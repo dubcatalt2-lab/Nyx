@@ -1,0 +1,23 @@
+{
+  "name": "goodlion",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "@mercuryworkshop/bare-mux": "latest",
+    "@mercuryworkshop/epoxy-transport": "^2.1.28",
+    "@mercuryworkshop/libcurl-transport": "^2.0.5",
+    "@mercuryworkshop/scramjet": "^2.0.67-alpha.1",
+    "@mercuryworkshop/scramjet-controller": "^0.0.13",
+    "@mercuryworkshop/wisp-js": "latest",
+    "@titaniumnetwork-dev/ultraviolet": "latest",
+    "express": "latest"
+  },
+  "devDependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0"
+  }
+}

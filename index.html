@@ -6427,10 +6427,24 @@ body.browser-shell .browser-mode-shell-tab span{
     }
     updateBrowserShellLocation(target,'',true);
   }
+  function pendingBrowserShellOptionPromptUrl(){
+    if(!store.get('nyx.browserShellMode',true)) return '';
+    const saved=store.text('nyx.lastBrowserShellUrl','');
+    const url=normalize(browserShellSourceUrl(saved) || saved);
+    return url && isAnimexUrl(url) ? url : '';
+  }
   function restoreBrowserShellOptionPrompt(){
-    if(!store.get('nyx.browserShellMode',true)) return;
-    const url=normalize(browserShellSourceUrl(store.text('nyx.lastBrowserShellUrl','')) || store.text('nyx.lastBrowserShellUrl',''));
-    if(!url || !isAnimexUrl(url)) return;
+    const url=pendingBrowserShellOptionPromptUrl();
+    if(!url) return false;
+    const gate=$('formulaGate');
+    if(gate && !gate.classList.contains('hidden')){
+      gate.dataset.opened='1';
+      gate.classList.add('hidden');
+      gate.setAttribute('aria-hidden','true');
+      gate.setAttribute('inert','');
+      closeWelcome(true);
+    }
+    hideCloakLaunchScreen();
     setTimeout(()=>{
       if(document.querySelector('.nyx-prompt-shade')) return;
       showAnimexMikuPrompt(()=>{
@@ -6440,6 +6454,7 @@ body.browser-shell .browser-mode-shell-tab span{
         store.setText('nyx.lastBrowserShellUrl','');
       });
     },650);
+    return true;
   }
   function goBrowserShellHome(){
     ensureBrowserShellHome();
@@ -7511,6 +7526,7 @@ body.browser-shell .browser-mode-shell-tab span{
     gate.setAttribute('aria-hidden','true');
     gate.setAttribute('inert','');
     closeWelcome(true);
+    setTimeout(()=>restoreBrowserShellOptionPrompt(),80);
   }
   const launchPdfOptions={
     math:'assets/docs/1300-maths-formula.pdf'
@@ -11195,6 +11211,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
       const params=new URLSearchParams(location.search);
       if(window.top!==window.self || params.has('nyx_cloaked')) return;
     }catch{}
+    if(pendingBrowserShellOptionPromptUrl()) return;
     if(!store.get('nyx.autoCloak',false) && !store.get('autoAbout',false) && !store.get('autoBlob',false)) return;
     store.set('nyx.autoCloak',true);
     store.set('autoAbout',false);
@@ -12611,7 +12628,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     else applyPreset(store.text('nyx.logo','nyx'),true);
     migrateGlassDefault();
     applyAutoHieroglyphPreference();
-    applyUserSettings(); tick(); setInterval(tick,1000); closeWelcome(); playHomeEntranceAnimation(document); setTimeout(()=>playHomeEntranceAnimation(document),180); restoreBrowserShellOptionPrompt(); scheduleAutoCloak();
+    applyUserSettings(); tick(); setInterval(tick,1000); closeWelcome(); playHomeEntranceAnimation(document); setTimeout(()=>playHomeEntranceAnimation(document),180); if(!restoreBrowserShellOptionPrompt()) scheduleAutoCloak();
     if(!store.get('nyx.setupComplete',false) || !store.text('nyx.userName','').trim()) setTimeout(showSetup,900);
     if(!store.get('nyx.updatesSeenOnce',false)){
       store.set('nyx.updatesSeenOnce',true);

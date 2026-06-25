@@ -5165,6 +5165,35 @@ select option:checked,
 .weather-panel .weather-icon-btn::after{
   text-indent:0!important;
 }
+html body.browser-shell .nyx-prompt-shade .nyx-prompt,
+html body .nyx-prompt-shade .nyx-prompt{
+  background:#fff!important;
+  background-color:#fff!important;
+  background-image:none!important;
+  color:#111827!important;
+  -webkit-text-fill-color:#111827!important;
+}
+html body.browser-shell .nyx-prompt-shade .nyx-prompt input.nyx-prompt-input,
+html body .nyx-prompt-shade .nyx-prompt input.nyx-prompt-input{
+  background:#fff!important;
+  background-color:#fff!important;
+  background-image:none!important;
+  color:#111827!important;
+  -webkit-text-fill-color:#111827!important;
+  border-color:#4b5563!important;
+  box-shadow:none!important;
+}
+html body.browser-shell .nyx-prompt-shade .nyx-prompt :is(button.nyx-prompt-ok,button.nyx-prompt-cancel,button.nyx-prompt-option),
+html body .nyx-prompt-shade .nyx-prompt :is(button.nyx-prompt-ok,button.nyx-prompt-cancel,button.nyx-prompt-option){
+  background:#fff!important;
+  background-color:#fff!important;
+  background-image:none!important;
+  color:#111827!important;
+  -webkit-text-fill-color:#111827!important;
+  border-color:#d1d5db!important;
+  box-shadow:0 2px 6px rgba(0,0,0,.08)!important;
+  text-shadow:none!important;
+}
 .weather-panel .weather-icon-btn[data-weather-refresh]::before{
   display:none!important;
 }
@@ -5490,12 +5519,40 @@ body.browser-shell .browser-mode-shell-tab span{
     });
     return shade;
   }
+  function forceWhitePromptStyles(root){
+    const set=(el,styles)=>{
+      if(!el) return;
+      Object.entries(styles).forEach(([prop,value])=>el.style.setProperty(prop,value,'important'));
+    };
+    set(root?.querySelector?.('.nyx-prompt'),{
+      background:'#fff',
+      'background-color':'#fff',
+      'background-image':'none',
+      color:'#111827',
+      '-webkit-text-fill-color':'#111827'
+    });
+    root?.querySelectorAll?.('.nyx-prompt-title,.nyx-prompt-message').forEach(el=>set(el,{
+      color:'#111827',
+      '-webkit-text-fill-color':'#111827',
+      'text-shadow':'none'
+    }));
+    root?.querySelectorAll?.('.nyx-prompt-input,.nyx-prompt-ok,.nyx-prompt-cancel,.nyx-prompt-option').forEach(el=>set(el,{
+      background:'#fff',
+      'background-color':'#fff',
+      'background-image':'none',
+      color:'#111827',
+      '-webkit-text-fill-color':'#111827',
+      'box-shadow':'0 2px 6px rgba(0,0,0,.08)',
+      'text-shadow':'none'
+    }));
+  }
   function showAnimexMikuPrompt(onOk,onCancel=null){
     document.querySelectorAll('.nyx-prompt-shade').forEach(el=>el.remove());
     const shade=document.createElement('div');
     shade.className='nyx-prompt-shade animex-option-prompt';
     shade.innerHTML=`<div class="nyx-prompt" role="dialog" aria-modal="true"><div class="nyx-prompt-title">Choose streaming option</div><div class="nyx-prompt-message">Select the option below to continue.</div><button class="nyx-prompt-option" type="button">Use MIKU for streaming</button><div class="nyx-prompt-actions"><button class="nyx-prompt-ok" type="button">OK</button><button class="nyx-prompt-cancel" type="button">Cancel</button></div></div>`;
     document.body.appendChild(shade);
+    forceWhitePromptStyles(shade);
     const choose=()=>{
       document.documentElement.classList.remove('pending-animex-option');
       shade.remove();

@@ -5396,11 +5396,19 @@ body.browser-shell .browser-mode-shell-tab span{
     }catch{return false}
   }
   const animexPromptApprovedUrls = new Set();
+  const animexPromptReloadUrls = new Set();
   function approveAnimexPromptUrl(url){
     const key=String(url || '');
     if(!key) return;
     animexPromptApprovedUrls.add(key);
     setTimeout(()=>animexPromptApprovedUrls.delete(key),20000);
+  }
+  function requireAnimexPromptOnReload(url){
+    const key=String(url || '');
+    if(!key) return;
+    animexPromptApprovedUrls.delete(key);
+    animexPromptReloadUrls.add(key);
+    setTimeout(()=>animexPromptReloadUrls.delete(key),30000);
   }
   function shownyxPrompt(message,{loop=false,onOk=null,onCancel=null}={}){
     document.querySelectorAll('.nyx-prompt-shade').forEach(el=>el.remove());
@@ -9402,13 +9410,14 @@ body.browser-shell .browser-mode-shell-tab span{
       }
       const url=normalize(browserShellSourceUrl(raw) || raw); if(!url)return;
       win.querySelector('.urlbar').value=browserShellDisplayValue(url);
-      if(isAnimexUrl(url) && !animexPromptApprovedUrls.has(url)){
+      if(isAnimexUrl(url) && (animexPromptReloadUrls.has(url) || !animexPromptApprovedUrls.has(url))){
         if(t.animexPromptPendingUrl===url) return;
         t.animexPromptPendingUrl=url;
         const tabId=t.id;
         showAnimexMikuPrompt(()=>{
           const tab=state.tabs.find(item=>item.id===tabId);
           if(tab) delete tab.animexPromptPendingUrl;
+          animexPromptReloadUrls.delete(url);
           approveAnimexPromptUrl(url);
           if(!state.tabs.some(tab=>tab.id===tabId)) return;
           activate(tabId);
@@ -9416,6 +9425,7 @@ body.browser-shell .browser-mode-shell-tab span{
         },()=>{
           const tab=state.tabs.find(item=>item.id===tabId);
           if(tab) delete tab.animexPromptPendingUrl;
+          animexPromptReloadUrls.delete(url);
         });
         return;
       }
@@ -9517,7 +9527,19 @@ body.browser-shell .browser-mode-shell-tab span{
     win.querySelector('[data-new-tab]').onclick=()=>addTab();
     win.querySelector('[data-go]').onclick=()=>navigate(win.querySelector('.urlbar').value);
     win.querySelector('.urlbar').addEventListener('keydown',e=>{if(e.key==='Enter')navigate(e.target.value)});
-    win.querySelector('[data-reload]').onclick=()=>{const t=current(); if(t?.scramjetFrame) t.scramjetFrame.reload(); else if(t?.url)t.frame.src=t.frame.src};
+    win.querySelector('[data-reload]').onclick=()=>{
+      const t=current();
+      if(!t?.url) return;
+      const source=browserShellSourceUrl(t.sourceUrl || t.url) || t.sourceUrl || t.url;
+      if(isAnimexUrl(source)){
+        delete t.animexPromptPendingUrl;
+        requireAnimexPromptOnReload(source);
+        navigate(source,t.expectedEngine || '');
+        return;
+      }
+      if(t.scramjetFrame) t.scramjetFrame.reload();
+      else t.frame.src=t.frame.src;
+    };
     win.querySelector('[data-back]').onclick=()=>goFrameHistory(-1);
     win.querySelector('[data-forward]').onclick=()=>goFrameHistory(1);
     win.querySelector('[data-menu]').onclick=()=>document.body.classList.contains('browser-shell') ? openBrowserShellSettings() : openSettings();

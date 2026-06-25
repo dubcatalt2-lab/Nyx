@@ -5640,7 +5640,7 @@ body.browser-shell .browser-mode-shell-tab span{
     }
     const dock=document.querySelector('.dock');
     if(dock){
-      dock.innerHTML=`<button title="Games" data-app-url="assets/games/index.html"><img class="dock-icon" alt="" src="${appIcon('games')}"><span>Games</span></button><button title="Apps" data-open="apps"><img class="dock-icon" alt="" src="${appIcon('apps')}"><span>Apps</span></button><button title="GeForce Now" data-app-url="https://play.geforcenow.com/"><img class="dock-icon" alt="" src="${appIcon('geforcenow')}"><span>GeForce</span></button><button title="Roblox" data-app-url="https://www.roblox.com/"><img class="dock-icon" alt="" src="${appIcon('roblox.com')}"><span>Roblox</span></button><button title="Discord" data-app-url="https://discord.com/app"><img class="dock-icon" alt="" src="${appIcon('discord-dock')}"><span>Discord</span></button><button title="Settings" data-open="settings" aria-label="Settings"><img class="dock-icon" alt="" src="${appIcon('settings')}"><span>Settings</span></button><span class="dock-separator"></span><span class="minimized-tray" id="minimizedTray"></span>`;
+      dock.innerHTML=`<button title="Games" data-app-url="/assets/games/index.html"><img class="dock-icon" alt="" src="${appIcon('games')}"><span>Games</span></button><button title="Apps" data-open="apps"><img class="dock-icon" alt="" src="${appIcon('apps')}"><span>Apps</span></button><button title="GeForce Now" data-app-url="https://play.geforcenow.com/"><img class="dock-icon" alt="" src="${appIcon('geforcenow')}"><span>GeForce</span></button><button title="Roblox" data-app-url="https://www.roblox.com/"><img class="dock-icon" alt="" src="${appIcon('roblox.com')}"><span>Roblox</span></button><button title="Discord" data-app-url="https://discord.com/app"><img class="dock-icon" alt="" src="${appIcon('discord-dock')}"><span>Discord</span></button><button title="Settings" data-open="settings" aria-label="Settings"><img class="dock-icon" alt="" src="${appIcon('settings')}"><span>Settings</span></button><span class="dock-separator"></span><span class="minimized-tray" id="minimizedTray"></span>`;
       hydrateDockDrag(dock);
     }
     const corner=document.querySelector('.corner-gear');
@@ -5649,7 +5649,7 @@ body.browser-shell .browser-mode-shell-tab span{
   function renderChromeFixed(){
     const top=document.querySelector('.top-os');
     if(top){
-      top.innerHTML='<div class="brand-mini"><button class="browser-mode-app-button active" data-browser-shell-home title="Current tab">Home</button><button class="browser-mode-tab" data-browser-shell-new-tab title="New tab"><span>New tab</span></button><button id="brandName" class="brand-button" data-open="updates" title="ռʏӼ fixes">ռʏӼ</button><span>|</span><button id="userGreeting" class="user-chip needs-name" data-open="settings">Set username</button></div><form class="browser-mode-address" data-browser-shell-search><button data-browser-shell-back type="button" title="Back">&lt;</button><button data-browser-shell-forward type="button" title="Forward">&gt;</button><button data-browser-shell-reload type="button" title="Reload">&#8635;</button><input class="browser-mode-url" data-browser-shell-url placeholder="Search or enter a URL" autocomplete="off"><button class="browser-mode-bookmark" data-browser-shell-bookmark type="button" title="Bookmark this tab" aria-pressed="false">&#9734;</button><button class="browser-mode-weather" data-open="weather" type="button" title="Weather" aria-label="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button><button data-browser-shell-menu type="button" title="Menu">...</button></form><div class="browser-bookmark-panel" id="browserBookmarkPanel" hidden></div><div class="browser-mode-menu" id="browserModeMenu"><button data-browser-shell-new-tab type="button">New tab</button><button data-browser-bookmarks-toggle type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-browser-hieroglyph-toggle type="button">Hieroglyph Mode</button><button data-app-url="assets/games/index.html" type="button">Games</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-shell-about-tab type="button">Open Tab in Abt:Blank</button></div><div class="status-icons"><button class="top-fullscreen" data-page-fullscreen title="Fullscreen" aria-label="Fullscreen"></button><span id="clock">--:--</span></div>';
+      top.innerHTML='<div class="brand-mini"><button class="browser-mode-app-button active" data-browser-shell-home title="Current tab">Home</button><button class="browser-mode-tab" data-browser-shell-new-tab title="New tab"><span>New tab</span></button><button id="brandName" class="brand-button" data-open="updates" title="ռʏӼ fixes">ռʏӼ</button><span>|</span><button id="userGreeting" class="user-chip needs-name" data-open="settings">Set username</button></div><form class="browser-mode-address" data-browser-shell-search><button data-browser-shell-back type="button" title="Back">&lt;</button><button data-browser-shell-forward type="button" title="Forward">&gt;</button><button data-browser-shell-reload type="button" title="Reload">&#8635;</button><input class="browser-mode-url" data-browser-shell-url placeholder="Search or enter a URL" autocomplete="off"><button class="browser-mode-bookmark" data-browser-shell-bookmark type="button" title="Bookmark this tab" aria-pressed="false">&#9734;</button><button class="browser-mode-weather" data-open="weather" type="button" title="Weather" aria-label="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button><button data-browser-shell-menu type="button" title="Menu">...</button></form><div class="browser-bookmark-panel" id="browserBookmarkPanel" hidden></div><div class="browser-mode-menu" id="browserModeMenu"><button data-browser-shell-new-tab type="button">New tab</button><button data-browser-bookmarks-toggle type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-browser-hieroglyph-toggle type="button">Hieroglyph Mode</button><button data-app-url="/assets/games/index.html" type="button">Games</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-shell-about-tab type="button">Open Tab in Abt:Blank</button></div><div class="status-icons"><button class="top-fullscreen" data-page-fullscreen title="Fullscreen" aria-label="Fullscreen"></button><span id="clock">--:--</span></div>';
       renderBrowserShellTabs();
       renderBrowserBookmarks();
     }
@@ -5659,7 +5659,7 @@ body.browser-shell .browser-mode-shell-tab span{
     }
     const dock=document.querySelector('.dock');
     if(dock){
-      dock.innerHTML=`<button title="Games" data-app-url="assets/games/index.html"><img class="dock-icon" alt="" src="${appIcon('games')}"><span>Games</span></button><button title="Apps" data-open="apps"><img class="dock-icon" alt="" src="${appIcon('apps')}"><span>Apps</span></button><button title="GeForce Now" data-app-url="https://play.geforcenow.com/"><img class="dock-icon" alt="" src="${appIcon('geforcenow')}"><span>GeForce</span></button><button title="Roblox" data-app-url="https://www.roblox.com/"><img class="dock-icon" alt="" src="${appIcon('roblox.com')}"><span>Roblox</span></button><button title="Discord" data-app-url="https://discord.com/app"><img class="dock-icon" alt="" src="${appIcon('discord-dock')}"><span>Discord</span></button><button title="Settings" data-open="settings" aria-label="Settings"><img class="dock-icon" alt="" src="${appIcon('settings')}"><span>Settings</span></button><span class="dock-separator"></span><span class="minimized-tray" id="minimizedTray"></span>`;
+      dock.innerHTML=`<button title="Games" data-app-url="/assets/games/index.html"><img class="dock-icon" alt="" src="${appIcon('games')}"><span>Games</span></button><button title="Apps" data-open="apps"><img class="dock-icon" alt="" src="${appIcon('apps')}"><span>Apps</span></button><button title="GeForce Now" data-app-url="https://play.geforcenow.com/"><img class="dock-icon" alt="" src="${appIcon('geforcenow')}"><span>GeForce</span></button><button title="Roblox" data-app-url="https://www.roblox.com/"><img class="dock-icon" alt="" src="${appIcon('roblox.com')}"><span>Roblox</span></button><button title="Discord" data-app-url="https://discord.com/app"><img class="dock-icon" alt="" src="${appIcon('discord-dock')}"><span>Discord</span></button><button title="Settings" data-open="settings" aria-label="Settings"><img class="dock-icon" alt="" src="${appIcon('settings')}"><span>Settings</span></button><span class="dock-separator"></span><span class="minimized-tray" id="minimizedTray"></span>`;
       hydrateDockDrag(dock);
     }
     const corner=document.querySelector('.corner-gear');
@@ -8241,14 +8241,28 @@ body.browser-shell .browser-mode-shell-tab span{
   const defaultHomeShortcuts=[
     {domain:'geforcenow',title:'GeForce Now',url:'https://play.geforcenow.com/',favorite:true},
     {domain:'duck.ai',title:'Duck AI',url:'https://duck.ai/',favorite:false},
-    {domain:'games',title:'Games',url:'assets/games/index.html',favorite:false},
+    {domain:'games',title:'Games',url:'/assets/games/index.html',favorite:false},
     {domain:'youtube.com',title:'YouTube',url:'https://www.youtube.com/',favorite:false},
     {domain:'tiktok.com',title:'TikTok',url:'https://www.tiktok.com/',favorite:false}
   ];
+  function normalizeInternalAppUrl(url){
+    const raw=String(url || '').trim();
+    if(/^assets\//i.test(raw)) return `/${raw}`;
+    return raw;
+  }
+  function normalizeHomeShortcut(item){
+    const next={...item,url:normalizeInternalAppUrl(item?.url)};
+    if(next.url==='/assets/games/index.html') next.domain='games';
+    return next;
+  }
   function homeShortcuts(){
     try{
       const saved=JSON.parse(store.text('nyx.homeShortcuts',''));
-      if(Array.isArray(saved)) return saved.filter(item=>item?.url && item?.title);
+      if(Array.isArray(saved)){
+        const cleaned=saved.filter(item=>item?.url && item?.title).map(normalizeHomeShortcut);
+        if(JSON.stringify(cleaned)!==JSON.stringify(saved)) saveHomeShortcuts(cleaned);
+        return cleaned;
+      }
     }catch{}
     return defaultHomeShortcuts.map(item=>({...item}));
   }
@@ -8406,7 +8420,7 @@ body.browser-shell .browser-mode-shell-tab span{
   function quickTiles(){
     return [
       ['youtube.com','YouTube','https://www.youtube.com/'],
-      ['games','Games','assets/games/index.html'],
+      ['games','Games','/assets/games/index.html'],
       ['geforcenow','GeForce Now','https://play.geforcenow.com/'],
       ['roblox.com','Roblox','https://www.roblox.com/'],
       ['discord.com','Discord','https://discord.com/app'],

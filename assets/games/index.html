@@ -97,6 +97,7 @@
       ugs:{name:'UGS',url:'/assets/ugs/index.html'},
       seraph:{name:'Seraph',url:'/assets/seraph/index.html'}
     };
+    const hostVersion='20260624-seraph-root-fix';
     const select=document.getElementById('hostSelect');
     const frame=document.getElementById('hostFrame');
     const saved=localStorage.getItem('nyx.gameHost') || 'ugs';
@@ -105,7 +106,7 @@
       select.value=hosts[key] ? key : 'ugs';
       localStorage.setItem('nyx.gameHost',select.value);
       document.title=`nyx Games - ${host.name}`;
-      frame.src=host.url;
+      frame.src=`${host.url}?v=${hostVersion}`;
     }
     select.addEventListener('change',()=>loadHost(select.value));
     loadHost(saved);

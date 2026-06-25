@@ -5183,8 +5183,8 @@ html body .nyx-prompt-shade .nyx-prompt input.nyx-prompt-input{
   border-color:#4b5563!important;
   box-shadow:none!important;
 }
-html body.browser-shell .nyx-prompt-shade .nyx-prompt :is(button.nyx-prompt-ok,button.nyx-prompt-cancel,button.nyx-prompt-option),
-html body .nyx-prompt-shade .nyx-prompt :is(button.nyx-prompt-ok,button.nyx-prompt-cancel,button.nyx-prompt-option){
+html body.browser-shell .nyx-prompt-shade .nyx-prompt :is(button.nyx-prompt-ok,button.nyx-prompt-cancel,button.nyx-prompt-option,.nyx-prompt-select),
+html body .nyx-prompt-shade .nyx-prompt :is(button.nyx-prompt-ok,button.nyx-prompt-cancel,button.nyx-prompt-option,.nyx-prompt-select){
   background:#fff!important;
   background-color:#fff!important;
   background-image:none!important;
@@ -5205,6 +5205,15 @@ html body .nyx-prompt-shade .nyx-prompt :is(input,button,select,textarea){
   background:#fff!important;
   background-color:#fff!important;
   background-image:none!important;
+}
+html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-select{
+  width:100%!important;
+  height:42px!important;
+  margin:10px 0 26px!important;
+  padding:0 12px!important;
+  border:1px solid #111827!important;
+  border-radius:10px!important;
+  font:800 15px Raleway,Arial,sans-serif!important;
 }
 .weather-panel .weather-icon-btn[data-weather-refresh]::before{
   display:none!important;
@@ -5549,7 +5558,7 @@ body.browser-shell .browser-mode-shell-tab span{
       '-webkit-text-fill-color':'#111827',
       'text-shadow':'none'
     }));
-    root?.querySelectorAll?.('.nyx-prompt-input,.nyx-prompt-ok,.nyx-prompt-cancel,.nyx-prompt-option').forEach(el=>set(el,{
+    root?.querySelectorAll?.('.nyx-prompt-input,.nyx-prompt-ok,.nyx-prompt-cancel,.nyx-prompt-option,.nyx-prompt-select').forEach(el=>set(el,{
       background:'#fff',
       'background-color':'#fff',
       'background-image':'none',
@@ -5563,10 +5572,17 @@ body.browser-shell .browser-mode-shell-tab span{
     document.querySelectorAll('.nyx-prompt-shade').forEach(el=>el.remove());
     const shade=document.createElement('div');
     shade.className='nyx-prompt-shade animex-option-prompt';
-    shade.innerHTML=`<div class="nyx-prompt" role="dialog" aria-modal="true"><div class="nyx-prompt-title">Choose streaming option</div><div class="nyx-prompt-message">Select the option below to continue.</div><button class="nyx-prompt-option" type="button">Use MIKU for streaming</button><div class="nyx-prompt-actions"><button class="nyx-prompt-ok" type="button">OK</button><button class="nyx-prompt-cancel" type="button">Cancel</button></div></div>`;
+    shade.innerHTML=`<div class="nyx-prompt" role="dialog" aria-modal="true"><div class="nyx-prompt-title">Choose streaming option</div><div class="nyx-prompt-message">Select an option, then press OK.</div><select class="nyx-prompt-select" aria-label="Streaming option"><option value="miku" selected>Use MIKU for streaming</option></select><div class="nyx-prompt-actions"><button class="nyx-prompt-ok" type="button" disabled>OK</button><button class="nyx-prompt-cancel" type="button">Cancel</button></div></div>`;
     document.body.appendChild(shade);
     forceWhitePromptStyles(shade);
+    let armed=false;
+    const ok=shade.querySelector('.nyx-prompt-ok');
+    setTimeout(()=>{
+      armed=true;
+      if(ok) ok.disabled=false;
+    },320);
     const choose=()=>{
+      if(!armed) return;
       document.documentElement.classList.remove('pending-animex-option');
       shade.remove();
       if(typeof onOk==='function') onOk();
@@ -5576,14 +5592,13 @@ body.browser-shell .browser-mode-shell-tab span{
       shade.remove();
       if(typeof onCancel==='function') onCancel();
     };
-    shade.querySelector('.nyx-prompt-option')?.addEventListener('click',choose);
-    shade.querySelector('.nyx-prompt-ok')?.addEventListener('click',choose);
+    ok?.addEventListener('click',choose);
     shade.querySelector('.nyx-prompt-cancel')?.addEventListener('click',cancel);
     shade.addEventListener('keydown',event=>{
       if(event.key==='Enter') choose();
       if(event.key==='Escape') cancel();
     });
-    shade.querySelector('.nyx-prompt-option')?.focus();
+    setTimeout(()=>shade.querySelector('.nyx-prompt-select')?.focus(),80);
     return shade;
   }
   //hieroglyph-text-effect

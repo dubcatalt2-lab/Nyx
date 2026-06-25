@@ -346,6 +346,38 @@ app.get("/search", async (req, res) => {
   }
 });
 
+function safeSeraphPath(path) {
+  const clean = String(path || "").replace(/^\/+/, "");
+  if (!clean || clean.includes("..") || !/^[a-z0-9_./-]+$/i.test(clean)) return "";
+  if (/(^|\/)(?:404|408)\.html$/i.test(clean)) return "";
+  return clean;
+}
+
+app.get("/seraph-fetch", async (req, res) => {
+  const path = safeSeraphPath(req.query.path);
+  if (!path) {
+    res.status(400).type("text/plain").send("Invalid Seraph path");
+    return;
+  }
+  const upstreamUrl = `https://cdn.jsdelivr.net/gh/a456pur/seraph@main/games/${path}`;
+  try {
+    const upstream = await fetch(upstreamUrl, {
+      headers: {
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "user-agent": "nyx/1.0"
+      }
+    });
+    if (!upstream.ok) {
+      res.status(upstream.status).type("text/plain").send(`Seraph upstream returned ${upstream.status}`);
+      return;
+    }
+    res.setHeader("Cache-Control", "public, max-age=300");
+    res.type("html").send(await upstream.text());
+  } catch (error) {
+    res.status(502).type("text/plain").send(`Seraph network error: ${error?.message || error}`);
+  }
+});
+
 app.get("/uv/uv.handler.js", (_req, res) => {
   res.type("application/javascript").send(patchedUvHandler());
 });

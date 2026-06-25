@@ -51,17 +51,23 @@
         .replace(/(["'(\s=])\/css\//g, `$1${cdnRoot}/css/`)
         .replace(/(["'(\s=])\/assets\//g, `$1${cdnRoot}/assets/`);
     }
+    async function fetchSeraphHtml(gamePath, htmlUrl){
+      const localUrl=`/seraph-fetch?path=${encodeURIComponent(gamePath)}`;
+      try{
+        const local=await fetch(localUrl,{cache:'no-store'});
+        if(local.ok) return await local.text();
+      }catch{}
+      const response=await fetch(htmlUrl,{cache:'no-store'});
+      if(!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.text();
+    }
     const gamePath=safeGamePath(game);
     if(!gamePath){
       fail('Missing Seraph game path.');
     }else{
       const htmlUrl=`${cdnRoot}/games/${gamePath}`;
       const baseUrl=htmlUrl.slice(0,htmlUrl.lastIndexOf('/') + 1);
-      fetch(htmlUrl)
-        .then(response=>{
-          if(!response.ok) throw new Error(`HTTP ${response.status}`);
-          return response.text();
-        })
+      fetchSeraphHtml(gamePath,htmlUrl)
         .then(html=>{
           const rewritten=rewriteSeraphHtml(html);
           const withBase=rewritten.replace(/<head([^>]*)>/i,`<head$1><base href="${baseUrl}">`);

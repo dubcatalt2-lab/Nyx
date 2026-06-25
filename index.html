@@ -5244,7 +5244,7 @@ body.browser-shell .browser-mode-shell-tab span{
     return 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="${bg}"/><text x="32" y="40" text-anchor="middle" font-size="22" font-family="Raleway, Arial, sans-serif" font-weight="800" fill="${fg}">${label}</text></svg>`);
   }
   function svgIcon(svg){return 'data:image/svg+xml,'+encodeURIComponent(svg)}
-  function localIcon(name){return `./assets/icons/${name}`}
+  function localIcon(name){return `/assets/icons/${name}`}
   function simpleIcon(slug,color='ffffff'){
     const c='#'+color.replace('#','');
     const common='xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"';
@@ -5301,7 +5301,7 @@ body.browser-shell .browser-mode-shell-tab span{
   function iconForUrl(url){
     const raw=String(url || '').trim();
     if(!raw || raw==='about:blank' || raw.startsWith('nyx://')) return favicons.nyx;
-    if(raw.startsWith('assets/games/') || raw.startsWith('assets/ugs/') || raw.startsWith('assets/seraph/')) return appIcon('games');
+    if(raw.startsWith('assets/games/') || raw.startsWith('assets/ugs/') || raw.startsWith('assets/seraph/') || raw.startsWith('/assets/games/') || raw.startsWith('/assets/ugs/') || raw.startsWith('/assets/seraph/')) return appIcon('games');
     try{
       const host=new URL(raw,location.href).hostname.replace(/^www\./,'').toLowerCase();
       if(appIcons[host]) return appIcons[host];
@@ -5315,7 +5315,7 @@ body.browser-shell .browser-mode-shell-tab span{
     const raw=String(url || '').trim();
     if(!raw || raw==='about:blank') return 'New Tab';
     if(raw.startsWith('nyx://')) return raw.replace('nyx://','nyx ');
-    if(raw.startsWith('assets/games/') || raw.startsWith('assets/ugs/') || raw.startsWith('assets/seraph/')) return 'Games';
+    if(raw.startsWith('assets/games/') || raw.startsWith('assets/ugs/') || raw.startsWith('assets/seraph/') || raw.startsWith('/assets/games/') || raw.startsWith('/assets/ugs/') || raw.startsWith('/assets/seraph/')) return 'Games';
     try{return new URL(raw,location.href).hostname.replace(/^www\./,'') || 'New Tab'}catch{return 'New Tab'}
   }
   let zTop = 20, winCount = 0, activeBrowser = null, antiCloseEnabled = store.get('nyx.antiClose',true), panicCaptureArmed = false;

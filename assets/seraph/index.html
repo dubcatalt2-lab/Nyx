@@ -85,6 +85,23 @@
       border-radius:10px;
       background:#111827;
     }
+    .thumb.broken{
+      display:none;
+    }
+    .thumb-fallback{
+      width:100%;
+      aspect-ratio:16/10;
+      display:none;
+      place-items:center;
+      border-radius:10px;
+      background:linear-gradient(135deg,#111827,#1e293b);
+      color:#7dd3fc;
+      font-size:28px;
+      font-weight:800;
+    }
+    .thumb.broken + .thumb-fallback{
+      display:grid;
+    }
     .name{
       font-size:14px;
       line-height:1.25;
@@ -133,7 +150,7 @@
 
     function gameUrl(path){
       const query=`game=${encodeURIComponent(String(path || '').replace(/^\/+/,''))}`;
-      return new URL(`play.html?${query}`,location.href).href;
+      return new URL(`/assets/seraph/play.html?${query}`,location.origin).href;
     }
 
     function isPlayablePath(path){
@@ -150,6 +167,7 @@
       grid.innerHTML=shown.map(game=>`
         <button class="card" type="button" data-url="${game.url}">
           <img class="thumb" alt="" loading="lazy" src="${game.thumbnail}">
+          <span class="thumb-fallback" aria-hidden="true">${game.title.slice(0,1).toUpperCase()}</span>
           <span class="name">${game.title}</span>
         </button>
       `).join('');
@@ -160,9 +178,12 @@
       const card=event.target.closest('[data-url]');
       if(card) openGame(card.dataset.url);
     });
+    grid.addEventListener('error',event=>{
+      if(event.target?.classList?.contains('thumb')) event.target.classList.add('broken');
+    },true);
     search.addEventListener('input',render);
 
-    fetch('games.json')
+    fetch('/assets/seraph/games.json')
       .then(response=>response.json())
       .then(data=>{
         const entries=Array.isArray(data.games) ? data.games : Object.entries(data).map(([path,info])=>({

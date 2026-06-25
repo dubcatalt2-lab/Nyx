@@ -5194,6 +5194,18 @@ html body .nyx-prompt-shade .nyx-prompt :is(button.nyx-prompt-ok,button.nyx-prom
   box-shadow:0 2px 6px rgba(0,0,0,.08)!important;
   text-shadow:none!important;
 }
+html body.browser-shell .nyx-prompt-shade .nyx-prompt *,
+html body .nyx-prompt-shade .nyx-prompt *{
+  color:#111827!important;
+  -webkit-text-fill-color:#111827!important;
+  text-shadow:none!important;
+}
+html body.browser-shell .nyx-prompt-shade .nyx-prompt :is(input,button,select,textarea),
+html body .nyx-prompt-shade .nyx-prompt :is(input,button,select,textarea){
+  background:#fff!important;
+  background-color:#fff!important;
+  background-image:none!important;
+}
 .weather-panel .weather-icon-btn[data-weather-refresh]::before{
   display:none!important;
 }
@@ -5501,6 +5513,7 @@ body.browser-shell .browser-mode-shell-tab span{
     shade.className='nyx-prompt-shade';
     shade.innerHTML=`<div class="nyx-prompt" role="dialog" aria-modal="true"><div class="nyx-prompt-title">${esc(location.hostname || 'nyx')} says</div><div class="nyx-prompt-message">${esc(message)}</div><input class="nyx-prompt-input" autocomplete="off" spellcheck="false"><div class="nyx-prompt-actions"><button class="nyx-prompt-ok" type="button">OK</button><button class="nyx-prompt-cancel" type="button">Cancel</button></div></div>`;
     document.body.appendChild(shade);
+    forceWhitePromptStyles(shade);
     const ok=shade.querySelector('.nyx-prompt-ok');
     const input=shade.querySelector('.nyx-prompt-input');
     input?.focus();

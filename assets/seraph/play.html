@@ -30,6 +30,16 @@
       padding:24px;
       background:#111827;
     }
+    .box button{
+      margin-top:14px;
+      border:1px solid #7dd3fc;
+      border-radius:10px;
+      background:#0f172a;
+      color:#f8fafc;
+      padding:9px 14px;
+      font:inherit;
+      cursor:pointer;
+    }
     .game-frame{
       position:fixed;
       inset:0;
@@ -54,7 +64,13 @@
     let lastBaseUrl='';
     let restoring=false;
     function fail(message){
-      status.textContent=message;
+      status.innerHTML='';
+      status.append(document.createTextNode(message));
+      const retry=document.createElement('button');
+      retry.type='button';
+      retry.textContent='Retry';
+      retry.addEventListener('click',()=>location.reload());
+      status.append(document.createElement('br'),retry);
       loading.classList.remove('hidden');
     }
     function safeGamePath(path){
@@ -62,23 +78,58 @@
       if(/(^|\/)(?:404|408)\.html$/i.test(path)) return '';
       return path.endsWith('.html') ? path : `${path.replace(/\/+$/,'')}/index.html`;
     }
-    function rewriteSeraphHtml(html){
-      const proxiedRootAsset=(prefix, folder)=>`${prefix}/seraph-asset?path=${folder}/`;
+    function seraphAssetUrl(path){
+      const clean=String(path || '').replace(/^\/+/,'');
+      return `${location.origin}/seraph-asset?path=${encodeURIComponent(clean)}`;
+    }
+    function rewriteSeraphHtml(html,gamePath){
+      const gameDir=`games/${String(gamePath || '').replace(/[^/]+$/,'')}`;
+      const proxiedRootAsset=(prefix, folder)=>`${prefix}${seraphAssetUrl(`${folder}/`)}`;
+      const proxiedRelative=(_match,prefix,raw)=>{
+        const value=String(raw || '').trim();
+        if(!value || /^(?:[a-z][a-z0-9+.-]*:|\/\/|#|data:|blob:|javascript:|mailto:)/i.test(value)) return `${prefix}${raw}`;
+        let assetPath=value.startsWith('/') ? value : `${gameDir}${value}`;
+        try{
+          assetPath=new URL(assetPath, 'https://seraph.local/').pathname.replace(/^\/+/,'') + (new URL(assetPath, 'https://seraph.local/').search || '');
+        }catch{}
+        return `${prefix}${seraphAssetUrl(assetPath)}`;
+      };
       return String(html || '')
+        .replace(/((?:src|href)=["'])([^"']+)/gi, proxiedRelative)
         .replace(/(["'(\s=])\/(games|images|js|css|assets|storage)\//g, (_match,prefix,folder)=>proxiedRootAsset(prefix,folder))
-        .replace(/(["'(\s=])\/favicon\.png\b/g, '$1/seraph-asset?path=favicon.png')
-        .replace(/(["'(\s=])\/favicon\.ico\b/g, '$1/seraph-asset?path=favicon.ico');
+        .replace(/(["'(\s=])\/favicon\.png\b/g, (_match,prefix)=>`${prefix}${seraphAssetUrl('favicon.png')}`)
+        .replace(/(["'(\s=])\/favicon\.ico\b/g, (_match,prefix)=>`${prefix}${seraphAssetUrl('favicon.ico')}`);
     }
     function withSeraphBase(html,baseUrl){
       const baseTag=`<base href="${baseUrl}">`;
+      const guard=`<script>
+        (() => {
+          const critical=/WebGL\\.json|\\.data(?:\\.unityweb)?$|\\.wasm(?:\\.unityweb)?$|\\.framework\\.js(?:\\.unityweb)?$/i;
+          const report=(message,url='')=>parent.postMessage({type:'seraph:load-error',message,url},'*');
+          window.addEventListener('error',event=>{
+            const target=event.target;
+            const url=target && (target.src || target.href);
+            if(url && critical.test(String(url))) report('A required game file failed to load.',url);
+          },true);
+          window.addEventListener('unhandledrejection',event=>report(event.reason?.message || 'The game stopped while loading.',''));
+          setTimeout(()=>{
+            const loader=document.querySelector('#loader,.loader,.loading');
+            const canvas=document.querySelector('canvas');
+            const text=(document.body?.innerText || '').trim();
+            if(loader && getComputedStyle(loader).display!=='none' && (!canvas || !text)){
+              report('This game is stuck loading because one of its remote files is unavailable.','');
+            }
+          },14000);
+        })();
+      <\/script>`;
       return /<head([^>]*)>/i.test(html)
-        ? html.replace(/<head([^>]*)>/i,`<head$1>${baseTag}`)
-        : `${baseTag}${html}`;
+        ? html.replace(/<head([^>]*)>/i,`<head$1>${baseTag}${guard}`)
+        : `${baseTag}${guard}${html}`;
     }
     function loadGameSrcdoc(html,baseUrl){
       lastGameHtml=html;
       lastBaseUrl=baseUrl;
-      frame.srcdoc=withSeraphBase(rewriteSeraphHtml(html),baseUrl);
+      frame.srcdoc=withSeraphBase(rewriteSeraphHtml(html,gamePath),baseUrl);
       loading.classList.add('hidden');
     }
     frame.addEventListener('load',()=>{
@@ -89,10 +140,15 @@
         const nyxRoot=sameOrigin && (current.pathname==='/' || /\/index\.html$/i.test(current.pathname));
         if(nyxRoot){
           restoring=true;
-          frame.srcdoc=withSeraphBase(rewriteSeraphHtml(lastGameHtml),lastBaseUrl);
+          frame.srcdoc=withSeraphBase(rewriteSeraphHtml(lastGameHtml,gamePath),lastBaseUrl);
           setTimeout(()=>{restoring=false},250);
         }
       }catch{}
+    });
+    window.addEventListener('message',event=>{
+      if(event.source!==frame.contentWindow || event.data?.type!=='seraph:load-error') return;
+      const url=event.data.url ? ` (${event.data.url})` : '';
+      fail(`${event.data.message || 'This game failed to load.'}${url}`);
     });
     async function fetchSeraphHtml(gamePath, htmlUrl){
       const localUrl=`/seraph-fetch?path=${encodeURIComponent(gamePath)}`;

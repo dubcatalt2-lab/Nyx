@@ -2406,6 +2406,96 @@ body.effect-emeralds #visualEffects i::before{
   outline:2px solid #2563eb;
   outline-offset:2px;
 }
+.nyx-preflight{
+  position:fixed;
+  inset:0;
+  z-index:2147483600;
+  display:grid;
+  place-items:center;
+  padding:24px;
+  background:rgba(5,7,13,.74);
+  backdrop-filter:blur(16px) saturate(1.1);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .24s ease;
+}
+.nyx-preflight.show{
+  opacity:1;
+  pointer-events:auto;
+}
+.nyx-preflight-card{
+  width:min(520px,calc(100vw - 36px));
+  padding:30px 30px 28px;
+  border:1px solid rgba(168,85,247,.42);
+  border-radius:14px;
+  background:linear-gradient(180deg,rgba(13,13,19,.96),rgba(10,8,15,.98));
+  color:#cfe7ff;
+  box-shadow:0 28px 90px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08);
+}
+.nyx-preflight-title{
+  margin:0 0 20px;
+  color:#fff;
+  font-size:18px;
+  font-weight:900;
+}
+.nyx-preflight-list{
+  display:grid;
+  gap:18px;
+  margin:0;
+  padding:0;
+  list-style:none;
+}
+.nyx-preflight-item{
+  display:grid;
+  grid-template-columns:30px 1fr;
+  align-items:center;
+  gap:12px;
+  color:#a9d4ff;
+  font-size:15px;
+  font-weight:800;
+}
+.nyx-preflight-dot{
+  width:26px;
+  height:26px;
+  display:grid;
+  place-items:center;
+  border:2px solid rgba(168,120,20,.7);
+  border-radius:999px;
+  color:#f8c351;
+  font-size:14px;
+  box-shadow:0 0 16px rgba(202,138,4,.18);
+}
+.nyx-preflight-item.running .nyx-preflight-dot{
+  border-style:dotted;
+  animation:preflightSpin 1s linear infinite;
+}
+.nyx-preflight-item.done .nyx-preflight-dot{
+  border-color:#22c55e;
+  color:#22c55e;
+  animation:none;
+}
+.nyx-preflight-item.warn .nyx-preflight-dot{
+  border-color:#f59e0b;
+  color:#f59e0b;
+  animation:none;
+}
+.nyx-preflight-bar{
+  height:4px;
+  margin-top:26px;
+  overflow:hidden;
+  border-radius:999px;
+  background:rgba(120,74,9,.55);
+}
+.nyx-preflight-fill{
+  width:0%;
+  height:100%;
+  border-radius:inherit;
+  background:linear-gradient(90deg,#f59e0b,#84cc16,#22c55e);
+  transition:width .28s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes preflightSpin{
+  to{transform:rotate(360deg)}
+}
 .panel{padding:28px;overflow:auto;height:calc(100% - 32px)}
 .panel h1{margin:0 0 22px;font-size:34px}
 .glass-grid{display:grid;grid-template-columns:repeat(2,minmax(260px,1fr));gap:20px}
@@ -6247,7 +6337,11 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
     }
     const id=openBrowserShellTab('');
     if(id) browserShellActiveTab=id;
-    showBrowserShellInternalPage(name);
+    if(String(name || '').toLowerCase()==='apps'){
+      runNyxPreflight('apps').then(()=>showBrowserShellInternalPage(name));
+    }else{
+      showBrowserShellInternalPage(name);
+    }
     return id;
   }
   function openBrowserShellAppTab(url){
@@ -8746,6 +8840,160 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
     if(reload) reload.textContent='↻';
     if(menu) menu.textContent='...';
   }
+  let nyxPreflightPromise=null;
+  let nyxPreflightBypass=false;
+  const preflightDelay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+  async function preflightTimeout(promise,ms,label='check timed out'){
+    let timer=null;
+    const guarded=Promise.resolve(promise);
+    guarded.catch(()=>{});
+    try{
+      return await Promise.race([
+        guarded,
+        new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(label)),ms)})
+      ]);
+    }finally{
+      clearTimeout(timer);
+    }
+  }
+  async function preflightFetchOk(url,timeout=2600){
+    if(location.protocol==='file:') return true;
+    const response=await preflightTimeout(fetch(url,{cache:'no-store'}),timeout,`${url} timed out`);
+    return response.ok;
+  }
+  function preflightBrowserModeForTarget(target=''){
+    const mode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
+    if(mode!=='auto') return mode;
+    try{
+      const normalized=normalize(browserShellSourceUrl(target) || target);
+      return selectedBrowserMode(normalized)==='ultraviolet' ? 'ultraviolet' : 'scramjet';
+    }catch{
+      return 'scramjet';
+    }
+  }
+  async function preflightEngineReady(target=''){
+    if(location.protocol==='file:' || !('serviceWorker' in navigator)) return false;
+    const mode=preflightBrowserModeForTarget(target);
+    if(mode==='iframe') return true;
+    if(mode==='ultraviolet') return installUltraviolet();
+    if(mode==='scramjet') return installScramjet();
+    const results=await Promise.allSettled([installScramjet(),installUltraviolet()]);
+    return results.some(result=>result.status==='fulfilled' && result.value);
+  }
+  async function preflightTransportReady(target=''){
+    if(location.protocol==='file:') return false;
+    const mode=preflightBrowserModeForTarget(target);
+    if(mode==='iframe') return true;
+    if(mode==='scramjet') return !!(await createScramjetTransport());
+    return !!(await installBareMuxTransport());
+  }
+  async function preflightServiceWorkerReady(target=''){
+    if(location.protocol==='file:' || !('serviceWorker' in navigator)) return false;
+    await preflightEngineReady(target);
+    const registrations=await Promise.all([
+      navigator.serviceWorker.getRegistration('/~/sj/').catch(()=>null),
+      navigator.serviceWorker.getRegistration('/service/').catch(()=>null)
+    ]);
+    return registrations.some(registration=>registration?.active || registration?.waiting || registration?.installing);
+  }
+  function preflightSearchUrl(raw=''){
+    return normalize(raw || 'nyx') || '';
+  }
+  async function preflightAppIconsReady(){
+    const urls=[...document.querySelectorAll('[data-app-url]')]
+      .map(el=>appIcon(el.dataset.domain || ''))
+      .filter(Boolean)
+      .slice(0,8);
+    await Promise.allSettled(urls.map(url=>preflightFetchOk(url,1600)));
+    return true;
+  }
+  function nyxPreflightTasks(kind='startup',options={}){
+    const target=String(options.target || '').trim();
+    const serverCheck=async()=>{
+      const checks=['/uv/uv.bundle.js','/scramjet/scramjet.js','/baremux/index.mjs'].map(url=>preflightFetchOk(url,2400).catch(()=>false));
+      const results=await Promise.all(checks);
+      return location.protocol==='file:' || results.some(Boolean);
+    };
+    const searchCheck=async()=>{
+      const url=preflightSearchUrl(target || 'nyx');
+      if(!url) return false;
+      const parsed=new URL(url,location.href);
+      return /^https?:|^data:|^blob:|^about:$/.test(parsed.protocol);
+    };
+    const base=[
+      {label:'Fetching server list',run:serverCheck},
+      {label:'Selecting fastest server',run:async()=>{await preflightDelay(180); return true}},
+      {label:'Loading browser engine',run:()=>preflightEngineReady(target)},
+      {label:'Opening transport',run:()=>preflightTransportReady(target)},
+      {label:'Registering service worker',run:()=>preflightServiceWorkerReady(target)}
+    ];
+    if(kind==='apps'){
+      return [
+        ...base,
+        {label:'Checking app shortcuts',run:preflightAppIconsReady},
+        {label:'Opening apps panel',run:async()=>{await preflightDelay(180); return true}}
+      ];
+    }
+    if(kind==='search'){
+      return [
+        {label:'Reading search query',run:searchCheck},
+        {label:'Checking selected search engine',run:async()=>{await preflightDelay(150); return !!store.text('nyx.engine','duckduckgo')}},
+        ...base,
+        {label:'Preparing results tab',run:async()=>{await preflightDelay(160); return true}}
+      ];
+    }
+    if(kind==='browser'){
+      return [
+        {label:'Checking requested page',run:searchCheck},
+        ...base,
+        {label:'Opening browser tab',run:async()=>{await preflightDelay(160); return true}}
+      ];
+    }
+    return [
+      {label:'Checking nyx files',run:serverCheck},
+      {label:'Checking search',run:searchCheck},
+      ...base,
+      {label:'Finishing startup',run:async()=>{await preflightDelay(220); return true}}
+    ];
+  }
+  async function runNyxPreflight(kind='startup',options={}){
+    if(options.skip || nyxPreflightBypass) return true;
+    if(nyxPreflightPromise) return nyxPreflightPromise;
+    nyxPreflightPromise=(async()=>{
+      const tasks=nyxPreflightTasks(kind,options);
+      const overlay=document.createElement('div');
+      overlay.className='nyx-preflight';
+      overlay.innerHTML=`<section class="nyx-preflight-card" role="status" aria-live="polite"><h2 class="nyx-preflight-title">${esc(kind==='startup'?'Starting nyx':kind==='apps'?'Opening Apps':kind==='search'?'Checking Search':'Checking Browser')}</h2><ul class="nyx-preflight-list">${tasks.map((task,index)=>`<li class="nyx-preflight-item" data-preflight-step="${index}"><span class="nyx-preflight-dot">•</span><span>${esc(task.label)}</span></li>`).join('')}</ul><div class="nyx-preflight-bar"><div class="nyx-preflight-fill"></div></div></section>`;
+      document.body.appendChild(overlay);
+      requestAnimationFrame(()=>overlay.classList.add('show'));
+      const started=Date.now();
+      const fill=overlay.querySelector('.nyx-preflight-fill');
+      for(let i=0;i<tasks.length;i++){
+        const item=overlay.querySelector(`[data-preflight-step="${i}"]`);
+        item?.classList.add('running');
+        let ok=true;
+        try{
+          ok=await preflightTimeout(Promise.resolve(tasks[i].run?.()),5200,'preflight timed out');
+        }catch(error){
+          ok=false;
+          console.warn('nyx preflight warning:',tasks[i].label,error);
+        }
+        item?.classList.remove('running');
+        item?.classList.add(ok ? 'done' : 'warn');
+        const dot=item?.querySelector('.nyx-preflight-dot');
+        if(dot) dot.textContent=ok ? '✓' : '!';
+        if(fill) fill.style.width=`${Math.round(((i+1)/tasks.length)*100)}%`;
+        await preflightDelay(90);
+      }
+      const minVisible=Number(options.minVisible || (kind==='startup' ? 900 : 520));
+      const remaining=minVisible-(Date.now()-started);
+      if(remaining>0) await preflightDelay(remaining);
+      overlay.classList.remove('show');
+      setTimeout(()=>overlay.remove(),260);
+      return true;
+    })().finally(()=>{nyxPreflightPromise=null});
+    return nyxPreflightPromise;
+  }
   //browser-window
   function openBrowser(url='https://duckduckgo.com/',options={}){
     const win=makeWindow({title:'New Tab',className:'browser-window',body:browserBody()});
@@ -9415,6 +9663,23 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
       const t=current(); if(!t)return;
       if(shouldTriggerSixtySevenJumpscare(raw)){
         showSixtySevenJumpscare();
+        return;
+      }
+      const rawText=String(raw || '').trim();
+      const proxyInternal=/^(?:\/service\/|\/~\/sj\/|\/scramjet\/service\/|nyx:\/\/)/i.test(rawText);
+      if(rawText && !proxyInternal && !nyxPreflightBypass){
+        const tabId=t.id;
+        const looksLikeUrl=/^(?:[a-z][a-z0-9+.-]*:|[\w.-]+\.[a-z]{2,}(?:\/|$))/i.test(rawText);
+        runNyxPreflight((forceMode || looksLikeUrl) ? 'browser' : 'search',{target:rawText}).then(()=>{
+          if(!state.tabs.some(tab=>tab.id===tabId)) return;
+          nyxPreflightBypass=true;
+          try{
+            activate(tabId);
+            navigate(rawText,forceMode);
+          }finally{
+            nyxPreflightBypass=false;
+          }
+        });
         return;
       }
       const url=normalize(browserShellSourceUrl(raw) || raw); if(!url)return;
@@ -10566,7 +10831,9 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
     makeWindow({title:'Links',left:'18vw',top:'100px',width:'520px',height:'380px',body:`<div class="panel"><h1>Links</h1><div class="glass-grid"><div class="glass-card"><h2>Search Engines</h2><button data-url="https://www.google.com/">Google</button><button data-url="https://duckduckgo.com/">DuckDuckGo</button></div><div class="glass-card"><h2>School</h2><button data-url="https://docs.google.com/">Docs</button><button data-url="https://classroom.google.com/">Classroom</button></div></div></div>`});
   }
   openApps = function(){
-    makeWindow({title:'Apps',left:'8vw',top:'64px',width:'960px',height:'650px',body:`<div class="panel apps-panel"><h1>Apps</h1><div class="quick-grid apps-launch-grid">${quickTiles()}</div></div>`});
+    runNyxPreflight('apps').then(()=>{
+      makeWindow({title:'Apps',left:'8vw',top:'64px',width:'960px',height:'650px',body:`<div class="panel apps-panel"><h1>Apps</h1><div class="quick-grid apps-launch-grid">${quickTiles()}</div></div>`});
+    });
   };
   //settings-window
   function settingsBody(){
@@ -12577,6 +12844,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
       store.set('nyx.searchDefaultedToDuck',true);
       if(['google','bing'].includes(store.text('nyx.engine','duckduckgo'))) store.setText('nyx.engine','duckduckgo');
     }
+    await runNyxPreflight('startup',{minVisible:1000});
     const bootMode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
     if(bootMode==='scramjet' || bootMode==='auto') installScramjet();
     if(bootMode==='ultraviolet' || bootMode==='auto') installUltraviolet();

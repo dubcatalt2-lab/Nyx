@@ -6378,7 +6378,6 @@ body.browser-shell .browser-mode-shell-tab span{
       || browserShellTabs.find(tab=>tab.id===browserShellActiveTab)
       || browserShellTabs[0];
     const nextUrl=String(url || '').trim();
-    store.setText('nyx.lastBrowserShellUrl',browserShellSourceUrl(nextUrl) || nextUrl);
     tab.url=nextUrl;
     if(nextUrl){
       tab.title=browserShellLabel(nextUrl);
@@ -6426,20 +6425,6 @@ body.browser-shell .browser-mode-shell-tab span{
       updateDockFullscreenState();
     }
     updateBrowserShellLocation(target,'',true);
-  }
-  function restoreBrowserShellOptionPrompt(){
-    if(!store.get('nyx.browserShellMode',true)) return;
-    const url=normalize(browserShellSourceUrl(store.text('nyx.lastBrowserShellUrl','')) || store.text('nyx.lastBrowserShellUrl',''));
-    if(!url || !isAnimexUrl(url)) return;
-    setTimeout(()=>{
-      if(document.querySelector('.nyx-prompt-shade')) return;
-      showAnimexMikuPrompt(()=>{
-        approveAnimexPromptUrl(url);
-        openBrowserShellTab(url);
-      },()=>{
-        store.setText('nyx.lastBrowserShellUrl','');
-      });
-    },650);
   }
   function goBrowserShellHome(){
     ensureBrowserShellHome();
@@ -12611,7 +12596,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     else applyPreset(store.text('nyx.logo','nyx'),true);
     migrateGlassDefault();
     applyAutoHieroglyphPreference();
-    applyUserSettings(); tick(); setInterval(tick,1000); closeWelcome(); playHomeEntranceAnimation(document); setTimeout(()=>playHomeEntranceAnimation(document),180); restoreBrowserShellOptionPrompt(); scheduleAutoCloak();
+    applyUserSettings(); tick(); setInterval(tick,1000); closeWelcome(); playHomeEntranceAnimation(document); setTimeout(()=>playHomeEntranceAnimation(document),180); scheduleAutoCloak();
     if(!store.get('nyx.setupComplete',false) || !store.text('nyx.userName','').trim()) setTimeout(showSetup,900);
     if(!store.get('nyx.updatesSeenOnce',false)){
       store.set('nyx.updatesSeenOnce',true);

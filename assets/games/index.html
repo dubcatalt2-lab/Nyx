@@ -1,0 +1,114 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>nyx Games</title>
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --panel:rgba(11,15,23,.78);
+      --text:#f8fafc;
+      --muted:#a8b3c7;
+      --line:#f87171;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0}
+    body{
+      background:var(--bg);
+      color:var(--text);
+      font-family:Raleway,Arial,sans-serif;
+      overflow:hidden;
+    }
+    .games-shell{
+      height:100%;
+      display:grid;
+      grid-template-rows:auto 1fr;
+    }
+    .games-top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:18px;
+      padding:16px 18px;
+      background:var(--panel);
+      border-bottom:1px solid var(--line);
+    }
+    h1{
+      margin:0;
+      font-size:24px;
+      font-weight:400;
+      letter-spacing:0;
+    }
+    p{
+      margin:4px 0 0;
+      color:var(--muted);
+      font-size:14px;
+    }
+    label{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      color:var(--muted);
+      font-size:13px;
+      white-space:nowrap;
+    }
+    select{
+      min-width:150px;
+      border:1px solid var(--line);
+      background:#121722;
+      color:var(--text);
+      border-radius:10px;
+      padding:9px 12px;
+      font:inherit;
+      outline:none;
+    }
+    iframe{
+      width:100%;
+      height:100%;
+      border:0;
+      background:#0b0f17;
+    }
+    @media (max-width:640px){
+      .games-top{align-items:flex-start;flex-direction:column}
+      label,select{width:100%}
+    }
+  </style>
+</head>
+<body>
+  <div class="games-shell">
+    <header class="games-top">
+      <div>
+        <h1>Games</h1>
+        <p>Choose a game host.</p>
+      </div>
+      <label>
+        Game Host
+        <select id="hostSelect">
+          <option value="ugs">UGS</option>
+          <option value="seraph">Seraph</option>
+        </select>
+      </label>
+    </header>
+    <iframe id="hostFrame" title="Game host"></iframe>
+  </div>
+  <script>
+    const hosts={
+      ugs:{name:'UGS',url:'../ugs/index.html'},
+      seraph:{name:'Seraph',url:'../seraph/index.html'}
+    };
+    const select=document.getElementById('hostSelect');
+    const frame=document.getElementById('hostFrame');
+    const saved=localStorage.getItem('nyx.gameHost') || 'ugs';
+    function loadHost(key){
+      const host=hosts[key] || hosts.ugs;
+      select.value=hosts[key] ? key : 'ugs';
+      localStorage.setItem('nyx.gameHost',select.value);
+      document.title=`nyx Games - ${host.name}`;
+      frame.src=host.url;
+    }
+    select.addEventListener('change',()=>loadHost(select.value));
+    loadHost(saved);
+  </script>
+</body>
+</html>

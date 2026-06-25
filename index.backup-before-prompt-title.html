@@ -1,19 +1,19 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>GoodLion</title>
+<title>nyx</title>
 <script>
 try{
   const params=new URLSearchParams(location.search);
   const cloakHosts=['lionrunner.web.app','lionrunner.firebaseapp.com','localhost','127.0.0.1','0.0.0.0'];
-  if(cloakHosts.includes(location.hostname) && window.top===window.self && !params.has('goodlion_cloaked')){
+  if(cloakHosts.includes(location.hostname) && window.top===window.self && !params.has('nyx_cloaked')){
     document.documentElement.classList.add('hosted-cloak-entry');
   }
 }catch{}
 </script>
-<link id="appFavicon" rel="icon" type="image/png" href="./assets/icons/goodlion-logo.png">
+<link id="appFavicon" rel="icon" type="image/png" href="./assets/icons/nyx-logo.png">
 <style>
 :root{
   --bg:url("./assets/backgrounds/wp10711425.jpg");
@@ -560,8 +560,8 @@ body.effect-flowers #visualEffects i{
   text-shadow:0 8px 18px rgba(0,0,0,.3);
   animation:leafFall calc(var(--effect-speed,1.1) * 9.8s) ease-in-out infinite;
 }
-body.effect-hearts #visualEffects i::before{content:"♥";color:#fb7185}
-body.effect-pokeballs #visualEffects i::before{content:"◉";color:#fff;text-shadow:0 0 0 #ef4444,0 8px 18px rgba(0,0,0,.35)}
+body.effect-hearts #visualEffects i::before{content:"â™¥";color:#fb7185}
+body.effect-pokeballs #visualEffects i::before{content:"â—‰";color:#fff;text-shadow:0 0 0 #ef4444,0 8px 18px rgba(0,0,0,.35)}
 body.effect-pokeballs #visualEffects i::before{content:"";display:block;width:18px;height:18px;border-radius:999px;background:linear-gradient(#ef4444 0 46%,#111827 46% 54%,#fff 54%);box-shadow:0 0 0 2px #111827,0 8px 18px rgba(0,0,0,.35)}
 body.effect-flowers #visualEffects i::before{content:"\273F";color:#f9a8d4;font-size:32px;text-shadow:0 0 12px rgba(244,114,182,.8),0 8px 18px rgba(0,0,0,.35)}
 #visualEffects i:nth-child(1){left:4%;animation-delay:-.2s;animation-duration:1.05s}
@@ -695,7 +695,7 @@ body.effect-amount-medium #visualEffects i:nth-child(n+11){display:none}
 .brand-button:hover{color:#67e8f9;text-decoration:underline;text-underline-offset:3px}
 .user-chip{border:0;background:transparent;color:white;font:inherit;font-weight:800;padding:0 2px;border-radius:6px}
 .user-chip.needs-name{color:#67e8f9;text-decoration:underline;text-underline-offset:3px}
-.goodlion-mark{display:none}
+.nyx-mark{display:none}
 .status-icons{display:flex;align-items:center;gap:10px;color:#f8fafc}
 .top-fullscreen{height:22px;border:1px solid rgba(255,255,255,.16);border-radius:7px;background:var(--glass-control);color:white;padding:0 8px;font-size:12px}
 .top-fullscreen:hover{background:rgba(255,255,255,.16)}
@@ -755,7 +755,7 @@ body.browser-shell .browser-mode-app-button{
   font-size:16px;
 }
 body.browser-shell .browser-mode-app-button::before{
-  content:"⌂";
+  content:"âŒ‚";
   position:absolute;
   left:17px;
   top:50%;
@@ -770,7 +770,7 @@ body.browser-shell .browser-mode-app-button::before{
   transform:translateY(-50%);
 }
 body.browser-shell .browser-mode-app-button::after{
-  content:"×";
+  content:"Ã—";
   position:absolute;
   right:14px;
   top:50%;
@@ -1584,7 +1584,7 @@ body.effect-emeralds #visualEffects i::before{
 .tool-btn{width:30px;height:30px;border:0;border-radius:8px;background:transparent;color:#d8dee9;font-size:16px}
 .tool-btn:hover{background:rgba(255,255,255,.1)}
 .urlbar{width:100%;min-width:0;height:34px;border:0;border-radius:999px;background:#070707;color:white;padding:0 44px 0 44px;outline:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
-.browser-tools::before{content:"⌕";position:absolute;left:142px;top:50%;z-index:1;color:#b8b8b8;font-size:22px;pointer-events:none;line-height:1;transform:translateY(-50%)}
+.browser-tools::before{content:"âŒ•";position:absolute;left:142px;top:50%;z-index:1;color:#b8b8b8;font-size:22px;pointer-events:none;line-height:1;transform:translateY(-50%)}
 .go-btn{display:none}
 .menu-btn{position:absolute;right:15px;top:50%;height:30px;border:0;border-radius:9px;background:transparent;color:#b8b8b8;padding:0;width:38px;font-size:20px;transform:translateY(-50%)}
 .go-btn:hover,.menu-btn:hover{background:rgba(255,255,255,.18)}
@@ -1620,7 +1620,7 @@ body.effect-emeralds #visualEffects i::before{
     0 0 24px rgba(185,28,28,.72),
     0 0 38px rgba(127,29,29,.58);
 }
-.goodlion-prompt-shade{
+.nyx-prompt-shade{
   position:fixed;
   inset:0;
   z-index:2147483647;
@@ -1630,7 +1630,7 @@ body.effect-emeralds #visualEffects i::before{
   padding-top:0;
   background:rgba(255,255,255,.96);
 }
-.goodlion-prompt{
+.nyx-prompt{
   width:min(540px,calc(100vw - 36px));
   padding:18px 20px 18px;
   border:0;
@@ -1640,19 +1640,19 @@ body.effect-emeralds #visualEffects i::before{
   box-shadow:0 6px 18px rgba(0,0,0,.18);
   font:14px Arial,Segoe UI,sans-serif;
 }
-.goodlion-prompt-title{
+.nyx-prompt-title{
   margin:0 0 22px;
   color:#111827;
   font-size:16px;
   font-weight:700;
 }
-.goodlion-prompt-message{
+.nyx-prompt-message{
   margin:0 0 8px;
   min-height:0;
   font-size:14px;
   line-height:1.35;
 }
-.goodlion-prompt-input{
+.nyx-prompt-input{
   width:100%;
   height:38px;
   margin:0 0 38px;
@@ -1664,13 +1664,13 @@ body.effect-emeralds #visualEffects i::before{
   font:16px Arial,Segoe UI,sans-serif;
   outline:0;
 }
-.goodlion-prompt-actions{
+.nyx-prompt-actions{
   display:flex;
   justify-content:flex-end;
   gap:10px;
 }
-.goodlion-prompt-ok,
-.goodlion-prompt-cancel{
+.nyx-prompt-ok,
+.nyx-prompt-cancel{
   min-width:48px;
   height:40px;
   border:0;
@@ -1678,15 +1678,15 @@ body.effect-emeralds #visualEffects i::before{
   padding:0 14px;
   font:15px Arial,Segoe UI,sans-serif;
 }
-.goodlion-prompt-ok{
+.nyx-prompt-ok{
   background:#27231f;
   color:#fff;
 }
-.goodlion-prompt-cancel{
+.nyx-prompt-cancel{
   background:#fff;
   color:#374151;
 }
-.goodlion-prompt-ok:focus{
+.nyx-prompt-ok:focus{
   outline:2px solid #2563eb;
   outline-offset:2px;
 }
@@ -2220,7 +2220,7 @@ body.browser-shell .settings-panel{
   background-position:left center;
 }
 body.browser-shell .settings-panel::before{
-  content:"GoodLion\A Settings";
+  content:"nyx\A Settings";
   white-space:pre-line;
   position:fixed;
   left:calc(3vw + 28px);
@@ -2476,7 +2476,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
 </head>
 <body>
 <img id="customBgImage" class="custom-bg-image" alt="" referrerpolicy="no-referrer">
-<div id="formulaGate" class="formula-gate" role="button" tabindex="0" aria-label="Open GoodLion">
+<div id="formulaGate" class="formula-gate" role="button" tabindex="0" aria-label="Open nyx">
   <section class="formula-sheet">
     <iframe class="formula-pdf" src="assets/docs/1300-maths-formula.pdf#toolbar=0&navpanes=0&scrollbar=1" title="Math formulas"></iframe>
     <p class="formula-click-hint">Click to continue</p>
@@ -2492,7 +2492,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
 </div>
 <div id="setupScreen" class="setup-screen" aria-hidden="true">
   <div class="setup-panel">
-    <h1>Customize GoodLion</h1>
+    <h1>Customize nyx</h1>
     <p>Pick a username and background before the desktop opens.</p>
     <div class="setup-grid">
       <div class="setup-name">
@@ -2506,13 +2506,13 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     </div>
     <div class="setup-actions">
       <button data-skip-setup>Skip</button>
-      <button class="primary" data-finish-setup>Start GoodLion</button>
+      <button class="primary" data-finish-setup>Start nyx</button>
     </div>
   </div>
 </div>
 <div id="cloakLaunchScreen" class="cloak-launch-screen" aria-hidden="true">
   <div class="cloak-launch-panel">
-    <h1>GoodLion</h1>
+    <h1>nyx</h1>
     <p>Please type one of the following:</p>
     <div class="cloak-mode-list">
       <div class="cloak-mode-row"><code>'a'</code><span>= about:blank</span></div>
@@ -2595,26 +2595,26 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
   <div id="watchPartyStatus" class="watchparty-status">WatchParty ready</div>
 </section>
 <div class="top-os">
-  <div class="brand-mini"><span id="brandName">GoodLion</span><span>|</span><button id="userGreeting" class="user-chip needs-name" data-open="settings">Set username</button></div>
-  <div class="status-icons"><button class="top-fullscreen" data-page-fullscreen title="Fullscreen">□</button><span id="clock">--:--</span></div>
+  <div class="brand-mini"><span id="brandName">nyx</span><span>|</span><button id="userGreeting" class="user-chip needs-name" data-open="settings">Set username</button></div>
+  <div class="status-icons"><button class="top-fullscreen" data-page-fullscreen title="Fullscreen">â–¡</button><span id="clock">--:--</span></div>
 </div>
 <main id="desktop">
   <div class="desktop-shortcuts">
-    <button class="desktop-shortcut" data-open="browser"><span class="icon">🌐</span>Browser</button>
-    <button class="desktop-shortcut" data-open="updates"><span class="icon">✦</span>Updates</button>
-    <button class="desktop-shortcut" data-open="settings"><span class="icon">⚙</span>Settings</button>
+    <button class="desktop-shortcut" data-open="browser"><span class="icon">ðŸŒ</span>Browser</button>
+    <button class="desktop-shortcut" data-open="updates"><span class="icon">âœ¦</span>Updates</button>
+    <button class="desktop-shortcut" data-open="settings"><span class="icon">âš™</span>Settings</button>
   </div>
   <div class="desktop-center-clock" id="centerClock">--:--:--</div>
   <form class="desktop-search" data-desktop-search>
     <input name="q" placeholder="Search the web" autocomplete="off">
-    <button type="submit" title="Search">⌕</button>
+    <button type="submit" title="Search">âŒ•</button>
   </form>
   <aside id="weatherPanel" class="weather-panel" aria-label="Weather">
     <div class="weather-effects" aria-hidden="true"><span class="fx-sun"></span><span class="fx-cloud"></span><span class="fx-rain"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="fx-wind"></span><span class="fx-snow"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="fx-tumble"><i></i><i></i></span></div>
     <div class="weather-panel-head">
       <span class="weather-panel-title">Weather</span>
       <div class="weather-head-actions">
-        <button class="weather-icon-btn" data-weather-refresh title="Refresh weather">↻</button>
+        <button class="weather-icon-btn" data-weather-refresh title="Refresh weather">â†»</button>
         <button class="weather-icon-btn" data-weather-minimize title="Minimize weather">-</button>
       </div>
     </div>
@@ -2638,18 +2638,18 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     </div>
   </aside>
 </main>
-<button id="weatherRestore" class="weather-restore" title="Open weather" aria-label="Open weather">☁</button>
+<button id="weatherRestore" class="weather-restore" title="Open weather" aria-label="Open weather">â˜</button>
 <nav class="dock">
-  <button title="Home" data-open="home">🪐</button>
-  <button title="Games" data-open="apps">🎮</button>
-  <button title="Apps" data-open="apps">▦</button>
-  <button title="Links" data-open="links">◈</button>
-  <button title="Browser" data-open="browser">◆</button>
-  <button title="Discord" data-url="https://discord.com/app">☯</button>
-  <button title="Settings" data-open="settings">⚙</button>
+  <button title="Home" data-open="home">ðŸª</button>
+  <button title="Games" data-open="apps">ðŸŽ®</button>
+  <button title="Apps" data-open="apps">â–¦</button>
+  <button title="Links" data-open="links">â—ˆ</button>
+  <button title="Browser" data-open="browser">â—†</button>
+  <button title="Discord" data-url="https://discord.com/app">â˜¯</button>
+  <button title="Settings" data-open="settings">âš™</button>
 </nav>
 <section class="ambient-player" id="ambientPlayer" aria-label="Music player">
-  <button class="ambient-toggle" id="ambientToggle" type="button" title="Pause or play music">▶</button>
+  <button class="ambient-toggle" id="ambientToggle" type="button" title="Pause or play music">â–¶</button>
   <div class="ambient-meta">
     <div class="ambient-title" id="ambientTitle">Now playing: Clair de Lune</div>
     <div class="ambient-sub" id="ambientStatus">Starting music...</div>
@@ -2662,7 +2662,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
         <option value="clair">Clair de Lune - Claude Debussy</option>
         <option value="testdrive">Test Drive Toothless - John Powell</option>
         <option value="imposter">Impostor Syndrome - Sidney Gish</option>
-        <option value="chess">Chess Type Beat - GoodLion</option>
+        <option value="chess">Chess Type Beat - nyx</option>
         <option value="givemore">Give Me More (Just Rawer) - Aloboi</option>
         <option value="custom">Add your music...</option>
       </select>
@@ -2688,7 +2688,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     <input class="ambient-volume" id="ambientVolume" type="range" min="0" max="100" value="100" aria-label="Music volume">
     <input class="ambient-file" id="ambientFile" type="file" accept="audio/*,video/mp4,.mp3,.m4a,.wav,.ogg,.mp4" aria-label="Choose your own music file">
   </div>
-  <button class="ambient-hide" id="ambientHide" type="button" title="Hide music player" aria-label="Hide music player">‹</button>
+  <button class="ambient-hide" id="ambientHide" type="button" title="Hide music player" aria-label="Hide music player">â€¹</button>
 </section>
 <audio class="ambient-audio" id="ambientAudio" preload="metadata" loop></audio>
 <div class="toast" id="toast"></div>
@@ -2700,7 +2700,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const store = {get(k,d){try{return JSON.parse(localStorage.getItem(k)) ?? d}catch{return d}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}, text(k,d=''){try{return localStorage.getItem(k) ?? d}catch{return d}}, setText(k,v){try{localStorage.setItem(k,String(v))}catch{}}};
   function popupProtectionEnabled(){
-    return store.get('goodlion.popupProtection',true);
+    return store.get('nyx.popupProtection',true);
   }
   function isAnimexUrl(url){
     try{
@@ -2708,36 +2708,36 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
       return host==='animex.one' || host.endsWith('.animex.one');
     }catch{return false}
   }
-  function showGoodLionPrompt(message,{loop=false,onOk=null}={}){
-    document.querySelectorAll('.goodlion-prompt-shade').forEach(el=>el.remove());
+  function shownyxPrompt(message,{loop=false,onOk=null}={}){
+    document.querySelectorAll('.nyx-prompt-shade').forEach(el=>el.remove());
     const shade=document.createElement('div');
-    shade.className='goodlion-prompt-shade';
-    shade.innerHTML=`<div class="goodlion-prompt" role="dialog" aria-modal="true"><div class="goodlion-prompt-title">${esc(location.hostname || 'GoodLion')} says</div><div class="goodlion-prompt-message">${esc(message)}</div><input class="goodlion-prompt-input" autocomplete="off" spellcheck="false"><div class="goodlion-prompt-actions"><button class="goodlion-prompt-ok" type="button">OK</button><button class="goodlion-prompt-cancel" type="button">Cancel</button></div></div>`;
+    shade.className='nyx-prompt-shade';
+    shade.innerHTML=`<div class="nyx-prompt" role="dialog" aria-modal="true"><div class="nyx-prompt-title">${esc(location.hostname || 'nyx')} says</div><div class="nyx-prompt-message">${esc(message)}</div><input class="nyx-prompt-input" autocomplete="off" spellcheck="false"><div class="nyx-prompt-actions"><button class="nyx-prompt-ok" type="button">OK</button><button class="nyx-prompt-cancel" type="button">Cancel</button></div></div>`;
     document.body.appendChild(shade);
-    const ok=shade.querySelector('.goodlion-prompt-ok');
-    const input=shade.querySelector('.goodlion-prompt-input');
+    const ok=shade.querySelector('.nyx-prompt-ok');
+    const input=shade.querySelector('.nyx-prompt-input');
     input?.focus();
     ok.onclick=()=>{
       shade.remove();
-      if(loop) setTimeout(()=>showGoodLionPrompt(message,{loop:true}),0);
+      if(loop) setTimeout(()=>shownyxPrompt(message,{loop:true}),0);
       else if(typeof onOk==='function') onOk();
     };
-    shade.querySelector('.goodlion-prompt-cancel')?.addEventListener('click',()=>shade.remove());
+    shade.querySelector('.nyx-prompt-cancel')?.addEventListener('click',()=>shade.remove());
     input?.addEventListener('keydown',e=>{
       if(e.key==='Enter') ok.click();
-      if(e.key==='Escape') shade.querySelector('.goodlion-prompt-cancel')?.click();
+      if(e.key==='Escape') shade.querySelector('.nyx-prompt-cancel')?.click();
     });
     return shade;
   }
   function showAnimexMikuPrompt(onOk){
-    showGoodLionPrompt('Use MIKU for streaming',{onOk});
+    shownyxPrompt('Use MIKU for streaming',{onOk});
   }
   const hieroglyphTextNodes = new WeakMap();
   const hieroglyphSkipSelector = 'script,style,noscript,textarea,input,select,option,iframe,canvas,svg,audio,video';
   const hieroglyphLetters = {
-    a:'𓄿',b:'𓃀',c:'𓎡',d:'𓂧',e:'𓇌',f:'𓆑',g:'𓎼',h:'𓉔',i:'𓇋',j:'𓆓',k:'𓎡',l:'𓃭',m:'𓅓',
-    n:'𓈖',o:'𓅱',p:'𓊪',q:'𓈎',r:'𓂋',s:'𓋴',t:'𓏏',u:'𓅱',v:'𓆑',w:'𓅱',x:'𓐍',y:'𓇌',z:'𓊃',
-    '0':'𓏤','1':'𓏺','2':'𓏻','3':'𓏼','4':'𓏽','5':'𓏾','6':'𓏿','7':'𓐀','8':'𓐁','9':'𓐂'
+    a:'ð“„¿',b:'ð“ƒ€',c:'ð“Ž¡',d:'ð“‚§',e:'ð“‡Œ',f:'ð“†‘',g:'ð“Ž¼',h:'ð“‰”',i:'ð“‡‹',j:'ð“†“',k:'ð“Ž¡',l:'ð“ƒ­',m:'ð“…“',
+    n:'ð“ˆ–',o:'ð“…±',p:'ð“Šª',q:'ð“ˆŽ',r:'ð“‚‹',s:'ð“‹´',t:'ð“',u:'ð“…±',v:'ð“†‘',w:'ð“…±',x:'ð“',y:'ð“‡Œ',z:'ð“Šƒ',
+    '0':'ð“¤','1':'ð“º','2':'ð“»','3':'ð“¼','4':'ð“½','5':'ð“¾','6':'ð“¿','7':'ð“€','8':'ð“','9':'ð“‚'
   };
   const hasHostedBackend = () => location.protocol === 'http:' || location.protocol === 'https:';
   const browserShellTabs = [];
@@ -2778,13 +2778,13 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     violet:'Violet Glass'
   };
   const favicons = {
-    goodlion:'./assets/icons/goodlion-logo.png',
+    nyx:'./assets/icons/nyx-logo.png',
     classroom:`data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%23fbbc04'/%3E%3Crect x='8' y='10' width='48' height='40' rx='3' fill='%2334a853'/%3E%3Ccircle cx='32' cy='25' r='6' fill='white'/%3E%3Cpath d='M18 42c4-9 20-9 24 0' fill='white'/%3E%3C/svg%3E`,
     drive:'./assets/icons/googledrive-logo.webp',
     google:'./assets/icons/google-logo.png',
     classlink:'./assets/icons/classlink-logo.png'
   };
-  const goodlionFaviconHref = () => $('appFavicon')?.href || favicons.goodlion;
+  const nyxFaviconHref = () => $('appFavicon')?.href || favicons.nyx;
   function makeIcon(label,bg='#111827',fg='#fff'){
     return 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="${bg}"/><text x="32" y="40" text-anchor="middle" font-size="22" font-family="Arial, sans-serif" font-weight="800" fill="${fg}">${label}</text></svg>`);
   }
@@ -2842,7 +2842,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     'animex.one':svgIcon(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 90"><rect width="160" height="90" rx="14" fill="#030304"/><g opacity=".55" stroke="#243a68" stroke-width="2"><path d="M8 8l16 12M48 4l22 16M132 8l18 12M20 64l16 12M116 62l24 18"/></g><text x="80" y="56" text-anchor="middle" font-size="30" font-family="Arial Black,Arial,sans-serif" font-weight="900" fill="#ffffff">ANIMEX</text><text x="78" y="56" text-anchor="middle" font-size="30" font-family="Arial Black,Arial,sans-serif" font-weight="900" fill="#7c5ce6" opacity=".9">ANI</text></svg>`)
   };
   function appIcon(domain){return appIcons[domain] || makeIcon('GL','#0b0f17','#67e8f9')}
-  let zTop = 20, winCount = 0, activeBrowser = null, antiCloseEnabled = store.get('goodlion.antiClose',true);
+  let zTop = 20, winCount = 0, activeBrowser = null, antiCloseEnabled = store.get('nyx.antiClose',true);
   let renderedChromeMode = '';
   const welcomeStartedAt = Date.now();
   let welcomeTimer = 0;
@@ -2859,10 +2859,10 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
   let hieroglyphObserver = null;
   let hieroglyphApplying = false;
   function hieroglyphTextEnabled(){
-    return store.get('goodlion.hieroglyphText',false) || store.get('goodlion.autoHieroglyphText',false);
+    return store.get('nyx.hieroglyphText',false) || store.get('nyx.autoHieroglyphText',false);
   }
   function applyAutoHieroglyphPreference(){
-    if(store.get('goodlion.autoHieroglyphText',false)) store.set('goodlion.hieroglyphText',true);
+    if(store.get('nyx.autoHieroglyphText',false)) store.set('nyx.hieroglyphText',true);
   }
   function toHieroglyphText(text){
     return String(text ?? '').replace(/[A-Za-z0-9]/g, ch => hieroglyphLetters[ch.toLowerCase()] || ch);
@@ -2897,7 +2897,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
           if(hieroglyphTextNodes.has(node)) node.nodeValue=hieroglyphTextNodes.get(node);
         });
       }
-      qsa('[data-hieroglyph-text], [data-switch="goodlion.hieroglyphText"]').forEach(el=>el.classList.toggle('on',enabled));
+      qsa('[data-hieroglyph-text], [data-switch="nyx.hieroglyphText"]').forEach(el=>el.classList.toggle('on',enabled));
     }finally{
       hieroglyphApplying=false;
     }
@@ -2922,7 +2922,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
   function renderChrome(){
     const top=document.querySelector('.top-os');
     if(top){
-      top.innerHTML='<div class="brand-mini"><span id="brandName">GoodLion</span><span>|</span><button id="userGreeting" class="user-chip needs-name" data-open="settings">Set username</button></div><div class="status-icons"><button class="top-fullscreen" data-page-fullscreen title="Fullscreen">□</button><span id="clock">--:--</span></div>';
+      top.innerHTML='<div class="brand-mini"><span id="brandName">nyx</span><span>|</span><button id="userGreeting" class="user-chip needs-name" data-open="settings">Set username</button></div><div class="status-icons"><button class="top-fullscreen" data-page-fullscreen title="Fullscreen">â–¡</button><span id="clock">--:--</span></div>';
     }
     const shortcuts=document.querySelector('.desktop-shortcuts');
     if(shortcuts){
@@ -2939,7 +2939,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
   function renderChromeFixed(){
     const top=document.querySelector('.top-os');
     if(top){
-      top.innerHTML='<div class="brand-mini"><button class="browser-mode-app-button active" data-browser-shell-home title="Current tab">Home</button><button class="browser-mode-tab" data-browser-shell-new-tab title="New tab"><span>New tab</span></button><button id="brandName" class="brand-button" data-open="updates" title="GoodLion fixes">GoodLion</button><span>|</span><button id="userGreeting" class="user-chip needs-name" data-open="settings">Set username</button></div><form class="browser-mode-address" data-browser-shell-search><button data-browser-shell-back type="button" title="Back">‹</button><button data-browser-shell-forward type="button" title="Forward">›</button><button data-browser-shell-reload type="button" title="Reload">↻</button><input class="browser-mode-url" data-browser-shell-url placeholder="Search or enter a URL" autocomplete="off"><button class="browser-mode-bookmark" data-browser-shell-bookmark type="button" title="Bookmark this tab" aria-pressed="false">☆</button><button class="browser-mode-weather" data-open="weather" type="button" title="Weather">☁</button><button data-browser-shell-menu type="button" title="Menu">⋮</button></form><div class="browser-bookmark-panel" id="browserBookmarkPanel" hidden></div><div class="browser-mode-menu" id="browserModeMenu"><button data-browser-shell-new-tab type="button">New tab</button><button data-browser-bookmarks-toggle type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-app-url="assets/ugs/index.html" type="button">Games</button><button data-open="lionai" type="button">AI</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-shell-about-tab type="button">Open Tab in Abt:Blank</button></div><div class="status-icons"><button class="top-fullscreen" data-page-fullscreen title="Fullscreen">□</button><span id="clock">--:--</span></div>';
+      top.innerHTML='<div class="brand-mini"><button class="browser-mode-app-button active" data-browser-shell-home title="Current tab">Home</button><button class="browser-mode-tab" data-browser-shell-new-tab title="New tab"><span>New tab</span></button><button id="brandName" class="brand-button" data-open="updates" title="nyx fixes">nyx</button><span>|</span><button id="userGreeting" class="user-chip needs-name" data-open="settings">Set username</button></div><form class="browser-mode-address" data-browser-shell-search><button data-browser-shell-back type="button" title="Back">â€¹</button><button data-browser-shell-forward type="button" title="Forward">â€º</button><button data-browser-shell-reload type="button" title="Reload">â†»</button><input class="browser-mode-url" data-browser-shell-url placeholder="Search or enter a URL" autocomplete="off"><button class="browser-mode-bookmark" data-browser-shell-bookmark type="button" title="Bookmark this tab" aria-pressed="false">â˜†</button><button class="browser-mode-weather" data-open="weather" type="button" title="Weather">â˜</button><button data-browser-shell-menu type="button" title="Menu">â‹®</button></form><div class="browser-bookmark-panel" id="browserBookmarkPanel" hidden></div><div class="browser-mode-menu" id="browserModeMenu"><button data-browser-shell-new-tab type="button">New tab</button><button data-browser-bookmarks-toggle type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-app-url="assets/ugs/index.html" type="button">Games</button><button data-open="lionai" type="button">AI</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-shell-about-tab type="button">Open Tab in Abt:Blank</button></div><div class="status-icons"><button class="top-fullscreen" data-page-fullscreen title="Fullscreen">â–¡</button><span id="clock">--:--</span></div>';
       renderBrowserShellTabs();
       renderBrowserBookmarks();
     }
@@ -3011,7 +3011,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     try{
       const parsed=new URL(browserShellSourceUrl(url),location.href);
       if(parsed.origin===location.origin && parsed.pathname.includes('/assets/ugs/')) return 'Pirate Cove';
-      if(parsed.origin===location.origin) return parsed.pathname.split('/').filter(Boolean).pop() || 'GoodLion';
+      if(parsed.origin===location.origin) return parsed.pathname.split('/').filter(Boolean).pop() || 'nyx';
       return parsed.hostname.replace(/^www\./,'') || 'New tab';
     }catch{
       return String(url || 'New tab').replace(/^https?:\/\//,'').slice(0,34) || 'New tab';
@@ -3029,14 +3029,14 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
   }
   function browserBookmarks(){
     try{
-      const parsed=JSON.parse(store.text('goodlion.browserBookmarks','[]'));
+      const parsed=JSON.parse(store.text('nyx.browserBookmarks','[]'));
       return Array.isArray(parsed) ? parsed.filter(item=>item && item.url) : [];
     }catch{
       return [];
     }
   }
   function saveBrowserBookmarks(items){
-    store.setText('goodlion.browserBookmarks',JSON.stringify(items.slice(0,80)));
+    store.setText('nyx.browserBookmarks',JSON.stringify(items.slice(0,80)));
   }
   function activeBrowserShellTab(){
     ensureBrowserShellHome();
@@ -3056,7 +3056,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     if(star){
       star.classList.toggle('saved',saved);
       star.setAttribute('aria-pressed',String(saved));
-      star.textContent=saved ? '★' : '☆';
+      star.textContent=saved ? 'â˜…' : 'â˜†';
     }
     if(!panel) return;
     if(!bookmarks.length){
@@ -3232,7 +3232,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
   function openBrowserShellAppTab(url){
     const normalized=normalize(url || '');
     const activeShell=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
-    const canReuseShell=activeShell?.url?.startsWith('goodlion://') || (!activeShell?.url && activeShell?.title==='New Tab');
+    const canReuseShell=activeShell?.url?.startsWith('nyx://') || (!activeShell?.url && activeShell?.title==='New Tab');
     if(normalized && canReuseShell && activeShell.browserTabId && activeBrowser?.win?.isConnected){
       activeShell.url=normalized;
       activeShell.title=browserShellLabel(normalized);
@@ -3292,16 +3292,16 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     renderBrowserShellTabs();
   }
   function browserShellSettingsMarkup(presetTiles){
-    const savedTitle=esc(store.text('goodlion.tabTitle',document.title || 'GoodLion'));
-    const savedFavicon=esc(store.text('goodlion.tabFavicon',goodlionFaviconHref()));
-    const currentPreset=esc(store.text('goodlion.logo','goodlion'));
-    const engine=esc(store.text('goodlion.engine','duckduckgo'));
-    const browserMode=esc(store.text('goodlion.browserMode','auto'));
-    const transport=esc(store.text('goodlion.transport','epoxy'));
-    const rhBase=esc(store.text('goodlion.rammerheadBase',rammerheadBase));
-    const rhSession=esc(store.text('goodlion.rammerheadSession',''));
-    const theme=esc(store.text('goodlion.theme','default'));
-    return `<section class="settings-app"><aside class="settings-side"><button class="active" data-settings-nav="general" type="button"><span class="settings-nav-icon icon-general"></span>General</button><button data-settings-nav="effects" type="button"><span class="settings-nav-icon icon-effects"></span>Effects</button><button data-settings-nav="watchparty" type="button"><span class="settings-nav-icon icon-watch"></span>WatchParty</button><button data-settings-nav="browser" type="button"><span class="settings-nav-icon icon-browser"></span>Browser Settings</button></aside><main class="settings-main"><h1>Settings</h1><section class="settings-section active" data-settings-section="general"><section class="settings-block"><h2>Browser Mode</h2><p>Turn this off anytime to go back to Windows Mode.</p><div class="settings-actions"><button class="settings-action" data-browser-shell-toggle data-enabled="false" type="button">Switch to Windows Mode</button></div></section><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply. This changes the real Microsoft Edge tab.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="goodlion" type="button">Reset GoodLion</button></div></section><section class="settings-block"><h2>Ready Made Presets</h2><p>Choose a preset. It applies as soon as you select it.</p><select class="settings-select" data-preset-select><option value="goodlion" ${currentPreset==='goodlion'?'selected':''}>GoodLion</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section></section><section class="settings-section" data-settings-section="effects"><section class="settings-block settings-compact"><h2>Effects</h2><p>Effects fly diagonally and only run while Browser Mode is enabled.</p><select class="settings-select" data-effect-value><option value="none">No effect</option><option value="rain">Rain</option><option value="stars">Stars</option><option value="hearts">Hearts</option><option value="pokeballs">Pokeballs</option></select><label class="settings-range">Speed <input data-effect-speed type="range" min=".3" max="3" step=".1" value="1.1"><span data-effect-speed-label>1.1x</span></label><label class="settings-range">Amount <input data-effect-amount type="range" min="1" max="16" step="1" value="16"><span data-effect-amount-label>16</span></label><div class="settings-effect-preview"><span></span><span></span><span></span><span></span></div></section></section><section class="settings-section" data-settings-section="watchparty"><section class="settings-block"><h2>WatchParty</h2><p>Stream Your Favorites offline, on us. Note some of these movies are Rated PG-13 or above. Watch with your parents permission or else...</p><div class="settings-actions"><button class="settings-action" data-watchparty-start type="button">Start WatchParty</button></div></section></section><section class="settings-section" data-settings-section="browser"><section class="settings-block"><h2>Search Engine</h2><select class="settings-select" data-browser-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>DuckDuckGo</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Browser Proxy</h2><select class="settings-select" data-browser-mode-select><option value="auto" ${browserMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${browserMode==='scramjet'?'selected':''}>Scramjet</option><option value="ultraviolet" ${browserMode==='ultraviolet'?'selected':''}>Ultraviolet</option><option value="iframe" ${browserMode==='iframe'?'selected':''}>Iframe</option><option value="rammerhead" ${browserMode==='rammerhead'?'selected':''}>Rammerhead</option></select></section><section class="settings-block"><h2>Popup Protection</h2><p>Replaces site popups with GoodLion's blocked popup screen.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as trojans disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section><section class="settings-block"><h2>Transport</h2><select class="settings-select" data-browser-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Epoxy over Wisp</option><option value="wisp" ${transport==='wisp'?'selected':''}>Wisp endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Libcurl over Wisp</option></select><p>Epoxy, Wisp, and Libcurl transports are installed locally.</p></section><section class="settings-block"><h2>Rammerhead</h2><div class="settings-form-row"><input class="settings-input" data-rh-base value="${rhBase}" placeholder="Rammerhead URL"><input class="settings-input" data-rh-session value="${rhSession}" placeholder="Session ID"></div><div class="settings-actions"><button class="settings-action" data-browser-settings-save type="button">Save Browser Settings</button></div></section></section></main></section>`;
+    const savedTitle=esc(store.text('nyx.tabTitle',document.title || 'nyx'));
+    const savedFavicon=esc(store.text('nyx.tabFavicon',nyxFaviconHref()));
+    const currentPreset=esc(store.text('nyx.logo','nyx'));
+    const engine=esc(store.text('nyx.engine','duckduckgo'));
+    const browserMode=esc(store.text('nyx.browserMode','auto'));
+    const transport=esc(store.text('nyx.transport','epoxy'));
+    const rhBase=esc(store.text('nyx.rammerheadBase',rammerheadBase));
+    const rhSession=esc(store.text('nyx.rammerheadSession',''));
+    const theme=esc(store.text('nyx.theme','default'));
+    return `<section class="settings-app"><aside class="settings-side"><button class="active" data-settings-nav="general" type="button"><span class="settings-nav-icon icon-general"></span>General</button><button data-settings-nav="effects" type="button"><span class="settings-nav-icon icon-effects"></span>Effects</button><button data-settings-nav="watchparty" type="button"><span class="settings-nav-icon icon-watch"></span>WatchParty</button><button data-settings-nav="browser" type="button"><span class="settings-nav-icon icon-browser"></span>Browser Settings</button></aside><main class="settings-main"><h1>Settings</h1><section class="settings-section active" data-settings-section="general"><section class="settings-block"><h2>Browser Mode</h2><p>Turn this off anytime to go back to Windows Mode.</p><div class="settings-actions"><button class="settings-action" data-browser-shell-toggle data-enabled="false" type="button">Switch to Windows Mode</button></div></section><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply. This changes the real Microsoft Edge tab.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="nyx" type="button">Reset nyx</button></div></section><section class="settings-block"><h2>Ready Made Presets</h2><p>Choose a preset. It applies as soon as you select it.</p><select class="settings-select" data-preset-select><option value="nyx" ${currentPreset==='nyx'?'selected':''}>nyx</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section></section><section class="settings-section" data-settings-section="effects"><section class="settings-block settings-compact"><h2>Effects</h2><p>Effects fly diagonally and only run while Browser Mode is enabled.</p><select class="settings-select" data-effect-value><option value="none">No effect</option><option value="rain">Rain</option><option value="stars">Stars</option><option value="hearts">Hearts</option><option value="pokeballs">Pokeballs</option></select><label class="settings-range">Speed <input data-effect-speed type="range" min=".3" max="3" step=".1" value="1.1"><span data-effect-speed-label>1.1x</span></label><label class="settings-range">Amount <input data-effect-amount type="range" min="1" max="16" step="1" value="16"><span data-effect-amount-label>16</span></label><div class="settings-effect-preview"><span></span><span></span><span></span><span></span></div></section></section><section class="settings-section" data-settings-section="watchparty"><section class="settings-block"><h2>WatchParty</h2><p>Stream Your Favorites offline, on us. Note some of these movies are Rated PG-13 or above. Watch with your parents permission or else...</p><div class="settings-actions"><button class="settings-action" data-watchparty-start type="button">Start WatchParty</button></div></section></section><section class="settings-section" data-settings-section="browser"><section class="settings-block"><h2>Search Engine</h2><select class="settings-select" data-browser-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>DuckDuckGo</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Browser Proxy</h2><select class="settings-select" data-browser-mode-select><option value="auto" ${browserMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${browserMode==='scramjet'?'selected':''}>Scramjet</option><option value="ultraviolet" ${browserMode==='ultraviolet'?'selected':''}>Ultraviolet</option><option value="iframe" ${browserMode==='iframe'?'selected':''}>Iframe</option><option value="rammerhead" ${browserMode==='rammerhead'?'selected':''}>Rammerhead</option></select></section><section class="settings-block"><h2>Popup Protection</h2><p>Replaces site popups with nyx's blocked popup screen.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as trojans disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section><section class="settings-block"><h2>Transport</h2><select class="settings-select" data-browser-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Epoxy over Wisp</option><option value="wisp" ${transport==='wisp'?'selected':''}>Wisp endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Libcurl over Wisp</option></select><p>Epoxy, Wisp, and Libcurl transports are installed locally.</p></section><section class="settings-block"><h2>Rammerhead</h2><div class="settings-form-row"><input class="settings-input" data-rh-base value="${rhBase}" placeholder="Rammerhead URL"><input class="settings-input" data-rh-session value="${rhSession}" placeholder="Session ID"></div><div class="settings-actions"><button class="settings-action" data-browser-settings-save type="button">Save Browser Settings</button></div></section></section></main></section>`;
   }
   function closeBrowserShellTab(id){
     const index=browserShellTabs.findIndex(tab=>tab.id===id);
@@ -3421,16 +3421,16 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     if(!tab) return false;
     const pages={
       apps:{title:'Apps',body:`<div class="browser-home browser-shell-page"><h1 class="home-heading">Apps</h1><p class="home-sub">Pick an app and stay in Browser Mode.</p><div class="quick-grid">${quickTiles()}</div></div>`},
-      settings:{title:'Settings',body:`<div class="browser-home browser-shell-page"><h1 class="home-heading">Settings</h1><p class="home-sub">Use the top menu for fullscreen, cloaking, and browser tools.</p><div class="quick-grid"><button class="quick-tile" data-page-fullscreen><b>□</b><span>Fullscreen</span></button><button class="quick-tile" data-shell-about><b>↗</b><span>Open About:Blank</span></button><button class="quick-tile" data-shell-about-tab><b>↗</b><span>Tab in About:Blank</span></button></div></div>`},
+      settings:{title:'Settings',body:`<div class="browser-home browser-shell-page"><h1 class="home-heading">Settings</h1><p class="home-sub">Use the top menu for fullscreen, cloaking, and browser tools.</p><div class="quick-grid"><button class="quick-tile" data-page-fullscreen><b>â–¡</b><span>Fullscreen</span></button><button class="quick-tile" data-shell-about><b>â†—</b><span>Open About:Blank</span></button><button class="quick-tile" data-shell-about-tab><b>â†—</b><span>Tab in About:Blank</span></button></div></div>`},
       links:{title:'Bookmarks',body:`<div class="browser-home browser-shell-page"><h1 class="home-heading">Bookmarks</h1><p class="home-sub">Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>DuckDuckGo</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></div>`},
       lionai:{title:'Lion AI',body:`<div class="browser-home browser-shell-page"><h1 class="home-heading">Lion AI</h1><p class="home-sub">Lion AI stays inside Browser Mode now.</p><div class="quick-grid"><button class="quick-tile" data-url="https://duck.ai/"><img class="quick-icon" alt="" src="${appIcon('duck.ai')}"><span>Duck AI</span></button><button class="quick-tile" data-url="https://chatgpt.com/"><img class="quick-icon" alt="" src="${appIcon('chatgpt.com')}"><span>ChatGPT</span></button></div></div>`}
     };
     pages.settings={
       title:'Settings',
-      body:`<section class="settings-app"><aside class="settings-side"><button class="active" type="button"><i>G</i>General</button><button type="button"><i>T</i>Themes</button><button type="button"><i>S</i>Search</button><button type="button"><i>D</i>Developer</button></aside><main class="settings-main"><h1>General</h1><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" placeholder="Title"><input class="settings-input" placeholder="Favicon"></div><p>Ready Made Cloaks</p><select class="settings-select"><option>Google Search</option><option>Google Drive</option><option>ClassLink</option><option>GoodLion</option></select><div class="settings-actions"><button class="settings-action" data-preset="google" type="button">Set</button><button class="settings-action" data-preset="goodlion" type="button">Reset</button></div></section><section class="settings-block"><h2>About:Blank</h2><p>The buttons below open GoodLion with browser cloaking tools from inside this tab.</p><div class="quick-grid settings-mini"><button class="quick-tile" data-page-fullscreen type="button"><b>[]</b><span>Fullscreen</span></button><button class="quick-tile" data-shell-about type="button"><b>-></b><span>Open About:Blank</span></button><button class="quick-tile" data-shell-about-tab type="button"><b>-></b><span>Tab in About:Blank</span></button></div></section><section class="settings-block settings-compact"><h2>Browser Effects</h2><p>Effects only run while Browser Mode is enabled.</p><select class="settings-select" data-effect-value><option value="none">No effect</option><option value="rain">Rain</option><option value="stars">Stars</option><option value="hearts">Hearts</option><option value="pokeballs">Pokeballs</option></select><div class="settings-effect-preview"><span>R</span><span>*</span><span>H</span><span>O</span></div></section><section class="settings-block"><h2>Tab Presets</h2><p>These change the actual browser tab title and favicon.</p><div class="settings-grid-settings">${presetTiles.replaceAll('quick-tile','settings-preset')}</div></section><section class="settings-block"><h2>Auto Blank</h2><p>Enable automatic about:blank cloaking from the top menu when needed.</p><span class="settings-toggle on"></span></section><section class="settings-block"><h2>History</h2><p>Browser Mode keeps navigation inside the current GoodLion tab when possible.</p><span class="settings-toggle on"></span></section></main></section>`
+      body:`<section class="settings-app"><aside class="settings-side"><button class="active" type="button"><i>G</i>General</button><button type="button"><i>T</i>Themes</button><button type="button"><i>S</i>Search</button><button type="button"><i>D</i>Developer</button></aside><main class="settings-main"><h1>General</h1><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" placeholder="Title"><input class="settings-input" placeholder="Favicon"></div><p>Ready Made Cloaks</p><select class="settings-select"><option>Google Search</option><option>Google Drive</option><option>ClassLink</option><option>nyx</option></select><div class="settings-actions"><button class="settings-action" data-preset="google" type="button">Set</button><button class="settings-action" data-preset="nyx" type="button">Reset</button></div></section><section class="settings-block"><h2>About:Blank</h2><p>The buttons below open nyx with browser cloaking tools from inside this tab.</p><div class="quick-grid settings-mini"><button class="quick-tile" data-page-fullscreen type="button"><b>[]</b><span>Fullscreen</span></button><button class="quick-tile" data-shell-about type="button"><b>-></b><span>Open About:Blank</span></button><button class="quick-tile" data-shell-about-tab type="button"><b>-></b><span>Tab in About:Blank</span></button></div></section><section class="settings-block settings-compact"><h2>Browser Effects</h2><p>Effects only run while Browser Mode is enabled.</p><select class="settings-select" data-effect-value><option value="none">No effect</option><option value="rain">Rain</option><option value="stars">Stars</option><option value="hearts">Hearts</option><option value="pokeballs">Pokeballs</option></select><div class="settings-effect-preview"><span>R</span><span>*</span><span>H</span><span>O</span></div></section><section class="settings-block"><h2>Tab Presets</h2><p>These change the actual browser tab title and favicon.</p><div class="settings-grid-settings">${presetTiles.replaceAll('quick-tile','settings-preset')}</div></section><section class="settings-block"><h2>Auto Blank</h2><p>Enable automatic about:blank cloaking from the top menu when needed.</p><span class="settings-toggle on"></span></section><section class="settings-block"><h2>History</h2><p>Browser Mode keeps navigation inside the current nyx tab when possible.</p><span class="settings-toggle on"></span></section></main></section>`
     };
     const page=pages[name] || pages.apps;
-    tab.url='goodlion://'+name;
+    tab.url='nyx://'+name;
     tab.title=page.title;
     tab.frame.removeAttribute('src');
     tab.frame.srcdoc=browserShellPageSrcdoc(page);
@@ -3444,9 +3444,9 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
   function browserShellPageSrcdoc(page){
     const style='html,body{margin:0;width:100%;min-height:100%;font-family:Inter,Segoe UI,Arial,sans-serif;background:linear-gradient(135deg,#d4d8dd 0%,#9ca3ad 42%,#5f6874 100%);color:#f8fafc}*{box-sizing:border-box}body{overflow:auto}.shell-page{min-height:100vh;padding:34px 36px 70px;background:radial-gradient(circle at 18% 10%,rgba(255,255,255,.55),transparent 28%),linear-gradient(135deg,rgba(236,240,244,.72),rgba(112,121,132,.58) 48%,rgba(45,53,64,.78));color:white}.shell-page h1{margin:0 0 8px;font-size:42px;line-height:1;font-weight:900;text-shadow:0 12px 34px rgba(0,0,0,.34)}.shell-page h2{margin:30px 0 14px;font-size:22px}.shell-page p{color:#eef2f7;margin:0 0 22px;font-weight:700;text-shadow:0 8px 26px rgba(0,0,0,.28)}.quick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px}.quick-grid.small{grid-template-columns:repeat(auto-fill,minmax(138px,1fr))}.quick-tile{height:132px;border:1px solid transparent;border-radius:24px;background:transparent;color:white;display:grid;place-items:center;gap:8px;font:800 16px Inter,Segoe UI,Arial,sans-serif;box-shadow:none;backdrop-filter:none;transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease,border-color .2s ease,background .2s ease,backdrop-filter .2s ease}.quick-tile:hover{transform:scale(1.045);background:linear-gradient(145deg,rgba(255,255,255,.22),rgba(31,41,55,.42));border-color:rgba(255,255,255,.36);box-shadow:inset 0 1px 0 rgba(255,255,255,.26),0 22px 54px rgba(0,0,0,.28);backdrop-filter:blur(16px) saturate(1.15)}.quick-icon{width:64px;height:64px;border-radius:20px;object-fit:contain;background:transparent;padding:8px;border:1px solid transparent;box-shadow:none;transition:transform .18s ease,background .18s ease,border-color .18s ease,box-shadow .18s ease}.quick-tile:hover .quick-icon{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 16px 34px rgba(0,0,0,.22);transform:scale(1.08)}.quick-tile[data-domain="traxmojo.com"] .quick-icon{width:92px;height:92px;padding:0;object-fit:contain;background:transparent}.quick-tile[data-domain="traxmojo.com"]:hover .quick-icon{transform:scale(1.12)}.quick-combo{width:min(132px,calc(100% - 12px));height:26px;border:1px solid rgba(255,255,255,.2);border-radius:999px;background:rgba(8,12,20,.62);color:#e0f2fe;padding:0 8px;font:800 11px Inter,Segoe UI,Arial,sans-serif;outline:0}.quick-combo option{background:#10131b;color:#e0f2fe}b{font-size:28px}.settings-app{min-height:100vh;display:grid;grid-template-columns:250px minmax(0,1fr);gap:18px;padding:10px;background:linear-gradient(135deg,rgba(7,10,16,.86),rgba(41,45,58,.9) 48%,rgba(11,13,20,.9));color:#eef2f7}.settings-side{position:sticky;top:10px;height:calc(100vh - 20px);padding:22px 16px;border:1px solid rgba(159,172,190,.28);border-radius:22px;background:rgba(20,24,34,.76);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 18px 48px rgba(0,0,0,.32);backdrop-filter:blur(14px)}.settings-side button{width:100%;height:48px;margin-bottom:8px;display:flex;align-items:center;gap:12px;border:0;border-radius:999px;background:transparent;color:#e5e7eb;font:800 14px Inter,Segoe UI,Arial,sans-serif;text-align:left;padding:0 14px;transition:background .16s ease,transform .16s ease,color .16s ease}.settings-side button:hover,.settings-side button.active{background:rgba(148,163,184,.18);color:#fff;transform:translateX(2px)}.settings-side i{width:22px;height:22px;display:grid;place-items:center;border-radius:8px;background:rgba(148,163,184,.22);font-style:normal}.settings-main{min-height:calc(100vh - 20px);padding:30px 34px 60px;border:1px solid rgba(159,172,190,.18);border-radius:22px;background:radial-gradient(circle at 50% 100%,rgba(118,124,145,.32),transparent 40%),linear-gradient(180deg,rgba(28,32,44,.82),rgba(13,16,24,.78));box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 22px 54px rgba(0,0,0,.28);backdrop-filter:blur(16px) saturate(1.1)}.settings-main h1{margin:0;color:#fff;font-size:30px;line-height:1;font-weight:900}.settings-main h1::after{content:"";display:block;width:56px;height:3px;margin:13px 0 30px;border-radius:999px;background:#a8b3c4}.settings-block{margin:0 0 34px}.settings-block h2{margin:0 0 8px;color:#cbd5e1;font-size:18px;font-weight:900}.settings-block p{max-width:900px;margin:0 0 14px;color:#d1d7e0;font-size:13px;font-weight:700;line-height:1.45}.settings-form-row{display:grid;grid-template-columns:minmax(240px,1fr) minmax(240px,1fr);gap:104px;align-items:end}.settings-input,.settings-select{width:100%;height:43px;border:1px solid rgba(148,163,184,.36);border-radius:999px;background:rgba(14,17,26,.54);color:#f8fafc;padding:0 14px;outline:0;font:700 13px Inter,Segoe UI,Arial,sans-serif;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}.settings-select{max-width:760px;appearance:auto}.settings-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}.settings-action{min-height:38px;border:0;border-radius:999px;background:linear-gradient(145deg,#6b7280,#4b5563);color:#fff;padding:0 16px;font:900 13px Inter,Segoe UI,Arial,sans-serif;box-shadow:0 10px 26px rgba(0,0,0,.28);transition:transform .16s ease,filter .16s ease}.settings-action:hover{transform:scale(1.045);filter:brightness(1.1)}.settings-toggle{width:46px;height:24px;border:1px solid rgba(255,255,255,.15);border-radius:999px;background:#4b5563;padding:2px;display:inline-flex;align-items:center}.settings-toggle::before{content:"";width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 3px 9px rgba(0,0,0,.28);transform:translateX(0);transition:transform .16s ease}.settings-toggle.on::before{transform:translateX(20px)}.settings-toggle.on{background:#71717a}.settings-grid-settings{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;max-width:720px}.settings-preset{height:138px;padding:10px;border:1px solid rgba(255,255,255,.16);border-radius:24px;background:linear-gradient(145deg,rgba(229,231,235,.18),rgba(75,85,99,.48));color:#fff;font:900 14px Inter,Segoe UI,Arial,sans-serif;display:grid;place-items:center;gap:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 16px 38px rgba(0,0,0,.28);transition:transform .16s ease,border-color .16s ease}.settings-preset:hover{transform:scale(1.045);border-color:rgba(255,255,255,.34)}.settings-effect-preview{display:flex;gap:9px;margin-top:12px}.settings-effect-preview span{width:36px;height:36px;display:grid;place-items:center;border-radius:999px;background:rgba(148,163,184,.18);border:1px solid rgba(255,255,255,.12);font-size:18px}.settings-compact{max-width:760px}.quick-grid.settings-mini{grid-template-columns:repeat(3,minmax(136px,170px));gap:14px}.quick-grid.settings-mini .quick-tile{height:118px;border-radius:24px}.quick-grid.settings-mini b{font-size:24px}@media(max-width:900px){.settings-app{grid-template-columns:1fr}.settings-side{position:relative;height:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.settings-side button{margin:0}.settings-form-row{grid-template-columns:1fr;gap:14px}.settings-main{padding:24px 18px}.quick-grid.settings-mini{grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}}@media(max-width:720px){.shell-page{padding:24px 18px 50px}.quick-grid{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:12px}.quick-tile{height:112px;font-size:13px}.settings-app{padding:0}.settings-side,.settings-main{border-radius:0}.settings-grid-settings{grid-template-columns:repeat(auto-fill,minmax(124px,1fr))}}';
     const themeStyle='body.theme-ruby{--theme-a:#ef4444;--theme-b:#7f1d1d;--theme-strong:#fecaca;--theme-text-gradient:linear-gradient(90deg,#fee2e2,#fb7185,#991b1b);--theme-bg:linear-gradient(rgba(25,0,0,.18),rgba(25,0,0,.36)),url("assets/backgrounds/theme-ruby.jpg")}body.theme-emerald{--theme-a:#10b981;--theme-b:#064e3b;--theme-strong:#dcfce7;--theme-text-gradient:linear-gradient(90deg,#dcfce7,#34d399,#065f46);--theme-bg:linear-gradient(rgba(0,25,8,.14),rgba(0,24,12,.32)),url("assets/backgrounds/theme-emerald.png")}body.theme-sakura{--theme-a:#f472b6;--theme-b:#be185d;--theme-strong:#fce7f3;--theme-text-gradient:linear-gradient(90deg,#fce7f3,#f9a8d4,#be185d);--theme-bg:linear-gradient(rgba(40,0,24,.12),rgba(40,0,30,.28)),url("assets/backgrounds/theme-sakura.jpg")}body.theme-ruby,body.theme-emerald,body.theme-sakura{background:var(--theme-bg)!important;background-size:cover!important;background-position:center!important;background-attachment:fixed!important}body.theme-ruby .shell-page,body.theme-emerald .shell-page,body.theme-sakura .shell-page{background:linear-gradient(135deg,color-mix(in srgb,var(--theme-a) 34%,transparent),rgba(12,16,24,.58)),var(--theme-bg)!important;background-size:cover!important;background-position:center!important}body.theme-ruby .settings-app,body.theme-emerald .settings-app,body.theme-sakura .settings-app{background:linear-gradient(135deg,color-mix(in srgb,var(--theme-a) 22%,rgba(8,12,20,.9)),color-mix(in srgb,var(--theme-b) 34%,rgba(12,16,24,.9)))!important}body.theme-ruby .settings-main,body.theme-ruby .settings-side,body.theme-ruby .quick-tile,body.theme-ruby .settings-action,body.theme-emerald .settings-main,body.theme-emerald .settings-side,body.theme-emerald .quick-tile,body.theme-emerald .settings-action,body.theme-sakura .settings-main,body.theme-sakura .settings-side,body.theme-sakura .quick-tile,body.theme-sakura .settings-action{background:linear-gradient(145deg,color-mix(in srgb,var(--theme-a) 28%,rgba(255,255,255,.18)),color-mix(in srgb,var(--theme-b) 42%,rgba(7,10,16,.72)))!important;border-color:color-mix(in srgb,var(--theme-a) 45%,rgba(255,255,255,.22))!important}body.theme-ruby .quick-tile:not(:hover),body.theme-emerald .quick-tile:not(:hover),body.theme-sakura .quick-tile:not(:hover){background:transparent!important;border-color:transparent!important;box-shadow:none!important;backdrop-filter:none!important}body.theme-ruby .quick-tile:hover,body.theme-emerald .quick-tile:hover,body.theme-sakura .quick-tile:hover{background:linear-gradient(145deg,color-mix(in srgb,var(--theme-a) 34%,rgba(255,255,255,.16)),color-mix(in srgb,var(--theme-b) 48%,rgba(7,10,16,.7)))!important;border-color:color-mix(in srgb,var(--theme-a) 45%,rgba(255,255,255,.22))!important}.theme-ruby h1,.theme-ruby h2,.theme-ruby p,.theme-ruby .settings-side span,.theme-ruby .quick-tile span,.theme-emerald h1,.theme-emerald h2,.theme-emerald p,.theme-emerald .settings-side span,.theme-emerald .quick-tile span,.theme-sakura h1,.theme-sakura h2,.theme-sakura p,.theme-sakura .settings-side span,.theme-sakura .quick-tile span{background:var(--theme-text-gradient);-webkit-background-clip:text;background-clip:text;color:transparent!important;-webkit-text-fill-color:transparent}.theme-ruby button,.theme-emerald button,.theme-sakura button{color:var(--theme-strong)!important;-webkit-text-fill-color:var(--theme-strong)!important}.theme-ruby .settings-input,.theme-ruby .settings-select,.theme-emerald .settings-input,.theme-emerald .settings-select,.theme-sakura .settings-input,.theme-sakura .settings-select{background:linear-gradient(90deg,color-mix(in srgb,var(--theme-a) 18%,rgba(12,16,24,.94)),rgba(12,16,24,.76))!important;border-color:color-mix(in srgb,var(--theme-a) 60%,rgba(255,255,255,.18))!important;color:var(--theme-strong)!important;-webkit-text-fill-color:var(--theme-strong)!important}.theme-ruby button:hover,.theme-emerald button:hover,.theme-sakura button:hover{color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 0 14px color-mix(in srgb,var(--theme-a) 72%,transparent)!important}.theme-ruby select option,.theme-emerald select option,.theme-sakura select option{background:#10131b;color:#f8fafc}';
-    const script='function showSettingsSection(name){document.querySelectorAll("[data-settings-nav]").forEach(btn=>btn.classList.toggle("active",btn.datasetSettingsNav===name||btn.dataset.settingsNav===name));document.querySelectorAll("[data-settings-section]").forEach(section=>section.classList.toggle("active",section.datasetSettingsSection===name||section.dataset.settingsSection===name))}function normalizeEffectsUi(){const effect=document.querySelector("[data-effect-value]");if(effect&&!effect.querySelector("option[value=flowers]"))effect.insertAdjacentHTML("beforeend","<option value=\\"flowers\\">Flowers</option>");if(effect&&!effect.querySelector("option[value=emeralds]"))effect.insertAdjacentHTML("beforeend","<option value=\\"emeralds\\">Emeralds</option>");const amount=document.querySelector("[data-effect-amount]");if(amount)amount.max="64";const effects=document.querySelector("[data-settings-section=effects]");if(effects&&!document.querySelector("[data-theme-value]"))effects.insertAdjacentHTML("afterbegin","<section class=\\"settings-block settings-compact\\"><h2>Themes</h2><p>Theme changes the Browser Mode colors and gradient.</p><select class=\\"settings-select\\" data-theme-value><option value=\\"default\\">Default</option><option value=\\"ruby\\">Ruby</option><option value=\\"emerald\\">Emerald</option><option value=\\"sakura\\">Sakura</option></select></section>");document.querySelectorAll("[data-theme-value]").forEach(el=>el.value=GOODLION_THEME||"default")}normalizeEffectsUi();document.addEventListener("click",e=>{const nav=e.target.closest("[data-settings-nav]");if(nav){e.preventDefault();showSettingsSection(nav.dataset.settingsNav||"general");return}const app=e.target.closest("[data-app-url]");if(app){e.preventDefault();parent.postMessage({type:"goodlion:navigate",url:app.dataset.appUrl},"*")}const url=e.target.closest("[data-url]");if(url){e.preventDefault();parent.postMessage({type:"goodlion:navigate",url:url.dataset.url},"*")}const open=e.target.closest("[data-open]");if(open&&open.dataset.open==="lionai"){e.preventDefault();parent.postMessage({type:"goodlion:internal",page:"lionai"},"*")}const preset=e.target.closest("[data-preset]");if(preset){e.preventDefault();parent.postMessage({type:"goodlion:preset",preset:preset.dataset.preset},"*")}const cloak=e.target.closest("[data-tab-cloak-apply]");if(cloak){e.preventDefault();parent.postMessage({type:"goodlion:tab-cloak",title:document.querySelector("[data-tab-title]")?.value || "GoodLion",favicon:document.querySelector("[data-tab-favicon-file]")?.dataset.favicon || document.querySelector("[data-tab-favicon]")?.value || ""},"*")}const saveBrowser=e.target.closest("[data-browser-settings-save]");if(saveBrowser){e.preventDefault();parent.postMessage({type:"goodlion:browser-settings",engine:document.querySelector("[data-browser-engine]")?.value||"duckduckgo",browserMode:document.querySelector("[data-browser-mode-select]")?.value||"auto",rhBase:document.querySelector("[data-rh-base]")?.value||"",rhSession:document.querySelector("[data-rh-session]")?.value||"",transport:document.querySelector("[data-browser-transport]")?.value||"epoxy"},"*")}const shellToggle=e.target.closest("[data-browser-shell-toggle]");if(shellToggle){e.preventDefault();parent.postMessage({type:"goodlion:browser-shell-toggle",enabled:shellToggle.dataset.enabled==="true"},"*")}if(e.target.closest("[data-watchparty-start]")){e.preventDefault();parent.postMessage({type:"goodlion:watchparty"},"*")}if(e.target.closest("[data-parent-lion-ai]"))parent.postMessage({type:"goodlion:lion-ai-window"},"*");if(e.target.closest("[data-page-fullscreen]"))parent.postMessage({type:"goodlion:fullscreen"},"*");if(e.target.closest("[data-shell-about]"))parent.postMessage({type:"goodlion:about"},"*");if(e.target.closest("[data-shell-about-tab]"))parent.postMessage({type:"goodlion:about-tab"},"*")});function applyLocalTheme(theme){document.body.classList.remove("theme-ruby","theme-emerald","theme-sakura");if(theme&&theme!=="default")document.body.classList.add("theme-"+theme)}function sendEffects(){const theme=document.querySelector("[data-theme-value]")?.value||"default";const effect=document.querySelector("[data-effect-value]");if(theme==="sakura"&&effect)effect.value="flowers";if(theme==="emerald"&&effect&&effect.value==="none")effect.value="emeralds";applyLocalTheme(theme);parent.postMessage({type:"goodlion:effect-settings",effect:effect?.value||"none",speed:document.querySelector("[data-effect-speed]")?.value||"1.1",amount:document.querySelector("[data-effect-amount]")?.value||"16",theme:theme},"*")}document.addEventListener("change",e=>{const iconFile=e.target.closest("[data-tab-favicon-file]");if(iconFile&&iconFile.files&&iconFile.files[0]){const reader=new FileReader();reader.onload=()=>{iconFile.dataset.favicon=String(reader.result||"");const hidden=document.querySelector("[data-tab-favicon]");if(hidden)hidden.value=iconFile.dataset.favicon};reader.readAsDataURL(iconFile.files[0]);return}const preset=e.target.closest("[data-preset-select]");if(preset){parent.postMessage({type:"goodlion:preset",preset:preset.value || "goodlion"},"*");return}if(e.target.closest("[data-browser-engine],[data-browser-mode-select],[data-browser-transport]")){parent.postMessage({type:"goodlion:browser-settings",engine:document.querySelector("[data-browser-engine]")?.value||"duckduckgo",browserMode:document.querySelector("[data-browser-mode-select]")?.value||"auto",rhBase:document.querySelector("[data-rh-base]")?.value||"",rhSession:document.querySelector("[data-rh-session]")?.value||"",transport:document.querySelector("[data-browser-transport]")?.value||"epoxy"},"*");return}if(e.target.closest("[data-effect-value],[data-effect-speed],[data-effect-amount],[data-theme-value]"))sendEffects()});document.addEventListener("input",e=>{if(e.target.closest("[data-effect-speed],[data-effect-amount]")){document.querySelectorAll("[data-effect-speed-label]").forEach(el=>el.textContent=(Number(document.querySelector("[data-effect-speed]")?.value||1.1).toFixed(1)+"x"));document.querySelectorAll("[data-effect-amount-label]").forEach(el=>el.textContent=(document.querySelector("[data-effect-amount]")?.value||"16"));sendEffects()}});';
-    const popupScript='document.addEventListener("click",e=>{const popup=e.target.closest("[data-popup-protection]");if(!popup)return;e.preventDefault();const next=popup.dataset.enabled!=="true";popup.dataset.enabled=String(next);popup.classList.toggle("on",next);popup.textContent="Popup Protection "+(next?"On":"Off");parent.postMessage({type:"goodlion:popup-protection",enabled:next},"*")});';
-    return '<!doctype html><meta charset="utf-8"><base target="_self"><style>'+style+themeStyle+'input[type=file].settings-input{color:#f8fafc;background:rgba(14,17,26,.54)}input[type=file].settings-input::file-selector-button{height:28px;margin:0 12px 0 0;border:0;border-radius:999px;background:rgba(148,163,184,.24);color:#f8fafc;padding:0 12px;font:800 12px Inter,Segoe UI,Arial,sans-serif}.theme-ruby input[type=file].settings-input::file-selector-button{background:linear-gradient(145deg,rgba(248,113,113,.52),rgba(127,29,29,.78));color:#fee2e2}.theme-emerald input[type=file].settings-input::file-selector-button{background:linear-gradient(145deg,rgba(52,211,153,.52),rgba(6,78,59,.78));color:#dcfce7}.theme-sakura input[type=file].settings-input::file-selector-button{background:linear-gradient(145deg,rgba(249,168,212,.58),rgba(157,23,77,.74));color:#fce7f3}.settings-section{display:none}.settings-section.active{display:block}.settings-range{display:grid;grid-template-columns:70px minmax(0,1fr) 46px;align-items:center;gap:10px;margin:12px 0;color:#d1d5db;font-size:13px;font-weight:800}.settings-range input{width:100%;accent-color:#9ca3af}.settings-nav-icon{width:24px;height:24px;border-radius:999px;border:2px solid #dbe2ea;display:inline-block;position:relative;background:rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.22)}.icon-general::before{content:"";position:absolute;inset:5px;border:2px solid #dbe2ea;border-radius:999px}.icon-effects::before{content:"";position:absolute;left:5px;right:5px;top:10px;height:2px;background:#dbe2ea;box-shadow:0 -5px 0 #dbe2ea,0 5px 0 #dbe2ea}.icon-watch::before{content:"";position:absolute;left:8px;top:5px;border-left:9px solid #dbe2ea;border-top:6px solid transparent;border-bottom:6px solid transparent}.icon-browser::before{content:"";position:absolute;left:4px;right:4px;top:6px;height:11px;border:2px solid #dbe2ea;border-radius:4px}.icon-browser::after{content:"";position:absolute;left:7px;right:7px;bottom:4px;height:2px;background:#dbe2ea}.settings-effect-preview span:nth-child(1)::before{content:"";width:14px;height:20px;border-radius:999px;background:#cfd8e3;transform:rotate(28deg)}.settings-effect-preview span:nth-child(2)::before{content:"";width:18px;height:18px;background:#cfd8e3;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 56%,79% 91%,50% 70%,21% 91%,32% 56%,2% 35%,39% 35%)}.settings-effect-preview span:nth-child(3)::before{content:"";width:18px;height:16px;background:#cfd8e3;clip-path:polygon(50% 100%,8% 52%,4% 22%,24% 2%,50% 20%,76% 2%,96% 22%,92% 52%)}.settings-effect-preview span:nth-child(4)::before{content:"";width:18px;height:18px;border:3px solid #cfd8e3;border-radius:999px}</style>'+page.body+'<script>const GOODLION_EFFECT='+JSON.stringify(store.text('goodlion.visualEffect','none'))+';const GOODLION_EFFECT_SPEED='+JSON.stringify(store.text('goodlion.visualEffectSpeed','1.1'))+';const GOODLION_EFFECT_AMOUNT='+JSON.stringify(store.text('goodlion.visualEffectAmount','16'))+';const GOODLION_THEME='+JSON.stringify(store.text('goodlion.theme','default'))+';if(GOODLION_THEME&&GOODLION_THEME!=="default")document.body.classList.add("theme-"+GOODLION_THEME);document.querySelectorAll("[data-effect-value]").forEach(el=>{el.value=GOODLION_EFFECT});document.querySelectorAll("[data-effect-speed]").forEach(el=>{el.value=GOODLION_EFFECT_SPEED});document.querySelectorAll("[data-effect-amount]").forEach(el=>{el.value=GOODLION_EFFECT_AMOUNT});document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=Number(GOODLION_EFFECT_SPEED).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=GOODLION_EFFECT_AMOUNT});'+script+popupScript+'<\/script>';
+    const script='function showSettingsSection(name){document.querySelectorAll("[data-settings-nav]").forEach(btn=>btn.classList.toggle("active",btn.datasetSettingsNav===name||btn.dataset.settingsNav===name));document.querySelectorAll("[data-settings-section]").forEach(section=>section.classList.toggle("active",section.datasetSettingsSection===name||section.dataset.settingsSection===name))}function normalizeEffectsUi(){const effect=document.querySelector("[data-effect-value]");if(effect&&!effect.querySelector("option[value=flowers]"))effect.insertAdjacentHTML("beforeend","<option value=\\"flowers\\">Flowers</option>");if(effect&&!effect.querySelector("option[value=emeralds]"))effect.insertAdjacentHTML("beforeend","<option value=\\"emeralds\\">Emeralds</option>");const amount=document.querySelector("[data-effect-amount]");if(amount)amount.max="64";const effects=document.querySelector("[data-settings-section=effects]");if(effects&&!document.querySelector("[data-theme-value]"))effects.insertAdjacentHTML("afterbegin","<section class=\\"settings-block settings-compact\\"><h2>Themes</h2><p>Theme changes the Browser Mode colors and gradient.</p><select class=\\"settings-select\\" data-theme-value><option value=\\"default\\">Default</option><option value=\\"ruby\\">Ruby</option><option value=\\"emerald\\">Emerald</option><option value=\\"sakura\\">Sakura</option></select></section>");document.querySelectorAll("[data-theme-value]").forEach(el=>el.value=NYX_THEME||"default")}normalizeEffectsUi();document.addEventListener("click",e=>{const nav=e.target.closest("[data-settings-nav]");if(nav){e.preventDefault();showSettingsSection(nav.dataset.settingsNav||"general");return}const app=e.target.closest("[data-app-url]");if(app){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:app.dataset.appUrl},"*")}const url=e.target.closest("[data-url]");if(url){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:url.dataset.url},"*")}const open=e.target.closest("[data-open]");if(open&&open.dataset.open==="lionai"){e.preventDefault();parent.postMessage({type:"nyx:internal",page:"lionai"},"*")}const preset=e.target.closest("[data-preset]");if(preset){e.preventDefault();parent.postMessage({type:"nyx:preset",preset:preset.dataset.preset},"*")}const cloak=e.target.closest("[data-tab-cloak-apply]");if(cloak){e.preventDefault();parent.postMessage({type:"nyx:tab-cloak",title:document.querySelector("[data-tab-title]")?.value || "nyx",favicon:document.querySelector("[data-tab-favicon-file]")?.dataset.favicon || document.querySelector("[data-tab-favicon]")?.value || ""},"*")}const saveBrowser=e.target.closest("[data-browser-settings-save]");if(saveBrowser){e.preventDefault();parent.postMessage({type:"nyx:browser-settings",engine:document.querySelector("[data-browser-engine]")?.value||"duckduckgo",browserMode:document.querySelector("[data-browser-mode-select]")?.value||"auto",rhBase:document.querySelector("[data-rh-base]")?.value||"",rhSession:document.querySelector("[data-rh-session]")?.value||"",transport:document.querySelector("[data-browser-transport]")?.value||"epoxy"},"*")}const shellToggle=e.target.closest("[data-browser-shell-toggle]");if(shellToggle){e.preventDefault();parent.postMessage({type:"nyx:browser-shell-toggle",enabled:shellToggle.dataset.enabled==="true"},"*")}if(e.target.closest("[data-watchparty-start]")){e.preventDefault();parent.postMessage({type:"nyx:watchparty"},"*")}if(e.target.closest("[data-parent-lion-ai]"))parent.postMessage({type:"nyx:lion-ai-window"},"*");if(e.target.closest("[data-page-fullscreen]"))parent.postMessage({type:"nyx:fullscreen"},"*");if(e.target.closest("[data-shell-about]"))parent.postMessage({type:"nyx:about"},"*");if(e.target.closest("[data-shell-about-tab]"))parent.postMessage({type:"nyx:about-tab"},"*")});function applyLocalTheme(theme){document.body.classList.remove("theme-ruby","theme-emerald","theme-sakura");if(theme&&theme!=="default")document.body.classList.add("theme-"+theme)}function sendEffects(){const theme=document.querySelector("[data-theme-value]")?.value||"default";const effect=document.querySelector("[data-effect-value]");if(theme==="sakura"&&effect)effect.value="flowers";if(theme==="emerald"&&effect&&effect.value==="none")effect.value="emeralds";applyLocalTheme(theme);parent.postMessage({type:"nyx:effect-settings",effect:effect?.value||"none",speed:document.querySelector("[data-effect-speed]")?.value||"1.1",amount:document.querySelector("[data-effect-amount]")?.value||"16",theme:theme},"*")}document.addEventListener("change",e=>{const iconFile=e.target.closest("[data-tab-favicon-file]");if(iconFile&&iconFile.files&&iconFile.files[0]){const reader=new FileReader();reader.onload=()=>{iconFile.dataset.favicon=String(reader.result||"");const hidden=document.querySelector("[data-tab-favicon]");if(hidden)hidden.value=iconFile.dataset.favicon};reader.readAsDataURL(iconFile.files[0]);return}const preset=e.target.closest("[data-preset-select]");if(preset){parent.postMessage({type:"nyx:preset",preset:preset.value || "nyx"},"*");return}if(e.target.closest("[data-browser-engine],[data-browser-mode-select],[data-browser-transport]")){parent.postMessage({type:"nyx:browser-settings",engine:document.querySelector("[data-browser-engine]")?.value||"duckduckgo",browserMode:document.querySelector("[data-browser-mode-select]")?.value||"auto",rhBase:document.querySelector("[data-rh-base]")?.value||"",rhSession:document.querySelector("[data-rh-session]")?.value||"",transport:document.querySelector("[data-browser-transport]")?.value||"epoxy"},"*");return}if(e.target.closest("[data-effect-value],[data-effect-speed],[data-effect-amount],[data-theme-value]"))sendEffects()});document.addEventListener("input",e=>{if(e.target.closest("[data-effect-speed],[data-effect-amount]")){document.querySelectorAll("[data-effect-speed-label]").forEach(el=>el.textContent=(Number(document.querySelector("[data-effect-speed]")?.value||1.1).toFixed(1)+"x"));document.querySelectorAll("[data-effect-amount-label]").forEach(el=>el.textContent=(document.querySelector("[data-effect-amount]")?.value||"16"));sendEffects()}});';
+    const popupScript='document.addEventListener("click",e=>{const popup=e.target.closest("[data-popup-protection]");if(!popup)return;e.preventDefault();const next=popup.dataset.enabled!=="true";popup.dataset.enabled=String(next);popup.classList.toggle("on",next);popup.textContent="Popup Protection "+(next?"On":"Off");parent.postMessage({type:"nyx:popup-protection",enabled:next},"*")});';
+    return '<!doctype html><meta charset="utf-8"><base target="_self"><style>'+style+themeStyle+'input[type=file].settings-input{color:#f8fafc;background:rgba(14,17,26,.54)}input[type=file].settings-input::file-selector-button{height:28px;margin:0 12px 0 0;border:0;border-radius:999px;background:rgba(148,163,184,.24);color:#f8fafc;padding:0 12px;font:800 12px Inter,Segoe UI,Arial,sans-serif}.theme-ruby input[type=file].settings-input::file-selector-button{background:linear-gradient(145deg,rgba(248,113,113,.52),rgba(127,29,29,.78));color:#fee2e2}.theme-emerald input[type=file].settings-input::file-selector-button{background:linear-gradient(145deg,rgba(52,211,153,.52),rgba(6,78,59,.78));color:#dcfce7}.theme-sakura input[type=file].settings-input::file-selector-button{background:linear-gradient(145deg,rgba(249,168,212,.58),rgba(157,23,77,.74));color:#fce7f3}.settings-section{display:none}.settings-section.active{display:block}.settings-range{display:grid;grid-template-columns:70px minmax(0,1fr) 46px;align-items:center;gap:10px;margin:12px 0;color:#d1d5db;font-size:13px;font-weight:800}.settings-range input{width:100%;accent-color:#9ca3af}.settings-nav-icon{width:24px;height:24px;border-radius:999px;border:2px solid #dbe2ea;display:inline-block;position:relative;background:rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.22)}.icon-general::before{content:"";position:absolute;inset:5px;border:2px solid #dbe2ea;border-radius:999px}.icon-effects::before{content:"";position:absolute;left:5px;right:5px;top:10px;height:2px;background:#dbe2ea;box-shadow:0 -5px 0 #dbe2ea,0 5px 0 #dbe2ea}.icon-watch::before{content:"";position:absolute;left:8px;top:5px;border-left:9px solid #dbe2ea;border-top:6px solid transparent;border-bottom:6px solid transparent}.icon-browser::before{content:"";position:absolute;left:4px;right:4px;top:6px;height:11px;border:2px solid #dbe2ea;border-radius:4px}.icon-browser::after{content:"";position:absolute;left:7px;right:7px;bottom:4px;height:2px;background:#dbe2ea}.settings-effect-preview span:nth-child(1)::before{content:"";width:14px;height:20px;border-radius:999px;background:#cfd8e3;transform:rotate(28deg)}.settings-effect-preview span:nth-child(2)::before{content:"";width:18px;height:18px;background:#cfd8e3;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 56%,79% 91%,50% 70%,21% 91%,32% 56%,2% 35%,39% 35%)}.settings-effect-preview span:nth-child(3)::before{content:"";width:18px;height:16px;background:#cfd8e3;clip-path:polygon(50% 100%,8% 52%,4% 22%,24% 2%,50% 20%,76% 2%,96% 22%,92% 52%)}.settings-effect-preview span:nth-child(4)::before{content:"";width:18px;height:18px;border:3px solid #cfd8e3;border-radius:999px}</style>'+page.body+'<script>const NYX_EFFECT='+JSON.stringify(store.text('nyx.visualEffect','none'))+';const NYX_EFFECT_SPEED='+JSON.stringify(store.text('nyx.visualEffectSpeed','1.1'))+';const NYX_EFFECT_AMOUNT='+JSON.stringify(store.text('nyx.visualEffectAmount','16'))+';const NYX_THEME='+JSON.stringify(store.text('nyx.theme','default'))+';if(NYX_THEME&&NYX_THEME!=="default")document.body.classList.add("theme-"+NYX_THEME);document.querySelectorAll("[data-effect-value]").forEach(el=>{el.value=NYX_EFFECT});document.querySelectorAll("[data-effect-speed]").forEach(el=>{el.value=NYX_EFFECT_SPEED});document.querySelectorAll("[data-effect-amount]").forEach(el=>{el.value=NYX_EFFECT_AMOUNT});document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=Number(NYX_EFFECT_SPEED).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=NYX_EFFECT_AMOUNT});'+script+popupScript+'<\/script>';
   }
   function showBrowserShellInternalPage(name){
     ensureBrowserShellHome();
@@ -3463,16 +3463,16 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     const state=activeBrowser;
     const tab=state?.tabs?.find(t=>t.id===state.active);
     if(!tab) return false;
-    const presetTiles=`<button class="quick-tile" data-preset="goodlion"><img class="quick-icon" alt="" src="${favicons.goodlion}"><span>GoodLion tab</span></button><button class="quick-tile" data-preset="google"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
+    const presetTiles=`<button class="quick-tile" data-preset="nyx"><img class="quick-icon" alt="" src="${favicons.nyx}"><span>nyx tab</span></button><button class="quick-tile" data-preset="google"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
     const pages={
       apps:{title:'Apps',body:`<section class="shell-page"><h1>Apps</h1><p>Pick an app and stay in Browser Mode.</p><div class="quick-grid">${quickTiles()}</div></section>`},
-      settings:{title:'Settings',body:`<section class="shell-page"><h1>Settings</h1><p>Browser Mode controls that work inside this tab.</p><div class="quick-grid"><button class="quick-tile" data-page-fullscreen><b>□</b><span>Fullscreen</span></button><button class="quick-tile" data-shell-about><b>↗</b><span>Open About:Blank</span></button><button class="quick-tile" data-shell-about-tab><b>↗</b><span>Tab in About:Blank</span></button></div><h2>Effects</h2><p>These effects only run in Browser Mode.</p><select data-effect-value><option value="none">No effect</option><option value="rain">Rain</option><option value="stars">Stars</option><option value="hearts">Hearts</option><option value="pokeballs">Pokeballs</option></select><div class="settings-effect-preview"><span>☔</span><span>✦</span><span>♥</span><span>◉</span></div><h2>Tab presets</h2><div class="quick-grid small">${presetTiles}</div></section>`},
+      settings:{title:'Settings',body:`<section class="shell-page"><h1>Settings</h1><p>Browser Mode controls that work inside this tab.</p><div class="quick-grid"><button class="quick-tile" data-page-fullscreen><b>â–¡</b><span>Fullscreen</span></button><button class="quick-tile" data-shell-about><b>â†—</b><span>Open About:Blank</span></button><button class="quick-tile" data-shell-about-tab><b>â†—</b><span>Tab in About:Blank</span></button></div><h2>Effects</h2><p>These effects only run in Browser Mode.</p><select data-effect-value><option value="none">No effect</option><option value="rain">Rain</option><option value="stars">Stars</option><option value="hearts">Hearts</option><option value="pokeballs">Pokeballs</option></select><div class="settings-effect-preview"><span>â˜”</span><span>âœ¦</span><span>â™¥</span><span>â—‰</span></div><h2>Tab presets</h2><div class="quick-grid small">${presetTiles}</div></section>`},
       links:{title:'Bookmarks',body:`<section class="shell-page"><h1>Bookmarks</h1><p>Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>DuckDuckGo</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></section>`},
       lionai:{title:'Lion AI',body:`<section class="shell-page"><h1>Lion AI</h1><p>Use Lion AI or open a stronger AI page without leaving Browser Mode.</p><div class="quick-grid"><button class="quick-tile" data-parent-lion-ai><b>AI</b><span>Open Lion AI</span></button><button class="quick-tile" data-url="https://duck.ai/"><img class="quick-icon" alt="" src="${appIcon('duck.ai')}"><span>Duck AI</span></button><button class="quick-tile" data-url="https://chatgpt.com/"><img class="quick-icon" alt="" src="${appIcon('chatgpt.com')}"><span>ChatGPT</span></button></div></section>`}
     };
     pages.settings={title:'Settings',body:browserShellSettingsMarkup(presetTiles)};
     const page=pages[name] || pages.apps;
-    tab.url='goodlion://'+name;
+    tab.url='nyx://'+name;
     tab.title=page.title;
     tab.frame.removeAttribute('src');
     tab.frame.srcdoc=browserShellPageSrcdoc(page);
@@ -3554,9 +3554,9 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
   function bgButton(key, compact=false){
     return `<button class="bg-choice" data-bg-choice="${esc(key)}" title="${esc(bgNames[key]||'Background')}" aria-label="${esc(bgNames[key]||'Background')}"><span>${esc(bgNames[key]||'Background')}</span></button>`;
   }
-  function renderBackgroundChoices(root, current=store.text('goodlion.background','dragon')){
-    const customData=store.text('goodlion.customBgData','');
-    const customUrl=store.text('goodlion.customBgUrl','');
+  function renderBackgroundChoices(root, current=store.text('nyx.background','dragon')){
+    const customData=store.text('nyx.customBgData','');
+    const customUrl=store.text('nyx.customBgUrl','');
     const custom=customData || customUrl;
     const hasCustom=!!custom;
     const choices=(hasCustom ? `<button class="bg-choice selected" data-custom-bg-preview title="Uploaded background" aria-label="Uploaded background"><span>Uploaded</span></button>` : '') + Object.keys(bgPresets).map(k=>bgButton(k)).join('');
@@ -3574,33 +3574,33 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     syncBackgroundPreview();
   }
   function chooseBackground(key){
-    store.setText('goodlion.background', key || 'dragon');
-    store.setText('goodlion.customBg','');
-    store.setText('goodlion.customBgUrl','');
-    store.setText('goodlion.customBgData','');
+    store.setText('nyx.background', key || 'dragon');
+    store.setText('nyx.customBg','');
+    store.setText('nyx.customBgUrl','');
+    store.setText('nyx.customBgData','');
     applyUserSettings();
   }
   function applyLagReducerSetting(){
-    const lag=store.get('goodlion.lagReducer',false);
+    const lag=store.get('nyx.lagReducer',false);
     document.body.classList.toggle('lag-reducer',lag);
     if(lag){
       const welcome=$('welcomeScreen');
       if(welcome) welcome.classList.add('hidden','force-hidden');
-      store.set('goodlion.backgroundEnhancer',false);
-      store.setText('goodlion.glassLevel','0');
+      store.set('nyx.backgroundEnhancer',false);
+      store.setText('nyx.glassLevel','0');
       document.documentElement.style.setProperty('--glass-blur','0px');
     }
     qsa('[data-lag-reducer]').forEach(el=>el.classList.toggle('on',lag));
-    qsa('[data-switch="goodlion.lagReducer"]').forEach(el=>el.classList.toggle('on',lag));
+    qsa('[data-switch="nyx.lagReducer"]').forEach(el=>el.classList.toggle('on',lag));
   }
   function applyBrowserShellMode(){
-    const enabled=store.get('goodlion.browserShellMode',false);
-    if(enabled && store.text('goodlion.glassLevel','80')!=='-40') store.setText('goodlion.glassLevel','-40');
-    if(enabled) store.set('goodlion.backgroundEnhancer',false);
+    const enabled=store.get('nyx.browserShellMode',false);
+    if(enabled && store.text('nyx.glassLevel','80')!=='-40') store.setText('nyx.glassLevel','-40');
+    if(enabled) store.set('nyx.backgroundEnhancer',false);
     document.body.classList.toggle('browser-shell',enabled);
     syncChromeMode(enabled);
     if(!enabled) document.body.classList.remove('menu-open');
-    qsa('[data-switch="goodlion.browserShellMode"]').forEach(el=>el.classList.toggle('on',enabled));
+    qsa('[data-switch="nyx.browserShellMode"]').forEach(el=>el.classList.toggle('on',enabled));
     applyGlassSetting();
     updateResponsiveFit();
     updateDockFullscreenState();
@@ -3739,14 +3739,14 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     reader.readAsText(file);
   }
   function setWatchPartyMovie(key){
-    const selected=watchPartyMovies[key] ? key : store.text('goodlion.watchPartyMovie','hiddenWorld');
+    const selected=watchPartyMovies[key] ? key : store.text('nyx.watchPartyMovie','hiddenWorld');
     const movie=watchPartyMovies[selected] || watchPartyMovies.hiddenWorld;
     const video=$('watchPartyVideo');
     const title=$('watchPartyMovieTitle');
     const movieSelect=$('watchPartyMovie');
     const subtitleSelect=$('watchPartySubtitles');
     const track=$('watchPartyTrack');
-    store.setText('goodlion.watchPartyMovie',selected);
+    store.setText('nyx.watchPartyMovie',selected);
     if(movieSelect) movieSelect.value=selected;
     if(title) title.textContent=movie.title;
     if(movie.needsRemux){
@@ -3790,12 +3790,12 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     const panel=$('watchParty');
     const video=$('watchPartyVideo');
     if(!panel || !video) return;
-    const selectedMovie=movieKey || $('watchPartyMovie')?.value || store.text('goodlion.watchPartyMovie','hiddenWorld');
+    const selectedMovie=movieKey || $('watchPartyMovie')?.value || store.text('nyx.watchPartyMovie','hiddenWorld');
     setWatchPartyMovie(selectedMovie);
     panel.setAttribute('aria-hidden','false');
     panel.classList.add('show-controls','watchparty-paused');
     document.body.classList.add('watchparty-active');
-    const movie=watchPartyMovies[watchPartyMovies[selectedMovie] ? selectedMovie : store.text('goodlion.watchPartyMovie','hiddenWorld')];
+    const movie=watchPartyMovies[watchPartyMovies[selectedMovie] ? selectedMovie : store.text('nyx.watchPartyMovie','hiddenWorld')];
     if(movie?.needsRemux){
       video.pause();
       setWatchPartyStatus('This Star Wars file is MPEG-TS, not browser MP4. It needs to be remuxed/transcoded before Edge can play it.');
@@ -3859,36 +3859,36 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
   }
   function applyThemeSetting(){
     const allowed=['default','ruby','emerald','sakura'];
-    const theme=allowed.includes(store.text('goodlion.theme','default')) ? store.text('goodlion.theme','default') : 'default';
+    const theme=allowed.includes(store.text('nyx.theme','default')) ? store.text('nyx.theme','default') : 'default';
     document.body.classList.remove('theme-ruby','theme-emerald','theme-sakura');
     if(theme!=='default') document.body.classList.add('theme-'+theme);
     qsa('[data-theme-value]').forEach(el=>{el.value=theme});
     if(theme==='default'){
-      if(store.text('goodlion.visualEffect','none')==='stars' && store.text('goodlion.visualEffectAmount','16')==='64'){
-        store.setText('goodlion.visualEffect','none');
+      if(store.text('nyx.visualEffect','none')==='stars' && store.text('nyx.visualEffectAmount','16')==='64'){
+        store.setText('nyx.visualEffect','none');
       }
-      store.setText('goodlion.musicTrack','clair');
+      store.setText('nyx.musicTrack','clair');
       if(ambientTracks?.clair && ambientCurrentKey!=='clair'){
         loadAmbientTrack('clair',true);
       }
     }
     if(theme==='sakura'){
-      store.setText('goodlion.visualEffect','flowers');
+      store.setText('nyx.visualEffect','flowers');
     }
-    if(theme==='emerald' && store.text('goodlion.visualEffect','none')==='none'){
-      store.setText('goodlion.visualEffect','emeralds');
+    if(theme==='emerald' && store.text('nyx.visualEffect','none')==='none'){
+      store.setText('nyx.visualEffect','emeralds');
     }
     if(theme==='emerald' && ambientTracks?.frog && ambientCurrentKey!=='frog'){
       loadAmbientTrack('frog',true);
     }
   }
   function applyVisualEffectSetting(){
-    const effect=store.text('goodlion.visualEffect','none');
+    const effect=store.text('nyx.visualEffect','none');
     const allowed=['none','rain','stars','hearts','pokeballs','flowers','emeralds'];
     const value=allowed.includes(effect) ? effect : 'none';
-    const speed=Math.max(.3,Math.min(3,Number(store.text('goodlion.visualEffectSpeed','1.1')) || 1.1));
-    const amount=Math.max(1,Math.min(64,Number(store.text('goodlion.visualEffectAmount','16')) || 16));
-    const canShow=document.body.classList.contains('browser-shell') && !document.body.classList.contains('browser-content-active') && !document.body.classList.contains('watchparty-active') && !store.get('goodlion.lagReducer',false);
+    const speed=Math.max(.3,Math.min(3,Number(store.text('nyx.visualEffectSpeed','1.1')) || 1.1));
+    const amount=Math.max(1,Math.min(64,Number(store.text('nyx.visualEffectAmount','16')) || 16));
+    const canShow=document.body.classList.contains('browser-shell') && !document.body.classList.contains('browser-content-active') && !document.body.classList.contains('watchparty-active') && !store.get('nyx.lagReducer',false);
     const nodes=ensureVisualEffectNodes(64);
     const isFallingEffect=['hearts','pokeballs','flowers','emeralds'].includes(value);
     nodes.forEach((node,index)=>{
@@ -3933,14 +3933,14 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     applyBrowserShellMode();
     applyThemeSetting();
     applyVisualEffectSetting();
-    const name=store.text('goodlion.userName','').trim();
+    const name=store.text('nyx.userName','').trim();
     const greeting=$('userGreeting');
     if(greeting){
       greeting.textContent=name || 'Set username';
       greeting.classList.toggle('needs-name',!name);
     }
-    const customData=store.text('goodlion.customBgData','');
-    const customUrl=store.text('goodlion.customBgUrl','');
+    const customData=store.text('nyx.customBgData','');
+    const customUrl=store.text('nyx.customBgUrl','');
     const value=currentBackgroundValue();
     const customSrc=customData || customUrl;
     document.documentElement.style.setProperty('--bg-size','cover');
@@ -3949,7 +3949,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     document.documentElement.style.setProperty('--bg-enhanced-render',normalizeBgValue(value));
     syncBackgroundPreview(value);
     updateWeatherContrast(value);
-    const enhance=store.get('goodlion.backgroundEnhancer',false);
+    const enhance=store.get('nyx.backgroundEnhancer',false);
     document.body.classList.toggle('bg-enhanced',enhance);
     document.documentElement.style.setProperty('--bg-brightness',enhance?'.8':'1');
     document.documentElement.style.setProperty('--bg-contrast','1');
@@ -3960,20 +3960,20 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
       setQualityStatus('');
     }
     qsa('[data-bg-enhancer]').forEach(el=>el.classList.toggle('on',enhance));
-    const engine=store.text('goodlion.engine','duckduckgo');
+    const engine=store.text('nyx.engine','duckduckgo');
     qsa('[data-engine-value]').forEach(el=>{el.value=engine});
     applyGlassSetting();
     startHieroglyphObserver();
     applyHieroglyphText();
   }
   function migrateGlassDefault(){
-    if(store.get('goodlion.glassDefault80',false)) return;
-    const saved=store.text('goodlion.glassLevel','');
-    if(!saved || saved==='72') store.setText('goodlion.glassLevel','80');
-    store.set('goodlion.glassDefault80',true);
+    if(store.get('nyx.glassDefault80',false)) return;
+    const saved=store.text('nyx.glassLevel','');
+    if(!saved || saved==='72') store.setText('nyx.glassLevel','80');
+    store.set('nyx.glassDefault80',true);
   }
   function applyGlassSetting(){
-    const raw=store.text('goodlion.glassLevel','80');
+    const raw=store.text('nyx.glassLevel','80');
     const parsed=Number(raw);
     const value=Math.max(-200,Math.min(200,Number.isFinite(parsed) ? parsed : 80));
     const brightness=Math.max(0,Math.min(value,100))/100;
@@ -4008,10 +4008,10 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     return match ? match[1] : '';
   }
   function currentBackgroundValue(){
-    const bg=store.text('goodlion.background','dragon');
-    const customData=store.text('goodlion.customBgData','');
-    const customUrl=store.text('goodlion.customBgUrl','');
-    const legacy=store.text('goodlion.customBg','');
+    const bg=store.text('nyx.background','dragon');
+    const customData=store.text('nyx.customBgData','');
+    const customUrl=store.text('nyx.customBgUrl','');
+    const legacy=store.text('nyx.customBg','');
     return customData ? `url("${customData}")` : customUrl ? `url("${customUrl.replaceAll('"','%22')}")` : legacy || bgPresets[bg] || bgPresets.dragon;
   }
   function imageProxySrc(src){
@@ -4215,15 +4215,15 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     document.documentElement.style.setProperty('--bg-render', cssValue);
     const src=bgSrc(cssValue);
     if(!src || src.startsWith('data:') || src.startsWith('blob:')) return;
-    if(store.text('goodlion.customBgUrl','') || store.text('goodlion.customBgData','') || store.text('goodlion.customBg','')) return;
+    if(store.text('nyx.customBgUrl','') || store.text('nyx.customBgData','') || store.text('nyx.customBg','')) return;
     const img=new Image();
     img.referrerPolicy='no-referrer';
     img.onerror=()=>{
       if(!allowFallback) return;
-      store.setText('goodlion.background','dragon');
-      store.setText('goodlion.customBg','');
-      store.setText('goodlion.customBgUrl','');
-      store.setText('goodlion.customBgData','');
+      store.setText('nyx.background','dragon');
+      store.setText('nyx.customBg','');
+      store.setText('nyx.customBgUrl','');
+      store.setText('nyx.customBgData','');
       applyBackgroundValue(bgPresets.dragon,false);
     };
     img.onload=()=>{};
@@ -4249,13 +4249,13 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
       setQualityStatus('Quality Boost active: animated GIF preserved');
     }else{
       renderEnhancedImage(src,(enhancedSrc,status)=>{
-        if(run!==enhancedBackgroundRun || !store.get('goodlion.backgroundEnhancer',false)) return;
+        if(run!==enhancedBackgroundRun || !store.get('nyx.backgroundEnhancer',false)) return;
         setQualityStatus(status);
         if(enhancedSrc){
           const boosted=`url("${enhancedSrc}")`;
           document.documentElement.style.setProperty('--bg-enhanced-render',boosted);
           syncBackgroundPreview(boosted);
-          if(store.text('goodlion.customBgUrl','') || store.text('goodlion.customBgData','')) setCustomBackgroundLayer(src,enhancedSrc);
+          if(store.text('nyx.customBgUrl','') || store.text('nyx.customBgData','')) setCustomBackgroundLayer(src,enhancedSrc);
         }
       });
     }
@@ -4265,7 +4265,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     img.crossOrigin='anonymous';
     img.referrerPolicy='no-referrer';
     img.onload=()=>{
-      if(run!==enhancedBackgroundRun || !store.get('goodlion.backgroundEnhancer',false)) return;
+      if(run!==enhancedBackgroundRun || !store.get('nyx.backgroundEnhancer',false)) return;
       try{
         let brightMask='linear-gradient(transparent,transparent)';
         const maskW=960;
@@ -4308,7 +4308,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
           maskCtx.putImageData(maskPixels,0,0);
           brightMask=`url("${maskCanvas.toDataURL('image/png')}")`;
         }
-      if(run===enhancedBackgroundRun && store.get('goodlion.backgroundEnhancer',false)){
+      if(run===enhancedBackgroundRun && store.get('nyx.backgroundEnhancer',false)){
         document.documentElement.style.setProperty('--bg-render',cssValue);
         document.documentElement.style.setProperty('--bg-bright-mask',brightMask);
       }
@@ -4334,13 +4334,13 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
   function saveProfile(root=document, quiet=false){
     const input=root.querySelector?.('#settingName') || document.querySelector('#settingName');
     const next=(input?.value || '').trim();
-    store.setText('goodlion.userName', next);
+    store.setText('nyx.userName', next);
     applyUserSettings();
     if(!quiet) toast('Username saved');
   }
   function closeWelcome(force=false){
     const w=$('welcomeScreen'); if(!w)return;
-    if(force || store.get('goodlion.lagReducer',false)){
+    if(force || store.get('nyx.lagReducer',false)){
       clearTimeout(welcomeTimer);
       w.classList.add('hidden','force-hidden');
       return;
@@ -4364,7 +4364,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
   };
   let launchPdfObjectUrl='';
   let launchPdfObjectName='';
-  const launchPdfDbName='goodlion-launch-pdfs';
+  const launchPdfDbName='nyx-launch-pdfs';
   const launchPdfStore='pdfs';
   function openLaunchPdfDb(){
     return new Promise((resolve,reject)=>{
@@ -4394,7 +4394,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     });
   }
   function launchPdfUrl(){
-    const choice=store.text('goodlion.launchPdf','math');
+    const choice=store.text('nyx.launchPdf','math');
     if(choice==='custom'){
       return launchPdfObjectUrl || launchPdfOptions.math;
     }
@@ -4407,7 +4407,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     if(frame.getAttribute('src')!==next) frame.setAttribute('src',next);
   }
   async function loadStoredLaunchPdf(){
-    if(store.text('goodlion.launchPdf','math')!=='custom') return;
+    if(store.text('nyx.launchPdf','math')!=='custom') return;
     try{
       const saved=await launchPdfDbGet('startup');
       if(!saved?.blob) return;
@@ -4429,7 +4429,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     if(launchPdfObjectUrl) URL.revokeObjectURL(launchPdfObjectUrl);
     launchPdfObjectUrl=URL.createObjectURL(file);
     launchPdfObjectName=file.name;
-    store.setText('goodlion.launchPdf','custom');
+    store.setText('nyx.launchPdf','custom');
     let saved=true;
     try{
       await launchPdfDbPut('startup',{name:file.name,type:file.type || 'application/pdf',blob:file,updatedAt:Date.now()});
@@ -4494,18 +4494,18 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     }
     else if(/^[\w.-]+\.[a-z]{2,}(\/.*)?$/i.test(raw) && !raw.includes(' ')) target='https://'+raw;
     else {
-      const engine=store.text('goodlion.engine','duckduckgo');
+      const engine=store.text('nyx.engine','duckduckgo');
       target=(engines[engine]||engines.google)+encodeURIComponent(raw);
     }
     return target;
   }
   function getRhBase(){
-    return store.text('goodlion.rammerheadBase',rammerheadBase).replace(/\/+$/,'') + '/';
+    return store.text('nyx.rammerheadBase',rammerheadBase).replace(/\/+$/,'') + '/';
   }
   function getRhSession(){
     return new Promise(resolve=>{
       const base=getRhBase();
-      const cached=store.text('goodlion.rammerheadSession','');
+      const cached=store.text('nyx.rammerheadSession','');
       const xhr=new XMLHttpRequest();
       let done=false;
       const finish=id=>{
@@ -4513,7 +4513,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
         done=true;
         clearTimeout(timer);
         if(id){
-          store.setText('goodlion.rammerheadSession',id);
+          store.setText('nyx.rammerheadSession',id);
           resolve({base,id});
         }else if(cached){
           resolve({base,id:cached});
@@ -4598,7 +4598,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
       const target=new URL(url,location.href);
       if(target.origin===location.origin || target.protocol==='file:') return 'iframe';
     }catch{}
-    const mode=store.text('goodlion.browserMode','auto');
+    const mode=store.text('nyx.browserMode','auto');
     if(mode!=='auto') return mode;
     const selected=bestBrowserMode(url);
     return selected==='scramjet' && avoidsScramjet(url) ? 'ultraviolet' : selected;
@@ -4698,7 +4698,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
       }
       throw lastError;
     };
-    const transport=browserTransportOverride || store.text('goodlion.transport','epoxy');
+    const transport=browserTransportOverride || store.text('nyx.transport','epoxy');
     try{
       if(transport==='libcurl'){
         await setTransportWithRetry('/assets/transports/libcurl-baremux.mjs', [{ wisp, websocket: wisp }]);
@@ -4719,7 +4719,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     }
   }
   async function createScramjetTransport(){
-    const transport=browserTransportOverride || store.text('goodlion.transport','epoxy');
+    const transport=browserTransportOverride || store.text('nyx.transport','epoxy');
     const key=`${transport}:${wispUrl()}`;
     if(scramjetTransport && scramjetTransportKey===key) return scramjetTransport;
     const wisp=wispUrl();
@@ -4808,11 +4808,11 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     const target=findScramjetHtmlNode(root,'head') || findScramjetHtmlNode(root,'html') || root;
     const children=target?.childNodes || target?.children;
     if(!Array.isArray(children)) return;
-    if(children.some(child=>child?.attribs?.['data-goodlion-runtime-guard'])) return;
+    if(children.some(child=>child?.attribs?.['data-nyx-runtime-guard'])) return;
     children.unshift({
       type:'script',
       name:'script',
-      attribs:{'data-goodlion-runtime-guard':'1',src:'/goodlion-scramjet-runtime-guard.js'},
+      attribs:{'data-nyx-runtime-guard':'1',src:'/nyx-scramjet-runtime-guard.js'},
       children:[]
     });
   }
@@ -4822,7 +4822,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
   }
   function createScramjetCompatibilityPlugin(){
     const plugin={
-      name:'goodlion-compatibility-guard',
+      name:'nyx-compatibility-guard',
       dependencies:[],
       install(frame){
         const Tap=window.$scramjet?.Tap;
@@ -4880,10 +4880,10 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
       await registration.update().catch(()=>null);
       await waitForServiceWorkerActive(registration,config.prefix);
       await installBareMuxTransport();
-      console.log('GoodLion UV Engine: Ready',registration.scope);
+      console.log('nyx UV Engine: Ready',registration.scope);
       return true;
     })().catch(err=>{
-      console.warn('GoodLion UV Engine unavailable:',err);
+      console.warn('nyx UV Engine unavailable:',err);
       uvInstallPromise=null;
       return false;
     });
@@ -4926,11 +4926,11 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
         scramjetController=createScramjetController(serviceworker,transport);
         await scramjetController.wait();
       }
-      console.log('GoodLion Scramjet Engine: Ready',registration.scope);
+      console.log('nyx Scramjet Engine: Ready',registration.scope);
       scramjetInstallError='';
       return true;
     })().catch(err=>{
-      console.warn('GoodLion Scramjet Engine unavailable:',err);
+      console.warn('nyx Scramjet Engine unavailable:',err);
       scramjetInstallError=`Failed while ${step}: ${err?.message || err}`;
       scramjetController=null;
       scramjetInstallPromise=null;
@@ -4942,7 +4942,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     if(/^data:text\/html/i.test(url)) return url;
     const base=getRhBase();
     if(url.startsWith(base)) return url;
-    const sessionId=store.text('goodlion.rammerheadSession','');
+    const sessionId=store.text('nyx.rammerheadSession','');
     return sessionId ? rhBuildUrl(base,sessionId,url) : url;
   }
   async function rhNavigate(rawUrl,navigateFn){
@@ -5060,10 +5060,10 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     win.style.top=opts.top||`${80+winCount*24}px`;
     win.style.width=opts.width||'560px';
     win.style.height=opts.height||'420px';
-    win.innerHTML=`<div class="titlebar"><div class="titlebar-title">${esc(opts.title||'Window')}</div><div class="window-controls"><button data-minimize>−</button><button data-maximize>□</button><button class="close" data-close>×</button></div></div>${opts.body||''}`;
+    win.innerHTML=`<div class="titlebar"><div class="titlebar-title">${esc(opts.title||'Window')}</div><div class="window-controls"><button data-minimize>âˆ’</button><button data-maximize>â–¡</button><button class="close" data-close>Ã—</button></div></div>${opts.body||''}`;
     const min=win.querySelector('[data-minimize]'), max=win.querySelector('[data-maximize]'), close=win.querySelector('[data-close]');
     if(min) min.textContent='-';
-    if(max) max.textContent='□';
+    if(max) max.textContent='â–¡';
     if(close) close.textContent='x';
     addResizeHandles(win);
     $('desktop').appendChild(win); winCount++; bring(win); wireWindow(win);
@@ -5071,7 +5071,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     if(opts.autoMaximize !== false){
       win.classList.add('maximized');
       const maxBtn=win.querySelector('[data-maximize]');
-      if(maxBtn) maxBtn.textContent='❐';
+      if(maxBtn) maxBtn.textContent='â';
     }
     updateWindowSizeClasses(win); updateDockFullscreenState(); return win;
   }
@@ -5127,7 +5127,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     win.querySelector('[data-minimize]').onclick=()=>minimizeWindow(win);
     win.querySelector('[data-maximize]').onclick=e=>{
       win.classList.toggle('maximized');
-      e.currentTarget.textContent=win.classList.contains('maximized')?'❐':'□';
+      e.currentTarget.textContent=win.classList.contains('maximized')?'â':'â–¡';
       updateDockFullscreenState();
     };
   }
@@ -5156,7 +5156,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     updateWindowSizeClasses(win);
   }
   function browserBody(){
-    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back>&lt;</button><button class="tool-btn" data-forward>&gt;</button><button class="tool-btn" data-reload title="Reload">&#8635;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="browser-shell-start"><img class="browser-shell-logo" alt="" src="${favicons.goodlion}"><div class="browser-shell-clock" data-browser-shell-clock>--:--</div><div class="browser-shell-caption">1aqlla so tuff</div></div><div class="browser-home-normal"><h1 class="home-heading">Search the World</h1><p class="home-sub">Search, watch, and enjoy</p><div class="quick-grid">${quickTiles()}</div></div></div></div>`;
+    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back>&lt;</button><button class="tool-btn" data-forward>&gt;</button><button class="tool-btn" data-reload title="Reload">&#8635;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="browser-shell-start"><img class="browser-shell-logo" alt="" src="${favicons.nyx}"><div class="browser-shell-clock" data-browser-shell-clock>--:--</div><div class="browser-shell-caption">1aqlla so tuff</div></div><div class="browser-home-normal"><h1 class="home-heading">Search the World</h1><p class="home-sub">Search, watch, and enjoy</p><div class="quick-grid">${quickTiles()}</div></div></div></div>`;
   }
   function quickTiles(){
     return [
@@ -5195,7 +5195,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     const back=win.querySelector('[data-back]'), forward=win.querySelector('[data-forward]'), reload=win.querySelector('[data-reload]'), menu=win.querySelector('[data-menu]');
     if(back) back.textContent='<';
     if(forward) forward.textContent='>';
-    if(reload) reload.textContent='↻';
+    if(reload) reload.textContent='â†»';
     if(menu) menu.textContent='...';
   }
   function openBrowser(url='https://duckduckgo.com/',options={}){
@@ -5208,7 +5208,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
       row.querySelectorAll('.browser-tab').forEach(x=>x.remove());
       state.tabs.forEach(t=>{
         const el=document.createElement('div'); el.className='browser-tab'+(t.id===state.active?' active':'');
-        el.innerHTML=`<span>${esc(t.title)}</span><button data-close-tab="${t.id}">×</button>`;
+        el.innerHTML=`<span>${esc(t.title)}</span><button data-close-tab="${t.id}">Ã—</button>`;
         const closeBtn=el.querySelector('button');
         if(closeBtn) closeBtn.textContent='x';
         el.onclick=e=>{if(e.target.closest('button'))return; activate(t.id)};
@@ -5239,7 +5239,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
       return tab;
     }
     function popupWarningHtml(){
-      return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>goodlion://blocked67haha</title><style>html,body{margin:0;width:100%;height:100%;background:#fff;color:#111;font:14px Arial,Segoe UI,sans-serif}body{overflow:hidden}.prompt-shade{position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;background:#fff}.prompt{width:min(540px,calc(100vw - 36px));padding:18px 20px;border:0;border-radius:0 0 14px 14px;background:#fff;color:#1f2937;box-shadow:0 6px 18px rgba(0,0,0,.18)}.title{margin:0 0 22px;color:#111827;font-size:16px;font-weight:700}.message{margin:0 0 8px;font-size:14px;line-height:1.35}.prompt-input{width:100%;height:38px;margin:0 0 38px;border:2px solid #4b5563;border-radius:8px;background:#fff;color:#111827;padding:0 10px;font:16px Arial,Segoe UI,sans-serif;outline:0}.actions{display:flex;justify-content:flex-end;gap:10px}.ok,.cancel{min-width:48px;height:40px;border:0;border-radius:9px;padding:0 14px;font:15px Arial,Segoe UI,sans-serif}.ok{background:#27231f;color:#fff}.cancel{background:#fff;color:#374151}.ok:focus{outline:2px solid #2563eb;outline-offset:2px}</style></head><body><script>function show(){document.body.innerHTML='<div class="prompt-shade"><div class="prompt" role="dialog" aria-modal="true"><div class="title">GoodLion says</div><div class="message">are you trying to hack me scamma?</div><input class="prompt-input" autocomplete="off" spellcheck="false"><div class="actions"><button class="ok" type="button">OK</button><button class="cancel" type="button">Cancel</button></div></div></div>';const ok=document.querySelector(".ok");const input=document.querySelector(".prompt-input");input.focus();ok.onclick=()=>setTimeout(show,0);document.querySelector(".cancel").onclick=()=>{};input.onkeydown=e=>{if(e.key==="Enter")ok.click()}}show();<\/script></body></html>`;
+      return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>nyx://blocked67haha</title><style>html,body{margin:0;width:100%;height:100%;background:#fff;color:#111;font:14px Arial,Segoe UI,sans-serif}body{overflow:hidden}.prompt-shade{position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;background:#fff}.prompt{width:min(540px,calc(100vw - 36px));padding:18px 20px;border:0;border-radius:0 0 14px 14px;background:#fff;color:#1f2937;box-shadow:0 6px 18px rgba(0,0,0,.18)}.title{margin:0 0 22px;color:#111827;font-size:16px;font-weight:700}.message{margin:0 0 8px;font-size:14px;line-height:1.35}.prompt-input{width:100%;height:38px;margin:0 0 38px;border:2px solid #4b5563;border-radius:8px;background:#fff;color:#111827;padding:0 10px;font:16px Arial,Segoe UI,sans-serif;outline:0}.actions{display:flex;justify-content:flex-end;gap:10px}.ok,.cancel{min-width:48px;height:40px;border:0;border-radius:9px;padding:0 14px;font:15px Arial,Segoe UI,sans-serif}.ok{background:#27231f;color:#fff}.cancel{background:#fff;color:#374151}.ok:focus{outline:2px solid #2563eb;outline-offset:2px}</style></head><body><script>function show(){document.body.innerHTML='<div class="prompt-shade"><div class="prompt" role="dialog" aria-modal="true"><div class="title">nyx says</div><div class="message">are you trying to hack me scamma?</div><input class="prompt-input" autocomplete="off" spellcheck="false"><div class="actions"><button class="ok" type="button">OK</button><button class="cancel" type="button">Cancel</button></div></div></div>';const ok=document.querySelector(".ok");const input=document.querySelector(".prompt-input");input.focus();ok.onclick=()=>setTimeout(show,0);document.querySelector(".cancel").onclick=()=>{};input.onkeydown=e=>{if(e.key==="Enter")ok.click()}}show();<\/script></body></html>`;
     }
     function popupTabHandle(t,openerUrl=''){
       if(!t) return null;
@@ -5293,7 +5293,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     }
     function showPopupWarningTab(t){
       if(!t?.frame) return;
-      t.url='goodlion://blocked67haha';
+      t.url='nyx://blocked67haha';
       t.title='Popup blocked';
       t.frame.removeAttribute('src');
       t.frame.srcdoc=popupWarningHtml();
@@ -5324,18 +5324,18 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
           close(){rewrite()}
         },
         location:{
-          href:'goodlion://blocked67haha',
+          href:'nyx://blocked67haha',
           assign(){rewrite()},
           replace(){rewrite()},
           reload(){rewrite()},
-          toString(){return 'goodlion://blocked67haha'}
+          toString(){return 'nyx://blocked67haha'}
         },
-        get href(){return 'goodlion://blocked67haha'},
+        get href(){return 'nyx://blocked67haha'},
         set href(_value){rewrite()}
       };
     }
     function openExternalBlockedPopup(){
-      const nativeOpen=window.__goodlionNativeOpen || window.open?.bind(window);
+      const nativeOpen=window.__nyxNativeOpen || window.open?.bind(window);
       const popup=nativeOpen ? nativeOpen('about:blank','_blank') : null;
       if(!popup) return null;
       try{
@@ -5352,7 +5352,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     function openPopupTab(rawUrl){
       const openerUrl=current()?.url || location.href;
       if(!popupProtectionEnabled()){
-        const nativeOpen=window.__goodlionNativeOpen || window.open?.bind(window);
+        const nativeOpen=window.__nyxNativeOpen || window.open?.bind(window);
         return nativeOpen ? nativeOpen(rawUrl || 'about:blank','_blank') : null;
       }
       const externalHandle=openExternalBlockedPopup();
@@ -5360,7 +5360,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
       const shellTab=(()=>{
         if(!document.body.classList.contains('browser-shell')) return null;
         const id='shell-'+Date.now()+Math.random().toString(16).slice(2);
-        const tab={id,url:'goodlion://blocked67haha',title:'Popup blocked'};
+        const tab={id,url:'nyx://blocked67haha',title:'Popup blocked'};
         browserShellTabs.push(tab);
         browserShellActiveTab=id;
         renderBrowserShellTabs();
@@ -5395,21 +5395,21 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
         try{
           const doc=t.frame.contentDocument;
           const frameWindow=t.frame.contentWindow;
-          if(frameWindow && !frameWindow.__goodlionOpenBridge){
-            frameWindow.__goodlionOpenBridge=true;
+          if(frameWindow && !frameWindow.__nyxOpenBridge){
+            frameWindow.__nyxOpenBridge=true;
             const nativeFrameOpen=frameWindow.open?.bind(frameWindow);
-            const goodlionPopup=(popupUrl,target,features)=>{
+            const nyxPopup=(popupUrl,target,features)=>{
               if(!popupProtectionEnabled()) return nativeFrameOpen ? nativeFrameOpen(popupUrl,target,features) : null;
               return openPopupTab('about:blank');
             };
             try{
-              Object.defineProperty(frameWindow,'open',{value:goodlionPopup,writable:true,configurable:true});
+              Object.defineProperty(frameWindow,'open',{value:nyxPopup,writable:true,configurable:true});
             }catch{
-              frameWindow.open=goodlionPopup;
+              frameWindow.open=nyxPopup;
             }
           }
-          if(!doc || doc.dataset.goodlionPopupBridge) return;
-          doc.dataset.goodlionPopupBridge='true';
+          if(!doc || doc.dataset.nyxPopupBridge) return;
+          doc.dataset.nyxPopupBridge='true';
           const trapDownload=event=>{
             const link=event.target?.closest?.('a[href]');
             if(!popupProtectionEnabled() || !shouldTrapDownloadLink(link)) return;
@@ -5498,28 +5498,28 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
       if(raw.startsWith('/service/') || frameSrc.startsWith('/service/')) return 'ultraviolet';
       if(raw.startsWith('/scramjet/service/') || frameSrc.startsWith('/scramjet/service/')) return 'scramjet-legacy';
       if(/^https?:/i.test(raw)) return 'direct';
-      if(raw.startsWith('goodlion://')) return 'goodlion';
+      if(raw.startsWith('nyx://')) return 'nyx';
       return raw ? 'iframe' : 'blank';
     }
     function markBrowserEngine(t,expected,url,phase='load'){
       if(!t) return;
       t.expectedEngine=expected || t.expectedEngine || '';
       t.actualEngine=detectBrowserEngine(url,t);
-      t.frame?.dataset && (t.frame.dataset.goodlionExpectedEngine=t.expectedEngine || '');
-      t.frame?.dataset && (t.frame.dataset.goodlionActualEngine=t.actualEngine || '');
+      t.frame?.dataset && (t.frame.dataset.nyxExpectedEngine=t.expectedEngine || '');
+      t.frame?.dataset && (t.frame.dataset.nyxActualEngine=t.actualEngine || '');
       if(t.expectedEngine && t.expectedEngine!==t.actualEngine && !(t.expectedEngine==='scramjet' && t.actualEngine==='scramjet-legacy')){
-        console.warn(`GoodLion Browser Engine mismatch during ${phase}: expected ${t.expectedEngine}, actual ${t.actualEngine}`, {url, frameSrc:t.frame?.getAttribute?.('src') || '', tab:t});
+        console.warn(`nyx Browser Engine mismatch during ${phase}: expected ${t.expectedEngine}, actual ${t.actualEngine}`, {url, frameSrc:t.frame?.getAttribute?.('src') || '', tab:t});
       }else if(t.expectedEngine){
-        console.log(`GoodLion Browser Engine verified: ${t.expectedEngine}`, {url, phase});
+        console.log(`nyx Browser Engine verified: ${t.expectedEngine}`, {url, phase});
       }
     }
     function assertProxyPath(mode,url){
       if(mode==='scramjet' && String(url || '').startsWith('/service/')){
-        console.warn('GoodLion blocked UV URL from loading in Scramjet mode:', url);
+        console.warn('nyx blocked UV URL from loading in Scramjet mode:', url);
         return false;
       }
       if(mode==='ultraviolet' && String(url || '').startsWith('/~/sj/')){
-        console.warn('GoodLion blocked Scramjet URL from loading in UV mode:', url);
+        console.warn('nyx blocked Scramjet URL from loading in UV mode:', url);
         return false;
       }
       return true;
@@ -5536,7 +5536,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
       resetProxyInstallers();
     }
     function watchProxyLoad(t,sourceUrl,expectedEngine){
-      if(!sourceUrl || store.text('goodlion.browserMode','auto')!=='auto') return;
+      if(!sourceUrl || store.text('nyx.browserMode','auto')!=='auto') return;
       if(t.fallbackSource!==sourceUrl){
         t.fallbackSource=sourceUrl;
         t.fallbackAttempts=0;
@@ -5551,9 +5551,9 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
         if(t.url!==sourceUrl && !String(t.url || '').startsWith('/service/') && !String(t.url || '').startsWith('/~/sj/')) return;
         t.fallbackAttempts=(t.fallbackAttempts || 0) + 1;
         if(t.fallbackAttempts>2) return;
-        console.warn(`GoodLion ${expectedEngine || 'proxy'} load timed out, trying fallback`, {sourceUrl, transport:browserTransportOverride || store.text('goodlion.transport','epoxy')});
+        console.warn(`nyx ${expectedEngine || 'proxy'} load timed out, trying fallback`, {sourceUrl, transport:browserTransportOverride || store.text('nyx.transport','epoxy')});
         if(expectedEngine==='ultraviolet'){
-          if((browserTransportOverride || store.text('goodlion.transport','epoxy'))!=='wisp'){
+          if((browserTransportOverride || store.text('nyx.transport','epoxy'))!=='wisp'){
             setBrowserTransportOverride('wisp');
             navigate(sourceUrl,'ultraviolet');
           }else{
@@ -5568,7 +5568,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     }
     function loadTab(t,url,addHistory=true,expectedEngine='',sourceUrl=''){
       if(expectedEngine && !assertProxyPath(expectedEngine,url)){
-        console.warn('GoodLion continuing despite engine path mismatch so the site can still attempt to load.');
+        console.warn('nyx continuing despite engine path mismatch so the site can still attempt to load.');
       }
       t.expectedEngine=expectedEngine || t.expectedEngine || '';
       t.sourceUrl=sourceUrl || (/^https?:/i.test(url) ? url : t.sourceUrl || '');
@@ -5586,7 +5586,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
       if(!url.startsWith('/scramjet/service/') && !url.startsWith('/~/sj/')) t.scramjetFrame=null;
       setFrameSandbox(t,true);
       clearFrameDocument(t);
-      if(store.text('goodlion.browserMode','auto')==='auto' && directOnly(url) && !proxied){
+      if(store.text('nyx.browserMode','auto')==='auto' && directOnly(url) && !proxied){
         loadScramjetTab(t,url,addHistory);
         return;
       }
@@ -5633,8 +5633,8 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
           t.url=url;
           setTabMeta(t,url,addHistory);
           t.actualEngine='scramjet-failed';
-          t.frame.dataset.goodlionExpectedEngine='scramjet';
-          t.frame.dataset.goodlionActualEngine='scramjet-failed';
+          t.frame.dataset.nyxExpectedEngine='scramjet';
+          t.frame.dataset.nyxActualEngine='scramjet-failed';
           setFrameSandbox(t,true);
           clearFrameDocument(t);
           t.frame.srcdoc=scramjetFailureHtml(scramjetInstallError);
@@ -5680,8 +5680,8 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
         setTimeout(()=>{
           try{
             const isScramjetPath=t.frame.contentWindow?.location?.pathname?.startsWith('/~/sj/');
-            const loadedGoodLion=!!t.frame.contentDocument?.querySelector('#desktop,#welcomeScreen');
-            if(isScramjetPath && loadedGoodLion) retryScramjetTab(t,url);
+            const loadednyx=!!t.frame.contentDocument?.querySelector('#desktop,#welcomeScreen');
+            if(isScramjetPath && loadednyx) retryScramjetTab(t,url);
           }catch{}
         },1800);
       });
@@ -5699,7 +5699,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
         });
         return;
       }
-      const browserMode=store.text('goodlion.browserMode','auto');
+      const browserMode=store.text('nyx.browserMode','auto');
       setBrowserTransportOverride(browserMode==='auto' ? (preferredTransport(url) || (prefersEpoxyTransport(url) ? 'epoxy' : '')) : '');
       try{
         const parsed=new URL(url,location.href);
@@ -5722,7 +5722,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
           const proxied=ok ? proxyModeUrl(mode,url) : '';
           if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,true,'ultraviolet',url);
           else{
-            console.warn('GoodLion UV Engine requested but unavailable or produced a non-UV URL:', {ok, proxied, url});
+            console.warn('nyx UV Engine requested but unavailable or produced a non-UV URL:', {ok, proxied, url});
             loadTab(t,url,true,'direct-fallback');
           }
         });
@@ -5794,19 +5794,19 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
       const q=e.target.closest('[data-url]'); if(q){e.preventDefault(); navigate(q.dataset.url)}
     });
     const messageHandler=e=>{
-      if(!['goodlion:navigate','goodlion:popup','goodlion:popup-protection','goodlion:fullscreen','goodlion:about','goodlion:about-tab','goodlion:internal','goodlion:preset','goodlion:tab-cloak','goodlion:browser-shell-toggle','goodlion:browser-settings','goodlion:settings-window','goodlion:lion-ai-window','goodlion:effect','goodlion:effect-settings','goodlion:watchparty'].includes(e.data?.type)) return;
-      if(e.data.type==='goodlion:preset'){
-        applyPreset(e.data.preset || 'goodlion');
+      if(!['nyx:navigate','nyx:popup','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:lion-ai-window','nyx:effect','nyx:effect-settings','nyx:watchparty'].includes(e.data?.type)) return;
+      if(e.data.type==='nyx:preset'){
+        applyPreset(e.data.preset || 'nyx');
         return;
       }
-      if(e.data.type==='goodlion:tab-cloak'){
-        applyCustomTabCloak(e.data.title || 'GoodLion', e.data.favicon || favicons.goodlion);
+      if(e.data.type==='nyx:tab-cloak'){
+        applyCustomTabCloak(e.data.title || 'nyx', e.data.favicon || favicons.nyx);
         return;
       }
-      if(e.data.type==='goodlion:browser-shell-toggle'){
+      if(e.data.type==='nyx:browser-shell-toggle'){
         const sourceTab=state.tabs.find(t=>t.frame.contentWindow===e.source);
         const sourceShellTab=browserShellTabs.find(tab=>tab.browserTabId===sourceTab?.id);
-        if(sourceShellTab && (!sourceShellTab.url || sourceShellTab.url.startsWith('goodlion://'))){
+        if(sourceShellTab && (!sourceShellTab.url || sourceShellTab.url.startsWith('nyx://'))){
           browserShellTabs.splice(0,browserShellTabs.length,...browserShellTabs.filter(tab=>tab.id!==sourceShellTab.id));
           if(browserShellActiveTab===sourceShellTab.id) browserShellActiveTab=browserShellTabs[0]?.id || null;
           if(sourceTab?.id && activeBrowser?.closeTab) activeBrowser.closeTab(sourceTab.id);
@@ -5816,62 +5816,62 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
             browserShellActiveTab=freshId;
           }
         }
-        store.set('goodlion.browserShellMode',!!e.data.enabled);
+        store.set('nyx.browserShellMode',!!e.data.enabled);
         if(!e.data.enabled){
-          store.setText('goodlion.theme','default');
-          store.setText('goodlion.visualEffect','none');
+          store.setText('nyx.theme','default');
+          store.setText('nyx.visualEffect','none');
         }
         applyUserSettings();
         return;
       }
-      if(e.data.type==='goodlion:browser-settings'){
-        store.setText('goodlion.engine',e.data.engine || 'duckduckgo');
-        store.setText('goodlion.browserMode',e.data.browserMode || 'auto');
+      if(e.data.type==='nyx:browser-settings'){
+        store.setText('nyx.engine',e.data.engine || 'duckduckgo');
+        store.setText('nyx.browserMode',e.data.browserMode || 'auto');
         const nextTransport=e.data.transport || 'epoxy';
-        if(store.text('goodlion.transport','epoxy')!==nextTransport){
+        if(store.text('nyx.transport','epoxy')!==nextTransport){
           scramjetInstallPromise=null;
           scramjetController=null;
           scramjetTransport=null;
           scramjetTransportKey='';
           uvInstallPromise=null;
         }
-        store.setText('goodlion.transport',nextTransport);
-        store.setText('goodlion.rammerheadBase',String(e.data.rhBase || '').trim() || rammerheadBase);
-        store.setText('goodlion.rammerheadSession',String(e.data.rhSession || '').trim());
+        store.setText('nyx.transport',nextTransport);
+        store.setText('nyx.rammerheadBase',String(e.data.rhBase || '').trim() || rammerheadBase);
+        store.setText('nyx.rammerheadSession',String(e.data.rhSession || '').trim());
         toast('Browser settings saved');
         return;
       }
-      if(e.data.type==='goodlion:popup-protection'){
+      if(e.data.type==='nyx:popup-protection'){
         const enabled=!!e.data.enabled;
-        store.set('goodlion.popupProtection',enabled);
-        qsa('[data-switch="goodlion.popupProtection"]').forEach(el=>el.classList.toggle('on',enabled));
+        store.set('nyx.popupProtection',enabled);
+        qsa('[data-switch="nyx.popupProtection"]').forEach(el=>el.classList.toggle('on',enabled));
         activeBrowser?.refreshSandbox?.();
         toast('Popup Protection '+(enabled?'on':'off'));
         return;
       }
-      if(e.data.type==='goodlion:effect-settings'){
-        store.setText('goodlion.visualEffect',e.data.effect || 'none');
-        store.setText('goodlion.visualEffectSpeed',e.data.speed || '1.1');
-        store.setText('goodlion.visualEffectAmount',String(Math.max(1,Math.min(64,Number(e.data.amount || 16)))));
-        store.setText('goodlion.theme',e.data.theme || store.text('goodlion.theme','default'));
+      if(e.data.type==='nyx:effect-settings'){
+        store.setText('nyx.visualEffect',e.data.effect || 'none');
+        store.setText('nyx.visualEffectSpeed',e.data.speed || '1.1');
+        store.setText('nyx.visualEffectAmount',String(Math.max(1,Math.min(64,Number(e.data.amount || 16)))));
+        store.setText('nyx.theme',e.data.theme || store.text('nyx.theme','default'));
         applyThemeSetting();
         applyVisualEffectSetting();
         return;
       }
-      if(e.data.type==='goodlion:watchparty'){
+      if(e.data.type==='nyx:watchparty'){
         startWatchParty();
         return;
       }
-      if(e.data.type==='goodlion:navigate'){
+      if(e.data.type==='nyx:navigate'){
         openBrowserShellAppTab(e.data.url || '');
         return;
       }
-      if(e.data.type==='goodlion:internal'){
+      if(e.data.type==='nyx:internal'){
         openBrowserShellInternalTab(e.data.page || 'apps');
         return;
       }
       const sourceTab=state.tabs.find(t=>t.frame.contentWindow===e.source);
-      if(e.data.type==='goodlion:popup'){
+      if(e.data.type==='nyx:popup'){
         const previousActive=state.active;
         if(sourceTab) state.active=sourceTab.id;
         openPopupTab(e.data.url);
@@ -5879,30 +5879,30 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
         return;
       }
       if(!sourceTab) return;
-      if(e.data.type==='goodlion:fullscreen'){
+      if(e.data.type==='nyx:fullscreen'){
         if(!document.fullscreenElement) document.documentElement.requestFullscreen?.();
         else document.exitFullscreen?.();
         return;
       }
-      if(e.data.type==='goodlion:about'){
+      if(e.data.type==='nyx:about'){
         launchDirectAboutBlankCloak();
         return;
       }
-      if(e.data.type==='goodlion:about-tab'){
+      if(e.data.type==='nyx:about-tab'){
         launchHostedCloak('ac');
         return;
       }
-      if(e.data.type==='goodlion:effect'){
-        store.setText('goodlion.visualEffect',e.data.effect || 'none');
+      if(e.data.type==='nyx:effect'){
+        store.setText('nyx.visualEffect',e.data.effect || 'none');
         applyVisualEffectSetting();
         toast('Browser Mode effect updated');
         return;
       }
-      if(e.data.type==='goodlion:settings-window'){
+      if(e.data.type==='nyx:settings-window'){
         openSettings();
         return;
       }
-      if(e.data.type==='goodlion:lion-ai-window'){
+      if(e.data.type==='nyx:lion-ai-window'){
         openLionAI();
         return;
       }
@@ -5912,7 +5912,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     addTab(url,options.forceMode || ''); return win;
   }
   function openUpdates(){
-    makeWindow({title:'GoodLion Fixes',left:'24px',top:'60px',width:'520px',height:'620px',autoMaximize:true,body:`<div class="panel"><h1>GoodLion Fixes</h1><p class="home-sub">Click GoodLion in the top-left anytime to see this.</p><div class="glass-grid" style="grid-template-columns:1fr"><div class="glass-card"><h2>Latest fixes</h2><p>- Added animated windows that eject from the bottom dock and fade when closed.</p><p>- Made the Updates window open fullscreen every time.</p><p>- Added one-time Updates popup on startup.</p><p>- Added multiple weather location choices for ambiguous searches.</p><p>- Added hot and freezing weather themes.</p><p>- Updated glassmorphism so 100%+ lowers blur instead of over-brightening.</p><p>- Replaced the Discord logo with the new attached icon.</p><p>- Removed the left desktop Browser and Updates buttons.</p><p>- Changed Weather from an app into a right-side liquid glass panel.</p><p>- Added visible background previews and background upload.</p><p>- Rebuilt the loading screen so it types the welcome text.</p><p>- Added local app icons to avoid blocked favicon requests.</p></div><div class="glass-card"><h2>Browser fixes</h2><p>- Added a Node server for Ultraviolet.</p><p>- Fixed UV static routes for /uv, /baremux, /epoxy, and /wisp.</p><p>- Replaced the old Wisp server package.</p><p>- Pinned the compatible Epoxy transport.</p><p>- Removed hard UV script loading from Live Server mode.</p></div></div></div>`});
+    makeWindow({title:'nyx Fixes',left:'24px',top:'60px',width:'520px',height:'620px',autoMaximize:true,body:`<div class="panel"><h1>nyx Fixes</h1><p class="home-sub">Click nyx in the top-left anytime to see this.</p><div class="glass-grid" style="grid-template-columns:1fr"><div class="glass-card"><h2>Latest fixes</h2><p>- Added animated windows that eject from the bottom dock and fade when closed.</p><p>- Made the Updates window open fullscreen every time.</p><p>- Added one-time Updates popup on startup.</p><p>- Added multiple weather location choices for ambiguous searches.</p><p>- Added hot and freezing weather themes.</p><p>- Updated glassmorphism so 100%+ lowers blur instead of over-brightening.</p><p>- Replaced the Discord logo with the new attached icon.</p><p>- Removed the left desktop Browser and Updates buttons.</p><p>- Changed Weather from an app into a right-side liquid glass panel.</p><p>- Added visible background previews and background upload.</p><p>- Rebuilt the loading screen so it types the welcome text.</p><p>- Added local app icons to avoid blocked favicon requests.</p></div><div class="glass-card"><h2>Browser fixes</h2><p>- Added a Node server for Ultraviolet.</p><p>- Fixed UV static routes for /uv, /baremux, /epoxy, and /wisp.</p><p>- Replaced the old Wisp server package.</p><p>- Pinned the compatible Epoxy transport.</p><p>- Removed hard UV script loading from Live Server mode.</p></div></div></div>`});
   }
   function weatherDescription(code){
     const map={0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Cloudy',45:'Fog',48:'Freezing fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',80:'Rain showers',81:'Rain showers',82:'Heavy showers',95:'Thunderstorm'};
@@ -5927,10 +5927,10 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
   }
   function savedWeatherLocation(){
     return {
-      latitude:Number(store.text('goodlion.weatherLat','34.0522')),
-      longitude:Number(store.text('goodlion.weatherLon','-118.2437')),
-      place:store.text('goodlion.weatherPlace','Los Angeles'),
-      timezone:store.text('goodlion.weatherTimezone','America/Los_Angeles')
+      latitude:Number(store.text('nyx.weatherLat','34.0522')),
+      longitude:Number(store.text('nyx.weatherLon','-118.2437')),
+      place:store.text('nyx.weatherPlace','Los Angeles'),
+      timezone:store.text('nyx.weatherTimezone','America/Los_Angeles')
     };
   }
   function weatherEffectClass(code, wind, temp){
@@ -5980,10 +5980,10 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
   }
   async function selectWeatherMatch(match){
     const place=weatherPlaceName(match);
-    store.setText('goodlion.weatherLat',match.latitude);
-    store.setText('goodlion.weatherLon',match.longitude);
-    store.setText('goodlion.weatherPlace',place);
-    if(match.timezone) store.setText('goodlion.weatherTimezone',match.timezone);
+    store.setText('nyx.weatherLat',match.latitude);
+    store.setText('nyx.weatherLon',match.longitude);
+    store.setText('nyx.weatherPlace',place);
+    if(match.timezone) store.setText('nyx.weatherTimezone',match.timezone);
     const input=weatherPanel()?.querySelector('[data-weather-query]');
     if(input) input.value=place;
     clearWeatherOptions();
@@ -6004,7 +6004,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
       if(!res.ok) throw new Error('weather failed');
       const json=await res.json();
       const tz=json.timezone || timezone;
-      store.setText('goodlion.weatherTimezone',tz);
+      store.setText('nyx.weatherTimezone',tz);
       renderWeather(json.current,place,tz);
     }catch{
       setWeatherStatus('Weather unavailable right now');
@@ -6027,7 +6027,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
       box.hidden=false;
       box.innerHTML='<option value="">Select a location...</option>'+matches.map((match,i)=>{
         const name=weatherPlaceName(match);
-        const detail=[match.timezone,match.population ? `${Number(match.population).toLocaleString()} people` : ''].filter(Boolean).join(' · ');
+        const detail=[match.timezone,match.population ? `${Number(match.population).toLocaleString()} people` : ''].filter(Boolean).join(' Â· ');
         return `<option value="${i}">${esc(name)}${detail ? ` - ${esc(detail)}` : ''}</option>`;
       }).join('');
       box.onchange=()=>{if(box.value!=='') selectWeatherMatch(matches[Number(box.value)])};
@@ -6101,7 +6101,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
         <form class="lion-ai-form" data-lion-ai-form>
           <label class="lion-ai-plus" title="Add image">+<input type="file" accept="image/*" data-lion-ai-image></label>
           <textarea class="lion-ai-input" data-lion-ai-input placeholder="Ask Lion AI anything..." autocomplete="off" spellcheck="true"></textarea>
-          <button class="lion-ai-send" type="submit" title="Send">↑</button>
+          <button class="lion-ai-send" type="submit" title="Send">â†‘</button>
         </form>
       </div>
     </div>`;
@@ -6178,7 +6178,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     return stems.slice(0,count).map(s=>s+'.').join(' ');
   }
   function lionAiNormalizeMath(expr){
-    return expr.replace(/π/gi,'pi').replace(/\s+/g,'').replace(/(\d)([a-zA-Z(])/g,'$1*$2').replace(/([a-zA-Z)])(\d)/g,'$1*$2').replace(/\)\(/g,')*(').replace(/\^/g,'**');
+    return expr.replace(/Ï€/gi,'pi').replace(/\s+/g,'').replace(/(\d)([a-zA-Z(])/g,'$1*$2').replace(/([a-zA-Z)])(\d)/g,'$1*$2').replace(/\)\(/g,')*(').replace(/\^/g,'**');
   }
   function lionAiEvalExpression(expr, xValue=0){
     const normalized=lionAiNormalizeMath(expr)
@@ -6225,7 +6225,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g,',');
   }
   function lionAiExactIntegerPower(expr){
-    const match=String(expr || '').replace(/\s+/g,'').replace(/[−–—]/g,'-').match(/^(-?\d+)\^(\d+)$/);
+    const match=String(expr || '').replace(/\s+/g,'').replace(/[âˆ’â€“â€”]/g,'-').match(/^(-?\d+)\^(\d+)$/);
     if(!match) return null;
     const base=BigInt(match[1]);
     const exp=BigInt(match[2]);
@@ -6479,7 +6479,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
     chat.scrollTop=chat.scrollHeight;
   }
   function openApps(){
-    makeWindow({title:'Apps',left:'12vw',top:'90px',width:'600px',height:'430px',body:`<div class="panel"><h1>Apps</h1><div class="quick-grid">${quickTiles()}<button class="quick-tile" data-open="settings"><b>⚙</b><span>Settings</span></button></div></div>`});
+    makeWindow({title:'Apps',left:'12vw',top:'90px',width:'600px',height:'430px',body:`<div class="panel"><h1>Apps</h1><div class="quick-grid">${quickTiles()}<button class="quick-tile" data-open="settings"><b>âš™</b><span>Settings</span></button></div></div>`});
   }
   function openLinks(){
     makeWindow({title:'Links',left:'18vw',top:'100px',width:'520px',height:'380px',body:`<div class="panel"><h1>Links</h1><div class="glass-grid"><div class="glass-card"><h2>Search Engines</h2><button data-url="https://www.google.com/">Google</button><button data-url="https://duckduckgo.com/">DuckDuckGo</button></div><div class="glass-card"><h2>School</h2><button data-url="https://docs.google.com/">Docs</button><button data-url="https://classroom.google.com/">Classroom</button></div></div></div>`});
@@ -6498,19 +6498,19 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
         </section>
         <section class="settings-card">
           <h2>Auto Cloak</h2>
-          <p class="hint">Automatically launches GoodLion in a cloaked tab, must retoggle after each opening</p>
-          <div class="settings-row"><span>Auto Cloak</span><button class="switch" data-switch="goodlion.autoCloak" aria-label="Auto cloak"></button></div>
+          <p class="hint">Automatically launches nyx in a cloaked tab, must retoggle after each opening</p>
+          <div class="settings-row"><span>Auto Cloak</span><button class="switch" data-switch="nyx.autoCloak" aria-label="Auto cloak"></button></div>
         </section>
         <section class="settings-card">
           <h2>Tab Presets</h2>
           <p>Changes the browser tab title and icon.</p>
-          <div class="seg"><button data-preset="classroom">Google Classroom</button><button data-preset="drive">Google Drive</button><button data-preset="classlink">Classlink</button><button data-preset="google">Google</button><button data-preset="goodlion">Reset</button></div>
+          <div class="seg"><button data-preset="classroom">Google Classroom</button><button data-preset="drive">Google Drive</button><button data-preset="classlink">Classlink</button><button data-preset="google">Google</button><button data-preset="nyx">Reset</button></div>
         </section>
         <section class="settings-card">
           <h2>Custom Tab Cloak</h2>
           <p>Choose a title and local image file for the real browser tab.</p>
-          <div class="settings-row"><input data-tab-title value="${esc(store.text('goodlion.tabTitle',document.title || 'GoodLion'))}" placeholder="Tab title"><input class="file-input" data-tab-favicon-file type="file" accept="image/*,.ico"></div>
-          <input type="hidden" data-tab-favicon value="${esc(store.text('goodlion.tabFavicon',goodlionFaviconHref()))}">
+          <div class="settings-row"><input data-tab-title value="${esc(store.text('nyx.tabTitle',document.title || 'nyx'))}" placeholder="Tab title"><input class="file-input" data-tab-favicon-file type="file" accept="image/*,.ico"></div>
+          <input type="hidden" data-tab-favicon value="${esc(store.text('nyx.tabFavicon',nyxFaviconHref()))}">
           <button data-tab-cloak-apply>Apply Tab Cloak</button>
         </section>
         <section class="settings-card">
@@ -6525,32 +6525,32 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
         <section class="settings-card">
           <h2>Change Your Name</h2>
           <p>Your greeting and profile name.</p>
-          <div class="settings-row"><input id="settingName" value="${esc(store.text('goodlion.userName',''))}" placeholder="Enter your name" autocomplete="nickname"><button data-save-profile>Save</button></div>
+          <div class="settings-row"><input id="settingName" value="${esc(store.text('nyx.userName',''))}" placeholder="Enter your name" autocomplete="nickname"><button data-save-profile>Save</button></div>
         </section>
         <section class="settings-card">
           <h2>Glassmorphism</h2>
-          <p>Changes transparency and blur. <span data-glass-output>${esc(store.text('goodlion.glassLevel','80'))}%</span></p>
-          <input type="range" min="-200" max="200" value="${esc(store.text('goodlion.glassLevel','80'))}" data-glass-value>
+          <p>Changes transparency and blur. <span data-glass-output>${esc(store.text('nyx.glassLevel','80'))}%</span></p>
+          <input type="range" min="-200" max="200" value="${esc(store.text('nyx.glassLevel','80'))}" data-glass-value>
         </section>
         <section class="settings-card">
           <h2>Lag Reducer</h2>
           <p>Stops animations, removes blur, sets Glassmorphism to 0, and turns Background Enhancer off.</p>
-          <div class="settings-row"><span>Lag Reducer</span><button class="switch ${store.get('goodlion.lagReducer',false)?'on':''}" data-switch="goodlion.lagReducer" data-lag-reducer aria-label="Lag reducer"></button></div>
+          <div class="settings-row"><span>Lag Reducer</span><button class="switch ${store.get('nyx.lagReducer',false)?'on':''}" data-switch="nyx.lagReducer" data-lag-reducer aria-label="Lag reducer"></button></div>
         </section>
         <section class="settings-card">
           <h2>Browser Mode</h2>
-          <p>Makes GoodLion look like a Chrome page with tabs on top, an address bar, and an Apps button instead of the bottom app bar.</p>
-          <div class="settings-row"><span>Browser Mode</span><button class="switch ${store.get('goodlion.browserShellMode',false)?'on':''}" data-switch="goodlion.browserShellMode" aria-label="Browser mode"></button></div>
+          <p>Makes nyx look like a Chrome page with tabs on top, an address bar, and an Apps button instead of the bottom app bar.</p>
+          <div class="settings-row"><span>Browser Mode</span><button class="switch ${store.get('nyx.browserShellMode',false)?'on':''}" data-switch="nyx.browserShellMode" aria-label="Browser mode"></button></div>
         </section>
         <section class="settings-card">
           <h2>Popup Protection</h2>
-          <p>Controls whether site popups are replaced with GoodLion's blocked popup screen.</p>
-          <div class="settings-row"><span>Popup Protection</span><button class="switch ${popupProtectionEnabled()?'on':''}" data-switch="goodlion.popupProtection" aria-label="Popup protection"></button></div>
+          <p>Controls whether site popups are replaced with nyx's blocked popup screen.</p>
+          <div class="settings-row"><span>Popup Protection</span><button class="switch ${popupProtectionEnabled()?'on':''}" data-switch="nyx.popupProtection" aria-label="Popup protection"></button></div>
           <p class="security-warning">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as trojans disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span class="security-warning-strong">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p>
         </section>
         <section class="settings-card">
           <h2>Startup PDF</h2>
-          <p>Choose which PDF appears before GoodLion opens.</p>
+          <p>Choose which PDF appears before nyx opens.</p>
           <select id="settingLaunchPdf">
             <option value="math">1300 Maths Formula</option>
             <option value="custom">Custom local PDF</option>
@@ -6561,19 +6561,19 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
         <section class="settings-card hieroglyph-scroll">
           <h2>${esc(toHieroglyphText('Egyptian hieroglyph Text'))}</h2>
           <p>${esc(toHieroglyphText('Changes visible letters and numbers into hieroglyph-style symbols.'))}</p>
-          <div class="settings-row"><span>${esc(toHieroglyphText('Hieroglyph Text'))}</span><button class="switch ${hieroglyphTextEnabled()?'on':''}" data-switch="goodlion.hieroglyphText" data-hieroglyph-text aria-label="Egyptian hieroglyph text"></button></div>
-          <div class="settings-row"><span>${esc(toHieroglyphText('Auto Hieroglyph'))}</span><button class="switch ${store.get('goodlion.autoHieroglyphText',false)?'on':''}" data-switch="goodlion.autoHieroglyphText" aria-label="Auto hieroglyph on open"></button></div>
+          <div class="settings-row"><span>${esc(toHieroglyphText('Hieroglyph Text'))}</span><button class="switch ${hieroglyphTextEnabled()?'on':''}" data-switch="nyx.hieroglyphText" data-hieroglyph-text aria-label="Egyptian hieroglyph text"></button></div>
+          <div class="settings-row"><span>${esc(toHieroglyphText('Auto Hieroglyph'))}</span><button class="switch ${store.get('nyx.autoHieroglyphText',false)?'on':''}" data-switch="nyx.autoHieroglyphText" aria-label="Auto hieroglyph on open"></button></div>
         </section>
         <section class="settings-card wide settings-backgrounds">
           <h2>Change Background</h2>
-          <p>Pick one of your current GoodLion backgrounds.</p>
+          <p>Pick one of your current nyx backgrounds.</p>
           <div class="background-picker" data-bg-picker></div>
-          <div class="settings-row"><span>Background Enhancer</span><button class="switch ${store.get('goodlion.backgroundEnhancer',false)?'on':''}" data-bg-enhancer aria-label="Background enhancer"></button></div>
+          <div class="settings-row"><span>Background Enhancer</span><button class="switch ${store.get('nyx.backgroundEnhancer',false)?'on':''}" data-bg-enhancer aria-label="Background enhancer"></button></div>
           <p class="bg-quality-status" data-bg-quality-status></p>
           <div class="settings-upload">
             <h2>Upload</h2>
             <input class="file-input" id="settingBgFile" type="file" accept="image/*">
-            <div class="settings-row"><input id="settingBgUrl" value="${esc(store.text('goodlion.customBgUrl',''))}" placeholder="https://example.com/background.jpg"><button data-save-bg>Apply Background</button></div>
+            <div class="settings-row"><input id="settingBgUrl" value="${esc(store.text('nyx.customBgUrl',''))}" placeholder="https://example.com/background.jpg"><button data-save-bg>Apply Background</button></div>
           </div>
         </section>
       </div>
@@ -6606,7 +6606,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
         <section class="settings-card">
           <h2>Rammerhead</h2>
           <p>Rammerhead fallback connection details</p>
-          <div class="settings-row"><input id="settingRammerhead" value="${esc(store.text('goodlion.rammerheadBase',rammerheadBase))}" placeholder="https://browser.rammerhead.org/"><input id="settingRammerheadSession" value="${esc(store.text('goodlion.rammerheadSession',''))}" placeholder="session id"></div>
+          <div class="settings-row"><input id="settingRammerhead" value="${esc(store.text('nyx.rammerheadBase',rammerheadBase))}" placeholder="https://browser.rammerhead.org/"><input id="settingRammerheadSession" value="${esc(store.text('nyx.rammerheadSession',''))}" placeholder="session id"></div>
         </section>
         <section class="settings-card">
           <h2>Change Search Engine</h2>
@@ -6621,13 +6621,13 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     const picker=win.querySelector('[data-bg-picker]');
     if(picker) renderBackgroundChoices(picker);
     const engineSel=win.querySelector('#settingEngine');
-    if(engineSel) engineSel.value=store.text('goodlion.engine','duckduckgo');
+    if(engineSel) engineSel.value=store.text('nyx.engine','duckduckgo');
     const modeSel=win.querySelector('#settingBrowserMode');
-    if(modeSel) modeSel.value=store.text('goodlion.browserMode','auto');
+    if(modeSel) modeSel.value=store.text('nyx.browserMode','auto');
     const transportSel=win.querySelector('#settingTransport');
-    if(transportSel) transportSel.value=store.text('goodlion.transport','epoxy');
+    if(transportSel) transportSel.value=store.text('nyx.transport','epoxy');
     const launchPdfSel=win.querySelector('#settingLaunchPdf');
-    if(launchPdfSel) launchPdfSel.value=store.text('goodlion.launchPdf','math');
+    if(launchPdfSel) launchPdfSel.value=store.text('nyx.launchPdf','math');
     syncSwitches(win);
     setTimeout(()=>win.querySelector('#settingName')?.focus(),60);
   }
@@ -6636,7 +6636,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     const list=$('setupBackgrounds');
     const name=$('setupName');
     if(!setup || !list) return;
-    if(name) name.value=store.text('goodlion.userName','');
+    if(name) name.value=store.text('nyx.userName','');
     renderBackgroundChoices(list);
     setup.classList.add('show');
     setup.setAttribute('aria-hidden','false');
@@ -6650,45 +6650,45 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
   }
   function syncSwitches(root=document){
     root.querySelectorAll('[data-switch]').forEach(btn=>{
-      const initial=btn.dataset.switch==='goodlion.autoCloak'
-        ? (store.get('goodlion.autoCloak',false) || store.get('autoAbout',false) || store.get('autoBlob',false))
-        : btn.dataset.switch==='goodlion.popupProtection'
+      const initial=btn.dataset.switch==='nyx.autoCloak'
+        ? (store.get('nyx.autoCloak',false) || store.get('autoAbout',false) || store.get('autoBlob',false))
+        : btn.dataset.switch==='nyx.popupProtection'
           ? popupProtectionEnabled()
-        : btn.dataset.switch==='goodlion.hieroglyphText'
+        : btn.dataset.switch==='nyx.hieroglyphText'
           ? hieroglyphTextEnabled()
         : store.get(btn.dataset.switch,false);
       btn.classList.toggle('on',initial);
       btn.onclick=()=>{
         const key=btn.dataset.switch;
-        const v=key==='goodlion.popupProtection' ? !popupProtectionEnabled() : !store.get(key,false);
+        const v=key==='nyx.popupProtection' ? !popupProtectionEnabled() : !store.get(key,false);
         store.set(key,v);
         qsa(`[data-switch="${key}"]`).forEach(el=>el.classList.toggle('on',v));
-        if(key==='goodlion.autoCloak'){
+        if(key==='nyx.autoCloak'){
           store.set('autoAbout',false);
           store.set('autoBlob',false);
           if(v) launchAutoCloak();
           toast('Auto Cloak '+(v?'on':'off'));
-        }else if(key==='goodlion.hieroglyphText'){
+        }else if(key==='nyx.hieroglyphText'){
           applyHieroglyphText();
           toast('Hieroglyph text '+(v?'on':'off'));
-        }else if(key==='goodlion.autoHieroglyphText'){
-          if(v) store.set('goodlion.hieroglyphText',true);
-          qsa('[data-switch="goodlion.hieroglyphText"]').forEach(el=>el.classList.toggle('on',hieroglyphTextEnabled()));
+        }else if(key==='nyx.autoHieroglyphText'){
+          if(v) store.set('nyx.hieroglyphText',true);
+          qsa('[data-switch="nyx.hieroglyphText"]').forEach(el=>el.classList.toggle('on',hieroglyphTextEnabled()));
           applyHieroglyphText();
           toast('Auto Hieroglyph '+(v?'on':'off'));
-        }else if(key==='goodlion.lagReducer'){
+        }else if(key==='nyx.lagReducer'){
           if(v){
-            store.set('goodlion.backgroundEnhancer',false);
-            store.setText('goodlion.glassLevel','0');
+            store.set('nyx.backgroundEnhancer',false);
+            store.setText('nyx.glassLevel','0');
           }
           applyUserSettings();
           toast('Lag Reducer '+(v?'on':'off'));
-        }else if(key==='goodlion.browserShellMode'){
+        }else if(key==='nyx.browserShellMode'){
           const hostWin=btn.closest('.window');
           applyUserSettings();
           if(hostWin) setTimeout(()=>closeWindowAnimated(hostWin),80);
           toast('Browser Mode '+(v?'on':'off'));
-        }else if(key==='goodlion.popupProtection'){
+        }else if(key==='nyx.popupProtection'){
           activeBrowser?.refreshSandbox?.();
           toast('Popup Protection '+(v?'on':'off'));
         }
@@ -6698,7 +6698,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
       ac.classList.toggle('on',antiCloseEnabled);
       ac.onclick=()=>{
         antiCloseEnabled=!antiCloseEnabled;
-        store.set('goodlion.antiClose',antiCloseEnabled);
+        store.set('nyx.antiClose',antiCloseEnabled);
         qsa('[data-anticlose]').forEach(btn=>btn.classList.toggle('on',antiCloseEnabled));
         toast('Anti-close '+(antiCloseEnabled?'on':'off'));
       };
@@ -6706,19 +6706,19 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
   }
   function applyPreset(name, silent=false){
     if(name==='custom'){
-      applyCustomTabCloak(store.text('goodlion.tabTitle','GoodLion'),store.text('goodlion.tabFavicon',goodlionFaviconHref()),silent);
+      applyCustomTabCloak(store.text('nyx.tabTitle','nyx'),store.text('nyx.tabFavicon',nyxFaviconHref()),silent);
       return;
     }
-    const labels={goodlion:'GoodLion',classroom:'Google Classroom',drive:'Google Drive',classlink:'ClassLink',google:'Google'};
-    const title=labels[name]||'GoodLion';
-    const favicon=favicons[name]||favicons.goodlion||favicons.google;
+    const labels={nyx:'nyx',classroom:'Google Classroom',drive:'Google Drive',classlink:'ClassLink',google:'Google'};
+    const title=labels[name]||'nyx';
+    const favicon=favicons[name]||favicons.nyx||favicons.google;
     setPageTitle(title);
     const brand=$('brandName');
-    if(brand) brand.textContent='GoodLion';
+    if(brand) brand.textContent='nyx';
     setPageFavicon(favicon,true);
-    store.setText('goodlion.logo',name);
-    store.setText('goodlion.tabTitle',title);
-    store.setText('goodlion.tabFavicon',favicon);
+    store.setText('nyx.logo',name);
+    store.setText('nyx.tabTitle',title);
+    store.setText('nyx.tabFavicon',favicon);
     if(!silent) toast('Tab preset applied');
   }
   function setPageTitle(title){
@@ -6731,7 +6731,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     }catch{}
   }
   function setPageFavicon(href, forceRefresh=false){
-    const clean=String(href || favicons.goodlion).trim() || favicons.goodlion;
+    const clean=String(href || favicons.nyx).trim() || favicons.nyx;
     let finalHref=clean;
     let lower=clean.toLowerCase();
     try{
@@ -6763,26 +6763,26 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     return finalHref;
   }
   function applyCustomTabCloak(title, favicon, silent=false){
-    const cleanTitle=String(title || '').trim() || 'GoodLion';
-    const cleanFavicon=String(favicon || '').trim() || favicons.goodlion;
+    const cleanTitle=String(title || '').trim() || 'nyx';
+    const cleanFavicon=String(favicon || '').trim() || favicons.nyx;
     setPageTitle(cleanTitle);
     setPageFavicon(cleanFavicon,/^(?:\.\/|\/|assets\/)/i.test(cleanFavicon));
-    store.setText('goodlion.tabTitle',cleanTitle);
-    store.setText('goodlion.tabFavicon',cleanFavicon);
-    store.setText('goodlion.logo','custom');
+    store.setText('nyx.tabTitle',cleanTitle);
+    store.setText('nyx.tabFavicon',cleanFavicon);
+    store.setText('nyx.logo','custom');
     if(!silent) toast('Tab cloak applied');
   }
   function currentCloakFrameUrl(){
     try{
       const url=new URL(location.href);
-      url.searchParams.set('goodlion_cloaked','1');
+      url.searchParams.set('nyx_cloaked','1');
       return url.href;
     }catch{
       return location.href;
     }
   }
   function cloakHtml(title=document.title){
-    return '<!doctype html><title>'+esc(title)+'</title><link rel="icon" href="'+esc(goodlionFaviconHref())+'"><iframe src="'+currentCloakFrameUrl()+'" style="position:fixed;inset:0;width:100%;height:100%;border:0"></iframe>';
+    return '<!doctype html><title>'+esc(title)+'</title><link rel="icon" href="'+esc(nyxFaviconHref())+'"><iframe src="'+currentCloakFrameUrl()+'" style="position:fixed;inset:0;width:100%;height:100%;border:0"></iframe>';
   }
   function cloakPromptText(){
     return "Please type one of the following:\n'a' = about:blank\n'b' = blob cloaking\n'm' = current tab iframe\n'ac' = same tab cloak\n'bc' = blob cloaking same tab\n'mc' = current tab iframe same tab";
@@ -6803,7 +6803,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     const iframe=document.createElement('iframe');
     iframe.src=currentCloakFrameUrl();
     iframe.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0;background:#020308;z-index:7000';
-    iframe.setAttribute('title','GoodLion');
+    iframe.setAttribute('title','nyx');
     document.body.classList.remove('hosted-cloak-entry');
     document.documentElement.classList.remove('hosted-cloak-entry');
     document.body.innerHTML='';
@@ -6844,9 +6844,9 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
   ];
   function nextCloakHop(forcedHop){
     if(forcedHop) return {name:forcedHop[0],url:forcedHop[1]};
-    const index=Number(store.text('goodlion.cloakHopIndex','0')) || 0;
+    const index=Number(store.text('nyx.cloakHopIndex','0')) || 0;
     const hop=cloakHopUrls[index % cloakHopUrls.length];
-    store.setText('goodlion.cloakHopIndex',String(index+1));
+    store.setText('nyx.cloakHopIndex',String(index+1));
     return {name:hop[0],url:hop[1]};
   }
   function writeAboutBlankCloak(w, html, started=Date.now()){
@@ -6859,7 +6859,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     if(Date.now()-started<2600) setTimeout(()=>writeAboutBlankCloak(w,html,started),140);
     return false;
   }
-  function openGoodLionInternalPopup(url='about:blank',options={}){
+  function opennyxInternalPopup(url='about:blank',options={}){
     const target=String(url || 'about:blank');
     if(activeBrowser?.openPopupTab){
       return activeBrowser.openPopupTab(target);
@@ -6889,14 +6889,14 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
       }
     };
   }
-  function openGoodLionBlobTab(html=cloakHtml()){
+  function opennyxBlobTab(html=cloakHtml()){
     const url=URL.createObjectURL(new Blob([html],{type:'text/html'}));
-    const popup=openGoodLionInternalPopup(url,{blob:true});
+    const popup=opennyxInternalPopup(url,{blob:true});
     if(!popup) URL.revokeObjectURL(url);
     return popup;
   }
   function openThroughDeltaMath(finalUrl=location.href, afterRedirect, forcedHop){
-    const w=openGoodLionInternalPopup(finalUrl);
+    const w=opennyxInternalPopup(finalUrl);
     if(!w) return null;
     setTimeout(()=>{
       if(typeof afterRedirect==='function') setTimeout(()=>afterRedirect(w),260);
@@ -6912,12 +6912,12 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
       },options.hop);
     }
     if(kind==='blob'){
-      return openGoodLionBlobTab(html);
+      return opennyxBlobTab(html);
     }
-    return openGoodLionBlobTab(html);
+    return opennyxBlobTab(html);
   }
   function launchDirectAboutBlankCloak(title='about:blank'){
-    const w=openGoodLionInternalPopup('about:blank');
+    const w=opennyxInternalPopup('about:blank');
     if(!w) return null;
     try{
       w.document.open();
@@ -6939,7 +6939,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
       const cloakHosts=['lionrunner.web.app','lionrunner.firebaseapp.com','localhost','127.0.0.1','0.0.0.0'];
       return cloakHosts.includes(location.hostname)
         && window.top===window.self
-        && !params.has('goodlion_cloaked');
+        && !params.has('nyx_cloaked');
     }catch{
       return false;
     }
@@ -7016,8 +7016,8 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     setCloakStatus('Choose a mode to change this blank page.');
   }
   function scheduleAutoCloak(){
-    if(!store.get('goodlion.autoCloak',false) && !store.get('autoAbout',false) && !store.get('autoBlob',false)) return;
-    store.set('goodlion.autoCloak',true);
+    if(!store.get('nyx.autoCloak',false) && !store.get('autoAbout',false) && !store.get('autoBlob',false)) return;
+    store.set('nyx.autoCloak',true);
     store.set('autoAbout',false);
     store.set('autoBlob',false);
     setTimeout(()=>{
@@ -7033,18 +7033,18 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     },700);
   }
   function installDeltaNewTabRedirect(){
-    if(window.__goodlionDeltaRedirectInstalled) return;
-    window.__goodlionDeltaRedirectInstalled=true;
+    if(window.__nyxDeltaRedirectInstalled) return;
+    window.__nyxDeltaRedirectInstalled=true;
     const nativeOpen=window.open?.bind(window);
-    window.__goodlionNativeOpen=nativeOpen;
+    window.__nyxNativeOpen=nativeOpen;
     window.open=(url,target,features)=>{
       if(activeBrowser?.openPopupTab) return activeBrowser.openPopupTab(url || 'about:blank');
       return nativeOpen ? nativeOpen(url,target,features) : null;
     };
   }
   function installBareMuxPortResponder(){
-    if(window.__goodlionBareMuxResponderInstalled) return;
-    window.__goodlionBareMuxResponderInstalled=true;
+    if(window.__nyxBareMuxResponderInstalled) return;
+    window.__nyxBareMuxResponderInstalled=true;
     window.addEventListener('message',event=>{
       if(event.data?.type!=='getPort' || !event.data.port) return;
       try{
@@ -7053,7 +7053,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
         event.data.port.start?.();
         event.data.port.postMessage(worker.port,[worker.port]);
       }catch(error){
-        console.warn('GoodLion BareMux port reply failed:',error);
+        console.warn('nyx BareMux port reply failed:',error);
       }
     });
   }
@@ -7125,18 +7125,18 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
       if(!app) return;
       const payload=readAppPayload(app);
       if(!payload.url) return;
-      e.dataTransfer?.setData('application/goodlion-app',JSON.stringify(payload));
+      e.dataTransfer?.setData('application/nyx-app',JSON.stringify(payload));
       e.dataTransfer?.setData('text/plain',payload.url);
       if(e.dataTransfer) e.dataTransfer.effectAllowed='copyMove';
     });
     $('desktop')?.addEventListener('dragover',e=>{
-      if(Array.from(e.dataTransfer?.types || []).includes('application/goodlion-app')){
+      if(Array.from(e.dataTransfer?.types || []).includes('application/nyx-app')){
         e.preventDefault();
         e.dataTransfer.dropEffect='copy';
       }
     });
     $('desktop')?.addEventListener('drop',e=>{
-      const raw=e.dataTransfer?.getData('application/goodlion-app');
+      const raw=e.dataTransfer?.getData('application/nyx-app');
       if(!raw) return;
       e.preventDefault();
       try{
@@ -7276,24 +7276,24 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
         const transport=win?.querySelector('#settingTransport');
         const rh=win?.querySelector('#settingRammerhead');
         const rhSession=win?.querySelector('#settingRammerheadSession');
-        store.setText('goodlion.engine', input?.value || 'duckduckgo');
-        store.setText('goodlion.browserMode', mode?.value || 'auto');
+        store.setText('nyx.engine', input?.value || 'duckduckgo');
+        store.setText('nyx.browserMode', mode?.value || 'auto');
         const nextTransport=transport?.value || 'epoxy';
-        if(store.text('goodlion.transport','epoxy')!==nextTransport){
+        if(store.text('nyx.transport','epoxy')!==nextTransport){
           scramjetInstallPromise=null;
           scramjetController=null;
           scramjetTransport=null;
           scramjetTransportKey='';
           uvInstallPromise=null;
         }
-        store.setText('goodlion.transport', nextTransport);
-        store.setText('goodlion.rammerheadBase', rh?.value.trim() || rammerheadBase);
-        store.setText('goodlion.rammerheadSession', rhSession?.value.trim() || '');
+        store.setText('nyx.transport', nextTransport);
+        store.setText('nyx.rammerheadBase', rh?.value.trim() || rammerheadBase);
+        store.setText('nyx.rammerheadSession', rhSession?.value.trim() || '');
         applyUserSettings(); toast('Browser settings saved'); return;
       }
       const bgChoice=e.target.closest('[data-bg-choice]');
       if(bgChoice){
-        if(store.get('goodlion.browserShellMode',false)){
+        if(store.get('nyx.browserShellMode',false)){
           toast('Browser Mode keeps Glacier Grey locked');
           return;
         }
@@ -7303,15 +7303,15 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
         toast('Background applied'); return;
       }
       if(e.target.closest('[data-save-bg]')){
-        if(store.get('goodlion.browserShellMode',false)){
+        if(store.get('nyx.browserShellMode',false)){
           toast('Browser Mode keeps Glacier Grey locked');
           return;
         }
         const win=e.target.closest('.window');
         const urlInput=win?.querySelector('#settingBgUrl')?.value.trim() || '';
-        store.setText('goodlion.customBgUrl', urlInput);
-        if(urlInput) store.setText('goodlion.customBgData','');
-        store.setText('goodlion.customBg','');
+        store.setText('nyx.customBgUrl', urlInput);
+        if(urlInput) store.setText('nyx.customBgData','');
+        store.setText('nyx.customBg','');
         applyUserSettings();
         const picker=win?.querySelector('[data-bg-picker]');
         if(picker) renderBackgroundChoices(picker);
@@ -7324,22 +7324,22 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
       }
       const enhancer=e.target.closest('[data-bg-enhancer]');
       if(enhancer){
-        if(store.get('goodlion.browserShellMode',false)){
-          store.set('goodlion.backgroundEnhancer',false);
+        if(store.get('nyx.browserShellMode',false)){
+          store.set('nyx.backgroundEnhancer',false);
           enhancer.classList.remove('on');
           applyUserSettings();
           toast('Browser Mode keeps Glacier Grey locked');
           return;
         }
-        if(store.get('goodlion.lagReducer',false)){
-          store.set('goodlion.backgroundEnhancer',false);
+        if(store.get('nyx.lagReducer',false)){
+          store.set('nyx.backgroundEnhancer',false);
           enhancer.classList.remove('on');
           applyUserSettings();
           toast('Lag Reducer keeps Background Enhancer off');
           return;
         }
-        const next=!store.get('goodlion.backgroundEnhancer',false);
-        store.set('goodlion.backgroundEnhancer',next);
+        const next=!store.get('nyx.backgroundEnhancer',false);
+        store.set('nyx.backgroundEnhancer',next);
         enhancer.classList.toggle('on',next);
         applyUserSettings();
         toast(next?'Background enhancer on':'Background enhancer off');
@@ -7350,7 +7350,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
         const root=e.target.closest('.window,.settings-app,body') || document;
         const fileInput=root.querySelector('[data-tab-favicon-file]');
         const file=fileInput?.files?.[0];
-        const apply=favicon=>applyCustomTabCloak(root.querySelector('[data-tab-title]')?.value || 'GoodLion', favicon || root.querySelector('[data-tab-favicon]')?.value || favicons.goodlion);
+        const apply=favicon=>applyCustomTabCloak(root.querySelector('[data-tab-title]')?.value || 'nyx', favicon || root.querySelector('[data-tab-favicon]')?.value || favicons.nyx);
         if(file){
           if(!file.type.startsWith('image/') && !/\.ico$/i.test(file.name || '')){
             toast('Choose an image file for the tab icon');
@@ -7372,17 +7372,17 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
       if(e.target.closest('[data-page-fullscreen]')){
         if(!document.fullscreenElement) document.documentElement.requestFullscreen?.();
         else document.exitFullscreen?.();
-        setTimeout(()=>{const btn=document.querySelector('[data-page-fullscreen]'); if(btn) btn.textContent=document.fullscreenElement?'❐':'□'},80);
+        setTimeout(()=>{const btn=document.querySelector('[data-page-fullscreen]'); if(btn) btn.textContent=document.fullscreenElement?'â':'â–¡'},80);
         return;
       }
       if(e.target.closest('[data-finish-setup]')){
         const name=$('setupName')?.value.trim();
-        if(name) store.setText('goodlion.userName',name);
-        store.set('goodlion.setupComplete',true);
+        if(name) store.setText('nyx.userName',name);
+        store.set('nyx.setupComplete',true);
         applyUserSettings(); hideSetup(); toast('Settings saved'); return;
       }
       if(e.target.closest('[data-skip-setup]')){
-        store.set('goodlion.setupComplete',true);
+        store.set('nyx.setupComplete',true);
         hideSetup(); return;
       }
       if(e.target.closest('[data-cloak-submit]')){
@@ -7418,13 +7418,13 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     document.addEventListener('input',e=>{
       if(e.target?.id==='settingName') saveProfile(e.target.closest('.window'),true);
       if(e.target?.matches?.('[data-glass-value]')){
-        if(store.get('goodlion.lagReducer',false)){
-          store.setText('goodlion.glassLevel','0');
+        if(store.get('nyx.lagReducer',false)){
+          store.setText('nyx.glassLevel','0');
           e.target.value='0';
           applyUserSettings();
           return;
         }
-        store.setText('goodlion.glassLevel',e.target.value);
+        store.setText('nyx.glassLevel',e.target.value);
         applyGlassSetting();
       }
     });
@@ -7447,7 +7447,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     document.addEventListener('change',e=>{
       const effect=e.target.closest('[data-effect-value]');
       if(effect){
-        store.setText('goodlion.visualEffect',effect.value || 'none');
+        store.setText('nyx.visualEffect',effect.value || 'none');
         applyVisualEffectSetting();
         toast('Effect set to '+effect.options[effect.selectedIndex].text);
         return;
@@ -7455,7 +7455,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
       const launchPdf=e.target.closest('#settingLaunchPdf');
       if(launchPdf){
         const win=launchPdf.closest('.window');
-        store.setText('goodlion.launchPdf',launchPdf.value || 'math');
+        store.setText('nyx.launchPdf',launchPdf.value || 'math');
         if(launchPdf.value==='custom'){
           win?.querySelector('#settingLaunchPdfFile')?.click();
           if(!launchPdfObjectUrl) applyLaunchPdfSetting();
@@ -7479,16 +7479,16 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
       }
       const file=e.target.closest('#settingBgFile');
       if(!file || !file.files?.[0]) return;
-      if(store.get('goodlion.browserShellMode',false)){
+      if(store.get('nyx.browserShellMode',false)){
         file.value='';
         toast('Browser Mode keeps Glacier Grey locked');
         return;
       }
       const reader=new FileReader();
       reader.onload=()=>{
-        store.setText('goodlion.customBgData',reader.result);
-        store.setText('goodlion.customBgUrl','');
-        store.setText('goodlion.customBg','');
+        store.setText('nyx.customBgData',reader.result);
+        store.setText('nyx.customBgUrl','');
+        store.setText('nyx.customBg','');
         applyUserSettings();
         qsa('[data-bg-picker]').forEach(picker=>renderBackgroundChoices(picker));
         toast('Uploaded background applied');
@@ -7627,7 +7627,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     frog:{title:'Frog',artist:'Joyful',src:'assets/music/frog.mp3'}
   };
   const ambientBaseTrackKeys = ['clair','testdrive','imposter','chess','givemore','frog'];
-  let ambientCurrentKey = store.text('goodlion.musicTrack','clair');
+  let ambientCurrentKey = store.text('nyx.musicTrack','clair');
   let ambientPlaying = false;
   let ambientCustomUrls = [];
   let ambientSeeking = false;
@@ -7669,10 +7669,10 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     if(title) title.textContent=`Now playing: ${ambientTrackLabel(track)}`;
   }
   function ambientBassEnabled(){
-    return store.get('goodlion.musicBassBoost',false);
+    return store.get('nyx.musicBassBoost',false);
   }
   function ambientBassAmount(){
-    return Math.max(0,Math.min(100,Number(store.text('goodlion.musicBassAmount','70')) || 0));
+    return Math.max(0,Math.min(100,Number(store.text('nyx.musicBassAmount','70')) || 0));
   }
   function ambientBassFilterGain(){
     if(!ambientBassEnabled()) return 0;
@@ -7728,14 +7728,14 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
   }
   function setAmbientBassAmount(value){
     const amount=Math.max(0,Math.min(100,Number(value) || 0));
-    store.setText('goodlion.musicBassAmount',amount);
-    if(amount>0 && !ambientBassEnabled()) store.set('goodlion.musicBassBoost',true);
+    store.setText('nyx.musicBassAmount',amount);
+    if(amount>0 && !ambientBassEnabled()) store.set('nyx.musicBassBoost',true);
     applyAmbientBassBoost();
     if(ambientBassEnabled()) ensureAmbientAudioGraph()?.resume?.().catch(()=>null);
   }
   function toggleAmbientBassBoost(){
     const next=!ambientBassEnabled();
-    store.set('goodlion.musicBassBoost',next);
+    store.set('nyx.musicBassBoost',next);
     applyAmbientBassBoost();
     if(next){
       const context=ensureAmbientAudioGraph();
@@ -7748,7 +7748,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     if(!audio) return;
     ambientPlaying=next;
     const btn=$('ambientToggle');
-    if(btn) btn.textContent=next ? 'II' : '▶';
+    if(btn) btn.textContent=next ? 'II' : 'â–¶';
     if(next){
       try{
         audio.volume=Math.max(0,Math.min(1,Number($('ambientVolume')?.value || 100) / 100));
@@ -7759,7 +7759,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
         await audio.play();
       }catch(err){
         ambientPlaying=false;
-        if(btn) btn.textContent='▶';
+        if(btn) btn.textContent='â–¶';
         setAmbientStatus('Click Play to start');
       }
     }else{
@@ -7770,7 +7770,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
   function setAmbientVolume(value){
     const audio=$('ambientAudio');
     const volume=Math.max(0,Math.min(100,Number(value) || 0));
-    store.setText('goodlion.musicVolume',volume);
+    store.setText('nyx.musicVolume',volume);
     if(audio){
       audio.volume=volume / 100;
       audio.muted=volume===0;
@@ -7811,7 +7811,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
   function setAmbientSpeed(value){
     const audio=$('ambientAudio');
     const speed=Math.max(.5,Math.min(8,Number(value) || 1));
-    store.setText('goodlion.musicSpeed',speed);
+    store.setText('nyx.musicSpeed',speed);
     if(audio) audio.playbackRate=speed;
   }
   function loadAmbientTrack(key=ambientCurrentKey, play=true){
@@ -7824,7 +7824,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
       return;
     }
     if(ambientTracks[key]) ambientCurrentKey=key;
-    store.setText('goodlion.musicTrack',ambientCurrentKey);
+    store.setText('nyx.musicTrack',ambientCurrentKey);
     setAmbientTitle();
     if(!audio) return;
     const track=ambientTrack();
@@ -7858,12 +7858,12 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     box.style.top=y+'px';
     box.style.right='auto';
     box.style.bottom='auto';
-    if(save) store.setText('goodlion.musicPlayerPos',JSON.stringify({left:x,top:y}));
+    if(save) store.setText('nyx.musicPlayerPos',JSON.stringify({left:x,top:y}));
   }
   function restoreAmbientPosition(){
     const box=$('ambientPlayer');
     if(!box) return;
-    const raw=store.text('goodlion.musicPlayerPos','');
+    const raw=store.text('nyx.musicPlayerPos','');
     if(raw){
       try{
         const pos=JSON.parse(raw);
@@ -7882,10 +7882,10 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     const box=$('ambientPlayer');
     if(!box) return;
     box.classList.toggle('tucked',tucked);
-    store.set('goodlion.musicPlayerTucked',tucked);
+    store.set('nyx.musicPlayerTucked',tucked);
     const hide=$('ambientHide');
     if(hide){
-      hide.textContent=tucked ? '›' : '‹';
+      hide.textContent=tucked ? 'â€º' : 'â€¹';
       hide.title=tucked ? 'Show music player' : 'Hide music player';
       hide.setAttribute('aria-label',hide.title);
     }
@@ -7904,7 +7904,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     if(!box || !handle || box.dataset.dragReady) return;
     box.dataset.dragReady='true';
     restoreAmbientPosition();
-    setAmbientTucked(store.get('goodlion.musicPlayerTucked',false));
+    setAmbientTucked(store.get('nyx.musicPlayerTucked',false));
     $('ambientHide')?.addEventListener('click',e=>{
       e.preventDefault();
       e.stopPropagation();
@@ -7956,8 +7956,8 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     const speed=$('ambientSpeed');
     const seek=$('ambientSeek');
     const bassAmount=$('ambientBassAmount');
-    const savedVolume=Math.max(85,Math.min(100,Number(store.text('goodlion.musicVolume','100')) || 100));
-    const savedSpeed=Math.max(.5,Math.min(8,Number(store.text('goodlion.musicSpeed','1')) || 1));
+    const savedVolume=Math.max(85,Math.min(100,Number(store.text('nyx.musicVolume','100')) || 100));
+    const savedSpeed=Math.max(.5,Math.min(8,Number(store.text('nyx.musicSpeed','1')) || 1));
     const savedBass=ambientBassAmount();
     if(song && !ambientTracks[ambientCurrentKey]) ambientCurrentKey='clair';
     refreshAmbientSongOptions(ambientCurrentKey);
@@ -7982,7 +7982,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
       if(!ambientPlaying) return;
       ambientPlaying=false;
       const btn=$('ambientToggle');
-      if(btn) btn.textContent='▶';
+      if(btn) btn.textContent='â–¶';
       setAmbientStatus('Paused');
     });
     audio.addEventListener('error',()=>setAmbientStatus('Could not load this audio file'));
@@ -8066,7 +8066,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     if(hostedCloakEntry) document.body.classList.add('hosted-cloak-entry');
     updateResponsiveFit();
     await loadStoredLaunchPdf();
-    applyLaunchPdfSetting(); bindFormulaGate(); startWelcomeTyping(); syncChromeMode(store.get('goodlion.browserShellMode',false)); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); startCenterClock();
+    applyLaunchPdfSetting(); bindFormulaGate(); startWelcomeTyping(); syncChromeMode(store.get('nyx.browserShellMode',false)); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); startCenterClock();
     if(hostedCloakEntry){
       closeWelcome();
       scheduleHostedCloakLaunch();
@@ -8074,21 +8074,21 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     }
     initWeatherPanel();
     initAmbientMusic();
-    if(!store.get('goodlion.searchDefaultedToDuck',false)){
-      store.set('goodlion.searchDefaultedToDuck',true);
-      if(['google','bing'].includes(store.text('goodlion.engine','duckduckgo'))) store.setText('goodlion.engine','duckduckgo');
+    if(!store.get('nyx.searchDefaultedToDuck',false)){
+      store.set('nyx.searchDefaultedToDuck',true);
+      if(['google','bing'].includes(store.text('nyx.engine','duckduckgo'))) store.setText('nyx.engine','duckduckgo');
     }
-    const bootMode=store.text('goodlion.browserMode','auto');
+    const bootMode=store.text('nyx.browserMode','auto');
     if(bootMode==='scramjet' || bootMode==='auto') installScramjet();
     if(bootMode==='ultraviolet' || bootMode==='auto') installUltraviolet();
-    if(!store.get('goodlion.identityReset',false)){store.set('goodlion.identityReset',true); applyPreset('goodlion',true);}
-    else applyPreset(store.text('goodlion.logo','goodlion'),true);
+    if(!store.get('nyx.identityReset',false)){store.set('nyx.identityReset',true); applyPreset('nyx',true);}
+    else applyPreset(store.text('nyx.logo','nyx'),true);
     migrateGlassDefault();
     applyAutoHieroglyphPreference();
     applyUserSettings(); tick(); setInterval(tick,1000); closeWelcome();
-    if(!store.get('goodlion.setupComplete',false) || !store.text('goodlion.userName','').trim()) setTimeout(showSetup,900);
-    if(!store.get('goodlion.updatesSeenOnce',false)){
-      store.set('goodlion.updatesSeenOnce',true);
+    if(!store.get('nyx.setupComplete',false) || !store.text('nyx.userName','').trim()) setTimeout(showSetup,900);
+    if(!store.get('nyx.updatesSeenOnce',false)){
+      store.set('nyx.updatesSeenOnce',true);
       setTimeout(openUpdates,1400);
     }
     scheduleHostedCloakLaunch();

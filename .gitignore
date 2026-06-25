@@ -69,6 +69,8 @@ node_modules/
 .dataconnect
 
 # GoodLion local/generated files
+.tmp-edge-proxy-matrix/
+nyx
 goodlion-backupfolder.html/
 video-frames/
 assets/ugs/

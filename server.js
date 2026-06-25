@@ -1,4 +1,4 @@
-import express from "express";
+﻿import express from "express";
 import { createServer } from "node:http";
 import { hostname } from "node:os";
 import { readFileSync } from "node:fs";
@@ -20,6 +20,28 @@ const uvHandlerPath = join(uvPath, "uv.handler.js");
 const baremuxIndexPath = join(baremuxPath, "index.mjs");
 const scramjetRuntimePath = join(scramjetPath, "scramjet.js");
 
+app.use((req, res, next) => {
+  const noStorePaths = new Set([
+    "/",
+    "/index.html",
+    "/uv.sw.js",
+    "/uv.config.js",
+    "/uv/uv.bundle.js",
+    "/uv/uv.client.js",
+    "/scramjet.sw.js",
+    "/uv/uv.handler.js",
+    "/baremux/index.mjs",
+    "/scramjet/scramjet.js",
+    "/nyx-scramjet-runtime-guard.js"
+  ]);
+  if (noStorePaths.has(req.path)) {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+  }
+  next();
+});
+
 function esc(value) {
   return String(value ?? "").replace(/[&<>"']/g, char => ({
     "&": "&amp;",
@@ -39,31 +61,65 @@ function patchedUvHandler() {
 
 function patchedBareMuxIndex() {
   return readFileSync(baremuxIndexPath, "utf8")
-    .replace('setTimeout(t,1e3,new TypeError("timeout"))', 'setTimeout(t,5000,new TypeError("timeout"))');
+    .replace(
+      'const e=(await self.clients.matchAll({type:"window",includeUncontrolled:!0})).map',
+      'const e=(await self.clients.matchAll({type:"window",includeUncontrolled:!0})).filter((e=>{try{const t=new URL(e.url);return t.origin===self.location.origin&&!t.pathname.startsWith("/service/")&&!t.pathname.startsWith("/~/sj/")}catch{return!1}})).map'
+    )
+    .replace(/setTimeout\(([^,]+),1e3,new TypeError\("timeout"\)\)/g, 'setTimeout($1,5000,new TypeError("timeout"))')
+    .replace(/within 1s/g, "within 5s");
 }
 
 function patchedScramjetRuntime() {
-  const source = readFileSync(scramjetRuntimePath, "utf8");
-  return source
-    .replace(
-      "if(e.box.unproxy.has(t.this)){t.this=e.box.unproxy.get(t.this);return}!function",
-      "if(e.box.unproxy.has(t.this)){t.this=e.box.unproxy.get(t.this);try{return t.return(t.fn.call(t.this))}catch(A){if(/Function/.test(String(A&&A.message||A)))return t.return(\"function () { [native code] }\");throw A}}!function"
-    )
-    .replace(
-      "let r=t.fn.call(t.this),o=function",
-      "let r;try{r=t.fn.call(t.this)}catch(A){if(/Function/.test(String(A&&A.message||A)))return t.return(\"function () { [native code] }\");throw A}let o=function"
-    );
+  return readFileSync(scramjetRuntimePath, "utf8");
 }
 
 function scramjetRuntimeGuard() {
   return `(() => {
-  if (typeof window === "undefined" || window.__goodlionScramjetGuards) return;
-  window.__goodlionScramjetGuards = true;
+  if (typeof window === "undefined" || window.__nyxScramjetGuards) return;
+  window.__nyxScramjetGuards = true;
   const nativeOpen = window.open?.bind(window);
-  const blockedHtml = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>goodlion://blocked67haha</title><style>html,body{margin:0;width:100%;height:100%;background:#fff;color:#111;font:28px system-ui,-apple-system,Segoe UI,sans-serif}body{display:grid;place-items:center;text-align:center}main{padding:24px}</style></head><body><main>are you trying to hack me scamma???</main></body></html>';
+  if (!window.trustedTypes) {
+    try {
+      Object.defineProperty(window, "trustedTypes", {
+        configurable: true,
+        value: {
+          createPolicy(_name, rules = {}) {
+            return {
+              createHTML(value) {
+                return typeof rules.createHTML === "function" ? rules.createHTML(value) : value;
+              },
+              createScript(value) {
+                return typeof rules.createScript === "function" ? rules.createScript(value) : value;
+              },
+              createScriptURL(value) {
+                return typeof rules.createScriptURL === "function" ? rules.createScriptURL(value) : value;
+              }
+            };
+          }
+        }
+      });
+    } catch {}
+  }
+  try {
+    const nativeCurrentScript = Object.getOwnPropertyDescriptor(Document.prototype, "currentScript");
+    const fallbackScript = document.createElement("script");
+    fallbackScript.setAttribute("nonce", "");
+    Object.defineProperty(Document.prototype, "currentScript", {
+      configurable: true,
+      get() {
+        let current = null;
+        try {
+          current = nativeCurrentScript?.get?.call(this) || null;
+        } catch {}
+        if (current) return current;
+        return this.querySelector?.("script[src],script") || fallbackScript;
+      }
+    });
+  } catch {}
+  const blockedHtml = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>nyx://blocked67haha</title><style>html,body{margin:0;width:100%;height:100%;background:#fff;color:#111;font:28px Raleway,Arial,sans-serif}body{display:grid;place-items:center;text-align:center}main{padding:24px}</style></head><body><main>are you trying to hack me scamma???</main></body></html>';
   const popupProtectionEnabled = () => {
     try {
-      return JSON.parse(localStorage.getItem("goodlion.popupProtection") ?? "true") !== false;
+      return JSON.parse(localStorage.getItem("nyx.popupProtection") ?? "true") !== false;
     } catch {
       return true;
     }
@@ -80,11 +136,11 @@ function scramjetRuntimeGuard() {
       return false;
     }
   };
-  const openGoodLionPopupWarning = () => {
+  const opennyxPopupWarning = () => {
     const popup = nativeOpen ? nativeOpen("about:blank", "_blank") : null;
     if (!writeBlocked(popup)) {
       try {
-        window.parent?.postMessage({ type: "goodlion:popup", url: "about:blank" }, "*");
+        window.parent?.postMessage({ type: "nyx:popup", url: "about:blank" }, "*");
       } catch {}
     }
     return {
@@ -100,24 +156,24 @@ function scramjetRuntimeGuard() {
         close() { writeBlocked(popup); }
       },
       location: {
-        href: "goodlion://blocked67haha",
-        assign() { openGoodLionPopupWarning(); },
-        replace() { openGoodLionPopupWarning(); },
+        href: "nyx://blocked67haha",
+        assign() { opennyxPopupWarning(); },
+        replace() { opennyxPopupWarning(); },
         reload() { writeBlocked(popup); },
-        toString() { return "goodlion://blocked67haha"; }
+        toString() { return "nyx://blocked67haha"; }
       }
     };
   };
   let guardedOpen = (...args) => {
     if (!popupProtectionEnabled() && nativeOpen) return nativeOpen(...args);
-    return openGoodLionPopupWarning();
+    return opennyxPopupWarning();
   };
   try {
     if (typeof nativeOpen === "function" && typeof Proxy === "function") {
       guardedOpen = new Proxy(nativeOpen, {
         apply(target, thisArg, args) {
           if (!popupProtectionEnabled()) return Reflect.apply(target, thisArg, args);
-          return openGoodLionPopupWarning();
+          return opennyxPopupWarning();
         },
         construct(target, args, newTarget) {
           if (!popupProtectionEnabled()) {
@@ -127,10 +183,10 @@ function scramjetRuntimeGuard() {
               return Reflect.apply(target, window, args);
             }
           }
-          return openGoodLionPopupWarning();
+          return opennyxPopupWarning();
         },
         get(target, prop, receiver) {
-          if (prop === "__goodlionPopupGuard") return true;
+          if (prop === "__nyxPopupGuard") return true;
           if (prop === "toString") return () => "function open() { [native code] }";
           return Reflect.get(target, prop, receiver);
         }
@@ -141,41 +197,59 @@ function scramjetRuntimeGuard() {
     const value = String(target || "").toLowerCase();
     return value && !["_self", "_parent", "_top"].includes(value);
   };
+  const shouldTrapDownloadLink = link => {
+    if (!link) return false;
+    if (link.hasAttribute("download")) return true;
+    const rawHref = String(link.href || link.getAttribute("href") || "").trim();
+    if (/^(?:blob|data):/i.test(rawHref)) return true;
+    const href = rawHref.split(/[?#]/)[0].toLowerCase();
+    return /\.(?:apk|appx|bat|bin|cmd|com|crx|deb|dmg|exe|iso|jar|js|jse|msi|pkg|ps1|scr|sh|vbs|wsf|zip|7z|rar)$/i.test(href);
+  };
   try {
     Object.defineProperty(window, "open", { value: guardedOpen, writable: true, configurable: true });
   } catch {
     window.open = guardedOpen;
   }
-  if (document && !window.__goodlionPopupWarningListeners) {
-    window.__goodlionPopupWarningListeners = true;
+  try {
+    const nativeAnchorClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function() {
+      if (popupProtectionEnabled() && (shouldTrapPopupTarget(this.target) || shouldTrapDownloadLink(this))) {
+        opennyxPopupWarning();
+        return;
+      }
+      return nativeAnchorClick.call(this);
+    };
+  } catch {}
+  if (document && !window.__nyxPopupWarningListeners) {
+    window.__nyxPopupWarningListeners = true;
     document.addEventListener("click", event => {
       if (!popupProtectionEnabled()) return;
       const link = event.target?.closest?.("a[href]");
-      if (!link || !shouldTrapPopupTarget(link.getAttribute("target"))) return;
+      if (!link || (!shouldTrapPopupTarget(link.getAttribute("target")) && !shouldTrapDownloadLink(link))) return;
       event.preventDefault();
-      event.stopPropagation();
-      openGoodLionPopupWarning();
+      event.stopImmediatePropagation();
+      opennyxPopupWarning();
     }, true);
     document.addEventListener("auxclick", event => {
       if (!popupProtectionEnabled()) return;
       const link = event.target?.closest?.("a[href]");
-      if (!link || !shouldTrapPopupTarget(link.getAttribute("target"))) return;
+      if (!link || (!shouldTrapPopupTarget(link.getAttribute("target")) && !shouldTrapDownloadLink(link))) return;
       event.preventDefault();
-      event.stopPropagation();
-      openGoodLionPopupWarning();
+      event.stopImmediatePropagation();
+      opennyxPopupWarning();
     }, true);
     document.addEventListener("submit", event => {
       if (!popupProtectionEnabled()) return;
       const form = event.target;
       if (!form || String(form.tagName || "").toUpperCase() !== "FORM" || !shouldTrapPopupTarget(form.getAttribute("target"))) return;
       event.preventDefault();
-      event.stopPropagation();
-      openGoodLionPopupWarning();
+      event.stopImmediatePropagation();
+      opennyxPopupWarning();
     }, true);
   }
   const wrapCue = name => {
     const Native = window[name];
-    if (typeof Native !== "function" || Native.__goodlionWrapped) return;
+    if (typeof Native !== "function" || Native.__nyxWrapped) return;
     function SafeCue(start, end, text) {
       let safeStart = Number(start);
       let safeEnd = Number(end);
@@ -186,7 +260,7 @@ function scramjetRuntimeGuard() {
     try {
       Object.setPrototypeOf(SafeCue, Native);
       SafeCue.prototype = Native.prototype;
-      Object.defineProperty(SafeCue, "__goodlionWrapped", { value: true });
+      Object.defineProperty(SafeCue, "__nyxWrapped", { value: true });
       window[name] = SafeCue;
     } catch {}
   };
@@ -218,10 +292,10 @@ function searchShell(query, body = "") {
 <main>${body || `<p>Search without embedding a third-party page directly.</p>`}</main>
 <script>
 document.addEventListener('click', event => {
-  const link = event.target.closest('a[data-goodlion-url]');
+  const link = event.target.closest('a[data-nyx-url]');
   if (!link) return;
   event.preventDefault();
-  parent.postMessage({ type: 'goodlion:navigate', url: link.dataset.goodlionUrl }, location.origin);
+  parent.postMessage({ type: 'nyx:navigate', url: link.dataset.nyxUrl }, location.origin);
 });
 </script>
 </body>
@@ -240,7 +314,7 @@ function rewriteSearchHtml(html) {
         const url = new URL(href, "https://lite.duckduckgo.com/");
         const target = url.searchParams.get("uddg") || url.searchParams.get("u") || url.href;
         if (/^https?:\/\//i.test(target) && !target.includes("duckduckgo.com/html")) {
-          return `href=${quote}#${quote} data-goodlion-url=${quote}${esc(target)}${quote}`;
+          return `href=${quote}#${quote} data-nyx-url=${quote}${esc(target)}${quote}`;
         }
         if (url.hostname.includes("duckduckgo.com")) {
           const q = url.searchParams.get("q");
@@ -261,7 +335,7 @@ app.get("/search", async (req, res) => {
   }
   try {
     const upstream = await fetch(`https://lite.duckduckgo.com/lite/?q=${encodeURIComponent(query)}`, {
-      headers: { "user-agent": "GoodLion/1.0" }
+      headers: { "user-agent": "nyx/1.0" }
     });
     if (!upstream.ok) throw new Error(`Search failed: ${upstream.status}`);
     const html = await upstream.text();
@@ -281,7 +355,7 @@ app.get("/baremux/index.mjs", (_req, res) => {
 app.get("/scramjet/scramjet.js", (_req, res) => {
   res.type("application/javascript").send(patchedScramjetRuntime());
 });
-app.get("/goodlion-scramjet-runtime-guard.js", (_req, res) => {
+app.get("/nyx-scramjet-runtime-guard.js", (_req, res) => {
   res.setHeader("Cache-Control", "no-store");
   res.type("application/javascript").send(scramjetRuntimeGuard());
 });
@@ -297,14 +371,14 @@ app.use("/~/sj/", (_req, res) => {
   res.status(502).type("html").send(`<!doctype html>
 <meta charset="utf-8">
 <style>
-  body{margin:0;min-height:100vh;display:grid;place-items:center;background:#101318;color:#f5f7fb;font:15px/1.45 system-ui,sans-serif}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:#101318;color:#f5f7fb;font:15px/1.45 Raleway,Arial,sans-serif}
   main{max-width:560px;padding:28px;text-align:center}
   h1{font-size:20px;margin:0 0 10px}
   p{margin:0;color:#c8ced8}
 </style>
 <main>
   <h1>Scramjet route missed</h1>
-  <p>The Scramjet service worker did not claim this frame yet. Reload GoodLion and try again.</p>
+  <p>The Scramjet service worker did not claim this frame yet. Reload nyx and try again.</p>
 </main>`);
 });
 
@@ -326,7 +400,7 @@ const port = Number.parseInt(process.env.PORT || "8080", 10);
 
 server.listen(port, "0.0.0.0", () => {
   const address = server.address();
-  console.log("GoodLion running with Ultraviolet and Scramjet:");
+  console.log("nyx running with Ultraviolet and Scramjet:");
   console.log(`  http://localhost:${address.port}`);
   console.log(`  http://${hostname()}:${address.port}`);
 });

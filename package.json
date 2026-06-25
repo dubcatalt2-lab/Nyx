@@ -1,5 +1,5 @@
-{
-  "name": "goodlion",
+﻿{
+  "name": "nyx",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -14,7 +14,7 @@
     "@mercuryworkshop/scramjet": "^2.0.67-alpha.1",
     "@mercuryworkshop/scramjet-controller": "^0.0.13",
     "@mercuryworkshop/wisp-js": "latest",
-    "@titaniumnetwork-dev/ultraviolet": "latest",
+    "@titaniumnetwork-dev/ultraviolet": "^3.2.10",
     "express": "latest"
   },
   "devDependencies": {

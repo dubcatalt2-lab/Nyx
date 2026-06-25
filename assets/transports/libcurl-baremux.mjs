@@ -1,7 +1,7 @@
-import LibcurlClient from '/libcurl/index.mjs';
+﻿import LibcurlClient from '/libcurl/index.mjs';
 import { headerEntries, headerRecord } from './header-utils.mjs';
 
-export default class GoodLionLibcurlClient extends LibcurlClient {
+export default class nyxLibcurlClient extends LibcurlClient {
   async request(remote, method, body, headers, signal){
     const response=await super.request(remote,method,body,headerEntries(headers),signal);
     const normalizedHeaders=headerRecord(response.headers);

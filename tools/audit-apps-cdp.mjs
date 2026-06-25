@@ -1,12 +1,12 @@
-const port = Number(process.env.CDP_PORT || 9231);
+﻿const port = Number(process.env.CDP_PORT || 9231);
 const base = `http://localhost:${port}`;
-const goodlion = process.env.GOODLION_URL || "http://localhost:8080/";
+const nyx = process.env.NYX_URL || "http://localhost:8080/";
 const browserMode = process.env.BROWSER_MODE || "auto";
 const transport = process.env.TRANSPORT || "epoxy";
 const allApps = [
   ["Lion AI", "#lion-ai"],
   ["YouTube", "https://www.youtube.com/"],
-  ["Games", "assets/ugs/index.html"],
+  ["Games", "assets/games/index.html"],
   ["GeForce Now", "https://play.geforcenow.com/"],
   ["Roblox", "https://www.roblox.com/"],
   ["Discord", "https://discord.com/app"],
@@ -120,13 +120,13 @@ async function auditApp(name, url) {
   await page.send("Log.enable");
   await page.send("Network.enable");
   await page.send("Page.enable");
-  await page.send("Page.navigate", { url: goodlion });
+  await page.send("Page.navigate", { url: nyx });
   await delay(1000);
   await page.send("Runtime.evaluate", {
     expression: `
-      localStorage.setItem('goodlion.browserMode',${JSON.stringify(browserMode)});
-      localStorage.setItem('goodlion.transport',${JSON.stringify(transport)});
-      localStorage.setItem('goodlion.browserShellMode','true');
+      localStorage.setItem('nyx.browserMode',${JSON.stringify(browserMode)});
+      localStorage.setItem('nyx.transport',${JSON.stringify(transport)});
+      localStorage.setItem('nyx.browserShellMode','true');
       true;
     `
   });

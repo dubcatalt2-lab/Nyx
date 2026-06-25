@@ -1,7 +1,7 @@
-import EpoxyTransport from '/epoxy/index.mjs';
+﻿import EpoxyTransport from '/epoxy/index.mjs';
 import { headerEntries, headerRecord } from './header-utils.mjs';
 
-export default class GoodLionScramjetEpoxyTransport extends EpoxyTransport {
+export default class nyxScramjetEpoxyTransport extends EpoxyTransport {
   async request(remote, method, body, headers, signal){
     const response=await super.request(remote,method,body,headerRecord(headers),signal);
     return {

@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { spawn } = require('child_process');
@@ -56,7 +56,7 @@ async function capture(game, index) {
   const outPath = path.join(thumbsDir, thumbName(game.path));
   if (fs.existsSync(outPath) && fs.statSync(outPath).size > 1000) return 'skip';
   if (!fs.existsSync(htmlPath)) return 'missing';
-  const profile = path.join(os.tmpdir(), 'goodlion-edge-profile-' + process.pid + '-' + index);
+  const profile = path.join(os.tmpdir(), 'nyx-edge-profile-' + process.pid + '-' + index);
   const ok = await runEdge([
     '--headless=new',
     '--disable-gpu',

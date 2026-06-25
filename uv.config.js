@@ -8,6 +8,6 @@ self.__uv$config = {
   handler: "/uv/uv.handler.js",
   bundle: "/uv/uv.bundle.js",
   config: "/uv.config.js",
-  sw: "/uv.sw.js?v=goodlion-uv-20260617-transport-runtime-v2",
+  sw: "/uv.sw.js?v=nyx-uv-v3-20260621-spotify-auth-v4",
   client: "/uv/uv.client.js"
 };

@@ -1,7 +1,7 @@
-import LibcurlClient from '/libcurl/index.mjs';
+﻿import LibcurlClient from '/libcurl/index.mjs';
 import { headerEntries } from './header-utils.mjs';
 
-export default class GoodLionScramjetLibcurlClient extends LibcurlClient {
+export default class nyxScramjetLibcurlClient extends LibcurlClient {
   async request(remote, method, body, headers, signal){
     const response=await super.request(remote,method,body,headerEntries(headers),signal);
     return {

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seraph Game</title>
+  <style>
+    html,body{
+      height:100%;
+      margin:0;
+      background:#0b0f17;
+      color:#f8fafc;
+      font-family:Raleway,Arial,sans-serif;
+    }
+    .loading{
+      min-height:100%;
+      display:grid;
+      place-items:center;
+      padding:24px;
+      text-align:center;
+    }
+    .box{
+      max-width:520px;
+      border:1px solid #7dd3fc;
+      border-radius:16px;
+      padding:24px;
+      background:#111827;
+    }
+  </style>
+</head>
+<body>
+  <div class="loading"><div class="box" id="status">Loading Seraph game...</div></div>
+  <script>
+    const cdnRoot='https://cdn.jsdelivr.net/gh/a456pur/seraph@main';
+    const status=document.getElementById('status');
+    const params=new URLSearchParams(location.search);
+    const game=String(params.get('game') || '').replace(/^\/+/,'');
+    function fail(message){
+      status.textContent=message;
+    }
+    function safeGamePath(path){
+      if(!path || path.includes('..') || !/^[a-z0-9_./-]+$/i.test(path)) return '';
+      if(/(^|\/)(?:404|408)\.html$/i.test(path)) return '';
+      return path.endsWith('.html') ? path : `${path.replace(/\/+$/,'')}/index.html`;
+    }
+    function rewriteSeraphHtml(html){
+      return String(html || '')
+        .replace(/(["'(\s=])\/games\//g, `$1${cdnRoot}/games/`)
+        .replace(/(["'(\s=])\/images\//g, `$1${cdnRoot}/images/`)
+        .replace(/(["'(\s=])\/js\//g, `$1${cdnRoot}/js/`)
+        .replace(/(["'(\s=])\/css\//g, `$1${cdnRoot}/css/`)
+        .replace(/(["'(\s=])\/assets\//g, `$1${cdnRoot}/assets/`);
+    }
+    const gamePath=safeGamePath(game);
+    if(!gamePath){
+      fail('Missing Seraph game path.');
+    }else{
+      const htmlUrl=`${cdnRoot}/games/${gamePath}`;
+      const baseUrl=htmlUrl.slice(0,htmlUrl.lastIndexOf('/') + 1);
+      fetch(htmlUrl)
+        .then(response=>{
+          if(!response.ok) throw new Error(`HTTP ${response.status}`);
+          return response.text();
+        })
+        .then(html=>{
+          const rewritten=rewriteSeraphHtml(html);
+          const withBase=rewritten.replace(/<head([^>]*)>/i,`<head$1><base href="${baseUrl}">`);
+          document.open();
+          document.write(withBase);
+          document.close();
+        })
+        .catch(error=>fail(`Could not load Seraph game: ${error.message}`));
+    }
+  </script>
+</body>
+</html>

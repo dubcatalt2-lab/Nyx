@@ -1133,7 +1133,7 @@ body.browser-shell .browser-mode-shell-tab-close{
 body.browser-shell .browser-mode-shell-tab-close:hover{
   background:rgba(226,232,240,.14);
   color:#fff;
-  transform:translateY(-50%) rotate(360deg) scale(1.06);
+  transform:translateY(-50%) rotate(45deg) scale(1.06);
 }
 body.browser-shell .browser-mode-shell-tab.active{
   border-color:rgba(226,232,240,.5);
@@ -2083,7 +2083,7 @@ body.effect-emeralds #visualEffects i::before{
 .window-controls button{width:46px;height:100%;border:0;background:transparent;color:#cbd5e1;font-size:0;position:relative}
 .window-controls button:hover{background:rgba(255,255,255,.12)}
 .window-controls [data-close]{transition:transform .42s cubic-bezier(.18,.82,.22,1),background .22s ease,color .22s ease}
-.window-controls .close:hover{background:#ef4444;color:white;transform:rotate(360deg)}
+.window-controls .close:hover{background:#ef4444;color:white;transform:rotate(45deg)}
 .window-controls button::before,
 .window-controls button::after{content:"";position:absolute;left:50%;top:50%;box-sizing:border-box;transform:translate(-50%,-50%);pointer-events:none}
 .window-controls [data-minimize]::before{width:11px;height:1.6px;background:currentColor;top:62%}
@@ -2103,11 +2103,11 @@ body.effect-emeralds #visualEffects i::before{
 .browser-tab span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .browser-tab button,.new-tab{border:0;background:transparent;color:#cbd5e1}
 .browser-tab button{transition:transform .42s cubic-bezier(.18,.82,.22,1),background .22s ease,color .22s ease}
-.browser-tab button:hover{transform:rotate(360deg) scale(1.08)}
+.browser-tab button:hover{transform:rotate(45deg) scale(1.08)}
 .quick-tile .icon-window{display:inline-block;width:22px;height:16px;border:2px solid currentColor;border-radius:2px}
 .new-tab{width:30px;height:30px;border-radius:999px;font-size:20px;transition:transform .22s cubic-bezier(.16,.86,.2,1),background .22s ease,box-shadow .22s ease}
-.new-tab:hover{background:rgba(255,255,255,.12);transform:translateY(-1px) rotate(360deg) scale(1.08);box-shadow:0 8px 20px rgba(0,0,0,.22)}
-.new-tab:active{transform:translateY(0) rotate(360deg) scale(.94)}
+.new-tab:hover{background:rgba(255,255,255,.12);transform:translateY(-1px) rotate(45deg) scale(1.08);box-shadow:0 8px 20px rgba(0,0,0,.22)}
+.new-tab:active{transform:translateY(0) rotate(45deg) scale(.94)}
 .browser-tools{height:48px;display:grid;grid-template-columns:104px minmax(220px,1fr);gap:10px;align-items:center;padding:7px 12px;background:#171717;border-bottom:1px solid rgba(255,255,255,.08);position:relative}
 .tool-group{display:flex;gap:4px}
 .tool-btn{width:30px;height:30px;border:0;border-radius:8px;background:transparent;color:#d8dee9;font-size:16px}
@@ -4704,13 +4704,13 @@ body.browser-shell .browser-shell-settings-close{
   transition:transform .42s cubic-bezier(.18,.82,.22,1),background .22s ease,border-color .22s ease,box-shadow .22s ease,filter .22s ease;
 }
 body.browser-shell .browser-shell-settings-close:hover{
-  transform:rotate(360deg) scale(1.06)!important;
+  transform:rotate(45deg) scale(1.06)!important;
   background:rgba(115,74,170,.34)!important;
   border-color:var(--theme-border,#8b5cf6)!important;
   box-shadow:0 12px 28px rgba(0,0,0,.30),0 0 16px color-mix(in srgb,var(--theme-border,#8b5cf6) 34%,transparent);
 }
 body.browser-shell .browser-shell-settings-close:active{
-  transform:rotate(360deg) scale(.94)!important;
+  transform:rotate(45deg) scale(.94)!important;
   filter:brightness(.9);
 }
 body.browser-shell .browser-shell-settings-panel .settings-app{
@@ -4787,7 +4787,7 @@ body.browser-shell .browser-shell-settings-panel .browser-shell-settings-close{
   transition:transform .42s cubic-bezier(.18,.82,.22,1),background .22s ease,border-color .22s ease,box-shadow .22s ease,filter .22s ease!important;
 }
 body.browser-shell .browser-shell-settings-panel .browser-shell-settings-close:hover{
-  transform:rotate(360deg) scale(1.06)!important;
+  transform:rotate(45deg) scale(1.06)!important;
 }
 body.browser-shell [data-browser-shell-new-tab]::before,
 body.browser-shell .home-shortcut-add b{
@@ -4798,7 +4798,7 @@ body.browser-shell .home-shortcut-add b{
 }
 body.browser-shell [data-browser-shell-new-tab]:hover::before,
 body.browser-shell .home-shortcut-add:hover b{
-  transform:rotate(360deg);
+  transform:rotate(45deg);
 }
 body.browser-shell .browser-shell-settings-panel .settings-block:has([data-cloak-type]){
   display:grid!important;

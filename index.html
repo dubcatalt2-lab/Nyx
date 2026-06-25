@@ -2395,8 +2395,8 @@ body.effect-emeralds #visualEffects i::before{
   font:15px Raleway,Arial,sans-serif;
 }
 .nyx-prompt-ok{
-  background:#27231f;
-  color:#fff;
+  background:#fff;
+  color:#111827;
 }
 .nyx-prompt-cancel{
   background:#fff;
@@ -3957,10 +3957,10 @@ body.browser-shell .nyx-prompt-input{
   -webkit-text-fill-color:#111827!important;
 }
 body.browser-shell .nyx-prompt-ok{
-  background:#27231f!important;
-  background-color:#27231f!important;
-  color:#fff!important;
-  -webkit-text-fill-color:#fff!important;
+  background:#fff!important;
+  background-color:#fff!important;
+  color:#111827!important;
+  -webkit-text-fill-color:#111827!important;
 }
 body.browser-shell .nyx-prompt-cancel{
   background:#fff!important;
@@ -5132,6 +5132,33 @@ body.browser-shell .browser-mode-shell-tab{
 }
 body.browser-shell .browser-mode-shell-tab span{
   text-align:left!important;
+}
+html body .nyx-prompt-shade .nyx-prompt{
+  background:#fff!important;
+  background-color:#fff!important;
+  color:#111827!important;
+}
+html body .nyx-prompt-shade .nyx-prompt :is(input,textarea,select,.nyx-prompt-input){
+  background:#fff!important;
+  background-color:#fff!important;
+  color:#111827!important;
+  -webkit-text-fill-color:#111827!important;
+  border-color:#4b5563!important;
+  box-shadow:none!important;
+  text-shadow:none!important;
+}
+html body .nyx-prompt-shade .nyx-prompt :is(button,.nyx-prompt-ok,.nyx-prompt-cancel){
+  background:#fff!important;
+  background-color:#fff!important;
+  color:#111827!important;
+  -webkit-text-fill-color:#111827!important;
+  border:1px solid #d1d5db!important;
+  box-shadow:0 2px 6px rgba(0,0,0,.08)!important;
+  text-shadow:none!important;
+}
+html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
+  border-color:#111827!important;
+  font-weight:800!important;
 }
 @media(max-width:760px){
   body.browser-shell .browser-mode-shell-tab{
@@ -8773,7 +8800,7 @@ body.browser-shell .browser-mode-shell-tab span{
     }
     function popupWarningHtml(message='are you trying to hack me ︻デ═一 indian shwarma scamma? get blocked by 1aqlla dummy haha67'){
       const safeMessage=JSON.stringify(String(message || 'are you trying to hack me ︻デ═一 indian shwarma scamma? get blocked by 1aqlla dummy haha67'));
-      return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>nyx://blocked67haha</title><style>html,body{margin:0;width:100%;height:100%;background:#fff;color:#111;font:14px Raleway,Arial,sans-serif}body{overflow:hidden}.prompt-shade{position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;background:#fff}.prompt{width:min(540px,calc(100vw - 36px));padding:18px 20px;border:0;border-radius:0 0 14px 14px;background:#fff;color:#1f2937;box-shadow:0 6px 18px rgba(0,0,0,.18)}.title{margin:0 0 22px;color:#111827;font-size:16px;font-weight:700}.message{margin:0 0 8px;font-size:14px;line-height:1.35}.prompt-input{width:100%;height:38px;margin:0 0 38px;border:2px solid #4b5563;border-radius:8px;background:#fff;color:#111827;padding:0 10px;font:16px Raleway,Arial,sans-serif;outline:0}.actions{display:flex;justify-content:flex-end;gap:10px}.ok,.cancel{min-width:48px;height:40px;border:0;border-radius:9px;padding:0 14px;font:15px Raleway,Arial,sans-serif}.ok{background:#27231f;color:#fff}.cancel{background:#fff;color:#374151}.ok:focus{outline:2px solid #2563eb;outline-offset:2px}</style></head><body><script>const MESSAGE=${safeMessage};function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;"}[c]))}function show(){document.body.innerHTML='<div class="prompt-shade"><div class="prompt" role="dialog" aria-modal="true"><div class="title">1aqlla said no goofy haha6767</div><div class="message">'+esc(MESSAGE)+'</div><input class="prompt-input" autocomplete="off" spellcheck="false"><div class="actions"><button class="ok" type="button">OK</button><button class="cancel" type="button">Cancel</button></div></div></div>';const ok=document.querySelector(".ok");const input=document.querySelector(".prompt-input");input.focus();ok.onclick=()=>setTimeout(show,0);document.querySelector(".cancel").onclick=()=>{};input.onkeydown=e=>{if(e.key==="Enter")ok.click()}}show();<\/script></body></html>`;
+      return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>nyx://blocked67haha</title><style>html,body{margin:0;width:100%;height:100%;background:#fff;color:#111;font:14px Raleway,Arial,sans-serif}body{overflow:hidden}.prompt-shade{position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;background:#fff}.prompt{width:min(540px,calc(100vw - 36px));padding:18px 20px;border:0;border-radius:0 0 14px 14px;background:#fff;color:#1f2937;box-shadow:0 6px 18px rgba(0,0,0,.18)}.title{margin:0 0 22px;color:#111827;font-size:16px;font-weight:700}.message{margin:0 0 8px;font-size:14px;line-height:1.35}.prompt-input{width:100%;height:38px;margin:0 0 38px;border:2px solid #4b5563;border-radius:8px;background:#fff;color:#111827;padding:0 10px;font:16px Raleway,Arial,sans-serif;outline:0}.actions{display:flex;justify-content:flex-end;gap:10px}.ok,.cancel{min-width:48px;height:40px;border:1px solid #d1d5db;border-radius:9px;background:#fff;color:#111827;padding:0 14px;font:15px Raleway,Arial,sans-serif}.ok{border-color:#111827;font-weight:800}.cancel{color:#374151}.ok:focus{outline:2px solid #2563eb;outline-offset:2px}</style></head><body><script>const MESSAGE=${safeMessage};function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;"}[c]))}function show(){document.body.innerHTML='<div class="prompt-shade"><div class="prompt" role="dialog" aria-modal="true"><div class="title">1aqlla said no goofy haha6767</div><div class="message">'+esc(MESSAGE)+'</div><input class="prompt-input" autocomplete="off" spellcheck="false"><div class="actions"><button class="ok" type="button">OK</button><button class="cancel" type="button">Cancel</button></div></div></div>';const ok=document.querySelector(".ok");const input=document.querySelector(".prompt-input");input.focus();ok.onclick=()=>setTimeout(show,0);document.querySelector(".cancel").onclick=()=>{};input.onkeydown=e=>{if(e.key==="Enter")ok.click()}}show();<\/script></body></html>`;
     }
     function popupTabHandle(t,openerUrl=''){
       if(!t) return null;

@@ -1127,11 +1127,13 @@ body.browser-shell .browser-mode-shell-tab-close{
   font-style:normal;
   line-height:1;
   transform:translateY(-50%);
+  transition:transform .42s cubic-bezier(.18,.82,.22,1),background .22s ease,color .22s ease;
   cursor:pointer;
 }
 body.browser-shell .browser-mode-shell-tab-close:hover{
   background:rgba(226,232,240,.14);
   color:#fff;
+  transform:translateY(-50%) rotate(360deg) scale(1.06);
 }
 body.browser-shell .browser-mode-shell-tab.active{
   border-color:rgba(226,232,240,.5);
@@ -2080,7 +2082,8 @@ body.effect-emeralds #visualEffects i::before{
 .window-controls{display:flex;height:100%}
 .window-controls button{width:46px;height:100%;border:0;background:transparent;color:#cbd5e1;font-size:0;position:relative}
 .window-controls button:hover{background:rgba(255,255,255,.12)}
-.window-controls .close:hover{background:#ef4444;color:white}
+.window-controls [data-close]{transition:transform .42s cubic-bezier(.18,.82,.22,1),background .22s ease,color .22s ease}
+.window-controls .close:hover{background:#ef4444;color:white;transform:rotate(360deg)}
 .window-controls button::before,
 .window-controls button::after{content:"";position:absolute;left:50%;top:50%;box-sizing:border-box;transform:translate(-50%,-50%);pointer-events:none}
 .window-controls [data-minimize]::before{width:11px;height:1.6px;background:currentColor;top:62%}
@@ -2099,10 +2102,12 @@ body.effect-emeralds #visualEffects i::before{
 .browser-tab.active{background:rgba(255,255,255,.17)}
 .browser-tab span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .browser-tab button,.new-tab{border:0;background:transparent;color:#cbd5e1}
+.browser-tab button{transition:transform .42s cubic-bezier(.18,.82,.22,1),background .22s ease,color .22s ease}
+.browser-tab button:hover{transform:rotate(360deg) scale(1.08)}
 .quick-tile .icon-window{display:inline-block;width:22px;height:16px;border:2px solid currentColor;border-radius:2px}
 .new-tab{width:30px;height:30px;border-radius:999px;font-size:20px;transition:transform .22s cubic-bezier(.16,.86,.2,1),background .22s ease,box-shadow .22s ease}
-.new-tab:hover{background:rgba(255,255,255,.12);transform:translateY(-1px) scale(1.08);box-shadow:0 8px 20px rgba(0,0,0,.22)}
-.new-tab:active{transform:translateY(0) scale(.94)}
+.new-tab:hover{background:rgba(255,255,255,.12);transform:translateY(-1px) rotate(360deg) scale(1.08);box-shadow:0 8px 20px rgba(0,0,0,.22)}
+.new-tab:active{transform:translateY(0) rotate(360deg) scale(.94)}
 .browser-tools{height:48px;display:grid;grid-template-columns:104px minmax(220px,1fr);gap:10px;align-items:center;padding:7px 12px;background:#171717;border-bottom:1px solid rgba(255,255,255,.08);position:relative}
 .tool-group{display:flex;gap:4px}
 .tool-btn{width:30px;height:30px;border:0;border-radius:8px;background:transparent;color:#d8dee9;font-size:16px}
@@ -4655,6 +4660,7 @@ body.browser-shell .browser-shell-settings-overlay{
 }
 body.browser-shell .browser-shell-settings-panel{
   pointer-events:auto;
+  position:relative;
   width:var(--settings-panel-width);
   max-height:min(620px,calc(100vh - 112px));
   overflow:auto;
@@ -4675,15 +4681,16 @@ body.browser-shell .browser-shell-settings-panel::-webkit-scrollbar{
   display:none;
 }
 body.browser-shell .browser-shell-settings-close{
-  position:fixed;
-  top:90px;
-  left:calc(50% + min(280px,calc((100vw - 36px) / 2)) - 36px);
+  position:sticky;
+  top:8px;
+  left:auto;
+  right:auto;
   z-index:123;
   width:24px;
   min-width:24px!important;
   height:24px;
   min-height:24px!important;
-  margin:0;
+  margin:8px 8px 0 auto;
   padding:0!important;
   border:1px solid color-mix(in srgb,var(--theme-border,#8b5cf6) 48%,rgba(255,255,255,.2));
   border-radius:7px;
@@ -4694,16 +4701,16 @@ body.browser-shell .browser-shell-settings-close{
   font-size:16px!important;
   line-height:1!important;
   box-shadow:0 8px 20px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.1);
-  transition:transform .22s cubic-bezier(.18,.82,.22,1),background .22s ease,border-color .22s ease,box-shadow .22s ease,filter .22s ease;
+  transition:transform .42s cubic-bezier(.18,.82,.22,1),background .22s ease,border-color .22s ease,box-shadow .22s ease,filter .22s ease;
 }
 body.browser-shell .browser-shell-settings-close:hover{
-  transform:translateY(-1px) scale(1.06)!important;
+  transform:rotate(360deg) scale(1.06)!important;
   background:rgba(115,74,170,.34)!important;
   border-color:var(--theme-border,#8b5cf6)!important;
   box-shadow:0 12px 28px rgba(0,0,0,.30),0 0 16px color-mix(in srgb,var(--theme-border,#8b5cf6) 34%,transparent);
 }
 body.browser-shell .browser-shell-settings-close:active{
-  transform:translateY(0) scale(.94)!important;
+  transform:rotate(360deg) scale(.94)!important;
   filter:brightness(.9);
 }
 body.browser-shell .browser-shell-settings-panel .settings-app{
@@ -4777,9 +4784,21 @@ body.browser-shell .browser-shell-settings-panel .browser-shell-settings-close{
   padding:0!important;
   background:rgba(8,7,14,.64)!important;
   box-shadow:0 8px 20px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.1)!important;
+  transition:transform .42s cubic-bezier(.18,.82,.22,1),background .22s ease,border-color .22s ease,box-shadow .22s ease,filter .22s ease!important;
 }
 body.browser-shell .browser-shell-settings-panel .browser-shell-settings-close:hover{
-  transform:translateY(-1px) scale(1.06)!important;
+  transform:rotate(360deg) scale(1.06)!important;
+}
+body.browser-shell [data-browser-shell-new-tab]::before,
+body.browser-shell .home-shortcut-add b{
+  display:inline-grid;
+  place-items:center;
+  transform:rotate(0deg);
+  transition:transform .42s cubic-bezier(.18,.82,.22,1);
+}
+body.browser-shell [data-browser-shell-new-tab]:hover::before,
+body.browser-shell .home-shortcut-add:hover b{
+  transform:rotate(360deg);
 }
 body.browser-shell .browser-shell-settings-panel .settings-block:has([data-cloak-type]){
   display:grid!important;

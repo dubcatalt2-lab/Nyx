@@ -145,7 +145,8 @@
 
     function assetUrl(path){
       if(!path) return '';
-      return `${seraphCdn}${String(path).startsWith('/') ? '' : '/'}${path}`;
+      const clean=String(path).replace(/^\/+/,'');
+      return `/seraph-asset?path=${encodeURIComponent(clean)}`;
     }
 
     function gameUrl(path){

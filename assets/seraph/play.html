@@ -63,12 +63,11 @@
       return path.endsWith('.html') ? path : `${path.replace(/\/+$/,'')}/index.html`;
     }
     function rewriteSeraphHtml(html){
+      const proxiedRootAsset=(prefix, folder)=>`${prefix}/seraph-asset?path=${folder}/`;
       return String(html || '')
-        .replace(/(["'(\s=])\/games\//g, `$1${cdnRoot}/games/`)
-        .replace(/(["'(\s=])\/images\//g, `$1${cdnRoot}/images/`)
-        .replace(/(["'(\s=])\/js\//g, `$1${cdnRoot}/js/`)
-        .replace(/(["'(\s=])\/css\//g, `$1${cdnRoot}/css/`)
-        .replace(/(["'(\s=])\/assets\//g, `$1${cdnRoot}/assets/`);
+        .replace(/(["'(\s=])\/(games|images|js|css|assets|storage)\//g, (_match,prefix,folder)=>proxiedRootAsset(prefix,folder))
+        .replace(/(["'(\s=])\/favicon\.png\b/g, '$1/seraph-asset?path=favicon.png')
+        .replace(/(["'(\s=])\/favicon\.ico\b/g, '$1/seraph-asset?path=favicon.ico');
     }
     function withSeraphBase(html,baseUrl){
       const baseTag=`<base href="${baseUrl}">`;

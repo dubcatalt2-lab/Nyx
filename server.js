@@ -378,6 +378,40 @@ app.get("/seraph-fetch", async (req, res) => {
   }
 });
 
+function safeSeraphAssetPath(path) {
+  const clean = String(path || "").replace(/^\/+/, "");
+  if (!clean || clean.includes("..") || !/^[a-z0-9_./?&=%-]+$/i.test(clean)) return "";
+  return clean;
+}
+
+app.get("/seraph-asset", async (req, res) => {
+  const path = safeSeraphAssetPath(req.query.path);
+  if (!path) {
+    res.status(400).type("text/plain").send("Invalid Seraph asset path");
+    return;
+  }
+  const upstreamUrl = `https://cdn.jsdelivr.net/gh/a456pur/seraph@main/${path}`;
+  try {
+    const upstream = await fetch(upstreamUrl, {
+      headers: {
+        "accept": "*/*",
+        "user-agent": "nyx/1.0"
+      }
+    });
+    if (!upstream.ok) {
+      res.status(upstream.status).type("text/plain").send(`Seraph asset returned ${upstream.status}`);
+      return;
+    }
+    const contentType = upstream.headers.get("content-type");
+    if (contentType) res.setHeader("Content-Type", contentType);
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    const buffer = Buffer.from(await upstream.arrayBuffer());
+    res.send(buffer);
+  } catch (error) {
+    res.status(502).type("text/plain").send(`Seraph asset network error: ${error?.message || error}`);
+  }
+});
+
 app.get("/uv/uv.handler.js", (_req, res) => {
   res.type("application/javascript").send(patchedUvHandler());
 });
@@ -412,6 +446,22 @@ app.use("/~/sj/", (_req, res) => {
   <h1>Scramjet route missed</h1>
   <p>The Scramjet service worker did not claim this frame yet. Reload nyx and try again.</p>
 </main>`);
+});
+
+app.use((req, res, next) => {
+  const path = String(req.path || "");
+  const shouldNotServeNyx =
+    path.startsWith("/assets/") ||
+    path.startsWith("/games/") ||
+    path.startsWith("/images/") ||
+    path.startsWith("/js/") ||
+    path.startsWith("/css/") ||
+    /\.(?:avif|bmp|css|gif|html?|ico|jpe?g|js|json|mjs|mp3|mp4|ogg|opus|png|svg|wasm|wav|webm|webp|woff2?|xml)$/i.test(path);
+  if (!shouldNotServeNyx) {
+    next();
+    return;
+  }
+  res.status(404).type("text/plain").send("Not found");
 });
 
 app.use((_req, res) => {

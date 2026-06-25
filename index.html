@@ -4612,10 +4612,11 @@ body.browser-shell .browser-shell-settings-overlay{
   padding:82px 18px 28px;
   background:transparent;
   pointer-events:none;
+  --settings-panel-width:min(560px,calc(100vw - 36px));
 }
 body.browser-shell .browser-shell-settings-panel{
   pointer-events:auto;
-  width:min(560px,calc(100vw - 36px));
+  width:var(--settings-panel-width);
   max-height:min(620px,calc(100vh - 112px));
   overflow:auto;
   scrollbar-width:none;
@@ -4635,17 +4636,36 @@ body.browser-shell .browser-shell-settings-panel::-webkit-scrollbar{
   display:none;
 }
 body.browser-shell .browser-shell-settings-close{
-  position:sticky;
-  top:10px;
-  float:right;
-  z-index:2;
-  width:32px;
-  height:32px;
-  margin:10px 10px -42px 0;
-  border:1px solid color-mix(in srgb,var(--theme-border,#8b5cf6) 44%,rgba(255,255,255,.16));
-  border-radius:9px;
-  background:rgba(8,7,14,.52);
+  position:fixed;
+  top:90px;
+  left:calc(50% + min(280px,calc((100vw - 36px) / 2)) - 36px);
+  z-index:123;
+  width:24px;
+  min-width:24px!important;
+  height:24px;
+  min-height:24px!important;
+  margin:0;
+  padding:0!important;
+  border:1px solid color-mix(in srgb,var(--theme-border,#8b5cf6) 48%,rgba(255,255,255,.2));
+  border-radius:7px;
+  background:rgba(8,7,14,.64);
   color:#f8fafc;
+  display:grid;
+  place-items:center;
+  font-size:16px!important;
+  line-height:1!important;
+  box-shadow:0 8px 20px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.1);
+  transition:transform .22s cubic-bezier(.18,.82,.22,1),background .22s ease,border-color .22s ease,box-shadow .22s ease,filter .22s ease;
+}
+body.browser-shell .browser-shell-settings-close:hover{
+  transform:translateY(-1px) scale(1.06)!important;
+  background:rgba(115,74,170,.34)!important;
+  border-color:var(--theme-border,#8b5cf6)!important;
+  box-shadow:0 12px 28px rgba(0,0,0,.30),0 0 16px color-mix(in srgb,var(--theme-border,#8b5cf6) 34%,transparent);
+}
+body.browser-shell .browser-shell-settings-close:active{
+  transform:translateY(0) scale(.94)!important;
+  filter:brightness(.9);
 }
 body.browser-shell .browser-shell-settings-panel .settings-app{
   width:100%!important;
@@ -4679,6 +4699,12 @@ body.browser-shell .browser-shell-settings-panel .settings-block{
   background:color-mix(in srgb,var(--theme-border,#8b5cf6) 14%,rgba(5,6,12,.52))!important;
   background-image:none!important;
   box-shadow:none!important;
+  transition:transform .24s cubic-bezier(.18,.82,.22,1),border-color .24s ease,background .24s ease,box-shadow .24s ease;
+}
+body.browser-shell .browser-shell-settings-panel .settings-block:hover{
+  transform:translateY(-1px);
+  border-color:color-mix(in srgb,var(--theme-border,#8b5cf6) 58%,rgba(255,255,255,.18))!important;
+  background:color-mix(in srgb,var(--theme-border,#8b5cf6) 18%,rgba(5,6,12,.56))!important;
 }
 body.browser-shell .browser-shell-settings-panel :is(button,.settings-action,input,select,textarea,.settings-input,.settings-select,.panic-key-display){
   min-height:32px!important;
@@ -4687,11 +4713,34 @@ body.browser-shell .browser-shell-settings-panel :is(button,.settings-action,inp
   background-image:none!important;
   border:1px solid rgba(255,255,255,.14)!important;
   box-shadow:none!important;
+  transition:transform .22s cubic-bezier(.18,.82,.22,1),background .22s ease,border-color .22s ease,box-shadow .22s ease,filter .22s ease,color .22s ease;
 }
 body.browser-shell .browser-shell-settings-panel :is(button,.settings-action):hover{
-  transform:scale(1.015)!important;
+  transform:translateY(-1px) scale(1.025)!important;
   background:rgba(115,74,170,.22)!important;
   border-color:var(--theme-border,#8b5cf6)!important;
+  box-shadow:0 10px 24px rgba(0,0,0,.20)!important;
+}
+body.browser-shell .browser-shell-settings-panel :is(button,.settings-action):active{
+  transform:translateY(0) scale(.975)!important;
+  filter:brightness(.92);
+}
+body.browser-shell .browser-shell-settings-panel :is(input,select,textarea,.settings-input,.settings-select):focus{
+  border-color:var(--theme-border,#8b5cf6)!important;
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--theme-border,#8b5cf6) 20%,transparent)!important;
+}
+body.browser-shell .browser-shell-settings-panel .browser-shell-settings-close{
+  width:24px!important;
+  min-width:24px!important;
+  height:24px!important;
+  min-height:24px!important;
+  border-radius:7px!important;
+  padding:0!important;
+  background:rgba(8,7,14,.64)!important;
+  box-shadow:0 8px 20px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.1)!important;
+}
+body.browser-shell .browser-shell-settings-panel .browser-shell-settings-close:hover{
+  transform:translateY(-1px) scale(1.06)!important;
 }
 body.browser-shell .browser-shell-settings-panel .settings-block:has([data-cloak-type]){
   display:grid!important;

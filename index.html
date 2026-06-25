@@ -1220,19 +1220,86 @@ body.browser-shell .browser-mode-bookmark{
 body.browser-shell [data-browser-shell-reload],
 body.browser-shell [data-browser-shell-bookmark],
 .tool-btn[data-reload]{
+  position:relative;
   color:transparent!important;
   font-size:0!important;
+}
+body.browser-shell [data-browser-shell-back],
+body.browser-shell [data-browser-shell-forward],
+.tool-btn[data-back],
+.tool-btn[data-forward]{
+  position:relative;
+  color:transparent!important;
+  font-size:0!important;
+  overflow:hidden;
 }
 body.browser-shell [data-browser-shell-reload]::before,
 body.browser-shell [data-browser-shell-bookmark]::before,
 .tool-btn[data-reload]::before{
-  display:inline-grid;
+  position:absolute;
+  left:50%;
+  top:50%;
+  display:grid;
   place-items:center;
   color:#f8fafc;
   font-size:18px;
   line-height:1;
-  transform:rotate(0deg);
+  transform:translate(-50%,-50%) rotate(0deg);
   transition:transform .58s cubic-bezier(.16,.86,.2,1),color .26s ease,text-shadow .26s ease;
+}
+body.browser-shell [data-browser-shell-back]::before,
+body.browser-shell [data-browser-shell-forward]::before,
+.tool-btn[data-back]::before,
+.tool-btn[data-forward]::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:14px;
+  height:2px;
+  border-radius:999px;
+  background:#f8fafc;
+  transform:translate(-50%,-50%);
+  transition:transform .42s cubic-bezier(.16,.86,.2,1),background .26s ease,box-shadow .26s ease;
+}
+body.browser-shell [data-browser-shell-back]::after,
+body.browser-shell [data-browser-shell-forward]::after,
+.tool-btn[data-back]::after,
+.tool-btn[data-forward]::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:8px;
+  height:8px;
+  border-top:2px solid #f8fafc;
+  border-right:2px solid #f8fafc;
+  border-radius:1px;
+  transition:transform .42s cubic-bezier(.16,.86,.2,1),border-color .26s ease,filter .26s ease;
+}
+body.browser-shell [data-browser-shell-back]::after,
+.tool-btn[data-back]::after{
+  transform:translate(-72%,-50%) rotate(-135deg);
+}
+body.browser-shell [data-browser-shell-forward]::after,
+.tool-btn[data-forward]::after{
+  transform:translate(-28%,-50%) rotate(45deg);
+}
+body.browser-shell [data-browser-shell-back]:hover::before,
+.tool-btn[data-back]:hover::before{
+  transform:translate(calc(-50% - 2px),-50%);
+}
+body.browser-shell [data-browser-shell-back]:hover::after,
+.tool-btn[data-back]:hover::after{
+  transform:translate(calc(-72% - 2px),-50%) rotate(-135deg);
+}
+body.browser-shell [data-browser-shell-forward]:hover::before,
+.tool-btn[data-forward]:hover::before{
+  transform:translate(calc(-50% + 2px),-50%);
+}
+body.browser-shell [data-browser-shell-forward]:hover::after,
+.tool-btn[data-forward]:hover::after{
+  transform:translate(calc(-28% + 2px),-50%) rotate(45deg);
 }
 body.browser-shell [data-browser-shell-reload]::before,
 .tool-btn[data-reload]::before{
@@ -1244,7 +1311,7 @@ body.browser-shell [data-browser-shell-bookmark]::before{
 body.browser-shell [data-browser-shell-reload]:hover::before,
 body.browser-shell [data-browser-shell-bookmark]:hover::before,
 .tool-btn[data-reload]:hover::before{
-  transform:rotate(45deg);
+  transform:translate(-50%,-50%) rotate(45deg);
 }
 body.browser-shell .browser-mode-bookmark.saved{
   color:transparent!important;

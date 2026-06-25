@@ -1137,6 +1137,34 @@ body.browser-shell .browser-mode-shell-tab.active{
   border-color:rgba(226,232,240,.5);
   background:rgba(51,65,85,.86);
 }
+@keyframes browserShellTabOpen{
+  0%{
+    opacity:0;
+    flex-basis:0;
+    min-width:0;
+    width:0;
+    padding-left:0;
+    padding-right:0;
+    transform:translateX(-24px) translateY(6px) scale(.86);
+    filter:blur(8px);
+    box-shadow:0 0 0 rgba(226,232,240,0);
+  }
+  58%{
+    opacity:1;
+    transform:translateX(3px) translateY(-2px) scale(1.035);
+    filter:blur(0);
+    box-shadow:0 0 24px rgba(168,199,255,.22),inset 0 1px 0 rgba(255,255,255,.14);
+  }
+  100%{
+    opacity:1;
+    transform:translateX(0) translateY(0) scale(1);
+    filter:blur(0);
+  }
+}
+body.browser-shell .browser-mode-shell-tab.tab-opening{
+  overflow:hidden;
+  animation:browserShellTabOpen .48s cubic-bezier(.16,.86,.2,1) both;
+}
 @keyframes browserShellTabClose{
   0%{transform:translateX(0) scale(1);opacity:1;filter:none;max-width:180px}
   36%{transform:translateX(30px) rotate(2deg) scale(.99);opacity:1;max-width:180px}
@@ -1146,6 +1174,16 @@ body.browser-shell .browser-mode-shell-tab.active{
 body.browser-shell .browser-mode-shell-tab.closing{
   animation:browserShellTabClose .34s cubic-bezier(.2,.9,.15,1) forwards;
   pointer-events:none;
+}
+@keyframes browserShellPageReveal{
+  0%{opacity:0;transform:translateY(12px) scale(.985);filter:blur(10px)}
+  62%{opacity:1;transform:translateY(-2px) scale(1.006);filter:blur(0)}
+  100%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}
+}
+body.browser-shell .browser-window.maximized .browser-home.tab-opening,
+body.browser-shell .browser-window.maximized iframe.view.tab-opening{
+  animation:browserShellPageReveal .44s cubic-bezier(.16,.86,.2,1) both;
+  transform-origin:50% 18%;
 }
 body.browser-shell .browser-mode-app-button.closing{
   transform:scale(.82) translateY(-8px)!important;
@@ -2054,16 +2092,17 @@ body.effect-emeralds #visualEffects i::before{
 .browser-window{left:31vw;top:170px;width:45vw;height:420px}
 .browser-window{--tab-width:150px}
 .browser-tabs{height:48px;display:flex;align-items:center;gap:6px;padding:6px 8px;background:#050505;cursor:grab;overflow:hidden}
-.browser-tab{height:30px;width:var(--tab-width);min-width:92px;max-width:260px;display:flex;align-items:center;justify-content:space-between;gap:7px;padding:0 9px;border-radius:8px;background:rgba(255,255,255,.08);font-size:13px;color:#dbeafe;animation:tabIn .18s ease both}
-@keyframes tabIn{from{opacity:0;transform:translateX(-10px) scale(.96)}to{opacity:1;transform:translateX(0) scale(1)}}
+.browser-tab{height:30px;width:var(--tab-width);min-width:92px;max-width:260px;display:flex;align-items:center;justify-content:space-between;gap:7px;padding:0 9px;border-radius:8px;background:rgba(255,255,255,.08);font-size:13px;color:#dbeafe;animation:tabIn .42s cubic-bezier(.16,.86,.2,1) both;transform-origin:left center}
+@keyframes tabIn{0%{opacity:0;max-width:0;min-width:0;width:0;padding-left:0;padding-right:0;transform:translateX(-18px) translateY(5px) scale(.86);filter:blur(8px)}58%{opacity:1;max-width:260px;min-width:92px;width:var(--tab-width);transform:translateX(3px) translateY(-2px) scale(1.035);filter:blur(0);box-shadow:0 0 22px rgba(147,197,253,.20)}100%{opacity:1;max-width:260px;min-width:92px;width:var(--tab-width);transform:translateX(0) translateY(0) scale(1);filter:blur(0)}}
 .browser-tab.tab-closing{pointer-events:none;animation:tabOut .16s ease forwards}
 @keyframes tabOut{to{opacity:0;transform:translateY(-8px) scale(.86);max-width:0;min-width:0;width:0;padding-left:0;padding-right:0;margin-left:-6px}}
 .browser-tab.active{background:rgba(255,255,255,.17)}
 .browser-tab span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .browser-tab button,.new-tab{border:0;background:transparent;color:#cbd5e1}
 .quick-tile .icon-window{display:inline-block;width:22px;height:16px;border:2px solid currentColor;border-radius:2px}
-.new-tab{width:30px;height:30px;border-radius:999px;font-size:20px}
-.new-tab:hover{background:rgba(255,255,255,.12)}
+.new-tab{width:30px;height:30px;border-radius:999px;font-size:20px;transition:transform .22s cubic-bezier(.16,.86,.2,1),background .22s ease,box-shadow .22s ease}
+.new-tab:hover{background:rgba(255,255,255,.12);transform:translateY(-1px) scale(1.08);box-shadow:0 8px 20px rgba(0,0,0,.22)}
+.new-tab:active{transform:translateY(0) scale(.94)}
 .browser-tools{height:48px;display:grid;grid-template-columns:104px minmax(220px,1fr);gap:10px;align-items:center;padding:7px 12px;background:#171717;border-bottom:1px solid rgba(255,255,255,.08);position:relative}
 .tool-group{display:flex;gap:4px}
 .tool-btn{width:30px;height:30px;border:0;border-radius:8px;background:transparent;color:#d8dee9;font-size:16px}
@@ -5218,6 +5257,7 @@ body.browser-shell .browser-mode-shell-tab span{
   //browser-engine-state
   const hasHostedBackend = () => location.protocol === 'http:' || location.protocol === 'https:';
   const browserShellTabs = [];
+  const browserShellOpeningTabs = new Set();
   let browserShellActiveTab = null;
   const engines = {
     bing:'https://www.bing.com/search?q=',
@@ -5908,10 +5948,12 @@ body.browser-shell .browser-mode-shell-tab span{
     browserShellTabs.filter(tab=>tab.url || tab.title!=='Home').forEach(tab=>{
       const button=document.createElement('button');
       button.type='button';
-      button.className='browser-mode-tab browser-mode-shell-tab'+(tab.id===browserShellActiveTab?' active':'');
+      const opening=browserShellOpeningTabs.has(tab.id);
+      button.className='browser-mode-tab browser-mode-shell-tab'+(tab.id===browserShellActiveTab?' active':'')+(opening?' tab-opening':'');
       button.dataset.browserShellTab=tab.id;
       button.innerHTML=`<img class="browser-mode-tab-icon" alt="" src="${esc(tab.icon || iconForUrl(tab.url))}"><span>${esc(tab.title || browserShellLabel(tab.url))}</span><i class="browser-mode-shell-tab-close" data-browser-shell-close-tab="${esc(tab.id)}" aria-label="Close tab">x</i>`;
       row.insertBefore(button,plus);
+      if(opening) setTimeout(()=>browserShellOpeningTabs.delete(tab.id),520);
     });
     const input=document.querySelector('[data-browser-shell-url]');
     if(input && document.activeElement!==input) input.value=browserShellDisplayValue(active.url);
@@ -5922,6 +5964,7 @@ body.browser-shell .browser-mode-shell-tab span{
     const id='shell-'+Date.now()+Math.random().toString(16).slice(2);
     const normalized=url ? normalize(url) : '';
     browserShellTabs.push({id,url:normalized,title:normalized ? browserShellLabel(normalized) : 'New Tab',icon:iconForUrl(normalized)});
+    browserShellOpeningTabs.add(id);
     browserShellActiveTab=id;
     renderBrowserShellTabs();
     if(activeBrowser?.win?.isConnected && typeof activeBrowser.addTab==='function'){
@@ -6216,6 +6259,7 @@ body.browser-shell .browser-mode-shell-tab span{
     }
     state?.win?.querySelector('.browser-home')?.classList.remove('hidden');
     state?.win?.classList.add('browser-blank');
+    playBrowserShellPageReveal(state?.win || document);
     state?.renderTabs?.();
     updateBrowserShellLocation('');
     document.querySelector('[data-browser-shell-url]')?.focus();
@@ -8407,6 +8451,15 @@ body.browser-shell .browser-mode-shell-tab span{
     playHomeShortcutAnimation(root);
     playHomeChromeAnimation(root);
   }
+  function playBrowserShellPageReveal(root=document){
+    const scope=root || document;
+    const home=scope.querySelector?.('.browser-home:not(.hidden)');
+    if(!home) return;
+    home.classList.remove('tab-opening');
+    void home.offsetWidth;
+    home.classList.add('tab-opening');
+    setTimeout(()=>home.classList.remove('tab-opening'),520);
+  }
   let homeShortcutAnimationObserverInstalled=false;
   function installHomeShortcutAnimationObserver(){
     if(homeShortcutAnimationObserverInstalled) return;
@@ -8505,7 +8558,7 @@ body.browser-shell .browser-mode-shell-tab span{
       const row=win.querySelector('.browser-tabs');
       row.querySelectorAll('.browser-tab').forEach(x=>x.remove());
       state.tabs.forEach(t=>{
-        const el=document.createElement('div'); el.className='browser-tab'+(t.id===state.active?' active':'');
+        const el=document.createElement('div'); el.className='browser-tab'+(t.id===state.active?' active':'')+(t.opening?' tab-opening':'');
         el.innerHTML=`<span>${esc(t.title)}</span><button data-close-tab="${t.id}">×</button>`;
         const label=el.querySelector('span');
         if(label){
@@ -8519,6 +8572,7 @@ body.browser-shell .browser-mode-shell-tab span{
         if(closeBtn) closeBtn.textContent='x';
         el.onclick=e=>{if(e.target.closest('button'))return; activate(t.id)};
         row.insertBefore(el,row.querySelector('[data-new-tab]'));
+        if(t.opening) setTimeout(()=>{t.opening=false},540);
       });
     }
     function current(){return state.tabs.find(t=>t.id===state.active)}
@@ -8538,7 +8592,7 @@ body.browser-shell .browser-mode-shell-tab span{
       const id='tab'+Date.now()+Math.random().toString(16).slice(2);
       const frame=document.createElement('iframe'); frame.className='view';
       win.querySelector('.browser-body').appendChild(frame);
-      const tab={id,title:'New Tab',url:'',icon:favicons.nyx,history:[],index:-1,frame};
+      const tab={id,title:'New Tab',url:'',icon:favicons.nyx,history:[],index:-1,frame,opening:true};
       state.tabs.push(tab);
       activate(id);
       if(openUrl) navigate(openUrl,forceMode);
@@ -8857,7 +8911,10 @@ body.browser-shell .browser-mode-shell-tab span{
       win.querySelectorAll('.view').forEach(f=>f.classList.remove('active'));
       win.classList.toggle('browser-blank',!activeUrl);
       if(activeUrl){t?.frame.classList.add('active'); win.querySelector('.browser-home').classList.add('hidden')}
-      else win.querySelector('.browser-home').classList.remove('hidden');
+      else{
+        win.querySelector('.browser-home').classList.remove('hidden');
+        if(t?.opening) playBrowserShellPageReveal(win);
+      }
       win.querySelector('.urlbar').value=browserShellDisplayValue(activeUrl); win.querySelector('.titlebar-title').textContent=activeTitle; renderTabs(); bring(win);
       if(t?.url || !mappedShellTab?.url) updateBrowserShellLocation(t?.url || '',t?.id || '');
     }

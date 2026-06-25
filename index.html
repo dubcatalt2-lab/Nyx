@@ -5395,14 +5395,7 @@ body.browser-shell .browser-mode-shell-tab span{
       return host==='animex.one' || host.endsWith('.animex.one');
     }catch{return false}
   }
-  const animexPromptApprovedUrls = new Set();
-  function approveAnimexPromptUrl(url){
-    const key=String(url || '');
-    if(!key) return;
-    animexPromptApprovedUrls.add(key);
-    setTimeout(()=>animexPromptApprovedUrls.delete(key),20000);
-  }
-  function shownyxPrompt(message,{loop=false,onOk=null,onCancel=null}={}){
+  function shownyxPrompt(message,{loop=false,onOk=null}={}){
     document.querySelectorAll('.nyx-prompt-shade').forEach(el=>el.remove());
     const shade=document.createElement('div');
     shade.className='nyx-prompt-shade';
@@ -5416,18 +5409,15 @@ body.browser-shell .browser-mode-shell-tab span{
       if(loop) setTimeout(()=>shownyxPrompt(message,{loop:true}),0);
       else if(typeof onOk==='function') onOk();
     };
-    shade.querySelector('.nyx-prompt-cancel')?.addEventListener('click',()=>{
-      shade.remove();
-      if(typeof onCancel==='function') onCancel();
-    });
+    shade.querySelector('.nyx-prompt-cancel')?.addEventListener('click',()=>shade.remove());
     input?.addEventListener('keydown',e=>{
       if(e.key==='Enter') ok.click();
       if(e.key==='Escape') shade.querySelector('.nyx-prompt-cancel')?.click();
     });
     return shade;
   }
-  function showAnimexMikuPrompt(onOk,onCancel=null){
-    shownyxPrompt('Use MIKU for streaming',{onOk,onCancel});
+  function showAnimexMikuPrompt(onOk){
+    shownyxPrompt('Use MIKU for streaming',{onOk});
   }
   //hieroglyph-text-effect
   const hieroglyphTextNodes = new WeakMap();
@@ -6160,7 +6150,7 @@ body.browser-shell .browser-mode-shell-tab span{
       }else{
         browserShellTabs.find(tab=>tab.id===id).browserTabId=created.id;
       }
-      if(normalized && !created.animexPromptPendingUrl){
+      if(normalized){
         created.url=normalized;
         created.title=browserShellLabel(normalized);
         created.icon=iconForUrl(normalized);
@@ -6194,7 +6184,7 @@ body.browser-shell .browser-mode-shell-tab span{
     win?.classList.add('maximized');
     const created=activeBrowser?.tabs?.[activeBrowser.tabs.length-1];
     if(created) browserShellTabs.find(tab=>tab.id===id).browserTabId=created.id;
-    if(created && normalized && !created.animexPromptPendingUrl){
+    if(created && normalized){
       created.url=normalized;
       created.title=browserShellLabel(normalized);
       created.icon=iconForUrl(normalized);
@@ -9402,20 +9392,13 @@ body.browser-shell .browser-mode-shell-tab span{
       }
       const url=normalize(browserShellSourceUrl(raw) || raw); if(!url)return;
       win.querySelector('.urlbar').value=browserShellDisplayValue(url);
-      if(isAnimexUrl(url) && !animexPromptApprovedUrls.has(url)){
-        if(t.animexPromptPendingUrl===url) return;
-        t.animexPromptPendingUrl=url;
+      if(isAnimexUrl(url) && t.animexPromptUrl!==url){
+        t.animexPromptUrl=url;
         const tabId=t.id;
         showAnimexMikuPrompt(()=>{
-          const tab=state.tabs.find(item=>item.id===tabId);
-          if(tab) delete tab.animexPromptPendingUrl;
-          approveAnimexPromptUrl(url);
           if(!state.tabs.some(tab=>tab.id===tabId)) return;
           activate(tabId);
           navigate(url,forceMode);
-        },()=>{
-          const tab=state.tabs.find(item=>item.id===tabId);
-          if(tab) delete tab.animexPromptPendingUrl;
         });
         return;
       }

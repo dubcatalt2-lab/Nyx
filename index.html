@@ -9195,9 +9195,20 @@ body.browser-shell .browser-mode-shell-tab span{
       const token='load-'+Date.now()+Math.random().toString(16).slice(2);
       t.loadWatchToken=token;
       let loaded=false;
-      const markLoaded=()=>{loaded=true};
-      t.frame.addEventListener('load',markLoaded,{once:true});
-      setTimeout(()=>{
+      const markLoaded=()=>{
+        const frameSrc=String(t.frame?.getAttribute?.('src') || '');
+        let frameHref='';
+        try{frameHref=String(t.frame?.contentWindow?.location?.href || '')}catch{}
+        const hasProxyPath=frameSrc.startsWith('/service/') || frameSrc.startsWith('/~/sj/') || frameSrc.startsWith('/scramjet/service/')
+          || frameHref.includes('/service/') || frameHref.includes('/~/sj/') || frameHref.includes('/scramjet/service/');
+        const hasDirectPage=/^https?:/i.test(frameSrc) || (/^https?:/i.test(frameHref) && frameHref!=='about:blank' && frameHref!==location.href);
+        if(!hasProxyPath && !hasDirectPage) return;
+        loaded=true;
+        t.frame?.removeEventListener?.('load',markLoaded);
+      };
+      t.frame.addEventListener('load',markLoaded);
+      const attemptFallback=()=>{
+        t.frame?.removeEventListener?.('load',markLoaded);
         if(loaded || t.loadWatchToken!==token || !state.tabs.includes(t)) return;
         if(t.url!==sourceUrl && !String(t.url || '').startsWith('/service/') && !String(t.url || '').startsWith('/~/sj/')) return;
         t.fallbackAttempts=(t.fallbackAttempts || 0) + 1;
@@ -9224,7 +9235,9 @@ body.browser-shell .browser-mode-shell-tab span{
             navigate(sourceUrl,'ultraviolet');
           }
         }
-      },11000);
+      };
+      setTimeout(attemptFallback,5200);
+      setTimeout(attemptFallback,11000);
     }
     function loadTab(t,url,addHistory=true,expectedEngine='',sourceUrl=''){
       if(expectedEngine && !assertProxyPath(expectedEngine,url)){

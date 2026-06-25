@@ -1233,6 +1233,12 @@ body.browser-shell [data-browser-shell-forward],
   font-size:0!important;
   overflow:hidden;
 }
+body.browser-shell [data-browser-shell-menu],
+.menu-btn{
+  position:relative;
+  color:transparent!important;
+  font-size:0!important;
+}
 body.browser-shell [data-browser-shell-reload]::before,
 body.browser-shell [data-browser-shell-bookmark]::before,
 .tool-btn[data-reload]::before{
@@ -1300,6 +1306,24 @@ body.browser-shell [data-browser-shell-forward]:hover::before,
 body.browser-shell [data-browser-shell-forward]:hover::after,
 .tool-btn[data-forward]:hover::after{
   transform:translate(calc(-28% + 2px),-50%) rotate(45deg);
+}
+body.browser-shell [data-browser-shell-menu]::before,
+.menu-btn::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:4px;
+  height:4px;
+  border-radius:999px;
+  background:#f8fafc;
+  box-shadow:0 -7px 0 #f8fafc,0 7px 0 #f8fafc;
+  transform:translate(-50%,-50%) scale(1);
+  transition:transform .42s cubic-bezier(.16,.86,.2,1),box-shadow .26s ease,background .26s ease;
+}
+body.browser-shell [data-browser-shell-menu]:hover::before,
+.menu-btn:hover::before{
+  transform:translate(-50%,-50%) scale(1.08);
 }
 body.browser-shell [data-browser-shell-reload]::before,
 .tool-btn[data-reload]::before{

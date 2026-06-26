@@ -6350,11 +6350,7 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
     }
     const id=openBrowserShellTab('');
     if(id) browserShellActiveTab=id;
-    if(String(name || '').toLowerCase()==='apps'){
-      runNyxPreflight('apps').then(()=>showBrowserShellInternalPage(name));
-    }else{
-      showBrowserShellInternalPage(name);
-    }
+    showBrowserShellInternalPage(name);
     return id;
   }
   function openBrowserShellAppTab(url){
@@ -9733,12 +9729,13 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
       }
       const rawText=String(raw || '').trim();
       const proxyInternal=/^(?:\/service\/|\/~\/sj\/|\/scramjet\/service\/|nyx:\/\/)/i.test(rawText);
-      if(rawText && !proxyInternal && !nyxPreflightBypass){
+      const looksLikeUrl=/^(?:[a-z][a-z0-9+.-]*:|[\w.-]+\.[a-z]{2,}(?:\/|$)|\/|\.\/|\.\.\/|assets\/)/i.test(rawText);
+      const isSearchQuery=rawText && !forceMode && !looksLikeUrl && !proxyInternal;
+      if(isSearchQuery && !nyxPreflightBypass){
         const tabId=t.id;
-        const looksLikeUrl=/^(?:[a-z][a-z0-9+.-]*:|[\w.-]+\.[a-z]{2,}(?:\/|$))/i.test(rawText);
-        runNyxPreflight((forceMode || looksLikeUrl) ? 'browser' : 'search',{
+        runNyxPreflight('search',{
           target:rawText,
-          finalLabel:(forceMode || looksLikeUrl) ? 'Page loaded' : 'Showing results',
+          finalLabel:'Showing results',
           finalRun:async()=>{
             const targetTab=state.tabs.find(tab=>tab.id===tabId);
             if(!targetTab) return false;
@@ -10910,9 +10907,7 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
     makeWindow({title:'Links',left:'18vw',top:'100px',width:'520px',height:'380px',body:`<div class="panel"><h1>Links</h1><div class="glass-grid"><div class="glass-card"><h2>Search Engines</h2><button data-url="https://www.google.com/">Google</button><button data-url="https://duckduckgo.com/">DuckDuckGo</button></div><div class="glass-card"><h2>School</h2><button data-url="https://docs.google.com/">Docs</button><button data-url="https://classroom.google.com/">Classroom</button></div></div></div>`});
   }
   openApps = function(){
-    runNyxPreflight('apps').then(()=>{
-      makeWindow({title:'Apps',left:'8vw',top:'64px',width:'960px',height:'650px',body:`<div class="panel apps-panel"><h1>Apps</h1><div class="quick-grid apps-launch-grid">${quickTiles()}</div></div>`});
-    });
+    makeWindow({title:'Apps',left:'8vw',top:'64px',width:'960px',height:'650px',body:`<div class="panel apps-panel"><h1>Apps</h1><div class="quick-grid apps-launch-grid">${quickTiles()}</div></div>`});
   };
   //settings-window
   function settingsBody(){

@@ -8911,7 +8911,16 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
     const target=String(options.target || '').trim();
     const appendFinal=tasks=>{
       if(typeof options.finalRun==='function'){
-        return [...tasks,{label:options.finalLabel || 'Showing results',run:options.finalRun}];
+        let finalStarted=false;
+        return [...tasks,{label:options.finalLabel || 'Showing results',run:async()=>{
+          if(!finalStarted){
+            finalStarted=true;
+            return options.finalRun();
+          }
+          if(typeof options.finalVerify==='function') return options.finalVerify();
+          await preflightDelay(120);
+          return true;
+        }}];
       }
       return tasks;
     };
@@ -8965,6 +8974,22 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
   async function runNyxPreflight(kind='startup',options={}){
     if(options.skip || nyxPreflightBypass) return true;
     if(nyxPreflightPromise) return nyxPreflightPromise;
+    const doubleCheckTask=async task=>{
+      let first=false, second=false, firstError=null, secondError=null;
+      try{
+        first=await preflightTimeout(Promise.resolve(task.run?.()),5200,'preflight timed out');
+      }catch(error){
+        firstError=error;
+      }
+      await preflightDelay(80);
+      try{
+        second=await preflightTimeout(Promise.resolve(task.run?.()),5200,'preflight double-check timed out');
+      }catch(error){
+        secondError=error;
+      }
+      if(firstError || secondError) console.warn('nyx preflight double-check detail:',task.label,{firstError,secondError});
+      return Boolean(first && second);
+    };
     nyxPreflightPromise=(async()=>{
       const tasks=nyxPreflightTasks(kind,options);
       const overlay=document.createElement('div');
@@ -8979,7 +9004,7 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
         item?.classList.add('running');
         let ok=true;
         try{
-          ok=await preflightTimeout(Promise.resolve(tasks[i].run?.()),5200,'preflight timed out');
+          ok=await doubleCheckTask(tasks[i]);
         }catch(error){
           ok=false;
           console.warn('nyx preflight warning:',tasks[i].label,error);
@@ -9712,6 +9737,12 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
               nyxPreflightBypass=false;
             }
             await waitForTabResultPaint(targetTab);
+            return true;
+          },
+          finalVerify:async()=>{
+            const targetTab=state.tabs.find(tab=>tab.id===tabId);
+            if(!targetTab) return false;
+            await waitForTabResultPaint(targetTab,1200);
             return true;
           }
         });

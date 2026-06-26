@@ -1240,8 +1240,10 @@ body.browser-shell [data-browser-shell-forward],
 .tool-btn[data-back],
 .tool-btn[data-forward]{
   position:relative;
-  color:transparent!important;
-  font-size:0!important;
+  color:#f8fafc!important;
+  -webkit-text-fill-color:#f8fafc!important;
+  font-size:22px!important;
+  line-height:1!important;
   overflow:hidden;
 }
 body.browser-shell [data-browser-shell-menu],
@@ -1268,55 +1270,31 @@ body.browser-shell [data-browser-shell-back]::before,
 body.browser-shell [data-browser-shell-forward]::before,
 .tool-btn[data-back]::before,
 .tool-btn[data-forward]::before{
-  content:"";
-  position:absolute;
-  left:50%;
-  top:50%;
-  width:14px;
-  height:2px;
-  border-radius:999px;
-  background:#f8fafc;
-  transform:translate(-50%,-50%);
-  transition:transform .42s cubic-bezier(.16,.86,.2,1),background .26s ease,box-shadow .26s ease;
+  content:none!important;
+  display:none!important;
 }
 body.browser-shell [data-browser-shell-back]::after,
 body.browser-shell [data-browser-shell-forward]::after,
 .tool-btn[data-back]::after,
 .tool-btn[data-forward]::after{
-  content:"";
-  position:absolute;
-  left:50%;
-  top:50%;
-  width:8px;
-  height:8px;
-  border-top:2px solid #f8fafc;
-  border-right:2px solid #f8fafc;
-  border-radius:1px;
-  transition:transform .42s cubic-bezier(.16,.86,.2,1),border-color .26s ease,filter .26s ease;
-}
-body.browser-shell [data-browser-shell-back]::after,
-.tool-btn[data-back]::after{
-  transform:translate(-72%,-50%) rotate(-135deg);
-}
-body.browser-shell [data-browser-shell-forward]::after,
-.tool-btn[data-forward]::after{
-  transform:translate(-28%,-50%) rotate(45deg);
+  content:none!important;
+  display:none!important;
 }
 body.browser-shell [data-browser-shell-back]:hover::before,
 .tool-btn[data-back]:hover::before{
-  transform:translate(calc(-50% - 2px),-50%);
+  transform:none;
 }
 body.browser-shell [data-browser-shell-back]:hover::after,
 .tool-btn[data-back]:hover::after{
-  transform:translate(calc(-72% - 2px),-50%) rotate(-135deg);
+  transform:none;
 }
 body.browser-shell [data-browser-shell-forward]:hover::before,
 .tool-btn[data-forward]:hover::before{
-  transform:translate(calc(-50% + 2px),-50%);
+  transform:none;
 }
 body.browser-shell [data-browser-shell-forward]:hover::after,
 .tool-btn[data-forward]:hover::after{
-  transform:translate(calc(-28% + 2px),-50%) rotate(45deg);
+  transform:none;
 }
 body.browser-shell [data-browser-shell-menu]::before,
 .menu-btn::before{
@@ -1338,7 +1316,7 @@ body.browser-shell [data-browser-shell-menu]:hover::before,
 }
 body.browser-shell [data-browser-shell-reload]::before,
 .tool-btn[data-reload]::before{
-  content:"\21bb";
+  content:"\1f5d8";
   width:1em;
   height:1em;
   display:grid;
@@ -5610,19 +5588,20 @@ body.browser-shell :is(
 }
 body.browser-shell [data-browser-shell-back]::before,
 body.browser-shell .tool-btn[data-back]::before{
-  content:"\2190"!important;
+  content:"\279C"!important;
+  transform:translate(-50%,-50%) scaleX(-1)!important;
 }
 body.browser-shell [data-browser-shell-forward]::before,
 body.browser-shell .tool-btn[data-forward]::before{
-  content:"\2192"!important;
+  content:"\279C"!important;
 }
 body.browser-shell [data-browser-shell-reload]::before,
 body.browser-shell .tool-btn[data-reload]::before{
-  content:"\21bb"!important;
+  content:"\1F5D8"!important;
   font-size:21px!important;
 }
 body.browser-shell :is([data-browser-shell-back],.tool-btn[data-back]):hover::before{
-  transform:translate(-54%,-50%)!important;
+  transform:translate(-54%,-50%) scaleX(-1)!important;
 }
 body.browser-shell :is([data-browser-shell-forward],.tool-btn[data-forward]):hover::before{
   transform:translate(-46%,-50%)!important;
@@ -6736,7 +6715,7 @@ body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn{
   function renderChromeFixed(){
     const top=document.querySelector('.top-os');
     if(top){
-      top.innerHTML='<div class="brand-mini"><button class="browser-mode-app-button active" data-browser-shell-home title="Current tab">Home</button><button class="browser-mode-tab" data-browser-shell-new-tab title="New tab"><span>New tab</span></button></div><form class="browser-mode-address" data-browser-shell-search><button data-browser-shell-back type="button" title="Back">&#8592;</button><button data-browser-shell-forward type="button" title="Forward">&#8594;</button><button data-browser-shell-reload type="button" title="Reload">&#8635;</button><input class="browser-mode-url" data-browser-shell-url placeholder="Search or enter a URL" autocomplete="off"><button class="browser-mode-bookmark" data-browser-shell-bookmark type="button" title="Bookmark this tab" aria-pressed="false">&#9734;</button><button class="browser-mode-weather" data-open="weather" type="button" title="Weather" aria-label="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button><button data-browser-shell-menu type="button" title="Menu">...</button></form><div class="browser-bookmark-panel" id="browserBookmarkPanel" hidden></div><div class="browser-mode-menu" id="browserModeMenu"><button data-browser-shell-new-tab type="button">New tab</button><button data-browser-bookmarks-toggle type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-browser-hieroglyph-toggle type="button">Hieroglyph Mode</button><button data-app-url="/assets/games/index.html" type="button">Games</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-shell-about-tab type="button">Open Tab in Abt:Blank</button></div>';
+      top.innerHTML='<div class="brand-mini"><button class="browser-mode-app-button active" data-browser-shell-home title="Current tab">Home</button><button class="browser-mode-tab" data-browser-shell-new-tab title="New tab"><span>New tab</span></button></div><form class="browser-mode-address" data-browser-shell-search><button data-browser-shell-back type="button" title="Back">&#10140;</button><button data-browser-shell-forward type="button" title="Forward">&#10140;</button><button data-browser-shell-reload type="button" title="Reload">&#128472;</button><input class="browser-mode-url" data-browser-shell-url placeholder="Search or enter a URL" autocomplete="off"><button class="browser-mode-bookmark" data-browser-shell-bookmark type="button" title="Bookmark this tab" aria-pressed="false">&#9734;</button><button class="browser-mode-weather" data-open="weather" type="button" title="Weather" aria-label="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button><button data-browser-shell-menu type="button" title="Menu">...</button></form><div class="browser-bookmark-panel" id="browserBookmarkPanel" hidden></div><div class="browser-mode-menu" id="browserModeMenu"><button data-browser-shell-new-tab type="button">New tab</button><button data-browser-bookmarks-toggle type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-browser-hieroglyph-toggle type="button">Hieroglyph Mode</button><button data-app-url="/assets/games/index.html" type="button">Games</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-shell-about-tab type="button">Open Tab in Abt:Blank</button></div>';
       renderBrowserShellTabs();
       renderBrowserBookmarks();
     }
@@ -9359,7 +9338,7 @@ body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn{
     updateWindowSizeClasses(win);
   }
   function browserBody(){
-    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#8592;</button><button class="tool-btn" data-forward title="Forward">&#8594;</button><button class="tool-btn" data-reload title="Reload">&#8635;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="browser-shell-start"><img class="browser-shell-logo" alt="" src="${favicons.nyx}"><div class="browser-shell-clock" data-browser-shell-clock>--:--</div><div class="browser-shell-caption" data-browser-caption></div></div><div class="browser-home-normal"><h1 class="home-heading">Search the World</h1><p class="home-sub">Search, watch, and enjoy</p><div class="quick-grid home-shortcut-grid" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div></div></div>`;
+    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="browser-shell-start"><img class="browser-shell-logo" alt="" src="${favicons.nyx}"><div class="browser-shell-clock" data-browser-shell-clock>--:--</div><div class="browser-shell-caption" data-browser-caption></div></div><div class="browser-home-normal"><h1 class="home-heading">Search the World</h1><p class="home-sub">Search, watch, and enjoy</p><div class="quick-grid home-shortcut-grid" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div></div></div>`;
   }
   //apps-grid
   const defaultHomeShortcuts=[
@@ -9581,9 +9560,9 @@ body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn{
   }
   function cleanBrowserControls(win){
     const back=win.querySelector('[data-back]'), forward=win.querySelector('[data-forward]'), reload=win.querySelector('[data-reload]'), menu=win.querySelector('[data-menu]');
-    if(back) back.textContent='<';
-    if(forward) forward.textContent='>';
-    if(reload) reload.textContent='↻';
+    if(back) back.textContent='➜';
+    if(forward) forward.textContent='➜';
+    if(reload) reload.textContent='🗘';
     if(menu) menu.textContent='...';
   }
   let nyxPreflightPromise=null;

@@ -5403,6 +5403,42 @@ body.browser-shell .weather-panel{
 body.browser-shell .weather-restore{
   top:78px!important;
 }
+body.browser-shell :is(
+  [data-browser-shell-bookmark],
+  .browser-mode-weather,
+  [data-browser-shell-menu]
+){
+  color:transparent!important;
+  -webkit-text-fill-color:transparent!important;
+  text-shadow:none!important;
+  font-size:0!important;
+  line-height:0!important;
+  text-indent:-9999px!important;
+  overflow:hidden!important;
+}
+body.browser-shell :is(
+  [data-browser-shell-bookmark],
+  .browser-mode-weather,
+  [data-browser-shell-menu]
+)::before,
+body.browser-shell :is(
+  [data-browser-shell-bookmark],
+  .browser-mode-weather,
+  [data-browser-shell-menu]
+)::after{
+  text-indent:0!important;
+  -webkit-text-fill-color:currentColor!important;
+}
+body.browser-shell [data-browser-shell-bookmark]::before,
+body.browser-shell [data-browser-shell-menu]::before{
+  z-index:3!important;
+}
+body.browser-shell .browser-mode-weather > .weather-cloud-icon{
+  text-indent:0!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  z-index:3!important;
+}
 @media(max-width:760px){
   body.browser-shell{
     --bar:70px!important;

@@ -9471,26 +9471,28 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
       ['goo',['google classroom','google docs','google drive','google translate','google maps','google flights']]
     ];
     const prefixItems=popularByPrefix.find(([prefix])=>q.startsWith(prefix))?.[1] || [];
-    const phraseItems=[
-      `${query} login`,
-      `${query} download`,
-      `${query} app`,
-      `${query} online`,
-      `${query} meaning`,
-      `${query} reddit`,
-      `${query} price`,
-      `${query} near me`,
-      `${query} news`,
-      `${query} support`
-    ];
-    const pool=[...remoteItems,...prefixItems,...tabItems,...bookmarkItems,...browserSuggestionSeeds,...phraseItems];
+    const pool=[...remoteItems,...prefixItems,...tabItems,...bookmarkItems,...browserSuggestionSeeds];
     const seen=new Set();
     const out=[];
-    pool.forEach(item=>{
+    pool
+      .map(item=>String(item || '').trim())
+      .filter(Boolean)
+      .sort((a,b)=>{
+        const ak=a.toLowerCase();
+        const bk=b.toLowerCase();
+        const aStarts=ak.startsWith(q) ? 0 : 1;
+        const bStarts=bk.startsWith(q) ? 0 : 1;
+        if(aStarts!==bStarts) return aStarts-bStarts;
+        const aIndex=ak.indexOf(q);
+        const bIndex=bk.indexOf(q);
+        if(aIndex!==bIndex) return aIndex-bIndex;
+        return a.length-b.length;
+      })
+      .forEach(item=>{
       const text=String(item || '').trim();
       const key=text.toLowerCase();
       if(!text || seen.has(key)) return;
-      if(key.includes(q) || q.includes(key)){
+      if(key.includes(q) || (q.length<=4 && q.includes(key))){
         seen.add(key);
         out.push(text);
       }

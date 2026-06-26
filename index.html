@@ -2537,6 +2537,24 @@ body.effect-emeralds #visualEffects i::before{
 .window.short .quick-tile{height:86px}
 /* //lion-ai-css */
 .lion-ai-panel{height:calc(100% - 32px);display:grid;grid-template-rows:auto 1fr auto;gap:14px;padding:18px;background:#fff;color:#111827;overflow:hidden}
+body.theme-ruby .lion-ai-panel,
+body.theme-emerald .lion-ai-panel,
+body.theme-sakura .lion-ai-panel{
+  background:linear-gradient(rgba(0,0,0,.08),rgba(0,0,0,.18)),var(--theme-bg)!important;
+  background-size:cover!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+  color:#f8fafc!important;
+}
+body.theme-ruby .lion-ai-title span,
+body.theme-emerald .lion-ai-title span,
+body.theme-sakura .lion-ai-title span,
+body.theme-ruby .lion-ai-image-status,
+body.theme-emerald .lion-ai-image-status,
+body.theme-sakura .lion-ai-image-status{
+  color:var(--theme-strong)!important;
+  -webkit-text-fill-color:var(--theme-strong)!important;
+}
 .lion-ai-head{display:flex;align-items:center;justify-content:space-between;gap:14px}
 .lion-ai-brand{display:flex;align-items:center;gap:12px;min-width:0}
 .lion-ai-mark{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:#111827;color:#fff;border:1px solid rgba(17,24,39,.12);box-shadow:0 10px 24px rgba(15,23,42,.16);font-weight:900}
@@ -4118,6 +4136,20 @@ body.browser-shell.theme-sakura .apps-panel .quick-tile span{
   background-image:none!important;
   text-shadow:none!important;
   font-weight:400!important;
+}
+body.theme-ruby .apps-panel,
+body.theme-emerald .apps-panel,
+body.theme-sakura .apps-panel,
+body.browser-shell.theme-ruby .apps-panel,
+body.browser-shell.theme-ruby .panel.apps-panel,
+body.browser-shell.theme-emerald .apps-panel,
+body.browser-shell.theme-emerald .panel.apps-panel,
+body.browser-shell.theme-sakura .apps-panel,
+body.browser-shell.theme-sakura .panel.apps-panel{
+  background:linear-gradient(rgba(0,0,0,.10),rgba(0,0,0,.20)),var(--theme-bg)!important;
+  background-size:cover!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
 }
 body.browser-shell :is(.settings-app,.settings-main,.settings-side,.settings-block,.settings-card),
 body.browser-shell.theme-ruby :is(.settings-app,.settings-main,.settings-side,.settings-block,.settings-card),
@@ -7090,6 +7122,20 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
     if(theme==='emerald' && ambientTracks?.frog && ambientCurrentKey!=='frog'){
       loadAmbientTrack('frog',true);
     }
+    syncInternalThemeFrames(theme);
+  }
+  function syncInternalThemeFrames(theme=store.text('nyx.theme','default')){
+    const clean=['ruby','emerald','sakura'].includes(theme) ? theme : 'default';
+    document.querySelectorAll('iframe.view').forEach(frame=>{
+      try{
+        const doc=frame.contentDocument;
+        if(!doc?.body) return;
+        doc.body.classList.remove('theme-ruby','theme-emerald','theme-sakura');
+        if(clean!=='default') doc.body.classList.add('theme-'+clean);
+        doc.querySelectorAll('[data-theme-value]').forEach(el=>{el.value=clean});
+      }catch{}
+      try{frame.contentWindow?.postMessage?.({type:'nyx:theme-sync',theme:clean},'*')}catch{}
+    });
   }
   function applyVisualEffectSetting(){
     const effect=store.text('nyx.visualEffect','none');

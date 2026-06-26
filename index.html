@@ -6555,13 +6555,17 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
       return;
     }
     ensureBrowserShellHome();
+    const proxyInternal=/^(?:\/service\/|\/~\/sj\/|\/scramjet\/service\/|nyx:\/\/)/i.test(raw);
+    const looksLikeUrl=/^(?:[a-z][a-z0-9+.-]*:|[\w.-]+\.[a-z]{2,}(?:\/|$)|\/|\.\/|\.\.\/|assets\/)/i.test(raw);
+    const isSearchQuery=raw && !looksLikeUrl && !proxyInternal;
     const normalized=normalize(raw);
     const target=normalized || raw;
+    const navigationValue=isSearchQuery ? raw : target;
     const shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab) || browserShellTabs[0];
     if(activeBrowser?.win?.isConnected){
       if(shellTab?.browserTabId && activeBrowser.activate) activeBrowser.activate(shellTab.browserTabId);
-      if(activeBrowser.navigate) activeBrowser.navigate(target);
-      else openBrowser(target);
+      if(activeBrowser.navigate) activeBrowser.navigate(navigationValue);
+      else openBrowser(navigationValue);
       const activeTab=activeBrowser?.tabs?.find(tab=>tab.id===shellTab?.browserTabId || tab.id===activeBrowser.active);
       if(activeTab){
         activeTab.url=target;
@@ -6570,7 +6574,7 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
         activeBrowser.renderTabs?.();
       }
     }else{
-      const win=openBrowser(target);
+      const win=openBrowser(navigationValue);
       win?.classList.add('maximized');
       const created=activeBrowser?.tabs?.[activeBrowser.tabs.length-1];
       if(shellTab && created) shellTab.browserTabId=created.id;

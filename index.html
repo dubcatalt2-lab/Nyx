@@ -12834,6 +12834,51 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
       if(openUrl) navigate(openUrl,forceMode);
       return tab;
     }
+    function reloadTab(tabId=state.active){
+      const t=state.tabs.find(tab=>tab.id===tabId) || current();
+      if(!t) return false;
+      const source=browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
+      if(!source){
+        activate(t.id);
+        return false;
+      }
+      activate(t.id);
+      if(String(source).startsWith('nyx://')){
+        showBrowserShellInternalPage(source.replace(/^nyx:\/\//,'') || 'apps');
+        return true;
+      }
+      if(t.scramjetFrame){
+        clearFrameDocument(t);
+        try{
+          t.scramjetFrame.go(source);
+          return true;
+        }catch{
+          retryScramjetTab(t,source);
+          return true;
+        }
+      }
+      try{
+        t.frame?.contentWindow?.location?.reload();
+        return true;
+      }catch{}
+      const srcdoc=t.frame?.getAttribute('srcdoc');
+      if(srcdoc){
+        t.frame.srcdoc='';
+        requestAnimationFrame(()=>{t.frame.srcdoc=srcdoc});
+        return true;
+      }
+      const src=t.frame?.getAttribute('src');
+      if(src){
+        t.frame.removeAttribute('src');
+        requestAnimationFrame(()=>{t.frame.src=src});
+        return true;
+      }
+      if(/^https?:/i.test(source)){
+        navigate(source,t.expectedEngine || '');
+        return true;
+      }
+      return false;
+    }
     function popupWarningHtml(message='are you trying to hack me ︻デ═一 indian shwarma scamma? get blocked by 1aqlla dummy haha67'){
       const safeMessage=JSON.stringify(String(message || 'are you trying to hack me ︻デ═一 indian shwarma scamma? get blocked by 1aqlla dummy haha67'));
       return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>nyx://blocked67haha</title><style>html,body{margin:0;width:100%;height:100%;background:#fff;color:#000;font:14px Raleway,Arial,sans-serif}body{overflow:hidden}.prompt-shade{position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;background:#fff}.prompt{width:min(540px,calc(100vw - 36px));padding:18px 20px;border:0;border-radius:0 0 14px 14px;background:#fff;color:#000;box-shadow:0 6px 18px rgba(0,0,0,.18)}.title{margin:0 0 22px;color:#000;font-size:16px;font-weight:700}.message{margin:0 0 8px;font-size:14px;line-height:1.35}.prompt-input{width:100%;height:38px;margin:0 0 38px;border:2px solid #4b5563;border-radius:8px;background:#fff;color:#000;padding:0 10px;font:16px Raleway,Arial,sans-serif;outline:0}.actions{display:flex;justify-content:flex-end;gap:10px}.ok,.cancel{min-width:48px;height:40px;border:1px solid #d1d5db;border-radius:9px;background:#fff;color:#000;padding:0 14px;font:15px Raleway,Arial,sans-serif}.ok{border-color:#000;font-weight:800}.cancel{color:#000}.ok:focus{outline:2px solid #2563eb;outline-offset:2px}</style></head><body><script>const MESSAGE=${safeMessage};function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;"}[c]))}function show(){document.body.innerHTML='<div class="prompt-shade"><div class="prompt" role="dialog" aria-modal="true"><div class="title">1aqlla said no goofy haha6767</div><div class="message">'+esc(MESSAGE)+'</div><input class="prompt-input" autocomplete="off" spellcheck="false"><div class="actions"><button class="ok" type="button">OK</button><button class="cancel" type="button">Cancel</button></div></div></div>';const ok=document.querySelector(".ok");const input=document.querySelector(".prompt-input");input.focus();ok.onclick=()=>setTimeout(show,0);document.querySelector(".cancel").onclick=()=>{};input.onkeydown=e=>{if(e.key==="Enter")ok.click()}}show();<\/script></body></html>`;
@@ -13707,10 +13752,11 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
     state.refreshSandbox=()=>state.tabs.forEach(tab=>setFrameSandbox(tab));
     state.renderTabs=renderTabs;
     state.navigate=navigate;
+    state.reloadTab=reloadTab;
     win.querySelector('[data-new-tab]').onclick=()=>addTab();
     win.querySelector('[data-go]').onclick=()=>navigate(win.querySelector('.urlbar').value);
     win.querySelector('.urlbar').addEventListener('keydown',e=>{if(e.key==='Enter')navigate(e.target.value)});
-    win.querySelector('[data-reload]').onclick=()=>{const t=current(); if(t?.scramjetFrame) t.scramjetFrame.reload(); else if(t?.url)t.frame.src=t.frame.src};
+    win.querySelector('[data-reload]').onclick=()=>reloadTab();
     win.querySelector('[data-back]').onclick=()=>goFrameHistory(-1);
     win.querySelector('[data-forward]').onclick=()=>goFrameHistory(1);
     win.querySelector('[data-menu]').onclick=()=>document.body.classList.contains('browser-shell') ? openBrowserShellSettings() : openSettings();
@@ -15817,17 +15863,19 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
           playHomeEntranceAnimation(activeBrowser?.win || document);
           return;
         }
-        const tabId=shellTab.id;
+        const browserTabId=shellTab.browserTabId || activeBrowser?.active || '';
         runNyxPreflight('browser',{
           target:shellTab.sourceUrl || shellTab.url,
           finalLabel:'Page loaded',
           finalRun:async()=>{
-            const targetTab=activeBrowser?.state?.tabs?.find(tab=>tab.id===tabId);
+            const targetTab=activeBrowser?.tabs?.find(tab=>tab.id===browserTabId) || activeBrowser?.tabs?.find(tab=>tab.id===activeBrowser?.active);
             if(!targetTab?.url) return false;
             nyxPreflightBypass=true;
             try{
-              activeBrowser?.state?.activate?.(tabId);
-              activeBrowser?.state?.navigate?.(targetTab.sourceUrl || targetTab.url);
+              activeBrowser?.activate?.(targetTab.id);
+              if(!activeBrowser?.reloadTab?.(targetTab.id)){
+                activeBrowser?.navigate?.(targetTab.sourceUrl || targetTab.url);
+              }
             }finally{
               nyxPreflightBypass=false;
             }
@@ -15835,7 +15883,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
             return true;
           },
           finalVerify:async()=>{
-            const targetTab=activeBrowser?.state?.tabs?.find(tab=>tab.id===tabId);
+            const targetTab=activeBrowser?.tabs?.find(tab=>tab.id===browserTabId) || activeBrowser?.tabs?.find(tab=>tab.id===activeBrowser?.active);
             if(!targetTab) return false;
             await waitForTabResultPaint(targetTab,2600);
             return true;

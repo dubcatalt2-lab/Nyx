@@ -8308,6 +8308,50 @@ html body.browser-shell .ambient-player:not(.tucked) .ambient-hide{
   0%{opacity:0;transform:translateX(-10px) scale(.96)}
   100%{opacity:1;transform:translateX(0) scale(1)}
 }
+/* //music-mini-polish-final */
+html body.browser-shell .ambient-player.tucked{
+  width:64px!important;
+  height:38px!important;
+  min-width:64px!important;
+  max-width:64px!important;
+  min-height:38px!important;
+  max-height:38px!important;
+  grid-template-columns:30px 18px!important;
+  gap:4px!important;
+  padding:4px 6px!important;
+  border-radius:999px!important;
+  overflow:hidden!important;
+  box-shadow:0 10px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.14)!important;
+}
+html body.browser-shell .ambient-player.tucked .ambient-toggle{
+  width:30px!important;
+  height:30px!important;
+  min-width:30px!important;
+  min-height:30px!important;
+  border-radius:999px!important;
+  font-size:12px!important;
+  background:color-mix(in srgb,var(--theme-a,#7c3aed) 28%,rgba(255,255,255,.1))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16)!important;
+}
+html body.browser-shell .ambient-player.tucked .ambient-hide{
+  width:18px!important;
+  height:30px!important;
+  min-width:18px!important;
+  min-height:30px!important;
+  border-radius:999px!important;
+  font-size:15px!important;
+  background:transparent!important;
+  opacity:.9!important;
+}
+html body.browser-shell .ambient-player.tucked .ambient-hide:hover,
+html body.browser-shell .ambient-player.tucked .ambient-toggle:hover{
+  transform:scale(1.06)!important;
+}
+html body.browser-shell.theme-fresh .ambient-player.tucked .ambient-toggle{
+  background:rgba(64,224,208,.18)!important;
+  color:var(--fresh-electric,#00f5d4)!important;
+  -webkit-text-fill-color:var(--fresh-electric,#00f5d4)!important;
+}
 html body.browser-shell .browser-mode-address button[data-browser-shell-menu],
 html body.browser-shell .browser-mode-address button[data-browser-shell-menu]:hover,
 html body.browser-shell .browser-mode-address button[data-browser-shell-menu]:focus,
@@ -9752,10 +9796,15 @@ html body.browser-shell.theme-fresh :is([data-browser-shell-back],[data-browser-
     document.body.appendChild(overlay);
     const effectBlock=overlay.querySelector('[data-effect-value]')?.closest('.settings-block');
     if(effectBlock){
+      const lagBlock=document.createElement('section');
+      lagBlock.className='settings-block';
+      const lagOn=store.get('nyx.lagReducer',false);
+      lagBlock.innerHTML=`<h2>Lag Reducer</h2><p>Turns off heavier blur, shadows, particles, and startup effects for smoother browsing.</p><div class="settings-row"><span>Lag Reducer</span><button class="settings-action ${lagOn?'on':''}" data-switch="nyx.lagReducer" data-lag-reducer type="button">${lagOn?'On':'Off'}</button></div>`;
       const liteBlock=document.createElement('section');
       liteBlock.className='settings-block';
       const liteOn=store.get('nyx.performanceLite',false);
       liteBlock.innerHTML=`<h2>Performance Lite</h2><p>Lightens blur, shadows, and particles without fully disabling animations.</p><div class="settings-row"><span>Performance Lite</span><button class="settings-action ${liteOn?'on':''}" data-switch="nyx.performanceLite" data-performance-lite type="button">${liteOn?'On':'Off'}</button></div>`;
+      effectBlock.before(lagBlock);
       effectBlock.before(liteBlock);
     }
     ensureFreshThemeOptions(overlay);

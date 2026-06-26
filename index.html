@@ -5734,6 +5734,26 @@ body.browser-shell .browser-shell-settings-close:hover{
 body.browser-shell .browser-shell-settings-close:hover::before{
   transform:translate(-50%,-50%) rotate(45deg)!important;
 }
+/* //settings-close-sticky-final */
+body.browser-shell .browser-shell-settings-panel .browser-shell-settings-close{
+  position:sticky!important;
+  top:12px!important;
+  left:auto!important;
+  right:auto!important;
+  z-index:9000!important;
+  margin:0 0 8px auto!important;
+  width:28px!important;
+  height:28px!important;
+  min-width:28px!important;
+  min-height:28px!important;
+  transform:none!important;
+}
+body.browser-shell .browser-shell-settings-panel .browser-shell-settings-close:hover{
+  transform:none!important;
+}
+body.browser-shell .browser-shell-settings-panel .browser-shell-settings-close:hover::before{
+  transform:translate(-50%,-50%) rotate(45deg)!important;
+}
 /* //fresh-theme-final */
 body.theme-fresh{
   --theme-border:#ffffff!important;
@@ -9534,7 +9554,7 @@ body.theme-fresh select option{
     const appendFinal=tasks=>{
       if(typeof options.finalRun==='function'){
         let finalStarted=false;
-        return [...tasks,{label:options.finalLabel || 'Showing results',run:async()=>{
+        return [...tasks,{label:options.finalLabel || 'Page loaded',acceptAnyCheck:true,run:async()=>{
           if(!finalStarted){
             finalStarted=true;
             return options.finalRun();
@@ -9623,7 +9643,7 @@ body.theme-fresh select option{
         secondError=error;
       }
       if(firstError || secondError) console.warn('nyx preflight double-check detail:',task.label,{firstError,secondError});
-      return Boolean(first && second);
+      return task.acceptAnyCheck ? Boolean(first || second) : Boolean(first && second);
     };
     nyxPreflightPromise=(async()=>{
       const tasks=nyxPreflightTasks(kind,options);
@@ -10378,13 +10398,13 @@ body.theme-fresh select option{
         };
         const poll=setInterval(()=>{
           const srcdoc=String(t.frame?.getAttribute?.('srcdoc') || '');
-          if(srcdoc && /Scramjet did not start|Ultraviolet did not start|Page Not Found|error/i.test(srcdoc)) finish(true);
+          if(srcdoc && /Scramjet did not start|Ultraviolet did not start|Page Not Found|error/i.test(srcdoc)) finish(false);
           if(hasMeaningfulContent()) finish(true);
           const source=sourceForReadiness();
           const isDuckSearch=hostMatches(browserHost(source),['duckduckgo.com']) && /[?&]q=/.test(source);
           if(!isDuckSearch && loadSeen && Date.now()-loadedAt>1100) finish(true);
         },120);
-        const timer=setTimeout(()=>finish(true),timeout);
+        const timer=setTimeout(()=>finish(false),timeout);
         t.frame.addEventListener('load',onLoad,{once:true});
       });
     }
@@ -10402,7 +10422,7 @@ body.theme-fresh select option{
         const tabId=t.id;
         runNyxPreflight('search',{
           target:rawText,
-          finalLabel:'Showing results',
+          finalLabel:'Page loaded',
           finalRun:async()=>{
             const targetTab=state.tabs.find(tab=>tab.id===tabId);
             if(!targetTab) return false;

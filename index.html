@@ -6230,6 +6230,73 @@ body.browser-shell.theme-fresh .home-shortcut-menu button:hover{
   background:rgba(255,255,255,.44)!important;
   transform:translateX(2px)!important;
 }
+/* //fresh-hover-smooth-final */
+body.browser-shell.theme-fresh :is(
+  button,
+  .browser-mode-tab,
+  .browser-mode-app-button,
+  .browser-mode-address button,
+  .browser-mode-menu button,
+  .settings-action,
+  .settings-preset,
+  .tool-btn,
+  .go-btn,
+  .menu-btn,
+  .home-shortcut,
+  .home-shortcut-add,
+  .home-shortcut-menu button,
+  .home-shortcut-menu-btn,
+  .quick-tile,
+  .quick-icon,
+  .weather-icon-btn
+){
+  transition:
+    transform .68s cubic-bezier(.18,.82,.2,1),
+    background-color .62s ease,
+    border-color .62s ease,
+    box-shadow .68s ease,
+    color .55s ease,
+    opacity .55s ease,
+    filter .62s ease!important;
+}
+body.browser-shell.theme-fresh :is(
+  [data-browser-shell-back],
+  [data-browser-shell-forward],
+  [data-browser-shell-reload],
+  [data-browser-shell-bookmark],
+  [data-browser-shell-menu],
+  .tool-btn[data-back],
+  .tool-btn[data-forward],
+  .tool-btn[data-reload],
+  .home-shortcut-menu-btn
+)::before,
+body.browser-shell.theme-fresh :is(
+  [data-browser-shell-back],
+  [data-browser-shell-forward],
+  [data-browser-shell-reload],
+  [data-browser-shell-bookmark],
+  [data-browser-shell-menu],
+  .tool-btn[data-back],
+  .tool-btn[data-forward],
+  .tool-btn[data-reload],
+  .home-shortcut-menu-btn
+)::after{
+  transition:
+    transform .72s cubic-bezier(.18,.82,.2,1),
+    background-color .62s ease,
+    color .62s ease,
+    box-shadow .62s ease!important;
+}
+body.browser-shell.theme-fresh .browser-mode-address button:hover{
+  transform:translateY(-1px) scale(1.04)!important;
+}
+body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn:hover{
+  transform:scale(1.08)!important;
+}
+body.browser-shell.theme-fresh .browser-mode-menu button:hover,
+body.browser-shell.theme-fresh .home-shortcut-menu button:hover{
+  transform:translateX(1px)!important;
+}
 </style>
 </head>
 <body>

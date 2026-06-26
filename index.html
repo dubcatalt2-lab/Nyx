@@ -5754,6 +5754,40 @@ body.browser-shell .browser-shell-settings-panel .browser-shell-settings-close:h
 body.browser-shell .browser-shell-settings-panel .browser-shell-settings-close:hover::before{
   transform:translate(-50%,-50%) rotate(45deg)!important;
 }
+/* //weather-icon-single-layer-final */
+body.browser-shell .browser-mode-weather,
+body.browser-shell #weatherRestore{
+  font-size:0!important;
+  line-height:0!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  text-indent:0!important;
+  overflow:hidden!important;
+}
+body.browser-shell .browser-mode-weather::before,
+body.browser-shell .browser-mode-weather::after,
+body.browser-shell #weatherRestore::before,
+body.browser-shell #weatherRestore::after,
+body.browser-shell .weather-cloud-icon::before,
+body.browser-shell .weather-cloud-icon::after{
+  content:none!important;
+  display:none!important;
+}
+body.browser-shell .browser-mode-weather > .weather-cloud-icon,
+body.browser-shell #weatherRestore > .weather-cloud-icon{
+  position:relative!important;
+  width:22px!important;
+  height:22px!important;
+  display:block!important;
+  margin:auto!important;
+  background:url("./assets/icons/cloud-weather.png") center/contain no-repeat!important;
+  filter:brightness(0) invert(1)!important;
+  opacity:1!important;
+  visibility:visible!important;
+  z-index:4!important;
+  text-indent:0!important;
+  transform:none!important;
+}
 /* //fresh-theme-final */
 body.theme-fresh{
   --theme-border:#ffffff!important;

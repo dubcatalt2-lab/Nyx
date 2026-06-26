@@ -8909,6 +8909,12 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
   }
   function nyxPreflightTasks(kind='startup',options={}){
     const target=String(options.target || '').trim();
+    const appendFinal=tasks=>{
+      if(typeof options.finalRun==='function'){
+        return [...tasks,{label:options.finalLabel || 'Showing results',run:options.finalRun}];
+      }
+      return tasks;
+    };
     const serverCheck=async()=>{
       const checks=['/uv/uv.bundle.js','/scramjet/scramjet.js','/baremux/index.mjs'].map(url=>preflightFetchOk(url,2400).catch(()=>false));
       const results=await Promise.all(checks);
@@ -8928,33 +8934,33 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
       {label:'Registering service worker',run:()=>preflightServiceWorkerReady(target)}
     ];
     if(kind==='apps'){
-      return [
+      return appendFinal([
         ...base,
         {label:'Checking app shortcuts',run:preflightAppIconsReady},
         {label:'Opening apps panel',run:async()=>{await preflightDelay(180); return true}}
-      ];
+      ]);
     }
     if(kind==='search'){
-      return [
+      return appendFinal([
         {label:'Reading search query',run:searchCheck},
         {label:'Checking selected search engine',run:async()=>{await preflightDelay(150); return !!store.text('nyx.engine','duckduckgo')}},
         ...base,
         {label:'Preparing results tab',run:async()=>{await preflightDelay(160); return true}}
-      ];
+      ]);
     }
     if(kind==='browser'){
-      return [
+      return appendFinal([
         {label:'Checking requested page',run:searchCheck},
         ...base,
         {label:'Opening browser tab',run:async()=>{await preflightDelay(160); return true}}
-      ];
+      ]);
     }
-    return [
+    return appendFinal([
       {label:'Checking nyx files',run:serverCheck},
       {label:'Checking search',run:searchCheck},
       ...base,
       {label:'Finishing startup',run:async()=>{await preflightDelay(220); return true}}
-    ];
+    ]);
   }
   async function runNyxPreflight(kind='startup',options={}){
     if(options.skip || nyxPreflightBypass) return true;
@@ -9659,6 +9665,28 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
         },1800);
       });
     }
+    function waitForTabResultPaint(t,timeout=4200){
+      return new Promise(resolve=>{
+        if(!t?.frame) return resolve(false);
+        let done=false;
+        const finish=value=>{
+          if(done) return;
+          done=true;
+          clearInterval(poll);
+          clearTimeout(timer);
+          try{t.frame.removeEventListener('load',onLoad)}catch{}
+          resolve(value);
+        };
+        const onLoad=()=>setTimeout(()=>finish(true),140);
+        const poll=setInterval(()=>{
+          const src=String(t.frame?.getAttribute?.('src') || '');
+          const srcdoc=String(t.frame?.getAttribute?.('srcdoc') || '');
+          if(t.scramjetFrame || src || srcdoc || t.url) finish(true);
+        },120);
+        const timer=setTimeout(()=>finish(true),timeout);
+        t.frame.addEventListener('load',onLoad,{once:true});
+      });
+    }
     function navigate(raw,forceMode=''){
       const t=current(); if(!t)return;
       if(shouldTriggerSixtySevenJumpscare(raw)){
@@ -9670,14 +9698,21 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
       if(rawText && !proxyInternal && !nyxPreflightBypass){
         const tabId=t.id;
         const looksLikeUrl=/^(?:[a-z][a-z0-9+.-]*:|[\w.-]+\.[a-z]{2,}(?:\/|$))/i.test(rawText);
-        runNyxPreflight((forceMode || looksLikeUrl) ? 'browser' : 'search',{target:rawText}).then(()=>{
-          if(!state.tabs.some(tab=>tab.id===tabId)) return;
-          nyxPreflightBypass=true;
-          try{
-            activate(tabId);
-            navigate(rawText,forceMode);
-          }finally{
-            nyxPreflightBypass=false;
+        runNyxPreflight((forceMode || looksLikeUrl) ? 'browser' : 'search',{
+          target:rawText,
+          finalLabel:(forceMode || looksLikeUrl) ? 'Showing page' : 'Showing results',
+          finalRun:async()=>{
+            const targetTab=state.tabs.find(tab=>tab.id===tabId);
+            if(!targetTab) return false;
+            nyxPreflightBypass=true;
+            try{
+              activate(tabId);
+              navigate(rawText,forceMode);
+            }finally{
+              nyxPreflightBypass=false;
+            }
+            await waitForTabResultPaint(targetTab);
+            return true;
           }
         });
         return;

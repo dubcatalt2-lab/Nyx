@@ -5550,6 +5550,81 @@ body.browser-shell .browser-mode-weather > .weather-cloud-icon{
   margin:0!important;
   transform:translate(-50%,-50%)!important;
 }
+/* //browser-nav-icon-center-final */
+body.browser-shell :is(
+  [data-browser-shell-back],
+  [data-browser-shell-forward],
+  [data-browser-shell-reload],
+  .tool-btn[data-back],
+  .tool-btn[data-forward],
+  .tool-btn[data-reload]
+){
+  position:relative!important;
+  overflow:hidden!important;
+  color:transparent!important;
+  -webkit-text-fill-color:transparent!important;
+  font-size:0!important;
+  text-indent:-9999px!important;
+}
+body.browser-shell :is(
+  [data-browser-shell-back],
+  [data-browser-shell-forward],
+  [data-browser-shell-reload],
+  .tool-btn[data-back],
+  .tool-btn[data-forward],
+  .tool-btn[data-reload]
+)::before{
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  width:auto!important;
+  height:auto!important;
+  display:block!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#f8fafc!important;
+  -webkit-text-fill-color:#f8fafc!important;
+  font-family:Arial,Helvetica,sans-serif!important;
+  font-size:22px!important;
+  font-weight:700!important;
+  line-height:1!important;
+  text-indent:0!important;
+  transform:translate(-50%,-50%) rotate(0deg)!important;
+  transition:transform .42s cubic-bezier(.16,.86,.2,1),color .22s ease!important;
+}
+body.browser-shell :is(
+  [data-browser-shell-back],
+  [data-browser-shell-forward],
+  .tool-btn[data-back],
+  .tool-btn[data-forward]
+)::after{
+  content:none!important;
+  display:none!important;
+}
+body.browser-shell [data-browser-shell-back]::before,
+body.browser-shell .tool-btn[data-back]::before{
+  content:"\2190"!important;
+}
+body.browser-shell [data-browser-shell-forward]::before,
+body.browser-shell .tool-btn[data-forward]::before{
+  content:"\2192"!important;
+}
+body.browser-shell [data-browser-shell-reload]::before,
+body.browser-shell .tool-btn[data-reload]::before{
+  content:"\21bb"!important;
+  font-size:21px!important;
+}
+body.browser-shell :is([data-browser-shell-back],.tool-btn[data-back]):hover::before{
+  transform:translate(-54%,-50%)!important;
+}
+body.browser-shell :is([data-browser-shell-forward],.tool-btn[data-forward]):hover::before{
+  transform:translate(-46%,-50%)!important;
+}
+body.browser-shell :is([data-browser-shell-reload],.tool-btn[data-reload]):hover::before{
+  transform:translate(-50%,-50%) rotate(28deg)!important;
+}
 </style>
 </head>
 <body>

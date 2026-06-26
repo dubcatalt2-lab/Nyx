@@ -8423,6 +8423,99 @@ html body.browser-shell.theme-fresh :is([data-browser-shell-back],[data-browser-
   color:#00f5d4!important;
   -webkit-text-fill-color:#00f5d4!important;
 }
+/* //weather-compact-modern-final */
+html body.browser-shell #weatherRestore,
+html body.browser-shell #weatherRestore.show{
+  display:none!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+html body.browser-shell .weather-panel{
+  top:94px!important;
+  right:14px!important;
+  width:min(368px,calc(100vw - 28px))!important;
+  max-height:calc(100dvh - 114px)!important;
+  overflow:auto!important;
+  padding:18px!important;
+  border-radius:24px!important;
+  background:radial-gradient(circle at 88% 12%,rgba(141,124,255,.28),transparent 26%),radial-gradient(circle at 18% 8%,rgba(255,255,255,.08),transparent 24%),linear-gradient(155deg,rgba(17,18,32,.96),rgba(12,13,25,.94) 58%,rgba(22,18,39,.96))!important;
+  border:1px solid color-mix(in srgb,var(--theme-a,#8b5cf6) 42%,rgba(255,255,255,.12))!important;
+  box-shadow:0 22px 64px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.08)!important;
+  backdrop-filter:blur(18px) saturate(1.12)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(1.12)!important;
+}
+html body.browser-shell .weather-panel::-webkit-scrollbar{width:0}
+html body.browser-shell .weather-search{grid-template-columns:minmax(0,1fr) 44px!important;gap:9px!important;margin-bottom:16px!important}
+html body.browser-shell .weather-search input{
+  height:44px!important;
+  border-radius:13px!important;
+  padding:0 13px 0 40px!important;
+  text-align:left!important;
+  direction:ltr!important;
+  font-size:14px!important;
+  font-weight:650!important;
+  letter-spacing:0!important;
+  background-color:rgba(8,9,20,.64)!important;
+  background-position:8px 50%,24px 26px!important;
+  color:#f4f1ff!important;
+  border-color:rgba(164,144,255,.22)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05)!important;
+}
+html body.browser-shell .weather-search input::placeholder{color:#8f87ad!important;text-align:left!important}
+html body.browser-shell .weather-search button{
+  width:44px!important;
+  height:44px!important;
+  border-radius:13px!important;
+  background:rgba(12,13,26,.72)!important;
+  border-color:rgba(164,144,255,.22)!important;
+}
+html body.browser-shell .weather-options{height:38px!important;margin:-8px 0 13px!important;font-size:13px!important}
+html body.browser-shell .weather-current{gap:13px!important}
+html body.browser-shell .weather-now{grid-template-columns:56px minmax(0,1fr) minmax(78px,auto)!important;gap:10px!important}
+html body.browser-shell .weather-glyph{width:50px!important;height:50px!important;font-size:34px!important}
+html body.browser-shell .weather-panel .weather-temp{font-size:42px!important;line-height:.9!important}
+html body.browser-shell .weather-panel .weather-desc{font-size:14px!important}
+html body.browser-shell .weather-panel .weather-place{max-width:108px!important;font-size:14px!important;color:#aaa2c8!important}
+html body.browser-shell .weather-region-time{margin-top:-6px!important;font-size:12px!important}
+html body.browser-shell .weather-stat-grid{gap:8px!important}
+html body.browser-shell .weather-stat{
+  min-height:36px!important;
+  padding:0 12px!important;
+  border-radius:12px!important;
+  background:rgba(7,8,18,.52)!important;
+  color:#9188aa!important;
+  font-size:14px!important;
+}
+html body.browser-shell .weather-stat strong{font-size:15px!important}
+html body.browser-shell .weather-forecast-title{margin:2px 0 -1px!important;font-size:12px!important;letter-spacing:.14em!important}
+html body.browser-shell .weather-forecast{gap:6px!important}
+html body.browser-shell .weather-forecast-row{
+  grid-template-columns:58px 30px 52px 1fr!important;
+  min-height:30px!important;
+  padding:0 10px!important;
+  border-radius:10px!important;
+  background:rgba(7,8,18,.42)!important;
+  color:#d8d4ea!important;
+  font-size:14px!important;
+  pointer-events:none!important;
+  cursor:default!important;
+}
+html body.browser-shell .weather-forecast-row .weather-rain-chance{color:#8ec9ff!important}
+html body.browser-shell .weather-forecast-row .weather-high-low{font-size:14px!important}
+html body.browser-shell .weather-status{min-height:12px!important;font-size:11px!important}
+html body.browser-shell.theme-fresh .weather-panel{
+  background:rgba(238,253,255,.74)!important;
+  border-color:rgba(0,245,212,.62)!important;
+  box-shadow:0 18px 54px rgba(20,120,150,.16),inset 0 1px 0 rgba(255,255,255,.75)!important;
+}
+html body.browser-shell.theme-fresh .weather-search input,
+html body.browser-shell.theme-fresh .weather-search button,
+html body.browser-shell.theme-fresh .weather-stat,
+html body.browser-shell.theme-fresh .weather-forecast-row{
+  background:rgba(255,255,255,.42)!important;
+  border-color:rgba(0,245,212,.42)!important;
+}
+html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!important}
 </style>
 </head>
 <body>
@@ -8602,7 +8695,7 @@ html body.browser-shell.theme-fresh :is([data-browser-shell-back],[data-browser-
         <div class="weather-stat"><span>Wind</span><strong data-weather-wind>-- mph</strong></div>
         <div class="weather-stat"><span>Precip</span><strong data-weather-precip>-- in</strong></div>
       </div>
-      <div class="weather-forecast-title">7-day forecast · tap a day</div>
+      <div class="weather-forecast-title">7-day forecast</div>
       <div class="weather-forecast" data-weather-forecast></div>
       <div class="weather-status" data-weather-status></div>
     </div>
@@ -13695,12 +13788,12 @@ html body.browser-shell.theme-fresh :is([data-browser-shell-back],[data-browser-
       const rain=Math.round(daily.precipitation_probability_max?.[index] ?? 0);
       const high=Math.round(daily.temperature_2m_max?.[index] ?? 0);
       const low=Math.round(daily.temperature_2m_min?.[index] ?? 0);
-      return `<button class="weather-forecast-row" type="button" title="${esc(weatherDescription(code))}">
+      return `<div class="weather-forecast-row" title="${esc(weatherDescription(code))}">
         <span class="weather-day">${esc(forecastDayLabel(day,index))}</span>
         <span aria-hidden="true">${weatherIcon(code)}</span>
         <span class="weather-rain-chance">${rain}%</span>
         <span class="weather-high-low">${high}&deg; <span>${low}&deg;</span></span>
-      </button>`;
+      </div>`;
     }).join('');
   }
   function weatherPanel(){
@@ -13770,6 +13863,21 @@ html body.browser-shell.theme-fresh :is([data-browser-shell-back],[data-browser-
   function weatherPlaceName(match){
     return [match.name,match.admin1,match.country].filter(Boolean).join(', ');
   }
+  function scoreWeatherMatch(term,match){
+    const query=String(term || '').toLowerCase();
+    const name=String(match.name || '').toLowerCase();
+    const admin=String(match.admin1 || '').toLowerCase();
+    const country=String(match.country || '').toLowerCase();
+    let score=0;
+    if(query===name) score+=80;
+    if(query.includes(name)) score+=30;
+    if(admin && query.includes(admin)) score+=35;
+    if(country && query.includes(country)) score+=28;
+    if(/\b(us|usa|united states|america)\b/.test(query) && match.country_code==='US') score+=24;
+    if(match.feature_code==='PPLA' || match.feature_code==='PPLC') score+=8;
+    if(match.population) score+=Math.min(20,Math.log10(Number(match.population))*4);
+    return score;
+  }
   async function selectWeatherMatch(match){
     const place=weatherPlaceName(match);
     store.setText('nyx.weatherLat',match.latitude);
@@ -13808,12 +13916,29 @@ html body.browser-shell.theme-fresh :is([data-browser-shell-back],[data-browser-
     clearWeatherOptions();
     setWeatherStatus('Searching...');
     try{
-      const res=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(term)}&count=6&language=en&format=json`);
-      if(!res.ok) throw new Error('search failed');
-      const data=await res.json();
-      const matches=data.results || [];
+      const fetchMatches=async(searchTerm)=>{
+        const res=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(searchTerm)}&count=10&language=en&format=json`);
+        if(!res.ok) throw new Error('search failed');
+        const data=await res.json();
+        return data.results || [];
+      };
+      let results=await fetchMatches(term);
+      if(!results.length && term.includes(',')){
+        results=await fetchMatches(term.split(',')[0].trim());
+      }
+      const seen=new Set();
+      const unique=results.filter(match=>{
+        const key=[match.name,match.admin1,match.country,match.latitude,match.longitude].join('|');
+        if(seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      const matches=unique.sort((a,b)=>scoreWeatherMatch(term,b)-scoreWeatherMatch(term,a));
       if(!matches.length){setWeatherStatus('No location found'); return}
-      if(matches.length===1){await selectWeatherMatch(matches[0]); return}
+      if(matches.length===1 || scoreWeatherMatch(term,matches[0])>=90){
+        await selectWeatherMatch(matches[0]);
+        return;
+      }
       const box=weatherPanel()?.querySelector('[data-weather-options]');
       if(!box) return;
       box.hidden=false;
@@ -13842,7 +13967,8 @@ html body.browser-shell.theme-fresh :is([data-browser-shell-back],[data-browser-
     setTimeout(()=>{
       panel.classList.remove('closing');
       panel.classList.add('minimized');
-      restore?.classList.add('show');
+      if(!document.body.classList.contains('browser-shell')) restore?.classList.add('show');
+      else restore?.classList.remove('show');
     },210);
   }
   function restoreWeatherPanel(){

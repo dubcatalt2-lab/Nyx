@@ -8490,7 +8490,7 @@ html body.browser-shell .browser-mode-address button[data-browser-shell-menu]::b
     if(raw.startsWith('assets/games/') || raw.startsWith('assets/ugs/') || raw.startsWith('assets/seraph/') || raw.startsWith('/assets/games/') || raw.startsWith('/assets/ugs/') || raw.startsWith('/assets/seraph/')) return 'Games';
     try{return new URL(raw,location.href).hostname.replace(/^www\./,'') || 'New Tab'}catch{return 'New Tab'}
   }
-  let zTop = 20, winCount = 0, activeBrowser = null, antiCloseEnabled = store.get('nyx.antiClose',true), panicCaptureArmed = false;
+  let zTop = 20, winCount = 0, activeBrowser = null, antiCloseEnabled = store.get('nyx.antiClose',true), panicCaptureArmed = false, antiClosePanicBypass = false;
   let antiCloseConfirmHandler = null, antiCloseGestureHandler = null, antiCloseRearmTimer = null, antiCloseHadGesture = false;
   let renderedChromeMode = '';
   const welcomeStartedAt = Date.now();
@@ -14580,18 +14580,18 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
   function installAntiClose(){
     const msg='Are you sure you want to leave this page?';
     if(antiCloseConfirmHandler) return;
-    antiCloseGestureHandler=event=>{
-      if(event?.target?.closest?.('.browser-window iframe,.view')) return;
+    antiCloseGestureHandler=()=>{
       antiCloseHadGesture=true;
     };
     antiCloseConfirmHandler=e=>{
-      if(!antiCloseEnabled || !antiCloseHadGesture) return;
+      if(!antiCloseEnabled || antiClosePanicBypass || !antiCloseHadGesture) return;
       e.preventDefault();
       e.returnValue=msg;
       return msg;
     };
     window.addEventListener('pointerdown',antiCloseGestureHandler,true);
     window.addEventListener('keydown',antiCloseGestureHandler,true);
+    if(antiCloseEnabled) antiCloseHadGesture=true;
     syncAntiCloseHandler();
   }
   function syncAntiCloseHandler(){
@@ -14613,6 +14613,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
   }
   function setAntiCloseEnabled(next){
     antiCloseEnabled=!!next;
+    if(antiCloseEnabled) antiCloseHadGesture=true;
     store.set('nyx.antiClose',antiCloseEnabled);
     qsa('[data-anticlose]').forEach(btn=>btn.classList.toggle('on',antiCloseEnabled));
     syncAntiCloseHandler();
@@ -14635,17 +14636,29 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     root.querySelectorAll('[data-panic-key-display]').forEach(el=>{el.textContent=value});
   }
   function triggerPanicClose(){
-    setAntiCloseEnabled(false);
+    const restoreAntiClose=antiCloseEnabled;
+    antiClosePanicBypass=true;
     antiCloseHadGesture=false;
     if(antiCloseConfirmHandler){
       try{window.removeEventListener('beforeunload',antiCloseConfirmHandler)}catch{}
     }
     if(window.onbeforeunload===antiCloseConfirmHandler) window.onbeforeunload=null;
+    if(antiCloseRearmTimer){
+      clearInterval(antiCloseRearmTimer);
+      antiCloseRearmTimer=null;
+    }
     try{window.open('','_self')}catch{}
     try{window.close()}catch{}
     setTimeout(()=>{
       try{location.replace('about:blank')}catch{document.documentElement.innerHTML=''}
     },30);
+    setTimeout(()=>{
+      antiClosePanicBypass=false;
+      if(restoreAntiClose){
+        antiCloseHadGesture=true;
+        syncAntiCloseHandler();
+      }
+    },1200);
   }
   function armPanicKeyCapture(){
     panicCaptureArmed=true;

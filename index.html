@@ -5170,10 +5170,10 @@ body.browser-shell .cloak-launch-screen .cloak-submit-actions .primary{
 body.theme-ruby{--theme-border:#7f1d1d!important}
 body.theme-emerald{--theme-border:#064e3b!important}
 body.theme-sakura{--theme-border:#fbcfe8!important}
-body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura){
+body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):not(.theme-fresh){
   --theme-border:#6d28d9!important;
 }
-body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura) :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.browser-mode-menu,.browser-bookmark-panel,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-url,.urlbar,.settings-input,.settings-select,button,input,select,textarea){
+body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):not(.theme-fresh) :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.browser-mode-menu,.browser-bookmark-panel,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-url,.urlbar,.settings-input,.settings-select,button,input,select,textarea){
   border-color:color-mix(in srgb,var(--theme-border) 54%,rgba(255,255,255,.10) 46%)!important;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.05),
@@ -8103,6 +8103,28 @@ html body.performance-lite :is(.browser-shell-clock,.desktop-center-clock,.brows
 html body.performance-lite #visualEffects i:nth-child(n+17){
   display:none!important;
 }
+/* //fresh-electric-aqua-border-final */
+html body.theme-fresh{
+  --theme-border:#00f5d4!important;
+  --nyx-purple-edge:#00f5d4!important;
+  --fresh-line:rgba(0,245,212,.68)!important;
+}
+html body.browser-shell.theme-fresh :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.browser-shell-settings-panel,.settings-block,.glass-card,.quick-tile,.quick-icon,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-url,.urlbar,.ambient-player,.weather-panel,.weather-restore,.apps-panel,.panel,.home-shortcut,.home-shortcut-add,.home-shortcut-menu,.tool-btn,.go-btn,.menu-btn,.settings-action,.settings-preset,input,select,textarea,button){
+  border-color:rgba(0,245,212,.72)!important;
+}
+html body.browser-shell.theme-fresh .browser-shell-settings-panel :is(.settings-block,.settings-card,.settings-input,.settings-select,.settings-action,button,input,select,textarea),
+html body.theme-fresh :is(.settings-card,.settings-block,.settings-input,.settings-select,.settings-action,button,input,select,textarea){
+  border-color:rgba(0,245,212,.72)!important;
+}
+html body.browser-shell.theme-fresh :is(.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-app-button,.browser-mode-address button,.home-shortcut,.home-shortcut-add,.quick-tile,.settings-action,.settings-preset,button):hover{
+  border-color:#00f5d4!important;
+  box-shadow:0 0 0 1px rgba(0,245,212,.30),0 12px 28px rgba(0,245,212,.12),inset 0 1px 0 rgba(255,255,255,.62)!important;
+}
+html body.browser-shell.theme-fresh :is([data-browser-shell-back],[data-browser-shell-forward],[data-browser-shell-reload],[data-browser-shell-bookmark],[data-browser-shell-menu],.browser-mode-weather)::before,
+html body.browser-shell.theme-fresh :is([data-browser-shell-back],[data-browser-shell-forward],[data-browser-shell-reload],[data-browser-shell-bookmark],[data-browser-shell-menu],.browser-mode-weather)::after{
+  color:#00f5d4!important;
+  -webkit-text-fill-color:#00f5d4!important;
+}
 </style>
 </head>
 <body>
@@ -9278,6 +9300,14 @@ html body.performance-lite #visualEffects i:nth-child(n+17){
     overlay.className='browser-shell-settings-overlay';
     overlay.innerHTML=`<div class="browser-shell-settings-panel" role="dialog" aria-modal="true" aria-label="Browser Mode Settings"><button class="browser-shell-settings-close" data-browser-settings-close type="button" aria-label="Close settings">×</button>${browserShellSettingsMarkup(browserShellPresetTiles())}</div>`;
     document.body.appendChild(overlay);
+    const effectBlock=overlay.querySelector('[data-effect-value]')?.closest('.settings-block');
+    if(effectBlock){
+      const liteBlock=document.createElement('section');
+      liteBlock.className='settings-block';
+      const liteOn=store.get('nyx.performanceLite',false);
+      liteBlock.innerHTML=`<h2>Performance Lite</h2><p>Lightens blur, shadows, and particles without fully disabling animations.</p><div class="settings-row"><span>Performance Lite</span><button class="settings-action ${liteOn?'on':''}" data-switch="nyx.performanceLite" data-performance-lite type="button">${liteOn?'On':'Off'}</button></div>`;
+      effectBlock.before(liteBlock);
+    }
     ensureFreshThemeOptions(overlay);
     syncSwitches(overlay);
   }
@@ -9632,15 +9662,16 @@ html body.performance-lite #visualEffects i:nth-child(n+17){
     }
     qsa('[data-lag-reducer]').forEach(el=>el.classList.toggle('on',lag));
     qsa('[data-switch="nyx.lagReducer"]').forEach(el=>el.classList.toggle('on',lag));
+    qsa('[data-performance-lite]').forEach(el=>el.classList.toggle('on',store.get('nyx.performanceLite',false)));
+    qsa('[data-switch="nyx.performanceLite"]').forEach(el=>el.classList.toggle('on',store.get('nyx.performanceLite',false)));
   }
   function syncPerformanceLite(){
-    const effect=store.text('nyx.visualEffect','none');
-    const amount=Number(store.text('nyx.visualEffectAmount','16')) || 16;
-    const lowPower=Number(navigator.hardwareConcurrency || 8)<=4;
+    const cores=Number(navigator.hardwareConcurrency || 8);
+    const memory=Number(navigator.deviceMemory || 8);
+    const isChromebook=/\bCrOS\b/i.test(navigator.userAgent || '');
+    const veryLowPower=isChromebook || cores<=2 || memory<=2;
     const reducedMotion=matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
-    const heavyTheme=document.body.classList.contains('theme-fresh') || document.body.classList.contains('theme-sakura');
-    const heavyEffects=['flowers','emeralds','hearts','pokeballs','rain'].includes(effect) && amount>10;
-    const enabled=!store.get('nyx.lagReducer',false) && (lowPower || reducedMotion || heavyTheme || heavyEffects);
+    const enabled=!store.get('nyx.lagReducer',false) && (store.get('nyx.performanceLite',false) || veryLowPower || reducedMotion);
     document.body.classList.toggle('performance-lite',enabled);
     if(enabled){
       document.documentElement.style.setProperty('--glass-blur','10px');
@@ -14049,6 +14080,11 @@ html body.performance-lite #visualEffects i:nth-child(n+17){
           <div class="settings-row"><span>Lag Reducer</span><button class="switch ${store.get('nyx.lagReducer',false)?'on':''}" data-switch="nyx.lagReducer" data-lag-reducer aria-label="Lag reducer"></button></div>
         </section>
         <section class="settings-card">
+          <h2>Performance Lite</h2>
+          <p>Lightens blur, shadows, and particles without fully disabling animations.</p>
+          <div class="settings-row"><span>Performance Lite</span><button class="switch ${store.get('nyx.performanceLite',false)?'on':''}" data-switch="nyx.performanceLite" data-performance-lite aria-label="Performance lite"></button></div>
+        </section>
+        <section class="settings-card">
           <h2>Browser Mode</h2>
           <p>Makes nyx look like a Chrome page with tabs on top, an address bar, and an Apps button instead of the bottom app bar.</p>
           <div class="settings-row"><span>Browser Mode</span><button class="switch ${store.get('nyx.browserShellMode',true)?'on':''}" data-switch="nyx.browserShellMode" aria-label="Browser mode"></button></div>
@@ -14223,6 +14259,9 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
           }
           applyUserSettings();
           toast('Lag Reducer '+(v?'on':'off'));
+        }else if(key==='nyx.performanceLite'){
+          applyUserSettings();
+          toast('Performance Lite '+(v?'on':'off'));
         }else if(key==='nyx.browserShellMode'){
           const hostWin=btn.closest('.window');
           applyUserSettings();

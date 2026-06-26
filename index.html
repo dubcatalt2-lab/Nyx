@@ -8491,6 +8491,7 @@ html body.browser-shell .browser-mode-address button[data-browser-shell-menu]::b
     try{return new URL(raw,location.href).hostname.replace(/^www\./,'') || 'New Tab'}catch{return 'New Tab'}
   }
   let zTop = 20, winCount = 0, activeBrowser = null, antiCloseEnabled = store.get('nyx.antiClose',true), panicCaptureArmed = false;
+  let antiCloseConfirmHandler = null, antiCloseGestureHandler = null, antiCloseRearmTimer = null, antiCloseHadGesture = false;
   let renderedChromeMode = '';
   const welcomeStartedAt = Date.now();
   let welcomeTimer = 0;
@@ -14174,9 +14175,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     root.querySelectorAll('[data-anticlose]').forEach(ac=>{
       ac.classList.toggle('on',antiCloseEnabled);
       ac.onclick=()=>{
-        antiCloseEnabled=!antiCloseEnabled;
-        store.set('nyx.antiClose',antiCloseEnabled);
-        qsa('[data-anticlose]').forEach(btn=>btn.classList.toggle('on',antiCloseEnabled));
+        setAntiCloseEnabled(!antiCloseEnabled);
         toast('Anti-close '+(antiCloseEnabled?'on':'off'));
       };
     });
@@ -14580,16 +14579,44 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
   }
   function installAntiClose(){
     const msg='Are you sure you want to leave this page?';
-    let hadTopLevelGesture=false;
-    const markGesture=event=>{
+    if(antiCloseConfirmHandler) return;
+    antiCloseGestureHandler=event=>{
       if(event?.target?.closest?.('.browser-window iframe,.view')) return;
-      hadTopLevelGesture=true;
+      antiCloseHadGesture=true;
     };
-    window.addEventListener('pointerdown',markGesture,true);
-    window.addEventListener('keydown',markGesture,true);
-    const confirmClose=e=>{if(!antiCloseEnabled || !hadTopLevelGesture)return; e.preventDefault(); e.returnValue=msg; return msg};
-    window.onbeforeunload=confirmClose; window.addEventListener('beforeunload',confirmClose);
-    setInterval(()=>{window.onbeforeunload=confirmClose},1000);
+    antiCloseConfirmHandler=e=>{
+      if(!antiCloseEnabled || !antiCloseHadGesture) return;
+      e.preventDefault();
+      e.returnValue=msg;
+      return msg;
+    };
+    window.addEventListener('pointerdown',antiCloseGestureHandler,true);
+    window.addEventListener('keydown',antiCloseGestureHandler,true);
+    syncAntiCloseHandler();
+  }
+  function syncAntiCloseHandler(){
+    if(!antiCloseConfirmHandler) return;
+    window.removeEventListener('beforeunload',antiCloseConfirmHandler);
+    if(antiCloseRearmTimer){
+      clearInterval(antiCloseRearmTimer);
+      antiCloseRearmTimer=null;
+    }
+    if(!antiCloseEnabled){
+      if(window.onbeforeunload===antiCloseConfirmHandler) window.onbeforeunload=null;
+      return;
+    }
+    window.onbeforeunload=antiCloseConfirmHandler;
+    window.addEventListener('beforeunload',antiCloseConfirmHandler);
+    antiCloseRearmTimer=setInterval(()=>{
+      if(antiCloseEnabled && antiCloseConfirmHandler) window.onbeforeunload=antiCloseConfirmHandler;
+    },1000);
+  }
+  function setAntiCloseEnabled(next){
+    antiCloseEnabled=!!next;
+    store.set('nyx.antiClose',antiCloseEnabled);
+    qsa('[data-anticlose]').forEach(btn=>btn.classList.toggle('on',antiCloseEnabled));
+    syncAntiCloseHandler();
+    return antiCloseEnabled;
   }
   function panicKeyCombo(event){
     const key=String(event.key || '').trim();
@@ -14608,10 +14635,12 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     root.querySelectorAll('[data-panic-key-display]').forEach(el=>{el.textContent=value});
   }
   function triggerPanicClose(){
-    antiCloseEnabled=false;
-    store.set('nyx.antiClose',false);
-    window.onbeforeunload=null;
-    try{window.removeEventListener('beforeunload',window.onbeforeunload)}catch{}
+    setAntiCloseEnabled(false);
+    antiCloseHadGesture=false;
+    if(antiCloseConfirmHandler){
+      try{window.removeEventListener('beforeunload',antiCloseConfirmHandler)}catch{}
+    }
+    if(window.onbeforeunload===antiCloseConfirmHandler) window.onbeforeunload=null;
     try{window.open('','_self')}catch{}
     try{window.close()}catch{}
     setTimeout(()=>{

@@ -5311,6 +5311,123 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
     flex-basis:clamp(88px,29vw,118px)!important;
   }
 }
+/* //browser-chrome-overlap-final */
+body.browser-shell{
+  --bar:72px!important;
+}
+body.browser-shell .top-os{
+  height:72px!important;
+  min-height:72px!important;
+  padding:5px 10px!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:29px 31px!important;
+  align-items:start!important;
+  align-content:start!important;
+  gap:4px!important;
+  overflow:visible!important;
+}
+body.browser-shell .top-os > .status-icons,
+body.browser-shell .top-os > .brand-button,
+body.browser-shell .top-os > .user-chip,
+body.browser-shell .top-os > span:not(.weather-cloud-icon){
+  display:none!important;
+  visibility:hidden!important;
+  width:0!important;
+  height:0!important;
+  pointer-events:none!important;
+}
+body.browser-shell .brand-mini{
+  grid-row:1!important;
+  align-self:start!important;
+  height:29px!important;
+  max-height:29px!important;
+  min-height:0!important;
+  gap:5px!important;
+}
+body.browser-shell .browser-mode-address{
+  grid-row:2!important;
+  align-self:start!important;
+  height:31px!important;
+  max-height:31px!important;
+  grid-template-columns:29px 29px 29px minmax(0,1fr) 29px 29px 33px!important;
+  gap:5px!important;
+}
+body.browser-shell .browser-mode-app-button,
+body.browser-shell .browser-mode-tab,
+body.browser-shell .browser-mode-shell-tab{
+  height:29px!important;
+  max-height:29px!important;
+  align-self:start!important;
+}
+body.browser-shell .browser-mode-app-button{
+  width:132px!important;
+  max-width:36vw!important;
+}
+body.browser-shell .browser-mode-address button{
+  width:29px!important;
+  height:29px!important;
+  max-width:29px!important;
+  max-height:29px!important;
+  align-self:start!important;
+}
+body.browser-shell .browser-mode-url{
+  height:29px!important;
+  max-height:29px!important;
+  align-self:start!important;
+}
+body.browser-shell .browser-window .titlebar,
+body.browser-shell .browser-window .browser-tabs,
+body.browser-shell .browser-window .browser-tools{
+  display:none!important;
+  visibility:hidden!important;
+  height:0!important;
+  min-height:0!important;
+  overflow:hidden!important;
+  pointer-events:none!important;
+}
+body.browser-shell .browser-window{
+  top:72px!important;
+  height:calc(100dvh - 72px)!important;
+}
+body.browser-shell .window.maximized{
+  top:72px!important;
+  height:calc(100dvh - 72px)!important;
+}
+body.browser-shell .browser-mode-menu{
+  top:72px!important;
+}
+body.browser-shell .weather-panel{
+  top:84px!important;
+}
+body.browser-shell .weather-restore{
+  top:78px!important;
+}
+@media(max-width:760px){
+  body.browser-shell{
+    --bar:70px!important;
+  }
+  body.browser-shell .top-os{
+    height:70px!important;
+    min-height:70px!important;
+    grid-template-rows:28px 30px!important;
+    padding:5px 7px!important;
+  }
+  body.browser-shell .browser-mode-address{
+    height:30px!important;
+    max-height:30px!important;
+    grid-template-columns:28px 28px 28px minmax(0,1fr) 28px 28px 32px!important;
+    gap:4px!important;
+  }
+  body.browser-shell .browser-window,
+  body.browser-shell .window.maximized{
+    top:70px!important;
+    height:calc(100dvh - 70px)!important;
+  }
+  body.browser-shell .browser-mode-menu{
+    top:70px!important;
+  }
+}
 </style>
 </head>
 <body>

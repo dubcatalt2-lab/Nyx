@@ -9749,6 +9749,21 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
       return new Promise(resolve=>{
         if(!t?.frame) return resolve(false);
         let done=false;
+        let loadSeen=false;
+        let loadedAt=0;
+        const hasMeaningfulContent=()=>{
+          try{
+            const doc=t.frame.contentDocument;
+            if(!doc?.body) return false;
+            if(doc.querySelector('#desktop,#welcomeScreen')) return false;
+            const text=String(doc.body.innerText || doc.body.textContent || '').replace(/\s+/g,' ').trim();
+            const hasPageNodes=!!doc.body.querySelector('a,form,input,button,main,article,section,[role="main"],#links,.results,.result,.result__body');
+            const ready=doc.readyState==='complete' || doc.readyState==='interactive';
+            return ready && (text.length>80 || hasPageNodes);
+          }catch{
+            return false;
+          }
+        };
         const finish=value=>{
           if(done) return;
           done=true;
@@ -9757,11 +9772,15 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
           try{t.frame.removeEventListener('load',onLoad)}catch{}
           resolve(value);
         };
-        const onLoad=()=>setTimeout(()=>finish(true),140);
+        const onLoad=()=>{
+          loadSeen=true;
+          loadedAt=Date.now();
+        };
         const poll=setInterval(()=>{
-          const src=String(t.frame?.getAttribute?.('src') || '');
           const srcdoc=String(t.frame?.getAttribute?.('srcdoc') || '');
-          if(t.scramjetFrame || src || srcdoc || t.url) finish(true);
+          if(srcdoc && /Scramjet did not start|Ultraviolet did not start|Page Not Found|error/i.test(srcdoc)) finish(true);
+          if(hasMeaningfulContent()) finish(true);
+          if(loadSeen && Date.now()-loadedAt>1100) finish(true);
         },120);
         const timer=setTimeout(()=>finish(true),timeout);
         t.frame.addEventListener('load',onLoad,{once:true});
@@ -9792,13 +9811,13 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
             }finally{
               nyxPreflightBypass=false;
             }
-            await waitForTabResultPaint(targetTab);
+            await waitForTabResultPaint(targetTab,9000);
             return true;
           },
           finalVerify:async()=>{
             const targetTab=state.tabs.find(tab=>tab.id===tabId);
             if(!targetTab) return false;
-            await waitForTabResultPaint(targetTab,1200);
+            await waitForTabResultPaint(targetTab,2600);
             return true;
           }
         });

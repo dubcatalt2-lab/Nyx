@@ -3768,6 +3768,10 @@ body.lag-reducer .welcome-cursor,
 body.lag-reducer #visualEffects{
   display:none!important;
 }
+body.runtime-lag-guard .weather-effects,
+body.runtime-lag-guard #visualEffects{
+  display:none!important;
+}
 body.lag-reducer #welcomeScreen,
 body.lag-reducer #welcomeScreen.hidden,
 body.lag-reducer #welcomeScreen.force-hidden{
@@ -3798,6 +3802,11 @@ body.lag-reducer .settings-card{
   backdrop-filter:none!important;
   -webkit-backdrop-filter:none!important;
   box-shadow:none!important;
+}
+body.runtime-lag-guard :is(.top-os,.window,.titlebar,.dock,.quick-tile,.quick-icon,.glass-card,.weather-panel,.weather-restore,.toast,.ambient-player,.browser-message-box,.setup-screen,.settings-card,.settings-panel,.settings-app,.settings-main,.settings-side,.browser-tabs,.browser-tools,.browser-mode-menu,.browser-bookmark-panel,.apps-panel,.panel){
+  backdrop-filter:blur(3px) saturate(1.02)!important;
+  -webkit-backdrop-filter:blur(3px) saturate(1.02)!important;
+  box-shadow:0 8px 20px rgba(0,0,0,.14),inset 0 1px 0 rgba(255,255,255,.08)!important;
 }
 body.lag-reducer .window{
   transform:none!important;
@@ -9407,8 +9416,12 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
   }
   const browserSuggestionSeeds=[
     'youtube','tiktok','spotify','discord','roblox','github','google classroom','google docs',
-    'duck ai','geforce now','games','weather','anime','music','unblocked games','calculator'
+    'duck ai','geforce now','games','weather','anime','music','unblocked games','calculator',
+    'roblox codes','gmail','google translate','cool math games','chatgpt','amazon','reddit','netflix'
   ];
+  const browserSuggestionCache=new Map();
+  let browserSuggestionTimer=0;
+  let browserSuggestionAbort=null;
   function ensureBrowserSuggestionBox(input){
     let box=$('browserSearchSuggestions');
     if(!box){
@@ -9426,12 +9439,24 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
     }
     return box;
   }
-  function browserSuggestionItems(query){
+  function browserSuggestionItems(query,remoteItems=[]){
     const q=String(query || '').trim().toLowerCase();
     if(!q) return [];
     const tabItems=browserShellTabs.map(tab=>browserShellSourceUrl(tab.url) || tab.title).filter(Boolean);
     const bookmarkItems=browserBookmarks().flatMap(item=>[item.title,item.url]).filter(Boolean);
-    const pool=[...tabItems,...bookmarkItems,...browserSuggestionSeeds];
+    const phraseItems=[
+      `${query} lyrics`,
+      `${query} meaning`,
+      `${query} reddit`,
+      `${query} login`,
+      `${query} download`,
+      `${query} song`,
+      `${query} movie`,
+      `${query} price`,
+      `${query} near me`,
+      `${query} weather`
+    ];
+    const pool=[...remoteItems,...tabItems,...bookmarkItems,...browserSuggestionSeeds,...phraseItems];
     const seen=new Set();
     const out=[];
     pool.forEach(item=>{
@@ -9444,20 +9469,10 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
       }
     });
     if(!out.includes(query)) out.unshift(query);
-    if(!/^(?:[a-z][a-z0-9+.-]*:|[\w.-]+\.[a-z]{2,})/i.test(query)){
-      [`${query} games`,`${query} wiki`,`${query} youtube`].forEach(item=>{
-        const key=item.toLowerCase();
-        if(!seen.has(key)){
-          seen.add(key);
-          out.push(item);
-        }
-      });
-    }
     return out.slice(0,6);
   }
-  function showBrowserSuggestions(input){
+  function renderBrowserSuggestions(input,items){
     if(!input || !document.body.classList.contains('browser-shell')) return;
-    const items=browserSuggestionItems(input.value);
     const box=ensureBrowserSuggestionBox(input);
     if(!items.length){
       box.classList.remove('show');
@@ -9467,7 +9482,60 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
     box.innerHTML=items.map((item,index)=>`<button class="browser-search-suggestion${index===0?' active':''}" data-browser-suggestion="${esc(item)}" type="button" role="option">${esc(item)}</button>`).join('');
     box.classList.add('show');
   }
+  async function fetchBrowserAutocomplete(query,signal){
+    const q=String(query || '').trim();
+    if(q.length<2) return [];
+    const key=q.toLowerCase();
+    if(browserSuggestionCache.has(key)) return browserSuggestionCache.get(key);
+    const callback='nyxSuggest_'+Math.random().toString(36).slice(2);
+    try{
+      const items=await new Promise(resolve=>{
+        if(signal?.aborted){resolve([]); return}
+        const script=document.createElement('script');
+        const cleanup=()=>{
+          try{delete window[callback]}catch{window[callback]=undefined}
+          script.remove();
+        };
+        const timer=setTimeout(()=>{cleanup(); resolve([])},1800);
+        window[callback]=data=>{
+          clearTimeout(timer);
+          cleanup();
+          resolve(Array.isArray(data?.[1]) ? data[1] : []);
+        };
+        signal?.addEventListener('abort',()=>{clearTimeout(timer); cleanup(); resolve([])},{once:true});
+        script.onerror=()=>{clearTimeout(timer); cleanup(); resolve([])};
+        script.src=`https://suggestqueries.google.com/complete/search?client=chrome&q=${encodeURIComponent(q)}&callback=${callback}`;
+        document.head.appendChild(script);
+      });
+      const clean=items.map(item=>String(item || '').trim()).filter(Boolean).slice(0,8);
+      if(clean.length){
+        browserSuggestionCache.set(key,clean);
+        return clean;
+      }
+    }catch{}
+    browserSuggestionCache.set(key,[]);
+    return [];
+  }
+  function showBrowserSuggestions(input){
+    if(!input || !document.body.classList.contains('browser-shell')) return;
+    const value=String(input.value || '').trim();
+    renderBrowserSuggestions(input,browserSuggestionItems(value));
+    clearTimeout(browserSuggestionTimer);
+    browserSuggestionAbort?.abort?.();
+    if(value.length<2) return;
+    browserSuggestionAbort=new AbortController();
+    const signal=browserSuggestionAbort.signal;
+    browserSuggestionTimer=setTimeout(async()=>{
+      const remote=await fetchBrowserAutocomplete(value,signal);
+      if(signal.aborted) return;
+      const active=document.querySelector('[data-browser-shell-url]');
+      if(active!==input || String(input.value || '').trim()!==value) return;
+      renderBrowserSuggestions(input,browserSuggestionItems(value,remote));
+    },120);
+  }
   function hideBrowserSuggestions(){
+    clearTimeout(browserSuggestionTimer);
+    browserSuggestionAbort?.abort?.();
     const box=$('browserSearchSuggestions');
     if(box) box.classList.remove('show');
   }
@@ -10269,6 +10337,37 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
       document.documentElement.style.setProperty('--glass-blur','10px');
       document.documentElement.style.setProperty('--glass-saturate','1.08');
     }
+  }
+  let runtimeLagWatchStarted=false;
+  function startRuntimeLagWatch(){
+    if(runtimeLagWatchStarted) return;
+    runtimeLagWatchStarted=true;
+    let last=performance.now();
+    let slowFrames=0;
+    let clearTimer=0;
+    let lastToast=0;
+    const loop=now=>{
+      const delta=now-last;
+      last=now;
+      if(!store.get('nyx.lagReducer',false)){
+        if(delta>75) slowFrames+=1;
+        else slowFrames=Math.max(0,slowFrames-.35);
+        if(slowFrames>=8){
+          document.body.classList.add('runtime-lag-guard');
+          clearTimeout(clearTimer);
+          clearTimer=setTimeout(()=>{
+            slowFrames=0;
+            document.body.classList.remove('runtime-lag-guard');
+          },9000);
+          if(Date.now()-lastToast>30000){
+            lastToast=Date.now();
+            toast('Lag guard trimmed effects for a moment');
+          }
+        }
+      }
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
   }
   function applyBrowserShellMode(){
     const enabled=store.get('nyx.browserShellMode',true);
@@ -12294,13 +12393,23 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
   function installHomeShortcutAnimationObserver(){
     if(homeShortcutAnimationObserverInstalled) return;
     homeShortcutAnimationObserverInstalled=true;
-    const trigger=root=>setTimeout(()=>playHomeEntranceAnimation(root || document),60);
+    let triggerTimer=0;
+    let lastTrigger=0;
+    const trigger=root=>{
+      const now=Date.now();
+      if(now-lastTrigger<850) return;
+      lastTrigger=now;
+      clearTimeout(triggerTimer);
+      triggerTimer=setTimeout(()=>playHomeEntranceAnimation(root || document),90);
+    };
     new MutationObserver(mutations=>{
       for(const mutation of mutations){
         for(const node of mutation.addedNodes){
           if(node.nodeType!==1) continue;
-          if(node.matches?.('[data-home-shortcuts]') || node.querySelector?.('[data-home-shortcuts]')){
-            trigger(node.matches?.('[data-home-shortcuts]') ? node.parentElement || document : node);
+          const shortcutRoot=node.matches?.('[data-home-shortcuts]') ? node : node.querySelector?.('[data-home-shortcuts]');
+          if(shortcutRoot && !shortcutRoot.dataset.entranceSeen){
+            shortcutRoot.dataset.entranceSeen='true';
+            trigger(shortcutRoot.closest?.('.browser-home') || node);
             return;
           }
         }
@@ -17035,7 +17144,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     if(hostedCloakEntry) document.body.classList.add('hosted-cloak-entry');
     updateResponsiveFit();
     await loadStoredLaunchPdf();
-    applyLaunchPdfSetting(); bindFormulaGate(); startWelcomeTyping(); installHomeShortcutAnimationObserver(); syncChromeMode(store.get('nyx.browserShellMode',true)); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); startCenterClock(); initDesktopSplash();
+    applyLaunchPdfSetting(); bindFormulaGate(); startWelcomeTyping(); installHomeShortcutAnimationObserver(); startRuntimeLagWatch(); syncChromeMode(store.get('nyx.browserShellMode',true)); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); startCenterClock(); initDesktopSplash();
     if(hostedCloakEntry){
       closeWelcome();
       scheduleHostedCloakLaunch();

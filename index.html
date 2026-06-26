@@ -3183,6 +3183,9 @@ body.hosted-cloak-entry .dock,
 body.hosted-cloak-entry .ambient-player,
 body.hosted-cloak-entry #weatherRestore,
 body.hosted-cloak-entry #toast{display:none!important}
+.formula-gate:not(.hidden) ~ .ambient-player,
+.cloak-launch-screen.show ~ .ambient-player,
+.ambient-player.cover-hidden{display:none!important}
 .background-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:10px 0}
 .background-picker .bg-choice{height:86px;font-size:12px}
 .file-input{width:100%;height:auto!important;padding:9px 10px!important}
@@ -8027,9 +8030,25 @@ html body.browser-shell .ambient-player.tucked .ambient-toggle{
   opacity:1!important;
   transform:scale(1)!important;
 }
+html body.browser-shell .ambient-player.ambient-closing{
+  animation:ambientPlayerClose .46s cubic-bezier(.16,.86,.18,1) both!important;
+}
+html body.browser-shell .ambient-player.ambient-opening{
+  animation:ambientPlayerOpen .52s cubic-bezier(.16,.86,.18,1) both!important;
+}
 html body.browser-shell .ambient-player:not(.tucked) .ambient-meta,
 html body.browser-shell .ambient-player:not(.tucked) .ambient-hide{
   animation:ambientPanelOpen .42s cubic-bezier(.16,.86,.18,1) both;
+}
+@keyframes ambientPlayerClose{
+  0%{opacity:1;transform:translateY(0) scale(1)}
+  58%{opacity:.92;transform:translateY(8px) scale(.94)}
+  100%{opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes ambientPlayerOpen{
+  0%{opacity:.2;transform:translateY(10px) scale(.82)}
+  70%{opacity:1;transform:translateY(-2px) scale(1.015)}
+  100%{opacity:1;transform:translateY(0) scale(1)}
 }
 @keyframes ambientPanelOpen{
   0%{opacity:0;transform:translateX(-10px) scale(.96)}
@@ -10450,6 +10469,10 @@ html body.browser-shell .browser-mode-address button[data-browser-shell-menu]::b
     gate.setAttribute('aria-hidden','true');
     gate.setAttribute('inert','');
     closeWelcome(true);
+    setTimeout(()=>{
+      initAmbientMusic();
+      playFreshThemeMusicOnOpen();
+    },180);
   }
   const launchPdfOptions={
     math:'assets/docs/1300-maths-formula.pdf'
@@ -14451,6 +14474,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     if(!screen) return;
     screen.classList.add('show');
     screen.setAttribute('aria-hidden','false');
+    syncAmbientCoverState();
     setTimeout(()=>screen.querySelector('[data-cloak-input]')?.focus(),40);
   }
   function hideCloakLaunchScreen(){
@@ -14458,6 +14482,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     if(!screen) return;
     screen.classList.remove('show');
     screen.setAttribute('aria-hidden','true');
+    syncAmbientCoverState();
   }
   function setCloakLaunchMessage(text){
     const panel=$('cloakLaunchScreen')?.querySelector('p');
@@ -15400,6 +15425,32 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
   let ambientBassGain = null;
   let spotifyPollTimer = null;
   //music-player-logic
+  function formulaGateActive(){
+    const gate=$('formulaGate');
+    return !!gate && !gate.classList.contains('hidden') && gate.getAttribute('aria-hidden')!=='true';
+  }
+  function cloakLaunchActive(){
+    return $('cloakLaunchScreen')?.classList.contains('show') || document.body.classList.contains('hosted-cloak-entry') || document.documentElement.classList.contains('hosted-cloak-entry');
+  }
+  function ambientShouldSuspend(){
+    return formulaGateActive() || cloakLaunchActive();
+  }
+  function syncAmbientCoverState(){
+    const box=$('ambientPlayer');
+    const audio=$('ambientAudio');
+    const suspended=ambientShouldSuspend();
+    box?.classList.toggle('cover-hidden',suspended);
+    if(suspended && audio){
+      audio.pause();
+      ambientPlaying=false;
+      const btn=$('ambientToggle');
+      if(btn){
+        btn.textContent='▶';
+        btn.classList.remove('is-playing');
+      }
+    }
+    return suspended;
+  }
   function ambientTrackLabel(track){
     return track?.artist ? `${track.title} - ${track.artist}` : (track?.title || 'Custom music');
   }
@@ -15638,6 +15689,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
   async function setAmbientPlaying(next){
     const audio=$('ambientAudio');
     if(!audio) return;
+    if(next && syncAmbientCoverState()) return;
     ambientPlaying=next;
     const btn=$('ambientToggle');
     if(btn){
@@ -15760,6 +15812,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     window.addEventListener('keydown',start,true);
   }
   function playFreshThemeMusicOnOpen(){
+    if(syncAmbientCoverState()) return;
     if(!freshThemeShouldPlayMusic()) return;
     if(ambientCurrentKey!=='sunny') loadAmbientTrack('sunny',true);
     else setAmbientPlaying(true);
@@ -15809,6 +15862,10 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
   function setAmbientTucked(tucked){
     const box=$('ambientPlayer');
     if(!box) return;
+    box.classList.remove('ambient-opening','ambient-closing');
+    void box.offsetWidth;
+    box.classList.add(tucked ? 'ambient-closing' : 'ambient-opening');
+    setTimeout(()=>box.classList.remove('ambient-opening','ambient-closing'),560);
     box.classList.toggle('tucked',tucked);
     store.set('nyx.musicPlayerTucked',tucked);
     const hide=$('ambientHide');
@@ -15878,6 +15935,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     const box=$('ambientPlayer');
     const audio=$('ambientAudio');
     if(!box || !audio || audio.dataset.ready) return;
+    if(syncAmbientCoverState()) return;
     audio.dataset.ready='true';
     const volume=$('ambientVolume');
     const song=$('ambientSong');

@@ -5588,8 +5588,8 @@ body.browser-shell :is(
 }
 body.browser-shell [data-browser-shell-back]::before,
 body.browser-shell .tool-btn[data-back]::before{
-  content:"\279C"!important;
-  transform:translate(-50%,-50%) scaleX(-1)!important;
+  content:"\2B05"!important;
+  transform:translate(-50%,-50%)!important;
 }
 body.browser-shell [data-browser-shell-forward]::before,
 body.browser-shell .tool-btn[data-forward]::before{
@@ -5601,7 +5601,7 @@ body.browser-shell .tool-btn[data-reload]::before{
   font-size:21px!important;
 }
 body.browser-shell :is([data-browser-shell-back],.tool-btn[data-back]):hover::before{
-  transform:translate(-54%,-50%) scaleX(-1)!important;
+  transform:translate(-54%,-50%)!important;
 }
 body.browser-shell :is([data-browser-shell-forward],.tool-btn[data-forward]):hover::before{
   transform:translate(-46%,-50%)!important;
@@ -6073,6 +6073,56 @@ body.browser-shell.theme-fresh #weatherRestore > .weather-cloud-icon{
 body.browser-shell.theme-fresh .browser-shell-caption,
 body.browser-shell.theme-fresh .browser-shell-caption *{
   font-family:Nunito,Raleway,Arial,sans-serif!important;
+}
+/* //fresh-blur-menu-final */
+body.browser-shell.theme-fresh :is(button,.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-menu button,.settings-action,.settings-preset,.tool-btn,.go-btn,.menu-btn,.home-shortcut-menu button,.weather-icon-btn){
+  background:rgba(255,255,255,.58)!important;
+  background-image:none!important;
+  backdrop-filter:blur(18px) saturate(1.16)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(1.16)!important;
+}
+body.browser-shell.theme-fresh :is(button,.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-menu button,.settings-action,.settings-preset,.tool-btn,.go-btn,.menu-btn,.home-shortcut-menu button,.weather-icon-btn):hover{
+  background:rgba(255,255,255,.72)!important;
+  background-image:none!important;
+}
+body.browser-shell.theme-fresh .browser-mode-menu{
+  overflow:hidden!important;
+  background:rgba(255,255,255,.56)!important;
+  background-image:none!important;
+  border:1px solid rgba(126,150,214,.42)!important;
+  border-radius:8px!important;
+  box-shadow:0 18px 48px rgba(35,96,122,.18),inset 0 1px 0 rgba(255,255,255,.74)!important;
+  backdrop-filter:blur(24px) saturate(1.18)!important;
+  -webkit-backdrop-filter:blur(24px) saturate(1.18)!important;
+}
+body.browser-shell.theme-fresh .browser-mode-menu button{
+  min-height:38px!important;
+  background:rgba(255,255,255,.22)!important;
+  background-image:none!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+body.browser-shell.theme-fresh .browser-mode-menu button:hover{
+  background:rgba(255,255,255,.46)!important;
+}
+body.browser-shell.theme-fresh .browser-mode-menu hr{
+  border:0!important;
+  height:1px!important;
+  background:rgba(11,113,134,.22)!important;
+  margin:2px 0!important;
+}
+body.browser-shell.theme-fresh .home-shortcut-menu{
+  background:rgba(255,255,255,.62)!important;
+  background-image:none!important;
+  backdrop-filter:blur(22px) saturate(1.16)!important;
+  -webkit-backdrop-filter:blur(22px) saturate(1.16)!important;
+}
+body.browser-shell.theme-fresh .home-shortcut-menu button{
+  background:rgba(255,255,255,.18)!important;
+}
+body.browser-shell.theme-fresh .home-shortcut-menu button:hover{
+  background:rgba(255,255,255,.46)!important;
 }
 </style>
 </head>

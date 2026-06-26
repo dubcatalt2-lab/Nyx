@@ -6230,6 +6230,45 @@ body.browser-shell.theme-fresh .home-shortcut-menu button:hover{
   background:rgba(255,255,255,.44)!important;
   transform:translateX(2px)!important;
 }
+/* //fresh-shortcut-single-box-final */
+body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn{
+  background:transparent!important;
+  background-image:none!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  width:24px!important;
+  height:32px!important;
+  top:-3px!important;
+  right:1px!important;
+  color:#0b7186!important;
+  -webkit-text-fill-color:#0b7186!important;
+}
+body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn:hover{
+  background:transparent!important;
+  box-shadow:none!important;
+  transform:scale(1.08)!important;
+}
+body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn::before{
+  width:3.8px!important;
+  height:3.8px!important;
+  background:#0b7186!important;
+  box-shadow:0 -6.5px 0 #0b7186,0 6.5px 0 #0b7186!important;
+}
+body.browser-shell.theme-fresh .home-shortcut-add b{
+  color:#0b7186!important;
+  -webkit-text-fill-color:#0b7186!important;
+  text-shadow:none!important;
+}
+body.browser-shell.theme-fresh :is([data-browser-shell-back],.tool-btn[data-back])::before{
+  width:24px!important;
+  height:24px!important;
+  background:#0b7186!important;
+  -webkit-mask:url("./assets/icons/fresh-left-arrow.png") center/contain no-repeat!important;
+  mask:url("./assets/icons/fresh-left-arrow.png") center/contain no-repeat!important;
+}
 /* //fresh-hover-smooth-final */
 body.browser-shell.theme-fresh :is(
   button,

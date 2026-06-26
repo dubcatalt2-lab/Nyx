@@ -6124,6 +6124,112 @@ body.browser-shell.theme-fresh .home-shortcut-menu button{
 body.browser-shell.theme-fresh .home-shortcut-menu button:hover{
   background:rgba(255,255,255,.46)!important;
 }
+/* //fresh-icon-toolbar-final */
+body.browser-shell :is([data-browser-shell-back],.tool-btn[data-back])::before{
+  content:""!important;
+  width:23px!important;
+  height:23px!important;
+  background:currentColor!important;
+  -webkit-mask:url("./assets/icons/fresh-left-arrow.png") center/contain no-repeat!important;
+  mask:url("./assets/icons/fresh-left-arrow.png") center/contain no-repeat!important;
+  transform:translate(-50%,-50%)!important;
+}
+body.browser-shell :is([data-browser-shell-back],.tool-btn[data-back]):hover::before{
+  transform:translate(-54%,-50%)!important;
+}
+body.browser-shell.theme-fresh .browser-mode-address button{
+  background:transparent!important;
+  background-image:none!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+  color:#0b7186!important;
+  -webkit-text-fill-color:#0b7186!important;
+  transition:transform .34s cubic-bezier(.16,.86,.2,1),color .22s ease,background-color .22s ease!important;
+}
+body.browser-shell.theme-fresh .browser-mode-address button:hover{
+  background:rgba(255,255,255,.32)!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+  transform:translateY(-1px) scale(1.06)!important;
+}
+body.browser-shell.theme-fresh .browser-mode-address button:active{
+  transform:translateY(0) scale(.96)!important;
+}
+body.browser-shell.theme-fresh :is([data-browser-shell-back],[data-browser-shell-forward],[data-browser-shell-reload],[data-browser-shell-bookmark],[data-browser-shell-menu])::before,
+body.browser-shell.theme-fresh :is([data-browser-shell-back],[data-browser-shell-forward],[data-browser-shell-reload],[data-browser-shell-bookmark],[data-browser-shell-menu])::after{
+  color:#0b7186!important;
+  -webkit-text-fill-color:#0b7186!important;
+}
+body.browser-shell.theme-fresh [data-browser-shell-menu]::before{
+  background:#0b7186!important;
+  box-shadow:0 -6px 0 #0b7186,0 6px 0 #0b7186!important;
+}
+body.browser-shell.theme-fresh .browser-mode-weather{
+  position:relative!important;
+  display:grid!important;
+  place-items:center!important;
+  overflow:hidden!important;
+}
+body.browser-shell.theme-fresh .browser-mode-weather > .weather-cloud-icon,
+body.browser-shell.theme-fresh #weatherRestore > .weather-cloud-icon{
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  width:23px!important;
+  height:23px!important;
+  margin:0!important;
+  transform:translate(-50%,-50%)!important;
+  background:#0b7186!important;
+  -webkit-mask:url("./assets/icons/cloud-weather.png") center/contain no-repeat!important;
+  mask:url("./assets/icons/cloud-weather.png") center/contain no-repeat!important;
+  filter:none!important;
+  z-index:5!important;
+}
+body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn{
+  color:#0b7186!important;
+  -webkit-text-fill-color:#0b7186!important;
+  transition:transform .28s cubic-bezier(.16,.86,.2,1),opacity .2s ease!important;
+}
+body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn:hover{
+  transform:scale(1.12)!important;
+}
+body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn::before{
+  background:#0b7186!important;
+  box-shadow:0 -6px 0 #0b7186,0 6px 0 #0b7186!important;
+}
+body.browser-shell.theme-fresh .browser-mode-menu{
+  padding:6px!important;
+  background:rgba(255,255,255,.48)!important;
+  border:1px solid rgba(126,150,214,.32)!important;
+  border-radius:10px!important;
+  box-shadow:0 22px 56px rgba(35,96,122,.16),inset 0 1px 0 rgba(255,255,255,.68)!important;
+}
+body.browser-shell.theme-fresh .browser-mode-menu button{
+  min-height:36px!important;
+  padding:0 12px!important;
+  border-radius:7px!important;
+  background:transparent!important;
+  transition:background-color .24s ease,transform .28s cubic-bezier(.16,.86,.2,1),color .2s ease!important;
+}
+body.browser-shell.theme-fresh .browser-mode-menu button:hover{
+  background:rgba(255,255,255,.42)!important;
+  transform:translateX(2px)!important;
+}
+body.browser-shell.theme-fresh .home-shortcut-menu{
+  padding:5px!important;
+  border-radius:10px!important;
+  background:rgba(255,255,255,.50)!important;
+  border-color:rgba(126,150,214,.30)!important;
+}
+body.browser-shell.theme-fresh .home-shortcut-menu button{
+  border-radius:7px!important;
+  background:transparent!important;
+  transition:background-color .22s ease,transform .26s cubic-bezier(.16,.86,.2,1)!important;
+}
+body.browser-shell.theme-fresh .home-shortcut-menu button:hover{
+  background:rgba(255,255,255,.44)!important;
+  transform:translateX(2px)!important;
+}
 </style>
 </head>
 <body>

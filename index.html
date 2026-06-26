@@ -9752,14 +9752,33 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
         let done=false;
         let loadSeen=false;
         let loadedAt=0;
+        const sourceForReadiness=()=>browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
         const hasMeaningfulContent=()=>{
           try{
             const doc=t.frame.contentDocument;
             if(!doc?.body) return false;
             if(doc.querySelector('#desktop,#welcomeScreen')) return false;
             const text=String(doc.body.innerText || doc.body.textContent || '').replace(/\s+/g,' ').trim();
-            const hasPageNodes=!!doc.body.querySelector('a,form,input,button,main,article,section,[role="main"],#links,.results,.result,.result__body');
             const ready=doc.readyState==='complete' || doc.readyState==='interactive';
+            const source=sourceForReadiness();
+            const host=browserHost(source);
+            const isDuckSearch=hostMatches(host,['duckduckgo.com']) && /[?&]q=/.test(source);
+            if(isDuckSearch){
+              if(/No results found|not many great results|try different keywords|there are no results/i.test(text)) return ready;
+              const resultNodes=[...doc.body.querySelectorAll('article[data-testid*="result" i],[data-testid*="result" i],[data-testid="mainline"] li,#links .result,.results_links,.result__body,main article,ol li')]
+                .filter(node=>String(node.innerText || node.textContent || '').replace(/\s+/g,' ').trim().length>24);
+              const resultLinks=[...doc.body.querySelectorAll('main a[href],#links a[href],[data-testid="mainline"] a[href],article a[href],ol a[href]')]
+                .filter(link=>{
+                  const label=String(link.innerText || link.textContent || '').replace(/\s+/g,' ').trim();
+                  if(label.length<8) return false;
+                  const href=String(link.getAttribute('href') || link.href || '');
+                  if(/^(#|javascript:)/i.test(href)) return false;
+                  const box=link.getBoundingClientRect?.();
+                  return !box || box.top>120;
+                });
+              return ready && (resultNodes.length>0 || resultLinks.length>=2);
+            }
+            const hasPageNodes=!!doc.body.querySelector('a,form,input,button,main,article,section,[role="main"],#links,.results,.result,.result__body');
             return ready && (text.length>80 || hasPageNodes);
           }catch{
             return false;
@@ -9781,7 +9800,9 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
           const srcdoc=String(t.frame?.getAttribute?.('srcdoc') || '');
           if(srcdoc && /Scramjet did not start|Ultraviolet did not start|Page Not Found|error/i.test(srcdoc)) finish(true);
           if(hasMeaningfulContent()) finish(true);
-          if(loadSeen && Date.now()-loadedAt>1100) finish(true);
+          const source=sourceForReadiness();
+          const isDuckSearch=hostMatches(browserHost(source),['duckduckgo.com']) && /[?&]q=/.test(source);
+          if(!isDuckSearch && loadSeen && Date.now()-loadedAt>1100) finish(true);
         },120);
         const timer=setTimeout(()=>finish(true),timeout);
         t.frame.addEventListener('load',onLoad,{once:true});

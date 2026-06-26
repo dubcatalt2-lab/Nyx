@@ -7944,6 +7944,31 @@ html body.browser-shell.theme-fresh form.browser-mode-address button[data-browse
 html body.browser-shell.theme-fresh form.browser-mode-address button[data-browser-shell-menu]:hover::before{
   transform:scale(1.055)!important;
 }
+html body :is(.quick-tile,.home-shortcut,.settings-preset,.apps-panel .quick-tile)[data-domain="traxmojo.com"] .quick-icon,
+html body.browser-shell .browser-home-normal .home-shortcut[data-domain="traxmojo.com"] .quick-icon,
+html body.browser-shell .apps-panel .quick-tile[data-domain="traxmojo.com"] .quick-icon{
+  width:92px!important;
+  height:92px!important;
+  max-width:92px!important;
+  max-height:92px!important;
+  padding:0!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  transform:scale(1.08)!important;
+}
+html body.browser-shell .browser-home-normal .home-shortcut[data-domain="traxmojo.com"] .quick-icon{
+  width:58px!important;
+  height:58px!important;
+  max-width:58px!important;
+  max-height:58px!important;
+  transform:scale(1.2)!important;
+}
+html body :is(.quick-tile,.home-shortcut,.settings-preset,.apps-panel .quick-tile)[data-domain="traxmojo.com"]:hover .quick-icon{
+  transform:scale(1.26)!important;
+}
 </style>
 </head>
 <body>
@@ -14673,7 +14698,30 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
           playHomeEntranceAnimation(activeBrowser?.win || document);
           return;
         }
-        activeBrowser?.win?.querySelector('[data-reload]')?.click();
+        const tabId=shellTab.id;
+        runNyxPreflight('browser',{
+          target:shellTab.sourceUrl || shellTab.url,
+          finalLabel:'Page loaded',
+          finalRun:async()=>{
+            const targetTab=activeBrowser?.state?.tabs?.find(tab=>tab.id===tabId);
+            if(!targetTab?.url) return false;
+            nyxPreflightBypass=true;
+            try{
+              activeBrowser?.state?.activate?.(tabId);
+              activeBrowser?.state?.navigate?.(targetTab.sourceUrl || targetTab.url);
+            }finally{
+              nyxPreflightBypass=false;
+            }
+            await waitForTabResultPaint(targetTab,9000);
+            return true;
+          },
+          finalVerify:async()=>{
+            const targetTab=activeBrowser?.state?.tabs?.find(tab=>tab.id===tabId);
+            if(!targetTab) return false;
+            await waitForTabResultPaint(targetTab,2600);
+            return true;
+          }
+        });
         return;
       }
       const shellMenuButton=e.target.closest('[data-browser-shell-menu]');

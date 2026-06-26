@@ -6467,6 +6467,67 @@ body.browser-shell.theme-fresh .browser-shell-logo{
     drop-shadow(0 0 58px rgba(0,245,212,.48))!important;
   opacity:1!important;
 }
+/* //fresh-smooth-borderless-dots-final */
+body.browser-shell.theme-fresh :is(
+  button,
+  .browser-mode-tab,
+  .browser-mode-app-button,
+  .browser-mode-address button,
+  .browser-mode-menu button,
+  .settings-action,
+  .settings-preset,
+  .tool-btn,
+  .go-btn,
+  .menu-btn,
+  .quick-tile,
+  .home-shortcut,
+  .home-shortcut-add,
+  .home-shortcut-menu button,
+  .weather-icon-btn
+){
+  transition:
+    transform .92s cubic-bezier(.16,.84,.18,1),
+    background-color .78s ease,
+    border-color .78s ease,
+    box-shadow .86s ease,
+    color .72s ease,
+    filter .82s ease,
+    opacity .72s ease!important;
+}
+body.browser-shell.theme-fresh :is(
+  button,
+  .browser-mode-tab,
+  .browser-mode-app-button,
+  .browser-mode-address button,
+  .tool-btn,
+  .go-btn,
+  .menu-btn,
+  .weather-icon-btn
+):hover{
+  transform:translateY(-1px) scale(1.018)!important;
+}
+body.browser-shell.theme-fresh .browser-home-normal :is(.quick-tile,.home-shortcut,.home-shortcut-add):hover{
+  transform:translateY(-2px) scale(1.018)!important;
+}
+body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn,
+body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn:hover,
+body.browser-shell.theme-fresh .home-shortcut.menu-open .home-shortcut-menu-btn{
+  background:transparent!important;
+  background-color:transparent!important;
+  background-image:none!important;
+  border:0!important;
+  box-shadow:none!important;
+  outline:0!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  transform:none!important;
+}
+body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn::before{
+  transition:transform .92s cubic-bezier(.16,.84,.18,1),background-color .78s ease,box-shadow .78s ease!important;
+}
+body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn:hover::before{
+  transform:translate(-50%,-50%) scale(1.08)!important;
+}
 </style>
 </head>
 <body>

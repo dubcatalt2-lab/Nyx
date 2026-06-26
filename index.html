@@ -3772,6 +3772,11 @@ body.runtime-lag-guard .weather-effects,
 body.runtime-lag-guard #visualEffects{
   display:none!important;
 }
+body.runtime-lag-guard :is(.browser-shell-caption,.browser-caption-live,.home-shortcut,.home-shortcut-add,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-url,.weather-panel,.ambient-player){
+  animation:none!important;
+  transition:opacity .12s linear,transform .12s linear!important;
+  filter:none!important;
+}
 body.lag-reducer #welcomeScreen,
 body.lag-reducer #welcomeScreen.hidden,
 body.lag-reducer #welcomeScreen.force-hidden{
@@ -9444,19 +9449,29 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
     if(!q) return [];
     const tabItems=browserShellTabs.map(tab=>browserShellSourceUrl(tab.url) || tab.title).filter(Boolean);
     const bookmarkItems=browserBookmarks().flatMap(item=>[item.title,item.url]).filter(Boolean);
+    const popularByPrefix=[
+      ['mine',['minecraft skins','minecraft movie','minecraft seed map','minecraft download','minecraft launcher','minecraft wiki']],
+      ['rob',['roblox codes','roblox login','roblox redeem','roblox support','roblox marketplace','roblox avatar']],
+      ['you',['youtube','youtube music','youtube tv','youtube studio','youtube shorts','youtube downloader']],
+      ['tik',['tiktok','tiktok shop','tiktok login','tiktok trends','tiktok sounds','tiktok studio']],
+      ['spo',['spotify','spotify web player','spotify wrapped','spotify login','spotify playlist','spotify download']],
+      ['dis',['discord','discord login','discord app','discord status','discord download','discord servers']],
+      ['goo',['google classroom','google docs','google drive','google translate','google maps','google flights']]
+    ];
+    const prefixItems=popularByPrefix.find(([prefix])=>q.startsWith(prefix))?.[1] || [];
     const phraseItems=[
-      `${query} lyrics`,
-      `${query} meaning`,
-      `${query} reddit`,
       `${query} login`,
       `${query} download`,
-      `${query} song`,
-      `${query} movie`,
+      `${query} app`,
+      `${query} online`,
+      `${query} meaning`,
+      `${query} reddit`,
       `${query} price`,
       `${query} near me`,
-      `${query} weather`
+      `${query} news`,
+      `${query} support`
     ];
-    const pool=[...remoteItems,...tabItems,...bookmarkItems,...browserSuggestionSeeds,...phraseItems];
+    const pool=[...remoteItems,...prefixItems,...tabItems,...bookmarkItems,...browserSuggestionSeeds,...phraseItems];
     const seen=new Set();
     const out=[];
     pool.forEach(item=>{
@@ -10350,15 +10365,15 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
       const delta=now-last;
       last=now;
       if(!store.get('nyx.lagReducer',false)){
-        if(delta>75) slowFrames+=1;
-        else slowFrames=Math.max(0,slowFrames-.35);
-        if(slowFrames>=8){
+        if(delta>58) slowFrames+=1.35;
+        else slowFrames=Math.max(0,slowFrames-.25);
+        if(slowFrames>=5){
           document.body.classList.add('runtime-lag-guard');
           clearTimeout(clearTimer);
           clearTimer=setTimeout(()=>{
             slowFrames=0;
             document.body.classList.remove('runtime-lag-guard');
-          },9000);
+          },14000);
           if(Date.now()-lastToast>30000){
             lastToast=Date.now();
             toast('Lag guard trimmed effects for a moment');
@@ -14044,20 +14059,20 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
       });
       const matches=unique.sort((a,b)=>scoreWeatherMatch(term,b)-scoreWeatherMatch(term,a));
       if(!matches.length){setWeatherStatus('No location found'); return}
-      if(matches.length===1 || scoreWeatherMatch(term,matches[0])>=90){
+      if(matches.length===1){
         await selectWeatherMatch(matches[0]);
         return;
       }
       const box=weatherPanel()?.querySelector('[data-weather-options]');
       if(!box) return;
       box.hidden=false;
-      box.innerHTML='<option value="">Select a location...</option>'+matches.map((match,i)=>{
+      box.innerHTML='<option value="">Choose a matching location...</option>'+matches.map((match,i)=>{
         const name=weatherPlaceName(match);
         const detail=[match.timezone,match.population ? `${Number(match.population).toLocaleString()} people` : ''].filter(Boolean).join(' · ');
         return `<option value="${i}">${esc(name)}${detail ? ` - ${esc(detail)}` : ''}</option>`;
       }).join('');
       box.onchange=()=>{if(box.value!=='') selectWeatherMatch(matches[Number(box.value)])};
-      setWeatherStatus('Pick a location');
+      setWeatherStatus('Choose a location');
     }catch{
       setWeatherStatus('Location search unavailable');
     }

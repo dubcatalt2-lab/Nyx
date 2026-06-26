@@ -6695,6 +6695,78 @@ body.browser-shell.theme-fresh .browser-home-normal .home-shortcut .home-shortcu
   outline:0!important;
   box-shadow:none!important;
 }
+/* //ambient-progress-and-cloud-repair-final */
+body.browser-shell.theme-fresh .ambient-player{
+  --ambient-accent:#00bfae!important;
+  --ambient-track:rgba(4,77,82,.26)!important;
+}
+body.browser-shell.theme-fresh :is(.ambient-seek,.ambient-volume,.ambient-bass-amount){
+  accent-color:#00bfae!important;
+}
+body.browser-shell.theme-fresh :is(.ambient-seek,.ambient-volume,.ambient-bass-amount)::-webkit-slider-runnable-track{
+  background:linear-gradient(90deg,#00bfae 0 var(--range-fill,0%),rgba(4,77,82,.26) var(--range-fill,0%) 100%)!important;
+}
+body.browser-shell.theme-fresh :is(.ambient-seek,.ambient-volume,.ambient-bass-amount)::-webkit-slider-thumb{
+  background:#78fff0!important;
+  box-shadow:0 0 10px rgba(0,191,174,.42)!important;
+}
+body.browser-shell.theme-fresh :is(.ambient-seek,.ambient-volume,.ambient-bass-amount)::-moz-range-progress{
+  background:#00bfae!important;
+}
+body.browser-shell.theme-fresh :is(.ambient-seek,.ambient-volume,.ambient-bass-amount)::-moz-range-track{
+  background:rgba(4,77,82,.26)!important;
+}
+body.browser-shell .browser-mode-weather,
+body.browser-shell #weatherRestore{
+  position:relative!important;
+  display:grid!important;
+  place-items:center!important;
+  color:#f8fafc!important;
+  -webkit-text-fill-color:#f8fafc!important;
+  overflow:visible!important;
+}
+body.browser-shell.theme-ruby .browser-mode-weather,
+body.browser-shell.theme-ruby #weatherRestore,
+body.browser-shell.theme-emerald .browser-mode-weather,
+body.browser-shell.theme-emerald #weatherRestore,
+body.browser-shell.theme-sakura .browser-mode-weather,
+body.browser-shell.theme-sakura #weatherRestore{
+  color:var(--theme-border,#f8fafc)!important;
+  -webkit-text-fill-color:var(--theme-border,#f8fafc)!important;
+}
+body.browser-shell.theme-fresh .browser-mode-weather,
+body.browser-shell.theme-fresh #weatherRestore{
+  color:var(--fresh-electric,#00f5d4)!important;
+  -webkit-text-fill-color:var(--fresh-electric,#00f5d4)!important;
+}
+body.browser-shell .weather-cloud-icon,
+body.browser-shell .browser-mode-weather > .weather-cloud-icon,
+body.browser-shell #weatherRestore > .weather-cloud-icon{
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  display:block!important;
+  width:22px!important;
+  height:22px!important;
+  min-width:22px!important;
+  min-height:22px!important;
+  margin:0!important;
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:none!important;
+  background:currentColor!important;
+  background-image:none!important;
+  -webkit-mask:url("./assets/icons/cloud-weather.png") center/contain no-repeat!important;
+  mask:url("./assets/icons/cloud-weather.png") center/contain no-repeat!important;
+  filter:none!important;
+  transform:translate(-50%,-50%)!important;
+  z-index:5!important;
+}
+body.browser-shell .weather-cloud-icon::before,
+body.browser-shell .weather-cloud-icon::after{
+  content:none!important;
+  display:none!important;
+}
 </style>
 </head>
 <body>
@@ -8525,6 +8597,9 @@ body.browser-shell.theme-fresh .browser-home-normal .home-shortcut .home-shortcu
     if(theme==='sakura'){
       store.setText('nyx.visualEffect','flowers');
     }
+    if(theme==='fresh'){
+      store.setText('nyx.visualEffect','flowers');
+    }
     if(theme==='emerald' && store.text('nyx.visualEffect','none')==='none'){
       store.setText('nyx.visualEffect','emeralds');
     }
@@ -8538,6 +8613,9 @@ body.browser-shell.theme-fresh .browser-home-normal .home-shortcut .home-shortcu
           armFreshAmbientGestureFallback();
         }
       },360);
+    }
+    if(theme==='fresh' || theme==='sakura'){
+      applyVisualEffectSetting();
     }
     syncInternalThemeFrames(theme);
     if(document.body.classList.contains('browser-shell') && qsa('[data-browser-caption]').length){

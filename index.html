@@ -9577,8 +9577,10 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
     hideBrowserSuggestions();
     navigateBrowserShell(value);
   }
-  function selectBrowserShellUrl(input){
+  function selectBrowserShellUrl(input,force=false){
     if(!input) return;
+    if(!force && input.dataset.selectOnFocus!=='1') return;
+    input.dataset.selectOnFocus='0';
     requestAnimationFrame(()=>{
       try{input.select()}catch{}
     });
@@ -9622,7 +9624,7 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
     if(key==='l' || key==='d'){
       consume();
       input?.focus();
-      selectBrowserShellUrl(input);
+      selectBrowserShellUrl(input,true);
       showBrowserSuggestions(input);
       return;
     }
@@ -9631,7 +9633,7 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
       openBrowserShellTab();
       const next=document.querySelector('[data-browser-shell-url]');
       next?.focus();
-      selectBrowserShellUrl(next);
+      selectBrowserShellUrl(next,true);
       return;
     }
     if(key==='w'){
@@ -10055,7 +10057,10 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
     renderBrowserShellTabs();
     if(forceInput){
       const input=document.querySelector('[data-browser-shell-url]');
-      if(input) input.value=browserShellDisplayValue(nextUrl);
+      if(input){
+        input.value=browserShellDisplayValue(nextUrl);
+        input.dataset.selectOnFocus='1';
+      }
     }
   }
   function navigateBrowserShell(value){
@@ -15708,7 +15713,6 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     document.addEventListener('pointerup',e=>{
       const input=e.target.closest?.('[data-browser-shell-url]');
       if(!input) return;
-      selectBrowserShellUrl(input);
       showBrowserSuggestions(input);
     });
     document.addEventListener('keydown',e=>{

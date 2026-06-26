@@ -7969,6 +7969,85 @@ html body.browser-shell .browser-home-normal .home-shortcut[data-domain="traxmoj
 html body :is(.quick-tile,.home-shortcut,.settings-preset,.apps-panel .quick-tile)[data-domain="traxmojo.com"]:hover .quick-icon{
   transform:scale(1.26)!important;
 }
+/* //music-tuck-and-menu-dot-final */
+html body.browser-shell .ambient-player{
+  transition:
+    width .58s cubic-bezier(.16,.86,.18,1),
+    height .58s cubic-bezier(.16,.86,.18,1),
+    padding .58s cubic-bezier(.16,.86,.18,1),
+    border-radius .58s cubic-bezier(.16,.86,.18,1),
+    transform .58s cubic-bezier(.16,.86,.18,1),
+    opacity .42s ease,
+    background-color .42s ease!important;
+}
+html body.browser-shell .ambient-player.tucked{
+  width:54px!important;
+  height:54px!important;
+  min-width:54px!important;
+  max-width:54px!important;
+  min-height:54px!important;
+  max-height:54px!important;
+  grid-template-columns:1fr!important;
+  place-items:center!important;
+  gap:0!important;
+  padding:8px!important;
+  border-radius:999px!important;
+  overflow:hidden!important;
+}
+html body.browser-shell .ambient-player.tucked .ambient-meta,
+html body.browser-shell .ambient-player.tucked .ambient-hide{
+  display:none!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+html body.browser-shell .ambient-player.tucked .ambient-toggle{
+  display:grid!important;
+  width:38px!important;
+  height:38px!important;
+  min-width:38px!important;
+  min-height:38px!important;
+  margin:0!important;
+  opacity:1!important;
+  transform:scale(1)!important;
+}
+html body.browser-shell .ambient-player:not(.tucked) .ambient-meta,
+html body.browser-shell .ambient-player:not(.tucked) .ambient-hide{
+  animation:ambientPanelOpen .42s cubic-bezier(.16,.86,.18,1) both;
+}
+@keyframes ambientPanelOpen{
+  0%{opacity:0;transform:translateX(-10px) scale(.96)}
+  100%{opacity:1;transform:translateX(0) scale(1)}
+}
+html body.browser-shell .browser-mode-address button[data-browser-shell-menu],
+html body.browser-shell .browser-mode-address button[data-browser-shell-menu]:hover,
+html body.browser-shell .browser-mode-address button[data-browser-shell-menu]:focus,
+html body.browser-shell .browser-mode-address button[data-browser-shell-menu]:focus-visible{
+  background:rgba(8,7,13,.32)!important;
+  background-color:rgba(8,7,13,.32)!important;
+  background-image:none!important;
+  border-color:var(--nyx-shortcut-border,var(--theme-border,rgba(190,148,255,.72)))!important;
+  box-shadow:none!important;
+  color:var(--nyx-shell-icon,#f8fafc)!important;
+  -webkit-text-fill-color:var(--nyx-shell-icon,#f8fafc)!important;
+}
+html body.browser-shell.theme-fresh .browser-mode-address button[data-browser-shell-menu],
+html body.browser-shell.theme-fresh .browser-mode-address button[data-browser-shell-menu]:hover,
+html body.browser-shell.theme-fresh .browser-mode-address button[data-browser-shell-menu]:focus,
+html body.browser-shell.theme-fresh .browser-mode-address button[data-browser-shell-menu]:focus-visible{
+  background:rgba(232,245,246,.58)!important;
+  background-color:rgba(232,245,246,.58)!important;
+  border-color:rgba(0,245,212,.74)!important;
+}
+html body.browser-shell .browser-mode-address button[data-browser-shell-menu]::before{
+  color:var(--nyx-shell-icon,#f8fafc)!important;
+  -webkit-text-fill-color:var(--nyx-shell-icon,#f8fafc)!important;
+  background:transparent!important;
+  background-color:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+  border:0!important;
+  border-radius:0!important;
+}
 </style>
 </head>
 <body>
@@ -12065,7 +12144,7 @@ html body :is(.quick-tile,.home-shortcut,.settings-preset,.apps-panel .quick-til
       t.popupBridgeInstalled=true;
       const shouldTrapPopupTarget=target=>{
         const value=String(target || '').toLowerCase();
-        return value && !['_self','_parent','_top'].includes(value);
+        return value && value !== '_self';
       };
       const shouldTrapDownloadLink=link=>{
         if(!link) return false;
@@ -12136,6 +12215,28 @@ html body :is(.quick-tile,.home-shortcut,.settings-preset,.apps-panel .quick-til
             event.stopImmediatePropagation();
             openPopupTab(form.action || form.getAttribute('action') || 'about:blank');
           },true);
+          try{
+            const frameLocation=frameWindow.location;
+            if(frameWindow.top && frameWindow.top!==frameWindow.self){
+              Object.defineProperty(frameWindow,'top',{value:frameWindow.self,configurable:true});
+              Object.defineProperty(frameWindow,'parent',{value:frameWindow.self,configurable:true});
+            }
+            if(frameLocation && !frameWindow.__nyxLocationGuard){
+              frameWindow.__nyxLocationGuard=true;
+              const blockTopNav=()=>popupProtectionEnabled();
+              ['assign','replace'].forEach(method=>{
+                const native=frameLocation[method]?.bind(frameLocation);
+                if(native){
+                  try{
+                    frameLocation[method]=value=>{
+                      if(blockTopNav()) return openPopupTab(String(value || 'about:blank'));
+                      return native(value);
+                    };
+                  }catch{}
+                }
+              });
+            }
+          }catch{}
         }catch{}
       };
       t.frame.addEventListener('load',()=>{
@@ -12186,11 +12287,10 @@ html body :is(.quick-tile,.home-shortcut,.settings-preset,.apps-panel .quick-til
         'allow-forms',
         'allow-modals',
         'allow-presentation',
-        'allow-storage-access-by-user-activation',
-        'allow-top-navigation-by-user-activation'
+        'allow-storage-access-by-user-activation'
       ];
       if(!popupProtectionEnabled()){
-        tokens.push('allow-popups','allow-popups-to-escape-sandbox','allow-downloads');
+        tokens.push('allow-popups','allow-popups-to-escape-sandbox','allow-downloads','allow-top-navigation-by-user-activation');
       }
       t.frame.setAttribute('sandbox',tokens.join(' '));
       t.frame.setAttribute('allow','autoplay; encrypted-media; fullscreen; clipboard-read; clipboard-write; payment; publickey-credentials-get; identity-credentials-get; private-state-token-issuance; private-state-token-redemption');

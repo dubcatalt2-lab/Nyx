@@ -5954,6 +5954,126 @@ body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn{
   color:#1d64c8!important;
   -webkit-text-fill-color:#1d64c8!important;
 }
+/* //fresh-cleanup-final */
+body.browser-shell.theme-fresh :is(button,.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-menu button,.settings-action,.settings-preset,.tool-btn,.go-btn,.menu-btn,.home-shortcut-menu button,.weather-icon-btn){
+  background:#ffffff!important;
+  background-image:none!important;
+  border-color:rgba(126,150,214,.42)!important;
+  color:#0b7186!important;
+  -webkit-text-fill-color:#0b7186!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.86),0 8px 20px rgba(35,96,122,.12)!important;
+}
+body.browser-shell.theme-fresh :is(button,.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-menu button,.settings-action,.settings-preset,.tool-btn,.go-btn,.menu-btn,.home-shortcut-menu button,.weather-icon-btn):hover{
+  background:#ffffff!important;
+  background-image:none!important;
+  border-color:rgba(11,113,134,.58)!important;
+  color:#075466!important;
+  -webkit-text-fill-color:#075466!important;
+}
+body.browser-shell.theme-fresh .weather-cloud-icon,
+body.browser-shell.theme-fresh .browser-mode-weather > .weather-cloud-icon,
+body.browser-shell.theme-fresh #weatherRestore > .weather-cloud-icon{
+  display:block!important;
+  opacity:1!important;
+  visibility:visible!important;
+  background:url("./assets/icons/cloud-weather.png") center/contain no-repeat!important;
+  filter:brightness(0) invert(1)!important;
+}
+body.browser-shell.theme-fresh .browser-mode-weather{
+  overflow:hidden!important;
+}
+body.browser-shell.theme-fresh .browser-home-normal .quick-tile,
+body.browser-shell.theme-fresh .home-shortcut,
+body.browser-shell.theme-fresh .home-shortcut-add{
+  background:rgba(255,255,255,.46)!important;
+  background-image:none!important;
+  border-color:rgba(126,150,214,.46)!important;
+  box-shadow:0 12px 30px rgba(35,96,122,.14),inset 0 1px 0 rgba(255,255,255,.76)!important;
+  backdrop-filter:blur(22px) saturate(1.18)!important;
+  -webkit-backdrop-filter:blur(22px) saturate(1.18)!important;
+}
+body.browser-shell.theme-fresh .home-shortcut .home-shortcut-open{
+  border:0!important;
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn{
+  width:30px!important;
+  height:30px!important;
+  top:-7px!important;
+  right:-7px!important;
+  border:1px solid rgba(126,150,214,.58)!important;
+  background:rgba(255,255,255,.74)!important;
+  background-image:none!important;
+  box-shadow:0 8px 18px rgba(35,96,122,.14)!important;
+  color:#0b7186!important;
+  -webkit-text-fill-color:#0b7186!important;
+}
+body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn::before{
+  background:#0b7186!important;
+  box-shadow:0 -6px 0 #0b7186,0 6px 0 #0b7186!important;
+}
+body.browser-shell .home-shortcut-menu{
+  z-index:2147482500!important;
+}
+body.browser-shell .home-shortcut.menu-open{
+  z-index:2147482400!important;
+}
+body.browser-shell .home-shortcut.menu-open .home-shortcut-menu{
+  display:grid!important;
+  top:auto!important;
+  bottom:calc(100% + 8px)!important;
+  right:0!important;
+  transform:none!important;
+}
+body.browser-shell.theme-fresh .home-shortcut-menu{
+  background:#ffffff!important;
+  background-image:none!important;
+  border:1px solid rgba(126,150,214,.42)!important;
+  border-radius:8px!important;
+  box-shadow:0 18px 42px rgba(35,96,122,.18)!important;
+}
+body.browser-shell.theme-fresh .home-shortcut-menu button{
+  background:#ffffff!important;
+  background-image:none!important;
+  border:0!important;
+  color:#0b7186!important;
+  -webkit-text-fill-color:#0b7186!important;
+  box-shadow:none!important;
+}
+body.browser-shell.theme-fresh .home-shortcut-menu button:hover{
+  background:rgba(11,113,134,.08)!important;
+}
+body.browser-shell.theme-fresh .home-shortcut-add b{
+  font-size:32px!important;
+  line-height:1!important;
+  color:#1d64c8!important;
+  -webkit-text-fill-color:#1d64c8!important;
+}
+body.browser-shell .home-shortcut .home-shortcut-menu-btn{
+  border:0!important;
+  box-shadow:none!important;
+  background:transparent!important;
+  background-image:none!important;
+}
+body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn{
+  border:0!important;
+  box-shadow:none!important;
+  background:transparent!important;
+  background-image:none!important;
+}
+body.browser-shell.theme-fresh .browser-mode-weather > .weather-cloud-icon,
+body.browser-shell.theme-fresh #weatherRestore > .weather-cloud-icon{
+  background:#0b7186!important;
+  -webkit-mask:url("./assets/icons/cloud-weather.png") center/contain no-repeat!important;
+  mask:url("./assets/icons/cloud-weather.png") center/contain no-repeat!important;
+  filter:none!important;
+}
+body.browser-shell.theme-fresh .browser-shell-caption,
+body.browser-shell.theme-fresh .browser-shell-caption *{
+  font-family:Nunito,Raleway,Arial,sans-serif!important;
+}
 </style>
 </head>
 <body>
@@ -7791,6 +7911,11 @@ body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn{
       loadAmbientTrack('frog',true);
     }
     syncInternalThemeFrames(theme);
+    if(document.body.classList.contains('browser-shell') && qsa('[data-browser-caption]').length){
+      randomBrowserCaptionIndex.deck=[];
+      initBrowserCaption.index=randomBrowserCaptionIndex();
+      showBrowserCaption(initBrowserCaption.index);
+    }
   }
   function syncInternalThemeFrames(theme=store.text('nyx.theme','default')){
     const clean=['ruby','emerald','sakura','fresh'].includes(theme) ? theme : 'default';
@@ -13612,6 +13737,18 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     {text:'Redeem (roblox code that i will insert later codex)'},
     {image:'assets/captions/squidhaha.webp',alt:'Squidzula caption'}
   ];
+  const freshBrowserCaptionItems=[
+    {text:'森のそよ風'},
+    {text:'今日もゆっくり'},
+    {text:'青空と魔法'},
+    {text:'新しい旅へ'},
+    {text:'静かな午後'},
+    {text:'光がきれい'},
+    {text:'小さな休憩'},
+    {text:'花びらの道'},
+    {text:'夢を見る時間'},
+    {text:'また会おうね'}
+  ];
   const browserRobloxCaptionIndex=8;
   const browserCaptionFonts=[
     'Raleway, "Segoe UI", Arial, sans-serif',
@@ -13624,6 +13761,10 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     'Optima, Candara, "Segoe UI", Arial, sans-serif',
     'Gill Sans, "Segoe UI", Arial, sans-serif',
     'Corbel, "Segoe UI", Arial, sans-serif'
+  ];
+  const freshBrowserCaptionFonts=[
+    'Nunito,Raleway,Arial,sans-serif',
+    'Raleway,Nunito,Arial,sans-serif'
   ];
   const browserCaptionAnimations=[
     {name:'burn-away',duration:1850,inDelay:520,easing:'cubic-bezier(.18,.74,.22,1)',out:[{opacity:1,transform:'translateY(0) scale(1)',filter:'blur(0) brightness(1)',textShadow:'0 8px 26px rgba(0,0,0,.54)',clipPath:'inset(0 0 0 0)'},{opacity:.9,transform:'translateY(-4px) scale(1.07)',filter:'blur(1px) brightness(2.25)',textShadow:'0 0 12px rgba(255,180,60,.95),0 0 30px rgba(255,74,28,.7)',clipPath:'inset(0 0 8% 0)'},{opacity:.38,transform:'translateY(-22px) scale(1.02) rotate(-2deg)',filter:'blur(7px) brightness(2.8)',textShadow:'0 0 24px rgba(255,95,30,.9)',clipPath:'inset(0 0 62% 0)'},{opacity:0,transform:'translateY(-58px) scale(.82) rotate(5deg)',filter:'blur(18px) brightness(3)',textShadow:'0 0 36px rgba(255,86,20,.0)',clipPath:'inset(0 0 100% 0)'}],in:[{opacity:0,transform:'translateY(38px) scale(.9)',filter:'blur(12px)'},{opacity:1,transform:'translateY(0) scale(1)',filter:'blur(0)'}]},
@@ -13655,18 +13796,51 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     nextBrowserCaptionAnimation.last=next;
     return next;
   }
+  function freshThemeActive(){
+    return document.body.classList.contains('theme-fresh');
+  }
+  function activeBrowserCaptionItems(){
+    return freshThemeActive() ? freshBrowserCaptionItems : browserCaptionItems;
+  }
+  function activeBrowserCaptionFonts(){
+    return freshThemeActive() ? freshBrowserCaptionFonts : browserCaptionFonts;
+  }
   function captionLetters(text){
-    const offset=Math.floor(Math.random()*browserCaptionFonts.length);
+    const fonts=activeBrowserCaptionFonts();
+    const offset=Math.floor(Math.random()*fonts.length);
     return Array.from(String(text)).map((ch,i)=>{
       if(ch===' ') return '<span class="browser-caption-letter browser-caption-space">&nbsp;</span>';
-      const font=browserCaptionFonts[(i+offset)%browserCaptionFonts.length];
+      const font=fonts[(i+offset)%fonts.length];
       return `<span class="browser-caption-letter" style='font-family:${font}'>${esc(ch)}</span>`;
     }).join('');
   }
   function randomBrowserCaptionIndex(){
+    const items=activeBrowserCaptionItems();
+    const deckKey=freshThemeActive() ? 'fresh' : 'default';
+    if(randomBrowserCaptionIndex.deckKey!==deckKey){
+      randomBrowserCaptionIndex.deck=[];
+      randomBrowserCaptionIndex.deckKey=deckKey;
+      randomBrowserCaptionIndex.last=null;
+    }
+    if(freshThemeActive()){
+      if(!randomBrowserCaptionIndex.deck?.length){
+        const deck=items.map((_,i)=>i);
+        for(let i=deck.length-1;i>0;i--){
+          const j=Math.floor(Math.random()*(i+1));
+          [deck[i],deck[j]]=[deck[j],deck[i]];
+        }
+        if(deck[0]===randomBrowserCaptionIndex.last && deck.length>1){
+          [deck[0],deck[1]]=[deck[1],deck[0]];
+        }
+        randomBrowserCaptionIndex.deck=deck;
+      }
+      const index=randomBrowserCaptionIndex.deck.shift() ?? 0;
+      randomBrowserCaptionIndex.last=index;
+      return index;
+    }
     if(Math.random()<.02) return browserRobloxCaptionIndex;
     if(!randomBrowserCaptionIndex.deck?.length){
-      const deck=browserCaptionItems.map((_,i)=>i).filter(i=>i!==browserRobloxCaptionIndex);
+      const deck=items.map((_,i)=>i).filter(i=>i!==browserRobloxCaptionIndex);
       for(let i=deck.length-1;i>0;i--){
         const j=Math.floor(Math.random()*(i+1));
         [deck[i],deck[j]]=[deck[j],deck[i]];
@@ -13685,7 +13859,8 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     return captionLetters(item.text);
   }
   function showBrowserCaption(index){
-    const item=browserCaptionItems[index%browserCaptionItems.length];
+    const items=activeBrowserCaptionItems();
+    const item=items[index%items.length];
     const animation=nextBrowserCaptionAnimation();
     qsa('[data-browser-caption]').forEach(el=>{
       el.dataset.captionAnimation=animation.name;

@@ -2833,10 +2833,11 @@ body.theme-sakura .weather-panel{
 .ambient-sub{font-size:11px;color:rgba(255,255,255,.72)}
 .ambient-hide{width:24px;height:38px;border:1px solid rgba(255,255,255,.18);border-radius:999px;background:rgba(255,255,255,.1);color:white;font-size:17px;font-weight:900;line-height:1;cursor:pointer}
 .ambient-hide:hover{background:rgba(255,255,255,.2)}
-.ambient-controls{display:grid;grid-template-columns:minmax(0,1fr) 74px 88px;gap:7px}
-.ambient-song,.ambient-speed,.ambient-bass{width:100%;height:28px;border:1px solid rgba(255,255,255,.24);border-radius:14px;background:#0b1220;color:white;padding:0 8px;outline:0;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.08);transition:border-color .16s ease,background .16s ease,box-shadow .16s ease}
+.ambient-controls{display:grid;grid-template-columns:minmax(0,1fr) 74px 82px;gap:7px}
+.ambient-song,.ambient-speed,.ambient-bass,.ambient-spotify{width:100%;height:28px;border:1px solid rgba(255,255,255,.24);border-radius:14px;background:#0b1220;color:white;padding:0 8px;outline:0;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.08);transition:border-color .16s ease,background .16s ease,box-shadow .16s ease}
 .ambient-bass{font-size:11px;font-weight:900;letter-spacing:0;padding:0 6px}
-.ambient-song:focus,.ambient-speed:focus,.ambient-bass:focus{border-color:#67e8f9}
+.ambient-spotify{font-size:11px;font-weight:900;letter-spacing:0;padding:0 6px}
+.ambient-song:focus,.ambient-speed:focus,.ambient-bass:focus,.ambient-spotify:focus{border-color:#67e8f9}
 .ambient-bass.on{border-color:rgba(251,146,60,.85);background:linear-gradient(135deg,#f97316,#db2777);box-shadow:0 0 18px rgba(249,115,22,.28),inset 0 1px 0 rgba(255,255,255,.18)}
 .ambient-song option,.ambient-speed option{background:#101827;color:white}
 .ambient-player{
@@ -2878,15 +2879,20 @@ body.theme-sakura .weather-panel{
   grid-template-columns:minmax(0,1fr) 56px 64px;
   gap:5px;
 }
-.ambient-song,.ambient-speed,.ambient-bass{
+.ambient-song,.ambient-speed,.ambient-bass,.ambient-spotify{
   height:23px;
   padding:0 7px;
   border-radius:12px;
   font-size:10px;
 }
-.ambient-bass{
+.ambient-bass,
+.ambient-spotify{
   font-size:9px;
   padding:0 5px;
+}
+.ambient-bass,
+.ambient-bass-row{
+  display:none!important;
 }
 .ambient-bass-row{
   grid-template-columns:auto minmax(0,1fr) 32px;
@@ -6767,6 +6773,72 @@ body.browser-shell .weather-cloud-icon::after{
   content:none!important;
   display:none!important;
 }
+/* //fresh-shortcut-and-player-final */
+body.browser-shell.theme-fresh .browser-home-normal .home-shortcut .home-shortcut-menu-btn{
+  position:absolute!important;
+  right:3px!important;
+  top:1px!important;
+  z-index:20!important;
+  width:13px!important;
+  min-width:13px!important;
+  max-width:13px!important;
+  height:34px!important;
+  min-height:34px!important;
+  max-height:34px!important;
+  padding:0!important;
+  margin:0!important;
+  appearance:none!important;
+  -webkit-appearance:none!important;
+  background:none!important;
+  background-color:transparent!important;
+  background-image:none!important;
+  border:0!important;
+  border-width:0!important;
+  border-color:transparent!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  filter:none!important;
+  outline:0!important;
+  outline-offset:0!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  transform:none!important;
+}
+body.browser-shell.theme-fresh .browser-home-normal .home-shortcut .home-shortcut-menu-btn::before{
+  width:3.4px!important;
+  height:3.4px!important;
+  border:0!important;
+  border-radius:999px!important;
+  background:var(--fresh-electric,#00f5d4)!important;
+  box-shadow:0 -6.2px 0 var(--fresh-electric,#00f5d4),0 6.2px 0 var(--fresh-electric,#00f5d4)!important;
+}
+body.browser-shell.theme-fresh .browser-home-normal .home-shortcut .home-shortcut-menu-btn::after{
+  content:none!important;
+  display:none!important;
+}
+body.browser-shell.theme-fresh .browser-home-normal :is(.home-shortcut,.home-shortcut-add){
+  overflow:visible!important;
+}
+body.browser-shell.theme-fresh .browser-home-normal .home-shortcut .home-shortcut-open{
+  position:relative!important;
+  z-index:1!important;
+  pointer-events:auto!important;
+}
+body.browser-shell.theme-fresh .ambient-controls{
+  grid-template-columns:minmax(0,1fr) 72px 82px!important;
+}
+body.browser-shell.theme-fresh .ambient-spotify{
+  background:rgba(255,255,255,.48)!important;
+  border-color:rgba(0,191,174,.42)!important;
+  color:var(--fresh-electric,#00f5d4)!important;
+  -webkit-text-fill-color:var(--fresh-electric,#00f5d4)!important;
+}
+.ambient-bass,
+.ambient-bass-row,
+.ambient-bass-amount,
+.ambient-bass-value{
+  display:none!important;
+}
 </style>
 </head>
 <body>
@@ -6987,13 +7059,8 @@ body.browser-shell .weather-cloud-icon::after{
         <option value="6">6x</option>
         <option value="8">8x</option>
       </select>
-      <button class="ambient-bass" id="ambientBass" type="button" aria-pressed="false" title="Boost song bass">Bass Boost</button>
+      <button class="ambient-spotify" id="ambientSpotify" type="button" title="Connect Spotify">Spotify</button>
     </div>
-    <label class="ambient-bass-row" title="Bass boost amount">
-      <span>Bass</span>
-      <input class="ambient-bass-amount" id="ambientBassAmount" type="range" min="0" max="100" value="70" aria-label="Bass boost amount">
-      <span class="ambient-bass-value" id="ambientBassValue">70%</span>
-    </label>
     <input class="ambient-volume" id="ambientVolume" type="range" min="0" max="100" value="100" aria-label="Music volume">
     <input class="ambient-file" id="ambientFile" type="file" accept="audio/*,video/mp4,.mp3,.m4a,.wav,.ogg,.mp4" aria-label="Choose your own music file">
   </div>
@@ -13868,10 +13935,10 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
         setAmbientPlaying(!ambientPlaying);
         return;
       }
-      if(e.target.closest('#ambientBass')){
+      if(e.target.closest('#ambientSpotify')){
         e.preventDefault();
         e.stopImmediatePropagation();
-        toggleAmbientBassBoost();
+        connectSpotifyNowPlaying();
         return;
       }
       if(e.target.closest('#watchPartyStop')){
@@ -13986,6 +14053,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
   let ambientSourceNode = null;
   let ambientBassFilter = null;
   let ambientBassGain = null;
+  let spotifyPollTimer = null;
   //music-player-logic
   function ambientTrackLabel(track){
     return track?.artist ? `${track.title} - ${track.artist}` : (track?.title || 'Custom music');
@@ -14020,8 +14088,136 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     const title=$('ambientTitle');
     if(title) title.textContent=`Now playing: ${ambientTrackLabel(track)}`;
   }
+  const spotifyScope='user-read-currently-playing user-read-playback-state';
+  function spotifyRedirectUri(){
+    return location.origin + location.pathname;
+  }
+  function spotifyTokenValid(){
+    return Boolean(store.text('nyx.spotifyAccessToken','') && Number(store.text('nyx.spotifyTokenExpires','0')) > Date.now()+30000);
+  }
+  function spotifyBase64Url(buffer){
+    const bytes=new Uint8Array(buffer);
+    let binary='';
+    bytes.forEach(byte=>{binary+=String.fromCharCode(byte)});
+    return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  }
+  async function spotifyChallenge(verifier){
+    const data=new TextEncoder().encode(verifier);
+    const digest=await crypto.subtle.digest('SHA-256',data);
+    return spotifyBase64Url(digest);
+  }
+  function spotifyRandomString(length=72){
+    const chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+    const values=new Uint8Array(length);
+    crypto.getRandomValues(values);
+    return Array.from(values,byte=>chars[byte % chars.length]).join('');
+  }
+  async function connectSpotifyNowPlaying(){
+    if(spotifyTokenValid()){
+      await updateSpotifyNowPlaying();
+      return;
+    }
+    let clientId=store.text('nyx.spotifyClientId','').trim();
+    if(!clientId){
+      clientId=prompt('Paste your Spotify Client ID to connect Spotify now playing:','')?.trim() || '';
+      if(!clientId){
+        setAmbientStatus('Spotify needs a Client ID');
+        return;
+      }
+      store.setText('nyx.spotifyClientId',clientId);
+    }
+    const verifier=spotifyRandomString();
+    const state=spotifyRandomString(28);
+    store.setText('nyx.spotifyVerifier',verifier);
+    store.setText('nyx.spotifyState',state);
+    const challenge=await spotifyChallenge(verifier);
+    const auth=new URL('https://accounts.spotify.com/authorize');
+    auth.searchParams.set('client_id',clientId);
+    auth.searchParams.set('response_type','code');
+    auth.searchParams.set('redirect_uri',spotifyRedirectUri());
+    auth.searchParams.set('scope',spotifyScope);
+    auth.searchParams.set('code_challenge_method','S256');
+    auth.searchParams.set('code_challenge',challenge);
+    auth.searchParams.set('state',state);
+    location.href=auth.href;
+  }
+  async function handleSpotifyCallback(){
+    const url=new URL(location.href);
+    const code=url.searchParams.get('code');
+    const state=url.searchParams.get('state');
+    if(!code || !state || state!==store.text('nyx.spotifyState','')) return false;
+    const clientId=store.text('nyx.spotifyClientId','').trim();
+    const verifier=store.text('nyx.spotifyVerifier','');
+    url.searchParams.delete('code');
+    url.searchParams.delete('state');
+    history.replaceState(null,'',url.pathname + url.search + url.hash);
+    if(!clientId || !verifier){
+      setAmbientStatus('Spotify connection expired');
+      return true;
+    }
+    try{
+      const body=new URLSearchParams();
+      body.set('client_id',clientId);
+      body.set('grant_type','authorization_code');
+      body.set('code',code);
+      body.set('redirect_uri',spotifyRedirectUri());
+      body.set('code_verifier',verifier);
+      const response=await fetch('https://accounts.spotify.com/api/token',{
+        method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body
+      });
+      if(!response.ok) throw new Error('token');
+      const token=await response.json();
+      store.setText('nyx.spotifyAccessToken',token.access_token || '');
+      store.setText('nyx.spotifyTokenExpires',String(Date.now()+((Number(token.expires_in)||3600)*1000)));
+      store.setText('nyx.spotifyVerifier','');
+      store.setText('nyx.spotifyState','');
+      setAmbientStatus('Spotify connected');
+      await updateSpotifyNowPlaying();
+    }catch{
+      setAmbientStatus('Spotify connection failed');
+    }
+    return true;
+  }
+  async function updateSpotifyNowPlaying(){
+    const button=$('ambientSpotify');
+    if(button) button.textContent=spotifyTokenValid() ? 'Sync' : 'Spotify';
+    if(!spotifyTokenValid()){
+      setAmbientStatus('Spotify needs reconnect');
+      return;
+    }
+    try{
+      const response=await fetch('https://api.spotify.com/v1/me/player/currently-playing',{
+        headers:{Authorization:`Bearer ${store.text('nyx.spotifyAccessToken','')}`}
+      });
+      if(response.status===204){
+        setAmbientStatus('No Spotify song playing');
+        return;
+      }
+      if(!response.ok) throw new Error('spotify');
+      const data=await response.json();
+      const item=data?.item;
+      if(!item){
+        setAmbientStatus('No Spotify song playing');
+        return;
+      }
+      const artists=(item.artists || []).map(artist=>artist.name).filter(Boolean).join(', ');
+      const title=$('ambientTitle');
+      if(title) title.textContent=`Spotify: ${item.name}${artists ? ' - '+artists : ''}`;
+      setAmbientStatus(data.is_playing ? 'Playing on Spotify' : 'Paused on Spotify');
+      if(button) button.textContent='Synced';
+    }catch{
+      setAmbientStatus('Could not read Spotify');
+    }
+  }
+  function startSpotifyPolling(){
+    clearInterval(spotifyPollTimer);
+    if(!spotifyTokenValid()) return;
+    spotifyPollTimer=setInterval(()=>updateSpotifyNowPlaying(),25000);
+  }
   function ambientBassEnabled(){
-    return store.get('nyx.musicBassBoost',false);
+    return false;
   }
   function ambientBassAmount(){
     return Math.max(0,Math.min(100,Number(store.text('nyx.musicBassAmount','70')) || 0));
@@ -14048,15 +14244,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     try{
       ambientAudioContext=new AudioContextClass();
       ambientSourceNode=ambientAudioContext.createMediaElementSource(audio);
-      ambientBassFilter=ambientAudioContext.createBiquadFilter();
-      ambientBassFilter.type='lowshelf';
-      ambientBassFilter.frequency.value=190;
-      ambientBassFilter.gain.value=ambientBassFilterGain();
-      ambientBassGain=ambientAudioContext.createGain();
-      ambientBassGain.gain.value=ambientBassOutputGain();
-      ambientSourceNode.connect(ambientBassFilter);
-      ambientBassFilter.connect(ambientBassGain);
-      ambientBassGain.connect(ambientAudioContext.destination);
+      ambientSourceNode.connect(ambientAudioContext.destination);
     }catch{
       ambientAudioContext=null;
       ambientSourceNode=null;
@@ -14350,22 +14538,17 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     const song=$('ambientSong');
     const speed=$('ambientSpeed');
     const seek=$('ambientSeek');
-    const bassAmount=$('ambientBassAmount');
     const savedVolume=Math.max(85,Math.min(100,Number(store.text('nyx.musicVolume','100')) || 100));
     const savedSpeed=Math.max(.5,Math.min(8,Number(store.text('nyx.musicSpeed','1')) || 1));
-    const savedBass=ambientBassAmount();
     if(song && !ambientTracks[ambientCurrentKey]) ambientCurrentKey='clair';
     refreshAmbientSongOptions(ambientCurrentKey);
     initAmbientDragging();
     if(volume) volume.value=String(savedVolume);
     if(speed) speed.value=String(savedSpeed);
-    if(bassAmount) bassAmount.value=String(savedBass);
     updateAmbientRangeFill(volume,100);
-    updateAmbientRangeFill(bassAmount,100);
     updateAmbientRangeFill(seek,1000);
     audio.volume=savedVolume / 100;
     audio.playbackRate=savedSpeed;
-    applyAmbientBassBoost();
     audio.addEventListener('loadedmetadata',updateAmbientSeek);
     audio.addEventListener('timeupdate',updateAmbientSeek);
     audio.addEventListener('durationchange',updateAmbientSeek);
@@ -14386,8 +14569,9 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     audio.addEventListener('error',()=>setAmbientStatus('Could not load this audio file'));
     setAmbientTitle();
     loadAmbientTrack(ambientCurrentKey,false);
+    handleSpotifyCallback().then(()=>startSpotifyPolling()).catch(()=>null);
     $('ambientToggle')?.addEventListener('click',()=>setAmbientPlaying(!ambientPlaying));
-    $('ambientBass')?.addEventListener('click',toggleAmbientBassBoost);
+    $('ambientSpotify')?.addEventListener('click',connectSpotifyNowPlaying);
     song?.addEventListener('change',e=>{
       loadAmbientTrack(e.target.value,true);
     });
@@ -14404,7 +14588,6 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     });
     volume?.addEventListener('input',e=>setAmbientVolume(e.target.value));
     speed?.addEventListener('change',e=>setAmbientSpeed(e.target.value));
-    bassAmount?.addEventListener('input',e=>setAmbientBassAmount(e.target.value));
     const commitSeek=e=>setAmbientSeekFromInput(e.target);
     seek?.addEventListener('pointerdown',()=>{ambientSeeking=true});
     seek?.addEventListener('touchstart',()=>{ambientSeeking=true},{passive:true});

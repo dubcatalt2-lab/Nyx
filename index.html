@@ -9700,7 +9700,7 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
         const looksLikeUrl=/^(?:[a-z][a-z0-9+.-]*:|[\w.-]+\.[a-z]{2,}(?:\/|$))/i.test(rawText);
         runNyxPreflight((forceMode || looksLikeUrl) ? 'browser' : 'search',{
           target:rawText,
-          finalLabel:(forceMode || looksLikeUrl) ? 'Showing page' : 'Showing results',
+          finalLabel:(forceMode || looksLikeUrl) ? 'Page loaded' : 'Showing results',
           finalRun:async()=>{
             const targetTab=state.tabs.find(tab=>tab.id===tabId);
             if(!targetTab) return false;

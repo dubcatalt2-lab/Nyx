@@ -6528,6 +6528,141 @@ body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn::before{
 body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn:hover::before{
   transform:translate(-50%,-50%) scale(1.08)!important;
 }
+/* //fresh-toolbar-icon-repair-final */
+body.browser-shell.theme-fresh :is(
+  .top-os,
+  .browser-tabs,
+  .browser-tools,
+  .browser-mode-tab,
+  .browser-mode-app-button,
+  .browser-mode-address button,
+  .browser-mode-url,
+  .browser-mode-menu,
+  .browser-bookmark-panel,
+  .settings-panel,
+  .settings-card,
+  .settings-app,
+  .settings-main,
+  .settings-side,
+  .weather-panel,
+  .weather-restore,
+  .home-shortcut,
+  .home-shortcut-add,
+  .home-shortcut-menu
+){
+  backdrop-filter:blur(34px) saturate(1.28)!important;
+  -webkit-backdrop-filter:blur(34px) saturate(1.28)!important;
+}
+body.browser-shell.theme-fresh :is(
+  [data-browser-shell-back],
+  [data-browser-shell-forward],
+  [data-browser-shell-reload],
+  [data-browser-shell-bookmark],
+  [data-browser-shell-menu]
+){
+  color:transparent!important;
+  -webkit-text-fill-color:transparent!important;
+  font-size:0!important;
+  text-indent:0!important;
+}
+body.browser-shell.theme-fresh :is(
+  [data-browser-shell-back],
+  [data-browser-shell-forward],
+  [data-browser-shell-reload],
+  [data-browser-shell-bookmark],
+  [data-browser-shell-menu]
+)::after{
+  content:none!important;
+  display:none!important;
+}
+body.browser-shell.theme-fresh :is(
+  [data-browser-shell-forward],
+  [data-browser-shell-reload],
+  [data-browser-shell-bookmark]
+)::before{
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  display:grid!important;
+  place-items:center!important;
+  width:auto!important;
+  height:auto!important;
+  background:transparent!important;
+  background-image:none!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  color:var(--fresh-electric)!important;
+  -webkit-text-fill-color:var(--fresh-electric)!important;
+  font-family:Arial,Helvetica,sans-serif!important;
+  font-weight:800!important;
+  line-height:1!important;
+  text-indent:0!important;
+  text-shadow:0 0 9px rgba(0,245,212,.46),0 0 18px rgba(0,245,212,.24)!important;
+  transform:translate(-50%,-50%)!important;
+}
+body.browser-shell.theme-fresh [data-browser-shell-forward]::before{
+  content:"\279C"!important;
+  font-size:24px!important;
+}
+body.browser-shell.theme-fresh [data-browser-shell-reload]::before{
+  content:"\1F5D8"!important;
+  font-size:22px!important;
+}
+body.browser-shell.theme-fresh [data-browser-shell-bookmark]::before{
+  content:"\2606"!important;
+  font-size:22px!important;
+}
+body.browser-shell.theme-fresh [data-browser-shell-bookmark].saved::before{
+  content:"\2605"!important;
+}
+body.browser-shell.theme-fresh :is([data-browser-shell-back],.tool-btn[data-back])::before{
+  content:""!important;
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  display:block!important;
+  width:24px!important;
+  height:24px!important;
+  background:var(--fresh-electric)!important;
+  box-shadow:0 0 10px rgba(0,245,212,.38)!important;
+  -webkit-mask:url("./assets/icons/fresh-left-arrow.png") center/contain no-repeat!important;
+  mask:url("./assets/icons/fresh-left-arrow.png") center/contain no-repeat!important;
+  transform:translate(-50%,-50%)!important;
+}
+body.browser-shell.theme-fresh [data-browser-shell-menu]::before,
+body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn::before{
+  content:""!important;
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  display:block!important;
+  width:3.6px!important;
+  height:3.6px!important;
+  border-radius:999px!important;
+  background:var(--fresh-electric)!important;
+  border:0!important;
+  box-shadow:0 -6.5px 0 var(--fresh-electric),0 6.5px 0 var(--fresh-electric),0 0 10px rgba(0,245,212,.36)!important;
+  transform:translate(-50%,-50%)!important;
+}
+body.browser-shell.theme-fresh :is(
+  [data-browser-shell-forward],
+  [data-browser-shell-reload],
+  [data-browser-shell-bookmark],
+  [data-browser-shell-menu],
+  .home-shortcut .home-shortcut-menu-btn
+):hover::before{
+  transform:translate(-50%,-50%) scale(1.08)!important;
+}
+body.browser-shell.theme-fresh [data-browser-shell-back]:hover::before{
+  transform:translate(-54%,-50%) scale(1.04)!important;
+}
+body.browser-shell.theme-fresh [data-browser-shell-forward]:hover::before{
+  transform:translate(-46%,-50%) scale(1.04)!important;
+}
+body.browser-shell.theme-fresh [data-browser-shell-reload]:hover::before{
+  transform:translate(-50%,-50%) rotate(18deg) scale(1.04)!important;
+}
 </style>
 </head>
 <body>

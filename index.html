@@ -8084,6 +8084,25 @@ html body.browser-shell .browser-mode-address button[data-browser-shell-menu]::b
   border:0!important;
   border-radius:0!important;
 }
+/* //performance-lite-final */
+html body.performance-lite{
+  --glass-blur:10px!important;
+  --glass-saturate:1.08!important;
+}
+html body.performance-lite :is(.top-os,.window,.titlebar,.dock,.quick-tile,.quick-icon,.glass-card,.weather-panel,.weather-restore,.toast,.ambient-player,.browser-message-box,.settings-card,.settings-panel,.settings-app,.settings-main,.settings-side,.browser-tabs,.browser-tools,.browser-mode-menu,.browser-bookmark-panel,.apps-panel,.panel){
+  backdrop-filter:blur(4px) saturate(1.04)!important;
+  -webkit-backdrop-filter:blur(4px) saturate(1.04)!important;
+  box-shadow:0 8px 22px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.10)!important;
+}
+html body.performance-lite.theme-fresh :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-menu,.browser-bookmark-panel,.ambient-player,.weather-panel,.weather-restore,.apps-panel,.panel){
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.36),0 8px 18px rgba(59,86,91,.12)!important;
+}
+html body.performance-lite :is(.browser-shell-clock,.desktop-center-clock,.browser-shell-caption,.quick-tile,.browser-mode-tab,.browser-mode-shell-tab,.home-shortcut){
+  filter:none!important;
+}
+html body.performance-lite #visualEffects i:nth-child(n+17){
+  display:none!important;
+}
 </style>
 </head>
 <body>
@@ -9614,6 +9633,20 @@ html body.browser-shell .browser-mode-address button[data-browser-shell-menu]::b
     qsa('[data-lag-reducer]').forEach(el=>el.classList.toggle('on',lag));
     qsa('[data-switch="nyx.lagReducer"]').forEach(el=>el.classList.toggle('on',lag));
   }
+  function syncPerformanceLite(){
+    const effect=store.text('nyx.visualEffect','none');
+    const amount=Number(store.text('nyx.visualEffectAmount','16')) || 16;
+    const lowPower=Number(navigator.hardwareConcurrency || 8)<=4;
+    const reducedMotion=matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+    const heavyTheme=document.body.classList.contains('theme-fresh') || document.body.classList.contains('theme-sakura');
+    const heavyEffects=['flowers','emeralds','hearts','pokeballs','rain'].includes(effect) && amount>10;
+    const enabled=!store.get('nyx.lagReducer',false) && (lowPower || reducedMotion || heavyTheme || heavyEffects);
+    document.body.classList.toggle('performance-lite',enabled);
+    if(enabled){
+      document.documentElement.style.setProperty('--glass-blur','10px');
+      document.documentElement.style.setProperty('--glass-saturate','1.08');
+    }
+  }
   function applyBrowserShellMode(){
     const enabled=store.get('nyx.browserShellMode',true);
     if(enabled && store.text('nyx.glassLevel','80')!=='-40') store.setText('nyx.glassLevel','-40');
@@ -9878,6 +9911,7 @@ html body.browser-shell .browser-mode-address button[data-browser-shell-menu]::b
     const layer=$('visualEffects');
     if(!layer) return [];
     while(layer.children.length<count) layer.appendChild(document.createElement('i'));
+    while(layer.children.length>count) layer.lastElementChild?.remove();
     return Array.from(layer.children);
   }
   //themes-and-visual-effects
@@ -9956,9 +9990,12 @@ html body.browser-shell .browser-mode-address button[data-browser-shell-menu]::b
     const allowed=['none','rain','stars','hearts','pokeballs','flowers','emeralds'];
     const value=allowed.includes(effect) ? effect : 'none';
     const speed=Math.max(.3,Math.min(3,Number(store.text('nyx.visualEffectSpeed','1.1')) || 1.1));
-    const amount=Math.max(1,Math.min(64,Number(store.text('nyx.visualEffectAmount','16')) || 16));
+    const requestedAmount=Math.max(1,Math.min(64,Number(store.text('nyx.visualEffectAmount','16')) || 16));
     const canShow=document.body.classList.contains('browser-shell') && !document.body.classList.contains('browser-content-active') && !document.body.classList.contains('watchparty-active') && !store.get('nyx.lagReducer',false);
-    const nodes=ensureVisualEffectNodes(64);
+    syncPerformanceLite();
+    const lite=document.body.classList.contains('performance-lite');
+    const amount=lite ? Math.min(requestedAmount,16) : requestedAmount;
+    const nodes=ensureVisualEffectNodes(canShow && value!=='none' ? amount : 0);
     const isFallingEffect=['hearts','pokeballs','flowers','emeralds'].includes(value);
     const randomizeFallingNode=node=>{
       const startX=Math.random()*112-6;
@@ -10019,15 +10056,16 @@ html body.browser-shell .browser-mode-address button[data-browser-shell-menu]::b
     document.documentElement.style.setProperty('--effect-speed',String(speed));
     qsa('[data-effect-value]').forEach(el=>{el.value=value});
     qsa('[data-effect-speed]').forEach(el=>{el.value=String(speed)});
-    qsa('[data-effect-amount]').forEach(el=>{el.value=String(amount)});
+    qsa('[data-effect-amount]').forEach(el=>{el.value=String(requestedAmount)});
     qsa('[data-effect-speed-label]').forEach(el=>{el.textContent=speed.toFixed(1)+'x'});
-    qsa('[data-effect-amount-label]').forEach(el=>{el.textContent=String(amount)});
+    qsa('[data-effect-amount-label]').forEach(el=>{el.textContent=String(requestedAmount)});
   }
   //user-settings-apply
   function applyUserSettings(){
     applyLagReducerSetting();
     applyBrowserShellMode();
     applyThemeSetting();
+    syncPerformanceLite();
     applyVisualEffectSetting();
     const name=store.text('nyx.userName','').trim();
     const greeting=$('userGreeting');
@@ -10058,6 +10096,7 @@ html body.browser-shell .browser-mode-address button[data-browser-shell-menu]::b
     const engine=store.text('nyx.engine','duckduckgo');
     qsa('[data-engine-value]').forEach(el=>{el.value=engine});
     applyGlassSetting();
+    syncPerformanceLite();
     startHieroglyphObserver();
     applyHieroglyphText();
   }

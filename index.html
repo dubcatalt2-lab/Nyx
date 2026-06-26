@@ -6367,6 +6367,106 @@ body.browser-shell.theme-fresh .browser-shell-logo{
     drop-shadow(0 0 32px rgba(11,113,134,.46))!important;
   opacity:.98!important;
 }
+/* //fresh-electric-aqua-final */
+body.theme-fresh{
+  --fresh-electric:#00f5d4;
+  --fresh-electric-deep:#00bfae;
+  --fresh-electric-glow:rgba(0,245,212,.76);
+  --theme-strong:var(--fresh-electric)!important;
+  --theme-text-gradient:none!important;
+  --accent:var(--fresh-electric)!important;
+}
+body.browser-shell.theme-fresh :is(
+  h1,h2,h3,p,span,label,strong,b,
+  button,
+  .browser-mode-tab,
+  .browser-mode-app-button,
+  .browser-mode-address button,
+  .browser-mode-menu button,
+  .settings-action,
+  .settings-preset,
+  .settings-input,
+  .settings-select,
+  .browser-mode-url,
+  .urlbar,
+  .tool-btn,
+  .go-btn,
+  .menu-btn,
+  .home-shortcut-menu button,
+  .home-shortcut span,
+  .home-shortcut-add span,
+  .home-shortcut-add b,
+  .quick-tile span,
+  .browser-shell-caption,
+  .browser-shell-caption *,
+  .browser-shell-clock,
+  .weather-icon-btn
+){
+  color:var(--fresh-electric)!important;
+  -webkit-text-fill-color:var(--fresh-electric)!important;
+  text-shadow:0 0 8px rgba(0,245,212,.34),0 0 18px rgba(0,245,212,.20)!important;
+}
+body.browser-shell.theme-fresh :is(
+  button,
+  .browser-mode-tab,
+  .browser-mode-app-button,
+  .browser-mode-address button,
+  .tool-btn,
+  .go-btn,
+  .menu-btn,
+  .home-shortcut-menu button,
+  .weather-icon-btn
+):hover{
+  color:#8ffff0!important;
+  -webkit-text-fill-color:#8ffff0!important;
+}
+body.browser-shell.theme-fresh :is(
+  [data-browser-shell-back],
+  [data-browser-shell-forward],
+  [data-browser-shell-reload],
+  [data-browser-shell-bookmark],
+  [data-browser-shell-menu],
+  .tool-btn[data-back],
+  .tool-btn[data-forward],
+  .tool-btn[data-reload],
+  .home-shortcut-menu-btn
+)::before,
+body.browser-shell.theme-fresh :is(
+  [data-browser-shell-back],
+  [data-browser-shell-forward],
+  [data-browser-shell-reload],
+  [data-browser-shell-bookmark],
+  [data-browser-shell-menu],
+  .tool-btn[data-back],
+  .tool-btn[data-forward],
+  .tool-btn[data-reload],
+  .home-shortcut-menu-btn
+)::after,
+body.browser-shell.theme-fresh .browser-mode-weather > .weather-cloud-icon,
+body.browser-shell.theme-fresh #weatherRestore > .weather-cloud-icon{
+  background:var(--fresh-electric)!important;
+  color:var(--fresh-electric)!important;
+  -webkit-text-fill-color:var(--fresh-electric)!important;
+  box-shadow:0 0 10px rgba(0,245,212,.38)!important;
+}
+body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn{
+  color:var(--fresh-electric)!important;
+  -webkit-text-fill-color:var(--fresh-electric)!important;
+}
+body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn::before{
+  background:var(--fresh-electric)!important;
+  box-shadow:0 -6.5px 0 var(--fresh-electric),0 6.5px 0 var(--fresh-electric),0 0 10px rgba(0,245,212,.42)!important;
+}
+body.browser-shell.theme-fresh .browser-shell-logo{
+  filter:
+    brightness(0) saturate(100%)
+    invert(82%) sepia(85%) saturate(1229%) hue-rotate(112deg) brightness(104%) contrast(103%)
+    drop-shadow(0 0 5px rgba(0,245,212,1))
+    drop-shadow(0 0 15px rgba(0,245,212,.92))
+    drop-shadow(0 0 34px rgba(0,245,212,.72))
+    drop-shadow(0 0 58px rgba(0,245,212,.48))!important;
+  opacity:1!important;
+}
 </style>
 </head>
 <body>

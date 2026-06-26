@@ -8897,6 +8897,7 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
   }
   let nyxPreflightPromise=null;
   let nyxPreflightBypass=false;
+  let nyxSearchPreflightShown=false;
   const preflightDelay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   async function preflightTimeout(promise,ms,label='check timed out'){
     let timer=null;
@@ -9796,8 +9797,9 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
       const proxyInternal=/^(?:\/service\/|\/~\/sj\/|\/scramjet\/service\/|nyx:\/\/)/i.test(rawText);
       const looksLikeUrl=/^(?:[a-z][a-z0-9+.-]*:|[\w.-]+\.[a-z]{2,}(?:\/|$)|\/|\.\/|\.\.\/|assets\/)/i.test(rawText);
       const isSearchQuery=rawText && !forceMode && !looksLikeUrl && !proxyInternal;
-      if(isSearchQuery && !nyxPreflightBypass){
+      if(isSearchQuery && !nyxPreflightBypass && !nyxSearchPreflightShown){
         const tabId=t.id;
+        nyxSearchPreflightShown=true;
         runNyxPreflight('search',{
           target:rawText,
           finalLabel:'Showing results',

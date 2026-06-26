@@ -2762,6 +2762,260 @@ body.theme-sakura .weather-panel{
 @keyframes fxWind{to{transform:translateX(30px)}}
 @keyframes snowFall{0%{transform:translate3d(0,-22px,0);opacity:0}12%{opacity:.95}100%{transform:translate3d(42px,390px,0);opacity:0}}
 @keyframes tumbleRoll{0%{transform:translateX(-42px) rotate(0deg);opacity:0}12%{opacity:1}88%{opacity:1}100%{transform:translateX(430px) rotate(760deg);opacity:0}}
+.weather-panel{
+  width:min(462px,calc(100vw - 28px));
+  padding:22px 24px 26px;
+  border-radius:24px;
+  background:#10111f;
+  border:1px solid rgba(166,163,208,.16);
+  box-shadow:0 30px 90px rgba(0,0,0,.46),inset 0 1px 0 rgba(255,255,255,.04);
+  color:#eeeefe;
+}
+.weather-panel::before{
+  background:radial-gradient(circle at 85% 8%,rgba(108,92,231,.12),transparent 34%),radial-gradient(circle at 6% 0,rgba(255,255,255,.06),transparent 28%);
+}
+.weather-panel-head{display:none}
+.weather-search{
+  grid-template-columns:minmax(0,1fr) 52px;
+  gap:10px;
+  margin-bottom:20px;
+}
+.weather-search input{
+  height:52px;
+  border-radius:14px;
+  border-color:rgba(142,137,184,.18);
+  background:#171827;
+  color:#eeefff;
+  font-size:18px;
+  padding:0 16px 0 46px;
+  background-image:radial-gradient(circle at 21px 50%,transparent 0 7px,#918bb4 7.5px 9.5px,transparent 10px),linear-gradient(45deg,transparent 0 63%,#918bb4 64% 72%,transparent 73%);
+  background-size:34px 34px,18px 18px;
+  background-position:10px 50%,26px 30px;
+  background-repeat:no-repeat;
+}
+.weather-search input::placeholder{color:#8e88ad}
+.weather-search button{
+  width:52px;
+  height:52px;
+  padding:0;
+  border-radius:14px;
+  font-size:0;
+  color:#9b95bc;
+  background:#191a2b;
+  border-color:rgba(142,137,184,.18);
+  position:relative;
+}
+.weather-search button::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:17px;
+  height:17px;
+  border:2px solid currentColor;
+  border-radius:50% 50% 50% 0;
+  transform:translate(-50%,-50%) rotate(-45deg);
+}
+.weather-options{
+  height:42px;
+  margin:-8px 0 16px;
+  border-color:rgba(142,137,184,.2);
+  background:#171827;
+  color:#eeefff;
+}
+.weather-current{gap:18px}
+.weather-now{
+  display:grid;
+  grid-template-columns:70px 1fr auto;
+  align-items:center;
+  gap:12px;
+}
+.weather-glyph{
+  width:64px;
+  height:64px;
+  display:grid;
+  place-items:center;
+  font-size:43px;
+  filter:drop-shadow(0 10px 16px rgba(0,0,0,.35));
+}
+.weather-temp-wrap{display:grid;gap:3px}
+.weather-panel .weather-temp{
+  font-size:48px;
+  font-weight:850;
+  line-height:.9;
+  color:#f3f3ff;
+  text-shadow:none;
+}
+.weather-panel .weather-desc{
+  font-size:17px;
+  color:#9d97bb;
+}
+.weather-panel .weather-place{
+  max-width:130px;
+  color:#b3accf;
+  font-size:18px;
+  text-align:right;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.weather-region-time{
+  margin-top:-10px;
+  color:#77708f;
+}
+.weather-stat-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.weather-stat{
+  min-height:42px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:0 14px;
+  border-radius:13px;
+  background:#191a2a;
+  color:#8f89aa;
+  font-size:17px;
+}
+.weather-stat strong{
+  color:#f0effc;
+  font-size:18px;
+}
+.weather-forecast-title{
+  margin:2px 0 -2px;
+  color:#847d9f;
+  font-size:14px;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+}
+.weather-forecast{
+  display:grid;
+  gap:12px;
+}
+.weather-forecast-row{
+  display:grid;
+  grid-template-columns:70px 40px 70px 1fr;
+  align-items:center;
+  gap:8px;
+  width:100%;
+  min-height:0;
+  padding:0;
+  border:0!important;
+  border-radius:0;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#b9b3d2;
+  font-size:18px;
+  text-align:left;
+}
+.weather-forecast-row .weather-day{font-weight:650}
+.weather-forecast-row .weather-rain-chance{color:#8bc7ff}
+.weather-forecast-row .weather-high-low{
+  justify-self:end;
+  color:#f0effc;
+  font-weight:800;
+}
+.weather-forecast-row .weather-high-low span{
+  color:#817a9d;
+  font-weight:600;
+}
+.weather-status{
+  color:#8d87a8;
+}
+.weather-restore{
+  width:auto;
+  min-width:220px;
+  height:46px;
+  right:auto;
+  left:18px;
+  top:auto;
+  bottom:14px;
+  justify-content:start;
+  gap:10px;
+  padding:0 18px;
+  border-radius:999px;
+  background:#10111f;
+  color:#eeeefe;
+  border-color:rgba(166,163,208,.16);
+}
+.weather-restore::after{
+  content:attr(data-weather-summary)!important;
+  position:static;
+  display:block;
+  color:#8f89aa;
+  transform:none;
+  font-size:16px;
+  line-height:1;
+}
+body.theme-fresh .weather-panel,
+body.theme-fresh .weather-restore{
+  background:rgba(238,253,255,.72)!important;
+  border-color:rgba(64,224,208,.54)!important;
+  color:#167b8f!important;
+  box-shadow:0 26px 84px rgba(20,120,150,.18),inset 0 1px 0 rgba(255,255,255,.8)!important;
+  backdrop-filter:blur(18px) saturate(1.08)!important;
+}
+body.theme-fresh .weather-search input,
+body.theme-fresh .weather-search button,
+body.theme-fresh .weather-options,
+body.theme-fresh .weather-stat{
+  background:rgba(255,255,255,.48)!important;
+  border-color:rgba(64,224,208,.46)!important;
+  color:#167b8f!important;
+}
+body.theme-fresh .weather-panel .weather-temp,
+body.theme-fresh .weather-stat strong,
+body.theme-fresh .weather-forecast-row .weather-high-low{
+  color:#167b8f!important;
+}
+body.theme-fresh .weather-panel .weather-desc,
+body.theme-fresh .weather-panel .weather-place,
+body.theme-fresh .weather-region-time,
+body.theme-fresh .weather-stat,
+body.theme-fresh .weather-forecast-title,
+body.theme-fresh .weather-forecast-row,
+body.theme-fresh .weather-status,
+body.theme-fresh .weather-restore::after{
+  color:#247f91!important;
+}
+.browser-search-suggestions{
+  position:fixed;
+  z-index:520;
+  display:none;
+  min-width:240px;
+  max-width:min(720px,calc(100vw - 28px));
+  padding:8px;
+  border:1px solid color-mix(in srgb,var(--theme-a,#7c3aed) 58%,rgba(255,255,255,.18));
+  border-radius:14px;
+  background:rgba(12,12,22,.94);
+  box-shadow:0 22px 60px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.08);
+  backdrop-filter:blur(14px) saturate(1.08);
+}
+.browser-search-suggestions.show{display:grid}
+.browser-search-suggestion{
+  min-height:34px;
+  border:0;
+  border-radius:10px;
+  background:transparent;
+  color:#f8fafc;
+  text-align:left;
+  padding:0 12px;
+  font-size:14px;
+}
+.browser-search-suggestion:hover,
+.browser-search-suggestion.active{
+  background:color-mix(in srgb,var(--theme-a,#7c3aed) 28%,rgba(255,255,255,.08));
+}
+body.theme-fresh .browser-search-suggestions{
+  background:rgba(244,253,255,.78);
+  border-color:rgba(64,224,208,.55);
+}
+body.theme-fresh .browser-search-suggestion{
+  color:#167b8f;
+}
 .switch{width:46px;height:24px;border:0;border-radius:999px;background:#111;position:relative;padding:2px}
 .switch::before{content:"";display:block;width:20px;height:20px;border-radius:50%;background:white;transition:transform .18s}
 .switch.on{background:#16a34a}
@@ -8289,21 +8543,28 @@ html body.browser-shell.theme-fresh :is([data-browser-shell-back],[data-browser-
     </form>
     <select class="weather-options" data-weather-options hidden aria-label="Select matching location"></select>
     <div class="weather-current">
-      <div class="weather-temp" data-weather-temp>--&deg;</div>
-      <div class="weather-meta">
-        <strong data-weather-place>Los Angeles</strong>
-        <span data-weather-desc>Loading weather...</span>
-        <span class="weather-region-time" data-weather-time>Local time --:--</span>
+      <div class="weather-now">
+        <div class="weather-glyph" data-weather-icon aria-hidden="true">☁️</div>
+        <div class="weather-temp-wrap">
+          <div class="weather-temp" data-weather-temp>--&deg;</div>
+          <div class="weather-desc" data-weather-desc>Loading weather...</div>
+        </div>
+        <strong class="weather-place" data-weather-place>Los Angeles</strong>
       </div>
-      <div class="weather-row">
-        <span class="weather-pill" data-weather-wind>Wind --</span>
-        <span class="weather-pill" data-weather-humidity>Humidity --</span>
+      <span class="weather-region-time" data-weather-time>Local time --:--</span>
+      <div class="weather-stat-grid">
+        <div class="weather-stat"><span>Feels like</span><strong data-weather-feels>--&deg;</strong></div>
+        <div class="weather-stat"><span>Humidity</span><strong data-weather-humidity>--%</strong></div>
+        <div class="weather-stat"><span>Wind</span><strong data-weather-wind>-- mph</strong></div>
+        <div class="weather-stat"><span>Precip</span><strong data-weather-precip>-- in</strong></div>
       </div>
+      <div class="weather-forecast-title">7-day forecast · tap a day</div>
+      <div class="weather-forecast" data-weather-forecast></div>
       <div class="weather-status" data-weather-status></div>
     </div>
   </aside>
 </main>
-<button id="weatherRestore" class="weather-restore" title="Open weather" aria-label="Open weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button>
+<button id="weatherRestore" class="weather-restore" title="Open weather" aria-label="Open weather" data-weather-summary="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button>
 <!-- //dock-app-launcher -->
 <nav class="dock">
   <button title="Home" data-open="home">🪐</button>
@@ -9006,6 +9267,195 @@ html body.browser-shell.theme-fresh :is([data-browser-shell-back],[data-browser-
   function currentBrowserShellUrl(){
     const tab=activeBrowserShellTab();
     return normalize(browserShellSourceUrl(tab?.url) || document.querySelector('[data-browser-shell-url]')?.value || '');
+  }
+  const browserSuggestionSeeds=[
+    'youtube','tiktok','spotify','discord','roblox','github','google classroom','google docs',
+    'duck ai','geforce now','games','weather','anime','music','unblocked games','calculator'
+  ];
+  function ensureBrowserSuggestionBox(input){
+    let box=$('browserSearchSuggestions');
+    if(!box){
+      box=document.createElement('div');
+      box.id='browserSearchSuggestions';
+      box.className='browser-search-suggestions';
+      box.setAttribute('role','listbox');
+      document.body.appendChild(box);
+    }
+    if(input){
+      const rect=input.getBoundingClientRect();
+      box.style.left=Math.max(8,rect.left)+'px';
+      box.style.top=Math.min(window.innerHeight-12,rect.bottom+8)+'px';
+      box.style.width=Math.min(rect.width,window.innerWidth-16)+'px';
+    }
+    return box;
+  }
+  function browserSuggestionItems(query){
+    const q=String(query || '').trim().toLowerCase();
+    if(!q) return [];
+    const tabItems=browserShellTabs.map(tab=>browserShellSourceUrl(tab.url) || tab.title).filter(Boolean);
+    const bookmarkItems=browserBookmarks().flatMap(item=>[item.title,item.url]).filter(Boolean);
+    const pool=[...tabItems,...bookmarkItems,...browserSuggestionSeeds];
+    const seen=new Set();
+    const out=[];
+    pool.forEach(item=>{
+      const text=String(item || '').trim();
+      const key=text.toLowerCase();
+      if(!text || seen.has(key)) return;
+      if(key.includes(q) || q.includes(key)){
+        seen.add(key);
+        out.push(text);
+      }
+    });
+    if(!out.includes(query)) out.unshift(query);
+    if(!/^(?:[a-z][a-z0-9+.-]*:|[\w.-]+\.[a-z]{2,})/i.test(query)){
+      [`${query} games`,`${query} wiki`,`${query} youtube`].forEach(item=>{
+        const key=item.toLowerCase();
+        if(!seen.has(key)){
+          seen.add(key);
+          out.push(item);
+        }
+      });
+    }
+    return out.slice(0,6);
+  }
+  function showBrowserSuggestions(input){
+    if(!input || !document.body.classList.contains('browser-shell')) return;
+    const items=browserSuggestionItems(input.value);
+    const box=ensureBrowserSuggestionBox(input);
+    if(!items.length){
+      box.classList.remove('show');
+      box.innerHTML='';
+      return;
+    }
+    box.innerHTML=items.map((item,index)=>`<button class="browser-search-suggestion${index===0?' active':''}" data-browser-suggestion="${esc(item)}" type="button" role="option">${esc(item)}</button>`).join('');
+    box.classList.add('show');
+  }
+  function hideBrowserSuggestions(){
+    const box=$('browserSearchSuggestions');
+    if(box) box.classList.remove('show');
+  }
+  function acceptBrowserSuggestion(value){
+    const input=document.querySelector('[data-browser-shell-url]');
+    if(input) input.value=value || '';
+    hideBrowserSuggestions();
+    navigateBrowserShell(value);
+  }
+  function selectBrowserShellUrl(input){
+    if(!input) return;
+    requestAnimationFrame(()=>{
+      try{input.select()}catch{}
+    });
+  }
+  function isEditableTarget(target){
+    return !!target && (target.matches?.('input,textarea') || target.isContentEditable);
+  }
+  function selectedTextFromTarget(target){
+    if(target?.matches?.('input,textarea')){
+      return target.value.slice(target.selectionStart || 0,target.selectionEnd || 0);
+    }
+    return String(getSelection?.() || '');
+  }
+  function replaceSelectionInTarget(target,text){
+    if(target?.matches?.('input,textarea')){
+      const start=target.selectionStart || 0;
+      const end=target.selectionEnd || 0;
+      const value=target.value || '';
+      target.value=value.slice(0,start)+text+value.slice(end);
+      const cursor=start+String(text).length;
+      target.setSelectionRange(cursor,cursor);
+      target.dispatchEvent(new Event('input',{bubbles:true}));
+      return;
+    }
+    document.execCommand('insertText',false,text);
+  }
+  async function writeClipboard(text){
+    try{
+      await navigator.clipboard?.writeText(text);
+      return true;
+    }catch{
+      return document.execCommand?.('copy');
+    }
+  }
+  async function handleLeftAltChromeShortcut(e){
+    if(panicCaptureArmed || e.ctrlKey || e.metaKey || !e.altKey || e.location===KeyboardEvent.DOM_KEY_LOCATION_RIGHT) return;
+    const key=String(e.key || '').toLowerCase();
+    const input=document.querySelector('[data-browser-shell-url]');
+    const target=e.target;
+    const consume=()=>{e.preventDefault(); e.stopPropagation();};
+    if(key==='l' || key==='d'){
+      consume();
+      input?.focus();
+      selectBrowserShellUrl(input);
+      showBrowserSuggestions(input);
+      return;
+    }
+    if(key==='t'){
+      consume();
+      openBrowserShellTab();
+      const next=document.querySelector('[data-browser-shell-url]');
+      next?.focus();
+      selectBrowserShellUrl(next);
+      return;
+    }
+    if(key==='w'){
+      consume();
+      const tab=activeBrowserShellTab();
+      if(tab?.id) closeBrowserShellTab(tab.id);
+      return;
+    }
+    if(key==='r'){
+      consume();
+      document.querySelector('[data-browser-shell-reload]')?.click();
+      return;
+    }
+    if(key==='arrowleft'){
+      consume();
+      document.querySelector('[data-browser-shell-back]')?.click();
+      return;
+    }
+    if(key==='arrowright'){
+      consume();
+      document.querySelector('[data-browser-shell-forward]')?.click();
+      return;
+    }
+    if(!isEditableTarget(target)) return;
+    if(key==='a'){
+      consume();
+      if(target.select) target.select();
+      else document.execCommand('selectAll');
+      return;
+    }
+    if(key==='c'){
+      consume();
+      await writeClipboard(selectedTextFromTarget(target));
+      return;
+    }
+    if(key==='x'){
+      consume();
+      const selected=selectedTextFromTarget(target);
+      await writeClipboard(selected);
+      replaceSelectionInTarget(target,'');
+      return;
+    }
+    if(key==='v'){
+      consume();
+      try{
+        const text=await navigator.clipboard?.readText();
+        if(text!=null) replaceSelectionInTarget(target,text);
+      }catch{
+        document.execCommand?.('paste');
+      }
+      return;
+    }
+    if(key==='z'){
+      consume();
+      document.execCommand?.('undo');
+      return;
+    }
+    if(key==='y'){
+      consume();
+      document.execCommand?.('redo');
+    }
   }
   function renderBrowserBookmarks(){
     const panel=$('browserBookmarkPanel');
@@ -13168,6 +13618,42 @@ html body.browser-shell.theme-fresh :is([data-browser-shell-back],[data-browser-
     const map={0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Cloudy',45:'Fog',48:'Freezing fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',80:'Rain showers',81:'Rain showers',82:'Heavy showers',95:'Thunderstorm'};
     return map[code] || 'Weather';
   }
+  function weatherIcon(code){
+    if([0,1].includes(Number(code))) return '☀️';
+    if([2,3,45,48].includes(Number(code))) return '☁️';
+    if([51,53,55,61,63,65,80,81,82,95].includes(Number(code))) return '🌧️';
+    if([71,73,75].includes(Number(code))) return '❄️';
+    return '🌤️';
+  }
+  function forecastDayLabel(dateText,index){
+    if(index===0) return 'Today';
+    try{
+      return new Intl.DateTimeFormat([],{weekday:'short'}).format(new Date(dateText+'T12:00:00'));
+    }catch{
+      return 'Day';
+    }
+  }
+  function renderWeatherForecast(daily){
+    const box=weatherPanel()?.querySelector('[data-weather-forecast]');
+    if(!box) return;
+    const times=daily?.time || [];
+    if(!times.length){
+      box.innerHTML='';
+      return;
+    }
+    box.innerHTML=times.slice(0,7).map((day,index)=>{
+      const code=daily.weather_code?.[index] ?? 3;
+      const rain=Math.round(daily.precipitation_probability_max?.[index] ?? 0);
+      const high=Math.round(daily.temperature_2m_max?.[index] ?? 0);
+      const low=Math.round(daily.temperature_2m_min?.[index] ?? 0);
+      return `<button class="weather-forecast-row" type="button" title="${esc(weatherDescription(code))}">
+        <span class="weather-day">${esc(forecastDayLabel(day,index))}</span>
+        <span aria-hidden="true">${weatherIcon(code)}</span>
+        <span class="weather-rain-chance">${rain}%</span>
+        <span class="weather-high-low">${high}&deg; <span>${low}&deg;</span></span>
+      </button>`;
+    }).join('');
+  }
   function weatherPanel(){
     return $('weatherPanel');
   }
@@ -13205,17 +13691,23 @@ html body.browser-shell.theme-fresh :is([data-browser-shell-back],[data-browser-
       time.textContent='Local time --:--';
     }
   }
-  function renderWeather(data, place, timezone){
+  function renderWeather(data, place, timezone, daily){
     const panel=weatherPanel();
     if(!panel || !data) return;
     panel.querySelector('[data-weather-temp]').innerHTML=Math.round(data.temperature_2m)+'&deg;';
     panel.querySelector('[data-weather-place]').textContent=place || 'Weather';
     panel.querySelector('[data-weather-desc]').textContent=weatherDescription(data.weather_code);
-    panel.querySelector('[data-weather-wind]').textContent='Wind '+Math.round(data.wind_speed_10m)+' mph';
-    panel.querySelector('[data-weather-humidity]').textContent='Humidity '+Math.round(data.relative_humidity_2m)+'%';
+    panel.querySelector('[data-weather-icon]').textContent=weatherIcon(data.weather_code);
+    panel.querySelector('[data-weather-feels]').innerHTML=Math.round(data.apparent_temperature ?? data.temperature_2m)+'&deg;';
+    panel.querySelector('[data-weather-wind]').textContent=Math.round(data.wind_speed_10m)+' mph';
+    panel.querySelector('[data-weather-humidity]').textContent=Math.round(data.relative_humidity_2m)+'%';
+    panel.querySelector('[data-weather-precip]').textContent=((Number(data.precipitation || 0)).toFixed(Number(data.precipitation || 0) >= 1 ? 1 : 2).replace(/\.00$/,'')).replace(/\.0$/,'')+' in';
     panel.classList.remove('weather-sun','weather-cloud','weather-rain','weather-wind','weather-hot','weather-freezing');
     panel.classList.add(weatherEffectClass(data.weather_code,data.wind_speed_10m,data.temperature_2m));
+    renderWeatherForecast(daily);
     renderWeatherTime(timezone);
+    const restore=$('weatherRestore');
+    if(restore) restore.dataset.weatherSummary=`${Math.round(data.temperature_2m)}° ${weatherDescription(data.weather_code)}`;
     setWeatherStatus('');
   }
   function clearWeatherOptions(){
@@ -13251,12 +13743,12 @@ html body.browser-shell.theme-fresh :is([data-browser-shell-back],[data-browser-
     if(panel) panel.querySelector('[data-weather-place]').textContent=place;
     setWeatherStatus('Loading...');
     try{
-      const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto`);
+      const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto`);
       if(!res.ok) throw new Error('weather failed');
       const json=await res.json();
       const tz=json.timezone || timezone;
       store.setText('nyx.weatherTimezone',tz);
-      renderWeather(json.current,place,tz);
+      renderWeather(json.current,place,tz,json.daily);
     }catch{
       setWeatherStatus('Weather unavailable right now');
     }
@@ -14839,11 +15331,52 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
       const value=(input?.value || '').trim();
       if(value) openBrowser(value);
     });
+    document.addEventListener('keydown',e=>{handleLeftAltChromeShortcut(e)},true);
+    document.addEventListener('input',e=>{
+      const input=e.target.closest?.('[data-browser-shell-url]');
+      if(input) showBrowserSuggestions(input);
+    });
+    document.addEventListener('focusin',e=>{
+      const input=e.target.closest?.('[data-browser-shell-url]');
+      if(!input) return;
+      selectBrowserShellUrl(input);
+      showBrowserSuggestions(input);
+    });
+    document.addEventListener('pointerup',e=>{
+      const input=e.target.closest?.('[data-browser-shell-url]');
+      if(!input) return;
+      selectBrowserShellUrl(input);
+      showBrowserSuggestions(input);
+    });
+    document.addEventListener('keydown',e=>{
+      const input=e.target.closest?.('[data-browser-shell-url]');
+      if(!input) return;
+      const box=$('browserSearchSuggestions');
+      const items=[...box?.querySelectorAll('.browser-search-suggestion') || []];
+      if(!items.length) return;
+      const current=Math.max(0,items.findIndex(item=>item.classList.contains('active')));
+      if(e.key==='ArrowDown' || e.key==='ArrowUp'){
+        e.preventDefault();
+        const next=e.key==='ArrowDown' ? (current+1)%items.length : (current-1+items.length)%items.length;
+        items.forEach(item=>item.classList.remove('active'));
+        items[next].classList.add('active');
+        input.value=items[next].dataset.browserSuggestion || items[next].textContent || input.value;
+      }else if(e.key==='Enter' && box?.classList.contains('show')){
+        const active=items.find(item=>item.classList.contains('active')) || items[0];
+        if(active){
+          e.preventDefault();
+          acceptBrowserSuggestion(active.dataset.browserSuggestion || active.textContent || input.value);
+        }
+      }else if(e.key==='Escape'){
+        hideBrowserSuggestions();
+      }
+    });
     document.addEventListener('submit',e=>{
       const shellSearch=e.target.closest?.('[data-browser-shell-search]');
       if(shellSearch){
         e.preventDefault();
         document.body.classList.remove('menu-open');
+        hideBrowserSuggestions();
         navigateBrowserShell(shellSearch.querySelector('[data-browser-shell-url]')?.value);
         return;
       }
@@ -14919,6 +15452,15 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
         openBrowserShellTab();
         document.querySelector('[data-browser-shell-url]')?.focus();
         return;
+      }
+      const browserSuggestion=e.target.closest('[data-browser-suggestion]');
+      if(browserSuggestion){
+        e.preventDefault();
+        acceptBrowserSuggestion(browserSuggestion.dataset.browserSuggestion || browserSuggestion.textContent);
+        return;
+      }
+      if(!e.target.closest('[data-browser-shell-url]') && !e.target.closest('#browserSearchSuggestions')){
+        hideBrowserSuggestions();
       }
       const shellTab=e.target.closest('[data-browser-shell-tab]');
       if(shellTab){

@@ -7090,6 +7090,277 @@ body.browser-shell.theme-fresh .browser-shell-settings-panel .browser-shell-sett
   background-color:rgba(220,238,240,.74)!important;
   border-color:rgba(0,191,174,.54)!important;
 }
+/* //fresh-real-icons-no-borders-final */
+body.browser-shell.theme-fresh .browser-mode-address button::before,
+body.browser-shell.theme-fresh .browser-mode-address button::after{
+  content:none!important;
+  display:none!important;
+  width:0!important;
+  height:0!important;
+  background:none!important;
+  box-shadow:none!important;
+  -webkit-mask:none!important;
+  mask:none!important;
+}
+body.browser-shell.theme-fresh .browser-mode-address button{
+  color:var(--fresh-electric,#00f5d4)!important;
+  -webkit-text-fill-color:var(--fresh-electric,#00f5d4)!important;
+  font-size:0!important;
+  text-indent:0!important;
+  overflow:hidden!important;
+}
+body.browser-shell.theme-fresh .fresh-real-icon{
+  display:grid!important;
+  place-items:center!important;
+  width:100%!important;
+  height:100%!important;
+  color:var(--fresh-electric,#00f5d4)!important;
+  -webkit-text-fill-color:var(--fresh-electric,#00f5d4)!important;
+  font:900 23px/1 Arial,Helvetica,sans-serif!important;
+  text-indent:0!important;
+  text-shadow:0 0 9px rgba(0,245,212,.38),0 0 18px rgba(0,245,212,.18)!important;
+  pointer-events:none!important;
+  transition:transform 1.35s cubic-bezier(.12,.82,.14,1),filter 1.05s ease!important;
+}
+body.browser-shell.theme-fresh .fresh-real-back{
+  width:24px!important;
+  height:24px!important;
+  margin:auto!important;
+  background:var(--fresh-electric,#00f5d4)!important;
+  -webkit-mask:url("./assets/icons/fresh-left-arrow.png") center/contain no-repeat!important;
+  mask:url("./assets/icons/fresh-left-arrow.png") center/contain no-repeat!important;
+  filter:drop-shadow(0 0 8px rgba(0,245,212,.32))!important;
+}
+body.browser-shell.theme-fresh .browser-mode-address button:hover .fresh-real-icon{
+  transform:scale(1.045)!important;
+}
+body.browser-shell.theme-fresh [data-browser-shell-reload]:hover .fresh-real-icon{
+  transform:rotate(14deg) scale(1.035)!important;
+}
+body.browser-shell.theme-fresh .browser-home-normal :is(.quick-tile,.home-shortcut,.home-shortcut-add),
+body.browser-shell.theme-fresh .browser-home-normal :is(.quick-tile,.home-shortcut,.home-shortcut-add):hover{
+  border:0!important;
+  border-color:transparent!important;
+  outline:0!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.42),0 12px 28px rgba(30,74,92,.12)!important;
+}
+body.browser-shell.theme-fresh .browser-home-normal .home-shortcut .home-shortcut-menu-btn,
+body.browser-shell.theme-fresh .browser-home-normal .home-shortcut .home-shortcut-menu-btn:hover,
+body.browser-shell.theme-fresh .browser-home-normal .home-shortcut.menu-open .home-shortcut-menu-btn{
+  border:0!important;
+  border-color:transparent!important;
+  outline:0!important;
+  box-shadow:none!important;
+  background:transparent!important;
+  background-color:transparent!important;
+  background-image:none!important;
+}
+/* //fresh-final-render-fix */
+body.browser-shell.theme-fresh .browser-mode-address button,
+body.browser-shell.theme-fresh .browser-mode-address button:hover,
+body.browser-shell.theme-fresh .browser-mode-address button:focus,
+body.browser-shell.theme-fresh .browser-mode-address button:focus-visible{
+  border:0!important;
+  outline:0!important;
+  color:var(--fresh-electric,#00f5d4)!important;
+  -webkit-text-fill-color:var(--fresh-electric,#00f5d4)!important;
+  background:rgba(232,245,246,.58)!important;
+  background-color:rgba(232,245,246,.58)!important;
+  background-image:none!important;
+  box-shadow:none!important;
+  overflow:hidden!important;
+}
+body.browser-shell.theme-fresh .browser-mode-address button::before,
+body.browser-shell.theme-fresh .browser-mode-address button::after,
+body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn::before,
+body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn::after{
+  content:none!important;
+  display:none!important;
+}
+body.browser-shell.theme-fresh .fresh-real-icon,
+body.browser-shell.theme-fresh .shortcut-real-dots{
+  display:grid!important;
+  place-items:center!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  color:var(--fresh-electric,#00f5d4)!important;
+  -webkit-text-fill-color:var(--fresh-electric,#00f5d4)!important;
+  font-size:0!important;
+  line-height:1!important;
+  text-indent:0!important;
+  text-shadow:0 0 10px rgba(0,245,212,.45),0 0 22px rgba(0,245,212,.24)!important;
+  filter:drop-shadow(0 0 8px rgba(0,245,212,.34))!important;
+  pointer-events:none!important;
+  transition:transform 1.25s cubic-bezier(.16,.86,.18,1),filter 1.25s ease!important;
+}
+body.browser-shell.theme-fresh [data-browser-shell-forward] .fresh-real-icon::before,
+body.browser-shell.theme-fresh [data-browser-shell-reload] .fresh-real-icon::before,
+body.browser-shell.theme-fresh [data-browser-shell-bookmark] .fresh-real-icon::before,
+body.browser-shell.theme-fresh [data-browser-shell-menu] .fresh-real-icon::before,
+body.browser-shell.theme-fresh .shortcut-real-dots::before{
+  display:grid!important;
+  place-items:center!important;
+  width:100%!important;
+  height:100%!important;
+  color:var(--fresh-electric,#00f5d4)!important;
+  -webkit-text-fill-color:var(--fresh-electric,#00f5d4)!important;
+  font:900 23px/1 Arial,Helvetica,sans-serif!important;
+  text-indent:0!important;
+}
+body.browser-shell.theme-fresh [data-browser-shell-forward] .fresh-real-icon::before{content:"\279C"!important}
+body.browser-shell.theme-fresh [data-browser-shell-reload] .fresh-real-icon::before{content:"\27F3"!important}
+body.browser-shell.theme-fresh [data-browser-shell-bookmark] .fresh-real-icon::before{content:"\2606"!important}
+body.browser-shell.theme-fresh [data-browser-shell-menu] .fresh-real-icon::before,
+body.browser-shell.theme-fresh .shortcut-real-dots::before{content:"\22EE"!important}
+body.browser-shell.theme-fresh .fresh-real-back{
+  width:24px!important;
+  height:24px!important;
+  margin:auto!important;
+  background:var(--fresh-electric,#00f5d4)!important;
+  -webkit-mask:url("./assets/icons/fresh-left-arrow.png") center/contain no-repeat!important;
+  mask:url("./assets/icons/fresh-left-arrow.png") center/contain no-repeat!important;
+}
+body.browser-shell.theme-fresh .browser-mode-address button:hover .fresh-real-icon{
+  transform:scale(1.035)!important;
+}
+body.browser-shell.theme-fresh [data-browser-shell-reload]:hover .fresh-real-icon{
+  transform:rotate(12deg) scale(1.025)!important;
+}
+body.browser-shell.theme-fresh .browser-home-normal :is(.quick-tile,.home-shortcut,.home-shortcut-add),
+body.browser-shell.theme-fresh .browser-home-normal :is(.quick-tile,.home-shortcut,.home-shortcut-add):hover,
+body.browser-shell.theme-fresh .browser-home-normal :is(.quick-tile,.home-shortcut,.home-shortcut-add):focus,
+body.browser-shell.theme-fresh .browser-home-normal :is(.quick-tile,.home-shortcut,.home-shortcut-add):focus-visible{
+  border:0!important;
+  border-color:transparent!important;
+  outline:0!important;
+  box-shadow:none!important;
+  background:rgba(232,245,246,.52)!important;
+  background-color:rgba(232,245,246,.52)!important;
+  background-image:none!important;
+  backdrop-filter:blur(42px) saturate(1.18)!important;
+  -webkit-backdrop-filter:blur(42px) saturate(1.18)!important;
+  transition:transform 1.05s cubic-bezier(.16,.86,.18,1),background-color 1.05s ease,filter 1.05s ease!important;
+}
+body.browser-shell.theme-fresh .browser-home-normal :is(.quick-tile,.home-shortcut,.home-shortcut-add)::before,
+body.browser-shell.theme-fresh .browser-home-normal :is(.quick-tile,.home-shortcut,.home-shortcut-add)::after{
+  content:none!important;
+  display:none!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+body.browser-shell.theme-fresh .browser-home-normal .home-shortcut .home-shortcut-menu-btn,
+body.browser-shell.theme-fresh .browser-home-normal .home-shortcut .home-shortcut-menu-btn:hover,
+body.browser-shell.theme-fresh .browser-home-normal .home-shortcut.menu-open .home-shortcut-menu-btn{
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+  background:transparent!important;
+  background-color:transparent!important;
+  background-image:none!important;
+}
+html body.browser-shell.theme-fresh form.browser-mode-address :is(
+  button[data-browser-shell-back],
+  button[data-browser-shell-forward],
+  button[data-browser-shell-reload],
+  button[data-browser-shell-bookmark],
+  button.browser-mode-weather,
+  button[data-browser-shell-menu]
+),
+html body.browser-shell.theme-fresh form.browser-mode-address :is(
+  button[data-browser-shell-back],
+  button[data-browser-shell-forward],
+  button[data-browser-shell-reload],
+  button[data-browser-shell-bookmark],
+  button.browser-mode-weather,
+  button[data-browser-shell-menu]
+):hover,
+html body.browser-shell.theme-fresh .browser-home-normal div.quick-tile.home-shortcut,
+html body.browser-shell.theme-fresh .browser-home-normal button.quick-tile.home-shortcut-add,
+html body.browser-shell.theme-fresh .browser-home-normal div.quick-tile.home-shortcut:hover,
+html body.browser-shell.theme-fresh .browser-home-normal button.quick-tile.home-shortcut-add:hover,
+html body.browser-shell.theme-fresh .browser-home-normal div.quick-tile.home-shortcut button.home-shortcut-menu-btn,
+html body.browser-shell.theme-fresh .browser-home-normal div.quick-tile.home-shortcut button.home-shortcut-menu-btn:hover{
+  border:0!important;
+  border-color:transparent!important;
+  outline:0!important;
+  box-shadow:none!important;
+  position:relative!important;
+  isolation:isolate!important;
+}
+html body.browser-shell.theme-fresh .browser-home-normal div.quick-tile.home-shortcut button.home-shortcut-menu-btn{
+  display:grid!important;
+  place-items:center!important;
+  width:22px!important;
+  height:30px!important;
+  min-width:22px!important;
+  padding:0!important;
+  color:var(--fresh-electric,#00f5d4)!important;
+  -webkit-text-fill-color:var(--fresh-electric,#00f5d4)!important;
+  background:transparent!important;
+  background-color:transparent!important;
+  background-image:none!important;
+}
+html body.browser-shell.theme-fresh .shortcut-real-dots::before{
+  content:"\22EE"!important;
+  display:grid!important;
+  place-items:center!important;
+  color:var(--fresh-electric,#00f5d4)!important;
+  -webkit-text-fill-color:var(--fresh-electric,#00f5d4)!important;
+  font:900 24px/1 Arial,Helvetica,sans-serif!important;
+  text-shadow:0 0 10px rgba(0,245,212,.45),0 0 22px rgba(0,245,212,.24)!important;
+}
+html body.browser-shell.theme-fresh form.browser-mode-address button[data-browser-shell-forward]::before,
+html body.browser-shell.theme-fresh form.browser-mode-address button[data-browser-shell-reload]::before,
+html body.browser-shell.theme-fresh form.browser-mode-address button[data-browser-shell-bookmark]::before,
+html body.browser-shell.theme-fresh form.browser-mode-address button[data-browser-shell-menu]::before{
+  content:""!important;
+  display:grid!important;
+  place-items:center!important;
+  position:absolute!important;
+  inset:0!important;
+  top:0!important;
+  right:0!important;
+  bottom:0!important;
+  left:0!important;
+  width:100%!important;
+  height:100%!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  transform:none!important;
+  clip-path:none!important;
+  color:var(--fresh-electric,#00f5d4)!important;
+  -webkit-text-fill-color:var(--fresh-electric,#00f5d4)!important;
+  background:none!important;
+  -webkit-mask:none!important;
+  mask:none!important;
+  font:900 23px/1 Arial,Helvetica,sans-serif!important;
+  text-indent:0!important;
+  text-shadow:0 0 10px rgba(0,245,212,.45),0 0 22px rgba(0,245,212,.24)!important;
+  filter:drop-shadow(0 0 8px rgba(0,245,212,.34))!important;
+  pointer-events:none!important;
+  z-index:2!important;
+  transition:transform 1.25s cubic-bezier(.16,.86,.18,1),filter 1.25s ease!important;
+}
+html body.browser-shell.theme-fresh form.browser-mode-address button[data-browser-shell-forward]::before{content:"\279C"!important}
+html body.browser-shell.theme-fresh form.browser-mode-address button[data-browser-shell-reload]::before{content:"\27F3"!important}
+html body.browser-shell.theme-fresh form.browser-mode-address button[data-browser-shell-bookmark]::before{content:"\2606"!important}
+html body.browser-shell.theme-fresh form.browser-mode-address button[data-browser-shell-menu]::before{content:"\22EE"!important}
+html body.browser-shell.theme-fresh form.browser-mode-address button[data-browser-shell-forward] .fresh-real-icon,
+html body.browser-shell.theme-fresh form.browser-mode-address button[data-browser-shell-reload] .fresh-real-icon,
+html body.browser-shell.theme-fresh form.browser-mode-address button[data-browser-shell-bookmark] .fresh-real-icon,
+html body.browser-shell.theme-fresh form.browser-mode-address button[data-browser-shell-menu] .fresh-real-icon{
+  opacity:0!important;
+}
+html body.browser-shell.theme-fresh form.browser-mode-address button:is([data-browser-shell-forward],[data-browser-shell-reload],[data-browser-shell-bookmark],[data-browser-shell-menu]):hover::before{
+  transform:scale(1.035)!important;
+}
+html body.browser-shell.theme-fresh form.browser-mode-address button[data-browser-shell-reload]:hover::before{
+  transform:rotate(12deg) scale(1.025)!important;
+}
 </style>
 </head>
 <body>
@@ -7846,7 +8117,7 @@ body.browser-shell.theme-fresh .browser-shell-settings-panel .browser-shell-sett
   function renderChromeFixed(){
     const top=document.querySelector('.top-os');
     if(top){
-      top.innerHTML='<div class="brand-mini"><button class="browser-mode-app-button active" data-browser-shell-home title="Current tab">Home</button><button class="browser-mode-tab" data-browser-shell-new-tab title="New tab"><span>New tab</span></button></div><form class="browser-mode-address" data-browser-shell-search><button data-browser-shell-back type="button" title="Back">&#10140;</button><button data-browser-shell-forward type="button" title="Forward">&#10140;</button><button data-browser-shell-reload type="button" title="Reload">&#128472;</button><input class="browser-mode-url" data-browser-shell-url placeholder="Search or enter a URL" autocomplete="off"><button class="browser-mode-bookmark" data-browser-shell-bookmark type="button" title="Bookmark this tab" aria-pressed="false">&#9734;</button><button class="browser-mode-weather" data-open="weather" type="button" title="Weather" aria-label="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button><button data-browser-shell-menu type="button" title="Menu">...</button></form><div class="browser-bookmark-panel" id="browserBookmarkPanel" hidden></div><div class="browser-mode-menu" id="browserModeMenu"><button data-browser-shell-new-tab type="button">New tab</button><button data-browser-bookmarks-toggle type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-browser-hieroglyph-toggle type="button">Hieroglyph Mode</button><button data-app-url="/assets/games/index.html" type="button">Games</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-shell-about-tab type="button">Open Tab in Abt:Blank</button></div>';
+      top.innerHTML='<div class="brand-mini"><button class="browser-mode-app-button active" data-browser-shell-home title="Current tab">Home</button><button class="browser-mode-tab" data-browser-shell-new-tab title="New tab"><span>New tab</span></button></div><form class="browser-mode-address" data-browser-shell-search><button data-browser-shell-back type="button" title="Back"><span class="fresh-real-icon fresh-real-back" aria-hidden="true"></span></button><button data-browser-shell-forward type="button" title="Forward"><span class="fresh-real-icon" aria-hidden="true">➜</span></button><button data-browser-shell-reload type="button" title="Reload"><span class="fresh-real-icon" aria-hidden="true">⟳</span></button><input class="browser-mode-url" data-browser-shell-url placeholder="Search or enter a URL" autocomplete="off"><button class="browser-mode-bookmark" data-browser-shell-bookmark type="button" title="Bookmark this tab" aria-pressed="false"><span class="fresh-real-icon" aria-hidden="true">☆</span></button><button class="browser-mode-weather" data-open="weather" type="button" title="Weather" aria-label="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button><button data-browser-shell-menu type="button" title="Menu"><span class="fresh-real-icon" aria-hidden="true">⋮</span></button></form><div class="browser-bookmark-panel" id="browserBookmarkPanel" hidden></div><div class="browser-mode-menu" id="browserModeMenu"><button data-browser-shell-new-tab type="button">New tab</button><button data-browser-bookmarks-toggle type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-browser-hieroglyph-toggle type="button">Hieroglyph Mode</button><button data-app-url="/assets/games/index.html" type="button">Games</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-shell-about-tab type="button">Open Tab in Abt:Blank</button></div>';
       renderBrowserShellTabs();
       renderBrowserBookmarks();
     }
@@ -10532,7 +10803,7 @@ body.browser-shell.theme-fresh .browser-shell-settings-panel .browser-shell-sett
       .sort((a,b)=>(b.favorite===true)-(a.favorite===true))
       .map(item=>{
         const domain=item.domain || homeShortcutDomain(item.url,item.title);
-        return `<div class="quick-tile home-shortcut ${item.favorite?'favorite':''}" draggable="true" data-home-shortcut="${item.index}" data-domain="${esc(domain)}" data-app-url="${esc(item.url)}"><button class="home-shortcut-open" data-app-url="${esc(item.url)}" type="button"><img class="quick-icon" alt="" src="${appIcon(domain)}"><span>${esc(item.title)}</span></button><button class="home-shortcut-menu-btn" data-home-shortcut-menu type="button" title="Shortcut options" aria-label="Shortcut options">...</button><div class="home-shortcut-menu"><button data-home-shortcut-favorite="${item.index}" type="button">${item.favorite?'Unfavorite':'Favorite'}</button><button data-home-shortcut-remove="${item.index}" type="button">Remove</button></div></div>`;
+        return `<div class="quick-tile home-shortcut ${item.favorite?'favorite':''}" draggable="true" data-home-shortcut="${item.index}" data-domain="${esc(domain)}" data-app-url="${esc(item.url)}"><button class="home-shortcut-open" data-app-url="${esc(item.url)}" type="button"><img class="quick-icon" alt="" src="${appIcon(domain)}"><span>${esc(item.title)}</span></button><button class="home-shortcut-menu-btn" data-home-shortcut-menu type="button" title="Shortcut options" aria-label="Shortcut options"><span class="shortcut-real-dots" aria-hidden="true">⋮</span></button><div class="home-shortcut-menu"><button data-home-shortcut-favorite="${item.index}" type="button">${item.favorite?'Unfavorite':'Favorite'}</button><button data-home-shortcut-remove="${item.index}" type="button">Remove</button></div></div>`;
     }).join('');
     return tiles + '<button class="quick-tile home-shortcut-add" data-home-shortcut-add type="button"><b>+</b><span>Add App</span></button>';
   }

@@ -5464,6 +5464,92 @@ body.browser-shell .browser-mode-weather > .weather-cloud-icon{
     top:70px!important;
   }
 }
+/* //center-icon-buttons-final */
+.home-shortcut-menu-btn{
+  right:6px!important;
+  top:6px!important;
+  width:28px!important;
+  height:28px!important;
+  min-width:28px!important;
+  min-height:28px!important;
+  max-width:28px!important;
+  max-height:28px!important;
+  padding:0!important;
+  display:grid!important;
+  place-items:center!important;
+  line-height:0!important;
+  font-size:0!important;
+  color:transparent!important;
+  -webkit-text-fill-color:transparent!important;
+  text-indent:-9999px!important;
+  overflow:hidden!important;
+}
+.home-shortcut-menu-btn::before{
+  content:""!important;
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  width:3.5px!important;
+  height:3.5px!important;
+  border-radius:999px!important;
+  background:#f8fafc!important;
+  box-shadow:0 -6px 0 #f8fafc,0 6px 0 #f8fafc!important;
+  transform:translate(-50%,-50%)!important;
+  text-indent:0!important;
+  -webkit-text-fill-color:#f8fafc!important;
+}
+body.browser-shell :is(
+  [data-browser-shell-back],
+  [data-browser-shell-forward],
+  [data-browser-shell-reload],
+  [data-browser-shell-bookmark],
+  .browser-mode-weather,
+  [data-browser-shell-menu],
+  .browser-mode-shell-tab-close,
+  .weather-icon-btn,
+  .browser-shell-settings-close,
+  .settings-close,
+  .new-tab,
+  .tool-btn,
+  .menu-btn
+){
+  display:grid!important;
+  place-items:center!important;
+  justify-content:center!important;
+  align-items:center!important;
+  padding:0!important;
+  line-height:0!important;
+  text-align:center!important;
+}
+body.browser-shell :is(
+  [data-browser-shell-reload],
+  [data-browser-shell-bookmark],
+  [data-browser-shell-menu],
+  .browser-mode-weather,
+  .tool-btn,
+  .menu-btn
+)::before,
+body.browser-shell :is(
+  [data-browser-shell-back],
+  [data-browser-shell-forward],
+  .tool-btn
+)::after{
+  left:50%!important;
+  top:50%!important;
+}
+body.browser-shell [data-browser-shell-menu]::before,
+.menu-btn::before{
+  width:3.5px!important;
+  height:3.5px!important;
+  box-shadow:0 -6px 0 #f8fafc,0 6px 0 #f8fafc!important;
+}
+body.browser-shell .browser-mode-weather > .weather-cloud-icon{
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  margin:0!important;
+  transform:translate(-50%,-50%)!important;
+}
 </style>
 </head>
 <body>

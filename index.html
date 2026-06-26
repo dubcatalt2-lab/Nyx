@@ -6663,6 +6663,38 @@ body.browser-shell.theme-fresh [data-browser-shell-forward]:hover::before{
 body.browser-shell.theme-fresh [data-browser-shell-reload]:hover::before{
   transform:translate(-50%,-50%) rotate(18deg) scale(1.04)!important;
 }
+/* //fresh-dot-border-erasure-final */
+body.browser-shell.theme-fresh .browser-home-normal .home-shortcut .home-shortcut-menu-btn,
+body.browser-shell.theme-fresh .browser-home-normal .home-shortcut .home-shortcut-menu-btn:hover,
+body.browser-shell.theme-fresh .browser-home-normal .home-shortcut.menu-open .home-shortcut-menu-btn{
+  appearance:none!important;
+  -webkit-appearance:none!important;
+  background:transparent!important;
+  background-color:transparent!important;
+  background-image:none!important;
+  border:0!important;
+  border-color:transparent!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  filter:none!important;
+  outline:0!important;
+  outline-color:transparent!important;
+  text-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+body.browser-shell.theme-fresh .browser-home-normal .home-shortcut .home-shortcut-menu-btn::after{
+  content:none!important;
+  display:none!important;
+  background:none!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+body.browser-shell.theme-fresh .browser-home-normal .home-shortcut .home-shortcut-menu-btn:focus,
+body.browser-shell.theme-fresh .browser-home-normal .home-shortcut .home-shortcut-menu-btn:focus-visible{
+  outline:0!important;
+  box-shadow:none!important;
+}
 </style>
 </head>
 <body>
@@ -8498,6 +8530,14 @@ body.browser-shell.theme-fresh [data-browser-shell-reload]:hover::before{
     }
     if(theme==='emerald' && ambientTracks?.frog && ambientCurrentKey!=='frog'){
       loadAmbientTrack('frog',true);
+    }
+    if(theme==='fresh' && ambientTracks?.sunny && ambientCurrentKey!=='sunny'){
+      loadAmbientTrack('sunny',true);
+      setTimeout(()=>{
+        if(document.body.classList.contains('theme-fresh') && ambientCurrentKey==='sunny' && !ambientPlaying){
+          armFreshAmbientGestureFallback();
+        }
+      },360);
     }
     syncInternalThemeFrames(theme);
     if(document.body.classList.contains('browser-shell') && qsa('[data-browser-caption]').length){
@@ -13855,11 +13895,13 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     imposter:{title:'Impostor Syndrome',artist:'Sidney Gish',src:'assets/music/impostor-syndrome.mp3'},
     chess:{title:'Chess Type Beat',artist:'Joyful',src:'assets/music/chess-type-beat.mp3'},
     givemore:{title:'Give Me More (Just Rawer)',artist:'Aloboi',src:'assets/music/give-me-more-just-rawer.mp3'},
-    frog:{title:'Frog',artist:'Joyful',src:'assets/music/frog.mp3'}
+    frog:{title:'Frog',artist:'Joyful',src:'assets/music/frog.mp3'},
+    sunny:{title:'Sunny',artist:'Yorushika',src:'assets/music/yorushika-sunny.mp3'}
   };
-  const ambientBaseTrackKeys = ['clair','testdrive','imposter','chess','givemore','frog'];
+  const ambientBaseTrackKeys = ['clair','testdrive','imposter','chess','givemore','frog','sunny'];
   let ambientCurrentKey = store.text('nyx.musicTrack','clair');
   let ambientPlaying = false;
+  let freshAmbientGestureArmed = false;
   let ambientCustomUrls = [];
   let ambientSeeking = false;
   let ambientAudioContext = null;
@@ -14088,6 +14130,33 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     }
     setAmbientStatus(play ? 'Loading...' : 'Ready');
     if(play) setAmbientPlaying(true);
+  }
+  function freshThemeShouldPlayMusic(){
+    return document.body.classList.contains('theme-fresh') && ambientTracks?.sunny;
+  }
+  function armFreshAmbientGestureFallback(){
+    if(freshAmbientGestureArmed) return;
+    freshAmbientGestureArmed=true;
+    const start=()=>{
+      freshAmbientGestureArmed=false;
+      window.removeEventListener('pointerdown',start,true);
+      window.removeEventListener('keydown',start,true);
+      if(freshThemeShouldPlayMusic() && ambientCurrentKey==='sunny' && !ambientPlaying){
+        setAmbientPlaying(true);
+      }
+    };
+    window.addEventListener('pointerdown',start,true);
+    window.addEventListener('keydown',start,true);
+  }
+  function playFreshThemeMusicOnOpen(){
+    if(!freshThemeShouldPlayMusic()) return;
+    if(ambientCurrentKey!=='sunny') loadAmbientTrack('sunny',true);
+    else setAmbientPlaying(true);
+    setTimeout(()=>{
+      if(freshThemeShouldPlayMusic() && ambientCurrentKey==='sunny' && !ambientPlaying){
+        armFreshAmbientGestureFallback();
+      }
+    },360);
   }
   function ambientPlayerBounds(box){
     const rect=box.getBoundingClientRect();
@@ -14515,6 +14584,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     }
     initWeatherPanel();
     initAmbientMusic();
+    playFreshThemeMusicOnOpen();
     if(!store.get('nyx.searchDefaultedToDuck',false)){
       store.set('nyx.searchDefaultedToDuck',true);
       if(['google','bing'].includes(store.text('nyx.engine','duckduckgo'))) store.setText('nyx.engine','duckduckgo');

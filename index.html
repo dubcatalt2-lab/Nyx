@@ -8916,6 +8916,33 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
     const response=await preflightTimeout(fetch(url,{cache:'no-store'}),timeout,`${url} timed out`);
     return response.ok;
   }
+  async function preflightImportOk(url,timeout=3600){
+    if(location.protocol==='file:') return true;
+    await preflightTimeout(import(`${url}?nyx_check=${Date.now()}`),timeout,`${url} import timed out`);
+    return true;
+  }
+  async function preflightWebSocketOk(url,timeout=3200){
+    if(location.protocol==='file:') return true;
+    if(!/^wss?:\/\//i.test(url) || !('WebSocket' in window)) return false;
+    return preflightTimeout(new Promise(resolve=>{
+      let settled=false;
+      let socket=null;
+      const done=value=>{
+        if(settled) return;
+        settled=true;
+        try{socket?.close()}catch{}
+        resolve(value);
+      };
+      try{
+        socket=new WebSocket(url);
+        socket.addEventListener('open',()=>done(true),{once:true});
+        socket.addEventListener('error',()=>done(false),{once:true});
+        socket.addEventListener('close',()=>done(false),{once:true});
+      }catch{
+        resolve(false);
+      }
+    }),timeout,`${url} websocket timed out`);
+  }
   function preflightBrowserModeForTarget(target=''){
     const mode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
     if(mode!=='auto') return mode;
@@ -8961,6 +8988,46 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
       .slice(0,8);
     await Promise.allSettled(urls.map(url=>preflightFetchOk(url,1600)));
     return true;
+  }
+  async function preflightLibcurlReady(){
+    if(location.protocol==='file:') return true;
+    const checks=await Promise.allSettled([
+      preflightFetchOk('/assets/transports/libcurl-baremux.mjs',2600),
+      preflightFetchOk('/assets/transports/libcurl-scramjet.mjs',2600),
+      preflightImportOk('/assets/transports/libcurl-scramjet.mjs',4200)
+    ]);
+    return checks.every(check=>check.status==='fulfilled' && check.value);
+  }
+  async function preflightFilesReady(){
+    if(location.protocol==='file:') return true;
+    const files=[
+      '/',
+      '/uv/uv.bundle.js',
+      '/uv.config.js',
+      '/scramjet/scramjet.js',
+      '/scramjet.sw.js',
+      '/baremux/index.mjs',
+      '/epoxy/index.mjs',
+      '/controller/controller.api.js'
+    ];
+    const checks=await Promise.allSettled(files.map(url=>preflightFetchOk(url,2600)));
+    return checks.every(check=>check.status==='fulfilled' && check.value);
+  }
+  async function preflightStateCurrent(){
+    await ensureFreshProxyState();
+    return store.text('nyx.proxyStateVersion','')===proxyStateVersion && store.text('nyx.scramjetStateVersion','')===scramjetStateVersion;
+  }
+  async function preflightBugScan(){
+    const required=[
+      document.body,
+      document.querySelector('#welcomeScreen'),
+      document.querySelector('#visualEffects'),
+      document.querySelector('#customBgImage')
+    ];
+    const browserApis=Boolean(window.fetch && window.Promise && window.URL && window.localStorage);
+    const proxyApis=location.protocol==='file:' || Boolean('serviceWorker' in navigator && 'caches' in window && window.indexedDB);
+    await preflightDelay(160);
+    return required.every(Boolean) && browserApis && proxyApis;
   }
   function nyxPreflightTasks(kind='startup',options={}){
     const target=String(options.target || '').trim();
@@ -9019,6 +9086,19 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
         {label:'Opening browser tab',run:async()=>{await preflightDelay(160); return true}}
       ]);
     }
+    if(kind==='startup-diagnostics'){
+      return appendFinal([
+        {label:'Checking Nyx files',run:preflightFilesReady},
+        {label:'Checking Wisp server',run:()=>preflightWebSocketOk(wispUrl(),3600)},
+        {label:'Checking Scramjet engine',run:()=>preflightEngineReady('https://duckduckgo.com/')},
+        {label:'Checking libcurl transport',run:preflightLibcurlReady},
+        {label:'Checking BareMux',run:()=>installBareMuxTransport().then(Boolean)},
+        {label:'Checking updates',run:preflightStateCurrent},
+        {label:'Checking search',run:searchCheck},
+        {label:'Scanning for bugs',run:preflightBugScan},
+        {label:'Launching Nyx',run:async()=>{await preflightDelay(220); return true}}
+      ]);
+    }
     return appendFinal([
       {label:'Checking nyx files',run:serverCheck},
       {label:'Checking search',run:searchCheck},
@@ -9049,7 +9129,8 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
       const tasks=nyxPreflightTasks(kind,options);
       const overlay=document.createElement('div');
       overlay.className='nyx-preflight';
-      overlay.innerHTML=`<section class="nyx-preflight-card" role="status" aria-live="polite"><h2 class="nyx-preflight-title">${esc(kind==='startup'?'Starting nyx':kind==='apps'?'Opening Apps':kind==='search'?'Checking Search':'Checking Browser')}</h2><ul class="nyx-preflight-list">${tasks.map((task,index)=>`<li class="nyx-preflight-item" data-preflight-step="${index}"><span class="nyx-preflight-dot">•</span><span>${esc(task.label)}</span></li>`).join('')}</ul><div class="nyx-preflight-bar"><div class="nyx-preflight-fill"></div></div></section>`;
+      const preflightTitle=kind==='startup-diagnostics' ? 'Startup Diagnostics' : kind==='startup' ? 'Starting nyx' : kind==='apps' ? 'Opening Apps' : kind==='search' ? 'Checking Search' : 'Checking Browser';
+      overlay.innerHTML=`<section class="nyx-preflight-card" role="status" aria-live="polite"><h2 class="nyx-preflight-title">${esc(preflightTitle)}</h2><ul class="nyx-preflight-list">${tasks.map((task,index)=>`<li class="nyx-preflight-item" data-preflight-step="${index}"><span class="nyx-preflight-dot">&bull;</span><span>${esc(task.label)}</span></li>`).join('')}</ul><div class="nyx-preflight-bar"><div class="nyx-preflight-fill"></div></div></section>`;
       document.body.appendChild(overlay);
       requestAnimationFrame(()=>overlay.classList.add('show'));
       const started=Date.now();
@@ -9067,11 +9148,11 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
         item?.classList.remove('running');
         item?.classList.add(ok ? 'done' : 'warn');
         const dot=item?.querySelector('.nyx-preflight-dot');
-        if(dot) dot.textContent=ok ? '✓' : '!';
+        if(dot) dot.textContent=ok ? '\u2713' : '!';
         if(fill) fill.style.width=`${Math.round(((i+1)/tasks.length)*100)}%`;
         await preflightDelay(90);
       }
-      const minVisible=Number(options.minVisible || (kind==='startup' ? 900 : 520));
+      const minVisible=Number(options.minVisible || (kind==='startup' || kind==='startup-diagnostics' ? 900 : 520));
       const remaining=minVisible-(Date.now()-started);
       if(remaining>0) await preflightDelay(remaining);
       overlay.classList.remove('show');
@@ -13004,7 +13085,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
       store.set('nyx.searchDefaultedToDuck',true);
       if(['google','bing'].includes(store.text('nyx.engine','duckduckgo'))) store.setText('nyx.engine','duckduckgo');
     }
-    await runNyxPreflight('startup',{minVisible:1000});
+    await runNyxPreflight('startup-diagnostics',{minVisible:1200});
     const bootMode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
     if(bootMode==='scramjet' || bootMode==='auto') installScramjet();
     if(bootMode==='ultraviolet' || bootMode==='auto') installUltraviolet();

@@ -8652,7 +8652,7 @@ body.browser-shell .browser-blank-search input{
   width:100%!important;
   height:44px!important;
   border:1px solid transparent!important;
-  border-radius:10px!important;
+  border-radius:999px!important;
   padding:0 16px!important;
   background:
     linear-gradient(#04050a,#04050a) padding-box,
@@ -8666,7 +8666,7 @@ body.browser-shell .browser-blank-search input{
 body.browser-shell .browser-blank-search button{
   height:44px!important;
   border:1px solid transparent!important;
-  border-radius:10px!important;
+  border-radius:999px!important;
   background:
     linear-gradient(#070812,#070812) padding-box,
     var(--chrome-border-gradient) border-box!important;
@@ -8745,6 +8745,39 @@ html body.browser-shell .browser-home .home-shortcut-grid .quick-tile span{
 html body.browser-shell .browser-home .home-shortcut-grid .home-shortcut-add b{
   font-size:24px!important;
   line-height:1!important;
+}
+/* //blank-tab-open-animation */
+body.browser-shell .browser-window.browser-blank-page .browser-blank-logo{
+  animation:blankLogoRise .72s cubic-bezier(.18,.82,.22,1) both!important;
+}
+body.browser-shell .browser-window.browser-blank-page .browser-blank-search{
+  animation:blankSearchRise .78s cubic-bezier(.18,.82,.22,1) .08s both!important;
+}
+body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile{
+  animation:blankShortcutRise .72s cubic-bezier(.18,.82,.22,1) both!important;
+}
+body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(1){animation-delay:.16s!important}
+body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(2){animation-delay:.21s!important}
+body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(3){animation-delay:.26s!important}
+body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(4){animation-delay:.31s!important}
+body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(5){animation-delay:.36s!important}
+body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(6){animation-delay:.41s!important}
+body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(7){animation-delay:.46s!important}
+body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(8){animation-delay:.51s!important}
+@keyframes blankLogoRise{
+  0%{opacity:0;transform:translateY(20px) scale(.88);filter:blur(8px)}
+  64%{opacity:1;transform:translateY(-3px) scale(1.025);filter:blur(0)}
+  100%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}
+}
+@keyframes blankSearchRise{
+  0%{opacity:0;transform:translateY(22px) scale(.94);filter:blur(8px)}
+  66%{opacity:1;transform:translateY(-2px) scale(1.01);filter:blur(0)}
+  100%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}
+}
+@keyframes blankShortcutRise{
+  0%{opacity:0;transform:translate(-22px,28px) scale(.84);filter:blur(7px)}
+  68%{opacity:1;transform:translate(-3px,3px) scale(1.015);filter:blur(0)}
+  100%{opacity:1;transform:translate(0,0) scale(1);filter:blur(0)}
 }
 </style>
 </head>

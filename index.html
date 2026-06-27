@@ -15138,6 +15138,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     });
   }
   function applyPreset(name, silent=false){
+    const previousCloakTitle=store.text('nyx.tabTitle','').trim();
     if(name==='custom'){
       applyCustomTabCloak(store.text('nyx.tabTitle','nyx'),store.text('nyx.tabFavicon',nyxFaviconHref()),silent);
       syncPresetCloakFields();
@@ -15154,8 +15155,22 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     store.setText('nyx.tabTitle',title);
     store.setText('nyx.tabFavicon',favicon);
     syncPresetCloakFields();
+    repairBlankBrowserShellPresetTabs(previousCloakTitle);
     scheduleStoredTabCloakEnforce();
     if(!silent) toast('Tab preset applied');
+  }
+  function repairBlankBrowserShellPresetTabs(previousCloakTitle=''){
+    if(!Array.isArray(browserShellTabs) || !browserShellTabs.length) return;
+    const presetTitles=new Set(['ռʏӼ','Õ¼ÊÓ¼','Google Classroom','Google Drive','ClassLink','Google']);
+    if(previousCloakTitle) presetTitles.add(previousCloakTitle);
+    let changed=false;
+    browserShellTabs.forEach((tab,index)=>{
+      if(tab.url || !presetTitles.has(String(tab.title || '').trim())) return;
+      tab.title=index===0 ? 'Home' : 'New Tab';
+      tab.icon=favicons.nyx;
+      changed=true;
+    });
+    if(changed && document.body.classList.contains('browser-shell')) renderBrowserShellTabs();
   }
   function syncPresetCloakFields(root=document){
     const scope=root || document;
@@ -15182,21 +15197,6 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
   function scheduleStoredTabCloakEnforce(){
     enforceStoredTabCloak();
     [80,320,1000].forEach(delay=>setTimeout(enforceStoredTabCloak,delay));
-    syncBrowserShellBlankTabCloak();
-  }
-  function syncBrowserShellBlankTabCloak(){
-    if(!Array.isArray(browserShellTabs)) return;
-    const title=store.text('nyx.tabTitle','').trim();
-    const favicon=store.text('nyx.tabFavicon','').trim();
-    if(!title && !favicon) return;
-    browserShellTabs.forEach(tab=>{
-      if(tab.url) return;
-      if(tab.title==='Home' || tab.title==='New Tab' || tab.title===document.title){
-        if(title) tab.title=title;
-        if(favicon) tab.icon=favicon;
-      }
-    });
-    if(document.body.classList.contains('browser-shell')) renderBrowserShellTabs();
   }
   function setPageTitle(title){
     document.title=title;

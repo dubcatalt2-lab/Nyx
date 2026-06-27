@@ -15150,16 +15150,16 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     const labels={nyx:nyxTabTitle,classroom:'Google Classroom',drive:'Google Drive',classlink:'ClassLink',google:'Google'};
     const title=labels[name]||nyxTabTitle;
     const favicon=name==='nyx' ? nyxTabFavicon : (favicons[name]||favicons.nyx||favicons.google);
-    setPageTitle(title);
+    setCurrentTabCloak(title,favicon,true);
     const brand=$('brandName');
     if(brand) brand.textContent=nyxTabTitle;
-    setPageFavicon(favicon,true);
     store.setText('nyx.logo',name);
     store.setText('nyx.tabTitle',title);
     store.setText('nyx.tabFavicon',favicon);
     syncPresetCloakFields();
     repairBlankBrowserShellPresetTabs(previousCloakTitle);
     scheduleStoredTabCloakEnforce();
+    requestAnimationFrame(()=>setCurrentTabCloak(title,favicon,false));
     if(!silent) toast('Tab preset applied');
   }
   function repairBlankBrowserShellPresetTabs(previousCloakTitle=''){
@@ -15212,28 +15212,43 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
   function enforceStoredTabCloak(){
     const title=store.text('nyx.tabTitle','').trim();
     const favicon=store.text('nyx.tabFavicon','').trim();
-    if(title && document.title!==title) setPageTitle(title);
-    if(favicon){
-      let target=favicon;
-      try{target=new URL(favicon,location.href).href}catch{}
-      const current=document.querySelector('#appFavicon, link[rel*="icon" i]')?.href || '';
-      if(current!==target) setPageFavicon(favicon,false);
-    }
+    if(title || favicon) setCurrentTabCloak(title || document.title, favicon || nyxFaviconHref(), false);
   }
   function scheduleStoredTabCloakEnforce(){
     enforceStoredTabCloak();
     [80,320,1000].forEach(delay=>setTimeout(enforceStoredTabCloak,delay));
   }
-  function setPageTitle(title){
-    document.title=title;
+  function reachableTabDocuments(){
+    const docs=[document];
     try{
-      if(window.parent && window.parent!==window && window.parent.document) window.parent.document.title=title;
+      if(window.parent && window.parent!==window && window.parent.document && !docs.includes(window.parent.document)) docs.push(window.parent.document);
     }catch{}
     try{
-      if(window.top && window.top!==window && window.top.document) window.top.document.title=title;
+      if(window.top && window.top!==window && window.top.document && !docs.includes(window.top.document)) docs.push(window.top.document);
     }catch{}
+    return docs;
   }
-  function setPageFavicon(href, forceRefresh=false){
+  function setCurrentTabCloak(title, favicon, forceRefresh=false){
+    const cleanTitle=String(title || nyxTabTitle).trim() || nyxTabTitle;
+    const cleanFavicon=String(favicon || nyxTabFavicon).trim() || nyxTabFavicon;
+    reachableTabDocuments().forEach(doc=>{
+      setPageTitle(cleanTitle,doc);
+      setPageFavicon(cleanFavicon,forceRefresh,doc);
+    });
+    return {title:cleanTitle,favicon:cleanFavicon};
+  }
+  function setPageTitle(title){
+    const doc=arguments[1] || document;
+    if(!doc) return;
+    let titleEl=doc.querySelector('head > title');
+    if(!titleEl && doc.head){
+      titleEl=doc.createElement('title');
+      doc.head.prepend(titleEl);
+    }
+    if(titleEl) titleEl.textContent=title;
+    try{doc.title=title}catch{}
+  }
+  function setPageFavicon(href, forceRefresh=false, targetDoc=document){
     const clean=String(href || favicons.nyx).trim() || favicons.nyx;
     let finalHref=clean;
     let lower=clean.toLowerCase();
@@ -15260,16 +15275,13 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
         doc.head.appendChild(fav);
       });
     };
-    install(document);
-    try{if(window.parent && window.parent!==window) install(window.parent.document)}catch{}
-    try{if(window.top && window.top!==window && window.top!==window.parent) install(window.top.document)}catch{}
+    install(targetDoc);
     return finalHref;
   }
   function applyCustomTabCloak(title, favicon, silent=false){
     const cleanTitle=String(title || '').trim() || 'nyx';
     const cleanFavicon=String(favicon || '').trim() || favicons.nyx;
-    setPageTitle(cleanTitle);
-    setPageFavicon(cleanFavicon,/^(?:\.\/|\/|assets\/)/i.test(cleanFavicon));
+    setCurrentTabCloak(cleanTitle,cleanFavicon,/^(?:\.\/|\/|assets\/)/i.test(cleanFavicon));
     store.setText('nyx.tabTitle',cleanTitle);
     store.setText('nyx.tabFavicon',cleanFavicon);
     store.setText('nyx.logo','custom');

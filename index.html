@@ -8882,6 +8882,7 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
     google:'./assets/icons/google-logo.png',
     classlink:'./assets/icons/classlink-logo.png'
   };
+  const nyxTabTitle = '\u057c\u028f\u04fc';
   const nyxTabFavicon = './assets/icons/firefly-tab-logo-bold.png';
   const nyxFaviconHref = () => $('appFavicon')?.href || nyxTabFavicon;
   function makeIcon(label,bg='#111827',fg='#fff'){
@@ -10007,6 +10008,7 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
     }
     ensureFreshThemeOptions(overlay);
     syncSwitches(overlay);
+    wirePresetCloakControls(overlay);
   }
   //browser-tab-actions
   function closeBrowserShellTab(id){
@@ -15136,6 +15138,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
         toast('Anti-close '+(antiCloseEnabled?'on':'off'));
       };
     });
+    wirePresetCloakControls(root);
   }
   function applyPreset(name, silent=false){
     const previousCloakTitle=store.text('nyx.tabTitle','').trim();
@@ -15144,12 +15147,12 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
       syncPresetCloakFields();
       return;
     }
-    const labels={nyx:'ռʏӼ',classroom:'Google Classroom',drive:'Google Drive',classlink:'ClassLink',google:'Google'};
-    const title=labels[name]||'ռʏӼ';
+    const labels={nyx:nyxTabTitle,classroom:'Google Classroom',drive:'Google Drive',classlink:'ClassLink',google:'Google'};
+    const title=labels[name]||nyxTabTitle;
     const favicon=name==='nyx' ? nyxTabFavicon : (favicons[name]||favicons.nyx||favicons.google);
     setPageTitle(title);
     const brand=$('brandName');
-    if(brand) brand.textContent='ռʏӼ';
+    if(brand) brand.textContent=nyxTabTitle;
     setPageFavicon(favicon,true);
     store.setText('nyx.logo',name);
     store.setText('nyx.tabTitle',title);
@@ -15161,7 +15164,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
   }
   function repairBlankBrowserShellPresetTabs(previousCloakTitle=''){
     if(!Array.isArray(browserShellTabs) || !browserShellTabs.length) return;
-    const presetTitles=new Set(['ռʏӼ','Õ¼ÊÓ¼','Google Classroom','Google Drive','ClassLink','Google']);
+    const presetTitles=new Set([nyxTabTitle,'ռʏӼ','Õ¼ÊÓ¼','Google Classroom','Google Drive','ClassLink','Google']);
     if(previousCloakTitle) presetTitles.add(previousCloakTitle);
     let changed=false;
     browserShellTabs.forEach((tab,index)=>{
@@ -15171,6 +15174,29 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
       changed=true;
     });
     if(changed && document.body.classList.contains('browser-shell')) renderBrowserShellTabs();
+  }
+  function wirePresetCloakControls(root=document){
+    const scope=root || document;
+    if(scope.__nyxPresetCloakWired) return;
+    scope.__nyxPresetCloakWired=true;
+    scope.addEventListener?.('click',e=>{
+      const preset=e.target.closest?.('[data-preset]');
+      if(!preset || !scope.contains?.(preset)) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      applyPreset(preset.dataset.preset || 'nyx');
+      syncPresetCloakFields(scope);
+    },true);
+    const applySelect=e=>{
+      const select=e.target.closest?.('[data-preset-select]');
+      if(!select || !scope.contains?.(select)) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      applyPreset(select.value || 'nyx');
+      syncPresetCloakFields(scope);
+    };
+    scope.addEventListener?.('change',applySelect,true);
+    scope.addEventListener?.('input',applySelect,true);
   }
   function syncPresetCloakFields(root=document){
     const scope=root || document;

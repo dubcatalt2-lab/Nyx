@@ -8408,11 +8408,11 @@ body.browser-shell{
     color-mix(in srgb,var(--theme-border,#8b5cf6) 86%,#000000 14%));
 }
 body.browser-shell .top-os{
-  height:68px!important;
-  min-height:68px!important;
-  padding:4px 10px 4px!important;
-  grid-template-rows:24px 30px!important;
-  gap:4px!important;
+  height:52px!important;
+  min-height:52px!important;
+  padding:3px 8px 3px!important;
+  grid-template-rows:18px 24px!important;
+  gap:3px!important;
   background:#04050a!important;
   background-image:none!important;
   border:1px solid transparent!important;
@@ -8435,54 +8435,54 @@ body.browser-shell .browser-mode-url:focus{
   box-shadow:0 0 0 1px color-mix(in srgb,var(--theme-border,#8b5cf6) 45%,transparent),0 0 14px color-mix(in srgb,var(--theme-border,#8b5cf6) 22%,transparent)!important;
 }
 body.browser-shell .browser-mode-app-button{
-  width:158px!important;
+  width:142px!important;
   max-width:calc(100vw - 132px)!important;
-  height:24px!important;
-  min-height:24px!important;
-  border-radius:7px!important;
-  padding:0 28px 0 36px!important;
-  font-size:11px!important;
+  height:18px!important;
+  min-height:18px!important;
+  border-radius:6px!important;
+  padding:0 22px 0 28px!important;
+  font-size:10px!important;
 }
 body.browser-shell .browser-mode-app-button::before{
-  left:10px!important;
-  width:15px!important;
-  height:15px!important;
+  left:8px!important;
+  width:12px!important;
+  height:12px!important;
 }
 body.browser-shell .browser-mode-tab,
 body.browser-shell .browser-mode-shell-tab{
+  height:18px!important;
+  min-height:18px!important;
+  border-radius:6px!important;
+  font-size:12px!important;
+  line-height:1!important;
+}
+body.browser-shell .browser-mode-tab{
+  width:18px!important;
+  min-width:18px!important;
+}
+body.browser-shell .browser-mode-shell-tab{
+  min-width:64px!important;
+  max-width:128px!important;
+}
+body.browser-shell .browser-mode-address button{
+  width:24px!important;
   height:24px!important;
+  min-width:24px!important;
   min-height:24px!important;
   border-radius:7px!important;
   font-size:14px!important;
   line-height:1!important;
 }
-body.browser-shell .browser-mode-tab{
-  width:24px!important;
-  min-width:24px!important;
-}
-body.browser-shell .browser-mode-shell-tab{
-  min-width:74px!important;
-  max-width:142px!important;
-}
-body.browser-shell .browser-mode-address button{
-  width:30px!important;
-  height:30px!important;
-  min-width:30px!important;
-  min-height:30px!important;
-  border-radius:8px!important;
-  font-size:17px!important;
-  line-height:1!important;
-}
 body.browser-shell .browser-mode-address{
-  grid-template-columns:30px 30px 30px minmax(0,1fr) 30px 30px 34px!important;
-  gap:5px!important;
+  grid-template-columns:24px 24px 24px minmax(0,1fr) 24px 24px 28px!important;
+  gap:4px!important;
 }
 body.browser-shell .browser-mode-url{
-  height:30px!important;
-  min-height:30px!important;
-  border-radius:8px!important;
-  font-size:13px!important;
-  padding:0 11px!important;
+  height:24px!important;
+  min-height:24px!important;
+  border-radius:7px!important;
+  font-size:12px!important;
+  padding:0 9px!important;
 }
 body.browser-shell .fresh-real-icon,
 body.browser-shell .browser-mode-address button::before,
@@ -8495,14 +8495,14 @@ body.browser-shell [data-browser-shell-forward] .fresh-real-icon,
 body.browser-shell [data-browser-shell-reload] .fresh-real-icon{
   width:18px!important;
   height:18px!important;
-  transform:scale(.86)!important;
+  transform:scale(.74)!important;
 }
 body.browser-shell .browser-mode-weather > .weather-cloud-icon{
-  width:18px!important;
-  height:18px!important;
+  width:15px!important;
+  height:15px!important;
 }
 body.browser-shell .browser-mode-menu{
-  top:68px!important;
+  top:52px!important;
   right:10px!important;
   width:176px!important;
   min-width:176px!important;
@@ -8521,15 +8521,15 @@ body.browser-shell .browser-mode-menu hr{
   margin:3px 4px!important;
 }
 @media(max-width:520px){
-  body.browser-shell .top-os{height:62px!important;min-height:62px!important;grid-template-rows:22px 28px!important;padding:4px 7px!important}
-  body.browser-shell .browser-mode-app-button{height:22px!important;min-height:22px!important;width:118px!important;font-size:10px!important}
+  body.browser-shell .top-os{height:48px!important;min-height:48px!important;grid-template-rows:17px 22px!important;padding:3px 6px!important}
+  body.browser-shell .browser-mode-app-button{height:17px!important;min-height:17px!important;width:108px!important;font-size:9px!important}
   body.browser-shell .browser-mode-tab,
-  body.browser-shell .browser-mode-shell-tab{height:22px!important;min-height:22px!important}
-  body.browser-shell .browser-mode-tab{width:22px!important;min-width:22px!important}
-  body.browser-shell .browser-mode-address button{width:27px!important;height:27px!important;min-width:27px!important;min-height:27px!important}
-  body.browser-shell .browser-mode-address{grid-template-columns:27px 27px 27px minmax(0,1fr) 27px 27px 30px!important}
-  body.browser-shell .browser-mode-url{height:27px!important;min-height:27px!important}
-  body.browser-shell .browser-mode-menu{top:62px!important;width:168px!important;min-width:168px!important}
+  body.browser-shell .browser-mode-shell-tab{height:17px!important;min-height:17px!important}
+  body.browser-shell .browser-mode-tab{width:17px!important;min-width:17px!important}
+  body.browser-shell .browser-mode-address button{width:22px!important;height:22px!important;min-width:22px!important;min-height:22px!important}
+  body.browser-shell .browser-mode-address{grid-template-columns:22px 22px 22px minmax(0,1fr) 22px 22px 26px!important}
+  body.browser-shell .browser-mode-url{height:22px!important;min-height:22px!important}
+  body.browser-shell .browser-mode-menu{top:48px!important;width:168px!important;min-width:168px!important}
 }
 </style>
 </head>

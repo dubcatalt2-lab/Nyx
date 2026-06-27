@@ -8415,6 +8415,9 @@ body.browser-shell .top-os{
   gap:3px!important;
   background:#04050a!important;
   background-image:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  filter:none!important;
   border:1px solid transparent!important;
   border-bottom-width:2px!important;
   border-image:var(--chrome-border-gradient) 1!important;
@@ -8644,9 +8647,7 @@ body.browser-shell .browser-blank-logo{
 body.browser-shell .browser-blank-search{
   width:min(620px,100%)!important;
   height:44px!important;
-  display:grid!important;
-  grid-template-columns:minmax(0,1fr) 92px!important;
-  gap:8px!important;
+  display:block!important;
 }
 body.browser-shell .browser-blank-search input{
   width:100%!important;
@@ -8664,16 +8665,7 @@ body.browser-shell .browser-blank-search input{
   box-shadow:0 14px 30px rgba(0,0,0,.28)!important;
 }
 body.browser-shell .browser-blank-search button{
-  height:44px!important;
-  border:1px solid transparent!important;
-  border-radius:999px!important;
-  background:
-    linear-gradient(#070812,#070812) padding-box,
-    var(--chrome-border-gradient) border-box!important;
-  color:#f8fafc!important;
-  -webkit-text-fill-color:#f8fafc!important;
-  font:900 13px Raleway,Nunito,Arial,sans-serif!important;
-  box-shadow:0 14px 30px rgba(0,0,0,.26)!important;
+  display:none!important;
 }
 body.browser-shell .browser-blank-center [data-home-shortcuts]{
   justify-content:center!important;
@@ -8778,6 +8770,12 @@ body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .qui
   0%{opacity:0;transform:translate(-22px,28px) scale(.84);filter:blur(7px)}
   68%{opacity:1;transform:translate(-3px,3px) scale(1.015);filter:blur(0)}
   100%{opacity:1;transform:translate(0,0) scale(1);filter:blur(0)}
+}
+/* //top-bar-no-blur-final */
+html body.browser-shell :is(.top-os,.top-os::before,.top-os::after){
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  filter:none!important;
 }
 </style>
 </head>
@@ -12649,7 +12647,7 @@ body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .qui
     updateWindowSizeClasses(win);
   }
   function browserBody(){
-    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="browser-shell-start"><img class="browser-shell-logo" alt="" src="${favicons.nyx}"><div class="browser-shell-clock" data-browser-shell-clock>--:--</div></div><div class="browser-blank-center"><img class="browser-blank-logo browser-shell-logo" alt="nyx" src="${favicons.nyx}"><form class="browser-blank-search" data-browser-blank-search><input data-browser-blank-input placeholder="Search or enter a URL" autocomplete="off"><button type="submit">Search</button></form></div><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div></div>`;
+    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="browser-shell-start"><img class="browser-shell-logo" alt="" src="${favicons.nyx}"><div class="browser-shell-clock" data-browser-shell-clock>--:--</div></div><div class="browser-blank-center"><img class="browser-blank-logo browser-shell-logo" alt="nyx" src="${favicons.nyx}"><form class="browser-blank-search" data-browser-blank-search><input data-browser-blank-input placeholder="Search or enter a URL" autocomplete="off"></form></div><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div></div>`;
   }
   //apps-grid
   const defaultHomeShortcuts=[

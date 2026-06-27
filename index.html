@@ -10001,7 +10001,7 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
       const liteBlock=document.createElement('section');
       liteBlock.className='settings-block';
       const liteOn=store.get('nyx.performanceLite',false);
-      liteBlock.innerHTML=`<h2>Performance Lite</h2><p>Lightens blur, shadows, and particles without fully disabling animations.</p><div class="settings-row"><span>Performance Lite</span><button class="settings-action ${liteOn?'on':''}" data-switch="nyx.performanceLite" data-performance-lite type="button">${liteOn?'On':'Off'}</button></div>`;
+      liteBlock.innerHTML=`<h2>Lite Mode</h2><p>Lightens blur, shadows, and particles without fully disabling animations.</p><div class="settings-row"><span>Lite Mode</span><button class="settings-action ${liteOn?'on':''}" data-switch="nyx.performanceLite" data-performance-lite type="button">${liteOn?'On':'Off'}</button></div>`;
       effectBlock.before(lagBlock);
       effectBlock.before(liteBlock);
     }
@@ -14940,9 +14940,9 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
           <div class="settings-row"><span>Lag Reducer</span><button class="switch ${store.get('nyx.lagReducer',false)?'on':''}" data-switch="nyx.lagReducer" data-lag-reducer aria-label="Lag reducer"></button></div>
         </section>
         <section class="settings-card">
-          <h2>Performance Lite</h2>
+          <h2>Lite Mode</h2>
           <p>Lightens blur, shadows, and particles without fully disabling animations.</p>
-          <div class="settings-row"><span>Performance Lite</span><button class="switch ${store.get('nyx.performanceLite',false)?'on':''}" data-switch="nyx.performanceLite" data-performance-lite aria-label="Performance lite"></button></div>
+          <div class="settings-row"><span>Lite Mode</span><button class="switch ${store.get('nyx.performanceLite',false)?'on':''}" data-switch="nyx.performanceLite" data-performance-lite aria-label="Lite mode"></button></div>
         </section>
         <section class="settings-card">
           <h2>Browser Mode</h2>
@@ -15121,7 +15121,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
           toast('Lag Reducer '+(v?'on':'off'));
         }else if(key==='nyx.performanceLite'){
           applyUserSettings();
-          toast('Performance Lite '+(v?'on':'off'));
+          toast('Lite Mode '+(v?'on':'off'));
         }else if(key==='nyx.browserShellMode'){
           const hostWin=btn.closest('.window');
           applyUserSettings();

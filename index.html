@@ -8731,7 +8731,7 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
   <button class="ambient-toggle" id="ambientToggle" type="button" title="Pause or play music">&#9654;</button>
   <div class="ambient-meta">
     <div class="ambient-title" id="ambientTitle">Now playing: Clair de Lune</div>
-    <div class="ambient-sub" id="ambientStatus">Starting music...</div>
+    <div class="ambient-sub" id="ambientStatus">Ready</div>
     <div class="ambient-seek-row">
       <input class="ambient-seek" id="ambientSeek" type="range" min="0" max="1000" step="1" value="0" aria-label="Skip through song">
       <span class="ambient-time" id="ambientTime">0:00 / 0:00</span>
@@ -10701,7 +10701,7 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
       }
       store.setText('nyx.musicTrack','clair');
       if(ambientTracks?.clair && ambientCurrentKey!=='clair'){
-        loadAmbientTrack('clair',true);
+        loadAmbientTrack('clair',false);
       }
     }
     if(theme==='sakura'){
@@ -10714,15 +10714,10 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
       store.setText('nyx.visualEffect','emeralds');
     }
     if(theme==='emerald' && ambientTracks?.frog && ambientCurrentKey!=='frog'){
-      loadAmbientTrack('frog',true);
+      loadAmbientTrack('frog',false);
     }
     if(theme==='fresh' && ambientTracks?.sunny && ambientCurrentKey!=='sunny'){
-      loadAmbientTrack('sunny',true);
-      setTimeout(()=>{
-        if(document.body.classList.contains('theme-fresh') && ambientCurrentKey==='sunny' && !ambientPlaying){
-          armFreshAmbientGestureFallback();
-        }
-      },360);
+      loadAmbientTrack('sunny',false);
     }
     if(theme==='fresh' || theme==='sakura'){
       applyVisualEffectSetting();
@@ -16782,34 +16777,24 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     }
     setAmbientStatus(play ? 'Loading...' : 'Ready');
     if(play) setAmbientPlaying(true);
+    else{
+      ambientPlaying=false;
+      try{audio.pause()}catch{}
+      const btn=$('ambientToggle');
+      if(btn){
+        btn.textContent='â–¶';
+        btn.classList.remove('is-playing');
+      }
+    }
   }
   function freshThemeShouldPlayMusic(){
     return document.body.classList.contains('theme-fresh') && ambientTracks?.sunny;
   }
   function armFreshAmbientGestureFallback(){
-    if(freshAmbientGestureArmed) return;
-    freshAmbientGestureArmed=true;
-    const start=()=>{
-      freshAmbientGestureArmed=false;
-      window.removeEventListener('pointerdown',start,true);
-      window.removeEventListener('keydown',start,true);
-      if(freshThemeShouldPlayMusic() && ambientCurrentKey==='sunny' && !ambientPlaying){
-        setAmbientPlaying(true);
-      }
-    };
-    window.addEventListener('pointerdown',start,true);
-    window.addEventListener('keydown',start,true);
+    freshAmbientGestureArmed=false;
   }
   function playFreshThemeMusicOnOpen(){
-    if(syncAmbientCoverState()) return;
-    if(!freshThemeShouldPlayMusic()) return;
-    if(ambientCurrentKey!=='sunny') loadAmbientTrack('sunny',true);
-    else setAmbientPlaying(true);
-    setTimeout(()=>{
-      if(freshThemeShouldPlayMusic() && ambientCurrentKey==='sunny' && !ambientPlaying){
-        armFreshAmbientGestureFallback();
-      }
-    },360);
+    if(freshThemeShouldPlayMusic() && ambientCurrentKey!=='sunny') loadAmbientTrack('sunny',false);
   }
   function ambientPlayerBounds(box){
     const rect=box.getBoundingClientRect();

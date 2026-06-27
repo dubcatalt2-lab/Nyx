@@ -8606,17 +8606,30 @@ html body.browser-shell .brand-mini [data-browser-shell-new-tab] span{
 }
 /* //nyx-blank-page-final */
 body.browser-shell .browser-home{
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
+  display:grid!important;
+  place-items:center!important;
   padding:24px!important;
 }
 body.browser-shell .browser-home.hidden{
   display:none!important;
 }
+body.browser-shell .browser-home .browser-shell-start{
+  display:grid!important;
+}
+body.browser-shell .browser-home .browser-blank-center{
+  display:none!important;
+}
+body.browser-shell .browser-window.browser-blank-page .browser-home .browser-shell-start{
+  display:none!important;
+}
+body.browser-shell .browser-window.browser-blank-page .browser-home .browser-blank-center{
+  display:grid!important;
+}
+body.browser-shell .browser-window.browser-home-page .browser-home .browser-blank-center{
+  display:none!important;
+}
 body.browser-shell .browser-blank-center{
   width:min(760px,calc(100vw - 56px))!important;
-  display:grid!important;
   justify-items:center!important;
   gap:18px!important;
   margin:0 auto!important;
@@ -8664,6 +8677,74 @@ body.browser-shell .browser-blank-search button{
 }
 body.browser-shell .browser-blank-center [data-home-shortcuts]{
   justify-content:center!important;
+}
+body.browser-shell .browser-home [data-home-shortcuts]{
+  width:min(760px,calc(100vw - 56px))!important;
+  display:flex!important;
+  flex-wrap:wrap!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:12px!important;
+  margin:0 auto!important;
+}
+body.browser-shell .browser-window.browser-home-page .browser-home [data-home-shortcuts]{
+  margin-top:22px!important;
+}
+/* //home-shortcuts-row-repair */
+html body.browser-shell .browser-home .home-shortcut-grid.browser-home-normal,
+html body.browser-shell .browser-home .home-shortcut-grid{
+  width:min(760px,calc(100vw - 56px))!important;
+  display:flex!important;
+  flex-direction:row!important;
+  flex-wrap:wrap!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:10px!important;
+  max-height:none!important;
+  overflow:visible!important;
+  margin:0 auto!important;
+}
+html body.browser-shell .browser-window.browser-home-page .browser-home .home-shortcut-grid{
+  margin-top:22px!important;
+}
+html body.browser-shell .browser-home .home-shortcut-grid > .quick-tile{
+  width:72px!important;
+  height:84px!important;
+  min-width:72px!important;
+  min-height:84px!important;
+  max-width:72px!important;
+  max-height:84px!important;
+  border-radius:12px!important;
+  padding:5px!important;
+  display:grid!important;
+  place-items:center!important;
+  gap:4px!important;
+}
+html body.browser-shell .browser-home .home-shortcut-grid .home-shortcut-open{
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  padding:5px!important;
+  gap:4px!important;
+}
+html body.browser-shell .browser-home .home-shortcut-grid .quick-icon{
+  width:36px!important;
+  height:36px!important;
+  padding:0!important;
+  border-radius:8px!important;
+}
+html body.browser-shell .browser-home .home-shortcut-grid .quick-tile span{
+  max-width:66px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  font-size:11px!important;
+  line-height:1.1!important;
+  text-align:center!important;
+}
+html body.browser-shell .browser-home .home-shortcut-grid .home-shortcut-add b{
+  font-size:24px!important;
+  line-height:1!important;
 }
 </style>
 </head>
@@ -9431,6 +9512,20 @@ body.browser-shell .browser-blank-center [data-home-shortcuts]{
     const top=document.querySelector('.top-os');
     if(top){
       top.innerHTML='<div class="brand-mini"><button class="browser-mode-app-button active" data-browser-shell-home title="Current tab">Home</button><button class="browser-mode-tab" data-browser-shell-new-tab title="New tab"><span>New tab</span></button></div><form class="browser-mode-address" data-browser-shell-search><button data-browser-shell-back type="button" title="Back"><span class="fresh-real-icon fresh-real-back" aria-hidden="true"></span></button><button data-browser-shell-forward type="button" title="Forward"><span class="fresh-real-icon" aria-hidden="true">➜</span></button><button data-browser-shell-reload type="button" title="Reload"><span class="fresh-real-icon" aria-hidden="true">⟳</span></button><input class="browser-mode-url" data-browser-shell-url placeholder="Search or enter a URL" autocomplete="off"><button class="browser-mode-bookmark" data-browser-shell-bookmark type="button" title="Bookmark this tab" aria-pressed="false"><span class="fresh-real-icon" aria-hidden="true">☆</span></button><button class="browser-mode-weather" data-open="weather" type="button" title="Weather" aria-label="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button><button data-browser-shell-menu type="button" title="Menu"><span class="fresh-real-icon" aria-hidden="true">⋮</span></button></form><div class="browser-bookmark-panel" id="browserBookmarkPanel" hidden></div><div class="browser-mode-menu" id="browserModeMenu"><button data-browser-shell-new-tab type="button">New tab</button><button data-browser-bookmarks-toggle type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-browser-hieroglyph-toggle type="button">Hieroglyph Mode</button><button data-app-url="/assets/games/index.html" type="button">Games</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-shell-about-tab type="button">Open Tab in Abt:Blank</button></div>';
+      top.querySelector('.brand-mini [data-browser-shell-new-tab]')?.addEventListener('click',event=>{
+        event.nyxShellNewHandled=true;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        document.body.classList.remove('menu-open');
+        openBrowserShellTab();
+        document.querySelector('[data-browser-shell-url]')?.focus();
+      });
+      top.querySelector('.brand-mini [data-browser-shell-home]')?.addEventListener('click',event=>{
+        event.nyxShellHomeHandled=true;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        setBrowserShellHomeActive();
+      });
       renderBrowserShellTabs();
       renderBrowserBookmarks();
     }
@@ -9463,7 +9558,7 @@ body.browser-shell .browser-blank-center [data-home-shortcuts]{
     document.body.classList.remove('menu-open');
     if(enabled){
       renderChromeFixed();
-      if(nyxGateOpened && activeBrowser?.win?.isConnected && browserShellNeedsStartupHome()) setBrowserShellHomeActive();
+      if(nyxGateOpened && browserShellNeedsStartupHome()) setBrowserShellHomeActive();
       else renderBrowserShellTabs();
     }else renderChrome();
     renderedChromeMode=mode;
@@ -9888,7 +9983,20 @@ body.browser-shell .browser-blank-center [data-home-shortcuts]{
   //browser-home-and-tabs
   function isBrowserShellBlankUrl(url){
     const raw=String(url || '').trim().toLowerCase();
-    return !raw || raw===NYX_BLANK_URL;
+    return raw===NYX_BLANK_URL;
+  }
+  function renderBrowserShellHomeMode(win,mode='home'){
+    if(!win) return;
+    const blank=mode==='blank';
+    win.classList.toggle('browser-blank-page',blank);
+    win.classList.toggle('browser-home-page',!blank);
+    win.classList.add('browser-blank');
+    win.querySelector('.browser-home')?.classList.remove('hidden');
+    win.querySelectorAll('.view').forEach(frame=>frame.classList.remove('active'));
+    if(blank){
+      const input=win.querySelector('[data-browser-blank-input]');
+      if(input && !input.value) input.value='';
+    }
   }
   function collapseDuplicateOpeningBlankTabs(){
     const active=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
@@ -9974,6 +10082,18 @@ body.browser-shell .browser-blank-center [data-home-shortcuts]{
     browserShellOpeningTabs.add(id);
     browserShellActiveTab=id;
     renderBrowserShellTabs();
+    if(isBlank && !activeBrowser?.win?.isConnected){
+      setBrowserShellHomeActive();
+      browserShellActiveTab=id;
+    }
+    if(isBlank && activeBrowser?.win?.isConnected){
+      renderBrowserShellHomeMode(activeBrowser.win,'blank');
+      updateBrowserShellLocation(NYX_BLANK_URL,'',true);
+      renderBrowserShellTabs();
+      setTimeout(()=>document.querySelector('[data-browser-shell-url]')?.focus(),30);
+      setTimeout(collapseDuplicateOpeningBlankTabs,0);
+      return id;
+    }
     if(activeBrowser?.win?.isConnected && typeof activeBrowser.addTab==='function'){
       const created=activeBrowser.addTab(isBlank ? '' : normalized,options.forceMode || '');
       if(!created){
@@ -10008,9 +10128,9 @@ body.browser-shell .browser-blank-center [data-home-shortcuts]{
           tab.frame.removeAttribute('srcdoc');
           tab.frame.classList.remove('active');
         }
-        state?.win?.querySelector('.browser-home')?.classList.remove('hidden');
-        state?.win?.classList.add('browser-blank');
+        renderBrowserShellHomeMode(state?.win,'blank');
         activeBrowser.activate?.(created.id);
+        renderBrowserShellHomeMode(state?.win,'blank');
         state?.renderTabs?.();
         updateBrowserShellLocation(NYX_BLANK_URL,created.id,true);
         renderBrowserShellTabs();
@@ -10045,9 +10165,9 @@ body.browser-shell .browser-blank-center [data-home-shortcuts]{
         tab.frame.removeAttribute('srcdoc');
         tab.frame.classList.remove('active');
       }
-      state?.win?.querySelector('.browser-home')?.classList.remove('hidden');
-      state?.win?.classList.add('browser-blank');
+      renderBrowserShellHomeMode(state?.win,'blank');
       activeBrowser?.activate?.(created?.id);
+      renderBrowserShellHomeMode(state?.win,'blank');
       state?.renderTabs?.();
       updateBrowserShellLocation(NYX_BLANK_URL,created?.id || '',true);
       renderBrowserShellTabs();
@@ -10079,7 +10199,12 @@ body.browser-shell .browser-blank-center [data-home-shortcuts]{
     if(!browserShellTabs.some(tab=>tab.id===id)) return;
     browserShellActiveTab=id;
     const shellTab=browserShellTabs.find(tab=>tab.id===id);
-    if(shellTab?.browserTabId && activeBrowser?.activate) activeBrowser.activate(shellTab.browserTabId);
+    if(shellTab?.title==='Home' && !shellTab.url){
+      renderBrowserShellHomeMode(activeBrowser?.win,'home');
+    }else if(isBrowserShellBlankUrl(shellTab?.url)){
+      if(shellTab?.browserTabId && activeBrowser?.activate) activeBrowser.activate(shellTab.browserTabId);
+      renderBrowserShellHomeMode(activeBrowser?.win,'blank');
+    }else if(shellTab?.browserTabId && activeBrowser?.activate) activeBrowser.activate(shellTab.browserTabId);
     renderBrowserShellTabs();
   }
   function setBrowserShellHomeActive(){
@@ -10097,29 +10222,15 @@ body.browser-shell .browser-blank-center [data-home-shortcuts]{
       updateDockFullscreenState();
     }
     if(activeBrowser?.win?.isConnected){
-      if(!homeTab.browserTabId && typeof activeBrowser.addTab==='function'){
-        const created=activeBrowser.addTab('');
-        if(created) homeTab.browserTabId=created.id;
-      }
-      if(homeTab.browserTabId && activeBrowser.activate) activeBrowser.activate(homeTab.browserTabId);
       const state=activeBrowser;
-      const tab=state?.tabs?.find(t=>t.id===homeTab.browserTabId || t.id===state.active);
-      if(tab){
-        tab.url='';
-        tab.title='Home';
-        tab.history=[''];
-        tab.index=0;
-        tab.scramjetFrame=null;
-        tab.frame.removeAttribute('src');
-        tab.frame.removeAttribute('srcdoc');
-        tab.frame.classList.remove('active');
-      }
-      state?.win?.querySelector('.browser-home')?.classList.remove('hidden');
-      state?.win?.classList.add('browser-blank');
+      state?.tabs?.forEach(tab=>tab.frame?.classList.remove('active'));
+      renderBrowserShellHomeMode(state.win,'home');
       state?.renderTabs?.();
       playHomeEntranceAnimation(state.win);
     }
     renderBrowserShellTabs();
+    const input=document.querySelector('[data-browser-shell-url]');
+    if(input) input.value='';
   }
   //browser-settings-page
   function browserShellSettingsMarkup(presetTiles){
@@ -12505,7 +12616,7 @@ body.browser-shell .browser-blank-center [data-home-shortcuts]{
     updateWindowSizeClasses(win);
   }
   function browserBody(){
-    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="browser-blank-center"><img class="browser-blank-logo browser-shell-logo" alt="nyx" src="${favicons.nyx}"><form class="browser-blank-search" data-browser-blank-search><input data-browser-blank-input placeholder="Search or enter a URL" autocomplete="off"><button type="submit">Search</button></form><div class="quick-grid home-shortcut-grid" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div></div></div>`;
+    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="browser-shell-start"><img class="browser-shell-logo" alt="" src="${favicons.nyx}"><div class="browser-shell-clock" data-browser-shell-clock>--:--</div></div><div class="browser-blank-center"><img class="browser-blank-logo browser-shell-logo" alt="nyx" src="${favicons.nyx}"><form class="browser-blank-search" data-browser-blank-search><input data-browser-blank-input placeholder="Search or enter a URL" autocomplete="off"><button type="submit">Search</button></form></div><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div></div>`;
   }
   //apps-grid
   const defaultHomeShortcuts=[
@@ -14157,8 +14268,7 @@ body.browser-shell .browser-blank-center [data-home-shortcuts]{
       initialTab.icon=favicons.nyx;
       initialTab.history=[''];
       initialTab.index=0;
-      win.querySelector('.browser-home')?.classList.remove('hidden');
-      win.classList.add('browser-blank');
+      renderBrowserShellHomeMode(win,'home');
       renderTabs();
       renderBrowserShellTabs();
       playHomeEntranceAnimation(win);

@@ -8538,7 +8538,7 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
 <!-- //formula-gate -->
 <div id="formulaGate" class="formula-gate" role="button" tabindex="0" aria-label="Open ռʏӼ">
   <section class="formula-sheet">
-    <iframe class="formula-pdf" src="assets/docs/1300-maths-formula.pdf#toolbar=0&navpanes=0&scrollbar=1&zoom=125" title="Math formulas"></iframe>
+    <iframe class="formula-pdf" title="Math formulas" loading="lazy" srcdoc="<!doctype html><style>html,body{margin:0;width:100%;height:100%;display:grid;place-items:center;background:#f6efff;color:#8a1685;font-family:Georgia,serif}main{text-align:center}.n{font-size:clamp(96px,18vw,230px);line-height:.9}.t{font-size:clamp(42px,8vw,112px);line-height:1.05}</style><main><div class='n'>1300</div><div class='t'>Math<br>Formulas</div></main>"></iframe>
     <p class="formula-click-hint">Click to continue</p>
   </section>
 </div>
@@ -9328,7 +9328,7 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
     document.body.classList.remove('menu-open');
     if(enabled){
       renderChromeFixed();
-      if(browserShellNeedsStartupHome()) setBrowserShellHomeActive();
+      if(nyxGateOpened && activeBrowser?.win?.isConnected && browserShellNeedsStartupHome()) setBrowserShellHomeActive();
       else renderBrowserShellTabs();
     }else renderChrome();
     renderedChromeMode=mode;
@@ -10680,6 +10680,7 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
     return Array.from(layer.children);
   }
   //themes-and-visual-effects
+  let nyxGateOpened=false;
   function ensureFreshThemeOptions(root=document){
     root.querySelectorAll?.('[data-theme-value]')?.forEach(select=>{
       if(!select.querySelector('option[value="fresh"]')){
@@ -10697,7 +10698,7 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
     if(theme!=='default') document.body.classList.add('theme-'+theme);
     ensureFreshThemeOptions();
     qsa('[data-theme-value]').forEach(el=>{el.value=theme});
-    if(theme==='default'){
+    if(nyxGateOpened && theme==='default'){
       if(store.text('nyx.visualEffect','none')==='stars' && store.text('nyx.visualEffectAmount','16')==='64'){
         store.setText('nyx.visualEffect','none');
       }
@@ -10715,13 +10716,13 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
     if(theme==='emerald' && store.text('nyx.visualEffect','none')==='none'){
       store.setText('nyx.visualEffect','emeralds');
     }
-    if(theme==='emerald' && ambientTracks?.frog && ambientCurrentKey!=='frog'){
+    if(nyxGateOpened && theme==='emerald' && ambientTracks?.frog && ambientCurrentKey!=='frog'){
       loadAmbientTrack('frog',false);
     }
-    if(theme==='fresh' && ambientTracks?.sunny && ambientCurrentKey!=='sunny'){
+    if(nyxGateOpened && theme==='fresh' && ambientTracks?.sunny && ambientCurrentKey!=='sunny'){
       loadAmbientTrack('sunny',false);
     }
-    if(theme==='fresh' || theme==='sakura'){
+    if(nyxGateOpened && (theme==='fresh' || theme==='sakura')){
       applyVisualEffectSetting();
     }
     syncInternalThemeFrames(theme);
@@ -10751,7 +10752,7 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
     const value=allowed.includes(effect) ? effect : 'none';
     const speed=Math.max(.3,Math.min(3,Number(store.text('nyx.visualEffectSpeed','1.1')) || 1.1));
     const requestedAmount=Math.max(1,Math.min(64,Number(store.text('nyx.visualEffectAmount','16')) || 16));
-    const canShow=document.body.classList.contains('browser-shell') && !document.body.classList.contains('browser-content-active') && !document.body.classList.contains('watchparty-active') && !store.get('nyx.lagReducer',false);
+    const canShow=nyxGateOpened && document.body.classList.contains('browser-shell') && !document.body.classList.contains('browser-content-active') && !document.body.classList.contains('watchparty-active') && !store.get('nyx.lagReducer',false);
     syncPerformanceLite();
     const lite=document.body.classList.contains('performance-lite');
     const amount=lite ? Math.min(requestedAmount,16) : requestedAmount;
@@ -10838,7 +10839,12 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
     const value=currentBackgroundValue();
     const customSrc=customData || customUrl;
     document.documentElement.style.setProperty('--bg-size','cover');
-    setCustomBackgroundLayer(customSrc);
+    if(nyxGateOpened){
+      setCustomBackgroundLayer(customSrc);
+    }else{
+      document.body.classList.remove('custom-bg-active');
+      $('customBgImage')?.removeAttribute('src');
+    }
     applyBackgroundValue(value);
     document.documentElement.style.setProperty('--bg-enhanced-render',normalizeBgValue(value));
     document.documentElement.style.setProperty('--browser-bg-render',normalizeBgValue(currentBrowserBackgroundValue()));
@@ -10857,8 +10863,10 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
     qsa('[data-engine-value]').forEach(el=>{el.value=engine});
     applyGlassSetting();
     syncPerformanceLite();
-    startHieroglyphObserver();
-    applyHieroglyphText();
+    if(nyxGateOpened){
+      startHieroglyphObserver();
+      applyHieroglyphText();
+    }
   }
   function migrateGlassDefault(){
     if(store.get('nyx.glassDefault80',false)) return;
@@ -11263,14 +11271,29 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
     const gate=$('formulaGate');
     if(!gate || gate.dataset.opened==='1') return;
     gate.dataset.opened='1';
+    nyxGateOpened=true;
+    document.querySelectorAll('.nyx-preflight').forEach(overlay=>overlay.remove());
+    document.body.classList.add('runtime-lag-guard');
     if(gate.contains(document.activeElement)) document.activeElement?.blur?.();
     gate.classList.add('hidden');
     gate.setAttribute('aria-hidden','true');
     gate.setAttribute('inert','');
     closeWelcome(true);
     setTimeout(()=>{
+      applyLagReducerSetting();
+      document.body.classList.toggle('browser-shell',store.get('nyx.browserShellMode',true));
+      syncChromeMode(store.get('nyx.browserShellMode',true));
+      applyThemeSetting();
+      syncPerformanceLite();
+      applyVisualEffectSetting();
+      tick();
+      installHomeShortcutAnimationObserver();
+      startRuntimeLagWatch();
+      initDesktopSplash();
+      finishNyxOpenStartup();
       initAmbientMusic();
-    },180);
+      applyVisualEffectSetting();
+    },120);
   }
   const launchPdfOptions={
     math:'assets/docs/1300-maths-formula.pdf'
@@ -11317,7 +11340,8 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
     const frame=document.querySelector('.formula-pdf');
     if(!frame) return;
     const next=launchPdfUrl()+'#toolbar=0&navpanes=0&scrollbar=1&zoom=125';
-    if(frame.getAttribute('src')!==next) frame.setAttribute('src',next);
+    frame.dataset.pdfSrc=next;
+    if(store.get('nyx.renderStartupPdf',false) && frame.getAttribute('src')!==next) frame.setAttribute('src',next);
   }
   async function loadStoredLaunchPdf(){
     if(store.text('nyx.launchPdf','math')!=='custom') return;
@@ -12713,15 +12737,9 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
     }
     if(kind==='startup-diagnostics'){
       return appendFinal([
-        {label:'Checking Nyx files',run:preflightFilesReady},
-        {label:'Checking Wisp server',run:()=>preflightWebSocketOk(wispUrl(),3600)},
-        {label:'Checking Scramjet engine',run:()=>preflightEngineReady('https://duckduckgo.com/')},
-        {label:'Checking libcurl transport',run:preflightLibcurlReady},
-        {label:'Checking BareMux',run:()=>installBareMuxTransport().then(Boolean)},
-        {label:'Checking updates',run:preflightStateCurrent},
-        {label:'Checking search',run:searchCheck},
-        {label:'Scanning for bugs',run:preflightBugScan},
-        {label:'Launching Nyx',run:async()=>{await preflightDelay(220); return true}}
+        {label:'Checking Nyx files',run:preflightStateCurrent},
+        {label:'Preparing interface',run:async()=>{await preflightDelay(60); return true}},
+        {label:'Launching Nyx',run:async()=>{await preflightDelay(80); return true}}
       ]);
     }
     return appendFinal([
@@ -12733,6 +12751,14 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
   }
   async function runNyxPreflight(kind='startup',options={}){
     if(options.skip || nyxPreflightBypass) return true;
+    if(options.background){
+      setTimeout(()=>{
+        nyxPreflightTasks(kind,options).slice(0,3).forEach(task=>{
+          Promise.resolve(task.run?.()).catch(()=>null);
+        });
+      },600);
+      return true;
+    }
     if(nyxPreflightPromise) return nyxPreflightPromise;
     const doubleCheckTask=async task=>{
       let first=false, second=false, firstError=null, secondError=null;
@@ -14187,7 +14213,7 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
     panel.querySelector('[data-weather-minimize]')?.addEventListener('click',closeWeatherPanelAnimated);
     $('weatherRestore')?.addEventListener('click',restoreWeatherPanel);
     loadWeatherLocation(saved);
-    setInterval(()=>renderWeatherTime(savedWeatherLocation().timezone),30000);
+    if(!initWeatherPanel.timeTimer) initWeatherPanel.timeTimer=setInterval(()=>renderWeatherTime(savedWeatherLocation().timezone),30000);
   }
   function openWeather(){
     initWeatherPanel();
@@ -17306,42 +17332,34 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     initBrowserCaption();
     updateDockFullscreenState();
   }
+  function finishNyxOpenStartup(){
+    if(finishNyxOpenStartup.done) return;
+    finishNyxOpenStartup.done=true;
+    if(store.text('nyx.tabTitle','') || store.text('nyx.tabFavicon','')) enforceStoredTabCloak();
+    else setCurrentTabCloak(nyxTabTitle,nyxTabFavicon,false);
+    migrateGlassDefault();
+    applyAutoHieroglyphPreference();
+  }
   async function boot(){
     const hostedCloakEntry=shouldAutoLaunchHostedCloak();
     if(hostedCloakEntry) document.body.classList.add('hosted-cloak-entry');
+    document.body.classList.add('runtime-lag-guard');
     updateResponsiveFit();
-    await loadStoredLaunchPdf();
-    applyLaunchPdfSetting(); bindFormulaGate(); startWelcomeTyping(); installHomeShortcutAnimationObserver(); startRuntimeLagWatch(); syncChromeMode(store.get('nyx.browserShellMode',true)); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); startCenterClock(); initDesktopSplash();
+    if(!localStorage.getItem('nyx.lagReducer')) store.set('nyx.lagReducer',true);
+    applyLaunchPdfSetting(); bindFormulaGate(); startWelcomeTyping(); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); startCenterClock();
     if(hostedCloakEntry){
       closeWelcome();
       scheduleHostedCloakLaunch();
       return;
     }
-    initWeatherPanel();
-    initAmbientMusic();
     if(!store.get('nyx.searchDefaultedToDuck',false)){
       store.set('nyx.searchDefaultedToDuck',true);
       if(['google','bing'].includes(store.text('nyx.engine','duckduckgo'))) store.setText('nyx.engine','duckduckgo');
     }
-    await runNyxPreflight('startup-diagnostics',{minVisible:1200});
-    const bootMode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
-    if(bootMode==='scramjet' || bootMode==='auto') installScramjet();
-    if(bootMode==='ultraviolet' || bootMode==='auto') installUltraviolet();
-    if(!store.get('nyx.identityReset',false)){
-      store.set('nyx.identityReset',true);
-      if(store.text('nyx.logo','') || store.text('nyx.tabTitle','') || store.text('nyx.tabFavicon','')) scheduleStoredTabCloakEnforce();
-      else applyPreset('nyx',true);
-    }
-    else applyPreset(store.text('nyx.logo','nyx'),true);
-    installTabCloakPersistence();
-    migrateGlassDefault();
-    applyAutoHieroglyphPreference();
-    applyUserSettings(); tick(); setInterval(tick,1000); closeWelcome(); playHomeEntranceAnimation(document); setTimeout(()=>playHomeEntranceAnimation(document),180); scheduleAutoCloak();
-    if(!store.get('nyx.setupComplete',false) || !store.text('nyx.userName','').trim()) setTimeout(showSetup,900);
-    if(!store.get('nyx.updatesSeenOnce',false)){
-      store.set('nyx.updatesSeenOnce',true);
-      setTimeout(openUpdates,1400);
-    }
+    if(nyxGateOpened) runNyxPreflight('startup-diagnostics',{minVisible:260,background:true}).catch(()=>null);
+    tick();
+    if(!boot.tickTimer) boot.tickTimer=setInterval(tick,1000);
+    closeWelcome();
     scheduleHostedCloakLaunch();
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();

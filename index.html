@@ -15154,6 +15154,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     store.setText('nyx.tabTitle',title);
     store.setText('nyx.tabFavicon',favicon);
     syncPresetCloakFields();
+    scheduleStoredTabCloakEnforce();
     if(!silent) toast('Tab preset applied');
   }
   function syncPresetCloakFields(root=document){
@@ -15166,6 +15167,36 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     });
     scope.querySelectorAll?.('[data-tab-title]').forEach(input=>{input.value=title});
     scope.querySelectorAll?.('[data-tab-favicon]').forEach(input=>{input.value=favicon});
+  }
+  function enforceStoredTabCloak(){
+    const title=store.text('nyx.tabTitle','').trim();
+    const favicon=store.text('nyx.tabFavicon','').trim();
+    if(title && document.title!==title) setPageTitle(title);
+    if(favicon){
+      let target=favicon;
+      try{target=new URL(favicon,location.href).href}catch{}
+      const current=document.querySelector('#appFavicon, link[rel*="icon" i]')?.href || '';
+      if(current!==target) setPageFavicon(favicon,false);
+    }
+  }
+  function scheduleStoredTabCloakEnforce(){
+    enforceStoredTabCloak();
+    [80,320,1000].forEach(delay=>setTimeout(enforceStoredTabCloak,delay));
+    syncBrowserShellBlankTabCloak();
+  }
+  function syncBrowserShellBlankTabCloak(){
+    if(!Array.isArray(browserShellTabs)) return;
+    const title=store.text('nyx.tabTitle','').trim();
+    const favicon=store.text('nyx.tabFavicon','').trim();
+    if(!title && !favicon) return;
+    browserShellTabs.forEach(tab=>{
+      if(tab.url) return;
+      if(tab.title==='Home' || tab.title==='New Tab' || tab.title===document.title){
+        if(title) tab.title=title;
+        if(favicon) tab.icon=favicon;
+      }
+    });
+    if(document.body.classList.contains('browser-shell')) renderBrowserShellTabs();
   }
   function setPageTitle(title){
     document.title=title;
@@ -15216,7 +15247,19 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     store.setText('nyx.tabTitle',cleanTitle);
     store.setText('nyx.tabFavicon',cleanFavicon);
     store.setText('nyx.logo','custom');
+    scheduleStoredTabCloakEnforce();
     if(!silent) toast('Tab cloak applied');
+  }
+  let tabCloakPersistenceInstalled=false;
+  function installTabCloakPersistence(){
+    if(tabCloakPersistenceInstalled) return;
+    tabCloakPersistenceInstalled=true;
+    ['focus','pageshow','visibilitychange'].forEach(type=>{
+      window.addEventListener(type,()=>scheduleStoredTabCloakEnforce(),{passive:true});
+    });
+    if(document.head){
+      new MutationObserver(()=>scheduleStoredTabCloakEnforce()).observe(document.head,{childList:true,subtree:true,attributes:true,attributeFilter:['href','rel']});
+    }
   }
   function currentCloakFrameUrl(){
     try{
@@ -17237,8 +17280,13 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     const bootMode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
     if(bootMode==='scramjet' || bootMode==='auto') installScramjet();
     if(bootMode==='ultraviolet' || bootMode==='auto') installUltraviolet();
-    if(!store.get('nyx.identityReset',false)){store.set('nyx.identityReset',true); applyPreset('nyx',true);}
+    if(!store.get('nyx.identityReset',false)){
+      store.set('nyx.identityReset',true);
+      if(store.text('nyx.logo','') || store.text('nyx.tabTitle','') || store.text('nyx.tabFavicon','')) scheduleStoredTabCloakEnforce();
+      else applyPreset('nyx',true);
+    }
     else applyPreset(store.text('nyx.logo','nyx'),true);
+    installTabCloakPersistence();
     migrateGlassDefault();
     applyAutoHieroglyphPreference();
     applyUserSettings(); tick(); setInterval(tick,1000); closeWelcome(); playHomeEntranceAnimation(document); setTimeout(()=>playHomeEntranceAnimation(document),180); scheduleAutoCloak();

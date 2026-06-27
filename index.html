@@ -15139,6 +15139,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
   function applyPreset(name, silent=false){
     if(name==='custom'){
       applyCustomTabCloak(store.text('nyx.tabTitle','nyx'),store.text('nyx.tabFavicon',nyxFaviconHref()),silent);
+      syncPresetCloakFields();
       return;
     }
     const labels={nyx:'ռʏӼ',classroom:'Google Classroom',drive:'Google Drive',classlink:'ClassLink',google:'Google'};
@@ -15151,7 +15152,19 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     store.setText('nyx.logo',name);
     store.setText('nyx.tabTitle',title);
     store.setText('nyx.tabFavicon',favicon);
+    syncPresetCloakFields();
     if(!silent) toast('Tab preset applied');
+  }
+  function syncPresetCloakFields(root=document){
+    const scope=root || document;
+    const logo=store.text('nyx.logo','nyx');
+    const title=store.text('nyx.tabTitle','nyx');
+    const favicon=store.text('nyx.tabFavicon',nyxFaviconHref());
+    scope.querySelectorAll?.('[data-preset-select]').forEach(select=>{
+      if([...select.options].some(option=>option.value===logo)) select.value=logo;
+    });
+    scope.querySelectorAll?.('[data-tab-title]').forEach(input=>{input.value=title});
+    scope.querySelectorAll?.('[data-tab-favicon]').forEach(input=>{input.value=favicon});
   }
   function setPageTitle(title){
     document.title=title;
@@ -16080,7 +16093,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
         toast('Background enhancer disabled');
         return;
       }
-      const preset=e.target.closest('[data-preset]'); if(preset){applyPreset(preset.dataset.preset); return}
+      const preset=e.target.closest('[data-preset]'); if(preset){applyPreset(preset.dataset.preset); syncPresetCloakFields(e.target.closest('.window,.settings-app,.browser-shell-settings-overlay') || document); return}
       if(e.target.closest('[data-save-cloak]')){
         saveCloakSettings(e.target.closest('.window,.settings-app,.browser-shell-settings-overlay') || document);
         return;
@@ -16209,8 +16222,11 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
         applyUserSettings();
         return;
       }
-      if(browserSettingsRoot && e.target.closest?.('[data-preset-select]')){
-        applyPreset(e.target.value || 'nyx');
+      const presetSelect=e.target.closest?.('[data-preset-select]');
+      if(presetSelect){
+        const root=e.target.closest('.window,.settings-app,.browser-shell-settings-overlay') || document;
+        applyPreset(presetSelect.value || 'nyx');
+        syncPresetCloakFields(root);
         return;
       }
       const effect=e.target.closest('[data-effect-value]');

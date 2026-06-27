@@ -12783,8 +12783,12 @@ body *::after{
     ];
     toolbarItems.forEach((el,index)=>animateHomeElement(el,index,{delay:120+(index*58),duration:690,start:'translate(-26px,38px) scale(.9)',mid:'translate(-8px,12px) scale(.98)'}));
   }
-  function playHomeEntranceAnimation(root=document){
+  let homeEntranceLastPlay=0;
+  function playHomeEntranceAnimation(root=document,options={}){
     if(!homeEntranceCanPlay(root)) return;
+    const now=Date.now();
+    if(!options.force && now-homeEntranceLastPlay<1400) return;
+    homeEntranceLastPlay=now;
     playHomeShortcutAnimation(root);
     playHomeChromeAnimation(root);
   }
@@ -12824,8 +12828,6 @@ body *::after{
       }
     }).observe(document.body,{childList:true,subtree:true});
     trigger(document);
-    setTimeout(()=>playHomeEntranceAnimation(document),350);
-    setTimeout(()=>playHomeEntranceAnimation(document),900);
   }
   function renderHomeShortcuts(root=document){
     root.querySelectorAll('[data-home-shortcuts]').forEach(grid=>{grid.innerHTML=browserHomeShortcutTiles()});

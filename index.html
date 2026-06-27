@@ -8408,10 +8408,10 @@ body.browser-shell{
     color-mix(in srgb,var(--theme-border,#8b5cf6) 86%,#000000 14%));
 }
 body.browser-shell .top-os{
-  height:52px!important;
-  min-height:52px!important;
+  height:56px!important;
+  min-height:56px!important;
   padding:3px 8px 3px!important;
-  grid-template-rows:18px 24px!important;
+  grid-template-rows:22px 24px!important;
   gap:3px!important;
   background:#04050a!important;
   background-image:none!important;
@@ -8437,8 +8437,8 @@ body.browser-shell .browser-mode-url:focus{
 body.browser-shell .browser-mode-app-button{
   width:142px!important;
   max-width:calc(100vw - 132px)!important;
-  height:18px!important;
-  min-height:18px!important;
+  height:22px!important;
+  min-height:22px!important;
   border-radius:6px!important;
   padding:0 22px 0 28px!important;
   font-size:10px!important;
@@ -8450,15 +8450,15 @@ body.browser-shell .browser-mode-app-button::before{
 }
 body.browser-shell .browser-mode-tab,
 body.browser-shell .browser-mode-shell-tab{
-  height:18px!important;
-  min-height:18px!important;
+  height:22px!important;
+  min-height:22px!important;
   border-radius:6px!important;
   font-size:12px!important;
   line-height:1!important;
 }
 body.browser-shell .browser-mode-tab{
-  width:18px!important;
-  min-width:18px!important;
+  width:22px!important;
+  min-width:22px!important;
 }
 body.browser-shell .browser-mode-shell-tab{
   min-width:64px!important;
@@ -8502,7 +8502,7 @@ body.browser-shell .browser-mode-weather > .weather-cloud-icon{
   height:15px!important;
 }
 body.browser-shell .browser-mode-menu{
-  top:52px!important;
+  top:56px!important;
   right:10px!important;
   width:146px!important;
   min-width:146px!important;
@@ -8521,15 +8521,15 @@ body.browser-shell .browser-mode-menu hr{
   margin:2px 3px!important;
 }
 @media(max-width:520px){
-  body.browser-shell .top-os{height:48px!important;min-height:48px!important;grid-template-rows:17px 22px!important;padding:3px 6px!important}
-  body.browser-shell .browser-mode-app-button{height:17px!important;min-height:17px!important;width:108px!important;font-size:9px!important}
+  body.browser-shell .top-os{height:52px!important;min-height:52px!important;grid-template-rows:21px 22px!important;padding:3px 6px!important}
+  body.browser-shell .browser-mode-app-button{height:21px!important;min-height:21px!important;width:108px!important;font-size:9px!important}
   body.browser-shell .browser-mode-tab,
-  body.browser-shell .browser-mode-shell-tab{height:17px!important;min-height:17px!important}
-  body.browser-shell .browser-mode-tab{width:17px!important;min-width:17px!important}
+  body.browser-shell .browser-mode-shell-tab{height:21px!important;min-height:21px!important}
+  body.browser-shell .browser-mode-tab{width:21px!important;min-width:21px!important}
   body.browser-shell .browser-mode-address button{width:22px!important;height:22px!important;min-width:22px!important;min-height:22px!important}
   body.browser-shell .browser-mode-address{grid-template-columns:22px 22px 22px minmax(0,1fr) 22px 22px 26px!important}
   body.browser-shell .browser-mode-url{height:22px!important;min-height:22px!important}
-  body.browser-shell .browser-mode-menu{top:48px!important;width:138px!important;min-width:138px!important;max-width:min(138px,calc(100vw - 20px))!important}
+  body.browser-shell .browser-mode-menu{top:52px!important;width:138px!important;min-width:138px!important;max-width:min(138px,calc(100vw - 20px))!important}
 }
 /* //browser-chrome-icon-fit-final */
 html body.browser-shell .browser-mode-address button{
@@ -8598,11 +8598,72 @@ html body.browser-shell .brand-mini [data-browser-shell-new-tab]{
   display:grid!important;
   place-items:center!important;
   padding:0!important;
-  font-size:13px!important;
+  font-size:15px!important;
   line-height:1!important;
 }
 html body.browser-shell .brand-mini [data-browser-shell-new-tab] span{
   display:none!important;
+}
+/* //nyx-blank-page-final */
+body.browser-shell .browser-home{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:24px!important;
+}
+body.browser-shell .browser-home.hidden{
+  display:none!important;
+}
+body.browser-shell .browser-blank-center{
+  width:min(760px,calc(100vw - 56px))!important;
+  display:grid!important;
+  justify-items:center!important;
+  gap:18px!important;
+  margin:0 auto!important;
+  transform:translateY(-2vh);
+}
+body.browser-shell .browser-blank-logo{
+  width:86px!important;
+  height:86px!important;
+  object-fit:contain!important;
+  filter:drop-shadow(0 0 18px color-mix(in srgb,var(--theme-border,#8b5cf6) 48%,transparent))!important;
+}
+body.browser-shell .browser-blank-search{
+  width:min(620px,100%)!important;
+  height:44px!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 92px!important;
+  gap:8px!important;
+}
+body.browser-shell .browser-blank-search input{
+  width:100%!important;
+  height:44px!important;
+  border:1px solid transparent!important;
+  border-radius:10px!important;
+  padding:0 16px!important;
+  background:
+    linear-gradient(#04050a,#04050a) padding-box,
+    var(--chrome-border-gradient) border-box!important;
+  color:#f8fafc!important;
+  -webkit-text-fill-color:#f8fafc!important;
+  font:700 15px Raleway,Nunito,Arial,sans-serif!important;
+  outline:0!important;
+  box-shadow:0 14px 30px rgba(0,0,0,.28)!important;
+}
+body.browser-shell .browser-blank-search button{
+  height:44px!important;
+  border:1px solid transparent!important;
+  border-radius:10px!important;
+  background:
+    linear-gradient(#070812,#070812) padding-box,
+    var(--chrome-border-gradient) border-box!important;
+  color:#f8fafc!important;
+  -webkit-text-fill-color:#f8fafc!important;
+  font:900 13px Raleway,Nunito,Arial,sans-serif!important;
+  box-shadow:0 14px 30px rgba(0,0,0,.26)!important;
+}
+body.browser-shell .browser-blank-center [data-home-shortcuts]{
+  justify-content:center!important;
 }
 </style>
 </head>
@@ -8895,6 +8956,7 @@ html body.browser-shell .brand-mini [data-browser-shell-new-tab] span{
   const browserShellTabs = [];
   const browserShellOpeningTabs = new Set();
   let browserShellActiveTab = null;
+  let browserShellLastBlankOpenAt = 0;
   const engines = {
     bing:'https://www.bing.com/search?q=',
     google:'https://www.google.com/search?q=',
@@ -9281,6 +9343,7 @@ html body.browser-shell .brand-mini [data-browser-shell-new-tab] span{
   })();`;
   const proxyStateVersion='nyx-proxy-state-20260621-spotify-auth-v4';
   const scramjetStateVersion='nyx-scramjet-state-20260621-spotify-auth-v4';
+  const NYX_BLANK_URL='nyx://blank';
   let enhancedBackgroundRun = 0;
   let customBgLayerRun = 0;
   let hieroglyphObserver = null;
@@ -9451,6 +9514,7 @@ html body.browser-shell .brand-mini [data-browser-shell-new-tab] span{
   }
   function browserShellLabel(url){
     if(!url) return 'Home';
+    if(String(url || '').trim().toLowerCase()===NYX_BLANK_URL) return NYX_BLANK_URL;
     try{
       const parsed=new URL(browserShellSourceUrl(url),location.href);
       if(parsed.origin===location.origin && parsed.pathname.includes('/assets/games/')) return 'Games';
@@ -9464,6 +9528,7 @@ html body.browser-shell .brand-mini [data-browser-shell-new-tab] span{
   }
   function browserShellDisplayValue(url){
     if(!url) return '';
+    if(String(url || '').trim().toLowerCase()===NYX_BLANK_URL) return NYX_BLANK_URL;
     try{
       const parsed=new URL(browserShellSourceUrl(url),location.href);
       if(parsed.origin===location.origin) return parsed.pathname.replace(/^\/+/,'') || parsed.href;
@@ -9821,6 +9886,24 @@ html body.browser-shell .brand-mini [data-browser-shell-new-tab] span{
     renderBrowserBookmarks();
   }
   //browser-home-and-tabs
+  function isBrowserShellBlankUrl(url){
+    const raw=String(url || '').trim().toLowerCase();
+    return !raw || raw===NYX_BLANK_URL;
+  }
+  function collapseDuplicateOpeningBlankTabs(){
+    const active=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
+    if(!active || !isBrowserShellBlankUrl(active.url)) return;
+    const duplicates=browserShellTabs.filter(tab=>tab.id!==active.id && isBrowserShellBlankUrl(tab.url) && browserShellOpeningTabs.has(tab.id));
+    if(!duplicates.length) return;
+    duplicates.forEach(tab=>{
+      browserShellOpeningTabs.delete(tab.id);
+      if(tab.browserTabId && activeBrowser?.closeTab) activeBrowser.closeTab(tab.browserTabId);
+      const index=browserShellTabs.findIndex(item=>item.id===tab.id);
+      if(index>=0) browserShellTabs.splice(index,1);
+    });
+    browserShellActiveTab=active.id;
+    renderBrowserShellTabs();
+  }
   function ensureBrowserShellHome(){
     if(!browserShellTabs.length){
       const id='shell-'+Date.now()+Math.random().toString(16).slice(2);
@@ -9852,7 +9935,8 @@ html body.browser-shell .brand-mini [data-browser-shell-new-tab] span{
       active=browserShellTabs[0];
       browserShellActiveTab=active.id;
     }
-    document.body.classList.toggle('browser-content-active',!!(active.url || active.title!=='Home'));
+    const activeShowsContent=!!(active.url && !isBrowserShellBlankUrl(active.url)) || (active.title!=='Home' && !isBrowserShellBlankUrl(active.url));
+    document.body.classList.toggle('browser-content-active',activeShowsContent);
     if(home){
       home.style.display='';
       home.innerHTML='<span>Home</span>';
@@ -9877,14 +9961,21 @@ html body.browser-shell .brand-mini [data-browser-shell-new-tab] span{
     if(!browserSuggestionsAllowed()) hideBrowserSuggestions();
   }
   function openBrowserShellTab(url='',options={}){
+    if(!url){
+      const now=performance.now();
+      const activeBlank=browserShellTabs.find(tab=>tab.id===browserShellActiveTab && isBrowserShellBlankUrl(tab.url) && browserShellOpeningTabs.has(tab.id));
+      if(activeBlank && now-browserShellLastBlankOpenAt<360) return activeBlank.id;
+      browserShellLastBlankOpenAt=now;
+    }
     const id='shell-'+Date.now()+Math.random().toString(16).slice(2);
-    const normalized=url ? normalize(url) : '';
-    browserShellTabs.push({id,url:normalized,title:normalized ? browserShellLabel(normalized) : 'New Tab',icon:iconForUrl(normalized)});
+    const normalized=url ? normalize(url) : NYX_BLANK_URL;
+    const isBlank=isBrowserShellBlankUrl(normalized);
+    browserShellTabs.push({id,url:normalized,title:isBlank ? NYX_BLANK_URL : browserShellLabel(normalized),icon:iconForUrl(normalized)});
     browserShellOpeningTabs.add(id);
     browserShellActiveTab=id;
     renderBrowserShellTabs();
     if(activeBrowser?.win?.isConnected && typeof activeBrowser.addTab==='function'){
-      const created=activeBrowser.addTab(normalized || '',options.forceMode || '');
+      const created=activeBrowser.addTab(isBlank ? '' : normalized,options.forceMode || '');
       if(!created){
         browserShellTabs.splice(0,browserShellTabs.length,...browserShellTabs.filter(tab=>tab.id!==id));
         browserShellActiveTab=browserShellTabs[0]?.id || null;
@@ -9893,7 +9984,7 @@ html body.browser-shell .brand-mini [data-browser-shell-new-tab] span{
       }else{
         browserShellTabs.find(tab=>tab.id===id).browserTabId=created.id;
       }
-      if(normalized){
+      if(normalized && !isBlank){
         created.url=normalized;
         created.title=browserShellLabel(normalized);
         created.icon=iconForUrl(normalized);
@@ -9907,27 +9998,32 @@ html body.browser-shell .brand-mini [data-browser-shell-new-tab] span{
         const state=activeBrowser;
         const tab=state?.tabs?.find(t=>t.id===created.id);
         if(tab){
-          tab.url='';
-          tab.title='New Tab';
+          tab.url=NYX_BLANK_URL;
+          tab.title=NYX_BLANK_URL;
           tab.icon=favicons.nyx;
-          tab.history=[''];
+          tab.history=[NYX_BLANK_URL];
           tab.index=0;
           tab.scramjetFrame=null;
           tab.frame.removeAttribute('src');
           tab.frame.removeAttribute('srcdoc');
+          tab.frame.classList.remove('active');
         }
+        state?.win?.querySelector('.browser-home')?.classList.remove('hidden');
+        state?.win?.classList.add('browser-blank');
         activeBrowser.activate?.(created.id);
         state?.renderTabs?.();
+        updateBrowserShellLocation(NYX_BLANK_URL,created.id,true);
         renderBrowserShellTabs();
         setTimeout(()=>document.querySelector('[data-browser-shell-url]')?.focus(),30);
       }
+      if(isBlank) setTimeout(collapseDuplicateOpeningBlankTabs,0);
       return id;
     }
-    const win=openBrowser(normalized || '',options);
+    const win=openBrowser(isBlank ? '' : normalized,options);
     win?.classList.add('maximized');
     const created=activeBrowser?.tabs?.[activeBrowser.tabs.length-1];
     if(created) browserShellTabs.find(tab=>tab.id===id).browserTabId=created.id;
-    if(created && normalized){
+    if(created && normalized && !isBlank){
       created.url=normalized;
       created.title=browserShellLabel(normalized);
       created.icon=iconForUrl(normalized);
@@ -9935,25 +10031,30 @@ html body.browser-shell .brand-mini [data-browser-shell-new-tab] span{
       activeBrowser?.activate?.(created.id);
       activeBrowser?.renderTabs?.();
     }
-    if(!normalized){
+    if(isBlank){
       const state=activeBrowser;
       const tab=created;
       if(tab){
-        tab.url='';
-        tab.title='New Tab';
+        tab.url=NYX_BLANK_URL;
+        tab.title=NYX_BLANK_URL;
         tab.icon=favicons.nyx;
-        tab.history=[''];
+        tab.history=[NYX_BLANK_URL];
         tab.index=0;
         tab.scramjetFrame=null;
         tab.frame.removeAttribute('src');
         tab.frame.removeAttribute('srcdoc');
+        tab.frame.classList.remove('active');
       }
+      state?.win?.querySelector('.browser-home')?.classList.remove('hidden');
+      state?.win?.classList.add('browser-blank');
       activeBrowser?.activate?.(created?.id);
       state?.renderTabs?.();
+      updateBrowserShellLocation(NYX_BLANK_URL,created?.id || '',true);
       renderBrowserShellTabs();
       setTimeout(()=>document.querySelector('[data-browser-shell-url]')?.focus(),30);
     }
     updateDockFullscreenState();
+    if(isBlank) setTimeout(collapseDuplicateOpeningBlankTabs,0);
     return id;
   }
   function openBrowserShellInternalTab(name){
@@ -10141,6 +10242,36 @@ html body.browser-shell .brand-mini [data-browser-shell-new-tab] span{
     const raw=String(value || '').trim();
     if(!raw){
       openBrowserShellTab('');
+      return;
+    }
+    if(raw.toLowerCase()===NYX_BLANK_URL){
+      ensureBrowserShellHome();
+      const shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab) || browserShellTabs[0];
+      shellTab.url=NYX_BLANK_URL;
+      shellTab.title=NYX_BLANK_URL;
+      shellTab.icon=favicons.nyx;
+      if(activeBrowser?.win?.isConnected){
+        if(shellTab.browserTabId && activeBrowser.activate) activeBrowser.activate(shellTab.browserTabId);
+        const state=activeBrowser;
+        const tab=state?.tabs?.find(t=>t.id===shellTab.browserTabId || t.id===state.active);
+        if(tab){
+          tab.url=NYX_BLANK_URL;
+          tab.title=NYX_BLANK_URL;
+          tab.icon=favicons.nyx;
+          tab.history=[NYX_BLANK_URL];
+          tab.index=0;
+          tab.scramjetFrame=null;
+          tab.frame.removeAttribute('src');
+          tab.frame.removeAttribute('srcdoc');
+          tab.frame.classList.remove('active');
+        }
+        state?.win?.querySelector('.browser-home')?.classList.remove('hidden');
+        state?.win?.classList.add('browser-blank');
+        state?.renderTabs?.();
+      }
+      updateBrowserShellLocation(NYX_BLANK_URL,shellTab.browserTabId || '',true);
+      renderBrowserShellTabs();
+      playHomeEntranceAnimation(activeBrowser?.win || document);
       return;
     }
     if(shouldTriggerSixtySevenJumpscare(raw)){
@@ -12374,7 +12505,7 @@ html body.browser-shell .brand-mini [data-browser-shell-new-tab] span{
     updateWindowSizeClasses(win);
   }
   function browserBody(){
-    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="browser-shell-start"><img class="browser-shell-logo" alt="" src="${favicons.nyx}"><div class="browser-shell-clock" data-browser-shell-clock>--:--</div></div><div class="browser-home-normal"><h1 class="home-heading">Search the World</h1><p class="home-sub">Search, watch, and enjoy</p><div class="quick-grid home-shortcut-grid" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div></div></div>`;
+    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="browser-blank-center"><img class="browser-blank-logo browser-shell-logo" alt="nyx" src="${favicons.nyx}"><form class="browser-blank-search" data-browser-blank-search><input data-browser-blank-input placeholder="Search or enter a URL" autocomplete="off"><button type="submit">Search</button></form><div class="quick-grid home-shortcut-grid" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div></div></div>`;
   }
   //apps-grid
   const defaultHomeShortcuts=[
@@ -13304,16 +13435,17 @@ html body.browser-shell .brand-mini [data-browser-shell-new-tab] span{
       }
       const activeUrl=t?.url || mappedShellTab?.url || '';
       const activeTitle=t?.title || mappedShellTab?.title || 'New Tab';
+      const activeIsBlank=isBrowserShellBlankUrl(activeUrl);
       win.classList.toggle('internal-clear',!!t?.frame?.classList.contains('transparent-internal-page'));
       win.querySelectorAll('.view').forEach(f=>f.classList.remove('active'));
-      win.classList.toggle('browser-blank',!activeUrl);
-      if(activeUrl){t?.frame.classList.add('active'); win.querySelector('.browser-home').classList.add('hidden')}
+      win.classList.toggle('browser-blank',activeIsBlank);
+      if(activeUrl && !activeIsBlank){t?.frame.classList.add('active'); win.querySelector('.browser-home').classList.add('hidden')}
       else{
         win.querySelector('.browser-home').classList.remove('hidden');
         if(t?.opening) playBrowserShellPageReveal(win);
       }
       win.querySelector('.urlbar').value=browserShellDisplayValue(activeUrl); win.querySelector('.titlebar-title').textContent=activeTitle; renderTabs(); bring(win);
-      if(t?.url || !mappedShellTab?.url) updateBrowserShellLocation(t?.url || '',t?.id || '');
+      if(t?.url || !mappedShellTab?.url) updateBrowserShellLocation(t?.url || (activeIsBlank ? NYX_BLANK_URL : ''),t?.id || '');
     }
     function detectBrowserEngine(url,t){
       const raw=String(url || '');
@@ -15928,6 +16060,13 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
         navigateBrowserShell(shellSearch.querySelector('[data-browser-shell-url]')?.value);
         return;
       }
+      const blankSearch=e.target.closest?.('[data-browser-blank-search]');
+      if(blankSearch){
+        e.preventDefault();
+        const input=blankSearch.querySelector('[data-browser-blank-input]');
+        navigateBrowserShell(input?.value);
+        return;
+      }
       const form=e.target.closest?.('[data-lion-ai-form]');
       if(!form) return;
       e.preventDefault();
@@ -16003,7 +16142,10 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
       }
       const shellNew=e.target.closest('[data-browser-shell-new-tab]');
       if(shellNew){
+        if(e.nyxShellNewHandled) return;
+        e.nyxShellNewHandled=true;
         e.preventDefault();
+        e.stopImmediatePropagation();
         document.body.classList.remove('menu-open');
         openBrowserShellTab();
         document.querySelector('[data-browser-shell-url]')?.focus();

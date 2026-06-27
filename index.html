@@ -8408,10 +8408,10 @@ body.browser-shell{
     color-mix(in srgb,var(--theme-border,#8b5cf6) 86%,#000000 14%));
 }
 body.browser-shell .top-os{
-  height:74px!important;
-  min-height:74px!important;
-  padding:5px 10px 5px!important;
-  grid-template-rows:30px 30px!important;
+  height:68px!important;
+  min-height:68px!important;
+  padding:4px 10px 4px!important;
+  grid-template-rows:24px 30px!important;
   gap:4px!important;
   background:#04050a!important;
   background-image:none!important;
@@ -8437,19 +8437,33 @@ body.browser-shell .browser-mode-url:focus{
 body.browser-shell .browser-mode-app-button{
   width:158px!important;
   max-width:calc(100vw - 132px)!important;
-  height:30px!important;
-  min-height:30px!important;
-  border-radius:8px!important;
+  height:24px!important;
+  min-height:24px!important;
+  border-radius:7px!important;
   padding:0 28px 0 36px!important;
-  font-size:12px!important;
+  font-size:11px!important;
 }
 body.browser-shell .browser-mode-app-button::before{
   left:10px!important;
-  width:18px!important;
-  height:18px!important;
+  width:15px!important;
+  height:15px!important;
 }
 body.browser-shell .browser-mode-tab,
-body.browser-shell .browser-mode-shell-tab,
+body.browser-shell .browser-mode-shell-tab{
+  height:24px!important;
+  min-height:24px!important;
+  border-radius:7px!important;
+  font-size:14px!important;
+  line-height:1!important;
+}
+body.browser-shell .browser-mode-tab{
+  width:24px!important;
+  min-width:24px!important;
+}
+body.browser-shell .browser-mode-shell-tab{
+  min-width:74px!important;
+  max-width:142px!important;
+}
 body.browser-shell .browser-mode-address button{
   width:30px!important;
   height:30px!important;
@@ -8488,7 +8502,7 @@ body.browser-shell .browser-mode-weather > .weather-cloud-icon{
   height:18px!important;
 }
 body.browser-shell .browser-mode-menu{
-  top:74px!important;
+  top:68px!important;
   right:10px!important;
   width:176px!important;
   min-width:176px!important;
@@ -8507,14 +8521,15 @@ body.browser-shell .browser-mode-menu hr{
   margin:3px 4px!important;
 }
 @media(max-width:520px){
-  body.browser-shell .top-os{height:66px!important;min-height:66px!important;grid-template-rows:27px 28px!important;padding:4px 7px!important}
-  body.browser-shell .browser-mode-app-button{height:27px!important;min-height:27px!important;width:118px!important;font-size:11px!important}
+  body.browser-shell .top-os{height:62px!important;min-height:62px!important;grid-template-rows:22px 28px!important;padding:4px 7px!important}
+  body.browser-shell .browser-mode-app-button{height:22px!important;min-height:22px!important;width:118px!important;font-size:10px!important}
   body.browser-shell .browser-mode-tab,
-  body.browser-shell .browser-mode-shell-tab,
+  body.browser-shell .browser-mode-shell-tab{height:22px!important;min-height:22px!important}
+  body.browser-shell .browser-mode-tab{width:22px!important;min-width:22px!important}
   body.browser-shell .browser-mode-address button{width:27px!important;height:27px!important;min-width:27px!important;min-height:27px!important}
   body.browser-shell .browser-mode-address{grid-template-columns:27px 27px 27px minmax(0,1fr) 27px 27px 30px!important}
   body.browser-shell .browser-mode-url{height:27px!important;min-height:27px!important}
-  body.browser-shell .browser-mode-menu{top:66px!important;width:168px!important;min-width:168px!important}
+  body.browser-shell .browser-mode-menu{top:62px!important;width:168px!important;min-width:168px!important}
 }
 </style>
 </head>

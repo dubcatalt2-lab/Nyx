@@ -8531,6 +8531,79 @@ body.browser-shell .browser-mode-menu hr{
   body.browser-shell .browser-mode-url{height:22px!important;min-height:22px!important}
   body.browser-shell .browser-mode-menu{top:48px!important;width:168px!important;min-width:168px!important}
 }
+/* //browser-chrome-icon-fit-final */
+html body.browser-shell .browser-mode-address button{
+  display:grid!important;
+  place-items:center!important;
+  padding:0!important;
+  overflow:hidden!important;
+}
+html body.browser-shell .browser-mode-address :is(
+  [data-browser-shell-back],
+  [data-browser-shell-forward],
+  [data-browser-shell-reload],
+  [data-browser-shell-bookmark],
+  [data-browser-shell-menu]
+)::before{
+  display:grid!important;
+  place-items:center!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  font-size:15px!important;
+  line-height:1!important;
+  transform-origin:50% 50%!important;
+}
+html body.browser-shell .browser-mode-address [data-browser-shell-back]::before{
+  transform:rotate(180deg) scale(.86)!important;
+}
+html body.browser-shell .browser-mode-address [data-browser-shell-forward]::before{
+  transform:scale(.86)!important;
+}
+html body.browser-shell .browser-mode-address [data-browser-shell-reload]::before{
+  transform:rotate(0deg) scale(.88)!important;
+}
+html body.browser-shell .browser-mode-address [data-browser-shell-bookmark]::before{
+  font-size:16px!important;
+  transform:rotate(0deg) scale(.86)!important;
+}
+html body.browser-shell .browser-mode-address [data-browser-shell-menu]::before{
+  font-size:16px!important;
+  transform:scale(.72)!important;
+}
+html body.browser-shell .browser-mode-address [data-browser-shell-back]:hover::before{
+  transform:rotate(180deg) translateX(1px) scale(.92)!important;
+}
+html body.browser-shell .browser-mode-address [data-browser-shell-forward]:hover::before{
+  transform:translateX(1px) scale(.92)!important;
+}
+html body.browser-shell .browser-mode-address [data-browser-shell-reload]:hover::before{
+  transform:rotate(24deg) scale(.92)!important;
+}
+html body.browser-shell .browser-mode-address [data-browser-shell-bookmark]:hover::before{
+  transform:rotate(18deg) scale(.92)!important;
+}
+html body.browser-shell .browser-mode-address [data-browser-shell-menu]:hover::before{
+  transform:scale(.78)!important;
+}
+html body.browser-shell .browser-mode-address button > .fresh-real-icon{
+  display:none!important;
+}
+html body.browser-shell .browser-mode-weather > .weather-cloud-icon{
+  width:14px!important;
+  height:14px!important;
+  margin:0!important;
+}
+html body.browser-shell .brand-mini [data-browser-shell-new-tab]{
+  display:grid!important;
+  place-items:center!important;
+  padding:0!important;
+  font-size:13px!important;
+  line-height:1!important;
+}
+html body.browser-shell .brand-mini [data-browser-shell-new-tab] span{
+  display:none!important;
+}
 </style>
 </head>
 <body>

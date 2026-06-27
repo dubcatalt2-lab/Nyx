@@ -1659,63 +1659,6 @@ body.browser-shell .browser-home.hidden{display:none!important}
   font-variant-numeric:tabular-nums;
   text-shadow:0 18px 60px rgba(0,0,0,.45);
 }
-.browser-shell-caption{
-  position:relative;
-  min-height:38px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:1px;
-  color:#fff;
-  -webkit-text-fill-color:#fff;
-  font-size:clamp(17px,2.1vw,29px);
-  font-weight:500;
-  line-height:1.1;
-  letter-spacing:0;
-  transform-origin:center;
-  perspective:720px;
-  transform-style:preserve-3d;
-  text-align:center;
-  text-shadow:0 8px 26px rgba(0,0,0,.54);
-  pointer-events:none;
-  user-select:none;
-}
-.browser-caption-live,
-.browser-caption-ghost{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:1px;
-  transform-origin:center;
-  transform-style:preserve-3d;
-  backface-visibility:hidden;
-  will-change:transform,opacity,filter,clip-path;
-}
-.browser-caption-live{position:relative;z-index:1}
-.browser-caption-ghost{
-  position:absolute;
-  inset:0;
-  z-index:2;
-  pointer-events:none;
-}
-.browser-caption-letter{
-  display:inline-block;
-  color:#fff!important;
-  -webkit-text-fill-color:#fff!important;
-  background:none!important;
-  background-image:none!important;
-}
-.browser-caption-space{
-  width:.34em;
-}
-.browser-shell-caption img{
-  display:block;
-  width:min(430px,72vw);
-  max-height:78px;
-  object-fit:contain;
-  border-radius:4px;
-  box-shadow:0 12px 34px rgba(0,0,0,.34);
-}
 .nyx-jumpscare{
   position:fixed;
   inset:0;
@@ -1735,25 +1678,6 @@ body.browser-shell .browser-home.hidden{display:none!important}
 @keyframes jumpscareFlash{
   0%,100%{filter:brightness(1)}
   50%{filter:brightness(2.2) contrast(1.35)}
-}
-.browser-shell-splash{
-  display:none;
-  color:#fde047;
-  font-size:clamp(15px,2vw,26px);
-  font-weight:900;
-  line-height:1.05;
-  letter-spacing:0;
-  text-align:center;
-  white-space:nowrap;
-  text-shadow:0 1px 0 rgba(0,0,0,.85);
-  transform:translate(clamp(74px,16vw,210px),clamp(10px,1.4vw,20px)) rotate(-12deg);
-  pointer-events:none;
-  user-select:none;
-  animation:splashPulse 1.15s ease-in-out infinite alternate;
-}
-@keyframes captionPulse{
-  0%,100%{transform:scale(1);filter:brightness(1)}
-  50%{transform:scale(1.08);filter:brightness(1.35)}
 }
 .browser-shell-start{display:none}
 body.browser-shell .browser-shell-start{display:grid}
@@ -2011,13 +1935,6 @@ body.theme-sakura .settings-action:hover{
   -webkit-text-fill-color:var(--theme-strong)!important;
   text-shadow:0 0 14px color-mix(in srgb,var(--theme-a) 72%,transparent)!important;
 }
-body.theme-ruby .browser-shell-caption,
-body.theme-emerald .browser-shell-caption,
-body.theme-sakura .browser-shell-caption{
-  color:var(--theme-strong)!important;
-  -webkit-text-fill-color:var(--theme-strong)!important;
-  text-shadow:0 0 22px var(--theme-a),0 0 42px color-mix(in srgb,var(--theme-a) 68%,transparent),0 10px 28px rgba(0,0,0,.62)!important;
-}
 body.theme-ruby .apps-panel,
 body.theme-emerald .apps-panel,
 body.theme-sakura .apps-panel{
@@ -2109,33 +2026,6 @@ body.effect-emeralds #visualEffects i::before{
   pointer-events:none;
   text-align:center;
   white-space:nowrap;
-}
-.desktop-splash{
-  position:fixed;
-  left:50%;
-  top:calc(45% - clamp(86px,calc(126px * var(--ui-scale)),136px));
-  z-index:75;
-  width:max-content;
-  max-width:min(420px,calc(100vw - 44px));
-  transform:translate(clamp(96px,18vw,250px),-50%) rotate(-12deg);
-  color:#fde047;
-  font-size:clamp(15px,calc(23px * var(--ui-scale)),27px);
-  font-weight:900;
-  line-height:1.05;
-  letter-spacing:0;
-  text-align:center;
-  white-space:nowrap;
-  text-shadow:0 1px 0 rgba(0,0,0,.85);
-  pointer-events:none;
-  user-select:none;
-  opacity:1;
-  display:block;
-  animation:splashPulse 1.15s ease-in-out infinite alternate;
-}
-.desktop-splash.hidden-for-window{display:none!important}
-@keyframes splashPulse{
-  from{scale:1}
-  to{scale:1.08}
 }
 .desktop-search{
   position:absolute;
@@ -3772,7 +3662,7 @@ body.runtime-lag-guard .weather-effects,
 body.runtime-lag-guard #visualEffects{
   display:none!important;
 }
-body.runtime-lag-guard :is(.browser-shell-caption,.browser-caption-live,.home-shortcut,.home-shortcut-add,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-url,.weather-panel,.ambient-player){
+body.runtime-lag-guard :is(.home-shortcut,.home-shortcut-add,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-url,.weather-panel,.ambient-player){
   animation:none!important;
   transition:opacity .12s linear,transform .12s linear!important;
   filter:none!important;
@@ -3916,7 +3806,6 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
   .brand-mini{gap:4px;min-width:0}
   .user-chip{max-width:38vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .desktop-center-clock{top:34%;font-size:clamp(30px,12vw,48px)}
-  .desktop-splash{top:28%;left:50%;max-width:calc(100vw - 28px);transform:translate(28px,-50%) rotate(-8deg);font-size:clamp(14px,5.5vw,22px)}
   .desktop-search{top:44%;width:calc(100vw - 24px)}
   .dock{justify-content:flex-start;overflow-x:auto;scrollbar-width:none}
   .dock::-webkit-scrollbar{display:none}
@@ -3997,13 +3886,6 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
   background:rgba(148,163,184,.24)!important;
   color:#f8fafc!important;
   -webkit-text-fill-color:#f8fafc!important;
-}
-body.theme-ruby .browser-shell-caption,
-body.theme-emerald .browser-shell-caption,
-body.theme-sakura .browser-shell-caption{
-  background:none!important;
-  color:inherit!important;
-  -webkit-text-fill-color:currentColor!important;
 }
 /* //browser-mode-stabilizer */
 body.browser-shell .browser-window.maximized:has(.browser-home:not(.hidden)),
@@ -4279,12 +4161,12 @@ body.browser-shell textarea{
   font-family:Nunito,Raleway,Arial,sans-serif!important;
   font-weight:400!important;
 }
-body.browser-shell *:not(.browser-shell-caption):not(.browser-shell-caption *):not(.browser-shell-splash):not(.browser-shell-splash *):not(.desktop-splash):not(.desktop-splash *){
+body.browser-shell *{
   font-family:Nunito,Raleway,Arial,sans-serif!important;
   font-weight:400!important;
   text-shadow:none!important;
 }
-body.browser-shell :is(button,input,select,textarea,.settings-app,.settings-app *,.apps-panel,.apps-panel *,.lion-ai,.lion-ai *,.panel,.panel *,.quick-tile,.quick-tile *,.browser-mode-menu,.browser-mode-menu *,.browser-mode-tab,.browser-mode-tab *,.browser-mode-app-button,.browser-mode-app-button *,.browser-mode-url,.urlbar,.browser-tab,.browser-tab *,.window,.window *):not(.browser-shell-caption):not(.browser-shell-caption *):not(.browser-shell-splash):not(.browser-shell-splash *):not(.desktop-splash):not(.desktop-splash *){
+body.browser-shell :is(button,input,select,textarea,.settings-app,.settings-app *,.apps-panel,.apps-panel *,.lion-ai,.lion-ai *,.panel,.panel *,.quick-tile,.quick-tile *,.browser-mode-menu,.browser-mode-menu *,.browser-mode-tab,.browser-mode-tab *,.browser-mode-app-button,.browser-mode-app-button *,.browser-mode-url,.urlbar,.browser-tab,.browser-tab *,.window,.window *){
   font-family:Nunito,Raleway,Arial,sans-serif!important;
   font-weight:400!important;
   text-shadow:none!important;
@@ -4558,14 +4440,6 @@ body.browser-shell .settings-card .switch{
   min-height:24px!important;
   padding:2px!important;
   border-radius:999px!important;
-}
-.browser-shell-caption,
-.browser-shell-caption *,
-.browser-shell-splash,
-.browser-shell-splash *,
-.desktop-splash,
-.desktop-splash *{
-  font-weight:900!important;
 }
 #brandName,
 .brand-button,
@@ -6069,7 +5943,7 @@ body.theme-fresh :is(button,input,select,textarea,.urlbar,.browser-mode-url,.bro
   -webkit-text-fill-color:#133034!important;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.72),0 8px 22px rgba(49,83,90,.12)!important;
 }
-body.theme-fresh :is(h1,h2,h3,p,span,label,strong,.home-heading,.home-sub,.titlebar-title,.desktop-center-clock,.browser-shell-clock,.browser-shell-caption,.quick-tile span,.dock span,.browser-mode-menu button,.watchparty-title,.watchparty-meta){
+body.theme-fresh :is(h1,h2,h3,p,span,label,strong,.home-heading,.home-sub,.titlebar-title,.desktop-center-clock,.browser-shell-clock,.quick-tile span,.dock span,.browser-mode-menu button,.watchparty-title,.watchparty-meta){
   background:none!important;
   color:#0f8fa3!important;
   -webkit-text-fill-color:#0f8fa3!important;
@@ -6346,10 +6220,6 @@ body.browser-shell.theme-fresh #weatherRestore > .weather-cloud-icon{
   -webkit-mask:url("./assets/icons/cloud-weather.png") center/contain no-repeat!important;
   mask:url("./assets/icons/cloud-weather.png") center/contain no-repeat!important;
   filter:none!important;
-}
-body.browser-shell.theme-fresh .browser-shell-caption,
-body.browser-shell.theme-fresh .browser-shell-caption *{
-  font-family:Nunito,Raleway,Arial,sans-serif!important;
 }
 /* //fresh-blur-menu-final */
 body.browser-shell.theme-fresh :is(button,.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-menu button,.settings-action,.settings-preset,.tool-btn,.go-btn,.menu-btn,.home-shortcut-menu button,.weather-icon-btn){
@@ -6674,8 +6544,6 @@ body.browser-shell.theme-fresh :is(
   .home-shortcut-add span,
   .home-shortcut-add b,
   .quick-tile span,
-  .browser-shell-caption,
-  .browser-shell-caption *,
   .browser-shell-clock,
   .weather-icon-btn
 ){
@@ -8409,7 +8277,7 @@ html body.performance-lite :is(.top-os,.window,.titlebar,.dock,.quick-tile,.quic
 html body.performance-lite.theme-fresh :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-menu,.browser-bookmark-panel,.ambient-player,.weather-panel,.weather-restore,.apps-panel,.panel){
   box-shadow:inset 0 1px 0 rgba(255,255,255,.36),0 8px 18px rgba(59,86,91,.12)!important;
 }
-html body.performance-lite :is(.browser-shell-clock,.desktop-center-clock,.browser-shell-caption,.quick-tile,.browser-mode-tab,.browser-mode-shell-tab,.home-shortcut){
+html body.performance-lite :is(.browser-shell-clock,.desktop-center-clock,.quick-tile,.browser-mode-tab,.browser-mode-shell-tab,.home-shortcut){
   filter:none!important;
 }
 html body.performance-lite #visualEffects i:nth-child(n+17){
@@ -8664,8 +8532,6 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
   <div class="brand-mini"><span id="brandName">ռʏӼ</span><span>|</span><button id="userGreeting" class="user-chip needs-name" data-open="settings">Set username</button></div>
   <div class="status-icons"><button class="top-fullscreen" data-page-fullscreen title="Fullscreen" aria-label="Fullscreen"></button><span id="clock">--:--</span></div>
 </div>
-<!-- //desktop-splash -->
-<div class="desktop-splash" id="desktopSplash" aria-hidden="true"></div>
 <!-- //desktop-home -->
 <main id="desktop">
   <div class="desktop-shortcuts">
@@ -10726,11 +10592,6 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
       applyVisualEffectSetting();
     }
     syncInternalThemeFrames(theme);
-    if(document.body.classList.contains('browser-shell') && qsa('[data-browser-caption]').length){
-      randomBrowserCaptionIndex.deck=[];
-      initBrowserCaption.index=randomBrowserCaptionIndex();
-      showBrowserCaption(initBrowserCaption.index);
-    }
   }
   function syncInternalThemeFrames(theme=store.text('nyx.theme','default')){
     const clean=['ruby','emerald','sakura','fresh'].includes(theme) ? theme : 'default';
@@ -12116,12 +11977,10 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
   function updateDockFullscreenState(){
     const dock=document.querySelector('.dock');
     const ambient=$('ambientPlayer');
-    const splash=$('desktopSplash');
     const hasFullscreen=[...document.querySelectorAll('.window.maximized')].some(win=>win.style.display!=='none' && !win.classList.contains('closing'));
     const browserShell=document.body.classList.contains('browser-shell');
     dock?.classList.toggle('hidden-for-window',hasFullscreen);
     ambient?.classList.toggle('hidden-for-window',hasFullscreen && !browserShell);
-    splash?.classList.toggle('hidden-for-window',hasFullscreen || browserShell);
     if(hasFullscreen) closeWeatherPanelAnimated();
   }
   function minimizeWindow(win){
@@ -12309,7 +12168,7 @@ html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!importan
     updateWindowSizeClasses(win);
   }
   function browserBody(){
-    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="browser-shell-start"><img class="browser-shell-logo" alt="" src="${favicons.nyx}"><div class="browser-shell-clock" data-browser-shell-clock>--:--</div><div class="browser-shell-caption" data-browser-caption></div></div><div class="browser-home-normal"><h1 class="home-heading">Search the World</h1><p class="home-sub">Search, watch, and enjoy</p><div class="quick-grid home-shortcut-grid" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div></div></div>`;
+    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="browser-shell-start"><img class="browser-shell-logo" alt="" src="${favicons.nyx}"><div class="browser-shell-clock" data-browser-shell-clock>--:--</div></div><div class="browser-home-normal"><h1 class="home-heading">Search the World</h1><p class="home-sub">Search, watch, and enjoy</p><div class="quick-grid home-shortcut-grid" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div></div></div>`;
   }
   //apps-grid
   const defaultHomeShortcuts=[
@@ -17153,183 +17012,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     update();
     setInterval(update,1000);
   }
-  //splash-text
-  const browserCaptionItems=[
-    {text:"I'm so tuff"},
-    {text:'Squid is a furry'},
-    {text:'I need a job😭'},
-    {text:'Also use TungTung!'},
-    {text:'Consider CatClass'},
-    {text:'Also Use Ink Math'},
-    {text:'Firstlynx is not tuff'},
-    {text:'Also use Xylora for Aura'},
-    {text:'Redeem (roblox code that i will insert later codex)'},
-    {image:'assets/captions/squidhaha.webp',alt:'Squidzula caption'}
-  ];
-  const freshBrowserCaptionItems=[
-    {text:'森のそよ風'},
-    {text:'今日もゆっくり'},
-    {text:'青空と魔法'},
-    {text:'新しい旅へ'},
-    {text:'静かな午後'},
-    {text:'光がきれい'},
-    {text:'小さな休憩'},
-    {text:'花びらの道'},
-    {text:'夢を見る時間'},
-    {text:'また会おうね'}
-  ];
-  const browserRobloxCaptionIndex=8;
-  const browserCaptionFonts=[
-    'Raleway, "Segoe UI", Arial, sans-serif'
-  ];
-  const freshBrowserCaptionFonts=[
-    'Raleway, "Segoe UI", Arial, sans-serif'
-  ];
-  const browserCaptionAnimations=[
-    {name:'burn-away',duration:1850,inDelay:520,easing:'cubic-bezier(.18,.74,.22,1)',out:[{opacity:1,transform:'translateY(0) scale(1)',filter:'blur(0) brightness(1)',textShadow:'0 8px 26px rgba(0,0,0,.54)',clipPath:'inset(0 0 0 0)'},{opacity:.9,transform:'translateY(-4px) scale(1.07)',filter:'blur(1px) brightness(2.25)',textShadow:'0 0 12px rgba(255,180,60,.95),0 0 30px rgba(255,74,28,.7)',clipPath:'inset(0 0 8% 0)'},{opacity:.38,transform:'translateY(-22px) scale(1.02) rotate(-2deg)',filter:'blur(7px) brightness(2.8)',textShadow:'0 0 24px rgba(255,95,30,.9)',clipPath:'inset(0 0 62% 0)'},{opacity:0,transform:'translateY(-58px) scale(.82) rotate(5deg)',filter:'blur(18px) brightness(3)',textShadow:'0 0 36px rgba(255,86,20,.0)',clipPath:'inset(0 0 100% 0)'}],in:[{opacity:0,transform:'translateY(38px) scale(.9)',filter:'blur(12px)'},{opacity:1,transform:'translateY(0) scale(1)',filter:'blur(0)'}]},
-    {name:'scratched-away',duration:1750,inDelay:430,easing:'cubic-bezier(.16,.82,.22,1)',out:[{opacity:1,transform:'translateX(0) skewX(0)',filter:'blur(0) contrast(1)',clipPath:'polygon(0 0,100% 0,100% 100%,0 100%)'},{opacity:.82,transform:'translateX(-10px) skewX(14deg)',filter:'blur(1px) contrast(1.6)',clipPath:'polygon(0 3%,100% 0,83% 13%,100% 22%,77% 34%,100% 45%,71% 57%,100% 69%,82% 83%,100% 100%,0 96%)'},{opacity:.42,transform:'translateX(38px) skewX(-22deg)',filter:'blur(3px) contrast(2)',clipPath:'polygon(0 14%,72% 0,46% 14%,92% 22%,39% 34%,86% 47%,32% 60%,76% 72%,27% 88%,68% 100%,0 82%)'},{opacity:0,transform:'translateX(126px) skewX(-34deg)',filter:'blur(12px) contrast(2.2)',clipPath:'polygon(0 24%,52% 0,29% 17%,74% 29%,21% 43%,66% 57%,12% 74%,58% 100%,0 76%)'}],in:[{opacity:0,transform:'translateX(-72px) skewX(16deg)',filter:'blur(10px)'},{opacity:1,transform:'translateX(0) skewX(0)',filter:'blur(0)'}]},
-    {name:'ripped-paper',duration:1850,inDelay:520,easing:'cubic-bezier(.17,.84,.26,1)',out:[{opacity:1,transform:'scale(1) rotate(0)',clipPath:'polygon(0 0,100% 0,100% 100%,0 100%)',filter:'blur(0)'},{opacity:.86,transform:'translate(-8px,2px) scale(1.06) rotate(-4deg)',clipPath:'polygon(0 0,51% 0,42% 13%,55% 24%,43% 36%,56% 49%,42% 63%,55% 78%,44% 100%,0 100%)',filter:'blur(1px)'},{opacity:.52,transform:'translate(-42px,18px) scale(.98) rotate(-12deg)',clipPath:'polygon(0 0,36% 0,25% 14%,41% 27%,25% 42%,43% 55%,24% 72%,38% 100%,0 100%)',filter:'blur(3px)'},{opacity:0,transform:'translate(-118px,54px) scale(.74) rotate(-24deg)',clipPath:'polygon(0 0,18% 0,9% 19%,23% 36%,8% 57%,24% 75%,12% 100%,0 100%)',filter:'blur(11px)'}],in:[{opacity:0,transform:'translate(84px,-30px) scale(.78) rotate(16deg)',filter:'blur(11px)'},{opacity:1,transform:'translate(0,0) scale(1) rotate(0)',filter:'blur(0)'}]},
-    {name:'thrown-right',duration:1400,easing:'cubic-bezier(.2,.8,.14,1)',out:[{opacity:1,transform:'translateX(0) rotate(0) scale(1)',filter:'blur(0)'},{opacity:.72,transform:'translateX(34px) rotate(7deg) scale(.98)',filter:'blur(1px)'},{opacity:0,transform:'translateX(190px) rotate(24deg) scale(.82)',filter:'blur(9px)'}],in:[{opacity:0,transform:'translateX(-92px) rotate(-12deg) scale(.86)',filter:'blur(10px)'},{opacity:1,transform:'translateX(5px) rotate(1deg) scale(1.02)',filter:'blur(0)'},{opacity:1,transform:'translateX(0) rotate(0) scale(1)',filter:'blur(0)'}]},
-    {name:'thrown-left',duration:1400,easing:'cubic-bezier(.2,.8,.14,1)',out:[{opacity:1,transform:'translateX(0) rotate(0) scale(1)',filter:'blur(0)'},{opacity:.72,transform:'translateX(-34px) rotate(-7deg) scale(.98)',filter:'blur(1px)'},{opacity:0,transform:'translateX(-190px) rotate(-24deg) scale(.82)',filter:'blur(9px)'}],in:[{opacity:0,transform:'translateX(92px) rotate(12deg) scale(.86)',filter:'blur(10px)'},{opacity:1,transform:'translateX(-5px) rotate(-1deg) scale(1.02)',filter:'blur(0)'},{opacity:1,transform:'translateX(0) rotate(0) scale(1)',filter:'blur(0)'}]},
-    {name:'cube-turn',duration:1650,inDelay:260,easing:'cubic-bezier(.18,.82,.2,1)',out:[{opacity:1,transform:'perspective(760px) rotateY(0) translateZ(0)',filter:'blur(0)'},{opacity:0,transform:'perspective(760px) rotateY(-98deg) translateZ(-58px)',filter:'blur(8px)'}],in:[{opacity:0,transform:'perspective(760px) rotateY(98deg) translateZ(-58px)',filter:'blur(8px)'},{opacity:1,transform:'perspective(760px) rotateY(-7deg) translateZ(0)',filter:'blur(0)'},{opacity:1,transform:'perspective(760px) rotateY(0) translateZ(0)',filter:'blur(0)'}]},
-    {name:'flip-over',duration:1700,inDelay:350,easing:'cubic-bezier(.18,.82,.2,1)',out:[{opacity:1,transform:'perspective(760px) rotateX(0) translateY(0)',filter:'blur(0)'},{opacity:.48,transform:'perspective(760px) rotateX(-96deg) translateY(34px) scale(.92)',filter:'blur(6px)'},{opacity:0,transform:'perspective(760px) rotateX(-130deg) translateY(72px) scale(.68)',filter:'blur(13px)'}],in:[{opacity:0,transform:'perspective(760px) rotateX(92deg) translateY(-54px) scale(.8)',filter:'blur(10px)'},{opacity:1,transform:'perspective(760px) rotateX(-8deg) translateY(3px) scale(1.02)',filter:'blur(0)'},{opacity:1,transform:'perspective(760px) rotateX(0) translateY(0) scale(1)',filter:'blur(0)'}]},
-    {name:'gallery-swap',duration:1800,inDelay:420,easing:'cubic-bezier(.18,.82,.2,1)',out:[{opacity:1,transform:'translateX(0) scale(1) rotate(0)',filter:'blur(0)'},{opacity:.64,transform:'translateX(-96px) scale(.68) rotate(-10deg)',filter:'blur(5px)'},{opacity:0,transform:'translateX(-178px) scale(.42) rotate(-18deg)',filter:'blur(14px)'}],in:[{opacity:0,transform:'translateX(178px) scale(.42) rotate(18deg)',filter:'blur(14px)'},{opacity:.72,transform:'translateX(24px) scale(1.08) rotate(-3deg)',filter:'blur(2px)'},{opacity:1,transform:'translateX(0) scale(1) rotate(0)',filter:'blur(0)'}]},
-    {name:'shatter-soft',duration:1850,inDelay:520,easing:'cubic-bezier(.16,.84,.2,1)',out:[{opacity:1,transform:'scale(1)',filter:'blur(0) contrast(1)',clipPath:'polygon(0 0,100% 0,100% 100%,0 100%)'},{opacity:.72,transform:'scale(1.16) rotate(3deg)',filter:'blur(1px) contrast(1.9)',clipPath:'polygon(0 0,31% 8%,48% 0,100% 12%,88% 38%,100% 100%,58% 86%,33% 100%,0 84%)'},{opacity:.32,transform:'translate(18px,-18px) scale(.94) rotate(11deg)',filter:'blur(6px) contrast(2.4)',clipPath:'polygon(9% 14%,28% 0,43% 24%,69% 5%,100% 24%,84% 56%,100% 91%,61% 78%,38% 100%,20% 70%,0 88%,14% 45%)'},{opacity:0,transform:'translate(58px,-48px) scale(.46) rotate(24deg)',filter:'blur(18px) contrast(2.8)',clipPath:'polygon(14% 24%,29% 3%,41% 31%,63% 9%,94% 28%,74% 51%,96% 83%,57% 67%,39% 98%,24% 62%,2% 80%,18% 42%)'}],in:[{opacity:0,transform:'scale(1.32) rotate(-7deg)',filter:'blur(18px)'},{opacity:1,transform:'scale(.96) rotate(1deg)',filter:'blur(0)'},{opacity:1,transform:'scale(1) rotate(0)',filter:'blur(0)'}]},
-    {name:'door-swing',duration:1800,inDelay:430,easing:'cubic-bezier(.17,.86,.28,1)',out:[{opacity:1,transform:'perspective(760px) rotateY(0) scale(1)',transformOrigin:'left center',filter:'blur(0)'},{opacity:.55,transform:'perspective(760px) rotateY(-82deg) translateX(-12px) scale(.9)',transformOrigin:'left center',filter:'blur(6px)'},{opacity:0,transform:'perspective(760px) rotateY(-118deg) translateX(-42px) scale(.72)',transformOrigin:'left center',filter:'blur(14px)'}],in:[{opacity:0,transform:'perspective(760px) rotateY(86deg) translateX(40px) scale(.78)',transformOrigin:'right center',filter:'blur(13px)'},{opacity:1,transform:'perspective(760px) rotateY(-7deg) translateX(-3px) scale(1.03)',transformOrigin:'right center',filter:'blur(0)'},{opacity:1,transform:'perspective(760px) rotateY(0) translateX(0) scale(1)',transformOrigin:'right center',filter:'blur(0)'}]},
-    {name:'smooth-rise',duration:1500,inDelay:300,easing:'cubic-bezier(.18,.82,.2,1)',out:[{opacity:1,transform:'translateY(0) scale(1)',filter:'blur(0)'},{opacity:.52,transform:'translateY(-36px) scale(.9)',filter:'blur(5px)'},{opacity:0,transform:'translateY(-74px) scale(.74)',filter:'blur(14px)'}],in:[{opacity:0,transform:'translateY(64px) scale(.82)',filter:'blur(14px)'},{opacity:1,transform:'translateY(-4px) scale(1.03)',filter:'blur(0)'},{opacity:1,transform:'translateY(0) scale(1)',filter:'blur(0)'}]}
-  ];
-  function nextBrowserCaptionAnimation(){
-    if(browserCaptionAnimations.length<2) return browserCaptionAnimations[0];
-    if(!nextBrowserCaptionAnimation.deck?.length){
-      const deck=browserCaptionAnimations.slice();
-      for(let i=deck.length-1;i>0;i--){
-        const j=Math.floor(Math.random()*(i+1));
-        [deck[i],deck[j]]=[deck[j],deck[i]];
-      }
-      if(deck[0]===nextBrowserCaptionAnimation.last && deck.length>1){
-        [deck[0],deck[1]]=[deck[1],deck[0]];
-      }
-      nextBrowserCaptionAnimation.deck=deck;
-    }
-    const next=nextBrowserCaptionAnimation.deck.shift();
-    nextBrowserCaptionAnimation.last=next;
-    return next;
-  }
-  function freshThemeActive(){
-    return document.body.classList.contains('theme-fresh');
-  }
-  function activeBrowserCaptionItems(){
-    return freshThemeActive() ? freshBrowserCaptionItems : browserCaptionItems;
-  }
-  function activeBrowserCaptionFonts(){
-    return freshThemeActive() ? freshBrowserCaptionFonts : browserCaptionFonts;
-  }
-  function captionLetters(text){
-    const fonts=activeBrowserCaptionFonts();
-    const offset=Math.floor(Math.random()*fonts.length);
-    return Array.from(String(text)).map((ch,i)=>{
-      if(ch===' ') return '<span class="browser-caption-letter browser-caption-space">&nbsp;</span>';
-      const font=fonts[(i+offset)%fonts.length];
-      return `<span class="browser-caption-letter" style='font-family:${font}'>${esc(ch)}</span>`;
-    }).join('');
-  }
-  function randomBrowserCaptionIndex(){
-    const items=activeBrowserCaptionItems();
-    const deckKey=freshThemeActive() ? 'fresh' : 'default';
-    if(randomBrowserCaptionIndex.deckKey!==deckKey){
-      randomBrowserCaptionIndex.deck=[];
-      randomBrowserCaptionIndex.deckKey=deckKey;
-      randomBrowserCaptionIndex.last=null;
-    }
-    if(freshThemeActive()){
-      if(!randomBrowserCaptionIndex.deck?.length){
-        const deck=items.map((_,i)=>i);
-        for(let i=deck.length-1;i>0;i--){
-          const j=Math.floor(Math.random()*(i+1));
-          [deck[i],deck[j]]=[deck[j],deck[i]];
-        }
-        if(deck[0]===randomBrowserCaptionIndex.last && deck.length>1){
-          [deck[0],deck[1]]=[deck[1],deck[0]];
-        }
-        randomBrowserCaptionIndex.deck=deck;
-      }
-      const index=randomBrowserCaptionIndex.deck.shift() ?? 0;
-      randomBrowserCaptionIndex.last=index;
-      return index;
-    }
-    if(Math.random()<.01) return browserRobloxCaptionIndex;
-    if(!randomBrowserCaptionIndex.deck?.length){
-      const deck=items.map((_,i)=>i).filter(i=>i!==browserRobloxCaptionIndex);
-      for(let i=deck.length-1;i>0;i--){
-        const j=Math.floor(Math.random()*(i+1));
-        [deck[i],deck[j]]=[deck[j],deck[i]];
-      }
-      if(deck[0]===randomBrowserCaptionIndex.last && deck.length>1){
-        [deck[0],deck[1]]=[deck[1],deck[0]];
-      }
-      randomBrowserCaptionIndex.deck=deck;
-    }
-    const index=randomBrowserCaptionIndex.deck.shift() ?? 0;
-    randomBrowserCaptionIndex.last=index;
-    return index;
-  }
-  function browserCaptionHtml(item){
-    if(item.image) return `<img alt="${esc(item.alt||'caption')}" src="${esc(item.image)}">`;
-    return captionLetters(item.text);
-  }
-  function showBrowserCaption(index){
-    const items=activeBrowserCaptionItems();
-    const item=items[index%items.length];
-    const animation=nextBrowserCaptionAnimation();
-    qsa('[data-browser-caption]').forEach(el=>{
-      el.dataset.captionAnimation=animation.name;
-      const oldLive=el.querySelector('.browser-caption-live');
-      if(oldLive){
-        const ghost=document.createElement('div');
-        ghost.className='browser-caption-ghost';
-        ghost.innerHTML=oldLive.innerHTML;
-        el.appendChild(ghost);
-        const outAnim=ghost.animate(animation.out,{duration:animation.duration,easing:animation.easing,fill:'both'});
-        outAnim.finished.finally(()=>ghost.remove()).catch(()=>ghost.remove());
-      }
-      const live=document.createElement('div');
-      live.className='browser-caption-live';
-      live.innerHTML=browserCaptionHtml(item);
-      if(oldLive) oldLive.replaceWith(live);
-      else el.appendChild(live);
-      live.animate(animation.in,{duration:animation.duration,easing:animation.easing,delay:oldLive?(animation.inDelay||260):0,fill:'both'});
-    });
-  }
-  function initBrowserCaption(){
-    if(!initBrowserCaption.index && initBrowserCaption.index!==0) initBrowserCaption.index=randomBrowserCaptionIndex();
-    showBrowserCaption(initBrowserCaption.index);
-    if(initBrowserCaption.timer) return;
-    initBrowserCaption.timer=setInterval(()=>{
-      initBrowserCaption.index=randomBrowserCaptionIndex();
-      showBrowserCaption(initBrowserCaption.index);
-    },6800);
-  }
   function initDesktopSplash(){
-    const splash=$('desktopSplash');
-    const fonts=[
-      'Impact, "Arial Black", sans-serif',
-      '"Comic Sans MS", "Comic Sans", cursive',
-      'Georgia, "Times New Roman", serif',
-      '"Trebuchet MS", Verdana, sans-serif',
-      '"Courier New", monospace',
-      'Arial, Helvetica, sans-serif'
-    ];
-    if(!initDesktopSplash.phrase){
-      const rarePhrases=['also check out TungTung!','add vdrtes on dc for robuc!','Chatgpt is aura'];
-      initDesktopSplash.phrase=Math.random()<.5 ? 'Squidzula is a furry' : rarePhrases[Math.floor(Math.random()*rarePhrases.length)];
-    }
-    const phrase=initDesktopSplash.phrase;
-    const font=fonts[Math.floor(Math.random()*fonts.length)];
-    if(splash){
-      splash.textContent=phrase;
-      splash.style.fontFamily=font;
-    }
-    initBrowserCaption();
     updateDockFullscreenState();
   }
   function finishNyxOpenStartup(){

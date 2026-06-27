@@ -16512,6 +16512,8 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
   function ambientShouldSuspend(){
     return formulaGateActive() || cloakLaunchActive();
   }
+  const ambientPlaySymbol = () => String.fromCharCode(9654);
+  const ambientPauseSymbol = () => String.fromCharCode(10074,10074);
   function syncAmbientCoverState(){
     const box=$('ambientPlayer');
     const audio=$('ambientAudio');
@@ -16522,7 +16524,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
       ambientPlaying=false;
       const btn=$('ambientToggle');
       if(btn){
-        btn.textContent='▶';
+        btn.textContent=ambientPlaySymbol();
         btn.classList.remove('is-playing');
       }
     }
@@ -16770,7 +16772,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     ambientPlaying=next;
     const btn=$('ambientToggle');
     if(btn){
-      btn.textContent=next ? '⏸' : '▶';
+      btn.textContent=next ? ambientPauseSymbol() : ambientPlaySymbol();
       btn.classList.toggle('is-playing',next);
     }
     if(next){
@@ -16784,7 +16786,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
       }catch(err){
         ambientPlaying=false;
         if(btn){
-          btn.textContent='▶';
+          btn.textContent=ambientPlaySymbol();
           btn.classList.remove('is-playing');
         }
         setAmbientStatus('Click Play to start');
@@ -16875,7 +16877,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
       try{audio.pause()}catch{}
       const btn=$('ambientToggle');
       if(btn){
-        btn.textContent='â–¶';
+        btn.textContent=ambientPlaySymbol();
         btn.classList.remove('is-playing');
       }
     }
@@ -17026,14 +17028,14 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     audio.addEventListener('playing',()=>{
       ambientPlaying=true;
       const btn=$('ambientToggle');
-      if(btn) btn.textContent='⏸';
+      if(btn) btn.textContent=ambientPauseSymbol();
       setAmbientStatus('Now playing');
     });
     audio.addEventListener('pause',()=>{
       if(!ambientPlaying) return;
       ambientPlaying=false;
       const btn=$('ambientToggle');
-      if(btn) btn.textContent='▶';
+      if(btn) btn.textContent=ambientPlaySymbol();
       setAmbientStatus('Paused');
     });
     audio.addEventListener('error',()=>setAmbientStatus('Could not load this audio file'));

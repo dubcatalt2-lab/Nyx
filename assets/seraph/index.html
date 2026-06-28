@@ -18,7 +18,7 @@
       min-height:100vh;
       background:var(--bg);
       color:var(--text);
-      font-family:Raleway,Arial,sans-serif;
+      font-family:Outfit,Arial,sans-serif;
     }
     header{
       position:sticky;
@@ -123,7 +123,7 @@
   <header>
     <div>
       <h1>Seraph Games</h1>
-      <div class="source">Game list from a456pur/seraph.</div>
+      <div class="source">Stable local game library.</div>
     </div>
     <input id="search" class="search" placeholder="Search Seraph games" autocomplete="off">
   </header>
@@ -132,7 +132,6 @@
     <div id="empty" class="empty">No games found.</div>
   </main>
   <script>
-    const seraphCdn='https://cdn.jsdelivr.net/gh/a456pur/seraph@main';
     const grid=document.getElementById('grid');
     const empty=document.getElementById('empty');
     const search=document.getElementById('search');
@@ -143,19 +142,24 @@
       return clean.replace(/[-_]+/g,' ').replace(/\b\w/g,letter=>letter.toUpperCase());
     }
 
-    function assetUrl(path){
-      if(!path) return '';
-      const clean=String(path).replace(/^\/+/,'');
-      return `/seraph-asset?path=${encodeURIComponent(clean)}`;
+    function slugTitle(title){
+      return String(title || '').toLowerCase().replace(/[^a-z0-9]+/g,'').trim();
+    }
+
+    function assetUrl(game){
+      const path=String(game?.path || '').replace(/^\/+/,'');
+      const folder=path.split('/')[0]?.toLowerCase() || 'fallback';
+      const file=path.split('/').pop()?.replace(/\.html?$/i,'') || slugTitle(game?.title);
+      return `/assets/ugs/thumbs/${folder}-${file.toLowerCase()}.png`;
     }
 
     function gameUrl(path){
-      const query=`game=${encodeURIComponent(String(path || '').replace(/^\/+/,''))}`;
-      return new URL(`/assets/seraph/play.html?${query}`,location.origin).href;
+      const clean=String(path || '').replace(/^\/+/,'');
+      return new URL(`/assets/ugs/${clean}`,location.origin).href;
     }
 
     function isPlayablePath(path){
-      return !!path && !/(^|\/)(?:404|408)\.html$/i.test(String(path));
+      return !!path && /\.html?$/i.test(String(path)) && !/(^|\/)(?:404|408)\.html$/i.test(String(path));
     }
 
     function openGame(url){
@@ -184,18 +188,14 @@
     },true);
     search.addEventListener('input',render);
 
-    fetch('/assets/seraph/games.json')
+    fetch('/assets/ugs/games.json')
       .then(response=>response.json())
       .then(data=>{
-        const entries=Array.isArray(data.games) ? data.games : Object.entries(data).map(([path,info])=>({
-          title:titleFromPath(path),
-          path,
-          thumbnail:info && info.thumbnail
-        }));
+        const entries=Array.isArray(data) ? data : (Array.isArray(data.games) ? data.games : []);
         games=entries.filter(game=>isPlayablePath(game.path)).map(game=>({
           title:game.title || titleFromPath(game.path),
           url:gameUrl(game.path),
-          thumbnail:assetUrl(game.thumbnail)
+          thumbnail:assetUrl(game)
         })).sort((a,b)=>a.title.localeCompare(b.title));
         render();
       })

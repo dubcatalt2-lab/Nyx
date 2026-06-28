@@ -10,7 +10,7 @@
       margin:0;
       background:#0b0f17;
       color:#f8fafc;
-      font-family:Raleway,Arial,sans-serif;
+      font-family:Outfit,Arial,sans-serif;
     }
     .loading{
       position:fixed;
@@ -70,7 +70,11 @@
       retry.type='button';
       retry.textContent='Retry';
       retry.addEventListener('click',()=>location.reload());
-      status.append(document.createElement('br'),retry);
+      const library=document.createElement('button');
+      library.type='button';
+      library.textContent='Open game library';
+      library.addEventListener('click',()=>location.href='/assets/games/index.html');
+      status.append(document.createElement('br'),retry,document.createTextNode(' '),library);
       loading.classList.remove('hidden');
     }
     function safeGamePath(path){
@@ -106,6 +110,20 @@
         (() => {
           const critical=/WebGL\\.json|\\.data(?:\\.unityweb)?$|\\.wasm(?:\\.unityweb)?$|\\.framework\\.js(?:\\.unityweb)?$/i;
           const report=(message,url='')=>parent.postMessage({type:'seraph:load-error',message,url},'*');
+          const ready=()=>parent.postMessage({type:'seraph:ready'},'*');
+          let readySent=false;
+          const notifyReady=()=>{
+            if(readySent) return;
+            const canvas=document.querySelector('canvas');
+            const embed=document.querySelector('iframe,embed,object');
+            if(!canvas && !embed && document.readyState!=='complete') return;
+            readySent=true;
+            setTimeout(ready,450);
+          };
+          window.addEventListener('load',notifyReady);
+          document.addEventListener('DOMContentLoaded',notifyReady);
+          setTimeout(notifyReady,2600);
+          setTimeout(notifyReady,6200);
           window.addEventListener('error',event=>{
             const target=event.target;
             const url=target && (target.src || target.href);
@@ -130,7 +148,8 @@
       lastGameHtml=html;
       lastBaseUrl=baseUrl;
       frame.srcdoc=withSeraphBase(rewriteSeraphHtml(html,gamePath),baseUrl);
-      loading.classList.add('hidden');
+      status.textContent='Starting Seraph game...';
+      loading.classList.remove('hidden');
     }
     frame.addEventListener('load',()=>{
       if(restoring || !lastGameHtml) return;
@@ -146,7 +165,12 @@
       }catch{}
     });
     window.addEventListener('message',event=>{
-      if(event.source!==frame.contentWindow || event.data?.type!=='seraph:load-error') return;
+      if(event.source!==frame.contentWindow) return;
+      if(event.data?.type==='seraph:ready'){
+        loading.classList.add('hidden');
+        return;
+      }
+      if(event.data?.type!=='seraph:load-error') return;
       const url=event.data.url ? ` (${event.data.url})` : '';
       fail(`${event.data.message || 'This game failed to load.'}${url}`);
     });

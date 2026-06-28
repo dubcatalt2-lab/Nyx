@@ -1659,6 +1659,24 @@ body.browser-shell .browser-home.hidden{display:none!important}
   font-variant-numeric:tabular-nums;
   text-shadow:0 18px 60px rgba(0,0,0,.45);
 }
+.browser-top-clock{
+  position:absolute;
+  right:12px;
+  top:5px;
+  z-index:12;
+  height:23px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  color:#f8fafc;
+  font-size:13px;
+  font-weight:800;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:0;
+  text-shadow:0 0 12px rgba(0,0,0,.7);
+  pointer-events:none;
+}
 .nyx-jumpscare{
   position:fixed;
   inset:0;
@@ -8619,6 +8637,10 @@ body.browser-shell .browser-home.hidden{
 body.browser-shell .browser-home .browser-shell-start{
   display:grid!important;
 }
+body.browser-shell #centerClock,
+body.browser-shell .browser-window.browser-home-page .browser-shell-clock{
+  display:none!important;
+}
 body.browser-shell .browser-home .browser-blank-center{
   display:none!important;
 }
@@ -8639,8 +8661,8 @@ body.browser-shell .browser-blank-center{
   transform:translateY(-2vh);
 }
 body.browser-shell .browser-blank-logo{
-  width:86px!important;
-  height:86px!important;
+  width:132px!important;
+  height:132px!important;
   object-fit:contain!important;
   filter:drop-shadow(0 0 18px color-mix(in srgb,var(--theme-border,#8b5cf6) 48%,transparent))!important;
 }
@@ -9551,7 +9573,7 @@ body *::after{
   function renderChromeFixed(){
     const top=document.querySelector('.top-os');
     if(top){
-      top.innerHTML='<div class="brand-mini"><button class="browser-mode-app-button active" data-browser-shell-home title="Current tab">Home</button><button class="browser-mode-tab" data-browser-shell-new-tab title="New tab"><span>New tab</span></button></div><form class="browser-mode-address" data-browser-shell-search><button data-browser-shell-back type="button" title="Back"><span class="fresh-real-icon fresh-real-back" aria-hidden="true"></span></button><button data-browser-shell-forward type="button" title="Forward"><span class="fresh-real-icon" aria-hidden="true">➜</span></button><button data-browser-shell-reload type="button" title="Reload"><span class="fresh-real-icon" aria-hidden="true">⟳</span></button><input class="browser-mode-url" data-browser-shell-url placeholder="Search or enter a URL" autocomplete="off"><button class="browser-mode-bookmark" data-browser-shell-bookmark type="button" title="Bookmark this tab" aria-pressed="false"><span class="fresh-real-icon" aria-hidden="true">☆</span></button><button class="browser-mode-weather" data-open="weather" type="button" title="Weather" aria-label="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button><button data-browser-shell-menu type="button" title="Menu"><span class="fresh-real-icon" aria-hidden="true">⋮</span></button></form><div class="browser-bookmark-panel" id="browserBookmarkPanel" hidden></div><div class="browser-mode-menu" id="browserModeMenu"><button data-browser-shell-new-tab type="button">New tab</button><button data-browser-bookmarks-toggle type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-browser-hieroglyph-toggle type="button">Hieroglyph Mode</button><button data-app-url="/assets/games/index.html" type="button">Games</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-shell-about-tab type="button">Open Tab in Abt:Blank</button></div>';
+      top.innerHTML='<div class="brand-mini"><button class="browser-mode-app-button active" data-browser-shell-home title="Current tab">Home</button><button class="browser-mode-tab" data-browser-shell-new-tab title="New tab"><span>New tab</span></button></div><span class="browser-top-clock" data-browser-shell-clock>--:--:--</span><form class="browser-mode-address" data-browser-shell-search><button data-browser-shell-back type="button" title="Back"><span class="fresh-real-icon fresh-real-back" aria-hidden="true"></span></button><button data-browser-shell-forward type="button" title="Forward"><span class="fresh-real-icon" aria-hidden="true">➜</span></button><button data-browser-shell-reload type="button" title="Reload"><span class="fresh-real-icon" aria-hidden="true">⟳</span></button><input class="browser-mode-url" data-browser-shell-url placeholder="Search or enter a URL" autocomplete="off"><button class="browser-mode-bookmark" data-browser-shell-bookmark type="button" title="Bookmark this tab" aria-pressed="false"><span class="fresh-real-icon" aria-hidden="true">☆</span></button><button class="browser-mode-weather" data-open="weather" type="button" title="Weather" aria-label="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button><button data-browser-shell-menu type="button" title="Menu"><span class="fresh-real-icon" aria-hidden="true">⋮</span></button></form><div class="browser-bookmark-panel" id="browserBookmarkPanel" hidden></div><div class="browser-mode-menu" id="browserModeMenu"><button data-browser-shell-new-tab type="button">New tab</button><button data-browser-bookmarks-toggle type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-browser-hieroglyph-toggle type="button">Hieroglyph Mode</button><button data-app-url="/assets/games/index.html" type="button">Games</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-shell-about-tab type="button">Open Tab in Abt:Blank</button></div>';
       top.querySelector('.brand-mini [data-browser-shell-new-tab]')?.addEventListener('click',event=>{
         event.nyxShellNewHandled=true;
         event.preventDefault();
@@ -11642,6 +11664,7 @@ body *::after{
       finishNyxOpenStartup();
       initAmbientMusic();
       applyVisualEffectSetting();
+      openWeatherOnStartup().catch(()=>loadWeatherLocation(savedWeatherLocation()));
     },120);
   }
   const launchPdfOptions={
@@ -14429,6 +14452,34 @@ body *::after{
   function weatherPlaceName(match){
     return [match.name,match.admin1,match.country].filter(Boolean).join(', ');
   }
+  function weatherTimezoneFallbackName(timezone=''){
+    const raw=String(timezone || '').split('/').pop() || 'Current location';
+    return raw.replace(/_/g,' ') + (/America\//.test(String(timezone || '')) ? ', United States' : '');
+  }
+  async function reverseWeatherPlace(latitude,longitude,timezone=''){
+    const cleanCountry=name=>String(name || '').replace(/\s*\(the\)\s*/i,'').replace(/United States of America/i,'United States').trim();
+    try{
+      const res=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${encodeURIComponent(latitude)}&longitude=${encodeURIComponent(longitude)}&localityLanguage=en`,{cache:'no-store'});
+      if(res.ok){
+        const data=await res.json();
+        const city=data.city || data.locality || '';
+        const region=data.principalSubdivision || '';
+        const country=cleanCountry(data.countryName || '');
+        const place=[city,region,country].filter(Boolean).join(', ');
+        if(place) return place;
+      }
+    }catch{}
+    try{
+      const res=await fetch(`https://geocoding-api.open-meteo.com/v1/reverse?latitude=${encodeURIComponent(latitude)}&longitude=${encodeURIComponent(longitude)}&language=en&format=json&count=1`,{cache:'no-store'});
+      if(res.ok){
+        const data=await res.json();
+        const match=Array.isArray(data.results) ? data.results[0] : null;
+        const place=match ? weatherPlaceName(match) : '';
+        if(place) return place;
+      }
+    }catch{}
+    return weatherTimezoneFallbackName(timezone);
+  }
   function scoreWeatherMatch(term,match){
     const query=String(term || '').toLowerCase();
     const name=String(match.name || '').toLowerCase();
@@ -14546,6 +14597,37 @@ body *::after{
     setTimeout(()=>panel.classList.remove('opening'),260);
     restore?.classList.remove('show');
     panel.querySelector('[data-weather-query]')?.focus();
+  }
+  function loadUserWeatherLocation(){
+    if(!navigator.geolocation) return Promise.resolve(false);
+    return new Promise(resolve=>{
+      navigator.geolocation.getCurrentPosition(async position=>{
+        const coords=position.coords || {};
+        if(!Number.isFinite(coords.latitude) || !Number.isFinite(coords.longitude)){
+          resolve(false);
+          return;
+        }
+        const timezone=Intl.DateTimeFormat().resolvedOptions().timeZone || savedWeatherLocation().timezone;
+        const place=await reverseWeatherPlace(coords.latitude,coords.longitude,timezone);
+        store.setText('nyx.weatherLat',coords.latitude);
+        store.setText('nyx.weatherLon',coords.longitude);
+        store.setText('nyx.weatherPlace',place);
+        store.setText('nyx.weatherTimezone',timezone);
+        const input=weatherPanel()?.querySelector('[data-weather-query]');
+        if(input) input.value=place;
+        await loadWeatherLocation({latitude:coords.latitude,longitude:coords.longitude,place,timezone});
+        resolve(true);
+      },()=>{
+        resolve(false);
+      },{enableHighAccuracy:false,maximumAge:600000,timeout:4500});
+    });
+  }
+  async function openWeatherOnStartup(){
+    initWeatherPanel();
+    restoreWeatherPanel();
+    const usedLocation=await loadUserWeatherLocation();
+    if(!usedLocation) loadWeatherLocation(savedWeatherLocation());
+    restoreWeatherPanel();
   }
   function initWeatherPanel(){
     const panel=weatherPanel();

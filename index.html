@@ -147,6 +147,15 @@ body.custom-bg-active::before{background:var(--theme-bg),linear-gradient(rgba(0,
   opacity:0;
   transition:opacity .35s ease;
 }
+#emeraldVantaBg{
+  position:fixed;
+  inset:0;
+  z-index:0;
+  background:#123025;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .35s ease;
+}
 body.theme-ruby #defaultVantaBg,
 body.theme-emerald #defaultVantaBg,
 body.theme-sakura #defaultVantaBg,
@@ -160,6 +169,9 @@ body.custom-bg-active #rubyVantaBg{opacity:0}
 body.theme-fresh:not(.custom-bg-active) #whiteVantaBg{opacity:1}
 body:not(.theme-fresh) #whiteVantaBg,
 body.custom-bg-active #whiteVantaBg{opacity:0}
+body.theme-emerald:not(.custom-bg-active) #emeraldVantaBg{opacity:1}
+body:not(.theme-emerald) #emeraldVantaBg,
+body.custom-bg-active #emeraldVantaBg{opacity:0}
 body:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):not(.theme-fresh):not(.custom-bg-active)::before{
   background:linear-gradient(rgba(0,0,0,.12),rgba(0,0,0,.22));
 }
@@ -8949,12 +8961,26 @@ html body.browser-shell.theme-ruby:not(.custom-bg-active)::before{
   background:linear-gradient(rgba(0,0,0,.10),rgba(0,0,0,.28))!important;
   background-image:linear-gradient(rgba(0,0,0,.10),rgba(0,0,0,.28))!important;
 }
+html body.theme-emerald:not(.custom-bg-active)::before,
+html body.browser-shell.theme-emerald:not(.custom-bg-active)::before{
+  background:linear-gradient(rgba(0,24,12,.08),rgba(0,24,12,.20))!important;
+  background-image:linear-gradient(rgba(0,24,12,.08),rgba(0,24,12,.20))!important;
+}
 body.browser-shell.theme-ruby:not(.custom-bg-active) :is(.browser-home,.browser-window.maximized.browser-blank,.browser-window.maximized:has(.browser-home:not(.hidden))){
   background:transparent!important;
   background-image:none!important;
 }
 body.browser-shell.theme-ruby:not(.custom-bg-active) :is(.browser-window.maximized.browser-blank,.browser-window.maximized:has(.browser-home:not(.hidden)))::before,
 body.browser-shell.theme-ruby:not(.custom-bg-active) :is(.browser-window.maximized.browser-blank,.browser-window.maximized:has(.browser-home:not(.hidden)))::after{
+  background:transparent!important;
+  background-image:none!important;
+}
+body.browser-shell.theme-emerald:not(.custom-bg-active) :is(.browser-home,.browser-window.maximized.browser-blank,.browser-window.maximized:has(.browser-home:not(.hidden))){
+  background:transparent!important;
+  background-image:none!important;
+}
+body.browser-shell.theme-emerald:not(.custom-bg-active) :is(.browser-window.maximized.browser-blank,.browser-window.maximized:has(.browser-home:not(.hidden)))::before,
+body.browser-shell.theme-emerald:not(.custom-bg-active) :is(.browser-window.maximized.browser-blank,.browser-window.maximized:has(.browser-home:not(.hidden)))::after{
   background:transparent!important;
   background-image:none!important;
 }
@@ -8982,6 +9008,7 @@ body.browser-shell.theme-fresh:not(.custom-bg-active) :is(.browser-window.maximi
 <div id="defaultVantaBg" aria-hidden="true"></div>
 <div id="rubyVantaBg" aria-hidden="true"></div>
 <div id="whiteVantaBg" aria-hidden="true"></div>
+<div id="emeraldVantaBg" aria-hidden="true"></div>
 <!-- //formula-gate -->
 <div id="formulaGate" class="formula-gate" role="button" tabindex="0" aria-label="Open ռʏӼ">
   <section class="formula-sheet">
@@ -9217,6 +9244,7 @@ body.browser-shell.theme-fresh:not(.custom-bg-active) :is(.browser-window.maximi
 <script src="./assets/vendor/vanta.net.min.js"></script>
 <script src="./assets/vendor/vanta.globe.min.js"></script>
 <script src="./assets/vendor/vanta.birds.min.js"></script>
+<script src="./assets/vendor/vanta.dots.min.js"></script>
 <script>
 (function(){
   'use strict';
@@ -11234,6 +11262,7 @@ body.browser-shell.theme-fresh:not(.custom-bg-active) :is(.browser-window.maximi
   let defaultVantaInstance=null;
   let rubyVantaInstance=null;
   let whiteVantaInstance=null;
+  let emeraldVantaInstance=null;
   function shouldShowDefaultVanta(){
     const theme=store.text('nyx.theme','default');
     return theme==='default' && !document.body.classList.contains('custom-bg-active');
@@ -11245,6 +11274,10 @@ body.browser-shell.theme-fresh:not(.custom-bg-active) :is(.browser-window.maximi
   function shouldShowWhiteVanta(){
     const theme=store.text('nyx.theme','default');
     return theme==='fresh' && !document.body.classList.contains('custom-bg-active');
+  }
+  function shouldShowEmeraldVanta(){
+    const theme=store.text('nyx.theme','default');
+    return theme==='emerald' && !document.body.classList.contains('custom-bg-active');
   }
   function stopDefaultVanta(){
     if(!defaultVantaInstance) return;
@@ -11260,6 +11293,11 @@ body.browser-shell.theme-fresh:not(.custom-bg-active) :is(.browser-window.maximi
     if(!whiteVantaInstance) return;
     try{whiteVantaInstance.destroy()}catch{}
     whiteVantaInstance=null;
+  }
+  function stopEmeraldVanta(){
+    if(!emeraldVantaInstance) return;
+    try{emeraldVantaInstance.destroy()}catch{}
+    emeraldVantaInstance=null;
   }
   function syncDefaultVantaBackground(){
     const layer=$('defaultVantaBg');
@@ -11344,10 +11382,40 @@ body.browser-shell.theme-fresh:not(.custom-bg-active) :is(.browser-window.maximi
       stopWhiteVanta();
     }
   }
+  function syncEmeraldVantaBackground(){
+    const layer=$('emeraldVantaBg');
+    if(!layer) return;
+    const show=shouldShowEmeraldVanta();
+    layer.hidden=!show;
+    if(!show){
+      stopEmeraldVanta();
+      return;
+    }
+    if(emeraldVantaInstance || !window.VANTA?.DOTS || !window.THREE) return;
+    try{
+      emeraldVantaInstance=VANTA.DOTS({
+        el:layer,
+        mouseControls:true,
+        touchControls:true,
+        gyroControls:false,
+        minHeight:200.00,
+        minWidth:200.00,
+        scale:1.00,
+        scaleMobile:1.00,
+        color:0x10ab3b,
+        color2:0x3bae28,
+        backgroundColor:0x123025,
+        size:2.00
+      });
+    }catch{
+      stopEmeraldVanta();
+    }
+  }
   function syncThemeVantaBackgrounds(){
     syncDefaultVantaBackground();
     syncRubyVantaBackground();
     syncWhiteVantaBackground();
+    syncEmeraldVantaBackground();
   }
   function ensureFreshThemeOptions(root=document){
     root.querySelectorAll?.('[data-theme-value]')?.forEach(select=>{

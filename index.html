@@ -5482,7 +5482,7 @@ body.browser-shell .top-os{
 body.browser-shell .top-os > .status-icons,
 body.browser-shell .top-os > .brand-button,
 body.browser-shell .top-os > .user-chip,
-body.browser-shell .top-os > span:not(.weather-cloud-icon){
+body.browser-shell .top-os > span:not(.weather-cloud-icon):not(.browser-top-clock){
   display:none!important;
   visibility:hidden!important;
   width:0!important;
@@ -8807,6 +8807,28 @@ body ::placeholder,
 body *::before,
 body *::after{
   font-family:Outfit,Arial,sans-serif!important;
+}
+/* //browser-top-clock-visible-final */
+body.browser-shell .top-os > .browser-top-clock{
+  display:flex!important;
+  visibility:visible!important;
+  position:absolute!important;
+  right:12px!important;
+  top:7px!important;
+  width:auto!important;
+  min-width:92px!important;
+  height:22px!important;
+  z-index:40!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  color:#f8fafc!important;
+  -webkit-text-fill-color:#f8fafc!important;
+  font-size:13px!important;
+  font-weight:800!important;
+  line-height:1!important;
+  text-indent:0!important;
+  opacity:1!important;
+  pointer-events:none!important;
 }
 </style>
 </head>

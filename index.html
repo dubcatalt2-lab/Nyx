@@ -76,6 +76,7 @@ try{
     radial-gradient(circle at left center,rgba(139,92,246,.30),transparent 28%),
     radial-gradient(circle at right center,rgba(168,85,247,.28),transparent 30%),
     linear-gradient(90deg,rgba(88,28,135,.22),transparent 18%,transparent 82%,rgba(88,28,135,.22));
+  --default-vanta-bg:#241933;
   --bar:30px;
   --ui-scale:1;
   --dock-size:36px;
@@ -87,7 +88,7 @@ try{
 }
 /* //base-layout */
 *{box-sizing:border-box}
-html,body{width:100%;height:100%;margin:0;overflow:hidden;font-family:Outfit,Arial,sans-serif;background:#020308;color:var(--text)}
+html,body{width:100%;height:100%;margin:0;overflow:hidden;font-family:Outfit,Arial,sans-serif;background:var(--default-vanta-bg);color:var(--text)}
 button,input{font:inherit}
 button{cursor:pointer}
 select{border-radius:14px}
@@ -119,6 +120,25 @@ body::before{
 }
 body.custom-bg-active .custom-bg-image{display:block}
 body.custom-bg-active::before{background:var(--theme-bg),linear-gradient(rgba(0,0,0,.18),rgba(0,0,0,.28)),var(--bg-enhanced-render)}
+#defaultVantaBg{
+  position:fixed;
+  inset:0;
+  z-index:0;
+  background:#241933;
+  pointer-events:none;
+  opacity:1;
+  transition:opacity .35s ease;
+}
+body.theme-ruby #defaultVantaBg,
+body.theme-emerald #defaultVantaBg,
+body.theme-sakura #defaultVantaBg,
+body.theme-fresh #defaultVantaBg,
+body.custom-bg-active #defaultVantaBg{
+  opacity:0;
+}
+body:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):not(.theme-fresh):not(.custom-bg-active)::before{
+  background:linear-gradient(rgba(0,0,0,.12),rgba(0,0,0,.22));
+}
 body.theme-ruby{--accent:#fb7185;--theme-a:#ef4444;--theme-b:#b91c1c;--theme-strong:#fff1f2;--theme-soft:#fb7185;--theme-text-gradient:linear-gradient(90deg,#fff1f2,#fb7185,#b91c1c);--theme-bg:linear-gradient(rgba(255,228,230,.18),rgba(185,28,28,.16)),url("assets/backgrounds/theme-ruby.jpg")}
 body.theme-emerald{--accent:#34d399;--theme-a:#10b981;--theme-b:#047857;--theme-strong:#ecfdf5;--theme-soft:#34d399;--theme-text-gradient:linear-gradient(90deg,#ecfdf5,#34d399,#047857);--theme-bg:linear-gradient(rgba(209,250,229,.16),rgba(4,120,87,.14)),url("assets/backgrounds/theme-emerald.png")}
 body.theme-sakura{--accent:#f9a8d4;--theme-a:#f472b6;--theme-b:#db2777;--theme-strong:#fff1f2;--theme-soft:#f9a8d4;--theme-text-gradient:linear-gradient(90deg,#fff1f2,#f9a8d4,#db2777);--theme-bg:linear-gradient(rgba(252,231,243,.18),rgba(219,39,119,.14)),url("assets/backgrounds/theme-sakura.jpg")}
@@ -8886,11 +8906,26 @@ body.browser-shell.theme-fresh .top-os > .browser-top-clock{
   font-weight:400!important;
   font-style:normal!important;
 }
+body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):not(.theme-fresh):not(.custom-bg-active) :is(.browser-home,.browser-window.maximized.browser-blank,.browser-window.maximized:has(.browser-home:not(.hidden))){
+  background:transparent!important;
+  background-image:none!important;
+}
+body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):not(.theme-fresh):not(.custom-bg-active) :is(.browser-window.maximized.browser-blank,.browser-window.maximized:has(.browser-home:not(.hidden)))::before,
+body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):not(.theme-fresh):not(.custom-bg-active) :is(.browser-window.maximized.browser-blank,.browser-window.maximized:has(.browser-home:not(.hidden)))::after{
+  background:transparent!important;
+  background-image:none!important;
+}
+html body:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):not(.theme-fresh):not(.custom-bg-active)::before,
+html body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):not(.theme-fresh):not(.custom-bg-active)::before{
+  background:linear-gradient(rgba(0,0,0,.12),rgba(0,0,0,.22))!important;
+  background-image:linear-gradient(rgba(0,0,0,.12),rgba(0,0,0,.22))!important;
+}
 </style>
 </head>
 <body>
 <!-- //background-image -->
 <img id="customBgImage" class="custom-bg-image" alt="" referrerpolicy="no-referrer">
+<div id="defaultVantaBg" aria-hidden="true"></div>
 <!-- //formula-gate -->
 <div id="formulaGate" class="formula-gate" role="button" tabindex="0" aria-label="Open ռʏӼ">
   <section class="formula-sheet">
@@ -9122,6 +9157,8 @@ body.browser-shell.theme-fresh .top-os > .browser-top-clock{
 <audio class="ambient-audio" id="ambientAudio" preload="metadata" loop></audio>
 <div class="toast" id="toast"></div>
 <!-- //main-app-script -->
+<script src="./assets/vendor/three.r134.min.js"></script>
+<script src="./assets/vendor/vanta.net.min.js"></script>
 <script>
 (function(){
   'use strict';
@@ -11136,6 +11173,43 @@ body.browser-shell.theme-fresh .top-os > .browser-top-clock{
   }
   //themes-and-visual-effects
   let nyxGateOpened=false;
+  let defaultVantaInstance=null;
+  function shouldShowDefaultVanta(){
+    const theme=store.text('nyx.theme','default');
+    return theme==='default' && !document.body.classList.contains('custom-bg-active');
+  }
+  function stopDefaultVanta(){
+    if(!defaultVantaInstance) return;
+    try{defaultVantaInstance.destroy()}catch{}
+    defaultVantaInstance=null;
+  }
+  function syncDefaultVantaBackground(){
+    const layer=$('defaultVantaBg');
+    if(!layer) return;
+    const show=shouldShowDefaultVanta();
+    layer.hidden=!show;
+    if(!show){
+      stopDefaultVanta();
+      return;
+    }
+    if(defaultVantaInstance || !window.VANTA?.NET || !window.THREE) return;
+    try{
+      defaultVantaInstance=VANTA.NET({
+        el:layer,
+        mouseControls:true,
+        touchControls:true,
+        gyroControls:false,
+        minHeight:200.00,
+        minWidth:200.00,
+        scale:1.00,
+        scaleMobile:1.00,
+        color:0x511151,
+        backgroundColor:0x241933
+      });
+    }catch{
+      stopDefaultVanta();
+    }
+  }
   function ensureFreshThemeOptions(root=document){
     root.querySelectorAll?.('[data-theme-value]')?.forEach(select=>{
       if(!select.querySelector('option[value="fresh"]')){
@@ -11181,6 +11255,7 @@ body.browser-shell.theme-fresh .top-os > .browser-top-clock{
       applyVisualEffectSetting();
     }
     syncInternalThemeFrames(theme);
+    syncDefaultVantaBackground();
   }
   function syncInternalThemeFrames(theme=store.text('nyx.theme','default')){
     const clean=['ruby','emerald','sakura','fresh'].includes(theme) ? theme : 'default';
@@ -11277,6 +11352,7 @@ body.browser-shell.theme-fresh .top-os > .browser-top-clock{
     applyBrowserShellMode();
     applyThemeSetting();
     syncPerformanceLite();
+    syncDefaultVantaBackground();
     applyVisualEffectSetting();
     const name=store.text('nyx.userName','').trim();
     const greeting=$('userGreeting');
@@ -11433,6 +11509,7 @@ body.browser-shell.theme-fresh .top-os > .browser-top-clock{
     if(!next){
       document.body.classList.remove('custom-bg-active');
       img.removeAttribute('src');
+      syncDefaultVantaBackground();
       return Promise.resolve(null);
     }
     return new Promise(resolve=>{
@@ -11442,10 +11519,12 @@ body.browser-shell.theme-fresh .top-os > .browser-top-clock{
       document.documentElement.style.setProperty('--bg-render',loadedCss);
       document.documentElement.style.setProperty('--bg-enhanced-render',loadedCss);
       document.body.classList.add('custom-bg-active');
+      syncDefaultVantaBackground();
       resolve({src:loadedSrc,width:loadedImg.naturalWidth,height:loadedImg.naturalHeight});
     },()=>{
       if(layerRun!==customBgLayerRun){resolve(null); return}
       document.body.classList.remove('custom-bg-active');
+      syncDefaultVantaBackground();
       resolve(null);
     });
     });

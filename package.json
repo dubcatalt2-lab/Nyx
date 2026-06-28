@@ -15,7 +15,9 @@
     "@mercuryworkshop/scramjet-controller": "^0.0.13",
     "@mercuryworkshop/wisp-js": "latest",
     "@titaniumnetwork-dev/ultraviolet": "^3.2.10",
-    "express": "latest"
+    "express": "latest",
+    "three": "^0.134.0",
+    "vanta": "^0.5.24"
   },
   "devDependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",

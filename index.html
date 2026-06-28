@@ -129,6 +129,15 @@ body.custom-bg-active::before{background:var(--theme-bg),linear-gradient(rgba(0,
   opacity:1;
   transition:opacity .35s ease;
 }
+#rubyVantaBg{
+  position:fixed;
+  inset:0;
+  z-index:0;
+  background:#0a0305;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .35s ease;
+}
 body.theme-ruby #defaultVantaBg,
 body.theme-emerald #defaultVantaBg,
 body.theme-sakura #defaultVantaBg,
@@ -136,6 +145,9 @@ body.theme-fresh #defaultVantaBg,
 body.custom-bg-active #defaultVantaBg{
   opacity:0;
 }
+body.theme-ruby:not(.custom-bg-active) #rubyVantaBg{opacity:1}
+body:not(.theme-ruby) #rubyVantaBg,
+body.custom-bg-active #rubyVantaBg{opacity:0}
 body:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):not(.theme-fresh):not(.custom-bg-active)::before{
   background:linear-gradient(rgba(0,0,0,.12),rgba(0,0,0,.22));
 }
@@ -8920,12 +8932,27 @@ html body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):
   background:linear-gradient(rgba(0,0,0,.12),rgba(0,0,0,.22))!important;
   background-image:linear-gradient(rgba(0,0,0,.12),rgba(0,0,0,.22))!important;
 }
+html body.theme-ruby:not(.custom-bg-active)::before,
+html body.browser-shell.theme-ruby:not(.custom-bg-active)::before{
+  background:linear-gradient(rgba(0,0,0,.10),rgba(0,0,0,.28))!important;
+  background-image:linear-gradient(rgba(0,0,0,.10),rgba(0,0,0,.28))!important;
+}
+body.browser-shell.theme-ruby:not(.custom-bg-active) :is(.browser-home,.browser-window.maximized.browser-blank,.browser-window.maximized:has(.browser-home:not(.hidden))){
+  background:transparent!important;
+  background-image:none!important;
+}
+body.browser-shell.theme-ruby:not(.custom-bg-active) :is(.browser-window.maximized.browser-blank,.browser-window.maximized:has(.browser-home:not(.hidden)))::before,
+body.browser-shell.theme-ruby:not(.custom-bg-active) :is(.browser-window.maximized.browser-blank,.browser-window.maximized:has(.browser-home:not(.hidden)))::after{
+  background:transparent!important;
+  background-image:none!important;
+}
 </style>
 </head>
 <body>
 <!-- //background-image -->
 <img id="customBgImage" class="custom-bg-image" alt="" referrerpolicy="no-referrer">
 <div id="defaultVantaBg" aria-hidden="true"></div>
+<div id="rubyVantaBg" aria-hidden="true"></div>
 <!-- //formula-gate -->
 <div id="formulaGate" class="formula-gate" role="button" tabindex="0" aria-label="Open ռʏӼ">
   <section class="formula-sheet">
@@ -9159,6 +9186,7 @@ html body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):
 <!-- //main-app-script -->
 <script src="./assets/vendor/three.r134.min.js"></script>
 <script src="./assets/vendor/vanta.net.min.js"></script>
+<script src="./assets/vendor/vanta.globe.min.js"></script>
 <script>
 (function(){
   'use strict';
@@ -11174,14 +11202,24 @@ html body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):
   //themes-and-visual-effects
   let nyxGateOpened=false;
   let defaultVantaInstance=null;
+  let rubyVantaInstance=null;
   function shouldShowDefaultVanta(){
     const theme=store.text('nyx.theme','default');
     return theme==='default' && !document.body.classList.contains('custom-bg-active');
+  }
+  function shouldShowRubyVanta(){
+    const theme=store.text('nyx.theme','default');
+    return theme==='ruby' && !document.body.classList.contains('custom-bg-active');
   }
   function stopDefaultVanta(){
     if(!defaultVantaInstance) return;
     try{defaultVantaInstance.destroy()}catch{}
     defaultVantaInstance=null;
+  }
+  function stopRubyVanta(){
+    if(!rubyVantaInstance) return;
+    try{rubyVantaInstance.destroy()}catch{}
+    rubyVantaInstance=null;
   }
   function syncDefaultVantaBackground(){
     const layer=$('defaultVantaBg');
@@ -11209,6 +11247,36 @@ html body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):
     }catch{
       stopDefaultVanta();
     }
+  }
+  function syncRubyVantaBackground(){
+    const layer=$('rubyVantaBg');
+    if(!layer) return;
+    const show=shouldShowRubyVanta();
+    layer.hidden=!show;
+    if(!show){
+      stopRubyVanta();
+      return;
+    }
+    if(rubyVantaInstance || !window.VANTA?.GLOBE || !window.THREE) return;
+    try{
+      rubyVantaInstance=VANTA.GLOBE({
+        el:layer,
+        mouseControls:true,
+        touchControls:true,
+        gyroControls:false,
+        minHeight:200.00,
+        minWidth:200.00,
+        scale:1.00,
+        scaleMobile:1.00,
+        color:0xab1a1a
+      });
+    }catch{
+      stopRubyVanta();
+    }
+  }
+  function syncThemeVantaBackgrounds(){
+    syncDefaultVantaBackground();
+    syncRubyVantaBackground();
   }
   function ensureFreshThemeOptions(root=document){
     root.querySelectorAll?.('[data-theme-value]')?.forEach(select=>{
@@ -11255,7 +11323,7 @@ html body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):
       applyVisualEffectSetting();
     }
     syncInternalThemeFrames(theme);
-    syncDefaultVantaBackground();
+    syncThemeVantaBackgrounds();
   }
   function syncInternalThemeFrames(theme=store.text('nyx.theme','default')){
     const clean=['ruby','emerald','sakura','fresh'].includes(theme) ? theme : 'default';
@@ -11352,7 +11420,7 @@ html body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):
     applyBrowserShellMode();
     applyThemeSetting();
     syncPerformanceLite();
-    syncDefaultVantaBackground();
+    syncThemeVantaBackgrounds();
     applyVisualEffectSetting();
     const name=store.text('nyx.userName','').trim();
     const greeting=$('userGreeting');
@@ -11509,7 +11577,7 @@ html body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):
     if(!next){
       document.body.classList.remove('custom-bg-active');
       img.removeAttribute('src');
-      syncDefaultVantaBackground();
+      syncThemeVantaBackgrounds();
       return Promise.resolve(null);
     }
     return new Promise(resolve=>{
@@ -11519,12 +11587,12 @@ html body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):
       document.documentElement.style.setProperty('--bg-render',loadedCss);
       document.documentElement.style.setProperty('--bg-enhanced-render',loadedCss);
       document.body.classList.add('custom-bg-active');
-      syncDefaultVantaBackground();
+      syncThemeVantaBackgrounds();
       resolve({src:loadedSrc,width:loadedImg.naturalWidth,height:loadedImg.naturalHeight});
     },()=>{
       if(layerRun!==customBgLayerRun){resolve(null); return}
       document.body.classList.remove('custom-bg-active');
-      syncDefaultVantaBackground();
+      syncThemeVantaBackgrounds();
       resolve(null);
     });
     });
@@ -17790,4 +17858,3 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
 </script>
 </body>
 </html>
-

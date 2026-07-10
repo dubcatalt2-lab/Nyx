@@ -15247,7 +15247,7 @@ html body,html body *:not(.fresh-real-icon):not(.weather-cloud-icon){font-family
       const structureCount=Number(doc.documentElement?.childElementCount || 0)+Number(body?.childElementCount || 0);
       const title=String(doc.title || '').trim();
       const hasVisibleStructure=!!doc.querySelector('main,button,a,input,[role],[data-testid],svg,img,canvas,video,audio');
-      const hasErrorText=/scramjet did not start|scramjet route missed|internal service worker error|localhost refused to connect|something went wrong/i.test(text);
+      const hasErrorText=/scramjet did not start|scramjet route missed|ultraviolet did not start|error processing your request|internal server error|internal service worker error|request failed with error code\s*(?:35|56|60)|ssl connect error|ssl peer certificate|ssh remote key|certificate.*not ok|failure when receiving data from the peer|localhost refused to connect|something went wrong/i.test(text);
       const blank=!hasVisibleStructure && text.length<12 && structureCount<4;
       return {reachable:true,blank,hasErrorText,text,title,htmlLength:structureCount};
     }catch(error){
@@ -16916,13 +16916,20 @@ html body,html body *:not(.fresh-real-icon):not(.weather-cloud-icon){font-family
       if(t.selectedSearchFallbackKey===key) return false;
       t.selectedSearchFallbackKey=key;
       const searchUrl=selectedSearchUrl(key);
-      console.warn('nyx proxy could not load the page; falling back to the selected search engine.', {sourceUrl:key, searchUrl, reason});
-      installUltraviolet().then(ok=>{
-        if(!state.tabs.includes(t)) return;
-        const proxied=ok ? proxyModeUrl('ultraviolet',searchUrl) : '';
-        if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',searchUrl);
-        else loadTab(t,searchUrl,false,'iframe',searchUrl);
-      });
+      const fallbackMode=selectedBrowserMode(searchUrl);
+      console.warn('nyx proxy could not load the page; falling back to the selected search engine.', {sourceUrl:key, searchUrl, fallbackMode, reason});
+      if(fallbackMode==='scramjet'){
+        loadScramjetTab(t,searchUrl,false);
+      }else if(fallbackMode==='ultraviolet'){
+        installUltraviolet().then(ok=>{
+          if(!state.tabs.includes(t)) return;
+          const proxied=ok ? proxyModeUrl('ultraviolet',searchUrl) : '';
+          if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',searchUrl);
+          else loadTab(t,searchUrl,false,'iframe',searchUrl);
+        });
+      }else{
+        loadTab(t,proxyModeUrl(fallbackMode,searchUrl),false,fallbackMode || 'iframe',searchUrl);
+      }
       return true;
     }
     function fallbackProxyEngine(t,sourceUrl,expectedEngine,reason=''){
@@ -16933,6 +16940,15 @@ html body,html body *:not(.fresh-real-icon):not(.weather-cloud-icon){font-family
       if(isSpotifyFamilyUrl(sourceUrl) && expectedEngine==='scramjet'){
         if(attempts[key]===1) console.warn('nyx Spotify is pinned to Scramjet + libcurl; not switching engines.', {sourceUrl, reason});
         return false;
+      }
+      if(expectedEngine==='scramjet' && normalizeBrowserModeName(store.text('nyx.browserMode','auto'))==='scramjet'){
+        if(attempts[key]>3) return loadSelectedSearchFallback(t,sourceUrl,reason || 'scramjet retries exhausted');
+        console.warn('nyx Scramjet is selected; retrying Scramjet instead of switching engines.', {sourceUrl, reason});
+        loadScramjetTab(t,sourceUrl,false);
+        return true;
+      }
+      if(expectedEngine==='ultraviolet' && normalizeBrowserModeName(store.text('nyx.browserMode','auto'))==='ultraviolet'){
+        return loadSelectedSearchFallback(t,sourceUrl,reason || 'ultraviolet failed while selected');
       }
       if(attempts[key]>3) return loadSelectedSearchFallback(t,sourceUrl,reason || 'proxy fallback exhausted');
       if(expectedEngine==='scramjet'){
@@ -17070,6 +17086,9 @@ html body,html body *:not(.fresh-real-icon):not(.weather-cloud-icon){font-family
         }else if(expectedEngine==='scramjet'){
           if(canAutoTransport && nextTransport){
             setBrowserTransportOverride(nextTransport);
+            loadScramjetTab(t,sourceUrl,false);
+            handled=true;
+          }else if(browserMode==='scramjet'){
             loadScramjetTab(t,sourceUrl,false);
             handled=true;
           }else if(browserMode==='auto'){

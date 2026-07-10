@@ -16,6 +16,14 @@ const scramjetControllerPath = dirname(require.resolve("@mercuryworkshop/scramje
 const epoxyPath = join(dirname(require.resolve("@mercuryworkshop/epoxy-transport")), "..", "dist");
 const libcurlPath = dirname(require.resolve("@mercuryworkshop/libcurl-transport"));
 const app = express();
+app.use(express.json({ limit: "2mb" }));
+app.use((error, _req, res, next) => {
+  if (error instanceof SyntaxError && "body" in error) {
+    res.status(400).json({ error: "Invalid JSON request body." });
+    return;
+  }
+  next(error);
+});
 const uvHandlerPath = join(uvPath, "uv.handler.js");
 const baremuxIndexPath = join(baremuxPath, "index.mjs");
 const scramjetRuntimePath = join(scramjetPath, "scramjet.js");
@@ -766,6 +774,76 @@ app.get("/gms-games-fetch", handleGmsGamesFetch);
 app.get("/gms-games-proxy", handleGmsGamesProxy);
 app.get("/reds-misc-fetch", handleGmsGamesFetch);
 app.get("/reds-misc-proxy", handleGmsGamesProxy);
+
+const nyxAiModels = {
+  "llama-3.3-70b": process.env.NYX_AI_MODEL_LLAMA_33_70B || "meta-llama/llama-3.3-70b-instruct",
+  "gpt-oss-120b": process.env.NYX_AI_MODEL_GPT_OSS_120B || "openai/gpt-oss-120b",
+  "qwen3-32b": process.env.NYX_AI_MODEL_QWEN3_32B || "qwen/qwen3-32b",
+  "llama-4-scout": process.env.NYX_AI_MODEL_LLAMA_4_SCOUT || "meta-llama/llama-4-scout",
+  "chatgpt-5.4-mini": process.env.NYX_AI_MODEL_CHATGPT_54_MINI || "openai/gpt-5.4-mini"
+};
+
+function nyxAiKey() {
+  return process.env.NYX_AI_API_KEY || process.env.OPENROUTER_API_KEY || "";
+}
+
+app.post("/api/nyx-ai", async (req, res) => {
+  const key = nyxAiKey();
+  if (!key) {
+    res.status(503).json({
+      error: "Nyx AI is not configured. Set NYX_AI_API_KEY or OPENROUTER_API_KEY in the server environment."
+    });
+    return;
+  }
+  const requestedModel = String(req.body?.model || "llama-3.3-70b");
+  const model = nyxAiModels[requestedModel];
+  if (!model) {
+    res.status(400).json({ error: "Unknown Nyx AI model." });
+    return;
+  }
+  const message = String(req.body?.message || "").trim();
+  const imageContext = String(req.body?.imageContext || "").trim();
+  if (!message && !imageContext) {
+    res.status(400).json({ error: "Message is required." });
+    return;
+  }
+  const baseUrl = String(process.env.NYX_AI_BASE_URL || "https://openrouter.ai/api/v1").replace(/\/+$/, "");
+  const prompt = imageContext ? `${message || "Answer the attached image."}\n\nImage context from Nyx OCR/analysis:\n${imageContext}` : message;
+  try {
+    const upstream = await fetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "authorization": `Bearer ${key}`,
+        "http-referer": process.env.NYX_SITE_URL || "http://localhost:8080",
+        "x-title": "Nyx AI"
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: "system",
+            content: "You are Nyx AI inside the Nyx browser. Be helpful, direct, and accurate. If you do not know something, say so plainly."
+          },
+          { role: "user", content: prompt }
+        ],
+        temperature: Number(process.env.NYX_AI_TEMPERATURE || 0.7),
+        max_tokens: Number(process.env.NYX_AI_MAX_TOKENS || 1200)
+      })
+    });
+    const data = await upstream.json().catch(() => ({}));
+    if (!upstream.ok) {
+      res.status(upstream.status).json({
+        error: data?.error?.message || data?.message || `Model request failed (${upstream.status}).`
+      });
+      return;
+    }
+    const text = data?.choices?.[0]?.message?.content || data?.choices?.[0]?.text || "";
+    res.json({ text: String(text || "").trim(), model });
+  } catch (error) {
+    res.status(502).json({ error: `Nyx AI request failed: ${error?.message || error}` });
+  }
+});
 
 app.use((req, res, next) => {
   const referer = String(req.get("referer") || "");

@@ -94,10 +94,16 @@
       display:none;
       place-items:center;
       border-radius:10px;
-      background:linear-gradient(135deg,#111827,#1e293b);
+      background:
+        radial-gradient(circle at 20% 20%,rgba(125,211,252,.36),transparent 32%),
+        radial-gradient(circle at 82% 76%,rgba(168,85,247,.28),transparent 34%),
+        linear-gradient(135deg,#111827,#1e293b);
       color:#7dd3fc;
       font-size:28px;
       font-weight:400;
+    }
+    .thumb-fallback.generated{
+      display:grid;
     }
     .thumb.broken + .thumb-fallback{
       display:grid;
@@ -142,20 +148,33 @@
       return clean.replace(/[-_]+/g,' ').replace(/\b\w/g,letter=>letter.toUpperCase());
     }
 
+    function prettyTitle(game){
+      const fromPath=titleFromPath(game.path);
+      const raw=String(game.title || '').trim();
+      const compact=/^[a-z0-9]+$/i.test(raw) && /[a-z]/i.test(raw);
+      const text=compact ? fromPath : (raw || fromPath);
+      return text
+        .replace(/[-_]+/g,' ')
+        .replace(/([a-z])([0-9])/gi,'$1 $2')
+        .replace(/([0-9])([a-z])/gi,'$1 $2')
+        .replace(/\s+/g,' ')
+        .trim()
+        .replace(/\b\w/g,letter=>letter.toUpperCase());
+    }
+
     function slugTitle(title){
       return String(title || '').toLowerCase().replace(/[^a-z0-9]+/g,'').trim();
     }
 
     function assetUrl(game){
-      const path=String(game?.path || '').replace(/^\/+/,'');
-      const folder=path.split('/')[0]?.toLowerCase() || 'fallback';
-      const file=path.split('/').pop()?.replace(/\.html?$/i,'') || slugTitle(game?.title);
-      return `/assets/ugs/thumbs/${folder}-${file.toLowerCase()}.png`;
+      const thumbnail=String(game?.thumbnail || '').trim().replace(/^\/+/,'');
+      if(thumbnail) return `/seraph-asset?path=${encodeURIComponent(thumbnail)}`;
+      return '';
     }
 
     function gameUrl(path){
       const clean=String(path || '').replace(/^\/+/,'');
-      return new URL(`/assets/ugs/${clean}`,location.origin).href;
+      return new URL(`/assets/seraph/play.html?game=${encodeURIComponent(clean)}`,location.origin).href;
     }
 
     function isPlayablePath(path){
@@ -163,6 +182,7 @@
     }
 
     function openGame(url){
+      parent.postMessage({type:'nyx:game-loading'},'*');
       location.href=url;
     }
 
@@ -171,8 +191,8 @@
       const shown=games.filter(game=>!term || game.title.toLowerCase().includes(term));
       grid.innerHTML=shown.map(game=>`
         <button class="card" type="button" data-url="${game.url}">
-          <img class="thumb" alt="" loading="lazy" src="${game.thumbnail}">
-          <span class="thumb-fallback" aria-hidden="true">${game.title.slice(0,1).toUpperCase()}</span>
+          ${game.thumbnail ? `<img class="thumb" alt="" loading="lazy" src="${game.thumbnail}">` : '<span class="thumb broken" aria-hidden="true"></span>'}
+          <span class="thumb-fallback ${game.thumbnail ? '' : 'generated'}" aria-hidden="true">${game.title.slice(0,1).toUpperCase()}</span>
           <span class="name">${game.title}</span>
         </button>
       `).join('');
@@ -188,12 +208,12 @@
     },true);
     search.addEventListener('input',render);
 
-    fetch('/assets/ugs/games.json')
+    fetch('/assets/seraph/games.json')
       .then(response=>response.json())
       .then(data=>{
         const entries=Array.isArray(data) ? data : (Array.isArray(data.games) ? data.games : []);
         games=entries.filter(game=>isPlayablePath(game.path)).map(game=>({
-          title:game.title || titleFromPath(game.path),
+          title:prettyTitle(game),
           url:gameUrl(game.path),
           thumbnail:assetUrl(game)
         })).sort((a,b)=>a.title.localeCompare(b.title));

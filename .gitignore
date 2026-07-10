@@ -53,6 +53,9 @@ node_modules/
 # Optional eslint cache
 .eslintcache
 
+# Nyx runtime cache
+.nyx-cache/
+
 # Optional REPL history
 .node_repl_history
 

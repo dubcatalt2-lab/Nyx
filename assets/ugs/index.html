@@ -48,6 +48,7 @@ const search=document.getElementById('search');
 const count=document.getElementById('count');
 const empty=document.getElementById('empty');
 let games=[];
+let thumbs=new Set();
 function cleanTitle(title){
   return String(title||'Game').replace(/([a-z])([0-9])/g,'$1 $2').replace(/([0-9])([a-z])/g,'$1 $2').replace(/\s+/g,' ').trim();
 }
@@ -74,11 +75,17 @@ function render(){
   const shown=games.filter(game=>!term || game.title.toLowerCase().includes(term));
   grid.innerHTML=shown.map(game=>{
     const title=cleanTitle(game.title);
-    return `<a class="game" href="${encodeURI(game.path)}"><div class="cover"><img loading="lazy" decoding="async" src="thumbs/${escapeAttr(thumbName(game.path))}" alt="" onerror="this.onerror=null;this.src=fallbackThumb('${escapeJs(title)}');"></div><span class="game-title">${escapeHtml(title)}</span></a>`;
+    const thumb=thumbName(game.path);
+    const src=thumbs.has(thumb) ? `thumbs/${escapeAttr(thumb)}` : fallbackThumb(title);
+    return `<a class="game" href="${encodeURI(game.path)}"><div class="cover"><img loading="lazy" decoding="async" src="${src}" alt="" onerror="this.onerror=null;this.src=fallbackThumb('${escapeJs(title)}');"></div><span class="game-title">${escapeHtml(title)}</span></a>`;
   }).join('');
   count.textContent=`${shown.length} / ${games.length}`;
   empty.style.display=shown.length?'none':'block';
 }
+grid.addEventListener('click',event=>{
+  const game=event.target.closest('a.game');
+  if(game) parent.postMessage({type:'nyx:game-loading'},'*');
+});
 function escapeHtml(value){
   return String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 }
@@ -88,12 +95,15 @@ function escapeAttr(value){
 function escapeJs(value){
   return String(value).replace(/[\\'"]/g,char=>char==='\\'?'\\\\':'\\'+char).replace(/\r?\n/g,' ');
 }
-fetch('games.json')
-  .then(response=>{
+Promise.all([
+  fetch('games.json').then(response=>{
     if(!response.ok) throw new Error('Could not load game list');
     return response.json();
-  })
-  .then(list=>{
+  }),
+  fetch('thumbs.json').then(response=>response.ok ? response.json() : [])
+])
+  .then(([list,thumbList])=>{
+    thumbs=new Set(Array.isArray(thumbList) ? thumbList : []);
     games=Array.isArray(list)?list:[];
     render();
     search.focus();

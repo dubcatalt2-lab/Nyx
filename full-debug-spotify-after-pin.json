@@ -1,0 +1,27 @@
+{
+  "steps": [
+    {
+      "step": "spotify-engine-after-pin",
+      "frames": [
+        "assets/docs/1300-maths-formula.pdf#toolbar=0&navpanes=0&scrollbar=1&zoom=125",
+        "http://localhost:8080/~/sj/ahxadnld/0n3c1l66/https%3A%2F%2Fopen.spotify.com%2F"
+      ],
+      "active": [
+        "http://localhost:8080/~/sj/ahxadnld/0n3c1l66/https%3A%2F%2Fopen.spotify.com%2F"
+      ],
+      "input": "https://open.spotify.com/",
+      "bodyText": "Loading\n0%\nHome\nopen.spotify.com\nx\n7:48:30 PM\n☆\nBookmarks\nApps\nSettings\nHieroglyph Mode\nGames\nDiscord\nFullscreen\nOpen About:Blank\nOpen Tab in Abt:Blank\n▶\nNow playing: Clair de Lune - Claude Debussy\nReady\n0:00 / 4:46\nClair de Lune - Claude Debussy\nTest Drive Toothless - John Powell\nImpostor Syndrome "
+    }
+  ],
+  "errors": [
+    "Unexpected token ')'",
+    "undefined"
+  ],
+  "warnings": [
+    "Unrecognized feature: 'pointer-lock'.",
+    "Allow attribute will take precedence over 'allowfullscreen'.",
+    "It is recommended that a robustness level be specified. Not specifying the robustness level could result in unexpected behavior.",
+    "com.microsoft.playready.recommendation: Internal testing is highly recommended prior to enabling PlayReady playback on Windows. Failure to do so may cause application instability or playback errors.\n\nBefore generating a request, setServerCertificate() must be called with a valid server certificate. Otherwise, generateRequest() could fail.",
+    "com.microsoft.playready.recommendation.3000: Internal testing is highly recommended prior to enabling PlayReady playback on Windows. Failure to do so may cause application instability or playback errors.\n\nBefore generating a request, setServerCertificate() must be called with a valid server certificate. Otherwise, generateRequest() could fail."
+  ]
+}

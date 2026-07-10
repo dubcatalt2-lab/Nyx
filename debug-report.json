@@ -1,0 +1,359 @@
+{
+  "steps": [
+    {
+      "name": "startup default shell",
+      "ok": true,
+      "data": {
+        "bodyClass": "lag-reducer browser-shell",
+        "tabCount": 1,
+        "topHeight": 68,
+        "winTop": 68,
+        "url": "",
+        "hasClock": true,
+        "duplicateMenus": 1
+      },
+      "logs": {
+        "total": 6,
+        "pageerror": 0,
+        "hardErrors": 0,
+        "bareMux": 0,
+        "hyper": 0,
+        "fallback": 0
+      }
+    },
+    {
+      "name": "url bar select and blur",
+      "ok": true,
+      "data": {
+        "focused": {
+          "start": 0,
+          "end": 31,
+          "len": 31
+        },
+        "blurred": {
+          "start": 31,
+          "end": 31,
+          "len": 31
+        }
+      },
+      "logs": {
+        "total": 0,
+        "pageerror": 0,
+        "hardErrors": 0,
+        "bareMux": 0,
+        "hyper": 0,
+        "fallback": 0
+      }
+    },
+    {
+      "name": "duckduckgo search results",
+      "ok": true,
+      "data": {
+        "shellUrl": "https://duckduckgo.com/?q=e",
+        "tabs": [
+          "Home",
+          "duckduckgo.comx"
+        ],
+        "frameSrc": "/service/hvtrs8%2F-dwcidwcigm.aoo%2F%3Dq%3Fe",
+        "title": "e at DuckDuckGo",
+        "textLen": 1143,
+        "textSample": "DuckDuckGo\n\nUpgrade to our browser.\n\nTry the\nDuckDuckGo Browser.\nFast. Free. Private.\n\nDownload Browser\n\nFree\n\nOpen menu\n All\nImages\nVideos\nNews\nMaps\nShopping\n Duck.ai\nSearch Settings\nProtected\nAll regions\nSafe search: moderate\nAny time\nClose menu\nSEARCH\nHomepage\nThemes\nSettings\nSHARE FEEDBACK\nDOWNL",
+        "blank": false,
+        "homeVisible": false,
+        "hasResults": true
+      },
+      "logs": {
+        "total": 8,
+        "pageerror": 0,
+        "hardErrors": 0,
+        "bareMux": 0,
+        "hyper": 0,
+        "fallback": 0
+      }
+    },
+    {
+      "name": "direct url navigation",
+      "ok": true,
+      "data": {
+        "shellUrl": "https://example.com/",
+        "tabs": [
+          "Home",
+          "example.comx"
+        ],
+        "frameSrc": "/service/hvtrs8%2F-ezaopne%2Ccmm-",
+        "title": "Example Domain",
+        "textLen": 129,
+        "textSample": "Example Domain\n\nThis domain is for use in documentation examples without needing permission. Avoid use in operations.\n\nLearn more",
+        "blank": false,
+        "homeVisible": false,
+        "hasExample": true
+      },
+      "logs": {
+        "total": 1,
+        "pageerror": 0,
+        "hardErrors": 0,
+        "bareMux": 0,
+        "hyper": 0,
+        "fallback": 0
+      }
+    },
+    {
+      "name": "menu and settings open",
+      "ok": true,
+      "data": {
+        "menu": {
+          "open": true,
+          "visible": true,
+          "rect": {
+            "x": 1211,
+            "y": 52,
+            "w": 146,
+            "h": 224
+          },
+          "buttons": [
+            "Bookmarks",
+            "Apps",
+            "Settings",
+            "Hieroglyph Mode",
+            "Games",
+            "Discord",
+            "Fullscreen",
+            "Open About:Blank",
+            "Open Tab in Abt:Blank"
+          ]
+        },
+        "settings": {
+          "settingsVisible": true,
+          "closeVisible": true,
+          "themeSelect": true
+        }
+      },
+      "logs": {
+        "total": 0,
+        "pageerror": 0,
+        "hardErrors": 0,
+        "bareMux": 0,
+        "hyper": 0,
+        "fallback": 0
+      }
+    },
+    {
+      "name": "blank tab search single tab",
+      "ok": true,
+      "data": {
+        "before": 3,
+        "after": 3,
+        "delta": 0,
+        "detail": {
+          "shellUrl": "https://duckduckgo.com/?q=test%20search",
+          "tabs": [
+            "Home",
+            "example.comx",
+            "duckduckgo.comx"
+          ],
+          "frameSrc": "/service/hvtrs8%2F-dwcidwcigm.aoo%2F%3Dq%3Ftgsv%2500qecrah",
+          "title": "test search at DuckDuckGo",
+          "textLen": 1143,
+          "textSample": "DuckDuckGo\n\nUpgrade to our browser.\n\nTry the\nDuckDuckGo Browser.\nFast. Free. Private.\n\nDownload Browser\n\nFree\n\nOpen menu\n All\nImages\nVideos\nNews\nMaps\nShopping\n Duck.ai\nSearch Settings\nProtected\nAll regions\nSafe search: moderate\nAny time\nClose menu\nSEARCH\nHomepage\nThemes\nSettings\nSHARE FEEDBACK\nDOWNL",
+          "blank": false,
+          "homeVisible": false
+        }
+      },
+      "logs": {
+        "total": 5,
+        "pageerror": 0,
+        "hardErrors": 0,
+        "bareMux": 0,
+        "hyper": 0,
+        "fallback": 0
+      }
+    },
+    {
+      "name": "games library page",
+      "ok": true,
+      "data": {
+        "title": "nyx Games - UGS",
+        "text": "Games\n\nChoose a game host.\n\nGame Host\nUGS\nSeraph\nGN Math\nGMS Games\n⛶",
+        "cardCount": 0,
+        "host": "ugs",
+        "fullscreenButton": true
+      },
+      "logs": {
+        "total": 2,
+        "pageerror": 0,
+        "hardErrors": 0,
+        "bareMux": 0,
+        "hyper": 0,
+        "fallback": 0
+      }
+    },
+    {
+      "name": "spotify pinned scramjet libcurl",
+      "ok": true,
+      "data": {
+        "shellUrl": "https://open.spotify.com/",
+        "tabs": [
+          "Home",
+          "example.comx",
+          "open.spotify.comx"
+        ],
+        "frameSrc": "http://localhost:8080/~/sj/5x6692rc/66gkysr3/https%3A%2F%2Fopen.spotify.com%2F",
+        "title": "Spotify - Web Player: Music for everyone",
+        "textLen": 2000,
+        "textSample": "Skip to main content\nCtrlShiftL\nPremium\nSupport\nDownload\nInstall App\nSign up\nLog in\nYour Library\nCreate your first playlist\nIt's easy, we'll help you\nCreate playlist\nLet's find some podcasts to follow\nWe'll keep you updated on new episodes\nBrowse podcasts\nLegal\nSafety & Privacy Center\nPrivacy Policy",
+        "blank": false,
+        "homeVisible": false,
+        "isScramjet": true,
+        "loadedSpotify": true,
+        "broke": false
+      },
+      "logs": {
+        "total": 25,
+        "pageerror": 3,
+        "hardErrors": 0,
+        "bareMux": 0,
+        "hyper": 0,
+        "fallback": 0
+      }
+    },
+    {
+      "name": "white theme smoke",
+      "ok": true,
+      "data": {
+        "className": "lag-reducer browser-shell theme-fresh",
+        "topBg": "rgba(255, 255, 255, 0.72)",
+        "text": "rgb(11, 114, 128)",
+        "weatherButtons": 1
+      },
+      "logs": {
+        "total": 2,
+        "pageerror": 0,
+        "hardErrors": 0,
+        "bareMux": 0,
+        "hyper": 0,
+        "fallback": 0
+      }
+    }
+  ],
+  "screenshots": [
+    "debug-01-startup.png",
+    "debug-02-search.png",
+    "debug-03-direct-url.png",
+    "debug-04-settings.png",
+    "debug-05-blank.png",
+    "debug-06-blank-search.png",
+    "debug-07-games.png",
+    "debug-08-spotify.png",
+    "debug-09-white-theme.png"
+  ],
+  "summary": {
+    "total": 49,
+    "pageerror": 3,
+    "hardErrors": 0,
+    "bareMux": 0,
+    "hyper": 0,
+    "fallback": 0
+  },
+  "sampleLogs": [
+    {
+      "type": "pageerror",
+      "text": "Unexpected token ')'"
+    },
+    {
+      "type": "warning",
+      "text": "It is recommended that a robustness level be specified. Not specifying the robustness level could result in unexpected behavior."
+    },
+    {
+      "type": "warning",
+      "text": "com.microsoft.playready.recommendation: Internal testing is highly recommended prior to enabling PlayReady playback on Windows. Failure to do so may cause application instability or playback errors.\n\nBefore generating a request, setServerCertificate() must be called with a valid server certificate. Otherwise, generateRequest() could fail."
+    },
+    {
+      "type": "warning",
+      "text": "com.microsoft.playready.recommendation.3000: Internal testing is highly recommended prior to enabling PlayReady playback on Windows. Failure to do so may cause application instability or playback errors.\n\nBefore generating a request, setServerCertificate() must be called with a valid server certificate. Otherwise, generateRequest() could fail."
+    },
+    {
+      "type": "warning",
+      "text": "com.microsoft.playready.recommendation: Internal testing is highly recommended prior to enabling PlayReady playback on Windows. Failure to do so may cause application instability or playback errors.\n\nBefore generating a request, setServerCertificate() must be called with a valid server certificate. Otherwise, generateRequest() could fail."
+    },
+    {
+      "type": "warning",
+      "text": "com.microsoft.playready.recommendation.3000: Internal testing is highly recommended prior to enabling PlayReady playback on Windows. Failure to do so may cause application instability or playback errors.\n\nBefore generating a request, setServerCertificate() must be called with a valid server certificate. Otherwise, generateRequest() could fail."
+    },
+    {
+      "type": "error",
+      "text": "undefined"
+    },
+    {
+      "type": "pageerror",
+      "text": "undefined"
+    },
+    {
+      "type": "warning",
+      "text": "The resource http://localhost:8080/~/sj/5x6692rc/66gkysr3/https%3A%2F%2Fopen.spotifycdn.com%2Fcdn%2Fgenerated-locales%2Fweb-player%2Fen.e39381ab.json?%24io=https%3A%2F%2Fopen.spotify.com was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "text": "The resource http://localhost:8080/~/sj/5x6692rc/66gkysr3/https%3A%2F%2Fencore.scdn.co%2Ffonts%2FSpotifyMixMono-Regular-134eeb986fc0f94a9f0acb9cedaeb584.woff2?%24io=https%3A%2F%2Fopen.spotify.com was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "text": "The resource http://localhost:8080/~/sj/5x6692rc/66gkysr3/https%3A%2F%2Fencore.scdn.co%2Ffonts%2FSpotifyMixUI-Regular-76c92fb1a35c462f73429fa8865163eb.woff2?%24io=https%3A%2F%2Fopen.spotify.com was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "text": "The resource http://localhost:8080/~/sj/5x6692rc/66gkysr3/https%3A%2F%2Fencore.scdn.co%2Ffonts%2FSpotifyMixUITitleVariable-08bab3354d40f74e5177917b5ae80894.woff2?%24io=https%3A%2F%2Fopen.spotify.com was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "text": "The resource http://localhost:8080/~/sj/5x6692rc/66gkysr3/https%3A%2F%2Fencore.scdn.co%2Ffonts%2FSpotifyMixUI-Bold-09c45a3a0ce9d2971e62cb26e97760fb.woff2?%24io=https%3A%2F%2Fopen.spotify.com was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "text": "The resource http://localhost:8080/~/sj/5x6692rc/66gkysr3/https%3A%2F%2Fopen.spotifycdn.com%2Fcdn%2Fgenerated-locales%2Fweb-player%2Fen.e39381ab.json?%24io=https%3A%2F%2Fopen.spotify.com was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "text": "The resource http://localhost:8080/~/sj/5x6692rc/66gkysr3/https%3A%2F%2Fencore.scdn.co%2Ffonts%2FSpotifyMixMono-Regular-134eeb986fc0f94a9f0acb9cedaeb584.woff2?%24io=https%3A%2F%2Fopen.spotify.com was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "text": "The resource http://localhost:8080/~/sj/5x6692rc/66gkysr3/https%3A%2F%2Fencore.scdn.co%2Ffonts%2FSpotifyMixUI-Regular-76c92fb1a35c462f73429fa8865163eb.woff2?%24io=https%3A%2F%2Fopen.spotify.com was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "text": "The resource http://localhost:8080/~/sj/5x6692rc/66gkysr3/https%3A%2F%2Fencore.scdn.co%2Ffonts%2FSpotifyMixUITitleVariable-08bab3354d40f74e5177917b5ae80894.woff2?%24io=https%3A%2F%2Fopen.spotify.com was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "text": "The resource http://localhost:8080/~/sj/5x6692rc/66gkysr3/https%3A%2F%2Fencore.scdn.co%2Ffonts%2FSpotifyMixUI-Bold-09c45a3a0ce9d2971e62cb26e97760fb.woff2?%24io=https%3A%2F%2Fopen.spotify.com was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "text": "The resource http://localhost:8080/~/sj/5x6692rc/66gkysr3/https%3A%2F%2Fopen.spotifycdn.com%2Fcdn%2Fgenerated-locales%2Fweb-player%2Fen.e39381ab.json?%24io=https%3A%2F%2Fopen.spotify.com was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "text": "The resource http://localhost:8080/~/sj/5x6692rc/66gkysr3/https%3A%2F%2Fencore.scdn.co%2Ffonts%2FSpotifyMixMono-Regular-134eeb986fc0f94a9f0acb9cedaeb584.woff2?%24io=https%3A%2F%2Fopen.spotify.com was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "text": "The resource http://localhost:8080/~/sj/5x6692rc/66gkysr3/https%3A%2F%2Fencore.scdn.co%2Ffonts%2FSpotifyMixUI-Regular-76c92fb1a35c462f73429fa8865163eb.woff2?%24io=https%3A%2F%2Fopen.spotify.com was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "text": "The resource http://localhost:8080/~/sj/5x6692rc/66gkysr3/https%3A%2F%2Fencore.scdn.co%2Ffonts%2FSpotifyMixUITitleVariable-08bab3354d40f74e5177917b5ae80894.woff2?%24io=https%3A%2F%2Fopen.spotify.com was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "text": "The resource http://localhost:8080/~/sj/5x6692rc/66gkysr3/https%3A%2F%2Fencore.scdn.co%2Ffonts%2FSpotifyMixUI-Bold-09c45a3a0ce9d2971e62cb26e97760fb.woff2?%24io=https%3A%2F%2Fopen.spotify.com was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "text": "Unrecognized feature: 'pointer-lock'."
+    },
+    {
+      "type": "warning",
+      "text": "Allow attribute will take precedence over 'allowfullscreen'."
+    }
+  ]
+}

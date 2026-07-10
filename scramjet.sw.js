@@ -40,6 +40,72 @@ function nyxScramjetSourcePath(requestUrl) {
   }
 }
 
+function nyxScramjetSourceUrl(requestUrl) {
+  try {
+    const url = new URL(requestUrl);
+    const match = url.pathname.match(/^\/~\/sj\/[^/]+\/[^/]+\/([^?#]*)/);
+    if (!match) return "";
+    return new URL(decodeURIComponent(match[1])).href;
+  } catch {
+    return "";
+  }
+}
+
+const nyxBlockedRequestHosts = [
+  "pagead2.googlesyndication.com",
+  "googlesyndication.com",
+  "googleads.g.doubleclick.net",
+  "doubleclick.net",
+  "googletagmanager.com",
+  "google-analytics.com",
+  "analytics.google.com",
+  "adservice.google.com",
+  "stats.g.doubleclick.net",
+  "static.cloudflareinsights.com",
+  "cloudflareinsights.com",
+  "statcounter.com",
+  "c.statcounter.com",
+  "www.statcounter.com",
+  "inmobi.com",
+  "cmp.inmobi.com",
+  "vntsm.com",
+  "hb.vntsm.com",
+  "facebook.net",
+  "connect.facebook.net"
+];
+
+function nyxHostBlocked(hostname) {
+  const host = String(hostname || "").toLowerCase();
+  return nyxBlockedRequestHosts.some(blocked => host === blocked || host.endsWith(`.${blocked}`));
+}
+
+function nyxShouldBlockScramjetRequest(event) {
+  const source = nyxScramjetSourceUrl(event.request.url);
+  if (!source) return false;
+  try {
+    return nyxHostBlocked(new URL(source).hostname);
+  } catch {
+    return false;
+  }
+}
+
+function nyxBlockedScramjetResponse(event) {
+  const accept = event.request.headers.get("accept") || "";
+  if (["script", "worker", "sharedworker"].includes(event.request.destination) || /javascript|ecmascript/i.test(accept)) {
+    return new Response("", { status: 200, headers: { "Content-Type": "application/javascript; charset=utf-8" } });
+  }
+  if (event.request.destination === "style" || /text\/css/i.test(accept)) {
+    return new Response("", { status: 200, headers: { "Content-Type": "text/css; charset=utf-8" } });
+  }
+  if (event.request.destination === "image") {
+    return new Response("", { status: 204 });
+  }
+  if (event.request.destination === "document" || event.request.destination === "iframe") {
+    return new Response("<!doctype html><meta charset=\"utf-8\">", { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } });
+  }
+  return new Response("", { status: 204 });
+}
+
 function nyxRequestExpectsAsset(event) {
   const accept = event.request.headers.get("accept") || "";
   const path = new URL(event.request.url).pathname;
@@ -138,6 +204,10 @@ async function nyxRouteScramjet(event) {
 }
 
 self.addEventListener("fetch", event => {
+  if (nyxShouldBlockScramjetRequest(event)) {
+    event.respondWith(nyxBlockedScramjetResponse(event));
+    return;
+  }
   if ($scramjetController.shouldRoute(event)) {
     event.respondWith(nyxRouteScramjet(event));
     return;

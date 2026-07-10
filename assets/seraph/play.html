@@ -28,10 +28,33 @@
     .loading.hidden{display:none}
     .box{
       max-width:520px;
+      width:min(520px,calc(100vw - 48px));
       border:1px solid #7dd3fc;
       border-radius:16px;
       padding:24px;
       background:#111827;
+    }
+    .progress-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom:10px;
+      color:#f8fafc;
+      font-size:15px;
+    }
+    .progress-track{
+      height:6px;
+      overflow:hidden;
+      border-radius:999px;
+      background:rgba(248,250,252,.14);
+    }
+    .progress-fill{
+      width:0;
+      height:100%;
+      border-radius:999px;
+      background:#7dd3fc;
+      transition:width .2s ease;
     }
     .box button{
       margin-top:14px;
@@ -54,21 +77,72 @@
   </style>
 </head>
 <body>
-  <div class="loading"><div class="box" id="status">Loading Seraph game...</div></div>
-  <iframe id="gameFrame" class="game-frame" title="Seraph game" sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-pointer-lock allow-popups allow-downloads allow-presentation"></iframe>
+  <div class="loading">
+    <div class="box" id="status">
+      <div class="progress-row">
+        <span id="progressLabel">Loading</span>
+        <span id="progressPercent">0%</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+  </div>
+  <iframe id="gameFrame" class="game-frame" title="Seraph game" allow="fullscreen; gamepad; autoplay; pointer-lock; keyboard-map; clipboard-read; clipboard-write" tabindex="0"></iframe>
   <script>
     const cdnRoot='https://cdn.jsdelivr.net/gh/a456pur/seraph@main';
     const loading=document.querySelector('.loading');
     const status=document.getElementById('status');
+    const progressLabel=document.getElementById('progressLabel');
+    const progressPercent=document.getElementById('progressPercent');
+    const progressFill=document.getElementById('progressFill');
     const frame=document.getElementById('gameFrame');
+    frame.addEventListener('load',()=>setTimeout(()=>frame.focus(),80));
+    document.addEventListener('pointerdown',()=>setTimeout(()=>frame.focus(),0),true);
     const params=new URLSearchParams(location.search);
     const game=String(params.get('game') || '').replace(/^\/+/,'');
     let lastGameHtml='';
     let lastBaseUrl='';
     let restoring=false;
+    let progressTimer=0;
+    let gameLaunched=false;
+    let gameLoadStarted=0;
+    function setGameProgress(value,label='Loading'){
+      const percent=Math.max(0,Math.min(100,Math.round(value)));
+      progressLabel.textContent=percent>=100 ? 'Launched' : label;
+      progressPercent.textContent=`${percent}%`;
+      progressFill.style.width=`${percent}%`;
+      loading.classList.remove('hidden');
+    }
+    function startGameProgress(){
+      clearInterval(progressTimer);
+      gameLaunched=false;
+      gameLoadStarted=performance.now();
+      let progress=8;
+      setGameProgress(progress);
+      progressTimer=setInterval(()=>{
+        progress=Math.min(94,progress + Math.max(1,(96-progress)*.1));
+        setGameProgress(progress);
+      },210);
+    }
+    function finishGameProgress(){
+      if(gameLaunched) return;
+      if(!gameSurfaceReady()){
+        if(performance.now()-gameLoadStarted>13000){
+          fail('This game loaded a blank screen. One of its required files is missing or blocked.');
+          return;
+        }
+        setTimeout(finishGameProgress,700);
+        return;
+      }
+      gameLaunched=true;
+      clearInterval(progressTimer);
+      setGameProgress(100,'Launched');
+      parent.postMessage({type:'nyx:game-launched'},'*');
+      setTimeout(()=>loading.classList.add('hidden'),650);
+    }
     function fail(message){
+      clearInterval(progressTimer);
       status.innerHTML='';
-      status.append(document.createTextNode(message));
+      status.append(document.createTextNode(String(message || 'This game failed to load.')));
       const retry=document.createElement('button');
       retry.type='button';
       retry.textContent='Retry';
@@ -79,6 +153,23 @@
       library.addEventListener('click',()=>location.href='/assets/games/index.html');
       status.append(document.createElement('br'),retry,document.createTextNode(' '),library);
       loading.classList.remove('hidden');
+    }
+    function gameSurfaceReady(){
+      try{
+        const doc=frame.contentDocument;
+        if(!doc?.body) return false;
+        const loader=doc.querySelector('#loader,.loader,.loading');
+        if(loader && getComputedStyle(loader).display!=='none' && performance.now()-gameLoadStarted>9000) return false;
+        const target=[...doc.querySelectorAll('canvas,object,embed,ruffle-player,ruffle-object,iframe,#game,#gameContainer,#game-container,#unity-container,#unity-canvas,#ruffle,#player')]
+          .find(el=>{
+            const box=el.getBoundingClientRect?.();
+            return box && box.width>40 && box.height>40 && getComputedStyle(el).display!=='none';
+          });
+        if(target) return true;
+        return String(doc.body.textContent || '').replace(/\s+/g,' ').trim().length>40;
+      }catch{
+        return false;
+      }
     }
     function safeGamePath(path){
       if(!path || path.includes('..') || !/^[a-z0-9_./-]+$/i.test(path)) return '';
@@ -102,6 +193,7 @@
         return `${prefix}${seraphAssetUrl(assetPath)}`;
       };
       return String(html || '')
+        .replace(/<script\b[^>]*src=["']\/js\/main\.js["'][^>]*>\s*<\/script>/gi,'')
         .replace(/((?:src|href)=["'])([^"']+)/gi, proxiedRelative)
         .replace(/(["'(\s=])\/(games|images|js|css|assets|storage)\//g, (_match,prefix,folder)=>proxiedRootAsset(prefix,folder))
         .replace(/(["'(\s=])\/favicon\.png\b/g, (_match,prefix)=>`${prefix}${seraphAssetUrl('favicon.png')}`)
@@ -109,8 +201,20 @@
     }
     function withSeraphBase(html,baseUrl){
       const baseTag=`<base href="${baseUrl}">`;
+      const safeFit=`<style>html,body{width:100%!important;height:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#05070d!important}.ads,.ad,.adsbygoogle,iframe[src*="googlesyndication"],iframe[src*="doubleclick"],iframe[src*="recaptcha"]{display:none!important;pointer-events:none!important}</style><script>(()=>{const q='canvas,object,embed,ruffle-player,ruffle-object,iframe,#game,#gameContainer,#game-container,#unity-container,#unity-canvas,#ruffle,#player';const visible=el=>{const r=el.getBoundingClientRect();return r.width>20&&r.height>20&&getComputedStyle(el).display!=='none'};const editing=()=>{const a=document.activeElement;return !!(a&&(a.isContentEditable||a.matches?.('input,textarea,select,[contenteditable=\"\"],[contenteditable=\"true\"]')))};const fit=()=>{try{if(editing())return;document.documentElement.style.setProperty('overflow','hidden','important');document.body?.style.setProperty('overflow','hidden','important');const target=[...document.querySelectorAll(q)].filter(visible).sort((a,b)=>{const ar=a.getBoundingClientRect(),br=b.getBoundingClientRect();return br.width*br.height-ar.width*ar.height})[0];if(!target)return;const r=target.getBoundingClientRect();const baseW=Number(target.getAttribute('width'))||r.width||innerWidth;const baseH=Number(target.getAttribute('height'))||r.height||innerHeight;const ratio=Math.max(.05,baseW/baseH);let w=innerWidth,h=innerHeight;if(w/h>ratio)w=h*ratio;else h=w/ratio;target.style.setProperty('position','fixed','important');target.style.setProperty('left','50%','important');target.style.setProperty('top','50%','important');target.style.setProperty('width',Math.round(w)+'px','important');target.style.setProperty('height',Math.round(h)+'px','important');target.style.setProperty('margin','0','important');target.style.setProperty('max-width','100vw','important');target.style.setProperty('max-height','100vh','important');target.style.setProperty('transform','translate(-50%,-50%)','important');target.style.setProperty('transform-origin','center center','important');target.style.setProperty('object-fit','contain','important')}catch{}};addEventListener('load',()=>{fit();setTimeout(fit,350);setTimeout(fit,1400)});addEventListener('resize',fit);document.addEventListener('DOMContentLoaded',fit);setInterval(fit,350)})()<\/script>`;
       const guard=`<script>
         (() => {
+          const NativeURL=window.URL;
+          function NyxURL(input,base){
+            try{
+              return new NativeURL(input,base || document.baseURI || location.href);
+            }catch{
+              return new NativeURL('about:blank');
+            }
+          }
+          Object.setPrototypeOf(NyxURL,NativeURL);
+          NyxURL.prototype=NativeURL.prototype;
+          window.URL=NyxURL;
           const critical=/WebGL\\.json|\\.data(?:\\.unityweb)?$|\\.wasm(?:\\.unityweb)?$|\\.framework\\.js(?:\\.unityweb)?$/i;
           const report=(message,url='')=>parent.postMessage({type:'seraph:load-error',message,url},'*');
           const ready=()=>parent.postMessage({type:'seraph:ready'},'*');
@@ -136,7 +240,7 @@
           setTimeout(()=>{
             const loader=document.querySelector('#loader,.loader,.loading');
             const canvas=document.querySelector('canvas');
-            const text=(document.body?.innerText || '').trim();
+            const text=(document.body?.textContent || '').trim();
             if(loader && getComputedStyle(loader).display!=='none' && (!canvas || !text)){
               report('This game is stuck loading because one of its remote files is unavailable.','');
             }
@@ -144,14 +248,16 @@
         })();
       <\/script>`;
       return /<head([^>]*)>/i.test(html)
-        ? html.replace(/<head([^>]*)>/i,`<head$1>${baseTag}${guard}`)
-        : `${baseTag}${guard}${html}`;
+        ? html.replace(/<head([^>]*)>/i,`<head$1>${baseTag}${safeFit}${guard}`)
+        : `${baseTag}${safeFit}${guard}${html}`;
     }
     function loadGameSrcdoc(html,baseUrl){
       lastGameHtml=html;
       lastBaseUrl=baseUrl;
+      setGameProgress(72);
       frame.srcdoc=withSeraphBase(rewriteSeraphHtml(html,gamePath),baseUrl);
-      status.textContent='Starting Seraph game...';
+      setGameProgress(86);
+      setTimeout(finishGameProgress,7000);
       loading.classList.remove('hidden');
     }
     frame.addEventListener('load',()=>{
@@ -166,11 +272,12 @@
           setTimeout(()=>{restoring=false},250);
         }
       }catch{}
+      if(lastGameHtml) setTimeout(finishGameProgress,1800);
     });
     window.addEventListener('message',event=>{
       if(event.source!==frame.contentWindow) return;
       if(event.data?.type==='seraph:ready'){
-        loading.classList.add('hidden');
+        finishGameProgress();
         return;
       }
       if(event.data?.type!=='seraph:load-error') return;
@@ -179,23 +286,30 @@
     });
     async function fetchSeraphHtml(gamePath, htmlUrl){
       const localUrl=`/seraph-fetch?path=${encodeURIComponent(gamePath)}`;
+      setGameProgress(22);
       try{
         const local=await fetch(localUrl,{cache:'no-store'});
-        if(local.ok) return await local.text();
+        if(local.ok){
+          setGameProgress(48);
+          return await local.text();
+        }
       }catch{}
+      setGameProgress(34);
       const response=await fetch(htmlUrl,{cache:'no-store'});
       if(!response.ok) throw new Error(`HTTP ${response.status}`);
+      setGameProgress(56);
       return response.text();
     }
     const gamePath=safeGamePath(game);
     if(!gamePath){
       fail('Missing Seraph game path.');
     }else{
+      startGameProgress();
       const htmlUrl=`${cdnRoot}/games/${gamePath}`;
       const baseUrl=htmlUrl.slice(0,htmlUrl.lastIndexOf('/') + 1);
       fetchSeraphHtml(gamePath,htmlUrl)
         .then(html=>loadGameSrcdoc(html,baseUrl))
-        .catch(error=>fail(`Could not load Seraph game: ${error.message}`));
+        .catch(error=>fail(`Could not load Seraph game: ${error?.message || error || 'Network error'}`));
     }
   </script>
 </body>

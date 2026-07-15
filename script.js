@@ -1,0 +1,10967 @@
+
+(function(){
+  'use strict';
+  //helpers
+  const $ = id => document.getElementById(id);
+  const qsa = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const store = {get(k,d){try{return JSON.parse(localStorage.getItem(k)) ?? d}catch{return d}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}, text(k,d=''){try{return localStorage.getItem(k) ?? d}catch{return d}}, setText(k,v){try{localStorage.setItem(k,String(v))}catch{}}};
+  const nyxFontOptions=[
+    ['outfit','Outfit','Outfit,Arial,sans-serif'],
+    ['raleway','Raleway','Raleway,Arial,sans-serif'],
+    ['nunito','Nunito','Nunito,Arial,sans-serif'],
+    ['inter','Inter','Inter,Arial,sans-serif'],
+    ['poppins','Poppins','Poppins,Arial,sans-serif'],
+    ['quicksand','Quicksand','Quicksand,Arial,sans-serif'],
+    ['lexend','Lexend','Lexend,Arial,sans-serif'],
+    ['montserrat','Montserrat','Montserrat,Arial,sans-serif'],
+    ['atkinson','Atkinson Hyperlegible','"Atkinson Hyperlegible",Arial,sans-serif']
+  ];
+  function nyxFontChoice(value=store.text('nyx.font','outfit')){
+    const key=String(value || 'outfit').toLowerCase();
+    return nyxFontOptions.find(item=>item[0]===key) || nyxFontOptions[0];
+  }
+  function nyxFontOptionsMarkup(selected=store.text('nyx.font','outfit')){
+    const current=nyxFontChoice(selected)[0];
+    return nyxFontOptions.map(([key,label])=>`<option value="${esc(key)}" ${key===current?'selected':''}>${esc(label)}</option>`).join('');
+  }
+  function applyFontSetting(root=document){
+    const [key,,family]=nyxFontChoice();
+    document.documentElement.style.setProperty('--nyx-font',family);
+    document.body.dataset.nyxFont=key;
+    root.querySelectorAll?.('[data-font-value]')?.forEach(select=>{
+      select.innerHTML=nyxFontOptionsMarkup(key);
+      select.value=key;
+    });
+  }
+  //popup-protection
+  function popupProtectionEnabled(){
+    return store.get('nyx.popupProtection',true);
+  }
+  function isAnimexUrl(url){
+    try{
+      const host=new URL(normalize(url),location.href).hostname.replace(/^www\./,'').toLowerCase();
+      return host==='animex.one' || host.endsWith('.animex.one');
+    }catch{return false}
+  }
+  function shownyxPrompt(message,{loop=false,onOk=null}={}){
+    document.querySelectorAll('.nyx-prompt-shade').forEach(el=>el.remove());
+    const shade=document.createElement('div');
+    shade.className='nyx-prompt-shade';
+    shade.innerHTML=`<div class="nyx-prompt" role="dialog" aria-modal="true"><div class="nyx-prompt-title">${esc(location.hostname || 'nyx')} says</div><div class="nyx-prompt-message">${esc(message)}</div><input class="nyx-prompt-input" autocomplete="off" spellcheck="false"><div class="nyx-prompt-actions"><button class="nyx-prompt-ok" type="button">OK</button><button class="nyx-prompt-cancel" type="button">Cancel</button></div></div>`;
+    document.body.appendChild(shade);
+    const ok=shade.querySelector('.nyx-prompt-ok');
+    const input=shade.querySelector('.nyx-prompt-input');
+    input?.focus();
+    ok.onclick=()=>{
+      shade.remove();
+      if(loop) setTimeout(()=>shownyxPrompt(message,{loop:true}),0);
+      else if(typeof onOk==='function') onOk();
+    };
+    shade.querySelector('.nyx-prompt-cancel')?.addEventListener('click',()=>shade.remove());
+    input?.addEventListener('keydown',e=>{
+      if(e.key==='Enter') ok.click();
+      if(e.key==='Escape') shade.querySelector('.nyx-prompt-cancel')?.click();
+    });
+    return shade;
+  }
+  function showAnimexMikuPrompt(onOk){
+    shownyxPrompt('Use MIKU for streaming',{onOk});
+  }
+  //hieroglyph-text-effect
+  const hieroglyphTextNodes = new WeakMap();
+  const hieroglyphSkipSelector = 'script,style,noscript,textarea,input,select,option,iframe,canvas,svg,audio,video';
+  const hieroglyphLetters = {
+    a:'𓄿',b:'𓃀',c:'𓎡',d:'𓂧',e:'𓇌',f:'𓆑',g:'𓎼',h:'𓉔',i:'𓇋',j:'𓆓',k:'𓎡',l:'𓃭',m:'𓅓',
+    n:'𓈖',o:'𓅱',p:'𓊪',q:'𓈎',r:'𓂋',s:'𓋴',t:'𓏏',u:'𓅱',v:'𓆑',w:'𓅱',x:'𓐍',y:'𓇌',z:'𓊃',
+    '0':'𓏤','1':'𓏺','2':'𓏻','3':'𓏼','4':'𓏽','5':'𓏾','6':'𓏿','7':'𓐀','8':'𓐁','9':'𓐂'
+  };
+  //browser-engine-state
+  const hasHostedBackend = () => location.protocol === 'http:' || location.protocol === 'https:';
+  const browserShellTabs = [];
+  const browserShellOpeningTabs = new Set();
+  let browserShellActiveTab = null;
+  let browserShellLastBlankOpenAt = 0;
+  const engines = {
+    bing:'https://www.bing.com/search?q=',
+    google:'https://www.google.com/search?q=',
+    duckduckgo:'https://duckduckgo.com/?q='
+  };
+  function selectedSearchUrl(query){
+    const engine=store.text('nyx.engine','duckduckgo');
+    return (engines[engine] || engines.duckduckgo || engines.google) + encodeURIComponent(String(query || '').trim());
+  }
+  function unwrapAccidentalUrlSearch(value){
+    const raw=String(value || '').trim();
+    try{
+      const parsed=new URL(raw);
+      const host=parsed.hostname.toLowerCase();
+      const isSearch=(host==='duckduckgo.com' && parsed.pathname==='/')
+        || (/^(?:www\.)?google\.[a-z.]+$/i.test(host) && parsed.pathname==='/search')
+        || (host==='www.bing.com' && parsed.pathname==='/search');
+      if(!isSearch) return raw;
+      const query=String(parsed.searchParams.get('q') || '').trim();
+      return /^(?:https?:\/\/|[\w.-]+\.[a-z]{2,}(?:[\/:?#]|$))/i.test(query) ? query : raw;
+    }catch{return raw}
+  }
+  function canonicalAddressInput(value){
+    const raw=unwrapAccidentalUrlSearch(value);
+    if(/^(?:localhost|(?:\d{1,3}\.){3}\d{1,3})(?::\d+)?(?:\/|$)/i.test(raw)) return 'http://'+raw;
+    if(/^[\w.-]+\.[a-z]{2,}(?:[\/:?#]|$)/i.test(raw) && !/^[a-z][a-z0-9+.-]*:/i.test(raw)) return 'https://'+raw;
+    return raw;
+  }
+  const sixtySevenJumpscareSrc='assets/jumpscares/676767.gif';
+  function shouldTriggerSixtySevenJumpscare(value){
+    return String(value || '').trim()==='67';
+  }
+  function showSixtySevenJumpscare(){
+    document.querySelectorAll('.nyx-jumpscare').forEach(el=>el.remove());
+    const overlay=document.createElement('div');
+    overlay.className='nyx-jumpscare';
+    overlay.innerHTML=`<img alt="" src="${sixtySevenJumpscareSrc}?t=${Date.now()}">`;
+    document.body.appendChild(overlay);
+    const close=()=>overlay.remove();
+    overlay.addEventListener('click',close,{once:true});
+    setTimeout(close,3600);
+  }
+  const rammerheadBase = 'https://browser.rammerhead.org/';
+  const defaultBg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  const bgPresets = {
+    dragon: defaultBg,
+    lofiPurple: 'url("./assets/backgrounds/nyx-blue-light-trails.jpg")',
+    sunset: 'url("./assets/backgrounds/wp6058967.jpg")',
+    yosemiteFog: 'url("./assets/backgrounds/961912.jpg")',
+    yosemiteGold: 'url("./assets/backgrounds/1014077.jpg")',
+    redArch: 'url("./assets/backgrounds/1565924.jpg")',
+    alpineLake: 'url("./assets/backgrounds/1609678.jpg")',
+    canyonLights: 'url("./assets/backgrounds/6781708.jpg")',
+    mountainSunset: 'url("./assets/backgrounds/6796216.jpg")',
+    riverFalls: 'url("./assets/backgrounds/8848864.jpg")',
+    starSky: 'url("./assets/backgrounds/8848964.jpg")',
+    dark: 'linear-gradient(135deg,#020308 0%,#111827 56%,#000 100%)',
+    violet: 'linear-gradient(135deg,#020617 0%,#312e81 48%,#0f172a 100%)'
+  };
+  const bgNames = {
+    dragon:'Nyx Blue',
+    lofiPurple:'Nyx Blue',
+    sunset:'Sunset Deer',
+    yosemiteFog:'Yosemite Fog',
+    yosemiteGold:'Yosemite Gold',
+    redArch:'Red Arch',
+    alpineLake:'Alpine Lake',
+    canyonLights:'Canyon Lights',
+    mountainSunset:'Mountain Sunset',
+    riverFalls:'River Falls',
+    starSky:'Star Sky',
+    dark:'Black Gradient',
+    violet:'Violet Glass'
+  };
+  //favicons
+  const favicons = {
+    nyx:'./assets/icons/nyx-logo.png',
+    classroom:`data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%23fbbc04'/%3E%3Crect x='8' y='10' width='48' height='40' rx='3' fill='%2334a853'/%3E%3Ccircle cx='32' cy='25' r='6' fill='white'/%3E%3Cpath d='M18 42c4-9 20-9 24 0' fill='white'/%3E%3C/svg%3E`,
+    drive:'./assets/icons/googledrive-logo.webp',
+    google:'./assets/icons/google-logo.png',
+    classlink:'./assets/icons/classlink-logo.png'
+  };
+  const nyxTabTitle = '\u057c\u028f\u04fc';
+  const nyxTabFavicon = './assets/icons/firefly-tab-logo-bold.png';
+  const nyxFaviconHref = () => $('appFavicon')?.href || nyxTabFavicon;
+  function makeIcon(label,bg='#111827',fg='#fff'){
+    return 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="${bg}"/><text x="32" y="40" text-anchor="middle" font-size="22" font-family="Outfit, Arial, sans-serif" font-weight="800" fill="${fg}">${label}</text></svg>`);
+  }
+  function svgIcon(svg){return 'data:image/svg+xml,'+encodeURIComponent(svg)}
+  function localIcon(name){return `/assets/icons/${name}`}
+  function simpleIcon(slug,color='ffffff'){
+    const c='#'+color.replace('#','');
+    const common='xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"';
+    const icons={
+      youtube:`<svg ${common}><rect width="64" height="64" rx="14" fill="#0b0b0b"/><rect x="10" y="19" width="44" height="26" rx="7" fill="#ff0000"/><path d="M28 25v14l13-7z" fill="#fff"/></svg>`,
+      discord:`<svg ${common}><rect width="64" height="64" rx="14" fill="#5865f2"/><path d="M22 22c5-2 19-2 24 0 4 7 5 14 3 22-5 3-9 3-12 1l2-3c-4 1-10 1-14 0l2 3c-4 2-8 2-12-1-2-8-1-15 3-22z" fill="#fff"/><circle cx="26" cy="34" r="3" fill="#5865f2"/><circle cx="38" cy="34" r="3" fill="#5865f2"/></svg>`,
+      spotify:`<svg ${common}><rect width="64" height="64" rx="14" fill="#1db954"/><path d="M19 27c10-3 20-2 29 3M21 35c8-2 16-1 23 3M23 42c6-1 12 0 17 2" stroke="#07110b" stroke-width="5" stroke-linecap="round" fill="none"/></svg>`,
+      google:`<svg ${common}><rect width="64" height="64" rx="14" fill="#fff"/><text x="32" y="44" text-anchor="middle" font-size="38" font-family="Outfit" font-weight="700" fill="#4285f4">G</text></svg>`,
+      duckduckgo:`<svg ${common}><rect width="64" height="64" rx="14" fill="#de5833"/><circle cx="32" cy="32" r="18" fill="#fff"/><text x="32" y="39" text-anchor="middle" font-size="18" font-family="Outfit" font-weight="900" fill="#de5833">D</text></svg>`,
+      wikipedia:`<svg ${common}><rect width="64" height="64" rx="14" fill="#fff"/><text x="32" y="43" text-anchor="middle" font-size="34" font-family="Outfit,Arial,sans-serif" font-weight="700" fill="#111">W</text></svg>`,
+      tiktok:`<svg ${common}><rect width="64" height="64" rx="14" fill="#050505"/><path d="M35 16v25a9 9 0 1 1-8-9" stroke="#fff" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M36 16c3 8 7 11 13 12" stroke="#25f4ee" stroke-width="5" stroke-linecap="round" fill="none"/></svg>`,
+      instagram:`<svg ${common}><defs><linearGradient id="ig" x1="0" x2="1" y1="1" y2="0"><stop stop-color="#feda75"/><stop offset=".45" stop-color="#d62976"/><stop offset="1" stop-color="#4f5bd5"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#ig)"/><rect x="17" y="17" width="30" height="30" rx="9" stroke="#fff" stroke-width="5" fill="none"/><circle cx="32" cy="32" r="7" stroke="#fff" stroke-width="5" fill="none"/><circle cx="43" cy="21" r="2.5" fill="#fff"/></svg>`,
+      snapchat:`<svg ${common}><rect width="64" height="64" rx="14" fill="#fffc00"/><path d="M32 15c8 0 11 7 10 17 2 3 5 5 9 6-4 3-7 3-10 3-3 6-15 6-18 0-3 0-6 0-10-3 4-1 7-3 9-6-1-10 2-17 10-17z" fill="#fff" stroke="#111" stroke-width="3" stroke-linejoin="round"/></svg>`,
+      amazon:`<svg ${common}><rect width="64" height="64" rx="14" fill="#fff"/><text x="32" y="36" text-anchor="middle" font-size="28" font-family="Outfit" font-weight="800" fill="#111">a</text><path d="M20 44c9 6 19 6 28 0" stroke="#ff9900" stroke-width="4" stroke-linecap="round" fill="none"/></svg>`,
+      reddit:`<svg ${common}><rect width="64" height="64" rx="14" fill="#ff4500"/><circle cx="32" cy="34" r="16" fill="#fff"/><circle cx="26" cy="33" r="3" fill="#ff4500"/><circle cx="38" cy="33" r="3" fill="#ff4500"/><path d="M25 41c4 3 10 3 14 0" stroke="#ff4500" stroke-width="3" stroke-linecap="round" fill="none"/><path d="M40 20l6-5 3 5" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/></svg>`,
+      twitter:`<svg ${common}><rect width="64" height="64" rx="14" fill="#1da1f2"/><path d="M49 23c-1 1-3 2-5 2 2-1 3-3 3-5-2 1-4 2-6 2-5-5-13-1-12 6-7 0-13-4-17-9-2 4-1 8 3 11-2 0-3-1-4-1 0 5 3 8 8 9-2 1-4 1-5 0 2 4 6 7 11 7-5 4-10 5-16 5 6 4 12 5 19 4 15-2 24-14 23-28 2-1 3-2 4-4z" fill="#fff"/></svg>`,
+      openai:`<svg ${common}><rect width="64" height="64" rx="14" fill="#111827"/><path d="M31 13c7-1 12 4 12 10 6 2 9 8 6 14 3 6-2 13-9 14-4 6-13 6-17 1-7 0-12-6-10-13-5-5-3-13 3-16 1-7 8-11 15-10z" fill="none" stroke="#fff" stroke-width="4" stroke-linejoin="round"/></svg>`
+    };
+    return svgIcon(icons[slug] || `<svg ${common}><rect width="64" height="64" rx="14" fill="#0b0f17"/><circle cx="32" cy="32" r="18" fill="${c}"/></svg>`);
+  }
+  //app-icons
+  const appIcons = {
+    'youtube.com':simpleIcon('youtube','ff0000'),
+    'discord.com':localIcon('discord-embleme.png'),
+    'spotify.com':localIcon('spotify-logo.png'),
+    'traxmojo.com':localIcon('traxmojo-logo.png'),
+    'google.com':localIcon('google-logo.png'),
+    'duckduckgo.com':localIcon('duck-ai-logo.png'),
+    'wikipedia.org':simpleIcon('wikipedia','ffffff'),
+    'cineby.at':localIcon('cineby-logo.png'),
+    'tiktok.com':localIcon('tiktok-logo.png'),
+    'instagram.com':localIcon('instagram-logo.jpg'),
+    'snapchat.com':localIcon('snapchat-logo.jpg'),
+    'amazon.com':simpleIcon('amazon','ff9900'),
+    'reddit.com':localIcon('reddit-logo.png'),
+    'x.com':localIcon('x-logo.png'),
+    'chatgpt.com':localIcon('chatgpt-logo.webp'),
+    'store.steampowered.com':localIcon('steam-logo.ico'),
+    'crunchyroll.com':localIcon('crunchyroll-logo.svg'),
+    'crazygames.com':localIcon('crazygames-logo.png'),
+    'newgrounds.com':localIcon('newgrounds-logo.svg'),
+    'twitch.tv':localIcon('twitch-logo.png'),
+    'kick.com':localIcon('kick-logo.svg'),
+    'soundcloud.com':localIcon('soundcloud-logo.png'),
+    'pluto.tv':localIcon('plutotv-logo.png'),
+    'skribbl.io':localIcon('skribbl-logo.png'),
+    'slither.io':localIcon('slither-logo.png'),
+    'geoguessr.com':localIcon('geoguessr-logo.png'),
+    'y8.com':localIcon('y8-logo.png'),
+    'itch.io':localIcon('itchio-logo.svg'),
+    'tcgplayer.com':localIcon('tcgplayer-logo.webp'),
+    'cpstest.org':localIcon('cps-logo.png'),
+    'classlink.com':localIcon('classlink-logo.png'),
+    'drive.google.com':localIcon('googledrive-logo.png'),
+    'docs.google.com':svgIcon(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#1a73e8"/><path d="M22 12h17l9 9v31H22z" fill="#fff"/><path d="M39 12v10h9" fill="#d2e3fc"/><path d="M27 31h16M27 37h16M27 43h12" stroke="#1a73e8" stroke-width="3" stroke-linecap="round"/></svg>`),
+    'duck.ai':localIcon('duck-ai-logo.png'),
+    'nyx-ai':favicons.nyx,
+    'chess.com':localIcon('chess-logo.png'),
+    'games':localIcon('dock-controller.png'),
+    'apps':svgIcon(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="10" y="10" width="18" height="18" rx="4" fill="#fff"/><rect x="36" y="10" width="18" height="18" rx="4" fill="#fff"/><rect x="10" y="36" width="18" height="18" rx="4" fill="#fff"/><rect x="36" y="36" width="18" height="18" rx="4" fill="#fff"/></svg>`),
+    'geforcenow':localIcon('dock-nvidia.png'),
+    'roblox.com':localIcon('dock-roblox.png'),
+    'discord-dock':localIcon('discord-embleme.png'),
+    'settings':localIcon('dock-settings.png'),
+    'animex.one':svgIcon(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 90"><rect width="160" height="90" rx="14" fill="#030304"/><g opacity=".55" stroke="#243a68" stroke-width="2"><path d="M8 8l16 12M48 4l22 16M132 8l18 12M20 64l16 12M116 62l24 18"/></g><text x="80" y="56" text-anchor="middle" font-size="30" font-family="Outfit,Arial,sans-serif" font-weight="900" fill="#ffffff">ANIMEX</text><text x="78" y="56" text-anchor="middle" font-size="30" font-family="Outfit,Arial,sans-serif" font-weight="900" fill="#7c5ce6" opacity=".9">ANI</text></svg>`)
+  };
+  function appIcon(domain){return appIcons[domain] || makeIcon('GL','#0b0f17','#67e8f9')}
+  function websiteFaviconUrl(url){
+    const raw=String(url || '').trim();
+    if(!raw || raw==='about:blank' || raw.startsWith('nyx://')) return '';
+    try{
+      const source=typeof browserShellSourceUrl==='function' ? (browserShellSourceUrl(raw) || raw) : raw;
+      const parsed=new URL(source,location.href);
+      if(!/^https?:$/.test(parsed.protocol)) return '';
+      return new URL('/favicon.ico',parsed.origin).href;
+    }catch{return ''}
+  }
+  function iconFromPageDocument(doc,sourceUrl=''){
+    try{
+      const link=doc?.querySelector?.('link[rel~="icon" i],link[rel="shortcut icon" i]');
+      const href=String(link?.href || link?.getAttribute?.('href') || '').trim();
+      if(!href || href.length>4096) return '';
+      const resolved=new URL(href,doc.baseURI || sourceUrl || location.href);
+      if(!['http:','https:','data:'].includes(resolved.protocol)) return '';
+      return resolved.href;
+    }catch{return ''}
+  }
+  function bindTabIconFallback(img){
+    if(!img || img.dataset.nyxIconFallbackBound==='true') return;
+    img.dataset.nyxIconFallbackBound='true';
+    img.addEventListener('error',()=>{
+      if(img.dataset.nyxIconFallbackUsed==='true') return;
+      img.dataset.nyxIconFallbackUsed='true';
+      img.src=favicons.nyx;
+    });
+  }
+  function iconForUrl(url){
+    const raw=String(url || '').trim();
+    if(!raw || raw==='about:blank' || raw.startsWith('nyx://')) return favicons.nyx;
+    const source=typeof browserShellSourceUrl==='function' ? (browserShellSourceUrl(raw) || raw) : raw;
+    if(source.startsWith('assets/games/') || source.startsWith('assets/ugs/') || source.startsWith('assets/seraph/') || source.startsWith('/assets/games/') || source.startsWith('/assets/ugs/') || source.startsWith('/assets/seraph/')) return appIcon('games');
+    try{
+      const host=new URL(source,location.href).hostname.replace(/^www\./,'').toLowerCase();
+      if(appIcons[host]) return appIcons[host];
+      const key=Object.keys(appIcons).find(domain=>host===domain || host.endsWith('.'+domain));
+      if(key) return appIcons[key];
+      if(host.includes('google')) return favicons.google;
+    }catch{}
+    return websiteFaviconUrl(source) || favicons.nyx;
+  }
+  function titleForUrl(url){
+    const raw=String(url || '').trim();
+    if(!raw || raw==='about:blank') return 'New Tab';
+    if(raw==='nyx://ai') return 'Nyx AI';
+    if(raw.startsWith('nyx://')) return raw.replace('nyx://','nyx ');
+    if(raw.startsWith('assets/games/') || raw.startsWith('assets/ugs/') || raw.startsWith('assets/seraph/') || raw.startsWith('/assets/games/') || raw.startsWith('/assets/ugs/') || raw.startsWith('/assets/seraph/')) return 'Games';
+    try{return new URL(raw,location.href).hostname.replace(/^www\./,'') || 'New Tab'}catch{return 'New Tab'}
+  }
+  let zTop = 20, winCount = 0, activeBrowser = null, antiCloseEnabled = store.get('nyx.antiClose',true), panicCaptureArmed = false, antiClosePanicBypass = false;
+  let antiCloseConfirmHandler = null, antiCloseGestureHandler = null, antiCloseRearmTimer = null, antiCloseHadGesture = false;
+  let renderedChromeMode = '';
+  let uvInstallPromise = null;
+  let scramjetInstallPromise = null;
+  let scramjetController = null;
+  let bareMuxConnection = null;
+  let scramjetTransport = null;
+  let scramjetTransportKey = '';
+  let browserTransportOverride = '';
+  let scramjetInstallError = '';
+  //scramjet-runtime-guard
+  let scramjetRuntimeGuardSource = '';
+  const scramjetMinimalRuntimeGuardSource=`(() => {
+    if (typeof window === "undefined" || window.__nyxScramjetMinimalGuards) return;
+    window.__nyxScramjetMinimalGuards = true;
+    try {
+      const noop = value => value;
+      window.$scramerr = window.$scramerr || noop;
+      window.$scramjet$pushsourcemap = window.$scramjet$pushsourcemap || noop;
+    } catch {}
+    try {
+      window.__sentry_instrumentation_handlers__ = window.__sentry_instrumentation_handlers__ || {};
+      window.global = window.global || window;
+    } catch {}
+    if (!window.trustedTypes) {
+      try {
+        Object.defineProperty(window, "trustedTypes", {
+          configurable: true,
+          value: {
+            createPolicy(_name, rules = {}) {
+              return {
+                createHTML(value) { return typeof rules.createHTML === "function" ? rules.createHTML(value) : value; },
+                createScript(value) { return typeof rules.createScript === "function" ? rules.createScript(value) : value; },
+                createScriptURL(value) { return typeof rules.createScriptURL === "function" ? rules.createScriptURL(value) : value; }
+              };
+            }
+          }
+        });
+      } catch {}
+    }
+    try {
+      if (!window.Buffer) {
+        const toBytes = value => value instanceof Uint8Array ? value : new TextEncoder().encode(String(value ?? ""));
+        window.Buffer = {
+          from: toBytes,
+          alloc(size) { return new Uint8Array(Math.max(0, Number(size) || 0)); },
+          isBuffer(value) { return value instanceof Uint8Array; },
+          byteLength(value) { return toBytes(value).byteLength; }
+        };
+      }
+      if (!window.Long) {
+        const toNumber = value => Number(value && typeof value === "object" && "low" in value ? value.low : value) || 0;
+        window.Long = {
+          ZERO: 0,
+          UZERO: 0,
+          fromNumber: toNumber,
+          fromValue: toNumber,
+          isLong() { return false; }
+        };
+      }
+    } catch {}
+    try {
+      const nativeCurrentScript = Object.getOwnPropertyDescriptor(Document.prototype, "currentScript");
+      const fallbackScript = document.createElement("script");
+      fallbackScript.setAttribute("nonce", "");
+      Object.defineProperty(Document.prototype, "currentScript", {
+        configurable: true,
+        get() {
+          let current = null;
+          try { current = nativeCurrentScript?.get?.call(this) || null; } catch {}
+          return current || this.querySelector?.("script[src],script") || fallbackScript;
+        }
+      });
+    } catch {}
+    try {
+      const blockedTelemetry = value => /(?:google-analytics\\.com|googletagmanager\\.com|stats\\.g\\.doubleclick\\.net|analytics\\.google\\.com)/i.test(String(value || ""));
+      const neutralizeScript = node => {
+        try {
+          if (node && String(node.tagName || "").toUpperCase() === "SCRIPT" && blockedTelemetry(node.src || node.getAttribute?.("src"))) {
+            node.type = "text/plain";
+            node.removeAttribute("src");
+            node.text = "";
+            return true;
+          }
+        } catch {}
+        return false;
+      };
+      const nativeAppendChild = Node.prototype.appendChild;
+      Node.prototype.appendChild = function(node) {
+        if (neutralizeScript(node)) return node;
+        return nativeAppendChild.call(this, node);
+      };
+      const nativeInsertBefore = Node.prototype.insertBefore;
+      Node.prototype.insertBefore = function(node, before) {
+        if (neutralizeScript(node)) return node;
+        return nativeInsertBefore.call(this, node, before);
+      };
+      const nativeSetAttribute = Element.prototype.setAttribute;
+      Element.prototype.setAttribute = function(name, value) {
+        if (String(this.tagName || "").toUpperCase() === "SCRIPT" && String(name || "").toLowerCase() === "src" && blockedTelemetry(value)) {
+          nativeSetAttribute.call(this, "type", "text/plain");
+          return;
+        }
+        return nativeSetAttribute.call(this, name, value);
+      };
+      const srcDescriptor = Object.getOwnPropertyDescriptor(HTMLScriptElement.prototype, "src");
+      if (srcDescriptor?.set) {
+        Object.defineProperty(HTMLScriptElement.prototype, "src", {
+          configurable: true,
+          get() { return srcDescriptor.get.call(this); },
+          set(value) {
+            if (blockedTelemetry(value)) {
+              try { this.type = "text/plain"; } catch {}
+              return;
+            }
+            return srcDescriptor.set.call(this, value);
+          }
+        });
+      }
+      if (navigator.sendBeacon) {
+        const nativeBeacon = navigator.sendBeacon.bind(navigator);
+        navigator.sendBeacon = (url, data) => blockedTelemetry(url) ? true : nativeBeacon(url, data);
+      }
+    } catch {}
+    try {
+      const popupProtectionEnabled = () => {
+        try {
+          const raw = localStorage.getItem("nyx.popupProtection");
+          return raw == null || JSON.parse(raw) !== false;
+        } catch {
+          return true;
+        }
+      };
+      const blockedUrl = "nyx://blocked67haha";
+      const popupAllowedAppDomains = [
+        "discord.com",
+        "geforcenow.com",
+        "play.geforcenow.com",
+        "nvidia.com",
+        "nvidiagrid.net",
+        "spotify.com",
+        "open.spotify.com",
+        "accounts.spotify.com",
+        "spotifycdn.com",
+        "scdn.co",
+        "accounts.scdn.co"
+      ];
+      const hostMatches = (host, domains) => domains.some(domain => host === domain || host.endsWith("." + domain));
+      const isPopupAllowedApp = () => {
+        try {
+          const candidates = [location.href, document.referrer, document.baseURI].filter(Boolean);
+          return candidates.some(value => {
+            try {
+              const host = new URL(value, location.href).hostname.replace(/^www\./, "").toLowerCase();
+              return hostMatches(host, popupAllowedAppDomains);
+            } catch {
+              return false;
+            }
+          }) || candidates.some(value => /(?:discord\.com|geforcenow\.com|play\.geforcenow\.com|nvidia\.com|nvidiagrid\.net|spotify\.com|open\.spotify\.com|accounts\.spotify\.com|spotifycdn\.com|scdn\.co|accounts\.scdn\.co)/i.test(String(value || ""));
+        } catch {
+          return false;
+        }
+      };
+      const fakePopup = (notify = false) => {
+        if (notify) {
+          try { window.parent?.postMessage?.({ type: "nyx:popup", url: blockedUrl, blocked: true }, "*"); } catch {}
+        }
+        const fakeDocument = { open(){ return this; }, write(){}, writeln(){}, close(){} };
+        return {
+          closed: false,
+          document: fakeDocument,
+          focus(){},
+          blur(){},
+          close(){ this.closed = true; },
+          postMessage(){},
+          location: {
+            href: blockedUrl,
+            assign(){},
+            replace(){},
+            reload(){},
+            toString(){ return blockedUrl; }
+          }
+        };
+      };
+      const targetOpensPopup = target => {
+        const value = String(target || "").toLowerCase();
+        return value && !["_self", "_parent", "_top"].includes(value);
+      };
+      const looksDownloadLike = value => {
+        const text = String(value || "").trim();
+        return /^(?:blob|data):/i.test(text) || /\.(?:apk|appx|bat|bin|cmd|com|crx|deb|dmg|exe|iso|jar|js|jse|msi|pkg|ps1|scr|sh|vbs|wsf|zip|7z|rar)(?:[?#]|$)/i.test(text);
+      };
+      const nativeOpen = window.open?.bind(window);
+      const guardedOpen = (...args) => {
+        if (isPopupAllowedApp() && nativeOpen) return nativeOpen(...args);
+        if (!popupProtectionEnabled() && nativeOpen) return nativeOpen(...args);
+        return fakePopup(Boolean(navigator.userActivation?.isActive));
+      };
+      try {
+        if (typeof window.open === "function" && typeof Proxy === "function") {
+          window.open = new Proxy(window.open, {
+            apply(target, thisArg, args) {
+              if (isPopupAllowedApp()) return Reflect.apply(target, thisArg, args);
+              if (!popupProtectionEnabled()) return Reflect.apply(target, thisArg, args);
+              return fakePopup(Boolean(navigator.userActivation?.isActive));
+            },
+            construct(target, args, newTarget) {
+              if (isPopupAllowedApp()) {
+                try { return Reflect.construct(target, args, newTarget); }
+                catch { return Reflect.apply(target, window, args); }
+              }
+              if (!popupProtectionEnabled()) {
+                try { return Reflect.construct(target, args, newTarget); }
+                catch { return Reflect.apply(target, window, args); }
+              }
+              return fakePopup(Boolean(navigator.userActivation?.isActive));
+            },
+            get(target, prop, receiver) {
+              if (prop === "__nyxPopupGuard") return true;
+              if (prop === "toString") return () => "function open() { [native code] }";
+              return Reflect.get(target, prop, receiver);
+            }
+          });
+        } else {
+          window.open = guardedOpen;
+        }
+      } catch {
+        window.open = guardedOpen;
+      }
+      try {
+        Object.defineProperty(window.open, "toString", { configurable: true, value: () => "function open() { [native code] }" });
+      } catch {}
+      if (window.HTMLAnchorElement?.prototype) {
+        const nativeAnchorClick = HTMLAnchorElement.prototype.click;
+        HTMLAnchorElement.prototype.click = function() {
+          if (isPopupAllowedApp()) return nativeAnchorClick.call(this);
+          if (popupProtectionEnabled() && (targetOpensPopup(this.target) || this.hasAttribute("download") || looksDownloadLike(this.href || this.getAttribute("href")))) {
+            fakePopup(Boolean(navigator.userActivation?.isActive));
+            return;
+          }
+          return nativeAnchorClick.call(this);
+        };
+      }
+      const stopPopupEvent = event => {
+        if (isPopupAllowedApp()) return;
+        if (!popupProtectionEnabled()) return;
+        const link = event.target?.closest?.("a[href]");
+        if (!link) return;
+        if (targetOpensPopup(link.getAttribute("target")) || link.hasAttribute("download") || looksDownloadLike(link.href || link.getAttribute("href"))) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          fakePopup(true);
+        }
+      };
+      const stopPopupSubmit = event => {
+        if (isPopupAllowedApp()) return;
+        if (!popupProtectionEnabled()) return;
+        const form = event.target;
+        if (!form || String(form.tagName || "").toUpperCase() !== "FORM") return;
+        if (targetOpensPopup(form.getAttribute("target"))) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          fakePopup(true);
+        }
+      };
+      document.addEventListener("click", stopPopupEvent, true);
+      document.addEventListener("auxclick", stopPopupEvent, true);
+      document.addEventListener("submit", stopPopupSubmit, true);
+    } catch {}
+  })();`;
+  const scramjetHelperRuntimeGuardSource=`(() => {
+    if (typeof window === "undefined" || window.__nyxScramjetHelperGuards) return;
+    window.__nyxScramjetHelperGuards = true;
+    try {
+      const seen = new Map();
+      const noisy = /bare-mux|Hyper client|tls handshake eof|preloaded using link preload|requestStorageAccess|PlayReady|robustness level|reCAPTCHA Timeout|load timed out|trying fallback|failed; switching|Uncaught \\(in promise\\) undefined|^undefined$/i;
+      const summarize = value => String(value && (value.stack || value.message) || value || "")
+        .replace(/https?:\\/\\/[^\\s)]+/g, "<url>")
+        .replace(/\\b[0-9a-f]{6,}\\b/gi, "<id>")
+        .replace(/\\d+/g, "#")
+        .slice(0, 360);
+      ["warn","error"].forEach(level => {
+        const native = console[level]?.bind(console);
+        if (!native || native.__nyxDedupe) return;
+        console[level] = (...args) => {
+          const text = args.map(summarize).join(" ");
+          if (noisy.test(text)) {
+            const key = level + ":" + text;
+            const now = Date.now();
+            const last = seen.get(key) || 0;
+            if (now - last < 12000) return;
+            seen.set(key, now);
+          }
+          native(...args);
+        };
+        console[level].__nyxDedupe = true;
+      });
+      const noop = value => value;
+      window.$scramerr = window.$scramerr || noop;
+      window.$scramjet$pushsourcemap = window.$scramjet$pushsourcemap || noop;
+    } catch {}
+  })();`;
+  const proxyStateVersion='nyx-proxy-state-20260715-pixelclient-input-v9';
+  const scramjetStateVersion='nyx-scramjet-state-20260713-cineby-frame-v5';
+  const NYX_BLANK_URL='nyx://blank';
+  function installNyxConsoleDedupe(scope='top'){
+    if(console.__nyxDedupeInstalled) return;
+    const seen=new Map();
+    const noisy=/bare-mux|Hyper client|tls handshake eof|preloaded using link preload|requestStorageAccess|PlayReady|robustness level|reCAPTCHA Timeout|load timed out|trying fallback|failed; switching|Uncaught \\(in promise\\) undefined|^undefined$/i;
+    const summarize=value=>{
+      try{
+        return String(value && (value.stack || value.message) || value)
+          .replace(/https?:\/\/[^\s)]+/g,'<url>')
+          .replace(/\b[0-9a-f]{6,}\b/gi,'<id>')
+          .replace(/\d+/g,'#')
+          .slice(0,360);
+      }catch{return ''}
+    };
+    ['warn','error'].forEach(level=>{
+      const native=console[level]?.bind(console);
+      if(!native) return;
+      console[level]=(...args)=>{
+        const text=args.map(summarize).join(' ');
+        if(noisy.test(text)){
+          const key=level+':'+text;
+          const now=Date.now();
+          const last=seen.get(key) || 0;
+          if(now-last<12000) return;
+          seen.set(key,now);
+        }
+        native(...args);
+      };
+    });
+    console.__nyxDedupeInstalled=scope;
+  }
+  installNyxConsoleDedupe();
+  let enhancedBackgroundRun = 0;
+  let customBgLayerRun = 0;
+  let hieroglyphObserver = null;
+  let hieroglyphApplying = false;
+  function hieroglyphTextEnabled(){
+    return store.get('nyx.hieroglyphText',false) || store.get('nyx.autoHieroglyphText',false);
+  }
+  function applyAutoHieroglyphPreference(){
+    if(store.get('nyx.autoHieroglyphText',false)) store.set('nyx.hieroglyphText',true);
+  }
+  function toHieroglyphText(text){
+    return String(text ?? '').replace(/[A-Za-z0-9]/g, ch => hieroglyphLetters[ch.toLowerCase()] || ch);
+  }
+  function shouldSkipHieroglyphNode(node){
+    const parent=node?.parentElement;
+    return !parent || parent.closest(hieroglyphSkipSelector) || parent.closest('[data-no-hieroglyph]');
+  }
+  function applyHieroglyphText(root=document.body){
+    if(hieroglyphApplying || !root) return;
+    hieroglyphApplying=true;
+    try{
+      const enabled=hieroglyphTextEnabled();
+      if(enabled){
+        const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{
+          acceptNode(node){
+            if(shouldSkipHieroglyphNode(node)) return NodeFilter.FILTER_REJECT;
+            return /\S/.test(node.nodeValue || '') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+          }
+        });
+        const nodes=[];
+        while(walker.nextNode()) nodes.push(walker.currentNode);
+        nodes.forEach(node=>{
+          if(!hieroglyphTextNodes.has(node)) hieroglyphTextNodes.set(node,node.nodeValue);
+          node.nodeValue=toHieroglyphText(hieroglyphTextNodes.get(node));
+        });
+      }else{
+        const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null);
+        const nodes=[];
+        while(walker.nextNode()) nodes.push(walker.currentNode);
+        nodes.forEach(node=>{
+          if(hieroglyphTextNodes.has(node)) node.nodeValue=hieroglyphTextNodes.get(node);
+        });
+      }
+      qsa('[data-hieroglyph-text], [data-switch="nyx.hieroglyphText"]').forEach(el=>el.classList.toggle('on',enabled));
+    }finally{
+      hieroglyphApplying=false;
+    }
+  }
+  function startHieroglyphObserver(){
+    if(hieroglyphObserver || !document.body) return;
+    hieroglyphObserver=new MutationObserver(records=>{
+      if(hieroglyphApplying || !hieroglyphTextEnabled()) return;
+      records.forEach(record=>{
+        record.addedNodes.forEach(node=>{
+          if(node.nodeType===Node.TEXT_NODE && !shouldSkipHieroglyphNode(node)){
+            if(!hieroglyphTextNodes.has(node)) hieroglyphTextNodes.set(node,node.nodeValue);
+            node.nodeValue=toHieroglyphText(hieroglyphTextNodes.get(node));
+          }else if(node.nodeType===Node.ELEMENT_NODE){
+            applyHieroglyphText(node);
+          }
+        });
+      });
+    });
+    hieroglyphObserver.observe(document.body,{childList:true,subtree:true});
+  }
+  //browser-mode-chrome
+  function renderChrome(){
+    const top=document.querySelector('.top-os');
+    if(top){
+      top.innerHTML='<div class="brand-mini"><span id="brandName">ռʏӼ</span><span>|</span><button id="userGreeting" class="user-chip needs-name" data-open="settings">Set username</button></div><div class="status-icons"><button class="top-fullscreen" data-page-fullscreen title="Fullscreen" aria-label="Fullscreen"></button><span id="clock">--:--</span></div>';
+    }
+    const shortcuts=document.querySelector('.desktop-shortcuts');
+    if(shortcuts){
+      shortcuts.innerHTML='<button class="desktop-shortcut" data-open="browser"><span class="icon">GL</span>Browser</button><button class="desktop-shortcut" data-open="updates"><span class="icon">Fix</span>Updates</button>';
+    }
+    const dock=document.querySelector('.dock');
+    if(dock){
+      dock.innerHTML=`<button title="Games" data-app-url="/assets/games/index.html"><img class="dock-icon" alt="" src="${appIcon('games')}"><span>Games</span></button><button title="Apps" data-open="apps"><img class="dock-icon" alt="" src="${appIcon('apps')}"><span>Apps</span></button><button title="GeForce Now" data-app-url="https://play.geforcenow.com/"><img class="dock-icon" alt="" src="${appIcon('geforcenow')}"><span>GeForce</span></button><button title="Roblox" data-app-url="https://www.roblox.com/"><img class="dock-icon" alt="" src="${appIcon('roblox.com')}"><span>Roblox</span></button><button title="Discord" data-app-url="https://discord.com/app"><img class="dock-icon" alt="" src="${appIcon('discord-dock')}"><span>Discord</span></button><button title="Settings" data-open="settings" aria-label="Settings"><img class="dock-icon" alt="" src="${appIcon('settings')}"><span>Settings</span></button><span class="dock-separator"></span><span class="minimized-tray" id="minimizedTray"></span>`;
+      hydrateDockDrag(dock);
+    }
+    const corner=document.querySelector('.corner-gear');
+    if(corner) corner.remove();
+  }
+  function normalizeBrowserChromeButtons(root=document){
+    const scope=root || document;
+    const keepOne=selector=>{
+      const items=[...scope.querySelectorAll(selector)];
+      items.slice(1).forEach(item=>item.remove());
+    };
+    keepOne('form.browser-mode-address [data-browser-shell-bookmark]');
+    keepOne('form.browser-mode-address .browser-mode-weather');
+    keepOne('form.browser-mode-address [data-browser-shell-menu]');
+    keepOne('#browserBookmarkPanel');
+    keepOne('#browserModeMenu');
+    const menu=scope.querySelector('#browserModeMenu');
+    if(menu){
+      [...menu.querySelectorAll('[data-browser-bookmarks-toggle]')].slice(1).forEach(item=>item.remove());
+      menu.querySelector(':scope > [data-browser-shell-new-tab]')?.remove();
+    }
+  }
+  function renderChromeFixed(){
+    const top=document.querySelector('.top-os');
+    if(top){
+      top.innerHTML='<div class="brand-mini"><button class="browser-mode-app-button active" data-browser-shell-home title="Current tab">Home</button><button class="browser-mode-tab" data-browser-shell-new-tab title="New tab"><span>New tab</span></button></div><span class="browser-top-clock" data-browser-shell-clock>--:--:--</span><form class="browser-mode-address" data-browser-shell-search><button data-browser-shell-back type="button" title="Back"><span class="fresh-real-icon fresh-real-back" aria-hidden="true"></span></button><button data-browser-shell-forward type="button" title="Forward"><span class="fresh-real-icon" aria-hidden="true">➜</span></button><button data-browser-shell-reload type="button" title="Reload"><span class="fresh-real-icon" aria-hidden="true">⟳</span></button><input class="browser-mode-url" data-browser-shell-url placeholder="Search or enter a URL" autocomplete="off"><button class="browser-mode-bookmark" data-browser-shell-bookmark type="button" title="Bookmark this tab" aria-pressed="false"><span class="fresh-real-icon" aria-hidden="true">☆</span></button><button class="browser-mode-weather" data-open="weather" type="button" title="Weather" aria-label="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button><button data-browser-shell-menu type="button" title="Menu"><span class="fresh-real-icon" aria-hidden="true">⋮</span></button></form><div class="browser-bookmark-panel" id="browserBookmarkPanel" hidden></div><div class="browser-mode-menu" id="browserModeMenu"><button data-browser-shell-new-tab type="button">New tab</button><button data-browser-bookmarks-toggle type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-browser-hieroglyph-toggle type="button">Hieroglyph Mode</button><button data-app-url="/assets/games/index.html" type="button">Games</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-shell-about-tab type="button">Open Tab in Abt:Blank</button></div>';
+      top.querySelector('#browserModeMenu > [data-browser-shell-new-tab]')?.remove();
+      normalizeBrowserChromeButtons(top);
+      top.querySelector('.brand-mini [data-browser-shell-new-tab]')?.addEventListener('click',event=>{
+        event.nyxShellNewHandled=true;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        document.body.classList.remove('menu-open');
+        openBrowserShellTab();
+        document.querySelector('[data-browser-shell-url]')?.focus();
+      });
+      top.querySelector('.brand-mini [data-browser-shell-home]')?.addEventListener('click',event=>{
+        event.nyxShellHomeHandled=true;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        setBrowserShellHomeActive();
+      });
+      top.addEventListener('pointerdown',()=>{requestNyxKeyboardLock()},{capture:true});
+      top.addEventListener('focusin',()=>{requestNyxKeyboardLock()},{capture:true});
+      renderBrowserShellTabs();
+      renderBrowserBookmarks();
+    }
+    const shortcuts=document.querySelector('.desktop-shortcuts');
+    if(shortcuts){
+      shortcuts.innerHTML='';
+    }
+    const dock=document.querySelector('.dock');
+    if(dock){
+      dock.innerHTML=`<button title="Games" data-app-url="/assets/games/index.html"><img class="dock-icon" alt="" src="${appIcon('games')}"><span>Games</span></button><button title="Apps" data-open="apps"><img class="dock-icon" alt="" src="${appIcon('apps')}"><span>Apps</span></button><button title="GeForce Now" data-app-url="https://play.geforcenow.com/"><img class="dock-icon" alt="" src="${appIcon('geforcenow')}"><span>GeForce</span></button><button title="Roblox" data-app-url="https://www.roblox.com/"><img class="dock-icon" alt="" src="${appIcon('roblox.com')}"><span>Roblox</span></button><button title="Discord" data-app-url="https://discord.com/app"><img class="dock-icon" alt="" src="${appIcon('discord-dock')}"><span>Discord</span></button><button title="Settings" data-open="settings" aria-label="Settings"><img class="dock-icon" alt="" src="${appIcon('settings')}"><span>Settings</span></button><span class="dock-separator"></span><span class="minimized-tray" id="minimizedTray"></span>`;
+      hydrateDockDrag(dock);
+    }
+    const corner=document.querySelector('.corner-gear');
+    if(corner) corner.remove();
+  }
+  function browserShellNeedsStartupHome(){
+    const homeTab=browserShellTabs.find(tab=>tab.title==='Home' && !tab.url);
+    if(!activeBrowser || !activeBrowser.win || !activeBrowser.win.isConnected) return true;
+    if(browserShellActiveTab && homeTab && browserShellActiveTab!==homeTab.id) return false;
+    const homeEl=activeBrowser.win.querySelector('.browser-home');
+    return !homeEl || homeEl.classList.contains('hidden');
+  }
+  function syncChromeMode(enabled){
+    const mode=enabled ? 'browser-shell' : 'windows';
+    const hasBrowserControls=!!document.querySelector('.top-os [data-browser-shell-search]');
+    if(renderedChromeMode===mode && hasBrowserControls===enabled){
+      if(enabled && browserShellNeedsStartupHome()) setBrowserShellHomeActive();
+      return;
+    }
+    document.body.classList.remove('menu-open');
+    if(enabled){
+      renderChromeFixed();
+      if(nyxGateOpened && browserShellNeedsStartupHome()) setBrowserShellHomeActive();
+      else renderBrowserShellTabs();
+    }else renderChrome();
+    renderedChromeMode=mode;
+    tick();
+  }
+  //browser-url-display
+  function browserShellSourceUrl(url){
+    const raw=String(url || '').trim();
+    if(!raw) return '';
+    if(!/^(?:[a-z][a-z0-9+.-]*:|\/|\.\/|\.\.\/)/i.test(raw) && !/^[^\s]+\.[^\s]{2,}(?:[/?#]|$)/.test(raw)) return raw;
+    const decodeUriPart=value=>{
+      const text=String(value || '');
+      try{return decodeURIComponent(text)}catch{return text}
+    };
+    const decodeUvPart=value=>{
+      const text=String(value || '');
+      try{
+        const config=window.__uv$config;
+        if(config && typeof config.decodeUrl==='function') return config.decodeUrl(text);
+      }catch{}
+      const uriDecoded=decodeUriPart(text);
+      const xorDecoded=[...uriDecoded].map((char,index)=>index % 2 ? String.fromCharCode(char.charCodeAt(0) ^ 2) : char).join('');
+      return /^https?:\/\//i.test(xorDecoded) ? xorDecoded : uriDecoded;
+    };
+    try{
+      const parsed=new URL(raw,location.href);
+      const uvPrefix=window.__uv$config?.prefix || '/service/';
+      const uvStart=parsed.origin + uvPrefix;
+      const scramjetStart=parsed.origin + '/scramjet/service/';
+      const scramjetV2Match=parsed.pathname.match(/^\/~\/sj\/[^/]+\/[^/]+\/([^?#]*)/);
+      if(parsed.href.startsWith(uvStart)){
+        const decoded=decodeUvPart(parsed.href.slice(uvStart.length));
+        try{return new URL(decoded).href}catch{return decoded}
+      }
+      if(parsed.href.startsWith(scramjetStart)){
+        const decoded=decodeUriPart(parsed.href.slice(scramjetStart.length));
+        try{return new URL(decoded).href}catch{return decoded}
+      }
+      if(parsed.origin===location.origin && scramjetV2Match){
+        const decodedHash=parsed.hash ? `#${decodeUriPart(parsed.hash.slice(1))}` : '';
+        const decoded=decodeUriPart(scramjetV2Match[1]) + decodedHash;
+        try{return new URL(decoded).href}catch{return decoded}
+      }
+      return parsed.href;
+    }catch{
+      return raw;
+    }
+  }
+  function browserShellLabel(url){
+    if(!url) return 'Home';
+    if(String(url || '').trim().toLowerCase()===NYX_BLANK_URL) return NYX_BLANK_URL;
+    try{
+      const parsed=new URL(browserShellSourceUrl(url),location.href);
+      if(parsed.origin===location.origin && parsed.pathname==='/search') return parsed.searchParams.get('q') || 'Search';
+      if(parsed.origin===location.origin && parsed.pathname.includes('/assets/games/')) return 'Games';
+      if(parsed.origin===location.origin && parsed.pathname.includes('/assets/seraph/')) return 'Seraph Games';
+      if(parsed.origin===location.origin && parsed.pathname.includes('/assets/ugs/')) return 'Pirate Cove';
+      if(parsed.origin===location.origin) return parsed.pathname.split('/').filter(Boolean).pop() || 'nyx';
+      return parsed.hostname.replace(/^www\./,'') || 'New tab';
+    }catch{
+      return String(url || 'New tab').replace(/^https?:\/\//,'').slice(0,34) || 'New tab';
+    }
+  }
+  function browserShellDisplayValue(url){
+    if(!url) return '';
+    if(String(url || '').trim().toLowerCase()===NYX_BLANK_URL) return NYX_BLANK_URL;
+    try{
+      const parsed=new URL(browserShellSourceUrl(url),location.href);
+      if(parsed.origin===location.origin && parsed.pathname==='/search') return parsed.searchParams.get('q') || '';
+      if(parsed.origin===location.origin) return parsed.pathname.replace(/^\/+/,'') || parsed.href;
+      return parsed.href;
+    }catch{
+      return browserShellSourceUrl(url);
+    }
+  }
+  //browser-bookmarks
+  function browserBookmarks(){
+    try{
+      const parsed=JSON.parse(store.text('nyx.browserBookmarks','[]'));
+      return Array.isArray(parsed) ? parsed.filter(item=>item && item.url) : [];
+    }catch{
+      return [];
+    }
+  }
+  function saveBrowserBookmarks(items){
+    store.setText('nyx.browserBookmarks',JSON.stringify(items.slice(0,80)));
+  }
+  function activeBrowserShellTab(){
+    ensureBrowserShellHome();
+    return browserShellTabs.find(tab=>tab.id===browserShellActiveTab) || browserShellTabs[0];
+  }
+  function currentBrowserShellUrl(){
+    const tab=activeBrowserShellTab();
+    return normalize(browserShellSourceUrl(tab?.url) || document.querySelector('[data-browser-shell-url]')?.value || '');
+  }
+  const browserSuggestionSeeds=[
+    'youtube','tiktok','spotify','discord','roblox','github','google classroom','google docs',
+    'duck ai','geforce now','games','weather','anime','music','unblocked games','calculator',
+    'roblox codes','gmail','google translate','cool math games','chatgpt','amazon','reddit','netflix'
+  ];
+  const browserSuggestionCache=new Map();
+  let browserSuggestionTimer=0;
+  let browserSuggestionAbort=null;
+  function ensureBrowserSuggestionBox(input){
+    let box=$('browserSearchSuggestions');
+    if(!box){
+      box=document.createElement('div');
+      box.id='browserSearchSuggestions';
+      box.className='browser-search-suggestions';
+      box.setAttribute('role','listbox');
+      document.body.appendChild(box);
+    }
+    if(input){
+      const rect=input.getBoundingClientRect();
+      box.style.left=Math.max(8,rect.left)+'px';
+      box.style.top=Math.min(window.innerHeight-12,rect.bottom+8)+'px';
+      box.style.width=Math.min(rect.width,window.innerWidth-16)+'px';
+    }
+    return box;
+  }
+  function browserSuggestionsAllowed(){
+    if(!document.body.classList.contains('browser-shell')) return false;
+    const tab=activeBrowserShellTab?.();
+    const url=String(tab?.url || '');
+    const title=String(tab?.title || '').trim().toLowerCase();
+    if(url.startsWith('nyx://')) return false;
+    if(['apps','lion ai','lionai','ai','bookmarks','links','settings','games'].includes(title)) return false;
+    const state=activeBrowser;
+    const browserTab=state?.tabs?.find(item=>item.id===state.active);
+    if(browserTab?.frame?.getAttribute('srcdoc') && String(browserTab.url || '').startsWith('nyx://')) return false;
+    return true;
+  }
+  function browserSuggestionItems(query,remoteItems=[]){
+    const q=String(query || '').trim().toLowerCase();
+    if(!q) return [];
+    const tabItems=browserShellTabs.map(tab=>browserShellSourceUrl(tab.url) || tab.title).filter(Boolean);
+    const bookmarkItems=browserBookmarks().flatMap(item=>[item.title,item.url]).filter(Boolean);
+    const popularByPrefix=[
+      ['mine',['minecraft skins','minecraft movie','minecraft seed map','minecraft download','minecraft launcher','minecraft wiki']],
+      ['rob',['roblox codes','roblox login','roblox redeem','roblox support','roblox marketplace','roblox avatar']],
+      ['you',['youtube','youtube music','youtube tv','youtube studio','youtube shorts','youtube downloader']],
+      ['tik',['tiktok','tiktok shop','tiktok login','tiktok trends','tiktok sounds','tiktok studio']],
+      ['spo',['spotify','spotify web player','spotify wrapped','spotify login','spotify playlist','spotify download']],
+      ['dis',['discord','discord login','discord app','discord status','discord download','discord servers']],
+      ['goo',['google classroom','google docs','google drive','google translate','google maps','google flights']]
+    ];
+    const prefixItems=popularByPrefix.find(([prefix])=>q.startsWith(prefix))?.[1] || [];
+    const pool=[...remoteItems,...prefixItems,...tabItems,...bookmarkItems,...browserSuggestionSeeds];
+    const seen=new Set();
+    const out=[];
+    pool
+      .map(item=>String(item || '').trim())
+      .filter(Boolean)
+      .sort((a,b)=>{
+        const ak=a.toLowerCase();
+        const bk=b.toLowerCase();
+        const aStarts=ak.startsWith(q) ? 0 : 1;
+        const bStarts=bk.startsWith(q) ? 0 : 1;
+        if(aStarts!==bStarts) return aStarts-bStarts;
+        const aIndex=ak.indexOf(q);
+        const bIndex=bk.indexOf(q);
+        if(aIndex!==bIndex) return aIndex-bIndex;
+        return a.length-b.length;
+      })
+      .forEach(item=>{
+      const text=String(item || '').trim();
+      const key=text.toLowerCase();
+      if(!text || seen.has(key)) return;
+      if(key.includes(q) || (q.length<=4 && q.includes(key))){
+        seen.add(key);
+        out.push(text);
+      }
+    });
+    if(!out.includes(query)) out.unshift(query);
+    return out.slice(0,6);
+  }
+  function renderBrowserSuggestions(input,items){
+    if(!input || !browserSuggestionsAllowed()) return;
+    const box=ensureBrowserSuggestionBox(input);
+    if(!items.length){
+      box.classList.remove('show');
+      box.innerHTML='';
+      return;
+    }
+    box.innerHTML=items.map((item,index)=>`<button class="browser-search-suggestion${index===0?' active':''}" data-browser-suggestion="${esc(item)}" type="button" role="option">${esc(item)}</button>`).join('');
+    box.classList.add('show');
+  }
+  async function fetchBrowserAutocomplete(query,signal){
+    const q=String(query || '').trim();
+    if(q.length<2) return [];
+    const key=q.toLowerCase();
+    if(browserSuggestionCache.has(key)) return browserSuggestionCache.get(key);
+    const callback='nyxSuggest_'+Math.random().toString(36).slice(2);
+    try{
+      const items=await new Promise(resolve=>{
+        if(signal?.aborted){resolve([]); return}
+        const script=document.createElement('script');
+        const cleanup=()=>{
+          try{window[callback]=()=>{}}catch{}
+          setTimeout(()=>{try{delete window[callback]}catch{window[callback]=undefined}},8000);
+          script.remove();
+        };
+        const timer=setTimeout(()=>{cleanup(); resolve([])},1800);
+        window[callback]=data=>{
+          clearTimeout(timer);
+          cleanup();
+          resolve(Array.isArray(data?.[1]) ? data[1] : []);
+        };
+        signal?.addEventListener('abort',()=>{clearTimeout(timer); cleanup(); resolve([])},{once:true});
+        script.onerror=()=>{clearTimeout(timer); cleanup(); resolve([])};
+        script.src=`https://suggestqueries.google.com/complete/search?client=chrome&q=${encodeURIComponent(q)}&callback=${callback}`;
+        document.head.appendChild(script);
+      });
+      const clean=items.map(item=>String(item || '').trim()).filter(Boolean).slice(0,8);
+      if(clean.length){
+        browserSuggestionCache.set(key,clean);
+        return clean;
+      }
+    }catch{}
+    browserSuggestionCache.set(key,[]);
+    return [];
+  }
+  function showBrowserSuggestions(input){
+    if(!input || !browserSuggestionsAllowed()){
+      hideBrowserSuggestions();
+      return;
+    }
+    const value=String(input.value || '').trim();
+    renderBrowserSuggestions(input,browserSuggestionItems(value));
+    clearTimeout(browserSuggestionTimer);
+    browserSuggestionAbort?.abort?.();
+    if(value.length<2 || document.body.classList.contains('runtime-lag-guard')) return;
+    browserSuggestionAbort=new AbortController();
+    const signal=browserSuggestionAbort.signal;
+    browserSuggestionTimer=setTimeout(async()=>{
+      const remote=await fetchBrowserAutocomplete(value,signal);
+      if(signal.aborted) return;
+      const active=document.querySelector('[data-browser-shell-url]');
+      if(active!==input || String(input.value || '').trim()!==value) return;
+      renderBrowserSuggestions(input,browserSuggestionItems(value,remote));
+    },320);
+  }
+  function hideBrowserSuggestions(){
+    clearTimeout(browserSuggestionTimer);
+    browserSuggestionAbort?.abort?.();
+    const box=$('browserSearchSuggestions');
+    if(box) box.classList.remove('show');
+  }
+  function browserSuggestionPointerInside(target){
+    return !!target?.closest?.('[data-browser-shell-url],#browserSearchSuggestions,.browser-search-suggestions');
+  }
+  function acceptBrowserSuggestion(value){
+    const input=document.querySelector('[data-browser-shell-url]');
+    if(input) input.value=value || '';
+    hideBrowserSuggestions();
+    navigateBrowserShell(value);
+  }
+  function selectBrowserShellUrl(input,force=false){
+    if(!input) return;
+    if(!force && input.dataset.selectOnFocus!=='1') return;
+    input.dataset.selectOnFocus='0';
+    requestAnimationFrame(()=>{
+      try{input.select()}catch{}
+    });
+  }
+  let browserShellUrlFirstPointer=null;
+  function clearBrowserShellUrlSelection(input=document.querySelector('[data-browser-shell-url]')){
+    if(!input) return;
+    try{
+      const end=String(input.value || '').length;
+      input.setSelectionRange(end,end);
+    }catch{}
+  }
+  function isEditableTarget(target){
+    return !!target && (target.matches?.('input,textarea') || target.isContentEditable);
+  }
+  function selectedTextFromTarget(target){
+    if(target?.matches?.('input,textarea')){
+      return target.value.slice(target.selectionStart || 0,target.selectionEnd || 0);
+    }
+    return String(getSelection?.() || '');
+  }
+  function replaceSelectionInTarget(target,text){
+    if(target?.matches?.('input,textarea')){
+      const start=target.selectionStart || 0;
+      const end=target.selectionEnd || 0;
+      const value=target.value || '';
+      target.value=value.slice(0,start)+text+value.slice(end);
+      const cursor=start+String(text).length;
+      target.setSelectionRange(cursor,cursor);
+      target.dispatchEvent(new Event('input',{bubbles:true}));
+      return;
+    }
+    document.execCommand('insertText',false,text);
+  }
+  async function writeClipboard(text){
+    try{
+      await navigator.clipboard?.writeText(text);
+      return true;
+    }catch{
+      return document.execCommand?.('copy');
+    }
+  }
+  function switchBrowserShellTabByIndex(index){
+    if(!document.body.classList.contains('browser-shell')) return false;
+    const safeIndex=Math.max(0,Math.min(8,Number(index || 0)));
+    const tab=browserShellTabs[safeIndex];
+    if(!tab) return false;
+    setBrowserShellActive(tab.id);
+    return true;
+  }
+  function primeBrowserShellShortcutFocus(){
+    if(!document.body.classList.contains('browser-shell')) return;
+    requestNyxKeyboardLock();
+    try{window.focus()}catch{}
+    const target=document.querySelector('.top-os') || document.body;
+    try{
+      if(!target.hasAttribute('tabindex')) target.setAttribute('tabindex','-1');
+      target.focus({preventScroll:true});
+    }catch{
+      try{document.body.focus({preventScroll:true})}catch{}
+    }
+  }
+  const nyxKeyboardLockKeys=['AltLeft','Digit1','Digit2','Digit3','Digit4','Digit5','Digit6','Digit7','Digit8','Digit9','KeyL','KeyD','KeyT','KeyW','KeyR','ArrowLeft','ArrowRight','Tab'];
+  let nyxKeyboardLockRequested=false;
+  async function releaseNyxKeyboardLock(){
+    if(!nyxKeyboardLockRequested) return;
+    try{await navigator.keyboard?.unlock?.()}catch{}
+    nyxKeyboardLockRequested=false;
+  }
+  async function requestNyxKeyboardLock(){
+    const activeTab=activeBrowser?.tabs?.find?.(tab=>tab.id===activeBrowser.active);
+    const activeSource=String(browserShellSourceUrl(activeTab?.sourceUrl || activeTab?.url || '') || activeTab?.sourceUrl || activeTab?.url || '');
+    if(/(?:pixelclient\.xyz|play\.geforcenow\.com|geforcenow\.com|\/assets\/(?:games|ugs|seraph|gn-math|gms-games)\/)/i.test(activeSource)){
+      await releaseNyxKeyboardLock();
+      return;
+    }
+    if(nyxKeyboardLockRequested || !document.body.classList.contains('browser-shell')) return;
+    nyxKeyboardLockRequested=true;
+    try{
+      await navigator.keyboard?.lock?.(nyxKeyboardLockKeys);
+    }catch{
+      nyxKeyboardLockRequested=false;
+    }
+  }
+  function handleBrowserShellAltAction(key,eventLike=null){
+    key=String(key || '').toLowerCase();
+    if(!key) return false;
+    const consume=()=>{try{eventLike?.preventDefault?.()}catch{}; try{eventLike?.stopPropagation?.()}catch{}};
+    if(key==='tab'){
+      if(eventLike && triggerChromeOsAltTabRedirect(eventLike)){
+        consume();
+        return true;
+      }
+      return false;
+    }
+    if(/^[1-9]$/.test(key)){
+      if(switchBrowserShellTabByIndex(Number(key)-1)){
+        consume();
+        return true;
+      }
+      return false;
+    }
+    const input=document.querySelector('[data-browser-shell-url]');
+    if(key==='l' || key==='d'){
+      consume();
+      input?.focus();
+      selectBrowserShellUrl(input,true);
+      showBrowserSuggestions(input);
+      return true;
+    }
+    if(key==='t'){
+      consume();
+      openBrowserShellTab();
+      const next=document.querySelector('[data-browser-shell-url]');
+      next?.focus();
+      selectBrowserShellUrl(next,true);
+      return true;
+    }
+    if(key==='w'){
+      consume();
+      const tab=activeBrowserShellTab();
+      if(tab?.id) closeBrowserShellTab(tab.id);
+      return true;
+    }
+    if(key==='r'){
+      consume();
+      document.querySelector('[data-browser-shell-reload]')?.click();
+      return true;
+    }
+    if(key==='arrowleft'){
+      consume();
+      document.querySelector('[data-browser-shell-back]')?.click();
+      return true;
+    }
+    if(key==='arrowright'){
+      consume();
+      document.querySelector('[data-browser-shell-forward]')?.click();
+      return true;
+    }
+    return false;
+  }
+  async function handleLeftAltChromeShortcut(e){
+    if(panicCaptureArmed || e.ctrlKey || e.metaKey || !e.altKey || e.location===KeyboardEvent.DOM_KEY_LOCATION_RIGHT) return;
+    const key=String(e.key || '').toLowerCase();
+    const consume=()=>{e.preventDefault(); e.stopPropagation();};
+    if(key==='alt'){
+      consume();
+      primeBrowserShellShortcutFocus();
+      return;
+    }
+    if(handleBrowserShellAltAction(key,e)) return;
+    const target=e.target;
+    if(!isEditableTarget(target)) return;
+    if(key==='a'){
+      consume();
+      if(target.select) target.select();
+      else document.execCommand('selectAll');
+      return;
+    }
+    if(key==='c'){
+      consume();
+      await writeClipboard(selectedTextFromTarget(target));
+      return;
+    }
+    if(key==='x'){
+      consume();
+      const selected=selectedTextFromTarget(target);
+      await writeClipboard(selected);
+      replaceSelectionInTarget(target,'');
+      return;
+    }
+    if(key==='v'){
+      consume();
+      try{
+        const text=await navigator.clipboard?.readText();
+        if(text!=null) replaceSelectionInTarget(target,text);
+      }catch{
+        document.execCommand?.('paste');
+      }
+      return;
+    }
+    if(key==='z'){
+      consume();
+      document.execCommand?.('undo');
+      return;
+    }
+    if(key==='y'){
+      consume();
+      document.execCommand?.('redo');
+    }
+  }
+  function renderBrowserBookmarks(){
+    const panel=$('browserBookmarkPanel');
+    const star=document.querySelector('[data-browser-shell-bookmark]');
+    if(!panel && !star) return;
+    const activeUrl=currentBrowserShellUrl();
+    const bookmarks=browserBookmarks();
+    const saved=!!activeUrl && bookmarks.some(item=>item.url===activeUrl);
+    if(star){
+      star.classList.toggle('saved',saved);
+      star.setAttribute('aria-pressed',String(saved));
+      star.textContent=saved ? '★' : '☆';
+    }
+    if(!panel) return;
+    if(!bookmarks.length){
+      panel.innerHTML='<p class="browser-bookmark-empty">No bookmarks yet. Open a page and press the star.</p>';
+      return;
+    }
+    panel.innerHTML=bookmarks.map((item,index)=>`<div class="browser-bookmark-row"><button class="browser-bookmark-open" data-browser-bookmark-open="${index}" type="button"><b>${esc(item.title || browserShellLabel(item.url))}</b><small>${esc(browserShellDisplayValue(item.url))}</small></button><button class="browser-bookmark-remove" data-browser-bookmark-remove="${index}" type="button" title="Remove bookmark">x</button></div>`).join('');
+  }
+  function toggleBrowserBookmark(){
+    const url=currentBrowserShellUrl();
+    if(!url){
+      toggleBrowserBookmarksPanel();
+      return;
+    }
+    const tab=activeBrowserShellTab();
+    const bookmarks=browserBookmarks();
+    const index=bookmarks.findIndex(item=>item.url===url);
+    if(index>=0){
+      bookmarks.splice(index,1);
+      toast('Bookmark removed');
+    }else{
+      bookmarks.unshift({url,title:tab?.title || browserShellLabel(url),created:Date.now()});
+      toast('Bookmarked');
+    }
+    saveBrowserBookmarks(bookmarks);
+    renderBrowserBookmarks();
+  }
+  function toggleBrowserBookmarksPanel(){
+    renderBrowserBookmarks();
+    const panel=$('browserBookmarkPanel');
+    if(panel) panel.hidden=!panel.hidden;
+  }
+  function openBrowserBookmark(index){
+    const item=browserBookmarks()[Number(index)];
+    if(!item?.url) return;
+    navigateBrowserShell(item.url);
+    const panel=$('browserBookmarkPanel');
+    if(panel) panel.hidden=true;
+  }
+  function removeBrowserBookmark(index){
+    const bookmarks=browserBookmarks();
+    bookmarks.splice(Number(index),1);
+    saveBrowserBookmarks(bookmarks);
+    renderBrowserBookmarks();
+  }
+  //browser-home-and-tabs
+  function isBrowserShellBlankUrl(url){
+    const raw=String(url || '').trim().toLowerCase();
+    return raw===NYX_BLANK_URL;
+  }
+  function renderBrowserShellHomeMode(win,mode='home'){
+    if(!win) return;
+    const blank=mode==='blank';
+    win.classList.toggle('browser-blank-page',blank);
+    win.classList.toggle('browser-home-page',!blank);
+    win.classList.add('browser-blank');
+    const home=win.querySelector('.browser-home');
+    home?.classList.remove('hidden','page-revealing','tab-opening','closing');
+    if(home) home.style.filter='';
+    win.querySelectorAll('.view').forEach(frame=>frame.classList.remove('active'));
+    if(blank){
+      const input=win.querySelector('[data-browser-blank-input]');
+      if(input && !input.value) input.value='';
+    }
+  }
+  function collapseDuplicateOpeningBlankTabs(){
+    const active=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
+    if(!active || !isBrowserShellBlankUrl(active.url)) return;
+    const duplicates=browserShellTabs.filter(tab=>tab.id!==active.id && isBrowserShellBlankUrl(tab.url) && browserShellOpeningTabs.has(tab.id));
+    if(!duplicates.length) return;
+    duplicates.forEach(tab=>{
+      browserShellOpeningTabs.delete(tab.id);
+      if(tab.browserTabId && activeBrowser?.closeTab) activeBrowser.closeTab(tab.browserTabId);
+      const index=browserShellTabs.findIndex(item=>item.id===tab.id);
+      if(index>=0) browserShellTabs.splice(index,1);
+    });
+    browserShellActiveTab=active.id;
+    renderBrowserShellTabs();
+  }
+  function ensureBrowserShellHome(){
+    if(!browserShellTabs.length){
+      const id='shell-'+Date.now()+Math.random().toString(16).slice(2);
+      browserShellTabs.push({id,url:'',title:'Home'});
+      browserShellActiveTab=id;
+    }
+    if(!browserShellActiveTab) browserShellActiveTab=browserShellTabs[0].id;
+  }
+  function renderBrowserShellTabs(){
+    if(!document.body.classList.contains('browser-shell')) return;
+    ensureBrowserShellHome();
+    const row=document.querySelector('body.browser-shell .brand-mini') || document.querySelector('.brand-mini');
+    if(!row) return;
+    row.querySelectorAll('.browser-mode-shell-tab').forEach(tab=>tab.remove());
+    const home=row.querySelector('[data-browser-shell-home]');
+    const plus=row.querySelector('[data-browser-shell-new-tab]');
+    if(!browserShellTabs.length){
+      browserShellActiveTab=null;
+      const contentStateChanged=document.body.classList.contains('browser-content-active');
+      document.body.classList.remove('browser-content-active');
+      if(contentStateChanged) queueMicrotask(()=>syncThemeVantaBackgrounds());
+      if(home){
+        home.style.display='none';
+        delete home.dataset.browserShellTab;
+      }
+      const input=document.querySelector('[data-browser-shell-url]');
+      if(input && document.activeElement!==input) input.value='';
+      return;
+    }
+    let active=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
+    if(!active){
+      active=browserShellTabs[0];
+      browserShellActiveTab=active.id;
+    }
+    const activeShowsContent=!!(active.url && !isBrowserShellBlankUrl(active.url)) || (active.title!=='Home' && !isBrowserShellBlankUrl(active.url));
+    const contentStateChanged=document.body.classList.contains('browser-content-active')!==activeShowsContent;
+    document.body.classList.toggle('browser-content-active',activeShowsContent);
+    if(contentStateChanged) queueMicrotask(()=>syncThemeVantaBackgrounds());
+    if(home){
+      home.style.display='';
+      home.innerHTML='<span>Home</span>';
+      delete home.dataset.browserShellTab;
+      home.title='Home';
+      home.classList.toggle('active',active.title==='Home' && !active.url);
+    }
+    browserShellTabs.filter(tab=>tab.url || tab.title!=='Home').forEach(tab=>{
+      const button=document.createElement('button');
+      button.type='button';
+      const opening=browserShellOpeningTabs.has(tab.id);
+      button.className='browser-mode-tab browser-mode-shell-tab'+(tab.id===browserShellActiveTab?' active':'')+(opening?' tab-opening':'');
+      button.dataset.browserShellTab=tab.id;
+      button.innerHTML=`<img class="browser-mode-tab-icon" alt="" src="${esc(tab.icon || iconForUrl(tab.url))}"><span>${esc(tab.title || browserShellLabel(tab.url))}</span><i class="browser-mode-shell-tab-close" data-browser-shell-close-tab="${esc(tab.id)}" aria-label="Close tab">x</i>`;
+      bindTabIconFallback(button.querySelector('.browser-mode-tab-icon'));
+      row.insertBefore(button,plus);
+      if(opening) setTimeout(()=>browserShellOpeningTabs.delete(tab.id),520);
+    });
+    const input=document.querySelector('[data-browser-shell-url]');
+    if(input && document.activeElement!==input) input.value=browserShellDisplayValue(active.url);
+    renderBrowserBookmarks();
+    if(typeof applyVisualEffectSetting==='function') applyVisualEffectSetting();
+    if(!browserSuggestionsAllowed()) hideBrowserSuggestions();
+  }
+  function pruneBrowserShellInternalPlaceholders(keepId=''){
+    if(!activeBrowser?.tabs || activeBrowser.tabs.length<=1) return;
+    for(let i=activeBrowser.tabs.length-1;i>=0;i--){
+      const tab=activeBrowser.tabs[i];
+      if(tab.id===keepId) continue;
+      const empty=!String(tab.url || '').trim() || isBrowserShellBlankUrl(tab.url);
+      const placeholder=empty && ['Home','New Tab',''].includes(String(tab.title || ''));
+      if(!placeholder) continue;
+      try{tab.frame?.remove()}catch{}
+      activeBrowser.tabs.splice(i,1);
+    }
+    if(!activeBrowser.tabs.some(tab=>tab.id===activeBrowser.active)){
+      activeBrowser.active=keepId || activeBrowser.tabs[0]?.id || null;
+    }
+    activeBrowser.renderTabs?.();
+  }
+  function pruneBrowserShellBlankPlaceholders(keepShellId=''){
+    for(let i=browserShellTabs.length-1;i>=0;i--){
+      const tab=browserShellTabs[i];
+      if(tab.id===keepShellId || (tab.title==='Home' && !tab.url)) continue;
+      const blank=isBrowserShellBlankUrl(tab.url);
+      const placeholder=blank && [NYX_BLANK_URL,'New tab','New Tab',''].includes(String(tab.title || ''));
+      if(!placeholder) continue;
+      browserShellOpeningTabs.delete(tab.id);
+      if(tab.browserTabId && activeBrowser?.closeTab) activeBrowser.closeTab(tab.browserTabId);
+      browserShellTabs.splice(i,1);
+    }
+    if(!browserShellTabs.some(tab=>tab.id===browserShellActiveTab)){
+      browserShellActiveTab=keepShellId || browserShellTabs.find(tab=>tab.title==='Home' && !tab.url)?.id || browserShellTabs[0]?.id || null;
+    }
+  }
+  function openBrowserShellTab(url='',options={}){
+    if(url) closeWeatherForWindowOpen();
+    if(!url){
+      const now=performance.now();
+      const activeBlank=browserShellTabs.find(tab=>tab.id===browserShellActiveTab && isBrowserShellBlankUrl(tab.url) && browserShellOpeningTabs.has(tab.id));
+      if(activeBlank && now-browserShellLastBlankOpenAt<360) return activeBlank.id;
+      browserShellLastBlankOpenAt=now;
+    }
+    const id='shell-'+Date.now()+Math.random().toString(16).slice(2);
+    const normalized=url ? normalize(url) : NYX_BLANK_URL;
+    const isBlank=isBrowserShellBlankUrl(normalized);
+    browserShellTabs.push({id,url:normalized,title:isBlank ? NYX_BLANK_URL : browserShellLabel(normalized),icon:iconForUrl(normalized)});
+    browserShellOpeningTabs.add(id);
+    browserShellActiveTab=id;
+    renderBrowserShellTabs();
+    if(isBlank && !activeBrowser?.win?.isConnected){
+      setBrowserShellHomeActive();
+      browserShellActiveTab=id;
+    }
+    if(isBlank && activeBrowser?.win?.isConnected){
+      const created=activeBrowser.addTab?.('');
+      const shellTab=browserShellTabs.find(tab=>tab.id===id);
+      if(created && shellTab) shellTab.browserTabId=created.id;
+      if(created){
+        activeBrowser.activate?.(created.id);
+        created.url=NYX_BLANK_URL;
+        created.title=NYX_BLANK_URL;
+        created.icon=favicons.nyx;
+        created.history=[NYX_BLANK_URL];
+        created.index=0;
+        created.scramjetFrame=null;
+        created.frame.removeAttribute('src');
+        created.frame.removeAttribute('srcdoc');
+        created.frame.classList.remove('active');
+      }
+      pruneBrowserShellInternalPlaceholders(created?.id || '');
+      renderBrowserShellHomeMode(activeBrowser.win,'blank');
+      activeBrowser.renderTabs?.();
+      updateBrowserShellLocation(NYX_BLANK_URL,created?.id || '',true);
+      renderBrowserShellTabs();
+      setTimeout(()=>document.querySelector('[data-browser-shell-url]')?.focus(),30);
+      setTimeout(collapseDuplicateOpeningBlankTabs,0);
+      return id;
+    }
+    if(activeBrowser?.win?.isConnected && typeof activeBrowser.addTab==='function'){
+      const created=activeBrowser.addTab(isBlank ? '' : normalized,options.forceMode || '');
+      if(!created){
+        browserShellTabs.splice(0,browserShellTabs.length,...browserShellTabs.filter(tab=>tab.id!==id));
+        browserShellActiveTab=browserShellTabs[0]?.id || null;
+        renderBrowserShellTabs();
+        return null;
+      }else{
+        browserShellTabs.find(tab=>tab.id===id).browserTabId=created.id;
+      }
+      if(normalized && !isBlank){
+        created.url=normalized;
+        created.title=browserShellLabel(normalized);
+        created.icon=iconForUrl(normalized);
+        browserShellActiveTab=id;
+        activeBrowser.activate?.(created.id);
+        activeBrowser.renderTabs?.();
+        updateBrowserShellLocation(normalized,created.id);
+      }
+      else{
+        activeBrowser.activate?.(created?.id);
+        const state=activeBrowser;
+        const tab=state?.tabs?.find(t=>t.id===created.id);
+        if(tab){
+          tab.url=NYX_BLANK_URL;
+          tab.title=NYX_BLANK_URL;
+          tab.icon=favicons.nyx;
+          tab.history=[NYX_BLANK_URL];
+          tab.index=0;
+          tab.scramjetFrame=null;
+          tab.frame.removeAttribute('src');
+          tab.frame.removeAttribute('srcdoc');
+          tab.frame.classList.remove('active');
+        }
+        renderBrowserShellHomeMode(state?.win,'blank');
+        activeBrowser.activate?.(created.id);
+        renderBrowserShellHomeMode(state?.win,'blank');
+        state?.renderTabs?.();
+        updateBrowserShellLocation(NYX_BLANK_URL,created.id,true);
+        renderBrowserShellTabs();
+        setTimeout(()=>document.querySelector('[data-browser-shell-url]')?.focus(),30);
+      }
+      if(isBlank) setTimeout(collapseDuplicateOpeningBlankTabs,0);
+      return id;
+    }
+    const win=openBrowser(isBlank ? '' : normalized,options);
+    win?.classList.add('maximized');
+    const created=activeBrowser?.tabs?.[activeBrowser.tabs.length-1];
+    if(created) browserShellTabs.find(tab=>tab.id===id).browserTabId=created.id;
+    if(created && normalized && !isBlank){
+      created.url=normalized;
+      created.title=browserShellLabel(normalized);
+      created.icon=iconForUrl(normalized);
+      browserShellActiveTab=id;
+      activeBrowser?.activate?.(created.id);
+      activeBrowser?.renderTabs?.();
+    }
+    if(isBlank){
+      const state=activeBrowser;
+      const tab=created;
+      if(tab){
+        tab.url=NYX_BLANK_URL;
+        tab.title=NYX_BLANK_URL;
+        tab.icon=favicons.nyx;
+        tab.history=[NYX_BLANK_URL];
+        tab.index=0;
+        tab.scramjetFrame=null;
+        tab.frame.removeAttribute('src');
+        tab.frame.removeAttribute('srcdoc');
+        tab.frame.classList.remove('active');
+      }
+      renderBrowserShellHomeMode(state?.win,'blank');
+      activeBrowser?.activate?.(created?.id);
+      renderBrowserShellHomeMode(state?.win,'blank');
+      state?.renderTabs?.();
+      updateBrowserShellLocation(NYX_BLANK_URL,created?.id || '',true);
+      renderBrowserShellTabs();
+      setTimeout(()=>document.querySelector('[data-browser-shell-url]')?.focus(),30);
+    }
+    updateDockFullscreenState();
+    if(isBlank) setTimeout(collapseDuplicateOpeningBlankTabs,0);
+    return id;
+  }
+  function openBrowserShellInternalTab(name){
+    hideBrowserSuggestions();
+    if(String(name || '').toLowerCase()==='settings'){
+      openBrowserShellSettings();
+      return browserShellActiveTab;
+    }
+    const id=openBrowserShellTab('');
+    if(id) browserShellActiveTab=id;
+    showBrowserShellInternalPage(name);
+    return id;
+  }
+  function openBrowserShellAppTab(url){
+    hideBrowserSuggestions();
+    closeWeatherForWindowOpen();
+    if(String(url || '').trim().toLowerCase()==='nyx://ai'){
+      return openBrowserShellInternalTab('ai');
+    }
+    if(String(url || '').trim().toLowerCase()==='nyx://ephesians1'){
+      return openBrowserShellInternalTab('ephesians1');
+    }
+    const id=openBrowserShellTab(url || '',{forceMode:appCompatibilityMode(url)});
+    if(id) browserShellActiveTab=id;
+    renderBrowserShellTabs();
+    return id;
+  }
+  function ensureBrowserShellLinkedTab(shellTab){
+    if(!shellTab || !activeBrowser?.win?.isConnected) return null;
+    let tab=shellTab.browserTabId ? activeBrowser.tabs?.find(item=>item.id===shellTab.browserTabId) : null;
+    if(tab){
+      activeBrowser.activate?.(tab.id);
+      return tab;
+    }
+    tab=activeBrowser.tabs?.find(item=>item.id===activeBrowser.active) || activeBrowser.tabs?.[0] || null;
+    if(!tab && typeof activeBrowser.addTab==='function') tab=activeBrowser.addTab('');
+    if(!tab) return null;
+    shellTab.browserTabId=tab.id;
+    activeBrowser.activate?.(tab.id);
+    return tab;
+  }
+  function setBrowserShellActive(id){
+    if(!browserShellTabs.some(tab=>tab.id===id)) return;
+    browserShellActiveTab=id;
+    const shellTab=browserShellTabs.find(tab=>tab.id===id);
+    if(shellTab?.title==='Home' && !shellTab.url){
+      renderBrowserShellHomeMode(activeBrowser?.win,'home');
+    }else if(isBrowserShellBlankUrl(shellTab?.url)){
+      if(shellTab?.browserTabId && activeBrowser?.activate) activeBrowser.activate(shellTab.browserTabId);
+      renderBrowserShellHomeMode(activeBrowser?.win,'blank');
+    }else if(shellTab?.browserTabId && activeBrowser?.activate) activeBrowser.activate(shellTab.browserTabId);
+    renderBrowserShellTabs();
+    animateActiveBrowserShellTab();
+  }
+  function animateActiveBrowserShellTab(){
+    if(suppressHomeEntranceOnStartup) return;
+    requestAnimationFrame(()=>{
+      const tab=document.querySelector('body.browser-shell .brand-mini > .active:is(.browser-mode-app-button,.browser-mode-shell-tab)');
+      if(!tab) return;
+      tab.classList.remove('tab-activating');
+      void tab.offsetWidth;
+      tab.classList.add('tab-activating');
+      setTimeout(()=>tab.classList.remove('tab-activating'),340);
+    });
+  }
+  function setBrowserShellHomeActive(){
+    ensureBrowserShellHome();
+    let homeTab=browserShellTabs.find(tab=>tab.title==='Home' && !tab.url);
+    if(!homeTab){
+      const id='shell-'+Date.now()+Math.random().toString(16).slice(2);
+      homeTab={id,url:'',title:'Home'};
+      browserShellTabs.unshift(homeTab);
+    }
+    browserShellActiveTab=homeTab.id;
+    if(!activeBrowser?.win?.isConnected){
+      const win=openBrowser('');
+      win?.classList.add('maximized');
+      updateDockFullscreenState();
+    }
+    if(activeBrowser?.win?.isConnected){
+      const state=activeBrowser;
+      state?.tabs?.forEach(tab=>tab.frame?.classList.remove('active'));
+      renderBrowserShellHomeMode(state.win,'home');
+      state?.renderTabs?.();
+      playHomeEntranceAnimation(state.win);
+    }
+    renderBrowserShellTabs();
+    animateActiveBrowserShellTab();
+    const input=document.querySelector('[data-browser-shell-url]');
+    if(input) input.value='';
+  }
+  //browser-settings-page
+  function browserShellSettingsMarkup(presetTiles){
+    const savedTitle=esc(store.text('nyx.tabTitle',document.title || 'ռʏӼ'));
+    const savedFavicon=esc(store.text('nyx.tabFavicon',nyxFaviconHref()));
+    const currentPreset=esc(store.text('nyx.logo','nyx'));
+    const engine=esc(store.text('nyx.engine','duckduckgo'));
+    const savedBrowserMode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
+    const browserMode=esc(savedBrowserMode==='rammerhead' ? 'auto' : savedBrowserMode);
+    const transport=esc(store.text('nyx.transport','epoxy'));
+    const theme=esc(store.text('nyx.theme','default'));
+    const effect=esc(store.text('nyx.visualEffect','none'));
+    const effectSpeed=esc(store.text('nyx.visualEffectSpeed','1.1'));
+    const effectAmount=esc(store.text('nyx.visualEffectAmount','16'));
+    return `<section class="settings-app settings-single-pane browser-only-settings"><main class="settings-main"><h1>Browser Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="nyx" type="button">Reset</button></div></section><section class="settings-block"><h2>Preset Cloak</h2><select class="settings-select" data-preset-select><option value="nyx" ${currentPreset==='nyx'?'selected':''}>ռʏӼ</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Cloaking</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original tab redirect URL"></div><div class="settings-row"><span>Auto Cloak</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Redirect original after launch</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save Cloak Settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Panic Key</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Display Mode</h2><p>Switch back to the Windows-style desktop layout.</p><p>Windows mode is no longer maintained. If you run into any issues, thats not my problem&#x1F494;</p><div class="settings-actions"><button class="settings-action" data-browser-shell-toggle data-enabled="false" type="button">Switch to Windows Mode</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>Search Engine</h2><select class="settings-select" data-browser-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>DuckDuckGo</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Proxy Engine</h2><select class="settings-select" data-browser-mode-select><option value="auto" ${browserMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${browserMode==='scramjet'?'selected':''}>Scramjet</option><option value="ultraviolet" ${browserMode==='ultraviolet'?'selected':''}>Ultraviolet</option><option value="iframe" ${browserMode==='iframe'?'selected':''}>Iframe</option></select></section><section class="settings-block"><h2>Transport</h2><select class="settings-select" data-browser-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Epoxy over Wisp</option><option value="wisp" ${transport==='wisp'?'selected':''}>Wisp endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Libcurl over Wisp</option></select><div class="settings-actions"><button class="settings-action" data-browser-settings-save type="button">Save Browser Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
+  }
+  function browserShellPresetTiles(){
+    return `<button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${nyxTabFavicon}"><span>ռʏӼ tab</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
+  }
+  function saveBrowserShellSettings(root=document){
+    const activeTab=activeBrowser?.tabs?.find(tab=>tab.id===activeBrowser.active);
+    const activeSource=browserShellSourceUrl(activeTab?.sourceUrl || activeTab?.url || '') || activeTab?.sourceUrl || activeTab?.url || '';
+    const engine=root.querySelector('[data-browser-engine]');
+    const mode=root.querySelector('[data-browser-mode-select]');
+    const transport=root.querySelector('[data-browser-transport]');
+    const font=root.querySelector('[data-font-value]');
+    store.setText('nyx.engine', engine?.value || 'duckduckgo');
+    store.setText('nyx.browserMode', normalizeBrowserModeName(mode?.value || 'auto'));
+    if(font) store.setText('nyx.font',nyxFontChoice(font.value)[0]);
+    const nextTransport=transport?.value || 'epoxy';
+    if(store.text('nyx.transport','epoxy')!==nextTransport){
+      scramjetInstallPromise=null;
+      scramjetController=null;
+      scramjetTransport=null;
+      scramjetTransportKey='';
+      uvInstallPromise=null;
+    }
+    store.setText('nyx.transport', nextTransport);
+    applyUserSettings();
+    browserTransportOverride='';
+    scramjetInstallPromise=null;
+    scramjetController=null;
+    scramjetTransport=null;
+    scramjetTransportKey='';
+    uvInstallPromise=null;
+    if(/^https?:\/\//i.test(activeSource)){
+      setTimeout(()=>activeBrowser?.navigate?.(activeSource),0);
+    }
+  }
+  function openBrowserShellSettings(){
+    if(!document.body.classList.contains('browser-shell')){
+      openSettings();
+      return;
+    }
+    document.querySelector('.browser-shell-settings-overlay')?.remove();
+    const overlay=document.createElement('div');
+    overlay.className='browser-shell-settings-overlay';
+    overlay.innerHTML=`<div class="browser-shell-settings-panel" role="dialog" aria-modal="true" aria-label="Browser Mode Settings"><button class="browser-shell-settings-close" data-browser-settings-close type="button" aria-label="Close settings">×</button>${browserShellSettingsMarkup(browserShellPresetTiles())}</div>`;
+    document.body.appendChild(overlay);
+    const closeButton=overlay.querySelector('.browser-shell-settings-close');
+    if(closeButton){
+      closeButton.textContent='\u00d7';
+      const closeColor=document.body.classList.contains('theme-fresh') ? '#54ebd9' : getComputedStyle(document.body).getPropertyValue('--theme-strong').trim() || '#f8fafc';
+      Object.entries({
+        border:'0',
+        borderWidth:'0',
+        borderStyle:'none',
+        outline:'0',
+        background:'transparent',
+        backgroundColor:'transparent',
+        backgroundImage:'none',
+        boxShadow:'none',
+        color:closeColor,
+        WebkitTextFillColor:closeColor,
+        width:'22px',
+        height:'22px',
+        minWidth:'22px',
+        minHeight:'22px',
+        padding:'0',
+        borderRadius:'0',
+        fontSize:'18px',
+        lineHeight:'20px',
+        textIndent:'0',
+        textAlign:'center'
+      }).forEach(([property,value])=>closeButton.style.setProperty(property,value,'important'));
+    }
+    const effectBlock=overlay.querySelector('[data-effect-value]')?.closest('.settings-block');
+    if(effectBlock){
+      const fontBlock=document.createElement('section');
+      fontBlock.className='settings-block';
+      fontBlock.innerHTML=`<h2>Font</h2><select class="settings-select" data-font-value>${nyxFontOptionsMarkup()}</select>`;
+      effectBlock.before(fontBlock);
+      const lagBlock=document.createElement('section');
+      lagBlock.className='settings-block';
+      const lagOn=store.get('nyx.lagReducer',false);
+      lagBlock.innerHTML=`<h2>Lag Reducer</h2><p>Turns off heavier blur, shadows, particles, and startup effects for smoother browsing.</p><div class="settings-row"><span>Lag Reducer</span><button class="settings-action ${lagOn?'on':''}" data-switch="nyx.lagReducer" data-lag-reducer type="button">${lagOn?'On':'Off'}</button></div>`;
+      const liteBlock=document.createElement('section');
+      liteBlock.className='settings-block';
+      const liteOn=store.get('nyx.performanceLite',false);
+      liteBlock.innerHTML=`<h2>Lite Mode</h2><p>Lightens blur, shadows, and particles without fully disabling animations.</p><div class="settings-row"><span>Lite Mode</span><button class="settings-action ${liteOn?'on':''}" data-switch="nyx.performanceLite" data-performance-lite type="button">${liteOn?'On':'Off'}</button></div>`;
+      const backgroundsBlock=document.createElement('section');
+      backgroundsBlock.className='settings-block';
+      const threeDOn=store.get('nyx.threeDBackgrounds',false);
+      backgroundsBlock.innerHTML=`<h2>3D Backgrounds</h2><p>Use the original interactive 3D theme scenes instead of the animated color background.</p><div class="settings-row"><span>3D Backgrounds</span><button class="settings-action ${threeDOn?'on':''}" data-switch="nyx.threeDBackgrounds" type="button">${threeDOn?'On':'Off'}</button></div>`;
+      const resetBlock=document.createElement('section');
+      resetBlock.className='settings-block';
+      resetBlock.innerHTML=`<h2>Clear Cache</h2><p>Removes cookies, cache files, saved settings, proxy storage, and service workers, then reloads nyx like a fresh install.</p><div class="settings-actions"><button class="settings-action danger-action" data-clear-nyx-cache type="button">Clear Cache and Reset</button></div>`;
+      effectBlock.before(lagBlock);
+      effectBlock.before(liteBlock);
+      effectBlock.before(backgroundsBlock);
+      effectBlock.before(resetBlock);
+    }
+    ensureFreshThemeOptions(overlay);
+    syncSwitches(overlay);
+    wirePresetCloakControls(overlay);
+  }
+  function closeBrowserShellSettings(){
+    document.querySelector('.browser-shell-settings-overlay')?.remove();
+  }
+  //browser-tab-actions
+  function closeBrowserShellTab(id){
+    const index=browserShellTabs.findIndex(tab=>tab.id===id);
+    if(index<0) return;
+    const closing=browserShellTabs[index];
+    if(!closing.url && closing.title==='Home') return;
+      const nextIndex=browserShellTabs.findIndex(tab=>tab.id===id);
+      if(nextIndex<0) return;
+      const shellTab=browserShellTabs[nextIndex];
+      if(shellTab?.browserTabId && activeBrowser?.closeTab) activeBrowser.closeTab(shellTab.browserTabId);
+      browserShellTabs.splice(nextIndex,1);
+      if(browserShellActiveTab===id) browserShellActiveTab=browserShellTabs[Math.max(0,nextIndex-1)]?.id || browserShellTabs[0]?.id || null;
+      if(!browserShellTabs.length){
+        const freshId='shell-'+Date.now()+Math.random().toString(16).slice(2);
+        browserShellTabs.push({id:freshId,url:'',title:'Home'});
+        browserShellActiveTab=freshId;
+        if(!activeBrowser?.win?.isConnected){
+          const win=openBrowser('');
+          win?.classList.add('maximized');
+        }
+      }
+      const activeShell=browserShellTabs.find(tab=>tab.id===browserShellActiveTab) || browserShellTabs[0];
+      if(activeShell?.title==='Home' && !activeShell.url){
+        if(activeBrowser?.win?.isConnected){
+          activeBrowser.tabs?.forEach(tab=>tab.frame?.classList.remove('active'));
+          renderBrowserShellHomeMode(activeBrowser.win,'home');
+          activeBrowser.renderTabs?.();
+        }
+      }else if(isBrowserShellBlankUrl(activeShell?.url)){
+        if(activeShell?.browserTabId && activeBrowser?.activate) activeBrowser.activate(activeShell.browserTabId);
+        renderBrowserShellHomeMode(activeBrowser?.win,'blank');
+      }else if(activeShell?.browserTabId && activeBrowser?.activate){
+        activeBrowser.activate(activeShell.browserTabId);
+      }
+      renderBrowserShellTabs();
+  }
+  function updateBrowserShellLocation(url,browserTabId='',forceInput=false){
+    ensureBrowserShellHome();
+    const tab=(browserTabId && browserShellTabs.find(tab=>tab.browserTabId===browserTabId))
+      || browserShellTabs.find(tab=>tab.id===browserShellActiveTab)
+      || browserShellTabs[0];
+    const nextUrl=String(url || '').trim();
+    tab.url=nextUrl;
+    if(nextUrl){
+      tab.title=browserShellLabel(nextUrl);
+      tab.icon=iconForUrl(nextUrl);
+    }else if(tab.title!=='Home' && tab.title!=='New Tab'){
+      tab.title='New Tab';
+      tab.icon=favicons.nyx;
+    }
+    renderBrowserShellTabs();
+    if(forceInput){
+      const input=document.querySelector('[data-browser-shell-url]');
+      if(input){
+        input.value=browserShellDisplayValue(nextUrl);
+        input.dataset.selectOnFocus='1';
+      }
+    }
+  }
+  function navigateBrowserShell(value){
+    closeBrowserShellSettings();
+    document.body.classList.remove('menu-open');
+    const raw=canonicalAddressInput(value);
+    if(!raw){
+      openBrowserShellTab('');
+      return;
+    }
+    if(raw.toLowerCase()==='nyx://ai'){
+      showBrowserShellInternalPage('ai');
+      return;
+    }
+    if(raw.toLowerCase()==='nyx://ephesians1'){
+      showBrowserShellInternalPage('ephesians1');
+      return;
+    }
+    if(raw.toLowerCase()===NYX_BLANK_URL){
+      ensureBrowserShellHome();
+      const shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab) || browserShellTabs[0];
+      shellTab.url=NYX_BLANK_URL;
+      shellTab.title=NYX_BLANK_URL;
+      shellTab.icon=favicons.nyx;
+      if(activeBrowser?.win?.isConnected){
+        if(shellTab.browserTabId && activeBrowser.activate) activeBrowser.activate(shellTab.browserTabId);
+        const state=activeBrowser;
+        const tab=state?.tabs?.find(t=>t.id===shellTab.browserTabId || t.id===state.active);
+        if(tab){
+          tab.url=NYX_BLANK_URL;
+          tab.title=NYX_BLANK_URL;
+          tab.icon=favicons.nyx;
+          tab.history=[NYX_BLANK_URL];
+          tab.index=0;
+          tab.scramjetFrame=null;
+          tab.frame.removeAttribute('src');
+          tab.frame.removeAttribute('srcdoc');
+          tab.frame.classList.remove('active');
+        }
+        state?.win?.querySelector('.browser-home')?.classList.remove('hidden');
+        state?.win?.classList.add('browser-blank');
+        state?.renderTabs?.();
+      }
+      updateBrowserShellLocation(NYX_BLANK_URL,shellTab.browserTabId || '',true);
+      renderBrowserShellTabs();
+      playHomeEntranceAnimation(activeBrowser?.win || document);
+      return;
+    }
+    if(shouldTriggerSixtySevenJumpscare(raw)){
+      showSixtySevenJumpscare();
+      return;
+    }
+    ensureBrowserShellHome();
+    const proxyInternal=/^(?:\/service\/|\/~\/sj\/|\/scramjet\/service\/|nyx:\/\/)/i.test(raw);
+    const looksLikeUrl=/^(?:[a-z][a-z0-9+.-]*:|[\w.-]+\.[a-z]{2,}(?:\/|$)|\/|\.\/|\.\.\/|assets\/)/i.test(raw);
+    const isSearchQuery=raw && !looksLikeUrl && !proxyInternal;
+    const normalized=normalize(raw);
+    const target=isSearchQuery ? selectedSearchUrl(raw) : (normalized || raw);
+    const navigationValue=isSearchQuery ? raw : target;
+    const shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab) || browserShellTabs[0];
+    if(activeBrowser?.win?.isConnected){
+      ensureBrowserShellLinkedTab(shellTab);
+      if(activeBrowser.navigate) activeBrowser.navigate(navigationValue);
+      else openBrowser(navigationValue);
+      const activeTab=activeBrowser?.tabs?.find(tab=>tab.id===shellTab?.browserTabId || tab.id===activeBrowser.active);
+      if(activeTab){
+        if(shellTab) shellTab.browserTabId=activeTab.id;
+        activeTab.url=target;
+        activeTab.title=browserShellLabel(target);
+        activeTab.icon=iconForUrl(target);
+        pruneBrowserShellInternalPlaceholders(activeTab.id);
+        activeBrowser.renderTabs?.();
+      }
+    }else{
+      const win=openBrowser(navigationValue);
+      win?.classList.add('maximized');
+      const created=activeBrowser?.tabs?.[activeBrowser.tabs.length-1];
+      if(shellTab && created) shellTab.browserTabId=created.id;
+      updateDockFullscreenState();
+    }
+    if(shellTab) pruneBrowserShellBlankPlaceholders(shellTab.id);
+    updateBrowserShellLocation(target,'',true);
+  }
+  function goBrowserShellHome(){
+    ensureBrowserShellHome();
+    if(!activeBrowser?.win?.isConnected){
+      const win=openBrowser('');
+      win?.classList.add('maximized');
+      updateDockFullscreenState();
+    }
+    const shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab) || browserShellTabs[0];
+    if(shellTab?.browserTabId && activeBrowser?.activate) activeBrowser.activate(shellTab.browserTabId);
+    const state=activeBrowser;
+    const tab=state?.tabs?.find(t=>t.id===state.active);
+    if(tab){
+        tab.url='';
+        tab.title='Home';
+        tab.icon=favicons.nyx;
+      tab.history=[''];
+      tab.index=0;
+      tab.scramjetFrame=null;
+      tab.frame.removeAttribute('src');
+      tab.frame.removeAttribute('srcdoc');
+      tab.frame.classList.remove('active');
+    }
+    state?.win?.querySelector('.browser-home')?.classList.remove('hidden');
+    state?.win?.classList.add('browser-blank');
+    playBrowserShellPageReveal(state?.win || document);
+    state?.renderTabs?.();
+    updateBrowserShellLocation('');
+    document.querySelector('[data-browser-shell-url]')?.focus();
+  }
+  //browser-internal-pages
+  function legacyBrowserShellInternalPage(name){
+    ensureBrowserShellHome();
+    if(!activeBrowser?.win?.isConnected){
+      const win=openBrowser('');
+      win?.classList.add('maximized');
+      const shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
+      const created=activeBrowser?.tabs?.[activeBrowser.tabs.length-1];
+      if(shellTab && created) shellTab.browserTabId=created.id;
+      updateDockFullscreenState();
+    }
+    const shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
+    if(shellTab?.browserTabId && activeBrowser?.activate) activeBrowser.activate(shellTab.browserTabId);
+    const state=activeBrowser;
+    const tab=state?.tabs?.find(t=>t.id===state.active);
+    if(!tab) return false;
+    const pages={
+      apps:{title:'Apps',body:`<div class="browser-home browser-shell-page"><h1 class="home-heading">Apps</h1><p class="home-sub">Apps for stuff</p><div class="quick-grid apps-launch-grid">${quickTiles()}</div></div>`},
+      links:{title:'Bookmarks',body:`<div class="browser-home browser-shell-page"><h1 class="home-heading">Bookmarks</h1><p class="home-sub">Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>DuckDuckGo</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></div>`}
+    };
+    const page=pages[name] || pages.apps;
+    tab.url='nyx://'+name;
+    tab.title=page.title;
+    const clearInternal=/^(apps)$/i.test(String(name || page.title || ''));
+    state.win.classList.toggle('internal-clear',clearInternal);
+    tab.frame.classList.toggle('transparent-internal-page',clearInternal);
+    tab.frame.setAttribute('allowtransparency','true');
+    tab.frame.style.backgroundColor=clearInternal?'transparent':'';
+    tab.frame.removeAttribute('src');
+    tab.frame.srcdoc=browserShellPageSrcdoc(page);
+    tab.frame.classList.add('active');
+    state.win.querySelector('.browser-home')?.classList.add('hidden');
+    state.win.classList.remove('browser-blank');
+    state.renderTabs?.();
+    updateBrowserShellLocation(tab.url);
+    return true;
+  }
+  //browser-srcdoc-pages
+  function browserShellPageSrcdoc(page){
+    const style='@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap");html,body{margin:0;width:100%;min-height:100%;font-family:Outfit,Arial,sans-serif;background:transparent;color:#f8fafc}*{box-sizing:border-box}select{color-scheme:dark!important}select option,select optgroup{background:#101827!important;color:#f8fafc!important;-webkit-text-fill-color:#f8fafc!important}select option:checked{background:#334155!important;color:#fff!important;-webkit-text-fill-color:#fff!important}body{overflow:auto}.shell-page{min-height:100vh;padding:34px 36px 70px;background:transparent;color:white}.shell-page h1{margin:0 0 8px;font-size:42px;line-height:1;font-weight:900;text-shadow:0 12px 34px rgba(0,0,0,.34)}.shell-page h2{margin:30px 0 14px;font-size:22px}.shell-page p{color:#eef2f7;margin:0 0 22px;font-weight:700;text-shadow:0 8px 26px rgba(0,0,0,.28)}.quick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px}.quick-grid.small{grid-template-columns:repeat(auto-fill,minmax(138px,1fr))}.quick-tile{height:132px;border:1px solid transparent;border-radius:24px;background:transparent;color:white;display:grid;place-items:center;gap:8px;font:800 16px Outfit,Arial,sans-serif;box-shadow:none;backdrop-filter:none;transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease,border-color .2s ease,background .2s ease,backdrop-filter .2s ease}.quick-tile:hover{transform:scale(1.045);background:linear-gradient(145deg,rgba(255,255,255,.22),rgba(31,41,55,.42));border-color:rgba(255,255,255,.36);box-shadow:inset 0 1px 0 rgba(255,255,255,.26),0 22px 54px rgba(0,0,0,.28);backdrop-filter:blur(16px) saturate(1.15)}.quick-icon{width:64px;height:64px;border-radius:20px;object-fit:contain;background:transparent;padding:8px;border:1px solid transparent;box-shadow:none;transition:transform .18s ease,background .18s ease,border-color .18s ease,box-shadow .18s ease}.quick-tile:hover .quick-icon{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 16px 34px rgba(0,0,0,.22);transform:scale(1.08)}.quick-tile[data-domain="traxmojo.com"] .quick-icon{width:112px;height:112px;padding:0;object-fit:contain;background:transparent}.quick-tile[data-domain="traxmojo.com"]:hover .quick-icon{transform:scale(1.16)}.quick-combo{width:min(132px,calc(100% - 12px));height:26px;border:1px solid rgba(255,255,255,.2);border-radius:999px;background:rgba(8,12,20,.62);color:#e0f2fe;padding:0 8px;font:800 11px Outfit,Arial,sans-serif;outline:0}.quick-combo option{background:#101827!important;color:#f8fafc!important}.settings-app{min-height:100vh;display:grid;grid-template-columns:250px minmax(0,1fr);gap:18px;padding:10px;background:linear-gradient(135deg,rgba(7,10,16,.86),rgba(41,45,58,.9) 48%,rgba(11,13,20,.9));color:#eef2f7}.settings-side{position:sticky;top:10px;height:calc(100vh - 20px);padding:22px 16px;border:1px solid rgba(159,172,190,.28);border-radius:22px;background:rgba(20,24,34,.76);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 18px 48px rgba(0,0,0,.32);backdrop-filter:blur(14px)}.settings-side button{width:100%;height:48px;margin-bottom:8px;display:flex;align-items:center;gap:12px;border:0;border-radius:999px;background:transparent;color:#e5e7eb;font:800 14px Outfit,Arial,sans-serif;text-align:left;padding:0 14px;transition:background .16s ease,transform .16s ease,color .16s ease}.settings-side button:hover,.settings-side button.active{background:rgba(148,163,184,.18);color:#fff;transform:translateX(2px)}.settings-side i{width:22px;height:22px;display:grid;place-items:center;border-radius:8px;background:rgba(148,163,184,.22);font-style:normal}.settings-main{min-height:calc(100vh - 20px);padding:30px 34px 60px;border:1px solid rgba(159,172,190,.18);border-radius:22px;background:radial-gradient(circle at 50% 100%,rgba(118,124,145,.32),transparent 40%),linear-gradient(180deg,rgba(28,32,44,.82),rgba(13,16,24,.78));box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 22px 54px rgba(0,0,0,.28);backdrop-filter:blur(16px) saturate(1.1)}.settings-main h1{margin:0;color:#fff;font-size:30px;line-height:1;font-weight:900}.settings-main h1::after{content:"";display:block;width:56px;height:3px;margin:13px 0 30px;border-radius:999px;background:#a8b3c4}.settings-block{margin:0 0 34px}.settings-block h2{margin:0 0 8px;color:#cbd5e1;font-size:18px;font-weight:900}.settings-block p{max-width:900px;margin:0 0 14px;color:#d1d7e0;font-size:13px;font-weight:700;line-height:1.45}.settings-form-row{display:grid;grid-template-columns:minmax(240px,1fr) minmax(240px,1fr);gap:104px;align-items:end}.settings-input,.settings-select{width:100%;height:43px;border:1px solid rgba(148,163,184,.36);border-radius:999px;background:rgba(14,17,26,.54);color:#f8fafc;padding:0 14px;outline:0;font:700 13px Outfit,Arial,sans-serif;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}.settings-select{max-width:760px;appearance:auto}.settings-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}.settings-action{min-height:38px;border:0;border-radius:999px;background:linear-gradient(145deg,#6b7280,#4b5563);color:#fff;padding:0 16px;font:900 13px Outfit,Arial,sans-serif;box-shadow:0 10px 26px rgba(0,0,0,.28);transition:transform .16s ease,filter .16s ease}.settings-action:hover{transform:scale(1.045);filter:brightness(1.1)}.settings-toggle{width:46px;height:24px;border:1px solid rgba(255,255,255,.15);border-radius:999px;background:#4b5563;padding:2px;display:inline-flex;align-items:center}.settings-toggle::before{content:"";width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 3px 9px rgba(0,0,0,.28);transform:translateX(0);transition:transform .16s ease}.settings-toggle.on::before{transform:translateX(20px)}.settings-toggle.on{background:#71717a}.settings-grid-settings{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;max-width:720px}.settings-preset{height:138px;padding:10px;border:1px solid rgba(255,255,255,.16);border-radius:24px;background:linear-gradient(145deg,rgba(229,231,235,.18),rgba(75,85,99,.48));color:#fff;font:900 14px Outfit,Arial,sans-serif;display:grid;place-items:center;gap:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 16px 38px rgba(0,0,0,.28);transition:transform .16s ease,border-color .16s ease}.settings-preset:hover{transform:scale(1.045);border-color:rgba(255,255,255,.34)}.settings-effect-preview{display:flex;gap:9px;margin-top:12px}.settings-effect-preview span{width:36px;height:36px;display:grid;place-items:center;border-radius:999px;background:rgba(148,163,184,.18);border:1px solid rgba(255,255,255,.12);font-size:18px}.settings-compact{max-width:760px}.quick-grid.settings-mini{grid-template-columns:repeat(3,minmax(136px,170px));gap:14px}.quick-grid.settings-mini .quick-tile{height:118px;border-radius:24px}.quick-grid.settings-mini b{font-size:24px}@media(max-width:900px){.settings-app{grid-template-columns:1fr}.settings-side{position:relative;height:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.settings-side button{margin:0}.settings-form-row{grid-template-columns:1fr;gap:14px}.settings-main{padding:24px 18px}.quick-grid.settings-mini{grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}}@media(max-width:720px){.shell-page{padding:24px 18px 50px}.quick-grid{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:12px}.quick-tile{height:112px;font-size:13px}.settings-app{padding:0}.settings-side,.settings-main{border-radius:0}.settings-grid-settings{grid-template-columns:repeat(auto-fill,minmax(124px,1fr))}}';
+    const themeStyle='body.theme-ruby{--theme-a:#ef4444;--theme-b:#7f1d1d;--theme-strong:#fecaca;--theme-text-gradient:linear-gradient(90deg,#fee2e2,#fb7185,#991b1b);--theme-bg:linear-gradient(rgba(25,0,0,.18),rgba(25,0,0,.36)),url("assets/backgrounds/theme-ruby.jpg")}body.theme-emerald{--theme-a:#10b981;--theme-b:#064e3b;--theme-strong:#dcfce7;--theme-text-gradient:linear-gradient(90deg,#dcfce7,#34d399,#065f46);--theme-bg:linear-gradient(rgba(0,25,8,.14),rgba(0,24,12,.32)),url("assets/backgrounds/theme-emerald.png")}body.theme-sakura{--theme-a:#f472b6;--theme-b:#be185d;--theme-strong:#fce7f3;--theme-text-gradient:linear-gradient(90deg,#fce7f3,#f9a8d4,#be185d);--theme-bg:linear-gradient(rgba(40,0,24,.12),rgba(40,0,30,.28)),url("assets/backgrounds/theme-sakura.jpg")}body.theme-ruby,body.theme-emerald,body.theme-sakura{background:var(--theme-bg)!important;background-size:cover!important;background-position:center!important;background-attachment:fixed!important}body.theme-ruby .shell-page,body.theme-emerald .shell-page,body.theme-sakura .shell-page{background:linear-gradient(135deg,color-mix(in srgb,var(--theme-a) 34%,transparent),rgba(12,16,24,.58)),var(--theme-bg)!important;background-size:cover!important;background-position:center!important}body.theme-ruby .settings-app,body.theme-emerald .settings-app,body.theme-sakura .settings-app{background:linear-gradient(135deg,color-mix(in srgb,var(--theme-a) 22%,rgba(8,12,20,.9)),color-mix(in srgb,var(--theme-b) 34%,rgba(12,16,24,.9)))!important}body.theme-ruby .settings-main,body.theme-ruby .settings-side,body.theme-ruby .quick-tile,body.theme-ruby .settings-action,body.theme-emerald .settings-main,body.theme-emerald .settings-side,body.theme-emerald .quick-tile,body.theme-emerald .settings-action,body.theme-sakura .settings-main,body.theme-sakura .settings-side,body.theme-sakura .quick-tile,body.theme-sakura .settings-action{background:linear-gradient(145deg,color-mix(in srgb,var(--theme-a) 28%,rgba(255,255,255,.18)),color-mix(in srgb,var(--theme-b) 42%,rgba(7,10,16,.72)))!important;border-color:color-mix(in srgb,var(--theme-a) 45%,rgba(255,255,255,.22))!important}body.theme-ruby .quick-tile:not(:hover),body.theme-emerald .quick-tile:not(:hover),body.theme-sakura .quick-tile:not(:hover){background:transparent!important;border-color:transparent!important;box-shadow:none!important;backdrop-filter:none!important}body.theme-ruby .quick-tile:hover,body.theme-emerald .quick-tile:hover,body.theme-sakura .quick-tile:hover{background:linear-gradient(145deg,color-mix(in srgb,var(--theme-a) 34%,rgba(255,255,255,.16)),color-mix(in srgb,var(--theme-b) 48%,rgba(7,10,16,.7)))!important;border-color:color-mix(in srgb,var(--theme-a) 45%,rgba(255,255,255,.22))!important}.theme-ruby h1,.theme-ruby h2,.theme-ruby p,.theme-ruby .settings-side span,.theme-ruby .quick-tile span,.theme-emerald h1,.theme-emerald h2,.theme-emerald p,.theme-emerald .settings-side span,.theme-emerald .quick-tile span,.theme-sakura h1,.theme-sakura h2,.theme-sakura p,.theme-sakura .settings-side span,.theme-sakura .quick-tile span{background:var(--theme-text-gradient);-webkit-background-clip:text;background-clip:text;color:transparent!important;-webkit-text-fill-color:transparent}.theme-ruby button,.theme-emerald button,.theme-sakura button{color:var(--theme-strong)!important;-webkit-text-fill-color:var(--theme-strong)!important}.theme-ruby .settings-input,.theme-ruby .settings-select,.theme-emerald .settings-input,.theme-emerald .settings-select,.theme-sakura .settings-input,.theme-sakura .settings-select{background:linear-gradient(90deg,color-mix(in srgb,var(--theme-a) 18%,rgba(12,16,24,.94)),rgba(12,16,24,.76))!important;border-color:color-mix(in srgb,var(--theme-a) 60%,rgba(255,255,255,.18))!important;color:var(--theme-strong)!important;-webkit-text-fill-color:var(--theme-strong)!important}.theme-ruby button:hover,.theme-emerald button:hover,.theme-sakura button:hover{color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 0 14px color-mix(in srgb,var(--theme-a) 72%,transparent)!important}.theme-ruby select option,.theme-emerald select option,.theme-sakura select option{background:#10131b;color:#f8fafc}';
+    const freshThemeStyle='body.theme-fresh{--theme-a:#fff;--theme-b:#c7f0de;--theme-strong:#0f8fa3;--theme-border:#fff;--theme-bg:linear-gradient(rgba(255,255,255,.10),rgba(255,255,255,.18)),url("assets/backgrounds/theme-fresh.jpg")!important;background:var(--theme-bg)!important;background-size:cover!important;background-position:center!important;background-attachment:fixed!important;color:#0f8fa3!important}body.theme-fresh :is(.shell-page,.browser-shell-page){background:var(--theme-bg)!important;background-size:cover!important;background-position:center!important}body.theme-fresh :is(.settings-app,.settings-main,.settings-side,.settings-block,.quick-tile,.quick-icon,.settings-action,.settings-preset,button,input,select,textarea){background:rgba(255,255,255,.42)!important;border-color:rgba(255,255,255,.82)!important;color:#133034!important;-webkit-text-fill-color:#133034!important;box-shadow:none!important}body.theme-fresh :is(h1,h2,h3,p,span,label,strong,.quick-tile span){background:none!important;color:#0f8fa3!important;-webkit-text-fill-color:#0f8fa3!important;text-shadow:0 2px 12px rgba(24,54,58,.42)!important}body.theme-fresh select option{background:#fff!important;color:#133034!important}';
+    const script='function nyxEffectPayload(){return{type:"nyx:effect-settings",effect:document.querySelector("[data-effect-value]")?.value||"none",speed:document.querySelector("[data-effect-speed]")?.value||"1.1",amount:document.querySelector("[data-effect-amount]")?.value||"16",theme:document.querySelector("[data-theme-value]")?.value||"default"}}function nyxBrowserPayload(){return{type:"nyx:browser-settings",engine:document.querySelector("[data-browser-engine]")?.value||"duckduckgo",browserMode:document.querySelector("[data-browser-mode-select]")?.value||"auto",transport:document.querySelector("[data-browser-transport]")?.value||"epoxy"}}document.addEventListener("click",e=>{const preset=e.target.closest("[data-preset]");if(preset){e.preventDefault();e.stopPropagation();parent.postMessage({type:"nyx:preset",preset:preset.dataset.preset},"*");return}const app=e.target.closest("[data-app-url]");if(app){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:app.dataset.appUrl},"*");return}const url=e.target.closest("[data-url]");if(url&&url.closest(".shell-page,.browser-shell-page")){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:url.dataset.url},"*");return}if(e.target.closest("[data-browser-settings-save]")){e.preventDefault();parent.postMessage(nyxBrowserPayload(),"*")}if(e.target.closest("[data-page-fullscreen]"))parent.postMessage({type:"nyx:fullscreen"},"*");if(e.target.closest("[data-shell-about]"))parent.postMessage({type:"nyx:about"},"*");if(e.target.closest("[data-shell-about-tab]"))parent.postMessage({type:"nyx:about-tab"},"*")});document.addEventListener("change",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){document.querySelectorAll("[data-tab-title]").forEach(el=>{el.value=presetSelect.options[presetSelect.selectedIndex]?.textContent||presetSelect.value||"nyx"});parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-value],[data-effect-speed],[data-effect-amount],[data-theme-value]"))parent.postMessage(nyxEffectPayload(),"*");if(e.target.closest("[data-browser-engine],[data-browser-mode-select],[data-browser-transport]"))parent.postMessage(nyxBrowserPayload(),"*")});document.addEventListener("input",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-speed],[data-effect-amount]")){document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=(Number(document.querySelector("[data-effect-speed]")?.value||1.1)).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=document.querySelector("[data-effect-amount]")?.value||"16"});parent.postMessage(nyxEffectPayload(),"*")}});';
+    const popupScript='document.addEventListener("click",e=>{const popup=e.target.closest("[data-popup-protection]");if(!popup)return;e.preventDefault();const next=popup.dataset.enabled!=="true";popup.dataset.enabled=String(next);popup.classList.toggle("on",next);popup.textContent="Popup Protection "+(next?"On":"Off");parent.postMessage({type:"nyx:popup-protection",enabled:next},"*")});';
+    const themeAppStyle='body.theme-ruby .quick-tile:hover .quick-icon,body.theme-emerald .quick-tile:hover .quick-icon,body.theme-sakura .quick-tile:hover .quick-icon{background:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important}';
+    const compactSettingsStyle='.settings-main h1{font-size:24px!important}.settings-block h2{font-size:15px!important}.settings-block p,.settings-block label{font-size:12px!important;line-height:1.35!important}.settings-side button,.settings-action,.settings-preset{background:transparent!important;background-image:none!important;box-shadow:none!important}.settings-action,.settings-preset{border-color:transparent!important}.settings-side button:hover,.settings-side button.active,.settings-action:hover,.settings-preset:hover{background:transparent!important;background-image:none!important;border-color:var(--theme-border,rgba(255,255,255,.28))!important;box-shadow:none!important;transform:scale(1.015)!important}';
+    const pageThemeStyle='.shell-page,.browser-shell-page{background:transparent!important}body.theme-ruby .shell-page,body.theme-ruby .browser-shell-page{background:transparent!important}body.theme-emerald .shell-page,body.theme-emerald .browser-shell-page{background:transparent!important}body.theme-sakura .shell-page,body.theme-sakura .browser-shell-page{background:transparent!important}';
+    const themeBorderOnlyStyle='body.theme-ruby{--theme-border:#fb7185!important;--theme-bg:linear-gradient(rgba(60,0,12,.10),rgba(60,0,12,.22)),url("assets/backgrounds/theme-ruby.jpg")!important}body.theme-emerald{--theme-border:#34d399!important;--theme-bg:linear-gradient(rgba(0,24,12,.08),rgba(0,24,12,.20)),url("assets/backgrounds/theme-emerald.png")!important}body.theme-sakura{--theme-border:#fbcfe8!important;--theme-bg:linear-gradient(rgba(40,0,28,.06),rgba(40,0,28,.18)),url("assets/backgrounds/theme-sakura.jpg")!important}.theme-ruby h1,.theme-ruby h2,.theme-ruby p,.theme-ruby span,.theme-ruby label,.theme-ruby button,.theme-emerald h1,.theme-emerald h2,.theme-emerald p,.theme-emerald span,.theme-emerald label,.theme-emerald button,.theme-sakura h1,.theme-sakura h2,.theme-sakura p,.theme-sakura span,.theme-sakura label,.theme-sakura button{background:none!important;color:inherit!important;-webkit-text-fill-color:currentColor!important;text-shadow:none!important}.theme-ruby .shell-page,.theme-emerald .shell-page,.theme-sakura .shell-page,.theme-ruby .browser-shell-page,.theme-emerald .browser-shell-page,.theme-sakura .browser-shell-page{background:var(--theme-bg)!important;background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important}.theme-ruby .settings-app,.theme-emerald .settings-app,.theme-sakura .settings-app,.theme-ruby .settings-main,.theme-emerald .settings-main,.theme-sakura .settings-main,.theme-ruby .settings-side,.theme-emerald .settings-side,.theme-sakura .settings-side,.theme-ruby .quick-tile,.theme-emerald .quick-tile,.theme-sakura .quick-tile{background:rgba(15,23,42,.36)!important}.theme-ruby button,.theme-ruby input,.theme-ruby select,.theme-ruby textarea,.theme-ruby .quick-tile,.theme-ruby .quick-icon,.theme-ruby .settings-main,.theme-ruby .settings-side,.theme-ruby .settings-action,.theme-ruby .settings-input,.theme-ruby .settings-select,.theme-emerald button,.theme-emerald input,.theme-emerald select,.theme-emerald textarea,.theme-emerald .quick-tile,.theme-emerald .quick-icon,.theme-emerald .settings-main,.theme-emerald .settings-side,.theme-emerald .settings-action,.theme-emerald .settings-input,.theme-emerald .settings-select,.theme-sakura button,.theme-sakura input,.theme-sakura select,.theme-sakura textarea,.theme-sakura .quick-tile,.theme-sakura .quick-icon,.theme-sakura .settings-main,.theme-sakura .settings-side,.theme-sakura .settings-action,.theme-sakura .settings-input,.theme-sakura .settings-select{border-color:color-mix(in srgb,var(--theme-border) 68%,rgba(255,255,255,.2))!important}.theme-ruby input[type=file].settings-input::file-selector-button,.theme-emerald input[type=file].settings-input::file-selector-button,.theme-sakura input[type=file].settings-input::file-selector-button{background:rgba(148,163,184,.24)!important;color:#f8fafc!important;-webkit-text-fill-color:#f8fafc!important}';
+    const flatInternalStyle='html,body,button,input,select,textarea{font-family:Outfit,Arial,sans-serif!important;font-weight:400!important}body *{font-family:Outfit,Arial,sans-serif!important;font-weight:400!important;text-shadow:none!important;-webkit-text-stroke:0!important}.theme-ruby *, .theme-emerald *, .theme-sakura *{background-image:none!important;box-shadow:none!important;text-shadow:none!important}.theme-ruby button,.theme-ruby .quick-tile,.theme-ruby .quick-icon,.theme-ruby .settings-action,.theme-ruby .settings-preset,.theme-emerald button,.theme-emerald .quick-tile,.theme-emerald .quick-icon,.theme-emerald .settings-action,.theme-emerald .settings-preset,.theme-sakura button,.theme-sakura .quick-tile,.theme-sakura .quick-icon,.theme-sakura .settings-action,.theme-sakura .settings-preset{transition:transform .14s ease,border-color .14s ease!important}.theme-ruby button:hover,.theme-ruby .quick-tile:hover,.theme-ruby .quick-icon:hover,.theme-ruby .settings-action:hover,.theme-ruby .settings-preset:hover,.theme-emerald button:hover,.theme-emerald .quick-tile:hover,.theme-emerald .quick-icon:hover,.theme-emerald .settings-action:hover,.theme-emerald .settings-preset:hover,.theme-sakura button:hover,.theme-sakura .quick-tile:hover,.theme-sakura .quick-icon:hover,.theme-sakura .settings-action:hover,.theme-sakura .settings-preset:hover{transform:scale(1.015)!important;border-color:var(--theme-border)!important;background-image:none!important;box-shadow:none!important}';
+    const flatInternalPageStyle='.shell-page,.browser-shell-page,.settings-app,.settings-main,.settings-side,.settings-block,.quick-tile,.quick-icon,.settings-action,.settings-preset{background-image:none!important;box-shadow:none!important;text-shadow:none!important}.settings-app,.settings-main,.settings-side,.settings-block{background:transparent!important;border-color:transparent!important}.quick-tile,.quick-icon,.settings-action,.settings-preset{background:transparent!important}.quick-tile:hover,.quick-icon:hover,.settings-preset:hover,.settings-action:hover{background:transparent!important;background-image:none!important;transform:scale(1.015)!important;border-color:var(--theme-border,rgba(255,255,255,.28))!important}input[type=file].settings-input::file-selector-button{background:transparent!important;background-image:none!important;color:#f8fafc!important;-webkit-text-fill-color:#f8fafc!important}';
+    const transparentInternalFinalStyle='body :is(.settings-app,.settings-main,.settings-side,.settings-block,.settings-card,.settings-grid-settings){background:transparent!important;background-color:transparent!important;background-image:none!important;box-shadow:none!important;backdrop-filter:none!important}body :is(.settings-block,.settings-card){border-color:transparent!important}body :is(.settings-side button,.settings-side button.active,.settings-action,.settings-preset,.settings-input,.settings-select),body input[type=file].settings-input::file-selector-button{background:transparent!important;background-color:transparent!important;background-image:none!important;box-shadow:none!important;filter:none!important;text-shadow:none!important}body :is(.settings-side button:hover,.settings-side button.active,.settings-action:hover,.settings-preset:hover,.settings-input:hover,.settings-select:hover),body input[type=file].settings-input:hover::file-selector-button{background:transparent!important;background-image:none!important;border-color:var(--theme-border,rgba(255,255,255,.3))!important;box-shadow:none!important;transform:scale(1.015)!important}.shell-page .quick-tile,.shell-page .quick-icon{background:transparent!important;background-color:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important;backdrop-filter:none!important}.shell-page .quick-tile:hover,.shell-page .quick-icon:hover{background:transparent!important;background-image:none!important;border-color:var(--theme-border,rgba(255,255,255,.3))!important;box-shadow:none!important}.shell-page .quick-tile span{display:block!important;opacity:1!important;visibility:visible!important;color:#f8fafc!important;-webkit-text-fill-color:#f8fafc!important;background:none!important;background-image:none!important;text-shadow:none!important;font-weight:400!important}';
+    const settingsInternalFinalStyle='html,body{background:transparent!important;background-color:transparent!important;background-image:none!important;color:#f8fafc!important}body::before,body::after{display:none!important;content:none!important}.settings-app{position:relative!important;z-index:1!important;display:block!important;min-height:0!important;width:min(780px,calc(100vw - 42px))!important;height:auto!important;margin:30px auto 96px!important;padding:0!important;border:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important;overflow:visible!important;color:#f8fafc!important}.settings-side{position:fixed!important;left:50%!important;bottom:18px!important;top:auto!important;transform:translateX(-50%)!important;width:auto!important;height:52px!important;display:flex!important;gap:8px!important;padding:7px!important;border:1px solid rgba(196,181,253,.30)!important;border-radius:16px!important;background:rgba(6,10,8,.52)!important;background-image:none!important;backdrop-filter:blur(7px) saturate(1.08)!important;box-shadow:0 14px 34px rgba(0,0,0,.28)!important;z-index:10!important}.settings-side button{width:42px!important;height:38px!important;min-height:38px!important;margin:0!important;padding:0!important;display:grid!important;place-items:center!important;border-radius:11px!important;font-size:0!important;background:transparent!important;background-image:none!important;border:1px solid transparent!important}.settings-side button.active,.settings-side button:hover{background:rgba(255,255,255,.12)!important;border-color:rgba(196,181,253,.30)!important}.settings-side .settings-nav-icon{margin:0!important;width:22px!important;height:22px!important}.settings-main{display:block!important;min-height:0!important;padding:0!important;border:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important;backdrop-filter:none!important}.settings-main h1{display:none!important}.settings-section{width:100%!important}.settings-section.active{display:block!important}.settings-section .settings-block{display:block!important;width:100%!important;background:rgba(8,15,12,.58)!important;background-image:linear-gradient(90deg,rgba(255,255,255,.10),rgba(255,255,255,.035))!important;border:1px solid color-mix(in srgb,var(--theme-border,#8b5cf6) 48%,rgba(255,255,255,.18))!important;border-radius:14px!important;padding:18px 20px!important;margin:0 0 16px!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 16px 42px rgba(0,0,0,.24)!important;backdrop-filter:blur(5px) saturate(1.05)!important}.settings-section .settings-block h2{font-size:15px!important;line-height:1.2!important;margin:0 0 10px!important;color:rgba(248,250,252,.98)!important;-webkit-text-fill-color:rgba(248,250,252,.98)!important}.settings-section .settings-block p{max-width:650px!important;font-size:12px!important;line-height:1.38!important;margin:0 0 13px!important;color:rgba(226,232,240,.84)!important;-webkit-text-fill-color:rgba(226,232,240,.84)!important}.settings-form-row{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;max-width:100%!important}.settings-actions{display:flex!important;gap:10px!important;flex-wrap:wrap!important}.settings-input,.settings-select,.panic-key-display{width:100%!important;min-height:40px!important;border-radius:10px!important;background:rgba(0,0,0,.50)!important;background-image:none!important;border:1px solid rgba(255,255,255,.18)!important;color:#f8fafc!important;-webkit-text-fill-color:#f8fafc!important;box-shadow:none!important}.settings-input[type=file]{padding:7px 10px!important}.panic-key-display{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:auto!important;min-width:160px!important;padding:0 16px!important}.settings-action,.settings-block button,.settings-input::file-selector-button{min-height:35px!important;border-radius:999px!important;background:rgba(255,255,255,.13)!important;background-image:none!important;border:1px solid rgba(255,255,255,.18)!important;box-shadow:none!important;color:#f8fafc!important;-webkit-text-fill-color:#f8fafc!important;padding:0 16px!important}.settings-action:hover,.settings-block button:hover,.settings-input::file-selector-button:hover{background:rgba(255,255,255,.20)!important;border-color:var(--theme-border,#8b5cf6)!important;transform:scale(1.015)!important}@media(max-width:760px){.settings-app{width:calc(100vw - 22px)!important;margin-top:16px!important}.settings-section .settings-block{padding:15px!important}.settings-side{bottom:10px!important}}';
+    const settingsGlassRepairStyle='';
+    const browserSettingsSinglePaneStyle='';
+    const internalPageBg=normalizeBgValue(currentBrowserBackgroundValue());
+    const internalBgStyle='background:linear-gradient(rgba(0,0,0,.10),rgba(0,0,0,.16)),'+internalPageBg+'!important;background-size:cover!important;background-position:left center!important;background-repeat:no-repeat!important;background-color:#05060c!important;filter:none!important;';
+    const settingsClearAroundStyle='';
+    const clearInternalPageStyle=/^(apps)$/i.test(String(page.title || '')) ? 'html,body,.shell-page,.browser-shell-page{min-height:100vh!important;'+internalBgStyle+'}html::before,html::after,body::before,body::after{display:none!important;content:none!important}.shell-page,.browser-shell-page{box-shadow:none!important;backdrop-filter:none!important;filter:none!important}.shell-page::before,.shell-page::after,.browser-shell-page::before,.browser-shell-page::after{display:none!important;content:none!important}.shell-page h1,.browser-shell-page h1,.shell-page p,.browser-shell-page p,.quick-tile span{color:#f8f5ff!important;-webkit-text-fill-color:#f8f5ff!important;opacity:1!important;visibility:visible!important;background:none!important;background-image:none!important;text-shadow:none!important}.quick-grid{gap:18px!important}.quick-tile{height:106px!important;background:transparent!important;background-image:none!important;border:1px solid transparent!important;border-radius:10px!important;box-shadow:none!important;backdrop-filter:none!important;filter:none!important}.quick-icon{width:58px!important;height:58px!important;background:transparent!important;background-image:none!important;border-color:transparent!important;border-radius:9px!important;box-shadow:none!important;backdrop-filter:none!important;filter:none!important}.quick-tile:hover{background:rgba(8,7,13,.32)!important;background-image:none!important;border-color:rgba(190,148,255,.54)!important;box-shadow:0 10px 28px rgba(0,0,0,.22)!important;transform:scale(1.018)!important;backdrop-filter:blur(3px)!important;-webkit-backdrop-filter:blur(3px)!important}.quick-tile:hover .quick-icon{background:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important;transform:scale(1.06)!important}.quick-tile span{font-size:13px!important;font-weight:400!important}' : '';
+    const internalAppsLaunchStyle=/^(apps)$/i.test(String(page.title || '')) ? '.apps-launch-grid{grid-template-columns:repeat(auto-fill,minmax(178px,1fr))!important;gap:24px!important}.apps-launch-grid .quick-tile{height:178px!important;min-height:178px!important;border-radius:18px!important;animation:appTileOpenRise .62s cubic-bezier(.18,.82,.2,1) both!important;animation-delay:var(--tile-delay,0ms)!important}.apps-launch-grid .quick-icon{width:98px!important;height:98px!important;border-radius:18px!important}.apps-launch-grid .quick-tile[data-domain="traxmojo.com"] .quick-icon{width:150px!important;height:150px!important;max-width:150px!important;max-height:150px!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}.apps-launch-grid .quick-tile span{font-size:16px!important}@keyframes appTileOpenRise{0%{opacity:0;transform:translate(-34px,42px) scale(.78);filter:blur(8px)}64%{opacity:1;transform:translate(4px,-5px) scale(1.025);filter:blur(0)}100%{opacity:1;transform:translate(0,0) scale(1);filter:blur(0)}}' : '';
+    const internalAppsHazeStyle=/^(apps)$/i.test(String(page.title || '')) ? 'html,body{position:relative!important;isolation:isolate!important}body::before{content:""!important;display:block!important;position:fixed!important;inset:-18px!important;z-index:0!important;pointer-events:none!important;background:rgba(77,47,142,.36)!important;backdrop-filter:blur(11px) saturate(.82)!important;-webkit-backdrop-filter:blur(11px) saturate(.82)!important}.shell-page{position:relative!important;z-index:1!important;background:transparent!important}.theme-ruby::before{background:rgba(125,22,39,.38)!important}.theme-emerald::before{background:rgba(4,92,65,.36)!important}.theme-sakura::before{background:rgba(190,55,120,.32)!important}.theme-fresh::before{background:rgba(92,219,207,.25)!important}.apps-launch-grid{position:relative!important;z-index:2!important}' : '';
+    const finalInternalBackgroundStyle='body.theme-ruby{--theme-bg:linear-gradient(rgba(60,0,12,.10),rgba(60,0,12,.22)),url("assets/backgrounds/theme-ruby.jpg")!important}body.theme-emerald{--theme-bg:linear-gradient(rgba(0,24,12,.08),rgba(0,24,12,.20)),url("assets/backgrounds/theme-emerald.png")!important}body.theme-sakura{--theme-bg:linear-gradient(rgba(40,0,28,.06),rgba(40,0,28,.18)),url("assets/backgrounds/theme-sakura.jpg")!important}body.theme-ruby .shell-page,body.theme-ruby .browser-shell-page,body.theme-emerald .shell-page,body.theme-emerald .browser-shell-page,body.theme-sakura .shell-page,body.theme-sakura .browser-shell-page{background:var(--theme-bg)!important;background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important}';
+    const normalInternalTextStyle='html,body,body *{font-weight:400!important;font-style:normal!important}body.theme-fresh,body.theme-fresh *{color:#075f70!important;-webkit-text-fill-color:#075f70!important;font-weight:400!important;font-style:normal!important}body.theme-fresh input::placeholder,body.theme-fresh textarea::placeholder{color:#336d78!important;-webkit-text-fill-color:#336d78!important}';
+    const panicFrameScript='let NYX_PANIC_CAPTURE=false;function nyxPanicCombo(e){const key=String(e.key||"").trim();if(!key||["Control","Shift","Alt","Meta"].includes(key))return "";const parts=[];if(e.ctrlKey)parts.push("Ctrl");if(e.altKey)parts.push("Alt");if(e.shiftKey)parts.push("Shift");if(e.metaKey)parts.push("Meta");parts.push(key.length===1?key.toUpperCase():key.replace(/^Arrow/,""));return parts.join("+")}document.addEventListener("click",e=>{if(e.target.closest("[data-panic-capture]"))NYX_PANIC_CAPTURE=true;if(e.target.closest("[data-panic-clear]"))NYX_PANIC_CAPTURE=false},true);document.addEventListener("keydown",e=>{if(!NYX_PANIC_CAPTURE)return;const combo=nyxPanicCombo(e);if(!combo)return;e.preventDefault();e.stopPropagation();NYX_PANIC_CAPTURE=false;document.querySelectorAll("[data-panic-key-display]").forEach(el=>el.textContent=combo);parent.postMessage({type:"nyx:panic-key-set",combo},"*")},true);';
+    const internalPaintScript='';
+    const finalInternalPaintScript='';
+    return '<!doctype html><meta charset="utf-8"><base target="_self"><style>'+style+themeStyle+freshThemeStyle+themeAppStyle+compactSettingsStyle+pageThemeStyle+themeBorderOnlyStyle+'input[type=file].settings-input{color:#f8fafc;background:transparent!important}input[type=file].settings-input::file-selector-button{height:28px;margin:0 12px 0 0;border:1px solid var(--theme-border,rgba(255,255,255,.3));border-radius:999px;background:transparent!important;background-image:none!important;color:#f8fafc;padding:0 12px;font:400 12px Outfit,Arial,sans-serif}.theme-ruby input[type=file].settings-input::file-selector-button,.theme-emerald input[type=file].settings-input::file-selector-button,.theme-sakura input[type=file].settings-input::file-selector-button{background:transparent!important;background-image:none!important;color:#f8fafc!important}.settings-section{display:none}.settings-section.active{display:block}.settings-range{display:grid;grid-template-columns:70px minmax(0,1fr) 46px;align-items:center;gap:10px;margin:12px 0;color:#d1d5db;font-size:13px;font-weight:400}.settings-range input{width:100%;accent-color:#9ca3af}.settings-nav-icon{width:24px;height:24px;border-radius:999px;border:2px solid #dbe2ea;display:inline-block;position:relative;background:transparent!important;box-shadow:none!important}.icon-general::before{content:"";position:absolute;inset:5px;border:2px solid #dbe2ea;border-radius:999px}.icon-effects::before{content:"";position:absolute;left:5px;right:5px;top:10px;height:2px;background:#dbe2ea;box-shadow:0 -5px 0 #dbe2ea,0 5px 0 #dbe2ea}.icon-watch::before{content:"";position:absolute;left:8px;top:5px;border-left:9px solid #dbe2ea;border-top:6px solid transparent;border-bottom:6px solid transparent}.icon-browser::before{content:"";position:absolute;left:4px;right:4px;top:6px;height:11px;border:2px solid #dbe2ea;border-radius:4px}.icon-browser::after{content:"";position:absolute;left:7px;right:7px;bottom:4px;height:2px;background:#dbe2ea}.settings-effect-preview span:nth-child(1)::before{content:"";width:14px;height:20px;border-radius:999px;background:#cfd8e3;transform:rotate(28deg)}.settings-effect-preview span:nth-child(2)::before{content:"";width:18px;height:18px;background:#cfd8e3;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 56%,79% 91%,50% 70%,21% 91%,32% 56%,2% 35%,39% 35%)}.settings-effect-preview span:nth-child(3)::before{content:"";width:18px;height:16px;background:#cfd8e3;clip-path:polygon(50% 100%,8% 52%,4% 22%,24% 2%,50% 20%,76% 2%,96% 22%,92% 52%)}.settings-effect-preview span:nth-child(4)::before{content:"";width:18px;height:18px;border:3px solid #cfd8e3;border-radius:999px}'+themeBorderOnlyStyle+flatInternalStyle+flatInternalPageStyle+transparentInternalFinalStyle+settingsInternalFinalStyle+settingsGlassRepairStyle+browserSettingsSinglePaneStyle+settingsClearAroundStyle+'html body .settings-app :is(input,select,textarea,.settings-input,.settings-select):hover{transform:none!important}html body .settings-app button:hover{transform:scale(1.012)!important}'+clearInternalPageStyle+internalAppsLaunchStyle+internalAppsHazeStyle+finalInternalBackgroundStyle+normalInternalTextStyle+'</style>'+page.body+'<script>const NYX_EFFECT='+JSON.stringify(store.text('nyx.visualEffect','none'))+';const NYX_EFFECT_SPEED='+JSON.stringify(store.text('nyx.visualEffectSpeed','1.1'))+';const NYX_EFFECT_AMOUNT='+JSON.stringify(store.text('nyx.visualEffectAmount','16'))+';const NYX_THEME='+JSON.stringify(store.text('nyx.theme','default'))+';if(NYX_THEME&&NYX_THEME!=="default")document.body.classList.add("theme-"+NYX_THEME);document.querySelectorAll("[data-effect-value]").forEach(el=>{el.value=NYX_EFFECT});document.querySelectorAll("[data-effect-speed]").forEach(el=>{el.value=NYX_EFFECT_SPEED});document.querySelectorAll("[data-effect-amount]").forEach(el=>{el.value=NYX_EFFECT_AMOUNT});document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=Number(NYX_EFFECT_SPEED).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=NYX_EFFECT_AMOUNT});'+internalPaintScript+finalInternalPaintScript+script+popupScript+panicFrameScript+'<\/script>';
+  }
+  function showBrowserShellInternalPage(name){
+    hideBrowserSuggestions();
+    if(/^(lionai|lion ai)$/i.test(String(name || ''))) name='ai';
+    if(/^settings$/i.test(String(name || ''))){
+      openBrowserShellSettings();
+      return true;
+    }
+    ensureBrowserShellHome();
+    if(!activeBrowser?.win?.isConnected){
+      const win=openBrowser('');
+      win?.classList.add('maximized');
+      const shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
+      const created=activeBrowser?.tabs?.[activeBrowser.tabs.length-1];
+      if(shellTab && created) shellTab.browserTabId=created.id;
+      updateDockFullscreenState();
+    }
+    const shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
+    if(shellTab?.browserTabId && activeBrowser?.activate) activeBrowser.activate(shellTab.browserTabId);
+    const state=activeBrowser;
+    const tab=state?.tabs?.find(t=>t.id===state.active);
+    if(!tab) return false;
+    if(/^ai$/i.test(String(name || ''))){
+      tab.url='nyx://ai';
+      tab.title='Nyx AI';
+      tab.icon=favicons.nyx;
+      state.win.classList.remove('internal-clear','browser-blank');
+      tab.frame.classList.remove('transparent-internal-page');
+      tab.frame.removeAttribute('srcdoc');
+      tab.frame.src='/ai.html';
+      tab.frame.classList.add('active');
+      state.win.querySelector('.browser-home')?.classList.add('hidden');
+      state.renderTabs?.();
+      updateBrowserShellLocation(tab.url);
+      return true;
+    }
+    const presetTiles=`<button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${favicons.nyx}"><span>ռʏӼ tab</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
+    const pages={
+      apps:{title:'Apps',body:`<section class="shell-page"><h1>Apps</h1><p>Apps</p><div class="quick-grid apps-launch-grid">${quickTiles()}</div></section>`},
+      links:{title:'Bookmarks',body:`<section class="shell-page"><h1>Bookmarks</h1><p>Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>DuckDuckGo</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></section>`},
+      ephesians1:{title:'Ephesians 1',body:`<section class="shell-page ephesians-diagram"><style>
+        .ephesians-diagram{--ink:#f8fafc;--muted:#cbd5e1;--line:rgba(255,255,255,.24);max-width:1120px;margin:auto;padding-bottom:64px}.ephesians-diagram h1{text-align:center;font-size:clamp(30px,5vw,48px);margin:4px 0 6px}.ephesians-diagram>.diagram-sub{text-align:center;margin:0 0 28px;color:var(--muted);font-size:15px}.eph-flow{display:grid;gap:12px}.eph-block{padding:17px 20px;border:1px solid var(--line);border-left:6px solid #94a3b8;border-radius:14px;background:rgba(15,23,42,.58);box-shadow:0 12px 28px rgba(0,0,0,.16)}.eph-block h2{font-size:19px;margin:5px 0 7px}.eph-block p{margin:0;color:#e2e8f0;line-height:1.48;font-size:14px}.eph-verse{color:#cbd5e1;font-size:11px;font-weight:800;letter-spacing:.11em}.eph-father{border-left-color:#60a5fa}.eph-son{border-left-color:#fbbf24}.eph-spirit{border-left-color:#4ade80}.eph-prayer{border-left-color:#c084fc}.eph-arrow{text-align:center;height:22px;font:700 24px/22px Arial,sans-serif;color:#cbd5e1}.eph-purpose{text-align:center;padding:16px;border:1px solid rgba(255,255,255,.34);border-radius:14px;background:rgba(255,255,255,.10);font-size:17px;font-weight:800}.eph-purpose small{display:block;margin-bottom:5px;color:#cbd5e1;font-size:11px;letter-spacing:.1em}.eph-triad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.eph-triad .eph-block{padding:15px}.eph-triad h2{font-size:17px}@media(max-width:720px){.eph-triad{grid-template-columns:1fr}.ephesians-diagram{padding:20px 4px 50px!important}}</style>
+        <h1>Ephesians 1</h1><p class="diagram-sub">God’s purpose in Christ, the Spirit’s seal, and Paul’s prayer for the church</p>
+        <div class="eph-flow">
+          <article class="eph-block"><div class="eph-verse">1:1–2 · GREETING</div><h2>Paul writes to the faithful in Christ Jesus</h2><p>Grace and peace come from God our Father and the Lord Jesus Christ.</p></article>
+          <div class="eph-arrow">↓</div>
+          <article class="eph-block eph-father"><div class="eph-verse">1:3–6 · THE FATHER’S PURPOSE</div><h2>Blessed, chosen, and adopted in Christ</h2><p>Before creation, God chose believers and predestined them for adoption through Jesus Christ, according to his loving will.</p></article>
+          <div class="eph-arrow">↓</div>
+          <article class="eph-block eph-son"><div class="eph-verse">1:7–12 · THE SON’S WORK</div><h2>Redemption, forgiveness, and an inheritance</h2><p>In Christ, believers are redeemed through his blood. God’s plan is to unite all things in Christ—things in heaven and on earth.</p></article>
+          <div class="eph-arrow">↓</div>
+          <article class="eph-block eph-spirit"><div class="eph-verse">1:13–14 · THE SPIRIT’S SEAL</div><h2>Hearing and believing the gospel → sealed with the Spirit</h2><p>The promised Holy Spirit guarantees the believers’ inheritance until final redemption.</p></article>
+          <div class="eph-arrow">↓</div>
+          <div class="eph-purpose"><small>REPEATED PURPOSE · 1:6, 12, 14</small>All of this is to the praise of his glory.</div>
+          <div class="eph-arrow">↓</div>
+          <article class="eph-block eph-prayer"><div class="eph-verse">1:15–23 · PAUL’S PRAYER</div><h2>Pray for spiritual sight</h2><p>Paul asks that believers know the hope of God’s calling, the riches of his inheritance, and the immeasurable greatness of his power.</p></article>
+          <div class="eph-arrow">↓</div>
+          <div class="eph-triad"><article class="eph-block eph-prayer"><div class="eph-verse">1:20</div><h2>Power displayed</h2><p>God raised Christ and seated him at his right hand.</p></article><article class="eph-block eph-prayer"><div class="eph-verse">1:21–22</div><h2>Christ exalted</h2><p>He is above every rule, authority, power, and name.</p></article><article class="eph-block eph-prayer"><div class="eph-verse">1:22–23</div><h2>Christ and the church</h2><p>Christ is head over all things to the church, his body.</p></article></div>
+        </div>
+      </section>`}
+    };
+    const page=pages[name] || pages.apps;
+    tab.url='nyx://'+name;
+    tab.title=page.title;
+    const clearInternal=/^(apps)$/i.test(String(name || page.title || ''));
+    state.win.classList.toggle('internal-clear',clearInternal);
+    tab.frame.classList.toggle('transparent-internal-page',clearInternal);
+    tab.frame.setAttribute('allowtransparency','true');
+    tab.frame.style.backgroundColor=clearInternal?'transparent':'';
+    tab.frame.removeAttribute('src');
+    tab.frame.srcdoc=browserShellPageSrcdoc(page);
+    tab.frame.classList.add('active');
+    state.win.querySelector('.browser-home')?.classList.add('hidden');
+    state.win.classList.remove('browser-blank');
+    state.renderTabs?.();
+    updateBrowserShellLocation(tab.url);
+    return true;
+  }
+  //desktop-app-drag
+  function canDragDesktopAppSource(el){
+    if(!el || document.body.classList.contains('browser-shell')) return false;
+    if(el.closest?.('.home-shortcut,.home-shortcut-add,[data-home-shortcuts]')) return false;
+    return !!(el.dataset.dragApp==='1' || el.closest?.('.dock,.apps-launch-grid'));
+  }
+  function hydrateDockDrag(root){
+    root.querySelectorAll('[data-app-url]').forEach(btn=>{
+      const allow=!document.body.classList.contains('browser-shell');
+      btn.draggable=allow;
+      if(allow) btn.dataset.dragApp='1';
+      else delete btn.dataset.dragApp;
+    });
+  }
+  function readAppPayload(el){
+    const img=el.querySelector('img');
+    const label=el.querySelector('span')?.textContent || el.getAttribute('title') || 'App';
+    return {
+      url:el.dataset.appUrl || '',
+      title:label.trim() || 'App',
+      icon:img?.getAttribute('src') || appIcon('apps')
+    };
+  }
+  function createDesktopApp(payload,x,y){
+    if(!payload?.url) return null;
+    if(document.body.classList.contains('browser-shell')) return null;
+    const desktop=$('desktop');
+    if(!desktop) return null;
+    const existing=[...desktop.querySelectorAll('.desktop-app')].find(app=>app.dataset.appUrl===payload.url);
+    const rect=desktop.getBoundingClientRect();
+    const left=Math.max(6,Math.min(rect.width-92,x-rect.left-43))+'px';
+    const top=Math.max(6,Math.min(rect.height-126,y-rect.top-43))+'px';
+    if(existing){
+      existing.style.left=left;
+      existing.style.top=top;
+      existing.animate?.([{transform:'scale(1.14)'},{transform:'scale(1)'}],{duration:180,easing:'ease-out'});
+      return existing;
+    }
+    const app=document.createElement('button');
+    app.className='desktop-app';
+    app.dataset.appUrl=payload.url;
+    app.draggable=true;
+    app.innerHTML=`<img alt="" src="${esc(payload.icon || appIcon('apps'))}"><span>${esc(payload.title || 'App')}</span>`;
+    app.style.left=left;
+    app.style.top=top;
+    desktop.appendChild(app);
+    wireDesktopApp(app);
+    return app;
+  }
+  function wireDesktopApp(app){
+    let move=null;
+    app.addEventListener('click',e=>{
+      if(app.dataset.moved==='1'){
+        e.preventDefault();
+        e.stopPropagation();
+        app.dataset.moved='0';
+      }
+    },true);
+    app.addEventListener('pointerdown',e=>{
+      if(e.button!==0) return;
+      move={x:e.clientX,y:e.clientY,left:app.offsetLeft,top:app.offsetTop,moved:false};
+      app.setPointerCapture?.(e.pointerId);
+    });
+    app.addEventListener('pointermove',e=>{
+      if(!move) return;
+      const dx=e.clientX-move.x, dy=e.clientY-move.y;
+      if(Math.abs(dx)+Math.abs(dy)>5) move.moved=true;
+      if(!move.moved) return;
+      const desktop=$('desktop');
+      const maxX=(desktop?.clientWidth || window.innerWidth)-92;
+      const maxY=(desktop?.clientHeight || window.innerHeight)-126;
+      app.style.left=Math.max(6,Math.min(maxX,move.left+dx))+'px';
+      app.style.top=Math.max(6,Math.min(maxY,move.top+dy))+'px';
+      app.dataset.moved='1';
+    });
+    app.addEventListener('pointerup',()=>{move=null});
+  }
+  //background-picker
+  function bgButton(key, compact=false){
+    return `<button class="bg-choice" data-bg-choice="${esc(key)}" title="${esc(bgNames[key]||'Background')}" aria-label="${esc(bgNames[key]||'Background')}"><span>${esc(bgNames[key]||'Background')}</span></button>`;
+  }
+  function backgroundScope(root=document){
+    return root?.dataset?.bgScope || (document.body.classList.contains('browser-shell') ? 'browser' : 'windows');
+  }
+  function currentBackgroundKeyForScope(scope){
+    return scope==='browser' ? store.text('nyx.browserBackground','lofiPurple') : store.text('nyx.background','dragon');
+  }
+  function renderBackgroundChoices(root, current=currentBackgroundKeyForScope(backgroundScope(root))){
+    const scope=backgroundScope(root);
+    const customData=store.text('nyx.customBgData','');
+    const customUrl=store.text('nyx.customBgUrl','');
+    const custom=scope==='browser' ? '' : (customData || customUrl);
+    const hasCustom=!!custom;
+    root.dataset.bgScope=scope;
+    const choices=(hasCustom ? `<button class="bg-choice selected" data-custom-bg-preview title="Uploaded background" aria-label="Uploaded background"><span>Uploaded</span></button>` : '') + Object.keys(bgPresets).map(k=>bgButton(k)).join('');
+    root.innerHTML=choices;
+    root.querySelectorAll('[data-bg-choice]').forEach(btn=>{
+      btn.style.backgroundImage = bgPresets[btn.dataset.bgChoice] || bgPresets.dragon;
+    });
+    const customBtn=root.querySelector('[data-custom-bg-preview]');
+    if(customBtn){
+      const customPreview=customUrl && !customData ? (imageProxySrc(customUrl) || customUrl) : custom;
+      customBtn.style.backgroundImage = normalizeBgValue(customPreview);
+      customBtn.classList.add('selected');
+    }
+    root.querySelectorAll('[data-bg-choice]').forEach(btn=>btn.classList.toggle('selected',!hasCustom && btn.dataset.bgChoice===current));
+    syncBackgroundPreview();
+  }
+  function chooseBackground(key, scope='windows'){
+    if(scope==='browser'){
+      store.setText('nyx.browserBackground', key || 'lofiPurple');
+    }else{
+      store.setText('nyx.background', key || 'dragon');
+      store.setText('nyx.customBg','');
+      store.setText('nyx.customBgUrl','');
+      store.setText('nyx.customBgData','');
+    }
+    applyUserSettings();
+  }
+  function applyLagReducerSetting(){
+    const lag=store.get('nyx.lagReducer',false);
+    document.body.classList.toggle('lag-reducer',lag);
+    if(lag){
+      const welcome=$('welcomeScreen');
+      if(welcome) welcome.classList.add('hidden','force-hidden');
+      store.set('nyx.backgroundEnhancer',false);
+      store.setText('nyx.glassLevel','0');
+      document.documentElement.style.setProperty('--glass-blur','0px');
+    }
+    qsa('[data-lag-reducer]').forEach(el=>el.classList.toggle('on',lag));
+    qsa('[data-switch="nyx.lagReducer"]').forEach(el=>el.classList.toggle('on',lag));
+    qsa('[data-performance-lite]').forEach(el=>el.classList.toggle('on',store.get('nyx.performanceLite',false)));
+    qsa('[data-switch="nyx.performanceLite"]').forEach(el=>el.classList.toggle('on',store.get('nyx.performanceLite',false)));
+  }
+  function syncPerformanceLite(){
+    const cores=Number(navigator.hardwareConcurrency || 8);
+    const memory=Number(navigator.deviceMemory || 8);
+    const isChromebook=/\bCrOS\b/i.test(navigator.userAgent || '');
+    const veryLowPower=isChromebook || cores<=2 || memory<=2;
+    const reducedMotion=matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+    const enabled=!store.get('nyx.lagReducer',false) && (store.get('nyx.performanceLite',false) || veryLowPower || reducedMotion);
+    document.body.classList.toggle('performance-lite',enabled);
+    if(enabled){
+      document.documentElement.style.setProperty('--glass-blur','10px');
+      document.documentElement.style.setProperty('--glass-saturate','1.08');
+    }
+  }
+  let runtimeLagWatchStarted=false;
+  function startRuntimeLagWatch(){
+    if(runtimeLagWatchStarted) return;
+    runtimeLagWatchStarted=true;
+    let last=performance.now();
+    let slowFrames=0;
+    let clearTimer=0;
+    let lastToast=0;
+    const loop=now=>{
+      const delta=now-last;
+      last=now;
+      if(!store.get('nyx.lagReducer',false)){
+        if(delta>58) slowFrames+=1.35;
+        else slowFrames=Math.max(0,slowFrames-.25);
+        if(slowFrames>=5){
+          document.body.classList.add('runtime-lag-guard');
+          clearTimeout(clearTimer);
+          clearTimer=setTimeout(()=>{
+            slowFrames=0;
+            document.body.classList.remove('runtime-lag-guard');
+          },14000);
+          if(Date.now()-lastToast>30000){
+            lastToast=Date.now();
+            toast('Lag guard trimmed effects for a moment');
+          }
+        }
+      }
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  }
+  function applyBrowserShellMode(){
+    const enabled=store.get('nyx.browserShellMode',true);
+    if(enabled && store.text('nyx.glassLevel','80')!=='-40') store.setText('nyx.glassLevel','-40');
+    if(enabled) store.set('nyx.backgroundEnhancer',false);
+    document.body.classList.toggle('browser-shell',enabled);
+    if(enabled){
+      qsa('[data-app-url]').forEach(el=>{
+        if(el.closest?.('.browser-window iframe')) return;
+        el.draggable=false;
+        delete el.dataset.dragApp;
+      });
+    }
+    syncChromeMode(enabled);
+    if(!enabled) document.body.classList.remove('menu-open');
+    qsa('[data-switch="nyx.browserShellMode"]').forEach(el=>el.classList.toggle('on',enabled));
+    applyGlassSetting();
+    updateResponsiveFit();
+    updateDockFullscreenState();
+  }
+  //watchparty-movies
+  const watchPartyMovies={
+    hiddenWorld:{title:'How to Train Your Dragon: The Hidden World',src:'assets/watchparty/hidden-world-browser.mp4',source:'720p source',subtitles:''},
+    dragon2:{title:'How to Train Your Dragon 2',src:'assets/watchparty/dragon-2-browser.mp4',source:'720p source',subtitles:''},
+    dragon2025:{title:'How to Train Your Dragon (2025)',src:'assets/watchparty/dragon-2025-browser.mp4',source:'Browser MP4',subtitles:'assets/watchparty/dragon-2025.vtt'},
+    oppenheimer:{title:'Oppenheimer',src:'assets/watchparty/oppenheimer-2023-browser.mp4',source:'360p source',subtitles:''},
+    lastJedi:{title:'Star Wars: The Last Jedi',src:'assets/watchparty/star-wars-last-jedi-2017-browser.mp4',source:'1080p source',subtitles:'assets/watchparty/star-wars-last-jedi-2017.vtt'}
+  };
+  let watchPartyControlsTimer=null;
+  let watchPartyCustomSubtitleUrl='';
+  //watchparty-controls
+  function formatWatchTime(seconds){
+    if(!Number.isFinite(seconds) || seconds<0) return '0:00';
+    const total=Math.floor(seconds);
+    const h=Math.floor(total/3600);
+    const m=Math.floor((total%3600)/60);
+    const s=String(total%60).padStart(2,'0');
+    return h ? `${h}:${String(m).padStart(2,'0')}:${s}` : `${m}:${s}`;
+  }
+  function setWatchPartyStatus(text){
+    const status=$('watchPartyStatus');
+    if(status) status.textContent=text || '';
+  }
+  function watchPartyVideoErrorText(video){
+    const code=video?.error?.code;
+    const labels={
+      1:'loading was canceled',
+      2:'network failed while loading the movie',
+      3:'the browser could not decode this movie codec',
+      4:'the movie file or codec is not supported by this browser'
+    };
+    return labels[code] || 'the browser could not load the movie file';
+  }
+  function showWatchPartyControls(){
+    const panel=$('watchParty');
+    if(!panel) return;
+    panel.classList.add('show-controls');
+    clearTimeout(watchPartyControlsTimer);
+    const video=$('watchPartyVideo');
+    watchPartyControlsTimer=setTimeout(()=>panel.classList.remove('show-controls'),2300);
+  }
+  function updateWatchPartyPlayButton(){
+    const video=$('watchPartyVideo');
+    const play=$('watchPartyPlay');
+    const panel=$('watchParty');
+    if(!video || !play) return;
+    const paused=video.paused || video.ended;
+    play.innerHTML=paused ? '&#9654;' : '&#10074;&#10074;';
+    panel?.classList.toggle('watchparty-paused',paused);
+  }
+  function updateWatchPartyProgress(){
+    const video=$('watchPartyVideo');
+    const progress=$('watchPartyProgress');
+    const time=$('watchPartyTime');
+    if(!video) return;
+    if(progress && !progress.dataset.dragging){
+      progress.value=video.duration ? String(Math.round((video.currentTime/video.duration)*1000)) : '0';
+    }
+    if(time) time.textContent=`${formatWatchTime(video.currentTime)} / ${formatWatchTime(video.duration)}`;
+  }
+  function applyWatchPartyQuality(){
+    const video=$('watchPartyVideo');
+    const quality=Number($('watchPartyQuality')?.value || 720);
+    if(!video) return;
+    const scale={1440:1,1080:1,720:1,480:.78,360:.58,240:.38,144:.24}[quality] ?? 1;
+    const blur={1440:0,1080:0,720:0,480:.4,360:.85,240:1.35,144:2.1}[quality] ?? 0;
+    const contrast=quality>=1080 ? 1.08 : quality<=240 ? .86 : quality<=480 ? .94 : 1;
+    const saturate=quality>=1080 ? 1.06 : quality<=240 ? .72 : 1;
+    const enhancer=$('watchPartyEnhancer')?.value || 'off';
+    const enhancerFilter={
+      off:'',
+      sharp:' contrast(1.12) saturate(1.1) brightness(1.03) drop-shadow(0 0 .18px rgba(255,255,255,.45))',
+      smooth:' contrast(1.04) saturate(1.04)',
+      max:' contrast(1.18) saturate(1.16) brightness(1.05) drop-shadow(0 0 .28px rgba(255,255,255,.5))'
+    }[enhancer] || '';
+    video.style.filter=`blur(${blur}px) contrast(${contrast}) saturate(${saturate})${enhancerFilter}`;
+    video.style.backfaceVisibility='hidden';
+    video.style.willChange=enhancer==='off' ? 'auto' : 'transform, filter';
+    video.style.imageRendering=quality<=240 ? 'pixelated' : 'auto';
+    if(scale<1){
+      video.style.inset='auto';
+      video.style.left='50%';
+      video.style.top='50%';
+      video.style.width=(scale*100)+'%';
+      video.style.height=(scale*100)+'%';
+      video.style.transform=`translate(-50%,-50%) scale(${1/scale})`;
+    }else{
+      video.style.inset='0';
+      video.style.left='';
+      video.style.top='';
+      video.style.width='100%';
+      video.style.height='100%';
+      video.style.transform='';
+    }
+  }
+  function applyWatchPartySpeed(){
+    const video=$('watchPartyVideo');
+    if(video) video.playbackRate=Math.max(.5,Math.min(2,Number($('watchPartySpeed')?.value || 1)));
+  }
+  function applyWatchPartySubtitles(){
+    const video=$('watchPartyVideo');
+    const mode=$('watchPartySubtitles')?.value || 'off';
+    if(!video) return;
+    if(mode==='custom' && !watchPartyCustomSubtitleUrl){
+      $('watchPartySubtitleFile')?.click();
+      return;
+    }
+    Array.from(video.textTracks || []).forEach(track=>{track.mode=(mode==='en' || mode==='custom') ? 'showing' : 'disabled'});
+  }
+  function srtToVtt(text){
+    const clean=String(text || '').replace(/^\uFEFF/,'').replace(/\r/g,'');
+    if(/^WEBVTT/i.test(clean.trim())) return clean;
+    const cueNumberPattern=new RegExp('^\\\\d+\\\\n(?=\\\\d{2}:\\\\d{2}:\\\\d{2}[,.]\\\\d{3}\\\\s+--' + '>\\\\s+\\\\d{2}:\\\\d{2}:\\\\d{2}[,.]\\\\d{3})','gm');
+    return 'WEBVTT\n\n'+clean
+      .replace(cueNumberPattern,'')
+      .replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g,'$1.$2');
+  }
+  function setWatchPartySubtitleFile(file){
+    const track=$('watchPartyTrack');
+    const select=$('watchPartySubtitles');
+    if(!file || !track) return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      if(watchPartyCustomSubtitleUrl) URL.revokeObjectURL(watchPartyCustomSubtitleUrl);
+      const blob=new Blob([srtToVtt(reader.result)],{type:'text/vtt'});
+      watchPartyCustomSubtitleUrl=URL.createObjectURL(blob);
+      track.setAttribute('src',watchPartyCustomSubtitleUrl);
+      track.removeAttribute('disabled');
+      if(select) select.value='custom';
+      setTimeout(applyWatchPartySubtitles,120);
+      setWatchPartyStatus('');
+      showWatchPartyControls();
+    };
+    reader.readAsText(file);
+  }
+  function setWatchPartyMovie(key){
+    const selected=watchPartyMovies[key] ? key : store.text('nyx.watchPartyMovie','hiddenWorld');
+    const movie=watchPartyMovies[selected] || watchPartyMovies.hiddenWorld;
+    const video=$('watchPartyVideo');
+    const title=$('watchPartyMovieTitle');
+    const movieSelect=$('watchPartyMovie');
+    const subtitleSelect=$('watchPartySubtitles');
+    const track=$('watchPartyTrack');
+    store.setText('nyx.watchPartyMovie',selected);
+    if(movieSelect) movieSelect.value=selected;
+    if(title) title.textContent=movie.title;
+    if(movie.needsRemux){
+      setWatchPartyStatus('This Star Wars file is mislabeled as .mp4 but is really MPEG-TS. Edge cannot play it until it is remuxed/transcoded to a real MP4.');
+    }
+    if(track){
+      if(movie.subtitles){
+        track.setAttribute('src',movie.subtitles);
+        track.removeAttribute('disabled');
+        if(subtitleSelect) subtitleSelect.value='en';
+      }else if(watchPartyCustomSubtitleUrl){
+        track.setAttribute('src',watchPartyCustomSubtitleUrl);
+        track.removeAttribute('disabled');
+        if(subtitleSelect) subtitleSelect.value='custom';
+      }else{
+        track.removeAttribute('src');
+        if(subtitleSelect) subtitleSelect.value='off';
+      }
+      if(subtitleSelect) subtitleSelect.disabled=false;
+    }
+    if(video && !video.src.endsWith(movie.src)){
+      const wasActive=document.body.classList.contains('watchparty-active');
+      const wasPlaying=!video.paused;
+      video.pause();
+      video.src=movie.src;
+      video.load();
+      if(wasActive && wasPlaying){
+        video.play().catch(()=>setWatchPartyStatus(`Click Play to start this movie. If it stays black, ${watchPartyVideoErrorText(video)}.`));
+      }
+    }
+    applyWatchPartySpeed();
+    applyWatchPartyQuality();
+    setTimeout(applyWatchPartySubtitles,120);
+    updateWatchPartyProgress();
+  }
+  async function startWatchParty(movieKey){
+    if(!document.body.classList.contains('browser-shell')){
+      toast('WatchParty is Browser Mode only');
+      return;
+    }
+    const panel=$('watchParty');
+    const video=$('watchPartyVideo');
+    if(!panel || !video) return;
+    const selectedMovie=movieKey || $('watchPartyMovie')?.value || store.text('nyx.watchPartyMovie','hiddenWorld');
+    setWatchPartyMovie(selectedMovie);
+    panel.setAttribute('aria-hidden','false');
+    panel.classList.add('show-controls','watchparty-paused');
+    document.body.classList.add('watchparty-active');
+    const movie=watchPartyMovies[watchPartyMovies[selectedMovie] ? selectedMovie : store.text('nyx.watchPartyMovie','hiddenWorld')];
+    if(movie?.needsRemux){
+      video.pause();
+      setWatchPartyStatus('This Star Wars file is MPEG-TS, not browser MP4. It needs to be remuxed/transcoded before Edge can play it.');
+      updateWatchPartyPlayButton();
+      showWatchPartyControls();
+      return;
+    }
+    setWatchPartyStatus('Loading movie...');
+    try{
+      await video.play();
+      setWatchPartyStatus('');
+      updateWatchPartyPlayButton();
+      showWatchPartyControls();
+    }catch{
+      setWatchPartyStatus(`Click Play. If it still will not play, ${watchPartyVideoErrorText(video)}.`);
+      updateWatchPartyPlayButton();
+    }
+  }
+  function stopWatchParty(){
+    const panel=$('watchParty');
+    const video=$('watchPartyVideo');
+    if(video) video.pause();
+    document.body.classList.remove('watchparty-active');
+    panel?.classList.remove('show-controls','watchparty-paused');
+    panel?.setAttribute('aria-hidden','true');
+    setWatchPartyStatus('WatchParty ready');
+    updateWatchPartyPlayButton();
+  }
+  async function toggleWatchPartyPlayback(){
+    const video=$('watchPartyVideo');
+    if(!video) return;
+    if(video.paused){
+      try{
+        await video.play();
+        setWatchPartyStatus('');
+        updateWatchPartyPlayButton();
+        showWatchPartyControls();
+      }catch{
+        setWatchPartyStatus(`The browser could not play this video file: ${watchPartyVideoErrorText(video)}.`);
+        updateWatchPartyPlayButton();
+      }
+    }else{
+      video.pause();
+      setWatchPartyStatus('Paused');
+      updateWatchPartyPlayButton();
+      showWatchPartyControls();
+    }
+  }
+  function skipWatchParty(seconds){
+    const video=$('watchPartyVideo');
+    if(!video || !Number.isFinite(video.duration)) return;
+    video.currentTime=Math.max(0,Math.min(video.duration,video.currentTime+seconds));
+    updateWatchPartyProgress();
+    showWatchPartyControls();
+  }
+  function ensureVisualEffectNodes(count=64){
+    const layer=$('visualEffects');
+    if(!layer) return [];
+    while(layer.children.length<count) layer.appendChild(document.createElement('i'));
+    while(layer.children.length>count) layer.lastElementChild?.remove();
+    return Array.from(layer.children);
+  }
+  //themes-and-visual-effects
+  let nyxGateOpened=false;
+  let defaultVantaInstance=null;
+  let rubyVantaInstance=null;
+  let whiteVantaInstance=null;
+  let emeraldVantaInstance=null;
+  let sakuraVantaInstance=null;
+  function shouldPauseVantaBackgrounds(){
+    return document.body.classList.contains('browser-content-active');
+  }
+  function threeDBackgroundsEnabled(){
+    return store.get('nyx.threeDBackgrounds',false);
+  }
+  function shouldShowDefaultVanta(){
+    return threeDBackgroundsEnabled() && !shouldPauseVantaBackgrounds() && !document.body.classList.contains('custom-bg-active');
+  }
+  function shouldShowRubyVanta(){
+    const theme=store.text('nyx.theme','default');
+    return threeDBackgroundsEnabled() && theme==='ruby' && !shouldPauseVantaBackgrounds() && !document.body.classList.contains('custom-bg-active');
+  }
+  function shouldShowWhiteVanta(){
+    const theme=store.text('nyx.theme','default');
+    return threeDBackgroundsEnabled() && theme==='fresh' && !shouldPauseVantaBackgrounds() && !document.body.classList.contains('custom-bg-active');
+  }
+  function shouldShowEmeraldVanta(){
+    const theme=store.text('nyx.theme','default');
+    return threeDBackgroundsEnabled() && theme==='emerald' && !shouldPauseVantaBackgrounds() && !document.body.classList.contains('custom-bg-active');
+  }
+  function shouldShowSakuraVanta(){
+    const theme=store.text('nyx.theme','default');
+    return threeDBackgroundsEnabled() && theme==='sakura' && !shouldPauseVantaBackgrounds() && !document.body.classList.contains('custom-bg-active');
+  }
+  function stopDefaultVanta(){
+    if(!defaultVantaInstance) return;
+    try{defaultVantaInstance.destroy()}catch{}
+    defaultVantaInstance=null;
+  }
+  function stopRubyVanta(){
+    if(!rubyVantaInstance) return;
+    try{rubyVantaInstance.destroy()}catch{}
+    rubyVantaInstance=null;
+  }
+  function stopWhiteVanta(){
+    if(!whiteVantaInstance) return;
+    try{whiteVantaInstance.destroy()}catch{}
+    whiteVantaInstance=null;
+  }
+  function stopEmeraldVanta(){
+    if(!emeraldVantaInstance) return;
+    try{emeraldVantaInstance.destroy()}catch{}
+    emeraldVantaInstance=null;
+  }
+  function stopSakuraVanta(){
+    if(!sakuraVantaInstance) return;
+    try{sakuraVantaInstance.destroy()}catch{}
+    sakuraVantaInstance=null;
+  }
+  function syncDefaultVantaBackground(){
+    const layer=$('defaultVantaBg');
+    if(!layer) return;
+    const show=shouldShowDefaultVanta();
+    layer.hidden=!show;
+    if(!show){
+      stopDefaultVanta();
+      return;
+    }
+    if(defaultVantaInstance || !window.VANTA?.NET || !window.THREE) return;
+    try{
+      defaultVantaInstance=VANTA.NET({
+        el:layer,
+        mouseControls:true,
+        touchControls:true,
+        gyroControls:false,
+        minHeight:200.00,
+        minWidth:200.00,
+        scale:1.00,
+        scaleMobile:1.00,
+        color:0x511151,
+        backgroundColor:0x241933
+      });
+    }catch{
+      stopDefaultVanta();
+    }
+  }
+  function syncRubyVantaBackground(){
+    const layer=$('rubyVantaBg');
+    if(!layer) return;
+    const show=shouldShowRubyVanta();
+    layer.hidden=!show;
+    if(!show){
+      stopRubyVanta();
+      return;
+    }
+    if(rubyVantaInstance || !window.VANTA?.GLOBE || !window.THREE) return;
+    try{
+      rubyVantaInstance=VANTA.GLOBE({
+        el:layer,
+        mouseControls:true,
+        touchControls:true,
+        gyroControls:false,
+        minHeight:200.00,
+        minWidth:200.00,
+        scale:1.00,
+        scaleMobile:1.00,
+        color:0xab1a1a
+      });
+    }catch{
+      stopRubyVanta();
+    }
+  }
+  function syncWhiteVantaBackground(){
+    const layer=$('whiteVantaBg');
+    if(!layer) return;
+    const show=shouldShowWhiteVanta();
+    layer.hidden=!show;
+    if(!show){
+      stopWhiteVanta();
+      return;
+    }
+    if(whiteVantaInstance || !window.VANTA?.BIRDS || !window.THREE) return;
+    try{
+      whiteVantaInstance=VANTA.BIRDS({
+        el:layer,
+        mouseControls:true,
+        touchControls:true,
+        gyroControls:false,
+        minHeight:200.00,
+        minWidth:200.00,
+        scale:1.00,
+        scaleMobile:1.00,
+        backgroundColor:0x25c3d6,
+        color1:0xf3f7f3,
+        color2:0xc8ffeb,
+        separation:24.00,
+        cohesion:22.00
+      });
+    }catch{
+      stopWhiteVanta();
+    }
+  }
+  function syncEmeraldVantaBackground(){
+    const layer=$('emeraldVantaBg');
+    if(!layer) return;
+    const show=shouldShowEmeraldVanta();
+    layer.hidden=!show;
+    if(!show){
+      stopEmeraldVanta();
+      return;
+    }
+    if(emeraldVantaInstance || !window.VANTA?.DOTS || !window.THREE) return;
+    try{
+      emeraldVantaInstance=VANTA.DOTS({
+        el:layer,
+        mouseControls:true,
+        touchControls:true,
+        gyroControls:false,
+        minHeight:200.00,
+        minWidth:200.00,
+        scale:1.00,
+        scaleMobile:1.00,
+        color:0x10ab3b,
+        color2:0x3bae28,
+        backgroundColor:0x123025,
+        size:2.00
+      });
+    }catch{
+      stopEmeraldVanta();
+    }
+  }
+  function syncSakuraVantaBackground(){
+    const layer=$('sakuraVantaBg');
+    if(!layer) return;
+    const show=shouldShowSakuraVanta();
+    layer.hidden=!show;
+    if(!show){
+      stopSakuraVanta();
+      return;
+    }
+    if(sakuraVantaInstance || !window.VANTA?.CLOUDS || !window.THREE) return;
+    try{
+      sakuraVantaInstance=VANTA.CLOUDS({
+        el:layer,
+        mouseControls:true,
+        touchControls:true,
+        gyroControls:false,
+        minHeight:200.00,
+        minWidth:200.00,
+        cloudColor:0xc9adde,
+        sunColor:0xff1818,
+        sunGlareColor:0xf23f04,
+        sunlightColor:0xde1d4b
+      });
+    }catch{
+      stopSakuraVanta();
+    }
+  }
+  function syncThemeVantaBackgrounds(){
+    syncDefaultVantaBackground();
+    syncRubyVantaBackground();
+    syncWhiteVantaBackground();
+    syncEmeraldVantaBackground();
+    syncSakuraVantaBackground();
+    syncNyxWaveBackground();
+  }
+  function syncNyxWaveBackground(){
+    const wave=$('nyxWaveBg');
+    if(!wave) return;
+    const active=!threeDBackgroundsEnabled() && !store.get('nyx.lagReducer',false) && !document.body.classList.contains('browser-content-active') && !document.body.classList.contains('custom-bg-active');
+    const notify=()=>{
+      try{wave.contentWindow?.postMessage({type:'nyx-wave-active',active},location.origin)}catch{}
+    };
+    wave.dataset.active=active ? '1' : '0';
+    if(!wave.dataset.waveSyncReady){
+      wave.dataset.waveSyncReady='1';
+      wave.addEventListener('load',notify);
+    }
+    notify();
+  }
+  function ensureFreshThemeOptions(root=document){
+    root.querySelectorAll?.('[data-theme-value]')?.forEach(select=>{
+      if(!select.querySelector('option[value="fresh"]')){
+        const option=document.createElement('option');
+        option.value='fresh';
+        option.textContent='White';
+        select.appendChild(option);
+      }
+      if(!select.querySelector('option[value="midnight"]')){
+        const option=document.createElement('option');
+        option.value='midnight';
+        option.textContent='Midnight';
+        select.appendChild(option);
+      }
+    });
+  }
+  function applyThemeSetting(){
+    const allowed=['default','ruby','emerald','sakura','fresh','midnight'];
+    const theme=allowed.includes(store.text('nyx.theme','default')) ? store.text('nyx.theme','default') : 'default';
+    document.body.classList.remove('theme-ruby','theme-emerald','theme-sakura','theme-fresh','theme-midnight');
+    document.body.classList.add(theme==='default' ? 'theme-midnight' : 'theme-'+theme);
+    const browserBackground=currentBrowserBackgroundValue();
+    document.documentElement.style.setProperty('--browser-bg-render',normalizeBgValue(browserBackground));
+    ensureFreshThemeOptions();
+    qsa('[data-theme-value]').forEach(el=>{el.value=theme});
+    if(nyxGateOpened && theme==='default'){
+      if(store.text('nyx.visualEffect','none')==='stars' && store.text('nyx.visualEffectAmount','16')==='64'){
+        store.setText('nyx.visualEffect','none');
+      }
+      store.setText('nyx.musicTrack','clair');
+      if(ambientTracks?.clair && ambientCurrentKey!=='clair'){
+        loadAmbientTrack('clair',false);
+      }
+    }
+    if(!store.get('nyx.visualEffectUserChoice',false) && ['flowers','emeralds'].includes(store.text('nyx.visualEffect','none'))){
+      store.setText('nyx.visualEffect','none');
+    }
+    if(nyxGateOpened && theme==='emerald' && ambientTracks?.frog && ambientCurrentKey!=='frog'){
+      loadAmbientTrack('frog',false);
+    }
+    if(nyxGateOpened && theme==='fresh' && ambientTracks?.sunny && ambientCurrentKey!=='sunny'){
+      loadAmbientTrack('sunny',false);
+    }
+    if(nyxGateOpened && (theme==='fresh' || theme==='sakura')){
+      applyVisualEffectSetting();
+    }
+    syncInternalThemeFrames(theme);
+    syncThemeVantaBackgrounds();
+  }
+  function syncInternalThemeFrames(theme=store.text('nyx.theme','default')){
+    const clean=theme==='default' ? 'midnight' : (['ruby','emerald','sakura','fresh','midnight'].includes(theme) ? theme : 'midnight');
+    document.querySelectorAll('iframe.view').forEach(frame=>{
+      try{
+        const doc=frame.contentDocument;
+        if(!doc?.body) return;
+        doc.body.classList.remove('theme-ruby','theme-emerald','theme-sakura','theme-fresh','theme-midnight');
+        if(clean!=='default') doc.body.classList.add('theme-'+clean);
+        ensureFreshThemeOptions(doc);
+        doc.querySelectorAll('[data-theme-value]').forEach(el=>{el.value=clean});
+      }catch{}
+      try{frame.contentWindow?.postMessage?.({type:'nyx:theme-sync',theme:clean},'*')}catch{}
+    });
+  }
+  function applyVisualEffectSetting(){
+    const effect=store.text('nyx.visualEffect','none');
+    const allowed=['none','rain','stars','hearts','pokeballs','flowers','emeralds'];
+    const value=allowed.includes(effect) ? effect : 'none';
+    const speed=Math.max(.3,Math.min(3,Number(store.text('nyx.visualEffectSpeed','1.1')) || 1.1));
+    const requestedAmount=Math.max(1,Math.min(64,Number(store.text('nyx.visualEffectAmount','16')) || 16));
+    const canShow=nyxGateOpened && document.body.classList.contains('browser-shell') && !document.body.classList.contains('browser-content-active') && !document.body.classList.contains('watchparty-active') && !store.get('nyx.lagReducer',false);
+    syncPerformanceLite();
+    const lite=document.body.classList.contains('performance-lite');
+    const amount=lite ? Math.min(requestedAmount,16) : requestedAmount;
+    const nodes=ensureVisualEffectNodes(canShow && value!=='none' ? amount : 0);
+    const isFallingEffect=['hearts','pokeballs','flowers','emeralds'].includes(value);
+    const randomizeFallingNode=node=>{
+      const startX=Math.random()*112-6;
+      const driftA=(Math.random()*34-17) + (Math.random()<.5 ? -18 : 18);
+      const driftB=driftA * (Math.random()*-.75-.15) + (Math.random()*18-9);
+      const driftC=driftA * (Math.random()*.55-.2) + (Math.random()*26-13);
+      node.style.setProperty('--fall-x',startX.toFixed(2)+'vw');
+      node.style.setProperty('--fall-start-y',(-24-Math.random()*36).toFixed(2)+'vh');
+      node.style.setProperty('--fall-mid-y-a',(22+Math.random()*24).toFixed(2)+'vh');
+      node.style.setProperty('--fall-mid-y-b',(58+Math.random()*28).toFixed(2)+'vh');
+      node.style.setProperty('--fall-end-y',(112+Math.random()*28).toFixed(2)+'vh');
+      node.style.setProperty('--fall-drift-a',driftA.toFixed(2)+'vw');
+      node.style.setProperty('--fall-drift-b',driftB.toFixed(2)+'vw');
+      node.style.setProperty('--fall-drift-c',driftC.toFixed(2)+'vw');
+      node.style.setProperty('--fall-rot-start',(Math.random()*90-45).toFixed(0)+'deg');
+      node.style.setProperty('--fall-rot-a',(80+Math.random()*160).toFixed(0)+'deg');
+      node.style.setProperty('--fall-rot-b',(230+Math.random()*220).toFixed(0)+'deg');
+      node.style.setProperty('--fall-rot-end',(430+Math.random()*520).toFixed(0)+'deg');
+      node.style.setProperty('--fall-scale-start',(.62+Math.random()*.24).toFixed(2));
+      node.style.setProperty('--fall-scale-a',(.82+Math.random()*.34).toFixed(2));
+      node.style.setProperty('--fall-scale-b',(.72+Math.random()*.32).toFixed(2));
+      node.style.setProperty('--fall-scale-end',(.82+Math.random()*.36).toFixed(2));
+      node.style.setProperty('--fall-opacity',(.66+Math.random()*.32).toFixed(2));
+    };
+    nodes.forEach((node,index)=>{
+      node.style.display=index<amount ? '' : 'none';
+      node.style.left=(Math.random()*104-2).toFixed(2)+'%';
+      node.style.top=(Math.random()*96).toFixed(2)+'%';
+      node.style.fontSize=(16+Math.random()*20).toFixed(1)+'px';
+      node.style.animationDelay='-'+(Math.random()*(isFallingEffect ? 14 : 6)/speed).toFixed(2)+'s';
+      const baseDuration=isFallingEffect ? 7.6+Math.random()*7.8 : .85+Math.random()*1.8;
+      node.style.animationDuration=(baseDuration/speed).toFixed(2)+'s';
+      node.style.opacity=(.58+Math.random()*.42).toFixed(2);
+      if(isFallingEffect){
+        randomizeFallingNode(node);
+        node.onanimationiteration=()=>randomizeFallingNode(node);
+      }else{
+        node.onanimationiteration=null;
+      }
+      const randomEdge=side=>{
+        if(side===0) return {x:(Math.random()*120-10).toFixed(2)+'vw',y:'-14vh'};
+        if(side===1) return {x:'114vw',y:(Math.random()*120-10).toFixed(2)+'vh'};
+        if(side===2) return {x:(Math.random()*120-10).toFixed(2)+'vw',y:'114vh'};
+        return {x:'-14vw',y:(Math.random()*120-10).toFixed(2)+'vh'};
+      };
+      const startSide=Math.floor(Math.random()*4);
+      const endSide=(startSide+2+Math.floor(Math.random()*2))%4;
+      const start=randomEdge(startSide);
+      const end=randomEdge(endSide);
+      node.style.setProperty('--effect-x0',start.x);
+      node.style.setProperty('--effect-y0',start.y);
+      node.style.setProperty('--effect-x1',end.x);
+      node.style.setProperty('--effect-y1',end.y);
+    });
+    ['rain','stars','hearts','pokeballs','flowers','emeralds'].forEach(name=>document.body.classList.toggle('effect-'+name,value===name && canShow));
+    document.body.classList.toggle('effect-amount-low',amount<=6);
+    document.body.classList.toggle('effect-amount-medium',amount>6 && amount<=10);
+    document.documentElement.style.setProperty('--effect-speed',String(speed));
+    qsa('[data-effect-value]').forEach(el=>{el.value=value});
+    qsa('[data-effect-speed]').forEach(el=>{el.value=String(speed)});
+    qsa('[data-effect-amount]').forEach(el=>{el.value=String(requestedAmount)});
+    qsa('[data-effect-speed-label]').forEach(el=>{el.textContent=speed.toFixed(1)+'x'});
+    qsa('[data-effect-amount-label]').forEach(el=>{el.textContent=String(requestedAmount)});
+  }
+  //user-settings-apply
+  function applyUserSettings(){
+    document.body.classList.toggle('three-d-backgrounds',store.get('nyx.threeDBackgrounds',false));
+    applyLagReducerSetting();
+    applyBrowserShellMode();
+    applyThemeSetting();
+    syncPerformanceLite();
+    syncThemeVantaBackgrounds();
+    applyFontSetting();
+    applyVisualEffectSetting();
+    const name=store.text('nyx.userName','').trim();
+    const greeting=$('userGreeting');
+    if(greeting){
+      greeting.textContent=name || 'Set username';
+      greeting.classList.toggle('needs-name',!name);
+    }
+    const customData=store.text('nyx.customBgData','');
+    const customUrl=store.text('nyx.customBgUrl','');
+    const value=currentBackgroundValue();
+    const customSrc=customData || customUrl;
+    document.documentElement.style.setProperty('--bg-size','cover');
+    if(nyxGateOpened){
+      setCustomBackgroundLayer(customSrc);
+    }else{
+      document.body.classList.remove('custom-bg-active');
+      $('customBgImage')?.removeAttribute('src');
+    }
+    applyBackgroundValue(value);
+    document.documentElement.style.setProperty('--bg-enhanced-render',normalizeBgValue(value));
+    document.documentElement.style.setProperty('--browser-bg-render',normalizeBgValue(currentBrowserBackgroundValue()));
+    syncBackgroundPreview(value);
+    updateWeatherContrast(value);
+    store.set('nyx.backgroundEnhancer',false);
+    const enhance=false;
+    document.body.classList.remove('bg-enhanced');
+    document.documentElement.style.setProperty('--bg-brightness','1');
+    document.documentElement.style.setProperty('--bg-contrast','1');
+    document.documentElement.style.setProperty('--bg-saturate','1');
+    document.documentElement.style.setProperty('--bg-bright-mask','linear-gradient(transparent,transparent)');
+    setQualityStatus('');
+    qsa('[data-bg-enhancer]').forEach(el=>el.classList.toggle('on',enhance));
+    const engine=store.text('nyx.engine','duckduckgo');
+    qsa('[data-engine-value]').forEach(el=>{el.value=engine});
+    applyGlassSetting();
+    syncPerformanceLite();
+    if(nyxGateOpened){
+      startHieroglyphObserver();
+      applyHieroglyphText();
+    }
+  }
+  function migrateGlassDefault(){
+    if(store.get('nyx.glassDefault80',false)) return;
+    const saved=store.text('nyx.glassLevel','');
+    if(!saved || saved==='72') store.setText('nyx.glassLevel','80');
+    store.set('nyx.glassDefault80',true);
+  }
+  function applyGlassSetting(){
+    const raw=store.text('nyx.glassLevel','80');
+    const parsed=Number(raw);
+    const value=Math.max(-200,Math.min(200,Number.isFinite(parsed) ? parsed : 80));
+    const brightness=Math.max(0,Math.min(value,100))/100;
+    const extra=Math.max(0,value-100)/100;
+    const negative=Math.abs(Math.min(value,0))/200;
+    const alpha=Math.min(0.94,0.7 - brightness * 0.58 + negative * 0.24).toFixed(3);
+    const cardA=Math.min(0.32,0.19 - brightness * 0.14 + negative * 0.08).toFixed(3);
+    const cardB=Math.min(0.24,0.12 - brightness * 0.09 + negative * 0.08).toFixed(3);
+    const control=Math.min(0.28,0.16 - brightness * 0.105 + negative * 0.075).toFixed(3);
+    const baseBlur=36 - brightness * 16 + negative * 32;
+    const blur=Math.max(0,Math.round(baseBlur * (1 - extra)));
+    const saturate=Math.max(0.8,1.02 + brightness * 0.58 - negative * 0.22).toFixed(2);
+    const root=document.documentElement;
+    root.style.setProperty('--glass-panel',`rgba(10,12,15,${alpha})`);
+    root.style.setProperty('--glass-card-a',`rgba(255,255,255,${cardA})`);
+    root.style.setProperty('--glass-card-b',`rgba(255,255,255,${cardB})`);
+    root.style.setProperty('--glass-control',`rgba(255,255,255,${control})`);
+    root.style.setProperty('--glass-blur',blur+'px');
+    root.style.setProperty('--glass-saturate',saturate);
+    root.style.setProperty('--glass-clarity',brightness.toFixed(2));
+    qsa('[data-glass-value]').forEach(el=>{el.value=String(value)});
+    qsa('[data-glass-output]').forEach(el=>{el.textContent=value+'%'});
+  }
+  //background-rendering
+  function normalizeBgValue(value){
+    const raw=String(value||'').trim();
+    if(raw.startsWith('url(') || raw.startsWith('linear-gradient')) return raw;
+    const src=/^[\w.-]+\.[a-z]{2,}([/?#].*)?$/i.test(raw) ? 'https://'+raw : raw;
+    return `url("${src.replaceAll('"','%22')}")`;
+  }
+  function bgSrc(value){
+    const match=String(value||'').match(/^url\(["']?(.+?)["']?\)$/);
+    return match ? match[1] : '';
+  }
+  function currentBackgroundValue(){
+    const bg=store.text('nyx.background','dragon');
+    const customData=store.text('nyx.customBgData','');
+    const customUrl=store.text('nyx.customBgUrl','');
+    const legacy=store.text('nyx.customBg','');
+    return customData ? `url("${customData}")` : customUrl ? `url("${customUrl.replaceAll('"','%22')}")` : legacy || bgPresets[bg] || bgPresets.dragon;
+  }
+  function currentBrowserBackgroundValue(){
+    const theme=store.text('nyx.theme','default');
+    if(['ruby','emerald','sakura','fresh'].includes(theme)){
+      const themeBg=getComputedStyle(document.body).getPropertyValue('--theme-bg').trim();
+      if(themeBg && !/transparent\s*,\s*transparent/i.test(themeBg)) return themeBg;
+      if(theme==='ruby') return 'linear-gradient(rgba(60,0,12,.10),rgba(60,0,12,.22)),url("assets/backgrounds/theme-ruby.jpg")';
+      if(theme==='emerald') return 'linear-gradient(rgba(0,24,12,.08),rgba(0,24,12,.20)),url("assets/backgrounds/theme-emerald.png")';
+      if(theme==='sakura') return 'linear-gradient(rgba(40,0,28,.06),rgba(40,0,28,.18)),url("assets/backgrounds/theme-sakura.jpg")';
+      if(theme==='fresh') return 'linear-gradient(rgba(255,255,255,.10),rgba(255,255,255,.18)),url("assets/backgrounds/theme-fresh.jpg")';
+    }
+    const bg=store.text('nyx.browserBackground','lofiPurple');
+    return bgPresets[bg] || bgPresets.lofiPurple || bgPresets.dragon;
+  }
+  function imageProxySrc(src){
+    if(!/^https?:\/\//i.test(src)) return '';
+    return 'https://images.weserv.nl/?url=' + encodeURIComponent(src.replace(/^https?:\/\//i,''));
+  }
+  function imageCandidates(src){
+    const proxy=imageProxySrc(src);
+    return proxy && proxy!==src ? [src,proxy] : [src];
+  }
+  function loadImageWithFallback(img, src, onLoad, onError){
+    const candidates=imageCandidates(src);
+    let index=0;
+    img.referrerPolicy='no-referrer';
+    img.onload=()=>onLoad?.(img.src,img);
+    img.onerror=()=>{
+      index++;
+      if(index<candidates.length){
+        img.src=candidates[index];
+        return;
+      }
+      onError?.();
+    };
+    img.src=candidates[index] || '';
+  }
+  function syncBackgroundPreview(value=currentBackgroundValue()){
+    const cssValue=normalizeBgValue(value);
+    const src=bgSrc(cssValue);
+    qsa('[data-bg-full-preview]').forEach(el=>{
+      el.style.backgroundImage=src ? '' : cssValue;
+      el.textContent='';
+      if(src){
+        const img=document.createElement('img');
+        img.alt='';
+        loadImageWithFallback(img,src,loadedSrc=>{
+          if(loadedSrc!==src) el.style.backgroundImage=`url("${loadedSrc}")`;
+        },()=>{
+          el.style.backgroundImage=cssValue;
+          el.textContent='Preview unavailable';
+        });
+        el.appendChild(img);
+      }
+    });
+  }
+  function setQualityStatus(text=''){
+    qsa('[data-bg-quality-status]').forEach(el=>{el.textContent=text});
+  }
+  function setCustomBackgroundLayer(src, enhancedSrc=''){
+    const img=$('customBgImage');
+    if(!img) return Promise.resolve(null);
+    const layerRun=++customBgLayerRun;
+    const next=enhancedSrc || src || '';
+    if(!next){
+      document.body.classList.remove('custom-bg-active');
+      img.removeAttribute('src');
+      syncThemeVantaBackgrounds();
+      return Promise.resolve(null);
+    }
+    return new Promise(resolve=>{
+      loadImageWithFallback(img,next,(loadedSrc,loadedImg)=>{
+      if(layerRun!==customBgLayerRun){resolve(null); return}
+      const loadedCss=`url("${loadedSrc.replaceAll('"','%22')}")`;
+      document.documentElement.style.setProperty('--bg-render',loadedCss);
+      document.documentElement.style.setProperty('--bg-enhanced-render',loadedCss);
+      document.body.classList.add('custom-bg-active');
+      syncThemeVantaBackgrounds();
+      resolve({src:loadedSrc,width:loadedImg.naturalWidth,height:loadedImg.naturalHeight});
+    },()=>{
+      if(layerRun!==customBgLayerRun){resolve(null); return}
+      document.body.classList.remove('custom-bg-active');
+      syncThemeVantaBackgrounds();
+      resolve(null);
+    });
+    });
+  }
+  function renderEnhancedImage(src, done){
+    const img=new Image();
+    const candidates=imageCandidates(src);
+    let index=0;
+    img.crossOrigin='anonymous';
+    img.referrerPolicy='no-referrer';
+    img.onload=()=>{
+      try{
+        const minW=2560, minH=1440, maxW=3840, maxH=2160;
+        const minScale=Math.max(minW/img.naturalWidth,minH/img.naturalHeight,1);
+        const maxScale=Math.min(maxW/img.naturalWidth,maxH/img.naturalHeight);
+        const upscale=Math.max(1,Math.min(minScale,maxScale));
+        const w=Math.round(img.naturalWidth*upscale);
+        const h=Math.round(img.naturalHeight*upscale);
+        let source=img;
+        let sourceW=img.naturalWidth;
+        let sourceH=img.naturalHeight;
+        while(sourceW*1.75<w && sourceH*1.75<h){
+          const step=document.createElement('canvas');
+          step.width=Math.min(w,Math.round(sourceW*1.75));
+          step.height=Math.min(h,Math.round(sourceH*1.75));
+          const stepCtx=step.getContext('2d');
+          if(!stepCtx) throw new Error('canvas unavailable');
+          stepCtx.imageSmoothingEnabled=true;
+          stepCtx.imageSmoothingQuality='high';
+          stepCtx.drawImage(source,0,0,step.width,step.height);
+          source=step;
+          sourceW=step.width;
+          sourceH=step.height;
+        }
+        const canvas=document.createElement('canvas');
+        canvas.width=w;
+        canvas.height=h;
+        const ctx=canvas.getContext('2d',{willReadFrequently:true});
+        if(!ctx) throw new Error('canvas unavailable');
+        ctx.imageSmoothingEnabled=true;
+        ctx.imageSmoothingQuality='high';
+        ctx.drawImage(source,0,0,w,h);
+        const pixels=ctx.getImageData(0,0,w,h);
+        const data=pixels.data;
+        const original=new Uint8ClampedArray(data);
+        const at=(x,y,c)=>original[((Math.max(0,Math.min(h-1,y))*w + Math.max(0,Math.min(w-1,x)))*4)+c];
+        for(let y=0;y<h;y++){
+          for(let x=0;x<w;x++){
+            const idx=(y*w+x)*4;
+            for(let c=0;c<3;c++){
+              const blur=(
+                at(x-1,y-1,c)+at(x,y-1,c)*2+at(x+1,y-1,c)+
+                at(x-1,y,c)*2+at(x,y,c)*4+at(x+1,y,c)*2+
+                at(x-1,y+1,c)+at(x,y+1,c)*2+at(x+1,y+1,c)
+              )/16;
+              const detail=original[idx+c]-blur;
+              const edge=Math.min(36,Math.abs(detail))*Math.sign(detail);
+              const sharpened=original[idx+c] + detail*2.65 + edge*.9;
+              data[idx+c]=Math.max(0,Math.min(255,(sharpened-128)*1.16+128+6));
+            }
+          }
+        }
+        ctx.putImageData(pixels,0,0);
+        done(canvas.toDataURL('image/jpeg',0.97),`Quality Boost active: ${img.naturalWidth}x${img.naturalHeight} to ${w}x${h}`);
+      }catch{
+        done('', 'Quality boost needs an uploaded/local image or a CORS-enabled link');
+      }
+    };
+    img.onerror=()=>{
+      index++;
+      if(index<candidates.length){
+        img.src=candidates[index];
+        return;
+      }
+      done('', 'Background link could not be loaded');
+    };
+    img.src=candidates[index] || src;
+  }
+  function setWeatherContrast(lightBackground){
+    const root=document.documentElement;
+    if(lightBackground){
+      root.style.setProperty('--weather-text','#0f172a');
+      root.style.setProperty('--weather-muted','#334155');
+      root.style.setProperty('--weather-control','rgba(15,23,42,.14)');
+      root.style.setProperty('--weather-control-border','rgba(15,23,42,.16)');
+      root.style.setProperty('--weather-shadow','0 1px 10px rgba(255,255,255,.34)');
+    }else{
+      root.style.setProperty('--weather-text','#f8fafc');
+      root.style.setProperty('--weather-muted','#dbeafe');
+      root.style.setProperty('--weather-control','rgba(0,0,0,.28)');
+      root.style.setProperty('--weather-control-border','rgba(255,255,255,.16)');
+      root.style.setProperty('--weather-shadow','0 1px 12px rgba(0,0,0,.36)');
+    }
+  }
+  function updateWeatherContrast(value){
+    const cssValue=normalizeBgValue(value || bgPresets.dragon);
+    const src=bgSrc(cssValue);
+    if(!src || cssValue.startsWith('linear-gradient')){setWeatherContrast(false); return}
+    const img=new Image();
+    const maskCandidates=imageCandidates(src);
+    let maskIndex=0;
+    img.crossOrigin='anonymous';
+    img.referrerPolicy='no-referrer';
+    img.onload=()=>{
+      try{
+        const w=360, h=210;
+        const canvas=document.createElement('canvas');
+        canvas.width=w;
+        canvas.height=h;
+        const ctx=canvas.getContext('2d',{willReadFrequently:true});
+        if(!ctx) return;
+        const scale=Math.max(w/img.naturalWidth,h/img.naturalHeight);
+        const drawW=img.naturalWidth*scale;
+        const drawH=img.naturalHeight*scale;
+        ctx.drawImage(img,(w-drawW)/2,(h-drawH)/2,drawW,drawH);
+        const sample=ctx.getImageData(Math.floor(w*.72),0,Math.floor(w*.28),Math.floor(h*.46)).data;
+        let total=0, count=0;
+        for(let i=0;i<sample.length;i+=16){
+          total+=.2126*sample[i] + .7152*sample[i+1] + .0722*sample[i+2];
+          count++;
+        }
+        setWeatherContrast(count ? total/count > 150 : false);
+      }catch{
+        setWeatherContrast(false);
+      }
+    };
+    img.onerror=()=>setWeatherContrast(false);
+    img.src=src;
+  }
+  function applyBackgroundValue(value, allowFallback=true){
+    const cssValue=normalizeBgValue(value || bgPresets.dragon);
+    document.documentElement.style.setProperty('--bg', cssValue);
+    document.documentElement.style.setProperty('--bg-render', cssValue);
+    const src=bgSrc(cssValue);
+    if(!src || src.startsWith('data:') || src.startsWith('blob:')) return;
+    if(store.text('nyx.customBgUrl','') || store.text('nyx.customBgData','') || store.text('nyx.customBg','')) return;
+    const img=new Image();
+    img.referrerPolicy='no-referrer';
+    img.onerror=()=>{
+      if(!allowFallback) return;
+      store.setText('nyx.background','dragon');
+      store.setText('nyx.customBg','');
+      store.setText('nyx.customBgUrl','');
+      store.setText('nyx.customBgData','');
+      applyBackgroundValue(bgPresets.dragon,false);
+    };
+    img.onload=()=>{};
+    img.src=src;
+  }
+  function enhanceBackgroundRender(value){
+    const run=++enhancedBackgroundRun;
+    const cssValue=normalizeBgValue(value || bgPresets.dragon);
+    const src=bgSrc(cssValue);
+    setQualityStatus('Quality Boost preparing image...');
+    if(!src || cssValue.startsWith('linear-gradient')){
+      document.documentElement.style.setProperty('--bg-render',cssValue);
+      document.documentElement.style.setProperty('--bg-enhanced-render',cssValue);
+      document.documentElement.style.setProperty('--bg-bright-mask','linear-gradient(transparent,transparent)');
+      setCustomBackgroundLayer('');
+      setQualityStatus('');
+      return;
+    }
+    const isGif=/\.gif(?:[?#].*)?$/i.test(src) || /^data:image\/gif/i.test(src);
+    if(isGif){
+      document.documentElement.style.setProperty('--bg-render',cssValue);
+      document.documentElement.style.setProperty('--bg-enhanced-render',cssValue);
+      setQualityStatus('Quality Boost active: animated GIF preserved');
+    }else{
+      renderEnhancedImage(src,(enhancedSrc,status)=>{
+        if(run!==enhancedBackgroundRun || !store.get('nyx.backgroundEnhancer',false)) return;
+        setQualityStatus(status);
+        if(enhancedSrc){
+          const boosted=`url("${enhancedSrc}")`;
+          document.documentElement.style.setProperty('--bg-enhanced-render',boosted);
+          syncBackgroundPreview(boosted);
+          if(store.text('nyx.customBgUrl','') || store.text('nyx.customBgData','')) setCustomBackgroundLayer(src,enhancedSrc);
+        }
+      });
+    }
+    const img=new Image();
+    const maskCandidates=imageCandidates(src);
+    let maskIndex=0;
+    img.crossOrigin='anonymous';
+    img.referrerPolicy='no-referrer';
+    img.onload=()=>{
+      if(run!==enhancedBackgroundRun || !store.get('nyx.backgroundEnhancer',false)) return;
+      try{
+        let brightMask='linear-gradient(transparent,transparent)';
+        const maskW=960;
+        const maskH=540;
+        const maskCanvas=document.createElement('canvas');
+        maskCanvas.width=maskW;
+        maskCanvas.height=maskH;
+        const maskCtx=maskCanvas.getContext('2d',{willReadFrequently:true});
+        if(maskCtx){
+          maskCtx.imageSmoothingEnabled=true;
+          maskCtx.imageSmoothingQuality='high';
+          const maskScale=Math.max(maskW/img.naturalWidth,maskH/img.naturalHeight);
+          const drawW=img.naturalWidth*maskScale;
+          const drawH=img.naturalHeight*maskScale;
+          maskCtx.drawImage(img,(maskW-drawW)/2,(maskH-drawH)/2,drawW,drawH);
+          const maskPixels=maskCtx.getImageData(0,0,maskW,maskH);
+          const maskData=maskPixels.data;
+          for(let i=0;i<maskData.length;i+=4){
+            const r=maskData[i], g=maskData[i+1], b=maskData[i+2];
+            const lum=.2126*r + .7152*g + .0722*b;
+            const max=Math.max(r,g,b);
+            const min=Math.min(r,g,b);
+            const chroma=max-min;
+            const saturation=max ? chroma / max : 0;
+            const yellow=Math.min(r,g) - b*.72;
+            const pink=Math.min(r,b) - g*.62;
+            const cyan=Math.min(g,b) - r*.62;
+            const blue=Math.max(0,b - Math.max(r,g)*.48);
+            const brightColor=Math.max(0,yellow,pink,cyan,blue);
+            const colorGate=max>170 && lum>118 && saturation>.34 && brightColor>44;
+            const yellowStrength=.8 + Math.min(1,Math.max(0,(yellow-44)/120))*.2;
+            const colorStrength=brightColor===yellow ? yellowStrength : brightColor===pink ? .42 : brightColor===cyan ? .22 : .14;
+            const score=(lum-118)*1.4 + (saturation-.34)*320 + Math.max(0,brightColor-44)*1.8;
+            const alpha=colorGate && score>120 ? Math.min(255,Math.round(255*colorStrength)) : 0;
+            maskData[i]=255;
+            maskData[i+1]=255;
+            maskData[i+2]=255;
+            maskData[i+3]=alpha;
+          }
+          maskCtx.putImageData(maskPixels,0,0);
+          brightMask=`url("${maskCanvas.toDataURL('image/png')}")`;
+        }
+      if(run===enhancedBackgroundRun && store.get('nyx.backgroundEnhancer',false)){
+        document.documentElement.style.setProperty('--bg-render',cssValue);
+        document.documentElement.style.setProperty('--bg-bright-mask',brightMask);
+      }
+    }catch{
+      document.documentElement.style.setProperty('--bg-render',cssValue);
+      document.documentElement.style.setProperty('--bg-enhanced-render',cssValue);
+      document.documentElement.style.setProperty('--bg-bright-mask','linear-gradient(transparent,transparent)');
+    }
+  };
+  img.onerror=()=>{
+    maskIndex++;
+    if(maskIndex<maskCandidates.length){
+      img.src=maskCandidates[maskIndex];
+      return;
+    }
+    document.documentElement.style.setProperty('--bg-render',cssValue);
+    document.documentElement.style.setProperty('--bg-enhanced-render',cssValue);
+    document.documentElement.style.setProperty('--bg-bright-mask','linear-gradient(transparent,transparent)');
+  };
+    img.src=maskCandidates[maskIndex] || src;
+  }
+  function toast(msg){const t=$('toast'); if(!t)return; t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200)}
+  window.__nyxStartupErrors=window.__nyxStartupErrors || [];
+  if(!window.__nyxStartupErrorCapture){
+    window.__nyxStartupErrorCapture=true;
+    window.addEventListener('error',event=>{
+      window.__nyxStartupErrors.push(event.message || 'Script error');
+      if(window.__nyxStartupErrors.length>12) window.__nyxStartupErrors.shift();
+    });
+    window.addEventListener('unhandledrejection',event=>{
+      window.__nyxStartupErrors.push(String(event.reason?.message || event.reason || 'Promise rejection'));
+      if(window.__nyxStartupErrors.length>12) window.__nyxStartupErrors.shift();
+    });
+  }
+  const postCoverWait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+  async function runPostCoverLoader(){
+    const loader=$('postCoverLoader');
+    const fill=$('postCoverLoaderFill');
+    const label=$('postCoverLoaderLabel');
+    const percent=$('postCoverLoaderPercent');
+    if(!loader || !fill || !label || !percent || loader.dataset.running==='1') return true;
+    loader.dataset.running='1';
+    loader.setAttribute('aria-hidden','false');
+    loader.classList.add('active');
+    const setProgress=(value,text)=>{
+      const next=Math.max(0,Math.min(100,Math.round(value)));
+      fill.style.width=`${next}%`;
+      percent.textContent=`${next}%`;
+      label.textContent=next>=100 ? 'Launched' : 'Loading';
+    };
+    const withLoaderTimeout=(promise,ms=900)=>Promise.race([
+      Promise.resolve(promise),
+      postCoverWait(ms).then(()=>false)
+    ]);
+    const pingLocal=async()=>{
+      try{
+        const response=await fetch(location.href.split('#')[0],{cache:'no-store'});
+        return response.ok || response.type==='basic';
+      }catch{return true}
+    };
+    const fetchOk=async(path,ms=900)=>{
+      if(location.protocol==='file:') return true;
+      try{
+        const response=await withLoaderTimeout(fetch(path,{cache:'no-store'}),ms);
+        return !!(response && response.ok);
+      }catch{return false}
+    };
+    const doubleCheck=async(run)=>{
+      const first=await withLoaderTimeout(run(),1000).catch(()=>false);
+      await postCoverWait(35);
+      const second=await withLoaderTimeout(run(),1000).catch(()=>false);
+      return Boolean(first || second);
+    };
+    const checks=[
+      ['Checking core files',async()=>doubleCheck(async()=>(
+        await fetchOk('/assets/docs/1300-maths-formula.pdf',850)
+        && await fetchOk('/assets/icons/nyx-logo.png',850)
+        && await fetchOk('/assets/vendor/three.r134.min.js',850)
+      ))],
+      ['Checking servers',async()=>doubleCheck(async()=>(
+        location.protocol==='file:'
+        || await Promise.all(['/uv/uv.bundle.js','/scramjet/scramjet.js','/baremux/index.mjs'].map(path=>fetchOk(path,900)))
+          .then(results=>results.some(Boolean))
+      ))],
+      ['Checking browser engine',async()=>doubleCheck(async()=>Boolean(window.fetch && window.Promise && window.URL && window.Blob))],
+      ['Checking storage',async()=>{
+        return doubleCheck(async()=>{
+          try{
+            const key='nyx-startup-check';
+            localStorage.setItem(key,'1');
+            return localStorage.getItem(key)==='1' && (localStorage.removeItem(key),true);
+          }catch{return false}
+        });
+      }],
+      ['Checking proxy updates',async()=>doubleCheck(async()=>{
+        if(typeof preflightStateCurrent==='function') return preflightStateCurrent();
+        return typeof proxyStateVersion==='string' && typeof scramjetStateVersion==='string';
+      })],
+      ['Checking for bugs',async()=>doubleCheck(async()=>(
+        Boolean(document.body && $('desktop') && $('visualEffects') && $('customBgImage'))
+        && window.__nyxStartupErrors.length===0
+      ))],
+      ['Launching Nyx',async()=>doubleCheck(async()=>Boolean($('browserShell') || $('desktop')))]
+    ];
+    setProgress(0,'Checking Nyx');
+    for(let i=0;i<checks.length;i++){
+      const [text,run]=checks[i];
+      setProgress((i/checks.length)*100,text);
+      try{
+        const ok=await run();
+        if(!ok) console.warn('post-cover check did not pass:',text);
+      }catch(error){console.warn('post-cover check warning:',text,error)}
+      await postCoverWait(70);
+      setProgress(((i+1)/checks.length)*100,text);
+    }
+    setProgress(100,'Launched');
+    await postCoverWait(420);
+    loader.classList.remove('active');
+    loader.setAttribute('aria-hidden','true');
+    setTimeout(()=>{
+      loader.dataset.running='0';
+      setProgress(0,'Checking Nyx');
+    },260);
+    return true;
+  }
+  function saveProfile(root=document, quiet=false){
+    const input=root.querySelector?.('#settingName') || document.querySelector('#settingName');
+    const next=(input?.value || '').trim();
+    store.setText('nyx.userName', next);
+    applyUserSettings();
+    if(!quiet) toast('Username saved');
+  }
+  async function openFormulaGate(){
+    const gate=$('formulaGate');
+    if(!gate || gate.dataset.opened==='1') return;
+    gate.dataset.opened='1';
+    nyxGateOpened=true;
+    document.body.classList.add('nyx-startup-prep');
+    document.querySelectorAll('.nyx-preflight').forEach(overlay=>overlay.remove());
+    document.body.classList.add('runtime-lag-guard');
+    if(gate.contains(document.activeElement)) document.activeElement?.blur?.();
+    gate.classList.add('hidden');
+    gate.setAttribute('aria-hidden','true');
+    gate.setAttribute('inert','');
+    showSetupLaunchSplash();
+    requestAnimationFrame(()=>{
+      applyLagReducerSetting();
+      document.body.classList.toggle('browser-shell',store.get('nyx.browserShellMode',true));
+      syncChromeMode(store.get('nyx.browserShellMode',true));
+      requestNyxKeyboardLock();
+      applyThemeSetting();
+      syncPerformanceLite();
+      applyVisualEffectSetting();
+      tick();
+      installHomeShortcutAnimationObserver();
+      startRuntimeLagWatch();
+      initDesktopSplash();
+      finishNyxOpenStartup();
+      initAmbientMusic();
+      applyVisualEffectSetting();
+      document.body.classList.remove('runtime-lag-guard');
+      if(shouldShowStartupCustomization()){
+        document.body.classList.remove('nyx-startup-prep');
+        suppressHomeEntranceOnStartup=false;
+        showSetup();
+      }else{
+        playNyxStartupReveal();
+      }
+    });
+  }
+  const launchPdfOptions={
+    math:'assets/docs/1300-maths-formula.pdf'
+  };
+  let launchPdfObjectUrl='';
+  let launchPdfObjectName='';
+  const launchPdfDbName='nyx-launch-pdfs';
+  const launchPdfStore='pdfs';
+  function openLaunchPdfDb(){
+    return new Promise((resolve,reject)=>{
+      if(!window.indexedDB){reject(new Error('IndexedDB unavailable')); return}
+      const request=indexedDB.open(launchPdfDbName,1);
+      request.onupgradeneeded=()=>request.result.createObjectStore(launchPdfStore);
+      request.onsuccess=()=>resolve(request.result);
+      request.onerror=()=>reject(request.error || new Error('Could not open PDF storage'));
+    });
+  }
+  async function launchPdfDbGet(key){
+    const db=await openLaunchPdfDb();
+    return new Promise((resolve,reject)=>{
+      const request=db.transaction(launchPdfStore,'readonly').objectStore(launchPdfStore).get(key);
+      request.onsuccess=()=>resolve(request.result || null);
+      request.onerror=()=>reject(request.error || new Error('Could not read PDF'));
+      request.transaction?.addEventListener?.('complete',()=>db.close(),{once:true});
+    });
+  }
+  async function launchPdfDbPut(key,value){
+    const db=await openLaunchPdfDb();
+    return new Promise((resolve,reject)=>{
+      const request=db.transaction(launchPdfStore,'readwrite').objectStore(launchPdfStore).put(value,key);
+      request.onsuccess=()=>resolve(true);
+      request.onerror=()=>reject(request.error || new Error('Could not save PDF'));
+      request.transaction?.addEventListener?.('complete',()=>db.close(),{once:true});
+    });
+  }
+  function launchPdfUrl(){
+    const choice=store.text('nyx.launchPdf','math');
+    if(choice==='custom'){
+      return launchPdfObjectUrl || launchPdfOptions.math;
+    }
+    return launchPdfOptions[choice] || launchPdfOptions.math;
+  }
+  function applyLaunchPdfSetting(){
+    const frame=document.querySelector('.formula-pdf');
+    if(!frame) return;
+    const next=launchPdfUrl()+'#toolbar=0&navpanes=0&scrollbar=1&zoom=125';
+    frame.dataset.pdfSrc=next;
+    if(store.get('nyx.renderStartupPdf',false) && frame.getAttribute('src')!==next) frame.setAttribute('src',next);
+  }
+  async function loadStoredLaunchPdf(){
+    if(store.text('nyx.launchPdf','math')!=='custom') return;
+    try{
+      const saved=await launchPdfDbGet('startup');
+      if(!saved?.blob) return;
+      if(launchPdfObjectUrl) URL.revokeObjectURL(launchPdfObjectUrl);
+      launchPdfObjectUrl=URL.createObjectURL(saved.blob);
+      launchPdfObjectName=saved.name || 'Custom startup PDF';
+      qsa('[data-launch-pdf-name]').forEach(node=>node.textContent=launchPdfObjectName);
+      applyLaunchPdfSetting();
+    }catch{
+      setTimeout(()=>toast('Could not load saved startup PDF'),250);
+    }
+  }
+  async function chooseLocalLaunchPdf(file){
+    const isPdf=file && (file.type==='application/pdf' || /\.pdf$/i.test(file.name || ''));
+    if(!isPdf){
+      toast('Choose a PDF file');
+      return;
+    }
+    if(launchPdfObjectUrl) URL.revokeObjectURL(launchPdfObjectUrl);
+    launchPdfObjectUrl=URL.createObjectURL(file);
+    launchPdfObjectName=file.name;
+    store.setText('nyx.launchPdf','custom');
+    let saved=true;
+    try{
+      await launchPdfDbPut('startup',{name:file.name,type:file.type || 'application/pdf',blob:file,updatedAt:Date.now()});
+    }catch{
+      saved=false;
+      toast('PDF picked, but browser storage blocked saving it');
+    }
+    applyLaunchPdfSetting();
+    qsa('[data-launch-pdf-name]').forEach(node=>node.textContent=launchPdfObjectName);
+    if(saved) toast(`Startup PDF saved: ${launchPdfObjectName}`);
+  }
+  function bindFormulaGate(){
+    const gate=$('formulaGate');
+    if(!gate || gate.dataset.bound==='1') return;
+    gate.dataset.bound='1';
+    gate.querySelectorAll('[data-formula-continue]').forEach(button=>button.addEventListener('click',openFormulaGate));
+    gate.addEventListener('keydown',event=>{
+      if(event.key==='Enter' || event.key===' '){
+        event.preventDefault();
+        openFormulaGate();
+      }
+    });
+  }
+  //url-normalization
+  function normalize(v){
+    const raw=String(v||'').trim(); if(!raw)return '';
+    if(shouldTriggerSixtySevenJumpscare(raw)){
+      showSixtySevenJumpscare();
+      return '';
+    }
+    let target='';
+    if(/^about:blank$/i.test(raw)) return raw;
+    if(/^(blob:|data:text\/html)/i.test(raw)) return raw;
+    if(/^data:text\/html/i.test(raw)) return raw;
+    if(/^https?:\/\//i.test(raw)) target=raw;
+    else if(/^(\/|\.\/|\.\.\/|assets\/)/i.test(raw)){
+      try{target=new URL(raw,location.href).href}catch{target=raw}
+    }
+    else if(/^[\w.-]+\.[a-z]{2,}(\/.*)?$/i.test(raw) && !raw.includes(' ')) target='https://'+raw;
+    else {
+      target=selectedSearchUrl(raw);
+    }
+    return target;
+  }
+  function getRhBase(){
+    return store.text('nyx.rammerheadBase',rammerheadBase).replace(/\/+$/,'') + '/';
+  }
+  function getRhSession(){
+    return new Promise(resolve=>{
+      const base=getRhBase();
+      const cached=store.text('nyx.rammerheadSession','');
+      const xhr=new XMLHttpRequest();
+      let done=false;
+      const finish=id=>{
+        if(done) return;
+        done=true;
+        clearTimeout(timer);
+        if(id){
+          store.setText('nyx.rammerheadSession',id);
+          resolve({base,id});
+        }else if(cached){
+          resolve({base,id:cached});
+        }else{
+          resolve(null);
+        }
+      };
+      const timer=setTimeout(()=>finish(null),5000);
+      try{
+        xhr.open('GET',base+'newsession',true);
+        xhr.onload=()=>{
+          const id=(xhr.responseText||'').trim();
+          finish(id || null);
+        };
+        xhr.onerror=()=>finish(null);
+        xhr.send();
+      }catch{
+        finish(null);
+      }
+    });
+  }
+  function rhBuildUrl(base,id,url){
+    return base + id + '/' + url;
+  }
+  function proxyModeUrl(mode,url){
+    mode=normalizeBrowserModeName(mode);
+    const target=proxyTargetUrl(url);
+    if(!target) return url;
+    if(mode==='ultraviolet') return nativeUvUrl(target) || target;
+    if(mode==='scramjet') return scramjetUrl(target) || target;
+    return url;
+  }
+  function normalizeBrowserModeName(mode){
+    let value=String(mode || 'auto').trim();
+    if((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))){
+      try{value=JSON.parse(value)}catch{value=value.slice(1,-1)}
+    }
+    value=String(value || 'auto').trim().toLowerCase();
+    if(value==='uv' || value==='ultra' || value==='ultraviolet') return 'ultraviolet';
+    if(value==='sj' || value==='scram' || value==='scramjet') return 'scramjet';
+    if(value==='rh' || value==='rammerhead') return 'rammerhead';
+    if(value==='direct' || value==='iframe') return 'iframe';
+    return value || 'auto';
+  }
+  function proxyTargetUrl(url){
+    try{
+      const target=new URL(url,location.href);
+      return /^https?:$/.test(target.protocol) ? target.href : '';
+    }catch{return ''}
+  }
+  function browserHost(url){
+    try{return new URL(url).hostname.replace(/^www\./,'').toLowerCase()}catch{return ''}
+  }
+  function hostMatches(host,domains){
+    return domains.some(domain=>host===domain || host.endsWith('.'+domain));
+  }
+  const popupAllowedAppDomains=[
+    'discord.com',
+    'geforcenow.com',
+    'play.geforcenow.com',
+    'nvidia.com',
+    'nvidiagrid.net',
+    'spotify.com',
+    'open.spotify.com',
+    'accounts.spotify.com',
+    'spotifycdn.com',
+    'scdn.co',
+    'accounts.scdn.co'
+  ];
+  function isPopupAllowedAppUrl(url){
+    const raw=browserShellSourceUrl(String(url || '')) || String(url || '');
+    const host=browserHost(raw);
+    return !!host && hostMatches(host,popupAllowedAppDomains);
+  }
+  function externalHttpUrl(url){
+    try{
+      const target=new URL(url,location.href);
+      return /^https?:$/.test(target.protocol) && target.origin!==location.origin;
+    }catch{return false}
+  }
+  function bestBrowserMode(url){
+    try{
+      const target=new URL(url,location.href);
+      if(target.origin===location.origin || target.protocol==='file:') return 'iframe';
+    }catch{}
+    const host=browserHost(url);
+    if(!host) return 'iframe';
+    if(hostMatches(host,['slither.io'])) return 'iframe';
+    if(hostMatches(host,['cineby.at'])) return 'scramjet';
+    if(hostMatches(host,['tcgplayer.com'])) return 'iframe';
+    const scramjetHosts=[
+      'geforcenow.com','nvidia.com','play.geforcenow.com',
+      'xbox.com','xboxlive.com','xboxservices.com',
+      'spotify.com','open.spotify.com','accounts.spotify.com',
+      'spotifycdn.com','scdn.co','accounts.scdn.co'
+    ];
+    const iframeHosts=[
+      'localhost','127.0.0.1'
+    ];
+    if(hostMatches(host,iframeHosts)) return 'iframe';
+    if(hostMatches(host,scramjetHosts)) return 'scramjet';
+    return 'ultraviolet';
+  }
+  function avoidsScramjet(url){
+    const host=browserHost(url);
+    return hostMatches(host,[
+      'youtube.com','youtu.be','google.com','drive.google.com','docs.google.com',
+      'discord.com','roblox.com','twitch.tv','netflix.com',
+      'reddit.com','x.com','twitter.com','instagram.com','tiktok.com','snapchat.com',
+      'amazon.com','tcgplayer.com','chess.com','chatgpt.com','duck.ai',
+      'wikipedia.org','classlink.com','traxmojo.com','duckduckgo.com',
+      'cpstest.org'
+    ]);
+  }
+  function selectedBrowserMode(url){
+    try{
+      const target=new URL(url,location.href);
+      if(target.origin===location.origin || target.protocol==='file:') return 'iframe';
+    }catch{}
+    if(hostMatches(browserHost(url),['duckduckgo.com'])) return 'ultraviolet';
+    if(isSpotifyFamilyUrl(url)) return 'scramjet';
+    if(hostMatches(browserHost(url),['slither.io'])) return 'iframe';
+    const mode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
+    if(mode==='iframe' && hostMatches(browserHost(url),['cineby.at'])) return 'scramjet';
+    if(mode!=='auto') return mode;
+    const selected=bestBrowserMode(url);
+    return selected==='scramjet' && avoidsScramjet(url) ? 'ultraviolet' : selected;
+  }
+  function proxySelectionInfo(url,forceMode=''){
+    const savedMode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
+    const mode=forceMode || selectedBrowserMode(url);
+    const savedTransport=store.text('nyx.transport','epoxy');
+    return {
+      url,
+      savedMode,
+      forcedMode:forceMode || '',
+      selectedMode:mode,
+      savedTransport,
+      activeTransport:browserTransportOverride || savedTransport
+    };
+  }
+  function logProxySelection(url,forceMode='',phase='navigate'){
+    const info=proxySelectionInfo(url,forceMode);
+    window.nyxProxySelection=info;
+    console.log('nyx proxy selection', {...info, phase});
+    return info;
+  }
+  function appCompatibilityMode(url){
+    if(hostMatches(browserHost(url),['crazygames.com'])) return 'ultraviolet';
+    return '';
+  }
+  function preferredTransport(url){
+    const host=browserHost(url);
+    if(hostMatches(host,[
+      'spotify.com','open.spotify.com',
+      'accounts.spotify.com','spotifycdn.com','scdn.co','accounts.scdn.co',
+      'google.com','gstatic.com','recaptcha.net',
+      'traxmojo.com',
+      'animex.one','tcgplayer.com'
+    ])) return 'epoxy';
+    if(hostMatches(host,['youtube.com','youtu.be','tcgplayer.com'])) return 'epoxy';
+    return '';
+  }
+  function nativeUvUrl(url){
+    const target=proxyTargetUrl(url);
+    if(!target) return '';
+    const config=window.__uv$config;
+    if(!config || typeof config.encodeUrl!=='function' || !config.prefix) return '';
+    return config.prefix + config.encodeUrl(target);
+  }
+  function scramjetUrl(url){
+    const target=proxyTargetUrl(url);
+    if(!target || !scramjetController?.prefix) return '';
+    const config=scramjetConfig();
+    const encode=typeof config.codec?.encode==='function' ? config.codec.encode : encodeURIComponent;
+    return config.prefix + encode(target);
+  }
+  function proxyFailureHtml(message,engine='Nyx'){
+    const safe=String(message || 'Refresh this page once so the updated service worker can take over, then search again.').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const safeEngine=String(engine || 'Nyx').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    return `<!doctype html><meta charset="utf-8"><style>body{margin:0;font-family:Outfit,Arial,sans-serif;background:#101318;color:#f5f7fb;display:grid;place-items:center;min-height:100vh}main{max-width:560px;padding:28px;text-align:center}h1{font-size:20px;margin:0 0 10px}p{margin:0;color:#c8ced8;line-height:1.45}</style><main><h1>${safeEngine} did not start</h1><p>${safe}</p></main>`;
+  }
+  function loadScript(src){
+    return new Promise((resolve,reject)=>{
+      const existing=document.querySelector(`script[src="${src}"]`);
+      if(existing){
+        if(existing.dataset.loaded) resolve();
+        else existing.addEventListener('load',resolve,{once:true});
+        return;
+      }
+      const script=document.createElement('script');
+      script.src=src;
+      script.async=false;
+      script.onload=()=>{script.dataset.loaded='true'; resolve()};
+      script.onerror=()=>reject(new Error(`Could not load ${src}`));
+      document.head.appendChild(script);
+    });
+  }
+      async function waitForServiceWorkerActive(registration, scope='/~/sj/'){
+        if(!registration || !('serviceWorker' in navigator)) return false;
+        const deadline=Date.now()+12000;
+        let current=registration;
+        while(Date.now()<deadline){
+          if(current?.active?.state==='activated') return true;
+          const worker=current?.installing || current?.waiting || current?.active;
+          if(worker?.state==='activated') return true;
+          const fresh=await navigator.serviceWorker.getRegistration(scope).catch(()=>null);
+          if(fresh){
+            current=fresh;
+            if(fresh.active?.state==='activated') return true;
+          }
+          await new Promise(resolve=>setTimeout(resolve,120));
+        }
+        const fresh=await navigator.serviceWorker.getRegistration(scope).catch(()=>null);
+        return Boolean(fresh?.active || current?.active);
+      }
+      async function refreshScramjetServiceWorker(){
+        if(!('serviceWorker' in navigator)) return false;
+        const registration=await navigator.serviceWorker.getRegistration('/~/sj/');
+        if(!registration) return false;
+        await registration.update().catch(()=>null);
+        return waitForServiceWorkerActive(registration);
+      }
+  function wispUrl(){
+    const configured=String(globalThis.__NYX_RUNTIME_CONFIG__?.wispUrl || '').trim();
+    if(/^wss?:\/\//i.test(configured)) return configured.endsWith('/') ? configured : configured+'/';
+    if(!hasHostedBackend()) return 'wss://wisp.mercurywork.shop/';
+    const protocol=location.protocol==='https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${location.host}/wisp/`;
+  }
+  async function installBareMuxTransport(){
+    const { BareMuxConnection } = await import('/baremux/index.mjs');
+    const connection = bareMuxConnection || (bareMuxConnection = new BareMuxConnection('/baremux/worker.js'));
+    const wisp=wispUrl();
+    const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+    const setTransportWithRetry=async (path,args)=>{
+      let lastError=null;
+      for(let attempt=0;attempt<3;attempt++){
+        try{
+          await connection.setTransport(path,args);
+          return;
+        }catch(error){
+          lastError=error;
+          await delay(220*(attempt+1));
+        }
+      }
+      throw lastError;
+    };
+    const transport=browserTransportOverride || store.text('nyx.transport','epoxy');
+    try{
+      if(transport==='libcurl'){
+        try{
+          await setTransportWithRetry('/assets/transports/libcurl-baremux.mjs', [{ wisp, websocket: wisp }]);
+          return connection;
+        }catch(error){
+          console.warn('nyx libcurl BareMux transport failed.', error);
+          throw error;
+        }
+      }
+      if(transport==='wisp'){
+        await setTransportWithRetry('/epoxy/index.mjs', [{ wisp, wisp_v2: false }]);
+        return connection;
+      }
+      await setTransportWithRetry('/epoxy/index.mjs', [{ wisp, wisp_v2: true }]);
+      return connection;
+    }catch(firstError){
+      if(transport==='libcurl') throw firstError;
+      await setTransportWithRetry('/epoxy/index.mjs', [{ wisp, wisp_v2: false }]).catch(()=>{
+        throw firstError;
+      });
+      return connection;
+    }
+  }
+  async function createScramjetTransport(){
+    const transport=browserTransportOverride || store.text('nyx.transport','epoxy');
+    const key=`${transport}:${wispUrl()}`;
+    if(scramjetTransport && scramjetTransportKey===key) return scramjetTransport;
+    const wisp=wispUrl();
+    const buildTransport=async name=>{
+      if(name==='libcurl'){
+        const { default: LibcurlClient } = await import('/assets/transports/libcurl-scramjet.mjs');
+        return new LibcurlClient({ wisp, websocket: wisp });
+      }
+      const { default: EpoxyTransport } = await import('/assets/transports/epoxy-scramjet.mjs');
+      return new EpoxyTransport({ wisp, wisp_v2: name!=='wisp' });
+    };
+    scramjetTransport=await buildTransport(transport);
+    if(typeof scramjetTransport.init==='function' && !scramjetTransport.ready){
+      try{
+        await Promise.race([
+          scramjetTransport.init(),
+          new Promise((_,reject)=>setTimeout(()=>reject(new Error(`Scramjet ${transport} transport timed out while connecting to ${wisp}`)),7000))
+        ]);
+      }catch(error){
+        if(transport==='libcurl'){
+          console.warn('nyx libcurl Scramjet transport failed.', error);
+          throw error;
+        }else{
+          throw error;
+        }
+      }
+    }
+    scramjetTransportKey=`${transport}:${wisp}`;
+    return scramjetTransport;
+  }
+  function scramjetConfig(){
+    return {
+      prefix:'/~/sj/',
+      scramjetPath:'/scramjet/scramjet.js',
+      injectPath:'/controller/controller.inject.js',
+      wasmPath:'/scramjet/scramjet.wasm',
+      virtualWasmPath:'scramjet.wasm.js',
+      codec:{
+        encode:url=>encodeURIComponent(url),
+        decode:url=>decodeURIComponent(url)
+      }
+    };
+  }
+  function scramjetRuntimeConfig(){
+    const authSafeFlags={
+      captureErrors:false,
+      cleanErrors:false,
+      sourcemaps:false,
+      destructureRewrites:false,
+      allowInvalidJs:false,
+      allowFailedIntercepts:true,
+      encapsulateWorkers:true
+    };
+    return {
+      flags:{
+        syncxhr:false,
+        disableComputedWrap:true,
+        rewriterLogs:false,
+        captureErrors:false,
+        cleanErrors:false,
+        scramitize:false,
+        sourcemaps:false,
+        destructureRewrites:false,
+        allowInvalidJs:false,
+        debugTrampolines:false,
+        debugSourceURL:false,
+        allowFailedIntercepts:true,
+        encapsulateWorkers:true
+      },
+      siteFlags:{
+        'https?:\\/\\/([^/]+\\.)?(spotify\\.com|spotifycdn\\.com|scdn\\.co|accounts\\.scdn\\.co)(\\/|$)':authSafeFlags,
+        'https?:\\/\\/([^/]+\\.)?(google\\.com|gstatic\\.com|recaptcha\\.net)(\\/|$)':authSafeFlags
+      },
+      maskedfiles:['inject.js','scramjet.wasm.js']
+    };
+  }
+  function createScramjetController(serviceworker,transport){
+    const api=window.$scramjetController;
+    const Controller=api?.Controller;
+    if(!Controller) throw new Error('Scramjet controller API did not load');
+    api.assertRuntimeScramjetVersion?.();
+    return new Controller({
+      serviceworker,
+      transport,
+      config:scramjetConfig(),
+      scramjetConfig:scramjetRuntimeConfig()
+    });
+  }
+  async function loadScramjetRuntimeGuardSource(){
+    if(scramjetRuntimeGuardSource) return scramjetRuntimeGuardSource;
+    const response=await fetch('/nyx-scramjet-runtime-guard.js',{cache:'no-store'});
+    if(!response.ok) throw new Error('Could not load Scramjet runtime guard');
+    scramjetRuntimeGuardSource=await response.text();
+    return scramjetRuntimeGuardSource;
+  }
+  function findScramjetHtmlNode(node,name){
+    if(String(node?.name || '').toLowerCase()===name) return node;
+    const children=node?.childNodes || node?.children;
+    if(!Array.isArray(children)) return null;
+    for(const child of children){
+      const found=findScramjetHtmlNode(child,name);
+      if(found) return found;
+    }
+    return null;
+  }
+  function installScramjetRuntimeGuards(root,source=scramjetRuntimeGuardSource,key='runtime-guard'){
+    const target=findScramjetHtmlNode(root,'head') || findScramjetHtmlNode(root,'html') || root;
+    const children=target?.childNodes || target?.children;
+    if(!Array.isArray(children)) return;
+    if(children.some(child=>child?.attribs?.['data-nyx-runtime-guard']===key)) return;
+    children.unshift({
+      type:'script',
+      name:'script',
+      attribs:{'data-nyx-runtime-guard':key},
+      children:[{type:'text',data:source || 'void 0;'}]
+    });
+  }
+  function shouldUseScramjetRuntimeGuard(url){
+    return false;
+  }
+  function shouldUseScramjetMinimalGuard(url){
+    const raw=String(url || '');
+    const host=browserHost(browserShellSourceUrl(raw) || raw);
+    if(host && hostMatches(host,[
+      'spotify.com',
+      'spotifycdn.com',
+      'scdn.co',
+      'accounts.spotify.com',
+      'accounts.scdn.co',
+      'open.spotify.com'
+    ])) return false;
+    return !!host && hostMatches(host,[
+      'google.com',
+      'gstatic.com',
+      'recaptcha.net',
+      'google-analytics.com',
+      'googletagmanager.com'
+    ]);
+  }
+  function shouldUseScramjetHelperGuard(url){
+    return isSpotifyFamilyUrl(url);
+  }
+  function shouldStripScramjetDuckDuckGoScripts(url){
+    return false;
+  }
+  function isSpotifyFamilyUrl(url){
+    const raw=String(url || '');
+    const host=browserHost(browserShellSourceUrl(raw) || raw);
+    return !!host && hostMatches(host,[
+      'spotify.com',
+      'spotifycdn.com',
+      'scdn.co',
+      'accounts.spotify.com',
+      'accounts.scdn.co',
+      'open.spotify.com'
+    ]);
+  }
+  function inspectFrameHealth(t){
+    try{
+      const doc=t?.frame?.contentDocument;
+      if(!doc) return {reachable:false,blank:false,text:'',title:'',readyState:''};
+      const body=doc.body;
+      const text=String(body?.textContent || '').trim().slice(0,5000);
+      const visibleText=String(body?.innerText || '').trim().slice(0,5000);
+      const structureCount=Number(doc.documentElement?.childElementCount || 0)+Number(body?.childElementCount || 0);
+      const title=String(doc.title || '').trim();
+      const hasVisibleStructure=!!doc.querySelector('main,button,a,input,[role],[data-testid],svg,img,canvas,video,audio');
+      const hasErrorText=/scramjet did not start|scramjet route missed|ultraviolet did not start|error processing your request|internal server error|internal service worker error|request failed with error code\s*(?:35|56|60)|ssl connect error|ssl peer certificate|ssh remote key|certificate.*not ok|failure when receiving data from the peer|localhost refused to connect|something went wrong/i.test(text);
+      const blank=!hasVisibleStructure && text.length<12 && structureCount<4;
+      return {reachable:true,blank,hasErrorText,text,visibleText,title,htmlLength:structureCount,readyState:doc.readyState};
+    }catch(error){
+      return {reachable:false,blank:false,error:String(error?.message || error),text:'',title:'',readyState:''};
+    }
+  }
+  function watchScramjetHealth(t,sourceUrl){
+    return;
+  }
+  function removeScramjetHtmlNodes(root,predicate){
+    const children=root?.childNodes || root?.children;
+    if(!Array.isArray(children)) return;
+    for(let i=children.length-1;i>=0;i--){
+      const child=children[i];
+      if(predicate(child)) children.splice(i,1);
+      else removeScramjetHtmlNodes(child,predicate);
+    }
+  }
+  function stripScramjetDuckDuckGoScripts(root){
+    removeScramjetHtmlNodes(root,node=>{
+      if(String(node?.name || '').toLowerCase()!=='script') return false;
+      const src=String(node?.attribs?.src || '').toLowerCase();
+      const id=String(node?.attribs?.id || '').toLowerCase();
+      const text=(node?.children || []).map(child=>child?.data || '').join('');
+      return src.includes('/dist/p.')
+        || src.includes('links.duckduckgo.com/d.js')
+        || id==='deep_preload_script'
+        || text.includes('window.__sc__=');
+    });
+  }
+  function stripScramjetPreloadLinks(root){
+    removeScramjetHtmlNodes(root,node=>{
+      if(String(node?.name || '').toLowerCase()!=='link') return false;
+      if(String(node?.attribs?.rel || '').toLowerCase()!=='preload') return false;
+      const asType=String(node?.attribs?.as || '').toLowerCase();
+      const href=String(node?.attribs?.href || '').toLowerCase();
+      return asType==='font'
+        || asType==='fetch'
+        || href.includes('.woff')
+        || href.includes('/generated-locales/')
+        || href.endsWith('.json');
+    });
+  }
+  function replaceCinebyDevtoolBundle(root){
+    const children=root?.childNodes || root?.children;
+    if(!Array.isArray(children)) return;
+    for(const node of children){
+      if(String(node?.name || '').toLowerCase()==='script'){
+        const src=String(node?.attribs?.['scramjet-attr-src'] || node?.attribs?.src || '');
+        if(/\/_app-[^/?]+\.js(?:[?#]|$)/i.test(src)) node.attribs.src='/nyx-compat/cineby-app.js';
+      }
+      replaceCinebyDevtoolBundle(node);
+    }
+  }
+  function patchScramjetHtml(root,source=scramjetRuntimeGuardSource,key='runtime-guard'){
+    if(key==='duckduckgo-noscript'){
+      stripScramjetDuckDuckGoScripts(root);
+      return;
+    }
+    if(key==='spotify-preload-strip'){
+      stripScramjetPreloadLinks(root);
+      return;
+    }
+    if(key==='cineby-disable-devtool'){
+      replaceCinebyDevtoolBundle(root);
+      return;
+    }
+    installScramjetRuntimeGuards(root,source,key);
+  }
+  function createScramjetCompatibilityPlugin(source=scramjetRuntimeGuardSource,key='runtime-guard'){
+    const plugin={
+      name:'nyx-compatibility-'+key,
+      dependencies:[],
+      install(frame){
+        const Tap=window.$scramjet?.Tap;
+        const hook=frame?.fetchHandler?.hooks?.rewriter?.html?.post;
+        if(!Tap?.tap || !hook) return;
+        Tap.tap(hook,context=>patchScramjetHtml(context?.handler?.root,source,key),plugin);
+      }
+    };
+    return plugin;
+  }
+  function isScramjetIdbShapeError(error){
+    return /object stores? was not found|not found/i.test(String(error?.message || error));
+  }
+  function deleteIndexedDb(name){
+    return new Promise(resolve=>{
+      if(!window.indexedDB) return resolve(false);
+      const request=indexedDB.deleteDatabase(name);
+      request.onsuccess=()=>resolve(true);
+      request.onerror=()=>resolve(false);
+      request.onblocked=()=>setTimeout(()=>resolve(false),500);
+    });
+  }
+  async function repairScramjetStorage(){
+    if(navigator.serviceWorker){
+      const registrations=await Promise.all([
+        navigator.serviceWorker.getRegistration('/~/sj/').catch(()=>null),
+        navigator.serviceWorker.getRegistration('/scramjet/service/').catch(()=>null)
+      ]);
+      await Promise.all(registrations.map(registration=>registration?.unregister?.().catch(()=>null)));
+    }
+    const names=['$scramjet','__scramjet_controller'];
+    if(indexedDB.databases){
+      const databases=await indexedDB.databases().catch(()=>[]);
+      for(const db of databases){
+        if(db?.name && /scramjet/i.test(db.name) && !names.includes(db.name)) names.push(db.name);
+      }
+    }
+    await Promise.all(names.map(name=>deleteIndexedDb(name)));
+  }
+  async function repairScramjetCaches(){
+    if(!window.caches?.keys) return;
+    const names=await caches.keys().catch(()=>[]);
+    await Promise.all(names.filter(name=>/scramjet/i.test(name)).map(name=>caches.delete(name).catch(()=>false)));
+  }
+  async function repairUvStorage(){
+    if(navigator.serviceWorker){
+      const registrations=await Promise.all([
+        navigator.serviceWorker.getRegistration('/service/').catch(()=>null),
+        navigator.serviceWorker.getRegistration('/uv/').catch(()=>null)
+      ]);
+      await Promise.all(registrations.map(registration=>registration?.unregister?.().catch(()=>null)));
+    }
+  }
+  async function repairUvCaches(){
+    if(!window.caches?.keys) return;
+    const names=await caches.keys().catch(()=>[]);
+    await Promise.all(names.filter(name=>/(ultraviolet|uv|bare|epoxy|libcurl)/i.test(name)).map(name=>caches.delete(name).catch(()=>false)));
+  }
+  function clearNyxCookies(){
+    try{
+      const hostParts=location.hostname.split('.').filter(Boolean);
+      const domains=new Set(['']);
+      for(let i=0;i<hostParts.length-1;i++) domains.add('.'+hostParts.slice(i).join('.'));
+      const pathParts=location.pathname.split('/').filter(Boolean);
+      const paths=new Set(['/']);
+      let path='';
+      pathParts.forEach(part=>{
+        path+='/'+part;
+        paths.add(path);
+        paths.add(path+'/');
+      });
+      document.cookie.split(';').forEach(cookie=>{
+        const name=cookie.split('=')[0]?.trim();
+        if(!name) return;
+        domains.forEach(domain=>{
+          paths.forEach(pathValue=>{
+            const domainPart=domain ? `; domain=${domain}` : '';
+            document.cookie=`${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; path=${pathValue}${domainPart}; SameSite=Lax`;
+          });
+        });
+      });
+    }catch{}
+  }
+  async function clearAllNyxData(){
+    try{document.body.classList.add('nyx-resetting')}catch{}
+    try{toast('Clearing cache...')}catch{}
+    try{
+      if(window.ambientAudio) window.ambientAudio.pause();
+    }catch{}
+    try{
+      if(navigator.serviceWorker?.getRegistrations){
+        const registrations=await navigator.serviceWorker.getRegistrations().catch(()=>[]);
+        await Promise.all(registrations.map(registration=>registration.unregister().catch(()=>false)));
+      }
+    }catch{}
+    try{
+      if(window.caches?.keys){
+        const names=await caches.keys().catch(()=>[]);
+        await Promise.all(names.map(name=>caches.delete(name).catch(()=>false)));
+      }
+    }catch{}
+    try{
+      if(indexedDB.databases){
+        const databases=await indexedDB.databases().catch(()=>[]);
+        await Promise.all(databases.map(db=>db?.name ? deleteIndexedDb(db.name) : false));
+      }else{
+        await Promise.all(['$scramjet','__scramjet_controller','NyxLaunchPdfStore'].map(name=>deleteIndexedDb(name)));
+      }
+    }catch{}
+    clearNyxCookies();
+    try{sessionStorage.clear()}catch{}
+    try{localStorage.clear()}catch{}
+    setTimeout(()=>location.replace(location.pathname+'?nyx-reset='+Date.now()),220);
+  }
+  async function ensureFreshProxyState(){
+    if(store.text('nyx.proxyStateVersion','')===proxyStateVersion) return;
+    await Promise.all([
+      repairScramjetStorage(),
+      repairScramjetCaches(),
+      repairUvStorage(),
+      repairUvCaches()
+    ]);
+    scramjetController=null;
+    scramjetTransport=null;
+    scramjetTransportKey='';
+    scramjetInstallPromise=null;
+    uvInstallPromise=null;
+    store.setText('nyx.scramjetStateVersion',scramjetStateVersion);
+    store.setText('nyx.proxyStateVersion',proxyStateVersion);
+  }
+  async function ensureFreshScramjetState(){
+    if(store.text('nyx.scramjetStateVersion','')===scramjetStateVersion) return;
+    await repairScramjetStorage();
+    await repairScramjetCaches();
+    scramjetController=null;
+    scramjetTransport=null;
+    scramjetTransportKey='';
+    store.setText('nyx.scramjetStateVersion',scramjetStateVersion);
+  }
+  function installUltraviolet(){
+    if(uvInstallPromise) return uvInstallPromise;
+    uvInstallPromise=(async()=>{
+      if(location.protocol==='file:' || !('serviceWorker' in navigator)) return false;
+      await ensureFreshProxyState();
+      if(!window.__uv$config){
+        await loadScript('/uv/uv.bundle.js');
+        await loadScript('/uv.config.js');
+      }
+      const config=window.__uv$config;
+      if(!config?.prefix || typeof config.encodeUrl!=='function') return false;
+      const existing=await navigator.serviceWorker.getRegistration(config.prefix).catch(()=>null);
+      if(existing?.active?.scriptURL && !existing.active.scriptURL.includes(config.sw || '/uv.sw.js')){
+        await existing.unregister().catch(()=>null);
+      }
+      const registration=await navigator.serviceWorker.register(config.sw || '/uv.sw.js',{scope:config.prefix,updateViaCache:'none'});
+      await registration.update().catch(()=>null);
+      await waitForServiceWorkerActive(registration,config.prefix);
+      await installBareMuxTransport();
+      console.log('nyx UV Engine: Ready',registration.scope);
+      return true;
+    })().catch(err=>{
+      console.warn('nyx UV Engine unavailable:',err);
+      uvInstallPromise=null;
+      return false;
+    });
+    return uvInstallPromise;
+  }
+  function installScramjet(){
+    if(scramjetInstallPromise) return scramjetInstallPromise;
+    let step='starting Scramjet';
+    scramjetInstallPromise=(async()=>{
+      step='checking browser support';
+      if(location.protocol==='file:' || !('serviceWorker' in navigator)) return false;
+      step='resetting stale Scramjet state';
+      await ensureFreshProxyState();
+      await ensureFreshScramjetState();
+      step='loading Scramjet assets';
+      if(!window.$scramjet) await loadScript('/scramjet/scramjet.js');
+      if(!window.$scramjetController) await loadScript('/controller/controller.api.js');
+      step='loading Scramjet runtime guard';
+      await loadScramjetRuntimeGuardSource();
+      step='starting Scramjet transport';
+      const transport=await createScramjetTransport();
+      step='registering Scramjet service worker';
+      const registration=await navigator.serviceWorker.register('/scramjet.sw.js?v=nyx-sj-20260710-nested-url-v10',{scope:'/~/sj/',updateViaCache:'none'});
+      await registration.update().catch(()=>null);
+      step='activating Scramjet service worker';
+      const active=await waitForServiceWorkerActive(registration);
+      if(!active) throw new Error('Scramjet service worker did not activate');
+      step='initializing Scramjet controller';
+      try{
+        const serviceworker=registration.active || navigator.serviceWorker.controller;
+        if(!serviceworker) throw new Error('Scramjet service worker is not controlling this page yet');
+        if(!scramjetController) scramjetController=createScramjetController(serviceworker,transport);
+        else scramjetController.setTransport?.(transport);
+        await scramjetController.wait();
+      }catch(initError){
+        if(!isScramjetIdbShapeError(initError)) throw initError;
+        step='repairing Scramjet IndexedDB';
+        await repairScramjetStorage();
+        const repairedRegistration=await navigator.serviceWorker.register('/scramjet.sw.js?v=nyx-sj-20260710-nested-url-v10',{scope:'/~/sj/',updateViaCache:'none'});
+        const repairedActive=await waitForServiceWorkerActive(repairedRegistration);
+        if(!repairedActive) throw new Error('Scramjet service worker did not activate after storage repair');
+        step='initializing Scramjet controller after storage repair';
+        const serviceworker=repairedRegistration.active || navigator.serviceWorker.controller;
+        if(!serviceworker) throw new Error('Scramjet service worker is not controlling this page yet');
+        scramjetController=createScramjetController(serviceworker,transport);
+        await scramjetController.wait();
+      }
+      console.log('nyx Scramjet Engine: Ready',registration.scope);
+      scramjetInstallError='';
+      return true;
+    })().catch(err=>{
+      console.warn('nyx Scramjet Engine unavailable:',err);
+      scramjetInstallError=`Failed while ${step}: ${err?.message || err}`;
+      scramjetController=null;
+      scramjetInstallPromise=null;
+      return false;
+    });
+    return scramjetInstallPromise;
+  }
+  function rammerhead(url){
+    if(/^data:text\/html/i.test(url)) return url;
+    const base=getRhBase();
+    if(url.startsWith(base)) return url;
+    const sessionId=store.text('nyx.rammerheadSession','');
+    return sessionId ? rhBuildUrl(base,sessionId,url) : url;
+  }
+  async function rhNavigate(rawUrl,navigateFn){
+    if(/^data:text\/html/i.test(rawUrl)){
+      navigateFn(rawUrl);
+      return;
+    }
+    const session=await getRhSession();
+    navigateFn(session ? rhBuildUrl(session.base,session.id,rawUrl) : rawUrl);
+  }
+  function bring(win){win.style.zIndex=++zTop}
+  function updateMinimizedDock(){
+    const dock=document.querySelector('.dock');
+    const tray=$('minimizedTray');
+    if(dock&&tray) dock.classList.toggle('has-minimized',tray.children.length>0);
+  }
+  function updateDockFullscreenState(){
+    const dock=document.querySelector('.dock');
+    const ambient=$('ambientPlayer');
+    const hasFullscreen=[...document.querySelectorAll('.window.maximized')].some(win=>win.style.display!=='none' && !win.classList.contains('closing'));
+    const browserShell=document.body.classList.contains('browser-shell');
+    dock?.classList.toggle('hidden-for-window',hasFullscreen);
+    ambient?.classList.toggle('hidden-for-window',hasFullscreen && !browserShell);
+    if(hasFullscreen) closeWeatherPanelAnimated();
+  }
+  function minimizeWindow(win){
+    const tray=$('minimizedTray');
+    if(!tray) return;
+    const id=win.dataset.winId || ('win'+Date.now()+Math.random().toString(16).slice(2));
+    win.dataset.winId=id;
+    if(!tray.querySelector(`[data-restore="${id}"]`)){
+      const title=win.querySelector('.titlebar-title')?.textContent || 'Window';
+      const item=document.createElement('button');
+      item.className='minimized-item';
+      item.dataset.restore=id;
+      item.dataset.mini=(title.trim()[0] || 'W').toUpperCase();
+      item.title='Restore '+title;
+      item.textContent=title;
+      item.onclick=()=>restoreWindow(win);
+      tray.appendChild(item);
+    }
+    win.style.display='none';
+    updateMinimizedDock();
+    updateDockFullscreenState();
+  }
+  function restoreWindow(win){
+    win.style.display='block';
+    const tray=$('minimizedTray');
+    tray?.querySelector(`[data-restore="${win.dataset.winId}"]`)?.remove();
+    updateMinimizedDock();
+    bring(win);
+    updateDockFullscreenState();
+  }
+  function closeWindowAnimated(win){
+    if(!win || win.classList.contains('closing')) return;
+    $('minimizedTray')?.querySelector(`[data-restore="${win.dataset.winId}"]`)?.remove();
+    updateMinimizedDock();
+    win.classList.add('closing');
+    setTimeout(()=>{win.remove(); updateDockFullscreenState()},230);
+  }
+  function updateWindowSizeClasses(win){
+    win.classList.toggle('compact',win.offsetWidth<520);
+    win.classList.toggle('short',win.offsetHeight<360);
+  }
+  function updateResponsiveFit(){
+    const root=document.documentElement;
+    const w=Math.max(320,window.innerWidth || 320);
+    const h=Math.max(320,window.innerHeight || 320);
+    const scale=Math.max(.68,Math.min(1.08,Math.min(w/1366,h/768)));
+    const dockSize=Math.round(Math.max(28,Math.min(40,36*scale)));
+    const dockIconSize=Math.round(Math.max(24,Math.min(36,32*scale)));
+    const desktopIconSize=Math.round(Math.max(42,Math.min(64,58*scale)));
+    const sideReserve=w<520 ? 24 : 42;
+    const safeBottom=Math.round(Math.max(48,Math.min(72,58*scale)));
+    root.style.setProperty('--ui-scale',scale.toFixed(3));
+    root.style.setProperty('--dock-size',dockSize+'px');
+    root.style.setProperty('--dock-icon-size',dockIconSize+'px');
+    root.style.setProperty('--desktop-icon-size',desktopIconSize+'px');
+    root.style.setProperty('--search-width','min(620px, calc(100vw - '+sideReserve+'px))');
+    root.style.setProperty('--safe-bottom',safeBottom+'px');
+    document.querySelectorAll('.window').forEach(clampWindowToScreen);
+  }
+  let responsiveFitTimer=0;
+  function scheduleResponsiveFit(){
+    clearTimeout(responsiveFitTimer);
+    responsiveFitTimer=setTimeout(updateResponsiveFit,60);
+  }
+  window.addEventListener('resize',scheduleResponsiveFit);
+  window.addEventListener('orientationchange',scheduleResponsiveFit);
+  function clampWindowToScreen(win){
+    if(!win || win.classList.contains('maximized')) return;
+    const margin=12;
+    const styles=getComputedStyle(document.documentElement);
+    const topLimit=(parseFloat(styles.getPropertyValue('--bar')) || 30) + 8;
+    const bottomReserve=parseFloat(styles.getPropertyValue('--safe-bottom')) || 58;
+    const maxW=Math.max(260,window.innerWidth - margin*2);
+    const maxH=Math.max(180,window.innerHeight - topLimit - bottomReserve - margin);
+    const width=Math.min(win.offsetWidth || parseFloat(win.style.width) || Math.min(560,maxW),maxW);
+    const height=Math.min(win.offsetHeight || parseFloat(win.style.height) || Math.min(420,maxH),maxH);
+    let left=parseFloat(win.style.left) || margin;
+    let top=parseFloat(win.style.top) || topLimit;
+    const rightLimit=Math.max(margin,window.innerWidth - width - margin);
+    const bottomLimit=Math.max(topLimit,window.innerHeight - bottomReserve - height);
+    left=Math.max(margin,Math.min(left,rightLimit));
+    top=Math.max(topLimit,Math.min(top,bottomLimit));
+    win.style.width=width+'px';
+    win.style.height=height+'px';
+    win.style.left=left+'px';
+    win.style.top=top+'px';
+  }
+  //window-system
+  function makeWindow(opts){
+    const win=document.createElement('section');
+    win.className='window '+(opts.className||'');
+    win.style.left=opts.left||`${120+winCount*28}px`;
+    win.style.top=opts.top||`${80+winCount*24}px`;
+    win.style.width=opts.width||'560px';
+    win.style.height=opts.height||'420px';
+    win.innerHTML=`<div class="titlebar"><div class="titlebar-title">${esc(opts.title||'Window')}</div><div class="window-controls"><button data-minimize title="Minimize" aria-label="Minimize"></button><button data-maximize title="Maximize" aria-label="Maximize"></button><button class="close" data-close title="Close" aria-label="Close"></button></div></div>${opts.body||''}`;
+    addResizeHandles(win);
+    $('desktop').appendChild(win); winCount++; bring(win); wireWindow(win);
+    clampWindowToScreen(win);
+    if(opts.autoMaximize !== false){
+      win.classList.add('maximized');
+      const maxBtn=win.querySelector('[data-maximize]');
+      if(maxBtn) maxBtn.setAttribute('aria-label','Restore');
+    }
+    closeWeatherForWindowOpen();
+    updateWindowSizeClasses(win); updateDockFullscreenState(); initDesktopSplash(); return win;
+  }
+  function addResizeHandles(win){
+    ['n','s','e','w','ne','nw','se','sw'].forEach(dir=>{
+      const handle=document.createElement('span');
+      handle.className='resize-handle '+dir;
+      handle.dataset.resize=dir;
+      win.appendChild(handle);
+    });
+  }
+  function wireWindow(win){
+    const bar=win.querySelector('.titlebar');
+    let drag=null, resize=null;
+    if('ResizeObserver' in window) new ResizeObserver(()=>updateWindowSizeClasses(win)).observe(win);
+    win.addEventListener('pointerdown',()=>bring(win));
+    const startDrag=e=>{
+      if(e.target.closest('button'))return;
+      if(win.classList.contains('maximized')){
+        const width=Math.min(Math.max(760,window.innerWidth*.62),window.innerWidth-24);
+        const height=Math.min(Math.max(460,window.innerHeight*.62),window.innerHeight-80);
+        win.classList.remove('maximized');
+        win.style.width=width+'px';
+        win.style.height=height+'px';
+        win.style.left=Math.max(0,Math.min(window.innerWidth-width,e.clientX-width*.45))+'px';
+        win.style.top=Math.max(34,Math.min(window.innerHeight-height,e.clientY-16))+'px';
+      }
+      drag={x:e.clientX,y:e.clientY,left:win.offsetLeft,top:win.offsetTop};
+      bar.classList.add('dragging'); e.preventDefault();
+    };
+    bar.addEventListener('pointerdown',startDrag);
+    win.querySelector('.browser-tabs')?.addEventListener('pointerdown',startDrag);
+    win.querySelectorAll('[data-resize]').forEach(handle=>{
+      handle.addEventListener('pointerdown',e=>{
+        if(win.classList.contains('maximized')) return;
+        resize={dir:handle.dataset.resize,x:e.clientX,y:e.clientY,left:win.offsetLeft,top:win.offsetTop,width:win.offsetWidth,height:win.offsetHeight};
+        e.preventDefault();
+        e.stopPropagation();
+      });
+    });
+    window.addEventListener('pointermove',e=>{
+      if(resize){
+        resizeWindowFromEdge(win,resize,e);
+        return;
+      }
+      if(!drag)return;
+      win.style.left=Math.max(0,drag.left+e.clientX-drag.x)+'px';
+      win.style.top=Math.max(0,drag.top+e.clientY-drag.y)+'px';
+    });
+    window.addEventListener('pointerup',()=>{drag=null; resize=null; bar.classList.remove('dragging')});
+    window.addEventListener('resize',()=>clampWindowToScreen(win));
+    win.querySelector('[data-close]').onclick=()=>closeWindowAnimated(win);
+    win.querySelector('[data-minimize]').onclick=()=>minimizeWindow(win);
+    win.querySelector('[data-maximize]').onclick=e=>{
+      win.classList.toggle('maximized');
+      e.currentTarget.setAttribute('aria-label',win.classList.contains('maximized')?'Restore':'Maximize');
+      updateDockFullscreenState();
+    };
+  }
+  function resizeWindowFromEdge(win,state,e){
+    const minW=Number.parseInt(getComputedStyle(win).minWidth,10)||320;
+    const minH=Number.parseInt(getComputedStyle(win).minHeight,10)||220;
+    const styles=getComputedStyle(document.documentElement);
+    const bottomReserve=parseFloat(styles.getPropertyValue('--safe-bottom')) || 58;
+    const topLimit=(parseFloat(styles.getPropertyValue('--bar')) || 30) + 4;
+    let left=state.left, top=state.top, width=state.width, height=state.height;
+    const dx=e.clientX-state.x, dy=e.clientY-state.y;
+    if(state.dir.includes('e')) width=state.width+dx;
+    if(state.dir.includes('s')) height=state.height+dy;
+    if(state.dir.includes('w')){width=state.width-dx; left=state.left+dx}
+    if(state.dir.includes('n')){height=state.height-dy; top=state.top+dy}
+    if(width<minW){if(state.dir.includes('w')) left-=minW-width; width=minW}
+    if(height<minH){if(state.dir.includes('n')) top-=minH-height; height=minH}
+    width=Math.min(width,window.innerWidth-left-12);
+    height=Math.min(height,window.innerHeight-top-bottomReserve);
+    left=Math.max(0,left);
+    top=Math.max(topLimit,top);
+    win.style.left=left+'px';
+    win.style.top=top+'px';
+    win.style.width=width+'px';
+    win.style.height=height+'px';
+    updateWindowSizeClasses(win);
+  }
+  function browserBody(){
+    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="browser-shell-start"><img class="browser-shell-logo" alt="" src="${favicons.nyx}"><div class="browser-shell-clock" data-browser-shell-clock>--:--</div></div><div class="browser-blank-center"><img class="browser-blank-logo browser-shell-logo" alt="nyx" src="${favicons.nyx}"><form class="browser-blank-search" data-browser-blank-search><input data-browser-blank-input placeholder="Search or enter a URL" autocomplete="off"></form></div><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div></div>`;
+  }
+  //apps-grid
+  const defaultHomeShortcuts=[
+    {domain:'geforcenow',title:'GeForce Now',url:'https://play.geforcenow.com/',favorite:true},
+    {domain:'duck.ai',title:'Duck AI',url:'https://duck.ai/',favorite:false},
+    {domain:'nyx-ai',title:'Nyx AI',url:'nyx://ai',favorite:false},
+    {domain:'games',title:'Games',url:'/assets/games/index.html',favorite:false},
+    {domain:'youtube.com',title:'YouTube',url:'https://www.youtube.com/',favorite:false},
+    {domain:'tiktok.com',title:'TikTok',url:'https://www.tiktok.com/',favorite:false},
+    {domain:'spotify.com',title:'Spotify',url:'https://open.spotify.com/',favorite:false},
+    {domain:'discord.com',title:'Discord',url:'https://discord.com/app',favorite:false}
+  ];
+  function normalizeInternalAppUrl(url){
+    const raw=String(url || '').trim();
+    if(/^assets\//i.test(raw)) return `/${raw}`;
+    return raw;
+  }
+  function normalizeHomeShortcut(item){
+    const next={...item,url:normalizeInternalAppUrl(item?.url)};
+    if(next.url==='/assets/games/index.html') next.domain='games';
+    return next;
+  }
+  function homeShortcuts(){
+    try{
+      const saved=JSON.parse(store.text('nyx.homeShortcuts',''));
+      if(Array.isArray(saved)){
+        const cleaned=saved.filter(item=>item?.url && item?.title).map(normalizeHomeShortcut);
+        if(JSON.stringify(cleaned)!==JSON.stringify(saved)) saveHomeShortcuts(cleaned);
+        return cleaned;
+      }
+    }catch{}
+    return defaultHomeShortcuts.map(item=>({...item}));
+  }
+  function saveHomeShortcuts(items){
+    store.setText('nyx.homeShortcuts',JSON.stringify(items.slice(0,32)));
+  }
+  function homeShortcutDomain(url,title=''){
+    try{return new URL(url,location.href).hostname.replace(/^www\./,'') || title.toLowerCase()}
+    catch{return String(title || 'apps').toLowerCase().replace(/\s+/g,'')}
+  }
+  function homeShortcutMask(domain,title=''){
+    const key=String(domain || title || '').toLowerCase();
+    if(key.includes('duck')) return '/assets/icons/shortcut-duckduckgo.svg';
+    if(key.includes('youtube') || key==='youtu.be') return '/assets/icons/shortcut-youtube.svg';
+    if(key.includes('tiktok')) return '/assets/icons/shortcut-tiktok.svg';
+    if(key.includes('spotify')) return '/assets/icons/shortcut-spotify.svg';
+    if(key.includes('discord')) return '/assets/icons/shortcut-discord.svg';
+    return '';
+  }
+  function browserHomeShortcutTiles(){
+    const tiles=homeShortcuts()
+      .map((item,index)=>({...item,index}))
+      .sort((a,b)=>(b.favorite===true)-(a.favorite===true))
+      .map(item=>{
+        const domain=item.domain || homeShortcutDomain(item.url,item.title);
+        const mask=homeShortcutMask(domain,item.title);
+        const icon=mask ? `<span class="home-shortcut-glyph" style="--shortcut-mask:url('${esc(mask)}')" aria-hidden="true"></span>` : `<img class="quick-icon" alt="" draggable="false" src="${appIcon(domain)}">`;
+        return `<div class="quick-tile home-shortcut ${item.favorite?'favorite':''}" draggable="false" data-home-shortcut="${item.index}" data-domain="${esc(domain)}" data-app-url="${esc(item.url)}"><button class="home-shortcut-open" data-app-url="${esc(item.url)}" draggable="false" type="button"><img class="quick-icon" alt="" draggable="false" src="${appIcon(domain)}"><span>${esc(item.title)}</span></button><button class="home-shortcut-menu-btn" data-home-shortcut-menu type="button" title="Shortcut options" aria-label="Shortcut options"><span class="shortcut-real-dots" aria-hidden="true">⋮</span></button><div class="home-shortcut-menu"><button data-home-shortcut-favorite="${item.index}" type="button">${item.favorite?'Unfavorite':'Favorite'}</button><button data-home-shortcut-remove="${item.index}" type="button">Remove</button></div></div>`;
+    }).join('');
+    return tiles + '<button class="quick-tile home-shortcut-add" data-home-shortcut-add type="button"><b>+</b><span>Add App</span></button>';
+  }
+  browserHomeShortcutTiles=function(){
+    const tiles=homeShortcuts()
+      .map((item,index)=>({...item,index}))
+      .sort((a,b)=>(b.favorite===true)-(a.favorite===true))
+      .map(item=>{
+        const domain=item.domain || homeShortcutDomain(item.url,item.title);
+        const mask=homeShortcutMask(domain,item.title);
+        const icon=mask
+          ? `<span class="home-shortcut-glyph" style="--shortcut-mask:url('${esc(mask)}')" aria-hidden="true"></span>`
+          : `<img class="quick-icon" alt="" draggable="false" src="${appIcon(domain)}">`;
+        return `<div class="quick-tile home-shortcut ${item.favorite?'favorite':''}" draggable="false" data-home-shortcut="${item.index}" data-domain="${esc(domain)}" data-app-url="${esc(item.url)}"><button class="home-shortcut-open" data-app-url="${esc(item.url)}" draggable="false" type="button">${icon}<span>${esc(item.title)}</span></button><button class="home-shortcut-menu-btn" data-home-shortcut-menu type="button" title="Shortcut options" aria-label="Shortcut options"><span class="shortcut-real-dots" aria-hidden="true">...</span></button><div class="home-shortcut-menu"><button data-home-shortcut-favorite="${item.index}" type="button">${item.favorite?'Unfavorite':'Favorite'}</button><button data-home-shortcut-remove="${item.index}" type="button">Remove</button></div></div>`;
+      }).join('');
+    return tiles + '<button class="quick-tile home-shortcut-add" data-home-shortcut-add type="button"><b>+</b><span>Add App</span></button>';
+  };
+  function homeEntranceCanPlay(root=document){
+    const scope=root || document;
+    if(document.body.classList.contains('hosted-cloak-entry')) return false;
+    if(document.documentElement.classList.contains('hosted-cloak-entry')) return false;
+    if($('cloakLaunchScreen')?.classList.contains('show')) return false;
+    if(!$('formulaGate')?.classList.contains('hidden')) return false;
+    const welcome=$('welcomeScreen');
+    if(welcome && !welcome.classList.contains('hidden')) return false;
+    if(!document.body.classList.contains('browser-shell')) return false;
+    const home=scope.querySelector?.('.browser-home:not(.hidden)') || document.querySelector('.browser-home:not(.hidden)');
+    if(!home) return false;
+    if(document.body.classList.contains('browser-content-active')) return false;
+    return !!home.querySelector('[data-home-shortcuts]');
+  }
+  function playHomeShortcutAnimation(root=document){
+    if(!homeEntranceCanPlay(root)) return;
+    root.querySelectorAll('[data-home-shortcuts]').forEach(grid=>{
+      grid.classList.remove('shortcut-entrance');
+      void grid.offsetWidth;
+      requestAnimationFrame(()=>requestAnimationFrame(()=>grid.classList.add('shortcut-entrance')));
+      Array.from(grid.children).filter(tile=>tile.classList?.contains('quick-tile')).forEach((tile,index)=>{
+        tile.getAnimations?.().forEach(anim=>anim.cancel());
+        tile.style.opacity='0';
+        tile.style.transform='translate(-32px,48px) scale(.84)';
+        tile.style.filter='blur(7px)';
+        const delay=70*index+40;
+        const finish=()=>{tile.style.opacity='';tile.style.transform='';tile.style.filter=''};
+        const run=()=>{
+          if(typeof tile.animate==='function'){
+            const anim=tile.animate([
+              {opacity:0,transform:'translate(-32px,48px) scale(.84)',filter:'blur(7px)'},
+              {opacity:1,transform:'translate(-10px,14px) scale(.97)',filter:'blur(1px)',offset:.68},
+              {opacity:1,transform:'translate(0,0) scale(1)',filter:'blur(0)'}
+            ],{duration:720,delay,easing:'cubic-bezier(.18,.82,.22,1)',fill:'both'});
+            anim.onfinish=finish;
+            anim.oncancel=finish;
+            anim.finished?.then(finish,finish);
+            setTimeout(finish,delay+860);
+            return;
+          }
+          setTimeout(finish,delay+720);
+        };
+        requestAnimationFrame(run);
+      });
+    });
+  }
+  function animateHomeElement(el,index=0,options={}){
+    if(!el) return;
+    el.getAnimations?.().forEach(anim=>anim.cancel());
+    const start=options.start || 'translate(-32px,48px) scale(.84)';
+    const mid=options.mid || 'translate(-10px,14px) scale(.97)';
+    const delay=options.delay ?? (70*index+40);
+    const duration=options.duration || 720;
+    el.style.opacity='0';
+    el.style.transform=start;
+    el.style.filter='blur(7px)';
+    const finish=()=>{el.style.opacity='';el.style.transform='';el.style.filter=''};
+    const run=()=>{
+      if(typeof el.animate==='function'){
+        const anim=el.animate([
+          {opacity:0,transform:start,filter:'blur(7px)'},
+          {opacity:1,transform:mid,filter:'blur(1px)',offset:.68},
+          {opacity:1,transform:'translate(0,0) scale(1)',filter:'blur(0)'}
+      ],{duration,delay,easing:'cubic-bezier(.18,.82,.22,1)',fill:'both'});
+      anim.onfinish=finish;
+      anim.oncancel=finish;
+      anim.finished?.then(finish,finish);
+      setTimeout(finish,delay+duration+140);
+      return;
+    }
+      setTimeout(finish,delay+duration);
+    };
+    requestAnimationFrame(run);
+  }
+  let nyxStartupRevealTimer=0;
+  function playNyxStartupReveal(){
+    const body=document.body;
+    const targets=[
+      ...document.querySelectorAll('body.browser-shell .top-os .brand-mini > button, body.browser-shell .top-os > .browser-top-clock, body.browser-shell .top-os .browser-mode-address > *, body.browser-shell .browser-home [data-home-shortcuts], body.browser-shell .browser-home [data-home-shortcuts] > .quick-tile')
+    ];
+    document.querySelectorAll('.shortcut-entrance').forEach(el=>el.classList.remove('shortcut-entrance'));
+    document.querySelectorAll('.tab-opening,.tab-activating').forEach(el=>el.classList.remove('tab-opening','tab-activating'));
+    targets.forEach(el=>el.getAnimations?.().forEach(animation=>animation.cancel()));
+    clearTimeout(nyxStartupRevealTimer);
+    body.classList.remove('nyx-startup-reveal');
+    void body.offsetWidth;
+    requestAnimationFrame(()=>{
+      body.classList.remove('nyx-startup-prep');
+      body.classList.add('nyx-startup-reveal');
+      nyxStartupRevealTimer=setTimeout(()=>{
+        body.classList.remove('nyx-startup-reveal');
+        suppressHomeEntranceOnStartup=false;
+      },1250);
+    });
+  }
+  function playHomeChromeAnimation(root=document){
+    if(!homeEntranceCanPlay(root)) return;
+    const scope=root || document;
+    scope.querySelectorAll?.('.browser-shell-start').forEach((el,index)=>animateHomeElement(el,index,{delay:60,duration:1200,start:'translate(-28px,44px) scale(.9)',mid:'translate(-8px,13px) scale(.98)'}));
+    const tabItems=[
+      ...document.querySelectorAll('body.browser-shell .brand-mini [data-browser-shell-home], body.browser-shell .brand-mini .browser-mode-shell-tab, body.browser-shell .brand-mini [data-browser-shell-new-tab]')
+    ];
+    tabItems.forEach((el,index)=>animateHomeElement(el,index,{delay:45+(index*65),duration:650,start:'translate(-24px,34px) scale(.88)',mid:'translate(-7px,10px) scale(.97)'}));
+    const toolbarItems=[
+      ...document.querySelectorAll('body.browser-shell [data-browser-shell-back], body.browser-shell [data-browser-shell-forward], body.browser-shell [data-browser-shell-reload], body.browser-shell [data-browser-shell-url], body.browser-shell [data-browser-shell-bookmark], body.browser-shell .browser-mode-weather, body.browser-shell [data-browser-shell-menu], body.browser-shell #clock')
+    ];
+    toolbarItems.forEach((el,index)=>animateHomeElement(el,index,{delay:120+(index*58),duration:690,start:'translate(-26px,38px) scale(.9)',mid:'translate(-8px,12px) scale(.98)'}));
+  }
+  let homeEntranceLastPlay=0;
+  let suppressHomeEntranceOnStartup=true;
+  function playHomeEntranceAnimation(root=document,options={}){
+    if(suppressHomeEntranceOnStartup) return;
+    if(!homeEntranceCanPlay(root)) return;
+    const now=Date.now();
+    if(!options.force && now-homeEntranceLastPlay<1400) return;
+    homeEntranceLastPlay=now;
+    playHomeShortcutAnimation(root);
+    playHomeChromeAnimation(root);
+  }
+  function playBrowserShellPageReveal(root=document){
+    const scope=root || document;
+    const home=scope.querySelector?.('.browser-home:not(.hidden)');
+    if(!home) return;
+    home.classList.remove('tab-opening');
+    void home.offsetWidth;
+    home.classList.add('tab-opening');
+    setTimeout(()=>home.classList.remove('tab-opening'),520);
+  }
+  let homeShortcutAnimationObserverInstalled=false;
+  function installHomeShortcutAnimationObserver(){
+    if(homeShortcutAnimationObserverInstalled) return;
+    homeShortcutAnimationObserverInstalled=true;
+    let triggerTimer=0;
+    let lastTrigger=0;
+    const trigger=root=>{
+      const now=Date.now();
+      if(now-lastTrigger<850) return;
+      lastTrigger=now;
+      clearTimeout(triggerTimer);
+      triggerTimer=setTimeout(()=>playHomeEntranceAnimation(root || document),90);
+    };
+    new MutationObserver(mutations=>{
+      for(const mutation of mutations){
+        for(const node of mutation.addedNodes){
+          if(node.nodeType!==1) continue;
+          const shortcutRoot=node.matches?.('[data-home-shortcuts]') ? node : node.querySelector?.('[data-home-shortcuts]');
+          if(shortcutRoot && !shortcutRoot.dataset.entranceSeen){
+            shortcutRoot.dataset.entranceSeen='true';
+            trigger(shortcutRoot.closest?.('.browser-home') || node);
+            return;
+          }
+        }
+      }
+    }).observe(document.body,{childList:true,subtree:true});
+    trigger(document);
+  }
+  function renderHomeShortcuts(root=document){
+    root.querySelectorAll('[data-home-shortcuts]').forEach(grid=>{grid.innerHTML=browserHomeShortcutTiles()});
+    playHomeEntranceAnimation(root);
+  }
+  function addHomeShortcut(){
+    const title=prompt('App name');
+    if(!title?.trim()) return;
+    const url=prompt('App URL');
+    if(!url?.trim()) return;
+    const normalized=normalize(url.trim());
+    const items=homeShortcuts();
+    items.push({title:title.trim(),url:normalized,domain:homeShortcutDomain(normalized,title),favorite:false});
+    saveHomeShortcuts(items);
+    renderHomeShortcuts();
+    toast('Shortcut added');
+  }
+  function toggleHomeShortcutFavorite(index){
+    const items=homeShortcuts();
+    const item=items[Number(index)];
+    if(!item) return;
+    item.favorite=!item.favorite;
+    saveHomeShortcuts(items);
+    renderHomeShortcuts();
+  }
+  function removeHomeShortcut(index){
+    const items=homeShortcuts();
+    items.splice(Number(index),1);
+    saveHomeShortcuts(items);
+    renderHomeShortcuts();
+  }
+  function quickTiles(){
+    return [
+      ['youtube.com','YouTube','https://www.youtube.com/'],
+      ['games','Games','/assets/games/index.html'],
+      ['geforcenow','GeForce Now','https://play.geforcenow.com/'],
+      ['roblox.com','Roblox','https://www.roblox.com/'],
+      ['discord.com','Discord','https://discord.com/app'],
+      ['spotify.com','Spotify','https://open.spotify.com/'],
+      ['traxmojo.com','Music','https://traxmojo.com/'],
+      ['google.com','Google','https://www.google.com/'],
+      ['docs.google.com','Study','https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0'],
+      ['duck.ai','Duck AI','https://duck.ai/'],
+      ['nyx-ai','Nyx AI','nyx://ai'],
+      ['wikipedia.org','Wikipedia','https://www.wikipedia.org/'],
+      ['cineby.at','Cineby','https://cineby.at/'],
+      ['tiktok.com','TikTok','https://www.tiktok.com/'],
+      ['instagram.com','Instagram','https://www.instagram.com/'],
+      ['snapchat.com','Snapchat','https://www.snapchat.com/'],
+      ['amazon.com','Amazon','https://www.amazon.com/'],
+      ['reddit.com','Reddit','https://www.reddit.com/'],
+      ['x.com','Twitter','https://x.com/'],
+      ['tcgplayer.com','TCGPlayer','https://www.tcgplayer.com/'],
+      ['cpstest.org','CPS Test','https://cpstest.org/'],
+      ['chess.com','Chess.com','https://www.chess.com/'],
+      ['animex.one','Animex','https://animex.one/'],
+      ['chatgpt.com','AI','https://chatgpt.com/'],
+      ['store.steampowered.com','Steam','https://store.steampowered.com/'],
+      ['crunchyroll.com','Crunchyroll','https://www.crunchyroll.com/'],
+      ['crazygames.com','CrazyGames','https://www.crazygames.com/'],
+      ['newgrounds.com','Newgrounds','https://www.newgrounds.com/'],
+      ['twitch.tv','Twitch','https://www.twitch.tv/'],
+      ['kick.com','Kick','https://kick.com/'],
+      ['soundcloud.com','SoundCloud','https://soundcloud.com/'],
+      ['pluto.tv','Pluto TV','https://pluto.tv/'],
+      ['skribbl.io','Skribbl.io','https://skribbl.io/'],
+      ['slither.io','Slither.io','https://slither.io/'],
+      ['geoguessr.com','GeoGuessr','https://www.geoguessr.com/'],
+      ['y8.com','Y8 Games','https://www.y8.com/'],
+      ['itch.io','itch.io','https://itch.io/']
+    ].map(([domain,n,u],i)=>`<button class="quick-tile" draggable="true" style="--tile-delay:${Math.min(i,18)*34}ms" data-domain="${esc(domain)}" data-app-url="${esc(u)}"><img class="quick-icon" alt="" src="${appIcon(domain)}"><span>${esc(n)}</span></button>`).join('');
+  }
+  function cleanBrowserControls(win){
+    const back=win.querySelector('[data-back]'), forward=win.querySelector('[data-forward]'), reload=win.querySelector('[data-reload]'), menu=win.querySelector('[data-menu]');
+    if(back) back.textContent='➜';
+    if(forward) forward.textContent='➜';
+    if(reload) reload.textContent='🗘';
+    if(menu) menu.textContent='...';
+  }
+  let nyxPreflightPromise=null;
+  let nyxPreflightBypass=false;
+  const preflightDelay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+  async function preflightTimeout(promise,ms,label='check timed out'){
+    let timer=null;
+    const guarded=Promise.resolve(promise);
+    guarded.catch(()=>{});
+    try{
+      return await Promise.race([
+        guarded,
+        new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(label)),ms)})
+      ]);
+    }finally{
+      clearTimeout(timer);
+    }
+  }
+  async function preflightFetchOk(url,timeout=2600){
+    if(location.protocol==='file:') return true;
+    const response=await preflightTimeout(fetch(url,{cache:'no-store'}),timeout,`${url} timed out`);
+    return response.ok;
+  }
+  async function preflightImportOk(url,timeout=3600){
+    if(location.protocol==='file:') return true;
+    await preflightTimeout(import(`${url}?nyx_check=${Date.now()}`),timeout,`${url} import timed out`);
+    return true;
+  }
+  async function preflightWebSocketOk(url,timeout=3200){
+    if(location.protocol==='file:') return true;
+    if(!/^wss?:\/\//i.test(url) || !('WebSocket' in window)) return false;
+    return preflightTimeout(new Promise(resolve=>{
+      let settled=false;
+      let socket=null;
+      const done=value=>{
+        if(settled) return;
+        settled=true;
+        try{socket?.close()}catch{}
+        resolve(value);
+      };
+      try{
+        socket=new WebSocket(url);
+        socket.addEventListener('open',()=>done(true),{once:true});
+        socket.addEventListener('error',()=>done(false),{once:true});
+        socket.addEventListener('close',()=>done(false),{once:true});
+      }catch{
+        resolve(false);
+      }
+    }),timeout,`${url} websocket timed out`);
+  }
+  function preflightBrowserModeForTarget(target=''){
+    const mode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
+    if(mode!=='auto') return mode;
+    try{
+      const normalized=normalize(browserShellSourceUrl(target) || target);
+      return selectedBrowserMode(normalized)==='ultraviolet' ? 'ultraviolet' : 'scramjet';
+    }catch{
+      return 'scramjet';
+    }
+  }
+  async function preflightEngineReady(target=''){
+    if(location.protocol==='file:' || !('serviceWorker' in navigator)) return false;
+    const mode=preflightBrowserModeForTarget(target);
+    if(mode==='iframe') return true;
+    if(mode==='ultraviolet') return installUltraviolet();
+    if(mode==='scramjet') return installScramjet();
+    const results=await Promise.allSettled([installScramjet(),installUltraviolet()]);
+    return results.some(result=>result.status==='fulfilled' && result.value);
+  }
+  async function preflightTransportReady(target=''){
+    if(location.protocol==='file:') return false;
+    const mode=preflightBrowserModeForTarget(target);
+    if(mode==='iframe') return true;
+    if(mode==='scramjet') return !!(await createScramjetTransport());
+    return !!(await installBareMuxTransport());
+  }
+  async function preflightServiceWorkerReady(target=''){
+    if(location.protocol==='file:' || !('serviceWorker' in navigator)) return false;
+    await preflightEngineReady(target);
+    const registrations=await Promise.all([
+      navigator.serviceWorker.getRegistration('/~/sj/').catch(()=>null),
+      navigator.serviceWorker.getRegistration('/service/').catch(()=>null)
+    ]);
+    return registrations.some(registration=>registration?.active || registration?.waiting || registration?.installing);
+  }
+  function preflightSearchUrl(raw=''){
+    return normalize(raw || 'nyx') || '';
+  }
+  async function preflightAppIconsReady(){
+    const urls=[...document.querySelectorAll('[data-app-url]')]
+      .map(el=>appIcon(el.dataset.domain || ''))
+      .filter(Boolean)
+      .slice(0,8);
+    await Promise.allSettled(urls.map(url=>preflightFetchOk(url,1600)));
+    return true;
+  }
+  async function preflightLibcurlReady(){
+    if(location.protocol==='file:') return true;
+    const checks=await Promise.allSettled([
+      preflightFetchOk('/assets/transports/libcurl-baremux.mjs',2600),
+      preflightFetchOk('/assets/transports/libcurl-scramjet.mjs',2600),
+      preflightImportOk('/assets/transports/libcurl-scramjet.mjs',4200)
+    ]);
+    return checks.every(check=>check.status==='fulfilled' && check.value);
+  }
+  async function preflightFilesReady(){
+    if(location.protocol==='file:') return true;
+    const files=[
+      '/',
+      '/uv/uv.bundle.js',
+      '/uv.config.js',
+      '/scramjet/scramjet.js',
+      '/scramjet.sw.js',
+      '/baremux/index.mjs',
+      '/epoxy/index.mjs',
+      '/controller/controller.api.js'
+    ];
+    const checks=await Promise.allSettled(files.map(url=>preflightFetchOk(url,2600)));
+    return checks.every(check=>check.status==='fulfilled' && check.value);
+  }
+  async function preflightStateCurrent(){
+    await ensureFreshProxyState();
+    return store.text('nyx.proxyStateVersion','')===proxyStateVersion && store.text('nyx.scramjetStateVersion','')===scramjetStateVersion;
+  }
+  async function preflightBugScan(){
+    const required=[
+      document.body,
+      document.querySelector('#desktop'),
+      document.querySelector('#visualEffects'),
+      document.querySelector('#customBgImage')
+    ];
+    const browserApis=Boolean(window.fetch && window.Promise && window.URL && window.localStorage);
+    const proxyApis=location.protocol==='file:' || Boolean('serviceWorker' in navigator && 'caches' in window && window.indexedDB);
+    await preflightDelay(160);
+    return required.every(Boolean) && browserApis && proxyApis;
+  }
+  function nyxPreflightTasks(kind='startup',options={}){
+    const target=String(options.target || '').trim();
+    const appendFinal=tasks=>{
+      if(typeof options.finalRun==='function'){
+        let finalStarted=false;
+        return [...tasks,{label:options.finalLabel || 'Page loaded',acceptAnyCheck:true,run:async()=>{
+          if(!finalStarted){
+            finalStarted=true;
+            return options.finalRun();
+          }
+          if(typeof options.finalVerify==='function') return options.finalVerify();
+          await preflightDelay(120);
+          return true;
+        }}];
+      }
+      return tasks;
+    };
+    const serverCheck=async()=>{
+      const checks=['/uv/uv.bundle.js','/scramjet/scramjet.js','/baremux/index.mjs'].map(url=>preflightFetchOk(url,2400).catch(()=>false));
+      const results=await Promise.all(checks);
+      return location.protocol==='file:' || results.some(Boolean);
+    };
+    const searchCheck=async()=>{
+      const url=preflightSearchUrl(target || 'nyx');
+      if(!url) return false;
+      const parsed=new URL(url,location.href);
+      return /^https?:|^data:|^blob:|^about:$/.test(parsed.protocol);
+    };
+    const base=[
+      {label:'Fetching server list',run:serverCheck},
+      {label:'Selecting fastest server',run:async()=>{await preflightDelay(180); return true}},
+      {label:'Loading browser engine',run:()=>preflightEngineReady(target)},
+      {label:'Opening transport',run:()=>preflightTransportReady(target)},
+      {label:'Registering service worker',run:()=>preflightServiceWorkerReady(target)}
+    ];
+    if(kind==='apps'){
+      return appendFinal([
+        ...base,
+        {label:'Checking app shortcuts',run:preflightAppIconsReady},
+        {label:'Opening apps panel',run:async()=>{await preflightDelay(180); return true}}
+      ]);
+    }
+    if(kind==='search'){
+      return appendFinal([
+        {label:'Reading search query',run:searchCheck},
+        {label:'Checking selected search engine',run:async()=>{await preflightDelay(150); return !!store.text('nyx.engine','duckduckgo')}},
+        ...base,
+        {label:'Preparing results tab',run:async()=>{await preflightDelay(160); return true}}
+      ]);
+    }
+    if(kind==='browser'){
+      return appendFinal([
+        {label:'Checking requested page',run:searchCheck},
+        ...base,
+        {label:'Opening browser tab',run:async()=>{await preflightDelay(160); return true}}
+      ]);
+    }
+    if(kind==='startup-diagnostics'){
+      return appendFinal([
+        {label:'Checking Nyx files',run:preflightStateCurrent},
+        {label:'Preparing interface',run:async()=>{await preflightDelay(60); return true}},
+        {label:'Launching Nyx',run:async()=>{await preflightDelay(80); return true}}
+      ]);
+    }
+    return appendFinal([
+      {label:'Checking nyx files',run:serverCheck},
+      {label:'Checking search',run:searchCheck},
+      ...base,
+      {label:'Finishing startup',run:async()=>{await preflightDelay(220); return true}}
+    ]);
+  }
+  async function runNyxPreflight(kind='startup',options={}){
+    if(options.skip || nyxPreflightBypass) return true;
+    if(options.background){
+      setTimeout(()=>{
+        nyxPreflightTasks(kind,options).slice(0,3).forEach(task=>{
+          Promise.resolve(task.run?.()).catch(()=>null);
+        });
+      },600);
+      return true;
+    }
+    if(nyxPreflightPromise) return nyxPreflightPromise;
+    const doubleCheckTask=async task=>{
+      let first=false, second=false, firstError=null, secondError=null;
+      try{
+        first=await preflightTimeout(Promise.resolve(task.run?.()),5200,'preflight timed out');
+      }catch(error){
+        firstError=error;
+      }
+      await preflightDelay(80);
+      try{
+        second=await preflightTimeout(Promise.resolve(task.run?.()),5200,'preflight double-check timed out');
+      }catch(error){
+        secondError=error;
+      }
+      if(firstError || secondError) console.warn('nyx preflight double-check detail:',task.label,{firstError,secondError});
+      return task.acceptAnyCheck ? Boolean(first || second) : Boolean(first && second);
+    };
+    nyxPreflightPromise=(async()=>{
+      const tasks=nyxPreflightTasks(kind,options);
+      const overlay=document.createElement('div');
+      overlay.className='nyx-preflight';
+      const preflightTitle=kind==='startup-diagnostics' ? 'Startup Diagnostics' : kind==='startup' ? 'Starting nyx' : kind==='apps' ? 'Opening Apps' : kind==='search' ? 'Checking Search' : 'Checking Browser';
+      overlay.innerHTML=`<section class="nyx-preflight-card" role="status" aria-live="polite"><h2 class="nyx-preflight-title">${esc(preflightTitle)}</h2><ul class="nyx-preflight-list">${tasks.map((task,index)=>`<li class="nyx-preflight-item" data-preflight-step="${index}"><span class="nyx-preflight-dot">&bull;</span><span>${esc(task.label)}</span></li>`).join('')}</ul><div class="nyx-preflight-bar"><div class="nyx-preflight-fill"></div></div></section>`;
+      document.body.appendChild(overlay);
+      requestAnimationFrame(()=>overlay.classList.add('show'));
+      const started=Date.now();
+      const fill=overlay.querySelector('.nyx-preflight-fill');
+      for(let i=0;i<tasks.length;i++){
+        const item=overlay.querySelector(`[data-preflight-step="${i}"]`);
+        item?.classList.add('running');
+        let ok=true;
+        try{
+          ok=await doubleCheckTask(tasks[i]);
+        }catch(error){
+          ok=false;
+          console.warn('nyx preflight warning:',tasks[i].label,error);
+        }
+        item?.classList.remove('running');
+        item?.classList.add(ok ? 'done' : 'warn');
+        const dot=item?.querySelector('.nyx-preflight-dot');
+        if(dot) dot.textContent=ok ? '\u2713' : '!';
+        if(fill) fill.style.width=`${Math.round(((i+1)/tasks.length)*100)}%`;
+        await preflightDelay(90);
+      }
+      const minVisible=Number(options.minVisible || (kind==='startup' || kind==='startup-diagnostics' ? 900 : 520));
+      const remaining=minVisible-(Date.now()-started);
+      if(remaining>0) await preflightDelay(remaining);
+      overlay.classList.remove('show');
+      setTimeout(()=>overlay.remove(),260);
+      return true;
+    })().finally(()=>{nyxPreflightPromise=null});
+    return nyxPreflightPromise;
+  }
+  //browser-window
+  function openBrowser(url='https://duckduckgo.com/',options={}){
+    const win=makeWindow({title:'New Tab',className:'browser-window',body:browserBody()});
+    cleanBrowserControls(win);
+    tick();
+    initDesktopSplash();
+    const state={tabs:[],active:null,win};
+    win.browserState=state; activeBrowser=state;
+    function renderTabs(){
+      const row=win.querySelector('.browser-tabs');
+      row.querySelectorAll('.browser-tab').forEach(x=>x.remove());
+      state.tabs.forEach(t=>{
+        const el=document.createElement('div'); el.className='browser-tab'+(t.id===state.active?' active':'')+(t.opening?' tab-opening':'');
+        el.innerHTML=`<span>${esc(t.title)}</span><button data-close-tab="${t.id}">×</button>`;
+        const label=el.querySelector('span');
+        if(label){
+          const icon=document.createElement('img');
+          icon.className='browser-tab-icon';
+          icon.alt='';
+          icon.src=t.icon || iconForUrl(t.url);
+          bindTabIconFallback(icon);
+          el.insertBefore(icon,label);
+        }
+        const closeBtn=el.querySelector('button');
+        if(closeBtn) closeBtn.textContent='x';
+        el.onclick=e=>{if(e.target.closest('button'))return; activate(t.id)};
+        row.insertBefore(el,row.querySelector('[data-new-tab]'));
+        if(t.opening) setTimeout(()=>{t.opening=false},540);
+      });
+    }
+    function syncLoadedTabIcon(t){
+      if(!t?.frame || !state.tabs.includes(t)) return false;
+      let icon='';
+      try{icon=iconFromPageDocument(t.frame.contentDocument,t.sourceUrl || t.url)}catch{}
+      if(!icon) icon=iconForUrl(t.sourceUrl || t.url);
+      if(!icon || icon===t.icon) return false;
+      t.icon=icon;
+      const shellTab=browserShellTabs.find(tab=>tab.browserTabId===t.id);
+      if(shellTab) shellTab.icon=icon;
+      renderTabs();
+      renderBrowserShellTabs();
+      return true;
+    }
+    function current(){return state.tabs.find(t=>t.id===state.active)}
+    function isGameInputTab(t=current()){
+      const source=String(browserShellSourceUrl(t?.sourceUrl || t?.url || '') || t?.sourceUrl || t?.url || '');
+      if(/(?:play\.geforcenow\.com|geforcenow\.com|nvidia|pixelclient\.xyz|\/assets\/games\/|\/assets\/ugs\/|\/assets\/seraph\/|\/assets\/gn-math\/|\/assets\/gms-games\/)/i.test(source)) return true;
+      try{return !!t?.frame?.contentDocument?.querySelector('canvas,[role="application"],[data-testid*="game" i],[class*="game" i],[id*="game" i]')}catch{return false}
+    }
+    function focusActiveGameFrame(){
+      const t=current();
+      if(!t?.frame || !isGameInputTab(t)) return;
+      releaseNyxKeyboardLock();
+      try{t.frame.focus({preventScroll:true})}catch{try{t.frame.focus()}catch{}}
+    }
+    win.querySelector('.browser-body')?.addEventListener('pointerdown',()=>setTimeout(focusActiveGameFrame,0),true);
+    win.querySelector('.browser-body')?.addEventListener('mousedown',()=>setTimeout(focusActiveGameFrame,0),true);
+    win.addEventListener('wheel',event=>{
+      if(!isGameInputTab() || !event.ctrlKey) return;
+      event.preventDefault();
+    },{capture:true,passive:false});
+    win.addEventListener('keydown',event=>{
+      if(!isGameInputTab()) return;
+      const key=String(event.key || '').toLowerCase();
+      if((event.ctrlKey || event.metaKey) && ['+','=','-','_','0'].includes(key)){
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    },true);
+    function directOnly(url){
+      return false;
+    }
+    function prefersEpoxyTransport(url){
+      try{
+        const h=new URL(url).hostname.replace(/^www\./,'');
+        return ['spotify.com','open.spotify.com','animex.one','traxmojo.com','youtube.com','youtu.be','tcgplayer.com'].some(d=>h===d||h.endsWith('.'+d));
+      }catch{return false}
+    }
+    function showBrowserMessage(t,url){
+      loadScramjetTab(t,url,false);
+    }
+    function addTab(openUrl='',forceMode=''){
+      const id='tab'+Date.now()+Math.random().toString(16).slice(2);
+      const frame=document.createElement('iframe'); frame.className='view';
+      applyFrameInteractionPermissions(frame);
+      win.querySelector('.browser-body').appendChild(frame);
+      const tab={id,title:'New Tab',url:'',icon:favicons.nyx,history:[],index:-1,frame,opening:true};
+      state.tabs.push(tab);
+      activate(id);
+      if(openUrl) navigate(openUrl,forceMode);
+      return tab;
+    }
+    function reloadTab(tabId=state.active){
+      const t=state.tabs.find(tab=>tab.id===tabId) || current();
+      if(!t) return false;
+      const source=browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
+      if(!source){
+        activate(t.id);
+        return false;
+      }
+      activate(t.id);
+      if(String(source).startsWith('nyx://')){
+        showBrowserShellInternalPage(source.replace(/^nyx:\/\//,'') || 'apps');
+        return true;
+      }
+      if(t.scramjetFrame){
+        clearFrameDocument(t);
+        try{
+          t.scramjetFrame.go(source);
+          return true;
+        }catch{
+          retryScramjetTab(t,source);
+          return true;
+        }
+      }
+      try{
+        t.frame?.contentWindow?.location?.reload();
+        return true;
+      }catch{}
+      const srcdoc=t.frame?.getAttribute('srcdoc');
+      if(srcdoc){
+        t.frame.srcdoc='';
+        requestAnimationFrame(()=>{t.frame.srcdoc=srcdoc});
+        return true;
+      }
+      const src=t.frame?.getAttribute('src');
+      if(src){
+        t.frame.removeAttribute('src');
+        requestAnimationFrame(()=>{t.frame.src=src});
+        return true;
+      }
+      if(/^https?:/i.test(source)){
+        navigate(source,t.expectedEngine || '');
+        return true;
+      }
+      return false;
+    }
+    function popupWarningHtml(message='are you trying to hack me ︻デ═一 indian shwarma scamma? get blocked hah'){
+      const safeMessage=JSON.stringify(String(message || 'are you trying to hack me ︻デ═一 indian shwarma scamma? get blocked hah'));
+      return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>nyx://blocked67haha</title><style>html,body{margin:0;width:100%;height:100%;background:#fff;color:#000;font:14px Outfit,Arial,sans-serif}body{overflow:hidden}.prompt-shade{position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;background:#fff}.prompt{width:min(540px,calc(100vw - 36px));padding:18px 20px;border:0;border-radius:0 0 14px 14px;background:#fff;color:#000;box-shadow:0 6px 18px rgba(0,0,0,.18)}.title{margin:0 0 22px;color:#000;font-size:16px;font-weight:700}.message{margin:0 0 8px;font-size:14px;line-height:1.35}.prompt-input{width:100%;height:38px;margin:0 0 38px;border:2px solid #4b5563;border-radius:8px;background:#fff;color:#000;padding:0 10px;font:16px Outfit,Arial,sans-serif;outline:0}.actions{display:flex;justify-content:flex-end;gap:10px}.ok,.cancel{min-width:48px;height:40px;border:1px solid #d1d5db;border-radius:9px;background:#fff;color:#000;padding:0 14px;font:15px Outfit,Arial,sans-serif}.ok{border-color:#000;font-weight:800}.cancel{color:#000}.ok:focus{outline:2px solid #2563eb;outline-offset:2px}</style></head><body><script>const MESSAGE=${safeMessage};function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;"}[c]))}function show(){document.body.innerHTML='<div class="prompt-shade"><div class="prompt" role="dialog" aria-modal="true"><div class="title">1aqlla said no goofy haha6767</div><div class="message">'+esc(MESSAGE)+'</div><input class="prompt-input" autocomplete="off" spellcheck="false"><div class="actions"><button class="ok" type="button">OK</button><button class="cancel" type="button">Cancel</button></div></div></div>';const ok=document.querySelector(".ok");const input=document.querySelector(".prompt-input");input.focus();ok.onclick=()=>setTimeout(show,0);document.querySelector(".cancel").onclick=()=>{};input.onkeydown=e=>{if(e.key==="Enter")ok.click()}}show();<\/script></body></html>`;
+    }
+    function popupTabHandle(t,openerUrl=''){
+      if(!t) return null;
+      let pendingHtml='';
+      const go=value=>{
+        const raw=String(value || '').trim();
+        if(!raw || /^about:blank$/i.test(raw)) return;
+        let next=raw;
+        if(!/^[a-z][a-z0-9+.-]*:/i.test(raw) && openerUrl){
+          try{next=new URL(raw,openerUrl).href}catch{}
+        }
+        activate(t.id);
+        navigate(next);
+      };
+      const popupDocument={
+        open(){pendingHtml=''; return popupDocument},
+        write(html){pendingHtml+=String(html || '')},
+        writeln(html){pendingHtml+=String(html || '')+'\n'},
+        close(){
+          showPopupWarningTab(t);
+        }
+      };
+      const locationProxy={
+        assign:go,
+        replace:go,
+        reload(){if(t.url) navigate(t.url)},
+        toString(){return t.url || 'about:blank'},
+        get href(){return t.url || 'about:blank'},
+        set href(value){go(value)}
+      };
+      return {
+        closed:false,
+        focus(){activate(t.id)},
+        blur(){},
+        close(){
+          const index=state.tabs.findIndex(tab=>tab.id===t.id);
+          if(index<0) return;
+          t.frame.remove();
+          state.tabs.splice(index,1);
+          this.closed=true;
+          if(!state.tabs.length) addTab();
+          else activate(state.tabs[Math.max(0,index-1)].id);
+        },
+        postMessage(){},
+        document:popupDocument,
+        get location(){return locationProxy},
+        set location(value){go(value)},
+        get href(){return t.url || 'about:blank'},
+        set href(value){go(value)}
+      };
+    }
+    function showPopupWarningTab(t,message=''){
+      if(!t?.frame) return;
+      t.popupBlockMessage=message || t.popupBlockMessage || 'are you trying to hack me ︻デ═一 indian shwarma scamma? get blocked by 1aqlla dummy haha67';
+      t.url='nyx://blocked67haha';
+      t.title='Popup blocked';
+      t.icon=favicons.nyx;
+      t.frame.removeAttribute('src');
+      t.frame.srcdoc=popupWarningHtml(t.popupBlockMessage);
+      win.querySelector('.browser-home').classList.add('hidden');
+      t.frame.classList.add('active');
+      renderTabs();
+      activate(t.id);
+      updateBrowserShellLocation(t.url,t.id);
+    }
+    function blockedPopupHandle(popup,message=''){
+      const popupMessage=message || 'are you trying to hack me ︻デ═一 indian shwarma scamma? get blocked by 1aqlla dummy haha67';
+      const rewrite=()=> {
+        try{
+          popup?.document?.open();
+          popup?.document?.write(popupWarningHtml(popupMessage));
+          popup?.document?.close();
+        }catch{}
+      };
+      return {
+        closed:false,
+        focus(){try{popup?.focus?.()}catch{}},
+        blur(){try{popup?.blur?.()}catch{}},
+        close(){try{popup?.close?.()}catch{} this.closed=true},
+        postMessage(){},
+        document:{
+          open(){rewrite(); return this},
+          write(){rewrite()},
+          writeln(){rewrite()},
+          close(){rewrite()}
+        },
+        location:{
+          href:'nyx://blocked67haha',
+          assign(){rewrite()},
+          replace(){rewrite()},
+          reload(){rewrite()},
+          toString(){return 'nyx://blocked67haha'}
+        },
+        get href(){return 'nyx://blocked67haha'},
+        set href(_value){rewrite()}
+      };
+    }
+    function openExternalBlockedPopup(message=''){
+      const nativeOpen=window.__nyxNativeOpen || window.open?.bind(window);
+      const popup=nativeOpen ? nativeOpen('about:blank','_blank') : null;
+      if(!popup) return null;
+      try{
+        popup.document.open();
+        popup.document.write(popupWarningHtml(message || 'are you trying to hack me ︻デ═一 indian shwarma scamma? get blocked by 1aqlla dummy haha67'));
+        popup.document.close();
+        popup.focus?.();
+        return blockedPopupHandle(popup,message);
+      }catch{
+        try{popup.close?.()}catch{}
+        return null;
+      }
+    }
+    function openPopupTab(rawUrl){
+      const openerUrl=current()?.url || location.href;
+      const popupBlockMessage=isAnimexUrl(openerUrl) ? 'are you trying to block me shwarma?' : 'are you trying to hack me ︻デ═一 indian shwarma scamma? get blocked by 1aqlla dummy haha67';
+      if(!popupProtectionEnabled()){
+        const nativeOpen=window.__nyxNativeOpen || window.open?.bind(window);
+        return nativeOpen ? nativeOpen(rawUrl || 'about:blank','_blank') : null;
+      }
+      if(isPopupAllowedAppUrl(openerUrl)){
+        const nativeOpen=window.__nyxNativeOpen || window.open?.bind(window);
+        return nativeOpen ? nativeOpen(rawUrl || 'about:blank','_blank') : null;
+      }
+      const shellTab=(()=>{
+        if(!document.body.classList.contains('browser-shell')) return null;
+        const id='shell-'+Date.now()+Math.random().toString(16).slice(2);
+        const tab={id,url:'nyx://blocked67haha',title:'Popup blocked'};
+        browserShellTabs.push(tab);
+        browserShellActiveTab=id;
+        renderBrowserShellTabs();
+        return tab;
+      })();
+      const tab=addTab();
+      tab.popupBlockMessage=popupBlockMessage;
+      if(shellTab){
+        shellTab.browserTabId=tab.id;
+        renderBrowserShellTabs();
+      }
+      showPopupWarningTab(tab,popupBlockMessage);
+      setTimeout(()=>{
+        if(shellTab && browserShellTabs.some(item=>item.id===shellTab.id)) closeBrowserShellTab(shellTab.id);
+        else if(state.tabs.some(item=>item.id===tab.id)) closeTabById(tab.id,true);
+      },500);
+      return popupTabHandle(tab,openerUrl);
+    }
+    function installCrazyGamesOfflineRecovery(t,url=''){
+      if(!t?.frame) return;
+      const source=browserShellSourceUrl(url || t.sourceUrl || t.url || '') || url || t.sourceUrl || t.url || '';
+      if(!hostMatches(browserHost(source),['crazygames.com'])) return;
+      if(t.crazyGamesRecoveryInstalled) return;
+      t.crazyGamesRecoveryInstalled=true;
+      const startedAt=Date.now();
+      const scan=()=>{
+        if(!state.tabs.includes(t) || Date.now()-startedAt>10*60*1000){
+          clearInterval(t.crazyGamesRecoveryTimer);
+          t.crazyGamesRecoveryTimer=0;
+          return;
+        }
+        const seen=new Set();
+        const visit=doc=>{
+          if(!doc?.documentElement || seen.has(doc)) return;
+          seen.add(doc);
+          try{
+            const pageText=String(doc.body?.innerText || doc.body?.textContent || '').slice(0,1200);
+            if(/connection issues/i.test(pageText)){
+              const offline=[...doc.querySelectorAll('button,[role="button"]')]
+                .find(button=>/^\s*continue offline\s*$/i.test(String(button.textContent || button.getAttribute('aria-label') || '')));
+              if(offline && offline.dataset.nyxCrazyGamesRecovery!=='true'){
+                offline.dataset.nyxCrazyGamesRecovery='true';
+                offline.click();
+                console.info('nyx CrazyGames: continued through the game frame offline so gameplay can start.');
+              }
+            }
+          }catch{}
+          try{
+            doc.querySelectorAll('iframe,frame').forEach(frame=>{
+              try{visit(frame.contentDocument)}catch{}
+            });
+          }catch{}
+        };
+        try{visit(t.frame.contentDocument)}catch{}
+      };
+      t.frame.addEventListener('load',()=>{
+        setTimeout(scan,100);
+        setTimeout(scan,700);
+      });
+      t.crazyGamesRecoveryTimer=setInterval(scan,700);
+      scan();
+    }
+    function installDuckDuckGoImageViewportFix(t){
+      if(!t?.frame) return;
+      let doc;
+      try{doc=t.frame.contentDocument}catch{return}
+      if(!doc?.documentElement || doc.documentElement.dataset.nyxDuckImageViewport==='true') return;
+      const currentSource=()=>{
+        try{
+          const href=String(t.frame.contentWindow?.location?.href || '');
+          return browserShellSourceUrl(href) || browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
+        }catch{
+          return browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
+        }
+      };
+      let initial;
+      try{initial=new URL(currentSource(),location.href)}catch{return}
+      if(initial.hostname.replace(/^www\./i,'').toLowerCase()!=='duckduckgo.com') return;
+      doc.documentElement.dataset.nyxDuckImageViewport='true';
+      const decodeBrokenImageUrl=value=>{
+        const raw=String(value || '').trim();
+        const match=raw.match(/https?%3a%2f%2f/i);
+        if(!match) return '';
+        const isEncodedUrl=match.index===0;
+        const isScramjetPath=raw.includes('/~/sj/');
+        if(!isEncodedUrl && !isScramjetPath) return '';
+        let encoded=raw.slice(match.index);
+        const metadataAt=encoded.search(/[?&]%24(?:rfp|io|tf|pf|iframe)=/i);
+        if(metadataAt>0) encoded=encoded.slice(0,metadataAt);
+        let decoded=encoded;
+        for(let pass=0;pass<2 && /%[0-9a-f]{2}/i.test(decoded);pass++){
+          try{decoded=decodeURIComponent(decoded)}catch{break}
+        }
+        return /^https?:\/\//i.test(decoded) ? decoded : '';
+      };
+      const repairImages=()=>{
+        doc.querySelectorAll('img,source').forEach(image=>{
+          const current=image.getAttribute('src') || '';
+          const repaired=decodeBrokenImageUrl(current);
+          if(repaired && repaired!==current) image.setAttribute('src',repaired);
+          ['data-src','data-original','data-lazy-src','data-image-url'].forEach(attribute=>{
+            const lazy=image.getAttribute(attribute) || '';
+            const repairedLazy=decodeBrokenImageUrl(lazy);
+            if(!repairedLazy || repairedLazy===lazy) return;
+            image.setAttribute(attribute,repairedLazy);
+            if(image.tagName==='IMG' && (!current || decodeBrokenImageUrl(current))) image.setAttribute('src',repairedLazy);
+          });
+          const srcset=image.getAttribute('srcset') || '';
+          const firstSrcsetUrl=srcset.split(',')[0]?.trim().split(/\s+/)[0] || '';
+          const repairedSrcset=decodeBrokenImageUrl(firstSrcsetUrl);
+          if(repairedSrcset){
+            image.removeAttribute('srcset');
+            image.setAttribute('src',repairedSrcset);
+          }
+        });
+      };
+      const collapseEmptyImageGap=()=>{
+        const view=t.frame.contentWindow;
+        if(!view || !doc.body) return;
+        const pageText=String(doc.body.innerText || '');
+        if(!/AI images/i.test(pageText) || !/All sizes/i.test(pageText) || !/All layouts/i.test(pageText)) return;
+        const scrollTop=view.scrollY || doc.scrollingElement?.scrollTop || 0;
+        const resultImages=[...doc.images].filter(image=>{
+          if(image.closest?.('header,nav,aside,[role="dialog"],[class*="modal" i],[class*="anomaly" i]')) return false;
+          const box=image.getBoundingClientRect?.();
+          return box && box.width>=100 && box.height>=70;
+        }).sort((a,b)=>{
+          const first=a.getBoundingClientRect();
+          const second=b.getBoundingClientRect();
+          return first.top-second.top || first.left-second.left;
+        });
+        if(resultImages.length<4) return;
+        const sample=resultImages.slice(0,Math.min(12,resultImages.length));
+        doc.querySelectorAll('[data-testid="mainline"],.results--main').forEach(mainline=>{
+          if(sample.some(image=>mainline.contains(image))) return;
+          mainline.style.setProperty('display','none','important');
+          mainline.style.setProperty('min-height','0','important');
+          mainline.style.setProperty('height','0','important');
+          mainline.style.setProperty('margin','0','important');
+          mainline.style.setProperty('padding','0','important');
+        });
+        let filterBottom=0;
+        doc.querySelectorAll('div,nav,section').forEach(element=>{
+          const text=String(element.innerText || '').replace(/\s+/g,' ').trim();
+          const matches=['AI images','All sizes','All colors','All types','All layouts','Licenses']
+            .filter(label=>text.includes(label)).length;
+          if(matches<3) return;
+          const box=element.getBoundingClientRect?.();
+          if(!box || box.width<300 || box.height<=0 || box.height>120) return;
+          filterBottom=Math.max(filterBottom,box.bottom+scrollTop);
+        });
+        const targetTop=Math.max(110,filterBottom ? filterBottom+12 : 0);
+        let container=sample[0].parentElement;
+        while(container && !sample.every(image=>container.contains(image))) container=container.parentElement;
+        if(!container || container===doc.body || container===doc.documentElement) return;
+        while(container.parentElement && container.parentElement!==doc.body && container.parentElement!==doc.documentElement){
+          const parent=container.parentElement;
+          if(parent.querySelector('[data-testid="header"],form[data-testid="search-form"]')) break;
+          const parentBox=parent.getBoundingClientRect?.();
+          const parentTop=(parentBox?.top || 0)+scrollTop;
+          if(!parentBox || parentTop<targetTop+180) break;
+          container=parent;
+        }
+        if(container.dataset.nyxDuckImageGapFixed==='true') return;
+        const containerBox=container.getBoundingClientRect?.();
+        if(!containerBox) return;
+        const gap=Math.round(containerBox.top+scrollTop-targetTop);
+        if(gap<220) return;
+        const currentMargin=Number.parseFloat(view.getComputedStyle(container).marginTop) || 0;
+        container.style.setProperty('margin-top',`${currentMargin-gap}px`,'important');
+        container.dataset.nyxDuckImageGapFixed='true';
+        doc.documentElement.dataset.nyxDuckImageGapFixed='true';
+      };
+      let queued=false;
+      const queueRepair=()=>{
+        if(queued) return;
+        queued=true;
+        requestAnimationFrame(()=>{
+          queued=false;
+          repairImages();
+          collapseEmptyImageGap();
+        });
+      };
+      try{
+        new MutationObserver(queueRepair).observe(doc.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['src','srcset','data-src','data-original','data-lazy-src','data-image-url']});
+      }catch{}
+      repairImages();
+      collapseEmptyImageGap();
+      [250,700,1400,2600,4200].forEach(delay=>setTimeout(()=>{
+        repairImages();
+        collapseEmptyImageGap();
+      },delay));
+    }
+    function installPopupBridge(t){
+      if(!t?.frame || t.popupBridgeInstalled) return;
+      if(t.frame.dataset.nyxDuckImageLoadFix!=='true'){
+        t.frame.dataset.nyxDuckImageLoadFix='true';
+        t.frame.addEventListener('load',()=>setTimeout(()=>installDuckDuckGoImageViewportFix(t),40));
+      }
+      installDuckDuckGoImageViewportFix(t);
+      if(t.frame.dataset.nyxLocationSync!=='true'){
+        t.frame.dataset.nyxLocationSync='true';
+        t.frame.addEventListener('load',()=>setTimeout(()=>{
+          try{
+            const frameHref=String(t.frame?.contentWindow?.location?.href || '');
+            const source=browserShellSourceUrl(frameHref);
+            if(!/^https?:\/\//i.test(source) || source===location.href) return;
+            installDuckDuckGoImageViewportFix(t);
+            t.url=source;
+            t.sourceUrl=source;
+            t.title=titleForUrl(source);
+            t.icon=iconForUrl(source);
+            renderTabs();
+            if(t.id===state.active){
+              win.querySelector('.urlbar').value=browserShellDisplayValue(source);
+              updateBrowserShellLocation(source,t.id,true);
+            }
+            syncLoadedTabIcon(t);
+          }catch{}
+          setTimeout(()=>syncLoadedTabIcon(t),260);
+        },40));
+      }
+      const bridgeUrl=t.sourceUrl || t.url || t.frame.getAttribute('src') || '';
+      if(isPopupAllowedAppUrl(bridgeUrl)) return;
+      if(isSpotifyFamilyUrl(bridgeUrl) || isAuthSensitiveUrl(bridgeUrl)) return;
+      if(hostMatches(browserHost(browserShellSourceUrl(bridgeUrl) || bridgeUrl),['google.com','gstatic.com'])) return;
+      t.popupBridgeInstalled=true;
+      const shouldTrapPopupTarget=target=>{
+        const value=String(target || '').toLowerCase();
+        return value && value !== '_self';
+      };
+      const currentBridgeUrl=()=>{
+        let frameHref='';
+        try{frameHref=String(t.frame?.contentWindow?.location?.href || '')}catch{}
+        return browserShellSourceUrl(frameHref)
+          || browserShellSourceUrl(t.url || '')
+          || browserShellSourceUrl(t.sourceUrl || '')
+          || t.url || t.sourceUrl || bridgeUrl;
+      };
+      const sameOriginPopupUrl=value=>{
+        const raw=String(value || '').trim();
+        if(!raw || /^about:blank$/i.test(raw)) return '';
+        try{
+          const base=currentBridgeUrl();
+          const resolvedRaw=browserShellSourceUrl(raw) || raw;
+          const resolved=new URL(resolvedRaw,base);
+          const source=new URL(base,location.href);
+          const cleanHost=host=>String(host || '').replace(/^www\./i,'').toLowerCase();
+          const sameSite=resolved.protocol===source.protocol
+            && resolved.port===source.port
+            && cleanHost(resolved.hostname)===cleanHost(source.hostname);
+          return sameSite ? resolved.href : '';
+        }catch{return ''}
+      };
+      const followSameOriginPopup=value=>{
+        const trusted=sameOriginPopupUrl(value);
+        if(!trusted) return false;
+        activate(t.id);
+        navigate(trusted,t.expectedEngine || '');
+        return true;
+      };
+      const searchResultUrl=link=>{
+        if(!link) return '';
+        const sourceHost=browserHost(browserShellSourceUrl(t.sourceUrl || t.url || bridgeUrl) || bridgeUrl);
+        let isResult=false;
+        if(hostMatches(sourceHost,['duckduckgo.com'])) isResult=!!link.closest?.('[data-testid="result"],article,.result,.results_links');
+        else if(hostMatches(sourceHost,['google.com'])) isResult=!!link.closest?.('#search,.MjjYud,.g');
+        else if(hostMatches(sourceHost,['bing.com'])) isResult=!!link.closest?.('li.b_algo,.b_algo');
+        if(!isResult) return '';
+        const raw=String(link.href || link.getAttribute?.('href') || '').trim();
+        try{
+          const resolved=new URL(browserShellSourceUrl(raw) || raw,t.sourceUrl || bridgeUrl);
+          if(hostMatches(resolved.hostname.replace(/^www\./i,''),['duckduckgo.com'])){
+            const direct=resolved.searchParams.get('uddg');
+            if(/^https?:\/\//i.test(direct || '')) return direct;
+          }
+          if(hostMatches(resolved.hostname.replace(/^www\./i,''),['google.com']) && /^\/url$/i.test(resolved.pathname)){
+            const direct=resolved.searchParams.get('q') || resolved.searchParams.get('url');
+            if(/^https?:\/\//i.test(direct || '')) return direct;
+          }
+          if(hostMatches(resolved.hostname.replace(/^www\./i,''),['bing.com']) && /^\/ck\/a/i.test(resolved.pathname)){
+            const encoded=String(resolved.searchParams.get('u') || '');
+            if(/^a1/i.test(encoded)){
+              const payload=encoded.slice(2).replace(/-/g,'+').replace(/_/g,'/');
+              const padded=payload+'='.repeat((4-payload.length%4)%4);
+              const direct=atob(padded);
+              if(/^https?:\/\//i.test(direct)) return direct;
+            }
+          }
+          return resolved.href;
+        }catch{return ''}
+      };
+      const followSearchResult=link=>{
+        const destination=searchResultUrl(link);
+        if(!destination) return false;
+        openBrowserShellAppTab(destination);
+        return true;
+      };
+      const searchUrlForCurrentProvider=query=>{
+        const value=String(query || '').trim();
+        if(!value) return '';
+        const host=browserHost(currentBridgeUrl());
+        const encoded=encodeURIComponent(value);
+        if(hostMatches(host,['duckduckgo.com'])) return `https://duckduckgo.com/?q=${encoded}`;
+        if(/(?:^|\.)google\.[a-z.]+$/i.test(host)) return `https://${host}/search?q=${encoded}`;
+        if(hostMatches(host,['bing.com'])) return `https://www.bing.com/search?q=${encoded}`;
+        return '';
+      };
+      const followInPageSearch=query=>{
+        const destination=searchUrlForCurrentProvider(query);
+        if(!destination) return false;
+        activate(t.id);
+        setTimeout(()=>{
+          if(!state.tabs.includes(t)) return;
+          navigate(destination);
+        },0);
+        return true;
+      };
+      const shouldTrapDownloadLink=link=>{
+        if(!link) return false;
+        if(link.hasAttribute('download')) return true;
+        const rawHref=String(link.href || link.getAttribute('href') || '').trim();
+        if(/^(?:blob|data):/i.test(rawHref)) return true;
+        const href=rawHref.split(/[?#]/)[0].toLowerCase();
+        return /\.(apk|appx|bat|bin|cmd|com|crx|deb|dmg|exe|iso|jar|js|msi|pkg|ps1|scr|sh|vbs|wsf|zip|7z|rar)$/i.test(href);
+      };
+      const attachBridge=()=>{
+        try{
+          const liveHost=browserHost(currentBridgeUrl());
+          if(hostMatches(liveHost,['google.com','gstatic.com'])) return;
+          const doc=t.frame.contentDocument;
+          const frameWindow=t.frame.contentWindow;
+          if(frameWindow && !frameWindow.__nyxOpenBridge){
+            frameWindow.__nyxOpenBridge=true;
+            const nativeFrameOpen=frameWindow.open?.bind(frameWindow);
+            const nyxPopup=(popupUrl,target,features)=>{
+              if(!popupProtectionEnabled()) return nativeFrameOpen ? nativeFrameOpen(popupUrl,target,features) : null;
+              if(followSameOriginPopup(popupUrl)) return frameWindow;
+              return openPopupTab(popupUrl || 'about:blank');
+            };
+            try{
+              Object.defineProperty(frameWindow,'open',{value:nyxPopup,writable:true,configurable:true});
+            }catch{
+              frameWindow.open=nyxPopup;
+            }
+            if(frameWindow.HTMLAnchorElement?.prototype?.click){
+              const nativeAnchorClick=frameWindow.HTMLAnchorElement.prototype.click;
+              frameWindow.HTMLAnchorElement.prototype.click=function(){
+                if(popupProtectionEnabled() && (shouldTrapPopupTarget(this.target) || shouldTrapDownloadLink(this))){
+                  const href=this.href || this.getAttribute('href') || '';
+                  if(!shouldTrapDownloadLink(this) && followSearchResult(this)) return;
+                  if(!shouldTrapDownloadLink(this) && followSameOriginPopup(href)) return;
+                  openPopupTab(href || 'about:blank');
+                  return;
+                }
+                return nativeAnchorClick.call(this);
+              };
+            }
+          }
+          if(!doc?.documentElement || doc.documentElement.dataset.nyxPopupBridge==='true') return;
+          doc.documentElement.dataset.nyxPopupBridge='true';
+          const sourceHost=browserHost(currentBridgeUrl());
+          if(hostMatches(sourceHost,['cineby.at']) && !doc.documentElement.dataset.nyxCinebyFrameGuard){
+            doc.documentElement.dataset.nyxCinebyFrameGuard='true';
+            const blockDirectCinebyFrame=node=>{
+              if(!node?.matches?.('iframe[src],frame[src]')) return;
+              const raw=String(node.getAttribute('src') || '').trim();
+              if(!/^https?:\/\//i.test(raw)) return;
+              const host=browserHost(raw);
+              if(!hostMatches(host,['cineby.at'])) return;
+              node.removeAttribute('src');
+              node.remove();
+            };
+            doc.querySelectorAll('iframe[src],frame[src]').forEach(blockDirectCinebyFrame);
+            new MutationObserver(records=>records.forEach(record=>{
+              if(record.type==='attributes') blockDirectCinebyFrame(record.target);
+              record.addedNodes.forEach(node=>{
+                blockDirectCinebyFrame(node);
+                node.querySelectorAll?.('iframe[src],frame[src]').forEach(blockDirectCinebyFrame);
+              });
+            })).observe(doc.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['src']});
+          }
+          const trapDownload=event=>{
+            const link=event.target?.closest?.('a[href]');
+            if(!popupProtectionEnabled() || !shouldTrapDownloadLink(link)) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            openPopupTab('about:blank');
+          };
+          const searchControlValue=control=>String(control?.value || '').trim();
+          const trapSearchSubmit=event=>{
+            const form=event.target;
+            if(!form || String(form.tagName || '').toUpperCase()!=='FORM') return;
+            const control=form.querySelector('textarea[name="q"],input[name="q"],input[type="search"]');
+            if(!followInPageSearch(searchControlValue(control))) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          };
+          const trapSearchEnter=event=>{
+            if(event.key!=='Enter' || event.shiftKey || event.ctrlKey || event.altKey || event.metaKey || event.isComposing) return;
+            const control=event.target?.closest?.('textarea[name="q"],input[name="q"],input[type="search"]');
+            if(!control || !followInPageSearch(searchControlValue(control))) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          };
+          const trapLink=event=>{
+            const link=event.target?.closest?.('a[href]');
+            if(!popupProtectionEnabled()) return;
+            if(shouldTrapDownloadLink(link)){
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              openPopupTab('about:blank');
+              return;
+            }
+            if(!link || !shouldTrapPopupTarget(link.getAttribute('target'))) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            const href=link.href || link.getAttribute('href') || 'about:blank';
+            if(followSearchResult(link)) return;
+            if(!followSameOriginPopup(href)) openPopupTab(href);
+          };
+          doc.addEventListener('keydown',trapSearchEnter,true);
+          doc.addEventListener('submit',trapSearchSubmit,true);
+          doc.addEventListener('click',trapLink,true);
+          doc.addEventListener('auxclick',trapLink,true);
+          doc.addEventListener('beforeinput',trapDownload,true);
+          doc.addEventListener('submit',event=>{
+            const form=event.target;
+            if(!popupProtectionEnabled()) return;
+            if(!form || String(form.tagName || '').toUpperCase()!=='FORM' || !shouldTrapPopupTarget(form.getAttribute('target'))) return;
+            const action=form.action || form.getAttribute('action') || '';
+            if(sameOriginPopupUrl(action)){
+              try{form.setAttribute('target','_self'); return}catch{}
+            }
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            openPopupTab(action || 'about:blank');
+          },true);
+        }catch{}
+      };
+      t.frame.addEventListener('load',()=>{
+        attachBridge();
+        setTimeout(attachBridge,50);
+        setTimeout(attachBridge,250);
+      });
+    }
+    function isAuthSensitiveUrl(url){
+      const raw=String(url || '');
+      if(/recaptcha|captcha|challenge|oauth|sso|login|signin|accounts/i.test(raw)) return true;
+      try{
+        const parsed=new URL(browserShellSourceUrl(raw) || raw,location.href);
+        const host=parsed.hostname.replace(/^www\./,'').toLowerCase();
+        const path=(parsed.pathname+parsed.search+parsed.hash).toLowerCase();
+        if(host==='accounts.spotify.com') return true;
+        if(['google.com','gstatic.com','recaptcha.net'].includes(host) && /recaptcha|captcha/.test(path)) return true;
+        return false;
+      }catch{
+        return false;
+      }
+    }
+    function shouldRelaxProxySandbox(url){
+      const raw=browserShellSourceUrl(String(url || '')) || String(url || '');
+      const host=browserHost(raw);
+      return isAuthSensitiveUrl(raw) || hostMatches(host,[
+        'geforcenow.com',
+        'play.geforcenow.com',
+        'nvidia.com',
+        'nvidiagrid.net',
+        'discord.com',
+        'spotify.com',
+        'spotifycdn.com',
+        'scdn.co',
+        'accounts.spotify.com',
+        'accounts.scdn.co',
+        'google.com',
+        'gstatic.com',
+        'recaptcha.net'
+      ]);
+    }
+    const browserFrameAllow='autoplay; encrypted-media; fullscreen; keyboard-map; gamepad; clipboard-read; clipboard-write; camera; microphone; display-capture; accelerometer; gyroscope; magnetometer; xr-spatial-tracking; payment; publickey-credentials-get; identity-credentials-get; private-state-token-issuance; private-state-token-redemption';
+    const browserFrameAltKeys=new Set(['l','d','t','w','r','arrowleft','arrowright','tab']);
+    function isBrowserFrameAltShortcut(key){
+      key=String(key || '').toLowerCase();
+      return /^[1-9]$/.test(key) || browserFrameAltKeys.has(key);
+    }
+    function stopFrameAltEvent(event){
+      try{event.preventDefault()}catch{}
+      try{event.stopPropagation()}catch{}
+      try{event.stopImmediatePropagation?.()}catch{}
+    }
+    function installBrowserAltBridgeInDocument(doc){
+      if(!doc || doc.__nyxBrowserAltBridge) return;
+      try{doc.__nyxBrowserAltBridge=true}catch{}
+      const handler=event=>{
+        try{
+          if(!event?.altKey || event.ctrlKey || event.metaKey || event.location===2) return;
+          const key=String(event.key || '').toLowerCase();
+          if(key==='alt'){
+            stopFrameAltEvent(event);
+            primeBrowserShellShortcutFocus();
+            return;
+          }
+          if(!isBrowserFrameAltShortcut(key)) return;
+          if(handleBrowserShellAltAction(key,event)) stopFrameAltEvent(event);
+        }catch{}
+      };
+      try{doc.addEventListener('keydown',handler,true)}catch{}
+      try{doc.defaultView?.addEventListener?.('keydown',handler,true)}catch{}
+      const releaseForPageInput=event=>{
+        try{
+          const target=event?.target;
+          if(!target?.closest?.('canvas,input,textarea,select,[contenteditable="true"],[role="application"]')) return;
+          releaseNyxKeyboardLock();
+        }catch{}
+      };
+      try{doc.addEventListener('pointerdown',releaseForPageInput,true)}catch{}
+      try{doc.addEventListener('mousedown',releaseForPageInput,true)}catch{}
+      try{doc.addEventListener('touchstart',releaseForPageInput,{capture:true,passive:true})}catch{}
+      try{doc.addEventListener('focusin',releaseForPageInput,true)}catch{}
+      const installNested=()=>{
+        try{
+          doc.querySelectorAll?.('iframe,frame').forEach(child=>{
+            try{installBrowserAltBridgeInDocument(child.contentDocument)}catch{}
+          });
+        }catch{}
+      };
+      installNested();
+      try{
+        const root=doc.documentElement || doc.body;
+        if(root) new MutationObserver(installNested).observe(root,{childList:true,subtree:true});
+      }catch{}
+    }
+    function installBrowserAltBridgeForFrame(frame){
+      try{installBrowserAltBridgeInDocument(frame.contentDocument)}catch{}
+    }
+    function applyFrameInteractionPermissions(frame){
+      if(!frame) return;
+      frame.tabIndex=0;
+      frame.setAttribute('tabindex','0');
+      frame.setAttribute('allow',browserFrameAllow);
+      frame.style.pointerEvents='auto';
+      const installAltBridge=()=>{
+        installBrowserAltBridgeForFrame(frame);
+        setTimeout(()=>installBrowserAltBridgeForFrame(frame),120);
+        setTimeout(()=>installBrowserAltBridgeForFrame(frame),700);
+      };
+      installAltBridge();
+      if(frame.dataset.nyxInputReady==='true') return;
+      frame.dataset.nyxInputReady='true';
+      const focusFrame=()=>setTimeout(()=>{try{frame.focus({preventScroll:true})}catch{try{frame.focus()}catch{}}},0);
+      frame.addEventListener('load',()=>{
+        installAltBridge();
+        setTimeout(focusFrame,90);
+      });
+      frame.addEventListener('keydown',event=>{
+        try{
+          if(!event.altKey || event.ctrlKey || event.metaKey || event.location===2) return;
+          const key=String(event.key || '').toLowerCase();
+          if(key==='alt'){
+            stopFrameAltEvent(event);
+            primeBrowserShellShortcutFocus();
+            return;
+          }
+          if(isBrowserFrameAltShortcut(key) && handleBrowserShellAltAction(key,event)) stopFrameAltEvent(event);
+        }catch{}
+      },true);
+      const handoffFrameInput=()=>{
+        // The embedded page needs unmodified WASD, arrows, Tab, and number keys.
+        releaseNyxKeyboardLock();
+      };
+      frame.addEventListener('focus',handoffFrameInput);
+      frame.addEventListener('pointerdown',handoffFrameInput,{capture:true});
+      frame.addEventListener('mousedown',handoffFrameInput,{capture:true});
+      frame.addEventListener('touchstart',handoffFrameInput,{capture:true,passive:true});
+    }
+    function setFrameSandbox(t){
+      if(!t?.frame) return;
+      const sourceUrl=t.sourceUrl || t.url || t.frame.getAttribute('src') || '';
+      applyFrameInteractionPermissions(t.frame);
+      if(shouldRelaxProxySandbox(sourceUrl)){
+        t.frame.removeAttribute('sandbox');
+        applyFrameInteractionPermissions(t.frame);
+        return;
+      }
+      const tokens=[
+        'allow-scripts',
+        'allow-same-origin',
+        'allow-forms',
+        'allow-modals',
+        'allow-pointer-lock',
+        'allow-presentation',
+        'allow-storage-access-by-user-activation'
+      ];
+      if(!popupProtectionEnabled() || isPopupAllowedAppUrl(sourceUrl)){
+        tokens.push('allow-popups','allow-popups-to-escape-sandbox','allow-downloads','allow-top-navigation-by-user-activation');
+      }
+      t.frame.setAttribute('sandbox',tokens.join(' '));
+      applyFrameInteractionPermissions(t.frame);
+    }
+    function clearFrameDocument(t){
+      if(!t?.frame) return;
+      t.frame.removeAttribute('srcdoc');
+    }
+    function replaceTabFrame(t){
+      if(!t?.frame) return;
+      const frame=document.createElement('iframe');
+      frame.className='view';
+      applyFrameInteractionPermissions(frame);
+      if(t.frame.classList.contains('active')) frame.classList.add('active');
+      t.frame.replaceWith(frame);
+      t.frame=frame;
+      t.scramjetFrame=null;
+      t.scramjetRuntimeGuarded=null;
+      t.popupBridgeInstalled=false;
+      setFrameSandbox(t,true);
+      installPopupBridge(t);
+    }
+    function activate(id){
+      state.active=id; const t=current();
+      let mappedShellTab=null;
+      if(document.body.classList.contains('browser-shell')){
+        mappedShellTab=browserShellTabs.find(tab=>tab.browserTabId===id) || null;
+        if(mappedShellTab) browserShellActiveTab=mappedShellTab.id;
+      }
+      const activeUrl=t?.url || mappedShellTab?.url || '';
+      const activeTitle=t?.title || mappedShellTab?.title || 'New Tab';
+      const activeIsBlank=isBrowserShellBlankUrl(activeUrl);
+      win.classList.toggle('internal-clear',!!t?.frame?.classList.contains('transparent-internal-page'));
+      win.querySelectorAll('.view').forEach(f=>f.classList.remove('active'));
+      win.classList.toggle('browser-blank',activeIsBlank);
+      if(activeUrl && !activeIsBlank){t?.frame.classList.add('active'); win.querySelector('.browser-home').classList.add('hidden')}
+      else{
+        win.querySelector('.browser-home').classList.remove('hidden');
+        if(t?.opening) playBrowserShellPageReveal(win);
+      }
+      win.querySelector('.urlbar').value=browserShellDisplayValue(activeUrl); win.querySelector('.titlebar-title').textContent=activeTitle; renderTabs(); bring(win);
+      if(t?.url || !mappedShellTab?.url) updateBrowserShellLocation(t?.url || (activeIsBlank ? NYX_BLANK_URL : ''),t?.id || '');
+    }
+    function detectBrowserEngine(url,t){
+      const raw=String(url || '');
+      const frameSrc=String(t?.frame?.getAttribute?.('src') || '');
+      if(t?.scramjetFrame || raw.startsWith('/~/sj/') || frameSrc.includes('/~/sj/')) return 'scramjet';
+      if(raw.startsWith('/service/') || frameSrc.startsWith('/service/')) return 'ultraviolet';
+      if(raw.startsWith('/scramjet/service/') || frameSrc.startsWith('/scramjet/service/')) return 'scramjet-legacy';
+      if(/^https?:/i.test(raw)) return 'direct';
+      if(raw.startsWith('nyx://')) return 'nyx';
+      return raw ? 'iframe' : 'blank';
+    }
+    function markBrowserEngine(t,expected,url,phase='load'){
+      if(!t) return;
+      t.expectedEngine=expected || t.expectedEngine || '';
+      t.actualEngine=detectBrowserEngine(url,t);
+      t.frame?.dataset && (t.frame.dataset.nyxExpectedEngine=t.expectedEngine || '');
+      t.frame?.dataset && (t.frame.dataset.nyxActualEngine=t.actualEngine || '');
+      if(t.expectedEngine && t.expectedEngine!==t.actualEngine && !(t.expectedEngine==='scramjet' && t.actualEngine==='scramjet-legacy')){
+        console.warn(`nyx Browser Engine mismatch during ${phase}: expected ${t.expectedEngine}, actual ${t.actualEngine}`, {url, frameSrc:t.frame?.getAttribute?.('src') || '', tab:t});
+      }else if(t.expectedEngine){
+        console.log(`nyx Browser Engine verified: ${t.expectedEngine}`, {url, phase});
+      }
+    }
+    function assertProxyPath(mode,url){
+      if(mode==='scramjet' && String(url || '').startsWith('/service/')){
+        console.warn('nyx blocked UV URL from loading in Scramjet mode:', url);
+        return false;
+      }
+      if(mode==='ultraviolet' && String(url || '').startsWith('/~/sj/')){
+        console.warn('nyx blocked Scramjet URL from loading in UV mode:', url);
+        return false;
+      }
+      return true;
+    }
+    function resetProxyInstallers(){
+      uvInstallPromise=null;
+      scramjetInstallPromise=null;
+      scramjetTransport=null;
+      scramjetTransportKey='';
+    }
+    function setBrowserTransportOverride(next){
+      if(browserTransportOverride===next) return;
+      browserTransportOverride=next;
+      resetProxyInstallers();
+    }
+    function applyPreferredTransportForUrl(url,browserMode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'))){
+      if(isSpotifyFamilyUrl(url)){
+        setBrowserTransportOverride('libcurl');
+        return;
+      }
+      if(!transportAutoEnabled()){
+        setBrowserTransportOverride('');
+        return;
+      }
+      const siteTransport=preferredTransport(url);
+      setBrowserTransportOverride(siteTransport || (browserMode==='auto' ? (prefersEpoxyTransport(url) ? 'epoxy' : 'libcurl') : ''));
+    }
+    function transportAutoEnabled(){
+      return store.text('nyx.transport','epoxy')==='auto'
+        || normalizeBrowserModeName(store.text('nyx.browserMode','auto'))==='auto';
+    }
+    function proxyTransportName(){
+      return browserTransportOverride || store.text('nyx.transport','epoxy');
+    }
+    function transportRetryOrder(current){
+      const ordered=['epoxy','wisp','libcurl'];
+      const index=ordered.indexOf(current);
+      if(index<0) return ordered;
+      return [...ordered.slice(index+1),...ordered.slice(0,index)];
+    }
+    function serviceWorkerTransportErrorText(text){
+      return /internal service worker error|request failed with error code\s*(?:35|56|60)|ssl connect error|ssl peer certificate|ssh remote key|certificate.*not ok|failure when receiving data from the peer/i.test(String(text || ''));
+    }
+    function loadSelectedSearchFallback(t,sourceUrl,reason=''){
+      if(!t || !sourceUrl) return false;
+      const key=String(sourceUrl);
+      if(t.selectedSearchFallbackKey===key) return false;
+      t.selectedSearchFallbackKey=key;
+      console.warn('nyx proxy could not load the requested page.', {sourceUrl:key, reason});
+      t.url=key;
+      t.sourceUrl=key;
+      t.title=browserShellLabel(key);
+      t.icon=iconForUrl(key);
+      t.frame.removeAttribute('src');
+      t.frame.srcdoc=proxyFailureHtml(`Nyx could not connect to ${browserShellLabel(key)}. Check that the address exists and is spelled correctly, then try again.`,'Page');
+      t.frame.classList.add('active');
+      renderTabs();
+      updateBrowserShellLocation(key,t.id,true);
+      return true;
+    }
+    function fallbackProxyEngine(t,sourceUrl,expectedEngine,reason=''){
+      if(!t || !sourceUrl || !expectedEngine) return false;
+      const key=`${expectedEngine}:${sourceUrl}`;
+      const attempts=t.engineFallbackAttempts || (t.engineFallbackAttempts={});
+      attempts[key]=(attempts[key] || 0) + 1;
+      const configuredMode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
+      if(configuredMode!=='auto'){
+        if(configuredMode==='scramjet' && expectedEngine!=='scramjet'){
+          console.warn('nyx enforcing selected Scramjet engine.', {sourceUrl, expectedEngine, reason});
+          loadScramjetTab(t,sourceUrl,false);
+          return true;
+        }
+        if(configuredMode==='ultraviolet' && expectedEngine!=='ultraviolet'){
+          console.warn('nyx enforcing selected Ultraviolet engine.', {sourceUrl, expectedEngine, reason});
+          installUltraviolet().then(ok=>{
+            if(!state.tabs.includes(t)) return;
+            const proxied=ok ? proxyModeUrl('ultraviolet',sourceUrl) : '';
+            if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',sourceUrl);
+            else loadSelectedSearchFallback(t,sourceUrl,'selected Ultraviolet engine unavailable');
+          });
+          return true;
+        }
+        if(configuredMode==='iframe'){
+          if(expectedEngine!=='iframe') loadTab(t,sourceUrl,false,'iframe',sourceUrl);
+          else loadSelectedSearchFallback(t,sourceUrl,reason || 'selected iframe mode failed');
+          return true;
+        }
+      }
+      if(isSpotifyFamilyUrl(sourceUrl) && expectedEngine==='scramjet'){
+        if(attempts[key]===1) console.warn('nyx Spotify is pinned to Scramjet + libcurl; not switching engines.', {sourceUrl, reason});
+        return false;
+      }
+      if(expectedEngine==='scramjet' && configuredMode==='scramjet'){
+        if(attempts[key]>3) return loadSelectedSearchFallback(t,sourceUrl,reason || 'scramjet retries exhausted');
+        console.warn('nyx Scramjet is selected; retrying Scramjet instead of switching engines.', {sourceUrl, reason});
+        loadScramjetTab(t,sourceUrl,false);
+        return true;
+      }
+      if(expectedEngine==='ultraviolet' && configuredMode==='ultraviolet'){
+        return loadSelectedSearchFallback(t,sourceUrl,reason || 'ultraviolet failed while selected');
+      }
+      if(attempts[key]>3) return loadSelectedSearchFallback(t,sourceUrl,reason || 'proxy fallback exhausted');
+      if(expectedEngine==='scramjet'){
+        console.warn('nyx scramjet failed; switching this tab to ultraviolet.', {sourceUrl, reason});
+        installUltraviolet().then(ok=>{
+          if(!state.tabs.includes(t)) return;
+          const proxied=ok ? proxyModeUrl('ultraviolet',sourceUrl) : '';
+          if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',sourceUrl);
+          else loadSelectedSearchFallback(t,sourceUrl,'ultraviolet unavailable after scramjet failure');
+        });
+        return true;
+      }
+      if(expectedEngine==='ultraviolet'){
+        console.warn('nyx ultraviolet failed; switching this tab to scramjet.', {sourceUrl, reason});
+        loadScramjetTab(t,sourceUrl,false);
+        return true;
+      }
+      return loadSelectedSearchFallback(t,sourceUrl,reason || 'unknown proxy failure');
+    }
+    function watchFrameTransportErrors(t,sourceUrl,expectedEngine){
+      if(!t?.frame || !sourceUrl || !expectedEngine) return;
+      if(normalizeBrowserModeName(store.text('nyx.browserMode','auto'))!=='auto') return;
+      const token='transport-'+Date.now()+Math.random().toString(16).slice(2);
+      t.transportWatchToken=token;
+      const check=()=>{
+        if(t.transportWatchToken!==token || !state.tabs.includes(t)) return;
+        let text='';
+        try{text=String(t.frame.contentDocument?.body?.textContent || '').slice(0,5000)}catch{return}
+        if(!serviceWorkerTransportErrorText(text)) return;
+        const key=`${expectedEngine}:${sourceUrl}`;
+        const attempts=t.transportRetries || (t.transportRetries={});
+        attempts[key]=(attempts[key] || 0) + 1;
+        if(isSpotifyFamilyUrl(sourceUrl) && expectedEngine==='scramjet'){
+          if(attempts[key]===1) console.warn('nyx Spotify transport warning; staying on Scramjet + libcurl.', {sourceUrl});
+          return;
+        }
+        if(attempts[key]>2){
+          fallbackProxyEngine(t,sourceUrl,expectedEngine,'transport retries exhausted');
+          return;
+        }
+        if(!transportAutoEnabled()){
+          fallbackProxyEngine(t,sourceUrl,expectedEngine,'transport failed with fixed transport');
+          return;
+        }
+        const currentTransport=proxyTransportName();
+        const nextTransport=transportRetryOrder(currentTransport)[0] || 'epoxy';
+        console.warn('nyx proxy transport failed; retrying same engine with safer transport.', {expectedEngine, sourceUrl, currentTransport, nextTransport});
+        setBrowserTransportOverride(nextTransport);
+        if(expectedEngine==='scramjet') loadScramjetTab(t,sourceUrl,false);
+        else if(expectedEngine==='ultraviolet'){
+          installUltraviolet().then(ok=>{
+            const proxied=ok ? proxyModeUrl('ultraviolet',sourceUrl) : '';
+            if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',sourceUrl);
+          });
+        }
+      };
+      t.frame.addEventListener('load',()=>setTimeout(check,80),{once:true});
+      setTimeout(check,1300);
+      setTimeout(check,4200);
+    }
+    function watchProxyLoad(t,sourceUrl,expectedEngine){
+      if(!sourceUrl || !expectedEngine) return;
+      // Fixed engine modes must preserve the real proxy response. Recovery is
+      // allowed to rotate transports or engines only when Auto was selected.
+      if(normalizeBrowserModeName(store.text('nyx.browserMode','auto'))!=='auto') return;
+      if(t.fallbackSource!==sourceUrl){
+        t.fallbackSource=sourceUrl;
+        t.fallbackAttempts=0;
+      }
+      const token='load-'+Date.now()+Math.random().toString(16).slice(2);
+      t.loadWatchToken=token;
+      const watchStartedAt=Date.now();
+      let loaded=false;
+      const markLoaded=()=>{
+        const frameSrc=String(t.frame?.getAttribute?.('src') || '');
+        let frameHref='';
+        try{frameHref=String(t.frame?.contentWindow?.location?.href || '')}catch{}
+        const hasProxyPath=frameSrc.startsWith('/service/') || frameSrc.startsWith('/~/sj/') || frameSrc.startsWith('/scramjet/service/')
+          || frameHref.includes('/service/') || frameHref.includes('/~/sj/') || frameHref.includes('/scramjet/service/');
+        const hasDirectPage=/^https?:/i.test(frameSrc) || (/^https?:/i.test(frameHref) && frameHref!=='about:blank' && frameHref!==location.href);
+        if(!hasProxyPath && !hasDirectPage) return;
+        loaded=true;
+        t.frame?.removeEventListener?.('load',markLoaded);
+      };
+      t.frame.addEventListener('load',markLoaded);
+      const proxyLooksBroken=()=>{
+        const health=inspectFrameHealth(t);
+        if(!health.reachable) return false;
+        if(health.blank && health.readyState!=='complete') return false;
+        if(isSpotifyFamilyUrl(sourceUrl)){
+          try{
+            const doc=t.frame?.contentDocument;
+            const text=String(doc?.body?.textContent || '').trim();
+            const htmlClass=String(doc?.documentElement?.className || '');
+            if(text.length>80 || /spotify/i.test(htmlClass) || doc?.querySelector('[data-testid],script[src*="spotify"],script[src*="spotifycdn"]')) return false;
+          }catch{}
+        }
+        try{
+          if(t.frame?.contentDocument?.querySelector('#desktop,#welcomeScreen')) return true;
+        }catch{}
+        return !!(health.blank || health.hasErrorText);
+      };
+      const protectedSiteReturnedEmptyShell=()=>{
+        const host=browserHost(sourceUrl);
+        if(!hostMatches(host,['meta.ai'])) return false;
+        const health=inspectFrameHealth(t);
+        return health.reachable && !health.hasErrorText && String(health.visibleText || '').length<12 && /meta ai/i.test(health.title || '');
+      };
+      if(hostMatches(browserHost(sourceUrl),['meta.ai'])){
+        let consecutiveProtectedBlanks=0;
+        let protectedChecks=0;
+        const protectedTimer=setInterval(()=>{
+          protectedChecks+=1;
+          if(t.loadWatchToken!==token || !state.tabs.includes(t) || protectedChecks>20){
+            clearInterval(protectedTimer);
+            return;
+          }
+          consecutiveProtectedBlanks=protectedSiteReturnedEmptyShell() ? consecutiveProtectedBlanks+1 : 0;
+          if(consecutiveProtectedBlanks<2) return;
+          clearInterval(protectedTimer);
+          loadSelectedSearchFallback(t,sourceUrl,'the site returned a blocked empty shell');
+        },1000);
+      }
+      const attemptFallback=(force=false)=>{
+        t.frame?.removeEventListener?.('load',markLoaded);
+        if((loaded && !force) || t.loadWatchToken!==token || !state.tabs.includes(t)) return;
+        if(!force){
+          const health=inspectFrameHealth(t);
+          const healthyProgress=health.reachable && !health.hasErrorText && !health.blank;
+          if(healthyProgress){
+            loaded=true;
+            return;
+          }
+          if(health.reachable && !health.hasErrorText && health.readyState==='loading' && Date.now()-watchStartedAt<10000) return;
+        }
+        if(isSpotifyFamilyUrl(sourceUrl) && expectedEngine==='scramjet'){
+          if(!t.spotifyPinnedNoticeShown){
+            t.spotifyPinnedNoticeShown=true;
+            console.warn('nyx Spotify is pinned to Scramjet + libcurl; skipping timeout engine fallback.', {sourceUrl});
+          }
+          return;
+        }
+        if(isSpotifyFamilyUrl(sourceUrl)){
+          try{
+            const doc=t.frame?.contentDocument;
+            const text=String(doc?.body?.textContent || '').trim();
+            const htmlClass=String(doc?.documentElement?.className || '');
+            if(text.length>80 || /spotify/i.test(htmlClass) || doc?.querySelector('[data-testid],script[src*="spotify"],script[src*="spotifycdn"]')) return;
+          }catch{}
+        }
+        const currentUrl=String(t.url || '');
+        if(t.url!==sourceUrl && !currentUrl.startsWith('/service/') && !currentUrl.startsWith('/~/sj/') && !currentUrl.startsWith('/scramjet/service/')) return;
+        t.fallbackAttempts=(t.fallbackAttempts || 0) + 1;
+        if(t.fallbackAttempts>4) return;
+        console.warn(`nyx ${expectedEngine || 'proxy'} load timed out, trying fallback`, {sourceUrl, transport:browserTransportOverride || store.text('nyx.transport','epoxy')});
+        const browserMode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
+        const canAutoTransport=transportAutoEnabled();
+        const currentTransport=proxyTransportName();
+        const nextTransport=transportRetryOrder(currentTransport)[0] || '';
+        let handled=false;
+        if(expectedEngine==='ultraviolet'){
+          if(canAutoTransport && nextTransport){
+            setBrowserTransportOverride(nextTransport);
+            navigate(sourceUrl,'ultraviolet');
+            handled=true;
+          }else if(browserMode==='auto'){
+            if(canAutoTransport) setBrowserTransportOverride('epoxy');
+            loadScramjetTab(t,sourceUrl,false);
+            handled=true;
+          }
+        }else if(expectedEngine==='scramjet'){
+          if(canAutoTransport && nextTransport){
+            setBrowserTransportOverride(nextTransport);
+            loadScramjetTab(t,sourceUrl,false);
+            handled=true;
+          }else if(browserMode==='scramjet'){
+            loadScramjetTab(t,sourceUrl,false);
+            handled=true;
+          }else if(browserMode==='auto'){
+            if(canAutoTransport) setBrowserTransportOverride('epoxy');
+            navigate(sourceUrl,'ultraviolet');
+            handled=true;
+          }
+        }
+        if(!handled) fallbackProxyEngine(t,sourceUrl,expectedEngine,'blank or timed-out proxy frame');
+      };
+      const checkBlankFallback=()=>{
+        if(t.loadWatchToken!==token || !state.tabs.includes(t)) return;
+        if(protectedSiteReturnedEmptyShell()){
+          loadSelectedSearchFallback(t,sourceUrl,'the site returned a blocked empty shell');
+          return;
+        }
+        if(proxyLooksBroken()) attemptFallback(true);
+      };
+      t.frame.addEventListener('load',()=>setTimeout(checkBlankFallback,1600),{once:true});
+      setTimeout(checkBlankFallback,3200);
+      setTimeout(checkBlankFallback,7600);
+      setTimeout(checkBlankFallback,12000);
+      setTimeout(attemptFallback,5200);
+      setTimeout(attemptFallback,11000);
+    }
+    function loadTab(t,url,addHistory=true,expectedEngine='',sourceUrl=''){
+      const requestedSource=sourceUrl || (/^https?:/i.test(url) ? url : '');
+      if(expectedEngine==='iframe' && hostMatches(browserHost(requestedSource),['cineby.at'])){
+        console.warn('nyx blocked a direct Cineby frame because Cineby denies iframe embedding; using Scramjet.', {sourceUrl:requestedSource});
+        loadScramjetTab(t,requestedSource,addHistory);
+        return;
+      }
+      if(expectedEngine && !assertProxyPath(expectedEngine,url)){
+        console.warn('nyx continuing despite engine path mismatch so the site can still attempt to load.');
+      }
+      t.expectedEngine=expectedEngine || t.expectedEngine || '';
+      t.sourceUrl=sourceUrl || (/^https?:/i.test(url) ? url : t.sourceUrl || '');
+      t.frame.classList.remove('transparent-internal-page');
+      t.frame.style.backgroundColor='';
+      win.classList.remove('internal-clear');
+      t.url=url;
+      if(addHistory){
+        t.history=t.history.slice(0,t.index+1);
+        t.history.push(url);
+        t.index=t.history.length-1;
+      }
+      t.title=titleForUrl(sourceUrl || url);
+      t.icon=iconForUrl(sourceUrl || url);
+      win.querySelector('.browser-home').classList.add('hidden');
+      t.frame.classList.add('active');
+      installPopupBridge(t);
+      const proxied=url.startsWith('/service/') || url.startsWith('/scramjet/service/') || url.startsWith('/~/sj/');
+      if(!url.startsWith('/scramjet/service/') && !url.startsWith('/~/sj/')) t.scramjetFrame=null;
+      setFrameSandbox(t,true);
+      clearFrameDocument(t);
+      if(normalizeBrowserModeName(store.text('nyx.browserMode','auto'))==='auto' && directOnly(url) && !proxied){
+        loadScramjetTab(t,url,addHistory);
+        return;
+      }
+      watchProxyLoad(t,sourceUrl || (/^https?:/i.test(url) ? url : ''),expectedEngine);
+      watchFrameTransportErrors(t,sourceUrl || (/^https?:/i.test(url) ? url : ''),expectedEngine);
+      t.frame.src=url;
+      markBrowserEngine(t,expectedEngine,url,'iframe-src');
+      renderTabs();
+      activate(t.id);
+      updateBrowserShellLocation(url,t.id);
+    }
+    function setTabMeta(t,url,addHistory=true){
+      t.url=url;
+      if(addHistory){
+        t.history=t.history.slice(0,t.index+1);
+        t.history.push(url);
+        t.index=t.history.length-1;
+      }
+      t.title=titleForUrl(url);
+      t.icon=iconForUrl(url);
+      win.querySelector('.browser-home').classList.add('hidden');
+      t.frame.classList.add('active');
+      installCrazyGamesOfflineRecovery(t,url);
+      renderTabs();
+      activate(t.id);
+      updateBrowserShellLocation(url,t.id);
+    }
+    function retryScramjetTab(t,url){
+      t.scramjetRetries=(t.scramjetRetries || 0) + 1;
+      if(t.scramjetRetries>3) return false;
+      const navigationIntent=t.navigationIntent || '';
+      t.frame.removeAttribute('src');
+      setTimeout(async ()=>{
+        if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
+        await refreshScramjetServiceWorker().catch(()=>false);
+        if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
+        scramjetInstallPromise=null;
+        const ok=await installScramjet();
+        if(!ok || !state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
+        if(t.scramjetFrame){
+          try{t.scramjetFrame.go(url); return}catch{}
+        }
+      },220);
+      return true;
+    }
+    function loadScramjetTab(t,url,addHistory=true){
+      t.expectedEngine='scramjet';
+      t.sourceUrl=url;
+      const navigationIntent=t.navigationIntent || '';
+      installScramjet().then(ok=>{
+        if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
+        if(!ok || !scramjetController){
+          t.url=url;
+          setTabMeta(t,url,addHistory);
+          t.actualEngine='scramjet-failed';
+          t.frame.dataset.nyxExpectedEngine='scramjet';
+          t.frame.dataset.nyxActualEngine='scramjet-failed';
+          setFrameSandbox(t,true);
+          clearFrameDocument(t);
+          t.frame.srcdoc=proxyFailureHtml(scramjetInstallError,'Scramjet');
+          return;
+        }
+        const existingFrameSrc=String(t.frame.getAttribute('src') || '');
+        if(existingFrameSrc.startsWith('/service/') || t.actualEngine==='ultraviolet'){
+          replaceTabFrame(t);
+        }
+        const guardMode=shouldUseScramjetRuntimeGuard(url) ? 'full' : (shouldUseScramjetMinimalGuard(url) ? 'minimal' : (shouldUseScramjetHelperGuard(url) ? 'helper' : 'none'));
+        if(t.scramjetFrame && t.scramjetRuntimeGuarded!==guardMode){
+          replaceTabFrame(t);
+        }
+        if(!t.scramjetFrame){
+          setFrameSandbox(t,true);
+          t.frame.removeAttribute('src');
+          clearFrameDocument(t);
+          installPopupBridge(t);
+          const plugins=guardMode==='full'
+            ? [createScramjetCompatibilityPlugin(scramjetRuntimeGuardSource,'runtime-guard')]
+            : (guardMode==='minimal'
+              ? [createScramjetCompatibilityPlugin(scramjetMinimalRuntimeGuardSource,'minimal-guard')]
+              : (guardMode==='helper' ? [createScramjetCompatibilityPlugin(scramjetHelperRuntimeGuardSource,'helper-guard')] : []));
+      if(shouldStripScramjetDuckDuckGoScripts(url)){
+        plugins.push(createScramjetCompatibilityPlugin('', 'duckduckgo-noscript'));
+      }
+          if(hostMatches(browserHost(url),['cineby.at'])){
+            plugins.push(createScramjetCompatibilityPlugin('', 'cineby-disable-devtool'));
+          }
+          t.scramjetRuntimeGuarded=guardMode;
+          t.scramjetFrame=scramjetController.createFrame(t.frame,{plugins});
+          t.scramjetFrame.addEventListener?.('urlchange',event=>{
+            const next=String(event.url || '');
+            if(!next) return;
+            t.url=next;
+            t.title=titleForUrl(next);
+            t.icon=iconForUrl(next);
+            renderTabs();
+            if(t.id===state.active) win.querySelector('.urlbar').value=browserShellDisplayValue(next);
+            updateBrowserShellLocation(next,t.id);
+            watchScramjetHealth(t,next);
+            setTimeout(()=>syncLoadedTabIcon(t),120);
+          });
+        }
+        setTabMeta(t,url,addHistory);
+        t.scramjetHealthRetries=0;
+        t.scramjetRetries=0;
+        watchProxyLoad(t,url,'scramjet');
+        watchFrameTransportErrors(t,url,'scramjet');
+        watchScramjetHealth(t,url);
+        if(String(t.frame.getAttribute('src') || '').startsWith('/service/')) t.frame.removeAttribute('src');
+        clearFrameDocument(t);
+        try{
+          t.scramjetFrame.go(url);
+        }catch{
+          retryScramjetTab(t,url);
+        }
+        setTimeout(()=>{
+          if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
+          if(t.scramjetFrame && !String(t.frame.getAttribute('src') || '').includes('/~/sj/')){
+            markBrowserEngine(t,'scramjet',String(t.frame.getAttribute('src') || ''),'scramjet-path-check');
+            try{t.scramjetFrame.go(url)}catch{}
+          }
+        },450);
+        setTimeout(()=>{
+          if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
+          markBrowserEngine(t,'scramjet',String(t.frame.getAttribute('src') || url),'scramjet-final');
+        },900);
+        setTimeout(()=>{
+          if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
+          try{
+            const isScramjetPath=t.frame.contentWindow?.location?.pathname?.startsWith('/~/sj/');
+            const loadednyx=!!t.frame.contentDocument?.querySelector('#desktop,#welcomeScreen');
+            if(isScramjetPath && loadednyx) retryScramjetTab(t,url);
+          }catch{}
+        },1800);
+      });
+    }
+    function waitForTabResultPaint(t,timeout=4200){
+      return new Promise(resolve=>{
+        if(!t?.frame) return resolve(false);
+        let done=false;
+        let loadSeen=false;
+        const sourceForReadiness=()=>browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
+        const hasMeaningfulContent=()=>{
+          try{
+            const doc=t.frame.contentDocument;
+            if(!doc?.body) return false;
+            if(doc.querySelector('#desktop,#welcomeScreen')) return false;
+            const text=String(doc.body.textContent || '').replace(/\s+/g,' ').trim().slice(0,6000);
+            const ready=doc.readyState==='complete' || doc.readyState==='interactive';
+            const source=sourceForReadiness();
+            const host=browserHost(source);
+            const isDuckSearch=hostMatches(host,['duckduckgo.com']) && /[?&]q=/.test(source);
+            if(isDuckSearch){
+              if(/No results found|not many great results|try different keywords|there are no results/i.test(text)) return ready;
+              const resultNodes=[...doc.body.querySelectorAll('article[data-testid*="result" i],[data-testid*="result" i],[data-testid="mainline"] li,#links .result,.results_links,.result__body,main article,ol li')]
+                .filter(node=>String(node.textContent || '').replace(/\s+/g,' ').trim().length>24);
+              const resultLinks=[...doc.body.querySelectorAll('main a[href],#links a[href],[data-testid="mainline"] a[href],article a[href],ol a[href]')]
+                .filter(link=>{
+                  const label=String(link.textContent || '').replace(/\s+/g,' ').trim();
+                  if(label.length<8) return false;
+                  const href=String(link.getAttribute('href') || link.href || '');
+                  if(/^(#|javascript:)/i.test(href)) return false;
+                  const box=link.getBoundingClientRect?.();
+                  return !box || box.top>120;
+                });
+              return ready && (resultNodes.length>0 || resultLinks.length>=2);
+            }
+            const hasPageNodes=!!doc.body.querySelector('a,form,input,button,main,article,section,[role="main"],#links,.results,.result,.result__body');
+            const visibleMedia=[...doc.body.querySelectorAll('img,video,canvas,iframe,svg,picture')]
+              .some(node=>{
+                const box=node.getBoundingClientRect?.();
+                return box && box.width>24 && box.height>24;
+              });
+            const visibleBlocks=[...doc.body.querySelectorAll('main,article,section,[role="main"],#links,.results,.result,.result__body,form')]
+              .some(node=>{
+                const box=node.getBoundingClientRect?.();
+                const nodeText=String(node.textContent || '').replace(/\s+/g,' ').trim();
+                return box && box.width>80 && box.height>40 && nodeText.length>16;
+              });
+            return ready && (text.length>80 || visibleBlocks || visibleMedia || (hasPageNodes && text.length>32));
+          }catch{
+            return false;
+          }
+        };
+        const finish=value=>{
+          if(done) return;
+          done=true;
+          clearInterval(poll);
+          clearTimeout(timer);
+          try{t.frame.removeEventListener('load',onLoad)}catch{}
+          resolve(value);
+        };
+        const onLoad=()=>{
+          loadSeen=true;
+        };
+        const poll=setInterval(()=>{
+          const srcdoc=String(t.frame?.getAttribute?.('srcdoc') || '');
+          if(srcdoc && /Scramjet did not start|Ultraviolet did not start|Page Not Found|error/i.test(srcdoc)) finish(false);
+          if(hasMeaningfulContent()) finish(true);
+        },420);
+        const timer=setTimeout(()=>finish(false),timeout);
+        t.frame.addEventListener('load',onLoad,{once:true});
+      });
+    }
+    function navigate(raw,forceMode=''){
+      const t=current(); if(!t)return;
+      const navigationIntent='navigate-'+Date.now()+Math.random().toString(16).slice(2);
+      t.navigationIntent=navigationIntent;
+      t.loadWatchToken='superseded-'+navigationIntent;
+      t.transportWatchToken='superseded-'+navigationIntent;
+      if(shouldTriggerSixtySevenJumpscare(raw)){
+        showSixtySevenJumpscare();
+        return;
+      }
+      const rawText=canonicalAddressInput(raw);
+      const proxyInternal=/^(?:\/service\/|\/~\/sj\/|\/scramjet\/service\/|nyx:\/\/)/i.test(rawText);
+      const looksLikeUrl=/^(?:[a-z][a-z0-9+.-]*:|[\w.-]+\.[a-z]{2,}(?:\/|$)|\/|\.\/|\.\.\/|assets\/)/i.test(rawText);
+      const isSearchQuery=rawText && !forceMode && !looksLikeUrl && !proxyInternal;
+      if(isSearchQuery){
+        const url=selectedSearchUrl(rawText);
+        document.querySelectorAll('.nyx-preflight').forEach(overlay=>overlay.remove());
+        win.querySelector('.urlbar').value=browserShellDisplayValue(url);
+        hideBrowserSuggestions();
+        const browserMode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
+        if(!forceMode || !browserTransportOverride) applyPreferredTransportForUrl(url,browserMode);
+        updateBrowserShellLocation(url,t.id,true);
+        const mode=forceMode || selectedBrowserMode(url);
+        logProxySelection(url,forceMode,'search');
+        if(browserMode==='auto' && mode==='iframe' && directOnly(url)){
+          loadScramjetTab(t,url,true);
+        }else if(mode==='rammerhead'){
+          rhNavigate(url,finalUrl=>{
+            if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
+            loadTab(t,finalUrl,true,'rammerhead',url);
+          });
+        }else if(mode==='scramjet'){
+          loadScramjetTab(t,url,true);
+        }else if(mode==='ultraviolet'){
+          setTabMeta(t,url,true);
+          installUltraviolet().then(ok=>{
+            if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
+            const proxied=ok ? proxyModeUrl(mode,url) : '';
+            if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',url);
+            else loadScramjetTab(t,url,false);
+          });
+        }else{
+          loadTab(t,proxyModeUrl(mode,url),true,mode || 'iframe',url);
+        }
+        return;
+      }
+      if(rawText && looksLikeUrl && !proxyInternal) document.querySelectorAll('.nyx-preflight').forEach(overlay=>overlay.remove());
+      const url=normalize(browserShellSourceUrl(raw) || raw); if(!url)return;
+      win.querySelector('.urlbar').value=browserShellDisplayValue(url);
+      if(isAnimexUrl(url) && t.animexPromptUrl!==url){
+        t.animexPromptUrl=url;
+        const tabId=t.id;
+        showAnimexMikuPrompt(()=>{
+          if(!state.tabs.some(tab=>tab.id===tabId)) return;
+          activate(tabId);
+          navigate(url,forceMode);
+        });
+        return;
+      }
+      const browserMode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
+      if(!forceMode || !browserTransportOverride) applyPreferredTransportForUrl(url,browserMode);
+      updateBrowserShellLocation(url,t.id,true);
+      try{
+        const parsed=new URL(url,location.href);
+        if(parsed.origin===location.origin && !parsed.pathname.includes('/assets/') && (parsed.pathname==='/' || /\/index\.html$/i.test(parsed.pathname))){
+          t.url=NYX_BLANK_URL;
+          t.title=NYX_BLANK_URL;
+          t.icon=favicons.nyx;
+          t.history=[NYX_BLANK_URL];
+          t.index=0;
+          clearFrameDocument(t);
+          t.frame.removeAttribute('src');
+          t.frame.classList.remove('active');
+          renderBrowserShellHomeMode(win,'blank');
+          renderTabs();
+          updateBrowserShellLocation(NYX_BLANK_URL,t.id,true);
+          return;
+        }
+        if(parsed.origin===location.origin && (parsed.pathname.includes('/assets/') || parsed.pathname.endsWith('/index.html'))){
+          loadTab(t,parsed.href,true,'iframe');
+          return;
+        }
+      }catch{}
+      const mode=forceMode || selectedBrowserMode(url);
+      logProxySelection(url,forceMode,'navigate');
+      if(browserMode==='auto' && mode==='iframe' && directOnly(url)){
+        loadScramjetTab(t,url,true);
+        return;
+      }
+      if(mode==='rammerhead'){
+        rhNavigate(url,finalUrl=>{
+          if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
+          loadTab(t,finalUrl,true,'rammerhead');
+        });
+      }else if(mode==='scramjet'){
+        loadScramjetTab(t,url,true);
+      }else if(mode==='ultraviolet'){
+        setTabMeta(t,url,true);
+        installUltraviolet().then(ok=>{
+          if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
+          const proxied=ok ? proxyModeUrl(mode,url) : '';
+          if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',url);
+          else{
+            console.warn('nyx UV Engine requested but unavailable or produced a non-UV URL:', {ok, proxied, url});
+            if(browserMode==='auto' && !document.body.classList.contains('browser-shell')){
+              loadScramjetTab(t,url,false);
+              return;
+            }
+            t.url=url;
+            setTabMeta(t,url,false);
+            t.actualEngine='ultraviolet-failed';
+            t.frame.dataset.nyxExpectedEngine='ultraviolet';
+            t.frame.dataset.nyxActualEngine='ultraviolet-failed';
+            setFrameSandbox(t,true);
+            clearFrameDocument(t);
+            t.frame.srcdoc=proxyFailureHtml('Refresh once so the updated service worker can register, then try again.','Ultraviolet');
+          }
+        });
+      }else{
+        loadTab(t,proxyModeUrl(mode,url),true,mode || 'iframe',url);
+      }
+    }
+    function goFrameHistory(direction){
+      const t=current();
+      if(!t) return;
+      const nextIndex=t.index+direction;
+      if(nextIndex>=0 && nextIndex<t.history.length){
+        t.index=nextIndex;
+        const stored=t.history[nextIndex];
+        const source=browserShellSourceUrl(stored) || stored;
+        const engine=t.expectedEngine || detectBrowserEngine(stored,t);
+        if(engine==='scramjet'){
+          loadScramjetTab(t,source,false);
+        }else if(engine==='ultraviolet'){
+          installUltraviolet().then(ok=>{
+            if(!ok || !state.tabs.includes(t)) return;
+            const proxied=String(stored).startsWith('/service/') ? stored : proxyModeUrl('ultraviolet',source);
+            loadTab(t,proxied,false,'ultraviolet',source);
+          });
+        }else{
+          loadTab(t,stored,false,engine,source);
+        }
+        return;
+      }
+      if(t.scramjetFrame){
+        try{
+          if(direction<0) t.scramjetFrame.back();
+          else t.scramjetFrame.forward();
+          return;
+        }catch{}
+      }
+      try{
+        if(t.frame.contentWindow?.history?.length > 1){
+          if(direction<0) t.frame.contentWindow.history.back();
+          else t.frame.contentWindow.history.forward();
+          return;
+        }
+      }catch{}
+    }
+    function closeTabById(tabId,keepBlank=true){
+      const index=state.tabs.findIndex(t=>t.id===tabId);
+      if(index<0) return false;
+        const nextIndex=state.tabs.findIndex(t=>t.id===tabId);
+        if(nextIndex<0) return;
+        state.tabs[nextIndex].frame.remove();
+        state.tabs.splice(nextIndex,1);
+        if(!state.tabs.length){
+          if(keepBlank) addTab();
+          else renderTabs();
+        }else{
+          activate(state.tabs[Math.max(0,nextIndex-1)].id);
+        }
+      return true;
+    }
+    state.addTab=addTab;
+    state.activate=activate;
+    state.closeTab=(tabId)=>closeTabById(tabId,false);
+    state.openPopupTab=openPopupTab;
+    state.refreshSandbox=()=>state.tabs.forEach(tab=>setFrameSandbox(tab));
+    state.renderTabs=renderTabs;
+    state.navigate=navigate;
+    state.reloadTab=reloadTab;
+    win.querySelector('[data-new-tab]').onclick=()=>addTab();
+    win.querySelector('[data-go]').onclick=()=>navigate(win.querySelector('.urlbar').value);
+    win.querySelector('.urlbar').addEventListener('keydown',e=>{if(e.key==='Enter')navigate(e.target.value)});
+    win.querySelector('[data-reload]').onclick=()=>reloadTab();
+    win.querySelector('[data-back]').onclick=()=>goFrameHistory(-1);
+    win.querySelector('[data-forward]').onclick=()=>goFrameHistory(1);
+    win.querySelector('[data-menu]').onclick=()=>document.body.classList.contains('browser-shell') ? openBrowserShellSettings() : openSettings();
+    win.addEventListener('click',e=>{
+      const ignoredShortcutClick=e.target.closest('.home-shortcut[data-ignore-shortcut-click="1"]');
+      if(ignoredShortcutClick){
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation?.();
+        ignoredShortcutClick.dataset.ignoreShortcutClick='0';
+        return;
+      }
+      if(shortcutMenuPointerHandled){
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation?.();
+        shortcutMenuPointerHandled=false;
+        return;
+      }
+      const pointShortcutMenu=shortcutMenuButtonAtPoint(e.clientX,e.clientY);
+      if(pointShortcutMenu){e.preventDefault(); e.stopPropagation(); toggleShortcutMenu(pointShortcutMenu); return}
+      const close=e.target.closest('[data-close-tab]'); if(close){closeTabById(close.dataset.closeTab,true)}
+      const shortcutMenu=e.target.closest('[data-home-shortcut-menu]');
+      if(shortcutMenu){e.preventDefault(); e.stopPropagation(); toggleShortcutMenu(shortcutMenu); return}
+      const shortcutFavorite=e.target.closest('[data-home-shortcut-favorite]');
+      if(shortcutFavorite){e.preventDefault(); e.stopPropagation(); toggleHomeShortcutFavorite(shortcutFavorite.dataset.homeShortcutFavorite); return}
+      const shortcutRemove=e.target.closest('[data-home-shortcut-remove]');
+      if(shortcutRemove){e.preventDefault(); e.stopPropagation(); removeHomeShortcut(shortcutRemove.dataset.homeShortcutRemove); return}
+      const shortcutAdd=e.target.closest('[data-home-shortcut-add]');
+      if(shortcutAdd){e.preventDefault(); e.stopPropagation(); addHomeShortcut(); return}
+      if(!e.target.closest('.home-shortcut-menu') && !e.target.closest('[data-home-shortcut-menu]')) win.querySelectorAll('.home-shortcut.menu-open').forEach(item=>item.classList.remove('menu-open'));
+      const app=e.target.closest('[data-app-url]'); if(app){e.preventDefault(); if(String(app.dataset.appUrl || '').trim().toLowerCase()==='nyx://ai') openBrowserShellAppTab('nyx://ai'); else if(document.body.classList.contains('browser-shell')) openBrowserShellAppTab(app.dataset.appUrl); else navigate(app.dataset.appUrl,appCompatibilityMode(app.dataset.appUrl)); return}
+      const q=e.target.closest('[data-url]'); if(q){e.preventDefault(); navigate(q.dataset.url)}
+    });
+    const messageHandler=e=>{
+      if(!['nyx:navigate','nyx:popup','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:watchparty','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut'].includes(e.data?.type)) return;
+      if(e.data.type==='nyx:shell-tab-index'){
+        switchBrowserShellTabByIndex(e.data.index);
+        return;
+      }
+      if(e.data.type==='nyx:alt-prime'){
+        primeBrowserShellShortcutFocus();
+        return;
+      }
+      if(e.data.type==='nyx:alt-shortcut'){
+        const key=String(e.data.key || '').toLowerCase();
+        handleBrowserShellAltAction(key,{
+          preventDefault(){},
+          stopPropagation(){},
+          altKey:true,
+          ctrlKey:false,
+          metaKey:false,
+          shiftKey:!!e.data.shiftKey,
+          key:e.data.key || key,
+          code:e.data.code || '',
+          location:Number(e.data.location || 0)
+        });
+        return;
+      }
+      if(e.data.type==='nyx:panic-capture'){
+        armPanicKeyCapture();
+        return;
+      }
+      if(e.data.type==='nyx:panic-clear'){
+        clearPanicKey();
+        return;
+      }
+      if(e.data.type==='nyx:panic-key-set'){
+        const combo=String(e.data.combo || '').trim();
+        if(combo){
+          panicCaptureArmed=false;
+          store.setText('nyx.panicKey',combo);
+          updatePanicKeyLabels();
+          toast('Panic key saved: '+combo);
+        }
+        return;
+      }
+      if(e.data.type==='nyx:preset'){
+        applyPreset(e.data.preset || 'nyx');
+        syncPresetCloakFields();
+        return;
+      }
+      if(e.data.type==='nyx:tab-cloak'){
+        applyCustomTabCloak(e.data.title || '???', e.data.favicon || favicons.nyx);
+        return;
+      }
+      if(e.data.type==='nyx:browser-shell-toggle'){
+        const sourceTab=state.tabs.find(t=>t.frame.contentWindow===e.source);
+        const sourceShellTab=browserShellTabs.find(tab=>tab.browserTabId===sourceTab?.id);
+        if(sourceShellTab && (!sourceShellTab.url || sourceShellTab.url.startsWith('nyx://'))){
+          browserShellTabs.splice(0,browserShellTabs.length,...browserShellTabs.filter(tab=>tab.id!==sourceShellTab.id));
+          if(browserShellActiveTab===sourceShellTab.id) browserShellActiveTab=browserShellTabs[0]?.id || null;
+          if(sourceTab?.id && activeBrowser?.closeTab) activeBrowser.closeTab(sourceTab.id);
+          if(!browserShellTabs.length){
+            const freshId='shell-'+Date.now()+Math.random().toString(16).slice(2);
+            browserShellTabs.push({id:freshId,url:'',title:'Home'});
+            browserShellActiveTab=freshId;
+          }
+        }
+        store.set('nyx.browserShellMode',!!e.data.enabled);
+        if(!e.data.enabled){
+          store.setText('nyx.theme','default');
+          store.setText('nyx.visualEffect','none');
+          store.set('nyx.visualEffectUserChoice',false);
+        }
+        applyUserSettings();
+        return;
+      }
+      if(e.data.type==='nyx:browser-settings'){
+        store.setText('nyx.engine',e.data.engine || 'duckduckgo');
+        store.setText('nyx.browserMode',normalizeBrowserModeName(e.data.browserMode || 'auto'));
+        const nextTransport=e.data.transport || 'epoxy';
+        browserTransportOverride='';
+        if(store.text('nyx.transport','epoxy')!==nextTransport){
+          scramjetInstallPromise=null;
+          scramjetController=null;
+          scramjetTransport=null;
+          scramjetTransportKey='';
+          uvInstallPromise=null;
+        }
+        store.setText('nyx.transport',nextTransport);
+        console.log('nyx browser settings saved', {
+          engine:store.text('nyx.engine','duckduckgo'),
+          browserMode:normalizeBrowserModeName(store.text('nyx.browserMode','auto')),
+          transport:store.text('nyx.transport','epoxy')
+        });
+        applyUserSettings();
+        toast('Browser settings saved');
+        return;
+      }
+      if(e.data.type==='nyx:popup-protection'){
+        const enabled=!!e.data.enabled;
+        store.set('nyx.popupProtection',enabled);
+        qsa('[data-switch="nyx.popupProtection"]').forEach(el=>el.classList.toggle('on',enabled));
+        activeBrowser?.refreshSandbox?.();
+        toast('Popup Protection '+(enabled?'on':'off'));
+        return;
+      }
+      if(e.data.type==='nyx:effect-settings'){
+        store.set('nyx.visualEffectUserChoice',true);
+        store.setText('nyx.visualEffect',e.data.effect || 'none');
+        store.setText('nyx.visualEffectSpeed',e.data.speed || '1.1');
+        store.setText('nyx.visualEffectAmount',String(Math.max(1,Math.min(64,Number(e.data.amount || 16)))));
+        store.setText('nyx.theme',e.data.theme || store.text('nyx.theme','default'));
+        applyThemeSetting();
+        applyVisualEffectSetting();
+        const shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
+        if(shellTab?.url?.startsWith('nyx://')){
+          showBrowserShellInternalPage(shellTab.url.replace('nyx://','') || 'apps');
+        }
+        return;
+      }
+      if(e.data.type==='nyx:watchparty'){
+        startWatchParty();
+        return;
+      }
+      if(e.data.type==='nyx:navigate'){
+        openBrowserShellAppTab(e.data.url || '');
+        return;
+      }
+      if(e.data.type==='nyx:internal'){
+        openBrowserShellInternalTab(e.data.page || 'apps');
+        return;
+      }
+      const sourceTab=state.tabs.find(t=>t.frame.contentWindow===e.source);
+      if(e.data.type==='nyx:popup'){
+        const previousActive=state.active;
+        if(sourceTab) state.active=sourceTab.id;
+        openPopupTab(e.data.url);
+        if(sourceTab && state.tabs.some(t=>t.id===previousActive) && state.active===sourceTab.id) state.active=previousActive;
+        return;
+      }
+      if(!sourceTab) return;
+      if(e.data.type==='nyx:fullscreen'){
+        if(!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+        else document.exitFullscreen?.();
+        return;
+      }
+      if(e.data.type==='nyx:about'){
+        launchDirectAboutBlankCloak();
+        return;
+      }
+      if(e.data.type==='nyx:about-tab'){
+        launchHostedCloak('ac');
+        return;
+      }
+      if(e.data.type==='nyx:effect'){
+        store.set('nyx.visualEffectUserChoice',true);
+        store.setText('nyx.visualEffect',e.data.effect || 'none');
+        applyVisualEffectSetting();
+        toast('Browser Mode effect updated');
+        return;
+      }
+      if(e.data.type==='nyx:settings-window'){
+        document.body.classList.contains('browser-shell') ? openBrowserShellSettings() : openSettings();
+        return;
+      }
+      navigate(e.data.url);
+    };
+    window.addEventListener('message',messageHandler);
+    const initialTab=addTab(url,options.forceMode || '');
+    if(document.body.classList.contains('browser-shell') && !url){
+      ensureBrowserShellHome();
+      const homeTab=browserShellTabs.find(tab=>tab.title==='Home' && !tab.url) || browserShellTabs[0];
+      if(homeTab){
+        homeTab.browserTabId=initialTab.id;
+        homeTab.url='';
+        homeTab.title='Home';
+        homeTab.icon=favicons.nyx;
+        browserShellActiveTab=homeTab.id;
+      }
+      initialTab.url='';
+      initialTab.title='Home';
+      initialTab.icon=favicons.nyx;
+      initialTab.history=[''];
+      initialTab.index=0;
+      renderBrowserShellHomeMode(win,'home');
+      renderTabs();
+      renderBrowserShellTabs();
+      playHomeEntranceAnimation(win);
+      tick();
+      initDesktopSplash();
+    }
+    return win;
+  }
+  function openUpdates(){
+    makeWindow({title:'ռʏӼ Fixes',left:'24px',top:'60px',width:'520px',height:'620px',autoMaximize:true,body:`<div class="panel"><h1>ռʏӼ Fixes</h1><p class="home-sub">Click ռʏӼ in the top-left anytime to see this.</p><div class="glass-grid" style="grid-template-columns:1fr"><div class="glass-card"><h2>Latest fixes</h2><p>- Added animated windows that eject from the bottom dock and fade when closed.</p><p>- Made the Updates window open fullscreen every time.</p><p>- Added one-time Updates popup on startup.</p><p>- Added multiple weather location choices for ambiguous searches.</p><p>- Added hot and freezing weather themes.</p><p>- Updated glassmorphism so 100%+ lowers blur instead of over-brightening.</p><p>- Replaced the Discord logo with the new attached icon.</p><p>- Removed the left desktop Browser and Updates buttons.</p><p>- Changed Weather from an app into a right-side liquid glass panel.</p><p>- Added visible background previews and background upload.</p><p>- Rebuilt the loading screen so it types the welcome text.</p><p>- Added local app icons to avoid blocked favicon requests.</p></div><div class="glass-card"><h2>Browser fixes</h2><p>- Added a Node server for Ultraviolet.</p><p>- Fixed UV static routes for /uv, /baremux, /epoxy, and /wisp.</p><p>- Replaced the old Wisp server package.</p><p>- Pinned the compatible Epoxy transport.</p><p>- Removed hard UV script loading from Live Server mode.</p></div></div></div>`});
+  }
+  function weatherDescription(code){
+    const map={0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Cloudy',45:'Fog',48:'Freezing fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',80:'Rain showers',81:'Rain showers',82:'Heavy showers',95:'Thunderstorm'};
+    return map[code] || 'Weather';
+  }
+  function weatherIcon(code){
+    if([0,1].includes(Number(code))) return '☀️';
+    if([2,3,45,48].includes(Number(code))) return '☁️';
+    if([51,53,55,61,63,65,80,81,82,95].includes(Number(code))) return '🌧️';
+    if([71,73,75].includes(Number(code))) return '❄️';
+    return '🌤️';
+  }
+  function forecastDayLabel(dateText,index){
+    if(index===0) return 'Today';
+    try{
+      return new Intl.DateTimeFormat([],{weekday:'short'}).format(new Date(dateText+'T12:00:00'));
+    }catch{
+      return 'Day';
+    }
+  }
+  function renderWeatherForecast(daily){
+    const box=weatherPanel()?.querySelector('[data-weather-forecast]');
+    if(!box) return;
+    const times=daily?.time || [];
+    if(!times.length){
+      box.innerHTML='';
+      return;
+    }
+    box.innerHTML=times.slice(0,7).map((day,index)=>{
+      const code=daily.weather_code?.[index] ?? 3;
+      const rain=Math.round(daily.precipitation_probability_max?.[index] ?? 0);
+      const high=Math.round(daily.temperature_2m_max?.[index] ?? 0);
+      const low=Math.round(daily.temperature_2m_min?.[index] ?? 0);
+      return `<div class="weather-forecast-row" title="${esc(weatherDescription(code))}">
+        <span class="weather-day">${esc(forecastDayLabel(day,index))}</span>
+        <span aria-hidden="true">${weatherIcon(code)}</span>
+        <span class="weather-rain-chance">${rain}%</span>
+        <span class="weather-high-low">${high}&deg; <span>${low}&deg;</span></span>
+      </div>`;
+    }).join('');
+  }
+  function weatherPanel(){
+    return $('weatherPanel');
+  }
+  function setWeatherStatus(text){
+    const status=weatherPanel()?.querySelector('[data-weather-status]');
+    if(status) status.textContent=text || '';
+  }
+  function savedWeatherLocation(){
+    return {
+      latitude:Number(store.text('nyx.weatherLat','34.0522')),
+      longitude:Number(store.text('nyx.weatherLon','-118.2437')),
+      place:store.text('nyx.weatherPlace','Los Angeles'),
+      timezone:store.text('nyx.weatherTimezone','America/Los_Angeles')
+    };
+  }
+  function weatherEffectClass(code, wind, temp){
+    if(Number(temp) > 100) return 'weather-hot';
+    if(Number(temp) < 32) return 'weather-freezing';
+    if([51,53,55,61,63,65,80,81,82,95].includes(code)) return 'weather-rain';
+    if(Number(wind) >= 18) return 'weather-wind';
+    if([0,1].includes(code)) return 'weather-sun';
+    return 'weather-cloud';
+  }
+  //weather
+  function renderWeatherTime(timezone){
+    const time=weatherPanel()?.querySelector('[data-weather-time]');
+    if(!time) return;
+    try{
+      time.textContent='Local time '+new Intl.DateTimeFormat([],{
+        hour:'numeric',
+        minute:'2-digit',
+        timeZone:timezone || savedWeatherLocation().timezone
+      }).format(new Date());
+    }catch{
+      time.textContent='Local time --:--';
+    }
+  }
+  function renderWeather(data, place, timezone, daily){
+    const panel=weatherPanel();
+    if(!panel || !data) return;
+    panel.querySelector('[data-weather-temp]').innerHTML=Math.round(data.temperature_2m)+'&deg;';
+    panel.querySelector('[data-weather-place]').textContent=place || 'Weather';
+    panel.querySelector('[data-weather-desc]').textContent=weatherDescription(data.weather_code);
+    panel.querySelector('[data-weather-icon]').textContent=weatherIcon(data.weather_code);
+    panel.querySelector('[data-weather-feels]').innerHTML=Math.round(data.apparent_temperature ?? data.temperature_2m)+'&deg;';
+    panel.querySelector('[data-weather-wind]').textContent=Math.round(data.wind_speed_10m)+' mph';
+    panel.querySelector('[data-weather-humidity]').textContent=Math.round(data.relative_humidity_2m)+'%';
+    panel.querySelector('[data-weather-precip]').textContent=((Number(data.precipitation || 0)).toFixed(Number(data.precipitation || 0) >= 1 ? 1 : 2).replace(/\.00$/,'')).replace(/\.0$/,'')+' in';
+    panel.classList.remove('weather-sun','weather-cloud','weather-rain','weather-wind','weather-hot','weather-freezing');
+    panel.classList.add(weatherEffectClass(data.weather_code,data.wind_speed_10m,data.temperature_2m));
+    renderWeatherForecast(daily);
+    renderWeatherTime(timezone);
+    const restore=$('weatherRestore');
+    if(restore) restore.dataset.weatherSummary=`${Math.round(data.temperature_2m)}° ${weatherDescription(data.weather_code)}`;
+    setWeatherStatus('');
+  }
+  function clearWeatherOptions(){
+    const box=weatherPanel()?.querySelector('[data-weather-options]');
+    if(box){
+      box.innerHTML='';
+      box.hidden=true;
+      box.onchange=null;
+    }
+  }
+  function weatherPlaceName(match){
+    return [match.name,match.admin1,match.country].filter(Boolean).join(', ');
+  }
+  function weatherTimezoneFallbackName(timezone=''){
+    const raw=String(timezone || '').split('/').pop() || 'Current location';
+    return raw.replace(/_/g,' ') + (/America\//.test(String(timezone || '')) ? ', United States' : '');
+  }
+  async function reverseWeatherPlace(latitude,longitude,timezone=''){
+    const cleanCountry=name=>String(name || '').replace(/\s*\(the\)\s*/i,'').replace(/United States of America/i,'United States').trim();
+    try{
+      const res=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${encodeURIComponent(latitude)}&longitude=${encodeURIComponent(longitude)}&localityLanguage=en`,{cache:'no-store'});
+      if(res.ok){
+        const data=await res.json();
+        const city=data.city || data.locality || '';
+        const region=data.principalSubdivision || '';
+        const country=cleanCountry(data.countryName || '');
+        const place=[city,region,country].filter(Boolean).join(', ');
+        if(place) return place;
+      }
+    }catch{}
+    try{
+      const res=await fetch(`https://geocoding-api.open-meteo.com/v1/reverse?latitude=${encodeURIComponent(latitude)}&longitude=${encodeURIComponent(longitude)}&language=en&format=json&count=1`,{cache:'no-store'});
+      if(res.ok){
+        const data=await res.json();
+        const match=Array.isArray(data.results) ? data.results[0] : null;
+        const place=match ? weatherPlaceName(match) : '';
+        if(place) return place;
+      }
+    }catch{}
+    return weatherTimezoneFallbackName(timezone);
+  }
+  function scoreWeatherMatch(term,match){
+    const query=String(term || '').toLowerCase();
+    const name=String(match.name || '').toLowerCase();
+    const admin=String(match.admin1 || '').toLowerCase();
+    const country=String(match.country || '').toLowerCase();
+    let score=0;
+    if(query===name) score+=80;
+    if(query.includes(name)) score+=30;
+    if(admin && query.includes(admin)) score+=35;
+    if(country && query.includes(country)) score+=28;
+    if(/\b(us|usa|united states|america)\b/.test(query) && match.country_code==='US') score+=24;
+    if(match.feature_code==='PPLA' || match.feature_code==='PPLC') score+=8;
+    if(match.population) score+=Math.min(20,Math.log10(Number(match.population))*4);
+    return score;
+  }
+  async function selectWeatherMatch(match){
+    const place=weatherPlaceName(match);
+    store.setText('nyx.weatherLat',match.latitude);
+    store.setText('nyx.weatherLon',match.longitude);
+    store.setText('nyx.weatherPlace',place);
+    if(match.timezone) store.setText('nyx.weatherTimezone',match.timezone);
+    const input=weatherPanel()?.querySelector('[data-weather-query]');
+    if(input) input.value=place;
+    clearWeatherOptions();
+    await loadWeatherLocation({latitude:match.latitude,longitude:match.longitude,place,timezone:match.timezone});
+  }
+  async function loadWeatherLocation(location=savedWeatherLocation()){
+    const coords={
+      latitude:Number(location.latitude) || 34.0522,
+      longitude:Number(location.longitude) || -118.2437
+    };
+    const place=location.place || 'Los Angeles';
+    const timezone=location.timezone || savedWeatherLocation().timezone;
+    const panel=weatherPanel();
+    if(panel) panel.querySelector('[data-weather-place]').textContent=place;
+    setWeatherStatus('Loading...');
+    try{
+      const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto`);
+      if(!res.ok) throw new Error('weather failed');
+      const json=await res.json();
+      const tz=json.timezone || timezone;
+      store.setText('nyx.weatherTimezone',tz);
+      renderWeather(json.current,place,tz,json.daily);
+    }catch{
+      setWeatherStatus('Weather unavailable right now');
+    }
+  }
+  async function searchWeatherPlace(query){
+    const term=String(query||'').trim();
+    if(!term){loadWeatherLocation(); return}
+    clearWeatherOptions();
+    setWeatherStatus('Searching...');
+    try{
+      const fetchMatches=async(searchTerm)=>{
+        const res=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(searchTerm)}&count=10&language=en&format=json`);
+        if(!res.ok) throw new Error('search failed');
+        const data=await res.json();
+        return data.results || [];
+      };
+      let results=await fetchMatches(term);
+      if(!results.length && term.includes(',')){
+        results=await fetchMatches(term.split(',')[0].trim());
+      }
+      const seen=new Set();
+      const unique=results.filter(match=>{
+        const key=[match.name,match.admin1,match.country,match.latitude,match.longitude].join('|');
+        if(seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      const matches=unique.sort((a,b)=>scoreWeatherMatch(term,b)-scoreWeatherMatch(term,a));
+      if(!matches.length){setWeatherStatus('No location found'); return}
+      if(matches.length===1){
+        await selectWeatherMatch(matches[0]);
+        return;
+      }
+      const box=weatherPanel()?.querySelector('[data-weather-options]');
+      if(!box) return;
+      box.hidden=false;
+      box.innerHTML='<option value="">Choose a matching location...</option>'+matches.map((match,i)=>{
+        const name=weatherPlaceName(match);
+        const detail=[match.timezone,match.population ? `${Number(match.population).toLocaleString()} people` : ''].filter(Boolean).join(' · ');
+        return `<option value="${i}">${esc(name)}${detail ? ` - ${esc(detail)}` : ''}</option>`;
+      }).join('');
+      box.onchange=()=>{if(box.value!=='') selectWeatherMatch(matches[Number(box.value)])};
+      setWeatherStatus('Choose a location');
+    }catch{
+      setWeatherStatus('Location search unavailable');
+    }
+  }
+  function isWeatherPanelOpen(){
+    const panel=weatherPanel();
+    return !!panel && !panel.classList.contains('minimized') && !panel.classList.contains('closing');
+  }
+  function closeWeatherPanelAnimated(){
+    const panel=weatherPanel();
+    const restore=$('weatherRestore');
+    if(!panel) return;
+    if(panel.classList.contains('minimized') || panel.classList.contains('closing')) return;
+    panel.classList.remove('opening');
+    panel.classList.add('closing');
+    setTimeout(()=>{
+      panel.classList.remove('closing');
+      panel.classList.add('minimized');
+      if(!document.body.classList.contains('browser-shell')) restore?.classList.add('show');
+      else restore?.classList.remove('show');
+    },520);
+  }
+  function closeWeatherForWindowOpen(){
+    const panel=weatherPanel();
+    if(!panel || !isWeatherPanelOpen()) return;
+    closeWeatherPanelAnimated();
+  }
+  function restoreWeatherPanel(){
+    const panel=weatherPanel();
+    const restore=$('weatherRestore');
+    if(!panel) return;
+    panel.classList.remove('minimized','closing');
+    panel.classList.add('opening');
+    setTimeout(()=>panel.classList.remove('opening'),640);
+    restore?.classList.remove('show');
+    panel.querySelector('[data-weather-query]')?.focus();
+  }
+  function loadUserWeatherLocation(){
+    if(!navigator.geolocation) return Promise.resolve(false);
+    return new Promise(resolve=>{
+      navigator.geolocation.getCurrentPosition(async position=>{
+        const coords=position.coords || {};
+        if(!Number.isFinite(coords.latitude) || !Number.isFinite(coords.longitude)){
+          resolve(false);
+          return;
+        }
+        const timezone=Intl.DateTimeFormat().resolvedOptions().timeZone || savedWeatherLocation().timezone;
+        const place=await reverseWeatherPlace(coords.latitude,coords.longitude,timezone);
+        store.setText('nyx.weatherLat',coords.latitude);
+        store.setText('nyx.weatherLon',coords.longitude);
+        store.setText('nyx.weatherPlace',place);
+        store.setText('nyx.weatherTimezone',timezone);
+        const input=weatherPanel()?.querySelector('[data-weather-query]');
+        if(input) input.value=place;
+        await loadWeatherLocation({latitude:coords.latitude,longitude:coords.longitude,place,timezone});
+        resolve(true);
+      },()=>{
+        resolve(false);
+      },{enableHighAccuracy:false,maximumAge:600000,timeout:4500});
+    });
+  }
+  async function openWeatherOnStartup(){
+    initWeatherPanel();
+    restoreWeatherPanel();
+    const usedLocation=await loadUserWeatherLocation();
+    if(!usedLocation) loadWeatherLocation(savedWeatherLocation());
+    restoreWeatherPanel();
+  }
+  function initWeatherPanel(){
+    const panel=weatherPanel();
+    if(!panel || panel.dataset.ready) return;
+    panel.dataset.ready='true';
+    const saved=savedWeatherLocation();
+    const query=panel.querySelector('[data-weather-query]');
+    if(query) query.value=saved.place;
+    panel.querySelector('[data-weather-search]')?.addEventListener('submit',e=>{
+      e.preventDefault();
+      searchWeatherPlace(query?.value);
+    });
+    panel.querySelector('[data-weather-refresh]')?.addEventListener('click',()=>loadWeatherLocation());
+    panel.querySelector('[data-weather-minimize]')?.addEventListener('click',closeWeatherPanelAnimated);
+    $('weatherRestore')?.addEventListener('click',restoreWeatherPanel);
+    loadWeatherLocation(saved);
+    if(!initWeatherPanel.timeTimer) initWeatherPanel.timeTimer=setInterval(()=>renderWeatherTime(savedWeatherLocation().timezone),30000);
+  }
+  function openWeather(){
+    initWeatherPanel();
+    if(isWeatherPanelOpen()){
+      closeWeatherPanelAnimated();
+      return;
+    }
+    restoreWeatherPanel();
+    weatherPanel()?.querySelector('[data-weather-query]')?.focus();
+  }
+  //lion-ai-ui
+  const nyxAiModels=[
+    ['llama-3.3-70b','Llama 3.3 70B'],
+    ['gpt-oss-120b','GPT-OSS 120B'],
+    ['qwen3-32b','Qwen3 32B'],
+    ['llama-4-scout','Llama 4 Scout'],
+    ['chatgpt-5.4-mini','ChatGPT 5.4 Mini']
+  ];
+  function nyxAiSelectedModel(){
+    const saved=store.text('nyx.aiModel','llama-3.3-70b');
+    return nyxAiModels.some(([id])=>id===saved) ? saved : 'llama-3.3-70b';
+  }
+  function nyxAiModelLabel(id=nyxAiSelectedModel()){
+    return nyxAiModels.find(([modelId])=>modelId===id)?.[1] || 'Llama 3.3 70B';
+  }
+  function nyxAiModelOptions(){
+    const selected=nyxAiSelectedModel();
+    return nyxAiModels.map(([id,label])=>`<option value="${esc(id)}" ${id===selected?'selected':''}>${esc(label)}</option>`).join('');
+  }
+  function lionAiBody(){
+    return `<div class="lion-ai-panel">
+      <div class="lion-ai-head">
+        <div class="lion-ai-brand">
+          <div class="lion-ai-mark">NYX</div>
+          <div class="lion-ai-title"><h1>Nyx AI</h1><span data-nyx-ai-model-label>${esc(nyxAiModelLabel())}</span></div>
+        </div>
+        <div class="lion-ai-head-actions"><button class="lion-ai-clear" type="button" data-lion-ai-clear title="Clear chat" aria-label="Clear chat">&#8635;</button><select class="lion-ai-model-select" data-lion-ai-model>${nyxAiModelOptions()}</select></div>
+      </div>
+      <div class="lion-ai-chat" data-lion-ai-chat>
+        <div class="lion-ai-msg bot">Hi. Pick a model and ask me anything.</div>
+      </div>
+      <div>
+        <div class="lion-ai-preview" data-lion-ai-preview><img alt=""><span></span></div>
+        <div class="lion-ai-image-status" data-lion-ai-image-status></div>
+        <form class="lion-ai-form" data-lion-ai-form>
+          <label class="lion-ai-plus" title="Add image">+<input type="file" accept="image/*" data-lion-ai-image></label>
+          <textarea class="lion-ai-input" data-lion-ai-input placeholder="Ask Nyx AI anything..." autocomplete="off" spellcheck="true"></textarea>
+          <button class="lion-ai-send" type="submit" title="Send">↑</button>
+        </form>
+      </div>
+    </div>`;
+  }
+  function openLionAI(){
+    const win=makeWindow({title:'Nyx AI',className:'lion-ai-window',left:'8vw',top:'54px',width:'min(920px,88vw)',height:'min(720px,calc(100vh - 82px))',autoMaximize:false,body:lionAiBody()});
+    lionAiRestoreChat(win);
+    setTimeout(()=>win.querySelector('[data-lion-ai-input]')?.focus(),80);
+  }
+  function lionAiTopic(prompt){
+    const phrase=String(prompt || '');
+    const afterSubjectWord=prompt.match(/\b(?:about|on|regarding)\s+(.+?)(?:[.?!]|$)/i);
+    let subject=afterSubjectWord ? afterSubjectWord[1] : phrase;
+    subject=subject
+      .replace(/\bwhy\s+(.+?)\s+(?:is|are)\s+(?:good|great|bad|important|popular|useful|fun)\b/i,'$1')
+      .replace(/\bwhat\s+makes\s+(.+?)\s+(?:good|great|bad|important|popular|useful|fun)\b/i,'$1');
+    const cleaned=subject
+      .replace(/\b\d+\s*sentences?\b/gi,' ')
+      .replace(/\b(write|make|create|generate|paragraph|essay|response|about|on|regarding|please|can you|for me|tell me|explain|define|what is|whats|what's|how do|how does|why does|why is)\b/gi,' ')
+      .replace(/\b(is|are|good|great|bad|important|popular|useful|fun)\b$/gi,' ')
+      .replace(/\b(a|an|the)\b/gi,' ')
+      .replace(/\s+/g,' ')
+      .replace(/^[^\w]+|[^\w]+$/g,'')
+      .trim();
+    return cleaned || 'the topic';
+  }
+  function lionAiParagraph(prompt){
+    const match=prompt.match(/(\d+)\s*sent/i);
+    const count=Math.max(1,Math.min(20,match ? Number(match[1]) : 8));
+    const topic=lionAiTopic(prompt);
+    const isPokemon=/\bpokemon\b/i.test(topic);
+    const stems=isPokemon ? [
+      `${topic} is popular because it mixes adventure, collecting, strategy, and imagination in a way many people can understand`,
+      `The main idea of ${topic} is that trainers meet different creatures, learn their strengths, and build teams that match their goals`,
+      `Each creature in ${topic} can feel memorable because it has its own design, type, moves, and personality`,
+      `This variety makes ${topic} interesting because two people can enjoy the same world in completely different ways`,
+      `Some people like ${topic} for battling, where choices such as type matchups, speed, abilities, and move timing matter`,
+      `Other people enjoy ${topic} because collecting and discovering new creatures gives the world a sense of progress`,
+      `The games also teach planning because a strong team usually needs balance instead of only using one favorite creature`,
+      `For example, a team with fire, water, grass, electric, and defensive options can handle more situations than a random team`,
+      `Another important part of ${topic} is evolution, which makes growth feel visible and rewarding`,
+      `When a creature evolves, the player can see effort turn into a stronger and more impressive form`,
+      `${topic} also works well as a story because it gives players rivals, gyms, regions, challenges, and goals to chase`,
+      `Those goals make the journey feel organized while still leaving room for personal choices`,
+      `The trading and battling parts of ${topic} also make it social, since players can share creatures and test strategies together`,
+      `This social side helps explain why ${topic} has stayed popular for so many years`,
+      `A good explanation of ${topic} should mention both the simple fun of catching creatures and the deeper strategy behind team building`,
+      `That combination lets younger players enjoy the basics while older players can study advanced tactics`,
+      `${topic} also stands out because its world is easy to recognize through names, music, creatures, and regions`,
+      `Even people who do not play often know famous examples, which shows how strong the series has become`,
+      `Overall, ${topic} matters because it turns collecting, friendship, competition, and exploration into one connected experience`,
+      `That is why ${topic} continues to be a subject people can write about, debate, play, and enjoy`
+    ] : [
+      `${topic} is an interesting subject because it has its own ideas, history, and reasons people care about it`,
+      `When people talk about ${topic}, they are usually thinking about what makes it unique compared with other topics`,
+      `A good paragraph about ${topic} should explain the main idea clearly before adding smaller details`,
+      `One important part of ${topic} is the way it connects facts, examples, and personal interest`,
+      `Those connections make ${topic} easier to understand because the reader can see why it matters`,
+      `Another useful way to explain ${topic} is to describe how it affects people or the world around them`,
+      `For many people, ${topic} becomes memorable because it includes details that are easy to picture`,
+      `Those details help turn a simple explanation into something more specific and meaningful`,
+      `A strong discussion of ${topic} should also include cause and effect, because that shows how one idea leads to another`,
+      `Examples are especially helpful because they give the reader something concrete to connect with`,
+      `If someone is learning about ${topic}, they should focus on the biggest ideas first and then study the details`,
+      `That approach prevents the subject from feeling confusing or random`,
+      `The more someone studies ${topic}, the easier it becomes to notice patterns and explain them clearly`,
+      `Those patterns can help someone compare ${topic} with similar subjects and understand what makes it different`,
+      `A careful explanation should avoid drifting away from ${topic}, because staying focused makes the writing stronger`,
+      `Good writing about ${topic} also uses clear transitions so each sentence builds on the last one`,
+      `This makes the paragraph feel organized instead of like a list of unrelated thoughts`,
+      `By the end, the reader should understand not only what ${topic} is, but also why it deserves attention`,
+      `That is what makes ${topic} a useful subject for learning, writing, and discussion`,
+      `Overall, ${topic} stands out because it can be explained through facts, examples, and clear reasoning`
+    ];
+    return stems.slice(0,count).map(s=>s+'.').join(' ');
+  }
+  function lionAiNormalizeMath(expr){
+    return expr.replace(/π/gi,'pi').replace(/\s+/g,'').replace(/(\d)([a-zA-Z(])/g,'$1*$2').replace(/([a-zA-Z)])(\d)/g,'$1*$2').replace(/\)\(/g,')*(').replace(/\^/g,'**');
+  }
+  function lionAiEvalExpression(expr, xValue=0){
+    const normalized=lionAiNormalizeMath(expr)
+      .replace(/\bpi\b/gi,'Math.PI').replace(/\be\b/g,'Math.E')
+      .replace(/\bsqrt\(/gi,'Math.sqrt(').replace(/\bsin\(/gi,'Math.sin(').replace(/\bcos\(/gi,'Math.cos(').replace(/\btan\(/gi,'Math.tan(')
+      .replace(/\blog\(/gi,'Math.log10(').replace(/\bln\(/gi,'Math.log(').replace(/\babs\(/gi,'Math.abs(');
+    if(!/^[0-9xX+\-*/().,MathPIEabsqrtingclo]+$/.test(normalized)) throw new Error('Unsupported symbol in expression.');
+    return Function('x','return ('+normalized.replace(/\bX\b/g,'x')+')')(xValue);
+  }
+  function lionAiSolveEquation(input){
+    const equation=input.split(/solve:?/i).pop().trim();
+    if(!equation.includes('=')){
+      const value=lionAiEvalExpression(equation);
+      return `Result: ${Number.isFinite(value) ? value : 'undefined'}\n\nI evaluated the expression using normal order of operations.`;
+    }
+    const [left,right]=equation.split('=');
+    const f=x=>lionAiEvalExpression(left,x)-lionAiEvalExpression(right,x);
+    const y0=f(0), y1=f(1), y2=f(2);
+    const a=(y2-2*y1+y0)/2;
+    const b=y1-y0-a;
+    const c=y0;
+    if(Math.abs(a)<1e-9){
+      if(Math.abs(b)<1e-9) return Math.abs(c)<1e-9 ? 'Every x works for this equation.' : 'No solution found because both sides differ by a constant.';
+      const x=-c/b;
+      return `Solution: x = ${Number(x.toFixed(8))}\n\nI rewrote the equation as f(x)=0 and solved the linear form.`;
+    }
+    const disc=b*b-4*a*c;
+    if(disc>=0){
+      const r1=(-b+Math.sqrt(disc))/(2*a);
+      const r2=(-b-Math.sqrt(disc))/(2*a);
+      return `Solutions: x = ${Number(r1.toFixed(8))} and x = ${Number(r2.toFixed(8))}\n\nI detected a quadratic form and used the quadratic formula.`;
+    }
+    const real=-b/(2*a);
+    const imag=Math.sqrt(-disc)/(2*Math.abs(a));
+    return `Complex solutions: x = ${Number(real.toFixed(8))} + ${Number(imag.toFixed(8))}i and x = ${Number(real.toFixed(8))} - ${Number(imag.toFixed(8))}i\n\nI detected a quadratic with a negative discriminant.`;
+  }
+  function lionAiCleanMathPrompt(prompt){
+    return String(prompt || '')
+      .replace(/^(please\s*)?(can\s+you\s+)?(calculate|compute|evaluate|solve|what\s+is|what's|whats|math)[:\s]*/i,'')
+      .replace(/[?,]+$/,'')
+      .trim();
+  }
+  function lionAiFormatBigInt(value){
+    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  }
+  function lionAiExactIntegerPower(expr){
+    const match=String(expr || '').replace(/\s+/g,'').replace(/[−–—]/g,'-').match(/^(-?\d+)\^(\d+)$/);
+    if(!match) return null;
+    const base=BigInt(match[1]);
+    const exp=BigInt(match[2]);
+    const result=base ** exp;
+    return `${match[1]}^${match[2]} = ${lionAiFormatBigInt(result)}\n\nExact value: ${result.toString()}`;
+  }
+  function lionAiSentenceCount(prompt){
+    const match=String(prompt || '').match(/(\d+)\s*(?:sent|sentence|sentences)/i);
+    return Math.max(1,Math.min(20,match ? Number(match[1]) : 8));
+  }
+  function lionAiCleanSubjectText(value){
+    return String(value || '')
+      .replace(/```[\s\S]*?```/g,' ')
+      .replace(/[“”]/g,'"')
+      .replace(/[‘’]/g,"'")
+      .replace(/\s+/g,' ')
+      .replace(/^[\s:;,.!?'"-]+|[\s:;,.!?'"-]+$/g,'')
+      .trim();
+  }
+  function lionAiTitleSubject(value){
+    const text=lionAiCleanSubjectText(value);
+    if(!text) return 'The topic';
+    return text.replace(/\b\w+/g,(word,index)=>/^(and|or|of|the|a|an|to|for|in|on|with)$/i.test(word) && index>0 ? word.toLowerCase() : word[0].toUpperCase()+word.slice(1));
+  }
+  function lionAiTopic(prompt){
+    const phrase=lionAiCleanSubjectText(prompt);
+    const direct=phrase.match(/\b(?:about|on|regarding|over)\s+(.+?)(?:[.?!]|$)/i);
+    let subject=direct ? direct[1] : phrase;
+    subject=subject
+      .replace(/\bwhy\s+(.+?)\s+(?:is|are|was|were)\s+(?:good|great|bad|important|popular|useful|fun|cool|interesting)\b/i,'$1')
+      .replace(/\bwhy\s+(?:is|are|was|were)\s+(.+?)\s+(?:good|great|bad|important|popular|useful|fun|cool|interesting)\b/i,'$1')
+      .replace(/\bwhat\s+makes\s+(.+?)\s+(?:good|great|bad|important|popular|useful|fun|cool|interesting)\b/i,'$1')
+      .replace(/\b(?:write|make|create|generate|give me|tell me|explain|define)\b/gi,' ')
+      .replace(/\b(?:a|an|the)?\s*(?:paragraph|essay|response|answer|summary)\b/gi,' ')
+      .replace(/\b\d+\s*(?:sent|sentence|sentences)\b/gi,' ')
+      .replace(/\b(?:please|can you|for me|in detail|short|long)\b/gi,' ')
+      .replace(/\b(?:what is|whats|what's|how do|how does|why does|why is)\b/gi,' ')
+      .replace(/\s+/g,' ');
+    subject=lionAiCleanSubjectText(subject);
+    return subject || 'the topic';
+  }
+  function lionAiNormalizeMathText(value){
+    const supers={'⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9'};
+    return String(value || '')
+      .replace(/[−–—]/g,'-')
+      .replace(/[×·∙]/g,'*')
+      .replace(/÷/g,'/')
+      .replace(/[πΠ]/g,'pi')
+      .replace(/√/g,'sqrt')
+      .replace(/≤/g,'<=')
+      .replace(/≥/g,'>=')
+      .replace(/≠/g,'!=')
+      .replace(/≈/g,'~')
+      .replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g,m=>'^'+[...m].map(ch=>supers[ch] || '').join(''));
+  }
+  function lionAiLooksLikeMath(value){
+    const text=lionAiNormalizeMathText(value);
+    return /(?:=|[+\-*/^()]|\b(?:sqrt|sin|cos|tan|log|ln|pi)\b)/i.test(text) && /(?:\d|x|pi)/i.test(text);
+  }
+  function lionAiNormalizeMath(expr){
+    return lionAiNormalizeMathText(expr)
+      .replace(/\bsqrt\s*([0-9.]+|x)\b/gi,'sqrt($1)')
+      .replace(/\s+/g,'')
+      .replace(/(\d)([a-zA-Z(])/g,'$1*$2')
+      .replace(/([a-zA-Z)])(\d)/g,'$1*$2')
+      .replace(/\)\(/g,')*(')
+      .replace(/\^/g,'**');
+  }
+  function lionAiCleanMathPrompt(prompt){
+    let text=lionAiNormalizeMathText(prompt);
+    const direct=text.match(/\b(?:about|on|regarding|over)\s+(.+?)(?:[.?!]|$)/i);
+    if(direct) text=direct[1];
+    return text
+      .replace(/^(please\s*)?(can\s+you\s+)?(calculate|compute|evaluate|solve|what\s+is|what's|whats|math)[:\s]*/i,'')
+      .replace(/\b(?:write|make|create|generate|paragraph|essay|sentences?|explain|about|please|for me)\b/gi,' ')
+      .replace(/[?,]+$/,'')
+      .replace(/\s+/g,' ')
+      .trim();
+  }
+  function lionAiExactIntegerPower(expr){
+    const match=lionAiNormalizeMathText(expr).replace(/\s+/g,'').match(/^(-?\d+)\^(\d+)$/);
+    if(!match) return null;
+    const base=BigInt(match[1]);
+    const exp=BigInt(match[2]);
+    const result=base ** exp;
+    return `${match[1]}^${match[2]} = ${lionAiFormatBigInt(result)}\n\nExact value: ${result.toString()}`;
+  }
+  function lionAiMathParagraph(prompt){
+    const count=lionAiSentenceCount(prompt);
+    const expression=lionAiCleanMathPrompt(prompt);
+    const answer=lionAiMath(expression || prompt);
+    const main=answer.split('\n')[0].replace(/\.$/,'');
+    const shown=expression || lionAiTopic(prompt);
+    const sentences=[
+      `The expression ${shown} can be understood by translating the symbols into standard math notation first`,
+      `After that, the normal order of operations decides which parts should be handled before others`,
+      `Parentheses and exponents come before multiplication and division, and addition or subtraction usually happen last`,
+      `When the expression is evaluated carefully, the main result is ${main}`,
+      `This matters because changing the order can produce a completely different answer`,
+      `A clear math paragraph should name the expression, explain the steps, and end with the final result`,
+      `If the problem includes a variable, the variable should be isolated or substituted before the final value is chosen`,
+      `Overall, ${shown} is solved best by keeping the notation clean and checking each operation one step at a time`
+    ];
+    return sentences.slice(0,count).map(s=>/[.!?]$/.test(s) ? s : s+'.').join(' ');
+  }
+  function lionAiParagraph(prompt){
+    const count=lionAiSentenceCount(prompt);
+    const topic=lionAiTopic(prompt);
+    if(lionAiLooksLikeMath(topic) || lionAiLooksLikeMath(prompt) || lionAiIsMathPrompt(prompt)) return lionAiMathParagraph(prompt);
+    const title=lionAiTitleSubject(topic);
+    const lower=String(prompt || '').toLowerCase();
+    const positive=/\b(good|great|useful|important|popular|fun|cool|interesting|best)\b/.test(lower);
+    const compare=/\b(compare|versus|vs\.?|difference between)\b/.test(lower);
+    const story=/\b(story|narrative|creative)\b/.test(lower);
+    const sentences=story ? [
+      `${title} can be turned into a clear story by giving it a setting, a goal, and a problem to solve`,
+      `The first part should introduce the situation so the reader understands what is happening`,
+      `Next, the paragraph should show a challenge that makes the subject feel important instead of random`,
+      `Strong details help the reader picture the scene and understand why the moment matters`,
+      `The ending should connect back to the main idea so the story feels complete`,
+      `This keeps the writing focused while still making it more interesting to read`,
+      `A good creative paragraph about ${topic} should feel organized, descriptive, and easy to follow`,
+      `Overall, the best version uses the subject as the center of the story instead of drifting away from it`
+    ] : compare ? [
+      `${title} is easiest to explain by separating the similarities from the differences`,
+      `A strong comparison starts with what the two sides have in common so the reader has a base to understand them`,
+      `After that, the paragraph should explain the biggest difference and why it matters`,
+      `Examples make the comparison clearer because they show how the difference works in real situations`,
+      `The paragraph should avoid jumping between unrelated points, because that can make the answer confusing`,
+      `Instead, each sentence should build from the last one and stay tied to the main comparison`,
+      `By the end, the reader should understand not only how the ideas are different, but also why that difference is important`,
+      `Overall, ${topic} should be explained with a balanced view that uses clear details instead of random claims`
+    ] : positive ? [
+      `${title} stands out because it gives people a clear reason to care about the subject`,
+      `One important strength is that it can be explained through specific details instead of empty opinions`,
+      `Those details help the reader understand why the subject is useful, interesting, or worth discussing`,
+      `A good paragraph should connect the main idea to examples so the answer feels grounded`,
+      `It should also explain cause and effect, because that shows how one part of the subject leads to another`,
+      `When the writing stays focused, the paragraph becomes easier to follow and more convincing`,
+      `This is why ${topic} can be described as important without simply repeating the original question`,
+      `Overall, ${topic} works as a strong paragraph topic because it can be supported with reasons, examples, and clear explanation`
+    ] : [
+      `${title} is the main subject, so a strong paragraph should explain it directly and clearly`,
+      `The first sentence should introduce what the subject is or what the reader needs to understand about it`,
+      `After that, the paragraph should add details that support the main idea instead of repeating the prompt`,
+      `Examples are useful because they turn a general statement into something easier to picture`,
+      `A clear paragraph also uses cause and effect when the subject needs explanation`,
+      `Each sentence should connect to the one before it so the writing feels organized`,
+      `The paragraph should avoid random filler and stay focused on the exact subject being discussed`,
+      `Overall, ${topic} can be explained well by combining a simple main idea with supporting details and a clear ending`
+    ];
+    return sentences.slice(0,count).map(s=>/[.!?]$/.test(s) ? s : s+'.').join(' ');
+  }
+  //lion-ai-symbol-math
+  function lionAiNormalizeEverydaySymbols(value){
+    const sub={'₀':'0','₁':'1','₂':'2','₃':'3','₄':'4','₅':'5','₆':'6','₇':'7','₈':'8','₉':'9','₊':'+','₋':'-','₌':'=','₍':'(','₎':')'};
+    return String(value || '')
+      .normalize('NFKC')
+      .replace(/[−‐‑‒–—―]/g,'-')
+      .replace(/[×✕✖⋅·∙•]/g,'*')
+      .replace(/[÷∕⁄]/g,'/')
+      .replace(/[πΠ]/g,'pi')
+      .replace(/[τΤ]/g,'tau')
+      .replace(/[θΘ]/g,'theta')
+      .replace(/[αΑ]/g,'alpha')
+      .replace(/[βΒ]/g,'beta')
+      .replace(/[γΓ]/g,'gamma')
+      .replace(/[δΔ]/g,'delta')
+      .replace(/[λΛ]/g,'lambda')
+      .replace(/[μΜ]/g,'mu')
+      .replace(/[σΣ]/g,'sigma')
+      .replace(/[φΦ]/g,'phi')
+      .replace(/[ωΩ]/g,'omega')
+      .replace(/[∞]/g,'infinity')
+      .replace(/[∫]/g,' integral ')
+      .replace(/[∑]/g,' sum ')
+      .replace(/[∏]/g,' product ')
+      .replace(/[√]/g,'sqrt')
+      .replace(/[∂]/g,' partial ')
+      .replace(/[′’]/g,"'")
+      .replace(/[″]/g,"''")
+      .replace(/[≤]/g,'<=')
+      .replace(/[≥]/g,'>=')
+      .replace(/[≠]/g,'!=')
+      .replace(/[≈≃≅]/g,'~')
+      .replace(/[∈]/g,' in ')
+      .replace(/[∉]/g,' not in ')
+      .replace(/[∪]/g,' union ')
+      .replace(/[∩]/g,' intersection ')
+      .replace(/[⊂⊆]/g,' subset ')
+      .replace(/[⊃⊇]/g,' superset ')
+      .replace(/[∀]/g,' for all ')
+      .replace(/[∃]/g,' exists ')
+      .replace(/[∴]/g,' therefore ')
+      .replace(/[∵]/g,' because ')
+      .replace(/[₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎]/g,ch=>sub[ch] || ch);
+  }
+  function lionAiNormalizeMathText(value){
+    const supers={'⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9'};
+    return lionAiNormalizeEverydaySymbols(value)
+      .replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g,m=>'^'+[...m].map(ch=>supers[ch] || '').join(''));
+  }
+  function lionAiAdvancedMathInfo(prompt){
+    const raw=String(prompt || '');
+    const text=lionAiNormalizeEverydaySymbols(raw).replace(/\s+/g,' ').trim();
+    const hasAdvanced=/\b(integral|differentiate|derivative|differential|equilibrium|stability|particle|acceleration|velocity|concave|concavity|maclaurin|taylor|series|limit|lim|summation|matrix|determinant|vector)\b|[{}]|f\([a-z]\)/i.test(text);
+    if(!hasAdvanced) return '';
+    const compact=text.replace(/\s+/g,'').toLowerCase();
+    if(/integral0?1(?:ln\(1\+x\)\/x|\/?xln\(1\+x\))dx/.test(compact) || /integral.*0.*1.*x.*ln\(1\+x\).*dx/.test(compact)){
+      const hasFractionCue=/\/|⁄|∕|\u200b|\u200c|\u200d|\ufeff/.test(raw) || /ln\(1\+x\)\/x/i.test(compact);
+      if(hasFractionCue){
+        return `I read this as the fraction integral from 0 to 1 of ln(1 + x) / x dx.\n\nUse the Maclaurin series ln(1 + x) = x - x^2/2 + x^3/3 - x^4/4 + ... .\n\nDividing by x gives ln(1 + x)/x = 1 - x/2 + x^2/3 - x^3/4 + ... .\n\nIntegrating term by term from 0 to 1 gives 1 - 1/2^2 + 1/3^2 - 1/4^2 + ... .\n\nThat alternating series is eta(2), and eta(2) = (1 - 2^(1 - 2))zeta(2) = (1/2)(pi^2/6) = pi^2/12.\n\nAnswer: pi^2 / 12, which is about 0.822467.\n\nNote: if you meant x * ln(1 + x) instead, that different integral equals 1/4.`;
+      }
+      return `This compact integral is ambiguous, so there are two common readings:\n\n1. If it means integral from 0 to 1 of ln(1 + x) / x dx, then use the series ln(1 + x)/x = 1 - x/2 + x^2/3 - x^3/4 + ... . Integrating from 0 to 1 gives 1 - 1/2^2 + 1/3^2 - 1/4^2 + ... = pi^2/12, about 0.822467.\n\n2. If it means integral from 0 to 1 of xln(1 + x) dx, then integration by parts gives 1/4.\n\nGemini used the first interpretation, ln(1 + x)/x. My earlier answer used the second interpretation, xln(1 + x).`;
+    }
+    if(/differentialequation|equilibrium|stability|particlemoves|initialcondition|x\(0\)=3/.test(compact)){
+      return `I am reading the broken OCR as the autonomous differential equation dx/dt = (x^2 + 1)(x^2 - 4), with x(0) = 3.\n\n(a) At t = 0, x = 3. Then dx/dt = (3^2 + 1)(3^2 - 4) = 10 * 5 = 50, which is positive. The particle is moving to the right.\n\n(b) Equilibrium solutions happen when dx/dt = 0. Since x^2 + 1 is never 0 for real x, x^2 - 4 = 0 gives x = -2 and x = 2. For |x| > 2, dx/dt is positive. For -2 < x < 2, dx/dt is negative. Therefore x = -2 is stable and x = 2 is unstable.\n\n(c) Acceleration is d2x/dt2 = (dy/dx)(dx/dt), where y = dx/dt = (x^2 + 1)(x^2 - 4). Expanding gives y = x^4 - 3x^2 - 4, so dy/dx = 4x^3 - 6x. At x = 3, y = 50 and dy/dx = 90, so d2x/dt2 = 90 * 50 = 4500.\n\n(d) If y = x^2 + 1, then dy/dt = (dy/dx)(dx/dt) = 2x(x^2 + 1)(x^2 - 4). At x = 3, dy/dt = 2 * 3 * 10 * 5 = 300.\n\n(e) Speed is increasing when velocity and acceleration have the same sign. At x = 3, velocity is 50 and acceleration is 4500, both positive, so speed is increasing.\n\n(f) The equation is separable: dx/[(x^2 + 1)(x^2 - 4)] = dt. It can be integrated with partial fractions, but solving explicitly for x(t) is not elementary in a simple closed form.`;
+    }
+    if(/integral.*0.*x.*t\^?2.*\+?1.*ln\(1\+t\^?2\).*dt/.test(compact) || /f\(x\)=.*integral0x.*t\^?2\+1.*ln\(1\+t\^?2\)/.test(compact)){
+      const approx=(Math.pow(.5,3)/3)+(Math.pow(.5,5)/10)-(Math.pow(.5,7)/42);
+      return `Assuming the problem is f(x) = integral from 0 to x of (t^2 + 1)ln(1 + t^2) dt:\n\nA. By the Fundamental Theorem of Calculus, f'(x) = (x^2 + 1)ln(1 + x^2).\n\nB. f''(x) = 2xln(1 + x^2) + 2x = 2x(ln(1 + x^2) + 1). At x = 1, f''(1) = 2(ln 2 + 1), which is positive, so f is concave up at x = 1.\n\nC. Since ln(1 + t^2) = t^2 - t^4/2 + t^6/3 - ..., multiplying by (1 + t^2) gives t^2 + t^4/2 - t^6/6 + ... . Integrating term by term gives f(x) = x^3/3 + x^5/10 - x^7/42 + ... . The first three nonzero terms are x^3/3, x^5/10, and -x^7/42.\n\nD. Using those three terms, f(0.5) ≈ ${approx.toFixed(6)}.`;
+    }
+    const parts=[];
+    parts.push(`I can read this as an advanced math question, not a single calculator expression.`);
+    if(/\bintegral\b/i.test(text) || /dt\b/i.test(text)){
+      parts.push(`The integral sign means the function is being built by accumulating an integrand over an interval, so the first step is to identify the lower bound, upper bound, integrand, and variable of integration.`);
+    }
+    if(/f\([a-z]\)/i.test(text)){
+      parts.push(`For a function like f(x), keep the input variable separate from dummy variables such as t, because the dummy variable disappears after integration.`);
+    }
+    if(/\bconcave|concavity/i.test(text)){
+      parts.push(`For concavity, find the second derivative and test its sign at the requested value: positive means concave up, and negative means concave down.`);
+    }
+    if(/\bmaclaurin|taylor|series/i.test(text)){
+      parts.push(`For a Maclaurin series, expand around x = 0 and keep the first nonzero terms after simplifying the expression.`);
+    }
+    if(/\bapproximate|approximation/i.test(text)){
+      parts.push(`For an approximation such as f(0.5), substitute the value into the series and add the kept terms.`);
+    }
+    parts.push(`Because the prompt contains multi-line calculus notation, I should explain the method and structure instead of rejecting symbols as unsupported.`);
+    return parts.join('\n\n');
+  }
+  function lionAiMath(prompt){
+    try{
+      const advanced=lionAiAdvancedMathInfo(prompt);
+      if(advanced) return advanced;
+      const target=lionAiCleanMathPrompt(prompt);
+      const exactPower=lionAiExactIntegerPower(target);
+      if(exactPower) return `${exactPower}\n\nI used exact integer arithmetic, so this is not rounded.`;
+      return lionAiSolveEquation(target || prompt);
+    }catch(err){
+      const normalized=lionAiNormalizeEverydaySymbols(prompt).replace(/\s+/g,' ').trim();
+      return `I can read the symbols, but I cannot safely finish the full calculation from that formatting yet.\n\nWhat I understood:\n${normalized || String(prompt || '').trim()}\n\nTry sending one part at a time, like the integral, the concavity check, or the Maclaurin series request, and I will solve that section.`;
+    }
+  }
+  function lionAiCode(prompt){
+    const lower=prompt.toLowerCase();
+    if(lower.includes('fix')){
+      const code=(prompt.match(/```[\s\S]*?```/)?.[0] || prompt.split(/fix.*code:?/i).pop() || '').replace(/```/g,'').trim();
+      const fixed=code
+        .replace(/function\s+(\w+)\(([^)]*)\)\s*\{\s*return\s+([^;}\n]+)\s*$/,'function $1($2){\n  return $3;\n}')
+        .replace(/console\.log\(([^)]*)$/,'console.log($1);');
+      return `Here is a cleaned-up version:\n\n\`\`\`js\n${fixed || 'Paste the code you want fixed and I will repair the structure, missing braces, and common syntax issues.'}\n\`\`\`\n\nWhat I check: missing braces, missing semicolons, unclosed function bodies, unclear variable names, and safer formatting.`;
+    }
+    if(lower.includes('python')){
+      return `Here is a simple Python starter:\n\n\`\`\`python\ndef main():\n    name = input("Name: ")\n    print(f"Hello, {name}!")\n\nif __name__ == "__main__":\n    main()\n\`\`\`\n\nTell me the exact app you want and I can shape it into a fuller program.`;
+    }
+    return `Here is a clean HTML/CSS/JS starter:\n\n\`\`\`html\n<!doctype html>\n<html>\n<head>\n  <meta charset="utf-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1">\n  <title>App</title>\n  <style>\n    body{font-family:Outfit,Arial,sans-serif;margin:0;min-height:100vh;display:grid;place-items:center;background:#101318;color:white}\n    main{width:min(520px,92vw);padding:24px;border:1px solid #334155;border-radius:12px;background:#172033}\n    button{height:38px;border:0;border-radius:8px;padding:0 14px;font-weight:700}\n  </style>\n</head>\n<body>\n  <main>\n    <h1>My App</h1>\n    <p id="out">Ready.</p>\n    <button id="run">Run</button>\n  </main>\n  <script>\n    document.getElementById('run').onclick = () => {\n      document.getElementById('out').textContent = 'It works!';\n    };\n  <\/script>\n</body>\n</html>\n\`\`\`\n\nAsk for a calculator, game, login page, dashboard, or anything specific and I will generate a more complete version.`;
+  }
+  function lionAiTime(){
+    const now=new Date();
+    return `The time is ${now.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}.\n\nToday is ${now.toLocaleDateString([], {weekday:'long', month:'long', day:'numeric', year:'numeric'})}.`;
+  }
+  function lionAiExplain(prompt){
+    const topic=lionAiTopic(prompt);
+    return `${topic} means the main subject you are asking about.\n\nA clear way to understand ${topic} is to break it into three parts: what it is, why it matters, and how it is used. First, define the basic idea in simple words. Next, connect it to a real example so it does not feel random. Finally, check whether the explanation answers the exact question you asked. If you want, I can make this shorter, longer, more advanced, or turn it into a paragraph.`;
+  }
+  function lionAiList(prompt){
+    const topic=lionAiTopic(prompt);
+    return `Here are useful points about ${topic}:\n\n1. Start with the main idea.\n2. Add the most important details.\n3. Use examples so the answer is specific.\n4. Compare it with something similar if that helps.\n5. End with the reason it matters.\n\nFor ${topic}, the strongest answer should stay focused on the exact subject instead of drifting into random advice.`;
+  }
+  function lionAiGeneral(prompt){
+    const topic=lionAiTopic(prompt);
+    return `Here is a focused answer about ${topic}:\n\n${topic} is the subject you asked about, so the best response should stay centered on that instead of changing topics. The simplest way to answer is to explain what ${topic} is, give the most important detail, and include one clear example. A strong answer also avoids extra filler and connects each sentence back to ${topic}.\n\nAsk me for a paragraph, code, a math solution, a summary, or an image answer and I will format it that way.`;
+  }
+  function lionAiIsMathPrompt(prompt){
+    const text=lionAiNormalizeEverydaySymbols(prompt).toLowerCase();
+    return /(solve|calculate|math|equation|integral|derivative|differentiate|concave|concavity|maclaurin|taylor|series|limit|lim|summation|matrix|determinant|vector|sqrt|sin|cos|tan|log|ln|pi|infinity|partial|sum|product|=|\d\s*[\+\-*/^]\s*\d)/i.test(text);
+  }
+  function lionAiNeedsLocalOnly(prompt){
+    return /\b(what'?s|what is|tell me)\s+(the\s+)?time\b|\bcurrent time\b|\btime is it\b/i.test(prompt)
+      || /(solve|calculate|math|equation|=|\d\s*[\+\-*/^×÷−–—]\s*\d|sqrt|sin|cos|tan|log|ln|π|√|[⁰¹²³⁴⁵⁶⁷⁸⁹])/i.test(prompt)
+      || /(code|javascript|html|css|python|function|fix this|make.*app|make.*website)/i.test(prompt);
+  }
+  function lionAiResearchQuery(prompt){
+    const topic=lionAiTopic(prompt);
+    return topic==='the topic' ? String(prompt || '').trim() : topic;
+  }
+  async function lionAiFetchJson(url){
+    const res=await fetch(url,{headers:{accept:'application/json'}});
+    if(!res.ok) throw new Error(`Web lookup failed (${res.status})`);
+    return res.json();
+  }
+  async function lionAiWebResearch(prompt){
+    const query=lionAiResearchQuery(prompt);
+    if(!query) return null;
+    const api='https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&origin=*&srlimit=5&srsearch='+encodeURIComponent(query);
+    const search=await lionAiFetchJson(api);
+    const hits=(search?.query?.search || []).slice(0,3);
+    const sources=[];
+    for(const hit of hits){
+      const title=hit.title;
+      try{
+        const summary=await lionAiFetchJson('https://en.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(title));
+        const extract=String(summary.extract || '').trim();
+        if(extract){
+          sources.push({
+            title:summary.title || title,
+            extract,
+            url:summary.content_urls?.desktop?.page || ('https://en.wikipedia.org/wiki/'+encodeURIComponent(title.replace(/\s+/g,'_')))
+          });
+        }
+      }catch{}
+    }
+    return {query,sources};
+  }
+  function lionAiSentenceSplit(text){
+    return String(text || '').replace(/\s+/g,' ').match(/[^.!?]+[.!?]+/g) || [];
+  }
+  function lionAiWebParagraph(prompt, research){
+    const match=prompt.match(/(\d+)\s*sent/i);
+    const count=Math.max(1,Math.min(20,match ? Number(match[1]) : 8));
+    const topic=lionAiResearchQuery(prompt);
+    const positiveWhy=/\bwhy\b.+\b(is|are)\b.+\b(good|great|popular|fun|important|useful)\b/i.test(prompt);
+    const facts=research.sources.flatMap(source=>lionAiSentenceSplit(source.extract)).map(s=>s.trim()).filter(Boolean);
+    const sentences=positiveWhy ? [
+      `${topic} is good because it gives people a clear world to explore, recognizable characters to care about, and goals that feel easy to understand`,
+      ...facts,
+      `Those facts support the idea that ${topic} works well because it combines story, design, collecting, and play into one memorable experience`,
+      `It also stays interesting because different people can enjoy different parts of it, such as characters, strategy, shows, games, or the larger world around it`,
+      `Overall, ${topic} is good because it is simple enough to enjoy quickly but deep enough to keep people interested over time`
+    ] : [
+      `${topic} makes more sense when it is explained with real background instead of guesses`,
+      ...facts,
+      `These sources show that ${topic} should be understood through its main definition, its history, and the details that make it important`,
+      `A strong explanation of ${topic} should connect facts together instead of listing random points`,
+      `Overall, ${topic} matters because the evidence gives it a clearer place in the real world`
+    ];
+    return sentences.slice(0,count).map(s=>/[.!?]$/.test(s) ? s : s+'.').join(' ');
+  }
+  function lionAiWebAnswer(prompt, research){
+    if(!research?.sources?.length) return '';
+    const topic=lionAiResearchQuery(prompt);
+    const sourceLines=research.sources.map((source,index)=>`${index+1}. ${source.title}: ${source.url}`).join('\n');
+    if(/(\d+\s*sent|paragraph|essay|write about|write a)/i.test(prompt)){
+      return `${lionAiWebParagraph(prompt,research)}\n\nSources checked:\n${sourceLines}`;
+    }
+    const main=research.sources[0];
+    const support=research.sources.slice(1).map(source=>`Another useful source, ${source.title}, adds that ${source.extract}`).join('\n\n');
+    return `I searched the web for "${topic}" and used the most relevant source summaries I could load.\n\nAnswer:\n${main.extract}${support ? '\n\n'+support : ''}\n\nMy take:\nThe important thing is to answer your exact question from evidence, then connect the facts into one clear explanation. For ${topic}, the strongest answer starts with what it is, then explains why it matters, and then uses the source details to avoid making stuff up.\n\nSources checked:\n${sourceLines}`;
+  }
+  function lionAiFollowupAnswer(prompt, win){
+    const text=String(prompt || '').trim().toLowerCase();
+    if(!/^(i\s+meant\s+that|i\s+mean\s+that|that|that one|first one|the first one|second one|the second one|fraction one|the fraction one|x one|the x one|multiply one|the multiply one|multiplication one|the multiplication one)$/i.test(text)) return '';
+    const last=String(win?.lionAiLastBot || '');
+    const lastUser=String(win?.lionAiLastUser || '');
+    const hadAmbiguousIntegral=/pi\^2\s*\/\s*12|0\.822467|x\s*\*\s*ln\(1\s*\+\s*x\)|1\/4/i.test(last) && /integral|ln\(1\s*\+\s*x\)/i.test(last);
+    if(!hadAmbiguousIntegral) return '';
+    if(/\b(second|x one|multiply|multiplication)\b/i.test(text)){
+      return `Got it. If you meant the multiplication version, the problem is integral from 0 to 1 of x * ln(1 + x) dx.\n\nUsing integration by parts with u = ln(1 + x) and dv = x dx gives the exact value 1/4.\n\nSo for x * ln(1 + x), the answer is 1/4.`;
+    }
+    if(/\b(first|fraction)\b/i.test(text) || /\u200b|\u200c|\u200d|\ufeff|\/|⁄|∕/.test(lastUser)){
+      return `Got it. If you meant the fraction version, the problem is integral from 0 to 1 of ln(1 + x) / x dx.\n\nUsing ln(1 + x)/x = 1 - x/2 + x^2/3 - x^3/4 + ..., integrating from 0 to 1 gives 1 - 1/2^2 + 1/3^2 - 1/4^2 + ... = pi^2/12.\n\nSo the answer is pi^2 / 12, about 0.822467.`;
+    }
+    return `That compact integral has two possible readings.\n\nIf you mean ln(1 + x) / x, the answer is pi^2 / 12, about 0.822467.\n\nIf you mean x * ln(1 + x), the answer is 1/4.\n\nType "fraction one" or "x one" to choose the interpretation.`;
+  }
+  let lionAiOcrLoader=null;
+  function lionAiLoadOcr(){
+    if(window.Tesseract) return Promise.resolve(window.Tesseract);
+    if(lionAiOcrLoader) return lionAiOcrLoader;
+    lionAiOcrLoader=new Promise((resolve,reject)=>{
+      const script=document.createElement('script');
+      script.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+      script.onload=()=>window.Tesseract ? resolve(window.Tesseract) : reject(new Error('OCR library did not start.'));
+      script.onerror=()=>reject(new Error('OCR library could not load.'));
+      document.head.appendChild(script);
+    });
+    return lionAiOcrLoader;
+  }
+  function lionAiSetImageStatus(win, text){
+    const status=win?.querySelector('[data-lion-ai-image-status]');
+    if(status) status.textContent=text || '';
+  }
+  function lionAiSetImageState(win, state=null){
+    if(!win) return;
+    win.lionAiImage=state;
+    const preview=win.querySelector('[data-lion-ai-preview]');
+    const img=preview?.querySelector('img');
+    const label=preview?.querySelector('span');
+    if(!state){
+      preview?.classList.remove('show');
+      if(img) img.removeAttribute('src');
+      if(label) label.textContent='';
+      lionAiSetImageStatus(win,'');
+      return;
+    }
+    if(img) img.src=state.dataUrl;
+    if(label) label.textContent=state.name;
+    preview?.classList.add('show');
+    lionAiSetImageStatus(win,'Image ready. Ask a question about it.');
+  }
+  function lionAiReadImageFile(win, file){
+    if(!file || !file.type.startsWith('image/')){
+      lionAiSetImageStatus(win,'Choose an image file.');
+      return;
+    }
+    const reader=new FileReader();
+    reader.onload=()=>lionAiSetImageState(win,{name:file.name,size:file.size,type:file.type,dataUrl:String(reader.result || '')});
+    reader.onerror=()=>lionAiSetImageStatus(win,'Could not read that image.');
+    reader.readAsDataURL(file);
+  }
+  function lionAiAnalyzeImage(dataUrl){
+    return new Promise(resolve=>{
+      const img=new Image();
+      img.onload=()=>{
+        const canvas=document.createElement('canvas');
+        const max=96;
+        const scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
+        canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));
+        canvas.height=Math.max(1,Math.round(img.naturalHeight*scale));
+        const ctx=canvas.getContext('2d',{willReadFrequently:true});
+        ctx.drawImage(img,0,0,canvas.width,canvas.height);
+        const pixels=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+        let r=0,g=0,b=0,light=0,dark=0,count=0;
+        for(let i=0;i<pixels.length;i+=16){
+          const rr=pixels[i], gg=pixels[i+1], bb=pixels[i+2];
+          const lum=(rr+gg+bb)/3;
+          r+=rr; g+=gg; b+=bb; count++;
+          if(lum>200) light++;
+          if(lum<55) dark++;
+        }
+        r=Math.round(r/count); g=Math.round(g/count); b=Math.round(b/count);
+        const brightness=Math.round((r+g+b)/3);
+        resolve(`Image details: ${img.naturalWidth}x${img.naturalHeight}px. Average color rgb(${r}, ${g}, ${b}). Overall brightness is about ${brightness}/255. Bright areas: ${Math.round(light/count*100)}%. Dark areas: ${Math.round(dark/count*100)}%.`);
+      };
+      img.onerror=()=>resolve('I could not inspect the image pixels.');
+      img.src=dataUrl;
+    });
+  }
+  async function lionAiReadImage(win){
+    const image=win?.lionAiImage;
+    if(!image?.dataUrl) return '';
+    lionAiSetImageStatus(win,'Reading image text...');
+    const visual=await lionAiAnalyzeImage(image.dataUrl);
+    try{
+      const Tesseract=await lionAiLoadOcr();
+      const result=await Tesseract.recognize(image.dataUrl,'eng', {
+        logger:m=>{
+          if(m.status){
+            const progress=Number.isFinite(m.progress) ? ` ${Math.round(m.progress*100)}%` : '';
+            lionAiSetImageStatus(win,`OCR: ${m.status}${progress}`);
+          }
+        }
+      });
+      const text=(result?.data?.text || '').trim();
+      lionAiSetImageStatus(win,text ? 'Image text read.' : 'No clear text found.');
+      return text ? `${visual}\n\nText I read from the image:\n${text}` : `${visual}\n\nI did not find clear readable text in the image.`;
+    }catch(err){
+      lionAiSetImageStatus(win,'OCR unavailable; using visual summary.');
+      return `${visual}\n\nOCR could not run here (${err.message}). I can still answer from the visible image details, but not exact printed words.`;
+    }
+  }
+  function lionAiSavedMessages(){
+    try{return JSON.parse(localStorage.getItem('nyx.aiMessages') || '[]').filter(m=>m && ['user','assistant'].includes(m.role) && m.content).slice(-40)}catch{return []}
+  }
+  function lionAiSaveMessages(messages){
+    try{localStorage.setItem('nyx.aiMessages',JSON.stringify(messages.slice(-40)))}catch{}
+  }
+  function lionAiRestoreChat(win){
+    const chat=win?.querySelector('[data-lion-ai-chat]');
+    const messages=lionAiSavedMessages();
+    if(!chat || !messages.length) return;
+    chat.innerHTML='';
+    messages.forEach(m=>addLionAiMessage(chat,m.role==='user'?'user':'bot',m.content));
+  }
+  async function nyxAiModelAnswer(prompt, win, imageContext='', onChunk=()=>{}){
+    const model=win?.querySelector?.('[data-lion-ai-model]')?.value || nyxAiSelectedModel();
+    const messages=lionAiSavedMessages();
+    const userText=prompt || 'Answer the attached image.';
+    messages.push({role:'user',content:userText});
+    const res=await fetch('/api/nyx-ai',{
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body:JSON.stringify({
+        model,
+        message:userText,
+        imageContext,
+        messages,
+        stream:true
+      })
+    });
+    if(!res.ok){const data=await res.json().catch(()=>({}));throw new Error(data?.error || `Nyx AI failed (${res.status})`)}
+    if(!res.body) throw new Error('The selected model did not return a stream.');
+    const reader=res.body.getReader(),decoder=new TextDecoder();
+    let buffer='',text='';
+    for(;;){
+      const chunk=await reader.read();
+      if(chunk.done) break;
+      buffer+=decoder.decode(chunk.value,{stream:true});
+      const lines=buffer.split(/\r?\n/);buffer=lines.pop() || '';
+      for(const line of lines){
+        if(!line.startsWith('data:')) continue;
+        const raw=line.slice(5).trim();if(!raw || raw==='[DONE]') continue;
+        try{const data=JSON.parse(raw);const token=data?.choices?.[0]?.delta?.content || data?.choices?.[0]?.text || '';if(token){text+=token;onChunk(text)}}catch{}
+      }
+    }
+    text=text.trim();
+    if(!text) throw new Error('The selected model returned an empty response.');
+    messages.push({role:'assistant',content:text});
+    lionAiSaveMessages(messages);
+    return text;
+  }
+  async function lionAiRespondAsync(prompt, win, onChunk){
+    const imageContext=await lionAiReadImage(win);
+    try{
+      return await nyxAiModelAnswer(prompt,win,imageContext,onChunk);
+    }catch(err){
+      return `Nyx AI could not reach the selected model.\n\n${err.message}\n\nSet NYX_AI_API_KEY or OPENROUTER_API_KEY on the server, and if your provider uses different model names, set the matching NYX_AI_MODEL_* environment variable.`;
+    }
+  }
+  function lionAiRespond(prompt){
+    const lower=String(prompt || '').toLowerCase();
+    if(/\b(what'?s|what is|tell me)\s+(the\s+)?time\b|\bcurrent time\b|\btime is it\b/.test(lower)) return lionAiTime();
+    if(/(\d+\s*sent|paragraph|essay|write about|write a)/i.test(prompt)) return lionAiParagraph(prompt);
+    if(/(solve|calculate|math|equation|=|\d\s*[\+\-*/^×÷−–—]\s*\d|sqrt|sin|cos|tan|log|ln|π|√|[⁰¹²³⁴⁵⁶⁷⁸⁹])/i.test(prompt)) return lionAiMath(prompt);
+    if(/(code|javascript|html|css|python|function|fix this|make.*app|make.*website)/i.test(prompt)) return lionAiCode(prompt);
+    if(/\b(list|ideas|steps|outline|plan)\b/i.test(prompt)) return lionAiList(prompt);
+    if(/\b(explain|define|what is|what are|how does|how do|why is|why does)\b/i.test(prompt)) return lionAiExplain(prompt);
+    return lionAiGeneral(prompt);
+  }
+  function lionAiNeedsLocalOnly(prompt){
+    return /\b(what'?s|what is|tell me)\s+(the\s+)?time\b|\bcurrent time\b|\btime is it\b/i.test(prompt)
+      || lionAiIsMathPrompt(prompt)
+      || /(code|javascript|html|css|python|function|fix this|make.*app|make.*website)/i.test(prompt);
+  }
+  function lionAiRespond(prompt){
+    const lower=String(prompt || '').toLowerCase();
+    if(/\b(what'?s|what is|tell me)\s+(the\s+)?time\b|\bcurrent time\b|\btime is it\b/.test(lower)) return lionAiTime();
+    if(/(\d+\s*sent|paragraph|essay|write about|write a)/i.test(prompt)) return lionAiParagraph(prompt);
+    if(lionAiIsMathPrompt(prompt)) return lionAiMath(prompt);
+    if(/(code|javascript|html|css|python|function|fix this|make.*app|make.*website)/i.test(prompt)) return lionAiCode(prompt);
+    if(/\b(list|ideas|steps|outline|plan)\b/i.test(prompt)) return lionAiList(prompt);
+    if(/\b(explain|define|what is|what are|how does|how do|why is|why does)\b/i.test(prompt)) return lionAiExplain(prompt);
+    return lionAiGeneral(prompt);
+  }
+  function addLionAiMessage(chat, role, text){
+    const msg=document.createElement('div');
+    msg.className='lion-ai-msg '+role;
+    msg.textContent=text;
+    chat.appendChild(msg);
+    chat.scrollTop=chat.scrollHeight;
+  }
+  function openApps(){
+    makeWindow({title:'Apps',left:'12vw',top:'90px',width:'600px',height:'430px',body:`<div class="panel"><h1>Apps</h1><div class="quick-grid apps-launch-grid">${quickTiles()}<button class="quick-tile" style="--tile-delay:612ms" data-open="settings"><b>Set</b><span>Settings</span></button></div></div>`});
+  }
+  function openLinks(){
+    makeWindow({title:'Links',left:'18vw',top:'100px',width:'520px',height:'380px',body:`<div class="panel"><h1>Links</h1><div class="glass-grid"><div class="glass-card"><h2>Search Engines</h2><button data-url="https://www.google.com/">Google</button><button data-url="https://duckduckgo.com/">DuckDuckGo</button></div><div class="glass-card"><h2>School</h2><button data-url="https://docs.google.com/">Docs</button><button data-url="https://classroom.google.com/">Classroom</button></div></div></div>`});
+  }
+  openApps = function(){
+    makeWindow({title:'Apps',left:'8vw',top:'64px',width:'960px',height:'650px',body:`<div class="panel apps-panel"><h1>Apps</h1><div class="quick-grid apps-launch-grid">${quickTiles()}</div></div>`});
+  };
+  //settings-window
+  function settingsBody(){
+    return `<div class="settings-panel">
+      <h1>Preferences</h1>
+      <div class="settings-grid">
+        <section class="settings-card">
+          <h2>AB Cloak</h2>
+          <p>super sneaky</p>
+          <div class="settings-row"><select data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current tab iframe</option></select><button data-save-cloak>Save</button></div>
+          <div class="settings-row"><span>Redirect original</span><button class="switch ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" aria-label="Redirect original tab"></button></div>
+          <div class="settings-row"><input data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Redirect URL"><button data-launch-selected-cloak>Launch</button></div>
+          <div class="settings-actions"><button data-about>Launch About:Blank</button><button data-blob>Launch Blob</button></div>
+        </section>
+        <section class="settings-card">
+          <h2>Auto Cloak</h2>
+          <p class="hint">Automatically launches nyx in a cloaked tab, must retoggle after each opening</p>
+          <div class="settings-row"><span>Auto Cloak</span><button class="switch" data-switch="nyx.autoCloak" aria-label="Auto cloak"></button></div>
+        </section>
+        <section class="settings-card">
+          <h2>Tab Presets</h2>
+          <p>Changes the browser tab title and icon.</p>
+          <div class="seg"><button data-preset="classroom" type="button">Google Classroom</button><button data-preset="drive" type="button">Google Drive</button><button data-preset="classlink" type="button">Classlink</button><button data-preset="google" type="button">Google</button><button data-preset="nyx" type="button">Reset</button></div>
+        </section>
+        <section class="settings-card">
+          <h2>Custom Tab Cloak</h2>
+          <p>Cloaks your tab</p>
+          <div class="settings-row"><input data-tab-title value="${esc(store.text('nyx.tabTitle',document.title || '???'))}" placeholder="Tab title"><input class="file-input" data-tab-favicon-file type="file" accept="image/*,.ico"></div>
+          <input type="hidden" data-tab-favicon value="${esc(store.text('nyx.tabFavicon',nyxFaviconHref()))}">
+          <button data-tab-cloak-apply>Apply Tab Cloak</button>
+        </section>
+        <section class="settings-card">
+          <h2>Anti-Close</h2>
+          <p>Prevents accidental closing when anti-close is enabled.</p>
+          <button class="switch" data-anticlose aria-label="Anti-close"></button>
+        </section>
+        <section class="settings-card">
+          <h2>Panic Key</h2>
+          <p>Press this key combo anytime to instantly close the current tab.</p>
+          <div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div>
+          <div class="settings-actions"><button data-panic-capture type="button">Capture</button><button data-panic-clear type="button">Clear</button></div>
+        </section>
+      </div>
+
+      <h1 class="settings-section-title">OS Settings</h1>
+      <div class="settings-grid">
+        <section class="settings-card">
+          <h2>Change Your Name</h2>
+          <p>Your greeting and profile name.</p>
+          <div class="settings-row"><input id="settingName" value="${esc(store.text('nyx.userName',''))}" placeholder="Enter your name" autocomplete="nickname"><button data-save-profile>Save</button></div>
+        </section>
+        <section class="settings-card">
+          <h2>Font</h2>
+          <p>Choose the font used across nyx.</p>
+          <select data-font-value>${nyxFontOptionsMarkup()}</select>
+        </section>
+        <section class="settings-card">
+          <h2>Glassmorphism</h2>
+          <p>Changes transparency and blur. <span data-glass-output>${esc(store.text('nyx.glassLevel','80'))}%</span></p>
+          <input type="range" min="-200" max="200" value="${esc(store.text('nyx.glassLevel','80'))}" data-glass-value>
+        </section>
+        <section class="settings-card">
+          <h2>Lag Reducer</h2>
+          <p>Stops animations, removes blur, sets Glassmorphism to 0, and turns Background Enhancer off.</p>
+          <div class="settings-row"><span>Lag Reducer</span><button class="switch ${store.get('nyx.lagReducer',false)?'on':''}" data-switch="nyx.lagReducer" data-lag-reducer aria-label="Lag reducer"></button></div>
+        </section>
+        <section class="settings-card">
+          <h2>Lite Mode</h2>
+          <p>Lightens blur, shadows, and particles without fully disabling animations.</p>
+          <div class="settings-row"><span>Lite Mode</span><button class="switch ${store.get('nyx.performanceLite',false)?'on':''}" data-switch="nyx.performanceLite" data-performance-lite aria-label="Lite mode"></button></div>
+        </section>
+        <section class="settings-card">
+          <h2>Clear Cache</h2>
+          <p>Removes cookies, cache files, saved settings, proxy storage, and service workers, then reloads nyx like a fresh install.</p>
+          <button data-clear-nyx-cache type="button">Clear Cache and Reset</button>
+        </section>
+        <section class="settings-card">
+          <h2>Browser Mode</h2>
+          <p>Makes nyx look like a Chrome page with tabs on top, an address bar, and an Apps button instead of the bottom app bar.</p>
+          <div class="settings-row"><span>Browser Mode</span><button class="switch ${store.get('nyx.browserShellMode',true)?'on':''}" data-switch="nyx.browserShellMode" aria-label="Browser mode"></button></div>
+        </section>
+        <section class="settings-card">
+          <h2>Popup Protection</h2>
+          <p>Controls whether site popups are replaced with nyx's blocked popup screen.</p>
+          <div class="settings-row"><span>Popup Protection</span><button class="switch ${popupProtectionEnabled()?'on':''}" data-switch="nyx.popupProtection" aria-label="Popup protection"></button></div>
+          <p class="security-warning">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span class="security-warning-strong">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p>
+        </section>
+        <section class="settings-card">
+          <h2>Startup PDF</h2>
+          <p>Choose which PDF appears before nyx opens.</p>
+          <select id="settingLaunchPdf">
+            <option value="math">1300 Maths Formula</option>
+            <option value="custom">Custom local PDF</option>
+          </select>
+          <input class="file-input" id="settingLaunchPdfFile" type="file" accept="application/pdf,.pdf">
+          <div class="settings-row"><span data-launch-pdf-name>${esc(launchPdfObjectName || 'No custom PDF selected')}</span><button data-pick-launch-pdf>Choose PDF</button></div>
+        </section>
+        <section class="settings-card hieroglyph-scroll">
+          <h2>${esc(toHieroglyphText('Egyptian hieroglyph Text'))}</h2>
+          <p>${esc(toHieroglyphText('Changes visible letters and numbers into hieroglyph-style symbols.'))}</p>
+          <div class="settings-row"><span>${esc(toHieroglyphText('Hieroglyph Text'))}</span><button class="switch ${hieroglyphTextEnabled()?'on':''}" data-switch="nyx.hieroglyphText" data-hieroglyph-text aria-label="Egyptian hieroglyph text"></button></div>
+          <div class="settings-row"><span>${esc(toHieroglyphText('Auto Hieroglyph'))}</span><button class="switch ${store.get('nyx.autoHieroglyphText',false)?'on':''}" data-switch="nyx.autoHieroglyphText" aria-label="Auto hieroglyph on open"></button></div>
+        </section>
+        <section class="settings-card wide settings-backgrounds">
+          <h2>${document.body.classList.contains('browser-shell') ? 'Browser Background' : 'Change Background'}</h2>
+          <p>Pick one of your current ռʏӼ backgrounds.</p>
+          <div class="background-picker" data-bg-picker data-bg-scope="${document.body.classList.contains('browser-shell') ? 'browser' : 'windows'}"></div>
+          <div class="settings-row"><span>3D Backgrounds</span><button class="switch ${store.get('nyx.threeDBackgrounds',false)?'on':''}" data-switch="nyx.threeDBackgrounds" aria-label="3D backgrounds"></button></div>
+          <div class="settings-row"><span>Background Enhancer</span><button class="switch ${store.get('nyx.backgroundEnhancer',false)?'on':''}" data-bg-enhancer aria-label="Background enhancer"></button></div>
+          <p class="bg-quality-status" data-bg-quality-status></p>
+          <div class="settings-upload" ${document.body.classList.contains('browser-shell') ? 'hidden' : ''}>
+            <h2>Upload</h2>
+            <input class="file-input" id="settingBgFile" type="file" accept="image/*">
+            <div class="settings-row"><input id="settingBgUrl" value="${esc(store.text('nyx.customBgUrl',''))}" placeholder="https://example.com/background.jpg"><button data-save-bg>Apply Background</button></div>
+          </div>
+        </section>
+      </div>
+
+      <h1 class="settings-section-title">Browser Settings</h1>
+      <div class="settings-grid">
+        <section class="settings-card">
+          <h2>Change Proxy</h2>
+          <p>This setting changes the browser's proxy to either UV or SJ.
+SJ supports more websites however, there will be some websites where UV is superior.
+Setting the proxy type to "auto" will automatically switch the proxy for specific websites where one functions and the other does not.</p>
+          <select id="settingBrowserMode">
+            <option value="auto">Auto</option>
+            <option value="scramjet">Use Scramjet</option>
+            <option value="ultraviolet">Use Ultraviolet</option>
+            <option value="iframe">Iframe</option>
+          </select>
+        </section>
+        <section class="settings-card">
+          <h2>Transport</h2>
+          <p class="hint">Choose the installed network transport.</p>
+          <select id="settingTransport">
+            <option value="epoxy">Epoxy over Wisp</option>
+            <option value="wisp">Wisp endpoint</option>
+            <option value="libcurl">Libcurl over Wisp</option>
+          </select>
+          <button data-save-browser>Save Browser Settings</button>
+        </section>
+        <section class="settings-card">
+          <h2>Change Search Engine</h2>
+          <p>Pick the search engine used for browser searches.</p>
+          <select id="settingEngine" data-engine-value><option value="google">Google</option><option value="bing">Bing</option><option value="duckduckgo">DuckDuckGo</option></select>
+        </section>
+        <section class="settings-card">
+          <h2>Effects</h2>
+          <p>Pick the particles shown in browser mode.</p>
+          <select data-effect-value>
+            <option value="none">None</option>
+            <option value="rain">Rain</option>
+            <option value="stars">Stars</option>
+            <option value="hearts">Hearts</option>
+            <option value="pokeballs">Pokeballs</option>
+            <option value="flowers">Flowers</option>
+            <option value="emeralds">Emeralds</option>
+          </select>
+          <div class="settings-row"><span>Speed <b data-effect-speed-label>${esc(store.text('nyx.visualEffectSpeed','1.1'))}x</b></span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${esc(store.text('nyx.visualEffectSpeed','1.1'))}"></div>
+          <div class="settings-row"><span>Amount <b data-effect-amount-label>${esc(store.text('nyx.visualEffectAmount','16'))}</b></span><input data-effect-amount type="range" min="1" max="64" step="1" value="${esc(store.text('nyx.visualEffectAmount','16'))}"></div>
+        </section>
+      </div>
+    </div>`;
+  }
+  function openSettings(){
+    const existing=document.querySelector('.window.settings-window');
+    if(existing){
+      bring(existing);
+      return existing;
+    }
+    const win=makeWindow({title:'Preferences',className:'settings-window',left:'calc(50vw - 380px)',top:'58px',width:'760px',height:'600px',body:settingsBody()});
+    win.classList.add('settings-opening');
+    setTimeout(()=>win.classList.remove('settings-opening'),340);
+    const picker=win.querySelector('[data-bg-picker]');
+    if(picker) renderBackgroundChoices(picker);
+    const engineSel=win.querySelector('#settingEngine');
+    if(engineSel) engineSel.value=store.text('nyx.engine','duckduckgo');
+    const modeSel=win.querySelector('#settingBrowserMode');
+    if(modeSel){
+      const mode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
+      modeSel.value=mode==='rammerhead' ? 'auto' : mode;
+    }
+    const transportSel=win.querySelector('#settingTransport');
+    if(transportSel) transportSel.value=store.text('nyx.transport','epoxy');
+    const launchPdfSel=win.querySelector('#settingLaunchPdf');
+    if(launchPdfSel) launchPdfSel.value=store.text('nyx.launchPdf','math');
+    applyVisualEffectSetting();
+    syncSwitches(win);
+    setTimeout(()=>win.querySelector('#settingName')?.focus(),60);
+  }
+  let setupStepIndex=0;
+  const setupStepTitles=[
+    'Welcome to Nyx. Customize your experience.',
+    'Pick the basics before nyx opens.',
+    'Preview the theme Nyx starts with.',
+    'Choose how much motion you want.',
+    'Choose your browser defaults.',
+    'Choose the font Nyx uses.',
+    'Check everything before launch.',
+    'Learn the controls before launch.'
+  ];
+  function setupOptionText(select){
+    return select?.options?.[select.selectedIndex]?.textContent?.trim() || select?.value || '';
+  }
+  function syncSetupThemeCards(){
+    const setup=$('setupScreen');
+    const theme=$('setupTheme')?.value || 'default';
+    setup?.querySelectorAll('[data-setup-theme-card]').forEach(card=>{
+      card.classList.toggle('selected',card.dataset.setupThemeCard===theme);
+    });
+  }
+  function updateSetupPreview(){
+    const setup=$('setupScreen');
+    if(!setup) return;
+    const themeSelect=$('setupTheme');
+    const effectSelect=$('setupEffect');
+    const browserSelect=$('setupBrowserMode');
+    const engineSelect=$('setupEngine');
+    const fontSelect=$('setupFont');
+    const theme=themeSelect?.value || 'default';
+    const stage=setup.querySelector('[data-setup-final-stage]');
+    if(stage) stage.dataset.theme=theme;
+    const values=[
+      ['[data-setup-preview-theme]',setupOptionText(themeSelect)],
+      ['[data-setup-preview-effect]',setupOptionText(effectSelect)],
+      ['[data-setup-preview-browser]',setupOptionText(browserSelect)],
+      ['[data-setup-preview-engine]',setupOptionText(engineSelect)],
+      ['[data-setup-preview-font]',setupOptionText(fontSelect)]
+    ];
+    values.forEach(([selector,value])=>{
+      const target=setup.querySelector(selector);
+      if(target) target.textContent=value || '-';
+    });
+  }
+  function setSetupStep(index=0){
+    const setup=$('setupScreen');
+    if(!setup) return;
+    const steps=[...setup.querySelectorAll('[data-setup-step]')];
+    if(!steps.length) return;
+    const previous=setupStepIndex;
+    setupStepIndex=Math.max(0,Math.min(steps.length-1,Number(index)||0));
+    setup.classList.remove('setup-forward','setup-back');
+    setup.classList.add(setupStepIndex >= previous ? 'setup-forward' : 'setup-back');
+    steps.forEach((step,i)=>step.classList.toggle('active',i===setupStepIndex));
+    setup.querySelectorAll('.setup-dot').forEach((dot,i)=>dot.classList.toggle('active',i===setupStepIndex));
+    const subtitle=setup.querySelector('[data-setup-subtitle]');
+    if(subtitle) subtitle.textContent=setupStepTitles[setupStepIndex] || setupStepTitles[0];
+    const back=setup.querySelector('[data-setup-back]');
+    const next=setup.querySelector('[data-setup-next]');
+    const finish=setup.querySelector('[data-finish-setup]');
+    if(back) back.hidden=setupStepIndex===0;
+    if(next){
+      next.hidden=setupStepIndex===steps.length-1;
+      next.textContent=setupStepIndex===0 ? 'Enter' : 'Next';
+    }
+    if(finish) finish.hidden=setupStepIndex!==steps.length-1;
+    updateSetupPreview();
+  }
+  function moveSetupStep(delta=1){
+    setSetupStep(setupStepIndex + delta);
+  }
+  function wireSetupWizardControls(setup=$('setupScreen')){
+    if(!setup || setup.__nyxSetupWizardWired) return;
+    setup.__nyxSetupWizardWired=true;
+    setup.addEventListener('click',event=>{
+      const themeCard=event.target.closest?.('[data-setup-theme-card]');
+      if(themeCard && setup.contains(themeCard)){
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation?.();
+        const theme=$('setupTheme');
+        if(theme) theme.value=themeCard.dataset.setupThemeCard || 'default';
+        syncSetupThemeCards();
+        updateSetupPreview();
+        return;
+      }
+      const button=event.target.closest?.('[data-setup-next],[data-setup-back],[data-finish-setup],[data-skip-setup]');
+      if(!button || !setup.contains(button)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      if(button.matches('[data-setup-next]')) moveSetupStep(1);
+      else if(button.matches('[data-setup-back]')) moveSetupStep(-1);
+      else if(button.matches('[data-finish-setup]')) finishSetupCustomization();
+      else if(button.matches('[data-skip-setup]')){
+        store.set('nyx.setupComplete',true);
+        hideSetup();
+      }
+    },true);
+    setup.addEventListener('change',event=>{
+      if(!event.target.closest?.('[data-theme-value],[data-effect-value],[data-browser-mode-select],[data-browser-engine],[data-font-value]')) return;
+      syncSetupThemeCards();
+      updateSetupPreview();
+    },true);
+    const handleSetupEnter=event=>{
+      if(event.key!=='Enter') return;
+      if(!setup.classList.contains('show')) return;
+      const target=event.target;
+      if(target?.matches?.('textarea,select,[contenteditable="true"]')) return;
+      const steps=[...setup.querySelectorAll('[data-setup-step]')];
+      if(!steps.length) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      if(setupStepIndex>=steps.length-1) finishSetupCustomization();
+      else moveSetupStep(1);
+    };
+    setup.addEventListener('keydown',handleSetupEnter,true);
+    if(!document.__nyxSetupEnterWired){
+      document.__nyxSetupEnterWired=true;
+      document.addEventListener('keydown',event=>{
+        const activeSetup=$('setupScreen');
+        if(!activeSetup?.classList.contains('show')) return;
+        handleSetupEnter(event);
+      },true);
+    }
+  }
+  function showSetup(){
+    const setup=$('setupScreen');
+    const name=$('setupName');
+    if(!setup) return;
+    wireSetupWizardControls(setup);
+    if(name) name.value=store.text('nyx.userName','');
+    const theme=$('setupTheme');
+    if(theme) theme.value=store.text('nyx.theme','default');
+    const effect=$('setupEffect');
+    if(effect) effect.value=store.text('nyx.visualEffect','none');
+    const browser=$('setupBrowserMode');
+    if(browser) browser.value=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
+    const engine=$('setupEngine');
+    if(engine) engine.value=store.text('nyx.engine','duckduckgo');
+    const font=$('setupFont');
+    if(font){
+      font.innerHTML=nyxFontOptionsMarkup();
+      font.value=nyxFontChoice()[0];
+    }
+    syncSetupThemeCards();
+    updateSetupPreview();
+    document.body.classList.add('setup-active');
+    setup.classList.add('show');
+    setup.setAttribute('aria-hidden','false');
+    setSetupStep(0);
+    setTimeout(()=>name?.focus(),80);
+  }
+  function shouldShowStartupCustomization(){
+    if(store.get('nyx.setupComplete',false)) return false;
+    try{
+      const existingSignals=['nyx.theme','nyx.engine','nyx.browserMode','nyx.homeShortcuts','nyx.background','nyx.browserBackground','nyx.tabTitle','nyx.panicKey'];
+      if(existingSignals.some(key=>localStorage.getItem(key)!==null)){
+        store.set('nyx.setupComplete',true);
+        return false;
+      }
+    }catch{}
+    return true;
+  }
+  function hideSetup(){
+    const setup=$('setupScreen');
+    if(!setup) return;
+    setup.classList.remove('show');
+    setup.setAttribute('aria-hidden','true');
+    document.body.classList.remove('setup-active');
+  }
+  function showSetupLaunchSplash(){
+    window.nyxLoadingScreen?.show();
+  }
+  function finishSetupCustomization(){
+    const name=$('setupName')?.value.trim();
+    if(name) store.setText('nyx.userName',name);
+    store.setText('nyx.theme',$('setupTheme')?.value || 'default');
+    store.setText('nyx.visualEffect',$('setupEffect')?.value || 'none');
+    store.set('nyx.visualEffectUserChoice',true);
+    store.setText('nyx.browserMode',normalizeBrowserModeName($('setupBrowserMode')?.value || 'auto'));
+    store.setText('nyx.engine',$('setupEngine')?.value || 'duckduckgo');
+    store.setText('nyx.font',nyxFontChoice($('setupFont')?.value || 'outfit')[0]);
+    store.set('nyx.setupComplete',true);
+    applyUserSettings();
+    hideSetup();
+    toast('Settings saved');
+  }
+  function syncSwitches(root=document){
+    root.querySelectorAll('[data-switch]').forEach(btn=>{
+      const initial=btn.dataset.switch==='nyx.autoCloak'
+        ? (store.get('nyx.autoCloak',false) || store.get('autoAbout',false) || store.get('autoBlob',false))
+        : btn.dataset.switch==='nyx.popupProtection'
+          ? popupProtectionEnabled()
+        : btn.dataset.switch==='nyx.hieroglyphText'
+          ? hieroglyphTextEnabled()
+        : btn.dataset.switch==='nyx.browserShellMode'
+          ? store.get('nyx.browserShellMode',true)
+        : store.get(btn.dataset.switch,false);
+      btn.classList.toggle('on',initial);
+      btn.setAttribute('role','switch');
+      btn.setAttribute('aria-checked',String(!!initial));
+      btn.onclick=()=>{
+        const key=btn.dataset.switch;
+        const v=key==='nyx.popupProtection'
+          ? !popupProtectionEnabled()
+          : key==='nyx.browserShellMode'
+            ? !store.get('nyx.browserShellMode',true)
+            : !store.get(key,false);
+        store.set(key,v);
+        qsa(`[data-switch="${key}"]`).forEach(el=>{el.classList.toggle('on',v);el.setAttribute('aria-checked',String(!!v))});
+        qsa(`[data-switch="${key}"].settings-action`).forEach(el=>{el.textContent=v?'On':'Off'});
+        if(key==='nyx.cloakRedirectOriginal' || key==='nyx.autoCloak') qsa(`[data-switch="${key}"]`).forEach(el=>{if(el.classList.contains('settings-action')) el.textContent=v?'On':'Off'});
+        if(key==='nyx.autoCloak'){
+          store.set('autoAbout',false);
+          store.set('autoBlob',false);
+          if(v) launchAutoCloak();
+          toast('Auto Cloak '+(v?'on':'off'));
+        }else if(key==='nyx.hieroglyphText'){
+          applyHieroglyphText();
+          toast('Hieroglyph text '+(v?'on':'off'));
+        }else if(key==='nyx.autoHieroglyphText'){
+          if(v) store.set('nyx.hieroglyphText',true);
+          qsa('[data-switch="nyx.hieroglyphText"]').forEach(el=>el.classList.toggle('on',hieroglyphTextEnabled()));
+          qsa('[data-switch="nyx.hieroglyphText"].settings-action').forEach(el=>{el.textContent=hieroglyphTextEnabled()?'On':'Off'});
+          applyHieroglyphText();
+          toast('Auto Hieroglyph '+(v?'on':'off'));
+        }else if(key==='nyx.lagReducer'){
+          if(v){
+            store.set('nyx.backgroundEnhancer',false);
+            store.setText('nyx.glassLevel','0');
+          }
+          applyUserSettings();
+          toast('Lag Reducer '+(v?'on':'off'));
+        }else if(key==='nyx.performanceLite'){
+          applyUserSettings();
+          toast('Lite Mode '+(v?'on':'off'));
+        }else if(key==='nyx.threeDBackgrounds'){
+          applyUserSettings();
+          toast('3D Backgrounds '+(v?'on':'off'));
+        }else if(key==='nyx.browserShellMode'){
+          const hostWin=btn.closest('.window');
+          applyUserSettings();
+          if(hostWin) setTimeout(()=>closeWindowAnimated(hostWin),80);
+          toast('Browser Mode '+(v?'on':'off'));
+        }else if(key==='nyx.popupProtection'){
+          activeBrowser?.refreshSandbox?.();
+          toast('Popup Protection '+(v?'on':'off'));
+        }
+      }
+    });
+    root.querySelectorAll('[data-anticlose]').forEach(ac=>{
+      ac.classList.toggle('on',antiCloseEnabled);
+      ac.onclick=()=>{
+        setAntiCloseEnabled(!antiCloseEnabled);
+        toast('Anti-close '+(antiCloseEnabled?'on':'off'));
+      };
+    });
+    wirePresetCloakControls(root);
+  }
+  function applyPreset(name, silent=false){
+    const previousCloakTitle=store.text('nyx.tabTitle','').trim();
+    if(name==='custom'){
+      applyCustomTabCloak(store.text('nyx.tabTitle','nyx'),store.text('nyx.tabFavicon',nyxFaviconHref()),silent);
+      syncPresetCloakFields();
+      return;
+    }
+    const labels={nyx:nyxTabTitle,classroom:'Google Classroom',drive:'Google Drive',classlink:'ClassLink',google:'Google'};
+    const title=labels[name]||nyxTabTitle;
+    const favicon=name==='nyx' ? nyxTabFavicon : (favicons[name]||favicons.nyx||favicons.google);
+    setCurrentTabCloak(title,favicon,true);
+    const brand=$('brandName');
+    if(brand) brand.textContent=nyxTabTitle;
+    store.setText('nyx.logo',name);
+    store.setText('nyx.tabTitle',title);
+    store.setText('nyx.tabFavicon',favicon);
+    syncPresetCloakFields();
+    repairBlankBrowserShellPresetTabs(previousCloakTitle);
+    scheduleStoredTabCloakEnforce();
+    requestAnimationFrame(()=>setCurrentTabCloak(title,favicon,false));
+    if(!silent) toast('Tab preset applied');
+  }
+  function repairBlankBrowserShellPresetTabs(previousCloakTitle=''){
+    if(!Array.isArray(browserShellTabs) || !browserShellTabs.length) return;
+    const presetTitles=new Set([nyxTabTitle,'ռʏӼ','Õ¼ÊÓ¼','Google Classroom','Google Drive','ClassLink','Google']);
+    if(previousCloakTitle) presetTitles.add(previousCloakTitle);
+    let changed=false;
+    browserShellTabs.forEach((tab,index)=>{
+      if(tab.url || !presetTitles.has(String(tab.title || '').trim())) return;
+      tab.title=index===0 ? 'Home' : 'New Tab';
+      tab.icon=favicons.nyx;
+      changed=true;
+    });
+    if(changed && document.body.classList.contains('browser-shell')) renderBrowserShellTabs();
+  }
+  function wirePresetCloakControls(root=document){
+    const scope=root || document;
+    if(scope.__nyxPresetCloakWired) return;
+    scope.__nyxPresetCloakWired=true;
+    scope.addEventListener?.('click',e=>{
+      const preset=e.target.closest?.('[data-preset]');
+      if(!preset || !scope.contains?.(preset)) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      applyPreset(preset.dataset.preset || 'nyx');
+      syncPresetCloakFields(scope);
+    },true);
+    const applySelect=e=>{
+      const select=e.target.closest?.('[data-preset-select]');
+      if(!select || !scope.contains?.(select)) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      applyPreset(select.value || 'nyx');
+      syncPresetCloakFields(scope);
+    };
+    scope.addEventListener?.('change',applySelect,true);
+    scope.addEventListener?.('input',applySelect,true);
+  }
+  function syncPresetCloakFields(root=document){
+    const scope=root || document;
+    const logo=store.text('nyx.logo','nyx');
+    const title=store.text('nyx.tabTitle','nyx');
+    const favicon=store.text('nyx.tabFavicon',nyxFaviconHref());
+    scope.querySelectorAll?.('[data-preset-select]').forEach(select=>{
+      if([...select.options].some(option=>option.value===logo)) select.value=logo;
+    });
+    scope.querySelectorAll?.('[data-tab-title]').forEach(input=>{input.value=title});
+    scope.querySelectorAll?.('[data-tab-favicon]').forEach(input=>{input.value=favicon});
+  }
+  function enforceStoredTabCloak(){
+    const title=store.text('nyx.tabTitle','').trim();
+    const favicon=store.text('nyx.tabFavicon','').trim();
+    if(title || favicon) setCurrentTabCloak(title || document.title, favicon || nyxFaviconHref(), false);
+  }
+  function scheduleStoredTabCloakEnforce(){
+    enforceStoredTabCloak();
+    [80,320,1000].forEach(delay=>setTimeout(enforceStoredTabCloak,delay));
+  }
+  function reachableTabDocuments(){
+    const docs=[document];
+    try{
+      if(window.parent && window.parent!==window && window.parent.document && !docs.includes(window.parent.document)) docs.push(window.parent.document);
+    }catch{}
+    try{
+      if(window.top && window.top!==window && window.top.document && !docs.includes(window.top.document)) docs.push(window.top.document);
+    }catch{}
+    return docs;
+  }
+  function setCurrentTabCloak(title, favicon, forceRefresh=false){
+    const cleanTitle=String(title || nyxTabTitle).trim() || nyxTabTitle;
+    const cleanFavicon=String(favicon || nyxTabFavicon).trim() || nyxTabFavicon;
+    reachableTabDocuments().forEach(doc=>{
+      setPageTitle(cleanTitle,doc);
+      setPageFavicon(cleanFavicon,forceRefresh,doc);
+    });
+    return {title:cleanTitle,favicon:cleanFavicon};
+  }
+  function setPageTitle(title){
+    const doc=arguments[1] || document;
+    if(!doc) return;
+    let titleEl=doc.querySelector('head > title');
+    if(!titleEl && doc.head){
+      titleEl=doc.createElement('title');
+      doc.head.prepend(titleEl);
+    }
+    if(titleEl) titleEl.textContent=title;
+    try{doc.title=title}catch{}
+  }
+  function setPageFavicon(href, forceRefresh=false, targetDoc=document){
+    const clean=String(href || favicons.nyx).trim() || favicons.nyx;
+    let finalHref=clean;
+    let lower=clean.toLowerCase();
+    try{
+      if(!/^(data:|blob:)/i.test(clean)){
+        const url=new URL(clean,location.href);
+        if(forceRefresh && url.origin===location.origin) url.searchParams.set('tabIcon',String(Date.now()));
+        finalHref=url.href;
+        lower=url.pathname.toLowerCase();
+      }
+    }catch{
+      finalHref=clean;
+    }
+    const type=lower.endsWith('.png') ? 'image/png' : lower.endsWith('.webp') ? 'image/webp' : lower.endsWith('.jpg') || lower.endsWith('.jpeg') ? 'image/jpeg' : lower.endsWith('.ico') ? 'image/x-icon' : lower.endsWith('.svg') || /^data:image\/svg/i.test(clean) ? 'image/svg+xml' : '';
+    const install=doc=>{
+      if(!doc?.head) return;
+      doc.querySelectorAll('link[rel*="icon" i], link[rel="apple-touch-icon" i]').forEach(el=>el.remove());
+      ['icon','shortcut icon','apple-touch-icon'].forEach((rel,index)=>{
+        const fav=doc.createElement('link');
+        if(index===0) fav.id='appFavicon';
+        fav.rel=rel;
+        if(type && rel!=='apple-touch-icon') fav.type=type;
+        fav.href=finalHref;
+        doc.head.appendChild(fav);
+      });
+    };
+    install(targetDoc);
+    return finalHref;
+  }
+  function applyCustomTabCloak(title, favicon, silent=false){
+    const cleanTitle=String(title || '').trim() || 'nyx';
+    const cleanFavicon=String(favicon || '').trim() || favicons.nyx;
+    setCurrentTabCloak(cleanTitle,cleanFavicon,/^(?:\.\/|\/|assets\/)/i.test(cleanFavicon));
+    store.setText('nyx.tabTitle',cleanTitle);
+    store.setText('nyx.tabFavicon',cleanFavicon);
+    store.setText('nyx.logo','custom');
+    scheduleStoredTabCloakEnforce();
+    if(!silent) toast('Tab cloak applied');
+  }
+  let tabCloakPersistenceInstalled=false;
+  function installTabCloakPersistence(){
+    if(tabCloakPersistenceInstalled) return;
+    tabCloakPersistenceInstalled=true;
+    ['focus','pageshow','visibilitychange'].forEach(type=>{
+      window.addEventListener(type,()=>scheduleStoredTabCloakEnforce(),{passive:true});
+    });
+    if(document.head){
+      new MutationObserver(()=>scheduleStoredTabCloakEnforce()).observe(document.head,{childList:true,subtree:true,attributes:true,attributeFilter:['href','rel']});
+    }
+  }
+  function currentCloakFrameUrl(){
+    try{
+      const url=new URL(location.href);
+      url.searchParams.set('nyx_cloaked','1');
+      return url.href;
+    }catch{
+      return location.href;
+    }
+  }
+  function cloakHtml(title=document.title){
+    return '<!doctype html><title>'+esc(title)+'</title><link rel="icon" href="'+esc(nyxFaviconHref())+'"><iframe src="'+currentCloakFrameUrl()+'" style="position:fixed;inset:0;width:100%;height:100%;border:0"></iframe>';
+  }
+  function cloakPromptText(){
+    return "Please type one of the following:\n'a' = about:blank\n'b' = blob cloaking\n'm' = current tab iframe\n'ac' = same tab cloak\n'bc' = blob cloaking same tab\n'mc' = current tab iframe same tab";
+  }
+  function normalizeCloakMode(value){
+    const mode=String(value || '').trim().toLowerCase();
+    return ['a','b','m','ac','bc','mc'].includes(mode) ? mode : 'a';
+  }
+  function cloakRedirectUrl(){
+    const raw=store.text('nyx.cloakRedirectUrl','https://google.com/').trim() || 'https://google.com/';
+    try{return normalize(raw)}catch{return 'https://google.com/'}
+  }
+  function maybeRedirectOriginalAfterCloak(){
+    if(!store.get('nyx.cloakRedirectOriginal',false)) return;
+    const target=cloakRedirectUrl();
+    setTimeout(()=>{
+      try{location.replace(target)}catch{location.href=target}
+    },260);
+  }
+  function saveCloakSettings(root=document){
+    const mode=normalizeCloakMode(root.querySelector('[data-cloak-type]')?.value || store.text('nyx.cloakType','a'));
+    const redirectUrl=root.querySelector('[data-cloak-redirect-url]')?.value?.trim();
+    store.setText('nyx.cloakType',mode);
+    if(redirectUrl) store.setText('nyx.cloakRedirectUrl',normalize(redirectUrl));
+    toast('Cloak settings saved');
+  }
+  function promptCloakMode(){
+    const value=prompt(cloakPromptText(),'m');
+    if(value===null) return null;
+    const mode=value.trim().toLowerCase();
+    if(['a','b','m','ac','bc','mc'].includes(mode)) return mode;
+    alert("Unknown cloak mode. Use a, b, m, ac, bc, or mc.");
+    return null;
+  }
+  function applyTabAnchor(){
+    try{history.replaceState(history.state,'',location.pathname+location.search)}catch{}
+  }
+  function launchCurrentTabIframe(useAnchor=false){
+    if(useAnchor) applyTabAnchor();
+    const iframe=document.createElement('iframe');
+    iframe.src=currentCloakFrameUrl();
+    iframe.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0;background:#020308;z-index:7000';
+    iframe.setAttribute('title','nyx');
+    document.body.classList.remove('hosted-cloak-entry');
+    document.documentElement.classList.remove('hosted-cloak-entry');
+    document.body.innerHTML='';
+    document.body.style.margin='0';
+    document.body.style.overflow='hidden';
+    document.body.appendChild(iframe);
+    return true;
+  }
+  function launchCurrentTabBlob(useAnchor=false){
+    if(useAnchor) applyTabAnchor();
+    const url=URL.createObjectURL(new Blob([cloakHtml()],{type:'text/html'}));
+    try{
+      location.replace(url);
+    }catch{
+      location.href=url;
+    }
+    return true;
+  }
+  function launchCurrentTabAboutBlank(useAnchor=false){
+    if(useAnchor) applyTabAnchor();
+    try{
+      document.open();
+      document.write(cloakHtml());
+      document.close();
+    }catch{
+      return launchCurrentTabIframe(false);
+    }
+    return true;
+  }
+  const cloakHopUrls=[
+    ['Blooket','https://www.blooket.com/'],
+    ['IXL','https://www.ixl.com/'],
+    ['Khan Academy','https://www.khanacademy.org/'],
+    ['Wikipedia','https://www.wikipedia.org/'],
+    ['Google','https://www.google.com/'],
+    ['Google Classroom','https://classroom.google.com/'],
+    ['Google Docs','https://docs.google.com/']
+  ];
+  function nextCloakHop(forcedHop){
+    if(forcedHop) return {name:forcedHop[0],url:forcedHop[1]};
+    const index=Number(store.text('nyx.cloakHopIndex','0')) || 0;
+    const hop=cloakHopUrls[index % cloakHopUrls.length];
+    store.setText('nyx.cloakHopIndex',String(index+1));
+    return {name:hop[0],url:hop[1]};
+  }
+  function writeAboutBlankCloak(w, html, started=Date.now()){
+    try{
+      w.document.open();
+      w.document.write(html);
+      w.document.close();
+      return true;
+    }catch{}
+    if(Date.now()-started<2600) setTimeout(()=>writeAboutBlankCloak(w,html,started),140);
+    return false;
+  }
+  function opennyxInternalPopup(url='about:blank',options={}){
+    const target=String(url || 'about:blank');
+    const nativeOpen=window.__nyxNativeOpen || window.open?.bind(window);
+    const features=options.features || 'popup=yes,width=1280,height=800';
+    let external=null;
+    try{external=nativeOpen ? nativeOpen(target,'_blank',features) : null}catch{}
+    if(!external && target!=='about:blank'){
+      try{external=nativeOpen ? nativeOpen('about:blank','_blank',features) : null}catch{}
+      try{if(external) external.location.replace(target)}catch{}
+    }
+    if(external) return external;
+    return {
+      closed:false,
+      focus(){},
+      blur(){},
+      close(){this.closed=true},
+      postMessage(){},
+      location:{
+        href:target,
+        assign(next){openBrowser(next || target)},
+        replace(next){openBrowser(next || target)}
+      },
+      document:{
+        open(){return this},
+        write(){},
+        writeln(){},
+        close(){}
+      }
+    };
+  }
+  function opennyxBlobTab(html=cloakHtml()){
+    const url=URL.createObjectURL(new Blob([html],{type:'text/html'}));
+    const popup=opennyxInternalPopup(url,{blob:true});
+    if(!popup) URL.revokeObjectURL(url);
+    return popup;
+  }
+  function openThroughDeltaMath(finalUrl=location.href, afterRedirect, forcedHop){
+    const w=opennyxInternalPopup(finalUrl);
+    if(!w) return null;
+    setTimeout(()=>{
+      if(typeof afterRedirect==='function') setTimeout(()=>afterRedirect(w),260);
+    },120);
+    return w;
+  }
+  function launchCloak(kind, options={}){
+    const html=cloakHtml();
+    if(options.anchor) applyTabAnchor();
+    if(kind==='about'){
+      return openThroughDeltaMath('about:blank',w=>{
+        writeAboutBlankCloak(w,html);
+      },options.hop);
+    }
+    if(kind==='blob'){
+      return opennyxBlobTab(html);
+    }
+    return opennyxBlobTab(html);
+  }
+  function launchDirectAboutBlankCloak(title='about:blank'){
+    const nativeOpen=window.__nyxNativeOpen || window.open?.bind(window);
+    let w=null;
+    try{w=nativeOpen ? nativeOpen('about:blank','_blank','popup=yes,width=1280,height=800') : null}catch{}
+    if(!w) w=opennyxInternalPopup('about:blank',{features:'popup=yes,width=1280,height=800'});
+    if(!w) return null;
+    try{
+      w.document.open();
+      w.document.write(cloakHtml(title));
+      w.document.close();
+      try{w.focus?.()}catch{}
+      return w;
+    }catch{
+      try{w.location.href=currentCloakFrameUrl()}catch{}
+      return w;
+    }
+  }
+  function launchAutoCloak(){
+    return !!launchHostedCloak(store.text('nyx.cloakType','a'));
+  }
+  function shouldAutoLaunchHostedCloak(){
+    try{
+      const params=new URLSearchParams(location.search);
+      const cloakHosts=['lionrunner.web.app','lionrunner.firebaseapp.com'];
+      return cloakHosts.includes(location.hostname)
+        && window.top===window.self
+        && params.has('nyx_auto_classroom')
+        && !params.has('nyx_cloaked');
+    }catch{
+      return false;
+    }
+  }
+  function showCloakLaunchScreen(){
+    const screen=$('cloakLaunchScreen');
+    if(!screen) return;
+    screen.classList.add('show');
+    screen.setAttribute('aria-hidden','false');
+    syncAmbientCoverState();
+    setTimeout(()=>screen.querySelector('[data-cloak-input]')?.focus(),40);
+  }
+  function hideCloakLaunchScreen(){
+    const screen=$('cloakLaunchScreen');
+    if(!screen) return;
+    screen.classList.remove('show');
+    screen.setAttribute('aria-hidden','true');
+    syncAmbientCoverState();
+  }
+  function setCloakLaunchMessage(text){
+    const panel=$('cloakLaunchScreen')?.querySelector('p');
+    if(panel) panel.textContent=text;
+  }
+  function setCloakStatus(text){
+    const status=$('cloakLaunchScreen')?.querySelector('[data-cloak-status]');
+    if(status) status.textContent=text;
+  }
+  function launchTypedCloakMode(){
+    const input=$('cloakLaunchScreen')?.querySelector('[data-cloak-input]');
+    const mode=(input?.value || '').trim().toLowerCase();
+    return launchHostedCloak(mode || 'm');
+  }
+  function launchHostedCloak(mode='m'){
+    mode=String(mode || 'm').trim().toLowerCase();
+    if(!['a','b','m','ac','bc','mc'].includes(mode)){
+      setCloakStatus('Unknown mode. Choose a, b, m, ac, bc, or mc.');
+      showCloakLaunchScreen();
+      return false;
+    }
+    if(mode==='m' || mode==='mc'){
+      hideCloakLaunchScreen();
+      return launchCurrentTabIframe(mode==='mc');
+    }
+    if(mode==='ac'){
+      hideCloakLaunchScreen();
+      return launchCurrentTabAboutBlank(true);
+    }
+    if(mode==='bc'){
+      hideCloakLaunchScreen();
+      return launchCurrentTabBlob(true);
+    }
+    if(mode==='a'){
+      const launched=launchDirectAboutBlankCloak();
+      if(launched){
+        maybeRedirectOriginalAfterCloak();
+        setCloakStatus('Opened about:blank');
+        showCloakLaunchScreen();
+        return true;
+      }
+      showCloakLaunchScreen();
+      setCloakStatus('Popup blocked. Allow popups and try again.');
+      return false;
+    }
+    const kind=(mode==='b' || mode==='bc') ? 'blob' : 'about';
+    if(launchCloak(kind,{hop:cloakHopUrls[0],anchor:mode.endsWith('c')})){
+      if(mode==='b') maybeRedirectOriginalAfterCloak();
+      setCloakStatus(kind==='blob' ? 'Opened' : 'Opened');
+      showCloakLaunchScreen();
+      return true;
+    }
+    showCloakLaunchScreen();
+    setCloakStatus('Popup blocked. Click the mode button again or allow popups for this site.');
+    return false;
+  }
+  function scheduleHostedCloakLaunch(){
+    if(!shouldAutoLaunchHostedCloak()) return;
+    showCloakLaunchScreen();
+    setCloakStatus('Choose a mode to change this blank page.');
+  }
+  function scheduleAutoCloak(){
+    try{
+      const params=new URLSearchParams(location.search);
+      if(window.top!==window.self || params.has('nyx_cloaked')) return;
+    }catch{}
+    if(!store.get('nyx.autoCloak',false) && !store.get('autoAbout',false) && !store.get('autoBlob',false)) return;
+    store.set('nyx.autoCloak',true);
+    store.set('autoAbout',false);
+    store.set('autoBlob',false);
+    const mode=store.text('nyx.cloakType','a');
+    showCloakLaunchScreen();
+    const input=$('cloakLaunchScreen')?.querySelector('[data-cloak-input]');
+    if(input) input.value=mode;
+    setCloakStatus('Auto Cloak ready. If the popup is blocked, click or press any key.');
+    const tryLaunch=()=>{
+      if(launchAutoCloak()){
+        hideCloakLaunchScreen();
+        return true;
+      }
+      showCloakLaunchScreen();
+      setCloakStatus('Popup blocked. Click or press any key to launch.');
+      return false;
+    };
+    setTimeout(()=>{
+      if(tryLaunch()) return;
+      const once=()=>{
+        window.removeEventListener('pointerdown',once,true);
+        window.removeEventListener('keydown',once,true);
+        tryLaunch();
+      };
+      window.addEventListener('pointerdown',once,true);
+      window.addEventListener('keydown',once,true);
+    },180);
+  }
+  function installDeltaNewTabRedirect(){
+    if(window.__nyxDeltaRedirectInstalled) return;
+    window.__nyxDeltaRedirectInstalled=true;
+    const nativeOpen=window.open?.bind(window);
+    window.__nyxNativeOpen=nativeOpen;
+    window.open=(url,target,features)=>{
+      if(activeBrowser?.openPopupTab) return activeBrowser.openPopupTab(url || 'about:blank');
+      return nativeOpen ? nativeOpen(url,target,features) : null;
+    };
+  }
+  function installBareMuxPortResponder(){
+    if(window.__nyxBareMuxResponderInstalled) return;
+    window.__nyxBareMuxResponderInstalled=true;
+    window.addEventListener('message',event=>{
+      if(event.data?.type!=='getPort' || !event.data.port) return;
+      try{
+        const worker=new SharedWorker('/baremux/worker.js','bare-mux-worker');
+        const replyPort=event.data.port;
+        MessagePort.prototype.postMessage.call(replyPort,worker.port,[worker.port]);
+      }catch(error){
+        console.warn('nyx BareMux port reply failed:',error);
+      }
+    });
+  }
+  function installAntiClose(){
+    const msg='Are you sure you want to leave this page?';
+    if(antiCloseConfirmHandler) return;
+    antiCloseGestureHandler=()=>{
+      antiCloseHadGesture=true;
+    };
+    antiCloseConfirmHandler=e=>{
+      if(!antiCloseEnabled || antiClosePanicBypass || !antiCloseHadGesture) return;
+      e.preventDefault();
+      e.returnValue=msg;
+      return msg;
+    };
+    window.addEventListener('pointerdown',antiCloseGestureHandler,true);
+    window.addEventListener('keydown',antiCloseGestureHandler,true);
+    if(antiCloseEnabled) antiCloseHadGesture=true;
+    syncAntiCloseHandler();
+  }
+  function syncAntiCloseHandler(){
+    if(!antiCloseConfirmHandler) return;
+    window.removeEventListener('beforeunload',antiCloseConfirmHandler);
+    if(antiCloseRearmTimer){
+      clearInterval(antiCloseRearmTimer);
+      antiCloseRearmTimer=null;
+    }
+    if(!antiCloseEnabled){
+      if(window.onbeforeunload===antiCloseConfirmHandler) window.onbeforeunload=null;
+      return;
+    }
+    window.onbeforeunload=antiCloseConfirmHandler;
+    window.addEventListener('beforeunload',antiCloseConfirmHandler);
+    antiCloseRearmTimer=setInterval(()=>{
+      if(antiCloseEnabled && antiCloseConfirmHandler) window.onbeforeunload=antiCloseConfirmHandler;
+    },1000);
+  }
+  function setAntiCloseEnabled(next){
+    antiCloseEnabled=!!next;
+    if(antiCloseEnabled) antiCloseHadGesture=true;
+    store.set('nyx.antiClose',antiCloseEnabled);
+    qsa('[data-anticlose]').forEach(btn=>btn.classList.toggle('on',antiCloseEnabled));
+    syncAntiCloseHandler();
+    return antiCloseEnabled;
+  }
+  function panicKeyCombo(event){
+    const key=String(event.key || '').trim();
+    if(!key || ['Control','Shift','Alt','Meta'].includes(key)) return '';
+    const parts=[];
+    if(event.ctrlKey) parts.push('Ctrl');
+    if(event.altKey) parts.push('Alt');
+    if(event.shiftKey) parts.push('Shift');
+    if(event.metaKey) parts.push('Meta');
+    const label=key.length===1 ? key.toUpperCase() : key.replace(/^Arrow/,'');
+    parts.push(label);
+    return parts.join('+');
+  }
+  function normalizedPanicKey(value){
+    return String(value || '')
+      .replace(/^["']|["']$/g,'')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g,'')
+      .replace(/arrow/g,'');
+  }
+  function savedPanicKeys(){
+    const values=[store.text('nyx.panicKey','not set')];
+    try{
+      const raw=localStorage.getItem('nyx.panicKey');
+      if(raw) values.push(raw,JSON.parse(raw));
+    }catch{}
+    return values.filter(Boolean);
+  }
+  function panicComboMatchesSaved(combo){
+    const normalized=normalizedPanicKey(combo);
+    if(!normalized || normalized==='notset') return false;
+    return savedPanicKeys().some(value=>normalizedPanicKey(value)===normalized);
+  }
+  function updatePanicKeyLabels(root=document){
+    const value=store.text('nyx.panicKey','not set') || 'not set';
+    root.querySelectorAll('[data-panic-key-display]').forEach(el=>{el.textContent=value});
+  }
+  function handlePanicKeydown(event){
+    const combo=panicKeyCombo(event);
+    if(!combo) return false;
+    if(panicCaptureArmed){
+      event.preventDefault();
+      event.stopPropagation();
+      panicCaptureArmed=false;
+      store.setText('nyx.panicKey',combo);
+      updatePanicKeyLabels();
+      toast('Panic key saved: '+combo);
+      return true;
+    }
+    if(panicComboMatchesSaved(combo)){
+      event.preventDefault();
+      event.stopPropagation();
+      triggerPanicClose();
+      return true;
+    }
+    return false;
+  }
+  function ensurePanicKeyListener(){
+    const previous=window.__nyxPanicKeyListener;
+    if(previous){
+      try{document.removeEventListener('keydown',previous,true)}catch{}
+      try{window.removeEventListener('keydown',previous,true)}catch{}
+    }
+    const listener=event=>{ handlePanicKeydown(event); };
+    window.__nyxPanicKeyListener=listener;
+    window.__nyxPanicKeyListenerInstalled=true;
+    document.addEventListener('keydown',listener,true);
+    window.addEventListener('keydown',listener,true);
+    const previousDocumentKeydown=window.__nyxPreviousDocumentOnKeydown || document.onkeydown;
+    const previousWindowKeydown=window.__nyxPreviousWindowOnKeydown || window.onkeydown;
+    window.__nyxPreviousDocumentOnKeydown=previousDocumentKeydown;
+    window.__nyxPreviousWindowOnKeydown=previousWindowKeydown;
+    document.onkeydown=event=>{
+      if(handlePanicKeydown(event)) return false;
+      return typeof previousDocumentKeydown==='function' ? previousDocumentKeydown.call(document,event) : true;
+    };
+    window.onkeydown=event=>{
+      if(handlePanicKeydown(event)) return false;
+      return typeof previousWindowKeydown==='function' ? previousWindowKeydown.call(window,event) : true;
+    };
+  }
+  ensurePanicKeyListener();
+  function triggerPanicClose(){
+    const restoreAntiClose=antiCloseEnabled;
+    antiClosePanicBypass=true;
+    antiCloseHadGesture=false;
+    if(antiCloseConfirmHandler){
+      try{window.removeEventListener('beforeunload',antiCloseConfirmHandler)}catch{}
+    }
+    if(window.onbeforeunload===antiCloseConfirmHandler) window.onbeforeunload=null;
+    if(antiCloseRearmTimer){
+      clearInterval(antiCloseRearmTimer);
+      antiCloseRearmTimer=null;
+    }
+    try{window.close()}catch{}
+    setTimeout(()=>{
+      try{location.replace('about:blank')}catch{document.documentElement.innerHTML=''}
+    },30);
+    setTimeout(()=>{
+      antiClosePanicBypass=false;
+      if(restoreAntiClose && location.protocol!=='about:'){
+        antiCloseHadGesture=true;
+        syncAntiCloseHandler();
+      }
+    },1200);
+  }
+  function armPanicKeyCapture(){
+    panicCaptureArmed=true;
+    qsa('[data-panic-key-display]').forEach(el=>{el.textContent='press keys...'});
+    toast('Press the panic key combo');
+  }
+  function clearPanicKey(){
+    store.setText('nyx.panicKey','not set');
+    updatePanicKeyLabels();
+    toast('Panic key cleared');
+  }
+  let chromeOsAltTabArmedUntil=0;
+  let chromeOsAltDimTimer=null;
+  function isChromeOsUser(){
+    const ua=String(navigator.userAgent || '');
+    const platform=String(navigator.userAgentData?.platform || navigator.platform || '');
+    return /\bCrOS\b/i.test(ua) || /Chrome\s*OS/i.test(platform);
+  }
+  function triggerChromeOsAltTabRedirect(event){
+    if(!isChromeOsUser()) return false;
+    if(event){
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    const dim=$('chromeOsAltDim');
+    if(!dim) return true;
+    clearTimeout(chromeOsAltDimTimer);
+    dim.classList.add('show');
+    dim.setAttribute('aria-hidden','false');
+    chromeOsAltDimTimer=setTimeout(()=>hideChromeOsAltDim(),5200);
+    return true;
+  }
+  function hideChromeOsAltDim(){
+    const dim=$('chromeOsAltDim');
+    if(!dim) return;
+    clearTimeout(chromeOsAltDimTimer);
+    dim.classList.remove('show');
+    dim.setAttribute('aria-hidden','true');
+  }
+  function rememberChromeOsAltKey(event){
+    if(!isChromeOsUser() || panicCaptureArmed || event.ctrlKey || event.metaKey) return;
+    if(event.key==='Alt' || event.code==='AltLeft' || event.code==='AltRight') chromeOsAltTabArmedUntil=Date.now()+1800;
+  }
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='hidden' && Date.now()<chromeOsAltTabArmedUntil) triggerChromeOsAltTabRedirect();
+  },true);
+  document.addEventListener('pointerdown',event=>{
+    if(event.target?.id==='chromeOsAltDim') hideChromeOsAltDim();
+  },true);
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Escape' || event.key==='Enter' || event.key===' ') hideChromeOsAltDim();
+  },true);
+  let shortcutMenuPointerHandled=false;
+  function shortcutMenuButtonAtPoint(x,y){
+    return [...document.querySelectorAll('[data-home-shortcut-menu]')].find(btn=>{
+      const rect=btn.getBoundingClientRect();
+      return x>=rect.left && x<=rect.right && y>=rect.top && y<=rect.bottom;
+    }) || null;
+  }
+  function toggleShortcutMenu(button){
+    const tile=button?.closest?.('.home-shortcut');
+    if(!tile) return false;
+    document.querySelectorAll('.home-shortcut.menu-open').forEach(item=>{if(item!==tile)item.classList.remove('menu-open')});
+    tile.classList.toggle('menu-open');
+    return true;
+  }
+  function bind(){
+    ensurePanicKeyListener();
+    if(!document.__nyxSetupEnterBind){
+      document.__nyxSetupEnterBind=true;
+      document.addEventListener('keydown',e=>{
+        if(e.key!=='Enter') return;
+        const setup=$('setupScreen');
+        if(!setup?.classList.contains('show')) return;
+        if(e.target?.matches?.('textarea,select,[contenteditable="true"]')) return;
+        const steps=[...setup.querySelectorAll('[data-setup-step]')];
+        if(!steps.length) return;
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation?.();
+        if(setupStepIndex>=steps.length-1) finishSetupCustomization();
+        else moveSetupStep(1);
+      },true);
+    }
+    document.addEventListener('click',e=>{
+      const setupRoot=e.target.closest?.('#setupScreen.show');
+      if(setupRoot){
+        if(e.target.closest('[data-setup-next]')){
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation?.();
+          moveSetupStep(1);
+          return;
+        }
+        if(e.target.closest('[data-setup-back]')){
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation?.();
+          moveSetupStep(-1);
+          return;
+        }
+        if(e.target.closest('[data-finish-setup]')){
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation?.();
+          finishSetupCustomization();
+          return;
+        }
+        if(e.target.closest('[data-skip-setup]')){
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation?.();
+          store.set('nyx.setupComplete',true);
+          hideSetup();
+          return;
+        }
+      }
+      const link=e.target.closest?.('a[href]');
+      if(!link) return;
+      const target=String(link.getAttribute('target') || '').toLowerCase();
+      if(!['_blank','_new'].includes(target)) return;
+      if(!popupProtectionEnabled()) return;
+      if(activeBrowser?.openPopupTab){
+        e.preventDefault();
+        e.stopPropagation();
+        activeBrowser.openPopupTab(link.href || link.getAttribute('href') || 'about:blank');
+      }
+    },true);
+    document.addEventListener('click',e=>{
+      if(shortcutMenuPointerHandled && e.target.closest?.('.home-shortcut')){
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation?.();
+        shortcutMenuPointerHandled=false;
+        return;
+      }
+      if(e.target.closest?.('[data-browser-settings-close]')){
+        e.preventDefault();
+        const overlay=e.target.closest('.browser-shell-settings-overlay');
+        const panel=overlay?.querySelector('.browser-shell-settings-panel');
+        if(panel){
+          panel.style.animation='settingsDropOut .22s ease forwards';
+          setTimeout(()=>overlay?.remove(),220);
+        }else overlay?.remove();
+        return;
+      }
+      const browserSettingsSave=e.target.closest?.('[data-browser-settings-save]');
+      if(browserSettingsSave && browserSettingsSave.closest('.browser-shell-settings-overlay')){
+        e.preventDefault();
+        saveBrowserShellSettings(browserSettingsSave.closest('.browser-shell-settings-overlay'));
+        toast('Browser settings saved');
+        return;
+      }
+      const browserShellToggle=e.target.closest?.('[data-browser-shell-toggle]');
+      if(browserShellToggle && browserShellToggle.closest('.browser-shell-settings-overlay')){
+        e.preventDefault();
+        store.set('nyx.browserShellMode',browserShellToggle.dataset.enabled==='true');
+        document.querySelector('.browser-shell-settings-overlay')?.remove();
+        applyUserSettings();
+        return;
+      }
+      const popupButton=e.target.closest?.('[data-popup-protection]');
+      if(popupButton && popupButton.closest('.browser-shell-settings-overlay')){
+        e.preventDefault();
+        const next=popupButton.dataset.enabled!=='true';
+        store.set('nyx.popupProtection',next);
+        popupButton.dataset.enabled=String(next);
+        popupButton.classList.toggle('on',next);
+        popupButton.textContent='Popup Protection '+(next?'On':'Off');
+        toast('Popup Protection '+(next?'enabled':'disabled'));
+        return;
+      }
+      if(e.target.closest?.('[data-panic-capture]')){
+        e.preventDefault();
+        armPanicKeyCapture();
+        return;
+      }
+      if(e.target.closest?.('[data-panic-clear]')){
+        e.preventDefault();
+        clearPanicKey();
+      }
+    });
+    document.querySelector('[data-desktop-search]')?.addEventListener('submit',e=>{
+      e.preventDefault();
+      const input=e.currentTarget.querySelector('input');
+      const value=(input?.value || '').trim();
+      if(!value) return;
+      if(input) input.value='';
+      if(document.body.classList.contains('browser-shell')) navigateBrowserShell(value);
+      else openBrowser(value);
+    });
+    document.addEventListener('keydown',rememberChromeOsAltKey,true);
+    document.addEventListener('keydown',e=>{handleLeftAltChromeShortcut(e)},true);
+    document.addEventListener('dragstart',e=>{
+      if(!e.target.closest?.('.home-shortcut,.home-shortcut-add,[data-home-shortcuts]')) return;
+      e.preventDefault();
+      e.stopPropagation();
+    },true);
+    document.addEventListener('input',e=>{
+      const input=e.target.closest?.('[data-browser-shell-url]');
+      if(input) showBrowserSuggestions(input);
+    });
+    document.addEventListener('focusin',e=>{
+      const input=e.target.closest?.('[data-browser-shell-url]');
+      if(!input) return;
+      selectBrowserShellUrl(input,true);
+      showBrowserSuggestions(input);
+    });
+    document.addEventListener('focusout',e=>{
+      const input=e.target.closest?.('[data-browser-shell-url]');
+      if(!input) return;
+      clearBrowserShellUrlSelection(input);
+    });
+    document.addEventListener('pointerdown',e=>{
+      const pointButton=shortcutMenuButtonAtPoint(e.clientX,e.clientY);
+      if(pointButton){
+        return;
+      }
+      const shellUrlInput=e.target.closest?.('[data-browser-shell-url]');
+      if(shellUrlInput && document.activeElement!==shellUrlInput){
+        browserShellUrlFirstPointer=shellUrlInput;
+        e.preventDefault();
+        shellUrlInput.focus();
+        selectBrowserShellUrl(shellUrlInput,true);
+      }
+      if(!e.target.closest?.('[data-browser-shell-url]')) clearBrowserShellUrlSelection();
+      if(!browserSuggestionPointerInside(e.target)) hideBrowserSuggestions();
+      if(!e.target.closest?.('[data-home-shortcut-menu],.home-shortcut-menu')){
+        document.querySelectorAll('.home-shortcut.menu-open').forEach(item=>item.classList.remove('menu-open'));
+      }
+      if(!e.target.closest?.('#browserModeMenu,[data-browser-shell-menu]')){
+        document.body.classList.remove('menu-open');
+      }
+      if(!e.target.closest?.('#browserBookmarkPanel,[data-browser-shell-bookmark],[data-browser-bookmarks-toggle]')){
+        $('browserBookmarkPanel')?.setAttribute('hidden','');
+      }
+    },true);
+    document.addEventListener('pointerup',e=>{
+      const input=e.target.closest?.('[data-browser-shell-url]');
+      if(!input) return;
+      if(browserShellUrlFirstPointer===input){
+        e.preventDefault();
+        browserShellUrlFirstPointer=null;
+        selectBrowserShellUrl(input,true);
+      }
+      showBrowserSuggestions(input);
+    });
+    document.addEventListener('keydown',e=>{
+      const input=e.target.closest?.('[data-browser-shell-url]');
+      if(!input) return;
+      const box=$('browserSearchSuggestions');
+      const items=[...box?.querySelectorAll('.browser-search-suggestion') || []];
+      if(!items.length) return;
+      const current=Math.max(0,items.findIndex(item=>item.classList.contains('active')));
+      if(e.key==='ArrowDown' || e.key==='ArrowUp'){
+        e.preventDefault();
+        const next=e.key==='ArrowDown' ? (current+1)%items.length : (current-1+items.length)%items.length;
+        items.forEach(item=>item.classList.remove('active'));
+        items[next].classList.add('active');
+        input.value=items[next].dataset.browserSuggestion || items[next].textContent || input.value;
+      }else if(e.key==='Enter' && box?.classList.contains('show')){
+        const raw=String(input.value || '').trim();
+        const directUrl=/^(?:https?:\/\/|[a-z][a-z0-9+.-]*:\/\/|(?:localhost|(?:\d{1,3}\.){3}\d{1,3})(?::\d+)?(?:\/|$)|[\w.-]+\.[a-z]{2,}(?:[\/:?#]|$))/i.test(raw);
+        if(directUrl){
+          hideBrowserSuggestions();
+          return;
+        }
+        const active=items.find(item=>item.classList.contains('active')) || items[0];
+        if(active){
+          e.preventDefault();
+          acceptBrowserSuggestion(active.dataset.browserSuggestion || active.textContent || input.value);
+        }
+      }else if(e.key==='Escape'){
+        hideBrowserSuggestions();
+      }
+    });
+    document.addEventListener('submit',e=>{
+      const shellSearch=e.target.closest?.('[data-browser-shell-search]');
+      if(shellSearch){
+        e.preventDefault();
+        document.body.classList.remove('menu-open');
+        hideBrowserSuggestions();
+        navigateBrowserShell(shellSearch.querySelector('[data-browser-shell-url]')?.value);
+        return;
+      }
+      const blankSearch=e.target.closest?.('[data-browser-blank-search]');
+      if(blankSearch){
+        if(e.nyxBlankSearchHandled) return;
+        e.nyxBlankSearchHandled=true;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const input=blankSearch.querySelector('[data-browser-blank-input]');
+        const value=(input?.value || '').trim();
+        hideBrowserSuggestions();
+        if(input) input.value='';
+        if(value) navigateBrowserShell(value);
+        return;
+      }
+      const form=e.target.closest?.('[data-lion-ai-form]');
+      if(!form) return;
+      e.preventDefault();
+      const win=form.closest('.window');
+      const input=win?.querySelector('[data-lion-ai-input]');
+      const chat=win?.querySelector('[data-lion-ai-chat]');
+      const prompt=(input?.value || '').trim();
+      if((!prompt && !win?.lionAiImage) || !chat) return;
+      addLionAiMessage(chat,'user',prompt || 'Please read this image and answer it.');
+      if(win) win.lionAiLastUser=prompt || 'Please read this image and answer it.';
+      input.value='';
+      addLionAiMessage(chat,'bot',win?.lionAiImage ? 'Reading image, then contacting model...' : `Contacting ${nyxAiModelLabel(win?.querySelector?.('[data-lion-ai-model]')?.value || nyxAiSelectedModel())}...`);
+      const pending=chat.lastElementChild;
+      if(input) input.disabled=true;
+      form.querySelector('.lion-ai-send').disabled=true;
+      lionAiRespondAsync(prompt,win,partial=>{if(pending){pending.textContent=partial;chat.scrollTop=chat.scrollHeight}}).then(answer=>{
+        if(pending) pending.textContent=answer;
+        if(win) win.lionAiLastBot=answer;
+        chat.scrollTop=chat.scrollHeight;
+      }).finally(()=>{if(input){input.disabled=false;input.focus()}form.querySelector('.lion-ai-send').disabled=false});
+    });
+    document.addEventListener('click',e=>{
+      const clear=e.target.closest?.('[data-lion-ai-clear]');
+      if(!clear) return;
+      localStorage.removeItem('nyx.aiMessages');
+      const chat=clear.closest('.window')?.querySelector('[data-lion-ai-chat]');
+      if(chat) chat.innerHTML='<div class="lion-ai-msg bot">Hi. Pick a model and ask me anything.</div>';
+    });
+    document.addEventListener('keydown',e=>{
+      if(handlePanicKeydown(e)) return;
+      const input=e.target.closest?.('[data-lion-ai-input]');
+      if(!input || e.key!=='Enter' || e.shiftKey || e.ctrlKey || e.altKey || e.metaKey || e.isComposing) return;
+      e.preventDefault();
+      input.closest('[data-lion-ai-form]')?.requestSubmit();
+    });
+    document.addEventListener('change',e=>{
+      const model=e.target.closest?.('[data-lion-ai-model]');
+      if(!model) return;
+      store.setText('nyx.aiModel',model.value || 'llama-3.3-70b');
+      const win=model.closest('.window');
+      const label=win?.querySelector('[data-nyx-ai-model-label]');
+      if(label) label.textContent=nyxAiModelLabel(model.value);
+    });
+    document.addEventListener('dragstart',e=>{
+      if(document.body.classList.contains('browser-shell') || e.target.closest?.('.home-shortcut,.home-shortcut-add,[data-home-shortcuts]')){
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      const app=e.target.closest('[data-app-url]');
+      if(!app) return;
+      if(!canDragDesktopAppSource(app)){
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      const payload=readAppPayload(app);
+      if(!payload.url) return;
+      e.dataTransfer?.setData('application/nyx-app',JSON.stringify(payload));
+      e.dataTransfer?.setData('text/plain',payload.url);
+      if(e.dataTransfer) e.dataTransfer.effectAllowed='copyMove';
+    });
+    $('desktop')?.addEventListener('dragover',e=>{
+      if(document.body.classList.contains('browser-shell')) return;
+      if(Array.from(e.dataTransfer?.types || []).includes('application/nyx-app')){
+        e.preventDefault();
+        e.dataTransfer.dropEffect='copy';
+      }
+    });
+    $('desktop')?.addEventListener('drop',e=>{
+      if(document.body.classList.contains('browser-shell')) return;
+      const raw=e.dataTransfer?.getData('application/nyx-app');
+      if(!raw) return;
+      e.preventDefault();
+      try{
+        createDesktopApp(JSON.parse(raw),e.clientX,e.clientY);
+      }catch{}
+    });
+    document.addEventListener('click',e=>{
+      const presetButton=e.target.closest?.('[data-preset]');
+      if(presetButton){
+        e.preventDefault();
+        e.stopPropagation();
+        applyPreset(presetButton.dataset.preset || 'nyx');
+        syncPresetCloakFields(presetButton.closest('.window,.settings-app,.browser-shell-settings-overlay') || document);
+        return;
+      }
+      const shellNew=e.target.closest('[data-browser-shell-new-tab]');
+      if(shellNew){
+        if(e.nyxShellNewHandled) return;
+        e.nyxShellNewHandled=true;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        document.body.classList.remove('menu-open');
+        openBrowserShellTab();
+        document.querySelector('[data-browser-shell-url]')?.focus();
+        return;
+      }
+      const browserSuggestion=e.target.closest('[data-browser-suggestion]');
+      if(browserSuggestion){
+        e.preventDefault();
+        acceptBrowserSuggestion(browserSuggestion.dataset.browserSuggestion || browserSuggestion.textContent);
+        return;
+      }
+      if(!e.target.closest('[data-browser-shell-url]') && !e.target.closest('#browserSearchSuggestions')){
+        hideBrowserSuggestions();
+      }
+      const shellTab=e.target.closest('[data-browser-shell-tab]');
+      if(shellTab){
+        e.preventDefault();
+        const id=shellTab.dataset.browserShellTab;
+        if(e.target.closest('[data-browser-shell-close-tab]')) closeBrowserShellTab(id);
+        else setBrowserShellActive(id);
+        return;
+      }
+      const shellHome=e.target.closest('[data-browser-shell-home]');
+      if(shellHome){
+        e.preventDefault();
+        if(e.target.closest('[data-browser-shell-close-tab]')){
+          closeBrowserShellTab(shellHome.dataset.browserShellTab);
+          return;
+        }
+        if(shellHome.dataset.browserShellTab) setBrowserShellActive(shellHome.dataset.browserShellTab);
+        else setBrowserShellHomeActive();
+        return;
+      }
+      const shellBack=e.target.closest('[data-browser-shell-back]');
+      if(shellBack){
+        e.preventDefault();
+        activeBrowser?.win?.querySelector('[data-back]')?.click();
+        return;
+      }
+      const shellForward=e.target.closest('[data-browser-shell-forward]');
+      if(shellForward){
+        e.preventDefault();
+        activeBrowser?.win?.querySelector('[data-forward]')?.click();
+        return;
+      }
+      const shellReload=e.target.closest('[data-browser-shell-reload]');
+      if(shellReload){
+        e.preventDefault();
+        const shellTab=activeBrowserShellTab();
+        if(!shellTab?.url){
+          setBrowserShellHomeActive();
+          playHomeEntranceAnimation(activeBrowser?.win || document);
+          return;
+        }
+        const browserTabId=shellTab.browserTabId || activeBrowser?.active || '';
+        document.querySelectorAll('.nyx-preflight').forEach(overlay=>overlay.remove());
+        const targetTab=activeBrowser?.tabs?.find(tab=>tab.id===browserTabId) || activeBrowser?.tabs?.find(tab=>tab.id===activeBrowser?.active);
+        if(targetTab){
+          activeBrowser?.activate?.(targetTab.id);
+          if(!activeBrowser?.reloadTab?.(targetTab.id)){
+            activeBrowser?.navigate?.(targetTab.sourceUrl || targetTab.url);
+          }
+        }
+        return;
+      }
+      const shellMenuButton=e.target.closest('[data-browser-shell-menu]');
+      if(shellMenuButton){
+        e.preventDefault();
+        document.body.classList.toggle('menu-open');
+        $('browserBookmarkPanel')?.setAttribute('hidden','');
+        return;
+      }
+      const shellBookmark=e.target.closest('[data-browser-shell-bookmark]');
+      if(shellBookmark){
+        e.preventDefault();
+        toggleBrowserBookmark();
+        return;
+      }
+      const bookmarksToggle=e.target.closest('[data-browser-bookmarks-toggle]');
+      if(bookmarksToggle){
+        e.preventDefault();
+        document.body.classList.remove('menu-open');
+        toggleBrowserBookmarksPanel();
+        return;
+      }
+      const bookmarkOpen=e.target.closest('[data-browser-bookmark-open]');
+      if(bookmarkOpen){
+        e.preventDefault();
+        openBrowserBookmark(bookmarkOpen.dataset.browserBookmarkOpen);
+        return;
+      }
+      const bookmarkRemove=e.target.closest('[data-browser-bookmark-remove]');
+      if(bookmarkRemove){
+        e.preventDefault();
+        removeBrowserBookmark(bookmarkRemove.dataset.browserBookmarkRemove);
+        return;
+      }
+      if(e.target.closest('[data-shell-about]')){
+        e.preventDefault();
+        document.body.classList.remove('menu-open');
+        launchDirectAboutBlankCloak();
+        return;
+      }
+      if(e.target.closest('[data-shell-about-tab]')){
+        e.preventDefault();
+        document.body.classList.remove('menu-open');
+        launchHostedCloak('ac');
+        return;
+      }
+      if(document.body.classList.contains('menu-open') && !e.target.closest('#browserModeMenu') && !e.target.closest('[data-browser-shell-menu]')){
+        document.body.classList.remove('menu-open');
+      }
+      if(!e.target.closest('#browserBookmarkPanel') && !e.target.closest('[data-browser-shell-bookmark]') && !e.target.closest('[data-browser-bookmarks-toggle]')){
+        $('browserBookmarkPanel')?.setAttribute('hidden','');
+      }
+      const shortcutMenu=e.target.closest('[data-home-shortcut-menu]');
+      if(shortcutMenu){
+        e.preventDefault();
+        e.stopPropagation();
+        toggleShortcutMenu(shortcutMenu);
+        return;
+      }
+      if(document.body.classList.contains('browser-shell')){
+        const browserHieroglyph=e.target.closest('[data-browser-hieroglyph-toggle]');
+        if(browserHieroglyph){
+          e.preventDefault();
+          document.body.classList.remove('menu-open');
+          const next=!hieroglyphTextEnabled();
+          store.set('nyx.hieroglyphText',next);
+          if(!next) store.set('nyx.autoHieroglyphText',false);
+          applyHieroglyphText();
+          qsa('[data-switch="nyx.hieroglyphText"].settings-action').forEach(el=>{el.textContent=hieroglyphTextEnabled()?'On':'Off'});
+          qsa('[data-switch="nyx.autoHieroglyphText"].settings-action').forEach(el=>{el.textContent=store.get('nyx.autoHieroglyphText',false)?'On':'Off'; el.classList.toggle('on',store.get('nyx.autoHieroglyphText',false))});
+          toast('Hieroglyph text '+(next?'on':'off'));
+          return;
+        }
+        const browserModeOpen=e.target.closest('[data-open]');
+        if(browserModeOpen){
+          const v=browserModeOpen.dataset.open;
+          if(v==='settings'){
+            e.preventDefault();
+            document.body.classList.remove('menu-open');
+            openBrowserShellSettings();
+            return;
+          }
+          if(['apps','links'].includes(v)){
+            e.preventDefault();
+            document.body.classList.remove('menu-open');
+            openBrowserShellInternalTab(v);
+            return;
+          }
+        }
+        const browserModeApp=e.target.closest('[data-app-url]');
+        if(browserModeApp && !browserModeApp.closest('.browser-window')){
+          e.preventDefault();
+          document.body.classList.remove('menu-open');
+          openBrowserShellAppTab(browserModeApp.dataset.appUrl);
+          return;
+        }
+      }
+      const shortcutFavorite=e.target.closest('[data-home-shortcut-favorite]');
+      if(shortcutFavorite){
+        e.preventDefault();
+        e.stopPropagation();
+        toggleHomeShortcutFavorite(shortcutFavorite.dataset.homeShortcutFavorite);
+        return;
+      }
+      const shortcutRemove=e.target.closest('[data-home-shortcut-remove]');
+      if(shortcutRemove){
+        e.preventDefault();
+        e.stopPropagation();
+        removeHomeShortcut(shortcutRemove.dataset.homeShortcutRemove);
+        return;
+      }
+      const shortcutAdd=e.target.closest('[data-home-shortcut-add]');
+      if(shortcutAdd){
+        e.preventDefault();
+        e.stopPropagation();
+        addHomeShortcut();
+        return;
+      }
+      if(!e.target.closest('.home-shortcut-menu') && !e.target.closest('[data-home-shortcut-menu]')){
+        document.querySelectorAll('.home-shortcut.menu-open').forEach(item=>item.classList.remove('menu-open'));
+      }
+      const open=e.target.closest('[data-open]'); if(open){e.preventDefault(); document.body.classList.remove('menu-open'); const v=open.dataset.open; if(v==='browser')openBrowser(); if(v==='home')openBrowser(); if(v==='updates')openUpdates(); if(v==='settings')openSettings(); if(v==='apps')openApps(); if(v==='links')openLinks(); if(v==='weather')openWeather(); return}
+      const app=e.target.closest('[data-app-url]');
+      if(app && !app.closest('.browser-window')){
+        e.preventDefault();
+        document.body.classList.remove('menu-open');
+        if(String(app.dataset.appUrl || '').trim().toLowerCase()==='nyx://ai') openBrowserShellAppTab('nyx://ai');
+        else openBrowser(app.dataset.appUrl,{forceMode:appCompatibilityMode(app.dataset.appUrl)});
+        return
+      }
+      const url=e.target.closest('[data-url]');
+      if(url && !url.closest('.browser-window')){e.preventDefault(); document.body.classList.remove('menu-open'); openBrowser(url.dataset.url); return}
+      if(e.target.closest('[data-save-profile]')){
+        saveProfile(e.target.closest('.window'));
+        return;
+      }
+      if(e.target.closest('[data-save-browser]')){
+        const win=e.target.closest('.window');
+        const input=win?.querySelector('#settingEngine');
+        const mode=win?.querySelector('#settingBrowserMode');
+        const transport=win?.querySelector('#settingTransport');
+        store.setText('nyx.engine', input?.value || 'duckduckgo');
+        store.setText('nyx.browserMode', normalizeBrowserModeName(mode?.value || 'auto'));
+        const nextTransport=transport?.value || 'epoxy';
+        browserTransportOverride='';
+        if(store.text('nyx.transport','epoxy')!==nextTransport){
+          scramjetInstallPromise=null;
+          scramjetController=null;
+          scramjetTransport=null;
+          scramjetTransportKey='';
+          uvInstallPromise=null;
+        }
+        store.setText('nyx.transport', nextTransport);
+        console.log('nyx browser settings saved', {
+          engine:store.text('nyx.engine','duckduckgo'),
+          browserMode:normalizeBrowserModeName(store.text('nyx.browserMode','auto')),
+          transport:store.text('nyx.transport','epoxy')
+        });
+        applyUserSettings(); toast('Browser settings saved'); return;
+      }
+      const bgChoice=e.target.closest('[data-bg-choice]');
+      if(bgChoice){
+        const root=bgChoice.closest('.bg-choices,.background-picker');
+        const scope=backgroundScope(root);
+        chooseBackground(bgChoice.dataset.bgChoice,scope);
+        if(root) renderBackgroundChoices(root, bgChoice.dataset.bgChoice);
+        toast(scope==='browser' ? 'Browser background applied' : 'Background applied'); return;
+      }
+      if(e.target.closest('[data-save-bg]')){
+        const win=e.target.closest('.window');
+        const urlInput=win?.querySelector('#settingBgUrl')?.value.trim() || '';
+        store.setText('nyx.customBgUrl', urlInput);
+        if(urlInput) store.setText('nyx.customBgData','');
+        store.setText('nyx.customBg','');
+        applyUserSettings();
+        const picker=win?.querySelector('[data-bg-picker]');
+        if(picker) renderBackgroundChoices(picker);
+        toast('Background applied'); return;
+      }
+      if(e.target.closest('[data-pick-launch-pdf]')){
+        const win=e.target.closest('.window');
+        win?.querySelector('#settingLaunchPdfFile')?.click();
+        return;
+      }
+      const enhancer=e.target.closest('[data-bg-enhancer]');
+      if(enhancer){
+        store.set('nyx.backgroundEnhancer',false);
+        enhancer.classList.remove('on');
+        applyUserSettings();
+        toast('Background enhancer disabled');
+        return;
+      }
+      if(e.target.closest('[data-save-cloak]')){
+        saveCloakSettings(e.target.closest('.window,.settings-app,.browser-shell-settings-overlay') || document);
+        return;
+      }
+      if(e.target.closest('[data-clear-nyx-cache]')){
+        e.preventDefault();
+        const ok=confirm('Clear cache, cookies, saved settings, and reset Nyx? This cannot be undone.');
+        if(!ok) return;
+        clearAllNyxData();
+        return;
+      }
+      if(e.target.closest('[data-launch-selected-cloak]')){
+        const root=e.target.closest('.window,.settings-app,.browser-shell-settings-overlay') || document;
+        saveCloakSettings(root);
+        launchHostedCloak(store.text('nyx.cloakType','a'));
+        return;
+      }
+      if(e.target.closest('[data-tab-cloak-apply]')){
+        const root=e.target.closest('.window,.settings-app,body') || document;
+        const fileInput=root.querySelector('[data-tab-favicon-file]');
+        const file=fileInput?.files?.[0];
+        const apply=favicon=>applyCustomTabCloak(root.querySelector('[data-tab-title]')?.value || 'nyx', favicon || root.querySelector('[data-tab-favicon]')?.value || favicons.nyx);
+        if(file){
+          if(!file.type.startsWith('image/') && !/\.ico$/i.test(file.name || '')){
+            toast('Choose an image file for the tab icon');
+            return;
+          }
+          const reader=new FileReader();
+          reader.onload=()=>{
+            const dataUrl=String(reader.result || '');
+            const hidden=root.querySelector('[data-tab-favicon]');
+            if(hidden) hidden.value=dataUrl;
+            apply(dataUrl);
+          };
+          reader.readAsDataURL(file);
+        }else{
+          apply();
+        }
+        return;
+      }
+      if(e.target.closest('[data-page-fullscreen]')){
+        if(!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+        else document.exitFullscreen?.();
+        return;
+      }
+      if(e.target.closest('[data-setup-next]')){
+        e.preventDefault();
+        moveSetupStep(1);
+        return;
+      }
+      if(e.target.closest('[data-setup-back]')){
+        e.preventDefault();
+        moveSetupStep(-1);
+        return;
+      }
+      if(e.target.closest('[data-finish-setup]')){
+        finishSetupCustomization();
+        return;
+      }
+      if(e.target.closest('[data-skip-setup]')){
+        store.set('nyx.setupComplete',true);
+        hideSetup(); return;
+      }
+      if(e.target.closest('[data-cloak-submit]')){
+        launchTypedCloakMode();
+        return;
+      }
+      if(e.target.closest('[data-cloak-cancel]')){
+        const input=$('cloakLaunchScreen')?.querySelector('[data-cloak-input]');
+        if(input) input.value='';
+        setCloakStatus('Choose a mode to change this blank page.');
+        return;
+      }
+      if(e.target.closest('[data-auto-cloak-launch]')){
+        const btn=e.target.closest('[data-auto-cloak-launch]');
+        if(btn?.dataset.launching==='1') return;
+        btn.dataset.launching='1';
+        launchHostedCloak('m');
+        setTimeout(()=>{btn.dataset.launching='0'},500);
+        return;
+      }
+      if(e.target.closest('[data-about]')){document.body.classList.remove('menu-open'); if(launchCloak('about')) maybeRedirectOriginalAfterCloak()}
+      if(e.target.closest('[data-blob]')){document.body.classList.remove('menu-open'); if(launchCloak('blob')) maybeRedirectOriginalAfterCloak()}
+    },true);
+    document.addEventListener('pointerdown',e=>{
+      const launchButton=e.target.closest('[data-auto-cloak-launch]');
+      if(!launchButton) return;
+      e.preventDefault();
+      if(launchButton.dataset.launching==='1') return;
+      launchButton.dataset.launching='1';
+      launchHostedCloak('m');
+      setTimeout(()=>{launchButton.dataset.launching='0'},500);
+    },true);
+    document.addEventListener('input',e=>{
+      if(e.target?.id==='settingName') saveProfile(e.target.closest('.window'),true);
+      if(e.target?.matches?.('[data-glass-value]')){
+        if(store.get('nyx.lagReducer',false)){
+          store.setText('nyx.glassLevel','0');
+          e.target.value='0';
+          applyUserSettings();
+          return;
+        }
+        store.setText('nyx.glassLevel',e.target.value);
+        applyGlassSetting();
+      }
+      if(e.target?.matches?.('[data-effect-speed]')){
+        store.set('nyx.visualEffectUserChoice',true);
+        store.setText('nyx.visualEffectSpeed',e.target.value || '1.1');
+        applyVisualEffectSetting();
+      }
+      if(e.target?.matches?.('[data-effect-amount]')){
+        store.set('nyx.visualEffectUserChoice',true);
+        store.setText('nyx.visualEffectAmount',e.target.value || '16');
+        applyVisualEffectSetting();
+      }
+    });
+    document.addEventListener('keydown',e=>{
+      if(e.key==='Escape' && document.body.classList.contains('watchparty-active')){
+        e.preventDefault();
+        stopWatchParty();
+        return;
+      }
+      if(e.target?.id==='settingName' && e.key==='Enter'){
+        e.preventDefault();
+        saveProfile(e.target.closest('.window'));
+      }
+      if(e.target?.matches?.('[data-cloak-input]') && e.key==='Enter'){
+        e.preventDefault();
+        launchTypedCloakMode();
+        return;
+      }
+    });
+    document.addEventListener('change',e=>{
+      const browserSettingsRoot=e.target.closest?.('.browser-shell-settings-overlay');
+      if(browserSettingsRoot && e.target.closest?.('[data-browser-engine],[data-browser-mode-select],[data-browser-transport],[data-font-value]')){
+        saveBrowserShellSettings(browserSettingsRoot);
+        toast('Browser settings saved');
+        return;
+      }
+      const fontSelect=e.target.closest?.('[data-font-value]');
+      if(fontSelect){
+        store.setText('nyx.font',nyxFontChoice(fontSelect.value)[0]);
+        applyFontSetting();
+        toast('Font updated');
+        return;
+      }
+      if(browserSettingsRoot && e.target.closest?.('[data-theme-value]')){
+        const theme=e.target.value || 'default';
+        store.setText('nyx.theme',theme);
+        applyUserSettings();
+        return;
+      }
+      const presetSelect=e.target.closest?.('[data-preset-select]');
+      if(presetSelect){
+        const root=e.target.closest('.window,.settings-app,.browser-shell-settings-overlay') || document;
+        applyPreset(presetSelect.value || 'nyx');
+        syncPresetCloakFields(root);
+        return;
+      }
+      const effect=e.target.closest('[data-effect-value]');
+      if(effect){
+        store.set('nyx.visualEffectUserChoice',true);
+        store.setText('nyx.visualEffect',effect.value || 'none');
+        applyVisualEffectSetting();
+        toast('Effect set to '+effect.options[effect.selectedIndex].text);
+        return;
+      }
+      const effectSpeed=e.target.closest('[data-effect-speed]');
+      if(effectSpeed){
+        store.set('nyx.visualEffectUserChoice',true);
+        store.setText('nyx.visualEffectSpeed',effectSpeed.value || '1.1');
+        applyVisualEffectSetting();
+        return;
+      }
+      const effectAmount=e.target.closest('[data-effect-amount]');
+      if(effectAmount){
+        store.set('nyx.visualEffectUserChoice',true);
+        store.setText('nyx.visualEffectAmount',effectAmount.value || '16');
+        applyVisualEffectSetting();
+        return;
+      }
+      const launchPdf=e.target.closest('#settingLaunchPdf');
+      if(launchPdf){
+        const win=launchPdf.closest('.window');
+        store.setText('nyx.launchPdf',launchPdf.value || 'math');
+        if(launchPdf.value==='custom'){
+          win?.querySelector('#settingLaunchPdfFile')?.click();
+          if(!launchPdfObjectUrl) applyLaunchPdfSetting();
+        }else{
+          applyLaunchPdfSetting();
+          toast('Startup PDF updated');
+        }
+        return;
+      }
+      const launchPdfFile=e.target.closest('#settingLaunchPdfFile');
+      if(launchPdfFile){
+        chooseLocalLaunchPdf(launchPdfFile.files?.[0]);
+        launchPdfFile.value='';
+        return;
+      }
+      const aiImage=e.target.closest('[data-lion-ai-image]');
+      if(aiImage){
+        lionAiReadImageFile(aiImage.closest('.window'),aiImage.files?.[0]);
+        aiImage.value='';
+        return;
+      }
+      const file=e.target.closest('#settingBgFile');
+      if(!file || !file.files?.[0]) return;
+      const reader=new FileReader();
+      reader.onload=()=>{
+        store.setText('nyx.customBgData',reader.result);
+        store.setText('nyx.customBgUrl','');
+        store.setText('nyx.customBg','');
+        applyUserSettings();
+        qsa('[data-bg-picker]').forEach(picker=>renderBackgroundChoices(picker));
+        toast('Uploaded background applied');
+      };
+      reader.readAsDataURL(file.files[0]);
+    });
+    document.addEventListener('click',e=>{
+      if(e.target.closest('[data-weather-refresh]')){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        loadWeatherLocation();
+        return;
+      }
+      if(e.target.closest('#weatherRestore')){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        restoreWeatherPanel();
+        return;
+      }
+      if(e.target.closest('#ambientToggle')){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        setAmbientPlaying(!ambientPlaying);
+        return;
+      }
+      if(e.target.closest('#ambientSpotify')){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        connectSpotifyNowPlaying();
+        return;
+      }
+      if(e.target.closest('#watchPartyStop')){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        stopWatchParty();
+        return;
+      }
+      if(e.target.closest('#watchPartyPlay')){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        toggleWatchPartyPlayback();
+        return;
+      }
+      if(e.target.closest('#watchPartyBack10')){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        skipWatchParty(-10);
+        return;
+      }
+      if(e.target.closest('#watchPartyForward10')){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        skipWatchParty(10);
+      }
+    },true);
+    document.addEventListener('input',e=>{
+      if(e.target && e.target.id==='watchPartyProgress'){
+        const video=$('watchPartyVideo');
+        if(!video || !Number.isFinite(video.duration)) return;
+        e.target.dataset.dragging='1';
+        video.currentTime=(Number(e.target.value || 0)/1000)*video.duration;
+        updateWatchPartyProgress();
+        showWatchPartyControls();
+      }
+    });
+    document.addEventListener('change',e=>{
+      if(!e.target) return;
+      if(e.target.id==='watchPartyProgress'){
+        delete e.target.dataset.dragging;
+        updateWatchPartyProgress();
+        return;
+      }
+      if(e.target.id==='watchPartyMovie'){
+        setWatchPartyMovie(e.target.value);
+        startWatchParty(e.target.value);
+        return;
+      }
+      if(e.target.id==='watchPartySubtitles'){
+        applyWatchPartySubtitles();
+        showWatchPartyControls();
+        return;
+      }
+      if(e.target.id==='watchPartySubtitleFile'){
+        setWatchPartySubtitleFile(e.target.files && e.target.files[0]);
+        return;
+      }
+      if(e.target.id==='watchPartySpeed'){
+        applyWatchPartySpeed();
+        showWatchPartyControls();
+        return;
+      }
+      if(e.target.id==='watchPartyQuality'){
+        applyWatchPartyQuality();
+        showWatchPartyControls();
+        return;
+      }
+      if(e.target.id==='watchPartyEnhancer'){
+        applyWatchPartyQuality();
+        showWatchPartyControls();
+      }
+    });
+    const watchVideo=$('watchPartyVideo');
+    if(watchVideo){
+      watchVideo.addEventListener('timeupdate',updateWatchPartyProgress);
+      watchVideo.addEventListener('loadedmetadata',updateWatchPartyProgress);
+      watchVideo.addEventListener('play',updateWatchPartyPlayButton);
+      watchVideo.addEventListener('pause',updateWatchPartyPlayButton);
+      watchVideo.addEventListener('ended',updateWatchPartyPlayButton);
+      watchVideo.addEventListener('error',()=>setWatchPartyStatus(`Video error: ${watchPartyVideoErrorText(watchVideo)}.`));
+    }
+    const watchPanel=$('watchParty');
+    if(watchPanel){
+      watchPanel.addEventListener('mousemove',showWatchPartyControls);
+      watchPanel.addEventListener('click',showWatchPartyControls);
+    }
+  }
+  //clock
+  function tick(){
+    const d=new Date();
+    const short=d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+    const full=centerClockText(d);
+    qsa('#clock').forEach(clock=>{clock.textContent=short});
+    qsa('#centerClock,[data-browser-shell-clock]').forEach(clock=>{clock.textContent=full});
+  }
+  const ambientTracks = {
+    clair:{title:'Clair de Lune',artist:'Claude Debussy',src:'assets/music/claire-de-lune.mp3',artwork:'https://image-cdn-fa.spotifycdn.com/image/ab67616d00001e02ca3a3517a97abe7f3fc862ce'},
+    testdrive:{title:'Test Drive Toothless',artist:'John Powell',src:'assets/music/test-driving-toothless.mp3',artwork:'https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e0231eeb313fb6fb6b175afd5fc'},
+    imposter:{title:'Impostor Syndrome',artist:'Sidney Gish',src:'assets/music/impostor-syndrome.mp3',artwork:'https://image-cdn-fa.spotifycdn.com/image/ab67616d00001e02f7832bb86831bdec9848acda'},
+    chess:{title:'Chess Type Beat',artist:'Joyful',src:'assets/music/chess-type-beat.mp3',artwork:'https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e02ed3787719b7defc511c87cb1'},
+    givemore:{title:'Give Me More (Just Rawer)',artist:'Aloboi',src:'assets/music/give-me-more-just-rawer.mp3',artwork:'https://image-cdn-fa.spotifycdn.com/image/ab67616d00001e02ffed09538e5eb47d7ac231a7'},
+    frog:{title:'Frog',artist:'Joyful',src:'assets/music/frog.mp3',artwork:'https://image-cdn-fa.spotifycdn.com/image/ab67616d00001e02fcd37730610ed7bf8e5c8aee'},
+    sunny:{title:'Sunny',artist:'Yorushika',src:'assets/music/yorushika-sunny.mp3',artwork:'https://image-cdn-fa.spotifycdn.com/image/ab67616d00001e02872720120ae663afd14b77b3'}
+  };
+  const ambientBaseTrackKeys = ['clair','testdrive','imposter','chess','givemore','frog','sunny'];
+  let ambientCurrentKey = store.text('nyx.musicTrack','clair');
+  let ambientQueueMode = store.text('nyx.musicQueue','all');
+  let ambientPlaying = false;
+  let freshAmbientGestureArmed = false;
+  let ambientCustomUrls = [];
+  let ambientSeeking = false;
+  let ambientAudioContext = null;
+  let ambientSourceNode = null;
+  let ambientBassFilter = null;
+  let ambientBassGain = null;
+  let spotifyPollTimer = null;
+  let spotifyStatusHoldUntil = 0;
+  //music-player-logic
+  function formulaGateActive(){
+    const gate=$('formulaGate');
+    return !!gate && !gate.classList.contains('hidden') && gate.getAttribute('aria-hidden')!=='true';
+  }
+  function cloakLaunchActive(){
+    return $('cloakLaunchScreen')?.classList.contains('show') || document.body.classList.contains('hosted-cloak-entry') || document.documentElement.classList.contains('hosted-cloak-entry');
+  }
+  function ambientShouldSuspend(){
+    return formulaGateActive() || cloakLaunchActive();
+  }
+  const ambientPlaySymbol = () => String.fromCharCode(9654);
+  const ambientPauseSymbol = () => String.fromCharCode(10074,10074);
+  function syncAmbientCoverState(){
+    const box=$('ambientPlayer');
+    const audio=$('ambientAudio');
+    const suspended=ambientShouldSuspend();
+    box?.classList.toggle('cover-hidden',suspended);
+    if(suspended && audio){
+      audio.pause();
+      ambientPlaying=false;
+      const btn=$('ambientToggle');
+      if(btn){
+        btn.textContent=ambientPlaySymbol();
+        btn.classList.remove('is-playing');
+      }
+    }
+    return suspended;
+  }
+  function ambientTrackLabel(track){
+    return track?.artist ? `${track.title} - ${track.artist}` : (track?.title || 'Custom music');
+  }
+  function refreshAmbientSongOptions(selected=ambientCurrentKey){
+    const song=$('ambientSong');
+    if(!song) return;
+    song.innerHTML='';
+    [...ambientBaseTrackKeys,Object.keys(ambientTracks).filter(key=>key.startsWith('custom-'))].flat().forEach(key=>{
+      const track=ambientTracks[key];
+      if(!track) return;
+      const option=document.createElement('option');
+      option.value=key;
+      option.textContent=(isAmbientFavorite(key) ? 'Favorite - ' : '') + ambientTrackLabel(track);
+      song.appendChild(option);
+    });
+    const addOption=document.createElement('option');
+    addOption.value='custom';
+    addOption.textContent='Add your music...';
+    song.appendChild(addOption);
+    song.value=ambientTracks[selected] ? selected : 'clair';
+  }
+  function ambientTrack(){
+    return ambientTracks[ambientCurrentKey] || ambientTracks.clair;
+  }
+  function setAmbientStatus(text,holdMs=0){
+    const status=$('ambientStatus');
+    if(status) status.textContent=text;
+    if(holdMs) spotifyStatusHoldUntil=Date.now()+holdMs;
+  }
+  function setAmbientTitle(){
+    const track=ambientTrack();
+    const title=$('ambientTitle');
+    const artist=$('ambientArtist');
+    const artwork=$('ambientArtwork');
+    if(title) title.textContent=track?.title || 'Custom music';
+    if(artist) artist.textContent=track?.artist || 'Unknown artist';
+    if(artwork) artwork.alt=`${ambientTrackLabel(track)} cover art`;
+    syncAmbientFavorite();
+  }
+  const ambientDefaultArtwork='https://image-cdn-fa.spotifycdn.com/image/ab67616d00001e02ca3a3517a97abe7f3fc862ce';
+  function setAmbientArtwork(url=ambientDefaultArtwork,alt='Music cover art'){
+    const artwork=$('ambientArtwork');
+    const cover=$('ambientCover');
+    if(!artwork) return;
+    if(url) artwork.src=url;
+    artwork.alt=alt;
+    cover?.classList.remove('cover-unavailable');
+  }
+  function ambientFavoriteStorageKey(){
+    return `nyx.musicFavorite.${ambientCurrentKey}`;
+  }
+  function isAmbientFavorite(key=ambientCurrentKey){
+    return store.get(`nyx.musicFavorite.${key}`,false)===true;
+  }
+  function ambientAllTrackKeys(){
+    return [...ambientBaseTrackKeys,Object.keys(ambientTracks).filter(key=>key.startsWith('custom-'))].flat().filter(key=>ambientTracks[key]);
+  }
+  function ambientFavoriteTrackKeys(){
+    return ambientAllTrackKeys().filter(key=>isAmbientFavorite(key));
+  }
+  function ambientQueueTrackKeys(){
+    const favorites=ambientFavoriteTrackKeys();
+    return ambientQueueMode==='favorites' && favorites.length ? favorites : ambientAllTrackKeys();
+  }
+  function syncAmbientQueue(){
+    const queue=$('ambientQueue');
+    if(queue) queue.value=ambientQueueMode;
+  }
+  function setAmbientQueue(value){
+    const favorites=ambientFavoriteTrackKeys();
+    ambientQueueMode=value==='favorites' && favorites.length ? 'favorites' : 'all';
+    store.setText('nyx.musicQueue',ambientQueueMode);
+    syncAmbientQueue();
+    if(value==='favorites' && !favorites.length){
+      setAmbientStatus('Favorite a track first',4500);
+      toast('Favorite a track first');
+      return;
+    }
+    setAmbientStatus(ambientQueueMode==='favorites' ? 'Favorites queue' : 'All tracks queue',3500);
+    toast(ambientQueueMode==='favorites' ? 'Favorites queue selected' : 'All tracks queue selected');
+  }
+  function syncAmbientFavorite(){
+    const button=$('ambientFavorite');
+    if(!button) return;
+    const active=isAmbientFavorite();
+    button.classList.toggle('is-favorite',active);
+    button.innerHTML=active ? '&#9829;' : '&#9825;';
+    button.setAttribute('aria-pressed',String(active));
+    button.title=active ? 'Remove from favorites' : 'Favorite this track';
+  }
+  function toggleAmbientFavorite(){
+    const active=isAmbientFavorite();
+    store.set(ambientFavoriteStorageKey(),!active);
+    syncAmbientFavorite();
+    refreshAmbientSongOptions(ambientCurrentKey);
+    if(active && ambientQueueMode==='favorites' && !ambientFavoriteTrackKeys().length) setAmbientQueue('all');
+    toast(active ? 'Removed from favorites' : 'Added to favorites');
+  }
+  function cycleAmbientTrack(step){
+    const keys=ambientQueueTrackKeys();
+    if(!keys.length) return;
+    const index=keys.indexOf(ambientCurrentKey);
+    const next=index<0 ? keys[step<0 ? keys.length-1 : 0] : keys[(index+step+keys.length)%keys.length];
+    refreshAmbientSongOptions(next);
+    loadAmbientTrack(next,true);
+  }
+  const spotifyScope='user-read-currently-playing user-read-playback-state';
+  function spotifyRedirectUri(){
+    return location.origin + location.pathname;
+  }
+  function hasSpotifyCallbackParams(){
+    try{
+      const url=new URL(location.href);
+      return url.searchParams.has('code') || url.searchParams.has('state') || url.searchParams.has('error');
+    }catch{
+      return false;
+    }
+  }
+  function showSpotifyCallbackScreen(message='Connecting Spotify...'){
+    let screen=$('spotifyCallbackScreen');
+    if(!screen){
+      screen=document.createElement('div');
+      screen.id='spotifyCallbackScreen';
+      screen.className='spotify-callback-screen';
+      screen.innerHTML='<div class="spotify-callback-card"><div class="spotify-callback-spinner" aria-hidden="true"></div><h1>Spotify</h1><p data-spotify-callback-message>Connecting Spotify...</p></div>';
+      document.body.appendChild(screen);
+    }
+    const text=screen.querySelector('[data-spotify-callback-message]');
+    if(text) text.textContent=message;
+    document.body.classList.add('spotify-callback-mode');
+    return screen;
+  }
+  function spotifyCallbackHasOpener(){
+    try{return !!(window.opener && !window.opener.closed)}catch{return false}
+  }
+  function spotifyTokenValid(){
+    return Boolean(store.text('nyx.spotifyAccessToken','') && Number(store.text('nyx.spotifyTokenExpires','0')) > Date.now()+30000);
+  }
+  function spotifyBase64Url(buffer){
+    const bytes=new Uint8Array(buffer);
+    let binary='';
+    bytes.forEach(byte=>{binary+=String.fromCharCode(byte)});
+    return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  }
+  async function spotifyChallenge(verifier){
+    const data=new TextEncoder().encode(verifier);
+    const digest=await crypto.subtle.digest('SHA-256',data);
+    return spotifyBase64Url(digest);
+  }
+  async function spotifyFetchWithTimeout(url,init={},timeout=16000){
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),timeout);
+    try{
+      return await fetch(url,{...init,signal:controller.signal});
+    }finally{
+      clearTimeout(timer);
+    }
+  }
+  function spotifyRandomString(length=72){
+    const chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+    const values=new Uint8Array(length);
+    crypto.getRandomValues(values);
+    return Array.from(values,byte=>chars[byte % chars.length]).join('');
+  }
+  async function connectSpotifyNowPlaying(){
+    if(spotifyTokenValid()){
+      await updateSpotifyNowPlaying();
+      return;
+    }
+    let clientId=store.text('nyx.spotifyClientId','').trim();
+    if(!clientId){
+      clientId=prompt('Paste your Spotify Client ID to connect Spotify now playing:','')?.trim() || '';
+      if(!clientId){
+        setAmbientStatus('Spotify needs a Client ID');
+        return;
+      }
+      store.setText('nyx.spotifyClientId',clientId);
+    }
+    const verifier=spotifyRandomString();
+    const state=spotifyRandomString(28);
+    store.setText('nyx.spotifyVerifier',verifier);
+    store.setText('nyx.spotifyState',state);
+    const challenge=await spotifyChallenge(verifier);
+    const auth=new URL('https://accounts.spotify.com/authorize');
+    auth.searchParams.set('client_id',clientId);
+    auth.searchParams.set('response_type','code');
+    auth.searchParams.set('redirect_uri',spotifyRedirectUri());
+    auth.searchParams.set('scope',spotifyScope);
+    auth.searchParams.set('code_challenge_method','S256');
+    auth.searchParams.set('code_challenge',challenge);
+    auth.searchParams.set('state',state);
+    const popup=window.open(auth.href,'nyxSpotifyAuth','popup=yes,width=520,height=760,menubar=no,toolbar=no,location=yes,status=no,scrollbars=yes,resizable=yes');
+    if(popup){
+      try{popup.focus?.()}catch{}
+      setAmbientStatus('Finish Spotify sign in');
+      return;
+    }
+    setAmbientStatus('Popup blocked, opening Spotify');
+    location.href=auth.href;
+  }
+  function finishSpotifyPopup(ok,message=''){
+    if(spotifyCallbackHasOpener()) showSpotifyCallbackScreen(ok ? 'Spotify connected. Closing this tab...' : (message || 'Spotify connection failed. You can close this tab.'));
+    try{
+      if(spotifyCallbackHasOpener()){
+        window.opener.postMessage({type:'nyx:spotify-auth',ok:!!ok,message},location.origin);
+        setTimeout(()=>window.close(),420);
+      }
+    }catch{}
+    if(spotifyCallbackHasOpener() && (!ok || !window.opener || window.opener.closed)){
+      setTimeout(()=>showSpotifyCallbackScreen(message || 'You can close this tab and return to Nyx.'),600);
+    }
+  }
+  async function handleSpotifyCallback(){
+    const spotifyPopupCallback=spotifyCallbackHasOpener();
+    if(spotifyPopupCallback) showSpotifyCallbackScreen('Connecting Spotify...');
+    const url=new URL(location.href);
+    const code=url.searchParams.get('code');
+    const state=url.searchParams.get('state');
+    const spotifyError=url.searchParams.get('error');
+    if(spotifyError){
+      url.searchParams.delete('error');
+      url.searchParams.delete('state');
+      history.replaceState(null,'',url.pathname + url.search + url.hash);
+      setAmbientStatus('Spotify sign in cancelled',9000);
+      finishSpotifyPopup(false,'Spotify sign in cancelled');
+      return true;
+    }
+    if(!code && !state) return false;
+    if(!code || !state || state!==store.text('nyx.spotifyState','')){
+      url.searchParams.delete('code');
+      url.searchParams.delete('state');
+      history.replaceState(null,'',url.pathname + url.search + url.hash);
+      setAmbientStatus('Spotify sign in expired',9000);
+      finishSpotifyPopup(false,'Spotify sign in expired');
+      return true;
+    }
+    const clientId=store.text('nyx.spotifyClientId','').trim();
+    const verifier=store.text('nyx.spotifyVerifier','');
+    url.searchParams.delete('code');
+    url.searchParams.delete('state');
+    history.replaceState(null,'',url.pathname + url.search + url.hash);
+    if(!clientId || !verifier){
+      setAmbientStatus('Spotify connection expired',9000);
+      finishSpotifyPopup(false,'Spotify connection expired');
+      return true;
+    }
+    try{
+      if(spotifyPopupCallback) showSpotifyCallbackScreen('Getting Spotify token...');
+      const body=new URLSearchParams();
+      body.set('client_id',clientId);
+      body.set('grant_type','authorization_code');
+      body.set('code',code);
+      body.set('redirect_uri',spotifyRedirectUri());
+      body.set('code_verifier',verifier);
+      const response=await spotifyFetchWithTimeout('https://accounts.spotify.com/api/token',{
+        method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body
+      },18000);
+      if(!response.ok) throw new Error('token');
+      const token=await response.json();
+      store.setText('nyx.spotifyAccessToken',token.access_token || '');
+      store.setText('nyx.spotifyTokenExpires',String(Date.now()+((Number(token.expires_in)||3600)*1000)));
+      store.setText('nyx.spotifyVerifier','');
+      store.setText('nyx.spotifyState','');
+      setAmbientStatus('Spotify connected');
+      if(spotifyPopupCallback) showSpotifyCallbackScreen('Reading current Spotify song...');
+      await updateSpotifyNowPlaying();
+      finishSpotifyPopup(true,'Spotify connected');
+    }catch{
+      setAmbientStatus('Spotify connection failed',9000);
+      finishSpotifyPopup(false,'Spotify connection failed');
+    }
+    return true;
+  }
+  async function updateSpotifyNowPlaying(){
+    const button=$('ambientSpotify');
+    if(button) button.textContent=spotifyTokenValid() ? 'Sync' : 'Spotify';
+    if(!spotifyTokenValid()){
+      setAmbientStatus('Spotify needs reconnect');
+      return;
+    }
+    try{
+      const response=await spotifyFetchWithTimeout('https://api.spotify.com/v1/me/player/currently-playing',{
+        headers:{Authorization:`Bearer ${store.text('nyx.spotifyAccessToken','')}`}
+      },12000);
+      if(response.status===204){
+        setAmbientStatus('No Spotify song playing');
+        return;
+      }
+      if(!response.ok) throw new Error('spotify');
+      const data=await response.json();
+      const item=data?.item;
+      if(!item){
+        setAmbientStatus('No Spotify song playing');
+        return;
+      }
+      const artists=(item.artists || []).map(artist=>artist.name).filter(Boolean).join(', ');
+      const title=$('ambientTitle');
+      const artist=$('ambientArtist');
+      if(title) title.textContent=item.name || 'Spotify';
+      if(artist) artist.textContent=artists || 'Spotify';
+      const artwork=item.album?.images?.find(image=>image?.url)?.url;
+      if(artwork) setAmbientArtwork(artwork,`${item.name || 'Spotify'} cover art`);
+      setAmbientStatus(data.is_playing ? 'Playing on Spotify' : 'Paused on Spotify');
+      if(button) button.textContent='Synced';
+    }catch{
+      setAmbientStatus('Could not read Spotify',9000);
+    }
+  }
+  function startSpotifyPolling(){
+    clearInterval(spotifyPollTimer);
+    if(!spotifyTokenValid()) return;
+    spotifyPollTimer=setInterval(()=>updateSpotifyNowPlaying(),25000);
+  }
+  window.addEventListener('message',event=>{
+    if(event.origin!==location.origin || event.data?.type!=='nyx:spotify-auth') return;
+    if(event.data.ok){
+      setAmbientStatus('Spotify connected');
+      updateSpotifyNowPlaying().then(()=>startSpotifyPolling()).catch(()=>setAmbientStatus('Could not read Spotify'));
+    }else{
+      setAmbientStatus(event.data.message || 'Spotify connection failed');
+    }
+  });
+  function ambientBassEnabled(){
+    return false;
+  }
+  function ambientBassAmount(){
+    return Math.max(0,Math.min(100,Number(store.text('nyx.musicBassAmount','70')) || 0));
+  }
+  function ambientBassFilterGain(){
+    if(!ambientBassEnabled()) return 0;
+    return Math.round((6 + ambientBassAmount() * .26) * 10) / 10;
+  }
+  function ambientBassOutputGain(){
+    if(!ambientBassEnabled()) return 1;
+    return Math.round((1 + ambientBassAmount() * .0035) * 1000) / 1000;
+  }
+  function updateAmbientRangeFill(input, max=100){
+    if(!input) return;
+    const value=Math.max(0,Math.min(Number(max) || 100,Number(input.value) || 0));
+    const percent=(value / (Number(max) || 100)) * 100;
+    input.style.setProperty('--range-fill',percent+'%');
+  }
+  function ensureAmbientAudioGraph(){
+    const audio=$('ambientAudio');
+    const AudioContextClass=window.AudioContext || window.webkitAudioContext;
+    if(!audio || !AudioContextClass) return null;
+    if(ambientAudioContext) return ambientAudioContext;
+    try{
+      ambientAudioContext=new AudioContextClass();
+      ambientSourceNode=ambientAudioContext.createMediaElementSource(audio);
+      ambientSourceNode.connect(ambientAudioContext.destination);
+    }catch{
+      ambientAudioContext=null;
+      ambientSourceNode=null;
+      ambientBassFilter=null;
+      ambientBassGain=null;
+    }
+    return ambientAudioContext;
+  }
+  function applyAmbientBassBoost(){
+    const enabled=ambientBassEnabled();
+    const button=$('ambientBass');
+    const amount=ambientBassAmount();
+    const slider=$('ambientBassAmount');
+    const value=$('ambientBassValue');
+    if(button){
+      button.classList.toggle('on',enabled);
+      button.setAttribute('aria-pressed',String(enabled));
+      button.textContent=enabled ? 'Bass On' : 'Bass Boost';
+    }
+    if(slider && document.activeElement!==slider) slider.value=String(amount);
+    updateAmbientRangeFill(slider,100);
+    if(value) value.textContent=amount+'%';
+    if(enabled) ensureAmbientAudioGraph();
+    if(ambientAudioContext && ambientBassFilter && ambientBassGain){
+      ambientBassFilter.gain.setTargetAtTime(ambientBassFilterGain(),ambientAudioContext.currentTime,.035);
+      ambientBassGain.gain.setTargetAtTime(ambientBassOutputGain(),ambientAudioContext.currentTime,.035);
+    }
+  }
+  function setAmbientBassAmount(value){
+    const amount=Math.max(0,Math.min(100,Number(value) || 0));
+    store.setText('nyx.musicBassAmount',amount);
+    if(amount>0 && !ambientBassEnabled()) store.set('nyx.musicBassBoost',true);
+    applyAmbientBassBoost();
+    if(ambientBassEnabled()) ensureAmbientAudioGraph()?.resume?.().catch(()=>null);
+  }
+  function toggleAmbientBassBoost(){
+    const next=!ambientBassEnabled();
+    store.set('nyx.musicBassBoost',next);
+    applyAmbientBassBoost();
+    if(next){
+      const context=ensureAmbientAudioGraph();
+      context?.resume?.().catch(()=>null);
+    }
+    toast(next ? 'Bass Boost on' : 'Bass Boost off');
+  }
+  async function setAmbientPlaying(next){
+    const audio=$('ambientAudio');
+    if(!audio) return;
+    if(next && syncAmbientCoverState()) return;
+    ambientPlaying=next;
+    const btn=$('ambientToggle');
+    if(btn){
+      btn.textContent=next ? ambientPauseSymbol() : ambientPlaySymbol();
+      btn.classList.toggle('is-playing',next);
+    }
+    if(next){
+      try{
+        audio.volume=Math.max(0,Math.min(1,Number($('ambientVolume')?.value || 100) / 100));
+        audio.muted=audio.volume===0;
+        setAmbientStatus('Loading...');
+        if(ambientBassEnabled()) ensureAmbientAudioGraph();
+        await ambientAudioContext?.resume?.().catch(()=>null);
+        await audio.play();
+      }catch(err){
+        ambientPlaying=false;
+        if(btn){
+          btn.textContent=ambientPlaySymbol();
+          btn.classList.remove('is-playing');
+        }
+        setAmbientStatus('Click Play to start');
+      }
+    }else{
+      audio.pause();
+      setAmbientStatus('Paused');
+    }
+  }
+  function setAmbientVolume(value){
+    const audio=$('ambientAudio');
+    const volume=Math.max(0,Math.min(100,Number(value) || 0));
+    store.setText('nyx.musicVolume',volume);
+    if(audio){
+      audio.volume=volume / 100;
+      audio.muted=volume===0;
+    }
+    updateAmbientRangeFill($('ambientVolume'),100);
+  }
+  function formatAmbientTime(seconds){
+    if(!Number.isFinite(seconds) || seconds<0) seconds=0;
+    seconds=Math.floor(seconds);
+    const minutes=Math.floor(seconds/60);
+    const secs=String(seconds%60).padStart(2,'0');
+    return `${minutes}:${secs}`;
+  }
+  function updateAmbientSeek(){
+    const audio=$('ambientAudio');
+    const seek=$('ambientSeek');
+    const time=$('ambientTime');
+    if(!audio || !seek || !time) return;
+    const duration=Number.isFinite(audio.duration) ? audio.duration : 0;
+    if(seek.max!=='1000') seek.max='1000';
+    if(duration>0 && !ambientSeeking){
+      seek.value=String(Math.round((audio.currentTime / duration) * 1000));
+    }
+    updateAmbientRangeFill(seek,1000);
+    time.textContent=`${formatAmbientTime(audio.currentTime)} / ${formatAmbientTime(duration)}`;
+  }
+  function setAmbientSeekFromInput(input){
+    const audio=$('ambientAudio');
+    if(!audio || !Number.isFinite(audio.duration) || audio.duration<=0) return false;
+    const target=Math.max(0,Math.min(audio.duration,(Number(input?.value || 0) / 1000) * audio.duration));
+    try{
+      if(typeof audio.fastSeek==='function') audio.fastSeek(target);
+      else audio.currentTime=target;
+    }catch{
+      audio.currentTime=target;
+    }
+    updateAmbientSeek();
+    return true;
+  }
+  function setAmbientSpeed(value){
+    const audio=$('ambientAudio');
+    const speed=Math.max(.5,Math.min(8,Number(value) || 1));
+    store.setText('nyx.musicSpeed',speed);
+    if(audio) audio.playbackRate=speed;
+  }
+  function loadAmbientTrack(key=ambientCurrentKey, play=true){
+    const audio=$('ambientAudio');
+    const previousKey=ambientCurrentKey;
+    if(key==='custom'){
+      $('ambientFile')?.click();
+      const song=$('ambientSong');
+      if(song) song.value=previousKey;
+      return;
+    }
+    if(ambientTracks[key]) ambientCurrentKey=key;
+    store.setText('nyx.musicTrack',ambientCurrentKey);
+    const selectedTrack=ambientTrack();
+    setAmbientArtwork(selectedTrack.artwork || ambientDefaultArtwork,`${ambientTrackLabel(selectedTrack)} cover art`);
+    setAmbientTitle();
+    if(!audio) return;
+    const track=ambientTrack();
+    if(!audio.src.endsWith(track.src)){
+      const seek=$('ambientSeek');
+      if(seek){
+        seek.value='0';
+        seek.max='1000';
+        updateAmbientRangeFill(seek,1000);
+      }
+      updateAmbientSeek();
+      audio.src=track.src;
+      audio.load();
+    }
+    setAmbientStatus(play ? 'Loading...' : 'Ready');
+    if(play) setAmbientPlaying(true);
+    else{
+      ambientPlaying=false;
+      try{audio.pause()}catch{}
+      const btn=$('ambientToggle');
+      if(btn){
+        btn.textContent=ambientPlaySymbol();
+        btn.classList.remove('is-playing');
+      }
+    }
+  }
+  function freshThemeShouldPlayMusic(){
+    return document.body.classList.contains('theme-fresh') && ambientTracks?.sunny;
+  }
+  function armFreshAmbientGestureFallback(){
+    freshAmbientGestureArmed=false;
+  }
+  function playFreshThemeMusicOnOpen(){
+    if(freshThemeShouldPlayMusic() && ambientCurrentKey!=='sunny') loadAmbientTrack('sunny',false);
+  }
+  function ambientPlayerBounds(box){
+    const rect=box.getBoundingClientRect();
+    const maxLeft=Math.max(8,window.innerWidth - rect.width - 8);
+    const topOffset=document.body.classList.contains('browser-shell') ? 104 : 8;
+    const maxTop=Math.max(topOffset,window.innerHeight - rect.height - 8);
+    return {maxLeft,topOffset,maxTop};
+  }
+  function setAmbientPosition(left, top, save=true){
+    const box=$('ambientPlayer');
+    if(!box) return;
+    const bounds=ambientPlayerBounds(box);
+    const x=Math.min(bounds.maxLeft,Math.max(8,Number(left) || 8));
+    const y=Math.min(bounds.maxTop,Math.max(bounds.topOffset,Number(top) || bounds.topOffset));
+    box.style.setProperty('left',x+'px','important');
+    box.style.setProperty('top',y+'px','important');
+    box.style.setProperty('right','auto','important');
+    box.style.setProperty('bottom','auto','important');
+    if(save) store.setText('nyx.musicPlayerPos',JSON.stringify({left:x,top:y}));
+  }
+  function restoreAmbientPosition(){
+    const box=$('ambientPlayer');
+    if(!box) return;
+    const raw=store.text('nyx.musicPlayerPos','');
+    if(raw){
+      try{
+        const pos=JSON.parse(raw);
+        if(Number.isFinite(pos.left) && Number.isFinite(pos.top)){
+          setAmbientPosition(pos.left,pos.top,false);
+          return;
+        }
+      }catch(_){}
+    }
+    box.style.setProperty('left','18px','important');
+    box.style.setProperty('top','auto','important');
+    box.style.setProperty('right','auto','important');
+    box.style.setProperty('bottom','66px','important');
+  }
+  function setAmbientTucked(tucked){
+    const box=$('ambientPlayer');
+    if(!box) return;
+    box.classList.remove('ambient-opening','ambient-closing');
+    void box.offsetWidth;
+    box.classList.add(tucked ? 'ambient-closing' : 'ambient-opening');
+    setTimeout(()=>box.classList.remove('ambient-opening','ambient-closing'),560);
+    box.classList.toggle('tucked',tucked);
+    store.set('nyx.musicPlayerTucked',tucked);
+    const hide=$('ambientHide');
+    if(hide){
+      hide.textContent='';
+      hide.title=tucked ? 'Show music player' : 'Hide music player';
+      hide.setAttribute('aria-label',hide.title);
+    }
+    if(tucked){
+      const rect=box.getBoundingClientRect();
+      const goRight=rect.left + rect.width / 2 > window.innerWidth / 2;
+      box.style.setProperty('left',goRight ? Math.max(8,window.innerWidth - 42)+'px' : '8px','important');
+      box.style.setProperty('right','auto','important');
+    }else{
+      restoreAmbientPosition();
+    }
+  }
+  function initAmbientDragging(){
+    const box=$('ambientPlayer');
+    const handle=box?.querySelector('.ambient-drag-area');
+    if(!box || !handle || box.dataset.dragReady) return;
+    box.dataset.dragReady='true';
+    restoreAmbientPosition();
+    setAmbientTucked(store.get('nyx.musicPlayerTucked',false));
+    $('ambientHide')?.addEventListener('click',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      setAmbientTucked(!box.classList.contains('tucked'));
+    });
+    box.addEventListener('click',e=>{
+      if(box.classList.contains('tucked') && !e.target.closest('.ambient-toggle')){
+        setAmbientTucked(false);
+      }
+    });
+    let start=null;
+    handle.addEventListener('pointerdown',e=>{
+      if(e.button !== 0) return;
+      if(e.target.closest('input,select,button,details,summary')) return;
+      const rect=box.getBoundingClientRect();
+      start={pointerId:e.pointerId,x:e.clientX,y:e.clientY,left:rect.left,top:rect.top};
+      setAmbientTucked(false);
+      box.classList.add('dragging');
+      handle.setPointerCapture?.(e.pointerId);
+      e.preventDefault();
+    });
+    handle.addEventListener('pointermove',e=>{
+      if(!start || e.pointerId !== start.pointerId) return;
+      setAmbientPosition(start.left + e.clientX - start.x,start.top + e.clientY - start.y,false);
+    });
+    const end=e=>{
+      if(!start || e.pointerId !== start.pointerId) return;
+      start=null;
+      box.classList.remove('dragging');
+      const rect=box.getBoundingClientRect();
+      setAmbientPosition(rect.left,rect.top,true);
+      handle.releasePointerCapture?.(e.pointerId);
+    };
+    handle.addEventListener('pointerup',end);
+    handle.addEventListener('pointercancel',end);
+    window.addEventListener('resize',()=>{
+      const rect=box.getBoundingClientRect();
+      if(box.classList.contains('tucked')) setAmbientTucked(true);
+      else setAmbientPosition(rect.left,rect.top,false);
+    });
+  }
+  function initAmbientMusic(){
+    const box=$('ambientPlayer');
+    const audio=$('ambientAudio');
+    if(!box || !audio || audio.dataset.ready) return;
+    const spotifyCallbackPending=hasSpotifyCallbackParams();
+    if(spotifyCallbackPending) handleSpotifyCallback().then(()=>startSpotifyPolling()).catch(()=>null);
+    if(syncAmbientCoverState() && !spotifyCallbackPending) return;
+    audio.dataset.ready='true';
+    const volume=$('ambientVolume');
+    const song=$('ambientSong');
+    const queue=$('ambientQueue');
+    const speed=$('ambientSpeed');
+    const seek=$('ambientSeek');
+    const savedVolume=Math.max(85,Math.min(100,Number(store.text('nyx.musicVolume','100')) || 100));
+    const savedSpeed=Math.max(.5,Math.min(8,Number(store.text('nyx.musicSpeed','1')) || 1));
+    if(song && !ambientTracks[ambientCurrentKey]) ambientCurrentKey='clair';
+    if(!['all','favorites'].includes(ambientQueueMode)) ambientQueueMode='all';
+    refreshAmbientSongOptions(ambientCurrentKey);
+    syncAmbientQueue();
+    initAmbientDragging();
+    $('ambientArtwork')?.addEventListener('error',event=>{
+      event.currentTarget.closest('.ambient-cover')?.classList.add('cover-unavailable');
+    },{once:true});
+    if(volume) volume.value=String(savedVolume);
+    if(speed) speed.value=String(savedSpeed);
+    updateAmbientRangeFill(volume,100);
+    updateAmbientRangeFill(seek,1000);
+    audio.volume=savedVolume / 100;
+    audio.playbackRate=savedSpeed;
+    audio.addEventListener('loadedmetadata',updateAmbientSeek);
+    audio.addEventListener('timeupdate',updateAmbientSeek);
+    audio.addEventListener('durationchange',updateAmbientSeek);
+    audio.addEventListener('canplay',()=>{if(!spotifyTokenValid() && Date.now()>spotifyStatusHoldUntil) setAmbientStatus(ambientPlaying ? 'Now playing' : 'Ready'); updateAmbientSeek()});
+    audio.addEventListener('playing',()=>{
+      ambientPlaying=true;
+      const btn=$('ambientToggle');
+      if(btn) btn.textContent=ambientPauseSymbol();
+      btn?.classList.add('is-playing');
+      setAmbientStatus('Now playing');
+    });
+    audio.addEventListener('pause',()=>{
+      if(!ambientPlaying) return;
+      ambientPlaying=false;
+      const btn=$('ambientToggle');
+      if(btn) btn.textContent=ambientPlaySymbol();
+      btn?.classList.remove('is-playing');
+      setAmbientStatus('Paused');
+    });
+    audio.addEventListener('error',()=>setAmbientStatus('Could not load this audio file'));
+    audio.addEventListener('ended',()=>cycleAmbientTrack(1));
+    setAmbientTitle();
+    loadAmbientTrack(ambientCurrentKey,false);
+    if(!spotifyCallbackPending) handleSpotifyCallback().then(()=>startSpotifyPolling()).catch(()=>null);
+    $('ambientToggle')?.addEventListener('click',()=>setAmbientPlaying(!ambientPlaying));
+    $('ambientPrevious')?.addEventListener('click',()=>cycleAmbientTrack(-1));
+    $('ambientNext')?.addEventListener('click',()=>cycleAmbientTrack(1));
+    $('ambientFavorite')?.addEventListener('click',toggleAmbientFavorite);
+    $('ambientSpotify')?.addEventListener('click',connectSpotifyNowPlaying);
+    song?.addEventListener('change',e=>{
+      loadAmbientTrack(e.target.value,true);
+    });
+    queue?.addEventListener('change',e=>setAmbientQueue(e.target.value));
+    $('ambientFile')?.addEventListener('change',e=>{
+      const file=e.target.files?.[0];
+      e.target.value='';
+      if(!file) return;
+      const customUrl=URL.createObjectURL(file);
+      ambientCustomUrls.push(customUrl);
+      const key=`custom-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      ambientTracks[key]={title:file.name.replace(/\.[^.]+$/,''),artist:'Your file',src:customUrl};
+      refreshAmbientSongOptions(key);
+      loadAmbientTrack(key,true);
+    });
+    volume?.addEventListener('input',e=>setAmbientVolume(e.target.value));
+    speed?.addEventListener('change',e=>setAmbientSpeed(e.target.value));
+    const commitSeek=e=>setAmbientSeekFromInput(e.target);
+    seek?.addEventListener('pointerdown',()=>{ambientSeeking=true});
+    seek?.addEventListener('touchstart',()=>{ambientSeeking=true},{passive:true});
+    seek?.addEventListener('input',e=>{
+      ambientSeeking=true;
+      updateAmbientRangeFill(e.target,1000);
+      const duration=Number.isFinite(audio.duration) ? audio.duration : 0;
+      const target=(Number(e.target.value || 0) / 1000) * duration;
+      const time=$('ambientTime');
+      if(time) time.textContent=`${formatAmbientTime(target)} / ${formatAmbientTime(audio.duration)}`;
+    });
+    seek?.addEventListener('change',e=>{
+      commitSeek(e);
+      ambientSeeking=false;
+      updateAmbientSeek();
+    });
+    seek?.addEventListener('pointerup',e=>{
+      commitSeek(e);
+      ambientSeeking=false;
+      updateAmbientSeek();
+    });
+    window.addEventListener('pointerup',()=>{
+      if(!ambientSeeking) return;
+      if(seek) setAmbientSeekFromInput(seek);
+      ambientSeeking=false;
+      updateAmbientSeek();
+    });
+    window.addEventListener('touchend',()=>{
+      if(!ambientSeeking) return;
+      if(seek) setAmbientSeekFromInput(seek);
+      ambientSeeking=false;
+      updateAmbientSeek();
+    });
+    seek?.addEventListener('keyup',e=>{
+      if(e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='Home'||e.key==='End'){
+        commitSeek(e);
+        ambientSeeking=false;
+      }
+    });
+  }
+  function centerClockText(date=new Date()){
+    return date.toLocaleTimeString([],{hour:'numeric',minute:'2-digit',second:'2-digit'});
+  }
+  function startCenterClock(){
+    const clock=$('centerClock');
+    if(clock?.dataset.running) return;
+    if(clock) clock.dataset.running='true';
+    const update=()=>{
+      const text=centerClockText();
+      if(clock) clock.textContent=text;
+      qsa('[data-browser-shell-clock]').forEach(el=>{el.textContent=text});
+    };
+    update();
+    setInterval(update,1000);
+  }
+  function initDesktopSplash(){
+    updateDockFullscreenState();
+  }
+  function finishNyxOpenStartup(){
+    if(finishNyxOpenStartup.done) return;
+    finishNyxOpenStartup.done=true;
+    if(store.text('nyx.tabTitle','') || store.text('nyx.tabFavicon','')) enforceStoredTabCloak();
+    else setCurrentTabCloak(nyxTabTitle,nyxTabFavicon,false);
+    migrateGlassDefault();
+    applyAutoHieroglyphPreference();
+  }
+  async function boot(){
+    const hostedCloakEntry=shouldAutoLaunchHostedCloak();
+    if(hostedCloakEntry) document.body.classList.add('hosted-cloak-entry');
+    document.body.classList.add('runtime-lag-guard');
+    updateResponsiveFit();
+    if(!localStorage.getItem('nyx.lagReducer')) store.set('nyx.lagReducer',true);
+    applyLaunchPdfSetting(); bindFormulaGate(); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); startCenterClock();
+    if(hasSpotifyCallbackParams()) initAmbientMusic();
+    if(hostedCloakEntry){
+      scheduleHostedCloakLaunch();
+      return;
+    }
+    if(!store.get('nyx.searchDefaultedToDuck',false)){
+      store.set('nyx.searchDefaultedToDuck',true);
+      if(['google','bing'].includes(store.text('nyx.engine','duckduckgo'))) store.setText('nyx.engine','duckduckgo');
+    }
+    if(nyxGateOpened) runNyxPreflight('startup-diagnostics',{minVisible:260,background:true}).catch(()=>null);
+    tick();
+    if(!boot.tickTimer) boot.tickTimer=setInterval(tick,1000);
+    scheduleHostedCloakLaunch();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
+})();

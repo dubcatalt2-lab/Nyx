@@ -77,9 +77,14 @@ nyx
 goodlion-backupfolder.html/
 video-frames/
 assets/ugs/
+!assets/ugs/
+assets/ugs/*
+!assets/ugs/play.html
 assets/music/
 assets/docs/
-assets/backgrounds/
+assets/backgrounds/*
+!assets/backgrounds/nyx-blue-light-trails.jpg
+!assets/backgrounds/animated-blue-wave.html
 *.mp4
 *.webm
 *.mov

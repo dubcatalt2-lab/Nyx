@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Nyx AI</title>
+  <style>
+    *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:Outfit,Arial,sans-serif;background:#f7fafc;color:#111827}button,select,textarea{font:inherit}.app{height:100%;display:grid;grid-template-rows:auto 1fr auto}.head{min-height:76px;padding:14px 24px;border-bottom:1px solid #dbe3ea;background:#fff;display:flex;align-items:center;gap:12px}.mark{width:44px;height:44px;display:grid;place-items:center;border-radius:8px;background:#071522;color:#72f2e1;font-weight:800}.title{min-width:0}.title h1{margin:0;font-size:22px}.title p{margin:2px 0 0;color:#64748b;font-size:13px}.actions{margin-left:auto;display:flex;align-items:center;gap:8px}.model,.clear{height:42px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#172033}.model{min-width:190px;padding:0 12px}.clear{width:42px;cursor:pointer;font-size:19px}.feed{min-height:0;overflow:auto;padding:28px clamp(18px,6vw,88px);display:grid;align-content:start;gap:14px}.msg{max-width:min(780px,88%);padding:12px 14px;border:1px solid #dbe3ea;border-radius:8px;background:#fff;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}.msg.user{justify-self:end;background:#dff7f4;border-color:#ace9e1}.msg.error{color:#991b1b;background:#fef2f2;border-color:#fecaca}.composer{padding:14px clamp(18px,6vw,88px) 20px;background:linear-gradient(transparent,#f7fafc 18%)}form{max-width:980px;margin:auto;display:grid;grid-template-columns:1fr 46px;gap:8px;padding:7px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;box-shadow:0 14px 35px rgba(15,23,42,.12)}textarea{min-height:42px;max-height:130px;resize:none;border:0;outline:0;padding:10px;color:#111827}.send{width:44px;height:44px;border:0;border-radius:8px;background:#071522;color:#fff;cursor:pointer;font-size:22px}.send:disabled{opacity:.5;cursor:wait}@media(max-width:620px){.head{padding:10px 12px;flex-wrap:wrap}.actions{width:100%}.model{flex:1;min-width:0}.feed{padding:18px 12px}.composer{padding:10px 12px}.msg{max-width:94%}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="head"><div class="mark">NYX</div><div class="title"><h1>Nyx AI</h1><p id="modelLabel">Llama 3.3 70B</p></div><div class="actions"><button class="clear" id="clear" title="Clear chat" aria-label="Clear chat">&#8635;</button><select class="model" id="model" aria-label="AI model"><option value="llama-3.3-70b">Llama 3.3 70B</option><option value="gpt-oss-120b">GPT-OSS 120B</option><option value="qwen3-32b">Qwen3 32B</option><option value="llama-4-scout">Llama 4 Scout</option><option value="chatgpt-5.4-mini">ChatGPT 5.4 Mini</option></select></div></header>
+    <section class="feed" id="feed" aria-live="polite"></section>
+    <div class="composer"><form id="form"><textarea id="input" maxlength="4000" placeholder="Ask Nyx AI anything..." aria-label="Message"></textarea><button class="send" id="send" type="submit" title="Send" aria-label="Send">&#8593;</button></form></div>
+  </main>
+  <script>
+    const feed=document.getElementById('feed'),form=document.getElementById('form'),input=document.getElementById('input'),send=document.getElementById('send'),model=document.getElementById('model'),modelLabel=document.getElementById('modelLabel');
+    const key='nyx.aiMessages';
+    function messages(){try{const value=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(value)?value.slice(-40):[]}catch{return[]}}
+    function save(value){localStorage.setItem(key,JSON.stringify(value.slice(-40)))}
+    function add(role,text,error=false){const el=document.createElement('div');el.className='msg '+(role==='user'?'user':'bot')+(error?' error':'');el.textContent=text;feed.appendChild(el);feed.scrollTop=feed.scrollHeight;return el}
+    function render(){feed.innerHTML='';const saved=messages();if(!saved.length)add('assistant','Hi. Pick a model and ask me anything.');else saved.forEach(item=>add(item.role,item.content))}
+    const savedModel=localStorage.getItem('nyx.aiModel');if([...model.options].some(option=>option.value===savedModel))model.value=savedModel;
+    function syncModel(){localStorage.setItem('nyx.aiModel',model.value);modelLabel.textContent=model.options[model.selectedIndex].textContent}model.addEventListener('change',syncModel);syncModel();
+    document.getElementById('clear').addEventListener('click',()=>{localStorage.removeItem(key);render();input.focus()});
+    input.addEventListener('input',()=>{input.style.height='auto';input.style.height=Math.min(input.scrollHeight,130)+'px'});
+    input.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();form.requestSubmit()}});
+    form.addEventListener('submit',async event=>{event.preventDefault();const prompt=input.value.trim();if(!prompt||send.disabled)return;const history=messages();history.push({role:'user',content:prompt});add('user',prompt);input.value='';input.style.height='auto';send.disabled=true;const pending=add('assistant','Thinking...');let answer='';try{const response=await fetch('/api/nyx-ai',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({model:model.value,message:prompt,messages:history,stream:true})});if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.error||`Nyx AI failed (${response.status})`)}const reader=response.body.getReader(),decoder=new TextDecoder();let buffer='';for(;;){const part=await reader.read();if(part.done)break;buffer+=decoder.decode(part.value,{stream:true});const lines=buffer.split(/\r?\n/);buffer=lines.pop()||'';for(const line of lines){if(!line.startsWith('data:'))continue;const raw=line.slice(5).trim();if(!raw||raw==='[DONE]')continue;try{const data=JSON.parse(raw);const token=data?.choices?.[0]?.delta?.content||data?.choices?.[0]?.text||'';if(token){answer+=token;pending.textContent=answer;feed.scrollTop=feed.scrollHeight}}catch{}}}if(!answer.trim())throw new Error('The model returned an empty response.');history.push({role:'assistant',content:answer.trim()});save(history)}catch(error){pending.textContent=error.message;pending.classList.add('error')}finally{send.disabled=false;input.focus()}});
+    render();input.focus();
+  </script>
+</body>
+</html>

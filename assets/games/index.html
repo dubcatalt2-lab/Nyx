@@ -1,360 +1,69 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>nyx Games</title>
+  <title>Nyx Games</title>
   <style>
-    :root{
-      --bg:#0b0f17;
-      --panel:rgba(11,15,23,.78);
-      --text:#f8fafc;
-      --muted:#a8b3c7;
-      --line:#f87171;
-    }
-    *{box-sizing:border-box;font-weight:400!important;font-style:normal!important}
-    html,body{height:100%;margin:0}
-    body{
-      background:var(--bg);
-      color:var(--text);
-      font-family:Outfit,Arial,sans-serif;
-      overflow:hidden;
-    }
-    .games-shell{
-      height:100%;
-      display:grid;
-      grid-template-rows:auto 1fr;
-    }
-    .games-top{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:18px;
-      padding:16px 18px;
-      background:var(--panel);
-      border-bottom:1px solid var(--line);
-    }
-    h1{
-      margin:0;
-      font-size:24px;
-      font-weight:400;
-      letter-spacing:0;
-    }
-    .games-home{
-      appearance:none;
-      border:0;
-      background:transparent;
-      color:inherit;
-      padding:0;
-      font:inherit;
-      cursor:pointer;
-      text-align:left;
-    }
-    .games-home:hover{
-      color:#fca5a5;
-    }
-    p{
-      margin:4px 0 0;
-      color:var(--muted);
-      font-size:14px;
-    }
-    label{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      color:var(--muted);
-      font-size:13px;
-      white-space:nowrap;
-    }
-    select{
-      min-width:150px;
-      border:1px solid var(--line);
-      background:#121722;
-      color:var(--text);
-      border-radius:10px;
-      padding:9px 12px;
-      font:inherit;
-      outline:none;
-    }
-    .games-actions{
-      display:flex;
-      align-items:center;
-      gap:10px;
-    }
-    .fullscreen-btn{
-      min-width:42px;
-      height:40px;
-      border:1px solid var(--line);
-      border-radius:10px;
-      background:#121722;
-      color:var(--text);
-      font:18px/1 Outfit,Arial,sans-serif;
-      cursor:pointer;
-      transition:transform .18s ease,border-color .18s ease;
-    }
-    .fullscreen-btn:hover{
-      transform:scale(1.04);
-      border-color:#fca5a5;
-    }
-    iframe{
-      width:100%;
-      height:100%;
-      border:0;
-      background:#0b0f17;
-    }
-    .games-shell.playing{
-      display:block;
-    }
-    .games-shell.playing .games-top{
-      display:none;
-    }
-    .games-shell.playing iframe{
-      position:fixed;
-      inset:0;
-      z-index:1;
-      width:100vw;
-      height:100vh;
-    }
-    .host-loading{
-      position:fixed;
-      inset:auto 18px 18px 18px;
-      z-index:5;
-      display:none;
-      padding:12px 14px;
-      border:1px solid var(--line);
-      background:rgba(11,15,23,.9);
-      color:var(--text);
-    }
-    .host-loading.active{display:block}
-    .host-loading-top{
-      display:flex;
-      justify-content:space-between;
-      gap:14px;
-      margin-bottom:8px;
-      font-size:13px;
-    }
-    .host-loading-track{
-      height:5px;
-      overflow:hidden;
-      background:rgba(248,250,252,.15);
-    }
-    .host-loading-fill{
-      width:0;
-      height:100%;
-      background:var(--line);
-      transition:width .18s ease;
-    }
-    @media (max-width:640px){
-      .games-top{align-items:flex-start;flex-direction:column}
-      label,select,.games-actions{width:100%}
-      .fullscreen-btn{width:100%}
-    }
+    :root{color-scheme:dark;--bg:#030612;--panel:rgba(8,15,35,.72);--line:rgba(96,165,250,.34);--text:#eef6ff;--muted:#9fb1cf;--accent:#72a8ff}
+    *{box-sizing:border-box}html,body{min-height:100%;margin:0}body{font-family:Outfit,Inter,Segoe UI,Arial,sans-serif;background:radial-gradient(circle at 82% -12%,rgba(37,99,235,.42),transparent 30%),radial-gradient(circle at 8% 22%,rgba(30,64,175,.20),transparent 34%),var(--bg);color:var(--text)}
+    .library{min-height:100vh;padding:clamp(18px,3vw,42px)}.top{max-width:1480px;margin:0 auto 28px;display:flex;align-items:end;justify-content:space-between;gap:22px}.eyebrow{margin:0 0 8px;color:#8bb8ff;font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}.title{margin:0;font-size:clamp(36px,5vw,66px);letter-spacing:-.055em;line-height:.94;background:linear-gradient(100deg,#dbeafe,#72a8ff 48%,#315fc8);color:transparent;background-clip:text;-webkit-background-clip:text}.subtitle{margin:12px 0 0;max-width:570px;color:var(--muted);line-height:1.5}.tools{display:flex;align-items:center;gap:10px}.search{width:min(390px,74vw);height:46px;border:1px solid var(--line);border-radius:14px;background:rgba(3,9,25,.72);color:var(--text);padding:0 15px;font:inherit;outline:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}.search:focus{border-color:#76abff;box-shadow:0 0 0 4px rgba(96,165,250,.15)}.count{white-space:nowrap;color:var(--muted);font-size:13px}.game-grid{max-width:1480px;margin:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:26px 18px}.game{position:relative;min-width:0;display:flex;flex-direction:column;gap:11px;overflow:visible;border:0;background:transparent;color:var(--text);padding:4px;text-align:center;cursor:pointer;transition:transform .2s ease}.game:hover,.game:focus-visible{transform:translateY(-5px);outline:0}.cover{width:100%;height:auto;aspect-ratio:1;position:relative;display:block;overflow:hidden;border:1px solid rgba(125,181,255,.3);border-radius:22px;background:linear-gradient(135deg,#162c61,#071027);box-shadow:0 16px 32px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.08);transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease}.cover img{width:100%;height:100%;display:block;object-fit:cover;transition:transform .35s ease,filter .35s ease}.game:hover .cover,.game:focus-visible .cover{border-color:rgba(125,181,255,.88);box-shadow:0 22px 42px rgba(0,0,0,.44),0 0 0 4px rgba(59,130,246,.13)}.game:hover .cover img{transform:scale(1.07);filter:saturate(1.12) brightness(1.06)}.cover::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(145deg,rgba(255,255,255,.1),transparent 28%,transparent 72%,rgba(1,5,18,.2))}.fallback{width:100%;height:100%;display:grid;place-items:center;background:radial-gradient(circle at 22% 24%,rgba(125,181,255,.46),transparent 26%),radial-gradient(circle at 82% 80%,rgba(91,33,182,.42),transparent 30%),linear-gradient(135deg,#142759,#061027);color:#c7e0ff;font-size:clamp(42px,5vw,64px);font-weight:800}.game-name{display:-webkit-box;min-height:2.5em;padding:0 5px;overflow:hidden;color:#edf5ff;font-size:14.5px;font-weight:750;line-height:1.25;overflow-wrap:anywhere;-webkit-box-orient:vertical;-webkit-line-clamp:2}.empty{display:none;max-width:1480px;margin:50px auto;color:var(--muted);text-align:center}.player{position:fixed;inset:0;z-index:100;display:none;background:#02040c}.player.show{display:block}.player iframe{width:100%;height:100%;border:0;background:#02040c}.player-bar{position:absolute;top:14px;left:14px;right:14px;z-index:2;display:flex;justify-content:space-between;pointer-events:none}.player-bar button{pointer-events:auto;height:40px;border:1px solid rgba(125,181,255,.44);border-radius:12px;background:rgba(4,10,28,.84);color:#e8f3ff;padding:0 14px;font:700 14px Outfit,Arial,sans-serif;cursor:pointer;backdrop-filter:blur(12px)}.player-bar button:hover{background:#12357d}.player-bar .fullscreen{width:42px;padding:0;font-size:20px}@media(max-width:720px){.library{padding:22px 14px}.top{align-items:stretch;flex-direction:column}.tools{justify-content:space-between}.search{width:100%}.game-grid{grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:18px 11px}.cover{border-radius:17px}.game-name{font-size:13px}}
   </style>
 </head>
 <body>
-  <div class="games-shell">
-    <header class="games-top">
-      <div>
-        <h1><button id="gamesHome" class="games-home" type="button">Games</button></h1>
-        <p>Choose a game host.</p>
-      </div>
-      <div class="games-actions">
-        <label>
-          Game Host
-          <select id="hostSelect">
-            <option value="ugs">UGS</option>
-            <option value="seraph">Seraph</option>
-            <option value="gn-math">GN Math</option>
-            <option value="gms-games">GMS Games</option>
-          </select>
-        </label>
-        <button id="fullscreenBtn" class="fullscreen-btn" type="button" title="Fullscreen games" aria-label="Fullscreen games">⛶</button>
-      </div>
+  <main class="library">
+    <header class="top">
+      <div><p class="eyebrow">Nyx arcade</p><h1 class="title">Games</h1><p class="subtitle">One local game library. Search once, play instantly, and never see duplicate titles.</p></div>
+      <div class="tools"><input id="search" class="search" type="search" autocomplete="off" placeholder="Search every game"><span id="count" class="count">Loading…</span></div>
     </header>
-    <iframe id="hostFrame" title="Game host" allow="fullscreen; gamepad; autoplay; pointer-lock; keyboard-map; clipboard-read; clipboard-write; camera; microphone; display-capture; accelerometer; gyroscope; magnetometer; xr-spatial-tracking" allowfullscreen tabindex="0"></iframe>
-    <div id="hostLoading" class="host-loading" aria-live="polite">
-      <div class="host-loading-top">
-        <span id="hostLoadingLabel">Loading</span>
-        <span id="hostLoadingPercent">0%</span>
-      </div>
-      <div class="host-loading-track"><div id="hostLoadingFill" class="host-loading-fill"></div></div>
-    </div>
-  </div>
+    <section id="grid" class="game-grid" aria-live="polite"></section>
+    <p id="empty" class="empty">No games match that search.</p>
+  </main>
+  <section id="player" class="player" aria-hidden="true">
+    <div class="player-bar"><button id="back" type="button">← All games</button><button id="fullscreen" class="fullscreen" type="button" title="Fullscreen">⛶</button></div>
+    <iframe id="gameFrame" title="Game" allow="autoplay; fullscreen; gamepad; keyboard-map; clipboard-read; clipboard-write" allowfullscreen></iframe>
+  </section>
   <script>
-    const hosts={
-      ugs:{name:'UGS',url:'/assets/ugs/index.html'},
-      seraph:{name:'Seraph',url:'/assets/seraph/index.html'},
-      'gn-math':{name:'GN Math',url:'/assets/gn-math/index.html'},
-      'gms-games':{name:'GMS Games',url:'/assets/gms-games/index.html'}
-    };
-    const hostVersion='20260630-game-fit-v4';
-    const select=document.getElementById('hostSelect');
-    const frame=document.getElementById('hostFrame');
-    const shell=document.querySelector('.games-shell');
-    const gamesHome=document.getElementById('gamesHome');
-    const fullscreenBtn=document.getElementById('fullscreenBtn');
-    const hostLoading=document.getElementById('hostLoading');
-    const hostLoadingLabel=document.getElementById('hostLoadingLabel');
-    const hostLoadingPercent=document.getElementById('hostLoadingPercent');
-    const hostLoadingFill=document.getElementById('hostLoadingFill');
-    const hostAliases={'reds-misc':'gms-games'};
-    const savedRaw=hostAliases[localStorage.getItem('nyx.gameHost')] || localStorage.getItem('nyx.gameHost') || 'ugs';
-    const saved=hosts[savedRaw] ? savedRaw : 'ugs';
-    let loadTimer=0;
-    let lastFrameUrl='';
-    function focusHostFrame(){
-      setTimeout(()=>{try{frame.focus({preventScroll:true})}catch{try{frame.focus()}catch{}}},0);
-    }
-    function installPointerBridgeInDocument(doc){
-      try{
-        if(!doc || doc.__nyxPointerBridge) return;
-        doc.__nyxPointerBridge=true;
-        const style=doc.createElement('style');
-        style.textContent='html.nyx-pointer-captured,html.nyx-pointer-captured *{cursor:none!important}';
-        (doc.head || doc.documentElement).appendChild(style);
-        const query='canvas,video,object,embed,ruffle-player,ruffle-object,iframe,#game,#game-container,#unity-container,#unity-canvas,#player,[class*="game" i],[class*="stream" i],[id*="game" i],[id*="stream" i]';
-        const isEditing=target=>!!(target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/i.test(target.tagName || '')));
-        const requestPointer=event=>{
-          try{
-            if(isEditing(event.target)) return;
-            const target=event.target?.closest?.(query) || doc.querySelector('canvas,video,object,embed,iframe') || doc.documentElement;
-            target.focus?.({preventScroll:true});
-            try{
-              if(!doc.pointerLockElement && target.requestPointerLock){
-                const lock=target.requestPointerLock({unadjustedMovement:true});
-                lock?.catch?.(()=>{try{target.requestPointerLock?.()}catch{}});
-              }
-            }catch{
-              try{target.requestPointerLock?.()}catch{}
-            }
-            doc.documentElement.classList.add('nyx-pointer-captured');
-          }catch{}
-        };
-        doc.addEventListener('pointerdown',requestPointer,true);
-        doc.addEventListener('click',requestPointer,true);
-        doc.addEventListener('pointerlockchange',()=>doc.documentElement.classList.toggle('nyx-pointer-captured',!!doc.pointerLockElement));
-        doc.addEventListener('keydown',event=>{
-          const key=String(event.key || '').toLowerCase();
-          if(event.altKey && !event.ctrlKey && !event.metaKey && event.location!==2 && key==='alt'){
-            event.preventDefault();
-            event.stopPropagation();
-            try{parent.postMessage({type:'nyx:alt-prime'},'*')}catch{}
-            try{top.postMessage({type:'nyx:alt-prime'},'*')}catch{}
-            return;
-          }
-          if(event.altKey && !event.ctrlKey && !event.metaKey && event.location!==2 && (/^[1-9]$/.test(key) || ['l','d','t','w','r','arrowleft','arrowright','tab'].includes(key))){
-            event.preventDefault();
-            event.stopPropagation();
-            try{parent.postMessage({type:'nyx:alt-shortcut',key,code:event.code||'',location:event.location||0,shiftKey:!!event.shiftKey},'*')}catch{}
-            try{top.postMessage({type:'nyx:alt-shortcut',key,code:event.code||'',location:event.location||0,shiftKey:!!event.shiftKey},'*')}catch{}
-            return;
-          }
-          if(event.key==='Escape') doc.documentElement.classList.remove('nyx-pointer-captured');
-        },true);
-      }catch{}
-    }
-    function installHostPointerBridge(){
-      try{
-        installPointerBridgeInDocument(frame.contentDocument);
-        frame.contentDocument?.querySelectorAll?.('iframe')?.forEach(child=>{
-          try{installPointerBridgeInDocument(child.contentDocument)}catch{}
-        });
-      }catch{}
-    }
-    frame.addEventListener('load',()=>{
-      setTimeout(focusHostFrame,80);
-      setTimeout(installHostPointerBridge,250);
-      setTimeout(installHostPointerBridge,1200);
-    });
-    setInterval(installHostPointerBridge,1800);
-    frame.addEventListener('pointerdown',focusHostFrame,{capture:true});
-    document.addEventListener('pointerdown',event=>{
-      if(event.target===frame || event.target.closest?.('.games-shell')) focusHostFrame();
-    },true);
-    document.addEventListener('wheel',event=>{
-      if(event.ctrlKey) event.preventDefault();
-    },{capture:true,passive:false});
-    document.addEventListener('keydown',event=>{
-      const key=String(event.key || '').toLowerCase();
-      if(event.altKey && !event.ctrlKey && !event.metaKey && event.location!==2 && key==='alt'){
-        event.preventDefault();
-        event.stopPropagation();
-        try{parent.postMessage({type:'nyx:alt-prime'},'*')}catch{}
-        try{top.postMessage({type:'nyx:alt-prime'},'*')}catch{}
-        return;
+    const grid=document.getElementById('grid'),search=document.getElementById('search'),count=document.getElementById('count'),empty=document.getElementById('empty'),player=document.getElementById('player'),frame=document.getElementById('gameFrame');
+    let games=[],gamesByKey=new Map();
+    const esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    function titleCase(value){return String(value||'Game').replace(/\.html?$/i,'').replace(/[-_]+/g,' ').replace(/([a-z])([A-Z0-9])/g,'$1 $2').replace(/([0-9])([a-z])/gi,'$1 $2').replace(/\s+/g,' ').trim().replace(/\b\w/g,c=>c.toUpperCase())}
+    function keyFor(title){return titleCase(title).toLowerCase().replace(/[^a-z0-9]/g,'')}
+    function ugsThumbName(path){return String(path).replace(/\.[^.]+$/,'').replace(/[^a-z0-9]+/gi,'-').replace(/^-+|-+$/g,'').toLowerCase()+'.png'}
+    function ugsThumb(path,available){const name=ugsThumbName(path);return available.has(name)?'/assets/ugs/thumbs/'+name:''}
+    function gmsCover(url){try{const parsed=new URL(url,location.href);return ['raw.githubusercontent.com','cdn.jsdelivr.net','rawcdn.githack.com','raw.githack.com'].includes(parsed.hostname)?'/gms-games-proxy?url='+encodeURIComponent(parsed.href):parsed.href}catch{return ''}}
+    function onlineCover(title){return '/game-cover?title='+encodeURIComponent(title)}
+    async function loadCatalog(){
+      const [ugs,ugsThumbs,seraph,gn,gms]=await Promise.all([fetch('/assets/ugs/games.json').then(r=>r.json()),fetch('/assets/ugs/thumbs.json').then(r=>r.json()).catch(()=>[]),fetch('/assets/seraph/games.json').then(r=>r.json()),fetch('/assets/gn-math/games.json',{cache:'no-store'}).then(r=>r.json()),fetch('/assets/gms-games/games.json',{cache:'no-store'}).then(r=>r.json())]);
+      const availableUgsThumbs=new Set(Array.isArray(ugsThumbs)?ugsThumbs:[]);
+      const entries=[];
+      entries.push(...(Array.isArray(ugs)?ugs:[]).map(g=>({title:titleCase(g.title||g.path),url:'/assets/ugs/play.html?game='+encodeURIComponent(g.path),cover:ugsThumb(g.path,availableUgsThumbs),priority:5,source:'local'})));
+      entries.push(...(Array.isArray(seraph)?seraph:(seraph.games||[])).filter(g=>/\.html?$/i.test(g.path||'')&&!/(^|\/)(?:404|408)\.html$/i.test(g.path||'')).map(g=>({title:titleCase(g.title||g.path),url:'/assets/seraph/play.html?game='+encodeURIComponent(String(g.path).replace(/^\/+/,'')),cover:g.thumbnail?'/seraph-asset?path='+encodeURIComponent(String(g.thumbnail).replace(/^\/+/,'')):'',priority:2,source:'seraph'})));
+      entries.push(...((gn.games||[])).map(g=>({title:titleCase(g.title||g.path),url:'/assets/gn-math/play.html?game='+encodeURIComponent(g.path),cover:g.cover||'',priority:4,source:'gn'})));
+      entries.push(...((gms.games||[])).map(g=>({title:titleCase(g.title||g.id||g.path),url:g.type==='gba'&&g.romId?'/assets/gms-games/play.html?gba='+encodeURIComponent(g.romId):'/assets/gms-games/play.html?game='+encodeURIComponent(g.path),cover:gmsCover(g.cover),priority:3,source:'gms'})));
+      const unique=new Map();
+      for(const game of entries){
+        const key=keyFor(game.title);if(!key) continue;
+        const current=unique.get(key);
+        const covers=[...(current?.covers||[])];
+        if(game.cover&&!covers.some(item=>item.url===game.cover)) covers.push({url:game.cover,priority:game.priority});
+        const replace=!current||(!current.cover&&game.cover)||(game.priority>current.priority&&!!game.cover===!!current.cover);
+        const selected=replace?{...game,key}:current;
+        selected.covers=covers;
+        unique.set(key,selected);
       }
-      if((event.ctrlKey || event.metaKey) && ['+','=','-','_','0'].includes(key)){
-        event.preventDefault();
-        event.stopPropagation();
-      }
-    },true);
-    function setHostProgress(value,label='Loading'){
-      const percent=Math.max(0,Math.min(100,Math.round(value)));
-      hostLoading.classList.add('active');
-      hostLoadingLabel.textContent=percent>=100 ? 'Launched' : label;
-      hostLoadingPercent.textContent=`${percent}%`;
-      hostLoadingFill.style.width=`${percent}%`;
+      games=[...unique.values()].map(game=>{
+        const supplied=game.covers.sort((a,b)=>b.priority-a.priority).map(item=>item.url);
+        return {...game,covers:[...new Set([...supplied,onlineCover(game.title)])]};
+      }).sort((a,b)=>a.title.localeCompare(b.title));
+      gamesByKey=new Map(games.map(game=>[game.key,game]));
+      render();
     }
-    function beginHostProgress(){
-      clearInterval(loadTimer);
-      let progress=8;
-      setHostProgress(progress);
-      loadTimer=setInterval(()=>{
-        progress=Math.min(92,progress + Math.max(1,(94-progress)*.12));
-        setHostProgress(progress);
-      },180);
-    }
-    function finishHostProgress(){
-      clearInterval(loadTimer);
-      setHostProgress(100,'Launched');
-      setTimeout(()=>hostLoading.classList.remove('active'),520);
-    }
-    function loadHost(key){
-      key=hostAliases[key] || key;
-      const host=hosts[key] || hosts.ugs;
-      select.value=hosts[key] ? key : 'ugs';
-      localStorage.setItem('nyx.gameHost',select.value);
-      document.title=`nyx Games - ${host.name}`;
-      shell.classList.remove('playing');
-      beginHostProgress();
-      frame.src=`${host.url}?v=${hostVersion}`;
-    }
-    gamesHome.addEventListener('click',()=>loadHost(select.value));
-    select.addEventListener('change',()=>loadHost(select.value));
-    async function toggleFullscreen(){
-      try{
-        if(document.fullscreenElement){
-          await document.exitFullscreen();
-          return;
-        }
-        const target=frame || document.documentElement;
-        if(target.requestFullscreen) await target.requestFullscreen();
-        else await document.documentElement.requestFullscreen();
-      }catch{
-        try{await document.documentElement.requestFullscreen()}catch{}
-      }
-    }
-    function updateFullscreenButton(){
-      fullscreenBtn.textContent=document.fullscreenElement ? '×' : '⛶';
-      fullscreenBtn.title=document.fullscreenElement ? 'Exit fullscreen' : 'Fullscreen games';
-      fullscreenBtn.setAttribute('aria-label',fullscreenBtn.title);
-    }
-    fullscreenBtn.addEventListener('click',toggleFullscreen);
-    document.addEventListener('fullscreenchange',updateFullscreenButton);
-    window.addEventListener('message',event=>{
-      if(event.source!==frame.contentWindow) return;
-      if(event.data?.type==='nyx:game-loading') hostLoading.classList.remove('active');
-    });
-    frame.addEventListener('load',()=>{
-      let current='';
-      try{current=frame.contentWindow.location.href}catch{current=frame.src}
-      shell.classList.toggle('playing',/\/assets\/(?:gn-math|gms-games|seraph|ugs)\/play\.html/i.test(current));
-      if(current && current!==lastFrameUrl){
-        lastFrameUrl=current;
-        finishHostProgress();
-      }
-    });
-    loadHost(saved);
+    function fallback(title){return `<div class="fallback">${esc(title).slice(0,1)}</div>`}
+    function render(){const term=search.value.trim().toLowerCase();const shown=games.filter(game=>!term||game.title.toLowerCase().includes(term));grid.innerHTML=shown.map(game=>`<button class="game" type="button" data-url="${esc(game.url)}" data-title="${esc(game.title)}"><span class="cover">${game.covers.length?`<img loading="lazy" decoding="async" src="${esc(game.covers[0])}" alt="" data-game-key="${esc(game.key)}" data-cover-index="0" data-fallback="${esc(game.title.slice(0,1))}">`:fallback(game.title)}</span><span class="game-name">${esc(game.title)}</span></button>`).join('');count.textContent=`${shown.length.toLocaleString()} games`;empty.style.display=shown.length?'none':'block'}
+    function openGame(url,title){frame.src=url;frame.title=title;player.classList.add('show');player.setAttribute('aria-hidden','false');try{parent.postMessage({type:'nyx:game-loading'},'*')}catch{}}
+    grid.addEventListener('click',event=>{const game=event.target.closest('[data-url]');if(game) openGame(game.dataset.url,game.dataset.title)});grid.addEventListener('error',event=>{const image=event.target;if(!image.matches?.('img'))return;const game=gamesByKey.get(image.dataset.gameKey||'');const next=Number(image.dataset.coverIndex||0)+1;if(game&&next<game.covers.length){image.dataset.coverIndex=String(next);image.src=game.covers[next];return}const missing=document.createElement('span');missing.className='fallback';missing.textContent=image.dataset.fallback||'?';image.replaceWith(missing)},true);search.addEventListener('input',render);document.getElementById('back').addEventListener('click',()=>{frame.src='about:blank';player.classList.remove('show');player.setAttribute('aria-hidden','true')});document.getElementById('fullscreen').addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await player.requestFullscreen()}catch{}});document.addEventListener('keydown',event=>{if(event.key==='Escape'&&player.classList.contains('show')&&!document.fullscreenElement)document.getElementById('back').click()});
+    loadCatalog().catch(()=>{count.textContent='Could not load games';empty.textContent='The game library could not be loaded.';empty.style.display='block'});
   </script>
 </body>
 </html>

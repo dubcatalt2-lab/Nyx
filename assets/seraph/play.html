@@ -86,7 +86,7 @@
       <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
     </div>
   </div>
-  <iframe id="gameFrame" class="game-frame" title="Seraph game" allow="fullscreen; gamepad; autoplay; pointer-lock; keyboard-map; clipboard-read; clipboard-write" tabindex="0"></iframe>
+  <iframe id="gameFrame" class="game-frame" title="Seraph game" allow="fullscreen; gamepad; autoplay; keyboard-map; clipboard-read; clipboard-write" tabindex="0"></iframe>
   <script>
     const cdnRoot='https://cdn.jsdelivr.net/gh/a456pur/seraph@main';
     const loading=document.querySelector('.loading');
@@ -153,6 +153,7 @@
       library.addEventListener('click',()=>location.href='/assets/games/index.html');
       status.append(document.createElement('br'),retry,document.createTextNode(' '),library);
       loading.classList.remove('hidden');
+      parent.postMessage({type:'nyx:game-failed'},'*');
     }
     function gameSurfaceReady(){
       try{

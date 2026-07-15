@@ -15,7 +15,30 @@ const { scramjetPath } = require("@mercuryworkshop/scramjet/path");
 const scramjetControllerPath = dirname(require.resolve("@mercuryworkshop/scramjet-controller"));
 const epoxyPath = join(dirname(require.resolve("@mercuryworkshop/epoxy-transport")), "..", "dist");
 const libcurlPath = dirname(require.resolve("@mercuryworkshop/libcurl-transport"));
+let cinebyAppCache = { source: "", expires: 0 };
+const gameCoverLookupCache = new Map();
 const app = express();
+
+function normalizePublicWispUrl(value) {
+  try {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    const url = new URL(raw);
+    if (url.protocol === "https:") url.protocol = "wss:";
+    if (url.protocol === "http:") url.protocol = "ws:";
+    if (url.protocol !== "ws:" && url.protocol !== "wss:") return "";
+    if (!url.pathname || url.pathname === "/") url.pathname = "/wisp/";
+    if (!url.pathname.endsWith("/")) url.pathname += "/";
+    url.username = "";
+    url.password = "";
+    url.hash = "";
+    return url.href;
+  } catch {
+    return "";
+  }
+}
+
+const externalWispUrl = normalizePublicWispUrl(process.env.WISP_URL);
 app.use(express.json({ limit: "2mb" }));
 app.use((error, _req, res, next) => {
   if (error instanceof SyntaxError && "body" in error) {
@@ -25,6 +48,7 @@ app.use((error, _req, res, next) => {
   next(error);
 });
 const uvHandlerPath = join(uvPath, "uv.handler.js");
+const uvBundlePath = join(uvPath, "uv.bundle.js");
 const baremuxIndexPath = join(baremuxPath, "index.mjs");
 const scramjetRuntimePath = join(scramjetPath, "scramjet.js");
 
@@ -32,6 +56,9 @@ app.use((req, res, next) => {
   const noStorePaths = new Set([
     "/",
     "/index.html",
+    "/script.js",
+    "/startup.js",
+    "/styles.css",
     "/uv.sw.js",
     "/uv.config.js",
     "/uv/uv.bundle.js",
@@ -61,6 +88,91 @@ function esc(value) {
   })[char]);
 }
 
+function gameTitleKey(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\b(?:online|unblocked|play|game)\b/g, " ")
+    .replace(/[^a-z0-9]+/g, "")
+    .slice(0, 100);
+}
+
+function gameCoverResultScore(page, titleKey) {
+  if (!page?.thumbnail?.source) return -Infinity;
+  const pageKey = gameTitleKey(page.title);
+  const description = String(page.terms?.description?.[0] || "").toLowerCase();
+  const isExactTitle = pageKey === titleKey;
+  const isGameArticle = /video game|browser game|arcade game|platform game|puzzle game|sports game|racing game/.test(description);
+  if (!isExactTitle && !isGameArticle) return -Infinity;
+  let score = 0;
+  if (isExactTitle) score += 100;
+  else if (pageKey.includes(titleKey) || titleKey.includes(pageKey)) score += 55;
+  if (isGameArticle) score += 45;
+  if (/film|album|song|novel|television|company|person/.test(description)) score -= 60;
+  return score;
+}
+
+async function findOnlineGameCover(title) {
+  const cleanTitle = String(title || "").replace(/\s+/g, " ").trim().slice(0, 90);
+  const titleKey = gameTitleKey(cleanTitle);
+  if (!cleanTitle || !titleKey) return "";
+  if (gameCoverLookupCache.has(titleKey)) return gameCoverLookupCache.get(titleKey);
+  const lookup = (async () => {
+    const params = new URLSearchParams({
+      action: "query",
+      format: "json",
+      formatversion: "2",
+      generator: "search",
+      gsrsearch: `${cleanTitle} video game`,
+      gsrnamespace: "0",
+      gsrlimit: "6",
+      prop: "pageimages|pageterms",
+      piprop: "thumbnail",
+      pithumbsize: "512",
+      pilimit: "6",
+      wbptterms: "description",
+      redirects: "1"
+    });
+    const response = await fetch(`https://en.wikipedia.org/w/api.php?${params}`, {
+      headers: {
+        "accept": "application/json",
+        "user-agent": "nyx-local-game-library/1.0"
+      },
+      signal: AbortSignal.timeout(7000)
+    });
+    if (!response.ok) return "";
+    const payload = await response.json();
+    const pages = Array.isArray(payload?.query?.pages) ? payload.query.pages : [];
+    const match = pages
+      .map(page => ({ page, score: gameCoverResultScore(page, titleKey) }))
+      .filter(result => result.score >= 40)
+      .sort((a, b) => b.score - a.score)[0]?.page;
+    const source = String(match?.thumbnail?.source || "");
+    try {
+      const imageUrl = new URL(source);
+      return imageUrl.protocol === "https:" && imageUrl.hostname === "upload.wikimedia.org" ? imageUrl.href : "";
+    } catch {
+      return "";
+    }
+  })().catch(() => "");
+  gameCoverLookupCache.set(titleKey, lookup);
+  return lookup;
+}
+
+app.get("/game-cover", async (req, res) => {
+  const title = String(req.query.title || "");
+  if (!title.trim() || title.length > 100) {
+    res.status(400).type("text/plain").send("Invalid game title");
+    return;
+  }
+  const cover = await findOnlineGameCover(title);
+  if (!cover) {
+    res.status(404).type("text/plain").send("No online cover found");
+    return;
+  }
+  res.setHeader("Cache-Control", "public, max-age=86400");
+  res.redirect(302, cover);
+});
+
 function patchedUvHandler() {
   const source = readFileSync(uvHandlerPath, "utf8");
   const original = "t.respondWith(h?l(t.target,[t.data.message,t.data.transfer],t.that):l(t.target,[t.data.message,t.data.origin,t.data.transfer],t.that))";
@@ -78,8 +190,19 @@ function patchedBareMuxIndex() {
     .replace(/within 1s/g, "within 5s");
 }
 
+function patchedUvBundle() {
+  const source = readFileSync(uvBundlePath, "utf8");
+  const original = "rewriteImport(t,r,n=this.meta){return this.rewriteUrl(t,{...n,base:r})}";
+  const patched = "rewriteImport(t,r,n=this.meta){return this.rewriteUrl(r,{...n,base:t})}";
+  if (!source.includes(original)) throw new Error("Ultraviolet dynamic import signature changed");
+  return source.replace(original, patched);
+}
+
 function patchedScramjetRuntime() {
-  return readFileSync(scramjetRuntimePath, "utf8");
+  const source = readFileSync(scramjetRuntimePath, "utf8");
+  const original = 'if(u.origin===new i.xP(e.rawUrl).origin)throw new i.$D("attempted to fetch from same origin - this means the site has obtained a reference to the real origin, aborting");';
+  const patched = 'if(u.origin===new i.xP(e.rawUrl).origin&&u.pathname.startsWith(t.context.prefix.pathname))u=new i.xP((0,n.v2)(u,t.context));else if(u.origin===new i.xP(e.rawUrl).origin)throw new i.$D("attempted to fetch from same origin - this means the site has obtained a reference to the real origin, aborting");';
+  return source.includes(original) ? source.replace(original, patched) : source;
 }
 
 function scramjetRuntimeGuard() {
@@ -126,47 +249,9 @@ function scramjetRuntimeGuard() {
     });
   } catch {}
   try {
-    if (!window.__nyxPointerLockBridge) {
-      window.__nyxPointerLockBridge = true;
-      const pointerStyle = document.createElement("style");
-      pointerStyle.textContent = "html.nyx-pointer-captured,html.nyx-pointer-captured *{cursor:none!important}";
-      const addPointerStyle = () => {
-        try {
-          (document.head || document.documentElement)?.appendChild(pointerStyle);
-        } catch {}
-      };
-      if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", addPointerStyle, { once: true });
-      else addPointerStyle();
-      const pointerTargets = 'canvas,video,[role="application"],[data-testid*="game" i],[data-testid*="stream" i],[class*="game" i],[class*="stream" i],[class*="player" i],[id*="game" i],[id*="stream" i],[id*="player" i]';
+    if (!window.__nyxRuntimeShortcuts) {
+      window.__nyxRuntimeShortcuts = true;
       const isEditingTarget = target => !!(target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/i.test(target.tagName || "")));
-      const requestGamePointer = event => {
-        try {
-          if (isEditingTarget(event.target)) return;
-          const target = event.target?.closest?.(pointerTargets);
-          if (!target) return;
-          target.focus?.({ preventScroll: true });
-          try {
-            if (!document.pointerLockElement && target.requestPointerLock) {
-              const lock = target.requestPointerLock({ unadjustedMovement: true });
-              lock?.catch?.(() => {
-                try {
-                  target.requestPointerLock?.();
-                } catch {}
-              });
-            }
-          } catch {
-            try {
-              target.requestPointerLock?.();
-            } catch {}
-          }
-          document.documentElement.classList.add("nyx-pointer-captured");
-        } catch {}
-      };
-      document.addEventListener("pointerdown", requestGamePointer, true);
-      document.addEventListener("click", requestGamePointer, true);
-      document.addEventListener("pointerlockchange", () => {
-        document.documentElement.classList.toggle("nyx-pointer-captured", !!document.pointerLockElement);
-      });
       const selectedTextFromTarget = target => {
         try {
           if (/^(INPUT|TEXTAREA)$/i.test(target?.tagName || "")) return String(target.value || "").slice(target.selectionStart || 0, target.selectionEnd || 0);
@@ -256,7 +341,6 @@ function scramjetRuntimeGuard() {
           postAltShortcut({ type: "nyx:alt-shortcut", key, code: event.code || "", location: event.location || 0, shiftKey: !!event.shiftKey });
           return;
         }
-        if (event.key === "Escape") document.documentElement.classList.remove("nyx-pointer-captured");
       }, true);
     }
   } catch {}
@@ -451,6 +535,18 @@ function safeSeraphAssetPath(path) {
   return clean;
 }
 
+function rewriteSeraphCss(css, assetPath) {
+  const base = new URL(String(assetPath || ""), "https://seraph.local/");
+  return String(css || "").replace(/url\(\s*(["']?)(?![a-z][a-z0-9+.-]*:|\/\/|#|data:|blob:)([^"')]+)\1\s*\)/gi, (match, quote, raw) => {
+    try {
+      const resolved = new URL(String(raw || "").trim(), base).pathname.replace(/^\/+/, "");
+      return `url(${quote}/seraph-asset?path=${encodeURIComponent(resolved)}${quote})`;
+    } catch {
+      return match;
+    }
+  });
+}
+
 app.get("/seraph-asset", async (req, res) => {
   const path = safeSeraphAssetPath(req.query.path);
   if (!path) {
@@ -473,7 +569,7 @@ app.get("/seraph-asset", async (req, res) => {
     if (contentType) res.setHeader("Content-Type", contentType);
     res.setHeader("Cache-Control", "public, max-age=3600");
     const buffer = Buffer.from(await upstream.arrayBuffer());
-    res.send(buffer);
+    res.send(/text\/css/i.test(contentType || "") || /\.css(?:$|\?)/i.test(path) ? Buffer.from(rewriteSeraphCss(buffer.toString("utf8"), path)) : buffer);
   } catch (error) {
     res.status(502).type("text/plain").send(`Seraph asset network error: ${error?.message || error}`);
   }
@@ -787,7 +883,78 @@ function nyxAiKey() {
   return process.env.NYX_AI_API_KEY || process.env.OPENROUTER_API_KEY || "";
 }
 
-app.post("/api/nyx-ai", async (req, res) => {
+const nyxAiUsage = new Map();
+let nyxAiActiveRequests = 0;
+const nyxAiLimit = (name, fallback) => {
+  const value = Number.parseInt(process.env[name] || "", 10);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+};
+const nyxAiLimits = {
+  minute: nyxAiLimit("NYX_AI_REQUESTS_PER_MINUTE", 6),
+  daily: nyxAiLimit("NYX_AI_REQUESTS_PER_DAY", 60),
+  perIpConcurrent: nyxAiLimit("NYX_AI_CONCURRENT_PER_IP", 2),
+  globalConcurrent: nyxAiLimit("NYX_AI_CONCURRENT_GLOBAL", 3),
+  promptChars: nyxAiLimit("NYX_AI_MAX_PROMPT_CHARS", 4000),
+  contextChars: nyxAiLimit("NYX_AI_MAX_CONTEXT_CHARS", 24000),
+  timeoutMs: nyxAiLimit("NYX_AI_TIMEOUT_MS", 45000)
+};
+
+function nyxAiClientId(req) {
+  const forwarded = process.env.NYX_TRUST_PROXY === "true"
+    ? String(req.get("cf-connecting-ip") || req.get("x-forwarded-for") || "").split(",")[0].trim()
+    : "";
+  return forwarded || req.socket.remoteAddress || "unknown";
+}
+
+function nyxAiRateLimit(req, res, next) {
+  const now = Date.now();
+  const clientId = nyxAiClientId(req);
+  const usage = nyxAiUsage.get(clientId) || { minute: [], day: [], active: 0, seen: now };
+  usage.minute = usage.minute.filter(time => now - time < 60_000);
+  usage.day = usage.day.filter(time => now - time < 86_400_000);
+  usage.seen = now;
+  nyxAiUsage.set(clientId, usage);
+  res.setHeader("x-ratelimit-limit-minute", nyxAiLimits.minute);
+  res.setHeader("x-ratelimit-remaining-minute", Math.max(0, nyxAiLimits.minute - usage.minute.length));
+  res.setHeader("x-ratelimit-limit-day", nyxAiLimits.daily);
+  res.setHeader("x-ratelimit-remaining-day", Math.max(0, nyxAiLimits.daily - usage.day.length));
+  if (usage.minute.length >= nyxAiLimits.minute || usage.day.length >= nyxAiLimits.daily) {
+    const retryAfter = usage.minute.length >= nyxAiLimits.minute
+      ? Math.max(1, Math.ceil((60_000 - (now - usage.minute[0])) / 1000))
+      : Math.max(1, Math.ceil((86_400_000 - (now - usage.day[0])) / 1000));
+    res.setHeader("retry-after", retryAfter);
+    res.status(429).json({ error: "Nyx AI usage limit reached. Please try again later." });
+    return;
+  }
+  if (usage.active >= nyxAiLimits.perIpConcurrent || nyxAiActiveRequests >= nyxAiLimits.globalConcurrent) {
+    res.setHeader("retry-after", "10");
+    res.status(429).json({ error: "Nyx AI is busy. Please wait for another response to finish." });
+    return;
+  }
+  usage.minute.push(now);
+  usage.day.push(now);
+  usage.active += 1;
+  nyxAiActiveRequests += 1;
+  let released = false;
+  req.nyxAiRelease = () => {
+    if (released) return;
+    released = true;
+    usage.active = Math.max(0, usage.active - 1);
+    nyxAiActiveRequests = Math.max(0, nyxAiActiveRequests - 1);
+  };
+  res.once("close", req.nyxAiRelease);
+  res.once("finish", req.nyxAiRelease);
+  next();
+}
+
+setInterval(() => {
+  const cutoff = Date.now() - 86_400_000;
+  for (const [clientId, usage] of nyxAiUsage) {
+    if (!usage.active && usage.seen < cutoff) nyxAiUsage.delete(clientId);
+  }
+}, 3_600_000).unref();
+
+app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   const key = nyxAiKey();
   if (!key) {
     res.status(503).json({
@@ -803,15 +970,38 @@ app.post("/api/nyx-ai", async (req, res) => {
   }
   const message = String(req.body?.message || "").trim();
   const imageContext = String(req.body?.imageContext || "").trim();
-  if (!message && !imageContext) {
+  if (message.length > nyxAiLimits.promptChars) {
+    res.status(413).json({ error: `Message is too long. The limit is ${nyxAiLimits.promptChars} characters.` });
+    return;
+  }
+  const history = Array.isArray(req.body?.messages)
+    ? req.body.messages.slice(-20).map(item => ({
+        role: item?.role === "assistant" ? "assistant" : "user",
+        content: String(item?.content || "").slice(0, 12000)
+      })).filter(item => item.content.trim())
+    : [];
+  let contextChars = imageContext.length;
+  for (const item of history) contextChars += item.content.length;
+  if (contextChars > nyxAiLimits.contextChars) {
+    res.status(413).json({ error: "This conversation is too long. Clear the chat and try again." });
+    return;
+  }
+  if (!message && !imageContext && !history.length) {
     res.status(400).json({ error: "Message is required." });
     return;
   }
   const baseUrl = String(process.env.NYX_AI_BASE_URL || "https://openrouter.ai/api/v1").replace(/\/+$/, "");
   const prompt = imageContext ? `${message || "Answer the attached image."}\n\nImage context from Nyx OCR/analysis:\n${imageContext}` : message;
+  const messages = history.length ? history : [{ role: "user", content: prompt }];
+  if (history.length && imageContext) messages[messages.length - 1] = { role: "user", content: prompt };
+  const wantsStream = req.body?.stream !== false;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), nyxAiLimits.timeoutMs);
+  res.once("close", () => controller.abort());
   try {
     const upstream = await fetch(`${baseUrl}/chat/completions`, {
       method: "POST",
+      signal: controller.signal,
       headers: {
         "content-type": "application/json",
         "authorization": `Bearer ${key}`,
@@ -825,12 +1015,30 @@ app.post("/api/nyx-ai", async (req, res) => {
             role: "system",
             content: "You are Nyx AI inside the Nyx browser. Be helpful, direct, and accurate. If you do not know something, say so plainly."
           },
-          { role: "user", content: prompt }
+          ...messages
         ],
         temperature: Number(process.env.NYX_AI_TEMPERATURE || 0.7),
-        max_tokens: Number(process.env.NYX_AI_MAX_TOKENS || 1200)
+        max_tokens: Number(process.env.NYX_AI_MAX_TOKENS || 1200),
+        stream: wantsStream
       })
     });
+    if (wantsStream && upstream.ok) {
+      res.status(200);
+      res.setHeader("content-type", "text/event-stream; charset=utf-8");
+      res.setHeader("cache-control", "no-cache, no-transform");
+      res.setHeader("connection", "keep-alive");
+      res.flushHeaders?.();
+      const reader = upstream.body?.getReader();
+      if (!reader) throw new Error("AI provider did not return a response stream.");
+      const decoder = new TextDecoder();
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        res.write(decoder.decode(value, { stream: true }));
+      }
+      res.end();
+      return;
+    }
     const data = await upstream.json().catch(() => ({}));
     if (!upstream.ok) {
       res.status(upstream.status).json({
@@ -841,7 +1049,15 @@ app.post("/api/nyx-ai", async (req, res) => {
     const text = data?.choices?.[0]?.message?.content || data?.choices?.[0]?.text || "";
     res.json({ text: String(text || "").trim(), model });
   } catch (error) {
-    res.status(502).json({ error: `Nyx AI request failed: ${error?.message || error}` });
+    if (!res.headersSent) {
+      const timedOut = error?.name === "AbortError";
+      res.status(timedOut ? 504 : 502).json({ error: timedOut ? "Nyx AI timed out. Please try again." : `Nyx AI request failed: ${error?.message || error}` });
+    } else if (!res.writableEnded) {
+      res.end();
+    }
+  } finally {
+    clearTimeout(timeout);
+    req.nyxAiRelease?.();
   }
 });
 
@@ -862,8 +1078,26 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get("/healthz", (_req, res) => {
+  res.status(200).json({
+    ok: true,
+    service: "nyx",
+    wisp: externalWispUrl ? "external" : "embedded"
+  });
+});
+
+app.get("/runtime-config.js", (_req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  res.type("application/javascript").send(
+    `globalThis.__NYX_RUNTIME_CONFIG__=Object.freeze(${JSON.stringify({ wispUrl: externalWispUrl })});`
+  );
+});
+
 app.get("/uv/uv.handler.js", (_req, res) => {
   res.type("application/javascript").send(patchedUvHandler());
+});
+app.get("/uv/uv.bundle.js", (_req, res) => {
+  res.type("application/javascript").send(patchedUvBundle());
 });
 app.get("/baremux/index.mjs", (_req, res) => {
   res.type("application/javascript").send(patchedBareMuxIndex());
@@ -874,6 +1108,36 @@ app.get("/scramjet/scramjet.js", (_req, res) => {
 app.get("/nyx-scramjet-runtime-guard.js", (_req, res) => {
   res.setHeader("Cache-Control", "no-store");
   res.type("application/javascript").send(scramjetRuntimeGuard());
+});
+app.get("/nyx-compat/cineby-app.js", async (_req, res) => {
+  try {
+    if (!cinebyAppCache.source || cinebyAppCache.expires < Date.now()) {
+      const pageResponse = await fetch("https://www.cineby.at/");
+      if (!pageResponse.ok) throw new Error(`Cineby returned ${pageResponse.status}`);
+      const html = await pageResponse.text();
+      const match = html.match(/<script[^>]+src=["']([^"']*\/_app-[^"']+\.js)["']/i);
+      if (!match) throw new Error("Cineby app bundle was not found");
+      const scriptUrl = new URL(match[1], "https://www.cineby.at/");
+      const scriptResponse = await fetch(scriptUrl);
+      if (!scriptResponse.ok) throw new Error(`Cineby app bundle returned ${scriptResponse.status}`);
+      const original = await scriptResponse.text();
+      const devtoolPatched = original.replace(
+        /ignore:\(\)=>\[[^\]]*\]\.includes\(location\.href\)/,
+        "ignore:()=>true"
+      );
+      if (devtoolPatched === original) throw new Error("Cineby DevTools detector signature changed");
+      const patched = devtoolPatched.replace(
+        /let e=\[\{id:"adstag-gk",src:"\/scripts\/os\.js"\},\{id:"adstag-2",src:"\/\/[^"\\]+"\}\];/,
+        "let e=[];"
+      );
+      if (patched === devtoolPatched) throw new Error("Cineby ad loader signature changed");
+      cinebyAppCache = { source: patched, expires: Date.now() + 5 * 60 * 1000 };
+    }
+    res.setHeader("Cache-Control", "no-store");
+    res.type("application/javascript").send(cinebyAppCache.source);
+  } catch (error) {
+    res.status(502).type("application/javascript").send(`throw new Error(${JSON.stringify(`Nyx Cineby compatibility failed: ${error.message}`)});`);
+  }
 });
 app.use(express.static(__dirname));
 app.use("/uv/", express.static(uvPath));
@@ -921,7 +1185,7 @@ app.use((_req, res) => {
 const server = createServer((req, res) => app(req, res));
 
 server.on("upgrade", (req, socket, head) => {
-  if (req.url?.endsWith("/wisp/")) {
+  if (!externalWispUrl && req.url?.endsWith("/wisp/")) {
     wisp.routeRequest(req, socket, head);
   } else {
     socket.end();
@@ -935,4 +1199,16 @@ server.listen(port, "0.0.0.0", () => {
   console.log("nyx running with Ultraviolet and Scramjet:");
   console.log(`  http://localhost:${address.port}`);
   console.log(`  http://${hostname()}:${address.port}`);
+  console.log(`  wisp transport: ${externalWispUrl || "same-host /wisp/"}`);
 });
+
+let shuttingDown = false;
+function shutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`${signal} received; closing nyx server.`);
+  server.close(() => process.exit(0));
+  setTimeout(() => process.exit(1), 10_000).unref();
+}
+process.once("SIGTERM", () => shutdown("SIGTERM"));
+process.once("SIGINT", () => shutdown("SIGINT"));

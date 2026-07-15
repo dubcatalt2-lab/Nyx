@@ -78,7 +78,7 @@
       <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
     </div>
   </div>
-  <iframe id="gameFrame" class="game-frame" title="GN Math game" allow="fullscreen; gamepad; autoplay; pointer-lock; keyboard-map; clipboard-read; clipboard-write; camera; microphone; display-capture; accelerometer; gyroscope; magnetometer; xr-spatial-tracking" allowfullscreen tabindex="0"></iframe>
+  <iframe id="gameFrame" class="game-frame" title="GN Math game" allow="fullscreen; gamepad; autoplay; keyboard-map; clipboard-read; clipboard-write; camera; microphone; display-capture; accelerometer; gyroscope; magnetometer; xr-spatial-tracking" allowfullscreen tabindex="0"></iframe>
   <script>
     const loading=document.querySelector('.loading');
     const status=document.getElementById('status');
@@ -89,68 +89,9 @@
     function focusGameFrame(){
       setTimeout(()=>{try{frame.focus({preventScroll:true})}catch{try{frame.focus()}catch{}}},0);
     }
-    function installPointerBridgeInDocument(doc){
-      try{
-        if(!doc || doc.__nyxPointerBridge) return;
-        doc.__nyxPointerBridge=true;
-        const style=doc.createElement('style');
-        style.textContent='html.nyx-pointer-captured,html.nyx-pointer-captured *{cursor:none!important}';
-        (doc.head || doc.documentElement).appendChild(style);
-        const query='canvas,video,object,embed,ruffle-player,ruffle-object,iframe,#game,#game-container,#unity-container,#unity-canvas,#ruffle,#player,[class*="game" i],[class*="stream" i],[id*="game" i],[id*="stream" i]';
-        const isEditing=target=>!!(target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/i.test(target.tagName || '')));
-        const requestPointer=event=>{
-          try{
-            if(isEditing(event.target)) return;
-            const target=event.target?.closest?.(query) || doc.querySelector('canvas,video,object,embed,iframe') || doc.documentElement;
-            target.focus?.({preventScroll:true});
-            try{
-              if(!doc.pointerLockElement && target.requestPointerLock){
-                const lock=target.requestPointerLock({unadjustedMovement:true});
-                lock?.catch?.(()=>{try{target.requestPointerLock?.()}catch{}});
-              }
-            }catch{
-              try{target.requestPointerLock?.()}catch{}
-            }
-            doc.documentElement.classList.add('nyx-pointer-captured');
-          }catch{}
-        };
-        doc.addEventListener('pointerdown',requestPointer,true);
-        doc.addEventListener('click',requestPointer,true);
-        doc.addEventListener('pointerlockchange',()=>doc.documentElement.classList.toggle('nyx-pointer-captured',!!doc.pointerLockElement));
-        doc.addEventListener('keydown',event=>{
-          const key=String(event.key || '').toLowerCase();
-          if(event.altKey && !event.ctrlKey && !event.metaKey && event.location!==2 && key==='alt'){
-            event.preventDefault();
-            event.stopPropagation();
-            try{parent.postMessage({type:'nyx:alt-prime'},'*')}catch{}
-            try{top.postMessage({type:'nyx:alt-prime'},'*')}catch{}
-            return;
-          }
-          if(event.altKey && !event.ctrlKey && !event.metaKey && event.location!==2 && (/^[1-9]$/.test(key) || ['l','d','t','w','r','arrowleft','arrowright','tab'].includes(key))){
-            event.preventDefault();
-            event.stopPropagation();
-            try{parent.postMessage({type:'nyx:alt-shortcut',key,code:event.code||'',location:event.location||0,shiftKey:!!event.shiftKey},'*')}catch{}
-            try{top.postMessage({type:'nyx:alt-shortcut',key,code:event.code||'',location:event.location||0,shiftKey:!!event.shiftKey},'*')}catch{}
-            return;
-          }
-          if(event.key==='Escape') doc.documentElement.classList.remove('nyx-pointer-captured');
-        },true);
-      }catch{}
-    }
-    function installGamePointerBridge(){
-      try{
-        installPointerBridgeInDocument(frame.contentDocument);
-        frame.contentDocument?.querySelectorAll?.('iframe')?.forEach(child=>{
-          try{installPointerBridgeInDocument(child.contentDocument)}catch{}
-        });
-      }catch{}
-    }
     frame.addEventListener('load',()=>{
       setTimeout(focusGameFrame,80);
-      setTimeout(installGamePointerBridge,250);
-      setTimeout(installGamePointerBridge,1200);
     });
-    setInterval(installGamePointerBridge,1800);
     frame.addEventListener('pointerdown',focusGameFrame,{capture:true});
     document.addEventListener('pointerdown',focusGameFrame,true);
     document.addEventListener('wheel',event=>{
@@ -234,6 +175,7 @@
       library.addEventListener('click',()=>location.href='/assets/games/index.html');
       status.append(document.createElement('br'),retry,document.createTextNode(' '),library);
       loading.classList.remove('hidden');
+      parent.postMessage({type:'nyx:game-failed'},'*');
     }
     function gameSurfaceReady(){
       try{
@@ -328,15 +270,15 @@
         .replace(/<script\b[^>]*>[\s\S]*?(?:gtag|dataLayer|adsbygoogle|googletag|fbq|facebook|doubleclick|r9x)[\s\S]*?<\/script>/gi,'');
       if(!/<base\b/i.test(output)){
         output=/<head([^>]*)>/i.test(output)
-          ? output.replace(/<head([^>]*)>/i,`<head$1><base href="${baseUrl}">`)
-          : `<base href="${baseUrl}">${output}`;
+          ? output.replace(/<head([^>]*)>/i,`<head$1><base href="${baseHref}">`)
+          : `<base href="${baseHref}">${output}`;
       }
       return /<head([^>]*)>/i.test(output)
         ? output.replace(/<head([^>]*)>/i,`<head$1>${safeFitScript()}${guard}`)
         : `${safeFitScript()}${guard}${output}`;
     }
     function safeFitScript(){
-      return `<style>html,body{width:100%!important;height:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#05070d!important}.ads,.ad,.adsbygoogle,iframe[src*="googlesyndication"],iframe[src*="doubleclick"],iframe[src*="recaptcha"]{display:none!important;pointer-events:none!important}html.nyx-pointer-captured,html.nyx-pointer-captured *{cursor:none!important}</style><script>(()=>{const q='canvas,object,embed,ruffle-player,ruffle-object,iframe,#game,#game-container,#unity-container,#unity-canvas,#ruffle,#player';const visible=el=>{const r=el.getBoundingClientRect();return r.width>20&&r.height>20&&getComputedStyle(el).display!=='none'};const editing=()=>{const a=document.activeElement;return !!(a&&(a.isContentEditable||a.matches?.('input,textarea,select,[contenteditable=\"\"],[contenteditable=\"true\"]')))};const fit=()=>{try{if(editing())return;document.documentElement.style.setProperty('overflow','hidden','important');document.body?.style.setProperty('overflow','hidden','important');const target=[...document.querySelectorAll(q)].filter(visible).sort((a,b)=>{const ar=a.getBoundingClientRect(),br=b.getBoundingClientRect();return br.width*br.height-ar.width*ar.height})[0];if(!target)return;const r=target.getBoundingClientRect();const baseW=Number(target.getAttribute('width'))||r.width||innerWidth;const baseH=Number(target.getAttribute('height'))||r.height||innerHeight;const ratio=Math.max(.05,baseW/baseH);let w=innerWidth,h=innerHeight;if(w/h>ratio)w=h*ratio;else h=w/ratio;target.style.setProperty('position','fixed','important');target.style.setProperty('left','50%','important');target.style.setProperty('top','50%','important');target.style.setProperty('width',Math.round(w)+'px','important');target.style.setProperty('height',Math.round(h)+'px','important');target.style.setProperty('margin','0','important');target.style.setProperty('max-width','100vw','important');target.style.setProperty('max-height','100vh','important');target.style.setProperty('transform','translate(-50%,-50%)','important');target.style.setProperty('transform-origin','center center','important');target.style.setProperty('object-fit','contain','important');target.style.setProperty('pointer-events','auto','important')}catch{}};const capture=e=>{try{if(editing())return;const target=e.target?.closest?.(q)||document.querySelector(q)||document.documentElement;target.focus?.({preventScroll:true});setTimeout(()=>{try{if(!document.pointerLockElement&&target.requestPointerLock)target.requestPointerLock({unadjustedMovement:true})}catch{try{target.requestPointerLock?.()}catch{}}document.documentElement.classList.add('nyx-pointer-captured')},0)}catch{}};document.addEventListener('pointerdown',capture,true);document.addEventListener('click',capture,true);document.addEventListener('pointerlockchange',()=>document.documentElement.classList.toggle('nyx-pointer-captured',!!document.pointerLockElement));addEventListener('keydown',e=>{if(e.key==='Escape')document.documentElement.classList.remove('nyx-pointer-captured')},true);addEventListener('load',()=>{fit();setTimeout(fit,350);setTimeout(fit,1400)});addEventListener('resize',fit);document.addEventListener('DOMContentLoaded',fit);setInterval(fit,350)})()<\/script>`;
+      return `<style>html,body{width:100%!important;height:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#05070d!important}.ads,.ad,.adsbygoogle,iframe[src*="googlesyndication"],iframe[src*="doubleclick"],iframe[src*="recaptcha"]{display:none!important;pointer-events:none!important}</style><script>(()=>{const q='canvas,object,embed,ruffle-player,ruffle-object,iframe,#game,#game-container,#unity-container,#unity-canvas,#ruffle,#player';const visible=el=>{const r=el.getBoundingClientRect();return r.width>20&&r.height>20&&getComputedStyle(el).display!=='none'};const editing=()=>{const a=document.activeElement;return !!(a&&(a.isContentEditable||a.matches?.('input,textarea,select,[contenteditable=\"\"],[contenteditable=\"true\"]')))};const fit=()=>{try{if(editing())return;document.documentElement.style.setProperty('overflow','hidden','important');document.body?.style.setProperty('overflow','hidden','important');const target=[...document.querySelectorAll(q)].filter(visible).sort((a,b)=>{const ar=a.getBoundingClientRect(),br=b.getBoundingClientRect();return br.width*br.height-ar.width*ar.height})[0];if(!target)return;const r=target.getBoundingClientRect();const baseW=Number(target.getAttribute('width'))||r.width||innerWidth;const baseH=Number(target.getAttribute('height'))||r.height||innerHeight;const ratio=Math.max(.05,baseW/baseH);let w=innerWidth,h=innerHeight;if(w/h>ratio)w=h*ratio;else h=w/ratio;target.style.setProperty('position','fixed','important');target.style.setProperty('left','50%','important');target.style.setProperty('top','50%','important');target.style.setProperty('width',Math.round(w)+'px','important');target.style.setProperty('height',Math.round(h)+'px','important');target.style.setProperty('margin','0','important');target.style.setProperty('max-width','100vw','important');target.style.setProperty('max-height','100vh','important');target.style.setProperty('transform','translate(-50%,-50%)','important');target.style.setProperty('transform-origin','center center','important');target.style.setProperty('object-fit','contain','important');target.style.setProperty('pointer-events','auto','important')}catch{}};addEventListener('load',()=>{fit();setTimeout(fit,350);setTimeout(fit,1400)});addEventListener('resize',fit);document.addEventListener('DOMContentLoaded',fit);setInterval(fit,350)})()<\/script>`;
     }
 
     window.addEventListener('message',event=>{

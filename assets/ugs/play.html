@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Nyx Game</title>
+  <style>
+    *{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;background:#050814;color:#eef6ff;font-family:Outfit,Segoe UI,Arial,sans-serif}.loading{position:fixed;inset:0;z-index:2;display:grid;place-items:center;background:#050814}.loading.hidden{display:none}.status{width:min(440px,calc(100vw - 40px));padding:22px;border:1px solid #638ee8;border-radius:14px;background:#0b1225;text-align:center}.track{height:6px;margin-top:13px;overflow:hidden;border-radius:99px;background:#1c2945}.fill{width:18%;height:100%;border-radius:inherit;background:#76a4ff;animation:load 2.2s ease-in-out infinite}.status button{min-height:36px;margin-top:14px;border:1px solid #638ee8;border-radius:9px;background:#111d39;color:#eef6ff;padding:0 13px;font:inherit;cursor:pointer}iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#050814}@keyframes load{50%{width:82%}}
+  </style>
+</head>
+<body>
+  <div class="loading" id="loading"><div class="status" id="status"><span>Loading game…</span><div class="track"><div class="fill"></div></div></div></div>
+  <iframe id="game" title="Game" allow="autoplay; fullscreen; gamepad; keyboard-map" allowfullscreen tabindex="0"></iframe>
+  <script>
+    const frame=document.getElementById('game');
+    const loading=document.getElementById('loading');
+    const status=document.getElementById('status');
+    const rawPath=String(new URLSearchParams(location.search).get('game')||'').replace(/^\/+/, '');
+    function safePath(path){return path&&!path.includes('..')&&/^[a-z0-9_./%() +'\-]+$/i.test(path)?path:''}
+    function fail(message){status.textContent=String(message||'This game could not be loaded.');const retry=document.createElement('button');retry.type='button';retry.textContent='retry';retry.onclick=()=>location.reload();status.append(document.createElement('br'),retry);loading.classList.remove('hidden');parent.postMessage({type:'nyx:game-failed'},'*')}
+    function unwrap(source){const match=String(source).match(/<Content\b[^>]*>\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*<\/Content>/i);return match?match[1]:String(source)}
+    function prepare(source,path){const dir=path.includes('/')?path.slice(0,path.lastIndexOf('/')+1):'';const base=`<base href="${location.origin}/assets/ugs/${dir}">`;const fit='<style>html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#050814}object,embed,canvas,iframe{max-width:100%;max-height:100%}.ads,.ad,.adsbygoogle,iframe[src*="doubleclick"],iframe[src*="googlesyndication"]{display:none!important}</style>';const html=unwrap(source);return /<head[^>]*>/i.test(html)?html.replace(/<head([^>]*)>/i,`<head$1>${base}${fit}`):`<!doctype html><html><head>${base}${fit}</head><body>${html}</body></html>`}
+    frame.addEventListener('load',()=>{setTimeout(()=>{loading.classList.add('hidden');frame.focus();parent.postMessage({type:'nyx:game-launched'},'*')},900)});
+    const path=safePath(rawPath);
+    if(!path) fail('Invalid game path.');
+    else fetch(`/assets/ugs/${path}`,{cache:'no-store'}).then(response=>{if(!response.ok)throw new Error(`HTTP ${response.status}`);return response.text()}).then(source=>{frame.srcdoc=prepare(source,path)}).catch(error=>fail(`Could not load game: ${error.message||error}`));
+  </script>
+</body>
+</html>

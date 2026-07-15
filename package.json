@@ -5,17 +5,22 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "start:wisp": "node wisp-server.js",
+    "dev": "node server.js",
+    "check:deploy": "node scripts/check-deploy.mjs"
+  },
+  "engines": {
+    "node": ">=20 <25"
   },
   "dependencies": {
-    "@mercuryworkshop/bare-mux": "latest",
+    "@mercuryworkshop/bare-mux": "2.1.9",
     "@mercuryworkshop/epoxy-transport": "^2.1.28",
     "@mercuryworkshop/libcurl-transport": "^2.0.5",
     "@mercuryworkshop/scramjet": "^2.0.67-alpha.1",
     "@mercuryworkshop/scramjet-controller": "^0.0.13",
-    "@mercuryworkshop/wisp-js": "latest",
+    "@mercuryworkshop/wisp-js": "0.4.1",
     "@titaniumnetwork-dev/ultraviolet": "^3.2.10",
-    "express": "latest",
+    "express": "5.2.1",
     "three": "^0.134.0",
     "vanta": "^0.5.24"
   },

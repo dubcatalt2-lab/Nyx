@@ -8,7 +8,7 @@ The repository is configured to build the Nyx frontend into `dist`, run its HTTP
 
 1. Commit and push the current project to the GitHub repository you want Netlify to use.
 2. In Netlify, choose **Add new project > Import an existing project > GitHub**.
-3. Select the GoodLion/Nyx repository.
+3. Select the Nyx repository.
 4. Leave **Base directory** empty. Netlify reads the remaining settings from `netlify.toml`:
    - Build command: `npm run build:netlify`
    - Publish directory: `dist`

@@ -1,0 +1,245 @@
+/* Minimal Nyx browser home: wordmark, live presence, and shortcut dock. */
+html body.browser-shell{
+  --nyx-home-wordmark:#78aaff;
+  --nyx-home-wordmark-gradient:linear-gradient(100deg,#eff6ff 0%,#93c5fd 32%,#3b82f6 66%,#1e3a8a 100%);
+  --nyx-home-muted:#b6c2da;
+  --nyx-home-panel:rgba(2,5,20,.82);
+  --nyx-home-line:rgba(106,158,255,.42);
+}
+html body.browser-shell.theme-midnight{--nyx-home-wordmark:#78aaff;--nyx-home-wordmark-gradient:linear-gradient(100deg,#eff6ff 0%,#93c5fd 32%,#3b82f6 66%,#1e3a8a 100%);--nyx-home-line:rgba(96,165,250,.46)}
+html body.browser-shell.theme-ruby{--nyx-home-wordmark:#fb7185;--nyx-home-wordmark-gradient:linear-gradient(100deg,#fff1f2 0%,#fb7185 34%,#ef4444 66%,#7f1d1d 100%);--nyx-home-line:rgba(251,113,133,.46);--nyx-home-panel:rgba(21,3,9,.84)}
+html body.browser-shell.theme-emerald{--nyx-home-wordmark:#34d399;--nyx-home-wordmark-gradient:linear-gradient(100deg,#ecfdf5 0%,#6ee7b7 32%,#10b981 64%,#065f46 100%);--nyx-home-line:rgba(52,211,153,.46);--nyx-home-panel:rgba(1,18,15,.84)}
+html body.browser-shell.theme-sakura{--nyx-home-wordmark:#f472b6;--nyx-home-wordmark-gradient:linear-gradient(100deg,#fff1f2 0%,#fbcfe8 30%,#f472b6 64%,#be185d 100%);--nyx-home-line:rgba(244,114,182,.48);--nyx-home-panel:rgba(24,3,17,.84)}
+html body.browser-shell.theme-fresh{--nyx-home-wordmark:#0f8fa3;--nyx-home-wordmark-gradient:linear-gradient(100deg,#f0fdfa 0%,#5eead4 32%,#14b8a6 66%,#0f766e 100%);--nyx-home-muted:#376b72;--nyx-home-line:rgba(14,165,164,.42);--nyx-home-panel:rgba(226,252,248,.9)}
+
+/* Theme-aware startup loading palette. */
+html body{
+  --nyx-load-bright:#eaf6ff;
+  --nyx-load-mid:#67a7ff;
+  --nyx-load-accent:#3b82f6;
+  --nyx-load-deep:#1d4ed8;
+  --nyx-load-muted:#9bb9e7;
+  --nyx-load-surface:#0b1835;
+  --nyx-load-bg:#050916;
+  --nyx-load-deep-bg:#02030a;
+  --nyx-load-glow:rgba(59,130,246,.55);
+}
+html body.theme-midnight{
+  --nyx-load-bright:#eaf6ff;--nyx-load-mid:#67a7ff;--nyx-load-accent:#3b82f6;--nyx-load-deep:#1d4ed8;--nyx-load-muted:#9bb9e7;--nyx-load-surface:#0b1835;--nyx-load-bg:#050916;--nyx-load-deep-bg:#02030a;--nyx-load-glow:rgba(59,130,246,.55);
+}
+html body.theme-ruby{
+  --nyx-load-bright:#fff1f2;--nyx-load-mid:#fb7185;--nyx-load-accent:#ef4444;--nyx-load-deep:#991b1b;--nyx-load-muted:#fda4af;--nyx-load-surface:#2b0810;--nyx-load-bg:#140308;--nyx-load-deep-bg:#070103;--nyx-load-glow:rgba(239,68,68,.5);
+}
+html body.theme-emerald{
+  --nyx-load-bright:#ecfdf5;--nyx-load-mid:#6ee7b7;--nyx-load-accent:#10b981;--nyx-load-deep:#047857;--nyx-load-muted:#6ee7b7;--nyx-load-surface:#08291f;--nyx-load-bg:#03140f;--nyx-load-deep-bg:#010906;--nyx-load-glow:rgba(16,185,129,.48);
+}
+html body.theme-sakura{
+  --nyx-load-bright:#fff1f2;--nyx-load-mid:#f9a8d4;--nyx-load-accent:#f472b6;--nyx-load-deep:#be185d;--nyx-load-muted:#fbcfe8;--nyx-load-surface:#351126;--nyx-load-bg:#1b0713;--nyx-load-deep-bg:#0b0208;--nyx-load-glow:rgba(244,114,182,.5);
+}
+html body.theme-fresh{
+  --nyx-load-bright:#f0fdfa;--nyx-load-mid:#5eead4;--nyx-load-accent:#14b8a6;--nyx-load-deep:#0f766e;--nyx-load-muted:#176b73;--nyx-load-surface:#c9f4ef;--nyx-load-bg:#e8fbf9;--nyx-load-deep-bg:#b9e7e9;--nyx-load-glow:rgba(20,184,166,.38);
+}
+
+html body .setup-launch-screen{
+  background:
+    linear-gradient(color-mix(in srgb,var(--nyx-load-bg) 84%,transparent),color-mix(in srgb,var(--nyx-load-bg) 92%,transparent)),
+    linear-gradient(90deg,color-mix(in srgb,var(--nyx-load-accent) 9%,transparent) 1px,transparent 1px),
+    linear-gradient(color-mix(in srgb,var(--nyx-load-accent) 9%,transparent) 1px,transparent 1px),
+    radial-gradient(ellipse at 50% 52%,var(--nyx-load-surface) 0%,var(--nyx-load-bg) 54%,var(--nyx-load-deep-bg) 100%)!important;
+  background-size:auto,28px 28px,28px 28px,auto!important;
+}
+html body #setupLaunchScreen .setup-launch-card h2{
+  background:linear-gradient(100deg,var(--nyx-load-deep),var(--nyx-load-mid) 52%,var(--nyx-load-accent))!important;
+  background-clip:text!important;
+  -webkit-background-clip:text!important;
+  color:transparent!important;
+  -webkit-text-fill-color:transparent!important;
+  filter:drop-shadow(0 6px 10px color-mix(in srgb,var(--nyx-load-deep) 48%,transparent)) drop-shadow(0 0 11px color-mix(in srgb,var(--nyx-load-glow) 58%,transparent))!important;
+}
+html body #setupLaunchScreen .nyx-title-shimmer{
+  background-image:linear-gradient(90deg,transparent 0%,color-mix(in srgb,var(--nyx-load-deep) 20%,transparent) 36%,var(--nyx-load-deep) 42%,var(--nyx-load-accent) 47%,var(--nyx-load-bright) 50%,var(--nyx-load-accent) 53%,var(--nyx-load-deep) 58%,color-mix(in srgb,var(--nyx-load-deep) 20%,transparent) 64%,transparent 100%)!important;
+  background-size:260% 100%!important;
+  background-repeat:no-repeat!important;
+  background-clip:text!important;
+  -webkit-background-clip:text!important;
+  color:transparent!important;
+  -webkit-text-fill-color:transparent!important;
+}
+html body #setupLaunchScreen .nyx-loading-progress{
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  height:10px!important;
+  min-height:10px!important;
+  box-sizing:border-box!important;
+  border-color:color-mix(in srgb,var(--nyx-load-accent) 46%,transparent)!important;
+  background:color-mix(in srgb,var(--nyx-load-deep-bg) 88%,var(--nyx-load-deep))!important;
+  box-shadow:0 0 16px color-mix(in srgb,var(--nyx-load-glow) 68%,transparent),inset 0 1px 3px rgba(0,0,0,.58),inset 0 0 0 1px color-mix(in srgb,var(--nyx-load-bright) 12%,transparent)!important;
+}
+html body #setupLaunchScreen .nyx-loading-progress > span{
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  background:linear-gradient(90deg,var(--nyx-load-deep),var(--nyx-load-accent) 56%,var(--nyx-load-mid))!important;
+  box-shadow:0 0 12px var(--nyx-load-glow),0 0 26px color-mix(in srgb,var(--nyx-load-glow) 82%,transparent)!important;
+}
+html body #setupLaunchScreen .nyx-loading-progress > span::after{background:linear-gradient(90deg,transparent,var(--nyx-load-bright),transparent)!important}
+html body #setupLaunchScreen .nyx-loading-percent{color:var(--nyx-load-mid)!important;-webkit-text-fill-color:var(--nyx-load-mid)!important;text-shadow:0 0 12px var(--nyx-load-glow)!important}
+html body #setupLaunchScreen .nyx-loading-spinner{
+  border-color:color-mix(in srgb,var(--nyx-load-accent) 24%,transparent)!important;
+  border-top-color:var(--nyx-load-bright)!important;
+  border-right-color:var(--nyx-load-accent)!important;
+  box-shadow:0 0 9px var(--nyx-load-glow),inset 0 0 6px color-mix(in srgb,var(--nyx-load-deep) 28%,transparent)!important;
+}
+html body #setupLaunchScreen .setup-launch-card .nyx-loading-stage{color:var(--nyx-load-muted)!important;-webkit-text-fill-color:var(--nyx-load-muted)!important}
+html body #setupLaunchScreen .setup-launch-card .setup-launch-credit{color:color-mix(in srgb,var(--nyx-load-muted) 74%,var(--nyx-load-bg))!important;-webkit-text-fill-color:color-mix(in srgb,var(--nyx-load-muted) 74%,var(--nyx-load-bg))!important}
+
+html body.browser-shell .browser-window.browser-home-page .browser-home{
+  position:relative!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:24px!important;
+  overflow:hidden!important;
+}
+html body.browser-shell .browser-window .browser-home.hidden,
+html body.browser-shell .browser-window.browser-home-page .browser-home.hidden{
+  display:none!important;
+}
+html body.browser-shell .browser-home .nyx-home-hero{
+  position:static!important;
+  width:auto!important;
+  min-height:0!important;
+  display:block!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:none!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  color:var(--nyx-home-wordmark)!important;
+  text-align:center;
+  pointer-events:none!important;
+  transform:none!important;
+  translate:none!important;
+  filter:none!important;
+  animation:none!important;
+}
+html body.browser-shell .browser-home .nyx-home-hero::before,
+html body.browser-shell .browser-home .nyx-home-hero::after{content:none!important}
+html body.browser-shell .browser-window.browser-home-page .browser-home h1.nyx-home-title{
+  margin:0!important;
+  padding:0!important;
+  background:var(--nyx-home-wordmark-gradient)!important;
+  background-size:100% 100%!important;
+  background-position:center!important;
+  background-clip:text!important;
+  -webkit-background-clip:text!important;
+  color:transparent!important;
+  -webkit-text-fill-color:transparent!important;
+  font-family:Outfit,Arial,sans-serif!important;
+  font-size:clamp(96px,14vw,176px)!important;
+  font-weight:300!important;
+  font-variation-settings:"wght" 300!important;
+  letter-spacing:-.075em!important;
+  line-height:.9!important;
+  text-indent:-.055em;
+  text-shadow:none!important;
+  filter:none!important;
+  animation:none!important;
+}
+html body.nyx-startup-reveal.browser-shell .browser-home .nyx-home-hero,
+html body.nyx-startup-prep.browser-shell .browser-home .nyx-home-hero{
+  opacity:1!important;
+  animation:none!important;
+  translate:none!important;
+  filter:none!important;
+}
+
+html body.browser-shell .nyx-home-presence{
+  position:absolute;
+  z-index:8;
+  left:22px;
+  top:20px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:30px;
+  padding:0 12px;
+  border:1px solid var(--nyx-home-line);
+  border-radius:999px;
+  background:color-mix(in srgb,var(--nyx-home-panel) 88%,transparent);
+  color:var(--nyx-home-muted)!important;
+  font:400 12px Outfit,Arial,sans-serif!important;
+  letter-spacing:.04em;
+  box-shadow:0 8px 24px rgba(0,0,0,.18);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+html body.browser-shell .nyx-home-presence-dot{
+  width:7px;
+  height:7px;
+  flex:0 0 7px;
+  border-radius:50%;
+  background:var(--nyx-home-wordmark);
+}
+
+html body.browser-shell .browser-window.browser-home-page .browser-home .home-shortcut-grid{
+  flex-wrap:nowrap!important;
+  width:auto!important;
+  max-width:min(780px,calc(100vw - 64px))!important;
+  min-height:68px!important;
+  margin:0 auto!important;
+  padding:7px 12px!important;
+  border:1px solid var(--nyx-home-line)!important;
+  border-radius:22px!important;
+  background:color-mix(in srgb,var(--nyx-home-panel) 88%,transparent)!important;
+  box-shadow:0 14px 32px rgba(0,0,0,.22),0 1px 0 rgba(255,255,255,.05) inset!important;
+  backdrop-filter:blur(16px) saturate(1.08)!important;
+  -webkit-backdrop-filter:blur(16px) saturate(1.08)!important;
+  overflow-x:auto!important;
+  overflow-y:visible!important;
+  scrollbar-width:none;
+}
+html body.browser-shell .browser-window.browser-home-page .browser-home .home-shortcut-grid::-webkit-scrollbar{display:none}
+html body.browser-shell .browser-window.browser-home-page .browser-home .home-shortcut-grid > .quick-tile{
+  width:60px!important;
+  height:58px!important;
+  min-width:60px!important;
+  min-height:58px!important;
+  max-width:60px!important;
+  max-height:58px!important;
+}
+
+/* Keep the startup screen readable without making every line heavily bold. */
+html body .setup-launch-card,
+html body .setup-launch-card :is(h2,p,strong){font-family:Outfit,Arial,sans-serif!important}
+html body .setup-launch-card h2{
+  font-weight:500!important;
+  letter-spacing:.015em!important;
+}
+html body .setup-launch-card :is(.nyx-loading-percent,.nyx-loading-stage){
+  font-weight:400!important;
+  letter-spacing:.085em!important;
+}
+html body .setup-launch-card .setup-launch-credit{
+  font-weight:300!important;
+  letter-spacing:.11em!important;
+}
+
+@media(max-width:720px){
+  html body.browser-shell .browser-window.browser-home-page .browser-home{padding:16px 12px!important}
+  html body.browser-shell .browser-window.browser-home-page .browser-home h1.nyx-home-title{font-size:clamp(82px,31vw,122px)!important}
+  html body.browser-shell .nyx-home-presence{left:12px;top:12px;min-height:28px;padding:0 10px;font-size:11px!important}
+  html body.browser-shell .browser-window.browser-home-page .browser-home .home-shortcut-grid{
+    max-width:calc(100vw - 24px)!important;
+    justify-content:flex-start!important;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  html body.browser-shell .browser-home .nyx-home-hero,
+  html body.browser-shell .browser-home .nyx-home-title{animation:none!important;transition:none!important}
+}

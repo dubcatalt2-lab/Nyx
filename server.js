@@ -40,6 +40,8 @@ function normalizePublicWispUrl(value) {
 }
 
 const externalWispUrl = normalizePublicWispUrl(process.env.WISP_URL);
+const presenceSessions = new Map();
+const presenceTtlMs = 45_000;
 app.use(express.json({ limit: "2mb" }));
 app.use((error, _req, res, next) => {
   if (error instanceof SyntaxError && "body" in error) {
@@ -1085,6 +1087,41 @@ app.get("/healthz", (_req, res) => {
     service: "nyx",
     wisp: externalWispUrl ? "external" : "embedded"
   });
+});
+
+function prunePresence(now = Date.now()) {
+  for (const [sessionId, lastSeen] of presenceSessions) {
+    if (now - lastSeen > presenceTtlMs) presenceSessions.delete(sessionId);
+  }
+  return presenceSessions.size;
+}
+
+function sendPresence(res, status = 200) {
+  res.status(status)
+    .set("Cache-Control", "no-store")
+    .json({ online: prunePresence(), ttl: presenceTtlMs });
+}
+
+app.options("/presence", (_req, res) => {
+  res.set("Cache-Control", "no-store").sendStatus(204);
+});
+
+app.get("/presence", (_req, res) => {
+  sendPresence(res);
+});
+
+app.post("/presence", express.text({ type: "text/plain", limit: "2kb" }), (req, res) => {
+  try {
+    const sessionId = String(JSON.parse(req.body || "{}").sessionId || "");
+    if (!/^[a-zA-Z0-9_-]{16,128}$/.test(sessionId)) {
+      sendPresence(res, 400);
+      return;
+    }
+    presenceSessions.set(sessionId, Date.now());
+    sendPresence(res);
+  } catch {
+    sendPresence(res, 400);
+  }
 });
 
 app.get("/runtime-config.js", (_req, res) => {

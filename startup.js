@@ -1,7 +1,6 @@
 try{const params=new URLSearchParams(location.search);
-  const cloakHosts=['lionrunner.web.app','lionrunner.firebaseapp.com'];
   const canCloakLaunch=/^https?:$/.test(location.protocol) && window.top===window.self && params.has('nyx_auto_classroom') && !params.has('nyx_real') && !params.has('nyx_no_classroom') && !params.has('nyx_cloaked');
-  if(canCloakLaunch && (cloakHosts.includes(location.hostname) || !location.hostname.includes('classroom.google.com'))){
+  if(canCloakLaunch){
     const next=new URL(location.href);
     next.searchParams.set('nyx_real','1');
     const nyxTab=window.open('about:blank','_blank');
@@ -23,7 +22,7 @@ try{const params=new URLSearchParams(location.search);
     },5000);
     location.replace('https://classroom.google.com/');
   }
-  if(cloakHosts.includes(location.hostname) && window.top===window.self && params.has('nyx_auto_classroom') && !params.has('nyx_cloaked')){
+  if(/^https?:$/.test(location.protocol) && window.top===window.self && params.has('nyx_auto_classroom') && !params.has('nyx_cloaked')){
     document.documentElement.classList.add('hosted-cloak-entry');
   }
 }catch{}

@@ -16,7 +16,11 @@ const requiredFiles = [
   "css/interface-polish.css",
   "css/midnight-theme.css",
   "assets/games/index.html",
-  "assets/ugs/play.html"
+  "assets/ugs/play.html",
+  "deploy/nginx/nyx.conf.template",
+  "deploy/systemd/nyx.service.template",
+  "deploy/nyx.env.example",
+  "deploy/setup-ovh.sh"
 ];
 
 const missing = [];

@@ -2,13 +2,14 @@
 import { createServer } from "node:http";
 import { hostname } from "node:os";
 import { readFileSync } from "node:fs";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join, dirname, resolve } from "node:path";
 import { createRequire } from "node:module";
 import { server as wisp } from "@mercuryworkshop/wisp-js/server";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const require = createRequire(import.meta.url);
+// Using the process root keeps this file compatible with Netlify's CommonJS
+// function bundle while preserving normal `node server.js` behavior.
+const __dirname = resolve(process.env.NYX_PROJECT_ROOT || process.cwd());
+const require = createRequire(join(__dirname, "package.json"));
 const { uvPath } = require("@titaniumnetwork-dev/ultraviolet");
 const { baremuxPath } = require("@mercuryworkshop/bare-mux/node");
 const { scramjetPath } = require("@mercuryworkshop/scramjet/path");
@@ -1182,33 +1183,38 @@ app.use((_req, res) => {
   res.sendFile(join(__dirname, "index.html"));
 });
 
-const server = createServer((req, res) => app(req, res));
+export { app, externalWispUrl, normalizePublicWispUrl };
 
-server.on("upgrade", (req, socket, head) => {
-  if (!externalWispUrl && req.url?.endsWith("/wisp/")) {
-    wisp.routeRequest(req, socket, head);
-  } else {
-    socket.end();
+const isDirectRun = process.argv[1] && resolve(process.argv[1]) === join(__dirname, "server.js");
+if (isDirectRun) {
+  const server = createServer((req, res) => app(req, res));
+
+  server.on("upgrade", (req, socket, head) => {
+    if (!externalWispUrl && req.url?.endsWith("/wisp/")) {
+      wisp.routeRequest(req, socket, head);
+    } else {
+      socket.end();
+    }
+  });
+
+  const port = Number.parseInt(process.env.PORT || "8080", 10);
+
+  server.listen(port, "0.0.0.0", () => {
+    const address = server.address();
+    console.log("nyx running with Ultraviolet and Scramjet:");
+    console.log(`  http://localhost:${address.port}`);
+    console.log(`  http://${hostname()}:${address.port}`);
+    console.log(`  wisp transport: ${externalWispUrl || "same-host /wisp/"}`);
+  });
+
+  let shuttingDown = false;
+  function shutdown(signal) {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(`${signal} received; closing nyx server.`);
+    server.close(() => process.exit(0));
+    setTimeout(() => process.exit(1), 10_000).unref();
   }
-});
-
-const port = Number.parseInt(process.env.PORT || "8080", 10);
-
-server.listen(port, "0.0.0.0", () => {
-  const address = server.address();
-  console.log("nyx running with Ultraviolet and Scramjet:");
-  console.log(`  http://localhost:${address.port}`);
-  console.log(`  http://${hostname()}:${address.port}`);
-  console.log(`  wisp transport: ${externalWispUrl || "same-host /wisp/"}`);
-});
-
-let shuttingDown = false;
-function shutdown(signal) {
-  if (shuttingDown) return;
-  shuttingDown = true;
-  console.log(`${signal} received; closing nyx server.`);
-  server.close(() => process.exit(0));
-  setTimeout(() => process.exit(1), 10_000).unref();
+  process.once("SIGTERM", () => shutdown("SIGTERM"));
+  process.once("SIGINT", () => shutdown("SIGINT"));
 }
-process.once("SIGTERM", () => shutdown("SIGTERM"));
-process.once("SIGINT", () => shutdown("SIGINT"));

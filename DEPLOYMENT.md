@@ -1,65 +1,124 @@
-# Deploy Nyx with Railway Wisp and Render
+# Deploy Nyx on one OVHcloud VPS
 
-This repository is configured as two services:
+Nyx and its Wisp WebSocket server run together on one VPS. Nginx accepts public HTTP/HTTPS traffic and forwards it to Nyx on private port `8080`. No `WISP_URL` is needed.
 
-- Railway runs the dedicated Wisp WebSocket server with `npm run start:wisp`.
-- Render runs the Nyx Express app with `npm start`.
+## Before buying anything
 
-## Before deploying
+- Buy the domain from Namecheap without web hosting, paid SSL, or PremiumDNS.
+- Buy an OVHcloud VPS with Ubuntu 24.04 and at least 2 GB RAM.
+- Keep the domain on Namecheap BasicDNS.
+- Use this repository under the name `nyx`.
 
-Run:
+## 1. Check and push the repository
+
+On the development computer:
 
 ```powershell
 npm ci
 npm run check:deploy
 git status --short
+git add -A
+git commit -m "Prepare Nyx for OVHcloud"
+git push
 ```
 
-Commit every required Nyx file shown by `git status`, especially `script.js`, `startup.js`, `styles.css`, `css/`, `js/loading-screen.js`, and `assets/ugs/play.html`. Hosting providers only receive files committed and pushed to GitHub.
+Never commit `.env` files, private keys, passwords, or API keys.
 
-Do not commit `.env` files, API keys, or the large ignored movie files.
+## 2. Clone Nyx onto the VPS
 
-## 1. Deploy Wisp on Railway
+Connect to the new VPS using the IP address supplied by OVHcloud:
 
-1. Push this project to GitHub.
-2. In Railway, create a project from that GitHub repository.
-3. Railway reads `railway.json`, builds `Dockerfile.wisp`, and starts the dedicated Wisp server. The small Docker build excludes Nyx's frontend, games, and development dependencies.
-4. In Railway networking, generate a public domain.
-5. Confirm `https://YOUR-WISP-DOMAIN/healthz` returns JSON containing `"ok":true`.
-6. Your Wisp URL is `wss://YOUR-WISP-DOMAIN/wisp/`.
-
-The server initially allows all browser origins if `NYX_ALLOWED_ORIGINS` is empty. After Render gives Nyx its URL, set this Railway variable immediately:
-
-```text
-NYX_ALLOWED_ORIGINS=https://YOUR-NYX-NAME.onrender.com
+```powershell
+ssh ubuntu@YOUR_VPS_IP
 ```
 
-For more than one exact origin, separate them with commas. Add your future custom-domain origin to this list before switching domains.
+Some OVH images use a different initial username. Use the username shown in the OVHcloud installation email.
 
-## 2. Deploy Nyx on Render
+On the VPS, install Git and clone the repository into the expected location:
 
-1. In Render, choose **New > Blueprint** and select the same GitHub repository.
-2. Render reads `render.yaml` and creates the `nyx-temporary` free web service.
-3. When prompted for `WISP_URL`, enter Railway's public endpoint:
-
-```text
-wss://YOUR-WISP-DOMAIN/wisp/
+```bash
+sudo apt-get update
+sudo apt-get install -y git
+sudo mkdir -p /var/www
+sudo chown "$USER":"$USER" /var/www
+git clone git@github.com:YOUR-GITHUB-USERNAME/nyx.git /var/www/nyx
+cd /var/www/nyx
 ```
 
-An `https://` Railway URL also works; Nyx converts it to `wss://` and adds `/wisp/` when needed.
+For a private GitHub repository, add the VPS public SSH key as a read-only GitHub deploy key before cloning.
 
-4. Deploy and open `https://YOUR-NYX-NAME.onrender.com/healthz`.
-5. The response should contain `"wisp":"external"`.
-6. Return to Railway and set `NYX_ALLOWED_ORIGINS` to the exact Render origin.
+## 3. Run the prepared OVH installer
 
-Render's free service can sleep while idle, so the first request after inactivity can be slow. It is suitable as a temporary host, not a permanent production plan.
+Replace `yourdomain.com` with the purchased domain, without `www`:
 
-## Future custom domain
+```bash
+sudo bash deploy/setup-ovh.sh yourdomain.com
+```
 
-When you buy a domain:
+The installer:
 
-1. Add it to Render's Nyx web service.
-2. Add its exact `https://` origin to Railway's `NYX_ALLOWED_ORIGINS`.
-3. Keep `WISP_URL` pointing to Railway unless you also move Wisp.
+- installs Node.js 22, Nginx, Git, and the firewall;
+- installs production dependencies and checks the deployment;
+- creates a locked-down `nyx` service account;
+- installs and starts the `nyx.service` systemd service;
+- configures Nginx, including Wisp WebSocket forwarding;
+- opens only SSH, HTTP, and HTTPS in the firewall;
+- confirms `/healthz` responds locally.
 
-No source-code change is required for the domain switch.
+Check the service at any time with:
+
+```bash
+sudo systemctl status nyx
+sudo journalctl -u nyx -n 100 --no-pager
+```
+
+## 4. Point Namecheap DNS at OVHcloud
+
+In Namecheap, open **Domain List > Manage > Advanced DNS**. Add:
+
+| Type | Host | Value |
+| --- | --- | --- |
+| A Record | `@` | `YOUR_VPS_IP` |
+| A Record | `www` | `YOUR_VPS_IP` |
+
+Use automatic TTL. Remove conflicting parking records for `@` or `www`, but preserve mail records. Wait until both names resolve to the VPS.
+
+## 5. Enable free HTTPS
+
+Only after the DNS records point to the VPS:
+
+```bash
+sudo apt-get install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
+sudo certbot renew --dry-run
+```
+
+Then verify:
+
+```bash
+curl https://yourdomain.com/healthz
+```
+
+The result should contain `"ok":true` and `"wisp":"embedded"`.
+
+## Updating Nyx later
+
+The `nyx` service account only runs the application; your SSH user continues to own and update the repository. Update with:
+
+```bash
+git -C /var/www/nyx pull --ff-only
+npm --prefix /var/www/nyx ci --omit=dev
+sudo systemctl restart nyx
+curl --fail https://yourdomain.com/healthz
+```
+
+## Optional Nyx AI secret
+
+The application does not automatically read a project `.env` file. Put server-only variables in `/etc/nyx/nyx.env`:
+
+```bash
+sudo nano /etc/nyx/nyx.env
+sudo systemctl restart nyx
+```
+
+Add `NYX_AI_API_KEY=...` or `OPENROUTER_API_KEY=...`. Never add those values to this repository.

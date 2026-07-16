@@ -290,6 +290,34 @@
     if(raw.startsWith('assets/games/') || raw.startsWith('assets/ugs/') || raw.startsWith('assets/seraph/') || raw.startsWith('/assets/games/') || raw.startsWith('/assets/ugs/') || raw.startsWith('/assets/seraph/')) return 'Games';
     try{return new URL(raw,location.href).hostname.replace(/^www\./,'') || 'New Tab'}catch{return 'New Tab'}
   }
+  function websiteDetailsHidden(){
+    return store.get('nyx.hideWebsiteDetails',false);
+  }
+  function isExternalWebsiteUrl(url){
+    const raw=String(url || '').trim();
+    if(!raw) return false;
+    const source=typeof browserShellSourceUrl==='function' ? (browserShellSourceUrl(raw) || raw) : raw;
+    try{
+      const parsed=new URL(source,location.href);
+      return /^https?:$/.test(parsed.protocol) && parsed.origin!==location.origin;
+    }catch{return false}
+  }
+  function browserChromeTitle(title,url){
+    return websiteDetailsHidden() && isExternalWebsiteUrl(url) ? 'Website Hidden' : (title || titleForUrl(url));
+  }
+  function browserChromeIcon(icon,url){
+    return websiteDetailsHidden() && isExternalWebsiteUrl(url) ? favicons.nyx : (icon || iconForUrl(url));
+  }
+  function refreshWebsiteDetailsVisibility(){
+    activeBrowser?.renderTabs?.();
+    renderBrowserShellTabs();
+    const activeTab=activeBrowser?.tabs?.find(tab=>tab.id===activeBrowser.active);
+    const shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
+    const url=activeTab?.sourceUrl || activeTab?.url || shellTab?.url || '';
+    const title=activeTab?.title || shellTab?.title || 'New Tab';
+    const titlebar=activeBrowser?.win?.querySelector?.('.titlebar-title');
+    if(titlebar) titlebar.textContent=browserChromeTitle(title,url);
+  }
   let zTop = 20, winCount = 0, activeBrowser = null, antiCloseEnabled = store.get('nyx.antiClose',true), panicCaptureArmed = false, antiClosePanicBypass = false;
   let antiCloseConfirmHandler = null, antiCloseGestureHandler = null, antiCloseRearmTimer = null, antiCloseHadGesture = false;
   let renderedChromeMode = '';
@@ -727,12 +755,47 @@
       menu.querySelector(':scope > [data-browser-shell-new-tab]')?.remove();
     }
   }
+  function bindReloadPointerTurn(root=document){
+    root.querySelectorAll?.('[data-browser-shell-reload],.tool-btn[data-reload]')?.forEach(button=>{
+      if(button.dataset.nyxPointerTurnBound==='true') return;
+      button.dataset.nyxPointerTurnBound='true';
+      let current=0;
+      let target=0;
+      let frame=0;
+      const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+      const draw=()=>{
+        frame=0;
+        current+=(target-current)*.09;
+        if(Math.abs(target-current)<.08) current=target;
+        button.style.setProperty('--nyx-reload-turn',`${current.toFixed(2)}deg`);
+        if(current!==target) frame=requestAnimationFrame(draw);
+      };
+      const aim=value=>{
+        target=Math.max(0,Math.min(180,value));
+        if(reducedMotion){
+          current=0;
+          target=0;
+          button.style.setProperty('--nyx-reload-turn','0deg');
+          return;
+        }
+        if(!frame) frame=requestAnimationFrame(draw);
+      };
+      button.addEventListener('pointermove',event=>{
+        const bounds=button.getBoundingClientRect();
+        const position=Math.max(0,Math.min(1,(event.clientX-bounds.left)/Math.max(1,bounds.width)));
+        aim(position*180);
+      });
+      button.addEventListener('pointerleave',()=>aim(0));
+      button.addEventListener('blur',()=>aim(0));
+    });
+  }
   function renderChromeFixed(){
     const top=document.querySelector('.top-os');
     if(top){
       top.innerHTML='<div class="brand-mini"><button class="browser-mode-app-button active" data-browser-shell-home title="Current tab">Home</button><button class="browser-mode-tab" data-browser-shell-new-tab title="New tab"><span>New tab</span></button></div><span class="browser-top-clock" data-browser-shell-clock>--:--:--</span><form class="browser-mode-address" data-browser-shell-search><button data-browser-shell-back type="button" title="Back"><span class="fresh-real-icon fresh-real-back" aria-hidden="true"></span></button><button data-browser-shell-forward type="button" title="Forward"><span class="fresh-real-icon" aria-hidden="true">➜</span></button><button data-browser-shell-reload type="button" title="Reload"><span class="fresh-real-icon" aria-hidden="true">⟳</span></button><input class="browser-mode-url" data-browser-shell-url placeholder="Search or enter a URL" autocomplete="off"><button class="browser-mode-bookmark" data-browser-shell-bookmark type="button" title="Bookmark this tab" aria-pressed="false"><span class="fresh-real-icon" aria-hidden="true">☆</span></button><button class="browser-mode-weather" data-open="weather" type="button" title="Weather" aria-label="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button><button data-browser-shell-menu type="button" title="Menu"><span class="fresh-real-icon" aria-hidden="true">⋮</span></button></form><div class="browser-bookmark-panel" id="browserBookmarkPanel" hidden></div><div class="browser-mode-menu" id="browserModeMenu"><button data-browser-shell-new-tab type="button">New tab</button><button data-browser-bookmarks-toggle type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-browser-hieroglyph-toggle type="button">Hieroglyph Mode</button><button data-app-url="/assets/games/index.html" type="button">Games</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-shell-about-tab type="button">Open Tab in Abt:Blank</button></div>';
       top.querySelector('#browserModeMenu > [data-browser-shell-new-tab]')?.remove();
       normalizeBrowserChromeButtons(top);
+      bindReloadPointerTurn(top);
       top.querySelector('.brand-mini [data-browser-shell-new-tab]')?.addEventListener('click',event=>{
         event.nyxShellNewHandled=true;
         event.preventDefault();
@@ -1375,7 +1438,7 @@
       const opening=browserShellOpeningTabs.has(tab.id);
       button.className='browser-mode-tab browser-mode-shell-tab'+(tab.id===browserShellActiveTab?' active':'')+(opening?' tab-opening':'');
       button.dataset.browserShellTab=tab.id;
-      button.innerHTML=`<img class="browser-mode-tab-icon" alt="" src="${esc(tab.icon || iconForUrl(tab.url))}"><span>${esc(tab.title || browserShellLabel(tab.url))}</span><i class="browser-mode-shell-tab-close" data-browser-shell-close-tab="${esc(tab.id)}" aria-label="Close tab">x</i>`;
+      button.innerHTML=`<img class="browser-mode-tab-icon" alt="" src="${esc(browserChromeIcon(tab.icon,tab.url))}"><span>${esc(browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url))}</span><i class="browser-mode-shell-tab-close" data-browser-shell-close-tab="${esc(tab.id)}" aria-label="Close tab">x</i>`;
       bindTabIconFallback(button.querySelector('.browser-mode-tab-icon'));
       row.insertBefore(button,plus);
       if(opening) setTimeout(()=>browserShellOpeningTabs.delete(tab.id),520);
@@ -1720,6 +1783,10 @@
     }
     const effectBlock=overlay.querySelector('[data-effect-value]')?.closest('.settings-block');
     if(effectBlock){
+      const privacyBlock=document.createElement('section');
+      privacyBlock.className='settings-block';
+      const hideDetails=websiteDetailsHidden();
+      privacyBlock.innerHTML=`<h2>Website Details</h2><p>Replace external website names and icons in Nyx tabs with a generic hidden label.</p><div class="settings-row"><span>Hide Names and Icons</span><button class="settings-action ${hideDetails?'on':''}" data-switch="nyx.hideWebsiteDetails" type="button">${hideDetails?'On':'Off'}</button></div>`;
       const fontBlock=document.createElement('section');
       fontBlock.className='settings-block';
       fontBlock.innerHTML=`<h2>Font</h2><select class="settings-select" data-font-value>${nyxFontOptionsMarkup()}</select>`;
@@ -1739,6 +1806,7 @@
       const resetBlock=document.createElement('section');
       resetBlock.className='settings-block';
       resetBlock.innerHTML=`<h2>Clear Cache</h2><p>Removes cookies, cache files, saved settings, proxy storage, and service workers, then reloads nyx like a fresh install.</p><div class="settings-actions"><button class="settings-action danger-action" data-clear-nyx-cache type="button">Clear Cache and Reset</button></div>`;
+      effectBlock.before(privacyBlock);
       effectBlock.before(lagBlock);
       effectBlock.before(liteBlock);
       effectBlock.before(backgroundsBlock);
@@ -1960,14 +2028,14 @@
   //browser-srcdoc-pages
   function browserShellPageSrcdoc(page){
     const style='@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap");html,body{margin:0;width:100%;min-height:100%;font-family:Outfit,Arial,sans-serif;background:transparent;color:#f8fafc}*{box-sizing:border-box}select{color-scheme:dark!important}select option,select optgroup{background:#101827!important;color:#f8fafc!important;-webkit-text-fill-color:#f8fafc!important}select option:checked{background:#334155!important;color:#fff!important;-webkit-text-fill-color:#fff!important}body{overflow:auto}.shell-page{min-height:100vh;padding:34px 36px 70px;background:transparent;color:white}.shell-page h1{margin:0 0 8px;font-size:42px;line-height:1;font-weight:900;text-shadow:0 12px 34px rgba(0,0,0,.34)}.shell-page h2{margin:30px 0 14px;font-size:22px}.shell-page p{color:#eef2f7;margin:0 0 22px;font-weight:700;text-shadow:0 8px 26px rgba(0,0,0,.28)}.quick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px}.quick-grid.small{grid-template-columns:repeat(auto-fill,minmax(138px,1fr))}.quick-tile{height:132px;border:1px solid transparent;border-radius:24px;background:transparent;color:white;display:grid;place-items:center;gap:8px;font:800 16px Outfit,Arial,sans-serif;box-shadow:none;backdrop-filter:none;transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease,border-color .2s ease,background .2s ease,backdrop-filter .2s ease}.quick-tile:hover{transform:scale(1.045);background:linear-gradient(145deg,rgba(255,255,255,.22),rgba(31,41,55,.42));border-color:rgba(255,255,255,.36);box-shadow:inset 0 1px 0 rgba(255,255,255,.26),0 22px 54px rgba(0,0,0,.28);backdrop-filter:blur(16px) saturate(1.15)}.quick-icon{width:64px;height:64px;border-radius:20px;object-fit:contain;background:transparent;padding:8px;border:1px solid transparent;box-shadow:none;transition:transform .18s ease,background .18s ease,border-color .18s ease,box-shadow .18s ease}.quick-tile:hover .quick-icon{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 16px 34px rgba(0,0,0,.22);transform:scale(1.08)}.quick-tile[data-domain="traxmojo.com"] .quick-icon{width:112px;height:112px;padding:0;object-fit:contain;background:transparent}.quick-tile[data-domain="traxmojo.com"]:hover .quick-icon{transform:scale(1.16)}.quick-combo{width:min(132px,calc(100% - 12px));height:26px;border:1px solid rgba(255,255,255,.2);border-radius:999px;background:rgba(8,12,20,.62);color:#e0f2fe;padding:0 8px;font:800 11px Outfit,Arial,sans-serif;outline:0}.quick-combo option{background:#101827!important;color:#f8fafc!important}.settings-app{min-height:100vh;display:grid;grid-template-columns:250px minmax(0,1fr);gap:18px;padding:10px;background:linear-gradient(135deg,rgba(7,10,16,.86),rgba(41,45,58,.9) 48%,rgba(11,13,20,.9));color:#eef2f7}.settings-side{position:sticky;top:10px;height:calc(100vh - 20px);padding:22px 16px;border:1px solid rgba(159,172,190,.28);border-radius:22px;background:rgba(20,24,34,.76);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 18px 48px rgba(0,0,0,.32);backdrop-filter:blur(14px)}.settings-side button{width:100%;height:48px;margin-bottom:8px;display:flex;align-items:center;gap:12px;border:0;border-radius:999px;background:transparent;color:#e5e7eb;font:800 14px Outfit,Arial,sans-serif;text-align:left;padding:0 14px;transition:background .16s ease,transform .16s ease,color .16s ease}.settings-side button:hover,.settings-side button.active{background:rgba(148,163,184,.18);color:#fff;transform:translateX(2px)}.settings-side i{width:22px;height:22px;display:grid;place-items:center;border-radius:8px;background:rgba(148,163,184,.22);font-style:normal}.settings-main{min-height:calc(100vh - 20px);padding:30px 34px 60px;border:1px solid rgba(159,172,190,.18);border-radius:22px;background:radial-gradient(circle at 50% 100%,rgba(118,124,145,.32),transparent 40%),linear-gradient(180deg,rgba(28,32,44,.82),rgba(13,16,24,.78));box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 22px 54px rgba(0,0,0,.28);backdrop-filter:blur(16px) saturate(1.1)}.settings-main h1{margin:0;color:#fff;font-size:30px;line-height:1;font-weight:900}.settings-main h1::after{content:"";display:block;width:56px;height:3px;margin:13px 0 30px;border-radius:999px;background:#a8b3c4}.settings-block{margin:0 0 34px}.settings-block h2{margin:0 0 8px;color:#cbd5e1;font-size:18px;font-weight:900}.settings-block p{max-width:900px;margin:0 0 14px;color:#d1d7e0;font-size:13px;font-weight:700;line-height:1.45}.settings-form-row{display:grid;grid-template-columns:minmax(240px,1fr) minmax(240px,1fr);gap:104px;align-items:end}.settings-input,.settings-select{width:100%;height:43px;border:1px solid rgba(148,163,184,.36);border-radius:999px;background:rgba(14,17,26,.54);color:#f8fafc;padding:0 14px;outline:0;font:700 13px Outfit,Arial,sans-serif;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}.settings-select{max-width:760px;appearance:auto}.settings-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}.settings-action{min-height:38px;border:0;border-radius:999px;background:linear-gradient(145deg,#6b7280,#4b5563);color:#fff;padding:0 16px;font:900 13px Outfit,Arial,sans-serif;box-shadow:0 10px 26px rgba(0,0,0,.28);transition:transform .16s ease,filter .16s ease}.settings-action:hover{transform:scale(1.045);filter:brightness(1.1)}.settings-toggle{width:46px;height:24px;border:1px solid rgba(255,255,255,.15);border-radius:999px;background:#4b5563;padding:2px;display:inline-flex;align-items:center}.settings-toggle::before{content:"";width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 3px 9px rgba(0,0,0,.28);transform:translateX(0);transition:transform .16s ease}.settings-toggle.on::before{transform:translateX(20px)}.settings-toggle.on{background:#71717a}.settings-grid-settings{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;max-width:720px}.settings-preset{height:138px;padding:10px;border:1px solid rgba(255,255,255,.16);border-radius:24px;background:linear-gradient(145deg,rgba(229,231,235,.18),rgba(75,85,99,.48));color:#fff;font:900 14px Outfit,Arial,sans-serif;display:grid;place-items:center;gap:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 16px 38px rgba(0,0,0,.28);transition:transform .16s ease,border-color .16s ease}.settings-preset:hover{transform:scale(1.045);border-color:rgba(255,255,255,.34)}.settings-effect-preview{display:flex;gap:9px;margin-top:12px}.settings-effect-preview span{width:36px;height:36px;display:grid;place-items:center;border-radius:999px;background:rgba(148,163,184,.18);border:1px solid rgba(255,255,255,.12);font-size:18px}.settings-compact{max-width:760px}.quick-grid.settings-mini{grid-template-columns:repeat(3,minmax(136px,170px));gap:14px}.quick-grid.settings-mini .quick-tile{height:118px;border-radius:24px}.quick-grid.settings-mini b{font-size:24px}@media(max-width:900px){.settings-app{grid-template-columns:1fr}.settings-side{position:relative;height:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.settings-side button{margin:0}.settings-form-row{grid-template-columns:1fr;gap:14px}.settings-main{padding:24px 18px}.quick-grid.settings-mini{grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}}@media(max-width:720px){.shell-page{padding:24px 18px 50px}.quick-grid{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:12px}.quick-tile{height:112px;font-size:13px}.settings-app{padding:0}.settings-side,.settings-main{border-radius:0}.settings-grid-settings{grid-template-columns:repeat(auto-fill,minmax(124px,1fr))}}';
-    const themeStyle='body.theme-ruby{--theme-a:#ef4444;--theme-b:#7f1d1d;--theme-strong:#fecaca;--theme-text-gradient:linear-gradient(90deg,#fee2e2,#fb7185,#991b1b);--theme-bg:linear-gradient(rgba(25,0,0,.18),rgba(25,0,0,.36)),url("assets/backgrounds/theme-ruby.jpg")}body.theme-emerald{--theme-a:#10b981;--theme-b:#064e3b;--theme-strong:#dcfce7;--theme-text-gradient:linear-gradient(90deg,#dcfce7,#34d399,#065f46);--theme-bg:linear-gradient(rgba(0,25,8,.14),rgba(0,24,12,.32)),url("assets/backgrounds/theme-emerald.png")}body.theme-sakura{--theme-a:#f472b6;--theme-b:#be185d;--theme-strong:#fce7f3;--theme-text-gradient:linear-gradient(90deg,#fce7f3,#f9a8d4,#be185d);--theme-bg:linear-gradient(rgba(40,0,24,.12),rgba(40,0,30,.28)),url("assets/backgrounds/theme-sakura.jpg")}body.theme-ruby,body.theme-emerald,body.theme-sakura{background:var(--theme-bg)!important;background-size:cover!important;background-position:center!important;background-attachment:fixed!important}body.theme-ruby .shell-page,body.theme-emerald .shell-page,body.theme-sakura .shell-page{background:linear-gradient(135deg,color-mix(in srgb,var(--theme-a) 34%,transparent),rgba(12,16,24,.58)),var(--theme-bg)!important;background-size:cover!important;background-position:center!important}body.theme-ruby .settings-app,body.theme-emerald .settings-app,body.theme-sakura .settings-app{background:linear-gradient(135deg,color-mix(in srgb,var(--theme-a) 22%,rgba(8,12,20,.9)),color-mix(in srgb,var(--theme-b) 34%,rgba(12,16,24,.9)))!important}body.theme-ruby .settings-main,body.theme-ruby .settings-side,body.theme-ruby .quick-tile,body.theme-ruby .settings-action,body.theme-emerald .settings-main,body.theme-emerald .settings-side,body.theme-emerald .quick-tile,body.theme-emerald .settings-action,body.theme-sakura .settings-main,body.theme-sakura .settings-side,body.theme-sakura .quick-tile,body.theme-sakura .settings-action{background:linear-gradient(145deg,color-mix(in srgb,var(--theme-a) 28%,rgba(255,255,255,.18)),color-mix(in srgb,var(--theme-b) 42%,rgba(7,10,16,.72)))!important;border-color:color-mix(in srgb,var(--theme-a) 45%,rgba(255,255,255,.22))!important}body.theme-ruby .quick-tile:not(:hover),body.theme-emerald .quick-tile:not(:hover),body.theme-sakura .quick-tile:not(:hover){background:transparent!important;border-color:transparent!important;box-shadow:none!important;backdrop-filter:none!important}body.theme-ruby .quick-tile:hover,body.theme-emerald .quick-tile:hover,body.theme-sakura .quick-tile:hover{background:linear-gradient(145deg,color-mix(in srgb,var(--theme-a) 34%,rgba(255,255,255,.16)),color-mix(in srgb,var(--theme-b) 48%,rgba(7,10,16,.7)))!important;border-color:color-mix(in srgb,var(--theme-a) 45%,rgba(255,255,255,.22))!important}.theme-ruby h1,.theme-ruby h2,.theme-ruby p,.theme-ruby .settings-side span,.theme-ruby .quick-tile span,.theme-emerald h1,.theme-emerald h2,.theme-emerald p,.theme-emerald .settings-side span,.theme-emerald .quick-tile span,.theme-sakura h1,.theme-sakura h2,.theme-sakura p,.theme-sakura .settings-side span,.theme-sakura .quick-tile span{background:var(--theme-text-gradient);-webkit-background-clip:text;background-clip:text;color:transparent!important;-webkit-text-fill-color:transparent}.theme-ruby button,.theme-emerald button,.theme-sakura button{color:var(--theme-strong)!important;-webkit-text-fill-color:var(--theme-strong)!important}.theme-ruby .settings-input,.theme-ruby .settings-select,.theme-emerald .settings-input,.theme-emerald .settings-select,.theme-sakura .settings-input,.theme-sakura .settings-select{background:linear-gradient(90deg,color-mix(in srgb,var(--theme-a) 18%,rgba(12,16,24,.94)),rgba(12,16,24,.76))!important;border-color:color-mix(in srgb,var(--theme-a) 60%,rgba(255,255,255,.18))!important;color:var(--theme-strong)!important;-webkit-text-fill-color:var(--theme-strong)!important}.theme-ruby button:hover,.theme-emerald button:hover,.theme-sakura button:hover{color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 0 14px color-mix(in srgb,var(--theme-a) 72%,transparent)!important}.theme-ruby select option,.theme-emerald select option,.theme-sakura select option{background:#10131b;color:#f8fafc}';
-    const freshThemeStyle='body.theme-fresh{--theme-a:#fff;--theme-b:#c7f0de;--theme-strong:#0f8fa3;--theme-border:#fff;--theme-bg:linear-gradient(rgba(255,255,255,.10),rgba(255,255,255,.18)),url("assets/backgrounds/theme-fresh.jpg")!important;background:var(--theme-bg)!important;background-size:cover!important;background-position:center!important;background-attachment:fixed!important;color:#0f8fa3!important}body.theme-fresh :is(.shell-page,.browser-shell-page){background:var(--theme-bg)!important;background-size:cover!important;background-position:center!important}body.theme-fresh :is(.settings-app,.settings-main,.settings-side,.settings-block,.quick-tile,.quick-icon,.settings-action,.settings-preset,button,input,select,textarea){background:rgba(255,255,255,.42)!important;border-color:rgba(255,255,255,.82)!important;color:#133034!important;-webkit-text-fill-color:#133034!important;box-shadow:none!important}body.theme-fresh :is(h1,h2,h3,p,span,label,strong,.quick-tile span){background:none!important;color:#0f8fa3!important;-webkit-text-fill-color:#0f8fa3!important;text-shadow:0 2px 12px rgba(24,54,58,.42)!important}body.theme-fresh select option{background:#fff!important;color:#133034!important}';
+    const themeStyle='body.theme-ruby{--theme-a:#ef4444;--theme-b:#7f1d1d;--theme-strong:#fecaca;--theme-text-gradient:linear-gradient(90deg,#fee2e2,#fb7185,#991b1b);--theme-bg:linear-gradient(rgba(25,0,0,.18),rgba(25,0,0,.36)),url("assets/backgrounds/nyx-blue-light-trails.jpg")}body.theme-emerald{--theme-a:#10b981;--theme-b:#064e3b;--theme-strong:#dcfce7;--theme-text-gradient:linear-gradient(90deg,#dcfce7,#34d399,#065f46);--theme-bg:linear-gradient(rgba(0,25,8,.14),rgba(0,24,12,.32)),url("assets/backgrounds/nyx-blue-light-trails.jpg")}body.theme-sakura{--theme-a:#f472b6;--theme-b:#be185d;--theme-strong:#fce7f3;--theme-text-gradient:linear-gradient(90deg,#fce7f3,#f9a8d4,#be185d);--theme-bg:linear-gradient(rgba(40,0,24,.12),rgba(40,0,30,.28)),url("assets/backgrounds/nyx-blue-light-trails.jpg")}body.theme-ruby,body.theme-emerald,body.theme-sakura{background:var(--theme-bg)!important;background-size:cover!important;background-position:center!important;background-attachment:fixed!important}body.theme-ruby .shell-page,body.theme-emerald .shell-page,body.theme-sakura .shell-page{background:linear-gradient(135deg,color-mix(in srgb,var(--theme-a) 34%,transparent),rgba(12,16,24,.58)),var(--theme-bg)!important;background-size:cover!important;background-position:center!important}body.theme-ruby .settings-app,body.theme-emerald .settings-app,body.theme-sakura .settings-app{background:linear-gradient(135deg,color-mix(in srgb,var(--theme-a) 22%,rgba(8,12,20,.9)),color-mix(in srgb,var(--theme-b) 34%,rgba(12,16,24,.9)))!important}body.theme-ruby .settings-main,body.theme-ruby .settings-side,body.theme-ruby .quick-tile,body.theme-ruby .settings-action,body.theme-emerald .settings-main,body.theme-emerald .settings-side,body.theme-emerald .quick-tile,body.theme-emerald .settings-action,body.theme-sakura .settings-main,body.theme-sakura .settings-side,body.theme-sakura .quick-tile,body.theme-sakura .settings-action{background:linear-gradient(145deg,color-mix(in srgb,var(--theme-a) 28%,rgba(255,255,255,.18)),color-mix(in srgb,var(--theme-b) 42%,rgba(7,10,16,.72)))!important;border-color:color-mix(in srgb,var(--theme-a) 45%,rgba(255,255,255,.22))!important}body.theme-ruby .quick-tile:not(:hover),body.theme-emerald .quick-tile:not(:hover),body.theme-sakura .quick-tile:not(:hover){background:transparent!important;border-color:transparent!important;box-shadow:none!important;backdrop-filter:none!important}body.theme-ruby .quick-tile:hover,body.theme-emerald .quick-tile:hover,body.theme-sakura .quick-tile:hover{background:linear-gradient(145deg,color-mix(in srgb,var(--theme-a) 34%,rgba(255,255,255,.16)),color-mix(in srgb,var(--theme-b) 48%,rgba(7,10,16,.7)))!important;border-color:color-mix(in srgb,var(--theme-a) 45%,rgba(255,255,255,.22))!important}.theme-ruby h1,.theme-ruby h2,.theme-ruby p,.theme-ruby .settings-side span,.theme-ruby .quick-tile span,.theme-emerald h1,.theme-emerald h2,.theme-emerald p,.theme-emerald .settings-side span,.theme-emerald .quick-tile span,.theme-sakura h1,.theme-sakura h2,.theme-sakura p,.theme-sakura .settings-side span,.theme-sakura .quick-tile span{background:var(--theme-text-gradient);-webkit-background-clip:text;background-clip:text;color:transparent!important;-webkit-text-fill-color:transparent}.theme-ruby button,.theme-emerald button,.theme-sakura button{color:var(--theme-strong)!important;-webkit-text-fill-color:var(--theme-strong)!important}.theme-ruby .settings-input,.theme-ruby .settings-select,.theme-emerald .settings-input,.theme-emerald .settings-select,.theme-sakura .settings-input,.theme-sakura .settings-select{background:linear-gradient(90deg,color-mix(in srgb,var(--theme-a) 18%,rgba(12,16,24,.94)),rgba(12,16,24,.76))!important;border-color:color-mix(in srgb,var(--theme-a) 60%,rgba(255,255,255,.18))!important;color:var(--theme-strong)!important;-webkit-text-fill-color:var(--theme-strong)!important}.theme-ruby button:hover,.theme-emerald button:hover,.theme-sakura button:hover{color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 0 14px color-mix(in srgb,var(--theme-a) 72%,transparent)!important}.theme-ruby select option,.theme-emerald select option,.theme-sakura select option{background:#10131b;color:#f8fafc}';
+    const freshThemeStyle='body.theme-fresh{--theme-a:#fff;--theme-b:#c7f0de;--theme-strong:#0f8fa3;--theme-border:#fff;--theme-bg:linear-gradient(rgba(255,255,255,.10),rgba(255,255,255,.18)),url("assets/backgrounds/nyx-blue-light-trails.jpg")!important;background:var(--theme-bg)!important;background-size:cover!important;background-position:center!important;background-attachment:fixed!important;color:#0f8fa3!important}body.theme-fresh :is(.shell-page,.browser-shell-page){background:var(--theme-bg)!important;background-size:cover!important;background-position:center!important}body.theme-fresh :is(.settings-app,.settings-main,.settings-side,.settings-block,.quick-tile,.quick-icon,.settings-action,.settings-preset,button,input,select,textarea){background:rgba(255,255,255,.42)!important;border-color:rgba(255,255,255,.82)!important;color:#133034!important;-webkit-text-fill-color:#133034!important;box-shadow:none!important}body.theme-fresh :is(h1,h2,h3,p,span,label,strong,.quick-tile span){background:none!important;color:#0f8fa3!important;-webkit-text-fill-color:#0f8fa3!important;text-shadow:0 2px 12px rgba(24,54,58,.42)!important}body.theme-fresh select option{background:#fff!important;color:#133034!important}';
     const script='function nyxEffectPayload(){return{type:"nyx:effect-settings",effect:document.querySelector("[data-effect-value]")?.value||"none",speed:document.querySelector("[data-effect-speed]")?.value||"1.1",amount:document.querySelector("[data-effect-amount]")?.value||"16",theme:document.querySelector("[data-theme-value]")?.value||"default"}}function nyxBrowserPayload(){return{type:"nyx:browser-settings",engine:document.querySelector("[data-browser-engine]")?.value||"duckduckgo",browserMode:document.querySelector("[data-browser-mode-select]")?.value||"auto",transport:document.querySelector("[data-browser-transport]")?.value||"epoxy"}}document.addEventListener("click",e=>{const preset=e.target.closest("[data-preset]");if(preset){e.preventDefault();e.stopPropagation();parent.postMessage({type:"nyx:preset",preset:preset.dataset.preset},"*");return}const app=e.target.closest("[data-app-url]");if(app){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:app.dataset.appUrl},"*");return}const url=e.target.closest("[data-url]");if(url&&url.closest(".shell-page,.browser-shell-page")){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:url.dataset.url},"*");return}if(e.target.closest("[data-browser-settings-save]")){e.preventDefault();parent.postMessage(nyxBrowserPayload(),"*")}if(e.target.closest("[data-page-fullscreen]"))parent.postMessage({type:"nyx:fullscreen"},"*");if(e.target.closest("[data-shell-about]"))parent.postMessage({type:"nyx:about"},"*");if(e.target.closest("[data-shell-about-tab]"))parent.postMessage({type:"nyx:about-tab"},"*")});document.addEventListener("change",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){document.querySelectorAll("[data-tab-title]").forEach(el=>{el.value=presetSelect.options[presetSelect.selectedIndex]?.textContent||presetSelect.value||"nyx"});parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-value],[data-effect-speed],[data-effect-amount],[data-theme-value]"))parent.postMessage(nyxEffectPayload(),"*");if(e.target.closest("[data-browser-engine],[data-browser-mode-select],[data-browser-transport]"))parent.postMessage(nyxBrowserPayload(),"*")});document.addEventListener("input",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-speed],[data-effect-amount]")){document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=(Number(document.querySelector("[data-effect-speed]")?.value||1.1)).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=document.querySelector("[data-effect-amount]")?.value||"16"});parent.postMessage(nyxEffectPayload(),"*")}});';
     const popupScript='document.addEventListener("click",e=>{const popup=e.target.closest("[data-popup-protection]");if(!popup)return;e.preventDefault();const next=popup.dataset.enabled!=="true";popup.dataset.enabled=String(next);popup.classList.toggle("on",next);popup.textContent="Popup Protection "+(next?"On":"Off");parent.postMessage({type:"nyx:popup-protection",enabled:next},"*")});';
     const themeAppStyle='body.theme-ruby .quick-tile:hover .quick-icon,body.theme-emerald .quick-tile:hover .quick-icon,body.theme-sakura .quick-tile:hover .quick-icon{background:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important}';
     const compactSettingsStyle='.settings-main h1{font-size:24px!important}.settings-block h2{font-size:15px!important}.settings-block p,.settings-block label{font-size:12px!important;line-height:1.35!important}.settings-side button,.settings-action,.settings-preset{background:transparent!important;background-image:none!important;box-shadow:none!important}.settings-action,.settings-preset{border-color:transparent!important}.settings-side button:hover,.settings-side button.active,.settings-action:hover,.settings-preset:hover{background:transparent!important;background-image:none!important;border-color:var(--theme-border,rgba(255,255,255,.28))!important;box-shadow:none!important;transform:scale(1.015)!important}';
     const pageThemeStyle='.shell-page,.browser-shell-page{background:transparent!important}body.theme-ruby .shell-page,body.theme-ruby .browser-shell-page{background:transparent!important}body.theme-emerald .shell-page,body.theme-emerald .browser-shell-page{background:transparent!important}body.theme-sakura .shell-page,body.theme-sakura .browser-shell-page{background:transparent!important}';
-    const themeBorderOnlyStyle='body.theme-ruby{--theme-border:#fb7185!important;--theme-bg:linear-gradient(rgba(60,0,12,.10),rgba(60,0,12,.22)),url("assets/backgrounds/theme-ruby.jpg")!important}body.theme-emerald{--theme-border:#34d399!important;--theme-bg:linear-gradient(rgba(0,24,12,.08),rgba(0,24,12,.20)),url("assets/backgrounds/theme-emerald.png")!important}body.theme-sakura{--theme-border:#fbcfe8!important;--theme-bg:linear-gradient(rgba(40,0,28,.06),rgba(40,0,28,.18)),url("assets/backgrounds/theme-sakura.jpg")!important}.theme-ruby h1,.theme-ruby h2,.theme-ruby p,.theme-ruby span,.theme-ruby label,.theme-ruby button,.theme-emerald h1,.theme-emerald h2,.theme-emerald p,.theme-emerald span,.theme-emerald label,.theme-emerald button,.theme-sakura h1,.theme-sakura h2,.theme-sakura p,.theme-sakura span,.theme-sakura label,.theme-sakura button{background:none!important;color:inherit!important;-webkit-text-fill-color:currentColor!important;text-shadow:none!important}.theme-ruby .shell-page,.theme-emerald .shell-page,.theme-sakura .shell-page,.theme-ruby .browser-shell-page,.theme-emerald .browser-shell-page,.theme-sakura .browser-shell-page{background:var(--theme-bg)!important;background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important}.theme-ruby .settings-app,.theme-emerald .settings-app,.theme-sakura .settings-app,.theme-ruby .settings-main,.theme-emerald .settings-main,.theme-sakura .settings-main,.theme-ruby .settings-side,.theme-emerald .settings-side,.theme-sakura .settings-side,.theme-ruby .quick-tile,.theme-emerald .quick-tile,.theme-sakura .quick-tile{background:rgba(15,23,42,.36)!important}.theme-ruby button,.theme-ruby input,.theme-ruby select,.theme-ruby textarea,.theme-ruby .quick-tile,.theme-ruby .quick-icon,.theme-ruby .settings-main,.theme-ruby .settings-side,.theme-ruby .settings-action,.theme-ruby .settings-input,.theme-ruby .settings-select,.theme-emerald button,.theme-emerald input,.theme-emerald select,.theme-emerald textarea,.theme-emerald .quick-tile,.theme-emerald .quick-icon,.theme-emerald .settings-main,.theme-emerald .settings-side,.theme-emerald .settings-action,.theme-emerald .settings-input,.theme-emerald .settings-select,.theme-sakura button,.theme-sakura input,.theme-sakura select,.theme-sakura textarea,.theme-sakura .quick-tile,.theme-sakura .quick-icon,.theme-sakura .settings-main,.theme-sakura .settings-side,.theme-sakura .settings-action,.theme-sakura .settings-input,.theme-sakura .settings-select{border-color:color-mix(in srgb,var(--theme-border) 68%,rgba(255,255,255,.2))!important}.theme-ruby input[type=file].settings-input::file-selector-button,.theme-emerald input[type=file].settings-input::file-selector-button,.theme-sakura input[type=file].settings-input::file-selector-button{background:rgba(148,163,184,.24)!important;color:#f8fafc!important;-webkit-text-fill-color:#f8fafc!important}';
+    const themeBorderOnlyStyle='body.theme-ruby{--theme-border:#fb7185!important;--theme-bg:linear-gradient(rgba(60,0,12,.10),rgba(60,0,12,.22)),url("assets/backgrounds/nyx-blue-light-trails.jpg")!important}body.theme-emerald{--theme-border:#34d399!important;--theme-bg:linear-gradient(rgba(0,24,12,.08),rgba(0,24,12,.20)),url("assets/backgrounds/nyx-blue-light-trails.jpg")!important}body.theme-sakura{--theme-border:#fbcfe8!important;--theme-bg:linear-gradient(rgba(40,0,28,.06),rgba(40,0,28,.18)),url("assets/backgrounds/nyx-blue-light-trails.jpg")!important}.theme-ruby h1,.theme-ruby h2,.theme-ruby p,.theme-ruby span,.theme-ruby label,.theme-ruby button,.theme-emerald h1,.theme-emerald h2,.theme-emerald p,.theme-emerald span,.theme-emerald label,.theme-emerald button,.theme-sakura h1,.theme-sakura h2,.theme-sakura p,.theme-sakura span,.theme-sakura label,.theme-sakura button{background:none!important;color:inherit!important;-webkit-text-fill-color:currentColor!important;text-shadow:none!important}.theme-ruby .shell-page,.theme-emerald .shell-page,.theme-sakura .shell-page,.theme-ruby .browser-shell-page,.theme-emerald .browser-shell-page,.theme-sakura .browser-shell-page{background:var(--theme-bg)!important;background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important}.theme-ruby .settings-app,.theme-emerald .settings-app,.theme-sakura .settings-app,.theme-ruby .settings-main,.theme-emerald .settings-main,.theme-sakura .settings-main,.theme-ruby .settings-side,.theme-emerald .settings-side,.theme-sakura .settings-side,.theme-ruby .quick-tile,.theme-emerald .quick-tile,.theme-sakura .quick-tile{background:rgba(15,23,42,.36)!important}.theme-ruby button,.theme-ruby input,.theme-ruby select,.theme-ruby textarea,.theme-ruby .quick-tile,.theme-ruby .quick-icon,.theme-ruby .settings-main,.theme-ruby .settings-side,.theme-ruby .settings-action,.theme-ruby .settings-input,.theme-ruby .settings-select,.theme-emerald button,.theme-emerald input,.theme-emerald select,.theme-emerald textarea,.theme-emerald .quick-tile,.theme-emerald .quick-icon,.theme-emerald .settings-main,.theme-emerald .settings-side,.theme-emerald .settings-action,.theme-emerald .settings-input,.theme-emerald .settings-select,.theme-sakura button,.theme-sakura input,.theme-sakura select,.theme-sakura textarea,.theme-sakura .quick-tile,.theme-sakura .quick-icon,.theme-sakura .settings-main,.theme-sakura .settings-side,.theme-sakura .settings-action,.theme-sakura .settings-input,.theme-sakura .settings-select{border-color:color-mix(in srgb,var(--theme-border) 68%,rgba(255,255,255,.2))!important}.theme-ruby input[type=file].settings-input::file-selector-button,.theme-emerald input[type=file].settings-input::file-selector-button,.theme-sakura input[type=file].settings-input::file-selector-button{background:rgba(148,163,184,.24)!important;color:#f8fafc!important;-webkit-text-fill-color:#f8fafc!important}';
     const flatInternalStyle='html,body,button,input,select,textarea{font-family:Outfit,Arial,sans-serif!important;font-weight:400!important}body *{font-family:Outfit,Arial,sans-serif!important;font-weight:400!important;text-shadow:none!important;-webkit-text-stroke:0!important}.theme-ruby *, .theme-emerald *, .theme-sakura *{background-image:none!important;box-shadow:none!important;text-shadow:none!important}.theme-ruby button,.theme-ruby .quick-tile,.theme-ruby .quick-icon,.theme-ruby .settings-action,.theme-ruby .settings-preset,.theme-emerald button,.theme-emerald .quick-tile,.theme-emerald .quick-icon,.theme-emerald .settings-action,.theme-emerald .settings-preset,.theme-sakura button,.theme-sakura .quick-tile,.theme-sakura .quick-icon,.theme-sakura .settings-action,.theme-sakura .settings-preset{transition:transform .14s ease,border-color .14s ease!important}.theme-ruby button:hover,.theme-ruby .quick-tile:hover,.theme-ruby .quick-icon:hover,.theme-ruby .settings-action:hover,.theme-ruby .settings-preset:hover,.theme-emerald button:hover,.theme-emerald .quick-tile:hover,.theme-emerald .quick-icon:hover,.theme-emerald .settings-action:hover,.theme-emerald .settings-preset:hover,.theme-sakura button:hover,.theme-sakura .quick-tile:hover,.theme-sakura .quick-icon:hover,.theme-sakura .settings-action:hover,.theme-sakura .settings-preset:hover{transform:scale(1.015)!important;border-color:var(--theme-border)!important;background-image:none!important;box-shadow:none!important}';
     const flatInternalPageStyle='.shell-page,.browser-shell-page,.settings-app,.settings-main,.settings-side,.settings-block,.quick-tile,.quick-icon,.settings-action,.settings-preset{background-image:none!important;box-shadow:none!important;text-shadow:none!important}.settings-app,.settings-main,.settings-side,.settings-block{background:transparent!important;border-color:transparent!important}.quick-tile,.quick-icon,.settings-action,.settings-preset{background:transparent!important}.quick-tile:hover,.quick-icon:hover,.settings-preset:hover,.settings-action:hover{background:transparent!important;background-image:none!important;transform:scale(1.015)!important;border-color:var(--theme-border,rgba(255,255,255,.28))!important}input[type=file].settings-input::file-selector-button{background:transparent!important;background-image:none!important;color:#f8fafc!important;-webkit-text-fill-color:#f8fafc!important}';
     const transparentInternalFinalStyle='body :is(.settings-app,.settings-main,.settings-side,.settings-block,.settings-card,.settings-grid-settings){background:transparent!important;background-color:transparent!important;background-image:none!important;box-shadow:none!important;backdrop-filter:none!important}body :is(.settings-block,.settings-card){border-color:transparent!important}body :is(.settings-side button,.settings-side button.active,.settings-action,.settings-preset,.settings-input,.settings-select),body input[type=file].settings-input::file-selector-button{background:transparent!important;background-color:transparent!important;background-image:none!important;box-shadow:none!important;filter:none!important;text-shadow:none!important}body :is(.settings-side button:hover,.settings-side button.active,.settings-action:hover,.settings-preset:hover,.settings-input:hover,.settings-select:hover),body input[type=file].settings-input:hover::file-selector-button{background:transparent!important;background-image:none!important;border-color:var(--theme-border,rgba(255,255,255,.3))!important;box-shadow:none!important;transform:scale(1.015)!important}.shell-page .quick-tile,.shell-page .quick-icon{background:transparent!important;background-color:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important;backdrop-filter:none!important}.shell-page .quick-tile:hover,.shell-page .quick-icon:hover{background:transparent!important;background-image:none!important;border-color:var(--theme-border,rgba(255,255,255,.3))!important;box-shadow:none!important}.shell-page .quick-tile span{display:block!important;opacity:1!important;visibility:visible!important;color:#f8fafc!important;-webkit-text-fill-color:#f8fafc!important;background:none!important;background-image:none!important;text-shadow:none!important;font-weight:400!important}';
@@ -1980,7 +2048,7 @@
     const clearInternalPageStyle=/^(apps)$/i.test(String(page.title || '')) ? 'html,body,.shell-page,.browser-shell-page{min-height:100vh!important;'+internalBgStyle+'}html::before,html::after,body::before,body::after{display:none!important;content:none!important}.shell-page,.browser-shell-page{box-shadow:none!important;backdrop-filter:none!important;filter:none!important}.shell-page::before,.shell-page::after,.browser-shell-page::before,.browser-shell-page::after{display:none!important;content:none!important}.shell-page h1,.browser-shell-page h1,.shell-page p,.browser-shell-page p,.quick-tile span{color:#f8f5ff!important;-webkit-text-fill-color:#f8f5ff!important;opacity:1!important;visibility:visible!important;background:none!important;background-image:none!important;text-shadow:none!important}.quick-grid{gap:18px!important}.quick-tile{height:106px!important;background:transparent!important;background-image:none!important;border:1px solid transparent!important;border-radius:10px!important;box-shadow:none!important;backdrop-filter:none!important;filter:none!important}.quick-icon{width:58px!important;height:58px!important;background:transparent!important;background-image:none!important;border-color:transparent!important;border-radius:9px!important;box-shadow:none!important;backdrop-filter:none!important;filter:none!important}.quick-tile:hover{background:rgba(8,7,13,.32)!important;background-image:none!important;border-color:rgba(190,148,255,.54)!important;box-shadow:0 10px 28px rgba(0,0,0,.22)!important;transform:scale(1.018)!important;backdrop-filter:blur(3px)!important;-webkit-backdrop-filter:blur(3px)!important}.quick-tile:hover .quick-icon{background:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important;transform:scale(1.06)!important}.quick-tile span{font-size:13px!important;font-weight:400!important}' : '';
     const internalAppsLaunchStyle=/^(apps)$/i.test(String(page.title || '')) ? '.apps-launch-grid{grid-template-columns:repeat(auto-fill,minmax(178px,1fr))!important;gap:24px!important}.apps-launch-grid .quick-tile{height:178px!important;min-height:178px!important;border-radius:18px!important;animation:appTileOpenRise .62s cubic-bezier(.18,.82,.2,1) both!important;animation-delay:var(--tile-delay,0ms)!important}.apps-launch-grid .quick-icon{width:98px!important;height:98px!important;border-radius:18px!important}.apps-launch-grid .quick-tile[data-domain="traxmojo.com"] .quick-icon{width:150px!important;height:150px!important;max-width:150px!important;max-height:150px!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}.apps-launch-grid .quick-tile span{font-size:16px!important}@keyframes appTileOpenRise{0%{opacity:0;transform:translate(-34px,42px) scale(.78);filter:blur(8px)}64%{opacity:1;transform:translate(4px,-5px) scale(1.025);filter:blur(0)}100%{opacity:1;transform:translate(0,0) scale(1);filter:blur(0)}}' : '';
     const internalAppsHazeStyle=/^(apps)$/i.test(String(page.title || '')) ? 'html,body{position:relative!important;isolation:isolate!important}body::before{content:""!important;display:block!important;position:fixed!important;inset:-18px!important;z-index:0!important;pointer-events:none!important;background:rgba(77,47,142,.36)!important;backdrop-filter:blur(11px) saturate(.82)!important;-webkit-backdrop-filter:blur(11px) saturate(.82)!important}.shell-page{position:relative!important;z-index:1!important;background:transparent!important}.theme-ruby::before{background:rgba(125,22,39,.38)!important}.theme-emerald::before{background:rgba(4,92,65,.36)!important}.theme-sakura::before{background:rgba(190,55,120,.32)!important}.theme-fresh::before{background:rgba(92,219,207,.25)!important}.apps-launch-grid{position:relative!important;z-index:2!important}' : '';
-    const finalInternalBackgroundStyle='body.theme-ruby{--theme-bg:linear-gradient(rgba(60,0,12,.10),rgba(60,0,12,.22)),url("assets/backgrounds/theme-ruby.jpg")!important}body.theme-emerald{--theme-bg:linear-gradient(rgba(0,24,12,.08),rgba(0,24,12,.20)),url("assets/backgrounds/theme-emerald.png")!important}body.theme-sakura{--theme-bg:linear-gradient(rgba(40,0,28,.06),rgba(40,0,28,.18)),url("assets/backgrounds/theme-sakura.jpg")!important}body.theme-ruby .shell-page,body.theme-ruby .browser-shell-page,body.theme-emerald .shell-page,body.theme-emerald .browser-shell-page,body.theme-sakura .shell-page,body.theme-sakura .browser-shell-page{background:var(--theme-bg)!important;background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important}';
+    const finalInternalBackgroundStyle='body.theme-ruby{--theme-bg:linear-gradient(rgba(60,0,12,.10),rgba(60,0,12,.22)),url("assets/backgrounds/nyx-blue-light-trails.jpg")!important}body.theme-emerald{--theme-bg:linear-gradient(rgba(0,24,12,.08),rgba(0,24,12,.20)),url("assets/backgrounds/nyx-blue-light-trails.jpg")!important}body.theme-sakura{--theme-bg:linear-gradient(rgba(40,0,28,.06),rgba(40,0,28,.18)),url("assets/backgrounds/nyx-blue-light-trails.jpg")!important}body.theme-ruby .shell-page,body.theme-ruby .browser-shell-page,body.theme-emerald .shell-page,body.theme-emerald .browser-shell-page,body.theme-sakura .shell-page,body.theme-sakura .browser-shell-page{background:var(--theme-bg)!important;background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important}';
     const normalInternalTextStyle='html,body,body *{font-weight:400!important;font-style:normal!important}body.theme-fresh,body.theme-fresh *{color:#075f70!important;-webkit-text-fill-color:#075f70!important;font-weight:400!important;font-style:normal!important}body.theme-fresh input::placeholder,body.theme-fresh textarea::placeholder{color:#336d78!important;-webkit-text-fill-color:#336d78!important}';
     const panicFrameScript='let NYX_PANIC_CAPTURE=false;function nyxPanicCombo(e){const key=String(e.key||"").trim();if(!key||["Control","Shift","Alt","Meta"].includes(key))return "";const parts=[];if(e.ctrlKey)parts.push("Ctrl");if(e.altKey)parts.push("Alt");if(e.shiftKey)parts.push("Shift");if(e.metaKey)parts.push("Meta");parts.push(key.length===1?key.toUpperCase():key.replace(/^Arrow/,""));return parts.join("+")}document.addEventListener("click",e=>{if(e.target.closest("[data-panic-capture]"))NYX_PANIC_CAPTURE=true;if(e.target.closest("[data-panic-clear]"))NYX_PANIC_CAPTURE=false},true);document.addEventListener("keydown",e=>{if(!NYX_PANIC_CAPTURE)return;const combo=nyxPanicCombo(e);if(!combo)return;e.preventDefault();e.stopPropagation();NYX_PANIC_CAPTURE=false;document.querySelectorAll("[data-panic-key-display]").forEach(el=>el.textContent=combo);parent.postMessage({type:"nyx:panic-key-set",combo},"*")},true);';
     const internalPaintScript='';
@@ -2762,19 +2830,9 @@
       if(store.text('nyx.visualEffect','none')==='stars' && store.text('nyx.visualEffectAmount','16')==='64'){
         store.setText('nyx.visualEffect','none');
       }
-      store.setText('nyx.musicTrack','clair');
-      if(ambientTracks?.clair && ambientCurrentKey!=='clair'){
-        loadAmbientTrack('clair',false);
-      }
     }
     if(!store.get('nyx.visualEffectUserChoice',false) && ['flowers','emeralds'].includes(store.text('nyx.visualEffect','none'))){
       store.setText('nyx.visualEffect','none');
-    }
-    if(nyxGateOpened && theme==='emerald' && ambientTracks?.frog && ambientCurrentKey!=='frog'){
-      loadAmbientTrack('frog',false);
-    }
-    if(nyxGateOpened && theme==='fresh' && ambientTracks?.sunny && ambientCurrentKey!=='sunny'){
-      loadAmbientTrack('sunny',false);
     }
     if(nyxGateOpened && (theme==='fresh' || theme==='sakura')){
       applyVisualEffectSetting();
@@ -2975,10 +3033,10 @@
     if(['ruby','emerald','sakura','fresh'].includes(theme)){
       const themeBg=getComputedStyle(document.body).getPropertyValue('--theme-bg').trim();
       if(themeBg && !/transparent\s*,\s*transparent/i.test(themeBg)) return themeBg;
-      if(theme==='ruby') return 'linear-gradient(rgba(60,0,12,.10),rgba(60,0,12,.22)),url("assets/backgrounds/theme-ruby.jpg")';
-      if(theme==='emerald') return 'linear-gradient(rgba(0,24,12,.08),rgba(0,24,12,.20)),url("assets/backgrounds/theme-emerald.png")';
-      if(theme==='sakura') return 'linear-gradient(rgba(40,0,28,.06),rgba(40,0,28,.18)),url("assets/backgrounds/theme-sakura.jpg")';
-      if(theme==='fresh') return 'linear-gradient(rgba(255,255,255,.10),rgba(255,255,255,.18)),url("assets/backgrounds/theme-fresh.jpg")';
+      if(theme==='ruby') return 'linear-gradient(rgba(60,0,12,.10),rgba(60,0,12,.22)),url("assets/backgrounds/nyx-blue-light-trails.jpg")';
+      if(theme==='emerald') return 'linear-gradient(rgba(0,24,12,.08),rgba(0,24,12,.20)),url("assets/backgrounds/nyx-blue-light-trails.jpg")';
+      if(theme==='sakura') return 'linear-gradient(rgba(40,0,28,.06),rgba(40,0,28,.18)),url("assets/backgrounds/nyx-blue-light-trails.jpg")';
+      if(theme==='fresh') return 'linear-gradient(rgba(255,255,255,.10),rgba(255,255,255,.18)),url("assets/backgrounds/nyx-blue-light-trails.jpg")';
     }
     const bg=store.text('nyx.browserBackground','lofiPurple');
     return bgPresets[bg] || bgPresets.lofiPurple || bgPresets.dragon;
@@ -3425,30 +3483,62 @@
     gate.classList.add('hidden');
     gate.setAttribute('aria-hidden','true');
     gate.setAttribute('inert','');
-    showSetupLaunchSplash();
-    requestAnimationFrame(()=>{
-      applyLagReducerSetting();
-      document.body.classList.toggle('browser-shell',store.get('nyx.browserShellMode',true));
-      syncChromeMode(store.get('nyx.browserShellMode',true));
-      requestNyxKeyboardLock();
-      applyThemeSetting();
-      syncPerformanceLite();
-      applyVisualEffectSetting();
-      tick();
-      installHomeShortcutAnimationObserver();
-      startRuntimeLagWatch();
-      initDesktopSplash();
-      finishNyxOpenStartup();
-      initAmbientMusic();
-      applyVisualEffectSetting();
-      document.body.classList.remove('runtime-lag-guard');
-      if(shouldShowStartupCustomization()){
-        document.body.classList.remove('nyx-startup-prep');
-        suppressHomeEntranceOnStartup=false;
-        showSetup();
-      }else{
-        playNyxStartupReveal();
-      }
+    const startupProgress=showSetupLaunchSplash();
+    requestAnimationFrame(async()=>{
+      const runStep=async(value,label,task,minimumVisible)=>{
+        if(startupProgress?.step) return startupProgress.step(value,label,task,minimumVisible);
+        try{return {ok:true,result:await Promise.resolve().then(task)}}catch(error){console.warn(`Startup task failed: ${label}`,error);return {ok:false,error}}
+      };
+
+      await runStep(12,'Preparing interface',()=>{
+        applyLagReducerSetting();
+        const browserShellMode=store.get('nyx.browserShellMode',true);
+        document.body.classList.toggle('browser-shell',browserShellMode);
+        syncChromeMode(browserShellMode);
+      },380);
+
+      await runStep(31,'Restoring settings',()=>{
+        applyUserSettings();
+      },460);
+
+      await runStep(49,'Loading your theme',async()=>{
+        applyThemeSetting();
+        syncPerformanceLite();
+        const fontsReady=document.fonts?.ready || Promise.resolve();
+        const pageReady=document.readyState==='complete'
+          ? Promise.resolve()
+          : new Promise(resolve=>window.addEventListener('load',resolve,{once:true}));
+        await Promise.race([
+          Promise.allSettled([fontsReady,pageReady]),
+          new Promise(resolve=>setTimeout(resolve,1400))
+        ]);
+      },480);
+
+      await runStep(67,'Starting browser',async()=>{
+        await requestNyxKeyboardLock();
+        tick();
+      },430);
+
+      await runStep(83,'Loading shortcuts',()=>{
+        installHomeShortcutAnimationObserver();
+        startRuntimeLagWatch();
+        initDesktopSplash();
+      },400);
+
+      await runStep(96,'Finishing startup',()=>{
+        finishNyxOpenStartup();
+        applyVisualEffectSetting();
+        document.body.classList.remove('runtime-lag-guard');
+        if(shouldShowStartupCustomization()){
+          document.body.classList.remove('nyx-startup-prep');
+          suppressHomeEntranceOnStartup=false;
+          showSetup();
+        }else{
+          playNyxStartupReveal();
+        }
+      },440);
+
+      await startupProgress?.complete?.('Nyx is ready');
     });
   }
   const launchPdfOptions={
@@ -3683,32 +3773,19 @@
     ];
     if(hostMatches(host,iframeHosts)) return 'iframe';
     if(hostMatches(host,scramjetHosts)) return 'scramjet';
-    return 'ultraviolet';
-  }
-  function avoidsScramjet(url){
-    const host=browserHost(url);
-    return hostMatches(host,[
-      'youtube.com','youtu.be','google.com','drive.google.com','docs.google.com',
-      'discord.com','roblox.com','twitch.tv','netflix.com',
-      'reddit.com','x.com','twitter.com','instagram.com','tiktok.com','snapchat.com',
-      'amazon.com','tcgplayer.com','chess.com','chatgpt.com','duck.ai',
-      'wikipedia.org','classlink.com','traxmojo.com','duckduckgo.com',
-      'cpstest.org'
-    ]);
+    return 'scramjet';
   }
   function selectedBrowserMode(url){
     try{
       const target=new URL(url,location.href);
       if(target.origin===location.origin || target.protocol==='file:') return 'iframe';
     }catch{}
-    if(hostMatches(browserHost(url),['duckduckgo.com'])) return 'ultraviolet';
+    const mode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
     if(isSpotifyFamilyUrl(url)) return 'scramjet';
     if(hostMatches(browserHost(url),['slither.io'])) return 'iframe';
-    const mode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
     if(mode==='iframe' && hostMatches(browserHost(url),['cineby.at'])) return 'scramjet';
     if(mode!=='auto') return mode;
-    const selected=bestBrowserMode(url);
-    return selected==='scramjet' && avoidsScramjet(url) ? 'ultraviolet' : selected;
+    return bestBrowserMode(url);
   }
   function proxySelectionInfo(url,forceMode=''){
     const savedMode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
@@ -4184,9 +4261,6 @@
     try{document.body.classList.add('nyx-resetting')}catch{}
     try{toast('Clearing cache...')}catch{}
     try{
-      if(window.ambientAudio) window.ambientAudio.pause();
-    }catch{}
-    try{
       if(navigator.serviceWorker?.getRegistrations){
         const registrations=await navigator.serviceWorker.getRegistrations().catch(()=>[]);
         await Promise.all(registrations.map(registration=>registration.unregister().catch(()=>false)));
@@ -4341,11 +4415,8 @@
   }
   function updateDockFullscreenState(){
     const dock=document.querySelector('.dock');
-    const ambient=$('ambientPlayer');
     const hasFullscreen=[...document.querySelectorAll('.window.maximized')].some(win=>win.style.display!=='none' && !win.classList.contains('closing'));
-    const browserShell=document.body.classList.contains('browser-shell');
     dock?.classList.toggle('hidden-for-window',hasFullscreen);
-    ambient?.classList.toggle('hidden-for-window',hasFullscreen && !browserShell);
     if(hasFullscreen) closeWeatherPanelAnimated();
   }
   function minimizeWindow(win){
@@ -4843,6 +4914,7 @@
     if(forward) forward.textContent='➜';
     if(reload) reload.textContent='🗘';
     if(menu) menu.textContent='...';
+    bindReloadPointerTurn(win);
   }
   let nyxPreflightPromise=null;
   let nyxPreflightBypass=false;
@@ -5125,13 +5197,14 @@
       row.querySelectorAll('.browser-tab').forEach(x=>x.remove());
       state.tabs.forEach(t=>{
         const el=document.createElement('div'); el.className='browser-tab'+(t.id===state.active?' active':'')+(t.opening?' tab-opening':'');
-        el.innerHTML=`<span>${esc(t.title)}</span><button data-close-tab="${t.id}">×</button>`;
+        const displayUrl=t.sourceUrl || t.url;
+        el.innerHTML=`<span>${esc(browserChromeTitle(t.title,displayUrl))}</span><button data-close-tab="${t.id}">×</button>`;
         const label=el.querySelector('span');
         if(label){
           const icon=document.createElement('img');
           icon.className='browser-tab-icon';
           icon.alt='';
-          icon.src=t.icon || iconForUrl(t.url);
+          icon.src=browserChromeIcon(t.icon,displayUrl);
           bindTabIconFallback(icon);
           el.insertBefore(icon,label);
         }
@@ -5144,6 +5217,7 @@
     }
     function syncLoadedTabIcon(t){
       if(!t?.frame || !state.tabs.includes(t)) return false;
+      if(websiteDetailsHidden()) return false;
       let icon='';
       try{icon=iconFromPageDocument(t.frame.contentDocument,t.sourceUrl || t.url)}catch{}
       if(!icon) icon=iconForUrl(t.sourceUrl || t.url);
@@ -6014,7 +6088,7 @@
         win.querySelector('.browser-home').classList.remove('hidden');
         if(t?.opening) playBrowserShellPageReveal(win);
       }
-      win.querySelector('.urlbar').value=browserShellDisplayValue(activeUrl); win.querySelector('.titlebar-title').textContent=activeTitle; renderTabs(); bring(win);
+      win.querySelector('.urlbar').value=browserShellDisplayValue(activeUrl); win.querySelector('.titlebar-title').textContent=browserChromeTitle(activeTitle,t?.sourceUrl || activeUrl); renderTabs(); bring(win);
       if(t?.url || !mappedShellTab?.url) updateBrowserShellLocation(t?.url || (activeIsBlank ? NYX_BLANK_URL : ''),t?.id || '');
     }
     function detectBrowserEngine(url,t){
@@ -8125,6 +8199,11 @@
           <div class="settings-row"><span>Browser Mode</span><button class="switch ${store.get('nyx.browserShellMode',true)?'on':''}" data-switch="nyx.browserShellMode" aria-label="Browser mode"></button></div>
         </section>
         <section class="settings-card">
+          <h2>Hide Website Details</h2>
+          <p>Replace external website names and icons in Nyx tabs with a generic hidden label.</p>
+          <div class="settings-row"><span>Hide Names and Icons</span><button class="switch ${websiteDetailsHidden()?'on':''}" data-switch="nyx.hideWebsiteDetails" aria-label="Hide website names and icons"></button></div>
+        </section>
+        <section class="settings-card">
           <h2>Popup Protection</h2>
           <p>Controls whether site popups are replaced with nyx's blocked popup screen.</p>
           <div class="settings-row"><span>Popup Protection</span><button class="switch ${popupProtectionEnabled()?'on':''}" data-switch="nyx.popupProtection" aria-label="Popup protection"></button></div>
@@ -8407,7 +8486,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     document.body.classList.remove('setup-active');
   }
   function showSetupLaunchSplash(){
-    window.nyxLoadingScreen?.show();
+    return window.nyxLoadingScreen?.show() || null;
   }
   function finishSetupCustomization(){
     const name=$('setupName')?.value.trim();
@@ -8483,6 +8562,9 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
         }else if(key==='nyx.popupProtection'){
           activeBrowser?.refreshSandbox?.();
           toast('Popup Protection '+(v?'on':'off'));
+        }else if(key==='nyx.hideWebsiteDetails'){
+          refreshWebsiteDetailsVisibility();
+          toast('Website details '+(v?'hidden':'shown'));
         }
       }
     });
@@ -8843,8 +8925,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
   function shouldAutoLaunchHostedCloak(){
     try{
       const params=new URLSearchParams(location.search);
-      const cloakHosts=['lionrunner.web.app','lionrunner.firebaseapp.com'];
-      return cloakHosts.includes(location.hostname)
+      return /^https?:$/.test(location.protocol)
         && window.top===window.self
         && params.has('nyx_auto_classroom')
         && !params.has('nyx_cloaked');
@@ -8857,7 +8938,6 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     if(!screen) return;
     screen.classList.add('show');
     screen.setAttribute('aria-hidden','false');
-    syncAmbientCoverState();
     setTimeout(()=>screen.querySelector('[data-cloak-input]')?.focus(),40);
   }
   function hideCloakLaunchScreen(){
@@ -8865,7 +8945,6 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     if(!screen) return;
     screen.classList.remove('show');
     screen.setAttribute('aria-hidden','true');
-    syncAmbientCoverState();
   }
   function setCloakLaunchMessage(text){
     const panel=$('cloakLaunchScreen')?.querySelector('p');
@@ -10010,18 +10089,6 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
         restoreWeatherPanel();
         return;
       }
-      if(e.target.closest('#ambientToggle')){
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        setAmbientPlaying(!ambientPlaying);
-        return;
-      }
-      if(e.target.closest('#ambientSpotify')){
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        connectSpotifyNowPlaying();
-        return;
-      }
       if(e.target.closest('#watchPartyStop')){
         e.preventDefault();
         e.stopImmediatePropagation();
@@ -10115,807 +10182,6 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     qsa('#clock').forEach(clock=>{clock.textContent=short});
     qsa('#centerClock,[data-browser-shell-clock]').forEach(clock=>{clock.textContent=full});
   }
-  const ambientTracks = {
-    clair:{title:'Clair de Lune',artist:'Claude Debussy',src:'assets/music/claire-de-lune.mp3',artwork:'https://image-cdn-fa.spotifycdn.com/image/ab67616d00001e02ca3a3517a97abe7f3fc862ce'},
-    testdrive:{title:'Test Drive Toothless',artist:'John Powell',src:'assets/music/test-driving-toothless.mp3',artwork:'https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e0231eeb313fb6fb6b175afd5fc'},
-    imposter:{title:'Impostor Syndrome',artist:'Sidney Gish',src:'assets/music/impostor-syndrome.mp3',artwork:'https://image-cdn-fa.spotifycdn.com/image/ab67616d00001e02f7832bb86831bdec9848acda'},
-    chess:{title:'Chess Type Beat',artist:'Joyful',src:'assets/music/chess-type-beat.mp3',artwork:'https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e02ed3787719b7defc511c87cb1'},
-    givemore:{title:'Give Me More (Just Rawer)',artist:'Aloboi',src:'assets/music/give-me-more-just-rawer.mp3',artwork:'https://image-cdn-fa.spotifycdn.com/image/ab67616d00001e02ffed09538e5eb47d7ac231a7'},
-    frog:{title:'Frog',artist:'Joyful',src:'assets/music/frog.mp3',artwork:'https://image-cdn-fa.spotifycdn.com/image/ab67616d00001e02fcd37730610ed7bf8e5c8aee'},
-    sunny:{title:'Sunny',artist:'Yorushika',src:'assets/music/yorushika-sunny.mp3',artwork:'https://image-cdn-fa.spotifycdn.com/image/ab67616d00001e02872720120ae663afd14b77b3'}
-  };
-  const ambientBaseTrackKeys = ['clair','testdrive','imposter','chess','givemore','frog','sunny'];
-  let ambientCurrentKey = store.text('nyx.musicTrack','clair');
-  let ambientQueueMode = store.text('nyx.musicQueue','all');
-  let ambientPlaying = false;
-  let freshAmbientGestureArmed = false;
-  let ambientCustomUrls = [];
-  let ambientSeeking = false;
-  let ambientAudioContext = null;
-  let ambientSourceNode = null;
-  let ambientBassFilter = null;
-  let ambientBassGain = null;
-  let spotifyPollTimer = null;
-  let spotifyStatusHoldUntil = 0;
-  //music-player-logic
-  function formulaGateActive(){
-    const gate=$('formulaGate');
-    return !!gate && !gate.classList.contains('hidden') && gate.getAttribute('aria-hidden')!=='true';
-  }
-  function cloakLaunchActive(){
-    return $('cloakLaunchScreen')?.classList.contains('show') || document.body.classList.contains('hosted-cloak-entry') || document.documentElement.classList.contains('hosted-cloak-entry');
-  }
-  function ambientShouldSuspend(){
-    return formulaGateActive() || cloakLaunchActive();
-  }
-  const ambientPlaySymbol = () => String.fromCharCode(9654);
-  const ambientPauseSymbol = () => String.fromCharCode(10074,10074);
-  function syncAmbientCoverState(){
-    const box=$('ambientPlayer');
-    const audio=$('ambientAudio');
-    const suspended=ambientShouldSuspend();
-    box?.classList.toggle('cover-hidden',suspended);
-    if(suspended && audio){
-      audio.pause();
-      ambientPlaying=false;
-      const btn=$('ambientToggle');
-      if(btn){
-        btn.textContent=ambientPlaySymbol();
-        btn.classList.remove('is-playing');
-      }
-    }
-    return suspended;
-  }
-  function ambientTrackLabel(track){
-    return track?.artist ? `${track.title} - ${track.artist}` : (track?.title || 'Custom music');
-  }
-  function refreshAmbientSongOptions(selected=ambientCurrentKey){
-    const song=$('ambientSong');
-    if(!song) return;
-    song.innerHTML='';
-    [...ambientBaseTrackKeys,Object.keys(ambientTracks).filter(key=>key.startsWith('custom-'))].flat().forEach(key=>{
-      const track=ambientTracks[key];
-      if(!track) return;
-      const option=document.createElement('option');
-      option.value=key;
-      option.textContent=(isAmbientFavorite(key) ? 'Favorite - ' : '') + ambientTrackLabel(track);
-      song.appendChild(option);
-    });
-    const addOption=document.createElement('option');
-    addOption.value='custom';
-    addOption.textContent='Add your music...';
-    song.appendChild(addOption);
-    song.value=ambientTracks[selected] ? selected : 'clair';
-  }
-  function ambientTrack(){
-    return ambientTracks[ambientCurrentKey] || ambientTracks.clair;
-  }
-  function setAmbientStatus(text,holdMs=0){
-    const status=$('ambientStatus');
-    if(status) status.textContent=text;
-    if(holdMs) spotifyStatusHoldUntil=Date.now()+holdMs;
-  }
-  function setAmbientTitle(){
-    const track=ambientTrack();
-    const title=$('ambientTitle');
-    const artist=$('ambientArtist');
-    const artwork=$('ambientArtwork');
-    if(title) title.textContent=track?.title || 'Custom music';
-    if(artist) artist.textContent=track?.artist || 'Unknown artist';
-    if(artwork) artwork.alt=`${ambientTrackLabel(track)} cover art`;
-    syncAmbientFavorite();
-  }
-  const ambientDefaultArtwork='https://image-cdn-fa.spotifycdn.com/image/ab67616d00001e02ca3a3517a97abe7f3fc862ce';
-  function setAmbientArtwork(url=ambientDefaultArtwork,alt='Music cover art'){
-    const artwork=$('ambientArtwork');
-    const cover=$('ambientCover');
-    if(!artwork) return;
-    if(url) artwork.src=url;
-    artwork.alt=alt;
-    cover?.classList.remove('cover-unavailable');
-  }
-  function ambientFavoriteStorageKey(){
-    return `nyx.musicFavorite.${ambientCurrentKey}`;
-  }
-  function isAmbientFavorite(key=ambientCurrentKey){
-    return store.get(`nyx.musicFavorite.${key}`,false)===true;
-  }
-  function ambientAllTrackKeys(){
-    return [...ambientBaseTrackKeys,Object.keys(ambientTracks).filter(key=>key.startsWith('custom-'))].flat().filter(key=>ambientTracks[key]);
-  }
-  function ambientFavoriteTrackKeys(){
-    return ambientAllTrackKeys().filter(key=>isAmbientFavorite(key));
-  }
-  function ambientQueueTrackKeys(){
-    const favorites=ambientFavoriteTrackKeys();
-    return ambientQueueMode==='favorites' && favorites.length ? favorites : ambientAllTrackKeys();
-  }
-  function syncAmbientQueue(){
-    const queue=$('ambientQueue');
-    if(queue) queue.value=ambientQueueMode;
-  }
-  function setAmbientQueue(value){
-    const favorites=ambientFavoriteTrackKeys();
-    ambientQueueMode=value==='favorites' && favorites.length ? 'favorites' : 'all';
-    store.setText('nyx.musicQueue',ambientQueueMode);
-    syncAmbientQueue();
-    if(value==='favorites' && !favorites.length){
-      setAmbientStatus('Favorite a track first',4500);
-      toast('Favorite a track first');
-      return;
-    }
-    setAmbientStatus(ambientQueueMode==='favorites' ? 'Favorites queue' : 'All tracks queue',3500);
-    toast(ambientQueueMode==='favorites' ? 'Favorites queue selected' : 'All tracks queue selected');
-  }
-  function syncAmbientFavorite(){
-    const button=$('ambientFavorite');
-    if(!button) return;
-    const active=isAmbientFavorite();
-    button.classList.toggle('is-favorite',active);
-    button.innerHTML=active ? '&#9829;' : '&#9825;';
-    button.setAttribute('aria-pressed',String(active));
-    button.title=active ? 'Remove from favorites' : 'Favorite this track';
-  }
-  function toggleAmbientFavorite(){
-    const active=isAmbientFavorite();
-    store.set(ambientFavoriteStorageKey(),!active);
-    syncAmbientFavorite();
-    refreshAmbientSongOptions(ambientCurrentKey);
-    if(active && ambientQueueMode==='favorites' && !ambientFavoriteTrackKeys().length) setAmbientQueue('all');
-    toast(active ? 'Removed from favorites' : 'Added to favorites');
-  }
-  function cycleAmbientTrack(step){
-    const keys=ambientQueueTrackKeys();
-    if(!keys.length) return;
-    const index=keys.indexOf(ambientCurrentKey);
-    const next=index<0 ? keys[step<0 ? keys.length-1 : 0] : keys[(index+step+keys.length)%keys.length];
-    refreshAmbientSongOptions(next);
-    loadAmbientTrack(next,true);
-  }
-  const spotifyScope='user-read-currently-playing user-read-playback-state';
-  function spotifyRedirectUri(){
-    return location.origin + location.pathname;
-  }
-  function hasSpotifyCallbackParams(){
-    try{
-      const url=new URL(location.href);
-      return url.searchParams.has('code') || url.searchParams.has('state') || url.searchParams.has('error');
-    }catch{
-      return false;
-    }
-  }
-  function showSpotifyCallbackScreen(message='Connecting Spotify...'){
-    let screen=$('spotifyCallbackScreen');
-    if(!screen){
-      screen=document.createElement('div');
-      screen.id='spotifyCallbackScreen';
-      screen.className='spotify-callback-screen';
-      screen.innerHTML='<div class="spotify-callback-card"><div class="spotify-callback-spinner" aria-hidden="true"></div><h1>Spotify</h1><p data-spotify-callback-message>Connecting Spotify...</p></div>';
-      document.body.appendChild(screen);
-    }
-    const text=screen.querySelector('[data-spotify-callback-message]');
-    if(text) text.textContent=message;
-    document.body.classList.add('spotify-callback-mode');
-    return screen;
-  }
-  function spotifyCallbackHasOpener(){
-    try{return !!(window.opener && !window.opener.closed)}catch{return false}
-  }
-  function spotifyTokenValid(){
-    return Boolean(store.text('nyx.spotifyAccessToken','') && Number(store.text('nyx.spotifyTokenExpires','0')) > Date.now()+30000);
-  }
-  function spotifyBase64Url(buffer){
-    const bytes=new Uint8Array(buffer);
-    let binary='';
-    bytes.forEach(byte=>{binary+=String.fromCharCode(byte)});
-    return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-  }
-  async function spotifyChallenge(verifier){
-    const data=new TextEncoder().encode(verifier);
-    const digest=await crypto.subtle.digest('SHA-256',data);
-    return spotifyBase64Url(digest);
-  }
-  async function spotifyFetchWithTimeout(url,init={},timeout=16000){
-    const controller=new AbortController();
-    const timer=setTimeout(()=>controller.abort(),timeout);
-    try{
-      return await fetch(url,{...init,signal:controller.signal});
-    }finally{
-      clearTimeout(timer);
-    }
-  }
-  function spotifyRandomString(length=72){
-    const chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
-    const values=new Uint8Array(length);
-    crypto.getRandomValues(values);
-    return Array.from(values,byte=>chars[byte % chars.length]).join('');
-  }
-  async function connectSpotifyNowPlaying(){
-    if(spotifyTokenValid()){
-      await updateSpotifyNowPlaying();
-      return;
-    }
-    let clientId=store.text('nyx.spotifyClientId','').trim();
-    if(!clientId){
-      clientId=prompt('Paste your Spotify Client ID to connect Spotify now playing:','')?.trim() || '';
-      if(!clientId){
-        setAmbientStatus('Spotify needs a Client ID');
-        return;
-      }
-      store.setText('nyx.spotifyClientId',clientId);
-    }
-    const verifier=spotifyRandomString();
-    const state=spotifyRandomString(28);
-    store.setText('nyx.spotifyVerifier',verifier);
-    store.setText('nyx.spotifyState',state);
-    const challenge=await spotifyChallenge(verifier);
-    const auth=new URL('https://accounts.spotify.com/authorize');
-    auth.searchParams.set('client_id',clientId);
-    auth.searchParams.set('response_type','code');
-    auth.searchParams.set('redirect_uri',spotifyRedirectUri());
-    auth.searchParams.set('scope',spotifyScope);
-    auth.searchParams.set('code_challenge_method','S256');
-    auth.searchParams.set('code_challenge',challenge);
-    auth.searchParams.set('state',state);
-    const popup=window.open(auth.href,'nyxSpotifyAuth','popup=yes,width=520,height=760,menubar=no,toolbar=no,location=yes,status=no,scrollbars=yes,resizable=yes');
-    if(popup){
-      try{popup.focus?.()}catch{}
-      setAmbientStatus('Finish Spotify sign in');
-      return;
-    }
-    setAmbientStatus('Popup blocked, opening Spotify');
-    location.href=auth.href;
-  }
-  function finishSpotifyPopup(ok,message=''){
-    if(spotifyCallbackHasOpener()) showSpotifyCallbackScreen(ok ? 'Spotify connected. Closing this tab...' : (message || 'Spotify connection failed. You can close this tab.'));
-    try{
-      if(spotifyCallbackHasOpener()){
-        window.opener.postMessage({type:'nyx:spotify-auth',ok:!!ok,message},location.origin);
-        setTimeout(()=>window.close(),420);
-      }
-    }catch{}
-    if(spotifyCallbackHasOpener() && (!ok || !window.opener || window.opener.closed)){
-      setTimeout(()=>showSpotifyCallbackScreen(message || 'You can close this tab and return to Nyx.'),600);
-    }
-  }
-  async function handleSpotifyCallback(){
-    const spotifyPopupCallback=spotifyCallbackHasOpener();
-    if(spotifyPopupCallback) showSpotifyCallbackScreen('Connecting Spotify...');
-    const url=new URL(location.href);
-    const code=url.searchParams.get('code');
-    const state=url.searchParams.get('state');
-    const spotifyError=url.searchParams.get('error');
-    if(spotifyError){
-      url.searchParams.delete('error');
-      url.searchParams.delete('state');
-      history.replaceState(null,'',url.pathname + url.search + url.hash);
-      setAmbientStatus('Spotify sign in cancelled',9000);
-      finishSpotifyPopup(false,'Spotify sign in cancelled');
-      return true;
-    }
-    if(!code && !state) return false;
-    if(!code || !state || state!==store.text('nyx.spotifyState','')){
-      url.searchParams.delete('code');
-      url.searchParams.delete('state');
-      history.replaceState(null,'',url.pathname + url.search + url.hash);
-      setAmbientStatus('Spotify sign in expired',9000);
-      finishSpotifyPopup(false,'Spotify sign in expired');
-      return true;
-    }
-    const clientId=store.text('nyx.spotifyClientId','').trim();
-    const verifier=store.text('nyx.spotifyVerifier','');
-    url.searchParams.delete('code');
-    url.searchParams.delete('state');
-    history.replaceState(null,'',url.pathname + url.search + url.hash);
-    if(!clientId || !verifier){
-      setAmbientStatus('Spotify connection expired',9000);
-      finishSpotifyPopup(false,'Spotify connection expired');
-      return true;
-    }
-    try{
-      if(spotifyPopupCallback) showSpotifyCallbackScreen('Getting Spotify token...');
-      const body=new URLSearchParams();
-      body.set('client_id',clientId);
-      body.set('grant_type','authorization_code');
-      body.set('code',code);
-      body.set('redirect_uri',spotifyRedirectUri());
-      body.set('code_verifier',verifier);
-      const response=await spotifyFetchWithTimeout('https://accounts.spotify.com/api/token',{
-        method:'POST',
-        headers:{'Content-Type':'application/x-www-form-urlencoded'},
-        body
-      },18000);
-      if(!response.ok) throw new Error('token');
-      const token=await response.json();
-      store.setText('nyx.spotifyAccessToken',token.access_token || '');
-      store.setText('nyx.spotifyTokenExpires',String(Date.now()+((Number(token.expires_in)||3600)*1000)));
-      store.setText('nyx.spotifyVerifier','');
-      store.setText('nyx.spotifyState','');
-      setAmbientStatus('Spotify connected');
-      if(spotifyPopupCallback) showSpotifyCallbackScreen('Reading current Spotify song...');
-      await updateSpotifyNowPlaying();
-      finishSpotifyPopup(true,'Spotify connected');
-    }catch{
-      setAmbientStatus('Spotify connection failed',9000);
-      finishSpotifyPopup(false,'Spotify connection failed');
-    }
-    return true;
-  }
-  async function updateSpotifyNowPlaying(){
-    const button=$('ambientSpotify');
-    if(button) button.textContent=spotifyTokenValid() ? 'Sync' : 'Spotify';
-    if(!spotifyTokenValid()){
-      setAmbientStatus('Spotify needs reconnect');
-      return;
-    }
-    try{
-      const response=await spotifyFetchWithTimeout('https://api.spotify.com/v1/me/player/currently-playing',{
-        headers:{Authorization:`Bearer ${store.text('nyx.spotifyAccessToken','')}`}
-      },12000);
-      if(response.status===204){
-        setAmbientStatus('No Spotify song playing');
-        return;
-      }
-      if(!response.ok) throw new Error('spotify');
-      const data=await response.json();
-      const item=data?.item;
-      if(!item){
-        setAmbientStatus('No Spotify song playing');
-        return;
-      }
-      const artists=(item.artists || []).map(artist=>artist.name).filter(Boolean).join(', ');
-      const title=$('ambientTitle');
-      const artist=$('ambientArtist');
-      if(title) title.textContent=item.name || 'Spotify';
-      if(artist) artist.textContent=artists || 'Spotify';
-      const artwork=item.album?.images?.find(image=>image?.url)?.url;
-      if(artwork) setAmbientArtwork(artwork,`${item.name || 'Spotify'} cover art`);
-      setAmbientStatus(data.is_playing ? 'Playing on Spotify' : 'Paused on Spotify');
-      if(button) button.textContent='Synced';
-    }catch{
-      setAmbientStatus('Could not read Spotify',9000);
-    }
-  }
-  function startSpotifyPolling(){
-    clearInterval(spotifyPollTimer);
-    if(!spotifyTokenValid()) return;
-    spotifyPollTimer=setInterval(()=>updateSpotifyNowPlaying(),25000);
-  }
-  window.addEventListener('message',event=>{
-    if(event.origin!==location.origin || event.data?.type!=='nyx:spotify-auth') return;
-    if(event.data.ok){
-      setAmbientStatus('Spotify connected');
-      updateSpotifyNowPlaying().then(()=>startSpotifyPolling()).catch(()=>setAmbientStatus('Could not read Spotify'));
-    }else{
-      setAmbientStatus(event.data.message || 'Spotify connection failed');
-    }
-  });
-  function ambientBassEnabled(){
-    return false;
-  }
-  function ambientBassAmount(){
-    return Math.max(0,Math.min(100,Number(store.text('nyx.musicBassAmount','70')) || 0));
-  }
-  function ambientBassFilterGain(){
-    if(!ambientBassEnabled()) return 0;
-    return Math.round((6 + ambientBassAmount() * .26) * 10) / 10;
-  }
-  function ambientBassOutputGain(){
-    if(!ambientBassEnabled()) return 1;
-    return Math.round((1 + ambientBassAmount() * .0035) * 1000) / 1000;
-  }
-  function updateAmbientRangeFill(input, max=100){
-    if(!input) return;
-    const value=Math.max(0,Math.min(Number(max) || 100,Number(input.value) || 0));
-    const percent=(value / (Number(max) || 100)) * 100;
-    input.style.setProperty('--range-fill',percent+'%');
-  }
-  function ensureAmbientAudioGraph(){
-    const audio=$('ambientAudio');
-    const AudioContextClass=window.AudioContext || window.webkitAudioContext;
-    if(!audio || !AudioContextClass) return null;
-    if(ambientAudioContext) return ambientAudioContext;
-    try{
-      ambientAudioContext=new AudioContextClass();
-      ambientSourceNode=ambientAudioContext.createMediaElementSource(audio);
-      ambientSourceNode.connect(ambientAudioContext.destination);
-    }catch{
-      ambientAudioContext=null;
-      ambientSourceNode=null;
-      ambientBassFilter=null;
-      ambientBassGain=null;
-    }
-    return ambientAudioContext;
-  }
-  function applyAmbientBassBoost(){
-    const enabled=ambientBassEnabled();
-    const button=$('ambientBass');
-    const amount=ambientBassAmount();
-    const slider=$('ambientBassAmount');
-    const value=$('ambientBassValue');
-    if(button){
-      button.classList.toggle('on',enabled);
-      button.setAttribute('aria-pressed',String(enabled));
-      button.textContent=enabled ? 'Bass On' : 'Bass Boost';
-    }
-    if(slider && document.activeElement!==slider) slider.value=String(amount);
-    updateAmbientRangeFill(slider,100);
-    if(value) value.textContent=amount+'%';
-    if(enabled) ensureAmbientAudioGraph();
-    if(ambientAudioContext && ambientBassFilter && ambientBassGain){
-      ambientBassFilter.gain.setTargetAtTime(ambientBassFilterGain(),ambientAudioContext.currentTime,.035);
-      ambientBassGain.gain.setTargetAtTime(ambientBassOutputGain(),ambientAudioContext.currentTime,.035);
-    }
-  }
-  function setAmbientBassAmount(value){
-    const amount=Math.max(0,Math.min(100,Number(value) || 0));
-    store.setText('nyx.musicBassAmount',amount);
-    if(amount>0 && !ambientBassEnabled()) store.set('nyx.musicBassBoost',true);
-    applyAmbientBassBoost();
-    if(ambientBassEnabled()) ensureAmbientAudioGraph()?.resume?.().catch(()=>null);
-  }
-  function toggleAmbientBassBoost(){
-    const next=!ambientBassEnabled();
-    store.set('nyx.musicBassBoost',next);
-    applyAmbientBassBoost();
-    if(next){
-      const context=ensureAmbientAudioGraph();
-      context?.resume?.().catch(()=>null);
-    }
-    toast(next ? 'Bass Boost on' : 'Bass Boost off');
-  }
-  async function setAmbientPlaying(next){
-    const audio=$('ambientAudio');
-    if(!audio) return;
-    if(next && syncAmbientCoverState()) return;
-    ambientPlaying=next;
-    const btn=$('ambientToggle');
-    if(btn){
-      btn.textContent=next ? ambientPauseSymbol() : ambientPlaySymbol();
-      btn.classList.toggle('is-playing',next);
-    }
-    if(next){
-      try{
-        audio.volume=Math.max(0,Math.min(1,Number($('ambientVolume')?.value || 100) / 100));
-        audio.muted=audio.volume===0;
-        setAmbientStatus('Loading...');
-        if(ambientBassEnabled()) ensureAmbientAudioGraph();
-        await ambientAudioContext?.resume?.().catch(()=>null);
-        await audio.play();
-      }catch(err){
-        ambientPlaying=false;
-        if(btn){
-          btn.textContent=ambientPlaySymbol();
-          btn.classList.remove('is-playing');
-        }
-        setAmbientStatus('Click Play to start');
-      }
-    }else{
-      audio.pause();
-      setAmbientStatus('Paused');
-    }
-  }
-  function setAmbientVolume(value){
-    const audio=$('ambientAudio');
-    const volume=Math.max(0,Math.min(100,Number(value) || 0));
-    store.setText('nyx.musicVolume',volume);
-    if(audio){
-      audio.volume=volume / 100;
-      audio.muted=volume===0;
-    }
-    updateAmbientRangeFill($('ambientVolume'),100);
-  }
-  function formatAmbientTime(seconds){
-    if(!Number.isFinite(seconds) || seconds<0) seconds=0;
-    seconds=Math.floor(seconds);
-    const minutes=Math.floor(seconds/60);
-    const secs=String(seconds%60).padStart(2,'0');
-    return `${minutes}:${secs}`;
-  }
-  function updateAmbientSeek(){
-    const audio=$('ambientAudio');
-    const seek=$('ambientSeek');
-    const time=$('ambientTime');
-    if(!audio || !seek || !time) return;
-    const duration=Number.isFinite(audio.duration) ? audio.duration : 0;
-    if(seek.max!=='1000') seek.max='1000';
-    if(duration>0 && !ambientSeeking){
-      seek.value=String(Math.round((audio.currentTime / duration) * 1000));
-    }
-    updateAmbientRangeFill(seek,1000);
-    time.textContent=`${formatAmbientTime(audio.currentTime)} / ${formatAmbientTime(duration)}`;
-  }
-  function setAmbientSeekFromInput(input){
-    const audio=$('ambientAudio');
-    if(!audio || !Number.isFinite(audio.duration) || audio.duration<=0) return false;
-    const target=Math.max(0,Math.min(audio.duration,(Number(input?.value || 0) / 1000) * audio.duration));
-    try{
-      if(typeof audio.fastSeek==='function') audio.fastSeek(target);
-      else audio.currentTime=target;
-    }catch{
-      audio.currentTime=target;
-    }
-    updateAmbientSeek();
-    return true;
-  }
-  function setAmbientSpeed(value){
-    const audio=$('ambientAudio');
-    const speed=Math.max(.5,Math.min(8,Number(value) || 1));
-    store.setText('nyx.musicSpeed',speed);
-    if(audio) audio.playbackRate=speed;
-  }
-  function loadAmbientTrack(key=ambientCurrentKey, play=true){
-    const audio=$('ambientAudio');
-    const previousKey=ambientCurrentKey;
-    if(key==='custom'){
-      $('ambientFile')?.click();
-      const song=$('ambientSong');
-      if(song) song.value=previousKey;
-      return;
-    }
-    if(ambientTracks[key]) ambientCurrentKey=key;
-    store.setText('nyx.musicTrack',ambientCurrentKey);
-    const selectedTrack=ambientTrack();
-    setAmbientArtwork(selectedTrack.artwork || ambientDefaultArtwork,`${ambientTrackLabel(selectedTrack)} cover art`);
-    setAmbientTitle();
-    if(!audio) return;
-    const track=ambientTrack();
-    if(!audio.src.endsWith(track.src)){
-      const seek=$('ambientSeek');
-      if(seek){
-        seek.value='0';
-        seek.max='1000';
-        updateAmbientRangeFill(seek,1000);
-      }
-      updateAmbientSeek();
-      audio.src=track.src;
-      audio.load();
-    }
-    setAmbientStatus(play ? 'Loading...' : 'Ready');
-    if(play) setAmbientPlaying(true);
-    else{
-      ambientPlaying=false;
-      try{audio.pause()}catch{}
-      const btn=$('ambientToggle');
-      if(btn){
-        btn.textContent=ambientPlaySymbol();
-        btn.classList.remove('is-playing');
-      }
-    }
-  }
-  function freshThemeShouldPlayMusic(){
-    return document.body.classList.contains('theme-fresh') && ambientTracks?.sunny;
-  }
-  function armFreshAmbientGestureFallback(){
-    freshAmbientGestureArmed=false;
-  }
-  function playFreshThemeMusicOnOpen(){
-    if(freshThemeShouldPlayMusic() && ambientCurrentKey!=='sunny') loadAmbientTrack('sunny',false);
-  }
-  function ambientPlayerBounds(box){
-    const rect=box.getBoundingClientRect();
-    const maxLeft=Math.max(8,window.innerWidth - rect.width - 8);
-    const topOffset=document.body.classList.contains('browser-shell') ? 104 : 8;
-    const maxTop=Math.max(topOffset,window.innerHeight - rect.height - 8);
-    return {maxLeft,topOffset,maxTop};
-  }
-  function setAmbientPosition(left, top, save=true){
-    const box=$('ambientPlayer');
-    if(!box) return;
-    const bounds=ambientPlayerBounds(box);
-    const x=Math.min(bounds.maxLeft,Math.max(8,Number(left) || 8));
-    const y=Math.min(bounds.maxTop,Math.max(bounds.topOffset,Number(top) || bounds.topOffset));
-    box.style.setProperty('left',x+'px','important');
-    box.style.setProperty('top',y+'px','important');
-    box.style.setProperty('right','auto','important');
-    box.style.setProperty('bottom','auto','important');
-    if(save) store.setText('nyx.musicPlayerPos',JSON.stringify({left:x,top:y}));
-  }
-  function restoreAmbientPosition(){
-    const box=$('ambientPlayer');
-    if(!box) return;
-    const raw=store.text('nyx.musicPlayerPos','');
-    if(raw){
-      try{
-        const pos=JSON.parse(raw);
-        if(Number.isFinite(pos.left) && Number.isFinite(pos.top)){
-          setAmbientPosition(pos.left,pos.top,false);
-          return;
-        }
-      }catch(_){}
-    }
-    box.style.setProperty('left','18px','important');
-    box.style.setProperty('top','auto','important');
-    box.style.setProperty('right','auto','important');
-    box.style.setProperty('bottom','66px','important');
-  }
-  function setAmbientTucked(tucked){
-    const box=$('ambientPlayer');
-    if(!box) return;
-    box.classList.remove('ambient-opening','ambient-closing');
-    void box.offsetWidth;
-    box.classList.add(tucked ? 'ambient-closing' : 'ambient-opening');
-    setTimeout(()=>box.classList.remove('ambient-opening','ambient-closing'),560);
-    box.classList.toggle('tucked',tucked);
-    store.set('nyx.musicPlayerTucked',tucked);
-    const hide=$('ambientHide');
-    if(hide){
-      hide.textContent='';
-      hide.title=tucked ? 'Show music player' : 'Hide music player';
-      hide.setAttribute('aria-label',hide.title);
-    }
-    if(tucked){
-      const rect=box.getBoundingClientRect();
-      const goRight=rect.left + rect.width / 2 > window.innerWidth / 2;
-      box.style.setProperty('left',goRight ? Math.max(8,window.innerWidth - 42)+'px' : '8px','important');
-      box.style.setProperty('right','auto','important');
-    }else{
-      restoreAmbientPosition();
-    }
-  }
-  function initAmbientDragging(){
-    const box=$('ambientPlayer');
-    const handle=box?.querySelector('.ambient-drag-area');
-    if(!box || !handle || box.dataset.dragReady) return;
-    box.dataset.dragReady='true';
-    restoreAmbientPosition();
-    setAmbientTucked(store.get('nyx.musicPlayerTucked',false));
-    $('ambientHide')?.addEventListener('click',e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      setAmbientTucked(!box.classList.contains('tucked'));
-    });
-    box.addEventListener('click',e=>{
-      if(box.classList.contains('tucked') && !e.target.closest('.ambient-toggle')){
-        setAmbientTucked(false);
-      }
-    });
-    let start=null;
-    handle.addEventListener('pointerdown',e=>{
-      if(e.button !== 0) return;
-      if(e.target.closest('input,select,button,details,summary')) return;
-      const rect=box.getBoundingClientRect();
-      start={pointerId:e.pointerId,x:e.clientX,y:e.clientY,left:rect.left,top:rect.top};
-      setAmbientTucked(false);
-      box.classList.add('dragging');
-      handle.setPointerCapture?.(e.pointerId);
-      e.preventDefault();
-    });
-    handle.addEventListener('pointermove',e=>{
-      if(!start || e.pointerId !== start.pointerId) return;
-      setAmbientPosition(start.left + e.clientX - start.x,start.top + e.clientY - start.y,false);
-    });
-    const end=e=>{
-      if(!start || e.pointerId !== start.pointerId) return;
-      start=null;
-      box.classList.remove('dragging');
-      const rect=box.getBoundingClientRect();
-      setAmbientPosition(rect.left,rect.top,true);
-      handle.releasePointerCapture?.(e.pointerId);
-    };
-    handle.addEventListener('pointerup',end);
-    handle.addEventListener('pointercancel',end);
-    window.addEventListener('resize',()=>{
-      const rect=box.getBoundingClientRect();
-      if(box.classList.contains('tucked')) setAmbientTucked(true);
-      else setAmbientPosition(rect.left,rect.top,false);
-    });
-  }
-  function initAmbientMusic(){
-    const box=$('ambientPlayer');
-    const audio=$('ambientAudio');
-    if(!box || !audio || audio.dataset.ready) return;
-    const spotifyCallbackPending=hasSpotifyCallbackParams();
-    if(spotifyCallbackPending) handleSpotifyCallback().then(()=>startSpotifyPolling()).catch(()=>null);
-    if(syncAmbientCoverState() && !spotifyCallbackPending) return;
-    audio.dataset.ready='true';
-    const volume=$('ambientVolume');
-    const song=$('ambientSong');
-    const queue=$('ambientQueue');
-    const speed=$('ambientSpeed');
-    const seek=$('ambientSeek');
-    const savedVolume=Math.max(85,Math.min(100,Number(store.text('nyx.musicVolume','100')) || 100));
-    const savedSpeed=Math.max(.5,Math.min(8,Number(store.text('nyx.musicSpeed','1')) || 1));
-    if(song && !ambientTracks[ambientCurrentKey]) ambientCurrentKey='clair';
-    if(!['all','favorites'].includes(ambientQueueMode)) ambientQueueMode='all';
-    refreshAmbientSongOptions(ambientCurrentKey);
-    syncAmbientQueue();
-    initAmbientDragging();
-    $('ambientArtwork')?.addEventListener('error',event=>{
-      event.currentTarget.closest('.ambient-cover')?.classList.add('cover-unavailable');
-    },{once:true});
-    if(volume) volume.value=String(savedVolume);
-    if(speed) speed.value=String(savedSpeed);
-    updateAmbientRangeFill(volume,100);
-    updateAmbientRangeFill(seek,1000);
-    audio.volume=savedVolume / 100;
-    audio.playbackRate=savedSpeed;
-    audio.addEventListener('loadedmetadata',updateAmbientSeek);
-    audio.addEventListener('timeupdate',updateAmbientSeek);
-    audio.addEventListener('durationchange',updateAmbientSeek);
-    audio.addEventListener('canplay',()=>{if(!spotifyTokenValid() && Date.now()>spotifyStatusHoldUntil) setAmbientStatus(ambientPlaying ? 'Now playing' : 'Ready'); updateAmbientSeek()});
-    audio.addEventListener('playing',()=>{
-      ambientPlaying=true;
-      const btn=$('ambientToggle');
-      if(btn) btn.textContent=ambientPauseSymbol();
-      btn?.classList.add('is-playing');
-      setAmbientStatus('Now playing');
-    });
-    audio.addEventListener('pause',()=>{
-      if(!ambientPlaying) return;
-      ambientPlaying=false;
-      const btn=$('ambientToggle');
-      if(btn) btn.textContent=ambientPlaySymbol();
-      btn?.classList.remove('is-playing');
-      setAmbientStatus('Paused');
-    });
-    audio.addEventListener('error',()=>setAmbientStatus('Could not load this audio file'));
-    audio.addEventListener('ended',()=>cycleAmbientTrack(1));
-    setAmbientTitle();
-    loadAmbientTrack(ambientCurrentKey,false);
-    if(!spotifyCallbackPending) handleSpotifyCallback().then(()=>startSpotifyPolling()).catch(()=>null);
-    $('ambientToggle')?.addEventListener('click',()=>setAmbientPlaying(!ambientPlaying));
-    $('ambientPrevious')?.addEventListener('click',()=>cycleAmbientTrack(-1));
-    $('ambientNext')?.addEventListener('click',()=>cycleAmbientTrack(1));
-    $('ambientFavorite')?.addEventListener('click',toggleAmbientFavorite);
-    $('ambientSpotify')?.addEventListener('click',connectSpotifyNowPlaying);
-    song?.addEventListener('change',e=>{
-      loadAmbientTrack(e.target.value,true);
-    });
-    queue?.addEventListener('change',e=>setAmbientQueue(e.target.value));
-    $('ambientFile')?.addEventListener('change',e=>{
-      const file=e.target.files?.[0];
-      e.target.value='';
-      if(!file) return;
-      const customUrl=URL.createObjectURL(file);
-      ambientCustomUrls.push(customUrl);
-      const key=`custom-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      ambientTracks[key]={title:file.name.replace(/\.[^.]+$/,''),artist:'Your file',src:customUrl};
-      refreshAmbientSongOptions(key);
-      loadAmbientTrack(key,true);
-    });
-    volume?.addEventListener('input',e=>setAmbientVolume(e.target.value));
-    speed?.addEventListener('change',e=>setAmbientSpeed(e.target.value));
-    const commitSeek=e=>setAmbientSeekFromInput(e.target);
-    seek?.addEventListener('pointerdown',()=>{ambientSeeking=true});
-    seek?.addEventListener('touchstart',()=>{ambientSeeking=true},{passive:true});
-    seek?.addEventListener('input',e=>{
-      ambientSeeking=true;
-      updateAmbientRangeFill(e.target,1000);
-      const duration=Number.isFinite(audio.duration) ? audio.duration : 0;
-      const target=(Number(e.target.value || 0) / 1000) * duration;
-      const time=$('ambientTime');
-      if(time) time.textContent=`${formatAmbientTime(target)} / ${formatAmbientTime(audio.duration)}`;
-    });
-    seek?.addEventListener('change',e=>{
-      commitSeek(e);
-      ambientSeeking=false;
-      updateAmbientSeek();
-    });
-    seek?.addEventListener('pointerup',e=>{
-      commitSeek(e);
-      ambientSeeking=false;
-      updateAmbientSeek();
-    });
-    window.addEventListener('pointerup',()=>{
-      if(!ambientSeeking) return;
-      if(seek) setAmbientSeekFromInput(seek);
-      ambientSeeking=false;
-      updateAmbientSeek();
-    });
-    window.addEventListener('touchend',()=>{
-      if(!ambientSeeking) return;
-      if(seek) setAmbientSeekFromInput(seek);
-      ambientSeeking=false;
-      updateAmbientSeek();
-    });
-    seek?.addEventListener('keyup',e=>{
-      if(e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='Home'||e.key==='End'){
-        commitSeek(e);
-        ambientSeeking=false;
-      }
-    });
-  }
   function centerClockText(date=new Date()){
     return date.toLocaleTimeString([],{hour:'numeric',minute:'2-digit',second:'2-digit'});
   }
@@ -10949,7 +10215,6 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     updateResponsiveFit();
     if(!localStorage.getItem('nyx.lagReducer')) store.set('nyx.lagReducer',true);
     applyLaunchPdfSetting(); bindFormulaGate(); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); startCenterClock();
-    if(hasSpotifyCallbackParams()) initAmbientMusic();
     if(hostedCloakEntry){
       scheduleHostedCloakLaunch();
       return;

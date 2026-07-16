@@ -115,7 +115,7 @@
         const href=frame.contentWindow.location.href;
         if(href===location.origin+'/' || href===location.origin+'/index.html') return true;
         const title=frame.contentDocument?.title || '';
-        return /^(nyx|GoodLion)$/i.test(title.trim());
+        return /^nyx$/i.test(title.trim());
       }catch{return false}
     }
     window.addEventListener('message',event=>{

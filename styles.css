@@ -1,5 +1,5 @@
-@import url("./css/core.css");
+@import url("./css/core.css?v=20260715-smooth-startup-progress-v7");
 @import url("./css/chrome-and-settings.css");
 @import url("./css/fresh-theme.css");
-@import url("./css/interface-polish.css?v=20260715-switch-fix-v3");
-@import url("./css/midnight-theme.css?v=20260715-switch-fix-v3");
+@import url("./css/interface-polish.css?v=20260715-shared-theme-bg-v1");
+@import url("./css/midnight-theme.css?v=20260715-centered-add-app-v9");

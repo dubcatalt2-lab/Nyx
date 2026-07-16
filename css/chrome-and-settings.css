@@ -6,9 +6,9 @@ body.theme-sakura{
   background-position:center!important;
   background-repeat:no-repeat!important;
 }
-body.theme-ruby{--theme-border:#fb7185!important;--theme-bg:linear-gradient(rgba(60,0,12,.10),rgba(60,0,12,.22)),url("../assets/backgrounds/theme-ruby.jpg")!important}
-body.theme-emerald{--theme-border:#34d399!important;--theme-bg:linear-gradient(rgba(0,24,12,.08),rgba(0,24,12,.20)),url("../assets/backgrounds/theme-emerald.png")!important}
-body.theme-sakura{--theme-border:#fbcfe8!important;--theme-bg:linear-gradient(rgba(40,0,28,.06),rgba(40,0,28,.18)),url("../assets/backgrounds/theme-sakura.jpg")!important}
+body.theme-ruby{--theme-border:#fb7185!important;--theme-bg:linear-gradient(rgba(60,0,12,.10),rgba(60,0,12,.22)),url("../assets/backgrounds/nyx-blue-light-trails.jpg")!important}
+body.theme-emerald{--theme-border:#34d399!important;--theme-bg:linear-gradient(rgba(0,24,12,.08),rgba(0,24,12,.20)),url("../assets/backgrounds/nyx-blue-light-trails.jpg")!important}
+body.theme-sakura{--theme-border:#fbcfe8!important;--theme-bg:linear-gradient(rgba(40,0,28,.06),rgba(40,0,28,.18)),url("../assets/backgrounds/nyx-blue-light-trails.jpg")!important}
 body.theme-ruby::before,
 body.theme-emerald::before,
 body.theme-sakura::before{
@@ -37,16 +37,16 @@ body.browser-shell.theme-emerald::after,
 body.browser-shell.theme-sakura::after{
   background:linear-gradient(rgba(0,0,0,.06),rgba(0,0,0,.22))!important;
 }
-body.browser-shell.theme-ruby :is(h1,h2,h3,p,span,label,strong,.home-heading,.home-sub,.titlebar-title,.desktop-center-clock,.browser-shell-clock,.watchparty-title,.watchparty-meta,.watchparty-time,.ambient-title,.ambient-sub,.ambient-time,.ambient-bass-row,.settings-main h1,.settings-block h2,.settings-block p,.settings-side button,.quick-tile span),
-body.browser-shell.theme-emerald :is(h1,h2,h3,p,span,label,strong,.home-heading,.home-sub,.titlebar-title,.desktop-center-clock,.browser-shell-clock,.watchparty-title,.watchparty-meta,.watchparty-time,.ambient-title,.ambient-sub,.ambient-time,.ambient-bass-row,.settings-main h1,.settings-block h2,.settings-block p,.settings-side button,.quick-tile span),
-body.browser-shell.theme-sakura :is(h1,h2,h3,p,span,label,strong,.home-heading,.home-sub,.titlebar-title,.desktop-center-clock,.browser-shell-clock,.watchparty-title,.watchparty-meta,.watchparty-time,.ambient-title,.ambient-sub,.ambient-time,.ambient-bass-row,.settings-main h1,.settings-block h2,.settings-block p,.settings-side button,.quick-tile span){
+body.browser-shell.theme-ruby :is(h1,h2,h3,p,span,label,strong,.home-heading,.home-sub,.titlebar-title,.desktop-center-clock,.browser-shell-clock,.watchparty-title,.watchparty-meta,.watchparty-time,.settings-main h1,.settings-block h2,.settings-block p,.settings-side button,.quick-tile span),
+body.browser-shell.theme-emerald :is(h1,h2,h3,p,span,label,strong,.home-heading,.home-sub,.titlebar-title,.desktop-center-clock,.browser-shell-clock,.watchparty-title,.watchparty-meta,.watchparty-time,.settings-main h1,.settings-block h2,.settings-block p,.settings-side button,.quick-tile span),
+body.browser-shell.theme-sakura :is(h1,h2,h3,p,span,label,strong,.home-heading,.home-sub,.titlebar-title,.desktop-center-clock,.browser-shell-clock,.watchparty-title,.watchparty-meta,.watchparty-time,.settings-main h1,.settings-block h2,.settings-block p,.settings-side button,.quick-tile span){
   background:none!important;
   color:inherit!important;
   -webkit-text-fill-color:currentColor!important;
 }
-body.browser-shell.theme-ruby :is(.top-os,.window,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,.ambient-player,.watchparty-stop,.watchparty-center-controls button,.ambient-toggle,.ambient-hide,.ambient-song,.ambient-speed,.ambient-bass,.watchparty-options select,button,input,select,textarea),
-body.browser-shell.theme-emerald :is(.top-os,.window,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,.ambient-player,.watchparty-stop,.watchparty-center-controls button,.ambient-toggle,.ambient-hide,.ambient-song,.ambient-speed,.ambient-bass,.watchparty-options select,button,input,select,textarea),
-body.browser-shell.theme-sakura :is(.top-os,.window,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,.ambient-player,.watchparty-stop,.watchparty-center-controls button,.ambient-toggle,.ambient-hide,.ambient-song,.ambient-speed,.ambient-bass,.watchparty-options select,button,input,select,textarea){
+body.browser-shell.theme-ruby :is(.top-os,.window,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,.watchparty-stop,.watchparty-center-controls button,.watchparty-options select,button,input,select,textarea),
+body.browser-shell.theme-emerald :is(.top-os,.window,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,.watchparty-stop,.watchparty-center-controls button,.watchparty-options select,button,input,select,textarea),
+body.browser-shell.theme-sakura :is(.top-os,.window,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,.watchparty-stop,.watchparty-center-controls button,.watchparty-options select,button,input,select,textarea){
   border-color:color-mix(in srgb,var(--theme-border) 68%,rgba(255,255,255,.2))!important;
 }
 body.browser-shell.theme-ruby :is(.shell-page,.browser-shell-page),
@@ -59,9 +59,9 @@ body.browser-shell.theme-emerald :is(.settings-app,.settings-main,.settings-side
 body.browser-shell.theme-sakura :is(.settings-app,.settings-main,.settings-side,.quick-tile,.weather-panel,.weather-restore,.apps-panel){
   background:rgba(15,23,42,.36)!important;
 }
-body.browser-shell.theme-ruby :is(.ambient-seek,.ambient-volume,.ambient-bass-amount,.watchparty-progress),
-body.browser-shell.theme-emerald :is(.ambient-seek,.ambient-volume,.ambient-bass-amount,.watchparty-progress),
-body.browser-shell.theme-sakura :is(.ambient-seek,.ambient-volume,.ambient-bass-amount,.watchparty-progress){
+body.browser-shell.theme-ruby :is(.watchparty-progress),
+body.browser-shell.theme-emerald :is(.watchparty-progress),
+body.browser-shell.theme-sakura :is(.watchparty-progress){
   accent-color:#9ca3af!important;
 }
 body.theme-ruby input[type="file"].settings-input::file-selector-button,
@@ -242,12 +242,12 @@ body:not(.browser-shell) .browser-tab-icon{
   text-overflow:ellipsis!important;
 }
 /* //flat-ui-final */
-body.browser-shell :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.browser-mode-menu,.browser-bookmark-panel,.ambient-player,.weather-panel,.weather-restore,.apps-panel,.panel,.lion-ai-msg,.lion-ai-form,button,input,select,textarea,.urlbar,.browser-mode-url,.quick-tile,.quick-icon,.settings-action,.settings-preset,.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.tool-btn,.go-btn,.menu-btn){
+body.browser-shell :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.browser-mode-menu,.browser-bookmark-panel,.weather-panel,.weather-restore,.apps-panel,.panel,.lion-ai-msg,.lion-ai-form,button,input,select,textarea,.urlbar,.browser-mode-url,.quick-tile,.quick-icon,.settings-action,.settings-preset,.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.tool-btn,.go-btn,.menu-btn){
   background-image:none!important;
   text-shadow:none!important;
   box-shadow:none!important;
 }
-body.browser-shell :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.settings-panel,.settings-app,.settings-main,.settings-side,.glass-card,.browser-mode-menu,.browser-bookmark-panel,.ambient-player,.weather-panel,.weather-restore,.apps-panel,.panel){
+body.browser-shell :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.settings-panel,.settings-app,.settings-main,.settings-side,.glass-card,.browser-mode-menu,.browser-bookmark-panel,.weather-panel,.weather-restore,.apps-panel,.panel){
   background-color:rgba(15,23,42,.76)!important;
 }
 body.browser-shell :is(button,input,select,textarea,.urlbar,.browser-mode-url,.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.tool-btn,.go-btn,.menu-btn,.settings-action,.settings-preset){
@@ -270,9 +270,9 @@ body.browser-shell.theme-sakura :is(button,.quick-tile,.quick-icon,.browser-mode
 body.theme-ruby{--theme-border:#fb7185!important}
 body.theme-emerald{--theme-border:#34d399!important}
 body.theme-sakura{--theme-border:#f9a8d4!important}
-body.browser-shell.theme-ruby :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,.ambient-player,.watchparty-stop,.watchparty-center-controls button,.ambient-toggle,.ambient-hide,.ambient-song,.ambient-speed,.ambient-bass,.watchparty-options select,button,input,select,textarea),
-body.browser-shell.theme-emerald :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,.ambient-player,.watchparty-stop,.watchparty-center-controls button,.ambient-toggle,.ambient-hide,.ambient-song,.ambient-speed,.ambient-bass,.watchparty-options select,button,input,select,textarea),
-body.browser-shell.theme-sakura :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,.ambient-player,.watchparty-stop,.watchparty-center-controls button,.ambient-toggle,.ambient-hide,.ambient-song,.ambient-speed,.ambient-bass,.watchparty-options select,button,input,select,textarea){
+body.browser-shell.theme-ruby :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,.watchparty-stop,.watchparty-center-controls button,.watchparty-options select,button,input,select,textarea),
+body.browser-shell.theme-emerald :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,.watchparty-stop,.watchparty-center-controls button,.watchparty-options select,button,input,select,textarea),
+body.browser-shell.theme-sakura :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,.watchparty-stop,.watchparty-center-controls button,.watchparty-options select,button,input,select,textarea){
   background-image:none!important;
   border-color:color-mix(in srgb,var(--theme-border) 72%,rgba(255,255,255,.18))!important;
   box-shadow:none!important;
@@ -291,23 +291,23 @@ body.browser-shell.theme-sakura :is(button,.quick-tile,.quick-icon,.browser-mode
   background-image:none!important;
   box-shadow:none!important;
 }
-body.browser-shell.theme-ruby :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.browser-mode-menu,.browser-bookmark-panel,.settings-panel,.settings-app,.settings-main,.settings-side,.glass-card,.ambient-player),
-body.browser-shell.theme-emerald :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.browser-mode-menu,.browser-bookmark-panel,.settings-panel,.settings-app,.settings-main,.settings-side,.glass-card,.ambient-player),
-body.browser-shell.theme-sakura :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.browser-mode-menu,.browser-bookmark-panel,.settings-panel,.settings-app,.settings-main,.settings-side,.glass-card,.ambient-player){
+body.browser-shell.theme-ruby :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.browser-mode-menu,.browser-bookmark-panel,.settings-panel,.settings-app,.settings-main,.settings-side,.glass-card),
+body.browser-shell.theme-emerald :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.browser-mode-menu,.browser-bookmark-panel,.settings-panel,.settings-app,.settings-main,.settings-side,.glass-card),
+body.browser-shell.theme-sakura :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.browser-mode-menu,.browser-bookmark-panel,.settings-panel,.settings-app,.settings-main,.settings-side,.glass-card){
   background:rgba(15,23,42,.76)!important;
 }
 body.browser-shell.theme-ruby::before{
-  background:linear-gradient(rgba(0,0,0,.10),rgba(0,0,0,.22)),url("../assets/backgrounds/theme-ruby.jpg")!important;
+  background:linear-gradient(rgba(0,0,0,.10),rgba(0,0,0,.22)),url("../assets/backgrounds/nyx-blue-light-trails.jpg")!important;
   background-size:cover!important;
   background-position:center!important;
 }
 body.browser-shell.theme-emerald::before{
-  background:linear-gradient(rgba(0,0,0,.10),rgba(0,0,0,.22)),url("../assets/backgrounds/theme-emerald.png")!important;
+  background:linear-gradient(rgba(0,0,0,.10),rgba(0,0,0,.22)),url("../assets/backgrounds/nyx-blue-light-trails.jpg")!important;
   background-size:cover!important;
   background-position:center!important;
 }
 body.browser-shell.theme-sakura::before{
-  background:linear-gradient(rgba(0,0,0,.10),rgba(0,0,0,.22)),url("../assets/backgrounds/theme-sakura.jpg")!important;
+  background:linear-gradient(rgba(0,0,0,.10),rgba(0,0,0,.22)),url("../assets/backgrounds/nyx-blue-light-trails.jpg")!important;
   background-size:cover!important;
   background-position:center!important;
 }
@@ -705,7 +705,6 @@ body.browser-shell.theme-sakura::before{
 .settings-side,
 .browser-mode-menu,
 .browser-bookmark-panel,
-.ambient-player,
 .quick-tile,
 .quick-icon,
 button,
@@ -813,55 +812,6 @@ textarea{
   64%{opacity:1;transform:translate(4px,-5px) scale(1.025);filter:blur(0)}
   100%{opacity:1;transform:translate(0,0) scale(1);filter:blur(0)}
 }
-.ambient-player{
-  width:min(300px,calc(100vw - 28px))!important;
-  grid-template-columns:30px minmax(0,1fr) 18px!important;
-  gap:7px!important;
-  padding:8px 9px!important;
-  background:rgba(8,7,13,.86)!important;
-  background-image:none!important;
-  border:1px solid var(--nyx-purple-edge)!important;
-  box-shadow:0 14px 34px rgba(0,0,0,.30)!important;
-  backdrop-filter:none!important;
-}
-.ambient-title{font-size:11px!important;font-weight:400!important}
-.ambient-sub,.ambient-time{font-size:9px!important;color:rgba(248,245,255,.68)!important}
-.ambient-toggle{
-  width:30px!important;
-  height:30px!important;
-  border-radius:9px!important;
-  background:rgba(190,148,255,.14)!important;
-  border:1px solid rgba(190,148,255,.38)!important;
-  color:#fff!important;
-}
-.ambient-hide{
-  width:18px!important;
-  height:30px!important;
-  border-radius:8px!important;
-  background:transparent!important;
-  border-color:rgba(190,148,255,.26)!important;
-}
-.ambient-controls{
-  grid-template-columns:minmax(0,1fr) 52px!important;
-  gap:5px!important;
-}
-.ambient-speed,
-.ambient-bass,
-.ambient-bass-row{
-  display:none!important;
-}
-.ambient-song{
-  height:22px!important;
-  background:rgba(255,255,255,.04)!important;
-  border-color:rgba(190,148,255,.30)!important;
-  color:#f8f5ff!important;
-  font-size:10px!important;
-}
-.ambient-seek,
-.ambient-volume,
-.ambient-bass-amount{
-  accent-color:#b889ff!important;
-}
 .settings-window{
   max-width:min(780px,calc(100vw - 24px))!important;
   max-height:min(640px,calc(100dvh - 84px))!important;
@@ -917,8 +867,7 @@ textarea,
 .panel,
 .quick-tile,
 .settings-panel,
-.settings-card,
-.ambient-player{
+.settings-card{
   font-family:Outfit,Arial,sans-serif!important;
 }
 /* //browser-purple-edge-final */
@@ -1118,7 +1067,7 @@ body.browser-shell .browser-window.maximized.browser-blank:not(:has(.browser-hom
   -webkit-backdrop-filter:none!important;
 }
 /* //galaxy-black-ui-final */
-body :is(.window,.panel,.settings-panel,.settings-card,.apps-panel,.lion-ai,.browser-mode-menu,.browser-bookmark-panel,.ambient-player,.weather-panel){
+body :is(.window,.panel,.settings-panel,.settings-card,.apps-panel,.lion-ai,.browser-mode-menu,.browser-bookmark-panel,.weather-panel){
   background-color:rgba(5,6,12,.72);
 }
 body.browser-shell :is(.browser-tabs,.browser-tools,.browser-mode-tab,.tool-btn,.go-btn,.menu-btn,.urlbar,.browser-mode-url){
@@ -1521,8 +1470,6 @@ body.browser-shell.theme-sakura :is(button,.quick-tile,.quick-icon,.browser-mode
 }
 select,
 .settings-select,
-.ambient-song,
-.ambient-speed,
 .weather-options,
 .watchparty-options select{
   color-scheme:dark!important;
@@ -1530,8 +1477,6 @@ select,
 select option,
 select optgroup,
 .settings-select option,
-.ambient-song option,
-.ambient-speed option,
 .weather-options option,
 .watchparty-options option{
   background:#101827!important;
@@ -1540,8 +1485,6 @@ select optgroup,
 }
 select option:checked,
 .settings-select option:checked,
-.ambient-song option:checked,
-.ambient-speed option:checked,
 .weather-options option:checked,
 .watchparty-options option:checked{
   background:#334155!important;

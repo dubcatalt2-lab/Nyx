@@ -7,7 +7,9 @@
     "start": "node server.js",
     "start:wisp": "node wisp-server.js",
     "dev": "node server.js",
-    "check:deploy": "node scripts/check-deploy.mjs"
+    "build:netlify": "node scripts/build-netlify.mjs",
+    "check:branding": "node scripts/check-branding.mjs",
+    "check:deploy": "node scripts/check-deploy.mjs && npm run check:branding"
   },
   "engines": {
     "node": ">=20 <25"
@@ -21,6 +23,7 @@
     "@mercuryworkshop/wisp-js": "0.4.1",
     "@titaniumnetwork-dev/ultraviolet": "^3.2.10",
     "express": "5.2.1",
+    "serverless-http": "^4.0.0",
     "three": "^0.134.0",
     "vanta": "^0.5.24"
   },

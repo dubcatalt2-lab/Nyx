@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -7,7 +7,7 @@
 <!-- //startup-cloak -->
 <script src="startup.js"></script>
 <link id="appFavicon" rel="icon" type="image/png" sizes="512x512" href="./assets/icons/firefly-tab-logo-bold.png">
-<link rel="stylesheet" href="styles.css?v=20260715-switch-fix-v3">
+<link rel="stylesheet" href="styles.css?v=20260715-centered-add-app-v12">
 
 </head>
 <body>
@@ -198,8 +198,15 @@
 <div id="setupLaunchScreen" class="setup-launch-screen" aria-hidden="true">
   <div class="setup-launch-card">
     <h2>Nyx<span class="nyx-title-shimmer shimmer-one" aria-hidden="true">Nyx</span><span class="nyx-title-shimmer shimmer-two" aria-hidden="true">Nyx</span></h2>
-    <div class="nyx-loading-progress" aria-label="Loading"><span></span></div>
-    <p>Developed by 1aqlla</p>
+    <div class="nyx-loading-row">
+      <div class="nyx-loading-progress" role="progressbar" aria-label="Starting Nyx" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
+      <strong class="nyx-loading-percent" data-nyx-loading-percent>0%</strong>
+    </div>
+    <div class="nyx-loading-status">
+      <span class="nyx-loading-spinner" aria-hidden="true"></span>
+      <p class="nyx-loading-stage" data-nyx-loading-stage aria-live="polite">Preparing Nyx</p>
+    </div>
+    <p class="setup-launch-credit">Developed by 1aqlla</p>
   </div>
 </div>
 <!-- //cloak-launch-menu -->
@@ -355,64 +362,6 @@
   <button title="Discord" data-url="https://discord.com/app">DC</button>
   <button title="Settings" data-open="settings">Set</button>
 </nav>
-<!-- //music-player -->
-<section class="ambient-player" id="ambientPlayer" aria-label="Music player">
-  <div class="ambient-cover" id="ambientCover">
-    <img id="ambientArtwork" src="https://image-cdn-fa.spotifycdn.com/image/ab67616d00001e02ca3a3517a97abe7f3fc862ce" alt="Clair de Lune cover art" referrerpolicy="no-referrer">
-  </div>
-  <div class="ambient-meta">
-    <div class="ambient-header">
-      <div class="ambient-copy ambient-drag-area" title="Drag music player">
-        <div class="ambient-title" id="ambientTitle">Clair de Lune</div>
-        <div class="ambient-sub" id="ambientArtist">Claude Debussy</div>
-        <div class="ambient-status" id="ambientStatus" aria-live="polite">Ready</div>
-      </div>
-      <div class="ambient-actions">
-        <button class="ambient-favorite" id="ambientFavorite" type="button" title="Favorite this track" aria-label="Favorite this track" aria-pressed="false">&#9825;</button>
-        <details class="ambient-more">
-          <summary title="Music options" aria-label="Music options">&#8942;</summary>
-          <div class="ambient-more-panel">
-            <label>Track
-              <select class="ambient-song" id="ambientSong" aria-label="Choose song">
-                <option value="clair">Clair de Lune - Claude Debussy</option>
-                <option value="testdrive">Test Drive Toothless - John Powell</option>
-                <option value="imposter">Impostor Syndrome - Sidney Gish</option>
-                <option value="chess">Chess Type Beat - nyx</option>
-                <option value="givemore">Give Me More (Just Rawer) - Aloboi</option>
-                <option value="custom">Add your music...</option>
-              </select>
-            </label>
-            <label>Queue
-              <select class="ambient-song" id="ambientQueue" aria-label="Choose music queue">
-                <option value="all">All tracks</option>
-                <option value="favorites">Favorites</option>
-              </select>
-            </label>
-            <label>Playback speed
-              <select class="ambient-speed" id="ambientSpeed" aria-label="Playback speed">
-                <option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1">1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option><option value="6">6x</option><option value="8">8x</option>
-              </select>
-            </label>
-            <button class="ambient-spotify" id="ambientSpotify" type="button" title="Connect Spotify">Connect Spotify</button>
-          </div>
-        </details>
-      </div>
-    </div>
-    <div class="ambient-seek-row">
-      <input class="ambient-seek" id="ambientSeek" type="range" min="0" max="1000" step="1" value="0" aria-label="Skip through song">
-      <span class="ambient-time" id="ambientTime">0:00 / 0:00</span>
-    </div>
-    <div class="ambient-controls">
-      <button class="ambient-previous" id="ambientPrevious" type="button" title="Previous track" aria-label="Previous track">Previous</button>
-      <button class="ambient-toggle" id="ambientToggle" type="button" title="Pause or play music" aria-label="Pause or play music">&#9654;</button>
-      <button class="ambient-next" id="ambientNext" type="button" title="Next track" aria-label="Next track">Next</button>
-    </div>
-    <input class="ambient-file" id="ambientFile" type="file" accept="audio/*,video/mp4,.mp3,.m4a,.wav,.ogg,.mp4" aria-label="Choose your own music file">
-  </div>
-  <button class="ambient-hide" id="ambientHide" type="button" title="Hide music player" aria-label="Hide music player">&#8250;</button>
-</section>
-<!-- //music-audio-toast -->
-<audio class="ambient-audio" id="ambientAudio" preload="metadata" loop></audio>
 <div class="toast" id="toast"></div>
 <!-- //main-app-script -->
 <script src="./assets/vendor/three.r134.min.js"></script>
@@ -422,8 +371,7 @@
 <script src="./assets/vendor/vanta.dots.min.js"></script>
 <script src="./assets/vendor/vanta.clouds.min.js"></script>
 <script src="/runtime-config.js"></script>
-<script src="/runtime-config.js"></script>
-<script src="js/loading-screen.js"></script>
-<script src="script.js"></script>
+<script src="js/loading-screen.js?v=20260715-smooth-startup-progress-v7"></script>
+<script src="script.js?v=20260715-pointer-reload-v3"></script>
 </body>
 </html>

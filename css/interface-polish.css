@@ -3,12 +3,12 @@ html body.performance-lite{
   --glass-blur:10px!important;
   --glass-saturate:1.08!important;
 }
-html body.performance-lite :is(.top-os,.window,.titlebar,.dock,.quick-tile,.quick-icon,.glass-card,.weather-panel,.weather-restore,.toast,.ambient-player,.browser-message-box,.settings-card,.settings-panel,.settings-app,.settings-main,.settings-side,.browser-tabs,.browser-tools,.browser-mode-menu,.browser-bookmark-panel,.apps-panel,.panel){
+html body.performance-lite :is(.top-os,.window,.titlebar,.dock,.quick-tile,.quick-icon,.glass-card,.weather-panel,.weather-restore,.toast,.browser-message-box,.settings-card,.settings-panel,.settings-app,.settings-main,.settings-side,.browser-tabs,.browser-tools,.browser-mode-menu,.browser-bookmark-panel,.apps-panel,.panel){
   backdrop-filter:blur(4px) saturate(1.04)!important;
   -webkit-backdrop-filter:blur(4px) saturate(1.04)!important;
   box-shadow:0 8px 22px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.10)!important;
 }
-html body.performance-lite.theme-fresh :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-menu,.browser-bookmark-panel,.ambient-player,.weather-panel,.weather-restore,.apps-panel,.panel){
+html body.performance-lite.theme-fresh :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-menu,.browser-bookmark-panel,.weather-panel,.weather-restore,.apps-panel,.panel){
   box-shadow:inset 0 1px 0 rgba(255,255,255,.36),0 8px 18px rgba(59,86,91,.12)!important;
 }
 html body.performance-lite :is(.browser-shell-clock,.desktop-center-clock,.quick-tile,.browser-mode-tab,.browser-mode-shell-tab,.home-shortcut){
@@ -23,7 +23,7 @@ html body.theme-fresh{
   --nyx-purple-edge:#00f5d4!important;
   --fresh-line:rgba(0,245,212,.68)!important;
 }
-html body.browser-shell.theme-fresh :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.browser-shell-settings-panel,.settings-block,.glass-card,.quick-tile,.quick-icon,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-url,.urlbar,.ambient-player,.weather-panel,.weather-restore,.apps-panel,.panel,.home-shortcut,.home-shortcut-add,.home-shortcut-menu,.tool-btn,.go-btn,.menu-btn,.settings-action,.settings-preset,input,select,textarea,button){
+html body.browser-shell.theme-fresh :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.browser-shell-settings-panel,.settings-block,.glass-card,.quick-tile,.quick-icon,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-url,.urlbar,.weather-panel,.weather-restore,.apps-panel,.panel,.home-shortcut,.home-shortcut-add,.home-shortcut-menu,.tool-btn,.go-btn,.menu-btn,.settings-action,.settings-preset,input,select,textarea,button){
   border-color:rgba(0,245,212,.72)!important;
 }
 html body.browser-shell.theme-fresh .browser-shell-settings-panel :is(.settings-block,.settings-card,.settings-input,.settings-select,.settings-action,button,input,select,textarea),
@@ -654,7 +654,7 @@ body.theme-fresh :is(.browser-mode-url,.urlbar,input,select,textarea)::placehold
 }
 body.browser-shell .top-os > .browser-top-clock,
 body.browser-shell :is(button,input,select,textarea,label,h1,h2,h3,h4,h5,h6,p,span,strong,small,code,pre,div,a,li,td,th,b,i,em),
-body :is(.welcome-title,.welcome-letter,.brand-mini,.brand-button,.user-chip,.home-heading,.desktop-app span,.weather-temp,.weather-panel-title,.weather-forecast-row .weather-day,.weather-stat strong,.ambient-title,.ambient-bass,.ambient-spotify,.settings-action,.settings-preset,.quick-tile,.quick-combo,.shell-page h1,.shell-page p,.settings-main h1,.settings-block h2,.settings-block p,.settings-side button,.settings-input,.settings-select){
+body :is(.welcome-title,.welcome-letter,.brand-mini,.brand-button,.user-chip,.home-heading,.desktop-app span,.weather-temp,.weather-panel-title,.weather-forecast-row .weather-day,.weather-stat strong,.settings-action,.settings-preset,.quick-tile,.quick-combo,.shell-page h1,.shell-page p,.settings-main h1,.settings-block h2,.settings-block p,.settings-side button,.settings-input,.settings-select){
   font-weight:400!important;
   font-style:normal!important;
 }
@@ -662,7 +662,7 @@ body.browser-shell.theme-fresh :is(
   button,input,select,textarea,label,h1,h2,h3,h4,h5,h6,p,span,strong,small,code,pre,div,a,li,td,th,b,i,em,
   .browser-mode-tab,.browser-mode-app-button,.browser-mode-menu button,.browser-mode-url,
   .browser-mode-address button,.home-shortcut span,.home-shortcut-add span,.quick-tile span,
-  .settings-app,.settings-app *,.weather-panel,.weather-panel *,.ambient-player,.ambient-player *
+  .settings-app,.settings-app *,.weather-panel,.weather-panel *
 ){
   color:#075f70!important;
   -webkit-text-fill-color:#075f70!important;
@@ -691,18 +691,18 @@ html body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):
 }
 html body.theme-ruby:not(.custom-bg-active)::before,
 html body.browser-shell.theme-ruby:not(.custom-bg-active)::before{
-  background:linear-gradient(rgba(60,0,12,.10),rgba(60,0,12,.22)),url("../assets/backgrounds/theme-ruby.jpg") center/cover no-repeat!important;
-  background-image:linear-gradient(rgba(60,0,12,.10),rgba(60,0,12,.22)),url("../assets/backgrounds/theme-ruby.jpg")!important;
+  background:linear-gradient(rgba(60,0,12,.10),rgba(60,0,12,.22)),url("../assets/backgrounds/nyx-blue-light-trails.jpg") center/cover no-repeat!important;
+  background-image:linear-gradient(rgba(60,0,12,.10),rgba(60,0,12,.22)),url("../assets/backgrounds/nyx-blue-light-trails.jpg")!important;
 }
 html body.theme-emerald:not(.custom-bg-active)::before,
 html body.browser-shell.theme-emerald:not(.custom-bg-active)::before{
-  background:linear-gradient(rgba(0,24,12,.08),rgba(0,24,12,.20)),url("../assets/backgrounds/theme-emerald.png") center/cover no-repeat!important;
-  background-image:linear-gradient(rgba(0,24,12,.08),rgba(0,24,12,.20)),url("../assets/backgrounds/theme-emerald.png")!important;
+  background:linear-gradient(rgba(0,24,12,.08),rgba(0,24,12,.20)),url("../assets/backgrounds/nyx-blue-light-trails.jpg") center/cover no-repeat!important;
+  background-image:linear-gradient(rgba(0,24,12,.08),rgba(0,24,12,.20)),url("../assets/backgrounds/nyx-blue-light-trails.jpg")!important;
 }
 html body.theme-sakura:not(.custom-bg-active)::before,
 html body.browser-shell.theme-sakura:not(.custom-bg-active)::before{
-  background:linear-gradient(rgba(40,0,28,.06),rgba(40,0,28,.18)),url("../assets/backgrounds/theme-sakura.jpg") center/cover no-repeat!important;
-  background-image:linear-gradient(rgba(40,0,28,.06),rgba(40,0,28,.18)),url("../assets/backgrounds/theme-sakura.jpg")!important;
+  background:linear-gradient(rgba(40,0,28,.06),rgba(40,0,28,.18)),url("../assets/backgrounds/nyx-blue-light-trails.jpg") center/cover no-repeat!important;
+  background-image:linear-gradient(rgba(40,0,28,.06),rgba(40,0,28,.18)),url("../assets/backgrounds/nyx-blue-light-trails.jpg")!important;
 }
 body.browser-shell.theme-ruby:not(.custom-bg-active) :is(.browser-home,.browser-window.maximized.browser-blank,.browser-window.maximized:has(.browser-home:not(.hidden))){
   background:transparent!important;
@@ -735,8 +735,8 @@ html body.theme-fresh:not(.custom-bg-active)::before,
 html body.browser-shell.theme-fresh:not(.custom-bg-active)::before,
 html body.theme-fresh:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):not(.custom-bg-active)::before,
 html body.browser-shell.theme-fresh:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):not(.custom-bg-active)::before{
-  background:linear-gradient(rgba(255,255,255,.10),rgba(255,255,255,.18)),url("../assets/backgrounds/theme-fresh.jpg") center/cover no-repeat!important;
-  background-image:linear-gradient(rgba(255,255,255,.10),rgba(255,255,255,.18)),url("../assets/backgrounds/theme-fresh.jpg")!important;
+  background:linear-gradient(rgba(255,255,255,.10),rgba(255,255,255,.18)),url("../assets/backgrounds/nyx-blue-light-trails.jpg") center/cover no-repeat!important;
+  background-image:linear-gradient(rgba(255,255,255,.10),rgba(255,255,255,.18)),url("../assets/backgrounds/nyx-blue-light-trails.jpg")!important;
 }
 body.browser-shell.theme-fresh:not(.custom-bg-active) :is(.browser-home,.browser-window.maximized.browser-blank,.browser-window.maximized:has(.browser-home:not(.hidden))){
   background:transparent!important;
@@ -861,7 +861,7 @@ html body.browser-shell.theme-fresh .top-os{
   background:rgba(255,255,255,.86)!important;
   background-image:none!important;
 }
-html body.browser-shell.theme-fresh :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.browser-mode-menu,.browser-bookmark-panel,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.browser-shell-settings-panel,.settings-block,.glass-card,.quick-tile,.quick-icon,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-url,.urlbar,.ambient-player,.weather-panel,.weather-restore,.apps-panel,.panel,.home-shortcut,.home-shortcut-add,.home-shortcut-menu,.tool-btn,.go-btn,.menu-btn,.settings-action,.settings-preset,input,select,textarea,button){
+html body.browser-shell.theme-fresh :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.browser-mode-menu,.browser-bookmark-panel,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.browser-shell-settings-panel,.settings-block,.glass-card,.quick-tile,.quick-icon,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-url,.urlbar,.weather-panel,.weather-restore,.apps-panel,.panel,.home-shortcut,.home-shortcut-add,.home-shortcut-menu,.tool-btn,.go-btn,.menu-btn,.settings-action,.settings-preset,input,select,textarea,button){
   background-color:rgba(255,255,255,.72)!important;
   background-image:none!important;
   border-color:rgba(84,235,217,.68)!important;
@@ -1954,31 +1954,6 @@ html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-
 html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > .quick-tile.home-shortcut-add:hover{
   transform:translateY(-2px) scale(1.045)!important;
 }
-html body .ambient-player{
-  border-radius:999px!important;
-  overflow:hidden!important;
-  transition:transform .52s cubic-bezier(.16,1,.3,1),opacity .52s ease,width .52s cubic-bezier(.16,1,.3,1),padding .52s ease,border-radius .52s ease!important;
-}
-html body .ambient-player:not(.tucked){
-  min-height:58px!important;
-}
-html body .ambient-player.tucked{
-  width:74px!important;
-  min-width:74px!important;
-  height:52px!important;
-  min-height:52px!important;
-  grid-template-columns:38px 18px!important;
-  padding:7px!important;
-  border-radius:999px!important;
-}
-html body .ambient-hide{
-  border-radius:999px!important;
-  font-size:18px!important;
-  line-height:1!important;
-}
-html body .ambient-toggle{
-  border-radius:999px!important;
-}
 /* //blank-search-and-shortcut-hover-repair */
 html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] .home-shortcut-glyph,
 html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] .home-shortcut:hover .home-shortcut-glyph,
@@ -2235,7 +2210,7 @@ html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-
   transition-duration:4s!important;
   transition-timing-function:cubic-bezier(.16,1,.3,1)!important;
 }
-/* //extra-slower-shortcut-and-music-arrow-final */
+/* //extra-slower-shortcut-arrow-final */
 html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > .quick-tile.home-shortcut,
 html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > .quick-tile.home-shortcut-add,
 html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] .home-shortcut-open{
@@ -2279,60 +2254,6 @@ html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-
 html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] .home-shortcut:hover .home-shortcut-open::after,
 html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] .home-shortcut:focus-within .home-shortcut-open::after{
   transform:translate(-50%,-50%) scale(1.006)!important;
-}
-html body.browser-shell .ambient-toggle,
-html body.browser-shell .ambient-hide{
-  position:relative!important;
-  display:grid!important;
-  place-items:center!important;
-  font-size:0!important;
-  line-height:1!important;
-  color:var(--nyx-shell-icon,#f8fafc)!important;
-  -webkit-text-fill-color:var(--nyx-shell-icon,#f8fafc)!important;
-  transition:
-    transform .72s cubic-bezier(.16,1,.3,1),
-    background-color .72s ease,
-    border-color .72s ease,
-    color .72s ease!important;
-}
-html body.browser-shell .ambient-toggle::before,
-html body.browser-shell .ambient-toggle::after,
-html body.browser-shell .ambient-hide::before{
-  content:""!important;
-  display:block!important;
-  position:absolute!important;
-  pointer-events:none!important;
-}
-html body.browser-shell .ambient-toggle::before{
-  width:0!important;
-  height:0!important;
-  border-top:7px solid transparent!important;
-  border-bottom:7px solid transparent!important;
-  border-left:10px solid currentColor!important;
-  transform:translateX(1px)!important;
-}
-html body.browser-shell .ambient-toggle.is-playing::before{
-  width:4px!important;
-  height:13px!important;
-  border:0!important;
-  border-left:4px solid currentColor!important;
-  border-right:4px solid currentColor!important;
-  transform:none!important;
-}
-html body.browser-shell .ambient-hide::before{
-  width:8px!important;
-  height:8px!important;
-  border-top:2px solid currentColor!important;
-  border-right:2px solid currentColor!important;
-  border-radius:1px!important;
-  transform:rotate(225deg)!important;
-}
-html body.browser-shell .ambient-player.tucked .ambient-hide::before{
-  transform:rotate(45deg)!important;
-}
-html body.browser-shell .ambient-hide:hover,
-html body.browser-shell .ambient-toggle:hover{
-  transform:scale(1.025)!important;
 }
 /* //shortcut-dots-hover-stability-final */
 html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > div.quick-tile.home-shortcut > button.home-shortcut-menu-btn,

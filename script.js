@@ -4613,7 +4613,6 @@
   const defaultHomeShortcuts=[
     {domain:'geforcenow',title:'GeForce Now',url:'https://play.geforcenow.com/',favorite:true},
     {domain:'duck.ai',title:'Duck AI',url:'https://duck.ai/',favorite:false},
-    {domain:'nyx-ai',title:'Nyx AI',url:'nyx://ai',favorite:false},
     {domain:'games',title:'Games',url:'/assets/games/index.html',favorite:false},
     {domain:'youtube.com',title:'YouTube',url:'https://www.youtube.com/',favorite:false},
     {domain:'tiktok.com',title:'TikTok',url:'https://www.tiktok.com/',favorite:false},
@@ -4634,7 +4633,9 @@
     try{
       const saved=JSON.parse(store.text('nyx.homeShortcuts',''));
       if(Array.isArray(saved)){
-        const cleaned=saved.filter(item=>item?.url && item?.title).map(normalizeHomeShortcut);
+        const cleaned=saved
+          .filter(item=>item?.url && item?.title && String(item.url).trim().toLowerCase()!=='nyx://ai')
+          .map(normalizeHomeShortcut);
         if(JSON.stringify(cleaned)!==JSON.stringify(saved)) saveHomeShortcuts(cleaned);
         return cleaned;
       }

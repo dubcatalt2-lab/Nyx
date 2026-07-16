@@ -6,6 +6,8 @@
   const qsa = (sel, root=document) => Array.from(root.querySelectorAll(sel));
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const store = {get(k,d){try{return JSON.parse(localStorage.getItem(k)) ?? d}catch{return d}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}, text(k,d=''){try{return localStorage.getItem(k) ?? d}catch{return d}}, setText(k,v){try{localStorage.setItem(k,String(v))}catch{}}};
+  const DEFAULT_BROWSER_MODE='scramjet';
+  const DEFAULT_BROWSER_TRANSPORT='libcurl';
   const nyxFontOptions=[
     ['outfit','Outfit','Outfit,Arial,sans-serif'],
     ['raleway','Raleway','Raleway,Arial,sans-serif'],
@@ -1702,9 +1704,9 @@
     const savedFavicon=esc(store.text('nyx.tabFavicon',nyxFaviconHref()));
     const currentPreset=esc(store.text('nyx.logo','nyx'));
     const engine=esc(store.text('nyx.engine','duckduckgo'));
-    const savedBrowserMode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
+    const savedBrowserMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
     const browserMode=esc(savedBrowserMode==='rammerhead' ? 'auto' : savedBrowserMode);
-    const transport=esc(store.text('nyx.transport','epoxy'));
+    const transport=esc(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT));
     const theme=esc(store.text('nyx.theme','default'));
     const effect=esc(store.text('nyx.visualEffect','none'));
     const effectSpeed=esc(store.text('nyx.visualEffectSpeed','1.1'));
@@ -1722,10 +1724,10 @@
     const transport=root.querySelector('[data-browser-transport]');
     const font=root.querySelector('[data-font-value]');
     store.setText('nyx.engine', engine?.value || 'duckduckgo');
-    store.setText('nyx.browserMode', normalizeBrowserModeName(mode?.value || 'auto'));
+    store.setText('nyx.browserMode', normalizeBrowserModeName(mode?.value || DEFAULT_BROWSER_MODE));
     if(font) store.setText('nyx.font',nyxFontChoice(font.value)[0]);
-    const nextTransport=transport?.value || 'epoxy';
-    if(store.text('nyx.transport','epoxy')!==nextTransport){
+    const nextTransport=transport?.value || DEFAULT_BROWSER_TRANSPORT;
+    if(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT)!==nextTransport){
       scramjetInstallPromise=null;
       scramjetController=null;
       scramjetTransport=null;
@@ -3780,7 +3782,7 @@
       const target=new URL(url,location.href);
       if(target.origin===location.origin || target.protocol==='file:') return 'iframe';
     }catch{}
-    const mode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
+    const mode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
     if(isSpotifyFamilyUrl(url)) return 'scramjet';
     if(hostMatches(browserHost(url),['slither.io'])) return 'iframe';
     if(mode==='iframe' && hostMatches(browserHost(url),['cineby.at'])) return 'scramjet';
@@ -3788,9 +3790,9 @@
     return bestBrowserMode(url);
   }
   function proxySelectionInfo(url,forceMode=''){
-    const savedMode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
+    const savedMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
     const mode=forceMode || selectedBrowserMode(url);
-    const savedTransport=store.text('nyx.transport','epoxy');
+    const savedTransport=store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT);
     return {
       url,
       savedMode,
@@ -3907,7 +3909,7 @@
       }
       throw lastError;
     };
-    const transport=browserTransportOverride || store.text('nyx.transport','epoxy');
+    const transport=browserTransportOverride || store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT);
     try{
       if(transport==='libcurl'){
         try{
@@ -3933,7 +3935,7 @@
     }
   }
   async function createScramjetTransport(){
-    const transport=browserTransportOverride || store.text('nyx.transport','epoxy');
+    const transport=browserTransportOverride || store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT);
     const key=`${transport}:${wispUrl()}`;
     if(scramjetTransport && scramjetTransportKey===key) return scramjetTransport;
     const wisp=wispUrl();
@@ -4965,7 +4967,7 @@
     }),timeout,`${url} websocket timed out`);
   }
   function preflightBrowserModeForTarget(target=''){
-    const mode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
+    const mode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
     if(mode!=='auto') return mode;
     try{
       const normalized=normalize(browserShellSourceUrl(target) || target);
@@ -6135,8 +6137,12 @@
       browserTransportOverride=next;
       resetProxyInstallers();
     }
-    function applyPreferredTransportForUrl(url,browserMode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'))){
+    function applyPreferredTransportForUrl(url,browserMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE))){
       if(isSpotifyFamilyUrl(url)){
+        setBrowserTransportOverride('libcurl');
+        return;
+      }
+      if(browserMode==='auto'){
         setBrowserTransportOverride('libcurl');
         return;
       }
@@ -6148,11 +6154,11 @@
       setBrowserTransportOverride(siteTransport || (browserMode==='auto' ? (prefersEpoxyTransport(url) ? 'epoxy' : 'libcurl') : ''));
     }
     function transportAutoEnabled(){
-      return store.text('nyx.transport','epoxy')==='auto'
-        || normalizeBrowserModeName(store.text('nyx.browserMode','auto'))==='auto';
+      return store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT)==='auto'
+        || normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE))==='auto';
     }
     function proxyTransportName(){
-      return browserTransportOverride || store.text('nyx.transport','epoxy');
+      return browserTransportOverride || store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT);
     }
     function transportRetryOrder(current){
       const ordered=['epoxy','wisp','libcurl'];
@@ -6161,7 +6167,7 @@
       return [...ordered.slice(index+1),...ordered.slice(0,index)];
     }
     function serviceWorkerTransportErrorText(text){
-      return /internal service worker error|request failed with error code\s*(?:35|56|60)|ssl connect error|ssl peer certificate|ssh remote key|certificate.*not ok|failure when receiving data from the peer/i.test(String(text || ''));
+      return /internal service worker error|request failed with error code\s*(?:35|52|56|60)|ssl connect error|tls handshake eof|wisp server closed|muxtaskended|ssl peer certificate|ssh remote key|certificate.*not ok|failure when receiving data from the peer/i.test(String(text || ''));
     }
     function loadSelectedSearchFallback(t,sourceUrl,reason=''){
       if(!t || !sourceUrl) return false;
@@ -6185,7 +6191,7 @@
       const key=`${expectedEngine}:${sourceUrl}`;
       const attempts=t.engineFallbackAttempts || (t.engineFallbackAttempts={});
       attempts[key]=(attempts[key] || 0) + 1;
-      const configuredMode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
+      const configuredMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
       if(configuredMode!=='auto'){
         if(configuredMode==='scramjet' && expectedEngine!=='scramjet'){
           console.warn('nyx enforcing selected Scramjet engine.', {sourceUrl, expectedEngine, reason});
@@ -6241,7 +6247,7 @@
     }
     function watchFrameTransportErrors(t,sourceUrl,expectedEngine){
       if(!t?.frame || !sourceUrl || !expectedEngine) return;
-      if(normalizeBrowserModeName(store.text('nyx.browserMode','auto'))!=='auto') return;
+      if(normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE))!=='auto') return;
       const token='transport-'+Date.now()+Math.random().toString(16).slice(2);
       t.transportWatchToken=token;
       const check=()=>{
@@ -6265,7 +6271,7 @@
           return;
         }
         const currentTransport=proxyTransportName();
-        const nextTransport=transportRetryOrder(currentTransport)[0] || 'epoxy';
+        const nextTransport=transportRetryOrder(currentTransport)[0] || DEFAULT_BROWSER_TRANSPORT;
         console.warn('nyx proxy transport failed; retrying same engine with safer transport.', {expectedEngine, sourceUrl, currentTransport, nextTransport});
         setBrowserTransportOverride(nextTransport);
         if(expectedEngine==='scramjet') loadScramjetTab(t,sourceUrl,false);
@@ -6284,7 +6290,7 @@
       if(!sourceUrl || !expectedEngine) return;
       // Fixed engine modes must preserve the real proxy response. Recovery is
       // allowed to rotate transports or engines only when Auto was selected.
-      if(normalizeBrowserModeName(store.text('nyx.browserMode','auto'))!=='auto') return;
+      if(normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE))!=='auto') return;
       if(t.fallbackSource!==sourceUrl){
         t.fallbackSource=sourceUrl;
         t.fallbackAttempts=0;
@@ -6374,8 +6380,8 @@
         if(t.url!==sourceUrl && !currentUrl.startsWith('/service/') && !currentUrl.startsWith('/~/sj/') && !currentUrl.startsWith('/scramjet/service/')) return;
         t.fallbackAttempts=(t.fallbackAttempts || 0) + 1;
         if(t.fallbackAttempts>4) return;
-        console.warn(`nyx ${expectedEngine || 'proxy'} load timed out, trying fallback`, {sourceUrl, transport:browserTransportOverride || store.text('nyx.transport','epoxy')});
-        const browserMode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
+        console.warn(`nyx ${expectedEngine || 'proxy'} load timed out, trying fallback`, {sourceUrl, transport:browserTransportOverride || store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT)});
+        const browserMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
         const canAutoTransport=transportAutoEnabled();
         const currentTransport=proxyTransportName();
         const nextTransport=transportRetryOrder(currentTransport)[0] || '';
@@ -6451,7 +6457,7 @@
       if(!url.startsWith('/scramjet/service/') && !url.startsWith('/~/sj/')) t.scramjetFrame=null;
       setFrameSandbox(t,true);
       clearFrameDocument(t);
-      if(normalizeBrowserModeName(store.text('nyx.browserMode','auto'))==='auto' && directOnly(url) && !proxied){
+      if(normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE))==='auto' && directOnly(url) && !proxied){
         loadScramjetTab(t,url,addHistory);
         return;
       }
@@ -6674,7 +6680,7 @@
         document.querySelectorAll('.nyx-preflight').forEach(overlay=>overlay.remove());
         win.querySelector('.urlbar').value=browserShellDisplayValue(url);
         hideBrowserSuggestions();
-        const browserMode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
+        const browserMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
         if(!forceMode || !browserTransportOverride) applyPreferredTransportForUrl(url,browserMode);
         updateBrowserShellLocation(url,t.id,true);
         const mode=forceMode || selectedBrowserMode(url);
@@ -6714,7 +6720,7 @@
         });
         return;
       }
-      const browserMode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
+      const browserMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
       if(!forceMode || !browserTransportOverride) applyPreferredTransportForUrl(url,browserMode);
       updateBrowserShellLocation(url,t.id,true);
       try{
@@ -6951,10 +6957,10 @@
       }
       if(e.data.type==='nyx:browser-settings'){
         store.setText('nyx.engine',e.data.engine || 'duckduckgo');
-        store.setText('nyx.browserMode',normalizeBrowserModeName(e.data.browserMode || 'auto'));
-        const nextTransport=e.data.transport || 'epoxy';
+        store.setText('nyx.browserMode',normalizeBrowserModeName(e.data.browserMode || DEFAULT_BROWSER_MODE));
+        const nextTransport=e.data.transport || DEFAULT_BROWSER_TRANSPORT;
         browserTransportOverride='';
-        if(store.text('nyx.transport','epoxy')!==nextTransport){
+        if(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT)!==nextTransport){
           scramjetInstallPromise=null;
           scramjetController=null;
           scramjetTransport=null;
@@ -6964,8 +6970,8 @@
         store.setText('nyx.transport',nextTransport);
         console.log('nyx browser settings saved', {
           engine:store.text('nyx.engine','duckduckgo'),
-          browserMode:normalizeBrowserModeName(store.text('nyx.browserMode','auto')),
-          transport:store.text('nyx.transport','epoxy')
+          browserMode:normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE)),
+          transport:store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT)
         });
         applyUserSettings();
         toast('Browser settings saved');
@@ -8246,9 +8252,9 @@
           <h2>Change Proxy</h2>
           <p>This setting changes the browser's proxy to either UV or SJ.
 SJ supports more websites however, there will be some websites where UV is superior.
-Setting the proxy type to "auto" will automatically switch the proxy for specific websites where one functions and the other does not.</p>
+Auto uses Scramjet with Libcurl by default and can still recover with another transport if the connection fails.</p>
           <select id="settingBrowserMode">
-            <option value="auto">Auto</option>
+            <option value="auto">Auto (Scramjet + Libcurl)</option>
             <option value="scramjet">Use Scramjet</option>
             <option value="ultraviolet">Use Ultraviolet</option>
             <option value="iframe">Iframe</option>
@@ -8302,11 +8308,11 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     if(engineSel) engineSel.value=store.text('nyx.engine','duckduckgo');
     const modeSel=win.querySelector('#settingBrowserMode');
     if(modeSel){
-      const mode=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
+      const mode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
       modeSel.value=mode==='rammerhead' ? 'auto' : mode;
     }
     const transportSel=win.querySelector('#settingTransport');
-    if(transportSel) transportSel.value=store.text('nyx.transport','epoxy');
+    if(transportSel) transportSel.value=store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT);
     const launchPdfSel=win.querySelector('#settingLaunchPdf');
     if(launchPdfSel) launchPdfSel.value=store.text('nyx.launchPdf','math');
     applyVisualEffectSetting();
@@ -8451,7 +8457,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     const effect=$('setupEffect');
     if(effect) effect.value=store.text('nyx.visualEffect','none');
     const browser=$('setupBrowserMode');
-    if(browser) browser.value=normalizeBrowserModeName(store.text('nyx.browserMode','auto'));
+    if(browser) browser.value=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
     const engine=$('setupEngine');
     if(engine) engine.value=store.text('nyx.engine','duckduckgo');
     const font=$('setupFont');
@@ -8494,7 +8500,7 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
     store.setText('nyx.theme',$('setupTheme')?.value || 'default');
     store.setText('nyx.visualEffect',$('setupEffect')?.value || 'none');
     store.set('nyx.visualEffectUserChoice',true);
-    store.setText('nyx.browserMode',normalizeBrowserModeName($('setupBrowserMode')?.value || 'auto'));
+    store.setText('nyx.browserMode',normalizeBrowserModeName($('setupBrowserMode')?.value || DEFAULT_BROWSER_MODE));
     store.setText('nyx.engine',$('setupEngine')?.value || 'duckduckgo');
     store.setText('nyx.font',nyxFontChoice($('setupFont')?.value || 'outfit')[0]);
     store.set('nyx.setupComplete',true);
@@ -9807,10 +9813,10 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
         const mode=win?.querySelector('#settingBrowserMode');
         const transport=win?.querySelector('#settingTransport');
         store.setText('nyx.engine', input?.value || 'duckduckgo');
-        store.setText('nyx.browserMode', normalizeBrowserModeName(mode?.value || 'auto'));
-        const nextTransport=transport?.value || 'epoxy';
+        store.setText('nyx.browserMode', normalizeBrowserModeName(mode?.value || DEFAULT_BROWSER_MODE));
+        const nextTransport=transport?.value || DEFAULT_BROWSER_TRANSPORT;
         browserTransportOverride='';
-        if(store.text('nyx.transport','epoxy')!==nextTransport){
+        if(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT)!==nextTransport){
           scramjetInstallPromise=null;
           scramjetController=null;
           scramjetTransport=null;
@@ -9820,8 +9826,8 @@ Setting the proxy type to "auto" will automatically switch the proxy for specifi
         store.setText('nyx.transport', nextTransport);
         console.log('nyx browser settings saved', {
           engine:store.text('nyx.engine','duckduckgo'),
-          browserMode:normalizeBrowserModeName(store.text('nyx.browserMode','auto')),
-          transport:store.text('nyx.transport','epoxy')
+          browserMode:normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE)),
+          transport:store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT)
         });
         applyUserSettings(); toast('Browser settings saved'); return;
       }

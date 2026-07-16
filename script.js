@@ -6218,6 +6218,10 @@
         if(attempts[key]===1) console.warn('nyx Spotify is pinned to Scramjet + libcurl; not switching engines.', {sourceUrl, reason});
         return false;
       }
+      if(expectedEngine==='scramjet' && configuredMode==='auto'){
+        console.warn('nyx Auto exhausted its Scramjet transports; keeping the selected engine.', {sourceUrl, reason});
+        return loadSelectedSearchFallback(t,sourceUrl,reason || 'Scramjet transports exhausted');
+      }
       if(expectedEngine==='scramjet' && configuredMode==='scramjet'){
         if(attempts[key]>3) return loadSelectedSearchFallback(t,sourceUrl,reason || 'scramjet retries exhausted');
         console.warn('nyx Scramjet is selected; retrying Scramjet instead of switching engines.', {sourceUrl, reason});
@@ -6406,7 +6410,7 @@
             handled=true;
           }else if(browserMode==='auto'){
             if(canAutoTransport) setBrowserTransportOverride('epoxy');
-            navigate(sourceUrl,'ultraviolet');
+            loadSelectedSearchFallback(t,sourceUrl,'Scramjet transports exhausted');
             handled=true;
           }
         }

@@ -14,7 +14,10 @@ wisp.options.allow_udp_streams = false;
 wisp.options.port_whitelist = [80, 443];
 wisp.options.dns_method = "lookup";
 wisp.options.dns_result_order = "ipv4first";
-wisp.options.stream_limit_per_host = 8;
+// wisp-js 0.4.1 stores streams in an object, but its per-host limiter tries
+// to iterate that object directly and crashes the process on the first stream.
+// Keep the working total limit below and leave the broken per-host path off.
+wisp.options.stream_limit_per_host = -1;
 wisp.options.stream_limit_total = 64;
 wisp.options.wisp_motd = "Nyx Railway Wisp";
 

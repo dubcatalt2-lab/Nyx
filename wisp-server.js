@@ -12,6 +12,8 @@ wisp.options.allow_loopback_ips = false;
 wisp.options.allow_direct_ip = true;
 wisp.options.allow_udp_streams = false;
 wisp.options.port_whitelist = [80, 443];
+wisp.options.dns_method = "lookup";
+wisp.options.dns_result_order = "ipv4first";
 wisp.options.stream_limit_per_host = 8;
 wisp.options.stream_limit_total = 64;
 wisp.options.wisp_motd = "Nyx Railway Wisp";
@@ -33,7 +35,12 @@ const server = createServer((req, res) => {
   const url = new URL(req.url || "/", "http://localhost");
   if (url.pathname === "/healthz") {
     res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
-    res.end(JSON.stringify({ ok: true, service: "nyx-wisp", originsRestricted: allowedOrigins.length > 0 }));
+    res.end(JSON.stringify({
+      ok: true,
+      service: "nyx-wisp",
+      originsRestricted: allowedOrigins.length > 0,
+      dnsResultOrder: wisp.options.dns_result_order
+    }));
     return;
   }
   res.writeHead(200, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" });
@@ -55,6 +62,7 @@ server.on("upgrade", (req, socket, head) => {
 
 server.listen(port, "0.0.0.0", () => {
   console.log(`Nyx Wisp listening on 0.0.0.0:${port}`);
+  console.log(`Outbound DNS result order: ${wisp.options.dns_result_order}`);
   console.log(allowedOrigins.length ? `Allowed origins: ${allowedOrigins.join(", ")}` : "Warning: NYX_ALLOWED_ORIGINS is empty; all browser origins are currently allowed.");
 });
 

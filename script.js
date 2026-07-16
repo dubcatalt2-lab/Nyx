@@ -331,6 +331,7 @@
   let scramjetTransportKey = '';
   let browserTransportOverride = '';
   let scramjetInstallError = '';
+  let nyxPresenceCount = null;
   //scramjet-runtime-guard
   let scramjetRuntimeGuardSource = '';
   const scramjetMinimalRuntimeGuardSource=`(() => {
@@ -624,7 +625,7 @@
     } catch {}
   })();`;
   const proxyStateVersion='nyx-proxy-state-20260715-pixelclient-input-v9';
-  const scramjetStateVersion='nyx-scramjet-state-20260713-cineby-frame-v5';
+  const scramjetStateVersion='nyx-scramjet-state-20260716-alpha2-spotify-epoxy-v1';
   const NYX_BLANK_URL='nyx://blank';
   function installNyxConsoleDedupe(scope='top'){
     if(console.__nyxDedupeInstalled) return;
@@ -3478,6 +3479,7 @@
     if(!gate || gate.dataset.opened==='1') return;
     gate.dataset.opened='1';
     nyxGateOpened=true;
+    applyThemeSetting();
     document.body.classList.add('nyx-startup-prep');
     document.querySelectorAll('.nyx-preflight').forEach(overlay=>overlay.remove());
     document.body.classList.add('runtime-lag-guard');
@@ -3891,6 +3893,59 @@
     const protocol=location.protocol==='https:' ? 'wss:' : 'ws:';
     return `${protocol}//${location.host}/wisp/`;
   }
+  function nyxPresenceUrl(){
+    try{
+      const endpoint=new URL(wispUrl());
+      endpoint.protocol=endpoint.protocol==='wss:' ? 'https:' : 'http:';
+      endpoint.pathname='/presence';
+      endpoint.search='';
+      endpoint.hash='';
+      return endpoint.href;
+    }catch{return ''}
+  }
+  function renderNyxPresence(count=nyxPresenceCount){
+    const label=Number.isFinite(count) ? `${count} online` : 'Connecting\u2026';
+    qsa('[data-nyx-online-count]').forEach(element=>{element.textContent=label});
+  }
+  function startNyxPresence(){
+    if(startNyxPresence.started) return;
+    startNyxPresence.started=true;
+    const endpoint=nyxPresenceUrl();
+    if(!endpoint) return;
+    let sessionId='';
+    try{
+      sessionId=localStorage.getItem('nyx.presenceSession') || '';
+      if(!/^[a-zA-Z0-9_-]{16,128}$/.test(sessionId)){
+        sessionId=(crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`).replace(/[^a-zA-Z0-9_-]/g,'');
+        localStorage.setItem('nyx.presenceSession',sessionId);
+      }
+    }catch{
+      sessionId=`${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    }
+    const heartbeat=async()=>{
+      if(document.visibilityState==='hidden') return;
+      try{
+        const response=await fetch(endpoint,{
+          method:'POST',
+          headers:{'content-type':'text/plain;charset=UTF-8'},
+          body:JSON.stringify({sessionId}),
+          cache:'no-store',
+          keepalive:true
+        });
+        if(!response.ok) throw new Error(`Presence returned ${response.status}`);
+        const payload=await response.json();
+        const count=Number(payload?.online);
+        if(!Number.isFinite(count) || count<0) return;
+        nyxPresenceCount=Math.floor(count);
+        renderNyxPresence();
+      }catch{
+        renderNyxPresence(null);
+      }
+    };
+    heartbeat();
+    setInterval(heartbeat,15_000);
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible') heartbeat()});
+  }
   async function installBareMuxTransport(){
     const { BareMuxConnection } = await import('/baremux/index.mjs');
     const connection = bareMuxConnection || (bareMuxConnection = new BareMuxConnection('/baremux/worker.js'));
@@ -4076,7 +4131,7 @@
     ]);
   }
   function shouldUseScramjetHelperGuard(url){
-    return isSpotifyFamilyUrl(url);
+    return false;
   }
   function shouldStripScramjetDuckDuckGoScripts(url){
     return false;
@@ -4357,7 +4412,7 @@
       step='starting Scramjet transport';
       const transport=await createScramjetTransport();
       step='registering Scramjet service worker';
-      const registration=await navigator.serviceWorker.register('/scramjet.sw.js?v=nyx-sj-20260710-nested-url-v10',{scope:'/~/sj/',updateViaCache:'none'});
+      const registration=await navigator.serviceWorker.register('/scramjet.sw.js?v=nyx-sj-20260716-alpha2-v1',{scope:'/~/sj/',updateViaCache:'none'});
       await registration.update().catch(()=>null);
       step='activating Scramjet service worker';
       const active=await waitForServiceWorkerActive(registration);
@@ -4373,7 +4428,7 @@
         if(!isScramjetIdbShapeError(initError)) throw initError;
         step='repairing Scramjet IndexedDB';
         await repairScramjetStorage();
-        const repairedRegistration=await navigator.serviceWorker.register('/scramjet.sw.js?v=nyx-sj-20260710-nested-url-v10',{scope:'/~/sj/',updateViaCache:'none'});
+        const repairedRegistration=await navigator.serviceWorker.register('/scramjet.sw.js?v=nyx-sj-20260716-alpha2-v1',{scope:'/~/sj/',updateViaCache:'none'});
         const repairedActive=await waitForServiceWorkerActive(repairedRegistration);
         if(!repairedActive) throw new Error('Scramjet service worker did not activate after storage repair');
         step='initializing Scramjet controller after storage repair';
@@ -4607,7 +4662,8 @@
     updateWindowSizeClasses(win);
   }
   function browserBody(){
-    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="browser-shell-start"><img class="browser-shell-logo" alt="" src="${favicons.nyx}"><div class="browser-shell-clock" data-browser-shell-clock>--:--</div></div><div class="browser-blank-center"><img class="browser-blank-logo browser-shell-logo" alt="nyx" src="${favicons.nyx}"><form class="browser-blank-search" data-browser-blank-search><input data-browser-blank-input placeholder="Search or enter a URL" autocomplete="off"></form></div><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div></div>`;
+    const presenceText=nyxPresenceCount===null ? 'Connecting\u2026' : `${nyxPresenceCount} online`;
+    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence" role="status" aria-live="polite"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1></main><div class="browser-blank-center"><img class="browser-blank-logo browser-shell-logo" alt="nyx" src="${favicons.nyx}"><form class="browser-blank-search" data-browser-blank-search><input data-browser-blank-input placeholder="Search or enter a URL" autocomplete="off"></form></div><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div></div>`;
   }
   //apps-grid
   const defaultHomeShortcuts=[
@@ -6139,14 +6195,6 @@
       resetProxyInstallers();
     }
     function applyPreferredTransportForUrl(url,browserMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE))){
-      if(isSpotifyFamilyUrl(url)){
-        setBrowserTransportOverride('libcurl');
-        return;
-      }
-      if(browserMode==='auto'){
-        setBrowserTransportOverride('libcurl');
-        return;
-      }
       if(!transportAutoEnabled()){
         setBrowserTransportOverride('');
         return;
@@ -6155,8 +6203,7 @@
       setBrowserTransportOverride(siteTransport || (browserMode==='auto' ? (prefersEpoxyTransport(url) ? 'epoxy' : 'libcurl') : ''));
     }
     function transportAutoEnabled(){
-      return store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT)==='auto'
-        || normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE))==='auto';
+      return store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT)==='auto';
     }
     function proxyTransportName(){
       return browserTransportOverride || store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT);
@@ -6216,7 +6263,7 @@
         }
       }
       if(isSpotifyFamilyUrl(sourceUrl) && expectedEngine==='scramjet'){
-        if(attempts[key]===1) console.warn('nyx Spotify is pinned to Scramjet + libcurl; not switching engines.', {sourceUrl, reason});
+        if(attempts[key]===1) console.warn('nyx Spotify is staying on Scramjet with the user-selected transport; not switching engines.', {sourceUrl, transport:proxyTransportName(), reason});
         return false;
       }
       if(expectedEngine==='scramjet' && configuredMode==='auto'){
@@ -6264,7 +6311,7 @@
         const attempts=t.transportRetries || (t.transportRetries={});
         attempts[key]=(attempts[key] || 0) + 1;
         if(isSpotifyFamilyUrl(sourceUrl) && expectedEngine==='scramjet'){
-          if(attempts[key]===1) console.warn('nyx Spotify transport warning; staying on Scramjet + libcurl.', {sourceUrl});
+          if(attempts[key]===1) console.warn('nyx Spotify transport warning; preserving the user-selected transport.', {sourceUrl, transport:proxyTransportName()});
           return;
         }
         if(attempts[key]>2){
@@ -6369,7 +6416,7 @@
         if(isSpotifyFamilyUrl(sourceUrl) && expectedEngine==='scramjet'){
           if(!t.spotifyPinnedNoticeShown){
             t.spotifyPinnedNoticeShown=true;
-            console.warn('nyx Spotify is pinned to Scramjet + libcurl; skipping timeout engine fallback.', {sourceUrl});
+            console.warn('nyx Spotify is staying on Scramjet with the user-selected transport; skipping timeout engine fallback.', {sourceUrl, transport:proxyTransportName()});
           }
           return;
         }
@@ -9736,6 +9783,14 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
         return;
       }
       if(document.body.classList.contains('browser-shell')){
+        const homeSearchFocus=e.target.closest('[data-home-focus-search]');
+        if(homeSearchFocus){
+          e.preventDefault();
+          const homeSearch=document.querySelector('.browser-window.browser-home-page .nyx-home-search [data-browser-blank-input]');
+          homeSearch?.focus();
+          homeSearch?.select();
+          return;
+        }
         const browserHieroglyph=e.target.closest('[data-browser-hieroglyph-toggle]');
         if(browserHieroglyph){
           e.preventDefault();
@@ -10225,7 +10280,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
     document.body.classList.add('runtime-lag-guard');
     updateResponsiveFit();
     if(!localStorage.getItem('nyx.lagReducer')) store.set('nyx.lagReducer',true);
-    applyLaunchPdfSetting(); bindFormulaGate(); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); startCenterClock();
+    applyLaunchPdfSetting(); bindFormulaGate(); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); startCenterClock(); startNyxPresence();
     if(hostedCloakEntry){
       scheduleHostedCloakLaunch();
       return;

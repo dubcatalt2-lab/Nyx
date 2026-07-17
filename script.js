@@ -5048,6 +5048,95 @@
     }).observe(document.body,{childList:true,subtree:true});
     trigger(document);
   }
+  let interactiveHomeDotsInstalled=false;
+  function installInteractiveHomeDots(){
+    if(interactiveHomeDotsInstalled) return;
+    interactiveHomeDotsInstalled=true;
+    const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
+    const initialize=home=>{
+      if(!home || home.dataset.nyxDotField==='true') return;
+      home.dataset.nyxDotField='true';
+      const canvas=document.createElement('canvas');
+      canvas.className='nyx-home-dot-field';
+      canvas.setAttribute('aria-hidden','true');
+      home.prepend(canvas);
+      const context=canvas.getContext('2d',{alpha:true});
+      if(!context) return;
+      const state={width:0,height:0,dots:[],pointer:null,frame:0};
+      const requestFrame=()=>{
+        if(!state.frame) state.frame=requestAnimationFrame(draw);
+      };
+      const resize=()=>{
+        const width=Math.max(1,home.clientWidth);
+        const height=Math.max(1,home.clientHeight);
+        if(width===state.width && height===state.height) return;
+        state.width=width;
+        state.height=height;
+        const ratio=Math.min(devicePixelRatio || 1,2);
+        canvas.width=Math.round(width*ratio);
+        canvas.height=Math.round(height*ratio);
+        canvas.style.width=width+'px';
+        canvas.style.height=height+'px';
+        context.setTransform(ratio,0,0,ratio,0,0);
+        state.dots=[];
+        const spacing=24;
+        for(let y=12;y<height;y+=spacing){
+          for(let x=20;x<width;x+=spacing) state.dots.push({homeX:x,homeY:y,x,y});
+        }
+        requestFrame();
+      };
+      function draw(){
+        state.frame=0;
+        context.clearRect(0,0,state.width,state.height);
+        context.fillStyle=getComputedStyle(home).getPropertyValue('--nyx-dot-color').trim() || '#202b3d';
+        let unsettled=false;
+        for(const dot of state.dots){
+          let targetX=dot.homeX;
+          let targetY=dot.homeY;
+          if(state.pointer && !reducedMotion.matches){
+            const dx=dot.homeX-state.pointer.x;
+            const dy=dot.homeY-state.pointer.y;
+            const distance=Math.hypot(dx,dy);
+            const radius=130;
+            if(distance<radius){
+              const strength=Math.pow(1-distance/radius,2)*30;
+              const direction=distance>0.01 ? distance : 1;
+              targetX+=dx/direction*strength;
+              targetY+=dy/direction*strength;
+            }
+          }
+          dot.x+=(targetX-dot.x)*.16;
+          dot.y+=(targetY-dot.y)*.16;
+          if(Math.abs(targetX-dot.x)>.04 || Math.abs(targetY-dot.y)>.04 || Math.abs(dot.homeX-dot.x)>.04 || Math.abs(dot.homeY-dot.y)>.04) unsettled=true;
+          context.beginPath();
+          context.arc(dot.x,dot.y,2.7,0,Math.PI*2);
+          context.fill();
+        }
+        if(state.pointer || unsettled) requestFrame();
+      }
+      home.addEventListener('pointermove',event=>{
+        if(!document.body.classList.contains('theme-default')) return;
+        const rect=home.getBoundingClientRect();
+        state.pointer={x:event.clientX-rect.left,y:event.clientY-rect.top};
+        requestFrame();
+      },{passive:true});
+      home.addEventListener('pointerleave',()=>{
+        state.pointer=null;
+        requestFrame();
+      },{passive:true});
+      if(typeof ResizeObserver==='function') new ResizeObserver(resize).observe(home);
+      else addEventListener('resize',resize,{passive:true});
+      resize();
+    };
+    const scan=root=>{
+      if(root?.matches?.('.browser-home')) initialize(root);
+      root?.querySelectorAll?.('.browser-home').forEach(initialize);
+    };
+    new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>{
+      if(node.nodeType===1) scan(node);
+    }))).observe(document.body,{childList:true,subtree:true});
+    scan(document);
+  }
   function renderHomeShortcuts(root=document){
     root.querySelectorAll('[data-home-shortcuts]').forEach(grid=>{grid.innerHTML=browserHomeShortcutTiles()});
     playHomeEntranceAnimation(root);
@@ -10450,7 +10539,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
     document.body.classList.add('runtime-lag-guard');
     updateResponsiveFit();
     if(!localStorage.getItem('nyx.lagReducer')) store.set('nyx.lagReducer',true);
-    applyLaunchPdfSetting(); bindFormulaGate(); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); startCenterClock(); startNyxPresence(); startSpotifyChromeOsCompatibilitySweep();
+    applyLaunchPdfSetting(); bindFormulaGate(); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); installInteractiveHomeDots(); startCenterClock(); startNyxPresence(); startSpotifyChromeOsCompatibilitySweep();
     if(hostedCloakEntry){
       scheduleHostedCloakLaunch();
       return;

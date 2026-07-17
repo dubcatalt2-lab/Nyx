@@ -1106,29 +1106,29 @@ html body.browser-shell.theme-default .top-os > .browser-top-clock{
 
 /* Tint both the dark fill and light linework of the supplied Nyx mark by theme. */
 html body.browser-shell{
-  --nyx-logo-fill:linear-gradient(145deg,#07111f 8%,#173865 62%,#78aaff 100%);
+  --nyx-logo-fill:#244d83;
   --nyx-logo-edge:rgba(191,216,255,.58);
-  --nyx-logo-glow:rgba(96,165,250,.22);
+  --nyx-title-theme-color:#9fc5ff;
 }
 html body.browser-shell.theme-ruby{
-  --nyx-logo-fill:linear-gradient(145deg,#21050a 8%,#7f1d2d 62%,#fb7185 100%);
+  --nyx-logo-fill:#8f2639;
   --nyx-logo-edge:rgba(255,190,200,.58);
-  --nyx-logo-glow:rgba(251,113,133,.22);
+  --nyx-title-theme-color:#fb8a9b;
 }
 html body.browser-shell.theme-emerald{
-  --nyx-logo-fill:linear-gradient(145deg,#031a12 8%,#087052 62%,#34d399 100%);
+  --nyx-logo-fill:#13795c;
   --nyx-logo-edge:rgba(181,255,224,.56);
-  --nyx-logo-glow:rgba(52,211,153,.20);
+  --nyx-title-theme-color:#5ee3b2;
 }
 html body.browser-shell.theme-sakura{
-  --nyx-logo-fill:linear-gradient(145deg,#260817 8%,#9d245f 62%,#f472b6 100%);
+  --nyx-logo-fill:#a83270;
   --nyx-logo-edge:rgba(255,210,234,.60);
-  --nyx-logo-glow:rgba(244,114,182,.20);
+  --nyx-title-theme-color:#f6a1cf;
 }
 html body.browser-shell.theme-fresh{
-  --nyx-logo-fill:linear-gradient(145deg,#073137 8%,#0f7880 62%,#5eead4 100%);
+  --nyx-logo-fill:#177f83;
   --nyx-logo-edge:rgba(211,255,248,.68);
-  --nyx-logo-glow:rgba(20,184,166,.18);
+  --nyx-title-theme-color:#32b9ae;
 }
 html body.browser-shell .browser-window.browser-home-page .browser-home h1.nyx-home-title{
   display:flex!important;
@@ -1143,9 +1143,11 @@ html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-eme
   flex:0 0 54px!important;
   border:0!important;
   border-radius:0!important;
-  background:
-    url("/assets/icons/nyx-logo.png") center/205% no-repeat,
-    var(--nyx-logo-fill)!important;
+  background-color:var(--nyx-logo-fill)!important;
+  background-image:url("/assets/icons/nyx-logo.png")!important;
+  background-position:center!important;
+  background-size:205%!important;
+  background-repeat:no-repeat!important;
   background-blend-mode:screen!important;
   -webkit-mask:url("/assets/icons/nyx-logo.png") center/205% no-repeat!important;
   mask:url("/assets/icons/nyx-logo.png") center/205% no-repeat!important;
@@ -1156,8 +1158,7 @@ html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-eme
     drop-shadow(1px 0 0 var(--nyx-logo-edge))
     drop-shadow(-1px 0 0 var(--nyx-logo-edge))
     drop-shadow(0 1px 0 var(--nyx-logo-edge))
-    drop-shadow(0 -1px 0 var(--nyx-logo-edge))
-    drop-shadow(0 0 5px var(--nyx-logo-glow))!important;
+    drop-shadow(0 -1px 0 var(--nyx-logo-edge))!important;
 }
 @media(max-width:720px){
   html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh) .browser-window.browser-home-page .browser-home h1.nyx-home-title::before{
@@ -1166,10 +1167,45 @@ html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-eme
     flex-basis:46px!important;
   }
 }
-html body.browser-shell.theme-default .browser-window.browser-home-page .browser-home h1.nyx-home-title{
-  background:var(--nyx-home-wordmark-gradient)!important;
-  background-clip:text!important;
-  -webkit-background-clip:text!important;
-  color:transparent!important;
-  -webkit-text-fill-color:transparent!important;
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh) .browser-window.browser-home-page .browser-home h1.nyx-home-title{
+  background:none!important;
+  color:var(--nyx-title-theme-color)!important;
+  -webkit-text-fill-color:var(--nyx-title-theme-color)!important;
+}
+
+/* The dotted field is drawn on canvas so it can react to the pointer. */
+html body.browser-shell.theme-default .browser-window.browser-home-page .browser-home::after{
+  content:none!important;
+  background:none!important;
+}
+html body.browser-shell .nyx-home-dot-field{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+  opacity:.72;
+}
+html body.browser-shell:not(.theme-default) .nyx-home-dot-field{display:none}
+
+/* Keep depth shadows, but remove colored glow from the homepage. */
+html body.browser-shell .browser-window.browser-home-page .browser-home :is(.nyx-home-title,.nyx-home-search,.nyx-home-actions,.home-shortcut-open,.home-shortcut-add){
+  text-shadow:none!important;
+}
+html body.browser-shell .browser-window.browser-home-page .browser-home :is(.quick-icon,.home-shortcut-glyph,.nyx-home-action-icon,.nyx-home-search-icon){
+  filter:none!important;
+}
+html body.browser-shell .browser-window.browser-home-page .nyx-home-presence-dot{
+  box-shadow:none!important;
+}
+html body.browser-shell .browser-window.browser-home-page .nyx-home-search,
+html body.browser-shell .browser-window.browser-home-page .nyx-home-search:focus-within{
+  box-shadow:0 16px 36px rgba(2,6,13,.24),inset 0 1px 0 rgba(255,255,255,.055)!important;
+}
+html body.browser-shell .browser-window.browser-home-page .nyx-home-actions > button:hover{
+  box-shadow:0 10px 24px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.06)!important;
+}
+html body.browser-shell.theme-default .browser-window.browser-home-page .browser-home .home-shortcut-grid .home-shortcut:hover .home-shortcut-open::before{
+  box-shadow:0 9px 20px rgba(2,6,13,.24)!important;
 }

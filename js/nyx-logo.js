@@ -11,6 +11,7 @@
     fresh:'#29aba4'
   };
   const cache=new Map();
+  const croppedCache=new Map();
   let imagePromise=null;
 
   function normalizeTheme(theme){
@@ -63,6 +64,29 @@
     return url;
   }
 
+  async function croppedUrl(theme='default'){
+    const clean=normalizeTheme(theme);
+    if(croppedCache.has(clean)) return croppedCache.get(clean);
+    const image=new Image();
+    image.decoding='async';
+    image.src=await themedUrl(clean);
+    if(typeof image.decode==='function') await image.decode();
+    else await new Promise((resolve,reject)=>{
+      image.onload=resolve;
+      image.onerror=reject;
+    });
+    const canvas=document.createElement('canvas');
+    canvas.width=256;
+    canvas.height=256;
+    const context=canvas.getContext('2d');
+    // Crop the large transparent margin from the supplied 500px artwork so
+    // the crescent remains legible at favicon and tab-icon sizes.
+    context.drawImage(image,122,122,256,256,0,0,256,256);
+    const url=canvas.toDataURL('image/png');
+    croppedCache.set(clean,url);
+    return url;
+  }
+
   async function apply(theme='default',root=document){
     const url=await themedUrl(theme);
     root.documentElement?.style.setProperty('--nyx-themed-logo-url',`url("${url}")`);
@@ -74,5 +98,5 @@
     return url;
   }
 
-  window.NyxLogo={apply,themedUrl,source,colors};
+  window.NyxLogo={apply,themedUrl,croppedUrl,source,colors};
 })();

@@ -172,14 +172,28 @@
   async function applyNyxLogoTheme(theme=store.text('nyx.theme','default')){
     if(!window.NyxLogo) return;
     try{
-      const themedUrl=await window.NyxLogo.apply(theme,document);
+      const [themedUrl,compactUrl]=await Promise.all([
+        window.NyxLogo.apply(theme,document),
+        window.NyxLogo.croppedUrl?.(theme) || window.NyxLogo.themedUrl(theme)
+      ]);
       if(store.text('nyx.theme','default')!==theme) return;
-      favicons.nyx=themedUrl;
-      nyxTabFavicon=themedUrl;
-      if(!store.text('nyx.tabFavicon','')){
+      favicons.nyx=compactUrl;
+      nyxTabFavicon=compactUrl;
+      const nyxPresetSelected=store.text('nyx.logo','nyx')==='nyx';
+      if(nyxPresetSelected) store.setText('nyx.tabFavicon',compactUrl);
+      if(nyxPresetSelected || !store.text('nyx.tabFavicon','')){
         const favicon=$('appFavicon');
-        if(favicon) favicon.href=themedUrl;
+        if(favicon) favicon.href=compactUrl;
       }
+      browserShellTabs.forEach(tab=>{
+        if((tab.title==='Home' && !tab.url) || tab.icon===themedUrl) tab.icon=compactUrl;
+      });
+      activeBrowser?.tabs?.forEach(tab=>{
+        if((tab.title==='Home' && !tab.url) || tab.icon===themedUrl) tab.icon=compactUrl;
+      });
+      renderBrowserShellTabs();
+      activeBrowser?.renderTabs?.();
+      if(nyxPresetSelected) setCurrentTabCloak(store.text('nyx.tabTitle',nyxTabTitle),compactUrl,false);
     }catch(error){
       console.warn('Nyx logo theme could not be applied:',error);
     }
@@ -1805,11 +1819,17 @@
 
     app.classList.add('nyx-settings-dashboard');
     main.querySelector(':scope > h1')?.remove();
+    const settingsIcons={
+      privacy:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 18a2 2 0 0 0-4 0"/><path d="m19 11-2.11-6.657a2 2 0 0 0-2.752-1.148l-1.276.61A2 2 0 0 1 12 4H8.5a2 2 0 0 0-1.925 1.456L5 11"/><path d="M2 11h20"/><circle cx="17" cy="18" r="3"/><circle cx="7" cy="18" r="3"/></svg>',
+      customize:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></svg>',
+      browsing:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>',
+      advanced:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"/></svg>'
+    };
     const definitions=[
-      ['privacy','Privacy','◌',['tab cloak','preset cloak','cloaking','panic key','website details','popup protection']],
-      ['customize','Customize','◇',['theme','font','effects','3d backgrounds']],
-      ['browsing','Browsing','◎',['search engine','proxy engine','transport']],
-      ['advanced','Advanced','⌁',[]]
+      ['privacy','Privacy',settingsIcons.privacy,['tab cloak','preset cloak','cloaking','panic key','website details','popup protection']],
+      ['customize','Customize',settingsIcons.customize,['theme','font','effects','3d backgrounds']],
+      ['browsing','Browsing',settingsIcons.browsing,['search engine','proxy engine','transport']],
+      ['advanced','Advanced',settingsIcons.advanced,[]]
     ];
     const categoryFor=title=>definitions.find(([, , ,titles])=>titles.includes(title))?.[0] || 'advanced';
     const categories=new Map();
@@ -1833,6 +1853,16 @@
       if(heading) copy.appendChild(heading);
       if(description) copy.appendChild(description);
       nodes.forEach(node=>{if(node!==heading && node!==description) controls.appendChild(node)});
+      if(title==='popup protection'){
+        const toggle=controls.querySelector('[data-popup-protection]');
+        if(toggle){
+          const row=document.createElement('div');
+          row.className='settings-row';
+          row.innerHTML='<span>Popup Protection</span>';
+          row.appendChild(toggle);
+          controls.prepend(row);
+        }
+      }
       block.replaceChildren(copy,controls);
       block.dataset.settingsSearch=(block.textContent || '').toLowerCase();
       categories.get(categoryFor(title)).querySelector('.nyx-settings-group').appendChild(block);
@@ -1841,10 +1871,10 @@
 
     const side=document.createElement('aside');
     side.className='nyx-settings-side';
-    side.innerHTML=`<div class="nyx-settings-brand"><span class="nyx-settings-brand-logo" aria-hidden="true"></span><span>Nyx</span></div><label class="nyx-settings-filter"><span aria-hidden="true">⌕</span><input type="search" placeholder="Filter settings" aria-label="Filter settings"></label><nav class="nyx-settings-nav" aria-label="Settings categories">${definitions.map(([key,label,icon],index)=>`<button class="${index===0?'active':''}" data-settings-category-button="${key}" type="button"><span aria-hidden="true">${icon}</span>${label}</button>`).join('')}</nav>`;
+    side.innerHTML=`<label class="nyx-settings-filter"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input type="search" placeholder="Filter settings" aria-label="Filter settings"></label><nav class="nyx-settings-nav" aria-label="Settings categories">${definitions.map(([key,label,icon],index)=>`<button class="${index===0?'active':''}" data-settings-category-button="${key}" type="button"><span aria-hidden="true">${icon}</span>${label}</button>`).join('')}</nav>`;
     const header=document.createElement('header');
     header.className='nyx-settings-header';
-    header.innerHTML='<span>Nyx Settings</span><h1>Privacy</h1>';
+    header.innerHTML='<h1>Privacy</h1>';
     app.prepend(side);
     main.prepend(header);
     categories.forEach(section=>main.appendChild(section));

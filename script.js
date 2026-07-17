@@ -5146,7 +5146,7 @@
       if(!context) return;
       const state={width:0,height:0,dots:[],pointer:null,trail:[],frame:0};
       const radius=62;
-      const trailLifetime=360;
+      const trailLifetime=900;
       const requestFrame=()=>{
         if(!state.frame) state.frame=requestAnimationFrame(draw);
       };
@@ -5180,7 +5180,7 @@
         const influences=reducedMotion.matches ? [] : state.trail.map(point=>({
           x:point.x,
           y:point.y,
-          weight:Math.max(0,1-(now-point.time)/trailLifetime)*.78
+          weight:Math.max(0,1-(now-point.time)/trailLifetime)*.96
         }));
         if(state.pointer && !reducedMotion.matches) influences.unshift({x:state.pointer.x,y:state.pointer.y,weight:1});
         let unsettled=false;
@@ -5196,7 +5196,7 @@
               const dy=dot.homeY-influence.y;
               const distance=Math.hypot(dx,dy);
               if(distance>=radius) continue;
-              const strength=Math.pow(1-distance/radius,2)*22*influence.weight;
+              const strength=Math.pow(1-distance/radius,2)*25*influence.weight;
               if(strength<=strongest) continue;
               const direction=distance>0.01 ? distance : 1;
               strongest=strength;
@@ -5223,9 +5223,9 @@
         if(previous){
           const last=state.trail[state.trail.length-1];
           const anchor=last || previous;
-          if(Math.hypot(next.x-anchor.x,next.y-anchor.y)>=10){
+          if(Math.hypot(next.x-anchor.x,next.y-anchor.y)>=8){
             state.trail.push({x:previous.x,y:previous.y,time:performance.now()});
-            if(state.trail.length>18) state.trail.splice(0,state.trail.length-18);
+            if(state.trail.length>32) state.trail.splice(0,state.trail.length-32);
           }
         }
         state.pointer=next;

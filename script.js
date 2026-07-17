@@ -83,7 +83,6 @@
   const browserShellTabs = [];
   const browserShellOpeningTabs = new Set();
   let browserShellActiveTab = null;
-  let browserShellLastBlankOpenAt = 0;
   const engines = {
     bing:'https://www.bing.com/search?q=',
     google:'https://www.google.com/search?q=',
@@ -690,7 +689,6 @@
   })();`;
   const proxyStateVersion='nyx-proxy-state-20260715-pixelclient-input-v9';
   const scramjetStateVersion='nyx-scramjet-state-20260716-alpha2-spotify-epoxy-v1';
-  const NYX_BLANK_URL='nyx://blank';
   function installNyxConsoleDedupe(scope='top'){
     if(console.__nyxDedupeInstalled) return;
     const seen=new Map();
@@ -962,7 +960,7 @@
   }
   function browserShellLabel(url){
     if(!url) return 'Home';
-    if(String(url || '').trim().toLowerCase()===NYX_BLANK_URL) return NYX_BLANK_URL;
+    if(String(url).trim().toLowerCase()==='nyx://settings') return 'Settings';
     try{
       const parsed=new URL(browserShellSourceUrl(url),location.href);
       if(parsed.origin===location.origin && parsed.pathname==='/search') return parsed.searchParams.get('q') || 'Search';
@@ -977,7 +975,6 @@
   }
   function browserShellDisplayValue(url){
     if(!url) return '';
-    if(String(url || '').trim().toLowerCase()===NYX_BLANK_URL) return NYX_BLANK_URL;
     try{
       const parsed=new URL(browserShellSourceUrl(url),location.href);
       if(parsed.origin===location.origin && parsed.pathname==='/search') return parsed.searchParams.get('q') || '';
@@ -1423,36 +1420,19 @@
   //browser-home-and-tabs
   function isBrowserShellBlankUrl(url){
     const raw=String(url || '').trim().toLowerCase();
-    return raw===NYX_BLANK_URL;
+    return !raw;
   }
-  function renderBrowserShellHomeMode(win,mode='home'){
+  function renderBrowserShellHomeMode(win){
     if(!win) return;
-    const blank=mode==='blank';
-    win.classList.toggle('browser-blank-page',blank);
-    win.classList.toggle('browser-home-page',!blank);
+    win.classList.remove('browser-blank-page');
+    win.classList.add('browser-home-page');
     win.classList.add('browser-blank');
     const home=win.querySelector('.browser-home');
     home?.classList.remove('hidden','page-revealing','tab-opening','closing');
     if(home) home.style.filter='';
     win.querySelectorAll('.view').forEach(frame=>frame.classList.remove('active'));
-    if(blank){
-      const input=win.querySelector('[data-browser-blank-input]');
-      if(input && !input.value) input.value='';
-    }
-  }
-  function collapseDuplicateOpeningBlankTabs(){
-    const active=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
-    if(!active || !isBrowserShellBlankUrl(active.url)) return;
-    const duplicates=browserShellTabs.filter(tab=>tab.id!==active.id && isBrowserShellBlankUrl(tab.url) && browserShellOpeningTabs.has(tab.id));
-    if(!duplicates.length) return;
-    duplicates.forEach(tab=>{
-      browserShellOpeningTabs.delete(tab.id);
-      if(tab.browserTabId && activeBrowser?.closeTab) activeBrowser.closeTab(tab.browserTabId);
-      const index=browserShellTabs.findIndex(item=>item.id===tab.id);
-      if(index>=0) browserShellTabs.splice(index,1);
-    });
-    browserShellActiveTab=active.id;
-    renderBrowserShellTabs();
+    const input=win.querySelector('[data-browser-blank-input]');
+    if(input && !input.value) input.value='';
   }
   function ensureBrowserShellHome(){
     if(!browserShellTabs.length){
@@ -1537,7 +1517,7 @@
       const tab=browserShellTabs[i];
       if(tab.id===keepShellId || (tab.title==='Home' && !tab.url)) continue;
       const blank=isBrowserShellBlankUrl(tab.url);
-      const placeholder=blank && [NYX_BLANK_URL,'New tab','New Tab',''].includes(String(tab.title || ''));
+      const placeholder=blank && ['New tab','New Tab',''].includes(String(tab.title || ''));
       if(!placeholder) continue;
       browserShellOpeningTabs.delete(tab.id);
       if(tab.browserTabId && activeBrowser?.closeTab) activeBrowser.closeTab(tab.browserTabId);
@@ -1549,50 +1529,15 @@
   }
   function openBrowserShellTab(url='',options={}){
     if(url) closeWeatherForWindowOpen();
-    if(!url){
-      const now=performance.now();
-      const activeBlank=browserShellTabs.find(tab=>tab.id===browserShellActiveTab && isBrowserShellBlankUrl(tab.url) && browserShellOpeningTabs.has(tab.id));
-      if(activeBlank && now-browserShellLastBlankOpenAt<360) return activeBlank.id;
-      browserShellLastBlankOpenAt=now;
-    }
     const id='shell-'+Date.now()+Math.random().toString(16).slice(2);
-    const normalized=url ? normalize(url) : NYX_BLANK_URL;
-    const isBlank=isBrowserShellBlankUrl(normalized);
-    browserShellTabs.push({id,url:normalized,title:isBlank ? NYX_BLANK_URL : browserShellLabel(normalized),icon:iconForUrl(normalized)});
+    const normalized=url ? normalize(url) : '';
+    const isBlank=!normalized;
+    browserShellTabs.push({id,url:normalized,title:isBlank ? 'New Tab' : browserShellLabel(normalized),icon:isBlank ? favicons.nyx : iconForUrl(normalized)});
     browserShellOpeningTabs.add(id);
     browserShellActiveTab=id;
     renderBrowserShellTabs();
-    if(isBlank && !activeBrowser?.win?.isConnected){
-      setBrowserShellHomeActive();
-      browserShellActiveTab=id;
-    }
-    if(isBlank && activeBrowser?.win?.isConnected){
-      const created=activeBrowser.addTab?.('');
-      const shellTab=browserShellTabs.find(tab=>tab.id===id);
-      if(created && shellTab) shellTab.browserTabId=created.id;
-      if(created){
-        activeBrowser.activate?.(created.id);
-        created.url=NYX_BLANK_URL;
-        created.title=NYX_BLANK_URL;
-        created.icon=favicons.nyx;
-        created.history=[NYX_BLANK_URL];
-        created.index=0;
-        created.scramjetFrame=null;
-        created.frame.removeAttribute('src');
-        created.frame.removeAttribute('srcdoc');
-        created.frame.classList.remove('active');
-      }
-      pruneBrowserShellInternalPlaceholders(created?.id || '');
-      renderBrowserShellHomeMode(activeBrowser.win,'blank');
-      activeBrowser.renderTabs?.();
-      updateBrowserShellLocation(NYX_BLANK_URL,created?.id || '',true);
-      renderBrowserShellTabs();
-      setTimeout(()=>document.querySelector('[data-browser-shell-url]')?.focus(),30);
-      setTimeout(collapseDuplicateOpeningBlankTabs,0);
-      return id;
-    }
     if(activeBrowser?.win?.isConnected && typeof activeBrowser.addTab==='function'){
-      const created=activeBrowser.addTab(isBlank ? '' : normalized,options.forceMode || '');
+      const created=activeBrowser.addTab(normalized,options.forceMode || '');
       if(!created){
         browserShellTabs.splice(0,browserShellTabs.length,...browserShellTabs.filter(tab=>tab.id!==id));
         browserShellActiveTab=browserShellTabs[0]?.id || null;
@@ -1601,7 +1546,7 @@
       }else{
         browserShellTabs.find(tab=>tab.id===id).browserTabId=created.id;
       }
-      if(normalized && !isBlank){
+      if(!isBlank){
         created.url=normalized;
         created.title=browserShellLabel(normalized);
         created.icon=iconForUrl(normalized);
@@ -1612,35 +1557,28 @@
       }
       else{
         activeBrowser.activate?.(created?.id);
-        const state=activeBrowser;
-        const tab=state?.tabs?.find(t=>t.id===created.id);
-        if(tab){
-          tab.url=NYX_BLANK_URL;
-          tab.title=NYX_BLANK_URL;
-          tab.icon=favicons.nyx;
-          tab.history=[NYX_BLANK_URL];
-          tab.index=0;
-          tab.scramjetFrame=null;
-          tab.frame.removeAttribute('src');
-          tab.frame.removeAttribute('srcdoc');
-          tab.frame.classList.remove('active');
-        }
-        renderBrowserShellHomeMode(state?.win,'blank');
-        activeBrowser.activate?.(created.id);
-        renderBrowserShellHomeMode(state?.win,'blank');
-        state?.renderTabs?.();
-        updateBrowserShellLocation(NYX_BLANK_URL,created.id,true);
+        created.url='';
+        created.title='New Tab';
+        created.icon=favicons.nyx;
+        created.history=[''];
+        created.index=0;
+        created.scramjetFrame=null;
+        created.frame.removeAttribute('src');
+        created.frame.removeAttribute('srcdoc');
+        created.frame.classList.remove('active');
+        renderBrowserShellHomeMode(activeBrowser.win);
+        activeBrowser.renderTabs?.();
+        updateBrowserShellLocation('',created.id,true);
         renderBrowserShellTabs();
         setTimeout(()=>document.querySelector('[data-browser-shell-url]')?.focus(),30);
       }
-      if(isBlank) setTimeout(collapseDuplicateOpeningBlankTabs,0);
       return id;
     }
-    const win=openBrowser(isBlank ? '' : normalized,options);
+    const win=openBrowser(normalized,options);
     win?.classList.add('maximized');
     const created=activeBrowser?.tabs?.[activeBrowser.tabs.length-1];
     if(created) browserShellTabs.find(tab=>tab.id===id).browserTabId=created.id;
-    if(created && normalized && !isBlank){
+    if(created && !isBlank){
       created.url=normalized;
       created.title=browserShellLabel(normalized);
       created.icon=iconForUrl(normalized);
@@ -1649,37 +1587,59 @@
       activeBrowser?.renderTabs?.();
     }
     if(isBlank){
-      const state=activeBrowser;
-      const tab=created;
-      if(tab){
-        tab.url=NYX_BLANK_URL;
-        tab.title=NYX_BLANK_URL;
-        tab.icon=favicons.nyx;
-        tab.history=[NYX_BLANK_URL];
-        tab.index=0;
-        tab.scramjetFrame=null;
-        tab.frame.removeAttribute('src');
-        tab.frame.removeAttribute('srcdoc');
-        tab.frame.classList.remove('active');
+      if(created){
+        created.url='';
+        created.title='New Tab';
+        created.icon=favicons.nyx;
+        created.history=[''];
+        created.index=0;
+        created.scramjetFrame=null;
+        created.frame.removeAttribute('src');
+        created.frame.removeAttribute('srcdoc');
+        created.frame.classList.remove('active');
       }
-      renderBrowserShellHomeMode(state?.win,'blank');
+      renderBrowserShellHomeMode(activeBrowser?.win);
       activeBrowser?.activate?.(created?.id);
-      renderBrowserShellHomeMode(state?.win,'blank');
-      state?.renderTabs?.();
-      updateBrowserShellLocation(NYX_BLANK_URL,created?.id || '',true);
+      renderBrowserShellHomeMode(activeBrowser?.win);
+      activeBrowser?.renderTabs?.();
+      updateBrowserShellLocation('',created?.id || '',true);
       renderBrowserShellTabs();
       setTimeout(()=>document.querySelector('[data-browser-shell-url]')?.focus(),30);
     }
     updateDockFullscreenState();
-    if(isBlank) setTimeout(collapseDuplicateOpeningBlankTabs,0);
     return id;
   }
   function openBrowserShellInternalTab(name){
     hideBrowserSuggestions();
     if(String(name || '').toLowerCase()==='settings'){
-      openBrowserShellSettings();
-      return browserShellActiveTab;
+      const existing=browserShellTabs.find(tab=>tab.url==='nyx://settings');
+      if(existing){
+        setBrowserShellActive(existing.id);
+        renderBrowserShellSettingsTab();
+        return existing.id;
+      }
+      const id=openBrowserShellTab('');
+      const shellTab=browserShellTabs.find(tab=>tab.id===id);
+      if(shellTab){
+        shellTab.url='nyx://settings';
+        shellTab.title='Settings';
+        shellTab.icon=appIcon('settings');
+        const linked=activeBrowser?.tabs?.find(tab=>tab.id===shellTab.browserTabId);
+        if(linked){
+          linked.url='nyx://settings';
+          linked.title='Settings';
+          linked.icon=shellTab.icon;
+          linked.history=['nyx://settings'];
+          linked.index=0;
+        }
+      }
+      renderBrowserShellTabs();
+      const address=document.querySelector('[data-browser-shell-url]');
+      if(address) address.value='nyx://settings';
+      renderBrowserShellSettingsTab();
+      return id;
     }
+    closeBrowserShellSettings();
     const id=openBrowserShellTab('');
     if(id) browserShellActiveTab=id;
     showBrowserShellInternalPage(name);
@@ -1688,6 +1648,9 @@
   function openBrowserShellAppTab(url){
     hideBrowserSuggestions();
     closeWeatherForWindowOpen();
+    if(String(url || '').trim().toLowerCase()==='nyx://settings'){
+      return openBrowserShellInternalTab('settings');
+    }
     if(String(url || '').trim().toLowerCase()==='nyx://ai'){
       return openBrowserShellInternalTab('ai');
     }
@@ -1717,11 +1680,13 @@
     if(!browserShellTabs.some(tab=>tab.id===id)) return;
     browserShellActiveTab=id;
     const shellTab=browserShellTabs.find(tab=>tab.id===id);
+    if(shellTab?.url==='nyx://settings') renderBrowserShellSettingsTab();
+    else closeBrowserShellSettings();
     if(shellTab?.title==='Home' && !shellTab.url){
       renderBrowserShellHomeMode(activeBrowser?.win,'home');
     }else if(isBrowserShellBlankUrl(shellTab?.url)){
       if(shellTab?.browserTabId && activeBrowser?.activate) activeBrowser.activate(shellTab.browserTabId);
-      renderBrowserShellHomeMode(activeBrowser?.win,'blank');
+      renderBrowserShellHomeMode(activeBrowser?.win);
     }else if(shellTab?.browserTabId && activeBrowser?.activate) activeBrowser.activate(shellTab.browserTabId);
     renderBrowserShellTabs();
     animateActiveBrowserShellTab();
@@ -1738,6 +1703,7 @@
     });
   }
   function setBrowserShellHomeActive(){
+    closeBrowserShellSettings();
     ensureBrowserShellHome();
     let homeTab=browserShellTabs.find(tab=>tab.title==='Home' && !tab.url);
     if(!homeTab){
@@ -1920,6 +1886,9 @@
       openSettings();
       return;
     }
+    return openBrowserShellInternalTab('settings');
+  }
+  function renderBrowserShellSettingsTab(){
     document.querySelector('.browser-shell-settings-overlay')?.remove();
     const overlay=document.createElement('div');
     overlay.className='browser-shell-settings-overlay';
@@ -1997,6 +1966,7 @@
     if(index<0) return;
     const closing=browserShellTabs[index];
     if(!closing.url && closing.title==='Home') return;
+      if(closing.url==='nyx://settings') closeBrowserShellSettings();
       const nextIndex=browserShellTabs.findIndex(tab=>tab.id===id);
       if(nextIndex<0) return;
       const shellTab=browserShellTabs[nextIndex];
@@ -2019,9 +1989,12 @@
           renderBrowserShellHomeMode(activeBrowser.win,'home');
           activeBrowser.renderTabs?.();
         }
+      }else if(activeShell?.url==='nyx://settings'){
+        if(activeShell?.browserTabId && activeBrowser?.activate) activeBrowser.activate(activeShell.browserTabId);
+        renderBrowserShellSettingsTab();
       }else if(isBrowserShellBlankUrl(activeShell?.url)){
         if(activeShell?.browserTabId && activeBrowser?.activate) activeBrowser.activate(activeShell.browserTabId);
-        renderBrowserShellHomeMode(activeBrowser?.win,'blank');
+        renderBrowserShellHomeMode(activeBrowser?.win);
       }else if(activeShell?.browserTabId && activeBrowser?.activate){
         activeBrowser.activate(activeShell.browserTabId);
       }
@@ -2062,38 +2035,12 @@
       showBrowserShellInternalPage('ai');
       return;
     }
-    if(raw.toLowerCase()==='nyx://ephesians1'){
-      showBrowserShellInternalPage('ephesians1');
+    if(raw.toLowerCase()==='nyx://settings'){
+      openBrowserShellSettings();
       return;
     }
-    if(raw.toLowerCase()===NYX_BLANK_URL){
-      ensureBrowserShellHome();
-      const shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab) || browserShellTabs[0];
-      shellTab.url=NYX_BLANK_URL;
-      shellTab.title=NYX_BLANK_URL;
-      shellTab.icon=favicons.nyx;
-      if(activeBrowser?.win?.isConnected){
-        if(shellTab.browserTabId && activeBrowser.activate) activeBrowser.activate(shellTab.browserTabId);
-        const state=activeBrowser;
-        const tab=state?.tabs?.find(t=>t.id===shellTab.browserTabId || t.id===state.active);
-        if(tab){
-          tab.url=NYX_BLANK_URL;
-          tab.title=NYX_BLANK_URL;
-          tab.icon=favicons.nyx;
-          tab.history=[NYX_BLANK_URL];
-          tab.index=0;
-          tab.scramjetFrame=null;
-          tab.frame.removeAttribute('src');
-          tab.frame.removeAttribute('srcdoc');
-          tab.frame.classList.remove('active');
-        }
-        state?.win?.querySelector('.browser-home')?.classList.remove('hidden');
-        state?.win?.classList.add('browser-blank');
-        state?.renderTabs?.();
-      }
-      updateBrowserShellLocation(NYX_BLANK_URL,shellTab.browserTabId || '',true);
-      renderBrowserShellTabs();
-      playHomeEntranceAnimation(activeBrowser?.win || document);
+    if(raw.toLowerCase()==='nyx://ephesians1'){
+      showBrowserShellInternalPage('ephesians1');
       return;
     }
     if(shouldTriggerSixtySevenJumpscare(raw)){
@@ -5197,8 +5144,7 @@
       home.prepend(canvas);
       const context=canvas.getContext('2d',{alpha:true});
       if(!context) return;
-      const state={width:0,height:0,dots:[],pointer:null,trail:[],frame:0};
-      const trailLifetime=380;
+      const state={width:0,height:0,dots:[],pointer:null,frame:0};
       const requestFrame=()=>{
         if(!state.frame) state.frame=requestAnimationFrame(draw);
       };
@@ -5223,8 +5169,6 @@
       };
       function draw(){
         state.frame=0;
-        const now=performance.now();
-        state.trail=state.trail.filter(point=>now-point.time<trailLifetime);
         context.clearRect(0,0,state.width,state.height);
         const styles=getComputedStyle(home);
         const dotColor=styles.getPropertyValue('--nyx-dot-color').trim() || '#202b3d';
@@ -5233,56 +5177,33 @@
         for(const dot of state.dots){
           let targetX=dot.homeX;
           let targetY=dot.homeY;
-          if(state.trail.length && !reducedMotion.matches){
-            let offsetX=0;
-            let offsetY=0;
-            for(const point of state.trail){
-              const age=(now-point.time)/trailLifetime;
-              if(age<0 || age>=1) continue;
-              const dx=dot.homeX-point.x;
-              const dy=dot.homeY-point.y;
-              const distance=Math.hypot(dx,dy);
-              const radius=78;
-              if(distance<radius){
-                const strength=Math.pow(1-distance/radius,2)*18*Math.pow(1-age,1.65);
-                const direction=distance>0.01 ? distance : 1;
-                offsetX+=dx/direction*strength;
-                offsetY+=dy/direction*strength;
-              }
+          if(state.pointer && !reducedMotion.matches){
+            const dx=dot.homeX-state.pointer.x;
+            const dy=dot.homeY-state.pointer.y;
+            const distance=Math.hypot(dx,dy);
+            const radius=56;
+            if(distance<radius){
+              const strength=Math.pow(1-distance/radius,2)*22;
+              const direction=distance>0.01 ? distance : 1;
+              targetX+=dx/direction*strength;
+              targetY+=dy/direction*strength;
             }
-            const offset=Math.hypot(offsetX,offsetY);
-            if(offset>42){offsetX=offsetX/offset*42;offsetY=offsetY/offset*42}
-            targetX+=offsetX;
-            targetY+=offsetY;
           }
-          const easing=state.pointer ? .42 : .19;
-          dot.x+=(targetX-dot.x)*easing;
-          dot.y+=(targetY-dot.y)*easing;
+          dot.x+=(targetX-dot.x)*.16;
+          dot.y+=(targetY-dot.y)*.16;
           if(Math.abs(targetX-dot.x)>.04 || Math.abs(targetY-dot.y)>.04 || Math.abs(dot.homeX-dot.x)>.04 || Math.abs(dot.homeY-dot.y)>.04) unsettled=true;
           context.beginPath();
           context.arc(dot.x,dot.y,2.7,0,Math.PI*2);
           context.fill();
         }
-        if(state.trail.length || unsettled) requestFrame();
+        if(state.pointer || unsettled) requestFrame();
       }
-      const trackPointer=event=>{
+      home.addEventListener('pointermove',event=>{
         if(!document.body.classList.contains('theme-default')) return;
         const rect=home.getBoundingClientRect();
-        const events=typeof event.getCoalescedEvents==='function' ? event.getCoalescedEvents() : [event];
-        const points=events.length ? events : [event];
-        const now=performance.now();
-        for(let index=0;index<points.length;index++){
-          const point=points[index];
-          const sample={x:point.clientX-rect.left,y:point.clientY-rect.top,time:now-(points.length-index-1)*2};
-          const last=state.trail[state.trail.length-1];
-          if(!last || Math.hypot(sample.x-last.x,sample.y-last.y)>2 || sample.time-last.time>18) state.trail.push(sample);
-          state.pointer=sample;
-        }
-        if(state.trail.length>34) state.trail.splice(0,state.trail.length-34);
+        state.pointer={x:event.clientX-rect.left,y:event.clientY-rect.top};
         requestFrame();
-      };
-      home.addEventListener('pointermove',trackPointer,{passive:true});
-      if('onpointerrawupdate' in window) home.addEventListener('pointerrawupdate',trackPointer,{passive:true});
+      },{passive:true});
       home.addEventListener('pointerleave',()=>{
         state.pointer=null;
         requestFrame();
@@ -6552,7 +6473,7 @@
         if(t?.opening) playBrowserShellPageReveal(win);
       }
       win.querySelector('.urlbar').value=browserShellDisplayValue(activeUrl); win.querySelector('.titlebar-title').textContent=browserChromeTitle(activeTitle,t?.sourceUrl || activeUrl); renderTabs(); bring(win);
-      if(t?.url || !mappedShellTab?.url) updateBrowserShellLocation(t?.url || (activeIsBlank ? NYX_BLANK_URL : ''),t?.id || '');
+      if(t?.url || !mappedShellTab?.url) updateBrowserShellLocation(t?.url || '',t?.id || '');
     }
     function detectBrowserEngine(url,t){
       const raw=String(url || '');
@@ -7187,17 +7108,17 @@
       try{
         const parsed=new URL(url,location.href);
         if(parsed.origin===location.origin && !parsed.pathname.includes('/assets/') && (parsed.pathname==='/' || /\/index\.html$/i.test(parsed.pathname))){
-          t.url=NYX_BLANK_URL;
-          t.title=NYX_BLANK_URL;
+          t.url='';
+          t.title='New Tab';
           t.icon=favicons.nyx;
-          t.history=[NYX_BLANK_URL];
+          t.history=[''];
           t.index=0;
           clearFrameDocument(t);
           t.frame.removeAttribute('src');
           t.frame.classList.remove('active');
-          renderBrowserShellHomeMode(win,'blank');
+          renderBrowserShellHomeMode(win);
           renderTabs();
-          updateBrowserShellLocation(NYX_BLANK_URL,t.id,true);
+          updateBrowserShellLocation('',t.id,true);
           return;
         }
         if(parsed.origin===location.origin && (parsed.pathname.includes('/assets/') || parsed.pathname.endsWith('/index.html'))){
@@ -9830,9 +9751,13 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
         e.preventDefault();
         const overlay=e.target.closest('.browser-shell-settings-overlay');
         const panel=overlay?.querySelector('.browser-shell-settings-panel');
+        const settingsTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab && tab.url==='nyx://settings');
         if(panel){
           panel.style.animation='settingsDropOut .22s ease forwards';
-          setTimeout(()=>overlay?.remove(),220);
+          setTimeout(()=>{
+            overlay?.remove();
+            if(settingsTab) closeBrowserShellTab(settingsTab.id);
+          },220);
         }else overlay?.remove();
         return;
       }

@@ -4893,7 +4893,7 @@
   }
   function browserBody(){
     const presenceText=nyxPresenceCount===null ? 'Connecting\u2026' : `${nyxPresenceCount} online`;
-    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence" role="status" aria-live="polite"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1><form class="browser-blank-search nyx-home-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Search the web or enter a URL" placeholder="Search the web..." autocomplete="off" spellcheck="false"></form><nav class="nyx-home-actions" aria-label="Nyx home"><button data-open="apps" type="button"><span class="nyx-home-action-icon nyx-home-action-apps" aria-hidden="true"></span><span>Apps</span></button><button data-app-url="https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" type="button"><span class="nyx-home-action-icon nyx-home-action-study" aria-hidden="true"></span><span>Study</span></button><button data-open="settings" type="button"><span class="nyx-home-action-icon nyx-home-action-settings" aria-hidden="true"></span><span>Settings</span></button></nav></main><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div></div>`;
+    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence" role="status" aria-live="polite"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1><form class="browser-blank-search nyx-home-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Search the web or enter a URL" placeholder="Search the web..." autocomplete="off" spellcheck="false"></form><nav class="nyx-home-actions" aria-label="Nyx home"><button data-open="apps" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-apps" aria-hidden="true"></span><span>Apps</span></button><button data-app-url="https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-study" aria-hidden="true"></span><span>Study</span></button><button data-open="settings" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-settings" aria-hidden="true"></span><span>Settings</span></button></nav></main><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div></div>`;
   }
   //apps-grid
   const defaultHomeShortcuts=[
@@ -5144,7 +5144,9 @@
       home.prepend(canvas);
       const context=canvas.getContext('2d',{alpha:true});
       if(!context) return;
-      const state={width:0,height:0,dots:[],pointer:null,frame:0};
+      const state={width:0,height:0,dots:[],pointer:null,trail:[],frame:0};
+      const radius=62;
+      const trailLifetime=360;
       const requestFrame=()=>{
         if(!state.frame) state.frame=requestAnimationFrame(draw);
       };
@@ -5169,25 +5171,40 @@
       };
       function draw(){
         state.frame=0;
+        const now=performance.now();
+        state.trail=state.trail.filter(point=>now-point.time<trailLifetime);
         context.clearRect(0,0,state.width,state.height);
         const styles=getComputedStyle(home);
         const dotColor=styles.getPropertyValue('--nyx-dot-color').trim() || '#202b3d';
         context.fillStyle=dotColor;
+        const influences=reducedMotion.matches ? [] : state.trail.map(point=>({
+          x:point.x,
+          y:point.y,
+          weight:Math.max(0,1-(now-point.time)/trailLifetime)*.78
+        }));
+        if(state.pointer && !reducedMotion.matches) influences.unshift({x:state.pointer.x,y:state.pointer.y,weight:1});
         let unsettled=false;
         for(const dot of state.dots){
           let targetX=dot.homeX;
           let targetY=dot.homeY;
-          if(state.pointer && !reducedMotion.matches){
-            const dx=dot.homeX-state.pointer.x;
-            const dy=dot.homeY-state.pointer.y;
-            const distance=Math.hypot(dx,dy);
-            const radius=56;
-            if(distance<radius){
-              const strength=Math.pow(1-distance/radius,2)*22;
+          if(!reducedMotion.matches){
+            let strongest=0;
+            let offsetX=0;
+            let offsetY=0;
+            for(const influence of influences){
+              const dx=dot.homeX-influence.x;
+              const dy=dot.homeY-influence.y;
+              const distance=Math.hypot(dx,dy);
+              if(distance>=radius) continue;
+              const strength=Math.pow(1-distance/radius,2)*22*influence.weight;
+              if(strength<=strongest) continue;
               const direction=distance>0.01 ? distance : 1;
-              targetX+=dx/direction*strength;
-              targetY+=dy/direction*strength;
+              strongest=strength;
+              offsetX=dx/direction*strength;
+              offsetY=dy/direction*strength;
             }
+            targetX+=offsetX;
+            targetY+=offsetY;
           }
           dot.x+=(targetX-dot.x)*.16;
           dot.y+=(targetY-dot.y)*.16;
@@ -5196,15 +5213,26 @@
           context.arc(dot.x,dot.y,2.7,0,Math.PI*2);
           context.fill();
         }
-        if(state.pointer || unsettled) requestFrame();
+        if(state.pointer || state.trail.length || unsettled) requestFrame();
       }
       home.addEventListener('pointermove',event=>{
         if(!document.body.classList.contains('theme-default')) return;
         const rect=home.getBoundingClientRect();
-        state.pointer={x:event.clientX-rect.left,y:event.clientY-rect.top};
+        const next={x:event.clientX-rect.left,y:event.clientY-rect.top};
+        const previous=state.pointer;
+        if(previous){
+          const last=state.trail[state.trail.length-1];
+          const anchor=last || previous;
+          if(Math.hypot(next.x-anchor.x,next.y-anchor.y)>=10){
+            state.trail.push({x:previous.x,y:previous.y,time:performance.now()});
+            if(state.trail.length>18) state.trail.splice(0,state.trail.length-18);
+          }
+        }
+        state.pointer=next;
         requestFrame();
       },{passive:true});
       home.addEventListener('pointerleave',()=>{
+        if(state.pointer) state.trail.push({...state.pointer,time:performance.now()});
         state.pointer=null;
         requestFrame();
       },{passive:true});

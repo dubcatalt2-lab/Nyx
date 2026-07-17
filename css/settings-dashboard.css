@@ -265,10 +265,21 @@ html body.browser-shell .browser-shell-settings-panel .nyx-settings-group > .set
 html body.browser-shell .browser-shell-settings-panel .nyx-settings-group > .settings-block[hidden]{display:none!important}
 
 html body.browser-shell .browser-shell-settings-panel .nyx-settings-group > .settings-block:hover{
-  background:#1b2d45!important;
+  background:#18283e!important;
   border-color:rgba(255,255,255,.05)!important;
   box-shadow:none!important;
   transform:none!important;
+  animation:none!important;
+}
+
+html body.browser-shell .browser-shell-settings-panel :is(.settings-block,.settings-card){
+  transition:none!important;
+}
+
+html body.browser-shell .browser-shell-settings-panel :is(.settings-block,.settings-card):hover{
+  transform:none!important;
+  animation:none!important;
+  box-shadow:none!important;
 }
 
 html body.browser-shell .nyx-settings-copy h2{

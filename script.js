@@ -4810,7 +4810,7 @@
   }
   function browserBody(){
     const presenceText=nyxPresenceCount===null ? 'Connecting\u2026' : `${nyxPresenceCount} online`;
-    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence" role="status" aria-live="polite"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1><form class="browser-blank-search nyx-home-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Search the web or enter a URL" placeholder="Search the web..." autocomplete="off" spellcheck="false"><button class="nyx-home-key" data-home-focus-search type="button" aria-label="Focus search">Ctrl + K</button></form><nav class="nyx-home-actions" aria-label="Nyx home"><button data-open="apps" type="button"><span class="nyx-home-action-icon nyx-home-action-apps" aria-hidden="true"></span><span>Apps</span></button><button data-app-url="/assets/games/index.html" type="button"><span class="nyx-home-action-icon nyx-home-action-games" aria-hidden="true"></span><span>Games</span></button><button data-open="settings" type="button"><span class="nyx-home-action-icon nyx-home-action-settings" aria-hidden="true"></span><span>Settings</span></button></nav></main><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div></div>`;
+    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence" role="status" aria-live="polite"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1><form class="browser-blank-search nyx-home-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Search the web or enter a URL" placeholder="Search the web..." autocomplete="off" spellcheck="false"></form><nav class="nyx-home-actions" aria-label="Nyx home"><button data-open="apps" type="button"><span class="nyx-home-action-icon nyx-home-action-apps" aria-hidden="true"></span><span>Apps</span></button><button data-app-url="/assets/games/index.html" type="button"><span class="nyx-home-action-icon nyx-home-action-games" aria-hidden="true"></span><span>Games</span></button><button data-open="settings" type="button"><span class="nyx-home-action-icon nyx-home-action-settings" aria-hidden="true"></span><span>Settings</span></button></nav></main><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div></div>`;
   }
   //apps-grid
   const defaultHomeShortcuts=[
@@ -9489,6 +9489,18 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
   }
   function bind(){
     ensurePanicKeyListener();
+    if(!document.__nyxUnifiedButtonMotion){
+      document.__nyxUnifiedButtonMotion=true;
+      document.addEventListener('click',event=>{
+        const button=event.target.closest?.('button');
+        if(!button || button.disabled || button.matches('.quick-tile,.setup-theme-card,.bg-choice,.game-card,.formula-exit-zone,[data-no-button-motion]')) return;
+        button.classList.remove('nyx-button-click');
+        void button.offsetWidth;
+        button.classList.add('nyx-button-click');
+        clearTimeout(button.__nyxButtonClickTimer);
+        button.__nyxButtonClickTimer=setTimeout(()=>button.classList.remove('nyx-button-click'),360);
+      },true);
+    }
     if(!document.__nyxSetupEnterBind){
       document.__nyxSetupEnterBind=true;
       document.addEventListener('keydown',e=>{
@@ -9944,14 +9956,6 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
         return;
       }
       if(document.body.classList.contains('browser-shell')){
-        const homeSearchFocus=e.target.closest('[data-home-focus-search]');
-        if(homeSearchFocus){
-          e.preventDefault();
-          const homeSearch=document.querySelector('.browser-window.browser-home-page .nyx-home-search [data-browser-blank-input]');
-          homeSearch?.focus();
-          homeSearch?.select();
-          return;
-        }
         const browserHieroglyph=e.target.closest('[data-browser-hieroglyph-toggle]');
         if(browserHieroglyph){
           e.preventDefault();

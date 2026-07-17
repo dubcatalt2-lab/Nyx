@@ -65,6 +65,26 @@ function safeCover(url) {
   }
 }
 
+function directCover(url) {
+  if (!url) return '';
+  try {
+    const parsed = new URL(url, location.href);
+    if (parsed.hostname === 'raw.githubusercontent.com') {
+      const parts = parsed.pathname.split('/').filter(Boolean);
+      if (parts.length >= 4) {
+        const [owner, repository, branch, ...path] = parts;
+        if (owner.toLowerCase() === 'gn-math' && repository.toLowerCase() === 'covers') {
+          return `https://raw.githack.com/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/${encodeURIComponent(branch)}/${path.map(encodeURIComponent).join('/')}`;
+        }
+        return `https://cdn.jsdelivr.net/gh/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}@${encodeURIComponent(branch)}/${path.map(encodeURIComponent).join('/')}`;
+      }
+    }
+    return parsed.protocol === 'https:' ? parsed.href : '';
+  } catch {
+    return '';
+  }
+}
+
 function rawItems(data) {
   if (Array.isArray(data)) return data;
   return Array.isArray(data?.games) ? data.games : [];
@@ -96,27 +116,34 @@ async function adaptCatalog(catalog) {
       ? titleCase(suppliedTitle || path)
       : suppliedTitle || titleCase(path);
     let player = fillTemplate(catalog.player, { path });
-    let cover = '';
+    let covers = [];
 
     if (catalog.format === 'ugs') {
       const thumbnail = ugsThumbnailName(path);
-      if (knownCovers.has(thumbnail)) cover = `/assets/ugs/thumbs/${encodeURIComponent(thumbnail)}`;
+      if (knownCovers.has(thumbnail)) covers.push(`/assets/ugs/thumbs/${encodeURIComponent(thumbnail)}`);
     } else if (catalog.format === 'gn') {
-      cover = item.cover || item.coverFallback || '';
+      covers.push(directCover(item.coverFallback), item.cover, directCover(item.cover));
     } else if (catalog.format === 'gms') {
       if (item.type === 'gba' && item.romId && catalog.gbaPlayer) {
         player = fillTemplate(catalog.gbaPlayer, { romId: item.romId });
       }
-      cover = safeCover(item.cover);
+      covers.push(directCover(item.cover), safeCover(item.cover));
     } else if (catalog.format === 'seraph' && item.thumbnail) {
-      cover = `/seraph-asset?path=${encodeURIComponent(String(item.thumbnail).replace(/^\/+/, ''))}`;
+      const thumbnailPath = String(item.thumbnail).replace(/^\/+/, '');
+      covers.push(
+        `https://cdn.jsdelivr.net/gh/a456pur/seraph@main/${thumbnailPath.split('/').map(encodeURIComponent).join('/')}`,
+        `/seraph-asset?path=${encodeURIComponent(thumbnailPath)}`
+      );
     }
+
+    covers = [...new Set(covers.filter(Boolean))];
 
     return [{
       key: gameKey(title),
       title,
       url: player,
-      cover,
+      cover: covers[0] || '',
+      covers,
       priority: Number(catalog.priority) || 0,
       source: catalog.id
     }];
@@ -129,7 +156,11 @@ function mergeCatalogs(catalogs) {
   for (const game of catalogs.flat()) {
     if (!game.key || !game.url) continue;
     const current = unique.get(game.key);
-    const covers = [...new Set([...(current?.covers || []), game.cover].filter(Boolean))];
+    const covers = [...new Set([
+      ...(current?.covers || []),
+      ...(game.covers || []),
+      game.cover
+    ].filter(Boolean))];
     const selected = !current || game.priority > current.priority ? { ...game } : { ...current };
     selected.covers = covers;
     unique.set(game.key, selected);

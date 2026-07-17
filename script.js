@@ -5212,7 +5212,7 @@
               const dx=dot.homeX-point.x;
               const dy=dot.homeY-point.y;
               const distance=Math.hypot(dx,dy);
-              const radius=112;
+              const radius=78;
               if(distance<radius){
                 const strength=Math.pow(1-distance/radius,2)*18*Math.pow(1-age,1.65);
                 const direction=distance>0.01 ? distance : 1;

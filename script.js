@@ -4183,6 +4183,89 @@
       'open.spotify.com'
     ]);
   }
+  function patchSpotifyChromeOsWindow(frameWindow){
+    try{
+      if(!frameWindow || frameWindow.closed) return false;
+      const frameNavigator=frameWindow.navigator;
+      const nativeUserAgent=String(frameNavigator?.userAgent || '');
+      if(!/\bCrOS\b/i.test(nativeUserAgent)) return !!frameWindow.__nyxSpotifyChromeOsCompatibility;
+      const chromeVersion=nativeUserAgent.match(/Chrome\/([0-9.]+)/i)?.[1] || '138.0.0.0';
+      const desktopUserAgent=`Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion} Safari/537.36`;
+      const defineNavigatorValue=(name,value)=>{
+        try{frameWindow.Object.defineProperty(frameWindow.Navigator.prototype,name,{configurable:true,get:()=>value})}
+        catch{try{frameWindow.Object.defineProperty(frameNavigator,name,{configurable:true,get:()=>value})}catch{}}
+      };
+      defineNavigatorValue('userAgent',desktopUserAgent);
+      defineNavigatorValue('platform','Win32');
+      const nativeData=frameNavigator.userAgentData;
+      if(nativeData){
+        const desktopData={
+          brands:Array.from(nativeData.brands || []),
+          mobile:false,
+          platform:'Windows',
+          toJSON(){return {brands:this.brands,mobile:false,platform:'Windows'}},
+          async getHighEntropyValues(hints){
+            let values={};
+            try{values=await nativeData.getHighEntropyValues(hints)}catch{}
+            return {...values,platform:'Windows',platformVersion:'10.0.0',architecture:'x86',bitness:'64',model:''};
+          }
+        };
+        defineNavigatorValue('userAgentData',desktopData);
+      }
+      try{frameWindow.Object.defineProperty(frameWindow,'__nyxSpotifyChromeOsCompatibility',{configurable:true,value:true})}
+      catch{frameWindow.__nyxSpotifyChromeOsCompatibility=true}
+      return true;
+    }catch{return false}
+  }
+  function applySpotifyChromeOsFrameCompatibility(t){
+    if(!t?.frame || !/\bCrOS\b/i.test(String(navigator.userAgent || '')) || !isSpotifyFamilyUrl(t.sourceUrl || t.url)) return false;
+    let applied=false;
+    const visit=frameWindow=>{
+      if(!frameWindow) return;
+      applied=patchSpotifyChromeOsWindow(frameWindow) || applied;
+      let childCount=0;
+      try{childCount=Number(frameWindow.length || 0)}catch{}
+      for(let index=0;index<childCount;index++){
+        try{visit(frameWindow.frames[index])}catch{}
+      }
+    };
+    try{visit(t.frame.contentWindow)}catch{}
+    return applied;
+  }
+  function stopSpotifyChromeOsFrameCompatibility(t){
+    if(t?.spotifyChromeOsCompatibilityTimer){
+      clearInterval(t.spotifyChromeOsCompatibilityTimer);
+      t.spotifyChromeOsCompatibilityTimer=0;
+    }
+    if(t?.spotifyChromeOsCompatibilityTimeout){
+      clearTimeout(t.spotifyChromeOsCompatibilityTimeout);
+      t.spotifyChromeOsCompatibilityTimeout=0;
+    }
+    if(t?.spotifyChromeOsLoadHandler && t.frame){
+      t.frame.removeEventListener('load',t.spotifyChromeOsLoadHandler);
+      t.spotifyChromeOsLoadHandler=null;
+    }
+  }
+  function startSpotifyChromeOsFrameCompatibility(t){
+    stopSpotifyChromeOsFrameCompatibility(t);
+    if(!/\bCrOS\b/i.test(String(navigator.userAgent || '')) || !isSpotifyFamilyUrl(t?.sourceUrl || t?.url)) return;
+    const apply=()=>{
+      if(!state.tabs.includes(t) || !isSpotifyFamilyUrl(t.sourceUrl || t.url)){
+        stopSpotifyChromeOsFrameCompatibility(t);
+        return;
+      }
+      applySpotifyChromeOsFrameCompatibility(t);
+    };
+    t.spotifyChromeOsLoadHandler=()=>{
+      apply();
+      setTimeout(apply,120);
+      setTimeout(apply,650);
+    };
+    t.frame.addEventListener('load',t.spotifyChromeOsLoadHandler);
+    apply();
+    t.spotifyChromeOsCompatibilityTimer=setInterval(apply,750);
+    t.spotifyChromeOsCompatibilityTimeout=setTimeout(()=>stopSpotifyChromeOsFrameCompatibility(t),5*60*1000);
+  }
   function inspectFrameHealth(t){
     try{
       const doc=t?.frame?.contentDocument;
@@ -6662,6 +6745,8 @@
         }catch{
           retryScramjetTab(t,url);
         }
+        if(spotifyChromeOsCompatibility) startSpotifyChromeOsFrameCompatibility(t);
+        else stopSpotifyChromeOsFrameCompatibility(t);
         setTimeout(()=>{
           if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
           if(t.scramjetFrame && !String(t.frame.getAttribute('src') || '').includes('/~/sj/')){

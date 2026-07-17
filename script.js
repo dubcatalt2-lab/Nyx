@@ -167,8 +167,23 @@
     classlink:'./assets/icons/classlink-logo.png'
   };
   const nyxTabTitle = '\u057c\u028f\u04fc';
-  const nyxTabFavicon = './assets/icons/firefly-tab-logo-bold.png';
+  let nyxTabFavicon = './assets/icons/nyx-logo.png';
   const nyxFaviconHref = () => $('appFavicon')?.href || nyxTabFavicon;
+  async function applyNyxLogoTheme(theme=store.text('nyx.theme','default')){
+    if(!window.NyxLogo) return;
+    try{
+      const themedUrl=await window.NyxLogo.apply(theme,document);
+      if(store.text('nyx.theme','default')!==theme) return;
+      favicons.nyx=themedUrl;
+      nyxTabFavicon=themedUrl;
+      if(!store.text('nyx.tabFavicon','')){
+        const favicon=$('appFavicon');
+        if(favicon) favicon.href=themedUrl;
+      }
+    }catch(error){
+      console.warn('Nyx logo theme could not be applied:',error);
+    }
+  }
   function makeIcon(label,bg='#111827',fg='#fff'){
     return 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="${bg}"/><text x="32" y="40" text-anchor="middle" font-size="22" font-family="Outfit, Arial, sans-serif" font-weight="800" fill="${fg}">${label}</text></svg>`);
   }
@@ -2861,6 +2876,7 @@
     document.body.classList.remove('theme-default','theme-ruby','theme-emerald','theme-sakura','theme-fresh','theme-midnight');
     document.body.classList.add(theme==='default' ? 'theme-midnight' : 'theme-'+theme);
     document.body.classList.toggle('theme-default',theme==='default');
+    applyNyxLogoTheme(theme);
     const browserBackground=currentBrowserBackgroundValue();
     document.documentElement.style.setProperty('--browser-bg-render',normalizeBgValue(browserBackground));
     ensureFreshThemeOptions();
@@ -5062,7 +5078,8 @@
       home.prepend(canvas);
       const context=canvas.getContext('2d',{alpha:true});
       if(!context) return;
-      const state={width:0,height:0,dots:[],pointer:null,frame:0};
+      const state={width:0,height:0,dots:[],pointer:null,trail:[],frame:0};
+      const trailLifetime=520;
       const requestFrame=()=>{
         if(!state.frame) state.frame=requestAnimationFrame(draw);
       };
@@ -5087,39 +5104,85 @@
       };
       function draw(){
         state.frame=0;
+        const now=performance.now();
+        state.trail=state.trail.filter(point=>now-point.time<trailLifetime);
         context.clearRect(0,0,state.width,state.height);
-        context.fillStyle=getComputedStyle(home).getPropertyValue('--nyx-dot-color').trim() || '#202b3d';
+        const styles=getComputedStyle(home);
+        const dotColor=styles.getPropertyValue('--nyx-dot-color').trim() || '#202b3d';
+        const trailColor=styles.getPropertyValue('--nyx-dot-trail-color').trim() || '#6f9ee8';
+        if(state.trail.length>1 && !reducedMotion.matches){
+          context.save();
+          context.lineCap='round';
+          context.lineJoin='round';
+          for(let index=1;index<state.trail.length;index++){
+            const previous=state.trail[index-1];
+            const point=state.trail[index];
+            const age=(now-point.time)/trailLifetime;
+            context.globalAlpha=Math.max(0,(1-age)*.26);
+            context.strokeStyle=trailColor;
+            context.lineWidth=Math.max(.65,(1-age)*2.1);
+            context.beginPath();
+            context.moveTo(previous.x,previous.y);
+            context.lineTo(point.x,point.y);
+            context.stroke();
+          }
+          context.restore();
+        }
+        context.fillStyle=dotColor;
         let unsettled=false;
         for(const dot of state.dots){
           let targetX=dot.homeX;
           let targetY=dot.homeY;
-          if(state.pointer && !reducedMotion.matches){
-            const dx=dot.homeX-state.pointer.x;
-            const dy=dot.homeY-state.pointer.y;
-            const distance=Math.hypot(dx,dy);
-            const radius=130;
-            if(distance<radius){
-              const strength=Math.pow(1-distance/radius,2)*30;
-              const direction=distance>0.01 ? distance : 1;
-              targetX+=dx/direction*strength;
-              targetY+=dy/direction*strength;
+          if(state.trail.length && !reducedMotion.matches){
+            let offsetX=0;
+            let offsetY=0;
+            for(const point of state.trail){
+              const age=(now-point.time)/trailLifetime;
+              if(age<0 || age>=1) continue;
+              const dx=dot.homeX-point.x;
+              const dy=dot.homeY-point.y;
+              const distance=Math.hypot(dx,dy);
+              const radius=112;
+              if(distance<radius){
+                const strength=Math.pow(1-distance/radius,2)*18*Math.pow(1-age,1.65);
+                const direction=distance>0.01 ? distance : 1;
+                offsetX+=dx/direction*strength;
+                offsetY+=dy/direction*strength;
+              }
             }
+            const offset=Math.hypot(offsetX,offsetY);
+            if(offset>42){offsetX=offsetX/offset*42;offsetY=offsetY/offset*42}
+            targetX+=offsetX;
+            targetY+=offsetY;
           }
-          dot.x+=(targetX-dot.x)*.16;
-          dot.y+=(targetY-dot.y)*.16;
+          const easing=state.pointer ? .42 : .19;
+          dot.x+=(targetX-dot.x)*easing;
+          dot.y+=(targetY-dot.y)*easing;
           if(Math.abs(targetX-dot.x)>.04 || Math.abs(targetY-dot.y)>.04 || Math.abs(dot.homeX-dot.x)>.04 || Math.abs(dot.homeY-dot.y)>.04) unsettled=true;
           context.beginPath();
           context.arc(dot.x,dot.y,2.7,0,Math.PI*2);
           context.fill();
         }
-        if(state.pointer || unsettled) requestFrame();
+        if(state.pointer || state.trail.length || unsettled) requestFrame();
       }
-      home.addEventListener('pointermove',event=>{
+      const trackPointer=event=>{
         if(!document.body.classList.contains('theme-default')) return;
         const rect=home.getBoundingClientRect();
-        state.pointer={x:event.clientX-rect.left,y:event.clientY-rect.top};
+        const events=typeof event.getCoalescedEvents==='function' ? event.getCoalescedEvents() : [event];
+        const points=events.length ? events : [event];
+        const now=performance.now();
+        for(let index=0;index<points.length;index++){
+          const point=points[index];
+          const sample={x:point.clientX-rect.left,y:point.clientY-rect.top,time:now-(points.length-index-1)*2};
+          const last=state.trail[state.trail.length-1];
+          if(!last || Math.hypot(sample.x-last.x,sample.y-last.y)>2 || sample.time-last.time>18) state.trail.push(sample);
+          state.pointer=sample;
+        }
+        if(state.trail.length>34) state.trail.splice(0,state.trail.length-34);
         requestFrame();
-      },{passive:true});
+      };
+      home.addEventListener('pointermove',trackPointer,{passive:true});
+      if('onpointerrawupdate' in window) home.addEventListener('pointerrawupdate',trackPointer,{passive:true});
       home.addEventListener('pointerleave',()=>{
         state.pointer=null;
         requestFrame();
@@ -7711,7 +7774,7 @@
     return `<div class="lion-ai-panel">
       <div class="lion-ai-head">
         <div class="lion-ai-brand">
-          <div class="lion-ai-mark">NYX</div>
+          <div class="lion-ai-mark" data-nyx-logo aria-label="Nyx"></div>
           <div class="lion-ai-title"><h1>Nyx AI</h1><span data-nyx-ai-model-label>${esc(nyxAiModelLabel())}</span></div>
         </div>
         <div class="lion-ai-head-actions"><button class="lion-ai-clear" type="button" data-lion-ai-clear title="Clear chat" aria-label="Clear chat">&#8635;</button><select class="lion-ai-model-select" data-lion-ai-model>${nyxAiModelOptions()}</select></div>

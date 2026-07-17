@@ -871,10 +871,7 @@ html body.browser-shell.theme-default .browser-window.browser-home-page .browser
   position:absolute!important;
   inset:0!important;
   z-index:0!important;
-  background:
-    radial-gradient(ellipse at 50% 36%,transparent 0 228px,rgba(111,158,232,.12) 229px,rgba(111,158,232,.12) 230px,transparent 232px),
-    radial-gradient(ellipse at 50% 36%,transparent 0 320px,rgba(111,158,232,.065) 321px,rgba(111,158,232,.065) 322px,transparent 324px),
-    linear-gradient(180deg,rgba(7,12,21,.30),transparent 150px)!important;
+  background:linear-gradient(180deg,rgba(7,12,21,.30),transparent 150px)!important;
 }
 html body.browser-shell.theme-default .browser-home .nyx-home-hero{
   width:min(720px,calc(100vw - 48px))!important;
@@ -1107,21 +1104,31 @@ html body.browser-shell.theme-default .top-os > .browser-top-clock{
   html body.browser-shell.theme-default .nyx-home-presence{left:12px!important;top:12px!important}
 }
 
-/* Keep the supplied Nyx mark intact while giving its light linework a subtle theme tint. */
+/* Tint both the dark fill and light linework of the supplied Nyx mark by theme. */
 html body.browser-shell{
-  --nyx-logo-theme-filter:sepia(.18) saturate(2.1) hue-rotate(175deg) brightness(1.08) drop-shadow(0 0 5px rgba(96,165,250,.24));
+  --nyx-logo-fill:linear-gradient(145deg,#07111f 8%,#173865 62%,#78aaff 100%);
+  --nyx-logo-edge:rgba(191,216,255,.58);
+  --nyx-logo-glow:rgba(96,165,250,.22);
 }
 html body.browser-shell.theme-ruby{
-  --nyx-logo-theme-filter:sepia(.22) saturate(2.2) hue-rotate(300deg) brightness(1.06) drop-shadow(0 0 5px rgba(251,113,133,.24));
+  --nyx-logo-fill:linear-gradient(145deg,#21050a 8%,#7f1d2d 62%,#fb7185 100%);
+  --nyx-logo-edge:rgba(255,190,200,.58);
+  --nyx-logo-glow:rgba(251,113,133,.22);
 }
 html body.browser-shell.theme-emerald{
-  --nyx-logo-theme-filter:sepia(.22) saturate(2.15) hue-rotate(70deg) brightness(1.04) drop-shadow(0 0 5px rgba(52,211,153,.22));
+  --nyx-logo-fill:linear-gradient(145deg,#031a12 8%,#087052 62%,#34d399 100%);
+  --nyx-logo-edge:rgba(181,255,224,.56);
+  --nyx-logo-glow:rgba(52,211,153,.20);
 }
 html body.browser-shell.theme-sakura{
-  --nyx-logo-theme-filter:sepia(.18) saturate(1.8) hue-rotate(300deg) brightness(1.1) drop-shadow(0 0 5px rgba(244,114,182,.22));
+  --nyx-logo-fill:linear-gradient(145deg,#260817 8%,#9d245f 62%,#f472b6 100%);
+  --nyx-logo-edge:rgba(255,210,234,.60);
+  --nyx-logo-glow:rgba(244,114,182,.20);
 }
 html body.browser-shell.theme-fresh{
-  --nyx-logo-theme-filter:sepia(.16) saturate(1.9) hue-rotate(120deg) brightness(1.02) drop-shadow(0 0 5px rgba(20,184,166,.18));
+  --nyx-logo-fill:linear-gradient(145deg,#073137 8%,#0f7880 62%,#5eead4 100%);
+  --nyx-logo-edge:rgba(211,255,248,.68);
+  --nyx-logo-glow:rgba(20,184,166,.18);
 }
 html body.browser-shell .browser-window.browser-home-page .browser-home h1.nyx-home-title{
   display:flex!important;
@@ -1129,18 +1136,35 @@ html body.browser-shell .browser-window.browser-home-page .browser-home h1.nyx-h
   justify-content:center!important;
   gap:14px!important;
 }
-html body.browser-shell .browser-window.browser-home-page .browser-home h1.nyx-home-title::before{
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh) .browser-window.browser-home-page .browser-home h1.nyx-home-title::before{
   content:""!important;
-  width:46px!important;
-  height:46px!important;
-  flex:0 0 46px!important;
+  width:54px!important;
+  height:54px!important;
+  flex:0 0 54px!important;
   border:0!important;
   border-radius:0!important;
-  background:transparent url("/assets/icons/nyx-logo.png") center/195% no-repeat!important;
+  background:
+    url("/assets/icons/nyx-logo.png") center/205% no-repeat,
+    var(--nyx-logo-fill)!important;
+  background-blend-mode:screen!important;
+  -webkit-mask:url("/assets/icons/nyx-logo.png") center/205% no-repeat!important;
+  mask:url("/assets/icons/nyx-logo.png") center/205% no-repeat!important;
   box-shadow:none!important;
   clip-path:none!important;
   transform:none!important;
-  filter:var(--nyx-logo-theme-filter)!important;
+  filter:
+    drop-shadow(1px 0 0 var(--nyx-logo-edge))
+    drop-shadow(-1px 0 0 var(--nyx-logo-edge))
+    drop-shadow(0 1px 0 var(--nyx-logo-edge))
+    drop-shadow(0 -1px 0 var(--nyx-logo-edge))
+    drop-shadow(0 0 5px var(--nyx-logo-glow))!important;
+}
+@media(max-width:720px){
+  html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh) .browser-window.browser-home-page .browser-home h1.nyx-home-title::before{
+    width:46px!important;
+    height:46px!important;
+    flex-basis:46px!important;
+  }
 }
 html body.browser-shell.theme-default .browser-window.browser-home-page .browser-home h1.nyx-home-title{
   background:var(--nyx-home-wordmark-gradient)!important;

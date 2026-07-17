@@ -2858,8 +2858,9 @@
   function applyThemeSetting(){
     const allowed=['default','ruby','emerald','sakura','fresh','midnight'];
     const theme=allowed.includes(store.text('nyx.theme','default')) ? store.text('nyx.theme','default') : 'default';
-    document.body.classList.remove('theme-ruby','theme-emerald','theme-sakura','theme-fresh','theme-midnight');
+    document.body.classList.remove('theme-default','theme-ruby','theme-emerald','theme-sakura','theme-fresh','theme-midnight');
     document.body.classList.add(theme==='default' ? 'theme-midnight' : 'theme-'+theme);
+    document.body.classList.toggle('theme-default',theme==='default');
     const browserBackground=currentBrowserBackgroundValue();
     document.documentElement.style.setProperty('--browser-bg-render',normalizeBgValue(browserBackground));
     ensureFreshThemeOptions();
@@ -4810,13 +4811,13 @@
   }
   function browserBody(){
     const presenceText=nyxPresenceCount===null ? 'Connecting\u2026' : `${nyxPresenceCount} online`;
-    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence" role="status" aria-live="polite"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1><form class="browser-blank-search nyx-home-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Search the web or enter a URL" placeholder="Search the web..." autocomplete="off" spellcheck="false"></form><nav class="nyx-home-actions" aria-label="Nyx home"><button data-open="apps" type="button"><span class="nyx-home-action-icon nyx-home-action-apps" aria-hidden="true"></span><span>Apps</span></button><button data-app-url="/assets/games/index.html" type="button"><span class="nyx-home-action-icon nyx-home-action-games" aria-hidden="true"></span><span>Games</span></button><button data-open="settings" type="button"><span class="nyx-home-action-icon nyx-home-action-settings" aria-hidden="true"></span><span>Settings</span></button></nav></main><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div></div>`;
+    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence" role="status" aria-live="polite"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1><form class="browser-blank-search nyx-home-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Search the web or enter a URL" placeholder="Search the web..." autocomplete="off" spellcheck="false"></form><nav class="nyx-home-actions" aria-label="Nyx home"><button data-open="apps" type="button"><span class="nyx-home-action-icon nyx-home-action-apps" aria-hidden="true"></span><span>Apps</span></button><button data-app-url="https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" type="button"><span class="nyx-home-action-icon nyx-home-action-study" aria-hidden="true"></span><span>Study</span></button><button data-open="settings" type="button"><span class="nyx-home-action-icon nyx-home-action-settings" aria-hidden="true"></span><span>Settings</span></button></nav></main><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div></div>`;
   }
   //apps-grid
   const defaultHomeShortcuts=[
     {domain:'geforcenow',title:'GeForce Now',url:'https://play.geforcenow.com/',favorite:true},
     {domain:'duck.ai',title:'Duck AI',url:'https://duck.ai/',favorite:false},
-    {domain:'games',title:'Games',url:'/assets/games/index.html',favorite:false},
+    {domain:'games',title:'Games',url:'/assets/games/',favorite:false},
     {domain:'youtube.com',title:'YouTube',url:'https://www.youtube.com/',favorite:false},
     {domain:'tiktok.com',title:'TikTok',url:'https://www.tiktok.com/',favorite:false},
     {domain:'spotify.com',title:'Spotify',url:'https://open.spotify.com/',favorite:false},
@@ -4829,7 +4830,8 @@
   }
   function normalizeHomeShortcut(item){
     const next={...item,url:normalizeInternalAppUrl(item?.url)};
-    if(next.url==='/assets/games/index.html') next.domain='games';
+    if(next.url==='/assets/games/index.html') next.url='/assets/games/';
+    if(next.url==='/assets/games/') next.domain='games';
     return next;
   }
   function homeShortcuts(){
@@ -5076,7 +5078,7 @@
   function quickTiles(){
     return [
       ['youtube.com','YouTube','https://www.youtube.com/'],
-      ['games','Games','/assets/games/index.html'],
+      ['games','Games','/assets/games/'],
       ['geforcenow','GeForce Now','https://play.geforcenow.com/'],
       ['roblox.com','Roblox','https://www.roblox.com/'],
       ['discord.com','Discord','https://discord.com/app'],

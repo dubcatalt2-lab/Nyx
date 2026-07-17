@@ -1,0 +1,129 @@
+/* Final hover behavior: one quiet translucent blur across the Nyx interface. */
+html body.browser-shell{
+  --nyx-hover-surface:color-mix(in srgb,var(--nyx-home-panel-soft,var(--nyx-chrome-base,#101a2a)) 62%,transparent);
+  --nyx-hover-border:color-mix(in srgb,var(--nyx-home-line,var(--theme-border,rgba(137,170,220,.34))) 78%,transparent);
+}
+
+/* The ID option inside :is() intentionally wins over legacy theme !important rules. */
+html body.browser-shell:is(body,#nyx-hover-specificity) :is(
+  button:not(.formula-exit-zone),
+  .quick-tile,
+  .settings-action,
+  .settings-preset,
+  .setup-theme-card,
+  .bg-choice,
+  .desktop-shortcut,
+  .desktop-app,
+  .browser-search-suggestion,
+  .weather-restore
+):not(:disabled){
+  transition:background-color .18s ease,border-color .18s ease,color .18s ease,opacity .18s ease!important;
+}
+
+html body.browser-shell:is(body,#nyx-hover-specificity) :is(
+  button:not(.formula-exit-zone),
+  .quick-tile,
+  .settings-action,
+  .settings-preset,
+  .setup-theme-card,
+  .bg-choice,
+  .desktop-shortcut,
+  .desktop-app,
+  .browser-search-suggestion,
+  .weather-restore
+):not(:disabled):hover{
+  transform:none!important;
+  animation:none!important;
+  filter:none!important;
+  text-shadow:none!important;
+  box-shadow:none!important;
+  border-color:var(--nyx-hover-border)!important;
+  background-color:var(--nyx-hover-surface)!important;
+  background-image:none!important;
+  backdrop-filter:blur(18px) saturate(1.08)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(1.08)!important;
+}
+
+html body.browser-shell:is(body,#nyx-hover-specificity) :is(input,select,textarea,.settings-input,.settings-select):hover{
+  transform:none!important;
+  animation:none!important;
+  filter:none!important;
+  box-shadow:none!important;
+}
+
+html body.browser-shell:is(body,#nyx-hover-specificity) button.nyx-button-click{
+  animation:none!important;
+}
+
+html body.browser-shell:is(body,#nyx-hover-specificity) .quick-tile:hover :is(.quick-icon,.home-shortcut-glyph,.dock-icon,img,svg),
+html body.browser-shell:is(body,#nyx-hover-specificity) :is(.settings-action,.settings-preset,button):hover > :is(.quick-icon,.nyx-home-action-icon,svg,img){
+  transform:none!important;
+  animation:none!important;
+  box-shadow:none!important;
+}
+
+/* Preserve structural centering while removing hover rotation and scaling. */
+html body.browser-shell:is(body,#nyx-hover-specificity) .browser-mode-shell-tab-close:hover{
+  transform:translateY(-50%)!important;
+}
+html body.browser-shell:is(body,#nyx-hover-specificity) .browser-mode-shell-tab-close:hover::before{
+  transform:translate(-50%,-50%) rotate(0deg)!important;
+}
+html body.browser-shell:is(body,#nyx-hover-specificity) :is(.browser-shell-settings-close,.browser-shell-settings-panel .browser-shell-settings-close):hover{
+  transform:none!important;
+}
+html body.browser-shell:is(body,#nyx-hover-specificity) :is(.browser-shell-settings-close,.browser-shell-settings-panel .browser-shell-settings-close):hover::before{
+  transform:translate(-50%,-50%) rotate(0deg)!important;
+}
+html body.browser-shell:is(body,#nyx-hover-specificity) :is([data-browser-shell-back],[data-browser-shell-forward]):hover::before{
+  transform:translate(-50%,-50%)!important;
+}
+html body.browser-shell:is(body,#nyx-hover-specificity) [data-browser-shell-menu]:hover::before,
+html body.browser-shell:is(body,#nyx-hover-specificity) .menu-btn:hover::before{
+  transform:translate(-50%,-50%) scale(1)!important;
+}
+html body.browser-shell:is(body,#nyx-hover-specificity) [data-browser-shell-reload]:hover::before,
+html body.browser-shell:is(body,#nyx-hover-specificity) .tool-btn[data-reload]:hover::before{
+  transform:rotate(var(--nyx-reload-turn,0deg)) scale(.96)!important;
+}
+html body.browser-shell:is(body,#nyx-hover-specificity) .menu-btn:hover{
+  transform:translateY(-50%)!important;
+}
+html body.browser-shell:is(body,#nyx-hover-specificity) :is(.browser-tab button,.new-tab):hover::before,
+html body.browser-shell:is(body,#nyx-hover-specificity) .brand-mini [data-browser-shell-new-tab]:hover::before,
+html body.browser-shell:is(body,#nyx-hover-specificity) .home-shortcut-add:hover b{
+  transform:rotate(0deg)!important;
+}
+html body.browser-shell:is(body,#nyx-hover-specificity) .window-controls [data-close]:hover::before{
+  transform:translate(-50%,-50%) rotate(45deg)!important;
+}
+html body.browser-shell:is(body,#nyx-hover-specificity) .window-controls [data-close]:hover::after{
+  transform:translate(-50%,-50%) rotate(-45deg)!important;
+}
+
+html body.browser-shell:is(body,#nyx-hover-specificity) .home-shortcut:hover .home-shortcut-open::before{
+  transform:translateX(-50%)!important;
+  box-shadow:none!important;
+  border-color:var(--nyx-hover-border)!important;
+  background-color:var(--nyx-hover-surface)!important;
+  background-image:none!important;
+  backdrop-filter:blur(18px) saturate(1.08)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(1.08)!important;
+}
+
+/* Settings cards intentionally have no hover response. */
+html body.browser-shell:is(body,#nyx-hover-specificity) .browser-shell-settings-panel :is(.settings-block,.settings-card):hover,
+html body.browser-shell:is(body,#nyx-hover-specificity) .settings-window .settings-card:hover{
+  transform:none!important;
+  animation:none!important;
+  filter:none!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+
+@media(prefers-reduced-motion:reduce){
+  html body.browser-shell:is(body,#nyx-hover-specificity) :is(button,.quick-tile,.settings-action,.settings-preset,.setup-theme-card,.bg-choice){
+    transition:none!important;
+  }
+}

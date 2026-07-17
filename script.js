@@ -4266,6 +4266,35 @@
     t.spotifyChromeOsCompatibilityTimer=setInterval(apply,750);
     t.spotifyChromeOsCompatibilityTimeout=setTimeout(()=>stopSpotifyChromeOsFrameCompatibility(t),5*60*1000);
   }
+  function sweepSpotifyChromeOsCompatibility(){
+    if(!/\bCrOS\b/i.test(String(navigator.userAgent || ''))) return false;
+    let applied=false;
+    qsa('iframe').forEach(frame=>{
+      const raw=String(frame.getAttribute('src') || frame.src || '');
+      const source=browserShellSourceUrl(raw) || raw;
+      const host=browserHost(source);
+      let decodedRaw=raw;
+      try{decodedRaw=decodeURIComponent(raw)}catch{}
+      if(!(host && hostMatches(host,['spotify.com','spotifycdn.com','scdn.co'])) && !/(spotify\.com|spotifycdn\.com|scdn\.co)/i.test(decodedRaw)) return;
+      const visit=frameWindow=>{
+        if(!frameWindow) return;
+        applied=patchSpotifyChromeOsWindow(frameWindow) || applied;
+        let childCount=0;
+        try{childCount=Number(frameWindow.length || 0)}catch{}
+        for(let index=0;index<childCount;index++){
+          try{visit(frameWindow.frames[index])}catch{}
+        }
+      };
+      try{visit(frame.contentWindow)}catch{}
+    });
+    return applied;
+  }
+  function startSpotifyChromeOsCompatibilitySweep(){
+    if(startSpotifyChromeOsCompatibilitySweep.timer || !/\bCrOS\b/i.test(String(navigator.userAgent || ''))) return;
+    const run=()=>sweepSpotifyChromeOsCompatibility();
+    run();
+    startSpotifyChromeOsCompatibilitySweep.timer=setInterval(run,750);
+  }
   function inspectFrameHealth(t){
     try{
       const doc=t?.frame?.contentDocument;
@@ -10403,7 +10432,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
     document.body.classList.add('runtime-lag-guard');
     updateResponsiveFit();
     if(!localStorage.getItem('nyx.lagReducer')) store.set('nyx.lagReducer',true);
-    applyLaunchPdfSetting(); bindFormulaGate(); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); startCenterClock(); startNyxPresence();
+    applyLaunchPdfSetting(); bindFormulaGate(); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); startCenterClock(); startNyxPresence(); startSpotifyChromeOsCompatibilitySweep();
     if(hostedCloakEntry){
       scheduleHostedCloakLaunch();
       return;

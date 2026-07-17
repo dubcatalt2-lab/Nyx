@@ -334,6 +334,41 @@
   let nyxPresenceCount = null;
   //scramjet-runtime-guard
   let scramjetRuntimeGuardSource = '';
+  const scramjetSpotifyChromeOsGuardSource=`(() => {
+    if (typeof window === "undefined" || window.__nyxSpotifyChromeOsCompatibility) return;
+    const nativeUserAgent = String(navigator.userAgent || "");
+    if (!/\\bCrOS\\b/i.test(nativeUserAgent)) return;
+    let hostname = "";
+    let pageAddress = "";
+    try { hostname = String(location.hostname || "").toLowerCase(); } catch {}
+    try { pageAddress = decodeURIComponent(String(location.href || "")).toLowerCase(); } catch { pageAddress = String(location.href || "").toLowerCase(); }
+    const compatibilityHost=/(^|\\.)(spotify\\.com|spotifycdn\\.com|scdn\\.co|google\\.com|gstatic\\.com|recaptcha\\.net)$/;
+    if (!compatibilityHost.test(hostname) && !/(spotify\\.com|spotifycdn\\.com|scdn\\.co|google\\.com|gstatic\\.com|recaptcha\\.net)/.test(pageAddress)) return;
+    window.__nyxSpotifyChromeOsCompatibility = true;
+    const chromeVersion = nativeUserAgent.match(/Chrome\\/([0-9.]+)/i)?.[1] || "138.0.0.0";
+    const desktopUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/" + chromeVersion + " Safari/537.36";
+    const defineNavigatorValue = (name, value) => {
+      try { Object.defineProperty(Navigator.prototype, name, { configurable: true, get: () => value }); }
+      catch { try { Object.defineProperty(navigator, name, { configurable: true, get: () => value }); } catch {} }
+    };
+    defineNavigatorValue("userAgent", desktopUserAgent);
+    defineNavigatorValue("platform", "Win32");
+    const nativeData = navigator.userAgentData;
+    if (nativeData) {
+      const desktopData = {
+        brands: Array.from(nativeData.brands || []),
+        mobile: false,
+        platform: "Windows",
+        toJSON() { return { brands: this.brands, mobile: false, platform: "Windows" }; },
+        async getHighEntropyValues(hints) {
+          let values = {};
+          try { values = await nativeData.getHighEntropyValues(hints); } catch {}
+          return { ...values, platform: "Windows", platformVersion: "10.0.0", architecture: "x86", bitness: "64", model: "" };
+        }
+      };
+      defineNavigatorValue("userAgentData", desktopData);
+    }
+  })();`;
   const scramjetMinimalRuntimeGuardSource=`(() => {
     if (typeof window === "undefined" || window.__nyxScramjetMinimalGuards) return;
     window.__nyxScramjetMinimalGuards = true;
@@ -6576,7 +6611,8 @@
         if(existingFrameSrc.startsWith('/service/') || t.actualEngine==='ultraviolet'){
           replaceTabFrame(t);
         }
-        const guardMode=shouldUseScramjetRuntimeGuard(url) ? 'full' : (shouldUseScramjetMinimalGuard(url) ? 'minimal' : (shouldUseScramjetHelperGuard(url) ? 'helper' : 'none'));
+        const spotifyChromeOsCompatibility=/\bCrOS\b/i.test(String(navigator.userAgent || '')) && isSpotifyFamilyUrl(url);
+        const guardMode=spotifyChromeOsCompatibility ? 'spotify-chromeos' : (shouldUseScramjetRuntimeGuard(url) ? 'full' : (shouldUseScramjetMinimalGuard(url) ? 'minimal' : (shouldUseScramjetHelperGuard(url) ? 'helper' : 'none')));
         if(t.scramjetFrame && t.scramjetRuntimeGuarded!==guardMode){
           replaceTabFrame(t);
         }
@@ -6587,9 +6623,11 @@
           installPopupBridge(t);
           const plugins=guardMode==='full'
             ? [createScramjetCompatibilityPlugin(scramjetRuntimeGuardSource,'runtime-guard')]
+            : (guardMode==='spotify-chromeos'
+              ? [createScramjetCompatibilityPlugin(scramjetSpotifyChromeOsGuardSource,'spotify-chromeos')]
             : (guardMode==='minimal'
               ? [createScramjetCompatibilityPlugin(scramjetMinimalRuntimeGuardSource,'minimal-guard')]
-              : (guardMode==='helper' ? [createScramjetCompatibilityPlugin(scramjetHelperRuntimeGuardSource,'helper-guard')] : []));
+              : (guardMode==='helper' ? [createScramjetCompatibilityPlugin(scramjetHelperRuntimeGuardSource,'helper-guard')] : [])));
       if(shouldStripScramjetDuckDuckGoScripts(url)){
         plugins.push(createScramjetCompatibilityPlugin('', 'duckduckgo-noscript'));
       }

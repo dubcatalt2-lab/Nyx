@@ -109,23 +109,39 @@ html body.browser-shell:not(.lag-reducer):is(.theme-midnight,.theme-ruby,.theme-
 }
 
 /* One shared Apps/Games/Settings-style interaction for real controls. */
+html body.browser-shell .top-os .brand-mini > button[data-browser-shell-home]{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:8px!important;
+  padding-left:12px!important;
+}
 html body.browser-shell .top-os .brand-mini > button[data-browser-shell-home]::before{
-  content:""!important;
+  content:none!important;
+  display:none!important;
+}
+html body.browser-shell .top-os .brand-mini > button[data-browser-shell-home] > .browser-home-icon{
   display:block!important;
-  position:absolute!important;
-  left:12px!important;
-  top:50%!important;
+  position:relative!important;
   width:18px!important;
   height:18px!important;
+  flex:0 0 18px!important;
+  margin:0!important;
   border:0!important;
   border-radius:0!important;
   background:currentColor!important;
   background-image:none!important;
-  transform:translateY(-50%)!important;
+  transform:none!important;
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.5 10.5 12 3.8l8.5 6.7v9.2a.8.8 0 0 1-.8.8h-5.1v-6.3H9.4v6.3H4.3a.8.8 0 0 1-.8-.8z' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat!important;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.5 10.5 12 3.8l8.5 6.7v9.2a.8.8 0 0 1-.8.8h-5.1v-6.3H9.4v6.3H4.3a.8.8 0 0 1-.8-.8z' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat!important;
   color:inherit!important;
   filter:none!important;
+}
+html body.browser-shell .top-os .brand-mini > button[data-browser-shell-home] > .browser-home-label{
+  display:block!important;
+  min-width:0!important;
+  margin:0!important;
+  line-height:1!important;
 }
 
 html body.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not(.formula-exit-zone):not([data-no-button-motion]):not(:disabled){

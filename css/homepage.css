@@ -1106,3 +1106,46 @@ html body.browser-shell.theme-default .top-os > .browser-top-clock{
   html body.browser-shell.theme-default .browser-window.browser-home-page .nyx-home-actions > button{height:36px!important;padding:0 8px!important;font-size:12px!important}
   html body.browser-shell.theme-default .nyx-home-presence{left:12px!important;top:12px!important}
 }
+
+/* Keep the supplied Nyx mark intact while giving its light linework a subtle theme tint. */
+html body.browser-shell{
+  --nyx-logo-theme-filter:sepia(.18) saturate(2.1) hue-rotate(175deg) brightness(1.08) drop-shadow(0 0 5px rgba(96,165,250,.24));
+}
+html body.browser-shell.theme-ruby{
+  --nyx-logo-theme-filter:sepia(.22) saturate(2.2) hue-rotate(300deg) brightness(1.06) drop-shadow(0 0 5px rgba(251,113,133,.24));
+}
+html body.browser-shell.theme-emerald{
+  --nyx-logo-theme-filter:sepia(.22) saturate(2.15) hue-rotate(70deg) brightness(1.04) drop-shadow(0 0 5px rgba(52,211,153,.22));
+}
+html body.browser-shell.theme-sakura{
+  --nyx-logo-theme-filter:sepia(.18) saturate(1.8) hue-rotate(300deg) brightness(1.1) drop-shadow(0 0 5px rgba(244,114,182,.22));
+}
+html body.browser-shell.theme-fresh{
+  --nyx-logo-theme-filter:sepia(.16) saturate(1.9) hue-rotate(120deg) brightness(1.02) drop-shadow(0 0 5px rgba(20,184,166,.18));
+}
+html body.browser-shell .browser-window.browser-home-page .browser-home h1.nyx-home-title{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:14px!important;
+}
+html body.browser-shell .browser-window.browser-home-page .browser-home h1.nyx-home-title::before{
+  content:""!important;
+  width:46px!important;
+  height:46px!important;
+  flex:0 0 46px!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent url("/assets/icons/nyx-logo.png") center/195% no-repeat!important;
+  box-shadow:none!important;
+  clip-path:none!important;
+  transform:none!important;
+  filter:var(--nyx-logo-theme-filter)!important;
+}
+html body.browser-shell.theme-default .browser-window.browser-home-page .browser-home h1.nyx-home-title{
+  background:var(--nyx-home-wordmark-gradient)!important;
+  background-clip:text!important;
+  -webkit-background-clip:text!important;
+  color:transparent!important;
+  -webkit-text-fill-color:transparent!important;
+}

@@ -4893,7 +4893,7 @@
   }
   function browserBody(){
     const presenceText=nyxPresenceCount===null ? 'Connecting\u2026' : `${nyxPresenceCount} online`;
-    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence" role="status" aria-live="polite"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1><form class="browser-blank-search nyx-home-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Search the web or enter a URL" placeholder="Search the web..." autocomplete="off" spellcheck="false"></form><nav class="nyx-home-actions" aria-label="Nyx home"><button data-open="apps" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-apps" aria-hidden="true"></span><span>Apps</span></button><button data-app-url="https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-study" aria-hidden="true"></span><span>Study</span></button><button data-open="settings" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-settings" aria-hidden="true"></span><span>Settings</span></button></nav></main><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div></div>`;
+    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence" role="status" aria-live="polite"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><button class="nyx-home-weather" data-home-weather data-open="weather" type="button" aria-label="Open weather report"><span class="nyx-home-weather-icon" data-home-weather-icon aria-hidden="true">🌤️</span><strong data-home-weather-temp>--°</strong><span data-home-weather-desc>Loading</span></button><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1><form class="browser-blank-search nyx-home-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Search the web or enter a URL" placeholder="Search the web..." autocomplete="off" spellcheck="false"></form><nav class="nyx-home-actions" aria-label="Nyx home"><button data-open="apps" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-apps" aria-hidden="true"></span><span>Apps</span></button><button data-app-url="https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-study" aria-hidden="true"></span><span>Study</span></button><button data-open="settings" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-settings" aria-hidden="true"></span><span>Settings</span></button></nav></main><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div></div>`;
   }
   //apps-grid
   const defaultHomeShortcuts=[
@@ -5239,6 +5239,7 @@
       if(typeof ResizeObserver==='function') new ResizeObserver(resize).observe(home);
       else addEventListener('resize',resize,{passive:true});
       resize();
+      syncHomeWeatherWidgets();
     };
     const scan=root=>{
       if(root?.matches?.('.browser-home')) initialize(root);
@@ -7528,6 +7529,29 @@
   function weatherPanel(){
     return $('weatherPanel');
   }
+  let latestWeatherSnapshot=null;
+  function syncHomeWeatherWidgets(snapshot=latestWeatherSnapshot){
+    qsa('[data-home-weather]').forEach(widget=>{
+      const icon=widget.querySelector('[data-home-weather-icon]');
+      const temp=widget.querySelector('[data-home-weather-temp]');
+      const desc=widget.querySelector('[data-home-weather-desc]');
+      if(snapshot){
+        const summary=weatherDescription(snapshot.weather_code);
+        const degrees=`${Math.round(snapshot.temperature_2m)}°`;
+        if(icon) icon.textContent=weatherIcon(snapshot.weather_code);
+        if(temp) temp.textContent=degrees;
+        if(desc) desc.textContent=summary;
+        widget.setAttribute('aria-label',`Open weather report. ${degrees}, ${summary}`);
+        widget.dataset.loaded='true';
+      }else{
+        if(icon) icon.textContent='🌤️';
+        if(temp) temp.textContent='--°';
+        if(desc) desc.textContent='Loading';
+        widget.setAttribute('aria-label','Open weather report');
+        delete widget.dataset.loaded;
+      }
+    });
+  }
   function setWeatherStatus(text){
     const status=weatherPanel()?.querySelector('[data-weather-status]');
     if(status) status.textContent=text || '';
@@ -7577,6 +7601,8 @@
     panel.classList.add(weatherEffectClass(data.weather_code,data.wind_speed_10m,data.temperature_2m));
     renderWeatherForecast(daily);
     renderWeatherTime(timezone);
+    latestWeatherSnapshot={...data};
+    syncHomeWeatherWidgets();
     const restore=$('weatherRestore');
     if(restore) restore.dataset.weatherSummary=`${Math.round(data.temperature_2m)}° ${weatherDescription(data.weather_code)}`;
     setWeatherStatus('');
@@ -10655,7 +10681,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
     document.body.classList.add('runtime-lag-guard');
     updateResponsiveFit();
     if(!localStorage.getItem('nyx.lagReducer')) store.set('nyx.lagReducer',true);
-    applyLaunchPdfSetting(); bindFormulaGate(); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); installInteractiveHomeDots(); startCenterClock(); startNyxPresence(); startSpotifyChromeOsCompatibilitySweep();
+    applyLaunchPdfSetting(); bindFormulaGate(); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); installInteractiveHomeDots(); initWeatherPanel(); startCenterClock(); startNyxPresence(); startSpotifyChromeOsCompatibilitySweep();
     if(hostedCloakEntry){
       scheduleHostedCloakLaunch();
       return;

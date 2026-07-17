@@ -1178,6 +1178,70 @@ html body.browser-shell .nyx-home-dot-field{
 }
 html body.browser-shell:not(.theme-default) .nyx-home-dot-field{display:none}
 
+/* Compact live weather summary; the existing report opens when this is clicked. */
+html body .browser-window .browser-home .nyx-home-weather{
+  position:absolute!important;
+  left:22px!important;
+  bottom:22px!important;
+  z-index:8!important;
+  width:auto!important;
+  min-width:166px!important;
+  max-width:240px!important;
+  height:48px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:9px!important;
+  margin:0!important;
+  padding:0 18px!important;
+  border:1px solid color-mix(in srgb,var(--nyx-home-line,rgba(126,162,220,.32)) 78%,transparent)!important;
+  border-radius:999px!important;
+  background-color:color-mix(in srgb,var(--nyx-home-panel-soft,rgba(8,14,28,.82)) 68%,transparent)!important;
+  background-image:none!important;
+  color:var(--nyx-home-text,#e8eef9)!important;
+  -webkit-text-fill-color:var(--nyx-home-text,#e8eef9)!important;
+  box-shadow:none!important;
+  backdrop-filter:blur(18px) saturate(1.08)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(1.08)!important;
+  font-family:Outfit,Arial,sans-serif!important;
+  cursor:pointer!important;
+}
+html body .browser-window .browser-home .nyx-home-weather-icon{
+  display:inline-grid;
+  flex:0 0 25px;
+  width:25px;
+  height:25px;
+  place-items:center;
+  font-size:21px;
+  line-height:1;
+}
+html body .browser-window .browser-home .nyx-home-weather strong{
+  flex:0 0 auto;
+  font-size:17px!important;
+  font-weight:600!important;
+  letter-spacing:-.01em;
+}
+html body .browser-window .browser-home .nyx-home-weather > span:last-child{
+  min-width:0;
+  overflow:hidden;
+  color:var(--nyx-home-muted,#99a9c4)!important;
+  -webkit-text-fill-color:var(--nyx-home-muted,#99a9c4)!important;
+  font-size:15px!important;
+  font-weight:400!important;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+@media (max-width:720px){
+  html body .browser-window .browser-home .nyx-home-weather{
+    left:12px!important;
+    bottom:12px!important;
+    min-width:0!important;
+    height:42px!important;
+    padding:0 14px!important;
+  }
+  html body .browser-window .browser-home .nyx-home-weather > span:last-child{display:none}
+}
+
 /* Keep depth shadows, but remove colored glow from the homepage. */
 html body.browser-shell .browser-window.browser-home-page .browser-home :is(.nyx-home-title,.nyx-home-search,.nyx-home-actions,.home-shortcut-open,.home-shortcut-add){
   text-shadow:none!important;

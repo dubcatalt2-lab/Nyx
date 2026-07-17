@@ -1797,6 +1797,94 @@
       setTimeout(()=>activeBrowser?.navigate?.(activeSource),0);
     }
   }
+  function enhanceBrowserShellSettings(overlay){
+    const app=overlay.querySelector('.settings-app');
+    const main=app?.querySelector('.settings-main');
+    const source=main?.querySelector('.settings-section.active');
+    if(!app || !main || !source) return;
+
+    app.classList.add('nyx-settings-dashboard');
+    main.querySelector(':scope > h1')?.remove();
+    const definitions=[
+      ['privacy','Privacy','◌',['tab cloak','preset cloak','cloaking','panic key','website details','popup protection']],
+      ['customize','Customize','◇',['theme','font','effects','3d backgrounds']],
+      ['browsing','Browsing','◎',['search engine','proxy engine','transport']],
+      ['advanced','Advanced','⌁',[]]
+    ];
+    const categoryFor=title=>definitions.find(([, , ,titles])=>titles.includes(title))?.[0] || 'advanced';
+    const categories=new Map();
+    definitions.forEach(([key,label])=>{
+      const section=document.createElement('section');
+      section.className='nyx-settings-category';
+      section.dataset.settingsCategory=key;
+      section.innerHTML=`<h2 class="nyx-settings-category-title">${label}</h2><div class="nyx-settings-group"></div>`;
+      categories.set(key,section);
+    });
+
+    Array.from(source.querySelectorAll(':scope > .settings-block')).forEach(block=>{
+      const heading=block.querySelector(':scope > h2');
+      const title=(heading?.textContent || '').trim().toLowerCase();
+      const description=Array.from(block.children).find(element=>element.tagName==='P');
+      const copy=document.createElement('div');
+      const controls=document.createElement('div');
+      copy.className='nyx-settings-copy';
+      controls.className='nyx-settings-control';
+      const nodes=Array.from(block.childNodes);
+      if(heading) copy.appendChild(heading);
+      if(description) copy.appendChild(description);
+      nodes.forEach(node=>{if(node!==heading && node!==description) controls.appendChild(node)});
+      block.replaceChildren(copy,controls);
+      block.dataset.settingsSearch=(block.textContent || '').toLowerCase();
+      categories.get(categoryFor(title)).querySelector('.nyx-settings-group').appendChild(block);
+    });
+    source.remove();
+
+    const side=document.createElement('aside');
+    side.className='nyx-settings-side';
+    side.innerHTML=`<div class="nyx-settings-brand"><span class="nyx-settings-brand-logo" aria-hidden="true"></span><span>Nyx</span></div><label class="nyx-settings-filter"><span aria-hidden="true">⌕</span><input type="search" placeholder="Filter settings" aria-label="Filter settings"></label><nav class="nyx-settings-nav" aria-label="Settings categories">${definitions.map(([key,label,icon],index)=>`<button class="${index===0?'active':''}" data-settings-category-button="${key}" type="button"><span aria-hidden="true">${icon}</span>${label}</button>`).join('')}</nav>`;
+    const header=document.createElement('header');
+    header.className='nyx-settings-header';
+    header.innerHTML='<span>Nyx Settings</span><h1>Privacy</h1>';
+    app.prepend(side);
+    main.prepend(header);
+    categories.forEach(section=>main.appendChild(section));
+
+    const title=header.querySelector('h1');
+    const filter=side.querySelector('input');
+    const buttons=Array.from(side.querySelectorAll('[data-settings-category-button]'));
+    const activate=key=>{
+      filter.value='';
+      categories.forEach((section,category)=>{
+        section.classList.toggle('active',category===key);
+        section.hidden=category!==key;
+        section.querySelectorAll('.settings-block').forEach(block=>{block.hidden=false});
+      });
+      buttons.forEach(button=>button.classList.toggle('active',button.dataset.settingsCategoryButton===key));
+      title.textContent=definitions.find(([category])=>category===key)?.[1] || 'Settings';
+      main.scrollTop=0;
+    };
+    buttons.forEach(button=>button.addEventListener('click',()=>activate(button.dataset.settingsCategoryButton)));
+    filter.addEventListener('input',()=>{
+      const query=filter.value.trim().toLowerCase();
+      if(!query){
+        activate(buttons.find(button=>button.classList.contains('active'))?.dataset.settingsCategoryButton || 'privacy');
+        return;
+      }
+      title.textContent='Search Results';
+      buttons.forEach(button=>button.classList.remove('active'));
+      categories.forEach(section=>{
+        let matches=0;
+        section.querySelectorAll('.settings-block').forEach(block=>{
+          const visible=block.dataset.settingsSearch.includes(query);
+          block.hidden=!visible;
+          if(visible) matches++;
+        });
+        section.hidden=matches===0;
+        section.classList.toggle('active',matches>0);
+      });
+    });
+    activate('privacy');
+  }
   function openBrowserShellSettings(){
     if(!document.body.classList.contains('browser-shell')){
       openSettings();
@@ -1866,6 +1954,7 @@
       effectBlock.before(resetBlock);
     }
     ensureFreshThemeOptions(overlay);
+    enhanceBrowserShellSettings(overlay);
     syncSwitches(overlay);
     wirePresetCloakControls(overlay);
   }
@@ -5079,7 +5168,7 @@
       const context=canvas.getContext('2d',{alpha:true});
       if(!context) return;
       const state={width:0,height:0,dots:[],pointer:null,trail:[],frame:0};
-      const trailLifetime=520;
+      const trailLifetime=380;
       const requestFrame=()=>{
         if(!state.frame) state.frame=requestAnimationFrame(draw);
       };
@@ -5109,25 +5198,6 @@
         context.clearRect(0,0,state.width,state.height);
         const styles=getComputedStyle(home);
         const dotColor=styles.getPropertyValue('--nyx-dot-color').trim() || '#202b3d';
-        const trailColor=styles.getPropertyValue('--nyx-dot-trail-color').trim() || '#6f9ee8';
-        if(state.trail.length>1 && !reducedMotion.matches){
-          context.save();
-          context.lineCap='round';
-          context.lineJoin='round';
-          for(let index=1;index<state.trail.length;index++){
-            const previous=state.trail[index-1];
-            const point=state.trail[index];
-            const age=(now-point.time)/trailLifetime;
-            context.globalAlpha=Math.max(0,(1-age)*.26);
-            context.strokeStyle=trailColor;
-            context.lineWidth=Math.max(.65,(1-age)*2.1);
-            context.beginPath();
-            context.moveTo(previous.x,previous.y);
-            context.lineTo(point.x,point.y);
-            context.stroke();
-          }
-          context.restore();
-        }
         context.fillStyle=dotColor;
         let unsettled=false;
         for(const dot of state.dots){
@@ -5163,7 +5233,7 @@
           context.arc(dot.x,dot.y,2.7,0,Math.PI*2);
           context.fill();
         }
-        if(state.pointer || state.trail.length || unsettled) requestFrame();
+        if(state.trail.length || unsettled) requestFrame();
       }
       const trackPointer=event=>{
         if(!document.body.classList.contains('theme-default')) return;

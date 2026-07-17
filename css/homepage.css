@@ -803,8 +803,8 @@ html body.browser-shell.theme-default .browser-home-normal .home-shortcut .quick
 }
 html body.browser-shell.theme-default .browser-window.browser-home-page .browser-home .home-shortcut-grid .home-shortcut-open > span:last-child,
 html body.browser-shell.theme-default .browser-window.browser-home-page .browser-home .home-shortcut-grid .home-shortcut-add > span{
-  color:#b8cdf2!important;
-  -webkit-text-fill-color:#b8cdf2!important;
+  color:#a9bee2!important;
+  -webkit-text-fill-color:#a9bee2!important;
   font-size:12px!important;
 }
 
@@ -962,8 +962,8 @@ html body.browser-shell.theme-default .browser-window.browser-home-page .nyx-hom
   padding:0 13px!important;
   border:0!important;
   border-radius:10px!important;
-  color:#a9bddf!important;
-  -webkit-text-fill-color:#a9bddf!important;
+  color:#9eb3d4!important;
+  -webkit-text-fill-color:#9eb3d4!important;
   font-size:13px!important;
 }
 html body.browser-shell.theme-default .browser-window.browser-home-page .nyx-home-actions > button + button{
@@ -981,7 +981,7 @@ html body.browser-shell.theme-default .browser-window.browser-home-page .nyx-hom
   width:16px!important;
   height:16px!important;
   flex:0 0 16px!important;
-  background:#91add8!important;
+  background:#86a2cd!important;
 }
 html body.browser-shell.theme-default .nyx-home-presence{
   left:22px!important;
@@ -1085,8 +1085,8 @@ html body.browser-shell.theme-default .top-os.top-os :is(.browser-mode-shell-tab
   -webkit-text-fill-color:#91acd5!important;
 }
 html body.browser-shell.theme-default .top-os > .browser-top-clock{
-  color:#a9bddf!important;
-  -webkit-text-fill-color:#a9bddf!important;
+  color:#9eb3d4!important;
+  -webkit-text-fill-color:#9eb3d4!important;
 }
 
 @media(max-width:720px){
@@ -1111,19 +1111,19 @@ html body.browser-shell.theme-default .top-os > .browser-top-clock{
 /* Tint both the dark fill and light linework of the supplied Nyx mark by theme. */
 html body.browser-shell{
   --nyx-themed-logo-url:url("/assets/icons/nyx-logo.png");
-  --nyx-title-theme-color:#9fc5ff;
+  --nyx-title-theme-color:#92b7ed;
 }
 html body.browser-shell.theme-ruby{
-  --nyx-title-theme-color:#fb8a9b;
+  --nyx-title-theme-color:#e97b8d;
 }
 html body.browser-shell.theme-emerald{
-  --nyx-title-theme-color:#5ee3b2;
+  --nyx-title-theme-color:#53cda3;
 }
 html body.browser-shell.theme-sakura{
-  --nyx-title-theme-color:#f6a1cf;
+  --nyx-title-theme-color:#df91bd;
 }
 html body.browser-shell.theme-fresh{
-  --nyx-title-theme-color:#32b9ae;
+  --nyx-title-theme-color:#2aa59d;
 }
 html body.browser-shell .browser-window.browser-home-page .browser-home h1.nyx-home-title{
   display:flex!important;
@@ -1178,7 +1178,6 @@ html body.browser-shell .nyx-home-dot-field{
   pointer-events:none;
   opacity:.72;
   --nyx-dot-color:#202b3d;
-  --nyx-dot-trail-color:#6f9ee8;
 }
 html body.browser-shell:not(.theme-default) .nyx-home-dot-field{display:none}
 
@@ -1188,6 +1187,12 @@ html body.browser-shell .browser-window.browser-home-page .browser-home :is(.nyx
 }
 html body.browser-shell .browser-window.browser-home-page .browser-home :is(.quick-icon,.home-shortcut-glyph,.nyx-home-action-icon,.nyx-home-search-icon){
   filter:none!important;
+}
+html body.browser-shell.theme-default .browser-window.browser-home-page .browser-home .home-shortcut-grid .quick-icon{
+  filter:brightness(.92)!important;
+}
+html body.browser-shell.theme-default .browser-window.browser-home-page .browser-home .home-shortcut-grid .home-shortcut-glyph{
+  background-color:#86a2cd!important;
 }
 
 /* Use the same supplied mark anywhere Nyx needs a compact brand icon. */

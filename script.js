@@ -259,6 +259,7 @@
     'docs.google.com':svgIcon(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#1a73e8"/><path d="M22 12h17l9 9v31H22z" fill="#fff"/><path d="M39 12v10h9" fill="#d2e3fc"/><path d="M27 31h16M27 37h16M27 43h12" stroke="#1a73e8" stroke-width="3" stroke-linecap="round"/></svg>`),
     'duck.ai':localIcon('duck-ai-logo.png'),
     'nyx-ai':favicons.nyx,
+    'link-checker':localIcon('link-checker.svg'),
     'chess.com':localIcon('chess-logo.png'),
     'games':localIcon('dock-controller.png'),
     'apps':svgIcon(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="10" y="10" width="18" height="18" rx="4" fill="#fff"/><rect x="36" y="10" width="18" height="18" rx="4" fill="#fff"/><rect x="10" y="36" width="18" height="18" rx="4" fill="#fff"/><rect x="36" y="36" width="18" height="18" rx="4" fill="#fff"/></svg>`),
@@ -301,6 +302,7 @@
   function iconForUrl(url){
     const raw=String(url || '').trim();
     if(!raw || raw==='about:blank' || raw.startsWith('nyx://')) return favicons.nyx;
+    if(/(?:^|\/)apps\/link-checker(?:\/|$)/i.test(raw)) return appIcon('link-checker');
     const source=typeof browserShellSourceUrl==='function' ? (browserShellSourceUrl(raw) || raw) : raw;
     if(source.startsWith('assets/games/') || source.startsWith('assets/ugs/') || source.startsWith('assets/seraph/') || source.startsWith('/assets/games/') || source.startsWith('/assets/ugs/') || source.startsWith('/assets/seraph/')) return appIcon('games');
     try{
@@ -315,6 +317,7 @@
   function titleForUrl(url){
     const raw=String(url || '').trim();
     if(!raw || raw==='about:blank') return 'New Tab';
+    if(/(?:^|\/)apps\/link-checker(?:\/|$)/i.test(raw)) return 'Link Checker';
     if(raw==='nyx://ai') return 'Nyx AI';
     if(raw.startsWith('nyx://')) return raw.replace('nyx://','nyx ');
     if(raw.startsWith('assets/games/') || raw.startsWith('assets/ugs/') || raw.startsWith('assets/seraph/') || raw.startsWith('/assets/games/') || raw.startsWith('/assets/ugs/') || raw.startsWith('/assets/seraph/')) return 'Study';
@@ -967,6 +970,7 @@
       if(parsed.origin===location.origin && parsed.pathname.includes('/assets/games/')) return 'Study';
       if(parsed.origin===location.origin && parsed.pathname.includes('/assets/seraph/')) return 'Seraph Study';
       if(parsed.origin===location.origin && parsed.pathname.includes('/assets/ugs/')) return 'Pirate Cove';
+      if(parsed.origin===location.origin && parsed.pathname.includes('/apps/link-checker/')) return 'Link Checker';
       if(parsed.origin===location.origin) return parsed.pathname.split('/').filter(Boolean).pop() || 'nyx';
       return parsed.hostname.replace(/^www\./,'') || 'New tab';
     }catch{
@@ -5293,6 +5297,7 @@
       ['docs.google.com','Study','https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0'],
       ['duck.ai','Duck AI','https://duck.ai/'],
       ['nyx-ai','Nyx AI','nyx://ai'],
+      ['link-checker','Link Checker by Taii','/apps/link-checker/'],
       ['wikipedia.org','Wikipedia','https://www.wikipedia.org/'],
       ['cineby.at','Cineby','https://cineby.at/'],
       ['tiktok.com','TikTok','https://www.tiktok.com/'],

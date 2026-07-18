@@ -16,6 +16,7 @@ const { scramjetPath } = require("@mercuryworkshop/scramjet/path");
 const scramjetControllerPath = dirname(require.resolve("@mercuryworkshop/scramjet-controller"));
 const epoxyPath = join(dirname(require.resolve("@mercuryworkshop/epoxy-transport")), "..", "dist");
 const libcurlPath = dirname(require.resolve("@mercuryworkshop/libcurl-transport"));
+const erudaPath = require.resolve("eruda");
 let cinebyAppCache = { source: "", expires: 0 };
 const gameCoverLookupCache = new Map();
 const app = express();
@@ -1176,6 +1177,10 @@ app.get("/nyx-compat/cineby-app.js", async (_req, res) => {
   } catch (error) {
     res.status(502).type("application/javascript").send(`throw new Error(${JSON.stringify(`Nyx Cineby compatibility failed: ${error.message}`)});`);
   }
+});
+app.get("/assets/vendor/eruda.min.js", (_req, res) => {
+  res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+  res.type("application/javascript").sendFile(erudaPath);
 });
 app.use(express.static(__dirname));
 app.use("/uv/", express.static(uvPath));

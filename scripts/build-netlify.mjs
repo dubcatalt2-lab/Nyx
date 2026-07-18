@@ -90,6 +90,13 @@ async function copyProxyRuntimes() {
   }
 }
 
+async function copyEruda() {
+  const source = require.resolve("eruda");
+  const destination = join(output, "assets", "vendor", "eruda.min.js");
+  await mkdir(dirname(destination), { recursive: true });
+  await cp(source, destination, { force: true });
+}
+
 async function waitForLocalServer(child) {
   return new Promise((resolveReady, reject) => {
     let log = "";
@@ -179,6 +186,7 @@ async function main() {
   await rm(output, { recursive: true, force: true });
   await mkdir(output, { recursive: true });
   await copyRepositoryStaticFiles();
+  await copyEruda();
   await copyProxyRuntimes();
   await writePatchedRuntimes(wispUrl);
   await configureUv(wispUrl);

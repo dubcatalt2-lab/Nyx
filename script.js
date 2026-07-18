@@ -1,6 +1,27 @@
 
 (function(){
   'use strict';
+  const nyxEarlyConsoleEntries=[];
+  let nyxEarlyConsoleBuffering=true;
+  const bufferNyxConsoleEntry=(level,args)=>{
+    if(!nyxEarlyConsoleBuffering) return;
+    nyxEarlyConsoleEntries.push({level,args:Array.from(args),time:new Date()});
+    if(nyxEarlyConsoleEntries.length>200) nyxEarlyConsoleEntries.shift();
+  };
+  ['log','info','warn','error'].forEach(level=>{
+    const original=console[level]?.bind(console);
+    if(!original) return;
+    console[level]=(...args)=>{
+      bufferNyxConsoleEntry(level,args);
+      return original(...args);
+    };
+  });
+  addEventListener('error',event=>{
+    bufferNyxConsoleEntry('error',[event.error || `${event.message || 'Script error'} at ${event.filename || 'unknown source'}:${event.lineno || 0}`]);
+  });
+  addEventListener('unhandledrejection',event=>{
+    bufferNyxConsoleEntry('error',['Unhandled promise rejection',event.reason]);
+  });
   //helpers
   const $ = id => document.getElementById(id);
   const qsa = (sel, root=document) => Array.from(root.querySelectorAll(sel));
@@ -113,8 +134,7 @@
     if(nyxErudaLoadPromise) return nyxErudaLoadPromise;
     nyxErudaLoadPromise=new Promise((resolve,reject)=>{
       const loader=document.createElement('script');
-      loader.src='https://cdn.jsdelivr.net/npm/eruda@3/eruda.min.js';
-      loader.crossOrigin='anonymous';
+      loader.src='/assets/vendor/eruda.min.js?v=3.4.3';
       loader.dataset.nyxErudaLoader='true';
       loader.onload=()=>window.eruda ? resolve(window.eruda) : reject(new Error('Eruda did not initialize'));
       loader.onerror=()=>reject(new Error('Eruda could not be downloaded'));
@@ -162,6 +182,10 @@
       if(activeBrowserShellTab()?.url!=='nyx://developer') return;
       if(!nyxErudaInitialized){
         eruda.init({container:mount,tool:['console','elements','network','resources','sources','info','snippets'],useShadowDom:true,autoScale:true,defaults:{displaySize:100,transparency:1,theme:'Dark'}});
+        const elementsTool=eruda.get?.('elements');
+        if(elementsTool?._detail){
+          elementsTool._detail._highlight=()=>{};
+        }
         nyxErudaInitialized=true;
       }
       host.hidden=false;
@@ -179,8 +203,21 @@
           element.style.setProperty('width','100%','important');
           element.style.setProperty('height','100%','important');
         });
+        if(panel){
+          panel.style.setProperty('display','block','important');
+          panel.style.setProperty('opacity','1','important');
+        }
         const entry=root?.querySelector('.eruda-entry-btn');
         if(entry) entry.style.setProperty('display','none','important');
+        if(nyxEarlyConsoleBuffering){
+          const buffered=nyxEarlyConsoleEntries.splice(0);
+          nyxEarlyConsoleBuffering=false;
+          console.info(`[Nyx] Developer Console connected. Replaying ${buffered.length} earlier message${buffered.length===1?'':'s'}.`);
+          buffered.forEach(item=>{
+            const method=typeof console[item.level]==='function' ? item.level : 'log';
+            console[method](`[${item.time.toLocaleTimeString()}]`,...item.args);
+          });
+        }
       },125);
     }catch(error){
       if(status){
@@ -3741,7 +3778,7 @@
     gate.setAttribute('aria-hidden','true');
     gate.setAttribute('inert','');
     const startupProgress=showSetupLaunchSplash();
-    requestAnimationFrame(async()=>{
+    setTimeout(async()=>{
       const runStep=async(value,label,task,minimumVisible)=>{
         if(startupProgress?.step) return startupProgress.step(value,label,task,minimumVisible);
         try{return {ok:true,result:await Promise.resolve().then(task)}}catch(error){console.warn(`Startup task failed: ${label}`,error);return {ok:false,error}}
@@ -3797,7 +3834,7 @@
 
       await startupProgress?.complete?.('Nyx is ready');
       scheduleNyxTermsAcceptanceGate(360);
-    });
+    },0);
   }
   const launchPdfOptions={
     math:'assets/docs/1300-maths-formula.pdf'

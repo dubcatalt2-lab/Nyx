@@ -40,17 +40,19 @@
         easing: 'linear',
         fill: 'forwards'
       });
-      const tick = now => {
+      let tickTimer = 0;
+      const tick = () => {
         if (session !== activeSession) {
+          clearTimeout(tickTimer);
           animation?.cancel();
           resolve();
           return;
         }
-        const elapsed = Math.min(1, (now - started) / Math.max(1, duration));
+        const elapsed = Math.min(1, (performance.now() - started) / Math.max(1, duration));
         const value = start + ((end - start) * elapsed);
         updateProgress(splash, value, label, false, false);
         if (elapsed < 1) {
-          requestAnimationFrame(tick);
+          tickTimer = setTimeout(tick, 32);
         } else {
           if (fill) fill.style.transform = `scaleX(${end / 100})`;
           animation?.cancel();
@@ -58,7 +60,7 @@
           resolve();
         }
       };
-      requestAnimationFrame(tick);
+      tickTimer = setTimeout(tick, 0);
     });
   }
 

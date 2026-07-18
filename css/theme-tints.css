@@ -1,0 +1,709 @@
+/* Final theme model: one Default layout/background with restrained tint palettes. */
+html body.browser-shell{
+  --nyx-unified-canvas:#151d2b;
+  --nyx-unified-top:#09111d;
+  --nyx-unified-field:#111a29;
+  --nyx-unified-dot:#202b3d;
+}
+
+/* Startup keeps the same dark Default surface; only its accent is tinted. */
+html body.theme-midnight{
+  --nyx-load-bright:#d6e1f0;--nyx-load-mid:#9eb7d9;--nyx-load-accent:#6f8fb9;--nyx-load-deep:#405b7e;--nyx-load-muted:#8fa2bc;--nyx-load-surface:#101827;--nyx-load-bg:#080e18;--nyx-load-deep-bg:#050912;--nyx-load-glow:transparent;
+}
+html body.theme-default{
+  --nyx-load-bright:#d4deec;--nyx-load-mid:#91acd2;--nyx-load-accent:#6687b2;--nyx-load-deep:#3c587e;--nyx-load-muted:#899bb5;--nyx-load-surface:#101827;--nyx-load-bg:#080e18;--nyx-load-deep-bg:#050912;--nyx-load-glow:transparent;
+}
+html body.theme-ruby{
+  --nyx-load-bright:#e2d7da;--nyx-load-mid:#c99aa4;--nyx-load-accent:#a56573;--nyx-load-deep:#68404a;--nyx-load-muted:#aa9198;--nyx-load-surface:#18151d;--nyx-load-bg:#0e0a0d;--nyx-load-deep-bg:#080507;--nyx-load-glow:transparent;
+}
+html body.theme-emerald{
+  --nyx-load-bright:#d4e2dd;--nyx-load-mid:#91bdae;--nyx-load-accent:#628f80;--nyx-load-deep:#3d6559;--nyx-load-muted:#879f98;--nyx-load-surface:#121a1c;--nyx-load-bg:#091010;--nyx-load-deep-bg:#050909;--nyx-load-glow:transparent;
+}
+html body.theme-sakura{
+  --nyx-load-bright:#e2d9e0;--nyx-load-mid:#c6a0ba;--nyx-load-accent:#9e718f;--nyx-load-deep:#67475f;--nyx-load-muted:#a892a2;--nyx-load-surface:#18151d;--nyx-load-bg:#0e0a10;--nyx-load-deep-bg:#080509;--nyx-load-glow:transparent;
+}
+html body.theme-fresh{
+  --nyx-load-bright:#d4e2e5;--nyx-load-mid:#8fb8c0;--nyx-load-accent:#638e97;--nyx-load-deep:#3e626a;--nyx-load-muted:#879fa4;--nyx-load-surface:#111a1f;--nyx-load-bg:#091015;--nyx-load-deep-bg:#05090c;--nyx-load-glow:transparent;
+}
+
+html body.browser-shell.theme-midnight{
+  --nyx-home-wordmark:#9eb7d9;
+  --nyx-home-text:#d6e1f0;
+  --nyx-home-muted:#8fa2bc;
+  --nyx-home-line:#2d405b;
+  --nyx-home-panel:#101827;
+  --nyx-home-panel-soft:#141f31;
+  --nyx-chrome-accent:#6f8fb9;
+  --nyx-chrome-bright:#9eb7d9;
+  --nyx-chrome-base:#0d1624;
+  --nyx-chrome-deep:#080e18;
+  --nyx-chrome-active:#1b2a40;
+  --nyx-chrome-hover:#21344f;
+  --nyx-shell-icon:#9eb7d9!important;
+  --nyx-final-shortcut-icon:#9eb7d9!important;
+  --nyx-dot-color:#223047;
+}
+html body.browser-shell.theme-default{
+  --nyx-home-wordmark:#91acd2;
+  --nyx-home-text:#d4deec;
+  --nyx-home-muted:#899bb5;
+  --nyx-home-line:#2a3b54;
+  --nyx-home-panel:#101827;
+  --nyx-home-panel-soft:#141f31;
+  --nyx-chrome-accent:#6687b2;
+  --nyx-chrome-bright:#91acd2;
+  --nyx-chrome-base:#0d1624;
+  --nyx-chrome-deep:#080e18;
+  --nyx-chrome-active:#1a293e;
+  --nyx-chrome-hover:#203149;
+  --nyx-shell-icon:#91acd2!important;
+  --nyx-final-shortcut-icon:#91acd2!important;
+  --nyx-dot-color:#202b3d;
+}
+html body.browser-shell.theme-ruby{
+  --nyx-home-wordmark:#c99aa4;
+  --nyx-home-text:#e2d7da;
+  --nyx-home-muted:#aa9198;
+  --nyx-home-line:#50333c;
+  --nyx-home-panel:#18151d;
+  --nyx-home-panel-soft:#211922;
+  --nyx-chrome-accent:#a56573;
+  --nyx-chrome-bright:#c99aa4;
+  --nyx-chrome-base:#18131a;
+  --nyx-chrome-deep:#0e0a0d;
+  --nyx-chrome-active:#35202a;
+  --nyx-chrome-hover:#402732;
+  --nyx-shell-icon:#c99aa4!important;
+  --nyx-final-shortcut-icon:#c99aa4!important;
+  --nyx-dot-color:#332733;
+}
+html body.browser-shell.theme-emerald{
+  --nyx-home-wordmark:#91bdae;
+  --nyx-home-text:#d4e2dd;
+  --nyx-home-muted:#879f98;
+  --nyx-home-line:#2f4a42;
+  --nyx-home-panel:#121a1c;
+  --nyx-home-panel-soft:#172224;
+  --nyx-chrome-accent:#628f80;
+  --nyx-chrome-bright:#91bdae;
+  --nyx-chrome-base:#101a1b;
+  --nyx-chrome-deep:#091010;
+  --nyx-chrome-active:#203531;
+  --nyx-chrome-hover:#28413b;
+  --nyx-shell-icon:#91bdae!important;
+  --nyx-final-shortcut-icon:#91bdae!important;
+  --nyx-dot-color:#24343a;
+}
+html body.browser-shell.theme-sakura{
+  --nyx-home-wordmark:#c6a0ba;
+  --nyx-home-text:#e2d9e0;
+  --nyx-home-muted:#a892a2;
+  --nyx-home-line:#4c3748;
+  --nyx-home-panel:#18151d;
+  --nyx-home-panel-soft:#211a23;
+  --nyx-chrome-accent:#9e718f;
+  --nyx-chrome-bright:#c6a0ba;
+  --nyx-chrome-base:#18141b;
+  --nyx-chrome-deep:#0e0a10;
+  --nyx-chrome-active:#332536;
+  --nyx-chrome-hover:#3e2d41;
+  --nyx-shell-icon:#c6a0ba!important;
+  --nyx-final-shortcut-icon:#c6a0ba!important;
+  --nyx-dot-color:#332936;
+}
+html body.browser-shell.theme-fresh{
+  --nyx-home-wordmark:#8fb8c0;
+  --nyx-home-text:#d4e2e5;
+  --nyx-home-muted:#879fa4;
+  --nyx-home-line:#304850;
+  --nyx-home-panel:#111a1f;
+  --nyx-home-panel-soft:#172228;
+  --nyx-chrome-accent:#638e97;
+  --nyx-chrome-bright:#8fb8c0;
+  --nyx-chrome-base:#10191e;
+  --nyx-chrome-deep:#091015;
+  --nyx-chrome-active:#20333a;
+  --nyx-chrome-hover:#284049;
+  --nyx-shell-icon:#8fb8c0!important;
+  --nyx-final-shortcut-icon:#8fb8c0!important;
+  --nyx-dot-color:#24343d;
+  color-scheme:dark!important;
+}
+
+/* Preserve custom user backgrounds. All built-in themes otherwise share the
+   exact Default canvas and dot pattern. */
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh):not(.custom-bg-active){
+  background:var(--nyx-unified-canvas)!important;
+  background-image:none!important;
+}
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh):not(.custom-bg-active)::before,
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh):not(.custom-bg-active)::after{
+  background:transparent!important;
+  background-image:none!important;
+  filter:none!important;
+}
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh):not(.custom-bg-active) :is(#nyxWaveBg,.nyx-wave-bg,#defaultVantaBg){
+  display:none!important;
+}
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh):not(.custom-bg-active)
+  :is(.browser-window.browser-home-page,.browser-window.maximized.browser-blank,.browser-window.maximized:has(.browser-home:not(.hidden)),.browser-home){
+  background:var(--nyx-unified-canvas)!important;
+  background-image:none!important;
+  border-color:var(--nyx-home-line)!important;
+}
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh):not(.custom-bg-active)
+  :is(.browser-window.browser-home-page,.browser-window.maximized.browser-blank,.browser-window.maximized:has(.browser-home:not(.hidden)))::before,
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh):not(.custom-bg-active)
+  :is(.browser-window.browser-home-page,.browser-window.maximized.browser-blank,.browser-window.maximized:has(.browser-home:not(.hidden)))::after{
+  background:transparent!important;
+  background-image:none!important;
+}
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-window.browser-home-page .browser-home::after{
+  content:none!important;
+  display:none!important;
+  background:none!important;
+  opacity:0!important;
+}
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-window.browser-home-page .nyx-home-dot-field{
+  display:block!important;
+}
+
+/* Default chrome geometry and surfaces, tinted only through variables above. */
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh) .top-os{
+  background:var(--nyx-unified-top)!important;
+  background-image:none!important;
+  border-bottom:1px solid var(--nyx-home-line)!important;
+  box-shadow:none!important;
+}
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .top-os.top-os .browser-mode-url{
+  background:var(--nyx-unified-field)!important;
+  background-image:none!important;
+  border-color:var(--nyx-home-line)!important;
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+  box-shadow:none!important;
+}
+html body.browser-shell.theme-fresh :is(input,select,textarea,.settings-input,.settings-select,.panic-key-display){
+  background-color:var(--nyx-unified-field)!important;
+  background-image:none!important;
+  border-color:var(--nyx-home-line)!important;
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+}
+
+/* Every built-in theme uses the Default homepage spacing and shortcut geometry. */
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-window.browser-home-page .browser-home{
+  justify-content:flex-start!important;
+  gap:27px!important;
+  padding:58px 24px 24px!important;
+}
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-home .nyx-home-hero{
+  width:100%!important;
+  max-width:none!important;
+  gap:34px!important;
+  transform:none!important;
+}
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-window.browser-home-page .nyx-home-search{
+  width:min(640px,100%)!important;
+  height:54px!important;
+  border-radius:21px!important;
+}
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-window.browser-home-page .nyx-home-actions{
+  gap:10px!important;
+}
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-window.browser-home-page .nyx-home-actions > button{
+  min-width:132px!important;
+  height:46px!important;
+  gap:10px!important;
+  padding:0 19px!important;
+  font-size:14px!important;
+}
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts]{
+  position:relative!important;
+  inset:auto!important;
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  flex-wrap:nowrap!important;
+  gap:12px!important;
+  width:auto!important;
+  max-width:min(760px,calc(100vw - 40px))!important;
+  min-height:84px!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  overflow:visible!important;
+  transform:none!important;
+}
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > :is(.home-shortcut,.home-shortcut-add){
+  position:relative!important;
+  inset:auto!important;
+  flex:0 0 72px!important;
+  width:72px!important;
+  min-width:72px!important;
+  max-width:72px!important;
+  height:82px!important;
+  min-height:82px!important;
+  max-height:82px!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:14px!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > .home-shortcut-add{
+  display:block!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+}
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-home .home-shortcut-add > b{
+  position:absolute!important;
+  inset:3px auto auto 14px!important;
+  display:grid!important;
+  place-items:center!important;
+  width:44px!important;
+  min-width:44px!important;
+  max-width:44px!important;
+  height:44px!important;
+  min-height:44px!important;
+  max-height:44px!important;
+  margin:0!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+  border:1px solid color-mix(in srgb,var(--nyx-home-line) 72%,rgba(255,255,255,.08))!important;
+  border-radius:50%!important;
+  background:color-mix(in srgb,var(--nyx-home-panel-soft) 78%,transparent)!important;
+  color:var(--nyx-home-wordmark)!important;
+  -webkit-text-fill-color:var(--nyx-home-wordmark)!important;
+  font:300 25px/1 Outfit,Arial,sans-serif!important;
+  transform:none!important;
+}
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-home .home-shortcut-add > span{
+  position:absolute!important;
+  inset:59px auto auto 3px!important;
+  width:66px!important;
+  height:auto!important;
+  margin:0!important;
+  overflow:hidden!important;
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+  font:400 11px/1.15 Outfit,Arial,sans-serif!important;
+  text-align:center!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+
+/* High-specificity normalization beats older per-theme layout rules. */
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-window.browser-home-page .browser-home{
+  justify-content:flex-start!important;
+  gap:27px!important;
+  padding:58px 24px 24px!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-home .nyx-home-hero{
+  width:100%!important;
+  max-width:none!important;
+  gap:34px!important;
+  transform:none!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-home .nyx-home-hero::before{
+  content:"NYX  /  NIGHT WORKSPACE"!important;
+  position:relative!important;
+  inset:auto!important;
+  display:block!important;
+  width:auto!important;
+  height:auto!important;
+  margin:0 0 -7px!important;
+  background:none!important;
+  color:var(--nyx-home-muted)!important;
+  -webkit-text-fill-color:var(--nyx-home-muted)!important;
+  font:500 10px/1 Outfit,Arial,sans-serif!important;
+  letter-spacing:.28em!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-home .nyx-home-hero::after{content:none!important}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-window.browser-home-page .browser-home h1.nyx-home-title{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:14px!important;
+  background:none!important;
+  color:var(--nyx-home-wordmark)!important;
+  -webkit-text-fill-color:var(--nyx-home-wordmark)!important;
+  font-size:50px!important;
+  font-weight:400!important;
+  font-variation-settings:"wght" 400!important;
+  line-height:1!important;
+  letter-spacing:.01em!important;
+  text-shadow:none!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-window.browser-home-page .browser-home h1.nyx-home-title::before{
+  width:46px!important;
+  height:46px!important;
+  flex:0 0 46px!important;
+  border:0!important;
+  border-radius:0!important;
+  background-color:transparent!important;
+  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-logo.png"))!important;
+  background-position:center!important;
+  background-size:195%!important;
+  background-repeat:no-repeat!important;
+  box-shadow:none!important;
+  clip-path:none!important;
+  transform:none!important;
+  filter:none!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-window.browser-home-page .nyx-home-search{
+  width:min(640px,calc(100vw - 48px))!important;
+  height:54px!important;
+  border:1px solid var(--nyx-home-line)!important;
+  border-radius:21px!important;
+  background:var(--nyx-unified-field)!important;
+  background-image:none!important;
+  box-shadow:0 8px 22px rgba(2,6,13,.15)!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-window.browser-home-page .nyx-home-actions{
+  position:relative!important;
+  inset:auto!important;
+  z-index:4!important;
+  width:min(470px,100%)!important;
+  height:48px!important;
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:4px!important;
+  padding:4px!important;
+  box-sizing:border-box!important;
+  border:1px solid var(--nyx-home-line)!important;
+  border-radius:15px!important;
+  background:color-mix(in srgb,var(--nyx-home-panel) 86%,transparent)!important;
+  box-shadow:0 10px 25px rgba(2,6,13,.14)!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-window.browser-home-page .nyx-home-actions > button{
+  width:100%!important;
+  min-width:0!important;
+  height:38px!important;
+  min-height:38px!important;
+  justify-content:center!important;
+  gap:8px!important;
+  padding:0 13px!important;
+  box-sizing:border-box!important;
+  border:1px solid transparent!important;
+  border-radius:10px!important;
+  background:transparent!important;
+  background-image:none!important;
+  color:var(--nyx-home-muted)!important;
+  -webkit-text-fill-color:var(--nyx-home-muted)!important;
+  font-size:13px!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-window.browser-home-page .nyx-home-actions > button:hover{
+  border-color:color-mix(in srgb,var(--nyx-home-line) 78%,transparent)!important;
+  background:color-mix(in srgb,var(--nyx-home-panel-soft) 82%,transparent)!important;
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-window.browser-home-page .nyx-home-action-icon{
+  width:16px!important;
+  height:16px!important;
+  flex:0 0 16px!important;
+  background:var(--nyx-home-wordmark)!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts]{
+  position:relative!important;
+  inset:auto!important;
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  flex-wrap:nowrap!important;
+  gap:12px!important;
+  width:auto!important;
+  max-width:min(760px,calc(100vw - 40px))!important;
+  min-height:84px!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+  transform:none!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > :is(.home-shortcut,.home-shortcut-add){
+  position:relative!important;
+  inset:auto!important;
+  flex:0 0 72px!important;
+  width:72px!important;
+  min-width:72px!important;
+  max-width:72px!important;
+  height:82px!important;
+  min-height:82px!important;
+  max-height:82px!important;
+  margin:0!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+  border:0!important;
+  border-radius:14px!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > .home-shortcut-add{
+  display:block!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-home .home-shortcut-add > b{
+  position:absolute!important;
+  inset:3px auto auto 14px!important;
+  display:grid!important;
+  place-items:center!important;
+  width:44px!important;
+  min-width:44px!important;
+  max-width:44px!important;
+  height:44px!important;
+  min-height:44px!important;
+  max-height:44px!important;
+  margin:0!important;
+  padding:0!important;
+  border:1px solid var(--nyx-home-line)!important;
+  border-radius:50%!important;
+  background:var(--nyx-home-panel)!important;
+  color:var(--nyx-home-wordmark)!important;
+  -webkit-text-fill-color:var(--nyx-home-wordmark)!important;
+  box-shadow:0 8px 18px rgba(2,6,13,.16)!important;
+  font:300 25px/1 Outfit,Arial,sans-serif!important;
+  transform:none!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-home .home-shortcut-add > span{
+  position:absolute!important;
+  inset:60px auto auto 3px!important;
+  width:66px!important;
+  margin:0!important;
+  color:var(--nyx-home-muted)!important;
+  -webkit-text-fill-color:var(--nyx-home-muted)!important;
+  font:400 11px/1.15 Outfit,Arial,sans-serif!important;
+  text-align:center!important;
+  transform:none!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-home .nyx-home-dot-field{
+  display:block!important;
+  opacity:.72!important;
+  --nyx-dot-color:inherit;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-default .browser-home .nyx-home-dot-field{--nyx-dot-color:#202b3d}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-midnight:not(.theme-default) .browser-home .nyx-home-dot-field{--nyx-dot-color:#223047}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-ruby .browser-home .nyx-home-dot-field{--nyx-dot-color:#332733}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-emerald .browser-home .nyx-home-dot-field{--nyx-dot-color:#24343a}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-sakura .browser-home .nyx-home-dot-field{--nyx-dot-color:#332936}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-fresh .browser-home .nyx-home-dot-field{--nyx-dot-color:#24343d}
+
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-home .home-shortcut-grid .home-shortcut-open{
+  position:relative!important;
+  inset:auto!important;
+  width:72px!important;
+  min-width:72px!important;
+  max-width:72px!important;
+  height:82px!important;
+  min-height:82px!important;
+  max-height:82px!important;
+  display:block!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:14px!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-home .home-shortcut-grid .home-shortcut-open::before{
+  content:""!important;
+  position:absolute!important;
+  inset:3px auto auto 14px!important;
+  width:44px!important;
+  height:44px!important;
+  border:1px solid var(--nyx-home-line)!important;
+  border-radius:50%!important;
+  background:color-mix(in srgb,var(--nyx-home-panel) 88%,transparent)!important;
+  box-shadow:0 8px 18px rgba(2,6,13,.16)!important;
+  backdrop-filter:blur(12px)!important;
+  -webkit-backdrop-filter:blur(12px)!important;
+  transform:none!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-home .home-shortcut-grid .home-shortcut:hover .home-shortcut-open::before{
+  border-color:var(--nyx-home-wordmark)!important;
+  background:color-mix(in srgb,var(--nyx-home-panel-soft) 82%,transparent)!important;
+  box-shadow:0 8px 18px rgba(2,6,13,.16)!important;
+  backdrop-filter:blur(16px)!important;
+  -webkit-backdrop-filter:blur(16px)!important;
+  transform:none!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-home .home-shortcut-grid .home-shortcut-open > :is(.quick-icon,.home-shortcut-glyph){
+  position:absolute!important;
+  inset:11px auto auto 22px!important;
+  z-index:1!important;
+  width:28px!important;
+  min-width:28px!important;
+  max-width:28px!important;
+  height:28px!important;
+  min-height:28px!important;
+  max-height:28px!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:8px!important;
+  background-color:var(--nyx-home-wordmark)!important;
+  box-shadow:none!important;
+  object-fit:contain!important;
+  transform:none!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
+  .browser-home .home-shortcut-grid .home-shortcut-open > span:last-child{
+  position:absolute!important;
+  inset:60px auto auto 3px!important;
+  z-index:1!important;
+  width:66px!important;
+  height:auto!important;
+  margin:0!important;
+  overflow:hidden!important;
+  clip:auto!important;
+  color:var(--nyx-home-muted)!important;
+  -webkit-text-fill-color:var(--nyx-home-muted)!important;
+  font:400 11px/1.15 Outfit,Arial,sans-serif!important;
+  text-align:center!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  transform:none!important;
+}
+
+/* Shared dark chrome and utility surfaces; palettes only tint borders/icons. */
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh){
+  --weather-accent:var(--nyx-home-wordmark);
+  --weather-accent-soft:color-mix(in srgb,var(--nyx-home-wordmark) 14%,transparent);
+  --weather-panel-bg:color-mix(in srgb,var(--nyx-home-panel) 95%,#080e18);
+  --weather-card-bg:color-mix(in srgb,var(--nyx-home-panel-soft) 72%,transparent);
+  --weather-card-hover:color-mix(in srgb,var(--nyx-home-panel-soft) 90%,transparent);
+  --weather-line:color-mix(in srgb,var(--nyx-home-line) 84%,transparent);
+  --weather-text:var(--nyx-home-text);
+  --weather-muted:var(--nyx-home-muted);
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh) .top-os{
+  background:var(--nyx-unified-top)!important;
+  background-image:none!important;
+  border-bottom:1px solid var(--nyx-home-line)!important;
+  color:var(--nyx-home-text)!important;
+  box-shadow:none!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh) .top-os.top-os :is(
+  .browser-mode-app-button,
+  .browser-mode-shell-tab,
+  .browser-mode-tab,
+  .browser-mode-address > button
+){
+  background:var(--nyx-chrome-base)!important;
+  background-image:none!important;
+  border-color:var(--nyx-home-line)!important;
+  color:var(--nyx-home-wordmark)!important;
+  -webkit-text-fill-color:var(--nyx-home-wordmark)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03)!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh) .top-os.top-os .brand-mini > :is(
+  .browser-mode-app-button,
+  .browser-mode-shell-tab,
+  .browser-mode-tab
+).active{
+  background:var(--nyx-chrome-active)!important;
+  background-image:none!important;
+  border-color:var(--nyx-chrome-accent)!important;
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.045)!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh) .top-os.top-os :is(
+  .browser-mode-app-button,
+  .browser-mode-shell-tab,
+  .browser-mode-tab,
+  .browser-mode-address > button
+):hover{
+  background:var(--nyx-chrome-hover)!important;
+  background-image:none!important;
+  border-color:var(--nyx-chrome-bright)!important;
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05)!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh) .browser-home :is(.nyx-home-weather,.nyx-home-utility-links button){
+  border-color:var(--nyx-home-line)!important;
+  background:color-mix(in srgb,var(--nyx-home-panel) 84%,transparent)!important;
+  background-image:none!important;
+  color:var(--nyx-home-muted)!important;
+  -webkit-text-fill-color:var(--nyx-home-muted)!important;
+  box-shadow:none!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh) .top-os.top-os :is(
+  .browser-mode-app-button,
+  .browser-mode-shell-tab,
+  .browser-mode-tab,
+  .browser-mode-address > button,
+  .browser-top-clock
+) :is(span,strong),
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh) .top-os.top-os :is(
+  .browser-mode-app-button,
+  .browser-mode-shell-tab,
+  .browser-mode-tab,
+  .browser-mode-address > button
+)::before,
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh) .top-os.top-os :is(
+  .browser-mode-app-button,
+  .browser-mode-shell-tab,
+  .browser-mode-tab,
+  .browser-mode-address > button
+)::after{
+  color:var(--nyx-home-wordmark)!important;
+  -webkit-text-fill-color:var(--nyx-home-wordmark)!important;
+  text-shadow:none!important;
+  filter:none!important;
+}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh) .top-os > .browser-top-clock{
+  color:var(--nyx-home-muted)!important;
+  -webkit-text-fill-color:var(--nyx-home-muted)!important;
+  text-shadow:none!important;
+}

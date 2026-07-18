@@ -304,8 +304,8 @@ async function loadLibrary() {
   state.gamesByKey = new Map(state.games.map(game => [game.key, game]));
   const iconCount = state.games.filter(game => game.hasIcon).length;
   const miscCount = state.games.length - iconCount;
-  elements.library.options[0].textContent = `Games (${iconCount.toLocaleString()})`;
-  elements.library.options[1].textContent = `Misc. Games (${miscCount.toLocaleString()})`;
+  elements.library.options[0].textContent = `Study (${iconCount.toLocaleString()})`;
+  elements.library.options[1].textContent = `Misc. Study (${miscCount.toLocaleString()})`;
   elements.progress.classList.add('done');
   render();
 

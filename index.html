@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ռʏӼ</title>
 <!-- //startup-cloak -->
+<script src="js/nyx-logo.js?v=20260717-muted-theme-logo-v3"></script>
 <script src="startup.js"></script>
-<link id="appFavicon" rel="icon" type="image/png" sizes="512x512" href="./assets/icons/firefly-tab-logo-bold.png">
-<link rel="stylesheet" href="styles.css?v=20260716-rounded-blur-actions-v29">
+<link id="appFavicon" rel="icon" type="image/png" sizes="256x256" href="./assets/icons/nyx-logo.png">
+<link rel="stylesheet" href="styles.css?v=20260717-unified-themes-v72">
 
 </head>
 <body>
@@ -47,7 +48,7 @@
     <div class="setup-grid">
       <section class="setup-step active" data-setup-step="0">
         <div class="setup-welcome-step">
-          <div class="setup-welcome-logo" aria-hidden="true">ռ</div>
+          <div class="setup-welcome-logo" data-nyx-logo aria-label="Nyx"></div>
           <h2>Welcome to Nyx</h2>
           <p>Customize your experience before Nyx opens. Pick your look, effects, browser, search engine, and font in a few quick steps.</p>
           <span class="setup-welcome-hint"><kbd>Enter</kbd> to continue</span>
@@ -154,7 +155,7 @@
         <p>Quick check before Nyx launches.</p>
         <div class="setup-final-preview">
           <div class="setup-final-stage" data-setup-final-stage data-theme="default">
-            <div class="setup-final-logo">ռ</div>
+            <div class="setup-final-logo" data-nyx-logo aria-label="Nyx"></div>
             <div class="setup-final-search">Search or enter a URL</div>
             <div class="setup-final-shortcuts"><span></span><span></span><span></span><span></span></div>
           </div>
@@ -197,16 +198,10 @@
 </div>
 <div id="setupLaunchScreen" class="setup-launch-screen" aria-hidden="true">
   <div class="setup-launch-card">
-    <h2>Nyx<span class="nyx-title-shimmer shimmer-one" aria-hidden="true">Nyx</span><span class="nyx-title-shimmer shimmer-two" aria-hidden="true">Nyx</span></h2>
     <div class="nyx-loading-row">
       <div class="nyx-loading-progress" role="progressbar" aria-label="Starting Nyx" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
       <strong class="nyx-loading-percent" data-nyx-loading-percent>0%</strong>
     </div>
-    <div class="nyx-loading-status">
-      <span class="nyx-loading-spinner" aria-hidden="true"></span>
-      <p class="nyx-loading-stage" data-nyx-loading-stage aria-live="polite">Preparing Nyx</p>
-    </div>
-    <p class="setup-launch-credit">Developed by 1aqlla</p>
   </div>
 </div>
 <!-- //cloak-launch-menu -->
@@ -320,13 +315,16 @@
     <div class="weather-panel-head">
       <span class="weather-panel-title">Weather</span>
       <div class="weather-head-actions">
-        <button class="weather-icon-btn" data-weather-refresh title="Refresh weather">&#8635;</button>
-        <button class="weather-icon-btn" data-weather-minimize title="Minimize weather" aria-label="Minimize weather">-</button>
+        <button class="weather-icon-btn" data-weather-refresh title="Refresh weather" aria-label="Refresh weather"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"/><path d="M20 4v7h-7"/></svg></button>
+        <button class="weather-icon-btn" data-weather-minimize title="Close weather" aria-label="Close weather"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg></button>
       </div>
     </div>
     <form class="weather-search" data-weather-search>
-      <input data-weather-query placeholder="Search location" autocomplete="off">
-      <button type="submit">Go</button>
+      <label class="weather-search-box">
+        <span class="weather-search-symbol" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5"/><line x1="13" y1="13" x2="10.5" y2="10.5"/></svg></span>
+        <input data-weather-query placeholder="Search a city..." autocomplete="off" spellcheck="false" aria-label="Search location">
+      </label>
+      <button type="submit" title="Search location" aria-label="Search location"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s-7-6.3-7-11a7 7 0 1 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></button>
     </form>
     <select class="weather-options" data-weather-options hidden aria-label="Select matching location"></select>
     <div class="weather-current">
@@ -355,7 +353,7 @@
 <!-- //dock-app-launcher -->
 <nav class="dock">
   <button title="Home" data-open="home">🪐</button>
-  <button title="Games" data-open="apps">🎮</button>
+  <button title="Study" data-open="apps">🎮</button>
   <button title="Apps" data-open="apps">Apps</button>
   <button title="Links" data-open="links">Links</button>
   <button title="Browser" data-open="browser">Web</button>
@@ -372,6 +370,6 @@
 <script src="./assets/vendor/vanta.clouds.min.js"></script>
 <script src="/runtime-config.js"></script>
 <script src="js/loading-screen.js?v=20260715-smooth-startup-progress-v7"></script>
-<script src="script.js?v=20260716-remove-search-key-v13"></script>
+<script src="script.js?v=20260717-theme-dot-field-v36"></script>
 </body>
 </html>

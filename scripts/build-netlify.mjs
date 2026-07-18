@@ -19,7 +19,7 @@ const rootFiles = new Set([
   "uv.sw.js",
   "scramjet.sw.js"
 ]);
-const staticPrefixes = ["assets/", "css/", "js/"];
+const staticPrefixes = ["apps/", "assets/", "css/", "js/"];
 const blockedExtensions = /\.(?:7z|avi|mkv|mov|mp4|rar|webm|zip)$/i;
 const skippedLargeFiles = [];
 

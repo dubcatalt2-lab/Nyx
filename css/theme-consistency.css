@@ -6,12 +6,12 @@ html body.browser-shell:is(.theme-midnight,.theme-ruby,.theme-emerald,.theme-sak
   border-color:color-mix(in srgb,var(--nyx-chrome-accent) 58%,transparent)!important;
   color:var(--nyx-chrome-bright)!important;
   -webkit-text-fill-color:var(--nyx-chrome-bright)!important;
-  box-shadow:0 0 8px color-mix(in srgb,var(--nyx-chrome-accent) 18%,transparent),inset 0 1px 0 color-mix(in srgb,var(--nyx-chrome-bright) 12%,transparent)!important;
+  box-shadow:inset 0 1px 0 color-mix(in srgb,var(--nyx-chrome-bright) 12%,transparent)!important;
 }
 
 html body.browser-shell:not(.lag-reducer):is(.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
   .top-os.top-os form.browser-mode-address > button{
-  transition:transform 1.05s cubic-bezier(.16,1,.3,1),background-color 1.05s,border-color 1.05s,box-shadow 1.05s,color 1.05s,opacity 1.05s,filter 1.05s!important;
+  transition:transform .22s cubic-bezier(.2,.8,.2,1),background-color .22s ease,border-color .22s ease,box-shadow .22s ease,color .22s ease,opacity .22s ease,filter .22s ease!important;
 }
 
 html body.browser-shell:is(.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
@@ -19,7 +19,7 @@ html body.browser-shell:is(.theme-midnight,.theme-ruby,.theme-emerald,.theme-sak
   background-color:var(--nyx-chrome-hover)!important;
   background-image:linear-gradient(118deg,color-mix(in srgb,var(--nyx-chrome-bright) 42%,var(--nyx-chrome-hover)),var(--nyx-chrome-hover) 50%,var(--nyx-chrome-deep))!important;
   border-color:var(--nyx-chrome-bright)!important;
-  box-shadow:0 0 12px color-mix(in srgb,var(--nyx-chrome-accent) 30%,transparent),inset 0 1px 0 color-mix(in srgb,var(--nyx-chrome-bright) 22%,transparent)!important;
+  box-shadow:0 10px 24px rgba(0,0,0,.22),inset 0 1px 0 color-mix(in srgb,var(--nyx-chrome-bright) 22%,transparent)!important;
 }
 
 html body.browser-shell:is(.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
@@ -52,7 +52,7 @@ html body.browser-shell:is(.theme-midnight,.theme-ruby,.theme-emerald,.theme-sak
   line-height:0!important;
   transform:translate(-50%,-50%)!important;
   transform-origin:center!important;
-  filter:drop-shadow(0 0 7px color-mix(in srgb,var(--nyx-nav-arrow) 42%,transparent))!important;
+  filter:none!important;
 }
 html body.browser-shell:is(.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
   .top-os.top-os form.browser-mode-address > button[data-browser-shell-back]::before{
@@ -109,40 +109,76 @@ html body.browser-shell:not(.lag-reducer):is(.theme-midnight,.theme-ruby,.theme-
 }
 
 /* One shared Apps/Games/Settings-style interaction for real controls. */
+html body.browser-shell .top-os .brand-mini > button[data-browser-shell-home]{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:8px!important;
+  padding-left:12px!important;
+}
+html body.browser-shell .top-os .brand-mini > button[data-browser-shell-home]::before{
+  content:none!important;
+  display:none!important;
+}
+html body.browser-shell .top-os .brand-mini > button[data-browser-shell-home] > .browser-home-icon{
+  display:block!important;
+  position:relative!important;
+  width:18px!important;
+  height:18px!important;
+  flex:0 0 18px!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:currentColor!important;
+  background-image:none!important;
+  transform:none!important;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.5 10.5 12 3.8l8.5 6.7v9.2a.8.8 0 0 1-.8.8h-5.1v-6.3H9.4v6.3H4.3a.8.8 0 0 1-.8-.8z' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat!important;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.5 10.5 12 3.8l8.5 6.7v9.2a.8.8 0 0 1-.8.8h-5.1v-6.3H9.4v6.3H4.3a.8.8 0 0 1-.8-.8z' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat!important;
+  color:inherit!important;
+  filter:none!important;
+}
+html body.browser-shell .top-os .brand-mini > button[data-browser-shell-home] > .browser-home-label{
+  display:block!important;
+  min-width:0!important;
+  margin:0!important;
+  line-height:1!important;
+}
+
 html body.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not(.formula-exit-zone):not([data-no-button-motion]):not(:disabled){
   transform-origin:center!important;
-  transition:transform .24s cubic-bezier(.2,.8,.2,1),border-color .24s ease,background-color .24s ease,box-shadow .24s ease,filter .24s ease!important;
+  --nyx-button-hover-scale:1.035;
+  transition:transform .22s cubic-bezier(.2,.8,.2,1),border-color .22s ease,background-color .22s ease,box-shadow .22s ease,filter .22s ease!important;
   will-change:transform,filter;
 }
 html body.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not(.formula-exit-zone):not([data-no-button-motion]):not(:disabled):hover{
   transform:translateY(-2px) scale(var(--nyx-button-hover-scale,1.035))!important;
   border-color:color-mix(in srgb,var(--nyx-home-wordmark,var(--nyx-chrome-accent,var(--theme-border,#78aaff))) 78%,rgba(255,255,255,.16))!important;
-  box-shadow:0 18px 42px rgba(0,0,0,.28),0 0 26px color-mix(in srgb,var(--nyx-home-wordmark,var(--nyx-chrome-accent,var(--theme-border,#78aaff))) 18%,transparent),inset 0 1px 0 rgba(255,255,255,.08)!important;
-  filter:brightness(1.08)!important;
+  box-shadow:0 10px 24px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.08)!important;
+  filter:brightness(1.05)!important;
 }
 
-/* Compact browser-chrome controls need a larger optical scale than full-size buttons. */
+/* Every real button uses exactly the same hover scale. */
 html body.browser-shell .top-os.top-os form.browser-mode-address > button:not(:disabled){
-  --nyx-button-hover-scale:1.11;
+  --nyx-button-hover-scale:1.035;
 }
 html body.browser-shell .top-os.top-os .brand-mini > :is(.browser-mode-app-button,.browser-mode-shell-tab,.browser-mode-tab):not(:disabled){
-  --nyx-button-hover-scale:1.065;
+  --nyx-button-hover-scale:1.035;
 }
 html body.browser-shell .top-os.top-os .browser-mode-menu > button:not(:disabled){
-  --nyx-button-hover-scale:1.045;
+  --nyx-button-hover-scale:1.035;
 }
 html body.browser-shell .top-os.top-os .browser-mode-shell-tab-close:hover{
-  transform:translateY(-50%) scale(1.18)!important;
-  filter:brightness(1.12)!important;
+  transform:translateY(-50%) scale(1.035)!important;
+  filter:brightness(1.05)!important;
 }
 html body.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not(.formula-exit-zone):not([data-no-button-motion]):not(:disabled):focus-visible{
   outline:2px solid color-mix(in srgb,var(--nyx-home-wordmark,var(--nyx-chrome-accent,var(--theme-border,#78aaff))) 78%,white)!important;
   outline-offset:3px!important;
-  box-shadow:0 0 0 4px color-mix(in srgb,var(--nyx-home-wordmark,var(--nyx-chrome-accent,var(--theme-border,#78aaff))) 16%,transparent),0 0 28px color-mix(in srgb,var(--nyx-home-wordmark,var(--nyx-chrome-accent,var(--theme-border,#78aaff))) 22%,transparent)!important;
+  box-shadow:none!important;
 }
 html body.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not(.formula-exit-zone):not([data-no-button-motion]):not(:disabled):active{
-  transform:translateY(0) scale(.965)!important;
-  box-shadow:0 7px 18px rgba(0,0,0,.28),0 0 34px color-mix(in srgb,var(--nyx-home-wordmark,var(--nyx-chrome-accent,var(--theme-border,#78aaff))) 30%,transparent),inset 0 1px 5px rgba(0,0,0,.24)!important;
+  transform:translateY(0) scale(.98)!important;
+  box-shadow:0 7px 18px rgba(0,0,0,.24),inset 0 1px 5px rgba(0,0,0,.24)!important;
   filter:brightness(.96)!important;
   transition-duration:.08s!important;
 }
@@ -150,9 +186,29 @@ html body.browser-shell button.nyx-button-click:not(.quick-tile):not(.setup-them
   animation:nyxSharedButtonClick .34s cubic-bezier(.2,.8,.2,1) both!important;
 }
 @keyframes nyxSharedButtonClick{
-  0%{transform:translateY(-2px) scale(var(--nyx-button-hover-scale,1.035));filter:brightness(1.08)}
-  38%{transform:translateY(0) scale(.965);filter:brightness(.96);box-shadow:0 7px 18px rgba(0,0,0,.28),0 0 36px color-mix(in srgb,var(--nyx-home-wordmark,var(--nyx-chrome-accent,var(--theme-border,#78aaff))) 34%,transparent)}
-  100%{transform:translateY(-2px) scale(var(--nyx-button-hover-scale,1.035));filter:brightness(1.08)}
+  0%{transform:translateY(-2px) scale(1.035);filter:brightness(1.05)}
+  38%{transform:translateY(0) scale(.98);filter:brightness(.97);box-shadow:0 7px 18px rgba(0,0,0,.24)}
+  100%{transform:translateY(-2px) scale(1.035);filter:brightness(1.05)}
+}
+
+/* High-specificity normalization prevents older theme rules from changing hover timing. */
+html body.browser-shell.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not(.formula-exit-zone):not([data-no-button-motion]):not(:disabled){
+  --nyx-button-hover-scale:1.035!important;
+  transition-duration:.22s!important;
+  transition-timing-function:cubic-bezier(.2,.8,.2,1)!important;
+}
+html body.browser-shell.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not(.formula-exit-zone):not([data-no-button-motion]):not(:disabled):hover{
+  transform:translateY(-2px) scale(1.035)!important;
+  filter:brightness(1.05)!important;
+  box-shadow:0 10px 24px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.08)!important;
+}
+html body.browser-shell.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not(.formula-exit-zone):not([data-no-button-motion]):not(:disabled):active{
+  transform:translateY(0) scale(.98)!important;
+  filter:brightness(.97)!important;
+  box-shadow:0 7px 18px rgba(0,0,0,.24),inset 0 1px 5px rgba(0,0,0,.24)!important;
+}
+html body.browser-shell.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not(.formula-exit-zone):not([data-no-button-motion]):focus-visible{
+  box-shadow:none!important;
 }
 
 /* Give every theme Midnight's two-pass loading-title shimmer. */

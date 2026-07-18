@@ -3,12 +3,12 @@
 
   const source='/assets/icons/nyx-logo.png';
   const colors={
-    default:'#72a5d4',
-    midnight:'#72a5d4',
-    ruby:'#ef7187',
-    emerald:'#45c696',
-    sakura:'#e887bb',
-    fresh:'#29aba4'
+    default:'#6687b2',
+    midnight:'#6f8fb9',
+    ruby:'#a56573',
+    emerald:'#628f80',
+    sakura:'#9e718f',
+    fresh:'#638e97'
   };
   const cache=new Map();
   const croppedCache=new Map();
@@ -90,6 +90,7 @@
   async function apply(theme='default',root=document){
     const url=await themedUrl(theme);
     root.documentElement?.style.setProperty('--nyx-themed-logo-url',`url("${url}")`);
+    root.body?.style.setProperty('--nyx-themed-logo-url',`url("${url}")`);
     root.querySelectorAll?.('[data-nyx-logo],img[src$="/assets/icons/nyx-logo.png"],img[src$="firefly-tab-logo-bold.png"]').forEach(element=>{
       element.dataset.nyxLogo='true';
       if(element.tagName==='IMG') element.src=url;

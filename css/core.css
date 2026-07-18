@@ -3040,18 +3040,18 @@ body.theme-fresh .browser-search-suggestion{
 .setup-launch-screen{position:fixed;inset:0;z-index:4700;display:none;place-items:center;overflow:hidden;background:linear-gradient(rgba(4,8,21,.82),rgba(4,8,21,.82)),linear-gradient(90deg,rgba(56,92,178,.055) 1px,transparent 1px),linear-gradient(rgba(56,92,178,.055) 1px,transparent 1px),radial-gradient(ellipse at 50% 52%,#0b1124 0%,#050815 46%,#02030a 100%);background-size:auto,28px 28px,28px 28px,auto;backdrop-filter:blur(18px);opacity:0;pointer-events:none}
 .setup-launch-screen.show{display:grid;opacity:1;animation:none}
 .setup-launch-screen.leaving{animation:setupLaunchOut .72s cubic-bezier(.16,.86,.18,1) forwards}
-.setup-launch-card{position:relative;z-index:1;display:grid;justify-items:center;gap:20px;text-align:center;color:#fff;transform:translateY(10px) scale(.98)}
+.setup-launch-card{position:relative;z-index:1;display:grid;justify-items:center;text-align:center;color:#fff;transform:translateY(10px) scale(.98)}
 .setup-launch-screen.show .setup-launch-card{animation:setupLaunchCardIn .36s cubic-bezier(.16,.86,.18,1) both}
 .setup-launch-card h2{position:relative;margin:0;font-size:clamp(60px,10vw,124px);font-weight:700;letter-spacing:-.07em;color:transparent;background:linear-gradient(90deg,#173b8c,#315ebc 52%,#1c469e);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 6px 10px rgba(4,12,53,.68)) drop-shadow(0 0 11px rgba(30,70,177,.3))}
 .nyx-title-shimmer{position:absolute;inset:0;color:transparent;background:linear-gradient(90deg,transparent 0%,rgba(17,50,130,.18) 36%,#1d4aab 42%,#4e82df 47%,#d7efff 50%,#4e82df 53%,#1d4aab 58%,rgba(17,50,130,.18) 64%,transparent 100%);background-size:260% 100%;background-position:120% 50%;background-repeat:no-repeat;-webkit-background-clip:text;background-clip:text;opacity:0;animation:nyxTitleShimmer 1.35s linear forwards}
 .nyx-title-shimmer.shimmer-one{animation-delay:.35s}.nyx-title-shimmer.shimmer-two{animation-delay:2.05s}
 .setup-launch-card p{margin:-1px 0 0;color:#7190bb;font-size:12px;font-weight:700;letter-spacing:.02em;opacity:.9}
-.nyx-loading-row{width:min(390px,78vw);display:flex;align-items:center;justify-content:center;gap:12px}
-.nyx-loading-progress{width:min(322px,68vw);height:7px;overflow:hidden;border:1px solid rgba(46,94,207,.36);border-radius:999px;background:rgba(4,10,27,.76);box-shadow:0 0 14px rgba(39,79,191,.28),inset 0 1px 2px rgba(0,0,0,.7)}
-.nyx-loading-progress span{position:relative;display:block;width:100%;height:100%;overflow:hidden;border-radius:inherit;background:linear-gradient(90deg,#1745aa,#4b83ef 58%,#76a8ff);box-shadow:0 0 10px rgba(66,126,242,.8),0 0 22px rgba(28,74,186,.62);transform:scaleX(0);transform-origin:left center;transition:none;will-change:transform;backface-visibility:hidden}
-.nyx-loading-progress span::after{content:"";position:absolute;inset:0;width:44%;background:linear-gradient(90deg,transparent,rgba(203,232,255,.95),transparent);transform:translateX(-180%)}
-.setup-launch-screen.show .nyx-loading-progress span::after{animation:nyxLoadingBarSweep 1.05s ease-in-out infinite}
-.nyx-loading-percent{width:44px;color:#8db8ff;font-size:12px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums;text-shadow:0 0 12px rgba(72,132,255,.58)}
+.nyx-loading-row{width:min(780px,84vw);display:grid;grid-template-columns:minmax(0,1fr) 48px;align-items:center;gap:14px}
+.nyx-loading-progress{width:100%;height:4px;overflow:hidden;border:0;border-radius:999px;background:color-mix(in srgb,var(--theme-strong,#8db8ff) 16%,rgba(4,10,27,.84));box-shadow:none}
+.nyx-loading-progress span{position:relative;display:block;width:100%;height:100%;overflow:hidden;border-radius:inherit;background:var(--theme-strong,#8db8ff);box-shadow:none;transform:scaleX(0);transform-origin:left center;transition:none;will-change:transform;backface-visibility:hidden}
+.nyx-loading-progress span::after{content:none}
+.setup-launch-screen.show .nyx-loading-progress span::after{animation:none}
+.nyx-loading-percent{width:48px;color:var(--theme-strong,#8db8ff);font-size:12px;font-weight:500;text-align:right;font-variant-numeric:tabular-nums;text-shadow:none}
 .nyx-loading-status{min-height:24px;margin:-5px 0 -8px;display:flex;align-items:center;justify-content:center;gap:9px}
 .nyx-loading-spinner{width:20px;height:20px;flex:0 0 20px;border:2px solid rgba(69,108,190,.24);border-top-color:#8db8ff;border-right-color:#3e73d8;border-radius:50%;box-shadow:0 0 9px rgba(70,127,244,.42),inset 0 0 6px rgba(43,91,193,.2);animation:nyxLoadingSpinner .72s linear infinite;will-change:transform;backface-visibility:hidden;contain:layout paint}
 .setup-launch-card .nyx-loading-stage{min-height:16px;margin:0;color:#9bb9e7;font-size:12px;font-weight:600;letter-spacing:.025em;transition:opacity .2s ease}

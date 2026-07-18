@@ -6,6 +6,28 @@
   const qsa = (sel, root=document) => Array.from(root.querySelectorAll(sel));
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const store = {get(k,d){try{return JSON.parse(localStorage.getItem(k)) ?? d}catch{return d}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}, text(k,d=''){try{return localStorage.getItem(k) ?? d}catch{return d}}, setText(k,v){try{localStorage.setItem(k,String(v))}catch{}}};
+  const NYX_TERMS_VERSION='2026-07-17';
+  function nyxTermsSectionsMarkup(){
+    return `<section><h2>1. Eligibility</h2><p>You must comply with all applicable laws when using Nyx. If you are under the age required by your jurisdiction to enter into a binding agreement, you may only use Nyx with the permission of a parent or legal guardian.</p></section>
+      <section><h2>2. Description of the Service</h2><p>Nyx is a platform that may provide features including, but not limited to:</p><ul><li>Search and discovery tools</li><li>AI-powered transcription and summarization</li><li>Productivity and educational tools</li><li>Entertainment applications</li><li>Links to third-party websites and services</li><li>Experimental features released for testing</li></ul><p>Features may change, be added, modified, or removed at any time without notice.</p></section>
+      <section><h2>3. Acceptable Use</h2><p>You agree not to:</p><ul><li>Violate any applicable law or regulation.</li><li>Attempt to gain unauthorized access to Nyx, its servers, or other users' systems.</li><li>Upload or distribute malware, viruses, or malicious code.</li><li>Interfere with or disrupt the operation of the Service.</li><li>Circumvent security measures, authentication systems, or rate limits.</li><li>Use automated systems that excessively burden our infrastructure.</li><li>Impersonate another person or entity.</li><li>Infringe upon the intellectual property or other legal rights of others.</li><li>Use Nyx in a manner that harms other users or the availability of the Service.</li></ul><p>We reserve the right to suspend, restrict, or terminate access for users who violate these Terms.</p></section>
+      <section><h2>4. User Content</h2><p>Some features may allow you to submit text, media, links, or other content ("User Content").</p><p>You retain ownership of your User Content.</p><p>By submitting User Content, you grant Nyx a non-exclusive, worldwide, royalty-free license to host, process, reproduce, and display that content solely for the purpose of operating, maintaining, and improving the Service.</p><p>You represent that you have the necessary rights and permissions to submit any User Content you provide.</p></section>
+      <section><h2>5. AI Features</h2><p>Nyx may provide AI-generated content such as summaries, transcriptions, recommendations, or other generated material.</p><p>AI-generated output may be inaccurate, incomplete, or outdated. It should not be relied upon as professional, legal, financial, medical, or other expert advice.</p><p>Users are responsible for reviewing and verifying AI-generated content before relying on it.</p></section>
+      <section><h2>6. Media Processing</h2><p>Nyx may process publicly available or user-submitted media to provide requested functionality.</p><p>You are solely responsible for ensuring that you have the necessary rights and permissions to submit or process any content through the Service.</p><p>Nyx does not claim ownership of submitted content.</p></section>
+      <section><h2>7. Third-Party Services</h2><p>Nyx may contain links to or integrate with third-party websites, APIs, applications, or services.</p><p>We do not control or endorse third-party content and are not responsible for its availability, accuracy, security, functionality, or privacy practices.</p><p>Your use of third-party services is governed by their own terms and policies.</p></section>
+      <section><h2>8. Intellectual Property</h2><p>Unless otherwise stated, Nyx, including its software, branding, design, graphics, logos, interface, and original content, is owned by Nyx or its licensors and is protected by applicable intellectual property laws.</p><p>You may not copy, modify, distribute, reverse engineer, sell, or commercially exploit any portion of the Service without prior written permission unless permitted by applicable law.</p></section>
+      <section><h2>9. Availability</h2><p>The Service is provided on an <strong>"AS IS"</strong> and <strong>"AS AVAILABLE"</strong> basis.</p><p>We do not guarantee that Nyx will always be available, uninterrupted, secure, or error-free.</p><p>Features may be modified, suspended, or discontinued at any time.</p></section>
+      <section><h2>10. Privacy</h2><p>Your use of Nyx is also subject to our Privacy Policy.</p><p>By using the Service, you acknowledge that Nyx may collect and process information necessary to operate, maintain, improve, and secure the Service.</p></section>
+      <section><h2>11. Cookies</h2><p>Nyx may use cookies, local storage, or similar technologies to:</p><ul><li>Remember user preferences.</li><li>Improve website performance.</li><li>Analyze anonymous usage statistics.</li><li>Enhance the overall user experience.</li></ul><p>You may disable cookies through your browser settings, although doing so may affect certain features of the Service.</p></section>
+      <section><h2>12. Copyright &amp; DMCA</h2><p>Nyx respects the intellectual property rights of others.</p><p>If you believe that content available through Nyx infringes your copyright, you may submit a copyright infringement notice containing sufficient information to identify the copyrighted work, the allegedly infringing material, and your contact information.</p><p>Where appropriate, Nyx may remove or disable access to allegedly infringing material while reviewing a valid complaint.</p><p>Users who repeatedly infringe intellectual property rights may have their access suspended or terminated.</p></section>
+      <section><h2>13. Limitation of Liability</h2><p>To the fullest extent permitted by applicable law, Nyx and its owners, developers, contributors, affiliates, and service providers shall not be liable for any indirect, incidental, special, exemplary, consequential, or punitive damages arising from or relating to the use of the Service.</p></section>
+      <section><h2>14. Indemnification</h2><p>You agree to defend, indemnify, and hold harmless Nyx, its developers, affiliates, contributors, and service providers from any claims, damages, losses, liabilities, and expenses arising from:</p><ul><li>Your use of the Service.</li><li>Your violation of these Terms.</li><li>Your submitted content.</li><li>Your violation of any applicable law or the rights of another person.</li></ul></section>
+      <section><h2>15. Termination</h2><p>We may suspend, restrict, or terminate your access to Nyx at any time, with or without notice, if we reasonably believe you have violated these Terms, abused the Service, or created a security or legal risk.</p><p>We may also discontinue the Service, in whole or in part, at any time.</p></section>
+      <section><h2>16. Changes to These Terms</h2><p>We reserve the right to update or modify these Terms at any time.</p><p>The updated version becomes effective when posted on Nyx.</p><p>Your continued use of the Service after changes are posted constitutes your acceptance of the revised Terms.</p></section>`;
+  }
+  function nyxTermsPageMarkup(className='nyx-utility-tab nyx-terms-tab'){
+    return `<article class="${esc(className)}"><p class="utility-kicker">Nyx</p><h1>Terms of Service</h1><p class="utility-updated"><strong>Effective Date:</strong> July 17, 2026</p><p class="utility-intro">Welcome to <strong>Nyx</strong> ("Nyx," "we," "our," or "us"). By accessing or using our website, applications, or services (collectively, the "Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use the Service.</p>${nyxTermsSectionsMarkup()}</article>`;
+  }
   const DEFAULT_BROWSER_MODE='scramjet';
   const DEFAULT_BROWSER_TRANSPORT='libcurl';
   const nyxFontOptions=[
@@ -861,6 +883,10 @@
     const top=document.querySelector('.top-os');
     if(top){
       top.innerHTML='<div class="brand-mini"><button class="browser-mode-app-button active" data-browser-shell-home title="Current tab"><span class="browser-home-icon" aria-hidden="true"></span><span class="browser-home-label">Home</span></button><button class="browser-mode-tab" data-browser-shell-new-tab title="New tab"><span>New tab</span></button></div><span class="browser-top-clock" data-browser-shell-clock>--:--:--</span><form class="browser-mode-address" data-browser-shell-search><button data-browser-shell-back type="button" title="Back"><span class="fresh-real-icon fresh-real-back" aria-hidden="true"></span></button><button data-browser-shell-forward type="button" title="Forward"><span class="fresh-real-icon" aria-hidden="true">➜</span></button><button data-browser-shell-reload type="button" title="Reload"><span class="fresh-real-icon" aria-hidden="true">⟳</span></button><input class="browser-mode-url" data-browser-shell-url placeholder="Search or enter a URL" autocomplete="off"><button class="browser-mode-bookmark" data-browser-shell-bookmark type="button" title="Bookmark this tab" aria-pressed="false"><span class="fresh-real-icon" aria-hidden="true">☆</span></button><button class="browser-mode-weather" data-open="weather" type="button" title="Weather" aria-label="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button><button data-browser-shell-menu type="button" title="Menu"><span class="fresh-real-icon" aria-hidden="true">⋮</span></button></form><div class="browser-bookmark-panel" id="browserBookmarkPanel" hidden></div><div class="browser-mode-menu" id="browserModeMenu"><button data-browser-shell-new-tab type="button">New tab</button><button data-browser-bookmarks-toggle type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-browser-hieroglyph-toggle type="button">Hieroglyph Mode</button><button data-app-url="/assets/games/index.html" type="button">Study</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-shell-about-tab type="button">Open Tab in Abt:Blank</button></div>';
+      top.querySelectorAll('.brand-mini button[title],.browser-mode-address button[title]').forEach(button=>{
+        if(!button.getAttribute('aria-label')) button.setAttribute('aria-label',button.getAttribute('title') || 'Browser control');
+        button.removeAttribute('title');
+      });
       top.querySelector('#browserModeMenu > [data-browser-shell-new-tab]')?.remove();
       normalizeBrowserChromeButtons(top);
       bindReloadPointerTurn(top);
@@ -964,6 +990,9 @@
   function browserShellLabel(url){
     if(!url) return 'Home';
     if(String(url).trim().toLowerCase()==='nyx://settings') return 'Settings';
+    if(String(url).trim().toLowerCase()==='nyx://terms') return 'Terms Of Service';
+    if(String(url).trim().toLowerCase()==='nyx://developer') return 'Developer Console';
+    if(String(url).trim().toLowerCase()==='nyx://about') return 'About Us';
     try{
       const parsed=new URL(browserShellSourceUrl(url),location.href);
       if(parsed.origin===location.origin && parsed.pathname==='/search') return parsed.searchParams.get('q') || 'Search';
@@ -1492,7 +1521,17 @@
       button.innerHTML=`<img class="browser-mode-tab-icon" alt="" src="${esc(browserChromeIcon(tab.icon,tab.url))}"><span>${esc(browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url))}</span><i class="browser-mode-shell-tab-close" data-browser-shell-close-tab="${esc(tab.id)}" aria-label="Close tab">x</i>`;
       bindTabIconFallback(button.querySelector('.browser-mode-tab-icon'));
       row.insertBefore(button,plus);
-      if(opening) setTimeout(()=>browserShellOpeningTabs.delete(tab.id),520);
+      if(opening){
+        let openingFinished=false;
+        const finishOpening=()=>{
+          if(openingFinished) return;
+          openingFinished=true;
+          browserShellOpeningTabs.delete(tab.id);
+          button.classList.remove('tab-opening');
+        };
+        button.addEventListener('animationend',finishOpening,{once:true});
+        setTimeout(finishOpening,1250);
+      }
     });
     const input=document.querySelector('[data-browser-shell-url]');
     if(input && document.activeElement!==input) input.value=browserShellDisplayValue(active.url);
@@ -1532,7 +1571,7 @@
     }
   }
   function openBrowserShellTab(url='',options={}){
-    if(url) closeWeatherForWindowOpen();
+    closeWeatherForWindowOpen();
     const id='shell-'+Date.now()+Math.random().toString(16).slice(2);
     const normalized=url ? normalize(url) : '';
     const isBlank=!normalized;
@@ -1661,6 +1700,9 @@
     if(String(url || '').trim().toLowerCase()==='nyx://ephesians1'){
       return openBrowserShellInternalTab('ephesians1');
     }
+    if(/^nyx:\/\/(terms|developer|about)$/i.test(String(url || '').trim())){
+      return openBrowserShellInternalTab(String(url).trim().slice(6).toLowerCase());
+    }
     const id=openBrowserShellTab(url || '',{forceMode:appCompatibilityMode(url)});
     if(id) browserShellActiveTab=id;
     renderBrowserShellTabs();
@@ -1682,6 +1724,7 @@
   }
   function setBrowserShellActive(id){
     if(!browserShellTabs.some(tab=>tab.id===id)) return;
+    closeWeatherForWindowOpen();
     browserShellActiveTab=id;
     const shellTab=browserShellTabs.find(tab=>tab.id===id);
     if(shellTab?.url==='nyx://settings') renderBrowserShellSettingsTab();
@@ -1707,6 +1750,7 @@
     });
   }
   function setBrowserShellHomeActive(){
+    closeWeatherForWindowOpen();
     closeBrowserShellSettings();
     ensureBrowserShellHome();
     let homeTab=browserShellTabs.find(tab=>tab.title==='Home' && !tab.url);
@@ -2047,6 +2091,10 @@
       showBrowserShellInternalPage('ephesians1');
       return;
     }
+    if(/^nyx:\/\/(terms|developer|about)$/i.test(raw)){
+      openBrowserShellInternalTab(raw.slice(6).toLowerCase());
+      return;
+    }
     if(shouldTriggerSixtySevenJumpscare(raw)){
       showSixtySevenJumpscare();
       return;
@@ -2156,19 +2204,19 @@
     const script='function nyxEffectPayload(){return{type:"nyx:effect-settings",effect:document.querySelector("[data-effect-value]")?.value||"none",speed:document.querySelector("[data-effect-speed]")?.value||"1.1",amount:document.querySelector("[data-effect-amount]")?.value||"16",theme:document.querySelector("[data-theme-value]")?.value||"default"}}function nyxBrowserPayload(){return{type:"nyx:browser-settings",engine:document.querySelector("[data-browser-engine]")?.value||"duckduckgo",browserMode:document.querySelector("[data-browser-mode-select]")?.value||"auto",transport:document.querySelector("[data-browser-transport]")?.value||"epoxy"}}document.addEventListener("click",e=>{const preset=e.target.closest("[data-preset]");if(preset){e.preventDefault();e.stopPropagation();parent.postMessage({type:"nyx:preset",preset:preset.dataset.preset},"*");return}const app=e.target.closest("[data-app-url]");if(app){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:app.dataset.appUrl},"*");return}const url=e.target.closest("[data-url]");if(url&&url.closest(".shell-page,.browser-shell-page")){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:url.dataset.url},"*");return}if(e.target.closest("[data-browser-settings-save]")){e.preventDefault();parent.postMessage(nyxBrowserPayload(),"*")}if(e.target.closest("[data-page-fullscreen]"))parent.postMessage({type:"nyx:fullscreen"},"*");if(e.target.closest("[data-shell-about]"))parent.postMessage({type:"nyx:about"},"*");if(e.target.closest("[data-shell-about-tab]"))parent.postMessage({type:"nyx:about-tab"},"*")});document.addEventListener("change",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){document.querySelectorAll("[data-tab-title]").forEach(el=>{el.value=presetSelect.options[presetSelect.selectedIndex]?.textContent||presetSelect.value||"nyx"});parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-value],[data-effect-speed],[data-effect-amount],[data-theme-value]"))parent.postMessage(nyxEffectPayload(),"*");if(e.target.closest("[data-browser-engine],[data-browser-mode-select],[data-browser-transport]"))parent.postMessage(nyxBrowserPayload(),"*")});document.addEventListener("input",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-speed],[data-effect-amount]")){document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=(Number(document.querySelector("[data-effect-speed]")?.value||1.1)).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=document.querySelector("[data-effect-amount]")?.value||"16"});parent.postMessage(nyxEffectPayload(),"*")}});';
     const popupScript='document.addEventListener("click",e=>{const popup=e.target.closest("[data-popup-protection]");if(!popup)return;e.preventDefault();const next=popup.dataset.enabled!=="true";popup.dataset.enabled=String(next);popup.classList.toggle("on",next);popup.textContent="Popup Protection "+(next?"On":"Off");parent.postMessage({type:"nyx:popup-protection",enabled:next},"*")});';
     const themeAppStyle='body.theme-ruby .quick-tile:hover .quick-icon,body.theme-emerald .quick-tile:hover .quick-icon,body.theme-sakura .quick-tile:hover .quick-icon{background:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important}';
-    const compactSettingsStyle='.settings-main h1{font-size:24px!important}.settings-block h2{font-size:15px!important}.settings-block p,.settings-block label{font-size:12px!important;line-height:1.35!important}.settings-side button,.settings-action,.settings-preset{background:transparent!important;background-image:none!important;box-shadow:none!important}.settings-action,.settings-preset{border-color:transparent!important}.settings-side button:hover,.settings-side button.active,.settings-action:hover,.settings-preset:hover{background:transparent!important;background-image:none!important;border-color:var(--theme-border,rgba(255,255,255,.28))!important;box-shadow:none!important;transform:scale(1.015)!important}';
+    const compactSettingsStyle='.settings-main h1{font-size:24px!important}.settings-block h2{font-size:15px!important}.settings-block p,.settings-block label{font-size:12px!important;line-height:1.35!important}.settings-side button,.settings-action,.settings-preset{background:transparent!important;background-image:none!important;box-shadow:none!important}.settings-action,.settings-preset{border-color:transparent!important}.settings-side button:hover,.settings-side button.active,.settings-action:hover,.settings-preset:hover{background:transparent!important;background-image:none!important;border-color:var(--theme-border,rgba(255,255,255,.28))!important;box-shadow:none!important;transform:none!important}';
     const pageThemeStyle='.shell-page,.browser-shell-page{background:transparent!important}body.theme-ruby .shell-page,body.theme-ruby .browser-shell-page{background:transparent!important}body.theme-emerald .shell-page,body.theme-emerald .browser-shell-page{background:transparent!important}body.theme-sakura .shell-page,body.theme-sakura .browser-shell-page{background:transparent!important}';
     const themeBorderOnlyStyle='body.theme-ruby{--theme-border:#fb7185!important;--theme-bg:linear-gradient(rgba(60,0,12,.10),rgba(60,0,12,.22)),url("assets/backgrounds/nyx-blue-light-trails.jpg")!important}body.theme-emerald{--theme-border:#34d399!important;--theme-bg:linear-gradient(rgba(0,24,12,.08),rgba(0,24,12,.20)),url("assets/backgrounds/nyx-blue-light-trails.jpg")!important}body.theme-sakura{--theme-border:#fbcfe8!important;--theme-bg:linear-gradient(rgba(40,0,28,.06),rgba(40,0,28,.18)),url("assets/backgrounds/nyx-blue-light-trails.jpg")!important}.theme-ruby h1,.theme-ruby h2,.theme-ruby p,.theme-ruby span,.theme-ruby label,.theme-ruby button,.theme-emerald h1,.theme-emerald h2,.theme-emerald p,.theme-emerald span,.theme-emerald label,.theme-emerald button,.theme-sakura h1,.theme-sakura h2,.theme-sakura p,.theme-sakura span,.theme-sakura label,.theme-sakura button{background:none!important;color:inherit!important;-webkit-text-fill-color:currentColor!important;text-shadow:none!important}.theme-ruby .shell-page,.theme-emerald .shell-page,.theme-sakura .shell-page,.theme-ruby .browser-shell-page,.theme-emerald .browser-shell-page,.theme-sakura .browser-shell-page{background:var(--theme-bg)!important;background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important}.theme-ruby .settings-app,.theme-emerald .settings-app,.theme-sakura .settings-app,.theme-ruby .settings-main,.theme-emerald .settings-main,.theme-sakura .settings-main,.theme-ruby .settings-side,.theme-emerald .settings-side,.theme-sakura .settings-side,.theme-ruby .quick-tile,.theme-emerald .quick-tile,.theme-sakura .quick-tile{background:rgba(15,23,42,.36)!important}.theme-ruby button,.theme-ruby input,.theme-ruby select,.theme-ruby textarea,.theme-ruby .quick-tile,.theme-ruby .quick-icon,.theme-ruby .settings-main,.theme-ruby .settings-side,.theme-ruby .settings-action,.theme-ruby .settings-input,.theme-ruby .settings-select,.theme-emerald button,.theme-emerald input,.theme-emerald select,.theme-emerald textarea,.theme-emerald .quick-tile,.theme-emerald .quick-icon,.theme-emerald .settings-main,.theme-emerald .settings-side,.theme-emerald .settings-action,.theme-emerald .settings-input,.theme-emerald .settings-select,.theme-sakura button,.theme-sakura input,.theme-sakura select,.theme-sakura textarea,.theme-sakura .quick-tile,.theme-sakura .quick-icon,.theme-sakura .settings-main,.theme-sakura .settings-side,.theme-sakura .settings-action,.theme-sakura .settings-input,.theme-sakura .settings-select{border-color:color-mix(in srgb,var(--theme-border) 68%,rgba(255,255,255,.2))!important}.theme-ruby input[type=file].settings-input::file-selector-button,.theme-emerald input[type=file].settings-input::file-selector-button,.theme-sakura input[type=file].settings-input::file-selector-button{background:rgba(148,163,184,.24)!important;color:#f8fafc!important;-webkit-text-fill-color:#f8fafc!important}';
-    const flatInternalStyle='html,body,button,input,select,textarea{font-family:Outfit,Arial,sans-serif!important;font-weight:400!important}body *{font-family:Outfit,Arial,sans-serif!important;font-weight:400!important;text-shadow:none!important;-webkit-text-stroke:0!important}.theme-ruby *, .theme-emerald *, .theme-sakura *{background-image:none!important;box-shadow:none!important;text-shadow:none!important}.theme-ruby button,.theme-ruby .quick-tile,.theme-ruby .quick-icon,.theme-ruby .settings-action,.theme-ruby .settings-preset,.theme-emerald button,.theme-emerald .quick-tile,.theme-emerald .quick-icon,.theme-emerald .settings-action,.theme-emerald .settings-preset,.theme-sakura button,.theme-sakura .quick-tile,.theme-sakura .quick-icon,.theme-sakura .settings-action,.theme-sakura .settings-preset{transition:transform .14s ease,border-color .14s ease!important}.theme-ruby button:hover,.theme-ruby .quick-tile:hover,.theme-ruby .quick-icon:hover,.theme-ruby .settings-action:hover,.theme-ruby .settings-preset:hover,.theme-emerald button:hover,.theme-emerald .quick-tile:hover,.theme-emerald .quick-icon:hover,.theme-emerald .settings-action:hover,.theme-emerald .settings-preset:hover,.theme-sakura button:hover,.theme-sakura .quick-tile:hover,.theme-sakura .quick-icon:hover,.theme-sakura .settings-action:hover,.theme-sakura .settings-preset:hover{transform:scale(1.015)!important;border-color:var(--theme-border)!important;background-image:none!important;box-shadow:none!important}';
-    const flatInternalPageStyle='.shell-page,.browser-shell-page,.settings-app,.settings-main,.settings-side,.settings-block,.quick-tile,.quick-icon,.settings-action,.settings-preset{background-image:none!important;box-shadow:none!important;text-shadow:none!important}.settings-app,.settings-main,.settings-side,.settings-block{background:transparent!important;border-color:transparent!important}.quick-tile,.quick-icon,.settings-action,.settings-preset{background:transparent!important}.quick-tile:hover,.quick-icon:hover,.settings-preset:hover,.settings-action:hover{background:transparent!important;background-image:none!important;transform:scale(1.015)!important;border-color:var(--theme-border,rgba(255,255,255,.28))!important}input[type=file].settings-input::file-selector-button{background:transparent!important;background-image:none!important;color:#f8fafc!important;-webkit-text-fill-color:#f8fafc!important}';
-    const transparentInternalFinalStyle='body :is(.settings-app,.settings-main,.settings-side,.settings-block,.settings-card,.settings-grid-settings){background:transparent!important;background-color:transparent!important;background-image:none!important;box-shadow:none!important;backdrop-filter:none!important}body :is(.settings-block,.settings-card){border-color:transparent!important}body :is(.settings-side button,.settings-side button.active,.settings-action,.settings-preset,.settings-input,.settings-select),body input[type=file].settings-input::file-selector-button{background:transparent!important;background-color:transparent!important;background-image:none!important;box-shadow:none!important;filter:none!important;text-shadow:none!important}body :is(.settings-side button:hover,.settings-side button.active,.settings-action:hover,.settings-preset:hover,.settings-input:hover,.settings-select:hover),body input[type=file].settings-input:hover::file-selector-button{background:transparent!important;background-image:none!important;border-color:var(--theme-border,rgba(255,255,255,.3))!important;box-shadow:none!important;transform:scale(1.015)!important}.shell-page .quick-tile,.shell-page .quick-icon{background:transparent!important;background-color:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important;backdrop-filter:none!important}.shell-page .quick-tile:hover,.shell-page .quick-icon:hover{background:transparent!important;background-image:none!important;border-color:var(--theme-border,rgba(255,255,255,.3))!important;box-shadow:none!important}.shell-page .quick-tile span{display:block!important;opacity:1!important;visibility:visible!important;color:#f8fafc!important;-webkit-text-fill-color:#f8fafc!important;background:none!important;background-image:none!important;text-shadow:none!important;font-weight:400!important}';
+    const flatInternalStyle='html,body,button,input,select,textarea{font-family:Outfit,Arial,sans-serif!important;font-weight:400!important}body *{font-family:Outfit,Arial,sans-serif!important;font-weight:400!important;text-shadow:none!important;-webkit-text-stroke:0!important}.theme-ruby *, .theme-emerald *, .theme-sakura *{background-image:none!important;box-shadow:none!important;text-shadow:none!important}.theme-ruby button,.theme-ruby .quick-tile,.theme-ruby .quick-icon,.theme-ruby .settings-action,.theme-ruby .settings-preset,.theme-emerald button,.theme-emerald .quick-tile,.theme-emerald .quick-icon,.theme-emerald .settings-action,.theme-emerald .settings-preset,.theme-sakura button,.theme-sakura .quick-tile,.theme-sakura .quick-icon,.theme-sakura .settings-action,.theme-sakura .settings-preset{transition:border-color .14s ease,background-color .14s ease!important}.theme-ruby button:hover,.theme-ruby .quick-tile:hover,.theme-ruby .quick-icon:hover,.theme-ruby .settings-action:hover,.theme-ruby .settings-preset:hover,.theme-emerald button:hover,.theme-emerald .quick-tile:hover,.theme-emerald .quick-icon:hover,.theme-emerald .settings-action:hover,.theme-emerald .settings-preset:hover,.theme-sakura button:hover,.theme-sakura .quick-tile:hover,.theme-sakura .quick-icon:hover,.theme-sakura .settings-action:hover,.theme-sakura .settings-preset:hover{transform:none!important;border-color:var(--theme-border)!important;background-image:none!important;box-shadow:none!important}';
+    const flatInternalPageStyle='.shell-page,.browser-shell-page,.settings-app,.settings-main,.settings-side,.settings-block,.quick-tile,.quick-icon,.settings-action,.settings-preset{background-image:none!important;box-shadow:none!important;text-shadow:none!important}.settings-app,.settings-main,.settings-side,.settings-block{background:transparent!important;border-color:transparent!important}.quick-tile,.quick-icon,.settings-action,.settings-preset{background:transparent!important}.quick-tile:hover,.quick-icon:hover,.settings-preset:hover,.settings-action:hover{background:transparent!important;background-image:none!important;transform:none!important;border-color:var(--theme-border,rgba(255,255,255,.28))!important}input[type=file].settings-input::file-selector-button{background:transparent!important;background-image:none!important;color:#f8fafc!important;-webkit-text-fill-color:#f8fafc!important}';
+    const transparentInternalFinalStyle='body :is(.settings-app,.settings-main,.settings-side,.settings-block,.settings-card,.settings-grid-settings){background:transparent!important;background-color:transparent!important;background-image:none!important;box-shadow:none!important;backdrop-filter:none!important}body :is(.settings-block,.settings-card){border-color:transparent!important}body :is(.settings-side button,.settings-side button.active,.settings-action,.settings-preset,.settings-input,.settings-select),body input[type=file].settings-input::file-selector-button{background:transparent!important;background-color:transparent!important;background-image:none!important;box-shadow:none!important;filter:none!important;text-shadow:none!important}body :is(.settings-side button:hover,.settings-side button.active,.settings-action:hover,.settings-preset:hover,.settings-input:hover,.settings-select:hover),body input[type=file].settings-input:hover::file-selector-button{background:transparent!important;background-image:none!important;border-color:var(--theme-border,rgba(255,255,255,.3))!important;box-shadow:none!important;transform:none!important}.shell-page .quick-tile,.shell-page .quick-icon{background:transparent!important;background-color:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important;backdrop-filter:none!important}.shell-page .quick-tile:hover,.shell-page .quick-icon:hover{background:transparent!important;background-image:none!important;border-color:var(--theme-border,rgba(255,255,255,.3))!important;box-shadow:none!important}.shell-page .quick-tile span{display:block!important;opacity:1!important;visibility:visible!important;color:#f8fafc!important;-webkit-text-fill-color:#f8fafc!important;background:none!important;background-image:none!important;text-shadow:none!important;font-weight:400!important}';
     const settingsInternalFinalStyle='html,body{background:transparent!important;background-color:transparent!important;background-image:none!important;color:#f8fafc!important}body::before,body::after{display:none!important;content:none!important}.settings-app{position:relative!important;z-index:1!important;display:block!important;min-height:0!important;width:min(780px,calc(100vw - 42px))!important;height:auto!important;margin:30px auto 96px!important;padding:0!important;border:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important;overflow:visible!important;color:#f8fafc!important}.settings-side{position:fixed!important;left:50%!important;bottom:18px!important;top:auto!important;transform:translateX(-50%)!important;width:auto!important;height:52px!important;display:flex!important;gap:8px!important;padding:7px!important;border:1px solid rgba(196,181,253,.30)!important;border-radius:16px!important;background:rgba(6,10,8,.52)!important;background-image:none!important;backdrop-filter:blur(7px) saturate(1.08)!important;box-shadow:0 14px 34px rgba(0,0,0,.28)!important;z-index:10!important}.settings-side button{width:42px!important;height:38px!important;min-height:38px!important;margin:0!important;padding:0!important;display:grid!important;place-items:center!important;border-radius:11px!important;font-size:0!important;background:transparent!important;background-image:none!important;border:1px solid transparent!important}.settings-side button.active,.settings-side button:hover{background:rgba(255,255,255,.12)!important;border-color:rgba(196,181,253,.30)!important}.settings-side .settings-nav-icon{margin:0!important;width:22px!important;height:22px!important}.settings-main{display:block!important;min-height:0!important;padding:0!important;border:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important;backdrop-filter:none!important}.settings-main h1{display:none!important}.settings-section{width:100%!important}.settings-section.active{display:block!important}.settings-section .settings-block{display:block!important;width:100%!important;background:rgba(8,15,12,.58)!important;background-image:linear-gradient(90deg,rgba(255,255,255,.10),rgba(255,255,255,.035))!important;border:1px solid color-mix(in srgb,var(--theme-border,#8b5cf6) 48%,rgba(255,255,255,.18))!important;border-radius:14px!important;padding:18px 20px!important;margin:0 0 16px!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 16px 42px rgba(0,0,0,.24)!important;backdrop-filter:blur(5px) saturate(1.05)!important}.settings-section .settings-block h2{font-size:15px!important;line-height:1.2!important;margin:0 0 10px!important;color:rgba(248,250,252,.98)!important;-webkit-text-fill-color:rgba(248,250,252,.98)!important}.settings-section .settings-block p{max-width:650px!important;font-size:12px!important;line-height:1.38!important;margin:0 0 13px!important;color:rgba(226,232,240,.84)!important;-webkit-text-fill-color:rgba(226,232,240,.84)!important}.settings-form-row{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;max-width:100%!important}.settings-actions{display:flex!important;gap:10px!important;flex-wrap:wrap!important}.settings-input,.settings-select,.panic-key-display{width:100%!important;min-height:40px!important;border-radius:10px!important;background:rgba(0,0,0,.50)!important;background-image:none!important;border:1px solid rgba(255,255,255,.18)!important;color:#f8fafc!important;-webkit-text-fill-color:#f8fafc!important;box-shadow:none!important}.settings-input[type=file]{padding:7px 10px!important}.panic-key-display{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:auto!important;min-width:160px!important;padding:0 16px!important}.settings-action,.settings-block button,.settings-input::file-selector-button{min-height:35px!important;border-radius:999px!important;background:rgba(255,255,255,.13)!important;background-image:none!important;border:1px solid rgba(255,255,255,.18)!important;box-shadow:none!important;color:#f8fafc!important;-webkit-text-fill-color:#f8fafc!important;padding:0 16px!important}.settings-action:hover,.settings-block button:hover,.settings-input::file-selector-button:hover{background:rgba(255,255,255,.20)!important;border-color:var(--theme-border,#8b5cf6)!important;transform:scale(1.015)!important}@media(max-width:760px){.settings-app{width:calc(100vw - 22px)!important;margin-top:16px!important}.settings-section .settings-block{padding:15px!important}.settings-side{bottom:10px!important}}';
     const settingsGlassRepairStyle='';
     const browserSettingsSinglePaneStyle='';
     const internalPageBg=normalizeBgValue(currentBrowserBackgroundValue());
     const internalBgStyle='background:linear-gradient(rgba(0,0,0,.10),rgba(0,0,0,.16)),'+internalPageBg+'!important;background-size:cover!important;background-position:left center!important;background-repeat:no-repeat!important;background-color:#05060c!important;filter:none!important;';
     const settingsClearAroundStyle='';
-    const clearInternalPageStyle=/^(apps)$/i.test(String(page.title || '')) ? 'html,body,.shell-page,.browser-shell-page{min-height:100vh!important;'+internalBgStyle+'}html::before,html::after,body::before,body::after{display:none!important;content:none!important}.shell-page,.browser-shell-page{box-shadow:none!important;backdrop-filter:none!important;filter:none!important}.shell-page::before,.shell-page::after,.browser-shell-page::before,.browser-shell-page::after{display:none!important;content:none!important}.shell-page h1,.browser-shell-page h1,.shell-page p,.browser-shell-page p,.quick-tile span{color:#f8f5ff!important;-webkit-text-fill-color:#f8f5ff!important;opacity:1!important;visibility:visible!important;background:none!important;background-image:none!important;text-shadow:none!important}.quick-grid{gap:18px!important}.quick-tile{height:106px!important;background:transparent!important;background-image:none!important;border:1px solid transparent!important;border-radius:10px!important;box-shadow:none!important;backdrop-filter:none!important;filter:none!important}.quick-icon{width:58px!important;height:58px!important;background:transparent!important;background-image:none!important;border-color:transparent!important;border-radius:9px!important;box-shadow:none!important;backdrop-filter:none!important;filter:none!important}.quick-tile:hover{background:rgba(8,7,13,.32)!important;background-image:none!important;border-color:rgba(190,148,255,.54)!important;box-shadow:0 10px 28px rgba(0,0,0,.22)!important;transform:scale(1.018)!important;backdrop-filter:blur(3px)!important;-webkit-backdrop-filter:blur(3px)!important}.quick-tile:hover .quick-icon{background:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important;transform:scale(1.06)!important}.quick-tile span{font-size:13px!important;font-weight:400!important}' : '';
+    const clearInternalPageStyle=/^(apps)$/i.test(String(page.title || '')) ? 'html,body,.shell-page,.browser-shell-page{min-height:100vh!important;'+internalBgStyle+'}html::before,html::after,body::before,body::after{display:none!important;content:none!important}.shell-page,.browser-shell-page{box-shadow:none!important;backdrop-filter:none!important;filter:none!important}.shell-page::before,.shell-page::after,.browser-shell-page::before,.browser-shell-page::after{display:none!important;content:none!important}.shell-page h1,.browser-shell-page h1,.shell-page p,.browser-shell-page p,.quick-tile span{color:#f8f5ff!important;-webkit-text-fill-color:#f8f5ff!important;opacity:1!important;visibility:visible!important;background:none!important;background-image:none!important;text-shadow:none!important}.quick-grid{gap:18px!important}.quick-tile{height:106px!important;background:transparent!important;background-image:none!important;border:1px solid transparent!important;border-radius:10px!important;box-shadow:none!important;backdrop-filter:none!important;filter:none!important}.quick-icon{width:58px!important;height:58px!important;background:transparent!important;background-image:none!important;border-color:transparent!important;border-radius:9px!important;box-shadow:none!important;backdrop-filter:none!important;filter:none!important}.quick-tile:hover{background:rgba(8,7,13,.32)!important;background-image:none!important;border-color:rgba(190,148,255,.54)!important;box-shadow:0 10px 28px rgba(0,0,0,.22)!important;transform:none!important;backdrop-filter:blur(3px)!important;-webkit-backdrop-filter:blur(3px)!important}.quick-tile:hover .quick-icon{background:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important;transform:none!important}.quick-tile span{font-size:13px!important;font-weight:400!important}' : '';
     const internalAppsLaunchStyle=/^(apps)$/i.test(String(page.title || '')) ? '.apps-launch-grid{grid-template-columns:repeat(auto-fill,minmax(178px,1fr))!important;gap:24px!important}.apps-launch-grid .quick-tile{height:178px!important;min-height:178px!important;border-radius:18px!important;animation:appTileOpenRise .62s cubic-bezier(.18,.82,.2,1) both!important;animation-delay:var(--tile-delay,0ms)!important}.apps-launch-grid .quick-icon{width:98px!important;height:98px!important;border-radius:18px!important}.apps-launch-grid .quick-tile[data-domain="traxmojo.com"] .quick-icon{width:150px!important;height:150px!important;max-width:150px!important;max-height:150px!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}.apps-launch-grid .quick-tile span{font-size:16px!important}@keyframes appTileOpenRise{0%{opacity:0;transform:translate(-34px,42px) scale(.78);filter:blur(8px)}64%{opacity:1;transform:translate(4px,-5px) scale(1.025);filter:blur(0)}100%{opacity:1;transform:translate(0,0) scale(1);filter:blur(0)}}' : '';
     const internalAppsHazeStyle=/^(apps)$/i.test(String(page.title || '')) ? 'html,body{position:relative!important;isolation:isolate!important}body::before{content:""!important;display:block!important;position:fixed!important;inset:-18px!important;z-index:0!important;pointer-events:none!important;background:rgba(77,47,142,.36)!important;backdrop-filter:blur(11px) saturate(.82)!important;-webkit-backdrop-filter:blur(11px) saturate(.82)!important}.shell-page{position:relative!important;z-index:1!important;background:transparent!important}.theme-ruby::before{background:rgba(125,22,39,.38)!important}.theme-emerald::before{background:rgba(4,92,65,.36)!important}.theme-sakura::before{background:rgba(190,55,120,.32)!important}.theme-fresh::before{background:rgba(92,219,207,.25)!important}.apps-launch-grid{position:relative!important;z-index:2!important}' : '';
     const finalInternalBackgroundStyle='body.theme-ruby{--theme-bg:linear-gradient(rgba(60,0,12,.10),rgba(60,0,12,.22)),url("assets/backgrounds/nyx-blue-light-trails.jpg")!important}body.theme-emerald{--theme-bg:linear-gradient(rgba(0,24,12,.08),rgba(0,24,12,.20)),url("assets/backgrounds/nyx-blue-light-trails.jpg")!important}body.theme-sakura{--theme-bg:linear-gradient(rgba(40,0,28,.06),rgba(40,0,28,.18)),url("assets/backgrounds/nyx-blue-light-trails.jpg")!important}body.theme-ruby .shell-page,body.theme-ruby .browser-shell-page,body.theme-emerald .shell-page,body.theme-emerald .browser-shell-page,body.theme-sakura .shell-page,body.theme-sakura .browser-shell-page{background:var(--theme-bg)!important;background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important}';
@@ -2176,7 +2224,7 @@
     const panicFrameScript='let NYX_PANIC_CAPTURE=false;function nyxPanicCombo(e){const key=String(e.key||"").trim();if(!key||["Control","Shift","Alt","Meta"].includes(key))return "";const parts=[];if(e.ctrlKey)parts.push("Ctrl");if(e.altKey)parts.push("Alt");if(e.shiftKey)parts.push("Shift");if(e.metaKey)parts.push("Meta");parts.push(key.length===1?key.toUpperCase():key.replace(/^Arrow/,""));return parts.join("+")}document.addEventListener("click",e=>{if(e.target.closest("[data-panic-capture]"))NYX_PANIC_CAPTURE=true;if(e.target.closest("[data-panic-clear]"))NYX_PANIC_CAPTURE=false},true);document.addEventListener("keydown",e=>{if(!NYX_PANIC_CAPTURE)return;const combo=nyxPanicCombo(e);if(!combo)return;e.preventDefault();e.stopPropagation();NYX_PANIC_CAPTURE=false;document.querySelectorAll("[data-panic-key-display]").forEach(el=>el.textContent=combo);parent.postMessage({type:"nyx:panic-key-set",combo},"*")},true);';
     const internalPaintScript='';
     const finalInternalPaintScript='';
-    return '<!doctype html><meta charset="utf-8"><base target="_self"><style>'+style+themeStyle+freshThemeStyle+themeAppStyle+compactSettingsStyle+pageThemeStyle+themeBorderOnlyStyle+'input[type=file].settings-input{color:#f8fafc;background:transparent!important}input[type=file].settings-input::file-selector-button{height:28px;margin:0 12px 0 0;border:1px solid var(--theme-border,rgba(255,255,255,.3));border-radius:999px;background:transparent!important;background-image:none!important;color:#f8fafc;padding:0 12px;font:400 12px Outfit,Arial,sans-serif}.theme-ruby input[type=file].settings-input::file-selector-button,.theme-emerald input[type=file].settings-input::file-selector-button,.theme-sakura input[type=file].settings-input::file-selector-button{background:transparent!important;background-image:none!important;color:#f8fafc!important}.settings-section{display:none}.settings-section.active{display:block}.settings-range{display:grid;grid-template-columns:70px minmax(0,1fr) 46px;align-items:center;gap:10px;margin:12px 0;color:#d1d5db;font-size:13px;font-weight:400}.settings-range input{width:100%;accent-color:#9ca3af}.settings-nav-icon{width:24px;height:24px;border-radius:999px;border:2px solid #dbe2ea;display:inline-block;position:relative;background:transparent!important;box-shadow:none!important}.icon-general::before{content:"";position:absolute;inset:5px;border:2px solid #dbe2ea;border-radius:999px}.icon-effects::before{content:"";position:absolute;left:5px;right:5px;top:10px;height:2px;background:#dbe2ea;box-shadow:0 -5px 0 #dbe2ea,0 5px 0 #dbe2ea}.icon-watch::before{content:"";position:absolute;left:8px;top:5px;border-left:9px solid #dbe2ea;border-top:6px solid transparent;border-bottom:6px solid transparent}.icon-browser::before{content:"";position:absolute;left:4px;right:4px;top:6px;height:11px;border:2px solid #dbe2ea;border-radius:4px}.icon-browser::after{content:"";position:absolute;left:7px;right:7px;bottom:4px;height:2px;background:#dbe2ea}.settings-effect-preview span:nth-child(1)::before{content:"";width:14px;height:20px;border-radius:999px;background:#cfd8e3;transform:rotate(28deg)}.settings-effect-preview span:nth-child(2)::before{content:"";width:18px;height:18px;background:#cfd8e3;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 56%,79% 91%,50% 70%,21% 91%,32% 56%,2% 35%,39% 35%)}.settings-effect-preview span:nth-child(3)::before{content:"";width:18px;height:16px;background:#cfd8e3;clip-path:polygon(50% 100%,8% 52%,4% 22%,24% 2%,50% 20%,76% 2%,96% 22%,92% 52%)}.settings-effect-preview span:nth-child(4)::before{content:"";width:18px;height:18px;border:3px solid #cfd8e3;border-radius:999px}'+themeBorderOnlyStyle+flatInternalStyle+flatInternalPageStyle+transparentInternalFinalStyle+settingsInternalFinalStyle+settingsGlassRepairStyle+browserSettingsSinglePaneStyle+settingsClearAroundStyle+'html body .settings-app :is(input,select,textarea,.settings-input,.settings-select):hover{transform:none!important}html body .settings-app button:hover{transform:scale(1.012)!important}'+clearInternalPageStyle+internalAppsLaunchStyle+internalAppsHazeStyle+finalInternalBackgroundStyle+normalInternalTextStyle+'</style>'+page.body+'<script>const NYX_EFFECT='+JSON.stringify(store.text('nyx.visualEffect','none'))+';const NYX_EFFECT_SPEED='+JSON.stringify(store.text('nyx.visualEffectSpeed','1.1'))+';const NYX_EFFECT_AMOUNT='+JSON.stringify(store.text('nyx.visualEffectAmount','16'))+';const NYX_THEME='+JSON.stringify(store.text('nyx.theme','default'))+';if(NYX_THEME&&NYX_THEME!=="default")document.body.classList.add("theme-"+NYX_THEME);document.querySelectorAll("[data-effect-value]").forEach(el=>{el.value=NYX_EFFECT});document.querySelectorAll("[data-effect-speed]").forEach(el=>{el.value=NYX_EFFECT_SPEED});document.querySelectorAll("[data-effect-amount]").forEach(el=>{el.value=NYX_EFFECT_AMOUNT});document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=Number(NYX_EFFECT_SPEED).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=NYX_EFFECT_AMOUNT});'+internalPaintScript+finalInternalPaintScript+script+popupScript+panicFrameScript+'<\/script>';
+    return '<!doctype html><meta charset="utf-8"><base target="_self"><style>'+style+themeStyle+freshThemeStyle+themeAppStyle+compactSettingsStyle+pageThemeStyle+themeBorderOnlyStyle+'input[type=file].settings-input{color:#f8fafc;background:transparent!important}input[type=file].settings-input::file-selector-button{height:28px;margin:0 12px 0 0;border:1px solid var(--theme-border,rgba(255,255,255,.3));border-radius:999px;background:transparent!important;background-image:none!important;color:#f8fafc;padding:0 12px;font:400 12px Outfit,Arial,sans-serif}.theme-ruby input[type=file].settings-input::file-selector-button,.theme-emerald input[type=file].settings-input::file-selector-button,.theme-sakura input[type=file].settings-input::file-selector-button{background:transparent!important;background-image:none!important;color:#f8fafc!important}.settings-section{display:none}.settings-section.active{display:block}.settings-range{display:grid;grid-template-columns:70px minmax(0,1fr) 46px;align-items:center;gap:10px;margin:12px 0;color:#d1d5db;font-size:13px;font-weight:400}.settings-range input{width:100%;accent-color:#9ca3af}.settings-nav-icon{width:24px;height:24px;border-radius:999px;border:2px solid #dbe2ea;display:inline-block;position:relative;background:transparent!important;box-shadow:none!important}.icon-general::before{content:"";position:absolute;inset:5px;border:2px solid #dbe2ea;border-radius:999px}.icon-effects::before{content:"";position:absolute;left:5px;right:5px;top:10px;height:2px;background:#dbe2ea;box-shadow:0 -5px 0 #dbe2ea,0 5px 0 #dbe2ea}.icon-watch::before{content:"";position:absolute;left:8px;top:5px;border-left:9px solid #dbe2ea;border-top:6px solid transparent;border-bottom:6px solid transparent}.icon-browser::before{content:"";position:absolute;left:4px;right:4px;top:6px;height:11px;border:2px solid #dbe2ea;border-radius:4px}.icon-browser::after{content:"";position:absolute;left:7px;right:7px;bottom:4px;height:2px;background:#dbe2ea}.settings-effect-preview span:nth-child(1)::before{content:"";width:14px;height:20px;border-radius:999px;background:#cfd8e3;transform:rotate(28deg)}.settings-effect-preview span:nth-child(2)::before{content:"";width:18px;height:18px;background:#cfd8e3;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 56%,79% 91%,50% 70%,21% 91%,32% 56%,2% 35%,39% 35%)}.settings-effect-preview span:nth-child(3)::before{content:"";width:18px;height:16px;background:#cfd8e3;clip-path:polygon(50% 100%,8% 52%,4% 22%,24% 2%,50% 20%,76% 2%,96% 22%,92% 52%)}.settings-effect-preview span:nth-child(4)::before{content:"";width:18px;height:18px;border:3px solid #cfd8e3;border-radius:999px}'+themeBorderOnlyStyle+flatInternalStyle+flatInternalPageStyle+transparentInternalFinalStyle+settingsInternalFinalStyle+settingsGlassRepairStyle+browserSettingsSinglePaneStyle+settingsClearAroundStyle+'html body .settings-app :is(input,select,textarea,.settings-input,.settings-select):hover{transform:none!important}html body .settings-app button:hover{transform:none!important}'+clearInternalPageStyle+internalAppsLaunchStyle+internalAppsHazeStyle+finalInternalBackgroundStyle+normalInternalTextStyle+(page.style||'')+'</style>'+page.body+'<script>const NYX_EFFECT='+JSON.stringify(store.text('nyx.visualEffect','none'))+';const NYX_EFFECT_SPEED='+JSON.stringify(store.text('nyx.visualEffectSpeed','1.1'))+';const NYX_EFFECT_AMOUNT='+JSON.stringify(store.text('nyx.visualEffectAmount','16'))+';const NYX_THEME='+JSON.stringify(store.text('nyx.theme','default'))+';if(NYX_THEME&&NYX_THEME!=="default")document.body.classList.add("theme-"+NYX_THEME);document.querySelectorAll("[data-effect-value]").forEach(el=>{el.value=NYX_EFFECT});document.querySelectorAll("[data-effect-speed]").forEach(el=>{el.value=NYX_EFFECT_SPEED});document.querySelectorAll("[data-effect-amount]").forEach(el=>{el.value=NYX_EFFECT_AMOUNT});document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=Number(NYX_EFFECT_SPEED).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=NYX_EFFECT_AMOUNT});'+internalPaintScript+finalInternalPaintScript+script+popupScript+panicFrameScript+(page.script||'')+'<\/script>';
   }
   function showBrowserShellInternalPage(name){
     hideBrowserSuggestions();
@@ -2214,9 +2262,29 @@
       return true;
     }
     const presetTiles=`<button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${favicons.nyx}"><span>ռʏӼ tab</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
+    const utilityPageStyle=`
+      html,body{min-height:100%!important;background:#0a1220!important;color:#eaf2ff!important}
+      .nyx-utility-tab{width:min(860px,calc(100vw - 44px));min-height:100vh;margin:0 auto;padding:clamp(34px,6vw,72px) clamp(22px,5vw,58px) 90px!important;background:transparent!important;color:#eaf2ff!important}
+      .nyx-utility-tab .utility-kicker{margin:0 0 8px!important;color:#8fb8ff!important;font-size:12px!important;font-weight:500!important;letter-spacing:.16em!important;text-transform:uppercase!important;text-shadow:none!important}
+      .nyx-utility-tab h1{margin:0 0 10px!important;color:#f4f8ff!important;font-size:clamp(34px,6vw,58px)!important;font-weight:420!important;letter-spacing:-.045em!important;text-shadow:none!important}
+      .nyx-utility-tab .utility-updated{margin:0 0 34px!important;color:#8498b7!important;font-size:12px!important;font-weight:400!important;text-shadow:none!important}
+      .nyx-utility-tab section{padding:20px 0;border-top:1px solid rgba(111,158,232,.22)}
+      .nyx-utility-tab section h2{margin:0 0 7px!important;color:#edf4ff!important;font-size:16px!important;font-weight:520!important;text-shadow:none!important}
+      .nyx-utility-tab section p,.nyx-utility-tab .about-lead{max-width:68ch;margin:0!important;color:#a9b9d0!important;font-size:14px!important;font-weight:400!important;line-height:1.68!important;text-shadow:none!important}
+      .nyx-utility-tab .utility-intro{max-width:68ch;margin:0 0 32px!important;color:#b7c5d9!important;font-size:14px!important;line-height:1.68!important}.nyx-utility-tab section p+p{margin-top:10px!important}.nyx-utility-tab ul{max-width:68ch;margin:10px 0 14px;padding-left:22px;color:#a9b9d0;font-size:14px;line-height:1.62}.nyx-utility-tab li+li{margin-top:4px}.nyx-utility-tab strong{color:#edf4ff!important;font-weight:600!important}
+      .nyx-about-tab{display:flex;min-height:calc(100vh - 1px);flex-direction:column;justify-content:center}.nyx-about-tab .about-mark{width:48px;height:48px;display:grid;place-items:center;margin-bottom:24px;border:1px solid rgba(111,158,232,.42);border-radius:15px;background:rgba(17,26,41,.72);color:#8fb8ff;font-size:23px}
+      .nyx-about-details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:30px 0 0}.nyx-about-details div{padding:14px;border:1px solid rgba(111,158,232,.22);border-radius:13px;background:rgba(17,26,41,.54)}.nyx-about-details dt{color:#8498b7;font-size:10px;letter-spacing:.09em;text-transform:uppercase}.nyx-about-details dd{margin:5px 0 0;color:#edf4ff;font-size:13px}
+      .nyx-terminal-tab{width:min(980px,calc(100vw - 34px));height:calc(100vh - 34px);min-height:420px;margin:17px auto;padding:0!important;display:grid;grid-template-rows:auto 1fr auto;border:1px solid rgba(111,158,232,.30);border-radius:17px;overflow:hidden;background:#080f1a!important}.nyx-terminal-toolbar{min-height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 17px;border-bottom:1px solid rgba(111,158,232,.22);color:#8498b7;font-size:11px;letter-spacing:.04em}.nyx-terminal-toolbar span:first-child{display:flex;align-items:center;gap:8px;color:#eaf2ff}.nyx-terminal-toolbar i{width:7px;height:7px;border-radius:50%;background:#79aaff}
+      .nyx-terminal-output{overflow:auto;padding:20px;color:#b9c8dc;font:400 12px/1.75 "Cascadia Code",Consolas,monospace}.nyx-terminal-line.command{margin-top:9px;color:#8fb8ff}.nyx-terminal-line.error{color:#ff8292}.nyx-terminal-form{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:12px 14px;border-top:1px solid rgba(111,158,232,.22);background:rgba(17,26,41,.70)}.nyx-terminal-form label{color:#8fb8ff;font:400 12px/1 "Cascadia Code",Consolas,monospace}.nyx-terminal-form input{width:100%;height:38px;padding:0 11px;border:1px solid rgba(111,158,232,.32);border-radius:9px;background:#080f1a;color:#eaf2ff;outline:0;font:400 12px/1 "Cascadia Code",Consolas,monospace}.nyx-terminal-form input:focus{border-color:#8fb8ff}.nyx-terminal-form button{height:38px;padding:0 16px;border:1px solid rgba(111,158,232,.38);border-radius:9px;background:rgba(111,158,232,.12);color:#eaf2ff;font:400 12px Outfit,Arial,sans-serif}.nyx-terminal-form button:hover{transform:none!important;background:rgba(111,158,232,.18)!important;border-color:#8fb8ff!important;box-shadow:none!important}
+      @media(max-width:680px){.nyx-about-details{grid-template-columns:1fr}.nyx-terminal-tab{width:calc(100vw - 16px);height:calc(100vh - 16px);margin:8px auto}.nyx-terminal-form{grid-template-columns:auto 1fr}.nyx-terminal-form button{grid-column:2}}
+    `;
+    const terminalPageScript=`(()=>{const output=document.querySelector('[data-nyx-terminal-output]');const input=document.querySelector('[data-nyx-terminal-input]');const write=(text,type='')=>{const row=document.createElement('div');row.className='nyx-terminal-line'+(type?' '+type:'');row.textContent=String(text);output.appendChild(row);output.scrollTop=output.scrollHeight};const run=raw=>{const command=String(raw||'').trim();if(!command)return;write('nyx> '+command,'command');const name=command.toLowerCase();if(name==='clear'){output.textContent='';return}if(name==='help'){write('Commands: help, status, theme, engine, origin, storage, date, clear');return}if(name==='status'){write('Nyx is '+(navigator.onLine?'online':'offline')+' · '+(navigator.platform||'browser'));return}if(name==='theme'){write('Theme: '+(document.body.className.match(/theme-([^ ]+)/)?.[1]||'default'));return}if(name==='engine'){write('Engine: '+(localStorage.getItem('nyx.browserMode')||'scramjet')+' · Transport: '+(localStorage.getItem('nyx.transport')||'libcurl'));return}if(name==='origin'){write('Origin: '+parent.location.origin);return}if(name==='storage'){write('Local settings entries: '+localStorage.length);return}if(name==='date'){write(new Date().toLocaleString());return}write('Unknown command: '+command+'. Type "help" for the command list.','error')};write('Nyx Developer Console');write('Type "help" to list commands. Browser DevTools cannot be opened by a webpage.');document.querySelector('[data-nyx-terminal-form]')?.addEventListener('submit',event=>{event.preventDefault();run(input?.value);if(input)input.value=''});setTimeout(()=>input?.focus(),50)})();`;
     const pages={
       apps:{title:'Apps',body:`<section class="shell-page"><h1>Apps</h1><p>Apps</p><div class="quick-grid apps-launch-grid">${quickTiles()}</div></section>`},
       links:{title:'Bookmarks',body:`<section class="shell-page"><h1>Bookmarks</h1><p>Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>DuckDuckGo</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></section>`},
+      terms:{title:'Terms Of Service',style:utilityPageStyle,body:nyxTermsPageMarkup()},
+      developer:{title:'Developer Console',style:utilityPageStyle,script:terminalPageScript,body:`<section class="nyx-terminal-tab" role="application" aria-label="Nyx developer console"><div class="nyx-terminal-toolbar"><span><i aria-hidden="true"></i>🛠 Nyx terminal</span><span>safe diagnostics</span></div><div class="nyx-terminal-output" data-nyx-terminal-output role="log" aria-live="polite"></div><form class="nyx-terminal-form" data-nyx-terminal-form><label for="nyxTerminalInput">nyx&gt;</label><input id="nyxTerminalInput" data-nyx-terminal-input autocomplete="off" spellcheck="false" aria-label="Terminal command" placeholder="Type help"><button type="submit">Run</button></form></section>`},
+      about:{title:'About Us',style:utilityPageStyle,body:`<article class="nyx-utility-tab nyx-about-tab"><div class="about-mark" aria-hidden="true">ⓘ</div><p class="utility-kicker">About Us</p><h1>Nyx</h1><p class="about-lead">A customizable browser-style workspace for search, study tools, apps, and a quieter way to move around the web.</p><dl class="nyx-about-details"><div><dt>Developed by</dt><dd>1aqlla</dd></div><div><dt>Interface</dt><dd>Nyx Workspace</dd></div><div><dt>Version</dt><dd>2026.07</dd></div></dl></article>`},
       ephesians1:{title:'Ephesians 1',body:`<section class="shell-page ephesians-diagram"><style>
         .ephesians-diagram{--ink:#f8fafc;--muted:#cbd5e1;--line:rgba(255,255,255,.24);max-width:1120px;margin:auto;padding-bottom:64px}.ephesians-diagram h1{text-align:center;font-size:clamp(30px,5vw,48px);margin:4px 0 6px}.ephesians-diagram>.diagram-sub{text-align:center;margin:0 0 28px;color:var(--muted);font-size:15px}.eph-flow{display:grid;gap:12px}.eph-block{padding:17px 20px;border:1px solid var(--line);border-left:6px solid #94a3b8;border-radius:14px;background:rgba(15,23,42,.58);box-shadow:0 12px 28px rgba(0,0,0,.16)}.eph-block h2{font-size:19px;margin:5px 0 7px}.eph-block p{margin:0;color:#e2e8f0;line-height:1.48;font-size:14px}.eph-verse{color:#cbd5e1;font-size:11px;font-weight:800;letter-spacing:.11em}.eph-father{border-left-color:#60a5fa}.eph-son{border-left-color:#fbbf24}.eph-spirit{border-left-color:#4ade80}.eph-prayer{border-left-color:#c084fc}.eph-arrow{text-align:center;height:22px;font:700 24px/22px Arial,sans-serif;color:#cbd5e1}.eph-purpose{text-align:center;padding:16px;border:1px solid rgba(255,255,255,.34);border-radius:14px;background:rgba(255,255,255,.10);font-size:17px;font-weight:800}.eph-purpose small{display:block;margin-bottom:5px;color:#cbd5e1;font-size:11px;letter-spacing:.1em}.eph-triad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.eph-triad .eph-block{padding:15px}.eph-triad h2{font-size:17px}@media(max-width:720px){.eph-triad{grid-template-columns:1fr}.ephesians-diagram{padding:20px 4px 50px!important}}</style>
         <h1>Ephesians 1</h1><p class="diagram-sub">God’s purpose in Christ, the Spirit’s seal, and Paul’s prayer for the church</p>
@@ -3665,6 +3733,7 @@
       },440);
 
       await startupProgress?.complete?.('Nyx is ready');
+      scheduleNyxTermsAcceptanceGate(360);
     });
   }
   const launchPdfOptions={
@@ -4897,7 +4966,7 @@
   }
   function browserBody(){
     const presenceText=nyxPresenceCount===null ? 'Connecting\u2026' : `${nyxPresenceCount} online`;
-    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence" role="status" aria-live="polite"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><button class="nyx-home-weather" data-home-weather data-open="weather" type="button" aria-label="Open weather report"><span class="nyx-home-weather-icon" data-home-weather-icon aria-hidden="true">🌤️</span><strong data-home-weather-temp>--°</strong><span data-home-weather-desc>Loading</span></button><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1><form class="browser-blank-search nyx-home-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Search the web or enter a URL" placeholder="Search the web..." autocomplete="off" spellcheck="false"></form><nav class="nyx-home-actions" aria-label="Nyx home"><button data-open="apps" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-apps" aria-hidden="true"></span><span>Apps</span></button><button data-app-url="https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-study" aria-hidden="true"></span><span>Study</span></button><button data-open="settings" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-settings" aria-hidden="true"></span><span>Settings</span></button></nav></main><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div></div>`;
+    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence" role="status" aria-live="polite"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><button class="nyx-home-weather" data-home-weather data-open="weather" type="button" aria-label="Open weather report"><span class="nyx-home-weather-icon" data-home-weather-icon aria-hidden="true">🌤️</span><strong data-home-weather-temp>--°</strong><span data-home-weather-desc>Loading</span></button><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1><form class="browser-blank-search nyx-home-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Search the web or enter a URL" placeholder="Search the web..." autocomplete="off" spellcheck="false"></form><nav class="nyx-home-actions" aria-label="Nyx home"><button data-open="apps" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-apps" aria-hidden="true"></span><span>Apps</span></button><button data-app-url="https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-study" aria-hidden="true"></span><span>Study</span></button><button data-open="settings" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-settings" aria-hidden="true"></span><span>Settings</span></button></nav></main><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div><nav class="nyx-home-utility-links" aria-label="Nyx information and tools"><button data-open="terms" type="button"><span aria-hidden="true">⚠︎</span><span>Terms Of Service</span></button><button data-open="developer" type="button"><span aria-hidden="true">🛠</span><span>Developer Console</span></button><button data-open="about" type="button"><span aria-hidden="true">ⓘ</span><span>About Us</span></button></nav></div></div>`;
   }
   //apps-grid
   const defaultHomeShortcuts=[
@@ -5149,8 +5218,8 @@
       const context=canvas.getContext('2d',{alpha:true});
       if(!context) return;
       const state={width:0,height:0,dots:[],pointer:null,trail:[],frame:0};
-      const radius=62;
-      const trailLifetime=900;
+      const radius=42;
+      const trailLifetime=760;
       const requestFrame=()=>{
         if(!state.frame) state.frame=requestAnimationFrame(draw);
       };
@@ -5169,8 +5238,10 @@
         state.dots=[];
         const spacing=24;
         for(let y=12;y<height;y+=spacing){
-          for(let x=20;x<width;x+=spacing) state.dots.push({homeX:x,homeY:y,x,y});
+          for(let x=20;x<width;x+=spacing) state.dots.push({homeX:x,homeY:y,x,y,vx:0,vy:0,opacity:1});
         }
+        canvas.dataset.particleCount=String(state.dots.length);
+        canvas.dataset.pointerEffect='repel-and-return';
         requestFrame();
       };
       function draw(){
@@ -5184,52 +5255,63 @@
         const influences=reducedMotion.matches ? [] : state.trail.map(point=>({
           x:point.x,
           y:point.y,
-          weight:Math.max(0,1-(now-point.time)/trailLifetime)*.96
+          weight:Math.max(0,1-(now-point.time)/trailLifetime)*.88
         }));
         if(state.pointer && !reducedMotion.matches) influences.unshift({x:state.pointer.x,y:state.pointer.y,weight:1});
         let unsettled=false;
         for(const dot of state.dots){
-          let targetX=dot.homeX;
-          let targetY=dot.homeY;
           if(!reducedMotion.matches){
-            let strongest=0;
-            let offsetX=0;
-            let offsetY=0;
+            let pushStrength=0;
+            let pushX=0;
+            let pushY=0;
             for(const influence of influences){
-              const dx=dot.homeX-influence.x;
-              const dy=dot.homeY-influence.y;
+              const dx=dot.x-influence.x;
+              const dy=dot.y-influence.y;
               const distance=Math.hypot(dx,dy);
               if(distance>=radius) continue;
-              const strength=Math.pow(1-distance/radius,2)*25*influence.weight;
-              if(strength<=strongest) continue;
               const direction=distance>0.01 ? distance : 1;
-              strongest=strength;
-              offsetX=dx/direction*strength;
-              offsetY=dy/direction*strength;
+              const strength=(1-distance/radius)*2.25*influence.weight;
+              if(strength<=pushStrength) continue;
+              pushStrength=strength;
+              pushX=dx/direction*strength;
+              pushY=dy/direction*strength;
             }
-            targetX+=offsetX;
-            targetY+=offsetY;
+            dot.vx+=pushX;
+            dot.vy+=pushY;
           }
-          dot.x+=(targetX-dot.x)*.16;
-          dot.y+=(targetY-dot.y)*.16;
-          if(Math.abs(targetX-dot.x)>.04 || Math.abs(targetY-dot.y)>.04 || Math.abs(dot.homeX-dot.x)>.04 || Math.abs(dot.homeY-dot.y)>.04) unsettled=true;
+          dot.vx+=(dot.homeX-dot.x)*.05;
+          dot.vy+=(dot.homeY-dot.y)*.05;
+          dot.vx*=.82;
+          dot.vy*=.82;
+          dot.x+=dot.vx;
+          dot.y+=dot.vy;
+          const displacement=Math.hypot(dot.x-dot.homeX,dot.y-dot.homeY);
+          dot.opacity=Math.max(.18,1-displacement/42);
+          if(displacement>.18 || dot.vx*dot.vx+dot.vy*dot.vy>.02) unsettled=true;
+          context.globalAlpha=dot.opacity;
           context.beginPath();
           context.arc(dot.x,dot.y,2.7,0,Math.PI*2);
           context.fill();
         }
+        context.globalAlpha=1;
         if(state.pointer || state.trail.length || unsettled) requestFrame();
       }
       home.addEventListener('pointermove',event=>{
-        if(!document.body.classList.contains('theme-default')) return;
         const rect=home.getBoundingClientRect();
         const next={x:event.clientX-rect.left,y:event.clientY-rect.top};
         const previous=state.pointer;
         if(previous){
           const last=state.trail[state.trail.length-1];
           const anchor=last || previous;
-          if(Math.hypot(next.x-anchor.x,next.y-anchor.y)>=8){
-            state.trail.push({x:previous.x,y:previous.y,time:performance.now()});
-            if(state.trail.length>32) state.trail.splice(0,state.trail.length-32);
+          if(Math.hypot(next.x-anchor.x,next.y-anchor.y)>=6){
+            const distance=Math.hypot(next.x-previous.x,next.y-previous.y);
+            const steps=Math.max(1,Math.min(6,Math.ceil(distance/12)));
+            const time=performance.now();
+            for(let step=0;step<steps;step++){
+              const amount=step/steps;
+              state.trail.push({x:previous.x+(next.x-previous.x)*amount,y:previous.y+(next.y-previous.y)*amount,time});
+            }
+            if(state.trail.length>54) state.trail.splice(0,state.trail.length-54);
           }
         }
         state.pointer=next;
@@ -5297,7 +5379,7 @@
       ['docs.google.com','Study','https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0'],
       ['duck.ai','Duck AI','https://duck.ai/'],
       ['nyx-ai','Nyx AI','nyx://ai'],
-      ['link-checker','Link Checker by Taii','/apps/link-checker/'],
+      ['link-checker','Link Checker by Midnight','/apps/link-checker/'],
       ['wikipedia.org','Wikipedia','https://www.wikipedia.org/'],
       ['cineby.at','Cineby','https://cineby.at/'],
       ['tiktok.com','TikTok','https://www.tiktok.com/'],
@@ -7492,15 +7574,14 @@
     makeWindow({title:'ռʏӼ Fixes',left:'24px',top:'60px',width:'520px',height:'620px',autoMaximize:true,body:`<div class="panel"><h1>ռʏӼ Fixes</h1><p class="home-sub">Click ռʏӼ in the top-left anytime to see this.</p><div class="glass-grid" style="grid-template-columns:1fr"><div class="glass-card"><h2>Latest fixes</h2><p>- Added animated windows that eject from the bottom dock and fade when closed.</p><p>- Made the Updates window open fullscreen every time.</p><p>- Added one-time Updates popup on startup.</p><p>- Added multiple weather location choices for ambiguous searches.</p><p>- Added hot and freezing weather themes.</p><p>- Updated glassmorphism so 100%+ lowers blur instead of over-brightening.</p><p>- Replaced the Discord logo with the new attached icon.</p><p>- Removed the left desktop Browser and Updates buttons.</p><p>- Changed Weather from an app into a right-side liquid glass panel.</p><p>- Added visible background previews and background upload.</p><p>- Rebuilt the loading screen so it types the welcome text.</p><p>- Added local app icons to avoid blocked favicon requests.</p></div><div class="glass-card"><h2>Browser fixes</h2><p>- Added a Node server for Ultraviolet.</p><p>- Fixed UV static routes for /uv, /baremux, /epoxy, and /wisp.</p><p>- Replaced the old Wisp server package.</p><p>- Pinned the compatible Epoxy transport.</p><p>- Removed hard UV script loading from Live Server mode.</p></div></div></div>`});
   }
   function weatherDescription(code){
-    const map={0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Cloudy',45:'Fog',48:'Freezing fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',80:'Rain showers',81:'Rain showers',82:'Heavy showers',95:'Thunderstorm'};
+    const map={0:'Clear',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Fog',48:'Rime fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',56:'Freezing drizzle',57:'Freezing drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',66:'Freezing rain',67:'Freezing rain',71:'Light snow',73:'Snow',75:'Heavy snow',77:'Snow grains',80:'Light showers',81:'Showers',82:'Heavy showers',85:'Snow showers',86:'Snow showers',95:'Thunderstorm',96:'Thunderstorm',99:'Thunderstorm, hail'};
     return map[code] || 'Weather';
   }
-  function weatherIcon(code){
-    if([0,1].includes(Number(code))) return '☀️';
-    if([2,3,45,48].includes(Number(code))) return '☁️';
-    if([51,53,55,61,63,65,80,81,82,95].includes(Number(code))) return '🌧️';
-    if([71,73,75].includes(Number(code))) return '❄️';
-    return '🌤️';
+  function weatherIcon(code,isDay=true){
+    const value=Number(code);
+    if(!isDay && [0,1].includes(value)) return '\uD83C\uDF19';
+    const icons={0:'\u2600\uFE0F',1:'\uD83C\uDF24\uFE0F',2:'\u26C5',3:'\u2601\uFE0F',45:'\uD83C\uDF2B\uFE0F',48:'\uD83C\uDF2B\uFE0F',51:'\uD83C\uDF26\uFE0F',53:'\uD83C\uDF26\uFE0F',55:'\uD83C\uDF27\uFE0F',56:'\uD83C\uDF27\uFE0F',57:'\uD83C\uDF27\uFE0F',61:'\uD83C\uDF26\uFE0F',63:'\uD83C\uDF27\uFE0F',65:'\uD83C\uDF27\uFE0F',66:'\uD83C\uDF27\uFE0F',67:'\uD83C\uDF27\uFE0F',71:'\uD83C\uDF28\uFE0F',73:'\uD83C\uDF28\uFE0F',75:'\u2744\uFE0F',77:'\uD83C\uDF28\uFE0F',80:'\uD83C\uDF26\uFE0F',81:'\uD83C\uDF27\uFE0F',82:'\u26C8\uFE0F',85:'\uD83C\uDF28\uFE0F',86:'\u2744\uFE0F',95:'\u26C8\uFE0F',96:'\u26C8\uFE0F',99:'\u26C8\uFE0F'};
+    return icons[value] || '\uD83C\uDF21\uFE0F';
   }
   function forecastDayLabel(dateText,index){
     if(index===0) return 'Today';
@@ -7525,7 +7606,7 @@
       const low=Math.round(daily.temperature_2m_min?.[index] ?? 0);
       return `<div class="weather-forecast-row" title="${esc(weatherDescription(code))}">
         <span class="weather-day">${esc(forecastDayLabel(day,index))}</span>
-        <span aria-hidden="true">${weatherIcon(code)}</span>
+        <span aria-hidden="true">${weatherIcon(code,true)}</span>
         <span class="weather-rain-chance">${rain}%</span>
         <span class="weather-high-low">${high}&deg; <span>${low}&deg;</span></span>
       </div>`;
@@ -7543,7 +7624,7 @@
       if(snapshot){
         const summary=weatherDescription(snapshot.weather_code);
         const degrees=`${Math.round(snapshot.temperature_2m)}°`;
-        if(icon) icon.textContent=weatherIcon(snapshot.weather_code);
+        if(icon) icon.textContent=weatherIcon(snapshot.weather_code,snapshot.is_day!==0);
         if(temp) temp.textContent=degrees;
         if(desc) desc.textContent=summary;
         widget.setAttribute('aria-label',`Open weather report. ${degrees}, ${summary}`);
@@ -7597,7 +7678,7 @@
     panel.querySelector('[data-weather-temp]').innerHTML=Math.round(data.temperature_2m)+'&deg;';
     panel.querySelector('[data-weather-place]').textContent=place || 'Weather';
     panel.querySelector('[data-weather-desc]').textContent=weatherDescription(data.weather_code);
-    panel.querySelector('[data-weather-icon]').textContent=weatherIcon(data.weather_code);
+    panel.querySelector('[data-weather-icon]').textContent=weatherIcon(data.weather_code,data.is_day!==0);
     panel.querySelector('[data-weather-feels]').innerHTML=Math.round(data.apparent_temperature ?? data.temperature_2m)+'&deg;';
     panel.querySelector('[data-weather-wind]').textContent=Math.round(data.wind_speed_10m)+' mph';
     panel.querySelector('[data-weather-humidity]').textContent=Math.round(data.relative_humidity_2m)+'%';
@@ -8562,6 +8643,105 @@
   function openLinks(){
     makeWindow({title:'Links',left:'18vw',top:'100px',width:'520px',height:'380px',body:`<div class="panel"><h1>Links</h1><div class="glass-grid"><div class="glass-card"><h2>Search Engines</h2><button data-url="https://www.google.com/">Google</button><button data-url="https://duckduckgo.com/">DuckDuckGo</button></div><div class="glass-card"><h2>School</h2><button data-url="https://docs.google.com/">Docs</button><button data-url="https://classroom.google.com/">Classroom</button></div></div></div>`});
   }
+  function openTermsOfService(){
+    if(document.body.classList.contains('browser-shell')) return openBrowserShellInternalTab('terms');
+    makeWindow({
+      title:'Terms Of Service',
+      left:'18vw',
+      top:'92px',
+      width:'720px',
+      height:'560px',
+      autoMaximize:false,
+      className:'nyx-utility-window',
+      body:nyxTermsPageMarkup('nyx-info-page nyx-terms-page')
+    });
+  }
+  function openAboutNyx(){
+    if(document.body.classList.contains('browser-shell')) return openBrowserShellInternalTab('about');
+    makeWindow({
+      title:'About Us',
+      left:'22vw',
+      top:'110px',
+      width:'620px',
+      height:'430px',
+      autoMaximize:false,
+      className:'nyx-utility-window',
+      body:`<article class="nyx-info-page nyx-about-page"><div class="nyx-about-mark" aria-hidden="true">ⓘ</div><p class="nyx-info-kicker">About Us</p><h1>Nyx</h1><p class="nyx-about-lead">A customizable browser-style workspace for search, study tools, apps, and a quieter way to move around the web.</p><dl class="nyx-about-details"><div><dt>Developed by</dt><dd>1aqlla</dd></div><div><dt>Interface</dt><dd>Nyx Workspace</dd></div><div><dt>Version</dt><dd>2026.07</dd></div></dl></article>`
+    });
+  }
+  function nyxTerminalWrite(output,text,type=''){
+    if(!output) return;
+    const row=document.createElement('div');
+    row.className='nyx-terminal-line'+(type?' '+type:'');
+    row.textContent=String(text);
+    output.appendChild(row);
+    output.scrollTop=output.scrollHeight;
+  }
+  function runNyxTerminalCommand(win,raw){
+    const output=win?.querySelector('[data-nyx-terminal-output]');
+    const command=String(raw || '').trim();
+    if(!command) return;
+    nyxTerminalWrite(output,'nyx> '+command,'command');
+    const name=command.toLowerCase();
+    if(name==='clear'){
+      output.textContent='';
+      return;
+    }
+    if(name==='help'){
+      nyxTerminalWrite(output,'Commands: help, status, theme, engine, origin, storage, date, clear');
+      return;
+    }
+    if(name==='status'){
+      nyxTerminalWrite(output,`Nyx is ${navigator.onLine?'online':'offline'} · ${navigator.platform || 'browser'} · ${location.hostname || 'local'}`);
+      return;
+    }
+    if(name==='theme'){
+      const active=Array.from(document.body.classList).find(value=>value.startsWith('theme-'))?.slice(6) || store.text('nyx.theme','default');
+      nyxTerminalWrite(output,'Theme: '+active);
+      return;
+    }
+    if(name==='engine'){
+      nyxTerminalWrite(output,`Engine: ${store.text('nyx.browserMode',DEFAULT_BROWSER_MODE)} · Transport: ${store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT)}`);
+      return;
+    }
+    if(name==='origin'){
+      nyxTerminalWrite(output,'Origin: '+location.origin);
+      return;
+    }
+    if(name==='storage'){
+      nyxTerminalWrite(output,`Local settings entries: ${localStorage.length}`);
+      return;
+    }
+    if(name==='date'){
+      nyxTerminalWrite(output,new Date().toLocaleString());
+      return;
+    }
+    nyxTerminalWrite(output,`Unknown command: ${command}. Type "help" for the command list.`,'error');
+  }
+  function openDeveloperConsole(){
+    if(document.body.classList.contains('browser-shell')) return openBrowserShellInternalTab('developer');
+    const win=makeWindow({
+      title:'🛠 Nyx Developer Console',
+      left:'16vw',
+      top:'84px',
+      width:'760px',
+      height:'520px',
+      autoMaximize:false,
+      className:'nyx-utility-window nyx-terminal-window',
+      body:`<div class="nyx-terminal" role="application" aria-label="Nyx developer console"><div class="nyx-terminal-toolbar"><span><i aria-hidden="true"></i>Nyx terminal</span><span>safe diagnostics</span></div><div class="nyx-terminal-output" data-nyx-terminal-output role="log" aria-live="polite"></div><form class="nyx-terminal-form" data-nyx-terminal-form><label for="nyxTerminalInput">nyx&gt;</label><input id="nyxTerminalInput" data-nyx-terminal-input autocomplete="off" spellcheck="false" aria-label="Terminal command" placeholder="Type help"><button type="submit">Run</button></form></div>`
+    });
+    const output=win.querySelector('[data-nyx-terminal-output]');
+    const form=win.querySelector('[data-nyx-terminal-form]');
+    const input=win.querySelector('[data-nyx-terminal-input]');
+    nyxTerminalWrite(output,'Nyx Developer Console');
+    nyxTerminalWrite(output,'Type "help" to list commands. Browser DevTools cannot be opened by a webpage.');
+    form?.addEventListener('submit',event=>{
+      event.preventDefault();
+      runNyxTerminalCommand(win,input?.value);
+      if(input) input.value='';
+    });
+    setTimeout(()=>input?.focus(),50);
+  }
   openApps = function(){
     makeWindow({title:'Apps',left:'8vw',top:'64px',width:'960px',height:'650px',body:`<div class="panel apps-panel"><h1>Apps</h1><div class="quick-grid apps-launch-grid">${quickTiles()}</div></div>`});
   };
@@ -8925,12 +9105,76 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
     }catch{}
     return true;
   }
+  let nyxTermsGateTimer=0;
+  function closeNyxTermsGate(){
+    document.querySelector('.nyx-tos-gate')?.remove();
+    document.body.classList.remove('nyx-tos-active');
+  }
+  function showNyxTermsAcceptanceGate(){
+    if(store.text('nyx.tosAcceptedVersion','')===NYX_TERMS_VERSION) return false;
+    if(document.querySelector('.nyx-tos-gate')) return true;
+    if(!$('formulaGate')?.classList.contains('hidden')) return false;
+    if($('setupScreen')?.classList.contains('show')) return false;
+    const gate=document.createElement('div');
+    gate.className='nyx-tos-gate';
+    gate.innerHTML=`<section class="nyx-tos-dialog" role="dialog" aria-modal="true" aria-labelledby="nyxTosGateTitle" aria-describedby="nyxTosGateIntro"><header class="nyx-tos-gate-header"><span class="nyx-tos-gate-logo" aria-hidden="true"></span><div><span>Before you continue</span><h1 id="nyxTosGateTitle" tabindex="-1">Nyx Terms of Service</h1></div></header><div class="nyx-tos-scroll" data-nyx-tos-scroll>${nyxTermsPageMarkup('nyx-tos-document')}<div class="nyx-tos-declined" hidden><span aria-hidden="true">ⓘ</span><h2 tabindex="-1">Terms declined</h2><p>You cannot use Nyx without accepting the Terms of Service. You can review the terms again or leave Nyx.</p></div></div><footer class="nyx-tos-actions"><p id="nyxTosGateIntro">By selecting Agree, you confirm that you have read and accept these Terms.</p><div><button class="nyx-tos-disagree" data-nyx-tos-disagree type="button">Disagree</button><button class="nyx-tos-agree" data-nyx-tos-agree type="button">Agree</button></div></footer></section>`;
+    document.body.appendChild(gate);
+    document.body.classList.add('nyx-tos-active');
+    const agree=gate.querySelector('[data-nyx-tos-agree]');
+    const disagree=gate.querySelector('[data-nyx-tos-disagree]');
+    const scroll=gate.querySelector('[data-nyx-tos-scroll]');
+    const documentView=gate.querySelector('.nyx-tos-document');
+    const declinedView=gate.querySelector('.nyx-tos-declined');
+    const showTerms=()=>{
+      gate.classList.remove('is-declined');
+      documentView.hidden=false;
+      declinedView.hidden=true;
+      agree.textContent='Agree';
+      disagree.textContent='Disagree';
+      scroll.scrollTop=0;
+      gate.querySelector('#nyxTosGateTitle')?.focus?.();
+    };
+    agree.addEventListener('click',()=>{
+      if(gate.classList.contains('is-declined')){
+        showTerms();
+        return;
+      }
+      store.setText('nyx.tosAcceptedVersion',NYX_TERMS_VERSION);
+      closeNyxTermsGate();
+      toast('Terms accepted');
+    });
+    disagree.addEventListener('click',()=>{
+      if(gate.classList.contains('is-declined')){
+        try{location.replace('about:blank')}catch{document.documentElement.innerHTML=''}
+        return;
+      }
+      gate.classList.add('is-declined');
+      documentView.hidden=true;
+      declinedView.hidden=false;
+      agree.textContent='Review Terms';
+      disagree.textContent='Leave Nyx';
+      scroll.scrollTop=0;
+      declinedView.querySelector('h2')?.focus();
+    });
+    requestAnimationFrame(()=>gate.classList.add('show'));
+    setTimeout(()=>gate.querySelector('#nyxTosGateTitle')?.focus?.(),80);
+    return true;
+  }
+  function scheduleNyxTermsAcceptanceGate(delay=320){
+    clearTimeout(nyxTermsGateTimer);
+    nyxTermsGateTimer=setTimeout(()=>{
+      if(!showNyxTermsAcceptanceGate() && store.text('nyx.tosAcceptedVersion','')!==NYX_TERMS_VERSION && nyxGateOpened){
+        scheduleNyxTermsAcceptanceGate(500);
+      }
+    },delay);
+  }
   function hideSetup(){
     const setup=$('setupScreen');
     if(!setup) return;
     setup.classList.remove('show');
     setup.setAttribute('aria-hidden','true');
     document.body.classList.remove('setup-active');
+    if(store.get('nyx.setupComplete',false)) scheduleNyxTermsAcceptanceGate(180);
   }
   function showSetupLaunchSplash(){
     return window.nyxLoadingScreen?.show() || null;
@@ -10258,7 +10502,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
       if(!e.target.closest('.home-shortcut-menu') && !e.target.closest('[data-home-shortcut-menu]')){
         document.querySelectorAll('.home-shortcut.menu-open').forEach(item=>item.classList.remove('menu-open'));
       }
-      const open=e.target.closest('[data-open]'); if(open){e.preventDefault(); document.body.classList.remove('menu-open'); const v=open.dataset.open; if(v==='browser')openBrowser(); if(v==='home')openBrowser(); if(v==='updates')openUpdates(); if(v==='settings')openSettings(); if(v==='apps')openApps(); if(v==='links')openLinks(); if(v==='weather')openWeather(); return}
+      const open=e.target.closest('[data-open]'); if(open){e.preventDefault(); document.body.classList.remove('menu-open'); const v=open.dataset.open; if(v==='browser')openBrowser(); if(v==='home')openBrowser(); if(v==='updates')openUpdates(); if(v==='settings')openSettings(); if(v==='apps')openApps(); if(v==='links')openLinks(); if(v==='weather')openWeather(); if(v==='terms')openTermsOfService(); if(v==='developer')openDeveloperConsole(); if(v==='about')openAboutNyx(); return}
       const app=e.target.closest('[data-app-url]');
       if(app && !app.closest('.browser-window')){
         e.preventDefault();

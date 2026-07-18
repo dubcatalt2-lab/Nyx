@@ -71,22 +71,22 @@ html body #setupLaunchScreen .nyx-loading-progress{
   display:block!important;
   visibility:visible!important;
   opacity:1!important;
-  height:10px!important;
-  min-height:10px!important;
+  height:4px!important;
+  min-height:4px!important;
   box-sizing:border-box!important;
-  border-color:color-mix(in srgb,var(--nyx-load-accent) 46%,transparent)!important;
-  background:color-mix(in srgb,var(--nyx-load-deep-bg) 88%,var(--nyx-load-deep))!important;
-  box-shadow:0 0 16px color-mix(in srgb,var(--nyx-load-glow) 68%,transparent),inset 0 1px 3px rgba(0,0,0,.58),inset 0 0 0 1px color-mix(in srgb,var(--nyx-load-bright) 12%,transparent)!important;
+  border:0!important;
+  background:color-mix(in srgb,var(--nyx-load-accent) 16%,var(--nyx-load-deep-bg))!important;
+  box-shadow:none!important;
 }
 html body #setupLaunchScreen .nyx-loading-progress > span{
   display:block!important;
   visibility:visible!important;
   opacity:1!important;
-  background:linear-gradient(90deg,var(--nyx-load-deep),var(--nyx-load-accent) 56%,var(--nyx-load-mid))!important;
-  box-shadow:0 0 12px var(--nyx-load-glow),0 0 26px color-mix(in srgb,var(--nyx-load-glow) 82%,transparent)!important;
+  background:var(--nyx-load-accent)!important;
+  box-shadow:none!important;
 }
-html body #setupLaunchScreen .nyx-loading-progress > span::after{background:linear-gradient(90deg,transparent,var(--nyx-load-bright),transparent)!important}
-html body #setupLaunchScreen .nyx-loading-percent{color:var(--nyx-load-mid)!important;-webkit-text-fill-color:var(--nyx-load-mid)!important;text-shadow:0 0 12px var(--nyx-load-glow)!important}
+html body #setupLaunchScreen .nyx-loading-progress > span::after{content:none!important;background:none!important;animation:none!important}
+html body #setupLaunchScreen .nyx-loading-percent{color:var(--nyx-load-mid)!important;-webkit-text-fill-color:var(--nyx-load-mid)!important;text-shadow:none!important}
 html body #setupLaunchScreen .nyx-loading-spinner{
   border-color:color-mix(in srgb,var(--nyx-load-accent) 24%,transparent)!important;
   border-top-color:var(--nyx-load-bright)!important;

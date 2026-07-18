@@ -100,10 +100,13 @@ html body:is(body,#nyx-weather-specificity) .weather-panel-title::before{
   background:var(--weather-accent);
 }
 html body:is(body,#nyx-weather-specificity) .weather-head-actions{display:flex!important;align-items:center!important;gap:8px!important}
-html body:is(body,#nyx-weather-specificity) .weather-icon-btn{
+html body:is(body,#nyx-weather-specificity) .weather-head-actions .weather-icon-btn{
+  flex:0 0 30px!important;
   width:30px!important;
+  max-width:30px!important;
   min-width:30px!important;
   height:30px!important;
+  max-height:30px!important;
   min-height:30px!important;
   display:grid!important;
   place-items:center!important;
@@ -115,10 +118,24 @@ html body:is(body,#nyx-weather-specificity) .weather-icon-btn{
   color:var(--weather-muted)!important;
   box-shadow:none!important;
 }
-html body:is(body,#nyx-weather-specificity) .weather-icon-btn:hover{
+html body:is(body,#nyx-weather-specificity) .weather-head-actions .weather-icon-btn:hover{
   border-color:color-mix(in srgb,var(--weather-accent) 58%,transparent)!important;
   background:var(--weather-card-hover)!important;
   color:var(--weather-text)!important;
+}
+html body:is(body,#nyx-weather-specificity) .weather-icon-btn svg{
+  width:17px!important;
+  height:17px!important;
+  fill:none!important;
+  stroke:currentColor!important;
+  stroke-width:1.7!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+}
+html body:is(body,#nyx-weather-specificity) .weather-icon-btn[data-weather-minimize]::before,
+html body:is(body,#nyx-weather-specificity) .weather-icon-btn[data-weather-minimize]::after{
+  content:none!important;
+  display:none!important;
 }
 
 html body:is(body,#nyx-weather-specificity) .weather-search{
@@ -126,6 +143,33 @@ html body:is(body,#nyx-weather-specificity) .weather-search{
   grid-template-columns:minmax(0,1fr) 40px!important;
   gap:8px!important;
   margin:0 0 10px!important;
+}
+html body:is(body,#nyx-weather-specificity) .weather-search-box{
+  position:relative!important;
+  min-width:0!important;
+  display:block!important;
+}
+html body:is(body,#nyx-weather-specificity) .weather-search-symbol{
+  position:absolute!important;
+  left:14px!important;
+  top:50%!important;
+  z-index:2!important;
+  width:13px!important;
+  height:13px!important;
+  display:grid!important;
+  place-items:center!important;
+  color:var(--weather-muted)!important;
+  transform:translateY(-50%)!important;
+  pointer-events:none!important;
+}
+html body:is(body,#nyx-weather-specificity) .weather-search-symbol svg,
+html body:is(body,#nyx-weather-specificity) .weather-search button svg{
+  display:block!important;
+  fill:none!important;
+  stroke:currentColor!important;
+  stroke-width:1.7!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
 }
 html body:is(body,#nyx-weather-specificity) .weather-search input,
 html body:is(body,#nyx-weather-specificity) .weather-options{
@@ -140,12 +184,9 @@ html body:is(body,#nyx-weather-specificity) .weather-options{
 }
 html body:is(body,#nyx-weather-specificity) .weather-search input{
   height:40px!important;
-  padding:0 14px 0 42px!important;
+  padding:0 14px 0 39px!important;
   font-size:14px!important;
-  background-image:radial-gradient(circle at 20px 48%,transparent 0 6px,var(--weather-muted) 6.5px 8px,transparent 8.5px),linear-gradient(45deg,transparent 0 63%,var(--weather-muted) 64% 72%,transparent 73%)!important;
-  background-size:32px 32px,15px 15px!important;
-  background-position:8px 50%,25px 26px!important;
-  background-repeat:no-repeat!important;
+  background-image:none!important;
 }
 html body:is(body,#nyx-weather-specificity) .weather-search input::placeholder{color:var(--weather-muted)!important}
 html body:is(body,#nyx-weather-specificity) .weather-search input:focus,
@@ -163,6 +204,7 @@ html body:is(body,#nyx-weather-specificity) .weather-search button{
   color:var(--weather-accent)!important;
   box-shadow:none!important;
 }
+html body:is(body,#nyx-weather-specificity) .weather-search button svg{width:17px!important;height:17px!important;margin:auto!important}
 html body:is(body,#nyx-weather-specificity) .weather-options{
   height:42px!important;
   margin:0 0 12px!important;
@@ -336,4 +378,74 @@ html body:is(body,#nyx-weather-specificity) .weather-panel.weather-sun .fx-sun{r
 
 @media (prefers-reduced-motion:reduce){
   html body:is(body,#nyx-weather-specificity) .weather-effects{display:none!important}
+}
+
+/* Compact vertical report: familiar at a glance, but distinctly Nyx. */
+html body:is(body,#nyx-weather-specificity) .weather-panel{
+  width:min(344px,calc(100vw - 44px))!important;
+  max-height:min(650px,calc(100vh - 104px))!important;
+  padding:13px!important;
+  border-radius:22px!important;
+}
+html body:is(body,#nyx-weather-specificity) .weather-panel-head{margin-bottom:9px!important}
+html body:is(body,#nyx-weather-specificity) .weather-panel-title{font-size:13px!important;letter-spacing:.04em!important}
+html body:is(body,#nyx-weather-specificity) .weather-search{grid-template-columns:minmax(0,1fr) 40px!important;margin-bottom:9px!important}
+html body:is(body,#nyx-weather-specificity) .weather-now{
+  grid-template-columns:50px minmax(0,1fr) minmax(68px,auto)!important;
+  min-height:72px!important;
+  padding:9px 10px!important;
+  border-radius:15px!important;
+}
+html body:is(body,#nyx-weather-specificity) .weather-glyph{width:46px!important;height:46px!important;font-size:32px!important}
+html body:is(body,#nyx-weather-specificity) .weather-panel .weather-temp{font-size:36px!important}
+html body:is(body,#nyx-weather-specificity) .weather-panel .weather-place{max-width:96px!important}
+html body:is(body,#nyx-weather-specificity) .weather-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+html body:is(body,#nyx-weather-specificity) .weather-stat{
+  min-height:39px!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:8px!important;
+  padding:7px 10px!important;
+  border-radius:12px!important;
+  font-size:11px!important;
+}
+html body:is(body,#nyx-weather-specificity) .weather-stat strong{font-size:12px!important}
+html body:is(body,#nyx-weather-specificity) .weather-forecast-title{margin-top:3px!important;font-size:10px!important}
+html body:is(body,#nyx-weather-specificity) .weather-forecast{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:1px!important;
+  overflow:visible!important;
+  padding:0!important;
+}
+html body:is(body,#nyx-weather-specificity) .weather-forecast-row{
+  min-height:34px!important;
+  display:grid!important;
+  grid-template-columns:52px 26px 42px minmax(72px,1fr)!important;
+  align-items:center!important;
+  justify-items:start!important;
+  gap:8px!important;
+  padding:4px 8px!important;
+  border-color:transparent!important;
+  border-radius:10px!important;
+  background:transparent!important;
+  text-align:left!important;
+}
+html body:is(body,#nyx-weather-specificity) .weather-forecast-row:hover{background:var(--weather-card-bg)!important}
+html body:is(body,#nyx-weather-specificity) .weather-forecast-row > span:nth-child(2){font-size:16px!important;justify-self:center!important}
+html body:is(body,#nyx-weather-specificity) .weather-forecast-row .weather-day{font-size:11px!important}
+html body:is(body,#nyx-weather-specificity) .weather-forecast-row .weather-rain-chance{font-size:11px!important}
+html body:is(body,#nyx-weather-specificity) .weather-forecast-row .weather-high-low{
+  width:100%!important;
+  margin:0!important;
+  font-size:12px!important;
+  text-align:right!important;
+}
+@media (max-width:620px){
+  html body:is(body,#nyx-weather-specificity) .weather-panel{width:calc(100vw - 24px)!important}
+  html body:is(body,#nyx-weather-specificity) .weather-now{grid-template-columns:48px minmax(0,1fr) minmax(68px,auto)!important}
+  html body:is(body,#nyx-weather-specificity) .weather-panel .weather-place{grid-column:auto!important;text-align:right!important}
+  html body:is(body,#nyx-weather-specificity) .weather-region-time{text-align:right!important}
+  html body:is(body,#nyx-weather-specificity) .weather-forecast{grid-template-columns:1fr!important;overflow:visible!important}
 }

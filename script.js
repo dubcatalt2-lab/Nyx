@@ -1945,29 +1945,6 @@
     const closeButton=overlay.querySelector('.browser-shell-settings-close');
     if(closeButton){
       closeButton.textContent='\u00d7';
-      const closeColor=document.body.classList.contains('theme-fresh') ? '#54ebd9' : getComputedStyle(document.body).getPropertyValue('--theme-strong').trim() || '#f8fafc';
-      Object.entries({
-        border:'0',
-        borderWidth:'0',
-        borderStyle:'none',
-        outline:'0',
-        background:'transparent',
-        backgroundColor:'transparent',
-        backgroundImage:'none',
-        boxShadow:'none',
-        color:closeColor,
-        WebkitTextFillColor:closeColor,
-        width:'22px',
-        height:'22px',
-        minWidth:'22px',
-        minHeight:'22px',
-        padding:'0',
-        borderRadius:'0',
-        fontSize:'18px',
-        lineHeight:'20px',
-        textIndent:'0',
-        textAlign:'center'
-      }).forEach(([property,value])=>closeButton.style.setProperty(property,value,'important'));
     }
     const effectBlock=overlay.querySelector('[data-effect-value]')?.closest('.settings-block');
     if(effectBlock){
@@ -2224,7 +2201,7 @@
     const panicFrameScript='let NYX_PANIC_CAPTURE=false;function nyxPanicCombo(e){const key=String(e.key||"").trim();if(!key||["Control","Shift","Alt","Meta"].includes(key))return "";const parts=[];if(e.ctrlKey)parts.push("Ctrl");if(e.altKey)parts.push("Alt");if(e.shiftKey)parts.push("Shift");if(e.metaKey)parts.push("Meta");parts.push(key.length===1?key.toUpperCase():key.replace(/^Arrow/,""));return parts.join("+")}document.addEventListener("click",e=>{if(e.target.closest("[data-panic-capture]"))NYX_PANIC_CAPTURE=true;if(e.target.closest("[data-panic-clear]"))NYX_PANIC_CAPTURE=false},true);document.addEventListener("keydown",e=>{if(!NYX_PANIC_CAPTURE)return;const combo=nyxPanicCombo(e);if(!combo)return;e.preventDefault();e.stopPropagation();NYX_PANIC_CAPTURE=false;document.querySelectorAll("[data-panic-key-display]").forEach(el=>el.textContent=combo);parent.postMessage({type:"nyx:panic-key-set",combo},"*")},true);';
     const internalPaintScript='';
     const finalInternalPaintScript='';
-    return '<!doctype html><meta charset="utf-8"><base target="_self"><style>'+style+themeStyle+freshThemeStyle+themeAppStyle+compactSettingsStyle+pageThemeStyle+themeBorderOnlyStyle+'input[type=file].settings-input{color:#f8fafc;background:transparent!important}input[type=file].settings-input::file-selector-button{height:28px;margin:0 12px 0 0;border:1px solid var(--theme-border,rgba(255,255,255,.3));border-radius:999px;background:transparent!important;background-image:none!important;color:#f8fafc;padding:0 12px;font:400 12px Outfit,Arial,sans-serif}.theme-ruby input[type=file].settings-input::file-selector-button,.theme-emerald input[type=file].settings-input::file-selector-button,.theme-sakura input[type=file].settings-input::file-selector-button{background:transparent!important;background-image:none!important;color:#f8fafc!important}.settings-section{display:none}.settings-section.active{display:block}.settings-range{display:grid;grid-template-columns:70px minmax(0,1fr) 46px;align-items:center;gap:10px;margin:12px 0;color:#d1d5db;font-size:13px;font-weight:400}.settings-range input{width:100%;accent-color:#9ca3af}.settings-nav-icon{width:24px;height:24px;border-radius:999px;border:2px solid #dbe2ea;display:inline-block;position:relative;background:transparent!important;box-shadow:none!important}.icon-general::before{content:"";position:absolute;inset:5px;border:2px solid #dbe2ea;border-radius:999px}.icon-effects::before{content:"";position:absolute;left:5px;right:5px;top:10px;height:2px;background:#dbe2ea;box-shadow:0 -5px 0 #dbe2ea,0 5px 0 #dbe2ea}.icon-watch::before{content:"";position:absolute;left:8px;top:5px;border-left:9px solid #dbe2ea;border-top:6px solid transparent;border-bottom:6px solid transparent}.icon-browser::before{content:"";position:absolute;left:4px;right:4px;top:6px;height:11px;border:2px solid #dbe2ea;border-radius:4px}.icon-browser::after{content:"";position:absolute;left:7px;right:7px;bottom:4px;height:2px;background:#dbe2ea}.settings-effect-preview span:nth-child(1)::before{content:"";width:14px;height:20px;border-radius:999px;background:#cfd8e3;transform:rotate(28deg)}.settings-effect-preview span:nth-child(2)::before{content:"";width:18px;height:18px;background:#cfd8e3;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 56%,79% 91%,50% 70%,21% 91%,32% 56%,2% 35%,39% 35%)}.settings-effect-preview span:nth-child(3)::before{content:"";width:18px;height:16px;background:#cfd8e3;clip-path:polygon(50% 100%,8% 52%,4% 22%,24% 2%,50% 20%,76% 2%,96% 22%,92% 52%)}.settings-effect-preview span:nth-child(4)::before{content:"";width:18px;height:18px;border:3px solid #cfd8e3;border-radius:999px}'+themeBorderOnlyStyle+flatInternalStyle+flatInternalPageStyle+transparentInternalFinalStyle+settingsInternalFinalStyle+settingsGlassRepairStyle+browserSettingsSinglePaneStyle+settingsClearAroundStyle+'html body .settings-app :is(input,select,textarea,.settings-input,.settings-select):hover{transform:none!important}html body .settings-app button:hover{transform:none!important}'+clearInternalPageStyle+internalAppsLaunchStyle+internalAppsHazeStyle+finalInternalBackgroundStyle+normalInternalTextStyle+(page.style||'')+'</style>'+page.body+'<script>const NYX_EFFECT='+JSON.stringify(store.text('nyx.visualEffect','none'))+';const NYX_EFFECT_SPEED='+JSON.stringify(store.text('nyx.visualEffectSpeed','1.1'))+';const NYX_EFFECT_AMOUNT='+JSON.stringify(store.text('nyx.visualEffectAmount','16'))+';const NYX_THEME='+JSON.stringify(store.text('nyx.theme','default'))+';if(NYX_THEME&&NYX_THEME!=="default")document.body.classList.add("theme-"+NYX_THEME);document.querySelectorAll("[data-effect-value]").forEach(el=>{el.value=NYX_EFFECT});document.querySelectorAll("[data-effect-speed]").forEach(el=>{el.value=NYX_EFFECT_SPEED});document.querySelectorAll("[data-effect-amount]").forEach(el=>{el.value=NYX_EFFECT_AMOUNT});document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=Number(NYX_EFFECT_SPEED).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=NYX_EFFECT_AMOUNT});'+internalPaintScript+finalInternalPaintScript+script+popupScript+panicFrameScript+(page.script||'')+'<\/script>';
+    return '<!doctype html><meta charset="utf-8"><base target="_self"><style>'+style+themeStyle+freshThemeStyle+themeAppStyle+compactSettingsStyle+pageThemeStyle+themeBorderOnlyStyle+'input[type=file].settings-input{color:#f8fafc;background:transparent!important}input[type=file].settings-input::file-selector-button{height:28px;margin:0 12px 0 0;border:1px solid var(--theme-border,rgba(255,255,255,.3));border-radius:999px;background:transparent!important;background-image:none!important;color:#f8fafc;padding:0 12px;font:400 12px Outfit,Arial,sans-serif}.theme-ruby input[type=file].settings-input::file-selector-button,.theme-emerald input[type=file].settings-input::file-selector-button,.theme-sakura input[type=file].settings-input::file-selector-button{background:transparent!important;background-image:none!important;color:#f8fafc!important}.settings-section{display:none}.settings-section.active{display:block}.settings-range{display:grid;grid-template-columns:70px minmax(0,1fr) 46px;align-items:center;gap:10px;margin:12px 0;color:#d1d5db;font-size:13px;font-weight:400}.settings-range input{width:100%;accent-color:#9ca3af}.settings-nav-icon{width:24px;height:24px;border-radius:999px;border:2px solid #dbe2ea;display:inline-block;position:relative;background:transparent!important;box-shadow:none!important}.icon-general::before{content:"";position:absolute;inset:5px;border:2px solid #dbe2ea;border-radius:999px}.icon-effects::before{content:"";position:absolute;left:5px;right:5px;top:10px;height:2px;background:#dbe2ea;box-shadow:0 -5px 0 #dbe2ea,0 5px 0 #dbe2ea}.icon-watch::before{content:"";position:absolute;left:8px;top:5px;border-left:9px solid #dbe2ea;border-top:6px solid transparent;border-bottom:6px solid transparent}.icon-browser::before{content:"";position:absolute;left:4px;right:4px;top:6px;height:11px;border:2px solid #dbe2ea;border-radius:4px}.icon-browser::after{content:"";position:absolute;left:7px;right:7px;bottom:4px;height:2px;background:#dbe2ea}.settings-effect-preview span:nth-child(1)::before{content:"";width:14px;height:20px;border-radius:999px;background:#cfd8e3;transform:rotate(28deg)}.settings-effect-preview span:nth-child(2)::before{content:"";width:18px;height:18px;background:#cfd8e3;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 56%,79% 91%,50% 70%,21% 91%,32% 56%,2% 35%,39% 35%)}.settings-effect-preview span:nth-child(3)::before{content:"";width:18px;height:16px;background:#cfd8e3;clip-path:polygon(50% 100%,8% 52%,4% 22%,24% 2%,50% 20%,76% 2%,96% 22%,92% 52%)}.settings-effect-preview span:nth-child(4)::before{content:"";width:18px;height:18px;border:3px solid #cfd8e3;border-radius:999px}'+themeBorderOnlyStyle+flatInternalStyle+flatInternalPageStyle+transparentInternalFinalStyle+settingsInternalFinalStyle+settingsGlassRepairStyle+browserSettingsSinglePaneStyle+settingsClearAroundStyle+'html body .settings-app :is(input,select,textarea,.settings-input,.settings-select):hover{transform:none!important}html body .settings-app button:hover{transform:none!important}'+clearInternalPageStyle+internalAppsLaunchStyle+internalAppsHazeStyle+finalInternalBackgroundStyle+normalInternalTextStyle+(page.style||'')+'</style>'+page.body+'<script>const NYX_EFFECT='+JSON.stringify(store.text('nyx.visualEffect','none'))+';const NYX_EFFECT_SPEED='+JSON.stringify(store.text('nyx.visualEffectSpeed','1.1'))+';const NYX_EFFECT_AMOUNT='+JSON.stringify(store.text('nyx.visualEffectAmount','16'))+';const NYX_THEME='+JSON.stringify(normalizeNyxTheme(store.text('nyx.theme','default')))+';document.body.classList.add("theme-"+NYX_THEME);document.body.dataset.nyxTheme=NYX_THEME;document.documentElement.dataset.nyxTheme=NYX_THEME;document.querySelectorAll("[data-effect-value]").forEach(el=>{el.value=NYX_EFFECT});document.querySelectorAll("[data-effect-speed]").forEach(el=>{el.value=NYX_EFFECT_SPEED});document.querySelectorAll("[data-effect-amount]").forEach(el=>{el.value=NYX_EFFECT_AMOUNT});document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=Number(NYX_EFFECT_SPEED).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=NYX_EFFECT_AMOUNT});'+internalPaintScript+finalInternalPaintScript+script+popupScript+panicFrameScript+(page.script||'')+'<\/script>';
   }
   function showBrowserShellInternalPage(name){
     hideBrowserSuggestions();
@@ -2971,11 +2948,19 @@
     }
   }
   function syncThemeVantaBackgrounds(){
+    /* Themes only tint the shared Nyx canvas.  Keep one optional 3D scene
+       instead of stacking a second theme-specific Vanta layer on top of it. */
     syncDefaultVantaBackground();
-    syncRubyVantaBackground();
-    syncWhiteVantaBackground();
-    syncEmeraldVantaBackground();
-    syncSakuraVantaBackground();
+    [
+      ['rubyVantaBg',stopRubyVanta],
+      ['whiteVantaBg',stopWhiteVanta],
+      ['emeraldVantaBg',stopEmeraldVanta],
+      ['sakuraVantaBg',stopSakuraVanta]
+    ].forEach(([id,stop])=>{
+      const layer=$(id);
+      if(layer) layer.hidden=true;
+      stop();
+    });
     syncNyxWaveBackground();
   }
   function syncNyxWaveBackground(){
@@ -3008,39 +2993,36 @@
       }
     });
   }
+  const nyxThemeNames=['default','ruby','emerald','sakura','fresh','midnight'];
+  const nyxThemeClasses=nyxThemeNames.map(name=>'theme-'+name);
+  function normalizeNyxTheme(value){
+    return nyxThemeNames.includes(String(value || '').toLowerCase()) ? String(value).toLowerCase() : 'default';
+  }
   function applyThemeSetting(){
-    const allowed=['default','ruby','emerald','sakura','fresh','midnight'];
-    const theme=allowed.includes(store.text('nyx.theme','default')) ? store.text('nyx.theme','default') : 'default';
+    const theme=normalizeNyxTheme(store.text('nyx.theme','default'));
+    if(store.text('nyx.theme','default')!==theme) store.setText('nyx.theme',theme);
     document.body.classList.remove('theme-default','theme-ruby','theme-emerald','theme-sakura','theme-fresh','theme-midnight');
-    document.body.classList.add(theme==='default' ? 'theme-midnight' : 'theme-'+theme);
-    document.body.classList.toggle('theme-default',theme==='default');
+    document.body.classList.add('theme-'+theme);
+    document.body.dataset.nyxTheme=theme;
+    document.documentElement.dataset.nyxTheme=theme;
+    document.documentElement.style.colorScheme='dark';
     applyNyxLogoTheme(theme);
-    const browserBackground=currentBrowserBackgroundValue();
-    document.documentElement.style.setProperty('--browser-bg-render',normalizeBgValue(browserBackground));
     ensureFreshThemeOptions();
     qsa('[data-theme-value]').forEach(el=>{el.value=theme});
-    if(nyxGateOpened && theme==='default'){
-      if(store.text('nyx.visualEffect','none')==='stars' && store.text('nyx.visualEffectAmount','16')==='64'){
-        store.setText('nyx.visualEffect','none');
-      }
-    }
-    if(!store.get('nyx.visualEffectUserChoice',false) && ['flowers','emeralds'].includes(store.text('nyx.visualEffect','none'))){
-      store.setText('nyx.visualEffect','none');
-    }
-    if(nyxGateOpened && (theme==='fresh' || theme==='sakura')){
-      applyVisualEffectSetting();
-    }
     syncInternalThemeFrames(theme);
     syncThemeVantaBackgrounds();
+    window.dispatchEvent(new CustomEvent('nyx:themechange',{detail:{theme}}));
   }
   function syncInternalThemeFrames(theme=store.text('nyx.theme','default')){
-    const clean=theme==='default' ? 'midnight' : (['ruby','emerald','sakura','fresh','midnight'].includes(theme) ? theme : 'midnight');
+    const clean=normalizeNyxTheme(theme);
     document.querySelectorAll('iframe.view').forEach(frame=>{
       try{
         const doc=frame.contentDocument;
         if(!doc?.body) return;
-        doc.body.classList.remove('theme-ruby','theme-emerald','theme-sakura','theme-fresh','theme-midnight');
-        if(clean!=='default') doc.body.classList.add('theme-'+clean);
+        doc.body.classList.remove(...nyxThemeClasses);
+        doc.body.classList.add('theme-'+clean);
+        doc.body.dataset.nyxTheme=clean;
+        doc.documentElement.dataset.nyxTheme=clean;
         ensureFreshThemeOptions(doc);
         doc.querySelectorAll('[data-theme-value]').forEach(el=>{el.value=clean});
       }catch{}
@@ -3222,15 +3204,6 @@
     return customData ? `url("${customData}")` : customUrl ? `url("${customUrl.replaceAll('"','%22')}")` : legacy || bgPresets[bg] || bgPresets.dragon;
   }
   function currentBrowserBackgroundValue(){
-    const theme=store.text('nyx.theme','default');
-    if(['ruby','emerald','sakura','fresh'].includes(theme)){
-      const themeBg=getComputedStyle(document.body).getPropertyValue('--theme-bg').trim();
-      if(themeBg && !/transparent\s*,\s*transparent/i.test(themeBg)) return themeBg;
-      if(theme==='ruby') return 'linear-gradient(rgba(60,0,12,.10),rgba(60,0,12,.22)),url("assets/backgrounds/nyx-blue-light-trails.jpg")';
-      if(theme==='emerald') return 'linear-gradient(rgba(0,24,12,.08),rgba(0,24,12,.20)),url("assets/backgrounds/nyx-blue-light-trails.jpg")';
-      if(theme==='sakura') return 'linear-gradient(rgba(40,0,28,.06),rgba(40,0,28,.18)),url("assets/backgrounds/nyx-blue-light-trails.jpg")';
-      if(theme==='fresh') return 'linear-gradient(rgba(255,255,255,.10),rgba(255,255,255,.18)),url("assets/backgrounds/nyx-blue-light-trails.jpg")';
-    }
     const bg=store.text('nyx.browserBackground','lofiPurple');
     return bgPresets[bg] || bgPresets.lofiPurple || bgPresets.dragon;
   }
@@ -7488,7 +7461,7 @@
         store.setText('nyx.visualEffect',e.data.effect || 'none');
         store.setText('nyx.visualEffectSpeed',e.data.speed || '1.1');
         store.setText('nyx.visualEffectAmount',String(Math.max(1,Math.min(64,Number(e.data.amount || 16)))));
-        store.setText('nyx.theme',e.data.theme || store.text('nyx.theme','default'));
+        store.setText('nyx.theme',normalizeNyxTheme(e.data.theme || store.text('nyx.theme','default')));
         applyThemeSetting();
         applyVisualEffectSetting();
         const shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
@@ -10720,9 +10693,10 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
         return;
       }
       if(browserSettingsRoot && e.target.closest?.('[data-theme-value]')){
-        const theme=e.target.value || 'default';
+        const theme=normalizeNyxTheme(e.target.value);
         store.setText('nyx.theme',theme);
-        applyUserSettings();
+        applyThemeSetting();
+        toast('Theme updated');
         return;
       }
       const presetSelect=e.target.closest?.('[data-preset-select]');

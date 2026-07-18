@@ -105,6 +105,91 @@
   const browserShellTabs = [];
   const browserShellOpeningTabs = new Set();
   let browserShellActiveTab = null;
+  let nyxErudaLoadPromise = null;
+  let nyxErudaHost = null;
+  let nyxErudaInitialized = false;
+  function loadNyxEruda(){
+    if(window.eruda) return Promise.resolve(window.eruda);
+    if(nyxErudaLoadPromise) return nyxErudaLoadPromise;
+    nyxErudaLoadPromise=new Promise((resolve,reject)=>{
+      const loader=document.createElement('script');
+      loader.src='https://cdn.jsdelivr.net/npm/eruda@3/eruda.min.js';
+      loader.crossOrigin='anonymous';
+      loader.dataset.nyxErudaLoader='true';
+      loader.onload=()=>window.eruda ? resolve(window.eruda) : reject(new Error('Eruda did not initialize'));
+      loader.onerror=()=>reject(new Error('Eruda could not be downloaded'));
+      document.head.appendChild(loader);
+    }).catch(error=>{
+      nyxErudaLoadPromise=null;
+      throw error;
+    });
+    return nyxErudaLoadPromise;
+  }
+  function hideNyxErudaPanel(){
+    try{window.eruda?.hide?.()}catch{}
+    if(nyxErudaHost) nyxErudaHost.hidden=true;
+  }
+  async function showNyxErudaPanel(win){
+    const body=win?.querySelector('.browser-body');
+    if(!body) return;
+    let host=body.querySelector(':scope > .nyx-eruda-host');
+    if(!host){
+      host=document.createElement('div');
+      host.className='nyx-eruda-host';
+      host.setAttribute('aria-label','Eruda developer tools');
+      body.appendChild(host);
+    }
+    host.hidden=false;
+    if(nyxErudaHost && nyxErudaHost!==host && nyxErudaInitialized){
+      try{window.eruda?.destroy?.()}catch{}
+      nyxErudaInitialized=false;
+    }
+    nyxErudaHost=host;
+    let status=host.querySelector('.nyx-eruda-loading');
+    let mount=host.querySelector('.nyx-eruda-root, #eruda');
+    if(!nyxErudaInitialized){
+      host.replaceChildren();
+      mount=document.createElement('div');
+      mount.className='nyx-eruda-root';
+      status=document.createElement('p');
+      status.className='nyx-eruda-loading';
+      status.setAttribute('role','status');
+      status.textContent='Starting Eruda...';
+      host.append(mount,status);
+    }
+    try{
+      const eruda=await loadNyxEruda();
+      if(activeBrowserShellTab()?.url!=='nyx://developer') return;
+      if(!nyxErudaInitialized){
+        eruda.init({container:mount,tool:['console','elements','network','resources','sources','info','snippets'],useShadowDom:true,autoScale:true,defaults:{displaySize:100,transparency:1,theme:'Dark'}});
+        nyxErudaInitialized=true;
+      }
+      host.hidden=false;
+      setTimeout(()=>{
+        eruda.show();
+        eruda.show('console');
+        status?.remove();
+        const root=host.querySelector('#eruda')?.shadowRoot;
+        const container=root?.querySelector('.eruda-container');
+        const panel=root?.querySelector('.eruda-dev-tools');
+        [container,panel].forEach(element=>{
+          if(!element) return;
+          element.style.setProperty('position','absolute','important');
+          element.style.setProperty('inset','0','important');
+          element.style.setProperty('width','100%','important');
+          element.style.setProperty('height','100%','important');
+        });
+        const entry=root?.querySelector('.eruda-entry-btn');
+        if(entry) entry.style.setProperty('display','none','important');
+      },125);
+    }catch(error){
+      if(status){
+        status.classList.add('error');
+        status.textContent='Eruda could not load. Check your connection and reopen this tab.';
+      }
+      console.error('Nyx Eruda failed to load',error);
+    }
+  }
   const engines = {
     bing:'https://www.bing.com/search?q=',
     google:'https://www.google.com/search?q=',
@@ -1457,6 +1542,7 @@
   }
   function renderBrowserShellHomeMode(win){
     if(!win) return;
+    hideNyxErudaPanel();
     win.classList.remove('browser-blank-page');
     win.classList.add('browser-home-page');
     win.classList.add('browser-blank');
@@ -1538,6 +1624,7 @@
     renderBrowserBookmarks();
     if(typeof applyVisualEffectSetting==='function') applyVisualEffectSetting();
     if(!browserSuggestionsAllowed()) hideBrowserSuggestions();
+    if(active?.url!=='nyx://developer') hideNyxErudaPanel();
   }
   function pruneBrowserShellInternalPlaceholders(keepId=''){
     if(!activeBrowser?.tabs || activeBrowser.tabs.length<=1) return;
@@ -1951,7 +2038,7 @@
       const privacyBlock=document.createElement('section');
       privacyBlock.className='settings-block';
       const hideDetails=websiteDetailsHidden();
-      privacyBlock.innerHTML=`<h2>Website Details</h2><p>Replace external website names and icons in Nyx tabs with a generic hidden label.</p><div class="settings-row"><span>Hide Names and Icons</span><button class="settings-action ${hideDetails?'on':''}" data-switch="nyx.hideWebsiteDetails" type="button">${hideDetails?'On':'Off'}</button></div>`;
+      privacyBlock.innerHTML=`<h2>Private Tabs</h2><p>Hides your current tab names and icons from view.</p><div class="settings-row"><span>Hide Names and Icons</span><button class="settings-action ${hideDetails?'on':''}" data-switch="nyx.hideWebsiteDetails" type="button">${hideDetails?'On':'Off'}</button></div>`;
       const fontBlock=document.createElement('section');
       fontBlock.className='settings-block';
       fontBlock.innerHTML=`<h2>Font</h2><select class="settings-select" data-font-value>${nyxFontOptionsMarkup()}</select>`;
@@ -2198,10 +2285,11 @@
     const internalAppsHazeStyle=/^(apps)$/i.test(String(page.title || '')) ? 'html,body{position:relative!important;isolation:isolate!important}body::before{content:""!important;display:block!important;position:fixed!important;inset:-18px!important;z-index:0!important;pointer-events:none!important;background:rgba(77,47,142,.36)!important;backdrop-filter:blur(11px) saturate(.82)!important;-webkit-backdrop-filter:blur(11px) saturate(.82)!important}.shell-page{position:relative!important;z-index:1!important;background:transparent!important}.theme-ruby::before{background:rgba(125,22,39,.38)!important}.theme-emerald::before{background:rgba(4,92,65,.36)!important}.theme-sakura::before{background:rgba(190,55,120,.32)!important}.theme-fresh::before{background:rgba(92,219,207,.25)!important}.apps-launch-grid{position:relative!important;z-index:2!important}' : '';
     const finalInternalBackgroundStyle='body.theme-ruby{--theme-bg:linear-gradient(rgba(60,0,12,.10),rgba(60,0,12,.22)),url("assets/backgrounds/nyx-blue-light-trails.jpg")!important}body.theme-emerald{--theme-bg:linear-gradient(rgba(0,24,12,.08),rgba(0,24,12,.20)),url("assets/backgrounds/nyx-blue-light-trails.jpg")!important}body.theme-sakura{--theme-bg:linear-gradient(rgba(40,0,28,.06),rgba(40,0,28,.18)),url("assets/backgrounds/nyx-blue-light-trails.jpg")!important}body.theme-ruby .shell-page,body.theme-ruby .browser-shell-page,body.theme-emerald .shell-page,body.theme-emerald .browser-shell-page,body.theme-sakura .shell-page,body.theme-sakura .browser-shell-page{background:var(--theme-bg)!important;background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important}';
     const normalInternalTextStyle='html,body,body *{font-weight:400!important;font-style:normal!important}body.theme-fresh,body.theme-fresh *{color:#075f70!important;-webkit-text-fill-color:#075f70!important;font-weight:400!important;font-style:normal!important}body.theme-fresh input::placeholder,body.theme-fresh textarea::placeholder{color:#336d78!important;-webkit-text-fill-color:#336d78!important}';
+    const internalAppsThemeCanvasStyle=/^(apps)$/i.test(String(page.title || '')) ? 'html{--nyx-app-canvas:#151d2b;--nyx-app-dot:#202b3d;--nyx-app-line:#2a3b54;--nyx-app-text:#d4deec;min-height:100%!important;background-color:var(--nyx-app-canvas)!important;background-image:radial-gradient(circle,var(--nyx-app-dot) 2.7px,transparent 3px)!important;background-size:24px 24px!important;background-position:0 0!important;background-repeat:repeat!important;background-attachment:fixed!important}html[data-nyx-theme="midnight"]{--nyx-app-dot:#223047;--nyx-app-line:#2d405b;--nyx-app-text:#d6e1f0}html[data-nyx-theme="ruby"]{--nyx-app-dot:#332733;--nyx-app-line:#50333c;--nyx-app-text:#e2d7da}html[data-nyx-theme="emerald"]{--nyx-app-dot:#24343a;--nyx-app-line:#2f4a42;--nyx-app-text:#d4e2dd}html[data-nyx-theme="sakura"]{--nyx-app-dot:#332936;--nyx-app-line:#4c3748;--nyx-app-text:#e2d9e0}html[data-nyx-theme="fresh"]{--nyx-app-dot:#24343d;--nyx-app-line:#304850;--nyx-app-text:#d4e2e5}html body,html body.theme-default,html body.theme-midnight,html body.theme-ruby,html body.theme-emerald,html body.theme-sakura,html body.theme-fresh{min-height:100vh!important;background:transparent!important;background-color:transparent!important;background-image:none!important;color:var(--nyx-app-text)!important}html body::before,html body::after{content:none!important;display:none!important;background:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}.shell-page,.browser-shell-page,body.theme-ruby .shell-page,body.theme-emerald .shell-page,body.theme-sakura .shell-page,body.theme-fresh .shell-page,body.theme-fresh .browser-shell-page{background:transparent!important;background-color:transparent!important;background-image:none!important}.shell-page h1,.shell-page p,.browser-shell-page h1,.browser-shell-page p,.quick-tile span,body.theme-fresh :is(h1,h2,h3,p,span,label,strong,.quick-tile span){color:var(--nyx-app-text)!important;-webkit-text-fill-color:var(--nyx-app-text)!important}.quick-tile:hover{border-color:var(--nyx-app-line)!important}' : '';
     const panicFrameScript='let NYX_PANIC_CAPTURE=false;function nyxPanicCombo(e){const key=String(e.key||"").trim();if(!key||["Control","Shift","Alt","Meta"].includes(key))return "";const parts=[];if(e.ctrlKey)parts.push("Ctrl");if(e.altKey)parts.push("Alt");if(e.shiftKey)parts.push("Shift");if(e.metaKey)parts.push("Meta");parts.push(key.length===1?key.toUpperCase():key.replace(/^Arrow/,""));return parts.join("+")}document.addEventListener("click",e=>{if(e.target.closest("[data-panic-capture]"))NYX_PANIC_CAPTURE=true;if(e.target.closest("[data-panic-clear]"))NYX_PANIC_CAPTURE=false},true);document.addEventListener("keydown",e=>{if(!NYX_PANIC_CAPTURE)return;const combo=nyxPanicCombo(e);if(!combo)return;e.preventDefault();e.stopPropagation();NYX_PANIC_CAPTURE=false;document.querySelectorAll("[data-panic-key-display]").forEach(el=>el.textContent=combo);parent.postMessage({type:"nyx:panic-key-set",combo},"*")},true);';
     const internalPaintScript='';
     const finalInternalPaintScript='';
-    return '<!doctype html><meta charset="utf-8"><base target="_self"><style>'+style+themeStyle+freshThemeStyle+themeAppStyle+compactSettingsStyle+pageThemeStyle+themeBorderOnlyStyle+'input[type=file].settings-input{color:#f8fafc;background:transparent!important}input[type=file].settings-input::file-selector-button{height:28px;margin:0 12px 0 0;border:1px solid var(--theme-border,rgba(255,255,255,.3));border-radius:999px;background:transparent!important;background-image:none!important;color:#f8fafc;padding:0 12px;font:400 12px Outfit,Arial,sans-serif}.theme-ruby input[type=file].settings-input::file-selector-button,.theme-emerald input[type=file].settings-input::file-selector-button,.theme-sakura input[type=file].settings-input::file-selector-button{background:transparent!important;background-image:none!important;color:#f8fafc!important}.settings-section{display:none}.settings-section.active{display:block}.settings-range{display:grid;grid-template-columns:70px minmax(0,1fr) 46px;align-items:center;gap:10px;margin:12px 0;color:#d1d5db;font-size:13px;font-weight:400}.settings-range input{width:100%;accent-color:#9ca3af}.settings-nav-icon{width:24px;height:24px;border-radius:999px;border:2px solid #dbe2ea;display:inline-block;position:relative;background:transparent!important;box-shadow:none!important}.icon-general::before{content:"";position:absolute;inset:5px;border:2px solid #dbe2ea;border-radius:999px}.icon-effects::before{content:"";position:absolute;left:5px;right:5px;top:10px;height:2px;background:#dbe2ea;box-shadow:0 -5px 0 #dbe2ea,0 5px 0 #dbe2ea}.icon-watch::before{content:"";position:absolute;left:8px;top:5px;border-left:9px solid #dbe2ea;border-top:6px solid transparent;border-bottom:6px solid transparent}.icon-browser::before{content:"";position:absolute;left:4px;right:4px;top:6px;height:11px;border:2px solid #dbe2ea;border-radius:4px}.icon-browser::after{content:"";position:absolute;left:7px;right:7px;bottom:4px;height:2px;background:#dbe2ea}.settings-effect-preview span:nth-child(1)::before{content:"";width:14px;height:20px;border-radius:999px;background:#cfd8e3;transform:rotate(28deg)}.settings-effect-preview span:nth-child(2)::before{content:"";width:18px;height:18px;background:#cfd8e3;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 56%,79% 91%,50% 70%,21% 91%,32% 56%,2% 35%,39% 35%)}.settings-effect-preview span:nth-child(3)::before{content:"";width:18px;height:16px;background:#cfd8e3;clip-path:polygon(50% 100%,8% 52%,4% 22%,24% 2%,50% 20%,76% 2%,96% 22%,92% 52%)}.settings-effect-preview span:nth-child(4)::before{content:"";width:18px;height:18px;border:3px solid #cfd8e3;border-radius:999px}'+themeBorderOnlyStyle+flatInternalStyle+flatInternalPageStyle+transparentInternalFinalStyle+settingsInternalFinalStyle+settingsGlassRepairStyle+browserSettingsSinglePaneStyle+settingsClearAroundStyle+'html body .settings-app :is(input,select,textarea,.settings-input,.settings-select):hover{transform:none!important}html body .settings-app button:hover{transform:none!important}'+clearInternalPageStyle+internalAppsLaunchStyle+internalAppsHazeStyle+finalInternalBackgroundStyle+normalInternalTextStyle+(page.style||'')+'</style>'+page.body+'<script>const NYX_EFFECT='+JSON.stringify(store.text('nyx.visualEffect','none'))+';const NYX_EFFECT_SPEED='+JSON.stringify(store.text('nyx.visualEffectSpeed','1.1'))+';const NYX_EFFECT_AMOUNT='+JSON.stringify(store.text('nyx.visualEffectAmount','16'))+';const NYX_THEME='+JSON.stringify(normalizeNyxTheme(store.text('nyx.theme','default')))+';document.body.classList.add("theme-"+NYX_THEME);document.body.dataset.nyxTheme=NYX_THEME;document.documentElement.dataset.nyxTheme=NYX_THEME;document.querySelectorAll("[data-effect-value]").forEach(el=>{el.value=NYX_EFFECT});document.querySelectorAll("[data-effect-speed]").forEach(el=>{el.value=NYX_EFFECT_SPEED});document.querySelectorAll("[data-effect-amount]").forEach(el=>{el.value=NYX_EFFECT_AMOUNT});document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=Number(NYX_EFFECT_SPEED).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=NYX_EFFECT_AMOUNT});'+internalPaintScript+finalInternalPaintScript+script+popupScript+panicFrameScript+(page.script||'')+'<\/script>';
+    return '<!doctype html><meta charset="utf-8"><base target="_self"><style>'+style+themeStyle+freshThemeStyle+themeAppStyle+compactSettingsStyle+pageThemeStyle+themeBorderOnlyStyle+'input[type=file].settings-input{color:#f8fafc;background:transparent!important}input[type=file].settings-input::file-selector-button{height:28px;margin:0 12px 0 0;border:1px solid var(--theme-border,rgba(255,255,255,.3));border-radius:999px;background:transparent!important;background-image:none!important;color:#f8fafc;padding:0 12px;font:400 12px Outfit,Arial,sans-serif}.theme-ruby input[type=file].settings-input::file-selector-button,.theme-emerald input[type=file].settings-input::file-selector-button,.theme-sakura input[type=file].settings-input::file-selector-button{background:transparent!important;background-image:none!important;color:#f8fafc!important}.settings-section{display:none}.settings-section.active{display:block}.settings-range{display:grid;grid-template-columns:70px minmax(0,1fr) 46px;align-items:center;gap:10px;margin:12px 0;color:#d1d5db;font-size:13px;font-weight:400}.settings-range input{width:100%;accent-color:#9ca3af}.settings-nav-icon{width:24px;height:24px;border-radius:999px;border:2px solid #dbe2ea;display:inline-block;position:relative;background:transparent!important;box-shadow:none!important}.icon-general::before{content:"";position:absolute;inset:5px;border:2px solid #dbe2ea;border-radius:999px}.icon-effects::before{content:"";position:absolute;left:5px;right:5px;top:10px;height:2px;background:#dbe2ea;box-shadow:0 -5px 0 #dbe2ea,0 5px 0 #dbe2ea}.icon-watch::before{content:"";position:absolute;left:8px;top:5px;border-left:9px solid #dbe2ea;border-top:6px solid transparent;border-bottom:6px solid transparent}.icon-browser::before{content:"";position:absolute;left:4px;right:4px;top:6px;height:11px;border:2px solid #dbe2ea;border-radius:4px}.icon-browser::after{content:"";position:absolute;left:7px;right:7px;bottom:4px;height:2px;background:#dbe2ea}.settings-effect-preview span:nth-child(1)::before{content:"";width:14px;height:20px;border-radius:999px;background:#cfd8e3;transform:rotate(28deg)}.settings-effect-preview span:nth-child(2)::before{content:"";width:18px;height:18px;background:#cfd8e3;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 56%,79% 91%,50% 70%,21% 91%,32% 56%,2% 35%,39% 35%)}.settings-effect-preview span:nth-child(3)::before{content:"";width:18px;height:16px;background:#cfd8e3;clip-path:polygon(50% 100%,8% 52%,4% 22%,24% 2%,50% 20%,76% 2%,96% 22%,92% 52%)}.settings-effect-preview span:nth-child(4)::before{content:"";width:18px;height:18px;border:3px solid #cfd8e3;border-radius:999px}'+themeBorderOnlyStyle+flatInternalStyle+flatInternalPageStyle+transparentInternalFinalStyle+settingsInternalFinalStyle+settingsGlassRepairStyle+browserSettingsSinglePaneStyle+settingsClearAroundStyle+'html body .settings-app :is(input,select,textarea,.settings-input,.settings-select):hover{transform:none!important}html body .settings-app button:hover{transform:none!important}'+clearInternalPageStyle+internalAppsLaunchStyle+internalAppsHazeStyle+finalInternalBackgroundStyle+normalInternalTextStyle+(page.style||'')+internalAppsThemeCanvasStyle+'</style>'+page.body+'<script>const NYX_EFFECT='+JSON.stringify(store.text('nyx.visualEffect','none'))+';const NYX_EFFECT_SPEED='+JSON.stringify(store.text('nyx.visualEffectSpeed','1.1'))+';const NYX_EFFECT_AMOUNT='+JSON.stringify(store.text('nyx.visualEffectAmount','16'))+';const NYX_THEME='+JSON.stringify(normalizeNyxTheme(store.text('nyx.theme','default')))+';document.body.classList.add("theme-"+NYX_THEME);document.body.dataset.nyxTheme=NYX_THEME;document.documentElement.dataset.nyxTheme=NYX_THEME;document.querySelectorAll("[data-effect-value]").forEach(el=>{el.value=NYX_EFFECT});document.querySelectorAll("[data-effect-speed]").forEach(el=>{el.value=NYX_EFFECT_SPEED});document.querySelectorAll("[data-effect-amount]").forEach(el=>{el.value=NYX_EFFECT_AMOUNT});document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=Number(NYX_EFFECT_SPEED).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=NYX_EFFECT_AMOUNT});'+internalPaintScript+finalInternalPaintScript+script+popupScript+panicFrameScript+(page.script||'')+'<\/script>';
   }
   function showBrowserShellInternalPage(name){
     hideBrowserSuggestions();
@@ -2260,8 +2348,8 @@
       apps:{title:'Apps',body:`<section class="shell-page"><h1>Apps</h1><p>Apps</p><div class="quick-grid apps-launch-grid">${quickTiles()}</div></section>`},
       links:{title:'Bookmarks',body:`<section class="shell-page"><h1>Bookmarks</h1><p>Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>DuckDuckGo</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></section>`},
       terms:{title:'Terms Of Service',style:utilityPageStyle,body:nyxTermsPageMarkup()},
-      developer:{title:'Developer Console',style:utilityPageStyle,script:terminalPageScript,body:`<section class="nyx-terminal-tab" role="application" aria-label="Nyx developer console"><div class="nyx-terminal-toolbar"><span><i aria-hidden="true"></i>🛠 Nyx terminal</span><span>safe diagnostics</span></div><div class="nyx-terminal-output" data-nyx-terminal-output role="log" aria-live="polite"></div><form class="nyx-terminal-form" data-nyx-terminal-form><label for="nyxTerminalInput">nyx&gt;</label><input id="nyxTerminalInput" data-nyx-terminal-input autocomplete="off" spellcheck="false" aria-label="Terminal command" placeholder="Type help"><button type="submit">Run</button></form></section>`},
       about:{title:'About Us',style:utilityPageStyle,body:`<article class="nyx-utility-tab nyx-about-tab"><div class="about-mark" aria-hidden="true">ⓘ</div><p class="utility-kicker">About Us</p><h1>Nyx</h1><p class="about-lead">A customizable browser-style workspace for search, study tools, apps, and a quieter way to move around the web.</p><dl class="nyx-about-details"><div><dt>Developed by</dt><dd>1aqlla</dd></div><div><dt>Interface</dt><dd>Nyx Workspace</dd></div><div><dt>Version</dt><dd>2026.07</dd></div></dl></article>`},
+      developer:{title:'Developer Console',style:utilityPageStyle,body:`<section aria-label="Eruda developer console"></section>`},
       ephesians1:{title:'Ephesians 1',body:`<section class="shell-page ephesians-diagram"><style>
         .ephesians-diagram{--ink:#f8fafc;--muted:#cbd5e1;--line:rgba(255,255,255,.24);max-width:1120px;margin:auto;padding-bottom:64px}.ephesians-diagram h1{text-align:center;font-size:clamp(30px,5vw,48px);margin:4px 0 6px}.ephesians-diagram>.diagram-sub{text-align:center;margin:0 0 28px;color:var(--muted);font-size:15px}.eph-flow{display:grid;gap:12px}.eph-block{padding:17px 20px;border:1px solid var(--line);border-left:6px solid #94a3b8;border-radius:14px;background:rgba(15,23,42,.58);box-shadow:0 12px 28px rgba(0,0,0,.16)}.eph-block h2{font-size:19px;margin:5px 0 7px}.eph-block p{margin:0;color:#e2e8f0;line-height:1.48;font-size:14px}.eph-verse{color:#cbd5e1;font-size:11px;font-weight:800;letter-spacing:.11em}.eph-father{border-left-color:#60a5fa}.eph-son{border-left-color:#fbbf24}.eph-spirit{border-left-color:#4ade80}.eph-prayer{border-left-color:#c084fc}.eph-arrow{text-align:center;height:22px;font:700 24px/22px Arial,sans-serif;color:#cbd5e1}.eph-purpose{text-align:center;padding:16px;border:1px solid rgba(255,255,255,.34);border-radius:14px;background:rgba(255,255,255,.10);font-size:17px;font-weight:800}.eph-purpose small{display:block;margin-bottom:5px;color:#cbd5e1;font-size:11px;letter-spacing:.1em}.eph-triad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.eph-triad .eph-block{padding:15px}.eph-triad h2{font-size:17px}@media(max-width:720px){.eph-triad{grid-template-columns:1fr}.ephesians-diagram{padding:20px 4px 50px!important}}</style>
         <h1>Ephesians 1</h1><p class="diagram-sub">God’s purpose in Christ, the Spirit’s seal, and Paul’s prayer for the church</p>
@@ -2297,6 +2385,8 @@
     state.win.classList.remove('browser-blank');
     state.renderTabs?.();
     updateBrowserShellLocation(tab.url);
+    if(name==='developer') showNyxErudaPanel(state.win);
+    else hideNyxErudaPanel();
     return true;
   }
   //desktop-app-drag
@@ -4939,7 +5029,7 @@
   }
   function browserBody(){
     const presenceText=nyxPresenceCount===null ? 'Connecting\u2026' : `${nyxPresenceCount} online`;
-    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence" role="status" aria-live="polite"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><button class="nyx-home-weather" data-home-weather data-open="weather" type="button" aria-label="Open weather report"><span class="nyx-home-weather-icon" data-home-weather-icon aria-hidden="true">🌤️</span><strong data-home-weather-temp>--°</strong><span data-home-weather-desc>Loading</span></button><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1><form class="browser-blank-search nyx-home-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Search the web or enter a URL" placeholder="Search the web..." autocomplete="off" spellcheck="false"></form><nav class="nyx-home-actions" aria-label="Nyx home"><button data-open="apps" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-apps" aria-hidden="true"></span><span>Apps</span></button><button data-app-url="https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-study" aria-hidden="true"></span><span>Study</span></button><button data-open="settings" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-settings" aria-hidden="true"></span><span>Settings</span></button></nav></main><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div><nav class="nyx-home-utility-links" aria-label="Nyx information and tools"><button data-open="terms" type="button"><span aria-hidden="true">⚠︎</span><span>Terms Of Service</span></button><button data-open="developer" type="button"><span aria-hidden="true">🛠</span><span>Developer Console</span></button><button data-open="about" type="button"><span aria-hidden="true">ⓘ</span><span>About Us</span></button></nav></div></div>`;
+    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence" role="status" aria-live="polite"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><button class="nyx-home-weather" data-home-weather data-open="weather" type="button" aria-label="Open weather report"><span class="nyx-home-weather-icon" data-home-weather-icon aria-hidden="true">🌤️</span><strong data-home-weather-temp>--°</strong><span data-home-weather-desc>Loading</span></button><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1><form class="browser-blank-search nyx-home-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Search the web or enter a URL" placeholder="Search the web..." autocomplete="off" spellcheck="false"></form><nav class="nyx-home-actions" aria-label="Nyx home"><button data-open="apps" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-apps" aria-hidden="true"></span><span>Apps</span></button><button data-app-url="https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-study" aria-hidden="true"></span><span>Study</span></button><button data-open="settings" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-settings" aria-hidden="true"></span><span>Settings</span></button></nav></main><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div><a class="nyx-home-link-checker" data-app-url="/apps/link-checker/" href="/apps/link-checker/">Link Checker</a><nav class="nyx-home-utility-links" aria-label="Nyx information and tools"><a data-open="terms" href="nyx://terms">Terms Of Service</a><a data-open="developer" href="nyx://developer">Developer Console</a><a data-open="about" href="nyx://about">About Us</a></nav></div></div>`;
   }
   //apps-grid
   const defaultHomeShortcuts=[
@@ -5352,7 +5442,6 @@
       ['docs.google.com','Study','https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0'],
       ['duck.ai','Duck AI','https://duck.ai/'],
       ['nyx-ai','Nyx AI','nyx://ai'],
-      ['link-checker','Link Checker by Midnight','/apps/link-checker/'],
       ['wikipedia.org','Wikipedia','https://www.wikipedia.org/'],
       ['cineby.at','Cineby','https://cineby.at/'],
       ['tiktok.com','TikTok','https://www.tiktok.com/'],
@@ -5660,6 +5749,9 @@
   //browser-window
   function openBrowser(url='https://duckduckgo.com/',options={}){
     const win=makeWindow({title:'New Tab',className:'browser-window',body:browserBody()});
+    const utilityLinks=win.querySelector('.nyx-home-utility-links');
+    const linkChecker=win.querySelector('.nyx-home-link-checker');
+    if(utilityLinks && linkChecker) utilityLinks.prepend(linkChecker);
     cleanBrowserControls(win);
     tick();
     initDesktopSplash();

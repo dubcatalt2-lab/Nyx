@@ -56,6 +56,11 @@
     refs.apiStatus.classList.toggle('offline',!online);
     refs.apiStatus.querySelector('span').textContent=label;
   }
+  function filterDisplayLabel(filter){
+    const key=String(filter?.filter || filter?.key || '').trim().toLowerCase();
+    const label=String(filter?.label || filter?.filter || filter?.key || 'Filter');
+    return key==='cisco' || /^cisco talos$/i.test(label) ? 'Cisco Umbrella' : label;
+  }
   async function fetchJson(url,options={}){
     const response=await fetch(url,{...options,headers:{Accept:'application/json',...(options.headers || {})}});
     if(!response.ok){
@@ -75,7 +80,7 @@
         if(!item?.key) return;
         const option=document.createElement('option');
         option.value=String(item.key);
-        option.textContent=String(item.label || item.key);
+        option.textContent=filterDisplayLabel(item);
         fragment.append(option);
       });
       refs.filter.append(fragment);
@@ -106,7 +111,7 @@
       const copy=document.createElement('div');
       copy.className='result-copy';
       const label=document.createElement('strong');
-      label.textContent=result.label || result.filter || 'Filter';
+      label.textContent=filterDisplayLabel(result);
       const category=document.createElement('span');
       category.textContent=result.error || result.category || 'No category returned';
       copy.append(label,category);
@@ -209,7 +214,7 @@
     const lines=[`Link Checker report for ${lastReport.target || currentTarget}`];
     lastReport.results.forEach(result=>{
       const state=resultState(result);
-      lines.push(`${result.label || result.filter}: ${state.label}${result.category ? ` — ${result.category}` : ''}`);
+      lines.push(`${filterDisplayLabel(result)}: ${state.label}${result.category ? ` — ${result.category}` : ''}`);
     });
     try{
       await navigator.clipboard.writeText(lines.join('\n'));

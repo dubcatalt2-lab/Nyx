@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Link Generator</title>
+  <link rel="icon" type="image/png" href="../../assets/icons/nyx-tab-logo.png">
+  <link rel="stylesheet" href="./styles.css?v=20260718-1">
+</head>
+<body>
+  <main class="generator-shell">
+    <header class="app-header">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M9.5 14.5l-2 2a3.5 3.5 0 01-5-5l3-3a3.5 3.5 0 015 0M14.5 9.5l2-2a3.5 3.5 0 015 5l-3 3a3.5 3.5 0 01-5 0M8.5 15.5l7-7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      </span>
+      <div>
+        <p class="eyebrow">Nyx utility</p>
+        <h1>Link Generator</h1>
+      </div>
+      <span class="service-status" data-service-status><i aria-hidden="true"></i><span>Checking setup</span></span>
+    </header>
+
+    <section class="generator-card" aria-labelledby="generator-title">
+      <div class="section-heading">
+        <div>
+          <h2 id="generator-title">Create a protected Nyx CDN link</h2>
+          <p>The destination is locked to the official Nyx origin.</p>
+        </div>
+      </div>
+
+      <form class="generator-form" data-generator-form>
+        <label>
+          <span>Link label</span>
+          <input name="label" data-label-input maxlength="40" autocomplete="off" placeholder="Example: study-room">
+        </label>
+        <label>
+          <span>Access code</span>
+          <input name="accessCode" data-access-code type="password" maxlength="128" autocomplete="current-password" placeholder="Enter the generator access code" required>
+        </label>
+        <label class="confirmation">
+          <input data-confirm type="checkbox" required>
+          <span>I understand this creates a resource on the Nyx Bunny account.</span>
+        </label>
+        <button class="primary-action" data-generate-button type="submit">
+          <span>Generate link</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </form>
+
+      <div class="origin-row"><span>Fixed origin</span><code data-origin>Loading…</code></div>
+      <p class="security-note">The Bunny API key stays on the server. This page never receives or stores it.</p>
+      <div class="notice" data-notice role="status" aria-live="polite" hidden></div>
+    </section>
+
+    <section class="result-card" data-result-card hidden aria-labelledby="result-title">
+      <p class="eyebrow">Created</p>
+      <h2 id="result-title">Your Nyx link is ready</h2>
+      <div class="link-result">
+        <input data-result-url readonly aria-label="Generated Nyx URL">
+        <button data-copy type="button">Copy</button>
+        <a data-open href="#" target="_blank" rel="noopener noreferrer">Open</a>
+      </div>
+      <p class="propagation-note">A new pull zone can take a short time to become available everywhere.</p>
+    </section>
+  </main>
+  <script src="./app.js?v=20260718-1"></script>
+</body>
+</html>

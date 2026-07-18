@@ -151,11 +151,11 @@ html body:is(body,#nyx-hover-specificity) :is([data-browser-shell-back],[data-br
 }
 html body:is(body,#nyx-hover-specificity) [data-browser-shell-menu]:hover::before,
 html body:is(body,#nyx-hover-specificity) .menu-btn:hover::before{
-  transform:translate(-50%,-50%) scale(1)!important;
+  transform:translate(-50%,-50%)!important;
 }
 html body:is(body,#nyx-hover-specificity) [data-browser-shell-reload]:hover::before,
 html body:is(body,#nyx-hover-specificity) .tool-btn[data-reload]:hover::before{
-  transform:rotate(var(--nyx-reload-turn,0deg)) scale(.96)!important;
+  transform:translate(-50%,-50%)!important;
 }
 html body:is(body,#nyx-hover-specificity) .menu-btn:hover{
   transform:translateY(-50%)!important;
@@ -237,12 +237,12 @@ html body:is(body,#nyx-hover-specificity) .browser-home .home-shortcut-add:hover
    so entering hover cannot pull the glyph half a button up and left. */
 html body:is(body,#nyx-hover-specificity) .browser-mode-address [data-browser-shell-menu]::before,
 html body:is(body,#nyx-hover-specificity) .browser-mode-address [data-browser-shell-menu]:hover::before{
-  inset:0!important;
-  width:100%!important;
-  height:100%!important;
-  display:grid!important;
-  place-items:center!important;
-  transform:none!important;
+  position:absolute!important;
+  inset:50% auto auto 50%!important;
+  width:16px!important;
+  height:16px!important;
+  display:block!important;
+  transform:translate(-50%,-50%)!important;
   transition:color .2s ease!important;
 }
 

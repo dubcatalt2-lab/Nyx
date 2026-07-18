@@ -707,3 +707,560 @@ html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser
   -webkit-text-fill-color:var(--nyx-home-muted)!important;
   text-shadow:none!important;
 }
+
+/* Runtime theme switching follows one rule: palette changes, geometry does not.
+   The data attribute is the canonical theme state; classes remain for older
+   component selectors while every built-in theme now has exactly one class. */
+html[data-nyx-theme] body.browser-shell,
+html[data-nyx-theme] body.browser-shell :is(.top-os,.browser-window,.browser-home,.browser-shell-settings-overlay,.browser-shell-settings-panel){
+  transition:background-color .18s ease,border-color .18s ease,color .18s ease!important;
+}
+
+html[data-nyx-theme] body.browser-shell .browser-shell-settings-overlay{
+  background-color:var(--nyx-unified-canvas)!important;
+  background-image:radial-gradient(circle,var(--nyx-dot-color) 2px,transparent 2.25px)!important;
+  color:var(--nyx-home-muted)!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-settings-side{
+  background:var(--nyx-unified-canvas)!important;
+  border-color:color-mix(in srgb,var(--nyx-home-line) 70%,transparent)!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-settings-filter{
+  background:color-mix(in srgb,var(--nyx-chrome-hover) 76%,var(--nyx-unified-canvas))!important;
+  color:var(--nyx-home-muted)!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-settings-filter :is(input,input::placeholder),
+html[data-nyx-theme] body.browser-shell .nyx-settings-header h1,
+html[data-nyx-theme] body.browser-shell .nyx-settings-copy :is(h2,p){
+  color:var(--nyx-home-muted)!important;
+  -webkit-text-fill-color:var(--nyx-home-muted)!important;
+  text-shadow:none!important;
+}
+html[data-nyx-theme] body.browser-shell.browser-shell .browser-shell-settings-panel .nyx-settings-nav button{
+  color:var(--nyx-home-muted)!important;
+  -webkit-text-fill-color:var(--nyx-home-muted)!important;
+}
+html[data-nyx-theme] body.browser-shell.browser-shell .browser-shell-settings-panel .nyx-settings-nav button:is(:hover,.active){
+  background:color-mix(in srgb,var(--nyx-chrome-active) 86%,var(--nyx-unified-canvas))!important;
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-settings-group,
+html[data-nyx-theme] body.browser-shell .browser-shell-settings-panel .nyx-settings-group > .settings-block,
+html[data-nyx-theme] body.browser-shell .browser-shell-settings-panel .nyx-settings-group > .settings-block:hover{
+  background:color-mix(in srgb,var(--nyx-home-panel-soft) 90%,var(--nyx-unified-canvas))!important;
+  border-color:color-mix(in srgb,var(--nyx-home-line) 56%,transparent)!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-settings-control :is(.settings-input,.settings-select,input:not([type="range"]),select,textarea,.panic-key-display){
+  background:var(--nyx-unified-field)!important;
+  border-color:color-mix(in srgb,var(--nyx-home-line) 74%,transparent)!important;
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+}
+html[data-nyx-theme] body.browser-shell .browser-shell-settings-panel :is(button,.settings-action,.settings-toggle){
+  --theme-border:var(--nyx-home-line)!important;
+  --theme-a:var(--nyx-chrome-accent)!important;
+  text-shadow:none!important;
+  filter:none!important;
+}
+
+/* One icon implementation for every palette. Older theme files used a mix of
+   glyphs and masks, which made Default's arrows look like missing images. */
+html[data-nyx-theme] body.browser-shell .browser-mode-address > button:is(
+  [data-browser-shell-back],
+  [data-browser-shell-forward],
+  [data-browser-shell-reload],
+  [data-browser-shell-bookmark],
+  [data-browser-shell-menu]
+){
+  display:grid!important;
+  place-items:center!important;
+  width:31px!important;
+  min-width:31px!important;
+  height:31px!important;
+  padding:0!important;
+  font-size:0!important;
+  line-height:0!important;
+}
+html[data-nyx-theme] body.browser-shell .browser-mode-address > button:is(
+  [data-browser-shell-back],
+  [data-browser-shell-forward],
+  [data-browser-shell-reload],
+  [data-browser-shell-bookmark],
+  [data-browser-shell-menu]
+) > span{display:none!important}
+html[data-nyx-theme] body.browser-shell .browser-mode-address > button:is(
+  [data-browser-shell-back],
+  [data-browser-shell-forward],
+  [data-browser-shell-reload],
+  [data-browser-shell-bookmark],
+  [data-browser-shell-menu]
+)::before{
+  content:""!important;
+  display:block!important;
+  width:16px!important;
+  height:16px!important;
+  background:currentColor!important;
+  background-image:none!important;
+  -webkit-mask-position:center!important;
+  mask-position:center!important;
+  -webkit-mask-repeat:no-repeat!important;
+  mask-repeat:no-repeat!important;
+  -webkit-mask-size:contain!important;
+  mask-size:contain!important;
+}
+html[data-nyx-theme] body.browser-shell [data-browser-shell-back]::before{
+  --nyx-control-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10.8 5.4 4.2 12l6.6 6.6 1.4-1.4L8 13h11v-2H8l4.2-4.2-1.4-1.4Z'/%3E%3C/svg%3E");
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10.8 5.4 4.2 12l6.6 6.6 1.4-1.4L8 13h11v-2H8l4.2-4.2-1.4-1.4Z'/%3E%3C/svg%3E")!important;
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10.8 5.4 4.2 12l6.6 6.6 1.4-1.4L8 13h11v-2H8l4.2-4.2-1.4-1.4Z'/%3E%3C/svg%3E")!important;
+}
+html[data-nyx-theme] body.browser-shell [data-browser-shell-forward]::before{
+  --nyx-control-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m13.2 5.4-1.4 1.4L16 11H5v2h11l-4.2 4.2 1.4 1.4 6.6-6.6-6.6-6.6Z'/%3E%3C/svg%3E");
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m13.2 5.4-1.4 1.4L16 11H5v2h11l-4.2 4.2 1.4 1.4 6.6-6.6-6.6-6.6Z'/%3E%3C/svg%3E")!important;
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m13.2 5.4-1.4 1.4L16 11H5v2h11l-4.2 4.2 1.4 1.4 6.6-6.6-6.6-6.6Z'/%3E%3C/svg%3E")!important;
+}
+html[data-nyx-theme] body.browser-shell [data-browser-shell-reload]::before{
+  --nyx-control-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20 12a8 8 0 1 1-2.34-5.66L20 8.68M20 4v4.68h-4.68' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20 12a8 8 0 1 1-2.34-5.66L20 8.68M20 4v4.68h-4.68' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important;
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20 12a8 8 0 1 1-2.34-5.66L20 8.68M20 4v4.68h-4.68' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important;
+}
+html[data-nyx-theme] body.browser-shell [data-browser-shell-bookmark]::before{
+  --nyx-control-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m12 3 2.75 5.57 6.15.9-4.45 4.33 1.05 6.12L12 17.03l-5.5 2.89 1.05-6.12L3.1 9.47l6.15-.9L12 3Z' fill='none' stroke='black' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/svg%3E");
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m12 3 2.75 5.57 6.15.9-4.45 4.33 1.05 6.12L12 17.03l-5.5 2.89 1.05-6.12L3.1 9.47l6.15-.9L12 3Z' fill='none' stroke='black' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/svg%3E")!important;
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m12 3 2.75 5.57 6.15.9-4.45 4.33 1.05 6.12L12 17.03l-5.5 2.89 1.05-6.12L3.1 9.47l6.15-.9L12 3Z' fill='none' stroke='black' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/svg%3E")!important;
+}
+html[data-nyx-theme] body.browser-shell [data-browser-shell-menu]::before{
+  --nyx-control-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='5' r='1.8'/%3E%3Ccircle cx='12' cy='12' r='1.8'/%3E%3Ccircle cx='12' cy='19' r='1.8'/%3E%3C/svg%3E");
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='5' r='1.8'/%3E%3Ccircle cx='12' cy='12' r='1.8'/%3E%3Ccircle cx='12' cy='19' r='1.8'/%3E%3C/svg%3E")!important;
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='5' r='1.8'/%3E%3Ccircle cx='12' cy='12' r='1.8'/%3E%3Ccircle cx='12' cy='19' r='1.8'/%3E%3C/svg%3E")!important;
+}
+
+/* Shortcut option dots use the same size and hover reveal in every theme. */
+html[data-nyx-theme] body.browser-shell .browser-home-normal div.quick-tile.home-shortcut > button.home-shortcut-menu-btn{
+  position:absolute!important;
+  top:-4px!important;
+  right:2px!important;
+  left:auto!important;
+  display:grid!important;
+  place-items:center!important;
+  width:18px!important;
+  min-width:18px!important;
+  height:18px!important;
+  min-height:18px!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  color:var(--nyx-home-wordmark)!important;
+  opacity:0!important;
+  transform:none!important;
+}
+html[data-nyx-theme] body.browser-shell .browser-home-normal div.quick-tile.home-shortcut:is(:hover,:focus-within,.menu-open) > button.home-shortcut-menu-btn{
+  opacity:1!important;
+}
+html[data-nyx-theme] body.browser-shell .browser-home-normal .home-shortcut-menu-btn::before,
+html[data-nyx-theme] body.browser-shell .browser-home-normal .home-shortcut-menu-btn::after,
+html[data-nyx-theme] body.browser-shell .browser-home-normal .shortcut-real-dots::before,
+html[data-nyx-theme] body.browser-shell .browser-home-normal .shortcut-real-dots::after{
+  content:none!important;
+  display:none!important;
+}
+html[data-nyx-theme] body.browser-shell .browser-home-normal .home-shortcut-menu-btn .shortcut-real-dots{
+  display:block!important;
+  width:18px!important;
+  height:18px!important;
+  color:currentColor!important;
+  -webkit-text-fill-color:currentColor!important;
+  font:600 12px/12px Outfit,Arial,sans-serif!important;
+  letter-spacing:0!important;
+  text-align:center!important;
+  opacity:1!important;
+}
+
+/* White's legacy file has unusually specific control selectors. This final
+   canonical state keeps it from changing the shared control geometry. */
+html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell .browser-mode-address > button:is(
+  [data-browser-shell-back],
+  [data-browser-shell-forward],
+  [data-browser-shell-reload],
+  [data-browser-shell-bookmark],
+  [data-browser-shell-menu]
+){
+  display:grid!important;
+  place-items:center!important;
+  width:31px!important;
+  min-width:31px!important;
+  height:31px!important;
+  min-height:31px!important;
+  padding:0!important;
+  font-size:0!important;
+  line-height:0!important;
+}
+html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell .browser-mode-address > button:is(
+  [data-browser-shell-back],
+  [data-browser-shell-forward],
+  [data-browser-shell-reload],
+  [data-browser-shell-bookmark],
+  [data-browser-shell-menu]
+)::before{
+  content:""!important;
+  display:block!important;
+  width:16px!important;
+  height:16px!important;
+  background:currentColor!important;
+  -webkit-mask-image:var(--nyx-control-icon)!important;
+  mask-image:var(--nyx-control-icon)!important;
+  -webkit-mask-position:center!important;
+  mask-position:center!important;
+  -webkit-mask-repeat:no-repeat!important;
+  mask-repeat:no-repeat!important;
+  -webkit-mask-size:contain!important;
+  mask-size:contain!important;
+}
+html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell #desktop .browser-home-normal div.quick-tile.home-shortcut > button.home-shortcut-menu-btn{
+  top:-4px!important;
+  right:2px!important;
+  left:auto!important;
+  display:grid!important;
+  place-items:center!important;
+  width:18px!important;
+  min-width:18px!important;
+  max-width:18px!important;
+  height:18px!important;
+  min-height:18px!important;
+  max-height:18px!important;
+  padding:0!important;
+  border:0!important;
+  opacity:0!important;
+}
+html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell #desktop .browser-home-normal div.quick-tile.home-shortcut:is(:hover,:focus-within,.menu-open) > button.home-shortcut-menu-btn{opacity:1!important}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .browser-mode-address > button:is(
+  [data-browser-shell-back],
+  [data-browser-shell-forward],
+  [data-browser-shell-reload],
+  [data-browser-shell-bookmark],
+  [data-browser-shell-menu]
+)::before{
+  content:""!important;
+  display:block!important;
+  width:16px!important;
+  height:16px!important;
+  background:currentColor!important;
+  -webkit-mask-image:var(--nyx-control-icon)!important;
+  mask-image:var(--nyx-control-icon)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell #desktop .browser-home-normal div.quick-tile.home-shortcut:is(:hover,:focus-within,.menu-open) > button.home-shortcut-menu-btn{
+  opacity:1!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell #desktop .browser-home-normal .home-shortcut-menu-btn .shortcut-real-dots{
+  display:block!important;
+  width:18px!important;
+  height:18px!important;
+  color:currentColor!important;
+  -webkit-text-fill-color:currentColor!important;
+  font:600 12px/12px Outfit,Arial,sans-serif!important;
+  letter-spacing:0!important;
+  text-align:center!important;
+  opacity:1!important;
+}
+
+/* Canonical browser chrome. Theme files may supply colors, never geometry or
+   motion, so switching a palette cannot resize tabs or toolbar controls. */
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .top-os .brand-mini > :is(
+  .browser-mode-app-button,
+  .browser-mode-shell-tab
+){
+  width:144px!important;
+  min-width:144px!important;
+  max-width:144px!important;
+  height:31px!important;
+  min-height:31px!important;
+  max-height:31px!important;
+  margin:0!important;
+  border:1px solid var(--nyx-home-line)!important;
+  border-radius:8px!important;
+  background:var(--nyx-chrome-base)!important;
+  color:var(--nyx-home-wordmark)!important;
+  opacity:1!important;
+  animation:none!important;
+  transform:none!important;
+  transition:background-color .16s ease,border-color .16s ease,color .16s ease!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .top-os .brand-mini > .browser-mode-shell-tab.active{
+  border-color:var(--nyx-chrome-accent)!important;
+  background:var(--nyx-chrome-active)!important;
+  color:var(--nyx-home-text)!important;
+  opacity:1!important;
+  animation:none!important;
+  transform:none!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .top-os .brand-mini > [data-browser-shell-new-tab]{
+  display:grid!important;
+  place-items:center!important;
+  width:31px!important;
+  min-width:31px!important;
+  max-width:31px!important;
+  height:31px!important;
+  min-height:31px!important;
+  max-height:31px!important;
+  margin:0!important;
+  padding:0!important;
+  border:1px solid var(--nyx-home-line)!important;
+  border-radius:10px!important;
+  background:var(--nyx-chrome-base)!important;
+  color:var(--nyx-home-wordmark)!important;
+  opacity:1!important;
+  animation:none!important;
+  transform:none!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .top-os .brand-mini > [data-browser-shell-new-tab] > span{display:none!important}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .top-os .brand-mini > [data-browser-shell-new-tab]::before{
+  content:"+"!important;
+  display:block!important;
+  width:auto!important;
+  height:auto!important;
+  background:none!important;
+  color:currentColor!important;
+  -webkit-text-fill-color:currentColor!important;
+  font:400 19px/1 Outfit,Arial,sans-serif!important;
+  -webkit-mask:none!important;
+  mask:none!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .browser-mode-address > button{
+  position:relative!important;
+  width:31px!important;
+  min-width:31px!important;
+  max-width:31px!important;
+  height:31px!important;
+  min-height:31px!important;
+  max-height:31px!important;
+  padding:0!important;
+  border:1px solid var(--nyx-home-line)!important;
+  border-radius:10px!important;
+  background:var(--nyx-chrome-base)!important;
+  color:var(--nyx-home-wordmark)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03)!important;
+  opacity:1!important;
+  animation:none!important;
+  transform:none!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .browser-mode-address > button:hover,
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .top-os .brand-mini > :is(.browser-mode-app-button,.browser-mode-shell-tab,[data-browser-shell-new-tab]):hover{
+  border-color:var(--nyx-chrome-bright)!important;
+  background:var(--nyx-chrome-hover)!important;
+  color:var(--nyx-home-text)!important;
+  opacity:1!important;
+  animation:none!important;
+  transform:none!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .browser-mode-address .weather-cloud-icon,
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .browser-mode-address .weather-cloud-icon::before,
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .browser-mode-address .weather-cloud-icon::after{
+  color:var(--nyx-home-wordmark)!important;
+  border-color:var(--nyx-home-wordmark)!important;
+  background-color:var(--nyx-home-wordmark)!important;
+  box-shadow:none!important;
+  filter:none!important;
+}
+
+/* The Add App tile shares the exact shortcut footprint and tint. */
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell #desktop .browser-home div.quick-grid.home-shortcut-grid[data-home-shortcuts] > button.home-shortcut-add{
+  position:relative!important;
+  display:block!important;
+  flex:0 0 72px!important;
+  width:72px!important;
+  min-width:72px!important;
+  max-width:72px!important;
+  height:82px!important;
+  min-height:82px!important;
+  max-height:82px!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:14px!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  animation:none!important;
+  transform:none!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell #desktop .browser-home .home-shortcut-add > b{
+  position:absolute!important;
+  inset:3px auto auto 14px!important;
+  display:grid!important;
+  place-items:center!important;
+  width:44px!important;
+  min-width:44px!important;
+  max-width:44px!important;
+  height:44px!important;
+  min-height:44px!important;
+  max-height:44px!important;
+  margin:0!important;
+  padding:0!important;
+  border:1px solid var(--nyx-home-line)!important;
+  border-radius:50%!important;
+  background:color-mix(in srgb,var(--nyx-home-panel) 88%,transparent)!important;
+  color:var(--nyx-home-wordmark)!important;
+  -webkit-text-fill-color:var(--nyx-home-wordmark)!important;
+  box-shadow:0 8px 18px rgba(2,6,13,.16)!important;
+  font:300 25px/1 Outfit,Arial,sans-serif!important;
+  animation:none!important;
+  transform:none!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell #desktop .browser-home .home-shortcut-add > span{
+  position:absolute!important;
+  inset:60px auto auto 3px!important;
+  display:block!important;
+  width:66px!important;
+  margin:0!important;
+  color:var(--nyx-home-muted)!important;
+  -webkit-text-fill-color:var(--nyx-home-muted)!important;
+  font:400 11px/1.15 Outfit,Arial,sans-serif!important;
+  text-align:center!important;
+  white-space:nowrap!important;
+  transform:none!important;
+}
+
+/* Settings inherits the active palette instead of the old purple fallback. */
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .browser-shell-settings-overlay.browser-shell-settings-overlay .browser-shell-settings-close{
+  border-color:transparent!important;
+  background:transparent!important;
+  color:var(--nyx-home-wordmark)!important;
+  -webkit-text-fill-color:var(--nyx-home-wordmark)!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .browser-shell-settings-overlay.browser-shell-settings-overlay .nyx-settings-control :is(
+  .settings-input,
+  .settings-select,
+  input:not([type="range"]),
+  select,
+  textarea,
+  .panic-key-display
+){
+  border:1px solid var(--nyx-home-line)!important;
+  background:var(--nyx-unified-field)!important;
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .browser-shell-settings-overlay.browser-shell-settings-overlay :is(
+  .settings-action,
+  .settings-toggle,
+  .nyx-settings-nav button
+){
+  --theme-a:var(--nyx-chrome-accent)!important;
+  --theme-border:var(--nyx-home-line)!important;
+  border-color:var(--nyx-home-line)!important;
+  color:var(--nyx-home-muted)!important;
+  -webkit-text-fill-color:var(--nyx-home-muted)!important;
+  box-shadow:none!important;
+  text-shadow:none!important;
+  filter:none!important;
+  transform:none!important;
+}
+
+/* Retire the original purple theme aliases. A few legacy pseudo-elements still
+   read these names, so point them at the active palette as well. */
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell{
+  --theme-strong:var(--nyx-home-wordmark)!important;
+  --theme-border:var(--nyx-home-line)!important;
+  --theme-a:var(--nyx-chrome-accent)!important;
+  --theme-b:var(--nyx-chrome-bright)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell #desktop .browser-home .home-shortcut-add > b::before,
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell #desktop .browser-home .home-shortcut-add > b::after{
+  content:none!important;
+  display:none!important;
+  background:none!important;
+  box-shadow:none!important;
+}
+
+/* Single-source toolbar icons: no theme is allowed to rotate, offset, or draw
+   a second glyph on hover. */
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .top-os.top-os .browser-mode-address > button:is(
+  [data-browser-shell-back],
+  [data-browser-shell-forward],
+  [data-browser-shell-reload],
+  [data-browser-shell-bookmark],
+  [data-browser-shell-menu]
+)::before,
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .top-os.top-os .browser-mode-address > button:is(
+  [data-browser-shell-back],
+  [data-browser-shell-forward],
+  [data-browser-shell-reload],
+  [data-browser-shell-bookmark],
+  [data-browser-shell-menu]
+):hover::before{
+  position:absolute!important;
+  inset:50% auto auto 50%!important;
+  width:16px!important;
+  height:16px!important;
+  margin:0!important;
+  transform:translate(-50%,-50%)!important;
+  translate:none!important;
+  rotate:0deg!important;
+  scale:1!important;
+  box-shadow:none!important;
+}
+
+/* Theme-colored cloud drawn as a mask, replacing the purple bitmap layer. */
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .top-os.top-os .browser-mode-address .browser-mode-weather > .weather-cloud-icon{
+  position:static!important;
+  display:block!important;
+  width:17px!important;
+  min-width:17px!important;
+  height:17px!important;
+  min-height:17px!important;
+  margin:0!important;
+  border:0!important;
+  background:currentColor!important;
+  background-image:none!important;
+  color:var(--nyx-home-wordmark)!important;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 18h10a4 4 0 0 0 .45-7.97A6 6 0 0 0 6.2 8.55 4.75 4.75 0 0 0 7 18Z' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat!important;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 18h10a4 4 0 0 0 .45-7.97A6 6 0 0 0 6.2 8.55 4.75 4.75 0 0 0 7 18Z' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat!important;
+  box-shadow:none!important;
+  filter:none!important;
+  opacity:1!important;
+  transform:none!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .top-os.top-os .browser-mode-address .browser-mode-weather > .weather-cloud-icon::before,
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .top-os.top-os .browser-mode-address .browser-mode-weather > .weather-cloud-icon::after{
+  content:none!important;
+  display:none!important;
+}
+
+/* Exactly one horizontal three-dot mark per shortcut. */
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell #desktop .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > div.quick-tile.home-shortcut > button.home-shortcut-menu-btn::before,
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell #desktop .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > div.quick-tile.home-shortcut > button.home-shortcut-menu-btn::after{
+  content:none!important;
+  display:none!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell #desktop .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > div.quick-tile.home-shortcut > button.home-shortcut-menu-btn > .shortcut-real-dots{
+  position:static!important;
+  display:block!important;
+  width:4px!important;
+  min-width:4px!important;
+  max-width:4px!important;
+  height:4px!important;
+  min-height:4px!important;
+  max-height:4px!important;
+  margin:0!important;
+  border-radius:50%!important;
+  background:currentColor!important;
+  color:var(--nyx-home-wordmark)!important;
+  -webkit-text-fill-color:transparent!important;
+  box-shadow:-6px 0 0 currentColor,6px 0 0 currentColor!important;
+  font-size:0!important;
+  line-height:0!important;
+  letter-spacing:0!important;
+  text-indent:0!important;
+  overflow:visible!important;
+  transform:none!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell #desktop .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > div.quick-tile.home-shortcut > button.home-shortcut-menu-btn > .shortcut-real-dots::before,
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell #desktop .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > div.quick-tile.home-shortcut > button.home-shortcut-menu-btn > .shortcut-real-dots::after{
+  content:none!important;
+  display:none!important;
+}

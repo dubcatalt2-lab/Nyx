@@ -1224,6 +1224,9 @@ function linkGeneratorClientId(req) {
 }
 
 function sameOriginRequest(req) {
+  const fetchSite = String(req.get("sec-fetch-site") || "").trim().toLowerCase();
+  if (fetchSite === "same-origin" || fetchSite === "same-site") return true;
+  if (fetchSite === "cross-site") return false;
   const origin = String(req.get("origin") || "").trim();
   if (!origin) return true;
   try {

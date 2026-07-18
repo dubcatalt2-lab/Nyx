@@ -1,5 +1,41 @@
 (() => {
   let activeSession = 0;
+  let lockedPageElements = [];
+
+  const blockedInputEvents = ['pointerdown', 'pointerup', 'click', 'dblclick', 'contextmenu', 'wheel', 'touchstart', 'touchmove', 'keydown', 'keyup'];
+  blockedInputEvents.forEach(type => {
+    window.addEventListener(type, event => {
+      if (!document.body?.classList.contains('nyx-loading-active')) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }, { capture: true, passive: false });
+  });
+
+  function unlockPage(splash) {
+    lockedPageElements.forEach(({ element, hadInert }) => {
+      if (!element?.isConnected || hadInert) return;
+      element.removeAttribute('inert');
+    });
+    lockedPageElements = [];
+    document.body?.classList.remove('nyx-loading-active');
+    splash?.blur?.();
+  }
+
+  function lockPage(splash) {
+    unlockPage(splash);
+    lockedPageElements = Array.from(document.body?.children || [])
+      .filter(element => element !== splash && !['SCRIPT', 'STYLE', 'LINK'].includes(element.tagName))
+      .map(element => {
+        const hadInert = element.hasAttribute('inert');
+        if (!hadInert) element.setAttribute('inert', '');
+        return { element, hadInert };
+      });
+    document.body?.classList.add('nyx-loading-active');
+    splash.setAttribute('role', 'dialog');
+    splash.setAttribute('aria-modal', 'true');
+    splash.tabIndex = -1;
+    splash.focus({ preventScroll: true });
+  }
 
   const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
 
@@ -77,6 +113,7 @@
       void splash.offsetWidth;
       splash.classList.add('show');
       splash.setAttribute('aria-hidden', 'false');
+      lockPage(splash);
 
       return {
         async step(value, label, task, minimumVisible = 360) {
@@ -108,6 +145,7 @@
           splash.classList.remove('show', 'leaving');
           splash.setAttribute('aria-hidden', 'true');
           updateProgress(splash, 0, 'Preparing Nyx');
+          unlockPage(splash);
         }
       };
     }

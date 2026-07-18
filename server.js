@@ -1,6 +1,7 @@
 ﻿import express from "express";
 import { createServer } from "node:http";
 import { hostname } from "node:os";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { createRequire } from "node:module";
@@ -43,6 +44,10 @@ function normalizePublicWispUrl(value) {
 const externalWispUrl = normalizePublicWispUrl(process.env.WISP_URL);
 const presenceSessions = new Map();
 const presenceTtlMs = 45_000;
+const linkGeneratorAttempts = new Map();
+const linkGeneratorWindowMs = 15 * 60 * 1000;
+const linkGeneratorCooldownMs = 10 * 60 * 1000;
+const linkGeneratorMaxAttempts = 5;
 app.use(express.json({ limit: "2mb" }));
 app.use((error, _req, res, next) => {
   if (error instanceof SyntaxError && "body" in error) {
@@ -1181,6 +1186,170 @@ app.get("/nyx-compat/cineby-app.js", async (_req, res) => {
 app.get("/assets/vendor/eruda.min.js", (_req, res) => {
   res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
   res.type("application/javascript").sendFile(erudaPath);
+});
+
+function linkGeneratorConfig() {
+  const maxZones = Math.max(1, Math.min(100, Number.parseInt(process.env.LINK_GENERATOR_MAX_ZONES || "20", 10) || 20));
+  let origin = "";
+  try {
+    const parsed = new URL(process.env.NYX_PUBLIC_ORIGIN || "https://nyxlearning.netlify.app");
+    if (parsed.protocol === "https:" || parsed.protocol === "http:") {
+      parsed.pathname = parsed.pathname.replace(/\/$/, "");
+      parsed.search = "";
+      parsed.hash = "";
+      origin = parsed.href.replace(/\/$/, "");
+    }
+  } catch {}
+  return {
+    apiKey: String(process.env.BUNNY_API_KEY || "").trim(),
+    accessCode: String(process.env.LINK_GENERATOR_ACCESS_CODE || ""),
+    origin,
+    maxZones
+  };
+}
+
+function secretMatches(actual, expected) {
+  const left = createHash("sha256").update(String(actual || "")).digest();
+  const right = createHash("sha256").update(String(expected || "")).digest();
+  return timingSafeEqual(left, right) && Boolean(expected);
+}
+
+function linkGeneratorClientId(req) {
+  return String(
+    req.get("x-nf-client-connection-ip") ||
+    req.get("x-forwarded-for")?.split(",")[0] ||
+    req.ip ||
+    "unknown"
+  ).trim().slice(0, 100);
+}
+
+function sameOriginRequest(req) {
+  const origin = String(req.get("origin") || "").trim();
+  if (!origin) return true;
+  try {
+    const forwardedHost = String(req.get("x-forwarded-host") || req.get("host") || "").split(",")[0].trim();
+    return new URL(origin).host === forwardedHost;
+  } catch {
+    return false;
+  }
+}
+
+function linkGeneratorRateState(clientId, now = Date.now()) {
+  for (const [key, state] of linkGeneratorAttempts) {
+    if (now - state.windowStarted > linkGeneratorWindowMs && now - state.lastCreated > linkGeneratorCooldownMs) {
+      linkGeneratorAttempts.delete(key);
+    }
+  }
+  let state = linkGeneratorAttempts.get(clientId);
+  if (!state || now - state.windowStarted > linkGeneratorWindowMs) {
+    state = { attempts: 0, windowStarted: now, lastCreated: 0 };
+    linkGeneratorAttempts.set(clientId, state);
+  }
+  return state;
+}
+
+function generatedPullZoneName(label) {
+  const slug = String(label || "link")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 24) || "link";
+  return `nyx-public-${slug}-${randomBytes(3).toString("hex")}`;
+}
+
+async function bunnyRequest(path, apiKey, options = {}) {
+  const response = await fetch(`https://api.bunny.net${path}`, {
+    ...options,
+    headers: {
+      Accept: "application/json",
+      AccessKey: apiKey,
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(options.headers || {})
+    },
+    signal: AbortSignal.timeout(15_000)
+  });
+  let payload = null;
+  try { payload = await response.json(); } catch {}
+  if (!response.ok) {
+    const message = String(payload?.Message || payload?.message || `Bunny API returned ${response.status}`).slice(0, 240);
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
+  }
+  return payload;
+}
+
+app.get("/api/link-generator/status", (_req, res) => {
+  const config = linkGeneratorConfig();
+  res.set("Cache-Control", "no-store").json({
+    available: Boolean(config.apiKey && config.accessCode && config.origin),
+    origin: config.origin,
+    cooldownMinutes: Math.round(linkGeneratorCooldownMs / 60_000)
+  });
+});
+
+app.post("/api/link-generator", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+
+  const config = linkGeneratorConfig();
+  if (!config.apiKey || !config.accessCode || !config.origin) {
+    res.status(503).json({ error: "Link Generator has not been configured by the Nyx administrator yet." });
+    return;
+  }
+
+  const clientId = linkGeneratorClientId(req);
+  const now = Date.now();
+  const rate = linkGeneratorRateState(clientId, now);
+  rate.attempts += 1;
+  if (rate.attempts > linkGeneratorMaxAttempts) {
+    const retryAfter = Math.max(1, Math.ceil((rate.windowStarted + linkGeneratorWindowMs - now) / 1000));
+    res.set("Retry-After", String(retryAfter)).status(429).json({ error: "Too many attempts. Try again later." });
+    return;
+  }
+  if (!secretMatches(req.body?.accessCode, config.accessCode)) {
+    res.status(401).json({ error: "The access code is incorrect." });
+    return;
+  }
+  if (rate.lastCreated && now - rate.lastCreated < linkGeneratorCooldownMs) {
+    const retryAfter = Math.max(1, Math.ceil((rate.lastCreated + linkGeneratorCooldownMs - now) / 1000));
+    res.set("Retry-After", String(retryAfter)).status(429).json({ error: `A link was already generated recently. Try again in ${Math.ceil(retryAfter / 60)} minute(s).` });
+    return;
+  }
+
+  try {
+    const zonesPayload = await bunnyRequest("/pullzone?page=1&perPage=1000&search=nyx-public-", config.apiKey);
+    const zones = Array.isArray(zonesPayload) ? zonesPayload : Array.isArray(zonesPayload?.Items) ? zonesPayload.Items : [];
+    const generatedZones = zones.filter(zone => String(zone?.Name || "").startsWith("nyx-public-"));
+    if (generatedZones.length >= config.maxZones) {
+      res.status(409).json({ error: "The public Link Generator has reached its zone limit. Ask the Nyx administrator to remove an old generated link." });
+      return;
+    }
+
+    const name = generatedPullZoneName(req.body?.label);
+    const zone = await bunnyRequest("/pullzone", config.apiKey, {
+      method: "POST",
+      body: JSON.stringify({ Name: name, OriginUrl: config.origin })
+    });
+    const systemHostname = Array.isArray(zone?.Hostnames)
+      ? zone.Hostnames.find(item => item?.IsSystemHostname)?.Value || zone.Hostnames[0]?.Value
+      : "";
+    if (!systemHostname) throw new Error("Bunny created the zone but did not return its hostname.");
+    rate.lastCreated = Date.now();
+    res.status(201).json({
+      id: zone.Id,
+      name: zone.Name || name,
+      url: `https://${systemHostname}`,
+      origin: config.origin
+    });
+  } catch (error) {
+    console.error("Nyx Link Generator failed:", error?.message || error);
+    res.status(502).json({ error: `Bunny could not create the link: ${String(error?.message || "Unknown error")}` });
+  }
 });
 app.use(express.static(__dirname));
 app.use("/uv/", express.static(uvPath));

@@ -1374,7 +1374,7 @@ function generatedPullZoneName(label) {
     .normalize("NFKD")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .slice(0, 24) || "link";
+    .slice(0, 40) || "link";
   return `${slug}-${randomBytes(3).toString("hex")}`;
 }
 

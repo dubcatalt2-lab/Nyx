@@ -1,4 +1,4 @@
-@import url("../utility-shell.css?v=20260718-step-wizard-1");
+@import url("../utility-shell.css?v=20260718-static-utility-header-2");
 
 .generator-shell{width:min(820px,calc(100% - 40px))}
 .generator-card{padding:24px 26px 26px;overflow:hidden}
@@ -12,10 +12,10 @@
 .wizard-progress-line span{display:block;width:0;height:100%;background:var(--accent);transition:width .38s cubic-bezier(.2,.8,.2,1)}
 .wizard-progress ol{position:relative;display:grid;grid-template-columns:repeat(4,1fr);margin:0;padding:0;list-style:none}
 .wizard-progress li{display:grid;justify-items:center;gap:7px;color:var(--muted-deep);font-size:9px;transition:color .25s ease}
-.wizard-progress li>span{width:29px;height:29px;display:grid;place-items:center;border:1px solid var(--line);border-radius:50%;background:var(--surface-strong);font:500 9px/1 ui-monospace,SFMono-Regular,Consolas,monospace;transition:border-color .25s ease,background-color .25s ease,color .25s ease}
+.wizard-progress li>span{position:relative;z-index:1;width:29px;height:29px;display:grid;place-items:center;border:1px solid var(--line);border-radius:50%;background:var(--bg);box-shadow:0 0 0 6px var(--bg);font:500 9px/1 ui-monospace,SFMono-Regular,Consolas,monospace;transition:border-color .25s ease,background-color .25s ease,color .25s ease}
 .wizard-progress li small{font-size:9px;letter-spacing:.03em}
 .wizard-progress li.active,.wizard-progress li.complete{color:var(--text)}
-.wizard-progress li.active>span{border-color:var(--line-strong);background:var(--accent-soft);color:var(--accent)}
+.wizard-progress li.active>span{border-color:var(--line-strong);background:linear-gradient(var(--accent-soft),var(--accent-soft)),var(--bg);color:var(--accent)}
 .wizard-progress li.complete>span{border-color:var(--line-strong);background:var(--accent);color:var(--bg)}
 
 .generator-form{display:block}

@@ -6,19 +6,19 @@
   <meta name="color-scheme" content="dark light">
   <title>Link Generator</title>
   <link rel="icon" type="image/png" href="../../assets/icons/nyx-tab-logo.png">
-  <link rel="stylesheet" href="./styles.css?v=20260718-step-wizard-1">
+  <link rel="stylesheet" href="./styles.css?v=20260718-static-utility-header-2">
 </head>
 <body>
   <main class="utility-shell generator-shell">
     <header class="utility-header">
-      <a class="brand-lockup" href="../../" aria-label="Return to Nyx">
+      <span class="brand-lockup" aria-label="Nyx utilities">
         <span class="brand-mark" aria-hidden="true"><img src="../../assets/icons/nyx-tab-logo.png" alt=""></span>
         <span class="brand-copy"><strong>nyx</strong><span>utilities</span></span>
-      </a>
-      <nav class="utility-nav" aria-label="Nyx utilities">
-        <a href="../link-checker/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a5 5 0 007.5.5l2-2a5 5 0 00-7-7l-1.1 1.1M14 10a5 5 0 00-7.5-.5l-2 2a5 5 0 007 7l1.1-1.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>Link Checker</span></a>
-        <a href="./" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M5.5 5.5l13 13M18.5 5.5l-13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Generator</span></a>
-      </nav>
+      </span>
+      <div class="utility-nav" aria-label="Nyx utility pages">
+        <span class="utility-nav-item"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a5 5 0 007.5.5l2-2a5 5 0 00-7-7l-1.1 1.1M14 10a5 5 0 00-7.5-.5l-2 2a5 5 0 007 7l1.1-1.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>Link Checker</span></span>
+        <span class="utility-nav-item" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M5.5 5.5l13 13M18.5 5.5l-13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Generator</span></span>
+      </div>
       <span class="service-status" data-service-status><i aria-hidden="true"></i><span>Checking setup</span></span>
     </header>
 
@@ -96,7 +96,7 @@
               <label>
                 <span>Link label</span>
                 <input name="label" data-label-input maxlength="40" autocomplete="off" placeholder="Example: study-room">
-                <small>Letters, numbers, and short words work best.</small>
+                <small>Up to 40 characters are preserved. Dots and spaces become hyphens in the CDN address.</small>
               </label>
               <label>
                 <span>Content filter report</span>
@@ -156,6 +156,6 @@
       </section>
     </section>
   </main>
-  <script src="./app.js?v=20260718-step-wizard-1"></script>
+  <script src="./app.js?v=20260718-static-utility-header-2"></script>
 </body>
 </html>

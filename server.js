@@ -47,7 +47,7 @@ const presenceTtlMs = 45_000;
 const linkGeneratorAttempts = new Map();
 const linkGeneratorWindowMs = 15 * 60 * 1000;
 const linkGeneratorMaxAttempts = 5;
-const freeLinkDailyLimit = 5;
+const freeLinkDailyLimit = 3;
 const freeNetworkDailyLimit = 25;
 let linkGeneratorFirebasePromise;
 app.use(express.json({ limit: "2mb" }));

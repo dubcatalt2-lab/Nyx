@@ -19,6 +19,7 @@
   let accessMode='account';
   let wizardStep=0;
   let premiumBatchLimit=10;
+  let freeDailyLimit=3;
   let authConfig={enabled:false,apiKey:''};
   let authSession=readStoredSession();
 
@@ -112,7 +113,7 @@
     return authSession;
   }
   async function currentVerifiedSession(){
-    if(!authSession) throw new Error('Sign in to use your five free links.');
+    if(!authSession) throw new Error(`Sign in to use your ${freeDailyLimit} free links.`);
     if(authSession.expiresAt-Date.now()<60_000) await refreshSession();
     if(!authSession.emailVerified) await refreshVerification();
     if(!authSession.emailVerified) throw new Error('Verify your email address, then select “I verified my email.”');
@@ -127,8 +128,8 @@
     refs.refreshAccount.hidden=!signedIn || Boolean(authSession?.emailVerified);
     refs.accountStatus.className=`account-status${signedIn ? (authSession.emailVerified ? ' good' : '') : ''}`;
     refs.accountStatus.textContent=signedIn
-      ? (authSession.emailVerified ? `${authSession.email || 'Account'} is verified. You can create up to 5 links today.` : `Verification sent to ${authSession.email || 'your email'}. Verify it before generating links.`)
-      : 'Sign in with a verified email to receive 5 free links per day.';
+      ? (authSession.emailVerified ? `${authSession.email || 'Account'} is verified. You can create up to ${freeDailyLimit} links today.` : `Verification sent to ${authSession.email || 'your email'}. Verify it before generating links.`)
+      : `Sign in with a verified email to receive ${freeDailyLimit} free links per day.`;
   }
   function setAccessMode(mode){
     accessMode=mode;
@@ -318,7 +319,7 @@
   async function loadStatus(){
     try{
       const status=await readJson(await fetch('/api/link-generator/status',{headers:{Accept:'application/json'},cache:'no-store'}));
-      premiumBatchLimit=Math.max(1,Math.min(10,Number.parseInt(status.premiumBatchLimit,10) || 10));refs.amount.max=String(premiumBatchLimit);refs.amountHint.textContent=`Premium can create up to ${premiumBatchLimit} links at once.`;
+      premiumBatchLimit=Math.max(1,Math.min(10,Number.parseInt(status.premiumBatchLimit,10) || 10));freeDailyLimit=Math.max(1,Number.parseInt(status.freeDailyLimit,10) || 3);refs.amount.max=String(premiumBatchLimit);refs.amountHint.textContent=`Premium can create up to ${premiumBatchLimit} links at once.`;renderAccount();
       refs.origin.textContent=status.origin || 'Not configured';setStatus(status.available,status.available ? 'Ready' : 'Setup required');
       if(!status.available) showNotice('The Nyx administrator still needs to finish the Link Generator environment settings in Netlify.','error');
     }catch(error){refs.origin.textContent='Unavailable';setStatus(false,'Unavailable');showNotice(`Could not check the generator: ${error.message}`,'error')}

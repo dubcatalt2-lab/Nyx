@@ -18,8 +18,7 @@
   };
   let accessMode='account';
   let wizardStep=0;
-  let premiumBatchLimit=100;
-  let premiumRequestLimit=10;
+  let premiumBatchLimit=10;
   let authConfig={enabled:false,apiKey:''};
   let authSession=readStoredSession();
 
@@ -319,7 +318,7 @@
   async function loadStatus(){
     try{
       const status=await readJson(await fetch('/api/link-generator/status',{headers:{Accept:'application/json'},cache:'no-store'}));
-      premiumBatchLimit=Math.max(1,Math.min(100,Number.parseInt(status.premiumBatchLimit,10) || 100));premiumRequestLimit=Math.max(1,Math.min(10,Number.parseInt(status.premiumRequestLimit,10) || 10));refs.amount.max=String(premiumBatchLimit);refs.amountHint.textContent=`Premium can create up to ${premiumBatchLimit} links at once.`;
+      premiumBatchLimit=Math.max(1,Math.min(10,Number.parseInt(status.premiumBatchLimit,10) || 10));refs.amount.max=String(premiumBatchLimit);refs.amountHint.textContent=`Premium can create up to ${premiumBatchLimit} links at once.`;
       refs.origin.textContent=status.origin || 'Not configured';setStatus(status.available,status.available ? 'Ready' : 'Setup required');
       if(!status.available) showNotice('The Nyx administrator still needs to finish the Link Generator environment settings in Netlify.','error');
     }catch(error){refs.origin.textContent='Unavailable';setStatus(false,'Unavailable');showNotice(`Could not check the generator: ${error.message}`,'error')}
@@ -353,30 +352,7 @@
         body.accessCode=refs.accessCode.value;
         body.amount=selectedAmount();
       }
-      let result;
-      if(accessMode==='administrator' && body.amount>premiumRequestLimit){
-        const requested=body.amount,allLinks=[];
-        let warning='';
-        while(allLinks.length<requested){
-          const chunkAmount=Math.min(premiumRequestLimit,requested-allLinks.length);
-          setLoading(true,`Creating ${allLinks.length} of ${requested} links...`);
-          const chunkBody={...body,amount:chunkAmount};
-          let chunk;
-          try{chunk=await readJson(await fetch('/api/link-generator',{method:'POST',headers,body:JSON.stringify(chunkBody)}))}
-          catch(error){
-            if(!allLinks.length) throw error;
-            warning=`Bunny stopped after creating ${allLinks.length} of ${requested} links: ${error.message}`;
-            break;
-          }
-          const chunkLinks=Array.isArray(chunk.links) ? chunk.links : (chunk.url ? [{url:chunk.url}] : []);
-          allLinks.push(...chunkLinks);
-          setLoading(true,`Creating ${allLinks.length} of ${requested} links...`);
-          if(chunk.partial || chunkLinks.length<chunkAmount){warning=chunk.warning || `Bunny stopped after creating ${allLinks.length} of ${requested} links.`;break}
-        }
-        result={links:allLinks,requested,created:allLinks.length,partial:allLinks.length<requested,warning,access:'administrator'};
-      }else{
-        result=await readJson(await fetch('/api/link-generator',{method:'POST',headers,body:JSON.stringify(body)}));
-      }
+      const result=await readJson(await fetch('/api/link-generator',{method:'POST',headers,body:JSON.stringify(body)}));
       const links=(Array.isArray(result.links)?result.links:[]).map(item=>typeof item==='string'?item:item?.url).filter(Boolean);
       if(!links.length && result.url) links.push(result.url);
       if(!links.length) throw new Error('Bunny did not return any generated links.');

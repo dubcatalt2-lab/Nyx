@@ -1192,8 +1192,7 @@ app.get("/assets/vendor/eruda.min.js", (_req, res) => {
 
 function linkGeneratorConfig() {
   const maxZones = Math.max(1, Math.min(10_000, Number.parseInt(process.env.LINK_GENERATOR_MAX_ZONES || "100", 10) || 100));
-  const premiumBatchLimit = Math.max(1, Math.min(100, Number.parseInt(process.env.LINK_GENERATOR_PREMIUM_BATCH_LIMIT || "100", 10) || 100));
-  const premiumRequestLimit = Math.max(1, Math.min(10, Number.parseInt(process.env.LINK_GENERATOR_PREMIUM_REQUEST_LIMIT || "10", 10) || 10));
+  const premiumBatchLimit = Math.max(1, Math.min(10, Number.parseInt(process.env.LINK_GENERATOR_PREMIUM_BATCH_LIMIT || "10", 10) || 10));
   let origin = "";
   try {
     const parsed = new URL(process.env.NYX_PUBLIC_ORIGIN || "https://nyxlearning.netlify.app");
@@ -1209,8 +1208,7 @@ function linkGeneratorConfig() {
     accessCode: String(process.env.LINK_GENERATOR_ACCESS_CODE || ""),
     origin,
     maxZones,
-    premiumBatchLimit,
-    premiumRequestLimit
+    premiumBatchLimit
   };
 }
 
@@ -1435,8 +1433,7 @@ app.get("/api/link-generator/status", (_req, res) => {
     accountAccess: firebaseAccountModeConfigured(),
     origin: config.origin,
     freeDailyLimit: freeLinkDailyLimit,
-    premiumBatchLimit: config.premiumBatchLimit,
-    premiumRequestLimit: config.premiumRequestLimit
+    premiumBatchLimit: config.premiumBatchLimit
   });
 });
 
@@ -1542,8 +1539,8 @@ app.post("/api/link-generator", async (req, res) => {
 
   const rawAmount = req.body?.amount === undefined ? 1 : Number(req.body.amount);
   const amount = administrator ? rawAmount : 1;
-  if (administrator && (!Number.isInteger(rawAmount) || rawAmount < 1 || rawAmount > config.premiumRequestLimit)) {
-    res.status(400).json({ error: `Each Premium generation request can contain between 1 and ${config.premiumRequestLimit} links.` });
+  if (administrator && (!Number.isInteger(rawAmount) || rawAmount < 1 || rawAmount > config.premiumBatchLimit)) {
+    res.status(400).json({ error: `Premium batches can contain between 1 and ${config.premiumBatchLimit} links.` });
     return;
   }
 

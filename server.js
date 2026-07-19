@@ -1192,7 +1192,8 @@ app.get("/assets/vendor/eruda.min.js", (_req, res) => {
 
 function linkGeneratorConfig() {
   const maxZones = Math.max(1, Math.min(10_000, Number.parseInt(process.env.LINK_GENERATOR_MAX_ZONES || "100", 10) || 100));
-  const premiumBatchLimit = Math.max(1, Math.min(25, Number.parseInt(process.env.LINK_GENERATOR_PREMIUM_BATCH_LIMIT || "10", 10) || 10));
+  const premiumBatchLimit = Math.max(1, Math.min(100, Number.parseInt(process.env.LINK_GENERATOR_PREMIUM_BATCH_LIMIT || "100", 10) || 100));
+  const premiumRequestLimit = Math.max(1, Math.min(10, Number.parseInt(process.env.LINK_GENERATOR_PREMIUM_REQUEST_LIMIT || "10", 10) || 10));
   let origin = "";
   try {
     const parsed = new URL(process.env.NYX_PUBLIC_ORIGIN || "https://nyxlearning.netlify.app");
@@ -1208,7 +1209,8 @@ function linkGeneratorConfig() {
     accessCode: String(process.env.LINK_GENERATOR_ACCESS_CODE || ""),
     origin,
     maxZones,
-    premiumBatchLimit
+    premiumBatchLimit,
+    premiumRequestLimit
   };
 }
 
@@ -1380,6 +1382,17 @@ function generatedPullZoneName(label) {
   return `${slug}-${randomBytes(3).toString("hex")}`;
 }
 
+function generatedBunnyUrl(value) {
+  try {
+    const parsed = new URL(String(value || ""));
+    const validHostname = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.b-cdn\.net$/i.test(parsed.hostname);
+    if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.port || !validHostname || parsed.pathname !== "/" || parsed.search || parsed.hash) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 function normalizedOrigin(value) {
   try {
     const parsed = new URL(String(value || ""));
@@ -1422,7 +1435,8 @@ app.get("/api/link-generator/status", (_req, res) => {
     accountAccess: firebaseAccountModeConfigured(),
     origin: config.origin,
     freeDailyLimit: freeLinkDailyLimit,
-    premiumBatchLimit: config.premiumBatchLimit
+    premiumBatchLimit: config.premiumBatchLimit,
+    premiumRequestLimit: config.premiumRequestLimit
   });
 });
 
@@ -1432,6 +1446,61 @@ app.get("/api/link-generator/auth-config", (_req, res) => {
     enabled: firebaseAccountModeConfigured(),
     apiKey: firebaseAccountModeConfigured() ? config.webApiKey : ""
   });
+});
+
+app.post("/api/link-generator/readiness", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  const config = linkGeneratorConfig();
+  const target = generatedBunnyUrl(req.body?.url);
+  if (!config.apiKey || !config.origin) {
+    res.status(503).json({ error: "Link Generator has not been configured by the Nyx administrator yet." });
+    return;
+  }
+  if (!target) {
+    res.status(400).json({ error: "Only generated Nyx CDN links can be checked." });
+    return;
+  }
+  try {
+    const zonesPayload = await bunnyRequest("/pullzone?page=1&perPage=1000", config.apiKey);
+    const zones = Array.isArray(zonesPayload) ? zonesPayload : Array.isArray(zonesPayload?.Items) ? zonesPayload.Items : [];
+    const zone = zones.find(item => normalizedOrigin(item?.OriginUrl) === config.origin && Array.isArray(item?.Hostnames) && item.Hostnames.some(hostname => String(hostname?.Value || "").toLowerCase() === target.hostname.toLowerCase()));
+    if (!zone) {
+      res.status(404).json({ error: "That hostname is not a generated Nyx CDN link." });
+      return;
+    }
+    if (zone.Suspended === true) {
+      res.json({ ready: false, state: "suspended", message: "Bunny suspended this CDN link. Check the Bunny account balance and service limits." });
+      return;
+    }
+    if (zone.Enabled === false) {
+      res.json({ ready: false, state: "disabled", message: "Bunny left this CDN link disabled. Check the Bunny account balance and pull-zone limit." });
+      return;
+    }
+    let response;
+    try {
+      response = await fetch(target.href, {
+        headers: { Accept: "text/html", Range: "bytes=0-32767", "Cache-Control": "no-cache" },
+        redirect: "manual",
+        signal: AbortSignal.timeout(8_000)
+      });
+    } catch {
+      res.json({ ready: false, state: "provisioning", message: "Bunny is still connecting this link to Nyx." });
+      return;
+    }
+    const sample = (await response.text()).slice(0, 40_000);
+    const bunnyPlaceholder = /This server is a part of a CDN service provided by|Server Node:\s*[A-Z0-9-]+/i.test(sample);
+    if (!response.ok || bunnyPlaceholder) {
+      res.json({ ready: false, state: "provisioning", message: "Bunny is still provisioning this link. It will open after the CDN begins serving Nyx." });
+      return;
+    }
+    res.json({ ready: true, state: "ready", message: "The CDN link is serving Nyx." });
+  } catch (error) {
+    res.status(error.status || 502).json({ error: error.status ? error.message : `Bunny readiness check failed: ${String(error?.message || "Unknown error")}` });
+  }
 });
 
 app.post("/api/link-generator", async (req, res) => {
@@ -1473,8 +1542,8 @@ app.post("/api/link-generator", async (req, res) => {
 
   const rawAmount = req.body?.amount === undefined ? 1 : Number(req.body.amount);
   const amount = administrator ? rawAmount : 1;
-  if (administrator && (!Number.isInteger(rawAmount) || rawAmount < 1 || rawAmount > config.premiumBatchLimit)) {
-    res.status(400).json({ error: `Premium batches can contain between 1 and ${config.premiumBatchLimit} links.` });
+  if (administrator && (!Number.isInteger(rawAmount) || rawAmount < 1 || rawAmount > config.premiumRequestLimit)) {
+    res.status(400).json({ error: `Each Premium generation request can contain between 1 and ${config.premiumRequestLimit} links.` });
     return;
   }
 

@@ -4045,6 +4045,26 @@
     const host=browserHost(raw);
     return !!host && hostMatches(host,popupAllowedAppDomains);
   }
+  function isNyxLinkGeneratorUrl(url){
+    const raw=browserShellSourceUrl(String(url || '')) || String(url || '');
+    try{
+      const parsed=new URL(raw,location.href);
+      return parsed.origin===location.origin && /^\/apps\/link-generator(?:\/|$)/i.test(parsed.pathname);
+    }catch{return false}
+  }
+  function isNyxGeneratedCdnUrl(url){
+    try{
+      const parsed=new URL(String(url || ''));
+      return parsed.protocol==='https:'
+        && !parsed.username
+        && !parsed.password
+        && !parsed.port
+        && /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.b-cdn\.net$/i.test(parsed.hostname)
+        && parsed.pathname==='/'
+        && !parsed.search
+        && !parsed.hash;
+    }catch{return false}
+  }
   function externalHttpUrl(url){
     try{
       const target=new URL(url,location.href);
@@ -6298,6 +6318,11 @@
           || browserShellSourceUrl(t.sourceUrl || '')
           || t.url || t.sourceUrl || bridgeUrl;
       };
+      const isTrustedGeneratedLink=link=>{
+        if(!link?.matches?.('a[data-nyx-generated-popup][href]')) return false;
+        if(!isNyxLinkGeneratorUrl(currentBridgeUrl())) return false;
+        return isNyxGeneratedCdnUrl(link.href || link.getAttribute('href'));
+      };
       const sameOriginPopupUrl=value=>{
         const raw=String(value || '').trim();
         if(!raw || /^about:blank$/i.test(raw)) return '';
@@ -6409,6 +6434,7 @@
               frameWindow.HTMLAnchorElement.prototype.click=function(){
                 if(popupProtectionEnabled() && (shouldTrapPopupTarget(this.target) || shouldTrapDownloadLink(this))){
                   const href=this.href || this.getAttribute('href') || '';
+                  if(isTrustedGeneratedLink(this)) return nativeAnchorClick.call(this);
                   if(!shouldTrapDownloadLink(this) && followSearchResult(this)) return;
                   if(!shouldTrapDownloadLink(this) && followSameOriginPopup(href)) return;
                   openPopupTab(href || 'about:blank');
@@ -6474,9 +6500,10 @@
               return;
             }
             if(!link || !shouldTrapPopupTarget(link.getAttribute('target'))) return;
+            const href=link.href || link.getAttribute('href') || 'about:blank';
+            if(isTrustedGeneratedLink(link)) return;
             event.preventDefault();
             event.stopImmediatePropagation();
-            const href=link.href || link.getAttribute('href') || 'about:blank';
             if(followSearchResult(link)) return;
             if(!followSameOriginPopup(href)) openPopupTab(href);
           };
@@ -6654,6 +6681,8 @@
       ];
       if(!popupProtectionEnabled() || isPopupAllowedAppUrl(sourceUrl)){
         tokens.push('allow-popups','allow-popups-to-escape-sandbox','allow-downloads','allow-top-navigation-by-user-activation');
+      }else if(isNyxLinkGeneratorUrl(sourceUrl)){
+        tokens.push('allow-popups');
       }
       t.frame.setAttribute('sandbox',tokens.join(' '));
       applyFrameInteractionPermissions(t.frame);

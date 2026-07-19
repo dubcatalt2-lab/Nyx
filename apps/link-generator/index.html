@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark light">
   <title>Link Generator</title>
   <link rel="icon" type="image/png" href="../../assets/icons/nyx-tab-logo.png">
-  <link rel="stylesheet" href="./styles.css?v=20260718-premium-batch-3">
+  <link rel="stylesheet" href="./styles.css?v=20260718-cdn-readiness-4">
 </head>
 <body>
   <main class="utility-shell generator-shell">
@@ -107,8 +107,8 @@
               </label>
               <label class="amount-field" data-premium-amount-field hidden>
                 <span>Amount</span>
-                <input name="amount" data-premium-amount type="number" min="1" max="10" step="1" value="1" inputmode="numeric">
-                <small data-premium-amount-hint>Premium can create up to 10 links at once.</small>
+                <input name="amount" data-premium-amount type="number" min="1" max="100" step="1" value="1" inputmode="numeric">
+                <small data-premium-amount-hint>Premium can create up to 100 links at once.</small>
               </label>
             </div>
           </div>
@@ -152,7 +152,7 @@
           <textarea data-result-url readonly rows="7" spellcheck="false" aria-label="Generated Nyx URLs"></textarea>
           <div class="bulk-link-actions">
             <button data-copy type="button">Copy all</button>
-            <a data-open href="#" target="_blank" rel="noopener noreferrer">Open first</a>
+            <a data-open data-nyx-generated-popup class="disabled" href="#" target="_blank" rel="noopener noreferrer" aria-disabled="true">Starting CDN...</a>
           </div>
         </div>
         <div class="filter-check checking" data-filter-check role="status" aria-live="polite">
@@ -165,6 +165,6 @@
       </section>
     </section>
   </main>
-  <script src="./app.js?v=20260718-premium-batch-3"></script>
+  <script src="./app.js?v=20260718-100-links-5"></script>
 </body>
 </html>

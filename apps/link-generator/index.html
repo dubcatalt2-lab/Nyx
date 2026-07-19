@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark light">
   <title>Link Generator</title>
   <link rel="icon" type="image/png" href="../../assets/icons/nyx-tab-logo.png">
-  <link rel="stylesheet" href="./styles.css?v=20260718-1">
+  <link rel="stylesheet" href="./styles.css?v=20260718-account-quota-1">
 </head>
 <body>
   <main class="generator-shell">
@@ -30,13 +30,42 @@
       </div>
 
       <form class="generator-form" data-generator-form>
+        <fieldset class="access-method">
+          <legend>Access method</legend>
+          <div class="access-tabs" role="tablist" aria-label="Link Generator access method">
+            <button class="active" data-access-mode="account" type="button" role="tab" aria-selected="true">Free account</button>
+            <button data-access-mode="administrator" type="button" role="tab" aria-selected="false">Administrator code</button>
+          </div>
+          <div class="account-access" data-account-access>
+            <div class="account-fields" data-account-fields>
+              <label><span>Email</span><input data-account-email type="email" autocomplete="email" placeholder="you@example.com"></label>
+              <label><span>Password</span><input data-account-password type="password" minlength="6" autocomplete="current-password" placeholder="At least 6 characters"></label>
+            </div>
+            <div class="account-actions">
+              <button data-account-sign-in type="button">Sign in</button>
+              <button data-account-create type="button">Create account</button>
+              <button data-account-refresh type="button" hidden>I verified my email</button>
+              <button data-account-sign-out type="button" hidden>Sign out</button>
+            </div>
+            <p class="account-status" data-account-status>Sign in with a verified email to receive 5 free links per day.</p>
+          </div>
+          <div class="administrator-access" data-administrator-access hidden>
+            <label>
+              <span>Administrator access code</span>
+              <input name="accessCode" data-access-code type="password" maxlength="128" autocomplete="current-password" placeholder="Enter the administrator code">
+            </label>
+            <p>Administrator access does not require an account and has no daily link quota.</p>
+          </div>
+        </fieldset>
         <label>
           <span>Link label</span>
           <input name="label" data-label-input maxlength="40" autocomplete="off" placeholder="Example: study-room">
         </label>
         <label>
-          <span>Access code</span>
-          <input name="accessCode" data-access-code type="password" maxlength="128" autocomplete="current-password" placeholder="Enter the generator access code" required>
+          <span>Check against one content filter</span>
+          <select name="filter" data-filter-select required disabled>
+            <option value="">Loading filters...</option>
+          </select>
         </label>
         <label class="confirmation">
           <input data-confirm type="checkbox" required>
@@ -61,9 +90,14 @@
         <button data-copy type="button">Copy</button>
         <a data-open href="#" target="_blank" rel="noopener noreferrer">Open</a>
       </div>
+      <div class="filter-check checking" data-filter-check role="status" aria-live="polite">
+        <span data-filter-check-label>Selected filter</span>
+        <strong data-filter-check-state>Waiting to check</strong>
+        <small data-filter-check-detail>Nyx checks this link once and does not generate replacements automatically.</small>
+      </div>
       <p class="propagation-note">A new pull zone can take a short time to become available everywhere.</p>
     </section>
   </main>
-  <script src="./app.js?v=20260718-1"></script>
+  <script src="./app.js?v=20260718-account-quota-1"></script>
 </body>
 </html>

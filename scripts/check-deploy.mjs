@@ -46,7 +46,7 @@ if (missing.length) {
 }
 
 const packageJson = JSON.parse(await readFile("package.json", "utf8"));
-for (const dependency of ["express", "@mercuryworkshop/wisp-js"]) {
+for (const dependency of ["express", "firebase-admin", "@mercuryworkshop/wisp-js"]) {
   if (!packageJson.dependencies?.[dependency]) {
     console.error(`Deployment dependency is missing: ${dependency}`);
     process.exit(1);

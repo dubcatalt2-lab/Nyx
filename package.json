@@ -24,6 +24,7 @@
     "@titaniumnetwork-dev/ultraviolet": "^3.2.10",
     "eruda": "3.4.3",
     "express": "5.2.1",
+    "firebase-admin": "14.2.0",
     "serverless-http": "^4.0.0",
     "three": "^0.134.0",
     "vanta": "^0.5.24"

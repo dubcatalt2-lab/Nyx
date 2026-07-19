@@ -46,8 +46,10 @@ const presenceSessions = new Map();
 const presenceTtlMs = 45_000;
 const linkGeneratorAttempts = new Map();
 const linkGeneratorWindowMs = 15 * 60 * 1000;
-const linkGeneratorCooldownMs = 10 * 60 * 1000;
 const linkGeneratorMaxAttempts = 5;
+const freeLinkDailyLimit = 5;
+const freeNetworkDailyLimit = 25;
+let linkGeneratorFirebasePromise;
 app.use(express.json({ limit: "2mb" }));
 app.use((error, _req, res, next) => {
   if (error instanceof SyntaxError && "body" in error) {
@@ -1189,7 +1191,7 @@ app.get("/assets/vendor/eruda.min.js", (_req, res) => {
 });
 
 function linkGeneratorConfig() {
-  const maxZones = Math.max(1, Math.min(100, Number.parseInt(process.env.LINK_GENERATOR_MAX_ZONES || "20", 10) || 20));
+  const maxZones = Math.max(1, Math.min(10_000, Number.parseInt(process.env.LINK_GENERATOR_MAX_ZONES || "100", 10) || 100));
   let origin = "";
   try {
     const parsed = new URL(process.env.NYX_PUBLIC_ORIGIN || "https://nyxlearning.netlify.app");
@@ -1206,6 +1208,45 @@ function linkGeneratorConfig() {
     origin,
     maxZones
   };
+}
+
+function linkGeneratorFirebaseConfig() {
+  return {
+    webApiKey: String(process.env.FIREBASE_WEB_API_KEY || "").trim(),
+    projectId: String(process.env.FIREBASE_PROJECT_ID || "").trim(),
+    clientEmail: String(process.env.FIREBASE_CLIENT_EMAIL || "").trim(),
+    privateKey: String(process.env.FIREBASE_PRIVATE_KEY || "").replace(/\\n/g, "\n").trim()
+  };
+}
+
+function firebaseAccountModeConfigured() {
+  return Object.values(linkGeneratorFirebaseConfig()).every(Boolean);
+}
+
+async function linkGeneratorFirebase() {
+  if (!firebaseAccountModeConfigured()) return null;
+  if (!linkGeneratorFirebasePromise) {
+    linkGeneratorFirebasePromise = (async () => {
+      const config = linkGeneratorFirebaseConfig();
+      const [{ cert, getApps, initializeApp }, { getAuth }, { getFirestore }] = await Promise.all([
+        import("firebase-admin/app"),
+        import("firebase-admin/auth"),
+        import("firebase-admin/firestore")
+      ]);
+      let firebaseApp = getApps().find(item => item.name === "nyx-link-generator");
+      if (!firebaseApp) {
+        firebaseApp = initializeApp({
+          credential: cert({ projectId: config.projectId, clientEmail: config.clientEmail, privateKey: config.privateKey }),
+          projectId: config.projectId
+        }, "nyx-link-generator");
+      }
+      return { auth: getAuth(firebaseApp), firestore: getFirestore(firebaseApp) };
+    })().catch(error => {
+      linkGeneratorFirebasePromise = null;
+      throw error;
+    });
+  }
+  return linkGeneratorFirebasePromise;
 }
 
 function secretMatches(actual, expected) {
@@ -1239,16 +1280,92 @@ function sameOriginRequest(req) {
 
 function linkGeneratorRateState(clientId, now = Date.now()) {
   for (const [key, state] of linkGeneratorAttempts) {
-    if (now - state.windowStarted > linkGeneratorWindowMs && now - state.lastCreated > linkGeneratorCooldownMs) {
-      linkGeneratorAttempts.delete(key);
-    }
+    if (now - state.windowStarted > linkGeneratorWindowMs) linkGeneratorAttempts.delete(key);
   }
   let state = linkGeneratorAttempts.get(clientId);
   if (!state || now - state.windowStarted > linkGeneratorWindowMs) {
-    state = { attempts: 0, windowStarted: now, lastCreated: 0 };
+    state = { attempts: 0, windowStarted: now };
     linkGeneratorAttempts.set(clientId, state);
   }
   return state;
+}
+
+function utcQuotaDay(now = new Date()) {
+  return now.toISOString().slice(0, 10);
+}
+
+function quotaIpKey(clientId) {
+  return createHash("sha256").update(String(clientId || "unknown")).digest("hex").slice(0, 32);
+}
+
+async function reserveFreeLink(firebase, uid, clientId) {
+  const day = utcQuotaDay();
+  const collection = firebase.firestore.collection("nyxLinkGeneratorUsage");
+  const userRef = collection.doc(`${day}_user_${uid}`);
+  const ipRef = collection.doc(`${day}_ip_${quotaIpKey(clientId)}`);
+  return firebase.firestore.runTransaction(async transaction => {
+    const [userSnapshot, ipSnapshot] = await transaction.getAll(userRef, ipRef);
+    const userCount = Number(userSnapshot.data()?.count || 0);
+    const ipCount = Number(ipSnapshot.data()?.count || 0);
+    if (userCount >= freeLinkDailyLimit) {
+      const error = new Error(`This account has used all ${freeLinkDailyLimit} free links for today.`);
+      error.status = 429;
+      throw error;
+    }
+    if (ipCount >= freeNetworkDailyLimit) {
+      const error = new Error("This network has reached the Link Generator safety limit for today.");
+      error.status = 429;
+      throw error;
+    }
+    const updatedAt = new Date().toISOString();
+    transaction.set(userRef, { count: userCount + 1, day, uid, updatedAt }, { merge: true });
+    transaction.set(ipRef, { count: ipCount + 1, day, updatedAt }, { merge: true });
+    return { remaining: freeLinkDailyLimit - userCount - 1, userRef, ipRef };
+  });
+}
+
+async function releaseFreeLink(firebase, reservation) {
+  if (!reservation) return;
+  try {
+    await firebase.firestore.runTransaction(async transaction => {
+      const snapshots = await transaction.getAll(reservation.userRef, reservation.ipRef);
+      for (let index = 0; index < snapshots.length; index += 1) {
+        const count = Math.max(0, Number(snapshots[index].data()?.count || 0) - 1);
+        transaction.set(index === 0 ? reservation.userRef : reservation.ipRef, { count, updatedAt: new Date().toISOString() }, { merge: true });
+      }
+    });
+  } catch (error) {
+    console.error("Nyx Link Generator could not release a failed quota reservation:", error?.message || error);
+  }
+}
+
+async function authenticatedFreeUser(req) {
+  const match = String(req.get("authorization") || "").match(/^Bearer\s+(.+)$/i);
+  if (!match) {
+    const error = new Error("Sign in with a verified account or enter the administrator access code.");
+    error.status = 401;
+    throw error;
+  }
+  const firebase = await linkGeneratorFirebase();
+  if (!firebase) {
+    const error = new Error("Free account access has not been configured by the Nyx administrator yet.");
+    error.status = 503;
+    throw error;
+  }
+  let token;
+  try {
+    token = await firebase.auth.verifyIdToken(match[1], true);
+  } catch {
+    const error = new Error("Your sign-in has expired. Sign in again.");
+    error.status = 401;
+    throw error;
+  }
+  if (!token.email_verified) {
+    const error = new Error("Verify your email address before generating free links.");
+    error.status = 403;
+    throw error;
+  }
+  return { firebase, uid: token.uid };
 }
 
 function generatedPullZoneName(label) {
@@ -1258,7 +1375,19 @@ function generatedPullZoneName(label) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 24) || "link";
-  return `nyx-public-${slug}-${randomBytes(3).toString("hex")}`;
+  return `${slug}-${randomBytes(3).toString("hex")}`;
+}
+
+function normalizedOrigin(value) {
+  try {
+    const parsed = new URL(String(value || ""));
+    parsed.pathname = parsed.pathname.replace(/\/$/, "");
+    parsed.search = "";
+    parsed.hash = "";
+    return parsed.href.replace(/\/$/, "");
+  } catch {
+    return "";
+  }
 }
 
 async function bunnyRequest(path, apiKey, options = {}) {
@@ -1286,9 +1415,19 @@ async function bunnyRequest(path, apiKey, options = {}) {
 app.get("/api/link-generator/status", (_req, res) => {
   const config = linkGeneratorConfig();
   res.set("Cache-Control", "no-store").json({
-    available: Boolean(config.apiKey && config.accessCode && config.origin),
+    available: Boolean(config.apiKey && config.origin && (config.accessCode || firebaseAccountModeConfigured())),
+    administratorAccess: Boolean(config.accessCode),
+    accountAccess: firebaseAccountModeConfigured(),
     origin: config.origin,
-    cooldownMinutes: Math.round(linkGeneratorCooldownMs / 60_000)
+    freeDailyLimit: freeLinkDailyLimit
+  });
+});
+
+app.get("/api/link-generator/auth-config", (_req, res) => {
+  const config = linkGeneratorFirebaseConfig();
+  res.set("Cache-Control", "no-store").json({
+    enabled: firebaseAccountModeConfigured(),
+    apiKey: firebaseAccountModeConfigured() ? config.webApiKey : ""
   });
 });
 
@@ -1300,7 +1439,7 @@ app.post("/api/link-generator", async (req, res) => {
   }
 
   const config = linkGeneratorConfig();
-  if (!config.apiKey || !config.accessCode || !config.origin) {
+  if (!config.apiKey || !config.origin || (!config.accessCode && !firebaseAccountModeConfigured())) {
     res.status(503).json({ error: "Link Generator has not been configured by the Nyx administrator yet." });
     return;
   }
@@ -1308,30 +1447,38 @@ app.post("/api/link-generator", async (req, res) => {
   const clientId = linkGeneratorClientId(req);
   const now = Date.now();
   const rate = linkGeneratorRateState(clientId, now);
-  rate.attempts += 1;
-  if (rate.attempts > linkGeneratorMaxAttempts) {
-    const retryAfter = Math.max(1, Math.ceil((rate.windowStarted + linkGeneratorWindowMs - now) / 1000));
-    res.set("Retry-After", String(retryAfter)).status(429).json({ error: "Too many attempts. Try again later." });
-    return;
-  }
-  if (!secretMatches(req.body?.accessCode, config.accessCode)) {
-    res.status(401).json({ error: "The access code is incorrect." });
-    return;
-  }
-  if (rate.lastCreated && now - rate.lastCreated < linkGeneratorCooldownMs) {
-    const retryAfter = Math.max(1, Math.ceil((rate.lastCreated + linkGeneratorCooldownMs - now) / 1000));
-    res.set("Retry-After", String(retryAfter)).status(429).json({ error: `A link was already generated recently. Try again in ${Math.ceil(retryAfter / 60)} minute(s).` });
+  const submittedAccessCode = String(req.body?.accessCode || "");
+  const administrator = Boolean(submittedAccessCode && config.accessCode && secretMatches(submittedAccessCode, config.accessCode));
+  if (submittedAccessCode && !administrator) {
+    rate.attempts += 1;
+    if (rate.attempts > linkGeneratorMaxAttempts) {
+      const retryAfter = Math.max(1, Math.ceil((rate.windowStarted + linkGeneratorWindowMs - now) / 1000));
+      res.set("Retry-After", String(retryAfter)).status(429).json({ error: "Too many incorrect access-code attempts. Try again later." });
+      return;
+    }
+    res.status(401).json({ error: "The administrator access code is incorrect." });
     return;
   }
 
+  let publicUser = null;
   try {
-    const zonesPayload = await bunnyRequest("/pullzone?page=1&perPage=1000&search=nyx-public-", config.apiKey);
+    if (!administrator) publicUser = await authenticatedFreeUser(req);
+  } catch (error) {
+    res.status(error.status || 401).json({ error: error.message });
+    return;
+  }
+
+  let reservation = null;
+  try {
+    const zonesPayload = await bunnyRequest("/pullzone?page=1&perPage=1000", config.apiKey);
     const zones = Array.isArray(zonesPayload) ? zonesPayload : Array.isArray(zonesPayload?.Items) ? zonesPayload.Items : [];
-    const generatedZones = zones.filter(zone => String(zone?.Name || "").startsWith("nyx-public-"));
-    if (generatedZones.length >= config.maxZones) {
+    const generatedZones = zones.filter(zone => normalizedOrigin(zone?.OriginUrl) === config.origin);
+    if (!administrator && generatedZones.length >= config.maxZones) {
       res.status(409).json({ error: "The public Link Generator has reached its zone limit. Ask the Nyx administrator to remove an old generated link." });
       return;
     }
+
+    if (publicUser) reservation = await reserveFreeLink(publicUser.firebase, publicUser.uid, clientId);
 
     const name = generatedPullZoneName(req.body?.label);
     const zone = await bunnyRequest("/pullzone", config.apiKey, {
@@ -1342,16 +1489,18 @@ app.post("/api/link-generator", async (req, res) => {
       ? zone.Hostnames.find(item => item?.IsSystemHostname)?.Value || zone.Hostnames[0]?.Value
       : "";
     if (!systemHostname) throw new Error("Bunny created the zone but did not return its hostname.");
-    rate.lastCreated = Date.now();
     res.status(201).json({
       id: zone.Id,
       name: zone.Name || name,
       url: `https://${systemHostname}`,
-      origin: config.origin
+      origin: config.origin,
+      access: administrator ? "administrator" : "account",
+      remaining: administrator ? null : reservation?.remaining
     });
   } catch (error) {
+    if (publicUser && reservation) await releaseFreeLink(publicUser.firebase, reservation);
     console.error("Nyx Link Generator failed:", error?.message || error);
-    res.status(502).json({ error: `Bunny could not create the link: ${String(error?.message || "Unknown error")}` });
+    res.status(error.status || 502).json({ error: error.status ? error.message : `Bunny could not create the link: ${String(error?.message || "Unknown error")}` });
   }
 });
 app.use(express.static(__dirname));

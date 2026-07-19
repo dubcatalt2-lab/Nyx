@@ -9,7 +9,7 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
-  external_node_modules = ["express", "serverless-http", "eruda", "@mercuryworkshop/wisp-js", "@titaniumnetwork-dev/ultraviolet", "@mercuryworkshop/bare-mux", "@mercuryworkshop/scramjet", "@mercuryworkshop/scramjet-controller", "@mercuryworkshop/epoxy-transport", "@mercuryworkshop/libcurl-transport"]
+  external_node_modules = ["express", "serverless-http", "eruda", "firebase-admin", "@mercuryworkshop/wisp-js", "@titaniumnetwork-dev/ultraviolet", "@mercuryworkshop/bare-mux", "@mercuryworkshop/scramjet", "@mercuryworkshop/scramjet-controller", "@mercuryworkshop/epoxy-transport", "@mercuryworkshop/libcurl-transport"]
 
 [[redirects]]
   from = "/api/*"

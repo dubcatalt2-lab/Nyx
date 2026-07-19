@@ -49,6 +49,10 @@ const linkGeneratorWindowMs = 15 * 60 * 1000;
 const linkGeneratorMaxAttempts = 5;
 const freeLinkDailyLimit = 3;
 const freeNetworkDailyLimit = 25;
+const premiumImmediateCooldownAt = 5;
+const premiumAccumulatedLimit = 30;
+const premiumCooldownMs = 10 * 60 * 1000;
+const premiumGenerationUsage = new Map();
 let linkGeneratorFirebasePromise;
 app.use(express.json({ limit: "2mb" }));
 app.use((error, _req, res, next) => {
@@ -1341,6 +1345,95 @@ async function releaseFreeLink(firebase, reservation) {
   }
 }
 
+function premiumCooldownError(cooldownUntil, now = Date.now()) {
+  const retryAfter = Math.max(1, Math.ceil((cooldownUntil - now) / 1000));
+  const minutes = Math.floor(retryAfter / 60);
+  const seconds = retryAfter % 60;
+  const wait = minutes ? `${minutes}m ${seconds}s` : `${seconds}s`;
+  const error = new Error(`Premium cooldown active. Try again in ${wait}.`);
+  error.status = 429;
+  error.retryAfter = retryAfter;
+  return error;
+}
+
+function premiumReservationResult(previousCount, previousCooldownUntil, amount, cooldownUntil, version, extra = {}) {
+  return {
+    previousCount,
+    previousCooldownUntil,
+    amount,
+    accumulated: previousCount + amount,
+    cooldownTriggered: cooldownUntil > 0,
+    cooldownUntil,
+    version,
+    ...extra
+  };
+}
+
+async function reservePremiumGeneration(firebase, clientId, amount, now = Date.now()) {
+  const key = quotaIpKey(clientId);
+  if (!firebase) {
+    const current = premiumGenerationUsage.get(key) || { count: 0, cooldownUntil: 0, version: 0 };
+    if (current.cooldownUntil > now) throw premiumCooldownError(current.cooldownUntil, now);
+    const previousCount = current.cooldownUntil ? 0 : Number(current.count || 0);
+    const accumulated = previousCount + amount;
+    const cooldownTriggered = amount >= premiumImmediateCooldownAt || accumulated >= premiumAccumulatedLimit;
+    const next = { count: accumulated, cooldownUntil: cooldownTriggered ? now + premiumCooldownMs : 0, version: current.version + 1 };
+    premiumGenerationUsage.set(key, next);
+    return premiumReservationResult(previousCount, current.cooldownUntil || 0, amount, next.cooldownUntil, next.version, { key, storage: "memory" });
+  }
+
+  const ref = firebase.firestore.collection("nyxLinkGeneratorPremiumUsage").doc(key);
+  return firebase.firestore.runTransaction(async transaction => {
+    const snapshot = await transaction.get(ref);
+    const data = snapshot.data() || {};
+    const activeCooldown = Number(data.cooldownUntil || 0);
+    if (activeCooldown > now) throw premiumCooldownError(activeCooldown, now);
+    const previousCount = activeCooldown ? 0 : Number(data.count || 0);
+    const accumulated = previousCount + amount;
+    const cooldownTriggered = amount >= premiumImmediateCooldownAt || accumulated >= premiumAccumulatedLimit;
+    const cooldownUntil = cooldownTriggered ? now + premiumCooldownMs : 0;
+    const version = Number(data.version || 0) + 1;
+    transaction.set(ref, { count: accumulated, cooldownUntil, version, updatedAt: new Date(now).toISOString() }, { merge: true });
+    return premiumReservationResult(previousCount, activeCooldown, amount, cooldownUntil, version, { ref, storage: "firestore" });
+  });
+}
+
+async function adjustPremiumGeneration(firebase, reservation, created) {
+  if (!reservation || created >= reservation.amount) return reservation;
+  const actual = Math.max(0, Number(created || 0));
+  const immediateCooldown = reservation.amount >= premiumImmediateCooldownAt && actual > 0;
+  const actualAccumulated = reservation.previousCount + actual;
+  const shouldKeepCooldown = immediateCooldown || actualAccumulated >= premiumAccumulatedLimit;
+
+  if (reservation.storage === "memory") {
+    const current = premiumGenerationUsage.get(reservation.key);
+    if (!current) return reservation;
+    const count = Math.max(0, Number(current.count || 0) - (reservation.amount - actual));
+    const sameReservation = current.version === reservation.version;
+    premiumGenerationUsage.set(reservation.key, {
+      count,
+      cooldownUntil: sameReservation && !shouldKeepCooldown ? reservation.previousCooldownUntil : current.cooldownUntil,
+      version: current.version + 1
+    });
+    return { ...reservation, accumulated: actualAccumulated, cooldownTriggered: shouldKeepCooldown, cooldownUntil: shouldKeepCooldown ? current.cooldownUntil : reservation.previousCooldownUntil };
+  }
+
+  try {
+    return await firebase.firestore.runTransaction(async transaction => {
+      const snapshot = await transaction.get(reservation.ref);
+      const data = snapshot.data() || {};
+      const sameReservation = Number(data.version || 0) === reservation.version;
+      const count = Math.max(0, Number(data.count || 0) - (reservation.amount - actual));
+      const cooldownUntil = sameReservation && !shouldKeepCooldown ? reservation.previousCooldownUntil : Number(data.cooldownUntil || 0);
+      transaction.set(reservation.ref, { count, cooldownUntil, version: Number(data.version || 0) + 1, updatedAt: new Date().toISOString() }, { merge: true });
+      return { ...reservation, accumulated: actualAccumulated, cooldownTriggered: shouldKeepCooldown, cooldownUntil: shouldKeepCooldown ? cooldownUntil : reservation.previousCooldownUntil };
+    });
+  } catch (error) {
+    console.error("Nyx Link Generator could not adjust a Premium cooldown reservation:", error?.message || error);
+    return reservation;
+  }
+}
+
 async function authenticatedFreeUser(req) {
   const match = String(req.get("authorization") || "").match(/^Bearer\s+(.+)$/i);
   if (!match) {
@@ -1433,7 +1526,10 @@ app.get("/api/link-generator/status", (_req, res) => {
     accountAccess: firebaseAccountModeConfigured(),
     origin: config.origin,
     freeDailyLimit: freeLinkDailyLimit,
-    premiumBatchLimit: config.premiumBatchLimit
+    premiumBatchLimit: config.premiumBatchLimit,
+    premiumImmediateCooldownAt,
+    premiumAccumulatedLimit,
+    premiumCooldownMinutes: premiumCooldownMs / 60_000
   });
 });
 
@@ -1545,6 +1641,8 @@ app.post("/api/link-generator", async (req, res) => {
   }
 
   let reservation = null;
+  let premiumReservation = null;
+  let premiumFirebase = null;
   try {
     const zonesPayload = await bunnyRequest("/pullzone?page=1&perPage=1000", config.apiKey);
     const zones = Array.isArray(zonesPayload) ? zonesPayload : Array.isArray(zonesPayload?.Items) ? zonesPayload.Items : [];
@@ -1555,6 +1653,10 @@ app.post("/api/link-generator", async (req, res) => {
     }
 
     if (publicUser) reservation = await reserveFreeLink(publicUser.firebase, publicUser.uid, clientId);
+    if (administrator) {
+      premiumFirebase = await linkGeneratorFirebase();
+      premiumReservation = await reservePremiumGeneration(premiumFirebase, clientId, amount, now);
+    }
 
     const links = [];
     let generationError = null;
@@ -1576,6 +1678,9 @@ app.post("/api/link-generator", async (req, res) => {
       }
     }
     if (!links.length && generationError) throw generationError;
+    if (administrator && premiumReservation && links.length < amount) {
+      premiumReservation = await adjustPremiumGeneration(premiumFirebase, premiumReservation, links.length);
+    }
     const first = links[0];
     res.status(generationError ? 207 : 201).json({
       id: first.id,
@@ -1588,11 +1693,21 @@ app.post("/api/link-generator", async (req, res) => {
       warning: generationError ? `Bunny stopped the batch after ${links.length} of ${amount} links: ${generationError.message}` : "",
       origin: config.origin,
       access: administrator ? "administrator" : "account",
-      remaining: administrator ? null : reservation?.remaining
+      remaining: administrator ? null : reservation?.remaining,
+      premiumCooldown: administrator ? {
+        triggered: Boolean(premiumReservation?.cooldownTriggered),
+        cooldownUntil: premiumReservation?.cooldownUntil || 0,
+        accumulated: premiumReservation?.accumulated || 0,
+        accumulatedLimit: premiumAccumulatedLimit,
+        immediateAt: premiumImmediateCooldownAt,
+        minutes: premiumCooldownMs / 60_000
+      } : null
     });
   } catch (error) {
     if (publicUser && reservation) await releaseFreeLink(publicUser.firebase, reservation);
-    console.error("Nyx Link Generator failed:", error?.message || error);
+    if (administrator && premiumReservation) await adjustPremiumGeneration(premiumFirebase, premiumReservation, 0);
+    if (!error.status || error.status >= 500) console.error("Nyx Link Generator failed:", error?.message || error);
+    if (error.retryAfter) res.set("Retry-After", String(error.retryAfter));
     res.status(error.status || 502).json({ error: error.status ? error.message : `Bunny could not create the link: ${String(error?.message || "Unknown error")}` });
   }
 });

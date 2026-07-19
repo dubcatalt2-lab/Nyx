@@ -224,13 +224,13 @@
         const session=await currentVerifiedSession();
         headers.Authorization=`Bearer ${session.idToken}`;
       }else{
-        if(!refs.accessCode.value) throw new Error('Enter the administrator access code.');
+        if(!refs.accessCode.value) throw new Error('Enter your Premium access code.');
         body.accessCode=refs.accessCode.value;
       }
       const result=await readJson(await fetch('/api/link-generator',{method:'POST',headers,body:JSON.stringify(body)}));
       refs.resultUrl.value=result.url;refs.open.href=result.url;refs.resultCard.hidden=false;refs.accessCode.value='';refs.resultCard.scrollIntoView({behavior:'smooth',block:'nearest'});
       await checkGeneratedLink(result.url,selectedFilter,selectedFilterName);
-      showNotice(result.access==='account' ? `The link was created. ${result.remaining} free link${result.remaining===1?'':'s'} remaining today.` : 'The link was created with administrator access.');
+      showNotice(result.access==='account' ? `The link was created. ${result.remaining} free link${result.remaining===1?'':'s'} remaining today.` : 'The link was created with Premium access.');
     }catch(error){showNotice(error.message,'error')}
     finally{setLoading(false)}
   });

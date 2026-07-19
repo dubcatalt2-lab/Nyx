@@ -1342,7 +1342,7 @@ async function releaseFreeLink(firebase, reservation) {
 async function authenticatedFreeUser(req) {
   const match = String(req.get("authorization") || "").match(/^Bearer\s+(.+)$/i);
   if (!match) {
-    const error = new Error("Sign in with a verified account or enter the administrator access code.");
+    const error = new Error("Sign in with a verified account or enter your Premium access code.");
     error.status = 401;
     throw error;
   }
@@ -1456,7 +1456,7 @@ app.post("/api/link-generator", async (req, res) => {
       res.set("Retry-After", String(retryAfter)).status(429).json({ error: "Too many incorrect access-code attempts. Try again later." });
       return;
     }
-    res.status(401).json({ error: "The administrator access code is incorrect." });
+    res.status(401).json({ error: "The Premium access code is incorrect." });
     return;
   }
 

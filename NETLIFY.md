@@ -35,7 +35,7 @@ In **Netlify > Site configuration > Environment variables**, add `NYX_AI_API_KEY
 The Link Generator supports two access methods:
 
 - A verified Firebase email/password account can create up to five links per UTC day.
-- The administrator access code creates links without signing in and has no daily quota.
+- A Premium access code creates links without signing in and has no daily quota.
 
 To enable free accounts:
 
@@ -49,12 +49,12 @@ To enable free accounts:
    - `FIREBASE_CLIENT_EMAIL`: `client_email` from the service-account JSON.
    - `FIREBASE_PRIVATE_KEY`: `private_key` from the service-account JSON. Mark this variable as secret.
    - `BUNNY_API_KEY`: the Bunny account API key. Mark this variable as secret.
-   - `LINK_GENERATOR_ACCESS_CODE`: the private administrator code. Mark this variable as secret.
+   - `LINK_GENERATOR_ACCESS_CODE`: the private Premium access code. Mark this variable as secret.
    - `NYX_PUBLIC_ORIGIN`: the official Nyx origin, for example `https://nyxlearning.netlify.app`.
 6. Add the Netlify domain under **Firebase Authentication > Settings > Authorized domains**.
 7. Trigger a new Netlify deploy after saving the variables.
 
-Never add the service-account JSON, private key, Bunny key, or administrator code to Git or frontend JavaScript. The Firebase Web API key is public configuration, but the other values are server-only secrets.
+Never add the service-account JSON, private key, Bunny key, or Premium access code to Git or frontend JavaScript. The Firebase Web API key is public configuration, but the other values are server-only secrets.
 
 ## Test the build locally
 

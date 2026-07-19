@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark light">
   <title>Link Generator</title>
   <link rel="icon" type="image/png" href="../../assets/icons/nyx-tab-logo.png">
-  <link rel="stylesheet" href="./styles.css?v=20260718-account-quota-1">
+  <link rel="stylesheet" href="./styles.css?v=20260718-premium-label-1">
 </head>
 <body>
   <main class="generator-shell">
@@ -34,7 +34,7 @@
           <legend>Access method</legend>
           <div class="access-tabs" role="tablist" aria-label="Link Generator access method">
             <button class="active" data-access-mode="account" type="button" role="tab" aria-selected="true">Free account</button>
-            <button data-access-mode="administrator" type="button" role="tab" aria-selected="false">Administrator code</button>
+            <button data-access-mode="administrator" type="button" role="tab" aria-selected="false">Premium users</button>
           </div>
           <div class="account-access" data-account-access>
             <div class="account-fields" data-account-fields>
@@ -51,10 +51,10 @@
           </div>
           <div class="administrator-access" data-administrator-access hidden>
             <label>
-              <span>Administrator access code</span>
-              <input name="accessCode" data-access-code type="password" maxlength="128" autocomplete="current-password" placeholder="Enter the administrator code">
+              <span>Premium access code</span>
+              <input name="accessCode" data-access-code type="password" maxlength="128" autocomplete="current-password" placeholder="Enter your Premium code">
             </label>
-            <p>Administrator access does not require an account and has no daily link quota.</p>
+            <p>Premium users do not need an account and have no daily link quota.</p>
           </div>
         </fieldset>
         <label>
@@ -78,7 +78,6 @@
       </form>
 
       <div class="origin-row"><span>Fixed origin</span><code data-origin>Loading…</code></div>
-      <p class="security-note">The Bunny API key stays on the server. This page never receives or stores it.</p>
       <div class="notice" data-notice role="status" aria-live="polite" hidden></div>
     </section>
 
@@ -98,6 +97,6 @@
       <p class="propagation-note">A new pull zone can take a short time to become available everywhere.</p>
     </section>
   </main>
-  <script src="./app.js?v=20260718-account-quota-1"></script>
+  <script src="./app.js?v=20260718-premium-label-1"></script>
 </body>
 </html>

@@ -10,9 +10,13 @@
     filterCheck:$('[data-filter-check]'),filterCheckLabel:$('[data-filter-check-label]'),filterCheckState:$('[data-filter-check-state]'),filterCheckDetail:$('[data-filter-check-detail]'),
     modeButtons:[...document.querySelectorAll('[data-access-mode]')],accountPanel:$('[data-account-access]'),administratorPanel:$('[data-administrator-access]'),
     accountFields:$('[data-account-fields]'),email:$('[data-account-email]'),password:$('[data-account-password]'),accountStatus:$('[data-account-status]'),
-    signIn:$('[data-account-sign-in]'),createAccount:$('[data-account-create]'),refreshAccount:$('[data-account-refresh]'),signOut:$('[data-account-sign-out]')
+    signIn:$('[data-account-sign-in]'),createAccount:$('[data-account-create]'),refreshAccount:$('[data-account-refresh]'),signOut:$('[data-account-sign-out]'),
+    wizardCard:$('[data-wizard-card]'),wizardSteps:[...document.querySelectorAll('[data-wizard-step]')],wizardIndicators:[...document.querySelectorAll('[data-wizard-indicator]')],
+    wizardProgress:$('[data-wizard-progress]'),wizardNext:[...document.querySelectorAll('[data-wizard-next]')],wizardBack:[...document.querySelectorAll('[data-wizard-back]')],wizardRestart:$('[data-wizard-restart]'),
+    reviewAccess:$('[data-review-access]'),reviewLabel:$('[data-review-label]'),reviewFilter:$('[data-review-filter]'),reviewOrigin:$('[data-review-origin]'),confirm:$('[data-confirm]')
   };
   let accessMode='account';
+  let wizardStep=0;
   let authConfig={enabled:false,apiKey:''};
   let authSession=readStoredSession();
 
@@ -133,6 +137,53 @@
       button.setAttribute('aria-selected',String(active));
     });
   }
+  function setWizardStep(nextStep,direction=nextStep>=wizardStep?'forward':'back'){
+    const index=Math.max(0,Math.min(refs.wizardSteps.length-1,Number(nextStep) || 0));
+    wizardStep=index;
+    refs.wizardCard.classList.remove('wizard-forward','wizard-back');
+    void refs.wizardCard.offsetWidth;
+    refs.wizardCard.classList.add(direction==='back' ? 'wizard-back' : 'wizard-forward');
+    refs.wizardSteps.forEach((step,stepIndex)=>{
+      const active=stepIndex===index;
+      step.hidden=!active;
+      step.classList.toggle('active',active);
+    });
+    refs.form.hidden=index===3;
+    refs.wizardIndicators.forEach((indicator,stepIndex)=>{
+      indicator.classList.toggle('active',stepIndex===index);
+      indicator.classList.toggle('complete',stepIndex<index);
+      if(stepIndex===index) indicator.setAttribute('aria-current','step');
+      else indicator.removeAttribute('aria-current');
+    });
+    refs.wizardProgress.style.width=`${(index/(refs.wizardSteps.length-1))*100}%`;
+  }
+  function updateReview(){
+    refs.reviewAccess.textContent=accessMode==='account' ? (authSession?.email || 'Free account') : 'Premium users';
+    refs.reviewLabel.textContent=refs.label.value.trim() || 'Automatic';
+    refs.reviewFilter.textContent=refs.filter.options[refs.filter.selectedIndex]?.textContent || 'Not selected';
+    refs.reviewOrigin.textContent=refs.origin.textContent || 'Official Nyx origin';
+  }
+  async function validateAccessStep(){
+    showNotice('');
+    if(accessMode==='administrator'){
+      if(!refs.accessCode.value){showNotice('Enter your Premium access code to continue.','error');refs.accessCode.focus();return false}
+      return true;
+    }
+    if(!authConfig.enabled){showNotice('Free account access is not configured yet. Choose Premium users to continue.','error');return false}
+    if(!authSession?.idToken){showNotice('Sign in or create a verified free account before continuing.','error');refs.email.focus();return false}
+    try{await currentVerifiedSession();renderAccount();return true}
+    catch(error){showNotice(friendlyFirebaseError(error),'error');return false}
+  }
+  async function handleWizardNext(){
+    if(wizardStep===0){
+      if(!await validateAccessStep()) return;
+      showNotice('');setWizardStep(1);return;
+    }
+    if(wizardStep===1){
+      if(!refs.filter.value){showNotice('Choose a content filter before continuing.','error');refs.filter.focus();return}
+      showNotice('');updateReview();setWizardStep(2);
+    }
+  }
   async function loadAuthConfig(){
     try{
       authConfig=await readJson(await fetch('/api/link-generator/auth-config',{headers:{Accept:'application/json'},cache:'no-store'}));
@@ -207,6 +258,11 @@
   }
 
   refs.modeButtons.forEach(button=>button.addEventListener('click',()=>setAccessMode(button.dataset.accessMode)));
+  refs.wizardNext.forEach(button=>button.addEventListener('click',handleWizardNext));
+  refs.wizardBack.forEach(button=>button.addEventListener('click',()=>{showNotice('');setWizardStep(wizardStep-1,'back')}));
+  refs.wizardRestart.addEventListener('click',()=>{
+    refs.label.value='';refs.filter.value='';refs.confirm.checked=false;refs.resultCard.hidden=true;showNotice('');setWizardStep(1,'back');
+  });
   refs.signIn.addEventListener('click',handleSignIn);
   refs.createAccount.addEventListener('click',handleCreateAccount);
   refs.refreshAccount.addEventListener('click',async()=>{setAuthBusy(true);try{await refreshVerification();if(!authSession.emailVerified)throw new Error('Email is not verified yet.')}catch(error){refs.accountStatus.textContent=friendlyFirebaseError(error);refs.accountStatus.className='account-status error'}finally{setAuthBusy(false)}});
@@ -228,7 +284,7 @@
         body.accessCode=refs.accessCode.value;
       }
       const result=await readJson(await fetch('/api/link-generator',{method:'POST',headers,body:JSON.stringify(body)}));
-      refs.resultUrl.value=result.url;refs.open.href=result.url;refs.resultCard.hidden=false;refs.accessCode.value='';refs.resultCard.scrollIntoView({behavior:'smooth',block:'nearest'});
+      refs.resultUrl.value=result.url;refs.open.href=result.url;refs.resultCard.hidden=false;refs.accessCode.value='';setWizardStep(3);requestAnimationFrame(()=>refs.resultCard.scrollIntoView({behavior:'smooth',block:'nearest'}));
       await checkGeneratedLink(result.url,selectedFilter,selectedFilterName);
       showNotice(result.access==='account' ? `The link was created. ${result.remaining} free link${result.remaining===1?'':'s'} remaining today.` : 'The link was created with Premium access.');
     }catch(error){showNotice(error.message,'error')}
@@ -236,5 +292,5 @@
   });
   refs.copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(refs.resultUrl.value);refs.copy.textContent='Copied';setTimeout(()=>{refs.copy.textContent='Copy'},1400)}catch{refs.resultUrl.select();document.execCommand('copy')}});
 
-  applyTheme();renderAccount();Promise.all([loadStatus(),loadAuthConfig(),loadFilters()]);
+  applyTheme();renderAccount();setWizardStep(0);Promise.all([loadStatus(),loadAuthConfig(),loadFilters()]);
 })();

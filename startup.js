@@ -1,3 +1,11 @@
+try{
+  const userAgent=String(navigator.userAgent || '');
+  const platform=String(navigator.userAgentData?.platform || '');
+  if(/\bCrOS\b/i.test(userAgent) || /^Chrome OS$/i.test(platform)){
+    document.documentElement.classList.add('nyx-chromeos-zoom');
+  }
+}catch{}
+
 try{const params=new URLSearchParams(location.search);
   const canCloakLaunch=/^https?:$/.test(location.protocol) && window.top===window.self && params.has('nyx_auto_classroom') && !params.has('nyx_real') && !params.has('nyx_no_classroom') && !params.has('nyx_cloaked');
   if(canCloakLaunch){

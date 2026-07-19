@@ -18,6 +18,7 @@ const requiredFiles = [
   "apps/link-checker/index.html",
   "apps/link-checker/styles.css",
   "apps/link-checker/app.js",
+  "apps/utility-shell.css",
   "apps/link-generator/index.html",
   "apps/link-generator/styles.css",
   "apps/link-generator/app.js",

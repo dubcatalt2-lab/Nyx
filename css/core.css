@@ -3666,3 +3666,7 @@ body.lag-reducer .setup-launch-screen.show .nyx-loading-spinner{
 @media(prefers-reduced-motion:reduce){
   body.lag-reducer .setup-launch-screen.show .nyx-loading-spinner{animation:none!important}
 }
+/* Match a 67% browser zoom on ChromeOS without changing other platforms. */
+html.nyx-chromeos-zoom{
+  zoom:67%;
+}

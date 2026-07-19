@@ -1192,6 +1192,7 @@ app.get("/assets/vendor/eruda.min.js", (_req, res) => {
 
 function linkGeneratorConfig() {
   const maxZones = Math.max(1, Math.min(10_000, Number.parseInt(process.env.LINK_GENERATOR_MAX_ZONES || "100", 10) || 100));
+  const premiumBatchLimit = Math.max(1, Math.min(25, Number.parseInt(process.env.LINK_GENERATOR_PREMIUM_BATCH_LIMIT || "10", 10) || 10));
   let origin = "";
   try {
     const parsed = new URL(process.env.NYX_PUBLIC_ORIGIN || "https://nyxlearning.netlify.app");
@@ -1206,7 +1207,8 @@ function linkGeneratorConfig() {
     apiKey: String(process.env.BUNNY_API_KEY || "").trim(),
     accessCode: String(process.env.LINK_GENERATOR_ACCESS_CODE || ""),
     origin,
-    maxZones
+    maxZones,
+    premiumBatchLimit
   };
 }
 
@@ -1419,7 +1421,8 @@ app.get("/api/link-generator/status", (_req, res) => {
     administratorAccess: Boolean(config.accessCode),
     accountAccess: firebaseAccountModeConfigured(),
     origin: config.origin,
-    freeDailyLimit: freeLinkDailyLimit
+    freeDailyLimit: freeLinkDailyLimit,
+    premiumBatchLimit: config.premiumBatchLimit
   });
 });
 
@@ -1468,6 +1471,13 @@ app.post("/api/link-generator", async (req, res) => {
     return;
   }
 
+  const rawAmount = req.body?.amount === undefined ? 1 : Number(req.body.amount);
+  const amount = administrator ? rawAmount : 1;
+  if (administrator && (!Number.isInteger(rawAmount) || rawAmount < 1 || rawAmount > config.premiumBatchLimit)) {
+    res.status(400).json({ error: `Premium batches can contain between 1 and ${config.premiumBatchLimit} links.` });
+    return;
+  }
+
   let reservation = null;
   try {
     const zonesPayload = await bunnyRequest("/pullzone?page=1&perPage=1000", config.apiKey);
@@ -1480,19 +1490,36 @@ app.post("/api/link-generator", async (req, res) => {
 
     if (publicUser) reservation = await reserveFreeLink(publicUser.firebase, publicUser.uid, clientId);
 
-    const name = generatedPullZoneName(req.body?.label);
-    const zone = await bunnyRequest("/pullzone", config.apiKey, {
-      method: "POST",
-      body: JSON.stringify({ Name: name, OriginUrl: config.origin })
-    });
-    const systemHostname = Array.isArray(zone?.Hostnames)
-      ? zone.Hostnames.find(item => item?.IsSystemHostname)?.Value || zone.Hostnames[0]?.Value
-      : "";
-    if (!systemHostname) throw new Error("Bunny created the zone but did not return its hostname.");
-    res.status(201).json({
-      id: zone.Id,
-      name: zone.Name || name,
-      url: `https://${systemHostname}`,
+    const links = [];
+    let generationError = null;
+    for (let index = 0; index < amount; index += 1) {
+      try {
+        const name = generatedPullZoneName(req.body?.label);
+        const zone = await bunnyRequest("/pullzone", config.apiKey, {
+          method: "POST",
+          body: JSON.stringify({ Name: name, OriginUrl: config.origin })
+        });
+        const systemHostname = Array.isArray(zone?.Hostnames)
+          ? zone.Hostnames.find(item => item?.IsSystemHostname)?.Value || zone.Hostnames[0]?.Value
+          : "";
+        if (!systemHostname) throw new Error("Bunny created the zone but did not return its hostname.");
+        links.push({ id: zone.Id, name: zone.Name || name, url: `https://${systemHostname}` });
+      } catch (error) {
+        generationError = error;
+        break;
+      }
+    }
+    if (!links.length && generationError) throw generationError;
+    const first = links[0];
+    res.status(generationError ? 207 : 201).json({
+      id: first.id,
+      name: first.name,
+      url: first.url,
+      links,
+      requested: amount,
+      created: links.length,
+      partial: Boolean(generationError),
+      warning: generationError ? `Bunny stopped the batch after ${links.length} of ${amount} links: ${generationError.message}` : "",
       origin: config.origin,
       access: administrator ? "administrator" : "account",
       remaining: administrator ? null : reservation?.remaining

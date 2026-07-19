@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark light">
   <title>Link Generator</title>
   <link rel="icon" type="image/png" href="../../assets/icons/nyx-tab-logo.png">
-  <link rel="stylesheet" href="./styles.css?v=20260718-static-utility-header-2">
+  <link rel="stylesheet" href="./styles.css?v=20260718-premium-batch-3">
 </head>
 <body>
   <main class="utility-shell generator-shell">
@@ -92,7 +92,7 @@
             <div><p class="eyebrow">Details</p><h3 id="details-step-title">Set up the new link</h3><p>Choose a short label and the filter Nyx should check.</p></div>
           </div>
           <div class="details-panel form-panel">
-            <div class="details-grid">
+            <div class="details-grid" data-details-grid>
               <label>
                 <span>Link label</span>
                 <input name="label" data-label-input maxlength="40" autocomplete="off" placeholder="Example: study-room">
@@ -104,6 +104,11 @@
                   <option value="">Loading filters...</option>
                 </select>
                 <small>Nyx checks the generated link with this filter once.</small>
+              </label>
+              <label class="amount-field" data-premium-amount-field hidden>
+                <span>Amount</span>
+                <input name="amount" data-premium-amount type="number" min="1" max="10" step="1" value="1" inputmode="numeric">
+                <small data-premium-amount-hint>Premium can create up to 10 links at once.</small>
               </label>
             </div>
           </div>
@@ -124,10 +129,11 @@
               <div><dt>Label</dt><dd data-review-label>Automatic</dd></div>
               <div><dt>Filter</dt><dd data-review-filter>Not selected</dd></div>
               <div><dt>Destination</dt><dd data-review-origin>Loading...</dd></div>
+              <div data-review-amount-row hidden><dt>Amount</dt><dd data-review-amount>1 link</dd></div>
             </dl>
             <label class="confirmation">
               <input data-confirm type="checkbox" required>
-              <span>I understand this creates one resource on the Nyx Bunny account.</span>
+              <span data-confirm-text>I understand this creates one resource on the Nyx Bunny account.</span>
             </label>
           </div>
           <div class="wizard-actions">
@@ -140,11 +146,14 @@
       <div class="notice" data-notice role="status" aria-live="polite" hidden></div>
 
       <section class="wizard-step result-card" data-wizard-step="3" data-result-card hidden aria-labelledby="result-title">
-        <div class="result-heading"><span class="result-icon"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><p class="eyebrow">Created</p><h2 id="result-title">Your Nyx link is ready</h2><p>The link was created and checked successfully.</p></div></div>
-        <div class="link-result">
-          <input data-result-url readonly aria-label="Generated Nyx URL">
-          <button data-copy type="button">Copy</button>
-          <a data-open href="#" target="_blank" rel="noopener noreferrer">Open</a>
+        <div class="result-heading"><span class="result-icon"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><p class="eyebrow">Created</p><h2 id="result-title" data-result-title>Your Nyx link is ready</h2><p data-result-subtitle>The link was created and checked successfully.</p></div></div>
+        <div class="bulk-link-box">
+          <div class="bulk-link-head"><span>Generated links</span><strong data-result-count>1 link</strong></div>
+          <textarea data-result-url readonly rows="7" spellcheck="false" aria-label="Generated Nyx URLs"></textarea>
+          <div class="bulk-link-actions">
+            <button data-copy type="button">Copy all</button>
+            <a data-open href="#" target="_blank" rel="noopener noreferrer">Open first</a>
+          </div>
         </div>
         <div class="filter-check checking" data-filter-check role="status" aria-live="polite">
           <span data-filter-check-label>Selected filter</span>
@@ -156,6 +165,6 @@
       </section>
     </section>
   </main>
-  <script src="./app.js?v=20260718-static-utility-header-2"></script>
+  <script src="./app.js?v=20260718-premium-batch-3"></script>
 </body>
 </html>

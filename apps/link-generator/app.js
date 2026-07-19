@@ -6,17 +6,19 @@
   const refs={
     form:$('[data-generator-form]'),label:$('[data-label-input]'),filter:$('[data-filter-select]'),accessCode:$('[data-access-code]'),
     button:$('[data-generate-button]'),status:$('[data-service-status]'),origin:$('[data-origin]'),notice:$('[data-notice]'),
-    resultCard:$('[data-result-card]'),resultUrl:$('[data-result-url]'),copy:$('[data-copy]'),open:$('[data-open]'),
+    resultCard:$('[data-result-card]'),resultUrl:$('[data-result-url]'),resultCount:$('[data-result-count]'),resultTitle:$('[data-result-title]'),resultSubtitle:$('[data-result-subtitle]'),copy:$('[data-copy]'),open:$('[data-open]'),
     filterCheck:$('[data-filter-check]'),filterCheckLabel:$('[data-filter-check-label]'),filterCheckState:$('[data-filter-check-state]'),filterCheckDetail:$('[data-filter-check-detail]'),
     modeButtons:[...document.querySelectorAll('[data-access-mode]')],accountPanel:$('[data-account-access]'),administratorPanel:$('[data-administrator-access]'),
     accountFields:$('[data-account-fields]'),email:$('[data-account-email]'),password:$('[data-account-password]'),accountStatus:$('[data-account-status]'),
     signIn:$('[data-account-sign-in]'),createAccount:$('[data-account-create]'),refreshAccount:$('[data-account-refresh]'),signOut:$('[data-account-sign-out]'),
     wizardCard:$('[data-wizard-card]'),wizardSteps:[...document.querySelectorAll('[data-wizard-step]')],wizardIndicators:[...document.querySelectorAll('[data-wizard-indicator]')],
     wizardProgress:$('[data-wizard-progress]'),wizardNext:[...document.querySelectorAll('[data-wizard-next]')],wizardBack:[...document.querySelectorAll('[data-wizard-back]')],wizardRestart:$('[data-wizard-restart]'),
-    reviewAccess:$('[data-review-access]'),reviewLabel:$('[data-review-label]'),reviewFilter:$('[data-review-filter]'),reviewOrigin:$('[data-review-origin]'),confirm:$('[data-confirm]')
+    reviewAccess:$('[data-review-access]'),reviewLabel:$('[data-review-label]'),reviewFilter:$('[data-review-filter]'),reviewOrigin:$('[data-review-origin]'),reviewAmountRow:$('[data-review-amount-row]'),reviewAmount:$('[data-review-amount]'),confirm:$('[data-confirm]'),confirmText:$('[data-confirm-text]'),
+    amount:$('[data-premium-amount]'),amountField:$('[data-premium-amount-field]'),amountHint:$('[data-premium-amount-hint]'),detailsGrid:$('[data-details-grid]')
   };
   let accessMode='account';
   let wizardStep=0;
+  let premiumBatchLimit=10;
   let authConfig={enabled:false,apiKey:''};
   let authSession=readStoredSession();
 
@@ -37,7 +39,8 @@
   }
   function setLoading(loading){
     refs.button.disabled=loading;
-    refs.button.querySelector('span').textContent=loading ? 'Creating...' : 'Generate link';
+    const amount=selectedAmount();
+    refs.button.querySelector('span').textContent=loading ? `Creating ${amount} link${amount===1?'':'s'}...` : `Generate ${amount===1?'link':`${amount} links`}`;
   }
   function setAuthBusy(busy){
     [refs.signIn,refs.createAccount,refs.refreshAccount,refs.signOut].forEach(button=>{button.disabled=busy});
@@ -131,11 +134,27 @@
     accessMode=mode;
     refs.accountPanel.hidden=mode!=='account';
     refs.administratorPanel.hidden=mode!=='administrator';
+    refs.amountField.hidden=mode!=='administrator';
+    refs.detailsGrid.classList.toggle('premium',mode==='administrator');
+    if(mode!=='administrator') refs.amount.value='1';
+    updateAmountCopy();
     refs.modeButtons.forEach(button=>{
       const active=button.dataset.accessMode===mode;
       button.classList.toggle('active',active);
       button.setAttribute('aria-selected',String(active));
     });
+  }
+  function selectedAmount(){
+    if(accessMode!=='administrator') return 1;
+    const value=Number.parseInt(refs.amount.value,10);
+    return Number.isInteger(value) ? Math.max(1,Math.min(premiumBatchLimit,value)) : 1;
+  }
+  function updateAmountCopy(){
+    const amount=selectedAmount();
+    refs.reviewAmountRow.hidden=accessMode!=='administrator';
+    refs.reviewAmount.textContent=`${amount} link${amount===1?'':'s'}`;
+    refs.confirmText.textContent=`I understand this creates ${amount===1?'one resource':`${amount} resources`} on the Nyx Bunny account.`;
+    if(!refs.button.disabled) refs.button.querySelector('span').textContent=`Generate ${amount===1?'link':`${amount} links`}`;
   }
   function setWizardStep(nextStep,direction=nextStep>=wizardStep?'forward':'back'){
     const index=Math.max(0,Math.min(refs.wizardSteps.length-1,Number(nextStep) || 0));
@@ -162,6 +181,7 @@
     refs.reviewLabel.textContent=refs.label.value.trim() || 'Automatic';
     refs.reviewFilter.textContent=refs.filter.options[refs.filter.selectedIndex]?.textContent || 'Not selected';
     refs.reviewOrigin.textContent=refs.origin.textContent || 'Official Nyx origin';
+    updateAmountCopy();
   }
   async function validateAccessStep(){
     showNotice('');
@@ -181,6 +201,10 @@
     }
     if(wizardStep===1){
       if(!refs.filter.value){showNotice('Choose a content filter before continuing.','error');refs.filter.focus();return}
+      if(accessMode==='administrator'){
+        const rawAmount=Number.parseInt(refs.amount.value,10);
+        if(!Number.isInteger(rawAmount) || rawAmount<1 || rawAmount>premiumBatchLimit){showNotice(`Choose an amount from 1 to ${premiumBatchLimit}.`,'error');refs.amount.focus();return}
+      }
       showNotice('');updateReview();setWizardStep(2);
     }
   }
@@ -237,27 +261,41 @@
     }catch(error){refs.filter.innerHTML='<option value="">Filter list unavailable</option>';refs.filter.disabled=true;showNotice(`Could not load the content filters: ${error.message}`,'error')}
   }
   function showFilterResult(kind,label,state,detail){refs.filterCheck.className=`filter-check ${kind}`;refs.filterCheckLabel.textContent=label;refs.filterCheckState.textContent=state;refs.filterCheckDetail.textContent=detail}
-  async function checkGeneratedLink(url,filterKey,filterName){
-    showFilterResult('checking',filterName,'Checking...','Nyx is checking this newly generated link once.');
+  async function checkOneGeneratedLink(url,filterKey){
     try{
       const endpoint=new URL(`${LINK_CHECKER_API}/check`);endpoint.searchParams.set('url',url);endpoint.searchParams.set('filter',filterKey);
       const report=await readJson(await fetch(endpoint,{headers:{Accept:'application/json'},cache:'no-store'}));
       const result=Array.isArray(report?.results) ? report.results[0] : report?.result || report;
-      if(result?.error || result?.ok===false) showFilterResult('error',filterName,'Check failed',String(result?.error || 'The filter did not return a usable result.'));
-      else if(result?.blocked===true) showFilterResult('blocked',filterName,'Blocked','Sorry, but that link is currently blocked.');
-      else if(result?.blocked===false) showFilterResult('allowed',filterName,'Allowed','The selected filter currently reports this link as allowed.');
-      else showFilterResult('info',filterName,'Informational','The selected filter did not provide a blocked or allowed decision.');
-    }catch(error){showFilterResult('error',filterName,'Check failed',`The link was created, but Nyx could not check it: ${error.message}`)}
+      if(result?.error || result?.ok===false) return 'error';
+      if(result?.blocked===true) return 'blocked';
+      if(result?.blocked===false) return 'allowed';
+      return 'info';
+    }catch{return 'error'}
+  }
+  async function checkGeneratedLinks(urls,filterKey,filterName){
+    const counts={allowed:0,blocked:0,info:0,error:0};
+    showFilterResult('checking',filterName,`Checking 0 of ${urls.length}`,`Nyx is checking ${urls.length===1?'this link':'each generated link'} once.`);
+    for(let index=0;index<urls.length;index+=1){
+      const result=await checkOneGeneratedLink(urls[index],filterKey);
+      counts[result]+=1;
+      showFilterResult('checking',filterName,`Checking ${index+1} of ${urls.length}`,'Completed checks appear here when the batch finishes.');
+    }
+    if(counts.blocked){showFilterResult('blocked',filterName,`${counts.blocked} blocked`,`Sorry, but ${counts.blocked===urls.length?'all of those links are':`${counts.blocked} of ${urls.length} links are`} currently blocked.`);return}
+    if(counts.error){showFilterResult('error',filterName,`${counts.error} unchecked`,`${counts.allowed} allowed; ${counts.error} could not be checked.`);return}
+    if(counts.info){showFilterResult('info',filterName,`${counts.info} informational`,`${counts.allowed} allowed; ${counts.info} did not return a blocked or allowed decision.`);return}
+    showFilterResult('allowed',filterName,`${counts.allowed} allowed`,urls.length===1?'The selected filter currently reports this link as allowed.':'The selected filter currently reports every generated link as allowed.');
   }
   async function loadStatus(){
     try{
       const status=await readJson(await fetch('/api/link-generator/status',{headers:{Accept:'application/json'},cache:'no-store'}));
+      premiumBatchLimit=Math.max(1,Number.parseInt(status.premiumBatchLimit,10) || 10);refs.amount.max=String(premiumBatchLimit);refs.amountHint.textContent=`Premium can create up to ${premiumBatchLimit} links at once.`;
       refs.origin.textContent=status.origin || 'Not configured';setStatus(status.available,status.available ? 'Ready' : 'Setup required');
       if(!status.available) showNotice('The Nyx administrator still needs to finish the Link Generator environment settings in Netlify.','error');
     }catch(error){refs.origin.textContent='Unavailable';setStatus(false,'Unavailable');showNotice(`Could not check the generator: ${error.message}`,'error')}
   }
 
   refs.modeButtons.forEach(button=>button.addEventListener('click',()=>setAccessMode(button.dataset.accessMode)));
+  refs.amount.addEventListener('input',updateAmountCopy);
   refs.wizardNext.forEach(button=>button.addEventListener('click',handleWizardNext));
   refs.wizardBack.forEach(button=>button.addEventListener('click',()=>{showNotice('');setWizardStep(wizardStep-1,'back')}));
   refs.wizardRestart.addEventListener('click',()=>{
@@ -282,15 +320,20 @@
       }else{
         if(!refs.accessCode.value) throw new Error('Enter your Premium access code.');
         body.accessCode=refs.accessCode.value;
+        body.amount=selectedAmount();
       }
       const result=await readJson(await fetch('/api/link-generator',{method:'POST',headers,body:JSON.stringify(body)}));
-      refs.resultUrl.value=result.url;refs.open.href=result.url;refs.resultCard.hidden=false;refs.accessCode.value='';setWizardStep(3);requestAnimationFrame(()=>refs.resultCard.scrollIntoView({behavior:'smooth',block:'nearest'}));
-      await checkGeneratedLink(result.url,selectedFilter,selectedFilterName);
-      showNotice(result.access==='account' ? `The link was created. ${result.remaining} free link${result.remaining===1?'':'s'} remaining today.` : 'The link was created with Premium access.');
+      const links=(Array.isArray(result.links)?result.links:[]).map(item=>typeof item==='string'?item:item?.url).filter(Boolean);
+      if(!links.length && result.url) links.push(result.url);
+      if(!links.length) throw new Error('Bunny did not return any generated links.');
+      refs.resultUrl.value=links.join('\n');refs.resultCount.textContent=`${links.length} link${links.length===1?'':'s'}`;refs.resultTitle.textContent=links.length===1?'Your Nyx link is ready':'Your Nyx links are ready';refs.resultSubtitle.textContent=result.partial?`${links.length} of ${result.requested} requested links were created.`:`${links.length===1?'The link was':'All links were'} created successfully.`;refs.open.href=links[0];refs.resultCard.hidden=false;refs.accessCode.value='';setWizardStep(3);requestAnimationFrame(()=>refs.resultCard.scrollIntoView({behavior:'smooth',block:'nearest'}));
+      await checkGeneratedLinks(links,selectedFilter,selectedFilterName);
+      if(result.partial) showNotice(result.warning || `${links.length} of ${result.requested} links were created.`,'error');
+      else showNotice(result.access==='account' ? `The link was created. ${result.remaining} free link${result.remaining===1?'':'s'} remaining today.` : `${links.length} link${links.length===1?' was':'s were'} created with Premium access.`);
     }catch(error){showNotice(error.message,'error')}
     finally{setLoading(false)}
   });
-  refs.copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(refs.resultUrl.value);refs.copy.textContent='Copied';setTimeout(()=>{refs.copy.textContent='Copy'},1400)}catch{refs.resultUrl.select();document.execCommand('copy')}});
+  refs.copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(refs.resultUrl.value);refs.copy.textContent='Copied all';setTimeout(()=>{refs.copy.textContent='Copy all'},1400)}catch{refs.resultUrl.select();document.execCommand('copy')}});
 
   applyTheme();renderAccount();setWizardStep(0);Promise.all([loadStatus(),loadAuthConfig(),loadFilters()]);
 })();

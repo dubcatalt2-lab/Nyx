@@ -309,3 +309,20 @@ html body:is(body,#nyx-hover-specificity) .settings-window .settings-card:hover{
     transition:none!important;
   }
 }
+
+/* GeForce Now and Study now use the stable in-flow glyph element. Suppress
+   their older generated icon so each shortcut renders exactly once. */
+html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts]
+  > div.quick-tile.home-shortcut:is([data-domain="geforcenow"],[data-domain="games"])
+  .home-shortcut-open::after,
+html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts]
+  > div.quick-tile.home-shortcut:is([data-domain="geforcenow"],[data-domain="games"]):hover
+  .home-shortcut-open::after,
+html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts]
+  > div.quick-tile.home-shortcut:is([data-domain="geforcenow"],[data-domain="games"]):focus-within
+  .home-shortcut-open::after{
+  content:none!important;
+  display:none!important;
+  visibility:hidden!important;
+  opacity:0!important;
+}

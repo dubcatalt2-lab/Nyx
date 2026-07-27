@@ -404,7 +404,7 @@
     'duck.ai':localIcon('duck-ai-logo.png'),
     'nyx-ai':favicons.nyx,
     'link-checker':localIcon('link-checker.svg'),
-    'link-generator':favicons.nyx,
+    'link-generator':localIcon('link-generator.svg'),
     'chess.com':localIcon('chess-logo.png'),
     'games':localIcon('dock-controller.png'),
     'apps':svgIcon(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="10" y="10" width="18" height="18" rx="4" fill="#fff"/><rect x="36" y="10" width="18" height="18" rx="4" fill="#fff"/><rect x="10" y="36" width="18" height="18" rx="4" fill="#fff"/><rect x="36" y="36" width="18" height="18" rx="4" fill="#fff"/></svg>`),
@@ -3110,12 +3110,15 @@
   }
   function ensureFreshThemeOptions(root=document){
     root.querySelectorAll?.('[data-theme-value]')?.forEach(select=>{
-      if(!select.querySelector('option[value="fresh"]')){
+      let freshOption=select.querySelector('option[value="fresh"]');
+      if(!freshOption){
         const option=document.createElement('option');
         option.value='fresh';
-        option.textContent='White';
+        option.textContent='Fern';
         select.appendChild(option);
+        freshOption=option;
       }
+      freshOption.textContent='Fern';
       if(!select.querySelector('option[value="midnight"]')){
         const option=document.createElement('option');
         option.value='midnight';
@@ -5138,6 +5141,8 @@
   }
   function homeShortcutMask(domain,title=''){
     const key=String(domain || title || '').toLowerCase();
+    if(key.includes('geforce')) return '/assets/icons/dock-nvidia.png';
+    if(key==='games' || key.includes('study')) return '/assets/icons/dock-controller.png';
     if(key.includes('duck')) return '/assets/icons/shortcut-duckduckgo.svg';
     if(key.includes('youtube') || key==='youtu.be') return '/assets/icons/shortcut-youtube.svg';
     if(key.includes('tiktok')) return '/assets/icons/shortcut-tiktok.svg';
@@ -5813,6 +5818,12 @@
     const utilityLinks=win.querySelector('.nyx-home-utility-links');
     const linkChecker=win.querySelector('.nyx-home-link-checker');
     if(utilityLinks && linkChecker) utilityLinks.prepend(linkChecker);
+    if(utilityLinks){
+      const copyright=document.createElement('span');
+      copyright.className='nyx-home-copyright';
+      copyright.textContent='© 2026 Nyx';
+      utilityLinks.append(copyright);
+    }
     cleanBrowserControls(win);
     tick();
     initDesktopSplash();
@@ -9092,6 +9103,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
   function syncSetupThemeCards(){
     const setup=$('setupScreen');
     const theme=$('setupTheme')?.value || 'default';
+    if(setup) setup.dataset.previewTheme=normalizeNyxTheme(theme);
     setup?.querySelectorAll('[data-setup-theme-card]').forEach(card=>{
       card.classList.toggle('selected',card.dataset.setupThemeCard===theme);
     });

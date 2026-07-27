@@ -6,9 +6,9 @@
 <title>ռʏӼ</title>
 <!-- //startup-cloak -->
 <script src="js/nyx-logo.js?v=20260717-muted-theme-logo-v3"></script>
-<script src="startup.js?v=20260718-chromeos-zoom-1"></script>
+<script src="startup.js?v=20260726-chromebook-layout-1"></script>
 <link id="appFavicon" rel="icon" type="image/png" sizes="256x256" href="./assets/icons/nyx-logo.png">
-<link rel="stylesheet" href="styles.css?v=20260718-chromeos-zoom-v75">
+<link rel="stylesheet" href="styles.css?v=20260726-fern-shortcuts-v4">
 
 </head>
 <body>
@@ -31,8 +31,9 @@
 <!-- //setup-screen -->
 <div id="setupScreen" class="setup-screen" aria-hidden="true">
   <div class="setup-panel">
-    <div>
-      <h1>Customize nyx</h1>
+    <div class="setup-header">
+      <span class="setup-eyebrow">NYX / FIRST RUN</span>
+      <h1>Customize Nyx</h1>
       <p data-setup-subtitle>Pick the basics before nyx opens.</p>
       <div class="setup-progress" aria-hidden="true">
         <span class="setup-dot active"></span>
@@ -72,7 +73,7 @@
             <option value="ruby">Ruby</option>
             <option value="emerald">Emerald</option>
             <option value="sakura">Sakura</option>
-            <option value="fresh">White</option>
+            <option value="fresh">Fern</option>
             <option value="midnight">Midnight</option>
           </select>
         </div>
@@ -95,7 +96,7 @@
           </button>
           <button class="setup-theme-card" data-setup-theme-card="fresh" type="button">
             <span class="setup-theme-preview fresh"></span>
-            <span class="setup-theme-name">White</span>
+            <span class="setup-theme-name">Fern</span>
           </button>
           <button class="setup-theme-card" data-setup-theme-card="midnight" type="button">
             <span class="setup-theme-preview midnight"></span>
@@ -188,10 +189,11 @@
       </section>
     </div>
     <div class="setup-actions">
+      <span class="setup-copyright">© 2026 Nyx</span>
       <button data-skip-setup>Skip</button>
       <button data-setup-back type="button" hidden>Back</button>
       <button class="primary" data-setup-next type="button">Next</button>
-      <button class="primary" data-finish-setup hidden>Start ռʏӼ</button>
+      <button class="primary" data-finish-setup hidden>Start Nyx</button>
     </div>
   </div>
 </div>
@@ -229,7 +231,7 @@
 <div id="visualEffects" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
 <!-- //watchparty-player -->
 <section id="watchParty" class="watchparty" aria-hidden="true">
-  <video id="watchPartyVideo" class="watchparty-video" src="assets/watchparty/hidden-world-browser.mp4" preload="metadata" playsinline crossorigin="anonymous">
+  <video id="watchPartyVideo" class="watchparty-video" preload="none" playsinline crossorigin="anonymous">
     <track id="watchPartyTrack" kind="subtitles" label="English" srclang="en">
   </video>
   <div id="watchPartyOverlay" class="watchparty-overlay">
@@ -369,6 +371,6 @@
 <script src="./assets/vendor/vanta.clouds.min.js"></script>
 <script src="/runtime-config.js"></script>
 <script src="js/loading-screen.js?v=20260718-modal-startup-progress-v9"></script>
-<script src="script.js?v=20260718-trusted-nyx-popup-v46"></script>
+<script src="script.js?v=20260726-fern-shortcuts-v49"></script>
 </body>
 </html>

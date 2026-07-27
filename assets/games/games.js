@@ -122,17 +122,19 @@ async function adaptCatalog(catalog) {
       const thumbnail = ugsThumbnailName(path);
       if (knownCovers.has(thumbnail)) covers.push(`/assets/ugs/thumbs/${encodeURIComponent(thumbnail)}`);
     } else if (catalog.format === 'gn') {
-      covers.push(directCover(item.coverFallback), item.cover, directCover(item.cover));
+      // Prefer Nyx's same-origin asset route. Managed Chromebook networks often
+      // block raw GitHub/CDN hosts even though the Nyx origin itself is allowed.
+      covers.push(item.cover, directCover(item.coverFallback), directCover(item.cover));
     } else if (catalog.format === 'gms') {
       if (item.type === 'gba' && item.romId && catalog.gbaPlayer) {
         player = fillTemplate(catalog.gbaPlayer, { romId: item.romId });
       }
-      covers.push(directCover(item.cover), safeCover(item.cover));
+      covers.push(safeCover(item.cover), directCover(item.cover));
     } else if (catalog.format === 'seraph' && item.thumbnail) {
       const thumbnailPath = String(item.thumbnail).replace(/^\/+/, '');
       covers.push(
-        `https://cdn.jsdelivr.net/gh/a456pur/seraph@main/${thumbnailPath.split('/').map(encodeURIComponent).join('/')}`,
-        `/seraph-asset?path=${encodeURIComponent(thumbnailPath)}`
+        `/seraph-asset?path=${encodeURIComponent(thumbnailPath)}`,
+        `https://cdn.jsdelivr.net/gh/a456pur/seraph@main/${thumbnailPath.split('/').map(encodeURIComponent).join('/')}`
       );
     }
 
@@ -199,6 +201,7 @@ function makeCover(game) {
   image.alt = '';
   image.loading = 'lazy';
   image.decoding = 'async';
+  image.referrerPolicy = 'no-referrer';
   let index = 0;
   image.src = game.covers[index];
   image.addEventListener('error', () => {

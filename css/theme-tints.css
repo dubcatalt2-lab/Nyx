@@ -878,7 +878,7 @@ html[data-nyx-theme] body.browser-shell .browser-home-normal .home-shortcut-menu
   opacity:1!important;
 }
 
-/* White's legacy file has unusually specific control selectors. This final
+/* Fern's legacy file has unusually specific control selectors. This final
    canonical state keeps it from changing the shared control geometry. */
 html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell .browser-mode-address > button:is(
   [data-browser-shell-back],

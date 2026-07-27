@@ -1,0 +1,68 @@
+/*
+ * Nyx interface density
+ *
+ * Keep the application viewport and backgrounds at full size, while rendering
+ * Nyx-owned controls at the same visual density as an 80% browser zoom.
+ * External pages remain full-size and usable inside the browser frame.
+ */
+:root{
+  --nyx-interface-scale:.8;
+  --nyx-interface-bar:77px;
+}
+
+/* Scale the browser chrome as one unit. Giving the fixed bar an explicit
+   100% width keeps it flush with both viewport edges after CSS zoom. */
+html body.browser-shell .top-os{
+  zoom:var(--nyx-interface-scale);
+  width:100%!important;
+  right:auto!important;
+}
+
+/* Reclaim the space saved by the compact browser bar. */
+html body.browser-shell #desktop{
+  top:var(--nyx-interface-bar)!important;
+}
+html body.browser-shell #desktop > .window.maximized{
+  top:var(--nyx-interface-bar)!important;
+  height:calc(100dvh - var(--nyx-interface-bar))!important;
+  max-height:calc(100dvh - var(--nyx-interface-bar))!important;
+}
+html body.browser-shell .browser-mode-menu,
+html body.browser-shell .browser-bookmark-panel{
+  top:var(--nyx-interface-bar)!important;
+}
+
+/* Main Nyx surfaces use element zoom so their centering and corner anchoring
+   remain responsive while every internal button/icon shrinks consistently. */
+html body.browser-shell .browser-home .nyx-home-hero,
+html body.browser-shell .browser-home .home-shortcut-grid,
+html body.browser-shell .browser-home .nyx-home-presence,
+html body.browser-shell .browser-home .nyx-home-weather,
+html body.browser-shell .browser-home .nyx-home-utility-links,
+html body.browser-shell .weather-panel,
+html body.browser-shell .browser-mode-menu,
+html body.browser-shell .browser-bookmark-panel,
+html body.browser-shell .browser-shell-settings-panel,
+html body .nyx-tos-dialog,
+html body .nyx-prompt,
+html body .setup-panel,
+html body .setup-launch-card{
+  zoom:var(--nyx-interface-scale);
+}
+
+/* These panels are positioned beneath the browser bar rather than inside it. */
+html body.browser-shell .weather-panel{
+  top:calc(var(--nyx-interface-bar) + 14px)!important;
+}
+html body.browser-shell .weather-restore{
+  top:calc(var(--nyx-interface-bar) + 7px)!important;
+}
+
+/* Keep compact floating panels inside the visible viewport at narrow sizes. */
+@media(max-width:720px){
+  :root{--nyx-interface-bar:60px}
+  html body.browser-shell .browser-mode-menu,
+  html body.browser-shell .browser-bookmark-panel{
+    max-width:calc(125vw - 16px)!important;
+  }
+}

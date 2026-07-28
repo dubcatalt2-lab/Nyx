@@ -5,10 +5,29 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ռʏӼ</title>
 <!-- //startup-cloak -->
-<script src="js/nyx-logo.js?v=20260717-muted-theme-logo-v3"></script>
-<script src="startup.js?v=20260726-chromebook-layout-1"></script>
 <link id="appFavicon" rel="icon" type="image/png" sizes="256x256" href="./assets/icons/nyx-logo.png">
-<link rel="stylesheet" href="styles.css?v=20260726-ui-scale-80-v5">
+<script src="js/nyx-logo.js?v=20260717-muted-theme-logo-v3"></script>
+<script>
+(() => {
+  const favicon=document.getElementById('appFavicon');
+  let savedIcon='';
+  let theme='default';
+  try{
+    savedIcon=localStorage.getItem('nyx.tabFavicon') || '';
+    theme=localStorage.getItem('nyx.theme') || 'default';
+  }catch{}
+  const isNyxSource=!savedIcon || /nyx-logo\.png/i.test(savedIcon);
+  if(savedIcon && !isNyxSource){
+    favicon.href=savedIcon;
+    return;
+  }
+  window.NyxLogo?.croppedUrl(theme).then(url=>{
+    favicon.href=url;
+  }).catch(()=>{});
+})();
+</script>
+<script src="startup.js?v=20260726-chromebook-layout-1"></script>
+<link rel="stylesheet" href="styles.css?v=20260727-weather-label-v17">
 
 </head>
 <body>
@@ -371,6 +390,6 @@
 <script src="./assets/vendor/vanta.clouds.min.js"></script>
 <script src="/runtime-config.js"></script>
 <script src="js/loading-screen.js?v=20260718-modal-startup-progress-v9"></script>
-<script src="script.js?v=20260726-fern-shortcuts-v49"></script>
+<script src="script.js?v=20260727-weather-field-v54"></script>
 </body>
 </html>

@@ -49,6 +49,38 @@
   function nyxTermsPageMarkup(className='nyx-utility-tab nyx-terms-tab'){
     return `<article class="${esc(className)}"><p class="utility-kicker">Nyx</p><h1>Terms of Service</h1><p class="utility-updated"><strong>Effective Date:</strong> July 17, 2026</p><p class="utility-intro">Welcome to <strong>Nyx</strong> ("Nyx," "we," "our," or "us"). By accessing or using our website, applications, or services (collectively, the "Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use the Service.</p>${nyxTermsSectionsMarkup()}</article>`;
   }
+  function nyxCreditsPageMarkup(className='nyx-utility-tab nyx-credits-tab'){
+    return `<article class="${esc(className)}">
+      <header class="nyx-credits-hero">
+        <p class="utility-kicker">Nyx Workspace</p>
+        <h1>Credits</h1>
+        <p>Built with care for everyone who searches, studies, and creates with Nyx.</p>
+      </header>
+      <section class="nyx-credits-section" aria-labelledby="nyxCreditsFounder">
+        <h2 id="nyxCreditsFounder">Founder</h2>
+        <article class="nyx-founder-profile">
+          <div class="nyx-founder-image-wrap">
+            <img class="nyx-founder-image" src="/assets/icons/nyx-logo.png" alt="Nyx founder profile">
+          </div>
+          <div class="nyx-founder-copy">
+            <p class="nyx-founder-role">Owner / Founder</p>
+            <h3>1aqlla</h3>
+            <p>The creator and lead developer of Nyx. Responsible for the project direction, interface, browser tools, and the details that shape the Nyx experience.</p>
+            <p class="nyx-founder-note">Thanks for using Nyx and helping the project keep improving.</p>
+          </div>
+        </article>
+      </section>
+      <section class="nyx-credits-section" aria-labelledby="nyxCreditsProject">
+        <h2 id="nyxCreditsProject">Project Credits</h2>
+        <div class="nyx-credit-grid">
+          <article><span aria-hidden="true">◇</span><h3>Design &amp; Development</h3><p>Nyx interface and original project work by 1aqlla.</p></article>
+          <article><span aria-hidden="true">⌁</span><h3>Open Technology</h3><p>Thanks to the open-source projects and public services that help power Nyx.</p></article>
+          <article><span aria-hidden="true">✦</span><h3>Community</h3><p>Thanks to every tester and user who reports issues and shares ideas.</p></article>
+        </div>
+      </section>
+      <footer class="nyx-credits-footer"><img src="/assets/icons/nyx-logo.png" alt="" aria-hidden="true"><div><strong>Nyx</strong><span>Thanks for using our site.</span></div><small>&copy; 2026 Nyx</small></footer>
+    </article>`;
+  }
   const DEFAULT_BROWSER_MODE='scramjet';
   const DEFAULT_BROWSER_TRANSPORT='libcurl';
   const nyxFontOptions=[
@@ -1117,7 +1149,7 @@
     if(String(url).trim().toLowerCase()==='nyx://settings') return 'Settings';
     if(String(url).trim().toLowerCase()==='nyx://terms') return 'Terms Of Service';
     if(String(url).trim().toLowerCase()==='nyx://developer') return 'Developer Console';
-    if(String(url).trim().toLowerCase()==='nyx://about') return 'About Us';
+    if(/^nyx:\/\/(?:about|credits)$/i.test(String(url).trim())) return 'Credits';
     try{
       const parsed=new URL(browserShellSourceUrl(url),location.href);
       if(parsed.origin===location.origin && parsed.pathname==='/search') return parsed.searchParams.get('q') || 'Search';
@@ -1828,7 +1860,7 @@
     if(String(url || '').trim().toLowerCase()==='nyx://ephesians1'){
       return openBrowserShellInternalTab('ephesians1');
     }
-    if(/^nyx:\/\/(terms|developer|about)$/i.test(String(url || '').trim())){
+    if(/^nyx:\/\/(terms|developer|about|credits)$/i.test(String(url || '').trim())){
       return openBrowserShellInternalTab(String(url).trim().slice(6).toLowerCase());
     }
     const id=openBrowserShellTab(url || '',{forceMode:appCompatibilityMode(url)});
@@ -2196,7 +2228,7 @@
       showBrowserShellInternalPage('ephesians1');
       return;
     }
-    if(/^nyx:\/\/(terms|developer|about)$/i.test(raw)){
+    if(/^nyx:\/\/(terms|developer|about|credits)$/i.test(raw)){
       openBrowserShellInternalTab(raw.slice(6).toLowerCase());
       return;
     }
@@ -2380,16 +2412,24 @@
       .nyx-utility-tab .utility-intro{max-width:68ch;margin:0 0 32px!important;color:#b7c5d9!important;font-size:14px!important;line-height:1.68!important}.nyx-utility-tab section p+p{margin-top:10px!important}.nyx-utility-tab ul{max-width:68ch;margin:10px 0 14px;padding-left:22px;color:#a9b9d0;font-size:14px;line-height:1.62}.nyx-utility-tab li+li{margin-top:4px}.nyx-utility-tab strong{color:#edf4ff!important;font-weight:600!important}
       .nyx-about-tab{display:flex;min-height:calc(100vh - 1px);flex-direction:column;justify-content:center}.nyx-about-tab .about-mark{width:48px;height:48px;display:grid;place-items:center;margin-bottom:24px;border:1px solid rgba(111,158,232,.42);border-radius:15px;background:rgba(17,26,41,.72);color:#8fb8ff;font-size:23px}
       .nyx-about-details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:30px 0 0}.nyx-about-details div{padding:14px;border:1px solid rgba(111,158,232,.22);border-radius:13px;background:rgba(17,26,41,.54)}.nyx-about-details dt{color:#8498b7;font-size:10px;letter-spacing:.09em;text-transform:uppercase}.nyx-about-details dd{margin:5px 0 0;color:#edf4ff;font-size:13px}
+      body{--credits-accent:#8fb8ff;--credits-line:rgba(143,184,255,.24);--credits-card:rgba(15,25,42,.72)}body.theme-midnight{--credits-accent:#789edc}body.theme-ruby{--credits-accent:#db7f91;--credits-line:rgba(219,127,145,.26)}body.theme-emerald{--credits-accent:#65b99b;--credits-line:rgba(101,185,155,.25)}body.theme-sakura{--credits-accent:#d798b8;--credits-line:rgba(215,152,184,.26)}body.theme-fresh{--credits-accent:#61a9a4;--credits-line:rgba(97,169,164,.26)}
+      .nyx-credits-tab{width:min(1040px,calc(100vw - 34px));padding:clamp(46px,7vw,92px) clamp(20px,5vw,62px) 70px!important}.nyx-credits-hero{text-align:center;margin:0 auto 68px}.nyx-credits-tab .nyx-credits-hero h1{margin:0 0 14px!important;font-size:clamp(48px,8vw,86px)!important;font-weight:400!important;letter-spacing:-.055em!important}.nyx-credits-hero>p:last-child{max-width:620px;margin:0 auto!important;color:#9cadc4!important;font-size:15px!important;line-height:1.6!important}
+      .nyx-credits-tab .nyx-credits-section{padding:0!important;margin:0 0 76px!important;border:0!important}.nyx-credits-tab .nyx-credits-section>h2{width:max-content;margin:0 auto 34px!important;padding-bottom:7px!important;border-bottom:2px solid var(--credits-accent)!important;color:#eef4ff!important;font-size:clamp(31px,5vw,48px)!important;font-weight:400!important;letter-spacing:-.035em!important;text-align:center!important}
+      .nyx-founder-profile{display:grid;grid-template-columns:minmax(240px,360px) minmax(0,1fr);align-items:center;gap:clamp(28px,6vw,72px);padding:clamp(18px,3vw,30px);border:1px solid var(--credits-line);border-radius:24px;background:linear-gradient(135deg,color-mix(in srgb,var(--credits-accent) 10%,transparent),transparent 42%),var(--credits-card);box-shadow:0 24px 70px rgba(0,0,0,.24)}
+      .nyx-founder-image-wrap{aspect-ratio:1;display:grid;place-items:center;overflow:hidden;border:1px solid var(--credits-line);border-radius:20px;background:#050a12}.nyx-founder-image{display:block;width:100%;height:100%;padding:17%;object-fit:contain;box-sizing:border-box}.nyx-founder-copy .nyx-founder-role{margin:0 0 6px!important;color:var(--credits-accent)!important;font-size:11px!important;font-weight:500!important;letter-spacing:.16em!important;text-transform:uppercase!important}.nyx-founder-copy h3{margin:0 0 16px!important;color:#f5f8ff!important;font-size:clamp(31px,5vw,50px)!important;font-weight:400!important;letter-spacing:-.04em!important}.nyx-founder-copy>p{margin:0!important;color:#aebdd1!important;font-size:15px!important;font-weight:400!important;line-height:1.72!important}.nyx-founder-copy .nyx-founder-note{margin-top:16px!important;color:#d7e1ef!important}
+      .nyx-credit-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.nyx-credit-grid article{min-height:176px;padding:22px;border:1px solid var(--credits-line);border-radius:19px;background:var(--credits-card)}.nyx-credit-grid article>span{display:grid;place-items:center;width:38px;height:38px;margin-bottom:24px;border:1px solid var(--credits-line);border-radius:12px;color:var(--credits-accent);font-size:20px}.nyx-credit-grid h3{margin:0 0 8px!important;color:#eef4ff!important;font-size:16px!important;font-weight:500!important}.nyx-credit-grid p{margin:0!important;color:#94a6bf!important;font-size:13px!important;line-height:1.55!important}
+      .nyx-credits-footer{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;padding:24px 0 0;border-top:1px solid var(--credits-line);color:#8498b7}.nyx-credits-footer img{width:38px;height:38px;border-radius:10px;object-fit:contain}.nyx-credits-footer div{display:grid;gap:2px}.nyx-credits-footer strong{font-size:14px!important;font-weight:500!important}.nyx-credits-footer span,.nyx-credits-footer small{font-size:11px!important}
       .nyx-terminal-tab{width:min(980px,calc(100vw - 34px));height:calc(100vh - 34px);min-height:420px;margin:17px auto;padding:0!important;display:grid;grid-template-rows:auto 1fr auto;border:1px solid rgba(111,158,232,.30);border-radius:17px;overflow:hidden;background:#080f1a!important}.nyx-terminal-toolbar{min-height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 17px;border-bottom:1px solid rgba(111,158,232,.22);color:#8498b7;font-size:11px;letter-spacing:.04em}.nyx-terminal-toolbar span:first-child{display:flex;align-items:center;gap:8px;color:#eaf2ff}.nyx-terminal-toolbar i{width:7px;height:7px;border-radius:50%;background:#79aaff}
       .nyx-terminal-output{overflow:auto;padding:20px;color:#b9c8dc;font:400 12px/1.75 "Cascadia Code",Consolas,monospace}.nyx-terminal-line.command{margin-top:9px;color:#8fb8ff}.nyx-terminal-line.error{color:#ff8292}.nyx-terminal-form{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:12px 14px;border-top:1px solid rgba(111,158,232,.22);background:rgba(17,26,41,.70)}.nyx-terminal-form label{color:#8fb8ff;font:400 12px/1 "Cascadia Code",Consolas,monospace}.nyx-terminal-form input{width:100%;height:38px;padding:0 11px;border:1px solid rgba(111,158,232,.32);border-radius:9px;background:#080f1a;color:#eaf2ff;outline:0;font:400 12px/1 "Cascadia Code",Consolas,monospace}.nyx-terminal-form input:focus{border-color:#8fb8ff}.nyx-terminal-form button{height:38px;padding:0 16px;border:1px solid rgba(111,158,232,.38);border-radius:9px;background:rgba(111,158,232,.12);color:#eaf2ff;font:400 12px Outfit,Arial,sans-serif}.nyx-terminal-form button:hover{transform:none!important;background:rgba(111,158,232,.18)!important;border-color:#8fb8ff!important;box-shadow:none!important}
-      @media(max-width:680px){.nyx-about-details{grid-template-columns:1fr}.nyx-terminal-tab{width:calc(100vw - 16px);height:calc(100vh - 16px);margin:8px auto}.nyx-terminal-form{grid-template-columns:auto 1fr}.nyx-terminal-form button{grid-column:2}}
+      @media(max-width:680px){.nyx-about-details{grid-template-columns:1fr}.nyx-founder-profile{grid-template-columns:1fr}.nyx-founder-image-wrap{width:min(310px,100%);margin:auto}.nyx-founder-copy{text-align:center}.nyx-credit-grid{grid-template-columns:1fr}.nyx-credits-footer{grid-template-columns:auto 1fr}.nyx-credits-footer small{grid-column:1/-1}.nyx-terminal-tab{width:calc(100vw - 16px);height:calc(100vh - 16px);margin:8px auto}.nyx-terminal-form{grid-template-columns:auto 1fr}.nyx-terminal-form button{grid-column:2}}
     `;
     const terminalPageScript=`(()=>{const output=document.querySelector('[data-nyx-terminal-output]');const input=document.querySelector('[data-nyx-terminal-input]');const write=(text,type='')=>{const row=document.createElement('div');row.className='nyx-terminal-line'+(type?' '+type:'');row.textContent=String(text);output.appendChild(row);output.scrollTop=output.scrollHeight};const run=raw=>{const command=String(raw||'').trim();if(!command)return;write('nyx> '+command,'command');const name=command.toLowerCase();if(name==='clear'){output.textContent='';return}if(name==='help'){write('Commands: help, status, theme, engine, origin, storage, date, clear');return}if(name==='status'){write('Nyx is '+(navigator.onLine?'online':'offline')+' · '+(navigator.platform||'browser'));return}if(name==='theme'){write('Theme: '+(document.body.className.match(/theme-([^ ]+)/)?.[1]||'default'));return}if(name==='engine'){write('Engine: '+(localStorage.getItem('nyx.browserMode')||'scramjet')+' · Transport: '+(localStorage.getItem('nyx.transport')||'libcurl'));return}if(name==='origin'){write('Origin: '+parent.location.origin);return}if(name==='storage'){write('Local settings entries: '+localStorage.length);return}if(name==='date'){write(new Date().toLocaleString());return}write('Unknown command: '+command+'. Type "help" for the command list.','error')};write('Nyx Developer Console');write('Type "help" to list commands. Browser DevTools cannot be opened by a webpage.');document.querySelector('[data-nyx-terminal-form]')?.addEventListener('submit',event=>{event.preventDefault();run(input?.value);if(input)input.value=''});setTimeout(()=>input?.focus(),50)})();`;
     const pages={
       apps:{title:'Apps',body:`<section class="shell-page"><h1>Apps</h1><p>Apps</p><div class="quick-grid apps-launch-grid">${quickTiles()}</div></section>`},
       links:{title:'Bookmarks',body:`<section class="shell-page"><h1>Bookmarks</h1><p>Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>DuckDuckGo</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></section>`},
       terms:{title:'Terms Of Service',style:utilityPageStyle,body:nyxTermsPageMarkup()},
-      about:{title:'About Us',style:utilityPageStyle,body:`<article class="nyx-utility-tab nyx-about-tab"><div class="about-mark" aria-hidden="true">ⓘ</div><p class="utility-kicker">About Us</p><h1>Nyx</h1><p class="about-lead">A customizable browser-style workspace for search, study tools, apps, and a quieter way to move around the web.</p><dl class="nyx-about-details"><div><dt>Developed by</dt><dd>1aqlla</dd></div><div><dt>Interface</dt><dd>Nyx Workspace</dd></div><div><dt>Version</dt><dd>2026.07</dd></div></dl></article>`},
+      about:{title:'Credits',style:utilityPageStyle,body:nyxCreditsPageMarkup()},
+      credits:{title:'Credits',style:utilityPageStyle,body:nyxCreditsPageMarkup()},
       developer:{title:'Developer Console',style:utilityPageStyle,body:`<section aria-label="Eruda developer console"></section>`},
       ephesians1:{title:'Ephesians 1',body:`<section class="shell-page ephesians-diagram"><style>
         .ephesians-diagram{--ink:#f8fafc;--muted:#cbd5e1;--line:rgba(255,255,255,.24);max-width:1120px;margin:auto;padding-bottom:64px}.ephesians-diagram h1{text-align:center;font-size:clamp(30px,5vw,48px);margin:4px 0 6px}.ephesians-diagram>.diagram-sub{text-align:center;margin:0 0 28px;color:var(--muted);font-size:15px}.eph-flow{display:grid;gap:12px}.eph-block{padding:17px 20px;border:1px solid var(--line);border-left:6px solid #94a3b8;border-radius:14px;background:rgba(15,23,42,.58);box-shadow:0 12px 28px rgba(0,0,0,.16)}.eph-block h2{font-size:19px;margin:5px 0 7px}.eph-block p{margin:0;color:#e2e8f0;line-height:1.48;font-size:14px}.eph-verse{color:#cbd5e1;font-size:11px;font-weight:800;letter-spacing:.11em}.eph-father{border-left-color:#60a5fa}.eph-son{border-left-color:#fbbf24}.eph-spirit{border-left-color:#4ade80}.eph-prayer{border-left-color:#c084fc}.eph-arrow{text-align:center;height:22px;font:700 24px/22px Arial,sans-serif;color:#cbd5e1}.eph-purpose{text-align:center;padding:16px;border:1px solid rgba(255,255,255,.34);border-radius:14px;background:rgba(255,255,255,.10);font-size:17px;font-weight:800}.eph-purpose small{display:block;margin-bottom:5px;color:#cbd5e1;font-size:11px;letter-spacing:.1em}.eph-triad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.eph-triad .eph-block{padding:15px}.eph-triad h2{font-size:17px}@media(max-width:720px){.eph-triad{grid-template-columns:1fr}.ephesians-diagram{padding:20px 4px 50px!important}}</style>
@@ -5819,6 +5859,11 @@
     const linkChecker=win.querySelector('.nyx-home-link-checker');
     if(utilityLinks && linkChecker) utilityLinks.prepend(linkChecker);
     if(utilityLinks){
+      const creditsLink=utilityLinks.querySelector('[data-open="about"]');
+      if(creditsLink){
+        creditsLink.textContent='Credits';
+        creditsLink.setAttribute('href','nyx://credits');
+      }
       const copyright=document.createElement('span');
       copyright.className='nyx-home-copyright';
       copyright.textContent='© 2026 Nyx';
@@ -7991,15 +8036,44 @@
     if(!panel || !isWeatherPanelOpen()) return;
     closeWeatherPanelAnimated();
   }
-  function restoreWeatherPanel(){
+  let weatherPanelAnchorTrigger=null;
+  function setWeatherPanelAnchor(anchor='bottom',trigger=null){
+    const panel=weatherPanel();
+    if(!panel) return 'bottom';
+    const next=anchor==='top' ? 'top' : 'bottom';
+    weatherPanelAnchorTrigger=next==='top' ? (trigger || weatherPanelAnchorTrigger) : null;
+    panel.dataset.weatherAnchor=next;
+    panel.classList.toggle('weather-anchor-top',next==='top');
+    panel.classList.toggle('weather-anchor-bottom',next==='bottom');
+    if(next==='top' && weatherPanelAnchorTrigger?.getBoundingClientRect){
+      const triggerRect=weatherPanelAnchorTrigger.getBoundingClientRect();
+      const panelStyle=getComputedStyle(panel);
+      const scale=Math.max(.1,Number.parseFloat(panelStyle.zoom) || 1);
+      const panelWidth=(Number.parseFloat(panelStyle.width) || 306)*scale;
+      const margin=12;
+      const centered=triggerRect.left+(triggerRect.width-panelWidth)/2;
+      const physicalLeft=Math.max(margin,Math.min(innerWidth-panelWidth-margin,centered));
+      panel.style.setProperty('--weather-top-left',`${physicalLeft/scale}px`);
+    }else{
+      panel.style.removeProperty('--weather-top-left');
+    }
+    return next;
+  }
+  function restoreWeatherPanel(anchor=weatherPanel()?.dataset.weatherAnchor || 'bottom',trigger=null){
     const panel=weatherPanel();
     const restore=$('weatherRestore');
     if(!panel) return;
+    setWeatherPanelAnchor(anchor,trigger);
     panel.classList.remove('minimized','closing');
     panel.classList.add('opening');
     setTimeout(()=>panel.classList.remove('opening'),640);
     restore?.classList.remove('show');
-    panel.querySelector('[data-weather-query]')?.focus();
+    const query=panel.querySelector('[data-weather-query]');
+    if(query){
+      query.blur();
+      try{query.setSelectionRange(0,0)}catch{}
+      query.scrollLeft=0;
+    }
   }
   function loadUserWeatherLocation(){
     if(!navigator.geolocation) return Promise.resolve(false);
@@ -8046,17 +8120,36 @@
     panel.querySelector('[data-weather-refresh]')?.addEventListener('click',()=>loadWeatherLocation());
     panel.querySelector('[data-weather-minimize]')?.addEventListener('click',closeWeatherPanelAnimated);
     $('weatherRestore')?.addEventListener('click',restoreWeatherPanel);
+    if(!initWeatherPanel.anchorResizeReady){
+      initWeatherPanel.anchorResizeReady=true;
+      addEventListener('resize',()=>{
+        if(isWeatherPanelOpen() && weatherPanel()?.dataset.weatherAnchor==='top'){
+          setWeatherPanelAnchor('top',weatherPanelAnchorTrigger);
+        }
+      },{passive:true});
+    }
     loadWeatherLocation(saved);
     if(!initWeatherPanel.timeTimer) initWeatherPanel.timeTimer=setInterval(()=>renderWeatherTime(savedWeatherLocation().timezone),30000);
   }
-  function openWeather(){
+  function openWeather(anchor='bottom',trigger=null){
     initWeatherPanel();
+    const panel=weatherPanel();
+    const next=anchor==='top' ? 'top' : 'bottom';
     if(isWeatherPanelOpen()){
+      if(panel?.dataset.weatherAnchor!==next){
+        setWeatherPanelAnchor(next,trigger);
+        const query=panel.querySelector('[data-weather-query]');
+        if(query){
+          query.blur();
+          try{query.setSelectionRange(0,0)}catch{}
+          query.scrollLeft=0;
+        }
+        return;
+      }
       closeWeatherPanelAnimated();
       return;
     }
-    restoreWeatherPanel();
-    weatherPanel()?.querySelector('[data-weather-query]')?.focus();
+    restoreWeatherPanel(next,trigger);
   }
   //lion-ai-ui
   const nyxAiModels=[
@@ -8803,16 +8896,16 @@
     });
   }
   function openAboutNyx(){
-    if(document.body.classList.contains('browser-shell')) return openBrowserShellInternalTab('about');
+    if(document.body.classList.contains('browser-shell')) return openBrowserShellInternalTab('credits');
     makeWindow({
-      title:'About Us',
+      title:'Credits',
       left:'22vw',
       top:'110px',
       width:'620px',
       height:'430px',
       autoMaximize:false,
       className:'nyx-utility-window',
-      body:`<article class="nyx-info-page nyx-about-page"><div class="nyx-about-mark" aria-hidden="true">ⓘ</div><p class="nyx-info-kicker">About Us</p><h1>Nyx</h1><p class="nyx-about-lead">A customizable browser-style workspace for search, study tools, apps, and a quieter way to move around the web.</p><dl class="nyx-about-details"><div><dt>Developed by</dt><dd>1aqlla</dd></div><div><dt>Interface</dt><dd>Nyx Workspace</dd></div><div><dt>Version</dt><dd>2026.07</dd></div></dl></article>`
+      body:nyxCreditsPageMarkup('nyx-info-page nyx-credits-tab')
     });
   }
   function nyxTerminalWrite(output,text,type=''){
@@ -10649,7 +10742,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
       if(!e.target.closest('.home-shortcut-menu') && !e.target.closest('[data-home-shortcut-menu]')){
         document.querySelectorAll('.home-shortcut.menu-open').forEach(item=>item.classList.remove('menu-open'));
       }
-      const open=e.target.closest('[data-open]'); if(open){e.preventDefault(); document.body.classList.remove('menu-open'); const v=open.dataset.open; if(v==='browser')openBrowser(); if(v==='home')openBrowser(); if(v==='updates')openUpdates(); if(v==='settings')openSettings(); if(v==='apps')openApps(); if(v==='links')openLinks(); if(v==='weather')openWeather(); if(v==='terms')openTermsOfService(); if(v==='developer')openDeveloperConsole(); if(v==='about')openAboutNyx(); return}
+      const open=e.target.closest('[data-open]'); if(open){e.preventDefault(); document.body.classList.remove('menu-open'); const v=open.dataset.open; if(v==='browser')openBrowser(); if(v==='home')openBrowser(); if(v==='updates')openUpdates(); if(v==='settings')openSettings(); if(v==='apps')openApps(); if(v==='links')openLinks(); if(v==='weather')openWeather(open.matches('.browser-mode-weather')?'top':'bottom',open); if(v==='terms')openTermsOfService(); if(v==='developer')openDeveloperConsole(); if(v==='about')openAboutNyx(); return}
       const app=e.target.closest('[data-app-url]');
       if(app && !app.closest('.browser-window')){
         e.preventDefault();
@@ -11075,6 +11168,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
   async function boot(){
     const hostedCloakEntry=shouldAutoLaunchHostedCloak();
     if(hostedCloakEntry) document.body.classList.add('hosted-cloak-entry');
+    document.documentElement.classList.toggle('nyx-chromeos',isChromeOsUser());
     document.body.classList.add('runtime-lag-guard');
     updateResponsiveFit();
     if(!localStorage.getItem('nyx.lagReducer')) store.set('nyx.lagReducer',true);

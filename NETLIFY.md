@@ -34,13 +34,13 @@ In **Netlify > Site configuration > Environment variables**, add `NYX_AI_API_KEY
 
 The Link Generator supports two access methods:
 
-- A verified Firebase email/password account can create up to three links per UTC day.
+- A verified Firebase email/password account can create up to five links per UTC day.
 - A Premium access code creates links without signing in and has no daily quota.
 
 To enable free accounts:
 
 1. In Firebase Console, open **Authentication > Sign-in method** and enable **Email/Password**.
-2. Open **Firestore Database** and create a database. The server stores daily counters in `nyxLinkGeneratorUsage` and temporary FreeDNS setup records in `nyxFreednsChallenges`.
+2. Open **Firestore Database** and create a database. The server stores daily counters in the `nyxLinkGeneratorUsage` collection.
 3. Open **Project settings > General** and copy the project's Web API key.
 4. Open **Project settings > Service accounts**, generate a private key, and keep the downloaded JSON private.
 5. In **Netlify > Project configuration > Environment variables**, add:
@@ -55,17 +55,6 @@ To enable free accounts:
 7. Trigger a new Netlify deploy after saving the variables.
 
 Never add the service-account JSON, private key, Bunny key, or Premium access code to Git or frontend JavaScript. The Firebase Web API key is public configuration, but the other values are server-only secrets.
-
-### FreeDNS hostnames
-
-Verified free-account users can connect a hostname from their own [FreeDNS](https://freedns.afraid.org/) account:
-
-1. In Link Generator, choose **My FreeDNS hostname**, enter the full hostname you plan to use, and select a content-filter report.
-2. Nyx creates a temporary Bunny target and displays the exact CNAME destination.
-3. In FreeDNS, add or edit the hostname as a **CNAME** pointing to that destination.
-4. Return to Nyx and choose **Verify CNAME**. Nyx verifies the public DNS record, connects it to Bunny, requests HTTPS, consumes one of the user's three daily links, and checks the selected filter.
-
-Nyx never asks for or stores FreeDNS credentials. FreeDNS does not provide this flow with OAuth, so the DNS record is created manually in the user's own FreeDNS account. Pending setups expire after 45 minutes.
 
 ## Test the build locally
 

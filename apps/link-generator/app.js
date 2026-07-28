@@ -13,21 +13,16 @@
     signIn:$('[data-account-sign-in]'),createAccount:$('[data-account-create]'),refreshAccount:$('[data-account-refresh]'),signOut:$('[data-account-sign-out]'),
     wizardCard:$('[data-wizard-card]'),wizardSteps:[...document.querySelectorAll('[data-wizard-step]')],wizardIndicators:[...document.querySelectorAll('[data-wizard-indicator]')],
     wizardProgress:$('[data-wizard-progress]'),wizardNext:[...document.querySelectorAll('[data-wizard-next]')],wizardBack:[...document.querySelectorAll('[data-wizard-back]')],wizardRestart:$('[data-wizard-restart]'),
-    reviewAccess:$('[data-review-access]'),reviewLabel:$('[data-review-label]'),reviewAddressLabel:$('[data-review-address-label]'),reviewFilter:$('[data-review-filter]'),reviewOrigin:$('[data-review-origin]'),reviewAmountRow:$('[data-review-amount-row]'),reviewAmount:$('[data-review-amount]'),confirm:$('[data-confirm]'),confirmText:$('[data-confirm-text]'),
-    amount:$('[data-premium-amount]'),amountField:$('[data-premium-amount-field]'),amountHint:$('[data-premium-amount-hint]'),detailsGrid:$('[data-details-grid]'),
-    linkType:$('[data-link-type]'),linkTypeHint:$('[data-link-type-hint]'),labelField:$('[data-label-field]'),freednsHostField:$('[data-freedns-host-field]'),freednsHostname:$('[data-freedns-hostname]'),
-    freednsSetup:$('[data-freedns-setup]'),freednsRecordHostname:$('[data-freedns-record-hostname]'),freednsRecordTarget:$('[data-freedns-record-target]'),freednsExpiry:$('[data-freedns-expiry]'),copyCname:$('[data-copy-cname]'),verifyFreedns:$('[data-verify-freedns]'),resultLinks:$('[data-result-links]')
+    reviewAccess:$('[data-review-access]'),reviewLabel:$('[data-review-label]'),reviewFilter:$('[data-review-filter]'),reviewOrigin:$('[data-review-origin]'),reviewAmountRow:$('[data-review-amount-row]'),reviewAmount:$('[data-review-amount]'),confirm:$('[data-confirm]'),confirmText:$('[data-confirm-text]'),
+    amount:$('[data-premium-amount]'),amountField:$('[data-premium-amount-field]'),amountHint:$('[data-premium-amount-hint]'),detailsGrid:$('[data-details-grid]')
   };
   let accessMode='account';
-  let linkType='cdn';
   let wizardStep=0;
   let premiumBatchLimit=10;
   let freeDailyLimit=3;
   let premiumImmediateCooldownAt=5;
   let premiumAccumulatedLimit=30;
   let premiumCooldownMinutes=10;
-  let freednsAvailable=false;
-  let pendingFreedns=null;
   let authConfig={enabled:false,apiKey:''};
   let authSession=readStoredSession();
 
@@ -49,9 +44,7 @@
   function setLoading(loading,label=''){
     refs.button.disabled=loading;
     const amount=selectedAmount();
-    const idleLabel=linkType==='freedns' ? 'Prepare FreeDNS link' : `Generate ${amount===1?'link':`${amount} links`}`;
-    const busyLabel=linkType==='freedns' ? 'Preparing CNAME...' : `Creating ${amount} link${amount===1?'':'s'}...`;
-    refs.button.querySelector('span').textContent=loading ? (label || busyLabel) : idleLabel;
+    refs.button.querySelector('span').textContent=loading ? (label || `Creating ${amount} link${amount===1?'':'s'}...`) : `Generate ${amount===1?'link':`${amount} links`}`;
   }
   function setAuthBusy(busy){
     [refs.signIn,refs.createAccount,refs.refreshAccount,refs.signOut].forEach(button=>{button.disabled=busy});
@@ -143,13 +136,10 @@
   }
   function setAccessMode(mode){
     accessMode=mode;
-    const freednsOption=refs.linkType.querySelector('option[value="freedns"]');
-    if(freednsOption) freednsOption.disabled=mode!=='account' || !freednsAvailable;
     refs.accountPanel.hidden=mode!=='account';
     refs.administratorPanel.hidden=mode!=='administrator';
-    if(mode==='administrator' && linkType==='freedns') setLinkType('cdn');
-    refs.amountField.hidden=mode!=='administrator' || linkType!=='cdn';
-    refs.detailsGrid.classList.toggle('premium',mode==='administrator' && linkType==='cdn');
+    refs.amountField.hidden=mode!=='administrator';
+    refs.detailsGrid.classList.toggle('premium',mode==='administrator');
     if(mode!=='administrator') refs.amount.value='1';
     updateAmountCopy();
     refs.modeButtons.forEach(button=>{
@@ -158,33 +148,17 @@
       button.setAttribute('aria-selected',String(active));
     });
   }
-  function setLinkType(type){
-    const wantsFreedns=type==='freedns';
-    linkType=wantsFreedns && accessMode==='account' && freednsAvailable ? 'freedns' : 'cdn';
-    refs.linkType.value=linkType;
-    refs.labelField.hidden=linkType==='freedns';
-    refs.freednsHostField.hidden=linkType!=='freedns';
-    refs.amountField.hidden=accessMode!=='administrator' || linkType!=='cdn';
-    refs.detailsGrid.classList.toggle('premium',accessMode==='administrator' && linkType==='cdn');
-    refs.detailsGrid.classList.toggle('freedns',linkType==='freedns');
-    refs.linkTypeHint.textContent=linkType==='freedns'
-      ? 'Enter a hostname you plan to add in your own FreeDNS account. Nyx will give you its CNAME destination.'
-      : 'Nyx creates and manages the CDN address automatically.';
-    updateAmountCopy();
-  }
   function selectedAmount(){
-    if(accessMode!=='administrator' || linkType==='freedns') return 1;
+    if(accessMode!=='administrator') return 1;
     const value=Number.parseInt(refs.amount.value,10);
     return Number.isInteger(value) ? Math.max(1,Math.min(premiumBatchLimit,value)) : 1;
   }
   function updateAmountCopy(){
     const amount=selectedAmount();
-    refs.reviewAmountRow.hidden=accessMode!=='administrator' || linkType==='freedns';
+    refs.reviewAmountRow.hidden=accessMode!=='administrator';
     refs.reviewAmount.textContent=`${amount} link${amount===1?'':'s'}`;
-    refs.confirmText.textContent=linkType==='freedns'
-      ? 'I understand Nyx creates a temporary Bunny target and I must connect my own FreeDNS CNAME.'
-      : `I understand this creates ${amount===1?'one resource':`${amount} resources`} on the Nyx Bunny account.`;
-    if(!refs.button.disabled) refs.button.querySelector('span').textContent=linkType==='freedns' ? 'Prepare FreeDNS link' : `Generate ${amount===1?'link':`${amount} links`}`;
+    refs.confirmText.textContent=`I understand this creates ${amount===1?'one resource':`${amount} resources`} on the Nyx Bunny account.`;
+    if(!refs.button.disabled) refs.button.querySelector('span').textContent=`Generate ${amount===1?'link':`${amount} links`}`;
   }
   function setWizardStep(nextStep,direction=nextStep>=wizardStep?'forward':'back'){
     const index=Math.max(0,Math.min(refs.wizardSteps.length-1,Number(nextStep) || 0));
@@ -208,10 +182,9 @@
   }
   function updateReview(){
     refs.reviewAccess.textContent=accessMode==='account' ? (authSession?.email || 'Free account') : 'Premium users';
-    refs.reviewAddressLabel.textContent=linkType==='freedns' ? 'FreeDNS hostname' : 'Label';
-    refs.reviewLabel.textContent=linkType==='freedns' ? refs.freednsHostname.value.trim().toLowerCase() : (refs.label.value.trim() || 'Automatic');
+    refs.reviewLabel.textContent=refs.label.value.trim() || 'Automatic';
     refs.reviewFilter.textContent=refs.filter.options[refs.filter.selectedIndex]?.textContent || 'Not selected';
-    refs.reviewOrigin.textContent=linkType==='freedns' ? 'FreeDNS CNAME connected to Nyx' : (refs.origin.textContent || 'Official Nyx origin');
+    refs.reviewOrigin.textContent=refs.origin.textContent || 'Official Nyx origin';
     updateAmountCopy();
   }
   async function validateAccessStep(){
@@ -232,12 +205,6 @@
     }
     if(wizardStep===1){
       if(!refs.filter.value){showNotice('Choose a content filter before continuing.','error');refs.filter.focus();return}
-      if(linkType==='freedns'){
-        const hostname=refs.freednsHostname.value.trim().toLowerCase();
-        if(!/^[a-z0-9](?:[a-z0-9.-]{1,251}[a-z0-9])$/.test(hostname) || hostname.split('.').length<3){
-          showNotice('Enter the complete hostname you plan to add in FreeDNS, such as study-room.mooo.com.','error');refs.freednsHostname.focus();return;
-        }
-      }
       if(accessMode==='administrator'){
         const rawAmount=Number.parseInt(refs.amount.value,10);
         if(!Number.isInteger(rawAmount) || rawAmount<1 || rawAmount>premiumBatchLimit){showNotice(`Choose an amount from 1 to ${premiumBatchLimit}.`,'error');refs.amount.focus();return}
@@ -352,87 +319,21 @@
     if(counts.info){showFilterResult('info',filterName,`${counts.info} informational`,`${counts.allowed} allowed; ${counts.info} did not return a blocked or allowed decision.`);return}
     showFilterResult('allowed',filterName,`${counts.allowed} allowed`,urls.length===1?'The selected filter currently reports this link as allowed.':'The selected filter currently reports every generated link as allowed.');
   }
-  function showFreednsInstructions(result,filterKey,filterName){
-    pendingFreedns={
-      hostname:String(result.hostname || '').toLowerCase(),
-      cnameTarget:String(result.cnameTarget || '').toLowerCase(),
-      filterKey,
-      filterName
-    };
-    refs.freednsRecordHostname.textContent=pendingFreedns.hostname;
-    refs.freednsRecordTarget.textContent=pendingFreedns.cnameTarget;
-    const minutes=Math.max(1,Math.ceil((Number(result.expiresAt || Date.now())-Date.now())/60_000));
-    refs.freednsExpiry.textContent=`This pending setup expires in about ${minutes} minute${minutes===1?'':'s'}. DNS changes can take a few minutes to appear.`;
-    refs.resultTitle.textContent='Finish your FreeDNS link';
-    refs.resultSubtitle.textContent='Add this CNAME in FreeDNS, then ask Nyx to verify it.';
-    refs.resultLinks.hidden=true;
-    refs.filterCheck.hidden=true;
-    refs.freednsSetup.hidden=false;
-    refs.resultCard.hidden=false;
-    setWizardStep(3);
-    requestAnimationFrame(()=>refs.resultCard.scrollIntoView({behavior:'smooth',block:'nearest'}));
-  }
-  async function verifyFreedns(){
-    if(!pendingFreedns) return;
-    refs.verifyFreedns.disabled=true;
-    refs.verifyFreedns.textContent='Checking DNS...';
-    showNotice('');
-    try{
-      const session=await currentVerifiedSession();
-      const result=await readJson(await fetch('/api/link-generator/freedns/verify',{
-        method:'POST',
-        headers:{Accept:'application/json','Content-Type':'application/json',Authorization:`Bearer ${session.idToken}`},
-        body:JSON.stringify({hostname:pendingFreedns.hostname})
-      }));
-      const links=(Array.isArray(result.links)?result.links:[]).map(item=>typeof item==='string'?item:item?.url).filter(Boolean);
-      if(!links.length && result.url) links.push(result.url);
-      if(!links.length) throw new Error('Nyx verified the DNS record but did not receive the finished address.');
-      const {filterKey,filterName}=pendingFreedns;
-      refs.freednsSetup.hidden=true;
-      refs.resultLinks.hidden=false;
-      refs.filterCheck.hidden=false;
-      refs.resultUrl.value=links.join('\n');
-      refs.resultCount.textContent='1 link';
-      refs.resultTitle.textContent='Your FreeDNS Nyx link is connected';
-      refs.resultSubtitle.textContent=result.certificatePending ? 'DNS is connected. Bunny is finishing HTTPS setup.' : 'DNS and HTTPS setup are being verified.';
-      refs.open.href=links[0];
-      setOpenReady(false);
-      const [,cdnReady]=await Promise.all([checkGeneratedLinks(links,filterKey,filterName),waitForCdnReadiness(links[0])]);
-      showNotice(cdnReady
-        ? `The link is ready. ${result.remaining} free link${result.remaining===1?'':'s'} remaining today.`
-        : (refs.open.dataset.readinessMessage || 'The hostname is connected, but Bunny is still issuing HTTPS. Try again shortly.'),
-      cdnReady ? '' : 'error');
-      pendingFreedns=null;
-    }catch(error){
-      showNotice(error.message,'error');
-    }finally{
-      refs.verifyFreedns.disabled=false;
-      refs.verifyFreedns.textContent='Verify CNAME';
-    }
-  }
   async function loadStatus(){
     try{
       const status=await readJson(await fetch('/api/link-generator/status',{headers:{Accept:'application/json'},cache:'no-store'}));
       premiumBatchLimit=Math.max(1,Math.min(10,Number.parseInt(status.premiumBatchLimit,10) || 10));freeDailyLimit=Math.max(1,Number.parseInt(status.freeDailyLimit,10) || 3);premiumImmediateCooldownAt=Math.max(1,Number.parseInt(status.premiumImmediateCooldownAt,10) || 5);premiumAccumulatedLimit=Math.max(premiumImmediateCooldownAt,Number.parseInt(status.premiumAccumulatedLimit,10) || 30);premiumCooldownMinutes=Math.max(1,Number.parseInt(status.premiumCooldownMinutes,10) || 10);refs.amount.max=String(premiumBatchLimit);refs.amountHint.textContent=`Choosing ${premiumImmediateCooldownAt}–${premiumBatchLimit} links starts a ${premiumCooldownMinutes}-minute cooldown. Smaller batches start it after ${premiumAccumulatedLimit} total links.`;renderAccount();
-      freednsAvailable=Boolean(status.freednsAccess);
-      const freednsOption=refs.linkType.querySelector('option[value="freedns"]');
-      if(freednsOption){
-        freednsOption.disabled=!freednsAvailable || accessMode!=='account';
-        freednsOption.textContent=freednsAvailable ? 'My FreeDNS hostname' : 'My FreeDNS hostname (unavailable)';
-      }
-      if(!freednsAvailable && linkType==='freedns') setLinkType('cdn');
       refs.origin.textContent=status.origin || 'Not configured';setStatus(status.available,status.available ? 'Ready' : 'Setup required');
       if(!status.available) showNotice('The Nyx administrator still needs to finish the Link Generator environment settings in Netlify.','error');
     }catch(error){refs.origin.textContent='Unavailable';setStatus(false,'Unavailable');showNotice(`Could not check the generator: ${error.message}`,'error')}
   }
 
   refs.modeButtons.forEach(button=>button.addEventListener('click',()=>setAccessMode(button.dataset.accessMode)));
-  refs.linkType.addEventListener('change',()=>setLinkType(refs.linkType.value));
   refs.amount.addEventListener('input',updateAmountCopy);
   refs.wizardNext.forEach(button=>button.addEventListener('click',handleWizardNext));
   refs.wizardBack.forEach(button=>button.addEventListener('click',()=>{showNotice('');setWizardStep(wizardStep-1,'back')}));
   refs.wizardRestart.addEventListener('click',()=>{
-    refs.label.value='';refs.freednsHostname.value='';refs.filter.value='';refs.confirm.checked=false;refs.resultCard.hidden=true;refs.freednsSetup.hidden=true;refs.resultLinks.hidden=false;refs.filterCheck.hidden=false;pendingFreedns=null;showNotice('');setWizardStep(1,'back');
+    refs.label.value='';refs.filter.value='';refs.confirm.checked=false;refs.resultCard.hidden=true;showNotice('');setWizardStep(1,'back');
   });
   refs.signIn.addEventListener('click',handleSignIn);
   refs.createAccount.addEventListener('click',handleCreateAccount);
@@ -454,16 +355,6 @@
         if(!refs.accessCode.value) throw new Error('Enter your Premium access code.');
         body.accessCode=refs.accessCode.value;
         body.amount=selectedAmount();
-      }
-      if(linkType==='freedns'){
-        const result=await readJson(await fetch('/api/link-generator/freedns/prepare',{
-          method:'POST',
-          headers,
-          body:JSON.stringify({hostname:refs.freednsHostname.value.trim().toLowerCase()})
-        }));
-        showFreednsInstructions(result,selectedFilter,selectedFilterName);
-        showNotice('CNAME instructions are ready. Add the record in FreeDNS, wait for DNS to update, then select Verify CNAME.');
-        return;
       }
       const result=await readJson(await fetch('/api/link-generator',{method:'POST',headers,body:JSON.stringify(body)}));
       const links=(Array.isArray(result.links)?result.links:[]).map(item=>typeof item==='string'?item:item?.url).filter(Boolean);
@@ -490,12 +381,6 @@
     showNotice(ready ? 'The CDN link is ready. Select Open first again.' : (refs.open.dataset.readinessMessage || 'The CDN link is not ready yet.'),ready ? '' : 'error');
   });
   refs.copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(refs.resultUrl.value);refs.copy.textContent='Copied all';setTimeout(()=>{refs.copy.textContent='Copy all'},1400)}catch{refs.resultUrl.select();document.execCommand('copy')}});
-  refs.copyCname.addEventListener('click',async()=>{
-    if(!pendingFreedns) return;
-    try{await navigator.clipboard.writeText(pendingFreedns.cnameTarget);refs.copyCname.textContent='Copied';setTimeout(()=>{refs.copyCname.textContent='Copy destination'},1400)}
-    catch{showNotice(`Copy this destination: ${pendingFreedns.cnameTarget}`)}
-  });
-  refs.verifyFreedns.addEventListener('click',verifyFreedns);
 
-  applyTheme();renderAccount();setLinkType('cdn');setWizardStep(0);Promise.all([loadStatus(),loadAuthConfig(),loadFilters()]);
+  applyTheme();renderAccount();setWizardStep(0);Promise.all([loadStatus(),loadAuthConfig(),loadFilters()]);
 })();

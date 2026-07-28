@@ -23,7 +23,7 @@ html body.theme-sakura{
   --nyx-load-bright:#e2d9e0;--nyx-load-mid:#c6a0ba;--nyx-load-accent:#9e718f;--nyx-load-deep:#67475f;--nyx-load-muted:#a892a2;--nyx-load-surface:#18151d;--nyx-load-bg:#0e0a10;--nyx-load-deep-bg:#080509;--nyx-load-glow:transparent;
 }
 html body.theme-fresh{
-  --nyx-load-bright:#d4e2e5;--nyx-load-mid:#8fb8c0;--nyx-load-accent:#638e97;--nyx-load-deep:#3e626a;--nyx-load-muted:#879fa4;--nyx-load-surface:#111a1f;--nyx-load-bg:#091015;--nyx-load-deep-bg:#05090c;--nyx-load-glow:transparent;
+  --nyx-load-bright:#d9e5d6;--nyx-load-mid:#a2bd9a;--nyx-load-accent:#728f6b;--nyx-load-deep:#405d42;--nyx-load-muted:#91a68d;--nyx-load-surface:#131c15;--nyx-load-bg:#0b130d;--nyx-load-deep-bg:#060a07;--nyx-load-glow:transparent;
 }
 
 html body.browser-shell.theme-midnight{
@@ -112,21 +112,25 @@ html body.browser-shell.theme-sakura{
   --nyx-dot-color:#332936;
 }
 html body.browser-shell.theme-fresh{
-  --nyx-home-wordmark:#8fb8c0;
-  --nyx-home-text:#d4e2e5;
-  --nyx-home-muted:#879fa4;
-  --nyx-home-line:#304850;
-  --nyx-home-panel:#111a1f;
-  --nyx-home-panel-soft:#172228;
-  --nyx-chrome-accent:#638e97;
-  --nyx-chrome-bright:#8fb8c0;
-  --nyx-chrome-base:#10191e;
-  --nyx-chrome-deep:#091015;
-  --nyx-chrome-active:#20333a;
-  --nyx-chrome-hover:#284049;
-  --nyx-shell-icon:#8fb8c0!important;
-  --nyx-final-shortcut-icon:#8fb8c0!important;
-  --nyx-dot-color:#24343d;
+  --nyx-unified-canvas:#162019;
+  --nyx-unified-top:#0b130d;
+  --nyx-unified-field:#121b14;
+  --nyx-unified-dot:#28382b;
+  --nyx-home-wordmark:#a2bd9a;
+  --nyx-home-text:#d9e5d6;
+  --nyx-home-muted:#91a68d;
+  --nyx-home-line:#354b36;
+  --nyx-home-panel:#131c15;
+  --nyx-home-panel-soft:#19241b;
+  --nyx-chrome-accent:#728f6b;
+  --nyx-chrome-bright:#a2bd9a;
+  --nyx-chrome-base:#111a13;
+  --nyx-chrome-deep:#0b130d;
+  --nyx-chrome-active:#263526;
+  --nyx-chrome-hover:#2e422f;
+  --nyx-shell-icon:#a2bd9a!important;
+  --nyx-final-shortcut-icon:#a2bd9a!important;
+  --nyx-dot-color:#28382b;
   color-scheme:dark!important;
 }
 
@@ -1168,6 +1172,41 @@ html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-
   --theme-border:var(--nyx-home-line)!important;
   --theme-a:var(--nyx-chrome-accent)!important;
   --theme-b:var(--nyx-chrome-bright)!important;
+  --accent:var(--nyx-chrome-accent)!important;
+  --nyx-shell-icon:var(--nyx-home-wordmark)!important;
+  --nyx-final-shortcut-icon:var(--nyx-home-wordmark)!important;
+  --nyx-purple-edge:var(--nyx-home-line)!important;
+  --nyx-purple-soft:color-mix(in srgb,var(--nyx-chrome-accent) 10%,transparent)!important;
+  --glass2:color-mix(in srgb,var(--nyx-chrome-accent) 8%,transparent)!important;
+  --glass-control:color-mix(in srgb,var(--nyx-chrome-accent) 10%,transparent)!important;
+  --line:var(--nyx-home-line)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .top-os.top-os .top-fullscreen{
+  border-color:var(--nyx-home-line)!important;
+  background:color-mix(in srgb,var(--nyx-chrome-accent) 10%,transparent)!important;
+  color:var(--nyx-home-wordmark)!important;
+  box-shadow:none!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .top-os.top-os .top-fullscreen:hover{
+  border-color:var(--nyx-home-line)!important;
+  background:color-mix(in srgb,var(--nyx-chrome-accent) 17%,transparent)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .top-os.top-os
+  .browser-mode-address .fresh-real-icon{
+  color:var(--nyx-shell-icon)!important;
+  -webkit-text-fill-color:var(--nyx-shell-icon)!important;
+  background:var(--nyx-shell-icon)!important;
+  background-color:var(--nyx-shell-icon)!important;
+  border-color:var(--nyx-home-line)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell #desktop#desktop
+  .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts]
+  .home-shortcut .home-shortcut-glyph{
+  color:var(--nyx-final-shortcut-icon)!important;
+  -webkit-text-fill-color:var(--nyx-final-shortcut-icon)!important;
+  background:var(--nyx-final-shortcut-icon)!important;
+  background-color:var(--nyx-final-shortcut-icon)!important;
+  border-color:var(--nyx-home-line)!important;
 }
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell #desktop .browser-home .home-shortcut-add > b::before,
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell #desktop .browser-home .home-shortcut-add > b::after{
@@ -1263,4 +1302,110 @@ html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell #desktop .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > div.quick-tile.home-shortcut > button.home-shortcut-menu-btn > .shortcut-real-dots::after{
   content:none!important;
   display:none!important;
+}
+
+/* Fern is a complete dark-green palette, including the settings surfaces
+   that historically inherited Fresh's old white/teal treatment. */
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"] body.browser-shell.theme-fresh.browser-shell{
+  color:var(--nyx-home-text)!important;
+  border-color:var(--nyx-home-line)!important;
+}
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"] body.browser-shell.theme-fresh.browser-shell
+  #desktop .browser-home .home-shortcut .home-shortcut-open{
+  color:var(--nyx-home-wordmark)!important;
+  -webkit-text-fill-color:var(--nyx-home-wordmark)!important;
+}
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"] body.browser-shell.theme-fresh.browser-shell
+  .browser-shell-settings-overlay.browser-shell-settings-overlay :is(
+    .browser-shell-settings-panel,
+    .settings-app,
+    .settings-main,
+    .settings-side,
+    .nyx-settings-nav,
+    .nyx-settings-control
+  ){
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+}
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"] body.browser-shell.theme-fresh.browser-shell:is(body,#nyx-hover-specificity):is(body,#nyx-fern-specificity)
+  .browser-shell-settings-overlay.browser-shell-settings-overlay :is(
+    .settings-block,
+    .settings-card,
+    .nyx-settings-group > .settings-block
+  ){
+  border-color:var(--nyx-home-line)!important;
+  background:color-mix(in srgb,var(--nyx-home-panel-soft) 88%,transparent)!important;
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+  box-shadow:inset 0 1px 0 color-mix(in srgb,var(--nyx-home-bright) 7%,transparent)!important;
+}
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"] body.browser-shell.theme-fresh.browser-shell
+  .browser-shell-settings-overlay.browser-shell-settings-overlay :is(
+    .settings-block,
+    .settings-card,
+    .nyx-settings-group,
+    .nyx-settings-control
+  ) :is(h1,h2,h3,p,label,span,strong,b){
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+}
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"] body.browser-shell.theme-fresh.browser-shell
+  .browser-shell-settings-overlay.browser-shell-settings-overlay :is(
+    .settings-action,
+    .settings-toggle,
+    .nyx-settings-nav button
+  ){
+  border-color:var(--nyx-home-line)!important;
+  background:color-mix(in srgb,var(--nyx-chrome-accent) 13%,var(--nyx-unified-field))!important;
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+}
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"] body.browser-shell.theme-fresh.browser-shell
+  .browser-shell-settings-overlay.browser-shell-settings-overlay :is(
+    .settings-action,
+    .settings-toggle,
+    .nyx-settings-nav button
+  ):hover,
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"] body.browser-shell.theme-fresh.browser-shell
+  .browser-shell-settings-overlay.browser-shell-settings-overlay .nyx-settings-nav button.active{
+  border-color:var(--nyx-chrome-bright)!important;
+  background:color-mix(in srgb,var(--nyx-chrome-accent) 22%,var(--nyx-unified-field))!important;
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+}
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"] body.browser-shell.theme-fresh.browser-shell:is(body,#nyx-hover-specificity):is(body,#nyx-fern-specificity)
+  .browser-shell-settings-overlay.browser-shell-settings-overlay .nyx-settings-side{
+  border-color:var(--nyx-home-line)!important;
+  background:color-mix(in srgb,var(--nyx-home-panel) 92%,transparent)!important;
+  color:var(--nyx-home-text)!important;
+}
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"] body.browser-shell.theme-fresh.browser-shell:is(body,#nyx-hover-specificity):is(body,#nyx-fern-specificity)
+  .browser-shell-settings-overlay.browser-shell-settings-overlay :is(
+    .nyx-settings-filter,
+    .nyx-settings-filter input,
+    .nyx-settings-nav button,
+    .nyx-settings-nav button span,
+    .settings-main h1,
+    .nyx-settings-category-title
+  ){
+  border-color:var(--nyx-home-line)!important;
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+}
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"] body.browser-shell.theme-fresh.browser-shell:is(body,#nyx-hover-specificity):is(body,#nyx-fern-specificity)
+  .browser-shell-settings-overlay.browser-shell-settings-overlay .nyx-settings-filter{
+  background:color-mix(in srgb,var(--nyx-chrome-accent) 12%,var(--nyx-unified-field))!important;
+}
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"] body.browser-shell.theme-fresh.browser-shell:is(body,#nyx-hover-specificity):is(body,#nyx-fern-specificity)
+  .browser-shell-settings-overlay.browser-shell-settings-overlay .nyx-settings-nav button.active,
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"] body.browser-shell.theme-fresh.browser-shell:is(body,#nyx-hover-specificity):is(body,#nyx-fern-specificity)
+  .browser-shell-settings-overlay.browser-shell-settings-overlay .nyx-settings-nav button.active:hover{
+  border-color:var(--nyx-chrome-bright)!important;
+  background:color-mix(in srgb,var(--nyx-chrome-accent) 28%,var(--nyx-unified-field))!important;
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+}
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"] body.browser-shell.theme-fresh.browser-shell
+  .browser-shell-settings-overlay.browser-shell-settings-overlay input[type="range"]{
+  accent-color:var(--nyx-chrome-accent)!important;
 }

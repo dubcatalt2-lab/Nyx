@@ -268,25 +268,19 @@ body.theme-ruby .settings-main p,
 body.theme-ruby .settings-block label,
 body.theme-ruby .quick-tile span,
 body.theme-ruby .dock span,
-body.theme-ruby .browser-mode-menu button,
-body.theme-ruby .watchparty-title,
-body.theme-ruby .watchparty-meta{background:linear-gradient(90deg,#fee2e2,#fb7185);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+body.theme-ruby .browser-mode-menu button{background:linear-gradient(90deg,#fee2e2,#fb7185);-webkit-background-clip:text;background-clip:text;color:transparent!important}
 body.theme-emerald .home-sub,
 body.theme-emerald .settings-main p,
 body.theme-emerald .settings-block label,
 body.theme-emerald .quick-tile span,
 body.theme-emerald .dock span,
-body.theme-emerald .browser-mode-menu button,
-body.theme-emerald .watchparty-title,
-body.theme-emerald .watchparty-meta{background:linear-gradient(90deg,#dcfce7,#34d399);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+body.theme-emerald .browser-mode-menu button{background:linear-gradient(90deg,#dcfce7,#34d399);-webkit-background-clip:text;background-clip:text;color:transparent!important}
 body.theme-sakura .home-sub,
 body.theme-sakura .settings-main p,
 body.theme-sakura .settings-block label,
 body.theme-sakura .quick-tile span,
 body.theme-sakura .dock span,
-body.theme-sakura .browser-mode-menu button,
-body.theme-sakura .watchparty-title,
-body.theme-sakura .watchparty-meta{background:linear-gradient(90deg,#fce7f3,#f9a8d4);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+body.theme-sakura .browser-mode-menu button{background:linear-gradient(90deg,#fce7f3,#f9a8d4);-webkit-background-clip:text;background-clip:text;color:transparent!important}
 body.theme-ruby .browser-mode-url,
 body.theme-ruby .urlbar,
 body.theme-ruby select,
@@ -322,10 +316,7 @@ body.theme-sakura .browser-bookmark-panel{
 }
 body.theme-ruby .browser-mode-url,
 body.theme-emerald .browser-mode-url,
-body.theme-sakura .browser-mode-url,
-body.theme-ruby .watchparty-options select,
-body.theme-emerald .watchparty-options select,
-body.theme-sakura .watchparty-options select{
+body.theme-sakura .browser-mode-url{
   color:var(--theme-strong)!important;
   caret-color:var(--theme-soft);
   border-color:color-mix(in srgb,var(--theme-a) 60%,rgba(255,255,255,.22))!important;
@@ -334,36 +325,6 @@ body.theme-sakura .watchparty-options select{
 body.theme-ruby .browser-mode-url::placeholder,
 body.theme-emerald .browser-mode-url::placeholder,
 body.theme-sakura .browser-mode-url::placeholder{color:color-mix(in srgb,var(--theme-strong) 70%,transparent)}
-body.theme-ruby .watchparty-stop,
-body.theme-ruby .watchparty-center-controls button,
-body.theme-emerald .watchparty-stop,
-body.theme-emerald .watchparty-center-controls button,
-body.theme-sakura .watchparty-stop,
-body.theme-sakura .watchparty-center-controls button{
-  background:linear-gradient(145deg,color-mix(in srgb,var(--theme-a) 70%,#ffffff 4%),color-mix(in srgb,var(--theme-b) 80%,#000 8%))!important;
-  color:var(--theme-strong)!important;
-  border-color:color-mix(in srgb,var(--theme-a) 62%,rgba(255,255,255,.2))!important;
-}
-body.theme-ruby .watchparty-progress,
-body.theme-emerald .watchparty-progress,
-body.theme-sakura .watchparty-progress{
-  accent-color:var(--theme-soft)!important;
-}
-body.theme-ruby .watchparty-title,
-body.theme-ruby .watchparty-meta,
-body.theme-ruby .watchparty-time,
-body.theme-emerald .watchparty-title,
-body.theme-emerald .watchparty-meta,
-body.theme-emerald .watchparty-time,
-body.theme-sakura .watchparty-title,
-body.theme-sakura .watchparty-meta,
-body.theme-sakura .watchparty-time{
-  background:var(--theme-text-gradient);
-  -webkit-background-clip:text;
-  background-clip:text;
-  color:transparent!important;
-  -webkit-text-fill-color:transparent;
-}
 body.theme-ruby .quick-tile:not(:hover),
 body.theme-emerald .quick-tile:not(:hover),
 body.theme-sakura .quick-tile:not(:hover){
@@ -411,154 +372,16 @@ body.bg-enhanced::after{
   overflow:hidden;
   display:none;
 }
-/* //watchparty-css */
-.watchparty{
-  position:fixed;
-  inset:0;
-  z-index:8200;
-  display:none;
-  background:#020204;
-  color:white;
-  overflow:hidden;
-}
-body.watchparty-active .watchparty{display:block}
-body.watchparty-active > *:not(.watchparty):not(script){visibility:hidden!important;pointer-events:none!important}
-body.watchparty-active .watchparty,
-body.watchparty-active .watchparty *{visibility:visible!important;pointer-events:auto!important}
-.watchparty-video{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  object-fit:contain;
-  object-position:center;
-  background:#020204;
-  image-rendering:auto;
-  transition:filter .22s ease,transform .22s ease,width .22s ease,height .22s ease;
-}
-.watchparty-overlay{
-  position:absolute;
-  inset:0;
-  display:flex;
-  flex-direction:column;
-  justify-content:space-between;
-  padding:24px clamp(18px,4vw,58px);
-  opacity:0;
-  transition:opacity .22s ease;
-  background:linear-gradient(180deg,rgba(0,0,0,.62),transparent 28%,transparent 62%,rgba(0,0,0,.74));
-}
-.watchparty.show-controls .watchparty-overlay{opacity:1}
-.watchparty-top,
-.watchparty-bottom-row,
-.watchparty-options,
-.watchparty-center-controls{
-  display:flex;
-  align-items:center;
-}
-.watchparty-top{
-  justify-content:space-between;
-  gap:18px;
-}
-.watchparty-title{
-  font-size:clamp(22px,3vw,44px);
-  line-height:1.05;
-  font-weight:1000;
-  text-shadow:0 3px 18px rgba(0,0,0,.8);
-}
-.watchparty-meta{
-  margin-top:7px;
-  color:#cfd6df;
-  font-weight:800;
-}
-.watchparty-stop,
-.watchparty-center-controls button,
-.watchparty-options select{
-  border:1px solid rgba(255,255,255,.24);
-  color:white;
-  background:linear-gradient(145deg,rgba(226,232,240,.28),rgba(74,82,95,.56));
-  box-shadow:0 16px 42px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.2);
-  backdrop-filter:blur(16px) saturate(1.1);
-}
-.watchparty-stop{
-  min-width:78px;
-  height:42px;
-  border-radius:999px;
-  font-weight:1000;
-}
-.watchparty-center-controls{
-  justify-content:center;
-  gap:24px;
-}
-.watchparty-play{
-  width:96px;
-  height:96px;
-  border-radius:50%;
-  font-size:38px;
-  line-height:1;
-}
-.watchparty-skip{
-  min-width:82px;
-  height:54px;
-  border-radius:999px;
-  font-weight:1000;
-}
-.watchparty-bottom{
-  display:grid;
-  gap:12px;
-}
-.watchparty-progress{
-  width:100%;
-  accent-color:#dce3eb;
-  cursor:default;
-}
-.watchparty-bottom-row{
-  justify-content:space-between;
-  gap:14px;
-}
-.watchparty-time{
-  color:#e5ebf2;
-  font-weight:900;
-  text-shadow:0 2px 12px rgba(0,0,0,.75);
-}
-.watchparty-options{
-  justify-content:flex-end;
-  gap:8px;
-  flex-wrap:wrap;
-}
-.watchparty-options select{
-  min-height:36px;
-  border-radius:999px;
-  padding:0 12px;
-  font-weight:900;
-}
-.watchparty-options option{color:#111827;background:#f3f4f6}
 body.browser-shell .quick-tile,
 body.browser-shell .settings-action,
 body.browser-shell .settings-preset,
-body.browser-shell .settings-side button,
-body.browser-shell .watchparty-center-controls button,
-body.browser-shell .watchparty-stop{
+body.browser-shell .settings-side button{
   border-radius:24px;
 }
 body.browser-shell .quick-icon,
 body.browser-shell .settings-preset .quick-icon{
   border-radius:22px;
 }
-.watchparty-status{
-  position:absolute;
-  left:50%;
-  bottom:86px;
-  transform:translateX(-50%);
-  max-width:min(560px,calc(100vw - 34px));
-  padding:10px 13px;
-  border-radius:12px;
-  background:rgba(0,0,0,.55);
-  color:#e5e7eb;
-  font-size:13px;
-  text-align:center;
-  pointer-events:none;
-}
-.watchparty-status:empty{display:none}
 video::cue{
   color:white;
   background:rgba(0,0,0,.62);

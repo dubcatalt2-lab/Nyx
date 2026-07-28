@@ -9,7 +9,7 @@
 <link rel="manifest" href="/app.webmanifest">
 <link rel="apple-touch-icon" href="/assets/icons/nyx-app-192.png">
 <meta name="theme-color" content="#0b1628">
-<script src="js/nyx-logo.js?v=20260717-muted-theme-logo-v3"></script>
+<script src="js/nyx-logo.js?v=20260728-fern-v4"></script>
 <script>
 (() => {
   const favicon=document.getElementById('appFavicon');
@@ -30,7 +30,7 @@
 })();
 </script>
 <script src="startup.js?v=20260726-chromebook-layout-1"></script>
-<link rel="stylesheet" href="styles.css?v=20260727-founder-profile-v18">
+<link rel="stylesheet" href="styles.css?v=20260728-fern-v23">
 
 </head>
 <body>
@@ -251,70 +251,6 @@
 </div>
 <!-- //visual-effects -->
 <div id="visualEffects" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-<!-- //watchparty-player -->
-<section id="watchParty" class="watchparty" aria-hidden="true">
-  <video id="watchPartyVideo" class="watchparty-video" preload="none" playsinline crossorigin="anonymous">
-    <track id="watchPartyTrack" kind="subtitles" label="English" srclang="en">
-  </video>
-  <div id="watchPartyOverlay" class="watchparty-overlay">
-    <div class="watchparty-top">
-      <div>
-        <div id="watchPartyMovieTitle" class="watchparty-title">How to Train Your Dragon: The Hidden World</div>
-      </div>
-      <button id="watchPartyStop" class="watchparty-stop" type="button" title="Stop WatchParty">Exit</button>
-    </div>
-    <div class="watchparty-center-controls">
-      <button id="watchPartyBack10" class="watchparty-skip" type="button" title="Back 10 seconds">&#8634; 10</button>
-      <button id="watchPartyPlay" class="watchparty-play" type="button" title="Pause or play">&#9654;</button>
-      <button id="watchPartyForward10" class="watchparty-skip" type="button" title="Forward 10 seconds">10 &#8635;</button>
-    </div>
-    <div class="watchparty-bottom">
-      <input id="watchPartyProgress" class="watchparty-progress" type="range" min="0" max="1000" value="0" step="1" aria-label="Movie progress">
-      <div class="watchparty-bottom-row">
-        <span id="watchPartyTime" class="watchparty-time">0:00 / 0:00</span>
-        <div class="watchparty-options">
-          <select id="watchPartyMovie" title="Movie">
-            <option value="hiddenWorld">How to Train Your Dragon: The Hidden World</option>
-            <option value="dragon2">How to Train Your Dragon 2</option>
-            <option value="dragon2025">How to Train Your Dragon (2025)</option>
-            <option value="lastJedi">Star Wars: The Last Jedi</option>
-          </select>
-          <select id="watchPartySubtitles" title="Subtitles">
-            <option value="off">Subtitles Off</option>
-            <option value="en">English Subtitles</option>
-            <option value="custom">Choose Subtitle File...</option>
-          </select>
-          <input id="watchPartySubtitleFile" type="file" accept=".vtt,.srt,text/vtt,text/plain" hidden>
-          <select id="watchPartySpeed" title="Speed">
-            <option value="0.5">0.5x</option>
-            <option value="0.75">0.75x</option>
-            <option value="1" selected>1x</option>
-            <option value="1.25">1.25x</option>
-            <option value="1.5">1.5x</option>
-            <option value="1.75">1.75x</option>
-            <option value="2">2x</option>
-          </select>
-          <select id="watchPartyQuality" title="Quality">
-            <option value="1440">1440p</option>
-            <option value="1080">1080p</option>
-            <option value="720" selected>720p</option>
-            <option value="480">480p</option>
-            <option value="360">360p</option>
-            <option value="240">240p</option>
-            <option value="144">144p</option>
-          </select>
-          <select id="watchPartyEnhancer" title="Video enhancer">
-            <option value="off">Enhancer Off</option>
-            <option value="sharp">Sharp Boost</option>
-            <option value="smooth">Smooth Motion</option>
-            <option value="max">Max Enhance</option>
-          </select>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div id="watchPartyStatus" class="watchparty-status">WatchParty ready</div>
-</section>
 <!-- //top-bar-title-clock -->
 <div class="top-os">
   <div class="brand-mini"><span id="brandName">ռʏӼ</span><span>|</span><button id="userGreeting" class="user-chip needs-name" data-open="settings">Set username</button></div>
@@ -394,6 +330,6 @@
 <script src="/runtime-config.js"></script>
 <script src="js/loading-screen.js?v=20260727-background-progress-v10"></script>
 <script src="js/pwa-install.js?v=20260727-install-nyx-v1"></script>
-<script src="script.js?v=20260727-install-nyx-v57"></script>
+<script src="script.js?v=20260728-credits-v60"></script>
 </body>
 </html>

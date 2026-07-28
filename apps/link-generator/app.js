@@ -191,14 +191,31 @@
     showNotice('');
     if(accessMode==='administrator'){
       if(!refs.accessCode.value){showNotice('Enter your Premium access code to continue.','error');refs.accessCode.focus();return false}
-      return true;
+      try{
+        showNotice('Checking your Premium access code...');
+        const result=await readJson(await fetch('/api/link-generator/validate-access',{
+          method:'POST',
+          headers:{Accept:'application/json','Content-Type':'application/json'},
+          body:JSON.stringify({accessCode:refs.accessCode.value})
+        }));
+        if(result.valid!==true) throw new Error('The Premium access code could not be verified.');
+        return true;
+      }catch(error){
+        showNotice(error.message || 'The Premium access code is incorrect.','error');
+        refs.accessCode.focus();
+        refs.accessCode.select();
+        return false;
+      }
     }
     if(!authConfig.enabled){showNotice('Free account access is not configured yet. Choose Premium users to continue.','error');return false}
     if(!authSession?.idToken){showNotice('Sign in or create a verified free account before continuing.','error');refs.email.focus();return false}
     try{await currentVerifiedSession();renderAccount();return true}
     catch(error){showNotice(friendlyFirebaseError(error),'error');return false}
   }
-  async function handleWizardNext(){
+  async function handleWizardNext(event){
+    const nextButton=event?.currentTarget;
+    if(nextButton) nextButton.disabled=true;
+    try{
     if(wizardStep===0){
       if(!await validateAccessStep()) return;
       showNotice('');setWizardStep(1);return;
@@ -210,6 +227,9 @@
         if(!Number.isInteger(rawAmount) || rawAmount<1 || rawAmount>premiumBatchLimit){showNotice(`Choose an amount from 1 to ${premiumBatchLimit}.`,'error');refs.amount.focus();return}
       }
       showNotice('');updateReview();setWizardStep(2);
+    }
+    }finally{
+      if(nextButton) nextButton.disabled=false;
     }
   }
   async function loadAuthConfig(){

@@ -638,7 +638,7 @@ body.theme-fresh :is(
   h1,h2,h3,h4,h5,h6,p,span,label,strong,small,button,a,
   .home-heading,.home-sub,.titlebar-title,.desktop-center-clock,.browser-shell-clock,
   .browser-top-clock,.quick-tile span,.dock span,.browser-mode-menu button,
-  .watchparty-title,.watchparty-meta,.weather-panel,.weather-panel *,
+  .weather-panel,.weather-panel *,
   .settings-app,.settings-app *, .apps-panel,.apps-panel *
 ){
   color:#075f70!important;

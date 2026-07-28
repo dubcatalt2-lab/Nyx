@@ -80,16 +80,18 @@ html body #setupScreen[data-preview-theme="sakura"]{
 }
 
 html body #setupScreen[data-preview-theme="fresh"]{
-  --setup-canvas:#121b20;
-  --setup-surface:#10191d;
-  --setup-deep:#05090c;
-  --setup-control:#0e191d;
-  --setup-control-hover:#1b2b31;
-  --setup-selected:#24383f;
-  --setup-accent:#56828b;
-  --setup-bright:#7caab2;
-  --setup-text:#bed4d8;
-  --setup-muted:#78959b;
+  --setup-canvas:#162019;
+  --setup-surface:#131c15;
+  --setup-deep:#060a07;
+  --setup-control:#111a13;
+  --setup-control-hover:#233225;
+  --setup-selected:#2d402f;
+  --setup-accent:#728f6b;
+  --setup-bright:#a2bd9a;
+  --setup-text:#d9e5d6;
+  --setup-muted:#91a68d;
+  --setup-line:rgba(114,143,107,.42);
+  --setup-line-soft:rgba(162,189,154,.17);
 }
 
 html body .setup-screen{
@@ -363,6 +365,16 @@ html body .setup-theme-card[data-setup-theme-card="midnight"]{
   --preview-border:rgba(111,143,185,.78);
 }
 
+html body .setup-theme-card[data-setup-theme-card="fresh"]{
+  --preview-accent:#728f6b;
+  --preview-border:rgba(114,143,107,.78);
+  color:#d9e5d6;
+}
+
+html body .setup-theme-preview.fresh{
+  background:#26382a;
+}
+
 html body .setup-theme-card:hover{
   border-color:var(--preview-border);
   background:var(--setup-control-hover);
@@ -598,4 +610,51 @@ html body .setup-actions [data-skip-setup]:hover{
   html body .setup-step{
     animation:none!important;
   }
+}
+
+/* Keep Fern's first-run experience inside the same earthy palette. The old
+   Fresh theme applied teal text and white controls with broad !important
+   selectors, so these scoped rules intentionally win only for this preview. */
+html body #setupScreen[data-preview-theme="fresh"]{
+  color:var(--setup-text)!important;
+  -webkit-text-fill-color:var(--setup-text)!important;
+}
+html body #setupScreen[data-preview-theme="fresh"] .setup-panel{
+  border-color:var(--setup-line)!important;
+  background:color-mix(in srgb,var(--setup-surface) 94%,transparent)!important;
+  color:var(--setup-text)!important;
+  -webkit-text-fill-color:var(--setup-text)!important;
+}
+html body #setupScreen[data-preview-theme="fresh"] :is(
+  h1,h2,h3,strong,b,span,.setup-theme-name,.setup-shortcut-card
+){
+  color:var(--setup-text)!important;
+  -webkit-text-fill-color:var(--setup-text)!important;
+}
+html body #setupScreen[data-preview-theme="fresh"] :is(
+  p,label,.setup-eyebrow,.setup-copyright,.setup-theme-card small
+){
+  color:var(--setup-muted)!important;
+  -webkit-text-fill-color:var(--setup-muted)!important;
+}
+html body #setupScreen[data-preview-theme="fresh"] :is(
+  button,input,select,textarea,.setup-theme-card,.setup-shortcut-card,.setup-choice-card
+){
+  border-color:var(--setup-line-soft)!important;
+  background-color:var(--setup-control)!important;
+  color:var(--setup-text)!important;
+  -webkit-text-fill-color:var(--setup-text)!important;
+  box-shadow:none!important;
+}
+html body #setupScreen[data-preview-theme="fresh"] :is(
+  button,input,select,textarea,.setup-theme-card,.setup-shortcut-card,.setup-choice-card
+):hover{
+  border-color:var(--setup-line)!important;
+  background-color:var(--setup-control-hover)!important;
+}
+html body #setupScreen[data-preview-theme="fresh"] :is(
+  .selected,[aria-checked="true"],[aria-selected="true"],.primary
+){
+  border-color:var(--setup-bright)!important;
+  background-color:var(--setup-selected)!important;
 }

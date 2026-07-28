@@ -1542,6 +1542,42 @@ app.get("/api/link-generator/auth-config", (_req, res) => {
   });
 });
 
+app.post("/api/link-generator/validate-access", (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+
+  const config = linkGeneratorConfig();
+  if (!config.accessCode) {
+    res.status(503).json({ error: "Premium access has not been configured by the Nyx administrator yet." });
+    return;
+  }
+
+  const submittedAccessCode = String(req.body?.accessCode || "");
+  if (!submittedAccessCode) {
+    res.status(400).json({ error: "Enter your Premium access code to continue." });
+    return;
+  }
+
+  const now = Date.now();
+  const rate = linkGeneratorRateState(linkGeneratorClientId(req), now);
+  if (!secretMatches(submittedAccessCode, config.accessCode)) {
+    rate.attempts += 1;
+    if (rate.attempts > linkGeneratorMaxAttempts) {
+      const retryAfter = Math.max(1, Math.ceil((rate.windowStarted + linkGeneratorWindowMs - now) / 1000));
+      res.set("Retry-After", String(retryAfter)).status(429).json({ error: "Too many incorrect access-code attempts. Try again later." });
+      return;
+    }
+    res.status(401).json({ error: "The Premium access code is incorrect." });
+    return;
+  }
+
+  rate.attempts = 0;
+  res.json({ valid: true });
+});
+
 app.post("/api/link-generator/readiness", async (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) {

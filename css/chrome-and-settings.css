@@ -37,16 +37,16 @@ body.browser-shell.theme-emerald::after,
 body.browser-shell.theme-sakura::after{
   background:linear-gradient(rgba(0,0,0,.06),rgba(0,0,0,.22))!important;
 }
-body.browser-shell.theme-ruby :is(h1,h2,h3,p,span,label,strong,.home-heading,.home-sub,.titlebar-title,.desktop-center-clock,.browser-shell-clock,.watchparty-title,.watchparty-meta,.watchparty-time,.settings-main h1,.settings-block h2,.settings-block p,.settings-side button,.quick-tile span),
-body.browser-shell.theme-emerald :is(h1,h2,h3,p,span,label,strong,.home-heading,.home-sub,.titlebar-title,.desktop-center-clock,.browser-shell-clock,.watchparty-title,.watchparty-meta,.watchparty-time,.settings-main h1,.settings-block h2,.settings-block p,.settings-side button,.quick-tile span),
-body.browser-shell.theme-sakura :is(h1,h2,h3,p,span,label,strong,.home-heading,.home-sub,.titlebar-title,.desktop-center-clock,.browser-shell-clock,.watchparty-title,.watchparty-meta,.watchparty-time,.settings-main h1,.settings-block h2,.settings-block p,.settings-side button,.quick-tile span){
+body.browser-shell.theme-ruby :is(h1,h2,h3,p,span,label,strong,.home-heading,.home-sub,.titlebar-title,.desktop-center-clock,.browser-shell-clock,.settings-main h1,.settings-block h2,.settings-block p,.settings-side button,.quick-tile span),
+body.browser-shell.theme-emerald :is(h1,h2,h3,p,span,label,strong,.home-heading,.home-sub,.titlebar-title,.desktop-center-clock,.browser-shell-clock,.settings-main h1,.settings-block h2,.settings-block p,.settings-side button,.quick-tile span),
+body.browser-shell.theme-sakura :is(h1,h2,h3,p,span,label,strong,.home-heading,.home-sub,.titlebar-title,.desktop-center-clock,.browser-shell-clock,.settings-main h1,.settings-block h2,.settings-block p,.settings-side button,.quick-tile span){
   background:none!important;
   color:inherit!important;
   -webkit-text-fill-color:currentColor!important;
 }
-body.browser-shell.theme-ruby :is(.top-os,.window,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,.watchparty-stop,.watchparty-center-controls button,.watchparty-options select,button,input,select,textarea),
-body.browser-shell.theme-emerald :is(.top-os,.window,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,.watchparty-stop,.watchparty-center-controls button,.watchparty-options select,button,input,select,textarea),
-body.browser-shell.theme-sakura :is(.top-os,.window,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,.watchparty-stop,.watchparty-center-controls button,.watchparty-options select,button,input,select,textarea){
+body.browser-shell.theme-ruby :is(.top-os,.window,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,button,input,select,textarea),
+body.browser-shell.theme-emerald :is(.top-os,.window,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,button,input,select,textarea),
+body.browser-shell.theme-sakura :is(.top-os,.window,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,button,input,select,textarea){
   border-color:color-mix(in srgb,var(--theme-border) 68%,rgba(255,255,255,.2))!important;
 }
 body.browser-shell.theme-ruby :is(.shell-page,.browser-shell-page),
@@ -58,11 +58,6 @@ body.browser-shell.theme-ruby :is(.settings-app,.settings-main,.settings-side,.q
 body.browser-shell.theme-emerald :is(.settings-app,.settings-main,.settings-side,.quick-tile,.weather-panel,.weather-restore,.apps-panel),
 body.browser-shell.theme-sakura :is(.settings-app,.settings-main,.settings-side,.quick-tile,.weather-panel,.weather-restore,.apps-panel){
   background:rgba(15,23,42,.36)!important;
-}
-body.browser-shell.theme-ruby :is(.watchparty-progress),
-body.browser-shell.theme-emerald :is(.watchparty-progress),
-body.browser-shell.theme-sakura :is(.watchparty-progress){
-  accent-color:#9ca3af!important;
 }
 body.theme-ruby input[type="file"].settings-input::file-selector-button,
 body.theme-ruby .file-input[data-tab-favicon-file]::file-selector-button,
@@ -270,9 +265,9 @@ body.browser-shell.theme-sakura :is(button,.quick-tile,.quick-icon,.browser-mode
 body.theme-ruby{--theme-border:#fb7185!important}
 body.theme-emerald{--theme-border:#34d399!important}
 body.theme-sakura{--theme-border:#f9a8d4!important}
-body.browser-shell.theme-ruby :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,.watchparty-stop,.watchparty-center-controls button,.watchparty-options select,button,input,select,textarea),
-body.browser-shell.theme-emerald :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,.watchparty-stop,.watchparty-center-controls button,.watchparty-options select,button,input,select,textarea),
-body.browser-shell.theme-sakura :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,.watchparty-stop,.watchparty-center-controls button,.watchparty-options select,button,input,select,textarea){
+body.browser-shell.theme-ruby :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,button,input,select,textarea),
+body.browser-shell.theme-emerald :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,button,input,select,textarea),
+body.browser-shell.theme-sakura :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,button,input,select,textarea){
   background-image:none!important;
   border-color:color-mix(in srgb,var(--theme-border) 72%,rgba(255,255,255,.18))!important;
   box-shadow:none!important;
@@ -1470,23 +1465,20 @@ body.browser-shell.theme-sakura :is(button,.quick-tile,.quick-icon,.browser-mode
 }
 select,
 .settings-select,
-.weather-options,
-.watchparty-options select{
+.weather-options{
   color-scheme:dark!important;
 }
 select option,
 select optgroup,
 .settings-select option,
-.weather-options option,
-.watchparty-options option{
+.weather-options option{
   background:#101827!important;
   color:#f8fafc!important;
   -webkit-text-fill-color:#f8fafc!important;
 }
 select option:checked,
 .settings-select option:checked,
-.weather-options option:checked,
-.watchparty-options option:checked{
+.weather-options option:checked{
   background:#334155!important;
   color:#fff!important;
   -webkit-text-fill-color:#fff!important;

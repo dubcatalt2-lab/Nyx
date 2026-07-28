@@ -23,7 +23,7 @@ body.theme-fresh :is(button,input,select,textarea,.urlbar,.browser-mode-url,.bro
   -webkit-text-fill-color:#133034!important;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.72),0 8px 22px rgba(49,83,90,.12)!important;
 }
-body.theme-fresh :is(h1,h2,h3,p,span,label,strong,.home-heading,.home-sub,.titlebar-title,.desktop-center-clock,.browser-shell-clock,.quick-tile span,.dock span,.browser-mode-menu button,.watchparty-title,.watchparty-meta){
+body.theme-fresh :is(h1,h2,h3,p,span,label,strong,.home-heading,.home-sub,.titlebar-title,.desktop-center-clock,.browser-shell-clock,.quick-tile span,.dock span,.browser-mode-menu button){
   background:none!important;
   color:#0f8fa3!important;
   -webkit-text-fill-color:#0f8fa3!important;

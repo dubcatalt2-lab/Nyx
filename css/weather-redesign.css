@@ -29,14 +29,14 @@ html body.theme-sakura{
   --weather-line:rgba(233,147,189,.28);
 }
 html body.theme-fresh{
-  --weather-accent:#238da0;
-  --weather-accent-soft:rgba(35,141,160,.13);
-  --weather-panel-bg:rgba(238,250,252,.92);
-  --weather-card-bg:rgba(255,255,255,.58);
-  --weather-card-hover:rgba(255,255,255,.78);
-  --weather-line:rgba(35,141,160,.25);
-  --weather-text:#164e5b;
-  --weather-muted:#4c7c86;
+  --weather-accent:#86a77e;
+  --weather-accent-soft:rgba(114,143,107,.15);
+  --weather-panel-bg:rgba(12,20,14,.94);
+  --weather-card-bg:rgba(27,40,29,.72);
+  --weather-card-hover:rgba(36,53,39,.84);
+  --weather-line:rgba(134,167,126,.27);
+  --weather-text:#d9e5d6;
+  --weather-muted:#91a68d;
 }
 
 html body:is(body,#nyx-weather-specificity) .weather-panel{

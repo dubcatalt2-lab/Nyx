@@ -9,7 +9,7 @@ html body.theme-midnight{--credits-accent:#789edc}
 html body.theme-ruby{--credits-accent:#db7f91;--credits-line:rgba(219,127,145,.26)}
 html body.theme-emerald{--credits-accent:#65b99b;--credits-line:rgba(101,185,155,.25)}
 html body.theme-sakura{--credits-accent:#d798b8;--credits-line:rgba(215,152,184,.26)}
-html body.theme-fresh{--credits-accent:#61a9a4;--credits-line:rgba(97,169,164,.26)}
+html body.theme-fresh{--credits-accent:#86a77e;--credits-line:rgba(134,167,126,.26)}
 
 html body .nyx-info-page.nyx-credits-tab{
   width:min(1040px,calc(100% - 34px));

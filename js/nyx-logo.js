@@ -8,7 +8,7 @@
     ruby:'#a56573',
     emerald:'#628f80',
     sakura:'#9e718f',
-    fresh:'#638e97'
+    fresh:'#728f6b'
   };
   const cache=new Map();
   const croppedCache=new Map();

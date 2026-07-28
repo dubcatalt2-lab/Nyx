@@ -12,5 +12,33 @@
 @import url("./css/weather-redesign.css?v=20260727-weather-label-v10");
 @import url("./css/theme-tints.css?v=20260718-centered-toolbar-v11");
 @import url("./css/setup-wizard.css?v=20260726-themed-wizard-v2");
-@import url("./css/credits.css?v=20260727-credits-v1");
+@import url("./css/credits.css?v=20260727-founder-profile-v2");
 @import url("./css/interface-scale.css?v=20260727-themed-menu-v9");
+
+/* Keep the close mark geometrically centered instead of relying on a font baseline. */
+html body.browser-shell .top-os.top-os .browser-mode-shell-tab-close{
+  top:50%!important;
+  right:5px!important;
+  width:18px!important;
+  height:18px!important;
+  margin:0!important;
+  padding:0!important;
+  display:grid!important;
+  place-items:center!important;
+  transform:translateY(-50%)!important;
+}
+html body.browser-shell .top-os.top-os .browser-mode-shell-tab-close::before{
+  content:""!important;
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  width:12px!important;
+  height:12px!important;
+  background:var(--nyx-shell-icon,var(--theme-strong,#f8fafc))!important;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12 19 17.6 17.6 19 12 13.4 6.4 19 5 17.6 10.6 12 5 6.4z'/%3E%3C/svg%3E") center/12px 12px no-repeat!important;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12 19 17.6 17.6 19 12 13.4 6.4 19 5 17.6 10.6 12 5 6.4z'/%3E%3C/svg%3E") center/12px 12px no-repeat!important;
+  transform:translate(-50%,-50%)!important;
+}
+html body.browser-shell .top-os.top-os .browser-mode-shell-tab-close:hover{
+  transform:translateY(-50%)!important;
+}

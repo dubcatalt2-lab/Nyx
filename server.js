@@ -2,6 +2,7 @@
 import { createServer } from "node:http";
 import { hostname } from "node:os";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { resolveCname, resolveNs } from "node:dns/promises";
 import { readFileSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { createRequire } from "node:module";
@@ -1473,11 +1474,109 @@ function generatedPullZoneName(label) {
   return `${slug}-${randomBytes(3).toString("hex")}`;
 }
 
+function normalizedHostname(value) {
+  const hostname = String(value || "").trim().toLowerCase().replace(/\.$/, "");
+  if (
+    hostname.length < 4 ||
+    hostname.length > 253 ||
+    hostname.includes("://") ||
+    hostname.includes("/") ||
+    hostname.includes("@") ||
+    !/^[a-z0-9.-]+$/.test(hostname)
+  ) return "";
+  const labels = hostname.split(".");
+  if (
+    labels.length < 3 ||
+    labels.some(label => !label || label.length > 63 || !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label))
+  ) return "";
+  return hostname;
+}
+
+async function freednsAuthority(hostname) {
+  const labels = String(hostname || "").split(".");
+  for (let index = 0; index < labels.length - 1; index += 1) {
+    const candidate = labels.slice(index).join(".");
+    try {
+      const nameservers = await resolveNs(candidate);
+      if (!nameservers.length) continue;
+      const normalized = nameservers.map(value => String(value || "").toLowerCase().replace(/\.$/, ""));
+      return normalized.every(value => value === "afraid.org" || value.endsWith(".afraid.org"))
+        ? { domain: candidate, nameservers: normalized }
+        : null;
+    } catch (error) {
+      if (!["ENODATA", "ENOTFOUND", "ESERVFAIL", "ETIMEOUT"].includes(error?.code)) throw error;
+    }
+  }
+  return null;
+}
+
+async function verifiedFreednsHostname(value) {
+  const hostname = normalizedHostname(value);
+  if (!hostname) {
+    const error = new Error("Enter a complete FreeDNS hostname, such as study-name.mooo.com.");
+    error.status = 400;
+    throw error;
+  }
+  const authority = await freednsAuthority(hostname);
+  if (!authority) {
+    const error = new Error("That hostname is not currently served by FreeDNS nameservers.");
+    error.status = 400;
+    throw error;
+  }
+  if (hostname === authority.domain) {
+    const error = new Error("Enter a hostname under the shared FreeDNS domain, not the shared domain itself.");
+    error.status = 400;
+    throw error;
+  }
+  return { hostname, authority };
+}
+
+function freednsChallengeRef(firebase, uid) {
+  return firebase.firestore.collection("nyxFreednsChallenges").doc(uid);
+}
+
+async function deleteBunnyPullZone(config, zoneId) {
+  if (!zoneId) return;
+  try {
+    await bunnyRequest(`/pullzone/${encodeURIComponent(zoneId)}`, config.apiKey, { method: "DELETE" });
+  } catch (error) {
+    if (error.status !== 404) console.error("Nyx could not remove an unused Bunny pull zone:", error?.message || error);
+  }
+}
+
+async function cnameMatches(hostname, expected) {
+  try {
+    const records = await resolveCname(hostname);
+    const target = String(expected || "").toLowerCase().replace(/\.$/, "");
+    return records.some(value => String(value || "").toLowerCase().replace(/\.$/, "") === target);
+  } catch {
+    return false;
+  }
+}
+
 function generatedBunnyUrl(value) {
   try {
     const parsed = new URL(String(value || ""));
     const validHostname = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.b-cdn\.net$/i.test(parsed.hostname);
     if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.port || !validHostname || parsed.pathname !== "/" || parsed.search || parsed.hash) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function generatedNyxUrl(value) {
+  try {
+    const parsed = new URL(String(value || ""));
+    if (
+      parsed.protocol !== "https:" ||
+      parsed.username ||
+      parsed.password ||
+      parsed.port ||
+      parsed.pathname !== "/" ||
+      parsed.search ||
+      parsed.hash
+    ) return null;
     return parsed;
   } catch {
     return null;
@@ -1524,6 +1623,7 @@ app.get("/api/link-generator/status", (_req, res) => {
     available: Boolean(config.apiKey && config.origin && (config.accessCode || firebaseAccountModeConfigured())),
     administratorAccess: Boolean(config.accessCode),
     accountAccess: firebaseAccountModeConfigured(),
+    freednsAccess: Boolean(config.apiKey && config.origin && firebaseAccountModeConfigured()),
     origin: config.origin,
     freeDailyLimit: freeLinkDailyLimit,
     premiumBatchLimit: config.premiumBatchLimit,
@@ -1541,6 +1641,208 @@ app.get("/api/link-generator/auth-config", (_req, res) => {
   });
 });
 
+app.post("/api/link-generator/freedns/prepare", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  const config = linkGeneratorConfig();
+  if (!config.apiKey || !config.origin || !firebaseAccountModeConfigured()) {
+    res.status(503).json({ error: "FreeDNS linking has not been configured by the Nyx administrator yet." });
+    return;
+  }
+
+  let user;
+  try {
+    user = await authenticatedFreeUser(req);
+  } catch (error) {
+    res.status(error.status || 401).json({ error: error.message });
+    return;
+  }
+
+  const clientId = linkGeneratorClientId(req);
+  const rate = linkGeneratorRateState(clientId);
+  if (rate.attempts >= linkGeneratorMaxAttempts) {
+    const retryAfter = Math.max(1, Math.ceil((rate.windowStarted + linkGeneratorWindowMs - Date.now()) / 1000));
+    res.set("Retry-After", String(retryAfter)).status(429).json({ error: "Too many FreeDNS setup attempts. Try again later." });
+    return;
+  }
+
+  try {
+    const { hostname: customHostname, authority } = await verifiedFreednsHostname(req.body?.hostname);
+    const challengeRef = freednsChallengeRef(user.firebase, user.uid);
+    const existingSnapshot = await challengeRef.get();
+    const existing = existingSnapshot.data() || {};
+    const now = Date.now();
+    if (
+      existing.status === "pending" &&
+      existing.hostname === customHostname &&
+      Number(existing.expiresAt || 0) > now &&
+      existing.cnameTarget &&
+      existing.zoneId
+    ) {
+      res.json({
+        pending: true,
+        hostname: existing.hostname,
+        cnameTarget: existing.cnameTarget,
+        sharedDomain: existing.sharedDomain || authority.domain,
+        expiresAt: existing.expiresAt
+      });
+      return;
+    }
+
+    rate.attempts += 1;
+    const zonesPayload = await bunnyRequest("/pullzone?page=1&perPage=1000", config.apiKey);
+    const zones = Array.isArray(zonesPayload) ? zonesPayload : Array.isArray(zonesPayload?.Items) ? zonesPayload.Items : [];
+    const generatedZones = zones.filter(zone =>
+      normalizedOrigin(zone?.OriginUrl) === config.origin &&
+      String(zone?.Id) !== String(existing.zoneId || "")
+    );
+    if (generatedZones.length >= config.maxZones) {
+      res.status(409).json({ error: "The public Link Generator has reached its zone limit. Ask the Nyx administrator to remove an old generated link." });
+      return;
+    }
+    if (existing.status === "pending" && existing.zoneId) await deleteBunnyPullZone(config, existing.zoneId);
+
+    const zoneName = generatedPullZoneName(`freedns-${customHostname.split(".")[0]}`);
+    const zone = await bunnyRequest("/pullzone", config.apiKey, {
+      method: "POST",
+      body: JSON.stringify({
+        Name: zoneName,
+        OriginUrl: config.origin,
+        EnableAutoSSL: true
+      })
+    });
+    const cnameTarget = Array.isArray(zone?.Hostnames)
+      ? zone.Hostnames.find(item => item?.IsSystemHostname)?.Value || zone.Hostnames[0]?.Value
+      : "";
+    if (!zone?.Id || !generatedBunnyUrl(`https://${cnameTarget}`)) {
+      if (zone?.Id) await deleteBunnyPullZone(config, zone.Id);
+      throw new Error("Bunny created the setup but did not return a valid CNAME target.");
+    }
+
+    const expiresAt = now + 45 * 60 * 1000;
+    await challengeRef.set({
+      status: "pending",
+      uid: user.uid,
+      hostname: customHostname,
+      sharedDomain: authority.domain,
+      cnameTarget: String(cnameTarget).toLowerCase(),
+      zoneId: zone.Id,
+      zoneName: zone.Name || zoneName,
+      origin: config.origin,
+      createdAt: new Date(now).toISOString(),
+      expiresAt
+    });
+    res.status(201).json({
+      pending: true,
+      hostname: customHostname,
+      cnameTarget: String(cnameTarget).toLowerCase(),
+      sharedDomain: authority.domain,
+      expiresAt
+    });
+  } catch (error) {
+    if (!error.status || error.status >= 500) console.error("Nyx FreeDNS preparation failed:", error?.message || error);
+    res.status(error.status || 502).json({ error: error.status ? error.message : `Nyx could not prepare the FreeDNS link: ${String(error?.message || "Unknown error")}` });
+  }
+});
+
+app.post("/api/link-generator/freedns/verify", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  const config = linkGeneratorConfig();
+  if (!config.apiKey || !config.origin || !firebaseAccountModeConfigured()) {
+    res.status(503).json({ error: "FreeDNS linking has not been configured by the Nyx administrator yet." });
+    return;
+  }
+
+  let user;
+  try {
+    user = await authenticatedFreeUser(req);
+  } catch (error) {
+    res.status(error.status || 401).json({ error: error.message });
+    return;
+  }
+
+  let reservation = null;
+  try {
+    const { hostname: customHostname } = await verifiedFreednsHostname(req.body?.hostname);
+    const challengeRef = freednsChallengeRef(user.firebase, user.uid);
+    const snapshot = await challengeRef.get();
+    const challenge = snapshot.data() || {};
+    if (
+      challenge.status !== "pending" ||
+      challenge.hostname !== customHostname ||
+      !challenge.zoneId ||
+      !challenge.cnameTarget
+    ) {
+      res.status(404).json({ error: "No pending FreeDNS setup was found for that hostname. Prepare it again." });
+      return;
+    }
+    if (Number(challenge.expiresAt || 0) <= Date.now()) {
+      await deleteBunnyPullZone(config, challenge.zoneId);
+      await challengeRef.delete();
+      res.status(410).json({ error: "That FreeDNS setup expired. Prepare the hostname again." });
+      return;
+    }
+    if (!await cnameMatches(customHostname, challenge.cnameTarget)) {
+      res.status(409).json({
+        error: `The CNAME is not visible yet. In FreeDNS, point ${customHostname} to ${challenge.cnameTarget}, then wait for DNS propagation and try again.`
+      });
+      return;
+    }
+
+    const zone = await bunnyRequest(`/pullzone/${encodeURIComponent(challenge.zoneId)}`, config.apiKey);
+    if (normalizedOrigin(zone?.OriginUrl) !== config.origin) {
+      res.status(409).json({ error: "The prepared Bunny resource no longer matches the official Nyx origin." });
+      return;
+    }
+    const hostnames = Array.isArray(zone?.Hostnames) ? zone.Hostnames : [];
+    if (!hostnames.some(item => String(item?.Value || "").toLowerCase() === customHostname)) {
+      await bunnyRequest(`/pullzone/${encodeURIComponent(challenge.zoneId)}/addHostname`, config.apiKey, {
+        method: "POST",
+        body: JSON.stringify({ Hostname: customHostname })
+      });
+    }
+
+    reservation = await reserveFreeLink(user.firebase, user.uid, linkGeneratorClientId(req));
+    let certificatePending = false;
+    try {
+      await bunnyRequest(`/pullzone/loadFreeCertificate?hostname=${encodeURIComponent(customHostname)}&useOnlyHttp01=true`, config.apiKey);
+      await bunnyRequest(`/pullzone/${encodeURIComponent(challenge.zoneId)}/setForceSSL`, config.apiKey, {
+        method: "POST",
+        body: JSON.stringify({ Hostname: customHostname, ForceSSL: true })
+      });
+    } catch (error) {
+      certificatePending = true;
+      console.warn("Nyx FreeDNS certificate is still provisioning:", error?.message || error);
+    }
+
+    await challengeRef.delete();
+    res.status(201).json({
+      id: challenge.zoneId,
+      name: challenge.zoneName,
+      url: `https://${customHostname}`,
+      links: [{ id: challenge.zoneId, name: challenge.zoneName, url: `https://${customHostname}` }],
+      requested: 1,
+      created: 1,
+      partial: false,
+      origin: config.origin,
+      access: "account",
+      remaining: reservation.remaining,
+      certificatePending
+    });
+  } catch (error) {
+    if (reservation) await releaseFreeLink(user.firebase, reservation);
+    if (!error.status || error.status >= 500) console.error("Nyx FreeDNS verification failed:", error?.message || error);
+    res.status(error.status || 502).json({ error: error.status ? error.message : `Nyx could not verify the FreeDNS link: ${String(error?.message || "Unknown error")}` });
+  }
+});
+
 app.post("/api/link-generator/readiness", async (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) {
@@ -1548,7 +1850,7 @@ app.post("/api/link-generator/readiness", async (req, res) => {
     return;
   }
   const config = linkGeneratorConfig();
-  const target = generatedBunnyUrl(req.body?.url);
+  const target = generatedNyxUrl(req.body?.url);
   if (!config.apiKey || !config.origin) {
     res.status(503).json({ error: "Link Generator has not been configured by the Nyx administrator yet." });
     return;
@@ -1558,6 +1860,11 @@ app.post("/api/link-generator/readiness", async (req, res) => {
     return;
   }
   try {
+    const systemHostname = Boolean(generatedBunnyUrl(target.href));
+    if (!systemHostname && !await freednsAuthority(target.hostname)) {
+      res.status(400).json({ error: "Only generated Bunny or verified FreeDNS Nyx links can be checked." });
+      return;
+    }
     const zonesPayload = await bunnyRequest("/pullzone?page=1&perPage=1000", config.apiKey);
     const zones = Array.isArray(zonesPayload) ? zonesPayload : Array.isArray(zonesPayload?.Items) ? zonesPayload.Items : [];
     const zone = zones.find(item => normalizedOrigin(item?.OriginUrl) === config.origin && Array.isArray(item?.Hostnames) && item.Hostnames.some(hostname => String(hostname?.Value || "").toLowerCase() === target.hostname.toLowerCase()));
@@ -1571,6 +1878,13 @@ app.post("/api/link-generator/readiness", async (req, res) => {
     }
     if (zone.Enabled === false) {
       res.json({ ready: false, state: "disabled", message: "Bunny left this CDN link disabled. Check the Bunny account balance and pull-zone limit." });
+      return;
+    }
+    const linkedHostname = Array.isArray(zone.Hostnames)
+      ? zone.Hostnames.find(hostname => String(hostname?.Value || "").toLowerCase() === target.hostname.toLowerCase())
+      : null;
+    if (!systemHostname && linkedHostname && linkedHostname.HasCertificate === false) {
+      res.json({ ready: false, state: "provisioning", message: "Bunny is still issuing HTTPS for this FreeDNS hostname." });
       return;
     }
     let response;

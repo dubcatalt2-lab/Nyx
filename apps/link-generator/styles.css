@@ -49,9 +49,12 @@ fieldset{min-width:0;margin:0;border:0}
 .account-status.error{color:#f09aaa}
 .administrator-access label{display:block;max-width:430px}
 
-.details-panel{flex:1;display:flex;align-items:center}
+.details-panel{flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px}
+.link-type-field{display:block;width:100%}
+.link-type-field>small{display:block;margin:7px 2px 0;color:var(--muted-deep);font-size:9px;line-height:1.45}
 .details-grid{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .details-grid.premium{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 130px}
+.details-grid.freedns{grid-template-columns:1fr 1fr}
 .details-grid label>small{display:block;margin:7px 2px 0;color:var(--muted-deep);font-size:9px;line-height:1.4}
 .amount-field input{text-align:center}
 .review-panel{flex:1}
@@ -75,6 +78,23 @@ fieldset{min-width:0;margin:0;border:0}
 .result-heading .eyebrow{margin-bottom:3px}
 .result-heading h2{margin:0;font-size:22px;font-weight:500;letter-spacing:-.025em}
 .result-heading p:last-child{margin:5px 0 0;color:var(--muted);font-size:10px}
+.freedns-setup{padding:17px;border:1px solid var(--line-strong);border-radius:16px;background:rgba(5,13,25,.55)}
+.freedns-setup-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.freedns-setup-heading h3{margin:2px 0 0;font-size:16px;font-weight:500}
+.freedns-setup-heading a{flex:0 0 auto;padding:8px 11px;border:1px solid var(--line);border-radius:10px;background:var(--surface-soft);color:var(--text);font-size:9px;text-decoration:none}
+.freedns-setup>p{margin:13px 0;color:var(--muted);font-size:10px;line-height:1.55}
+.freedns-directions{display:grid;gap:6px;margin:0 0 13px;padding:0;list-style:none;counter-reset:freedns-step}
+.freedns-directions li{position:relative;min-height:27px;padding:6px 8px 6px 34px;border-left:1px solid var(--line);color:var(--muted);font-size:9px;line-height:1.5;counter-increment:freedns-step}
+.freedns-directions li::before{content:counter(freedns-step);position:absolute;top:4px;left:7px;width:19px;height:19px;display:grid;place-items:center;border:1px solid var(--line);border-radius:50%;background:var(--accent-faint);color:var(--accent);font:500 8px/1 ui-monospace,SFMono-Regular,Consolas,monospace}
+.dns-record{display:grid;gap:7px;margin:0}
+.dns-record>div{display:grid;grid-template-columns:90px minmax(0,1fr);align-items:center;gap:10px;padding:10px 11px;border:1px solid var(--line);border-radius:11px;background:rgba(2,8,17,.42)}
+.dns-record dt{color:var(--muted-deep);font-size:9px;text-transform:uppercase;letter-spacing:.08em}
+.dns-record dd{overflow-wrap:anywhere;margin:0;color:var(--text);font:400 10px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace}
+.freedns-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:13px}
+.freedns-actions button{min-height:35px;padding:0 13px;border:1px solid var(--line);border-radius:11px;background:var(--surface-soft);color:var(--text);font-size:10px;cursor:pointer}
+.freedns-actions button:hover,.freedns-setup-heading a:hover{border-color:var(--line-strong);background:rgba(var(--accent-rgb),.09);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.freedns-actions button:disabled{cursor:wait;opacity:.55}
+.freedns-setup>small{display:block;margin-top:10px;color:var(--muted-deep);font-size:9px;line-height:1.45}
 .bulk-link-box{overflow:hidden;border:1px solid var(--line);border-radius:16px;background:rgba(4,11,21,.5)}
 .bulk-link-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 13px;border-bottom:1px solid var(--line)}
 .bulk-link-head span{color:var(--muted);font-size:10px}
@@ -100,7 +120,7 @@ fieldset{min-width:0;margin:0;border:0}
 .filter-check.error strong{color:var(--warning)}
 .propagation-note{margin:11px 1px 0;color:var(--muted-deep);font-size:10px}
 .result-actions{margin-top:auto;padding-top:18px;justify-content:flex-end}
-body.theme-fresh .form-panel,body.theme-fresh .account-access,body.theme-fresh .administrator-access,body.theme-fresh .filter-check,body.theme-fresh .bulk-link-box,body.theme-fresh .bulk-link-box textarea{background:rgba(255,255,255,.42)}
+body.theme-fresh .form-panel,body.theme-fresh .account-access,body.theme-fresh .administrator-access,body.theme-fresh .filter-check,body.theme-fresh .bulk-link-box,body.theme-fresh .bulk-link-box textarea,body.theme-fresh .freedns-setup{background:rgba(255,255,255,.42)}
 
 @media(max-width:680px){
   .generator-card{padding:18px}
@@ -112,6 +132,10 @@ body.theme-fresh .form-panel,body.theme-fresh .account-access,body.theme-fresh .
   .wizard-step{min-height:440px}
   .form-panel{padding:14px}
   .account-fields,.details-grid,.details-grid.premium,.review-list{grid-template-columns:1fr}
+  .freedns-setup-heading{display:block}
+  .freedns-setup-heading a{display:inline-block;margin-top:10px}
+  .dns-record>div{grid-template-columns:1fr}
+  .freedns-actions{flex-direction:column}
   .bulk-link-box textarea{min-height:190px}
 }
 @media(prefers-reduced-motion:reduce){

@@ -1,6 +1,11 @@
 (() => {
   let activeSession = 0;
+  let backgroundedSession = 0;
   let lockedPageElements = [];
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && activeSession) backgroundedSession = activeSession;
+  });
 
   const blockedInputEvents = ['pointerdown', 'pointerup', 'click', 'dblclick', 'contextmenu', 'wheel', 'touchstart', 'touchmove', 'keydown', 'keyup'];
   blockedInputEvents.forEach(type => {
@@ -37,7 +42,24 @@
     splash.focus({ preventScroll: true });
   }
 
-  const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+  function waitForVisualDelay(milliseconds, session) {
+    if (session !== activeSession || document.hidden || backgroundedSession === session) {
+      return Promise.resolve();
+    }
+    return new Promise(resolve => {
+      let timer = 0;
+      const finish = () => {
+        clearTimeout(timer);
+        document.removeEventListener('visibilitychange', handleVisibility);
+        resolve();
+      };
+      const handleVisibility = () => {
+        if (document.hidden || session !== activeSession) finish();
+      };
+      document.addEventListener('visibilitychange', handleVisibility);
+      timer = setTimeout(finish, Math.max(0, Number(milliseconds) || 0));
+    });
+  }
 
   function updateProgress(splash, value, label, emit = true, updateFill = true) {
     const progress = splash.querySelector('.nyx-loading-progress');
@@ -66,8 +88,12 @@
       updateProgress(splash, end, label);
       return Promise.resolve();
     }
+    if (document.hidden || backgroundedSession === session) {
+      updateProgress(splash, end, label);
+      return Promise.resolve();
+    }
     return new Promise(resolve => {
-      const started = performance.now();
+      const started = Date.now();
       const animation = fill?.animate([
         { transform: `scaleX(${start / 100})` },
         { transform: `scaleX(${end / 100})` }
@@ -77,25 +103,47 @@
         fill: 'forwards'
       });
       let tickTimer = 0;
+      let finished = false;
+      const finish = (commit = true) => {
+        if (finished) return;
+        finished = true;
+        clearTimeout(tickTimer);
+        document.removeEventListener('visibilitychange', handleVisibility);
+        animation?.cancel();
+        if (commit) {
+          if (fill) fill.style.transform = `scaleX(${end / 100})`;
+          updateProgress(splash, end, label, true);
+        }
+        resolve();
+      };
+      const handleVisibility = () => {
+        if (session !== activeSession) {
+          finish(false);
+        } else if (document.hidden || backgroundedSession === session) {
+          finish();
+        } else {
+          tick();
+        }
+      };
       const tick = () => {
         if (session !== activeSession) {
-          clearTimeout(tickTimer);
-          animation?.cancel();
-          resolve();
+          finish(false);
           return;
         }
-        const elapsed = Math.min(1, (performance.now() - started) / Math.max(1, duration));
+        if (document.hidden || backgroundedSession === session) {
+          finish();
+          return;
+        }
+        const elapsed = Math.min(1, (Date.now() - started) / Math.max(1, duration));
         const value = start + ((end - start) * elapsed);
         updateProgress(splash, value, label, false, false);
         if (elapsed < 1) {
           tickTimer = setTimeout(tick, 32);
         } else {
-          if (fill) fill.style.transform = `scaleX(${end / 100})`;
-          animation?.cancel();
-          updateProgress(splash, end, label, true);
-          resolve();
+          finish();
         }
       };
+      document.addEventListener('visibilitychange', handleVisibility);
       tickTimer = setTimeout(tick, 0);
     });
   }
@@ -107,6 +155,7 @@
       if (!splash || !fill) return null;
 
       const session = ++activeSession;
+      if (document.hidden) backgroundedSession = session;
       splash.classList.remove('show', 'leaving');
       fill.getAnimations().forEach(animation => animation.cancel());
       updateProgress(splash, 0, 'Preparing Nyx');
@@ -137,10 +186,10 @@
         async complete(label = 'Nyx is ready') {
           if (session !== activeSession) return;
           await animateProgress(splash, 100, label, 300, session);
-          await wait(620);
+          await waitForVisualDelay(620, session);
           if (session !== activeSession) return;
           splash.classList.add('leaving');
-          await wait(780);
+          await waitForVisualDelay(780, session);
           if (session !== activeSession) return;
           splash.classList.remove('show', 'leaving');
           splash.setAttribute('aria-hidden', 'true');

@@ -71,6 +71,7 @@ app.use((req, res, next) => {
   const noStorePaths = new Set([
     "/",
     "/index.html",
+    "/app.webmanifest",
     "/script.js",
     "/startup.js",
     "/styles.css",

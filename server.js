@@ -1292,8 +1292,10 @@ function founderProfileText(value, fallback, limit) {
 }
 
 function founderProfileUrl(value, fallback = "") {
-  const raw = String(value ?? "").trim().slice(0, 1_500);
+  const raw = String(value ?? "").trim();
   if (!raw) return fallback;
+  if (/^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(raw) && raw.length <= 460_000) return raw.replace(/\s/g, "");
+  if (raw.length > 1_500) return fallback;
   if (/^\/assets\/[a-z0-9/_\-.]+$/i.test(raw)) return raw;
   try {
     const parsed = new URL(raw);
@@ -1391,7 +1393,7 @@ function normalizeNyxUserProfile(value = {}, token = {}) {
     accentPrimary,
     accentSecondary,
     bannerColor,
-    profileEffect: ["none", "glow", "sparkle"].includes(String(source.profileEffect || "").toLowerCase()) ? String(source.profileEffect).toLowerCase() : "none",
+    profileEffect: ["none", "glow", "sparkle", "aurora", "holographic", "fireflies"].includes(String(source.profileEffect || "").toLowerCase()) ? String(source.profileEffect).toLowerCase() : "none",
     status: ["online", "idle", "dnd", "offline"].includes(String(source.status || "").toLowerCase()) ? String(source.status).toLowerCase() : "online"
   };
 }
@@ -1717,6 +1719,23 @@ app.get("/api/founder-profile", async (_req, res) => {
     if (firebase) {
       const snapshot = await firebase.firestore.collection("nyxSiteSettings").doc("founderProfile").get();
       profile = normalizeFounderProfile(snapshot.data()?.profile);
+      const founderUid = founderProfileConfig().administratorUid;
+      if (founderUid) {
+        const founderUser = await firebase.firestore.collection("nyxUserProfiles").doc(founderUid).get();
+        if (founderUser.exists) {
+          const userProfile = normalizeNyxUserProfile(founderUser.data()?.profile);
+          profile = normalizeFounderProfile({
+            ...profile,
+            displayName: userProfile.displayName,
+            handle: userProfile.handle,
+            bio: userProfile.bio,
+            avatarUrl: userProfile.avatarUrl,
+            bannerUrl: userProfile.bannerUrl,
+            accent: userProfile.accentPrimary,
+            status: userProfile.status
+          });
+        }
+      }
       persistent = true;
     }
   } catch (error) {

@@ -449,6 +449,24 @@
       return new URL('/favicon.ico',parsed.origin).href;
     }catch{return ''}
   }
+  function websiteFaviconFallbackUrl(url){
+    const raw=String(url || '').trim();
+    try{
+      const source=typeof browserShellSourceUrl==='function' ? (browserShellSourceUrl(raw) || raw) : raw;
+      const parsed=new URL(source,location.href);
+      if(!/^https?:$/.test(parsed.protocol)) return '';
+      return `https://www.google.com/s2/favicons?sz=128&domain_url=${encodeURIComponent(parsed.origin)}`;
+    }catch{return ''}
+  }
+  function websiteFaviconFallbackUrls(url){
+    const primary=websiteFaviconFallbackUrl(url);
+    try{
+      const source=typeof browserShellSourceUrl==='function' ? (browserShellSourceUrl(String(url || '').trim()) || url) : url;
+      const host=new URL(source,location.href).hostname;
+      const duckDuckGo=host ? `https://icons.duckduckgo.com/ip3/${encodeURIComponent(host)}.ico` : '';
+      return [...new Set([primary,duckDuckGo].filter(Boolean))];
+    }catch{return primary ? [primary] : []}
+  }
   function iconFromPageDocument(doc,sourceUrl=''){
     try{
       const link=doc?.querySelector?.('link[rel~="icon" i],link[rel="shortcut icon" i]');
@@ -484,6 +502,41 @@
     }catch{}
     return websiteFaviconUrl(source) || favicons.nyx;
   }
+  function homeShortcutIconUrl(item,domain=''){
+    const saved=String(item?.icon || '').trim();
+    if(saved) return saved;
+    const key=String(domain || homeShortcutDomain(item?.url,item?.title)).toLowerCase();
+    if(appIcons[key]) return appIcon(key);
+    const matched=Object.keys(appIcons).find(name=>key===name || key.endsWith('.'+name));
+    if(matched) return appIcon(matched);
+    return websiteFaviconUrl(item?.url) || favicons.nyx;
+  }
+  function homeShortcutIconMarkup(item,domain=''){
+    const source=homeShortcutIconUrl(item,domain);
+    const fallbacks=websiteFaviconFallbackUrls(item?.url);
+    return `<img class="quick-icon" alt="" draggable="false" referrerpolicy="no-referrer" data-home-shortcut-site-icon data-favicon-fallbacks="${esc(JSON.stringify(fallbacks))}" src="${esc(source)}">`;
+  }
+  function installHomeShortcutIconFallbacks(){
+    if(document.__nyxHomeShortcutIconFallbacks) return;
+    document.__nyxHomeShortcutIconFallbacks=true;
+    document.addEventListener('error',event=>{
+      const image=event.target;
+      if(!(image instanceof HTMLImageElement) || !image.matches('[data-home-shortcut-site-icon]')) return;
+      let fallbacks=[];
+      try{fallbacks=JSON.parse(image.dataset.faviconFallbacks || '[]')}catch{}
+      const index=Number(image.dataset.faviconFallbackIndex || '0');
+      const fallback=fallbacks[index] || '';
+      if(fallback){
+        image.dataset.faviconFallbackIndex=String(index+1);
+        image.dataset.faviconFallbackUsed='true';
+        image.src=fallback;
+        return;
+      }
+      image.removeAttribute('data-home-shortcut-site-icon');
+      image.src=favicons.nyx;
+    },true);
+  }
+  installHomeShortcutIconFallbacks();
   function titleForUrl(url){
     const raw=String(url || '').trim();
     if(!raw || raw==='about:blank') return 'New Tab';
@@ -2681,8 +2734,16 @@
   function threeDBackgroundsEnabled(){
     return store.get('nyx.threeDBackgrounds',false);
   }
+  function syncHomeDotFieldVisibility(){
+    const hide=threeDBackgroundsEnabled() && !document.body.classList.contains('custom-bg-active');
+    qsa('.nyx-home-dot-field').forEach(canvas=>{
+      if(hide) canvas.style.setProperty('display','none','important');
+      else canvas.style.removeProperty('display');
+    });
+  }
   function shouldShowDefaultVanta(){
-    return threeDBackgroundsEnabled() && !shouldPauseVantaBackgrounds() && !document.body.classList.contains('custom-bg-active');
+    const theme=store.text('nyx.theme','default');
+    return threeDBackgroundsEnabled() && (theme==='default' || theme==='midnight') && !shouldPauseVantaBackgrounds() && !document.body.classList.contains('custom-bg-active');
   }
   function shouldShowRubyVanta(){
     const theme=store.text('nyx.theme','default');
@@ -2798,9 +2859,9 @@
         minWidth:200.00,
         scale:1.00,
         scaleMobile:1.00,
-        backgroundColor:0x25c3d6,
-        color1:0xf3f7f3,
-        color2:0xc8ffeb,
+        backgroundColor:0x162019,
+        color1:0xd9e5d6,
+        color2:0x728f6b,
         separation:24.00,
         cohesion:22.00
       });
@@ -2865,19 +2926,15 @@
     }
   }
   function syncThemeVantaBackgrounds(){
-    /* Themes only tint the shared Nyx canvas.  Keep one optional 3D scene
-       instead of stacking a second theme-specific Vanta layer on top of it. */
+    /* Each active theme owns exactly one optional 3D scene.  The layers are
+       mutually exclusive via their `shouldShow…` guards, so theme changes
+       replace a scene instead of stacking canvases. */
     syncDefaultVantaBackground();
-    [
-      ['rubyVantaBg',stopRubyVanta],
-      ['whiteVantaBg',stopWhiteVanta],
-      ['emeraldVantaBg',stopEmeraldVanta],
-      ['sakuraVantaBg',stopSakuraVanta]
-    ].forEach(([id,stop])=>{
-      const layer=$(id);
-      if(layer) layer.hidden=true;
-      stop();
-    });
+    syncRubyVantaBackground();
+    syncWhiteVantaBackground();
+    syncEmeraldVantaBackground();
+    syncSakuraVantaBackground();
+    syncHomeDotFieldVisibility();
     syncNyxWaveBackground();
   }
   function syncNyxWaveBackground(){
@@ -2926,6 +2983,17 @@
     document.body.dataset.nyxTheme=theme;
     document.documentElement.dataset.nyxTheme=theme;
     document.documentElement.style.colorScheme='dark';
+    qsa('#userGreeting').forEach(el=>{
+      if(theme==='fresh'){
+        el.style.setProperty('color','#d9e5d6','important');
+        el.style.setProperty('-webkit-text-fill-color','#d9e5d6','important');
+        el.style.setProperty('border-color','#354b36','important');
+      }else{
+        el.style.removeProperty('color');
+        el.style.removeProperty('-webkit-text-fill-color');
+        el.style.removeProperty('border-color');
+      }
+    });
     applyNyxLogoTheme(theme);
     ensureFreshThemeOptions();
     qsa('[data-theme-value]').forEach(el=>{el.value=theme});
@@ -4957,7 +5025,7 @@
         const mask=homeShortcutMask(domain,item.title);
         const icon=mask
           ? `<span class="home-shortcut-glyph" style="--shortcut-mask:url('${esc(mask)}')" aria-hidden="true"></span>`
-          : `<img class="quick-icon" alt="" draggable="false" src="${appIcon(domain)}">`;
+          : homeShortcutIconMarkup(item,domain);
         return `<div class="quick-tile home-shortcut ${item.favorite?'favorite':''}" draggable="false" data-home-shortcut="${item.index}" data-domain="${esc(domain)}" data-app-url="${esc(item.url)}"><button class="home-shortcut-open" data-app-url="${esc(item.url)}" draggable="false" type="button">${icon}<span>${esc(item.title)}</span></button><button class="home-shortcut-menu-btn" data-home-shortcut-menu type="button" title="Shortcut options" aria-label="Shortcut options"><span class="shortcut-real-dots" aria-hidden="true">...</span></button><div class="home-shortcut-menu"><button data-home-shortcut-favorite="${item.index}" type="button">${item.favorite?'Unfavorite':'Favorite'}</button><button data-home-shortcut-remove="${item.index}" type="button">Remove</button></div></div>`;
       }).join('');
     return tiles + '<button class="quick-tile home-shortcut-add" data-home-shortcut-add type="button"><b>+</b><span>Add App</span></button>';
@@ -5130,6 +5198,7 @@
       canvas.className='nyx-home-dot-field';
       canvas.setAttribute('aria-hidden','true');
       home.prepend(canvas);
+      syncHomeDotFieldVisibility();
       const context=canvas.getContext('2d',{alpha:true});
       if(!context) return;
       const state={width:0,height:0,dots:[],pointer:null,trail:[],frame:0};
@@ -5262,7 +5331,7 @@
     if(!url?.trim()) return;
     const normalized=normalize(url.trim());
     const items=homeShortcuts();
-    items.push({title:title.trim(),url:normalized,domain:homeShortcutDomain(normalized,title),favorite:false});
+    items.push({title:title.trim(),url:normalized,domain:homeShortcutDomain(normalized,title),icon:websiteFaviconUrl(normalized),favorite:false});
     saveHomeShortcuts(items);
     renderHomeShortcuts();
     toast('Shortcut added');

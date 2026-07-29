@@ -1276,6 +1276,7 @@ const founderProfileDefaults = Object.freeze({
   bannerUrl: "",
   accent: "#8fb8ff",
   status: "online",
+  roles: ["Owner", "Developer"],
   badges: ["Founder"],
   linkLabel: "",
   linkUrl: ""
@@ -1307,6 +1308,7 @@ function founderProfileUrl(value, fallback = "") {
 
 function normalizeFounderProfile(value = {}) {
   const source = value && typeof value === "object" ? value : {};
+  const roles = Array.isArray(source.roles) ? source.roles : founderProfileDefaults.roles;
   const badges = Array.isArray(source.badges) ? source.badges : [];
   return {
     displayName: founderProfileText(source.displayName, founderProfileDefaults.displayName, 48),
@@ -1317,6 +1319,7 @@ function normalizeFounderProfile(value = {}) {
     bannerUrl: founderProfileUrl(source.bannerUrl),
     accent: /^#[0-9a-f]{6}$/i.test(String(source.accent || "").trim()) ? String(source.accent).trim().toLowerCase() : founderProfileDefaults.accent,
     status: ["online", "idle", "dnd", "offline"].includes(String(source.status || "").toLowerCase()) ? String(source.status).toLowerCase() : founderProfileDefaults.status,
+    roles: roles.map(role => founderProfileText(role, "", 32)).filter(Boolean).slice(0, 8),
     badges: badges.map(badge => founderProfileText(badge, "", 32)).filter(Boolean).slice(0, 8),
     linkLabel: founderProfileText(source.linkLabel, "", 40),
     linkUrl: founderProfileUrl(source.linkUrl)
@@ -1341,6 +1344,13 @@ function nyxUsernameFromToken(token = {}) {
   const email = String(token.email || "");
   const username = email.split("@")[0].replace(/[^a-z0-9_.-]/gi, "").slice(0, 32);
   return username || "nyx-user";
+}
+
+function nyxProfileImage(value, fallback = "") {
+  const raw = String(value || "").trim();
+  if (!raw) return fallback;
+  if (/^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(raw) && raw.length <= 460_000) return raw.replace(/\s/g, "");
+  return founderProfileUrl(raw, fallback);
 }
 
 async function authenticatedNyxUser(req) {
@@ -1368,22 +1378,20 @@ function normalizeNyxUserProfile(value = {}, token = {}) {
   const username = nyxUsernameFromToken(token);
   const fallbackName = founderProfileText(token.name, username, 48);
   const fallbackHandle = `@${username || uid.slice(0, 8) || "user"}`;
-  const accent = /^#[0-9a-f]{6}$/i.test(String(source.accent || "").trim()) ? String(source.accent).trim().toLowerCase() : "#8fb8ff";
-  const bannerPrimary = /^#[0-9a-f]{6}$/i.test(String(source.bannerPrimary || "").trim()) ? String(source.bannerPrimary).trim().toLowerCase() : accent;
-  const bannerSecondary = /^#[0-9a-f]{6}$/i.test(String(source.bannerSecondary || "").trim()) ? String(source.bannerSecondary).trim().toLowerCase() : "#172a46";
+  const accentPrimary = /^#[0-9a-f]{6}$/i.test(String(source.accentPrimary || source.accent || "").trim()) ? String(source.accentPrimary || source.accent).trim().toLowerCase() : "#5865f2";
+  const accentSecondary = /^#[0-9a-f]{6}$/i.test(String(source.accentSecondary || source.bannerPrimary || "").trim()) ? String(source.accentSecondary || source.bannerPrimary).trim().toLowerCase() : "#8ea1ff";
+  const bannerColor = /^#[0-9a-f]{6}$/i.test(String(source.bannerColor || source.bannerSecondary || "").trim()) ? String(source.bannerColor || source.bannerSecondary).trim().toLowerCase() : accentSecondary;
   return {
     displayName: founderProfileText(source.displayName, fallbackName, 48),
     handle: founderProfileText(source.handle, fallbackHandle, 40).replace(/\s+/g, ""),
     bio: founderProfileText(source.bio, "", 280),
-    pronouns: founderProfileText(source.pronouns, "", 32),
-    avatarUrl: founderProfileUrl(source.avatarUrl, founderProfileUrl(token.picture)),
-    bannerUrl: founderProfileUrl(source.bannerUrl),
-    bannerStyle: ["gradient", "solid", "image"].includes(String(source.bannerStyle || "").toLowerCase()) ? String(source.bannerStyle).toLowerCase() : "gradient",
-    bannerPrimary,
-    bannerSecondary,
-    accent,
-    profileTheme: ["midnight", "cloud", "neon"].includes(String(source.profileTheme || "").toLowerCase()) ? String(source.profileTheme).toLowerCase() : "midnight",
-    profileEffect: ["none", "glow", "aurora", "sparkle"].includes(String(source.profileEffect || "").toLowerCase()) ? String(source.profileEffect).toLowerCase() : "none",
+    avatarUrl: nyxProfileImage(source.avatarUrl, nyxProfileImage(token.picture)),
+    bannerUrl: nyxProfileImage(source.bannerUrl),
+    accent: accentPrimary,
+    accentPrimary,
+    accentSecondary,
+    bannerColor,
+    profileEffect: ["none", "glow", "sparkle"].includes(String(source.profileEffect || "").toLowerCase()) ? String(source.profileEffect).toLowerCase() : "none",
     status: ["online", "idle", "dnd", "offline"].includes(String(source.status || "").toLowerCase()) ? String(source.status).toLowerCase() : "online"
   };
 }
@@ -1730,6 +1738,18 @@ app.get("/api/founder-profile/auth-config", (_req, res) => {
 app.get("/api/founder-profile/owner", async (req, res) => {
   const access = await verifiedFounderOwner(req);
   res.set("Cache-Control", "no-store").json(access);
+});
+
+app.get("/api/founder-profile/developer-status", async (req, res) => {
+  const access = await verifiedFounderOwner(req);
+  if (!access.enabled) return res.status(503).json({ error: "Founder ownership has not been configured." });
+  if (!access.owner) return res.status(403).json({ error: "Owner access is required." });
+  res.set("Cache-Control", "no-store").json({
+    owner: true,
+    role: "Owner",
+    permissions: ["profile:write", "developer-console"],
+    checkedAt: new Date().toISOString()
+  });
 });
 
 app.put("/api/founder-profile", async (req, res) => {

@@ -47,9 +47,6 @@ const presenceTtlMs = 45_000;
 const linkGeneratorAttempts = new Map();
 const linkGeneratorWindowMs = 15 * 60 * 1000;
 const linkGeneratorMaxAttempts = 5;
-const founderProfileAttempts = new Map();
-const founderProfileWindowMs = 15 * 60 * 1000;
-const founderProfileMaxAttempts = 5;
 const freeLinkDailyLimit = 3;
 const freeNetworkDailyLimit = 25;
 const premiumImmediateCooldownAt = 5;
@@ -1285,7 +1282,7 @@ const founderProfileDefaults = Object.freeze({
 });
 
 function founderProfileConfig() {
-  return { accessCode: String(process.env.NYX_FOUNDER_PROFILE_ADMIN_CODE || "") };
+  return { administratorUid: String(process.env.NYX_FOUNDER_PROFILE_ADMIN_UID || "").trim() };
 }
 
 function founderProfileText(value, fallback, limit) {
@@ -1326,16 +1323,69 @@ function normalizeFounderProfile(value = {}) {
   };
 }
 
-function founderProfileRateState(clientId, now = Date.now()) {
-  for (const [key, state] of founderProfileAttempts) {
-    if (now - state.windowStarted > founderProfileWindowMs) founderProfileAttempts.delete(key);
+async function verifiedFounderOwner(req) {
+  const config = founderProfileConfig();
+  if (!config.administratorUid || !firebaseAdminModeConfigured()) return { enabled: false, owner: false };
+  const match = String(req.get("authorization") || "").match(/^Bearer\s+(.+)$/i);
+  if (!match) return { enabled: true, owner: false };
+  try {
+    const firebase = await linkGeneratorFirebase();
+    const token = await firebase?.auth.verifyIdToken(match[1], true);
+    return { enabled: true, owner: Boolean(token && token.uid === config.administratorUid) };
+  } catch {
+    return { enabled: true, owner: false };
   }
-  let state = founderProfileAttempts.get(clientId);
-  if (!state || now - state.windowStarted > founderProfileWindowMs) {
-    state = { attempts: 0, windowStarted: now };
-    founderProfileAttempts.set(clientId, state);
+}
+
+function nyxUsernameFromToken(token = {}) {
+  const email = String(token.email || "");
+  const username = email.split("@")[0].replace(/[^a-z0-9_.-]/gi, "").slice(0, 32);
+  return username || "nyx-user";
+}
+
+async function authenticatedNyxUser(req) {
+  const match = String(req.get("authorization") || "").match(/^Bearer\s+(.+)$/i);
+  if (!match || !firebaseAdminModeConfigured()) {
+    const error = new Error("Sign in to use Nyx Profiles.");
+    error.status = 401;
+    throw error;
   }
-  return state;
+  try {
+    const firebase = await linkGeneratorFirebase();
+    const token = await firebase?.auth.verifyIdToken(match[1], true);
+    if (!token) throw new Error("Sign-in is required.");
+    return { firebase, token };
+  } catch (cause) {
+    const error = new Error(cause?.message === "Sign-in is required." ? cause.message : "Your sign-in has expired. Sign in again.");
+    error.status = 401;
+    throw error;
+  }
+}
+
+function normalizeNyxUserProfile(value = {}, token = {}) {
+  const source = value && typeof value === "object" ? value : {};
+  const uid = String(token.uid || "");
+  const username = nyxUsernameFromToken(token);
+  const fallbackName = founderProfileText(token.name, username, 48);
+  const fallbackHandle = `@${username || uid.slice(0, 8) || "user"}`;
+  const accent = /^#[0-9a-f]{6}$/i.test(String(source.accent || "").trim()) ? String(source.accent).trim().toLowerCase() : "#8fb8ff";
+  const bannerPrimary = /^#[0-9a-f]{6}$/i.test(String(source.bannerPrimary || "").trim()) ? String(source.bannerPrimary).trim().toLowerCase() : accent;
+  const bannerSecondary = /^#[0-9a-f]{6}$/i.test(String(source.bannerSecondary || "").trim()) ? String(source.bannerSecondary).trim().toLowerCase() : "#172a46";
+  return {
+    displayName: founderProfileText(source.displayName, fallbackName, 48),
+    handle: founderProfileText(source.handle, fallbackHandle, 40).replace(/\s+/g, ""),
+    bio: founderProfileText(source.bio, "", 280),
+    pronouns: founderProfileText(source.pronouns, "", 32),
+    avatarUrl: founderProfileUrl(source.avatarUrl, founderProfileUrl(token.picture)),
+    bannerUrl: founderProfileUrl(source.bannerUrl),
+    bannerStyle: ["gradient", "solid", "image"].includes(String(source.bannerStyle || "").toLowerCase()) ? String(source.bannerStyle).toLowerCase() : "gradient",
+    bannerPrimary,
+    bannerSecondary,
+    accent,
+    profileTheme: ["midnight", "cloud", "neon"].includes(String(source.profileTheme || "").toLowerCase()) ? String(source.profileTheme).toLowerCase() : "midnight",
+    profileEffect: ["none", "glow", "aurora", "sparkle"].includes(String(source.profileEffect || "").toLowerCase()) ? String(source.profileEffect).toLowerCase() : "none",
+    status: ["online", "idle", "dnd", "offline"].includes(String(source.status || "").toLowerCase()) ? String(source.status).toLowerCase() : "online"
+  };
 }
 
 function linkGeneratorClientId(req) {
@@ -1595,6 +1645,61 @@ async function bunnyRequest(path, apiKey, options = {}) {
   return payload;
 }
 
+app.get("/api/profiles/me", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const { firebase, token } = await authenticatedNyxUser(req);
+    const ref = firebase.firestore.collection("nyxUserProfiles").doc(token.uid);
+    const snapshot = await ref.get();
+    const profile = normalizeNyxUserProfile(snapshot.data()?.profile, token);
+    const createdAt = String(snapshot.data()?.createdAt || new Date().toISOString());
+    if (!snapshot.exists) await ref.set({ profile, createdAt, updatedAt: createdAt });
+    res.json({ uid: token.uid, profile, createdAt });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Nyx Profile is unavailable." });
+  }
+});
+
+app.put("/api/profiles/me", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  try {
+    const { firebase, token } = await authenticatedNyxUser(req);
+    const ref = firebase.firestore.collection("nyxUserProfiles").doc(token.uid);
+    const previous = await ref.get();
+    const profile = normalizeNyxUserProfile(req.body?.profile, token);
+    const createdAt = String(previous.data()?.createdAt || new Date().toISOString());
+    await ref.set({ profile, createdAt, updatedAt: new Date().toISOString() }, { merge: true });
+    res.json({ uid: token.uid, profile, createdAt });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Nyx Profile could not be saved." });
+  }
+});
+
+app.get("/api/profiles/:uid", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  const uid = String(req.params.uid || "").trim();
+  if (!/^[A-Za-z0-9_-]{8,128}$/.test(uid) || !firebaseAdminModeConfigured()) {
+    res.status(404).json({ error: "Profile not found." });
+    return;
+  }
+  try {
+    const firebase = await linkGeneratorFirebase();
+    const snapshot = await firebase.firestore.collection("nyxUserProfiles").doc(uid).get();
+    if (!snapshot.exists) {
+      res.status(404).json({ error: "Profile not found." });
+      return;
+    }
+    const data = snapshot.data() || {};
+    res.json({ uid, profile: normalizeNyxUserProfile(data.profile), createdAt: String(data.createdAt || "") });
+  } catch {
+    res.status(503).json({ error: "Profile is unavailable." });
+  }
+});
+
 app.get("/api/founder-profile", async (_req, res) => {
   res.set("Cache-Control", "no-store");
   let profile = founderProfileDefaults;
@@ -1609,7 +1714,22 @@ app.get("/api/founder-profile", async (_req, res) => {
   } catch (error) {
     console.error("Nyx Founder Profile could not be read:", error?.message || error);
   }
-  res.json({ profile, persistent, editingEnabled: Boolean(firebaseAdminModeConfigured() && founderProfileConfig().accessCode) });
+  res.json({ profile, persistent, editingEnabled: Boolean(firebaseAdminModeConfigured() && founderProfileConfig().administratorUid) });
+});
+
+app.get("/api/founder-profile/auth-config", (_req, res) => {
+  const firebase = linkGeneratorFirebaseConfig();
+  res.set("Cache-Control", "no-store").json({
+    enabled: firebaseAccountModeConfigured(),
+    ownerConfigured: Boolean(founderProfileConfig().administratorUid),
+    apiKey: firebaseAccountModeConfigured() ? firebase.webApiKey : "",
+    projectId: firebaseAccountModeConfigured() ? firebase.projectId : ""
+  });
+});
+
+app.get("/api/founder-profile/owner", async (req, res) => {
+  const access = await verifiedFounderOwner(req);
+  res.set("Cache-Control", "no-store").json(access);
 });
 
 app.put("/api/founder-profile", async (req, res) => {
@@ -1619,24 +1739,15 @@ app.put("/api/founder-profile", async (req, res) => {
     return;
   }
   const config = founderProfileConfig();
-  if (!config.accessCode || !firebaseAdminModeConfigured()) {
-    res.status(503).json({ error: "Founder Profile editing has not been configured by the Nyx administrator yet." });
+  if (!config.administratorUid || !firebaseAdminModeConfigured()) {
+    res.status(503).json({ error: "Founder Profile ownership has not been configured by the Nyx administrator yet." });
     return;
   }
-  const submittedAccessCode = String(req.body?.accessCode || "");
-  const now = Date.now();
-  const rate = founderProfileRateState(linkGeneratorClientId(req), now);
-  if (!secretMatches(submittedAccessCode, config.accessCode)) {
-    rate.attempts += 1;
-    if (rate.attempts > founderProfileMaxAttempts) {
-      const retryAfter = Math.max(1, Math.ceil((rate.windowStarted + founderProfileWindowMs - now) / 1000));
-      res.set("Retry-After", String(retryAfter)).status(429).json({ error: "Too many incorrect access-code attempts. Try again later." });
-      return;
-    }
-    res.status(401).json({ error: "The administrator code is incorrect." });
+  const access = await verifiedFounderOwner(req);
+  if (!access.owner) {
+    res.status(403).json({ error: "Only the signed-in founder account can publish this profile." });
     return;
   }
-  rate.attempts = 0;
   const profile = normalizeFounderProfile(req.body?.profile);
   try {
     const firebase = await linkGeneratorFirebase();

@@ -48,19 +48,31 @@ html body .nyx-credits-section>h2{
 }
 html body .nyx-founder-profile{
   display:grid;
-  grid-template-columns:minmax(240px,360px) minmax(0,1fr);
-  align-items:center;
-  gap:clamp(28px,6vw,72px);
   padding:clamp(18px,3vw,30px);
   border:1px solid var(--credits-line);
   border-radius:24px;
   background:linear-gradient(135deg,color-mix(in srgb,var(--credits-accent) 10%,transparent),transparent 42%),var(--credits-card);
 }
-html body .nyx-founder-image-wrap{aspect-ratio:1;display:grid;place-items:center;overflow:hidden;border:1px solid var(--credits-line);border-radius:20px;background:#050a12}
+html body .nyx-founder-profile-standard{position:relative;overflow:hidden;border-color:color-mix(in srgb,var(--nyx-founder-accent,var(--credits-accent)) 38%,transparent);background:linear-gradient(135deg,color-mix(in srgb,var(--nyx-founder-accent,var(--credits-accent)) 16%,transparent),transparent 46%),var(--credits-card)}
+html body .nyx-founder-banner{height:clamp(100px,16vw,150px);margin:calc(clamp(18px,3vw,30px) * -1) calc(clamp(18px,3vw,30px) * -1) clamp(18px,3vw,30px);background:linear-gradient(135deg,color-mix(in srgb,var(--nyx-founder-accent,var(--credits-accent)) 38%,#16243a),#080f19)}
+html body .nyx-founder-banner img{display:block;width:100%;height:100%;object-fit:cover}
+html body .nyx-founder-profile-content{display:grid;grid-template-columns:minmax(190px,300px) minmax(0,1fr);align-items:center;gap:clamp(28px,6vw,72px)}
+html body .nyx-founder-image-wrap{position:relative;aspect-ratio:1;display:grid;place-items:center;overflow:visible;border:1px solid var(--credits-line);border-radius:20px;background:#050a12}
 html body .nyx-founder-image{display:block;width:100%;height:100%;padding:0;box-sizing:border-box;object-fit:cover;object-position:center}
-html body .nyx-founder-role{margin:0 0 6px;color:var(--credits-accent);font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase}
+html body .nyx-founder-profile-standard .nyx-founder-image{border:2px solid var(--nyx-founder-accent,var(--credits-accent));border-radius:19px}
+html body .nyx-founder-status{position:absolute;right:-7px;bottom:-7px;width:20px;height:20px;box-sizing:border-box;border:3px solid #0a111c;border-radius:50%;background:#77849a}
+html body .nyx-founder-status-online{background:#5bc68a}
+html body .nyx-founder-status-idle{background:#e4b65a}
+html body .nyx-founder-status-dnd{background:#df6875}
+html body .nyx-founder-role{margin:0 0 6px;color:var(--nyx-founder-accent,var(--credits-accent));font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase}
 html body .nyx-founder-copy h3{margin:0 0 16px;color:#f5f8ff;font-size:clamp(31px,5vw,50px);font-weight:400;letter-spacing:-.04em}
 html body .nyx-founder-copy>p{margin:0;color:#aebdd1;font-size:15px;font-weight:400;line-height:1.72;overflow-wrap:anywhere}
+html body .nyx-founder-copy .nyx-founder-handle{margin:-10px 0 14px;color:#b7c4d6;font-size:13px}
+html body .nyx-founder-copy .nyx-founder-bio{color:#aebdd1}
+html body .nyx-founder-badges{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 16px}
+html body .nyx-founder-badge{padding:5px 9px;border:1px solid color-mix(in srgb,var(--nyx-founder-accent,var(--credits-accent)) 46%,transparent);border-radius:999px;color:var(--nyx-founder-accent,var(--credits-accent));font-size:11px;font-weight:500}
+html body .nyx-founder-link{display:inline-flex;align-items:center;gap:6px;margin-top:18px;color:var(--nyx-founder-accent,var(--credits-accent));font-size:13px;font-weight:500;text-decoration:none}
+html body .nyx-founder-link:hover{text-decoration:underline}
 html body .nyx-founder-copy .nyx-founder-note{margin-top:16px;color:#d7e1ef}
 html body .nyx-credit-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 html body .nyx-credit-grid article{min-height:176px;padding:22px;border:1px solid var(--credits-line);border-radius:19px;background:var(--credits-card)}
@@ -74,9 +86,10 @@ html body .nyx-credits-footer strong{font-size:14px;font-weight:500}
 html body .nyx-credits-footer span,html body .nyx-credits-footer small{font-size:11px}
 
 @media(max-width:680px){
-  html body .nyx-founder-profile{grid-template-columns:1fr}
+  html body .nyx-founder-profile-content{grid-template-columns:1fr}
   html body .nyx-founder-image-wrap{width:min(310px,100%);margin:auto}
   html body .nyx-founder-copy{text-align:center}
+  html body .nyx-founder-badges{justify-content:center}
   html body .nyx-credit-grid{grid-template-columns:1fr}
   html body .nyx-credits-footer{grid-template-columns:auto 1fr}
   html body .nyx-credits-footer small{grid-column:1/-1}

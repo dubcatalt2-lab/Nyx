@@ -1,4 +1,4 @@
-@import url("./css/core.css?v=20260726-chromebook-layout-v1");
+@import url("./css/core.css?v=20260728-vanta-layer-v2");
 @import url("./css/chrome-and-settings.css");
 @import url("./css/fresh-theme.css");
 @import url("./css/interface-polish.css?v=20260715-shared-theme-bg-v1");
@@ -10,9 +10,9 @@
 @import url("./css/home-utilities.css?v=20260726-copyright-v8");
 @import url("./css/hover-consistency.css?v=20260726-single-shortcuts-v18");
 @import url("./css/weather-redesign.css?v=20260728-fern-v11");
-@import url("./css/theme-tints.css?v=20260728-fern-v16");
+@import url("./css/theme-tints.css?v=20260729-custom-theme-maker-v27");
 @import url("./css/setup-wizard.css?v=20260728-fern-v5");
-@import url("./css/credits.css?v=20260728-fern-v3");
+@import url("./css/credits.css?v=20260729-founder-profile-v4");
 @import url("./css/interface-scale.css?v=20260727-themed-menu-v9");
 
 /* Keep the close mark geometrically centered instead of relying on a font baseline. */
@@ -27,6 +27,20 @@ html body.browser-shell .top-os.top-os .browser-mode-shell-tab-close{
   place-items:center!important;
   transform:translateY(-50%)!important;
 }
+
+/* Founder profile editor: public profile, owner-only publishing. */
+.nyx-founder-editor-overlay{position:fixed;z-index:2147483000;inset:0;display:grid;place-items:center;padding:22px;background:rgba(3,8,14,.68);backdrop-filter:blur(12px)}
+.nyx-founder-editor{width:min(760px,100%);max-height:min(880px,calc(100vh - 44px));overflow:auto;border:1px solid var(--theme-border,rgba(143,184,255,.38));border-radius:22px;background:var(--theme-panel,#111b2a);box-shadow:0 24px 80px rgba(0,0,0,.48);color:var(--theme-text,#edf4ff)}
+.nyx-founder-editor header{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;padding:28px 30px 20px;border-bottom:1px solid var(--theme-border,rgba(143,184,255,.22))}
+.nyx-founder-editor header .utility-kicker{margin:0 0 5px;color:var(--theme-accent,#8fb8ff);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.nyx-founder-editor h2{margin:0;color:inherit;font-size:24px}.nyx-founder-editor header p:last-child{margin:7px 0 0;color:var(--theme-muted,#aebdd1);font-size:13px}
+.nyx-founder-editor-close{display:grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid var(--theme-border,rgba(143,184,255,.3));border-radius:10px;background:transparent;color:inherit;font-size:25px;line-height:1;cursor:pointer}
+.nyx-founder-editor-form{padding:24px 30px 28px}.nyx-founder-editor-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.nyx-founder-editor label{display:grid;gap:7px;color:var(--theme-muted,#bdcadb);font-size:12px;font-weight:600}.nyx-founder-editor label small{font-weight:400;opacity:.8}
+.nyx-founder-editor input,.nyx-founder-editor select,.nyx-founder-editor textarea{width:100%;box-sizing:border-box;border:1px solid var(--theme-border,rgba(143,184,255,.28));border-radius:10px;background:color-mix(in srgb,var(--theme-panel,#111b2a) 76%,#000);color:inherit;font:inherit;font-weight:400;outline:none;padding:10px 11px}.nyx-founder-editor textarea{resize:vertical;min-height:90px}.nyx-founder-editor input:focus,.nyx-founder-editor select:focus,.nyx-founder-editor textarea:focus{border-color:var(--theme-accent,#8fb8ff);box-shadow:0 0 0 3px color-mix(in srgb,var(--theme-accent,#8fb8ff) 20%,transparent)}
+.nyx-founder-editor input[type=color]{height:42px;padding:4px;cursor:pointer}.nyx-founder-editor-wide{grid-column:1/-1}
+.nyx-founder-editor footer{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:18px;align-items:end;margin-top:22px}.nyx-founder-editor-code{max-width:330px}.nyx-founder-editor footer>div{display:flex;gap:9px;justify-content:flex-end}.nyx-founder-editor-error{grid-column:1/-1;min-height:18px;margin:0;color:#ff9da8;font-size:12px}
+@media(max-width:620px){.nyx-founder-editor-overlay{padding:10px}.nyx-founder-editor header,.nyx-founder-editor-form{padding-left:18px;padding-right:18px}.nyx-founder-editor-grid{grid-template-columns:1fr}.nyx-founder-editor-wide{grid-column:auto}.nyx-founder-editor footer{grid-template-columns:1fr}.nyx-founder-editor footer>div{justify-content:stretch}.nyx-founder-editor footer>div button{flex:1}}
 html body.browser-shell .top-os.top-os .browser-mode-shell-tab-close::before{
   content:""!important;
   position:absolute!important;
@@ -41,4 +55,59 @@ html body.browser-shell .top-os.top-os .browser-mode-shell-tab-close::before{
 }
 html body.browser-shell .top-os.top-os .browser-mode-shell-tab-close:hover{
   transform:translateY(-50%)!important;
+}
+
+/* This file loads after the imported theme sheets.  Keep the custom palette
+   authoritative for the remaining shell controls those sheets define later. */
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-custom.theme-custom.theme-custom.theme-custom :is(.browser-mode-url,.browser-mode-address input,.browser-mode-address textarea){
+  background-color:var(--nyx-custom-field)!important;
+  border-color:var(--nyx-custom-line)!important;
+  color:var(--nyx-custom-text)!important;
+  -webkit-text-fill-color:var(--nyx-custom-text)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-custom.theme-custom.theme-custom.theme-custom .browser-mode-url::placeholder{
+  color:var(--nyx-custom-muted)!important;
+  -webkit-text-fill-color:var(--nyx-custom-muted)!important;
+  opacity:1!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-custom.theme-custom.theme-custom.theme-custom :is(.quick-tile,.home-shortcut-open,.home-shortcut-menu-btn,.home-shortcut-add,.browser-mode-bookmark,.browser-mode-weather){
+  border-color:var(--nyx-custom-line)!important;
+  color:var(--nyx-custom-text)!important;
+  -webkit-text-fill-color:var(--nyx-custom-text)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-custom.theme-custom.theme-custom.theme-custom :is(.quick-tile:hover,.home-shortcut-open:hover,.home-shortcut-menu-btn:hover,.home-shortcut-add:hover,.browser-mode-bookmark:hover,.browser-mode-weather:hover){
+  background-color:var(--nyx-custom-panel)!important;
+  border-color:var(--nyx-custom-bright)!important;
+}
+
+/* Give every built-in color theme its own canvas, top bar, and input surface.
+   Previously the accent changed while these large surfaces stayed default navy. */
+html body.browser-shell.theme-ruby{
+  --nyx-unified-canvas:#291219!important;
+  --nyx-unified-top:#16080d!important;
+  --nyx-unified-field:#351018!important;
+}
+html body.browser-shell.theme-emerald{
+  --nyx-unified-canvas:#0e251b!important;
+  --nyx-unified-top:#07130e!important;
+  --nyx-unified-field:#123126!important;
+}
+html body.browser-shell.theme-sakura{
+  --nyx-unified-canvas:#281522!important;
+  --nyx-unified-top:#150a12!important;
+  --nyx-unified-field:#35162f!important;
+}
+html body.browser-shell.theme-midnight{
+  --nyx-unified-canvas:#0a1029!important;
+  --nyx-unified-top:#050817!important;
+  --nyx-unified-field:#111a3b!important;
+}
+html body.browser-shell:is(.theme-ruby,.theme-emerald,.theme-sakura,.theme-midnight){
+  background:var(--nyx-unified-canvas)!important;
+}
+html body.browser-shell:is(.theme-ruby,.theme-emerald,.theme-sakura,.theme-midnight) .top-os{
+  background:var(--nyx-unified-top)!important;
+}
+html body.browser-shell:is(.theme-ruby,.theme-emerald,.theme-sakura,.theme-midnight) :is(.browser-mode-url,.browser-mode-address input,.browser-mode-address textarea,.settings-input,.settings-select){
+  background-color:var(--nyx-unified-field)!important;
 }

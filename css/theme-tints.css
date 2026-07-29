@@ -146,7 +146,7 @@ html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-eme
   background-image:none!important;
   filter:none!important;
 }
-html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh):not(.custom-bg-active) :is(#nyxWaveBg,.nyx-wave-bg,#defaultVantaBg){
+html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh):not(.custom-bg-active):not(.three-d-backgrounds) :is(#nyxWaveBg,.nyx-wave-bg,#defaultVantaBg){
   display:none!important;
 }
 html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh):not(.custom-bg-active)
@@ -1409,3 +1409,248 @@ html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"] bod
   .browser-shell-settings-overlay.browser-shell-settings-overlay input[type="range"]{
   accent-color:var(--nyx-chrome-accent)!important;
 }
+
+/* Keep the compact homepage utilities inside Fern's muted green palette.
+   Fresh's legacy teal text rules have higher specificity than their base
+   utility styles, so this theme-scoped rule deliberately resolves that clash. */
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
+  body.browser-shell.theme-fresh.browser-shell:is(body,#nyx-fern-footer-specificity)
+  .browser-window.browser-home-page :is(
+    .nyx-home-link-checker,
+    .nyx-home-utility-links a,
+    .nyx-home-utility-links .nyx-home-copyright
+  ){
+  color:var(--nyx-home-muted)!important;
+  -webkit-text-fill-color:var(--nyx-home-muted)!important;
+}
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
+  body.browser-shell.theme-fresh.browser-shell:is(body,#nyx-fern-footer-specificity)
+  .browser-window.browser-home-page :is(
+    .nyx-home-link-checker,
+    .nyx-home-utility-links a
+  ):is(:hover,:focus-visible){
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+}
+
+/* Fresh used to be the light aqua theme. Its legacy stylesheet still contains
+   several direct cyan text declarations, and desktop mode does not carry the
+   `.browser-shell` class that the earlier Fern repairs target. Keep the
+   palette aliases and all application text on Fern in one place so both
+   desktop and browser mode resolve to green. */
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
+  body.theme-fresh:is(body,#nyx-fern-text-specificity){
+  --nyx-fern-text:#d9e5d6;
+  --nyx-fern-muted:#91a68d;
+  --nyx-fern-accent:#a2bd9a;
+  --fresh-ink:var(--nyx-fern-text)!important;
+  --fresh-blue:var(--nyx-fern-accent)!important;
+  --fresh-blue-deep:var(--nyx-fern-accent)!important;
+  --fresh-electric:var(--nyx-fern-accent)!important;
+  --fresh-electric-deep:var(--nyx-fern-muted)!important;
+  --fresh-electric-glow:rgba(162,189,154,.28)!important;
+  --nyx-shell-icon:var(--nyx-fern-accent)!important;
+}
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
+  body.theme-fresh:is(body,#nyx-fern-text-specificity) :is(
+    h1,h2,h3,h4,h5,h6,p,span,label,strong,b,a,button,
+    input,select,textarea,option,legend,figcaption,dt,dd,li,th,td,caption,
+    .tool-btn,.go-btn,.menu-btn,.user-chip,.browser-mode-url,.urlbar
+  ){
+  color:var(--nyx-fern-text)!important;
+  -webkit-text-fill-color:var(--nyx-fern-text)!important;
+  text-shadow:none!important;
+}
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
+  body.theme-fresh:is(body,#nyx-fern-text-specificity) :is(
+    button,a,.tool-btn,.go-btn,.menu-btn,.user-chip
+  ):is(:hover,:focus-visible){
+  color:var(--nyx-fern-accent)!important;
+  -webkit-text-fill-color:var(--nyx-fern-accent)!important;
+}
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
+  body.theme-fresh:is(body,#nyx-fern-text-specificity) :is(input,textarea,.browser-mode-url,.urlbar)::placeholder{
+  color:var(--nyx-fern-muted)!important;
+  -webkit-text-fill-color:var(--nyx-fern-muted)!important;
+}
+
+/* Weather has an older, standalone Fresh treatment with direct teal values.
+   Scope an explicit Fern palette to the report so its text, SVG controls, and
+   forecast emphasis cannot fall back to that treatment in desktop mode. */
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
+  body.theme-fresh:is(body,#nyx-fern-weather-specificity) .weather-panel,
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
+  body.theme-fresh:is(body,#nyx-fern-weather-specificity) .weather-restore{
+  --weather-accent:var(--nyx-fern-accent)!important;
+  --weather-accent-soft:rgba(162,189,154,.15)!important;
+  --weather-panel-bg:#0c140e!important;
+  --weather-card-bg:rgba(27,40,29,.72)!important;
+  --weather-card-hover:rgba(36,53,39,.84)!important;
+  --weather-line:rgba(134,167,126,.27)!important;
+  --weather-text:var(--nyx-fern-text)!important;
+  --weather-muted:var(--nyx-fern-muted)!important;
+  color:var(--nyx-fern-text)!important;
+  -webkit-text-fill-color:var(--nyx-fern-text)!important;
+}
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
+  body.theme-fresh:is(body,#nyx-fern-weather-specificity) .weather-panel :is(
+    .weather-panel-title,.weather-search-symbol,.weather-search input,
+    .weather-search button,.weather-options,.weather-temp,.weather-desc,
+    .weather-place,.weather-region-time,.weather-stat,.weather-stat strong,
+    .weather-forecast-title,.weather-forecast-row,.weather-day,
+    .weather-rain-chance,.weather-high-low,.weather-high-low span,.weather-status,
+    .weather-icon-btn
+  ),
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
+  body.theme-fresh:is(body,#nyx-fern-weather-specificity) .weather-restore::after{
+  color:var(--nyx-fern-text)!important;
+  -webkit-text-fill-color:var(--nyx-fern-text)!important;
+  text-shadow:none!important;
+}
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
+  body.theme-fresh:is(body,#nyx-fern-weather-specificity) .weather-panel :is(
+    .weather-search-symbol,.weather-search button,.weather-rain-chance,.weather-icon-btn
+  ){
+  color:var(--nyx-fern-accent)!important;
+  -webkit-text-fill-color:var(--nyx-fern-accent)!important;
+}
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
+  body.theme-fresh:is(body,#nyx-fern-weather-specificity) .weather-panel .weather-search input::placeholder{
+  color:var(--nyx-fern-muted)!important;
+  -webkit-text-fill-color:var(--nyx-fern-muted)!important;
+}
+
+/* Final legacy containment. The original Fresh theme supplied cyan as the
+   inherited color and control border, so unclassed desktop text and controls
+   could still leak aqua even after their child rules were corrected. Fern is
+   intentionally a fully green theme: reset those inherited channels here. */
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
+  body.theme-fresh:is(body,#nyx-fern-global-specificity){
+  --nyx-fern-line:#354b36;
+  --theme-a:#728f6b!important;
+  --theme-b:#405d42!important;
+  --theme-strong:#d9e5d6!important;
+  --theme-border:var(--nyx-fern-line)!important;
+  --theme-soft:#19241b!important;
+  --theme-text-gradient:none!important;
+  --accent:#728f6b!important;
+  --nyx-purple-edge:var(--nyx-fern-line)!important;
+  color:var(--nyx-fern-text)!important;
+  -webkit-text-fill-color:var(--nyx-fern-text)!important;
+  border-color:var(--nyx-fern-line)!important;
+  outline-color:var(--nyx-fern-line)!important;
+}
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
+  body.theme-fresh:is(body,#nyx-fern-global-specificity) :is(
+    *,*::before,*::after
+  ){
+  color:var(--nyx-fern-text)!important;
+  -webkit-text-fill-color:var(--nyx-fern-text)!important;
+  border-color:var(--nyx-fern-line)!important;
+  outline-color:var(--nyx-fern-line)!important;
+}
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
+  body.theme-fresh:is(body,#nyx-fern-global-specificity):not(.custom-bg-active):not(.three-d-backgrounds) #whiteVantaBg{
+  opacity:0!important;
+  background:#162019!important;
+}
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
+  body.theme-fresh:is(body,#nyx-fern-global-specificity) :is(
+    .setup-theme-preview.fresh,.setup-final-stage[data-theme="fresh"]
+  ){
+  --stage-accent:var(--nyx-fern-accent)!important;
+  --stage-strong:var(--nyx-fern-text)!important;
+  --stage-border:var(--nyx-fern-line)!important;
+  background:#162019!important;
+}
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
+  body.theme-fresh:is(body,#nyx-fern-global-specificity) .user-chip.needs-name{
+  color:#d9e5d6!important;
+  -webkit-text-fill-color:#d9e5d6!important;
+  border:1px solid #354b36!important;
+  box-shadow:none!important;
+}
+
+/* The browser home's standard canvas is opaque. Reveal the active Vanta
+   scene behind it only while the user has 3D backgrounds enabled. */
+html body.browser-shell.three-d-backgrounds:not(.custom-bg-active)
+  :is(.browser-window.browser-home-page,.browser-window.maximized.browser-blank,.browser-window.maximized:has(.browser-home:not(.hidden)),.browser-home){
+  background:transparent!important;
+  background-image:none!important;
+}
+html body.browser-shell.three-d-backgrounds:not(.custom-bg-active)
+  :is(.browser-window.browser-home-page,.browser-window.maximized.browser-blank,.browser-window.maximized:has(.browser-home:not(.hidden)))::before,
+html body.browser-shell.three-d-backgrounds:not(.custom-bg-active)
+  :is(.browser-window.browser-home-page,.browser-window.maximized.browser-blank,.browser-window.maximized:has(.browser-home:not(.hidden)))::after,
+html body.browser-shell.three-d-backgrounds:not(.custom-bg-active) .browser-home::before,
+html body.browser-shell.three-d-backgrounds:not(.custom-bg-active) .browser-home::after{
+  background:transparent!important;
+  background-image:none!important;
+}
+/* The unified canvas and its dot field are the 2D fallback.  They must not
+   paint over an enabled Vanta scene, regardless of the active theme. */
+html body.browser-shell.three-d-backgrounds:not(.custom-bg-active){
+  background:transparent!important;
+  background-image:none!important;
+}
+html[data-nyx-theme] body.browser-shell.browser-shell.three-d-backgrounds:not(.custom-bg-active) .browser-home .nyx-home-dot-field{
+  display:none!important;
+}
+
+/* Custom themes derive the whole Nyx chrome from one saved base color. */
+html[data-nyx-theme="custom"] body.theme-custom{
+  --nyx-unified-canvas:var(--nyx-custom-canvas)!important;
+  --nyx-unified-top:var(--nyx-custom-top)!important;
+  --nyx-unified-field:var(--nyx-custom-field)!important;
+  --nyx-home-wordmark:var(--nyx-custom-bright)!important;
+  --nyx-home-text:var(--nyx-custom-text)!important;
+  --nyx-home-muted:var(--nyx-custom-muted)!important;
+  --nyx-home-line:var(--nyx-custom-line)!important;
+  --nyx-home-panel:var(--nyx-custom-panel)!important;
+  --nyx-home-panel-soft:var(--nyx-custom-field)!important;
+  --nyx-chrome-accent:var(--nyx-custom-accent)!important;
+  --nyx-chrome-bright:var(--nyx-custom-bright)!important;
+  --nyx-chrome-base:var(--nyx-custom-field)!important;
+  --nyx-chrome-deep:var(--nyx-custom-top)!important;
+  --nyx-chrome-active:var(--nyx-custom-panel)!important;
+  --nyx-chrome-hover:var(--nyx-custom-line)!important;
+  --nyx-dot-color:var(--nyx-custom-dot)!important;
+  --theme-a:var(--nyx-custom-accent)!important;
+  --theme-b:var(--nyx-custom-line)!important;
+  --theme-strong:var(--nyx-custom-text)!important;
+  --theme-border:var(--nyx-custom-line)!important;
+  --theme-bg:var(--nyx-custom-canvas)!important;
+  --accent:var(--nyx-custom-accent)!important;
+  color:var(--nyx-custom-text)!important;
+  color-scheme:dark!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom,
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom .browser-window.browser-home-page,
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom .browser-window.browser-home-page .browser-home{
+  background:var(--nyx-custom-canvas)!important;
+  background-image:none!important;
+  border-color:var(--nyx-custom-line)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom .top-os{
+  background:var(--nyx-custom-top)!important;
+  background-image:none!important;
+  border-color:var(--nyx-custom-line)!important;
+}
+html[data-nyx-theme="custom"] body.theme-custom :is(.browser-mode-url,.settings-input,.settings-select,.nyx-settings-filter,input,select,textarea){
+  background-color:var(--nyx-custom-field)!important;
+  border-color:var(--nyx-custom-line)!important;
+  color:var(--nyx-custom-text)!important;
+  -webkit-text-fill-color:var(--nyx-custom-text)!important;
+}
+html[data-nyx-theme="custom"] body.theme-custom :is(h1,h2,h3,p,span,label,strong,b,a,button){
+  color:var(--nyx-custom-text)!important;
+  -webkit-text-fill-color:var(--nyx-custom-text)!important;
+}
+html[data-nyx-theme="custom"] body.theme-custom :is(button,.settings-action,.quick-tile):hover{
+  border-color:var(--nyx-custom-bright)!important;
+}
+.nyx-custom-theme-controls{display:flex;align-items:center;gap:10px;max-width:440px}
+.nyx-custom-theme-picker{position:relative;display:grid;place-items:center;width:42px;height:42px;flex:0 0 42px;border:1px solid var(--nyx-home-line,rgba(255,255,255,.25));border-radius:12px;overflow:hidden;cursor:pointer;background:var(--nyx-swatch,#6f9ee8)}
+.nyx-custom-theme-picker input{position:absolute;inset:-8px;width:calc(100% + 16px);height:calc(100% + 16px);padding:0;border:0;opacity:0;cursor:pointer}
+.nyx-custom-theme-swatch{width:23px;height:23px;border:2px solid rgba(255,255,255,.88);border-radius:999px;background:var(--nyx-swatch,#6f9ee8);box-shadow:0 0 0 1px rgba(0,0,0,.35)}
+.nyx-custom-theme-controls .settings-input{min-width:0;text-transform:uppercase;font-family:ui-monospace,Consolas,monospace!important}

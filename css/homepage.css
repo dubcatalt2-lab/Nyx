@@ -614,7 +614,7 @@ html body.browser-shell.theme-default{
 }
 html body.browser-shell.theme-default #nyxWaveBg,
 html body.browser-shell.theme-default .nyx-wave-bg,
-html body.browser-shell.theme-default #defaultVantaBg{display:none!important}
+html body.browser-shell.theme-default:not(.three-d-backgrounds) #defaultVantaBg{display:none!important}
 html body.browser-shell.theme-default .top-os{
   background:#09111d!important;
   background-image:none!important;

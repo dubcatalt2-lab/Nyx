@@ -106,6 +106,19 @@ body.custom-bg-active::before{background:var(--theme-bg),linear-gradient(rgba(0,
   opacity:1;
   transition:opacity .35s ease;
 }
+#defaultVantaBg,
+#rubyVantaBg,
+#whiteVantaBg,
+#emeraldVantaBg,
+#sakuraVantaBg,
+#defaultVantaBg canvas,
+#rubyVantaBg canvas,
+#whiteVantaBg canvas,
+#emeraldVantaBg canvas,
+#sakuraVantaBg canvas{
+  pointer-events:none!important;
+  user-select:none!important;
+}
 #rubyVantaBg{
   position:fixed;
   inset:0;

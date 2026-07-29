@@ -47,6 +47,9 @@ const presenceTtlMs = 45_000;
 const linkGeneratorAttempts = new Map();
 const linkGeneratorWindowMs = 15 * 60 * 1000;
 const linkGeneratorMaxAttempts = 5;
+const founderProfileAttempts = new Map();
+const founderProfileWindowMs = 15 * 60 * 1000;
+const founderProfileMaxAttempts = 5;
 const freeLinkDailyLimit = 3;
 const freeNetworkDailyLimit = 25;
 const premiumImmediateCooldownAt = 5;
@@ -1226,12 +1229,17 @@ function linkGeneratorFirebaseConfig() {
   };
 }
 
+function firebaseAdminModeConfigured() {
+  const { projectId, clientEmail, privateKey } = linkGeneratorFirebaseConfig();
+  return Boolean(projectId && clientEmail && privateKey);
+}
+
 function firebaseAccountModeConfigured() {
-  return Object.values(linkGeneratorFirebaseConfig()).every(Boolean);
+  return firebaseAdminModeConfigured() && Boolean(linkGeneratorFirebaseConfig().webApiKey);
 }
 
 async function linkGeneratorFirebase() {
-  if (!firebaseAccountModeConfigured()) return null;
+  if (!firebaseAdminModeConfigured()) return null;
   if (!linkGeneratorFirebasePromise) {
     linkGeneratorFirebasePromise = (async () => {
       const config = linkGeneratorFirebaseConfig();
@@ -1260,6 +1268,74 @@ function secretMatches(actual, expected) {
   const left = createHash("sha256").update(String(actual || "")).digest();
   const right = createHash("sha256").update(String(expected || "")).digest();
   return timingSafeEqual(left, right) && Boolean(expected);
+}
+
+const founderProfileDefaults = Object.freeze({
+  displayName: "1aqlla",
+  handle: "@1aqlla",
+  role: "Owner / Founder",
+  bio: "Built Nyx for people who search, study, and create.",
+  avatarUrl: "/assets/icons/founder-1aqlla.jpg",
+  bannerUrl: "",
+  accent: "#8fb8ff",
+  status: "online",
+  badges: ["Founder"],
+  linkLabel: "",
+  linkUrl: ""
+});
+
+function founderProfileConfig() {
+  return { accessCode: String(process.env.NYX_FOUNDER_PROFILE_ADMIN_CODE || "") };
+}
+
+function founderProfileText(value, fallback, limit) {
+  const text = String(value ?? "").trim().replace(/\s+/g, " ").slice(0, limit);
+  return text || fallback;
+}
+
+function founderProfileUrl(value, fallback = "") {
+  const raw = String(value ?? "").trim().slice(0, 1_500);
+  if (!raw) return fallback;
+  if (/^\/assets\/[a-z0-9/_\-.]+$/i.test(raw)) return raw;
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return fallback;
+    parsed.username = "";
+    parsed.password = "";
+    return parsed.href;
+  } catch {
+    return fallback;
+  }
+}
+
+function normalizeFounderProfile(value = {}) {
+  const source = value && typeof value === "object" ? value : {};
+  const badges = Array.isArray(source.badges) ? source.badges : [];
+  return {
+    displayName: founderProfileText(source.displayName, founderProfileDefaults.displayName, 48),
+    handle: founderProfileText(source.handle, founderProfileDefaults.handle, 40),
+    role: founderProfileText(source.role, founderProfileDefaults.role, 64),
+    bio: founderProfileText(source.bio, founderProfileDefaults.bio, 500),
+    avatarUrl: founderProfileUrl(source.avatarUrl, founderProfileDefaults.avatarUrl),
+    bannerUrl: founderProfileUrl(source.bannerUrl),
+    accent: /^#[0-9a-f]{6}$/i.test(String(source.accent || "").trim()) ? String(source.accent).trim().toLowerCase() : founderProfileDefaults.accent,
+    status: ["online", "idle", "dnd", "offline"].includes(String(source.status || "").toLowerCase()) ? String(source.status).toLowerCase() : founderProfileDefaults.status,
+    badges: badges.map(badge => founderProfileText(badge, "", 32)).filter(Boolean).slice(0, 8),
+    linkLabel: founderProfileText(source.linkLabel, "", 40),
+    linkUrl: founderProfileUrl(source.linkUrl)
+  };
+}
+
+function founderProfileRateState(clientId, now = Date.now()) {
+  for (const [key, state] of founderProfileAttempts) {
+    if (now - state.windowStarted > founderProfileWindowMs) founderProfileAttempts.delete(key);
+  }
+  let state = founderProfileAttempts.get(clientId);
+  if (!state || now - state.windowStarted > founderProfileWindowMs) {
+    state = { attempts: 0, windowStarted: now };
+    founderProfileAttempts.set(clientId, state);
+  }
+  return state;
 }
 
 function linkGeneratorClientId(req) {
@@ -1518,6 +1594,63 @@ async function bunnyRequest(path, apiKey, options = {}) {
   }
   return payload;
 }
+
+app.get("/api/founder-profile", async (_req, res) => {
+  res.set("Cache-Control", "no-store");
+  let profile = founderProfileDefaults;
+  let persistent = false;
+  try {
+    const firebase = await linkGeneratorFirebase();
+    if (firebase) {
+      const snapshot = await firebase.firestore.collection("nyxSiteSettings").doc("founderProfile").get();
+      profile = normalizeFounderProfile(snapshot.data()?.profile);
+      persistent = true;
+    }
+  } catch (error) {
+    console.error("Nyx Founder Profile could not be read:", error?.message || error);
+  }
+  res.json({ profile, persistent, editingEnabled: Boolean(firebaseAdminModeConfigured() && founderProfileConfig().accessCode) });
+});
+
+app.put("/api/founder-profile", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  const config = founderProfileConfig();
+  if (!config.accessCode || !firebaseAdminModeConfigured()) {
+    res.status(503).json({ error: "Founder Profile editing has not been configured by the Nyx administrator yet." });
+    return;
+  }
+  const submittedAccessCode = String(req.body?.accessCode || "");
+  const now = Date.now();
+  const rate = founderProfileRateState(linkGeneratorClientId(req), now);
+  if (!secretMatches(submittedAccessCode, config.accessCode)) {
+    rate.attempts += 1;
+    if (rate.attempts > founderProfileMaxAttempts) {
+      const retryAfter = Math.max(1, Math.ceil((rate.windowStarted + founderProfileWindowMs - now) / 1000));
+      res.set("Retry-After", String(retryAfter)).status(429).json({ error: "Too many incorrect access-code attempts. Try again later." });
+      return;
+    }
+    res.status(401).json({ error: "The administrator code is incorrect." });
+    return;
+  }
+  rate.attempts = 0;
+  const profile = normalizeFounderProfile(req.body?.profile);
+  try {
+    const firebase = await linkGeneratorFirebase();
+    if (!firebase) throw new Error("Firebase is unavailable.");
+    await firebase.firestore.collection("nyxSiteSettings").doc("founderProfile").set({
+      profile,
+      updatedAt: new Date().toISOString()
+    });
+    res.json({ profile, persistent: true });
+  } catch (error) {
+    console.error("Nyx Founder Profile could not be saved:", error?.message || error);
+    res.status(503).json({ error: "Founder Profile could not be saved right now. Try again shortly." });
+  }
+});
 
 app.get("/api/link-generator/status", (_req, res) => {
   const config = linkGeneratorConfig();

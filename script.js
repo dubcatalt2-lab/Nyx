@@ -27,6 +27,76 @@
   const qsa = (sel, root=document) => Array.from(root.querySelectorAll(sel));
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const store = {get(k,d){try{return JSON.parse(localStorage.getItem(k)) ?? d}catch{return d}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}, text(k,d=''){try{return localStorage.getItem(k) ?? d}catch{return d}}, setText(k,v){try{localStorage.setItem(k,String(v))}catch{}}};
+  const nyxFounderProfileDefaults=Object.freeze({displayName:'1aqlla',handle:'@1aqlla',role:'Owner / Founder',bio:'Built Nyx for people who search, study, and create.',avatarUrl:'/assets/icons/founder-1aqlla.jpg',bannerUrl:'',accent:'#8fb8ff',status:'online',badges:['Founder'],linkLabel:'',linkUrl:''});
+  let nyxFounderProfile={...nyxFounderProfileDefaults};
+  let nyxFounderProfileLoadPromise=null;
+  function nyxFounderText(value,fallback,max){const text=String(value??'').trim().replace(/\s+/g,' ').slice(0,max);return text||fallback}
+  function nyxFounderUrl(value,fallback=''){
+    const raw=String(value??'').trim().slice(0,1500);
+    if(!raw) return fallback;
+    if(/^\/assets\/[a-z0-9/_\-.]+$/i.test(raw)) return raw;
+    try{const url=new URL(raw,location.origin);return /^(https?:)$/i.test(url.protocol)&&!url.username&&!url.password?url.href:fallback}catch{return fallback}
+  }
+  function normalizeNyxFounderProfile(value={}){
+    const source=value&&typeof value==='object'?value:{};
+    const badges=Array.isArray(source.badges)?source.badges:[];
+    return {displayName:nyxFounderText(source.displayName,nyxFounderProfileDefaults.displayName,48),handle:nyxFounderText(source.handle,nyxFounderProfileDefaults.handle,40),role:nyxFounderText(source.role,nyxFounderProfileDefaults.role,64),bio:nyxFounderText(source.bio,nyxFounderProfileDefaults.bio,500),avatarUrl:nyxFounderUrl(source.avatarUrl,nyxFounderProfileDefaults.avatarUrl),bannerUrl:nyxFounderUrl(source.bannerUrl),accent:/^#[0-9a-f]{6}$/i.test(String(source.accent||'').trim())?String(source.accent).trim().toLowerCase():nyxFounderProfileDefaults.accent,status:['online','idle','dnd','offline'].includes(String(source.status||'').toLowerCase())?String(source.status).toLowerCase():nyxFounderProfileDefaults.status,badges:badges.map(badge=>nyxFounderText(badge,'',32)).filter(Boolean).slice(0,8),linkLabel:nyxFounderText(source.linkLabel,'',40),linkUrl:nyxFounderUrl(source.linkUrl)};
+  }
+  function nyxFounderProfileCardMarkup(){
+    const profile=normalizeNyxFounderProfile(nyxFounderProfile);
+    const badges=profile.badges.map(badge=>`<span class="nyx-founder-badge">${esc(badge)}</span>`).join('');
+    const link=profile.linkUrl?`<a class="nyx-founder-link" href="${esc(profile.linkUrl)}" target="_blank" rel="noreferrer noopener">${esc(profile.linkLabel||'Open profile')}<span aria-hidden="true">↗</span></a>`:'';
+    const banner=profile.bannerUrl?`<img src="${esc(profile.bannerUrl)}" alt="" aria-hidden="true">`:'';
+    return `<article class="nyx-founder-profile nyx-founder-profile-standard" data-nyx-founder-profile style="--nyx-founder-accent:${profile.accent}"><div class="nyx-founder-banner" aria-hidden="true">${banner}</div><div class="nyx-founder-profile-content"><div class="nyx-founder-image-wrap"><img class="nyx-founder-image" src="${esc(profile.avatarUrl)}" alt="${esc(profile.displayName)} profile picture"><span class="nyx-founder-status nyx-founder-status-${esc(profile.status)}" title="${esc(profile.status)}" aria-label="${esc(profile.status)}"></span></div><div class="nyx-founder-copy"><p class="nyx-founder-role">${esc(profile.role)}</p><h3>${esc(profile.displayName)}</h3><p class="nyx-founder-handle">${esc(profile.handle)}</p>${badges?`<div class="nyx-founder-badges" aria-label="Profile badges">${badges}</div>`:''}<p class="nyx-founder-bio">${esc(profile.bio)}</p>${link}</div></div></article>`;
+  }
+  function refreshFounderProfileViews(){
+    const update=root=>{try{root.querySelectorAll?.('[data-nyx-founder-profile]').forEach(card=>{card.outerHTML=nyxFounderProfileCardMarkup()})}catch{}};
+    update(document);
+    document.querySelectorAll('iframe').forEach(frame=>update(frame.contentDocument));
+  }
+  async function loadFounderProfile({force=false}={}){
+    if(nyxFounderProfileLoadPromise&&!force) return nyxFounderProfileLoadPromise;
+    nyxFounderProfileLoadPromise=fetch('/api/founder-profile',{cache:'no-store'}).then(async response=>{
+      if(!response.ok) throw new Error('Founder Profile is unavailable.');
+      const data=await response.json();
+      nyxFounderProfile=normalizeNyxFounderProfile(data?.profile);
+      refreshFounderProfileViews();
+      return data;
+    }).catch(error=>{console.warn('Nyx Founder Profile could not load:',error);return {profile:nyxFounderProfile,persistent:false,editingEnabled:false}}).finally(()=>{nyxFounderProfileLoadPromise=null});
+    return nyxFounderProfileLoadPromise;
+  }
+  async function openFounderProfileEditor(){
+    await loadFounderProfile();
+    document.querySelector('.nyx-founder-editor-overlay')?.remove();
+    const profile=normalizeNyxFounderProfile(nyxFounderProfile);
+    const overlay=document.createElement('div');
+    overlay.className='nyx-founder-editor-overlay';
+    overlay.innerHTML=`<section class="nyx-founder-editor" role="dialog" aria-modal="true" aria-labelledby="nyxFounderEditorTitle"><header><div><p class="utility-kicker">Nyx Credits</p><h2 id="nyxFounderEditorTitle">Customize Founder Profile</h2><p>Changes are public for every Nyx visitor.</p></div><button type="button" class="nyx-founder-editor-close" data-close-founder-editor aria-label="Close">×</button></header><form class="nyx-founder-editor-form"><div class="nyx-founder-editor-grid"><label>Display name<input name="displayName" maxlength="48" required value="${esc(profile.displayName)}"></label><label>Handle<input name="handle" maxlength="40" required value="${esc(profile.handle)}"></label><label>Role<input name="role" maxlength="64" required value="${esc(profile.role)}"></label><label>Status<select name="status"><option value="online" ${profile.status==='online'?'selected':''}>Online</option><option value="idle" ${profile.status==='idle'?'selected':''}>Idle</option><option value="dnd" ${profile.status==='dnd'?'selected':''}>Do not disturb</option><option value="offline" ${profile.status==='offline'?'selected':''}>Offline</option></select></label><label class="nyx-founder-editor-wide">Bio<textarea name="bio" maxlength="500" rows="4" required>${esc(profile.bio)}</textarea></label><label>Avatar URL<input name="avatarUrl" type="url" value="${esc(profile.avatarUrl)}"></label><label>Banner URL <small>Optional</small><input name="bannerUrl" type="url" value="${esc(profile.bannerUrl)}"></label><label>Accent color<input name="accent" type="color" value="${esc(profile.accent)}"></label><label>Badges <small>Comma-separated</small><input name="badges" maxlength="280" value="${esc(profile.badges.join(', '))}"></label><label>Profile link label <small>Optional</small><input name="linkLabel" maxlength="40" value="${esc(profile.linkLabel)}"></label><label>Profile link URL <small>Optional</small><input name="linkUrl" type="url" value="${esc(profile.linkUrl)}"></label></div><footer><label class="nyx-founder-editor-code">Administrator code<input name="accessCode" type="password" autocomplete="current-password" required></label><p class="nyx-founder-editor-error" aria-live="polite"></p><div><button type="button" class="settings-action" data-close-founder-editor>Cancel</button><button type="submit" class="settings-action on">Publish profile</button></div></footer></form></section>`;
+    document.body.appendChild(overlay);
+    const close=()=>overlay.remove();
+    overlay.addEventListener('click',event=>{if(event.target===overlay||event.target.closest('[data-close-founder-editor]')) close()});
+    overlay.addEventListener('keydown',event=>{if(event.key==='Escape') close()});
+    const form=overlay.querySelector('form');
+    form.addEventListener('submit',async event=>{
+      event.preventDefault();
+      const values=new FormData(form);
+      const button=form.querySelector('[type="submit"]');
+      const error=form.querySelector('.nyx-founder-editor-error');
+      const next={displayName:values.get('displayName'),handle:values.get('handle'),role:values.get('role'),bio:values.get('bio'),avatarUrl:values.get('avatarUrl'),bannerUrl:values.get('bannerUrl'),accent:values.get('accent'),status:values.get('status'),badges:String(values.get('badges')||'').split(','),linkLabel:values.get('linkLabel'),linkUrl:values.get('linkUrl')};
+      button.disabled=true;
+      error.textContent='';
+      try{
+        const response=await fetch('/api/founder-profile',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({accessCode:values.get('accessCode'),profile:next})});
+        const data=await response.json().catch(()=>({}));
+        if(!response.ok) throw new Error(data.error||'Profile could not be published.');
+        nyxFounderProfile=normalizeNyxFounderProfile(data.profile);
+        refreshFounderProfileViews();
+        close();
+        toast('Founder profile published');
+      }catch(saveError){error.textContent=saveError.message||'Profile could not be published.';button.disabled=false}
+    });
+    setTimeout(()=>form.querySelector('[name="displayName"]')?.focus(),0);
+  }
   const NYX_TERMS_VERSION='2026-07-17';
   function nyxTermsSectionsMarkup(){
     return `<section><h2>1. Eligibility</h2><p>You must comply with all applicable laws when using Nyx. If you are under the age required by your jurisdiction to enter into a binding agreement, you may only use Nyx with the permission of a parent or legal guardian.</p></section>
@@ -58,16 +128,7 @@
       </header>
       <section class="nyx-credits-section" aria-labelledby="nyxCreditsFounder">
         <h2 id="nyxCreditsFounder">Founder</h2>
-        <article class="nyx-founder-profile">
-          <div class="nyx-founder-image-wrap">
-            <img class="nyx-founder-image" src="/assets/icons/founder-1aqlla.jpg" alt="1aqlla profile picture">
-          </div>
-          <div class="nyx-founder-copy">
-            <p class="nyx-founder-role">Owner / Founder</p>
-            <h3>1aqlla</h3>
-            <p>i am so tuff tuff tuff tufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftufftuff</p>
-          </div>
-        </article>
+        ${nyxFounderProfileCardMarkup()}
       </section>
       <footer class="nyx-credits-footer"><img src="/assets/icons/nyx-logo.png" alt="" aria-hidden="true"><div><strong>Nyx</strong><span>Thanks for using our site.</span></div><small>&copy; 2026 Nyx</small></footer>
     </article>`;
@@ -2046,7 +2107,7 @@
     };
     const definitions=[
       ['privacy','Privacy',settingsIcons.privacy,['tab cloak','preset cloak','cloaking','panic key','website details','popup protection']],
-      ['customize','Customize',settingsIcons.customize,['theme','font','effects','3d backgrounds']],
+      ['customize','Customize',settingsIcons.customize,['theme','custom theme','font','effects','3d backgrounds','founder profile']],
       ['browsing','Browsing',settingsIcons.browsing,['search engine','proxy engine','transport']],
       ['advanced','Advanced',settingsIcons.advanced,[]]
     ];
@@ -2173,6 +2234,13 @@
       backgroundsBlock.className='settings-block';
       const threeDOn=store.get('nyx.threeDBackgrounds',false);
       backgroundsBlock.innerHTML=`<h2>3D Backgrounds</h2><p>Use the original interactive 3D theme scenes instead of the animated color background.</p><div class="settings-row"><span>3D Backgrounds</span><button class="settings-action ${threeDOn?'on':''}" data-switch="nyx.threeDBackgrounds" type="button">${threeDOn?'On':'Off'}</button></div>`;
+      const customThemeBlock=document.createElement('section');
+      customThemeBlock.className='settings-block nyx-custom-theme-maker';
+      const customColor=nyxThemeHex(store.text('nyx.customThemeColor',nyxCustomThemeDefaults.base));
+      customThemeBlock.innerHTML=`<h2>Custom Theme</h2><p>Choose one color and Nyx generates the canvas, panels, borders, and accents from it.</p><div class="nyx-custom-theme-controls"><label class="nyx-custom-theme-picker"><input type="color" value="${customColor}" data-custom-theme-color aria-label="Custom theme color"><span class="nyx-custom-theme-swatch" data-custom-theme-swatch style="--nyx-swatch:${customColor}"></span></label><input class="settings-input" value="${customColor}" data-custom-theme-hex aria-label="Custom theme color hex" maxlength="7" spellcheck="false"></div><div class="settings-actions"><button class="settings-action" data-apply-custom-theme type="button">Apply Custom Theme</button><button class="settings-action" data-reset-custom-theme type="button">Reset Color</button></div>`;
+      const founderProfileBlock=document.createElement('section');
+      founderProfileBlock.className='settings-block';
+      founderProfileBlock.innerHTML='<h2>Founder Profile</h2><p>Customize the public profile shown to everyone in Credits.</p><div class="settings-actions"><button class="settings-action" data-open-founder-profile-editor type="button">Customize Founder Profile</button></div>';
       const resetBlock=document.createElement('section');
       resetBlock.className='settings-block';
       resetBlock.innerHTML=`<h2>Clear Cache</h2><p>Removes cookies, cache files, saved settings, proxy storage, and service workers, then reloads nyx like a fresh install.</p><div class="settings-actions"><button class="settings-action danger-action" data-clear-nyx-cache type="button">Clear Cache and Reset</button></div>`;
@@ -2180,6 +2248,8 @@
       effectBlock.before(lagBlock);
       effectBlock.before(liteBlock);
       effectBlock.before(backgroundsBlock);
+      effectBlock.before(customThemeBlock);
+      effectBlock.before(founderProfileBlock);
       effectBlock.before(resetBlock);
     }
     ensureFreshThemeOptions(overlay);
@@ -2406,10 +2476,11 @@
     const internalAppsThemeCanvasStyle=/^(apps)$/i.test(String(page.title || '')) ? 'html{--nyx-app-canvas:#151d2b;--nyx-app-dot:#202b3d;--nyx-app-line:#2a3b54;--nyx-app-text:#d4deec;min-height:100%!important;background-color:var(--nyx-app-canvas)!important;background-image:radial-gradient(circle,var(--nyx-app-dot) 2.7px,transparent 3px)!important;background-size:24px 24px!important;background-position:0 0!important;background-repeat:repeat!important;background-attachment:fixed!important}html[data-nyx-theme="midnight"]{--nyx-app-dot:#223047;--nyx-app-line:#2d405b;--nyx-app-text:#d6e1f0}html[data-nyx-theme="ruby"]{--nyx-app-dot:#332733;--nyx-app-line:#50333c;--nyx-app-text:#e2d7da}html[data-nyx-theme="emerald"]{--nyx-app-dot:#24343a;--nyx-app-line:#2f4a42;--nyx-app-text:#d4e2dd}html[data-nyx-theme="sakura"]{--nyx-app-dot:#332936;--nyx-app-line:#4c3748;--nyx-app-text:#e2d9e0}html[data-nyx-theme="fresh"]{--nyx-app-dot:#24343d;--nyx-app-line:#304850;--nyx-app-text:#d4e2e5}html body,html body.theme-default,html body.theme-midnight,html body.theme-ruby,html body.theme-emerald,html body.theme-sakura,html body.theme-fresh{min-height:100vh!important;background:transparent!important;background-color:transparent!important;background-image:none!important;color:var(--nyx-app-text)!important}html body::before,html body::after{content:none!important;display:none!important;background:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}.shell-page,.browser-shell-page,body.theme-ruby .shell-page,body.theme-emerald .shell-page,body.theme-sakura .shell-page,body.theme-fresh .shell-page,body.theme-fresh .browser-shell-page{background:transparent!important;background-color:transparent!important;background-image:none!important}.shell-page h1,.shell-page p,.browser-shell-page h1,.browser-shell-page p,.quick-tile span,body.theme-fresh :is(h1,h2,h3,p,span,label,strong,.quick-tile span){color:var(--nyx-app-text)!important;-webkit-text-fill-color:var(--nyx-app-text)!important}.quick-tile:hover{border-color:var(--nyx-app-line)!important}' : '';
     const internalThemePurityStyle='html{--nyx-internal-accent:#6687b2;--nyx-internal-line:#2a3b54}html[data-nyx-theme="midnight"]{--nyx-internal-accent:#6f8fb9;--nyx-internal-line:#2d405b}html[data-nyx-theme="ruby"]{--nyx-internal-accent:#a56573;--nyx-internal-line:#50333c}html[data-nyx-theme="emerald"]{--nyx-internal-accent:#628f80;--nyx-internal-line:#2f4a42}html[data-nyx-theme="sakura"]{--nyx-internal-accent:#9e718f;--nyx-internal-line:#4c3748}html[data-nyx-theme="fresh"]{--nyx-internal-accent:#728f6b;--nyx-internal-line:#354b36}html body{--theme-a:var(--nyx-internal-accent)!important;--theme-b:var(--nyx-internal-accent)!important;--theme-border:var(--nyx-internal-line)!important}.settings-side,.settings-section .settings-block,.settings-side button.active,.settings-side button:hover{border-color:var(--nyx-internal-line)!important}.settings-action:hover,.settings-block button:hover,.settings-input::file-selector-button:hover,.quick-tile:hover{border-color:var(--nyx-internal-line)!important;box-shadow:none!important;text-shadow:none!important}';
     const internalFernThemeStyle='html[data-nyx-theme="fresh"]{--nyx-app-canvas:#162019;--nyx-app-dot:#28382b;--nyx-app-line:#354b36;--nyx-app-text:#d9e5d6}html[data-nyx-theme="fresh"] body,html[data-nyx-theme="fresh"] .shell-page,html[data-nyx-theme="fresh"] .browser-shell-page{color:#d9e5d6!important}html[data-nyx-theme="fresh"] :is(.settings-block,.settings-side,.settings-action,.settings-preset,.settings-input,.settings-select,.quick-tile){border-color:#354b36!important;color:#d9e5d6!important;-webkit-text-fill-color:#d9e5d6!important}html[data-nyx-theme="fresh"] :is(.settings-block,.settings-side,.settings-input,.settings-select){background-color:rgba(19,28,21,.82)!important}html[data-nyx-theme="fresh"] :is(.settings-action,.settings-preset,button):hover{background-color:rgba(46,66,47,.72)!important}';
+    const internalFounderProfileStyle='.nyx-founder-profile{position:relative;overflow:hidden;padding:22px;border:1px solid color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 30%,transparent);border-radius:22px;background:linear-gradient(135deg,color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 14%,transparent),rgba(10,18,30,.78))}.nyx-founder-banner{height:112px;margin:-22px -22px 22px;background:linear-gradient(135deg,color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 38%,#172337),#0b111c)}.nyx-founder-banner img{width:100%;height:100%;object-fit:cover}.nyx-founder-profile-content{display:grid;grid-template-columns:155px minmax(0,1fr);align-items:center;gap:26px}.nyx-founder-image-wrap{position:relative;overflow:visible}.nyx-founder-image{display:block;width:155px;height:155px;border:3px solid var(--nyx-founder-accent,#8fb8ff);border-radius:18px;object-fit:cover}.nyx-founder-status{position:absolute;right:-5px;bottom:-5px;width:19px;height:19px;border:3px solid #111a27;border-radius:50%;background:#717b8d}.nyx-founder-status-online{background:#57c486}.nyx-founder-status-idle{background:#e6b85a}.nyx-founder-status-dnd{background:#dd6170}.nyx-founder-role{margin:0 0 5px;color:var(--nyx-founder-accent,#8fb8ff);font-size:11px;letter-spacing:.14em;text-transform:uppercase}.nyx-founder-copy h3{margin:0;color:#f5f8ff;font-size:38px}.nyx-founder-handle{margin:4px 0 12px;color:#9fb0c8}.nyx-founder-badges{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}.nyx-founder-badge{padding:4px 8px;border:1px solid color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 45%,transparent);border-radius:999px;color:var(--nyx-founder-accent,#8fb8ff);font-size:11px}.nyx-founder-bio{margin:0;color:#bcc8d9;line-height:1.6}.nyx-founder-link{display:inline-flex;gap:6px;margin-top:15px;color:var(--nyx-founder-accent,#8fb8ff);text-decoration:none}@media(max-width:620px){.nyx-founder-profile-content{grid-template-columns:1fr;text-align:center}.nyx-founder-image-wrap{margin:auto}.nyx-founder-badges{justify-content:center}}';
     const panicFrameScript='let NYX_PANIC_CAPTURE=false;function nyxPanicCombo(e){const key=String(e.key||"").trim();if(!key||["Control","Shift","Alt","Meta"].includes(key))return "";const parts=[];if(e.ctrlKey)parts.push("Ctrl");if(e.altKey)parts.push("Alt");if(e.shiftKey)parts.push("Shift");if(e.metaKey)parts.push("Meta");parts.push(key.length===1?key.toUpperCase():key.replace(/^Arrow/,""));return parts.join("+")}document.addEventListener("click",e=>{if(e.target.closest("[data-panic-capture]"))NYX_PANIC_CAPTURE=true;if(e.target.closest("[data-panic-clear]"))NYX_PANIC_CAPTURE=false},true);document.addEventListener("keydown",e=>{if(!NYX_PANIC_CAPTURE)return;const combo=nyxPanicCombo(e);if(!combo)return;e.preventDefault();e.stopPropagation();NYX_PANIC_CAPTURE=false;document.querySelectorAll("[data-panic-key-display]").forEach(el=>el.textContent=combo);parent.postMessage({type:"nyx:panic-key-set",combo},"*")},true);';
     const internalPaintScript='';
     const finalInternalPaintScript='';
-    return '<!doctype html><meta charset="utf-8"><base target="_self"><style>'+style+themeStyle+freshThemeStyle+themeAppStyle+compactSettingsStyle+pageThemeStyle+themeBorderOnlyStyle+'input[type=file].settings-input{color:#f8fafc;background:transparent!important}input[type=file].settings-input::file-selector-button{height:28px;margin:0 12px 0 0;border:1px solid var(--theme-border,rgba(255,255,255,.3));border-radius:999px;background:transparent!important;background-image:none!important;color:#f8fafc;padding:0 12px;font:400 12px Outfit,Arial,sans-serif}.theme-ruby input[type=file].settings-input::file-selector-button,.theme-emerald input[type=file].settings-input::file-selector-button,.theme-sakura input[type=file].settings-input::file-selector-button{background:transparent!important;background-image:none!important;color:#f8fafc!important}.settings-section{display:none}.settings-section.active{display:block}.settings-range{display:grid;grid-template-columns:70px minmax(0,1fr) 46px;align-items:center;gap:10px;margin:12px 0;color:#d1d5db;font-size:13px;font-weight:400}.settings-range input{width:100%;accent-color:#9ca3af}.settings-nav-icon{width:24px;height:24px;border-radius:999px;border:2px solid #dbe2ea;display:inline-block;position:relative;background:transparent!important;box-shadow:none!important}.icon-general::before{content:"";position:absolute;inset:5px;border:2px solid #dbe2ea;border-radius:999px}.icon-effects::before{content:"";position:absolute;left:5px;right:5px;top:10px;height:2px;background:#dbe2ea;box-shadow:0 -5px 0 #dbe2ea,0 5px 0 #dbe2ea}.icon-watch::before{content:"";position:absolute;left:8px;top:5px;border-left:9px solid #dbe2ea;border-top:6px solid transparent;border-bottom:6px solid transparent}.icon-browser::before{content:"";position:absolute;left:4px;right:4px;top:6px;height:11px;border:2px solid #dbe2ea;border-radius:4px}.icon-browser::after{content:"";position:absolute;left:7px;right:7px;bottom:4px;height:2px;background:#dbe2ea}.settings-effect-preview span:nth-child(1)::before{content:"";width:14px;height:20px;border-radius:999px;background:#cfd8e3;transform:rotate(28deg)}.settings-effect-preview span:nth-child(2)::before{content:"";width:18px;height:18px;background:#cfd8e3;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 56%,79% 91%,50% 70%,21% 91%,32% 56%,2% 35%,39% 35%)}.settings-effect-preview span:nth-child(3)::before{content:"";width:18px;height:16px;background:#cfd8e3;clip-path:polygon(50% 100%,8% 52%,4% 22%,24% 2%,50% 20%,76% 2%,96% 22%,92% 52%)}.settings-effect-preview span:nth-child(4)::before{content:"";width:18px;height:18px;border:3px solid #cfd8e3;border-radius:999px}'+themeBorderOnlyStyle+flatInternalStyle+flatInternalPageStyle+transparentInternalFinalStyle+settingsInternalFinalStyle+settingsGlassRepairStyle+browserSettingsSinglePaneStyle+settingsClearAroundStyle+'html body .settings-app :is(input,select,textarea,.settings-input,.settings-select):hover{transform:none!important}html body .settings-app button:hover{transform:none!important}'+clearInternalPageStyle+internalAppsLaunchStyle+internalAppsHazeStyle+finalInternalBackgroundStyle+normalInternalTextStyle+(page.style||'')+internalAppsThemeCanvasStyle+internalThemePurityStyle+internalFernThemeStyle+'</style>'+page.body+'<script>const NYX_EFFECT='+JSON.stringify(store.text('nyx.visualEffect','none'))+';const NYX_EFFECT_SPEED='+JSON.stringify(store.text('nyx.visualEffectSpeed','1.1'))+';const NYX_EFFECT_AMOUNT='+JSON.stringify(store.text('nyx.visualEffectAmount','16'))+';const NYX_THEME='+JSON.stringify(normalizeNyxTheme(store.text('nyx.theme','default')))+';document.body.classList.add("theme-"+NYX_THEME);document.body.dataset.nyxTheme=NYX_THEME;document.documentElement.dataset.nyxTheme=NYX_THEME;document.querySelectorAll("[data-effect-value]").forEach(el=>{el.value=NYX_EFFECT});document.querySelectorAll("[data-effect-speed]").forEach(el=>{el.value=NYX_EFFECT_SPEED});document.querySelectorAll("[data-effect-amount]").forEach(el=>{el.value=NYX_EFFECT_AMOUNT});document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=Number(NYX_EFFECT_SPEED).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=NYX_EFFECT_AMOUNT});'+internalPaintScript+finalInternalPaintScript+script+popupScript+panicFrameScript+(page.script||'')+'<\/script>';
+    return '<!doctype html><meta charset="utf-8"><base target="_self"><style>'+style+themeStyle+freshThemeStyle+themeAppStyle+compactSettingsStyle+pageThemeStyle+themeBorderOnlyStyle+'input[type=file].settings-input{color:#f8fafc;background:transparent!important}input[type=file].settings-input::file-selector-button{height:28px;margin:0 12px 0 0;border:1px solid var(--theme-border,rgba(255,255,255,.3));border-radius:999px;background:transparent!important;background-image:none!important;color:#f8fafc;padding:0 12px;font:400 12px Outfit,Arial,sans-serif}.theme-ruby input[type=file].settings-input::file-selector-button,.theme-emerald input[type=file].settings-input::file-selector-button,.theme-sakura input[type=file].settings-input::file-selector-button{background:transparent!important;background-image:none!important;color:#f8fafc!important}.settings-section{display:none}.settings-section.active{display:block}.settings-range{display:grid;grid-template-columns:70px minmax(0,1fr) 46px;align-items:center;gap:10px;margin:12px 0;color:#d1d5db;font-size:13px;font-weight:400}.settings-range input{width:100%;accent-color:#9ca3af}.settings-nav-icon{width:24px;height:24px;border-radius:999px;border:2px solid #dbe2ea;display:inline-block;position:relative;background:transparent!important;box-shadow:none!important}.icon-general::before{content:"";position:absolute;inset:5px;border:2px solid #dbe2ea;border-radius:999px}.icon-effects::before{content:"";position:absolute;left:5px;right:5px;top:10px;height:2px;background:#dbe2ea;box-shadow:0 -5px 0 #dbe2ea,0 5px 0 #dbe2ea}.icon-watch::before{content:"";position:absolute;left:8px;top:5px;border-left:9px solid #dbe2ea;border-top:6px solid transparent;border-bottom:6px solid transparent}.icon-browser::before{content:"";position:absolute;left:4px;right:4px;top:6px;height:11px;border:2px solid #dbe2ea;border-radius:4px}.icon-browser::after{content:"";position:absolute;left:7px;right:7px;bottom:4px;height:2px;background:#dbe2ea}.settings-effect-preview span:nth-child(1)::before{content:"";width:14px;height:20px;border-radius:999px;background:#cfd8e3;transform:rotate(28deg)}.settings-effect-preview span:nth-child(2)::before{content:"";width:18px;height:18px;background:#cfd8e3;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 56%,79% 91%,50% 70%,21% 91%,32% 56%,2% 35%,39% 35%)}.settings-effect-preview span:nth-child(3)::before{content:"";width:18px;height:16px;background:#cfd8e3;clip-path:polygon(50% 100%,8% 52%,4% 22%,24% 2%,50% 20%,76% 2%,96% 22%,92% 52%)}.settings-effect-preview span:nth-child(4)::before{content:"";width:18px;height:18px;border:3px solid #cfd8e3;border-radius:999px}'+themeBorderOnlyStyle+flatInternalStyle+flatInternalPageStyle+transparentInternalFinalStyle+settingsInternalFinalStyle+settingsGlassRepairStyle+browserSettingsSinglePaneStyle+settingsClearAroundStyle+'html body .settings-app :is(input,select,textarea,.settings-input,.settings-select):hover{transform:none!important}html body .settings-app button:hover{transform:none!important}'+clearInternalPageStyle+internalAppsLaunchStyle+internalAppsHazeStyle+finalInternalBackgroundStyle+normalInternalTextStyle+(page.style||'')+internalAppsThemeCanvasStyle+internalThemePurityStyle+internalFernThemeStyle+internalFounderProfileStyle+'</style>'+page.body+'<script>const NYX_EFFECT='+JSON.stringify(store.text('nyx.visualEffect','none'))+';const NYX_EFFECT_SPEED='+JSON.stringify(store.text('nyx.visualEffectSpeed','1.1'))+';const NYX_EFFECT_AMOUNT='+JSON.stringify(store.text('nyx.visualEffectAmount','16'))+';const NYX_THEME='+JSON.stringify(normalizeNyxTheme(store.text('nyx.theme','default')))+';document.body.classList.add("theme-"+NYX_THEME);document.body.dataset.nyxTheme=NYX_THEME;document.documentElement.dataset.nyxTheme=NYX_THEME;document.querySelectorAll("[data-effect-value]").forEach(el=>{el.value=NYX_EFFECT});document.querySelectorAll("[data-effect-speed]").forEach(el=>{el.value=NYX_EFFECT_SPEED});document.querySelectorAll("[data-effect-amount]").forEach(el=>{el.value=NYX_EFFECT_AMOUNT});document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=Number(NYX_EFFECT_SPEED).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=NYX_EFFECT_AMOUNT});'+internalPaintScript+finalInternalPaintScript+script+popupScript+panicFrameScript+(page.script||'')+'<\/script>';
   }
   function showBrowserShellInternalPage(name){
     hideBrowserSuggestions();
@@ -2734,6 +2805,61 @@
   function threeDBackgroundsEnabled(){
     return store.get('nyx.threeDBackgrounds',false);
   }
+  const nyxCustomThemeDefaults={base:'#6f9ee8'};
+  function nyxThemeHex(value,fallback=nyxCustomThemeDefaults.base){
+    const raw=String(value || '').trim();
+    return /^#[0-9a-f]{6}$/i.test(raw) ? raw.toLowerCase() : fallback;
+  }
+  function nyxShadeHex(hex,percent=0){
+    const clean=nyxThemeHex(hex);
+    const amount=Math.max(-100,Math.min(100,Number(percent) || 0))/100;
+    const channel=index=>{
+      const value=parseInt(clean.slice(index,index+2),16);
+      return Math.round(amount>=0 ? value+(255-value)*amount : value*(1+amount));
+    };
+    return '#'+[1,3,5].map(index=>channel(index).toString(16).padStart(2,'0')).join('');
+  }
+  function nyxHexToNumber(hex){
+    return parseInt(nyxThemeHex(hex).slice(1),16);
+  }
+  function nyxCustomThemePalette(color=store.text('nyx.customThemeColor',nyxCustomThemeDefaults.base)){
+    const base=nyxThemeHex(color);
+    return {
+      base,
+      canvas:nyxShadeHex(base,-84),
+      top:nyxShadeHex(base,-91),
+      field:nyxShadeHex(base,-79),
+      panel:nyxShadeHex(base,-74),
+      line:nyxShadeHex(base,-30),
+      accent:nyxShadeHex(base,8),
+      bright:nyxShadeHex(base,38),
+      text:'#f4f7ff',
+      muted:nyxShadeHex(base,48),
+      dot:nyxShadeHex(base,-67)
+    };
+  }
+  function applyCustomThemePalette(theme=normalizeNyxTheme(store.text('nyx.theme','default'))){
+    const root=document.documentElement;
+    const names=['base','canvas','top','field','panel','line','accent','bright','text','muted','dot'];
+    if(theme!=='custom'){
+      names.forEach(name=>root.style.removeProperty('--nyx-custom-'+name));
+      return;
+    }
+    const palette=nyxCustomThemePalette();
+    names.forEach(name=>root.style.setProperty('--nyx-custom-'+name,palette[name]));
+  }
+  function applyCustomThemeColor(value){
+    const color=nyxThemeHex(value);
+    store.setText('nyx.customThemeColor',color);
+    store.setText('nyx.theme','custom');
+    stopDefaultVanta();
+    applyThemeSetting();
+    return color;
+  }
+  function syncCustomThemeMaker(root=document,color=nyxThemeHex(store.text('nyx.customThemeColor',nyxCustomThemeDefaults.base))){
+    root.querySelectorAll?.('[data-custom-theme-color],[data-custom-theme-hex]')?.forEach(input=>{input.value=color});
+    root.querySelectorAll?.('[data-custom-theme-swatch]')?.forEach(swatch=>swatch.style.setProperty('--nyx-swatch',color));
+  }
   function syncHomeDotFieldVisibility(){
     const hide=threeDBackgroundsEnabled() && !document.body.classList.contains('custom-bg-active');
     qsa('.nyx-home-dot-field').forEach(canvas=>{
@@ -2743,7 +2869,7 @@
   }
   function shouldShowDefaultVanta(){
     const theme=store.text('nyx.theme','default');
-    return threeDBackgroundsEnabled() && (theme==='default' || theme==='midnight') && !shouldPauseVantaBackgrounds() && !document.body.classList.contains('custom-bg-active');
+    return threeDBackgroundsEnabled() && (theme==='default' || theme==='midnight' || theme==='custom') && !shouldPauseVantaBackgrounds() && !document.body.classList.contains('custom-bg-active');
   }
   function shouldShowRubyVanta(){
     const theme=store.text('nyx.theme','default');
@@ -2797,6 +2923,7 @@
     }
     if(defaultVantaInstance || !window.VANTA?.NET || !window.THREE) return;
     try{
+      const customPalette=store.text('nyx.theme','default')==='custom' ? nyxCustomThemePalette() : null;
       defaultVantaInstance=VANTA.NET({
         el:layer,
         mouseControls:true,
@@ -2806,8 +2933,8 @@
         minWidth:200.00,
         scale:1.00,
         scaleMobile:1.00,
-        color:0x511151,
-        backgroundColor:0x241933
+        color:customPalette ? nyxHexToNumber(customPalette.accent) : 0x511151,
+        backgroundColor:customPalette ? nyxHexToNumber(customPalette.canvas) : 0x241933
       });
     }catch{
       stopDefaultVanta();
@@ -2968,9 +3095,15 @@
         option.textContent='Midnight';
         select.appendChild(option);
       }
+      if(!select.querySelector('option[value="custom"]')){
+        const option=document.createElement('option');
+        option.value='custom';
+        option.textContent='Custom';
+        select.appendChild(option);
+      }
     });
   }
-  const nyxThemeNames=['default','ruby','emerald','sakura','fresh','midnight'];
+  const nyxThemeNames=['default','ruby','emerald','sakura','fresh','midnight','custom'];
   const nyxThemeClasses=nyxThemeNames.map(name=>'theme-'+name);
   function normalizeNyxTheme(value){
     return nyxThemeNames.includes(String(value || '').toLowerCase()) ? String(value).toLowerCase() : 'default';
@@ -2978,8 +3111,9 @@
   function applyThemeSetting(){
     const theme=normalizeNyxTheme(store.text('nyx.theme','default'));
     if(store.text('nyx.theme','default')!==theme) store.setText('nyx.theme',theme);
-    document.body.classList.remove('theme-default','theme-ruby','theme-emerald','theme-sakura','theme-fresh','theme-midnight');
+    document.body.classList.remove('theme-default','theme-ruby','theme-emerald','theme-sakura','theme-fresh','theme-midnight','theme-custom');
     document.body.classList.add('theme-'+theme);
+    if(theme==='custom') document.body.classList.add('theme-default');
     document.body.dataset.nyxTheme=theme;
     document.documentElement.dataset.nyxTheme=theme;
     document.documentElement.style.colorScheme='dark';
@@ -2994,6 +3128,7 @@
         el.style.removeProperty('border-color');
       }
     });
+    applyCustomThemePalette(theme);
     applyNyxLogoTheme(theme);
     ensureFreshThemeOptions();
     qsa('[data-theme-value]').forEach(el=>{el.value=theme});
@@ -6120,6 +6255,7 @@
           mainline.style.setProperty('height','0','important');
           mainline.style.setProperty('margin','0','important');
           mainline.style.setProperty('padding','0','important');
+          mainline.dataset.nyxDuckMainlineHidden='true';
         });
         let filterBottom=0;
         doc.querySelectorAll('div,nav,section').forEach(element=>{
@@ -8879,6 +9015,11 @@
           <div class="settings-row"><input id="settingName" value="${esc(store.text('nyx.userName',''))}" placeholder="Enter your name" autocomplete="nickname"><button data-save-profile>Save</button></div>
         </section>
         <section class="settings-card">
+          <h2>Founder Profile</h2>
+          <p>Customize the public profile shown to everyone in Credits.</p>
+          <button data-open-founder-profile-editor type="button">Customize Founder Profile</button>
+        </section>
+        <section class="settings-card">
           <h2>Font</h2>
           <p>Choose the font used across nyx.</p>
           <select data-font-value>${nyxFontOptionsMarkup()}</select>
@@ -10673,6 +10814,27 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
         toast('Background enhancer disabled');
         return;
       }
+      if(e.target.closest('[data-open-founder-profile-editor]')){
+        e.preventDefault();
+        openFounderProfileEditor();
+        return;
+      }
+      const customThemeApply=e.target.closest('[data-apply-custom-theme]');
+      if(customThemeApply){
+        const root=customThemeApply.closest('.settings-block,.browser-shell-settings-overlay,.window') || document;
+        const color=nyxThemeHex(root.querySelector('[data-custom-theme-hex]')?.value || root.querySelector('[data-custom-theme-color]')?.value);
+        applyCustomThemeColor(color);
+        syncCustomThemeMaker(document,color);
+        toast('Custom theme applied');
+        return;
+      }
+      const customThemeReset=e.target.closest('[data-reset-custom-theme]');
+      if(customThemeReset){
+        const color=applyCustomThemeColor(nyxCustomThemeDefaults.base);
+        syncCustomThemeMaker(document,color);
+        toast('Custom theme reset');
+        return;
+      }
       if(e.target.closest('[data-save-cloak]')){
         saveCloakSettings(e.target.closest('.window,.settings-app,.browser-shell-settings-overlay') || document);
         return;
@@ -10767,6 +10929,14 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
       setTimeout(()=>{launchButton.dataset.launching='0'},500);
     },true);
     document.addEventListener('input',e=>{
+      if(e.target?.matches?.('[data-custom-theme-color],[data-custom-theme-hex]')){
+        const raw=String(e.target.value || '').trim();
+        if(e.target.matches('[data-custom-theme-hex]') && !/^#[0-9a-f]{6}$/i.test(raw)) return;
+        const color=nyxThemeHex(raw,store.text('nyx.customThemeColor',nyxCustomThemeDefaults.base));
+        const root=e.target.closest('.settings-block,.browser-shell-settings-overlay,.window') || document;
+        root.querySelectorAll?.('[data-custom-theme-color],[data-custom-theme-hex]')?.forEach(input=>{if(input!==e.target || input.type==='color') input.value=color});
+        root.querySelectorAll?.('[data-custom-theme-swatch]')?.forEach(swatch=>swatch.style.setProperty('--nyx-swatch',color));
+      }
       if(e.target?.id==='settingName') saveProfile(e.target.closest('.window'),true);
       if(e.target?.matches?.('[data-glass-value]')){
         if(store.get('nyx.lagReducer',false)){
@@ -10944,7 +11114,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
     document.body.classList.add('runtime-lag-guard');
     updateResponsiveFit();
     if(!localStorage.getItem('nyx.lagReducer')) store.set('nyx.lagReducer',true);
-    applyLaunchPdfSetting(); bindFormulaGate(); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); installInteractiveHomeDots(); initWeatherPanel(); startCenterClock(); startNyxPresence(); startSpotifyChromeOsCompatibilitySweep();
+    applyLaunchPdfSetting(); bindFormulaGate(); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); installInteractiveHomeDots(); initWeatherPanel(); startCenterClock(); startNyxPresence(); startSpotifyChromeOsCompatibilitySweep(); loadFounderProfile();
     if(hostedCloakEntry){
       scheduleHostedCloakLaunch();
       return;

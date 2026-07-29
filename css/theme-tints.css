@@ -1596,3 +1596,61 @@ html body.browser-shell.three-d-backgrounds:not(.custom-bg-active){
 html[data-nyx-theme] body.browser-shell.browser-shell.three-d-backgrounds:not(.custom-bg-active) .browser-home .nyx-home-dot-field{
   display:none!important;
 }
+
+/* Custom themes derive the whole Nyx chrome from one saved base color. */
+html[data-nyx-theme="custom"] body.theme-custom{
+  --nyx-unified-canvas:var(--nyx-custom-canvas)!important;
+  --nyx-unified-top:var(--nyx-custom-top)!important;
+  --nyx-unified-field:var(--nyx-custom-field)!important;
+  --nyx-home-wordmark:var(--nyx-custom-bright)!important;
+  --nyx-home-text:var(--nyx-custom-text)!important;
+  --nyx-home-muted:var(--nyx-custom-muted)!important;
+  --nyx-home-line:var(--nyx-custom-line)!important;
+  --nyx-home-panel:var(--nyx-custom-panel)!important;
+  --nyx-home-panel-soft:var(--nyx-custom-field)!important;
+  --nyx-chrome-accent:var(--nyx-custom-accent)!important;
+  --nyx-chrome-bright:var(--nyx-custom-bright)!important;
+  --nyx-chrome-base:var(--nyx-custom-field)!important;
+  --nyx-chrome-deep:var(--nyx-custom-top)!important;
+  --nyx-chrome-active:var(--nyx-custom-panel)!important;
+  --nyx-chrome-hover:var(--nyx-custom-line)!important;
+  --nyx-dot-color:var(--nyx-custom-dot)!important;
+  --theme-a:var(--nyx-custom-accent)!important;
+  --theme-b:var(--nyx-custom-line)!important;
+  --theme-strong:var(--nyx-custom-text)!important;
+  --theme-border:var(--nyx-custom-line)!important;
+  --theme-bg:var(--nyx-custom-canvas)!important;
+  --accent:var(--nyx-custom-accent)!important;
+  color:var(--nyx-custom-text)!important;
+  color-scheme:dark!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom,
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom .browser-window.browser-home-page,
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom .browser-window.browser-home-page .browser-home{
+  background:var(--nyx-custom-canvas)!important;
+  background-image:none!important;
+  border-color:var(--nyx-custom-line)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom .top-os{
+  background:var(--nyx-custom-top)!important;
+  background-image:none!important;
+  border-color:var(--nyx-custom-line)!important;
+}
+html[data-nyx-theme="custom"] body.theme-custom :is(.browser-mode-url,.settings-input,.settings-select,.nyx-settings-filter,input,select,textarea){
+  background-color:var(--nyx-custom-field)!important;
+  border-color:var(--nyx-custom-line)!important;
+  color:var(--nyx-custom-text)!important;
+  -webkit-text-fill-color:var(--nyx-custom-text)!important;
+}
+html[data-nyx-theme="custom"] body.theme-custom :is(h1,h2,h3,p,span,label,strong,b,a,button){
+  color:var(--nyx-custom-text)!important;
+  -webkit-text-fill-color:var(--nyx-custom-text)!important;
+}
+html[data-nyx-theme="custom"] body.theme-custom :is(button,.settings-action,.quick-tile):hover{
+  border-color:var(--nyx-custom-bright)!important;
+}
+.nyx-custom-theme-controls{display:flex;align-items:center;gap:10px;max-width:440px}
+.nyx-custom-theme-picker{position:relative;display:grid;place-items:center;width:42px;height:42px;flex:0 0 42px;border:1px solid var(--nyx-home-line,rgba(255,255,255,.25));border-radius:12px;overflow:hidden;cursor:pointer;background:var(--nyx-swatch,#6f9ee8)}
+.nyx-custom-theme-picker input{position:absolute;inset:-8px;width:calc(100% + 16px);height:calc(100% + 16px);padding:0;border:0;opacity:0;cursor:pointer}
+.nyx-custom-theme-swatch{width:23px;height:23px;border:2px solid rgba(255,255,255,.88);border-radius:999px;background:var(--nyx-swatch,#6f9ee8);box-shadow:0 0 0 1px rgba(0,0,0,.35)}
+.nyx-custom-theme-controls .settings-input{min-width:0;text-transform:uppercase;font-family:ui-monospace,Consolas,monospace!important}

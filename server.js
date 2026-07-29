@@ -1275,6 +1275,11 @@ const founderProfileDefaults = Object.freeze({
   avatarUrl: "/assets/icons/founder-1aqlla.jpg",
   bannerUrl: "",
   accent: "#8fb8ff",
+  accentPrimary: "#8fb8ff",
+  accentSecondary: "#8ea1ff",
+  bannerColor: "#8ea1ff",
+  profileEffect: "none",
+  avatarDecoration: "none",
   status: "online",
   roles: ["Owner", "Developer"],
   badges: ["Founder"],
@@ -1312,6 +1317,9 @@ function normalizeFounderProfile(value = {}) {
   const source = value && typeof value === "object" ? value : {};
   const roles = Array.isArray(source.roles) ? source.roles : founderProfileDefaults.roles;
   const badges = Array.isArray(source.badges) ? source.badges : [];
+  const accentPrimary = /^#[0-9a-f]{6}$/i.test(String(source.accentPrimary || source.accent || "").trim()) ? String(source.accentPrimary || source.accent).trim().toLowerCase() : founderProfileDefaults.accentPrimary;
+  const accentSecondary = /^#[0-9a-f]{6}$/i.test(String(source.accentSecondary || "").trim()) ? String(source.accentSecondary).trim().toLowerCase() : founderProfileDefaults.accentSecondary;
+  const bannerColor = /^#[0-9a-f]{6}$/i.test(String(source.bannerColor || "").trim()) ? String(source.bannerColor).trim().toLowerCase() : accentSecondary;
   return {
     displayName: founderProfileText(source.displayName, founderProfileDefaults.displayName, 48),
     handle: founderProfileText(source.handle, founderProfileDefaults.handle, 40),
@@ -1319,7 +1327,12 @@ function normalizeFounderProfile(value = {}) {
     bio: founderProfileText(source.bio, founderProfileDefaults.bio, 500),
     avatarUrl: founderProfileUrl(source.avatarUrl, founderProfileDefaults.avatarUrl),
     bannerUrl: founderProfileUrl(source.bannerUrl),
-    accent: /^#[0-9a-f]{6}$/i.test(String(source.accent || "").trim()) ? String(source.accent).trim().toLowerCase() : founderProfileDefaults.accent,
+    accent: accentPrimary,
+    accentPrimary,
+    accentSecondary,
+    bannerColor,
+    profileEffect: ["none", "glow", "sparkle", "aurora", "holographic", "fireflies"].includes(String(source.profileEffect || "").toLowerCase()) ? String(source.profileEffect).toLowerCase() : founderProfileDefaults.profileEffect,
+    avatarDecoration: ["none", "starfall", "orbit", "laurel", "neon-wings"].includes(String(source.avatarDecoration || "").toLowerCase()) ? String(source.avatarDecoration).toLowerCase() : founderProfileDefaults.avatarDecoration,
     status: ["online", "idle", "dnd", "offline"].includes(String(source.status || "").toLowerCase()) ? String(source.status).toLowerCase() : founderProfileDefaults.status,
     roles: roles.map(role => founderProfileText(role, "", 32)).filter(Boolean).slice(0, 8),
     badges: badges.map(badge => founderProfileText(badge, "", 32)).filter(Boolean).slice(0, 8),
@@ -1387,6 +1400,7 @@ function normalizeNyxUserProfile(value = {}, token = {}) {
     displayName: founderProfileText(source.displayName, fallbackName, 48),
     handle: founderProfileText(source.handle, fallbackHandle, 40).replace(/\s+/g, ""),
     bio: founderProfileText(source.bio, "", 280),
+    customStatus: founderProfileText(source.customStatus, "", 80),
     avatarUrl: nyxProfileImage(source.avatarUrl, nyxProfileImage(token.picture)),
     bannerUrl: nyxProfileImage(source.bannerUrl),
     accent: accentPrimary,
@@ -1394,6 +1408,7 @@ function normalizeNyxUserProfile(value = {}, token = {}) {
     accentSecondary,
     bannerColor,
     profileEffect: ["none", "glow", "sparkle", "aurora", "holographic", "fireflies"].includes(String(source.profileEffect || "").toLowerCase()) ? String(source.profileEffect).toLowerCase() : "none",
+    avatarDecoration: ["none", "starfall", "orbit", "laurel", "neon-wings"].includes(String(source.avatarDecoration || "").toLowerCase()) ? String(source.avatarDecoration).toLowerCase() : "none",
     status: ["online", "idle", "dnd", "offline"].includes(String(source.status || "").toLowerCase()) ? String(source.status).toLowerCase() : "online"
   };
 }
@@ -1732,6 +1747,11 @@ app.get("/api/founder-profile", async (_req, res) => {
             avatarUrl: userProfile.avatarUrl,
             bannerUrl: userProfile.bannerUrl,
             accent: userProfile.accentPrimary,
+            accentPrimary: userProfile.accentPrimary,
+            accentSecondary: userProfile.accentSecondary,
+            bannerColor: userProfile.bannerColor,
+            profileEffect: userProfile.profileEffect,
+            avatarDecoration: userProfile.avatarDecoration,
             status: userProfile.status
           });
         }

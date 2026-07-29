@@ -173,40 +173,60 @@ body.browser-shell .nyx-profile-slot .nyx-account-button:hover{border-color:var(
 /* Richer Discord-style profile presentation and effects. */
 .nyx-user-profile-dialog{width:min(1180px,calc(100vw - 32px));grid-template-columns:minmax(360px,420px) minmax(0,1fr);gap:42px}
 .nyx-user-profile-view{position:sticky;top:0;display:grid;justify-items:center}
-.nyx-user-profile-card{display:block;width:100%;max-width:420px;min-height:650px;padding:14px;overflow:hidden;background:linear-gradient(165deg,color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 90%,#292b3d) 0 54%,color-mix(in srgb,var(--nyx-user-accent-secondary,#8ea1ff) 72%,#20222f) 100%)!important;border:1px solid rgba(255,255,255,.16)!important;border-radius:18px!important;box-shadow:0 26px 70px rgba(0,0,0,.42)!important}
+.nyx-user-profile-card{display:block;width:100%;max-width:420px;min-height:650px;padding:14px;overflow:hidden;background:linear-gradient(180deg,color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 78%,#1e1f22) 0%,color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 62%,#1e1f22) 54%,color-mix(in srgb,var(--nyx-user-accent-secondary,#8ea1ff) 68%,#1e1f22) 100%)!important;border:1px solid color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 66%,#4e5058)!important;border-radius:18px!important;box-shadow:0 26px 70px rgba(0,0,0,.42),inset 0 3px 0 var(--nyx-user-accent-primary,#5865f2),inset 0 -3px 0 var(--nyx-user-accent-secondary,#8ea1ff)!important}
 .nyx-user-profile-card>*:not(.nyx-user-profile-effect){position:relative;z-index:1}
-.nyx-user-profile-effect{z-index:0!important}
+.nyx-user-profile-effect{z-index:2!important}
 .nyx-user-profile-banner{height:184px!important;margin:-14px -14px 0;overflow:hidden;border-radius:17px 17px 0 0;background:var(--nyx-user-banner-color,var(--nyx-user-accent-secondary,#8ea1ff))!important}
 .nyx-user-profile-banner img{border-radius:inherit!important}
 .nyx-user-profile-chrome{display:flex;align-items:flex-end;justify-content:flex-start;height:64px;padding:0 7px}
-.nyx-user-profile-avatar{width:92px!important;height:92px!important;flex:0 0 auto;margin-top:-42px;border:6px solid color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 68%,#20222f)!important;border-radius:50%!important;background:#202225!important}
+.nyx-user-profile-avatar{width:92px!important;height:92px!important;flex:0 0 auto;margin-top:-42px;border:6px solid color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 76%,#20222f)!important;border-radius:50%!important;background:color-mix(in srgb,var(--nyx-user-accent-secondary,#8ea1ff) 22%,#202225)!important;box-shadow:0 0 0 2px color-mix(in srgb,var(--nyx-user-accent-secondary,#8ea1ff) 48%,transparent),0 8px 20px rgba(0,0,0,.3)}
 .nyx-user-profile-avatar img{border-radius:50%!important}
 .nyx-user-profile-avatar>span{font-size:28px!important}
+.nyx-user-profile-avatar>img,.nyx-user-profile-avatar>span{position:relative;z-index:1}
+.nyx-avatar-decoration{display:none;position:absolute;z-index:3;inset:-16px;pointer-events:none;color:var(--nyx-user-accent-primary,#5865f2);filter:drop-shadow(0 0 7px color-mix(in srgb,var(--nyx-user-accent-secondary,#8ea1ff) 68%,transparent))}
+.nyx-avatar-decoration::before,.nyx-avatar-decoration::after,.nyx-avatar-decoration>span{content:"";position:absolute;display:block;box-sizing:border-box}
+.nyx-avatar-decoration-starfall>.nyx-avatar-decoration{display:block;background:radial-gradient(circle at 15% 24%,#fff 0 2px,transparent 2.7px),radial-gradient(circle at 84% 18%,var(--nyx-user-accent-secondary,#8ea1ff) 0 2.5px,transparent 3.2px),radial-gradient(circle at 90% 72%,#fff 0 1.8px,transparent 2.5px),radial-gradient(circle at 17% 81%,var(--nyx-user-accent-primary,#5865f2) 0 2.3px,transparent 3px);animation:nyx-avatar-twinkle 2.8s ease-in-out infinite}
+.nyx-avatar-decoration-starfall>.nyx-avatar-decoration::before,.nyx-avatar-decoration-starfall>.nyx-avatar-decoration::after{width:17px;height:17px;background:linear-gradient(135deg,#fff,var(--nyx-user-accent-secondary,#8ea1ff));clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%)}
+.nyx-avatar-decoration-starfall>.nyx-avatar-decoration::before{right:-1px;top:13px}.nyx-avatar-decoration-starfall>.nyx-avatar-decoration::after{left:3px;bottom:9px;width:12px;height:12px;animation:nyx-avatar-twinkle 1.7s ease-in-out infinite reverse}
+.nyx-avatar-decoration-orbit>.nyx-avatar-decoration{display:block;border:2px solid color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 72%,transparent);border-left-color:var(--nyx-user-accent-secondary,#8ea1ff);border-right-color:var(--nyx-user-accent-secondary,#8ea1ff);border-radius:50%;animation:nyx-avatar-orbit 7s linear infinite}
+.nyx-avatar-decoration-orbit>.nyx-avatar-decoration::before,.nyx-avatar-decoration-orbit>.nyx-avatar-decoration::after{border-radius:50%;background:#fff;box-shadow:0 0 0 3px var(--nyx-user-accent-primary,#5865f2),0 0 12px 5px color-mix(in srgb,var(--nyx-user-accent-secondary,#8ea1ff) 72%,transparent)}
+.nyx-avatar-decoration-orbit>.nyx-avatar-decoration::before{width:8px;height:8px;top:8px;right:11px}.nyx-avatar-decoration-orbit>.nyx-avatar-decoration::after{width:6px;height:6px;left:8px;bottom:15px}
+.nyx-avatar-decoration-laurel>.nyx-avatar-decoration{display:block}
+.nyx-avatar-decoration-laurel>.nyx-avatar-decoration::before,.nyx-avatar-decoration-laurel>.nyx-avatar-decoration::after{top:13px;width:35px;height:88px;border:7px dotted color-mix(in srgb,var(--nyx-user-accent-secondary,#8ea1ff) 86%,#fff);border-top-color:transparent;border-bottom-color:transparent;border-radius:50%}
+.nyx-avatar-decoration-laurel>.nyx-avatar-decoration::before{left:-5px;border-right:0;transform:rotate(-11deg)}.nyx-avatar-decoration-laurel>.nyx-avatar-decoration::after{right:-5px;border-left:0;transform:rotate(11deg)}
+.nyx-avatar-decoration-laurel>.nyx-avatar-decoration>span{left:50%;bottom:1px;width:16px;height:16px;background:linear-gradient(135deg,var(--nyx-user-accent-primary,#5865f2),var(--nyx-user-accent-secondary,#8ea1ff));clip-path:polygon(50% 0,61% 36%,100% 50%,61% 64%,50% 100%,39% 64%,0 50%,39% 36%);transform:translateX(-50%)}
+.nyx-avatar-decoration-neon-wings>.nyx-avatar-decoration{display:block}
+.nyx-avatar-decoration-neon-wings>.nyx-avatar-decoration::before,.nyx-avatar-decoration-neon-wings>.nyx-avatar-decoration::after{top:23px;width:39px;height:72px;background:linear-gradient(160deg,#fff 0 5%,var(--nyx-user-accent-secondary,#8ea1ff) 28%,var(--nyx-user-accent-primary,#5865f2) 74%,transparent 75%);clip-path:polygon(100% 2%,65% 18%,33% 10%,50% 38%,0 31%,42% 60%,8% 71%,64% 80%,53% 100%,100% 72%)}
+.nyx-avatar-decoration-neon-wings>.nyx-avatar-decoration::before{left:-24px}.nyx-avatar-decoration-neon-wings>.nyx-avatar-decoration::after{right:-24px;transform:scaleX(-1)}
+.nyx-user-profile-avatar>.nyx-user-status{z-index:5!important}
+@keyframes nyx-avatar-orbit{to{transform:rotate(360deg)}}@keyframes nyx-avatar-twinkle{0%,100%{opacity:.55;filter:brightness(.85)}50%{opacity:1;filter:brightness(1.35)}}
 .nyx-user-status{right:-2px!important;bottom:1px!important;width:20px!important;height:20px!important;border:4px solid #202225!important}
-.nyx-user-profile-body{position:relative;display:block;min-height:390px;margin:0;padding:16px;overflow:hidden;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(22,23,29,.9)!important;box-shadow:0 10px 25px rgba(0,0,0,.25)}
+.nyx-user-profile-body{position:relative;display:block;min-height:390px;margin:0;padding:16px;overflow:hidden;border:1px solid rgba(255,255,255,.18);border-radius:12px;background:linear-gradient(180deg,color-mix(in srgb,#2b2d31 72%,var(--nyx-user-accent-primary,#5865f2)) 0%,color-mix(in srgb,#2b2d31 80%,var(--nyx-user-accent-primary,#5865f2)) 58%,color-mix(in srgb,#2b2d31 82%,var(--nyx-user-accent-secondary,#8ea1ff)) 100%)!important;box-shadow:0 10px 25px rgba(0,0,0,.3)}
+.nyx-user-profile-body>*{position:relative;z-index:1}
+.nyx-user-profile-body::before{content:"";position:absolute;z-index:0;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.035),transparent 32%,rgba(0,0,0,.08))}
 .nyx-user-profile-heading{display:block;padding:0;margin:0}
 .nyx-user-profile-heading h2{margin:0!important;color:#fff!important;font-size:24px!important;font-weight:800!important;line-height:1.12!important}
-.nyx-user-profile-heading p{margin:3px 0 0!important;color:#d8d9df!important;font-size:13px!important}
-.nyx-user-profile-custom-status{margin:12px 0 0!important;color:#ececf0!important;font-size:13px!important;line-height:1.4!important}
+.nyx-user-profile-heading p{margin:3px 0 0!important;color:#c4c7ce!important;font-size:13px!important}
+.nyx-user-profile-custom-status{margin:12px 0 0!important;color:#f2f3f5!important;font-size:13px!important;line-height:1.4!important}
 .nyx-profile-symbol{display:block;width:15px;height:15px;flex:0 0 auto}
 .nyx-user-profile-custom-status{display:flex;align-items:center;gap:7px}
 .nyx-user-profile-custom-status .nyx-profile-symbol{color:var(--nyx-user-accent-secondary,#8ea1ff)}
 .nyx-user-profile-about,.nyx-user-profile-roles,.nyx-user-profile-details{margin:16px 0 0;padding:14px 0 0;border-top:1px solid rgba(255,255,255,.18)}
-.nyx-user-profile-about h3,.nyx-user-profile-roles h3,.nyx-user-profile-details h3{margin:0 0 7px;color:#fff;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.nyx-user-profile-about h3,.nyx-user-profile-roles h3,.nyx-user-profile-details h3{margin:0 0 7px;color:#f2f3f5;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
 .nyx-user-profile-bio,.nyx-user-profile-details p{min-height:0;margin:0;color:#e5e5e9!important;font-size:13px!important;line-height:1.5!important}
 .nyx-user-role-list{display:flex;flex-wrap:wrap;gap:6px}
-.nyx-user-role{display:inline-flex;align-items:center;gap:5px;min-height:24px;padding:2px 8px 2px 5px;border:1px solid rgba(255,255,255,.13);border-radius:5px;background:#2b2d31;color:#dbdee1;font-size:11px;font-weight:650;line-height:1}
+.nyx-user-role{display:inline-flex;align-items:center;gap:5px;min-height:24px;padding:2px 8px 2px 5px;border:1px solid rgba(255,255,255,.2);border-radius:5px;background:rgba(255,255,255,.09);color:#f2f3f5;font-size:11px;font-weight:650;line-height:1}
 .nyx-user-role img{width:18px;height:18px;flex:0 0 18px;border-radius:4px;object-fit:cover}
 .nyx-user-role .nyx-profile-symbol{width:14px;height:14px}
-.nyx-user-role-owner{border-color:rgba(255,61,61,.4);background:rgba(94,20,25,.55);color:#ffb6b6}
-.nyx-user-role-developer{border-color:rgba(47,171,255,.38);background:rgba(17,55,82,.58);color:#a9ddff}
-.nyx-user-role-founder{border-color:rgba(181,132,255,.4);background:rgba(65,43,91,.62);color:#d9bfff}
+.nyx-user-role-owner{border-color:color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 70%,transparent);background:color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 28%,#24252b);color:color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 35%,#fff)}
+.nyx-user-role-developer{border-color:color-mix(in srgb,var(--nyx-user-accent-secondary,#8ea1ff) 62%,transparent);background:color-mix(in srgb,var(--nyx-user-accent-secondary,#8ea1ff) 25%,#24252b);color:color-mix(in srgb,var(--nyx-user-accent-secondary,#8ea1ff) 34%,#fff)}
+.nyx-user-role-founder{border-color:color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 48%,var(--nyx-user-accent-secondary,#8ea1ff));background:linear-gradient(120deg,color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 24%,#24252b),color-mix(in srgb,var(--nyx-user-accent-secondary,#8ea1ff) 23%,#24252b));color:#fff}
 .nyx-user-profile-actions{display:grid;gap:2px;margin:16px -5px -5px;padding-top:7px;border-top:1px solid rgba(255,255,255,.18)}
-.nyx-user-profile-actions>div{display:grid;grid-template-columns:18px 1fr auto;align-items:center;gap:8px;min-height:35px;padding:0 7px;border-radius:5px;color:#e9e9ee;font-size:12px}
-.nyx-user-profile-actions>div:hover{background:rgba(255,255,255,.07)}
+.nyx-user-profile-actions>button{display:grid;width:100%;grid-template-columns:18px 1fr auto;align-items:center;gap:8px;min-height:35px;padding:0 7px;border:0;border-radius:5px;background:transparent;color:color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 15%,#f4f4f6);font:inherit;font-size:12px;text-align:left;cursor:pointer}
+.nyx-user-profile-actions>button:hover,.nyx-user-profile-actions>button:focus-visible{background:linear-gradient(90deg,color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 18%,transparent),color-mix(in srgb,var(--nyx-user-accent-secondary,#8ea1ff) 14%,transparent));outline:none}
 .nyx-user-profile-actions .nyx-user-status{position:relative!important;right:auto!important;bottom:auto!important;width:10px!important;height:10px!important;border:0!important}
-.nyx-user-profile-actions>div>.nyx-profile-symbol{width:14px;height:14px;color:#d7d8de}
-.nyx-user-profile-actions b{display:grid;place-items:center;color:#aeb0b8;font-weight:400}
+.nyx-user-profile-actions>button>.nyx-profile-symbol{width:14px;height:14px;color:var(--nyx-user-accent-primary,#5865f2)}
+.nyx-user-profile-actions b{display:grid;place-items:center;color:var(--nyx-user-accent-secondary,#8ea1ff);font-weight:400}
 .nyx-user-profile-actions b .nyx-profile-symbol{width:14px;height:14px}
 .nyx-user-status-dnd::after{content:"";position:absolute;left:50%;top:50%;width:8px;height:2px;border-radius:2px;background:#202225;transform:translate(-50%,-50%)}
 .nyx-user-profile-actions .nyx-user-status-dnd::after{width:6px;height:1.5px}
@@ -223,4 +243,4 @@ body.browser-shell .nyx-profile-slot .nyx-account-button:hover{border-color:var(
 @keyframes nyx-profile-fireflies{0%,100%{background-position:0 0;transform:translateY(0)}50%{background-position:35px -54px;transform:translateY(-10px)}}
 @media(max-width:1050px){.nyx-user-profile-dialog{width:min(760px,calc(100vw - 24px));grid-template-columns:1fr}.nyx-user-profile-view{position:static;max-width:420px;margin:0 auto;width:100%}.nyx-user-profile-card{min-height:620px}}
 @media(max-width:620px){.nyx-user-profile-dialog{width:calc(100vw - 16px);padding:20px 16px}.nyx-user-profile-card{min-height:580px;padding:10px}.nyx-user-profile-banner{height:154px!important;margin:-10px -10px 0}.nyx-user-profile-avatar{width:82px!important;height:82px!important;margin-top:-37px}.nyx-user-profile-chrome{height:59px;padding:0 4px}.nyx-user-profile-body{min-height:365px;padding:14px}.nyx-user-profile-heading h2{font-size:22px!important}}
-@media(prefers-reduced-motion:reduce){.nyx-user-profile-effect,.nyx-user-profile-effect::before{animation:none!important}}
+@media(prefers-reduced-motion:reduce){.nyx-user-profile-effect,.nyx-user-profile-effect::before,.nyx-avatar-decoration,.nyx-avatar-decoration::after{animation:none!important}}

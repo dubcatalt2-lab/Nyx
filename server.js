@@ -60,9 +60,11 @@ const userActivityEventWindowMs = 15 * 60_000;
 const userActivityEventTimes = new Map();
 const nyxAccountSignInAttempts = new Map();
 const nyxAccountRegisterAttempts = new Map();
+const nyxAccountPasswordResetAttempts = new Map();
 const nyxAccountSignInWindowMs = 15 * 60_000;
 const nyxAccountSignInMaxAttempts = 10;
 const nyxAccountRegisterMaxAttempts = 5;
+const nyxAccountPasswordResetMaxAttempts = 5;
 const ownerDashboardSnapshotTtlMs = 30_000;
 let ownerDashboardSnapshotCache = { expiresAt: 0, value: null, promise: null };
 const linkGeneratorAttempts = new Map();
@@ -2022,6 +2024,18 @@ function nyxAccountRegisterRateState(clientId, now = Date.now()) {
   return state;
 }
 
+function nyxAccountPasswordResetRateState(clientId, now = Date.now()) {
+  for (const [key, state] of nyxAccountPasswordResetAttempts) {
+    if (now - state.windowStarted > nyxAccountSignInWindowMs) nyxAccountPasswordResetAttempts.delete(key);
+  }
+  let state = nyxAccountPasswordResetAttempts.get(clientId);
+  if (!state || now - state.windowStarted > nyxAccountSignInWindowMs) {
+    state = { attempts: 0, windowStarted: now };
+    nyxAccountPasswordResetAttempts.set(clientId, state);
+  }
+  return state;
+}
+
 function utcQuotaDay(now = new Date()) {
   return now.toISOString().slice(0, 10);
 }
@@ -2244,6 +2258,22 @@ async function bunnyRequest(path, apiKey, options = {}) {
   return payload;
 }
 
+async function resolveNyxAccountIdentifier(firebase, value) {
+  const identifier = String(value || "").trim();
+  const usernameIdentifier = /^@[a-z0-9_.-]{3,32}$/i.test(identifier);
+  if (identifier.includes("@") && !usernameIdentifier) {
+    const authEmail = normalizeNyxAccountEmail(identifier);
+    return authEmail ? { authEmail, expectedUid: "" } : null;
+  }
+  const username = nyxProfileUsername(identifier.replace(/^@+/, ""), "");
+  if (!username) return null;
+  const usernameSnapshot = await firebase.firestore.collection("nyxUsernames").doc(username).get();
+  const expectedUid = String(usernameSnapshot.data()?.ownerUid || "");
+  if (!expectedUid) return { authEmail: `${username}@account.nyx.local`, expectedUid: "" };
+  const account = await firebase.auth.getUser(expectedUid);
+  return { authEmail: String(account.email || ""), expectedUid };
+}
+
 app.post("/api/account/register", async (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) {
@@ -2262,8 +2292,14 @@ app.post("/api/account/register", async (req, res) => {
   const rawUsername = String(req.body?.username || "").trim().toLowerCase().replace(/^@+/, "");
   const username = nyxProfileUsername(rawUsername, "");
   const password = String(req.body?.password || "");
+  const requestedEmail = String(req.body?.email || "").trim();
+  const recoveryEmail = requestedEmail ? normalizeNyxAccountEmail(requestedEmail) : "";
   if (!username || username !== rawUsername) {
     res.status(400).json({ error: "Use 3–32 letters, numbers, dots, dashes, or underscores." });
+    return;
+  }
+  if (requestedEmail && !recoveryEmail) {
+    res.status(400).json({ error: "Enter a valid email address or leave the email field blank." });
     return;
   }
   if (password.length < 8 || password.length > 256) {
@@ -2283,7 +2319,7 @@ app.post("/api/account/register", async (req, res) => {
       res.status(409).json({ error: "That username is already taken." });
       return;
     }
-    const email = `${username}@account.nyx.local`;
+    const email = recoveryEmail || `${username}@account.nyx.local`;
     const account = await firebase.auth.createUser({
       email,
       password,
@@ -2324,7 +2360,8 @@ app.post("/api/account/register", async (req, res) => {
     invalidateOwnerDashboardSnapshot();
     res.status(201).json({ customToken });
   } catch (error) {
-    const duplicate = error?.code === "auth/email-already-exists" || error?.status === 409;
+    const duplicateEmail = error?.code === "auth/email-already-exists";
+    const duplicate = duplicateEmail || error?.status === 409;
     const invalidPassword = error?.code === "auth/invalid-password";
     if (createdUid) {
       const firebase = await linkGeneratorFirebase().catch(() => null);
@@ -2332,7 +2369,7 @@ app.post("/api/account/register", async (req, res) => {
     }
     res.status(duplicate ? 409 : (invalidPassword ? 400 : (error.status || 503))).json({
       error: duplicate
-        ? "That username is already taken."
+        ? (duplicateEmail ? "That email is already connected to an account." : "That username is already taken.")
         : invalidPassword
           ? "Choose a password with at least 8 characters."
           : (error.message || "Account creation is temporarily unavailable.")
@@ -2364,30 +2401,12 @@ app.post("/api/account/sign-in", async (req, res) => {
   rateState.attempts += 1;
   try {
     const firebase = await linkGeneratorFirebase();
-    let authEmail = "";
-    let expectedUid = "";
-    const usernameIdentifier = /^@[a-z0-9_.-]{3,32}$/i.test(identifier);
-    if (identifier.includes("@") && !usernameIdentifier) {
-      authEmail = normalizeNyxAccountEmail(identifier);
-      if (!authEmail) {
-        res.status(401).json({ error: "Username, email, or password is incorrect." });
-        return;
-      }
-    } else {
-      const username = nyxProfileUsername(identifier.replace(/^@+/, ""), "");
-      if (!username) {
-        res.status(401).json({ error: "Username, email, or password is incorrect." });
-        return;
-      }
-      const usernameSnapshot = await firebase.firestore.collection("nyxUsernames").doc(username).get();
-      expectedUid = String(usernameSnapshot.data()?.ownerUid || "");
-      if (expectedUid) {
-        const account = await firebase.auth.getUser(expectedUid);
-        authEmail = String(account.email || "");
-      } else {
-        authEmail = `${username}@account.nyx.local`;
-      }
+    const resolved = await resolveNyxAccountIdentifier(firebase, identifier);
+    if (!resolved?.authEmail) {
+      res.status(401).json({ error: "Username, email, or password is incorrect." });
+      return;
     }
+    const { authEmail, expectedUid } = resolved;
     const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${encodeURIComponent(linkGeneratorFirebaseConfig().webApiKey)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -2409,6 +2428,61 @@ app.post("/api/account/sign-in", async (req, res) => {
     res.status(knownAccountError ? 401 : 503).json({
       error: knownAccountError ? "Username, email, or password is incorrect." : "Sign-in is temporarily unavailable."
     });
+  }
+});
+
+app.post("/api/account/password-reset", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  if (!firebaseAccountModeConfigured()) {
+    res.status(503).json({ error: "Nyx accounts are not configured." });
+    return;
+  }
+  const clientId = linkGeneratorClientId(req);
+  const rateState = nyxAccountPasswordResetRateState(clientId);
+  if (rateState.attempts >= nyxAccountPasswordResetMaxAttempts) {
+    res.status(429).json({ error: "Too many reset attempts. Try again in a few minutes." });
+    return;
+  }
+  const identifier = String(req.body?.identifier || "").trim();
+  if (identifier.length < 3 || identifier.length > 254) {
+    res.status(400).json({ error: "Enter your username or email." });
+    return;
+  }
+  rateState.attempts += 1;
+  const genericMessage = "If that account has a recovery email, Firebase sent a password-reset message.";
+  try {
+    const firebase = await linkGeneratorFirebase();
+    const resolved = await resolveNyxAccountIdentifier(firebase, identifier).catch(() => null);
+    if (resolved?.authEmail && nyxDeliverableEmail(resolved.authEmail)) {
+      const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${encodeURIComponent(linkGeneratorFirebaseConfig().webApiKey)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestType: "PASSWORD_RESET", email: resolved.authEmail }),
+        signal: AbortSignal.timeout(15_000)
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok && String(payload?.error?.message || "") !== "EMAIL_NOT_FOUND") {
+        throw new Error("Firebase could not send the reset email.");
+      }
+      if (response.ok) {
+        nyxAccountPasswordResetAttempts.delete(clientId);
+        await recordNyxAuditSafe(firebase, {
+          actorUid: resolved.expectedUid,
+          actorEmail: resolved.authEmail,
+          action: "password_reset_requested",
+          targetUid: resolved.expectedUid,
+          targetEmail: resolved.authEmail
+        });
+      }
+    }
+    res.status(202).json({ message: genericMessage });
+  } catch (error) {
+    console.warn("Nyx password reset request failed:", error?.message || error);
+    res.status(202).json({ message: genericMessage });
   }
 });
 
@@ -2463,7 +2537,12 @@ app.put("/api/account/me/email", async (req, res) => {
       });
     }
     const updated = await firebase.auth.getUser(token.uid);
-    res.json({ email: String(updated.email || ""), emailVerified: Boolean(updated.emailVerified) });
+    const customToken = await firebase.auth.createCustomToken(token.uid);
+    res.json({
+      email: String(updated.email || ""),
+      emailVerified: Boolean(updated.emailVerified),
+      customToken
+    });
   } catch (error) {
     const duplicate = error.code === "auth/email-already-exists";
     res.status(duplicate ? 409 : (error.status || 503)).json({

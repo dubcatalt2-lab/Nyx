@@ -15,6 +15,7 @@ const rootFiles = new Set([
   "app.webmanifest",
   "script.js",
   "startup.js",
+  "startup-studyhub.html",
   "styles.css",
   "uv.config.js",
   "uv.sw.js",

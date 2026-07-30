@@ -144,13 +144,13 @@ html body.browser-shell .top-os .brand-mini > button[data-browser-shell-home] > 
   line-height:1!important;
 }
 
-html body.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not(.formula-exit-zone):not([data-no-button-motion]):not(:disabled){
+html body.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not([data-no-button-motion]):not(:disabled){
   transform-origin:center!important;
   --nyx-button-hover-scale:1.035;
   transition:transform .22s cubic-bezier(.2,.8,.2,1),border-color .22s ease,background-color .22s ease,box-shadow .22s ease,filter .22s ease!important;
   will-change:transform,filter;
 }
-html body.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not(.formula-exit-zone):not([data-no-button-motion]):not(:disabled):hover{
+html body.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not([data-no-button-motion]):not(:disabled):hover{
   transform:translateY(-2px) scale(var(--nyx-button-hover-scale,1.035))!important;
   border-color:color-mix(in srgb,var(--nyx-home-wordmark,var(--nyx-chrome-accent,var(--theme-border,#78aaff))) 78%,rgba(255,255,255,.16))!important;
   box-shadow:0 10px 24px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.08)!important;
@@ -171,18 +171,18 @@ html body.browser-shell .top-os.top-os .browser-mode-shell-tab-close:hover{
   transform:translateY(-50%) scale(1.035)!important;
   filter:brightness(1.05)!important;
 }
-html body.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not(.formula-exit-zone):not([data-no-button-motion]):not(:disabled):focus-visible{
+html body.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not([data-no-button-motion]):not(:disabled):focus-visible{
   outline:2px solid color-mix(in srgb,var(--nyx-home-wordmark,var(--nyx-chrome-accent,var(--theme-border,#78aaff))) 78%,white)!important;
   outline-offset:3px!important;
   box-shadow:none!important;
 }
-html body.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not(.formula-exit-zone):not([data-no-button-motion]):not(:disabled):active{
+html body.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not([data-no-button-motion]):not(:disabled):active{
   transform:translateY(0) scale(.98)!important;
   box-shadow:0 7px 18px rgba(0,0,0,.24),inset 0 1px 5px rgba(0,0,0,.24)!important;
   filter:brightness(.96)!important;
   transition-duration:.08s!important;
 }
-html body.browser-shell button.nyx-button-click:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not(.formula-exit-zone):not([data-no-button-motion]):not(:disabled){
+html body.browser-shell button.nyx-button-click:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not([data-no-button-motion]):not(:disabled){
   animation:nyxSharedButtonClick .34s cubic-bezier(.2,.8,.2,1) both!important;
 }
 @keyframes nyxSharedButtonClick{
@@ -192,22 +192,22 @@ html body.browser-shell button.nyx-button-click:not(.quick-tile):not(.setup-them
 }
 
 /* High-specificity normalization prevents older theme rules from changing hover timing. */
-html body.browser-shell.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not(.formula-exit-zone):not([data-no-button-motion]):not(:disabled){
+html body.browser-shell.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not([data-no-button-motion]):not(:disabled){
   --nyx-button-hover-scale:1.035!important;
   transition-duration:.22s!important;
   transition-timing-function:cubic-bezier(.2,.8,.2,1)!important;
 }
-html body.browser-shell.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not(.formula-exit-zone):not([data-no-button-motion]):not(:disabled):hover{
+html body.browser-shell.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not([data-no-button-motion]):not(:disabled):hover{
   transform:translateY(-2px) scale(1.035)!important;
   filter:brightness(1.05)!important;
   box-shadow:0 10px 24px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.08)!important;
 }
-html body.browser-shell.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not(.formula-exit-zone):not([data-no-button-motion]):not(:disabled):active{
+html body.browser-shell.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not([data-no-button-motion]):not(:disabled):active{
   transform:translateY(0) scale(.98)!important;
   filter:brightness(.97)!important;
   box-shadow:0 7px 18px rgba(0,0,0,.24),inset 0 1px 5px rgba(0,0,0,.24)!important;
 }
-html body.browser-shell.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not(.formula-exit-zone):not([data-no-button-motion]):focus-visible{
+html body.browser-shell.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not([data-no-button-motion]):focus-visible{
   box-shadow:none!important;
 }
 
@@ -231,7 +231,7 @@ html body:is(.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fre
 
 @media(prefers-reduced-motion:reduce){
   html body #setupLaunchScreen.show .nyx-title-shimmer{animation:none!important}
-  html body.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not(.formula-exit-zone):not([data-no-button-motion]){
+  html body.browser-shell button:not(.quick-tile):not(.setup-theme-card):not(.bg-choice):not(.game-card):not([data-no-button-motion]){
     animation:none!important;
     transition:none!important;
     transform:none!important;

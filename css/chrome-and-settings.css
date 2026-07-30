@@ -627,8 +627,7 @@ body.browser-shell .settings-card .switch{
 .brand-button,
 .welcome-title,
 .welcome-title *,
-#setupScreen h1,
-.formula-gate h1{
+#setupScreen h1{
   font-family:Outfit,Arial,sans-serif!important;
   font-weight:400!important;
   letter-spacing:0!important;

@@ -1901,9 +1901,6 @@ body.theme-fresh.post-cover-loading .post-cover-loader{
   color:#0b7280!important;
   -webkit-text-fill-color:#0b7280!important;
 }
-#formulaGate:not(.hidden) .formula-pdf{
-  pointer-events:auto!important;
-}
 /* //panic-effects-dropdown-polish-final */
 html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > div.quick-tile.home-shortcut > button.home-shortcut-menu-btn,
 html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > div.quick-tile.home-shortcut > button.home-shortcut-menu-btn:hover,

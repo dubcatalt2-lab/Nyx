@@ -1406,7 +1406,7 @@ function normalizeFounderProfile(value = {}) {
     accentPrimary,
     accentSecondary,
     bannerColor,
-    profileEffect: ["none", "glow", "sparkle", "aurora", "holographic", "fireflies"].includes(String(source.profileEffect || "").toLowerCase()) ? String(source.profileEffect).toLowerCase() : founderProfileDefaults.profileEffect,
+    profileEffect: ["none", "glow", "sparkle", "aurora", "holographic", "fireflies", "cosmic-dust", "electric-storm", "meteor-shower", "cyber-grid", "plasma", "snowfall", "embers", "bubbles"].includes(String(source.profileEffect || "").toLowerCase()) ? String(source.profileEffect).toLowerCase() : founderProfileDefaults.profileEffect,
     avatarDecoration: ["none", "starfall", "orbit", "laurel", "neon-wings"].includes(String(source.avatarDecoration || "").toLowerCase()) ? String(source.avatarDecoration).toLowerCase() : founderProfileDefaults.avatarDecoration,
     status: ["online", "idle", "dnd", "offline"].includes(String(source.status || "").toLowerCase()) ? String(source.status).toLowerCase() : founderProfileDefaults.status,
     roles: roles.map(role => founderProfileText(role, "", 32)).filter(Boolean).slice(0, 8),
@@ -1489,7 +1489,7 @@ function normalizeNyxUserProfile(value = {}, token = {}) {
     accentPrimary,
     accentSecondary,
     bannerColor,
-    profileEffect: ["none", "glow", "sparkle", "aurora", "holographic", "fireflies"].includes(String(source.profileEffect || "").toLowerCase()) ? String(source.profileEffect).toLowerCase() : "none",
+    profileEffect: ["none", "glow", "sparkle", "aurora", "holographic", "fireflies", "cosmic-dust", "electric-storm", "meteor-shower", "cyber-grid", "plasma", "snowfall", "embers", "bubbles"].includes(String(source.profileEffect || "").toLowerCase()) ? String(source.profileEffect).toLowerCase() : "none",
     avatarDecoration: ["none", "starfall", "orbit", "laurel", "neon-wings"].includes(String(source.avatarDecoration || "").toLowerCase()) ? String(source.avatarDecoration).toLowerCase() : "none",
     status: ["online", "idle", "dnd", "offline"].includes(String(source.status || "").toLowerCase()) ? String(source.status).toLowerCase() : "online"
   };

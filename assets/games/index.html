@@ -64,7 +64,8 @@
     <div class="player-stage">
       <div id="playerLoading" class="player-loading" role="status">
         <span class="spinner" aria-hidden="true"></span>
-        <span>Loading game…</span>
+        <span id="playerLoadingText">Loading game…</span>
+        <button id="retryGame" class="toolbar-button" type="button" hidden>Retry all sources</button>
       </div>
       <iframe id="gameFrame" title="Game" allow="autoplay; fullscreen; gamepad; keyboard-map; clipboard-read; clipboard-write" allowfullscreen></iframe>
     </div>

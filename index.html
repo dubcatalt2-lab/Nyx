@@ -30,23 +30,23 @@
 })();
 </script>
 <script src="startup.js?v=20260726-chromebook-layout-1"></script>
-<link rel="stylesheet" href="styles.css?v=20260730-profile-effects-v55">
+<link rel="stylesheet" href="styles.css?v=20260730-account-security-v57">
 <style>
 html.nyx-studyhub-starting,html.nyx-studyhub-starting body{overflow:hidden!important}
 #nyxStudyHubStartup{position:fixed;z-index:2147483647;inset:0;display:block;width:100vw;height:100dvh;border:0;background:#f2eee4;opacity:1;pointer-events:auto!important;transition:opacity .35s ease;isolation:isolate}
 #nyxStudyHubStartup.is-leaving{opacity:0;pointer-events:none}
+html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!important;pointer-events:none!important}
 @media(prefers-reduced-motion:reduce){#nyxStudyHubStartup{transition:none}}
 </style>
 <script>document.documentElement.classList.add('nyx-studyhub-starting')</script>
 </head>
 <body>
-<!-- //ten-second-studyhub-startup -->
-<iframe id="nyxStudyHubStartup" src="startup-studyhub.html?v=20260729-interactive-v2" title="StudyHub startup screen" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe>
+<!-- //math-gated-studyhub-startup -->
+<iframe id="nyxStudyHubStartup" src="startup-studyhub.html?v=20260730-math-gate-v8" title="StudyHub startup math question" tabindex="0" referrerpolicy="no-referrer"></iframe>
 <script>
 (() => {
   const splash=document.getElementById('nyxStudyHubStartup');
   const root=document.documentElement;
-  let revealTimer=0;
   let removeTimer=0;
   let finished=false;
   const removeSplash=()=>{
@@ -56,19 +56,17 @@ html.nyx-studyhub-starting,html.nyx-studyhub-starting body{overflow:hidden!impor
   const finishSplash=(duration=350)=>{
     if(finished)return;
     finished=true;
-    clearTimeout(revealTimer);
     clearTimeout(removeTimer);
     splash?.classList.add('is-leaving');
     removeTimer=setTimeout(removeSplash,duration);
   };
-  revealTimer=setTimeout(()=>finishSplash(350),9650);
   const onMessage=event=>{
     if(event.source!==splash?.contentWindow||event.data?.type!=='nyx-studyhub')return;
-    if(event.data.action==='enter')finishSplash(350);
+    if(event.data.action==='interactive-ready')return;
+    if(event.data.action==='math-passed')finishSplash(350);
   };
   addEventListener('message',onMessage);
   addEventListener('pagehide',()=>{
-    clearTimeout(revealTimer);
     clearTimeout(removeTimer);
     removeEventListener('message',onMessage);
   },{once:true});
@@ -360,9 +358,9 @@ html.nyx-studyhub-starting,html.nyx-studyhub-starting body{overflow:hidden!impor
 <script src="./assets/vendor/vanta.dots.min.js"></script>
 <script src="./assets/vendor/vanta.clouds.min.js"></script>
 <script src="/runtime-config.js"></script>
-<script src="js/loading-screen.js?v=20260727-background-progress-v10"></script>
+<script src="js/loading-screen.js?v=20260730-studyhub-input-v11"></script>
 <script src="js/pwa-install.js?v=20260727-install-nyx-v1"></script>
-<script src="js/owner-dashboard.js?v=20260729-owner-dashboard-v1"></script>
-<script src="script.js?v=20260730-profile-effects-v82"></script>
+<script src="js/owner-dashboard.js?v=20260730-account-security-v2"></script>
+<script src="script.js?v=20260730-account-security-v83"></script>
 </body>
 </html>

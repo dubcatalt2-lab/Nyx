@@ -97,7 +97,8 @@ html body .nyx-credits-footer span,html body .nyx-credits-footer small{font-size
 
 /* Discord-inspired founder profile: banner, overlapping avatar, identity, and visible role chips. */
 html body .nyx-founder-profile-standard{display:block;max-width:620px;margin:0 auto;padding:0;overflow:hidden;border:1px solid color-mix(in srgb,var(--nyx-founder-accent,var(--credits-accent)) 42%,transparent);border-radius:16px;background:#111827;box-shadow:0 16px 42px rgba(0,0,0,.32)}
-html body .nyx-founder-profile-standard .nyx-founder-banner{height:140px;margin:0;background:var(--nyx-founder-accent,var(--credits-accent))}
+html body .nyx-founder-profile-standard .nyx-founder-banner{height:auto;aspect-ratio:17/6;margin:0;background:var(--nyx-founder-accent,var(--credits-accent))}
+html body .nyx-founder-profile-standard .nyx-founder-banner img{object-fit:contain}
 html body .nyx-founder-profile-standard .nyx-founder-profile-content{display:block;padding:0 16px 18px}
 html body .nyx-founder-profile-standard .nyx-founder-image-wrap{width:88px;height:88px;margin:-45px 0 0;border:6px solid #111827;border-radius:50%;background:#111827}
 html body .nyx-founder-profile-standard .nyx-founder-image{border:0;border-radius:50%;background:#172338}

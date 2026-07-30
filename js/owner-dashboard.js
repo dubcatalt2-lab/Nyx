@@ -4,7 +4,8 @@
   const esc = value => String(value ?? "").replace(/[&<>"']/g, character => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   })[character]);
-  const roleLabel = value => ({ owner: "Owner", admin: "Admin", member: "Member" }[value] || "Member");
+  const roleLabel = value => ({ owner: "Owner", admin: "Admin", developer: "Developer", moderator: "Moderator", member: "Member" }[value] || "Member");
+  const roleIcon = role => `<img class="nyx-owner-role-icon" src="/assets/icons/roles/${esc(role)}.png" alt="" aria-hidden="true">`;
   const subscriptionLabel = value => ({
     free: "Free", premium: "Premium", trialing: "Trial", past_due: "Past due", canceled: "Canceled"
   }[value] || "Free");
@@ -95,7 +96,7 @@
             </header>
             <form class="nyx-owner-filters" data-owner-filters>
               <label class="nyx-owner-search">${dashboardIcon("search")}<input type="search" name="search" placeholder="Search name, username, email, or UID" autocomplete="off"></label>
-              <select name="role" aria-label="Filter by role"><option value="all">All roles</option><option value="owner">Owner</option><option value="admin">Admin</option><option value="member">Member</option></select>
+              <select name="role" aria-label="Filter by role"><option value="all">All roles</option><option value="owner">Owner</option><option value="admin">Admin</option><option value="developer">Developer</option><option value="moderator">Moderator</option><option value="member">Member</option></select>
               <select name="subscription" aria-label="Filter by subscription"><option value="all">All subscriptions</option><option value="free">Free</option><option value="premium">Premium</option><option value="trialing">Trial</option><option value="past_due">Past due</option><option value="canceled">Canceled</option></select>
               <select name="status" aria-label="Filter by account status"><option value="all">All accounts</option><option value="enabled">Enabled</option><option value="disabled">Disabled</option><option value="online">Online now</option></select>
             </form>
@@ -186,7 +187,7 @@
           <thead><tr><th>${sortButton("displayName", "User")}</th><th>${sortButton("role", "Role")}</th><th>${sortButton("subscriptionStatus", "Subscription")}</th><th>${sortButton("createdAt", "Created")}</th><th>${sortButton("lastSignInAt", "Last sign-in")}</th><th>${sortButton("lastActiveAt", "Last active")}</th><th>Email verified</th><th>${sortButton("status", "Status")}</th><th><span class="sr-only">Actions</span></th></tr></thead>
           <tbody>${users.map(user => `<tr data-owner-user-row="${esc(user.uid)}">
             <td><button class="nyx-owner-user-cell" type="button" data-owner-view-user="${esc(user.uid)}"><span class="nyx-owner-avatar">${user.photoUrl ? `<img src="${esc(user.photoUrl)}" alt="">` : esc((user.displayName || "?").slice(0, 1).toUpperCase())}<i class="${user.online ? "online" : ""}"></i></span><span><strong>${esc(user.displayName)}</strong><small>@${esc(user.username)} · ${esc(user.email || "No email")}</small></span></button></td>
-            <td><span class="nyx-owner-badge role-${esc(user.role)}">${esc(roleLabel(user.role))}</span></td>
+            <td><span class="nyx-owner-badge role-${esc(user.role)}">${roleIcon(user.role)}${esc(roleLabel(user.role))}</span></td>
             <td><span class="nyx-owner-badge subscription-${esc(user.subscriptionStatus)}">${esc(subscriptionLabel(user.subscriptionStatus))}</span></td>
             <td><span title="${esc(dateLabel(user.createdAt))}">${esc(relativeLabel(user.createdAt))}</span></td>
             <td><span title="${esc(dateLabel(user.lastSignInAt))}">${esc(relativeLabel(user.lastSignInAt))}</span></td>
@@ -252,12 +253,12 @@
         const { user } = await api(`/api/owner-dashboard/users/${encodeURIComponent(uid)}`);
         state.selectedUser = user;
         const avatar = user.photoUrl ? `<img src="${esc(user.photoUrl)}" alt="">` : esc((user.displayName || "?").slice(0, 1).toUpperCase());
-        drawer.innerHTML = `<header><div class="nyx-owner-detail-avatar">${avatar}<i class="${user.online ? "online" : ""}"></i></div><div><span>${esc(roleLabel(user.role))} account</span><h2>${esc(user.displayName)}</h2><p>@${esc(user.username)}</p></div><button type="button" data-owner-drawer-close aria-label="Close user details">${dashboardIcon("close")}</button></header>
+        drawer.innerHTML = `<header><div class="nyx-owner-detail-avatar">${avatar}<i class="${user.online ? "online" : ""}"></i></div><div><span>${roleIcon(user.role)}${esc(roleLabel(user.role))} account</span><h2>${esc(user.displayName)}</h2><p>@${esc(user.username)}</p></div><button type="button" data-owner-drawer-close aria-label="Close user details">${dashboardIcon("close")}</button></header>
           <div class="nyx-owner-drawer-scroll">
-            <section class="nyx-owner-detail-grid">${detailValue("Email", user.email || "No email")}${detailValue("Firebase UID", user.uid, "uid")}${detailValue("Created", dateLabel(user.createdAt))}${detailValue("Last sign-in", dateLabel(user.lastSignInAt))}${detailValue("Last active", dateLabel(user.lastActiveAt))}${detailValue("Email verified", user.deliverableEmail ? (user.emailVerified ? "Verified" : "Not verified") : "Not applicable · username-only")}</section>
+            <section class="nyx-owner-detail-grid">${detailValue("Email", user.deliverableEmail ? user.email : "No email added")}${detailValue("Firebase UID", user.uid, "uid")}${detailValue("Created", dateLabel(user.createdAt))}${detailValue("Last sign-in", dateLabel(user.lastSignInAt))}${detailValue("Last active", dateLabel(user.lastActiveAt))}${detailValue("Email verified", user.deliverableEmail ? (user.emailVerified ? "Verified" : "Not verified") : "Not applicable · username-only")}</section>
             <section class="nyx-owner-detail-section"><h3>Profile information</h3><div class="nyx-owner-profile-summary"><strong>${esc(user.profile?.displayName || user.displayName)}</strong><span>${esc(user.profile?.handle || `@${user.username}`)}</span><p>${esc(user.profile?.bio || "No bio yet.")}</p>${user.profile?.customStatus ? `<small>Custom status · ${esc(user.profile.customStatus)}</small>` : ""}</div></section>
-            <section class="nyx-owner-detail-section"><h3>Access</h3><label>Role<select data-owner-detail-role ${user.role === "owner" ? "disabled" : ""}><option value="member">Member</option><option value="admin">Admin</option><option value="owner" ${user.role === "owner" ? "selected" : "disabled"}>Owner</option></select></label><label>Subscription<select data-owner-detail-subscription><option value="free">Free</option><option value="premium">Premium</option><option value="trialing">Trial</option><option value="past_due">Past due</option><option value="canceled">Canceled</option></select></label><label>Monthly revenue <input data-owner-detail-revenue type="number" min="0" step="0.01" value="${((user.monthlyRevenueCents || 0) / 100).toFixed(2)}"></label><div class="nyx-owner-detail-actions"><button type="button" data-owner-save-access>Save access</button></div></section>
-            <section class="nyx-owner-detail-section"><h3>Account actions</h3>${!user.deliverableEmail ? '<p class="nyx-owner-action-note">Username-only accounts do not have a deliverable recovery email.</p>' : ""}<div class="nyx-owner-action-grid"><button type="button" data-owner-user-action="send_password_reset" ${!user.deliverableEmail ? "disabled" : ""}>Send password reset</button><button type="button" data-owner-user-action="verify_email" ${user.emailVerified || !user.deliverableEmail ? "disabled" : ""}>Verify email</button><button type="button" data-owner-user-action="${user.disabled ? "enable" : "disable"}" ${user.role === "owner" ? "disabled" : ""}>${user.disabled ? "Re-enable account" : "Disable account"}</button><button class="danger" type="button" data-owner-user-action="delete" ${user.role === "owner" ? "disabled" : ""}>Delete account</button></div></section>
+            <section class="nyx-owner-detail-section"><h3>Access</h3><label>Role<select data-owner-detail-role ${user.role === "owner" ? "disabled" : ""}><option value="member">Member</option><option value="moderator">Moderator</option><option value="developer">Developer</option><option value="admin">Admin</option><option value="owner" ${user.role === "owner" ? "selected" : "disabled"}>Owner</option></select></label><label>Subscription<select data-owner-detail-subscription><option value="free">Free</option><option value="premium">Premium</option><option value="trialing">Trial</option><option value="past_due">Past due</option><option value="canceled">Canceled</option></select></label><label>Monthly revenue <input data-owner-detail-revenue type="number" min="0" step="0.01" value="${((user.monthlyRevenueCents || 0) / 100).toFixed(2)}"></label><div class="nyx-owner-detail-actions"><button type="button" data-owner-save-access>Save access</button></div></section>
+            <section class="nyx-owner-detail-section"><h3>Account actions</h3>${!user.deliverableEmail ? '<p class="nyx-owner-action-note">This username-only account has no inbox. Create a secure reset link and give it directly to the account owner.</p>' : ""}<div class="nyx-owner-action-grid"><button type="button" data-owner-user-action="create_password_reset_link">Create reset link</button><button type="button" data-owner-user-action="send_password_reset" ${!user.deliverableEmail ? "disabled" : ""}>Email reset link</button><button type="button" data-owner-user-action="verify_email" ${user.emailVerified || !user.deliverableEmail ? "disabled" : ""}>Verify email</button><button type="button" data-owner-user-action="${user.disabled ? "enable" : "disable"}" ${user.role === "owner" ? "disabled" : ""}>${user.disabled ? "Re-enable account" : "Disable account"}</button><button class="danger" type="button" data-owner-user-action="delete" ${user.role === "owner" ? "disabled" : ""}>Delete account</button></div></section>
             <section class="nyx-owner-detail-section"><h3>Recent user activity</h3><div class="nyx-owner-user-activity">${(user.recentActivity || []).length ? user.recentActivity.map(event => `<p><strong>${esc(actionLabel(event.action))}</strong><span>${esc(relativeLabel(event.createdAt))}</span></p>`).join("") : "<span>No recorded account actions.</span>"}</div></section>
           </div>`;
         drawer.querySelector("[data-owner-detail-role]").value = user.role;
@@ -288,6 +289,25 @@
       });
     }
 
+    function showResetLink(resetLink) {
+      confirmHost.hidden = false;
+      confirmHost.innerHTML = `<form><h2>Password reset link</h2><p>Give this one-time Firebase link directly to the account owner. Nyx never reveals or stores their password.</p><label>Reset link<input name="resetLink" value="${esc(resetLink)}" readonly></label><div><button type="button" data-owner-reset-close>Close</button><button type="button" data-owner-reset-copy>Copy link</button></div></form>`;
+      const input = confirmHost.querySelector('[name="resetLink"]');
+      const close = () => { confirmHost.hidden = true; confirmHost.innerHTML = ""; };
+      confirmHost.querySelector("[data-owner-reset-close]").addEventListener("click", close);
+      confirmHost.querySelector("[data-owner-reset-copy]").addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(resetLink);
+          notify("Password reset link copied.");
+        } catch {
+          input.focus();
+          input.select();
+          notify("Select and copy the reset link.", "error");
+        }
+      });
+      setTimeout(() => { input.focus(); input.select(); }, 0);
+    }
+
     async function mutateUser(action, body = {}) {
       const user = state.selectedUser;
       if (!user) return;
@@ -295,6 +315,7 @@
         disable: ["Disable account?", `${user.email || user.displayName} will immediately lose access until re-enabled.`, "Disable", true],
         enable: ["Re-enable account?", `${user.email || user.displayName} will be able to sign in again.`, "Re-enable", false],
         verify_email: ["Verify this email?", `Mark ${user.email} as verified in Firebase Authentication.`, "Verify", false],
+        create_password_reset_link: ["Create a password reset link?", "The current password will remain private. Give the generated one-time link only to the account owner.", "Create link", false],
         send_password_reset: ["Send password reset?", `Firebase will email a password-reset link to ${user.email}.`, "Send email", false]
       };
       if (action === "delete") {
@@ -310,6 +331,9 @@
         if (result.deleted) {
           notify("Account deleted.");
           closeDrawer();
+        } else if (result.resetLink) {
+          showResetLink(result.resetLink);
+          notify("Secure password reset link created.");
         } else {
           state.selectedUser = result.user;
           notify(action === "send_password_reset" ? "Password reset email sent." : "Account updated.");
@@ -367,7 +391,7 @@
         const subscriptionChanged = subscriptionStatus !== state.selectedUser?.subscriptionStatus || monthlyRevenueCents !== state.selectedUser?.monthlyRevenueCents;
         return void (async () => {
           if (roleChanged) {
-            const confirmed = await confirmAction({ title: `${role === "admin" ? "Promote" : "Demote"} user?`, message: `${state.selectedUser.email || state.selectedUser.displayName} will become ${roleLabel(role)}.`, confirmLabel: "Change role" });
+            const confirmed = await confirmAction({ title: "Change account role?", message: `${state.selectedUser.email || state.selectedUser.displayName} will become ${roleLabel(role)}.`, confirmLabel: "Change role" });
             if (!confirmed) return;
             await mutateUser("set_role", { role });
           }
@@ -407,7 +431,7 @@
     function onKeydown(event) {
       if (event.key !== "Escape") return;
       if (!confirmHost.hidden) {
-        confirmHost.querySelector("[data-owner-confirm-cancel]")?.click();
+        (confirmHost.querySelector("[data-owner-confirm-cancel]") || confirmHost.querySelector("[data-owner-reset-close]"))?.click();
       } else if (!drawer.hidden) {
         closeDrawer();
       } else {

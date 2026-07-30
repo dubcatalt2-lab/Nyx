@@ -203,7 +203,17 @@
       const baseUrl=rawBase.slice(0,rawBase.lastIndexOf('/') + 1);
       const repoRoot='https://raw.githubusercontent.com/gn-math/html/main/';
       const proxyUrl=url=>`${location.origin}/gn-math-proxy?url=${encodeURIComponent(url)}`;
-      const sourceHtml=String(html || '');
+      const sourceHtml=String(html || '').replace(
+        /https?:\/\/cdn\.jsdelivr\.net\/gh\/genizy\/fnaf@[^/"'<>\s]+/gi,
+        'https://cdn.jsdelivr.net/gh/bubblfan/fnaf@latest'
+      )
+        // Old GN Math pages sometimes include a cloaking helper from the
+        // deleted gn-math/storage repository. It is unrelated to the game,
+        // but its 404 used to abort otherwise healthy Unity builds.
+        .replace(
+          /<script\b[^>]*src=["'][^"']*(?:(?:\.\.\/)+storage\/js\/cloak(?:i)?\.js|(?:raw\.githubusercontent\.com|cdn\.jsdelivr\.net\/gh)\/gn-math\/storage[^"']*cloak(?:i)?\.js)[^"']*["'][^>]*>\s*<\/script>/gi,
+          ''
+        );
       const baseHref=(sourceHtml.match(/<base\b[^>]*href=["']([^"']+)/i)?.[1] || baseUrl).trim();
       const toProxy=(raw,base=baseHref)=>{
         try{
@@ -251,19 +261,37 @@
           XMLHttpRequest.prototype.open=function(method,url,...rest){return nativeOpen.call(this,method,own(url),...rest)};
           const NativeWorker=window.Worker;
           if(NativeWorker) window.Worker=function(url,opts){return new NativeWorker(own(url),opts)};
+          const nativeAlert=window.alert?.bind(window);
+          window.alert=message=>{
+            const text=String(message || '');
+            if(/error occurred running the unity content|uncaught syntaxerror|a required game file failed|failed to load/i.test(text)){
+              fail(text);
+              return;
+            }
+            nativeAlert?.(message);
+          };
           window.open=(url)=>{ if(url) location.href=url; return null; };
           window.addEventListener('load',()=>setTimeout(ready,650));
           document.addEventListener('DOMContentLoaded',()=>setTimeout(ready,1800));
           setTimeout(ready,4500);
+          const visibleGameSurface=()=>[...document.querySelectorAll('canvas,object,embed,ruffle-player,ruffle-object,iframe,#game,#game-container,#unity-container,#unity-canvas,#ruffle,#player')]
+            .some(element=>{
+              const box=element.getBoundingClientRect?.();
+              return box && box.width>40 && box.height>40 && getComputedStyle(element).display!=='none';
+            });
           window.addEventListener('error',event=>{
             const target=event.target;
             const url=target && (target.src || target.href);
-            if(url && important.test(String(url)) && !ignorable.test(String(url))) fail('A required game file failed to load.',url);
+            if(url && important.test(String(url)) && !ignorable.test(String(url))){
+              setTimeout(()=>{
+                if(!visibleGameSurface()) fail('A required game file failed to load.',url);
+              },2200);
+            }
           },true);
         })();
       <\/script>`;
       let output=proxiedHtml
-        .replace(/<script\b[^>]*src=["']\/js\/main\.js["'][^>]*>\s*<\/script>/gi,'')
+        .replace(/<script\b[^>]*src=["']\/js\/(?:main|lib|all(?:\.min)?)\.js["'][^>]*>\s*<\/script>/gi,'')
         .replace(/<script\b[^>]*googletagmanager[^>]*>[\s\S]*?<\/script>/gi,'')
         .replace(/<script\b[^>]*google-analytics[^>]*>[\s\S]*?<\/script>/gi,'')
         .replace(/<script\b[^>]*(?:pagead2|googlesyndication|doubleclick|connect\.facebook|cdn\.r9x\.in)[^>]*>[\s\S]*?<\/script>/gi,'')

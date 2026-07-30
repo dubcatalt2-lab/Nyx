@@ -36,6 +36,12 @@
   force = true
 
 [[redirects]]
+  from = "/duckmath-*"
+  to = "/.netlify/functions/api/duckmath-:splat"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/gms-games-*"
   to = "/.netlify/functions/api/gms-games-:splat"
   status = 200
@@ -83,6 +89,11 @@
 
 [[headers]]
   for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-store, no-cache, must-revalidate"
+
+[[headers]]
+  for = "/startup-studyhub.html"
   [headers.values]
     Cache-Control = "no-store, no-cache, must-revalidate"
 

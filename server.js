@@ -20,6 +20,7 @@ const libcurlPath = dirname(require.resolve("@mercuryworkshop/libcurl-transport"
 const erudaPath = require.resolve("eruda");
 let cinebyAppCache = { source: "", expires: 0 };
 const gameCoverLookupCache = new Map();
+let duckMathGamesCache = { games: [], expires: 0, promise: null };
 const app = express();
 
 function normalizePublicWispUrl(value) {
@@ -57,6 +58,9 @@ const ownerDashboardPageSizeLimit = 100;
 const signedInOnlineWindowMs = 90_000;
 const userActivityEventWindowMs = 15 * 60_000;
 const userActivityEventTimes = new Map();
+const nyxAccountSignInAttempts = new Map();
+const nyxAccountSignInWindowMs = 15 * 60_000;
+const nyxAccountSignInMaxAttempts = 10;
 const ownerDashboardSnapshotTtlMs = 30_000;
 let ownerDashboardSnapshotCache = { expiresAt: 0, value: null, promise: null };
 const linkGeneratorAttempts = new Map();
@@ -202,6 +206,78 @@ app.get("/game-cover", async (req, res) => {
   }
   res.setHeader("Cache-Control", "public, max-age=86400");
   res.redirect(302, cover);
+});
+
+const duckMathGameHosts = new Set([
+  "classroomlesson.github.io",
+  "db2.duckmath.org",
+  "mathlete.pages.dev",
+  "turbowarp.org",
+  "noclip.website",
+  "dives05.github.io"
+]);
+
+function safeDuckMathGameUrl(value) {
+  try {
+    const url = new URL(String(value || ""));
+    if (url.protocol !== "https:" || !duckMathGameHosts.has(url.hostname)) return "";
+    url.username = "";
+    url.password = "";
+    return url.href;
+  } catch {
+    return "";
+  }
+}
+
+async function loadDuckMathGames() {
+  const now = Date.now();
+  if (duckMathGamesCache.games.length && duckMathGamesCache.expires > now) {
+    return duckMathGamesCache.games;
+  }
+  if (duckMathGamesCache.promise) return duckMathGamesCache.promise;
+
+  duckMathGamesCache.promise = (async () => {
+    const page = await fetchText("https://duckmath.org/");
+    const bundlePath = page.match(/<script[^>]+src=["']([^"']*\/assets\/index-[^"']+\.js)["']/i)?.[1];
+    if (!bundlePath) throw new Error("DuckMath game bundle was not found");
+    const bundleUrl = new URL(bundlePath, "https://duckmath.org/").href;
+    const bundle = await fetchText(bundleUrl, { accept: "text/javascript,*/*;q=0.8" });
+    const games = [];
+    const seen = new Set();
+    const entryPattern = /\{link:"([^"]+)"[\s\S]{0,900}?title:"([^"]+)"/g;
+    let match;
+    while ((match = entryPattern.exec(bundle))) {
+      const url = safeDuckMathGameUrl(match[1]);
+      const title = String(match[2] || "").replace(/\\(["'\\/bfnrt])/g, "$1").trim();
+      const key = `${title.toLowerCase()}\n${url}`;
+      if (!url || !title || seen.has(key)) continue;
+      seen.add(key);
+      games.push({ title, url });
+    }
+    if (games.length < 50) throw new Error("DuckMath returned an incomplete game list");
+    duckMathGamesCache = {
+      games,
+      expires: Date.now() + 60 * 60 * 1000,
+      promise: null
+    };
+    return games;
+  })();
+
+  try {
+    return await duckMathGamesCache.promise;
+  } finally {
+    duckMathGamesCache.promise = null;
+  }
+}
+
+app.get("/duckmath-games", async (_req, res) => {
+  try {
+    const games = await loadDuckMathGames();
+    res.setHeader("Cache-Control", "public, max-age=300");
+    res.json({ games });
+  } catch (error) {
+    res.status(502).json({ error: `DuckMath list network error: ${error?.message || error}` });
+  }
 });
 
 function patchedUvHandler() {
@@ -801,20 +877,109 @@ async function directProxyFetch(url) {
   };
 }
 
+function isHtmlProxyPayload(url, result) {
+  const pathname = String(url?.pathname || "").toLowerCase();
+  const executable = /\.(?:js|mjs|cjs|json|wasm|data|unityweb|mem|symbols\.json)(?:$|[?#])/i.test(pathname);
+  if (!executable) return false;
+  const contentType = String(result?.contentType || "").toLowerCase();
+  if (contentType.includes("text/html") || contentType.includes("application/xhtml")) return true;
+  const start = result?.body?.subarray?.(0, 512)?.toString("utf8").replace(/^\uFEFF/, "").trimStart() || "";
+  return /^(?:<!doctype\s+html|<html\b|<head\b|<body\b)/i.test(start);
+}
+
+function gnMathProxyCandidates(url) {
+  const candidates = [url];
+  const parts = url.pathname.split("/").filter(Boolean);
+  if (url.hostname === "cdn.jsdelivr.net" && parts[0] === "gh" && parts.length >= 4) {
+    const [owner, repoRef, ...resourcePath] = parts.slice(1);
+    const separator = repoRef.lastIndexOf("@");
+    if (separator > 0) {
+      const repository = repoRef.slice(0, separator);
+      const ref = repoRef.slice(separator + 1);
+      candidates.push(new URL(`https://raw.githubusercontent.com/${owner}/${repository}/${ref}/${resourcePath.join("/")}`));
+      candidates.push(new URL(`https://raw.githack.com/${owner}/${repository}/${ref}/${resourcePath.join("/")}`));
+    }
+  } else if (
+    ["raw.githubusercontent.com", "raw.githack.com", "rawcdn.githack.com"].includes(url.hostname) &&
+    parts.length >= 4
+  ) {
+    const [owner, repository, ref, ...resourcePath] = parts;
+    candidates.push(new URL(`https://raw.githubusercontent.com/${owner}/${repository}/${ref}/${resourcePath.join("/")}`));
+    candidates.push(new URL(`https://cdn.jsdelivr.net/gh/${owner}/${repository}@${ref}/${resourcePath.join("/")}`));
+    candidates.push(new URL(`https://raw.githack.com/${owner}/${repository}/${ref}/${resourcePath.join("/")}`));
+  }
+  return candidates.filter((candidate, index, list) =>
+    list.findIndex(item => item.href === candidate.href) === index
+  );
+}
+
+function gnMathResourceContentType(url, upstreamType) {
+  const pathname = String(url?.pathname || "").toLowerCase();
+  if (/\.(?:js|mjs|cjs)$/.test(pathname)) return "application/javascript; charset=utf-8";
+  if (/\.json$/.test(pathname)) return "application/json; charset=utf-8";
+  if (/\.wasm$/.test(pathname)) return "application/wasm";
+  if (/\.css$/.test(pathname)) return "text/css; charset=utf-8";
+  return upstreamType;
+}
+
+function rewriteGnMathJsonAssets(url, result) {
+  if (!/\.json$/i.test(url.pathname)) return result;
+  try {
+    const data = JSON.parse(result.body.toString("utf8"));
+    const rewrite = value => {
+      if (Array.isArray(value)) return value.map(rewrite);
+      if (value && typeof value === "object") {
+        return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, rewrite(entry)]));
+      }
+      if (
+        typeof value !== "string" ||
+        !/\.(?:js|mjs|cjs|json|wasm|data|unityweb|mem|symbols\.json)(?:[?#].*)?$/i.test(value)
+      ) return value;
+      if (/^(?:data|blob|javascript|about):/i.test(value)) return value;
+      const asset = new URL(value, url);
+      return safeGnMathProxyUrl(asset)
+        // Unity prepends the JSON file's directory to these values. Keeping
+        // this relative avoids the double-slash path that an absolute value
+        // would create (//gn-math-proxy), which Netlify treats as the SPA.
+        ? `gn-math-proxy?url=${encodeURIComponent(asset.href)}`
+        : value;
+    };
+    return {
+      ...result,
+      body: Buffer.from(JSON.stringify(rewrite(data))),
+      contentType: "application/json; charset=utf-8"
+    };
+  } catch {
+    return result;
+  }
+}
+
 app.get("/gn-math-proxy", async (req, res) => {
   const url = safeGnMathProxyUrl(req.query.url);
   if (!url) {
     res.status(400).type("text/plain").send("Invalid GN Math proxy URL");
     return;
   }
-  try {
-    const result = await directProxyFetch(url);
-    res.setHeader("Cache-Control", result.cacheControl);
-    res.type(result.contentType);
-    res.send(result.body);
-  } catch (error) {
-    res.status(error?.status || 502).type("text/plain").send(`GN Math proxy error: ${error?.message || error}`);
+  let lastError;
+  for (const candidate of gnMathProxyCandidates(url)) {
+    try {
+      let result = await directProxyFetch(candidate);
+      if (isHtmlProxyPayload(candidate, result)) {
+        const error = new Error("upstream returned HTML for a game resource");
+        error.status = 502;
+        throw error;
+      }
+      result = rewriteGnMathJsonAssets(candidate, result);
+      res.setHeader("Cache-Control", result.cacheControl);
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.type(gnMathResourceContentType(candidate, result.contentType));
+      res.send(result.body);
+      return;
+    } catch (error) {
+      lastError = error;
+    }
   }
+  res.status(lastError?.status || 502).type("text/plain").send(`GN Math proxy error: ${lastError?.message || lastError}`);
 });
 
 const redsMiscProxyHosts = new Set([
@@ -1430,7 +1595,7 @@ function normalizeFounderProfile(value = {}) {
     accentPrimary,
     accentSecondary,
     bannerColor,
-    displayNameFont: ["gg-sans", "tempo", "sakura", "jellybean", "modern", "medieval", "eight-bit", "vampyre"].includes(String(source.displayNameFont || "").toLowerCase()) ? String(source.displayNameFont).toLowerCase() : founderProfileDefaults.displayNameFont,
+    displayNameFont: ["gg-sans", "headline", "rounded", "wide", "slab", "condensed", "mono-block", "tempo", "sakura", "jellybean", "modern", "medieval", "eight-bit", "vampyre"].includes(String(source.displayNameFont || "").toLowerCase()) ? String(source.displayNameFont).toLowerCase() : founderProfileDefaults.displayNameFont,
     displayNameEffect: ["solid", "gradient", "neon", "toon", "pop"].includes(String(source.displayNameEffect || "").toLowerCase()) ? String(source.displayNameEffect).toLowerCase() : founderProfileDefaults.displayNameEffect,
     displayNameColorPrimary,
     displayNameColorSecondary,
@@ -1532,7 +1697,7 @@ function normalizeNyxUserProfile(value = {}, token = {}) {
     accentPrimary,
     accentSecondary,
     bannerColor,
-    displayNameFont: ["gg-sans", "tempo", "sakura", "jellybean", "modern", "medieval", "eight-bit", "vampyre"].includes(String(source.displayNameFont || "").toLowerCase()) ? String(source.displayNameFont).toLowerCase() : "gg-sans",
+    displayNameFont: ["gg-sans", "headline", "rounded", "wide", "slab", "condensed", "mono-block", "tempo", "sakura", "jellybean", "modern", "medieval", "eight-bit", "vampyre"].includes(String(source.displayNameFont || "").toLowerCase()) ? String(source.displayNameFont).toLowerCase() : "gg-sans",
     displayNameEffect: ["solid", "gradient", "neon", "toon", "pop"].includes(String(source.displayNameEffect || "").toLowerCase()) ? String(source.displayNameEffect).toLowerCase() : "solid",
     displayNameColorPrimary,
     displayNameColorSecondary,
@@ -1601,7 +1766,8 @@ function safeActivityTime(value) {
 }
 
 function normalizeNyxRole(value) {
-  return String(value || "").trim().toLowerCase() === "admin" ? "admin" : "member";
+  const role = String(value || "").trim().toLowerCase();
+  return ["admin", "developer", "moderator", "member"].includes(role) ? role : "member";
 }
 
 function normalizeSubscriptionStatus(value) {
@@ -1612,6 +1778,16 @@ function normalizeSubscriptionStatus(value) {
 function nyxDeliverableEmail(value) {
   const email = String(value || "").trim();
   return Boolean(email && !/@account\.nyx\.local$/i.test(email) && !/\.local$/i.test(email));
+}
+
+function normalizeNyxAccountEmail(value) {
+  const email = String(value || "").trim().toLowerCase();
+  if (
+    email.length > 254 ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+    !nyxDeliverableEmail(email)
+  ) return "";
+  return email;
 }
 
 async function ownerDashboardActor(req) {
@@ -1816,6 +1992,18 @@ function linkGeneratorRateState(clientId, now = Date.now()) {
   if (!state || now - state.windowStarted > linkGeneratorWindowMs) {
     state = { attempts: 0, windowStarted: now };
     linkGeneratorAttempts.set(clientId, state);
+  }
+  return state;
+}
+
+function nyxAccountSignInRateState(clientId, now = Date.now()) {
+  for (const [key, state] of nyxAccountSignInAttempts) {
+    if (now - state.windowStarted > nyxAccountSignInWindowMs) nyxAccountSignInAttempts.delete(key);
+  }
+  let state = nyxAccountSignInAttempts.get(clientId);
+  if (!state || now - state.windowStarted > nyxAccountSignInWindowMs) {
+    state = { attempts: 0, windowStarted: now };
+    nyxAccountSignInAttempts.set(clientId, state);
   }
   return state;
 }
@@ -2041,6 +2229,137 @@ async function bunnyRequest(path, apiKey, options = {}) {
   }
   return payload;
 }
+
+app.post("/api/account/sign-in", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  if (!firebaseAccountModeConfigured()) {
+    res.status(503).json({ error: "Nyx accounts are not configured." });
+    return;
+  }
+  const rateState = nyxAccountSignInRateState(linkGeneratorClientId(req));
+  if (rateState.attempts >= nyxAccountSignInMaxAttempts) {
+    res.status(429).json({ error: "Too many sign-in attempts. Try again in a few minutes." });
+    return;
+  }
+  const identifier = String(req.body?.identifier || "").trim();
+  const password = String(req.body?.password || "");
+  if (!identifier || password.length < 6 || password.length > 256) {
+    res.status(400).json({ error: "Enter your username or email and password." });
+    return;
+  }
+  rateState.attempts += 1;
+  try {
+    const firebase = await linkGeneratorFirebase();
+    let authEmail = "";
+    let expectedUid = "";
+    if (identifier.includes("@")) {
+      authEmail = normalizeNyxAccountEmail(identifier);
+      if (!authEmail) {
+        res.status(401).json({ error: "Username, email, or password is incorrect." });
+        return;
+      }
+    } else {
+      const username = nyxProfileUsername(identifier, "");
+      if (!username) {
+        res.status(401).json({ error: "Username, email, or password is incorrect." });
+        return;
+      }
+      const usernameSnapshot = await firebase.firestore.collection("nyxUsernames").doc(username).get();
+      expectedUid = String(usernameSnapshot.data()?.ownerUid || "");
+      if (expectedUid) {
+        const account = await firebase.auth.getUser(expectedUid);
+        authEmail = String(account.email || "");
+      } else {
+        authEmail = `${username}@account.nyx.local`;
+      }
+    }
+    const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${encodeURIComponent(linkGeneratorFirebaseConfig().webApiKey)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: authEmail, password, returnSecureToken: true }),
+      signal: AbortSignal.timeout(15_000)
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload.localId || (expectedUid && payload.localId !== expectedUid)) {
+      res.status(response.status === 429 ? 429 : 401).json({
+        error: response.status === 429 ? "Too many sign-in attempts. Try again later." : "Username, email, or password is incorrect."
+      });
+      return;
+    }
+    const customToken = await firebase.auth.createCustomToken(payload.localId);
+    nyxAccountSignInAttempts.delete(linkGeneratorClientId(req));
+    res.json({ customToken });
+  } catch (error) {
+    const knownAccountError = ["auth/user-not-found", "auth/invalid-email"].includes(String(error?.code || ""));
+    res.status(knownAccountError ? 401 : 503).json({
+      error: knownAccountError ? "Username, email, or password is incorrect." : "Sign-in is temporarily unavailable."
+    });
+  }
+});
+
+app.get("/api/account/me", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const { firebase, token } = await authenticatedNyxUser(req);
+    const [account, administration] = await Promise.all([
+      firebase.auth.getUser(token.uid),
+      firebase.firestore.collection("nyxUserAdministration").doc(token.uid).get()
+    ]);
+    const role = token.uid === founderProfileConfig().administratorUid ? "owner" : normalizeNyxRole(administration.data()?.role);
+    res.json({
+      uid: token.uid,
+      email: nyxDeliverableEmail(account.email) ? String(account.email) : "",
+      emailVerified: Boolean(account.emailVerified),
+      role
+    });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Account information is unavailable." });
+  }
+});
+
+app.put("/api/account/me/email", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  try {
+    const { firebase, token } = await authenticatedNyxUser(req);
+    const email = normalizeNyxAccountEmail(req.body?.email);
+    if (!email) {
+      res.status(400).json({ error: "Enter a valid email address." });
+      return;
+    }
+    const current = await firebase.auth.getUser(token.uid);
+    if (String(current.email || "").toLowerCase() !== email) {
+      await firebase.auth.updateUser(token.uid, { email, emailVerified: false });
+      const now = new Date().toISOString();
+      await firebase.firestore.collection("nyxUserAdministration").doc(token.uid).set({
+        emailAttachedAt: now,
+        updatedAt: now
+      }, { merge: true });
+      invalidateOwnerDashboardSnapshot();
+      await recordNyxAuditSafe(firebase, {
+        actorUid: token.uid,
+        actorEmail: email,
+        action: "account_email_changed",
+        targetUid: token.uid,
+        targetEmail: email
+      });
+    }
+    const updated = await firebase.auth.getUser(token.uid);
+    res.json({ email: String(updated.email || ""), emailVerified: Boolean(updated.emailVerified) });
+  } catch (error) {
+    const duplicate = error.code === "auth/email-already-exists";
+    res.status(duplicate ? 409 : (error.status || 503)).json({
+      error: duplicate ? "That email is already connected to another account." : (error.message || "Your email could not be updated.")
+    });
+  }
+});
 
 app.get("/api/profiles/me", async (req, res) => {
   res.set("Cache-Control", "no-store");
@@ -2519,6 +2838,20 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
       }
       await firebase.auth.updateUser(uid, { emailVerified: true });
       auditAction = "email_verified";
+    } else if (action === "create_password_reset_link") {
+      const resetLink = await firebase.auth.generatePasswordResetLink(String(target.email || ""));
+      auditAction = "password_reset_link_created";
+      auditDetails = { delivery: nyxDeliverableEmail(target.email) ? "manual_or_email" : "manual" };
+      await recordNyxAuditSafe(firebase, {
+        actorUid: token.uid,
+        actorEmail: token.email,
+        action: auditAction,
+        targetUid: uid,
+        targetEmail: target.email,
+        details: auditDetails
+      });
+      res.json({ resetLink });
+      return;
     } else if (action === "send_password_reset") {
       if (!nyxDeliverableEmail(target.email)) {
         res.status(409).json({ error: "This username-only account has no recovery email. Firebase cannot deliver a reset message to it." });

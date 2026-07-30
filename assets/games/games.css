@@ -377,6 +377,13 @@ h1 {
 
 .player-loading.done { display: none; }
 
+.player-loading.failed .spinner { display: none; }
+
+.player-loading.failed {
+  padding: 24px;
+  text-align: center;
+}
+
 .spinner {
   width: 34px;
   height: 34px;

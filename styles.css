@@ -7,13 +7,13 @@
 @import url("./css/theme-consistency.css?v=20260717-unified-hover-v11");
 @import url("./css/default-theme-polish.css?v=20260717-v2");
 @import url("./css/settings-dashboard.css?v=20260717-static-cards-v3");
-@import url("./css/owner-dashboard.css?v=20260729-owner-dashboard-v1");
+@import url("./css/owner-dashboard.css?v=20260730-account-security-v2");
 @import url("./css/home-utilities.css?v=20260726-copyright-v8");
 @import url("./css/hover-consistency.css?v=20260726-single-shortcuts-v18");
 @import url("./css/weather-redesign.css?v=20260728-fern-v11");
 @import url("./css/theme-tints.css?v=20260729-custom-theme-maker-v27");
 @import url("./css/setup-wizard.css?v=20260728-fern-v5");
-@import url("./css/credits.css?v=20260729-founder-profile-v4");
+@import url("./css/credits.css?v=20260730-banner-fit-v5");
 @import url("./css/interface-scale.css?v=20260727-themed-menu-v9");
 
 /* Keep the close mark geometrically centered instead of relying on a font baseline. */
@@ -1792,6 +1792,16 @@ html[data-nyx-theme] body .nyx-profile-media-edit svg{
   width:15px!important;
   height:15px!important;
 }
+html[data-nyx-theme] body .nyx-profile-media-edit::before,
+html[data-nyx-theme] body .nyx-profile-media-edit::after{
+  display:none!important;
+  content:none!important;
+}
+html[data-nyx-theme] body .nyx-profile-media-edit>span{
+  display:block!important;
+  font:700 17px/1 "Segoe UI Symbol",sans-serif!important;
+  transform:rotate(-2deg)!important;
+}
 html[data-nyx-theme] body .nyx-profile-media-edit-banner{
   top:12px!important;
   right:12px!important;
@@ -1838,34 +1848,57 @@ html[data-nyx-theme] body .nyx-discord-settings-close{
    menu, Credits card, and the custom-effect editor. */
 html[data-nyx-theme] body .nyx-account-menu{
   isolation:isolate;
-  border-color:color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 54%,rgba(255,255,255,.1))!important;
-  background:linear-gradient(165deg,color-mix(in srgb,var(--nyx-account-primary,#5865f2) 28%,#111214),color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 18%,#111214) 58%,#111214)!important;
-  box-shadow:0 20px 60px rgba(0,0,0,.56),0 0 28px color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 24%,transparent)!important;
+  border-color:color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 72%,rgba(255,255,255,.12))!important;
+  background:color-mix(in srgb,var(--nyx-account-primary,#5865f2) 24%,#111214)!important;
+  box-shadow:
+    inset 0 3px 0 var(--nyx-account-primary,#5865f2),
+    inset 0 -3px 0 var(--nyx-account-secondary,#8ea1ff),
+    0 20px 60px rgba(0,0,0,.56),
+    0 0 24px color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 18%,transparent)!important;
 }
 html[data-nyx-theme] body .nyx-account-menu>*:not(.nyx-account-menu-profile-effect){
   position:relative;
   z-index:1;
 }
 html[data-nyx-theme] body .nyx-account-menu-profile{
-  background:linear-gradient(155deg,color-mix(in srgb,var(--nyx-account-primary,#5865f2) 48%,#111214),color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 34%,#111214) 62%,color-mix(in srgb,var(--nyx-account-primary,#5865f2) 22%,#111214))!important;
+  background:color-mix(in srgb,var(--nyx-account-primary,#5865f2) 46%,#1e1f22)!important;
+}
+html[data-nyx-theme] body .nyx-account-menu-profile::before{
+  position:absolute;
+  z-index:0;
+  top:39px;
+  right:10px;
+  bottom:8px;
+  left:10px;
+  border:1px solid color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 24%,rgba(255,255,255,.06));
+  border-radius:10px;
+  background:color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 14%,#1e1f22);
+  content:"";
+  pointer-events:none;
+}
+html[data-nyx-theme] body .nyx-account-menu-profile :is(h2,.nyx-account-menu-handle,.nyx-account-menu-bio){
+  position:relative;
+  z-index:1;
 }
 html[data-nyx-theme] body .nyx-account-menu-avatar{
+  z-index:2;
   border-color:color-mix(in srgb,var(--nyx-account-primary,#5865f2) 42%,#111214)!important;
   box-shadow:0 0 0 2px color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 74%,transparent),0 8px 22px rgba(0,0,0,.4);
 }
 html[data-nyx-theme] body .nyx-account-menu-status{
+  z-index:2;
   border-color:color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 42%,transparent)!important;
   background:color-mix(in srgb,var(--nyx-account-primary,#5865f2) 24%,#1e1f22)!important;
 }
 html[data-nyx-theme] body .nyx-account-menu-group{
   border:1px solid color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 27%,rgba(255,255,255,.06));
-  background:linear-gradient(145deg,color-mix(in srgb,var(--nyx-account-primary,#5865f2) 20%,#1e1f22),color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 15%,#1e1f22))!important;
+  background:color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 12%,#1e1f22)!important;
 }
 html[data-nyx-theme] body .nyx-account-menu-group button svg{
   color:color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 68%,#fff)!important;
 }
 html[data-nyx-theme] body .nyx-account-menu-group button:is(:hover,:focus-visible){
-  background:linear-gradient(90deg,color-mix(in srgb,var(--nyx-account-primary,#5865f2) 32%,#35373c),color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 24%,#35373c))!important;
+  background:color-mix(in srgb,var(--nyx-account-primary,#5865f2) 28%,#35373c)!important;
 }
 html[data-nyx-theme] body .nyx-account-menu-group hr{
   background:color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 32%,#3f4147)!important;
@@ -2069,10 +2102,49 @@ html[data-nyx-theme] body.browser-shell .nyx-account-button-rich .nyx-account-bu
 .nyx-account-menu-banner img,
 .nyx-user-profile-banner img,
 .nyx-founder-banner img{
+  display:block!important;
+  min-width:100%!important;
   width:100%!important;
   height:100%!important;
-  object-fit:contain!important;
+  max-width:none!important;
+  object-fit:cover!important;
   object-position:center!important;
+}
+.nyx-founder-profile-standard .nyx-founder-banner{
+  height:auto!important;
+  aspect-ratio:17/6!important;
+}
+.nyx-founder-profile-standard .nyx-founder-banner img{
+  object-fit:contain!important;
+}
+.nyx-user-role>img{
+  width:15px!important;
+  height:15px!important;
+  flex:0 0 15px!important;
+  object-fit:contain!important;
+}
+.nyx-founder-role-chip>img{
+  width:15px!important;
+  height:15px!important;
+  flex:0 0 15px!important;
+  object-fit:contain!important;
+}
+.nyx-profile-account-email-field .nyx-profile-optional{
+  margin-left:5px!important;
+  color:#b5bac1!important;
+  -webkit-text-fill-color:#b5bac1!important;
+  font-size:10px!important;
+  font-weight:500!important;
+  text-transform:none!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-home-presence.nyx-owner-presence-action{
+  cursor:pointer!important;
+  border-color:color-mix(in srgb,var(--theme-accent,#8fb8ff) 62%,transparent)!important;
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--theme-accent,#8fb8ff) 18%,transparent),0 8px 22px rgba(0,0,0,.22)!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-home-presence.nyx-owner-presence-action:is(:hover,:focus-visible){
+  background:color-mix(in srgb,var(--theme-accent,#8fb8ff) 16%,var(--theme-panel,#101827))!important;
+  outline:none!important;
 }
 .nyx-account-menu-profile{
   min-height:154px!important;
@@ -2251,14 +2323,20 @@ html[data-nyx-theme] body .nyx-user-profile-form>footer>.settings-action{
 
 /* Discord-style display name customization. */
 .nyx-styled-display-name{display:inline-block!important;max-width:100%;color:var(--nyx-name-color-primary,#fff)!important;-webkit-text-fill-color:var(--nyx-name-color-primary,#fff)!important;line-height:1.14;text-overflow:ellipsis}
-.nyx-name-font-gg-sans{font-family:"Outfit","Segoe UI",Arial,sans-serif!important}
-.nyx-name-font-tempo{font-family:Impact,"Arial Black",sans-serif!important;font-weight:500!important;letter-spacing:.02em}
-.nyx-name-font-sakura{font-family:"Segoe Script","Brush Script MT",cursive!important;font-weight:700!important}
-.nyx-name-font-jellybean{font-family:"Comic Sans MS","Trebuchet MS",cursive!important;font-weight:700!important;letter-spacing:.01em}
-.nyx-name-font-modern{font-family:"Arial Narrow","Helvetica Neue",Arial,sans-serif!important;font-weight:800!important;letter-spacing:.07em;text-transform:uppercase}
-.nyx-name-font-medieval{font-family:"Palatino Linotype","Book Antiqua",Georgia,serif!important;font-weight:700!important;letter-spacing:.025em}
-.nyx-name-font-eight-bit{font-family:"Cascadia Mono","Courier New",monospace!important;font-weight:800!important;letter-spacing:-.06em;text-transform:uppercase}
-.nyx-name-font-vampyre{font-family:Copperplate,"Times New Roman",serif!important;font-weight:800!important;font-variant:small-caps;letter-spacing:.07em}
+html body .nyx-styled-display-name.nyx-name-font-gg-sans[class]{font-family:"Outfit","Segoe UI",Arial,sans-serif!important}
+html body .nyx-styled-display-name.nyx-name-font-headline[class]{font-family:"Arial Black","Franklin Gothic Heavy","Segoe UI",sans-serif!important;font-size:1.08em!important;font-weight:900!important;letter-spacing:-.035em}
+html body .nyx-styled-display-name.nyx-name-font-rounded[class]{font-family:"Arial Rounded MT Bold","Trebuchet MS","Segoe UI",sans-serif!important;font-size:1.06em!important;font-weight:900!important;letter-spacing:-.025em}
+html body .nyx-styled-display-name.nyx-name-font-wide[class]{font-family:"Arial Black","Trebuchet MS","Segoe UI",sans-serif!important;font-size:1.04em!important;font-weight:900!important;letter-spacing:.075em;text-transform:uppercase}
+html body .nyx-styled-display-name.nyx-name-font-slab[class]{font-family:Rockwell,"Roboto Slab","Palatino Linotype",Georgia,serif!important;font-size:1.06em!important;font-weight:900!important;letter-spacing:-.02em}
+html body .nyx-styled-display-name.nyx-name-font-condensed[class]{font-family:"Bahnschrift Condensed","Arial Narrow","Roboto Condensed",sans-serif!important;font-size:1.1em!important;font-stretch:condensed;font-weight:800!important;letter-spacing:.015em}
+html body .nyx-styled-display-name.nyx-name-font-mono-block[class]{font-family:"Cascadia Mono","Segoe UI Mono","Courier New",monospace!important;font-size:1.02em!important;font-weight:900!important;letter-spacing:-.055em}
+html body .nyx-styled-display-name.nyx-name-font-tempo[class]{font-family:Impact,"Arial Black",sans-serif!important;font-weight:500!important;letter-spacing:.02em}
+html body .nyx-styled-display-name.nyx-name-font-sakura[class]{font-family:"Segoe Script","Brush Script MT",cursive!important;font-weight:700!important}
+html body .nyx-styled-display-name.nyx-name-font-jellybean[class]{font-family:"Comic Sans MS","Trebuchet MS",cursive!important;font-weight:700!important;letter-spacing:.01em}
+html body .nyx-styled-display-name.nyx-name-font-modern[class]{font-family:"Arial Narrow","Helvetica Neue",Arial,sans-serif!important;font-weight:800!important;letter-spacing:.07em;text-transform:uppercase}
+html body .nyx-styled-display-name.nyx-name-font-medieval[class]{font-family:"Palatino Linotype","Book Antiqua",Georgia,serif!important;font-weight:700!important;letter-spacing:.025em}
+html body .nyx-styled-display-name.nyx-name-font-eight-bit[class]{font-family:"Cascadia Mono","Courier New",monospace!important;font-weight:800!important;letter-spacing:-.06em;text-transform:uppercase}
+html body .nyx-styled-display-name.nyx-name-font-vampyre[class]{font-family:Copperplate,"Times New Roman",serif!important;font-weight:800!important;font-variant:small-caps;letter-spacing:.07em}
 .nyx-name-effect-solid{color:var(--nyx-name-color-primary,#fff)!important;-webkit-text-fill-color:var(--nyx-name-color-primary,#fff)!important}
 .nyx-name-effect-gradient,.nyx-name-effect-neon,.nyx-name-effect-pop{background:linear-gradient(105deg,var(--nyx-name-color-primary,#fff),var(--nyx-name-color-secondary,#8ea1ff),var(--nyx-name-color-primary,#fff));background-size:220% 100%;background-clip:text;-webkit-background-clip:text;color:transparent!important;-webkit-text-fill-color:transparent!important}
 .nyx-name-effect-gradient{animation:nyx-name-gradient 5s ease-in-out infinite}

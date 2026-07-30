@@ -24,6 +24,13 @@ const rootFiles = new Set([
 const staticPrefixes = ["apps/", "assets/", "css/", "js/"];
 const blockedExtensions = /\.(?:7z|avi|mkv|mov|mp4|rar|webm|zip)$/i;
 const skippedLargeFiles = [];
+const remotelyHostedUgsGames = new Set([
+  "minecraft/Dragonxclient.html",
+  "minecraft/EaglercraftL_1.9_v0_7_0_Offline_Signed.html",
+  "minecraft/EaglercraftX 1.8.8(u29).html",
+  "minecraft/EaglercraftZ_1.11.2.html",
+  "minecraft/eaglercraft.1.5.2.html"
+]);
 
 function normalizeWispUrl(value) {
   const raw = String(value || "").trim();
@@ -170,6 +177,10 @@ async function removeUnavailableUgsEntries() {
   for (const game of games) {
     const gamePath = String(game?.path || "").replaceAll("\\", "/");
     if (!gamePath || gamePath.includes("..")) continue;
+    if (remotelyHostedUgsGames.has(gamePath)) {
+      available.push(game);
+      continue;
+    }
     try {
       const info = await stat(join(output, "assets", "ugs", ...gamePath.split("/")));
       if (info.isFile()) available.push(game);

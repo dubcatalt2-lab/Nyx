@@ -29,7 +29,11 @@
   function lockPage(splash) {
     unlockPage(splash);
     lockedPageElements = Array.from(document.body?.children || [])
-      .filter(element => element !== splash && !['SCRIPT', 'STYLE', 'LINK'].includes(element.tagName))
+      .filter(element => (
+        element !== splash
+        && element.id !== 'nyxStudyHubStartup'
+        && !['SCRIPT', 'STYLE', 'LINK'].includes(element.tagName)
+      ))
       .map(element => {
         const hadInert = element.hasAttribute('inert');
         if (!hadInert) element.setAttribute('inert', '');

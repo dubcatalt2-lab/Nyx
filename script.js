@@ -29,7 +29,7 @@
   const store = {get(k,d){try{return JSON.parse(localStorage.getItem(k)) ?? d}catch{return d}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}, text(k,d=''){try{return localStorage.getItem(k) ?? d}catch{return d}}, setText(k,v){try{localStorage.setItem(k,String(v))}catch{}}};
   const NYX_DISPLAY_NAME_FONTS=Object.freeze([['gg-sans','gg sans'],['tempo','Tempo'],['sakura','Sakura'],['jellybean','Jellybean'],['modern','Modern'],['medieval','Medieval'],['eight-bit','8Bit'],['vampyre','Vampyre']]);
   const NYX_DISPLAY_NAME_EFFECTS=Object.freeze([['solid','Solid'],['gradient','Gradient'],['neon','Neon'],['toon','Toon'],['pop','Pop']]);
-  const nyxFounderProfileDefaults=Object.freeze({displayName:'1aqlla',handle:'@1aqlla',role:'Owner / Founder',bio:'Built Nyx for people who search, study, and create.',avatarUrl:'/assets/icons/founder-1aqlla.jpg',bannerUrl:'',accent:'#8fb8ff',accentPrimary:'#8fb8ff',accentSecondary:'#8ea1ff',bannerColor:'#8ea1ff',displayNameFont:'gg-sans',displayNameEffect:'solid',displayNameColorPrimary:'#ffffff',displayNameColorSecondary:'#8ea1ff',profileEffect:'none',avatarDecoration:'none',status:'online',roles:['Owner','Developer'],badges:['Founder'],linkLabel:'',linkUrl:''});
+  const nyxFounderProfileDefaults=Object.freeze({displayName:'1aqlla',handle:'@1aqlla',role:'Owner / Founder',bio:'Built Nyx for people who search, study, and create.',avatarUrl:'/assets/icons/founder-1aqlla.jpg',bannerUrl:'',accent:'#8fb8ff',accentPrimary:'#8fb8ff',accentSecondary:'#8ea1ff',bannerColor:'#8ea1ff',displayNameFont:'gg-sans',displayNameEffect:'solid',displayNameColorPrimary:'#ffffff',displayNameColorSecondary:'#8ea1ff',profileEffect:'none',customEffectPattern:'starfield',customEffectColorPrimary:'#ffffff',customEffectColorSecondary:'#8ea1ff',customEffectSpeed:7,customEffectIntensity:70,avatarDecoration:'none',status:'online',roles:['Owner','Developer'],badges:['Founder'],linkLabel:'',linkUrl:''});
   let nyxFounderProfile={...nyxFounderProfileDefaults};
   let nyxFounderProfileLoadPromise=null;
   let nyxFounderAuthConfig={enabled:false,ownerConfigured:false};
@@ -40,9 +40,77 @@
   let nyxUserProfile=null;
   let nyxUserProfileCreatedAt='';
   let nyxUserActivityTimer=0;
+  const nyxGifPosterCache=new Map();
   const NYX_PROFILE_IMAGE_DATA_LIMIT=850000;
   const NYX_PROFILE_MEDIA_DATA_LIMIT=11250000;
   const NYX_PROFILE_IMAGE_TOTAL_LIMIT=900000;
+  function nyxAnimatedProfileImage(value){
+    const source=String(value||'').trim();
+    return /^data:image\/gif;base64,/i.test(source)||/\.gif(?:$|[?#])/i.test(source)||/^\/api\/profile-media\/[A-Za-z0-9_-]{8,128}\/(?:avatar|banner)\/[A-Za-z0-9_-]{12,80}$/.test(source);
+  }
+  function nyxCaptureGifPoster(image,source,maxSize=180){
+    const cacheKey=`${source}::${maxSize}`;
+    if(nyxGifPosterCache.has(cacheKey))return nyxGifPosterCache.get(cacheKey);
+    const poster=new Promise(resolve=>{
+      const capture=()=>{
+        try{
+          const width=Number(image.naturalWidth||0);
+          const height=Number(image.naturalHeight||0);
+          if(!width||!height){resolve('');return}
+          const scale=Math.min(1,maxSize/Math.max(width,height));
+          const canvas=document.createElement('canvas');
+          canvas.width=Math.max(1,Math.round(width*scale));
+          canvas.height=Math.max(1,Math.round(height*scale));
+          canvas.getContext('2d',{alpha:true})?.drawImage(image,0,0,canvas.width,canvas.height);
+          resolve(canvas.toDataURL('image/webp',.78));
+        }catch{resolve('')}
+      };
+      if(image.complete&&image.naturalWidth)capture();
+      else{
+        image.addEventListener('load',capture,{once:true});
+        image.addEventListener('error',()=>resolve(''),{once:true});
+      }
+    });
+    nyxGifPosterCache.set(cacheKey,poster);
+    return poster;
+  }
+  function nyxSetCompactGifMotion(host,active){
+    const image=host?.querySelector(':scope > img');
+    const source=String(host?.dataset.nyxAnimatedSource||'');
+    const poster=String(host?.dataset.nyxAnimatedPoster||'');
+    if(!image||!source)return;
+    const target=active&&document.visibilityState==='visible'?source:(poster||source);
+    if(image.getAttribute('src')!==target)image.setAttribute('src',target);
+  }
+  function nyxManageCompactGif(host,image,source,maxSize=180){
+    if(!host||!image)return;
+    if(!nyxAnimatedProfileImage(source)){
+      delete host.dataset.nyxAnimatedSource;
+      delete host.dataset.nyxAnimatedPoster;
+      if(image.getAttribute('src')!==source)image.setAttribute('src',source);
+      return;
+    }
+    const sourceChanged=host.dataset.nyxAnimatedSource!==source;
+    host.dataset.nyxAnimatedSource=source;
+    if(sourceChanged){
+      delete host.dataset.nyxAnimatedPoster;
+      if(image.getAttribute('src')!==source)image.setAttribute('src',source);
+    }
+    if(!host.dataset.nyxGifMotionBound){
+      host.dataset.nyxGifMotionBound='true';
+      const focusTarget=host.closest('button')||host;
+      host.addEventListener('pointerenter',()=>nyxSetCompactGifMotion(host,true));
+      host.addEventListener('pointerleave',()=>nyxSetCompactGifMotion(host,focusTarget.matches(':focus')));
+      focusTarget.addEventListener('focus',()=>nyxSetCompactGifMotion(host,true));
+      focusTarget.addEventListener('blur',()=>nyxSetCompactGifMotion(host,false));
+    }
+    void nyxCaptureGifPoster(image,source,maxSize).then(poster=>{
+      if(!poster||host.dataset.nyxAnimatedSource!==source)return;
+      host.dataset.nyxAnimatedPoster=poster;
+      const focusTarget=host.closest('button')||host;
+      nyxSetCompactGifMotion(host,host.matches(':hover')||focusTarget.matches(':focus'));
+    });
+  }
   function nyxAccountUsername(value){return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_.-]/g,'').slice(0,32)}
   function nyxAccountEmail(username){return `${nyxAccountUsername(username)}@account.nyx.local`}
   function nyxUserImage(value,fallback=''){const raw=String(value||'').trim();if(!raw)return fallback;if(/^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(raw)&&raw.length<=NYX_PROFILE_MEDIA_DATA_LIMIT)return raw.replace(/\s/g,'');return nyxFounderUrl(raw,fallback)}
@@ -51,6 +119,12 @@
   }
   function nyxDisplayNameStyleVars(profile={}){
     return `--nyx-name-color-primary:${profile.displayNameColorPrimary||'#ffffff'};--nyx-name-color-secondary:${profile.displayNameColorSecondary||'#8ea1ff'}`;
+  }
+  function nyxProfileEffectClass(profile={}){
+    return `nyx-user-profile-effect-${profile.profileEffect||'none'} nyx-user-profile-custom-${profile.customEffectPattern||'starfield'}`;
+  }
+  function nyxProfileEffectVars(profile={}){
+    return `--nyx-custom-effect-primary:${profile.customEffectColorPrimary||'#ffffff'};--nyx-custom-effect-secondary:${profile.customEffectColorSecondary||profile.accentSecondary||'#8ea1ff'};--nyx-custom-effect-duration:${Math.max(2,Math.min(18,Number(profile.customEffectSpeed)||7))}s;--nyx-custom-effect-opacity:${Math.max(.2,Math.min(1,(Number(profile.customEffectIntensity)||70)/100))}`;
   }
   function normalizeNyxUserProfile(value={},user=nyxFounderSignedInUser){
     const source=value&&typeof value==='object'?value:{};
@@ -63,7 +137,12 @@
     const displayNameColorSecondary=/^#[0-9a-f]{6}$/i.test(String(source.displayNameColorSecondary||'').trim())?String(source.displayNameColorSecondary).trim().toLowerCase():accentSecondary;
     const displayNameFont=NYX_DISPLAY_NAME_FONTS.some(([value])=>value===String(source.displayNameFont||'').toLowerCase())?String(source.displayNameFont).toLowerCase():'gg-sans';
     const displayNameEffect=NYX_DISPLAY_NAME_EFFECTS.some(([value])=>value===String(source.displayNameEffect||'').toLowerCase())?String(source.displayNameEffect).toLowerCase():'solid';
-    return {displayName:nyxFounderText(source.displayName,user?.displayName||username,48),handle:nyxFounderText(source.handle,`@${username}`,40).replace(/\s+/g,''),bio:String(source.bio||'').trim().slice(0,280),customStatus:String(source.customStatus||'').trim().slice(0,80),avatarUrl:nyxUserImage(source.avatarUrl,nyxUserImage(user?.photoURL)),bannerUrl:nyxUserImage(source.bannerUrl),accent:accentPrimary,accentPrimary,accentSecondary,bannerColor,displayNameFont,displayNameEffect,displayNameColorPrimary,displayNameColorSecondary,profileEffect:['none','glow','sparkle','aurora','holographic','fireflies','cosmic-dust','electric-storm','meteor-shower','cyber-grid','plasma','snowfall','embers','bubbles'].includes(String(source.profileEffect||'').toLowerCase())?String(source.profileEffect).toLowerCase():'none',avatarDecoration:['none','starfall','orbit','laurel','neon-wings'].includes(String(source.avatarDecoration||'').toLowerCase())?String(source.avatarDecoration).toLowerCase():'none',status:['online','idle','dnd','offline'].includes(String(source.status||'').toLowerCase())?String(source.status).toLowerCase():'online'};
+    const customEffectPattern=['starfield','aurora','comets','grid'].includes(String(source.customEffectPattern||'').toLowerCase())?String(source.customEffectPattern).toLowerCase():'starfield';
+    const customEffectColorPrimary=/^#[0-9a-f]{6}$/i.test(String(source.customEffectColorPrimary||'').trim())?String(source.customEffectColorPrimary).trim().toLowerCase():'#ffffff';
+    const customEffectColorSecondary=/^#[0-9a-f]{6}$/i.test(String(source.customEffectColorSecondary||'').trim())?String(source.customEffectColorSecondary).trim().toLowerCase():accentSecondary;
+    const customEffectSpeed=Math.max(2,Math.min(18,Number(source.customEffectSpeed)||7));
+    const customEffectIntensity=Math.max(20,Math.min(100,Number(source.customEffectIntensity)||70));
+    return {displayName:nyxFounderText(source.displayName,user?.displayName||username,48),handle:nyxFounderText(source.handle,`@${username}`,40).replace(/\s+/g,''),bio:String(source.bio||'').trim().slice(0,280),customStatus:String(source.customStatus||'').trim().slice(0,80),avatarUrl:nyxUserImage(source.avatarUrl,nyxUserImage(user?.photoURL)),bannerUrl:nyxUserImage(source.bannerUrl),accent:accentPrimary,accentPrimary,accentSecondary,bannerColor,displayNameFont,displayNameEffect,displayNameColorPrimary,displayNameColorSecondary,profileEffect:['none','glow','sparkle','aurora','holographic','fireflies','cosmic-dust','electric-storm','meteor-shower','cyber-grid','plasma','snowfall','embers','bubbles','custom'].includes(String(source.profileEffect||'').toLowerCase())?String(source.profileEffect).toLowerCase():'none',customEffectPattern,customEffectColorPrimary,customEffectColorSecondary,customEffectSpeed,customEffectIntensity,avatarDecoration:['none','starfall','orbit','laurel','neon-wings'].includes(String(source.avatarDecoration||'').toLowerCase())?String(source.avatarDecoration).toLowerCase():'none',status:['online','idle','dnd','offline'].includes(String(source.status||'').toLowerCase())?String(source.status).toLowerCase():'online'};
   }
   async function loadNyxUserProfile(){
     if(!nyxFounderSignedInUser) return null;
@@ -101,7 +180,13 @@
     }
     nyxUserActivityTimer=setInterval(()=>{if(document.visibilityState==='visible')void sendNyxUserActivity('/api/activity/heartbeat',user)},30000);
   }
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')void sendNyxUserActivity('/api/activity/heartbeat')});
+  document.addEventListener('visibilitychange',()=>{
+    document.querySelectorAll('[data-nyx-animated-source]').forEach(host=>{
+      const focusTarget=host.closest('button')||host;
+      nyxSetCompactGifMotion(host,document.visibilityState==='visible'&&(host.matches(':hover')||focusTarget.matches(':focus')));
+    });
+    if(document.visibilityState==='visible')void sendNyxUserActivity('/api/activity/heartbeat');
+  });
   function nyxAccountMenuIcon(name){
     const paths={
       edit:'<path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/>',
@@ -136,15 +221,23 @@
     const avatar=profile.avatarUrl?`<img src="${esc(profile.avatarUrl)}" alt="">`:`<span>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</span>`;
     const banner=profile.bannerUrl?`<img src="${esc(profile.bannerUrl)}" alt="" aria-hidden="true">`:'';
     const menu=document.createElement('aside');
-    menu.className='nyx-account-menu';
+    menu.className=`nyx-account-menu ${nyxProfileEffectClass(profile)}`;
     menu.setAttribute('role','menu');
     menu.setAttribute('aria-label','Account options');
     menu.style.setProperty('--nyx-account-primary',profile.accentPrimary);
     menu.style.setProperty('--nyx-account-secondary',profile.accentSecondary);
     menu.style.setProperty('--nyx-account-banner',profile.bannerColor);
+    menu.style.setProperty('--nyx-user-accent-primary',profile.accentPrimary);
+    menu.style.setProperty('--nyx-user-accent-secondary',profile.accentSecondary);
+    menu.style.setProperty('--nyx-user-banner-color',profile.bannerColor);
+    menu.style.cssText+=nyxProfileEffectVars(profile);
     const ownerControls=nyxFounderIsOwner?`<div class="nyx-account-menu-group nyx-account-menu-owner"><button type="button" role="menuitem" data-nyx-account-menu-action="owner-dashboard">${nyxAccountMenuIcon('dashboard')}<span>Owner Dashboard</span>${nyxAccountMenuIcon('chevron')}</button></div>`:'';
-    menu.innerHTML=`<div class="nyx-account-menu-banner">${banner}</div><div class="nyx-account-menu-profile"><div class="nyx-account-menu-avatar">${avatar}<i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i></div><span class="nyx-account-menu-status">${esc(profile.customStatus||statusLabel)}</span><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p class="nyx-account-menu-handle">${esc(profile.handle)}</p><p class="nyx-account-menu-bio">${esc(profile.bio||'No bio yet.')}</p></div>${ownerControls}<div class="nyx-account-menu-group"><button type="button" role="menuitem" data-nyx-account-menu-action="edit">${nyxAccountMenuIcon('edit')}<span>Edit Profile</span></button><hr><button type="button" role="menuitem" data-nyx-account-menu-action="status"><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-hidden="true"></i><span>${esc(statusLabel)}</span>${nyxAccountMenuIcon('chevron')}</button></div><div class="nyx-account-menu-group"><button type="button" role="menuitem" data-nyx-account-menu-action="switch">${nyxAccountMenuIcon('switch')}<span>Switch Accounts</span>${nyxAccountMenuIcon('chevron')}</button><hr><button type="button" role="menuitem" data-nyx-account-menu-action="copy-id">${nyxAccountMenuIcon('id')}<span>Copy User ID</span></button></div>`;
+    menu.innerHTML=`<i class="nyx-user-profile-effect nyx-account-menu-profile-effect" aria-hidden="true"></i><div class="nyx-account-menu-banner">${banner}</div><div class="nyx-account-menu-profile"><div class="nyx-account-menu-avatar nyx-avatar-decoration-${esc(profile.avatarDecoration)}">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i></div><span class="nyx-account-menu-status">${esc(profile.customStatus||statusLabel)}</span><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p class="nyx-account-menu-handle">${esc(profile.handle)}</p><p class="nyx-account-menu-bio">${esc(profile.bio||'No bio yet.')}</p></div>${ownerControls}<div class="nyx-account-menu-group"><button type="button" role="menuitem" data-nyx-account-menu-action="edit">${nyxAccountMenuIcon('edit')}<span>Edit Profile</span></button><hr><button type="button" role="menuitem" data-nyx-account-menu-action="status"><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-hidden="true"></i><span>${esc(statusLabel)}</span>${nyxAccountMenuIcon('chevron')}</button></div><div class="nyx-account-menu-group"><button type="button" role="menuitem" data-nyx-account-menu-action="switch">${nyxAccountMenuIcon('switch')}<span>Switch Accounts</span>${nyxAccountMenuIcon('chevron')}</button><hr><button type="button" role="menuitem" data-nyx-account-menu-action="copy-id">${nyxAccountMenuIcon('id')}<span>Copy User ID</span></button></div>`;
     document.body.appendChild(menu);
+    syncNyxAccountButtonAvatar(menu.querySelector('.nyx-account-menu-avatar'),profile);
+    const bannerHost=menu.querySelector('.nyx-account-menu-banner');
+    const bannerImage=bannerHost?.querySelector(':scope > img');
+    if(bannerHost&&bannerImage)nyxManageCompactGif(bannerHost,bannerImage,profile.bannerUrl,420);
     button?.setAttribute('aria-expanded','true');
     positionNyxAccountMenu(menu,button);
     requestAnimationFrame(()=>menu.classList.add('show'));
@@ -188,6 +281,31 @@
   }
   addEventListener('resize',closeNyxAccountMenu,{passive:true});
   document.addEventListener('keydown',event=>{if(event.key==='Escape')closeNyxAccountMenu()});
+  function syncNyxAccountButtonAvatar(host,profile){
+    if(!host)return;
+    const source=String(profile.avatarUrl||'');
+    let image=host.querySelector(':scope > img');
+    let fallback=host.querySelector(':scope > span');
+    if(source){
+      fallback?.remove();
+      if(!image){
+        image=document.createElement('img');
+        image.alt='';
+        image.loading='eager';
+        host.prepend(image);
+      }
+      nyxManageCompactGif(host,image,source,180);
+      return;
+    }
+    delete host.dataset.nyxAnimatedSource;
+    delete host.dataset.nyxAnimatedPoster;
+    image?.remove();
+    if(!fallback){
+      fallback=document.createElement('span');
+      host.prepend(fallback);
+    }
+    fallback.textContent=profile.displayName.slice(0,1).toUpperCase()||'N';
+  }
   function ensureNyxAccountButton(){
     const existing=document.getElementById('nyxAccountButton');
     const signedIn=Boolean(nyxFounderSignedInUser);
@@ -198,8 +316,32 @@
     button.id='nyxAccountButton';button.type='button';button.className='nyx-account-button';button.classList.toggle('nyx-account-button-default',!signedIn);button.classList.toggle('nyx-account-button-rich',signedIn);delete button.dataset.openNyxProfile;button.dataset.toggleNyxAccountMenu='';button.title=signedIn?'Account menu':'Sign in or create a profile';button.setAttribute('aria-label',button.title);button.setAttribute('aria-haspopup','menu');button.setAttribute('aria-expanded',String(Boolean(document.querySelector('.nyx-account-menu'))));
     const profile=normalizeNyxUserProfile(nyxUserProfile);
     const statusLabel={online:'Online',idle:'Idle',dnd:'Do not disturb',offline:'Invisible'}[profile.status]||'Online';
-    const avatar=profile.avatarUrl?`<img src="${esc(profile.avatarUrl)}" alt="">`:`<span>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</span>`;
-    button.innerHTML=signedIn?`<span class="nyx-account-button-avatar">${avatar}<i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-hidden="true"></i></span><span class="nyx-account-button-copy"><strong>${esc(profile.displayName)}</strong><small>${esc(profile.customStatus||statusLabel)}</small></span>`:'<span aria-hidden="true"></span>';
+    if(signedIn){
+      let avatarHost=button.querySelector(':scope > .nyx-account-button-avatar');
+      let copy=button.querySelector(':scope > .nyx-account-button-copy');
+      if(!avatarHost||!copy){
+        button.replaceChildren();
+        avatarHost=document.createElement('span');
+        avatarHost.className='nyx-account-button-avatar';
+        const status=document.createElement('i');
+        status.className='nyx-user-status';
+        status.setAttribute('aria-hidden','true');
+        avatarHost.appendChild(status);
+        copy=document.createElement('span');
+        copy.className='nyx-account-button-copy';
+        copy.append(document.createElement('strong'),document.createElement('small'));
+        button.append(avatarHost,copy);
+      }
+      syncNyxAccountButtonAvatar(avatarHost,profile);
+      const status=avatarHost.querySelector(':scope > .nyx-user-status');
+      if(status) status.className=`nyx-user-status nyx-user-status-${profile.status}`;
+      const name=copy.querySelector(':scope > strong');
+      const customStatus=copy.querySelector(':scope > small');
+      if(name) name.textContent=profile.displayName;
+      if(customStatus) customStatus.textContent=profile.customStatus||statusLabel;
+    }else if(!button.querySelector(':scope > span[aria-hidden="true"]')||button.children.length!==1){
+      button.innerHTML='<span aria-hidden="true"></span>';
+    }
     if(!button.parentElement) host.appendChild(button);
   }
   function syncFounderOwnerControls(){
@@ -298,7 +440,7 @@
     const mediaEdit=(type,label)=>editable?`<button class="nyx-profile-media-edit nyx-profile-media-edit-${type}" type="button" data-nyx-direct-edit="${type}" aria-label="${label}" title="${label}">${symbol('edit')}</button>`:'';
     const avatar=profile.avatarUrl?`<img src="${esc(profile.avatarUrl)}" alt="${esc(profile.displayName)} profile picture">`:`<span>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</span>`;
     const background=profile.bannerUrl?`<img src="${esc(profile.bannerUrl)}" alt="" aria-hidden="true">`:'';
-    return `<section class="nyx-user-profile-card nyx-user-profile-effect-${esc(profile.profileEffect)}" style="--nyx-user-accent-primary:${profile.accentPrimary};--nyx-user-accent-secondary:${profile.accentSecondary};--nyx-user-banner-color:${profile.bannerColor}"><i class="nyx-user-profile-effect" aria-hidden="true"></i><div class="nyx-user-profile-banner">${background}${mediaEdit('banner','Edit profile banner')}</div><div class="nyx-user-profile-chrome"><div class="nyx-user-profile-avatar nyx-avatar-decoration-${esc(profile.avatarDecoration)}">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i>${mediaEdit('avatar','Edit profile picture')}</div></div><div class="nyx-user-profile-body"><div class="nyx-user-profile-heading"><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p>${esc(profile.handle)}</p></div><p class="nyx-user-profile-custom-status">${symbol('status')} ${esc(profile.customStatus||`${statusLabel} on Nyx`)}</p><section class="nyx-user-profile-about"><h3>About me</h3><p class="nyx-user-profile-bio">${esc(profile.bio||'No bio yet.')}</p></section><section class="nyx-user-profile-roles"><h3>Roles</h3><div class="nyx-user-role-list">${roles}</div></section><section class="nyx-user-profile-details"><h3>Nyx member since</h3><p>${esc(joined)}</p></section>${ownerActions}</div></section>`;
+    return `<section class="nyx-user-profile-card ${nyxProfileEffectClass(profile)}" style="--nyx-user-accent-primary:${profile.accentPrimary};--nyx-user-accent-secondary:${profile.accentSecondary};--nyx-user-banner-color:${profile.bannerColor};${nyxProfileEffectVars(profile)}"><i class="nyx-user-profile-effect" aria-hidden="true"></i><div class="nyx-user-profile-banner">${background}${mediaEdit('banner','Edit profile banner')}</div><div class="nyx-user-profile-chrome"><div class="nyx-user-profile-avatar nyx-avatar-decoration-${esc(profile.avatarDecoration)}">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i>${mediaEdit('avatar','Edit profile picture')}</div></div><div class="nyx-user-profile-body"><div class="nyx-user-profile-heading"><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p>${esc(profile.handle)}</p></div><p class="nyx-user-profile-custom-status">${symbol('status')} ${esc(profile.customStatus||`${statusLabel} on Nyx`)}</p><section class="nyx-user-profile-about"><h3>About me</h3><p class="nyx-user-profile-bio">${esc(profile.bio||'No bio yet.')}</p></section><section class="nyx-user-profile-roles"><h3>Roles</h3><div class="nyx-user-role-list">${roles}</div></section><section class="nyx-user-profile-details"><h3>Nyx member since</h3><p>${esc(joined)}</p></section>${ownerActions}</div></section>`;
   }
   async function nyxProfileImageFromFile(file,maxWidth,maxHeight){
     if(!file||!/^image\/(?:png|jpe?g|webp|gif)$/i.test(String(file.type||'')))throw new Error('Choose a PNG, JPG, WebP, or GIF image.');
@@ -420,7 +562,7 @@
                     <label class="nyx-profile-field nyx-profile-color-field">Primary<input name="accentPrimary" type="color" value="${esc(profile.accentPrimary)}"><small>Profile card color</small></label>
                     <label class="nyx-profile-field nyx-profile-color-field">Accent<input name="accentSecondary" type="color" value="${esc(profile.accentSecondary)}"><small>Secondary surface color</small></label>
                     <label class="nyx-profile-field nyx-profile-color-field">Banner color<input name="bannerColor" type="color" value="${esc(profile.bannerColor)}"><small>Used without a banner image</small></label>
-                    <label class="nyx-profile-field">Profile effect<select name="profileEffect"><option value="none" ${profile.profileEffect==='none'?'selected':''}>None</option><option value="glow" ${profile.profileEffect==='glow'?'selected':''}>Glow</option><option value="sparkle" ${profile.profileEffect==='sparkle'?'selected':''}>Sparkle</option><option value="aurora" ${profile.profileEffect==='aurora'?'selected':''}>Aurora</option><option value="holographic" ${profile.profileEffect==='holographic'?'selected':''}>Holographic</option><option value="fireflies" ${profile.profileEffect==='fireflies'?'selected':''}>Fireflies</option><option value="cosmic-dust" ${profile.profileEffect==='cosmic-dust'?'selected':''}>Cosmic Dust</option><option value="electric-storm" ${profile.profileEffect==='electric-storm'?'selected':''}>Electric Storm</option><option value="meteor-shower" ${profile.profileEffect==='meteor-shower'?'selected':''}>Meteor Shower</option><option value="cyber-grid" ${profile.profileEffect==='cyber-grid'?'selected':''}>Cyber Grid</option><option value="plasma" ${profile.profileEffect==='plasma'?'selected':''}>Plasma</option><option value="snowfall" ${profile.profileEffect==='snowfall'?'selected':''}>Snowfall</option><option value="embers" ${profile.profileEffect==='embers'?'selected':''}>Embers</option><option value="bubbles" ${profile.profileEffect==='bubbles'?'selected':''}>Bubbles</option></select></label>
+                    <label class="nyx-profile-field">Profile effect<select name="profileEffect"><option value="none" ${profile.profileEffect==='none'?'selected':''}>None</option><option value="glow" ${profile.profileEffect==='glow'?'selected':''}>Glow</option><option value="sparkle" ${profile.profileEffect==='sparkle'?'selected':''}>Sparkle</option><option value="aurora" ${profile.profileEffect==='aurora'?'selected':''}>Aurora</option><option value="holographic" ${profile.profileEffect==='holographic'?'selected':''}>Holographic</option><option value="fireflies" ${profile.profileEffect==='fireflies'?'selected':''}>Fireflies</option><option value="cosmic-dust" ${profile.profileEffect==='cosmic-dust'?'selected':''}>Cosmic Dust</option><option value="electric-storm" ${profile.profileEffect==='electric-storm'?'selected':''}>Electric Storm</option><option value="meteor-shower" ${profile.profileEffect==='meteor-shower'?'selected':''}>Meteor Shower</option><option value="cyber-grid" ${profile.profileEffect==='cyber-grid'?'selected':''}>Cyber Grid</option><option value="plasma" ${profile.profileEffect==='plasma'?'selected':''}>Plasma</option><option value="snowfall" ${profile.profileEffect==='snowfall'?'selected':''}>Snowfall</option><option value="embers" ${profile.profileEffect==='embers'?'selected':''}>Embers</option><option value="bubbles" ${profile.profileEffect==='bubbles'?'selected':''}>Bubbles</option><option value="custom" ${profile.profileEffect==='custom'?'selected':''}>Custom effect</option></select></label>
                   </div>
                 </section>
                 <p class="nyx-founder-editor-error" aria-live="polite"></p>
@@ -493,11 +635,16 @@
     form.querySelector('[name="accentSecondary"]')?.closest('label')?.classList.add('nyx-profile-secondary-color-field');
     const decorationField=document.createElement('label');
     decorationField.className='nyx-profile-field';
-    decorationField.innerHTML=`Avatar decoration<select name="avatarDecoration"><option value="none">None</option><option value="starfall">Starfall</option><option value="orbit">Orbit</option><option value="laurel">Laurel</option><option value="neon-wings">Neon wings</option></select><small>Frames your avatar wherever it is shown.</small>`;
+    decorationField.innerHTML=`<span class="nyx-profile-decoration-preview nyx-avatar-decoration-${esc(profile.avatarDecoration)}" data-nyx-decoration-preview style="--nyx-user-accent-primary:${profile.accentPrimary};--nyx-user-accent-secondary:${profile.accentSecondary}"><span class="nyx-profile-decoration-avatar">${profile.avatarUrl?`<img src="${esc(profile.avatarUrl)}" alt="">`:`<span>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</span>`}</span><i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i></span><span class="nyx-profile-decoration-label">Avatar decoration</span><select name="avatarDecoration"><option value="none">None</option><option value="starfall">Starfall</option><option value="orbit">Orbit</option><option value="laurel">Laurel</option><option value="neon-wings">Neon wings</option></select><small>Frames your avatar wherever it is shown.</small>`;
     decorationField.classList.add('nyx-profile-decoration-field');
     form.querySelector('.nyx-profile-image-list')?.appendChild(decorationField);
     decorationField.querySelector('select').value=profile.avatarDecoration;
-    const profileKeys=['displayName','handle','status','customStatus','bio','profileEffect','avatarDecoration','accentPrimary','accentSecondary','bannerColor','displayNameFont','displayNameEffect','displayNameColorPrimary','displayNameColorSecondary','avatarUrl','bannerUrl'];
+    const customEffectBuilder=document.createElement('div');
+    customEffectBuilder.className='nyx-profile-custom-effect-builder';
+    customEffectBuilder.innerHTML=`<button type="button" data-nyx-custom-effect-create>Create custom effect</button><div class="nyx-profile-custom-effect-controls" data-nyx-custom-effect-controls ${profile.profileEffect==='custom'?'':'hidden'}><label>Pattern<select name="customEffectPattern"><option value="starfield">Starfield</option><option value="aurora">Aurora waves</option><option value="comets">Comets</option><option value="grid">Digital grid</option></select></label><label>Primary effect color<input name="customEffectColorPrimary" type="color" value="${profile.customEffectColorPrimary}"></label><label>Secondary effect color<input name="customEffectColorSecondary" type="color" value="${profile.customEffectColorSecondary}"></label><label>Animation time <output data-nyx-custom-speed>${profile.customEffectSpeed}s</output><input name="customEffectSpeed" type="range" min="2" max="18" step="1" value="${profile.customEffectSpeed}"><small>Lower is faster.</small></label><label>Intensity <output data-nyx-custom-intensity>${profile.customEffectIntensity}%</output><input name="customEffectIntensity" type="range" min="20" max="100" step="5" value="${profile.customEffectIntensity}"></label></div>`;
+    form.querySelector('.nyx-profile-color-grid')?.appendChild(customEffectBuilder);
+    customEffectBuilder.querySelector('[name="customEffectPattern"]').value=profile.customEffectPattern;
+    const profileKeys=['displayName','handle','status','customStatus','bio','profileEffect','customEffectPattern','customEffectColorPrimary','customEffectColorSecondary','customEffectSpeed','customEffectIntensity','avatarDecoration','accentPrimary','accentSecondary','bannerColor','displayNameFont','displayNameEffect','displayNameColorPrimary','displayNameColorSecondary','avatarUrl','bannerUrl'];
     const directPopover=document.createElement('section');
     directPopover.className='nyx-profile-direct-popover';
     directPopover.hidden=true;
@@ -521,7 +668,33 @@
       });
       displaySection.querySelector('[data-nyx-display-name-editor]')?.setAttribute('data-name-effect',nextProfile.displayNameEffect);
     };
-    const preview=()=>{const values=new FormData(form);const nextProfile=normalizeNyxUserProfile({...profile,...Object.fromEntries(profileKeys.map(key=>[key,values.get(key)]))});overlay.querySelector('.nyx-user-profile-view').innerHTML=nyxUserProfileCardMarkup(nextProfile,{editable:true});syncDisplayNameStylePreview(nextProfile);const bioCount=form.querySelector('[data-nyx-bio-count]');if(bioCount)bioCount.textContent=String(values.get('bio')||'').length;form.classList.add('is-dirty');directTargets();};
+    const syncAvatarDecorationPreview=nextProfile=>{
+      const decorationPreview=decorationField.querySelector('[data-nyx-decoration-preview]');
+      const avatarPreview=decorationPreview?.querySelector('.nyx-profile-decoration-avatar');
+      if(!decorationPreview||!avatarPreview)return;
+      decorationPreview.classList.remove('nyx-avatar-decoration-none','nyx-avatar-decoration-starfall','nyx-avatar-decoration-orbit','nyx-avatar-decoration-laurel','nyx-avatar-decoration-neon-wings');
+      decorationPreview.classList.add(`nyx-avatar-decoration-${nextProfile.avatarDecoration}`);
+      decorationPreview.style.setProperty('--nyx-user-accent-primary',nextProfile.accentPrimary);
+      decorationPreview.style.setProperty('--nyx-user-accent-secondary',nextProfile.accentSecondary);
+      syncNyxAccountButtonAvatar(avatarPreview,nextProfile);
+    };
+    const syncCustomEffectBuilder=()=>{
+      const custom=form.querySelector('[name="profileEffect"]')?.value==='custom';
+      const controls=customEffectBuilder.querySelector('[data-nyx-custom-effect-controls]');
+      const launcher=customEffectBuilder.querySelector('[data-nyx-custom-effect-create]');
+      if(controls)controls.hidden=!custom;
+      if(launcher){
+        launcher.textContent=custom?'Custom effect active':'Create custom effect';
+        launcher.classList.toggle('active',custom);
+      }
+      const speed=customEffectBuilder.querySelector('[name="customEffectSpeed"]')?.value||'7';
+      const intensity=customEffectBuilder.querySelector('[name="customEffectIntensity"]')?.value||'70';
+      const speedOutput=customEffectBuilder.querySelector('[data-nyx-custom-speed]');
+      const intensityOutput=customEffectBuilder.querySelector('[data-nyx-custom-intensity]');
+      if(speedOutput)speedOutput.textContent=`${speed}s`;
+      if(intensityOutput)intensityOutput.textContent=`${intensity}%`;
+    };
+    const preview=()=>{const values=new FormData(form);const nextProfile=normalizeNyxUserProfile({...profile,...Object.fromEntries(profileKeys.map(key=>[key,values.get(key)]))});overlay.querySelector('.nyx-user-profile-view').innerHTML=nyxUserProfileCardMarkup(nextProfile,{editable:true});syncDisplayNameStylePreview(nextProfile);syncAvatarDecorationPreview(nextProfile);syncCustomEffectBuilder();const bioCount=form.querySelector('[data-nyx-bio-count]');if(bioCount)bioCount.textContent=String(values.get('bio')||'').length;form.classList.add('is-dirty');directTargets();};
     const styleLauncher=displaySection.querySelector('[data-nyx-display-style-toggle]');
     const styleEditor=displaySection.querySelector('[data-nyx-display-name-editor]');
     styleLauncher?.addEventListener('click',()=>{
@@ -548,6 +721,14 @@
       preview();
     });
     syncDisplayNameStylePreview(profile);
+    syncAvatarDecorationPreview(profile);
+    syncCustomEffectBuilder();
+    customEffectBuilder.querySelector('[data-nyx-custom-effect-create]')?.addEventListener('click',()=>{
+      const effect=form.querySelector('[name="profileEffect"]');
+      if(effect)effect.value='custom';
+      preview();
+      customEffectBuilder.querySelector('select,input')?.focus();
+    });
     const closeDirectPopover=()=>{directPopover.hidden=true;directPopover.textContent=''};
     const positionDirectPopover=target=>{
       requestAnimationFrame(()=>{
@@ -611,7 +792,7 @@
       if(event.key==='Escape'){event.stopPropagation();if(!directPopover.hidden)closeDirectPopover();else close()}
     });
     form.addEventListener('input',preview);form.addEventListener('change',preview);
-    form.addEventListener('reset',()=>requestAnimationFrame(()=>{form.classList.remove('is-dirty');const avatarLabel=form.querySelector('[data-nyx-file-name="avatar"]');const bannerLabel=form.querySelector('[data-nyx-file-name="banner"]');if(avatarLabel)avatarLabel.textContent=profile.avatarUrl?'Image selected':'No image selected';if(bannerLabel)bannerLabel.textContent=profile.bannerUrl?'Image selected':'No image selected';const values=new FormData(form);const nextProfile=normalizeNyxUserProfile({...profile,...Object.fromEntries(profileKeys.map(key=>[key,values.get(key)]))});overlay.querySelector('.nyx-user-profile-view').innerHTML=nyxUserProfileCardMarkup(nextProfile,{editable:true});syncDisplayNameStylePreview(nextProfile);const bioCount=form.querySelector('[data-nyx-bio-count]');if(bioCount)bioCount.textContent=String(values.get('bio')||'').length;directTargets()}));
+    form.addEventListener('reset',()=>requestAnimationFrame(()=>{form.classList.remove('is-dirty');const avatarLabel=form.querySelector('[data-nyx-file-name="avatar"]');const bannerLabel=form.querySelector('[data-nyx-file-name="banner"]');if(avatarLabel)avatarLabel.textContent=profile.avatarUrl?'Image selected':'No image selected';if(bannerLabel)bannerLabel.textContent=profile.bannerUrl?'Image selected':'No image selected';const values=new FormData(form);const nextProfile=normalizeNyxUserProfile({...profile,...Object.fromEntries(profileKeys.map(key=>[key,values.get(key)]))});overlay.querySelector('.nyx-user-profile-view').innerHTML=nyxUserProfileCardMarkup(nextProfile,{editable:true});syncDisplayNameStylePreview(nextProfile);syncAvatarDecorationPreview(nextProfile);syncCustomEffectBuilder();const bioCount=form.querySelector('[data-nyx-bio-count]');if(bioCount)bioCount.textContent=String(values.get('bio')||'').length;directTargets()}));
     form.querySelectorAll('[data-nyx-pick-image]').forEach(button=>button.addEventListener('click',()=>form.querySelector(`[name="${button.dataset.nyxPickImage}File"]`)?.click()));
     form.querySelectorAll('[data-nyx-clear-image]').forEach(button=>button.addEventListener('click',()=>{const type=button.dataset.nyxClearImage;form.querySelector(`[name="${type}Url"]`).value='';form.querySelector(`[name="${type}File"]`).value='';form.querySelector(`[data-nyx-file-name="${type}"]`).textContent='No image selected';preview()}));
     form.querySelectorAll('.nyx-profile-file-input').forEach(input=>input.addEventListener('change',async()=>{const type=input.name==='avatarFile'?'avatar':'banner';const label=form.querySelector(`[data-nyx-file-name="${type}"]`);const error=form.querySelector('.nyx-founder-editor-error');const file=input.files?.[0];if(!file)return;label.textContent='Preparing image…';error.textContent='';try{form.querySelector(`[name="${type}Url"]`).value=await nyxProfileImageFromFile(file,type==='avatar'?512:1200,type==='avatar'?512:480);label.textContent=file.name;preview()}catch(imageError){input.value='';label.textContent='No image selected';error.textContent=imageError.message||'That image could not be used.'}}));
@@ -638,7 +819,12 @@
     const displayNameColorSecondary=/^#[0-9a-f]{6}$/i.test(String(source.displayNameColorSecondary||'').trim())?String(source.displayNameColorSecondary).trim().toLowerCase():accentSecondary;
     const displayNameFont=NYX_DISPLAY_NAME_FONTS.some(([value])=>value===String(source.displayNameFont||'').toLowerCase())?String(source.displayNameFont).toLowerCase():nyxFounderProfileDefaults.displayNameFont;
     const displayNameEffect=NYX_DISPLAY_NAME_EFFECTS.some(([value])=>value===String(source.displayNameEffect||'').toLowerCase())?String(source.displayNameEffect).toLowerCase():nyxFounderProfileDefaults.displayNameEffect;
-    return {displayName:nyxFounderText(source.displayName,nyxFounderProfileDefaults.displayName,48),handle:nyxFounderText(source.handle,nyxFounderProfileDefaults.handle,40),role:nyxFounderText(source.role,nyxFounderProfileDefaults.role,64),bio:nyxFounderText(source.bio,nyxFounderProfileDefaults.bio,500),avatarUrl:nyxFounderUrl(source.avatarUrl,nyxFounderProfileDefaults.avatarUrl),bannerUrl:nyxFounderUrl(source.bannerUrl),accent:accentPrimary,accentPrimary,accentSecondary,bannerColor,displayNameFont,displayNameEffect,displayNameColorPrimary,displayNameColorSecondary,profileEffect:['none','glow','sparkle','aurora','holographic','fireflies','cosmic-dust','electric-storm','meteor-shower','cyber-grid','plasma','snowfall','embers','bubbles'].includes(String(source.profileEffect||'').toLowerCase())?String(source.profileEffect).toLowerCase():'none',avatarDecoration:['none','starfall','orbit','laurel','neon-wings'].includes(String(source.avatarDecoration||'').toLowerCase())?String(source.avatarDecoration).toLowerCase():'none',status:['online','idle','dnd','offline'].includes(String(source.status||'').toLowerCase())?String(source.status).toLowerCase():nyxFounderProfileDefaults.status,roles:roles.map(role=>nyxFounderText(role,'',32)).filter(Boolean).slice(0,8),badges:badges.map(badge=>nyxFounderText(badge,'',32)).filter(Boolean).slice(0,8),linkLabel:nyxFounderText(source.linkLabel,'',40),linkUrl:nyxFounderUrl(source.linkUrl)};
+    const customEffectPattern=['starfield','aurora','comets','grid'].includes(String(source.customEffectPattern||'').toLowerCase())?String(source.customEffectPattern).toLowerCase():nyxFounderProfileDefaults.customEffectPattern;
+    const customEffectColorPrimary=/^#[0-9a-f]{6}$/i.test(String(source.customEffectColorPrimary||'').trim())?String(source.customEffectColorPrimary).trim().toLowerCase():nyxFounderProfileDefaults.customEffectColorPrimary;
+    const customEffectColorSecondary=/^#[0-9a-f]{6}$/i.test(String(source.customEffectColorSecondary||'').trim())?String(source.customEffectColorSecondary).trim().toLowerCase():accentSecondary;
+    const customEffectSpeed=Math.max(2,Math.min(18,Number(source.customEffectSpeed)||nyxFounderProfileDefaults.customEffectSpeed));
+    const customEffectIntensity=Math.max(20,Math.min(100,Number(source.customEffectIntensity)||nyxFounderProfileDefaults.customEffectIntensity));
+    return {displayName:nyxFounderText(source.displayName,nyxFounderProfileDefaults.displayName,48),handle:nyxFounderText(source.handle,nyxFounderProfileDefaults.handle,40),role:nyxFounderText(source.role,nyxFounderProfileDefaults.role,64),bio:nyxFounderText(source.bio,nyxFounderProfileDefaults.bio,500),avatarUrl:nyxFounderUrl(source.avatarUrl,nyxFounderProfileDefaults.avatarUrl),bannerUrl:nyxFounderUrl(source.bannerUrl),accent:accentPrimary,accentPrimary,accentSecondary,bannerColor,displayNameFont,displayNameEffect,displayNameColorPrimary,displayNameColorSecondary,profileEffect:['none','glow','sparkle','aurora','holographic','fireflies','cosmic-dust','electric-storm','meteor-shower','cyber-grid','plasma','snowfall','embers','bubbles','custom'].includes(String(source.profileEffect||'').toLowerCase())?String(source.profileEffect).toLowerCase():'none',customEffectPattern,customEffectColorPrimary,customEffectColorSecondary,customEffectSpeed,customEffectIntensity,avatarDecoration:['none','starfall','orbit','laurel','neon-wings'].includes(String(source.avatarDecoration||'').toLowerCase())?String(source.avatarDecoration).toLowerCase():'none',status:['online','idle','dnd','offline'].includes(String(source.status||'').toLowerCase())?String(source.status).toLowerCase():nyxFounderProfileDefaults.status,roles:roles.map(role=>nyxFounderText(role,'',32)).filter(Boolean).slice(0,8),badges:badges.map(badge=>nyxFounderText(badge,'',32)).filter(Boolean).slice(0,8),linkLabel:nyxFounderText(source.linkLabel,'',40),linkUrl:nyxFounderUrl(source.linkUrl)};
   }
   function nyxFounderProfileCardMarkup(){
     const profile=normalizeNyxFounderProfile(nyxFounderProfile);
@@ -646,7 +832,7 @@
     const badges=profile.badges.map(badge=>`<span class="nyx-founder-badge">${esc(badge)}</span>`).join('');
     const link=profile.linkUrl?`<a class="nyx-founder-link" href="${esc(profile.linkUrl)}" target="_blank" rel="noreferrer noopener">${esc(profile.linkLabel||'Open profile')}<span aria-hidden="true">↗</span></a>`:'';
     const banner=profile.bannerUrl?`<img src="${esc(profile.bannerUrl)}" alt="" aria-hidden="true">`:'';
-    return `<article class="nyx-founder-profile nyx-founder-profile-standard nyx-founder-effect-${esc(profile.profileEffect)}" data-nyx-founder-profile style="--nyx-founder-accent:${profile.accentPrimary};--nyx-founder-accent-primary:${profile.accentPrimary};--nyx-founder-accent-secondary:${profile.accentSecondary};--nyx-founder-banner-color:${profile.bannerColor}"><i class="nyx-founder-profile-effect" aria-hidden="true"></i><div class="nyx-founder-banner" aria-hidden="true">${banner}</div><div class="nyx-founder-profile-content"><div class="nyx-founder-image-wrap nyx-avatar-decoration-${esc(profile.avatarDecoration)}"><img class="nyx-founder-image" src="${esc(profile.avatarUrl)}" alt="${esc(profile.displayName)} profile picture"><i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><span class="nyx-founder-status nyx-founder-status-${esc(profile.status)}" title="${esc(profile.status)}" aria-label="${esc(profile.status)}"></span></div><div class="nyx-founder-copy"><div class="nyx-founder-name-row"><h3 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h3>${profile.roles.some(role=>role.toLowerCase()==='owner')?'<span class="nyx-founder-owner-crown" title="Nyx owner" aria-label="Nyx owner">♛</span>':''}</div><p class="nyx-founder-handle">${esc(profile.handle)}</p><p class="nyx-founder-role">${esc(profile.role)}</p>${roles?`<div class="nyx-founder-role-list" aria-label="Profile roles">${roles}</div>`:''}${badges?`<div class="nyx-founder-badges" aria-label="Profile badges">${badges}</div>`:''}<div class="nyx-founder-about"><strong>About me</strong><p class="nyx-founder-bio">${esc(profile.bio)}</p></div>${link}</div></div></article>`;
+    return `<article class="nyx-founder-profile nyx-founder-profile-standard nyx-founder-effect-${esc(profile.profileEffect)} ${nyxProfileEffectClass(profile)}" data-nyx-founder-profile style="--nyx-founder-accent:${profile.accentPrimary};--nyx-founder-accent-primary:${profile.accentPrimary};--nyx-founder-accent-secondary:${profile.accentSecondary};--nyx-founder-banner-color:${profile.bannerColor};--nyx-user-accent-primary:${profile.accentPrimary};--nyx-user-accent-secondary:${profile.accentSecondary};${nyxProfileEffectVars(profile)}"><i class="nyx-founder-profile-effect nyx-user-profile-effect" aria-hidden="true"></i><div class="nyx-founder-banner" aria-hidden="true">${banner}</div><div class="nyx-founder-profile-content"><div class="nyx-founder-image-wrap nyx-avatar-decoration-${esc(profile.avatarDecoration)}"><img class="nyx-founder-image" src="${esc(profile.avatarUrl)}" alt="${esc(profile.displayName)} profile picture"><i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><span class="nyx-founder-status nyx-founder-status-${esc(profile.status)}" title="${esc(profile.status)}" aria-label="${esc(profile.status)}"></span></div><div class="nyx-founder-copy"><div class="nyx-founder-name-row"><h3 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h3>${profile.roles.some(role=>role.toLowerCase()==='owner')?'<span class="nyx-founder-owner-crown" title="Nyx owner" aria-label="Nyx owner">♛</span>':''}</div><p class="nyx-founder-handle">${esc(profile.handle)}</p><p class="nyx-founder-role">${esc(profile.role)}</p>${roles?`<div class="nyx-founder-role-list" aria-label="Profile roles">${roles}</div>`:''}${badges?`<div class="nyx-founder-badges" aria-label="Profile badges">${badges}</div>`:''}<div class="nyx-founder-about"><strong>About me</strong><p class="nyx-founder-bio">${esc(profile.bio)}</p></div>${link}</div></div></article>`;
   }
   function refreshFounderProfileViews(){
     const update=root=>{try{root.querySelectorAll?.('[data-nyx-founder-profile]').forEach(card=>{card.outerHTML=nyxFounderProfileCardMarkup()})}catch{}};

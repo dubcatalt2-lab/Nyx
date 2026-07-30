@@ -1368,6 +1368,11 @@ const founderProfileDefaults = Object.freeze({
   displayNameColorPrimary: "#ffffff",
   displayNameColorSecondary: "#8ea1ff",
   profileEffect: "none",
+  customEffectPattern: "starfield",
+  customEffectColorPrimary: "#ffffff",
+  customEffectColorSecondary: "#8ea1ff",
+  customEffectSpeed: 7,
+  customEffectIntensity: 70,
   avatarDecoration: "none",
   status: "online",
   roles: ["Owner", "Developer"],
@@ -1412,6 +1417,8 @@ function normalizeFounderProfile(value = {}) {
   const bannerColor = /^#[0-9a-f]{6}$/i.test(String(source.bannerColor || "").trim()) ? String(source.bannerColor).trim().toLowerCase() : accentSecondary;
   const displayNameColorPrimary = /^#[0-9a-f]{6}$/i.test(String(source.displayNameColorPrimary || "").trim()) ? String(source.displayNameColorPrimary).trim().toLowerCase() : founderProfileDefaults.displayNameColorPrimary;
   const displayNameColorSecondary = /^#[0-9a-f]{6}$/i.test(String(source.displayNameColorSecondary || "").trim()) ? String(source.displayNameColorSecondary).trim().toLowerCase() : accentSecondary;
+  const customEffectColorPrimary = /^#[0-9a-f]{6}$/i.test(String(source.customEffectColorPrimary || "").trim()) ? String(source.customEffectColorPrimary).trim().toLowerCase() : founderProfileDefaults.customEffectColorPrimary;
+  const customEffectColorSecondary = /^#[0-9a-f]{6}$/i.test(String(source.customEffectColorSecondary || "").trim()) ? String(source.customEffectColorSecondary).trim().toLowerCase() : accentSecondary;
   return {
     displayName: founderProfileText(source.displayName, founderProfileDefaults.displayName, 48),
     handle: founderProfileText(source.handle, founderProfileDefaults.handle, 40),
@@ -1427,7 +1434,12 @@ function normalizeFounderProfile(value = {}) {
     displayNameEffect: ["solid", "gradient", "neon", "toon", "pop"].includes(String(source.displayNameEffect || "").toLowerCase()) ? String(source.displayNameEffect).toLowerCase() : founderProfileDefaults.displayNameEffect,
     displayNameColorPrimary,
     displayNameColorSecondary,
-    profileEffect: ["none", "glow", "sparkle", "aurora", "holographic", "fireflies", "cosmic-dust", "electric-storm", "meteor-shower", "cyber-grid", "plasma", "snowfall", "embers", "bubbles"].includes(String(source.profileEffect || "").toLowerCase()) ? String(source.profileEffect).toLowerCase() : founderProfileDefaults.profileEffect,
+    profileEffect: ["none", "glow", "sparkle", "aurora", "holographic", "fireflies", "cosmic-dust", "electric-storm", "meteor-shower", "cyber-grid", "plasma", "snowfall", "embers", "bubbles", "custom"].includes(String(source.profileEffect || "").toLowerCase()) ? String(source.profileEffect).toLowerCase() : founderProfileDefaults.profileEffect,
+    customEffectPattern: ["starfield", "aurora", "comets", "grid"].includes(String(source.customEffectPattern || "").toLowerCase()) ? String(source.customEffectPattern).toLowerCase() : founderProfileDefaults.customEffectPattern,
+    customEffectColorPrimary,
+    customEffectColorSecondary,
+    customEffectSpeed: Math.max(2, Math.min(18, Number(source.customEffectSpeed) || founderProfileDefaults.customEffectSpeed)),
+    customEffectIntensity: Math.max(20, Math.min(100, Number(source.customEffectIntensity) || founderProfileDefaults.customEffectIntensity)),
     avatarDecoration: ["none", "starfall", "orbit", "laurel", "neon-wings"].includes(String(source.avatarDecoration || "").toLowerCase()) ? String(source.avatarDecoration).toLowerCase() : founderProfileDefaults.avatarDecoration,
     status: ["online", "idle", "dnd", "offline"].includes(String(source.status || "").toLowerCase()) ? String(source.status).toLowerCase() : founderProfileDefaults.status,
     roles: roles.map(role => founderProfileText(role, "", 32)).filter(Boolean).slice(0, 8),
@@ -1507,6 +1519,8 @@ function normalizeNyxUserProfile(value = {}, token = {}) {
   const bannerColor = /^#[0-9a-f]{6}$/i.test(String(source.bannerColor || source.bannerSecondary || "").trim()) ? String(source.bannerColor || source.bannerSecondary).trim().toLowerCase() : accentSecondary;
   const displayNameColorPrimary = /^#[0-9a-f]{6}$/i.test(String(source.displayNameColorPrimary || "").trim()) ? String(source.displayNameColorPrimary).trim().toLowerCase() : "#ffffff";
   const displayNameColorSecondary = /^#[0-9a-f]{6}$/i.test(String(source.displayNameColorSecondary || "").trim()) ? String(source.displayNameColorSecondary).trim().toLowerCase() : accentSecondary;
+  const customEffectColorPrimary = /^#[0-9a-f]{6}$/i.test(String(source.customEffectColorPrimary || "").trim()) ? String(source.customEffectColorPrimary).trim().toLowerCase() : "#ffffff";
+  const customEffectColorSecondary = /^#[0-9a-f]{6}$/i.test(String(source.customEffectColorSecondary || "").trim()) ? String(source.customEffectColorSecondary).trim().toLowerCase() : accentSecondary;
   return {
     displayName: founderProfileText(source.displayName, fallbackName, 48),
     handle: `@${nyxProfileUsername(source.handle, fallbackUsername)}`,
@@ -1522,7 +1536,12 @@ function normalizeNyxUserProfile(value = {}, token = {}) {
     displayNameEffect: ["solid", "gradient", "neon", "toon", "pop"].includes(String(source.displayNameEffect || "").toLowerCase()) ? String(source.displayNameEffect).toLowerCase() : "solid",
     displayNameColorPrimary,
     displayNameColorSecondary,
-    profileEffect: ["none", "glow", "sparkle", "aurora", "holographic", "fireflies", "cosmic-dust", "electric-storm", "meteor-shower", "cyber-grid", "plasma", "snowfall", "embers", "bubbles"].includes(String(source.profileEffect || "").toLowerCase()) ? String(source.profileEffect).toLowerCase() : "none",
+    profileEffect: ["none", "glow", "sparkle", "aurora", "holographic", "fireflies", "cosmic-dust", "electric-storm", "meteor-shower", "cyber-grid", "plasma", "snowfall", "embers", "bubbles", "custom"].includes(String(source.profileEffect || "").toLowerCase()) ? String(source.profileEffect).toLowerCase() : "none",
+    customEffectPattern: ["starfield", "aurora", "comets", "grid"].includes(String(source.customEffectPattern || "").toLowerCase()) ? String(source.customEffectPattern).toLowerCase() : "starfield",
+    customEffectColorPrimary,
+    customEffectColorSecondary,
+    customEffectSpeed: Math.max(2, Math.min(18, Number(source.customEffectSpeed) || 7)),
+    customEffectIntensity: Math.max(20, Math.min(100, Number(source.customEffectIntensity) || 70)),
     avatarDecoration: ["none", "starfall", "orbit", "laurel", "neon-wings"].includes(String(source.avatarDecoration || "").toLowerCase()) ? String(source.avatarDecoration).toLowerCase() : "none",
     status: ["online", "idle", "dnd", "offline"].includes(String(source.status || "").toLowerCase()) ? String(source.status).toLowerCase() : "online"
   };
@@ -2598,6 +2617,11 @@ app.get("/api/founder-profile", async (_req, res) => {
             displayNameColorPrimary: userProfile.displayNameColorPrimary,
             displayNameColorSecondary: userProfile.displayNameColorSecondary,
             profileEffect: userProfile.profileEffect,
+            customEffectPattern: userProfile.customEffectPattern,
+            customEffectColorPrimary: userProfile.customEffectColorPrimary,
+            customEffectColorSecondary: userProfile.customEffectColorSecondary,
+            customEffectSpeed: userProfile.customEffectSpeed,
+            customEffectIntensity: userProfile.customEffectIntensity,
             avatarDecoration: userProfile.avatarDecoration,
             status: userProfile.status
           });

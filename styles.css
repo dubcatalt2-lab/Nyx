@@ -1643,16 +1643,69 @@ html[data-nyx-theme] body .nyx-profile-decoration-field{
   background:#1e1f22;
 }
 html[data-nyx-theme] body .nyx-profile-decoration-field::before{
-  content:"+";
+  display:none;
+  content:none;
+}
+html[data-nyx-theme] body .nyx-profile-decoration-preview{
+  position:relative;
+  z-index:0;
   display:grid;
-  width:54px;
-  height:54px;
-  margin:0 auto 4px;
+  width:58px;
+  height:58px;
+  margin:2px auto 5px;
   place-items:center;
-  border:2px dashed #4e5058;
+  overflow:visible;
+}
+html[data-nyx-theme] body .nyx-profile-decoration-avatar{
+  position:relative;
+  z-index:1;
+  display:grid;
+  width:52px;
+  height:52px;
+  place-items:center;
+  overflow:hidden;
+  border:3px solid #111214;
   border-radius:50%;
-  color:#dbdee1;
-  font-size:30px;
+  background:var(--nyx-user-accent-primary,#5865f2);
+  color:#fff;
+  font-size:18px;
+  font-weight:800;
+}
+html[data-nyx-theme] body .nyx-profile-decoration-avatar>img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+html[data-nyx-theme] body .nyx-profile-decoration-preview>.nyx-avatar-decoration{
+  inset:-9px;
+}
+html[data-nyx-theme] body .nyx-profile-decoration-preview.nyx-avatar-decoration-laurel>.nyx-avatar-decoration::before,
+html[data-nyx-theme] body .nyx-profile-decoration-preview.nyx-avatar-decoration-laurel>.nyx-avatar-decoration::after{
+  top:8px;
+  width:25px;
+  height:58px;
+  border-width:5px;
+}
+html[data-nyx-theme] body .nyx-profile-decoration-preview.nyx-avatar-decoration-neon-wings>.nyx-avatar-decoration::before,
+html[data-nyx-theme] body .nyx-profile-decoration-preview.nyx-avatar-decoration-neon-wings>.nyx-avatar-decoration::after{
+  top:13px;
+  width:28px;
+  height:48px;
+}
+html[data-nyx-theme] body .nyx-profile-decoration-preview.nyx-avatar-decoration-neon-wings>.nyx-avatar-decoration::before{
+  left:-15px;
+}
+html[data-nyx-theme] body .nyx-profile-decoration-preview.nyx-avatar-decoration-neon-wings>.nyx-avatar-decoration::after{
+  right:-15px;
+}
+html[data-nyx-theme] body .nyx-profile-decoration-label{
+  color:#b5bac1!important;
+  -webkit-text-fill-color:#b5bac1!important;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.025em;
+  text-transform:uppercase;
 }
 html[data-nyx-theme] body .nyx-profile-decoration-field small{display:none!important}
 html[data-nyx-theme] body .nyx-profile-decoration-field select{
@@ -1779,6 +1832,162 @@ html[data-nyx-theme] body .nyx-discord-settings-close{
     height:auto!important;
     min-height:620px;
   }
+}
+
+/* Profile effects and accents are shared by the full card, compact account
+   menu, Credits card, and the custom-effect editor. */
+html[data-nyx-theme] body .nyx-account-menu{
+  isolation:isolate;
+  border-color:color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 54%,rgba(255,255,255,.1))!important;
+  background:linear-gradient(165deg,color-mix(in srgb,var(--nyx-account-primary,#5865f2) 28%,#111214),color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 18%,#111214) 58%,#111214)!important;
+  box-shadow:0 20px 60px rgba(0,0,0,.56),0 0 28px color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 24%,transparent)!important;
+}
+html[data-nyx-theme] body .nyx-account-menu>*:not(.nyx-account-menu-profile-effect){
+  position:relative;
+  z-index:1;
+}
+html[data-nyx-theme] body .nyx-account-menu-profile{
+  background:linear-gradient(155deg,color-mix(in srgb,var(--nyx-account-primary,#5865f2) 48%,#111214),color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 34%,#111214) 62%,color-mix(in srgb,var(--nyx-account-primary,#5865f2) 22%,#111214))!important;
+}
+html[data-nyx-theme] body .nyx-account-menu-avatar{
+  border-color:color-mix(in srgb,var(--nyx-account-primary,#5865f2) 42%,#111214)!important;
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 74%,transparent),0 8px 22px rgba(0,0,0,.4);
+}
+html[data-nyx-theme] body .nyx-account-menu-status{
+  border-color:color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 42%,transparent)!important;
+  background:color-mix(in srgb,var(--nyx-account-primary,#5865f2) 24%,#1e1f22)!important;
+}
+html[data-nyx-theme] body .nyx-account-menu-group{
+  border:1px solid color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 27%,rgba(255,255,255,.06));
+  background:linear-gradient(145deg,color-mix(in srgb,var(--nyx-account-primary,#5865f2) 20%,#1e1f22),color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 15%,#1e1f22))!important;
+}
+html[data-nyx-theme] body .nyx-account-menu-group button svg{
+  color:color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 68%,#fff)!important;
+}
+html[data-nyx-theme] body .nyx-account-menu-group button:is(:hover,:focus-visible){
+  background:linear-gradient(90deg,color-mix(in srgb,var(--nyx-account-primary,#5865f2) 32%,#35373c),color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 24%,#35373c))!important;
+}
+html[data-nyx-theme] body .nyx-account-menu-group hr{
+  background:color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 32%,#3f4147)!important;
+}
+html[data-nyx-theme] body .nyx-account-menu-profile-effect{
+  position:absolute!important;
+  z-index:3!important;
+  inset:0!important;
+  border-radius:inherit;
+}
+
+.nyx-user-profile-effect-custom .nyx-user-profile-effect{
+  display:block!important;
+  opacity:var(--nyx-custom-effect-opacity,.7)!important;
+  mix-blend-mode:screen;
+}
+.nyx-user-profile-effect-custom.nyx-user-profile-custom-starfield .nyx-user-profile-effect{
+  background-image:
+    radial-gradient(circle,var(--nyx-custom-effect-primary,#fff) 0 1.8px,transparent 2.7px),
+    radial-gradient(circle,var(--nyx-custom-effect-secondary,#8ea1ff) 0 1.2px,transparent 2.2px),
+    radial-gradient(circle,color-mix(in srgb,var(--nyx-custom-effect-primary,#fff) 70%,var(--nyx-custom-effect-secondary,#8ea1ff)) 0 2.2px,transparent 3.2px);
+  background-size:93px 117px,147px 173px,211px 239px;
+  filter:drop-shadow(0 0 5px var(--nyx-custom-effect-secondary,#8ea1ff));
+  animation:nyx-custom-effect-starfield var(--nyx-custom-effect-duration,7s) linear infinite!important;
+}
+.nyx-user-profile-effect-custom.nyx-user-profile-custom-aurora .nyx-user-profile-effect{
+  background:linear-gradient(118deg,transparent 8%,color-mix(in srgb,var(--nyx-custom-effect-primary,#fff) 72%,transparent) 30%,transparent 49%,color-mix(in srgb,var(--nyx-custom-effect-secondary,#8ea1ff) 76%,transparent) 69%,transparent 92%);
+  background-size:240% 100%;
+  filter:blur(4px) saturate(1.25);
+  animation:nyx-custom-effect-aurora var(--nyx-custom-effect-duration,7s) ease-in-out infinite!important;
+}
+.nyx-user-profile-effect-custom.nyx-user-profile-custom-comets .nyx-user-profile-effect{
+  background-image:
+    linear-gradient(138deg,transparent 44%,var(--nyx-custom-effect-primary,#fff) 48%,transparent 52%),
+    linear-gradient(138deg,transparent 45%,var(--nyx-custom-effect-secondary,#8ea1ff) 49%,transparent 53%);
+  background-size:170px 210px,270px 310px;
+  background-position:30px -250px,190px -390px;
+  filter:drop-shadow(-5px 5px 5px var(--nyx-custom-effect-secondary,#8ea1ff));
+  animation:nyx-custom-effect-comets var(--nyx-custom-effect-duration,7s) linear infinite!important;
+}
+.nyx-user-profile-effect-custom.nyx-user-profile-custom-grid .nyx-user-profile-effect{
+  background-image:
+    linear-gradient(color-mix(in srgb,var(--nyx-custom-effect-secondary,#8ea1ff) 78%,transparent) 1px,transparent 1px),
+    linear-gradient(90deg,color-mix(in srgb,var(--nyx-custom-effect-primary,#fff) 72%,transparent) 1px,transparent 1px),
+    linear-gradient(180deg,transparent 20%,color-mix(in srgb,var(--nyx-custom-effect-secondary,#8ea1ff) 24%,transparent));
+  background-size:32px 32px,32px 32px,100% 100%;
+  filter:drop-shadow(0 0 5px var(--nyx-custom-effect-secondary,#8ea1ff));
+  animation:nyx-custom-effect-grid var(--nyx-custom-effect-duration,7s) linear infinite!important;
+}
+@keyframes nyx-custom-effect-starfield{to{background-position:93px -117px,-147px -173px,211px -239px}}
+@keyframes nyx-custom-effect-aurora{0%,100%{background-position:0 0}50%{background-position:100% 0}}
+@keyframes nyx-custom-effect-comets{to{background-position:-410px 420px,-520px 510px}}
+@keyframes nyx-custom-effect-grid{to{background-position:0 64px,64px 0,0 0}}
+
+html[data-nyx-theme] body .nyx-profile-custom-effect-builder{
+  display:grid;
+  grid-column:1/-1;
+  gap:9px;
+}
+html[data-nyx-theme] body .nyx-profile-custom-effect-builder>[data-nyx-custom-effect-create]{
+  width:100%;
+  min-height:38px;
+  border:1px solid color-mix(in srgb,var(--theme-accent,#5865f2) 56%,#35373c);
+  border-radius:8px;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--theme-accent,#5865f2) 22%,#1e1f22),color-mix(in srgb,var(--theme-bright,#8ea1ff) 14%,#1e1f22));
+  color:#f2f3f5;
+  font:700 11px/1 "Outfit","Segoe UI",sans-serif;
+  cursor:pointer;
+}
+html[data-nyx-theme] body .nyx-profile-custom-effect-builder>[data-nyx-custom-effect-create].active{
+  border-color:var(--theme-accent,#5865f2);
+  color:#fff;
+  box-shadow:inset 0 0 18px color-mix(in srgb,var(--theme-accent,#5865f2) 18%,transparent);
+}
+html[data-nyx-theme] body .nyx-profile-custom-effect-controls{
+  display:grid;
+  gap:10px;
+  padding:11px;
+  border:1px solid #35373c;
+  border-radius:9px;
+  background:#17181c;
+}
+html[data-nyx-theme] body .nyx-profile-custom-effect-controls[hidden]{display:none!important}
+html[data-nyx-theme] body .nyx-profile-custom-effect-controls label{
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:center;
+  gap:5px 9px;
+  color:#b5bac1!important;
+  -webkit-text-fill-color:#b5bac1!important;
+  font-size:10px!important;
+  font-weight:700;
+}
+html[data-nyx-theme] body .nyx-profile-custom-effect-controls :is(select,input[type="color"],input[type="range"]){
+  grid-column:1/-1;
+  width:100%;
+  box-sizing:border-box;
+}
+html[data-nyx-theme] body .nyx-profile-custom-effect-controls select{
+  min-height:34px;
+  border:1px solid #35373c;
+  border-radius:7px;
+  background:#1e1f22;
+  color:#f2f3f5;
+  padding:5px 8px;
+}
+html[data-nyx-theme] body .nyx-profile-custom-effect-controls input[type="color"]{
+  height:34px;
+  padding:3px;
+  border:1px solid #35373c;
+  border-radius:7px;
+  background:#1e1f22;
+}
+html[data-nyx-theme] body .nyx-profile-custom-effect-controls output{
+  color:#f2f3f5;
+  font-size:10px;
+}
+html[data-nyx-theme] body .nyx-profile-custom-effect-controls small{
+  grid-column:1/-1;
+  color:#949ba4!important;
+  -webkit-text-fill-color:#949ba4!important;
+  font-size:9px!important;
 }
 
 /* Profile interaction polish: compact controls, uncropped media, and one edit affordance. */

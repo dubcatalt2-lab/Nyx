@@ -30,10 +30,10 @@
 })();
 </script>
 <script src="startup.js?v=20260726-chromebook-layout-1"></script>
-<link rel="stylesheet" href="styles.css?v=20260729-profile-effects-v50">
+<link rel="stylesheet" href="styles.css?v=20260729-owner-dashboard-v53">
 <style>
 html.nyx-studyhub-starting,html.nyx-studyhub-starting body{overflow:hidden!important}
-#nyxStudyHubStartup{position:fixed;z-index:2147483647;inset:0;display:block;width:100vw;height:100dvh;border:0;background:#f2eee4;opacity:1;transition:opacity .35s ease;isolation:isolate}
+#nyxStudyHubStartup{position:fixed;z-index:2147483647;inset:0;display:block;width:100vw;height:100dvh;border:0;background:#f2eee4;opacity:1;pointer-events:auto!important;transition:opacity .35s ease;isolation:isolate}
 #nyxStudyHubStartup.is-leaving{opacity:0;pointer-events:none}
 @media(prefers-reduced-motion:reduce){#nyxStudyHubStartup{transition:none}}
 </style>
@@ -41,19 +41,36 @@ html.nyx-studyhub-starting,html.nyx-studyhub-starting body{overflow:hidden!impor
 </head>
 <body>
 <!-- //ten-second-studyhub-startup -->
-<iframe id="nyxStudyHubStartup" src="startup-studyhub.html" title="StudyHub startup screen" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe>
+<iframe id="nyxStudyHubStartup" src="startup-studyhub.html?v=20260729-interactive-v2" title="StudyHub startup screen" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe>
 <script>
 (() => {
   const splash=document.getElementById('nyxStudyHubStartup');
   const root=document.documentElement;
-  const revealTimer=setTimeout(()=>splash?.classList.add('is-leaving'),9650);
-  const removeTimer=setTimeout(()=>{
+  let revealTimer=0;
+  let removeTimer=0;
+  let finished=false;
+  const removeSplash=()=>{
     splash?.remove();
     root.classList.remove('nyx-studyhub-starting');
-  },10000);
+  };
+  const finishSplash=(duration=350)=>{
+    if(finished)return;
+    finished=true;
+    clearTimeout(revealTimer);
+    clearTimeout(removeTimer);
+    splash?.classList.add('is-leaving');
+    removeTimer=setTimeout(removeSplash,duration);
+  };
+  revealTimer=setTimeout(()=>finishSplash(350),9650);
+  const onMessage=event=>{
+    if(event.source!==splash?.contentWindow||event.data?.type!=='nyx-studyhub')return;
+    if(event.data.action==='enter')finishSplash(350);
+  };
+  addEventListener('message',onMessage);
   addEventListener('pagehide',()=>{
     clearTimeout(revealTimer);
     clearTimeout(removeTimer);
+    removeEventListener('message',onMessage);
   },{once:true});
 })();
 </script>
@@ -345,6 +362,7 @@ html.nyx-studyhub-starting,html.nyx-studyhub-starting body{overflow:hidden!impor
 <script src="/runtime-config.js"></script>
 <script src="js/loading-screen.js?v=20260727-background-progress-v10"></script>
 <script src="js/pwa-install.js?v=20260727-install-nyx-v1"></script>
-<script src="script.js?v=20260729-profile-effects-v75"></script>
+<script src="js/owner-dashboard.js?v=20260729-owner-dashboard-v1"></script>
+<script src="script.js?v=20260729-owner-dashboard-v78"></script>
 </body>
 </html>

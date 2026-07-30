@@ -440,6 +440,75 @@ html body:is(body,#nyx-weather-specificity) .weather-panel-head{margin-bottom:7p
 html body:is(body,#nyx-weather-specificity) .weather-panel-title{font-size:12px!important;letter-spacing:.04em!important}
 html body:is(body,#nyx-weather-specificity) .weather-head-actions{gap:6px!important}
 html body:is(body,#nyx-weather-specificity) .weather-icon-btn{width:34px!important;height:34px!important}
+
+/* Weather conditions use local vector symbols instead of operating-system
+   emoji fonts, which keeps every WMO state visible on Windows and ChromeOS. */
+html body .nyx-weather-symbol{
+  display:block!important;
+  width:1em!important;
+  height:1em!important;
+  overflow:visible!important;
+}
+html body .nyx-weather-symbol :is(.nyx-weather-sun-ray,.nyx-weather-detail,.nyx-weather-rain,.nyx-weather-snow){
+  fill:none!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+}
+html body .nyx-weather-sun-fill{
+  fill:#f7bd43!important;
+  stroke:#ffd978!important;
+  stroke-width:.8!important;
+}
+html body .nyx-weather-sun-ray{
+  stroke:#f7bd43!important;
+  stroke-width:1.7!important;
+}
+html body .nyx-weather-cloud-fill{
+  fill:color-mix(in srgb,var(--weather-text,#eef3fa) 88%,var(--weather-accent,#7aa2d8))!important;
+  stroke:color-mix(in srgb,var(--weather-muted,#9caec4) 76%,var(--weather-accent,#7aa2d8))!important;
+  stroke-width:.85!important;
+}
+html body .nyx-weather-moon-fill{
+  fill:#d9ddff!important;
+  stroke:#aeb7ef!important;
+  stroke-width:.85!important;
+}
+html body .nyx-weather-detail{
+  stroke:var(--weather-muted,#9caec4)!important;
+  stroke-width:1.45!important;
+}
+html body .nyx-weather-rain{
+  stroke:#6eb6f2!important;
+  stroke-width:1.65!important;
+}
+html body .nyx-weather-snow{
+  stroke:#b9e6ff!important;
+  stroke-width:1.25!important;
+}
+html body .nyx-weather-bolt{
+  fill:#ffd45f!important;
+  stroke:#f0ae2d!important;
+  stroke-width:.65!important;
+  stroke-linejoin:round!important;
+}
+html body:is(body,#nyx-weather-specificity) .weather-glyph .nyx-weather-symbol{
+  width:44px!important;
+  height:44px!important;
+}
+html body:is(body,#nyx-weather-specificity) .weather-forecast-symbol{
+  display:grid!important;
+  width:20px!important;
+  height:20px!important;
+  place-items:center!important;
+}
+html body:is(body,#nyx-weather-specificity) .weather-forecast-symbol .nyx-weather-symbol{
+  width:20px!important;
+  height:20px!important;
+}
+html body .browser-window .browser-home .nyx-home-weather-icon .nyx-weather-symbol{
+  width:23px!important;
+  height:23px!important;
+}
 html body:is(body,#nyx-weather-specificity) .weather-search{grid-template-columns:minmax(0,1fr) 36px!important;margin-bottom:7px!important}
 html body:is(body,#nyx-weather-specificity) .weather-search-box,
 html body:is(body,#nyx-weather-specificity) .weather-search > button{min-height:36px!important;height:36px!important}

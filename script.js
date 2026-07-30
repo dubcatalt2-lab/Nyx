@@ -423,7 +423,7 @@
     const close=()=>overlay.remove();
     overlay.addEventListener('click',event=>{if(event.target.closest('[data-close-nyx-account]')){close();return}const tab=event.target.closest('[data-nyx-account-tab]');if(tab){mode=tab.dataset.nyxAccountTab;update()}});
     overlay.addEventListener('keydown',event=>{if(event.key==='Escape')close()});
-    form.addEventListener('submit',async event=>{event.preventDefault();const values=new FormData(form);const rawIdentifier=String(values.get('username')||'').trim();const username=nyxAccountUsername(rawIdentifier);const passwordValue=String(values.get('password')||'');const error=form.querySelector('.nyx-founder-editor-error');if(mode==='register'&&(username.length<3||username!==rawIdentifier.toLowerCase())){error.textContent='Use 3–32 letters, numbers, dots, dashes, or underscores.';return}if(mode==='signin'&&rawIdentifier.length<3){error.textContent='Enter your username or email.';return}submit.disabled=true;error.textContent='';try{const {createUserWithEmailAndPassword,signInWithCustomToken}=await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js');if(mode==='register'){await createUserWithEmailAndPassword(nyxFounderFirebaseAuth,nyxAccountEmail(username),passwordValue)}else{const response=await fetch('/api/account/sign-in',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:rawIdentifier,password:passwordValue})});const data=await response.json().catch(()=>({}));if(!response.ok)throw Object.assign(new Error(data.error||'Sign-in failed.'),{code:'nyx/sign-in'});await signInWithCustomToken(nyxFounderFirebaseAuth,data.customToken)}await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile()]);close();toast(mode==='register'?'Nyx profile created':'Signed in')}catch(authError){const code=String(authError?.code||'');error.textContent=code==='auth/email-already-in-use'?'That username is already taken.':code==='auth/weak-password'?'Choose a password with at least 8 characters.':authError?.message||'Account could not be completed. Try again.';submit.disabled=false}});
+    form.addEventListener('submit',async event=>{event.preventDefault();const values=new FormData(form);const rawIdentifier=String(values.get('username')||'').trim();const username=nyxAccountUsername(rawIdentifier.replace(/^@+/,''));const passwordValue=String(values.get('password')||'');const error=form.querySelector('.nyx-founder-editor-error');if(mode==='register'&&(username.length<3||username!==rawIdentifier.toLowerCase().replace(/^@+/,''))){error.textContent='Use 3–32 letters, numbers, dots, dashes, or underscores.';return}if(mode==='signin'&&rawIdentifier.length<3){error.textContent='Enter your username or email.';return}submit.disabled=true;error.textContent='';try{const {signInWithCustomToken}=await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js');const endpoint=mode==='register'?'/api/account/register':'/api/account/sign-in';const payload=mode==='register'?{username,password:passwordValue}:{identifier:rawIdentifier,password:passwordValue};const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await response.json().catch(()=>({}));if(!response.ok)throw Object.assign(new Error(data.error||(mode==='register'?'Account creation failed.':'Sign-in failed.')),{code:'nyx/account'});await signInWithCustomToken(nyxFounderFirebaseAuth,data.customToken);await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile()]);close();toast(mode==='register'?'Nyx profile created':'Signed in')}catch(authError){error.textContent=authError?.message||'Account could not be completed. Try again.';submit.disabled=false}});
     setTimeout(()=>form.querySelector('[name="username"]')?.focus(),0);
   }
   async function signOutFounderOwner(){
@@ -625,7 +625,82 @@
     overlay.addEventListener('click',async event=>{if(event.target===overlay||event.target.closest('[data-close-nyx-profile]')){close();return}const action=event.target.closest('[data-nyx-profile-action]')?.dataset.nyxProfileAction;if(!action)return;if(action==='status'){const field=overlay.querySelector('[name="status"]');field?.scrollIntoView({block:'center',behavior:'smooth'});field?.focus();try{field?.showPicker?.()}catch{}return}if(action==='custom-status'){const field=overlay.querySelector('[name="customStatus"]');field?.scrollIntoView({block:'center',behavior:'smooth'});field?.focus();field?.select();return}if(action==='switch-account'){close();await signOutFounderOwner();await openNyxAccountAccess()}});
     const form=overlay.querySelector('form');
     const pendingMediaPreparations=new Map();
-    form.insertAdjacentHTML('afterbegin','<header class="nyx-profile-rail-header"><button type="button" aria-label="Current profile"><span>Main Profile</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></button><b aria-hidden="true">&#187;</b></header>');
+    form.insertAdjacentHTML('afterbegin',`<header class="nyx-profile-rail-header">
+      <button type="button" data-nyx-profile-switch-toggle aria-haspopup="menu" aria-expanded="false">
+        <span>Main Profile</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>
+      </button>
+      <section class="nyx-profile-switch-menu" data-nyx-profile-switch-menu role="menu" aria-label="Profile options" hidden>
+        <div class="nyx-profile-switch-current">
+          <span class="nyx-profile-switch-avatar">${profile.avatarUrl?`<img src="${esc(profile.avatarUrl)}" alt="">`:`<b>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</b>`}</span>
+          <span><strong>${esc(profile.displayName)}</strong><small>${esc(profile.handle)}</small></span>
+          <i aria-hidden="true"></i>
+        </div>
+        <button type="button" role="menuitem" data-nyx-switch-profile>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 4 4-4 4"/><path d="M20 7H9a4 4 0 0 0-4 4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h11a4 4 0 0 0 4-4"/></svg>
+          <span><strong>Switch Profile</strong><small>Sign in to another Nyx profile</small></span>
+        </button>
+        <div class="nyx-profile-switch-confirm" data-nyx-profile-switch-confirm hidden>
+          <strong>Discard unsaved changes?</strong>
+          <p>Your current profile edits have not been saved.</p>
+          <div><button type="button" data-nyx-switch-stay>Keep editing</button><button type="button" data-nyx-switch-discard>Discard &amp; switch</button></div>
+        </div>
+      </section>
+    </header>`);
+    const profileSwitchToggle=form.querySelector('[data-nyx-profile-switch-toggle]');
+    const profileSwitchMenu=form.querySelector('[data-nyx-profile-switch-menu]');
+    const profileSwitchConfirm=form.querySelector('[data-nyx-profile-switch-confirm]');
+    const setProfileSwitchMenu=open=>{
+      profileSwitchMenu.hidden=!open;
+      profileSwitchToggle.setAttribute('aria-expanded',String(open));
+      profileSwitchToggle.classList.toggle('active',open);
+      if(!open){
+        profileSwitchConfirm.hidden=true;
+        form.querySelector('[data-nyx-switch-profile]').hidden=false;
+      }
+    };
+    const performProfileSwitch=async()=>{
+      setProfileSwitchMenu(false);
+      close();
+      await new Promise(resolve=>setTimeout(resolve,250));
+      await signOutFounderOwner();
+      await openNyxAccountAccess();
+    };
+    profileSwitchToggle.addEventListener('click',event=>{
+      event.stopPropagation();
+      setProfileSwitchMenu(profileSwitchMenu.hidden);
+      if(!profileSwitchMenu.hidden)setTimeout(()=>profileSwitchMenu.querySelector('[role="menuitem"]')?.focus(),0);
+    });
+    profileSwitchMenu.addEventListener('click',event=>{
+      event.stopPropagation();
+      if(event.target.closest('[data-nyx-switch-profile]')){
+        if(form.classList.contains('is-dirty')){
+          form.querySelector('[data-nyx-switch-profile]').hidden=true;
+          profileSwitchConfirm.hidden=false;
+          setTimeout(()=>profileSwitchConfirm.querySelector('button')?.focus(),0);
+        }else{
+          void performProfileSwitch();
+        }
+        return;
+      }
+      if(event.target.closest('[data-nyx-switch-stay]')){
+        profileSwitchConfirm.hidden=true;
+        form.querySelector('[data-nyx-switch-profile]').hidden=false;
+        profileSwitchToggle.focus();
+        return;
+      }
+      if(event.target.closest('[data-nyx-switch-discard]')) void performProfileSwitch();
+    });
+    overlay.addEventListener('click',event=>{
+      if(!profileSwitchMenu.hidden&&!event.target.closest('.nyx-profile-rail-header'))setProfileSwitchMenu(false);
+    });
+    profileSwitchMenu.addEventListener('keydown',event=>{
+      if(event.key==='Escape'){
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        setProfileSwitchMenu(false);
+        profileSwitchToggle.focus();
+      }
+    });
     const railSections=Array.from(form.querySelectorAll('.nyx-profile-editor-section'));
     if(railSections[0]) railSections[0].querySelector('h4').textContent='Nameplate';
     if(railSections[1]) railSections[1].querySelector('h4').textContent='Avatar & Decoration';
@@ -6098,7 +6173,7 @@
   }
   function browserBody(){
     const presenceText=nyxPresenceCount===null ? 'Connecting\u2026' : `${nyxPresenceCount} online`;
-    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence${nyxFounderIsOwner?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="button" tabindex="${nyxFounderIsOwner?'0':'-1'}" aria-live="polite" aria-label="${nyxFounderIsOwner?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><button class="nyx-home-weather" data-home-weather data-open="weather" type="button" aria-label="Open weather report"><span class="nyx-home-weather-icon" data-home-weather-icon aria-hidden="true">🌤️</span><strong data-home-weather-temp>--°</strong><span data-home-weather-desc>Loading</span></button><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1><form class="browser-blank-search nyx-home-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Search the web or enter a URL" placeholder="Search the web..." autocomplete="off" spellcheck="false"></form><nav class="nyx-home-actions" aria-label="Nyx home"><button data-open="apps" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-apps" aria-hidden="true"></span><span>Apps</span></button><button data-app-url="https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-study" aria-hidden="true"></span><span>Study</span></button><button data-open-nyx-profile-entry data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-profile" aria-hidden="true"></span><span>Profile</span></button><button data-open="settings" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-settings" aria-hidden="true"></span><span>Settings</span></button></nav></main><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div><a class="nyx-home-link-checker" data-app-url="/apps/link-checker/" href="/apps/link-checker/">Link Checker</a><nav class="nyx-home-utility-links" aria-label="Nyx information and tools"><a data-app-url="/apps/link-generator/" href="/apps/link-generator/">Link Generator</a><a data-open="terms" href="nyx://terms">Terms Of Service</a><a data-open="developer" href="nyx://developer">Developer Console</a><a data-open="about" href="nyx://about">About Us</a></nav></div></div>`;
+    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence${nyxFounderIsOwner?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="button" tabindex="${nyxFounderIsOwner?'0':'-1'}" aria-live="polite" aria-label="${nyxFounderIsOwner?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><button class="nyx-home-weather" data-home-weather data-open="weather" type="button" aria-label="Open weather report"><span class="nyx-home-weather-icon" data-home-weather-icon aria-hidden="true"><svg class="nyx-weather-symbol nyx-weather-symbol-partly-cloudy" viewBox="0 0 24 24" focusable="false"><circle class="nyx-weather-sun-fill" cx="8" cy="8" r="3.2"/><path class="nyx-weather-sun-ray" d="M8 2.3v1.4M3.97 3.97l1 1M2.3 8h1.4M12.03 3.97l-1 1M13.7 8h-1.4"/><path class="nyx-weather-cloud-fill" d="M7.2 19h10a4 4 0 0 0 .45-7.98A5.55 5.55 0 0 0 7.08 12.6 3.2 3.2 0 0 0 7.2 19Z"/></svg></span><strong data-home-weather-temp>--°</strong><span data-home-weather-desc>Loading</span></button><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1><form class="browser-blank-search nyx-home-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Search the web or enter a URL" placeholder="Search the web..." autocomplete="off" spellcheck="false"></form><nav class="nyx-home-actions" aria-label="Nyx home"><button data-open="apps" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-apps" aria-hidden="true"></span><span>Apps</span></button><button data-app-url="https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-study" aria-hidden="true"></span><span>Study</span></button><button data-open-nyx-profile-entry data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-profile" aria-hidden="true"></span><span>Profile</span></button><button data-open="settings" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-settings" aria-hidden="true"></span><span>Settings</span></button></nav></main><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div><a class="nyx-home-link-checker" data-app-url="/apps/link-checker/" href="/apps/link-checker/">Link Checker</a><nav class="nyx-home-utility-links" aria-label="Nyx information and tools"><a data-app-url="/apps/link-generator/" href="/apps/link-generator/">Link Generator</a><a data-open="terms" href="nyx://terms">Terms Of Service</a><a data-open="developer" href="nyx://developer">Developer Console</a><a data-open="about" href="nyx://about">About Us</a></nav></div></div>`;
   }
   //apps-grid
   const defaultHomeShortcuts=[
@@ -8801,9 +8876,30 @@
   }
   function weatherIcon(code,isDay=true){
     const value=Number(code);
-    if(!isDay && [0,1].includes(value)) return '\uD83C\uDF19';
-    const icons={0:'\u2600\uFE0F',1:'\uD83C\uDF24\uFE0F',2:'\u26C5',3:'\u2601\uFE0F',45:'\uD83C\uDF2B\uFE0F',48:'\uD83C\uDF2B\uFE0F',51:'\uD83C\uDF26\uFE0F',53:'\uD83C\uDF26\uFE0F',55:'\uD83C\uDF27\uFE0F',56:'\uD83C\uDF27\uFE0F',57:'\uD83C\uDF27\uFE0F',61:'\uD83C\uDF26\uFE0F',63:'\uD83C\uDF27\uFE0F',65:'\uD83C\uDF27\uFE0F',66:'\uD83C\uDF27\uFE0F',67:'\uD83C\uDF27\uFE0F',71:'\uD83C\uDF28\uFE0F',73:'\uD83C\uDF28\uFE0F',75:'\u2744\uFE0F',77:'\uD83C\uDF28\uFE0F',80:'\uD83C\uDF26\uFE0F',81:'\uD83C\uDF27\uFE0F',82:'\u26C8\uFE0F',85:'\uD83C\uDF28\uFE0F',86:'\u2744\uFE0F',95:'\u26C8\uFE0F',96:'\u26C8\uFE0F',99:'\u26C8\uFE0F'};
-    return icons[value] || '\uD83C\uDF21\uFE0F';
+    const svg=(kind,content)=>`<svg class="nyx-weather-symbol nyx-weather-symbol-${kind}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${content}</svg>`;
+    const sun='<circle class="nyx-weather-sun-fill" cx="12" cy="12" r="4"/><path class="nyx-weather-sun-ray" d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"/>';
+    const cloud='<path class="nyx-weather-cloud-fill" d="M6.4 18.2h10.3a4.25 4.25 0 0 0 .5-8.47 6.05 6.05 0 0 0-11.55 1.83A3.38 3.38 0 0 0 6.4 18.2Z"/>';
+    if(!isDay && [0,1,2].includes(value)){
+      return svg('moon','<path class="nyx-weather-moon-fill" d="M18.7 15.45A7.4 7.4 0 0 1 8.55 5.3a7.7 7.7 0 1 0 10.15 10.15Z"/>');
+    }
+    if(value===0) return svg('sun',sun);
+    if([1,2].includes(value)){
+      return svg('partly-cloudy','<circle class="nyx-weather-sun-fill" cx="8" cy="8" r="3.2"/><path class="nyx-weather-sun-ray" d="M8 2.3v1.4M3.97 3.97l1 1M2.3 8h1.4M12.03 3.97l-1 1M13.7 8h-1.4"/><path class="nyx-weather-cloud-fill" d="M7.2 19h10a4 4 0 0 0 .45-7.98A5.55 5.55 0 0 0 7.08 12.6 3.2 3.2 0 0 0 7.2 19Z"/>');
+    }
+    if(value===3) return svg('cloud',cloud);
+    if([45,48].includes(value)){
+      return svg('fog',`${cloud}<path class="nyx-weather-detail" d="M4 20.5h13M7 23h12"/>`);
+    }
+    if([71,73,75,77,85,86].includes(value)){
+      return svg('snow',`${cloud}<path class="nyx-weather-snow" d="M8 19.7v3M6.7 20.45l2.6 1.5M9.3 20.45l-2.6 1.5M15.5 19.7v3M14.2 20.45l2.6 1.5M16.8 20.45l-2.6 1.5"/>`);
+    }
+    if([95,96,99].includes(value)){
+      return svg('storm',`${cloud}<path class="nyx-weather-bolt" d="m12.5 18.4-2.1 3.4h2l-1 2.2 4-4.3h-2.3l1.4-1.3Z"/>`);
+    }
+    if([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(value)){
+      return svg('rain',`${cloud}<path class="nyx-weather-rain" d="m8 19.8-1 2M12.5 19.8l-1 2M17 19.8l-1 2"/>`);
+    }
+    return svg('cloud',cloud);
   }
   function forecastDayLabel(dateText,index){
     if(index===0) return 'Today';
@@ -8828,7 +8924,7 @@
       const low=Math.round(daily.temperature_2m_min?.[index] ?? 0);
       return `<div class="weather-forecast-row" title="${esc(weatherDescription(code))}">
         <span class="weather-day">${esc(forecastDayLabel(day,index))}</span>
-        <span aria-hidden="true">${weatherIcon(code,true)}</span>
+        <span class="weather-forecast-symbol" aria-hidden="true">${weatherIcon(code,true)}</span>
         <span class="weather-rain-chance">${rain}%</span>
         <span class="weather-high-low">${high}&deg; <span>${low}&deg;</span></span>
       </div>`;
@@ -8846,13 +8942,13 @@
       if(snapshot){
         const summary=weatherDescription(snapshot.weather_code);
         const degrees=`${Math.round(snapshot.temperature_2m)}°`;
-        if(icon) icon.textContent=weatherIcon(snapshot.weather_code,snapshot.is_day!==0);
+        if(icon) icon.innerHTML=weatherIcon(snapshot.weather_code,snapshot.is_day!==0);
         if(temp) temp.textContent=degrees;
         if(desc) desc.textContent=summary;
         widget.setAttribute('aria-label',`Open weather report. ${degrees}, ${summary}`);
         widget.dataset.loaded='true';
       }else{
-        if(icon) icon.textContent='🌤️';
+        if(icon) icon.innerHTML=weatherIcon(1,true);
         if(temp) temp.textContent='--°';
         if(desc) desc.textContent='Loading';
         widget.setAttribute('aria-label','Open weather report');
@@ -8900,7 +8996,7 @@
     panel.querySelector('[data-weather-temp]').innerHTML=Math.round(data.temperature_2m)+'&deg;';
     panel.querySelector('[data-weather-place]').textContent=place || 'Weather';
     panel.querySelector('[data-weather-desc]').textContent=weatherDescription(data.weather_code);
-    panel.querySelector('[data-weather-icon]').textContent=weatherIcon(data.weather_code,data.is_day!==0);
+    panel.querySelector('[data-weather-icon]').innerHTML=weatherIcon(data.weather_code,data.is_day!==0);
     panel.querySelector('[data-weather-feels]').innerHTML=Math.round(data.apparent_temperature ?? data.temperature_2m)+'&deg;';
     panel.querySelector('[data-weather-wind]').textContent=Math.round(data.wind_speed_10m)+' mph';
     panel.querySelector('[data-weather-humidity]').textContent=Math.round(data.relative_humidity_2m)+'%';
@@ -11558,7 +11654,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
       if(chat) chat.innerHTML='<div class="lion-ai-msg bot">Hi. Pick a model and ask me anything.</div>';
     });
     document.addEventListener('keydown',e=>{
-      if(nyxFounderIsOwner&&(e.key==='Enter'||e.key===' ')&&e.target.closest?.('[data-nyx-owner-presence]')){
+      if(nyxFounderIsOwner&&(e.key==='Enter'||e.key===' ')&&e.target.closest?.('[data-nyx-owner-presence]')&&!e.target.closest?.('[data-toggle-nyx-account-menu]')){
         e.preventDefault();
         openNyxOwnerDashboard();
         return;
@@ -11622,18 +11718,18 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
       }catch{}
     });
     document.addEventListener('click',async e=>{
-      const ownerPresence=e.target.closest?.('[data-nyx-owner-presence]');
-      if(ownerPresence&&nyxFounderIsOwner){
-        e.preventDefault();
-        openNyxOwnerDashboard();
-        return;
-      }
       const accountToggle=e.target.closest?.('[data-toggle-nyx-account-menu]');
       if(accountToggle){
         e.preventDefault();
         e.stopPropagation();
         if(nyxFounderSignedInUser) toggleNyxAccountMenu(accountToggle);
         else openNyxAccountAccess();
+        return;
+      }
+      const ownerPresence=e.target.closest?.('[data-nyx-owner-presence]');
+      if(ownerPresence&&nyxFounderIsOwner){
+        e.preventDefault();
+        openNyxOwnerDashboard();
         return;
       }
       const accountMenuAction=e.target.closest?.('[data-nyx-account-menu-action]')?.dataset.nyxAccountMenuAction;

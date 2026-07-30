@@ -30,7 +30,7 @@
 })();
 </script>
 <script src="startup.js?v=20260726-chromebook-layout-1"></script>
-<link rel="stylesheet" href="styles.css?v=20260730-account-security-v57">
+<link rel="stylesheet" href="styles.css?v=20260730-profile-switch-v60">
 <style>
 html.nyx-studyhub-starting,html.nyx-studyhub-starting body{overflow:hidden!important}
 #nyxStudyHubStartup{position:fixed;z-index:2147483647;inset:0;display:block;width:100vw;height:100dvh;border:0;background:#f2eee4;opacity:1;pointer-events:auto!important;transition:opacity .35s ease;isolation:isolate}
@@ -42,7 +42,7 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
 </head>
 <body>
 <!-- //math-gated-studyhub-startup -->
-<iframe id="nyxStudyHubStartup" src="startup-studyhub.html?v=20260730-math-gate-v8" title="StudyHub startup math question" tabindex="0" referrerpolicy="no-referrer"></iframe>
+  <iframe id="nyxStudyHubStartup" src="startup-studyhub.html?v=20260730-math-lessons-v9" title="StudyHub startup math question" tabindex="0" referrerpolicy="no-referrer"></iframe>
 <script>
 (() => {
   const splash=document.getElementById('nyxStudyHubStartup');
@@ -318,7 +318,7 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
     <select class="weather-options" data-weather-options hidden aria-label="Select matching location"></select>
     <div class="weather-current">
       <div class="weather-now">
-        <div class="weather-glyph" data-weather-icon aria-hidden="true">☁️</div>
+        <div class="weather-glyph" data-weather-icon aria-hidden="true"><svg class="nyx-weather-symbol nyx-weather-symbol-cloud" viewBox="0 0 24 24" focusable="false"><path class="nyx-weather-cloud-fill" d="M6.4 18.2h10.3a4.25 4.25 0 0 0 .5-8.47 6.05 6.05 0 0 0-11.55 1.83A3.38 3.38 0 0 0 6.4 18.2Z"/></svg></div>
         <div class="weather-temp-wrap">
           <div class="weather-temp" data-weather-temp>--&deg;</div>
           <div class="weather-desc" data-weather-desc>Loading weather...</div>
@@ -361,6 +361,6 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
 <script src="js/loading-screen.js?v=20260730-studyhub-input-v11"></script>
 <script src="js/pwa-install.js?v=20260727-install-nyx-v1"></script>
 <script src="js/owner-dashboard.js?v=20260730-account-security-v2"></script>
-<script src="script.js?v=20260730-account-security-v83"></script>
+<script src="script.js?v=20260730-profile-switch-v86"></script>
 </body>
 </html>

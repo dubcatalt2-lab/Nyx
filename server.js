@@ -59,8 +59,10 @@ const signedInOnlineWindowMs = 90_000;
 const userActivityEventWindowMs = 15 * 60_000;
 const userActivityEventTimes = new Map();
 const nyxAccountSignInAttempts = new Map();
+const nyxAccountRegisterAttempts = new Map();
 const nyxAccountSignInWindowMs = 15 * 60_000;
 const nyxAccountSignInMaxAttempts = 10;
+const nyxAccountRegisterMaxAttempts = 5;
 const ownerDashboardSnapshotTtlMs = 30_000;
 let ownerDashboardSnapshotCache = { expiresAt: 0, value: null, promise: null };
 const linkGeneratorAttempts = new Map();
@@ -2008,6 +2010,18 @@ function nyxAccountSignInRateState(clientId, now = Date.now()) {
   return state;
 }
 
+function nyxAccountRegisterRateState(clientId, now = Date.now()) {
+  for (const [key, state] of nyxAccountRegisterAttempts) {
+    if (now - state.windowStarted > nyxAccountSignInWindowMs) nyxAccountRegisterAttempts.delete(key);
+  }
+  let state = nyxAccountRegisterAttempts.get(clientId);
+  if (!state || now - state.windowStarted > nyxAccountSignInWindowMs) {
+    state = { attempts: 0, windowStarted: now };
+    nyxAccountRegisterAttempts.set(clientId, state);
+  }
+  return state;
+}
+
 function utcQuotaDay(now = new Date()) {
   return now.toISOString().slice(0, 10);
 }
@@ -2230,6 +2244,102 @@ async function bunnyRequest(path, apiKey, options = {}) {
   return payload;
 }
 
+app.post("/api/account/register", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  if (!firebaseAccountModeConfigured()) {
+    res.status(503).json({ error: "Nyx accounts are not configured." });
+    return;
+  }
+  const rateState = nyxAccountRegisterRateState(linkGeneratorClientId(req));
+  if (rateState.attempts >= nyxAccountRegisterMaxAttempts) {
+    res.status(429).json({ error: "Too many account creation attempts. Try again in a few minutes." });
+    return;
+  }
+  const rawUsername = String(req.body?.username || "").trim().toLowerCase().replace(/^@+/, "");
+  const username = nyxProfileUsername(rawUsername, "");
+  const password = String(req.body?.password || "");
+  if (!username || username !== rawUsername) {
+    res.status(400).json({ error: "Use 3–32 letters, numbers, dots, dashes, or underscores." });
+    return;
+  }
+  if (password.length < 8 || password.length > 256) {
+    res.status(400).json({ error: "Choose a password with at least 8 characters." });
+    return;
+  }
+  rateState.attempts += 1;
+  let createdUid = "";
+  try {
+    const firebase = await linkGeneratorFirebase();
+    const usernameRef = firebase.firestore.collection("nyxUsernames").doc(username);
+    const [usernameSnapshot, duplicateProfiles] = await Promise.all([
+      usernameRef.get(),
+      firebase.firestore.collection("nyxUserProfiles").where("profile.handle", "==", `@${username}`).limit(1).get()
+    ]);
+    if (usernameSnapshot.exists || !duplicateProfiles.empty) {
+      res.status(409).json({ error: "That username is already taken." });
+      return;
+    }
+    const email = `${username}@account.nyx.local`;
+    const account = await firebase.auth.createUser({
+      email,
+      password,
+      displayName: username,
+      emailVerified: false,
+      disabled: false
+    });
+    createdUid = account.uid;
+    const profileToken = { uid: account.uid, email, name: username, picture: "" };
+    const profile = normalizeNyxUserProfile({}, profileToken);
+    try {
+      await saveNyxProfileWithUsername(firebase, profileToken, profile, new Date().toISOString());
+    } catch (error) {
+      await firebase.auth.deleteUser(account.uid).catch(() => {});
+      createdUid = "";
+      throw error;
+    }
+    createdUid = "";
+    await firebase.firestore.collection("nyxUserAdministration").doc(account.uid).set({
+      role: "member",
+      disabled: false,
+      subscriptionStatus: "free",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }, { merge: true }).catch(error => {
+      console.warn("Nyx account defaults could not be stored:", error?.message || error);
+    });
+    await recordNyxAuditSafe(firebase, {
+      actorUid: account.uid,
+      actorEmail: email,
+      action: "account_created",
+      targetUid: account.uid,
+      targetEmail: email,
+      details: { username }
+    });
+    const customToken = await firebase.auth.createCustomToken(account.uid);
+    nyxAccountRegisterAttempts.delete(linkGeneratorClientId(req));
+    invalidateOwnerDashboardSnapshot();
+    res.status(201).json({ customToken });
+  } catch (error) {
+    const duplicate = error?.code === "auth/email-already-exists" || error?.status === 409;
+    const invalidPassword = error?.code === "auth/invalid-password";
+    if (createdUid) {
+      const firebase = await linkGeneratorFirebase().catch(() => null);
+      await firebase?.auth.deleteUser(createdUid).catch(() => {});
+    }
+    res.status(duplicate ? 409 : (invalidPassword ? 400 : (error.status || 503))).json({
+      error: duplicate
+        ? "That username is already taken."
+        : invalidPassword
+          ? "Choose a password with at least 8 characters."
+          : (error.message || "Account creation is temporarily unavailable.")
+    });
+  }
+});
+
 app.post("/api/account/sign-in", async (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) {
@@ -2256,14 +2366,15 @@ app.post("/api/account/sign-in", async (req, res) => {
     const firebase = await linkGeneratorFirebase();
     let authEmail = "";
     let expectedUid = "";
-    if (identifier.includes("@")) {
+    const usernameIdentifier = /^@[a-z0-9_.-]{3,32}$/i.test(identifier);
+    if (identifier.includes("@") && !usernameIdentifier) {
       authEmail = normalizeNyxAccountEmail(identifier);
       if (!authEmail) {
         res.status(401).json({ error: "Username, email, or password is incorrect." });
         return;
       }
     } else {
-      const username = nyxProfileUsername(identifier, "");
+      const username = nyxProfileUsername(identifier.replace(/^@+/, ""), "");
       if (!username) {
         res.status(401).json({ error: "Username, email, or password is incorrect." });
         return;

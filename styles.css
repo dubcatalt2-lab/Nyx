@@ -10,7 +10,7 @@
 @import url("./css/owner-dashboard.css?v=20260730-account-security-v2");
 @import url("./css/home-utilities.css?v=20260726-copyright-v8");
 @import url("./css/hover-consistency.css?v=20260726-single-shortcuts-v18");
-@import url("./css/weather-redesign.css?v=20260728-fern-v11");
+@import url("./css/weather-redesign.css?v=20260730-symbols-v12");
 @import url("./css/theme-tints.css?v=20260729-custom-theme-maker-v27");
 @import url("./css/setup-wizard.css?v=20260728-fern-v5");
 @import url("./css/credits.css?v=20260730-banner-fit-v5");
@@ -2602,5 +2602,260 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-user-profile-avatar:hover>img
     height:auto!important;
     min-height:620px!important;
     max-height:none!important;
+  }
+}
+
+/* Final profile-surface pass: profile accents tint Discord-like gray surfaces
+   without becoming the page background or stacking bright nested outlines. */
+html[data-nyx-theme] body .nyx-account-menu{
+  border:1px solid color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 28%,rgba(255,255,255,.1))!important;
+  background:#111214!important;
+  box-shadow:
+    0 20px 60px rgba(0,0,0,.56),
+    0 2px 8px rgba(0,0,0,.42),
+    0 0 0 1px color-mix(in srgb,var(--nyx-account-primary,#5865f2) 10%,transparent)!important;
+}
+html[data-nyx-theme] body .nyx-account-menu-profile{
+  background:linear-gradient(
+    180deg,
+    color-mix(in srgb,#1e1f22 84%,var(--nyx-account-primary,#5865f2)) 0%,
+    color-mix(in srgb,#1e1f22 90%,var(--nyx-account-secondary,#8ea1ff)) 100%
+  )!important;
+}
+html[data-nyx-theme] body .nyx-account-menu-profile::before{
+  display:none!important;
+}
+html[data-nyx-theme] body .nyx-account-menu-avatar{
+  border-color:#111214!important;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb,var(--nyx-account-primary,#5865f2) 52%,transparent),
+    0 8px 22px rgba(0,0,0,.4)!important;
+}
+html[data-nyx-theme] body .nyx-account-menu-status{
+  border-color:rgba(255,255,255,.1)!important;
+  background:color-mix(in srgb,#1e1f22 88%,var(--nyx-account-secondary,#8ea1ff))!important;
+}
+html[data-nyx-theme] body .nyx-account-menu-group{
+  border:1px solid rgba(255,255,255,.065)!important;
+  background:color-mix(in srgb,#1e1f22 94%,var(--nyx-account-primary,#5865f2))!important;
+}
+html[data-nyx-theme] body .nyx-account-menu-group button{
+  border:0!important;
+  box-shadow:none!important;
+}
+html[data-nyx-theme] body .nyx-account-menu-group button svg{
+  color:color-mix(in srgb,#b5bac1 78%,var(--nyx-account-secondary,#8ea1ff))!important;
+}
+html[data-nyx-theme] body .nyx-account-menu-group button:is(:hover,:focus-visible){
+  background:color-mix(in srgb,#35373c 86%,var(--nyx-account-primary,#5865f2))!important;
+}
+html[data-nyx-theme] body .nyx-account-menu-group button:focus-visible{
+  box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--nyx-account-primary,#5865f2) 58%,#fff)!important;
+}
+html[data-nyx-theme] body .nyx-account-menu-group hr{
+  background:color-mix(in srgb,#3f4147 88%,var(--nyx-account-secondary,#8ea1ff))!important;
+}
+html[data-nyx-theme] body .nyx-user-profile-card{
+  border:1px solid color-mix(in srgb,var(--nyx-user-accent-secondary,#8ea1ff) 32%,#4e5058)!important;
+  background:linear-gradient(
+    180deg,
+    color-mix(in srgb,#1e1f22 82%,var(--nyx-user-accent-primary,#5865f2)) 0%,
+    color-mix(in srgb,#1e1f22 88%,var(--nyx-user-accent-secondary,#8ea1ff)) 100%
+  )!important;
+  box-shadow:
+    0 26px 70px rgba(0,0,0,.42),
+    inset 0 2px 0 color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 72%,transparent),
+    inset 0 -2px 0 color-mix(in srgb,var(--nyx-user-accent-secondary,#8ea1ff) 60%,transparent)!important;
+}
+html[data-nyx-theme] body .nyx-user-profile-body{
+  border-color:rgba(255,255,255,.12)!important;
+  background:linear-gradient(
+    180deg,
+    color-mix(in srgb,#2b2d31 84%,var(--nyx-user-accent-primary,#5865f2)) 0%,
+    color-mix(in srgb,#2b2d31 90%,var(--nyx-user-accent-secondary,#8ea1ff)) 100%
+  )!important;
+}
+
+/* The profile editor's Main Profile control is a real account/profile
+   switcher. It stays inside the rail and protects unsaved edits. */
+html[data-nyx-theme] body .nyx-profile-rail-header{
+  overflow:visible!important;
+}
+html[data-nyx-theme] body .nyx-profile-rail-header>[data-nyx-profile-switch-toggle]{
+  cursor:pointer!important;
+}
+html[data-nyx-theme] body .nyx-profile-rail-header>[data-nyx-profile-switch-toggle]:is(:hover,.active){
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+}
+html[data-nyx-theme] body .nyx-profile-rail-header>[data-nyx-profile-switch-toggle] svg{
+  transition:transform .15s ease;
+}
+html[data-nyx-theme] body .nyx-profile-rail-header>[data-nyx-profile-switch-toggle].active svg{
+  transform:rotate(180deg);
+}
+html[data-nyx-theme] body .nyx-profile-switch-menu{
+  position:absolute!important;
+  z-index:40!important;
+  top:50px!important;
+  left:18px!important;
+  display:grid!important;
+  width:min(270px,calc(100% - 36px))!important;
+  box-sizing:border-box!important;
+  gap:6px!important;
+  padding:8px!important;
+  border:1px solid #3f4147!important;
+  border-radius:8px!important;
+  background:#18191c!important;
+  color:#f2f3f5!important;
+  -webkit-text-fill-color:#f2f3f5!important;
+  box-shadow:0 14px 34px rgba(0,0,0,.5)!important;
+}
+html[data-nyx-theme] body .nyx-profile-switch-menu[hidden]{
+  display:none!important;
+}
+html[data-nyx-theme] body .nyx-profile-switch-current{
+  display:grid!important;
+  grid-template-columns:36px minmax(0,1fr) 8px!important;
+  align-items:center!important;
+  gap:9px!important;
+  min-height:48px!important;
+  padding:5px 7px 8px!important;
+  border-bottom:1px solid #3f4147!important;
+}
+html[data-nyx-theme] body .nyx-profile-switch-avatar{
+  position:relative;
+  display:grid!important;
+  width:36px!important;
+  height:36px!important;
+  place-items:center!important;
+  overflow:hidden!important;
+  border-radius:50%!important;
+  background:color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 40%,#2b2d31)!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+}
+html[data-nyx-theme] body .nyx-profile-switch-avatar img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+}
+html[data-nyx-theme] body .nyx-profile-switch-avatar>b{
+  color:inherit!important;
+  font-size:14px!important;
+}
+html[data-nyx-theme] body .nyx-profile-switch-current>span:nth-child(2),
+html[data-nyx-theme] body .nyx-profile-switch-menu>[data-nyx-switch-profile]>span{
+  display:grid!important;
+  min-width:0!important;
+  gap:2px!important;
+}
+html[data-nyx-theme] body .nyx-profile-switch-current strong,
+html[data-nyx-theme] body .nyx-profile-switch-menu>[data-nyx-switch-profile] strong{
+  overflow:hidden!important;
+  color:#f2f3f5!important;
+  -webkit-text-fill-color:#f2f3f5!important;
+  font-size:12px!important;
+  font-weight:650!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+html[data-nyx-theme] body .nyx-profile-switch-current small,
+html[data-nyx-theme] body .nyx-profile-switch-menu>[data-nyx-switch-profile] small{
+  overflow:hidden!important;
+  color:#b5bac1!important;
+  -webkit-text-fill-color:#b5bac1!important;
+  font-size:10px!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+html[data-nyx-theme] body .nyx-profile-switch-current>i{
+  width:7px!important;
+  height:7px!important;
+  border-radius:50%!important;
+  background:#23a55a!important;
+}
+html[data-nyx-theme] body .nyx-profile-switch-menu>[data-nyx-switch-profile]{
+  display:grid!important;
+  width:100%!important;
+  min-height:48px!important;
+  grid-template-columns:19px minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:10px!important;
+  margin:0!important;
+  padding:6px 8px!important;
+  border:0!important;
+  border-radius:5px!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#dbdee1!important;
+  -webkit-text-fill-color:#dbdee1!important;
+  text-align:left!important;
+  cursor:pointer!important;
+}
+html[data-nyx-theme] body .nyx-profile-switch-menu>[data-nyx-switch-profile]:is(:hover,:focus-visible){
+  background:#35373c!important;
+  outline:none!important;
+}
+html[data-nyx-theme] body .nyx-profile-switch-menu>[data-nyx-switch-profile]>svg{
+  width:19px!important;
+  height:19px!important;
+  fill:none!important;
+  stroke:#b5bac1!important;
+  stroke-width:1.8!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+}
+html[data-nyx-theme] body .nyx-profile-switch-confirm{
+  display:grid!important;
+  gap:6px!important;
+  padding:7px!important;
+}
+html[data-nyx-theme] body .nyx-profile-switch-confirm[hidden]{
+  display:none!important;
+}
+html[data-nyx-theme] body .nyx-profile-switch-confirm>strong{
+  color:#f2f3f5!important;
+  -webkit-text-fill-color:#f2f3f5!important;
+  font-size:12px!important;
+}
+html[data-nyx-theme] body .nyx-profile-switch-confirm>p{
+  margin:0!important;
+  color:#b5bac1!important;
+  -webkit-text-fill-color:#b5bac1!important;
+  font-size:10px!important;
+  line-height:1.4!important;
+}
+html[data-nyx-theme] body .nyx-profile-switch-confirm>div{
+  display:flex!important;
+  justify-content:flex-end!important;
+  gap:6px!important;
+  margin-top:3px!important;
+}
+html[data-nyx-theme] body .nyx-profile-switch-confirm button{
+  min-height:30px!important;
+  margin:0!important;
+  padding:0 9px!important;
+  border:0!important;
+  border-radius:4px!important;
+  background:#2b2d31!important;
+  color:#f2f3f5!important;
+  -webkit-text-fill-color:#f2f3f5!important;
+  box-shadow:none!important;
+  font-size:10px!important;
+  font-weight:650!important;
+}
+html[data-nyx-theme] body .nyx-profile-switch-confirm [data-nyx-switch-discard]{
+  background:#da373c!important;
+}
+html[data-nyx-theme] body .nyx-profile-switch-confirm button:is(:hover,:focus-visible){
+  filter:brightness(1.12)!important;
+  outline:none!important;
+}
+@media(max-width:680px){
+  html[data-nyx-theme] body .nyx-profile-switch-menu{
+    left:14px!important;
+    width:min(270px,calc(100% - 28px))!important;
   }
 }

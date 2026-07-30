@@ -37,9 +37,11 @@
   let nyxFounderAuthReadyPromise=null;
   let nyxUserProfile=null;
   let nyxUserProfileCreatedAt='';
+  const NYX_PROFILE_IMAGE_DATA_LIMIT=850000;
+  const NYX_PROFILE_IMAGE_TOTAL_LIMIT=900000;
   function nyxAccountUsername(value){return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_.-]/g,'').slice(0,32)}
   function nyxAccountEmail(username){return `${nyxAccountUsername(username)}@account.nyx.local`}
-  function nyxUserImage(value,fallback=''){const raw=String(value||'').trim();if(!raw)return fallback;if(/^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(raw)&&raw.length<=460000)return raw.replace(/\s/g,'');return nyxFounderUrl(raw,fallback)}
+  function nyxUserImage(value,fallback=''){const raw=String(value||'').trim();if(!raw)return fallback;if(/^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(raw)&&raw.length<=NYX_PROFILE_IMAGE_DATA_LIMIT)return raw.replace(/\s/g,'');return nyxFounderUrl(raw,fallback)}
   function normalizeNyxUserProfile(value={},user=nyxFounderSignedInUser){
     const source=value&&typeof value==='object'?value:{};
     const uid=String(user?.uid||'');
@@ -171,6 +173,19 @@
   async function nyxProfileImageFromFile(file,maxWidth,maxHeight){
     if(!file||!/^image\/(?:png|jpe?g|webp|gif)$/i.test(String(file.type||'')))throw new Error('Choose a PNG, JPG, WebP, or GIF image.');
     if(file.size>8*1024*1024)throw new Error('Choose an image smaller than 8 MB.');
+    if(/^image\/gif$/i.test(String(file.type||''))){
+      const signature=await file.slice(0,6).text();
+      if(!/^GIF8[79]a$/.test(signature))throw new Error('That file is not a valid GIF.');
+      const dataUrl=await new Promise((resolve,reject)=>{
+        const reader=new FileReader();
+        reader.onload=()=>resolve(String(reader.result||''));
+        reader.onerror=()=>reject(new Error('That GIF could not be opened.'));
+        reader.readAsDataURL(file);
+      });
+      if(!/^data:image\/gif;base64,/i.test(dataUrl))throw new Error('That GIF could not be opened.');
+      if(dataUrl.length>NYX_PROFILE_IMAGE_DATA_LIMIT)throw new Error('Choose a GIF smaller than 620 KB so Nyx can save its animation.');
+      return dataUrl;
+    }
     const objectUrl=URL.createObjectURL(file);
     try{
       const image=await new Promise((resolve,reject)=>{const preview=new Image();preview.onload=()=>resolve(preview);preview.onerror=()=>reject(new Error('That image could not be opened.'));preview.src=objectUrl});
@@ -181,7 +196,7 @@
         canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));
         canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);
         const dataUrl=canvas.toDataURL('image/webp',Math.max(.52,.86-pass*.1));
-        if(dataUrl.length<=440000)return dataUrl;
+        if(dataUrl.length<=NYX_PROFILE_IMAGE_DATA_LIMIT)return dataUrl;
         scale*=.72;
       }
       throw new Error('That image is too detailed to save. Try a smaller image.');
@@ -195,29 +210,186 @@
     const accountUsername=nyxAccountUsername(String(nyxFounderSignedInUser?.email||'').split('@')[0]);
     const overlay=document.createElement('div');
     overlay.className='nyx-user-profile-overlay';
-    overlay.innerHTML=`<section class="nyx-user-profile-dialog" role="dialog" aria-modal="true" aria-labelledby="nyxUserProfileTitle"><button class="nyx-founder-editor-close" data-close-nyx-profile type="button" aria-label="Close">×</button><div class="nyx-user-profile-view">${nyxUserProfileCardMarkup(profile,{editable:true})}</div><form class="nyx-user-profile-form"><header><p class="utility-kicker">Nyx profile</p><h3 id="nyxUserProfileTitle">Profile customization</h3><p>Set up your profile and see the card update as you edit.</p></header><section class="nyx-profile-editor-section"><h4>About me</h4><div class="nyx-profile-field-grid"><label class="nyx-profile-field">Display name<input name="displayName" maxlength="48" required value="${esc(profile.displayName)}"></label><label class="nyx-profile-field">Profile username<input name="handle" maxlength="40" required value="${esc(profile.handle)}"><small>Sign in as ${esc(accountUsername||'your account name')}.</small></label><label class="nyx-profile-field nyx-profile-field-wide">Bio<textarea name="bio" maxlength="280" rows="4" placeholder="Tell people a little about yourself.">${esc(profile.bio)}</textarea></label><label class="nyx-profile-field">Status<select name="status"><option value="online" ${profile.status==='online'?'selected':''}>Online</option><option value="idle" ${profile.status==='idle'?'selected':''}>Idle</option><option value="dnd" ${profile.status==='dnd'?'selected':''}>Do not disturb</option><option value="offline" ${profile.status==='offline'?'selected':''}>Offline</option></select></label><label class="nyx-profile-field nyx-profile-field-wide">Custom status<input name="customStatus" maxlength="80" value="${esc(profile.customStatus)}" placeholder="What are you up to?"></label></div></section><section class="nyx-profile-editor-section"><h4>Profile appearance</h4><div class="nyx-profile-image-list"><div class="nyx-profile-image-control"><div><strong>Avatar</strong><small>Choose an image from your device.</small></div><input name="avatarUrl" type="hidden" value="${esc(profile.avatarUrl)}"><input class="nyx-profile-file-input" name="avatarFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden><span class="nyx-profile-file-name" data-nyx-file-name="avatar">${profile.avatarUrl?'Current image selected':'No image selected'}</span><div class="nyx-profile-image-actions"><button class="nyx-profile-file-button" type="button" data-nyx-pick-image="avatar">Choose image</button><button class="nyx-profile-clear-button" type="button" data-nyx-clear-image="avatar">Remove</button></div></div><div class="nyx-profile-image-control"><div><strong>Profile background</strong><small>Shown across the top of your profile.</small></div><input name="bannerUrl" type="hidden" value="${esc(profile.bannerUrl)}"><input class="nyx-profile-file-input" name="bannerFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden><span class="nyx-profile-file-name" data-nyx-file-name="banner">${profile.bannerUrl?'Current image selected':'No image selected'}</span><div class="nyx-profile-image-actions"><button class="nyx-profile-file-button" type="button" data-nyx-pick-image="banner">Choose image</button><button class="nyx-profile-clear-button" type="button" data-nyx-clear-image="banner">Remove</button></div></div></div><div class="nyx-profile-color-grid"><label class="nyx-profile-field">Base profile color<input name="accentPrimary" type="color" value="${esc(profile.accentPrimary)}"><small>Sets the main tone around your profile card.</small></label><label class="nyx-profile-field">Accent profile color<input name="accentSecondary" type="color" value="${esc(profile.accentSecondary)}"><small>Adds depth to the profile surface.</small></label><label class="nyx-profile-field">Background fallback color<input name="bannerColor" type="color" value="${esc(profile.bannerColor)}"><small>Used when no background image is selected.</small></label><label class="nyx-profile-field">Profile effect<select name="profileEffect"><option value="none" ${profile.profileEffect==='none'?'selected':''}>None</option><option value="glow" ${profile.profileEffect==='glow'?'selected':''}>Glow</option><option value="sparkle" ${profile.profileEffect==='sparkle'?'selected':''}>Sparkle</option><option value="aurora" ${profile.profileEffect==='aurora'?'selected':''}>Aurora</option><option value="holographic" ${profile.profileEffect==='holographic'?'selected':''}>Holographic</option><option value="fireflies" ${profile.profileEffect==='fireflies'?'selected':''}>Fireflies</option></select></label></div></section><p class="nyx-founder-editor-error" aria-live="polite"></p><footer><button class="settings-action on" type="submit">Save changes</button></footer></form></section>`;
+    overlay.innerHTML=`
+      <section class="nyx-user-profile-dialog" role="dialog" aria-modal="true" aria-labelledby="nyxUserProfileTitle">
+        <aside class="nyx-discord-settings-sidebar" aria-label="User settings">
+          <nav>
+            <p>User settings</p>
+            <button type="button" class="active" aria-current="page">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0"/></svg>
+              Profiles
+            </button>
+          </nav>
+          <div class="nyx-discord-sidebar-account">
+            <span>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</span>
+            <div><strong>${esc(profile.displayName)}</strong><small>${esc(profile.handle)}</small></div>
+          </div>
+        </aside>
+        <main class="nyx-discord-profile-main">
+          <button class="nyx-founder-editor-close nyx-discord-settings-close" data-close-nyx-profile type="button" aria-label="Close">
+            <span aria-hidden="true">&#215;</span><small>ESC</small>
+          </button>
+          <div class="nyx-discord-profile-scroll">
+            <header class="nyx-discord-profile-header">
+              <h2 id="nyxUserProfileTitle">Profiles</h2>
+              <p>Customize how your profile appears to everyone on Nyx.</p>
+            </header>
+            <div class="nyx-discord-profile-layout">
+              <form class="nyx-user-profile-form">
+                <section class="nyx-profile-editor-section">
+                  <h4>Profile information</h4>
+                  <div class="nyx-profile-field-grid">
+                    <label class="nyx-profile-field">Display name<input name="displayName" maxlength="48" required value="${esc(profile.displayName)}"></label>
+                    <label class="nyx-profile-field">Profile username<input name="handle" maxlength="40" required value="${esc(profile.handle)}"><small>Signed in as ${esc(accountUsername||'your account name')}.</small></label>
+                    <label class="nyx-profile-field nyx-profile-field-wide">About me<textarea name="bio" maxlength="280" rows="4" placeholder="You can use text and emoji.">${esc(profile.bio)}</textarea><small><span data-nyx-bio-count>${profile.bio.length}</span>/280</small></label>
+                    <label class="nyx-profile-field">Status<select name="status"><option value="online" ${profile.status==='online'?'selected':''}>Online</option><option value="idle" ${profile.status==='idle'?'selected':''}>Idle</option><option value="dnd" ${profile.status==='dnd'?'selected':''}>Do not disturb</option><option value="offline" ${profile.status==='offline'?'selected':''}>Invisible</option></select></label>
+                    <label class="nyx-profile-field">Custom status<input name="customStatus" maxlength="80" value="${esc(profile.customStatus)}" placeholder="What are you up to?"></label>
+                  </div>
+                </section>
+                <section class="nyx-profile-editor-section">
+                  <h4>Avatar &amp; banner</h4>
+                  <div class="nyx-profile-image-list">
+                    <div class="nyx-profile-image-control">
+                      <div><strong>Avatar</strong><small>PNG, JPG, WebP, or animated GIF.</small></div>
+                      <input name="avatarUrl" type="hidden" value="${esc(profile.avatarUrl)}">
+                      <input class="nyx-profile-file-input" name="avatarFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+                      <span class="nyx-profile-file-name" data-nyx-file-name="avatar">${profile.avatarUrl?'Image selected':'No image selected'}</span>
+                      <div class="nyx-profile-image-actions"><button class="nyx-profile-file-button" type="button" data-nyx-pick-image="avatar">Change Avatar</button><button class="nyx-profile-clear-button" type="button" data-nyx-clear-image="avatar">Remove Avatar</button></div>
+                    </div>
+                    <div class="nyx-profile-image-control">
+                      <div><strong>Profile banner</strong><small>Recommended size: 680 × 240.</small></div>
+                      <input name="bannerUrl" type="hidden" value="${esc(profile.bannerUrl)}">
+                      <input class="nyx-profile-file-input" name="bannerFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+                      <span class="nyx-profile-file-name" data-nyx-file-name="banner">${profile.bannerUrl?'Image selected':'No image selected'}</span>
+                      <div class="nyx-profile-image-actions"><button class="nyx-profile-file-button" type="button" data-nyx-pick-image="banner">Change Banner</button><button class="nyx-profile-clear-button" type="button" data-nyx-clear-image="banner">Remove Banner</button></div>
+                    </div>
+                  </div>
+                </section>
+                <section class="nyx-profile-editor-section">
+                  <h4>Profile theme</h4>
+                  <div class="nyx-profile-color-grid">
+                    <label class="nyx-profile-field nyx-profile-color-field">Primary<input name="accentPrimary" type="color" value="${esc(profile.accentPrimary)}"><small>Profile card color</small></label>
+                    <label class="nyx-profile-field nyx-profile-color-field">Accent<input name="accentSecondary" type="color" value="${esc(profile.accentSecondary)}"><small>Secondary surface color</small></label>
+                    <label class="nyx-profile-field nyx-profile-color-field">Banner color<input name="bannerColor" type="color" value="${esc(profile.bannerColor)}"><small>Used without a banner image</small></label>
+                    <label class="nyx-profile-field">Profile effect<select name="profileEffect"><option value="none" ${profile.profileEffect==='none'?'selected':''}>None</option><option value="glow" ${profile.profileEffect==='glow'?'selected':''}>Glow</option><option value="sparkle" ${profile.profileEffect==='sparkle'?'selected':''}>Sparkle</option><option value="aurora" ${profile.profileEffect==='aurora'?'selected':''}>Aurora</option><option value="holographic" ${profile.profileEffect==='holographic'?'selected':''}>Holographic</option><option value="fireflies" ${profile.profileEffect==='fireflies'?'selected':''}>Fireflies</option></select></label>
+                  </div>
+                </section>
+                <p class="nyx-founder-editor-error" aria-live="polite"></p>
+                <footer>
+                  <strong>Careful — you have unsaved changes!</strong>
+                  <button class="nyx-profile-reset-button" type="reset">Reset</button>
+                  <button class="settings-action on" type="submit">Save Changes</button>
+                </footer>
+              </form>
+              <aside class="nyx-discord-preview-pane">
+                <h3>Preview</h3>
+                <div class="nyx-user-profile-view">${nyxUserProfileCardMarkup(profile,{editable:true})}</div>
+              </aside>
+            </div>
+          </div>
+        </main>
+      </section>`;
     document.body.appendChild(overlay);
     const close=()=>overlay.remove();
     overlay.addEventListener('click',async event=>{if(event.target===overlay||event.target.closest('[data-close-nyx-profile]')){close();return}const action=event.target.closest('[data-nyx-profile-action]')?.dataset.nyxProfileAction;if(!action)return;if(action==='status'){const field=overlay.querySelector('[name="status"]');field?.scrollIntoView({block:'center',behavior:'smooth'});field?.focus();try{field?.showPicker?.()}catch{}return}if(action==='custom-status'){const field=overlay.querySelector('[name="customStatus"]');field?.scrollIntoView({block:'center',behavior:'smooth'});field?.focus();field?.select();return}if(action==='switch-account'){close();await signOutFounderOwner();await openNyxAccountAccess()}});
     const form=overlay.querySelector('form');
     const decorationField=document.createElement('label');
     decorationField.className='nyx-profile-field';
-    decorationField.innerHTML=`Avatar decoration<select name="avatarDecoration"><option value="none">None</option><option value="starfall">Starfall</option><option value="orbit">Orbit</option><option value="laurel">Laurel</option><option value="neon-wings">Neon wings</option></select><small>Frames your avatar anywhere your profile is shown.</small>`;
+    decorationField.innerHTML=`Avatar decoration<select name="avatarDecoration"><option value="none">None</option><option value="starfall">Starfall</option><option value="orbit">Orbit</option><option value="laurel">Laurel</option><option value="neon-wings">Neon wings</option></select><small>Frames your avatar wherever it is shown.</small>`;
     form.querySelector('.nyx-profile-color-grid')?.appendChild(decorationField);
     decorationField.querySelector('select').value=profile.avatarDecoration;
     const profileKeys=['displayName','handle','status','customStatus','bio','profileEffect','avatarDecoration','accentPrimary','accentSecondary','bannerColor','avatarUrl','bannerUrl'];
-    const preview=()=>{const values=new FormData(form);overlay.querySelector('.nyx-user-profile-view').innerHTML=nyxUserProfileCardMarkup(normalizeNyxUserProfile({...profile,...Object.fromEntries(profileKeys.map(key=>[key,values.get(key)]))}),{editable:true});};
+    const directPopover=document.createElement('section');
+    directPopover.className='nyx-profile-direct-popover';
+    directPopover.hidden=true;
+    overlay.querySelector('.nyx-user-profile-dialog')?.appendChild(directPopover);
+    const directTargets=()=>{
+      const view=overlay.querySelector('.nyx-user-profile-view');
+      [['avatar','.nyx-user-profile-avatar','Change picture or decoration'],['banner','.nyx-user-profile-banner','Change profile banner'],['bio','.nyx-user-profile-bio','Edit About me']].forEach(([type,selector,label])=>{
+        const target=view?.querySelector(selector);
+        if(!target)return;
+        target.dataset.nyxDirectEdit=type;
+        target.tabIndex=0;
+        target.setAttribute('role','button');
+        target.setAttribute('aria-label',label);
+        target.title=label;
+      });
+    };
+    const preview=()=>{const values=new FormData(form);overlay.querySelector('.nyx-user-profile-view').innerHTML=nyxUserProfileCardMarkup(normalizeNyxUserProfile({...profile,...Object.fromEntries(profileKeys.map(key=>[key,values.get(key)]))}),{editable:true});const bioCount=form.querySelector('[data-nyx-bio-count]');if(bioCount)bioCount.textContent=String(values.get('bio')||'').length;form.classList.add('is-dirty');directTargets();};
+    const closeDirectPopover=()=>{directPopover.hidden=true;directPopover.textContent=''};
+    const positionDirectPopover=target=>{
+      requestAnimationFrame(()=>{
+        const targetBox=target.getBoundingClientRect();
+        const popoverBox=directPopover.getBoundingClientRect();
+        const gap=12;
+        let left=targetBox.right+gap;
+        if(left+popoverBox.width>innerWidth-16)left=Math.max(16,targetBox.left-popoverBox.width-gap);
+        let top=Math.max(16,targetBox.top);
+        if(top+popoverBox.height>innerHeight-16)top=Math.max(16,innerHeight-popoverBox.height-16);
+        directPopover.style.left=`${Math.round(left)}px`;
+        directPopover.style.top=`${Math.round(top)}px`;
+      });
+    };
+    const directEditorOptions=(selected,options)=>options.map(([value,label])=>`<option value="${value}" ${selected===value?'selected':''}>${label}</option>`).join('');
+    const openDirectEditor=(type,target)=>{
+      const values=new FormData(form);
+      directPopover.style.setProperty('--nyx-direct-primary',String(values.get('accentPrimary')||'#5865f2'));
+      directPopover.style.setProperty('--nyx-direct-secondary',String(values.get('accentSecondary')||'#8ea1ff'));
+      if(type==='avatar'){
+        const decoration=String(values.get('avatarDecoration')||'none');
+        directPopover.innerHTML=`<header><div><strong>Avatar</strong><small>Picture and decoration</small></div><button type="button" data-nyx-direct-close aria-label="Close">&#215;</button></header><div class="nyx-profile-direct-actions"><button type="button" data-nyx-direct-action="pick-avatar">Change picture</button><button type="button" data-nyx-direct-action="remove-avatar">Remove picture</button></div><label>Avatar decoration<select data-nyx-direct-value="avatarDecoration">${directEditorOptions(decoration,[['none','None'],['starfall','Starfall'],['orbit','Orbit'],['laurel','Laurel'],['neon-wings','Neon wings']])}</select></label><p>Changes preview instantly. Use Save changes when you are finished.</p>`;
+      }else if(type==='banner'){
+        directPopover.innerHTML=`<header><div><strong>Profile banner</strong><small>Image and fallback color</small></div><button type="button" data-nyx-direct-close aria-label="Close">&#215;</button></header><div class="nyx-profile-direct-actions"><button type="button" data-nyx-direct-action="pick-banner">Change banner</button><button type="button" data-nyx-direct-action="remove-banner">Remove banner</button></div><label>Fallback color<input type="color" data-nyx-direct-value="bannerColor" value="${esc(values.get('bannerColor')||'#8ea1ff')}"></label><p>The fallback color appears when no banner image is selected.</p>`;
+      }else{
+        directPopover.innerHTML=`<header><div><strong>About me</strong><small>Profile description</small></div><button type="button" data-nyx-direct-close aria-label="Close">&#215;</button></header><label>Description<textarea data-nyx-direct-value="bio" maxlength="280" rows="5" placeholder="Tell people a little about yourself.">${esc(values.get('bio')||'')}</textarea></label><p>Changes preview instantly. Use Save changes when you are finished.</p>`;
+      }
+      directPopover.hidden=false;
+      positionDirectPopover(target);
+      setTimeout(()=>directPopover.querySelector('textarea,select,input,button')?.focus(),0);
+    };
+    directTargets();
+    overlay.addEventListener('click',event=>{
+      const directTarget=event.target.closest('[data-nyx-direct-edit]');
+      if(directTarget){openDirectEditor(directTarget.dataset.nyxDirectEdit,directTarget);return}
+      if(event.target.closest('[data-nyx-direct-close]')){closeDirectPopover();return}
+      const action=event.target.closest('[data-nyx-direct-action]')?.dataset.nyxDirectAction;
+      if(action){
+        const [verb,type]=action.split('-');
+        if(verb==='pick')form.querySelector(`[data-nyx-pick-image="${type}"]`)?.click();
+        if(verb==='remove')form.querySelector(`[data-nyx-clear-image="${type}"]`)?.click();
+        return;
+      }
+      if(!directPopover.hidden&&!event.target.closest('.nyx-profile-direct-popover'))closeDirectPopover();
+    });
+    overlay.addEventListener('input',event=>{
+      const key=event.target.dataset.nyxDirectValue;
+      if(!key)return;
+      const source=form.querySelector(`[name="${key}"]`);
+      if(source){source.value=event.target.value;preview()}
+    });
+    overlay.addEventListener('change',event=>{
+      const key=event.target.dataset.nyxDirectValue;
+      if(!key)return;
+      const source=form.querySelector(`[name="${key}"]`);
+      if(source){source.value=event.target.value;preview()}
+    });
+    overlay.addEventListener('keydown',event=>{
+      const directTarget=event.target.closest('[data-nyx-direct-edit]');
+      if(directTarget&&(event.key==='Enter'||event.key===' ')){event.preventDefault();openDirectEditor(directTarget.dataset.nyxDirectEdit,directTarget)}
+      if(event.key==='Escape'){event.stopPropagation();if(!directPopover.hidden)closeDirectPopover();else close()}
+    });
     form.addEventListener('input',preview);form.addEventListener('change',preview);
+    form.addEventListener('reset',()=>requestAnimationFrame(()=>{form.classList.remove('is-dirty');const avatarLabel=form.querySelector('[data-nyx-file-name="avatar"]');const bannerLabel=form.querySelector('[data-nyx-file-name="banner"]');if(avatarLabel)avatarLabel.textContent=profile.avatarUrl?'Image selected':'No image selected';if(bannerLabel)bannerLabel.textContent=profile.bannerUrl?'Image selected':'No image selected';const values=new FormData(form);overlay.querySelector('.nyx-user-profile-view').innerHTML=nyxUserProfileCardMarkup(normalizeNyxUserProfile({...profile,...Object.fromEntries(profileKeys.map(key=>[key,values.get(key)]))}),{editable:true});const bioCount=form.querySelector('[data-nyx-bio-count]');if(bioCount)bioCount.textContent=String(values.get('bio')||'').length;directTargets()}));
     form.querySelectorAll('[data-nyx-pick-image]').forEach(button=>button.addEventListener('click',()=>form.querySelector(`[name="${button.dataset.nyxPickImage}File"]`)?.click()));
     form.querySelectorAll('[data-nyx-clear-image]').forEach(button=>button.addEventListener('click',()=>{const type=button.dataset.nyxClearImage;form.querySelector(`[name="${type}Url"]`).value='';form.querySelector(`[name="${type}File"]`).value='';form.querySelector(`[data-nyx-file-name="${type}"]`).textContent='No image selected';preview()}));
     form.querySelectorAll('.nyx-profile-file-input').forEach(input=>input.addEventListener('change',async()=>{const type=input.name==='avatarFile'?'avatar':'banner';const label=form.querySelector(`[data-nyx-file-name="${type}"]`);const error=form.querySelector('.nyx-founder-editor-error');const file=input.files?.[0];if(!file)return;label.textContent='Preparing image…';error.textContent='';try{form.querySelector(`[name="${type}Url"]`).value=await nyxProfileImageFromFile(file,type==='avatar'?512:1200,type==='avatar'?512:480);label.textContent=file.name;preview()}catch(imageError){input.value='';label.textContent='No image selected';error.textContent=imageError.message||'That image could not be used.'}}));
-    form.addEventListener('submit',async event=>{event.preventDefault();const values=new FormData(form);const error=form.querySelector('.nyx-founder-editor-error');const button=form.querySelector('[type="submit"]');button.disabled=true;try{const token=await nyxFounderSignedInUser?.getIdToken();const response=await fetch('/api/profiles/me',{method:'PUT',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({profile:Object.fromEntries(profileKeys.map(key=>[key,values.get(key)]))})});const data=await response.json();if(!response.ok)throw new Error(data.error||'Profile could not be saved.');nyxUserProfile=normalizeNyxUserProfile(data.profile);nyxUserProfileCreatedAt=String(data.createdAt||nyxUserProfileCreatedAt);if(nyxFounderIsOwner)await loadFounderProfile({force:true});syncFounderOwnerControls();close();toast(nyxFounderIsOwner?'Profile and Credits updated':'Profile saved');}catch(saveError){error.textContent=saveError.message||'Profile could not be saved.';button.disabled=false}});
+    form.addEventListener('submit',async event=>{event.preventDefault();const values=new FormData(form);const error=form.querySelector('.nyx-founder-editor-error');const button=form.querySelector('[type="submit"]');button.disabled=true;try{const nextProfile=Object.fromEntries(profileKeys.map(key=>[key,values.get(key)]));const imagePayloadSize=[nextProfile.avatarUrl,nextProfile.bannerUrl].reduce((total,value)=>total+(String(value||'').startsWith('data:image/')?String(value).length:0),0);if(imagePayloadSize>NYX_PROFILE_IMAGE_TOTAL_LIMIT)throw new Error('Your avatar and banner are too large together. Remove one or choose a smaller GIF.');const token=await nyxFounderSignedInUser?.getIdToken();const response=await fetch('/api/profiles/me',{method:'PUT',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({profile:nextProfile})});const data=await response.json();if(!response.ok)throw new Error(data.error||'Profile could not be saved.');nyxUserProfile=normalizeNyxUserProfile(data.profile);nyxUserProfileCreatedAt=String(data.createdAt||nyxUserProfileCreatedAt);if(nyxFounderIsOwner)await loadFounderProfile({force:true});syncFounderOwnerControls();close();toast(nyxFounderIsOwner?'Profile and Credits updated':'Profile saved');}catch(saveError){error.textContent=saveError.message||'Profile could not be saved.';button.disabled=false}});
   }
   function nyxFounderText(value,fallback,max){const text=String(value??'').trim().replace(/\s+/g,' ').slice(0,max);return text||fallback}
   function nyxFounderUrl(value,fallback=''){
     const raw=String(value??'').trim();
     if(!raw) return fallback;
-    if(/^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(raw)&&raw.length<=460000)return raw.replace(/\s/g,'');
+    if(/^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(raw)&&raw.length<=NYX_PROFILE_IMAGE_DATA_LIMIT)return raw.replace(/\s/g,'');
     if(raw.length>1500)return fallback;
     if(/^\/assets\/[a-z0-9/_\-.]+$/i.test(raw)) return raw;
     try{const url=new URL(raw,location.origin);return /^(https?:)$/i.test(url.protocol)&&!url.username&&!url.password?url.href:fallback}catch{return fallback}
@@ -1279,7 +1451,7 @@
     }
     const dock=document.querySelector('.dock');
     if(dock){
-      dock.innerHTML=`<button title="Study" data-app-url="/assets/games/index.html"><img class="dock-icon" alt="" src="${appIcon('games')}"><span>Study</span></button><button title="Apps" data-open="apps"><img class="dock-icon" alt="" src="${appIcon('apps')}"><span>Apps</span></button><button title="GeForce Now" data-app-url="https://play.geforcenow.com/"><img class="dock-icon" alt="" src="${appIcon('geforcenow')}"><span>GeForce</span></button><button title="Roblox" data-app-url="https://www.roblox.com/"><img class="dock-icon" alt="" src="${appIcon('roblox.com')}"><span>Roblox</span></button><button title="Discord" data-app-url="https://discord.com/app"><img class="dock-icon" alt="" src="${appIcon('discord-dock')}"><span>Discord</span></button><button title="Settings" data-open="settings" aria-label="Settings"><img class="dock-icon" alt="" src="${appIcon('settings')}"><span>Settings</span></button><span class="dock-separator"></span><span class="minimized-tray" id="minimizedTray"></span>`;
+      dock.innerHTML=`<button title="Study" data-app-url="/assets/games/index.html"><img class="dock-icon" alt="" src="${appIcon('games')}"><span>Study</span></button><button title="Apps" data-open="apps"><img class="dock-icon" alt="" src="${appIcon('apps')}"><span>Apps</span></button><button title="GeForce Now" data-app-url="https://play.geforcenow.com/"><img class="dock-icon" alt="" src="${appIcon('geforcenow')}"><span>GeForce</span></button><button title="Roblox" data-app-url="https://web.cloudmoonapp.com/game/com.roblox.client/"><img class="dock-icon" alt="" src="${appIcon('roblox.com')}"><span>Roblox</span></button><button title="Discord" data-app-url="https://discord.com/app"><img class="dock-icon" alt="" src="${appIcon('discord-dock')}"><span>Discord</span></button><button title="Settings" data-open="settings" aria-label="Settings"><img class="dock-icon" alt="" src="${appIcon('settings')}"><span>Settings</span></button><span class="dock-separator"></span><span class="minimized-tray" id="minimizedTray"></span>`;
       hydrateDockDrag(dock);
     }
     const corner=document.querySelector('.corner-gear');
@@ -1373,7 +1545,7 @@
     }
     const dock=document.querySelector('.dock');
     if(dock){
-      dock.innerHTML=`<button title="Study" data-app-url="/assets/games/index.html"><img class="dock-icon" alt="" src="${appIcon('games')}"><span>Study</span></button><button title="Apps" data-open="apps"><img class="dock-icon" alt="" src="${appIcon('apps')}"><span>Apps</span></button><button title="GeForce Now" data-app-url="https://play.geforcenow.com/"><img class="dock-icon" alt="" src="${appIcon('geforcenow')}"><span>GeForce</span></button><button title="Roblox" data-app-url="https://www.roblox.com/"><img class="dock-icon" alt="" src="${appIcon('roblox.com')}"><span>Roblox</span></button><button title="Discord" data-app-url="https://discord.com/app"><img class="dock-icon" alt="" src="${appIcon('discord-dock')}"><span>Discord</span></button><button title="Settings" data-open="settings" aria-label="Settings"><img class="dock-icon" alt="" src="${appIcon('settings')}"><span>Settings</span></button><span class="dock-separator"></span><span class="minimized-tray" id="minimizedTray"></span>`;
+      dock.innerHTML=`<button title="Study" data-app-url="/assets/games/index.html"><img class="dock-icon" alt="" src="${appIcon('games')}"><span>Study</span></button><button title="Apps" data-open="apps"><img class="dock-icon" alt="" src="${appIcon('apps')}"><span>Apps</span></button><button title="GeForce Now" data-app-url="https://play.geforcenow.com/"><img class="dock-icon" alt="" src="${appIcon('geforcenow')}"><span>GeForce</span></button><button title="Roblox" data-app-url="https://web.cloudmoonapp.com/game/com.roblox.client/"><img class="dock-icon" alt="" src="${appIcon('roblox.com')}"><span>Roblox</span></button><button title="Discord" data-app-url="https://discord.com/app"><img class="dock-icon" alt="" src="${appIcon('discord-dock')}"><span>Discord</span></button><button title="Settings" data-open="settings" aria-label="Settings"><img class="dock-icon" alt="" src="${appIcon('settings')}"><span>Settings</span></button><span class="dock-separator"></span><span class="minimized-tray" id="minimizedTray"></span>`;
       hydrateDockDrag(dock);
     }
     const corner=document.querySelector('.corner-gear');
@@ -2699,10 +2871,13 @@
     const internalThemePurityStyle='html{--nyx-internal-accent:#6687b2;--nyx-internal-line:#2a3b54}html[data-nyx-theme="midnight"]{--nyx-internal-accent:#6f8fb9;--nyx-internal-line:#2d405b}html[data-nyx-theme="ruby"]{--nyx-internal-accent:#a56573;--nyx-internal-line:#50333c}html[data-nyx-theme="emerald"]{--nyx-internal-accent:#628f80;--nyx-internal-line:#2f4a42}html[data-nyx-theme="sakura"]{--nyx-internal-accent:#9e718f;--nyx-internal-line:#4c3748}html[data-nyx-theme="fresh"]{--nyx-internal-accent:#728f6b;--nyx-internal-line:#354b36}html body{--theme-a:var(--nyx-internal-accent)!important;--theme-b:var(--nyx-internal-accent)!important;--theme-border:var(--nyx-internal-line)!important}.settings-side,.settings-section .settings-block,.settings-side button.active,.settings-side button:hover{border-color:var(--nyx-internal-line)!important}.settings-action:hover,.settings-block button:hover,.settings-input::file-selector-button:hover,.quick-tile:hover{border-color:var(--nyx-internal-line)!important;box-shadow:none!important;text-shadow:none!important}';
     const internalFernThemeStyle='html[data-nyx-theme="fresh"]{--nyx-app-canvas:#162019;--nyx-app-dot:#28382b;--nyx-app-line:#354b36;--nyx-app-text:#d9e5d6}html[data-nyx-theme="fresh"] body,html[data-nyx-theme="fresh"] .shell-page,html[data-nyx-theme="fresh"] .browser-shell-page{color:#d9e5d6!important}html[data-nyx-theme="fresh"] :is(.settings-block,.settings-side,.settings-action,.settings-preset,.settings-input,.settings-select,.quick-tile){border-color:#354b36!important;color:#d9e5d6!important;-webkit-text-fill-color:#d9e5d6!important}html[data-nyx-theme="fresh"] :is(.settings-block,.settings-side,.settings-input,.settings-select){background-color:rgba(19,28,21,.82)!important}html[data-nyx-theme="fresh"] :is(.settings-action,.settings-preset,button):hover{background-color:rgba(46,66,47,.72)!important}';
     const internalFounderProfileStyle='.nyx-founder-profile{position:relative;overflow:hidden;padding:22px;border:1px solid color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 30%,transparent);border-radius:22px;background:linear-gradient(135deg,color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 14%,transparent),rgba(10,18,30,.78))}.nyx-founder-banner{height:112px;margin:-22px -22px 22px;background:linear-gradient(135deg,color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 38%,#172337),#0b111c)}.nyx-founder-banner img{width:100%;height:100%;object-fit:cover}.nyx-founder-profile-content{display:grid;grid-template-columns:155px minmax(0,1fr);align-items:center;gap:26px}.nyx-founder-image-wrap{position:relative;overflow:visible}.nyx-founder-image{display:block;width:155px;height:155px;border:3px solid var(--nyx-founder-accent,#8fb8ff);border-radius:18px;object-fit:cover}.nyx-founder-status{position:absolute;right:-5px;bottom:-5px;width:19px;height:19px;border:3px solid #111a27;border-radius:50%;background:#717b8d}.nyx-founder-status-online{background:#57c486}.nyx-founder-status-idle{background:#e6b85a}.nyx-founder-status-dnd{background:#dd6170}.nyx-founder-role{margin:0 0 5px;color:var(--nyx-founder-accent,#8fb8ff);font-size:11px;letter-spacing:.14em;text-transform:uppercase}.nyx-founder-copy h3{margin:0;color:#f5f8ff;font-size:38px}.nyx-founder-handle{margin:4px 0 12px;color:#9fb0c8}.nyx-founder-badges{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}.nyx-founder-badge{padding:4px 8px;border:1px solid color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 45%,transparent);border-radius:999px;color:var(--nyx-founder-accent,#8fb8ff);font-size:11px}.nyx-founder-bio{margin:0;color:#bcc8d9;line-height:1.6}.nyx-founder-link{display:inline-flex;gap:6px;margin-top:15px;color:var(--nyx-founder-accent,#8fb8ff);text-decoration:none}@media(max-width:620px){.nyx-founder-profile-content{grid-template-columns:1fr;text-align:center}.nyx-founder-image-wrap{margin:auto}.nyx-founder-badges{justify-content:center}}';
+    const internalCustomPalette=nyxCustomThemePalette();
+    const internalUnifiedThemeStyle='html{--nyx-page-canvas:#151d2b;--nyx-page-top:#09111d;--nyx-page-field:#111a29;--nyx-page-panel:#141f31;--nyx-page-active:#1a293e;--nyx-page-line:#2a3b54;--nyx-page-text:#d4deec;--nyx-page-muted:#899bb5;--nyx-page-accent:#6687b2;--nyx-page-bright:#91acd2;--nyx-app-canvas:var(--nyx-page-canvas)!important;--nyx-app-dot:#202b3d!important;--nyx-app-line:var(--nyx-page-line)!important;--nyx-app-text:var(--nyx-page-text)!important}html[data-nyx-theme="midnight"]{--nyx-page-canvas:#0a1029;--nyx-page-top:#050817;--nyx-page-field:#111a3b;--nyx-page-panel:#141f31;--nyx-page-active:#1b2a40;--nyx-page-line:#2d405b;--nyx-page-text:#d6e1f0;--nyx-page-muted:#8fa2bc;--nyx-page-accent:#6f8fb9;--nyx-page-bright:#9eb7d9;--nyx-app-dot:#223047!important}html[data-nyx-theme="ruby"]{--nyx-page-canvas:#291219;--nyx-page-top:#16080d;--nyx-page-field:#351018;--nyx-page-panel:#211922;--nyx-page-active:#35202a;--nyx-page-line:#50333c;--nyx-page-text:#e2d7da;--nyx-page-muted:#aa9198;--nyx-page-accent:#a56573;--nyx-page-bright:#c99aa4;--nyx-app-dot:#332733!important}html[data-nyx-theme="emerald"]{--nyx-page-canvas:#0e251b;--nyx-page-top:#07130e;--nyx-page-field:#123126;--nyx-page-panel:#172224;--nyx-page-active:#203531;--nyx-page-line:#2f4a42;--nyx-page-text:#d4e2dd;--nyx-page-muted:#879f98;--nyx-page-accent:#628f80;--nyx-page-bright:#91bdae;--nyx-app-dot:#24343a!important}html[data-nyx-theme="sakura"]{--nyx-page-canvas:#281522;--nyx-page-top:#150a12;--nyx-page-field:#35162f;--nyx-page-panel:#211a23;--nyx-page-active:#332536;--nyx-page-line:#4c3748;--nyx-page-text:#e2d9e0;--nyx-page-muted:#a892a2;--nyx-page-accent:#9e718f;--nyx-page-bright:#c6a0ba;--nyx-app-dot:#332936!important}html[data-nyx-theme="fresh"]{--nyx-page-canvas:#162019;--nyx-page-top:#0b130d;--nyx-page-field:#121b14;--nyx-page-panel:#19241b;--nyx-page-active:#263526;--nyx-page-line:#354b36;--nyx-page-text:#d9e5d6;--nyx-page-muted:#91a68d;--nyx-page-accent:#728f6b;--nyx-page-bright:#a2bd9a;--nyx-app-dot:#28382b!important}html[data-nyx-theme="custom"]{--nyx-page-canvas:'+internalCustomPalette.canvas+';--nyx-page-top:'+internalCustomPalette.top+';--nyx-page-field:'+internalCustomPalette.field+';--nyx-page-panel:'+internalCustomPalette.panel+';--nyx-page-active:'+internalCustomPalette.line+';--nyx-page-line:'+internalCustomPalette.line+';--nyx-page-text:'+internalCustomPalette.text+';--nyx-page-muted:'+internalCustomPalette.muted+';--nyx-page-accent:'+internalCustomPalette.accent+';--nyx-page-bright:'+internalCustomPalette.bright+';--nyx-app-dot:'+internalCustomPalette.dot+'!important}html{min-height:100%!important;background-color:var(--nyx-page-canvas)!important;color-scheme:dark!important}html body{--theme-a:var(--nyx-page-accent)!important;--theme-b:var(--nyx-page-bright)!important;--theme-strong:var(--nyx-page-text)!important;--theme-border:var(--nyx-page-line)!important;min-height:100vh!important;background-color:transparent!important;background-image:none!important;color:var(--nyx-page-text)!important;-webkit-text-fill-color:var(--nyx-page-text)!important}.shell-page,.browser-shell-page{background-color:transparent!important;background-image:none!important;color:var(--nyx-page-text)!important}.shell-page :is(h1,h2,h3,strong),.browser-shell-page :is(h1,h2,h3,strong),.settings-main :is(h1,h2,h3,strong){background:none!important;color:var(--nyx-page-text)!important;-webkit-text-fill-color:var(--nyx-page-text)!important;text-shadow:none!important}.shell-page p,.browser-shell-page p,.settings-main p,.settings-range,.settings-range span{background:none!important;color:var(--nyx-page-muted)!important;-webkit-text-fill-color:var(--nyx-page-muted)!important;text-shadow:none!important}.settings-app{background:var(--nyx-page-canvas)!important;background-image:none!important;color:var(--nyx-page-text)!important}.settings-side{background:var(--nyx-page-canvas)!important;background-image:none!important;border-color:var(--nyx-page-line)!important;color:var(--nyx-page-muted)!important}.settings-main{background:var(--nyx-page-canvas)!important;background-image:none!important;border-color:var(--nyx-page-line)!important}.settings-side button{background:transparent!important;background-image:none!important;border-color:transparent!important;color:var(--nyx-page-muted)!important;-webkit-text-fill-color:var(--nyx-page-muted)!important}.settings-side button:is(:hover,.active){background:var(--nyx-page-active)!important;color:var(--nyx-page-text)!important;-webkit-text-fill-color:var(--nyx-page-text)!important}.settings-section .settings-block{background:color-mix(in srgb,var(--nyx-page-panel) 90%,var(--nyx-page-canvas))!important;background-image:none!important;border-color:var(--nyx-page-line)!important;color:var(--nyx-page-text)!important}.settings-section .settings-block h2{color:var(--nyx-page-text)!important;-webkit-text-fill-color:var(--nyx-page-text)!important}.settings-section .settings-block p{color:var(--nyx-page-muted)!important;-webkit-text-fill-color:var(--nyx-page-muted)!important}.settings-app :is(input:not([type="range"]),select,textarea,.settings-input,.settings-select,.panic-key-display){background:var(--nyx-page-field)!important;background-image:none!important;border-color:var(--nyx-page-line)!important;color:var(--nyx-page-text)!important;-webkit-text-fill-color:var(--nyx-page-text)!important;caret-color:var(--nyx-page-bright)!important}.settings-app :is(input,textarea)::placeholder{color:var(--nyx-page-muted)!important;-webkit-text-fill-color:var(--nyx-page-muted)!important;opacity:.82!important}.settings-app :is(.settings-action,.settings-block button,.settings-input::file-selector-button){background:var(--nyx-page-active)!important;background-image:none!important;border-color:var(--nyx-page-line)!important;color:var(--nyx-page-text)!important;-webkit-text-fill-color:var(--nyx-page-text)!important;box-shadow:none!important;text-shadow:none!important}.settings-app :is(.settings-action,.settings-block button,.settings-input::file-selector-button):hover{background:color-mix(in srgb,var(--nyx-page-active) 78%,var(--nyx-page-accent))!important;border-color:var(--nyx-page-bright)!important;filter:none!important}.quick-tile{background:transparent!important;background-image:none!important;border-color:transparent!important;color:var(--nyx-page-text)!important;-webkit-text-fill-color:var(--nyx-page-text)!important;box-shadow:none!important}.quick-tile span{background:none!important;color:var(--nyx-page-text)!important;-webkit-text-fill-color:var(--nyx-page-text)!important}.quick-tile:hover{background:color-mix(in srgb,var(--nyx-page-active) 72%,transparent)!important;background-image:none!important;border-color:var(--nyx-page-line)!important;box-shadow:none!important}.quick-combo,select option,select optgroup{background:var(--nyx-page-field)!important;color:var(--nyx-page-text)!important;-webkit-text-fill-color:var(--nyx-page-text)!important;border-color:var(--nyx-page-line)!important}.nyx-founder-profile:not(.nyx-founder-profile-standard){background:color-mix(in srgb,var(--nyx-page-panel) 90%,var(--nyx-page-canvas))!important;border-color:var(--nyx-page-line)!important}::selection{background:var(--nyx-page-accent)!important;color:#081018!important;-webkit-text-fill-color:#081018!important}';
+    const internalFreshGeometryStyle='html[data-nyx-theme="fresh"] body.theme-fresh .quick-tile{background:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important}html[data-nyx-theme="fresh"] body.theme-fresh .quick-tile:hover{background:color-mix(in srgb,var(--nyx-page-active) 72%,transparent)!important;border-color:var(--nyx-page-line)!important}';
     const panicFrameScript='let NYX_PANIC_CAPTURE=false;function nyxPanicCombo(e){const key=String(e.key||"").trim();if(!key||["Control","Shift","Alt","Meta"].includes(key))return "";const parts=[];if(e.ctrlKey)parts.push("Ctrl");if(e.altKey)parts.push("Alt");if(e.shiftKey)parts.push("Shift");if(e.metaKey)parts.push("Meta");parts.push(key.length===1?key.toUpperCase():key.replace(/^Arrow/,""));return parts.join("+")}document.addEventListener("click",e=>{if(e.target.closest("[data-panic-capture]"))NYX_PANIC_CAPTURE=true;if(e.target.closest("[data-panic-clear]"))NYX_PANIC_CAPTURE=false},true);document.addEventListener("keydown",e=>{if(!NYX_PANIC_CAPTURE)return;const combo=nyxPanicCombo(e);if(!combo)return;e.preventDefault();e.stopPropagation();NYX_PANIC_CAPTURE=false;document.querySelectorAll("[data-panic-key-display]").forEach(el=>el.textContent=combo);parent.postMessage({type:"nyx:panic-key-set",combo},"*")},true);';
     const internalPaintScript='';
     const finalInternalPaintScript='';
-    return '<!doctype html><meta charset="utf-8"><base target="_self"><style>'+style+themeStyle+freshThemeStyle+themeAppStyle+compactSettingsStyle+pageThemeStyle+themeBorderOnlyStyle+'input[type=file].settings-input{color:#f8fafc;background:transparent!important}input[type=file].settings-input::file-selector-button{height:28px;margin:0 12px 0 0;border:1px solid var(--theme-border,rgba(255,255,255,.3));border-radius:999px;background:transparent!important;background-image:none!important;color:#f8fafc;padding:0 12px;font:400 12px Outfit,Arial,sans-serif}.theme-ruby input[type=file].settings-input::file-selector-button,.theme-emerald input[type=file].settings-input::file-selector-button,.theme-sakura input[type=file].settings-input::file-selector-button{background:transparent!important;background-image:none!important;color:#f8fafc!important}.settings-section{display:none}.settings-section.active{display:block}.settings-range{display:grid;grid-template-columns:70px minmax(0,1fr) 46px;align-items:center;gap:10px;margin:12px 0;color:#d1d5db;font-size:13px;font-weight:400}.settings-range input{width:100%;accent-color:#9ca3af}.settings-nav-icon{width:24px;height:24px;border-radius:999px;border:2px solid #dbe2ea;display:inline-block;position:relative;background:transparent!important;box-shadow:none!important}.icon-general::before{content:"";position:absolute;inset:5px;border:2px solid #dbe2ea;border-radius:999px}.icon-effects::before{content:"";position:absolute;left:5px;right:5px;top:10px;height:2px;background:#dbe2ea;box-shadow:0 -5px 0 #dbe2ea,0 5px 0 #dbe2ea}.icon-watch::before{content:"";position:absolute;left:8px;top:5px;border-left:9px solid #dbe2ea;border-top:6px solid transparent;border-bottom:6px solid transparent}.icon-browser::before{content:"";position:absolute;left:4px;right:4px;top:6px;height:11px;border:2px solid #dbe2ea;border-radius:4px}.icon-browser::after{content:"";position:absolute;left:7px;right:7px;bottom:4px;height:2px;background:#dbe2ea}.settings-effect-preview span:nth-child(1)::before{content:"";width:14px;height:20px;border-radius:999px;background:#cfd8e3;transform:rotate(28deg)}.settings-effect-preview span:nth-child(2)::before{content:"";width:18px;height:18px;background:#cfd8e3;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 56%,79% 91%,50% 70%,21% 91%,32% 56%,2% 35%,39% 35%)}.settings-effect-preview span:nth-child(3)::before{content:"";width:18px;height:16px;background:#cfd8e3;clip-path:polygon(50% 100%,8% 52%,4% 22%,24% 2%,50% 20%,76% 2%,96% 22%,92% 52%)}.settings-effect-preview span:nth-child(4)::before{content:"";width:18px;height:18px;border:3px solid #cfd8e3;border-radius:999px}'+themeBorderOnlyStyle+flatInternalStyle+flatInternalPageStyle+transparentInternalFinalStyle+settingsInternalFinalStyle+settingsGlassRepairStyle+browserSettingsSinglePaneStyle+settingsClearAroundStyle+'html body .settings-app :is(input,select,textarea,.settings-input,.settings-select):hover{transform:none!important}html body .settings-app button:hover{transform:none!important}'+clearInternalPageStyle+internalAppsLaunchStyle+internalAppsHazeStyle+finalInternalBackgroundStyle+normalInternalTextStyle+(page.style||'')+internalAppsThemeCanvasStyle+internalThemePurityStyle+internalFernThemeStyle+internalFounderProfileStyle+'</style>'+page.body+'<script>const NYX_EFFECT='+JSON.stringify(store.text('nyx.visualEffect','none'))+';const NYX_EFFECT_SPEED='+JSON.stringify(store.text('nyx.visualEffectSpeed','1.1'))+';const NYX_EFFECT_AMOUNT='+JSON.stringify(store.text('nyx.visualEffectAmount','16'))+';const NYX_THEME='+JSON.stringify(normalizeNyxTheme(store.text('nyx.theme','default')))+';document.body.classList.add("theme-"+NYX_THEME);document.body.dataset.nyxTheme=NYX_THEME;document.documentElement.dataset.nyxTheme=NYX_THEME;document.querySelectorAll("[data-effect-value]").forEach(el=>{el.value=NYX_EFFECT});document.querySelectorAll("[data-effect-speed]").forEach(el=>{el.value=NYX_EFFECT_SPEED});document.querySelectorAll("[data-effect-amount]").forEach(el=>{el.value=NYX_EFFECT_AMOUNT});document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=Number(NYX_EFFECT_SPEED).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=NYX_EFFECT_AMOUNT});'+internalPaintScript+finalInternalPaintScript+script+popupScript+panicFrameScript+(page.script||'')+'<\/script>';
+    return '<!doctype html><meta charset="utf-8"><base target="_self"><style>'+style+themeStyle+freshThemeStyle+themeAppStyle+compactSettingsStyle+pageThemeStyle+themeBorderOnlyStyle+'input[type=file].settings-input{color:#f8fafc;background:transparent!important}input[type=file].settings-input::file-selector-button{height:28px;margin:0 12px 0 0;border:1px solid var(--theme-border,rgba(255,255,255,.3));border-radius:999px;background:transparent!important;background-image:none!important;color:#f8fafc;padding:0 12px;font:400 12px Outfit,Arial,sans-serif}.theme-ruby input[type=file].settings-input::file-selector-button,.theme-emerald input[type=file].settings-input::file-selector-button,.theme-sakura input[type=file].settings-input::file-selector-button{background:transparent!important;background-image:none!important;color:#f8fafc!important}.settings-section{display:none}.settings-section.active{display:block}.settings-range{display:grid;grid-template-columns:70px minmax(0,1fr) 46px;align-items:center;gap:10px;margin:12px 0;color:#d1d5db;font-size:13px;font-weight:400}.settings-range input{width:100%;accent-color:#9ca3af}.settings-nav-icon{width:24px;height:24px;border-radius:999px;border:2px solid #dbe2ea;display:inline-block;position:relative;background:transparent!important;box-shadow:none!important}.icon-general::before{content:"";position:absolute;inset:5px;border:2px solid #dbe2ea;border-radius:999px}.icon-effects::before{content:"";position:absolute;left:5px;right:5px;top:10px;height:2px;background:#dbe2ea;box-shadow:0 -5px 0 #dbe2ea,0 5px 0 #dbe2ea}.icon-watch::before{content:"";position:absolute;left:8px;top:5px;border-left:9px solid #dbe2ea;border-top:6px solid transparent;border-bottom:6px solid transparent}.icon-browser::before{content:"";position:absolute;left:4px;right:4px;top:6px;height:11px;border:2px solid #dbe2ea;border-radius:4px}.icon-browser::after{content:"";position:absolute;left:7px;right:7px;bottom:4px;height:2px;background:#dbe2ea}.settings-effect-preview span:nth-child(1)::before{content:"";width:14px;height:20px;border-radius:999px;background:#cfd8e3;transform:rotate(28deg)}.settings-effect-preview span:nth-child(2)::before{content:"";width:18px;height:18px;background:#cfd8e3;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 56%,79% 91%,50% 70%,21% 91%,32% 56%,2% 35%,39% 35%)}.settings-effect-preview span:nth-child(3)::before{content:"";width:18px;height:16px;background:#cfd8e3;clip-path:polygon(50% 100%,8% 52%,4% 22%,24% 2%,50% 20%,76% 2%,96% 22%,92% 52%)}.settings-effect-preview span:nth-child(4)::before{content:"";width:18px;height:18px;border:3px solid #cfd8e3;border-radius:999px}'+themeBorderOnlyStyle+flatInternalStyle+flatInternalPageStyle+transparentInternalFinalStyle+settingsInternalFinalStyle+settingsGlassRepairStyle+browserSettingsSinglePaneStyle+settingsClearAroundStyle+'html body .settings-app :is(input,select,textarea,.settings-input,.settings-select):hover{transform:none!important}html body .settings-app button:hover{transform:none!important}'+clearInternalPageStyle+internalAppsLaunchStyle+internalAppsHazeStyle+finalInternalBackgroundStyle+normalInternalTextStyle+(page.style||'')+internalAppsThemeCanvasStyle+internalThemePurityStyle+internalFernThemeStyle+internalFounderProfileStyle+internalUnifiedThemeStyle+internalFreshGeometryStyle+'</style>'+page.body+'<script>const NYX_EFFECT='+JSON.stringify(store.text('nyx.visualEffect','none'))+';const NYX_EFFECT_SPEED='+JSON.stringify(store.text('nyx.visualEffectSpeed','1.1'))+';const NYX_EFFECT_AMOUNT='+JSON.stringify(store.text('nyx.visualEffectAmount','16'))+';const NYX_THEME='+JSON.stringify(normalizeNyxTheme(store.text('nyx.theme','default')))+';document.body.classList.add("theme-"+NYX_THEME);document.body.dataset.nyxTheme=NYX_THEME;document.documentElement.dataset.nyxTheme=NYX_THEME;document.querySelectorAll("[data-effect-value]").forEach(el=>{el.value=NYX_EFFECT});document.querySelectorAll("[data-effect-speed]").forEach(el=>{el.value=NYX_EFFECT_SPEED});document.querySelectorAll("[data-effect-amount]").forEach(el=>{el.value=NYX_EFFECT_AMOUNT});document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=Number(NYX_EFFECT_SPEED).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=NYX_EFFECT_AMOUNT});'+internalPaintScript+finalInternalPaintScript+script+popupScript+panicFrameScript+(page.script||'')+'<\/script>';
   }
   function showBrowserShellInternalPage(name){
     hideBrowserSuggestions();
@@ -4445,6 +4620,13 @@
     return `${protocol}//${location.host}/wisp/`;
   }
   function nyxPresenceUrl(){
+    const configured=String(globalThis.__NYX_RUNTIME_CONFIG__?.presenceUrl||'').trim();
+    if(configured){
+      try{
+        const endpoint=new URL(configured,location.href);
+        if(/^https?:$/i.test(endpoint.protocol))return endpoint.href;
+      }catch{}
+    }
     try{
       const endpoint=new URL(wispUrl());
       endpoint.protocol=endpoint.protocol==='wss:' ? 'https:' : 'http:';
@@ -5734,7 +5916,7 @@
       ['youtube.com','YouTube','https://www.youtube.com/'],
       ['games','Study','/assets/games/'],
       ['geforcenow','GeForce Now','https://play.geforcenow.com/'],
-      ['roblox.com','Roblox','https://www.roblox.com/'],
+      ['roblox.com','Roblox','https://web.cloudmoonapp.com/game/com.roblox.client/'],
       ['discord.com','Discord','https://discord.com/app'],
       ['spotify.com','Spotify','https://open.spotify.com/'],
       ['traxmojo.com','Music','https://traxmojo.com/'],

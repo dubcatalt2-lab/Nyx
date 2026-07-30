@@ -49,6 +49,16 @@ const presenceCleanupIntervalMs = 5 * 60_000;
 let lastPresenceCleanupAt = 0;
 const profileImageDataLimit = 850_000;
 const profileImageDocumentLimit = 900_000;
+const profileMediaEncodedLimit = 11_250_000;
+const profileMediaChunkLimit = 450_000;
+const profileMediaChunkCountLimit = 32;
+const ownerDashboardUserScanLimit = 5_000;
+const ownerDashboardPageSizeLimit = 100;
+const signedInOnlineWindowMs = 90_000;
+const userActivityEventWindowMs = 15 * 60_000;
+const userActivityEventTimes = new Map();
+const ownerDashboardSnapshotTtlMs = 30_000;
+let ownerDashboardSnapshotCache = { expiresAt: 0, value: null, promise: null };
 const linkGeneratorAttempts = new Map();
 const linkGeneratorWindowMs = 15 * 60 * 1000;
 const linkGeneratorMaxAttempts = 5;
@@ -1353,6 +1363,10 @@ const founderProfileDefaults = Object.freeze({
   accentPrimary: "#8fb8ff",
   accentSecondary: "#8ea1ff",
   bannerColor: "#8ea1ff",
+  displayNameFont: "gg-sans",
+  displayNameEffect: "solid",
+  displayNameColorPrimary: "#ffffff",
+  displayNameColorSecondary: "#8ea1ff",
   profileEffect: "none",
   avatarDecoration: "none",
   status: "online",
@@ -1377,6 +1391,7 @@ function founderProfileUrl(value, fallback = "") {
   if (/^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(raw) && raw.length <= profileImageDataLimit) return raw.replace(/\s/g, "");
   if (raw.length > 1_500) return fallback;
   if (/^\/assets\/[a-z0-9/_\-.]+$/i.test(raw)) return raw;
+  if (/^\/api\/profile-media\/[A-Za-z0-9_-]{8,128}\/(?:avatar|banner)\/[A-Za-z0-9_-]{12,80}$/.test(raw)) return raw;
   try {
     const parsed = new URL(raw);
     if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return fallback;
@@ -1395,6 +1410,8 @@ function normalizeFounderProfile(value = {}) {
   const accentPrimary = /^#[0-9a-f]{6}$/i.test(String(source.accentPrimary || source.accent || "").trim()) ? String(source.accentPrimary || source.accent).trim().toLowerCase() : founderProfileDefaults.accentPrimary;
   const accentSecondary = /^#[0-9a-f]{6}$/i.test(String(source.accentSecondary || "").trim()) ? String(source.accentSecondary).trim().toLowerCase() : founderProfileDefaults.accentSecondary;
   const bannerColor = /^#[0-9a-f]{6}$/i.test(String(source.bannerColor || "").trim()) ? String(source.bannerColor).trim().toLowerCase() : accentSecondary;
+  const displayNameColorPrimary = /^#[0-9a-f]{6}$/i.test(String(source.displayNameColorPrimary || "").trim()) ? String(source.displayNameColorPrimary).trim().toLowerCase() : founderProfileDefaults.displayNameColorPrimary;
+  const displayNameColorSecondary = /^#[0-9a-f]{6}$/i.test(String(source.displayNameColorSecondary || "").trim()) ? String(source.displayNameColorSecondary).trim().toLowerCase() : accentSecondary;
   return {
     displayName: founderProfileText(source.displayName, founderProfileDefaults.displayName, 48),
     handle: founderProfileText(source.handle, founderProfileDefaults.handle, 40),
@@ -1406,6 +1423,10 @@ function normalizeFounderProfile(value = {}) {
     accentPrimary,
     accentSecondary,
     bannerColor,
+    displayNameFont: ["gg-sans", "tempo", "sakura", "jellybean", "modern", "medieval", "eight-bit", "vampyre"].includes(String(source.displayNameFont || "").toLowerCase()) ? String(source.displayNameFont).toLowerCase() : founderProfileDefaults.displayNameFont,
+    displayNameEffect: ["solid", "gradient", "neon", "toon", "pop"].includes(String(source.displayNameEffect || "").toLowerCase()) ? String(source.displayNameEffect).toLowerCase() : founderProfileDefaults.displayNameEffect,
+    displayNameColorPrimary,
+    displayNameColorSecondary,
     profileEffect: ["none", "glow", "sparkle", "aurora", "holographic", "fireflies", "cosmic-dust", "electric-storm", "meteor-shower", "cyber-grid", "plasma", "snowfall", "embers", "bubbles"].includes(String(source.profileEffect || "").toLowerCase()) ? String(source.profileEffect).toLowerCase() : founderProfileDefaults.profileEffect,
     avatarDecoration: ["none", "starfall", "orbit", "laurel", "neon-wings"].includes(String(source.avatarDecoration || "").toLowerCase()) ? String(source.avatarDecoration).toLowerCase() : founderProfileDefaults.avatarDecoration,
     status: ["online", "idle", "dnd", "offline"].includes(String(source.status || "").toLowerCase()) ? String(source.status).toLowerCase() : founderProfileDefaults.status,
@@ -1434,6 +1455,11 @@ function nyxUsernameFromToken(token = {}) {
   const email = String(token.email || "");
   const username = email.split("@")[0].replace(/[^a-z0-9_.-]/gi, "").slice(0, 32);
   return username || "nyx-user";
+}
+
+function nyxProfileUsername(value, fallback = "nyx-user") {
+  const username = String(value || "").trim().replace(/^@+/, "").toLowerCase();
+  return /^[a-z0-9_.-]{3,32}$/.test(username) ? username : fallback;
 }
 
 function nyxProfileImage(value, fallback = "") {
@@ -1474,13 +1500,16 @@ function normalizeNyxUserProfile(value = {}, token = {}) {
   const uid = String(token.uid || "");
   const username = nyxUsernameFromToken(token);
   const fallbackName = founderProfileText(token.name, username, 48);
-  const fallbackHandle = `@${username || uid.slice(0, 8) || "user"}`;
+  const fallbackUsername = nyxProfileUsername(username || uid.slice(0, 8) || "user");
+  const fallbackHandle = `@${fallbackUsername}`;
   const accentPrimary = /^#[0-9a-f]{6}$/i.test(String(source.accentPrimary || source.accent || "").trim()) ? String(source.accentPrimary || source.accent).trim().toLowerCase() : "#5865f2";
   const accentSecondary = /^#[0-9a-f]{6}$/i.test(String(source.accentSecondary || source.bannerPrimary || "").trim()) ? String(source.accentSecondary || source.bannerPrimary).trim().toLowerCase() : "#8ea1ff";
   const bannerColor = /^#[0-9a-f]{6}$/i.test(String(source.bannerColor || source.bannerSecondary || "").trim()) ? String(source.bannerColor || source.bannerSecondary).trim().toLowerCase() : accentSecondary;
+  const displayNameColorPrimary = /^#[0-9a-f]{6}$/i.test(String(source.displayNameColorPrimary || "").trim()) ? String(source.displayNameColorPrimary).trim().toLowerCase() : "#ffffff";
+  const displayNameColorSecondary = /^#[0-9a-f]{6}$/i.test(String(source.displayNameColorSecondary || "").trim()) ? String(source.displayNameColorSecondary).trim().toLowerCase() : accentSecondary;
   return {
     displayName: founderProfileText(source.displayName, fallbackName, 48),
-    handle: founderProfileText(source.handle, fallbackHandle, 40).replace(/\s+/g, ""),
+    handle: `@${nyxProfileUsername(source.handle, fallbackUsername)}`,
     bio: founderProfileText(source.bio, "", 280),
     customStatus: founderProfileText(source.customStatus, "", 80),
     avatarUrl: nyxProfileImage(source.avatarUrl, nyxProfileImage(token.picture)),
@@ -1489,10 +1518,252 @@ function normalizeNyxUserProfile(value = {}, token = {}) {
     accentPrimary,
     accentSecondary,
     bannerColor,
+    displayNameFont: ["gg-sans", "tempo", "sakura", "jellybean", "modern", "medieval", "eight-bit", "vampyre"].includes(String(source.displayNameFont || "").toLowerCase()) ? String(source.displayNameFont).toLowerCase() : "gg-sans",
+    displayNameEffect: ["solid", "gradient", "neon", "toon", "pop"].includes(String(source.displayNameEffect || "").toLowerCase()) ? String(source.displayNameEffect).toLowerCase() : "solid",
+    displayNameColorPrimary,
+    displayNameColorSecondary,
     profileEffect: ["none", "glow", "sparkle", "aurora", "holographic", "fireflies", "cosmic-dust", "electric-storm", "meteor-shower", "cyber-grid", "plasma", "snowfall", "embers", "bubbles"].includes(String(source.profileEffect || "").toLowerCase()) ? String(source.profileEffect).toLowerCase() : "none",
     avatarDecoration: ["none", "starfall", "orbit", "laurel", "neon-wings"].includes(String(source.avatarDecoration || "").toLowerCase()) ? String(source.avatarDecoration).toLowerCase() : "none",
     status: ["online", "idle", "dnd", "offline"].includes(String(source.status || "").toLowerCase()) ? String(source.status).toLowerCase() : "online"
   };
+}
+
+async function saveNyxProfileWithUsername(firebase, token, profile, createdAt, previousProfile = null) {
+  const uid = String(token.uid || "");
+  const username = nyxProfileUsername(profile.handle, nyxProfileUsername(nyxUsernameFromToken(token)));
+  const previousUsername = previousProfile ? nyxProfileUsername(previousProfile.handle, "") : "";
+  const profileRef = firebase.firestore.collection("nyxUserProfiles").doc(uid);
+  const usernameRef = firebase.firestore.collection("nyxUsernames").doc(username);
+  const previousUsernameRef = previousUsername && previousUsername !== username
+    ? firebase.firestore.collection("nyxUsernames").doc(previousUsername)
+    : null;
+  const now = new Date().toISOString();
+  await firebase.firestore.runTransaction(async transaction => {
+    const usernameSnapshot = await transaction.get(usernameRef);
+    const previousUsernameSnapshot = previousUsernameRef ? await transaction.get(previousUsernameRef) : null;
+    const duplicateProfiles = await transaction.get(
+      firebase.firestore.collection("nyxUserProfiles").where("profile.handle", "==", `@${username}`).limit(2)
+    );
+    const claimedBy = String(usernameSnapshot.data()?.ownerUid || "");
+    const duplicateOwner = duplicateProfiles.docs.find(document => document.id !== uid)?.id || "";
+    if ((usernameSnapshot.exists && claimedBy !== uid) || duplicateOwner) {
+      const error = new Error("That username is already taken.");
+      error.status = 409;
+      throw error;
+    }
+    transaction.set(usernameRef, {
+      username,
+      ownerUid: uid,
+      createdAt: String(usernameSnapshot.data()?.createdAt || now),
+      updatedAt: now
+    }, { merge: true });
+    if (previousUsernameRef && previousUsernameSnapshot?.exists && String(previousUsernameSnapshot.data()?.ownerUid || "") === uid) {
+      transaction.delete(previousUsernameRef);
+    }
+    transaction.set(profileRef, {
+      profile: { ...profile, handle: `@${username}` },
+      createdAt,
+      updatedAt: now
+    }, { merge: true });
+  });
+  return { ...profile, handle: `@${username}` };
+}
+
+function safeDateIso(value, fallback = "") {
+  const timestamp = Date.parse(String(value || ""));
+  return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : fallback;
+}
+
+function safeActivityTime(value) {
+  const numeric = Number(value || 0);
+  if (Number.isFinite(numeric) && numeric > 0) return numeric;
+  const parsed = Date.parse(String(value || ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeNyxRole(value) {
+  return String(value || "").trim().toLowerCase() === "admin" ? "admin" : "member";
+}
+
+function normalizeSubscriptionStatus(value) {
+  const status = String(value || "").trim().toLowerCase();
+  return ["free", "premium", "trialing", "past_due", "canceled"].includes(status) ? status : "free";
+}
+
+function nyxDeliverableEmail(value) {
+  const email = String(value || "").trim();
+  return Boolean(email && !/@account\.nyx\.local$/i.test(email) && !/\.local$/i.test(email));
+}
+
+async function ownerDashboardActor(req) {
+  const { firebase, token } = await authenticatedNyxUser(req);
+  const ownerUid = founderProfileConfig().administratorUid;
+  if (!ownerUid || token.uid !== ownerUid) {
+    const error = new Error("Owner access is required.");
+    error.status = 403;
+    throw error;
+  }
+  await firebase.firestore.collection("nyxUserAdministration").doc(token.uid).set({
+    role: "owner",
+    owner: true,
+    updatedAt: new Date().toISOString()
+  }, { merge: true });
+  return { firebase, token };
+}
+
+async function firestoreDocumentsById(firestore, collectionName, ids, fieldMask = []) {
+  const uniqueIds = [...new Set(ids.map(value => String(value || "")).filter(Boolean))];
+  const result = new Map();
+  for (let offset = 0; offset < uniqueIds.length; offset += 250) {
+    const refs = uniqueIds.slice(offset, offset + 250).map(id => firestore.collection(collectionName).doc(id));
+    if (!refs.length) continue;
+    const snapshots = await firestore.getAll(...refs, ...(fieldMask.length ? [{ fieldMask }] : []));
+    snapshots.forEach(snapshot => {
+      if (snapshot.exists) result.set(snapshot.id, snapshot.data() || {});
+    });
+  }
+  return result;
+}
+
+async function recordNyxAudit(firebase, {
+  actorUid = "",
+  actorEmail = "",
+  action,
+  targetUid = "",
+  targetEmail = "",
+  details = {}
+}) {
+  const cleanAction = String(action || "").trim().slice(0, 80);
+  if (!cleanAction) return;
+  const cleanDetails = {};
+  Object.entries(details && typeof details === "object" ? details : {}).slice(0, 20).forEach(([key, value]) => {
+    const safeKey = String(key || "").replace(/[^a-z0-9_-]/gi, "").slice(0, 40);
+    if (!safeKey) return;
+    if (typeof value === "boolean" || typeof value === "number") cleanDetails[safeKey] = value;
+    else cleanDetails[safeKey] = String(value ?? "").slice(0, 240);
+  });
+  await firebase.firestore.collection("nyxAuditLog").add({
+    actorUid: String(actorUid || "").slice(0, 128),
+    actorEmail: String(actorEmail || "").slice(0, 254),
+    action: cleanAction,
+    targetUid: String(targetUid || "").slice(0, 128),
+    targetEmail: String(targetEmail || "").slice(0, 254),
+    details: cleanDetails,
+    createdAt: new Date().toISOString(),
+    createdAtMs: Date.now()
+  });
+}
+
+async function recordNyxAuditSafe(firebase, event) {
+  try {
+    await recordNyxAudit(firebase, event);
+  } catch (error) {
+    console.error("Nyx audit event could not be recorded:", error?.message || error);
+  }
+}
+
+async function listAllFirebaseUsers(auth, limit = ownerDashboardUserScanLimit) {
+  const users = [];
+  let pageToken;
+  do {
+    const page = await auth.listUsers(Math.min(1000, limit - users.length), pageToken);
+    users.push(...page.users);
+    pageToken = page.pageToken;
+  } while (pageToken && users.length < limit);
+  return { users, truncated: Boolean(pageToken) };
+}
+
+function nyxOwnerUserRecord(user, administration = {}, profileData = {}, activity = {}, ownerUid = "", includeProfileMedia = false) {
+  const profile = normalizeNyxUserProfile(profileData?.profile);
+  const email = String(user.email || "");
+  const emailUsername = email.split("@")[0] || user.uid.slice(0, 8);
+  const profileUsername = String(profile.handle || "").replace(/^@/, "");
+  const isOwner = user.uid === ownerUid;
+  const role = isOwner ? "owner" : normalizeNyxRole(administration.role);
+  const subscriptionStatus = normalizeSubscriptionStatus(administration.subscriptionStatus || administration.subscription?.status);
+  const monthlyRevenueCents = Math.max(0, Math.min(100_000_000, Number(administration.monthlyRevenueCents || administration.subscription?.monthlyRevenueCents || 0) || 0));
+  const lastActiveAtMs = safeActivityTime(activity.lastActiveAtMs || activity.lastActiveAt);
+  const now = Date.now();
+  return {
+    uid: user.uid,
+    displayName: String(profile.displayName || user.displayName || emailUsername).slice(0, 80),
+    username: String(profileUsername || administration.username || emailUsername).slice(0, 80),
+    email,
+    deliverableEmail: nyxDeliverableEmail(email),
+    role,
+    subscriptionStatus,
+    monthlyRevenueCents,
+    createdAt: safeDateIso(user.metadata?.creationTime),
+    lastSignInAt: safeDateIso(user.metadata?.lastSignInTime),
+    lastActiveAt: lastActiveAtMs ? new Date(lastActiveAtMs).toISOString() : "",
+    online: Boolean(lastActiveAtMs && now - lastActiveAtMs <= signedInOnlineWindowMs),
+    emailVerified: Boolean(user.emailVerified),
+    disabled: Boolean(user.disabled),
+    photoUrl: includeProfileMedia ? String(profile.avatarUrl || user.photoURL || "") : (/^data:image\//i.test(String(profile.avatarUrl || user.photoURL || "")) ? "" : String(profile.avatarUrl || user.photoURL || "").slice(0, 1_500)),
+    profile: {
+      displayName: profile.displayName,
+      handle: profile.handle,
+      bio: profile.bio,
+      customStatus: profile.customStatus,
+      status: profile.status,
+      avatarUrl: includeProfileMedia ? profile.avatarUrl : "",
+      bannerUrl: includeProfileMedia ? profile.bannerUrl : ""
+    }
+  };
+}
+
+function nyxOwnerSortUsers(users, sort, direction) {
+  const allowed = new Set(["displayName", "username", "email", "role", "subscriptionStatus", "createdAt", "lastSignInAt", "lastActiveAt", "status"]);
+  const key = allowed.has(sort) ? sort : "createdAt";
+  const multiplier = direction === "asc" ? 1 : -1;
+  return users.sort((left, right) => {
+    let a = key === "status" ? (left.disabled ? "disabled" : "enabled") : left[key];
+    let b = key === "status" ? (right.disabled ? "disabled" : "enabled") : right[key];
+    if (key.endsWith("At")) {
+      a = Date.parse(a || "") || 0;
+      b = Date.parse(b || "") || 0;
+      return (a - b) * multiplier;
+    }
+    return String(a || "").localeCompare(String(b || ""), undefined, { sensitivity: "base", numeric: true }) * multiplier;
+  });
+}
+
+async function ownerDashboardSnapshot(firebase) {
+  const now = Date.now();
+  if (ownerDashboardSnapshotCache.value && ownerDashboardSnapshotCache.expiresAt > now) return ownerDashboardSnapshotCache.value;
+  if (ownerDashboardSnapshotCache.promise) return ownerDashboardSnapshotCache.promise;
+  ownerDashboardSnapshotCache.promise = (async () => {
+    const { users: authUsers, truncated } = await listAllFirebaseUsers(firebase.auth);
+    const uids = authUsers.map(user => user.uid);
+    const [administration, profiles, activity] = await Promise.all([
+      firestoreDocumentsById(firebase.firestore, "nyxUserAdministration", uids),
+      firestoreDocumentsById(firebase.firestore, "nyxUserProfiles", uids, ["profile.displayName", "profile.handle", "profile.bio", "profile.customStatus", "profile.status"]),
+      firestoreDocumentsById(firebase.firestore, "nyxUserActivity", uids)
+    ]);
+    const ownerUid = founderProfileConfig().administratorUid;
+    return {
+      users: authUsers.map(user => nyxOwnerUserRecord(
+        user,
+        administration.get(user.uid),
+        profiles.get(user.uid),
+        activity.get(user.uid),
+        ownerUid
+      )),
+      truncated
+    };
+  })();
+  try {
+    const value = await ownerDashboardSnapshotCache.promise;
+    ownerDashboardSnapshotCache = { expiresAt: Date.now() + ownerDashboardSnapshotTtlMs, value, promise: null };
+    return value;
+  } catch (error) {
+    ownerDashboardSnapshotCache.promise = null;
+    throw error;
+  }
+}
+
+function invalidateOwnerDashboardSnapshot() {
+  ownerDashboardSnapshotCache = { expiresAt: 0, value: null, promise: null };
 }
 
 function linkGeneratorClientId(req) {
@@ -1760,7 +2031,18 @@ app.get("/api/profiles/me", async (req, res) => {
     const snapshot = await ref.get();
     const profile = normalizeNyxUserProfile(snapshot.data()?.profile, token);
     const createdAt = String(snapshot.data()?.createdAt || new Date().toISOString());
-    if (!snapshot.exists) await ref.set({ profile, createdAt, updatedAt: createdAt });
+    if (!snapshot.exists) {
+      const savedProfile = await saveNyxProfileWithUsername(firebase, token, profile, createdAt);
+      Object.assign(profile, savedProfile);
+      invalidateOwnerDashboardSnapshot();
+      await recordNyxAuditSafe(firebase, {
+        actorUid: token.uid,
+        actorEmail: token.email,
+        action: "profile_created",
+        targetUid: token.uid,
+        targetEmail: token.email
+      });
+    }
     res.json({ uid: token.uid, profile, createdAt });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "Nyx Profile is unavailable." });
@@ -1777,16 +2059,200 @@ app.put("/api/profiles/me", async (req, res) => {
     const { firebase, token } = await authenticatedNyxUser(req);
     const ref = firebase.firestore.collection("nyxUserProfiles").doc(token.uid);
     const previous = await ref.get();
-    const profile = normalizeNyxUserProfile(req.body?.profile, token);
+    const requestedHandle = String(req.body?.profile?.handle || "").trim().replace(/^@+/, "").toLowerCase();
+    if (!/^[a-z0-9_.-]{3,32}$/.test(requestedHandle)) {
+      res.status(400).json({ error: "Usernames must use 3–32 letters, numbers, dots, dashes, or underscores." });
+      return;
+    }
+    let profile = normalizeNyxUserProfile(req.body?.profile, token);
     if (nyxProfileImagePayloadSize(profile) > profileImageDocumentLimit) {
       res.status(413).json({ error: "Your avatar and banner are too large together. Remove one or choose a smaller GIF." });
       return;
     }
     const createdAt = String(previous.data()?.createdAt || new Date().toISOString());
-    await ref.set({ profile, createdAt, updatedAt: new Date().toISOString() }, { merge: true });
+    const previousProfile = normalizeNyxUserProfile(previous.data()?.profile, token);
+    const previousUsername = nyxProfileUsername(previousProfile.handle, "");
+    profile = await saveNyxProfileWithUsername(firebase, token, profile, createdAt, previousProfile);
+    invalidateOwnerDashboardSnapshot();
+    await recordNyxAuditSafe(firebase, {
+      actorUid: token.uid,
+      actorEmail: token.email,
+      action: previousUsername && previousUsername !== nyxProfileUsername(profile.handle, "") ? "username_changed" : "profile_updated",
+      targetUid: token.uid,
+      targetEmail: token.email,
+      details: previousUsername && previousUsername !== nyxProfileUsername(profile.handle, "") ? { previousUsername, username: nyxProfileUsername(profile.handle, "") } : {}
+    });
     res.json({ uid: token.uid, profile, createdAt });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "Nyx Profile could not be saved." });
+  }
+});
+
+function nyxProfileMediaDocumentId(uid, kind, uploadId) {
+  return `${uid}--${kind}--${uploadId}`;
+}
+
+function nyxProfileMediaRouteValues(req) {
+  const uid = String(req.params.uid || "").trim();
+  const kind = String(req.params.kind || "").trim().toLowerCase();
+  const uploadId = String(req.params.uploadId || "").trim();
+  return {
+    uid,
+    kind,
+    uploadId,
+    validUid: /^[A-Za-z0-9_-]{8,128}$/.test(uid),
+    validKind: kind === "avatar" || kind === "banner",
+    validUploadId: /^[A-Za-z0-9_-]{12,80}$/.test(uploadId)
+  };
+}
+
+app.put("/api/profile-media/:kind/:uploadId/:index", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  try {
+    const { firebase, token } = await authenticatedNyxUser(req);
+    const kind = String(req.params.kind || "").trim().toLowerCase();
+    const uploadId = String(req.params.uploadId || "").trim();
+    const index = Number.parseInt(String(req.params.index || ""), 10);
+    const totalChunks = Number.parseInt(String(req.body?.totalChunks || ""), 10);
+    const mime = String(req.body?.mime || "").trim().toLowerCase();
+    const chunk = String(req.body?.chunk || "").trim();
+    if (
+      !["avatar", "banner"].includes(kind) ||
+      !/^[A-Za-z0-9_-]{12,80}$/.test(uploadId) ||
+      !Number.isInteger(index) ||
+      index < 0 ||
+      !Number.isInteger(totalChunks) ||
+      totalChunks < 1 ||
+      totalChunks > profileMediaChunkCountLimit ||
+      index >= totalChunks ||
+      !/^image\/(?:gif|png|jpeg|webp)$/.test(mime) ||
+      !chunk ||
+      chunk.length > profileMediaChunkLimit ||
+      !/^[A-Za-z0-9+/=]+$/.test(chunk)
+    ) {
+      res.status(400).json({ error: "That profile media chunk is invalid." });
+      return;
+    }
+    const mediaId = nyxProfileMediaDocumentId(token.uid, kind, uploadId);
+    const mediaRef = firebase.firestore.collection("nyxProfileMedia").doc(mediaId);
+    const chunkRef = mediaRef.collection("chunks").doc(String(index).padStart(3, "0"));
+    await Promise.all([
+      mediaRef.set({
+        ownerUid: token.uid,
+        kind,
+        mime,
+        totalChunks,
+        updatedAt: new Date().toISOString()
+      }, { merge: true }),
+      chunkRef.set({ index, chunk })
+    ]);
+    res.json({ received: index });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Profile media could not be uploaded." });
+  }
+});
+
+app.post("/api/profile-media/:kind/:uploadId/complete", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  try {
+    const { firebase, token } = await authenticatedNyxUser(req);
+    const kind = String(req.params.kind || "").trim().toLowerCase();
+    const uploadId = String(req.params.uploadId || "").trim();
+    if (!["avatar", "banner"].includes(kind) || !/^[A-Za-z0-9_-]{12,80}$/.test(uploadId)) {
+      res.status(400).json({ error: "That profile media upload is invalid." });
+      return;
+    }
+    const mediaId = nyxProfileMediaDocumentId(token.uid, kind, uploadId);
+    const mediaRef = firebase.firestore.collection("nyxProfileMedia").doc(mediaId);
+    const mediaSnapshot = await mediaRef.get();
+    const media = mediaSnapshot.data() || {};
+    const totalChunks = Number(media.totalChunks || 0);
+    if (
+      !mediaSnapshot.exists ||
+      media.ownerUid !== token.uid ||
+      media.kind !== kind ||
+      totalChunks < 1 ||
+      totalChunks > profileMediaChunkCountLimit
+    ) {
+      res.status(404).json({ error: "That profile media upload was not found." });
+      return;
+    }
+    const chunkSnapshots = await Promise.all(
+      Array.from({ length: totalChunks }, (_, index) =>
+        mediaRef.collection("chunks").doc(String(index).padStart(3, "0")).get()
+      )
+    );
+    const encodedLength = chunkSnapshots.reduce((total, snapshot, index) => {
+      const data = snapshot.data() || {};
+      return total + (snapshot.exists && data.index === index ? String(data.chunk || "").length : profileMediaEncodedLimit + 1);
+    }, 0);
+    if (encodedLength < 1 || encodedLength > profileMediaEncodedLimit) {
+      res.status(413).json({ error: "That GIF is too large or incomplete." });
+      return;
+    }
+    await mediaRef.set({ complete: true, encodedLength, completedAt: new Date().toISOString() }, { merge: true });
+    res.json({ url: `/api/profile-media/${token.uid}/${kind}/${uploadId}` });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Profile media could not be completed." });
+  }
+});
+
+app.get("/api/profile-media/:uid/:kind/:uploadId", async (req, res) => {
+  const values = nyxProfileMediaRouteValues(req);
+  if (!values.validUid || !values.validKind || !values.validUploadId || !firebaseAdminModeConfigured()) {
+    res.status(404).end();
+    return;
+  }
+  try {
+    const firebase = await linkGeneratorFirebase();
+    const mediaId = nyxProfileMediaDocumentId(values.uid, values.kind, values.uploadId);
+    const mediaRef = firebase.firestore.collection("nyxProfileMedia").doc(mediaId);
+    const mediaSnapshot = await mediaRef.get();
+    const media = mediaSnapshot.data() || {};
+    const totalChunks = Number(media.totalChunks || 0);
+    if (
+      !mediaSnapshot.exists ||
+      media.ownerUid !== values.uid ||
+      media.kind !== values.kind ||
+      media.complete !== true ||
+      !/^image\/(?:gif|png|jpeg|webp)$/.test(String(media.mime || "")) ||
+      totalChunks < 1 ||
+      totalChunks > profileMediaChunkCountLimit
+    ) {
+      res.status(404).end();
+      return;
+    }
+    const chunkSnapshots = await Promise.all(
+      Array.from({ length: totalChunks }, (_, index) =>
+        mediaRef.collection("chunks").doc(String(index).padStart(3, "0")).get()
+      )
+    );
+    const encoded = chunkSnapshots.map((snapshot, index) => {
+      const data = snapshot.data() || {};
+      if (!snapshot.exists || data.index !== index) throw new Error("Profile media is incomplete.");
+      return String(data.chunk || "");
+    }).join("");
+    if (!encoded || encoded.length > profileMediaEncodedLimit || !/^[A-Za-z0-9+/=]+$/.test(encoded)) {
+      res.status(404).end();
+      return;
+    }
+    res.set({
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "Content-Type": media.mime,
+      "Content-Length": String(Buffer.byteLength(encoded, "base64")),
+      "X-Content-Type-Options": "nosniff"
+    });
+    res.end(Buffer.from(encoded, "base64"));
+  } catch {
+    res.status(404).end();
   }
 });
 
@@ -1808,6 +2274,297 @@ app.get("/api/profiles/:uid", async (req, res) => {
     res.json({ uid, profile: normalizeNyxUserProfile(data.profile), createdAt: String(data.createdAt || "") });
   } catch {
     res.status(503).json({ error: "Profile is unavailable." });
+  }
+});
+
+app.post("/api/activity/heartbeat", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  try {
+    const { firebase, token } = await authenticatedNyxUser(req);
+    const now = Date.now();
+    await firebase.firestore.collection("nyxUserActivity").doc(token.uid).set({
+      lastActiveAt: new Date(now).toISOString(),
+      lastActiveAtMs: now,
+      onlineUntilMs: now + signedInOnlineWindowMs,
+      updatedAt: new Date(now).toISOString()
+    }, { merge: true });
+    res.json({ ok: true, onlineUntil: new Date(now + signedInOnlineWindowMs).toISOString() });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Activity could not be updated." });
+  }
+});
+
+app.post("/api/activity/event", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  try {
+    const { firebase, token } = await authenticatedNyxUser(req);
+    const action = String(req.body?.action || "").trim().toLowerCase();
+    if (!["login", "session_start"].includes(action)) {
+      res.status(400).json({ error: "That activity event is not supported." });
+      return;
+    }
+    const key = `${token.uid}:${action}`;
+    const now = Date.now();
+    const lastRecorded = Number(userActivityEventTimes.get(key) || 0);
+    if (now - lastRecorded >= userActivityEventWindowMs) {
+      userActivityEventTimes.set(key, now);
+      await recordNyxAuditSafe(firebase, {
+        actorUid: token.uid,
+        actorEmail: token.email,
+        action,
+        targetUid: token.uid,
+        targetEmail: token.email,
+        details: { provider: String(token.firebase?.sign_in_provider || "password") }
+      });
+    }
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Activity could not be recorded." });
+  }
+});
+
+app.get("/api/owner-dashboard", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const { firebase } = await ownerDashboardActor(req);
+    const [{ users: allUsers, truncated }, auditSnapshot] = await Promise.all([
+      ownerDashboardSnapshot(firebase),
+      firebase.firestore.collection("nyxAuditLog").orderBy("createdAtMs", "desc").limit(30).get()
+    ]);
+    const now = Date.now();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const premiumStatuses = new Set(["premium", "trialing"]);
+    const metrics = {
+      totalUsers: allUsers.length,
+      activeToday: allUsers.filter(user => (Date.parse(user.lastActiveAt || "") || 0) >= today.getTime()).length,
+      onlineUsers: allUsers.filter(user => user.online).length,
+      newSignups: allUsers.filter(user => (Date.parse(user.createdAt || "") || 0) >= sevenDaysAgo).length,
+      premiumSubscribers: allUsers.filter(user => premiumStatuses.has(user.subscriptionStatus)).length,
+      monthlyRevenueCents: allUsers.reduce((total, user) => total + (premiumStatuses.has(user.subscriptionStatus) ? user.monthlyRevenueCents : 0), 0)
+    };
+    const search = String(req.query.search || "").trim().toLowerCase().slice(0, 120);
+    const role = String(req.query.role || "all").trim().toLowerCase();
+    const subscription = String(req.query.subscription || "all").trim().toLowerCase();
+    const status = String(req.query.status || "all").trim().toLowerCase();
+    let filtered = allUsers.filter(user => {
+      if (search && ![user.displayName, user.username, user.email, user.uid].some(value => String(value || "").toLowerCase().includes(search))) return false;
+      if (role !== "all" && user.role !== role) return false;
+      if (subscription !== "all" && user.subscriptionStatus !== subscription) return false;
+      if (status === "enabled" && user.disabled) return false;
+      if (status === "disabled" && !user.disabled) return false;
+      if (status === "online" && !user.online) return false;
+      return true;
+    });
+    filtered = nyxOwnerSortUsers(filtered, String(req.query.sort || ""), String(req.query.direction || "").toLowerCase());
+    const pageSize = Math.max(10, Math.min(ownerDashboardPageSizeLimit, Number.parseInt(String(req.query.pageSize || "25"), 10) || 25));
+    const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    const page = Math.max(1, Math.min(pages, Number.parseInt(String(req.query.page || "1"), 10) || 1));
+    const offset = (page - 1) * pageSize;
+    const recentActivity = auditSnapshot.docs.map(document => {
+      const data = document.data() || {};
+      return {
+        id: document.id,
+        actorUid: String(data.actorUid || ""),
+        actorEmail: String(data.actorEmail || ""),
+        action: String(data.action || ""),
+        targetUid: String(data.targetUid || ""),
+        targetEmail: String(data.targetEmail || ""),
+        details: data.details && typeof data.details === "object" ? data.details : {},
+        createdAt: safeDateIso(data.createdAt, new Date(Number(data.createdAtMs || 0) || now).toISOString())
+      };
+    });
+    res.json({
+      metrics,
+      users: filtered.slice(offset, offset + pageSize),
+      pagination: { page, pageSize, pages, total: filtered.length, scanned: allUsers.length, truncated },
+      recentActivity,
+      generatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Owner dashboard is unavailable." });
+  }
+});
+
+app.get("/api/owner-dashboard/users/:uid", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  const uid = String(req.params.uid || "").trim();
+  if (!/^[A-Za-z0-9_-]{8,128}$/.test(uid)) {
+    res.status(400).json({ error: "That user ID is invalid." });
+    return;
+  }
+  try {
+    const { firebase } = await ownerDashboardActor(req);
+    const [user, administration, profile, activity, audit] = await Promise.all([
+      firebase.auth.getUser(uid),
+      firebase.firestore.collection("nyxUserAdministration").doc(uid).get(),
+      firebase.firestore.collection("nyxUserProfiles").doc(uid).get(),
+      firebase.firestore.collection("nyxUserActivity").doc(uid).get(),
+      firebase.firestore.collection("nyxAuditLog").where("targetUid", "==", uid).orderBy("createdAtMs", "desc").limit(20).get().catch(() => null)
+    ]);
+    const record = nyxOwnerUserRecord(user, administration.data(), profile.data(), activity.data(), founderProfileConfig().administratorUid, true);
+    record.recentActivity = audit ? audit.docs.map(document => {
+      const data = document.data() || {};
+      return { id: document.id, action: String(data.action || ""), actorEmail: String(data.actorEmail || ""), createdAt: safeDateIso(data.createdAt), details: data.details || {} };
+    }) : [];
+    res.json({ user: record });
+  } catch (error) {
+    const status = error.code === "auth/user-not-found" ? 404 : (error.status || 503);
+    res.status(status).json({ error: status === 404 ? "User not found." : (error.message || "User details are unavailable.") });
+  }
+});
+
+app.get("/api/owner-dashboard/audit", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const { firebase } = await ownerDashboardActor(req);
+    const limit = Math.max(10, Math.min(200, Number.parseInt(String(req.query.limit || "100"), 10) || 100));
+    const snapshot = await firebase.firestore.collection("nyxAuditLog").orderBy("createdAtMs", "desc").limit(limit).get();
+    res.json({
+      activity: snapshot.docs.map(document => {
+        const data = document.data() || {};
+        return {
+          id: document.id,
+          actorUid: String(data.actorUid || ""),
+          actorEmail: String(data.actorEmail || ""),
+          action: String(data.action || ""),
+          targetUid: String(data.targetUid || ""),
+          targetEmail: String(data.targetEmail || ""),
+          details: data.details && typeof data.details === "object" ? data.details : {},
+          createdAt: safeDateIso(data.createdAt)
+        };
+      })
+    });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Audit activity is unavailable." });
+  }
+});
+
+app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  const uid = String(req.params.uid || "").trim();
+  if (!/^[A-Za-z0-9_-]{8,128}$/.test(uid)) {
+    res.status(400).json({ error: "That user ID is invalid." });
+    return;
+  }
+  try {
+    const { firebase, token } = await ownerDashboardActor(req);
+    const action = String(req.body?.action || "").trim().toLowerCase();
+    const ownerUid = founderProfileConfig().administratorUid;
+    const target = await firebase.auth.getUser(uid);
+    const ownerProtectedAction = ["set_role", "disable", "delete"].includes(action);
+    if (uid === ownerUid && ownerProtectedAction) {
+      res.status(409).json({ error: "The configured owner account cannot be demoted, disabled, or deleted." });
+      return;
+    }
+    let auditAction = action;
+    let auditDetails = {};
+    if (action === "set_role") {
+      const role = normalizeNyxRole(req.body?.role);
+      await firebase.firestore.collection("nyxUserAdministration").doc(uid).set({ role, updatedAt: new Date().toISOString() }, { merge: true });
+      auditDetails = { role };
+    } else if (action === "set_subscription") {
+      const subscriptionStatus = normalizeSubscriptionStatus(req.body?.subscriptionStatus);
+      const monthlyRevenueCents = Math.max(0, Math.min(100_000_000, Number.parseInt(String(req.body?.monthlyRevenueCents || "0"), 10) || 0));
+      await firebase.firestore.collection("nyxUserAdministration").doc(uid).set({
+        subscriptionStatus,
+        monthlyRevenueCents,
+        subscriptionUpdatedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      auditAction = "subscription_change";
+      auditDetails = { subscriptionStatus, monthlyRevenueCents };
+    } else if (action === "disable" || action === "enable") {
+      const disabled = action === "disable";
+      await firebase.auth.updateUser(uid, { disabled });
+      if (disabled) await firebase.auth.revokeRefreshTokens(uid);
+      auditAction = disabled ? "account_disabled" : "account_enabled";
+      auditDetails = { disabled };
+    } else if (action === "verify_email") {
+      if (!nyxDeliverableEmail(target.email)) {
+        res.status(409).json({ error: "Username-only Nyx accounts do not have a deliverable email to verify." });
+        return;
+      }
+      await firebase.auth.updateUser(uid, { emailVerified: true });
+      auditAction = "email_verified";
+    } else if (action === "send_password_reset") {
+      if (!nyxDeliverableEmail(target.email)) {
+        res.status(409).json({ error: "This username-only account has no recovery email. Firebase cannot deliver a reset message to it." });
+        return;
+      }
+      const apiKey = linkGeneratorFirebaseConfig().webApiKey;
+      if (!apiKey) {
+        res.status(503).json({ error: "Firebase email actions are not configured." });
+        return;
+      }
+      const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${encodeURIComponent(apiKey)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestType: "PASSWORD_RESET", email: target.email })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(String(payload?.error?.message || "Firebase could not send the reset email.").replace(/_/g, " ").toLowerCase());
+      auditAction = "password_reset_sent";
+    } else if (action === "delete") {
+      const profileRef = firebase.firestore.collection("nyxUserProfiles").doc(uid);
+      const profileSnapshot = await profileRef.get();
+      const username = nyxProfileUsername(profileSnapshot.data()?.profile?.handle, nyxProfileUsername(String(target.email || "").split("@")[0], ""));
+      const usernameRef = username ? firebase.firestore.collection("nyxUsernames").doc(username) : null;
+      const usernameSnapshot = usernameRef ? await usernameRef.get() : null;
+      await firebase.auth.deleteUser(uid);
+      const batch = firebase.firestore.batch();
+      ["nyxUserProfiles", "nyxUserAdministration", "nyxUserActivity"].forEach(collectionName => {
+        batch.delete(firebase.firestore.collection(collectionName).doc(uid));
+      });
+      if (usernameRef && usernameSnapshot?.exists && String(usernameSnapshot.data()?.ownerUid || "") === uid) batch.delete(usernameRef);
+      await batch.commit();
+      invalidateOwnerDashboardSnapshot();
+      await recordNyxAuditSafe(firebase, {
+        actorUid: token.uid,
+        actorEmail: token.email,
+        action: "account_deleted",
+        targetUid: uid,
+        targetEmail: target.email,
+        details: { displayName: target.displayName || "" }
+      });
+      res.json({ deleted: true, uid });
+      return;
+    } else {
+      res.status(400).json({ error: "That owner action is not supported." });
+      return;
+    }
+    invalidateOwnerDashboardSnapshot();
+    await recordNyxAuditSafe(firebase, {
+      actorUid: token.uid,
+      actorEmail: token.email,
+      action: auditAction,
+      targetUid: uid,
+      targetEmail: target.email,
+      details: auditDetails
+    });
+    const [updated, administration, profile, activity] = await Promise.all([
+      firebase.auth.getUser(uid),
+      firebase.firestore.collection("nyxUserAdministration").doc(uid).get(),
+      firebase.firestore.collection("nyxUserProfiles").doc(uid).get(),
+      firebase.firestore.collection("nyxUserActivity").doc(uid).get()
+    ]);
+    res.json({ user: nyxOwnerUserRecord(updated, administration.data(), profile.data(), activity.data(), ownerUid, true) });
+  } catch (error) {
+    const status = error.code === "auth/user-not-found" ? 404 : (error.status || 503);
+    res.status(status).json({ error: status === 404 ? "User not found." : (error.message || "The owner action could not be completed.") });
   }
 });
 
@@ -1836,6 +2593,10 @@ app.get("/api/founder-profile", async (_req, res) => {
             accentPrimary: userProfile.accentPrimary,
             accentSecondary: userProfile.accentSecondary,
             bannerColor: userProfile.bannerColor,
+            displayNameFont: userProfile.displayNameFont,
+            displayNameEffect: userProfile.displayNameEffect,
+            displayNameColorPrimary: userProfile.displayNameColorPrimary,
+            displayNameColorSecondary: userProfile.displayNameColorSecondary,
             profileEffect: userProfile.profileEffect,
             avatarDecoration: userProfile.avatarDecoration,
             status: userProfile.status

@@ -44,6 +44,11 @@ function normalizePublicWispUrl(value) {
 const externalWispUrl = normalizePublicWispUrl(process.env.WISP_URL);
 const presenceSessions = new Map();
 const presenceTtlMs = 45_000;
+const presenceCollectionName = "nyxPresenceSessions";
+const presenceCleanupIntervalMs = 5 * 60_000;
+let lastPresenceCleanupAt = 0;
+const profileImageDataLimit = 850_000;
+const profileImageDocumentLimit = 900_000;
 const linkGeneratorAttempts = new Map();
 const linkGeneratorWindowMs = 15 * 60 * 1000;
 const linkGeneratorMaxAttempts = 5;
@@ -1102,45 +1107,115 @@ app.get("/healthz", (_req, res) => {
   });
 });
 
-function prunePresence(now = Date.now()) {
+function pruneLocalPresence(now = Date.now()) {
   for (const [sessionId, lastSeen] of presenceSessions) {
     if (now - lastSeen > presenceTtlMs) presenceSessions.delete(sessionId);
   }
   return presenceSessions.size;
 }
 
-function sendPresence(res, status = 200) {
-  res.status(status)
-    .set("Cache-Control", "no-store")
-    .json({ online: prunePresence(), ttl: presenceTtlMs });
+function setPresenceCors(res) {
+  res.set({
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Max-Age": "86400"
+  });
 }
 
-app.options("/presence", (_req, res) => {
+async function cleanupSharedPresence(collection, cutoff, now) {
+  if (now - lastPresenceCleanupAt < presenceCleanupIntervalMs) return;
+  lastPresenceCleanupAt = now;
+  try {
+    const stale = await collection.where("lastSeen", "<", cutoff).limit(100).get();
+    if (stale.empty) return;
+    const firebase = await linkGeneratorFirebase();
+    const batch = firebase.firestore.batch();
+    stale.docs.forEach(document => batch.delete(document.ref));
+    await batch.commit();
+  } catch (error) {
+    console.warn("Nyx presence cleanup was skipped:", error?.message || error);
+  }
+}
+
+async function sharedPresenceCount(now = Date.now()) {
+  const firebase = await linkGeneratorFirebase();
+  if (!firebase) return null;
+  const cutoff = now - presenceTtlMs;
+  const collection = firebase.firestore.collection(presenceCollectionName);
+  const aggregate = await collection.where("lastSeen", ">=", cutoff).count().get();
+  void cleanupSharedPresence(collection, cutoff, now);
+  return Number(aggregate.data().count) || 0;
+}
+
+async function recordSharedPresence(sessionId, now = Date.now()) {
+  presenceSessions.set(sessionId, now);
+  const firebase = await linkGeneratorFirebase();
+  if (!firebase) return pruneLocalPresence(now);
+  const collection = firebase.firestore.collection(presenceCollectionName);
+  await collection.doc(sessionId).set({ lastSeen: now, updatedAt: new Date(now).toISOString() });
+  const aggregate = await collection.where("lastSeen", ">=", now - presenceTtlMs).count().get();
+  void cleanupSharedPresence(collection, now - presenceTtlMs, now);
+  return Number(aggregate.data().count) || 0;
+}
+
+async function presenceCount(now = Date.now()) {
+  try {
+    const shared = await sharedPresenceCount(now);
+    if (shared !== null) return shared;
+  } catch (error) {
+    console.warn("Nyx shared presence is unavailable; using this server:", error?.message || error);
+  }
+  return pruneLocalPresence(now);
+}
+
+async function sendPresence(res, status = 200, countPromise = presenceCount()) {
+  setPresenceCors(res);
+  const online = await countPromise;
+  res.status(status)
+    .set("Cache-Control", "no-store")
+    .json({ online, ttl: presenceTtlMs });
+}
+
+app.options(["/presence", "/api/presence"], (_req, res) => {
+  setPresenceCors(res);
   res.set("Cache-Control", "no-store").sendStatus(204);
 });
 
-app.get("/presence", (_req, res) => {
-  sendPresence(res);
+app.get(["/presence", "/api/presence"], async (_req, res) => {
+  await sendPresence(res);
 });
 
-app.post("/presence", express.text({ type: "text/plain", limit: "2kb" }), (req, res) => {
+app.post(["/presence", "/api/presence"], express.text({ type: "text/plain", limit: "2kb" }), async (req, res) => {
   try {
     const sessionId = String(JSON.parse(req.body || "{}").sessionId || "");
     if (!/^[a-zA-Z0-9_-]{16,128}$/.test(sessionId)) {
-      sendPresence(res, 400);
+      await sendPresence(res, 400);
       return;
     }
-    presenceSessions.set(sessionId, Date.now());
-    sendPresence(res);
+    const now = Date.now();
+    let count;
+    try {
+      count = await recordSharedPresence(sessionId, now);
+    } catch (error) {
+      console.warn("Nyx shared presence heartbeat failed; using this server:", error?.message || error);
+      presenceSessions.set(sessionId, now);
+      count = pruneLocalPresence(now);
+    }
+    await sendPresence(res, 200, Promise.resolve(count));
   } catch {
-    sendPresence(res, 400);
+    await sendPresence(res, 400);
   }
 });
 
 app.get("/runtime-config.js", (_req, res) => {
+  const publicOrigin = linkGeneratorConfig().origin;
   res.setHeader("Cache-Control", "no-store");
   res.type("application/javascript").send(
-    `globalThis.__NYX_RUNTIME_CONFIG__=Object.freeze(${JSON.stringify({ wispUrl: externalWispUrl })});`
+    `globalThis.__NYX_RUNTIME_CONFIG__=Object.freeze(${JSON.stringify({
+      wispUrl: externalWispUrl,
+      presenceUrl: publicOrigin ? `${publicOrigin}/api/presence` : ""
+    })});`
   );
 });
 
@@ -1299,7 +1374,7 @@ function founderProfileText(value, fallback, limit) {
 function founderProfileUrl(value, fallback = "") {
   const raw = String(value ?? "").trim();
   if (!raw) return fallback;
-  if (/^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(raw) && raw.length <= 460_000) return raw.replace(/\s/g, "");
+  if (/^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(raw) && raw.length <= profileImageDataLimit) return raw.replace(/\s/g, "");
   if (raw.length > 1_500) return fallback;
   if (/^\/assets\/[a-z0-9/_\-.]+$/i.test(raw)) return raw;
   try {
@@ -1364,8 +1439,15 @@ function nyxUsernameFromToken(token = {}) {
 function nyxProfileImage(value, fallback = "") {
   const raw = String(value || "").trim();
   if (!raw) return fallback;
-  if (/^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(raw) && raw.length <= 460_000) return raw.replace(/\s/g, "");
+  if (/^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(raw) && raw.length <= profileImageDataLimit) return raw.replace(/\s/g, "");
   return founderProfileUrl(raw, fallback);
+}
+
+function nyxProfileImagePayloadSize(profile = {}) {
+  return [profile.avatarUrl, profile.bannerUrl].reduce((total, value) => {
+    const image = String(value || "");
+    return total + (image.startsWith("data:image/") ? image.length : 0);
+  }, 0);
 }
 
 async function authenticatedNyxUser(req) {
@@ -1696,6 +1778,10 @@ app.put("/api/profiles/me", async (req, res) => {
     const ref = firebase.firestore.collection("nyxUserProfiles").doc(token.uid);
     const previous = await ref.get();
     const profile = normalizeNyxUserProfile(req.body?.profile, token);
+    if (nyxProfileImagePayloadSize(profile) > profileImageDocumentLimit) {
+      res.status(413).json({ error: "Your avatar and banner are too large together. Remove one or choose a smaller GIF." });
+      return;
+    }
     const createdAt = String(previous.data()?.createdAt || new Date().toISOString());
     await ref.set({ profile, createdAt, updatedAt: new Date().toISOString() }, { merge: true });
     res.json({ uid: token.uid, profile, createdAt });

@@ -39,6 +39,7 @@
   let nyxUserAccountRole='member';
   let nyxUserAccountEmail='';
   let nyxFounderAuthReadyPromise=null;
+  let nyxFirebaseTokenPromise=null;
   let nyxUserProfile=null;
   let nyxUserProfileCreatedAt='';
   let nyxUserActivityTimer=0;
@@ -185,17 +186,22 @@
   async function nyxGetFirebaseToken(forceRefresh=false){
     const user=nyxFounderSignedInUser;
     if(!user)return '';
-    try{
-      return await user.getIdToken(forceRefresh);
-    }catch(error){
-      if(forceRefresh)return '';
+    if(nyxFirebaseTokenPromise)return nyxFirebaseTokenPromise;
+    const request=(async()=>{
       try{
-        await user.reload();
-        return await user.getIdToken(true);
+        return await user.getIdToken(forceRefresh);
       }catch{
-        return '';
+        try{
+          await user.reload();
+          return await user.getIdToken(true);
+        }catch{
+          return '';
+        }
       }
-    }
+    })();
+    nyxFirebaseTokenPromise=request;
+    try{return await request}
+    finally{if(nyxFirebaseTokenPromise===request)nyxFirebaseTokenPromise=null}
   }
   function nyxFriendlyFirebaseError(error,fallback='Your account request could not be completed.'){
     const code=String(error?.code||'').toLowerCase();
@@ -412,7 +418,11 @@
       if(status) status.className=`nyx-user-status nyx-user-status-${profile.status}`;
       const name=copy.querySelector(':scope > strong');
       const customStatus=copy.querySelector(':scope > small');
-      if(name) name.textContent=profile.displayName;
+      if(name){
+        name.className=nyxDisplayNameStyleClass(profile);
+        name.style.cssText=nyxDisplayNameStyleVars(profile);
+        name.textContent=profile.displayName;
+      }
       if(customStatus) customStatus.textContent=profile.customStatus||statusLabel;
     }else if(!button.querySelector(':scope > span[aria-hidden="true"]')||button.children.length!==1){
       button.innerHTML='<span aria-hidden="true"></span>';
@@ -460,9 +470,12 @@
         const response=await fetch('/api/founder-profile/auth-config',{cache:'no-store'});
         nyxFounderAuthConfig=await response.json();
         if(!nyxFounderAuthConfig?.enabled) return;
-        const [{initializeApp,getApps},{getAuth,onAuthStateChanged}]=await Promise.all([import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')]);
+        const [{initializeApp,getApps},{getAuth,onAuthStateChanged,setPersistence,browserLocalPersistence}]=await Promise.all([import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')]);
         const app=getApps().find(item=>item.name==='nyx-founder-owner')||initializeApp({apiKey:nyxFounderAuthConfig.apiKey,authDomain:`${nyxFounderAuthConfig.projectId}.firebaseapp.com`,projectId:nyxFounderAuthConfig.projectId},'nyx-founder-owner');
         nyxFounderFirebaseAuth=getAuth(app);
+        try{await setPersistence(nyxFounderFirebaseAuth,browserLocalPersistence)}
+        catch(error){console.warn('Nyx could not enable persistent sign-in:',error)}
+        if(typeof nyxFounderFirebaseAuth.authStateReady==='function')await nyxFounderFirebaseAuth.authStateReady();
         onAuthStateChanged(nyxFounderFirebaseAuth,async user=>{nyxFounderSignedInUser=user||null;if(!user){stopNyxUserActivity();nyxUserProfile=null;nyxUserProfileCreatedAt='';nyxUserAccountRole='member';nyxUserAccountEmail='';await refreshFounderOwnerAccess();return}startNyxUserActivity(user);await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile()])});
       }catch(error){console.warn('Nyx owner sign-in could not initialize:',error);nyxFounderAuthConfig={enabled:false,ownerConfigured:false}}
       finally{syncFounderOwnerControls()}
@@ -562,7 +575,7 @@
   async function signOutFounderOwner(){
     closeNyxAccountMenu();
     try{await nyxFounderFirebaseAuth?.signOut()}catch{}
-    nyxFounderSignedInUser=null;nyxFounderIsOwner=false;nyxUserAccountRole='member';nyxUserAccountEmail='';nyxUserProfile=null;nyxUserProfileCreatedAt='';syncFounderOwnerControls();toast('Signed out');
+    nyxFirebaseTokenPromise=null;nyxFounderSignedInUser=null;nyxFounderIsOwner=false;nyxUserAccountRole='member';nyxUserAccountEmail='';nyxUserProfile=null;nyxUserProfileCreatedAt='';syncFounderOwnerControls();toast('Signed out');
   }
   function nyxUserProfileCardMarkup(profile=normalizeNyxUserProfile(nyxUserProfile),options={}){
     const joined=nyxUserProfileCreatedAt?new Date(nyxUserProfileCreatedAt).toLocaleDateString(undefined,{month:'short',year:'numeric'}):'Today';

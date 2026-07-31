@@ -1456,7 +1456,7 @@ html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
     h1,h2,h3,h4,h5,h6,p,span,label,strong,b,a,button,
     input,select,textarea,option,legend,figcaption,dt,dd,li,th,td,caption,
     .tool-btn,.go-btn,.menu-btn,.user-chip,.browser-mode-url,.urlbar
-  ){
+  ):not(.nyx-styled-display-name):not(.nyx-user-profile-effect):not(.nyx-avatar-decoration){
   color:var(--nyx-fern-text)!important;
   -webkit-text-fill-color:var(--nyx-fern-text)!important;
   text-shadow:none!important;
@@ -1543,7 +1543,7 @@ html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
 html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
   body.theme-fresh:is(body,#nyx-fern-global-specificity) :is(
     *,*::before,*::after
-  ){
+  ):not(.nyx-styled-display-name):not(.nyx-user-profile-effect):not(.nyx-avatar-decoration){
   color:var(--nyx-fern-text)!important;
   -webkit-text-fill-color:var(--nyx-fern-text)!important;
   border-color:var(--nyx-fern-line)!important;

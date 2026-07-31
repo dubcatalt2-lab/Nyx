@@ -359,10 +359,10 @@ body.browser-shell .nyx-profile-slot .nyx-account-button:hover{border-color:var(
   background:#3f4147;
 }
 html[data-nyx-theme] body .nyx-account-menu,
-html[data-nyx-theme] body .nyx-account-menu :is(h2,p,span,button){
+html[data-nyx-theme] body .nyx-account-menu :is(h2,p,span,button):not(.nyx-styled-display-name){
   text-shadow:none!important;
 }
-html[data-nyx-theme] body .nyx-account-menu :is(h2,p,span){
+html[data-nyx-theme] body .nyx-account-menu :is(h2,p,span):not(.nyx-styled-display-name){
   -webkit-text-fill-color:currentColor!important;
 }
 .nyx-account-settings-link{
@@ -2553,11 +2553,21 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-media-edit-avatar{
   transform:translate(-50%,-50%)!important;
   transition:opacity .16s ease,background-color .16s ease!important;
 }
+html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-media-edit-banner{
+  opacity:0!important;
+  pointer-events:none!important;
+  transition:opacity .16s ease,background-color .16s ease!important;
+}
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-user-profile-avatar:is(:hover,:focus-within) .nyx-profile-media-edit-avatar,
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-media-edit-avatar:is(:hover,:focus-visible){
   opacity:1!important;
   pointer-events:auto!important;
   transform:translate(-50%,-50%)!important;
+}
+html[data-nyx-theme] body .nyx-profile-drawer .nyx-user-profile-banner:is(:hover,:focus-within) .nyx-profile-media-edit-banner,
+html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-media-edit-banner:is(:hover,:focus-visible){
+  opacity:1!important;
+  pointer-events:auto!important;
 }
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-user-profile-avatar:hover>img{
   filter:brightness(.72);
@@ -2752,6 +2762,73 @@ html[data-nyx-theme] body .nyx-user-profile-avatar{
 }
 html[data-nyx-theme] body .nyx-user-profile-avatar>.nyx-user-status{
   border-color:#202225!important;
+}
+
+/* Profile presentation is deliberately exempt from the browser chrome's
+   blanket text/background reset. Keep every saved name effect visible on all
+   three profile surfaces, and restore Glow after the accent surface pass. */
+html[data-nyx-theme] body.browser-shell .nyx-styled-display-name.nyx-name-effect-solid{
+  color:var(--nyx-name-color-primary,#fff)!important;
+  -webkit-text-fill-color:var(--nyx-name-color-primary,#fff)!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-styled-display-name:is(.nyx-name-effect-gradient,.nyx-name-effect-neon,.nyx-name-effect-pop){
+  background-image:linear-gradient(105deg,var(--nyx-name-color-primary,#fff),var(--nyx-name-color-secondary,#8ea1ff),var(--nyx-name-color-primary,#fff))!important;
+  background-size:220% 100%!important;
+  background-clip:text!important;
+  -webkit-background-clip:text!important;
+  color:transparent!important;
+  -webkit-text-fill-color:transparent!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-styled-display-name.nyx-name-effect-neon{
+  text-shadow:
+    0 0 5px color-mix(in srgb,var(--nyx-name-color-primary,#fff) 88%,transparent),
+    0 0 12px color-mix(in srgb,var(--nyx-name-color-secondary,#8ea1ff) 78%,transparent),
+    0 0 22px color-mix(in srgb,var(--nyx-name-color-secondary,#8ea1ff) 58%,transparent)!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-styled-display-name.nyx-name-effect-toon{
+  color:var(--nyx-name-color-primary,#fff)!important;
+  -webkit-text-fill-color:var(--nyx-name-color-primary,#fff)!important;
+  -webkit-text-stroke:1px color-mix(in srgb,var(--nyx-name-color-secondary,#8ea1ff) 76%,#17181b)!important;
+  text-shadow:2px 2px 0 var(--nyx-name-color-secondary,#8ea1ff),3px 3px 0 rgba(0,0,0,.42)!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-account-button-copy>.nyx-styled-display-name{
+  overflow:visible!important;
+}
+html[data-nyx-theme] body.browser-shell #nyxAccountButton .nyx-account-button-copy>.nyx-styled-display-name.nyx-name-effect-solid{
+  color:var(--nyx-name-color-primary,#fff)!important;
+  -webkit-text-fill-color:var(--nyx-name-color-primary,#fff)!important;
+}
+html[data-nyx-theme] body.browser-shell #nyxAccountButton .nyx-account-button-copy>.nyx-styled-display-name:is(.nyx-name-effect-gradient,.nyx-name-effect-neon,.nyx-name-effect-pop){
+  background-image:linear-gradient(105deg,var(--nyx-name-color-primary,#fff),var(--nyx-name-color-secondary,#8ea1ff),var(--nyx-name-color-primary,#fff))!important;
+  background-size:220% 100%!important;
+  background-clip:text!important;
+  -webkit-background-clip:text!important;
+  color:transparent!important;
+  -webkit-text-fill-color:transparent!important;
+}
+html[data-nyx-theme] body.browser-shell #nyxAccountButton .nyx-account-button-copy>.nyx-styled-display-name.nyx-name-effect-neon{
+  text-shadow:
+    0 0 4px color-mix(in srgb,var(--nyx-name-color-primary,#fff) 86%,transparent),
+    0 0 9px color-mix(in srgb,var(--nyx-name-color-secondary,#8ea1ff) 72%,transparent)!important;
+}
+html[data-nyx-theme] body.browser-shell #nyxAccountButton .nyx-account-button-copy>.nyx-styled-display-name.nyx-name-effect-toon{
+  color:var(--nyx-name-color-primary,#fff)!important;
+  -webkit-text-fill-color:var(--nyx-name-color-primary,#fff)!important;
+  -webkit-text-stroke:.7px color-mix(in srgb,var(--nyx-name-color-secondary,#8ea1ff) 76%,#17181b)!important;
+  text-shadow:1px 1px 0 var(--nyx-name-color-secondary,#8ea1ff)!important;
+}
+html[data-nyx-theme] body .nyx-account-menu.nyx-user-profile-effect-glow{
+  box-shadow:
+    0 20px 60px rgba(0,0,0,.56),
+    0 2px 8px rgba(0,0,0,.42),
+    0 0 30px color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 72%,transparent),
+    inset 0 0 24px color-mix(in srgb,var(--nyx-account-primary,#5865f2) 32%,transparent)!important;
+}
+html[data-nyx-theme] body .nyx-user-profile-card.nyx-user-profile-effect-glow{
+  box-shadow:
+    0 26px 70px rgba(0,0,0,.42),
+    0 0 34px color-mix(in srgb,var(--nyx-user-accent-secondary,#8ea1ff) 72%,transparent),
+    inset 0 0 28px color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 30%,transparent)!important;
 }
 
 /* The profile editor's Main Profile control is a real account/profile

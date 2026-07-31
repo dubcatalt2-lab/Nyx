@@ -327,9 +327,9 @@ body.browser-shell.theme-emerald :is(.quick-tile,.quick-icon):hover,
 body.browser-shell.theme-sakura :is(.quick-tile,.quick-icon):hover{
   background:rgba(15,23,42,.42)!important;
 }
-body.browser-shell.theme-ruby :is(h1,h2,h3,h4,p,span,label,strong,b,i,button,a),
-body.browser-shell.theme-emerald :is(h1,h2,h3,h4,p,span,label,strong,b,i,button,a),
-body.browser-shell.theme-sakura :is(h1,h2,h3,h4,p,span,label,strong,b,i,button,a){
+body.browser-shell.theme-ruby :is(h1,h2,h3,h4,p,span,label,strong,b,i,button,a):not(.nyx-styled-display-name):not(.nyx-user-profile-effect):not(.nyx-avatar-decoration),
+body.browser-shell.theme-emerald :is(h1,h2,h3,h4,p,span,label,strong,b,i,button,a):not(.nyx-styled-display-name):not(.nyx-user-profile-effect):not(.nyx-avatar-decoration),
+body.browser-shell.theme-sakura :is(h1,h2,h3,h4,p,span,label,strong,b,i,button,a):not(.nyx-styled-display-name):not(.nyx-user-profile-effect):not(.nyx-avatar-decoration){
   background-image:none!important;
   color:inherit!important;
   -webkit-text-fill-color:currentColor!important;
@@ -343,12 +343,12 @@ body.browser-shell textarea{
   font-family:Outfit,Arial,sans-serif!important;
   font-weight:400!important;
 }
-body.browser-shell *{
+body.browser-shell *:not(.nyx-styled-display-name){
   font-family:Outfit,Arial,sans-serif!important;
   font-weight:400!important;
   text-shadow:none!important;
 }
-body.browser-shell :is(button,input,select,textarea,.settings-app,.settings-app *,.apps-panel,.apps-panel *,.lion-ai,.lion-ai *,.panel,.panel *,.quick-tile,.quick-tile *,.browser-mode-menu,.browser-mode-menu *,.browser-mode-tab,.browser-mode-tab *,.browser-mode-app-button,.browser-mode-app-button *,.browser-mode-url,.urlbar,.browser-tab,.browser-tab *,.window,.window *){
+body.browser-shell :is(button,input,select,textarea,.settings-app,.settings-app *,.apps-panel,.apps-panel *,.lion-ai,.lion-ai *,.panel,.panel *,.quick-tile,.quick-tile *,.browser-mode-menu,.browser-mode-menu *,.browser-mode-tab,.browser-mode-tab *,.browser-mode-app-button,.browser-mode-app-button *,.browser-mode-url,.urlbar,.browser-tab,.browser-tab *,.window,.window *):not(.nyx-styled-display-name){
   font-family:Outfit,Arial,sans-serif!important;
   font-weight:400!important;
   text-shadow:none!important;

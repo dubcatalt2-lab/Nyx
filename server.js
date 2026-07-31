@@ -2269,9 +2269,46 @@ async function resolveNyxAccountIdentifier(firebase, value) {
   if (!username) return null;
   const usernameSnapshot = await firebase.firestore.collection("nyxUsernames").doc(username).get();
   const expectedUid = String(usernameSnapshot.data()?.ownerUid || "");
-  if (!expectedUid) return { authEmail: `${username}@account.nyx.local`, expectedUid: "" };
-  const account = await firebase.auth.getUser(expectedUid);
-  return { authEmail: String(account.email || ""), expectedUid };
+  if (expectedUid) {
+    const account = await firebase.auth.getUser(expectedUid);
+    return { authEmail: String(account.email || ""), expectedUid, username, repairUsername: false };
+  }
+  const localAccountEmail = `${username}@account.nyx.local`;
+  const localAccount = await firebase.auth.getUserByEmail(localAccountEmail).catch(() => null);
+  if (localAccount) {
+    return { authEmail: String(localAccount.email || localAccountEmail), expectedUid: localAccount.uid, username, repairUsername: true };
+  }
+  const handleProfiles = await firebase.firestore.collection("nyxUserProfiles").where("profile.handle", "==", `@${username}`).limit(2).get();
+  if (handleProfiles.size === 1) {
+    const account = await firebase.auth.getUser(handleProfiles.docs[0].id).catch(() => null);
+    if (account) return { authEmail: String(account.email || ""), expectedUid: account.uid, username, repairUsername: true };
+  }
+  const legacyProfiles = await firebase.firestore.collection("nyxUserProfiles").where("profile.displayName", "==", username).limit(3).get();
+  const legacyAccounts = (await Promise.all(legacyProfiles.docs.map(document => firebase.auth.getUser(document.id).catch(() => null))))
+    .filter(account => account && String(account.displayName || "").trim().toLowerCase() === username);
+  if (legacyAccounts.length === 1) {
+    const account = legacyAccounts[0];
+    return { authEmail: String(account.email || ""), expectedUid: account.uid, username, repairUsername: true };
+  }
+  const authDirectory = await listAllFirebaseUsers(firebase.auth);
+  const displayNameAccounts = authDirectory.users.filter(account => String(account.displayName || "").trim().toLowerCase() === username);
+  if (displayNameAccounts.length === 1) {
+    const account = displayNameAccounts[0];
+    return { authEmail: String(account.email || ""), expectedUid: account.uid, username, repairUsername: true };
+  }
+  return { authEmail: localAccountEmail, expectedUid: "", username, repairUsername: false };
+}
+
+async function repairLegacyNyxUsername(firebase, uid, username) {
+  if (!uid || !username) return;
+  const profileRef = firebase.firestore.collection("nyxUserProfiles").doc(uid);
+  const snapshot = await profileRef.get();
+  if (!snapshot.exists) return;
+  const account = await firebase.auth.getUser(uid);
+  const token = { uid, email: String(account.email || ""), name: String(account.displayName || username), picture: String(account.photoURL || "") };
+  const previousProfile = normalizeNyxUserProfile(snapshot.data()?.profile, token);
+  const nextProfile = { ...previousProfile, handle: `@${username}` };
+  await saveNyxProfileWithUsername(firebase, token, nextProfile, String(snapshot.data()?.createdAt || new Date().toISOString()), previousProfile);
 }
 
 app.post("/api/account/register", async (req, res) => {
@@ -2329,7 +2366,7 @@ app.post("/api/account/register", async (req, res) => {
     });
     createdUid = account.uid;
     const profileToken = { uid: account.uid, email, name: username, picture: "" };
-    const profile = normalizeNyxUserProfile({}, profileToken);
+    const profile = normalizeNyxUserProfile({ displayName: username, handle: `@${username}` }, profileToken);
     try {
       await saveNyxProfileWithUsername(firebase, profileToken, profile, new Date().toISOString());
     } catch (error) {
@@ -2419,6 +2456,11 @@ app.post("/api/account/sign-in", async (req, res) => {
         error: response.status === 429 ? "Too many sign-in attempts. Try again later." : "Username, email, or password is incorrect."
       });
       return;
+    }
+    if (resolved.repairUsername && resolved.username) {
+      await repairLegacyNyxUsername(firebase, payload.localId, resolved.username).catch(error => {
+        console.warn("Nyx legacy username mapping could not be repaired:", error?.message || error);
+      });
     }
     const customToken = await firebase.auth.createCustomToken(payload.localId);
     nyxAccountSignInAttempts.delete(linkGeneratorClientId(req));

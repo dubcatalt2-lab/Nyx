@@ -674,13 +674,12 @@
   async function nyxUploadProfileMedia(kind,dataUrl,token,onProgress=()=>{}){
     const match=String(dataUrl||'').match(/^data:(image\/(?:gif|png|jpeg|webp));base64,([a-z0-9+/=]+)$/i);
     if(!match)return dataUrl;
-    if(match[1].toLowerCase()!=='image/gif'&&dataUrl.length<=NYX_PROFILE_IMAGE_DATA_LIMIT)return dataUrl;
-    if(dataUrl.length>NYX_PROFILE_MEDIA_DATA_LIMIT)throw new Error('Choose an animated image smaller than 8 MB.');
+    if(dataUrl.length>NYX_PROFILE_MEDIA_DATA_LIMIT)throw new Error('Choose an image smaller than 8 MB.');
     const encoded=match[2];
     const chunkSize=420000;
     const chunks=[];
     for(let offset=0;offset<encoded.length;offset+=chunkSize)chunks.push(encoded.slice(offset,offset+chunkSize));
-    if(!chunks.length||chunks.length>32)throw new Error('That animated image is too large to upload.');
+    if(!chunks.length||chunks.length>32)throw new Error('That image is too large to upload.');
     const uploadId=(globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2)}`).replace(/[^a-z0-9_-]/gi,'');
     for(let index=0;index<chunks.length;index++){
       onProgress(Math.round((index/chunks.length)*90));
@@ -688,14 +687,14 @@
         method:'PUT',
         headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
         body:JSON.stringify({mime:match[1].toLowerCase(),totalChunks:chunks.length,chunk:chunks[index]})
-      },`The ${kind} GIF could not be uploaded.`);
+      },`The ${kind} image could not be uploaded.`);
     }
     const data=await nyxProfileMediaFetch(`/api/profile-media/${kind}/${uploadId}/complete`,{
       method:'POST',
       headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
       body:'{}'
-    },`The ${kind} GIF could not be completed.`);
-    if(!data.url)throw new Error(`The ${kind} GIF could not be completed.`);
+    },`The ${kind} image could not be completed.`);
+    if(!data.url)throw new Error(`The ${kind} image could not be completed.`);
     onProgress(100);
     return data.url;
   }
@@ -1108,7 +1107,7 @@
         if(!token)throw new Error('Sign in again to save your profile.');
         for(const kind of ['avatar','banner']){
           const key=`${kind}Url`;
-          if(/^data:image\/gif;base64,/i.test(String(nextProfile[key]||''))){
+          if(/^data:image\/(?:gif|png|jpeg|webp);base64,/i.test(String(nextProfile[key]||''))){
             button.textContent=`Uploading ${kind}…`;
             nextProfile[key]=await nyxUploadProfileMedia(kind,nextProfile[key],token,progress=>{button.textContent=`Uploading ${kind} ${progress}%`});
             form.querySelector(`[name="${key}"]`).value=nextProfile[key];
@@ -1118,6 +1117,13 @@
         if(imagePayloadSize>NYX_PROFILE_IMAGE_TOTAL_LIMIT)throw new Error('Your avatar and banner are too large together. Remove one or choose smaller images.');
         button.textContent='Saving…';
         const data=await nyxProfileMediaFetch('/api/profiles/me',{method:'PUT',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({profile:nextProfile})},'Profile could not be saved.');
+        const persistedProfile=normalizeNyxUserProfile(data.profile);
+        for(const kind of ['avatar','banner']){
+          const key=`${kind}Url`;
+          if(String(nextProfile[key]||'')!==String(persistedProfile[key]||'')){
+            throw new Error(`The ${kind} image was not stored. Try selecting it again.`);
+          }
+        }
         if(nextEmail&&nextEmail!==nyxUserAccountEmail){
           button.textContent='Updating email…';
           const accountData=await nyxProfileMediaFetch('/api/account/me/email',{method:'PUT',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({email:nextEmail})},'Account email could not be updated.');
@@ -1129,8 +1135,17 @@
             await credential.user.getIdToken(true);
           }
         }
-        nyxUserProfile=normalizeNyxUserProfile(data.profile);
+        nyxUserProfile=persistedProfile;
         nyxUserProfileCreatedAt=String(data.createdAt||nyxUserProfileCreatedAt);
+        button.textContent='Verifying…';
+        const verifiedProfile=await loadNyxUserProfile();
+        if(!verifiedProfile)throw new Error('The saved profile could not be verified. Try again.');
+        for(const kind of ['avatar','banner']){
+          const key=`${kind}Url`;
+          if(String(nextProfile[key]||'')!==String(nyxUserProfile?.[key]||'')){
+            throw new Error(`The saved ${kind} image could not be loaded. Try selecting it again.`);
+          }
+        }
         if(nyxFounderIsOwner)await loadFounderProfile({force:true});
         syncFounderOwnerControls();
         close();

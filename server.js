@@ -2765,7 +2765,7 @@ app.post("/api/profile-media/:kind/:uploadId/complete", async (req, res) => {
       return total + (snapshot.exists && data.index === index ? String(data.chunk || "").length : profileMediaEncodedLimit + 1);
     }, 0);
     if (encodedLength < 1 || encodedLength > profileMediaEncodedLimit) {
-      res.status(413).json({ error: "That GIF is too large or incomplete." });
+      res.status(413).json({ error: "That profile image is too large or incomplete." });
       return;
     }
     await mediaRef.set({ complete: true, encodedLength, completedAt: new Date().toISOString() }, { merge: true });

@@ -62,6 +62,7 @@
       role: "all",
       subscription: "all",
       status: "all",
+      segment: "all",
       sort: "createdAt",
       direction: "desc",
       data: null,
@@ -98,7 +99,7 @@
               <label class="nyx-owner-search">${dashboardIcon("search")}<input type="search" name="search" placeholder="Search name, username, email, or UID" autocomplete="off"></label>
               <select name="role" aria-label="Filter by role"><option value="all">All roles</option><option value="owner">Owner</option><option value="admin">Admin</option><option value="developer">Developer</option><option value="moderator">Moderator</option><option value="member">Member</option></select>
               <select name="subscription" aria-label="Filter by subscription"><option value="all">All subscriptions</option><option value="free">Free</option><option value="premium">Premium</option><option value="trialing">Trial</option><option value="past_due">Past due</option><option value="canceled">Canceled</option></select>
-              <select name="status" aria-label="Filter by account status"><option value="all">All accounts</option><option value="enabled">Enabled</option><option value="disabled">Disabled</option><option value="online">Online now</option></select>
+              <select name="status" aria-label="Filter by account status"><option value="all">All accounts</option><option value="enabled">Enabled</option><option value="disabled">Disabled</option><option value="online">Online now</option><option value="offline">Offline</option></select>
             </form>
             <div class="nyx-owner-table-wrap" data-owner-table aria-live="polite"></div>
             <footer class="nyx-owner-pagination" data-owner-pagination></footer>
@@ -162,14 +163,17 @@
 
     function renderMetrics(metrics = {}) {
       const definitions = [
-        ["users", "Total users", metrics.totalUsers ?? 0],
-        ["active", "Active today", metrics.activeToday ?? 0],
-        ["online", "Online now", metrics.onlineUsers ?? 0],
-        ["signup", "New signups · 7d", metrics.newSignups ?? 0],
-        ["premium", "Premium", metrics.premiumSubscribers ?? 0],
-        ["revenue", "Monthly revenue", moneyLabel(metrics.monthlyRevenueCents)]
+        ["users", "Total users", metrics.totalUsers ?? 0, "all"],
+        ["active", "Active today", metrics.activeToday ?? 0, "active_today"],
+        ["online", "Online now", metrics.onlineUsers ?? 0, "online"],
+        ["signup", "New signups · 7d", metrics.newSignups ?? 0, "new_7d"],
+        ["premium", "Premium", metrics.premiumSubscribers ?? 0, "premium"],
+        ["revenue", "Monthly revenue", moneyLabel(metrics.monthlyRevenueCents), "revenue"]
       ];
-      metricsHost.innerHTML = definitions.map(([icon, label, value]) => `<article class="nyx-owner-metric">${dashboardIcon(icon)}<div><span>${esc(label)}</span><strong>${esc(value)}</strong></div></article>`).join("");
+      metricsHost.innerHTML = definitions.map(([icon, label, value, segment]) => {
+        const active = state.segment === segment;
+        return `<button class="nyx-owner-metric${active ? " active" : ""}" type="button" data-owner-segment="${segment}" aria-pressed="${active}" aria-label="Show ${esc(label)}">${dashboardIcon(icon)}<div><span>${esc(label)}</span><strong>${esc(value)}</strong></div></button>`;
+      }).join("");
     }
 
     function sortButton(key, label) {
@@ -186,7 +190,7 @@
         tableHost.innerHTML = `<table class="nyx-owner-table">
           <thead><tr><th>${sortButton("displayName", "User")}</th><th>${sortButton("role", "Role")}</th><th>${sortButton("subscriptionStatus", "Subscription")}</th><th>${sortButton("createdAt", "Created")}</th><th>${sortButton("lastSignInAt", "Last sign-in")}</th><th>${sortButton("lastActiveAt", "Last active")}</th><th>Email verified</th><th>${sortButton("status", "Status")}</th><th><span class="sr-only">Actions</span></th></tr></thead>
           <tbody>${users.map(user => `<tr data-owner-user-row="${esc(user.uid)}">
-            <td><button class="nyx-owner-user-cell" type="button" data-owner-view-user="${esc(user.uid)}"><span class="nyx-owner-avatar">${user.photoUrl ? `<img src="${esc(user.photoUrl)}" alt="">` : esc((user.displayName || "?").slice(0, 1).toUpperCase())}<i class="${user.online ? "online" : ""}"></i></span><span><strong>${esc(user.displayName)}</strong><small>@${esc(user.username)} · ${esc(user.email || "No email")}</small></span></button></td>
+            <td><button class="nyx-owner-user-cell" type="button" data-owner-view-user="${esc(user.uid)}"><span class="nyx-owner-avatar">${user.photoUrl ? `<img src="${esc(user.photoUrl)}" alt="">` : esc((user.displayName || "?").slice(0, 1).toUpperCase())}<i class="${user.online ? "online" : ""}"></i></span><span><span class="nyx-owner-user-name-row"><strong>${esc(user.displayName)}</strong><span class="nyx-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></span><small>@${esc(user.username)} · ${esc(user.email || "No email")}</small></span></button></td>
             <td><span class="nyx-owner-badge role-${esc(user.role)}">${roleIcon(user.role)}${esc(roleLabel(user.role))}</span></td>
             <td><span class="nyx-owner-badge subscription-${esc(user.subscriptionStatus)}">${esc(subscriptionLabel(user.subscriptionStatus))}</span></td>
             <td><span title="${esc(dateLabel(user.createdAt))}">${esc(relativeLabel(user.createdAt))}</span></td>
@@ -224,6 +228,7 @@
         role: state.role,
         subscription: state.subscription,
         status: state.status,
+        segment: state.segment,
         sort: state.sort,
         direction: state.direction
       });
@@ -244,6 +249,77 @@
       return `<div class="nyx-owner-detail-value ${className}"><span>${esc(label)}</span><strong>${esc(value || "Not available")}</strong></div>`;
     }
 
+    function profileColor(value, fallback) {
+      return /^#[0-9a-f]{6}$/i.test(String(value || "")) ? String(value).toLowerCase() : fallback;
+    }
+
+    function selected(value, expected) {
+      return value === expected ? " selected" : "";
+    }
+
+    function ownerProfilePreview(user) {
+      const profile = user.profile || {};
+      const primary = profileColor(profile.accentPrimary, "#5865f2");
+      const secondary = profileColor(profile.accentSecondary, "#8ea1ff");
+      const bannerColor = profileColor(profile.bannerColor, secondary);
+      const namePrimary = profileColor(profile.displayNameColorPrimary, "#ffffff");
+      const nameSecondary = profileColor(profile.displayNameColorSecondary, secondary);
+      const customPrimary = profileColor(profile.customEffectColorPrimary, "#ffffff");
+      const customSecondary = profileColor(profile.customEffectColorSecondary, secondary);
+      const effect = String(profile.profileEffect || "none").toLowerCase();
+      const decoration = String(profile.avatarDecoration || "none").toLowerCase();
+      const nameFont = String(profile.displayNameFont || "gg-sans").toLowerCase();
+      const nameEffect = String(profile.displayNameEffect || "solid").toLowerCase();
+      const customSpeed = Math.max(2, Math.min(18, Number(profile.customEffectSpeed) || 7));
+      const customIntensity = Math.max(20, Math.min(100, Number(profile.customEffectIntensity) || 70));
+      const avatar = profile.avatarUrl
+        ? `<img src="${esc(profile.avatarUrl)}" alt="${esc(profile.displayName || user.displayName)}">`
+        : `<span>${esc((profile.displayName || user.displayName || "?").slice(0, 1).toUpperCase())}</span>`;
+      const banner = profile.bannerUrl ? `<img src="${esc(profile.bannerUrl)}" alt="">` : "";
+      return `<article class="nyx-owner-public-profile nyx-owner-effect-${esc(effect)}" style="--profile-primary:${primary};--profile-secondary:${secondary};--profile-banner:${bannerColor};--profile-name-primary:${namePrimary};--profile-name-secondary:${nameSecondary};--profile-custom-primary:${customPrimary};--profile-custom-secondary:${customSecondary};--profile-effect-speed:${customSpeed}s;--profile-effect-opacity:${customIntensity / 100}">
+        <i class="nyx-owner-public-effect" aria-hidden="true"></i>
+        <div class="nyx-owner-public-banner">${banner}</div>
+        <div class="nyx-owner-public-avatar nyx-owner-decoration-${esc(decoration)}">${avatar}<em aria-hidden="true"></em><i class="${user.online ? "online" : ""}"></i></div>
+        <div class="nyx-owner-public-body">
+          <strong class="nyx-owner-name-font-${esc(nameFont)} nyx-owner-name-effect-${esc(nameEffect)}">${esc(profile.displayName || user.displayName)}</strong>
+          <span>${esc(profile.handle || `@${user.username}`)}</span>
+          ${profile.customStatus ? `<p class="status">${esc(profile.customStatus)}</p>` : ""}
+          <div><b>About me</b><p>${esc(profile.bio || "No bio yet.")}</p></div>
+          <small>${roleIcon(user.role)}${esc(roleLabel(user.role))} · ${user.online ? "Online" : "Offline"}</small>
+        </div>
+      </article>`;
+    }
+
+    function ownerProfileEditor(user) {
+      const profile = user.profile || {};
+      const remoteAvatar = /^https?:\/\//i.test(String(profile.avatarUrl || "")) ? profile.avatarUrl : "";
+      const remoteBanner = /^https?:\/\//i.test(String(profile.bannerUrl || "")) ? profile.bannerUrl : "";
+      return `<form class="nyx-owner-profile-editor" data-owner-profile-form>
+        <div class="nyx-owner-profile-fields">
+          <label>Display name<input name="displayName" maxlength="48" required value="${esc(profile.displayName || user.displayName)}"></label>
+          <label>Username<span class="nyx-owner-prefixed-input"><i>@</i><input name="handle" maxlength="32" required value="${esc(String(profile.handle || user.username).replace(/^@/, ""))}"></span></label>
+          <label class="wide">About me<textarea name="bio" maxlength="280" rows="4">${esc(profile.bio || "")}</textarea></label>
+          <label class="wide">Custom status<input name="customStatus" maxlength="80" value="${esc(profile.customStatus || "")}"></label>
+          <label>Status<select name="status"><option value="online"${selected(profile.status, "online")}>Online</option><option value="idle"${selected(profile.status, "idle")}>Idle</option><option value="dnd"${selected(profile.status, "dnd")}>Do not disturb</option><option value="offline"${selected(profile.status, "offline")}>Offline</option></select></label>
+          <label>Name style<select name="displayNameFont"><option value="gg-sans"${selected(profile.displayNameFont, "gg-sans")}>Default</option><option value="headline"${selected(profile.displayNameFont, "headline")}>Headline</option><option value="rounded"${selected(profile.displayNameFont, "rounded")}>Rounded</option><option value="wide"${selected(profile.displayNameFont, "wide")}>Wide</option><option value="slab"${selected(profile.displayNameFont, "slab")}>Slab</option><option value="condensed"${selected(profile.displayNameFont, "condensed")}>Condensed</option><option value="mono-block"${selected(profile.displayNameFont, "mono-block")}>Mono block</option><option value="tempo"${selected(profile.displayNameFont, "tempo")}>Tempo</option><option value="sakura"${selected(profile.displayNameFont, "sakura")}>Sakura</option><option value="jellybean"${selected(profile.displayNameFont, "jellybean")}>Jellybean</option><option value="modern"${selected(profile.displayNameFont, "modern")}>Modern</option><option value="medieval"${selected(profile.displayNameFont, "medieval")}>Medieval</option><option value="eight-bit"${selected(profile.displayNameFont, "eight-bit")}>Eight bit</option><option value="vampyre"${selected(profile.displayNameFont, "vampyre")}>Vampyre</option></select></label>
+          <label>Primary color<input name="accentPrimary" type="color" value="${profileColor(profile.accentPrimary, "#5865f2")}"></label>
+          <label>Accent color<input name="accentSecondary" type="color" value="${profileColor(profile.accentSecondary, "#8ea1ff")}"></label>
+          <label>Banner fallback<input name="bannerColor" type="color" value="${profileColor(profile.bannerColor, "#8ea1ff")}"></label>
+          <label>Name effect<select name="displayNameEffect"><option value="solid"${selected(profile.displayNameEffect, "solid")}>Solid</option><option value="gradient"${selected(profile.displayNameEffect, "gradient")}>Gradient</option><option value="neon"${selected(profile.displayNameEffect, "neon")}>Neon</option><option value="toon"${selected(profile.displayNameEffect, "toon")}>Toon</option><option value="pop"${selected(profile.displayNameEffect, "pop")}>Pop</option></select></label>
+          <label>Profile effect<select name="profileEffect"><option value="none"${selected(profile.profileEffect, "none")}>None</option><option value="glow"${selected(profile.profileEffect, "glow")}>Glow</option><option value="sparkle"${selected(profile.profileEffect, "sparkle")}>Sparkle</option><option value="aurora"${selected(profile.profileEffect, "aurora")}>Aurora</option><option value="holographic"${selected(profile.profileEffect, "holographic")}>Holographic</option><option value="fireflies"${selected(profile.profileEffect, "fireflies")}>Fireflies</option><option value="cosmic-dust"${selected(profile.profileEffect, "cosmic-dust")}>Cosmic dust</option><option value="electric-storm"${selected(profile.profileEffect, "electric-storm")}>Electric storm</option><option value="meteor-shower"${selected(profile.profileEffect, "meteor-shower")}>Meteor shower</option><option value="cyber-grid"${selected(profile.profileEffect, "cyber-grid")}>Cyber grid</option><option value="plasma"${selected(profile.profileEffect, "plasma")}>Plasma</option><option value="snowfall"${selected(profile.profileEffect, "snowfall")}>Snowfall</option><option value="embers"${selected(profile.profileEffect, "embers")}>Embers</option><option value="bubbles"${selected(profile.profileEffect, "bubbles")}>Bubbles</option><option value="custom"${selected(profile.profileEffect, "custom")}>Custom</option></select></label>
+          <label>Avatar decoration<select name="avatarDecoration"><option value="none"${selected(profile.avatarDecoration, "none")}>None</option><option value="starfall"${selected(profile.avatarDecoration, "starfall")}>Starfall</option><option value="orbit"${selected(profile.avatarDecoration, "orbit")}>Orbit</option><option value="laurel"${selected(profile.avatarDecoration, "laurel")}>Laurel</option><option value="neon-wings"${selected(profile.avatarDecoration, "neon-wings")}>Neon wings</option></select></label>
+          <label class="wide">Replace avatar from URL<input name="avatarUrl" type="url" placeholder="Leave blank to keep the current image" value="${esc(remoteAvatar)}"></label>
+          <label class="wide">Replace banner from URL<input name="bannerUrl" type="url" placeholder="Leave blank to keep the current image" value="${esc(remoteBanner)}"></label>
+        </div>
+        <div class="nyx-owner-media-removal">
+          <label><input name="removeAvatar" type="checkbox"> Remove current avatar</label>
+          <label><input name="removeBanner" type="checkbox"> Remove current banner</label>
+        </div>
+        <p>Owner edits use the same unique-username check as normal profile settings. Blank image URL fields keep uploaded images unchanged.</p>
+        <div class="nyx-owner-detail-actions"><button type="submit">Save profile</button></div>
+      </form>`;
+    }
+
     async function openUser(uid) {
       drawer.hidden = false;
       drawer.classList.remove("show");
@@ -253,10 +329,10 @@
         const { user } = await api(`/api/owner-dashboard/users/${encodeURIComponent(uid)}`);
         state.selectedUser = user;
         const avatar = user.photoUrl ? `<img src="${esc(user.photoUrl)}" alt="">` : esc((user.displayName || "?").slice(0, 1).toUpperCase());
-        drawer.innerHTML = `<header><div class="nyx-owner-detail-avatar">${avatar}<i class="${user.online ? "online" : ""}"></i></div><div><span>${roleIcon(user.role)}${esc(roleLabel(user.role))} account</span><h2>${esc(user.displayName)}</h2><p>@${esc(user.username)}</p></div><button type="button" data-owner-drawer-close aria-label="Close user details">${dashboardIcon("close")}</button></header>
+        drawer.innerHTML = `<header><div class="nyx-owner-detail-avatar">${avatar}<i class="${user.online ? "online" : ""}"></i></div><div><span>${roleIcon(user.role)}${esc(roleLabel(user.role))} account</span><h2>${esc(user.displayName)}</h2><p class="nyx-owner-drawer-identity">@${esc(user.username)} <span class="nyx-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></p></div><button type="button" data-owner-drawer-close aria-label="Close user details">${dashboardIcon("close")}</button></header>
           <div class="nyx-owner-drawer-scroll">
-            <section class="nyx-owner-detail-grid">${detailValue("Email", user.deliverableEmail ? user.email : "No email added")}${detailValue("Firebase UID", user.uid, "uid")}${detailValue("Created", dateLabel(user.createdAt))}${detailValue("Last sign-in", dateLabel(user.lastSignInAt))}${detailValue("Last active", dateLabel(user.lastActiveAt))}${detailValue("Email verified", user.deliverableEmail ? (user.emailVerified ? "Verified" : "Not verified") : "Not applicable · username-only")}</section>
-            <section class="nyx-owner-detail-section"><h3>Profile information</h3><div class="nyx-owner-profile-summary"><strong>${esc(user.profile?.displayName || user.displayName)}</strong><span>${esc(user.profile?.handle || `@${user.username}`)}</span><p>${esc(user.profile?.bio || "No bio yet.")}</p>${user.profile?.customStatus ? `<small>Custom status · ${esc(user.profile.customStatus)}</small>` : ""}</div></section>
+            <section class="nyx-owner-detail-grid">${detailValue("Email", user.deliverableEmail ? user.email : "No email added")}${detailValue("Firebase UID", user.uid, "uid")}${detailValue("Presence", user.online ? "Online now" : "Offline")}${detailValue("Created", dateLabel(user.createdAt))}${detailValue("Last sign-in", dateLabel(user.lastSignInAt))}${detailValue("Last active", dateLabel(user.lastActiveAt))}${detailValue("Email verified", user.deliverableEmail ? (user.emailVerified ? "Verified" : "Not verified") : "Not applicable · username-only")}</section>
+            <section class="nyx-owner-detail-section nyx-owner-profile-management"><h3>Public profile</h3>${ownerProfilePreview(user)}<details><summary>Edit this profile</summary>${ownerProfileEditor(user)}</details></section>
             <section class="nyx-owner-detail-section"><h3>Access</h3><label>Role<select data-owner-detail-role ${user.role === "owner" ? "disabled" : ""}><option value="member">Member</option><option value="moderator">Moderator</option><option value="developer">Developer</option><option value="admin">Admin</option><option value="owner" ${user.role === "owner" ? "selected" : "disabled"}>Owner</option></select></label><label>Subscription<select data-owner-detail-subscription><option value="free">Free</option><option value="premium">Premium</option><option value="trialing">Trial</option><option value="past_due">Past due</option><option value="canceled">Canceled</option></select></label><label>Monthly revenue <input data-owner-detail-revenue type="number" min="0" step="0.01" value="${((user.monthlyRevenueCents || 0) / 100).toFixed(2)}"></label><div class="nyx-owner-detail-actions"><button type="button" data-owner-save-access>Save access</button></div></section>
             <section class="nyx-owner-detail-section"><h3>Account actions</h3>${!user.deliverableEmail ? '<p class="nyx-owner-action-note">This username-only account has no inbox. Create a secure reset link and give it directly to the account owner.</p>' : ""}<div class="nyx-owner-action-grid"><button type="button" data-owner-user-action="create_password_reset_link">Create reset link</button><button type="button" data-owner-user-action="send_password_reset" ${!user.deliverableEmail ? "disabled" : ""}>Email reset link</button><button type="button" data-owner-user-action="verify_email" ${user.emailVerified || !user.deliverableEmail ? "disabled" : ""}>Verify email</button><button type="button" data-owner-user-action="${user.disabled ? "enable" : "disable"}" ${user.role === "owner" ? "disabled" : ""}>${user.disabled ? "Re-enable account" : "Disable account"}</button><button class="danger" type="button" data-owner-user-action="delete" ${user.role === "owner" ? "disabled" : ""}>Delete account</button></div></section>
             <section class="nyx-owner-detail-section"><h3>Recent user activity</h3><div class="nyx-owner-user-activity">${(user.recentActivity || []).length ? user.recentActivity.map(event => `<p><strong>${esc(actionLabel(event.action))}</strong><span>${esc(relativeLabel(event.createdAt))}</span></p>`).join("") : "<span>No recorded account actions.</span>"}</div></section>
@@ -364,7 +440,23 @@
       if (event.target === overlay || event.target.closest("[data-owner-close]")) return destroy();
       if (event.target.closest("[data-owner-refresh]")) return void load();
       if (event.target.closest("[data-owner-export]")) return exportCurrentPage();
+      const segment = event.target.closest("[data-owner-segment]")?.dataset.ownerSegment;
+      if (segment) {
+        state.segment = segment;
+        state.search = "";
+        state.role = "all";
+        state.subscription = "all";
+        state.status = "all";
+        state.page = 1;
+        const filters = overlay.querySelector("[data-owner-filters]");
+        filters.elements.search.value = "";
+        filters.elements.role.value = "all";
+        filters.elements.subscription.value = "all";
+        filters.elements.status.value = "all";
+        return void load();
+      }
       if (event.target.closest("[data-owner-online-only]")) {
+        state.segment = "";
         state.status = state.status === "online" ? "all" : "online";
         overlay.querySelector('[name="status"]').value = state.status;
         state.page = 1;
@@ -413,15 +505,56 @@
       if (event.target.name === "subscription") state.subscription = event.target.value;
       if (event.target.name === "status") state.status = event.target.value;
       if (event.target.name !== "search") {
+        state.segment = "";
         state.page = 1;
         void load();
       }
+    }
+
+    function onSubmit(event) {
+      const form = event.target.closest("[data-owner-profile-form]");
+      if (!form) return;
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+      const values = new FormData(form);
+      const profile = {
+        displayName: values.get("displayName"),
+        handle: values.get("handle"),
+        bio: values.get("bio"),
+        customStatus: values.get("customStatus"),
+        status: values.get("status"),
+        accentPrimary: values.get("accentPrimary"),
+        accentSecondary: values.get("accentSecondary"),
+        bannerColor: values.get("bannerColor"),
+        displayNameFont: values.get("displayNameFont"),
+        displayNameEffect: values.get("displayNameEffect"),
+        profileEffect: values.get("profileEffect"),
+        avatarDecoration: values.get("avatarDecoration")
+      };
+      const avatarUrl = String(values.get("avatarUrl") || "").trim();
+      const bannerUrl = String(values.get("bannerUrl") || "").trim();
+      if (avatarUrl) profile.avatarUrl = avatarUrl;
+      if (bannerUrl) profile.bannerUrl = bannerUrl;
+      const submit = form.querySelector('[type="submit"]');
+      submit.disabled = true;
+      submit.textContent = "Saving…";
+      void mutateUser("set_profile", {
+        profile,
+        removeAvatar: values.get("removeAvatar") === "on",
+        removeBanner: values.get("removeBanner") === "on"
+      }).finally(() => {
+        if (submit.isConnected) {
+          submit.disabled = false;
+          submit.textContent = "Save profile";
+        }
+      });
     }
 
     function onInput(event) {
       if (event.target.name !== "search" || !event.target.closest("[data-owner-filters]")) return;
       clearTimeout(state.searchTimer);
       state.searchTimer = setTimeout(() => {
+        state.segment = "";
         state.search = event.target.value.trim();
         state.page = 1;
         void load();
@@ -451,6 +584,7 @@
     overlay.addEventListener("click", onClick);
     overlay.addEventListener("change", onChange);
     overlay.addEventListener("input", onInput);
+    overlay.addEventListener("submit", onSubmit);
     document.addEventListener("keydown", onKeydown);
     renderLoading();
     void load();

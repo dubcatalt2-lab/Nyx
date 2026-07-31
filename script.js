@@ -1366,6 +1366,7 @@
       <footer class="nyx-credits-footer"><img src="/assets/icons/nyx-logo.png" alt="" aria-hidden="true"><div><strong>Nyx</strong><span>Thanks for using our site.</span></div><small>&copy; 2026 Nyx</small></footer>
     </article>`;
   }
+  const nyxDiscordCreditsProfileStyle='.nyx-credits-hero{margin-bottom:34px!important}.nyx-credits-hero h1{font-size:clamp(36px,6vw,54px)!important;font-weight:600!important}.nyx-credits-section{margin-bottom:44px!important}.nyx-credits-section>h2{margin-bottom:18px!important;font-size:26px!important}.nyx-founder-profile-standard{max-width:510px!important;border-radius:12px!important;background:linear-gradient(155deg,color-mix(in srgb,var(--nyx-founder-accent-primary,#5865f2) 66%,#202126),color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 30%,#18191e))!important}.nyx-founder-profile-standard .nyx-founder-banner{height:150px!important;aspect-ratio:auto!important;background:var(--nyx-founder-banner-color,var(--nyx-founder-accent-secondary,#8ea1ff))!important}.nyx-founder-profile-standard .nyx-founder-banner img{width:100%!important;height:100%!important;object-fit:cover!important;object-position:center!important}.nyx-founder-profile-standard .nyx-founder-profile-content{padding:0 14px 14px!important}.nyx-founder-profile-standard .nyx-founder-image-wrap{width:84px!important;height:84px!important;margin-top:-43px!important;border-color:color-mix(in srgb,var(--nyx-founder-accent-primary,#5865f2) 62%,#18191e)!important}.nyx-founder-profile-standard .nyx-founder-copy{margin-top:9px!important;padding:13px!important;border:1px solid color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 38%,transparent)!important;border-radius:9px!important;background:color-mix(in srgb,var(--nyx-founder-accent-primary,#5865f2) 14%,rgba(12,13,17,.76))!important}.nyx-founder-profile-standard .nyx-founder-copy h3{font-size:21px!important}.nyx-founder-profile-standard .nyx-founder-role{margin-top:10px!important}.nyx-founder-profile-standard .nyx-founder-about{margin-top:4px!important}.nyx-founder-profile-standard .nyx-founder-bio{font-size:13px!important}';
   const DEFAULT_BROWSER_MODE='scramjet';
   const DEFAULT_BROWSER_TRANSPORT='libcurl';
   const nyxFontOptions=[
@@ -3856,8 +3857,8 @@
       apps:{title:'Apps',body:`<section class="shell-page"><h1>Apps</h1><p>Apps</p><div class="quick-grid apps-launch-grid">${quickTiles()}</div></section>`},
       links:{title:'Bookmarks',body:`<section class="shell-page"><h1>Bookmarks</h1><p>Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>DuckDuckGo</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></section>`},
       terms:{title:'Terms Of Service',style:utilityPageStyle,body:nyxTermsPageMarkup()},
-      about:{title:'Credits',style:utilityPageStyle+discordFounderProfileStyle+founderAccentEffectStyle,body:nyxCreditsPageMarkup()},
-      credits:{title:'Credits',style:utilityPageStyle+discordFounderProfileStyle+founderAccentEffectStyle,body:nyxCreditsPageMarkup()},
+      about:{title:'Credits',style:utilityPageStyle+discordFounderProfileStyle+nyxDiscordCreditsProfileStyle+founderAccentEffectStyle,body:nyxCreditsPageMarkup()},
+      credits:{title:'Credits',style:utilityPageStyle+discordFounderProfileStyle+nyxDiscordCreditsProfileStyle+founderAccentEffectStyle,body:nyxCreditsPageMarkup()},
       developer:{title:'Developer Console',style:utilityPageStyle,body:`<section aria-label="Eruda developer console"></section>`},
       ephesians1:{title:'Ephesians 1',body:`<section class="shell-page ephesians-diagram"><style>
         .ephesians-diagram{--ink:#f8fafc;--muted:#cbd5e1;--line:rgba(255,255,255,.24);max-width:1120px;margin:auto;padding-bottom:64px}.ephesians-diagram h1{text-align:center;font-size:clamp(30px,5vw,48px);margin:4px 0 6px}.ephesians-diagram>.diagram-sub{text-align:center;margin:0 0 28px;color:var(--muted);font-size:15px}.eph-flow{display:grid;gap:12px}.eph-block{padding:17px 20px;border:1px solid var(--line);border-left:6px solid #94a3b8;border-radius:14px;background:rgba(15,23,42,.58);box-shadow:0 12px 28px rgba(0,0,0,.16)}.eph-block h2{font-size:19px;margin:5px 0 7px}.eph-block p{margin:0;color:#e2e8f0;line-height:1.48;font-size:14px}.eph-verse{color:#cbd5e1;font-size:11px;font-weight:800;letter-spacing:.11em}.eph-father{border-left-color:#60a5fa}.eph-son{border-left-color:#fbbf24}.eph-spirit{border-left-color:#4ade80}.eph-prayer{border-left-color:#c084fc}.eph-arrow{text-align:center;height:22px;font:700 24px/22px Arial,sans-serif;color:#cbd5e1}.eph-purpose{text-align:center;padding:16px;border:1px solid rgba(255,255,255,.34);border-radius:14px;background:rgba(255,255,255,.10);font-size:17px;font-weight:800}.eph-purpose small{display:block;margin-bottom:5px;color:#cbd5e1;font-size:11px;letter-spacing:.1em}.eph-triad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.eph-triad .eph-block{padding:15px}.eph-triad h2{font-size:17px}@media(max-width:720px){.eph-triad{grid-template-columns:1fr}.ephesians-diagram{padding:20px 4px 50px!important}}</style>
@@ -9560,48 +9561,90 @@
   }
   //lion-ai-ui
   const nyxAiModels=[
-    ['llama-3.3-70b','Llama 3.3 70B'],
-    ['gpt-oss-120b','GPT-OSS 120B'],
-    ['qwen3-32b','Qwen3 32B'],
-    ['llama-4-scout','Llama 4 Scout'],
-    ['chatgpt-5.4-mini','ChatGPT 5.4 Mini']
+    ['chatgpt-5.4-mini','GPT-5.4 Mini']
   ];
   function nyxAiSelectedModel(){
-    const saved=store.text('nyx.aiModel','llama-3.3-70b');
-    return nyxAiModels.some(([id])=>id===saved) ? saved : 'llama-3.3-70b';
+    const saved=store.text('nyx.aiModel','chatgpt-5.4-mini');
+    return nyxAiModels.some(([id])=>id===saved) ? saved : 'chatgpt-5.4-mini';
   }
   function nyxAiModelLabel(id=nyxAiSelectedModel()){
-    return nyxAiModels.find(([modelId])=>modelId===id)?.[1] || 'Llama 3.3 70B';
+    return nyxAiModels.find(([modelId])=>modelId===id)?.[1] || 'GPT-5.4 Mini';
   }
   function nyxAiModelOptions(){
     const selected=nyxAiSelectedModel();
     return nyxAiModels.map(([id,label])=>`<option value="${esc(id)}" ${id===selected?'selected':''}>${esc(label)}</option>`).join('');
   }
+  function lionAiEmptyState(){
+    return `<section class="lion-ai-empty" data-lion-ai-empty>
+      <div class="lion-ai-orb" data-nyx-logo aria-hidden="true"></div>
+      <p class="lion-ai-eyebrow">NYX INTELLIGENCE</p>
+      <h2>What can I help you with?</h2>
+      <p class="lion-ai-empty-copy">Ask a question, work through an idea, or start creating.</p>
+      <div class="lion-ai-starters">
+        <button type="button" data-lion-ai-prompt="Explain quantum computing in simple terms">
+          <span class="lion-ai-starter-icon" aria-hidden="true">✦</span>
+          <strong>Explain a complex topic</strong>
+          <small>in simple terms</small>
+        </button>
+        <button type="button" data-lion-ai-prompt="Write a JavaScript function that parses JSON from an API endpoint">
+          <span class="lion-ai-starter-icon" aria-hidden="true">&lt;/&gt;</span>
+          <strong>Help me write code</strong>
+          <small>and explain how it works</small>
+        </button>
+        <button type="button" data-lion-ai-prompt="Give me five creative startup ideas in the AI space">
+          <span class="lion-ai-starter-icon" aria-hidden="true">⌁</span>
+          <strong>Brainstorm new ideas</strong>
+          <small>for a creative project</small>
+        </button>
+        <button type="button" data-lion-ai-prompt="Write a short dark science-fiction story about a rogue AI">
+          <span class="lion-ai-starter-icon" aria-hidden="true">◇</span>
+          <strong>Create something</strong>
+          <small>from a simple prompt</small>
+        </button>
+      </div>
+    </section>`;
+  }
   function lionAiBody(){
     return `<div class="lion-ai-panel">
-      <div class="lion-ai-head">
-        <div class="lion-ai-brand">
-          <div class="lion-ai-mark" data-nyx-logo aria-label="Nyx"></div>
-          <div class="lion-ai-title"><h1>Nyx AI</h1><span data-nyx-ai-model-label>${esc(nyxAiModelLabel())}</span></div>
-        </div>
-        <div class="lion-ai-head-actions"><button class="lion-ai-clear" type="button" data-lion-ai-clear title="Clear chat" aria-label="Clear chat">&#8635;</button><select class="lion-ai-model-select" data-lion-ai-model>${nyxAiModelOptions()}</select></div>
-      </div>
-      <div class="lion-ai-chat" data-lion-ai-chat>
-        <div class="lion-ai-msg bot">Hi. Pick a model and ask me anything.</div>
-      </div>
-      <div>
-        <div class="lion-ai-preview" data-lion-ai-preview><img alt=""><span></span></div>
-        <div class="lion-ai-image-status" data-lion-ai-image-status></div>
-        <form class="lion-ai-form" data-lion-ai-form>
-          <label class="lion-ai-plus" title="Add image">+<input type="file" accept="image/*" data-lion-ai-image></label>
-          <textarea class="lion-ai-input" data-lion-ai-input placeholder="Ask Nyx AI anything..." autocomplete="off" spellcheck="true"></textarea>
-          <button class="lion-ai-send" type="submit" title="Send">↑</button>
-        </form>
-      </div>
+      <main class="lion-ai-main">
+        <header class="lion-ai-head">
+          <div class="lion-ai-header-brand">
+            <div class="lion-ai-mark" data-nyx-logo aria-label="Nyx"></div>
+            <div class="lion-ai-title">
+              <h1 data-lion-ai-thread-title>New chat</h1>
+              <span>Nyx AI workspace</span>
+            </div>
+          </div>
+          <div class="lion-ai-head-actions">
+            <div class="lion-ai-model-pill">
+              <span class="lion-ai-ready-dot" aria-hidden="true"></span>
+              <strong data-nyx-ai-model-label>${esc(nyxAiModelLabel())}</strong>
+            </div>
+            <button class="lion-ai-clear" type="button" data-lion-ai-clear title="Clear conversation" aria-label="Clear conversation">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M7 6l1 14h8l1-14M10 10v6M14 10v6"/></svg>
+            </button>
+            <select class="lion-ai-model-select" data-lion-ai-model aria-label="AI model">${nyxAiModelOptions()}</select>
+          </div>
+        </header>
+        <div class="lion-ai-chat" data-lion-ai-chat>${lionAiEmptyState()}</div>
+        <footer class="lion-ai-composer">
+          <div class="lion-ai-preview" data-lion-ai-preview><img alt=""><span></span></div>
+          <div class="lion-ai-image-status" data-lion-ai-image-status></div>
+          <form class="lion-ai-form" data-lion-ai-form>
+            <label class="lion-ai-plus" title="Add image" aria-label="Add image">
+              <span aria-hidden="true">＋</span>
+              <input type="file" accept="image/*" data-lion-ai-image>
+            </label>
+            <textarea class="lion-ai-input" data-lion-ai-input placeholder="Ask Nyx AI anything..." autocomplete="off" spellcheck="true"></textarea>
+            <button class="lion-ai-send" type="submit" title="Send" aria-label="Send">↑</button>
+          </form>
+          <p>Nyx AI can make mistakes. Verify important information.</p>
+        </footer>
+      </main>
     </div>`;
   }
   function openLionAI(){
-    const win=makeWindow({title:'Nyx AI',className:'lion-ai-window',left:'8vw',top:'54px',width:'min(920px,88vw)',height:'min(720px,calc(100vh - 82px))',autoMaximize:false,body:lionAiBody()});
+    const win=makeWindow({title:'Nyx AI',className:'lion-ai-window',left:'7vw',top:'52px',width:'min(1080px,88vw)',height:'min(760px,calc(100vh - 76px))',autoMaximize:false,body:lionAiBody()});
     lionAiRestoreChat(win);
     setTimeout(()=>win.querySelector('[data-lion-ai-input]')?.focus(),80);
   }
@@ -10205,6 +10248,9 @@
     if(!chat || !messages.length) return;
     chat.innerHTML='';
     messages.forEach(m=>addLionAiMessage(chat,m.role==='user'?'user':'bot',m.content));
+    const first=messages.find(message=>message.role==='user')?.content;
+    const title=win?.querySelector('[data-lion-ai-thread-title]');
+    if(title && first) title.textContent=first.length>54 ? `${first.slice(0,54)}…` : first;
   }
   async function nyxAiModelAnswer(prompt, win, imageContext='', onChunk=()=>{}){
     const model=win?.querySelector?.('[data-lion-ai-model]')?.value || nyxAiSelectedModel();
@@ -10277,6 +10323,8 @@
     return lionAiGeneral(prompt);
   }
   function addLionAiMessage(chat, role, text){
+    chat.querySelector('[data-lion-ai-empty]')?.remove();
+    chat.classList.add('has-messages');
     const msg=document.createElement('div');
     msg.className='lion-ai-msg '+role;
     msg.textContent=text;
@@ -11913,6 +11961,11 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
       const chat=win?.querySelector('[data-lion-ai-chat]');
       const prompt=(input?.value || '').trim();
       if((!prompt && !win?.lionAiImage) || !chat) return;
+      const threadTitle=win?.querySelector('[data-lion-ai-thread-title]');
+      if(threadTitle && chat.querySelector('[data-lion-ai-empty]')){
+        const nextTitle=prompt || 'Image conversation';
+        threadTitle.textContent=nextTitle.length>54 ? `${nextTitle.slice(0,54)}…` : nextTitle;
+      }
       addLionAiMessage(chat,'user',prompt || 'Please read this image and answer it.');
       if(win) win.lionAiLastUser=prompt || 'Please read this image and answer it.';
       input.value='';
@@ -11927,11 +11980,27 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
       }).finally(()=>{if(input){input.disabled=false;input.focus()}form.querySelector('.lion-ai-send').disabled=false});
     });
     document.addEventListener('click',e=>{
+      const starter=e.target.closest?.('[data-lion-ai-prompt]');
+      if(starter){
+        const win=starter.closest('.window');
+        const input=win?.querySelector('[data-lion-ai-input]');
+        const form=win?.querySelector('[data-lion-ai-form]');
+        if(input && form){
+          input.value=starter.dataset.lionAiPrompt || '';
+          form.requestSubmit();
+        }
+        return;
+      }
       const clear=e.target.closest?.('[data-lion-ai-clear]');
       if(!clear) return;
       localStorage.removeItem('nyx.aiMessages');
       const chat=clear.closest('.window')?.querySelector('[data-lion-ai-chat]');
-      if(chat) chat.innerHTML='<div class="lion-ai-msg bot">Hi. Pick a model and ask me anything.</div>';
+      if(chat){
+        chat.classList.remove('has-messages');
+        chat.innerHTML=lionAiEmptyState();
+      }
+      const title=clear.closest('.window')?.querySelector('[data-lion-ai-thread-title]');
+      if(title) title.textContent='New chat';
     });
     document.addEventListener('keydown',e=>{
       if(nyxFounderIsOwner&&(e.key==='Enter'||e.key===' ')&&e.target.closest?.('[data-nyx-owner-presence]')&&!e.target.closest?.('[data-toggle-nyx-account-menu]')){
@@ -11957,7 +12026,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
     document.addEventListener('change',e=>{
       const model=e.target.closest?.('[data-lion-ai-model]');
       if(!model) return;
-      store.setText('nyx.aiModel',model.value || 'llama-3.3-70b');
+      store.setText('nyx.aiModel',model.value || 'chatgpt-5.4-mini');
       const win=model.closest('.window');
       const label=win?.querySelector('[data-nyx-ai-model-label]');
       if(label) label.textContent=nyxAiModelLabel(model.value);

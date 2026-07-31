@@ -7,6 +7,7 @@
     "start": "node server.js",
     "start:wisp": "node wisp-server.js",
     "dev": "node server.js",
+    "dev:accounts": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-local-accounts.ps1",
     "build:netlify": "node scripts/build-netlify.mjs",
     "check:branding": "node scripts/check-branding.mjs",
     "check:deploy": "node scripts/check-deploy.mjs && npm run check:branding"

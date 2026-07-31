@@ -69,6 +69,7 @@ node_modules/
 
 # dotenv environment variables file
 .env
+.nyx-local.json
 
 # dataconnect generated files
 .dataconnect

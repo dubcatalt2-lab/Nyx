@@ -1072,11 +1072,7 @@ app.get("/reds-misc-fetch", handleGmsGamesFetch);
 app.get("/reds-misc-proxy", handleGmsGamesProxy);
 
 const nyxAiModels = {
-  "llama-3.3-70b": process.env.NYX_AI_MODEL_LLAMA_33_70B || "meta-llama/llama-3.3-70b-instruct",
-  "gpt-oss-120b": process.env.NYX_AI_MODEL_GPT_OSS_120B || "openai/gpt-oss-120b",
-  "qwen3-32b": process.env.NYX_AI_MODEL_QWEN3_32B || "qwen/qwen3-32b",
-  "llama-4-scout": process.env.NYX_AI_MODEL_LLAMA_4_SCOUT || "meta-llama/llama-4-scout",
-  "chatgpt-5.4-mini": process.env.NYX_AI_MODEL_CHATGPT_54_MINI || "openai/gpt-5.4-mini"
+  "chatgpt-5.4-mini": process.env.NYX_AI_MODEL_CHATGPT_54_MINI || "gpt-5.4-mini"
 };
 
 function nyxAiKey() {
@@ -1162,7 +1158,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     });
     return;
   }
-  const requestedModel = String(req.body?.model || "llama-3.3-70b");
+  const requestedModel = String(req.body?.model || "chatgpt-5.4-mini");
   const model = nyxAiModels[requestedModel];
   if (!model) {
     res.status(400).json({ error: "Unknown Nyx AI model." });
@@ -1906,7 +1902,21 @@ function nyxOwnerUserRecord(user, administration = {}, profileData = {}, activit
       customStatus: profile.customStatus,
       status: profile.status,
       avatarUrl: includeProfileMedia ? profile.avatarUrl : "",
-      bannerUrl: includeProfileMedia ? profile.bannerUrl : ""
+      bannerUrl: includeProfileMedia ? profile.bannerUrl : "",
+      accentPrimary: profile.accentPrimary,
+      accentSecondary: profile.accentSecondary,
+      bannerColor: profile.bannerColor,
+      displayNameFont: profile.displayNameFont,
+      displayNameEffect: profile.displayNameEffect,
+      displayNameColorPrimary: profile.displayNameColorPrimary,
+      displayNameColorSecondary: profile.displayNameColorSecondary,
+      profileEffect: profile.profileEffect,
+      customEffectPattern: profile.customEffectPattern,
+      customEffectColorPrimary: profile.customEffectColorPrimary,
+      customEffectColorSecondary: profile.customEffectColorSecondary,
+      customEffectSpeed: profile.customEffectSpeed,
+      customEffectIntensity: profile.customEffectIntensity,
+      avatarDecoration: profile.avatarDecoration
     }
   };
 }
@@ -2995,6 +3005,7 @@ app.get("/api/owner-dashboard", async (req, res) => {
     const role = String(req.query.role || "all").trim().toLowerCase();
     const subscription = String(req.query.subscription || "all").trim().toLowerCase();
     const status = String(req.query.status || "all").trim().toLowerCase();
+    const segment = String(req.query.segment || "all").trim().toLowerCase();
     let filtered = allUsers.filter(user => {
       if (search && ![user.displayName, user.username, user.email, user.uid].some(value => String(value || "").toLowerCase().includes(search))) return false;
       if (role !== "all" && user.role !== role) return false;
@@ -3002,6 +3013,11 @@ app.get("/api/owner-dashboard", async (req, res) => {
       if (status === "enabled" && user.disabled) return false;
       if (status === "disabled" && !user.disabled) return false;
       if (status === "online" && !user.online) return false;
+      if (status === "offline" && user.online) return false;
+      if (segment === "active_today" && (Date.parse(user.lastActiveAt || "") || 0) < today.getTime()) return false;
+      if (segment === "online" && !user.online) return false;
+      if (segment === "new_7d" && (Date.parse(user.createdAt || "") || 0) < sevenDaysAgo) return false;
+      if ((segment === "premium" || segment === "revenue") && !premiumStatuses.has(user.subscriptionStatus)) return false;
       return true;
     });
     filtered = nyxOwnerSortUsers(filtered, String(req.query.sort || ""), String(req.query.direction || "").toLowerCase());
@@ -3126,6 +3142,46 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
       }, { merge: true });
       auditAction = "subscription_change";
       auditDetails = { subscriptionStatus, monthlyRevenueCents };
+    } else if (action === "set_profile") {
+      const profileRef = firebase.firestore.collection("nyxUserProfiles").doc(uid);
+      const profileSnapshot = await profileRef.get();
+      const profileToken = {
+        uid,
+        email: target.email,
+        name: target.displayName,
+        picture: target.photoURL
+      };
+      const previousProfile = normalizeNyxUserProfile(profileSnapshot.data()?.profile, profileToken);
+      const requestedProfile = req.body?.profile && typeof req.body.profile === "object" ? req.body.profile : {};
+      const editableFields = [
+        "displayName", "handle", "bio", "customStatus", "status",
+        "accentPrimary", "accentSecondary", "bannerColor",
+        "displayNameFont", "displayNameEffect",
+        "displayNameColorPrimary", "displayNameColorSecondary",
+        "profileEffect", "avatarDecoration"
+      ];
+      const profileChanges = {};
+      editableFields.forEach(field => {
+        if (Object.prototype.hasOwnProperty.call(requestedProfile, field)) profileChanges[field] = requestedProfile[field];
+      });
+      if (Object.prototype.hasOwnProperty.call(requestedProfile, "avatarUrl")) profileChanges.avatarUrl = requestedProfile.avatarUrl;
+      if (Object.prototype.hasOwnProperty.call(requestedProfile, "bannerUrl")) profileChanges.bannerUrl = requestedProfile.bannerUrl;
+      if (req.body?.removeAvatar === true) profileChanges.avatarUrl = "";
+      if (req.body?.removeBanner === true) profileChanges.bannerUrl = "";
+      const nextProfile = normalizeNyxUserProfile({ ...previousProfile, ...profileChanges }, profileToken);
+      const createdAt = String(profileSnapshot.data()?.createdAt || target.metadata?.creationTime || new Date().toISOString());
+      const savedProfile = await saveNyxProfileWithUsername(firebase, profileToken, nextProfile, createdAt, previousProfile);
+      await firebase.auth.updateUser(uid, {
+        displayName: savedProfile.displayName,
+        photoURL: /^https?:\/\//i.test(savedProfile.avatarUrl) ? savedProfile.avatarUrl : null
+      });
+      auditAction = "profile_updated_by_owner";
+      auditDetails = {
+        username: nyxProfileUsername(savedProfile.handle, ""),
+        displayName: savedProfile.displayName,
+        avatarRemoved: req.body?.removeAvatar === true,
+        bannerRemoved: req.body?.removeBanner === true
+      };
     } else if (action === "disable" || action === "enable") {
       const disabled = action === "disable";
       await firebase.auth.updateUser(uid, { disabled });

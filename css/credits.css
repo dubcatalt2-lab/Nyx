@@ -18,7 +18,7 @@ html body .nyx-info-page.nyx-credits-tab{
   padding:clamp(46px,7vw,92px) clamp(20px,5vw,62px) 70px;
   color:#eaf2ff;
 }
-html body .nyx-credits-hero{text-align:center;margin:0 auto 68px}
+html body .nyx-credits-hero{text-align:center;margin:0 auto 34px}
 html body .nyx-credits-hero .utility-kicker{
   margin:0 0 8px;
   color:var(--credits-accent);
@@ -30,19 +30,19 @@ html body .nyx-credits-hero .utility-kicker{
 html body .nyx-credits-hero h1{
   margin:0 0 14px;
   color:#f4f8ff;
-  font-size:clamp(48px,8vw,86px);
-  font-weight:400;
-  letter-spacing:-.055em;
+  font-size:clamp(36px,6vw,54px);
+  font-weight:600;
+  letter-spacing:-.04em;
 }
 html body .nyx-credits-hero>p:last-child{max-width:620px;margin:0 auto;color:#9cadc4;font-size:15px;line-height:1.6}
-html body .nyx-credits-section{margin:0 0 76px}
+html body .nyx-credits-section{margin:0 0 44px}
 html body .nyx-credits-section>h2{
   width:max-content;
-  margin:0 auto 34px;
+  margin:0 auto 18px;
   padding-bottom:7px;
   border-bottom:2px solid var(--credits-accent);
   color:#eef4ff;
-  font-size:clamp(31px,5vw,48px);
+  font-size:clamp(24px,4vw,30px);
   font-weight:400;
   letter-spacing:-.035em;
 }
@@ -96,27 +96,27 @@ html body .nyx-credits-footer span,html body .nyx-credits-footer small{font-size
 }
 
 /* Discord-inspired founder profile: banner, overlapping avatar, identity, and visible role chips. */
-html body .nyx-founder-profile-standard{display:block;max-width:620px;margin:0 auto;padding:0;overflow:hidden;border:1px solid color-mix(in srgb,var(--nyx-founder-accent,var(--credits-accent)) 42%,transparent);border-radius:16px;background:#111827;box-shadow:0 16px 42px rgba(0,0,0,.32)}
-html body .nyx-founder-profile-standard .nyx-founder-banner{height:auto;aspect-ratio:17/6;margin:0;background:var(--nyx-founder-accent,var(--credits-accent))}
-html body .nyx-founder-profile-standard .nyx-founder-banner img{object-fit:contain}
-html body .nyx-founder-profile-standard .nyx-founder-profile-content{display:block;padding:0 16px 18px}
-html body .nyx-founder-profile-standard .nyx-founder-image-wrap{width:88px;height:88px;margin:-45px 0 0;border:6px solid #111827;border-radius:50%;background:#111827}
+html body .nyx-founder-profile-standard{display:block;max-width:510px;margin:0 auto;padding:0;overflow:hidden;border:1px solid color-mix(in srgb,var(--nyx-founder-accent,var(--credits-accent)) 42%,transparent);border-radius:12px;background:linear-gradient(155deg,color-mix(in srgb,var(--nyx-founder-accent-primary,#5865f2) 66%,#202126),color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 30%,#18191e));box-shadow:0 16px 42px rgba(0,0,0,.32)}
+html body .nyx-founder-profile-standard .nyx-founder-banner{height:150px;aspect-ratio:auto;margin:0;background:var(--nyx-founder-banner-color,var(--nyx-founder-accent-secondary,var(--credits-accent)))}
+html body .nyx-founder-profile-standard .nyx-founder-banner img{object-fit:cover;object-position:center}
+html body .nyx-founder-profile-standard .nyx-founder-profile-content{display:block;padding:0 14px 14px}
+html body .nyx-founder-profile-standard .nyx-founder-image-wrap{width:84px;height:84px;margin:-43px 0 0;border:6px solid color-mix(in srgb,var(--nyx-founder-accent-primary,#5865f2) 62%,#18191e);border-radius:50%;background:#111827}
 html body .nyx-founder-profile-standard .nyx-founder-image{border:0;border-radius:50%;background:#172338}
 html body .nyx-founder-profile-standard .nyx-founder-status{right:-2px;bottom:-2px;border:4px solid #111827}
-html body .nyx-founder-profile-standard .nyx-founder-copy{padding-top:13px}
+html body .nyx-founder-profile-standard .nyx-founder-copy{margin-top:9px;padding:13px;border:1px solid color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 38%,transparent);border-radius:9px;background:color-mix(in srgb,var(--nyx-founder-accent-primary,#5865f2) 14%,rgba(12,13,17,.76))}
 html body .nyx-founder-name-row{display:flex;align-items:center;gap:7px}
-html body .nyx-founder-profile-standard .nyx-founder-copy h3{margin:0;color:#f8fbff;font-size:24px;font-weight:700;letter-spacing:-.025em}
+html body .nyx-founder-profile-standard .nyx-founder-copy h3{margin:0;color:#f8fbff;font-size:21px;font-weight:700;letter-spacing:-.025em}
 html body .nyx-founder-owner-crown{color:#f0c85c;font-size:18px;line-height:1}
 html body .nyx-founder-profile-standard .nyx-founder-handle{margin:2px 0 10px;color:#b5c2d5;font-size:14px}
-html body .nyx-founder-profile-standard .nyx-founder-role{margin:0 0 11px;color:#9cadc4;font-size:11px;font-weight:600;letter-spacing:.09em}
+html body .nyx-founder-profile-standard .nyx-founder-role{margin:10px 0 11px;color:#9cadc4;font-size:11px;font-weight:600;letter-spacing:.09em}
 html body .nyx-founder-role-list{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 12px}
 html body .nyx-founder-role-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border:1px solid rgba(255,255,255,.18);border-radius:4px;background:rgba(255,255,255,.08);color:#d9e3f1;font-size:11px;font-weight:650}
 html body .nyx-founder-role-owner{border-color:color-mix(in srgb,var(--nyx-founder-accent,var(--credits-accent)) 78%,transparent);background:color-mix(in srgb,var(--nyx-founder-accent,var(--credits-accent)) 22%,transparent);color:#fff}
 html body .nyx-founder-role-owner span{color:#f0c85c}
 html body .nyx-founder-profile-standard .nyx-founder-badges{margin:0 0 14px}
 html body .nyx-founder-profile-standard .nyx-founder-badge{border:0;border-radius:4px;background:rgba(255,255,255,.1);color:#c9d7ea}
-html body .nyx-founder-about{padding-top:13px;border-top:1px solid rgba(255,255,255,.14)}
+html body .nyx-founder-about{margin-top:4px;padding-top:13px;border-top:1px solid rgba(255,255,255,.14)}
 html body .nyx-founder-about>strong{display:block;margin-bottom:7px;color:#f5f8ff;font-size:12px;font-weight:700;text-transform:uppercase}
-html body .nyx-founder-profile-standard .nyx-founder-bio{color:#d5dfec;font-size:14px;line-height:1.55}
+html body .nyx-founder-profile-standard .nyx-founder-bio{color:#d5dfec;font-size:13px;line-height:1.55}
 html body .nyx-founder-profile-standard .nyx-founder-link{margin-top:14px;color:#cbd9ff}
-@media(max-width:680px){html body .nyx-founder-profile-standard .nyx-founder-image-wrap{width:88px;margin:-45px 0 0}html body .nyx-founder-profile-standard .nyx-founder-copy{text-align:left}html body .nyx-founder-profile-standard .nyx-founder-badges{justify-content:flex-start}}
+@media(max-width:680px){html body .nyx-founder-profile-standard .nyx-founder-image-wrap{width:84px;margin:-43px 0 0}html body .nyx-founder-profile-standard .nyx-founder-copy{text-align:left}html body .nyx-founder-profile-standard .nyx-founder-badges{justify-content:flex-start}}

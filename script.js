@@ -210,10 +210,10 @@
   }
   function nyxManageUserProfileGifs(root,profile){
     if(!root||!profile)return;
-    const avatarHost=root.querySelector?.('.nyx-user-profile-avatar');
+    const avatarHost=root.querySelector?.('.nyx-user-profile-avatar,.nyx-account-menu-avatar');
     const avatarImage=avatarHost?.querySelector(':scope > img');
     if(avatarHost&&avatarImage)nyxManageCompactGif(avatarHost,avatarImage,profile.avatarUrl,640);
-    const bannerHost=root.querySelector?.('.nyx-user-profile-banner');
+    const bannerHost=root.querySelector?.('.nyx-user-profile-banner,.nyx-account-menu-banner');
     const bannerImage=bannerHost?.querySelector(':scope > img');
     if(bannerHost&&bannerImage)nyxManageCompactGif(bannerHost,bannerImage,profile.bannerUrl,720);
     root.querySelectorAll?.('.nyx-profile-rail-avatar,.nyx-profile-decoration-avatar,.nyx-profile-nameplate-preview>span,.nyx-profile-switch-avatar').forEach(host=>{
@@ -686,6 +686,10 @@
     const mediaEdit=(type,label)=>editable?`<button class="nyx-profile-media-edit nyx-profile-media-edit-${type}" type="button" data-nyx-direct-edit="${type}" aria-label="${label}" title="${label}"><span aria-hidden="true">&#9998;</span></button>`:'';
     const avatar=profile.avatarUrl?`<img src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="${esc(profile.displayName)} profile picture">`:`<span>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</span>`;
     const background=profile.bannerUrl?`<img src="${esc(nyxProfileStillSource(profile.bannerUrl))}" alt="" aria-hidden="true">`:'';
+    if(options.compactPreview){
+      const previewActions=`<div class="nyx-account-menu-group nyx-editor-menu-preview-actions" aria-hidden="true"><button type="button" tabindex="-1">${nyxAccountMenuIcon('edit')}<span>Edit Profile</span></button><hr><button type="button" tabindex="-1"><i class="nyx-user-status nyx-user-status-${esc(profile.status)}"></i><span>${esc(statusLabel)}</span>${nyxAccountMenuIcon('chevron')}</button></div><div class="nyx-account-menu-group nyx-editor-menu-preview-actions" aria-hidden="true"><button type="button" tabindex="-1">${nyxAccountMenuIcon('switch')}<span>Switch Accounts</span>${nyxAccountMenuIcon('chevron')}</button><hr><button type="button" tabindex="-1">${nyxAccountMenuIcon('id')}<span>Copy User ID</span></button></div>`;
+      return `<section class="nyx-editor-menu-preview nyx-account-menu show ${nyxProfileEffectClass(profile)}" style="--nyx-account-primary:${profile.accentPrimary};--nyx-account-secondary:${profile.accentSecondary};--nyx-account-banner:${profile.bannerColor};--nyx-user-accent-primary:${profile.accentPrimary};--nyx-user-accent-secondary:${profile.accentSecondary};--nyx-user-banner-color:${profile.bannerColor};${nyxProfileEffectVars(profile)}"><i class="nyx-user-profile-effect nyx-account-menu-profile-effect" aria-hidden="true"></i><div class="nyx-account-menu-banner">${background}${mediaEdit('banner','Edit profile banner')}</div><div class="nyx-account-menu-profile"><div class="nyx-account-menu-avatar nyx-avatar-decoration-${esc(profile.avatarDecoration)}">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i>${mediaEdit('avatar','Edit profile picture')}</div><span class="nyx-account-menu-status">${esc(profile.customStatus||statusLabel)}</span><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p class="nyx-account-menu-handle">${esc(profile.handle)}</p><p class="nyx-account-menu-bio">${esc(profile.bio||'No bio yet.')}</p></div>${previewActions}</section>`;
+    }
     return `<section class="nyx-user-profile-card ${nyxProfileEffectClass(profile)}" style="--nyx-user-accent-primary:${profile.accentPrimary};--nyx-user-accent-secondary:${profile.accentSecondary};--nyx-user-banner-color:${profile.bannerColor};${nyxProfileEffectVars(profile)}"><i class="nyx-user-profile-effect" aria-hidden="true"></i><div class="nyx-user-profile-banner">${background}${mediaEdit('banner','Edit profile banner')}</div><div class="nyx-user-profile-chrome"><div class="nyx-user-profile-avatar nyx-avatar-decoration-${esc(profile.avatarDecoration)}">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i>${mediaEdit('avatar','Edit profile picture')}</div></div><div class="nyx-user-profile-body"><div class="nyx-user-profile-heading"><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p>${esc(profile.handle)}</p></div><p class="nyx-user-profile-custom-status">${symbol('status')} ${esc(profile.customStatus||`${statusLabel} on Nyx`)}</p><section class="nyx-user-profile-about"><h3>About me</h3><p class="nyx-user-profile-bio">${esc(profile.bio||'No bio yet.')}</p></section><section class="nyx-user-profile-roles"><h3>Roles</h3><div class="nyx-user-role-list">${roles}</div></section><section class="nyx-user-profile-details"><h3>Nyx member since</h3><p>${esc(joined)}</p></section>${ownerActions}</div></section>`;
   }
   async function nyxProfileImageFromFile(file,maxWidth,maxHeight){
@@ -791,9 +795,6 @@
     overlay.innerHTML=`
       <section class="nyx-user-profile-dialog" role="dialog" aria-modal="true" aria-labelledby="nyxUserProfileTitle">
         <main class="nyx-discord-profile-main">
-          <button class="nyx-founder-editor-close nyx-discord-settings-close" data-close-nyx-profile type="button" aria-label="Close">
-            <span aria-hidden="true">&#215;</span><small>ESC</small>
-          </button>
           <div class="nyx-discord-profile-scroll">
             <header class="nyx-discord-profile-header">
               <h2 id="nyxUserProfileTitle">Profiles</h2>
@@ -848,7 +849,7 @@
               </form>
               <aside class="nyx-discord-preview-pane">
                 <h3>Preview</h3>
-                <div class="nyx-user-profile-view">${nyxUserProfileCardMarkup(profile,{editable:true})}</div>
+                <div class="nyx-user-profile-view">${nyxUserProfileCardMarkup(profile,{editable:true,compactPreview:true})}</div>
               </aside>
             </div>
           </div>
@@ -863,7 +864,22 @@
       overlay.classList.remove('show');
       setTimeout(()=>overlay.remove(),240);
     };
-    overlay.addEventListener('click',async event=>{if(event.target===overlay||event.target.closest('[data-close-nyx-profile]')){close();return}const action=event.target.closest('[data-nyx-profile-action]')?.dataset.nyxProfileAction;if(!action)return;if(action==='status'){const field=overlay.querySelector('[name="status"]');field?.scrollIntoView({block:'center',behavior:'smooth'});field?.focus();try{field?.showPicker?.()}catch{}return}if(action==='custom-status'){const field=overlay.querySelector('[name="customStatus"]');field?.scrollIntoView({block:'center',behavior:'smooth'});field?.focus();field?.select();return}if(action==='switch-account'){close();await signOutFounderOwner();await openNyxAccountAccess()}});
+    overlay.addEventListener('click',async event=>{
+      if(event.target===overlay){close();return}
+      const action=event.target.closest('[data-nyx-profile-action]')?.dataset.nyxProfileAction;
+      if(!action)return;
+      if(action==='status'||action==='custom-status'){
+        overlay.querySelector('[data-nyx-editor-tab="advanced"]')?.click();
+        const field=overlay.querySelector(`[name="${action==='status'?'status':'customStatus'}"]`);
+        requestAnimationFrame(()=>{
+          field?.scrollIntoView({block:'center',behavior:'smooth'});
+          field?.focus();
+          if(action==='status'){try{field?.showPicker?.()}catch{}}else field?.select();
+        });
+        return;
+      }
+      if(action==='switch-account'){close();await signOutFounderOwner();await openNyxAccountAccess()}
+    });
     const form=overlay.querySelector('form');
     const pendingMediaPreparations=new Map();
     form.insertAdjacentHTML('afterbegin',`<header class="nyx-profile-rail-header">
@@ -998,6 +1014,98 @@
     customEffectBuilder.innerHTML=`<button type="button" data-nyx-custom-effect-create>Create custom effect</button><div class="nyx-profile-custom-effect-controls" data-nyx-custom-effect-controls ${profile.profileEffect==='custom'?'':'hidden'}><label>Pattern<select name="customEffectPattern"><option value="starfield">Starfield</option><option value="aurora">Aurora waves</option><option value="comets">Comets</option><option value="grid">Digital grid</option></select></label><label>Primary effect color<input name="customEffectColorPrimary" type="color" value="${profile.customEffectColorPrimary}"></label><label>Secondary effect color<input name="customEffectColorSecondary" type="color" value="${profile.customEffectColorSecondary}"></label><label>Animation time <output data-nyx-custom-speed>${profile.customEffectSpeed}s</output><input name="customEffectSpeed" type="range" min="2" max="18" step="1" value="${profile.customEffectSpeed}"><small>Lower is faster.</small></label><label>Intensity <output data-nyx-custom-intensity>${profile.customEffectIntensity}%</output><input name="customEffectIntensity" type="range" min="20" max="100" step="5" value="${profile.customEffectIntensity}"></label></div>`;
     form.querySelector('.nyx-profile-color-grid')?.appendChild(customEffectBuilder);
     customEffectBuilder.querySelector('[name="customEffectPattern"]').value=profile.customEffectPattern;
+    const avatarSection=railSections[1];
+    const effectsSection=railSections[2];
+    const imageList=avatarSection?.querySelector('.nyx-profile-image-list');
+    const avatarControl=imageList?.querySelector('.nyx-profile-image-control:first-child');
+    const bannerControl=imageList?.querySelector('.nyx-profile-image-control:nth-child(2)');
+    const colorGrid=effectsSection?.querySelector('.nyx-profile-color-grid');
+    const primaryColorField=form.querySelector('[name="accentPrimary"]')?.closest('label');
+    const secondaryColorField=form.querySelector('[name="accentSecondary"]')?.closest('label');
+    const bannerColorField=form.querySelector('[name="bannerColor"]')?.closest('label');
+    const profileEffectField=form.querySelector('[name="profileEffect"]')?.closest('label');
+    const createVisualPanel=(panel,title,description='')=>{
+      const section=document.createElement('section');
+      section.className='nyx-profile-editor-section nyx-profile-visual-panel';
+      section.dataset.nyxEditorPanel=panel;
+      section.innerHTML=`<div class="nyx-profile-panel-heading"><div><h4>${title}</h4>${description?`<p>${description}</p>`:''}</div></div>`;
+      return section;
+    };
+    const bannerSection=createVisualPanel('banner','Banner','Choose the image that frames your profile.');
+    const colorsSection=createVisualPanel('colors','Colors','Build a recognizable profile palette.');
+    const colorsControls=document.createElement('div');
+    colorsControls.className='nyx-profile-color-grid nyx-profile-visual-color-grid';
+    [primaryColorField,secondaryColorField,bannerColorField].filter(Boolean).forEach(field=>colorsControls.appendChild(field));
+    const palette=document.createElement('div');
+    palette.className='nyx-profile-palette';
+    palette.setAttribute('aria-label','Profile color palettes');
+    const palettes=[
+      ['Sky','#5865f2','#8ea1ff','#202b52'],['Rose','#e96cae','#f3a4d1','#4a263d'],['Mint','#44c48a','#7ee1ba','#153b31'],
+      ['Amber','#e99a3c','#f4c46c','#47321a'],['Violet','#9667ef','#c29cff','#33204b'],['Mono','#c9ccd4','#8f95a4','#31343b']
+    ];
+    palette.innerHTML=palettes.map(([name,primary,secondary,banner])=>`<button type="button" data-nyx-profile-palette="${primary},${secondary},${banner}" style="--nyx-palette-primary:${primary};--nyx-palette-secondary:${secondary};--nyx-palette-banner:${banner}" aria-label="Use ${name} palette"><i></i><span>${name}</span></button>`).join('');
+    colorsSection.append(colorsControls,palette);
+    const decorationsSection=createVisualPanel('decorations','Decorations','Add a frame that follows your avatar.');
+    if(decorationField)decorationsSection.appendChild(decorationField);
+    const badgesSection=createVisualPanel('badges','Badges','Recognition is added automatically as you earn it on Nyx.');
+    badgesSection.insertAdjacentHTML('beforeend','<div class="nyx-profile-earned-badges"><span aria-hidden="true">✦</span><div><strong>Earned badges</strong><small>Your account badges appear in the live preview when available.</small></div></div>');
+    if(imageList&&avatarControl){imageList.replaceChildren(avatarControl);}
+    if(bannerControl){
+      const bannerList=document.createElement('div');
+      bannerList.className='nyx-profile-image-list';
+      bannerList.appendChild(bannerControl);
+      bannerSection.appendChild(bannerList);
+    }
+    if(colorGrid){
+      colorGrid.className='nyx-profile-effect-stack';
+      [profileEffectField,customEffectBuilder].filter(Boolean).forEach(field=>colorGrid.appendChild(field));
+    }
+    if(effectsSection)effectsSection.querySelector('h4').textContent='Effects';
+    if(avatarSection)avatarSection.querySelector('h4').textContent='Avatar';
+    if(railSections[0])railSections[0].querySelector('h4').textContent='Identity';
+    if(displaySection)displaySection.dataset.nyxEditorPanel='identity';
+    if(railSections[0])railSections[0].dataset.nyxEditorPanel='identity';
+    if(avatarSection)avatarSection.dataset.nyxEditorPanel='avatar';
+    if(effectsSection)effectsSection.dataset.nyxEditorPanel='effects';
+    if(detailsSection)detailsSection.dataset.nyxEditorPanel='advanced';
+    const profileEditorPanels=[railSections[0],displaySection,avatarSection,bannerSection,colorsSection,effectsSection,decorationsSection,badgesSection,detailsSection].filter(Boolean);
+    const editorTabs=document.createElement('nav');
+    editorTabs.className='nyx-profile-editor-tabs';
+    editorTabs.setAttribute('aria-label','Profile customization sections');
+    const tabs=[['identity','Identity'],['avatar','Avatar'],['banner','Banner'],['colors','Colors'],['effects','Effects'],['decorations','Decor'],['badges','Badges'],['advanced','Advanced']];
+    editorTabs.innerHTML=tabs.map(([panel,label],index)=>`<button type="button" data-nyx-editor-tab="${panel}" aria-selected="${index===0?'true':'false'}">${label}</button>`).join('');
+    form.querySelector('.nyx-profile-rail-header')?.after(editorTabs);
+    const setProfileEditorPanel=panel=>{
+      editorTabs.querySelectorAll('[data-nyx-editor-tab]').forEach(tab=>{
+        const active=tab.dataset.nyxEditorTab===panel;
+        tab.classList.toggle('active',active);
+        tab.setAttribute('aria-selected',String(active));
+      });
+      profileEditorPanels.forEach(section=>{section.hidden=section.dataset.nyxEditorPanel!==panel});
+      form.dataset.nyxEditorPanel=panel;
+      form.scrollTo({top:0,behavior:'smooth'});
+    };
+    editorTabs.addEventListener('click',event=>{
+      const tab=event.target.closest('[data-nyx-editor-tab]');
+      if(tab)setProfileEditorPanel(tab.dataset.nyxEditorTab);
+    });
+    palette.addEventListener('click',event=>{
+      const choice=event.target.closest('[data-nyx-profile-palette]');
+      if(!choice)return;
+      const [primary,secondary,banner]=choice.dataset.nyxProfilePalette.split(',');
+      [['accentPrimary',primary],['accentSecondary',secondary],['bannerColor',banner]].forEach(([name,value])=>{
+        const input=form.querySelector(`[name="${name}"]`);
+        if(!input)return;
+        input.value=value;
+        input.dispatchEvent(new Event('input',{bubbles:true}));
+      });
+      palette.querySelectorAll('button').forEach(button=>button.classList.toggle('active',button===choice));
+    });
+    const profileEditorError=form.querySelector('.nyx-founder-editor-error');
+    const profileEditorFooter=form.querySelector('footer');
+    [railSections[0],displaySection,avatarSection,bannerSection,colorsSection,effectsSection,decorationsSection,badgesSection,detailsSection].filter(Boolean).forEach(section=>form.insertBefore(section,profileEditorError));
+    if(profileEditorFooter)form.appendChild(profileEditorFooter);
+    setProfileEditorPanel('identity');
     const profileKeys=['displayName','handle','status','customStatus','bio','profileEffect','customEffectPattern','customEffectColorPrimary','customEffectColorSecondary','customEffectSpeed','customEffectIntensity','avatarDecoration','accentPrimary','accentSecondary','bannerColor','displayNameFont','displayNameEffect','displayNameColorPrimary','displayNameColorSecondary','avatarUrl','bannerUrl'];
     const directPopover=document.createElement('section');
     directPopover.className='nyx-profile-direct-popover';
@@ -1054,7 +1162,7 @@
       const values=new FormData(form);
       const nextProfile=normalizeNyxUserProfile({...profile,...Object.fromEntries(profileKeys.map(key=>[key,values.get(key)]))});
       const view=overlay.querySelector('.nyx-user-profile-view');
-      view.innerHTML=nyxUserProfileCardMarkup(nextProfile,{editable:true});
+      view.innerHTML=nyxUserProfileCardMarkup(nextProfile,{editable:true,compactPreview:true});
       nyxManageUserProfileGifs(view,nextProfile);
       syncDisplayNameStylePreview(nextProfile);
       syncAvatarDecorationPreview(nextProfile);
@@ -1163,10 +1271,10 @@
     overlay.addEventListener('keydown',event=>{
       const directTarget=event.target.closest('[data-nyx-direct-edit]');
       if(directTarget&&(event.key==='Enter'||event.key===' ')){event.preventDefault();openDirectEditor(directTarget.dataset.nyxDirectEdit,directTarget)}
-      if(event.key==='Escape'){event.stopPropagation();if(!directPopover.hidden)closeDirectPopover();else close()}
+      if(event.key==='Escape'){event.preventDefault();event.stopPropagation();if(!directPopover.hidden)closeDirectPopover()}
     });
     form.addEventListener('input',preview);form.addEventListener('change',preview);
-    form.addEventListener('reset',()=>{pendingMediaPreparations.clear();clearTimeout(previewTimer);requestAnimationFrame(()=>{form.classList.remove('is-dirty');const avatarLabel=form.querySelector('[data-nyx-file-name="avatar"]');const bannerLabel=form.querySelector('[data-nyx-file-name="banner"]');if(avatarLabel)avatarLabel.textContent=profile.avatarUrl?'Image selected':'No image selected';if(bannerLabel)bannerLabel.textContent=profile.bannerUrl?'Image selected':'No image selected';const values=new FormData(form);const nextProfile=normalizeNyxUserProfile({...profile,...Object.fromEntries(profileKeys.map(key=>[key,values.get(key)]))});const view=overlay.querySelector('.nyx-user-profile-view');view.innerHTML=nyxUserProfileCardMarkup(nextProfile,{editable:true});nyxManageUserProfileGifs(view,nextProfile);syncDisplayNameStylePreview(nextProfile);syncAvatarDecorationPreview(nextProfile);syncCustomEffectBuilder();const bioCount=form.querySelector('[data-nyx-bio-count]');if(bioCount)bioCount.textContent=String(values.get('bio')||'').length;directTargets()})});
+    form.addEventListener('reset',()=>{pendingMediaPreparations.clear();clearTimeout(previewTimer);requestAnimationFrame(()=>{form.classList.remove('is-dirty');const avatarLabel=form.querySelector('[data-nyx-file-name="avatar"]');const bannerLabel=form.querySelector('[data-nyx-file-name="banner"]');if(avatarLabel)avatarLabel.textContent=profile.avatarUrl?'Image selected':'No image selected';if(bannerLabel)bannerLabel.textContent=profile.bannerUrl?'Image selected':'No image selected';const values=new FormData(form);const nextProfile=normalizeNyxUserProfile({...profile,...Object.fromEntries(profileKeys.map(key=>[key,values.get(key)]))});const view=overlay.querySelector('.nyx-user-profile-view');view.innerHTML=nyxUserProfileCardMarkup(nextProfile,{editable:true,compactPreview:true});nyxManageUserProfileGifs(view,nextProfile);syncDisplayNameStylePreview(nextProfile);syncAvatarDecorationPreview(nextProfile);syncCustomEffectBuilder();const bioCount=form.querySelector('[data-nyx-bio-count]');if(bioCount)bioCount.textContent=String(values.get('bio')||'').length;directTargets()})});
     form.querySelectorAll('[data-nyx-pick-image]').forEach(button=>button.addEventListener('click',()=>form.querySelector(`[name="${button.dataset.nyxPickImage}File"]`)?.click()));
     form.querySelectorAll('[data-nyx-clear-image]').forEach(button=>button.addEventListener('click',()=>{const type=button.dataset.nyxClearImage;pendingMediaPreparations.delete(type);form.querySelector(`[name="${type}Url"]`).value='';form.querySelector(`[name="${type}File"]`).value='';form.querySelector(`[data-nyx-file-name="${type}"]`).textContent='No image selected';preview()}));
     form.querySelectorAll('.nyx-profile-file-input').forEach(input=>input.addEventListener('change',()=>{const type=input.name==='avatarFile'?'avatar':'banner';const label=form.querySelector(`[data-nyx-file-name="${type}"]`);const error=form.querySelector('.nyx-founder-editor-error');const file=input.files?.[0];if(!file)return;label.textContent='Preparing image…';error.textContent='';const preparation=nyxProfileImageFromFile(file,type==='avatar'?512:1200,type==='avatar'?512:480);pendingMediaPreparations.set(type,preparation);void preparation.then(dataUrl=>{if(pendingMediaPreparations.get(type)!==preparation)return;form.querySelector(`[name="${type}Url"]`).value=dataUrl;label.textContent=file.name;preview()}).catch(imageError=>{if(pendingMediaPreparations.get(type)!==preparation)return;input.value='';label.textContent='No image selected';error.textContent=imageError.message||'That image could not be used.'}).finally(()=>{if(pendingMediaPreparations.get(type)===preparation)pendingMediaPreparations.delete(type)})}));
@@ -1230,7 +1338,7 @@
         if(nyxFounderIsOwner)await loadFounderProfile({force:true});
         syncFounderOwnerControls();
         close();
-        toast(nyxFounderIsOwner?'Profile and Credits updated':'Profile saved');
+        toast(nyxFounderIsOwner?'Profile and About Nyx updated':'Profile saved');
       }catch(saveError){
         error.textContent=nyxFriendlyFirebaseError(saveError,'Profile could not be saved.');
         button.disabled=false;
@@ -1279,7 +1387,7 @@
     return `<article class="nyx-founder-profile nyx-founder-profile-standard nyx-founder-effect-${esc(profile.profileEffect)} ${nyxProfileEffectClass(profile)}" data-nyx-founder-profile style="--nyx-founder-accent:${profile.accentPrimary};--nyx-founder-accent-primary:${profile.accentPrimary};--nyx-founder-accent-secondary:${profile.accentSecondary};--nyx-founder-banner-color:${profile.bannerColor};--nyx-user-accent-primary:${profile.accentPrimary};--nyx-user-accent-secondary:${profile.accentSecondary};${nyxProfileEffectVars(profile)}"><i class="nyx-founder-profile-effect nyx-user-profile-effect" aria-hidden="true"></i><div class="nyx-founder-banner" aria-hidden="true">${banner}</div><div class="nyx-founder-profile-content"><div class="nyx-founder-image-wrap nyx-avatar-decoration-${esc(profile.avatarDecoration)}"><img class="nyx-founder-image" src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="${esc(profile.displayName)} profile picture"><i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><span class="nyx-founder-status nyx-founder-status-${esc(profile.status)}" title="${esc(profile.status)}" aria-label="${esc(profile.status)}"></span></div><div class="nyx-founder-copy"><div class="nyx-founder-name-row"><h3 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h3>${profile.roles.some(role=>role.toLowerCase()==='owner')?'<span class="nyx-founder-owner-crown" title="Nyx owner" aria-label="Nyx owner">♛</span>':''}</div><p class="nyx-founder-handle">${esc(profile.handle)}</p><p class="nyx-founder-role">${esc(profile.role)}</p>${roles?`<div class="nyx-founder-role-list" aria-label="Profile roles">${roles}</div>`:''}${badges?`<div class="nyx-founder-badges" aria-label="Profile badges">${badges}</div>`:''}<div class="nyx-founder-about"><strong>About me</strong><p class="nyx-founder-bio">${esc(profile.bio)}</p></div>${link}</div></div></article>`;
   }
   function refreshFounderProfileViews(){
-    const update=root=>{try{root.querySelectorAll?.('[data-nyx-founder-profile]').forEach(card=>{card.outerHTML=nyxFounderProfileCardMarkup()});nyxManageFounderProfileGifs(root)}catch{}};
+    const update=root=>{try{root.querySelectorAll?.('[data-nyx-founder-profile]').forEach(card=>{card.outerHTML=nyxFounderProfileCardMarkup()});root.querySelectorAll?.('[data-nyx-credits-founder]').forEach(card=>{card.outerHTML=nyxCreditsFounderCardMarkup()});nyxManageFounderProfileGifs(root)}catch{}};
     update(document);
     document.querySelectorAll('iframe').forEach(frame=>update(frame.contentDocument));
   }
@@ -1301,7 +1409,7 @@
     const profile=normalizeNyxFounderProfile(nyxFounderProfile);
     const overlay=document.createElement('div');
     overlay.className='nyx-founder-editor-overlay';
-    overlay.innerHTML=`<section class="nyx-founder-editor" role="dialog" aria-modal="true" aria-labelledby="nyxFounderEditorTitle"><header><div><p class="utility-kicker">Nyx Credits</p><h2 id="nyxFounderEditorTitle">Customize Founder Profile</h2><p>Publishing as your signed-in founder account.</p></div><button type="button" class="nyx-founder-editor-close" data-close-founder-editor aria-label="Close">×</button></header><form class="nyx-founder-editor-form"><div class="nyx-founder-editor-grid"><label>Display name<input name="displayName" maxlength="48" required value="${esc(profile.displayName)}"></label><label>Handle<input name="handle" maxlength="40" required value="${esc(profile.handle)}"></label><label>Profile subtitle<input name="role" maxlength="64" required value="${esc(profile.role)}"></label><label>Status<select name="status"><option value="online" ${profile.status==='online'?'selected':''}>Online</option><option value="idle" ${profile.status==='idle'?'selected':''}>Idle</option><option value="dnd" ${profile.status==='dnd'?'selected':''}>Do not disturb</option><option value="offline" ${profile.status==='offline'?'selected':''}>Offline</option></select></label><label class="nyx-founder-editor-wide">Bio<textarea name="bio" maxlength="500" rows="4" required>${esc(profile.bio)}</textarea></label><label>Avatar URL<input name="avatarUrl" type="url" value="${esc(profile.avatarUrl)}"></label><label>Banner URL <small>Optional</small><input name="bannerUrl" type="url" value="${esc(profile.bannerUrl)}"></label><label>Accent color<input name="accent" type="color" value="${esc(profile.accent)}"></label><label>Roles <small>Comma-separated; access remains tied to your Firebase account ID.</small><input name="roles" maxlength="280" value="${esc(profile.roles.join(', '))}"></label><label>Badges <small>Comma-separated</small><input name="badges" maxlength="280" value="${esc(profile.badges.join(', '))}"></label><label>Profile link label <small>Optional</small><input name="linkLabel" maxlength="40" value="${esc(profile.linkLabel)}"></label><label>Profile link URL <small>Optional</small><input name="linkUrl" type="url" value="${esc(profile.linkUrl)}"></label></div><footer><p class="nyx-founder-editor-error" aria-live="polite"></p><div><button type="button" class="settings-action" data-close-founder-editor>Cancel</button><button type="submit" class="settings-action on">Publish profile</button></div></footer></form></section>`;
+    overlay.innerHTML=`<section class="nyx-founder-editor" role="dialog" aria-modal="true" aria-labelledby="nyxFounderEditorTitle"><header><div><p class="utility-kicker">About Nyx</p><h2 id="nyxFounderEditorTitle">Customize Founder Profile</h2><p>Publishing as your signed-in founder account.</p></div><button type="button" class="nyx-founder-editor-close" data-close-founder-editor aria-label="Close">×</button></header><form class="nyx-founder-editor-form"><div class="nyx-founder-editor-grid"><label>Display name<input name="displayName" maxlength="48" required value="${esc(profile.displayName)}"></label><label>Handle<input name="handle" maxlength="40" required value="${esc(profile.handle)}"></label><label>Profile subtitle<input name="role" maxlength="64" required value="${esc(profile.role)}"></label><label>Status<select name="status"><option value="online" ${profile.status==='online'?'selected':''}>Online</option><option value="idle" ${profile.status==='idle'?'selected':''}>Idle</option><option value="dnd" ${profile.status==='dnd'?'selected':''}>Do not disturb</option><option value="offline" ${profile.status==='offline'?'selected':''}>Offline</option></select></label><label class="nyx-founder-editor-wide">Bio<textarea name="bio" maxlength="500" rows="4" required>${esc(profile.bio)}</textarea></label><label>Avatar URL<input name="avatarUrl" type="url" value="${esc(profile.avatarUrl)}"></label><label>Banner URL <small>Optional</small><input name="bannerUrl" type="url" value="${esc(profile.bannerUrl)}"></label><label>Accent color<input name="accent" type="color" value="${esc(profile.accent)}"></label><label>Roles <small>Comma-separated; access remains tied to your Firebase account ID.</small><input name="roles" maxlength="280" value="${esc(profile.roles.join(', '))}"></label><label>Badges <small>Comma-separated</small><input name="badges" maxlength="280" value="${esc(profile.badges.join(', '))}"></label><label>Profile link label <small>Optional</small><input name="linkLabel" maxlength="40" value="${esc(profile.linkLabel)}"></label><label>Profile link URL <small>Optional</small><input name="linkUrl" type="url" value="${esc(profile.linkUrl)}"></label></div><footer><p class="nyx-founder-editor-error" aria-live="polite"></p><div><button type="button" class="settings-action" data-close-founder-editor>Cancel</button><button type="submit" class="settings-action on">Publish profile</button></div></footer></form></section>`;
     document.body.appendChild(overlay);
     const close=()=>overlay.remove();
     overlay.addEventListener('click',event=>{if(event.target===overlay||event.target.closest('[data-close-founder-editor]')) close()});
@@ -1355,18 +1463,54 @@
     const profile=normalizeNyxFounderProfile(nyxFounderProfile);
     return `<article class="${esc(className)}" style="--credits-accent:${profile.accentPrimary};--credits-line:color-mix(in srgb,${profile.accentPrimary} 28%,transparent)">
       <header class="nyx-credits-hero">
-        <p class="utility-kicker">Nyx Workspace</p>
-        <h1>Credits</h1>
-        <p>Built with care for everyone who searches, studies, and creates with Nyx.</p>
+        <p class="utility-kicker">The people behind Nyx</p>
+        <h1>Made for curious minds.</h1>
+        <p>Nyx is a place to search, study, create, and make the web feel a little more personal. This is a thank-you to the people and tools that help bring it to life.</p>
+        <div class="nyx-credits-hero-notes" aria-label="Nyx values"><span>Built with care</span><span>Always evolving</span><span>Made to explore</span></div>
       </header>
-      <section class="nyx-credits-section" aria-labelledby="nyxCreditsFounder">
-        <h2 id="nyxCreditsFounder">Founder</h2>
-        ${nyxFounderProfileCardMarkup()}
+      <section class="nyx-credits-section nyx-credits-founder-section" aria-labelledby="nyxCreditsFounder">
+        <div class="nyx-credits-section-heading"><p>01 / Founder</p><h2 id="nyxCreditsFounder">Owner</h2></div>
+        <figure class="nyx-credits-owner-image"><img src="/assets/credits/about-nyx-owner-profile.png" alt="Nyx owner profile"></figure>
       </section>
-      <footer class="nyx-credits-footer"><img src="/assets/icons/nyx-logo.png" alt="" aria-hidden="true"><div><strong>Nyx</strong><span>Thanks for using our site.</span></div><small>&copy; 2026 Nyx</small></footer>
+      <section class="nyx-credits-section nyx-credits-community-section" aria-labelledby="nyxCreditsCommunity">
+        <div class="nyx-credits-section-heading"><p>02 / With thanks</p><h2 id="nyxCreditsCommunity">Credits and ideas</h2><span>Every release carries the care of the people who contribute ideas, feedback, and the foundations beneath the product.</span></div>
+        <div class="nyx-credit-grid">
+          <article><span aria-hidden="true">◌</span><h3>Libraries</h3><p>With appreciation for the tools that power Nyx’s interface, graphics, account experience, and browser technology.</p></article>
+          <article><span aria-hidden="true">♡</span><h3>Special thanks</h3><p>For the early believers, patient testers, and every person who chose to spend time with Nyx.</p></article>
+        </div>
+      </section>
+      <section class="nyx-credits-section nyx-credits-changelog-section" aria-labelledby="nyxCreditsChangelog">
+        <div class="nyx-credits-section-heading"><p>03 / Changelog</p><h2 id="nyxCreditsChangelog">What changed.</h2><span>Updates are added here manually when there is something worth sharing.</span></div>
+        <ol class="nyx-credits-changelog"><li><time datetime="2026-07-31">Jul 31, 2026</time><div><strong>About Nyx refresh</strong><p>Reframed Credits as About Nyx with a new founder spotlight, contributor acknowledgements, and a clearer story of the project.</p></div></li></ol>
+      </section>
+      <footer class="nyx-credits-footer"><img src="/assets/icons/nyx-logo.png" alt="" aria-hidden="true"><div><strong>Nyx</strong><span>Thank you for making this space yours.</span></div><small>&copy; 2026 Nyx</small></footer>
     </article>`;
   }
-  const nyxDiscordCreditsProfileStyle='.nyx-credits-hero{margin-bottom:34px!important}.nyx-credits-hero h1{font-size:clamp(36px,6vw,54px)!important;font-weight:600!important}.nyx-credits-section{margin-bottom:44px!important}.nyx-credits-section>h2{margin-bottom:18px!important;font-size:26px!important}.nyx-founder-profile-standard{max-width:510px!important;border-radius:12px!important;background:linear-gradient(155deg,color-mix(in srgb,var(--nyx-founder-accent-primary,#5865f2) 66%,#202126),color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 30%,#18191e))!important}.nyx-founder-profile-standard .nyx-founder-banner{height:150px!important;aspect-ratio:auto!important;background:var(--nyx-founder-banner-color,var(--nyx-founder-accent-secondary,#8ea1ff))!important}.nyx-founder-profile-standard .nyx-founder-banner img{width:100%!important;height:100%!important;object-fit:cover!important;object-position:center!important}.nyx-founder-profile-standard .nyx-founder-profile-content{padding:0 14px 14px!important}.nyx-founder-profile-standard .nyx-founder-image-wrap{width:84px!important;height:84px!important;margin-top:-43px!important;border-color:color-mix(in srgb,var(--nyx-founder-accent-primary,#5865f2) 62%,#18191e)!important}.nyx-founder-profile-standard .nyx-founder-copy{margin-top:9px!important;padding:13px!important;border:1px solid color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 38%,transparent)!important;border-radius:9px!important;background:color-mix(in srgb,var(--nyx-founder-accent-primary,#5865f2) 14%,rgba(12,13,17,.76))!important}.nyx-founder-profile-standard .nyx-founder-copy h3{font-size:21px!important}.nyx-founder-profile-standard .nyx-founder-role{margin-top:10px!important}.nyx-founder-profile-standard .nyx-founder-about{margin-top:4px!important}.nyx-founder-profile-standard .nyx-founder-bio{font-size:13px!important}';
+  function nyxCreditsFounderCardMarkup(){
+    const profile=normalizeNyxFounderProfile(nyxFounderProfile);
+    const roles=profile.roles.map(role=>`<span class="nyx-credits-founder-role">${esc(role)}</span>`).join('');
+    const badges=profile.badges.map(badge=>`<span class="nyx-credits-founder-badge">${esc(badge)}</span>`).join('');
+    const avatar=profile.avatarUrl?`<img src="${esc(profile.avatarUrl)}" alt="${esc(profile.displayName)} profile picture">`:`<span>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</span>`;
+    const banner=profile.bannerUrl?`<img src="${esc(profile.bannerUrl)}" alt="" aria-hidden="true">`:'';
+    const link=profile.linkUrl?`<a class="nyx-credits-founder-link" href="${esc(profile.linkUrl)}" target="_blank" rel="noreferrer noopener">${esc(profile.linkLabel||'Open profile')} <span aria-hidden="true">↗</span></a>`:'';
+    const statusLabel={online:'Online',idle:'Idle',dnd:'Do not disturb',offline:'Offline'}[profile.status]||'Online';
+    return `<article class="nyx-credits-founder-card nyx-credits-founder-effect-${esc(profile.profileEffect)} nyx-avatar-decoration-${esc(profile.avatarDecoration)}" data-nyx-credits-founder style="--nyx-founder-accent:${profile.accentPrimary};--nyx-founder-accent-secondary:${profile.accentSecondary};--nyx-founder-banner-color:${profile.bannerColor}"><div class="nyx-credits-founder-media"><div class="nyx-credits-founder-banner">${banner}</div><div class="nyx-credits-founder-avatar">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><span class="nyx-credits-founder-status nyx-founder-status-${esc(profile.status)}" title="${esc(statusLabel)}"></span></div><span class="nyx-credits-founder-presence nyx-founder-status-${esc(profile.status)}"><i aria-hidden="true"></i>${esc(statusLabel)}</span></div><div class="nyx-credits-founder-copy"><p class="nyx-credits-founder-role">${esc(profile.role)}</p><h3 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h3><p class="nyx-credits-founder-handle">${esc(profile.handle)}</p><p class="nyx-credits-founder-bio">${esc(profile.bio||'No bio yet.')}</p>${roles?`<div class="nyx-credits-founder-roles" aria-label="Founder roles">${roles}</div>`:''}${badges?`<div class="nyx-credits-founder-badges" aria-label="Founder badges">${badges}</div>`:''}${link}</div></article>`;
+  }
+  const nyxPublicProfileInlinePolish='.nyx-founder-profile-standard{max-width:480px!important;border-color:color-mix(in srgb,#555963 72%,var(--nyx-founder-accent-primary,#8fb8ff))!important;border-radius:14px!important;background:linear-gradient(180deg,#1c1e24,color-mix(in srgb,#191b20 96%,var(--nyx-founder-accent-primary,#8fb8ff)))!important;box-shadow:0 14px 32px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.035)!important}.nyx-founder-profile-standard .nyx-founder-banner{width:100%!important;height:132px!important}.nyx-founder-profile-standard .nyx-founder-profile-content{padding:0 11px 11px!important}.nyx-founder-profile-standard .nyx-founder-image-wrap{width:78px!important;height:78px!important;margin-top:-40px!important;border:4px solid #1c1e24!important;background:#1c1e24!important;box-shadow:0 0 0 2px color-mix(in srgb,var(--nyx-founder-accent-primary,#8fb8ff) 72%,#d5d9e1),0 7px 15px rgba(0,0,0,.34)!important}.nyx-founder-profile-standard .nyx-founder-copy{margin-top:8px!important;padding:12px!important;border-color:rgba(255,255,255,.08)!important;border-radius:10px!important;background:linear-gradient(180deg,color-mix(in srgb,#272a32 97%,var(--nyx-founder-accent-primary,#8fb8ff)),#22242b)!important}.nyx-founder-profile-standard .nyx-founder-copy h3{font-size:20px!important;line-height:1.15!important}.nyx-founder-profile-standard .nyx-founder-handle{margin:2px 0 8px!important;font-size:12px!important}.nyx-founder-profile-standard .nyx-founder-role{margin:8px 0!important;color:#aeb2bd!important;font-size:10px!important;letter-spacing:.075em!important}.nyx-founder-role-list{gap:6px!important;margin:0 0 10px!important}.nyx-founder-role-chip,.nyx-founder-profile-standard .nyx-founder-badge{min-height:23px!important;padding:2px 7px!important;border:1px solid #484b55!important;border-radius:6px!important;background:#2b2e36!important;font-size:10.5px!important;transition:border-color .18s ease,background-color .18s ease,transform .18s ease!important}.nyx-founder-role-owner{border-color:color-mix(in srgb,var(--nyx-founder-accent-primary,#8fb8ff) 68%,#c5c9d2)!important;background:color-mix(in srgb,#2b2e36 81%,var(--nyx-founder-accent-primary,#8fb8ff))!important}.nyx-founder-role-chip:hover{border-color:color-mix(in srgb,var(--nyx-founder-accent-primary,#8fb8ff) 60%,#70747e)!important;background:color-mix(in srgb,#2b2e36 87%,var(--nyx-founder-accent-primary,#8fb8ff))!important;transform:translateY(-1px)!important}.nyx-founder-about{margin-top:2px!important;padding-top:10px!important;border-top-color:rgba(255,255,255,.075)!important}.nyx-founder-about>strong{margin-bottom:5px!important;color:#b8bdc8!important;font-size:10px!important;letter-spacing:.075em!important}.nyx-founder-profile-standard .nyx-founder-bio{font-size:12.5px!important;line-height:1.48!important}.nyx-founder-profile-standard .nyx-founder-link{margin-top:10px!important;font-size:12px!important}';
+  const nyxDiscordCreditsProfileStyle='.nyx-credits-hero{margin-bottom:34px!important}.nyx-credits-hero h1{font-size:clamp(36px,6vw,54px)!important;font-weight:600!important}.nyx-credits-section{margin-bottom:44px!important}.nyx-credits-section>h2{margin-bottom:18px!important;font-size:26px!important}.nyx-founder-profile-standard{max-width:510px!important;border-radius:12px!important;background:linear-gradient(155deg,color-mix(in srgb,var(--nyx-founder-accent-primary,#5865f2) 66%,#202126),color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 30%,#18191e))!important}.nyx-founder-profile-standard .nyx-founder-banner{height:150px!important;aspect-ratio:auto!important;background:var(--nyx-founder-banner-color,var(--nyx-founder-accent-secondary,#8ea1ff))!important}.nyx-founder-profile-standard .nyx-founder-banner img{width:100%!important;height:100%!important;object-fit:cover!important;object-position:center!important}.nyx-founder-profile-standard .nyx-founder-profile-content{padding:0 14px 14px!important}.nyx-founder-profile-standard .nyx-founder-image-wrap{width:84px!important;height:84px!important;margin-top:-43px!important;border-color:color-mix(in srgb,var(--nyx-founder-accent-primary,#5865f2) 62%,#18191e)!important}.nyx-founder-profile-standard .nyx-founder-copy{margin-top:9px!important;padding:13px!important;border:1px solid color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 38%,transparent)!important;border-radius:9px!important;background:color-mix(in srgb,var(--nyx-founder-accent-primary,#5865f2) 14%,rgba(12,13,17,.76))!important}.nyx-founder-profile-standard .nyx-founder-copy h3{font-size:21px!important}.nyx-founder-profile-standard .nyx-founder-role{margin-top:10px!important}.nyx-founder-profile-standard .nyx-founder-about{margin-top:4px!important}.nyx-founder-profile-standard .nyx-founder-bio{font-size:13px!important}'+nyxPublicProfileInlinePolish;
+  const nyxCreditsPresentationStyle=`
+    .nyx-credits-tab{width:min(1080px,calc(100vw - 34px))!important;min-height:auto!important;padding:clamp(38px,6vw,78px) clamp(20px,5vw,62px) 54px!important}
+    .nyx-credits-hero{position:relative;max-width:740px;margin:0 0 clamp(42px,7vw,78px)!important;text-align:left!important}.nyx-credits-hero .utility-kicker{margin-bottom:12px!important}.nyx-credits-hero h1{max-width:680px;margin:0 0 17px!important;color:#f4f7ff!important;font-size:clamp(42px,7vw,76px)!important;font-weight:520!important;letter-spacing:-.06em!important;line-height:.98!important}.nyx-credits-hero>p:last-child{max-width:640px;margin:0!important;color:#aab6c9!important;font-size:15px!important;line-height:1.72!important}.nyx-credits-hero-notes{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}.nyx-credits-hero-notes span{padding:6px 9px;border:1px solid color-mix(in srgb,var(--credits-accent) 32%,transparent);border-radius:999px;background:color-mix(in srgb,var(--credits-accent) 9%,transparent);color:#cbd6e8;font-size:10px;font-weight:650;letter-spacing:.035em}
+    .nyx-credits-tab .nyx-credits-section{display:grid;gap:23px;margin:0 0 clamp(44px,7vw,72px)!important;padding:0!important;border:0!important}.nyx-credits-section-heading{display:grid;max-width:650px;gap:8px}.nyx-credits-section-heading>p{margin:0!important;color:var(--credits-accent)!important;font-size:10px!important;font-weight:800!important;letter-spacing:.14em!important;text-transform:uppercase!important}.nyx-credits-tab .nyx-credits-section-heading h2{width:auto;margin:0!important;padding:0!important;border:0!important;color:#edf2fb!important;font-size:clamp(25px,4vw,37px)!important;font-weight:520!important;letter-spacing:-.045em!important;text-align:left!important}.nyx-credits-section-heading>span{color:#91a0b7;font-size:13px;line-height:1.62}
+    .nyx-credits-founder-card{position:relative;display:grid;grid-template-columns:minmax(230px,310px) minmax(0,1fr);overflow:hidden;border:1px solid color-mix(in srgb,var(--nyx-founder-accent,var(--credits-accent)) 34%,rgba(255,255,255,.08));border-radius:20px;background:linear-gradient(112deg,color-mix(in srgb,var(--nyx-founder-accent,var(--credits-accent)) 10%,transparent),transparent 48%),rgba(16,22,34,.76);box-shadow:0 20px 48px rgba(0,0,0,.18);transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}.nyx-credits-founder-card:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--nyx-founder-accent,var(--credits-accent)) 56%,rgba(255,255,255,.14));box-shadow:0 24px 56px rgba(0,0,0,.26)}.nyx-credits-founder-media{position:relative;min-height:290px;overflow:hidden;background:#0b111b}.nyx-credits-founder-banner{position:absolute;inset:0;background:linear-gradient(145deg,color-mix(in srgb,var(--nyx-founder-accent,var(--credits-accent)) 44%,#101b2a),#070b12)}.nyx-credits-founder-banner::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 32%,rgba(6,10,16,.86) 100%)}.nyx-credits-founder-banner img{display:block;width:100%;height:100%;object-fit:cover}.nyx-credits-founder-avatar{position:absolute;z-index:1;left:22px;bottom:21px;display:grid;width:82px;height:82px;place-items:center;border:4px solid #121925;border-radius:50%;background:#293241;color:#fff;font-size:27px;font-weight:800;box-shadow:0 0 0 2px var(--nyx-founder-accent,var(--credits-accent)),0 9px 22px rgba(0,0,0,.38)}.nyx-credits-founder-avatar>img{display:block;width:100%;height:100%;border-radius:inherit;object-fit:cover}.nyx-credits-founder-status{position:absolute;right:-1px;bottom:2px;width:17px;height:17px;border:4px solid #121925;border-radius:50%;background:#77849a}.nyx-credits-founder-status.nyx-founder-status-online{background:#5bc68a}.nyx-credits-founder-status.nyx-founder-status-idle{background:#e4b65a}.nyx-credits-founder-status.nyx-founder-status-dnd{background:#df6875}
+    .nyx-credits-founder-copy{align-self:center;padding:clamp(24px,4vw,42px)}.nyx-credits-founder-copy>p.nyx-credits-founder-role{margin:0 0 8px!important;color:var(--nyx-founder-accent,var(--credits-accent))!important;font-size:10px!important;font-weight:800!important;letter-spacing:.14em!important;text-transform:uppercase!important}.nyx-credits-founder-copy h3{margin:0!important;color:#f6f8fc!important;font-size:clamp(28px,4vw,43px)!important;letter-spacing:-.045em!important;line-height:1.05!important}.nyx-credits-founder-handle{margin:5px 0 18px!important;color:#94a2b7!important;font-size:13px!important}.nyx-credits-founder-bio{max-width:55ch;margin:0!important;color:#c2ccda!important;font-size:14px!important;line-height:1.68!important}.nyx-credits-founder-roles,.nyx-credits-founder-badges{display:flex;flex-wrap:wrap;gap:7px;margin-top:17px}.nyx-credits-founder-role,.nyx-credits-founder-badge{display:inline-flex;align-items:center;min-height:25px;padding:3px 8px;border:1px solid rgba(191,207,240,.14);border-radius:7px;background:rgba(255,255,255,.045);color:#d4dcea;font-size:10px;font-weight:700}.nyx-credits-founder-roles .nyx-credits-founder-role:first-child{border-color:color-mix(in srgb,var(--nyx-founder-accent,var(--credits-accent)) 58%,transparent);background:color-mix(in srgb,var(--nyx-founder-accent,var(--credits-accent)) 17%,transparent);color:#fff}.nyx-credits-founder-badge{color:#aebcd0}.nyx-credits-founder-link{display:inline-flex;gap:7px;margin-top:19px;color:var(--nyx-founder-accent,var(--credits-accent));font-size:12px;font-weight:750;text-decoration:none}.nyx-credits-founder-link:hover{text-decoration:underline}
+    .nyx-credit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.nyx-credit-grid article{min-height:172px;padding:20px!important;border:1px solid rgba(191,207,240,.1)!important;border-radius:15px!important;background:rgba(16,22,34,.6)!important;box-shadow:inset 0 1px rgba(255,255,255,.02);transition:transform .18s ease,border-color .18s ease,background-color .18s ease}.nyx-credit-grid article:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--credits-accent) 42%,rgba(191,207,240,.16))!important;background:color-mix(in srgb,var(--credits-accent) 7%,rgba(16,22,34,.76))!important}.nyx-credit-grid article>span{width:34px!important;height:34px!important;margin-bottom:18px!important;border-color:color-mix(in srgb,var(--credits-accent) 32%,transparent)!important;border-radius:10px!important;background:color-mix(in srgb,var(--credits-accent) 9%,transparent)!important;color:var(--credits-accent)!important;font-size:16px!important}.nyx-credit-grid h3{margin:0 0 7px!important;color:#eef3fb!important;font-size:15px!important;font-weight:700!important}.nyx-credit-grid p{margin:0!important;color:#9cabc0!important;font-size:12px!important;line-height:1.62!important}.nyx-credits-changelog{display:grid;gap:0;max-width:760px;margin:0;padding:0;list-style:none;border-top:1px solid rgba(191,207,240,.1)}.nyx-credits-changelog li{display:grid;grid-template-columns:112px minmax(0,1fr);gap:18px;padding:17px 0;border-bottom:1px solid rgba(191,207,240,.1)}.nyx-credits-changelog time{color:var(--credits-accent);font-size:10px;font-weight:750;letter-spacing:.05em;text-transform:uppercase}.nyx-credits-changelog div{display:grid;gap:5px}.nyx-credits-changelog strong{color:#edf3fc;font-size:13px;font-weight:700}.nyx-credits-changelog p{margin:0;color:#9cabc0;font-size:12px;line-height:1.6}.nyx-credits-footer{margin-top:4px;padding-top:22px!important;border-top-color:rgba(191,207,240,.1)!important}
+    @media(max-width:720px){.nyx-credits-founder-card{grid-template-columns:1fr}.nyx-credits-founder-media{min-height:205px}.nyx-credits-founder-copy{padding:24px}.nyx-credit-grid{grid-template-columns:1fr}.nyx-credit-grid article{min-height:auto}.nyx-credits-changelog li{grid-template-columns:1fr;gap:6px}.nyx-credits-hero-notes{margin-top:19px}}@media(prefers-reduced-motion:reduce){.nyx-credits-founder-card,.nyx-credit-grid article{transition:none!important}}
+  `;
+  const nyxCreditsProfileReferenceStyle=`
+    .nyx-credits-founder-card{display:block;max-width:470px;margin:0;border-color:rgba(255,255,255,.12);border-radius:16px;background:#111216;box-shadow:0 18px 40px rgba(0,0,0,.28)}.nyx-credits-founder-media{min-height:142px;overflow:visible;background:#f3eef5}.nyx-credits-founder-banner{overflow:hidden;border-radius:15px 15px 0 0;background:var(--nyx-founder-banner-color,#f3eef5)}.nyx-credits-founder-banner::after{display:none}.nyx-credits-founder-banner img{object-position:center;opacity:.92}.nyx-credits-founder-avatar{left:18px;bottom:-47px;width:92px;height:92px;border:6px solid #111216;box-shadow:0 0 0 2px rgba(255,255,255,.18),0 8px 18px rgba(0,0,0,.32)}.nyx-credits-founder-status{right:-2px;bottom:1px;border-color:#111216}.nyx-credits-founder-presence{position:absolute;z-index:2;left:118px;bottom:-39px;display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:0 13px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:#202126;color:#d9dde5;font-size:12px;font-weight:650;box-shadow:0 5px 14px rgba(0,0,0,.2)}.nyx-credits-founder-presence i{width:8px;height:8px;border-radius:50%;background:#77849a}.nyx-credits-founder-presence.nyx-founder-status-online i{background:#5bc68a}.nyx-credits-founder-presence.nyx-founder-status-idle i{background:#e4b65a}.nyx-credits-founder-presence.nyx-founder-status-dnd i{background:#df6875}.nyx-credits-founder-copy{padding:60px 20px 21px}.nyx-credits-founder-copy>p.nyx-credits-founder-role{margin:0 0 7px!important;color:#aeb5c1!important;font-size:10px!important;letter-spacing:.08em!important}.nyx-credits-founder-copy h3{font-size:26px!important;line-height:1.1!important}.nyx-credits-founder-handle{margin:4px 0 14px!important;color:#9ba2ae!important}.nyx-credits-founder-bio{color:#d6d9df!important;font-size:13px!important;line-height:1.55!important}.nyx-credits-founder-roles,.nyx-credits-founder-badges{margin-top:14px}.nyx-credits-founder-role,.nyx-credits-founder-badge{border-color:#444750;border-radius:6px;background:#24262d;color:#d9dde5}.nyx-credits-founder-roles .nyx-credits-founder-role:first-child{border-color:color-mix(in srgb,var(--nyx-founder-accent,var(--credits-accent)) 62%,#535763);background:color-mix(in srgb,#262830 82%,var(--nyx-founder-accent,var(--credits-accent)));color:#fff}@media(max-width:720px){.nyx-credits-founder-card{max-width:none}.nyx-credits-founder-media{min-height:132px}.nyx-credits-founder-copy{padding:58px 18px 19px}}
+  `;
+  const nyxCreditsOwnerImageStyle=`.nyx-credits-owner-image{width:min(394px,100%);margin:0}.nyx-credits-owner-image img{display:block;width:100%;height:auto;border-radius:0}`;
   const DEFAULT_BROWSER_MODE='scramjet';
   const DEFAULT_BROWSER_TRANSPORT='libcurl';
   const nyxFontOptions=[
@@ -2491,7 +2635,7 @@
     if(String(url).trim().toLowerCase()==='nyx://settings') return 'Settings';
     if(String(url).trim().toLowerCase()==='nyx://terms') return 'Terms Of Service';
     if(String(url).trim().toLowerCase()==='nyx://developer') return 'Developer Console';
-    if(/^nyx:\/\/(?:about|credits)$/i.test(String(url).trim())) return 'Credits';
+    if(/^nyx:\/\/(?:about|credits)$/i.test(String(url).trim())) return 'About Nyx';
     try{
       const parsed=new URL(browserShellSourceUrl(url),location.href);
       if(parsed.origin===location.origin && parsed.pathname==='/search') return parsed.searchParams.get('q') || 'Search';
@@ -3496,7 +3640,7 @@
       const founderProfileBlock=document.createElement('section');
       founderProfileBlock.className='settings-block';
       founderProfileBlock.hidden=true;
-      founderProfileBlock.innerHTML='<h2>Founder Profile</h2><p>Customize the public profile shown to everyone in Credits.</p><div class="settings-actions"><button class="settings-action" data-open-founder-profile-editor type="button">Customize Founder Profile</button></div>';
+      founderProfileBlock.innerHTML='<h2>Founder Profile</h2><p>Customize the public profile shown on About Nyx.</p><div class="settings-actions"><button class="settings-action" data-open-founder-profile-editor type="button">Customize Founder Profile</button></div>';
       founderProfileBlock.dataset.founderProfileSettingsCard='';
       const ownerDashboardBlock=document.createElement('section');
       ownerDashboardBlock.className='settings-block';
@@ -3857,8 +4001,8 @@
       apps:{title:'Apps',body:`<section class="shell-page"><h1>Apps</h1><p>Apps</p><div class="quick-grid apps-launch-grid">${quickTiles()}</div></section>`},
       links:{title:'Bookmarks',body:`<section class="shell-page"><h1>Bookmarks</h1><p>Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>DuckDuckGo</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></section>`},
       terms:{title:'Terms Of Service',style:utilityPageStyle,body:nyxTermsPageMarkup()},
-      about:{title:'Credits',style:utilityPageStyle+discordFounderProfileStyle+nyxDiscordCreditsProfileStyle+founderAccentEffectStyle,body:nyxCreditsPageMarkup()},
-      credits:{title:'Credits',style:utilityPageStyle+discordFounderProfileStyle+nyxDiscordCreditsProfileStyle+founderAccentEffectStyle,body:nyxCreditsPageMarkup()},
+      about:{title:'About Nyx',style:utilityPageStyle+nyxCreditsPresentationStyle+nyxCreditsOwnerImageStyle,body:nyxCreditsPageMarkup()},
+      credits:{title:'About Nyx',style:utilityPageStyle+nyxCreditsPresentationStyle+nyxCreditsOwnerImageStyle,body:nyxCreditsPageMarkup()},
       developer:{title:'Developer Console',style:utilityPageStyle,body:`<section aria-label="Eruda developer console"></section>`},
       ephesians1:{title:'Ephesians 1',body:`<section class="shell-page ephesians-diagram"><style>
         .ephesians-diagram{--ink:#f8fafc;--muted:#cbd5e1;--line:rgba(255,255,255,.24);max-width:1120px;margin:auto;padding-bottom:64px}.ephesians-diagram h1{text-align:center;font-size:clamp(30px,5vw,48px);margin:4px 0 6px}.ephesians-diagram>.diagram-sub{text-align:center;margin:0 0 28px;color:var(--muted);font-size:15px}.eph-flow{display:grid;gap:12px}.eph-block{padding:17px 20px;border:1px solid var(--line);border-left:6px solid #94a3b8;border-radius:14px;background:rgba(15,23,42,.58);box-shadow:0 12px 28px rgba(0,0,0,.16)}.eph-block h2{font-size:19px;margin:5px 0 7px}.eph-block p{margin:0;color:#e2e8f0;line-height:1.48;font-size:14px}.eph-verse{color:#cbd5e1;font-size:11px;font-weight:800;letter-spacing:.11em}.eph-father{border-left-color:#60a5fa}.eph-son{border-left-color:#fbbf24}.eph-spirit{border-left-color:#4ade80}.eph-prayer{border-left-color:#c084fc}.eph-arrow{text-align:center;height:22px;font:700 24px/22px Arial,sans-serif;color:#cbd5e1}.eph-purpose{text-align:center;padding:16px;border:1px solid rgba(255,255,255,.34);border-radius:14px;background:rgba(255,255,255,.10);font-size:17px;font-weight:800}.eph-purpose small{display:block;margin-bottom:5px;color:#cbd5e1;font-size:11px;letter-spacing:.1em}.eph-triad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.eph-triad .eph-block{padding:15px}.eph-triad h2{font-size:17px}@media(max-width:720px){.eph-triad{grid-template-columns:1fr}.ephesians-diagram{padding:20px 4px 50px!important}}</style>
@@ -7182,7 +7326,7 @@
     if(utilityLinks){
       const creditsLink=utilityLinks.querySelector('[data-open="about"]');
       if(creditsLink){
-        creditsLink.textContent='Credits';
+        creditsLink.textContent='About Nyx';
         creditsLink.dataset.open='credits';
         creditsLink.dataset.browserCredits='';
         creditsLink.setAttribute('href','#credits');
@@ -10353,7 +10497,7 @@
   function openAboutNyx(){
     if(document.body.classList.contains('browser-shell')) return showBrowserShellInternalPage('credits');
     makeWindow({
-      title:'Credits',
+      title:'About Nyx',
       left:'22vw',
       top:'110px',
       width:'620px',
@@ -10524,7 +10668,7 @@
         </section>
         <section class="settings-card" data-founder-profile-settings-card hidden>
           <h2>Founder Profile</h2>
-          <p>Customize the public profile shown to everyone in Credits.</p>
+          <p>Customize the public profile shown on About Nyx.</p>
           <button data-open-founder-profile-editor type="button">Customize Founder Profile</button>
         </section>
         <section class="settings-card">

@@ -2676,6 +2676,27 @@ function nyxProfileMediaRouteValues(req) {
   };
 }
 
+async function nyxProfileMediaRecord(firebase, values) {
+  if (!values.validUid || !values.validKind || !values.validUploadId) return null;
+  const mediaId = nyxProfileMediaDocumentId(values.uid, values.kind, values.uploadId);
+  const mediaRef = firebase.firestore.collection("nyxProfileMedia").doc(mediaId);
+  const mediaSnapshot = await mediaRef.get();
+  const media = mediaSnapshot.data() || {};
+  const totalChunks = Number(media.totalChunks || 0);
+  if (
+    !mediaSnapshot.exists ||
+    media.ownerUid !== values.uid ||
+    media.kind !== values.kind ||
+    media.complete !== true ||
+    !/^image\/(?:gif|png|jpeg|webp)$/.test(String(media.mime || "")) ||
+    totalChunks < 1 ||
+    totalChunks > profileMediaChunkCountLimit
+  ) {
+    return null;
+  }
+  return { mediaRef, media, totalChunks };
+}
+
 app.put("/api/profile-media/:kind/:uploadId/:index", async (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) {
@@ -2768,41 +2789,89 @@ app.post("/api/profile-media/:kind/:uploadId/complete", async (req, res) => {
       res.status(413).json({ error: "That profile image is too large or incomplete." });
       return;
     }
-    await mediaRef.set({ complete: true, encodedLength, completedAt: new Date().toISOString() }, { merge: true });
+    const finalChunk = String(chunkSnapshots.at(-1)?.data()?.chunk || "");
+    const padding = finalChunk.endsWith("==") ? 2 : (finalChunk.endsWith("=") ? 1 : 0);
+    const byteLength = Math.floor(encodedLength * 3 / 4) - padding;
+    await mediaRef.set({ complete: true, encodedLength, byteLength, completedAt: new Date().toISOString() }, { merge: true });
     res.json({ url: `/api/profile-media/${token.uid}/${kind}/${uploadId}` });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "Profile media could not be completed." });
   }
 });
 
-app.get("/api/profile-media/:uid/:kind/:uploadId", async (req, res) => {
+app.get("/api/profile-media/:uid/:kind/:uploadId/manifest", async (req, res) => {
   const values = nyxProfileMediaRouteValues(req);
-  if (!values.validUid || !values.validKind || !values.validUploadId || !firebaseAdminModeConfigured()) {
+  if (!firebaseAdminModeConfigured()) {
     res.status(404).end();
     return;
   }
   try {
     const firebase = await linkGeneratorFirebase();
-    const mediaId = nyxProfileMediaDocumentId(values.uid, values.kind, values.uploadId);
-    const mediaRef = firebase.firestore.collection("nyxProfileMedia").doc(mediaId);
-    const mediaSnapshot = await mediaRef.get();
-    const media = mediaSnapshot.data() || {};
-    const totalChunks = Number(media.totalChunks || 0);
-    if (
-      !mediaSnapshot.exists ||
-      media.ownerUid !== values.uid ||
-      media.kind !== values.kind ||
-      media.complete !== true ||
-      !/^image\/(?:gif|png|jpeg|webp)$/.test(String(media.mime || "")) ||
-      totalChunks < 1 ||
-      totalChunks > profileMediaChunkCountLimit
-    ) {
+    const record = await nyxProfileMediaRecord(firebase, values);
+    if (!record) {
+      res.status(404).end();
+      return;
+    }
+    res.set({
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "X-Content-Type-Options": "nosniff"
+    }).json({
+      mime: record.media.mime,
+      totalChunks: record.totalChunks,
+      byteLength: Number(record.media.byteLength || 0)
+    });
+  } catch {
+    res.status(404).end();
+  }
+});
+
+app.get("/api/profile-media/:uid/:kind/:uploadId/chunks/:index", async (req, res) => {
+  const values = nyxProfileMediaRouteValues(req);
+  const index = Number.parseInt(String(req.params.index || ""), 10);
+  if (!firebaseAdminModeConfigured() || !Number.isInteger(index) || index < 0 || index >= profileMediaChunkCountLimit) {
+    res.status(404).end();
+    return;
+  }
+  try {
+    const firebase = await linkGeneratorFirebase();
+    const record = await nyxProfileMediaRecord(firebase, values);
+    if (!record || index >= record.totalChunks) {
+      res.status(404).end();
+      return;
+    }
+    const snapshot = await record.mediaRef.collection("chunks").doc(String(index).padStart(3, "0")).get();
+    const data = snapshot.data() || {};
+    const chunk = String(data.chunk || "");
+    if (!snapshot.exists || data.index !== index || !chunk || chunk.length > profileMediaChunkLimit || !/^[A-Za-z0-9+/=]+$/.test(chunk)) {
+      res.status(404).end();
+      return;
+    }
+    res.set({
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "Content-Type": "text/plain; charset=utf-8",
+      "X-Content-Type-Options": "nosniff"
+    }).send(chunk);
+  } catch {
+    res.status(404).end();
+  }
+});
+
+app.get("/api/profile-media/:uid/:kind/:uploadId", async (req, res) => {
+  const values = nyxProfileMediaRouteValues(req);
+  if (!firebaseAdminModeConfigured()) {
+    res.status(404).end();
+    return;
+  }
+  try {
+    const firebase = await linkGeneratorFirebase();
+    const record = await nyxProfileMediaRecord(firebase, values);
+    if (!record) {
       res.status(404).end();
       return;
     }
     const chunkSnapshots = await Promise.all(
-      Array.from({ length: totalChunks }, (_, index) =>
-        mediaRef.collection("chunks").doc(String(index).padStart(3, "0")).get()
+      Array.from({ length: record.totalChunks }, (_, index) =>
+        record.mediaRef.collection("chunks").doc(String(index).padStart(3, "0")).get()
       )
     );
     const encoded = chunkSnapshots.map((snapshot, index) => {
@@ -2816,7 +2885,7 @@ app.get("/api/profile-media/:uid/:kind/:uploadId", async (req, res) => {
     }
     res.set({
       "Cache-Control": "public, max-age=31536000, immutable",
-      "Content-Type": media.mime,
+      "Content-Type": record.media.mime,
       "Content-Length": String(Buffer.byteLength(encoded, "base64")),
       "X-Content-Type-Options": "nosniff"
     });

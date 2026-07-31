@@ -45,12 +45,61 @@
   let nyxUserActivityTimer=0;
   const nyxGifPosterCache=new Map();
   const nyxGifPosterResolved=new Map();
+  const nyxProfileMediaResolved=new Map();
+  const nyxProfileMediaPending=new Map();
   const NYX_PROFILE_IMAGE_DATA_LIMIT=850000;
   const NYX_PROFILE_MEDIA_DATA_LIMIT=11250000;
   const NYX_PROFILE_IMAGE_TOTAL_LIMIT=900000;
+  const NYX_PROFILE_IMAGE_PLACEHOLDER='data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+  function nyxProfileMediaPath(value){
+    const source=String(value||'').trim();
+    return /^\/api\/profile-media\/[A-Za-z0-9_-]{8,128}\/(?:avatar|banner)\/[A-Za-z0-9_-]{12,80}$/.test(source)?source:'';
+  }
   function nyxAnimatedProfileImage(value){
     const source=String(value||'').trim();
-    return /^data:image\/gif;base64,/i.test(source)||/\.gif(?:$|[?#])/i.test(source)||/^\/api\/profile-media\/[A-Za-z0-9_-]{8,128}\/(?:avatar|banner)\/[A-Za-z0-9_-]{12,80}$/.test(source);
+    const media=nyxProfileMediaResolved.get(nyxProfileMediaPath(source));
+    return /^data:image\/gif;base64,/i.test(source)||/\.gif(?:$|[?#])/i.test(source)||media?.mime==='image/gif';
+  }
+  async function nyxResolveProfileMedia(value){
+    const source=nyxProfileMediaPath(value);
+    if(!source)return null;
+    if(nyxProfileMediaResolved.has(source))return nyxProfileMediaResolved.get(source);
+    if(nyxProfileMediaPending.has(source))return nyxProfileMediaPending.get(source);
+    const pending=(async()=>{
+      const manifestResponse=await fetch(`${source}/manifest`,{cache:'force-cache'});
+      const manifest=await manifestResponse.json().catch(()=>({}));
+      const mime=String(manifest.mime||'').toLowerCase();
+      const totalChunks=Number(manifest.totalChunks||0);
+      if(!manifestResponse.ok||!/^image\/(?:gif|png|jpeg|webp)$/.test(mime)||!Number.isInteger(totalChunks)||totalChunks<1||totalChunks>32){
+        throw new Error('That saved profile image is unavailable.');
+      }
+      const encodedChunks=new Array(totalChunks);
+      let nextIndex=0;
+      await Promise.all(Array.from({length:Math.min(4,totalChunks)},async()=>{
+        while(nextIndex<totalChunks){
+          const index=nextIndex++;
+          const response=await fetch(`${source}/chunks/${index}`,{cache:'force-cache'});
+          const encoded=(await response.text()).trim();
+          if(!response.ok||!encoded||!/^[a-z0-9+/=]+$/i.test(encoded))throw new Error('That saved profile image is incomplete.');
+          encodedChunks[index]=encoded;
+        }
+      }));
+      const parts=encodedChunks.map(encoded=>{
+        const decoded=atob(encoded);
+        const bytes=new Uint8Array(decoded.length);
+        for(let index=0;index<decoded.length;index++)bytes[index]=decoded.charCodeAt(index);
+        return bytes;
+      });
+      const blob=new Blob(parts,{type:mime});
+      if(Number(manifest.byteLength||0)>0&&blob.size!==Number(manifest.byteLength)){
+        throw new Error('That saved profile image did not pass its size check.');
+      }
+      const result={url:URL.createObjectURL(blob),mime,size:blob.size};
+      nyxProfileMediaResolved.set(source,result);
+      return result;
+    })().finally(()=>nyxProfileMediaPending.delete(source));
+    nyxProfileMediaPending.set(source,pending);
+    return pending;
   }
   function nyxCaptureGifPoster(image,source,maxSize=180){
     const existing=nyxGifPosterResolved.get(source);
@@ -85,6 +134,12 @@
   }
   function nyxProfileStillSource(source){
     const value=String(source||'');
+    const mediaPath=nyxProfileMediaPath(value);
+    if(mediaPath){
+      const media=nyxProfileMediaResolved.get(mediaPath);
+      if(!media)return NYX_PROFILE_IMAGE_PLACEHOLDER;
+      return media.mime==='image/gif'?(nyxGifPosterResolved.get(value)||media.url):media.url;
+    }
     return nyxAnimatedProfileImage(value)?(nyxGifPosterResolved.get(value)||value):value;
   }
   function nyxSetCompactGifMotion(host,active){
@@ -95,21 +150,23 @@
     const target=active&&document.visibilityState==='visible'?source:(poster||source);
     if(image.getAttribute('src')!==target)image.setAttribute('src',target);
   }
-  function nyxManageCompactGif(host,image,source,maxSize=180){
+  function nyxApplyCompactProfileImage(host,image,identity,renderSource,animated,maxSize=180){
     if(!host||!image)return;
-    if(!nyxAnimatedProfileImage(source)){
+    if(!animated){
+      delete host.dataset.nyxAnimatedIdentity;
       delete host.dataset.nyxAnimatedSource;
       delete host.dataset.nyxAnimatedPoster;
-      if(image.getAttribute('src')!==source)image.setAttribute('src',source);
+      if(image.getAttribute('src')!==renderSource)image.setAttribute('src',renderSource);
       return;
     }
-    const sourceChanged=host.dataset.nyxAnimatedSource!==source;
-    host.dataset.nyxAnimatedSource=source;
-    const cachedPoster=nyxGifPosterResolved.get(source)||'';
+    const sourceChanged=host.dataset.nyxAnimatedIdentity!==identity||host.dataset.nyxAnimatedSource!==renderSource;
+    host.dataset.nyxAnimatedIdentity=identity;
+    host.dataset.nyxAnimatedSource=renderSource;
+    const cachedPoster=nyxGifPosterResolved.get(identity)||'';
     if(sourceChanged){
       if(cachedPoster)host.dataset.nyxAnimatedPoster=cachedPoster;
       else delete host.dataset.nyxAnimatedPoster;
-      const initial=cachedPoster||source;
+      const initial=cachedPoster||renderSource;
       if(image.getAttribute('src')!==initial)image.setAttribute('src',initial);
     }
     if(!host.dataset.nyxGifMotionBound){
@@ -120,11 +177,35 @@
       focusTarget.addEventListener('focus',()=>nyxSetCompactGifMotion(host,true));
       focusTarget.addEventListener('blur',()=>nyxSetCompactGifMotion(host,false));
     }
-    void nyxCaptureGifPoster(image,source,maxSize).then(poster=>{
-      if(!poster||host.dataset.nyxAnimatedSource!==source)return;
+    void nyxCaptureGifPoster(image,identity,maxSize).then(poster=>{
+      if(!poster||host.dataset.nyxAnimatedIdentity!==identity)return;
       host.dataset.nyxAnimatedPoster=poster;
       const focusTarget=host.closest('button')||host;
       nyxSetCompactGifMotion(host,host.matches(':hover')||focusTarget.matches(':focus'));
+    });
+  }
+  function nyxManageCompactGif(host,image,source,maxSize=180){
+    if(!host||!image)return;
+    const mediaPath=nyxProfileMediaPath(source);
+    if(!mediaPath){
+      delete host.dataset.nyxProfileMediaSource;
+      nyxApplyCompactProfileImage(host,image,String(source||''),String(source||''),nyxAnimatedProfileImage(source),maxSize);
+      return;
+    }
+    host.dataset.nyxProfileMediaSource=mediaPath;
+    const resolved=nyxProfileMediaResolved.get(mediaPath);
+    if(resolved){
+      nyxApplyCompactProfileImage(host,image,mediaPath,resolved.url,resolved.mime==='image/gif',maxSize);
+      return;
+    }
+    if(image.getAttribute('src')!==NYX_PROFILE_IMAGE_PLACEHOLDER)image.setAttribute('src',NYX_PROFILE_IMAGE_PLACEHOLDER);
+    void nyxResolveProfileMedia(mediaPath).then(media=>{
+      if(!media||host.dataset.nyxProfileMediaSource!==mediaPath)return;
+      nyxApplyCompactProfileImage(host,image,mediaPath,media.url,media.mime==='image/gif',maxSize);
+    }).catch(error=>{
+      if(host.dataset.nyxProfileMediaSource!==mediaPath)return;
+      console.warn('Nyx profile media could not load:',error);
+      if(image.getAttribute('src')!==mediaPath)image.setAttribute('src',mediaPath);
     });
   }
   function nyxManageUserProfileGifs(root,profile){

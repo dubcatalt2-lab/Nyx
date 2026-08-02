@@ -27,6 +27,25 @@
     return formatter.format(Math.round(hours / 24), "day");
   };
   const moneyLabel = cents => new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format((Number(cents) || 0) / 100);
+  const activityDayLabel = value => {
+    const date = new Date(value || "");
+    if (Number.isNaN(date.getTime())) return "Recent";
+    const today = new Date();
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    const startOfEvent = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+    const difference = Math.round((startOfToday - startOfEvent) / 86400000);
+    if (difference === 0) return "Today";
+    if (difference === 1) return "Yesterday";
+    return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date);
+  };
+  const activityIconName = action => {
+    const value = String(action || "").toLowerCase();
+    if (/(sign.?in|login|session|online)/.test(value)) return "online";
+    if (/(sign.?up|create|invite|register)/.test(value)) return "signup";
+    if (/(premium|subscription|payment|revenue|billing)/.test(value)) return "premium";
+    if (/(user|account|profile|role)/.test(value)) return "users";
+    return "activity";
+  };
 
   let activeDashboard = null;
 
@@ -207,7 +226,18 @@
     }
 
     function renderActivity(activity = []) {
-      activityHost.innerHTML = activity.length ? activity.map(event => `<article class="nyx-owner-activity-item"><i class="nyx-owner-activity-dot"></i><div><strong>${esc(actionLabel(event.action))}</strong><p>${esc(event.targetEmail || event.actorEmail || event.targetUid || "System event")}</p><span title="${esc(dateLabel(event.createdAt))}">${esc(relativeLabel(event.createdAt))}${event.actorEmail && event.actorEmail !== event.targetEmail ? ` · by ${esc(event.actorEmail)}` : ""}</span></div></article>`).join("") : '<div class="nyx-owner-empty compact"><strong>No activity yet</strong><span>Owner and account events will appear here.</span></div>';
+      if (!activity.length) {
+        activityHost.innerHTML = '<div class="nyx-owner-empty compact"><strong>No activity yet</strong><span>Owner and account events will appear here.</span></div>';
+        return;
+      }
+      const groups = activity.reduce((result, event) => {
+        const label = activityDayLabel(event.createdAt);
+        const group = result.find(entry => entry.label === label);
+        if (group) group.events.push(event);
+        else result.push({ label, events: [event] });
+        return result;
+      }, []);
+      activityHost.innerHTML = groups.map(group => `<section class="nyx-owner-activity-group"><header><strong>${esc(group.label)}</strong><span>${group.events.length} event${group.events.length === 1 ? "" : "s"}</span></header>${group.events.map(event => `<article class="nyx-owner-activity-item" data-owner-activity-type="${esc(activityIconName(event.action))}"><i class="nyx-owner-activity-dot">${dashboardIcon(activityIconName(event.action))}</i><div><strong>${esc(actionLabel(event.action))}</strong><p>${esc(event.targetEmail || event.actorEmail || event.targetUid || "System event")}</p><span title="${esc(dateLabel(event.createdAt))}">${esc(relativeLabel(event.createdAt))}${event.actorEmail && event.actorEmail !== event.targetEmail ? ` · by ${esc(event.actorEmail)}` : ""}</span></div></article>`).join("")}</section>`).join("");
     }
 
     function renderError(error) {

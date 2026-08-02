@@ -1,0 +1,98 @@
+/* Browser chrome motion polish. This intentionally preserves the existing shell layout. */
+body.browser-shell :is(.browser-mode-app-button,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-address button,.browser-mode-url,.window-controls button){
+  transition:transform 160ms cubic-bezier(.2,.75,.25,1),background-color 160ms ease,border-color 160ms ease,box-shadow 160ms ease,color 140ms ease,opacity 140ms ease;
+}
+
+body.browser-shell :is(.browser-mode-app-button,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-address button):hover{
+  transform:translateY(-1px) scale(1.015);
+}
+body.browser-shell :is(.browser-mode-app-button,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-address button):active{
+  transform:translateY(0) scale(.975);
+  transition-duration:80ms;
+}
+body.browser-shell :is(.browser-mode-app-button,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-address button,.window-controls button):focus-visible{
+  outline:2px solid color-mix(in srgb,var(--theme-accent,#8aa7ff) 82%,white);
+  outline-offset:2px;
+}
+
+body.browser-shell .browser-mode-shell-tab{
+  border-color:rgba(191,207,240,.17)!important;
+  background:rgba(20,27,40,.6)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.035),0 1px rgba(0,0,0,.16)!important;
+  will-change:transform;
+}
+body.browser-shell .browser-mode-shell-tab:hover{
+  border-color:rgba(191,207,240,.33)!important;
+  background:rgba(44,57,78,.72)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.06),0 5px 12px rgba(0,0,0,.16)!important;
+}
+body.browser-shell .browser-mode-shell-tab.active{
+  color:#f8fbff!important;
+  border-color:color-mix(in srgb,var(--theme-accent,#8aa7ff) 52%,rgba(191,207,240,.3))!important;
+  background:linear-gradient(180deg,rgba(82,103,139,.62),rgba(37,48,66,.82))!important;
+  box-shadow:inset 0 2px color-mix(in srgb,var(--theme-accent,#8aa7ff) 76%,white),inset 0 1px rgba(255,255,255,.1),0 4px 12px rgba(0,0,0,.2)!important;
+}
+body.browser-shell .browser-mode-shell-tab.tab-opening{
+  animation:browserTabSettle 180ms cubic-bezier(.2,.8,.25,1) both!important;
+}
+@keyframes browserTabSettle{from{opacity:0;transform:translateX(-7px) scale(.985)}to{opacity:1;transform:translateX(0) scale(1)}}
+
+body.browser-shell .browser-mode-shell-tab-close{
+  transition:transform 140ms ease,background-color 140ms ease,opacity 140ms ease!important;
+}
+body.browser-shell .browser-mode-shell-tab-close:hover{
+  transform:translateY(-50%) scale(1)!important;
+  background:rgba(255,255,255,.13)!important;
+}
+body.browser-shell .browser-mode-shell-tab-close:active{transform:translateY(-50%) scale(.88)!important}
+
+body.browser-shell .browser-mode-url{
+  border-color:rgba(191,207,240,.17)!important;
+  background:rgba(7,12,21,.64)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.025)!important;
+  caret-color:var(--theme-accent,#9ab2ff);
+}
+body.browser-shell .browser-mode-url:hover{border-color:rgba(191,207,240,.29)!important;background:rgba(11,18,30,.78)!important}
+body.browser-shell .browser-mode-url:focus{
+  border-color:color-mix(in srgb,var(--theme-accent,#8aa7ff) 70%,white)!important;
+  background:rgba(11,18,30,.96)!important;
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--theme-accent,#8aa7ff) 18%,transparent),inset 0 1px rgba(255,255,255,.045)!important;
+}
+body.browser-shell .browser-mode-address button:hover{background-color:rgba(86,108,145,.26)!important;box-shadow:inset 0 1px rgba(255,255,255,.08),0 3px 9px rgba(0,0,0,.14)!important}
+body.browser-shell .browser-mode-address [data-browser-shell-reload]:active .fresh-real-icon{transform:rotate(115deg);transition:transform 180ms ease}
+body.browser-shell .browser-mode-address [data-browser-shell-bookmark][aria-pressed="true"]{color:color-mix(in srgb,var(--theme-accent,#8aa7ff) 75%,white)!important;background-color:color-mix(in srgb,var(--theme-accent,#8aa7ff) 16%,transparent)!important}
+
+body.browser-shell .window-controls button{transition:background-color 150ms ease,color 150ms ease,transform 150ms ease!important}
+body.browser-shell .window-controls button:hover{background:rgba(255,255,255,.09);color:#fff}
+body.browser-shell .window-controls button:active{transform:scale(.92)}
+body.browser-shell .window-controls .close:hover{background:#dc4a58;color:#fff}
+
+@media(prefers-reduced-motion:reduce){
+  body.browser-shell :is(.browser-mode-app-button,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-address button,.browser-mode-url,.window-controls button,.browser-mode-shell-tab-close){transition:none!important}
+  body.browser-shell .browser-mode-shell-tab.tab-opening{animation:none!important}
+}
+
+/* These selectors intentionally match the legacy chrome specificity that uses !important. */
+html body:not(#nyx-browser-microinteractions).browser-shell :is(.browser-mode-app-button,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-address button,.browser-mode-url,.window-controls button){
+  transition:transform 160ms cubic-bezier(.2,.75,.25,1),background-color 160ms ease,border-color 160ms ease,box-shadow 160ms ease,color 140ms ease,opacity 140ms ease!important;
+}
+html body:not(#nyx-browser-microinteractions).browser-shell :is(.browser-mode-app-button,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-address button):hover{transform:translateY(-1px) scale(1.015)!important}
+html body:not(#nyx-browser-microinteractions).browser-shell :is(.browser-mode-app-button,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-address button):active{transform:translateY(0) scale(.975)!important;transition-duration:80ms!important}
+html body:not(#nyx-browser-microinteractions).browser-shell .browser-mode-shell-tab{
+  background:rgba(20,27,40,.6)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.035),0 1px rgba(0,0,0,.16)!important;
+}
+html body:not(#nyx-browser-microinteractions).browser-shell .browser-mode-shell-tab.active{
+  background:linear-gradient(180deg,rgba(82,103,139,.62),rgba(37,48,66,.82))!important;
+  box-shadow:inset 0 2px color-mix(in srgb,var(--theme-accent,#8aa7ff) 76%,white),inset 0 1px rgba(255,255,255,.1),0 4px 12px rgba(0,0,0,.2)!important;
+}
+html body:not(#nyx-browser-microinteractions).browser-shell .browser-mode-url:focus{
+  background:rgba(11,18,30,.96)!important;
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--theme-accent,#8aa7ff) 18%,transparent),inset 0 1px rgba(255,255,255,.045)!important;
+}
+html body.browser-shell.browser-shell .browser-mode-shell-tab.tab-opening{animation:browserTabSettle 180ms cubic-bezier(.2,.8,.25,1) both!important}
+@media(prefers-reduced-motion:reduce){
+  html body:not(#nyx-browser-microinteractions).browser-shell :is(.browser-mode-app-button,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-address button,.browser-mode-url,.window-controls button,.browser-mode-shell-tab-close){transition:none!important}
+  html body:is(body,#nyx-hover-specificity).browser-shell :is(.browser-mode-app-button,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-address button,.browser-mode-url,.window-controls button,.browser-mode-shell-tab-close){transition:none!important}
+  html body.browser-shell.browser-shell .browser-mode-shell-tab.tab-opening{animation:none!important}
+}

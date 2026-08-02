@@ -108,10 +108,13 @@ button,a,[role="button"]{cursor:pointer}
 .edu-mod .ms{color:var(--muted);font-size:11px;font-weight:300;line-height:1.45}
 .edu-mod .tg{align-self:center;padding:2px 8px;border:1px solid var(--teal);border-radius:20px;color:var(--teal);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
 .edu-quick{margin-top:.75rem;overflow:hidden;border:1px solid var(--line);border-radius:8px;background:var(--card);animation:rise .6s .22s both}
-.edu-qh{display:flex;align-items:center;justify-content:space-between;padding:.42rem 1rem;border-bottom:1px solid var(--line);background:rgba(47,125,117,.05)}
+.edu-qh{display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.42rem 1rem;border-bottom:1px solid var(--line);background:rgba(47,125,117,.05)}
 .edu-qh .lbl{color:var(--teal);font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase}
 .edu-qh button{border:0;background:none;color:var(--muted);font:9px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase}
 .edu-qh button:hover,.edu-qh button:focus-visible{color:var(--teal);outline:0}
+.edu-question-controls{display:flex;align-items:center;justify-content:flex-end;gap:.38rem;min-width:0}
+.edu-question-controls select{min-width:0;max-width:122px;padding:3px 19px 3px 6px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font:9px/1.2 var(--mono);outline:0}
+.edu-question-controls select:focus{border-color:var(--teal);box-shadow:0 0 0 2px rgba(47,125,117,.12)}
 .edu-qb{display:grid;grid-template-columns:1fr 1.15fr}
 .edu-qv{display:flex;padding:.55rem;align-items:center;justify-content:center;border-right:1px solid var(--line)}
 .edu-qv svg{width:100%;max-width:96px;height:auto}
@@ -165,6 +168,9 @@ button,a,[role="button"]{cursor:pointer}
   .edu-shapes,.edu-field{display:none}
   .edu-foot{align-items:flex-start;flex-direction:column;gap:.8rem}
   .edu-foot-r{align-items:flex-start;flex-direction:column;gap:.6rem;text-align:left}
+  .edu-qh{align-items:flex-start;flex-direction:column}
+  .edu-question-controls{width:100%;justify-content:space-between}
+  .edu-question-controls select{max-width:48%}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
@@ -222,7 +228,7 @@ button,a,[role="button"]{cursor:pointer}
           <div class="edu-mod" role="button" tabindex="0"><span class="n">04</span><div class="b"><div class="mt">Mentorship &amp; Career</div><div class="ms">One-on-one guidance &amp; industry connections</div></div><span class="tg">Ongoing</span></div>
         </div>
         <div class="edu-quick">
-          <div class="edu-qh"><span class="lbl">Quick Take · Answer to Continue</span><button id="newProblem" type="button">New Problem →</button></div>
+          <div class="edu-qh"><span class="lbl">Quick Take · Answer to Continue</span><div class="edu-question-controls"><select id="problemGrade" aria-label="Choose a grade level"><option value="all">All grades</option><option value="6">Grade 6</option><option value="7">Grade 7</option><option value="8">Grade 8</option><option value="9">Grade 9</option><option value="10">Grade 10</option></select><select id="problemPicker" aria-label="Choose a math question"></select><button id="newProblem" type="button">New Problem →</button></div></div>
           <div class="edu-qb">
             <div class="edu-qv" id="problemVisual"></div>
             <div class="edu-qi">
@@ -279,6 +285,21 @@ button,a,[role="button"]{cursor:pointer}
     {id:'slope',category:'Algebra',title:'Slope Between Two Points',text:'Find the slope from (1, 3) to (5, 11).',given:'Enter the <b>slope</b>.',value:2,tolerance:.001,unit:'',displayAnswer:'2',type:'slope',data:{x1:1,y1:3,x2:5,y2:11},formula:'m = rise ÷ run',steps:['rise = 11 − 3 = 8','run = 5 − 1 = 4','m = 8 ÷ 4 = 2']},
     {id:'decimal-addition',category:'Decimals',title:'Adding Decimals',text:'Add 4.5 + 2.75.',given:'Find the <b>sum</b>.',value:7.25,tolerance:.001,unit:'',displayAnswer:'7.25',type:'decimal',data:{a:4.5,b:2.75},formula:'Line up decimal places',steps:['4.50 + 2.75','Add by place value','Total = 7.25']},
     {id:'sequence',category:'Patterns',title:'Continue the Pattern',text:'Find the next term: 5, 8, 11, 14, ...',given:'Enter the <b>next number</b>.',value:17,tolerance:.001,unit:'',displayAnswer:'17',type:'sequence',data:{values:[5,8,11,14]},formula:'Find the common difference',steps:['8 − 5 = 3','Each term increases by 3','14 + 3 = 17']}
+    ,{id:'g6-fraction-subtraction',grade:6,category:'Grade 6 Fractions',title:'Subtracting Fractions',text:'Evaluate 5/6 - 1/4.',given:'Enter a <b>fraction or decimal</b>.',value:7/12,tolerance:.001,unit:'',displayAnswer:'7/12',type:'equation',data:{equation:'5/6 - 1/4'},formula:'Use a common denominator',steps:['5/6 = 10/12 and 1/4 = 3/12','10/12 - 3/12 = 7/12','Answer: 7/12']}
+    ,{id:'g6-unit-rate',grade:6,category:'Grade 6 Ratios',title:'Unit Rate',text:'A car travels 156 miles in 3 hours at a constant speed.',given:'Find the <b>miles per hour</b>.',value:52,tolerance:.001,unit:'mph',displayAnswer:'52 mph',type:'order',data:{expression:'156 / 3'},formula:'rate = distance / time',steps:['156 miles / 3 hours','Divide distance by time','52 miles per hour']}
+    ,{id:'g6-percent',grade:6,category:'Grade 6 Percents',title:'Percent of a Quantity',text:'What is 35% of 60?',given:'Find the <b>amount</b>.',value:21,tolerance:.001,unit:'',displayAnswer:'21',type:'percent',data:{percent:35,total:60},formula:'percent x whole',steps:['35% = 0.35','0.35 x 60','21']}
+    ,{id:'g7-integers',grade:7,category:'Grade 7 Integers',title:'Adding Integers',text:'Evaluate -12 + 7.',given:'Enter the <b>integer result</b>.',value:-5,tolerance:.001,unit:'',displayAnswer:'-5',type:'order',data:{expression:'-12 + 7'},formula:'Move 7 units toward zero',steps:['Start at -12','Add 7','-12 + 7 = -5']}
+    ,{id:'g7-proportion',grade:7,category:'Grade 7 Proportions',title:'Solve a Proportion',text:'Five notebooks cost $15. At the same rate, how much do 8 notebooks cost?',given:'Find the <b>cost in dollars</b>.',value:24,tolerance:.001,unit:'dollars',displayAnswer:'$24',type:'equation',data:{equation:'15 / 5 = x / 8'},formula:'Find the unit price first',steps:['$15 / 5 = $3 each','8 notebooks x $3','Cost = $24']}
+    ,{id:'g7-distribution',grade:7,category:'Grade 7 Algebra',title:'Distributive Property',text:'Solve 2(3x - 4) = 16.',given:'Find the value of <b>x</b>.',value:4,tolerance:.001,unit:'',displayAnswer:'x = 4',type:'equation',data:{equation:'2(3x - 4) = 16'},formula:'Undo multiplication, then isolate x',steps:['3x - 4 = 8','3x = 12','x = 4']}
+    ,{id:'g8-pythagorean',grade:8,category:'Grade 8 Geometry',title:'Pythagorean Theorem',text:'A right triangle has legs of 5 cm and 12 cm.',given:'Find the <b>hypotenuse</b>.',value:13,tolerance:.001,unit:'cm',displayAnswer:'13 cm',type:'triangle',data:{a:5,b:12,mode:'hypotenuse'},formula:'a^2 + b^2 = c^2',steps:['5^2 + 12^2 = c^2','25 + 144 = 169','c = 13 cm']}
+    ,{id:'g8-linear-equation',grade:8,category:'Grade 8 Algebra',title:'Multi-Step Equation',text:'Solve 4(x - 3) = 20.',given:'Find the value of <b>x</b>.',value:8,tolerance:.001,unit:'',displayAnswer:'x = 8',type:'equation',data:{equation:'4(x - 3) = 20'},formula:'Undo multiplication, then add',steps:['x - 3 = 5','x = 5 + 3','x = 8']}
+    ,{id:'g8-exponent-rules',grade:8,category:'Grade 8 Exponents',title:'Exponent Rules',text:'Evaluate 2^5 x 2^3.',given:'Enter the <b>value</b>.',value:256,tolerance:.001,unit:'',displayAnswer:'256',type:'order',data:{expression:'2^5 x 2^3'},formula:'Add exponents with the same base',steps:['2^5 x 2^3 = 2^8','2^8 = 256','Answer: 256']}
+    ,{id:'g9-system',grade:9,category:'Grade 9 Algebra',title:'System of Equations',text:'For x + y = 10 and x - y = 4, find x.',given:'Enter the <b>value of x</b>.',value:7,tolerance:.001,unit:'',displayAnswer:'x = 7',type:'equation',data:{equation:'x + y = 10; x - y = 4'},formula:'Add the equations to eliminate y',steps:['2x = 14','Divide both sides by 2','x = 7']}
+    ,{id:'g9-function',grade:9,category:'Grade 9 Functions',title:'Evaluate a Function',text:'If f(x) = 2x^2 - 3x + 1, find f(4).',given:'Enter the <b>function value</b>.',value:21,tolerance:.001,unit:'',displayAnswer:'21',type:'equation',data:{equation:'f(4) = 2(4)^2 - 3(4) + 1'},formula:'Substitute x = 4',steps:['2(16) - 12 + 1','32 - 12 + 1','f(4) = 21']}
+    ,{id:'g9-quadratic-root',grade:9,category:'Grade 9 Quadratics',title:'Factoring a Quadratic',text:'Find the smaller solution of x^2 - 5x + 6 = 0.',given:'Enter the <b>smaller root</b>.',value:2,tolerance:.001,unit:'',displayAnswer:'2',type:'equation',data:{equation:'x^2 - 5x + 6 = 0'},formula:'Factor the trinomial',steps:['(x - 2)(x - 3) = 0','Roots are 2 and 3','Smaller root = 2']}
+    ,{id:'g10-similarity',grade:10,category:'Grade 10 Geometry',title:'Similar Figures',text:'A scale drawing uses 6 cm for 9 m. How many meters are represented by 10 cm?',given:'Find the <b>actual length in meters</b>.',value:15,tolerance:.001,unit:'m',displayAnswer:'15 m',type:'equation',data:{equation:'6 / 9 = 10 / x'},formula:'Keep the scale ratio equal',steps:['x = 10 x 9 / 6','x = 90 / 6','x = 15 m']}
+    ,{id:'g10-exponential',grade:10,category:'Grade 10 Exponents',title:'Exponential Growth',text:'$500 grows by 4% each year for 2 years. What is the value?',given:'Round to the nearest <b>cent</b>.',value:540.8,tolerance:.01,unit:'dollars',displayAnswer:'$540.80',type:'equation',data:{equation:'500(1.04)^2'},formula:'A = P(1 + r)^t',steps:['A = 500(1.04)^2','A = 500(1.0816)','A = $540.80']}
+    ,{id:'g10-arithmetic-sequence',grade:10,category:'Grade 10 Sequences',title:'Arithmetic Sequence',text:'A sequence starts 7, 12, 17, ... What is its 10th term?',given:'Enter the <b>10th term</b>.',value:52,tolerance:.001,unit:'',displayAnswer:'52',type:'equation',data:{equation:'a10 = 7 + 9(5)'},formula:'a_n = a_1 + (n - 1)d',steps:['First term = 7 and d = 5','a10 = 7 + 9(5)','a10 = 52']}
   ];
   const escapeSvgText=value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   const sceneFor=problem=>{
@@ -321,9 +342,31 @@ button,a,[role="button"]{cursor:pointer}
     board.innerHTML=`<g class="lesson-object" transform="translate(14 19) scale(.96)">${sceneFor(problem)}</g><path class="lesson-divider" d="M249 23v134"/><text class="lesson-kicker" x="274" y="30">${escapeSvgText(problem.category)} · ${escapeSvgText(problem.formula)}</text>${problem.steps.map((step,index)=>`<text class="lesson-step lesson-step-${index+1}${index===2?' lesson-step-final':''}" x="274" y="${64+index*39}">${escapeSvgText(step)}</text>`).join('')}`;
   };
   let restartLesson=()=>{};
-  let problemIndex=Math.floor(Math.random()*problems.length);
+  let selectedGrade='all';
+  let currentProblemId=problems[Math.floor(Math.random()*problems.length)].id;
+  const problemsForSelection=()=>selectedGrade==='all'?problems:problems.filter(problem=>String(problem.grade)===selectedGrade);
+  const currentProblem=()=>problems.find(problem=>problem.id===currentProblemId)||problemsForSelection()[0]||problems[0];
+  const syncProblemControls=()=>{
+    const grade=document.getElementById('problemGrade');
+    const picker=document.getElementById('problemPicker');
+    const problem=currentProblem();
+    grade.value=selectedGrade;
+    picker.replaceChildren(...problemsForSelection().map(item=>{
+      const option=document.createElement('option');
+      option.value=item.id;
+      option.textContent=`${item.grade?`Grade ${item.grade} · `:''}${item.title}`;
+      return option;
+    }));
+    picker.value=problem.id;
+  };
+  const chooseNextProblem=()=>{
+    const available=problemsForSelection();
+    const index=available.findIndex(problem=>problem.id===currentProblemId);
+    currentProblemId=available[(index+1+available.length)%available.length].id;
+    renderProblem();
+  };
   const renderProblem=()=>{
-    const problem=problems[problemIndex%problems.length];
+    const problem=currentProblem();
     const visual=document.getElementById('problemVisual');
     visual.dataset.problemId=problem.id;
     visual.innerHTML=`<svg viewBox="0 0 220 140" aria-hidden="true">${sceneFor(problem)}</svg>`;
@@ -341,6 +384,7 @@ button,a,[role="button"]{cursor:pointer}
     feedback.textContent='';
     feedback.className='av';
     document.getElementById('checkAnswer').disabled=false;
+    syncProblemControls();
     restartLesson();
   };
   const parseMathAnswer=raw=>{
@@ -350,9 +394,19 @@ button,a,[role="button"]{cursor:pointer}
     return Number.parseFloat(cleaned);
   };
   renderProblem();
-  document.getElementById('newProblem').addEventListener('click',()=>{problemIndex++;renderProblem()});
+  document.getElementById('newProblem').addEventListener('click',chooseNextProblem);
+  document.getElementById('problemGrade').addEventListener('change',event=>{
+    selectedGrade=event.target.value;
+    const available=problemsForSelection();
+    currentProblemId=available[Math.floor(Math.random()*available.length)].id;
+    renderProblem();
+  });
+  document.getElementById('problemPicker').addEventListener('change',event=>{
+    currentProblemId=event.target.value;
+    renderProblem();
+  });
   const checkMathAnswer=()=>{
-    const problem=problems[problemIndex%problems.length];
+    const problem=currentProblem();
     const input=document.getElementById('problemAnswerInput');
     const feedback=document.getElementById('problemFeedback');
     const submitted=parseMathAnswer(input.value);
@@ -414,8 +468,7 @@ button,a,[role="button"]{cursor:pointer}
       document.querySelector('.edu-thumb')?.focus();
       notify('Select the featured lesson to play or pause its preview.');
     }else{
-      problemIndex++;
-      renderProblem();
+      chooseNextProblem();
       notify('A new journal practice problem is ready.');
     }
   }));
@@ -426,7 +479,6 @@ button,a,[role="button"]{cursor:pointer}
   let lessonFrame=0;
   const lessonProgress=lesson.querySelector('.lesson-progress');
   const lessonTime=lesson.querySelector('.cap span');
-  const currentProblem=()=>problems[problemIndex%problems.length];
   const updateLesson=now=>{
     if(lesson.dataset.running!=='true')return;
     const elapsed=Math.min(lessonDuration,lessonElapsed+now-lessonStarted);

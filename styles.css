@@ -6,7 +6,7 @@
 @import url("./css/homepage.css?v=20260717-slim-loader-v35");
 @import url("./css/theme-consistency.css?v=20260717-unified-hover-v11");
 @import url("./css/default-theme-polish.css?v=20260717-v2");
-@import url("./css/settings-dashboard.css?v=20260717-static-cards-v3");
+@import url("./css/settings-dashboard.css?v=20260801-settings-tab-v4");
 @import url("./css/owner-dashboard.css?v=20260730-profile-effects-v5");
 @import url("./css/home-utilities.css?v=20260726-copyright-v8");
 @import url("./css/hover-consistency.css?v=20260726-single-shortcuts-v18");
@@ -217,7 +217,7 @@ body.browser-shell .nyx-profile-slot .nyx-account-button:hover{border-color:var(
 .nyx-account-menu::-webkit-scrollbar{display:none}
 .nyx-account-menu.show{opacity:1;transform:none}
 .nyx-account-menu-banner{
-  height:88px;
+  height:116px;
   margin:0 -8px;
   overflow:hidden;
   background:var(--nyx-account-banner,#5865f2);
@@ -291,7 +291,7 @@ body.browser-shell .nyx-profile-slot .nyx-account-button:hover{border-color:var(
 .nyx-account-menu-handle{
   margin:4px 0 0;
   color:#b5bac1;
-  font:500 13px/1.25 inherit;
+  font:500 15px/1.25 inherit;
 }
 .nyx-account-menu-bio{
   margin:14px 0 0;
@@ -519,6 +519,12 @@ html[data-nyx-theme] body.browser-shell{
   --nyx-control-surface:color-mix(in srgb,var(--nyx-unified-field) 88%,var(--nyx-unified-top));
   --nyx-control-hover:color-mix(in srgb,var(--nyx-chrome-active) 84%,var(--nyx-unified-field));
   --nyx-panel-surface:color-mix(in srgb,var(--nyx-home-panel-soft) 88%,var(--nyx-unified-canvas));
+  color:var(--nyx-home-text)!important;
+}
+html[data-nyx-theme] body.browser-shell .top-os.top-os{
+  background:var(--nyx-unified-top)!important;
+  background-image:none!important;
+  border-bottom-color:var(--nyx-home-line)!important;
   color:var(--nyx-home-text)!important;
 }
 html[data-nyx-theme] body.browser-shell:not(.three-d-backgrounds):not(.custom-bg-active),
@@ -2098,7 +2104,7 @@ html[data-nyx-theme] body.browser-shell .nyx-account-button-rich .nyx-account-bu
   border-radius:12px!important;
 }
 .nyx-account-menu-banner{
-  height:82px!important;
+  height:116px!important;
 }
 .nyx-account-menu-banner img,
 .nyx-user-profile-banner img,
@@ -2331,22 +2337,23 @@ html body .nyx-styled-display-name.nyx-name-font-wide[class]{font-family:"Arial 
 html body .nyx-styled-display-name.nyx-name-font-slab[class]{font-family:Rockwell,"Roboto Slab","Palatino Linotype",Georgia,serif!important;font-size:1.06em!important;font-weight:900!important;letter-spacing:-.02em}
 html body .nyx-styled-display-name.nyx-name-font-condensed[class]{font-family:"Bahnschrift Condensed","Arial Narrow","Roboto Condensed",sans-serif!important;font-size:1.1em!important;font-stretch:condensed;font-weight:800!important;letter-spacing:.015em}
 html body .nyx-styled-display-name.nyx-name-font-mono-block[class]{font-family:"Cascadia Mono","Segoe UI Mono","Courier New",monospace!important;font-size:1.02em!important;font-weight:900!important;letter-spacing:-.055em}
-html body .nyx-styled-display-name.nyx-name-font-tempo[class]{font-family:Impact,"Arial Black",sans-serif!important;font-weight:500!important;letter-spacing:.02em}
-html body .nyx-styled-display-name.nyx-name-font-sakura[class]{font-family:"Segoe Script","Brush Script MT",cursive!important;font-weight:700!important}
-html body .nyx-styled-display-name.nyx-name-font-jellybean[class]{font-family:"Comic Sans MS","Trebuchet MS",cursive!important;font-weight:700!important;letter-spacing:.01em}
-html body .nyx-styled-display-name.nyx-name-font-modern[class]{font-family:"Arial Narrow","Helvetica Neue",Arial,sans-serif!important;font-weight:800!important;letter-spacing:.07em;text-transform:uppercase}
-html body .nyx-styled-display-name.nyx-name-font-medieval[class]{font-family:"Palatino Linotype","Book Antiqua",Georgia,serif!important;font-weight:700!important;letter-spacing:.025em}
-html body .nyx-styled-display-name.nyx-name-font-eight-bit[class]{font-family:"Cascadia Mono","Courier New",monospace!important;font-weight:800!important;letter-spacing:-.06em;text-transform:uppercase}
-html body .nyx-styled-display-name.nyx-name-font-vampyre[class]{font-family:Copperplate,"Times New Roman",serif!important;font-weight:800!important;font-variant:small-caps;letter-spacing:.07em}
+html body .nyx-styled-display-name.nyx-name-font-tempo[class]{font-family:Impact,"Arial Black",sans-serif!important;font-size:1.12em!important;font-weight:500!important;letter-spacing:.02em}
+html body .nyx-styled-display-name.nyx-name-font-sakura[class]{font-family:"Segoe Script","Brush Script MT",cursive!important;font-size:1.14em!important;font-weight:700!important}
+html body .nyx-styled-display-name.nyx-name-font-jellybean[class]{font-family:"Comic Sans MS","Trebuchet MS",cursive!important;font-size:1.06em!important;font-weight:700!important;letter-spacing:.01em}
+html body .nyx-styled-display-name.nyx-name-font-modern[class]{font-family:"Arial Narrow","Helvetica Neue",Arial,sans-serif!important;font-size:1.08em!important;font-weight:800!important;letter-spacing:.07em;text-transform:uppercase}
+html body .nyx-styled-display-name.nyx-name-font-medieval[class]{font-family:"Palatino Linotype","Book Antiqua",Georgia,serif!important;font-size:1.08em!important;font-weight:700!important;letter-spacing:.025em}
+html body .nyx-styled-display-name.nyx-name-font-eight-bit[class]{font-family:"Cascadia Mono","Courier New",monospace!important;font-size:1.07em!important;font-weight:800!important;letter-spacing:-.06em;text-transform:uppercase}
+html body .nyx-styled-display-name.nyx-name-font-vampyre[class]{font-family:Copperplate,"Times New Roman",serif!important;font-size:1.08em!important;font-weight:800!important;font-variant:small-caps;letter-spacing:.07em}
 .nyx-name-effect-solid{color:var(--nyx-name-color-primary,#fff)!important;-webkit-text-fill-color:var(--nyx-name-color-primary,#fff)!important}
 .nyx-name-effect-gradient,.nyx-name-effect-neon,.nyx-name-effect-pop{background:linear-gradient(105deg,var(--nyx-name-color-primary,#fff),var(--nyx-name-color-secondary,#8ea1ff),var(--nyx-name-color-primary,#fff));background-size:220% 100%;background-clip:text;-webkit-background-clip:text;color:transparent!important;-webkit-text-fill-color:transparent!important}
 .nyx-name-effect-gradient{animation:nyx-name-gradient 5s ease-in-out infinite}
 .nyx-name-effect-neon{text-shadow:0 0 5px color-mix(in srgb,var(--nyx-name-color-primary,#fff) 88%,transparent),0 0 12px color-mix(in srgb,var(--nyx-name-color-secondary,#8ea1ff) 78%,transparent),0 0 22px color-mix(in srgb,var(--nyx-name-color-secondary,#8ea1ff) 58%,transparent);animation:nyx-name-neon 2.4s ease-in-out infinite}
-.nyx-name-effect-toon{color:var(--nyx-name-color-primary,#fff)!important;-webkit-text-fill-color:var(--nyx-name-color-primary,#fff)!important;-webkit-text-stroke:1px color-mix(in srgb,var(--nyx-name-color-secondary,#8ea1ff) 76%,#17181b);text-shadow:2px 2px 0 var(--nyx-name-color-secondary,#8ea1ff),3px 3px 0 rgba(0,0,0,.42)}
+.nyx-name-effect-toon{color:var(--nyx-name-color-primary,#fff)!important;-webkit-text-fill-color:var(--nyx-name-color-primary,#fff)!important;-webkit-text-stroke:1px color-mix(in srgb,var(--nyx-name-color-secondary,#8ea1ff) 76%,#17181b);text-shadow:2px 2px 0 var(--nyx-name-color-secondary,#8ea1ff),3px 3px 0 rgba(0,0,0,.42);animation:nyx-name-toon 2.8s ease-in-out infinite;transform-origin:center bottom}
 .nyx-name-effect-pop{filter:drop-shadow(0 2px 0 color-mix(in srgb,var(--nyx-name-color-secondary,#8ea1ff) 72%,#111));animation:nyx-name-gradient 4.6s linear infinite,nyx-name-pop 2.8s ease-in-out infinite;transform-origin:center bottom}
 @keyframes nyx-name-gradient{0%,100%{background-position:0 50%}50%{background-position:100% 50%}}
 @keyframes nyx-name-neon{0%,100%{filter:brightness(.9)}50%{filter:brightness(1.28)}}
 @keyframes nyx-name-pop{0%,82%,100%{transform:translateY(0) scale(1)}88%{transform:translateY(-2px) scale(1.035)}93%{transform:translateY(0) scale(.985)}}
+@keyframes nyx-name-toon{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-1px) rotate(-.45deg)}}
 
 html[data-nyx-theme] body .nyx-profile-display-section .nyx-display-name-style-launcher{
   display:grid!important;
@@ -3602,8 +3609,229 @@ html body .lion-ai-clear{
   -webkit-text-fill-color:var(--ai-muted)!important;
 }
 html body .lion-ai-preview{border-color:var(--ai-line)!important;background:var(--glass,rgba(8,7,13,.82))!important}
+/* Custom themes own every Nyx chrome surface. External page content and
+   profile-specific accents intentionally remain untouched. */
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom{
+  --glass:var(--nyx-custom-canvas)!important;
+  --glass-panel:var(--nyx-custom-panel)!important;
+  --glass-control:var(--nyx-custom-field)!important;
+  --text:var(--nyx-custom-text)!important;
+  --muted:var(--nyx-custom-muted)!important;
+  --ai-accent:var(--nyx-custom-accent)!important;
+  --ai-line:var(--nyx-custom-line)!important;
+  --ai-muted:var(--nyx-custom-muted)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom :is(
+  .browser-mode-app-button,
+  .browser-mode-tab,
+  .browser-mode-shell-tab,
+  .browser-mode-address>button,
+  .browser-mode-url,
+  .browser-mode-menu,
+  .browser-bookmark-panel,
+  .browser-search-suggestions,
+  .browser-suggestions,
+  .weather-panel,
+  .weather-restore,
+  .apps-panel,
+  .lion-ai,
+  .lion-ai-form,
+  .lion-ai-msg,
+  .lion-ai-preview
+){
+  background-color:var(--nyx-custom-field)!important;
+  background-image:none!important;
+  border-color:var(--nyx-custom-line)!important;
+  color:var(--nyx-custom-text)!important;
+  -webkit-text-fill-color:var(--nyx-custom-text)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom :is(
+  .browser-mode-menu,
+  .browser-bookmark-panel,
+  .browser-search-suggestions,
+  .browser-suggestions,
+  .weather-panel,
+  .weather-restore,
+  .apps-panel,
+  .lion-ai
+){background-color:var(--nyx-custom-panel)!important}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom :is(
+  .browser-mode-app-button.active,
+  .browser-mode-shell-tab.active,
+  .browser-mode-app-button:hover,
+  .browser-mode-shell-tab:hover,
+  .browser-mode-tab:hover,
+  .browser-mode-address>button:hover,
+  .browser-mode-menu>button:hover,
+  .browser-bookmark-panel button:hover,
+  .browser-search-suggestion:hover
+){
+  background-color:color-mix(in srgb,var(--nyx-custom-panel) 82%,var(--nyx-custom-accent))!important;
+  border-color:var(--nyx-custom-bright)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom :is(
+  .browser-shell-settings-overlay,
+  .browser-shell-settings-panel,
+  .nyx-settings-side,
+  .nyx-settings-dashboard>.settings-main
+){
+  background-color:var(--nyx-custom-canvas)!important;
+  background-image:none!important;
+  border-color:var(--nyx-custom-line)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom :is(
+  .nyx-settings-group>.settings-block,
+  .nyx-settings-filter,
+  .nyx-settings-control :is(input,select,textarea,.settings-input,.settings-select,.panic-key-display)
+){
+  background-color:var(--nyx-custom-field)!important;
+  background-image:none!important;
+  border-color:var(--nyx-custom-line)!important;
+  color:var(--nyx-custom-text)!important;
+  -webkit-text-fill-color:var(--nyx-custom-text)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom .nyx-settings-nav button.active{
+  background-color:var(--nyx-custom-panel)!important;
+  color:var(--nyx-custom-text)!important;
+  -webkit-text-fill-color:var(--nyx-custom-text)!important;
+}
+/* Some older chrome rules deliberately use ID-weighted :is() selectors.
+   Match that specificity so a custom palette remains authoritative. */
+html[data-nyx-theme="custom"][data-nyx-theme="custom"] body.browser-shell.browser-shell.theme-custom:is(body,#nyx-final-theme-contract):is(body,#nyx-final-theme-controls) .top-os.top-os{
+  background-color:var(--nyx-custom-top)!important;
+  background-image:none!important;
+  border-bottom-color:var(--nyx-custom-line)!important;
+  color:var(--nyx-custom-text)!important;
+}
+html[data-nyx-theme="custom"][data-nyx-theme="custom"] body.browser-shell.browser-shell.theme-custom:is(body,#nyx-final-theme-contract):is(body,#nyx-final-theme-controls) .top-os.top-os .browser-mode-app-button,
+html[data-nyx-theme="custom"][data-nyx-theme="custom"] body.browser-shell.browser-shell.theme-custom:is(body,#nyx-final-theme-contract):is(body,#nyx-final-theme-controls) .top-os.top-os .browser-mode-tab,
+html[data-nyx-theme="custom"][data-nyx-theme="custom"] body.browser-shell.browser-shell.theme-custom:is(body,#nyx-final-theme-contract):is(body,#nyx-final-theme-controls) .top-os.top-os .browser-mode-shell-tab,
+html[data-nyx-theme="custom"][data-nyx-theme="custom"] body.browser-shell.browser-shell.theme-custom:is(body,#nyx-final-theme-contract):is(body,#nyx-final-theme-controls) .top-os.top-os .browser-mode-address>button{
+  background-color:var(--nyx-custom-field)!important;
+  background-image:none!important;
+  border-color:var(--nyx-custom-line)!important;
+  color:var(--nyx-custom-text)!important;
+  -webkit-text-fill-color:var(--nyx-custom-text)!important;
+  box-shadow:none!important;
+}
+html[data-nyx-theme="custom"][data-nyx-theme="custom"] body.browser-shell.browser-shell.theme-custom:is(body,#nyx-final-theme-contract):is(body,#nyx-final-theme-controls) .top-os.top-os .browser-mode-app-button.active,
+html[data-nyx-theme="custom"][data-nyx-theme="custom"] body.browser-shell.browser-shell.theme-custom:is(body,#nyx-final-theme-contract):is(body,#nyx-final-theme-controls) .top-os.top-os .browser-mode-shell-tab.active,
+html[data-nyx-theme="custom"][data-nyx-theme="custom"] body.browser-shell.browser-shell.theme-custom:is(body,#nyx-final-theme-contract):is(body,#nyx-final-theme-controls) .top-os.top-os :is(.browser-mode-app-button,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-address>button):hover{
+  background-color:color-mix(in srgb,var(--nyx-custom-panel) 82%,var(--nyx-custom-accent))!important;
+  border-color:var(--nyx-custom-bright)!important;
+}
+@media(prefers-reduced-motion:reduce){
+  .nyx-styled-display-name{animation:none!important}
+}
 @media(max-width:560px){
   html body .lion-ai-model-pill strong{display:none}
   html body .lion-ai-model-pill{width:31px;padding:0;justify-content:center}
   html body .lion-ai-empty{padding:18px 13px}
+}
+
+/* Custom home colors: preserve the default homepage's exact layout, artwork,
+   opacity, shadows, and motion while replacing only its fixed navy palette. */
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default{
+  --nyx-title-theme-color:var(--nyx-custom-bright)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default .browser-home{
+  --nyx-dot-color:var(--nyx-custom-dot)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default .browser-window.browser-home-page .browser-home::before{
+  background:linear-gradient(180deg,color-mix(in srgb,var(--nyx-custom-top) 30%,transparent),transparent 150px)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default .browser-home .nyx-home-hero::before{
+  color:var(--nyx-custom-muted)!important;
+  -webkit-text-fill-color:var(--nyx-custom-muted)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default .browser-window.browser-home-page .nyx-home-search{
+  border-color:var(--nyx-custom-line)!important;
+  background-color:var(--nyx-custom-field)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default .browser-window.browser-home-page .nyx-home-search-icon{
+  background-color:var(--nyx-custom-bright)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default .browser-window.browser-home-page .nyx-home-actions{
+  border-color:var(--nyx-custom-line)!important;
+  background-color:color-mix(in srgb,var(--nyx-custom-field) 78%,transparent)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default .browser-window.browser-home-page .nyx-home-actions>button{
+  color:var(--nyx-custom-muted)!important;
+  -webkit-text-fill-color:var(--nyx-custom-muted)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default .browser-window.browser-home-page .nyx-home-actions>button:hover{
+  background-color:var(--nyx-custom-panel)!important;
+  color:var(--nyx-custom-text)!important;
+  -webkit-text-fill-color:var(--nyx-custom-text)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default .browser-window.browser-home-page .nyx-home-action-icon{
+  background-color:var(--nyx-custom-accent)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default .nyx-home-presence{
+  border-color:var(--nyx-custom-line)!important;
+  background-color:color-mix(in srgb,var(--nyx-custom-field) 76%,transparent)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default .browser-home .home-shortcut-grid .home-shortcut-open::before,
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default .browser-home .home-shortcut-grid .home-shortcut-add b{
+  border-color:var(--nyx-custom-line)!important;
+  background-color:var(--nyx-custom-field)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default .browser-home .home-shortcut-grid .home-shortcut:hover .home-shortcut-open::before{
+  border-color:var(--nyx-custom-bright)!important;
+  background-color:var(--nyx-custom-panel)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default .browser-home .home-shortcut-grid .home-shortcut-glyph{
+  background-color:var(--nyx-custom-accent)!important;
+}
+/* The default home sheet also assigns text colors directly. Keep its visual
+   structure, but let every home label inherit the selected custom palette. */
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default .browser-window.browser-home-page :is(
+  .nyx-home-title,
+  .nyx-home-presence,
+  .nyx-home-presence .nyx-account-button,
+  .nyx-home-weather strong,
+  .nyx-home-actions>button,
+  .home-shortcut-grid .quick-tile span,
+  .home-shortcut-grid .home-shortcut-open,
+  .home-shortcut-grid .home-shortcut-add,
+  .nyx-home-link-checker,
+  .nyx-home-utility-links a
+){
+  color:var(--nyx-custom-text)!important;
+  -webkit-text-fill-color:var(--nyx-custom-text)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default .browser-window.browser-home-page :is(
+  .nyx-home-hero::before,
+  .nyx-home-weather>span:last-child,
+  .nyx-home-search input::placeholder,
+  .nyx-home-actions>button,
+  .home-shortcut-grid .quick-tile span,
+  .nyx-home-link-checker,
+  .nyx-home-utility-links a
+){
+  color:var(--nyx-custom-muted)!important;
+  -webkit-text-fill-color:var(--nyx-custom-muted)!important;
+}
+html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default .top-os :is(.urlbar,.urlbar::placeholder,.browser-mode-url,.browser-mode-url::placeholder){
+  color:var(--nyx-custom-muted)!important;
+  -webkit-text-fill-color:var(--nyx-custom-muted)!important;
+}
+/* These three default-home details have their own direct color declarations. */
+html[data-nyx-theme="custom"][data-nyx-theme="custom"] body.browser-shell.browser-shell.theme-custom.theme-default:is(body,#nyx-custom-home-text):is(body,#nyx-custom-home-labels)
+  .browser-home .nyx-home-hero::before{
+  color:var(--nyx-custom-muted)!important;
+  -webkit-text-fill-color:var(--nyx-custom-muted)!important;
+}
+html[data-nyx-theme="custom"][data-nyx-theme="custom"] body.browser-shell.browser-shell.theme-custom.theme-default:is(body,#nyx-custom-home-text):is(body,#nyx-custom-home-labels)
+  .browser-window.browser-home-page .nyx-home-search input::placeholder{
+  color:var(--nyx-custom-muted)!important;
+  -webkit-text-fill-color:var(--nyx-custom-muted)!important;
+}
+html[data-nyx-theme="custom"][data-nyx-theme="custom"] body.browser-shell.browser-shell.theme-custom.theme-default:is(body,#nyx-custom-home-text):is(body,#nyx-custom-home-labels)
+  .browser-window.browser-home-page .browser-home h1.nyx-home-title::before{
+  background-color:transparent!important;
+  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-logo.png"))!important;
+  -webkit-mask:none!important;
+  mask:none!important;
+  filter:var(--nyx-custom-logo-filter,none)!important;
 }

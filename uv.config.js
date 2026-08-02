@@ -8,6 +8,6 @@ self.__uv$config = {
   handler: "/uv/uv.handler.js",
   bundle: "/uv/uv.bundle.js",
   config: "/uv.config.js",
-  sw: "/uv.sw.js?v=nyx-uv-v5-20260715-search-interaction",
+  sw: "/uv.sw.js?v=nyx-uv-v7-20260801-critical-asset-recovery",
   client: "/uv/uv.client.js"
 };

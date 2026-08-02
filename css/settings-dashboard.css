@@ -1,7 +1,7 @@
 /* DogeUB-style settings workspace: exact geometry and restrained navy palette. */
 html body.browser-shell .browser-shell-settings-overlay{
   position:fixed!important;
-  inset:96px 0 0!important;
+  inset:var(--nyx-interface-bar) 0 0!important;
   z-index:2200!important;
   display:block!important;
   padding:0!important;
@@ -449,7 +449,7 @@ html body.browser-shell .settings-preset[data-preset="nyx"]:hover .quick-icon{tr
 }
 
 @media(max-width:620px){
-  html body.browser-shell .browser-shell-settings-overlay{inset:96px 0 0!important}
+  html body.browser-shell .browser-shell-settings-overlay{inset:var(--nyx-interface-bar) 0 0!important}
   html body.browser-shell.browser-shell .browser-shell-settings-panel .settings-app.nyx-settings-dashboard{grid-template-columns:1fr!important;grid-template-rows:auto minmax(0,1fr)!important}
   html body.browser-shell .nyx-settings-side{padding:10px!important;border-right:0!important;border-bottom:1px solid rgba(255,255,255,.05)!important}
   html body.browser-shell .nyx-settings-filter{width:100%!important;margin:0 0 8px!important}

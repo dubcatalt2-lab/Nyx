@@ -688,7 +688,7 @@
     const background=profile.bannerUrl?`<img src="${esc(nyxProfileStillSource(profile.bannerUrl))}" alt="" aria-hidden="true">`:'';
     if(options.compactPreview){
       const previewActions=`<div class="nyx-account-menu-group nyx-editor-menu-preview-actions" aria-hidden="true"><button type="button" tabindex="-1">${nyxAccountMenuIcon('edit')}<span>Edit Profile</span></button><hr><button type="button" tabindex="-1"><i class="nyx-user-status nyx-user-status-${esc(profile.status)}"></i><span>${esc(statusLabel)}</span>${nyxAccountMenuIcon('chevron')}</button></div><div class="nyx-account-menu-group nyx-editor-menu-preview-actions" aria-hidden="true"><button type="button" tabindex="-1">${nyxAccountMenuIcon('switch')}<span>Switch Accounts</span>${nyxAccountMenuIcon('chevron')}</button><hr><button type="button" tabindex="-1">${nyxAccountMenuIcon('id')}<span>Copy User ID</span></button></div>`;
-      return `<section class="nyx-editor-menu-preview nyx-account-menu show ${nyxProfileEffectClass(profile)}" style="--nyx-account-primary:${profile.accentPrimary};--nyx-account-secondary:${profile.accentSecondary};--nyx-account-banner:${profile.bannerColor};--nyx-user-accent-primary:${profile.accentPrimary};--nyx-user-accent-secondary:${profile.accentSecondary};--nyx-user-banner-color:${profile.bannerColor};${nyxProfileEffectVars(profile)}"><i class="nyx-user-profile-effect nyx-account-menu-profile-effect" aria-hidden="true"></i><div class="nyx-account-menu-banner">${background}${mediaEdit('banner','Edit profile banner')}</div><div class="nyx-account-menu-profile"><div class="nyx-account-menu-avatar nyx-avatar-decoration-${esc(profile.avatarDecoration)}">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i>${mediaEdit('avatar','Edit profile picture')}</div><span class="nyx-account-menu-status">${esc(profile.customStatus||statusLabel)}</span><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p class="nyx-account-menu-handle">${esc(profile.handle)}</p><p class="nyx-account-menu-bio">${esc(profile.bio||'No bio yet.')}</p></div>${previewActions}</section>`;
+      return `<section class="nyx-editor-menu-preview nyx-account-menu show ${nyxProfileEffectClass(profile)}" style="--nyx-account-primary:${profile.accentPrimary};--nyx-account-secondary:${profile.accentSecondary};--nyx-account-banner:${profile.bannerColor};--nyx-user-accent-primary:${profile.accentPrimary};--nyx-user-accent-secondary:${profile.accentSecondary};--nyx-user-banner-color:${profile.bannerColor};${nyxProfileEffectVars(profile)}"><i class="nyx-user-profile-effect nyx-account-menu-profile-effect" aria-hidden="true"></i><div class="nyx-account-menu-banner">${background}${mediaEdit('banner','Edit profile banner')}</div><div class="nyx-account-menu-profile"><div class="nyx-account-menu-avatar nyx-avatar-decoration-${esc(profile.avatarDecoration)}" data-nyx-direct-edit="avatar">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i></div><span class="nyx-account-menu-status">${esc(profile.customStatus||statusLabel)}</span><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p class="nyx-account-menu-handle">${esc(profile.handle)}</p><p class="nyx-account-menu-bio">${esc(profile.bio||'No bio yet.')}</p></div>${previewActions}</section>`;
     }
     return `<section class="nyx-user-profile-card ${nyxProfileEffectClass(profile)}" style="--nyx-user-accent-primary:${profile.accentPrimary};--nyx-user-accent-secondary:${profile.accentSecondary};--nyx-user-banner-color:${profile.bannerColor};${nyxProfileEffectVars(profile)}"><i class="nyx-user-profile-effect" aria-hidden="true"></i><div class="nyx-user-profile-banner">${background}${mediaEdit('banner','Edit profile banner')}</div><div class="nyx-user-profile-chrome"><div class="nyx-user-profile-avatar nyx-avatar-decoration-${esc(profile.avatarDecoration)}">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i>${mediaEdit('avatar','Edit profile picture')}</div></div><div class="nyx-user-profile-body"><div class="nyx-user-profile-heading"><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p>${esc(profile.handle)}</p></div><p class="nyx-user-profile-custom-status">${symbol('status')} ${esc(profile.customStatus||`${statusLabel} on Nyx`)}</p><section class="nyx-user-profile-about"><h3>About me</h3><p class="nyx-user-profile-bio">${esc(profile.bio||'No bio yet.')}</p></section><section class="nyx-user-profile-roles"><h3>Roles</h3><div class="nyx-user-role-list">${roles}</div></section><section class="nyx-user-profile-details"><h3>Nyx member since</h3><p>${esc(joined)}</p></section>${ownerActions}</div></section>`;
   }
@@ -795,6 +795,9 @@
     overlay.innerHTML=`
       <section class="nyx-user-profile-dialog" role="dialog" aria-modal="true" aria-labelledby="nyxUserProfileTitle">
         <main class="nyx-discord-profile-main">
+          <button class="nyx-founder-editor-close nyx-discord-settings-close" data-close-nyx-profile type="button" aria-label="Close">
+            <span aria-hidden="true">&#215;</span><small>ESC</small>
+          </button>
           <div class="nyx-discord-profile-scroll">
             <header class="nyx-discord-profile-header">
               <h2 id="nyxUserProfileTitle">Profiles</h2>
@@ -849,12 +852,12 @@
               </form>
               <aside class="nyx-discord-preview-pane">
                 <h3>Preview</h3>
-                <div class="nyx-user-profile-view">${nyxUserProfileCardMarkup(profile,{editable:true,compactPreview:true})}</div>
+                <div class="nyx-user-profile-view">${nyxUserProfileCardMarkup(profile,{editable:true})}</div>
               </aside>
             </div>
           </div>
         </main>
-      </section>`;
+    </section>`;
     document.body.appendChild(overlay);
     requestAnimationFrame(()=>overlay.classList.add('show'));
     const close=()=>{
@@ -865,19 +868,11 @@
       setTimeout(()=>overlay.remove(),240);
     };
     overlay.addEventListener('click',async event=>{
-      if(event.target===overlay){close();return}
+      if(event.target===overlay||event.target.closest('[data-close-nyx-profile]')){close();return}
       const action=event.target.closest('[data-nyx-profile-action]')?.dataset.nyxProfileAction;
       if(!action)return;
-      if(action==='status'||action==='custom-status'){
-        overlay.querySelector('[data-nyx-editor-tab="advanced"]')?.click();
-        const field=overlay.querySelector(`[name="${action==='status'?'status':'customStatus'}"]`);
-        requestAnimationFrame(()=>{
-          field?.scrollIntoView({block:'center',behavior:'smooth'});
-          field?.focus();
-          if(action==='status'){try{field?.showPicker?.()}catch{}}else field?.select();
-        });
-        return;
-      }
+      if(action==='status'){const field=overlay.querySelector('[name="status"]');field?.scrollIntoView({block:'center',behavior:'smooth'});field?.focus();try{field?.showPicker?.()}catch{}return}
+      if(action==='custom-status'){const field=overlay.querySelector('[name="customStatus"]');field?.scrollIntoView({block:'center',behavior:'smooth'});field?.focus();field?.select();return}
       if(action==='switch-account'){close();await signOutFounderOwner();await openNyxAccountAccess()}
     });
     const form=overlay.querySelector('form');
@@ -1014,98 +1009,6 @@
     customEffectBuilder.innerHTML=`<button type="button" data-nyx-custom-effect-create>Create custom effect</button><div class="nyx-profile-custom-effect-controls" data-nyx-custom-effect-controls ${profile.profileEffect==='custom'?'':'hidden'}><label>Pattern<select name="customEffectPattern"><option value="starfield">Starfield</option><option value="aurora">Aurora waves</option><option value="comets">Comets</option><option value="grid">Digital grid</option></select></label><label>Primary effect color<input name="customEffectColorPrimary" type="color" value="${profile.customEffectColorPrimary}"></label><label>Secondary effect color<input name="customEffectColorSecondary" type="color" value="${profile.customEffectColorSecondary}"></label><label>Animation time <output data-nyx-custom-speed>${profile.customEffectSpeed}s</output><input name="customEffectSpeed" type="range" min="2" max="18" step="1" value="${profile.customEffectSpeed}"><small>Lower is faster.</small></label><label>Intensity <output data-nyx-custom-intensity>${profile.customEffectIntensity}%</output><input name="customEffectIntensity" type="range" min="20" max="100" step="5" value="${profile.customEffectIntensity}"></label></div>`;
     form.querySelector('.nyx-profile-color-grid')?.appendChild(customEffectBuilder);
     customEffectBuilder.querySelector('[name="customEffectPattern"]').value=profile.customEffectPattern;
-    const avatarSection=railSections[1];
-    const effectsSection=railSections[2];
-    const imageList=avatarSection?.querySelector('.nyx-profile-image-list');
-    const avatarControl=imageList?.querySelector('.nyx-profile-image-control:first-child');
-    const bannerControl=imageList?.querySelector('.nyx-profile-image-control:nth-child(2)');
-    const colorGrid=effectsSection?.querySelector('.nyx-profile-color-grid');
-    const primaryColorField=form.querySelector('[name="accentPrimary"]')?.closest('label');
-    const secondaryColorField=form.querySelector('[name="accentSecondary"]')?.closest('label');
-    const bannerColorField=form.querySelector('[name="bannerColor"]')?.closest('label');
-    const profileEffectField=form.querySelector('[name="profileEffect"]')?.closest('label');
-    const createVisualPanel=(panel,title,description='')=>{
-      const section=document.createElement('section');
-      section.className='nyx-profile-editor-section nyx-profile-visual-panel';
-      section.dataset.nyxEditorPanel=panel;
-      section.innerHTML=`<div class="nyx-profile-panel-heading"><div><h4>${title}</h4>${description?`<p>${description}</p>`:''}</div></div>`;
-      return section;
-    };
-    const bannerSection=createVisualPanel('banner','Banner','Choose the image that frames your profile.');
-    const colorsSection=createVisualPanel('colors','Colors','Build a recognizable profile palette.');
-    const colorsControls=document.createElement('div');
-    colorsControls.className='nyx-profile-color-grid nyx-profile-visual-color-grid';
-    [primaryColorField,secondaryColorField,bannerColorField].filter(Boolean).forEach(field=>colorsControls.appendChild(field));
-    const palette=document.createElement('div');
-    palette.className='nyx-profile-palette';
-    palette.setAttribute('aria-label','Profile color palettes');
-    const palettes=[
-      ['Sky','#5865f2','#8ea1ff','#202b52'],['Rose','#e96cae','#f3a4d1','#4a263d'],['Mint','#44c48a','#7ee1ba','#153b31'],
-      ['Amber','#e99a3c','#f4c46c','#47321a'],['Violet','#9667ef','#c29cff','#33204b'],['Mono','#c9ccd4','#8f95a4','#31343b']
-    ];
-    palette.innerHTML=palettes.map(([name,primary,secondary,banner])=>`<button type="button" data-nyx-profile-palette="${primary},${secondary},${banner}" style="--nyx-palette-primary:${primary};--nyx-palette-secondary:${secondary};--nyx-palette-banner:${banner}" aria-label="Use ${name} palette"><i></i><span>${name}</span></button>`).join('');
-    colorsSection.append(colorsControls,palette);
-    const decorationsSection=createVisualPanel('decorations','Decorations','Add a frame that follows your avatar.');
-    if(decorationField)decorationsSection.appendChild(decorationField);
-    const badgesSection=createVisualPanel('badges','Badges','Recognition is added automatically as you earn it on Nyx.');
-    badgesSection.insertAdjacentHTML('beforeend','<div class="nyx-profile-earned-badges"><span aria-hidden="true">✦</span><div><strong>Earned badges</strong><small>Your account badges appear in the live preview when available.</small></div></div>');
-    if(imageList&&avatarControl){imageList.replaceChildren(avatarControl);}
-    if(bannerControl){
-      const bannerList=document.createElement('div');
-      bannerList.className='nyx-profile-image-list';
-      bannerList.appendChild(bannerControl);
-      bannerSection.appendChild(bannerList);
-    }
-    if(colorGrid){
-      colorGrid.className='nyx-profile-effect-stack';
-      [profileEffectField,customEffectBuilder].filter(Boolean).forEach(field=>colorGrid.appendChild(field));
-    }
-    if(effectsSection)effectsSection.querySelector('h4').textContent='Effects';
-    if(avatarSection)avatarSection.querySelector('h4').textContent='Avatar';
-    if(railSections[0])railSections[0].querySelector('h4').textContent='Identity';
-    if(displaySection)displaySection.dataset.nyxEditorPanel='identity';
-    if(railSections[0])railSections[0].dataset.nyxEditorPanel='identity';
-    if(avatarSection)avatarSection.dataset.nyxEditorPanel='avatar';
-    if(effectsSection)effectsSection.dataset.nyxEditorPanel='effects';
-    if(detailsSection)detailsSection.dataset.nyxEditorPanel='advanced';
-    const profileEditorPanels=[railSections[0],displaySection,avatarSection,bannerSection,colorsSection,effectsSection,decorationsSection,badgesSection,detailsSection].filter(Boolean);
-    const editorTabs=document.createElement('nav');
-    editorTabs.className='nyx-profile-editor-tabs';
-    editorTabs.setAttribute('aria-label','Profile customization sections');
-    const tabs=[['identity','Identity'],['avatar','Avatar'],['banner','Banner'],['colors','Colors'],['effects','Effects'],['decorations','Decor'],['badges','Badges'],['advanced','Advanced']];
-    editorTabs.innerHTML=tabs.map(([panel,label],index)=>`<button type="button" data-nyx-editor-tab="${panel}" aria-selected="${index===0?'true':'false'}">${label}</button>`).join('');
-    form.querySelector('.nyx-profile-rail-header')?.after(editorTabs);
-    const setProfileEditorPanel=panel=>{
-      editorTabs.querySelectorAll('[data-nyx-editor-tab]').forEach(tab=>{
-        const active=tab.dataset.nyxEditorTab===panel;
-        tab.classList.toggle('active',active);
-        tab.setAttribute('aria-selected',String(active));
-      });
-      profileEditorPanels.forEach(section=>{section.hidden=section.dataset.nyxEditorPanel!==panel});
-      form.dataset.nyxEditorPanel=panel;
-      form.scrollTo({top:0,behavior:'smooth'});
-    };
-    editorTabs.addEventListener('click',event=>{
-      const tab=event.target.closest('[data-nyx-editor-tab]');
-      if(tab)setProfileEditorPanel(tab.dataset.nyxEditorTab);
-    });
-    palette.addEventListener('click',event=>{
-      const choice=event.target.closest('[data-nyx-profile-palette]');
-      if(!choice)return;
-      const [primary,secondary,banner]=choice.dataset.nyxProfilePalette.split(',');
-      [['accentPrimary',primary],['accentSecondary',secondary],['bannerColor',banner]].forEach(([name,value])=>{
-        const input=form.querySelector(`[name="${name}"]`);
-        if(!input)return;
-        input.value=value;
-        input.dispatchEvent(new Event('input',{bubbles:true}));
-      });
-      palette.querySelectorAll('button').forEach(button=>button.classList.toggle('active',button===choice));
-    });
-    const profileEditorError=form.querySelector('.nyx-founder-editor-error');
-    const profileEditorFooter=form.querySelector('footer');
-    [railSections[0],displaySection,avatarSection,bannerSection,colorsSection,effectsSection,decorationsSection,badgesSection,detailsSection].filter(Boolean).forEach(section=>form.insertBefore(section,profileEditorError));
-    if(profileEditorFooter)form.appendChild(profileEditorFooter);
-    setProfileEditorPanel('identity');
     const profileKeys=['displayName','handle','status','customStatus','bio','profileEffect','customEffectPattern','customEffectColorPrimary','customEffectColorSecondary','customEffectSpeed','customEffectIntensity','avatarDecoration','accentPrimary','accentSecondary','bannerColor','displayNameFont','displayNameEffect','displayNameColorPrimary','displayNameColorSecondary','avatarUrl','bannerUrl'];
     const directPopover=document.createElement('section');
     directPopover.className='nyx-profile-direct-popover';
@@ -1162,7 +1065,7 @@
       const values=new FormData(form);
       const nextProfile=normalizeNyxUserProfile({...profile,...Object.fromEntries(profileKeys.map(key=>[key,values.get(key)]))});
       const view=overlay.querySelector('.nyx-user-profile-view');
-      view.innerHTML=nyxUserProfileCardMarkup(nextProfile,{editable:true,compactPreview:true});
+      view.innerHTML=nyxUserProfileCardMarkup(nextProfile,{editable:true});
       nyxManageUserProfileGifs(view,nextProfile);
       syncDisplayNameStylePreview(nextProfile);
       syncAvatarDecorationPreview(nextProfile);
@@ -1274,7 +1177,7 @@
       if(event.key==='Escape'){event.preventDefault();event.stopPropagation();if(!directPopover.hidden)closeDirectPopover()}
     });
     form.addEventListener('input',preview);form.addEventListener('change',preview);
-    form.addEventListener('reset',()=>{pendingMediaPreparations.clear();clearTimeout(previewTimer);requestAnimationFrame(()=>{form.classList.remove('is-dirty');const avatarLabel=form.querySelector('[data-nyx-file-name="avatar"]');const bannerLabel=form.querySelector('[data-nyx-file-name="banner"]');if(avatarLabel)avatarLabel.textContent=profile.avatarUrl?'Image selected':'No image selected';if(bannerLabel)bannerLabel.textContent=profile.bannerUrl?'Image selected':'No image selected';const values=new FormData(form);const nextProfile=normalizeNyxUserProfile({...profile,...Object.fromEntries(profileKeys.map(key=>[key,values.get(key)]))});const view=overlay.querySelector('.nyx-user-profile-view');view.innerHTML=nyxUserProfileCardMarkup(nextProfile,{editable:true,compactPreview:true});nyxManageUserProfileGifs(view,nextProfile);syncDisplayNameStylePreview(nextProfile);syncAvatarDecorationPreview(nextProfile);syncCustomEffectBuilder();const bioCount=form.querySelector('[data-nyx-bio-count]');if(bioCount)bioCount.textContent=String(values.get('bio')||'').length;directTargets()})});
+    form.addEventListener('reset',()=>{pendingMediaPreparations.clear();clearTimeout(previewTimer);requestAnimationFrame(()=>{form.classList.remove('is-dirty');const avatarLabel=form.querySelector('[data-nyx-file-name="avatar"]');const bannerLabel=form.querySelector('[data-nyx-file-name="banner"]');if(avatarLabel)avatarLabel.textContent=profile.avatarUrl?'Image selected':'No image selected';if(bannerLabel)bannerLabel.textContent=profile.bannerUrl?'Image selected':'No image selected';const values=new FormData(form);const nextProfile=normalizeNyxUserProfile({...profile,...Object.fromEntries(profileKeys.map(key=>[key,values.get(key)]))});const view=overlay.querySelector('.nyx-user-profile-view');view.innerHTML=nyxUserProfileCardMarkup(nextProfile,{editable:true});nyxManageUserProfileGifs(view,nextProfile);syncDisplayNameStylePreview(nextProfile);syncAvatarDecorationPreview(nextProfile);syncCustomEffectBuilder();const bioCount=form.querySelector('[data-nyx-bio-count]');if(bioCount)bioCount.textContent=String(values.get('bio')||'').length;directTargets()})});
     form.querySelectorAll('[data-nyx-pick-image]').forEach(button=>button.addEventListener('click',()=>form.querySelector(`[name="${button.dataset.nyxPickImage}File"]`)?.click()));
     form.querySelectorAll('[data-nyx-clear-image]').forEach(button=>button.addEventListener('click',()=>{const type=button.dataset.nyxClearImage;pendingMediaPreparations.delete(type);form.querySelector(`[name="${type}Url"]`).value='';form.querySelector(`[name="${type}File"]`).value='';form.querySelector(`[data-nyx-file-name="${type}"]`).textContent='No image selected';preview()}));
     form.querySelectorAll('.nyx-profile-file-input').forEach(input=>input.addEventListener('change',()=>{const type=input.name==='avatarFile'?'avatar':'banner';const label=form.querySelector(`[data-nyx-file-name="${type}"]`);const error=form.querySelector('.nyx-founder-editor-error');const file=input.files?.[0];if(!file)return;label.textContent='Preparing image…';error.textContent='';const preparation=nyxProfileImageFromFile(file,type==='avatar'?512:1200,type==='avatar'?512:480);pendingMediaPreparations.set(type,preparation);void preparation.then(dataUrl=>{if(pendingMediaPreparations.get(type)!==preparation)return;form.querySelector(`[name="${type}Url"]`).value=dataUrl;label.textContent=file.name;preview()}).catch(imageError=>{if(pendingMediaPreparations.get(type)!==preparation)return;input.value='';label.textContent='No image selected';error.textContent=imageError.message||'That image could not be used.'}).finally(()=>{if(pendingMediaPreparations.get(type)===preparation)pendingMediaPreparations.delete(type)})}));
@@ -2353,7 +2256,7 @@
       window.$scramjet$pushsourcemap = window.$scramjet$pushsourcemap || noop;
     } catch {}
   })();`;
-  const proxyStateVersion='nyx-proxy-state-20260715-pixelclient-input-v9';
+  const proxyStateVersion='nyx-proxy-state-20260801-uv-critical-assets-v11';
   const scramjetStateVersion='nyx-scramjet-state-20260716-alpha2-spotify-epoxy-v1';
   function installNyxConsoleDedupe(scope='top'){
     if(console.__nyxDedupeInstalled) return;
@@ -3605,12 +3508,8 @@
     document.querySelector('.browser-shell-settings-overlay')?.remove();
     const overlay=document.createElement('div');
     overlay.className='browser-shell-settings-overlay';
-    overlay.innerHTML=`<div class="browser-shell-settings-panel" role="dialog" aria-modal="true" aria-label="Browser Mode Settings"><button class="browser-shell-settings-close" data-browser-settings-close type="button" aria-label="Close settings">×</button>${browserShellSettingsMarkup(browserShellPresetTiles())}</div>`;
+    overlay.innerHTML=`<main class="browser-shell-settings-panel" aria-label="Settings">${browserShellSettingsMarkup(browserShellPresetTiles())}</main>`;
     document.body.appendChild(overlay);
-    const closeButton=overlay.querySelector('.browser-shell-settings-close');
-    if(closeButton){
-      closeButton.textContent='\u00d7';
-    }
     const effectBlock=overlay.querySelector('[data-effect-value]')?.closest('.settings-block');
     if(effectBlock){
       const privacyBlock=document.createElement('section');
@@ -4277,6 +4176,26 @@
   function nyxHexToNumber(hex){
     return parseInt(nyxThemeHex(hex).slice(1),16);
   }
+  function nyxThemeLogoFilter(hex){
+    const clean=nyxThemeHex(hex);
+    const channels=[1,3,5].map(index=>parseInt(clean.slice(index,index+2),16)/255);
+    const max=Math.max(...channels);
+    const min=Math.min(...channels);
+    const delta=max-min;
+    let hue=0;
+    if(delta){
+      if(max===channels[0]) hue=60*(((channels[1]-channels[2])/delta)%6);
+      else if(max===channels[1]) hue=60*((channels[2]-channels[0])/delta+2);
+      else hue=60*((channels[0]-channels[1])/delta+4);
+    }
+    if(hue<0) hue+=360;
+    const lightness=(max+min)/2;
+    const saturation=delta ? delta/(1-Math.abs(2*lightness-1)) : 0;
+    const hueShift=((hue-208+540)%360)-180;
+    const saturationScale=Math.max(0,Math.min(4,saturation/.53));
+    const brightnessScale=Math.max(.35,Math.min(1.7,lightness/.64));
+    return `hue-rotate(${hueShift.toFixed(1)}deg) saturate(${saturationScale.toFixed(2)}) brightness(${brightnessScale.toFixed(2)})`;
+  }
   function nyxCustomThemePalette(color=store.text('nyx.customThemeColor',nyxCustomThemeDefaults.base)){
     const base=nyxThemeHex(color);
     return {
@@ -4298,10 +4217,12 @@
     const names=['base','canvas','top','field','panel','line','accent','bright','text','muted','dot'];
     if(theme!=='custom'){
       names.forEach(name=>root.style.removeProperty('--nyx-custom-'+name));
+      root.style.removeProperty('--nyx-custom-logo-filter');
       return;
     }
     const palette=nyxCustomThemePalette();
     names.forEach(name=>root.style.setProperty('--nyx-custom-'+name,palette[name]));
+    root.style.setProperty('--nyx-custom-logo-filter',nyxThemeLogoFilter(palette.bright));
   }
   function applyCustomThemeColor(value){
     const color=nyxThemeHex(value);
@@ -4595,6 +4516,10 @@
     const clean=normalizeNyxTheme(theme);
     document.querySelectorAll('iframe.view').forEach(frame=>{
       try{
+        const frameHref=String(frame.contentWindow?.location?.href || frame.getAttribute('src') || '');
+        const source=browserShellSourceUrl(frameHref) || frameHref;
+        const target=new URL(source,location.href);
+        if(target.origin!==location.origin) return;
         const doc=frame.contentDocument;
         if(!doc?.body) return;
         doc.body.classList.remove(...nyxThemeClasses);
@@ -6065,6 +5990,103 @@
     setTimeout(check,2400);
     setTimeout(check,5000);
     setTimeout(check,8200);
+  }
+  function watchUvPresentation(t,sourceUrl){
+    if(!t?.frame || !sourceUrl) return;
+    const source=browserShellSourceUrl(sourceUrl) || String(sourceUrl);
+    if(!/^https?:/i.test(source)) return;
+    if(t.uvPresentationSource!==source){
+      t.uvPresentationSource=source;
+      t.uvPresentationRetries=0;
+    }
+    if(t.uvPresentationLoadHandler){
+      try{t.frame.removeEventListener('load',t.uvPresentationLoadHandler)}catch{}
+    }
+    const token='uv-presentation-'+Date.now()+Math.random().toString(16).slice(2);
+    const navigationIntent=t.navigationIntent || '';
+    t.uvPresentationWatchToken=token;
+    let badKind='';
+    let badChecks=0;
+    let recoveryStarted=false;
+    const current=()=>t.frame?.isConnected
+      && t.uvPresentationWatchToken===token
+      && (t.navigationIntent || '')===navigationIntent
+      && t.uvPresentationSource===source;
+    const recover=async reason=>{
+      if(recoveryStarted || !current() || Number(t.uvPresentationRetries || 0)>=1) return;
+      recoveryStarted=true;
+      t.uvPresentationRetries=Number(t.uvPresentationRetries || 0)+1;
+      t.uvPresentationWatchToken='recovering-'+token;
+      console.warn('nyx detected an incomplete UV page; applying the compatible recovery path.',{
+        sourceUrl:source,
+        reason
+      });
+      if(reason==='YouTube component styles did not initialize'){
+        if(typeof t.retryUvPresentation==='function') t.retryUvPresentation(source,reason);
+        return;
+      }
+      const registration=await navigator.serviceWorker.getRegistration('/service/').catch(()=>null);
+      if(registration) await registration.update().catch(()=>null);
+      uvInstallPromise=null;
+      const ok=await installUltraviolet();
+      if(!ok || !t.frame?.isConnected || (t.navigationIntent || '')!==navigationIntent || t.uvPresentationSource!==source) return;
+      if(typeof t.retryUvPresentation==='function') t.retryUvPresentation(source);
+    };
+    const youtubePresentationIncomplete=presentation=>{
+      if(!hostMatches(browserHost(source),['youtube.com','youtu.be'])) return false;
+      try{
+        const doc=t.frame?.contentDocument;
+        const app=doc?.querySelector('ytd-app');
+        if(!app) return false;
+        const masthead=doc.querySelector('ytd-masthead');
+        const appStyle=doc.defaultView?.getComputedStyle?.(app);
+        const mastheadStyle=masthead ? doc.defaultView?.getComputedStyle?.(masthead) : null;
+        if(appStyle?.display==='inline' || mastheadStyle?.display==='inline') return true;
+        const links=Array.from(doc.querySelectorAll('link[rel~="stylesheet"][href]'));
+        const mainLinks=links.filter(link=>{
+          const raw=String(link.getAttribute('href') || '');
+          const absolute=String(link.href || '');
+          const decoded=browserShellSourceUrl(absolute);
+          return /ytmainappweb|kevlar_base|www-main-desktop/i.test(raw+' '+absolute+' '+decoded);
+        });
+        const rulesFor=link=>{
+          try{return Number(link.sheet?.cssRules?.length || 0)}catch{return 0}
+        };
+        const largestMainSheet=Math.max(0,...mainLinks.map(rulesFor));
+        const largestLinkedSheet=Math.max(0,...links.map(rulesFor));
+        if(mainLinks.length && (largestMainSheet>=1000 || largestLinkedSheet>=5000)) return false;
+        return links.length<3 || largestLinkedSheet<5000;
+      }catch{return false}
+    };
+    const check=()=>{
+      if(!current()) return;
+      const presentation=inspectFramePresentation(t);
+      if(!presentation.reachable || presentation.hasErrorText || presentation.readyState!=='complete') return;
+      const kind=youtubePresentationIncomplete(presentation)
+        ? 'YouTube component styles did not initialize'
+        : (presentation.unstyled ? 'stylesheets did not load' : (presentation.blank ? 'page stayed blank' : ''));
+      if(!kind){
+        badKind='';
+        badChecks=0;
+        return;
+      }
+      if(kind===badKind) badChecks+=1;
+      else{
+        badKind=kind;
+        badChecks=1;
+      }
+      if(badChecks>=2) void recover(kind);
+    };
+    const onLoad=()=>{
+      setTimeout(check,850);
+      setTimeout(check,2100);
+      setTimeout(check,4200);
+    };
+    t.uvPresentationLoadHandler=onLoad;
+    t.frame.addEventListener('load',onLoad);
+    setTimeout(check,2800);
+    setTimeout(check,5600);
+    setTimeout(check,9000);
   }
   function removeScramjetHtmlNodes(root,predicate){
     const children=root?.childNodes || root?.children;
@@ -7885,7 +7907,7 @@
       const bridgeUrl=t.sourceUrl || t.url || t.frame.getAttribute('src') || '';
       if(isPopupAllowedAppUrl(bridgeUrl)) return;
       if(isSpotifyFamilyUrl(bridgeUrl) || isAuthSensitiveUrl(bridgeUrl)) return;
-      if(hostMatches(browserHost(browserShellSourceUrl(bridgeUrl) || bridgeUrl),['google.com','gstatic.com'])) return;
+      if(hostMatches(browserHost(browserShellSourceUrl(bridgeUrl) || bridgeUrl),['google.com','gstatic.com','youtube.com','youtu.be'])) return;
       t.popupBridgeInstalled=true;
       const shouldTrapPopupTarget=target=>{
         const value=String(target || '').toLowerCase();
@@ -8127,6 +8149,68 @@
         return false;
       }
     }
+    function installYouTubeCompositorGuard(t){
+      const frame=t?.frame;
+      if(!frame) return;
+      const install=()=>{
+        try{
+          const frameHref=String(frame.contentWindow?.location?.href || frame.getAttribute('src') || '');
+          const source=browserShellSourceUrl(frameHref)
+            || browserShellSourceUrl(t.sourceUrl || t.url || '')
+            || t.sourceUrl || t.url || frameHref;
+          if(!hostMatches(browserHost(source),['youtube.com','youtu.be'])) return;
+          const doc=frame.contentDocument;
+          const frameWindow=frame.contentWindow;
+          if(!doc?.documentElement || !frameWindow) return;
+          if(!doc.getElementById('nyx-youtube-compositor-guard')){
+            const style=doc.createElement('style');
+            style.id='nyx-youtube-compositor-guard';
+            style.textContent='html:root,html:root *{view-transition-name:none!important}';
+            (doc.head || doc.documentElement).appendChild(style);
+          }
+          const disabledStartViewTransition=update=>{
+            const callback=typeof update==='function' ? update : update?.update;
+            let result;
+            try{result=callback?.()}
+            catch(error){result=Promise.reject(error)}
+            const updateCallbackDone=Promise.resolve(result);
+            const ready=updateCallbackDone.then(()=>undefined);
+            return {
+              ready,
+              finished:ready,
+              updateCallbackDone,
+              skipTransition(){},
+              types:new Set()
+            };
+          };
+          const disableFor=target=>{
+            if(!target) return;
+            try{
+              Object.defineProperty(target,'startViewTransition',{
+                configurable:true,
+                writable:true,
+                value:disabledStartViewTransition
+              });
+            }catch{
+              try{target.startViewTransition=disabledStartViewTransition}catch{}
+            }
+          };
+          disableFor(frameWindow.Document?.prototype);
+          disableFor(frameWindow.Element?.prototype);
+          disableFor(doc);
+          doc.documentElement.dataset.nyxYouTubeCompositorGuard='true';
+        }catch{}
+      };
+      if(frame.dataset.nyxYouTubeCompositorGuardWatch!=='true'){
+        frame.dataset.nyxYouTubeCompositorGuardWatch='true';
+        frame.addEventListener('load',()=>{
+          install();
+          setTimeout(install,40);
+          setTimeout(install,300);
+        });
+      }
+      install();
+    }
     function shouldRelaxProxySandbox(url){
       const raw=browserShellSourceUrl(String(url || '')) || String(url || '');
       const host=browserHost(raw);
@@ -8143,7 +8227,9 @@
         'accounts.scdn.co',
         'google.com',
         'gstatic.com',
-        'recaptcha.net'
+        'recaptcha.net',
+        'youtube.com',
+        'youtu.be'
       ]);
     }
     const browserFrameAllow='autoplay; encrypted-media; fullscreen; keyboard-map; gamepad; clipboard-read; clipboard-write; camera; microphone; display-capture; accelerometer; gyroscope; magnetometer; xr-spatial-tracking; payment; publickey-credentials-get; identity-credentials-get; private-state-token-issuance; private-state-token-redemption';
@@ -8200,7 +8286,12 @@
       }catch{}
     }
     function installBrowserAltBridgeForFrame(frame){
-      try{installBrowserAltBridgeInDocument(frame.contentDocument)}catch{}
+      try{
+        const frameHref=String(frame.contentWindow?.location?.href || frame.getAttribute('src') || '');
+        const source=browserShellSourceUrl(frameHref) || frameHref;
+        if(hostMatches(browserHost(source),['youtube.com','youtu.be'])) return;
+        installBrowserAltBridgeInDocument(frame.contentDocument);
+      }catch{}
     }
     function applyFrameInteractionPermissions(frame){
       if(!frame) return;
@@ -8246,6 +8337,7 @@
       if(!t?.frame) return;
       const sourceUrl=t.sourceUrl || t.url || t.frame.getAttribute('src') || '';
       applyFrameInteractionPermissions(t.frame);
+      installYouTubeCompositorGuard(t);
       if(shouldRelaxProxySandbox(sourceUrl)){
         t.frame.removeAttribute('sandbox');
         applyFrameInteractionPermissions(t.frame);
@@ -8672,6 +8764,17 @@
       }
       watchProxyLoad(t,sourceUrl || (/^https?:/i.test(url) ? url : ''),expectedEngine);
       watchFrameTransportErrors(t,sourceUrl || (/^https?:/i.test(url) ? url : ''),expectedEngine);
+      if(expectedEngine==='ultraviolet'){
+        t.retryUvPresentation=(retrySource,reason='')=>{
+          if(reason==='YouTube component styles did not initialize'){
+            loadScramjetTab(t,retrySource,false);
+            return;
+          }
+          const proxied=proxyModeUrl('ultraviolet',retrySource);
+          if(proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',retrySource);
+        };
+        watchUvPresentation(t,sourceUrl || requestedSource);
+      }else t.retryUvPresentation=null;
       t.frame.src=url;
       markBrowserEngine(t,expectedEngine,url,'iframe-src');
       renderTabs();

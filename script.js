@@ -2088,35 +2088,6 @@
         }
       };
       const blockedUrl = "nyx://blocked67haha";
-      const popupAllowedAppDomains = [
-        "discord.com",
-        "geforcenow.com",
-        "play.geforcenow.com",
-        "nvidia.com",
-        "nvidiagrid.net",
-        "spotify.com",
-        "open.spotify.com",
-        "accounts.spotify.com",
-        "spotifycdn.com",
-        "scdn.co",
-        "accounts.scdn.co"
-      ];
-      const hostMatches = (host, domains) => domains.some(domain => host === domain || host.endsWith("." + domain));
-      const isPopupAllowedApp = () => {
-        try {
-          const candidates = [location.href, document.referrer, document.baseURI].filter(Boolean);
-          return candidates.some(value => {
-            try {
-              const host = new URL(value, location.href).hostname.replace(/^www\./, "").toLowerCase();
-              return hostMatches(host, popupAllowedAppDomains);
-            } catch {
-              return false;
-            }
-          }) || candidates.some(value => /(?:discord\.com|geforcenow\.com|play\.geforcenow\.com|nvidia\.com|nvidiagrid\.net|spotify\.com|open\.spotify\.com|accounts\.spotify\.com|spotifycdn\.com|scdn\.co|accounts\.scdn\.co)/i.test(String(value || ""));
-        } catch {
-          return false;
-        }
-      };
       const fakePopup = (notify = false) => {
         if (notify) {
           try { window.parent?.postMessage?.({ type: "nyx:popup", url: blockedUrl, blocked: true }, "*"); } catch {}
@@ -2148,7 +2119,6 @@
       };
       const nativeOpen = window.open?.bind(window);
       const guardedOpen = (...args) => {
-        if (isPopupAllowedApp() && nativeOpen) return nativeOpen(...args);
         if (!popupProtectionEnabled() && nativeOpen) return nativeOpen(...args);
         return fakePopup(Boolean(navigator.userActivation?.isActive));
       };
@@ -2156,15 +2126,10 @@
         if (typeof window.open === "function" && typeof Proxy === "function") {
           window.open = new Proxy(window.open, {
             apply(target, thisArg, args) {
-              if (isPopupAllowedApp()) return Reflect.apply(target, thisArg, args);
               if (!popupProtectionEnabled()) return Reflect.apply(target, thisArg, args);
               return fakePopup(Boolean(navigator.userActivation?.isActive));
             },
             construct(target, args, newTarget) {
-              if (isPopupAllowedApp()) {
-                try { return Reflect.construct(target, args, newTarget); }
-                catch { return Reflect.apply(target, window, args); }
-              }
               if (!popupProtectionEnabled()) {
                 try { return Reflect.construct(target, args, newTarget); }
                 catch { return Reflect.apply(target, window, args); }
@@ -2189,7 +2154,6 @@
       if (window.HTMLAnchorElement?.prototype) {
         const nativeAnchorClick = HTMLAnchorElement.prototype.click;
         HTMLAnchorElement.prototype.click = function() {
-          if (isPopupAllowedApp()) return nativeAnchorClick.call(this);
           if (popupProtectionEnabled() && (targetOpensPopup(this.target) || this.hasAttribute("download") || looksDownloadLike(this.href || this.getAttribute("href")))) {
             fakePopup(Boolean(navigator.userActivation?.isActive));
             return;
@@ -2198,7 +2162,6 @@
         };
       }
       const stopPopupEvent = event => {
-        if (isPopupAllowedApp()) return;
         if (!popupProtectionEnabled()) return;
         const link = event.target?.closest?.("a[href]");
         if (!link) return;
@@ -2209,7 +2172,6 @@
         }
       };
       const stopPopupSubmit = event => {
-        if (isPopupAllowedApp()) return;
         if (!popupProtectionEnabled()) return;
         const form = event.target;
         if (!form || String(form.tagName || "").toUpperCase() !== "FORM") return;
@@ -2427,7 +2389,7 @@
   function renderChromeFixed(){
     const top=document.querySelector('.top-os');
     if(top){
-      top.innerHTML='<div class="brand-mini"><button class="browser-mode-app-button active" data-browser-shell-home title="Current tab"><span class="browser-home-icon" aria-hidden="true"></span><span class="browser-home-label">Home</span></button><button class="browser-mode-tab" data-browser-shell-new-tab title="New tab"><span>New tab</span></button></div><span class="browser-top-clock" data-browser-shell-clock>--:--:--</span><form class="browser-mode-address" data-browser-shell-search><button data-browser-shell-back type="button" title="Back"><span class="fresh-real-icon fresh-real-back" aria-hidden="true"></span></button><button data-browser-shell-forward type="button" title="Forward"><span class="fresh-real-icon" aria-hidden="true">➜</span></button><button data-browser-shell-reload type="button" title="Reload"><span class="fresh-real-icon" aria-hidden="true">⟳</span></button><input class="browser-mode-url" data-browser-shell-url placeholder="Search or enter a URL" autocomplete="off"><button class="browser-mode-bookmark" data-browser-shell-bookmark type="button" title="Bookmark this tab" aria-pressed="false"><span class="fresh-real-icon" aria-hidden="true">☆</span></button><button class="browser-mode-weather" data-open="weather" type="button" title="Weather" aria-label="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button><button data-browser-shell-menu type="button" title="Menu"><span class="fresh-real-icon" aria-hidden="true">⋮</span></button></form><div class="browser-bookmark-panel" id="browserBookmarkPanel" hidden></div><div class="browser-mode-menu" id="browserModeMenu"><button data-browser-shell-new-tab type="button">New tab</button><button data-browser-bookmarks-toggle type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-browser-hieroglyph-toggle type="button">Hieroglyph Mode</button><button data-app-url="/assets/games/index.html" type="button">Study</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-shell-about-tab type="button">Open Tab in Abt:Blank</button></div>';
+      top.innerHTML='<div class="brand-mini"><button class="browser-mode-app-button active" data-browser-shell-home title="Current tab"><span class="browser-home-icon" aria-hidden="true"></span><span class="browser-home-label">Home</span></button><button class="browser-mode-tab" data-browser-shell-new-tab title="New tab"><span>New tab</span></button></div><span class="browser-top-clock" data-browser-shell-clock>--:--:--</span><form class="browser-mode-address" data-browser-shell-search><button class="browser-nav-control" data-browser-shell-back type="button" title="Back" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button><button class="browser-nav-control" data-browser-shell-forward type="button" title="Forward" aria-label="Forward"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button><button class="browser-nav-control" data-browser-shell-reload type="button" title="Reload" aria-label="Reload"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"></path><path d="M20 4v7h-7"></path></svg></button><button class="browser-nav-control" data-browser-shell-home-nav type="button" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8"></path><path d="M5 10v10h14V10"></path><path d="M9 20v-6h6v6"></path></svg></button><input class="browser-mode-url" data-browser-shell-url placeholder="Search or enter a URL" autocomplete="off"><button class="browser-mode-bookmark" data-browser-shell-bookmark type="button" title="Bookmark this tab" aria-pressed="false"><span class="fresh-real-icon" aria-hidden="true">☆</span></button><button class="browser-mode-weather" data-open="weather" type="button" title="Weather" aria-label="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button><button data-browser-shell-menu type="button" title="Menu"><span class="fresh-real-icon" aria-hidden="true">⋮</span></button></form><div class="browser-bookmark-panel" id="browserBookmarkPanel" hidden></div><div class="browser-mode-menu" id="browserModeMenu"><button data-browser-shell-new-tab type="button">New tab</button><button data-browser-bookmarks-toggle type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-browser-hieroglyph-toggle type="button">Hieroglyph Mode</button><button data-app-url="/assets/games/index.html" type="button">Study</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-shell-about-tab type="button">Open Tab in Abt:Blank</button></div>';
       top.querySelectorAll('.brand-mini button[title],.browser-mode-address button[title]').forEach(button=>{
         if(!button.getAttribute('aria-label')) button.setAttribute('aria-label',button.getAttribute('title') || 'Browser control');
         button.removeAttribute('title');
@@ -3063,7 +3025,7 @@
     if(contentStateChanged) queueMicrotask(()=>syncThemeVantaBackgrounds());
     if(home){
       home.style.display='';
-      home.innerHTML='<span class="browser-home-icon" aria-hidden="true"></span><span class="browser-home-label">Home</span>';
+      home.innerHTML='<span class="browser-home-icon" aria-hidden="true"></span><span class="browser-home-label">Nyx</span>';
       delete home.dataset.browserShellTab;
       home.title='Home';
       home.classList.toggle('active',active.title==='Home' && !active.url);
@@ -5297,24 +5259,6 @@
   function hostMatches(host,domains){
     return domains.some(domain=>host===domain || host.endsWith('.'+domain));
   }
-  const popupAllowedAppDomains=[
-    'discord.com',
-    'geforcenow.com',
-    'play.geforcenow.com',
-    'nvidia.com',
-    'nvidiagrid.net',
-    'spotify.com',
-    'open.spotify.com',
-    'accounts.spotify.com',
-    'spotifycdn.com',
-    'scdn.co',
-    'accounts.scdn.co'
-  ];
-  function isPopupAllowedAppUrl(url){
-    const raw=browserShellSourceUrl(String(url || '')) || String(url || '');
-    const host=browserHost(raw);
-    return !!host && hostMatches(host,popupAllowedAppDomains);
-  }
   function isNyxLinkGeneratorUrl(url){
     const raw=browserShellSourceUrl(String(url || '')) || String(url || '');
     try{
@@ -6806,7 +6750,7 @@
     ];
     tabItems.forEach((el,index)=>animateHomeElement(el,index,{delay:45+(index*65),duration:650,start:'translate(-24px,34px) scale(.88)',mid:'translate(-7px,10px) scale(.97)'}));
     const toolbarItems=[
-      ...document.querySelectorAll('body.browser-shell [data-browser-shell-back], body.browser-shell [data-browser-shell-forward], body.browser-shell [data-browser-shell-reload], body.browser-shell [data-browser-shell-url], body.browser-shell [data-browser-shell-bookmark], body.browser-shell .browser-mode-weather, body.browser-shell [data-browser-shell-menu], body.browser-shell #clock')
+      ...document.querySelectorAll('body.browser-shell [data-browser-shell-back], body.browser-shell [data-browser-shell-forward], body.browser-shell [data-browser-shell-reload], body.browser-shell [data-browser-shell-home-nav], body.browser-shell [data-browser-shell-url], body.browser-shell [data-browser-shell-bookmark], body.browser-shell .browser-mode-weather, body.browser-shell [data-browser-shell-menu], body.browser-shell #clock')
     ];
     toolbarItems.forEach((el,index)=>animateHomeElement(el,index,{delay:120+(index*58),duration:690,start:'translate(-26px,38px) scale(.9)',mid:'translate(-8px,12px) scale(.98)'}));
   }
@@ -7594,21 +7538,6 @@
         set href(_value){rewrite()}
       };
     }
-    function openExternalBlockedPopup(message=''){
-      const nativeOpen=window.__nyxNativeOpen || window.open?.bind(window);
-      const popup=nativeOpen ? nativeOpen('about:blank','_blank') : null;
-      if(!popup) return null;
-      try{
-        popup.document.open();
-        popup.document.write(popupWarningHtml(message || 'are you trying to hack me ︻デ═一 indian shwarma scamma? get blocked by 1aqlla dummy haha67'));
-        popup.document.close();
-        popup.focus?.();
-        return blockedPopupHandle(popup,message);
-      }catch{
-        try{popup.close?.()}catch{}
-        return null;
-      }
-    }
     function openPopupTab(rawUrl){
       const openerUrl=current()?.url || location.href;
       const popupBlockMessage=isAnimexUrl(openerUrl) ? 'are you trying to block me shwarma?' : 'are you trying to hack me ︻デ═一 indian shwarma scamma? get blocked by 1aqlla dummy haha67';
@@ -7616,31 +7545,7 @@
         const nativeOpen=window.__nyxNativeOpen || window.open?.bind(window);
         return nativeOpen ? nativeOpen(rawUrl || 'about:blank','_blank') : null;
       }
-      if(isPopupAllowedAppUrl(openerUrl)){
-        const nativeOpen=window.__nyxNativeOpen || window.open?.bind(window);
-        return nativeOpen ? nativeOpen(rawUrl || 'about:blank','_blank') : null;
-      }
-      const shellTab=(()=>{
-        if(!document.body.classList.contains('browser-shell')) return null;
-        const id='shell-'+Date.now()+Math.random().toString(16).slice(2);
-        const tab={id,url:'nyx://blocked67haha',title:'Popup blocked'};
-        browserShellTabs.push(tab);
-        browserShellActiveTab=id;
-        renderBrowserShellTabs();
-        return tab;
-      })();
-      const tab=addTab();
-      tab.popupBlockMessage=popupBlockMessage;
-      if(shellTab){
-        shellTab.browserTabId=tab.id;
-        renderBrowserShellTabs();
-      }
-      showPopupWarningTab(tab,popupBlockMessage);
-      setTimeout(()=>{
-        if(shellTab && browserShellTabs.some(item=>item.id===shellTab.id)) closeBrowserShellTab(shellTab.id);
-        else if(state.tabs.some(item=>item.id===tab.id)) closeTabById(tab.id,true);
-      },500);
-      return popupTabHandle(tab,openerUrl);
+      return blockedPopupHandle(null,popupBlockMessage);
     }
     function installCrazyGamesOfflineRecovery(t,url=''){
       if(!t?.frame) return;
@@ -7905,7 +7810,6 @@
         },40));
       }
       const bridgeUrl=t.sourceUrl || t.url || t.frame.getAttribute('src') || '';
-      if(isPopupAllowedAppUrl(bridgeUrl)) return;
       if(isSpotifyFamilyUrl(bridgeUrl) || isAuthSensitiveUrl(bridgeUrl)) return;
       if(hostMatches(browserHost(browserShellSourceUrl(bridgeUrl) || bridgeUrl),['google.com','gstatic.com','youtube.com','youtu.be'])) return;
       t.popupBridgeInstalled=true;
@@ -8338,7 +8242,7 @@
       const sourceUrl=t.sourceUrl || t.url || t.frame.getAttribute('src') || '';
       applyFrameInteractionPermissions(t.frame);
       installYouTubeCompositorGuard(t);
-      if(shouldRelaxProxySandbox(sourceUrl)){
+      if(!popupProtectionEnabled() && shouldRelaxProxySandbox(sourceUrl)){
         t.frame.removeAttribute('sandbox');
         applyFrameInteractionPermissions(t.frame);
         return;
@@ -8352,10 +8256,8 @@
         'allow-presentation',
         'allow-storage-access-by-user-activation'
       ];
-      if(!popupProtectionEnabled() || isPopupAllowedAppUrl(sourceUrl)){
+      if(!popupProtectionEnabled()){
         tokens.push('allow-popups','allow-popups-to-escape-sandbox','allow-downloads','allow-top-navigation-by-user-activation');
-      }else if(isNyxLinkGeneratorUrl(sourceUrl)){
-        tokens.push('allow-popups');
       }
       t.frame.setAttribute('sandbox',tokens.join(' '));
       applyFrameInteractionPermissions(t.frame);
@@ -10541,7 +10443,7 @@
     try{
       return await nyxAiModelAnswer(prompt,win,imageContext,onChunk);
     }catch(err){
-      return `Nyx AI could not reach the selected model.\n\n${err.message}\n\nSet NYX_AI_API_KEY or OPENROUTER_API_KEY on the server, and if your provider uses different model names, set the matching NYX_AI_MODEL_* environment variable.`;
+      return `Nyx AI could not reach the selected model.\n\n${err.message}\n\nSet NYX_AI_API_KEY on the server. The configured Vilen model can be changed with the matching NYX_AI_MODEL_* environment variable.`;
     }
   }
   function lionAiRespond(prompt){
@@ -10689,27 +10591,9 @@
     nyxTerminalWrite(output,`Unknown command: ${command}. Type "help" for the command list.`,'error');
   }
   function openDeveloperConsole(){
-    const win=makeWindow({
-      title:'🛠 Nyx Developer Console',
-      left:'16vw',
-      top:'84px',
-      width:'760px',
-      height:'520px',
-      autoMaximize:false,
-      className:'nyx-utility-window nyx-terminal-window',
-      body:`<div class="nyx-terminal" role="application" aria-label="Nyx developer console"><div class="nyx-terminal-toolbar"><span><i aria-hidden="true"></i>Nyx terminal</span><span>safe diagnostics</span></div><div class="nyx-terminal-output" data-nyx-terminal-output role="log" aria-live="polite"></div><form class="nyx-terminal-form" data-nyx-terminal-form><label for="nyxTerminalInput">nyx&gt;</label><input id="nyxTerminalInput" data-nyx-terminal-input autocomplete="off" spellcheck="false" aria-label="Terminal command" placeholder="Type help"><button type="submit">Run</button></form></div>`
-    });
-    const output=win.querySelector('[data-nyx-terminal-output]');
-    const form=win.querySelector('[data-nyx-terminal-form]');
-    const input=win.querySelector('[data-nyx-terminal-input]');
-    nyxTerminalWrite(output,'Nyx Developer Console');
-    nyxTerminalWrite(output,'Type "help" to list commands. Browser DevTools cannot be opened by a webpage.');
-    form?.addEventListener('submit',event=>{
-      event.preventDefault();
-      void runNyxTerminalCommand(win,input?.value);
-      if(input) input.value='';
-    });
-    setTimeout(()=>input?.focus(),50);
+    // Developer Console is intentionally the full Eruda tab. Keep this as a
+    // single route so it cannot fall back to the old Nyx terminal window.
+    return openBrowserShellInternalTab('developer');
   }
   openApps = function(){
     makeWindow({title:'Apps',left:'8vw',top:'64px',width:'960px',height:'650px',body:`<div class="panel apps-panel"><h1>Apps</h1><div class="quick-grid apps-launch-grid">${quickTiles()}</div></div>`});
@@ -10811,7 +10695,7 @@
         </section>
         <section class="settings-card">
           <h2>Popup Protection</h2>
-          <p>Controls whether site popups are replaced with nyx's blocked popup screen.</p>
+          <p>Blocks all site-created popup windows and popup ads.</p>
           <div class="settings-row"><span>Popup Protection</span><button class="switch ${popupProtectionEnabled()?'on':''}" data-switch="nyx.popupProtection" aria-label="Popup protection"></button></div>
           <p class="security-warning">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span class="security-warning-strong">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p>
         </section>
@@ -12421,6 +12305,12 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
       if(shellBack){
         e.preventDefault();
         activeBrowser?.win?.querySelector('[data-back]')?.click();
+        return;
+      }
+      const shellNavHome=e.target.closest('[data-browser-shell-home-nav]');
+      if(shellNavHome){
+        e.preventDefault();
+        setBrowserShellHomeActive();
         return;
       }
       const shellForward=e.target.closest('[data-browser-shell-forward]');

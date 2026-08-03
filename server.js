@@ -476,12 +476,9 @@ function scramjetRuntimeGuard() {
     }
   };
   const opennyxPopupWarning = () => {
-    const popup = nativeOpen ? nativeOpen("about:blank", "_blank") : null;
-    if (!writeBlocked(popup)) {
-      try {
-        window.parent?.postMessage({ type: "nyx:popup", url: "about:blank" }, "*");
-      } catch {}
-    }
+    // Popup protection must never create a real popup just to display a
+    // warning. Return a browser-like inert handle to the calling site.
+    const popup = null;
     return {
       closed: false,
       focus() { try { popup?.focus?.(); } catch {} },
@@ -1072,11 +1069,43 @@ app.get("/reds-misc-fetch", handleGmsGamesFetch);
 app.get("/reds-misc-proxy", handleGmsGamesProxy);
 
 const nyxAiModels = {
-  "chatgpt-5.4-mini": process.env.NYX_AI_MODEL_CHATGPT_54_MINI || "gpt-5.4-mini"
+  "chatgpt-5.4-mini": process.env.NYX_AI_MODEL_CHATGPT_54_MINI || "navy:gpt-5.4-mini"
 };
 
 function nyxAiKey() {
-  return process.env.NYX_AI_API_KEY || process.env.OPENROUTER_API_KEY || "";
+  return process.env.NYX_AI_API_KEY || "";
+}
+
+function nyxAiEndpoint() {
+  const explicitEndpoint = String(process.env.NYX_AI_ENDPOINT || "").trim();
+  if (explicitEndpoint) return explicitEndpoint;
+  const baseUrl = String(process.env.NYX_AI_BASE_URL || "https://vilen.sbs").trim().replace(/\/+$/, "");
+  return /\/api\/ai$/i.test(baseUrl) ? baseUrl : `${baseUrl}/api/ai`;
+}
+
+function nyxAiErrorMessage(data, status) {
+  const error = data?.error;
+  return String(
+    (error && typeof error === "object" ? error.message : error)
+    || data?.message
+    || `Model request failed (${status}).`
+  );
+}
+
+function nyxAiStreamText(data) {
+  if (!data || typeof data !== "object") return "";
+  if (data.type === "delta") return String(data.text || data.delta || "");
+  return String(data?.choices?.[0]?.delta?.content || data?.choices?.[0]?.text || "");
+}
+
+function nyxAiWriteStreamChunk(res, text, model) {
+  if (!text) return;
+  res.write(`data: ${JSON.stringify({
+    id: "nyx-ai",
+    object: "chat.completion.chunk",
+    model,
+    choices: [{ index: 0, delta: { content: String(text) }, finish_reason: null }]
+  })}\n\n`);
 }
 
 const nyxAiUsage = new Map();
@@ -1154,7 +1183,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   const key = nyxAiKey();
   if (!key) {
     res.status(503).json({
-      error: "Nyx AI is not configured. Set NYX_AI_API_KEY or OPENROUTER_API_KEY in the server environment."
+      error: "Nyx AI is not configured. Set NYX_AI_API_KEY in the server environment."
     });
     return;
   }
@@ -1186,7 +1215,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     res.status(400).json({ error: "Message is required." });
     return;
   }
-  const baseUrl = String(process.env.NYX_AI_BASE_URL || "https://openrouter.ai/api/v1").replace(/\/+$/, "");
+  const endpoint = nyxAiEndpoint();
   const prompt = imageContext ? `${message || "Answer the attached image."}\n\nImage context from Nyx OCR/analysis:\n${imageContext}` : message;
   const messages = history.length ? history : [{ role: "user", content: prompt }];
   if (history.length && imageContext) messages[messages.length - 1] = { role: "user", content: prompt };
@@ -1195,24 +1224,17 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   const timeout = setTimeout(() => controller.abort(), nyxAiLimits.timeoutMs);
   res.once("close", () => controller.abort());
   try {
-    const upstream = await fetch(`${baseUrl}/chat/completions`, {
+    const upstream = await fetch(endpoint, {
       method: "POST",
       signal: controller.signal,
       headers: {
         "content-type": "application/json",
-        "authorization": `Bearer ${key}`,
-        "http-referer": process.env.NYX_SITE_URL || "http://localhost:8080",
-        "x-title": "Nyx AI"
+        "authorization": `Bearer ${key}`
       },
       body: JSON.stringify({
         model,
-        messages: [
-          {
-            role: "system",
-            content: "You are Nyx AI inside the Nyx browser. Be helpful, direct, and accurate. If you do not know something, say so plainly."
-          },
-          ...messages
-        ],
+        system: "You are Nyx AI inside the Nyx browser. Be helpful, direct, and accurate. If you do not know something, say so plainly.",
+        messages,
         temperature: Number(process.env.NYX_AI_TEMPERATURE || 0.7),
         max_tokens: Number(process.env.NYX_AI_MAX_TOKENS || 1200),
         stream: wantsStream
@@ -1227,22 +1249,45 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       const reader = upstream.body?.getReader();
       if (!reader) throw new Error("AI provider did not return a response stream.");
       const decoder = new TextDecoder();
+      let buffer = "";
       for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
-        res.write(decoder.decode(value, { stream: true }));
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split(/\r?\n/);
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          if (!line.startsWith("data:")) continue;
+          const raw = line.slice(5).trim();
+          if (!raw || raw === "[DONE]") continue;
+          const event = JSON.parse(raw);
+          if (event?.type === "error") {
+            nyxAiWriteStreamChunk(res, `Nyx AI error: ${nyxAiErrorMessage(event, upstream.status)}`, model);
+            continue;
+          }
+          nyxAiWriteStreamChunk(res, nyxAiStreamText(event), model);
+        }
       }
+      buffer += decoder.decode();
+      if (buffer.trim().startsWith("data:")) {
+        const raw = buffer.trim().slice(5).trim();
+        if (raw && raw !== "[DONE]") {
+          const event = JSON.parse(raw);
+          nyxAiWriteStreamChunk(res, nyxAiStreamText(event), model);
+        }
+      }
+      res.write("data: [DONE]\n\n");
       res.end();
       return;
     }
     const data = await upstream.json().catch(() => ({}));
     if (!upstream.ok) {
       res.status(upstream.status).json({
-        error: data?.error?.message || data?.message || `Model request failed (${upstream.status}).`
+        error: nyxAiErrorMessage(data, upstream.status)
       });
       return;
     }
-    const text = data?.choices?.[0]?.message?.content || data?.choices?.[0]?.text || "";
+    const text = data?.response || data?.text || data?.choices?.[0]?.message?.content || data?.choices?.[0]?.text || "";
     res.json({ text: String(text || "").trim(), model });
   } catch (error) {
     if (!res.headersSent) {

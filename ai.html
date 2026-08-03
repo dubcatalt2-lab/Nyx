@@ -9,9 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/ai-workspace.css?v=20260803-v1">
+  <link rel="stylesheet" href="/css/ai-workspace.css?v=20260803-model-menu-v2">
   <script src="/js/nyx-logo.js?v=20260717-theme-crescent-v1" defer></script>
-  <script src="/js/ai-workspace.js?v=20260803-v1" defer></script>
+  <script src="/js/ai-workspace.js?v=20260803-model-menu-v2" defer></script>
 </head>
 <body>
   <main class="ai-app" data-ai-app>
@@ -28,14 +28,23 @@
         </div>
 
         <div class="ai-header-actions">
-          <label class="ai-model-control" for="model">
-            <span class="ai-model-status" aria-hidden="true"></span>
-            <span class="sr-only">AI model</span>
-            <select id="model" aria-label="AI model">
+          <div class="ai-model-picker" id="modelPicker">
+            <button class="ai-model-trigger" id="modelTrigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="modelMenu">
+              <span class="ai-model-status" aria-hidden="true"></span>
+              <span class="ai-model-selected" id="modelSelected">GPT-5.4 Mini</span>
+              <svg aria-hidden="true" viewBox="0 0 20 20"><path d="m6 8 4 4 4-4"/></svg>
+            </button>
+            <select class="sr-only" id="model" tabindex="-1" aria-hidden="true">
               <option value="chatgpt-5.4-mini">GPT-5.4 Mini</option>
             </select>
-            <svg aria-hidden="true" viewBox="0 0 20 20"><path d="m6 8 4 4 4-4"/></svg>
-          </label>
+            <div class="ai-model-menu" id="modelMenu" role="listbox" aria-label="AI model" tabindex="-1" hidden>
+              <div class="ai-model-menu-header">
+                <strong>Select model</strong>
+                <span data-model-count>1 available</span>
+              </div>
+              <div class="ai-model-options" id="modelOptions"></div>
+            </div>
+          </div>
           <button class="ai-clear" id="clear" type="button" title="Clear conversation" aria-label="Clear conversation">
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M7 6l1 14h8l1-14M10 10v6M14 10v6"/></svg>
             <span>Clear</span>

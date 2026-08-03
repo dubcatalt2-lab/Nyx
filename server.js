@@ -2024,7 +2024,7 @@ function safeActivityTime(value) {
 
 function normalizeNyxRole(value) {
   const role = String(value || "").trim().toLowerCase();
-  return ["admin", "developer", "moderator", "member"].includes(role) ? role : "member";
+  return ["co_owner", "admin", "manager", "developer", "moderator", "support", "tester", "contributor", "member"].includes(role) ? role : "member";
 }
 
 function normalizeSubscriptionStatus(value) {
@@ -3066,6 +3066,120 @@ app.post("/api/profile-media/:kind/:uploadId/complete", async (req, res) => {
   }
 });
 
+app.put("/api/owner-dashboard/users/:uid/profile-media/:kind/:uploadId/:index", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  const uid = String(req.params.uid || "").trim();
+  const kind = String(req.params.kind || "").trim().toLowerCase();
+  const uploadId = String(req.params.uploadId || "").trim();
+  const index = Number.parseInt(String(req.params.index || ""), 10);
+  const totalChunks = Number.parseInt(String(req.body?.totalChunks || ""), 10);
+  const mime = String(req.body?.mime || "").trim().toLowerCase();
+  const chunk = String(req.body?.chunk || "").trim();
+  if (
+    !/^[A-Za-z0-9_-]{8,128}$/.test(uid) ||
+    !["avatar", "banner"].includes(kind) ||
+    !/^[A-Za-z0-9_-]{12,80}$/.test(uploadId) ||
+    !Number.isInteger(index) ||
+    index < 0 ||
+    !Number.isInteger(totalChunks) ||
+    totalChunks < 1 ||
+    totalChunks > profileMediaChunkCountLimit ||
+    index >= totalChunks ||
+    !/^image\/(?:gif|png|jpeg|webp)$/.test(mime) ||
+    !chunk ||
+    chunk.length > profileMediaChunkLimit ||
+    !/^[A-Za-z0-9+/=]+$/.test(chunk)
+  ) {
+    res.status(400).json({ error: "That profile media chunk is invalid." });
+    return;
+  }
+  try {
+    const { firebase, token } = await ownerDashboardActor(req);
+    await firebase.auth.getUser(uid);
+    const mediaId = nyxProfileMediaDocumentId(uid, kind, uploadId);
+    const mediaRef = firebase.firestore.collection("nyxProfileMedia").doc(mediaId);
+    const chunkRef = mediaRef.collection("chunks").doc(String(index).padStart(3, "0"));
+    await Promise.all([
+      mediaRef.set({
+        ownerUid: uid,
+        uploadedByUid: token.uid,
+        kind,
+        mime,
+        totalChunks,
+        updatedAt: new Date().toISOString()
+      }, { merge: true }),
+      chunkRef.set({ index, chunk })
+    ]);
+    res.json({ received: index });
+  } catch (error) {
+    const status = error.code === "auth/user-not-found" ? 404 : (error.status || 503);
+    res.status(status).json({ error: status === 404 ? "User not found." : (error.message || "Profile media could not be uploaded.") });
+  }
+});
+
+app.post("/api/owner-dashboard/users/:uid/profile-media/:kind/:uploadId/complete", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  const uid = String(req.params.uid || "").trim();
+  const kind = String(req.params.kind || "").trim().toLowerCase();
+  const uploadId = String(req.params.uploadId || "").trim();
+  if (
+    !/^[A-Za-z0-9_-]{8,128}$/.test(uid) ||
+    !["avatar", "banner"].includes(kind) ||
+    !/^[A-Za-z0-9_-]{12,80}$/.test(uploadId)
+  ) {
+    res.status(400).json({ error: "That profile media upload is invalid." });
+    return;
+  }
+  try {
+    const { firebase } = await ownerDashboardActor(req);
+    await firebase.auth.getUser(uid);
+    const mediaId = nyxProfileMediaDocumentId(uid, kind, uploadId);
+    const mediaRef = firebase.firestore.collection("nyxProfileMedia").doc(mediaId);
+    const mediaSnapshot = await mediaRef.get();
+    const media = mediaSnapshot.data() || {};
+    const totalChunks = Number(media.totalChunks || 0);
+    if (
+      !mediaSnapshot.exists ||
+      media.ownerUid !== uid ||
+      media.kind !== kind ||
+      totalChunks < 1 ||
+      totalChunks > profileMediaChunkCountLimit
+    ) {
+      res.status(404).json({ error: "That profile media upload was not found." });
+      return;
+    }
+    const chunkSnapshots = await Promise.all(
+      Array.from({ length: totalChunks }, (_, chunkIndex) =>
+        mediaRef.collection("chunks").doc(String(chunkIndex).padStart(3, "0")).get()
+      )
+    );
+    const encodedLength = chunkSnapshots.reduce((total, snapshot, chunkIndex) => {
+      const data = snapshot.data() || {};
+      return total + (snapshot.exists && data.index === chunkIndex ? String(data.chunk || "").length : profileMediaEncodedLimit + 1);
+    }, 0);
+    if (encodedLength < 1 || encodedLength > profileMediaEncodedLimit) {
+      res.status(413).json({ error: "That profile image is too large or incomplete." });
+      return;
+    }
+    const finalChunk = String(chunkSnapshots.at(-1)?.data()?.chunk || "");
+    const padding = finalChunk.endsWith("==") ? 2 : (finalChunk.endsWith("=") ? 1 : 0);
+    const byteLength = Math.floor(encodedLength * 3 / 4) - padding;
+    await mediaRef.set({ complete: true, encodedLength, byteLength, completedAt: new Date().toISOString() }, { merge: true });
+    res.json({ url: `/api/profile-media/${uid}/${kind}/${uploadId}` });
+  } catch (error) {
+    const status = error.code === "auth/user-not-found" ? 404 : (error.status || 503);
+    res.status(status).json({ error: status === 404 ? "User not found." : (error.message || "Profile media could not be completed.") });
+  }
+});
+
 app.get("/api/profile-media/:uid/:kind/:uploadId/manifest", async (req, res) => {
   const values = nyxProfileMediaRouteValues(req);
   if (!firebaseAdminModeConfigured()) {
@@ -3159,6 +3273,46 @@ app.get("/api/profile-media/:uid/:kind/:uploadId", async (req, res) => {
     res.end(Buffer.from(encoded, "base64"));
   } catch {
     res.status(404).end();
+  }
+});
+
+app.get("/api/profiles", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const { firebase, token } = await authenticatedNyxUser(req);
+    const search = String(req.query.search || "").trim().toLowerCase().slice(0, 80);
+    const snapshot = await firebase.firestore.collection("nyxUserProfiles").limit(250).get();
+    const uids = snapshot.docs.map(document => document.id);
+    const [administration, activity] = await Promise.all([
+      firestoreDocumentsById(firebase.firestore, "nyxUserAdministration", uids),
+      firestoreDocumentsById(firebase.firestore, "nyxUserActivity", uids)
+    ]);
+    const ownerUid = founderProfileConfig().administratorUid;
+    const now = Date.now();
+    const profiles = snapshot.docs.map(document => {
+      const data = document.data() || {};
+      const profile = normalizeNyxUserProfile(data.profile, { uid: document.id });
+      const activityData = activity.get(document.id) || {};
+      const lastActiveAtMs = safeActivityTime(activityData.lastActiveAtMs || activityData.lastActiveAt);
+      return {
+        uid: document.id,
+        profile,
+        role: document.id === ownerUid ? "owner" : normalizeNyxRole(administration.get(document.id)?.role),
+        online: Boolean(lastActiveAtMs && now - lastActiveAtMs <= signedInOnlineWindowMs),
+        createdAt: safeDateIso(data.createdAt),
+        self: document.id === token.uid
+      };
+    }).filter(entry => {
+      if (!search) return true;
+      return [entry.profile.displayName, entry.profile.handle, entry.role].some(value => String(value || "").toLowerCase().includes(search));
+    }).sort((left, right) => {
+      if (left.self !== right.self) return left.self ? -1 : 1;
+      if (left.online !== right.online) return left.online ? -1 : 1;
+      return String(left.profile.displayName || "").localeCompare(String(right.profile.displayName || ""), undefined, { sensitivity: "base", numeric: true });
+    }).slice(0, 40);
+    res.json({ profiles, total: profiles.length });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Profiles are unavailable." });
   }
 });
 

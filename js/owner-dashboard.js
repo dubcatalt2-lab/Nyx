@@ -4,8 +4,21 @@
   const esc = value => String(value ?? "").replace(/[&<>"']/g, character => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   })[character]);
-  const roleLabel = value => ({ owner: "Owner", admin: "Admin", developer: "Developer", moderator: "Moderator", member: "Member" }[value] || "Member");
-  const roleIcon = role => `<img class="nyx-owner-role-icon" src="/assets/icons/roles/${esc(role)}.png" alt="" aria-hidden="true">`;
+  const ownerRoleLabels = Object.freeze({
+    owner: "Owner",
+    co_owner: "Co-owner",
+    admin: "Admin",
+    manager: "Manager",
+    developer: "Developer",
+    moderator: "Moderator",
+    support: "Support",
+    tester: "Tester",
+    contributor: "Contributor",
+    member: "Member"
+  });
+  const ownerRoleIcons = Object.freeze({ co_owner: "owner", manager: "admin", support: "moderator", tester: "developer", contributor: "developer" });
+  const roleLabel = value => ownerRoleLabels[value] || "Member";
+  const roleIcon = role => `<img class="nyx-owner-role-icon" src="/assets/icons/roles/${esc(ownerRoleIcons[role] || role)}.png" alt="" aria-hidden="true">`;
   const subscriptionLabel = value => ({
     free: "Free", premium: "Premium", trialing: "Trial", past_due: "Past due", canceled: "Canceled"
   }[value] || "Free");
@@ -46,6 +59,121 @@
     if (/(user|account|profile|role)/.test(value)) return "users";
     return "activity";
   };
+  const ownerProfileImageDataLimit = 850_000;
+  const ownerProfileMediaDataLimit = 11_250_000;
+  const ownerProfileMediaPlaceholder = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
+  const ownerProfileMediaResolved = new Map();
+  const ownerProfileMediaPending = new Map();
+
+  function ownerProfileMediaPath(value) {
+    const source = String(value || "").trim();
+    return /^\/api\/profile-media\/[A-Za-z0-9_-]{8,128}\/(?:avatar|banner)\/[A-Za-z0-9_-]{12,80}$/.test(source) ? source : "";
+  }
+
+  async function resolveOwnerProfileMedia(source) {
+    const path = ownerProfileMediaPath(source);
+    if (!path) return null;
+    if (ownerProfileMediaResolved.has(path)) return ownerProfileMediaResolved.get(path);
+    if (ownerProfileMediaPending.has(path)) return ownerProfileMediaPending.get(path);
+    const pending = (async () => {
+      const manifestResponse = await fetch(`${path}/manifest`, { cache: "force-cache" });
+      const manifest = await manifestResponse.json().catch(() => ({}));
+      const mime = String(manifest.mime || "").toLowerCase();
+      const totalChunks = Number(manifest.totalChunks || 0);
+      if (!manifestResponse.ok || !/^image\/(?:gif|png|jpeg|webp)$/.test(mime) || !Number.isInteger(totalChunks) || totalChunks < 1 || totalChunks > 32) {
+        throw new Error("That saved profile image is unavailable.");
+      }
+      const encodedChunks = await Promise.all(Array.from({ length: totalChunks }, async (_, index) => {
+        const response = await fetch(`${path}/chunks/${index}`, { cache: "force-cache" });
+        const encoded = (await response.text()).trim();
+        if (!response.ok || !encoded || !/^[a-z0-9+/=]+$/i.test(encoded)) throw new Error("That saved profile image is incomplete.");
+        return encoded;
+      }));
+      const parts = encodedChunks.map(encoded => {
+        const decoded = atob(encoded);
+        const bytes = new Uint8Array(decoded.length);
+        for (let index = 0; index < decoded.length; index += 1) bytes[index] = decoded.charCodeAt(index);
+        return bytes;
+      });
+      const blob = new Blob(parts, { type: mime });
+      if (Number(manifest.byteLength || 0) > 0 && blob.size !== Number(manifest.byteLength)) {
+        throw new Error("That saved profile image did not pass its size check.");
+      }
+      const result = { url: URL.createObjectURL(blob), mime, size: blob.size };
+      ownerProfileMediaResolved.set(path, result);
+      return result;
+    })().finally(() => ownerProfileMediaPending.delete(path));
+    ownerProfileMediaPending.set(path, pending);
+    return pending;
+  }
+
+  function ownerProfileImageMarkup(source, alt = "", fallback = "") {
+    const path = ownerProfileMediaPath(source);
+    if (path) return `<img src="${ownerProfileMediaPlaceholder}" data-owner-profile-media="${esc(path)}" data-owner-media-fallback="${esc(fallback)}" alt="${esc(alt)}">`;
+    return source ? `<img src="${esc(source)}" alt="${esc(alt)}">` : esc(fallback);
+  }
+
+  async function hydrateOwnerProfileMedia(root) {
+    const images = [...(root?.querySelectorAll?.("img[data-owner-profile-media]") || [])];
+    await Promise.all(images.map(async image => {
+      const fallback = String(image.dataset.ownerMediaFallback || "");
+      try {
+        const media = await resolveOwnerProfileMedia(image.dataset.ownerProfileMedia);
+        if (media && image.isConnected) image.src = media.url;
+      } catch {
+        if (!image.isConnected) return;
+        if (fallback) image.replaceWith(document.createTextNode(fallback));
+        else image.remove();
+      }
+    }));
+  }
+
+  function readOwnerProfileFile(file, errorMessage) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error(errorMessage));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function prepareOwnerProfileImage(file, maxWidth, maxHeight) {
+    if (!file || !/^image\/(?:png|jpe?g|webp|gif)$/i.test(String(file.type || ""))) {
+      throw new Error("Choose a PNG, JPG, WebP, or GIF image.");
+    }
+    if (file.size > 8 * 1024 * 1024) throw new Error("Choose an image smaller than 8 MB.");
+    if (/^image\/gif$/i.test(String(file.type || ""))) {
+      const signature = await file.slice(0, 6).text();
+      if (!/^GIF8[79]a$/.test(signature)) throw new Error("That file is not a valid GIF.");
+      const dataUrl = await readOwnerProfileFile(file, "That GIF could not be opened.");
+      if (!/^data:image\/gif;base64,/i.test(dataUrl) || dataUrl.length > ownerProfileMediaDataLimit) {
+        throw new Error("Choose a valid GIF smaller than 8 MB.");
+      }
+      return dataUrl;
+    }
+    const objectUrl = URL.createObjectURL(file);
+    try {
+      const image = await new Promise((resolve, reject) => {
+        const preview = new Image();
+        preview.onload = () => resolve(preview);
+        preview.onerror = () => reject(new Error("That image could not be opened."));
+        preview.src = objectUrl;
+      });
+      let scale = Math.min(1, maxWidth / Math.max(1, image.naturalWidth), maxHeight / Math.max(1, image.naturalHeight));
+      for (let pass = 0; pass < 4; pass += 1) {
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+        canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/webp", Math.max(0.52, 0.86 - pass * 0.1));
+        if (dataUrl.length <= ownerProfileImageDataLimit) return dataUrl;
+        scale *= 0.72;
+      }
+      throw new Error("That image is too detailed to save. Try a smaller image.");
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  }
 
   let activeDashboard = null;
 
@@ -116,7 +244,7 @@
             </header>
             <form class="nyx-owner-filters" data-owner-filters>
               <label class="nyx-owner-search">${dashboardIcon("search")}<input type="search" name="search" placeholder="Search name, username, email, or UID" autocomplete="off"></label>
-              <select name="role" aria-label="Filter by role"><option value="all">All roles</option><option value="owner">Owner</option><option value="admin">Admin</option><option value="developer">Developer</option><option value="moderator">Moderator</option><option value="member">Member</option></select>
+              <select name="role" aria-label="Filter by role"><option value="all">All roles</option><option value="owner">Owner</option><option value="co_owner">Co-owner</option><option value="admin">Admin</option><option value="manager">Manager</option><option value="developer">Developer</option><option value="moderator">Moderator</option><option value="support">Support</option><option value="tester">Tester</option><option value="contributor">Contributor</option><option value="member">Member</option></select>
               <select name="subscription" aria-label="Filter by subscription"><option value="all">All subscriptions</option><option value="free">Free</option><option value="premium">Premium</option><option value="trialing">Trial</option><option value="past_due">Past due</option><option value="canceled">Canceled</option></select>
               <select name="status" aria-label="Filter by account status"><option value="all">All accounts</option><option value="enabled">Enabled</option><option value="disabled">Disabled</option><option value="online">Online now</option><option value="offline">Offline</option></select>
             </form>
@@ -174,6 +302,29 @@
       return payload;
     }
 
+    async function uploadProfileMedia(uid, kind, dataUrl, onProgress = () => {}) {
+      const match = String(dataUrl || "").match(/^data:(image\/(?:gif|png|jpeg|webp));base64,([a-z0-9+/=]+)$/i);
+      if (!match) throw new Error(`The selected ${kind} could not be prepared.`);
+      if (dataUrl.length > ownerProfileMediaDataLimit) throw new Error("Choose an image smaller than 8 MB.");
+      const encoded = match[2];
+      const chunks = [];
+      for (let offset = 0; offset < encoded.length; offset += 420_000) chunks.push(encoded.slice(offset, offset + 420_000));
+      if (!chunks.length || chunks.length > 32) throw new Error("That image is too large to upload.");
+      const uploadId = (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`).replace(/[^a-z0-9_-]/gi, "");
+      const base = `/api/owner-dashboard/users/${encodeURIComponent(uid)}/profile-media/${kind}/${uploadId}`;
+      for (let index = 0; index < chunks.length; index += 1) {
+        onProgress(Math.round((index / chunks.length) * 90));
+        await api(`${base}/${index}`, {
+          method: "PUT",
+          body: JSON.stringify({ mime: match[1].toLowerCase(), totalChunks: chunks.length, chunk: chunks[index] })
+        });
+      }
+      const data = await api(`${base}/complete`, { method: "POST", body: "{}" });
+      if (!data.url) throw new Error(`The ${kind} image could not be completed.`);
+      onProgress(100);
+      return data.url;
+    }
+
     function renderLoading() {
       metricsHost.innerHTML = Array.from({ length: 6 }, () => '<article class="nyx-owner-metric loading"><i></i><div><span></span><strong></strong></div></article>').join("");
       tableHost.innerHTML = '<div class="nyx-owner-table-loading"><i></i><i></i><i></i><i></i><i></i></div>';
@@ -209,7 +360,7 @@
         tableHost.innerHTML = `<table class="nyx-owner-table">
           <thead><tr><th>${sortButton("displayName", "User")}</th><th>${sortButton("role", "Role")}</th><th>${sortButton("subscriptionStatus", "Subscription")}</th><th>${sortButton("createdAt", "Created")}</th><th>${sortButton("lastSignInAt", "Last sign-in")}</th><th>${sortButton("lastActiveAt", "Last active")}</th><th>Email verified</th><th>${sortButton("status", "Status")}</th><th><span class="sr-only">Actions</span></th></tr></thead>
           <tbody>${users.map(user => `<tr data-owner-user-row="${esc(user.uid)}">
-            <td><button class="nyx-owner-user-cell" type="button" data-owner-view-user="${esc(user.uid)}"><span class="nyx-owner-avatar">${user.photoUrl ? `<img src="${esc(user.photoUrl)}" alt="">` : esc((user.displayName || "?").slice(0, 1).toUpperCase())}<i class="${user.online ? "online" : ""}"></i></span><span><span class="nyx-owner-user-name-row"><strong>${esc(user.displayName)}</strong><span class="nyx-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></span><small>@${esc(user.username)} · ${esc(user.email || "No email")}</small></span></button></td>
+            <td><button class="nyx-owner-user-cell" type="button" data-owner-view-user="${esc(user.uid)}"><span class="nyx-owner-avatar">${ownerProfileImageMarkup(user.photoUrl, "", (user.displayName || "?").slice(0, 1).toUpperCase())}<i class="${user.online ? "online" : ""}"></i></span><span><span class="nyx-owner-user-name-row"><strong>${esc(user.displayName)}</strong><span class="nyx-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></span><small>@${esc(user.username)} · ${esc(user.email || "No email")}</small></span></button></td>
             <td><span class="nyx-owner-badge role-${esc(user.role)}">${roleIcon(user.role)}${esc(roleLabel(user.role))}</span></td>
             <td><span class="nyx-owner-badge subscription-${esc(user.subscriptionStatus)}">${esc(subscriptionLabel(user.subscriptionStatus))}</span></td>
             <td><span title="${esc(dateLabel(user.createdAt))}">${esc(relativeLabel(user.createdAt))}</span></td>
@@ -223,6 +374,7 @@
       const pagination = data.pagination || {};
       paginationHost.innerHTML = `<span>Page ${pagination.page || 1} of ${pagination.pages || 1}</span><div><label>Rows <select data-owner-page-size><option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option></select></label><button type="button" data-owner-page="${Math.max(1, (pagination.page || 1) - 1)}" ${(pagination.page || 1) <= 1 ? "disabled" : ""}>Previous</button><button type="button" data-owner-page="${Math.min(pagination.pages || 1, (pagination.page || 1) + 1)}" ${(pagination.page || 1) >= (pagination.pages || 1) ? "disabled" : ""}>Next</button></div>`;
       paginationHost.querySelector("[data-owner-page-size]").value = String(state.pageSize);
+      void hydrateOwnerProfileMedia(tableHost);
     }
 
     function renderActivity(activity = []) {
@@ -302,10 +454,8 @@
       const nameEffect = String(profile.displayNameEffect || "solid").toLowerCase();
       const customSpeed = Math.max(2, Math.min(18, Number(profile.customEffectSpeed) || 7));
       const customIntensity = Math.max(20, Math.min(100, Number(profile.customEffectIntensity) || 70));
-      const avatar = profile.avatarUrl
-        ? `<img src="${esc(profile.avatarUrl)}" alt="${esc(profile.displayName || user.displayName)}">`
-        : `<span>${esc((profile.displayName || user.displayName || "?").slice(0, 1).toUpperCase())}</span>`;
-      const banner = profile.bannerUrl ? `<img src="${esc(profile.bannerUrl)}" alt="">` : "";
+      const avatar = ownerProfileImageMarkup(profile.avatarUrl, profile.displayName || user.displayName, (profile.displayName || user.displayName || "?").slice(0, 1).toUpperCase());
+      const banner = ownerProfileImageMarkup(profile.bannerUrl, "");
       return `<article class="nyx-owner-public-profile nyx-owner-effect-${esc(effect)}" style="--profile-primary:${primary};--profile-secondary:${secondary};--profile-banner:${bannerColor};--profile-name-primary:${namePrimary};--profile-name-secondary:${nameSecondary};--profile-custom-primary:${customPrimary};--profile-custom-secondary:${customSecondary};--profile-effect-speed:${customSpeed}s;--profile-effect-opacity:${customIntensity / 100}">
         <i class="nyx-owner-public-effect" aria-hidden="true"></i>
         <div class="nyx-owner-public-banner">${banner}</div>
@@ -324,7 +474,26 @@
       const profile = user.profile || {};
       const remoteAvatar = /^https?:\/\//i.test(String(profile.avatarUrl || "")) ? profile.avatarUrl : "";
       const remoteBanner = /^https?:\/\//i.test(String(profile.bannerUrl || "")) ? profile.bannerUrl : "";
+      const avatarPreview = ownerProfileImageMarkup(profile.avatarUrl, "Current avatar", (profile.displayName || user.displayName || "?").slice(0, 1).toUpperCase());
+      const bannerPreview = ownerProfileImageMarkup(profile.bannerUrl, "Current banner");
+      const avatarInputId = `nyx-owner-avatar-${esc(user.uid)}`;
+      const bannerInputId = `nyx-owner-banner-${esc(user.uid)}`;
       return `<form class="nyx-owner-profile-editor" data-owner-profile-form>
+        <div class="nyx-owner-media-editors">
+          <article class="nyx-owner-media-editor">
+            <div class="nyx-owner-media-preview avatar" data-owner-media-preview="avatar">${avatarPreview}</div>
+            <div><strong>Profile avatar</strong><span data-owner-media-name="avatar">PNG, JPG, WebP, or animated GIF · 8 MB max</span></div>
+            <label class="nyx-owner-media-button" for="${avatarInputId}">Choose avatar</label>
+            <input class="nyx-owner-media-input" id="${avatarInputId}" name="avatarFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+          </article>
+          <article class="nyx-owner-media-editor banner">
+            <div class="nyx-owner-media-preview banner" data-owner-media-preview="banner" style="--owner-banner-preview:${profileColor(profile.bannerColor, "#8ea1ff")}">${bannerPreview}</div>
+            <div><strong>Profile banner</strong><span data-owner-media-name="banner">PNG, JPG, WebP, or animated GIF · 8 MB max</span></div>
+            <label class="nyx-owner-media-button" for="${bannerInputId}">Choose banner</label>
+            <input class="nyx-owner-media-input" id="${bannerInputId}" name="bannerFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+          </article>
+        </div>
+        <p class="nyx-owner-media-error" data-owner-media-error role="alert"></p>
         <div class="nyx-owner-profile-fields">
           <label>Display name<input name="displayName" maxlength="48" required value="${esc(profile.displayName || user.displayName)}"></label>
           <label>Username<span class="nyx-owner-prefixed-input"><i>@</i><input name="handle" maxlength="32" required value="${esc(String(profile.handle || user.username).replace(/^@/, ""))}"></span></label>
@@ -338,14 +507,14 @@
           <label>Name effect<select name="displayNameEffect"><option value="solid"${selected(profile.displayNameEffect, "solid")}>Solid</option><option value="gradient"${selected(profile.displayNameEffect, "gradient")}>Gradient</option><option value="neon"${selected(profile.displayNameEffect, "neon")}>Neon</option><option value="toon"${selected(profile.displayNameEffect, "toon")}>Toon</option><option value="pop"${selected(profile.displayNameEffect, "pop")}>Pop</option></select></label>
           <label>Profile effect<select name="profileEffect"><option value="none"${selected(profile.profileEffect, "none")}>None</option><option value="glow"${selected(profile.profileEffect, "glow")}>Glow</option><option value="sparkle"${selected(profile.profileEffect, "sparkle")}>Sparkle</option><option value="aurora"${selected(profile.profileEffect, "aurora")}>Aurora</option><option value="holographic"${selected(profile.profileEffect, "holographic")}>Holographic</option><option value="fireflies"${selected(profile.profileEffect, "fireflies")}>Fireflies</option><option value="cosmic-dust"${selected(profile.profileEffect, "cosmic-dust")}>Cosmic dust</option><option value="electric-storm"${selected(profile.profileEffect, "electric-storm")}>Electric storm</option><option value="meteor-shower"${selected(profile.profileEffect, "meteor-shower")}>Meteor shower</option><option value="cyber-grid"${selected(profile.profileEffect, "cyber-grid")}>Cyber grid</option><option value="plasma"${selected(profile.profileEffect, "plasma")}>Plasma</option><option value="snowfall"${selected(profile.profileEffect, "snowfall")}>Snowfall</option><option value="embers"${selected(profile.profileEffect, "embers")}>Embers</option><option value="bubbles"${selected(profile.profileEffect, "bubbles")}>Bubbles</option><option value="custom"${selected(profile.profileEffect, "custom")}>Custom</option></select></label>
           <label>Avatar decoration<select name="avatarDecoration"><option value="none"${selected(profile.avatarDecoration, "none")}>None</option><option value="starfall"${selected(profile.avatarDecoration, "starfall")}>Starfall</option><option value="orbit"${selected(profile.avatarDecoration, "orbit")}>Orbit</option><option value="laurel"${selected(profile.avatarDecoration, "laurel")}>Laurel</option><option value="neon-wings"${selected(profile.avatarDecoration, "neon-wings")}>Neon wings</option></select></label>
-          <label class="wide">Replace avatar from URL<input name="avatarUrl" type="url" placeholder="Leave blank to keep the current image" value="${esc(remoteAvatar)}"></label>
-          <label class="wide">Replace banner from URL<input name="bannerUrl" type="url" placeholder="Leave blank to keep the current image" value="${esc(remoteBanner)}"></label>
+          <label class="wide">Avatar URL (optional)<input name="avatarUrl" type="url" placeholder="Leave blank to keep the current image" value="${esc(remoteAvatar)}"></label>
+          <label class="wide">Banner URL (optional)<input name="bannerUrl" type="url" placeholder="Leave blank to keep the current image" value="${esc(remoteBanner)}"></label>
         </div>
         <div class="nyx-owner-media-removal">
           <label><input name="removeAvatar" type="checkbox"> Remove current avatar</label>
           <label><input name="removeBanner" type="checkbox"> Remove current banner</label>
         </div>
-        <p>Owner edits use the same unique-username check as normal profile settings. Blank image URL fields keep uploaded images unchanged.</p>
+        <p>File uploads preserve animated GIFs. A selected file takes priority over its URL field, and blank fields keep the current media unchanged.</p>
         <div class="nyx-owner-detail-actions"><button type="submit">Save profile</button></div>
       </form>`;
     }
@@ -358,17 +527,18 @@
       try {
         const { user } = await api(`/api/owner-dashboard/users/${encodeURIComponent(uid)}`);
         state.selectedUser = user;
-        const avatar = user.photoUrl ? `<img src="${esc(user.photoUrl)}" alt="">` : esc((user.displayName || "?").slice(0, 1).toUpperCase());
+        const avatar = ownerProfileImageMarkup(user.photoUrl, "", (user.displayName || "?").slice(0, 1).toUpperCase());
         drawer.innerHTML = `<header><div class="nyx-owner-detail-avatar">${avatar}<i class="${user.online ? "online" : ""}"></i></div><div><span>${roleIcon(user.role)}${esc(roleLabel(user.role))} account</span><h2>${esc(user.displayName)}</h2><p class="nyx-owner-drawer-identity">@${esc(user.username)} <span class="nyx-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></p></div><button type="button" data-owner-drawer-close aria-label="Close user details">${dashboardIcon("close")}</button></header>
           <div class="nyx-owner-drawer-scroll">
             <section class="nyx-owner-detail-grid">${detailValue("Email", user.deliverableEmail ? user.email : "No email added")}${detailValue("Firebase UID", user.uid, "uid")}${detailValue("Presence", user.online ? "Online now" : "Offline")}${detailValue("Created", dateLabel(user.createdAt))}${detailValue("Last sign-in", dateLabel(user.lastSignInAt))}${detailValue("Last active", dateLabel(user.lastActiveAt))}${detailValue("Email verified", user.deliverableEmail ? (user.emailVerified ? "Verified" : "Not verified") : "Not applicable · username-only")}</section>
             <section class="nyx-owner-detail-section nyx-owner-profile-management"><h3>Public profile</h3>${ownerProfilePreview(user)}<details><summary>Edit this profile</summary>${ownerProfileEditor(user)}</details></section>
-            <section class="nyx-owner-detail-section"><h3>Access</h3><label>Role<select data-owner-detail-role ${user.role === "owner" ? "disabled" : ""}><option value="member">Member</option><option value="moderator">Moderator</option><option value="developer">Developer</option><option value="admin">Admin</option><option value="owner" ${user.role === "owner" ? "selected" : "disabled"}>Owner</option></select></label><label>Subscription<select data-owner-detail-subscription><option value="free">Free</option><option value="premium">Premium</option><option value="trialing">Trial</option><option value="past_due">Past due</option><option value="canceled">Canceled</option></select></label><label>Monthly revenue <input data-owner-detail-revenue type="number" min="0" step="0.01" value="${((user.monthlyRevenueCents || 0) / 100).toFixed(2)}"></label><div class="nyx-owner-detail-actions"><button type="button" data-owner-save-access>Save access</button></div></section>
+            <section class="nyx-owner-detail-section"><h3>Access</h3><label>Role<select data-owner-detail-role ${user.role === "owner" ? "disabled" : ""}><option value="member">Member</option><option value="contributor">Contributor</option><option value="tester">Tester</option><option value="support">Support</option><option value="moderator">Moderator</option><option value="developer">Developer</option><option value="manager">Manager</option><option value="admin">Admin</option><option value="co_owner">Co-owner</option><option value="owner" ${user.role === "owner" ? "selected" : "disabled"}>Owner</option></select></label><label>Subscription<select data-owner-detail-subscription><option value="free">Free</option><option value="premium">Premium</option><option value="trialing">Trial</option><option value="past_due">Past due</option><option value="canceled">Canceled</option></select></label><label>Monthly revenue <input data-owner-detail-revenue type="number" min="0" step="0.01" value="${((user.monthlyRevenueCents || 0) / 100).toFixed(2)}"></label><div class="nyx-owner-detail-actions"><button type="button" data-owner-save-access>Save access</button></div></section>
             <section class="nyx-owner-detail-section"><h3>Account actions</h3>${!user.deliverableEmail ? '<p class="nyx-owner-action-note">This username-only account has no inbox. Create a secure reset link and give it directly to the account owner.</p>' : ""}<div class="nyx-owner-action-grid"><button type="button" data-owner-user-action="create_password_reset_link">Create reset link</button><button type="button" data-owner-user-action="send_password_reset" ${!user.deliverableEmail ? "disabled" : ""}>Email reset link</button><button type="button" data-owner-user-action="verify_email" ${user.emailVerified || !user.deliverableEmail ? "disabled" : ""}>Verify email</button><button type="button" data-owner-user-action="${user.disabled ? "enable" : "disable"}" ${user.role === "owner" ? "disabled" : ""}>${user.disabled ? "Re-enable account" : "Disable account"}</button><button class="danger" type="button" data-owner-user-action="delete" ${user.role === "owner" ? "disabled" : ""}>Delete account</button></div></section>
             <section class="nyx-owner-detail-section"><h3>Recent user activity</h3><div class="nyx-owner-user-activity">${(user.recentActivity || []).length ? user.recentActivity.map(event => `<p><strong>${esc(actionLabel(event.action))}</strong><span>${esc(relativeLabel(event.createdAt))}</span></p>`).join("") : "<span>No recorded account actions.</span>"}</div></section>
           </div>`;
         drawer.querySelector("[data-owner-detail-role]").value = user.role;
         drawer.querySelector("[data-owner-detail-subscription]").value = user.subscriptionStatus;
+        void hydrateOwnerProfileMedia(drawer);
       } catch (error) {
         drawer.innerHTML = `<div class="nyx-owner-error"><strong>User details could not load</strong><span>${esc(error.message)}</span><button type="button" data-owner-drawer-close>Close</button></div>`;
       }
@@ -524,6 +694,39 @@
     }
 
     function onChange(event) {
+      if (event.target.matches(".nyx-owner-media-input")) {
+        const input = event.target;
+        const form = input.closest("[data-owner-profile-form]");
+        const kind = input.name === "avatarFile" ? "avatar" : "banner";
+        const file = input.files?.[0];
+        const name = form?.querySelector(`[data-owner-media-name="${kind}"]`);
+        const preview = form?.querySelector(`[data-owner-media-preview="${kind}"]`);
+        const errorHost = form?.querySelector("[data-owner-media-error]");
+        input._nyxOwnerDataUrl = "";
+        input._nyxOwnerMediaError = null;
+        if (!file) return;
+        if (name) name.textContent = `Preparing ${file.name}...`;
+        if (errorHost) errorHost.textContent = "";
+        const removeInput = form?.querySelector(`[name="remove${kind[0].toUpperCase()}${kind.slice(1)}"]`);
+        if (removeInput) removeInput.checked = false;
+        const preparation = prepareOwnerProfileImage(file, kind === "avatar" ? 512 : 1200, kind === "avatar" ? 512 : 480);
+        input._nyxOwnerPreparation = preparation;
+        void preparation.then(dataUrl => {
+          if (input._nyxOwnerPreparation !== preparation) return;
+          input._nyxOwnerDataUrl = dataUrl;
+          if (name) name.textContent = file.name;
+          if (preview) preview.innerHTML = `<img src="${dataUrl}" alt="Selected ${kind}">`;
+        }).catch(error => {
+          if (input._nyxOwnerPreparation !== preparation) return;
+          input._nyxOwnerMediaError = error;
+          input.value = "";
+          if (name) name.textContent = "Choose a different image";
+          if (errorHost) errorHost.textContent = error.message || "That image could not be used.";
+        }).finally(() => {
+          if (input._nyxOwnerPreparation === preparation) input._nyxOwnerPreparation = null;
+        });
+        return;
+      }
       if (event.target.matches("[data-owner-page-size]")) {
         state.pageSize = Number(event.target.value) || 25;
         state.page = 1;
@@ -546,36 +749,67 @@
       if (!form) return;
       event.preventDefault();
       if (!form.reportValidity()) return;
-      const values = new FormData(form);
-      const profile = {
-        displayName: values.get("displayName"),
-        handle: values.get("handle"),
-        bio: values.get("bio"),
-        customStatus: values.get("customStatus"),
-        status: values.get("status"),
-        accentPrimary: values.get("accentPrimary"),
-        accentSecondary: values.get("accentSecondary"),
-        bannerColor: values.get("bannerColor"),
-        displayNameFont: values.get("displayNameFont"),
-        displayNameEffect: values.get("displayNameEffect"),
-        profileEffect: values.get("profileEffect"),
-        avatarDecoration: values.get("avatarDecoration")
-      };
-      const avatarUrl = String(values.get("avatarUrl") || "").trim();
-      const bannerUrl = String(values.get("bannerUrl") || "").trim();
-      if (avatarUrl) profile.avatarUrl = avatarUrl;
-      if (bannerUrl) profile.bannerUrl = bannerUrl;
       const submit = form.querySelector('[type="submit"]');
       submit.disabled = true;
-      submit.textContent = "Saving…";
-      void mutateUser("set_profile", {
-        profile,
-        removeAvatar: values.get("removeAvatar") === "on",
-        removeBanner: values.get("removeBanner") === "on"
-      }).finally(() => {
+      const originalLabel = submit.textContent;
+      void (async () => {
+        try {
+          const mediaInputs = [...form.querySelectorAll(".nyx-owner-media-input")];
+          const pending = mediaInputs.map(input => input._nyxOwnerPreparation).filter(Boolean);
+          if (pending.length) {
+            submit.textContent = "Preparing media…";
+            await Promise.all(pending);
+          }
+          const mediaError = mediaInputs.find(input => input._nyxOwnerMediaError)?._nyxOwnerMediaError;
+          if (mediaError) throw mediaError;
+          const values = new FormData(form);
+          const profile = {
+            displayName: values.get("displayName"),
+            handle: values.get("handle"),
+            bio: values.get("bio"),
+            customStatus: values.get("customStatus"),
+            status: values.get("status"),
+            accentPrimary: values.get("accentPrimary"),
+            accentSecondary: values.get("accentSecondary"),
+            bannerColor: values.get("bannerColor"),
+            displayNameFont: values.get("displayNameFont"),
+            displayNameEffect: values.get("displayNameEffect"),
+            profileEffect: values.get("profileEffect"),
+            avatarDecoration: values.get("avatarDecoration")
+          };
+          const removals = {
+            avatar: values.get("removeAvatar") === "on",
+            banner: values.get("removeBanner") === "on"
+          };
+          for (const kind of ["avatar", "banner"]) {
+            const input = form.querySelector(`[name="${kind}File"]`);
+            const url = String(values.get(`${kind}Url`) || "").trim();
+            if (input?.files?.[0]) {
+              if (!input._nyxOwnerDataUrl) throw new Error(`The selected ${kind} is not ready. Choose it again.`);
+              removals[kind] = false;
+              submit.textContent = `Uploading ${kind}…`;
+              profile[`${kind}Url`] = await uploadProfileMedia(state.selectedUser.uid, kind, input._nyxOwnerDataUrl, progress => {
+                submit.textContent = `Uploading ${kind} ${progress}%`;
+              });
+            } else if (url) {
+              profile[`${kind}Url`] = url;
+            }
+          }
+          submit.textContent = "Saving…";
+          await mutateUser("set_profile", {
+            profile,
+            removeAvatar: removals.avatar,
+            removeBanner: removals.banner
+          });
+        } catch (error) {
+          const errorHost = form.querySelector("[data-owner-media-error]");
+          if (errorHost) errorHost.textContent = error.message || "Profile media could not be saved.";
+          notify(error.message || "Profile media could not be saved.", "error");
+        }
+      })().finally(() => {
         if (submit.isConnected) {
           submit.disabled = false;
-          submit.textContent = "Save profile";
+          submit.textContent = originalLabel;
         }
       });
     }

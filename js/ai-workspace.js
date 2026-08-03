@@ -14,10 +14,15 @@
   const input=document.getElementById('input');
   const send=document.getElementById('send');
   const model=document.getElementById('model');
+  const modelPicker=document.getElementById('modelPicker');
+  const modelTrigger=document.getElementById('modelTrigger');
+  const modelSelected=document.getElementById('modelSelected');
+  const modelMenu=document.getElementById('modelMenu');
+  const modelOptionsHost=document.getElementById('modelOptions');
   const clear=document.getElementById('clear');
   const threadTitle=document.getElementById('threadTitle');
   const characterCount=document.getElementById('characterCount');
-  if(!app||!feed||!conversation||!form||!input||!send||!model||!clear||!threadTitle) return;
+  if(!app||!feed||!conversation||!form||!input||!send||!model||!modelPicker||!modelTrigger||!modelSelected||!modelMenu||!modelOptionsHost||!clear||!threadTitle) return;
 
   let activeController=null;
   let followStream=true;
@@ -335,19 +340,91 @@
     return modelCatalog.find(item=>item.id===id)?.label||id;
   }
 
-  function modelOptions(models){
+  function groupedModels(models){
     const groups=new Map();
     models.forEach(item=>{
       const company=item.company||'Other models';
       if(!groups.has(company)) groups.set(company,[]);
       groups.get(company).push(item);
     });
-    return [...groups].map(([company,items])=>`<optgroup label="${escapeHtml(company)}">${items.map(item=>`<option value="${escapeHtml(item.id)}">${escapeHtml(item.label)}</option>`).join('')}</optgroup>`).join('');
+    return [...groups];
+  }
+
+  function modelOptions(models){
+    return groupedModels(models).map(([company,items])=>`<optgroup label="${escapeHtml(company)}">${items.map(item=>`<option value="${escapeHtml(item.id)}">${escapeHtml(item.label)}</option>`).join('')}</optgroup>`).join('');
+  }
+
+  function modelMenuOptions(models,selected){
+    return groupedModels(models).map(([company,items],groupIndex)=>{
+      const groupId=`modelGroup${groupIndex}`;
+      return `<section class="ai-model-group" role="group" aria-labelledby="${groupId}">
+        <p class="ai-model-group-label" id="${groupId}">${escapeHtml(company)}</p>
+        ${items.map(item=>`<button class="ai-model-option" type="button" role="option" data-model-id="${escapeHtml(item.id)}" aria-selected="${item.id===selected?'true':'false'}">
+          <span class="ai-model-option-label">${escapeHtml(item.label)}</span>
+          <span class="ai-model-option-check" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="m5 10 3 3 7-7"/></svg></span>
+        </button>`).join('')}
+      </section>`;
+    }).join('');
+  }
+
+  function syncModelControl(){
+    const selected=model.value||DEFAULT_MODEL;
+    const label=modelLabel(selected);
+    modelSelected.textContent=label;
+    modelTrigger.title=`Model: ${label}`;
+    modelTrigger.setAttribute('aria-label',`AI model: ${label}`);
+    modelOptionsHost.querySelectorAll('[data-model-id]').forEach(option=>{
+      option.setAttribute('aria-selected',String(option.dataset.modelId===selected));
+    });
+  }
+
+  function renderModelOptions(models,selected){
+    model.innerHTML=modelOptions(models);
+    model.value=selected;
+    modelOptionsHost.innerHTML=modelMenuOptions(models,selected);
+    const count=modelMenu.querySelector('[data-model-count]');
+    if(count) count.textContent=`${models.length} available`;
+    syncModelControl();
+  }
+
+  function modelOptionElements(){
+    return [...modelOptionsHost.querySelectorAll('[data-model-id]')];
+  }
+
+  function closeModelMenu({restoreFocus=false}={}){
+    if(modelMenu.hidden) return;
+    modelMenu.hidden=true;
+    modelPicker.classList.remove('is-open');
+    modelTrigger.setAttribute('aria-expanded','false');
+    if(restoreFocus) modelTrigger.focus();
+  }
+
+  function openModelMenu(direction=0){
+    if(modelTrigger.disabled) return;
+    modelMenu.hidden=false;
+    modelPicker.classList.add('is-open');
+    modelTrigger.setAttribute('aria-expanded','true');
+    requestAnimationFrame(()=>{
+      const options=modelOptionElements();
+      const selectedIndex=Math.max(0,options.findIndex(option=>option.getAttribute('aria-selected')==='true'));
+      const index=direction<0?options.length-1:(direction>0?0:selectedIndex);
+      options[index]?.focus({preventScroll:true});
+      options[index]?.scrollIntoView({block:'nearest'});
+    });
+  }
+
+  function selectModel(id){
+    if(!modelCatalog.some(item=>item.id===id)) return;
+    model.value=id;
+    model.dispatchEvent(new Event('change',{bubbles:true}));
+    closeModelMenu({restoreFocus:true});
   }
 
   async function loadModels(){
     const status=document.querySelector('.ai-model-status');
     model.disabled=true;
+    modelTrigger.disabled=true;
+    modelTrigger.setAttribute('aria-busy','true');
     try{
       const response=await fetch('/api/nyx-ai/models',{headers:{accept:'application/json'}});
       const data=await response.json();
@@ -362,8 +439,7 @@
       modelCatalog=next;
       const saved=localStorage.getItem(MODEL_KEY)||DEFAULT_MODEL;
       const selected=next.some(item=>item.id===saved)?saved:(next.some(item=>item.id===DEFAULT_MODEL)?DEFAULT_MODEL:next[0].id);
-      model.innerHTML=modelOptions(next);
-      model.value=selected;
+      renderModelOptions(next,selected);
       localStorage.setItem(MODEL_KEY,selected);
       if(status) status.title=`${next.length} models available`;
     }catch(error){
@@ -371,6 +447,8 @@
       if(status){status.classList.add('is-warning');status.title='Using the default model'}
     }finally{
       model.disabled=false;
+      modelTrigger.disabled=false;
+      modelTrigger.removeAttribute('aria-busy');
     }
   }
 
@@ -541,12 +619,61 @@
       form.requestSubmit();
     }
   });
+  modelTrigger.addEventListener('click',()=>{
+    if(modelMenu.hidden) openModelMenu();
+    else closeModelMenu();
+  });
+  modelTrigger.addEventListener('keydown',event=>{
+    if(event.key==='ArrowDown'||event.key==='ArrowUp'){
+      event.preventDefault();
+      openModelMenu(event.key==='ArrowDown'?1:-1);
+    }else if(event.key==='Escape'){
+      event.preventDefault();
+      closeModelMenu();
+    }
+  });
+  modelMenu.addEventListener('click',event=>{
+    const option=event.target.closest('[data-model-id]');
+    if(option) selectModel(option.dataset.modelId||'');
+  });
+  modelMenu.addEventListener('keydown',event=>{
+    const option=event.target.closest('[data-model-id]');
+    const options=modelOptionElements();
+    const index=Math.max(0,options.indexOf(option));
+    let target=-1;
+    if(event.key==='ArrowDown') target=Math.min(options.length-1,index+1);
+    else if(event.key==='ArrowUp') target=Math.max(0,index-1);
+    else if(event.key==='Home') target=0;
+    else if(event.key==='End') target=options.length-1;
+    else if(event.key==='Enter'||event.key===' '){
+      event.preventDefault();
+      if(option) selectModel(option.dataset.modelId||'');
+      return;
+    }else if(event.key==='Escape'){
+      event.preventDefault();
+      closeModelMenu({restoreFocus:true});
+      return;
+    }else if(event.key==='Tab'){
+      closeModelMenu();
+      return;
+    }
+    if(target>=0){
+      event.preventDefault();
+      options[target]?.focus();
+      options[target]?.scrollIntoView({block:'nearest'});
+    }
+  });
+  document.addEventListener('pointerdown',event=>{
+    if(!modelMenu.hidden&&!modelPicker.contains(event.target)) closeModelMenu();
+  });
   model.addEventListener('change',()=>{
     localStorage.setItem(MODEL_KEY,model.value||DEFAULT_MODEL);
     model.title=modelLabel(model.value);
+    syncModelControl();
   });
   clear.addEventListener('click',clearChat);
 
+  renderModelOptions(modelCatalog,model.value||DEFAULT_MODEL);
   render();
   autoGrow();
   void loadModels();

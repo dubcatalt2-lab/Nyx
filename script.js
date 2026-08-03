@@ -354,6 +354,7 @@
       edit:'<path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/>',
       switch:'<path d="m16 3 4 4-4 4"/><path d="M20 7H9a4 4 0 0 0-4 4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h11a4 4 0 0 0 4-4"/>',
       id:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 9v6M12 9v6M16 12h.01"/>',
+      people:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
       dashboard:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
       chevron:'<path d="m9 18 6-6-6-6"/>'
     };
@@ -394,7 +395,7 @@
     menu.style.setProperty('--nyx-user-banner-color',profile.bannerColor);
     menu.style.cssText+=nyxProfileEffectVars(profile);
     const ownerControls=nyxFounderIsOwner?`<div class="nyx-account-menu-group nyx-account-menu-owner"><button type="button" role="menuitem" data-nyx-account-menu-action="owner-dashboard">${nyxAccountMenuIcon('dashboard')}<span>Owner Dashboard</span>${nyxAccountMenuIcon('chevron')}</button></div>`:'';
-    menu.innerHTML=`<i class="nyx-user-profile-effect nyx-account-menu-profile-effect" aria-hidden="true"></i><div class="nyx-account-menu-banner">${banner}</div><div class="nyx-account-menu-profile"><div class="nyx-account-menu-avatar nyx-avatar-decoration-${esc(profile.avatarDecoration)}">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i></div><span class="nyx-account-menu-status">${esc(profile.customStatus||statusLabel)}</span><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p class="nyx-account-menu-handle">${esc(profile.handle)}</p><p class="nyx-account-menu-bio">${esc(profile.bio||'No bio yet.')}</p></div>${ownerControls}<div class="nyx-account-menu-group"><button type="button" role="menuitem" data-nyx-account-menu-action="edit">${nyxAccountMenuIcon('edit')}<span>Edit Profile</span></button><hr><button type="button" role="menuitem" data-nyx-account-menu-action="status"><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-hidden="true"></i><span>${esc(statusLabel)}</span>${nyxAccountMenuIcon('chevron')}</button></div><div class="nyx-account-menu-group"><button type="button" role="menuitem" data-nyx-account-menu-action="switch">${nyxAccountMenuIcon('switch')}<span>Switch Accounts</span>${nyxAccountMenuIcon('chevron')}</button><hr><button type="button" role="menuitem" data-nyx-account-menu-action="copy-id">${nyxAccountMenuIcon('id')}<span>Copy User ID</span></button></div>`;
+    menu.innerHTML=`<i class="nyx-user-profile-effect nyx-account-menu-profile-effect" aria-hidden="true"></i><div class="nyx-account-menu-banner">${banner}</div><div class="nyx-account-menu-profile"><div class="nyx-account-menu-avatar nyx-avatar-decoration-${esc(profile.avatarDecoration)}">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i></div><span class="nyx-account-menu-status">${esc(profile.customStatus||statusLabel)}</span><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p class="nyx-account-menu-handle">${esc(profile.handle)}</p><p class="nyx-account-menu-bio">${esc(profile.bio||'No bio yet.')}</p></div>${ownerControls}<div class="nyx-account-menu-group"><button type="button" role="menuitem" data-nyx-account-menu-action="edit">${nyxAccountMenuIcon('edit')}<span>Edit Profile</span></button><button type="button" role="menuitem" data-nyx-account-menu-action="profiles">${nyxAccountMenuIcon('people')}<span>Browse Profiles</span>${nyxAccountMenuIcon('chevron')}</button><hr><button type="button" role="menuitem" data-nyx-account-menu-action="status"><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-hidden="true"></i><span>${esc(statusLabel)}</span>${nyxAccountMenuIcon('chevron')}</button></div><div class="nyx-account-menu-group"><button type="button" role="menuitem" data-nyx-account-menu-action="switch">${nyxAccountMenuIcon('switch')}<span>Switch Accounts</span>${nyxAccountMenuIcon('chevron')}</button><hr><button type="button" role="menuitem" data-nyx-account-menu-action="copy-id">${nyxAccountMenuIcon('id')}<span>Copy User ID</span></button></div>`;
     document.body.appendChild(menu);
     syncNyxAccountButtonAvatar(menu.querySelector('.nyx-account-menu-avatar'),profile);
     const bannerHost=menu.querySelector('.nyx-account-menu-banner');
@@ -440,6 +441,101 @@
       getToken:()=>nyxGetFirebaseToken(true),
       toast
     });
+  }
+  async function openNyxProfileDirectory(){
+    closeNyxAccountMenu();
+    if(!nyxFounderSignedInUser){await openNyxAccountAccess();if(!nyxFounderSignedInUser)return}
+    document.querySelector('.nyx-profile-directory-overlay')?.remove();
+    const overlay=document.createElement('div');
+    overlay.className='nyx-profile-directory-overlay';
+    overlay.innerHTML=`<section class="nyx-profile-directory" role="dialog" aria-modal="true" aria-labelledby="nyxProfileDirectoryTitle">
+      <header class="nyx-profile-directory-header"><div><span>NYX COMMUNITY</span><h2 id="nyxProfileDirectoryTitle">Browse Profiles</h2><p>Discover the people using Nyx.</p></div><button type="button" data-close-profile-directory aria-label="Close profile browser">&#215;</button></header>
+      <div class="nyx-profile-directory-layout">
+        <aside class="nyx-profile-directory-sidebar">
+          <label class="nyx-profile-directory-search">${nyxAccountMenuIcon('people')}<input type="search" data-profile-directory-search placeholder="Search name, username, or role" autocomplete="off"></label>
+          <p data-profile-directory-summary>Loading profiles…</p>
+          <div class="nyx-profile-directory-results" data-profile-directory-results aria-live="polite"></div>
+        </aside>
+        <main class="nyx-profile-directory-view" data-profile-directory-view><div class="nyx-profile-directory-empty"><span>${nyxAccountMenuIcon('people')}</span><h3>Select a profile</h3><p>Choose someone to view their public Nyx profile.</p></div></main>
+      </div>
+    </section>`;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(()=>overlay.classList.add('show'));
+    const resultsHost=overlay.querySelector('[data-profile-directory-results]');
+    const view=overlay.querySelector('[data-profile-directory-view]');
+    const summary=overlay.querySelector('[data-profile-directory-summary]');
+    const search=overlay.querySelector('[data-profile-directory-search]');
+    const roleLabel=role=>({owner:'Owner',co_owner:'Co-owner',admin:'Admin',manager:'Manager',developer:'Developer',moderator:'Moderator',support:'Support',tester:'Tester',contributor:'Contributor',member:'Member'}[role]||'Member');
+    let entries=[];
+    let selectedUid='';
+    let searchTimer=0;
+    let controller=null;
+    const close=()=>{
+      clearTimeout(searchTimer);
+      controller?.abort();
+      document.removeEventListener('keydown',onKeydown);
+      overlay.classList.remove('show');
+      setTimeout(()=>overlay.remove(),180);
+    };
+    const renderProfile=entry=>{
+      if(!entry)return;
+      selectedUid=entry.uid;
+      resultsHost.querySelectorAll('[data-directory-profile]').forEach(button=>button.classList.toggle('active',button.dataset.directoryProfile===selectedUid));
+      const profile=normalizeNyxUserProfile(entry.profile);
+      view.innerHTML=`<div class="nyx-profile-directory-view-head"><span>${entry.self?'Your public profile':roleLabel(entry.role)}</span><strong>${esc(profile.displayName)}</strong></div><div class="nyx-profile-directory-card-host">${nyxUserProfileCardMarkup(profile,{role:entry.role,createdAt:entry.createdAt})}</div>`;
+      nyxManageUserProfileGifs(view,profile);
+    };
+    const renderResults=()=>{
+      summary.textContent=`${entries.length} profile${entries.length===1?'':'s'}`;
+      if(!entries.length){
+        resultsHost.innerHTML='<div class="nyx-profile-directory-no-results"><strong>No profiles found</strong><span>Try a different name or role.</span></div>';
+        view.innerHTML='<div class="nyx-profile-directory-empty"><span aria-hidden="true">?</span><h3>No matching profiles</h3><p>Change your search to discover more people.</p></div>';
+        selectedUid='';
+        return;
+      }
+      resultsHost.innerHTML=entries.map(entry=>{
+        const profile=normalizeNyxUserProfile(entry.profile);
+        const avatar=profile.avatarUrl?`<img src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="">`:`<span>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</span>`;
+        return `<button type="button" data-directory-profile="${esc(entry.uid)}"><i class="nyx-profile-directory-avatar">${avatar}<em class="${entry.online?'online':''}" aria-label="${entry.online?'Online':'Offline'}"></em></i><span><strong>${esc(profile.displayName)}${entry.self?' <small>You</small>':''}</strong><small>${esc(profile.handle)}</small></span><b>${esc(roleLabel(entry.role))}</b></button>`;
+      }).join('');
+      resultsHost.querySelectorAll('[data-directory-profile]').forEach(button=>{
+        const entry=entries.find(item=>item.uid===button.dataset.directoryProfile);
+        const profile=normalizeNyxUserProfile(entry?.profile);
+        const avatarHost=button.querySelector('.nyx-profile-directory-avatar');
+        const avatarImage=avatarHost?.querySelector(':scope > img');
+        if(avatarHost&&avatarImage)nyxManageCompactGif(avatarHost,avatarImage,profile.avatarUrl,180);
+      });
+      renderProfile(entries.find(entry=>entry.uid===selectedUid)||entries[0]);
+    };
+    const load=async()=>{
+      controller?.abort();
+      controller=new AbortController();
+      resultsHost.innerHTML='<div class="nyx-profile-directory-loading"><i></i><i></i><i></i><i></i></div>';
+      summary.textContent='Loading profiles…';
+      try{
+        const token=await nyxGetFirebaseToken(true);
+        if(!token)throw new Error('Sign in again to browse profiles.');
+        const data=await nyxProfileMediaFetch(`/api/profiles?search=${encodeURIComponent(search.value.trim())}`,{headers:{Authorization:`Bearer ${token}`},cache:'no-store',signal:controller.signal},'Profiles could not be loaded.');
+        entries=Array.isArray(data.profiles)?data.profiles:[];
+        renderResults();
+      }catch(error){
+        if(error.name==='AbortError')return;
+        entries=[];
+        summary.textContent='Profiles unavailable';
+        resultsHost.innerHTML=`<div class="nyx-profile-directory-no-results"><strong>Could not load profiles</strong><span>${esc(error.message||'Try again.')}</span><button type="button" data-profile-directory-retry>Try again</button></div>`;
+      }
+    };
+    const onKeydown=event=>{if(event.key==='Escape'){event.preventDefault();close()}};
+    overlay.addEventListener('click',event=>{
+      if(event.target===overlay||event.target.closest('[data-close-profile-directory]')){close();return}
+      if(event.target.closest('[data-profile-directory-retry]')){void load();return}
+      const uid=event.target.closest('[data-directory-profile]')?.dataset.directoryProfile;
+      if(uid)renderProfile(entries.find(entry=>entry.uid===uid));
+    });
+    search.addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>void load(),240)});
+    document.addEventListener('keydown',onKeydown);
+    setTimeout(()=>search.focus(),0);
+    await load();
   }
   addEventListener('resize',closeNyxAccountMenu,{passive:true});
   document.addEventListener('keydown',event=>{if(event.key==='Escape')closeNyxAccountMenu()});
@@ -659,7 +755,8 @@
     nyxFirebaseTokenPromise=null;nyxFounderSignedInUser=null;nyxFounderIsOwner=false;nyxUserAccountRole='member';nyxUserAccountEmail='';nyxUserProfile=null;nyxUserProfileCreatedAt='';syncFounderOwnerControls();toast('Signed out');
   }
   function nyxUserProfileCardMarkup(profile=normalizeNyxUserProfile(nyxUserProfile),options={}){
-    const joined=nyxUserProfileCreatedAt?new Date(nyxUserProfileCreatedAt).toLocaleDateString(undefined,{month:'short',year:'numeric'}):'Today';
+    const joinedAt=String(options.createdAt||nyxUserProfileCreatedAt||'');
+    const joined=joinedAt?new Date(joinedAt).toLocaleDateString(undefined,{month:'short',year:'numeric'}):'Today';
     const statusLabel={online:'Online',idle:'Idle',dnd:'Do not disturb',offline:'Invisible'}[profile.status]||'Online';
     const editable=Boolean(options.editable&&nyxFounderSignedInUser);
     const symbol=name=>{
@@ -677,11 +774,16 @@
       };
       return `<svg class="nyx-profile-symbol nyx-profile-symbol-${name}" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths[name]||''}</svg>`;
     };
-    const roleLabel=role=>({owner:'Owner',admin:'Admin',developer:'Developer',moderator:'Moderator',member:'Member'}[role]||'Member');
-    const roleChip=role=>`<span class="nyx-user-role nyx-user-role-${role}"><img src="/assets/icons/roles/${role}.png" alt="" aria-hidden="true">${roleLabel(role)}</span>`;
-    const roles=nyxFounderIsOwner
-      ?`${roleChip('owner')}${roleChip('developer')}<span class="nyx-user-role nyx-user-role-founder">${symbol('founder')}Founder</span>`
-      :roleChip(['admin','developer','moderator','member'].includes(nyxUserAccountRole)?nyxUserAccountRole:'member');
+    const roleLabel=role=>({owner:'Owner',co_owner:'Co-owner',admin:'Admin',manager:'Manager',developer:'Developer',moderator:'Moderator',support:'Support',tester:'Tester',contributor:'Contributor',member:'Member'}[role]||'Member');
+    const roleIconKey=role=>({co_owner:'owner',manager:'admin',support:'moderator',tester:'developer',contributor:'developer'}[role]||role);
+    const roleChip=role=>`<span class="nyx-user-role nyx-user-role-${role}"><img src="/assets/icons/roles/${roleIconKey(role)}.png" alt="" aria-hidden="true">${roleLabel(role)}</span>`;
+    const availableRoles=['owner','co_owner','admin','manager','developer','moderator','support','tester','contributor','member'];
+    const publicRole=availableRoles.includes(String(options.role||''))?String(options.role):'';
+    const roles=publicRole
+      ?roleChip(publicRole)
+      :(nyxFounderIsOwner
+        ?`${roleChip('owner')}${roleChip('developer')}<span class="nyx-user-role nyx-user-role-founder">${symbol('founder')}Founder</span>`
+        :roleChip(availableRoles.includes(nyxUserAccountRole)?nyxUserAccountRole:'member'));
     const ownerActions=editable?`<div class="nyx-user-profile-actions" aria-label="Your account controls"><button type="button" data-nyx-profile-action="status"><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-hidden="true"></i><span>${esc(statusLabel)}</span><b aria-hidden="true">${symbol('chevron')}</b></button><button type="button" data-nyx-profile-action="custom-status">${symbol('edit')}<span>Edit custom status</span><b aria-hidden="true">${symbol('chevron')}</b></button><button type="button" data-nyx-profile-action="switch-account">${symbol('switch')}<span>Switch accounts</span><b aria-hidden="true">${symbol('chevron')}</b></button></div>`:'';
     const mediaEdit=(type,label)=>editable?`<button class="nyx-profile-media-edit nyx-profile-media-edit-${type}" type="button" data-nyx-direct-edit="${type}" aria-label="${label}" title="${label}"><span aria-hidden="true">&#9998;</span></button>`:'';
     const avatar=profile.avatarUrl?`<img src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="${esc(profile.displayName)} profile picture">`:`<span>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</span>`;
@@ -12265,6 +12367,10 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
           return;
         }
         closeNyxAccountMenu();
+        if(accountMenuAction==='profiles'){
+          await openNyxProfileDirectory();
+          return;
+        }
         if(accountMenuAction==='edit'){
           await openNyxUserProfile();
           return;

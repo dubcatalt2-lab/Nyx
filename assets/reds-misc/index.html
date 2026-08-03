@@ -45,8 +45,8 @@
     const source=document.getElementById('source');
     let games=[];
     function gameUrl(game){
-      if(game.type==='gba' && game.romId) return new URL(`/assets/gms-games/play.html?gba=${encodeURIComponent(game.romId)}`,location.origin).href;
-      return new URL(`/assets/gms-games/play.html?game=${encodeURIComponent(game.path)}`,location.origin).href;
+      if(game.type==='gba' && game.romId) return new URL(`/assets/gms-games/play.html?v=20260803-resource-fix&gba=${encodeURIComponent(game.romId)}`,location.origin).href;
+      return new URL(`/assets/gms-games/play.html?v=20260803-resource-fix&game=${encodeURIComponent(game.path)}`,location.origin).href;
     }
     function coverUrl(url){
       if(!url) return '';

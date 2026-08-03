@@ -30,8 +30,9 @@
     const copy = `
       <h2>Install Nyx</h2>
       <p data-install-nyx-status>Installs Nyx as an app with its own window and desktop icon.</p>`;
-    const control = `<div class="settings-actions">
+    const control = `<div class="settings-actions nyx-install-actions">
       <button class="${kind === "legacy" ? "" : "settings-action"}" data-install-nyx type="button">Install Nyx</button>
+      <button class="${kind === "legacy" ? "" : "settings-action"}" data-download-nyx-singlefile type="button">Download Single File</button>
     </div>`;
     card.innerHTML = kind === "dashboard"
       ? `<div class="nyx-settings-copy">${copy}</div><div class="nyx-settings-control">${control}</div>`
@@ -106,6 +107,38 @@
     }
   }
 
+  async function downloadSingleFile(button) {
+    const source = new URL("/nyx-singlefile.html", window.location.href).href;
+    const previousLabel = button?.textContent || "Download Single File";
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Preparing Download…";
+    }
+    let objectUrl = "";
+    try {
+      const response = await fetch(source, { cache: "no-store" });
+      if (!response.ok) throw new Error(`Download returned ${response.status}`);
+      objectUrl = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = "Nyx-Single-File.html";
+      link.hidden = true;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error("Unable to download the Nyx single-file launcher.", error);
+      const status = button?.closest("[data-nyx-install-card]")?.querySelector("[data-install-nyx-status]");
+      if (status) status.textContent = "The single-file download failed. Check your connection and try again.";
+    } finally {
+      if (objectUrl) window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+      if (button) {
+        button.disabled = false;
+        button.textContent = previousLabel;
+      }
+    }
+  }
+
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
     installPrompt = event;
@@ -118,6 +151,12 @@
   });
 
   document.addEventListener("click", (event) => {
+    const downloadButton = event.target.closest?.("[data-download-nyx-singlefile]");
+    if (downloadButton) {
+      event.preventDefault();
+      downloadSingleFile(downloadButton);
+      return;
+    }
     const button = event.target.closest?.("[data-install-nyx]");
     if (!button) return;
     event.preventDefault();
@@ -137,6 +176,7 @@
 
   window.NyxInstall = {
     request: requestInstall,
+    downloadSingleFile,
     refresh: updateControls,
     get available() {
       return Boolean(installPrompt);

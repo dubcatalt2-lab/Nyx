@@ -29,7 +29,20 @@
     let launchStarted=false;
     let launched=false;
     function reportLaunched(){if(launched||failed)return;launched=true;loading.classList.add('hidden');frame.focus();parent.postMessage({type:'nyx:game-launched'},'*')}
-    function gameSurfaceReady(doc){if(!doc?.body)return false;const target=[...doc.querySelectorAll('canvas,object,embed,ruffle-player,ruffle-object,iframe,#game,#game-container,#unity-container,#unity-canvas,#ruffle,#player')].find(element=>{const box=element.getBoundingClientRect?.();return box&&box.width>40&&box.height>40&&getComputedStyle(element).display!=='none'});return !!target||String(doc.body.textContent||'').replace(/\s+/g,' ').trim().length>40}
+    function gameSurfaceReady(doc){
+      if(!doc?.body)return false;
+      const visible=element=>{
+        const box=element.getBoundingClientRect?.();
+        const style=getComputedStyle(element);
+        return !!box&&box.width>40&&box.height>40&&style.display!=='none'&&style.visibility!=='hidden'&&style.opacity!=='0';
+      };
+      const gameSurface=[...doc.querySelectorAll('canvas,object,embed,ruffle-player,ruffle-object,iframe,#game,#game-container,#unity-container,#unity-canvas,#ruffle,#player')].find(visible);
+      if(gameSurface)return true;
+      const visiblePage=[...doc.body.children].find(element=>
+        !/^(?:SCRIPT|STYLE|LINK|META|NOSCRIPT|TEMPLATE)$/.test(element.tagName)&&visible(element)
+      );
+      return !!visiblePage||String(doc.body.textContent||'').replace(/\s+/g,' ').trim().length>8;
+    }
     async function missingLocalResource(win,important,ignorable){const entries=win.performance?.getEntriesByType?.('resource')||[];for(const entry of entries){let url;try{url=new URL(entry.name)}catch{continue}if(url.origin!==location.origin||!important.test(url.href)||ignorable.test(url.href)||entry.encodedBodySize>0)continue;try{const response=await fetch(url.href,{method:'HEAD',cache:'no-store'});if(!response.ok)return url.href}catch{return url.href}}return''}
     function monitorGame(){if(!launchStarted||failed)return;try{const win=frame.contentWindow;const doc=frame.contentDocument;if(!doc?.body){setTimeout(reportLaunched,900);return}const important=/\.(?:wasm|data|unityweb|json|swf|zip|7z|js)(?:[?#]|$)|\/Build\//i;const ignorable=/googletagmanager|google-analytics|googlesyndication|doubleclick|facebook|recaptcha|pagead/i;doc.addEventListener('error',event=>{const target=event.target;const url=target&&(target.src||target.href);if(url&&important.test(String(url))&&!ignorable.test(String(url))&&!gameSurfaceReady(doc))fail(`A required game file failed to load: ${url}`)},true);win.addEventListener('unhandledrejection',event=>{const message=String(event.reason?.message||event.reason||'');if(/failed to fetch|missing (?:part|file)|http (?:4|5)\d\d|load failed/i.test(message)&&!gameSurfaceReady(doc))fail(`A required game file failed to load: ${message}`)});const started=performance.now();const check=async()=>{if(failed)return;const surfaceReady=gameSurfaceReady(doc);const missing=await missingLocalResource(win,important,ignorable);if(missing&&!surfaceReady){fail(`A required game file failed to load: ${missing}`);return}if(surfaceReady){reportLaunched();return}if(performance.now()-started>12_000){fail('This game loaded a blank screen.');return}setTimeout(check,650)};setTimeout(check,500)}catch{setTimeout(reportLaunched,900)}}
     frame.addEventListener('load',monitorGame);

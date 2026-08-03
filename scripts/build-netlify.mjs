@@ -12,6 +12,7 @@ const maxStaticFileBytes = 10_000_000;
 const rootFiles = new Set([
   "index.html",
   "ai.html",
+  "nyx-singlefile.html",
   "app.webmanifest",
   "script.js",
   "startup.js",

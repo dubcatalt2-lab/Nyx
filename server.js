@@ -21,6 +21,7 @@ const erudaPath = require.resolve("eruda");
 let cinebyAppCache = { source: "", expires: 0 };
 const gameCoverLookupCache = new Map();
 let duckMathGamesCache = { games: [], expires: 0, promise: null };
+let catClassGamesCache = { games: [], expires: 0, promise: null };
 const app = express();
 
 function normalizePublicWispUrl(value) {
@@ -281,6 +282,116 @@ app.get("/duckmath-games", async (_req, res) => {
     res.json({ games });
   } catch (error) {
     res.status(502).json({ error: `DuckMath list network error: ${error?.message || error}` });
+  }
+});
+
+const catClassCatalogEndpoints = Object.freeze([
+  { id: "catclass", url: "https://catclass.net/json/g.json" },
+  { id: "selenite", url: "https://catclass.net/api/g4m3-sources/selenite" },
+  { id: "velara", url: "https://catclass.net/api/g4m3-sources/velara" },
+  { id: "edurocks", url: "https://catclass.net/api/g4m3-sources/edurocks" },
+  { id: "truffled", url: "https://catclass.net/api/g4m3-sources/truffled" }
+]);
+
+function safeCatalogUrl(value, base) {
+  try {
+    const url = new URL(String(value || "").trim(), base);
+    if (url.protocol !== "https:" && url.protocol !== "http:") return "";
+    url.username = "";
+    url.password = "";
+    url.hash = "";
+    return url.href;
+  } catch {
+    return "";
+  }
+}
+
+function catClassCatalogItems(source, payload) {
+  const items = Array.isArray(payload)
+    ? payload
+    : Array.isArray(payload?.games) ? payload.games : [];
+  return items.flatMap(item => {
+    let title = "";
+    let url = "";
+    let cover = "";
+
+    if (source === "catclass") {
+      title = item?.name;
+      url = safeCatalogUrl(item?.url, "https://catclass.net/");
+      cover = safeCatalogUrl(item?.img, "https://catclass.net/");
+    } else if (source === "selenite") {
+      const directory = String(item?.directory || "").replace(/^\/+/, "");
+      const image = String(item?.image || "").replace(/^\/+/, "");
+      title = item?.name;
+      url = directory ? safeCatalogUrl(directory, "https://selenite.cc/resources/semag/") : "";
+      cover = directory && image
+        ? safeCatalogUrl(`${directory}/${image}`, "https://selenite.cc/resources/semag/")
+        : "";
+    } else if (source === "velara") {
+      title = item?.title;
+      if (!title || title === "!!DMCA" || title === "!!G4m3 Request" || title.includes("[!]") || String(item?.location || "").includes("astra")) return [];
+      url = safeCatalogUrl(item?.location, "https://velara.cc/");
+      cover = safeCatalogUrl(item?.image, "https://velara.cc/");
+    } else if (source === "edurocks") {
+      title = item?.name;
+      if (String(title || "").includes("[!]")) return [];
+      url = safeCatalogUrl(String(item?.url || "").replace(/^\.\//, ""), "https://edunet.climaref.cl/");
+      cover = safeCatalogUrl(String(item?.img || "").replace(/^\.\//, ""), "https://edunet.climaref.cl/");
+    } else if (source === "truffled") {
+      title = item?.name;
+      url = safeCatalogUrl(item?.url, "https://truffled.lol/");
+      cover = safeCatalogUrl(item?.thumbnail, "https://truffled.lol/");
+    }
+
+    title = String(title || "").replace(/\s+/g, " ").trim().slice(0, 120);
+    return title && url ? [{ title, url, cover, provider: source }] : [];
+  });
+}
+
+async function loadCatClassGames() {
+  const now = Date.now();
+  if (catClassGamesCache.games.length && catClassGamesCache.expires > now) return catClassGamesCache.games;
+  if (catClassGamesCache.promise) return catClassGamesCache.promise;
+
+  catClassGamesCache.promise = (async () => {
+    const results = await Promise.allSettled(catClassCatalogEndpoints.map(async source => {
+      const response = await fetch(source.url, {
+        headers: { "accept": "application/json", "user-agent": "nyx/1.0" },
+        signal: AbortSignal.timeout(12_000)
+      });
+      if (!response.ok) throw new Error(`${source.id} returned ${response.status}`);
+      return catClassCatalogItems(source.id, await response.json());
+    }));
+    const games = [];
+    const seen = new Set();
+    for (const result of results) {
+      if (result.status !== "fulfilled") continue;
+      for (const game of result.value) {
+        const key = `${game.title.toLowerCase()}\n${game.url}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        games.push(game);
+      }
+    }
+    if (!games.length) throw new Error("No CatClass catalog source was available");
+    catClassGamesCache = { games, expires: Date.now() + 30 * 60 * 1000, promise: null };
+    return games;
+  })();
+
+  try {
+    return await catClassGamesCache.promise;
+  } finally {
+    catClassGamesCache.promise = null;
+  }
+}
+
+app.get("/catclass-games", async (_req, res) => {
+  try {
+    const games = await loadCatClassGames();
+    res.setHeader("Cache-Control", "public, max-age=300");
+    res.json({ games });
+  } catch (error) {
+    res.status(502).json({ error: `CatClass list network error: ${error?.message || error}` });
   }
 });
 
@@ -1072,6 +1183,34 @@ const nyxAiModels = {
   "chatgpt-5.4-mini": process.env.NYX_AI_MODEL_CHATGPT_54_MINI || "navy:gpt-5.4-mini"
 };
 
+const nyxAiFallbackCatalog = [
+  ["llama-3.3-70b-versatile", "Llama 3.3 70B (Versatile)"],
+  ["openai/gpt-oss-120b", "GPT-OSS 120B"],
+  ["qwen/qwen3-32b", "Qwen3 32B"],
+  ["meta-llama/llama-4-scout-17b-16e-instruct", "Llama 4 Scout (Vision)"],
+  ["navy:gpt-5.4-mini", "ChatGPT 5.4 Mini"],
+  ["navy:claude-opus-5", "Claude Opus 5"],
+  ["navy:gpt-4o-mini-search-preview", "GPT-4o Mini Search (Preview)"],
+  ["navy:gemini-3.1-pro-preview", "Gemini 3.1 Pro (Preview)"],
+  ["navy:gemini-3.5-flash", "Gemini 3.5 Flash"],
+  ["navy:grok-4.3", "Grok 4.3"],
+  ["navy:grok-4.1-fast-reasoning", "Grok 4.1 Fast (Reasoning)"],
+  ["navy:deepseek-v4-pro", "DeepSeek V4 Pro"],
+  ["navy:llama-4-scout", "Llama 4 Scout"],
+  ["navy:mistral-medium-latest", "Mistral Medium"],
+  ["navy:kimi-k2.6", "Kimi K2.6"],
+  ["navy:nemotron-3-super", "Nemotron 3 Super"],
+  ["navy:mimo-v2.5-pro", "MiMo V2.5 Pro"],
+  ["navy:c4ai-aya-expanse-32b", "Aya Expanse 32B"],
+  ["navy:gpt-4o", "GPT-4o"],
+  ["navy:kimi-k2.5", "Kimi K2.5"],
+  ["navy:qwen3.5-397b-a17b", "Qwen3.5 397B A17B"],
+  ["navy:hermes-4-405b", "Hermes 4 405B"],
+  ["navy:mistral-medium-3.5", "Mistral Medium 3.5"]
+].map(([id, label]) => ({ id, label }));
+
+let nyxAiCatalogCache = { expiresAt: 0, models: nyxAiFallbackCatalog };
+
 function nyxAiKey() {
   return process.env.NYX_AI_API_KEY || "";
 }
@@ -1081,6 +1220,58 @@ function nyxAiEndpoint() {
   if (explicitEndpoint) return explicitEndpoint;
   const baseUrl = String(process.env.NYX_AI_BASE_URL || "https://vilen.sbs").trim().replace(/\/+$/, "");
   return /\/api\/ai$/i.test(baseUrl) ? baseUrl : `${baseUrl}/api/ai`;
+}
+
+function nyxAiCatalogEndpoint() {
+  const explicitEndpoint = String(process.env.NYX_AI_MODELS_ENDPOINT || "").trim();
+  if (explicitEndpoint) return explicitEndpoint;
+  return `${nyxAiEndpoint().replace(/\/+$/, "")}/config`;
+}
+
+function nyxAiNormalizeCatalog(models) {
+  if (!Array.isArray(models)) return [];
+  const seen = new Set();
+  return models.flatMap(item => {
+    const id = String(item?.id || "").trim();
+    if (!/^[a-z0-9][a-z0-9._:/-]{0,127}$/i.test(id) || seen.has(id) || (item?.audience && item.audience !== "all")) return [];
+    seen.add(id);
+    return [{
+      id,
+      label: String(item?.label || id).trim().slice(0, 100) || id,
+      company: String(item?.company || "").trim().slice(0, 50),
+      vision: Boolean(item?.vision),
+      reasoning: Boolean(item?.reasoning)
+    }];
+  });
+}
+
+async function nyxAiAvailableModels() {
+  const now = Date.now();
+  if (nyxAiCatalogCache.expiresAt > now) return nyxAiCatalogCache.models;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 6000);
+  try {
+    const response = await fetch(nyxAiCatalogEndpoint(), {
+      signal: controller.signal,
+      headers: { accept: "application/json" }
+    });
+    const data = await response.json().catch(() => ({}));
+    const models = response.ok ? nyxAiNormalizeCatalog(data?.models) : [];
+    if (!models.length) throw new Error("The AI model catalog was empty.");
+    nyxAiCatalogCache = { expiresAt: now + 300_000, models };
+  } catch {
+    nyxAiCatalogCache = { expiresAt: now + 60_000, models: nyxAiFallbackCatalog };
+  } finally {
+    clearTimeout(timeout);
+  }
+  return nyxAiCatalogCache.models;
+}
+
+async function nyxAiResolveModel(requestedModel) {
+  const alias = nyxAiModels[requestedModel];
+  if (alias) return alias;
+  const models = await nyxAiAvailableModels();
+  return models.some(item => item.id === requestedModel) ? requestedModel : "";
 }
 
 function nyxAiErrorMessage(data, status) {
@@ -1179,6 +1370,27 @@ setInterval(() => {
   }
 }, 3_600_000).unref();
 
+app.get("/api/nyx-ai/models", async (_req, res) => {
+  const models = await nyxAiAvailableModels();
+  const defaultProviderId = nyxAiModels["chatgpt-5.4-mini"];
+  const exposedModels = models.map(item => item.id === defaultProviderId
+    ? { ...item, id: "chatgpt-5.4-mini", providerId: item.id }
+    : item);
+  if (!exposedModels.some(item => item.id === "chatgpt-5.4-mini")) {
+    exposedModels.unshift({
+      id: "chatgpt-5.4-mini",
+      providerId: defaultProviderId,
+      label: "ChatGPT 5.4 Mini",
+      company: "ChatGPT",
+      vision: true,
+      reasoning: true
+    });
+  }
+  exposedModels.sort((left, right) => Number(right.id === "chatgpt-5.4-mini") - Number(left.id === "chatgpt-5.4-mini"));
+  res.setHeader("cache-control", "public, max-age=60, stale-while-revalidate=240");
+  res.json({ models: exposedModels });
+});
+
 app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   const key = nyxAiKey();
   if (!key) {
@@ -1188,7 +1400,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     return;
   }
   const requestedModel = String(req.body?.model || "chatgpt-5.4-mini");
-  const model = nyxAiModels[requestedModel];
+  const model = await nyxAiResolveModel(requestedModel);
   if (!model) {
     res.status(400).json({ error: "Unknown Nyx AI model." });
     return;

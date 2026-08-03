@@ -2274,7 +2274,7 @@ body.theme-sakura .lion-ai-image-status{
 .lion-ai-head-actions{display:flex;align-items:center;gap:8px}
 .lion-ai-clear{width:40px;height:40px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;color:#334155;cursor:pointer;font-size:18px}
 .lion-ai-clear:hover{background:#f8fafc;color:#111827}
-.lion-ai-model-select{min-width:190px;height:44px;border:1px solid #facc15;border-radius:8px;background:#050816;color:#f8fafc;padding:0 12px;font:400 13px Outfit,Arial,sans-serif;outline:0;box-shadow:0 0 0 1px rgba(250,204,21,.08)}
+.lion-ai-model-select{width:min(280px,32vw);min-width:220px;height:44px;border:1px solid #facc15;border-radius:8px;background:#050816;color:#f8fafc;padding:0 34px 0 12px;font:400 13px Outfit,Arial,sans-serif;outline:0;box-shadow:0 0 0 1px rgba(250,204,21,.08);text-overflow:ellipsis}
 .lion-ai-model-select option{background:#080b17;color:#f8fafc}
 .lion-ai-chat{min-height:0;overflow:auto;display:grid;align-content:start;gap:12px;padding:2px 4px 2px 0}
 .lion-ai-msg{max-width:min(760px,92%);border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;background:#fff;color:#111827;box-shadow:0 12px 30px rgba(15,23,42,.08);white-space:pre-wrap;line-height:1.45}

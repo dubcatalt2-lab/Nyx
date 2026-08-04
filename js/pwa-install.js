@@ -3,6 +3,7 @@
 
   let installPrompt = null;
   let lastMessage = "";
+  const SINGLE_FILE_RELEASE = "2026.08.03.10";
 
   function isInstalled() {
     return window.matchMedia?.("(display-mode: standalone)")?.matches
@@ -107,36 +108,30 @@
     }
   }
 
-  async function downloadSingleFile(button) {
-    const source = new URL("/nyx-singlefile.html", window.location.href).href;
+  function downloadSingleFile(button) {
+    const source = new URL("/nyx-singlefile.html", window.location.href);
+    source.searchParams.set("release", SINGLE_FILE_RELEASE);
+    source.searchParams.set("fresh", Date.now().toString(36));
     const previousLabel = button?.textContent || "Download Single File";
     if (button) {
       button.disabled = true;
-      button.textContent = "Preparing Download…";
+      button.textContent = "Downloading…";
     }
-    let objectUrl = "";
-    try {
-      const response = await fetch(source, { cache: "no-store" });
-      if (!response.ok) throw new Error(`Download returned ${response.status}`);
-      objectUrl = URL.createObjectURL(await response.blob());
-      const link = document.createElement("a");
-      link.href = objectUrl;
-      link.download = "Nyx-Single-File.html";
-      link.hidden = true;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (error) {
-      console.error("Unable to download the Nyx single-file launcher.", error);
-      const status = button?.closest("[data-nyx-install-card]")?.querySelector("[data-install-nyx-status]");
-      if (status) status.textContent = "The single-file download failed. Check your connection and try again.";
-    } finally {
-      if (objectUrl) window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    const link = document.createElement("a");
+    link.href = source.href;
+    link.download = "Nyx-Single-File.html";
+    link.hidden = true;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    const status = button?.closest("[data-nyx-install-card]")?.querySelector("[data-install-nyx-status]");
+    if (status) status.textContent = "The latest Chrome-compatible Nyx file is downloading.";
+    window.setTimeout(() => {
       if (button) {
         button.disabled = false;
         button.textContent = previousLabel;
       }
-    }
+    }, 500);
   }
 
   window.addEventListener("beforeinstallprompt", (event) => {

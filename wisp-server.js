@@ -2,10 +2,19 @@ import { createServer } from "node:http";
 import { server as wisp } from "@mercuryworkshop/wisp-js/server";
 
 const port = Number.parseInt(process.env.PORT || "8080", 10);
-const allowedOrigins = String(process.env.NYX_ALLOWED_ORIGINS || "")
+const configuredAllowedOrigins = String(process.env.NYX_ALLOWED_ORIGINS || "")
   .split(",")
   .map(value => value.trim().replace(/\/$/, ""))
   .filter(Boolean);
+const canonicalAllowedOrigins = [
+  process.env.NYX_PUBLIC_ORIGIN,
+  "https://nyxlearning.org",
+  "https://www.nyxlearning.org",
+  "https://nyxlearning.netlify.app"
+]
+  .map(value => String(value || "").trim().replace(/\/$/, ""))
+  .filter(Boolean);
+const allowedOrigins = [...new Set([...configuredAllowedOrigins, ...canonicalAllowedOrigins])];
 const presenceSessions = new Map();
 const presenceTtlMs = 45_000;
 

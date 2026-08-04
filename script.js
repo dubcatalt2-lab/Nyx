@@ -36,6 +36,8 @@
   let nyxFounderFirebaseAuth=null;
   let nyxFounderSignedInUser=null;
   let nyxFounderIsOwner=false;
+  let nyxOwnerDashboardAccess=false;
+  let nyxUserPermissions=[];
   let nyxUserAccountRole='member';
   let nyxUserSubscriptionStatus='free';
   let nyxUserAccountEmail='';
@@ -235,9 +237,13 @@
   function nyxAccountUsername(value){return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_.-]/g,'').slice(0,32)}
   function nyxAccountEmail(username){return `${nyxAccountUsername(username)}@account.nyx.local`}
   function nyxHasPremiumSubscription(value=nyxUserSubscriptionStatus){return ['premium','trialing'].includes(String(value||'').trim().toLowerCase())}
+  function nyxHasAccountPermission(permission){return nyxUserPermissions.includes(String(permission||''))}
   function syncNyxAccountEntitlements(account={}){
     const previousStatus=nyxUserSubscriptionStatus;
     if(account.role)nyxUserAccountRole=String(account.role||'member');
+    if(typeof account.owner==='boolean')nyxFounderIsOwner=account.owner;
+    if(typeof account.dashboard==='boolean')nyxOwnerDashboardAccess=account.dashboard;
+    if(Array.isArray(account.permissions))nyxUserPermissions=account.permissions.map(String);
     if(account.subscriptionStatus)nyxUserSubscriptionStatus=String(account.subscriptionStatus||'free').toLowerCase();
     document.body.dataset.nyxSubscription=nyxUserSubscriptionStatus;
     document.body.classList.toggle('nyx-premium-account',nyxHasPremiumSubscription());
@@ -342,7 +348,7 @@
       }
       if(response.ok&&path.endsWith('/heartbeat')){
         const account=await response.json().catch(()=>null);
-        if(account)syncNyxAccountEntitlements(account);
+        if(account){syncNyxAccountEntitlements(account);syncFounderOwnerControls()}
       }
     }catch{}
   }
@@ -410,7 +416,7 @@
     menu.style.setProperty('--nyx-user-accent-secondary',profile.accentSecondary);
     menu.style.setProperty('--nyx-user-banner-color',profile.bannerColor);
     menu.style.cssText+=nyxProfileEffectVars(profile);
-    const ownerControls=nyxFounderIsOwner?`<div class="nyx-account-menu-group nyx-account-menu-owner"><button type="button" role="menuitem" data-nyx-account-menu-action="owner-dashboard">${nyxAccountMenuIcon('dashboard')}<span>Owner Dashboard</span>${nyxAccountMenuIcon('chevron')}</button></div>`:'';
+    const ownerControls=nyxOwnerDashboardAccess?`<div class="nyx-account-menu-group nyx-account-menu-owner"><button type="button" role="menuitem" data-nyx-account-menu-action="owner-dashboard">${nyxAccountMenuIcon('dashboard')}<span>Owner Dashboard</span>${nyxAccountMenuIcon('chevron')}</button></div>`:'';
     menu.innerHTML=`<i class="nyx-user-profile-effect nyx-account-menu-profile-effect" aria-hidden="true"></i><div class="nyx-account-menu-banner">${banner}</div><div class="nyx-account-menu-profile"><div class="nyx-account-menu-avatar nyx-avatar-decoration-${esc(profile.avatarDecoration)}">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i></div><span class="nyx-account-menu-status">${esc(profile.customStatus||statusLabel)}</span><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p class="nyx-account-menu-handle">${esc(profile.handle)}</p><p class="nyx-account-menu-bio">${esc(profile.bio||'No bio yet.')}</p></div>${ownerControls}<div class="nyx-account-menu-group"><button type="button" role="menuitem" data-nyx-account-menu-action="edit">${nyxAccountMenuIcon('edit')}<span>Edit Profile</span></button><button type="button" role="menuitem" data-nyx-account-menu-action="profiles">${nyxAccountMenuIcon('people')}<span>Browse Profiles</span>${nyxAccountMenuIcon('chevron')}</button><hr><button type="button" role="menuitem" data-nyx-account-menu-action="status"><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-hidden="true"></i><span>${esc(statusLabel)}</span>${nyxAccountMenuIcon('chevron')}</button></div><div class="nyx-account-menu-group"><button type="button" role="menuitem" data-nyx-account-menu-action="switch">${nyxAccountMenuIcon('switch')}<span>Switch Accounts</span>${nyxAccountMenuIcon('chevron')}</button><hr><button type="button" role="menuitem" data-nyx-account-menu-action="copy-id">${nyxAccountMenuIcon('id')}<span>Copy User ID</span></button></div>`;
     document.body.appendChild(menu);
     syncNyxAccountButtonAvatar(menu.querySelector('.nyx-account-menu-avatar'),profile);
@@ -445,8 +451,8 @@
   }
   function openNyxOwnerDashboard(){
     closeNyxAccountMenu();
-    if(!nyxFounderSignedInUser||!nyxFounderIsOwner){
-      toast('Owner access is required');
+    if(!nyxFounderSignedInUser||!nyxOwnerDashboardAccess){
+      toast('Staff dashboard access is required');
       return;
     }
     if(!globalThis.NyxOwnerDashboard?.open){
@@ -627,34 +633,40 @@
     const signedIn=nyxFounderSignedInUser;
     document.querySelectorAll('[data-founder-account-card]').forEach(card=>{card.hidden=!configured});
     document.querySelectorAll('[data-founder-profile-settings-card]').forEach(card=>{card.hidden=!nyxFounderIsOwner});
-    document.querySelectorAll('[data-owner-dashboard-card]').forEach(card=>{card.hidden=!nyxFounderIsOwner});
+    document.querySelectorAll('[data-owner-dashboard-card]').forEach(card=>{card.hidden=!nyxOwnerDashboardAccess});
     document.querySelectorAll('[data-founder-account-status]').forEach(status=>{
       if(!configured){status.textContent='Nyx accounts are not configured.';return}
       if(!signedIn){status.textContent='Sign in to create and manage your Nyx profile.';return}
       const accountId=String(signedIn.uid||'');
-      status.textContent=nyxFounderIsOwner?'Signed in as the Nyx founder.':`Signed in. Firebase account ID: ${accountId}`;
+      const roleName=String(nyxUserAccountRole||'member').replaceAll('_',' ').replace(/\b\w/g,letter=>letter.toUpperCase());
+      status.textContent=nyxFounderIsOwner?'Signed in as the Nyx founder.':nyxOwnerDashboardAccess?`Signed in as ${roleName}.`:`Signed in. Firebase account ID: ${accountId}`;
     });
     document.querySelectorAll('[data-open-nyx-account]').forEach(button=>{button.hidden=!configured||Boolean(signedIn);});
     document.querySelectorAll('[data-nyx-account-sign-out]').forEach(button=>{button.hidden=!signedIn;});
     document.querySelectorAll('[data-open-nyx-profile]').forEach(button=>{if(button.id!=='nyxAccountButton') button.hidden=!signedIn;});
     document.querySelectorAll('[data-nyx-owner-presence]').forEach(presence=>{
-      presence.classList.toggle('nyx-owner-presence-action',Boolean(nyxFounderIsOwner));
-      presence.tabIndex=nyxFounderIsOwner?0:-1;
-      presence.setAttribute('aria-label',nyxFounderIsOwner?'Open Owner Dashboard':'Current users online');
+      presence.classList.toggle('nyx-owner-presence-action',Boolean(nyxOwnerDashboardAccess));
+      presence.tabIndex=nyxOwnerDashboardAccess?0:-1;
+      presence.setAttribute('aria-label',nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online');
     });
     ensureNyxAccountButton();
   }
   async function refreshFounderOwnerAccess(){
     nyxFounderIsOwner=false;
+    nyxOwnerDashboardAccess=false;
+    nyxUserPermissions=[];
     if(!nyxFounderSignedInUser){syncFounderOwnerControls();return false}
     try{
       const token=await nyxGetFirebaseToken(true);
       if(!token)throw new Error('Your owner session has expired.');
       const access=await nyxProfileMediaFetch('/api/founder-profile/owner',{headers:{Authorization:`Bearer ${token}`},cache:'no-store'},'Owner access is unavailable.');
       nyxFounderIsOwner=Boolean(access?.owner);
-    }catch{nyxFounderIsOwner=false}
+      nyxOwnerDashboardAccess=Boolean(access?.dashboard);
+      nyxUserPermissions=Array.isArray(access?.permissions)?access.permissions.map(String):[];
+      if(access?.role)nyxUserAccountRole=String(access.role);
+    }catch{nyxFounderIsOwner=false;nyxOwnerDashboardAccess=false;nyxUserPermissions=[]}
     syncFounderOwnerControls();
-    return nyxFounderIsOwner;
+    return nyxOwnerDashboardAccess;
   }
   async function initializeFounderOwnerAccess(){
     if(nyxFounderAuthReadyPromise) return nyxFounderAuthReadyPromise;
@@ -669,7 +681,7 @@
         try{await setPersistence(nyxFounderFirebaseAuth,browserLocalPersistence)}
         catch(error){console.warn('Nyx could not enable persistent sign-in:',error)}
         if(typeof nyxFounderFirebaseAuth.authStateReady==='function')await nyxFounderFirebaseAuth.authStateReady();
-        onAuthStateChanged(nyxFounderFirebaseAuth,async user=>{nyxFounderSignedInUser=user||null;if(!user){stopNyxUserActivity();nyxUserProfile=null;nyxUserProfileCreatedAt='';nyxUserAccountRole='member';nyxUserSubscriptionStatus='free';syncNyxAccountEntitlements();nyxUserAccountEmail='';await refreshFounderOwnerAccess();return}startNyxUserActivity(user);await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile()])});
+        onAuthStateChanged(nyxFounderFirebaseAuth,async user=>{nyxFounderSignedInUser=user||null;if(!user){stopNyxUserActivity();nyxUserProfile=null;nyxUserProfileCreatedAt='';nyxFounderIsOwner=false;nyxOwnerDashboardAccess=false;nyxUserPermissions=[];nyxUserAccountRole='member';nyxUserSubscriptionStatus='free';syncNyxAccountEntitlements();nyxUserAccountEmail='';await refreshFounderOwnerAccess();return}startNyxUserActivity(user);await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile()])});
       }catch(error){console.warn('Nyx owner sign-in could not initialize:',error);nyxFounderAuthConfig={enabled:false,ownerConfigured:false}}
       finally{syncFounderOwnerControls()}
     })();
@@ -768,7 +780,7 @@
   async function signOutFounderOwner(){
     closeNyxAccountMenu();
     try{await nyxFounderFirebaseAuth?.signOut()}catch{}
-    nyxFirebaseTokenPromise=null;nyxFounderSignedInUser=null;nyxFounderIsOwner=false;nyxUserAccountRole='member';nyxUserSubscriptionStatus='free';syncNyxAccountEntitlements();nyxUserAccountEmail='';nyxUserProfile=null;nyxUserProfileCreatedAt='';syncFounderOwnerControls();toast('Signed out');
+    nyxFirebaseTokenPromise=null;nyxFounderSignedInUser=null;nyxFounderIsOwner=false;nyxOwnerDashboardAccess=false;nyxUserPermissions=[];nyxUserAccountRole='member';nyxUserSubscriptionStatus='free';syncNyxAccountEntitlements();nyxUserAccountEmail='';nyxUserProfile=null;nyxUserProfileCreatedAt='';syncFounderOwnerControls();toast('Signed out');
   }
   function nyxUserProfileCardMarkup(profile=normalizeNyxUserProfile(nyxUserProfile),options={}){
     const joinedAt=String(options.createdAt||nyxUserProfileCreatedAt||'');
@@ -6879,7 +6891,7 @@
   }
   function browserBody(){
     const presenceText=nyxPresenceCount===null ? 'Connecting\u2026' : `${nyxPresenceCount} online`;
-    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence${nyxFounderIsOwner?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="button" tabindex="${nyxFounderIsOwner?'0':'-1'}" aria-live="polite" aria-label="${nyxFounderIsOwner?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><button class="nyx-home-weather" data-home-weather data-open="weather" type="button" aria-label="Open weather report"><span class="nyx-home-weather-icon" data-home-weather-icon aria-hidden="true"><svg class="nyx-weather-symbol nyx-weather-symbol-partly-cloudy" viewBox="0 0 24 24" focusable="false"><circle class="nyx-weather-sun-fill" cx="8" cy="8" r="3.2"/><path class="nyx-weather-sun-ray" d="M8 2.3v1.4M3.97 3.97l1 1M2.3 8h1.4M12.03 3.97l-1 1M13.7 8h-1.4"/><path class="nyx-weather-cloud-fill" d="M7.2 19h10a4 4 0 0 0 .45-7.98A5.55 5.55 0 0 0 7.08 12.6 3.2 3.2 0 0 0 7.2 19Z"/></svg></span><strong data-home-weather-temp>--°</strong><span data-home-weather-desc>Loading</span></button><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1><form class="browser-blank-search nyx-home-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Find your course or enter a URL" placeholder="Find your Course" autocomplete="off" spellcheck="false"></form><nav class="nyx-home-actions" aria-label="Nyx home"><button data-open="apps" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-apps" aria-hidden="true"></span><span>Resources</span></button><button data-app-url="https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-study" aria-hidden="true"></span><span>Assignments</span></button><button data-open-nyx-profile-entry data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-profile" aria-hidden="true"></span><span>Student Profile</span></button><button data-open="settings" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-settings" aria-hidden="true"></span><span>Preferences</span></button></nav></main><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div><a class="nyx-home-link-checker" data-app-url="/apps/link-checker/" href="/apps/link-checker/">Link Checker</a><nav class="nyx-home-utility-links" aria-label="Nyx information and tools"><a data-app-url="/apps/link-generator/" href="/apps/link-generator/">Link Generator</a><a data-open="terms" href="nyx://terms">Terms Of Service</a><a data-open="developer" href="nyx://developer">Developer Console</a><a data-open="about" href="nyx://about">About Us</a></nav></div></div>`;
+    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence${nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="button" tabindex="${nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><button class="nyx-home-weather" data-home-weather data-open="weather" type="button" aria-label="Open weather report"><span class="nyx-home-weather-icon" data-home-weather-icon aria-hidden="true"><svg class="nyx-weather-symbol nyx-weather-symbol-partly-cloudy" viewBox="0 0 24 24" focusable="false"><circle class="nyx-weather-sun-fill" cx="8" cy="8" r="3.2"/><path class="nyx-weather-sun-ray" d="M8 2.3v1.4M3.97 3.97l1 1M2.3 8h1.4M12.03 3.97l-1 1M13.7 8h-1.4"/><path class="nyx-weather-cloud-fill" d="M7.2 19h10a4 4 0 0 0 .45-7.98A5.55 5.55 0 0 0 7.08 12.6 3.2 3.2 0 0 0 7.2 19Z"/></svg></span><strong data-home-weather-temp>--°</strong><span data-home-weather-desc>Loading</span></button><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1><form class="browser-blank-search nyx-home-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Find your course or enter a URL" placeholder="Find your Course" autocomplete="off" spellcheck="false"></form><nav class="nyx-home-actions" aria-label="Nyx home"><button data-open="apps" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-apps" aria-hidden="true"></span><span>Resources</span></button><button data-app-url="https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-study" aria-hidden="true"></span><span>Assignments</span></button><button data-open-nyx-profile-entry data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-profile" aria-hidden="true"></span><span>Student Profile</span></button><button data-open="settings" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-settings" aria-hidden="true"></span><span>Preferences</span></button></nav></main><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div><a class="nyx-home-link-checker" data-app-url="/apps/link-checker/" href="/apps/link-checker/">Link Checker</a><nav class="nyx-home-utility-links" aria-label="Nyx information and tools"><a data-app-url="/apps/link-generator/" href="/apps/link-generator/">Link Generator</a><a data-open="terms" href="nyx://terms">Terms Of Service</a><a data-open="developer" href="nyx://developer">Developer Console</a><a data-open="about" href="nyx://about">About Us</a></nav></div></div>`;
   }
   //apps-grid
   const nyxAiHomeShortcut={domain:'nyx-ai',title:'AI Tutor',url:'nyx://ai',favorite:false};
@@ -10918,22 +10930,22 @@
     }
     if(name==='help'){
       nyxTerminalWrite(output,'Commands: help, status, theme, engine, origin, storage, date, clear');
-      nyxTerminalWrite(output,'Owner commands (owner role only): owner help');
+      nyxTerminalWrite(output,'Staff commands (based on your assigned role): owner help');
       return;
     }
     if(name==='owner help'){
-      if(!nyxFounderIsOwner){nyxTerminalWrite(output,'Owner access is required for owner commands.','error');return}
-      nyxTerminalWrite(output,'Owner commands: owner dashboard, owner status, owner profile, owner reload-profile');
+      if(!nyxOwnerDashboardAccess&&!nyxHasAccountPermission('developer-console')){nyxTerminalWrite(output,'Your role does not include staff commands.','error');return}
+      nyxTerminalWrite(output,'Staff commands: owner dashboard, owner status. Founder only: owner profile, owner reload-profile');
       return;
     }
     if(name==='owner dashboard'){
-      if(!nyxFounderIsOwner){nyxTerminalWrite(output,'Owner access is required for owner commands.','error');return}
+      if(!nyxOwnerDashboardAccess){nyxTerminalWrite(output,'Dashboard access is required for this command.','error');return}
       openNyxOwnerDashboard();
       nyxTerminalWrite(output,'Owner Dashboard opened.');
       return;
     }
     if(name==='owner status'){
-      if(!nyxFounderIsOwner){nyxTerminalWrite(output,'Owner access is required for owner commands.','error');return}
+      if(!nyxHasAccountPermission('developer-console')){nyxTerminalWrite(output,'Developer Console access is required for this command.','error');return}
       try{const token=await nyxGetFirebaseToken(true);const response=await fetch('/api/founder-profile/developer-status',{headers:{Authorization:`Bearer ${token}`},cache:'no-store'});const data=await response.json();if(!response.ok)throw new Error(data.error||'Owner status is unavailable.');nyxTerminalWrite(output,`Role: ${data.role} · Permissions: ${(data.permissions||[]).join(', ')} · Verified ${new Date(data.checkedAt).toLocaleTimeString()}`)}catch(error){nyxTerminalWrite(output,error.message||'Owner status is unavailable.','error')}
       return;
     }
@@ -12520,7 +12532,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
       if(title) title.textContent='New chat';
     });
     document.addEventListener('keydown',e=>{
-      if(nyxFounderIsOwner&&(e.key==='Enter'||e.key===' ')&&e.target.closest?.('[data-nyx-owner-presence]')&&!e.target.closest?.('[data-toggle-nyx-account-menu]')){
+      if(nyxOwnerDashboardAccess&&(e.key==='Enter'||e.key===' ')&&e.target.closest?.('[data-nyx-owner-presence]')&&!e.target.closest?.('[data-toggle-nyx-account-menu]')){
         e.preventDefault();
         openNyxOwnerDashboard();
         return;
@@ -12593,7 +12605,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
         return;
       }
       const ownerPresence=e.target.closest?.('[data-nyx-owner-presence]');
-      if(ownerPresence&&nyxFounderIsOwner){
+      if(ownerPresence&&nyxOwnerDashboardAccess){
         e.preventDefault();
         openNyxOwnerDashboard();
         return;

@@ -336,6 +336,14 @@
 .nyx-owner-media-removal input{accent-color:var(--owner-accent)}
 .nyx-owner-profile-editor>p{margin:0;color:var(--owner-muted);font-size:8px;line-height:1.45}
 .nyx-owner-detail-section>label{display:grid;grid-template-columns:130px minmax(0,1fr);align-items:center;gap:8px;color:var(--owner-muted);font-size:9px}
+.nyx-owner-role-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.nyx-owner-role-options button{display:flex;min-width:0;align-items:center;justify-content:flex-start;gap:6px;padding:8px 9px;border:1px solid var(--owner-line);border-radius:8px;background:var(--owner-panel-2);color:var(--owner-muted);font:inherit;font-size:9px;font-weight:600;line-height:1;cursor:pointer;transition:border-color 160ms ease,background-color 160ms ease,color 160ms ease,transform 160ms ease}
+.nyx-owner-role-options button:hover:not(:disabled){border-color:color-mix(in srgb,var(--owner-accent) 48%,var(--owner-line));color:var(--owner-text);transform:translateY(-1px)}
+.nyx-owner-role-options button.active{border-color:var(--owner-accent);background:color-mix(in srgb,var(--owner-accent) 14%,var(--owner-panel-2));color:var(--owner-text);box-shadow:0 0 0 1px color-mix(in srgb,var(--owner-accent) 15%,transparent)}
+.nyx-owner-role-options button:focus-visible{outline:2px solid var(--owner-accent);outline-offset:2px}
+.nyx-owner-role-options button:disabled{cursor:not-allowed;opacity:.8}
+.nyx-owner-role-options .nyx-owner-role-icon{width:13px;height:13px;flex:0 0 auto}
+.nyx-owner-premium-note{margin:0;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--owner-accent) 8%,var(--owner-panel-2));color:var(--owner-muted);font-size:9px;line-height:1.5}
 .nyx-owner-detail-actions{display:flex;justify-content:flex-end}
 .nyx-owner-detail-actions button,.nyx-owner-action-grid button{
   min-height:32px;
@@ -418,6 +426,7 @@
   .nyx-owner-detail-grid{grid-template-columns:1fr}
   .nyx-owner-detail-value.uid{grid-column:auto}
   .nyx-owner-detail-section>label{grid-template-columns:1fr}
+  .nyx-owner-role-options{grid-template-columns:repeat(2,minmax(0,1fr))}
   .nyx-owner-media-editors{grid-template-columns:1fr}
   .nyx-owner-profile-fields{grid-template-columns:1fr}
   .nyx-owner-profile-fields>label.wide{grid-column:auto}

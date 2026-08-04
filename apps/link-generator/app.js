@@ -91,13 +91,29 @@
       refreshToken:result.refreshToken || result.refresh_token || existing.refreshToken,
       expiresAt:Date.now() + (Number(result.expiresIn || result.expires_in || 3600)*1000),
       email:result.email || existing.email || '',
-      emailVerified:Boolean(existing.emailVerified)
+      emailVerified:Boolean(existing.emailVerified),
+      subscriptionStatus:existing.subscriptionStatus || 'free',
+      premiumAccess:Boolean(existing.premiumAccess)
     };
   }
   async function lookupAccount(idToken){
     const result=await firebaseRequest('identity','accounts:lookup',{idToken});
     const user=result.users?.[0];
     return {email:user?.email || '',emailVerified:Boolean(user?.emailVerified)};
+  }
+  async function lookupNyxAccess(idToken){
+    const account=await readJson(await fetch('/api/account/me',{headers:{Accept:'application/json',Authorization:`Bearer ${idToken}`},cache:'no-store'}));
+    return {
+      subscriptionStatus:String(account.subscriptionStatus || 'free').toLowerCase(),
+      premiumAccess:Boolean(account.premiumAccess || ['premium','trialing'].includes(String(account.subscriptionStatus || '').toLowerCase()))
+    };
+  }
+  function accountHasPremium(){return Boolean(authSession?.premiumAccess || ['premium','trialing'].includes(String(authSession?.subscriptionStatus || '').toLowerCase()))}
+  function premiumAccessActive(){return accessMode==='administrator' || (accessMode==='account' && accountHasPremium())}
+  async function refreshNyxAccess(){
+    if(!authSession?.idToken)return authSession;
+    const access=await lookupNyxAccess(authSession.idToken);
+    return storeSession({...authSession,...access});
   }
   async function refreshSession(){
     if(!authSession?.refreshToken) throw new Error('Sign in again.');
@@ -106,8 +122,8 @@
   }
   async function refreshVerification(){
     await refreshSession();
-    const profile=await lookupAccount(authSession.idToken);
-    authSession={...authSession,...profile};
+    const [profile,access]=await Promise.all([lookupAccount(authSession.idToken),lookupNyxAccess(authSession.idToken)]);
+    authSession={...authSession,...profile,...access};
     if(profile.emailVerified){
       await refreshSession();
       authSession.emailVerified=true;
@@ -118,30 +134,40 @@
   async function currentVerifiedSession(){
     if(!authSession) throw new Error(`Sign in to use your ${freeDailyLimit} free links.`);
     if(authSession.expiresAt-Date.now()<60_000) await refreshSession();
+    await refreshNyxAccess();
+    if(accountHasPremium()) return authSession;
     if(!authSession.emailVerified) await refreshVerification();
     if(!authSession.emailVerified) throw new Error('Verify your email address, then select “I verified my email.”');
     return authSession;
   }
   function renderAccount(){
     const signedIn=Boolean(authSession?.idToken);
+    const premium=signedIn&&accountHasPremium();
     refs.accountFields.hidden=signedIn;
     refs.signIn.hidden=signedIn;
     refs.createAccount.hidden=signedIn;
     refs.signOut.hidden=!signedIn;
-    refs.refreshAccount.hidden=!signedIn || Boolean(authSession?.emailVerified);
-    refs.accountStatus.className=`account-status${signedIn ? (authSession.emailVerified ? ' good' : '') : ''}`;
+    refs.refreshAccount.hidden=!signedIn || premium || Boolean(authSession?.emailVerified);
+    refs.accountStatus.className=`account-status${signedIn ? (premium || authSession.emailVerified ? ' good' : '') : ''}`;
     refs.accountStatus.textContent=signedIn
-      ? (authSession.emailVerified ? `${authSession.email || 'Account'} is verified. You can create up to ${freeDailyLimit} links today.` : `Verification sent to ${authSession.email || 'your email'}. Verify it before generating links.`)
+      ? (premium ? `${authSession.email || 'Account'} has Premium access. No access code is required.` : (authSession.emailVerified ? `${authSession.email || 'Account'} is verified. You can create up to ${freeDailyLimit} links today.` : `Verification sent to ${authSession.email || 'your email'}. Verify it before generating links.`))
       : `Sign in with a verified email to receive ${freeDailyLimit} free links per day.`;
+    const accountButton=refs.modeButtons.find(button=>button.dataset.accessMode==='account');
+    if(accountButton)accountButton.textContent=premium?'Premium account':'Account';
+    if(accessMode==='account')setPremiumLayout();
+  }
+  function setPremiumLayout(){
+    const premium=premiumAccessActive();
+    refs.amountField.hidden=!premium;
+    refs.detailsGrid.classList.toggle('premium',premium);
+    if(!premium)refs.amount.value='1';
+    updateAmountCopy();
   }
   function setAccessMode(mode){
     accessMode=mode;
     refs.accountPanel.hidden=mode!=='account';
     refs.administratorPanel.hidden=mode!=='administrator';
-    refs.amountField.hidden=mode!=='administrator';
-    refs.detailsGrid.classList.toggle('premium',mode==='administrator');
-    if(mode!=='administrator') refs.amount.value='1';
-    updateAmountCopy();
+    setPremiumLayout();
     refs.modeButtons.forEach(button=>{
       const active=button.dataset.accessMode===mode;
       button.classList.toggle('active',active);
@@ -149,13 +175,13 @@
     });
   }
   function selectedAmount(){
-    if(accessMode!=='administrator') return 1;
+    if(!premiumAccessActive()) return 1;
     const value=Number.parseInt(refs.amount.value,10);
     return Number.isInteger(value) ? Math.max(1,Math.min(premiumBatchLimit,value)) : 1;
   }
   function updateAmountCopy(){
     const amount=selectedAmount();
-    refs.reviewAmountRow.hidden=accessMode!=='administrator';
+    refs.reviewAmountRow.hidden=!premiumAccessActive();
     refs.reviewAmount.textContent=`${amount} link${amount===1?'':'s'}`;
     refs.confirmText.textContent=`I understand this creates ${amount===1?'one resource':`${amount} resources`} on the Nyx Bunny account.`;
     if(!refs.button.disabled) refs.button.querySelector('span').textContent=`Generate ${amount===1?'link':`${amount} links`}`;
@@ -181,7 +207,7 @@
     refs.wizardProgress.style.width=`${(index/(refs.wizardSteps.length-1))*100}%`;
   }
   function updateReview(){
-    refs.reviewAccess.textContent=accessMode==='account' ? (authSession?.email || 'Free account') : 'Premium users';
+    refs.reviewAccess.textContent=accessMode==='account' ? (accountHasPremium() ? `${authSession?.email || 'Account'} · Premium` : (authSession?.email || 'Free account')) : 'Premium access code';
     refs.reviewLabel.textContent=refs.label.value.trim() || 'Automatic';
     refs.reviewFilter.textContent=refs.filter.options[refs.filter.selectedIndex]?.textContent || 'Not selected';
     refs.reviewOrigin.textContent=refs.origin.textContent || 'Official Nyx origin';
@@ -222,7 +248,7 @@
     }
     if(wizardStep===1){
       if(!refs.filter.value){showNotice('Choose a content filter before continuing.','error');refs.filter.focus();return}
-      if(accessMode==='administrator'){
+      if(premiumAccessActive()){
         const rawAmount=Number.parseInt(refs.amount.value,10);
         if(!Number.isInteger(rawAmount) || rawAmount<1 || rawAmount>premiumBatchLimit){showNotice(`Choose an amount from 1 to ${premiumBatchLimit}.`,'error');refs.amount.focus();return}
       }
@@ -239,6 +265,12 @@
     const accountButton=refs.modeButtons.find(button=>button.dataset.accessMode==='account');
     accountButton.disabled=!authConfig.enabled;
     if(!authConfig.enabled) setAccessMode('administrator');
+    if(authSession?.idToken){
+      try{
+        if(authSession.expiresAt-Date.now()<60_000)await refreshSession();
+        await refreshNyxAccess();
+      }catch{clearSession()}
+    }
     renderAccount();
   }
   async function handleSignIn(){
@@ -248,8 +280,8 @@
     try{
       const result=await firebaseRequest('identity','accounts:signInWithPassword',{email,password,returnSecureToken:true});
       storeSession(sessionFromResponse(result));
-      const profile=await lookupAccount(authSession.idToken);
-      storeSession({...authSession,...profile});
+      const [profile,access]=await Promise.all([lookupAccount(authSession.idToken),lookupNyxAccess(authSession.idToken)]);
+      storeSession({...authSession,...profile,...access});
       refs.password.value='';
     }catch(error){refs.accountStatus.textContent=friendlyFirebaseError(error);refs.accountStatus.className='account-status error'}
     finally{setAuthBusy(false)}
@@ -262,6 +294,7 @@
       const result=await firebaseRequest('identity','accounts:signUp',{email,password,returnSecureToken:true});
       storeSession(sessionFromResponse(result,{email,emailVerified:false}));
       await firebaseRequest('identity','accounts:sendOobCode',{requestType:'VERIFY_EMAIL',idToken:authSession.idToken});
+      await refreshNyxAccess();
       refs.password.value='';
       renderAccount();
     }catch(error){refs.accountStatus.textContent=friendlyFirebaseError(error);refs.accountStatus.className='account-status error'}
@@ -371,6 +404,7 @@
       if(accessMode==='account'){
         const session=await currentVerifiedSession();
         headers.Authorization=`Bearer ${session.idToken}`;
+        if(accountHasPremium())body.amount=selectedAmount();
       }else{
         if(!refs.accessCode.value) throw new Error('Enter your Premium access code.');
         body.accessCode=refs.accessCode.value;
@@ -383,12 +417,13 @@
       refs.resultUrl.value=links.join('\n');refs.resultCount.textContent=`${links.length} link${links.length===1?'':'s'}`;refs.resultTitle.textContent=links.length===1?'Your Nyx link is ready':'Your Nyx links are ready';refs.resultSubtitle.textContent=result.partial?`${links.length} of ${result.requested} requested links were created.`:`${links.length===1?'The link was':'All links were'} created successfully.`;refs.open.href=links[0];setOpenReady(false);refs.resultCard.hidden=false;refs.accessCode.value='';setWizardStep(3);requestAnimationFrame(()=>refs.resultCard.scrollIntoView({behavior:'smooth',block:'nearest'}));
       const [,cdnReady]=await Promise.all([checkGeneratedLinks(links,selectedFilter,selectedFilterName),waitForCdnReadiness(links[0])]);
       const cooldown=result.premiumCooldown;
+      const premiumResult=result.access==='administrator'||result.access==='premium';
       const premiumMessage=cooldown?.triggered
         ? `${links.length} link${links.length===1?' was':'s were'} created. A ${cooldown.minutes || premiumCooldownMinutes}-minute Premium cooldown is now active.`
         : `${links.length} link${links.length===1?' was':'s were'} created with Premium access. ${cooldown?.accumulated || 0} of ${cooldown?.accumulatedLimit || premiumAccumulatedLimit} links accumulated before cooldown.`;
       if(result.partial) showNotice(result.warning || `${links.length} of ${result.requested} links were created.`,'error');
-      else if(!cdnReady) showNotice(`${result.access==='administrator' ? `${premiumMessage} ` : ''}${refs.open.dataset.readinessMessage || 'The link was created, but Bunny is still provisioning it. Try Open first again shortly.'}`,'error');
-      else showNotice(result.access==='account' ? `The link was created. ${result.remaining} free link${result.remaining===1?'':'s'} remaining today.` : premiumMessage);
+      else if(!cdnReady) showNotice(`${premiumResult ? `${premiumMessage} ` : ''}${refs.open.dataset.readinessMessage || 'The link was created, but Bunny is still provisioning it. Try Open first again shortly.'}`,'error');
+      else showNotice(premiumResult ? premiumMessage : `The link was created. ${result.remaining} free link${result.remaining===1?'':'s'} remaining today.`);
     }catch(error){showNotice(error.message,'error')}
     finally{setLoading(false)}
   });

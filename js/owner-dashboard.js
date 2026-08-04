@@ -17,8 +17,15 @@
     member: "Member"
   });
   const ownerRoleIcons = Object.freeze({ co_owner: "owner", manager: "admin", support: "moderator", tester: "developer", contributor: "developer" });
+  const ownerAssignableRoles = Object.freeze(["member", "contributor", "tester", "support", "moderator", "developer", "manager", "admin", "co_owner"]);
   const roleLabel = value => ownerRoleLabels[value] || "Member";
   const roleIcon = role => `<img class="nyx-owner-role-icon" src="/assets/icons/roles/${esc(ownerRoleIcons[role] || role)}.png" alt="" aria-hidden="true">`;
+  const roleOptions = (currentRole, locked = false) => `<div class="nyx-owner-role-options" role="radiogroup" aria-label="Account role">${ownerAssignableRoles.map(role => `<button class="role-${esc(role)}${currentRole === role ? " active" : ""}" type="button" role="radio" aria-checked="${currentRole === role}" data-owner-role-option="${esc(role)}" ${locked ? "disabled" : ""}>${roleIcon(role)}<span>${esc(roleLabel(role))}</span></button>`).join("")}${currentRole === "owner" ? `<button class="role-owner active" type="button" role="radio" aria-checked="true" disabled>${roleIcon("owner")}<span>Owner</span></button>` : ""}</div>`;
+  const syncRoleOptions = (root, selectedRole) => root?.querySelectorAll?.("[data-owner-role-option]").forEach(button => {
+    const active = button.dataset.ownerRoleOption === selectedRole;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-checked", String(active));
+  });
   const subscriptionLabel = value => ({
     free: "Free", premium: "Premium", trialing: "Trial", past_due: "Past due", canceled: "Canceled"
   }[value] || "Free");
@@ -532,12 +539,13 @@
           <div class="nyx-owner-drawer-scroll">
             <section class="nyx-owner-detail-grid">${detailValue("Email", user.deliverableEmail ? user.email : "No email added")}${detailValue("Firebase UID", user.uid, "uid")}${detailValue("Presence", user.online ? "Online now" : "Offline")}${detailValue("Created", dateLabel(user.createdAt))}${detailValue("Last sign-in", dateLabel(user.lastSignInAt))}${detailValue("Last active", dateLabel(user.lastActiveAt))}${detailValue("Email verified", user.deliverableEmail ? (user.emailVerified ? "Verified" : "Not verified") : "Not applicable · username-only")}</section>
             <section class="nyx-owner-detail-section nyx-owner-profile-management"><h3>Public profile</h3>${ownerProfilePreview(user)}<details><summary>Edit this profile</summary>${ownerProfileEditor(user)}</details></section>
-            <section class="nyx-owner-detail-section"><h3>Access</h3><label>Role<select data-owner-detail-role ${user.role === "owner" ? "disabled" : ""}><option value="member">Member</option><option value="contributor">Contributor</option><option value="tester">Tester</option><option value="support">Support</option><option value="moderator">Moderator</option><option value="developer">Developer</option><option value="manager">Manager</option><option value="admin">Admin</option><option value="co_owner">Co-owner</option><option value="owner" ${user.role === "owner" ? "selected" : "disabled"}>Owner</option></select></label><label>Subscription<select data-owner-detail-subscription><option value="free">Free</option><option value="premium">Premium</option><option value="trialing">Trial</option><option value="past_due">Past due</option><option value="canceled">Canceled</option></select></label><label>Monthly revenue <input data-owner-detail-revenue type="number" min="0" step="0.01" value="${((user.monthlyRevenueCents || 0) / 100).toFixed(2)}"></label><div class="nyx-owner-detail-actions"><button type="button" data-owner-save-access>Save access</button></div></section>
+            <section class="nyx-owner-detail-section"><h3>Access</h3><label>Current role<select data-owner-detail-role ${user.role === "owner" ? "disabled" : ""}><option value="member">Member</option><option value="contributor">Contributor</option><option value="tester">Tester</option><option value="support">Support</option><option value="moderator">Moderator</option><option value="developer">Developer</option><option value="manager">Manager</option><option value="admin">Admin</option><option value="co_owner">Co-owner</option><option value="owner" ${user.role === "owner" ? "selected" : "disabled"}>Owner</option></select></label>${roleOptions(user.role, user.role === "owner")}<label>Subscription<select data-owner-detail-subscription><option value="free">Free</option><option value="premium">Premium</option><option value="trialing">Trial</option><option value="past_due">Past due</option><option value="canceled">Canceled</option></select></label><p class="nyx-owner-premium-note">Premium and Trial accounts receive Premium benefits automatically when they sign in. They do not need a Premium access code.</p><label>Monthly revenue <input data-owner-detail-revenue type="number" min="0" step="0.01" value="${((user.monthlyRevenueCents || 0) / 100).toFixed(2)}"></label><div class="nyx-owner-detail-actions"><button type="button" data-owner-save-access>Save access</button></div></section>
             <section class="nyx-owner-detail-section"><h3>Account actions</h3>${!user.deliverableEmail ? '<p class="nyx-owner-action-note">This username-only account has no inbox. Create a secure reset link and give it directly to the account owner.</p>' : ""}<div class="nyx-owner-action-grid"><button type="button" data-owner-user-action="create_password_reset_link">Create reset link</button><button type="button" data-owner-user-action="send_password_reset" ${!user.deliverableEmail ? "disabled" : ""}>Email reset link</button><button type="button" data-owner-user-action="verify_email" ${user.emailVerified || !user.deliverableEmail ? "disabled" : ""}>Verify email</button><button type="button" data-owner-user-action="${user.disabled ? "enable" : "disable"}" ${user.role === "owner" ? "disabled" : ""}>${user.disabled ? "Re-enable account" : "Disable account"}</button><button class="danger" type="button" data-owner-user-action="delete" ${user.role === "owner" ? "disabled" : ""}>Delete account</button></div></section>
             <section class="nyx-owner-detail-section"><h3>Recent user activity</h3><div class="nyx-owner-user-activity">${(user.recentActivity || []).length ? user.recentActivity.map(event => `<p><strong>${esc(actionLabel(event.action))}</strong><span>${esc(relativeLabel(event.createdAt))}</span></p>`).join("") : "<span>No recorded account actions.</span>"}</div></section>
           </div>`;
         drawer.querySelector("[data-owner-detail-role]").value = user.role;
         drawer.querySelector("[data-owner-detail-subscription]").value = user.subscriptionStatus;
+        syncRoleOptions(drawer, user.role);
         void hydrateOwnerProfileMedia(drawer);
       } catch (error) {
         drawer.innerHTML = `<div class="nyx-owner-error"><strong>User details could not load</strong><span>${esc(error.message)}</span><button type="button" data-owner-drawer-close>Close</button></div>`;
@@ -673,6 +681,14 @@
       const uid = event.target.closest("[data-owner-view-user]")?.dataset.ownerViewUser;
       if (uid) return void openUser(uid);
       if (event.target.closest("[data-owner-drawer-close]")) return closeDrawer();
+      const selectedRole = event.target.closest("[data-owner-role-option]")?.dataset.ownerRoleOption;
+      if (selectedRole) {
+        const select = drawer.querySelector("[data-owner-detail-role]");
+        if (!select || select.disabled) return;
+        select.value = selectedRole;
+        syncRoleOptions(drawer, selectedRole);
+        return;
+      }
       const userAction = event.target.closest("[data-owner-user-action]")?.dataset.ownerUserAction;
       if (userAction) return void mutateUser(userAction);
       if (event.target.closest("[data-owner-save-access]")) {

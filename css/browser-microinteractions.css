@@ -20,7 +20,12 @@ body.browser-shell .browser-mode-shell-tab{
   background:rgba(20,27,40,.6)!important;
   box-shadow:inset 0 1px rgba(255,255,255,.035),0 1px rgba(0,0,0,.16)!important;
   will-change:transform;
+  cursor:grab;
 }
+body.browser-shell.nyx-tab-reordering .browser-mode-shell-tab{transition:none!important}
+body.browser-shell .browser-mode-shell-tab.tab-dragging{opacity:.42!important;cursor:grabbing;transform:scale(.985)!important}
+body.browser-shell .browser-mode-shell-tab.tab-drop-before{box-shadow:inset 3px 0 0 var(--theme-accent,#8aa7ff),inset 0 1px rgba(255,255,255,.06)!important}
+body.browser-shell .browser-mode-shell-tab.tab-drop-after{box-shadow:inset -3px 0 0 var(--theme-accent,#8aa7ff),inset 0 1px rgba(255,255,255,.06)!important}
 body.browser-shell .browser-mode-shell-tab:hover{
   border-color:rgba(191,207,240,.33)!important;
   background:rgba(44,57,78,.72)!important;

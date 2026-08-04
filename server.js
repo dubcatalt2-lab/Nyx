@@ -77,6 +77,10 @@ const premiumImmediateCooldownAt = 5;
 const premiumAccumulatedLimit = 30;
 const premiumCooldownMs = 10 * 60 * 1000;
 const premiumGenerationUsage = new Map();
+const downloadSafetyCache = new Map();
+const downloadSafetyAttempts = new Map();
+const downloadSafetyWindowMs = 60_000;
+const downloadSafetyMaxAttempts = 60;
 let linkGeneratorFirebasePromise;
 app.use(express.json({ limit: "2mb" }));
 app.use((error, _req, res, next) => {
@@ -611,7 +615,29 @@ function scramjetRuntimeGuard() {
       }
     };
   };
+  const isDownloadUrl = value => {
+    const rawHref = String(value || "").trim();
+    if (/^(?:blob|data):/i.test(rawHref)) return true;
+    const href = rawHref.split(/[?#]/)[0].toLowerCase();
+    return /\.(?:apk|appx|bat|bin|cmd|com|crx|deb|dmg|exe|iso|jar|js|jse|msi|pkg|ps1|scr|sh|vbs|wsf|zip|7z|rar)$/i.test(href);
+  };
+  const postDownloadRequest = (value, filename = "") => {
+    const href = String(value || "").trim();
+    if (!href || !window.parent || window.parent === window) return false;
+    try {
+      window.parent.postMessage({
+        type: "nyx:download-request",
+        url: href,
+        filename: String(filename || ""),
+        sourceUrl: String(location.href || "")
+      }, "*");
+      return true;
+    } catch {
+      return false;
+    }
+  };
   let guardedOpen = (...args) => {
+    if (isDownloadUrl(args[0]) && postDownloadRequest(args[0])) return null;
     if (!popupProtectionEnabled() && nativeOpen) return nativeOpen(...args);
     return opennyxPopupWarning();
   };
@@ -619,6 +645,7 @@ function scramjetRuntimeGuard() {
     if (typeof nativeOpen === "function" && typeof Proxy === "function") {
       guardedOpen = new Proxy(nativeOpen, {
         apply(target, thisArg, args) {
+          if (isDownloadUrl(args[0]) && postDownloadRequest(args[0])) return null;
           if (!popupProtectionEnabled()) return Reflect.apply(target, thisArg, args);
           return opennyxPopupWarning();
         },
@@ -644,13 +671,10 @@ function scramjetRuntimeGuard() {
     const value = String(target || "").toLowerCase();
     return value && !["_self", "_parent", "_top"].includes(value);
   };
-  const shouldTrapDownloadLink = link => {
+  const isDownloadLink = link => {
     if (!link) return false;
     if (link.hasAttribute("download")) return true;
-    const rawHref = String(link.href || link.getAttribute("href") || "").trim();
-    if (/^(?:blob|data):/i.test(rawHref)) return true;
-    const href = rawHref.split(/[?#]/)[0].toLowerCase();
-    return /\.(?:apk|appx|bat|bin|cmd|com|crx|deb|dmg|exe|iso|jar|js|jse|msi|pkg|ps1|scr|sh|vbs|wsf|zip|7z|rar)$/i.test(href);
+    return isDownloadUrl(link.href || link.getAttribute("href") || "");
   };
   try {
     Object.defineProperty(window, "open", { value: guardedOpen, writable: true, configurable: true });
@@ -660,7 +684,8 @@ function scramjetRuntimeGuard() {
   try {
     const nativeAnchorClick = HTMLAnchorElement.prototype.click;
     HTMLAnchorElement.prototype.click = function() {
-      if (popupProtectionEnabled() && (shouldTrapPopupTarget(this.target) || shouldTrapDownloadLink(this))) {
+      if (isDownloadLink(this) && postDownloadRequest(this.href || this.getAttribute("href"), this.getAttribute("download") || "")) return;
+      if (popupProtectionEnabled() && shouldTrapPopupTarget(this.target)) {
         opennyxPopupWarning();
         return;
       }
@@ -670,17 +695,27 @@ function scramjetRuntimeGuard() {
   if (document && !window.__nyxPopupWarningListeners) {
     window.__nyxPopupWarningListeners = true;
     document.addEventListener("click", event => {
-      if (!popupProtectionEnabled()) return;
       const link = event.target?.closest?.("a[href]");
-      if (!link || (!shouldTrapPopupTarget(link.getAttribute("target")) && !shouldTrapDownloadLink(link))) return;
+      if (!link) return;
+      if (isDownloadLink(link) && postDownloadRequest(link.href || link.getAttribute("href"), link.getAttribute("download") || "")) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+      if (!popupProtectionEnabled() || !shouldTrapPopupTarget(link.getAttribute("target"))) return;
       event.preventDefault();
       event.stopImmediatePropagation();
       opennyxPopupWarning();
     }, true);
     document.addEventListener("auxclick", event => {
-      if (!popupProtectionEnabled()) return;
       const link = event.target?.closest?.("a[href]");
-      if (!link || (!shouldTrapPopupTarget(link.getAttribute("target")) && !shouldTrapDownloadLink(link))) return;
+      if (!link) return;
+      if (isDownloadLink(link) && postDownloadRequest(link.href || link.getAttribute("href"), link.getAttribute("download") || "")) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+      if (!popupProtectionEnabled() || !shouldTrapPopupTarget(link.getAttribute("target"))) return;
       event.preventDefault();
       event.stopImmediatePropagation();
       opennyxPopupWarning();
@@ -2032,6 +2067,10 @@ function normalizeSubscriptionStatus(value) {
   return ["free", "premium", "trialing", "past_due", "canceled"].includes(status) ? status : "free";
 }
 
+function hasPremiumSubscription(value) {
+  return ["premium", "trialing"].includes(normalizeSubscriptionStatus(value));
+}
+
 function nyxDeliverableEmail(value) {
   const email = String(value || "").trim();
   return Boolean(email && !/@account\.nyx\.local$/i.test(email) && !/\.local$/i.test(email));
@@ -2267,6 +2306,128 @@ function linkGeneratorRateState(clientId, now = Date.now()) {
   return state;
 }
 
+function normalizedDownloadSafetyUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw || raw.length > 4096) return null;
+  try {
+    const url = new URL(raw);
+    if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) return null;
+    url.hash = "";
+    return url;
+  } catch {
+    return null;
+  }
+}
+
+function downloadSafetyFileRisk(url, filename = "") {
+  const candidate = `${String(url?.pathname || "")} ${String(filename || "")}`.toLowerCase();
+  const executable = /\.(?:apk|appx|bat|cmd|com|crx|deb|dmg|exe|iso|jar|jse|msi|pkg|ps1|scr|sh|vbs|wsf)(?:$|[\s?#])/i.test(candidate);
+  const archive = /\.(?:7z|rar|tar|tgz|zip)(?:$|[\s?#])/i.test(candidate);
+  return executable ? "executable" : (archive ? "archive" : "ordinary");
+}
+
+function downloadSafetyRateState(clientId, now = Date.now()) {
+  for (const [key, state] of downloadSafetyAttempts) {
+    if (now - state.windowStarted > downloadSafetyWindowMs) downloadSafetyAttempts.delete(key);
+  }
+  let state = downloadSafetyAttempts.get(clientId);
+  if (!state || now - state.windowStarted > downloadSafetyWindowMs) {
+    state = { attempts: 0, windowStarted: now };
+    downloadSafetyAttempts.set(clientId, state);
+  }
+  return state;
+}
+
+async function googleSafeBrowsingLookup(url) {
+  const apiKey = String(process.env.NYX_SAFE_BROWSING_API_KEY || process.env.GOOGLE_SAFE_BROWSING_API_KEY || "").trim();
+  if (!apiKey) return { configured: false, matches: [] };
+  const cacheKey = url.href;
+  const cached = downloadSafetyCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 7_000);
+  try {
+    const response = await fetch(`https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${encodeURIComponent(apiKey)}`, {
+      method: "POST",
+      signal: controller.signal,
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        client: { clientId: "nyx-browser", clientVersion: "1.0.0" },
+        threatInfo: {
+          threatTypes: ["MALWARE", "SOCIAL_ENGINEERING", "UNWANTED_SOFTWARE", "POTENTIALLY_HARMFUL_APPLICATION"],
+          platformTypes: ["ANY_PLATFORM"],
+          threatEntryTypes: ["URL"],
+          threatEntries: [{ url: url.href }]
+        }
+      })
+    });
+    if (!response.ok) throw new Error(`Safe Browsing returned ${response.status}`);
+    const payload = await response.json().catch(() => ({}));
+    const matches = Array.isArray(payload.matches) ? payload.matches.map(match => String(match?.threatType || "UNKNOWN")).filter(Boolean) : [];
+    const value = { configured: true, matches };
+    downloadSafetyCache.set(cacheKey, { expiresAt: Date.now() + 10 * 60_000, value });
+    return value;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+app.post("/api/download-safety/check", async (req, res) => {
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-site download checks are not allowed." });
+    return;
+  }
+  const rate = downloadSafetyRateState(linkGeneratorClientId(req));
+  rate.attempts += 1;
+  if (rate.attempts > downloadSafetyMaxAttempts) {
+    res.set("Retry-After", String(Math.ceil(downloadSafetyWindowMs / 1000)));
+    res.status(429).json({ error: "Too many download checks. Try again in a minute." });
+    return;
+  }
+  const target = normalizedDownloadSafetyUrl(req.body?.url);
+  if (!target) {
+    res.status(400).json({ error: "A valid HTTP or HTTPS download URL is required." });
+    return;
+  }
+  const fileRisk = downloadSafetyFileRisk(target, req.body?.filename);
+  try {
+    const lookup = await googleSafeBrowsingLookup(target);
+    const threats = [...new Set(lookup.matches)];
+    const blocked = threats.length > 0;
+    const caution = !blocked && fileRisk !== "ordinary";
+    res.setHeader("cache-control", "no-store");
+    res.json({
+      verdict: blocked ? "blocked" : (caution ? "caution" : (lookup.configured ? "clear" : "unverified")),
+      provider: lookup.configured ? "Google Safe Browsing" : "Nyx local checks",
+      providerConfigured: lookup.configured,
+      threats,
+      fileRisk,
+      urlChecked: lookup.configured,
+      fileScanned: false,
+      message: blocked
+        ? "This download URL matches a known threat list."
+        : (caution
+          ? `This is ${fileRisk === "executable" ? "an executable or installable file" : "an archive"}; inspect it carefully before opening it.`
+          : (lookup.configured
+            ? "No known URL threat was reported. The file contents were not antivirus-scanned."
+            : "URL reputation checking is not configured on this Nyx server. The file contents were not antivirus-scanned."))
+    });
+  } catch (error) {
+    console.warn("Nyx download safety lookup failed:", error?.message || error);
+    res.setHeader("cache-control", "no-store");
+    res.json({
+      verdict: fileRisk === "ordinary" ? "unverified" : "caution",
+      provider: "Nyx local checks",
+      providerConfigured: true,
+      threats: [],
+      fileRisk,
+      urlChecked: false,
+      fileScanned: false,
+      message: "The URL reputation service could not be reached. The file contents were not antivirus-scanned."
+    });
+  }
+});
+
 function nyxAccountSignInRateState(clientId, now = Date.now()) {
   for (const [key, state] of nyxAccountSignInAttempts) {
     if (now - state.windowStarted > nyxAccountSignInWindowMs) nyxAccountSignInAttempts.delete(key);
@@ -2441,7 +2602,7 @@ async function adjustPremiumGeneration(firebase, reservation, created) {
   }
 }
 
-async function authenticatedFreeUser(req) {
+async function authenticatedLinkGeneratorUser(req) {
   const match = String(req.get("authorization") || "").match(/^Bearer\s+(.+)$/i);
   if (!match) {
     const error = new Error("Sign in with a verified account or enter your Premium access code.");
@@ -2462,12 +2623,16 @@ async function authenticatedFreeUser(req) {
     error.status = 401;
     throw error;
   }
-  if (!token.email_verified) {
+  const administration = await firebase.firestore.collection("nyxUserAdministration").doc(token.uid).get();
+  const administrationData = administration.data() || {};
+  const subscriptionStatus = normalizeSubscriptionStatus(administrationData.subscriptionStatus || administrationData.subscription?.status);
+  const premiumAccess = hasPremiumSubscription(subscriptionStatus);
+  if (!token.email_verified && !premiumAccess) {
     const error = new Error("Verify your email address before generating free links.");
     error.status = 403;
     throw error;
   }
-  return { firebase, uid: token.uid };
+  return { firebase, uid: token.uid, subscriptionStatus, premiumAccess };
 }
 
 function generatedPullZoneName(label) {
@@ -2803,12 +2968,16 @@ app.get("/api/account/me", async (req, res) => {
       firebase.auth.getUser(token.uid),
       firebase.firestore.collection("nyxUserAdministration").doc(token.uid).get()
     ]);
-    const role = token.uid === founderProfileConfig().administratorUid ? "owner" : normalizeNyxRole(administration.data()?.role);
+    const administrationData = administration.data() || {};
+    const role = token.uid === founderProfileConfig().administratorUid ? "owner" : normalizeNyxRole(administrationData.role);
+    const subscriptionStatus = normalizeSubscriptionStatus(administrationData.subscriptionStatus || administrationData.subscription?.status);
     res.json({
       uid: token.uid,
       email: nyxDeliverableEmail(account.email) ? String(account.email) : "",
       emailVerified: Boolean(account.emailVerified),
-      role
+      role,
+      subscriptionStatus,
+      premiumAccess: hasPremiumSubscription(subscriptionStatus)
     });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "Account information is unavailable." });
@@ -3346,13 +3515,26 @@ app.post("/api/activity/heartbeat", async (req, res) => {
   try {
     const { firebase, token } = await authenticatedNyxUser(req);
     const now = Date.now();
-    await firebase.firestore.collection("nyxUserActivity").doc(token.uid).set({
-      lastActiveAt: new Date(now).toISOString(),
-      lastActiveAtMs: now,
-      onlineUntilMs: now + signedInOnlineWindowMs,
-      updatedAt: new Date(now).toISOString()
-    }, { merge: true });
-    res.json({ ok: true, onlineUntil: new Date(now + signedInOnlineWindowMs).toISOString() });
+    const administrationRef = firebase.firestore.collection("nyxUserAdministration").doc(token.uid);
+    const [, administration] = await Promise.all([
+      firebase.firestore.collection("nyxUserActivity").doc(token.uid).set({
+        lastActiveAt: new Date(now).toISOString(),
+        lastActiveAtMs: now,
+        onlineUntilMs: now + signedInOnlineWindowMs,
+        updatedAt: new Date(now).toISOString()
+      }, { merge: true }),
+      administrationRef.get()
+    ]);
+    const administrationData = administration.data() || {};
+    const role = token.uid === founderProfileConfig().administratorUid ? "owner" : normalizeNyxRole(administrationData.role);
+    const subscriptionStatus = normalizeSubscriptionStatus(administrationData.subscriptionStatus || administrationData.subscription?.status);
+    res.json({
+      ok: true,
+      onlineUntil: new Date(now + signedInOnlineWindowMs).toISOString(),
+      role,
+      subscriptionStatus,
+      premiumAccess: hasPremiumSubscription(subscriptionStatus)
+    });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "Activity could not be updated." });
   }
@@ -3939,15 +4121,17 @@ app.post("/api/link-generator", async (req, res) => {
 
   let publicUser = null;
   try {
-    if (!administrator) publicUser = await authenticatedFreeUser(req);
+    if (!administrator) publicUser = await authenticatedLinkGeneratorUser(req);
   } catch (error) {
     res.status(error.status || 401).json({ error: error.message });
     return;
   }
 
+  const premiumAccount = Boolean(publicUser?.premiumAccess);
+  const premiumAccess = administrator || premiumAccount;
   const rawAmount = req.body?.amount === undefined ? 1 : Number(req.body.amount);
-  const amount = administrator ? rawAmount : 1;
-  if (administrator && (!Number.isInteger(rawAmount) || rawAmount < 1 || rawAmount > config.premiumBatchLimit)) {
+  const amount = premiumAccess ? rawAmount : 1;
+  if (premiumAccess && (!Number.isInteger(rawAmount) || rawAmount < 1 || rawAmount > config.premiumBatchLimit)) {
     res.status(400).json({ error: `Premium batches can contain between 1 and ${config.premiumBatchLimit} links.` });
     return;
   }
@@ -3959,15 +4143,16 @@ app.post("/api/link-generator", async (req, res) => {
     const zonesPayload = await bunnyRequest("/pullzone?page=1&perPage=1000", config.apiKey);
     const zones = Array.isArray(zonesPayload) ? zonesPayload : Array.isArray(zonesPayload?.Items) ? zonesPayload.Items : [];
     const generatedZones = zones.filter(zone => normalizedOrigin(zone?.OriginUrl) === config.origin);
-    if (!administrator && generatedZones.length >= config.maxZones) {
+    if (!premiumAccess && generatedZones.length >= config.maxZones) {
       res.status(409).json({ error: "The public Link Generator has reached its zone limit. Ask the Nyx administrator to remove an old generated link." });
       return;
     }
 
-    if (publicUser) reservation = await reserveFreeLink(publicUser.firebase, publicUser.uid, clientId);
-    if (administrator) {
-      premiumFirebase = await linkGeneratorFirebase();
-      premiumReservation = await reservePremiumGeneration(premiumFirebase, clientId, amount, now);
+    if (publicUser && !premiumAccount) reservation = await reserveFreeLink(publicUser.firebase, publicUser.uid, clientId);
+    if (premiumAccess) {
+      premiumFirebase = publicUser?.firebase || await linkGeneratorFirebase();
+      const premiumIdentity = premiumAccount ? `account:${publicUser.uid}` : clientId;
+      premiumReservation = await reservePremiumGeneration(premiumFirebase, premiumIdentity, amount, now);
     }
 
     const links = [];
@@ -3990,7 +4175,7 @@ app.post("/api/link-generator", async (req, res) => {
       }
     }
     if (!links.length && generationError) throw generationError;
-    if (administrator && premiumReservation && links.length < amount) {
+    if (premiumAccess && premiumReservation && links.length < amount) {
       premiumReservation = await adjustPremiumGeneration(premiumFirebase, premiumReservation, links.length);
     }
     const first = links[0];
@@ -4004,9 +4189,10 @@ app.post("/api/link-generator", async (req, res) => {
       partial: Boolean(generationError),
       warning: generationError ? `Bunny stopped the batch after ${links.length} of ${amount} links: ${generationError.message}` : "",
       origin: config.origin,
-      access: administrator ? "administrator" : "account",
-      remaining: administrator ? null : reservation?.remaining,
-      premiumCooldown: administrator ? {
+      access: administrator ? "administrator" : (premiumAccount ? "premium" : "account"),
+      subscriptionStatus: publicUser?.subscriptionStatus || (administrator ? "premium" : "free"),
+      remaining: premiumAccess ? null : reservation?.remaining,
+      premiumCooldown: premiumAccess ? {
         triggered: Boolean(premiumReservation?.cooldownTriggered),
         cooldownUntil: premiumReservation?.cooldownUntil || 0,
         accumulated: premiumReservation?.accumulated || 0,
@@ -4017,7 +4203,7 @@ app.post("/api/link-generator", async (req, res) => {
     });
   } catch (error) {
     if (publicUser && reservation) await releaseFreeLink(publicUser.firebase, reservation);
-    if (administrator && premiumReservation) await adjustPremiumGeneration(premiumFirebase, premiumReservation, 0);
+    if (premiumAccess && premiumReservation) await adjustPremiumGeneration(premiumFirebase, premiumReservation, 0);
     if (!error.status || error.status >= 500) console.error("Nyx Link Generator failed:", error?.message || error);
     if (error.retryAfter) res.set("Retry-After", String(error.retryAfter));
     res.status(error.status || 502).json({ error: error.status ? error.message : `Bunny could not create the link: ${String(error?.message || "Unknown error")}` });

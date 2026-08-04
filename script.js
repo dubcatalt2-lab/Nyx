@@ -37,6 +37,7 @@
   let nyxFounderSignedInUser=null;
   let nyxFounderIsOwner=false;
   let nyxUserAccountRole='member';
+  let nyxUserSubscriptionStatus='free';
   let nyxUserAccountEmail='';
   let nyxFounderAuthReadyPromise=null;
   let nyxFirebaseTokenPromise=null;
@@ -233,6 +234,17 @@
   }
   function nyxAccountUsername(value){return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_.-]/g,'').slice(0,32)}
   function nyxAccountEmail(username){return `${nyxAccountUsername(username)}@account.nyx.local`}
+  function nyxHasPremiumSubscription(value=nyxUserSubscriptionStatus){return ['premium','trialing'].includes(String(value||'').trim().toLowerCase())}
+  function syncNyxAccountEntitlements(account={}){
+    const previousStatus=nyxUserSubscriptionStatus;
+    if(account.role)nyxUserAccountRole=String(account.role||'member');
+    if(account.subscriptionStatus)nyxUserSubscriptionStatus=String(account.subscriptionStatus||'free').toLowerCase();
+    document.body.dataset.nyxSubscription=nyxUserSubscriptionStatus;
+    document.body.classList.toggle('nyx-premium-account',nyxHasPremiumSubscription());
+    if(previousStatus!==nyxUserSubscriptionStatus){
+      dispatchEvent(new CustomEvent('nyx:subscription-change',{detail:{subscriptionStatus:nyxUserSubscriptionStatus,premiumAccess:nyxHasPremiumSubscription()}}));
+    }
+  }
   function nyxUserImage(value,fallback=''){const raw=String(value||'').trim();if(!raw)return fallback;if(/^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(raw)&&raw.length<=NYX_PROFILE_MEDIA_DATA_LIMIT)return raw.replace(/\s/g,'');return nyxFounderUrl(raw,fallback)}
   function nyxDisplayNameStyleClass(profile={}){
     return `nyx-styled-display-name nyx-name-font-${profile.displayNameFont||'gg-sans'} nyx-name-effect-${profile.displayNameEffect||'solid'}`;
@@ -304,7 +316,7 @@
       ]);
       nyxUserProfile=normalizeNyxUserProfile(data.profile);
       nyxUserProfileCreatedAt=String(data.createdAt||'');
-      nyxUserAccountRole=String(account.role||'member');
+      syncNyxAccountEntitlements(account);
       nyxUserAccountEmail=String(account.email||'');
       syncFounderOwnerControls();
       return {...data,account};
@@ -327,6 +339,10 @@
           options.headers.Authorization=`Bearer ${token}`;
           response=await fetch(path,options);
         }
+      }
+      if(response.ok&&path.endsWith('/heartbeat')){
+        const account=await response.json().catch(()=>null);
+        if(account)syncNyxAccountEntitlements(account);
       }
     }catch{}
   }
@@ -653,7 +669,7 @@
         try{await setPersistence(nyxFounderFirebaseAuth,browserLocalPersistence)}
         catch(error){console.warn('Nyx could not enable persistent sign-in:',error)}
         if(typeof nyxFounderFirebaseAuth.authStateReady==='function')await nyxFounderFirebaseAuth.authStateReady();
-        onAuthStateChanged(nyxFounderFirebaseAuth,async user=>{nyxFounderSignedInUser=user||null;if(!user){stopNyxUserActivity();nyxUserProfile=null;nyxUserProfileCreatedAt='';nyxUserAccountRole='member';nyxUserAccountEmail='';await refreshFounderOwnerAccess();return}startNyxUserActivity(user);await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile()])});
+        onAuthStateChanged(nyxFounderFirebaseAuth,async user=>{nyxFounderSignedInUser=user||null;if(!user){stopNyxUserActivity();nyxUserProfile=null;nyxUserProfileCreatedAt='';nyxUserAccountRole='member';nyxUserSubscriptionStatus='free';syncNyxAccountEntitlements();nyxUserAccountEmail='';await refreshFounderOwnerAccess();return}startNyxUserActivity(user);await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile()])});
       }catch(error){console.warn('Nyx owner sign-in could not initialize:',error);nyxFounderAuthConfig={enabled:false,ownerConfigured:false}}
       finally{syncFounderOwnerControls()}
     })();
@@ -752,7 +768,7 @@
   async function signOutFounderOwner(){
     closeNyxAccountMenu();
     try{await nyxFounderFirebaseAuth?.signOut()}catch{}
-    nyxFirebaseTokenPromise=null;nyxFounderSignedInUser=null;nyxFounderIsOwner=false;nyxUserAccountRole='member';nyxUserAccountEmail='';nyxUserProfile=null;nyxUserProfileCreatedAt='';syncFounderOwnerControls();toast('Signed out');
+    nyxFirebaseTokenPromise=null;nyxFounderSignedInUser=null;nyxFounderIsOwner=false;nyxUserAccountRole='member';nyxUserSubscriptionStatus='free';syncNyxAccountEntitlements();nyxUserAccountEmail='';nyxUserProfile=null;nyxUserProfileCreatedAt='';syncFounderOwnerControls();toast('Signed out');
   }
   function nyxUserProfileCardMarkup(profile=normalizeNyxUserProfile(nyxUserProfile),options={}){
     const joinedAt=String(options.createdAt||nyxUserProfileCreatedAt||'');
@@ -1577,6 +1593,111 @@
     });
     return shade;
   }
+  function nyxDownloadDisplayName(filename,url){
+    const supplied=String(filename || '').trim().split(/[\\/]/).pop();
+    if(supplied) return supplied.slice(0,180);
+    try{
+      const parsed=new URL(String(url || ''),location.href);
+      return decodeURIComponent(parsed.pathname.split('/').filter(Boolean).pop() || parsed.hostname || 'download').slice(0,180);
+    }catch{return 'download'}
+  }
+  function nyxDownloadCheckUrl(downloadUrl,sourceUrl=''){
+    const actual=String(downloadUrl || '').trim();
+    const source=String(sourceUrl || '').trim();
+    if(/^(?:blob|data):/i.test(actual)) return browserShellSourceUrl(source) || source;
+    return browserShellSourceUrl(actual) || actual || browserShellSourceUrl(source) || source;
+  }
+  function nyxDownloadSafetyDialog(result,{filename,url}={}){
+    document.querySelectorAll('.nyx-download-safety-shade').forEach(element=>element.remove());
+    return new Promise(resolve=>{
+      const blocked=result?.verdict==='blocked';
+      const shade=document.createElement('div');
+      shade.className='nyx-download-safety-shade';
+      const threatList=Array.isArray(result?.threats) && result.threats.length
+        ? `<p class="nyx-download-safety-threats">Detected: ${esc(result.threats.join(', ').replaceAll('_',' ').toLowerCase())}</p>`
+        : '';
+      let host='Unknown source';
+      try{host=new URL(String(url || ''),location.href).hostname || host}catch{}
+      shade.innerHTML=`<section class="nyx-download-safety-dialog ${blocked?'is-blocked':'is-caution'}" role="alertdialog" aria-modal="true" aria-labelledby="nyxDownloadSafetyTitle" aria-describedby="nyxDownloadSafetyMessage">
+        <span class="nyx-download-safety-icon" aria-hidden="true">${blocked?'!':'?'}</span>
+        <div class="nyx-download-safety-copy">
+          <p class="nyx-download-safety-kicker">Download protection</p>
+          <h2 id="nyxDownloadSafetyTitle">${blocked?'Download blocked':'Check this download'}</h2>
+          <p class="nyx-download-safety-file">${esc(filename || 'download')}</p>
+          <p class="nyx-download-safety-source">From ${esc(host)}</p>
+          <p id="nyxDownloadSafetyMessage">${esc(result?.message || 'Nyx could not verify this download.')}</p>
+          ${threatList}
+          <p class="nyx-download-safety-note">Nyx checked the URL reputation only. The file bytes were not uploaded or antivirus-scanned.</p>
+        </div>
+        <footer>
+          <button class="settings-action" data-nyx-download-cancel type="button">${blocked?'Close':'Cancel'}</button>
+          ${blocked?'':`<button class="settings-action on" data-nyx-download-continue type="button">Download anyway</button>`}
+        </footer>
+      </section>`;
+      document.body.appendChild(shade);
+      const finish=allowed=>{shade.remove();resolve(allowed)};
+      shade.querySelector('[data-nyx-download-cancel]')?.addEventListener('click',()=>finish(false));
+      shade.querySelector('[data-nyx-download-continue]')?.addEventListener('click',()=>finish(true));
+      shade.addEventListener('click',event=>{if(event.target===shade)finish(false)});
+      shade.addEventListener('keydown',event=>{if(event.key==='Escape')finish(false)});
+      shade.querySelector('button')?.focus();
+    });
+  }
+  async function nyxRequestBrowserDownload(downloadUrl,filename='',sourceUrl=''){
+    const href=String(downloadUrl || '').trim();
+    if(!href || /^(?:javascript|vbscript):/i.test(href)){
+      toast('Nyx blocked an invalid download address');
+      return false;
+    }
+    const displayName=nyxDownloadDisplayName(filename,href);
+    const checkUrl=nyxDownloadCheckUrl(href,sourceUrl);
+    let result={
+      verdict:'unverified',
+      threats:[],
+      fileScanned:false,
+      message:'Nyx could not identify the source URL. The file contents were not antivirus-scanned.'
+    };
+    if(/^https?:\/\//i.test(checkUrl)){
+      toast('Checking download source…');
+      try{
+        const response=await fetch('/api/download-safety/check',{
+          method:'POST',
+          headers:{'content-type':'application/json'},
+          body:JSON.stringify({url:checkUrl,filename:displayName})
+        });
+        const payload=await response.json().catch(()=>({}));
+        if(!response.ok) throw new Error(payload.error || `Download check failed (${response.status})`);
+        result=payload;
+      }catch(error){
+        console.warn('Nyx download safety check failed:',error?.message || error);
+        result={
+          verdict:'unverified',
+          threats:[],
+          fileScanned:false,
+          message:'The URL reputation check is unavailable. The file contents were not antivirus-scanned.'
+        };
+      }
+    }
+    if(result.verdict==='blocked'){
+      await nyxDownloadSafetyDialog(result,{filename:displayName,url:checkUrl || sourceUrl});
+      return false;
+    }
+    if(result.verdict!=='clear'){
+      const allowed=await nyxDownloadSafetyDialog(result,{filename:displayName,url:checkUrl || sourceUrl});
+      if(!allowed) return false;
+    }else{
+      toast('No known URL threat found — starting download');
+    }
+    const link=document.createElement('a');
+    link.href=href;
+    link.download=String(filename || '').trim();
+    link.rel='noopener';
+    link.hidden=true;
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(()=>link.remove(),0);
+    return true;
+  }
   function showAnimexMikuPrompt(onOk){
     shownyxPrompt('Use MIKU for streaming',{onOk});
   }
@@ -1870,7 +1991,7 @@
     'drive.google.com':localIcon('googledrive-logo.png'),
     'docs.google.com':svgIcon(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#1a73e8"/><path d="M22 12h17l9 9v31H22z" fill="#fff"/><path d="M39 12v10h9" fill="#d2e3fc"/><path d="M27 31h16M27 37h16M27 43h12" stroke="#1a73e8" stroke-width="3" stroke-linecap="round"/></svg>`),
     'duck.ai':localIcon('duck-ai-logo.png'),
-    'nyx-ai':localIcon('shortcut-nyx-ai.svg'),
+    'nyx-ai':localIcon('shortcut-nyx-ai.svg?v=3'),
     'link-checker':localIcon('link-checker.svg'),
     'link-generator':localIcon('link-generator.svg'),
     'chess.com':localIcon('chess-logo.png'),
@@ -3095,6 +3216,85 @@
     }
     if(!browserShellActiveTab) browserShellActiveTab=browserShellTabs[0].id;
   }
+  function moveBrowserShellTab(draggedId,targetId,placeAfter=false){
+    if(!draggedId || !targetId || draggedId===targetId) return false;
+    const dragged=browserShellTabs.find(tab=>tab.id===draggedId);
+    const target=browserShellTabs.find(tab=>tab.id===targetId);
+    if(!dragged || !target || (!dragged.url && dragged.title==='Home') || (!target.url && target.title==='Home')) return false;
+    const from=browserShellTabs.indexOf(dragged);
+    browserShellTabs.splice(from,1);
+    const targetIndex=browserShellTabs.indexOf(target);
+    browserShellTabs.splice(Math.max(0,targetIndex+(placeAfter?1:0)),0,dragged);
+    if(activeBrowser?.tabs?.length){
+      const rank=new Map(browserShellTabs.map((tab,index)=>[tab.browserTabId,index]).filter(([id])=>id));
+      const originalOrder=new Map(activeBrowser.tabs.map((tab,index)=>[tab.id,index]));
+      activeBrowser.tabs.sort((left,right)=>{
+        const leftRank=rank.has(left.id)?rank.get(left.id):Number.MAX_SAFE_INTEGER;
+        const rightRank=rank.has(right.id)?rank.get(right.id):Number.MAX_SAFE_INTEGER;
+        return leftRank-rightRank || originalOrder.get(left.id)-originalOrder.get(right.id);
+      });
+      activeBrowser.renderTabs?.();
+    }
+    renderBrowserShellTabs();
+    requestAnimationFrame(()=>document.querySelector(`[data-browser-shell-tab="${CSS.escape(draggedId)}"]`)?.focus({preventScroll:true}));
+    return true;
+  }
+  function clearBrowserShellTabDropState(row){
+    row?.querySelectorAll?.('.tab-dragging,.tab-drop-before,.tab-drop-after').forEach(tab=>tab.classList.remove('tab-dragging','tab-drop-before','tab-drop-after'));
+    document.body.classList.remove('nyx-tab-reordering');
+  }
+  function installBrowserShellTabReordering(row){
+    if(!row || row.dataset.nyxTabReordering==='true') return;
+    row.dataset.nyxTabReordering='true';
+    let draggedId='';
+    row.addEventListener('dragstart',event=>{
+      const tab=event.target.closest?.('[data-browser-shell-tab]');
+      if(!tab || event.target.closest?.('[data-browser-shell-close-tab]')){event.preventDefault();return}
+      draggedId=tab.dataset.browserShellTab || '';
+      if(!draggedId){event.preventDefault();return}
+      tab.classList.add('tab-dragging');
+      document.body.classList.add('nyx-tab-reordering');
+      if(event.dataTransfer){
+        event.dataTransfer.effectAllowed='move';
+        event.dataTransfer.setData('application/x-nyx-tab',draggedId);
+        event.dataTransfer.setData('text/plain',draggedId);
+      }
+    });
+    row.addEventListener('dragover',event=>{
+      const target=event.target.closest?.('[data-browser-shell-tab]');
+      if(!draggedId || !target || target.dataset.browserShellTab===draggedId) return;
+      event.preventDefault();
+      if(event.dataTransfer)event.dataTransfer.dropEffect='move';
+      row.querySelectorAll('.tab-drop-before,.tab-drop-after').forEach(tab=>tab.classList.remove('tab-drop-before','tab-drop-after'));
+      const rect=target.getBoundingClientRect();
+      target.classList.add(event.clientX>=rect.left+rect.width/2?'tab-drop-after':'tab-drop-before');
+    });
+    row.addEventListener('drop',event=>{
+      const target=event.target.closest?.('[data-browser-shell-tab]');
+      if(!draggedId || !target) return;
+      event.preventDefault();
+      const rect=target.getBoundingClientRect();
+      moveBrowserShellTab(draggedId,target.dataset.browserShellTab,event.clientX>=rect.left+rect.width/2);
+      draggedId='';
+      clearBrowserShellTabDropState(row);
+    });
+    row.addEventListener('dragend',()=>{
+      draggedId='';
+      clearBrowserShellTabDropState(row);
+    });
+    row.addEventListener('keydown',event=>{
+      if(!(event.ctrlKey||event.metaKey) || !event.shiftKey || !['ArrowLeft','ArrowRight'].includes(event.key)) return;
+      const tab=event.target.closest?.('[data-browser-shell-tab]');
+      if(!tab) return;
+      const movable=browserShellTabs.filter(item=>item.url || item.title!=='Home');
+      const index=movable.findIndex(item=>item.id===tab.dataset.browserShellTab);
+      const direction=event.key==='ArrowLeft'?-1:1;
+      const target=movable[index+direction];
+      if(!target) return;
+      event.preventDefault();
+      moveBrowserShellTab(tab.dataset.browserShellTab,target.id,direction>0);
+    });
+  }
   function renderBrowserShellTabs(){
     if(!document.body.classList.contains('browser-shell')) return;
     ensureBrowserShellHome();
@@ -3138,6 +3338,9 @@
       const opening=browserShellOpeningTabs.has(tab.id);
       button.className='browser-mode-tab browser-mode-shell-tab'+(tab.id===browserShellActiveTab?' active':'')+(opening?' tab-opening':'');
       button.dataset.browserShellTab=tab.id;
+      button.draggable=true;
+      button.setAttribute('aria-grabbed','false');
+      button.title='Drag to reorder tab';
       button.innerHTML=`<img class="browser-mode-tab-icon" alt="" src="${esc(browserChromeIcon(tab.icon,tab.url))}"><span>${esc(browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url))}</span><i class="browser-mode-shell-tab-close" data-browser-shell-close-tab="${esc(tab.id)}" aria-label="Close tab">x</i>`;
       bindTabIconFallback(button.querySelector('.browser-mode-tab-icon'));
       row.insertBefore(button,plus);
@@ -3153,6 +3356,7 @@
         setTimeout(finishOpening,1250);
       }
     });
+    installBrowserShellTabReordering(row);
     const input=document.querySelector('[data-browser-shell-url]');
     if(input && document.activeElement!==input) input.value=browserShellDisplayValue(active.url);
     renderBrowserBookmarks();
@@ -6733,7 +6937,7 @@
     const key=String(domain || title || '').toLowerCase();
     if(key.includes('geforce')) return '/assets/icons/dock-nvidia.png';
     if(key==='games' || key.includes('study')) return '/assets/icons/dock-controller.png';
-    if(key==='nyx-ai' || key==='ai') return '/assets/icons/shortcut-nyx-ai.svg?v=2';
+    if(key==='nyx-ai' || key==='ai') return '/assets/icons/shortcut-nyx-ai.svg?v=3';
     if(key.includes('duck')) return '/assets/icons/shortcut-duckduckgo.svg';
     if(key.includes('youtube') || key==='youtu.be') return '/assets/icons/shortcut-youtube.svg';
     if(key.includes('tiktok')) return '/assets/icons/shortcut-tiktok.svg';
@@ -8029,13 +8233,22 @@
         },0);
         return true;
       };
-      const shouldTrapDownloadLink=link=>{
-        if(!link) return false;
-        if(link.hasAttribute('download')) return true;
-        const rawHref=String(link.href || link.getAttribute('href') || '').trim();
+      const isDownloadUrl=value=>{
+        const rawHref=String(value || '').trim();
         if(/^(?:blob|data):/i.test(rawHref)) return true;
         const href=rawHref.split(/[?#]/)[0].toLowerCase();
         return /\.(apk|appx|bat|bin|cmd|com|crx|deb|dmg|exe|iso|jar|js|msi|pkg|ps1|scr|sh|vbs|wsf|zip|7z|rar)$/i.test(href);
+      };
+      const isDownloadLink=link=>{
+        if(!link) return false;
+        if(link.hasAttribute('download')) return true;
+        return isDownloadUrl(link.href || link.getAttribute('href') || '');
+      };
+      const requestFrameDownload=(value,filename='')=>{
+        const href=String(value || '').trim();
+        if(!href) return false;
+        void nyxRequestBrowserDownload(href,String(filename || '').trim(),currentBridgeUrl());
+        return true;
       };
       const attachBridge=()=>{
         try{
@@ -8047,6 +8260,7 @@
             frameWindow.__nyxOpenBridge=true;
             const nativeFrameOpen=frameWindow.open?.bind(frameWindow);
             const nyxPopup=(popupUrl,target,features)=>{
+              if(isDownloadUrl(popupUrl) && requestFrameDownload(popupUrl)) return frameWindow;
               if(!popupProtectionEnabled()) return nativeFrameOpen ? nativeFrameOpen(popupUrl,target,features) : null;
               if(followSameOriginPopup(popupUrl)) return frameWindow;
               return openPopupTab(popupUrl || 'about:blank');
@@ -8059,11 +8273,12 @@
             if(frameWindow.HTMLAnchorElement?.prototype?.click){
               const nativeAnchorClick=frameWindow.HTMLAnchorElement.prototype.click;
               frameWindow.HTMLAnchorElement.prototype.click=function(){
-                if(popupProtectionEnabled() && (shouldTrapPopupTarget(this.target) || shouldTrapDownloadLink(this))){
+                if(isDownloadLink(this) && requestFrameDownload(this.href || this.getAttribute('href'),this.getAttribute('download') || '')) return;
+                if(popupProtectionEnabled() && shouldTrapPopupTarget(this.target)){
                   const href=this.href || this.getAttribute('href') || '';
                   if(isTrustedGeneratedLink(this)) return nativeAnchorClick.call(this);
-                  if(!shouldTrapDownloadLink(this) && followSearchResult(this)) return;
-                  if(!shouldTrapDownloadLink(this) && followSameOriginPopup(href)) return;
+                  if(followSearchResult(this)) return;
+                  if(followSameOriginPopup(href)) return;
                   openPopupTab(href || 'about:blank');
                   return;
                 }
@@ -8094,13 +8309,6 @@
               });
             })).observe(doc.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['src']});
           }
-          const trapDownload=event=>{
-            const link=event.target?.closest?.('a[href]');
-            if(!popupProtectionEnabled() || !shouldTrapDownloadLink(link)) return;
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            openPopupTab('about:blank');
-          };
           const searchControlValue=control=>String(control?.value || '').trim();
           const trapSearchSubmit=event=>{
             const form=event.target;
@@ -8119,14 +8327,15 @@
           };
           const trapLink=event=>{
             const link=event.target?.closest?.('a[href]');
-            if(!popupProtectionEnabled()) return;
-            if(shouldTrapDownloadLink(link)){
+            if(!link) return;
+            if(isDownloadLink(link)){
               event.preventDefault();
               event.stopImmediatePropagation();
-              openPopupTab('about:blank');
+              requestFrameDownload(link.href || link.getAttribute('href'),link.getAttribute('download') || '');
               return;
             }
-            if(!link || !shouldTrapPopupTarget(link.getAttribute('target'))) return;
+            if(!popupProtectionEnabled()) return;
+            if(!shouldTrapPopupTarget(link.getAttribute('target'))) return;
             const href=link.href || link.getAttribute('href') || 'about:blank';
             if(isTrustedGeneratedLink(link)) return;
             event.preventDefault();
@@ -8138,7 +8347,6 @@
           doc.addEventListener('submit',trapSearchSubmit,true);
           doc.addEventListener('click',trapLink,true);
           doc.addEventListener('auxclick',trapLink,true);
-          doc.addEventListener('beforeinput',trapDownload,true);
           doc.addEventListener('submit',event=>{
             const form=event.target;
             if(!popupProtectionEnabled()) return;
@@ -8372,12 +8580,13 @@
         'allow-same-origin',
         'allow-forms',
         'allow-modals',
+        'allow-downloads',
         'allow-pointer-lock',
         'allow-presentation',
         'allow-storage-access-by-user-activation'
       ];
       if(!popupProtectionEnabled()){
-        tokens.push('allow-popups','allow-popups-to-escape-sandbox','allow-downloads','allow-top-navigation-by-user-activation');
+        tokens.push('allow-popups','allow-popups-to-escape-sandbox','allow-top-navigation-by-user-activation');
       }
       t.frame.setAttribute('sandbox',tokens.join(' '));
       applyFrameInteractionPermissions(t.frame);
@@ -9231,7 +9440,7 @@
       const q=e.target.closest('[data-url]'); if(q){e.preventDefault(); navigate(q.dataset.url)}
     });
     const messageHandler=e=>{
-      if(!['nyx:navigate','nyx:popup','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut'].includes(e.data?.type)) return;
+      if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut'].includes(e.data?.type)) return;
       if(e.data.type==='nyx:shell-tab-index'){
         switchBrowserShellTabByIndex(e.data.index);
         return;
@@ -9357,6 +9566,11 @@
         return;
       }
       const sourceTab=state.tabs.find(t=>t.frame.contentWindow===e.source);
+      if(e.data.type==='nyx:download-request'){
+        if(!sourceTab) return;
+        void nyxRequestBrowserDownload(e.data.url || '',e.data.filename || '',e.data.sourceUrl || sourceTab.sourceUrl || sourceTab.url || '');
+        return;
+      }
       if(e.data.type==='nyx:popup'){
         const previousActive=state.active;
         if(sourceTab) state.active=sourceTab.id;
@@ -12306,7 +12520,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
       if(label) label.textContent=nyxAiModelLabel(model.value);
     });
     document.addEventListener('dragstart',e=>{
-      if(document.body.classList.contains('browser-shell') || e.target.closest?.('.home-shortcut,.home-shortcut-add,[data-home-shortcuts]')){
+      if((document.body.classList.contains('browser-shell') && !e.target.closest?.('.browser-mode-shell-tab')) || e.target.closest?.('.home-shortcut,.home-shortcut-add,[data-home-shortcuts]')){
         e.preventDefault();
         e.stopPropagation();
         return;

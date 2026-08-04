@@ -1912,15 +1912,23 @@ function normalizeFounderProfile(value = {}) {
 
 async function verifiedFounderOwner(req) {
   const config = founderProfileConfig();
-  if (!config.administratorUid || !firebaseAdminModeConfigured()) return { enabled: false, owner: false };
+  if (!config.administratorUid || !firebaseAdminModeConfigured()) {
+    return { enabled: false, owner: false, dashboard: false, role: "member", roleLabel: "Member", permissions: [] };
+  }
   const match = String(req.get("authorization") || "").match(/^Bearer\s+(.+)$/i);
-  if (!match) return { enabled: true, owner: false };
+  if (!match) return { enabled: true, owner: false, dashboard: false, role: "member", roleLabel: "Member", permissions: [] };
   try {
     const firebase = await linkGeneratorFirebase();
     const token = await firebase?.auth.verifyIdToken(match[1], true);
-    return { enabled: true, owner: Boolean(token && token.uid === config.administratorUid) };
+    if (!token) throw new Error("The account session is unavailable.");
+    const administration = token.uid === config.administratorUid
+      ? { role: "owner" }
+      : (await firebase.firestore.collection("nyxUserAdministration").doc(token.uid).get()).data();
+    const role = nyxRoleForUser(token.uid, administration, config.administratorUid);
+    const actor = { role, permissions: nyxRolePolicy(role).permissions };
+    return { enabled: true, ...nyxOwnerAccessPayload(actor) };
   } catch {
-    return { enabled: true, owner: false };
+    return { enabled: true, owner: false, dashboard: false, role: "member", roleLabel: "Member", permissions: [] };
   }
 }
 
@@ -2066,6 +2074,103 @@ function normalizeNyxRole(value) {
   return ["co_owner", "admin", "manager", "developer", "moderator", "support", "tester", "contributor", "member"].includes(role) ? role : "member";
 }
 
+const nyxRolePolicies = Object.freeze({
+  owner: Object.freeze({
+    rank: 100,
+    assignableRank: 90,
+    permissions: Object.freeze(["dashboard:view", "users:view", "audit:view", "profiles:write", "roles:write", "subscriptions:write", "accounts:reset", "accounts:verify", "accounts:disable", "accounts:delete", "developer-console", "founder:write"])
+  }),
+  co_owner: Object.freeze({
+    rank: 90,
+    assignableRank: 80,
+    permissions: Object.freeze(["dashboard:view", "users:view", "audit:view", "profiles:write", "roles:write", "subscriptions:write", "accounts:reset", "accounts:verify", "accounts:disable", "accounts:delete", "developer-console"])
+  }),
+  admin: Object.freeze({
+    rank: 80,
+    assignableRank: 70,
+    permissions: Object.freeze(["dashboard:view", "users:view", "audit:view", "profiles:write", "roles:write", "subscriptions:write", "accounts:reset", "accounts:verify", "accounts:disable"])
+  }),
+  manager: Object.freeze({
+    rank: 70,
+    assignableRank: 0,
+    permissions: Object.freeze(["dashboard:view", "users:view", "profiles:write", "subscriptions:write"])
+  }),
+  developer: Object.freeze({ rank: 60, assignableRank: 0, permissions: Object.freeze(["developer-console"]) }),
+  moderator: Object.freeze({ rank: 50, assignableRank: 0, permissions: Object.freeze(["dashboard:view", "users:view", "accounts:disable"]) }),
+  support: Object.freeze({ rank: 40, assignableRank: 0, permissions: Object.freeze(["dashboard:view", "users:view", "accounts:reset", "accounts:verify"]) }),
+  tester: Object.freeze({ rank: 30, assignableRank: 0, permissions: Object.freeze([]) }),
+  contributor: Object.freeze({ rank: 20, assignableRank: 0, permissions: Object.freeze([]) }),
+  member: Object.freeze({ rank: 10, assignableRank: 0, permissions: Object.freeze([]) })
+});
+
+const nyxAssignableRoles = Object.freeze(["member", "contributor", "tester", "support", "moderator", "developer", "manager", "admin", "co_owner"]);
+const nyxRoleLabels = Object.freeze({
+  owner: "Owner",
+  co_owner: "Co-owner",
+  admin: "Admin",
+  manager: "Manager",
+  developer: "Developer",
+  moderator: "Moderator",
+  support: "Support",
+  tester: "Tester",
+  contributor: "Contributor",
+  member: "Member"
+});
+
+function nyxRolePolicy(role) {
+  return nyxRolePolicies[role] || nyxRolePolicies.member;
+}
+
+function nyxRoleForUser(uid, administration = {}, ownerUid = founderProfileConfig().administratorUid) {
+  return uid === ownerUid ? "owner" : normalizeNyxRole(administration.role);
+}
+
+function nyxActorHasPermission(actor, permission) {
+  return Boolean(actor?.permissions?.includes(permission));
+}
+
+function nyxOwnerAccessPayload(actor) {
+  const policy = nyxRolePolicy(actor.role);
+  return {
+    role: actor.role,
+    roleLabel: nyxRoleLabels[actor.role] || nyxRoleLabels.member,
+    owner: actor.role === "owner",
+    dashboard: nyxActorHasPermission(actor, "dashboard:view"),
+    permissions: [...actor.permissions],
+    assignableRoles: nyxActorHasPermission(actor, "roles:write")
+      ? nyxAssignableRoles.filter(role => nyxRolePolicy(role).rank <= policy.assignableRank)
+      : []
+  };
+}
+
+function nyxOwnerUserCapabilities(actor, targetRole, targetUid, ownerUid = founderProfileConfig().administratorUid) {
+  const actorPolicy = nyxRolePolicy(actor.role);
+  const targetPolicy = nyxRolePolicy(targetRole);
+  const ownerManagingSelf = actor.role === "owner" && targetRole === "owner" && actor.uid === targetUid;
+  const targetProtected = targetUid === ownerUid || targetRole === "owner" || targetPolicy.rank >= actorPolicy.rank;
+  const canManageTarget = !targetProtected;
+  return {
+    canViewAudit: nyxActorHasPermission(actor, "audit:view"),
+    canEditProfile: (canManageTarget || ownerManagingSelf) && nyxActorHasPermission(actor, "profiles:write"),
+    canSetRole: canManageTarget && nyxActorHasPermission(actor, "roles:write"),
+    canSetSubscription: (canManageTarget || ownerManagingSelf) && nyxActorHasPermission(actor, "subscriptions:write"),
+    canResetPassword: (canManageTarget || ownerManagingSelf) && nyxActorHasPermission(actor, "accounts:reset"),
+    canVerifyEmail: (canManageTarget || ownerManagingSelf) && nyxActorHasPermission(actor, "accounts:verify"),
+    canDisableAccount: canManageTarget && nyxActorHasPermission(actor, "accounts:disable"),
+    canDeleteAccount: canManageTarget && nyxActorHasPermission(actor, "accounts:delete"),
+    assignableRoles: nyxActorHasPermission(actor, "roles:write")
+      ? nyxAssignableRoles.filter(role => nyxRolePolicy(role).rank <= actorPolicy.assignableRank)
+      : []
+  };
+}
+
+function assertNyxOwnerCapability(capabilities, capability, message) {
+  if (capabilities?.[capability]) return;
+  const error = new Error(message || "Your role does not have permission to perform that action.");
+  error.status = 403;
+  throw error;
+}
+
 function normalizeSubscriptionStatus(value) {
   const status = String(value || "").trim().toLowerCase();
   return ["free", "premium", "trialing", "past_due", "canceled"].includes(status) ? status : "free";
@@ -2090,20 +2195,45 @@ function normalizeNyxAccountEmail(value) {
   return email;
 }
 
-async function ownerDashboardActor(req) {
+async function ownerDashboardActor(req, requiredPermission = "dashboard:view") {
   const { firebase, token } = await authenticatedNyxUser(req);
   const ownerUid = founderProfileConfig().administratorUid;
-  if (!ownerUid || token.uid !== ownerUid) {
-    const error = new Error("Owner access is required.");
+  if (!ownerUid) {
+    const error = new Error("Owner access has not been configured.");
+    error.status = 503;
+    throw error;
+  }
+  let administration = {};
+  if (token.uid === ownerUid) {
+    administration = { role: "owner" };
+    await firebase.firestore.collection("nyxUserAdministration").doc(token.uid).set({
+      role: "owner",
+      owner: true,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+  } else {
+    administration = (await firebase.firestore.collection("nyxUserAdministration").doc(token.uid).get()).data() || {};
+  }
+  const role = nyxRoleForUser(token.uid, administration, ownerUid);
+  const policy = nyxRolePolicy(role);
+  const actor = { uid: token.uid, role, permissions: policy.permissions, rank: policy.rank };
+  if (requiredPermission && !nyxActorHasPermission(actor, requiredPermission)) {
+    const error = new Error(`${nyxRoleLabels[role] || "Member"} does not have permission to open this area.`);
     error.status = 403;
     throw error;
   }
-  await firebase.firestore.collection("nyxUserAdministration").doc(token.uid).set({
-    role: "owner",
-    owner: true,
-    updatedAt: new Date().toISOString()
-  }, { merge: true });
-  return { firebase, token };
+  return { firebase, token, actor, ownerUid };
+}
+
+async function nyxOwnerTargetAccess(firebase, actor, uid, ownerUid = founderProfileConfig().administratorUid) {
+  const administration = uid === ownerUid
+    ? { role: "owner" }
+    : (await firebase.firestore.collection("nyxUserAdministration").doc(uid).get()).data() || {};
+  const targetRole = nyxRoleForUser(uid, administration, ownerUid);
+  return {
+    targetRole,
+    capabilities: nyxOwnerUserCapabilities(actor, targetRole, uid, ownerUid)
+  };
 }
 
 async function firestoreDocumentsById(firestore, collectionName, ids, fieldMask = []) {
@@ -2173,8 +2303,7 @@ function nyxOwnerUserRecord(user, administration = {}, profileData = {}, activit
   const email = String(user.email || "");
   const emailUsername = email.split("@")[0] || user.uid.slice(0, 8);
   const profileUsername = String(profile.handle || "").replace(/^@/, "");
-  const isOwner = user.uid === ownerUid;
-  const role = isOwner ? "owner" : normalizeNyxRole(administration.role);
+  const role = nyxRoleForUser(user.uid, administration, ownerUid);
   const subscriptionStatus = normalizeSubscriptionStatus(administration.subscriptionStatus || administration.subscription?.status);
   const monthlyRevenueCents = Math.max(0, Math.min(100_000_000, Number(administration.monthlyRevenueCents || administration.subscription?.monthlyRevenueCents || 0) || 0));
   const lastActiveAtMs = safeActivityTime(activity.lastActiveAtMs || activity.lastActiveAt);
@@ -2973,13 +3102,17 @@ app.get("/api/account/me", async (req, res) => {
       firebase.firestore.collection("nyxUserAdministration").doc(token.uid).get()
     ]);
     const administrationData = administration.data() || {};
-    const role = token.uid === founderProfileConfig().administratorUid ? "owner" : normalizeNyxRole(administrationData.role);
+    const role = nyxRoleForUser(token.uid, administrationData);
+    const access = nyxOwnerAccessPayload({ role, permissions: nyxRolePolicy(role).permissions });
     const subscriptionStatus = normalizeSubscriptionStatus(administrationData.subscriptionStatus || administrationData.subscription?.status);
     res.json({
       uid: token.uid,
       email: nyxDeliverableEmail(account.email) ? String(account.email) : "",
       emailVerified: Boolean(account.emailVerified),
       role,
+      owner: access.owner,
+      dashboard: access.dashboard,
+      permissions: access.permissions,
       subscriptionStatus,
       premiumAccess: hasPremiumSubscription(subscriptionStatus)
     });
@@ -3271,8 +3404,10 @@ app.put("/api/owner-dashboard/users/:uid/profile-media/:kind/:uploadId/:index", 
     return;
   }
   try {
-    const { firebase, token } = await ownerDashboardActor(req);
+    const { firebase, token, actor, ownerUid } = await ownerDashboardActor(req, "profiles:write");
     await firebase.auth.getUser(uid);
+    const { capabilities } = await nyxOwnerTargetAccess(firebase, actor, uid, ownerUid);
+    assertNyxOwnerCapability(capabilities, "canEditProfile", "Your role cannot edit this account's profile media.");
     const mediaId = nyxProfileMediaDocumentId(uid, kind, uploadId);
     const mediaRef = firebase.firestore.collection("nyxProfileMedia").doc(mediaId);
     const chunkRef = mediaRef.collection("chunks").doc(String(index).padStart(3, "0"));
@@ -3312,8 +3447,10 @@ app.post("/api/owner-dashboard/users/:uid/profile-media/:kind/:uploadId/complete
     return;
   }
   try {
-    const { firebase } = await ownerDashboardActor(req);
+    const { firebase, actor, ownerUid } = await ownerDashboardActor(req, "profiles:write");
     await firebase.auth.getUser(uid);
+    const { capabilities } = await nyxOwnerTargetAccess(firebase, actor, uid, ownerUid);
+    assertNyxOwnerCapability(capabilities, "canEditProfile", "Your role cannot edit this account's profile media.");
     const mediaId = nyxProfileMediaDocumentId(uid, kind, uploadId);
     const mediaRef = firebase.firestore.collection("nyxProfileMedia").doc(mediaId);
     const mediaSnapshot = await mediaRef.get();
@@ -3530,12 +3667,16 @@ app.post("/api/activity/heartbeat", async (req, res) => {
       administrationRef.get()
     ]);
     const administrationData = administration.data() || {};
-    const role = token.uid === founderProfileConfig().administratorUid ? "owner" : normalizeNyxRole(administrationData.role);
+    const role = nyxRoleForUser(token.uid, administrationData);
+    const access = nyxOwnerAccessPayload({ role, permissions: nyxRolePolicy(role).permissions });
     const subscriptionStatus = normalizeSubscriptionStatus(administrationData.subscriptionStatus || administrationData.subscription?.status);
     res.json({
       ok: true,
       onlineUntil: new Date(now + signedInOnlineWindowMs).toISOString(),
       role,
+      owner: access.owner,
+      dashboard: access.dashboard,
+      permissions: access.permissions,
       subscriptionStatus,
       premiumAccess: hasPremiumSubscription(subscriptionStatus)
     });
@@ -3580,10 +3721,12 @@ app.post("/api/activity/event", async (req, res) => {
 app.get("/api/owner-dashboard", async (req, res) => {
   res.set("Cache-Control", "no-store");
   try {
-    const { firebase } = await ownerDashboardActor(req);
+    const { firebase, actor } = await ownerDashboardActor(req, "users:view");
     const [{ users: allUsers, truncated }, auditSnapshot] = await Promise.all([
       ownerDashboardSnapshot(firebase),
-      firebase.firestore.collection("nyxAuditLog").orderBy("createdAtMs", "desc").limit(30).get()
+      nyxActorHasPermission(actor, "audit:view")
+        ? firebase.firestore.collection("nyxAuditLog").orderBy("createdAtMs", "desc").limit(30).get()
+        : Promise.resolve(null)
     ]);
     const now = Date.now();
     const today = new Date();
@@ -3622,7 +3765,7 @@ app.get("/api/owner-dashboard", async (req, res) => {
     const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
     const page = Math.max(1, Math.min(pages, Number.parseInt(String(req.query.page || "1"), 10) || 1));
     const offset = (page - 1) * pageSize;
-    const recentActivity = auditSnapshot.docs.map(document => {
+    const recentActivity = (auditSnapshot?.docs || []).map(document => {
       const data = document.data() || {};
       return {
         id: document.id,
@@ -3636,6 +3779,7 @@ app.get("/api/owner-dashboard", async (req, res) => {
       };
     });
     res.json({
+      access: nyxOwnerAccessPayload(actor),
       metrics,
       users: filtered.slice(offset, offset + pageSize),
       pagination: { page, pageSize, pages, total: filtered.length, scanned: allUsers.length, truncated },
@@ -3655,20 +3799,23 @@ app.get("/api/owner-dashboard/users/:uid", async (req, res) => {
     return;
   }
   try {
-    const { firebase } = await ownerDashboardActor(req);
+    const { firebase, actor, ownerUid } = await ownerDashboardActor(req, "users:view");
     const [user, administration, profile, activity, audit] = await Promise.all([
       firebase.auth.getUser(uid),
       firebase.firestore.collection("nyxUserAdministration").doc(uid).get(),
       firebase.firestore.collection("nyxUserProfiles").doc(uid).get(),
       firebase.firestore.collection("nyxUserActivity").doc(uid).get(),
-      firebase.firestore.collection("nyxAuditLog").where("targetUid", "==", uid).orderBy("createdAtMs", "desc").limit(20).get().catch(() => null)
+      nyxActorHasPermission(actor, "audit:view")
+        ? firebase.firestore.collection("nyxAuditLog").where("targetUid", "==", uid).orderBy("createdAtMs", "desc").limit(20).get().catch(() => null)
+        : Promise.resolve(null)
     ]);
-    const record = nyxOwnerUserRecord(user, administration.data(), profile.data(), activity.data(), founderProfileConfig().administratorUid, true);
+    const record = nyxOwnerUserRecord(user, administration.data(), profile.data(), activity.data(), ownerUid, true);
+    const capabilities = nyxOwnerUserCapabilities(actor, record.role, uid, ownerUid);
     record.recentActivity = audit ? audit.docs.map(document => {
       const data = document.data() || {};
       return { id: document.id, action: String(data.action || ""), actorEmail: String(data.actorEmail || ""), createdAt: safeDateIso(data.createdAt), details: data.details || {} };
     }) : [];
-    res.json({ user: record });
+    res.json({ user: record, access: nyxOwnerAccessPayload(actor), capabilities });
   } catch (error) {
     const status = error.code === "auth/user-not-found" ? 404 : (error.status || 503);
     res.status(status).json({ error: status === 404 ? "User not found." : (error.message || "User details are unavailable.") });
@@ -3678,10 +3825,11 @@ app.get("/api/owner-dashboard/users/:uid", async (req, res) => {
 app.get("/api/owner-dashboard/audit", async (req, res) => {
   res.set("Cache-Control", "no-store");
   try {
-    const { firebase } = await ownerDashboardActor(req);
+    const { firebase, actor } = await ownerDashboardActor(req, "audit:view");
     const limit = Math.max(10, Math.min(200, Number.parseInt(String(req.query.limit || "100"), 10) || 100));
     const snapshot = await firebase.firestore.collection("nyxAuditLog").orderBy("createdAtMs", "desc").limit(limit).get();
     res.json({
+      access: nyxOwnerAccessPayload(actor),
       activity: snapshot.docs.map(document => {
         const data = document.data() || {};
         return {
@@ -3713,10 +3861,30 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
     return;
   }
   try {
-    const { firebase, token } = await ownerDashboardActor(req);
+    const { firebase, token, actor, ownerUid } = await ownerDashboardActor(req, "dashboard:view");
     const action = String(req.body?.action || "").trim().toLowerCase();
-    const ownerUid = founderProfileConfig().administratorUid;
-    const target = await firebase.auth.getUser(uid);
+    const [target, targetAdministration] = await Promise.all([
+      firebase.auth.getUser(uid),
+      uid === ownerUid
+        ? Promise.resolve(null)
+        : firebase.firestore.collection("nyxUserAdministration").doc(uid).get()
+    ]);
+    const targetRole = nyxRoleForUser(uid, targetAdministration?.data(), ownerUid);
+    const capabilities = nyxOwnerUserCapabilities(actor, targetRole, uid, ownerUid);
+    const capabilityByAction = {
+      set_role: "canSetRole",
+      set_subscription: "canSetSubscription",
+      set_profile: "canEditProfile",
+      disable: "canDisableAccount",
+      enable: "canDisableAccount",
+      verify_email: "canVerifyEmail",
+      create_password_reset_link: "canResetPassword",
+      send_password_reset: "canResetPassword",
+      delete: "canDeleteAccount"
+    };
+    if (capabilityByAction[action]) {
+      assertNyxOwnerCapability(capabilities, capabilityByAction[action], `Your ${nyxRoleLabels[actor.role] || "Member"} role cannot perform that action on this account.`);
+    }
     const ownerProtectedAction = ["set_role", "disable", "delete"].includes(action);
     if (uid === ownerUid && ownerProtectedAction) {
       res.status(409).json({ error: "The configured owner account cannot be demoted, disabled, or deleted." });
@@ -3725,7 +3893,12 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
     let auditAction = action;
     let auditDetails = {};
     if (action === "set_role") {
-      const role = normalizeNyxRole(req.body?.role);
+      const requestedRole = String(req.body?.role || "").trim().toLowerCase();
+      if (!capabilities.assignableRoles.includes(requestedRole)) {
+        res.status(403).json({ error: "Your role cannot assign that account role." });
+        return;
+      }
+      const role = normalizeNyxRole(requestedRole);
       await firebase.firestore.collection("nyxUserAdministration").doc(uid).set({ role, updatedAt: new Date().toISOString() }, { merge: true });
       auditDetails = { role };
     } else if (action === "set_subscription") {
@@ -3867,7 +4040,12 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
       firebase.firestore.collection("nyxUserProfiles").doc(uid).get(),
       firebase.firestore.collection("nyxUserActivity").doc(uid).get()
     ]);
-    res.json({ user: nyxOwnerUserRecord(updated, administration.data(), profile.data(), activity.data(), ownerUid, true) });
+    const record = nyxOwnerUserRecord(updated, administration.data(), profile.data(), activity.data(), ownerUid, true);
+    res.json({
+      user: record,
+      access: nyxOwnerAccessPayload(actor),
+      capabilities: nyxOwnerUserCapabilities(actor, record.role, uid, ownerUid)
+    });
   } catch (error) {
     const status = error.code === "auth/user-not-found" ? 404 : (error.status || 503);
     res.status(status).json({ error: status === 404 ? "User not found." : (error.message || "The owner action could not be completed.") });
@@ -3940,11 +4118,11 @@ app.get("/api/founder-profile/owner", async (req, res) => {
 app.get("/api/founder-profile/developer-status", async (req, res) => {
   const access = await verifiedFounderOwner(req);
   if (!access.enabled) return res.status(503).json({ error: "Founder ownership has not been configured." });
-  if (!access.owner) return res.status(403).json({ error: "Owner access is required." });
+  if (!access.permissions.includes("developer-console")) return res.status(403).json({ error: "Developer Console access is required." });
   res.set("Cache-Control", "no-store").json({
-    owner: true,
-    role: "Owner",
-    permissions: ["profile:write", "developer-console"],
+    owner: access.owner,
+    role: access.roleLabel,
+    permissions: access.permissions,
     checkedAt: new Date().toISOString()
   });
 });

@@ -20,7 +20,11 @@
   const ownerAssignableRoles = Object.freeze(["member", "contributor", "tester", "support", "moderator", "developer", "manager", "admin", "co_owner"]);
   const roleLabel = value => ownerRoleLabels[value] || "Member";
   const roleIcon = role => `<img class="nyx-owner-role-icon" src="/assets/icons/roles/${esc(ownerRoleIcons[role] || role)}.png" alt="" aria-hidden="true">`;
-  const roleOptions = (currentRole, locked = false) => `<div class="nyx-owner-role-options" role="radiogroup" aria-label="Account role">${ownerAssignableRoles.map(role => `<button class="role-${esc(role)}${currentRole === role ? " active" : ""}" type="button" role="radio" aria-checked="${currentRole === role}" data-owner-role-option="${esc(role)}" ${locked ? "disabled" : ""}>${roleIcon(role)}<span>${esc(roleLabel(role))}</span></button>`).join("")}${currentRole === "owner" ? `<button class="role-owner active" type="button" role="radio" aria-checked="true" disabled>${roleIcon("owner")}<span>Owner</span></button>` : ""}</div>`;
+  const roleOptions = (currentRole, allowedRoles = []) => {
+    const allowed = new Set(allowedRoles);
+    const roles = ownerAssignableRoles.filter(role => allowed.has(role) || role === currentRole);
+    return `<div class="nyx-owner-role-options" role="radiogroup" aria-label="Account role">${roles.map(role => `<button class="role-${esc(role)}${currentRole === role ? " active" : ""}" type="button" role="radio" aria-checked="${currentRole === role}" data-owner-role-option="${esc(role)}" ${allowed.has(role) ? "" : "disabled"}>${roleIcon(role)}<span>${esc(roleLabel(role))}</span></button>`).join("")}${currentRole === "owner" ? `<button class="role-owner active" type="button" role="radio" aria-checked="true" disabled>${roleIcon("owner")}<span>Owner</span></button>` : ""}</div>`;
+  };
   const syncRoleOptions = (root, selectedRole) => root?.querySelectorAll?.("[data-owner-role-option]").forEach(button => {
     const active = button.dataset.ownerRoleOption === selectedRole;
     button.classList.toggle("active", active);
@@ -220,10 +224,12 @@
       sort: "createdAt",
       direction: "desc",
       data: null,
+      access: null,
       loading: false,
       controller: null,
       searchTimer: 0,
-      selectedUser: null
+      selectedUser: null,
+      selectedCapabilities: null
     };
     const overlay = document.createElement("section");
     overlay.className = "nyx-owner-dashboard-overlay";
@@ -233,7 +239,7 @@
     overlay.innerHTML = `
       <main class="nyx-owner-dashboard">
         <header class="nyx-owner-header">
-          <div><span class="nyx-owner-eyebrow">NYX CONTROL CENTER</span><h1 id="nyxOwnerDashboardTitle">Owner Dashboard</h1><p>Manage accounts, subscriptions, security, and activity.</p></div>
+          <div><span class="nyx-owner-eyebrow">NYX CONTROL CENTER</span><h1 id="nyxOwnerDashboardTitle">Owner Dashboard</h1><p data-owner-access-copy>Loading your role permissionsâ€¦</p></div>
           <div class="nyx-owner-header-actions">
             <button type="button" data-owner-refresh>${dashboardIcon("refresh")}<span>Refresh</span></button>
             <button class="nyx-owner-close" type="button" data-owner-close aria-label="Close owner dashboard">${dashboardIcon("close")}</button>
@@ -289,7 +295,7 @@
 
     async function api(path, options = {}) {
       const token = await getToken();
-      if (!token) throw new Error("Your owner session has expired. Sign in again.");
+      if (!token) throw new Error("Your staff session has expired. Sign in again.");
       const response = await fetch(path, {
         ...options,
         headers: {
@@ -385,6 +391,10 @@
     }
 
     function renderActivity(activity = []) {
+      if (state.access && !state.access.permissions?.includes("audit:view")) {
+        activityHost.innerHTML = '<div class="nyx-owner-empty compact"><strong>Activity is protected</strong><span>Your assigned role can manage its permitted account tasks without viewing the full audit log.</span></div>';
+        return;
+      }
       if (!activity.length) {
         activityHost.innerHTML = '<div class="nyx-owner-empty compact"><strong>No activity yet</strong><span>Owner and account events will appear here.</span></div>';
         return;
@@ -424,6 +434,9 @@
       try {
         const data = await api(`/api/owner-dashboard?${parameters}`, { signal: state.controller.signal });
         state.data = data;
+        state.access = data.access || state.access;
+        const accessCopy = overlay.querySelector("[data-owner-access-copy]");
+        if (accessCopy && state.access) accessCopy.textContent = `${state.access.roleLabel || roleLabel(state.access.role)} access Â· controls are limited to this role's permissions.`;
         renderMetrics(data.metrics);
         renderUsers(data);
         renderActivity(data.recentActivity);
@@ -532,19 +545,39 @@
       drawer.innerHTML = '<div class="nyx-owner-drawer-loading"><i></i><i></i><i></i></div>';
       requestAnimationFrame(() => drawer.classList.add("show"));
       try {
-        const { user } = await api(`/api/owner-dashboard/users/${encodeURIComponent(uid)}`);
+        const { user, access, capabilities = {} } = await api(`/api/owner-dashboard/users/${encodeURIComponent(uid)}`);
         state.selectedUser = user;
+        state.selectedCapabilities = capabilities;
+        state.access = access || state.access;
         const avatar = ownerProfileImageMarkup(user.photoUrl, "", (user.displayName || "?").slice(0, 1).toUpperCase());
+        const assignableRoles = access?.assignableRoles || [];
+        const roleSelectOptions = assignableRoles.map(role => `<option value="${esc(role)}"${selected(user.role, role)}>${esc(roleLabel(role))}</option>`).join("");
+        const currentRoleOption = assignableRoles.includes(user.role) ? "" : `<option value="${esc(user.role)}" selected disabled>${esc(roleLabel(user.role))}</option>`;
+        const accessSection = capabilities.canSetRole || capabilities.canSetSubscription ? `<section class="nyx-owner-detail-section"><h3>Access</h3>
+          ${capabilities.canSetRole ? `<label>Current role<select data-owner-detail-role>${roleSelectOptions}${currentRoleOption}</select></label>${roleOptions(user.role, assignableRoles)}` : `<p class="nyx-owner-action-note">Role: ${esc(roleLabel(user.role))}</p>`}
+          ${capabilities.canSetSubscription ? `<label>Subscription<select data-owner-detail-subscription><option value="free">Free</option><option value="premium">Premium</option><option value="trialing">Trial</option><option value="past_due">Past due</option><option value="canceled">Canceled</option></select></label><p class="nyx-owner-premium-note">Premium and Trial accounts receive Premium benefits automatically when they sign in. They do not need a Premium access code.</p><label>Monthly revenue <input data-owner-detail-revenue type="number" min="0" step="0.01" value="${((user.monthlyRevenueCents || 0) / 100).toFixed(2)}"></label>` : `<p class="nyx-owner-action-note">Subscription: ${esc(subscriptionLabel(user.subscriptionStatus))}</p>`}
+          <div class="nyx-owner-detail-actions"><button type="button" data-owner-save-access>Save access</button></div></section>` : "";
+        const accountActions = [
+          capabilities.canResetPassword ? '<button type="button" data-owner-user-action="create_password_reset_link">Create reset link</button>' : "",
+          capabilities.canResetPassword ? `<button type="button" data-owner-user-action="send_password_reset" ${!user.deliverableEmail ? "disabled" : ""}>Email reset link</button>` : "",
+          capabilities.canVerifyEmail ? `<button type="button" data-owner-user-action="verify_email" ${user.emailVerified || !user.deliverableEmail ? "disabled" : ""}>Verify email</button>` : "",
+          capabilities.canDisableAccount ? `<button type="button" data-owner-user-action="${user.disabled ? "enable" : "disable"}">${user.disabled ? "Re-enable account" : "Disable account"}</button>` : "",
+          capabilities.canDeleteAccount ? '<button class="danger" type="button" data-owner-user-action="delete">Delete account</button>' : ""
+        ].filter(Boolean).join("");
+        const accountActionsSection = accountActions ? `<section class="nyx-owner-detail-section"><h3>Account actions</h3>${!user.deliverableEmail && capabilities.canResetPassword ? '<p class="nyx-owner-action-note">This username-only account has no inbox. Create a secure reset link and give it directly to the account owner.</p>' : ""}<div class="nyx-owner-action-grid">${accountActions}</div></section>` : "";
+        const recentActivitySection = capabilities.canViewAudit ? `<section class="nyx-owner-detail-section"><h3>Recent user activity</h3><div class="nyx-owner-user-activity">${(user.recentActivity || []).length ? user.recentActivity.map(event => `<p><strong>${esc(actionLabel(event.action))}</strong><span>${esc(relativeLabel(event.createdAt))}</span></p>`).join("") : "<span>No recorded account actions.</span>"}</div></section>` : "";
         drawer.innerHTML = `<header><div class="nyx-owner-detail-avatar">${avatar}<i class="${user.online ? "online" : ""}"></i></div><div><span>${roleIcon(user.role)}${esc(roleLabel(user.role))} account</span><h2>${esc(user.displayName)}</h2><p class="nyx-owner-drawer-identity">@${esc(user.username)} <span class="nyx-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></p></div><button type="button" data-owner-drawer-close aria-label="Close user details">${dashboardIcon("close")}</button></header>
           <div class="nyx-owner-drawer-scroll">
             <section class="nyx-owner-detail-grid">${detailValue("Email", user.deliverableEmail ? user.email : "No email added")}${detailValue("Firebase UID", user.uid, "uid")}${detailValue("Presence", user.online ? "Online now" : "Offline")}${detailValue("Created", dateLabel(user.createdAt))}${detailValue("Last sign-in", dateLabel(user.lastSignInAt))}${detailValue("Last active", dateLabel(user.lastActiveAt))}${detailValue("Email verified", user.deliverableEmail ? (user.emailVerified ? "Verified" : "Not verified") : "Not applicable · username-only")}</section>
-            <section class="nyx-owner-detail-section nyx-owner-profile-management"><h3>Public profile</h3>${ownerProfilePreview(user)}<details><summary>Edit this profile</summary>${ownerProfileEditor(user)}</details></section>
-            <section class="nyx-owner-detail-section"><h3>Access</h3><label>Current role<select data-owner-detail-role ${user.role === "owner" ? "disabled" : ""}><option value="member">Member</option><option value="contributor">Contributor</option><option value="tester">Tester</option><option value="support">Support</option><option value="moderator">Moderator</option><option value="developer">Developer</option><option value="manager">Manager</option><option value="admin">Admin</option><option value="co_owner">Co-owner</option><option value="owner" ${user.role === "owner" ? "selected" : "disabled"}>Owner</option></select></label>${roleOptions(user.role, user.role === "owner")}<label>Subscription<select data-owner-detail-subscription><option value="free">Free</option><option value="premium">Premium</option><option value="trialing">Trial</option><option value="past_due">Past due</option><option value="canceled">Canceled</option></select></label><p class="nyx-owner-premium-note">Premium and Trial accounts receive Premium benefits automatically when they sign in. They do not need a Premium access code.</p><label>Monthly revenue <input data-owner-detail-revenue type="number" min="0" step="0.01" value="${((user.monthlyRevenueCents || 0) / 100).toFixed(2)}"></label><div class="nyx-owner-detail-actions"><button type="button" data-owner-save-access>Save access</button></div></section>
-            <section class="nyx-owner-detail-section"><h3>Account actions</h3>${!user.deliverableEmail ? '<p class="nyx-owner-action-note">This username-only account has no inbox. Create a secure reset link and give it directly to the account owner.</p>' : ""}<div class="nyx-owner-action-grid"><button type="button" data-owner-user-action="create_password_reset_link">Create reset link</button><button type="button" data-owner-user-action="send_password_reset" ${!user.deliverableEmail ? "disabled" : ""}>Email reset link</button><button type="button" data-owner-user-action="verify_email" ${user.emailVerified || !user.deliverableEmail ? "disabled" : ""}>Verify email</button><button type="button" data-owner-user-action="${user.disabled ? "enable" : "disable"}" ${user.role === "owner" ? "disabled" : ""}>${user.disabled ? "Re-enable account" : "Disable account"}</button><button class="danger" type="button" data-owner-user-action="delete" ${user.role === "owner" ? "disabled" : ""}>Delete account</button></div></section>
-            <section class="nyx-owner-detail-section"><h3>Recent user activity</h3><div class="nyx-owner-user-activity">${(user.recentActivity || []).length ? user.recentActivity.map(event => `<p><strong>${esc(actionLabel(event.action))}</strong><span>${esc(relativeLabel(event.createdAt))}</span></p>`).join("") : "<span>No recorded account actions.</span>"}</div></section>
+            <section class="nyx-owner-detail-section nyx-owner-profile-management"><h3>Public profile</h3>${ownerProfilePreview(user)}${capabilities.canEditProfile ? `<details><summary>Edit this profile</summary>${ownerProfileEditor(user)}</details>` : ""}</section>
+            ${accessSection}
+            ${accountActionsSection}
+            ${recentActivitySection}
           </div>`;
-        drawer.querySelector("[data-owner-detail-role]").value = user.role;
-        drawer.querySelector("[data-owner-detail-subscription]").value = user.subscriptionStatus;
+        const roleSelect = drawer.querySelector("[data-owner-detail-role]");
+        const subscriptionSelect = drawer.querySelector("[data-owner-detail-subscription]");
+        if (roleSelect) roleSelect.value = user.role;
+        if (subscriptionSelect) subscriptionSelect.value = user.subscriptionStatus;
         syncRoleOptions(drawer, user.role);
         void hydrateOwnerProfileMedia(drawer);
       } catch (error) {
@@ -556,6 +589,7 @@
       drawer.classList.remove("show");
       setTimeout(() => { drawer.hidden = true; drawer.innerHTML = ""; }, 180);
       state.selectedUser = null;
+      state.selectedCapabilities = null;
     }
 
     function confirmAction({ title, message, confirmLabel = "Continue", danger = false, requireText = "" }) {
@@ -620,6 +654,8 @@
           notify("Secure password reset link created.");
         } else {
           state.selectedUser = result.user;
+          state.selectedCapabilities = result.capabilities || state.selectedCapabilities;
+          state.access = result.access || state.access;
           notify(action === "send_password_reset" ? "Password reset email sent." : "Account updated.");
           await openUser(user.uid);
         }
@@ -692,11 +728,14 @@
       const userAction = event.target.closest("[data-owner-user-action]")?.dataset.ownerUserAction;
       if (userAction) return void mutateUser(userAction);
       if (event.target.closest("[data-owner-save-access]")) {
-        const role = drawer.querySelector("[data-owner-detail-role]")?.value;
-        const subscriptionStatus = drawer.querySelector("[data-owner-detail-subscription]")?.value;
-        const monthlyRevenueCents = Math.round((Number(drawer.querySelector("[data-owner-detail-revenue]")?.value) || 0) * 100);
-        const roleChanged = role !== state.selectedUser?.role;
-        const subscriptionChanged = subscriptionStatus !== state.selectedUser?.subscriptionStatus || monthlyRevenueCents !== state.selectedUser?.monthlyRevenueCents;
+        const roleField = drawer.querySelector("[data-owner-detail-role]");
+        const subscriptionField = drawer.querySelector("[data-owner-detail-subscription]");
+        const revenueField = drawer.querySelector("[data-owner-detail-revenue]");
+        const role = roleField?.value || state.selectedUser?.role;
+        const subscriptionStatus = subscriptionField?.value || state.selectedUser?.subscriptionStatus;
+        const monthlyRevenueCents = revenueField ? Math.round((Number(revenueField.value) || 0) * 100) : state.selectedUser?.monthlyRevenueCents;
+        const roleChanged = Boolean(roleField && role !== state.selectedUser?.role);
+        const subscriptionChanged = Boolean(subscriptionField && (subscriptionStatus !== state.selectedUser?.subscriptionStatus || monthlyRevenueCents !== state.selectedUser?.monthlyRevenueCents));
         return void (async () => {
           if (roleChanged) {
             const confirmed = await confirmAction({ title: "Change account role?", message: `${state.selectedUser.email || state.selectedUser.displayName} will become ${roleLabel(role)}.`, confirmLabel: "Change role" });

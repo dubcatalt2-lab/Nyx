@@ -177,6 +177,19 @@ function fillTemplate(template, values) {
   return String(template || '').replace(/\{(\w+)\}/g, (_, key) => encodeURIComponent(values[key] ?? ''));
 }
 
+function externalGamePlayer(value) {
+  try {
+    const url = new URL(String(value || '').trim());
+    if (!/^https?:$/.test(url.protocol)) return '';
+    url.username = '';
+    url.password = '';
+    url.hash = '';
+    return `/assets/games/remote-play.html?v=20260803-catclass-v1&url=${encodeURIComponent(url.href)}`;
+  } catch {
+    return '';
+  }
+}
+
 function ugsThumbnailName(path) {
   return String(path)
     .replace(/\.[^.]+$/, '')
@@ -240,7 +253,7 @@ async function adaptCatalog(catalog) {
 
   return items.flatMap(item => {
     const path = String(item.path || '').replace(/^\/+/, '');
-    if (!path && catalog.format !== 'duckmath') return [];
+    if (!path && catalog.format !== 'duckmath' && catalog.format !== 'external') return [];
     if (catalog.format === 'seraph' && !/(^|\/)index\.html?$/i.test(path)) return [];
 
     const suppliedTitle = String(item.title || item.name || '').replace(/\s+/g, ' ').trim();
@@ -251,7 +264,9 @@ async function adaptCatalog(catalog) {
     if (!title) return [];
     let player = catalog.format === 'duckmath'
       ? String(item.url || '')
-      : fillTemplate(catalog.player, { path });
+      : catalog.format === 'external'
+        ? externalGamePlayer(item.url)
+        : fillTemplate(catalog.player, { path });
     if (!player) return [];
     let covers = [];
 
@@ -274,6 +289,8 @@ async function adaptCatalog(catalog) {
         `/seraph-asset?path=${encodeURIComponent(thumbnailPath)}`,
         `https://cdn.jsdelivr.net/gh/a456pur/seraph@main/${thumbnailPath.split('/').map(encodeURIComponent).join('/')}`
       );
+    } else if (catalog.format === 'external') {
+      covers.push(safeCover(item.cover), directCover(item.cover));
     }
 
     covers = [...new Set(covers.filter(Boolean))];
@@ -573,8 +590,17 @@ elements.frame.addEventListener('load', () => {
   if (elements.player.hidden || !state.activeGame || elements.frame.src === 'about:blank') return;
   const source = gameSources()[state.activeSourceIndex];
   let sameOrigin = false;
-  try { sameOrigin = new URL(source?.url || '', location.href).origin === location.origin; } catch {}
-  if (!sameOrigin) setTimeout(finishGameLaunch, 900);
+  let managedRunner = false;
+  try {
+    const parsed = new URL(source?.url || '', location.href);
+    sameOrigin = parsed.origin === location.origin;
+    managedRunner = sameOrigin && /^\/assets\/(?:ugs|gn-math|gms-games|reds-misc|seraph)\/play\.html$/i.test(parsed.pathname);
+    if (sameOrigin && parsed.pathname === '/assets/games/remote-play.html') managedRunner = true;
+  } catch {}
+  // Nyx's runner pages own their detailed loading/error state. Reveal them as
+  // soon as the runner document is available instead of requiring a custom
+  // ready message that a short or DOM-only game may never emit.
+  if (!sameOrigin || managedRunner) setTimeout(finishGameLaunch, 900);
 });
 elements.frame.addEventListener('error', () => tryNextGameSource('The current source could not be opened.'));
 window.addEventListener('message', event => {

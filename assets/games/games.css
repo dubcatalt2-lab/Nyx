@@ -9,6 +9,7 @@
   --muted: #9eafca;
   --accent: #73aaff;
   --accent-strong: #3878ef;
+  --hover-speed: 180ms;
 }
 
 * { box-sizing: border-box; }
@@ -195,7 +196,7 @@ h1 {
   padding: 4px;
   text-align: center;
   cursor: pointer;
-  transition: transform 180ms ease;
+  transition: transform var(--hover-speed) ease;
 }
 
 .game-card:hover, .game-card:focus-visible {
@@ -214,7 +215,7 @@ h1 {
   border-radius: 22px;
   background: linear-gradient(140deg, #152c61, #071027);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.34), inset 0 1px rgba(255, 255, 255, 0.08);
-  transition: border-color 180ms ease, box-shadow 180ms ease;
+  transition: border-color var(--hover-speed) ease, box-shadow var(--hover-speed) ease;
 }
 
 .game-cover::after {
@@ -230,7 +231,7 @@ h1 {
   height: 100%;
   display: block;
   object-fit: cover;
-  transition: transform 300ms ease, filter 300ms ease;
+  transition: transform var(--hover-speed) ease, filter var(--hover-speed) ease;
 }
 
 .game-card:hover .game-cover, .game-card:focus-visible .game-cover {
@@ -325,7 +326,7 @@ h1 {
   font-weight: 700;
   cursor: pointer;
   transform-origin: center;
-  transition: transform 240ms cubic-bezier(.2,.8,.2,1), border-color 240ms ease, background-color 240ms ease, box-shadow 240ms ease, filter 240ms ease;
+  transition: transform var(--hover-speed) cubic-bezier(.2,.8,.2,1), border-color var(--hover-speed) ease, background-color var(--hover-speed) ease, box-shadow var(--hover-speed) ease, filter var(--hover-speed) ease;
 }
 
 .toolbar-button:hover, .toolbar-button:focus-visible {

@@ -2129,6 +2129,77 @@ body.browser-shell #desktop .desktop-app{
   outline:2px solid #2563eb;
   outline-offset:2px;
 }
+
+.nyx-download-safety-shade{
+  position:fixed;
+  inset:0;
+  z-index:2147483646;
+  display:grid;
+  place-items:center;
+  padding:24px;
+  background:rgba(3,6,12,.72);
+  backdrop-filter:blur(10px);
+}
+.nyx-download-safety-dialog{
+  width:min(500px,calc(100vw - 32px));
+  display:grid;
+  grid-template-columns:44px minmax(0,1fr);
+  gap:16px;
+  padding:22px;
+  border:1px solid color-mix(in srgb,var(--theme-border,#334155) 72%,transparent);
+  border-radius:18px;
+  background:color-mix(in srgb,var(--theme-card,#111827) 96%,black);
+  color:var(--theme-text,#f5f7fb);
+  box-shadow:0 24px 70px rgba(0,0,0,.46);
+}
+.nyx-download-safety-icon{
+  width:44px;
+  height:44px;
+  display:grid;
+  place-items:center;
+  border-radius:14px;
+  background:color-mix(in srgb,#f59e0b 16%,transparent);
+  color:#fbbf24;
+  font-size:22px;
+  font-weight:800;
+}
+.nyx-download-safety-dialog.is-blocked .nyx-download-safety-icon{
+  background:color-mix(in srgb,#ef4444 18%,transparent);
+  color:#fb7185;
+}
+.nyx-download-safety-copy{min-width:0}
+.nyx-download-safety-kicker{
+  margin:0 0 4px;
+  color:var(--theme-accent,#9b8cff);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.nyx-download-safety-dialog h2{margin:0 0 12px;font-size:21px;line-height:1.2}
+.nyx-download-safety-dialog p{margin:0;color:var(--theme-muted,#a9b0bf);font-size:14px;line-height:1.5}
+.nyx-download-safety-dialog .nyx-download-safety-file{
+  overflow:hidden;
+  color:var(--theme-text,#f5f7fb);
+  font-weight:650;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.nyx-download-safety-source{margin-bottom:12px!important;font-size:12px!important}
+.nyx-download-safety-threats{margin-top:10px!important;color:#fb7185!important;font-weight:650}
+.nyx-download-safety-note{margin-top:12px!important;font-size:12px!important}
+.nyx-download-safety-dialog footer{
+  grid-column:1/-1;
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  padding-top:2px;
+}
+@media(max-width:520px){
+  .nyx-download-safety-shade{padding:12px}
+  .nyx-download-safety-dialog{grid-template-columns:36px minmax(0,1fr);gap:12px;padding:18px;border-radius:16px}
+  .nyx-download-safety-icon{width:36px;height:36px;border-radius:11px;font-size:18px}
+}
 .nyx-preflight{
   position:fixed;
   inset:0;
@@ -2274,7 +2345,7 @@ body.theme-sakura .lion-ai-image-status{
 .lion-ai-head-actions{display:flex;align-items:center;gap:8px}
 .lion-ai-clear{width:40px;height:40px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;color:#334155;cursor:pointer;font-size:18px}
 .lion-ai-clear:hover{background:#f8fafc;color:#111827}
-.lion-ai-model-select{min-width:190px;height:44px;border:1px solid #facc15;border-radius:8px;background:#050816;color:#f8fafc;padding:0 12px;font:400 13px Outfit,Arial,sans-serif;outline:0;box-shadow:0 0 0 1px rgba(250,204,21,.08)}
+.lion-ai-model-select{width:min(280px,32vw);min-width:220px;height:44px;border:1px solid #facc15;border-radius:8px;background:#050816;color:#f8fafc;padding:0 34px 0 12px;font:400 13px Outfit,Arial,sans-serif;outline:0;box-shadow:0 0 0 1px rgba(250,204,21,.08);text-overflow:ellipsis}
 .lion-ai-model-select option{background:#080b17;color:#f8fafc}
 .lion-ai-chat{min-height:0;overflow:auto;display:grid;align-content:start;gap:12px;padding:2px 4px 2px 0}
 .lion-ai-msg{max-width:min(760px,92%);border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;background:#fff;color:#111827;box-shadow:0 12px 30px rgba(15,23,42,.08);white-space:pre-wrap;line-height:1.45}

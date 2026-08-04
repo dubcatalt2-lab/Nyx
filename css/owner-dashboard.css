@@ -185,9 +185,14 @@
 .nyx-owner-avatar i.online,.nyx-owner-detail-avatar i.online{background:#4fd18b}
 .nyx-owner-badge,.nyx-owner-account-state{display:inline-flex;align-items:center;gap:5px;min-height:22px;padding:2px 7px;border:1px solid var(--owner-line);border-radius:6px;font-size:9px;font-weight:750}
 .nyx-owner-badge.role-owner{border-color:#b08cff;background:rgba(176,140,255,.12);color:#d8c4ff}
+.nyx-owner-badge.role-co_owner{border-color:#d5a85b;background:rgba(213,168,91,.12);color:#f4d293}
 .nyx-owner-badge.role-admin{border-color:#6f9cff;background:rgba(111,156,255,.12);color:#b9cfff}
+.nyx-owner-badge.role-manager{border-color:#60b9db;background:rgba(96,185,219,.11);color:#a9e1f5}
 .nyx-owner-badge.role-developer{border-color:#65d6b4;background:rgba(101,214,180,.11);color:#a9f0d9}
 .nyx-owner-badge.role-moderator{border-color:#f1a85d;background:rgba(241,168,93,.11);color:#ffd0a3}
+.nyx-owner-badge.role-support{border-color:#67c8b2;background:rgba(103,200,178,.1);color:#aee8da}
+.nyx-owner-badge.role-tester{border-color:#cb83dc;background:rgba(203,131,220,.1);color:#e9b8f3}
+.nyx-owner-badge.role-contributor{border-color:#8994aa;background:rgba(137,148,170,.1);color:#c8cfdd}
 .nyx-owner-role-icon{display:inline-block;width:14px;height:14px;object-fit:contain}
 .nyx-owner-user-drawer>header>div:nth-child(2)>span{display:flex;align-items:center;gap:6px}
 .nyx-owner-badge.subscription-premium,.nyx-owner-badge.subscription-trialing{border-color:#e8bd64;background:rgba(232,189,100,.11);color:#f3d79b}
@@ -301,6 +306,21 @@
 .nyx-owner-profile-management details{border-top:1px solid var(--owner-line)}
 .nyx-owner-profile-management summary{padding:10px 0 2px;color:var(--owner-accent);font-size:10px;font-weight:800;cursor:pointer}
 .nyx-owner-profile-editor{display:grid;gap:10px;padding-top:10px}
+.nyx-owner-media-editors{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.nyx-owner-media-editor{position:relative;display:grid;grid-template-columns:48px minmax(0,1fr);align-items:center;gap:9px;min-width:0;padding:9px;border:1px solid var(--owner-line);border-radius:9px;background:#0b111b;transition:border-color .18s ease,background-color .18s ease}
+.nyx-owner-media-editor:hover,.nyx-owner-media-editor:focus-within{border-color:color-mix(in srgb,var(--owner-accent) 62%,var(--owner-line));background:#0e1622}
+.nyx-owner-media-preview{display:grid;place-items:center;width:48px;height:48px;overflow:hidden;border:1px solid rgba(255,255,255,.15);border-radius:50%;background:#151d2a;color:var(--owner-text);font-size:18px;font-weight:800}
+.nyx-owner-media-preview img{width:100%;height:100%;object-fit:cover}
+.nyx-owner-media-editor.banner{grid-template-columns:76px minmax(0,1fr)}
+.nyx-owner-media-editor.banner .nyx-owner-media-preview{width:76px;height:48px;border-radius:7px;background:var(--owner-banner-preview,#263653)}
+.nyx-owner-media-editor>div:nth-child(2){display:grid;gap:3px;min-width:0}
+.nyx-owner-media-editor strong{color:var(--owner-text);font-size:9px}
+.nyx-owner-media-editor [data-owner-media-name]{overflow:hidden;color:var(--owner-muted);font-size:7px;line-height:1.35;text-overflow:ellipsis;white-space:nowrap}
+.nyx-owner-media-button{grid-column:1/-1;display:flex;align-items:center;justify-content:center;min-height:29px;border:1px solid var(--owner-line);border-radius:7px;background:#131c29;color:var(--owner-text);font-size:8px;font-weight:750;cursor:pointer;transition:border-color .18s ease,background-color .18s ease,color .18s ease}
+.nyx-owner-media-button:hover,.nyx-owner-media-editor:focus-within .nyx-owner-media-button{border-color:var(--owner-accent);background:#18243a;color:#fff}
+.nyx-owner-profile-editor .nyx-owner-media-input{position:absolute;width:1px;min-width:1px;height:1px;min-height:1px;padding:0;overflow:hidden;border:0;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+.nyx-owner-profile-editor>.nyx-owner-media-error{display:none;margin:0;color:#ff9a9a;font-size:8px;line-height:1.45}
+.nyx-owner-profile-editor>.nyx-owner-media-error:not(:empty){display:block}
 .nyx-owner-profile-fields{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .nyx-owner-profile-fields>label{display:grid;gap:5px;color:var(--owner-muted);font-size:8px;font-weight:700;text-transform:uppercase}
 .nyx-owner-profile-fields>label.wide{grid-column:1/-1}
@@ -316,6 +336,14 @@
 .nyx-owner-media-removal input{accent-color:var(--owner-accent)}
 .nyx-owner-profile-editor>p{margin:0;color:var(--owner-muted);font-size:8px;line-height:1.45}
 .nyx-owner-detail-section>label{display:grid;grid-template-columns:130px minmax(0,1fr);align-items:center;gap:8px;color:var(--owner-muted);font-size:9px}
+.nyx-owner-role-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.nyx-owner-role-options button{display:flex;min-width:0;align-items:center;justify-content:flex-start;gap:6px;padding:8px 9px;border:1px solid var(--owner-line);border-radius:8px;background:var(--owner-panel-2);color:var(--owner-muted);font:inherit;font-size:9px;font-weight:600;line-height:1;cursor:pointer;transition:border-color 160ms ease,background-color 160ms ease,color 160ms ease,transform 160ms ease}
+.nyx-owner-role-options button:hover:not(:disabled){border-color:color-mix(in srgb,var(--owner-accent) 48%,var(--owner-line));color:var(--owner-text);transform:translateY(-1px)}
+.nyx-owner-role-options button.active{border-color:var(--owner-accent);background:color-mix(in srgb,var(--owner-accent) 14%,var(--owner-panel-2));color:var(--owner-text);box-shadow:0 0 0 1px color-mix(in srgb,var(--owner-accent) 15%,transparent)}
+.nyx-owner-role-options button:focus-visible{outline:2px solid var(--owner-accent);outline-offset:2px}
+.nyx-owner-role-options button:disabled{cursor:not-allowed;opacity:.8}
+.nyx-owner-role-options .nyx-owner-role-icon{width:13px;height:13px;flex:0 0 auto}
+.nyx-owner-premium-note{margin:0;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--owner-accent) 8%,var(--owner-panel-2));color:var(--owner-muted);font-size:9px;line-height:1.5}
 .nyx-owner-detail-actions{display:flex;justify-content:flex-end}
 .nyx-owner-detail-actions button,.nyx-owner-action-grid button{
   min-height:32px;
@@ -398,6 +426,8 @@
   .nyx-owner-detail-grid{grid-template-columns:1fr}
   .nyx-owner-detail-value.uid{grid-column:auto}
   .nyx-owner-detail-section>label{grid-template-columns:1fr}
+  .nyx-owner-role-options{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .nyx-owner-media-editors{grid-template-columns:1fr}
   .nyx-owner-profile-fields{grid-template-columns:1fr}
   .nyx-owner-profile-fields>label.wide{grid-column:auto}
 }

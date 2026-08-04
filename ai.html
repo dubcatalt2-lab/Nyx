@@ -2,63 +2,135 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
   <title>Nyx AI</title>
   <link rel="icon" type="image/png" href="/assets/icons/nyx-logo.png" data-nyx-logo>
-  <script src="/js/nyx-logo.js?v=20260717-theme-crescent-v1"></script>
-  <style>
-    *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:Outfit,Arial,sans-serif;background:#f7fafc;color:#111827}button,select,textarea{font:inherit}.app{height:100%;display:grid;grid-template-rows:auto 1fr auto}.head{min-height:76px;padding:14px 24px;border-bottom:1px solid #dbe3ea;background:#fff;display:flex;align-items:center;gap:12px}.mark{width:44px;height:44px;display:grid;place-items:center;border-radius:8px;background:#071522;color:#72f2e1;font-weight:800}.title{min-width:0}.title h1{margin:0;font-size:22px}.title p{margin:2px 0 0;color:#64748b;font-size:13px}.actions{margin-left:auto;display:flex;align-items:center;gap:8px}.model,.clear{height:42px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#172033}.model{min-width:190px;padding:0 12px}.clear{width:42px;cursor:pointer;font-size:19px}.feed{min-height:0;overflow:auto;padding:28px clamp(18px,6vw,88px);display:grid;align-content:start;gap:14px}.msg{max-width:min(780px,88%);padding:12px 14px;border:1px solid #dbe3ea;border-radius:8px;background:#fff;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}.msg.user{justify-self:end;background:#dff7f4;border-color:#ace9e1}.msg.error{color:#991b1b;background:#fef2f2;border-color:#fecaca}.composer{padding:14px clamp(18px,6vw,88px) 20px;background:linear-gradient(transparent,#f7fafc 18%)}form{max-width:980px;margin:auto;display:grid;grid-template-columns:1fr 46px;gap:8px;padding:7px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;box-shadow:0 14px 35px rgba(15,23,42,.12)}textarea{min-height:42px;max-height:130px;resize:none;border:0;outline:0;padding:10px;color:#111827}.send{width:44px;height:44px;border:0;border-radius:8px;background:#071522;color:#fff;cursor:pointer;font-size:22px}.send:disabled{opacity:.5;cursor:wait}@media(max-width:620px){.head{padding:10px 12px;flex-wrap:wrap}.actions{width:100%}.model{flex:1;min-width:0}.feed{padding:18px 12px}.composer{padding:10px 12px}.msg{max-width:94%}}
-  </style>
-  <style>.head .mark{width:48px;height:48px;border-radius:0;background-color:transparent;background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-logo.png"));background-position:center;background-repeat:no-repeat;background-size:205%;color:transparent}</style>
-  <style>
-    :root{--ai-bg:#070914;--ai-side:#05070e;--ai-panel:#101321;--ai-line:rgba(184,137,255,.18);--ai-accent:#b889ff;--ai-text:#f7f8ff;--ai-muted:#8f94ad}
-    html,body{background:var(--ai-bg);color:var(--ai-text);overflow:hidden}.app{height:100%;display:grid;grid-template-columns:232px minmax(0,1fr);grid-template-rows:1fr;background:radial-gradient(700px 480px at 75% 42%,rgba(184,137,255,.08),transparent 72%),var(--ai-bg)}
-    .side{min-height:0;display:flex;flex-direction:column;gap:10px;padding:17px 13px 14px;border-right:1px solid var(--ai-line);background:rgba(4,6,13,.78)}.side-brand{display:flex;align-items:center;gap:10px;min-height:42px;padding:0 7px 9px;font-size:15px}.side-brand .mark{width:28px;height:28px;border:0;border-radius:8px;background-color:transparent;background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-logo.png"));background-position:center;background-repeat:no-repeat;background-size:190%;color:transparent}.new-chat,.conversation{width:100%;display:flex;align-items:center;gap:10px;border:1px solid var(--ai-line);border-radius:9px;color:var(--ai-text);text-align:left}.new-chat{min-height:43px;padding:0 12px;background:rgba(184,137,255,.11);font-weight:650}.new-chat span:first-child{color:var(--ai-accent);font-size:19px}.side-label{margin:15px 7px 1px;color:var(--ai-muted);font-size:9px;font-weight:750;letter-spacing:.15em}.conversation{min-height:51px;padding:8px 10px;background:rgba(255,255,255,.035)}.conversation>span:last-child{display:grid;gap:2px}.conversation strong{font-size:12px}.conversation small{color:var(--ai-muted);font-size:9px}.side-space{flex:1}.model-card{display:flex;align-items:center;gap:9px;min-height:52px;padding:9px 10px;border:1px solid var(--ai-line);border-radius:9px;background:rgba(255,255,255,.028)}.ready-dot{width:8px;height:8px;border-radius:50%;background:#66d99a;box-shadow:0 0 12px rgba(102,217,154,.55)}.model-card span:last-child{display:grid;gap:2px}.model-card small{color:var(--ai-muted);font-size:8px;font-weight:750;letter-spacing:.14em}.model-card strong{font-size:11px}.model{display:none}
-    .workspace{min-width:0;min-height:0;display:grid;grid-template-rows:58px minmax(0,1fr) auto;overflow:hidden}.head{min-height:58px;padding:0 20px;border-bottom:1px solid var(--ai-line);background:rgba(6,8,16,.38)}.title h1{font-size:14px}.title p{font-size:9px;color:var(--ai-muted)}.clear{width:34px;height:34px;border-color:transparent;background:transparent;color:var(--ai-muted)}.clear:hover{border-color:var(--ai-line);background:rgba(255,255,255,.045);color:#fff}
-    .feed{min-height:0;overflow:auto;padding:24px clamp(18px,4vw,62px);display:grid;align-content:start;gap:13px}.feed.empty{place-items:center;align-content:center}.welcome{width:min(650px,100%);display:grid;justify-items:center;text-align:center}.welcome-mark{width:62px;height:62px;margin-bottom:12px;border:1px solid rgba(184,137,255,.42);border-radius:19px;background-color:rgba(184,137,255,.1);background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-logo.png"));background-position:center;background-repeat:no-repeat;background-size:178%;box-shadow:0 18px 52px rgba(184,137,255,.15)}.eyebrow{margin:0 0 8px;color:var(--ai-accent);font-size:9px;font-weight:750;letter-spacing:.2em}.welcome h2{margin:0;font-size:clamp(25px,3vw,34px);letter-spacing:-.035em}.welcome>p:last-of-type{margin:9px 0 22px;color:var(--ai-muted);font-size:12px}.starters{width:min(560px,100%);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.starter{min-height:86px;display:grid;align-content:center;gap:4px;padding:13px;border:1px solid var(--ai-line);border-radius:12px;background:rgba(255,255,255,.035);color:var(--ai-text);text-align:left}.starter:hover{border-color:rgba(184,137,255,.5);background:rgba(184,137,255,.08)}.starter strong{font-size:12px}.starter small{color:var(--ai-muted);font-size:10px}.msg{width:min(780px,92%);margin:0 auto;padding:13px 15px;border-color:var(--ai-line);border-radius:11px;background:rgba(255,255,255,.035);color:#eef0f8;box-shadow:none;font-size:13px;line-height:1.58}.msg.user{justify-self:end;background:rgba(184,137,255,.14);border-color:rgba(184,137,255,.34)}
-    .composer{padding:5px clamp(18px,4vw,62px) 12px;background:linear-gradient(transparent,rgba(5,7,14,.9) 24%)}form{width:min(820px,100%);margin:auto;grid-template-columns:minmax(0,1fr) 38px;gap:7px;padding:7px 8px;border-color:rgba(184,137,255,.3);border-radius:13px;background:rgba(13,16,28,.96);box-shadow:0 18px 46px rgba(0,0,0,.28)}textarea{min-height:36px;padding:8px 7px;background:transparent;color:var(--ai-text);font-size:13px}.send{width:36px;height:36px;border-radius:10px;background:var(--ai-accent);color:#070914}.disclaimer{margin:8px 0 0;color:rgba(238,242,255,.43);font-size:9px;text-align:center}
-    .app{grid-template-columns:minmax(0,1fr);background:radial-gradient(circle at 1px 1px,rgba(184,137,255,.16) 1.2px,transparent 1.4px) 0 0/24px 24px,radial-gradient(720px 460px at 50% 44%,rgba(184,137,255,.13),transparent 72%),var(--ai-bg)}.side{display:none}.standalone-head-brand{min-width:0;display:flex;align-items:center;gap:10px}.standalone-head-brand .mark{width:34px;height:34px;flex:0 0 34px}.head{background:rgba(8,7,13,.72);backdrop-filter:blur(16px)}.model-pill{height:32px;display:flex;align-items:center;gap:7px;padding:0 10px;border:1px solid var(--ai-line);border-radius:999px;background:rgba(184,137,255,.09);font-size:10px;font-weight:700}.welcome{padding:24px;border:1px solid var(--ai-line);border-radius:22px;background:rgba(8,7,13,.58);backdrop-filter:blur(10px)}.starter,.msg,form{background:rgba(8,7,13,.78)}
-    @media(max-width:760px){.feed{padding:18px 12px}.composer{padding-left:12px;padding-right:12px}.starters{grid-template-columns:1fr}.starter{min-height:62px}.welcome{padding:18px 13px}.model-pill strong{display:none}.model-pill{width:31px;padding:0;justify-content:center}}
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/ai-workspace.css?v=20260803-image-attachments-v4">
+  <script src="/js/nyx-logo.js?v=20260717-theme-crescent-v1" defer></script>
+  <script src="/js/ai-workspace.js?v=20260803-image-attachments-v4" defer></script>
 </head>
 <body>
-  <main class="app">
-    <aside class="side">
-      <div class="side-brand"><div class="mark" data-nyx-logo aria-label="Nyx"></div><strong>Nyx AI</strong></div>
-      <button class="new-chat" id="newChat" type="button"><span>＋</span><span>New chat</span></button>
-      <p class="side-label">CONVERSATION</p>
-      <button class="conversation" type="button"><span>▢</span><span><strong>Current chat</strong><small>Saved on this device</small></span></button>
-      <div class="side-space"></div>
-      <div class="model-card"><span class="ready-dot"></span><span><small>MODEL</small><strong>GPT-5.4 Mini</strong></span></div>
-      <select class="model" id="model" aria-label="AI model"><option value="chatgpt-5.4-mini">GPT-5.4 Mini</option></select>
+  <main class="ai-app" data-ai-app>
+    <aside class="ai-sidebar" id="aiSidebar" aria-label="AI conversations">
+      <header class="ai-sidebar-header">
+        <div class="ai-sidebar-brand">
+          <span class="ai-sidebar-brand-mark" data-nyx-logo aria-hidden="true"></span>
+          <span><strong>Nyx AI</strong><small>Workspace</small></span>
+        </div>
+        <button class="ai-sidebar-close" id="sidebarClose" type="button" aria-label="Close conversation sidebar">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg>
+        </button>
+      </header>
+
+      <nav class="ai-sidebar-actions" aria-label="Conversation actions">
+        <button class="ai-new-chat" id="newChat" type="button">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          <span>New chat</span>
+        </button>
+        <button class="ai-temporary-chat" id="temporaryChat" type="button" aria-pressed="false">
+          <span class="ai-sidebar-action-icon"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9M12 7v5l3 2M17 3h4v4"/></svg></span>
+          <span><strong>Temporary chat</strong><small>Not saved to history</small></span>
+        </button>
+      </nav>
+
+      <section class="ai-history" aria-labelledby="aiHistoryTitle">
+        <header><h2 id="aiHistoryTitle">Chats</h2><span id="threadCount">0</span></header>
+        <div class="ai-thread-list" id="threadList" role="list"></div>
+        <p class="ai-history-empty" id="historyEmpty">Your conversations will appear here.</p>
+      </section>
+
+      <footer class="ai-sidebar-footer">
+        <button class="ai-profile-button" id="aiProfile" type="button" aria-label="Open your Nyx profile">
+          <span class="ai-profile-avatar"><img id="profileAvatar" alt="" hidden><span id="profileInitial">N</span></span>
+          <span class="ai-profile-copy"><strong id="profileName">Profile</strong><small id="profileHandle">Open your Nyx profile</small></span>
+          <svg class="ai-profile-chevron" aria-hidden="true" viewBox="0 0 20 20"><path d="m7 4 6 6-6 6"/></svg>
+        </button>
+      </footer>
     </aside>
-    <section class="workspace">
-      <header class="head"><div class="standalone-head-brand"><div class="mark" data-nyx-logo aria-label="Nyx"></div><div class="title"><h1 id="threadTitle">New chat</h1><p id="modelLabel">Nyx AI workspace</p></div></div><div class="actions"><div class="model-pill"><span class="ready-dot"></span><strong>GPT-5.4 Mini</strong></div><button class="clear" id="clear" title="Clear chat" aria-label="Clear chat"><svg width="17" height="17" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M7 6l1 14h8l1-14M10 10v6M14 10v6"/></svg></button></div></header>
-      <section class="feed" id="feed" aria-live="polite"></section>
-      <div class="composer"><form id="form"><textarea id="input" maxlength="4000" placeholder="Ask Nyx AI anything..." aria-label="Message"></textarea><button class="send" id="send" type="submit" title="Send" aria-label="Send">&#8593;</button></form><p class="disclaimer">Nyx AI can make mistakes. Verify important information.</p></div>
+    <button class="ai-sidebar-scrim" id="sidebarScrim" type="button" aria-label="Close conversation sidebar"></button>
+
+    <section class="ai-workspace">
+      <header class="ai-header">
+      <div class="ai-header-inner">
+        <div class="ai-brand">
+          <button class="ai-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Open conversation sidebar" aria-controls="aiSidebar" aria-expanded="false">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+          <div class="ai-brand-mark" data-nyx-logo aria-hidden="true"></div>
+          <div class="ai-brand-copy">
+            <span>NYX INTELLIGENCE</span>
+            <h1>Nyx AI</h1>
+          </div>
+          <span class="ai-header-divider" aria-hidden="true"></span>
+          <p class="ai-thread-title" id="threadTitle">New conversation</p>
+        </div>
+
+        <div class="ai-header-actions">
+          <div class="ai-model-picker" id="modelPicker">
+            <button class="ai-model-trigger" id="modelTrigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="modelMenu">
+              <span class="ai-model-status" aria-hidden="true"></span>
+              <span class="ai-model-selected" id="modelSelected">GPT-5.4 Mini</span>
+              <svg aria-hidden="true" viewBox="0 0 20 20"><path d="m6 8 4 4 4-4"/></svg>
+            </button>
+            <select class="sr-only" id="model" tabindex="-1" aria-hidden="true">
+              <option value="chatgpt-5.4-mini">GPT-5.4 Mini</option>
+            </select>
+            <div class="ai-model-menu" id="modelMenu" role="listbox" aria-label="AI model" tabindex="-1" hidden>
+              <div class="ai-model-menu-header">
+                <strong>Select model</strong>
+                <span data-model-count>1 available</span>
+              </div>
+              <div class="ai-model-options" id="modelOptions"></div>
+            </div>
+          </div>
+          <button class="ai-clear" id="clear" type="button" title="Clear conversation" aria-label="Clear conversation">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M7 6l1 14h8l1-14M10 10v6M14 10v6"/></svg>
+            <span>Clear</span>
+          </button>
+        </div>
+      </div>
+      </header>
+
+      <section class="ai-feed" id="feed" role="log" aria-live="polite" aria-relevant="additions text" aria-busy="false">
+        <div class="ai-conversation" id="conversation"></div>
+      </section>
+
+      <footer class="ai-composer-shell">
+        <div class="ai-composer-wrap">
+          <form class="ai-composer" id="form">
+          <input class="sr-only" id="imageInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" tabindex="-1">
+          <div class="ai-attachment-preview" id="attachmentPreview" hidden>
+            <img id="attachmentThumbnail" alt="Attached image preview">
+            <span class="ai-attachment-copy">
+              <strong id="attachmentName"></strong>
+              <small id="attachmentStatus" aria-live="polite">Ready to send</small>
+            </span>
+            <button class="ai-attachment-remove" id="removeAttachment" type="button" title="Remove image" aria-label="Remove attached image">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg>
+            </button>
+          </div>
+          <label class="sr-only" for="input">Message Nyx AI</label>
+          <textarea id="input" rows="1" maxlength="4000" placeholder="Ask Nyx AI anything…" aria-label="Message Nyx AI"></textarea>
+          <div class="ai-composer-footer">
+            <button class="ai-attach" id="attachImage" type="button" title="Attach an image" aria-label="Attach an image" aria-controls="imageInput">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/><path d="m19 15 2.3-2.3a2.4 2.4 0 0 0-3.4-3.4l-8.2 8.2a4 4 0 0 1-5.7-5.7l8.5-8.5"/></svg>
+            </button>
+            <span class="ai-composer-hint"><kbd>Enter</kbd> to send · <kbd>Shift</kbd> + <kbd>Enter</kbd> for a new line</span>
+            <span class="ai-character-count" id="characterCount" aria-live="off">0 / 4000</span>
+            <button class="ai-send" id="send" type="submit" title="Send message" aria-label="Send message">
+              <svg class="ai-send-arrow" aria-hidden="true" viewBox="0 0 24 24"><path d="m12 19V5m0 0-6 6m6-6 6 6"/></svg>
+              <span class="ai-send-spinner" aria-hidden="true"></span>
+            </button>
+          </div>
+          </form>
+          <p class="ai-disclaimer">Nyx AI can make mistakes. Verify important information.</p>
+        </div>
+      </footer>
     </section>
   </main>
-  <script>
-    const feed=document.getElementById('feed'),form=document.getElementById('form'),input=document.getElementById('input'),send=document.getElementById('send'),model=document.getElementById('model'),modelLabel=document.getElementById('modelLabel'),threadTitle=document.getElementById('threadTitle');
-    const applyLogoTheme=theme=>window.NyxLogo?.apply(theme||localStorage.getItem('nyx.theme')||'default',document);
-    applyLogoTheme();
-    addEventListener('message',event=>{if(event.data?.type==='nyx:theme-sync')applyLogoTheme(event.data.theme)});
-    const key='nyx.aiMessages';
-    function messages(){try{const value=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(value)?value.slice(-40):[]}catch{return[]}}
-    function save(value){localStorage.setItem(key,JSON.stringify(value.slice(-40)))}
-    function welcome(){return `<section class="welcome" id="welcome"><div class="welcome-mark" data-nyx-logo></div><p class="eyebrow">NYX INTELLIGENCE</p><h2>What can I help you with?</h2><p>Ask a question, work through an idea, or start creating.</p><div class="starters"><button class="starter" data-prompt="Explain quantum computing in simple terms"><strong>Explain a complex topic</strong><small>in simple terms</small></button><button class="starter" data-prompt="Write a JavaScript function that parses JSON from an API endpoint"><strong>Help me write code</strong><small>and explain how it works</small></button><button class="starter" data-prompt="Give me five creative startup ideas in the AI space"><strong>Brainstorm new ideas</strong><small>for a creative project</small></button><button class="starter" data-prompt="Write a short dark science-fiction story about a rogue AI"><strong>Create something</strong><small>from a simple prompt</small></button></div></section>`}
-    function add(role,text,error=false){document.getElementById('welcome')?.remove();feed.classList.remove('empty');const el=document.createElement('div');el.className='msg '+(role==='user'?'user':'bot')+(error?' error':'');el.textContent=text;feed.appendChild(el);feed.scrollTop=feed.scrollHeight;return el}
-    function render(){feed.innerHTML='';const saved=messages();if(!saved.length){feed.classList.add('empty');feed.innerHTML=welcome();threadTitle.textContent='New chat';applyLogoTheme()}else{feed.classList.remove('empty');saved.forEach(item=>add(item.role,item.content));const first=saved.find(item=>item.role==='user')?.content||'Current chat';threadTitle.textContent=first.length>54?first.slice(0,54)+'…':first}}
-    const savedModel=localStorage.getItem('nyx.aiModel');if([...model.options].some(option=>option.value===savedModel))model.value=savedModel;
-    function syncModel(){localStorage.setItem('nyx.aiModel',model.value);modelLabel.textContent='Nyx AI workspace'}model.addEventListener('change',syncModel);syncModel();
-    function clearChat(){localStorage.removeItem(key);render();input.focus()}
-    document.getElementById('clear').addEventListener('click',clearChat);
-    document.getElementById('newChat').addEventListener('click',clearChat);
-    feed.addEventListener('click',event=>{const starter=event.target.closest('[data-prompt]');if(!starter)return;input.value=starter.dataset.prompt||'';form.requestSubmit()});
-    input.addEventListener('input',()=>{input.style.height='auto';input.style.height=Math.min(input.scrollHeight,130)+'px'});
-    input.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();form.requestSubmit()}});
-    form.addEventListener('submit',async event=>{event.preventDefault();const prompt=input.value.trim();if(!prompt||send.disabled)return;if(document.getElementById('welcome'))threadTitle.textContent=prompt.length>54?prompt.slice(0,54)+'…':prompt;const history=messages();history.push({role:'user',content:prompt});add('user',prompt);input.value='';input.style.height='auto';send.disabled=true;const pending=add('assistant','Thinking...');let answer='';try{const response=await fetch('/api/nyx-ai',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({model:model.value,message:prompt,messages:history,stream:true})});if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.error||`Nyx AI failed (${response.status})`)}const reader=response.body.getReader(),decoder=new TextDecoder();let buffer='';for(;;){const part=await reader.read();if(part.done)break;buffer+=decoder.decode(part.value,{stream:true});const lines=buffer.split(/\r?\n/);buffer=lines.pop()||'';for(const line of lines){if(!line.startsWith('data:'))continue;const raw=line.slice(5).trim();if(!raw||raw==='[DONE]')continue;try{const data=JSON.parse(raw);const token=data?.choices?.[0]?.delta?.content||data?.choices?.[0]?.text||'';if(token){answer+=token;pending.textContent=answer;feed.scrollTop=feed.scrollHeight}}catch{}}}if(!answer.trim())throw new Error('The model returned an empty response.');history.push({role:'assistant',content:answer.trim()});save(history)}catch(error){pending.textContent=error.message;pending.classList.add('error')}finally{send.disabled=false;input.focus()}});
-    render();input.focus();
-  </script>
 </body>
 </html>

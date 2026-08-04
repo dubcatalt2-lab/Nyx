@@ -21,6 +21,7 @@ const erudaPath = require.resolve("eruda");
 let cinebyAppCache = { source: "", expires: 0 };
 const gameCoverLookupCache = new Map();
 let duckMathGamesCache = { games: [], expires: 0, promise: null };
+let catClassGamesCache = { games: [], expires: 0, promise: null };
 const app = express();
 
 function normalizePublicWispUrl(value) {
@@ -76,6 +77,10 @@ const premiumImmediateCooldownAt = 5;
 const premiumAccumulatedLimit = 30;
 const premiumCooldownMs = 10 * 60 * 1000;
 const premiumGenerationUsage = new Map();
+const downloadSafetyCache = new Map();
+const downloadSafetyAttempts = new Map();
+const downloadSafetyWindowMs = 60_000;
+const downloadSafetyMaxAttempts = 60;
 let linkGeneratorFirebasePromise;
 app.use(express.json({ limit: "2mb" }));
 app.use((error, _req, res, next) => {
@@ -284,6 +289,116 @@ app.get("/duckmath-games", async (_req, res) => {
   }
 });
 
+const catClassCatalogEndpoints = Object.freeze([
+  { id: "catclass", url: "https://catclass.net/json/g.json" },
+  { id: "selenite", url: "https://catclass.net/api/g4m3-sources/selenite" },
+  { id: "velara", url: "https://catclass.net/api/g4m3-sources/velara" },
+  { id: "edurocks", url: "https://catclass.net/api/g4m3-sources/edurocks" },
+  { id: "truffled", url: "https://catclass.net/api/g4m3-sources/truffled" }
+]);
+
+function safeCatalogUrl(value, base) {
+  try {
+    const url = new URL(String(value || "").trim(), base);
+    if (url.protocol !== "https:" && url.protocol !== "http:") return "";
+    url.username = "";
+    url.password = "";
+    url.hash = "";
+    return url.href;
+  } catch {
+    return "";
+  }
+}
+
+function catClassCatalogItems(source, payload) {
+  const items = Array.isArray(payload)
+    ? payload
+    : Array.isArray(payload?.games) ? payload.games : [];
+  return items.flatMap(item => {
+    let title = "";
+    let url = "";
+    let cover = "";
+
+    if (source === "catclass") {
+      title = item?.name;
+      url = safeCatalogUrl(item?.url, "https://catclass.net/");
+      cover = safeCatalogUrl(item?.img, "https://catclass.net/");
+    } else if (source === "selenite") {
+      const directory = String(item?.directory || "").replace(/^\/+/, "");
+      const image = String(item?.image || "").replace(/^\/+/, "");
+      title = item?.name;
+      url = directory ? safeCatalogUrl(directory, "https://selenite.cc/resources/semag/") : "";
+      cover = directory && image
+        ? safeCatalogUrl(`${directory}/${image}`, "https://selenite.cc/resources/semag/")
+        : "";
+    } else if (source === "velara") {
+      title = item?.title;
+      if (!title || title === "!!DMCA" || title === "!!G4m3 Request" || title.includes("[!]") || String(item?.location || "").includes("astra")) return [];
+      url = safeCatalogUrl(item?.location, "https://velara.cc/");
+      cover = safeCatalogUrl(item?.image, "https://velara.cc/");
+    } else if (source === "edurocks") {
+      title = item?.name;
+      if (String(title || "").includes("[!]")) return [];
+      url = safeCatalogUrl(String(item?.url || "").replace(/^\.\//, ""), "https://edunet.climaref.cl/");
+      cover = safeCatalogUrl(String(item?.img || "").replace(/^\.\//, ""), "https://edunet.climaref.cl/");
+    } else if (source === "truffled") {
+      title = item?.name;
+      url = safeCatalogUrl(item?.url, "https://truffled.lol/");
+      cover = safeCatalogUrl(item?.thumbnail, "https://truffled.lol/");
+    }
+
+    title = String(title || "").replace(/\s+/g, " ").trim().slice(0, 120);
+    return title && url ? [{ title, url, cover, provider: source }] : [];
+  });
+}
+
+async function loadCatClassGames() {
+  const now = Date.now();
+  if (catClassGamesCache.games.length && catClassGamesCache.expires > now) return catClassGamesCache.games;
+  if (catClassGamesCache.promise) return catClassGamesCache.promise;
+
+  catClassGamesCache.promise = (async () => {
+    const results = await Promise.allSettled(catClassCatalogEndpoints.map(async source => {
+      const response = await fetch(source.url, {
+        headers: { "accept": "application/json", "user-agent": "nyx/1.0" },
+        signal: AbortSignal.timeout(12_000)
+      });
+      if (!response.ok) throw new Error(`${source.id} returned ${response.status}`);
+      return catClassCatalogItems(source.id, await response.json());
+    }));
+    const games = [];
+    const seen = new Set();
+    for (const result of results) {
+      if (result.status !== "fulfilled") continue;
+      for (const game of result.value) {
+        const key = `${game.title.toLowerCase()}\n${game.url}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        games.push(game);
+      }
+    }
+    if (!games.length) throw new Error("No CatClass catalog source was available");
+    catClassGamesCache = { games, expires: Date.now() + 30 * 60 * 1000, promise: null };
+    return games;
+  })();
+
+  try {
+    return await catClassGamesCache.promise;
+  } finally {
+    catClassGamesCache.promise = null;
+  }
+}
+
+app.get("/catclass-games", async (_req, res) => {
+  try {
+    const games = await loadCatClassGames();
+    res.setHeader("Cache-Control", "public, max-age=300");
+    res.json({ games });
+  } catch (error) {
+    res.status(502).json({ error: `CatClass list network error: ${error?.message || error}` });
+  }
+});
+
 function patchedUvHandler() {
   const source = readFileSync(uvHandlerPath, "utf8");
   const original = "t.respondWith(h?l(t.target,[t.data.message,t.data.transfer],t.that):l(t.target,[t.data.message,t.data.origin,t.data.transfer],t.that))";
@@ -476,12 +591,9 @@ function scramjetRuntimeGuard() {
     }
   };
   const opennyxPopupWarning = () => {
-    const popup = nativeOpen ? nativeOpen("about:blank", "_blank") : null;
-    if (!writeBlocked(popup)) {
-      try {
-        window.parent?.postMessage({ type: "nyx:popup", url: "about:blank" }, "*");
-      } catch {}
-    }
+    // Popup protection must never create a real popup just to display a
+    // warning. Return a browser-like inert handle to the calling site.
+    const popup = null;
     return {
       closed: false,
       focus() { try { popup?.focus?.(); } catch {} },
@@ -503,7 +615,33 @@ function scramjetRuntimeGuard() {
       }
     };
   };
+  const isDownloadUrl = value => {
+    const rawHref = String(value || "").trim();
+    // Blob/data URLs and script-like paths are also used by verification
+    // challenges, workers, and client-side navigation. Treating them as
+    // downloads breaks those flows before they can complete. Explicit
+    // Explicit download links are still handled by isDownloadLink below.
+    if (/^(?:blob|data):/i.test(rawHref)) return false;
+    const href = rawHref.split(/[?#]/)[0].toLowerCase();
+    return /\.(?:apk|appx|bat|bin|cmd|com|crx|deb|dmg|exe|iso|jar|msi|pkg|scr|wsf|zip|7z|rar)$/i.test(href);
+  };
+  const postDownloadRequest = (value, filename = "") => {
+    const href = String(value || "").trim();
+    if (!href || !window.parent || window.parent === window) return false;
+    try {
+      window.parent.postMessage({
+        type: "nyx:download-request",
+        url: href,
+        filename: String(filename || ""),
+        sourceUrl: String(location.href || "")
+      }, "*");
+      return true;
+    } catch {
+      return false;
+    }
+  };
   let guardedOpen = (...args) => {
+    if (isDownloadUrl(args[0]) && postDownloadRequest(args[0])) return null;
     if (!popupProtectionEnabled() && nativeOpen) return nativeOpen(...args);
     return opennyxPopupWarning();
   };
@@ -511,6 +649,7 @@ function scramjetRuntimeGuard() {
     if (typeof nativeOpen === "function" && typeof Proxy === "function") {
       guardedOpen = new Proxy(nativeOpen, {
         apply(target, thisArg, args) {
+          if (isDownloadUrl(args[0]) && postDownloadRequest(args[0])) return null;
           if (!popupProtectionEnabled()) return Reflect.apply(target, thisArg, args);
           return opennyxPopupWarning();
         },
@@ -536,13 +675,10 @@ function scramjetRuntimeGuard() {
     const value = String(target || "").toLowerCase();
     return value && !["_self", "_parent", "_top"].includes(value);
   };
-  const shouldTrapDownloadLink = link => {
+  const isDownloadLink = link => {
     if (!link) return false;
     if (link.hasAttribute("download")) return true;
-    const rawHref = String(link.href || link.getAttribute("href") || "").trim();
-    if (/^(?:blob|data):/i.test(rawHref)) return true;
-    const href = rawHref.split(/[?#]/)[0].toLowerCase();
-    return /\.(?:apk|appx|bat|bin|cmd|com|crx|deb|dmg|exe|iso|jar|js|jse|msi|pkg|ps1|scr|sh|vbs|wsf|zip|7z|rar)$/i.test(href);
+    return isDownloadUrl(link.href || link.getAttribute("href") || "");
   };
   try {
     Object.defineProperty(window, "open", { value: guardedOpen, writable: true, configurable: true });
@@ -552,7 +688,8 @@ function scramjetRuntimeGuard() {
   try {
     const nativeAnchorClick = HTMLAnchorElement.prototype.click;
     HTMLAnchorElement.prototype.click = function() {
-      if (popupProtectionEnabled() && (shouldTrapPopupTarget(this.target) || shouldTrapDownloadLink(this))) {
+      if (isDownloadLink(this) && postDownloadRequest(this.href || this.getAttribute("href"), this.getAttribute("download") || "")) return;
+      if (popupProtectionEnabled() && shouldTrapPopupTarget(this.target)) {
         opennyxPopupWarning();
         return;
       }
@@ -562,17 +699,27 @@ function scramjetRuntimeGuard() {
   if (document && !window.__nyxPopupWarningListeners) {
     window.__nyxPopupWarningListeners = true;
     document.addEventListener("click", event => {
-      if (!popupProtectionEnabled()) return;
       const link = event.target?.closest?.("a[href]");
-      if (!link || (!shouldTrapPopupTarget(link.getAttribute("target")) && !shouldTrapDownloadLink(link))) return;
+      if (!link) return;
+      if (isDownloadLink(link) && postDownloadRequest(link.href || link.getAttribute("href"), link.getAttribute("download") || "")) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+      if (!popupProtectionEnabled() || !shouldTrapPopupTarget(link.getAttribute("target"))) return;
       event.preventDefault();
       event.stopImmediatePropagation();
       opennyxPopupWarning();
     }, true);
     document.addEventListener("auxclick", event => {
-      if (!popupProtectionEnabled()) return;
       const link = event.target?.closest?.("a[href]");
-      if (!link || (!shouldTrapPopupTarget(link.getAttribute("target")) && !shouldTrapDownloadLink(link))) return;
+      if (!link) return;
+      if (isDownloadLink(link) && postDownloadRequest(link.href || link.getAttribute("href"), link.getAttribute("download") || "")) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+      if (!popupProtectionEnabled() || !shouldTrapPopupTarget(link.getAttribute("target"))) return;
       event.preventDefault();
       event.stopImmediatePropagation();
       opennyxPopupWarning();
@@ -1072,11 +1219,123 @@ app.get("/reds-misc-fetch", handleGmsGamesFetch);
 app.get("/reds-misc-proxy", handleGmsGamesProxy);
 
 const nyxAiModels = {
-  "chatgpt-5.4-mini": process.env.NYX_AI_MODEL_CHATGPT_54_MINI || "gpt-5.4-mini"
+  "chatgpt-5.4-mini": process.env.NYX_AI_MODEL_CHATGPT_54_MINI || "navy:gpt-5.4-mini"
 };
 
+const nyxAiFallbackCatalog = [
+  ["llama-3.3-70b-versatile", "Llama 3.3 70B (Versatile)"],
+  ["openai/gpt-oss-120b", "GPT-OSS 120B"],
+  ["qwen/qwen3-32b", "Qwen3 32B"],
+  ["meta-llama/llama-4-scout-17b-16e-instruct", "Llama 4 Scout (Vision)"],
+  ["navy:gpt-5.4-mini", "ChatGPT 5.4 Mini"],
+  ["navy:claude-opus-5", "Claude Opus 5"],
+  ["navy:gpt-4o-mini-search-preview", "GPT-4o Mini Search (Preview)"],
+  ["navy:gemini-3.1-pro-preview", "Gemini 3.1 Pro (Preview)"],
+  ["navy:gemini-3.5-flash", "Gemini 3.5 Flash"],
+  ["navy:grok-4.3", "Grok 4.3"],
+  ["navy:grok-4.1-fast-reasoning", "Grok 4.1 Fast (Reasoning)"],
+  ["navy:deepseek-v4-pro", "DeepSeek V4 Pro"],
+  ["navy:llama-4-scout", "Llama 4 Scout"],
+  ["navy:mistral-medium-latest", "Mistral Medium"],
+  ["navy:kimi-k2.6", "Kimi K2.6"],
+  ["navy:nemotron-3-super", "Nemotron 3 Super"],
+  ["navy:mimo-v2.5-pro", "MiMo V2.5 Pro"],
+  ["navy:c4ai-aya-expanse-32b", "Aya Expanse 32B"],
+  ["navy:gpt-4o", "GPT-4o"],
+  ["navy:kimi-k2.5", "Kimi K2.5"],
+  ["navy:qwen3.5-397b-a17b", "Qwen3.5 397B A17B"],
+  ["navy:hermes-4-405b", "Hermes 4 405B"],
+  ["navy:mistral-medium-3.5", "Mistral Medium 3.5"]
+].map(([id, label]) => ({ id, label }));
+
+let nyxAiCatalogCache = { expiresAt: 0, models: nyxAiFallbackCatalog };
+
 function nyxAiKey() {
-  return process.env.NYX_AI_API_KEY || process.env.OPENROUTER_API_KEY || "";
+  return process.env.NYX_AI_API_KEY || "";
+}
+
+function nyxAiEndpoint() {
+  const explicitEndpoint = String(process.env.NYX_AI_ENDPOINT || "").trim();
+  if (explicitEndpoint) return explicitEndpoint;
+  const baseUrl = String(process.env.NYX_AI_BASE_URL || "https://vilen.sbs").trim().replace(/\/+$/, "");
+  return /\/api\/ai$/i.test(baseUrl) ? baseUrl : `${baseUrl}/api/ai`;
+}
+
+function nyxAiCatalogEndpoint() {
+  const explicitEndpoint = String(process.env.NYX_AI_MODELS_ENDPOINT || "").trim();
+  if (explicitEndpoint) return explicitEndpoint;
+  return `${nyxAiEndpoint().replace(/\/+$/, "")}/config`;
+}
+
+function nyxAiNormalizeCatalog(models) {
+  if (!Array.isArray(models)) return [];
+  const seen = new Set();
+  return models.flatMap(item => {
+    const id = String(item?.id || "").trim();
+    if (!/^[a-z0-9][a-z0-9._:/-]{0,127}$/i.test(id) || seen.has(id) || (item?.audience && item.audience !== "all")) return [];
+    seen.add(id);
+    return [{
+      id,
+      label: String(item?.label || id).trim().slice(0, 100) || id,
+      company: String(item?.company || "").trim().slice(0, 50),
+      vision: Boolean(item?.vision),
+      reasoning: Boolean(item?.reasoning)
+    }];
+  });
+}
+
+async function nyxAiAvailableModels() {
+  const now = Date.now();
+  if (nyxAiCatalogCache.expiresAt > now) return nyxAiCatalogCache.models;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 6000);
+  try {
+    const response = await fetch(nyxAiCatalogEndpoint(), {
+      signal: controller.signal,
+      headers: { accept: "application/json" }
+    });
+    const data = await response.json().catch(() => ({}));
+    const models = response.ok ? nyxAiNormalizeCatalog(data?.models) : [];
+    if (!models.length) throw new Error("The AI model catalog was empty.");
+    nyxAiCatalogCache = { expiresAt: now + 300_000, models };
+  } catch {
+    nyxAiCatalogCache = { expiresAt: now + 60_000, models: nyxAiFallbackCatalog };
+  } finally {
+    clearTimeout(timeout);
+  }
+  return nyxAiCatalogCache.models;
+}
+
+async function nyxAiResolveModel(requestedModel) {
+  const alias = nyxAiModels[requestedModel];
+  if (alias) return alias;
+  const models = await nyxAiAvailableModels();
+  return models.some(item => item.id === requestedModel) ? requestedModel : "";
+}
+
+function nyxAiErrorMessage(data, status) {
+  const error = data?.error;
+  return String(
+    (error && typeof error === "object" ? error.message : error)
+    || data?.message
+    || `Model request failed (${status}).`
+  );
+}
+
+function nyxAiStreamText(data) {
+  if (!data || typeof data !== "object") return "";
+  if (data.type === "delta") return String(data.text || data.delta || "");
+  return String(data?.choices?.[0]?.delta?.content || data?.choices?.[0]?.text || "");
+}
+
+function nyxAiWriteStreamChunk(res, text, model) {
+  if (!text) return;
+  res.write(`data: ${JSON.stringify({
+    id: "nyx-ai",
+    object: "chat.completion.chunk",
+    model,
+    choices: [{ index: 0, delta: { content: String(text) }, finish_reason: null }]
+  })}\n\n`);
 }
 
 const nyxAiUsage = new Map();
@@ -1150,16 +1409,37 @@ setInterval(() => {
   }
 }, 3_600_000).unref();
 
+app.get("/api/nyx-ai/models", async (_req, res) => {
+  const models = await nyxAiAvailableModels();
+  const defaultProviderId = nyxAiModels["chatgpt-5.4-mini"];
+  const exposedModels = models.map(item => item.id === defaultProviderId
+    ? { ...item, id: "chatgpt-5.4-mini", providerId: item.id }
+    : item);
+  if (!exposedModels.some(item => item.id === "chatgpt-5.4-mini")) {
+    exposedModels.unshift({
+      id: "chatgpt-5.4-mini",
+      providerId: defaultProviderId,
+      label: "ChatGPT 5.4 Mini",
+      company: "ChatGPT",
+      vision: true,
+      reasoning: true
+    });
+  }
+  exposedModels.sort((left, right) => Number(right.id === "chatgpt-5.4-mini") - Number(left.id === "chatgpt-5.4-mini"));
+  res.setHeader("cache-control", "public, max-age=60, stale-while-revalidate=240");
+  res.json({ models: exposedModels });
+});
+
 app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   const key = nyxAiKey();
   if (!key) {
     res.status(503).json({
-      error: "Nyx AI is not configured. Set NYX_AI_API_KEY or OPENROUTER_API_KEY in the server environment."
+      error: "Nyx AI is not configured. Set NYX_AI_API_KEY in the server environment."
     });
     return;
   }
   const requestedModel = String(req.body?.model || "chatgpt-5.4-mini");
-  const model = nyxAiModels[requestedModel];
+  const model = await nyxAiResolveModel(requestedModel);
   if (!model) {
     res.status(400).json({ error: "Unknown Nyx AI model." });
     return;
@@ -1186,7 +1466,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     res.status(400).json({ error: "Message is required." });
     return;
   }
-  const baseUrl = String(process.env.NYX_AI_BASE_URL || "https://openrouter.ai/api/v1").replace(/\/+$/, "");
+  const endpoint = nyxAiEndpoint();
   const prompt = imageContext ? `${message || "Answer the attached image."}\n\nImage context from Nyx OCR/analysis:\n${imageContext}` : message;
   const messages = history.length ? history : [{ role: "user", content: prompt }];
   if (history.length && imageContext) messages[messages.length - 1] = { role: "user", content: prompt };
@@ -1195,24 +1475,17 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   const timeout = setTimeout(() => controller.abort(), nyxAiLimits.timeoutMs);
   res.once("close", () => controller.abort());
   try {
-    const upstream = await fetch(`${baseUrl}/chat/completions`, {
+    const upstream = await fetch(endpoint, {
       method: "POST",
       signal: controller.signal,
       headers: {
         "content-type": "application/json",
-        "authorization": `Bearer ${key}`,
-        "http-referer": process.env.NYX_SITE_URL || "http://localhost:8080",
-        "x-title": "Nyx AI"
+        "authorization": `Bearer ${key}`
       },
       body: JSON.stringify({
         model,
-        messages: [
-          {
-            role: "system",
-            content: "You are Nyx AI inside the Nyx browser. Be helpful, direct, and accurate. If you do not know something, say so plainly."
-          },
-          ...messages
-        ],
+        system: "You are Nyx AI inside the Nyx browser. Be helpful, direct, and accurate. If you do not know something, say so plainly.",
+        messages,
         temperature: Number(process.env.NYX_AI_TEMPERATURE || 0.7),
         max_tokens: Number(process.env.NYX_AI_MAX_TOKENS || 1200),
         stream: wantsStream
@@ -1227,22 +1500,45 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       const reader = upstream.body?.getReader();
       if (!reader) throw new Error("AI provider did not return a response stream.");
       const decoder = new TextDecoder();
+      let buffer = "";
       for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
-        res.write(decoder.decode(value, { stream: true }));
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split(/\r?\n/);
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          if (!line.startsWith("data:")) continue;
+          const raw = line.slice(5).trim();
+          if (!raw || raw === "[DONE]") continue;
+          const event = JSON.parse(raw);
+          if (event?.type === "error") {
+            nyxAiWriteStreamChunk(res, `Nyx AI error: ${nyxAiErrorMessage(event, upstream.status)}`, model);
+            continue;
+          }
+          nyxAiWriteStreamChunk(res, nyxAiStreamText(event), model);
+        }
       }
+      buffer += decoder.decode();
+      if (buffer.trim().startsWith("data:")) {
+        const raw = buffer.trim().slice(5).trim();
+        if (raw && raw !== "[DONE]") {
+          const event = JSON.parse(raw);
+          nyxAiWriteStreamChunk(res, nyxAiStreamText(event), model);
+        }
+      }
+      res.write("data: [DONE]\n\n");
       res.end();
       return;
     }
     const data = await upstream.json().catch(() => ({}));
     if (!upstream.ok) {
       res.status(upstream.status).json({
-        error: data?.error?.message || data?.message || `Model request failed (${upstream.status}).`
+        error: nyxAiErrorMessage(data, upstream.status)
       });
       return;
     }
-    const text = data?.choices?.[0]?.message?.content || data?.choices?.[0]?.text || "";
+    const text = data?.response || data?.text || data?.choices?.[0]?.message?.content || data?.choices?.[0]?.text || "";
     res.json({ text: String(text || "").trim(), model });
   } catch (error) {
     if (!res.headersSent) {
@@ -1767,12 +2063,16 @@ function safeActivityTime(value) {
 
 function normalizeNyxRole(value) {
   const role = String(value || "").trim().toLowerCase();
-  return ["admin", "developer", "moderator", "member"].includes(role) ? role : "member";
+  return ["co_owner", "admin", "manager", "developer", "moderator", "support", "tester", "contributor", "member"].includes(role) ? role : "member";
 }
 
 function normalizeSubscriptionStatus(value) {
   const status = String(value || "").trim().toLowerCase();
   return ["free", "premium", "trialing", "past_due", "canceled"].includes(status) ? status : "free";
+}
+
+function hasPremiumSubscription(value) {
+  return ["premium", "trialing"].includes(normalizeSubscriptionStatus(value));
 }
 
 function nyxDeliverableEmail(value) {
@@ -2010,6 +2310,128 @@ function linkGeneratorRateState(clientId, now = Date.now()) {
   return state;
 }
 
+function normalizedDownloadSafetyUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw || raw.length > 4096) return null;
+  try {
+    const url = new URL(raw);
+    if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) return null;
+    url.hash = "";
+    return url;
+  } catch {
+    return null;
+  }
+}
+
+function downloadSafetyFileRisk(url, filename = "") {
+  const candidate = `${String(url?.pathname || "")} ${String(filename || "")}`.toLowerCase();
+  const executable = /\.(?:apk|appx|bat|cmd|com|crx|deb|dmg|exe|iso|jar|jse|msi|pkg|ps1|scr|sh|vbs|wsf)(?:$|[\s?#])/i.test(candidate);
+  const archive = /\.(?:7z|rar|tar|tgz|zip)(?:$|[\s?#])/i.test(candidate);
+  return executable ? "executable" : (archive ? "archive" : "ordinary");
+}
+
+function downloadSafetyRateState(clientId, now = Date.now()) {
+  for (const [key, state] of downloadSafetyAttempts) {
+    if (now - state.windowStarted > downloadSafetyWindowMs) downloadSafetyAttempts.delete(key);
+  }
+  let state = downloadSafetyAttempts.get(clientId);
+  if (!state || now - state.windowStarted > downloadSafetyWindowMs) {
+    state = { attempts: 0, windowStarted: now };
+    downloadSafetyAttempts.set(clientId, state);
+  }
+  return state;
+}
+
+async function googleSafeBrowsingLookup(url) {
+  const apiKey = String(process.env.NYX_SAFE_BROWSING_API_KEY || process.env.GOOGLE_SAFE_BROWSING_API_KEY || "").trim();
+  if (!apiKey) return { configured: false, matches: [] };
+  const cacheKey = url.href;
+  const cached = downloadSafetyCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 7_000);
+  try {
+    const response = await fetch(`https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${encodeURIComponent(apiKey)}`, {
+      method: "POST",
+      signal: controller.signal,
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        client: { clientId: "nyx-browser", clientVersion: "1.0.0" },
+        threatInfo: {
+          threatTypes: ["MALWARE", "SOCIAL_ENGINEERING", "UNWANTED_SOFTWARE", "POTENTIALLY_HARMFUL_APPLICATION"],
+          platformTypes: ["ANY_PLATFORM"],
+          threatEntryTypes: ["URL"],
+          threatEntries: [{ url: url.href }]
+        }
+      })
+    });
+    if (!response.ok) throw new Error(`Safe Browsing returned ${response.status}`);
+    const payload = await response.json().catch(() => ({}));
+    const matches = Array.isArray(payload.matches) ? payload.matches.map(match => String(match?.threatType || "UNKNOWN")).filter(Boolean) : [];
+    const value = { configured: true, matches };
+    downloadSafetyCache.set(cacheKey, { expiresAt: Date.now() + 10 * 60_000, value });
+    return value;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+app.post("/api/download-safety/check", async (req, res) => {
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-site download checks are not allowed." });
+    return;
+  }
+  const rate = downloadSafetyRateState(linkGeneratorClientId(req));
+  rate.attempts += 1;
+  if (rate.attempts > downloadSafetyMaxAttempts) {
+    res.set("Retry-After", String(Math.ceil(downloadSafetyWindowMs / 1000)));
+    res.status(429).json({ error: "Too many download checks. Try again in a minute." });
+    return;
+  }
+  const target = normalizedDownloadSafetyUrl(req.body?.url);
+  if (!target) {
+    res.status(400).json({ error: "A valid HTTP or HTTPS download URL is required." });
+    return;
+  }
+  const fileRisk = downloadSafetyFileRisk(target, req.body?.filename);
+  try {
+    const lookup = await googleSafeBrowsingLookup(target);
+    const threats = [...new Set(lookup.matches)];
+    const blocked = threats.length > 0;
+    const caution = !blocked && fileRisk !== "ordinary";
+    res.setHeader("cache-control", "no-store");
+    res.json({
+      verdict: blocked ? "blocked" : (caution ? "caution" : (lookup.configured ? "clear" : "unverified")),
+      provider: lookup.configured ? "Google Safe Browsing" : "Nyx local checks",
+      providerConfigured: lookup.configured,
+      threats,
+      fileRisk,
+      urlChecked: lookup.configured,
+      fileScanned: false,
+      message: blocked
+        ? "This download URL matches a known threat list."
+        : (caution
+          ? `This is ${fileRisk === "executable" ? "an executable or installable file" : "an archive"}; inspect it carefully before opening it.`
+          : (lookup.configured
+            ? "No known URL threat was reported. The file contents were not antivirus-scanned."
+            : "URL reputation checking is not configured on this Nyx server. The file contents were not antivirus-scanned."))
+    });
+  } catch (error) {
+    console.warn("Nyx download safety lookup failed:", error?.message || error);
+    res.setHeader("cache-control", "no-store");
+    res.json({
+      verdict: fileRisk === "ordinary" ? "unverified" : "caution",
+      provider: "Nyx local checks",
+      providerConfigured: true,
+      threats: [],
+      fileRisk,
+      urlChecked: false,
+      fileScanned: false,
+      message: "The URL reputation service could not be reached. The file contents were not antivirus-scanned."
+    });
+  }
+});
+
 function nyxAccountSignInRateState(clientId, now = Date.now()) {
   for (const [key, state] of nyxAccountSignInAttempts) {
     if (now - state.windowStarted > nyxAccountSignInWindowMs) nyxAccountSignInAttempts.delete(key);
@@ -2184,7 +2606,7 @@ async function adjustPremiumGeneration(firebase, reservation, created) {
   }
 }
 
-async function authenticatedFreeUser(req) {
+async function authenticatedLinkGeneratorUser(req) {
   const match = String(req.get("authorization") || "").match(/^Bearer\s+(.+)$/i);
   if (!match) {
     const error = new Error("Sign in with a verified account or enter your Premium access code.");
@@ -2205,12 +2627,16 @@ async function authenticatedFreeUser(req) {
     error.status = 401;
     throw error;
   }
-  if (!token.email_verified) {
+  const administration = await firebase.firestore.collection("nyxUserAdministration").doc(token.uid).get();
+  const administrationData = administration.data() || {};
+  const subscriptionStatus = normalizeSubscriptionStatus(administrationData.subscriptionStatus || administrationData.subscription?.status);
+  const premiumAccess = hasPremiumSubscription(subscriptionStatus);
+  if (!token.email_verified && !premiumAccess) {
     const error = new Error("Verify your email address before generating free links.");
     error.status = 403;
     throw error;
   }
-  return { firebase, uid: token.uid };
+  return { firebase, uid: token.uid, subscriptionStatus, premiumAccess };
 }
 
 function generatedPullZoneName(label) {
@@ -2546,12 +2972,16 @@ app.get("/api/account/me", async (req, res) => {
       firebase.auth.getUser(token.uid),
       firebase.firestore.collection("nyxUserAdministration").doc(token.uid).get()
     ]);
-    const role = token.uid === founderProfileConfig().administratorUid ? "owner" : normalizeNyxRole(administration.data()?.role);
+    const administrationData = administration.data() || {};
+    const role = token.uid === founderProfileConfig().administratorUid ? "owner" : normalizeNyxRole(administrationData.role);
+    const subscriptionStatus = normalizeSubscriptionStatus(administrationData.subscriptionStatus || administrationData.subscription?.status);
     res.json({
       uid: token.uid,
       email: nyxDeliverableEmail(account.email) ? String(account.email) : "",
       emailVerified: Boolean(account.emailVerified),
-      role
+      role,
+      subscriptionStatus,
+      premiumAccess: hasPremiumSubscription(subscriptionStatus)
     });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "Account information is unavailable." });
@@ -2809,6 +3239,120 @@ app.post("/api/profile-media/:kind/:uploadId/complete", async (req, res) => {
   }
 });
 
+app.put("/api/owner-dashboard/users/:uid/profile-media/:kind/:uploadId/:index", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  const uid = String(req.params.uid || "").trim();
+  const kind = String(req.params.kind || "").trim().toLowerCase();
+  const uploadId = String(req.params.uploadId || "").trim();
+  const index = Number.parseInt(String(req.params.index || ""), 10);
+  const totalChunks = Number.parseInt(String(req.body?.totalChunks || ""), 10);
+  const mime = String(req.body?.mime || "").trim().toLowerCase();
+  const chunk = String(req.body?.chunk || "").trim();
+  if (
+    !/^[A-Za-z0-9_-]{8,128}$/.test(uid) ||
+    !["avatar", "banner"].includes(kind) ||
+    !/^[A-Za-z0-9_-]{12,80}$/.test(uploadId) ||
+    !Number.isInteger(index) ||
+    index < 0 ||
+    !Number.isInteger(totalChunks) ||
+    totalChunks < 1 ||
+    totalChunks > profileMediaChunkCountLimit ||
+    index >= totalChunks ||
+    !/^image\/(?:gif|png|jpeg|webp)$/.test(mime) ||
+    !chunk ||
+    chunk.length > profileMediaChunkLimit ||
+    !/^[A-Za-z0-9+/=]+$/.test(chunk)
+  ) {
+    res.status(400).json({ error: "That profile media chunk is invalid." });
+    return;
+  }
+  try {
+    const { firebase, token } = await ownerDashboardActor(req);
+    await firebase.auth.getUser(uid);
+    const mediaId = nyxProfileMediaDocumentId(uid, kind, uploadId);
+    const mediaRef = firebase.firestore.collection("nyxProfileMedia").doc(mediaId);
+    const chunkRef = mediaRef.collection("chunks").doc(String(index).padStart(3, "0"));
+    await Promise.all([
+      mediaRef.set({
+        ownerUid: uid,
+        uploadedByUid: token.uid,
+        kind,
+        mime,
+        totalChunks,
+        updatedAt: new Date().toISOString()
+      }, { merge: true }),
+      chunkRef.set({ index, chunk })
+    ]);
+    res.json({ received: index });
+  } catch (error) {
+    const status = error.code === "auth/user-not-found" ? 404 : (error.status || 503);
+    res.status(status).json({ error: status === 404 ? "User not found." : (error.message || "Profile media could not be uploaded.") });
+  }
+});
+
+app.post("/api/owner-dashboard/users/:uid/profile-media/:kind/:uploadId/complete", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  const uid = String(req.params.uid || "").trim();
+  const kind = String(req.params.kind || "").trim().toLowerCase();
+  const uploadId = String(req.params.uploadId || "").trim();
+  if (
+    !/^[A-Za-z0-9_-]{8,128}$/.test(uid) ||
+    !["avatar", "banner"].includes(kind) ||
+    !/^[A-Za-z0-9_-]{12,80}$/.test(uploadId)
+  ) {
+    res.status(400).json({ error: "That profile media upload is invalid." });
+    return;
+  }
+  try {
+    const { firebase } = await ownerDashboardActor(req);
+    await firebase.auth.getUser(uid);
+    const mediaId = nyxProfileMediaDocumentId(uid, kind, uploadId);
+    const mediaRef = firebase.firestore.collection("nyxProfileMedia").doc(mediaId);
+    const mediaSnapshot = await mediaRef.get();
+    const media = mediaSnapshot.data() || {};
+    const totalChunks = Number(media.totalChunks || 0);
+    if (
+      !mediaSnapshot.exists ||
+      media.ownerUid !== uid ||
+      media.kind !== kind ||
+      totalChunks < 1 ||
+      totalChunks > profileMediaChunkCountLimit
+    ) {
+      res.status(404).json({ error: "That profile media upload was not found." });
+      return;
+    }
+    const chunkSnapshots = await Promise.all(
+      Array.from({ length: totalChunks }, (_, chunkIndex) =>
+        mediaRef.collection("chunks").doc(String(chunkIndex).padStart(3, "0")).get()
+      )
+    );
+    const encodedLength = chunkSnapshots.reduce((total, snapshot, chunkIndex) => {
+      const data = snapshot.data() || {};
+      return total + (snapshot.exists && data.index === chunkIndex ? String(data.chunk || "").length : profileMediaEncodedLimit + 1);
+    }, 0);
+    if (encodedLength < 1 || encodedLength > profileMediaEncodedLimit) {
+      res.status(413).json({ error: "That profile image is too large or incomplete." });
+      return;
+    }
+    const finalChunk = String(chunkSnapshots.at(-1)?.data()?.chunk || "");
+    const padding = finalChunk.endsWith("==") ? 2 : (finalChunk.endsWith("=") ? 1 : 0);
+    const byteLength = Math.floor(encodedLength * 3 / 4) - padding;
+    await mediaRef.set({ complete: true, encodedLength, byteLength, completedAt: new Date().toISOString() }, { merge: true });
+    res.json({ url: `/api/profile-media/${uid}/${kind}/${uploadId}` });
+  } catch (error) {
+    const status = error.code === "auth/user-not-found" ? 404 : (error.status || 503);
+    res.status(status).json({ error: status === 404 ? "User not found." : (error.message || "Profile media could not be completed.") });
+  }
+});
+
 app.get("/api/profile-media/:uid/:kind/:uploadId/manifest", async (req, res) => {
   const values = nyxProfileMediaRouteValues(req);
   if (!firebaseAdminModeConfigured()) {
@@ -2905,6 +3449,46 @@ app.get("/api/profile-media/:uid/:kind/:uploadId", async (req, res) => {
   }
 });
 
+app.get("/api/profiles", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const { firebase, token } = await authenticatedNyxUser(req);
+    const search = String(req.query.search || "").trim().toLowerCase().slice(0, 80);
+    const snapshot = await firebase.firestore.collection("nyxUserProfiles").limit(250).get();
+    const uids = snapshot.docs.map(document => document.id);
+    const [administration, activity] = await Promise.all([
+      firestoreDocumentsById(firebase.firestore, "nyxUserAdministration", uids),
+      firestoreDocumentsById(firebase.firestore, "nyxUserActivity", uids)
+    ]);
+    const ownerUid = founderProfileConfig().administratorUid;
+    const now = Date.now();
+    const profiles = snapshot.docs.map(document => {
+      const data = document.data() || {};
+      const profile = normalizeNyxUserProfile(data.profile, { uid: document.id });
+      const activityData = activity.get(document.id) || {};
+      const lastActiveAtMs = safeActivityTime(activityData.lastActiveAtMs || activityData.lastActiveAt);
+      return {
+        uid: document.id,
+        profile,
+        role: document.id === ownerUid ? "owner" : normalizeNyxRole(administration.get(document.id)?.role),
+        online: Boolean(lastActiveAtMs && now - lastActiveAtMs <= signedInOnlineWindowMs),
+        createdAt: safeDateIso(data.createdAt),
+        self: document.id === token.uid
+      };
+    }).filter(entry => {
+      if (!search) return true;
+      return [entry.profile.displayName, entry.profile.handle, entry.role].some(value => String(value || "").toLowerCase().includes(search));
+    }).sort((left, right) => {
+      if (left.self !== right.self) return left.self ? -1 : 1;
+      if (left.online !== right.online) return left.online ? -1 : 1;
+      return String(left.profile.displayName || "").localeCompare(String(right.profile.displayName || ""), undefined, { sensitivity: "base", numeric: true });
+    }).slice(0, 40);
+    res.json({ profiles, total: profiles.length });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Profiles are unavailable." });
+  }
+});
+
 app.get("/api/profiles/:uid", async (req, res) => {
   res.set("Cache-Control", "no-store");
   const uid = String(req.params.uid || "").trim();
@@ -2935,13 +3519,26 @@ app.post("/api/activity/heartbeat", async (req, res) => {
   try {
     const { firebase, token } = await authenticatedNyxUser(req);
     const now = Date.now();
-    await firebase.firestore.collection("nyxUserActivity").doc(token.uid).set({
-      lastActiveAt: new Date(now).toISOString(),
-      lastActiveAtMs: now,
-      onlineUntilMs: now + signedInOnlineWindowMs,
-      updatedAt: new Date(now).toISOString()
-    }, { merge: true });
-    res.json({ ok: true, onlineUntil: new Date(now + signedInOnlineWindowMs).toISOString() });
+    const administrationRef = firebase.firestore.collection("nyxUserAdministration").doc(token.uid);
+    const [, administration] = await Promise.all([
+      firebase.firestore.collection("nyxUserActivity").doc(token.uid).set({
+        lastActiveAt: new Date(now).toISOString(),
+        lastActiveAtMs: now,
+        onlineUntilMs: now + signedInOnlineWindowMs,
+        updatedAt: new Date(now).toISOString()
+      }, { merge: true }),
+      administrationRef.get()
+    ]);
+    const administrationData = administration.data() || {};
+    const role = token.uid === founderProfileConfig().administratorUid ? "owner" : normalizeNyxRole(administrationData.role);
+    const subscriptionStatus = normalizeSubscriptionStatus(administrationData.subscriptionStatus || administrationData.subscription?.status);
+    res.json({
+      ok: true,
+      onlineUntil: new Date(now + signedInOnlineWindowMs).toISOString(),
+      role,
+      subscriptionStatus,
+      premiumAccess: hasPremiumSubscription(subscriptionStatus)
+    });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "Activity could not be updated." });
   }
@@ -3528,15 +4125,17 @@ app.post("/api/link-generator", async (req, res) => {
 
   let publicUser = null;
   try {
-    if (!administrator) publicUser = await authenticatedFreeUser(req);
+    if (!administrator) publicUser = await authenticatedLinkGeneratorUser(req);
   } catch (error) {
     res.status(error.status || 401).json({ error: error.message });
     return;
   }
 
+  const premiumAccount = Boolean(publicUser?.premiumAccess);
+  const premiumAccess = administrator || premiumAccount;
   const rawAmount = req.body?.amount === undefined ? 1 : Number(req.body.amount);
-  const amount = administrator ? rawAmount : 1;
-  if (administrator && (!Number.isInteger(rawAmount) || rawAmount < 1 || rawAmount > config.premiumBatchLimit)) {
+  const amount = premiumAccess ? rawAmount : 1;
+  if (premiumAccess && (!Number.isInteger(rawAmount) || rawAmount < 1 || rawAmount > config.premiumBatchLimit)) {
     res.status(400).json({ error: `Premium batches can contain between 1 and ${config.premiumBatchLimit} links.` });
     return;
   }
@@ -3548,15 +4147,16 @@ app.post("/api/link-generator", async (req, res) => {
     const zonesPayload = await bunnyRequest("/pullzone?page=1&perPage=1000", config.apiKey);
     const zones = Array.isArray(zonesPayload) ? zonesPayload : Array.isArray(zonesPayload?.Items) ? zonesPayload.Items : [];
     const generatedZones = zones.filter(zone => normalizedOrigin(zone?.OriginUrl) === config.origin);
-    if (!administrator && generatedZones.length >= config.maxZones) {
+    if (!premiumAccess && generatedZones.length >= config.maxZones) {
       res.status(409).json({ error: "The public Link Generator has reached its zone limit. Ask the Nyx administrator to remove an old generated link." });
       return;
     }
 
-    if (publicUser) reservation = await reserveFreeLink(publicUser.firebase, publicUser.uid, clientId);
-    if (administrator) {
-      premiumFirebase = await linkGeneratorFirebase();
-      premiumReservation = await reservePremiumGeneration(premiumFirebase, clientId, amount, now);
+    if (publicUser && !premiumAccount) reservation = await reserveFreeLink(publicUser.firebase, publicUser.uid, clientId);
+    if (premiumAccess) {
+      premiumFirebase = publicUser?.firebase || await linkGeneratorFirebase();
+      const premiumIdentity = premiumAccount ? `account:${publicUser.uid}` : clientId;
+      premiumReservation = await reservePremiumGeneration(premiumFirebase, premiumIdentity, amount, now);
     }
 
     const links = [];
@@ -3579,7 +4179,7 @@ app.post("/api/link-generator", async (req, res) => {
       }
     }
     if (!links.length && generationError) throw generationError;
-    if (administrator && premiumReservation && links.length < amount) {
+    if (premiumAccess && premiumReservation && links.length < amount) {
       premiumReservation = await adjustPremiumGeneration(premiumFirebase, premiumReservation, links.length);
     }
     const first = links[0];
@@ -3593,9 +4193,10 @@ app.post("/api/link-generator", async (req, res) => {
       partial: Boolean(generationError),
       warning: generationError ? `Bunny stopped the batch after ${links.length} of ${amount} links: ${generationError.message}` : "",
       origin: config.origin,
-      access: administrator ? "administrator" : "account",
-      remaining: administrator ? null : reservation?.remaining,
-      premiumCooldown: administrator ? {
+      access: administrator ? "administrator" : (premiumAccount ? "premium" : "account"),
+      subscriptionStatus: publicUser?.subscriptionStatus || (administrator ? "premium" : "free"),
+      remaining: premiumAccess ? null : reservation?.remaining,
+      premiumCooldown: premiumAccess ? {
         triggered: Boolean(premiumReservation?.cooldownTriggered),
         cooldownUntil: premiumReservation?.cooldownUntil || 0,
         accumulated: premiumReservation?.accumulated || 0,
@@ -3606,7 +4207,7 @@ app.post("/api/link-generator", async (req, res) => {
     });
   } catch (error) {
     if (publicUser && reservation) await releaseFreeLink(publicUser.firebase, reservation);
-    if (administrator && premiumReservation) await adjustPremiumGeneration(premiumFirebase, premiumReservation, 0);
+    if (premiumAccess && premiumReservation) await adjustPremiumGeneration(premiumFirebase, premiumReservation, 0);
     if (!error.status || error.status >= 500) console.error("Nyx Link Generator failed:", error?.message || error);
     if (error.retryAfter) res.set("Retry-After", String(error.retryAfter));
     res.status(error.status || 502).json({ error: error.status ? error.message : `Bunny could not create the link: ${String(error?.message || "Unknown error")}` });

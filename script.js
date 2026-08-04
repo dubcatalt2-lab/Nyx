@@ -37,6 +37,7 @@
   let nyxFounderSignedInUser=null;
   let nyxFounderIsOwner=false;
   let nyxUserAccountRole='member';
+  let nyxUserSubscriptionStatus='free';
   let nyxUserAccountEmail='';
   let nyxFounderAuthReadyPromise=null;
   let nyxFirebaseTokenPromise=null;
@@ -233,6 +234,17 @@
   }
   function nyxAccountUsername(value){return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_.-]/g,'').slice(0,32)}
   function nyxAccountEmail(username){return `${nyxAccountUsername(username)}@account.nyx.local`}
+  function nyxHasPremiumSubscription(value=nyxUserSubscriptionStatus){return ['premium','trialing'].includes(String(value||'').trim().toLowerCase())}
+  function syncNyxAccountEntitlements(account={}){
+    const previousStatus=nyxUserSubscriptionStatus;
+    if(account.role)nyxUserAccountRole=String(account.role||'member');
+    if(account.subscriptionStatus)nyxUserSubscriptionStatus=String(account.subscriptionStatus||'free').toLowerCase();
+    document.body.dataset.nyxSubscription=nyxUserSubscriptionStatus;
+    document.body.classList.toggle('nyx-premium-account',nyxHasPremiumSubscription());
+    if(previousStatus!==nyxUserSubscriptionStatus){
+      dispatchEvent(new CustomEvent('nyx:subscription-change',{detail:{subscriptionStatus:nyxUserSubscriptionStatus,premiumAccess:nyxHasPremiumSubscription()}}));
+    }
+  }
   function nyxUserImage(value,fallback=''){const raw=String(value||'').trim();if(!raw)return fallback;if(/^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(raw)&&raw.length<=NYX_PROFILE_MEDIA_DATA_LIMIT)return raw.replace(/\s/g,'');return nyxFounderUrl(raw,fallback)}
   function nyxDisplayNameStyleClass(profile={}){
     return `nyx-styled-display-name nyx-name-font-${profile.displayNameFont||'gg-sans'} nyx-name-effect-${profile.displayNameEffect||'solid'}`;
@@ -304,7 +316,7 @@
       ]);
       nyxUserProfile=normalizeNyxUserProfile(data.profile);
       nyxUserProfileCreatedAt=String(data.createdAt||'');
-      nyxUserAccountRole=String(account.role||'member');
+      syncNyxAccountEntitlements(account);
       nyxUserAccountEmail=String(account.email||'');
       syncFounderOwnerControls();
       return {...data,account};
@@ -327,6 +339,10 @@
           options.headers.Authorization=`Bearer ${token}`;
           response=await fetch(path,options);
         }
+      }
+      if(response.ok&&path.endsWith('/heartbeat')){
+        const account=await response.json().catch(()=>null);
+        if(account)syncNyxAccountEntitlements(account);
       }
     }catch{}
   }
@@ -354,6 +370,7 @@
       edit:'<path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/>',
       switch:'<path d="m16 3 4 4-4 4"/><path d="M20 7H9a4 4 0 0 0-4 4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h11a4 4 0 0 0 4-4"/>',
       id:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 9v6M12 9v6M16 12h.01"/>',
+      people:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
       dashboard:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
       chevron:'<path d="m9 18 6-6-6-6"/>'
     };
@@ -394,7 +411,7 @@
     menu.style.setProperty('--nyx-user-banner-color',profile.bannerColor);
     menu.style.cssText+=nyxProfileEffectVars(profile);
     const ownerControls=nyxFounderIsOwner?`<div class="nyx-account-menu-group nyx-account-menu-owner"><button type="button" role="menuitem" data-nyx-account-menu-action="owner-dashboard">${nyxAccountMenuIcon('dashboard')}<span>Owner Dashboard</span>${nyxAccountMenuIcon('chevron')}</button></div>`:'';
-    menu.innerHTML=`<i class="nyx-user-profile-effect nyx-account-menu-profile-effect" aria-hidden="true"></i><div class="nyx-account-menu-banner">${banner}</div><div class="nyx-account-menu-profile"><div class="nyx-account-menu-avatar nyx-avatar-decoration-${esc(profile.avatarDecoration)}">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i></div><span class="nyx-account-menu-status">${esc(profile.customStatus||statusLabel)}</span><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p class="nyx-account-menu-handle">${esc(profile.handle)}</p><p class="nyx-account-menu-bio">${esc(profile.bio||'No bio yet.')}</p></div>${ownerControls}<div class="nyx-account-menu-group"><button type="button" role="menuitem" data-nyx-account-menu-action="edit">${nyxAccountMenuIcon('edit')}<span>Edit Profile</span></button><hr><button type="button" role="menuitem" data-nyx-account-menu-action="status"><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-hidden="true"></i><span>${esc(statusLabel)}</span>${nyxAccountMenuIcon('chevron')}</button></div><div class="nyx-account-menu-group"><button type="button" role="menuitem" data-nyx-account-menu-action="switch">${nyxAccountMenuIcon('switch')}<span>Switch Accounts</span>${nyxAccountMenuIcon('chevron')}</button><hr><button type="button" role="menuitem" data-nyx-account-menu-action="copy-id">${nyxAccountMenuIcon('id')}<span>Copy User ID</span></button></div>`;
+    menu.innerHTML=`<i class="nyx-user-profile-effect nyx-account-menu-profile-effect" aria-hidden="true"></i><div class="nyx-account-menu-banner">${banner}</div><div class="nyx-account-menu-profile"><div class="nyx-account-menu-avatar nyx-avatar-decoration-${esc(profile.avatarDecoration)}">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i></div><span class="nyx-account-menu-status">${esc(profile.customStatus||statusLabel)}</span><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p class="nyx-account-menu-handle">${esc(profile.handle)}</p><p class="nyx-account-menu-bio">${esc(profile.bio||'No bio yet.')}</p></div>${ownerControls}<div class="nyx-account-menu-group"><button type="button" role="menuitem" data-nyx-account-menu-action="edit">${nyxAccountMenuIcon('edit')}<span>Edit Profile</span></button><button type="button" role="menuitem" data-nyx-account-menu-action="profiles">${nyxAccountMenuIcon('people')}<span>Browse Profiles</span>${nyxAccountMenuIcon('chevron')}</button><hr><button type="button" role="menuitem" data-nyx-account-menu-action="status"><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-hidden="true"></i><span>${esc(statusLabel)}</span>${nyxAccountMenuIcon('chevron')}</button></div><div class="nyx-account-menu-group"><button type="button" role="menuitem" data-nyx-account-menu-action="switch">${nyxAccountMenuIcon('switch')}<span>Switch Accounts</span>${nyxAccountMenuIcon('chevron')}</button><hr><button type="button" role="menuitem" data-nyx-account-menu-action="copy-id">${nyxAccountMenuIcon('id')}<span>Copy User ID</span></button></div>`;
     document.body.appendChild(menu);
     syncNyxAccountButtonAvatar(menu.querySelector('.nyx-account-menu-avatar'),profile);
     const bannerHost=menu.querySelector('.nyx-account-menu-banner');
@@ -440,6 +457,101 @@
       getToken:()=>nyxGetFirebaseToken(true),
       toast
     });
+  }
+  async function openNyxProfileDirectory(){
+    closeNyxAccountMenu();
+    if(!nyxFounderSignedInUser){await openNyxAccountAccess();if(!nyxFounderSignedInUser)return}
+    document.querySelector('.nyx-profile-directory-overlay')?.remove();
+    const overlay=document.createElement('div');
+    overlay.className='nyx-profile-directory-overlay';
+    overlay.innerHTML=`<section class="nyx-profile-directory" role="dialog" aria-modal="true" aria-labelledby="nyxProfileDirectoryTitle">
+      <header class="nyx-profile-directory-header"><div><span>NYX COMMUNITY</span><h2 id="nyxProfileDirectoryTitle">Browse Profiles</h2><p>Discover the people using Nyx.</p></div><button type="button" data-close-profile-directory aria-label="Close profile browser">&#215;</button></header>
+      <div class="nyx-profile-directory-layout">
+        <aside class="nyx-profile-directory-sidebar">
+          <label class="nyx-profile-directory-search">${nyxAccountMenuIcon('people')}<input type="search" data-profile-directory-search placeholder="Search name, username, or role" autocomplete="off"></label>
+          <p data-profile-directory-summary>Loading profiles…</p>
+          <div class="nyx-profile-directory-results" data-profile-directory-results aria-live="polite"></div>
+        </aside>
+        <main class="nyx-profile-directory-view" data-profile-directory-view><div class="nyx-profile-directory-empty"><span>${nyxAccountMenuIcon('people')}</span><h3>Select a profile</h3><p>Choose someone to view their public Nyx profile.</p></div></main>
+      </div>
+    </section>`;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(()=>overlay.classList.add('show'));
+    const resultsHost=overlay.querySelector('[data-profile-directory-results]');
+    const view=overlay.querySelector('[data-profile-directory-view]');
+    const summary=overlay.querySelector('[data-profile-directory-summary]');
+    const search=overlay.querySelector('[data-profile-directory-search]');
+    const roleLabel=role=>({owner:'Owner',co_owner:'Co-owner',admin:'Admin',manager:'Manager',developer:'Developer',moderator:'Moderator',support:'Support',tester:'Tester',contributor:'Contributor',member:'Member'}[role]||'Member');
+    let entries=[];
+    let selectedUid='';
+    let searchTimer=0;
+    let controller=null;
+    const close=()=>{
+      clearTimeout(searchTimer);
+      controller?.abort();
+      document.removeEventListener('keydown',onKeydown);
+      overlay.classList.remove('show');
+      setTimeout(()=>overlay.remove(),180);
+    };
+    const renderProfile=entry=>{
+      if(!entry)return;
+      selectedUid=entry.uid;
+      resultsHost.querySelectorAll('[data-directory-profile]').forEach(button=>button.classList.toggle('active',button.dataset.directoryProfile===selectedUid));
+      const profile=normalizeNyxUserProfile(entry.profile);
+      view.innerHTML=`<div class="nyx-profile-directory-view-head"><span>${entry.self?'Your public profile':roleLabel(entry.role)}</span><strong>${esc(profile.displayName)}</strong></div><div class="nyx-profile-directory-card-host">${nyxUserProfileCardMarkup(profile,{role:entry.role,createdAt:entry.createdAt})}</div>`;
+      nyxManageUserProfileGifs(view,profile);
+    };
+    const renderResults=()=>{
+      summary.textContent=`${entries.length} profile${entries.length===1?'':'s'}`;
+      if(!entries.length){
+        resultsHost.innerHTML='<div class="nyx-profile-directory-no-results"><strong>No profiles found</strong><span>Try a different name or role.</span></div>';
+        view.innerHTML='<div class="nyx-profile-directory-empty"><span aria-hidden="true">?</span><h3>No matching profiles</h3><p>Change your search to discover more people.</p></div>';
+        selectedUid='';
+        return;
+      }
+      resultsHost.innerHTML=entries.map(entry=>{
+        const profile=normalizeNyxUserProfile(entry.profile);
+        const avatar=profile.avatarUrl?`<img src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="">`:`<span>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</span>`;
+        return `<button type="button" data-directory-profile="${esc(entry.uid)}"><i class="nyx-profile-directory-avatar">${avatar}<em class="${entry.online?'online':''}" aria-label="${entry.online?'Online':'Offline'}"></em></i><span><strong>${esc(profile.displayName)}${entry.self?' <small>You</small>':''}</strong><small>${esc(profile.handle)}</small></span><b>${esc(roleLabel(entry.role))}</b></button>`;
+      }).join('');
+      resultsHost.querySelectorAll('[data-directory-profile]').forEach(button=>{
+        const entry=entries.find(item=>item.uid===button.dataset.directoryProfile);
+        const profile=normalizeNyxUserProfile(entry?.profile);
+        const avatarHost=button.querySelector('.nyx-profile-directory-avatar');
+        const avatarImage=avatarHost?.querySelector(':scope > img');
+        if(avatarHost&&avatarImage)nyxManageCompactGif(avatarHost,avatarImage,profile.avatarUrl,180);
+      });
+      renderProfile(entries.find(entry=>entry.uid===selectedUid)||entries[0]);
+    };
+    const load=async()=>{
+      controller?.abort();
+      controller=new AbortController();
+      resultsHost.innerHTML='<div class="nyx-profile-directory-loading"><i></i><i></i><i></i><i></i></div>';
+      summary.textContent='Loading profiles…';
+      try{
+        const token=await nyxGetFirebaseToken(true);
+        if(!token)throw new Error('Sign in again to browse profiles.');
+        const data=await nyxProfileMediaFetch(`/api/profiles?search=${encodeURIComponent(search.value.trim())}`,{headers:{Authorization:`Bearer ${token}`},cache:'no-store',signal:controller.signal},'Profiles could not be loaded.');
+        entries=Array.isArray(data.profiles)?data.profiles:[];
+        renderResults();
+      }catch(error){
+        if(error.name==='AbortError')return;
+        entries=[];
+        summary.textContent='Profiles unavailable';
+        resultsHost.innerHTML=`<div class="nyx-profile-directory-no-results"><strong>Could not load profiles</strong><span>${esc(error.message||'Try again.')}</span><button type="button" data-profile-directory-retry>Try again</button></div>`;
+      }
+    };
+    const onKeydown=event=>{if(event.key==='Escape'){event.preventDefault();close()}};
+    overlay.addEventListener('click',event=>{
+      if(event.target===overlay||event.target.closest('[data-close-profile-directory]')){close();return}
+      if(event.target.closest('[data-profile-directory-retry]')){void load();return}
+      const uid=event.target.closest('[data-directory-profile]')?.dataset.directoryProfile;
+      if(uid)renderProfile(entries.find(entry=>entry.uid===uid));
+    });
+    search.addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>void load(),240)});
+    document.addEventListener('keydown',onKeydown);
+    setTimeout(()=>search.focus(),0);
+    await load();
   }
   addEventListener('resize',closeNyxAccountMenu,{passive:true});
   document.addEventListener('keydown',event=>{if(event.key==='Escape')closeNyxAccountMenu()});
@@ -557,7 +669,7 @@
         try{await setPersistence(nyxFounderFirebaseAuth,browserLocalPersistence)}
         catch(error){console.warn('Nyx could not enable persistent sign-in:',error)}
         if(typeof nyxFounderFirebaseAuth.authStateReady==='function')await nyxFounderFirebaseAuth.authStateReady();
-        onAuthStateChanged(nyxFounderFirebaseAuth,async user=>{nyxFounderSignedInUser=user||null;if(!user){stopNyxUserActivity();nyxUserProfile=null;nyxUserProfileCreatedAt='';nyxUserAccountRole='member';nyxUserAccountEmail='';await refreshFounderOwnerAccess();return}startNyxUserActivity(user);await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile()])});
+        onAuthStateChanged(nyxFounderFirebaseAuth,async user=>{nyxFounderSignedInUser=user||null;if(!user){stopNyxUserActivity();nyxUserProfile=null;nyxUserProfileCreatedAt='';nyxUserAccountRole='member';nyxUserSubscriptionStatus='free';syncNyxAccountEntitlements();nyxUserAccountEmail='';await refreshFounderOwnerAccess();return}startNyxUserActivity(user);await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile()])});
       }catch(error){console.warn('Nyx owner sign-in could not initialize:',error);nyxFounderAuthConfig={enabled:false,ownerConfigured:false}}
       finally{syncFounderOwnerControls()}
     })();
@@ -656,10 +768,11 @@
   async function signOutFounderOwner(){
     closeNyxAccountMenu();
     try{await nyxFounderFirebaseAuth?.signOut()}catch{}
-    nyxFirebaseTokenPromise=null;nyxFounderSignedInUser=null;nyxFounderIsOwner=false;nyxUserAccountRole='member';nyxUserAccountEmail='';nyxUserProfile=null;nyxUserProfileCreatedAt='';syncFounderOwnerControls();toast('Signed out');
+    nyxFirebaseTokenPromise=null;nyxFounderSignedInUser=null;nyxFounderIsOwner=false;nyxUserAccountRole='member';nyxUserSubscriptionStatus='free';syncNyxAccountEntitlements();nyxUserAccountEmail='';nyxUserProfile=null;nyxUserProfileCreatedAt='';syncFounderOwnerControls();toast('Signed out');
   }
   function nyxUserProfileCardMarkup(profile=normalizeNyxUserProfile(nyxUserProfile),options={}){
-    const joined=nyxUserProfileCreatedAt?new Date(nyxUserProfileCreatedAt).toLocaleDateString(undefined,{month:'short',year:'numeric'}):'Today';
+    const joinedAt=String(options.createdAt||nyxUserProfileCreatedAt||'');
+    const joined=joinedAt?new Date(joinedAt).toLocaleDateString(undefined,{month:'short',year:'numeric'}):'Today';
     const statusLabel={online:'Online',idle:'Idle',dnd:'Do not disturb',offline:'Invisible'}[profile.status]||'Online';
     const editable=Boolean(options.editable&&nyxFounderSignedInUser);
     const symbol=name=>{
@@ -677,11 +790,16 @@
       };
       return `<svg class="nyx-profile-symbol nyx-profile-symbol-${name}" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths[name]||''}</svg>`;
     };
-    const roleLabel=role=>({owner:'Owner',admin:'Admin',developer:'Developer',moderator:'Moderator',member:'Member'}[role]||'Member');
-    const roleChip=role=>`<span class="nyx-user-role nyx-user-role-${role}"><img src="/assets/icons/roles/${role}.png" alt="" aria-hidden="true">${roleLabel(role)}</span>`;
-    const roles=nyxFounderIsOwner
-      ?`${roleChip('owner')}${roleChip('developer')}<span class="nyx-user-role nyx-user-role-founder">${symbol('founder')}Founder</span>`
-      :roleChip(['admin','developer','moderator','member'].includes(nyxUserAccountRole)?nyxUserAccountRole:'member');
+    const roleLabel=role=>({owner:'Owner',co_owner:'Co-owner',admin:'Admin',manager:'Manager',developer:'Developer',moderator:'Moderator',support:'Support',tester:'Tester',contributor:'Contributor',member:'Member'}[role]||'Member');
+    const roleIconKey=role=>({co_owner:'owner',manager:'admin',support:'moderator',tester:'developer',contributor:'developer'}[role]||role);
+    const roleChip=role=>`<span class="nyx-user-role nyx-user-role-${role}"><img src="/assets/icons/roles/${roleIconKey(role)}.png" alt="" aria-hidden="true">${roleLabel(role)}</span>`;
+    const availableRoles=['owner','co_owner','admin','manager','developer','moderator','support','tester','contributor','member'];
+    const publicRole=availableRoles.includes(String(options.role||''))?String(options.role):'';
+    const roles=publicRole
+      ?roleChip(publicRole)
+      :(nyxFounderIsOwner
+        ?`${roleChip('owner')}${roleChip('developer')}<span class="nyx-user-role nyx-user-role-founder">${symbol('founder')}Founder</span>`
+        :roleChip(availableRoles.includes(nyxUserAccountRole)?nyxUserAccountRole:'member'));
     const ownerActions=editable?`<div class="nyx-user-profile-actions" aria-label="Your account controls"><button type="button" data-nyx-profile-action="status"><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-hidden="true"></i><span>${esc(statusLabel)}</span><b aria-hidden="true">${symbol('chevron')}</b></button><button type="button" data-nyx-profile-action="custom-status">${symbol('edit')}<span>Edit custom status</span><b aria-hidden="true">${symbol('chevron')}</b></button><button type="button" data-nyx-profile-action="switch-account">${symbol('switch')}<span>Switch accounts</span><b aria-hidden="true">${symbol('chevron')}</b></button></div>`:'';
     const mediaEdit=(type,label)=>editable?`<button class="nyx-profile-media-edit nyx-profile-media-edit-${type}" type="button" data-nyx-direct-edit="${type}" aria-label="${label}" title="${label}"><span aria-hidden="true">&#9998;</span></button>`:'';
     const avatar=profile.avatarUrl?`<img src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="${esc(profile.displayName)} profile picture">`:`<span>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</span>`;
@@ -1384,7 +1502,10 @@
       </section>
       <section class="nyx-credits-section nyx-credits-changelog-section" aria-labelledby="nyxCreditsChangelog">
         <div class="nyx-credits-section-heading"><p>03 / Changelog</p><h2 id="nyxCreditsChangelog">What changed.</h2><span>Updates are added here manually when there is something worth sharing.</span></div>
-        <ol class="nyx-credits-changelog"><li><time datetime="2026-07-31">Jul 31, 2026</time><div><strong>About Nyx refresh</strong><p>Reframed Credits as About Nyx with a new founder spotlight, contributor acknowledgements, and a clearer story of the project.</p></div></li></ol>
+        <ol class="nyx-credits-changelog">
+          <li><time datetime="2026-08-03">Aug 3, 2026</time><div><strong>Browser, AI, and account updates</strong><p>Added model switching and a redesigned AI workspace, expanded games and portable download support, improved browser downloads and draggable tabs, added safer link checks without interfering with verification pages, and expanded profile, role, and premium controls in the Owner Dashboard.</p></div></li>
+          <li><time datetime="2026-07-31">Jul 31, 2026</time><div><strong>About Nyx refresh</strong><p>Reframed Credits as About Nyx with a new founder spotlight, contributor acknowledgements, and a clearer story of the project.</p></div></li>
+        </ol>
       </section>
       <footer class="nyx-credits-footer"><img src="/assets/icons/nyx-logo.png" alt="" aria-hidden="true"><div><strong>Nyx</strong><span>Thank you for making this space yours.</span></div><small>&copy; 2026 Nyx</small></footer>
     </article>`;
@@ -1474,6 +1595,111 @@
       if(e.key==='Escape') shade.querySelector('.nyx-prompt-cancel')?.click();
     });
     return shade;
+  }
+  function nyxDownloadDisplayName(filename,url){
+    const supplied=String(filename || '').trim().split(/[\\/]/).pop();
+    if(supplied) return supplied.slice(0,180);
+    try{
+      const parsed=new URL(String(url || ''),location.href);
+      return decodeURIComponent(parsed.pathname.split('/').filter(Boolean).pop() || parsed.hostname || 'download').slice(0,180);
+    }catch{return 'download'}
+  }
+  function nyxDownloadCheckUrl(downloadUrl,sourceUrl=''){
+    const actual=String(downloadUrl || '').trim();
+    const source=String(sourceUrl || '').trim();
+    if(/^(?:blob|data):/i.test(actual)) return browserShellSourceUrl(source) || source;
+    return browserShellSourceUrl(actual) || actual || browserShellSourceUrl(source) || source;
+  }
+  function nyxDownloadSafetyDialog(result,{filename,url}={}){
+    document.querySelectorAll('.nyx-download-safety-shade').forEach(element=>element.remove());
+    return new Promise(resolve=>{
+      const blocked=result?.verdict==='blocked';
+      const shade=document.createElement('div');
+      shade.className='nyx-download-safety-shade';
+      const threatList=Array.isArray(result?.threats) && result.threats.length
+        ? `<p class="nyx-download-safety-threats">Detected: ${esc(result.threats.join(', ').replaceAll('_',' ').toLowerCase())}</p>`
+        : '';
+      let host='Unknown source';
+      try{host=new URL(String(url || ''),location.href).hostname || host}catch{}
+      shade.innerHTML=`<section class="nyx-download-safety-dialog ${blocked?'is-blocked':'is-caution'}" role="alertdialog" aria-modal="true" aria-labelledby="nyxDownloadSafetyTitle" aria-describedby="nyxDownloadSafetyMessage">
+        <span class="nyx-download-safety-icon" aria-hidden="true">${blocked?'!':'?'}</span>
+        <div class="nyx-download-safety-copy">
+          <p class="nyx-download-safety-kicker">Download protection</p>
+          <h2 id="nyxDownloadSafetyTitle">${blocked?'Download blocked':'Check this download'}</h2>
+          <p class="nyx-download-safety-file">${esc(filename || 'download')}</p>
+          <p class="nyx-download-safety-source">From ${esc(host)}</p>
+          <p id="nyxDownloadSafetyMessage">${esc(result?.message || 'Nyx could not verify this download.')}</p>
+          ${threatList}
+          <p class="nyx-download-safety-note">Nyx checked the URL reputation only. The file bytes were not uploaded or antivirus-scanned.</p>
+        </div>
+        <footer>
+          <button class="settings-action" data-nyx-download-cancel type="button">${blocked?'Close':'Cancel'}</button>
+          ${blocked?'':`<button class="settings-action on" data-nyx-download-continue type="button">Download anyway</button>`}
+        </footer>
+      </section>`;
+      document.body.appendChild(shade);
+      const finish=allowed=>{shade.remove();resolve(allowed)};
+      shade.querySelector('[data-nyx-download-cancel]')?.addEventListener('click',()=>finish(false));
+      shade.querySelector('[data-nyx-download-continue]')?.addEventListener('click',()=>finish(true));
+      shade.addEventListener('click',event=>{if(event.target===shade)finish(false)});
+      shade.addEventListener('keydown',event=>{if(event.key==='Escape')finish(false)});
+      shade.querySelector('button')?.focus();
+    });
+  }
+  async function nyxRequestBrowserDownload(downloadUrl,filename='',sourceUrl=''){
+    const href=String(downloadUrl || '').trim();
+    if(!href || /^(?:javascript|vbscript):/i.test(href)){
+      toast('Nyx blocked an invalid download address');
+      return false;
+    }
+    const displayName=nyxDownloadDisplayName(filename,href);
+    const checkUrl=nyxDownloadCheckUrl(href,sourceUrl);
+    let result={
+      verdict:'unverified',
+      threats:[],
+      fileScanned:false,
+      message:'Nyx could not identify the source URL. The file contents were not antivirus-scanned.'
+    };
+    if(/^https?:\/\//i.test(checkUrl)){
+      toast('Checking download source…');
+      try{
+        const response=await fetch('/api/download-safety/check',{
+          method:'POST',
+          headers:{'content-type':'application/json'},
+          body:JSON.stringify({url:checkUrl,filename:displayName})
+        });
+        const payload=await response.json().catch(()=>({}));
+        if(!response.ok) throw new Error(payload.error || `Download check failed (${response.status})`);
+        result=payload;
+      }catch(error){
+        console.warn('Nyx download safety check failed:',error?.message || error);
+        result={
+          verdict:'unverified',
+          threats:[],
+          fileScanned:false,
+          message:'The URL reputation check is unavailable. The file contents were not antivirus-scanned.'
+        };
+      }
+    }
+    if(result.verdict==='blocked'){
+      await nyxDownloadSafetyDialog(result,{filename:displayName,url:checkUrl || sourceUrl});
+      return false;
+    }
+    if(result.verdict!=='clear'){
+      const allowed=await nyxDownloadSafetyDialog(result,{filename:displayName,url:checkUrl || sourceUrl});
+      if(!allowed) return false;
+    }else{
+      toast('No known URL threat found — starting download');
+    }
+    const link=document.createElement('a');
+    link.href=href;
+    link.download=String(filename || '').trim();
+    link.rel='noopener';
+    link.hidden=true;
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(()=>link.remove(),0);
+    return true;
   }
   function showAnimexMikuPrompt(onOk){
     shownyxPrompt('Use MIKU for streaming',{onOk});
@@ -1768,7 +1994,7 @@
     'drive.google.com':localIcon('googledrive-logo.png'),
     'docs.google.com':svgIcon(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#1a73e8"/><path d="M22 12h17l9 9v31H22z" fill="#fff"/><path d="M39 12v10h9" fill="#d2e3fc"/><path d="M27 31h16M27 37h16M27 43h12" stroke="#1a73e8" stroke-width="3" stroke-linecap="round"/></svg>`),
     'duck.ai':localIcon('duck-ai-logo.png'),
-    'nyx-ai':favicons.nyx,
+    'nyx-ai':localIcon('shortcut-nyx-ai.svg?v=3'),
     'link-checker':localIcon('link-checker.svg'),
     'link-generator':localIcon('link-generator.svg'),
     'chess.com':localIcon('chess-logo.png'),
@@ -2088,35 +2314,6 @@
         }
       };
       const blockedUrl = "nyx://blocked67haha";
-      const popupAllowedAppDomains = [
-        "discord.com",
-        "geforcenow.com",
-        "play.geforcenow.com",
-        "nvidia.com",
-        "nvidiagrid.net",
-        "spotify.com",
-        "open.spotify.com",
-        "accounts.spotify.com",
-        "spotifycdn.com",
-        "scdn.co",
-        "accounts.scdn.co"
-      ];
-      const hostMatches = (host, domains) => domains.some(domain => host === domain || host.endsWith("." + domain));
-      const isPopupAllowedApp = () => {
-        try {
-          const candidates = [location.href, document.referrer, document.baseURI].filter(Boolean);
-          return candidates.some(value => {
-            try {
-              const host = new URL(value, location.href).hostname.replace(/^www\./, "").toLowerCase();
-              return hostMatches(host, popupAllowedAppDomains);
-            } catch {
-              return false;
-            }
-          }) || candidates.some(value => /(?:discord\.com|geforcenow\.com|play\.geforcenow\.com|nvidia\.com|nvidiagrid\.net|spotify\.com|open\.spotify\.com|accounts\.spotify\.com|spotifycdn\.com|scdn\.co|accounts\.scdn\.co)/i.test(String(value || ""));
-        } catch {
-          return false;
-        }
-      };
       const fakePopup = (notify = false) => {
         if (notify) {
           try { window.parent?.postMessage?.({ type: "nyx:popup", url: blockedUrl, blocked: true }, "*"); } catch {}
@@ -2148,7 +2345,6 @@
       };
       const nativeOpen = window.open?.bind(window);
       const guardedOpen = (...args) => {
-        if (isPopupAllowedApp() && nativeOpen) return nativeOpen(...args);
         if (!popupProtectionEnabled() && nativeOpen) return nativeOpen(...args);
         return fakePopup(Boolean(navigator.userActivation?.isActive));
       };
@@ -2156,15 +2352,10 @@
         if (typeof window.open === "function" && typeof Proxy === "function") {
           window.open = new Proxy(window.open, {
             apply(target, thisArg, args) {
-              if (isPopupAllowedApp()) return Reflect.apply(target, thisArg, args);
               if (!popupProtectionEnabled()) return Reflect.apply(target, thisArg, args);
               return fakePopup(Boolean(navigator.userActivation?.isActive));
             },
             construct(target, args, newTarget) {
-              if (isPopupAllowedApp()) {
-                try { return Reflect.construct(target, args, newTarget); }
-                catch { return Reflect.apply(target, window, args); }
-              }
               if (!popupProtectionEnabled()) {
                 try { return Reflect.construct(target, args, newTarget); }
                 catch { return Reflect.apply(target, window, args); }
@@ -2189,7 +2380,6 @@
       if (window.HTMLAnchorElement?.prototype) {
         const nativeAnchorClick = HTMLAnchorElement.prototype.click;
         HTMLAnchorElement.prototype.click = function() {
-          if (isPopupAllowedApp()) return nativeAnchorClick.call(this);
           if (popupProtectionEnabled() && (targetOpensPopup(this.target) || this.hasAttribute("download") || looksDownloadLike(this.href || this.getAttribute("href")))) {
             fakePopup(Boolean(navigator.userActivation?.isActive));
             return;
@@ -2198,7 +2388,6 @@
         };
       }
       const stopPopupEvent = event => {
-        if (isPopupAllowedApp()) return;
         if (!popupProtectionEnabled()) return;
         const link = event.target?.closest?.("a[href]");
         if (!link) return;
@@ -2209,7 +2398,6 @@
         }
       };
       const stopPopupSubmit = event => {
-        if (isPopupAllowedApp()) return;
         if (!popupProtectionEnabled()) return;
         const form = event.target;
         if (!form || String(form.tagName || "").toUpperCase() !== "FORM") return;
@@ -2427,7 +2615,7 @@
   function renderChromeFixed(){
     const top=document.querySelector('.top-os');
     if(top){
-      top.innerHTML='<div class="brand-mini"><button class="browser-mode-app-button active" data-browser-shell-home title="Current tab"><span class="browser-home-icon" aria-hidden="true"></span><span class="browser-home-label">Home</span></button><button class="browser-mode-tab" data-browser-shell-new-tab title="New tab"><span>New tab</span></button></div><span class="browser-top-clock" data-browser-shell-clock>--:--:--</span><form class="browser-mode-address" data-browser-shell-search><button data-browser-shell-back type="button" title="Back"><span class="fresh-real-icon fresh-real-back" aria-hidden="true"></span></button><button data-browser-shell-forward type="button" title="Forward"><span class="fresh-real-icon" aria-hidden="true">➜</span></button><button data-browser-shell-reload type="button" title="Reload"><span class="fresh-real-icon" aria-hidden="true">⟳</span></button><input class="browser-mode-url" data-browser-shell-url placeholder="Search or enter a URL" autocomplete="off"><button class="browser-mode-bookmark" data-browser-shell-bookmark type="button" title="Bookmark this tab" aria-pressed="false"><span class="fresh-real-icon" aria-hidden="true">☆</span></button><button class="browser-mode-weather" data-open="weather" type="button" title="Weather" aria-label="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button><button data-browser-shell-menu type="button" title="Menu"><span class="fresh-real-icon" aria-hidden="true">⋮</span></button></form><div class="browser-bookmark-panel" id="browserBookmarkPanel" hidden></div><div class="browser-mode-menu" id="browserModeMenu"><button data-browser-shell-new-tab type="button">New tab</button><button data-browser-bookmarks-toggle type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-browser-hieroglyph-toggle type="button">Hieroglyph Mode</button><button data-app-url="/assets/games/index.html" type="button">Study</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-shell-about-tab type="button">Open Tab in Abt:Blank</button></div>';
+      top.innerHTML='<div class="brand-mini"><button class="browser-mode-app-button active" data-browser-shell-home title="Current tab"><span class="browser-home-icon" aria-hidden="true"></span><span class="browser-home-label">Home</span></button><button class="browser-mode-tab" data-browser-shell-new-tab title="New tab"><span>New tab</span></button></div><span class="browser-top-clock" data-browser-shell-clock>--:--:--</span><form class="browser-mode-address" data-browser-shell-search><button class="browser-nav-control" data-browser-shell-back type="button" title="Back" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button><button class="browser-nav-control" data-browser-shell-forward type="button" title="Forward" aria-label="Forward"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button><button class="browser-nav-control" data-browser-shell-reload type="button" title="Reload" aria-label="Reload"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"></path><path d="M20 4v7h-7"></path></svg></button><button class="browser-nav-control" data-browser-shell-home-nav type="button" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8"></path><path d="M5 10v10h14V10"></path><path d="M9 20v-6h6v6"></path></svg></button><input class="browser-mode-url" data-browser-shell-url placeholder="Search or enter a URL" autocomplete="off"><button class="browser-mode-bookmark" data-browser-shell-bookmark type="button" title="Bookmark this tab" aria-pressed="false"><span class="fresh-real-icon" aria-hidden="true">☆</span></button><button class="browser-mode-weather" data-open="weather" type="button" title="Weather" aria-label="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button><button data-browser-shell-menu type="button" title="Menu"><span class="fresh-real-icon" aria-hidden="true">⋮</span></button></form><div class="browser-bookmark-panel" id="browserBookmarkPanel" hidden></div><div class="browser-mode-menu" id="browserModeMenu"><button data-browser-shell-new-tab type="button">New tab</button><button data-browser-bookmarks-toggle type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-browser-hieroglyph-toggle type="button">Hieroglyph Mode</button><button data-app-url="/assets/games/index.html" type="button">Study</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-shell-about-tab type="button">Open Tab in Abt:Blank</button></div>';
       top.querySelectorAll('.brand-mini button[title],.browser-mode-address button[title]').forEach(button=>{
         if(!button.getAttribute('aria-label')) button.setAttribute('aria-label',button.getAttribute('title') || 'Browser control');
         button.removeAttribute('title');
@@ -3031,6 +3219,85 @@
     }
     if(!browserShellActiveTab) browserShellActiveTab=browserShellTabs[0].id;
   }
+  function moveBrowserShellTab(draggedId,targetId,placeAfter=false){
+    if(!draggedId || !targetId || draggedId===targetId) return false;
+    const dragged=browserShellTabs.find(tab=>tab.id===draggedId);
+    const target=browserShellTabs.find(tab=>tab.id===targetId);
+    if(!dragged || !target || (!dragged.url && dragged.title==='Home') || (!target.url && target.title==='Home')) return false;
+    const from=browserShellTabs.indexOf(dragged);
+    browserShellTabs.splice(from,1);
+    const targetIndex=browserShellTabs.indexOf(target);
+    browserShellTabs.splice(Math.max(0,targetIndex+(placeAfter?1:0)),0,dragged);
+    if(activeBrowser?.tabs?.length){
+      const rank=new Map(browserShellTabs.map((tab,index)=>[tab.browserTabId,index]).filter(([id])=>id));
+      const originalOrder=new Map(activeBrowser.tabs.map((tab,index)=>[tab.id,index]));
+      activeBrowser.tabs.sort((left,right)=>{
+        const leftRank=rank.has(left.id)?rank.get(left.id):Number.MAX_SAFE_INTEGER;
+        const rightRank=rank.has(right.id)?rank.get(right.id):Number.MAX_SAFE_INTEGER;
+        return leftRank-rightRank || originalOrder.get(left.id)-originalOrder.get(right.id);
+      });
+      activeBrowser.renderTabs?.();
+    }
+    renderBrowserShellTabs();
+    requestAnimationFrame(()=>document.querySelector(`[data-browser-shell-tab="${CSS.escape(draggedId)}"]`)?.focus({preventScroll:true}));
+    return true;
+  }
+  function clearBrowserShellTabDropState(row){
+    row?.querySelectorAll?.('.tab-dragging,.tab-drop-before,.tab-drop-after').forEach(tab=>tab.classList.remove('tab-dragging','tab-drop-before','tab-drop-after'));
+    document.body.classList.remove('nyx-tab-reordering');
+  }
+  function installBrowserShellTabReordering(row){
+    if(!row || row.dataset.nyxTabReordering==='true') return;
+    row.dataset.nyxTabReordering='true';
+    let draggedId='';
+    row.addEventListener('dragstart',event=>{
+      const tab=event.target.closest?.('[data-browser-shell-tab]');
+      if(!tab || event.target.closest?.('[data-browser-shell-close-tab]')){event.preventDefault();return}
+      draggedId=tab.dataset.browserShellTab || '';
+      if(!draggedId){event.preventDefault();return}
+      tab.classList.add('tab-dragging');
+      document.body.classList.add('nyx-tab-reordering');
+      if(event.dataTransfer){
+        event.dataTransfer.effectAllowed='move';
+        event.dataTransfer.setData('application/x-nyx-tab',draggedId);
+        event.dataTransfer.setData('text/plain',draggedId);
+      }
+    });
+    row.addEventListener('dragover',event=>{
+      const target=event.target.closest?.('[data-browser-shell-tab]');
+      if(!draggedId || !target || target.dataset.browserShellTab===draggedId) return;
+      event.preventDefault();
+      if(event.dataTransfer)event.dataTransfer.dropEffect='move';
+      row.querySelectorAll('.tab-drop-before,.tab-drop-after').forEach(tab=>tab.classList.remove('tab-drop-before','tab-drop-after'));
+      const rect=target.getBoundingClientRect();
+      target.classList.add(event.clientX>=rect.left+rect.width/2?'tab-drop-after':'tab-drop-before');
+    });
+    row.addEventListener('drop',event=>{
+      const target=event.target.closest?.('[data-browser-shell-tab]');
+      if(!draggedId || !target) return;
+      event.preventDefault();
+      const rect=target.getBoundingClientRect();
+      moveBrowserShellTab(draggedId,target.dataset.browserShellTab,event.clientX>=rect.left+rect.width/2);
+      draggedId='';
+      clearBrowserShellTabDropState(row);
+    });
+    row.addEventListener('dragend',()=>{
+      draggedId='';
+      clearBrowserShellTabDropState(row);
+    });
+    row.addEventListener('keydown',event=>{
+      if(!(event.ctrlKey||event.metaKey) || !event.shiftKey || !['ArrowLeft','ArrowRight'].includes(event.key)) return;
+      const tab=event.target.closest?.('[data-browser-shell-tab]');
+      if(!tab) return;
+      const movable=browserShellTabs.filter(item=>item.url || item.title!=='Home');
+      const index=movable.findIndex(item=>item.id===tab.dataset.browserShellTab);
+      const direction=event.key==='ArrowLeft'?-1:1;
+      const target=movable[index+direction];
+      if(!target) return;
+      event.preventDefault();
+      moveBrowserShellTab(tab.dataset.browserShellTab,target.id,direction>0);
+    });
+  }
   function renderBrowserShellTabs(){
     if(!document.body.classList.contains('browser-shell')) return;
     ensureBrowserShellHome();
@@ -3063,7 +3330,7 @@
     if(contentStateChanged) queueMicrotask(()=>syncThemeVantaBackgrounds());
     if(home){
       home.style.display='';
-      home.innerHTML='<span class="browser-home-icon" aria-hidden="true"></span><span class="browser-home-label">Home</span>';
+      home.innerHTML='<span class="browser-home-icon" aria-hidden="true"></span><span class="browser-home-label">Nyx</span>';
       delete home.dataset.browserShellTab;
       home.title='Home';
       home.classList.toggle('active',active.title==='Home' && !active.url);
@@ -3074,6 +3341,9 @@
       const opening=browserShellOpeningTabs.has(tab.id);
       button.className='browser-mode-tab browser-mode-shell-tab'+(tab.id===browserShellActiveTab?' active':'')+(opening?' tab-opening':'');
       button.dataset.browserShellTab=tab.id;
+      button.draggable=true;
+      button.setAttribute('aria-grabbed','false');
+      button.title='Drag to reorder tab';
       button.innerHTML=`<img class="browser-mode-tab-icon" alt="" src="${esc(browserChromeIcon(tab.icon,tab.url))}"><span>${esc(browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url))}</span><i class="browser-mode-shell-tab-close" data-browser-shell-close-tab="${esc(tab.id)}" aria-label="Close tab">x</i>`;
       bindTabIconFallback(button.querySelector('.browser-mode-tab-icon'));
       row.insertBefore(button,plus);
@@ -3089,6 +3359,7 @@
         setTimeout(finishOpening,1250);
       }
     });
+    installBrowserShellTabReordering(row);
     const input=document.querySelector('[data-browser-shell-url]');
     if(input && document.activeElement!==input) input.value=browserShellDisplayValue(active.url);
     renderBrowserBookmarks();
@@ -5273,6 +5544,12 @@
     if(mode==='scramjet') return scramjetUrl(target) || target;
     return url;
   }
+  window.nyxProxyGameUrl=async url=>{
+    const target=proxyTargetUrl(url);
+    if(!target) return '';
+    const ready=await installUltraviolet();
+    return ready ? (proxyModeUrl('ultraviolet',target) || target) : target;
+  };
   function normalizeBrowserModeName(mode){
     let value=String(mode || 'auto').trim();
     if((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))){
@@ -5296,24 +5573,6 @@
   }
   function hostMatches(host,domains){
     return domains.some(domain=>host===domain || host.endsWith('.'+domain));
-  }
-  const popupAllowedAppDomains=[
-    'discord.com',
-    'geforcenow.com',
-    'play.geforcenow.com',
-    'nvidia.com',
-    'nvidiagrid.net',
-    'spotify.com',
-    'open.spotify.com',
-    'accounts.spotify.com',
-    'spotifycdn.com',
-    'scdn.co',
-    'accounts.scdn.co'
-  ];
-  function isPopupAllowedAppUrl(url){
-    const raw=browserShellSourceUrl(String(url || '')) || String(url || '');
-    const host=browserHost(raw);
-    return !!host && hostMatches(host,popupAllowedAppDomains);
   }
   function isNyxLinkGeneratorUrl(url){
     const raw=browserShellSourceUrl(String(url || '')) || String(url || '');
@@ -6620,18 +6879,22 @@
   }
   function browserBody(){
     const presenceText=nyxPresenceCount===null ? 'Connecting\u2026' : `${nyxPresenceCount} online`;
-    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence${nyxFounderIsOwner?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="button" tabindex="${nyxFounderIsOwner?'0':'-1'}" aria-live="polite" aria-label="${nyxFounderIsOwner?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><button class="nyx-home-weather" data-home-weather data-open="weather" type="button" aria-label="Open weather report"><span class="nyx-home-weather-icon" data-home-weather-icon aria-hidden="true"><svg class="nyx-weather-symbol nyx-weather-symbol-partly-cloudy" viewBox="0 0 24 24" focusable="false"><circle class="nyx-weather-sun-fill" cx="8" cy="8" r="3.2"/><path class="nyx-weather-sun-ray" d="M8 2.3v1.4M3.97 3.97l1 1M2.3 8h1.4M12.03 3.97l-1 1M13.7 8h-1.4"/><path class="nyx-weather-cloud-fill" d="M7.2 19h10a4 4 0 0 0 .45-7.98A5.55 5.55 0 0 0 7.08 12.6 3.2 3.2 0 0 0 7.2 19Z"/></svg></span><strong data-home-weather-temp>--°</strong><span data-home-weather-desc>Loading</span></button><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1><form class="browser-blank-search nyx-home-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Search the web or enter a URL" placeholder="Search the web..." autocomplete="off" spellcheck="false"></form><nav class="nyx-home-actions" aria-label="Nyx home"><button data-open="apps" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-apps" aria-hidden="true"></span><span>Apps</span></button><button data-app-url="https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-study" aria-hidden="true"></span><span>Study</span></button><button data-open-nyx-profile-entry data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-profile" aria-hidden="true"></span><span>Profile</span></button><button data-open="settings" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-settings" aria-hidden="true"></span><span>Settings</span></button></nav></main><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div><a class="nyx-home-link-checker" data-app-url="/apps/link-checker/" href="/apps/link-checker/">Link Checker</a><nav class="nyx-home-utility-links" aria-label="Nyx information and tools"><a data-app-url="/apps/link-generator/" href="/apps/link-generator/">Link Generator</a><a data-open="terms" href="nyx://terms">Terms Of Service</a><a data-open="developer" href="nyx://developer">Developer Console</a><a data-open="about" href="nyx://about">About Us</a></nav></div></div>`;
+    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence${nyxFounderIsOwner?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="button" tabindex="${nyxFounderIsOwner?'0':'-1'}" aria-live="polite" aria-label="${nyxFounderIsOwner?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><button class="nyx-home-weather" data-home-weather data-open="weather" type="button" aria-label="Open weather report"><span class="nyx-home-weather-icon" data-home-weather-icon aria-hidden="true"><svg class="nyx-weather-symbol nyx-weather-symbol-partly-cloudy" viewBox="0 0 24 24" focusable="false"><circle class="nyx-weather-sun-fill" cx="8" cy="8" r="3.2"/><path class="nyx-weather-sun-ray" d="M8 2.3v1.4M3.97 3.97l1 1M2.3 8h1.4M12.03 3.97l-1 1M13.7 8h-1.4"/><path class="nyx-weather-cloud-fill" d="M7.2 19h10a4 4 0 0 0 .45-7.98A5.55 5.55 0 0 0 7.08 12.6 3.2 3.2 0 0 0 7.2 19Z"/></svg></span><strong data-home-weather-temp>--°</strong><span data-home-weather-desc>Loading</span></button><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1><form class="browser-blank-search nyx-home-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Find your course or enter a URL" placeholder="Find your Course" autocomplete="off" spellcheck="false"></form><nav class="nyx-home-actions" aria-label="Nyx home"><button data-open="apps" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-apps" aria-hidden="true"></span><span>Resources</span></button><button data-app-url="https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-study" aria-hidden="true"></span><span>Assignments</span></button><button data-open-nyx-profile-entry data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-profile" aria-hidden="true"></span><span>Student Profile</span></button><button data-open="settings" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-settings" aria-hidden="true"></span><span>Preferences</span></button></nav></main><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div><a class="nyx-home-link-checker" data-app-url="/apps/link-checker/" href="/apps/link-checker/">Link Checker</a><nav class="nyx-home-utility-links" aria-label="Nyx information and tools"><a data-app-url="/apps/link-generator/" href="/apps/link-generator/">Link Generator</a><a data-open="terms" href="nyx://terms">Terms Of Service</a><a data-open="developer" href="nyx://developer">Developer Console</a><a data-open="about" href="nyx://about">About Us</a></nav></div></div>`;
   }
   //apps-grid
+  const nyxAiHomeShortcut={domain:'nyx-ai',title:'AI Tutor',url:'nyx://ai',favorite:false};
+  const nyxAiHomeShortcutMigrationKey='nyx.homeShortcuts.aiShortcutV1';
   const defaultHomeShortcuts=[
-    {domain:'geforcenow',title:'GeForce Now',url:'https://play.geforcenow.com/',favorite:true},
-    {domain:'duck.ai',title:'Duck AI',url:'https://duck.ai/',favorite:false},
-    {domain:'games',title:'Study',url:'/assets/games/',favorite:false},
-    {domain:'youtube.com',title:'YouTube',url:'https://www.youtube.com/',favorite:false},
-    {domain:'tiktok.com',title:'TikTok',url:'https://www.tiktok.com/',favorite:false},
-    {domain:'spotify.com',title:'Spotify',url:'https://open.spotify.com/',favorite:false},
-    {domain:'discord.com',title:'Discord',url:'https://discord.com/app',favorite:false}
+    {domain:'geforcenow',title:'Course Library',url:'https://play.geforcenow.com/',favorite:true},
+    {domain:'duck.ai',title:'Research Assistant',url:'https://duck.ai/',favorite:false},
+    nyxAiHomeShortcut,
+    {domain:'games',title:'Practice Lab',url:'/assets/games/',favorite:false},
+    {domain:'youtube.com',title:'Video Lessons',url:'https://www.youtube.com/',favorite:false},
+    {domain:'tiktok.com',title:'Quick Lessons',url:'https://www.tiktok.com/',favorite:false},
+    {domain:'spotify.com',title:'Focus Audio',url:'https://open.spotify.com/',favorite:false},
+    {domain:'discord.com',title:'Study Groups',url:'https://discord.com/app',favorite:false}
   ];
+  const educationShortcutTitles=new Map(defaultHomeShortcuts.map(item=>[String(item.url).replace(/\/+$/,''),item.title]));
   function normalizeInternalAppUrl(url){
     const raw=String(url || '').trim();
     if(/^assets\//i.test(raw)) return `/${raw}`;
@@ -6642,8 +6905,8 @@
     if(next.url==='/assets/games/index.html') next.url='/assets/games/';
     if(next.url==='/assets/games/'){
       next.domain='games';
-      if(/^games$/i.test(String(next.title || '').trim())) next.title='Study';
     }
+    next.title=educationShortcutTitles.get(String(next.url || '').replace(/\/+$/,'')) || next.title;
     return next;
   }
   function homeShortcuts(){
@@ -6651,12 +6914,20 @@
       const saved=JSON.parse(store.text('nyx.homeShortcuts',''));
       if(Array.isArray(saved)){
         const cleaned=saved
-          .filter(item=>item?.url && item?.title && String(item.url).trim().toLowerCase()!=='nyx://ai')
+          .filter(item=>item?.url && item?.title)
           .map(normalizeHomeShortcut);
+        if(!store.get(nyxAiHomeShortcutMigrationKey,false)){
+          if(!cleaned.some(item=>String(item.url || '').trim().toLowerCase()==='nyx://ai')){
+            const duckIndex=cleaned.findIndex(item=>String(item.domain || '').toLowerCase()==='duck.ai');
+            cleaned.splice(duckIndex>=0?duckIndex+1:cleaned.length,0,{...nyxAiHomeShortcut});
+          }
+          store.set(nyxAiHomeShortcutMigrationKey,true);
+        }
         if(JSON.stringify(cleaned)!==JSON.stringify(saved)) saveHomeShortcuts(cleaned);
         return cleaned;
       }
     }catch{}
+    store.set(nyxAiHomeShortcutMigrationKey,true);
     return defaultHomeShortcuts.map(item=>({...item}));
   }
   function saveHomeShortcuts(items){
@@ -6670,6 +6941,7 @@
     const key=String(domain || title || '').toLowerCase();
     if(key.includes('geforce')) return '/assets/icons/dock-nvidia.png';
     if(key==='games' || key.includes('study')) return '/assets/icons/dock-controller.png';
+    if(key==='nyx-ai' || key==='ai') return '/assets/icons/shortcut-nyx-ai.svg?v=3';
     if(key.includes('duck')) return '/assets/icons/shortcut-duckduckgo.svg';
     if(key.includes('youtube') || key==='youtu.be') return '/assets/icons/shortcut-youtube.svg';
     if(key.includes('tiktok')) return '/assets/icons/shortcut-tiktok.svg';
@@ -6687,7 +6959,7 @@
         const icon=mask ? `<span class="home-shortcut-glyph" style="--shortcut-mask:url('${esc(mask)}')" aria-hidden="true"></span>` : `<img class="quick-icon" alt="" draggable="false" src="${appIcon(domain)}">`;
         return `<div class="quick-tile home-shortcut ${item.favorite?'favorite':''}" draggable="false" data-home-shortcut="${item.index}" data-domain="${esc(domain)}" data-app-url="${esc(item.url)}"><button class="home-shortcut-open" data-app-url="${esc(item.url)}" draggable="false" type="button"><img class="quick-icon" alt="" draggable="false" src="${appIcon(domain)}"><span>${esc(item.title)}</span></button><button class="home-shortcut-menu-btn" data-home-shortcut-menu type="button" title="Shortcut options" aria-label="Shortcut options"><span class="shortcut-real-dots" aria-hidden="true">⋮</span></button><div class="home-shortcut-menu"><button data-home-shortcut-favorite="${item.index}" type="button">${item.favorite?'Unfavorite':'Favorite'}</button><button data-home-shortcut-remove="${item.index}" type="button">Remove</button></div></div>`;
     }).join('');
-    return tiles + '<button class="quick-tile home-shortcut-add" data-home-shortcut-add type="button"><b>+</b><span>Add App</span></button>';
+    return tiles + '<button class="quick-tile home-shortcut-add" data-home-shortcut-add type="button"><b>+</b><span>Add Resource</span></button>';
   }
   browserHomeShortcutTiles=function(){
     const tiles=homeShortcuts()
@@ -6701,7 +6973,7 @@
           : homeShortcutIconMarkup(item,domain);
         return `<div class="quick-tile home-shortcut ${item.favorite?'favorite':''}" draggable="false" data-home-shortcut="${item.index}" data-domain="${esc(domain)}" data-app-url="${esc(item.url)}"><button class="home-shortcut-open" data-app-url="${esc(item.url)}" draggable="false" type="button">${icon}<span>${esc(item.title)}</span></button><button class="home-shortcut-menu-btn" data-home-shortcut-menu type="button" title="Shortcut options" aria-label="Shortcut options"><span class="shortcut-real-dots" aria-hidden="true">...</span></button><div class="home-shortcut-menu"><button data-home-shortcut-favorite="${item.index}" type="button">${item.favorite?'Unfavorite':'Favorite'}</button><button data-home-shortcut-remove="${item.index}" type="button">Remove</button></div></div>`;
       }).join('');
-    return tiles + '<button class="quick-tile home-shortcut-add" data-home-shortcut-add type="button"><b>+</b><span>Add App</span></button>';
+    return tiles + '<button class="quick-tile home-shortcut-add" data-home-shortcut-add type="button"><b>+</b><span>Add Resource</span></button>';
   };
   function homeEntranceCanPlay(root=document){
     const scope=root || document;
@@ -6806,7 +7078,7 @@
     ];
     tabItems.forEach((el,index)=>animateHomeElement(el,index,{delay:45+(index*65),duration:650,start:'translate(-24px,34px) scale(.88)',mid:'translate(-7px,10px) scale(.97)'}));
     const toolbarItems=[
-      ...document.querySelectorAll('body.browser-shell [data-browser-shell-back], body.browser-shell [data-browser-shell-forward], body.browser-shell [data-browser-shell-reload], body.browser-shell [data-browser-shell-url], body.browser-shell [data-browser-shell-bookmark], body.browser-shell .browser-mode-weather, body.browser-shell [data-browser-shell-menu], body.browser-shell #clock')
+      ...document.querySelectorAll('body.browser-shell [data-browser-shell-back], body.browser-shell [data-browser-shell-forward], body.browser-shell [data-browser-shell-reload], body.browser-shell [data-browser-shell-home-nav], body.browser-shell [data-browser-shell-url], body.browser-shell [data-browser-shell-bookmark], body.browser-shell .browser-mode-weather, body.browser-shell [data-browser-shell-menu], body.browser-shell #clock')
     ];
     toolbarItems.forEach((el,index)=>animateHomeElement(el,index,{delay:120+(index*58),duration:690,start:'translate(-26px,38px) scale(.9)',mid:'translate(-8px,12px) scale(.98)'}));
   }
@@ -7594,21 +7866,6 @@
         set href(_value){rewrite()}
       };
     }
-    function openExternalBlockedPopup(message=''){
-      const nativeOpen=window.__nyxNativeOpen || window.open?.bind(window);
-      const popup=nativeOpen ? nativeOpen('about:blank','_blank') : null;
-      if(!popup) return null;
-      try{
-        popup.document.open();
-        popup.document.write(popupWarningHtml(message || 'are you trying to hack me ︻デ═一 indian shwarma scamma? get blocked by 1aqlla dummy haha67'));
-        popup.document.close();
-        popup.focus?.();
-        return blockedPopupHandle(popup,message);
-      }catch{
-        try{popup.close?.()}catch{}
-        return null;
-      }
-    }
     function openPopupTab(rawUrl){
       const openerUrl=current()?.url || location.href;
       const popupBlockMessage=isAnimexUrl(openerUrl) ? 'are you trying to block me shwarma?' : 'are you trying to hack me ︻デ═一 indian shwarma scamma? get blocked by 1aqlla dummy haha67';
@@ -7616,31 +7873,7 @@
         const nativeOpen=window.__nyxNativeOpen || window.open?.bind(window);
         return nativeOpen ? nativeOpen(rawUrl || 'about:blank','_blank') : null;
       }
-      if(isPopupAllowedAppUrl(openerUrl)){
-        const nativeOpen=window.__nyxNativeOpen || window.open?.bind(window);
-        return nativeOpen ? nativeOpen(rawUrl || 'about:blank','_blank') : null;
-      }
-      const shellTab=(()=>{
-        if(!document.body.classList.contains('browser-shell')) return null;
-        const id='shell-'+Date.now()+Math.random().toString(16).slice(2);
-        const tab={id,url:'nyx://blocked67haha',title:'Popup blocked'};
-        browserShellTabs.push(tab);
-        browserShellActiveTab=id;
-        renderBrowserShellTabs();
-        return tab;
-      })();
-      const tab=addTab();
-      tab.popupBlockMessage=popupBlockMessage;
-      if(shellTab){
-        shellTab.browserTabId=tab.id;
-        renderBrowserShellTabs();
-      }
-      showPopupWarningTab(tab,popupBlockMessage);
-      setTimeout(()=>{
-        if(shellTab && browserShellTabs.some(item=>item.id===shellTab.id)) closeBrowserShellTab(shellTab.id);
-        else if(state.tabs.some(item=>item.id===tab.id)) closeTabById(tab.id,true);
-      },500);
-      return popupTabHandle(tab,openerUrl);
+      return blockedPopupHandle(null,popupBlockMessage);
     }
     function installCrazyGamesOfflineRecovery(t,url=''){
       if(!t?.frame) return;
@@ -7905,7 +8138,6 @@
         },40));
       }
       const bridgeUrl=t.sourceUrl || t.url || t.frame.getAttribute('src') || '';
-      if(isPopupAllowedAppUrl(bridgeUrl)) return;
       if(isSpotifyFamilyUrl(bridgeUrl) || isAuthSensitiveUrl(bridgeUrl)) return;
       if(hostMatches(browserHost(browserShellSourceUrl(bridgeUrl) || bridgeUrl),['google.com','gstatic.com','youtube.com','youtu.be'])) return;
       t.popupBridgeInstalled=true;
@@ -8005,13 +8237,26 @@
         },0);
         return true;
       };
-      const shouldTrapDownloadLink=link=>{
+      const isDownloadUrl=value=>{
+        const rawHref=String(value || '').trim();
+        // Verification challenges and web workers commonly use blob/data
+        // URLs and script paths. Only an explicit `download` attribute (see
+        // isDownloadLink) or a high-confidence binary/archive extension
+        // should enter Nyx's download-safety flow.
+        if(/^(?:blob|data):/i.test(rawHref)) return false;
+        const href=rawHref.split(/[?#]/)[0].toLowerCase();
+        return /\.(apk|appx|bat|bin|cmd|com|crx|deb|dmg|exe|iso|jar|msi|pkg|scr|wsf|zip|7z|rar)$/i.test(href);
+      };
+      const isDownloadLink=link=>{
         if(!link) return false;
         if(link.hasAttribute('download')) return true;
-        const rawHref=String(link.href || link.getAttribute('href') || '').trim();
-        if(/^(?:blob|data):/i.test(rawHref)) return true;
-        const href=rawHref.split(/[?#]/)[0].toLowerCase();
-        return /\.(apk|appx|bat|bin|cmd|com|crx|deb|dmg|exe|iso|jar|js|msi|pkg|ps1|scr|sh|vbs|wsf|zip|7z|rar)$/i.test(href);
+        return isDownloadUrl(link.href || link.getAttribute('href') || '');
+      };
+      const requestFrameDownload=(value,filename='')=>{
+        const href=String(value || '').trim();
+        if(!href) return false;
+        void nyxRequestBrowserDownload(href,String(filename || '').trim(),currentBridgeUrl());
+        return true;
       };
       const attachBridge=()=>{
         try{
@@ -8023,6 +8268,7 @@
             frameWindow.__nyxOpenBridge=true;
             const nativeFrameOpen=frameWindow.open?.bind(frameWindow);
             const nyxPopup=(popupUrl,target,features)=>{
+              if(isDownloadUrl(popupUrl) && requestFrameDownload(popupUrl)) return frameWindow;
               if(!popupProtectionEnabled()) return nativeFrameOpen ? nativeFrameOpen(popupUrl,target,features) : null;
               if(followSameOriginPopup(popupUrl)) return frameWindow;
               return openPopupTab(popupUrl || 'about:blank');
@@ -8035,11 +8281,12 @@
             if(frameWindow.HTMLAnchorElement?.prototype?.click){
               const nativeAnchorClick=frameWindow.HTMLAnchorElement.prototype.click;
               frameWindow.HTMLAnchorElement.prototype.click=function(){
-                if(popupProtectionEnabled() && (shouldTrapPopupTarget(this.target) || shouldTrapDownloadLink(this))){
+                if(isDownloadLink(this) && requestFrameDownload(this.href || this.getAttribute('href'),this.getAttribute('download') || '')) return;
+                if(popupProtectionEnabled() && shouldTrapPopupTarget(this.target)){
                   const href=this.href || this.getAttribute('href') || '';
                   if(isTrustedGeneratedLink(this)) return nativeAnchorClick.call(this);
-                  if(!shouldTrapDownloadLink(this) && followSearchResult(this)) return;
-                  if(!shouldTrapDownloadLink(this) && followSameOriginPopup(href)) return;
+                  if(followSearchResult(this)) return;
+                  if(followSameOriginPopup(href)) return;
                   openPopupTab(href || 'about:blank');
                   return;
                 }
@@ -8070,13 +8317,6 @@
               });
             })).observe(doc.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['src']});
           }
-          const trapDownload=event=>{
-            const link=event.target?.closest?.('a[href]');
-            if(!popupProtectionEnabled() || !shouldTrapDownloadLink(link)) return;
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            openPopupTab('about:blank');
-          };
           const searchControlValue=control=>String(control?.value || '').trim();
           const trapSearchSubmit=event=>{
             const form=event.target;
@@ -8095,14 +8335,15 @@
           };
           const trapLink=event=>{
             const link=event.target?.closest?.('a[href]');
-            if(!popupProtectionEnabled()) return;
-            if(shouldTrapDownloadLink(link)){
+            if(!link) return;
+            if(isDownloadLink(link)){
               event.preventDefault();
               event.stopImmediatePropagation();
-              openPopupTab('about:blank');
+              requestFrameDownload(link.href || link.getAttribute('href'),link.getAttribute('download') || '');
               return;
             }
-            if(!link || !shouldTrapPopupTarget(link.getAttribute('target'))) return;
+            if(!popupProtectionEnabled()) return;
+            if(!shouldTrapPopupTarget(link.getAttribute('target'))) return;
             const href=link.href || link.getAttribute('href') || 'about:blank';
             if(isTrustedGeneratedLink(link)) return;
             event.preventDefault();
@@ -8114,7 +8355,6 @@
           doc.addEventListener('submit',trapSearchSubmit,true);
           doc.addEventListener('click',trapLink,true);
           doc.addEventListener('auxclick',trapLink,true);
-          doc.addEventListener('beforeinput',trapDownload,true);
           doc.addEventListener('submit',event=>{
             const form=event.target;
             if(!popupProtectionEnabled()) return;
@@ -8338,7 +8578,7 @@
       const sourceUrl=t.sourceUrl || t.url || t.frame.getAttribute('src') || '';
       applyFrameInteractionPermissions(t.frame);
       installYouTubeCompositorGuard(t);
-      if(shouldRelaxProxySandbox(sourceUrl)){
+      if(!popupProtectionEnabled() && shouldRelaxProxySandbox(sourceUrl)){
         t.frame.removeAttribute('sandbox');
         applyFrameInteractionPermissions(t.frame);
         return;
@@ -8348,14 +8588,13 @@
         'allow-same-origin',
         'allow-forms',
         'allow-modals',
+        'allow-downloads',
         'allow-pointer-lock',
         'allow-presentation',
         'allow-storage-access-by-user-activation'
       ];
-      if(!popupProtectionEnabled() || isPopupAllowedAppUrl(sourceUrl)){
-        tokens.push('allow-popups','allow-popups-to-escape-sandbox','allow-downloads','allow-top-navigation-by-user-activation');
-      }else if(isNyxLinkGeneratorUrl(sourceUrl)){
-        tokens.push('allow-popups');
+      if(!popupProtectionEnabled()){
+        tokens.push('allow-popups','allow-popups-to-escape-sandbox','allow-top-navigation-by-user-activation');
       }
       t.frame.setAttribute('sandbox',tokens.join(' '));
       applyFrameInteractionPermissions(t.frame);
@@ -9209,7 +9448,28 @@
       const q=e.target.closest('[data-url]'); if(q){e.preventDefault(); navigate(q.dataset.url)}
     });
     const messageHandler=e=>{
-      if(!['nyx:navigate','nyx:popup','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut'].includes(e.data?.type)) return;
+      if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile'].includes(e.data?.type)) return;
+      if(['nyx:ai-profile-request','nyx:ai-open-profile'].includes(e.data.type)&&(e.origin!==location.origin||!state.tabs.some(tab=>tab.frame.contentWindow===e.source)))return;
+      if(e.data.type==='nyx:ai-profile-request'){
+        const target=e.source;
+        void (async()=>{
+          const profile=nyxFounderSignedInUser
+            ? normalizeNyxUserProfile(nyxUserProfile||{},nyxFounderSignedInUser)
+            : {displayName:store.text('nyx.userName','Profile')||'Profile',handle:'Sign in to customize',avatarUrl:''};
+          let avatarUrl=String(profile.avatarUrl||'');
+          const mediaPath=nyxProfileMediaPath(avatarUrl);
+          if(mediaPath){
+            const media=await nyxResolveProfileMedia(mediaPath).catch(()=>null);
+            if(media?.url)avatarUrl=media.url;
+          }
+          target?.postMessage({type:'nyx:ai-profile',profile:{displayName:profile.displayName,handle:profile.handle,avatarUrl}},location.origin);
+        })();
+        return;
+      }
+      if(e.data.type==='nyx:ai-open-profile'){
+        void openNyxUserProfile();
+        return;
+      }
       if(e.data.type==='nyx:shell-tab-index'){
         switchBrowserShellTabByIndex(e.data.index);
         return;
@@ -9335,6 +9595,11 @@
         return;
       }
       const sourceTab=state.tabs.find(t=>t.frame.contentWindow===e.source);
+      if(e.data.type==='nyx:download-request'){
+        if(!sourceTab) return;
+        void nyxRequestBrowserDownload(e.data.url || '',e.data.filename || '',e.data.sourceUrl || sourceTab.sourceUrl || sourceTab.url || '');
+        return;
+      }
       if(e.data.type==='nyx:popup'){
         const previousActive=state.active;
         if(sourceTab) state.active=sourceTab.id;
@@ -9807,7 +10072,7 @@
     restoreWeatherPanel(next,trigger);
   }
   //lion-ai-ui
-  const nyxAiModels=[
+  let nyxAiModels=[
     ['chatgpt-5.4-mini','GPT-5.4 Mini']
   ];
   function nyxAiSelectedModel(){
@@ -9817,10 +10082,33 @@
   function nyxAiModelLabel(id=nyxAiSelectedModel()){
     return nyxAiModels.find(([modelId])=>modelId===id)?.[1] || 'GPT-5.4 Mini';
   }
-  function nyxAiModelOptions(){
-    const selected=nyxAiSelectedModel();
+  function nyxAiModelOptions(selected=nyxAiSelectedModel()){
     return nyxAiModels.map(([id,label])=>`<option value="${esc(id)}" ${id===selected?'selected':''}>${esc(label)}</option>`).join('');
   }
+  async function nyxAiLoadModels(){
+    try{
+      const response=await fetch('/api/nyx-ai/models',{headers:{accept:'application/json'}});
+      const data=await response.json();
+      if(!response.ok) throw new Error(data?.error || `Model catalog failed (${response.status})`);
+      const models=Array.isArray(data?.models) ? data.models.flatMap(item=>{
+        const id=String(item?.id || '').trim();
+        const label=String(item?.label || id).trim();
+        return id && label ? [[id,label]] : [];
+      }) : [];
+      if(!models.length) return;
+      nyxAiModels=models;
+      const selected=nyxAiSelectedModel();
+      document.querySelectorAll('[data-lion-ai-model]').forEach(select=>{
+        const previous=nyxAiModels.some(([id])=>id===select.value) ? select.value : selected;
+        select.innerHTML=nyxAiModelOptions(previous);
+        select.value=previous;
+      });
+      document.querySelectorAll('[data-nyx-ai-model-label]').forEach(label=>{label.textContent=nyxAiModelLabel(selected)});
+    }catch(error){
+      console.warn('Nyx AI model catalog could not be loaded:',error);
+    }
+  }
+  void nyxAiLoadModels();
   function lionAiEmptyState(){
     return `<section class="lion-ai-empty" data-lion-ai-empty>
       <div class="lion-ai-orb" data-nyx-logo aria-hidden="true"></div>
@@ -10541,7 +10829,7 @@
     try{
       return await nyxAiModelAnswer(prompt,win,imageContext,onChunk);
     }catch(err){
-      return `Nyx AI could not reach the selected model.\n\n${err.message}\n\nSet NYX_AI_API_KEY or OPENROUTER_API_KEY on the server, and if your provider uses different model names, set the matching NYX_AI_MODEL_* environment variable.`;
+      return `Nyx AI could not reach the selected model.\n\n${err.message}\n\nSet NYX_AI_API_KEY on the server. The configured Vilen model can be changed with the matching NYX_AI_MODEL_* environment variable.`;
     }
   }
   function lionAiRespond(prompt){
@@ -10689,27 +10977,9 @@
     nyxTerminalWrite(output,`Unknown command: ${command}. Type "help" for the command list.`,'error');
   }
   function openDeveloperConsole(){
-    const win=makeWindow({
-      title:'🛠 Nyx Developer Console',
-      left:'16vw',
-      top:'84px',
-      width:'760px',
-      height:'520px',
-      autoMaximize:false,
-      className:'nyx-utility-window nyx-terminal-window',
-      body:`<div class="nyx-terminal" role="application" aria-label="Nyx developer console"><div class="nyx-terminal-toolbar"><span><i aria-hidden="true"></i>Nyx terminal</span><span>safe diagnostics</span></div><div class="nyx-terminal-output" data-nyx-terminal-output role="log" aria-live="polite"></div><form class="nyx-terminal-form" data-nyx-terminal-form><label for="nyxTerminalInput">nyx&gt;</label><input id="nyxTerminalInput" data-nyx-terminal-input autocomplete="off" spellcheck="false" aria-label="Terminal command" placeholder="Type help"><button type="submit">Run</button></form></div>`
-    });
-    const output=win.querySelector('[data-nyx-terminal-output]');
-    const form=win.querySelector('[data-nyx-terminal-form]');
-    const input=win.querySelector('[data-nyx-terminal-input]');
-    nyxTerminalWrite(output,'Nyx Developer Console');
-    nyxTerminalWrite(output,'Type "help" to list commands. Browser DevTools cannot be opened by a webpage.');
-    form?.addEventListener('submit',event=>{
-      event.preventDefault();
-      void runNyxTerminalCommand(win,input?.value);
-      if(input) input.value='';
-    });
-    setTimeout(()=>input?.focus(),50);
+    // Developer Console is intentionally the full Eruda tab. Keep this as a
+    // single route so it cannot fall back to the old Nyx terminal window.
+    return openBrowserShellInternalTab('developer');
   }
   openApps = function(){
     makeWindow({title:'Apps',left:'8vw',top:'64px',width:'960px',height:'650px',body:`<div class="panel apps-panel"><h1>Apps</h1><div class="quick-grid apps-launch-grid">${quickTiles()}</div></div>`});
@@ -10811,7 +11081,7 @@
         </section>
         <section class="settings-card">
           <h2>Popup Protection</h2>
-          <p>Controls whether site popups are replaced with nyx's blocked popup screen.</p>
+          <p>Blocks all site-created popup windows and popup ads.</p>
           <div class="settings-row"><span>Popup Protection</span><button class="switch ${popupProtectionEnabled()?'on':''}" data-switch="nyx.popupProtection" aria-label="Popup protection"></button></div>
           <p class="security-warning">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span class="security-warning-strong">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p>
         </section>
@@ -12279,7 +12549,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
       if(label) label.textContent=nyxAiModelLabel(model.value);
     });
     document.addEventListener('dragstart',e=>{
-      if(document.body.classList.contains('browser-shell') || e.target.closest?.('.home-shortcut,.home-shortcut-add,[data-home-shortcuts]')){
+      if((document.body.classList.contains('browser-shell') && !e.target.closest?.('.browser-mode-shell-tab')) || e.target.closest?.('.home-shortcut,.home-shortcut-add,[data-home-shortcuts]')){
         e.preventDefault();
         e.stopPropagation();
         return;
@@ -12340,6 +12610,10 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
           return;
         }
         closeNyxAccountMenu();
+        if(accountMenuAction==='profiles'){
+          await openNyxProfileDirectory();
+          return;
+        }
         if(accountMenuAction==='edit'){
           await openNyxUserProfile();
           return;
@@ -12421,6 +12695,12 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
       if(shellBack){
         e.preventDefault();
         activeBrowser?.win?.querySelector('[data-back]')?.click();
+        return;
+      }
+      const shellNavHome=e.target.closest('[data-browser-shell-home-nav]');
+      if(shellNavHome){
+        e.preventDefault();
+        setBrowserShellHomeActive();
         return;
       }
       const shellForward=e.target.closest('[data-browser-shell-forward]');

@@ -51,13 +51,13 @@
         <section class="wizard-step active" data-wizard-step="0" aria-labelledby="access-step-title">
           <div class="wizard-step-heading">
             <span class="wizard-step-number" aria-hidden="true">01</span>
-            <div><p class="eyebrow">Access</p><h3 id="access-step-title">How would you like to continue?</h3><p>Use a verified free account or enter your Premium code.</p></div>
+            <div><p class="eyebrow">Access</p><h3 id="access-step-title">How would you like to continue?</h3><p>Sign in to use your account benefits. Premium subscriptions unlock automatically.</p></div>
           </div>
           <fieldset class="access-method form-panel">
             <legend class="sr-only">Access method</legend>
             <div class="access-tabs" role="tablist" aria-label="Link Generator access method">
-              <button class="active" data-access-mode="account" type="button" role="tab" aria-selected="true">Free account</button>
-              <button data-access-mode="administrator" type="button" role="tab" aria-selected="false">Premium users</button>
+              <button class="active" data-access-mode="account" type="button" role="tab" aria-selected="true">Account</button>
+              <button data-access-mode="administrator" type="button" role="tab" aria-selected="false">Access code</button>
             </div>
             <div class="account-access" data-account-access>
               <div class="account-fields" data-account-fields>
@@ -77,7 +77,7 @@
                 <span>Premium access code</span>
                 <input name="accessCode" data-access-code type="password" maxlength="128" autocomplete="current-password" placeholder="Enter your Premium code">
               </label>
-              <p>Premium users do not need an account and have no daily link quota.</p>
+              <p>Legacy Premium codes remain available when an account sign-in cannot be used.</p>
             </div>
           </fieldset>
           <div class="wizard-actions wizard-actions-end">
@@ -164,6 +164,6 @@
       </section>
     </section>
   </main>
-  <script src="./app.js?v=20260728-premium-validation-9"></script>
+  <script src="./app.js?v=20260803-account-premium-10"></script>
 </body>
 </html>

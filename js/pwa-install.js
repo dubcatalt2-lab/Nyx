@@ -3,6 +3,7 @@
 
   let installPrompt = null;
   let lastMessage = "";
+  const SINGLE_FILE_RELEASE = "2026.08.03.10";
 
   function isInstalled() {
     return window.matchMedia?.("(display-mode: standalone)")?.matches
@@ -30,8 +31,9 @@
     const copy = `
       <h2>Install Nyx</h2>
       <p data-install-nyx-status>Installs Nyx as an app with its own window and desktop icon.</p>`;
-    const control = `<div class="settings-actions">
+    const control = `<div class="settings-actions nyx-install-actions">
       <button class="${kind === "legacy" ? "" : "settings-action"}" data-install-nyx type="button">Install Nyx</button>
+      <button class="${kind === "legacy" ? "" : "settings-action"}" data-download-nyx-singlefile type="button">Download Single File</button>
     </div>`;
     card.innerHTML = kind === "dashboard"
       ? `<div class="nyx-settings-copy">${copy}</div><div class="nyx-settings-control">${control}</div>`
@@ -106,6 +108,32 @@
     }
   }
 
+  function downloadSingleFile(button) {
+    const source = new URL("/nyx-singlefile.html", window.location.href);
+    source.searchParams.set("release", SINGLE_FILE_RELEASE);
+    source.searchParams.set("fresh", Date.now().toString(36));
+    const previousLabel = button?.textContent || "Download Single File";
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Downloading…";
+    }
+    const link = document.createElement("a");
+    link.href = source.href;
+    link.download = "Nyx-Single-File.html";
+    link.hidden = true;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    const status = button?.closest("[data-nyx-install-card]")?.querySelector("[data-install-nyx-status]");
+    if (status) status.textContent = "The latest Chrome-compatible Nyx file is downloading.";
+    window.setTimeout(() => {
+      if (button) {
+        button.disabled = false;
+        button.textContent = previousLabel;
+      }
+    }, 500);
+  }
+
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
     installPrompt = event;
@@ -118,6 +146,12 @@
   });
 
   document.addEventListener("click", (event) => {
+    const downloadButton = event.target.closest?.("[data-download-nyx-singlefile]");
+    if (downloadButton) {
+      event.preventDefault();
+      downloadSingleFile(downloadButton);
+      return;
+    }
     const button = event.target.closest?.("[data-install-nyx]");
     if (!button) return;
     event.preventDefault();
@@ -137,6 +171,7 @@
 
   window.NyxInstall = {
     request: requestInstall,
+    downloadSingleFile,
     refresh: updateControls,
     get available() {
       return Boolean(installPrompt);

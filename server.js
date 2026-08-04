@@ -617,9 +617,13 @@ function scramjetRuntimeGuard() {
   };
   const isDownloadUrl = value => {
     const rawHref = String(value || "").trim();
-    if (/^(?:blob|data):/i.test(rawHref)) return true;
+    // Blob/data URLs and script-like paths are also used by verification
+    // challenges, workers, and client-side navigation. Treating them as
+    // downloads breaks those flows before they can complete. Explicit
+    // Explicit download links are still handled by isDownloadLink below.
+    if (/^(?:blob|data):/i.test(rawHref)) return false;
     const href = rawHref.split(/[?#]/)[0].toLowerCase();
-    return /\.(?:apk|appx|bat|bin|cmd|com|crx|deb|dmg|exe|iso|jar|js|jse|msi|pkg|ps1|scr|sh|vbs|wsf|zip|7z|rar)$/i.test(href);
+    return /\.(?:apk|appx|bat|bin|cmd|com|crx|deb|dmg|exe|iso|jar|msi|pkg|scr|wsf|zip|7z|rar)$/i.test(href);
   };
   const postDownloadRequest = (value, filename = "") => {
     const href = String(value || "").trim();

@@ -8235,9 +8235,13 @@
       };
       const isDownloadUrl=value=>{
         const rawHref=String(value || '').trim();
-        if(/^(?:blob|data):/i.test(rawHref)) return true;
+        // Verification challenges and web workers commonly use blob/data
+        // URLs and script paths. Only an explicit `download` attribute (see
+        // isDownloadLink) or a high-confidence binary/archive extension
+        // should enter Nyx's download-safety flow.
+        if(/^(?:blob|data):/i.test(rawHref)) return false;
         const href=rawHref.split(/[?#]/)[0].toLowerCase();
-        return /\.(apk|appx|bat|bin|cmd|com|crx|deb|dmg|exe|iso|jar|js|msi|pkg|ps1|scr|sh|vbs|wsf|zip|7z|rar)$/i.test(href);
+        return /\.(apk|appx|bat|bin|cmd|com|crx|deb|dmg|exe|iso|jar|msi|pkg|scr|wsf|zip|7z|rar)$/i.test(href);
       };
       const isDownloadLink=link=>{
         if(!link) return false;

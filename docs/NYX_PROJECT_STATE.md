@@ -22,15 +22,15 @@ Important release warning: production currently contains commits that are not on
 
 - Repository: `https://github.com/dubcatalt2-lab/Nyx.git`
 - Active branch: `agent/pirate-cove`
-- Combined release commit: `5c690f51c7f42616dff89720a27b8612905b80fa`
+- Combined release commit: `c1101ed2ec8654646d6ef07219adcbfd4ac88574`
 - `main` / `origin/main`: `0a654cc1c3e17faff12424ae1f2a1a4eb63f6a90`
 - Draft PR: `https://github.com/dubcatalt2-lab/Nyx/pull/34`
 - PR title: **Ship Pirate Cove and Owner Dashboard IP bans**
 - Production URL: `https://nyxlearning.org`
 - Netlify project URL: `https://nyxlearning.netlify.app`
 - Netlify site ID: `c3ee107b-3703-489c-9793-6a8eb598e186`
-- Latest verified production deploy: `6a73a949a58eda00f3369424`
-- Unique deploy URL: `https://6a73a949a58eda00f3369424--nyxlearning.netlify.app`
+- Latest verified production deploy: `6a73b2e30de5962b1f91764d`
+- Unique deploy URL: `https://6a73b2e30de5962b1f91764d--nyxlearning.netlify.app`
 - Production Wisp: `wss://nyx-temporary-production.up.railway.app/wisp/`
 
 The following working-tree entries were deliberately left untracked and must not be staged, removed, or treated as Nyx release files without explicit instruction:
@@ -48,6 +48,7 @@ The 2026-08-05 combined Pirate Cove and Owner Dashboard IP-ban deployment was ve
 - `/healthz`: HTTP 200 JSON
 - `/catclass-games`: HTTP 200 JSON
 - `/api/owner-dashboard/ip-bans`: HTTP 401 when unauthenticated, confirming the route and function bundle are live
+- **Amazing Strange Rope Police**: transformed Unity loader uses the guarded worker callback, creates its canvas, and shows no Unity error dialog through Ultraviolet
 - Live CatClass-derived catalog: 4,482 games at verification time
 - Removed-game matches for **A Mirror's Curse SFW**: 0
 
@@ -113,6 +114,7 @@ PR #34 contains the Pirate Cove release, durable handoff updates, and the combin
 - `844b91c` — route `/catclass-games` through the Netlify function so the live remote catalog works in production
 - `d206192` and `8fd6a4f` — add and format the durable Nyx handoff
 - `5c690f5` — add Owner Dashboard IP bans and dashboard polish on top of Pirate Cove
+- `c1101ed` — repair the legacy UnityLoader worker callback after Ultraviolet rewriting
 
 The supplied background is stored at:
 

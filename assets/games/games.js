@@ -252,7 +252,7 @@ function externalGamePlayer(value) {
     url.username = '';
     url.password = '';
     url.hash = '';
-    return `/assets/games/remote-play.html?v=20260804-not-found-fallback-v2&url=${encodeURIComponent(url.href)}`;
+    return `/assets/games/remote-play.html?v=20260805-selected-proxy-engine-v3&url=${encodeURIComponent(url.href)}`;
   } catch {
     return '';
   }

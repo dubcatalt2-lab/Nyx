@@ -53,7 +53,7 @@
       let current=window;
       for(let depth=0;depth<4;depth++){
         try{
-          if(typeof current.nyxProxyGameUrl==='function') return current;
+          if(typeof current.nyxLaunchGameFrame==='function' || typeof current.nyxProxyGameUrl==='function') return current;
           if(current.parent===current) break;
           current=current.parent;
         }catch{break}
@@ -98,7 +98,20 @@
       frame.removeAttribute('src');
       try{
         const owner=proxyOwner();
-        const destination=owner ? await owner.nyxProxyGameUrl(target) : target;
+        const launch=owner && typeof owner.nyxLaunchGameFrame==='function'
+          ? await owner.nyxLaunchGameFrame(frame,target)
+          : null;
+        if(attempt!==launchAttempt) return;
+        if(launch?.managed){
+          clearTimeout(launchTimer);
+          setTimeout(()=>{
+            if(attempt!==launchAttempt) return;
+            state.hidden=true;
+            parent.postMessage({type:'nyx:game-launched',engine:launch.engine},'*');
+          },650);
+          return;
+        }
+        const destination=launch?.url || (owner ? await owner.nyxProxyGameUrl(target) : target);
         if(attempt!==launchAttempt) return;
         if(!destination){fail('Nyx could not prepare this game source.');return}
         launchTimer=setTimeout(()=>fail('The original game host did not respond.'),30000);

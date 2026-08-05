@@ -5562,6 +5562,32 @@
     const ready=await installUltraviolet();
     return ready ? (proxyModeUrl('ultraviolet',target) || target) : target;
   };
+  const nyxManagedGameFrames=new WeakMap();
+  window.nyxLaunchGameFrame=async (frame,url)=>{
+    const target=proxyTargetUrl(url);
+    if(!target) return {managed:false,engine:'',url:''};
+    const mode=selectedBrowserMode(target);
+    if(mode==='scramjet' && String(frame?.tagName || '').toLowerCase()==='iframe'){
+      const ready=await installScramjet();
+      if(ready && scramjetController){
+        let managed=nyxManagedGameFrames.get(frame);
+        if(!managed){
+          frame.removeAttribute('src');
+          managed=scramjetController.createFrame(frame,{plugins:[createScramjetCompatibilityPlugin('','proxy-sri')]});
+          nyxManagedGameFrames.set(frame,managed);
+        }
+        managed.go(target);
+        return {managed:true,engine:'scramjet',url:target};
+      }
+    }
+    if(mode==='iframe') return {managed:false,engine:'iframe',url:target};
+    const ready=await installUltraviolet();
+    return {
+      managed:false,
+      engine:'ultraviolet',
+      url:ready ? (proxyModeUrl('ultraviolet',target) || target) : target
+    };
+  };
   function normalizeBrowserModeName(mode){
     let value=String(mode || 'auto').trim();
     if((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))){

@@ -206,7 +206,8 @@
       download: '<path d="M12 3v12m-5-5 5 5 5-5"/><path d="M5 21h14"/>',
       close: '<path d="m6 6 12 12M18 6 6 18"/>',
       chevron: '<path d="m9 18 6-6-6-6"/>',
-      activity: '<path d="M12 8v5l3 2"/><circle cx="12" cy="12" r="9"/>'
+      activity: '<path d="M12 8v5l3 2"/><circle cx="12" cy="12" r="9"/>',
+      shield: '<path d="M12 3 4.5 6v5c0 4.7 3.1 8.9 7.5 10 4.4-1.1 7.5-5.3 7.5-10V6L12 3Z"/><path d="m9 12 2 2 4-4"/>'
     };
     return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name] || ""}</svg>`;
   }
@@ -229,7 +230,9 @@
       controller: null,
       searchTimer: 0,
       selectedUser: null,
-      selectedCapabilities: null
+      selectedCapabilities: null,
+      ipBans: [],
+      ipBanClientIp: ""
     };
     const overlay = document.createElement("section");
     overlay.className = "nyx-owner-dashboard-overlay";
@@ -239,7 +242,7 @@
     overlay.innerHTML = `
       <main class="nyx-owner-dashboard">
         <header class="nyx-owner-header">
-          <div><span class="nyx-owner-eyebrow">NYX CONTROL CENTER</span><h1 id="nyxOwnerDashboardTitle">Owner Dashboard</h1><p data-owner-access-copy>Loading your role permissionsâ€¦</p></div>
+          <div><span class="nyx-owner-eyebrow">NYX CONTROL CENTER</span><h1 id="nyxOwnerDashboardTitle">Owner Dashboard</h1><p data-owner-access-copy>Loading your role permissions…</p></div>
           <div class="nyx-owner-header-actions">
             <button type="button" data-owner-refresh>${dashboardIcon("refresh")}<span>Refresh</span></button>
             <button class="nyx-owner-close" type="button" data-owner-close aria-label="Close owner dashboard">${dashboardIcon("close")}</button>
@@ -253,6 +256,7 @@
               <div class="nyx-owner-quick-actions">
                 <button type="button" data-owner-online-only>${dashboardIcon("online")}Online users</button>
                 <button type="button" data-owner-export>${dashboardIcon("download")}Export page</button>
+                <button type="button" data-owner-ip-bans hidden>${dashboardIcon("shield")}IP bans</button>
               </div>
             </header>
             <form class="nyx-owner-filters" data-owner-filters>
@@ -415,6 +419,50 @@
       activityHost.innerHTML = "";
     }
 
+    function renderIpBans() {
+      const bans = state.ipBans || [];
+      const clientNote = state.ipBanClientIp ? ` Your current IP is ${state.ipBanClientIp}; Nyx will not let you block it from this session.` : "";
+      drawer.innerHTML = `<header><div><span>${dashboardIcon("shield")}</span><h2>Network access</h2><p>IP bans apply to Nyx server and function requests.</p></div><button type="button" data-owner-drawer-close aria-label="Close IP bans">${dashboardIcon("close")}</button></header>
+        <div class="nyx-owner-drawer-scroll nyx-owner-ip-ban-drawer">
+          <section class="nyx-owner-detail-section"><h3>Block an IP address</h3><p class="nyx-owner-action-note">Use a full IPv4 or IPv6 address. This does not configure Cloudflare's edge firewall.${esc(clientNote)}</p><form class="nyx-owner-ip-ban-form" data-owner-ip-ban-form><label>IP address<input name="ip" inputmode="text" autocomplete="off" maxlength="45" required placeholder="203.0.113.10 or 2001:db8::10"></label><label>Reason <input name="reason" maxlength="160" autocomplete="off" placeholder="Optional internal note"></label><div class="nyx-owner-detail-actions"><button type="submit">Block IP</button></div></form></section>
+          <section class="nyx-owner-detail-section"><h3>Blocked IP addresses</h3>${bans.length ? `<div class="nyx-owner-ip-ban-list">${bans.map(ban => `<article><div><strong>${esc(ban.ip)}</strong><span>${esc(ban.reason || "No reason recorded")}</span><small>Blocked ${esc(relativeLabel(ban.createdAt))}${ban.createdBy ? ` by ${esc(ban.createdBy)}` : ""}</small></div><button class="danger" type="button" data-owner-unban="${esc(ban.id)}">Unblock</button></article>`).join("")}</div>` : '<p class="nyx-owner-action-note">No IP addresses are blocked.</p>'}</section>
+        </div>`;
+    }
+
+    async function openIpBans() {
+      drawer.hidden = false;
+      drawer.classList.remove("show");
+      drawer.innerHTML = '<div class="nyx-owner-drawer-loading"><i></i><i></i><i></i></div>';
+      requestAnimationFrame(() => drawer.classList.add("show"));
+      state.selectedUser = null;
+      state.selectedCapabilities = null;
+      try {
+        const data = await api("/api/owner-dashboard/ip-bans");
+        state.ipBans = data.bans || [];
+        state.ipBanClientIp = data.clientIp || "";
+        state.access = data.access || state.access;
+        renderIpBans();
+      } catch (error) {
+        drawer.innerHTML = `<div class="nyx-owner-error"><strong>IP bans could not load</strong><span>${esc(error.message)}</span><button type="button" data-owner-drawer-close>Close</button></div>`;
+      }
+    }
+
+    async function removeIpBan(id) {
+      const ban = state.ipBans.find(entry => entry.id === id);
+      if (!ban) return;
+      const confirmed = await confirmAction({ title: "Unblock this IP address?", message: `${ban.ip} will regain access to Nyx server requests.`, confirmLabel: "Unblock", requireText: ban.ip });
+      if (!confirmed) return;
+      try {
+        await api(`/api/owner-dashboard/ip-bans/${encodeURIComponent(id)}`, { method: "DELETE" });
+        state.ipBans = state.ipBans.filter(entry => entry.id !== id);
+        renderIpBans();
+        notify("IP address unblocked.");
+        await load({ preserveLoading: true });
+      } catch (error) {
+        notify(error.message || "The IP address could not be unblocked.", "error");
+      }
+    }
+
     async function load({ preserveLoading = false } = {}) {
       state.controller?.abort();
       state.controller = new AbortController();
@@ -435,8 +483,10 @@
         const data = await api(`/api/owner-dashboard?${parameters}`, { signal: state.controller.signal });
         state.data = data;
         state.access = data.access || state.access;
+        const ipBansButton = overlay.querySelector("[data-owner-ip-bans]");
+        if (ipBansButton) ipBansButton.hidden = !state.access?.permissions?.includes("network:bans");
         const accessCopy = overlay.querySelector("[data-owner-access-copy]");
-        if (accessCopy && state.access) accessCopy.textContent = `${state.access.roleLabel || roleLabel(state.access.role)} access Â· controls are limited to this role's permissions.`;
+        if (accessCopy && state.access) accessCopy.textContent = `${state.access.roleLabel || roleLabel(state.access.role)} access · controls are limited to this role's permissions.`;
         renderMetrics(data.metrics);
         renderUsers(data);
         renderActivity(data.recentActivity);
@@ -562,13 +612,15 @@
           capabilities.canResetPassword ? `<button type="button" data-owner-user-action="send_password_reset" ${!user.deliverableEmail ? "disabled" : ""}>Email reset link</button>` : "",
           capabilities.canVerifyEmail ? `<button type="button" data-owner-user-action="verify_email" ${user.emailVerified || !user.deliverableEmail ? "disabled" : ""}>Verify email</button>` : "",
           capabilities.canDisableAccount ? `<button type="button" data-owner-user-action="${user.disabled ? "enable" : "disable"}">${user.disabled ? "Re-enable account" : "Disable account"}</button>` : "",
+          capabilities.canDisableAccount && capabilities.canManageNetworkBans && !user.disabled && user.lastSeenIp ? '<button class="danger" type="button" data-owner-user-action="disable_with_ip_ban">Disable + block IP</button>' : "",
           capabilities.canDeleteAccount ? '<button class="danger" type="button" data-owner-user-action="delete">Delete account</button>' : ""
         ].filter(Boolean).join("");
-        const accountActionsSection = accountActions ? `<section class="nyx-owner-detail-section"><h3>Account actions</h3>${!user.deliverableEmail && capabilities.canResetPassword ? '<p class="nyx-owner-action-note">This username-only account has no inbox. Create a secure reset link and give it directly to the account owner.</p>' : ""}<div class="nyx-owner-action-grid">${accountActions}</div></section>` : "";
+        const ipBanNote = capabilities.canManageNetworkBans ? (user.lastSeenIp ? `<p class="nyx-owner-action-note">Last seen IP: ${esc(user.lastSeenIp)} · ${esc(dateLabel(user.lastSeenIpAt))}. IP addresses can be shared or change over time.</p>` : '<p class="nyx-owner-action-note">No IP has been recorded for this account yet. Nyx records one after its next authenticated activity.</p>') : "";
+        const accountActionsSection = accountActions ? `<section class="nyx-owner-detail-section"><h3>Account actions</h3>${!user.deliverableEmail && capabilities.canResetPassword ? '<p class="nyx-owner-action-note">This username-only account has no inbox. Create a secure reset link and give it directly to the account owner.</p>' : ""}${ipBanNote}<div class="nyx-owner-action-grid">${accountActions}</div></section>` : "";
         const recentActivitySection = capabilities.canViewAudit ? `<section class="nyx-owner-detail-section"><h3>Recent user activity</h3><div class="nyx-owner-user-activity">${(user.recentActivity || []).length ? user.recentActivity.map(event => `<p><strong>${esc(actionLabel(event.action))}</strong><span>${esc(relativeLabel(event.createdAt))}</span></p>`).join("") : "<span>No recorded account actions.</span>"}</div></section>` : "";
         drawer.innerHTML = `<header><div class="nyx-owner-detail-avatar">${avatar}<i class="${user.online ? "online" : ""}"></i></div><div><span>${roleIcon(user.role)}${esc(roleLabel(user.role))} account</span><h2>${esc(user.displayName)}</h2><p class="nyx-owner-drawer-identity">@${esc(user.username)} <span class="nyx-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></p></div><button type="button" data-owner-drawer-close aria-label="Close user details">${dashboardIcon("close")}</button></header>
           <div class="nyx-owner-drawer-scroll">
-            <section class="nyx-owner-detail-grid">${detailValue("Email", user.deliverableEmail ? user.email : "No email added")}${detailValue("Firebase UID", user.uid, "uid")}${detailValue("Presence", user.online ? "Online now" : "Offline")}${detailValue("Created", dateLabel(user.createdAt))}${detailValue("Last sign-in", dateLabel(user.lastSignInAt))}${detailValue("Last active", dateLabel(user.lastActiveAt))}${detailValue("Email verified", user.deliverableEmail ? (user.emailVerified ? "Verified" : "Not verified") : "Not applicable · username-only")}</section>
+            <section class="nyx-owner-detail-grid">${detailValue("Email", user.deliverableEmail ? user.email : "No email added")}${detailValue("Firebase UID", user.uid, "uid")}${detailValue("Presence", user.online ? "Online now" : "Offline")}${detailValue("Created", dateLabel(user.createdAt))}${detailValue("Last sign-in", dateLabel(user.lastSignInAt))}${detailValue("Last active", dateLabel(user.lastActiveAt))}${capabilities.canManageNetworkBans ? detailValue("Last seen IP", user.lastSeenIp || "Not recorded yet") : ""}${capabilities.canManageNetworkBans && user.lastSeenIp ? detailValue("IP last seen", dateLabel(user.lastSeenIpAt)) : ""}${detailValue("Email verified", user.deliverableEmail ? (user.emailVerified ? "Verified" : "Not verified") : "Not applicable · username-only")}</section>
             <section class="nyx-owner-detail-section nyx-owner-profile-management"><h3>Public profile</h3>${ownerProfilePreview(user)}${capabilities.canEditProfile ? `<details><summary>Edit this profile</summary>${ownerProfileEditor(user)}</details>` : ""}</section>
             ${accessSection}
             ${accountActionsSection}
@@ -631,6 +683,7 @@
       if (!user) return;
       const confirmations = {
         disable: ["Disable account?", `${user.email || user.displayName} will immediately lose access until re-enabled.`, "Disable", true],
+        disable_with_ip_ban: ["Disable account and block its IP?", `${user.email || user.displayName} will lose access, and ${user.lastSeenIp} will be blocked from Nyx server requests. Shared or changing IPs can affect other people.`, "Disable and block", true],
         enable: ["Re-enable account?", `${user.email || user.displayName} will be able to sign in again.`, "Re-enable", false],
         verify_email: ["Verify this email?", `Mark ${user.email} as verified in Firebase Authentication.`, "Verify", false],
         create_password_reset_link: ["Create a password reset link?", "The current password will remain private. Give the generated one-time link only to the account owner.", "Create link", false],
@@ -684,6 +737,9 @@
       if (event.target === overlay || event.target.closest("[data-owner-close]")) return destroy();
       if (event.target.closest("[data-owner-refresh]")) return void load();
       if (event.target.closest("[data-owner-export]")) return exportCurrentPage();
+      if (event.target.closest("[data-owner-ip-bans]")) return void openIpBans();
+      const unbanId = event.target.closest("[data-owner-unban]")?.dataset.ownerUnban;
+      if (unbanId) return void removeIpBan(unbanId);
       const segment = event.target.closest("[data-owner-segment]")?.dataset.ownerSegment;
       if (segment) {
         state.segment = segment;
@@ -800,6 +856,26 @@
     }
 
     function onSubmit(event) {
+      const ipBanForm = event.target.closest("[data-owner-ip-ban-form]");
+      if (ipBanForm) {
+        event.preventDefault();
+        if (!ipBanForm.reportValidity()) return;
+        const submit = ipBanForm.querySelector('[type="submit"]');
+        submit.disabled = true;
+        void (async () => {
+          try {
+            const values = new FormData(ipBanForm);
+            const result = await api("/api/owner-dashboard/ip-bans", { method: "POST", body: JSON.stringify({ ip: values.get("ip"), reason: values.get("reason") }) });
+            state.ipBans = [result.ban, ...state.ipBans.filter(entry => entry.id !== result.ban.id)];
+            renderIpBans();
+            notify("IP address blocked.");
+            await load({ preserveLoading: true });
+          } catch (error) {
+            notify(error.message || "The IP address could not be blocked.", "error");
+          }
+        })().finally(() => { if (submit.isConnected) submit.disabled = false; });
+        return;
+      }
       const form = event.target.closest("[data-owner-profile-form]");
       if (!form) return;
       event.preventDefault();

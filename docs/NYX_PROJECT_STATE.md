@@ -130,6 +130,15 @@ Netlify cannot replace the long-running Wisp WebSocket service. `netlify.toml` a
 
 If Railway restricts Wisp origins, `NYX_ALLOWED_ORIGINS` must include the exact active origins that should connect, normally the custom domain and Netlify domain. Confirm the deployed Railway variables rather than assuming their value.
 
+## IP Ban Controls
+
+- The Owner Dashboard gives Owner, Co-owner, and Admin roles an **IP bans** control. It stores exact IPv4/IPv6 addresses in the server-only `nyxIpBans` Firestore collection and records changes in `nyxAuditLog`.
+- Authenticated activity heartbeats and session-start events update server-managed `lastSeenIp` and `lastSeenIpAt` fields for that account. Authorized staff can view the last observed address for accounts they can manage and use **Disable + block IP**; it disables the Firebase account, revokes sessions, and creates the IP ban. It is not a historical IP log.
+- Express and Netlify-function requests are checked before routes run; ban data is cached for up to 30 seconds and invalidated after a local change. The application must fail open if Firebase is unavailable rather than turn a Firebase outage into a site outage.
+- Netlify functions default `NYX_TRUST_PROXY` to `true` so the verified deployment headers can identify the source IP. A self-hosted deployment may set it only behind a proxy that overwrites client-supplied forwarding headers.
+- Static files are served by Netlify ahead of the function, so a matching Cloudflare IP List plus WAF rule is required for a full `nyxlearning.org` block. The exact runbook is `docs/IP_BANS.md`. Do not add a Cloudflare API token to Nyx merely to synchronize the two lists.
+- Railway's direct Wisp endpoint is outside Cloudflare. Blocked visitors cannot load Nyx through the domain once the WAF rule is active, but direct Wisp abuse requires a separate Railway-side policy.
+
 ### Future VPS option
 
 `DEPLOYMENT.md` documents an alternative single-OVHcloud-VPS deployment using Ubuntu, Nginx, systemd, and embedded Wisp. It is not the current production topology.

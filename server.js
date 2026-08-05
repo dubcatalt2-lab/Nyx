@@ -1,5 +1,6 @@
 ﻿import express from "express";
 import { createServer } from "node:http";
+import { isIP } from "node:net";
 import { hostname } from "node:os";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -68,6 +69,10 @@ const nyxAccountRegisterMaxAttempts = 5;
 const nyxAccountPasswordResetMaxAttempts = 5;
 const ownerDashboardSnapshotTtlMs = 30_000;
 let ownerDashboardSnapshotCache = { expiresAt: 0, value: null, promise: null };
+const nyxIpBanCollectionName = "nyxIpBans";
+const nyxIpBanCacheTtlMs = 30_000;
+const nyxIpBanListLimit = 500;
+let nyxIpBanCache = { expiresAt: 0, bans: new Map(), promise: null };
 const linkGeneratorAttempts = new Map();
 const linkGeneratorWindowMs = 15 * 60 * 1000;
 const linkGeneratorMaxAttempts = 5;
@@ -90,6 +95,93 @@ app.use((error, _req, res, next) => {
   }
   next(error);
 });
+
+function normalizeNyxIp(value) {
+  const candidate = String(value || "").trim().replace(/^\[|\]$/g, "").toLowerCase();
+  const ip = candidate.startsWith("::ffff:") ? candidate.slice(7) : candidate;
+  return isIP(ip) ? ip : "";
+}
+
+function nyxClientIp(req) {
+  const forwarded = process.env.NYX_TRUST_PROXY === "true"
+    ? String(req.get("x-nf-client-connection-ip") || req.get("cf-connecting-ip") || req.get("x-forwarded-for") || "").split(",")[0]
+    : "";
+  return normalizeNyxIp(forwarded) || normalizeNyxIp(req.socket?.remoteAddress);
+}
+
+function nyxIpBanId(ip) {
+  return createHash("sha256").update(`nyx-ip-ban:${ip}`).digest("hex");
+}
+
+function nyxIpBanRecord(id, data = {}) {
+  const ip = normalizeNyxIp(data.ip);
+  if (!ip) return null;
+  return {
+    id: String(id || ""),
+    ip,
+    reason: String(data.reason || "").trim().slice(0, 160),
+    createdAt: safeDateIso(data.createdAt),
+    createdBy: String(data.createdBy || "").slice(0, 254)
+  };
+}
+
+async function nyxIpBans(firebase) {
+  const now = Date.now();
+  if (nyxIpBanCache.expiresAt > now) return nyxIpBanCache.bans;
+  if (nyxIpBanCache.promise) return nyxIpBanCache.promise;
+  nyxIpBanCache.promise = (async () => {
+    const snapshot = await firebase.firestore.collection(nyxIpBanCollectionName).limit(nyxIpBanListLimit).get();
+    const bans = new Map();
+    snapshot.docs.forEach(document => {
+      const ban = nyxIpBanRecord(document.id, document.data());
+      if (ban) bans.set(ban.ip, ban);
+    });
+    return bans;
+  })();
+  try {
+    const bans = await nyxIpBanCache.promise;
+    nyxIpBanCache = { expiresAt: Date.now() + nyxIpBanCacheTtlMs, bans, promise: null };
+    return bans;
+  } catch (error) {
+    nyxIpBanCache.promise = null;
+    if (nyxIpBanCache.bans.size) return nyxIpBanCache.bans;
+    throw error;
+  }
+}
+
+function invalidateNyxIpBans() {
+  nyxIpBanCache = { expiresAt: 0, bans: new Map(), promise: null };
+}
+
+async function nyxIpBanGuard(req, res, next) {
+  if (!firebaseAdminModeConfigured()) {
+    next();
+    return;
+  }
+  try {
+    const ip = nyxClientIp(req);
+    if (!ip) {
+      next();
+      return;
+    }
+    const firebase = await linkGeneratorFirebase();
+    if (!((await nyxIpBans(firebase)).has(ip))) {
+      next();
+      return;
+    }
+    res.set("Cache-Control", "no-store");
+    if (req.path.startsWith("/api/")) {
+      res.status(403).json({ error: "This network has been blocked from Nyx." });
+      return;
+    }
+    res.status(403).type("html").send(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nyx access blocked</title><style>html,body{margin:0;min-height:100%;display:grid;place-items:center;background:#0b101a;color:#f5f7fb;font:16px/1.5 system-ui,sans-serif}main{max-width:440px;padding:32px;text-align:center}h1{margin:0 0 10px;font-size:24px}p{margin:0;color:#b7c1d1}</style><main><h1>Access blocked</h1><p>This network has been blocked from Nyx.</p></main>`);
+  } catch (error) {
+    console.error("Nyx IP ban check could not be completed:", error?.message || error);
+    next();
+  }
+}
+
+app.use(nyxIpBanGuard);
 const uvHandlerPath = join(uvPath, "uv.handler.js");
 const uvBundlePath = join(uvPath, "uv.bundle.js");
 const baremuxIndexPath = join(baremuxPath, "index.mjs");
@@ -2078,17 +2170,17 @@ const nyxRolePolicies = Object.freeze({
   owner: Object.freeze({
     rank: 100,
     assignableRank: 90,
-    permissions: Object.freeze(["dashboard:view", "users:view", "audit:view", "profiles:write", "roles:write", "subscriptions:write", "accounts:reset", "accounts:verify", "accounts:disable", "accounts:delete", "developer-console", "founder:write"])
+    permissions: Object.freeze(["dashboard:view", "users:view", "audit:view", "profiles:write", "roles:write", "subscriptions:write", "accounts:reset", "accounts:verify", "accounts:disable", "accounts:delete", "network:bans", "developer-console", "founder:write"])
   }),
   co_owner: Object.freeze({
     rank: 90,
     assignableRank: 80,
-    permissions: Object.freeze(["dashboard:view", "users:view", "audit:view", "profiles:write", "roles:write", "subscriptions:write", "accounts:reset", "accounts:verify", "accounts:disable", "accounts:delete", "developer-console"])
+    permissions: Object.freeze(["dashboard:view", "users:view", "audit:view", "profiles:write", "roles:write", "subscriptions:write", "accounts:reset", "accounts:verify", "accounts:disable", "accounts:delete", "network:bans", "developer-console"])
   }),
   admin: Object.freeze({
     rank: 80,
     assignableRank: 70,
-    permissions: Object.freeze(["dashboard:view", "users:view", "audit:view", "profiles:write", "roles:write", "subscriptions:write", "accounts:reset", "accounts:verify", "accounts:disable"])
+    permissions: Object.freeze(["dashboard:view", "users:view", "audit:view", "profiles:write", "roles:write", "subscriptions:write", "accounts:reset", "accounts:verify", "accounts:disable", "network:bans"])
   }),
   manager: Object.freeze({
     rank: 70,
@@ -2157,6 +2249,7 @@ function nyxOwnerUserCapabilities(actor, targetRole, targetUid, ownerUid = found
     canResetPassword: (canManageTarget || ownerManagingSelf) && nyxActorHasPermission(actor, "accounts:reset"),
     canVerifyEmail: (canManageTarget || ownerManagingSelf) && nyxActorHasPermission(actor, "accounts:verify"),
     canDisableAccount: canManageTarget && nyxActorHasPermission(actor, "accounts:disable"),
+    canManageNetworkBans: canManageTarget && nyxActorHasPermission(actor, "network:bans"),
     canDeleteAccount: canManageTarget && nyxActorHasPermission(actor, "accounts:delete"),
     assignableRoles: nyxActorHasPermission(actor, "roles:write")
       ? nyxAssignableRoles.filter(role => nyxRolePolicy(role).rank <= actorPolicy.assignableRank)
@@ -2298,7 +2391,7 @@ async function listAllFirebaseUsers(auth, limit = ownerDashboardUserScanLimit) {
   return { users, truncated: Boolean(pageToken) };
 }
 
-function nyxOwnerUserRecord(user, administration = {}, profileData = {}, activity = {}, ownerUid = "", includeProfileMedia = false) {
+function nyxOwnerUserRecord(user, administration = {}, profileData = {}, activity = {}, ownerUid = "", includeProfileMedia = false, includeNetworkDetails = false) {
   const profile = normalizeNyxUserProfile(profileData?.profile);
   const email = String(user.email || "");
   const emailUsername = email.split("@")[0] || user.uid.slice(0, 8);
@@ -2320,6 +2413,8 @@ function nyxOwnerUserRecord(user, administration = {}, profileData = {}, activit
     createdAt: safeDateIso(user.metadata?.creationTime),
     lastSignInAt: safeDateIso(user.metadata?.lastSignInTime),
     lastActiveAt: lastActiveAtMs ? new Date(lastActiveAtMs).toISOString() : "",
+    lastSeenIp: includeNetworkDetails ? normalizeNyxIp(administration.lastSeenIp) : "",
+    lastSeenIpAt: includeNetworkDetails ? safeDateIso(administration.lastSeenIpAt) : "",
     online: Boolean(lastActiveAtMs && now - lastActiveAtMs <= signedInOnlineWindowMs),
     emailVerified: Boolean(user.emailVerified),
     disabled: Boolean(user.disabled),
@@ -3656,16 +3751,22 @@ app.post("/api/activity/heartbeat", async (req, res) => {
   try {
     const { firebase, token } = await authenticatedNyxUser(req);
     const now = Date.now();
+    const timestamp = new Date(now).toISOString();
+    const lastSeenIp = nyxClientIp(req);
     const administrationRef = firebase.firestore.collection("nyxUserAdministration").doc(token.uid);
-    const [, administration] = await Promise.all([
+    const work = [
       firebase.firestore.collection("nyxUserActivity").doc(token.uid).set({
-        lastActiveAt: new Date(now).toISOString(),
+        lastActiveAt: timestamp,
         lastActiveAtMs: now,
         onlineUntilMs: now + signedInOnlineWindowMs,
-        updatedAt: new Date(now).toISOString()
+        updatedAt: timestamp
       }, { merge: true }),
       administrationRef.get()
-    ]);
+    ];
+    if (lastSeenIp) {
+      work.push(administrationRef.set({ lastSeenIp, lastSeenIpAt: timestamp, updatedAt: timestamp }, { merge: true }));
+    }
+    const [, administration] = await Promise.all(work);
     const administrationData = administration.data() || {};
     const role = nyxRoleForUser(token.uid, administrationData);
     const access = nyxOwnerAccessPayload({ role, permissions: nyxRolePolicy(role).permissions });
@@ -3697,6 +3798,14 @@ app.post("/api/activity/event", async (req, res) => {
     if (!["login", "session_start"].includes(action)) {
       res.status(400).json({ error: "That activity event is not supported." });
       return;
+    }
+    const lastSeenIp = nyxClientIp(req);
+    if (lastSeenIp) {
+      await firebase.firestore.collection("nyxUserAdministration").doc(token.uid).set({
+        lastSeenIp,
+        lastSeenIpAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
     }
     const key = `${token.uid}:${action}`;
     const now = Date.now();
@@ -3809,8 +3918,9 @@ app.get("/api/owner-dashboard/users/:uid", async (req, res) => {
         ? firebase.firestore.collection("nyxAuditLog").where("targetUid", "==", uid).orderBy("createdAtMs", "desc").limit(20).get().catch(() => null)
         : Promise.resolve(null)
     ]);
-    const record = nyxOwnerUserRecord(user, administration.data(), profile.data(), activity.data(), ownerUid, true);
-    const capabilities = nyxOwnerUserCapabilities(actor, record.role, uid, ownerUid);
+    const targetRole = nyxRoleForUser(uid, administration.data(), ownerUid);
+    const capabilities = nyxOwnerUserCapabilities(actor, targetRole, uid, ownerUid);
+    const record = nyxOwnerUserRecord(user, administration.data(), profile.data(), activity.data(), ownerUid, true, capabilities.canManageNetworkBans);
     record.recentActivity = audit ? audit.docs.map(document => {
       const data = document.data() || {};
       return { id: document.id, action: String(data.action || ""), actorEmail: String(data.actorEmail || ""), createdAt: safeDateIso(data.createdAt), details: data.details || {} };
@@ -3849,6 +3959,95 @@ app.get("/api/owner-dashboard/audit", async (req, res) => {
   }
 });
 
+app.get("/api/owner-dashboard/ip-bans", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const { firebase, actor } = await ownerDashboardActor(req, "network:bans");
+    const bans = [...(await nyxIpBans(firebase)).values()]
+      .sort((left, right) => Date.parse(right.createdAt || "") - Date.parse(left.createdAt || ""));
+    res.json({ access: nyxOwnerAccessPayload(actor), bans, clientIp: nyxClientIp(req) });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "IP bans are unavailable." });
+  }
+});
+
+app.post("/api/owner-dashboard/ip-bans", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  const ip = normalizeNyxIp(req.body?.ip);
+  if (!ip) {
+    res.status(400).json({ error: "Enter a valid IPv4 or IPv6 address." });
+    return;
+  }
+  if (ip === nyxClientIp(req)) {
+    res.status(409).json({ error: "You cannot block the IP address currently managing Nyx." });
+    return;
+  }
+  try {
+    const { firebase, token, actor } = await ownerDashboardActor(req, "network:bans");
+    const id = nyxIpBanId(ip);
+    const existing = await firebase.firestore.collection(nyxIpBanCollectionName).doc(id).get();
+    const reason = String(req.body?.reason || "").trim().slice(0, 160);
+    const createdAt = String(existing.data()?.createdAt || new Date().toISOString());
+    await firebase.firestore.collection(nyxIpBanCollectionName).doc(id).set({
+      ip,
+      reason,
+      createdAt,
+      createdBy: String(existing.data()?.createdBy || token.email || token.uid).slice(0, 254),
+      updatedAt: new Date().toISOString(),
+      updatedBy: String(token.email || token.uid).slice(0, 254)
+    }, { merge: true });
+    invalidateNyxIpBans();
+    await recordNyxAuditSafe(firebase, {
+      actorUid: token.uid,
+      actorEmail: token.email,
+      action: existing.exists ? "ip_ban_updated" : "ip_banned",
+      details: { ip, reason }
+    });
+    const ban = nyxIpBanRecord(id, (await firebase.firestore.collection(nyxIpBanCollectionName).doc(id).get()).data());
+    res.status(existing.exists ? 200 : 201).json({ ban, access: nyxOwnerAccessPayload(actor) });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "The IP ban could not be saved." });
+  }
+});
+
+app.delete("/api/owner-dashboard/ip-bans/:id", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  const id = String(req.params.id || "").toLowerCase();
+  if (!/^[a-f0-9]{64}$/.test(id)) {
+    res.status(400).json({ error: "That IP ban is invalid." });
+    return;
+  }
+  try {
+    const { firebase, token, actor } = await ownerDashboardActor(req, "network:bans");
+    const reference = firebase.firestore.collection(nyxIpBanCollectionName).doc(id);
+    const snapshot = await reference.get();
+    if (!snapshot.exists) {
+      res.status(404).json({ error: "That IP ban no longer exists." });
+      return;
+    }
+    const ban = nyxIpBanRecord(id, snapshot.data());
+    await reference.delete();
+    invalidateNyxIpBans();
+    await recordNyxAuditSafe(firebase, {
+      actorUid: token.uid,
+      actorEmail: token.email,
+      action: "ip_ban_removed",
+      details: { ip: ban?.ip || "" }
+    });
+    res.json({ removed: true, id, access: nyxOwnerAccessPayload(actor) });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "The IP ban could not be removed." });
+  }
+});
+
 app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) {
@@ -3880,12 +4079,13 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
       verify_email: "canVerifyEmail",
       create_password_reset_link: "canResetPassword",
       send_password_reset: "canResetPassword",
+      disable_with_ip_ban: "canDisableAccount",
       delete: "canDeleteAccount"
     };
     if (capabilityByAction[action]) {
       assertNyxOwnerCapability(capabilities, capabilityByAction[action], `Your ${nyxRoleLabels[actor.role] || "Member"} role cannot perform that action on this account.`);
     }
-    const ownerProtectedAction = ["set_role", "disable", "delete"].includes(action);
+    const ownerProtectedAction = ["set_role", "disable", "disable_with_ip_ban", "delete"].includes(action);
     if (uid === ownerUid && ownerProtectedAction) {
       res.status(409).json({ error: "The configured owner account cannot be demoted, disabled, or deleted." });
       return;
@@ -3952,12 +4152,43 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
         avatarRemoved: req.body?.removeAvatar === true,
         bannerRemoved: req.body?.removeBanner === true
       };
-    } else if (action === "disable" || action === "enable") {
-      const disabled = action === "disable";
+    } else if (action === "disable" || action === "enable" || action === "disable_with_ip_ban") {
+      if (action === "disable_with_ip_ban" && !capabilities.canManageNetworkBans) {
+        res.status(403).json({ error: "Your role cannot manage IP bans for that account." });
+        return;
+      }
+      const disabled = action === "disable" || action === "disable_with_ip_ban";
+      const lastSeenIp = action === "disable_with_ip_ban" ? normalizeNyxIp(targetAdministration?.data()?.lastSeenIp) : "";
+      if (action === "disable_with_ip_ban" && !lastSeenIp) {
+        res.status(409).json({ error: "Nyx has not recorded an IP address for this account yet." });
+        return;
+      }
+      if (action === "disable_with_ip_ban" && lastSeenIp === nyxClientIp(req)) {
+        res.status(409).json({ error: "You cannot block the IP address currently managing Nyx." });
+        return;
+      }
       await firebase.auth.updateUser(uid, { disabled });
       if (disabled) await firebase.auth.revokeRefreshTokens(uid);
-      auditAction = disabled ? "account_disabled" : "account_enabled";
-      auditDetails = { disabled };
+      if (action === "disable_with_ip_ban") {
+        const banId = nyxIpBanId(lastSeenIp);
+        const banReference = firebase.firestore.collection(nyxIpBanCollectionName).doc(banId);
+        const existingBan = await banReference.get();
+        const timestamp = new Date().toISOString();
+        await banReference.set({
+          ip: lastSeenIp,
+          reason: `Blocked with account ${String(target.email || uid).slice(0, 120)}`,
+          createdAt: String(existingBan.data()?.createdAt || timestamp),
+          createdBy: String(existingBan.data()?.createdBy || token.email || token.uid).slice(0, 254),
+          updatedAt: timestamp,
+          updatedBy: String(token.email || token.uid).slice(0, 254)
+        }, { merge: true });
+        invalidateNyxIpBans();
+        auditAction = "account_disabled_with_ip_ban";
+        auditDetails = { disabled: true, ip: lastSeenIp };
+      } else {
+        auditAction = disabled ? "account_disabled" : "account_enabled";
+        auditDetails = { disabled };
+      }
     } else if (action === "verify_email") {
       if (!nyxDeliverableEmail(target.email)) {
         res.status(409).json({ error: "Username-only Nyx accounts do not have a deliverable email to verify." });
@@ -4040,11 +4271,13 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
       firebase.firestore.collection("nyxUserProfiles").doc(uid).get(),
       firebase.firestore.collection("nyxUserActivity").doc(uid).get()
     ]);
-    const record = nyxOwnerUserRecord(updated, administration.data(), profile.data(), activity.data(), ownerUid, true);
+    const updatedTargetRole = nyxRoleForUser(uid, administration.data(), ownerUid);
+    const updatedCapabilities = nyxOwnerUserCapabilities(actor, updatedTargetRole, uid, ownerUid);
+    const record = nyxOwnerUserRecord(updated, administration.data(), profile.data(), activity.data(), ownerUid, true, updatedCapabilities.canManageNetworkBans);
     res.json({
       user: record,
       access: nyxOwnerAccessPayload(actor),
-      capabilities: nyxOwnerUserCapabilities(actor, record.role, uid, ownerUid)
+      capabilities: updatedCapabilities
     });
   } catch (error) {
     const status = error.code === "auth/user-not-found" ? 404 : (error.status || 503);

@@ -16,4 +16,3 @@ Working rules:
 - Run `npm run check:deploy` after material changes and use targeted browser/runtime checks for the affected feature.
 - Do not push, merge, deploy, change DNS, or mutate external services unless the user explicitly asks.
 - Update `docs/NYX_PROJECT_STATE.md` when a change materially alters the release state, architecture, deployment setup, durable constraints, or known issues.
-

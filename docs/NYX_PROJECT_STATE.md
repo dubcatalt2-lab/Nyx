@@ -103,6 +103,7 @@ Client preferences and much local UI state use browser storage. Cross-device acc
 - Do not import or mirror third-party game catalogs or copyrighted assets without checking authorization and deployment implications.
 - The game titled **A Mirror's Curse SFW** must remain excluded from both server-fed and client-cached catalogs.
 - Pirate Cove must retain the supplied animated background, smooth delayed parallax, filled page bottom, responsive 30-item pagination, and working source fallback behavior.
+- `uv.sw.js` repairs the exact legacy UnityLoader worker-callback lookup that Ultraviolet rewrites incorrectly. Keep the patch scoped to transformed `*UnityLoader.js` scripts containing that marker, and regression-test **Amazing Strange Rope Police** before removing or broadening it.
 
 ## Pirate Cove Release Details
 

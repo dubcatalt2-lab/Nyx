@@ -2456,7 +2456,7 @@
       window.$scramjet$pushsourcemap = window.$scramjet$pushsourcemap || noop;
     } catch {}
   })();`;
-  const proxyStateVersion='nyx-proxy-state-20260801-uv-critical-assets-v11';
+  const proxyStateVersion='nyx-proxy-state-20260805-uv-unity-callback-v12';
   const scramjetStateVersion='nyx-scramjet-state-20260716-alpha2-spotify-epoxy-v1';
   function installNyxConsoleDedupe(scope='top'){
     if(console.__nyxDedupeInstalled) return;

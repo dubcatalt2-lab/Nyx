@@ -103,6 +103,34 @@ async function uvFetchWithAssetRetry(event) {
   throw lastError || new Error("UV asset request failed");
 }
 
+async function patchUvUnityWorkerCallbacks(event, response) {
+  if (!uvRequestIsScript(event) || response.status >= 400) return response;
+  let source;
+  try {
+    source = new URL(proxiedSourceUrl(event.request.url));
+  } catch {
+    return response;
+  }
+  if (!/unityloader\.js$/i.test(source.pathname)) return response;
+  const text = await response.clone().text().catch(() => "");
+  const brokenLookup = "this.callbacks[__uv.$wrap((e.data.id))]";
+  if (!text.includes(brokenLookup)) return response;
+  const headers = new Headers(response.headers);
+  headers.delete("content-length");
+  headers.delete("content-encoding");
+  headers.set("cache-control", "no-store");
+  const brokenCall = `${brokenLookup}(e.data.decompressed)`;
+  const guardedCall = '(typeof this.callbacks[e.data.id]==="function"&&this.callbacks[e.data.id](e.data.decompressed))';
+  const patched = text
+    .replaceAll(brokenCall, guardedCall)
+    .replaceAll(brokenLookup, "this.callbacks[e.data.id]");
+  return new Response(patched, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
+}
+
 function uvRequestExpectsAsset(event) {
   const accept = event.request.headers.get("accept") || "";
   const path = new URL(event.request.url).pathname;
@@ -124,7 +152,7 @@ async function nyxUvFetch(event) {
   if (shouldNeutralizeUvScript(event)) {
     return emptyNeutralizedScriptResponse(event);
   }
-  const response = await uvFetchWithAssetRetry(event);
+  const response = await patchUvUnityWorkerCallbacks(event, await uvFetchWithAssetRetry(event));
   if (response.status >= 400) {
     try {
       console.warn("[nyx UV upstream error]", response.status, event.request.method, proxiedSourceUrl(event.request.url) || event.request.url);

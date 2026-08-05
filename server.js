@@ -310,6 +310,14 @@ function safeCatalogUrl(value, base) {
   }
 }
 
+function excludedExternalGame(title, url, cover) {
+  const identity = [title, url, cover]
+    .map(value => String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, ""))
+    .join(" ");
+  return identity.includes("amirrorscursesfw")
+    || identity.includes("amatyamirrorscurse");
+}
+
 function catClassCatalogItems(source, payload) {
   const items = Array.isArray(payload)
     ? payload
@@ -348,7 +356,9 @@ function catClassCatalogItems(source, payload) {
     }
 
     title = String(title || "").replace(/\s+/g, " ").trim().slice(0, 120);
-    return title && url ? [{ title, url, cover, provider: source }] : [];
+    return title && url && !excludedExternalGame(title, url, cover)
+      ? [{ title, url, cover, provider: source }]
+      : [];
   });
 }
 

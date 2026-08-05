@@ -6,6 +6,10 @@ const elements = {
   count: document.getElementById('gameCount'),
   progress: document.getElementById('catalogProgress'),
   empty: document.getElementById('emptyState'),
+  pagination: document.getElementById('gamePagination'),
+  previousPage: document.getElementById('previousPage'),
+  nextPage: document.getElementById('nextPage'),
+  pageInfo: document.getElementById('pageInfo'),
   player: document.getElementById('gamePlayer'),
   playerTitle: document.getElementById('playerTitle'),
   playerLoading: document.getElementById('playerLoading'),
@@ -26,8 +30,72 @@ const state = {
   activeSourceIndex: 0,
   sourceAttempt: 0,
   sourceTimer: 0,
-  failedSources: new Set()
+  failedSources: new Set(),
+  page: 1,
+  pageSize: 30
 };
+
+function syncHostTheme() {
+  if (parent === window) return;
+  try {
+    const parentRoot = getComputedStyle(parent.document.documentElement);
+    const parentBody = getComputedStyle(parent.document.body);
+    const accent = [
+      parentBody.getPropertyValue('--theme-accent'),
+      parentBody.getPropertyValue('--theme-a'),
+      parentBody.getPropertyValue('--accent'),
+      parentRoot.getPropertyValue('--theme-accent'),
+      parentRoot.getPropertyValue('--theme-a'),
+      parentRoot.getPropertyValue('--accent')
+    ].map(value => value.trim()).find(value => value && CSS.supports('color', value));
+    if (accent) document.documentElement.style.setProperty('--accent', accent);
+  } catch {
+    // Pirate Cove remains usable when opened outside the same-origin Nyx shell.
+  }
+}
+
+function watchHostTheme() {
+  syncHostTheme();
+  if (parent === window) return;
+  try {
+    const observer = new MutationObserver(syncHostTheme);
+    observer.observe(parent.document.documentElement, { attributes: true, attributeFilter: ['class', 'style'] });
+    observer.observe(parent.document.body, { attributes: true, attributeFilter: ['class', 'style'] });
+  } catch {}
+}
+
+watchHostTheme();
+
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+let coveParallaxFrame = 0;
+let coveParallaxCurrent = 0;
+let coveParallaxTarget = 0;
+
+function renderCoveParallax() {
+  coveParallaxFrame = 0;
+  const distance = coveParallaxTarget - coveParallaxCurrent;
+  coveParallaxCurrent += distance * 0.14;
+  if (Math.abs(distance) < 0.08) coveParallaxCurrent = coveParallaxTarget;
+  document.documentElement.style.setProperty('--cove-parallax-y', `${coveParallaxCurrent.toFixed(2)}px`);
+  if (coveParallaxCurrent !== coveParallaxTarget) coveParallaxFrame = requestAnimationFrame(renderCoveParallax);
+}
+
+function updateCoveParallax() {
+  if (reducedMotion.matches) {
+    coveParallaxTarget = 0;
+  } else {
+    const gridTop = elements.grid.getBoundingClientRect().top + scrollY;
+    const revealStart = Math.max(0, gridTop - innerHeight * 0.48);
+    const revealedRows = Math.max(0, scrollY - revealStart);
+    coveParallaxTarget = -Math.min(revealedRows * 0.16, innerHeight * 0.58);
+  }
+  if (!coveParallaxFrame) coveParallaxFrame = requestAnimationFrame(renderCoveParallax);
+}
+
+addEventListener('scroll', updateCoveParallax, { passive: true });
+addEventListener('resize', updateCoveParallax, { passive: true });
+reducedMotion.addEventListener?.('change', updateCoveParallax);
+updateCoveParallax();
 
 const ugsPlayerOverrides = new Map([
   ['F/clfnafps.html', 'https://classroomlesson.github.io/basic-ruffle-player/html/fnaf_pizzeria_simulator/index.html'],
@@ -184,7 +252,7 @@ function externalGamePlayer(value) {
     url.username = '';
     url.password = '';
     url.hash = '';
-    return `/assets/games/remote-play.html?v=20260803-catclass-v1&url=${encodeURIComponent(url.href)}`;
+    return `/assets/games/remote-play.html?v=20260804-not-found-fallback-v2&url=${encodeURIComponent(url.href)}`;
   } catch {
     return '';
   }
@@ -236,6 +304,14 @@ function rawItems(data) {
   return Array.isArray(data?.games) ? data.games : [];
 }
 
+function excludedGameItem(item) {
+  const identity = [item?.title, item?.name, item?.path, item?.url, item?.cover, item?.img, item?.thumbnail]
+    .map(value => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ''))
+    .join(' ');
+  return identity.includes('amirrorscursesfw')
+    || identity.includes('amatyamirrorscurse');
+}
+
 async function adaptCatalog(catalog) {
   const response = await fetch(catalog.url, { cache: 'no-store' });
   if (!response.ok) throw new Error(`${catalog.id} returned ${response.status}`);
@@ -252,6 +328,7 @@ async function adaptCatalog(catalog) {
   }
 
   return items.flatMap(item => {
+    if (excludedGameItem(item)) return [];
     const path = String(item.path || '').replace(/^\/+/, '');
     if (!path && catalog.format !== 'duckmath' && catalog.format !== 'external') return [];
     if (catalog.format === 'seraph' && !/(^|\/)index\.html?$/i.test(path)) return [];
@@ -372,8 +449,9 @@ function makeFallback(title) {
 function makeCover(game) {
   const cover = document.createElement('span');
   cover.className = 'game-cover';
+  const fallback = makeFallback(game.title);
+  cover.append(fallback);
   if (!game.covers.length) {
-    cover.append(makeFallback(game.title));
     return cover;
   }
 
@@ -384,12 +462,16 @@ function makeCover(game) {
   image.referrerPolicy = 'no-referrer';
   let index = 0;
   image.src = game.covers[index];
+  image.addEventListener('load', () => {
+    image.classList.add('loaded');
+    fallback.remove();
+  });
   image.addEventListener('error', () => {
     index += 1;
     if (index < game.covers.length) {
       image.src = game.covers[index];
     } else {
-      image.replaceWith(makeFallback(game.title));
+      image.remove();
     }
   });
   cover.append(image);
@@ -424,11 +506,34 @@ function visibleGames() {
 
 function render() {
   const games = visibleGames();
+  const totalPages = Math.max(1, Math.ceil(games.length / state.pageSize));
+  state.page = Math.min(Math.max(1, state.page), totalPages);
+  const pageStart = (state.page - 1) * state.pageSize;
+  const pageGames = games.slice(pageStart, pageStart + state.pageSize);
   const fragment = document.createDocumentFragment();
-  for (const game of games) fragment.append(makeCard(game));
+  for (const game of pageGames) fragment.append(makeCard(game));
   elements.grid.replaceChildren(fragment);
   elements.empty.hidden = games.length > 0;
   elements.count.textContent = `${games.length.toLocaleString()} game${games.length === 1 ? '' : 's'}`;
+  elements.pagination.hidden = games.length <= state.pageSize;
+  elements.previousPage.disabled = state.page <= 1;
+  elements.nextPage.disabled = state.page >= totalPages;
+  elements.pageInfo.textContent = `Page ${state.page} of ${totalPages}`;
+}
+
+function resetResults() {
+  state.page = 1;
+  render();
+}
+
+function changePage(nextPage) {
+  const games = visibleGames();
+  const totalPages = Math.max(1, Math.ceil(games.length / state.pageSize));
+  const page = Math.min(Math.max(1, nextPage), totalPages);
+  if (page === state.page) return;
+  state.page = page;
+  render();
+  elements.grid.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
 }
 
 function updateGameQuery(key) {
@@ -552,8 +657,8 @@ async function loadLibrary() {
   state.gamesByKey = new Map(state.games.map(game => [game.key, game]));
   const iconCount = state.games.filter(game => game.hasIcon).length;
   const miscCount = state.games.length - iconCount;
-  elements.library.options[0].textContent = `Study (${iconCount.toLocaleString()})`;
-  elements.library.options[1].textContent = `Misc. Study (${miscCount.toLocaleString()})`;
+  elements.library.options[0].textContent = `All games (${iconCount.toLocaleString()})`;
+  elements.library.options[1].textContent = `More games (${miscCount.toLocaleString()})`;
   elements.progress.classList.add('done');
   render();
 
@@ -569,9 +674,11 @@ elements.grid.addEventListener('click', event => {
   const card = event.target.closest('[data-game-key]');
   if (card) openGame(state.gamesByKey.get(card.dataset.gameKey));
 });
-elements.search.addEventListener('input', render);
-elements.library.addEventListener('change', render);
-elements.sort.addEventListener('change', render);
+elements.search.addEventListener('input', resetResults);
+elements.library.addEventListener('change', resetResults);
+elements.sort.addEventListener('change', resetResults);
+elements.previousPage.addEventListener('click', () => changePage(state.page - 1));
+elements.nextPage.addEventListener('click', () => changePage(state.page + 1));
 elements.close.addEventListener('click', closeGame);
 elements.reload.addEventListener('click', () => {
   if (state.activeGame) launchGameSource(state.activeSourceIndex);

@@ -7,7 +7,7 @@
       "format": "ugs",
       "url": "/assets/ugs/games.json",
       "coversUrl": "/assets/ugs/thumbs.json",
-      "player": "/assets/ugs/play.html?v=20260803-ready-v2&game={path}",
+      "player": "/assets/ugs/play.html?v=20260804-not-found-fallback-v3&game={path}",
       "priority": 50
     },
     {

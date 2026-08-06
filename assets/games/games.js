@@ -16,6 +16,8 @@ const elements = {
   playerLoadingText: document.getElementById('playerLoadingText'),
   playerRetry: document.getElementById('retryGame'),
   frame: document.getElementById('gameFrame'),
+  performance: document.getElementById('performanceGame'),
+  performanceLabel: document.getElementById('performanceGameLabel'),
   close: document.getElementById('closePlayer'),
   reload: document.getElementById('reloadGame'),
   fullscreen: document.getElementById('fullscreenGame')
@@ -31,6 +33,11 @@ const state = {
   sourceAttempt: 0,
   sourceTimer: 0,
   failedSources: new Set(),
+  performancePreference: ['auto', 'on', 'off'].includes(localStorage.getItem('nyx.gamePerformanceMode'))
+    ? localStorage.getItem('nyx.gamePerformanceMode')
+    : 'auto',
+  performanceAutoTriggered: false,
+  performanceFrame: 0,
   page: 1,
   pageSize: 30
 };
@@ -552,6 +559,63 @@ function clearSourceTimer() {
   state.sourceTimer = 0;
 }
 
+function lowPowerGameDevice() {
+  const cores = Number(navigator.hardwareConcurrency || 8);
+  const memory = Number(navigator.deviceMemory || 8);
+  const watchViewport = matchMedia('(max-width: 480px) and (max-height: 520px)').matches;
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  return watchViewport || cores <= 4 || memory <= 4 || reducedMotion;
+}
+
+function gamePerformanceEnabled() {
+  if (!state.activeGame || state.performancePreference === 'off') return false;
+  return state.performancePreference === 'on' || lowPowerGameDevice() || state.performanceAutoTriggered;
+}
+
+function syncGamePerformanceMode() {
+  const active = gamePerformanceEnabled();
+  document.body.classList.toggle('game-active', Boolean(state.activeGame));
+  document.body.classList.toggle('game-performance-active', active);
+  const label = state.performancePreference === 'auto'
+    ? (active ? 'Auto · On' : 'Auto')
+    : (state.performancePreference === 'on' ? 'On' : 'Off');
+  if (elements.performanceLabel) elements.performanceLabel.textContent = label;
+  if (elements.performance) {
+    elements.performance.dataset.mode = state.performancePreference;
+    elements.performance.classList.toggle('active', active);
+    elements.performance.setAttribute('aria-pressed', String(active));
+    elements.performance.setAttribute('aria-label', `Game performance mode: ${label}`);
+    elements.performance.title = `Game performance mode: ${label}. Select to change Auto, On, or Off.`;
+  }
+}
+
+function stopGamePerformanceMonitor() {
+  if (state.performanceFrame) cancelAnimationFrame(state.performanceFrame);
+  state.performanceFrame = 0;
+}
+
+function startGamePerformanceMonitor() {
+  stopGamePerformanceMonitor();
+  let last = performance.now();
+  let slowScore = 0;
+  const monitor = now => {
+    state.performanceFrame = 0;
+    if (!state.activeGame) return;
+    const delta = now - last;
+    last = now;
+    if (state.performancePreference === 'auto' && !state.performanceAutoTriggered && !lowPowerGameDevice() && document.visibilityState === 'visible') {
+      if (delta > 72) slowScore += Math.min(3, delta / 72);
+      else slowScore = Math.max(0, slowScore - 0.3);
+      if (slowScore >= 7) {
+        state.performanceAutoTriggered = true;
+        syncGamePerformanceMode();
+      }
+    }
+    state.performanceFrame = requestAnimationFrame(monitor);
+  };
+  state.performanceFrame = requestAnimationFrame(monitor);
+}
+
 function setPlayerLoading(message, failed = false) {
   elements.playerLoading.classList.remove('done');
   elements.playerLoading.classList.toggle('failed', failed);
@@ -623,11 +687,14 @@ function openGame(game, updateHistory = true) {
   if (!game) return;
   state.lastFocused = document.activeElement;
   state.activeGame = game;
+  state.performanceAutoTriggered = false;
   const firstAvailable = gameSources(game).findIndex(source => !state.failedSources.has(source.url));
   state.activeSourceIndex = firstAvailable >= 0 ? firstAvailable : 0;
   elements.playerTitle.textContent = game.title;
   elements.frame.title = game.title;
   elements.player.hidden = false;
+  syncGamePerformanceMode();
+  startGamePerformanceMonitor();
   launchGameSource(state.activeSourceIndex);
   elements.close.focus();
   if (updateHistory) updateGameQuery(game.key);
@@ -638,8 +705,11 @@ function closeGame() {
   clearSourceTimer();
   state.sourceAttempt += 1;
   state.activeGame = null;
+  state.performanceAutoTriggered = false;
+  stopGamePerformanceMonitor();
   elements.frame.src = 'about:blank';
   elements.player.hidden = true;
+  syncGamePerformanceMode();
   setPlayerLoading('Loading game…');
   updateGameQuery('');
   state.lastFocused?.focus?.();
@@ -680,6 +750,13 @@ elements.sort.addEventListener('change', resetResults);
 elements.previousPage.addEventListener('click', () => changePage(state.page - 1));
 elements.nextPage.addEventListener('click', () => changePage(state.page + 1));
 elements.close.addEventListener('click', closeGame);
+elements.performance?.addEventListener('click', () => {
+  const modes = ['auto', 'on', 'off'];
+  state.performancePreference = modes[(modes.indexOf(state.performancePreference) + 1) % modes.length];
+  state.performanceAutoTriggered = false;
+  localStorage.setItem('nyx.gamePerformanceMode', state.performancePreference);
+  syncGamePerformanceMode();
+});
 elements.reload.addEventListener('click', () => {
   if (state.activeGame) launchGameSource(state.activeSourceIndex);
 });

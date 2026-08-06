@@ -5722,10 +5722,11 @@
     const encode=typeof config.codec?.encode==='function' ? config.codec.encode : encodeURIComponent;
     return config.prefix + encode(target);
   }
-  function proxyFailureHtml(message,engine='Nyx'){
+  function proxyFailureHtml(message,engine='Nyx',{allowDirect=false}={}){
     const safe=String(message || 'Refresh this page once so the updated service worker can take over, then search again.').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const safeEngine=String(engine || 'Nyx').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    return `<!doctype html><meta charset="utf-8"><style>body{margin:0;font-family:Outfit,Arial,sans-serif;background:#101318;color:#f5f7fb;display:grid;place-items:center;min-height:100vh}main{max-width:560px;padding:28px;text-align:center}h1{font-size:20px;margin:0 0 10px}p{margin:0;color:#c8ced8;line-height:1.45}</style><main><h1>${safeEngine} did not start</h1><p>${safe}</p></main>`;
+    const directAction=allowDirect?'<button type="button" onclick="parent.postMessage({type:\'nyx:proxy-direct-fallback\'},\'*\')">Try direct mode</button><small>Direct mode works only when the site allows embedding.</small>':'';
+    return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font-family:Outfit,Arial,sans-serif;background:#101318;color:#f5f7fb;display:grid;place-items:center;min-height:100vh}main{box-sizing:border-box;width:min(560px,100%);padding:28px;text-align:center}h1{font-size:20px;margin:0 0 10px}p{margin:0;color:#c8ced8;line-height:1.45}button{min-height:42px;margin:18px 0 0;padding:0 18px;border:1px solid #6379a0;border-radius:12px;background:#1a2841;color:#f5f7fb;font:700 14px Outfit,Arial,sans-serif;cursor:pointer}small{display:block;margin-top:9px;color:#98a6bb;line-height:1.4}@media(max-width:480px) and (max-height:520px){main{padding:18px}h1{font-size:18px}p{font-size:13px}button{width:100%}}</style><main><h1>${safeEngine} did not start</h1><p>${safe}</p>${directAction}</main>`;
   }
   function loadScript(src){
     return new Promise((resolve,reject)=>{
@@ -6594,7 +6595,7 @@
     clearNyxCookies();
     try{sessionStorage.clear()}catch{}
     try{localStorage.clear()}catch{}
-    setTimeout(()=>location.replace(location.pathname+'?nyx-reset='+Date.now()),220);
+    setTimeout(()=>location.replace(location.pathname || '/'),220);
   }
   async function ensureFreshProxyState(){
     if(store.text('nyx.proxyStateVersion','')===proxyStateVersion) return;
@@ -6654,7 +6655,14 @@
     let step='starting Scramjet';
     scramjetInstallPromise=(async()=>{
       step='checking browser support';
-      if(location.protocol==='file:' || !('serviceWorker' in navigator)) return false;
+      if(location.protocol==='file:'){
+        scramjetInstallError='Scramjet needs Nyx to be opened from its website, not as a local file.';
+        return false;
+      }
+      if(!('serviceWorker' in navigator)){
+        scramjetInstallError='This browser does not support the Service Workers Scramjet needs. Some watch browsers do not provide that feature.';
+        return false;
+      }
       step='resetting stale Scramjet state';
       await ensureFreshProxyState();
       await ensureFreshScramjetState();
@@ -9087,7 +9095,7 @@
           t.frame.dataset.nyxActualEngine='scramjet-failed';
           setFrameSandbox(t,true);
           clearFrameDocument(t);
-          t.frame.srcdoc=proxyFailureHtml(scramjetInstallError,'Scramjet');
+          t.frame.srcdoc=proxyFailureHtml(scramjetInstallError,'Scramjet',{allowDirect:true});
           return;
         }
         const existingFrameSrc=String(t.frame.getAttribute('src') || '');
@@ -9467,7 +9475,7 @@
       const q=e.target.closest('[data-url]'); if(q){e.preventDefault(); navigate(q.dataset.url)}
     });
     const messageHandler=e=>{
-      if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile'].includes(e.data?.type)) return;
+      if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:proxy-direct-fallback'].includes(e.data?.type)) return;
       if(['nyx:ai-profile-request','nyx:ai-open-profile'].includes(e.data.type)&&(e.origin!==location.origin||!state.tabs.some(tab=>tab.frame.contentWindow===e.source)))return;
       if(e.data.type==='nyx:ai-profile-request'){
         const target=e.source;
@@ -9487,6 +9495,14 @@
       }
       if(e.data.type==='nyx:ai-open-profile'){
         void openNyxUserProfile();
+        return;
+      }
+      if(e.data.type==='nyx:proxy-direct-fallback'){
+        const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);
+        const sourceUrl=String(sourceTab?.sourceUrl || '').trim();
+        if(!sourceTab || !sourceUrl) return;
+        loadTab(sourceTab,sourceUrl,false,'iframe',sourceUrl);
+        toast('Trying this tab in direct mode');
         return;
       }
       if(e.data.type==='nyx:shell-tab-index'){

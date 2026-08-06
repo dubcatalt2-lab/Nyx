@@ -44,6 +44,17 @@ body::after {
   pointer-events: none;
 }
 
+/* The player covers the library completely. Stop painting the animated cove
+   and the card grid while a game owns the screen. */
+body.game-active::before,
+body.game-active::after {
+  content: none;
+  background-image: none;
+  transform: none;
+}
+
+body.game-active .library { display: none; }
+
 body::before {
   inset: -70vh 0;
   background-color: #083844;
@@ -500,6 +511,17 @@ h1 {
   gap: 7px;
 }
 
+.performance-button svg {
+  width: 17px;
+  height: 17px;
+}
+
+.performance-button.active {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: color-mix(in srgb, var(--accent) 75%, white);
+}
+
 .toolbar-button {
   width: max-content;
   height: 40px;
@@ -556,6 +578,18 @@ h1 {
   display: block;
   border: 0;
   background: var(--page-deep);
+}
+
+/* A smaller iframe viewport lowers the canvas/WebGL resolution, then scales
+   the result back to the stage. Pointer coordinates remain mapped by the
+   browser while the game has substantially fewer pixels to render. */
+body.game-performance-active .player-stage { overflow: hidden; }
+
+body.game-performance-active .player iframe {
+  width: 80%;
+  height: 80%;
+  transform: scale(1.25);
+  transform-origin: left top;
 }
 
 .player-loading {
@@ -632,6 +666,8 @@ h1 {
   .pagination { gap: 8px; }
   .page-button { padding: 0 11px; font-size: 13px; }
   .page-info { min-width: 72px; font-size: 12px; }
+  .performance-button { width: 40px; padding: 0; }
+  .performance-button span { display: none; }
 }
 
 @media (hover: none) and (pointer: coarse) {

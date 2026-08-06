@@ -81,6 +81,7 @@ Client preferences and much local UI state use browser storage. Cross-device acc
 ## Main Product Areas to Preserve
 
 - Browser shell, tabs, navigation, address bar, downloads, popup protection, and developer console
+- Smartwatch layout for short, narrow viewports, including reachable home actions and compact browser controls
 - User-selected proxy engine and transport
 - Themes and custom recoloring
 - Homepage shortcuts, effects, profile/account controls, and search/course entry
@@ -97,6 +98,8 @@ Client preferences and much local UI state use browser storage. Cross-device acc
 - Preserve functionality before changing presentation.
 - Diagnose the actual cause of a regression; do not keep stacking speculative CSS, proxy overrides, cache resets, or host-specific fixes.
 - The user's explicit proxy engine and transport choice should remain authoritative. Do not silently force a different engine for a site unless the user asks for that policy.
+- Smartwatch-specific layout is limited to viewports no larger than 480px wide and 520px tall. It keeps Back, Reload, Home, the address field, and Menu visible; Forward, Bookmark, and Weather remain available outside that watch breakpoint.
+- Scramjet requires browser Service Worker support. When the selected browser cannot provide it, keep the saved engine unchanged and offer the user a per-tab **Try direct mode** action; direct mode still depends on the destination allowing iframe embedding.
 - Keep the Developer Console implemented with Eruda unless the user explicitly requests otherwise.
 - Theme work should recolor the existing interface without unexpectedly changing its layout. Custom-theme text, icons, controls, and selected states must use the selected theme tokens.
 - The 2D homepage dot field uses a swept-pointer particle response: nearby dots repel and fade, then spring back into their grid. Preserve its reduced-motion behavior and keep it disabled when 3D backgrounds are active.
@@ -106,6 +109,7 @@ Client preferences and much local UI state use browser storage. Cross-device acc
 - Do not import or mirror third-party game catalogs or copyrighted assets without checking authorization and deployment implications.
 - The game titled **A Mirror's Curse SFW** must remain excluded from both server-fed and client-cached catalogs.
 - Pirate Cove must retain the supplied animated background, smooth delayed parallax, filled page bottom, responsive 30-item pagination, and working source fallback behavior.
+- Pirate Cove suspends its hidden catalog and animated cove background while a game is open. Its **Game performance** control cycles Auto, On, and Off; Auto lowers the game iframe's render resolution on low-power devices or after sustained frame stalls without changing the saved Nyx proxy engine.
 - Pirate Cove remote games must honor Nyx's configured proxy engine and transport. Its managed Scramjet frame path is required for large legacy Unity builds; do not restore the old behavior that forced every remote game through Ultraviolet.
 - `uv.sw.js` repairs the exact legacy UnityLoader worker-callback lookup that Ultraviolet rewrites incorrectly. Keep the patch scoped to transformed `*UnityLoader.js` scripts containing that marker, and regression-test **Amazing Strange Rope Police** before removing or broadening it.
 
@@ -260,6 +264,8 @@ For Pirate Cove, test search, sort, pagination, card cover fallbacks, launch/ret
 
 - Spotify authentication inside the proxied browser has been unreliable. Observed failures included invalid CSRF responses and reCAPTCHA timeouts on both the custom domain and localhost. Treat it as unresolved unless a fresh end-to-end login succeeds. Do not add another forced-engine or authentication workaround without tracing the exact request/cookie/origin flow.
 - Some external sites use bot protection, DRM, cross-origin isolation, OAuth restrictions, or security verification that may not work through a browser proxy. Distinguish an upstream restriction from a Nyx regression.
+- Large WebGL/Unity games can still exceed a device's available GPU memory or have their own performance defects. Pirate Cove's Auto performance mode reduces host rendering and game resolution, but it cannot guarantee that every third-party game is safe on every GPU.
+- Some smartwatch browsers do not expose Service Workers, so Scramjet cannot run in those browsers. Nyx reports that capability limit and offers a user-triggered direct-mode attempt for the failed tab, but sites that block iframe embedding will still be unavailable there.
 - Service workers and versioned proxy assets can make old behavior appear after a deployment. Inspect the active registration and cached asset version before changing application logic.
 - `script.js` and `styles.css` are large, and several feature CSS files overlap. Keep changes narrowly scoped, inspect computed precedence, and remove obsolete rules when replacing a presentation layer.
 - Production is ahead of `main` until PR #34 is merged.

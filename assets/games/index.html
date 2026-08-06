@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
   <title>Pirate Cove | Nyx</title>
-  <link rel="stylesheet" href="/assets/games/games.css?v=20260804-pirate-cove-v2">
-<script type="module" src="/assets/games/games.js?v=20260805-selected-proxy-engine-v3"></script>
+  <link rel="stylesheet" href="/assets/games/games.css?v=20260806-game-performance-v3">
+<script type="module" src="/assets/games/games.js?v=20260806-game-performance-v4"></script>
 </head>
 <body>
   <main class="library">
@@ -81,6 +81,10 @@
       </button>
       <h2 id="playerTitle">Game</h2>
       <div class="player-actions">
+        <button id="performanceGame" class="toolbar-button performance-button" type="button" title="Game performance mode: Auto" aria-label="Game performance mode: Auto" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 5 14h6l-1 8 8-12h-6z"/></svg>
+          <span id="performanceGameLabel">Auto</span>
+        </button>
         <button id="reloadGame" class="toolbar-button icon-button" type="button" title="Reload game" aria-label="Reload game">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.34 5.66M20 5v6h-6"/></svg>
         </button>

@@ -1,6 +1,6 @@
 # Nyx Project State
 
-Last repository review: 2026-08-05
+Last repository review: 2026-08-06
 
 Workspace: repository root (`<repo-root>`)
 
@@ -22,15 +22,15 @@ Important release warning: production currently contains commits that are not on
 
 - Repository: `https://github.com/dubcatalt2-lab/Nyx.git`
 - Active branch: `agent/pirate-cove`
-- Combined release commit: `12a557f60879f384664b69b8c012375929250652`
+- Combined release commit: `f5375cb266ae09c8be49e8b1f429d5cc0bbc3783`
 - `main` / `origin/main`: `0a654cc1c3e17faff12424ae1f2a1a4eb63f6a90`
 - Draft PR: `https://github.com/dubcatalt2-lab/Nyx/pull/34`
 - PR title: **Ship Pirate Cove and Owner Dashboard IP bans**
 - Production URL: `https://nyxlearning.org`
 - Netlify project URL: `https://nyxlearning.netlify.app`
 - Netlify site ID: `c3ee107b-3703-489c-9793-6a8eb598e186`
-- Latest verified production deploy: `6a73d6d57ed32f209cb0743c`
-- Unique deploy URL: `https://6a73d6d57ed32f209cb0743c--nyxlearning.netlify.app`
+- Latest verified production deploy: `6a73ecec5d0c5c5dd6a791d9`
+- Unique deploy URL: `https://6a73ecec5d0c5c5dd6a791d9--nyxlearning.netlify.app`
 - Production Wisp: `wss://nyx-temporary-production.up.railway.app/wisp/`
 
 The following working-tree entries were deliberately left untracked and must not be staged, removed, or treated as Nyx release files without explicit instruction:
@@ -41,7 +41,7 @@ The following working-tree entries were deliberately left untracked and must not
 
 ## Current Production Verification
 
-The 2026-08-05 combined Pirate Cove and Owner Dashboard IP-ban deployment was verified on the custom domain:
+The 2026-08-06 smartwatch and game-performance deployment was verified on the custom domain and its immutable deploy URL. The earlier Pirate Cove and Owner Dashboard IP-ban checks remain part of the release baseline:
 
 - `/assets/games/index.html`: HTTP 200 and contains **Pirate Cove**
 - `/assets/backgrounds/pirate-cove.gif`: HTTP 200 with `image/gif`
@@ -50,6 +50,10 @@ The 2026-08-05 combined Pirate Cove and Owner Dashboard IP-ban deployment was ve
 - `/api/owner-dashboard/ip-bans`: HTTP 401 when unauthenticated, confirming the route and function bundle are live
 - **Amazing Strange Rope Police**: transformed Unity loader uses the guarded worker callback through Ultraviolet; the selected Scramjet path loads the 66 MB legacy Unity data archive, creates its canvas, and shows no callback or DataView error through a 90-second production regression run
 - Homepage cursor effect: the background dots repel, fade, and return along the pointer path; the **Nyx** wordmark remains fixed with no cursor transform
+- Smartwatch stylesheet and cache-versioned application script: HTTP 200; the 320x320, 396x484, and 450x450 layouts keep essential browser controls and home actions reachable
+- Scramjet capability fallback: browsers without Service Worker support receive an explanation and a per-tab **Try direct mode** action without changing the saved proxy engine
+- Pirate Cove game performance control: Auto, On, and Off are present; Auto lowers iframe resolution immediately on low-power devices or after sustained frame stalls
+- Reset navigation returns to the clean application path without adding a `nyx-reset` query parameter
 - Live CatClass-derived catalog: 4,482 games at verification time
 - Removed-game matches for **A Mirror's Curse SFW**: 0
 
@@ -124,6 +128,7 @@ PR #34 contains the Pirate Cove release, durable handoff updates, and the combin
 - `c1101ed` — repair the legacy UnityLoader worker callback after Ultraviolet rewriting
 - `f689159` — make Pirate Cove honor Nyx's selected proxy engine so large legacy Unity archives use the reliable managed Scramjet frame path
 - `12a557f` — add the cursor-reactive homepage particle field while keeping the Nyx wordmark fixed
+- `f5375cb` — add the smartwatch layout, Scramjet direct-mode fallback, clean reset URL, and Pirate Cove performance safeguards
 
 The supplied background is stored at:
 

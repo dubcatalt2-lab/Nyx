@@ -7183,9 +7183,9 @@
       syncHomeDotFieldVisibility();
       const context=canvas.getContext('2d',{alpha:true});
       if(!context) return;
-      const state={width:0,height:0,dots:[],pointer:null,trail:[],frame:0};
-      const radius=42;
-      const trailLifetime=760;
+      const state={width:0,height:0,dots:[],pointer:null,previousPointer:null,frame:0};
+      const radius=55;
+      const fadeDistance=42;
       const requestFrame=()=>{
         if(!state.frame) state.frame=requestAnimationFrame(draw);
       };
@@ -7212,38 +7212,33 @@
       };
       function draw(){
         state.frame=0;
-        const now=performance.now();
-        state.trail=state.trail.filter(point=>now-point.time<trailLifetime);
         context.clearRect(0,0,state.width,state.height);
         const styles=getComputedStyle(home);
         const dotColor=styles.getPropertyValue('--nyx-dot-color').trim() || '#202b3d';
         context.fillStyle=dotColor;
-        const influences=reducedMotion.matches ? [] : state.trail.map(point=>({
-          x:point.x,
-          y:point.y,
-          weight:Math.max(0,1-(now-point.time)/trailLifetime)*.88
-        }));
-        if(state.pointer && !reducedMotion.matches) influences.unshift({x:state.pointer.x,y:state.pointer.y,weight:1});
+        const pointer=reducedMotion.matches ? null : state.pointer;
+        const previous=state.previousPointer || pointer;
+        const segmentX=pointer && previous ? pointer.x-previous.x : 0;
+        const segmentY=pointer && previous ? pointer.y-previous.y : 0;
+        const segmentLengthSquared=segmentX*segmentX+segmentY*segmentY;
         let unsettled=false;
         for(const dot of state.dots){
-          if(!reducedMotion.matches){
-            let pushStrength=0;
-            let pushX=0;
-            let pushY=0;
-            for(const influence of influences){
-              const dx=dot.x-influence.x;
-              const dy=dot.y-influence.y;
-              const distance=Math.hypot(dx,dy);
-              if(distance>=radius) continue;
+          if(pointer && previous){
+            let progress=segmentLengthSquared
+              ? ((dot.x-previous.x)*segmentX+(dot.y-previous.y)*segmentY)/segmentLengthSquared
+              : 0;
+            progress=Math.max(0,Math.min(1,progress));
+            const nearestX=previous.x+segmentX*progress;
+            const nearestY=previous.y+segmentY*progress;
+            const dx=dot.x-nearestX;
+            const dy=dot.y-nearestY;
+            const distance=Math.hypot(dx,dy);
+            if(distance<radius){
               const direction=distance>0.01 ? distance : 1;
-              const strength=(1-distance/radius)*2.25*influence.weight;
-              if(strength<=pushStrength) continue;
-              pushStrength=strength;
-              pushX=dx/direction*strength;
-              pushY=dy/direction*strength;
+              const strength=(1-distance/radius)*2.2;
+              dot.vx+=dx/direction*strength;
+              dot.vy+=dy/direction*strength;
             }
-            dot.vx+=pushX;
-            dot.vy+=pushY;
           }
           dot.vx+=(dot.homeX-dot.x)*.05;
           dot.vy+=(dot.homeY-dot.y)*.05;
@@ -7252,7 +7247,7 @@
           dot.x+=dot.vx;
           dot.y+=dot.vy;
           const displacement=Math.hypot(dot.x-dot.homeX,dot.y-dot.homeY);
-          dot.opacity=Math.max(.18,1-displacement/42);
+          dot.opacity=displacement>=fadeDistance ? 0 : 1-displacement/fadeDistance;
           if(displacement>.18 || dot.vx*dot.vx+dot.vy*dot.vy>.02) unsettled=true;
           context.globalAlpha=dot.opacity;
           context.beginPath();
@@ -7260,31 +7255,17 @@
           context.fill();
         }
         context.globalAlpha=1;
-        if(state.pointer || state.trail.length || unsettled) requestFrame();
+        if(pointer) state.previousPointer={...pointer};
+        if((state.pointer && !reducedMotion.matches) || unsettled) requestFrame();
       }
       home.addEventListener('pointermove',event=>{
         const rect=home.getBoundingClientRect();
         const next={x:event.clientX-rect.left,y:event.clientY-rect.top};
-        const previous=state.pointer;
-        if(previous){
-          const last=state.trail[state.trail.length-1];
-          const anchor=last || previous;
-          if(Math.hypot(next.x-anchor.x,next.y-anchor.y)>=6){
-            const distance=Math.hypot(next.x-previous.x,next.y-previous.y);
-            const steps=Math.max(1,Math.min(6,Math.ceil(distance/12)));
-            const time=performance.now();
-            for(let step=0;step<steps;step++){
-              const amount=step/steps;
-              state.trail.push({x:previous.x+(next.x-previous.x)*amount,y:previous.y+(next.y-previous.y)*amount,time});
-            }
-            if(state.trail.length>54) state.trail.splice(0,state.trail.length-54);
-          }
-        }
+        state.previousPointer=state.pointer || next;
         state.pointer=next;
         requestFrame();
       },{passive:true});
       home.addEventListener('pointerleave',()=>{
-        if(state.pointer) state.trail.push({...state.pointer,time:performance.now()});
         state.pointer=null;
         requestFrame();
       },{passive:true});

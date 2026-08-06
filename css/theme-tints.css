@@ -563,15 +563,15 @@ html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser
 html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
   .browser-home .nyx-home-dot-field{
   display:block!important;
-  opacity:.3!important;
+  opacity:.58!important;
   --nyx-dot-color:inherit;
 }
-html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-default .browser-home .nyx-home-dot-field{--nyx-dot-color:#202b3d}
-html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-midnight:not(.theme-default) .browser-home .nyx-home-dot-field{--nyx-dot-color:#223047}
-html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-ruby .browser-home .nyx-home-dot-field{--nyx-dot-color:#332733}
-html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-emerald .browser-home .nyx-home-dot-field{--nyx-dot-color:#24343a}
-html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-sakura .browser-home .nyx-home-dot-field{--nyx-dot-color:#332936}
-html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-fresh .browser-home .nyx-home-dot-field{--nyx-dot-color:#24343d}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-default .browser-home .nyx-home-dot-field{--nyx-dot-color:#314766}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-midnight:not(.theme-default) .browser-home .nyx-home-dot-field{--nyx-dot-color:#344d72}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-ruby .browser-home .nyx-home-dot-field{--nyx-dot-color:#68405d}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-emerald .browser-home .nyx-home-dot-field{--nyx-dot-color:#386258}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-sakura .browser-home .nyx-home-dot-field{--nyx-dot-color:#6e4c70}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-fresh .browser-home .nyx-home-dot-field{--nyx-dot-color:#49655f}
 
 html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
   .browser-home .home-shortcut-grid .home-shortcut-open{

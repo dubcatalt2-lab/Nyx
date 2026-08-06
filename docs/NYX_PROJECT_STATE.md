@@ -98,6 +98,7 @@ Client preferences and much local UI state use browser storage. Cross-device acc
 - The user's explicit proxy engine and transport choice should remain authoritative. Do not silently force a different engine for a site unless the user asks for that policy.
 - Keep the Developer Console implemented with Eruda unless the user explicitly requests otherwise.
 - Theme work should recolor the existing interface without unexpectedly changing its layout. Custom-theme text, icons, controls, and selected states must use the selected theme tokens.
+- The 2D homepage dot field uses a swept-pointer particle response: nearby dots repel and fade, then spring back into their grid. Preserve its reduced-motion behavior and keep it disabled when 3D backgrounds are active.
 - Preserve animated GIF banners and avatars as animated media. Do not replace them with static conversions.
 - Public profile, profile editor preview, and account dropdown share behavior but must not lose their intended presentation or editing controls.
 - Only add entries to the About Nyx changelog when the user explicitly asks.

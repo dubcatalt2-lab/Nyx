@@ -6,101 +6,138 @@
   <meta name="color-scheme" content="dark light">
   <title>Link Checker</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/icons/link-checker.svg">
-  <link rel="stylesheet" href="./styles.css?v=20260728-fern-8">
+  <link rel="stylesheet" href="./styles.css?v=20260806-nocturne-layout-4">
 </head>
 <body>
-  <main class="utility-shell checker-shell">
-    <header class="utility-header">
-      <span class="brand-lockup" aria-label="Nyx utilities">
-        <span class="brand-mark" aria-hidden="true"><img src="../../assets/icons/nyx-app-192.png" alt=""></span>
-        <span class="brand-copy"><strong>nyx</strong><span>utilities</span></span>
-      </span>
-      <div class="utility-nav" aria-label="Nyx utility pages">
-        <a class="utility-nav-item" href="../link-checker/" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a5 5 0 007.5.5l2-2a5 5 0 00-7-7l-1.1 1.1M14 10a5 5 0 00-7.5-.5l-2 2a5 5 0 007 7l1.1-1.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>Link Checker</span></a>
-        <a class="utility-nav-item" href="../link-generator/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M5.5 5.5l13 13M18.5 5.5l-13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Generator</span></a>
+  <svg class="lc-icon-sprite" aria-hidden="true">
+    <symbol id="icon-infinity" viewBox="0 0 24 24"><path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4Zm0 0c2 2.67 4 4 6 4a4 4 0 1 0 0-8c-2 0-4 1.33-6 4Z"/></symbol>
+    <symbol id="icon-dashboard" viewBox="0 0 24 24"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></symbol>
+    <symbol id="icon-link" viewBox="0 0 24 24"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><path d="M8 12h8"/></symbol>
+    <symbol id="icon-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="icon-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+    <symbol id="icon-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></symbol>
+    <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+    <symbol id="icon-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+    <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.2 6.5L3 16"/><path d="M3 21v-5h5M3 12A9 9 0 0 1 18.2 5.5L21 8"/><path d="M21 3v5h-5"/></symbol>
+    <symbol id="icon-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6M10 11v6M14 11v6"/></symbol>
+    <symbol id="icon-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="icon-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="icon-external" viewBox="0 0 24 24"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+    <symbol id="icon-home" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/></symbol>
+    <symbol id="icon-eye" viewBox="0 0 24 24"><path d="M2.06 12.35a1 1 0 0 1 0-.7C3.8 7.6 7.75 5 12 5s8.2 2.6 9.94 6.65a1 1 0 0 1 0 .7C20.2 16.4 16.25 19 12 19s-8.2-2.6-9.94-6.65Z"/><circle cx="12" cy="12" r="3"/></symbol>
+  </svg>
+  <div class="lc-app">
+    <aside class="lc-sidebar" data-sidebar>
+      <div class="lc-brand"><span class="lc-brand-icon" aria-hidden="true"><svg class="lc-icon"><use href="#icon-infinity"/></svg></span><strong>Nyx Link Checker</strong></div>
+      <nav class="lc-nav" aria-label="Link Checker pages">
+        <button class="active" data-view-button="dashboard" type="button"><svg class="lc-icon" aria-hidden="true"><use href="#icon-dashboard"/></svg>Dashboard</button>
+        <button data-view-button="checker" type="button"><svg class="lc-icon" aria-hidden="true"><use href="#icon-link"/></svg>Link Checker</button>
+        <button data-view-button="history" type="button"><svg class="lc-icon" aria-hidden="true"><use href="#icon-history"/></svg>Scan History</button>
+        <button data-view-button="settings" type="button"><svg class="lc-icon" aria-hidden="true"><use href="#icon-settings"/></svg>Settings</button>
+      </nav>
+      <div class="lc-sidebar-bottom">
+        <span class="api-status" data-api-status><i aria-hidden="true"></i><span>Connecting</span></span>
+        <a href="../link-generator/"><svg class="lc-icon" aria-hidden="true"><use href="#icon-external"/></svg>Link Generator</a>
+        <a href="../../"><svg class="lc-icon" aria-hidden="true"><use href="#icon-home"/></svg>Back to Nyx</a>
       </div>
-      <span class="api-status" data-api-status><i aria-hidden="true"></i><span>Connecting</span></span>
-    </header>
+    </aside>
 
-    <section class="utility-intro" aria-labelledby="page-title">
-      <span class="intro-mark" aria-hidden="true">&#8734;</span>
-      <div><h1 id="page-title">Link Checker</h1><p>by Midnight</p></div>
-    </section>
+    <div class="lc-main">
+      <header class="lc-mobile-header">
+        <button data-sidebar-toggle type="button" aria-label="Open navigation"><svg class="lc-icon" aria-hidden="true"><use href="#icon-menu"/></svg></button>
+        <span class="lc-brand-icon" aria-hidden="true"><svg class="lc-icon"><use href="#icon-infinity"/></svg></span><strong>Nyx Link Checker</strong>
+      </header>
+      <div class="lc-sidebar-shade" data-sidebar-shade hidden></div>
 
-    <section class="checker-card surface" aria-labelledby="checker-title">
-      <div class="section-bar">
-        <div class="section-id">
-        <div>
-          <h2 id="checker-title">Check a website</h2>
-          <p>See how available content filters currently classify a URL.</p>
-        </div>
-        </div>
-        <span class="privacy-chip"><i aria-hidden="true"></i> API check</span>
-      </div>
-      <form class="check-form" data-check-form>
-        <label class="url-field">
-          <span>Website or URL</span>
-          <div class="input-shell">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a5 5 0 007.5.5l2-2a5 5 0 00-7-7l-1.1 1.1M14 10a5 5 0 00-7.5-.5l-2 2a5 5 0 007 7l1.1-1.1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-            <input data-url-input name="url" type="text" inputmode="url" autocomplete="url" spellcheck="false" placeholder="example.com" required>
+      <main class="lc-content">
+        <div class="notice global-notice" data-notice role="status" aria-live="polite" hidden></div>
+
+        <section class="checker-view active" data-view="dashboard" aria-labelledby="dashboard-title">
+          <header class="page-heading compact-heading">
+            <div class="heading-line"><h1 id="dashboard-title">Dashboard</h1><span><b data-stat-domains>0</b> domains saved</span></div>
+            <div class="heading-actions"><button class="btn-secondary" data-export="csv" type="button"><svg class="lc-icon" aria-hidden="true"><use href="#icon-download"/></svg>CSV</button><button class="btn-secondary" data-export="json" type="button"><svg class="lc-icon" aria-hidden="true"><use href="#icon-download"/></svg>JSON</button></div>
+          </header>
+
+          <div class="dashboard-top-grid">
+            <article class="lc-card usage-card">
+              <div><strong>Local scan history</strong><span><b data-stat-checks>0</b> completed checks</span></div>
+              <div class="usage-track"><i data-usage-bar></i></div>
+              <small><b data-stat-blocked>0</b> blocked results across <b data-stat-vendors>0</b> vendors</small>
+            </article>
+            <form class="lc-card dashboard-search" data-dashboard-search-form>
+              <svg class="lc-icon" aria-hidden="true"><use href="#icon-search"/></svg><input data-dashboard-search type="search" placeholder="Search domains..."><button class="btn-secondary" type="submit">Go</button>
+            </form>
           </div>
-        </label>
-        <label class="filter-field">
-          <span>Content filter</span>
-          <select data-filter-select name="filter" aria-label="Content filter">
-            <option value="all">All filters</option>
-          </select>
-        </label>
-        <button class="primary-action" data-check-button type="submit">
-          <span>Run check</span>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-      </form>
-      <div class="notice" data-notice role="status" aria-live="polite" hidden></div>
-    </section>
 
-    <section class="results-section surface" data-results-section hidden aria-labelledby="results-title">
-      <div class="results-head">
-        <div>
-          <p class="eyebrow">Report</p>
-          <h2 id="results-title" data-results-title>Results</h2>
-        </div>
-        <button class="quiet-action" data-copy-results type="button">Copy report</button>
-      </div>
-      <div class="summary-grid" aria-label="Result summary">
-        <article class="summary-card blocked"><span>Blocked</span><strong data-count-blocked>0</strong></article>
-        <article class="summary-card allowed"><span>Allowed</span><strong data-count-allowed>0</strong></article>
-        <article class="summary-card info"><span>Informational</span><strong data-count-info>0</strong></article>
-        <article class="summary-card error"><span>Errors</span><strong data-count-error>0</strong></article>
-      </div>
-      <div class="result-list" data-result-list></div>
-    </section>
+          <div class="dashboard-filter-row">
+            <select data-dashboard-vendor data-vendor-select><option value="">All vendors</option></select>
+            <div class="verdict-toggle" data-verdict-toggle>
+              <button class="active" data-dashboard-verdict="" type="button">All</button>
+              <button data-dashboard-verdict="allowed" type="button">Unblocked</button>
+              <button data-dashboard-verdict="blocked" type="button">Blocked</button>
+              <button data-dashboard-verdict="unknown" type="button">Unknown</button>
+            </div>
+          </div>
 
-    <section class="preview-section surface" data-preview-section hidden aria-labelledby="preview-title">
-      <div class="preview-head">
-        <div>
-          <p class="eyebrow">Page preview</p>
-          <h2 id="preview-title">Website details</h2>
-        </div>
-        <button class="quiet-action" data-screenshot-button type="button">View screenshot</button>
-      </div>
-      <article class="site-preview">
-        <img class="site-favicon" data-preview-favicon alt="">
-        <div class="site-copy">
-          <strong data-preview-title>Website</strong>
-          <span data-preview-host></span>
-          <p data-preview-description>No description available.</p>
-        </div>
-        <a class="visit-link" data-preview-link href="#" target="_blank" rel="noopener noreferrer" aria-label="Open checked website in a new tab">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M10 14l9-9M19 14v5H5V5h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </a>
-      </article>
-      <div class="screenshot-wrap" data-screenshot-wrap hidden>
-        <div class="screenshot-loading" data-screenshot-loading>Rendering screenshot…</div>
-        <img data-screenshot-image alt="Screenshot of the checked website" hidden>
-      </div>
-    </section>
-  </main>
-  <script src="./app.js?v=20260718-dogeub-utility-1"></script>
+          <section class="lc-card table-card">
+            <div class="domain-table-head"><span>Domain</span><span>Last checked</span><span>Status</span><span>Vendors</span><span></span></div>
+            <div class="domain-list" data-dashboard-list></div>
+            <div class="empty-state" data-dashboard-empty><strong>No domains checked yet</strong><span>Open Link Checker to create your first report.</span></div>
+            <footer class="pager" data-dashboard-pager hidden><span data-dashboard-page-label>Page 1</span><div><button class="btn-secondary" data-dashboard-prev type="button"><svg class="lc-icon" aria-hidden="true"><use href="#icon-chevron-left"/></svg>Prev</button><button class="btn-secondary" data-dashboard-next type="button">Next<svg class="lc-icon" aria-hidden="true"><use href="#icon-chevron-right"/></svg></button></div></footer>
+          </section>
+        </section>
+
+        <section class="checker-view" data-view="checker" aria-labelledby="checker-title" hidden>
+          <header class="page-heading"><div><h1 id="checker-title">Link Checker</h1><p>Paste any link and run it across all available filter vendors. No account is required.</p></div></header>
+          <section class="lc-card checker-card">
+            <form class="simple-check-form" data-check-form>
+              <svg class="lc-icon" aria-hidden="true"><use href="#icon-link"/></svg>
+              <input data-url-input name="url" type="text" inputmode="url" autocomplete="url" spellcheck="false" placeholder="https://example.com/some/page" aria-label="Website or URL" required>
+              <select data-filter-select data-vendor-select aria-label="Optional vendor filter"><option value="">All vendors</option></select>
+              <button class="btn-primary" data-check-button type="submit"><svg class="lc-icon" aria-hidden="true"><use href="#icon-search"/></svg><span>Check</span></button>
+            </form>
+          </section>
+
+          <section class="results-section lc-card" data-results-section hidden aria-labelledby="results-title">
+            <div class="section-heading"><div><h2 id="results-title" data-results-title>Results</h2><p data-results-summary>Vendor classifications</p></div><div class="heading-actions"><button class="btn-secondary" data-recheck type="button"><svg class="lc-icon" aria-hidden="true"><use href="#icon-refresh"/></svg>Check again</button><button class="btn-secondary" data-copy-results type="button"><svg class="lc-icon" aria-hidden="true"><use href="#icon-copy"/></svg>Copy</button></div></div>
+            <div class="summary-grid" aria-label="Result summary">
+              <article class="summary-card blocked"><span>Blocked</span><strong data-count-blocked>0</strong></article>
+              <article class="summary-card allowed"><span>Unblocked</span><strong data-count-allowed>0</strong></article>
+              <article class="summary-card info"><span>Unknown</span><strong data-count-info>0</strong></article>
+              <article class="summary-card error"><span>Errors</span><strong data-count-error>0</strong></article>
+            </div>
+            <div class="result-list" data-result-list></div>
+          </section>
+
+          <section class="domain-section lc-card" data-domain-section hidden aria-labelledby="domain-title">
+            <div class="section-heading"><div><h2 id="domain-title" data-domain-title>Domain details</h2><p>Public registration information</p></div><span class="source-badge" data-domain-source>RDAP</span></div>
+            <div class="domain-detail-grid" data-domain-details></div>
+          </section>
+
+        </section>
+
+        <section class="checker-view" data-view="history" aria-labelledby="history-title" hidden>
+          <header class="page-heading compact-heading"><div><h1 id="history-title">Scan History</h1><p>Completed checks stored on this device.</p></div><button class="btn-danger" data-clear-history type="button"><svg class="lc-icon" aria-hidden="true"><use href="#icon-trash"/></svg>Clear history</button></header>
+          <section class="lc-card table-card">
+            <div class="history-table-head"><span>When</span><span>Action</span><span>Domain</span><span>Results</span><span></span></div>
+            <div class="history-list" data-history-list></div>
+            <div class="empty-state" data-history-empty><strong>No activity yet</strong><span>Completed checks will appear here.</span></div>
+          </section>
+        </section>
+
+        <section class="checker-view" data-view="settings" aria-labelledby="settings-title" hidden>
+          <header class="page-heading"><div><h1 id="settings-title">Settings</h1><p>Preferences are saved in this browser.</p></div></header>
+          <div class="settings-stack">
+            <section class="lc-card settings-card"><h2>Preferences</h2><label><span><strong>Results per page</strong><small>Dashboard pagination size</small></span><select data-setting-page-size><option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option></select></label><label><span><strong>Toast notifications</strong><small>Successful scan messages</small></span><button class="btn-secondary" data-setting-notifications type="button" aria-pressed="true">On</button></label></section>
+            <section class="lc-card settings-card"><h2>Appearance</h2><label><span><strong>Theme</strong><small>Inherit Nyx or select a local theme</small></span><select data-setting-theme><option value="inherit">Inherit Nyx</option><option value="default">Dark</option><option value="ruby">Ruby</option><option value="emerald">Emerald</option><option value="sakura">Sakura</option><option value="fresh">Light</option></select></label></section>
+            <section class="lc-card settings-card"><h2>Local data</h2><label><span><strong>Saved scan history</strong><small>Download or remove reports on this device</small></span><span class="heading-actions"><button class="btn-secondary" data-export="json" type="button"><svg class="lc-icon" aria-hidden="true"><use href="#icon-download"/></svg>Download</button><button class="btn-danger" data-clear-history type="button"><svg class="lc-icon" aria-hidden="true"><use href="#icon-trash"/></svg>Clear</button></span></label></section>
+          </div>
+        </section>
+      </main>
+      <footer class="lc-footer">Nyx Link Checker · classifications are informational and can change</footer>
+    </div>
+  </div>
+  <script src="./app.js?v=20260806-nocturne-layout-5"></script>
 </body>
 </html>

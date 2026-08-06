@@ -86,6 +86,10 @@ const downloadSafetyCache = new Map();
 const downloadSafetyAttempts = new Map();
 const downloadSafetyWindowMs = 60_000;
 const downloadSafetyMaxAttempts = 60;
+const linkCheckerAttempts = new Map();
+const linkCheckerWindowMs = 15 * 60_000;
+const linkCheckerMaxAttempts = 30;
+const linkCheckerApiOrigin = "https://lc.nocturne.lol";
 let linkGeneratorFirebasePromise;
 app.use(express.json({ limit: "2mb" }));
 app.use((error, _req, res, next) => {
@@ -2575,6 +2579,161 @@ function downloadSafetyRateState(clientId, now = Date.now()) {
   }
   return state;
 }
+
+function linkCheckerRateState(clientId, now = Date.now()) {
+  for (const [key, state] of linkCheckerAttempts) {
+    if (now - state.windowStarted > linkCheckerWindowMs) linkCheckerAttempts.delete(key);
+  }
+  let state = linkCheckerAttempts.get(clientId);
+  if (!state || now - state.windowStarted > linkCheckerWindowMs) {
+    state = { attempts: 0, windowStarted: now };
+    linkCheckerAttempts.set(clientId, state);
+  }
+  return state;
+}
+
+function linkCheckerApiKey() {
+  return String(process.env.NYX_LINK_CHECKER_API_KEY || "").trim();
+}
+
+async function linkCheckerUpstream(path, options = {}) {
+  const apiKey = linkCheckerApiKey();
+  const headers = { Accept: "application/json", ...(options.headers || {}) };
+  if (apiKey) headers["X-API-Key"] = apiKey;
+  const response = await fetch(`${linkCheckerApiOrigin}${path}`, {
+    ...options,
+    headers,
+    signal: AbortSignal.timeout(20_000)
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    const error = new Error(
+      response.status === 401 || response.status === 403
+        ? "The Link Checker API key was rejected."
+        : response.status === 429
+          ? "The Link Checker rate limit has been reached."
+          : "The Link Checker provider could not complete this request."
+    );
+    error.status = response.status === 429 ? 429 : (response.status < 500 ? response.status : 502);
+    error.retryAfter = response.headers.get("retry-after") || "";
+    throw error;
+  }
+  if (!payload || typeof payload !== "object") {
+    const error = new Error("The Link Checker provider returned an invalid response.");
+    error.status = 502;
+    throw error;
+  }
+  return payload;
+}
+
+app.get("/api/link-checker/vendors", async (req, res) => {
+  res.set("Cache-Control", "public, max-age=300");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-site link checks are not allowed." });
+    return;
+  }
+  try {
+    res.json(await linkCheckerUpstream("/api/check/vendors"));
+  } catch (error) {
+    if (error.retryAfter) res.set("Retry-After", String(error.retryAfter));
+    res.status(error.status || 502).json({ error: error.message || "The Link Checker provider is unavailable." });
+  }
+});
+
+app.post("/api/link-checker/check", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-site link checks are not allowed." });
+    return;
+  }
+  const rate = linkCheckerRateState(linkGeneratorClientId(req));
+  rate.attempts += 1;
+  if (rate.attempts > linkCheckerMaxAttempts) {
+    const retryAfter = Math.max(1, Math.ceil((rate.windowStarted + linkCheckerWindowMs - Date.now()) / 1000));
+    res.set("Retry-After", String(retryAfter)).status(429).json({ error: "Too many link checks. Try again later." });
+    return;
+  }
+  const target = normalizedDownloadSafetyUrl(req.body?.url);
+  if (!target) {
+    res.status(400).json({ error: "A valid HTTP or HTTPS URL is required." });
+    return;
+  }
+  const vendor = String(req.body?.vendor || "").trim().toLowerCase();
+  if (vendor && !/^[a-z0-9_-]{1,64}$/.test(vendor)) {
+    res.status(400).json({ error: "The selected Link Checker vendor is invalid." });
+    return;
+  }
+  try {
+    const payload = await linkCheckerUpstream("/api/check", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: target.href, ...(vendor ? { vendor } : {}) })
+    });
+    res.json(payload);
+  } catch (error) {
+    if (error.retryAfter) res.set("Retry-After", String(error.retryAfter));
+    res.status(error.status || 502).json({ error: error.message || "The Link Checker provider is unavailable." });
+  }
+});
+
+app.post("/api/link-checker/domain-info", async (req, res) => {
+  res.set("Cache-Control", "public, max-age=900");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-site domain lookups are not allowed." });
+    return;
+  }
+  const target = normalizedDownloadSafetyUrl(req.body?.url);
+  const host = String(target?.hostname || "").toLowerCase();
+  if (!host || host === "localhost" || isIP(host)) {
+    res.status(400).json({ error: "Registration details require a public domain name." });
+    return;
+  }
+  try {
+    const response = await fetch(`https://rdap.org/domain/${encodeURIComponent(host)}`, {
+      headers: { Accept: "application/rdap+json, application/json" },
+      redirect: "follow",
+      signal: AbortSignal.timeout(15_000)
+    });
+    if (!response.ok) {
+      res.status(response.status === 404 ? 404 : 502).json({
+        error: response.status === 404
+          ? "Registration details were not found for this domain."
+          : "The registration lookup provider is unavailable."
+      });
+      return;
+    }
+    const payload = await response.json().catch(() => null);
+    if (!payload || typeof payload !== "object") {
+      res.status(502).json({ error: "The registration lookup returned an invalid response." });
+      return;
+    }
+    const registrar = Array.isArray(payload.entities)
+      ? payload.entities.find(entity => Array.isArray(entity?.roles) && entity.roles.includes("registrar"))
+      : null;
+    const registrarCard = Array.isArray(registrar?.vcardArray?.[1]) ? registrar.vcardArray[1] : [];
+    const registrarName = String(registrarCard.find(field => field?.[0] === "fn")?.[3] || registrar?.handle || "");
+    const events = Array.isArray(payload.events) ? payload.events.map(event => ({
+      action: String(event?.eventAction || ""),
+      date: String(event?.eventDate || "")
+    })).filter(event => event.action || event.date) : [];
+    const nameservers = Array.isArray(payload.nameservers)
+      ? payload.nameservers.map(nameserver => String(nameserver?.ldhName || nameserver?.unicodeName || "")).filter(Boolean)
+      : [];
+    res.json({
+      domain: String(payload.ldhName || payload.unicodeName || host).toLowerCase(),
+      handle: String(payload.handle || ""),
+      registrar: registrarName,
+      status: Array.isArray(payload.status) ? payload.status.map(String) : [],
+      events,
+      nameservers,
+      dnssec: payload.secureDNS?.delegationSigned === true,
+      source: "RDAP"
+    });
+  } catch (error) {
+    console.warn("Nyx Link Checker registration lookup failed:", error?.message || error);
+    res.status(502).json({ error: "The registration lookup provider could not be reached." });
+  }
+});
 
 async function googleSafeBrowsingLookup(url) {
   const apiKey = String(process.env.NYX_SAFE_BROWSING_API_KEY || process.env.GOOGLE_SAFE_BROWSING_API_KEY || "").trim();

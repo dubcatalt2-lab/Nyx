@@ -105,6 +105,8 @@ Client preferences and much local UI state use browser storage. Cross-device acc
 - Smartwatch-specific layout is limited to viewports no larger than 480px wide and 520px tall. It keeps Back, Reload, Home, the address field, and Menu visible; Forward, Bookmark, and Weather remain available outside that watch breakpoint.
 - Scramjet requires browser Service Worker support. When the selected browser cannot provide it, keep the saved engine unchanged and offer the user a per-tab **Try direct mode** action; direct mode still depends on the destination allowing iframe embedding.
 - Keep the Developer Console implemented with Eruda unless the user explicitly requests otherwise.
+- Link Checker vendor scans go through Nyx's same-origin `/api/link-checker/*` server bridge to `lc.nocturne.lol`. The checker works through Nocturne's anonymous public allowance and adds `NYX_LINK_CHECKER_API_KEY` only when that optional server variable is configured. Never put its value in client code, tracked files, documentation, logs, or commits.
+- Nyx presents the non-account Link Checker workspace in a Nocturne-inspired sidebar and table layout, with a local dashboard, single all-vendor or selected-vendor checks, device-local history, filters, CSV/JSON exports, preferences, vendor reports, and public RDAP registration details. Nocturne account, upgrade, admin, API-key-management, global FreeDNS cache, and account-only scrape/bulk-scan/history routes are deliberately not exposed.
 - Theme work should recolor the existing interface without unexpectedly changing its layout. Custom-theme text, icons, controls, and selected states must use the selected theme tokens.
 - The 2D homepage dot field uses a swept-pointer particle response: nearby dots repel and fade, then spring back into their grid. Preserve its reduced-motion behavior and keep it disabled when 3D backgrounds are active.
 - Preserve animated GIF banners and avatars as animated media. Do not replace them with static conversions.
@@ -201,6 +203,7 @@ Other server features:
 - `LINK_GENERATOR_ACCESS_CODE`
 - `LINK_GENERATOR_MAX_ZONES`
 - `LINK_GENERATOR_PREMIUM_BATCH_LIMIT`
+- `NYX_LINK_CHECKER_API_KEY`
 - `NYX_SAFE_BROWSING_API_KEY` or `GOOGLE_SAFE_BROWSING_API_KEY`
 
 Inspect `server.js`, `wisp-server.js`, and deployment settings before adding or renaming variables.

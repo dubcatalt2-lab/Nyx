@@ -3,6 +3,7 @@
   const CHECK_API='/api/link-checker';
   const HISTORY_KEY='nyx.linkChecker.history.v1';
   const SETTINGS_KEY='nyx.linkChecker.settings.v1';
+  const FREEDNS_KEY='nyx.linkChecker.freedns.v1';
   const HISTORY_LIMIT=500;
   const THEME_CLASSES=['theme-default','theme-ruby','theme-emerald','theme-sakura','theme-fresh'];
   const $=selector=>document.querySelector(selector);
@@ -13,7 +14,9 @@
     resultList:$('[data-result-list]'),
     domainSection:$('[data-domain-section]'),domainTitle:$('[data-domain-title]'),domainSource:$('[data-domain-source]'),domainDetails:$('[data-domain-details]'),
     dashboardList:$('[data-dashboard-list]'),dashboardEmpty:$('[data-dashboard-empty]'),dashboardPager:$('[data-dashboard-pager]'),
-    historyList:$('[data-history-list]'),historyEmpty:$('[data-history-empty]')
+    historyList:$('[data-history-list]'),historyEmpty:$('[data-history-empty]'),
+    freednsStart:$('[data-freedns-start]'),freednsStop:$('[data-freedns-stop]'),freednsList:$('[data-freedns-list]'),freednsEmpty:$('[data-freedns-empty]'),freednsPager:$('[data-freedns-pager]'),
+    freednsSearch:$('[data-freedns-search]'),freednsStatus:$('[data-freedns-status]'),freednsProgress:$('[data-freedns-progress]')
   };
   const defaultSettings={pageSize:25,notifications:true,theme:'inherit'};
   let settings=readJsonStorage(SETTINGS_KEY,defaultSettings);
@@ -25,6 +28,11 @@
   let currentTarget='';
   let dashboardPage=1;
   let dashboardVerdict='';
+  let freednsCache=readJsonStorage(FREEDNS_KEY,{domains:[],totalPages:0,totalDomains:0,lastScrapedAt:'',complete:false});
+  if(!freednsCache||!Array.isArray(freednsCache.domains))freednsCache={domains:[],totalPages:0,totalDomains:0,lastScrapedAt:'',complete:false};
+  let freednsPage=1;
+  let freednsController=null;
+  let freednsScraping=false;
 
   function readJsonStorage(key,fallback){
     try{const value=JSON.parse(localStorage.getItem(key)||'null');return value===null ? fallback : value}catch{return fallback}
@@ -243,7 +251,83 @@
       const open=document.createElement('button');open.className='btn-secondary';open.type='button';open.append(makeIcon('eye'),'View');open.addEventListener('click',()=>openSavedReport(entry));row.append(time,action,copy,result,open);refs.historyList.append(row);
     });refs.historyEmpty.hidden=history.length>0;
   }
-  function renderWorkspace(){renderDashboard();renderHistory();}
+  function normalizedFreednsDomain(value){
+    const domain=String(value?.domain||'').trim().toLowerCase();
+    if(!domain||!/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i.test(domain))return null;
+    return {id:String(value?.id||domain),domain,status:value?.status==='public'?'public':'private',hosts:Math.max(0,Number(value?.hosts)||0)};
+  }
+  function filteredFreednsDomains(){
+    const search=String(refs.freednsSearch?.value||'').trim().toLowerCase();const status=refs.freednsStatus?.value||'all';
+    return freednsCache.domains.filter(entry=>(!search||entry.domain.includes(search))&&(status==='all'||entry.status===status));
+  }
+  function renderFreedns(){
+    const domains=filteredFreednsDomains();const pageSize=50;const pages=Math.max(1,Math.ceil(domains.length/pageSize));freednsPage=Math.min(Math.max(1,freednsPage),pages);
+    $('[data-freedns-count]').textContent=freednsCache.domains.length.toLocaleString();
+    $('[data-freedns-pages]').textContent=freednsCache.totalPages?String(freednsCache.totalPages):'—';
+    $('[data-freedns-public]').textContent=freednsCache.domains.filter(entry=>entry.status==='public').length.toLocaleString();
+    $('[data-freedns-private]').textContent=freednsCache.domains.filter(entry=>entry.status==='private').length.toLocaleString();
+    $('[data-freedns-updated]').textContent=freednsCache.lastScrapedAt?`${freednsCache.complete?'Updated':'Partial scrape'} ${formatDate(freednsCache.lastScrapedAt)}`:'Not scraped on this device';
+    refs.freednsList.replaceChildren();
+    domains.slice((freednsPage-1)*pageSize,freednsPage*pageSize).forEach(entry=>{
+      const row=document.createElement('article');row.className='freedns-row';
+      const identity=document.createElement('div');identity.className='freedns-identity';const name=document.createElement('strong');name.textContent=entry.domain;const id=document.createElement('span');id.textContent=`FreeDNS #${entry.id}`;identity.append(name,id);
+      const status=document.createElement('span');status.className=`freedns-status ${entry.status}`;status.textContent=entry.status;
+      const hosts=document.createElement('span');hosts.className='freedns-hosts';hosts.textContent=entry.hosts.toLocaleString();
+      const check=document.createElement('button');check.className='btn-secondary';check.type='button';check.append(makeIcon('search'),'Check');check.addEventListener('click',()=>checkFreednsDomain(entry.domain));
+      row.append(identity,status,hosts,check);refs.freednsList.append(row);
+    });
+    refs.freednsEmpty.hidden=domains.length>0;refs.freednsPager.hidden=domains.length<=pageSize;
+    $('[data-freedns-page-label]').textContent=`Page ${freednsPage} of ${pages} · ${domains.length.toLocaleString()} domains`;
+    $('[data-freedns-prev]').disabled=freednsPage<=1;$('[data-freedns-next]').disabled=freednsPage>=pages;
+  }
+  function setFreednsScraping(active){
+    freednsScraping=active;refs.freednsStart.disabled=active;refs.freednsStart.querySelector('span').textContent=active?'Scraping…':'Scrape registry';refs.freednsStop.hidden=!active;
+  }
+  function setFreednsProgress(page,total,count){
+    const percent=total?Math.min(100,Math.round(page/total*100)):0;refs.freednsProgress.hidden=false;
+    $('[data-freedns-progress-label]').textContent=`Scraping page ${page.toLocaleString()} of ${total.toLocaleString()}`;
+    $('[data-freedns-progress-count]').textContent=`${percent}% · ${count.toLocaleString()} domains`;
+    $('[data-freedns-progress-bar]').style.width=`${percent}%`;
+  }
+  function freednsDelay(milliseconds,signal){
+    if(signal.aborted)return Promise.reject(new DOMException('Stopped','AbortError'));
+    return new Promise((resolve,reject)=>{const timer=setTimeout(resolve,milliseconds);signal.addEventListener('abort',()=>{clearTimeout(timer);reject(new DOMException('Stopped','AbortError'));},{once:true});});
+  }
+  function saveFreednsCache(){return writeJsonStorage(FREEDNS_KEY,freednsCache)}
+  async function startFreednsScrape(){
+    if(freednsScraping)return;
+    freednsController?.abort();freednsController=new AbortController();const signal=freednsController.signal;setFreednsScraping(true);showNotice('');
+    const collected=new Map();let totalPages=1;let totalDomains=0;let completedPages=0;
+    try{
+      for(let page=1;page<=totalPages;page+=1){
+        const payload=await fetchJson(`${CHECK_API}/freedns-registry?page=${page}`,{signal});
+        if(page===1){totalPages=Math.max(1,Math.min(500,Number(payload.totalPages)||1));totalDomains=Math.max(0,Number(payload.totalDomains)||0);}
+        (Array.isArray(payload.domains)?payload.domains:[]).forEach(value=>{const entry=normalizedFreednsDomain(value);if(entry)collected.set(entry.id,entry);});
+        completedPages=page;setFreednsProgress(page,totalPages,collected.size);
+        if(page===1||page%10===0||page===totalPages){freednsCache={domains:[...collected.values()],totalPages,totalDomains,lastScrapedAt:new Date().toISOString(),complete:page===totalPages};renderFreedns();}
+        if(page<totalPages)await freednsDelay(175,signal);
+      }
+      freednsCache={domains:[...collected.values()],totalPages,totalDomains,lastScrapedAt:new Date().toISOString(),complete:true};
+      const saved=saveFreednsCache();renderFreedns();showNotice(saved?`FreeDNS scrape complete: ${freednsCache.domains.length.toLocaleString()} domains cached on this device.`:'The scrape completed, but this browser could not save the registry cache.',saved?'':'error',!saved);
+    }catch(error){
+      if(collected.size){freednsCache={domains:[...collected.values()],totalPages,totalDomains,lastScrapedAt:new Date().toISOString(),complete:false};saveFreednsCache();renderFreedns();}
+      if(error.name==='AbortError')showNotice(`FreeDNS scrape stopped after ${completedPages.toLocaleString()} pages. The partial cache was saved.`);
+      else showNotice(`FreeDNS scrape failed on page ${(completedPages+1).toLocaleString()}: ${error.message}`,'error',true);
+    }finally{setFreednsScraping(false);}
+  }
+  function stopFreednsScrape(){freednsController?.abort()}
+  function clearFreednsCache(){
+    if(freednsScraping){showNotice('Stop the active scrape before clearing its cache.','error',true);return;}
+    if(!freednsCache.domains.length)return;if(!confirm('Clear the FreeDNS registry cache stored on this device?'))return;
+    freednsCache={domains:[],totalPages:0,totalDomains:0,lastScrapedAt:'',complete:false};freednsPage=1;try{localStorage.removeItem(FREEDNS_KEY)}catch{}renderFreedns();showNotice('Local FreeDNS registry cache cleared.');
+  }
+  function exportFreedns(){
+    if(!freednsCache.domains.length){showNotice('Scrape the FreeDNS registry before exporting it.','error',true);return;}
+    const content=[['id','domain','status','hostsInUse'],...freednsCache.domains.map(entry=>[entry.id,entry.domain,entry.status,entry.hosts])].map(row=>row.map(csvCell).join(',')).join('\n');
+    const blob=new Blob([content],{type:'text/csv'});const url=URL.createObjectURL(blob);const anchor=document.createElement('a');anchor.href=url;anchor.download=`nyx-freedns-registry-${new Date().toISOString().slice(0,10)}.csv`;anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000);showNotice('FreeDNS registry CSV created.');
+  }
+  function checkFreednsDomain(domain){refs.input.value=`https://${domain}/`;switchView('checker');void runCheck();}
+  function renderWorkspace(){renderDashboard();renderHistory();renderFreedns();}
   function switchView(name){
     $$('[data-view]').forEach(view=>{const active=view.dataset.view===name;view.hidden=!active;view.classList.toggle('active',active);});
     $$('[data-view-button]').forEach(button=>button.classList.toggle('active',button.dataset.viewButton===name));
@@ -278,6 +362,10 @@
     $('[data-dashboard-vendor]').addEventListener('change',()=>{dashboardPage=1;renderDashboard();});
     $$('[data-dashboard-verdict]').forEach(button=>button.addEventListener('click',()=>{dashboardVerdict=button.dataset.dashboardVerdict||'';$$('[data-dashboard-verdict]').forEach(item=>item.classList.toggle('active',item===button));dashboardPage=1;renderDashboard();}));
     $('[data-dashboard-prev]').addEventListener('click',()=>{dashboardPage-=1;renderDashboard();});$('[data-dashboard-next]').addEventListener('click',()=>{dashboardPage+=1;renderDashboard();});
+    refs.freednsStart.addEventListener('click',()=>void startFreednsScrape());refs.freednsStop.addEventListener('click',stopFreednsScrape);
+    refs.freednsSearch.addEventListener('input',()=>{freednsPage=1;renderFreedns();});refs.freednsStatus.addEventListener('change',()=>{freednsPage=1;renderFreedns();});
+    $('[data-freedns-export]').addEventListener('click',exportFreedns);$('[data-freedns-clear]').addEventListener('click',clearFreednsCache);
+    $('[data-freedns-prev]').addEventListener('click',()=>{freednsPage-=1;renderFreedns();});$('[data-freedns-next]').addEventListener('click',()=>{freednsPage+=1;renderFreedns();});
     $$('[data-export]').forEach(button=>button.addEventListener('click',()=>exportRecords(button.dataset.export)));$$('[data-clear-history]').forEach(button=>button.addEventListener('click',clearHistory));
     const pageSize=$('[data-setting-page-size]');pageSize.value=String(settings.pageSize||25);pageSize.addEventListener('change',()=>{settings.pageSize=Number(pageSize.value)||25;dashboardPage=1;saveSettings();});
     const notifications=$('[data-setting-notifications]');const renderNotifications=()=>{notifications.textContent=settings.notifications?'On':'Off';notifications.setAttribute('aria-pressed',String(settings.notifications));};renderNotifications();notifications.addEventListener('click',()=>{settings.notifications=!settings.notifications;renderNotifications();saveSettings();});

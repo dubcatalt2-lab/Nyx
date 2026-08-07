@@ -207,7 +207,15 @@
       close: '<path d="m6 6 12 12M18 6 6 18"/>',
       chevron: '<path d="m9 18 6-6-6-6"/>',
       activity: '<path d="M12 8v5l3 2"/><circle cx="12" cy="12" r="9"/>',
-      shield: '<path d="M12 3 4.5 6v5c0 4.7 3.1 8.9 7.5 10 4.4-1.1 7.5-5.3 7.5-10V6L12 3Z"/><path d="m9 12 2 2 4-4"/>'
+      shield: '<path d="M12 3 4.5 6v5c0 4.7 3.1 8.9 7.5 10 4.4-1.1 7.5-5.3 7.5-10V6L12 3Z"/><path d="m9 12 2 2 4-4"/>',
+      key: '<circle cx="8" cy="15" r="4"/><path d="m11 12 8-8M15 8l3 3M18 5l2 2"/>',
+      mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+      check: '<path d="m5 12 4 4L19 6"/>',
+      userOff: '<path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9.5 11a4 4 0 0 0 2.9-6.8M3 3l18 18"/>',
+      userCheck: '<path d="M15 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M8 11a4 4 0 1 0 0-8M16 11l2 2 4-4"/>',
+      ban: '<circle cx="12" cy="12" r="9"/><path d="m6 6 12 12"/>',
+      trash: '<path d="M4 7h16M9 7V4h6v3M18 7l-1 14H7L6 7M10 11v6M14 11v6"/>',
+      save: '<path d="M5 3h12l2 2v16H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/>'
     };
     return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name] || ""}</svg>`;
   }
@@ -242,7 +250,7 @@
     overlay.innerHTML = `
       <main class="nyx-owner-dashboard">
         <header class="nyx-owner-header">
-          <div><span class="nyx-owner-eyebrow">NYX CONTROL CENTER</span><h1 id="nyxOwnerDashboardTitle">Owner Dashboard</h1><p data-owner-access-copy>Loading your role permissions…</p></div>
+          <div><span class="nyx-owner-eyebrow">${dashboardIcon("shield")}NYX ADMINISTRATION</span><h1 id="nyxOwnerDashboardTitle">Owner Dashboard</h1><p data-owner-access-copy>Loading your role permissions…</p></div>
           <div class="nyx-owner-header-actions">
             <button type="button" data-owner-refresh>${dashboardIcon("refresh")}<span>Refresh</span></button>
             <button class="nyx-owner-close" type="button" data-owner-close aria-label="Close owner dashboard">${dashboardIcon("close")}</button>
@@ -252,7 +260,7 @@
         <section class="nyx-owner-workspace">
           <div class="nyx-owner-users-panel">
             <header class="nyx-owner-panel-head">
-              <div><h2>Users</h2><span data-owner-user-count>Loading accounts…</span></div>
+              <div><h2>${dashboardIcon("users")}Users</h2><span data-owner-user-count>Loading accounts…</span></div>
               <div class="nyx-owner-quick-actions">
                 <button type="button" data-owner-online-only>${dashboardIcon("online")}Online users</button>
                 <button type="button" data-owner-export>${dashboardIcon("download")}Export page</button>
@@ -269,7 +277,7 @@
             <footer class="nyx-owner-pagination" data-owner-pagination></footer>
           </div>
           <aside class="nyx-owner-activity-panel">
-            <header><div><h2>Recent activity</h2><span>Security and account events</span></div>${dashboardIcon("activity")}</header>
+            <header><div><h2>${dashboardIcon("activity")}Activity logs</h2><span>Security and account events</span></div></header>
             <div class="nyx-owner-activity-list" data-owner-activity></div>
           </aside>
         </section>
@@ -377,7 +385,7 @@
         tableHost.innerHTML = `<table class="nyx-owner-table">
           <thead><tr><th>${sortButton("displayName", "User")}</th><th>${sortButton("role", "Role")}</th><th>${sortButton("subscriptionStatus", "Subscription")}</th><th>${sortButton("createdAt", "Created")}</th><th>${sortButton("lastSignInAt", "Last sign-in")}</th><th>${sortButton("lastActiveAt", "Last active")}</th><th>Email verified</th><th>${sortButton("status", "Status")}</th><th><span class="sr-only">Actions</span></th></tr></thead>
           <tbody>${users.map(user => `<tr data-owner-user-row="${esc(user.uid)}">
-            <td><button class="nyx-owner-user-cell" type="button" data-owner-view-user="${esc(user.uid)}"><span class="nyx-owner-avatar">${ownerProfileImageMarkup(user.photoUrl, "", (user.displayName || "?").slice(0, 1).toUpperCase())}<i class="${user.online ? "online" : ""}"></i></span><span><span class="nyx-owner-user-name-row"><strong>${esc(user.displayName)}</strong><span class="nyx-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></span><small>@${esc(user.username)} · ${esc(user.email || "No email")}</small></span></button></td>
+            <td><button class="nyx-owner-user-cell" type="button" data-owner-view-user="${esc(user.uid)}"><span class="nyx-owner-avatar">${ownerProfileImageMarkup(user.photoUrl, "", (user.displayName || "?").slice(0, 1).toUpperCase())}<i class="${user.online ? "online" : ""}"></i></span><span><span class="nyx-owner-user-name-row"><strong>${esc(user.displayName)}</strong><span class="nyx-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></span><small>@${esc(user.username)} · ${esc(user.email || "No email")}</small><span class="nyx-owner-mobile-access"><span class="nyx-owner-badge role-${esc(user.role)}">${roleIcon(user.role)}${esc(roleLabel(user.role))}</span><span class="nyx-owner-badge subscription-${esc(user.subscriptionStatus)}">${esc(subscriptionLabel(user.subscriptionStatus))}</span></span></span></button></td>
             <td><span class="nyx-owner-badge role-${esc(user.role)}">${roleIcon(user.role)}${esc(roleLabel(user.role))}</span></td>
             <td><span class="nyx-owner-badge subscription-${esc(user.subscriptionStatus)}">${esc(subscriptionLabel(user.subscriptionStatus))}</span></td>
             <td><span title="${esc(dateLabel(user.createdAt))}">${esc(relativeLabel(user.createdAt))}</span></td>
@@ -424,8 +432,8 @@
       const clientNote = state.ipBanClientIp ? ` Your current IP is ${state.ipBanClientIp}; Nyx will not let you block it from this session.` : "";
       drawer.innerHTML = `<header><div><span>${dashboardIcon("shield")}</span><h2>Network access</h2><p>IP bans apply to Nyx server and function requests.</p></div><button type="button" data-owner-drawer-close aria-label="Close IP bans">${dashboardIcon("close")}</button></header>
         <div class="nyx-owner-drawer-scroll nyx-owner-ip-ban-drawer">
-          <section class="nyx-owner-detail-section"><h3>Block an IP address</h3><p class="nyx-owner-action-note">Use a full IPv4 or IPv6 address. This does not configure Cloudflare's edge firewall.${esc(clientNote)}</p><form class="nyx-owner-ip-ban-form" data-owner-ip-ban-form><label>IP address<input name="ip" inputmode="text" autocomplete="off" maxlength="45" required placeholder="203.0.113.10 or 2001:db8::10"></label><label>Reason <input name="reason" maxlength="160" autocomplete="off" placeholder="Optional internal note"></label><div class="nyx-owner-detail-actions"><button type="submit">Block IP</button></div></form></section>
-          <section class="nyx-owner-detail-section"><h3>Blocked IP addresses</h3>${bans.length ? `<div class="nyx-owner-ip-ban-list">${bans.map(ban => `<article><div><strong>${esc(ban.ip)}</strong><span>${esc(ban.reason || "No reason recorded")}</span><small>Blocked ${esc(relativeLabel(ban.createdAt))}${ban.createdBy ? ` by ${esc(ban.createdBy)}` : ""}</small></div><button class="danger" type="button" data-owner-unban="${esc(ban.id)}">Unblock</button></article>`).join("")}</div>` : '<p class="nyx-owner-action-note">No IP addresses are blocked.</p>'}</section>
+          <section class="nyx-owner-detail-section"><h3>Block an IP address</h3><p class="nyx-owner-action-note">Use a full IPv4 or IPv6 address. This does not configure Cloudflare's edge firewall.${esc(clientNote)}</p><form class="nyx-owner-ip-ban-form" data-owner-ip-ban-form><label>IP address<input name="ip" inputmode="text" autocomplete="off" maxlength="45" required placeholder="203.0.113.10 or 2001:db8::10"></label><label>Reason <input name="reason" maxlength="160" autocomplete="off" placeholder="Optional internal note"></label><div class="nyx-owner-detail-actions"><button type="submit">${dashboardIcon("shield")}Block IP</button></div></form></section>
+          <section class="nyx-owner-detail-section"><h3>Blocked IP addresses</h3>${bans.length ? `<div class="nyx-owner-ip-ban-list">${bans.map(ban => `<article><div><strong>${esc(ban.ip)}</strong><span>${esc(ban.reason || "No reason recorded")}</span><small>Blocked ${esc(relativeLabel(ban.createdAt))}${ban.createdBy ? ` by ${esc(ban.createdBy)}` : ""}</small></div><button class="danger" type="button" data-owner-unban="${esc(ban.id)}">${dashboardIcon("refresh")}Unblock</button></article>`).join("")}</div>` : '<p class="nyx-owner-action-note">No IP addresses are blocked.</p>'}</section>
         </div>`;
     }
 
@@ -606,14 +614,14 @@
         const accessSection = capabilities.canSetRole || capabilities.canSetSubscription ? `<section class="nyx-owner-detail-section"><h3>Access</h3>
           ${capabilities.canSetRole ? `<label>Current role<select data-owner-detail-role>${roleSelectOptions}${currentRoleOption}</select></label>${roleOptions(user.role, assignableRoles)}` : `<p class="nyx-owner-action-note">Role: ${esc(roleLabel(user.role))}</p>`}
           ${capabilities.canSetSubscription ? `<label>Subscription<select data-owner-detail-subscription><option value="free">Free</option><option value="premium">Premium</option><option value="trialing">Trial</option><option value="past_due">Past due</option><option value="canceled">Canceled</option></select></label><p class="nyx-owner-premium-note">Premium and Trial accounts receive Premium benefits automatically when they sign in. They do not need a Premium access code.</p><label>Monthly revenue <input data-owner-detail-revenue type="number" min="0" step="0.01" value="${((user.monthlyRevenueCents || 0) / 100).toFixed(2)}"></label>` : `<p class="nyx-owner-action-note">Subscription: ${esc(subscriptionLabel(user.subscriptionStatus))}</p>`}
-          <div class="nyx-owner-detail-actions"><button type="button" data-owner-save-access>Save access</button></div></section>` : "";
+          <div class="nyx-owner-detail-actions"><button type="button" data-owner-save-access>${dashboardIcon("save")}Save access</button></div></section>` : "";
         const accountActions = [
-          capabilities.canResetPassword ? '<button type="button" data-owner-user-action="create_password_reset_link">Create reset link</button>' : "",
-          capabilities.canResetPassword ? `<button type="button" data-owner-user-action="send_password_reset" ${!user.deliverableEmail ? "disabled" : ""}>Email reset link</button>` : "",
-          capabilities.canVerifyEmail ? `<button type="button" data-owner-user-action="verify_email" ${user.emailVerified || !user.deliverableEmail ? "disabled" : ""}>Verify email</button>` : "",
-          capabilities.canDisableAccount ? `<button type="button" data-owner-user-action="${user.disabled ? "enable" : "disable"}">${user.disabled ? "Re-enable account" : "Disable account"}</button>` : "",
-          capabilities.canDisableAccount && capabilities.canManageNetworkBans && !user.disabled && user.lastSeenIp ? '<button class="danger" type="button" data-owner-user-action="disable_with_ip_ban">Disable + block IP</button>' : "",
-          capabilities.canDeleteAccount ? '<button class="danger" type="button" data-owner-user-action="delete">Delete account</button>' : ""
+          capabilities.canResetPassword ? `<button type="button" data-owner-user-action="create_password_reset_link">${dashboardIcon("key")}Create reset link</button>` : "",
+          capabilities.canResetPassword ? `<button type="button" data-owner-user-action="send_password_reset" ${!user.deliverableEmail ? "disabled" : ""}>${dashboardIcon("mail")}Email reset link</button>` : "",
+          capabilities.canVerifyEmail ? `<button type="button" data-owner-user-action="verify_email" ${user.emailVerified || !user.deliverableEmail ? "disabled" : ""}>${dashboardIcon("check")}Verify email</button>` : "",
+          capabilities.canDisableAccount ? `<button type="button" data-owner-user-action="${user.disabled ? "enable" : "disable"}">${dashboardIcon(user.disabled ? "userCheck" : "userOff")}${user.disabled ? "Re-enable account" : "Disable account"}</button>` : "",
+          capabilities.canDisableAccount && capabilities.canManageNetworkBans && !user.disabled && user.lastSeenIp ? `<button class="danger" type="button" data-owner-user-action="disable_with_ip_ban">${dashboardIcon("ban")}Disable + block IP</button>` : "",
+          capabilities.canDeleteAccount ? `<button class="danger" type="button" data-owner-user-action="delete">${dashboardIcon("trash")}Delete account</button>` : ""
         ].filter(Boolean).join("");
         const ipBanNote = capabilities.canManageNetworkBans ? (user.lastSeenIp ? `<p class="nyx-owner-action-note">Last seen IP: ${esc(user.lastSeenIp)} · ${esc(dateLabel(user.lastSeenIpAt))}. IP addresses can be shared or change over time.</p>` : '<p class="nyx-owner-action-note">No IP has been recorded for this account yet. Nyx records one after its next authenticated activity.</p>') : "";
         const accountActionsSection = accountActions ? `<section class="nyx-owner-detail-section"><h3>Account actions</h3>${!user.deliverableEmail && capabilities.canResetPassword ? '<p class="nyx-owner-action-note">This username-only account has no inbox. Create a secure reset link and give it directly to the account owner.</p>' : ""}${ipBanNote}<div class="nyx-owner-action-grid">${accountActions}</div></section>` : "";

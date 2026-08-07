@@ -90,6 +90,11 @@ const linkCheckerAttempts = new Map();
 const linkCheckerWindowMs = 15 * 60_000;
 const linkCheckerMaxAttempts = 30;
 const linkCheckerApiOrigin = "https://lc.nocturne.lol";
+const freednsRegistryAttempts = new Map();
+const freednsRegistryWindowMs = 20 * 60_000;
+const freednsRegistryMaxAttempts = 240;
+const freednsRegistryCache = new Map();
+const freednsRegistryCacheTtlMs = 30 * 60_000;
 let linkGeneratorFirebasePromise;
 app.use(express.json({ limit: "2mb" }));
 app.use((error, _req, res, next) => {
@@ -2592,6 +2597,59 @@ function linkCheckerRateState(clientId, now = Date.now()) {
   return state;
 }
 
+function freednsRegistryRateState(clientId, now = Date.now()) {
+  for (const [key, state] of freednsRegistryAttempts) {
+    if (now - state.windowStarted > freednsRegistryWindowMs) freednsRegistryAttempts.delete(key);
+  }
+  let state = freednsRegistryAttempts.get(clientId);
+  if (!state || now - state.windowStarted > freednsRegistryWindowMs) {
+    state = { attempts: 0, windowStarted: now };
+    freednsRegistryAttempts.set(clientId, state);
+  }
+  return state;
+}
+
+function freednsRegistryText(value) {
+  return String(value || "")
+    .replace(/<br\s*\/?\s*>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&#x([0-9a-f]+);/gi, (_match, value) => String.fromCodePoint(Number.parseInt(value, 16)))
+    .replace(/&#(\d+);/g, (_match, value) => String.fromCodePoint(Number.parseInt(value, 10)))
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function parseFreednsRegistryPage(html, requestedPage) {
+  const source = String(html || "");
+  const pageSummary = source.match(/Page\s*<input[^>]*value=(?:"|')?(\d+)(?:"|')?[^>]*>\s*of\s*([\d,]+)/i);
+  const totalSummary = source.match(/Showing\s*<b>[\d,]+<\/b>-<b>[\d,]+<\/b>\s*of\s*<b>([\d,]+)<\/b>\s*total/i);
+  const totalPages = Number.parseInt(String(pageSummary?.[2] || "0").replace(/,/g, ""), 10) || 0;
+  const totalDomains = Number.parseInt(String(totalSummary?.[1] || "0").replace(/,/g, ""), 10) || 0;
+  const currentPage = Number.parseInt(pageSummary?.[1] || String(requestedPage), 10) || requestedPage;
+  const domains = [];
+  const rows = source.match(/<tr\s+class=(?:"|')?tr[ld](?:"|')?[^>]*>[\s\S]*?<\/tr>/gi) || [];
+  rows.forEach(row => {
+    const cells = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map(match => match[1]);
+    const identity = row.match(/\/subdomain\/edit\.php\?edit_domain_id=(\d+)[^>]*>([^<]+)<\/a>/i);
+    if (!identity || cells.length < 2) return;
+    const domain = freednsRegistryText(identity[2]).toLowerCase();
+    if (!/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i.test(domain)) return;
+    const hosts = Number.parseInt(String(cells[0].match(/\(([\d,]+)\s+hosts?\s+in\s+use\)/i)?.[1] || "0").replace(/,/g, ""), 10) || 0;
+    const status = freednsRegistryText(cells[1]).toLowerCase() === "public" ? "public" : "private";
+    domains.push({ id: identity[1], domain, status, hosts });
+  });
+  if (!totalPages || !totalDomains || !domains.length) {
+    const error = new Error("FreeDNS returned a registry page Nyx could not read.");
+    error.status = 502;
+    throw error;
+  }
+  return { page: currentPage, totalPages, totalDomains, domains };
+}
+
 function linkCheckerApiKey() {
   return String(process.env.NYX_LINK_CHECKER_API_KEY || "").trim();
 }
@@ -2637,6 +2695,57 @@ app.get("/api/link-checker/vendors", async (req, res) => {
   } catch (error) {
     if (error.retryAfter) res.set("Retry-After", String(error.retryAfter));
     res.status(error.status || 502).json({ error: error.message || "The Link Checker provider is unavailable." });
+  }
+});
+
+app.get("/api/link-checker/freedns-registry", async (req, res) => {
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-site registry scraping is not allowed." });
+    return;
+  }
+  const page = Number.parseInt(String(req.query?.page || "1"), 10);
+  if (!Number.isInteger(page) || page < 1 || page > 500) {
+    res.status(400).json({ error: "A valid FreeDNS registry page is required." });
+    return;
+  }
+  const cached = freednsRegistryCache.get(page);
+  if (cached && Date.now() - cached.storedAt < freednsRegistryCacheTtlMs) {
+    res.set("Cache-Control", "public, max-age=300, s-maxage=1800, stale-while-revalidate=3600");
+    res.json({ ...cached.payload, cached: true });
+    return;
+  }
+  const rate = freednsRegistryRateState(linkGeneratorClientId(req));
+  rate.attempts += 1;
+  if (rate.attempts > freednsRegistryMaxAttempts) {
+    const retryAfter = Math.max(1, Math.ceil((rate.windowStarted + freednsRegistryWindowMs - Date.now()) / 1000));
+    res.set("Retry-After", String(retryAfter)).status(429).json({ error: "The FreeDNS registry scrape limit has been reached. Try again later." });
+    return;
+  }
+  try {
+    const path = page === 1 ? "/domain/registry/" : `/domain/registry/page-${page}.html`;
+    const response = await fetch(`https://freedns.afraid.org${path}`, {
+      headers: {
+        Accept: "text/html,application/xhtml+xml",
+        "User-Agent": "NyxLinkChecker/1.0 (+https://nyxlearning.org)"
+      },
+      redirect: "follow",
+      signal: AbortSignal.timeout(15_000)
+    });
+    if (!response.ok) {
+      res.status(response.status === 404 ? 404 : 502).json({ error: response.status === 404 ? "That FreeDNS registry page does not exist." : "FreeDNS could not complete the registry request." });
+      return;
+    }
+    const payload = parseFreednsRegistryPage(await response.text(), page);
+    if (page > payload.totalPages || payload.page !== page) {
+      res.status(400).json({ error: "That FreeDNS registry page is outside the current registry." });
+      return;
+    }
+    freednsRegistryCache.set(page, { storedAt: Date.now(), payload });
+    res.set("Cache-Control", "public, max-age=300, s-maxage=1800, stale-while-revalidate=3600");
+    res.json({ ...payload, cached: false });
+  } catch (error) {
+    console.warn("Nyx FreeDNS registry scrape failed:", error?.message || error);
+    res.status(error.status || 502).json({ error: error.message || "The FreeDNS registry could not be reached." });
   }
 });
 

@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark light">
   <title>Link Checker</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/icons/link-checker.svg">
-  <link rel="stylesheet" href="./styles.css?v=20260806-freedns-scraper-v1">
+  <link rel="stylesheet" href="./styles.css?v=20260806-freedns-vendors-v2">
 </head>
 <body>
   <svg class="lc-icon-sprite" aria-hidden="true">
@@ -28,6 +28,9 @@
     <symbol id="icon-eye" viewBox="0 0 24 24"><path d="M2.06 12.35a1 1 0 0 1 0-.7C3.8 7.6 7.75 5 12 5s8.2 2.6 9.94 6.65a1 1 0 0 1 0 .7C20.2 16.4 16.25 19 12 19s-8.2-2.6-9.94-6.65Z"/><circle cx="12" cy="12" r="3"/></symbol>
     <symbol id="icon-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></symbol>
     <symbol id="icon-stop" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></symbol>
+    <symbol id="icon-shield-check" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="icon-shield-x" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9.5 9.5 5 5m0-5-5 5"/></symbol>
+    <symbol id="icon-shield-question" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="M9.8 9a2.4 2.4 0 1 1 3.35 2.2c-.75.34-1.15.8-1.15 1.55M12 16h.01"/></symbol>
   </svg>
   <div class="lc-app">
     <aside class="lc-sidebar" data-sidebar>
@@ -143,15 +146,16 @@
             <div class="scraper-toolbar">
               <label class="scraper-search"><svg class="lc-icon" aria-hidden="true"><use href="#icon-search"/></svg><input data-freedns-search type="search" placeholder="Search cached domains…"></label>
               <select data-freedns-status aria-label="Filter FreeDNS status"><option value="all">All statuses</option><option value="public">Public</option><option value="private">Private</option></select>
+              <select data-freedns-vendor data-vendor-select aria-label="Vendor results shown"><option value="">All vendors</option></select>
               <button class="btn-secondary" data-freedns-export type="button"><svg class="lc-icon" aria-hidden="true"><use href="#icon-download"/></svg>CSV</button>
               <button class="btn-danger" data-freedns-clear type="button"><svg class="lc-icon" aria-hidden="true"><use href="#icon-trash"/></svg>Clear</button>
             </div>
-            <div class="freedns-table-head"><span>Domain</span><span>Status</span><span>Hosts in use</span><span></span></div>
+            <div class="freedns-table-head"><span>Domain</span><span>Hosts</span><span>Status</span><span>Vendors</span><span></span></div>
             <div class="freedns-list" data-freedns-list></div>
             <div class="empty-state" data-freedns-empty><strong>No registry cache yet</strong><span>Scrape FreeDNS to build a searchable local list.</span></div>
             <footer class="pager" data-freedns-pager hidden><span data-freedns-page-label>Page 1</span><div><button class="btn-secondary" data-freedns-prev type="button"><svg class="lc-icon" aria-hidden="true"><use href="#icon-chevron-left"/></svg>Prev</button><button class="btn-secondary" data-freedns-next type="button">Next<svg class="lc-icon" aria-hidden="true"><use href="#icon-chevron-right"/></svg></button></div></footer>
           </section>
-          <p class="scraper-note">Registry scraping does not bulk-check every domain. Use <strong>Check</strong> beside a domain to run it through the paid Link Checker safely.</p>
+          <p class="scraper-note">Registry scraping does not automatically scan thousands of domains. Use the refresh button on a row to check that domain against every vendor, or select one vendor from the filter.</p>
         </section>
 
         <section class="checker-view" data-view="history" aria-labelledby="history-title" hidden>
@@ -175,6 +179,6 @@
       <footer class="lc-footer">Nyx Link Checker · classifications are informational and can change</footer>
     </div>
   </div>
-  <script src="./app.js?v=20260806-freedns-scraper-v1"></script>
+  <script src="./app.js?v=20260806-freedns-vendors-v2"></script>
 </body>
 </html>

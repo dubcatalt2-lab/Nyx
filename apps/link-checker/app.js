@@ -16,7 +16,7 @@
     dashboardList:$('[data-dashboard-list]'),dashboardEmpty:$('[data-dashboard-empty]'),dashboardPager:$('[data-dashboard-pager]'),
     historyList:$('[data-history-list]'),historyEmpty:$('[data-history-empty]'),
     freednsStart:$('[data-freedns-start]'),freednsStop:$('[data-freedns-stop]'),freednsList:$('[data-freedns-list]'),freednsEmpty:$('[data-freedns-empty]'),freednsPager:$('[data-freedns-pager]'),
-    freednsSearch:$('[data-freedns-search]'),freednsStatus:$('[data-freedns-status]'),freednsProgress:$('[data-freedns-progress]')
+    freednsSearch:$('[data-freedns-search]'),freednsStatus:$('[data-freedns-status]'),freednsVendor:$('[data-freedns-vendor]'),freednsProgress:$('[data-freedns-progress]')
   };
   const defaultSettings={pageSize:25,notifications:true,theme:'inherit'};
   let settings=readJsonStorage(SETTINGS_KEY,defaultSettings);
@@ -33,6 +33,7 @@
   let freednsPage=1;
   let freednsController=null;
   let freednsScraping=false;
+  const freednsChecking=new Set();
 
   function readJsonStorage(key,fallback){
     try{const value=JSON.parse(localStorage.getItem(key)||'null');return value===null ? fallback : value}catch{return fallback}
@@ -112,6 +113,7 @@
       });
       $('[data-stat-vendors]').textContent=String(vendors.length);
       setApiStatus(true,`${vendors.length} vendors ready`);
+      renderFreedns();
     }catch(error){setApiStatus(false);showNotice(`Could not load vendor filters: ${error.message}`,'error',true);}
   }
   function normalizeCheckReport(payload,target){
@@ -260,6 +262,22 @@
     const search=String(refs.freednsSearch?.value||'').trim().toLowerCase();const status=refs.freednsStatus?.value||'all';
     return freednsCache.domains.filter(entry=>(!search||entry.domain.includes(search))&&(status==='all'||entry.status===status));
   }
+  function freednsResultsFor(domain){
+    const results=new Map();let checkedAt='';
+    history.forEach(entry=>{
+      if(String(entry?.target||'').trim().toLowerCase()!==domain)return;
+      if(!checkedAt)checkedAt=entry.checkedAt||'';
+      (entry.results||[]).forEach(result=>{const key=String(result?.filter||'');if(key&&!results.has(key))results.set(key,result);});
+    });
+    return {results,checkedAt};
+  }
+  function makeFreednsVendorStatus(vendor,result){
+    const state=result ? resultState(result) : {key:'unchecked',label:'Not checked'};
+    const status=document.createElement('span');status.className=`freedns-vendor-icon ${state.key}`;
+    status.title=`${vendorLabel(vendor)}: ${state.label}`;status.setAttribute('aria-label',status.title);
+    status.append(makeIcon(state.key==='blocked'?'shield-x':state.key==='allowed'?'shield-check':'shield-question'));
+    return status;
+  }
   function renderFreedns(){
     const domains=filteredFreednsDomains();const pageSize=50;const pages=Math.max(1,Math.ceil(domains.length/pageSize));freednsPage=Math.min(Math.max(1,freednsPage),pages);
     $('[data-freedns-count]').textContent=freednsCache.domains.length.toLocaleString();
@@ -271,10 +289,16 @@
     domains.slice((freednsPage-1)*pageSize,freednsPage*pageSize).forEach(entry=>{
       const row=document.createElement('article');row.className='freedns-row';
       const identity=document.createElement('div');identity.className='freedns-identity';const name=document.createElement('strong');name.textContent=entry.domain;const id=document.createElement('span');id.textContent=`FreeDNS #${entry.id}`;identity.append(name,id);
-      const status=document.createElement('span');status.className=`freedns-status ${entry.status}`;status.textContent=entry.status;
       const hosts=document.createElement('span');hosts.className='freedns-hosts';hosts.textContent=entry.hosts.toLocaleString();
-      const check=document.createElement('button');check.className='btn-secondary';check.type='button';check.append(makeIcon('search'),'Check');check.addEventListener('click',()=>checkFreednsDomain(entry.domain));
-      row.append(identity,status,hosts,check);refs.freednsList.append(row);
+      const status=document.createElement('span');status.className=`freedns-status ${entry.status}`;status.textContent=entry.status;
+      const report=freednsResultsFor(entry.domain);const selectedVendor=refs.freednsVendor?.value||'';const shownVendors=selectedVendor?[selectedVendor]:vendors;
+      const vendorStates=document.createElement('div');vendorStates.className='freedns-vendor-states';
+      if(!shownVendors.length){const waiting=document.createElement('span');waiting.className='freedns-not-checked';waiting.textContent='vendors loading';vendorStates.append(waiting);}
+      else if(!shownVendors.some(vendor=>report.results.has(vendor))){const unchecked=document.createElement('span');unchecked.className='freedns-not-checked';unchecked.textContent='not checked';vendorStates.append(unchecked);}
+      else shownVendors.forEach(vendor=>vendorStates.append(makeFreednsVendorStatus(vendor,report.results.get(vendor))));
+      if(report.checkedAt)vendorStates.title=`Last checked ${formatDate(report.checkedAt)}`;
+      const checking=freednsChecking.has(entry.domain);const check=document.createElement('button');check.className=`btn-secondary freedns-check-button${checking?' checking':''}`;check.type='button';check.disabled=checking||!vendors.length;check.title=selectedVendor?`Check ${entry.domain} with ${vendorLabel(selectedVendor)}`:`Check ${entry.domain} with all vendors`;check.setAttribute('aria-label',check.title);check.append(makeIcon('refresh'));check.addEventListener('click',()=>void checkFreednsDomain(entry.domain));
+      row.append(identity,hosts,status,vendorStates,check);refs.freednsList.append(row);
     });
     refs.freednsEmpty.hidden=domains.length>0;refs.freednsPager.hidden=domains.length<=pageSize;
     $('[data-freedns-page-label]').textContent=`Page ${freednsPage} of ${pages} · ${domains.length.toLocaleString()} domains`;
@@ -326,7 +350,15 @@
     const content=[['id','domain','status','hostsInUse'],...freednsCache.domains.map(entry=>[entry.id,entry.domain,entry.status,entry.hosts])].map(row=>row.map(csvCell).join(',')).join('\n');
     const blob=new Blob([content],{type:'text/csv'});const url=URL.createObjectURL(blob);const anchor=document.createElement('a');anchor.href=url;anchor.download=`nyx-freedns-registry-${new Date().toISOString().slice(0,10)}.csv`;anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000);showNotice('FreeDNS registry CSV created.');
   }
-  function checkFreednsDomain(domain){refs.input.value=`https://${domain}/`;switchView('checker');void runCheck();}
+  async function checkFreednsDomain(domain){
+    if(freednsChecking.has(domain))return;
+    const vendor=refs.freednsVendor?.value||'';const controller=new AbortController();freednsChecking.add(domain);renderFreedns();showNotice('');
+    try{
+      const report=await checkTarget(`https://${domain}/`,vendor,controller.signal);recordReport(report,'freedns');
+      showNotice(vendor?`${domain} checked with ${vendorLabel(vendor)}.`:`${domain} checked across ${report.results.length} vendors.`);
+    }catch(error){if(error.name!=='AbortError')showNotice(`Could not check ${domain}: ${error.message}`,'error',true);}
+    finally{freednsChecking.delete(domain);renderFreedns();}
+  }
   function renderWorkspace(){renderDashboard();renderHistory();renderFreedns();}
   function switchView(name){
     $$('[data-view]').forEach(view=>{const active=view.dataset.view===name;view.hidden=!active;view.classList.toggle('active',active);});
@@ -363,7 +395,7 @@
     $$('[data-dashboard-verdict]').forEach(button=>button.addEventListener('click',()=>{dashboardVerdict=button.dataset.dashboardVerdict||'';$$('[data-dashboard-verdict]').forEach(item=>item.classList.toggle('active',item===button));dashboardPage=1;renderDashboard();}));
     $('[data-dashboard-prev]').addEventListener('click',()=>{dashboardPage-=1;renderDashboard();});$('[data-dashboard-next]').addEventListener('click',()=>{dashboardPage+=1;renderDashboard();});
     refs.freednsStart.addEventListener('click',()=>void startFreednsScrape());refs.freednsStop.addEventListener('click',stopFreednsScrape);
-    refs.freednsSearch.addEventListener('input',()=>{freednsPage=1;renderFreedns();});refs.freednsStatus.addEventListener('change',()=>{freednsPage=1;renderFreedns();});
+    refs.freednsSearch.addEventListener('input',()=>{freednsPage=1;renderFreedns();});refs.freednsStatus.addEventListener('change',()=>{freednsPage=1;renderFreedns();});refs.freednsVendor.addEventListener('change',renderFreedns);
     $('[data-freedns-export]').addEventListener('click',exportFreedns);$('[data-freedns-clear]').addEventListener('click',clearFreednsCache);
     $('[data-freedns-prev]').addEventListener('click',()=>{freednsPage-=1;renderFreedns();});$('[data-freedns-next]').addEventListener('click',()=>{freednsPage+=1;renderFreedns();});
     $$('[data-export]').forEach(button=>button.addEventListener('click',()=>exportRecords(button.dataset.export)));$$('[data-clear-history]').forEach(button=>button.addEventListener('click',clearHistory));

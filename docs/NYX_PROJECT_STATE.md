@@ -22,15 +22,15 @@ Important release warning: production currently contains commits that are not on
 
 - Repository: `https://github.com/dubcatalt2-lab/Nyx.git`
 - Active branch: `agent/pirate-cove`
-- Combined release commit: `6439b2df672762ab09237fae0e5b4b055da8904e`
+- Latest release commit: `9857b181308723367cc813d137db85491bf3f6c9`
 - `main` / `origin/main`: `0a654cc1c3e17faff12424ae1f2a1a4eb63f6a90`
 - Draft PR: `https://github.com/dubcatalt2-lab/Nyx/pull/34`
 - PR title: **Ship Pirate Cove and Owner Dashboard IP bans**
 - Production URL: `https://nyxlearning.org`
 - Netlify project URL: `https://nyxlearning.netlify.app`
 - Netlify site ID: `c3ee107b-3703-489c-9793-6a8eb598e186`
-- Latest verified production deploy: `6a751b5d899b5d7cefe94f02`
-- Unique deploy URL: `https://6a751b5d899b5d7cefe94f02--nyxlearning.netlify.app`
+- Latest verified production deploy: `6a75347043448e94329acfa3`
+- Unique deploy URL: `https://6a75347043448e94329acfa3--nyxlearning.netlify.app`
 - Production Wisp: `wss://nyx-temporary-production.up.railway.app/wisp/`
 
 The following working-tree entries were deliberately left untracked and must not be staged, removed, or treated as Nyx release files without explicit instruction:
@@ -41,16 +41,18 @@ The following working-tree entries were deliberately left untracked and must not
 
 ## Current Production Verification
 
-The 2026-08-06 Link Checker deployment was verified on the custom domain and its immutable deploy URL. The earlier smartwatch, game-performance, Pirate Cove, and Owner Dashboard IP-ban checks remain part of the release baseline:
+The 2026-08-06 FreeDNS Scraper and Owner Dashboard redesign deployment was verified on the custom domain and its immutable deploy URL. The earlier smartwatch, game-performance, Pirate Cove, and Owner Dashboard IP-ban checks remain part of the release baseline:
 
 - `/assets/games/index.html`: HTTP 200 and contains **Pirate Cove**
 - `/assets/backgrounds/pirate-cove.gif`: HTTP 200 with `image/gif`
 - `/healthz`: HTTP 200 JSON
 - `/catclass-games`: HTTP 200 JSON
 - `/api/owner-dashboard/ip-bans`: HTTP 401 when unauthenticated, confirming the route and function bundle are live
-- `/apps/link-checker/`: HTTP 200 with the Nocturne-inspired dashboard, sidebar, matching vector action icons, and no FreeDNS batch-scanner UI
+- `/apps/link-checker/`: HTTP 200 with the Nocturne-inspired dashboard, sidebar, matching vector action icons, root-level **Back to Nyx** link, and FreeDNS Scraper UI
+- `/api/link-checker/freedns-registry?page=1`: HTTP 200 with 100 parsed registry entries on both production URLs; FreeDNS reported 21,163 entries across 212 pages at verification time
 - `/api/link-checker/vendors`: HTTP 200 with 18 vendors on both production URLs
 - `/api/link-checker/check`: `example.com` returned HTTP 200 with 18 vendor results and the configured paid plan, confirming the server-only Netlify key is active
+- Owner Dashboard redesign assets: cache-versioned stylesheet and script returned through the production homepage; desktop, 390x844, and 320x320 local interaction checks showed no horizontal overflow
 - **Amazing Strange Rope Police**: transformed Unity loader uses the guarded worker callback through Ultraviolet; the selected Scramjet path loads the 66 MB legacy Unity data archive, creates its canvas, and shows no callback or DataView error through a 90-second production regression run
 - Homepage cursor effect: the background dots repel, fade, and return along the pointer path; the **Nyx** wordmark remains fixed with no cursor transform
 - Smartwatch stylesheet and cache-versioned application script: HTTP 200; the 320x320, 396x484, and 450x450 layouts keep essential browser controls and home actions reachable

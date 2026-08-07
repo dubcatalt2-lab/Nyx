@@ -22,15 +22,15 @@ Important release warning: production currently contains commits that are not on
 
 - Repository: `https://github.com/dubcatalt2-lab/Nyx.git`
 - Active branch: `agent/pirate-cove`
-- Latest release commit: `9857b181308723367cc813d137db85491bf3f6c9`
+- Latest release commit: `5ee0bd129417f59a18a2eb696a558a15551418d4`
 - `main` / `origin/main`: `0a654cc1c3e17faff12424ae1f2a1a4eb63f6a90`
 - Draft PR: `https://github.com/dubcatalt2-lab/Nyx/pull/34`
 - PR title: **Ship Pirate Cove and Owner Dashboard IP bans**
 - Production URL: `https://nyxlearning.org`
 - Netlify project URL: `https://nyxlearning.netlify.app`
 - Netlify site ID: `c3ee107b-3703-489c-9793-6a8eb598e186`
-- Latest verified production deploy: `6a75347043448e94329acfa3`
-- Unique deploy URL: `https://6a75347043448e94329acfa3--nyxlearning.netlify.app`
+- Latest verified production deploy: `6a753cd7b03e27a527de1b43`
+- Unique deploy URL: `https://6a753cd7b03e27a527de1b43--nyxlearning.netlify.app`
 - Production Wisp: `wss://nyx-temporary-production.up.railway.app/wisp/`
 
 The following working-tree entries were deliberately left untracked and must not be staged, removed, or treated as Nyx release files without explicit instruction:
@@ -52,6 +52,7 @@ The 2026-08-06 FreeDNS Scraper and Owner Dashboard redesign deployment was verif
 - `/api/link-checker/freedns-registry?page=1`: HTTP 200 with 100 parsed registry entries on both production URLs; FreeDNS reported 21,163 entries across 212 pages at verification time
 - `/api/link-checker/vendors`: HTTP 200 with 18 vendors on both production URLs
 - `/api/link-checker/check`: `example.com` returned HTTP 200 with 18 vendor results and the configured paid plan, confirming the server-only Netlify key is active
+- FreeDNS inline vendor check: the production UI kept `example.com` in the scraper table and rendered all 18 vendor shields after the row refresh action (10 allowed, 2 blocked, 3 unknown, and 3 errors at verification time) with no horizontal overflow
 - Owner Dashboard redesign assets: cache-versioned stylesheet and script returned through the production homepage; desktop, 390x844, and 320x320 local interaction checks showed no horizontal overflow
 - **Amazing Strange Rope Police**: transformed Unity loader uses the guarded worker callback through Ultraviolet; the selected Scramjet path loads the 66 MB legacy Unity data archive, creates its canvas, and shows no callback or DataView error through a 90-second production regression run
 - Homepage cursor effect: the background dots repel, fade, and return along the pointer path; the **Nyx** wordmark remains fixed with no cursor transform

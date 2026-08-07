@@ -112,7 +112,8 @@ Client preferences and much local UI state use browser storage. Cross-device acc
 - Scramjet requires browser Service Worker support. When the selected browser cannot provide it, keep the saved engine unchanged and offer the user a per-tab **Try direct mode** action; direct mode still depends on the destination allowing iframe embedding.
 - Keep the Developer Console implemented with Eruda unless the user explicitly requests otherwise.
 - Link Checker vendor scans go through Nyx's same-origin `/api/link-checker/*` server bridge to `lc.nocturne.lol`. The checker works through Nocturne's anonymous public allowance and adds `NYX_LINK_CHECKER_API_KEY` only when that optional server variable is configured. Never put its value in client code, tracked files, documentation, logs, or commits.
-- Nyx presents the non-account Link Checker workspace in a Nocturne-inspired sidebar and table layout, with a local dashboard, single all-vendor or selected-vendor checks, device-local history, filters, CSV/JSON exports, preferences, vendor reports, and public RDAP registration details. Its FreeDNS Scraper reads the public `freedns.afraid.org` registry through a fixed-target same-origin route and stores the collected registry only in that browser. Each registry row has an explicit refresh action that runs the selected domain through all vendors by default and displays per-vendor allowed, blocked, unknown, or error shields inline; a vendor filter can narrow both the check and displayed result. It does not automatically bulk-scan the registry and is not a server-side global cache. Nocturne account, upgrade, admin, API-key-management, and account-only scrape/bulk-scan/history routes remain deliberately unexposed.
+- The Netlify build uses Terser to mangle private identifiers in Nyx's first-party browser and service-worker runtimes. Repository sources remain readable, user-facing labels and storage/message values remain unchanged, and required public contracts such as `__uv$config`, `__NYX_RUNTIME_CONFIG__`, service-worker routes, and third-party runtime APIs must never be property-mangled or renamed.
+- Nyx presents the non-account Link Checker workspace in a Nocturne-inspired sidebar and table layout, with a local dashboard, single all-vendor or selected-vendor checks, device-local history, filters, CSV/JSON exports, preferences, vendor reports, and public RDAP registration details. Its FreeDNS Scraper reads the public `freedns.afraid.org` registry through a fixed-target same-origin route and stores the collected registry only in that browser. When the scraper is opened, the first 25-domain page is checked automatically if its rows have no saved verdicts; **Check this page** handles bounded page scans. Signed-in Owner, Co-owner, and Admin accounts can run a resumable **Check all domains** job through the paid server-side key. The browser uses a two-request queue and compact local verdict storage, while the authenticated server route has a separate 30,000-check daily safety limit; anonymous checks retain their 30-per-15-minute limit. Each row also has an explicit refresh action, and vendor results appear as allowed, blocked, unknown, or error shields. Nyx's scan is device-local rather than a server-side global cache, and Nocturne account, upgrade, admin, API-key-management, and account-only scrape/bulk-scan/history routes remain deliberately unexposed.
 - Theme work should recolor the existing interface without unexpectedly changing its layout. Custom-theme text, icons, controls, and selected states must use the selected theme tokens.
 - The 2D homepage dot field uses a swept-pointer particle response: nearby dots repel and fade, then spring back into their grid. Preserve its reduced-motion behavior and keep it disabled when 3D backgrounds are active.
 - Preserve animated GIF banners and avatars as animated media. Do not replace them with static conversions.
@@ -170,7 +171,7 @@ If Railway restricts Wisp origins, `NYX_ALLOWED_ORIGINS` must include the exact 
 
 ### Future VPS option
 
-`DEPLOYMENT.md` documents an alternative single-OVHcloud-VPS deployment using Ubuntu, Nginx, systemd, and embedded Wisp. It is not the current production topology.
+`DEPLOYMENT.md` and `deploy/` now contain a prepared single-OVHcloud-VPS deployment using Ubuntu, Nginx, systemd, and embedded Wisp. The installer builds the minified `dist/` output with the production same-origin Wisp URL and without Netlify's large-file omissions, serves it through Express so the application IP-ban guard also covers static pages, sanitizes forwarding headers, restricts Cloudflare visitor-IP trust to Cloudflare's published networks, and prunes build-only dependencies. `/etc/nyx/nyx.env` and the selected domain are preserved across reruns, and `deploy/update-ovh.sh` provides validated fast-forward updates. This kit has not been installed or production-verified; Netlify and Railway remain the current production topology and rollback until an explicit cutover.
 
 ## Server Environment Variable Names
 
@@ -184,6 +185,7 @@ Core deployment:
 - `NYX_PUBLIC_ORIGIN`
 - `NYX_TRUST_PROXY`
 - `NYX_PROJECT_ROOT`
+- `NYX_STATIC_ROOT` (VPS only; points Express at generated `dist/` while dependencies remain under the project root)
 
 Firebase/account administration:
 

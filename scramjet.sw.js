@@ -1,6 +1,6 @@
 ﻿importScripts("/controller/controller.sw.js");
 
-self.__nyxScramjetRevivePromise = null;
+let nyxScramjetRevivePromise = null;
 
 self.addEventListener("install", event => {
   event.waitUntil(self.skipWaiting());
@@ -166,8 +166,8 @@ function nyxDelay(ms) {
 }
 
 async function nyxNotifyScramjetControllers() {
-  if (self.__nyxScramjetRevivePromise) return self.__nyxScramjetRevivePromise;
-  self.__nyxScramjetRevivePromise = (async () => {
+  if (nyxScramjetRevivePromise) return nyxScramjetRevivePromise;
+  nyxScramjetRevivePromise = (async () => {
     const clients = await self.clients.matchAll({
       includeUncontrolled: true,
       type: "window"
@@ -179,9 +179,9 @@ async function nyxNotifyScramjetControllers() {
     }
     await nyxDelay(60);
   })().finally(() => {
-    self.__nyxScramjetRevivePromise = null;
+    nyxScramjetRevivePromise = null;
   });
-  return self.__nyxScramjetRevivePromise;
+  return nyxScramjetRevivePromise;
 }
 
 async function nyxRouteAfterRevive(event) {

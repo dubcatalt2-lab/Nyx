@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark light">
   <title>Link Checker</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/icons/link-checker.svg">
-  <link rel="stylesheet" href="./styles.css?v=20260806-freedns-vendors-v2">
+  <link rel="stylesheet" href="./styles.css?v=20260806-freedns-full-scan-v1">
 </head>
 <body>
   <svg class="lc-icon-sprite" aria-hidden="true">
@@ -125,8 +125,8 @@
 
         <section class="checker-view" data-view="scraper" aria-labelledby="scraper-title" hidden>
           <header class="page-heading compact-heading">
-            <div><h1 id="scraper-title">FreeDNS Scraper</h1><p>Collect the public FreeDNS registry into this browser, then send individual domains to the Link Checker.</p></div>
-            <div class="heading-actions"><button class="btn-primary" data-freedns-start type="button"><svg class="lc-icon" aria-hidden="true"><use href="#icon-refresh"/></svg><span>Scrape registry</span></button><button class="btn-danger" data-freedns-stop type="button" hidden><svg class="lc-icon" aria-hidden="true"><use href="#icon-stop"/></svg>Stop</button></div>
+            <div><h1 id="scraper-title">FreeDNS Scraper</h1><p>Collect the public FreeDNS registry, then check every domain against every filter vendor.</p></div>
+            <div class="heading-actions"><button class="btn-primary" data-freedns-start type="button"><svg class="lc-icon" aria-hidden="true"><use href="#icon-refresh"/></svg><span>Scrape registry</span></button><button class="btn-primary" data-freedns-check-all type="button"><svg class="lc-icon" aria-hidden="true"><use href="#icon-shield-check"/></svg><span>Check all domains</span></button><button class="btn-secondary" data-freedns-check-page type="button"><svg class="lc-icon" aria-hidden="true"><use href="#icon-shield-check"/></svg><span>Check this page</span></button><button class="btn-danger" data-freedns-stop type="button" hidden><svg class="lc-icon" aria-hidden="true"><use href="#icon-stop"/></svg>Stop</button></div>
           </header>
 
           <section class="scraper-summary-grid">
@@ -139,7 +139,7 @@
           <section class="lc-card scraper-progress" data-freedns-progress hidden aria-live="polite">
             <div><strong data-freedns-progress-label>Preparing registry scrape…</strong><span data-freedns-progress-count>0%</span></div>
             <div class="scraper-progress-track"><i data-freedns-progress-bar></i></div>
-            <small>The scrape runs one bounded page at a time so it can finish safely through Netlify.</small>
+            <small data-freedns-progress-detail>The scrape runs one bounded page at a time so it can finish safely through Netlify.</small>
           </section>
 
           <section class="lc-card scraper-table-card">
@@ -155,7 +155,7 @@
             <div class="empty-state" data-freedns-empty><strong>No registry cache yet</strong><span>Scrape FreeDNS to build a searchable local list.</span></div>
             <footer class="pager" data-freedns-pager hidden><span data-freedns-page-label>Page 1</span><div><button class="btn-secondary" data-freedns-prev type="button"><svg class="lc-icon" aria-hidden="true"><use href="#icon-chevron-left"/></svg>Prev</button><button class="btn-secondary" data-freedns-next type="button">Next<svg class="lc-icon" aria-hidden="true"><use href="#icon-chevron-right"/></svg></button></div></footer>
           </section>
-          <p class="scraper-note">Registry scraping does not automatically scan thousands of domains. Use the refresh button on a row to check that domain against every vendor, or select one vendor from the filter.</p>
+          <p class="scraper-note"><strong>Check all domains</strong> is available to signed-in Owner, Co-owner, and Admin accounts. Keep this tab open while it runs; stopped scans resume from compact results saved on this device. Page and row checks remain available for smaller jobs.</p>
         </section>
 
         <section class="checker-view" data-view="history" aria-labelledby="history-title" hidden>
@@ -179,6 +179,6 @@
       <footer class="lc-footer">Nyx Link Checker · classifications are informational and can change</footer>
     </div>
   </div>
-  <script src="./app.js?v=20260806-freedns-vendors-v2"></script>
+  <script src="./app.js?v=20260806-freedns-full-scan-v1"></script>
 </body>
 </html>

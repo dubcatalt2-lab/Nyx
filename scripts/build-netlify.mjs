@@ -3,12 +3,15 @@ import { createRequire } from "node:module";
 import { cp, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parse } from "acorn";
+import { minify } from "terser";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
 const output = join(root, "dist");
 const require = createRequire(import.meta.url);
-const maxStaticFileBytes = 10_000_000;
+const vpsBuild = process.env.NYX_BUILD_TARGET === "vps";
+const maxStaticFileBytes = vpsBuild ? Number.POSITIVE_INFINITY : 10_000_000;
 const rootFiles = new Set([
   "index.html",
   "ai.html",
@@ -191,6 +194,85 @@ async function removeUnavailableUgsEntries() {
   console.log(`UGS catalog: ${available.length}/${games.length} deployable games`);
 }
 
+function runtimeMangleOptions(topLevel) {
+  return { toplevel: topLevel };
+}
+
+async function minifyEmbeddedScramjetGuards(source, nameCache) {
+  const names = new Set([
+    "scramjetSpotifyChromeOsGuardSource",
+    "scramjetMinimalRuntimeGuardSource",
+    "scramjetHelperRuntimeGuardSource"
+  ]);
+  const program = parse(source, { ecmaVersion: "latest", sourceType: "script" });
+  const replacements = [];
+  const visit = async node => {
+    if (!node || typeof node !== "object") return;
+    if (
+      node.type === "VariableDeclarator" &&
+      names.has(node.id?.name) &&
+      node.init?.type === "TemplateLiteral" &&
+      node.init.expressions.length === 0
+    ) {
+      const result = await minify(node.init.quasis[0].value.cooked, {
+        compress: false,
+        mangle: runtimeMangleOptions(false),
+        format: { comments: false },
+        nameCache
+      });
+      if (!result.code) throw new Error(`Could not minify embedded guard ${node.id.name}`);
+      replacements.push({ start: node.init.start, end: node.init.end, code: JSON.stringify(result.code) });
+      names.delete(node.id.name);
+      return;
+    }
+    for (const value of Object.values(node)) {
+      if (Array.isArray(value)) {
+        for (const child of value) await visit(child);
+      } else if (value && typeof value === "object" && typeof value.type === "string") {
+        await visit(value);
+      }
+    }
+  };
+  await visit(program);
+  if (names.size) throw new Error(`Could not locate embedded Scramjet guards: ${[...names].join(", ")}`);
+  let transformed = source;
+  replacements.sort((a, b) => b.start - a.start).forEach(replacement => {
+    transformed = `${transformed.slice(0, replacement.start)}${replacement.code}${transformed.slice(replacement.end)}`;
+  });
+  return transformed;
+}
+
+async function minifyFirstPartyBrowserRuntimes() {
+  const targets = [
+    { path: "script.js", topLevel: false },
+    { path: "uv.sw.js", topLevel: true },
+    { path: "scramjet.sw.js", topLevel: true },
+    { path: "uv.config.js", topLevel: false },
+    { path: "runtime-config.js", topLevel: false },
+    { path: "nyx-scramjet-runtime-guard.js", topLevel: false }
+  ];
+  const nameCache = {};
+  for (const target of targets) {
+    const path = join(output, ...target.path.split("/"));
+    let source;
+    try {
+      source = await readFile(path, "utf8");
+    } catch {
+      continue;
+    }
+    if (target.path === "script.js") source = await minifyEmbeddedScramjetGuards(source, nameCache);
+    const result = await minify(source, {
+      compress: false,
+      mangle: runtimeMangleOptions(target.topLevel),
+      format: { comments: false },
+      nameCache
+    });
+    if (!result.code) throw new Error(`Could not minify ${target.path}`);
+    await writeFile(path, `${result.code}\n`);
+  }
+  console.log(`Minified ${targets.length} first-party browser runtime files`);
+}
+
 async function writeNetlifyFiles() {
   await writeFile(join(output, "404.html"), "<!doctype html><meta charset=\"utf-8\"><title>Not found</title><p>Not found</p>\n");
 }
@@ -205,8 +287,9 @@ async function main() {
   await writePatchedRuntimes(wispUrl);
   await configureUv(wispUrl);
   await removeUnavailableUgsEntries();
+  await minifyFirstPartyBrowserRuntimes();
   await writeNetlifyFiles();
-  console.log(`Netlify build ready in ${output}`);
+  console.log(`${vpsBuild ? "VPS" : "Netlify"} build ready in ${output}`);
   console.log(`Wisp endpoint: ${wispUrl}`);
   if (skippedLargeFiles.length) {
     console.warn(`Skipped ${skippedLargeFiles.length} static files over Netlify's 10 MB recommendation:`);

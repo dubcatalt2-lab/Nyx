@@ -27,7 +27,8 @@ const requiredFiles = [
   "deploy/nginx/nyx.conf.template",
   "deploy/systemd/nyx.service.template",
   "deploy/nyx.env.example",
-  "deploy/setup-ovh.sh"
+  "deploy/setup-ovh.sh",
+  "deploy/update-ovh.sh"
 ];
 
 const missing = [];

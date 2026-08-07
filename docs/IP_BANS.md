@@ -10,6 +10,8 @@ The Express application checks the list before handling each request. Ban-list r
 
 On Netlify, `netlify/functions/api.mjs` enables `NYX_TRUST_PROXY` by default so the application can use Netlify's `x-nf-client-connection-ip` header, then Cloudflare's `cf-connecting-ip` header, and finally `x-forwarded-for`. A self-hosted deployment must set `NYX_TRUST_PROXY=true` only when its reverse proxy replaces these headers; otherwise leave it unset so a direct client cannot spoof an address.
 
+The prepared OVH Nginx configuration does this safely: it accepts `CF-Connecting-IP` only from Cloudflare's published source networks, converts the verified address into Nginx's `$remote_addr`, and overwrites every forwarding header sent to Nyx. Because the VPS serves `dist/` through Express, its application ban guard covers static pages, API routes, and embedded-Wisp upgrades. Keep the Cloudflare WAF list anyway so blocked traffic is rejected before reaching the VPS.
+
 ## Required Cloudflare full-site rule
 
 Netlify serves static Nyx files before the Express function executes. Therefore the Owner Dashboard ban list protects Nyx function and server traffic, but a matching Cloudflare rule is required to block the complete `nyxlearning.org` site at the edge.
@@ -23,4 +25,4 @@ Action: Block
 
 Keep the Cloudflare list synchronized with the Owner Dashboard list when adding or removing an address. Nyx deliberately does not store a Cloudflare API token or mutate the firewall automatically.
 
-The public Railway Wisp endpoint is outside the Cloudflare zone. A Cloudflare rule prevents people from loading Nyx itself, but direct WebSocket abuse needs an equivalent Railway-side network policy if it becomes a concern.
+While Railway remains the production Wisp, its public endpoint is outside the Cloudflare zone. A Cloudflare rule prevents people from loading Nyx itself, but direct WebSocket abuse needs an equivalent Railway-side network policy if it becomes a concern. After the documented OVH cutover, same-origin embedded Wisp is protected by both Cloudflare and the Express guard.

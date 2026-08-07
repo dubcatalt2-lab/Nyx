@@ -11,6 +11,7 @@ import { server as wisp } from "@mercuryworkshop/wisp-js/server";
 // Using the process root keeps this file compatible with Netlify's CommonJS
 // function bundle while preserving normal `node server.js` behavior.
 const __dirname = resolve(process.env.NYX_PROJECT_ROOT || process.cwd());
+const staticRoot = resolve(process.env.NYX_STATIC_ROOT || __dirname);
 const require = createRequire(join(__dirname, "package.json"));
 const { uvPath } = require("@titaniumnetwork-dev/ultraviolet");
 const { baremuxPath } = require("@mercuryworkshop/bare-mux/node");
@@ -45,6 +46,23 @@ function normalizePublicWispUrl(value) {
 }
 
 const externalWispUrl = normalizePublicWispUrl(process.env.WISP_URL);
+const embeddedWispAllowedOrigins = [...new Set([
+  ...String(process.env.NYX_ALLOWED_ORIGINS || "").split(","),
+  process.env.NYX_PUBLIC_ORIGIN
+].map(value => String(value || "").trim().replace(/\/$/, "")).filter(Boolean))];
+if (!externalWispUrl) {
+  wisp.options.allow_private_ips = false;
+  wisp.options.allow_loopback_ips = false;
+  wisp.options.allow_direct_ip = true;
+  wisp.options.allow_udp_streams = false;
+  wisp.options.port_whitelist = [80, 443];
+  wisp.options.dns_method = "lookup";
+  wisp.options.dns_result_order = "ipv4first";
+  // wisp-js 0.4.1's per-host limiter cannot iterate its stream object safely.
+  wisp.options.stream_limit_per_host = -1;
+  wisp.options.stream_limit_total = 64;
+  wisp.options.wisp_motd = "Nyx embedded Wisp";
+}
 const presenceSessions = new Map();
 const presenceTtlMs = 45_000;
 const presenceCollectionName = "nyxPresenceSessions";
@@ -89,6 +107,11 @@ const downloadSafetyMaxAttempts = 60;
 const linkCheckerAttempts = new Map();
 const linkCheckerWindowMs = 15 * 60_000;
 const linkCheckerMaxAttempts = 30;
+const linkCheckerBulkAttempts = new Map();
+const linkCheckerBulkWindowMs = 24 * 60 * 60_000;
+const linkCheckerBulkMaxAttempts = 30_000;
+const linkCheckerBulkActorCache = new Map();
+const linkCheckerBulkActorCacheTtlMs = 5 * 60_000;
 const linkCheckerApiOrigin = "https://lc.nocturne.lol";
 const freednsRegistryAttempts = new Map();
 const freednsRegistryWindowMs = 20 * 60_000;
@@ -111,9 +134,27 @@ function normalizeNyxIp(value) {
   return isIP(ip) ? ip : "";
 }
 
+function embeddedWispOriginAllowed(origin) {
+  if (!embeddedWispAllowedOrigins.length || embeddedWispAllowedOrigins.includes("*")) return true;
+  return embeddedWispAllowedOrigins.includes(String(origin || "").trim().replace(/\/$/, ""));
+}
+
+function rejectWispUpgrade(socket, status = "403 Forbidden") {
+  try {
+    socket.write(`HTTP/1.1 ${status}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`);
+  } finally {
+    socket.destroy();
+  }
+}
+
+function nyxRequestHeader(req, name) {
+  if (typeof req.get === "function") return req.get(name);
+  return req.headers?.[String(name || "").toLowerCase()];
+}
+
 function nyxClientIp(req) {
   const forwarded = process.env.NYX_TRUST_PROXY === "true"
-    ? String(req.get("x-nf-client-connection-ip") || req.get("cf-connecting-ip") || req.get("x-forwarded-for") || "").split(",")[0]
+    ? String(nyxRequestHeader(req, "x-nf-client-connection-ip") || nyxRequestHeader(req, "cf-connecting-ip") || nyxRequestHeader(req, "x-forwarded-for") || "").split(",")[0]
     : "";
   return normalizeNyxIp(forwarded) || normalizeNyxIp(req.socket?.remoteAddress);
 }
@@ -162,19 +203,17 @@ function invalidateNyxIpBans() {
   nyxIpBanCache = { expiresAt: 0, bans: new Map(), promise: null };
 }
 
+async function nyxRequestIpIsBanned(req) {
+  if (!firebaseAdminModeConfigured()) return false;
+  const ip = nyxClientIp(req);
+  if (!ip) return false;
+  const firebase = await linkGeneratorFirebase();
+  return (await nyxIpBans(firebase)).has(ip);
+}
+
 async function nyxIpBanGuard(req, res, next) {
-  if (!firebaseAdminModeConfigured()) {
-    next();
-    return;
-  }
   try {
-    const ip = nyxClientIp(req);
-    if (!ip) {
-      next();
-      return;
-    }
-    const firebase = await linkGeneratorFirebase();
-    if (!((await nyxIpBans(firebase)).has(ip))) {
+    if (!(await nyxRequestIpIsBanned(req))) {
       next();
       return;
     }
@@ -2068,7 +2107,7 @@ function nyxProfileImagePayloadSize(profile = {}) {
   }, 0);
 }
 
-async function authenticatedNyxUser(req) {
+async function authenticatedNyxUser(req, checkRevoked = true) {
   const match = String(req.get("authorization") || "").match(/^Bearer\s+(.+)$/i);
   if (!match || !firebaseAdminModeConfigured()) {
     const error = new Error("Sign in to use Nyx Profiles.");
@@ -2077,7 +2116,7 @@ async function authenticatedNyxUser(req) {
   }
   try {
     const firebase = await linkGeneratorFirebase();
-    const token = await firebase?.auth.verifyIdToken(match[1], true);
+    const token = await firebase?.auth.verifyIdToken(match[1], checkRevoked);
     if (!token) throw new Error("Sign-in is required.");
     return { firebase, token };
   } catch (cause) {
@@ -2189,17 +2228,17 @@ const nyxRolePolicies = Object.freeze({
   owner: Object.freeze({
     rank: 100,
     assignableRank: 90,
-    permissions: Object.freeze(["dashboard:view", "users:view", "audit:view", "profiles:write", "roles:write", "subscriptions:write", "accounts:reset", "accounts:verify", "accounts:disable", "accounts:delete", "network:bans", "developer-console", "founder:write"])
+    permissions: Object.freeze(["dashboard:view", "users:view", "audit:view", "profiles:write", "roles:write", "subscriptions:write", "accounts:reset", "accounts:verify", "accounts:disable", "accounts:delete", "network:bans", "link-checker:bulk", "developer-console", "founder:write"])
   }),
   co_owner: Object.freeze({
     rank: 90,
     assignableRank: 80,
-    permissions: Object.freeze(["dashboard:view", "users:view", "audit:view", "profiles:write", "roles:write", "subscriptions:write", "accounts:reset", "accounts:verify", "accounts:disable", "accounts:delete", "network:bans", "developer-console"])
+    permissions: Object.freeze(["dashboard:view", "users:view", "audit:view", "profiles:write", "roles:write", "subscriptions:write", "accounts:reset", "accounts:verify", "accounts:disable", "accounts:delete", "network:bans", "link-checker:bulk", "developer-console"])
   }),
   admin: Object.freeze({
     rank: 80,
     assignableRank: 70,
-    permissions: Object.freeze(["dashboard:view", "users:view", "audit:view", "profiles:write", "roles:write", "subscriptions:write", "accounts:reset", "accounts:verify", "accounts:disable", "network:bans"])
+    permissions: Object.freeze(["dashboard:view", "users:view", "audit:view", "profiles:write", "roles:write", "subscriptions:write", "accounts:reset", "accounts:verify", "accounts:disable", "network:bans", "link-checker:bulk"])
   }),
   manager: Object.freeze({
     rank: 70,
@@ -2331,6 +2370,34 @@ async function ownerDashboardActor(req, requiredPermission = "dashboard:view") {
   const actor = { uid: token.uid, role, permissions: policy.permissions, rank: policy.rank };
   if (requiredPermission && !nyxActorHasPermission(actor, requiredPermission)) {
     const error = new Error(`${nyxRoleLabels[role] || "Member"} does not have permission to open this area.`);
+    error.status = 403;
+    throw error;
+  }
+  return { firebase, token, actor, ownerUid };
+}
+
+async function linkCheckerBulkActor(req) {
+  const { firebase, token } = await authenticatedNyxUser(req, false);
+  const ownerUid = founderProfileConfig().administratorUid;
+  if (!ownerUid) {
+    const error = new Error("Owner access has not been configured.");
+    error.status = 503;
+    throw error;
+  }
+  let role = token.uid === ownerUid ? "owner" : "member";
+  if (token.uid !== ownerUid) {
+    const cached = linkCheckerBulkActorCache.get(token.uid);
+    if (cached && cached.expiresAt > Date.now()) role = cached.role;
+    else {
+      const administration = (await firebase.firestore.collection("nyxUserAdministration").doc(token.uid).get()).data() || {};
+      role = nyxRoleForUser(token.uid, administration, ownerUid);
+      linkCheckerBulkActorCache.set(token.uid, { role, expiresAt: Date.now() + linkCheckerBulkActorCacheTtlMs });
+    }
+  }
+  const policy = nyxRolePolicy(role);
+  const actor = { uid: token.uid, role, permissions: policy.permissions, rank: policy.rank };
+  if (!nyxActorHasPermission(actor, "link-checker:bulk")) {
+    const error = new Error(`${nyxRoleLabels[role] || "Member"} does not have permission to run a full registry scan.`);
     error.status = 403;
     throw error;
   }
@@ -2597,6 +2664,18 @@ function linkCheckerRateState(clientId, now = Date.now()) {
   return state;
 }
 
+function linkCheckerBulkRateState(uid, now = Date.now()) {
+  for (const [key, state] of linkCheckerBulkAttempts) {
+    if (now - state.windowStarted > linkCheckerBulkWindowMs) linkCheckerBulkAttempts.delete(key);
+  }
+  let state = linkCheckerBulkAttempts.get(uid);
+  if (!state || now - state.windowStarted > linkCheckerBulkWindowMs) {
+    state = { attempts: 0, windowStarted: now };
+    linkCheckerBulkAttempts.set(uid, state);
+  }
+  return state;
+}
+
 function freednsRegistryRateState(clientId, now = Date.now()) {
   for (const [key, state] of freednsRegistryAttempts) {
     if (now - state.windowStarted > freednsRegistryWindowMs) freednsRegistryAttempts.delete(key);
@@ -2755,12 +2834,29 @@ app.post("/api/link-checker/check", async (req, res) => {
     res.status(403).json({ error: "Cross-site link checks are not allowed." });
     return;
   }
-  const rate = linkCheckerRateState(linkGeneratorClientId(req));
-  rate.attempts += 1;
-  if (rate.attempts > linkCheckerMaxAttempts) {
-    const retryAfter = Math.max(1, Math.ceil((rate.windowStarted + linkCheckerWindowMs - Date.now()) / 1000));
-    res.set("Retry-After", String(retryAfter)).status(429).json({ error: "Too many link checks. Try again later." });
-    return;
+  const bulk = req.body?.bulk === true;
+  if (bulk) {
+    try {
+      const { actor } = await linkCheckerBulkActor(req);
+      const rate = linkCheckerBulkRateState(actor.uid);
+      rate.attempts += 1;
+      if (rate.attempts > linkCheckerBulkMaxAttempts) {
+        const retryAfter = Math.max(1, Math.ceil((rate.windowStarted + linkCheckerBulkWindowMs - Date.now()) / 1000));
+        res.set("Retry-After", String(retryAfter)).status(429).json({ error: "The daily full-registry scan limit has been reached. Try again later." });
+        return;
+      }
+    } catch (error) {
+      res.status(error.status || 500).json({ error: error.message || "Full-registry scan access could not be verified." });
+      return;
+    }
+  } else {
+    const rate = linkCheckerRateState(linkGeneratorClientId(req));
+    rate.attempts += 1;
+    if (rate.attempts > linkCheckerMaxAttempts) {
+      const retryAfter = Math.max(1, Math.ceil((rate.windowStarted + linkCheckerWindowMs - Date.now()) / 1000));
+      res.set("Retry-After", String(retryAfter)).status(429).json({ error: "Too many link checks. Try again later." });
+      return;
+    }
   }
   const target = normalizedDownloadSafetyUrl(req.body?.url);
   if (!target) {
@@ -4902,7 +4998,7 @@ app.post("/api/link-generator", async (req, res) => {
     res.status(error.status || 502).json({ error: error.status ? error.message : `Bunny could not create the link: ${String(error?.message || "Unknown error")}` });
   }
 });
-app.use(express.static(__dirname));
+app.use(express.static(staticRoot));
 app.use("/uv/", express.static(uvPath));
 app.use("/scramjet/", express.static(scramjetPath));
 app.use("/controller/", express.static(scramjetControllerPath));
@@ -4942,7 +5038,7 @@ app.use((req, res, next) => {
 });
 
 app.use((_req, res) => {
-  res.sendFile(join(__dirname, "index.html"));
+  res.sendFile(join(staticRoot, "index.html"));
 });
 
 export { app, externalWispUrl, normalizePublicWispUrl };
@@ -4951,11 +5047,25 @@ const isDirectRun = process.argv[1] && resolve(process.argv[1]) === join(__dirna
 if (isDirectRun) {
   const server = createServer((req, res) => app(req, res));
 
-  server.on("upgrade", (req, socket, head) => {
-    if (!externalWispUrl && req.url?.endsWith("/wisp/")) {
+  server.on("upgrade", async (req, socket, head) => {
+    const upgradePath = new URL(req.url || "/", "http://localhost").pathname;
+    if (!externalWispUrl && (upgradePath === "/wisp/" || upgradePath === "/wisp")) {
+      if (!embeddedWispOriginAllowed(req.headers.origin)) {
+        rejectWispUpgrade(socket);
+        return;
+      }
+      try {
+        if (await nyxRequestIpIsBanned(req)) {
+          rejectWispUpgrade(socket);
+          return;
+        }
+      } catch (error) {
+        console.error("Nyx Wisp IP ban check could not be completed:", error?.message || error);
+      }
+      if (socket.destroyed) return;
       wisp.routeRequest(req, socket, head);
     } else {
-      socket.end();
+      rejectWispUpgrade(socket, "404 Not Found");
     }
   });
 
@@ -4967,6 +5077,8 @@ if (isDirectRun) {
     console.log(`  http://localhost:${address.port}`);
     console.log(`  http://${hostname()}:${address.port}`);
     console.log(`  wisp transport: ${externalWispUrl || "same-host /wisp/"}`);
+    console.log(`  static root: ${staticRoot}`);
+    if (!externalWispUrl) console.log(embeddedWispAllowedOrigins.length ? `  allowed Wisp origins: ${embeddedWispAllowedOrigins.join(", ")}` : "  warning: embedded Wisp accepts every browser origin");
   });
 
   let shuttingDown = false;

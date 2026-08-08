@@ -105,6 +105,8 @@ NYX_SAFE_BROWSING_API_KEY='...'
 NYX_AI_API_KEY='...'
 ```
 
+Premium FreeDNS full scans use six paced browser workers with adaptive provider cooldowns, plus server ceilings of 12 concurrent requests per account and 48 globally. The server ceilings can be tuned with `NYX_LINK_CHECKER_BULK_CONCURRENCY_PER_USER` and `NYX_LINK_CHECKER_BULK_CONCURRENCY_GLOBAL`; leave the defaults unless the provider or VPS capacity requires a lower ceiling.
+
 Only add variables for features you use. Do not paste `curl` commands into this file, and never put the actual values in Git, Discord, screenshots, or chat. Keep the Firebase private key on one line with literal `\n` characters.
 
 For the one-server setup, leave `WISP_URL` commented out. Nyx then uses `wss://nyxlearning.org/wisp/`. `NYX_ALLOWED_ORIGINS` must include the exact production domain. `NYX_SITE_URL` and `OPENROUTER_API_KEY` are obsolete names and should not be added.

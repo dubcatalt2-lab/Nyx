@@ -107,11 +107,12 @@ const downloadSafetyMaxAttempts = 60;
 const linkCheckerAttempts = new Map();
 const linkCheckerWindowMs = 15 * 60_000;
 const linkCheckerMaxAttempts = 30;
-const linkCheckerBulkAttempts = new Map();
-const linkCheckerBulkWindowMs = 24 * 60 * 60_000;
-const linkCheckerBulkMaxAttempts = 30_000;
-const linkCheckerBulkActorCache = new Map();
-const linkCheckerBulkActorCacheTtlMs = 5 * 60_000;
+const linkCheckerBulkAccessCache = new Map();
+const linkCheckerBulkAccessCacheTtlMs = 5 * 60_000;
+const linkCheckerBulkActiveByUser = new Map();
+let linkCheckerBulkActiveRequests = 0;
+const linkCheckerBulkMaxConcurrentPerUser = Math.max(1, Math.min(24, Number.parseInt(process.env.NYX_LINK_CHECKER_BULK_CONCURRENCY_PER_USER || "12", 10) || 12));
+const linkCheckerBulkMaxConcurrentGlobal = Math.max(linkCheckerBulkMaxConcurrentPerUser, Math.min(96, Number.parseInt(process.env.NYX_LINK_CHECKER_BULK_CONCURRENCY_GLOBAL || "48", 10) || 48));
 const linkCheckerApiOrigin = "https://lc.nocturne.lol";
 const freednsRegistryAttempts = new Map();
 const freednsRegistryWindowMs = 20 * 60_000;
@@ -2228,17 +2229,17 @@ const nyxRolePolicies = Object.freeze({
   owner: Object.freeze({
     rank: 100,
     assignableRank: 90,
-    permissions: Object.freeze(["dashboard:view", "users:view", "audit:view", "profiles:write", "roles:write", "subscriptions:write", "accounts:reset", "accounts:verify", "accounts:disable", "accounts:delete", "network:bans", "link-checker:bulk", "developer-console", "founder:write"])
+    permissions: Object.freeze(["dashboard:view", "users:view", "audit:view", "profiles:write", "roles:write", "subscriptions:write", "accounts:reset", "accounts:verify", "accounts:disable", "accounts:delete", "network:bans", "developer-console", "founder:write"])
   }),
   co_owner: Object.freeze({
     rank: 90,
     assignableRank: 80,
-    permissions: Object.freeze(["dashboard:view", "users:view", "audit:view", "profiles:write", "roles:write", "subscriptions:write", "accounts:reset", "accounts:verify", "accounts:disable", "accounts:delete", "network:bans", "link-checker:bulk", "developer-console"])
+    permissions: Object.freeze(["dashboard:view", "users:view", "audit:view", "profiles:write", "roles:write", "subscriptions:write", "accounts:reset", "accounts:verify", "accounts:disable", "accounts:delete", "network:bans", "developer-console"])
   }),
   admin: Object.freeze({
     rank: 80,
     assignableRank: 70,
-    permissions: Object.freeze(["dashboard:view", "users:view", "audit:view", "profiles:write", "roles:write", "subscriptions:write", "accounts:reset", "accounts:verify", "accounts:disable", "network:bans", "link-checker:bulk"])
+    permissions: Object.freeze(["dashboard:view", "users:view", "audit:view", "profiles:write", "roles:write", "subscriptions:write", "accounts:reset", "accounts:verify", "accounts:disable", "network:bans"])
   }),
   manager: Object.freeze({
     rank: 70,
@@ -2376,32 +2377,21 @@ async function ownerDashboardActor(req, requiredPermission = "dashboard:view") {
   return { firebase, token, actor, ownerUid };
 }
 
-async function linkCheckerBulkActor(req) {
+async function linkCheckerBulkSubscriber(req) {
   const { firebase, token } = await authenticatedNyxUser(req, false);
-  const ownerUid = founderProfileConfig().administratorUid;
-  if (!ownerUid) {
-    const error = new Error("Owner access has not been configured.");
-    error.status = 503;
-    throw error;
+  const cached = linkCheckerBulkAccessCache.get(token.uid);
+  let subscriptionStatus = cached?.expiresAt > Date.now() ? cached.subscriptionStatus : "";
+  if (!subscriptionStatus) {
+    const administration = (await firebase.firestore.collection("nyxUserAdministration").doc(token.uid).get()).data() || {};
+    subscriptionStatus = normalizeSubscriptionStatus(administration.subscriptionStatus || administration.subscription?.status);
+    linkCheckerBulkAccessCache.set(token.uid, { subscriptionStatus, expiresAt: Date.now() + linkCheckerBulkAccessCacheTtlMs });
   }
-  let role = token.uid === ownerUid ? "owner" : "member";
-  if (token.uid !== ownerUid) {
-    const cached = linkCheckerBulkActorCache.get(token.uid);
-    if (cached && cached.expiresAt > Date.now()) role = cached.role;
-    else {
-      const administration = (await firebase.firestore.collection("nyxUserAdministration").doc(token.uid).get()).data() || {};
-      role = nyxRoleForUser(token.uid, administration, ownerUid);
-      linkCheckerBulkActorCache.set(token.uid, { role, expiresAt: Date.now() + linkCheckerBulkActorCacheTtlMs });
-    }
-  }
-  const policy = nyxRolePolicy(role);
-  const actor = { uid: token.uid, role, permissions: policy.permissions, rank: policy.rank };
-  if (!nyxActorHasPermission(actor, "link-checker:bulk")) {
-    const error = new Error(`${nyxRoleLabels[role] || "Member"} does not have permission to run a full registry scan.`);
+  if (!hasPremiumSubscription(subscriptionStatus)) {
+    const error = new Error("A Premium subscription is required to run a full registry scan.");
     error.status = 403;
     throw error;
   }
-  return { firebase, token, actor, ownerUid };
+  return { firebase, token, subscriber: { uid: token.uid, subscriptionStatus } };
 }
 
 async function nyxOwnerTargetAccess(firebase, actor, uid, ownerUid = founderProfileConfig().administratorUid) {
@@ -2664,16 +2654,20 @@ function linkCheckerRateState(clientId, now = Date.now()) {
   return state;
 }
 
-function linkCheckerBulkRateState(uid, now = Date.now()) {
-  for (const [key, state] of linkCheckerBulkAttempts) {
-    if (now - state.windowStarted > linkCheckerBulkWindowMs) linkCheckerBulkAttempts.delete(key);
-  }
-  let state = linkCheckerBulkAttempts.get(uid);
-  if (!state || now - state.windowStarted > linkCheckerBulkWindowMs) {
-    state = { attempts: 0, windowStarted: now };
-    linkCheckerBulkAttempts.set(uid, state);
-  }
-  return state;
+function reserveLinkCheckerBulkSlot(uid) {
+  const activeForUser = linkCheckerBulkActiveByUser.get(uid) || 0;
+  if (activeForUser >= linkCheckerBulkMaxConcurrentPerUser || linkCheckerBulkActiveRequests >= linkCheckerBulkMaxConcurrentGlobal) return null;
+  linkCheckerBulkActiveByUser.set(uid, activeForUser + 1);
+  linkCheckerBulkActiveRequests += 1;
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    const remaining = Math.max(0, (linkCheckerBulkActiveByUser.get(uid) || 1) - 1);
+    if (remaining) linkCheckerBulkActiveByUser.set(uid, remaining);
+    else linkCheckerBulkActiveByUser.delete(uid);
+    linkCheckerBulkActiveRequests = Math.max(0, linkCheckerBulkActiveRequests - 1);
+  };
 }
 
 function freednsRegistryRateState(clientId, now = Date.now()) {
@@ -2719,7 +2713,10 @@ function parseFreednsRegistryPage(html, requestedPage) {
     if (!/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i.test(domain)) return;
     const hosts = Number.parseInt(String(cells[0].match(/\(([\d,]+)\s+hosts?\s+in\s+use\)/i)?.[1] || "0").replace(/,/g, ""), 10) || 0;
     const status = freednsRegistryText(cells[1]).toLowerCase() === "public" ? "public" : "private";
-    domains.push({ id: identity[1], domain, status, hosts });
+    const owner = freednsRegistryText(cells[2]);
+    const addedText = freednsRegistryText(cells[3]);
+    const added = String(addedText.match(/\((\d{2}\/\d{2}\/\d{4})\)/)?.[1] || addedText).slice(0, 40);
+    domains.push({ id: identity[1], domain, status, hosts, owner: owner.slice(0, 100), added });
   });
   if (!totalPages || !totalDomains || !domains.length) {
     const error = new Error("FreeDNS returned a registry page Nyx could not read.");
@@ -2835,16 +2832,11 @@ app.post("/api/link-checker/check", async (req, res) => {
     return;
   }
   const bulk = req.body?.bulk === true;
+  let bulkSubscriberUid = "";
   if (bulk) {
     try {
-      const { actor } = await linkCheckerBulkActor(req);
-      const rate = linkCheckerBulkRateState(actor.uid);
-      rate.attempts += 1;
-      if (rate.attempts > linkCheckerBulkMaxAttempts) {
-        const retryAfter = Math.max(1, Math.ceil((rate.windowStarted + linkCheckerBulkWindowMs - Date.now()) / 1000));
-        res.set("Retry-After", String(retryAfter)).status(429).json({ error: "The daily full-registry scan limit has been reached. Try again later." });
-        return;
-      }
+      const { subscriber } = await linkCheckerBulkSubscriber(req);
+      bulkSubscriberUid = subscriber.uid;
     } catch (error) {
       res.status(error.status || 500).json({ error: error.message || "Full-registry scan access could not be verified." });
       return;
@@ -2868,6 +2860,11 @@ app.post("/api/link-checker/check", async (req, res) => {
     res.status(400).json({ error: "The selected Link Checker vendor is invalid." });
     return;
   }
+  const releaseBulkSlot = bulk ? reserveLinkCheckerBulkSlot(bulkSubscriberUid) : null;
+  if (bulk && !releaseBulkSlot) {
+    res.set("Retry-After", "2").status(429).json({ error: "Premium full-scan capacity is busy. Nyx will retry shortly." });
+    return;
+  }
   try {
     const payload = await linkCheckerUpstream("/api/check", {
       method: "POST",
@@ -2878,6 +2875,8 @@ app.post("/api/link-checker/check", async (req, res) => {
   } catch (error) {
     if (error.retryAfter) res.set("Retry-After", String(error.retryAfter));
     res.status(error.status || 502).json({ error: error.message || "The Link Checker provider is unavailable." });
+  } finally {
+    releaseBulkSlot?.();
   }
 });
 
@@ -4484,6 +4483,7 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
         subscriptionUpdatedAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }, { merge: true });
+      linkCheckerBulkAccessCache.delete(uid);
       auditAction = "subscription_change";
       auditDetails = { subscriptionStatus, monthlyRevenueCents };
     } else if (action === "set_profile") {

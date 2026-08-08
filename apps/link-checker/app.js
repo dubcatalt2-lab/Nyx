@@ -8,6 +8,12 @@
   const HISTORY_LIMIT=500;
   const FREEDNS_PAGE_SIZE=25;
   const FREEDNS_SCAN_CONCURRENCY=2;
+  const FREEDNS_FULL_SCAN_CONCURRENCY=6;
+  const FREEDNS_FULL_SAVE_BATCH=100;
+  const FREEDNS_FULL_REQUEST_SPACING_MS=350;
+  const FREEDNS_FULL_MAX_REQUEST_SPACING_MS=5_000;
+  const FREEDNS_FULL_MAX_BACKOFF_MS=5*60_000;
+  const FREEDNS_BULK_ACCESS_TTL_MS=5*60_000;
   const THEME_CLASSES=['theme-default','theme-ruby','theme-emerald','theme-sakura','theme-fresh'];
   const $=selector=>document.querySelector(selector);
   const $$=selector=>[...document.querySelectorAll(selector)];
@@ -19,7 +25,9 @@
     dashboardList:$('[data-dashboard-list]'),dashboardEmpty:$('[data-dashboard-empty]'),dashboardPager:$('[data-dashboard-pager]'),
     historyList:$('[data-history-list]'),historyEmpty:$('[data-history-empty]'),
     freednsStart:$('[data-freedns-start]'),freednsCheckAll:$('[data-freedns-check-all]'),freednsCheckPage:$('[data-freedns-check-page]'),freednsStop:$('[data-freedns-stop]'),freednsList:$('[data-freedns-list]'),freednsEmpty:$('[data-freedns-empty]'),freednsPager:$('[data-freedns-pager]'),
-    freednsSearch:$('[data-freedns-search]'),freednsStatus:$('[data-freedns-status]'),freednsVendor:$('[data-freedns-vendor]'),freednsProgress:$('[data-freedns-progress]')
+    freednsSearch:$('[data-freedns-search]'),freednsStatus:$('[data-freedns-status]'),freednsVendor:$('[data-freedns-vendor]'),freednsProgress:$('[data-freedns-progress]'),
+    freednsDetail:$('[data-freedns-detail]'),freednsDetailTitle:$('[data-freedns-detail-title]'),freednsDetailLink:$('[data-freedns-detail-link]'),freednsDetailSummary:$('[data-freedns-detail-summary]'),
+    freednsDetailMessage:$('[data-freedns-detail-message]'),freednsDetailVendors:$('[data-freedns-detail-vendors]'),freednsRegistration:$('[data-freedns-registration]'),freednsRegistrationSource:$('[data-freedns-registration-source]')
   };
   const defaultSettings={pageSize:25,notifications:true,theme:'inherit'};
   let settings=readJsonStorage(SETTINGS_KEY,defaultSettings);
@@ -41,7 +49,9 @@
   let freednsFullScanning=false;
   let freednsAutoScanStarted=false;
   let freednsBulkAuthPromise=null;
+  let freednsBulkAccess={resolved:false,premium:false,expiresAt:0,error:'',promise:null};
   let freednsVisibleDomains=new Set();
+  let freednsDetailController=null;
   let freednsVerdicts=readJsonStorage(FREEDNS_VERDICTS_KEY,{vendors:[],verdicts:{},updatedAt:''});
   if(!freednsVerdicts||!Array.isArray(freednsVerdicts.vendors)||!freednsVerdicts.verdicts||typeof freednsVerdicts.verdicts!=='object')freednsVerdicts={vendors:[],verdicts:{},updatedAt:''};
   const freednsChecking=new Set();
@@ -105,7 +115,9 @@
     if(!response.ok){
       let message=`Request failed (${response.status})`;
       try{const body=await response.json();message=body.error||body.message||message}catch{}
-      const error=new Error(message);error.status=response.status;throw error;
+      const retryAfter=String(response.headers.get('retry-after')||'').trim();
+      const retryAfterMs=/^\d+$/.test(retryAfter)?Number(retryAfter)*1000:Math.max(0,(Date.parse(retryAfter)||0)-Date.now());
+      const error=new Error(message);error.status=response.status;error.retryAfterMs=retryAfterMs;throw error;
     }
     return response.json();
   }
@@ -141,7 +153,7 @@
       cached:payload?.cached===true,plan:String(payload?.plan||''),usage:payload?.usage||null,results
     };
   }
-  async function freednsBulkToken(){
+  async function freednsBulkAuth(){
     if(!freednsBulkAuthPromise)freednsBulkAuthPromise=(async()=>{
       const config=await fetchJson('/api/founder-profile/auth-config',{cache:'no-store'});
       if(!config?.enabled)throw new Error('Nyx account sign-in is not configured.');
@@ -154,9 +166,29 @@
       if(typeof auth.authStateReady==='function')await auth.authStateReady();
       return auth;
     })();
-    const auth=await freednsBulkAuthPromise;
-    if(!auth.currentUser)throw new Error('Sign in to Nyx on the homepage before starting a full registry scan.');
-    return auth.currentUser.getIdToken();
+    return freednsBulkAuthPromise;
+  }
+  async function refreshFreednsBulkAccess(force=false){
+    if(!force&&freednsBulkAccess.resolved&&freednsBulkAccess.expiresAt>Date.now())return freednsBulkAccess;
+    if(freednsBulkAccess.promise)return freednsBulkAccess.promise;
+    const operation=(async()=>{
+      const auth=await freednsBulkAuth();
+      if(!auth.currentUser)return {resolved:true,premium:false,expiresAt:Date.now()+FREEDNS_BULK_ACCESS_TTL_MS,error:'Sign in to Nyx to use Premium full scans.',auth};
+      const token=await auth.currentUser.getIdToken();
+      const account=await fetchJson('/api/account/me',{cache:'no-store',headers:{Authorization:`Bearer ${token}`}});
+      const premium=account?.premiumAccess===true;
+      return {resolved:true,premium,expiresAt:Date.now()+FREEDNS_BULK_ACCESS_TTL_MS,error:premium?'':'A Premium subscription is required to check all domains.',auth};
+    })();
+    freednsBulkAccess={...freednsBulkAccess,promise:operation};
+    try{return freednsBulkAccess={...(await operation),promise:null};}
+    catch(error){freednsBulkAccess={resolved:true,premium:false,expiresAt:Date.now()+30_000,error:error.message||'Premium access could not be checked.',promise:null};throw error;}
+    finally{updateFreednsActions();}
+  }
+  async function freednsBulkToken({force=false}={}){
+    const access=await refreshFreednsBulkAccess(force);
+    if(!access.auth?.currentUser)throw new Error(access.error||'Sign in to Nyx on the homepage before starting a full registry scan.');
+    if(!access.premium)throw new Error(access.error||'A Premium subscription is required to check all domains.');
+    return access.auth.currentUser.getIdToken();
   }
   async function checkTarget(target,vendor='',signal,{bulk=false}={}){
     const headers={'Content-Type':'application/json'};
@@ -287,7 +319,7 @@
   function normalizedFreednsDomain(value){
     const domain=String(value?.domain||'').trim().toLowerCase();
     if(!domain||!/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i.test(domain))return null;
-    return {id:String(value?.id||domain),domain,status:value?.status==='public'?'public':'private',hosts:Math.max(0,Number(value?.hosts)||0)};
+    return {id:String(value?.id||domain),domain,status:value?.status==='public'?'public':'private',hosts:Math.max(0,Number(value?.hosts)||0),owner:String(value?.owner||'').trim().slice(0,100),added:String(value?.added||'').trim().slice(0,40)};
   }
   function filteredFreednsDomains(){
     const search=String(refs.freednsSearch?.value||'').trim().toLowerCase();const status=refs.freednsStatus?.value||'all';
@@ -301,6 +333,7 @@
       (entry.results||[]).forEach(result=>{const key=String(result?.filter||'');if(key&&!results.has(key))results.set(key,result);});
     });
     const compact=String(freednsVerdicts.verdicts[domain]||'');
+    if(compact&&!checkedAt)checkedAt=freednsVerdicts.updatedAt||'';
     freednsVerdicts.vendors.forEach((vendor,index)=>{
       if(results.has(vendor))return;
       const state=compact[index];
@@ -331,6 +364,59 @@
     status.append(makeIcon(state.key==='blocked'?'shield-x':state.key==='allowed'?'shield-check':'shield-question'));
     return status;
   }
+  function addFreednsDetailSummary(label,value){
+    const item=document.createElement('article');const name=document.createElement('span');const copy=document.createElement('strong');
+    name.textContent=label;copy.textContent=String(value||'Not reported');item.append(name,copy);refs.freednsDetailSummary.append(item);
+  }
+  function renderFreednsDetailVendors(report){
+    const results=report?.results instanceof Map?report.results:new Map((report?.results||[]).map(result=>[String(result?.filter||''),result]));
+    refs.freednsDetailVendors.replaceChildren();
+    vendors.forEach(vendor=>{
+      const result=results.get(vendor);const state=result?resultState(result):{key:'unchecked',label:'Not checked'};
+      const card=document.createElement('article');card.className=`freedns-detail-vendor ${state.key}`;
+      const icon=document.createElement('span');icon.className='freedns-detail-vendor-icon';icon.append(makeIcon(state.key==='blocked'?'shield-x':state.key==='allowed'?'shield-check':'shield-question'));
+      const label=document.createElement('strong');label.textContent=vendorLabel(vendor);
+      const status=document.createElement('span');status.className='freedns-detail-vendor-state';status.textContent=state.key==='allowed'?'Unblocked':state.key==='error'?'Unknown':state.label;
+      const category=document.createElement('small');category.textContent=result?.error||result?.category||(result?'Category not stored':'Not checked');
+      card.append(icon,label,status,category);refs.freednsDetailVendors.append(card);
+    });
+  }
+  function registrationRecord(info){
+    const lines=[];const append=(label,value)=>{const values=Array.isArray(value)?value:[value];values.filter(Boolean).forEach(item=>lines.push(`${label}: ${item}`));};
+    append('Domain Name',info?.domain);append('Registry Domain ID',info?.handle);append('Registrar',info?.registrar);
+    append('Created',domainDate(info?.events||[],'registration'));append('Updated',domainDate(info?.events||[],'last changed'));append('Expires',domainDate(info?.events||[],'expiration'));
+    append('Domain Status',info?.status);append('Name Server',info?.nameservers);append('DNSSEC',info?.dnssec?'signedDelegation':'unsigned');
+    return lines.join('\n')||'No public registration details were reported for this domain.';
+  }
+  function closeFreednsDetails(){
+    freednsDetailController?.abort();freednsDetailController=null;
+    if(refs.freednsDetail?.open)refs.freednsDetail.close();
+  }
+  async function openFreednsDetails(entry){
+    const saved=freednsResultsFor(entry.domain);if(!saved.results.size)return;
+    freednsDetailController?.abort();const controller=new AbortController();freednsDetailController=controller;const {signal}=controller;
+    refs.freednsDetailTitle.textContent=entry.domain;refs.freednsDetailLink.href=`https://${entry.domain}/`;
+    refs.freednsDetailSummary.replaceChildren();addFreednsDetailSummary('Subdomains',entry.hosts.toLocaleString());addFreednsDetailSummary('Owner',entry.owner);addFreednsDetailSummary('Added',entry.added);addFreednsDetailSummary('Status',entry.status);
+    renderFreednsDetailVendors(saved);refs.freednsDetailMessage.textContent=saved.checkedAt?`Saved results from ${formatDate(saved.checkedAt)}. Loading categories...`:'Saved compact results. Loading categories...';
+    refs.freednsRegistrationSource.textContent='RDAP';refs.freednsRegistration.textContent='Loading public registration details...';
+    if(!refs.freednsDetail.open){if(typeof refs.freednsDetail.showModal==='function')refs.freednsDetail.showModal();else refs.freednsDetail.setAttribute('open','');}
+    const target=`https://${entry.domain}/`;
+    const vendorRequest=checkTarget(target,'',signal,{bulk:freednsBulkAccess.premium===true}).then(report=>{
+      if(signal.aborted||freednsDetailController!==controller)return;
+      renderFreednsDetailVendors(report);refs.freednsDetailMessage.textContent=`All ${report.results.length} vendor details loaded${report.cached?' from the provider cache':''}.`;
+    }).catch(error=>{
+      if(error.name==='AbortError'||signal.aborted||freednsDetailController!==controller)return;
+      refs.freednsDetailMessage.textContent=`Showing saved compact states. Categories could not be refreshed: ${error.message}`;
+    });
+    const registrationRequest=fetchJson(`${CHECK_API}/domain-info`,{method:'POST',signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({url:target})}).then(info=>{
+      if(signal.aborted||freednsDetailController!==controller)return;
+      refs.freednsRegistrationSource.textContent=info.source||'RDAP';refs.freednsRegistration.textContent=registrationRecord(info);
+    }).catch(error=>{
+      if(error.name==='AbortError'||signal.aborted||freednsDetailController!==controller)return;
+      refs.freednsRegistration.textContent=`Registration details unavailable: ${error.message}`;
+    });
+    await Promise.allSettled([vendorRequest,registrationRequest]);
+  }
   function freednsPageState(){
     const domains=filteredFreednsDomains();const pages=Math.max(1,Math.ceil(domains.length/FREEDNS_PAGE_SIZE));freednsPage=Math.min(Math.max(1,freednsPage),pages);
     return {domains,pages,visible:domains.slice((freednsPage-1)*FREEDNS_PAGE_SIZE,freednsPage*FREEDNS_PAGE_SIZE)};
@@ -340,8 +426,9 @@
     const interactionBusy=freednsScraping||freednsPageScanning;
     refs.freednsStart.disabled=busy;
     refs.freednsStart.querySelector('span').textContent=freednsScraping?'Scraping…':'Scrape registry';
-    refs.freednsCheckAll.disabled=busy||!vendors.length||!freednsCache.complete;
-    refs.freednsCheckAll.querySelector('span').textContent=freednsFullScanning?'Checking all…':'Check all domains';
+    refs.freednsCheckAll.disabled=busy||!vendors.length||!freednsCache.complete||!freednsBulkAccess.premium;
+    refs.freednsCheckAll.querySelector('span').textContent=freednsFullScanning?'Checking all…':(!freednsBulkAccess.resolved?'Checking access…':(freednsBulkAccess.premium?'Check all domains':'Premium required'));
+    refs.freednsCheckAll.title=freednsBulkAccess.premium?'Check every cached domain with all vendors':(freednsBulkAccess.error||'Premium access is being checked.');
     refs.freednsCheckPage.disabled=busy||!vendors.length||!freednsPageState().visible.length;
     refs.freednsCheckPage.querySelector('span').textContent=freednsPageScanning?'Checking…':'Check this page';
     refs.freednsStop.hidden=!busy;
@@ -369,7 +456,9 @@
       if(!shownVendors.length){const waiting=document.createElement('span');waiting.className='freedns-not-checked';waiting.textContent='vendors loading';vendorStates.append(waiting);}
       else if(!shownVendors.some(vendor=>report.results.has(vendor))){const unchecked=document.createElement('span');unchecked.className='freedns-not-checked';unchecked.textContent='not checked';vendorStates.append(unchecked);}
       else shownVendors.forEach(vendor=>vendorStates.append(makeFreednsVendorStatus(vendor,report.results.get(vendor))));
-      if(report.checkedAt)vendorStates.title=`Last checked ${formatDate(report.checkedAt)}`;
+      const detailsReady=report.results.size>0&&!freednsScraping&&!freednsPageScanning&&!freednsFullScanning;
+      if(detailsReady){vendorStates.classList.add('has-details');vendorStates.tabIndex=0;vendorStates.setAttribute('role','button');vendorStates.setAttribute('aria-label',`Open detailed blocker results for ${entry.domain}`);vendorStates.title=`Open detailed results${report.checkedAt?` · checked ${formatDate(report.checkedAt)}`:''}`;vendorStates.addEventListener('click',()=>void openFreednsDetails(entry));vendorStates.addEventListener('keydown',event=>{if(event.key!=='Enter'&&event.key!==' ')return;event.preventDefault();void openFreednsDetails(entry);});}
+      else if(report.checkedAt)vendorStates.title=`Last checked ${formatDate(report.checkedAt)}`;
       const checking=freednsChecking.has(entry.domain);const check=document.createElement('button');check.className=`btn-secondary freedns-check-button${checking?' checking':''}`;check.type='button';check.disabled=checking||freednsFullScanning||freednsPageScanning||freednsScraping||!vendors.length;check.title=selectedVendor?`Check ${entry.domain} with ${vendorLabel(selectedVendor)}`:`Check ${entry.domain} with all vendors`;check.setAttribute('aria-label',check.title);check.append(makeIcon('refresh'));check.addEventListener('click',()=>void checkFreednsDomain(entry.domain));
       row.append(identity,hosts,status,vendorStates,check);refs.freednsList.append(row);
     });
@@ -386,7 +475,7 @@
     $('[data-freedns-progress-label]').textContent=`Scraping page ${page.toLocaleString()} of ${total.toLocaleString()}`;
     $('[data-freedns-progress-count]').textContent=`${percent}% · ${count.toLocaleString()} domains`;
     $('[data-freedns-progress-bar]').style.width=`${percent}%`;
-    $('[data-freedns-progress-detail]').textContent='The scrape runs one bounded page at a time so it can finish safely through Netlify.';
+    $('[data-freedns-progress-detail]').textContent='The scrape runs one bounded page at a time so FreeDNS is not overloaded.';
   }
   function setFreednsScanProgress(completed,total,failed=0){
     const percent=total?Math.min(100,Math.round(completed/total*100)):0;refs.freednsProgress.hidden=false;
@@ -436,7 +525,7 @@
   }
   function exportFreedns(){
     if(!freednsCache.domains.length){showNotice('Scrape the FreeDNS registry before exporting it.','error',true);return;}
-    const content=[['id','domain','status','hostsInUse'],...freednsCache.domains.map(entry=>[entry.id,entry.domain,entry.status,entry.hosts])].map(row=>row.map(csvCell).join(',')).join('\n');
+    const content=[['id','domain','status','hostsInUse','owner','added'],...freednsCache.domains.map(entry=>[entry.id,entry.domain,entry.status,entry.hosts,entry.owner,entry.added])].map(row=>row.map(csvCell).join(',')).join('\n');
     const blob=new Blob([content],{type:'text/csv'});const url=URL.createObjectURL(blob);const anchor=document.createElement('a');anchor.href=url;anchor.download=`nyx-freedns-registry-${new Date().toISOString().slice(0,10)}.csv`;anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000);showNotice('FreeDNS registry CSV created.');
   }
   async function checkFreednsDomain(domain){
@@ -488,18 +577,46 @@
   async function scanAllFreedns(){
     if(freednsScraping||freednsPageScanning||freednsFullScanning||!vendors.length)return;
     if(!freednsCache.complete){showNotice('Finish scraping the FreeDNS registry before checking every domain.','error',true);return;}
-    try{await freednsBulkToken();}catch(error){showNotice(error.message,'error',true);return;}
+    try{await freednsBulkToken({force:true});}catch(error){showNotice(error.message,'error',true);return;}
     const total=freednsCache.domains.length;
     const candidates=freednsCache.domains.filter(entry=>!hasStoredFreednsVerdict(entry.domain));
     if(!candidates.length){showNotice(`All ${total.toLocaleString()} cached FreeDNS domains already have saved vendor results.`);setFreednsFullProgress(total,total);return;}
     freednsScanController?.abort();freednsScanController=new AbortController();const {signal}=freednsScanController;
     freednsFullScanning=true;updateFreednsActions();showNotice('');
-    const already=total-candidates.length;let cursor=0;let processed=0;let failed=0;let unsaved=0;let persistedTotal=Object.keys(freednsVerdicts.verdicts).length;let blockingError=null;let storageFailed=false;
+    const already=total-candidates.length;let cursor=0;let processed=0;let failed=0;let unsaved=0;let persistedTotal=Object.keys(freednsVerdicts.verdicts).length;let blockingError=null;let storageFailed=false;let bulkPauseUntil=0;let bulkNextRequestAt=0;let bulkSpacingMs=FREEDNS_FULL_REQUEST_SPACING_MS;let bulkRateLimitCount=0;let bulkSuccessStreak=0;
     setFreednsFullProgress(already,total);
     const visibleNow=domain=>freednsVisibleDomains.has(domain);
     const flush=()=>{
       if(!unsaved)return true;
       const saved=saveFreednsVerdicts();if(saved){unsaved=0;persistedTotal=Object.keys(freednsVerdicts.verdicts).length;}return saved;
+    };
+    const waitForBulkTurn=async()=>{
+      while(!signal.aborted){
+        const now=Date.now();const scheduled=Math.max(now,bulkPauseUntil,bulkNextRequestAt);bulkNextRequestAt=scheduled+bulkSpacingMs;
+        if(scheduled>now)await freednsDelay(scheduled-now,signal);
+        if(Date.now()>=bulkPauseUntil)return;
+      }
+      throw new DOMException('Stopped','AbortError');
+    };
+    const checkWithBackoff=async domain=>{
+      while(!signal.aborted){
+        await waitForBulkTurn();
+        try{
+          const report=await checkTarget(`https://${domain}/`,'',signal,{bulk:true});
+          bulkSuccessStreak+=1;
+          if(bulkSuccessStreak>=20){bulkRateLimitCount=Math.max(0,bulkRateLimitCount-1);bulkSpacingMs=Math.max(FREEDNS_FULL_REQUEST_SPACING_MS,Math.floor(bulkSpacingMs*.85));bulkSuccessStreak=0;}
+          return report;
+        }
+        catch(error){
+          if(error.name==='AbortError'||error.status!==429)throw error;
+          bulkRateLimitCount+=1;bulkSuccessStreak=0;bulkSpacingMs=Math.min(FREEDNS_FULL_MAX_REQUEST_SPACING_MS,Math.max(700,Math.ceil(bulkSpacingMs*1.75)));
+          const retryMs=Math.max(error.retryAfterMs||0,Math.min(FREEDNS_FULL_MAX_BACKOFF_MS,2000*(2**Math.min(7,Math.max(0,bulkRateLimitCount-1)))));
+          bulkPauseUntil=Math.max(bulkPauseUntil,Date.now()+retryMs+Math.floor(Math.random()*500));
+          bulkNextRequestAt=Math.max(bulkNextRequestAt,bulkPauseUntil);
+          $('[data-freedns-progress-detail]').textContent=`The provider is rate limiting requests. The whole scan is still active and will resume automatically in about ${Math.ceil(retryMs/1000)} seconds.`;
+        }
+      }
+      throw new DOMException('Stopped','AbortError');
     };
     const worker=async()=>{
       while(!signal.aborted){
@@ -507,12 +624,12 @@
         const domain=candidates[index].domain;const visible=visibleNow(domain);freednsChecking.add(domain);if(visible)renderFreedns();
         let counted=false;
         try{
-          const report=await checkTarget(`https://${domain}/`,'',signal,{bulk:true});
+          const report=await checkWithBackoff(domain);
           storeFreednsVerdict(report,domain);unsaved+=1;counted=true;
-          if(unsaved>=25&&!flush()){storageFailed=true;freednsScanController.abort();}
+          if(unsaved>=FREEDNS_FULL_SAVE_BATCH&&!flush()){storageFailed=true;freednsScanController.abort();}
         }catch(error){
           if(error.name==='AbortError')return;
-          if([401,403,429].includes(error.status)){blockingError=error;freednsScanController.abort();return;}
+          if([401,403].includes(error.status)){blockingError=error;freednsScanController.abort();return;}
           failed+=1;counted=true;
         }finally{
           freednsChecking.delete(domain);
@@ -521,7 +638,7 @@
         }
       }
     };
-    try{await Promise.all(Array.from({length:Math.min(FREEDNS_SCAN_CONCURRENCY,candidates.length)},worker));}
+    try{await Promise.all(Array.from({length:Math.min(FREEDNS_FULL_SCAN_CONCURRENCY,candidates.length)},worker));}
     finally{
       if(!flush())storageFailed=true;
       freednsFullScanning=false;freednsChecking.clear();renderWorkspace();
@@ -566,6 +683,7 @@
   }
   function saveSettings(){writeJsonStorage(SETTINGS_KEY,settings);applyTheme();renderDashboard();}
   function wireEvents(){
+    $('[data-back-to-nyx]').addEventListener('click',event=>{if(window.parent===window)return;event.preventDefault();window.parent.postMessage({type:'nyx:close-tab'},location.origin);});
     refs.form.addEventListener('submit',runCheck);$('[data-copy-results]').addEventListener('click',copyReport);
     $('[data-recheck]').addEventListener('click',()=>{if(currentTarget){refs.input.value=currentTarget;void runCheck();}});
     $$('[data-view-button]').forEach(button=>button.addEventListener('click',()=>switchView(button.dataset.viewButton)));
@@ -578,11 +696,12 @@
     refs.freednsSearch.addEventListener('input',()=>{freednsPage=1;renderFreedns();});refs.freednsStatus.addEventListener('change',()=>{freednsPage=1;renderFreedns();});refs.freednsVendor.addEventListener('change',renderFreedns);
     $('[data-freedns-export]').addEventListener('click',exportFreedns);$('[data-freedns-clear]').addEventListener('click',clearFreednsCache);
     $('[data-freedns-prev]').addEventListener('click',()=>{freednsPage-=1;renderFreedns();});$('[data-freedns-next]').addEventListener('click',()=>{freednsPage+=1;renderFreedns();});
+    $('[data-freedns-detail-close]').addEventListener('click',closeFreednsDetails);refs.freednsDetail.addEventListener('click',event=>{if(event.target===refs.freednsDetail)closeFreednsDetails();});refs.freednsDetail.addEventListener('close',()=>{freednsDetailController?.abort();freednsDetailController=null;});
     $$('[data-export]').forEach(button=>button.addEventListener('click',()=>exportRecords(button.dataset.export)));$$('[data-clear-history]').forEach(button=>button.addEventListener('click',clearHistory));
     const pageSize=$('[data-setting-page-size]');pageSize.value=String(settings.pageSize||25);pageSize.addEventListener('change',()=>{settings.pageSize=Number(pageSize.value)||25;dashboardPage=1;saveSettings();});
     const notifications=$('[data-setting-notifications]');const renderNotifications=()=>{notifications.textContent=settings.notifications?'On':'Off';notifications.setAttribute('aria-pressed',String(settings.notifications));};renderNotifications();notifications.addEventListener('click',()=>{settings.notifications=!settings.notifications;renderNotifications();saveSettings();});
     const theme=$('[data-setting-theme]');theme.value=settings.theme||'inherit';theme.addEventListener('change',()=>{settings.theme=theme.value;saveSettings();});
     const sidebar=$('[data-sidebar]');const shade=$('[data-sidebar-shade]');$('[data-sidebar-toggle]').addEventListener('click',()=>{sidebar.classList.add('open');shade.hidden=false;});shade.addEventListener('click',()=>{sidebar.classList.remove('open');shade.hidden=true;});
   }
-  settings={...defaultSettings,...settings};applyTheme();wireEvents();renderWorkspace();loadVendors();
+  settings={...defaultSettings,...settings};applyTheme();wireEvents();renderWorkspace();loadVendors();void refreshFreednsBulkAccess().catch(()=>{});
 })();

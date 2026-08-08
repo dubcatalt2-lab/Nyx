@@ -1,6 +1,6 @@
 # Nyx Project State
 
-Last repository review: 2026-08-06
+Last repository review: 2026-08-08
 
 Workspace: repository root (`<repo-root>`)
 
@@ -22,16 +22,18 @@ Important release warning: production currently contains commits that are not on
 
 - Repository: `https://github.com/dubcatalt2-lab/Nyx.git`
 - Active branch: `agent/pirate-cove`
-- Latest release commit: `5ee0bd129417f59a18a2eb696a558a15551418d4`
+- Latest release commit: `b2d0abc302e9249dcdc952813c82f37f26b3b1a3`
 - `main` / `origin/main`: `0a654cc1c3e17faff12424ae1f2a1a4eb63f6a90`
 - Draft PR: `https://github.com/dubcatalt2-lab/Nyx/pull/34`
 - PR title: **Ship Pirate Cove and Owner Dashboard IP bans**
 - Production URL: `https://nyxlearning.org`
+- Production alias: `https://networkforteachers.netw.ar` (FreeDNS A record to the OVH VPS)
 - Netlify project URL: `https://nyxlearning.netlify.app`
 - Netlify site ID: `c3ee107b-3703-489c-9793-6a8eb598e186`
-- Latest verified production deploy: `6a753cd7b03e27a527de1b43`
-- Unique deploy URL: `https://6a753cd7b03e27a527de1b43--nyxlearning.netlify.app`
-- Production Wisp: `wss://nyx-temporary-production.up.railway.app/wisp/`
+- Production host: OVHcloud VPS `15.204.93.166`, behind Cloudflare
+- Production Wisp: `wss://nyxlearning.org/wisp/` (embedded)
+- Rollback frontend: `https://nyxlearning.netlify.app`
+- Rollback Wisp: `wss://nyx-temporary-production.up.railway.app/wisp/`
 
 The following working-tree entries were deliberately left untracked and must not be staged, removed, or treated as Nyx release files without explicit instruction:
 
@@ -41,18 +43,20 @@ The following working-tree entries were deliberately left untracked and must not
 
 ## Current Production Verification
 
-The 2026-08-06 FreeDNS Scraper and Owner Dashboard redesign deployment was verified on the custom domain and its immutable deploy URL. The earlier smartwatch, game-performance, Pirate Cove, and Owner Dashboard IP-ban checks remain part of the release baseline:
+The OVHcloud cutover was completed and production-verified on 2026-08-08. Cloudflare uses Full (strict), Certbot's DNS challenge and renewal dry run succeeded, Nginx and Nyx are enabled at boot, SSH uses key-only login, and Netlify/Railway remain available temporarily for rollback. The earlier smartwatch, game-performance, Pirate Cove, and Owner Dashboard IP-ban checks remain part of the release baseline:
 
 - `/assets/games/index.html`: HTTP 200 and contains **Pirate Cove**
 - `/assets/backgrounds/pirate-cove.gif`: HTTP 200 with `image/gif`
-- `/healthz`: HTTP 200 JSON
+- `/healthz`: HTTP 200 JSON with `"wisp":"embedded"` on both apex and `www`
 - `/catclass-games`: HTTP 200 JSON
 - `/api/owner-dashboard/ip-bans`: HTTP 401 when unauthenticated, confirming the route and function bundle are live
-- `/apps/link-checker/`: HTTP 200 with the Nocturne-inspired dashboard, sidebar, matching vector action icons, root-level **Back to Nyx** link, and FreeDNS Scraper UI
-- `/api/link-checker/freedns-registry?page=1`: HTTP 200 with 100 parsed registry entries on both production URLs; FreeDNS reported 21,163 entries across 212 pages at verification time
-- `/api/link-checker/vendors`: HTTP 200 with 18 vendors on both production URLs
-- `/api/link-checker/check`: `example.com` returned HTTP 200 with 18 vendor results and the configured paid plan, confirming the server-only Netlify key is active
+- `/apps/link-checker/`: HTTP 200 with the Nocturne-inspired dashboard, sidebar, matching vector action icons, in-app tab-closing **Back to Nyx** action, and FreeDNS Scraper UI
+- `/api/link-checker/freedns-registry?page=1`: HTTP 200 with 100 parsed registry entries; FreeDNS reported 21,163 entries across 212 pages at verification time
+- `/api/link-checker/vendors`: HTTP 200 with 18 vendors
+- `/api/link-checker/check`: `example.com` returned HTTP 200 with 18 vendor results and the configured paid plan, confirming the server-only OVH key is active
+- Firebase sign-in, Owner Dashboard user listing, IP-ban listing, Nyx AI, Bunny link-generator access, Pirate Cove, and a proxied page through embedded Wisp were verified after the cutover
 - FreeDNS inline vendor check: the production UI kept `example.com` in the scraper table and rendered all 18 vendor shields after the row refresh action (10 allowed, 2 blocked, 3 unknown, and 3 errors at verification time) with no horizontal overflow
+- FreeDNS custom hostname: `networkforteachers.netw.ar` resolves to the OVH IPv4 address, is included in the Nginx/Certbot certificate, and is permitted by the embedded-Wisp origin list
 - Owner Dashboard redesign assets: cache-versioned stylesheet and script returned through the production homepage; desktop, 390x844, and 320x320 local interaction checks showed no horizontal overflow
 - **Amazing Strange Rope Police**: transformed Unity loader uses the guarded worker callback through Ultraviolet; the selected Scramjet path loads the 66 MB legacy Unity data archive, creates its canvas, and shows no callback or DataView error through a 90-second production regression run
 - Homepage cursor effect: the background dots repel, fade, and return along the pointer path; the **Nyx** wordmark remains fixed with no cursor transform
@@ -113,7 +117,7 @@ Client preferences and much local UI state use browser storage. Cross-device acc
 - Keep the Developer Console implemented with Eruda unless the user explicitly requests otherwise.
 - Link Checker vendor scans go through Nyx's same-origin `/api/link-checker/*` server bridge to `lc.nocturne.lol`. The checker works through Nocturne's anonymous public allowance and adds `NYX_LINK_CHECKER_API_KEY` only when that optional server variable is configured. Never put its value in client code, tracked files, documentation, logs, or commits.
 - The Netlify build uses Terser to mangle private identifiers in Nyx's first-party browser and service-worker runtimes. Repository sources remain readable, user-facing labels and storage/message values remain unchanged, and required public contracts such as `__uv$config`, `__NYX_RUNTIME_CONFIG__`, service-worker routes, and third-party runtime APIs must never be property-mangled or renamed.
-- Nyx presents the non-account Link Checker workspace in a Nocturne-inspired sidebar and table layout, with a local dashboard, single all-vendor or selected-vendor checks, device-local history, filters, CSV/JSON exports, preferences, vendor reports, and public RDAP registration details. Its FreeDNS Scraper reads the public `freedns.afraid.org` registry through a fixed-target same-origin route and stores the collected registry only in that browser. When the scraper is opened, the first 25-domain page is checked automatically if its rows have no saved verdicts; **Check this page** handles bounded page scans. Signed-in Owner, Co-owner, and Admin accounts can run a resumable **Check all domains** job through the paid server-side key. The browser uses a two-request queue and compact local verdict storage, while the authenticated server route has a separate 30,000-check daily safety limit; anonymous checks retain their 30-per-15-minute limit. Each row also has an explicit refresh action, and vendor results appear as allowed, blocked, unknown, or error shields. Nyx's scan is device-local rather than a server-side global cache, and Nocturne account, upgrade, admin, API-key-management, and account-only scrape/bulk-scan/history routes remain deliberately unexposed.
+- Nyx presents the non-account Link Checker workspace in a Nocturne-inspired sidebar and table layout, with a local dashboard, single all-vendor or selected-vendor checks, device-local history, filters, CSV/JSON exports, preferences, vendor reports, and public RDAP registration details. Its **Back to Nyx** action closes the containing Nyx browser tab when embedded and returns to `/` when opened directly. Its FreeDNS Scraper reads the public `freedns.afraid.org` registry through a fixed-target same-origin route and stores the collected registry only in that browser, including the public owner and added-date fields. When the scraper is opened, the first 25-domain page is checked automatically if its rows have no saved verdicts; **Check this page** handles bounded page scans. Only signed-in Premium and Trial accounts can run a resumable **Check all domains** job through the paid server-side key; staff role alone does not grant access. Full scans use six bounded, paced browser workers, compact local verdict storage in 100-result checkpoints, and a shared adaptive provider cooldown that automatically resumes after any number of 429 responses instead of aborting after a fixed retry count. The server enforces subscription access plus per-account/global concurrency ceilings instead of the former 30,000-check daily cutoff; anonymous checks retain their 30-per-15-minute limit. Each row also has an explicit refresh action, and vendor results appear as allowed, blocked, unknown, or error shields. After a result is saved and scanning is idle, the compact shield group is clickable and opens a responsive detail dialog with every vendor state, refreshed category data when available, FreeDNS metadata, and public RDAP registration fields; failure to refresh preserves the compact result display. Nyx's scan is device-local rather than a server-side global cache, and Nocturne account, upgrade, admin, API-key-management, and account-only scrape/bulk-scan/history routes remain deliberately unexposed.
 - Theme work should recolor the existing interface without unexpectedly changing its layout. Custom-theme text, icons, controls, and selected states must use the selected theme tokens.
 - The 2D homepage dot field uses a swept-pointer particle response: nearby dots repel and fade, then spring back into their grid. Preserve its reduced-motion behavior and keep it disabled when 3D backgrounds are active.
 - Preserve animated GIF banners and avatars as animated media. Do not replace them with static conversions.
@@ -151,14 +155,12 @@ The Netlify build intentionally skips five bundled Minecraft HTML files larger t
 
 ### Current production
 
-- Static frontend and Express-backed HTTP routes: Netlify
-- Public domain and DNS: Cloudflare-managed `nyxlearning.org`
-- Wisp WebSocket server: separate Railway deployment
+- Static frontend, Express-backed HTTP routes, and embedded Wisp: OVHcloud VPS behind Nginx
+- Public domain, edge proxy, and DNS: Cloudflare-managed `nyxlearning.org`
 - Accounts and shared profile/admin data: Firebase Authentication and Firestore
+- Rollback only: Netlify frontend and Railway Wisp remain configured until the OVH release is stable
 
-Netlify cannot replace the long-running Wisp WebSocket service. `netlify.toml` and `netlify/functions/api.mjs` inject the Railway Wisp endpoint into the generated runtime.
-
-If Railway restricts Wisp origins, `NYX_ALLOWED_ORIGINS` must include the exact active origins that should connect, normally the custom domain and Netlify domain. Confirm the deployed Railway variables rather than assuming their value.
+The VPS serves generated `dist/` through Express on local port 8080 and exposes the embedded Wisp endpoint through Nginx at `/wisp/`. Cloudflare visitor headers are trusted only after Nginx overwrites forwarding headers and only from Cloudflare networks.
 
 ## IP Ban Controls
 
@@ -166,12 +168,12 @@ If Railway restricts Wisp origins, `NYX_ALLOWED_ORIGINS` must include the exact 
 - Authenticated activity heartbeats and session-start events update server-managed `lastSeenIp` and `lastSeenIpAt` fields for that account. Authorized staff can view the last observed address for accounts they can manage and use **Disable + block IP**; it disables the Firebase account, revokes sessions, and creates the IP ban. It is not a historical IP log.
 - Express and Netlify-function requests are checked before routes run; ban data is cached for up to 30 seconds and invalidated after a local change. The application must fail open if Firebase is unavailable rather than turn a Firebase outage into a site outage.
 - Netlify functions default `NYX_TRUST_PROXY` to `true` so the verified deployment headers can identify the source IP. A self-hosted deployment may set it only behind a proxy that overwrites client-supplied forwarding headers.
-- Static files are served by Netlify ahead of the function, so a matching Cloudflare IP List plus WAF rule is required for a full `nyxlearning.org` block. The exact runbook is `docs/IP_BANS.md`. Do not add a Cloudflare API token to Nyx merely to synchronize the two lists.
-- Railway's direct Wisp endpoint is outside Cloudflare. Blocked visitors cannot load Nyx through the domain once the WAF rule is active, but direct Wisp abuse requires a separate Railway-side policy.
+- Production static files, APIs, and Wisp upgrades pass through Express's IP-ban guard on OVH. A matching Cloudflare IP List plus WAF rule remains the earliest edge block and prevents cached responses from bypassing the origin guard. The exact runbook is `docs/IP_BANS.md`. Do not add a Cloudflare API token to Nyx merely to synchronize the two lists.
+- Railway's direct Wisp endpoint is rollback-only and remains outside Cloudflare.
 
-### Future VPS option
+### OVH deployment
 
-`DEPLOYMENT.md` and `deploy/` now contain a prepared single-OVHcloud-VPS deployment using Ubuntu, Nginx, systemd, and embedded Wisp. The installer builds the minified `dist/` output with the production same-origin Wisp URL and without Netlify's large-file omissions, serves it through Express so the application IP-ban guard also covers static pages, sanitizes forwarding headers, restricts Cloudflare visitor-IP trust to Cloudflare's published networks, and prunes build-only dependencies. `/etc/nyx/nyx.env` and the selected domain are preserved across reruns, and `deploy/update-ovh.sh` provides validated fast-forward updates. This kit has not been installed or production-verified; Netlify and Railway remain the current production topology and rollback until an explicit cutover.
+`DEPLOYMENT.md` and `deploy/` define the active single-OVHcloud-VPS deployment using Ubuntu 26.04, Nginx, systemd, and embedded Wisp. The installer builds the minified `dist/` output with the production same-origin Wisp URL and without Netlify's large-file omissions, serves it through Express so the application IP-ban guard also covers static pages, sanitizes forwarding headers, restricts Cloudflare visitor-IP trust to Cloudflare's published networks, and prunes build-only dependencies. `/etc/nyx/nyx.env` and the selected domain are preserved across reruns, and `deploy/update-ovh.sh` provides validated fast-forward updates.
 
 ## Server Environment Variable Names
 
@@ -212,6 +214,8 @@ Other server features:
 - `LINK_GENERATOR_MAX_ZONES`
 - `LINK_GENERATOR_PREMIUM_BATCH_LIMIT`
 - `NYX_LINK_CHECKER_API_KEY`
+- `NYX_LINK_CHECKER_BULK_CONCURRENCY_PER_USER`
+- `NYX_LINK_CHECKER_BULK_CONCURRENCY_GLOBAL`
 - `NYX_SAFE_BROWSING_API_KEY` or `GOOGLE_SAFE_BROWSING_API_KEY`
 
 Inspect `server.js`, `wisp-server.js`, and deployment settings before adding or renaming variables.
@@ -278,6 +282,8 @@ For Pirate Cove, test search, sort, pagination, card cover fallbacks, launch/ret
 
 ## Known Risks and Unresolved Areas
 
+- A complete FreeDNS vendor scan still makes one paid upstream check per uncached domain, so a registry with more than 20,000 entries can take substantial time. Provider rate limits trigger an automatic shared cooldown and do not terminate the job, but the tab must remain open; the Stop button is the explicit way to pause it, and saved results are skipped on resume.
+- Arbitrary FreeDNS/custom hostnames are not yet provisioned automatically. `networkforteachers.netw.ar` is an exact manual Nginx, Certbot, and `NYX_ALLOWED_ORIGINS` alias; another hostname pointed at the VPS will still reach the default 404 until automatic verified-hostname and on-demand TLS support is implemented.
 - Spotify authentication inside the proxied browser has been unreliable. Observed failures included invalid CSRF responses and reCAPTCHA timeouts on both the custom domain and localhost. Treat it as unresolved unless a fresh end-to-end login succeeds. Do not add another forced-engine or authentication workaround without tracing the exact request/cookie/origin flow.
 - Some external sites use bot protection, DRM, cross-origin isolation, OAuth restrictions, or security verification that may not work through a browser proxy. Distinguish an upstream restriction from a Nyx regression.
 - Large WebGL/Unity games can still exceed a device's available GPU memory or have their own performance defects. Pirate Cove's Auto performance mode reduces host rendering and game resolution, but it cannot guarantee that every third-party game is safe on every GPU.

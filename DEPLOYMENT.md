@@ -99,13 +99,15 @@ FIREBASE_CLIENT_EMAIL='...'
 FIREBASE_PRIVATE_KEY='-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n'
 NYX_FOUNDER_PROFILE_ADMIN_UID='...'
 NYX_LINK_CHECKER_API_KEY='...'
+NYX_LINK_CHECKER_ACCOUNT_USERNAME='...'
+NYX_LINK_CHECKER_ACCOUNT_PASSWORD='...'
 BUNNY_API_KEY='...'
 LINK_GENERATOR_ACCESS_CODE='...'
 NYX_SAFE_BROWSING_API_KEY='...'
 NYX_AI_API_KEY='...'
 ```
 
-Premium FreeDNS full scans use six paced browser workers with adaptive provider cooldowns, plus server ceilings of 12 concurrent requests per account and 48 globally. The server ceilings can be tuned with `NYX_LINK_CHECKER_BULK_CONCURRENCY_PER_USER` and `NYX_LINK_CHECKER_BULK_CONCURRENCY_GLOBAL`; leave the defaults unless the provider or VPS capacity requires a lower ceiling.
+`NYX_LINK_CHECKER_API_KEY` powers individual row and page checks. Fast Premium FreeDNS full scans require the separate Nocturne account username and password so Nyx can start Nocturne's server-side `/api/scan` job instead of making more than 20,000 rate-limited `/api/check` calls. These credentials stay in `/etc/nyx/nyx.env`; never add them to Git or client code. Authenticated check concurrency ceilings default to 12 requests per account and 48 globally and can be tuned with `NYX_LINK_CHECKER_BULK_CONCURRENCY_PER_USER` and `NYX_LINK_CHECKER_BULK_CONCURRENCY_GLOBAL`.
 
 Only add variables for features you use. Do not paste `curl` commands into this file, and never put the actual values in Git, Discord, screenshots, or chat. Keep the Firebase private key on one line with literal `\n` characters.
 

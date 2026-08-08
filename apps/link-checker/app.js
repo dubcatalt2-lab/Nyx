@@ -8,11 +8,8 @@
   const HISTORY_LIMIT=500;
   const FREEDNS_PAGE_SIZE=25;
   const FREEDNS_SCAN_CONCURRENCY=2;
-  const FREEDNS_FULL_SCAN_CONCURRENCY=6;
   const FREEDNS_FULL_SAVE_BATCH=100;
-  const FREEDNS_FULL_REQUEST_SPACING_MS=350;
-  const FREEDNS_FULL_MAX_REQUEST_SPACING_MS=5_000;
-  const FREEDNS_FULL_MAX_BACKOFF_MS=5*60_000;
+  const FREEDNS_SCAN_MAX_BACKOFF_MS=5*60_000;
   const FREEDNS_BULK_ACCESS_TTL_MS=5*60_000;
   const THEME_CLASSES=['theme-default','theme-ruby','theme-emerald','theme-sakura','theme-fresh'];
   const $=selector=>document.querySelector(selector);
@@ -190,11 +187,11 @@
     if(!access.premium)throw new Error(access.error||'A Premium subscription is required to check all domains.');
     return access.auth.currentUser.getIdToken();
   }
-  async function checkTarget(target,vendor='',signal,{bulk=false}={}){
+  async function checkTarget(target,vendor='',signal,{bulk=false,pageScan=false}={}){
     const headers={'Content-Type':'application/json'};
     if(bulk)headers.Authorization=`Bearer ${await freednsBulkToken()}`;
     const payload=await fetchJson(`${CHECK_API}/check`,{
-      method:'POST',signal,headers,body:JSON.stringify({url:target,...(vendor?{vendor}:{}),...(bulk?{bulk:true}:{})})
+      method:'POST',signal,headers,body:JSON.stringify({url:target,...(vendor?{vendor}:{}),...(bulk?{bulk:true}:{}),...(pageScan?{pageScan:true}:{})})
     });
     return normalizeCheckReport(payload,target);
   }
@@ -548,16 +545,29 @@
     if(!candidates.length){if(!automatic)showNotice('Every domain on this page already has results for the selected vendors.');return;}
     freednsScanController?.abort();freednsScanController=new AbortController();const {signal}=freednsScanController;
     freednsPageScanning=true;updateFreednsActions();showNotice('');setFreednsScanProgress(0,candidates.length);
-    let cursor=0;let completed=0;let failed=0;let rateLimited=false;
+    let cursor=0;let completed=0;let failed=0;let pagePauseUntil=0;let pageRateLimitCount=0;
+    const checkWithBackoff=async domain=>{
+      while(!signal.aborted){
+        const wait=Math.max(0,pagePauseUntil-Date.now());if(wait)await freednsDelay(wait,signal);
+        try{return await checkTarget(`https://${domain}/`,vendor,signal,{bulk:freednsBulkAccess.premium===true,pageScan:freednsBulkAccess.premium!==true});}
+        catch(error){
+          if(error.name==='AbortError'||error.status!==429)throw error;
+          pageRateLimitCount+=1;
+          const retryMs=Math.max(error.retryAfterMs||0,Math.min(FREEDNS_SCAN_MAX_BACKOFF_MS,2000*(2**Math.min(7,pageRateLimitCount-1))));
+          pagePauseUntil=Math.max(pagePauseUntil,Date.now()+retryMs+Math.floor(Math.random()*500));
+          $('[data-freedns-progress-detail]').textContent=`The page scan is still active. It will resume automatically in about ${Math.ceil(retryMs/1000)} seconds.`;
+        }
+      }
+      throw new DOMException('Stopped','AbortError');
+    };
     const worker=async()=>{
       while(!signal.aborted){
         const index=cursor;cursor+=1;if(index>=candidates.length)return;
         const domain=candidates[index].domain;freednsChecking.add(domain);renderFreedns();
         let counted=false;
-        try{const report=await checkTarget(`https://${domain}/`,vendor,signal);recordReport(report,'freedns',false);counted=true;}
+        try{const report=await checkWithBackoff(domain);recordReport(report,'freedns',false);counted=true;}
         catch(error){
           if(error.name==='AbortError')return;
-          if(error.status===429){rateLimited=true;freednsScanController.abort();return;}
           failed+=1;counted=true;
         }finally{
           freednsChecking.delete(domain);
@@ -569,8 +579,7 @@
     try{await Promise.all(Array.from({length:Math.min(FREEDNS_SCAN_CONCURRENCY,candidates.length)},worker));}
     finally{
       freednsPageScanning=false;freednsChecking.clear();renderWorkspace();
-      if(rateLimited)showNotice(`The page scan paused after ${completed.toLocaleString()} domains because Nyx reached its safety limit. Completed results were saved; try again later.`,'error',true);
-      else if(signal.aborted)showNotice(`Page scan stopped after ${completed.toLocaleString()} of ${candidates.length.toLocaleString()} domains. Completed results were saved.`);
+      if(signal.aborted)showNotice(`Page scan stopped after ${completed.toLocaleString()} of ${candidates.length.toLocaleString()} domains. Completed results were saved.`);
       else showNotice(`Page scan complete: ${completed.toLocaleString()} domains checked${failed?`, ${failed.toLocaleString()} failed`:''}.`,failed?'error':'',failed>0);
     }
   }
@@ -583,69 +592,49 @@
     if(!candidates.length){showNotice(`All ${total.toLocaleString()} cached FreeDNS domains already have saved vendor results.`);setFreednsFullProgress(total,total);return;}
     freednsScanController?.abort();freednsScanController=new AbortController();const {signal}=freednsScanController;
     freednsFullScanning=true;updateFreednsActions();showNotice('');
-    const already=total-candidates.length;let cursor=0;let processed=0;let failed=0;let unsaved=0;let persistedTotal=Object.keys(freednsVerdicts.verdicts).length;let blockingError=null;let storageFailed=false;let bulkPauseUntil=0;let bulkNextRequestAt=0;let bulkSpacingMs=FREEDNS_FULL_REQUEST_SPACING_MS;let bulkRateLimitCount=0;let bulkSuccessStreak=0;
+    const already=total-candidates.length;const wanted=new Set(candidates.map(entry=>entry.domain));let imported=0;let unsaved=0;let persistedTotal=Object.keys(freednsVerdicts.verdicts).length;let storageFailed=false;
     setFreednsFullProgress(already,total);
-    const visibleNow=domain=>freednsVisibleDomains.has(domain);
     const flush=()=>{
       if(!unsaved)return true;
       const saved=saveFreednsVerdicts();if(saved){unsaved=0;persistedTotal=Object.keys(freednsVerdicts.verdicts).length;}return saved;
     };
-    const waitForBulkTurn=async()=>{
-      while(!signal.aborted){
-        const now=Date.now();const scheduled=Math.max(now,bulkPauseUntil,bulkNextRequestAt);bulkNextRequestAt=scheduled+bulkSpacingMs;
-        if(scheduled>now)await freednsDelay(scheduled-now,signal);
-        if(Date.now()>=bulkPauseUntil)return;
-      }
-      throw new DOMException('Stopped','AbortError');
+    const bulkFetch=async(path,options={})=>fetchJson(`${CHECK_API}${path}`,{...options,signal,headers:{Authorization:`Bearer ${await freednsBulkToken()}`,...(options.headers||{})}});
+    const updateRemoteProgress=status=>{
+      const remoteTotal=Math.max(1,Number(status?.total)||total);const checked=Math.min(remoteTotal,Math.max(0,Number(status?.checked)||0));setFreednsFullProgress(checked,remoteTotal);
+      $('[data-freedns-progress-detail]').textContent='Nocturne is checking the registry on its server. Nyx will import the completed vendor results automatically.';
     };
-    const checkWithBackoff=async domain=>{
-      while(!signal.aborted){
-        await waitForBulkTurn();
-        try{
-          const report=await checkTarget(`https://${domain}/`,'',signal,{bulk:true});
-          bulkSuccessStreak+=1;
-          if(bulkSuccessStreak>=20){bulkRateLimitCount=Math.max(0,bulkRateLimitCount-1);bulkSpacingMs=Math.max(FREEDNS_FULL_REQUEST_SPACING_MS,Math.floor(bulkSpacingMs*.85));bulkSuccessStreak=0;}
-          return report;
+    const reportFromProvider=entry=>({target:entry.domain,url:`https://${entry.domain}/`,results:Object.entries(entry.vendors||{}).map(([filter,value])=>({filter,blocked:value?.blocked===true?true:(value?.blocked===false?false:null),category:String(value?.category||''),error:String(value?.error||'')}))});
+    const importProviderResults=async()=>{
+      let page=1;let totalPages=1;
+      do{
+        const payload=await bulkFetch(`/full-scan/results?page=${page}`);totalPages=Math.max(1,Number(payload.totalPages)||1);
+        for(const entry of Array.isArray(payload.domains)?payload.domains:[]){
+          if(!wanted.has(entry.domain)||!entry.vendors||!Object.keys(entry.vendors).length)continue;
+          storeFreednsVerdict(reportFromProvider(entry),entry.domain);wanted.delete(entry.domain);imported+=1;unsaved+=1;
+          if(unsaved>=FREEDNS_FULL_SAVE_BATCH&&!flush()){storageFailed=true;throw new Error('This browser could not save more verdicts.');}
         }
-        catch(error){
-          if(error.name==='AbortError'||error.status!==429)throw error;
-          bulkRateLimitCount+=1;bulkSuccessStreak=0;bulkSpacingMs=Math.min(FREEDNS_FULL_MAX_REQUEST_SPACING_MS,Math.max(700,Math.ceil(bulkSpacingMs*1.75)));
-          const retryMs=Math.max(error.retryAfterMs||0,Math.min(FREEDNS_FULL_MAX_BACKOFF_MS,2000*(2**Math.min(7,Math.max(0,bulkRateLimitCount-1)))));
-          bulkPauseUntil=Math.max(bulkPauseUntil,Date.now()+retryMs+Math.floor(Math.random()*500));
-          bulkNextRequestAt=Math.max(bulkNextRequestAt,bulkPauseUntil);
-          $('[data-freedns-progress-detail]').textContent=`The provider is rate limiting requests. The whole scan is still active and will resume automatically in about ${Math.ceil(retryMs/1000)} seconds.`;
-        }
-      }
-      throw new DOMException('Stopped','AbortError');
+        setFreednsFullProgress(already+imported,total);$('[data-freedns-progress-detail]').textContent=`Importing completed vendor results: page ${page.toLocaleString()} of ${totalPages.toLocaleString()}.`;
+        page+=1;
+      }while(page<=totalPages&&!signal.aborted);
     };
-    const worker=async()=>{
+    let error=null;
+    try{
+      let status=await bulkFetch('/full-scan/start',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});let observedRunning=status.running===true;let idlePolls=0;updateRemoteProgress(status);
       while(!signal.aborted){
-        const index=cursor;cursor+=1;if(index>=candidates.length)return;
-        const domain=candidates[index].domain;const visible=visibleNow(domain);freednsChecking.add(domain);if(visible)renderFreedns();
-        let counted=false;
-        try{
-          const report=await checkWithBackoff(domain);
-          storeFreednsVerdict(report,domain);unsaved+=1;counted=true;
-          if(unsaved>=FREEDNS_FULL_SAVE_BATCH&&!flush()){storageFailed=true;freednsScanController.abort();}
-        }catch(error){
-          if(error.name==='AbortError')return;
-          if([401,403].includes(error.status)){blockingError=error;freednsScanController.abort();return;}
-          failed+=1;counted=true;
-        }finally{
-          freednsChecking.delete(domain);
-          if(counted){processed+=1;setFreednsFullProgress(already+processed,total,failed);}
-          if(visible||visibleNow(domain))renderFreedns();
-        }
+        if(status.running===true){observedRunning=true;idlePolls=0;}
+        else if(observedRunning||status.started===false||idlePolls>=2)break;
+        await freednsDelay(2500,signal);status=await bulkFetch('/full-scan/status');updateRemoteProgress(status);if(!status.running)idlePolls+=1;
       }
-    };
-    try{await Promise.all(Array.from({length:Math.min(FREEDNS_FULL_SCAN_CONCURRENCY,candidates.length)},worker));}
+      if(!signal.aborted)await importProviderResults();
+    }catch(scanError){if(scanError.name!=='AbortError')error=scanError;}
     finally{
       if(!flush())storageFailed=true;
       freednsFullScanning=false;freednsChecking.clear();renderWorkspace();
       if(storageFailed)showNotice(`The full scan stopped because this browser could not save more verdicts. ${persistedTotal.toLocaleString()} domain results remain saved.`,'error',true);
-      else if(blockingError)showNotice(`The full scan paused after ${processed.toLocaleString()} new domains: ${blockingError.message} Saved results will be skipped when you resume.`,'error',true);
-      else if(signal.aborted)showNotice(`Full scan stopped after ${processed.toLocaleString()} new domains. Saved results will be skipped when you resume.`);
-      else showNotice(`Full scan complete: all ${total.toLocaleString()} domains were processed${failed?`; ${failed.toLocaleString()} need another attempt`:''}.`,failed?'error':'',failed>0);
+      else if(error)showNotice(`The full scan could not finish: ${error.message}`,'error',true);
+      else if(signal.aborted)showNotice('Nyx stopped watching the full scan. The Nocturne server job may continue; click Check all domains to reconnect and import its results.');
+      else if(wanted.size)showNotice(`The server scan finished and imported ${imported.toLocaleString()} new domains. ${wanted.size.toLocaleString()} domains had no completed vendor result and can be retried.`,'error',true);
+      else showNotice(`Full scan complete: all ${total.toLocaleString()} cached domains have saved vendor results.`);
     }
   }
   async function maybeAutoScanFreednsPage(){

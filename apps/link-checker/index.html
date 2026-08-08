@@ -158,7 +158,7 @@
             <div class="empty-state" data-freedns-empty><strong>No registry cache yet</strong><span>Scrape FreeDNS to build a searchable local list.</span></div>
             <footer class="pager" data-freedns-pager hidden><span data-freedns-page-label>Page 1</span><div><button class="btn-secondary" data-freedns-prev type="button"><svg class="lc-icon" aria-hidden="true"><use href="#icon-chevron-left"/></svg>Prev</button><button class="btn-secondary" data-freedns-next type="button">Next<svg class="lc-icon" aria-hidden="true"><use href="#icon-chevron-right"/></svg></button></div></footer>
           </section>
-          <p class="scraper-note"><strong>Check all domains</strong> is available only to signed-in Premium and Trial accounts. Premium full scans use a faster bounded queue, pause and retry automatically when the provider is busy, and resume from compact results saved on this device. Page and row checks remain available for smaller jobs.</p>
+          <p class="scraper-note"><strong>Check all domains</strong> is available only to signed-in Premium and Trial accounts. It starts one server-side registry job, follows its progress, and imports compact results when it finishes—without sending one browser request per domain. Page and row checks remain available for smaller jobs.</p>
         </section>
 
         <section class="checker-view" data-view="history" aria-labelledby="history-title" hidden>
@@ -207,6 +207,6 @@
       </div>
     </div>
   </dialog>
-  <script src="./app.js?v=20260808-full-scan-v4"></script>
+  <script src="./app.js?v=20260808-account-scan-v6"></script>
 </body>
 </html>

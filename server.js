@@ -107,6 +107,8 @@ const downloadSafetyMaxAttempts = 60;
 const linkCheckerAttempts = new Map();
 const linkCheckerWindowMs = 15 * 60_000;
 const linkCheckerMaxAttempts = 30;
+const linkCheckerPageAttempts = new Map();
+const linkCheckerPageMaxAttempts = 250;
 const linkCheckerBulkAccessCache = new Map();
 const linkCheckerBulkAccessCacheTtlMs = 5 * 60_000;
 const linkCheckerBulkActiveByUser = new Map();
@@ -114,6 +116,8 @@ let linkCheckerBulkActiveRequests = 0;
 const linkCheckerBulkMaxConcurrentPerUser = Math.max(1, Math.min(24, Number.parseInt(process.env.NYX_LINK_CHECKER_BULK_CONCURRENCY_PER_USER || "12", 10) || 12));
 const linkCheckerBulkMaxConcurrentGlobal = Math.max(linkCheckerBulkMaxConcurrentPerUser, Math.min(96, Number.parseInt(process.env.NYX_LINK_CHECKER_BULK_CONCURRENCY_GLOBAL || "48", 10) || 48));
 const linkCheckerApiOrigin = "https://lc.nocturne.lol";
+let linkCheckerAccountCookie = "";
+let linkCheckerAccountLoginPromise = null;
 const freednsRegistryAttempts = new Map();
 const freednsRegistryWindowMs = 20 * 60_000;
 const freednsRegistryMaxAttempts = 240;
@@ -2654,6 +2658,18 @@ function linkCheckerRateState(clientId, now = Date.now()) {
   return state;
 }
 
+function linkCheckerPageRateState(clientId, now = Date.now()) {
+  for (const [key, state] of linkCheckerPageAttempts) {
+    if (now - state.windowStarted > linkCheckerWindowMs) linkCheckerPageAttempts.delete(key);
+  }
+  let state = linkCheckerPageAttempts.get(clientId);
+  if (!state || now - state.windowStarted > linkCheckerWindowMs) {
+    state = { attempts: 0, windowStarted: now };
+    linkCheckerPageAttempts.set(clientId, state);
+  }
+  return state;
+}
+
 function reserveLinkCheckerBulkSlot(uid) {
   const activeForUser = linkCheckerBulkActiveByUser.get(uid) || 0;
   if (activeForUser >= linkCheckerBulkMaxConcurrentPerUser || linkCheckerBulkActiveRequests >= linkCheckerBulkMaxConcurrentGlobal) return null;
@@ -2760,6 +2776,127 @@ async function linkCheckerUpstream(path, options = {}) {
   return payload;
 }
 
+function linkCheckerAccountCredentials() {
+  const username = String(process.env.NYX_LINK_CHECKER_ACCOUNT_USERNAME || "").trim();
+  const password = String(process.env.NYX_LINK_CHECKER_ACCOUNT_PASSWORD || "");
+  if (!username || !password) {
+    const error = new Error("Fast full scans require the Nocturne account credentials in the VPS environment.");
+    error.status = 503;
+    throw error;
+  }
+  return { username, password };
+}
+
+function linkCheckerResponseCookies(response) {
+  const values = typeof response.headers.getSetCookie === "function"
+    ? response.headers.getSetCookie()
+    : [response.headers.get("set-cookie")].filter(Boolean);
+  return values.map((value) => String(value).split(";", 1)[0].trim()).filter(Boolean).join("; ");
+}
+
+async function linkCheckerAccountLogin() {
+  if (linkCheckerAccountCookie) return linkCheckerAccountCookie;
+  if (linkCheckerAccountLoginPromise) return linkCheckerAccountLoginPromise;
+  linkCheckerAccountLoginPromise = (async () => {
+    const credentials = linkCheckerAccountCredentials();
+    const response = await fetch(`${linkCheckerApiOrigin}/api/auth/login`, {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify(credentials),
+      signal: AbortSignal.timeout(20_000)
+    });
+    const payload = await response.json().catch(() => null);
+    const cookie = linkCheckerResponseCookies(response);
+    if (!response.ok || !cookie) {
+      const error = new Error(response.status === 401 ? "The configured Nocturne account login was rejected." : "Nocturne account sign-in is unavailable.");
+      error.status = 503;
+      throw error;
+    }
+    linkCheckerAccountCookie = cookie;
+    return cookie;
+  })();
+  try {
+    return await linkCheckerAccountLoginPromise;
+  } finally {
+    linkCheckerAccountLoginPromise = null;
+  }
+}
+
+async function linkCheckerAccountRequest(path, options = {}, retry = true) {
+  const cookie = await linkCheckerAccountLogin();
+  const headers = { Accept: "application/json", ...(options.headers || {}), Cookie: cookie };
+  const response = await fetch(`${linkCheckerApiOrigin}${path}`, {
+    ...options,
+    headers,
+    signal: AbortSignal.timeout(30_000)
+  });
+  const payload = await response.json().catch(() => null);
+  if (response.status === 401 && retry) {
+    linkCheckerAccountCookie = "";
+    return linkCheckerAccountRequest(path, options, false);
+  }
+  if (!response.ok) {
+    const error = new Error(
+      response.status === 409
+        ? "A Nocturne full scan is already running."
+        : response.status === 401
+          ? "The configured Nocturne account session was rejected."
+          : response.status === 403
+            ? "The configured Nocturne account cannot run a full scan."
+            : "Nocturne could not complete the full-scan request."
+    );
+    error.status = response.status === 409 ? 409 : 502;
+    error.retryAfter = response.headers.get("retry-after") || "";
+    throw error;
+  }
+  if (!payload || typeof payload !== "object") {
+    const error = new Error("Nocturne returned an invalid full-scan response.");
+    error.status = 502;
+    throw error;
+  }
+  return payload;
+}
+
+function linkCheckerAccountStatus(payload) {
+  const last = payload?.lastResult && typeof payload.lastResult === "object" ? payload.lastResult : null;
+  return {
+    running: payload?.running === true,
+    checked: Math.max(0, Number(payload?.checked) || 0),
+    total: Math.max(0, Number(payload?.total) || 0),
+    pending: Math.max(0, Number(payload?.pending) || 0),
+    startedAt: String(payload?.startedAt || ""),
+    vendors: Array.isArray(payload?.vendors) ? payload.vendors.map(String).slice(0, 64) : [],
+    lastResult: last ? {
+      checked: Math.max(0, Number(last.checked) || 0),
+      total: Math.max(0, Number(last.total) || 0),
+      failures: Math.max(0, Number(last.failures) || 0),
+      finishedAt: String(last.finishedAt || last.completedAt || "")
+    } : null
+  };
+}
+
+function linkCheckerAccountDomainResults(payload) {
+  const domains = Array.isArray(payload?.domains) ? payload.domains : [];
+  return {
+    page: Math.max(1, Number(payload?.page) || 1),
+    totalPages: Math.max(1, Number(payload?.totalPages) || 1),
+    total: Math.max(0, Number(payload?.total) || 0),
+    domains: domains.slice(0, 100).map((domain) => {
+      const vendorSource = domain?.vendors && typeof domain.vendors === "object" ? domain.vendors : {};
+      const vendorResults = {};
+      for (const [key, value] of Object.entries(vendorSource).slice(0, 64)) {
+        if (!/^[a-z0-9_-]{1,64}$/i.test(key)) continue;
+        vendorResults[key] = {
+          blocked: value?.blocked === true ? true : (value?.blocked === false ? false : null),
+          category: String(value?.category || "").slice(0, 160),
+          error: String(value?.error || "").slice(0, 240)
+        };
+      }
+      return { domain: String(domain?.domain_name || domain?.domain || "").trim().toLowerCase(), vendors: vendorResults };
+    }).filter((domain) => domain.domain)
+  };
+}
+
 app.get("/api/link-checker/vendors", async (req, res) => {
   res.set("Cache-Control", "public, max-age=300");
   if (!sameOriginRequest(req)) {
@@ -2771,6 +2908,68 @@ app.get("/api/link-checker/vendors", async (req, res) => {
   } catch (error) {
     if (error.retryAfter) res.set("Retry-After", String(error.retryAfter));
     res.status(error.status || 502).json({ error: error.message || "The Link Checker provider is unavailable." });
+  }
+});
+
+app.post("/api/link-checker/full-scan/start", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-site full scans are not allowed." });
+    return;
+  }
+  try {
+    await linkCheckerBulkSubscriber(req);
+    let started = null;
+    try {
+      started = await linkCheckerAccountRequest("/api/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({})
+      });
+    } catch (error) {
+      if (error.status !== 409) throw error;
+    }
+    const status = linkCheckerAccountStatus(await linkCheckerAccountRequest("/api/vendors/status"));
+    res.json({ ...status, started: Boolean(started), total: Math.max(status.total, Number(started?.total) || 0) });
+  } catch (error) {
+    if (error.retryAfter) res.set("Retry-After", String(error.retryAfter));
+    res.status(error.status || 500).json({ error: error.message || "The full scan could not be started." });
+  }
+});
+
+app.get("/api/link-checker/full-scan/status", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-site full scans are not allowed." });
+    return;
+  }
+  try {
+    await linkCheckerBulkSubscriber(req);
+    res.json(linkCheckerAccountStatus(await linkCheckerAccountRequest("/api/vendors/status")));
+  } catch (error) {
+    if (error.retryAfter) res.set("Retry-After", String(error.retryAfter));
+    res.status(error.status || 500).json({ error: error.message || "Full-scan status is unavailable." });
+  }
+});
+
+app.get("/api/link-checker/full-scan/results", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-site full-scan results are not allowed." });
+    return;
+  }
+  const page = Number.parseInt(String(req.query?.page || "1"), 10);
+  if (!Number.isInteger(page) || page < 1 || page > 500) {
+    res.status(400).json({ error: "A valid full-scan result page is required." });
+    return;
+  }
+  try {
+    await linkCheckerBulkSubscriber(req);
+    const payload = linkCheckerAccountDomainResults(await linkCheckerAccountRequest(`/api/domains?page=${page}&perPage=100&search=`));
+    res.json({ ...payload, page });
+  } catch (error) {
+    if (error.retryAfter) res.set("Retry-After", String(error.retryAfter));
+    res.status(error.status || 500).json({ error: error.message || "Full-scan results are unavailable." });
   }
 });
 
@@ -2832,6 +3031,7 @@ app.post("/api/link-checker/check", async (req, res) => {
     return;
   }
   const bulk = req.body?.bulk === true;
+  const pageScan = !bulk && req.body?.pageScan === true;
   let bulkSubscriberUid = "";
   if (bulk) {
     try {
@@ -2842,11 +3042,12 @@ app.post("/api/link-checker/check", async (req, res) => {
       return;
     }
   } else {
-    const rate = linkCheckerRateState(linkGeneratorClientId(req));
+    const rate = pageScan ? linkCheckerPageRateState(linkGeneratorClientId(req)) : linkCheckerRateState(linkGeneratorClientId(req));
     rate.attempts += 1;
-    if (rate.attempts > linkCheckerMaxAttempts) {
+    const maxAttempts = pageScan ? linkCheckerPageMaxAttempts : linkCheckerMaxAttempts;
+    if (rate.attempts > maxAttempts) {
       const retryAfter = Math.max(1, Math.ceil((rate.windowStarted + linkCheckerWindowMs - Date.now()) / 1000));
-      res.set("Retry-After", String(retryAfter)).status(429).json({ error: "Too many link checks. Try again later." });
+      res.set("Retry-After", String(retryAfter)).status(429).json({ error: pageScan ? "The page-scan allowance is cooling down. Nyx will resume automatically." : "Too many link checks. Try again later." });
       return;
     }
   }

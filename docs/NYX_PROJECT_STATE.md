@@ -22,7 +22,7 @@ Important release warning: production currently contains commits that are not on
 
 - Repository: `https://github.com/dubcatalt2-lab/Nyx.git`
 - Active branch: `agent/pirate-cove`
-- Latest release commit: `b2d0abc302e9249dcdc952813c82f37f26b3b1a3`
+- Latest release commit: `4b4d352f80a64a4c7611c828345382222067bbd2`
 - `main` / `origin/main`: `0a654cc1c3e17faff12424ae1f2a1a4eb63f6a90`
 - Draft PR: `https://github.com/dubcatalt2-lab/Nyx/pull/34`
 - PR title: **Ship Pirate Cove and Owner Dashboard IP bans**
@@ -51,6 +51,8 @@ The OVHcloud cutover was completed and production-verified on 2026-08-08. Cloudf
 - `/catclass-games`: HTTP 200 JSON
 - `/api/owner-dashboard/ip-bans`: HTTP 401 when unauthenticated, confirming the route and function bundle are live
 - `/apps/link-checker/`: HTTP 200 with the Nocturne-inspired dashboard, sidebar, matching vector action icons, in-app tab-closing **Back to Nyx** action, and FreeDNS Scraper UI
+- Link Checker account-scan asset version `20260808-account-scan-v6` is live; unauthenticated `/api/link-checker/full-scan/status` requests return HTTP 401
+- The OVH-only Nocturne account credentials successfully authenticated and read `/api/vendors/status` without exposing credentials or starting a scan
 - `/api/link-checker/freedns-registry?page=1`: HTTP 200 with 100 parsed registry entries; FreeDNS reported 21,163 entries across 212 pages at verification time
 - `/api/link-checker/vendors`: HTTP 200 with 18 vendors
 - `/api/link-checker/check`: `example.com` returned HTTP 200 with 18 vendor results and the configured paid plan, confirming the server-only OVH key is active

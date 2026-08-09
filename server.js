@@ -3,6 +3,7 @@ import { createServer } from "node:http";
 import { isIP } from "node:net";
 import { hostname } from "node:os";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { resolve4, resolve6 } from "node:dns/promises";
 import { readFileSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { createRequire } from "node:module";
@@ -91,6 +92,12 @@ const nyxIpBanCollectionName = "nyxIpBans";
 const nyxIpBanCacheTtlMs = 30_000;
 const nyxIpBanListLimit = 500;
 let nyxIpBanCache = { expiresAt: 0, bans: new Map(), promise: null };
+const nyxCustomHostnameCollectionName = "nyxCustomHostnames";
+const nyxCustomHostnameRegistrationAttempts = new Map();
+const nyxCustomHostnameRegistrationWindowMs = 60 * 60_000;
+const nyxCustomHostnameRegistrationMaxAttempts = 10;
+const nyxCustomHostnameAskCacheTtlMs = 5 * 60_000;
+const nyxCustomHostnameAskCache = new Map();
 const linkGeneratorAttempts = new Map();
 const linkGeneratorWindowMs = 15 * 60 * 1000;
 const linkGeneratorMaxAttempts = 5;
@@ -139,9 +146,17 @@ function normalizeNyxIp(value) {
   return isIP(ip) ? ip : "";
 }
 
-function embeddedWispOriginAllowed(origin) {
+function embeddedWispOriginAllowed(origin, requestHost = "") {
   if (!embeddedWispAllowedOrigins.length || embeddedWispAllowedOrigins.includes("*")) return true;
-  return embeddedWispAllowedOrigins.includes(String(origin || "").trim().replace(/\/$/, ""));
+  const normalizedOrigin = String(origin || "").trim().replace(/\/$/, "");
+  if (embeddedWispAllowedOrigins.includes(normalizedOrigin)) return true;
+  try {
+    const parsed = new URL(normalizedOrigin);
+    const host = String(requestHost || "").split(",")[0].trim().toLowerCase();
+    return ["http:", "https:"].includes(parsed.protocol) && parsed.host.toLowerCase() === host;
+  } catch {
+    return false;
+  }
 }
 
 function rejectWispUpgrade(socket, status = "403 Forbidden") {
@@ -166,6 +181,88 @@ function nyxClientIp(req) {
 
 function nyxIpBanId(ip) {
   return createHash("sha256").update(`nyx-ip-ban:${ip}`).digest("hex");
+}
+
+function normalizeNyxCustomHostname(value) {
+  const raw = String(value || "").trim();
+  if (!raw || raw.length > 300 || raw.includes("*")) return "";
+  try {
+    const parsed = new URL(raw.includes("://") ? raw : `https://${raw}`);
+    const hostname = parsed.hostname.toLowerCase().replace(/\.$/, "");
+    if (
+      !["http:", "https:"].includes(parsed.protocol) ||
+      parsed.username ||
+      parsed.password ||
+      parsed.port ||
+      parsed.pathname !== "/" ||
+      parsed.search ||
+      parsed.hash ||
+      isIP(hostname) ||
+      hostname.length > 253
+    ) return "";
+    const labels = hostname.split(".");
+    if (labels.length < 2 || labels.some(label => !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i.test(label))) return "";
+    if (["example", "invalid", "localhost", "local", "test", "internal"].includes(labels.at(-1))) return "";
+    return hostname;
+  } catch {
+    return "";
+  }
+}
+
+function nyxCustomHostnameDocumentId(hostname) {
+  return createHash("sha256").update(`nyx-custom-hostname:${hostname}`).digest("hex");
+}
+
+function nyxCustomHostnameTargetIps() {
+  return [...new Set(String(process.env.NYX_CUSTOM_HOST_IPS || "")
+    .split(",")
+    .map(normalizeNyxIp)
+    .filter(Boolean))];
+}
+
+function nyxCustomHostnameRateState(clientId, now = Date.now()) {
+  for (const [key, state] of nyxCustomHostnameRegistrationAttempts) {
+    if (now - state.windowStarted > nyxCustomHostnameRegistrationWindowMs) nyxCustomHostnameRegistrationAttempts.delete(key);
+  }
+  let state = nyxCustomHostnameRegistrationAttempts.get(clientId);
+  if (!state || now - state.windowStarted > nyxCustomHostnameRegistrationWindowMs) {
+    state = { attempts: 0, windowStarted: now };
+    nyxCustomHostnameRegistrationAttempts.set(clientId, state);
+  }
+  return state;
+}
+
+async function nyxCustomHostnameResolvedIps(hostname) {
+  let timer;
+  try {
+    const lookup = Promise.all([
+      resolve4(hostname).catch(() => []),
+      resolve6(hostname).catch(() => [])
+    ]);
+    const timeout = new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error("DNS verification timed out.")), 5_000);
+    });
+    const results = await Promise.race([lookup, timeout]);
+    return [...new Set(results.flat().map(normalizeNyxIp).filter(Boolean))];
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function nyxCustomHostnameAllowed(hostname) {
+  const normalized = normalizeNyxCustomHostname(hostname);
+  if (!normalized || !firebaseAdminModeConfigured()) return false;
+  const cached = nyxCustomHostnameAskCache.get(normalized);
+  if (cached && cached.expiresAt > Date.now()) return cached.allowed;
+  const firebase = await linkGeneratorFirebase();
+  const snapshot = await firebase.firestore
+    .collection(nyxCustomHostnameCollectionName)
+    .doc(nyxCustomHostnameDocumentId(normalized))
+    .get();
+  const data = snapshot.data() || {};
+  const allowed = snapshot.exists && normalizeNyxCustomHostname(data.hostname) === normalized && data.status !== "disabled";
+  nyxCustomHostnameAskCache.set(normalized, { allowed, expiresAt: Date.now() + nyxCustomHostnameAskCacheTtlMs });
+  return allowed;
 }
 
 function nyxIpBanRecord(id, data = {}) {
@@ -2962,6 +3059,103 @@ app.get("/api/link-checker/vendors", async (req, res) => {
   }
 });
 
+app.get("/api/custom-hostnames/config", (_req, res) => {
+  const targetIps = nyxCustomHostnameTargetIps();
+  res.set("Cache-Control", "no-store");
+  res.json({
+    enabled: Boolean(targetIps.length && firebaseAdminModeConfigured()),
+    targetIps,
+    registrationLimit: nyxCustomHostnameRegistrationMaxAttempts
+  });
+});
+
+app.get("/api/custom-hostnames/allow", async (req, res) => {
+  const requestedHostname = normalizeNyxCustomHostname(req.query?.domain);
+  res.set("Cache-Control", "no-store");
+  if (!requestedHostname) {
+    res.status(400).end();
+    return;
+  }
+  try {
+    if (await nyxCustomHostnameAllowed(requestedHostname)) {
+      res.status(204).end();
+      return;
+    }
+    res.status(404).end();
+  } catch (error) {
+    console.error("Nyx custom-hostname authorization failed:", error?.message || error);
+    res.status(503).end();
+  }
+});
+
+app.post("/api/custom-hostnames", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  const targetIps = nyxCustomHostnameTargetIps();
+  if (!targetIps.length || !firebaseAdminModeConfigured()) {
+    res.status(503).json({ error: "Custom-domain connection is not configured on this Nyx server." });
+    return;
+  }
+  const requestedHostname = normalizeNyxCustomHostname(req.body?.hostname);
+  if (!requestedHostname) {
+    res.status(400).json({ error: "Enter a valid hostname without a path, port, or wildcard." });
+    return;
+  }
+  const rate = nyxCustomHostnameRateState(nyxClientIp(req) || "unknown");
+  rate.attempts += 1;
+  if (rate.attempts > nyxCustomHostnameRegistrationMaxAttempts) {
+    const retryAfter = Math.max(1, Math.ceil((rate.windowStarted + nyxCustomHostnameRegistrationWindowMs - Date.now()) / 1000));
+    res.set("Retry-After", String(retryAfter));
+    res.status(429).json({ error: "This network has made too many domain-verification attempts. Try again later." });
+    return;
+  }
+  try {
+    const resolvedIps = await nyxCustomHostnameResolvedIps(requestedHostname);
+    const matchedIps = resolvedIps.filter(ip => targetIps.includes(ip));
+    if (!matchedIps.length) {
+      res.status(422).json({
+        error: `That hostname does not currently resolve to Nyx. Set its A record to ${targetIps[0]}, wait for DNS to update, and try again.`,
+        resolvedIps
+      });
+      return;
+    }
+    const firebase = await linkGeneratorFirebase();
+    const reference = firebase.firestore
+      .collection(nyxCustomHostnameCollectionName)
+      .doc(nyxCustomHostnameDocumentId(requestedHostname));
+    const existing = await reference.get();
+    const now = new Date().toISOString();
+    await reference.set({
+      hostname: requestedHostname,
+      status: "active",
+      verifiedIps: matchedIps,
+      verifiedAt: now,
+      createdAt: existing.data()?.createdAt || now
+    }, { merge: true });
+    nyxCustomHostnameAskCache.set(requestedHostname, {
+      allowed: true,
+      expiresAt: Date.now() + nyxCustomHostnameAskCacheTtlMs
+    });
+    res.status(existing.exists ? 200 : 201).json({
+      ok: true,
+      hostname: requestedHostname,
+      url: `https://${requestedHostname}/`,
+      message: "Domain verified. HTTPS will be prepared automatically on its first visit."
+    });
+  } catch (error) {
+    const status = /timed out/i.test(String(error?.message || "")) ? 504 : 502;
+    console.error("Nyx custom-hostname verification failed:", error?.message || error);
+    res.status(status).json({ error: status === 504 ? error.message : "Nyx could not verify that hostname right now." });
+  }
+});
+
+app.get("/connect-domain", (_req, res) => {
+  res.sendFile(join(staticRoot, "apps", "connect-domain", "index.html"));
+});
+
 app.post("/api/link-checker/full-scan/start", async (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) {
@@ -5358,7 +5552,7 @@ if (isDirectRun) {
   server.on("upgrade", async (req, socket, head) => {
     const upgradePath = new URL(req.url || "/", "http://localhost").pathname;
     if (!externalWispUrl && (upgradePath === "/wisp/" || upgradePath === "/wisp")) {
-      if (!embeddedWispOriginAllowed(req.headers.origin)) {
+      if (!embeddedWispOriginAllowed(req.headers.origin, req.headers.host)) {
         rejectWispUpgrade(socket);
         return;
       }

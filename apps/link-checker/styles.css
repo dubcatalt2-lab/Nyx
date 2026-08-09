@@ -49,6 +49,7 @@ a{color:inherit;text-decoration:none}
 .btn-primary:hover{filter:brightness(1.08)}
 .btn-secondary{border:1px solid var(--border);background:#101b2c;color:#cbd5e1}
 .btn-secondary:hover{border-color:#3d4d65;background:#152237;color:var(--text)}
+.god-domains-button{border-color:rgba(251,191,36,.35);color:#fbbf24}.god-domains-button:hover{border-color:rgba(251,191,36,.7);background:rgba(251,191,36,.08);color:#fde68a}.god-domains-button.active{border-color:#fbbf24;background:linear-gradient(135deg,rgba(251,191,36,.22),rgba(245,158,11,.1));color:#fef3c7;box-shadow:0 0 0 3px rgba(251,191,36,.08)}
 .btn-danger{border:1px solid rgba(251,113,133,.32);background:rgba(251,113,133,.08);color:#fda4af}
 .lc-card{border:1px solid var(--border);border-radius:10px;background:var(--card);box-shadow:var(--shadow)}
 .dashboard-top-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}

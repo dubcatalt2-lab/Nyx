@@ -38,6 +38,7 @@ const remotelyHostedUgsGames = new Set([
 
 function normalizeWispUrl(value) {
   const raw = String(value || "").trim();
+  if (vpsBuild && !raw) return "";
   const url = new URL(raw || "wss://nyx-temporary-production.up.railway.app/wisp/");
   if (url.protocol === "https:") url.protocol = "wss:";
   if (url.protocol === "http:") url.protocol = "ws:";
@@ -161,9 +162,12 @@ async function writePatchedRuntimes(wispUrl) {
 async function configureUv(wispUrl) {
   const path = join(output, "uv.config.js");
   const source = await readFile(path, "utf8");
+  const bareValue = wispUrl
+    ? JSON.stringify(wispUrl)
+    : '`${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/wisp/`';
   const configured = source.replace(
     /bare:\s*[\s\S]*?,\s*encodeUrl:/,
-    `bare: ${JSON.stringify(wispUrl)},\n  encodeUrl:`
+    `bare: ${bareValue},\n  encodeUrl:`
   );
   if (configured === source) throw new Error("Could not set the Netlify Wisp URL in uv.config.js");
   await writeFile(path, configured);

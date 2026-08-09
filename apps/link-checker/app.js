@@ -20,7 +20,7 @@
     domainSection:$('[data-domain-section]'),domainTitle:$('[data-domain-title]'),domainSource:$('[data-domain-source]'),domainDetails:$('[data-domain-details]'),
     dashboardList:$('[data-dashboard-list]'),dashboardEmpty:$('[data-dashboard-empty]'),dashboardPager:$('[data-dashboard-pager]'),
     historyList:$('[data-history-list]'),historyEmpty:$('[data-history-empty]'),
-    freednsStart:$('[data-freedns-start]'),freednsCheckAll:$('[data-freedns-check-all]'),freednsCheckPage:$('[data-freedns-check-page]'),freednsStop:$('[data-freedns-stop]'),freednsList:$('[data-freedns-list]'),freednsEmpty:$('[data-freedns-empty]'),freednsPager:$('[data-freedns-pager]'),
+    freednsStart:$('[data-freedns-start]'),freednsCheckAll:$('[data-freedns-check-all]'),freednsCheckPage:$('[data-freedns-check-page]'),freednsGodDomains:$('[data-freedns-god-domains]'),freednsDoubleCheck:$('[data-freedns-double-check]'),freednsStop:$('[data-freedns-stop]'),freednsList:$('[data-freedns-list]'),freednsEmpty:$('[data-freedns-empty]'),freednsPager:$('[data-freedns-pager]'),
     freednsSearch:$('[data-freedns-search]'),freednsStatus:$('[data-freedns-status]'),freednsVendor:$('[data-freedns-vendor]'),freednsProgress:$('[data-freedns-progress]'),
     freednsDetail:$('[data-freedns-detail]'),freednsDetailTitle:$('[data-freedns-detail-title]'),freednsDetailLink:$('[data-freedns-detail-link]'),freednsDetailSummary:$('[data-freedns-detail-summary]'),
     freednsDetailMessage:$('[data-freedns-detail-message]'),freednsDetailVendors:$('[data-freedns-detail-vendors]'),freednsRegistration:$('[data-freedns-registration]'),freednsRegistrationSource:$('[data-freedns-registration-source]')
@@ -43,6 +43,8 @@
   let freednsScanController=null;
   let freednsPageScanning=false;
   let freednsFullScanning=false;
+  let freednsGodMode=false;
+  let freednsDoubleCheckRemaining=0;
   let freednsAutoScanStarted=false;
   let freednsBulkAuthPromise=null;
   let freednsBulkAccess={resolved:false,premium:false,expiresAt:0,error:'',promise:null};
@@ -337,7 +339,18 @@
   }
   function filteredFreednsDomains(){
     const search=String(refs.freednsSearch?.value||'').trim().toLowerCase();const status=refs.freednsStatus?.value||'all';
-    return freednsCache.domains.filter(entry=>(!search||entry.domain.includes(search))&&(status==='all'||entry.status===status));
+    const filtered=freednsCache.domains.filter(entry=>(!search||entry.domain.includes(search))&&(status==='all'||entry.status===status));
+    if(!freednsGodMode)return filtered;
+    const historyDomains=new Set(history.map(entry=>String(entry?.target||'').trim().toLowerCase()).filter(Boolean));
+    return filtered.map(entry=>({entry,score:freednsGodScore(entry.domain,historyDomains)})).filter(item=>item.score.checked>0).sort((left,right)=>
+      right.score.allowed-left.score.allowed
+      ||left.score.blocked-right.score.blocked
+      ||left.score.unknown-right.score.unknown
+      ||right.score.checked-left.score.checked
+      ||Number(right.entry.status==='public')-Number(left.entry.status==='public')
+      ||right.entry.hosts-left.entry.hosts
+      ||left.entry.domain.localeCompare(right.entry.domain)
+    ).map(item=>item.entry);
   }
   function freednsResultsFor(domain){
     const results=new Map();let checkedAt='';
@@ -359,6 +372,13 @@
     return {results,checkedAt};
   }
   function freednsVendorSignature(values=vendors){return values.map(String).join('\u001f')}
+  function freednsGodScore(domain,historyDomains=null){
+    const compact=String(freednsVerdicts.verdicts[domain]||'');
+    if(compact){const allowed=(compact.match(/a/g)||[]).length;const blocked=(compact.match(/b/g)||[]).length;return {allowed,blocked,unknown:compact.length-allowed-blocked,checked:compact.length};}
+    if(historyDomains&&!historyDomains.has(domain))return {allowed:0,blocked:0,unknown:0,checked:0};
+    const results=[...freednsResultsFor(domain).results.values()];const allowed=results.filter(result=>result?.blocked===false&&!result?.error).length;const blocked=results.filter(result=>result?.blocked===true).length;
+    return {allowed,blocked,unknown:results.length-allowed-blocked,checked:results.length};
+  }
   function storeFreednsVerdict(report,domain=report?.target){
     if(freednsVendorSignature(freednsVerdicts.vendors)!==freednsVendorSignature())freednsVerdicts={vendors:[...vendors],verdicts:{},updatedAt:''};
     const byVendor=new Map((report?.results||[]).map(result=>[String(result?.filter||''),result]));
@@ -445,6 +465,12 @@
     refs.freednsCheckAll.title=freednsBulkAccess.premium?'Check every cached domain with all vendors':(freednsBulkAccess.error||'Premium access is being checked.');
     refs.freednsCheckPage.disabled=busy||!vendors.length||!freednsPageState().visible.length;
     refs.freednsCheckPage.querySelector('span').textContent=freednsPageScanning?'Checking…':'Check this page';
+    refs.freednsGodDomains.disabled=!freednsCache.domains.length;
+    refs.freednsGodDomains.classList.toggle('active',freednsGodMode);refs.freednsGodDomains.setAttribute('aria-pressed',String(freednsGodMode));
+    refs.freednsDoubleCheck.hidden=busy||freednsDoubleCheckRemaining<=0;
+    refs.freednsDoubleCheck.disabled=busy||!freednsBulkAccess.premium;
+    refs.freednsDoubleCheck.querySelector('span').textContent=`Double check (${freednsDoubleCheckRemaining.toLocaleString()})`;
+    refs.freednsDoubleCheck.title=freednsBulkAccess.premium?'Retry only the domains still missing results':(freednsBulkAccess.error||'Premium access is required.');
     refs.freednsStop.hidden=!busy;
     refs.freednsSearch.disabled=interactionBusy;refs.freednsStatus.disabled=interactionBusy;refs.freednsVendor.disabled=interactionBusy;
     $('[data-freedns-clear]').disabled=busy;
@@ -462,7 +488,7 @@
     refs.freednsList.replaceChildren();
     visible.forEach(entry=>{
       const row=document.createElement('article');row.className='freedns-row';
-      const identity=document.createElement('div');identity.className='freedns-identity';const name=document.createElement('strong');name.textContent=entry.domain;const id=document.createElement('span');id.textContent=`FreeDNS #${entry.id}`;identity.append(name,id);
+      const identity=document.createElement('div');identity.className='freedns-identity';const name=document.createElement('strong');name.textContent=entry.domain;const id=document.createElement('span');const godScore=freednsGodMode?freednsGodScore(entry.domain):null;id.textContent=godScore?`${godScore.allowed}/${godScore.checked} blockers unblocked · FreeDNS #${entry.id}`:`FreeDNS #${entry.id}`;identity.append(name,id);
       const hosts=document.createElement('span');hosts.className='freedns-hosts';hosts.textContent=entry.hosts.toLocaleString();
       const status=document.createElement('span');status.className=`freedns-status ${entry.status}`;status.textContent=entry.status;
       const report=freednsResultsFor(entry.domain);const selectedVendor=refs.freednsVendor?.value||'';const shownVendors=selectedVendor?[selectedVendor]:vendors;
@@ -476,6 +502,7 @@
       const checking=freednsChecking.has(entry.domain);const check=document.createElement('button');check.className=`btn-secondary freedns-check-button${checking?' checking':''}`;check.type='button';check.disabled=checking||freednsFullScanning||freednsPageScanning||freednsScraping||!vendors.length;check.title=selectedVendor?`Check ${entry.domain} with ${vendorLabel(selectedVendor)}`:`Check ${entry.domain} with all vendors`;check.setAttribute('aria-label',check.title);check.append(makeIcon('refresh'));check.addEventListener('click',()=>void checkFreednsDomain(entry.domain));
       row.append(identity,hosts,status,vendorStates,check);refs.freednsList.append(row);
     });
+    refs.freednsEmpty.querySelector('strong').textContent=freednsGodMode?'No God Domains yet':'No registry cache yet';refs.freednsEmpty.querySelector('span').textContent=freednsGodMode?'Run a domain check or full scan to rank domains by unblocked vendors.':'Scrape FreeDNS to build a searchable local list.';
     refs.freednsEmpty.hidden=domains.length>0;refs.freednsPager.hidden=domains.length<=FREEDNS_PAGE_SIZE;
     $('[data-freedns-page-label]').textContent=`Page ${freednsPage} of ${pages} · ${domains.length.toLocaleString()} domains`;
     $('[data-freedns-prev]').disabled=freednsPage<=1;$('[data-freedns-next]').disabled=freednsPage>=pages;
@@ -512,7 +539,7 @@
   function saveFreednsCache(){return writeJsonStorage(FREEDNS_KEY,freednsCache)}
   async function startFreednsScrape(){
     if(freednsScraping)return;
-    freednsAutoScanStarted=false;freednsController?.abort();freednsController=new AbortController();const signal=freednsController.signal;setFreednsScraping(true);showNotice('');
+    freednsAutoScanStarted=false;freednsDoubleCheckRemaining=0;freednsController?.abort();freednsController=new AbortController();const signal=freednsController.signal;setFreednsScraping(true);showNotice('');
     const collected=new Map();let totalPages=1;let totalDomains=0;let completedPages=0;
     try{
       for(let page=1;page<=totalPages;page+=1){
@@ -535,7 +562,7 @@
   function clearFreednsCache(){
     if(freednsScraping||freednsPageScanning||freednsFullScanning){showNotice('Stop the active work before clearing the cache.','error',true);return;}
     if(!freednsCache.domains.length)return;if(!confirm('Clear the FreeDNS registry cache stored on this device?'))return;
-    freednsCache={domains:[],totalPages:0,totalDomains:0,lastScrapedAt:'',complete:false};freednsVerdicts={vendors:[],verdicts:{},updatedAt:''};freednsPage=1;try{localStorage.removeItem(FREEDNS_KEY);localStorage.removeItem(FREEDNS_VERDICTS_KEY)}catch{}renderFreedns();showNotice('Local FreeDNS registry cache and saved verdicts cleared.');
+    freednsCache={domains:[],totalPages:0,totalDomains:0,lastScrapedAt:'',complete:false};freednsVerdicts={vendors:[],verdicts:{},updatedAt:''};freednsPage=1;freednsGodMode=false;freednsDoubleCheckRemaining=0;try{localStorage.removeItem(FREEDNS_KEY);localStorage.removeItem(FREEDNS_VERDICTS_KEY)}catch{}renderFreedns();showNotice('Local FreeDNS registry cache and saved verdicts cleared.');
   }
   function exportFreedns(){
     if(!freednsCache.domains.length){showNotice('Scrape the FreeDNS registry before exporting it.','error',true);return;}
@@ -589,9 +616,9 @@
     try{await freednsBulkToken({force:true});}catch(error){showNotice(error.message,'error',true);return;}
     const total=freednsCache.domains.length;
     const candidates=freednsCache.domains.filter(entry=>!hasStoredFreednsVerdict(entry.domain));
-    if(!candidates.length){showNotice(`All ${total.toLocaleString()} cached FreeDNS domains already have saved vendor results.`);setFreednsFullProgress(total,total);return;}
+    if(!candidates.length){freednsDoubleCheckRemaining=0;updateFreednsActions();showNotice(`All ${total.toLocaleString()} cached FreeDNS domains already have saved vendor results.`);setFreednsFullProgress(total,total);return;}
     freednsScanController?.abort();freednsScanController=new AbortController();const {signal}=freednsScanController;
-    freednsFullScanning=true;updateFreednsActions();showNotice('');
+    freednsFullScanning=true;freednsDoubleCheckRemaining=0;updateFreednsActions();showNotice('');
     const already=total-candidates.length;const wanted=new Set(candidates.map(entry=>entry.domain));let imported=0;let unsaved=0;let persistedTotal=Object.keys(freednsVerdicts.verdicts).length;let storageFailed=false;
     setFreednsFullProgress(already,total);
     const flush=()=>{
@@ -651,11 +678,12 @@
     }catch(scanError){if(scanError.name!=='AbortError')error=scanError;}
     finally{
       if(!flush())storageFailed=true;
+      freednsDoubleCheckRemaining=!storageFailed&&!error&&!signal.aborted?wanted.size:0;
       freednsFullScanning=false;freednsChecking.clear();renderWorkspace();
       if(storageFailed)showNotice(`The full scan stopped because this browser could not save more verdicts. ${persistedTotal.toLocaleString()} domain results remain saved.`,'error',true);
       else if(error)showNotice(`The full scan could not finish: ${error.message}`,'error',true);
       else if(signal.aborted)showNotice('Nyx stopped watching the full scan. The Nocturne server job may continue; click Check all domains to reconnect and import its results.');
-      else if(wanted.size)showNotice(`The server scan finished and imported ${imported.toLocaleString()} new domains. ${wanted.size.toLocaleString()} domains had no completed vendor result and can be retried.`,'error',true);
+      else if(wanted.size)showNotice(`The server scan finished and imported ${imported.toLocaleString()} new domains. ${wanted.size.toLocaleString()} ${wanted.size===1?'domain still needs':'domains still need'} results; use Double check to retry only ${wanted.size===1?'that domain':'those domains'}.`,'error',true);
       else showNotice(`Full scan complete: all ${total.toLocaleString()} cached domains have saved vendor results.`);
     }
   }
@@ -703,7 +731,7 @@
     $('[data-dashboard-vendor]').addEventListener('change',()=>{dashboardPage=1;renderDashboard();});
     $$('[data-dashboard-verdict]').forEach(button=>button.addEventListener('click',()=>{dashboardVerdict=button.dataset.dashboardVerdict||'';$$('[data-dashboard-verdict]').forEach(item=>item.classList.toggle('active',item===button));dashboardPage=1;renderDashboard();}));
     $('[data-dashboard-prev]').addEventListener('click',()=>{dashboardPage-=1;renderDashboard();});$('[data-dashboard-next]').addEventListener('click',()=>{dashboardPage+=1;renderDashboard();});
-    refs.freednsStart.addEventListener('click',()=>void startFreednsScrape());refs.freednsCheckAll.addEventListener('click',()=>void scanAllFreedns());refs.freednsCheckPage.addEventListener('click',()=>void scanFreednsPage());refs.freednsStop.addEventListener('click',stopFreednsWork);
+    refs.freednsStart.addEventListener('click',()=>void startFreednsScrape());refs.freednsCheckAll.addEventListener('click',()=>void scanAllFreedns());refs.freednsCheckPage.addEventListener('click',()=>void scanFreednsPage());refs.freednsGodDomains.addEventListener('click',()=>{freednsGodMode=!freednsGodMode;freednsPage=1;renderFreedns();});refs.freednsDoubleCheck.addEventListener('click',()=>void scanAllFreedns());refs.freednsStop.addEventListener('click',stopFreednsWork);
     refs.freednsSearch.addEventListener('input',()=>{freednsPage=1;renderFreedns();});refs.freednsStatus.addEventListener('change',()=>{freednsPage=1;renderFreedns();});refs.freednsVendor.addEventListener('change',renderFreedns);
     $('[data-freedns-export]').addEventListener('click',exportFreedns);$('[data-freedns-clear]').addEventListener('click',clearFreednsCache);
     $('[data-freedns-prev]').addEventListener('click',()=>{freednsPage-=1;renderFreedns();});$('[data-freedns-next]').addEventListener('click',()=>{freednsPage+=1;renderFreedns();});

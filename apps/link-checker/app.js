@@ -597,7 +597,22 @@
       if(!unsaved)return true;
       const saved=saveFreednsVerdicts();if(saved){unsaved=0;persistedTotal=Object.keys(freednsVerdicts.verdicts).length;}return saved;
     };
-    const bulkFetch=async(path,options={})=>fetchJson(`${CHECK_API}${path}`,{...options,signal,headers:{Authorization:`Bearer ${await freednsBulkToken()}`,...(options.headers||{})}});
+    const bulkFetch=async(path,options={})=>{
+      let failures=0;
+      while(!signal.aborted){
+        try{return await fetchJson(`${CHECK_API}${path}`,{...options,signal,headers:{Authorization:`Bearer ${await freednsBulkToken()}`,...(options.headers||{})}});}
+        catch(error){
+          if(signal.aborted||error.name==='AbortError')throw error;
+          const status=Number(error.status);const transient=[429,502,504].includes(status)||(status===503&&Number(error.retryAfterMs)>0)||error instanceof TypeError;
+          if(!transient)throw error;
+          failures+=1;
+          const waitMs=Math.max(1500,Math.min(5000,Number(error.retryAfterMs)||1500+failures*500));
+          $('[data-freedns-progress-detail]').textContent='Nocturne is busy. Nyx is retrying automatically without stopping the full scan.';
+          await freednsDelay(waitMs,signal);
+        }
+      }
+      throw new DOMException('Stopped','AbortError');
+    };
     const updateRemoteProgress=status=>{
       const remoteTotal=Math.max(1,Number(status?.total)||total);const checked=Math.min(remoteTotal,Math.max(0,Number(status?.checked)||0));setFreednsFullProgress(checked,remoteTotal);
       $('[data-freedns-progress-detail]').textContent='Nocturne is checking the registry on its server. Nyx will import the completed vendor results automatically.';
@@ -621,7 +636,7 @@
       let status=await bulkFetch('/full-scan/start',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});let observedRunning=status.running===true;let idlePolls=0;updateRemoteProgress(status);
       while(!signal.aborted){
         if(status.running===true){observedRunning=true;idlePolls=0;}
-        else if(observedRunning||status.started===false||idlePolls>=2)break;
+        else if(idlePolls>=2&&(observedRunning||status.started===false))break;
         await freednsDelay(2500,signal);status=await bulkFetch('/full-scan/status');updateRemoteProgress(status);if(!status.running)idlePolls+=1;
       }
       if(!signal.aborted)await importProviderResults();

@@ -2806,17 +2806,27 @@ async function linkCheckerAccountLogin() {
   if (linkCheckerAccountLoginPromise) return linkCheckerAccountLoginPromise;
   linkCheckerAccountLoginPromise = (async () => {
     const credentials = linkCheckerAccountCredentials();
-    const response = await fetch(`${linkCheckerApiOrigin}/api/auth/login`, {
-      method: "POST",
-      headers: { Accept: "application/json", "Content-Type": "application/json" },
-      body: JSON.stringify(credentials),
-      signal: AbortSignal.timeout(20_000)
-    });
+    let response;
+    try {
+      response = await fetch(`${linkCheckerApiOrigin}/api/auth/login`, {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
+        signal: AbortSignal.timeout(20_000)
+      });
+    } catch (error) {
+      const unavailable = new Error("Nocturne account sign-in is temporarily unavailable.");
+      unavailable.status = 503;
+      unavailable.retryAfter = "3";
+      unavailable.cause = error;
+      throw unavailable;
+    }
     const payload = await response.json().catch(() => null);
     const cookie = linkCheckerResponseCookies(response);
     if (!response.ok || !cookie) {
       const error = new Error(response.status === 401 ? "The configured Nocturne account login was rejected." : "Nocturne account sign-in is unavailable.");
       error.status = 503;
+      if (response.status !== 401) error.retryAfter = response.headers.get("retry-after") || "3";
       throw error;
     }
     linkCheckerAccountCookie = cookie;
@@ -2832,11 +2842,20 @@ async function linkCheckerAccountLogin() {
 async function linkCheckerAccountRequest(path, options = {}, retry = true) {
   const cookie = await linkCheckerAccountLogin();
   const headers = { Accept: "application/json", ...(options.headers || {}), Cookie: cookie };
-  const response = await fetch(`${linkCheckerApiOrigin}${path}`, {
-    ...options,
-    headers,
-    signal: AbortSignal.timeout(30_000)
-  });
+  let response;
+  try {
+    response = await fetch(`${linkCheckerApiOrigin}${path}`, {
+      ...options,
+      headers,
+      signal: AbortSignal.timeout(30_000)
+    });
+  } catch (error) {
+    const unavailable = new Error("Nocturne is taking longer than expected. Nyx will retry automatically.");
+    unavailable.status = 504;
+    unavailable.retryAfter = "3";
+    unavailable.cause = error;
+    throw unavailable;
+  }
   const payload = await response.json().catch(() => null);
   const redirectedToLogin = response.redirected && /(?:auth|login)/i.test(new URL(response.url).pathname);
   const htmlInsteadOfJson = response.ok
@@ -2960,9 +2979,11 @@ app.post("/api/link-checker/full-scan/start", async (req, res) => {
       });
     } catch (error) {
       if (error.status !== 409) throw error;
+      res.json({ running: true, checked: 0, total: 0, pending: 0, vendors: [], started: false });
+      return;
     }
-    const status = linkCheckerAccountStatus(await linkCheckerAccountRequest("/api/vendors/status"));
-    res.json({ ...status, started: Boolean(started), total: Math.max(status.total, Number(started?.total) || 0) });
+    const total = Math.max(0, Number(started?.total) || 0);
+    res.status(202).json({ running: true, checked: 0, total, pending: total, vendors: [], started: true });
   } catch (error) {
     if (error.retryAfter) res.set("Retry-After", String(error.retryAfter));
     res.status(error.status || 500).json({ error: error.message || "The full scan could not be started." });

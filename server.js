@@ -3,7 +3,7 @@ import { createServer } from "node:http";
 import { isIP } from "node:net";
 import { hostname } from "node:os";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
-import { resolve4, resolve6 } from "node:dns/promises";
+import { lookup } from "node:dns/promises";
 import { readFileSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { createRequire } from "node:module";
@@ -97,7 +97,10 @@ const nyxCustomHostnameRegistrationAttempts = new Map();
 const nyxCustomHostnameRegistrationWindowMs = 60 * 60_000;
 const nyxCustomHostnameRegistrationMaxAttempts = 10;
 const nyxCustomHostnameAskCacheTtlMs = 5 * 60_000;
+const nyxCustomHostnameAskNegativeCacheTtlMs = 30_000;
+const nyxCustomHostnameAskCacheLimit = 1_000;
 const nyxCustomHostnameAskCache = new Map();
+const nyxCustomHostnameAskInFlight = new Map();
 const linkGeneratorAttempts = new Map();
 const linkGeneratorWindowMs = 15 * 60 * 1000;
 const linkGeneratorMaxAttempts = 5;
@@ -179,6 +182,18 @@ function nyxClientIp(req) {
   return normalizeNyxIp(forwarded) || normalizeNyxIp(req.socket?.remoteAddress);
 }
 
+function nyxInternalLoopbackRequest(req) {
+  const remoteIp = normalizeNyxIp(req.socket?.remoteAddress);
+  if (remoteIp !== "127.0.0.1" && remoteIp !== "::1") return false;
+  try {
+    const requestHostname = new URL(`http://${String(req.headers?.host || "")}`).hostname;
+    const hostIp = normalizeNyxIp(requestHostname);
+    return hostIp === "127.0.0.1" || hostIp === "::1";
+  } catch {
+    return false;
+  }
+}
+
 function nyxIpBanId(ip) {
   return createHash("sha256").update(`nyx-ip-ban:${ip}`).digest("hex");
 }
@@ -235,18 +250,32 @@ function nyxCustomHostnameRateState(clientId, now = Date.now()) {
 async function nyxCustomHostnameResolvedIps(hostname) {
   let timer;
   try {
-    const lookup = Promise.all([
-      resolve4(hostname).catch(() => []),
-      resolve6(hostname).catch(() => [])
-    ]);
+    const addresses = lookup(hostname, { all: true, verbatim: true }).catch(() => []);
     const timeout = new Promise((_, reject) => {
       timer = setTimeout(() => reject(new Error("DNS verification timed out.")), 5_000);
     });
-    const results = await Promise.race([lookup, timeout]);
-    return [...new Set(results.flat().map(normalizeNyxIp).filter(Boolean))];
+    const results = await Promise.race([addresses, timeout]);
+    return [...new Set(results.map(result => normalizeNyxIp(result?.address)).filter(Boolean))];
   } finally {
     clearTimeout(timer);
   }
+}
+
+function cacheNyxCustomHostnameDecision(hostname, allowed) {
+  const now = Date.now();
+  for (const [cachedHostname, cached] of nyxCustomHostnameAskCache) {
+    if (!cached || cached.expiresAt <= now) nyxCustomHostnameAskCache.delete(cachedHostname);
+  }
+  while (nyxCustomHostnameAskCache.size >= nyxCustomHostnameAskCacheLimit) {
+    const oldestHostname = nyxCustomHostnameAskCache.keys().next().value;
+    if (!oldestHostname) break;
+    nyxCustomHostnameAskCache.delete(oldestHostname);
+  }
+  nyxCustomHostnameAskCache.set(hostname, {
+    allowed,
+    expiresAt: now + (allowed ? nyxCustomHostnameAskCacheTtlMs : nyxCustomHostnameAskNegativeCacheTtlMs)
+  });
+  return allowed;
 }
 
 async function nyxCustomHostnameAllowed(hostname) {
@@ -256,18 +285,37 @@ async function nyxCustomHostnameAllowed(hostname) {
     .map(value => normalizeNyxCustomHostname(value))
     .filter(Boolean);
   if (configuredHostnames.includes(normalized)) return true;
-  if (!firebaseAdminModeConfigured()) return false;
   const cached = nyxCustomHostnameAskCache.get(normalized);
   if (cached && cached.expiresAt > Date.now()) return cached.allowed;
-  const firebase = await linkGeneratorFirebase();
-  const snapshot = await firebase.firestore
-    .collection(nyxCustomHostnameCollectionName)
-    .doc(nyxCustomHostnameDocumentId(normalized))
-    .get();
-  const data = snapshot.data() || {};
-  const allowed = snapshot.exists && normalizeNyxCustomHostname(data.hostname) === normalized && data.status !== "disabled";
-  nyxCustomHostnameAskCache.set(normalized, { allowed, expiresAt: Date.now() + nyxCustomHostnameAskCacheTtlMs });
-  return allowed;
+  if (cached) nyxCustomHostnameAskCache.delete(normalized);
+
+  const existingCheck = nyxCustomHostnameAskInFlight.get(normalized);
+  if (existingCheck) return existingCheck;
+
+  const check = (async () => {
+    if (firebaseAdminModeConfigured()) {
+      const firebase = await linkGeneratorFirebase();
+      const snapshot = await firebase.firestore
+        .collection(nyxCustomHostnameCollectionName)
+        .doc(nyxCustomHostnameDocumentId(normalized))
+        .get();
+      const data = snapshot.data() || {};
+      if (snapshot.exists && normalizeNyxCustomHostname(data.hostname) === normalized) {
+        return cacheNyxCustomHostnameDecision(normalized, data.status !== "disabled");
+      }
+    }
+
+    const targetIps = nyxCustomHostnameTargetIps();
+    if (!targetIps.length) return cacheNyxCustomHostnameDecision(normalized, false);
+    const resolvedIps = await nyxCustomHostnameResolvedIps(normalized);
+    return cacheNyxCustomHostnameDecision(normalized, resolvedIps.some(ip => targetIps.includes(ip)));
+  })();
+  nyxCustomHostnameAskInFlight.set(normalized, check);
+  try {
+    return await check;
+  } finally {
+    if (nyxCustomHostnameAskInFlight.get(normalized) === check) nyxCustomHostnameAskInFlight.delete(normalized);
+  }
 }
 
 function nyxIpBanRecord(id, data = {}) {
@@ -3068,13 +3116,18 @@ app.get("/api/custom-hostnames/config", (_req, res) => {
   const targetIps = nyxCustomHostnameTargetIps();
   res.set("Cache-Control", "no-store");
   res.json({
-    enabled: Boolean(targetIps.length && firebaseAdminModeConfigured()),
+    enabled: Boolean(targetIps.length),
+    automatic: true,
     targetIps,
     registrationLimit: nyxCustomHostnameRegistrationMaxAttempts
   });
 });
 
 app.get("/api/custom-hostnames/allow", async (req, res) => {
+  if (!nyxInternalLoopbackRequest(req)) {
+    res.status(404).end();
+    return;
+  }
   const requestedHostname = normalizeNyxCustomHostname(req.query?.domain);
   res.set("Cache-Control", "no-store");
   if (!requestedHostname) {
@@ -3140,10 +3193,7 @@ app.post("/api/custom-hostnames", async (req, res) => {
       verifiedAt: now,
       createdAt: existing.data()?.createdAt || now
     }, { merge: true });
-    nyxCustomHostnameAskCache.set(requestedHostname, {
-      allowed: true,
-      expiresAt: Date.now() + nyxCustomHostnameAskCacheTtlMs
-    });
+    cacheNyxCustomHostnameDecision(requestedHostname, true);
     res.status(existing.exists ? 200 : 201).json({
       ok: true,
       hostname: requestedHostname,

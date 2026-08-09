@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="dark">
   <title>Connect a domain · Nyx</title>
-  <link rel="stylesheet" href="/apps/connect-domain/styles.css?v=20260808-caddy-1">
+  <link rel="stylesheet" href="/apps/connect-domain/styles.css?v=20260808-auto-domain-1">
 </head>
 <body>
   <main class="domain-shell">
@@ -13,8 +13,8 @@
     <section class="domain-card">
       <div class="domain-mark" aria-hidden="true">◎</div>
       <p class="eyebrow">NYX CUSTOM DOMAINS</p>
-      <h1>Connect your FreeDNS domain</h1>
-      <p class="intro">Point the hostname to Nyx, then verify it here. No owner approval is required.</p>
+      <h1>Point your FreeDNS domain to Nyx</h1>
+      <p class="intro">Create the DNS record, then open your new hostname. Nyx connects it automatically&mdash;there is nothing to submit and no owner approval.</p>
 
       <div class="record-card">
         <span>A record destination</span>
@@ -25,20 +25,20 @@
       <ol class="steps">
         <li>Create an <strong>A</strong> record at FreeDNS using the address above.</li>
         <li>Wait for the DNS change to appear publicly.</li>
-        <li>Enter the complete hostname below and connect it.</li>
+        <li>Open your complete hostname with <strong>https://</strong>. Nyx prepares HTTPS on the first visit.</li>
       </ol>
 
       <form data-domain-form>
-        <label for="hostname">Complete hostname</label>
+        <label for="hostname">Optional: check the connection now</label>
         <div class="domain-entry">
           <input id="hostname" name="hostname" type="text" inputmode="url" autocomplete="url" placeholder="example.yourfreednsdomain.com" required maxlength="253">
-          <button type="submit" data-submit>Connect domain</button>
+          <button type="submit" data-submit>Check domain</button>
         </div>
       </form>
 
       <div class="status" data-status hidden role="status" aria-live="polite"></div>
     </section>
   </main>
-  <script src="/apps/connect-domain/app.js?v=20260808-caddy-1" defer></script>
+  <script src="/apps/connect-domain/app.js?v=20260808-auto-domain-1" defer></script>
 </body>
 </html>

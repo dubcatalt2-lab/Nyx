@@ -390,9 +390,10 @@
   function positionNyxAccountMenu(menu,button){
     if(!menu||!button) return;
     const anchor=button.getBoundingClientRect();
-    const width=Math.min(280,Math.max(0,innerWidth-24));
+    const shortLaptop=matchMedia('(min-width:481px) and (max-width:1100px) and (max-height:650px)').matches;
+    const width=Math.min(shortLaptop?244:280,Math.max(0,innerWidth-24));
     const left=Math.max(12,Math.min(anchor.left,innerWidth-width-12));
-    const top=Math.max(12,anchor.bottom+8);
+    const top=Math.max(12,anchor.bottom+(shortLaptop?5:8));
     menu.style.width=`${width}px`;
     menu.style.left=`${Math.round(left)}px`;
     menu.style.top=`${Math.round(top)}px`;

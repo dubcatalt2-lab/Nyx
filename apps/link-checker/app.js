@@ -7,9 +7,7 @@
   const FREEDNS_VERDICTS_KEY='nyx.linkChecker.freednsVerdicts.v1';
   const HISTORY_LIMIT=500;
   const FREEDNS_PAGE_SIZE=25;
-  const FREEDNS_SCAN_CONCURRENCY=2;
   const FREEDNS_FULL_SAVE_BATCH=100;
-  const FREEDNS_SCAN_MAX_BACKOFF_MS=5*60_000;
   const FREEDNS_BULK_ACCESS_TTL_MS=5*60_000;
   const THEME_CLASSES=['theme-default','theme-ruby','theme-emerald','theme-sakura','theme-fresh'];
   const $=selector=>document.querySelector(selector);
@@ -109,14 +107,20 @@
   }
   async function fetchJson(url,options={}){
     const response=await fetch(url,{...options,headers:{Accept:'application/json',...(options.headers||{})}});
+    const text=await response.text();let body=null;
+    try{body=text?JSON.parse(text):null}catch{
+      const path=(()=>{try{return new URL(url,location.href).pathname}catch{return String(url)}})();
+      throw new Error(`Nyx received a web page instead of API data from ${path}. Refresh Nyx and try again.`);
+    }
     if(!response.ok){
       let message=`Request failed (${response.status})`;
-      try{const body=await response.json();message=body.error||body.message||message}catch{}
+      message=body?.error||body?.message||message;
       const retryAfter=String(response.headers.get('retry-after')||'').trim();
       const retryAfterMs=/^\d+$/.test(retryAfter)?Number(retryAfter)*1000:Math.max(0,(Date.parse(retryAfter)||0)-Date.now());
       const error=new Error(message);error.status=response.status;error.retryAfterMs=retryAfterMs;throw error;
     }
-    return response.json();
+    if(body===null)throw new Error('Nyx received an empty API response.');
+    return body;
   }
   async function loadVendors(){
     try{
@@ -150,7 +154,19 @@
       cached:payload?.cached===true,plan:String(payload?.plan||''),usage:payload?.usage||null,results
     };
   }
+  async function freednsParentAuth(){
+    if(window.parent===window)return null;
+    const requestId=`lc-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    return new Promise(resolve=>{
+      let settled=false;
+      const finish=value=>{if(settled)return;settled=true;clearTimeout(timer);window.removeEventListener('message',receive);resolve(value)};
+      const receive=event=>{if(event.source!==window.parent||event.origin!==location.origin||event.data?.type!=='nyx:account-token-response'||event.data?.requestId!==requestId)return;finish({available:true,token:String(event.data.token||'')})};
+      const timer=setTimeout(()=>finish(null),2500);window.addEventListener('message',receive);window.parent.postMessage({type:'nyx:account-token-request',requestId},location.origin);
+    });
+  }
   async function freednsBulkAuth(){
+    const parentAuth=await freednsParentAuth();
+    if(parentAuth?.available)return {currentUser:parentAuth.token?{getIdToken:async()=>String((await freednsParentAuth())?.token||'')}:null};
     if(!freednsBulkAuthPromise)freednsBulkAuthPromise=(async()=>{
       const config=await fetchJson('/api/founder-profile/auth-config',{cache:'no-store'});
       if(!config?.enabled)throw new Error('Nyx account sign-in is not configured.');
@@ -163,7 +179,7 @@
       if(typeof auth.authStateReady==='function')await auth.authStateReady();
       return auth;
     })();
-    return freednsBulkAuthPromise;
+    try{return await freednsBulkAuthPromise}catch(error){freednsBulkAuthPromise=null;throw error}
   }
   async function refreshFreednsBulkAccess(force=false){
     if(!force&&freednsBulkAccess.resolved&&freednsBulkAccess.expiresAt>Date.now())return freednsBulkAccess;
@@ -187,11 +203,11 @@
     if(!access.premium)throw new Error(access.error||'A Premium subscription is required to check all domains.');
     return access.auth.currentUser.getIdToken();
   }
-  async function checkTarget(target,vendor='',signal,{bulk=false,pageScan=false}={}){
+  async function checkTarget(target,vendor='',signal,{bulk=false}={}){
     const headers={'Content-Type':'application/json'};
     if(bulk)headers.Authorization=`Bearer ${await freednsBulkToken()}`;
     const payload=await fetchJson(`${CHECK_API}/check`,{
-      method:'POST',signal,headers,body:JSON.stringify({url:target,...(vendor?{vendor}:{}),...(bulk?{bulk:true}:{}),...(pageScan?{pageScan:true}:{})})
+      method:'POST',signal,headers,body:JSON.stringify({url:target,...(vendor?{vendor}:{}),...(bulk?{bulk:true}:{})})
     });
     return normalizeCheckReport(payload,target);
   }
@@ -544,42 +560,25 @@
     const candidates=freednsPageState().visible.filter(entry=>freednsNeedsCheck(entry.domain,vendor));
     if(!candidates.length){if(!automatic)showNotice('Every domain on this page already has results for the selected vendors.');return;}
     freednsScanController?.abort();freednsScanController=new AbortController();const {signal}=freednsScanController;
-    freednsPageScanning=true;updateFreednsActions();showNotice('');setFreednsScanProgress(0,candidates.length);
-    let cursor=0;let completed=0;let failed=0;let pagePauseUntil=0;let pageRateLimitCount=0;
-    const checkWithBackoff=async domain=>{
-      while(!signal.aborted){
-        const wait=Math.max(0,pagePauseUntil-Date.now());if(wait)await freednsDelay(wait,signal);
-        try{return await checkTarget(`https://${domain}/`,vendor,signal,{bulk:freednsBulkAccess.premium===true,pageScan:freednsBulkAccess.premium!==true});}
-        catch(error){
-          if(error.name==='AbortError'||error.status!==429)throw error;
-          pageRateLimitCount+=1;
-          const retryMs=Math.max(error.retryAfterMs||0,Math.min(FREEDNS_SCAN_MAX_BACKOFF_MS,2000*(2**Math.min(7,pageRateLimitCount-1))));
-          pagePauseUntil=Math.max(pagePauseUntil,Date.now()+retryMs+Math.floor(Math.random()*500));
-          $('[data-freedns-progress-detail]').textContent=`The page scan is still active. It will resume automatically in about ${Math.ceil(retryMs/1000)} seconds.`;
-        }
+    freednsPageScanning=true;candidates.forEach(entry=>freednsChecking.add(entry.domain));updateFreednsActions();renderFreedns();showNotice('');setFreednsScanProgress(0,candidates.length);
+    $('[data-freedns-progress-detail]').textContent='Nyx is checking this page through the paid server session. The page will not pause between domains.';
+    let completed=0;let failed=0;let requestError=null;
+    try{
+      const payload=await fetchJson(`${CHECK_API}/page-scan`,{method:'POST',signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({urls:candidates.map(entry=>`https://${entry.domain}/`),...(vendor?{vendor}:{})})});
+      for(const item of Array.isArray(payload.results)?payload.results:[]){
+        if(signal.aborted)throw new DOMException('Stopped','AbortError');
+        const domain=new URL(item.url).hostname.toLowerCase();
+        if(item.report)recordReport(normalizeCheckReport(item.report,item.url),'freedns',false);else failed+=1;
+        freednsChecking.delete(domain);completed+=1;setFreednsScanProgress(completed,candidates.length,failed);renderFreedns();
       }
-      throw new DOMException('Stopped','AbortError');
-    };
-    const worker=async()=>{
-      while(!signal.aborted){
-        const index=cursor;cursor+=1;if(index>=candidates.length)return;
-        const domain=candidates[index].domain;freednsChecking.add(domain);renderFreedns();
-        let counted=false;
-        try{const report=await checkWithBackoff(domain);recordReport(report,'freedns',false);counted=true;}
-        catch(error){
-          if(error.name==='AbortError')return;
-          failed+=1;counted=true;
-        }finally{
-          freednsChecking.delete(domain);
-          if(counted){completed+=1;setFreednsScanProgress(completed,candidates.length,failed);}
-          renderFreedns();
-        }
-      }
-    };
-    try{await Promise.all(Array.from({length:Math.min(FREEDNS_SCAN_CONCURRENCY,candidates.length)},worker));}
+      if(completed<candidates.length)failed+=candidates.length-completed;
+    }catch(error){
+      if(error.name==='AbortError')requestError=error;else{requestError=error;failed=candidates.length;completed=candidates.length;setFreednsScanProgress(completed,candidates.length,failed);}
+    }
     finally{
       freednsPageScanning=false;freednsChecking.clear();renderWorkspace();
-      if(signal.aborted)showNotice(`Page scan stopped after ${completed.toLocaleString()} of ${candidates.length.toLocaleString()} domains. Completed results were saved.`);
+      if(signal.aborted||requestError?.name==='AbortError')showNotice(`Page scan stopped after ${completed.toLocaleString()} of ${candidates.length.toLocaleString()} domains. Completed results were saved.`);
+      else if(requestError)showNotice(`The page scan could not finish: ${requestError.message}`,'error',true);
       else showNotice(`Page scan complete: ${completed.toLocaleString()} domains checked${failed?`, ${failed.toLocaleString()} failed`:''}.`,failed?'error':'',failed>0);
     }
   }
@@ -650,7 +649,7 @@
     $$('[data-view-button]').forEach(button=>button.classList.toggle('active',button.dataset.viewButton===name));
     $('[data-sidebar]')?.classList.remove('open');const shade=$('[data-sidebar-shade]');if(shade)shade.hidden=true;
     window.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
-    if(name==='scraper')void maybeAutoScanFreednsPage();
+    if(name==='scraper'){void refreshFreednsBulkAccess(true).catch(()=>{});void maybeAutoScanFreednsPage();}
   }
   function openSavedReport(entry){
     currentTarget=entry.url||entry.target;refs.input.value=currentTarget;renderResults(entry);refs.domainSection.hidden=true;switchView('checker');

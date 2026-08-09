@@ -126,7 +126,9 @@ body.theme-ruby{--accent:#fb7185;--accent-soft:rgba(251,113,133,.12)}body.theme-
 body.theme-fresh{color-scheme:light;--bg:#f6f8fb;--sidebar:#fff;--card:#fff;--card-soft:#f4f7fa;--border:#dce3ec;--text:#172033;--muted:#637085;--accent:#2563eb;--accent-soft:rgba(37,99,235,.1);--shadow:0 12px 34px rgba(40,55,78,.08)}
 body.theme-fresh .btn-secondary{background:#fff;color:#334155}body.theme-fresh .lc-nav button{color:#536176}body.theme-fresh .usage-track{background:#e5eaf1}
 .lc-sidebar-shade{display:none}
-@media(max-width:900px){
+/* ChromeOS commonly exposes about 1024-1093 CSS pixels after display scaling.
+   Collapse the navigation before it competes with filters and scan tables. */
+@media(max-width:1100px){
   .lc-sidebar{position:fixed;left:0;transform:translateX(-102%);transition:transform .2s ease;box-shadow:20px 0 50px rgba(0,0,0,.3)}.lc-sidebar.open{transform:none}.lc-sidebar-shade{position:fixed;z-index:40;inset:0;display:block;background:rgba(3,8,15,.66)}
   .lc-mobile-header{position:sticky;top:0;z-index:35;min-height:56px;display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--border);background:rgba(10,17,29,.94);padding:0 17px;backdrop-filter:blur(15px)}.lc-mobile-header>button{width:34px;height:34px;display:grid;place-items:center;border:0;border-radius:8px;background:transparent;color:var(--text)}.lc-mobile-header>button .lc-icon{width:20px;height:20px}.lc-mobile-header .lc-brand-icon{width:25px;height:25px}.lc-mobile-header .lc-brand-icon .lc-icon{width:16px;height:16px}.lc-mobile-header strong{font-size:13px}
   body.theme-fresh .lc-mobile-header{background:rgba(255,255,255,.94)}.lc-content{padding:22px 18px}

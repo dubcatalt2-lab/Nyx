@@ -14,9 +14,10 @@
     support: "Support",
     tester: "Tester",
     contributor: "Contributor",
-    member: "Member"
+    member: "Member",
+    guest: "Guest"
   });
-  const ownerRoleIcons = Object.freeze({ co_owner: "owner", manager: "admin", support: "moderator", tester: "developer", contributor: "developer" });
+  const ownerRoleIcons = Object.freeze({ co_owner: "owner", manager: "admin", support: "moderator", tester: "developer", contributor: "developer", guest: "member" });
   const ownerAssignableRoles = Object.freeze(["member", "contributor", "tester", "support", "moderator", "developer", "manager", "admin", "co_owner"]);
   const roleLabel = value => ownerRoleLabels[value] || "Member";
   const roleIcon = role => `<img class="nyx-owner-role-icon" src="/assets/icons/roles/${esc(ownerRoleIcons[role] || role)}.png" alt="" aria-hidden="true">`;
@@ -31,7 +32,7 @@
     button.setAttribute("aria-checked", String(active));
   });
   const subscriptionLabel = value => ({
-    free: "Free", premium: "Premium", trialing: "Trial", past_due: "Past due", canceled: "Canceled"
+    none: "No account", free: "Free", premium: "Premium", trialing: "Trial", past_due: "Past due", canceled: "Canceled"
   }[value] || "Free");
   const actionLabel = value => String(value || "").replaceAll("_", " ").replace(/\b\w/g, letter => letter.toUpperCase());
   const dateLabel = value => {
@@ -269,8 +270,8 @@
             </header>
             <form class="nyx-owner-filters" data-owner-filters>
               <label class="nyx-owner-search">${dashboardIcon("search")}<input type="search" name="search" placeholder="Search name, username, email, or UID" autocomplete="off"></label>
-              <select name="role" aria-label="Filter by role"><option value="all">All roles</option><option value="owner">Owner</option><option value="co_owner">Co-owner</option><option value="admin">Admin</option><option value="manager">Manager</option><option value="developer">Developer</option><option value="moderator">Moderator</option><option value="support">Support</option><option value="tester">Tester</option><option value="contributor">Contributor</option><option value="member">Member</option></select>
-              <select name="subscription" aria-label="Filter by subscription"><option value="all">All subscriptions</option><option value="free">Free</option><option value="premium">Premium</option><option value="trialing">Trial</option><option value="past_due">Past due</option><option value="canceled">Canceled</option></select>
+              <select name="role" aria-label="Filter by role"><option value="all">All roles</option><option value="guest">Guest</option><option value="owner">Owner</option><option value="co_owner">Co-owner</option><option value="admin">Admin</option><option value="manager">Manager</option><option value="developer">Developer</option><option value="moderator">Moderator</option><option value="support">Support</option><option value="tester">Tester</option><option value="contributor">Contributor</option><option value="member">Member</option></select>
+              <select name="subscription" aria-label="Filter by subscription"><option value="all">All subscriptions</option><option value="none">No account</option><option value="free">Free</option><option value="premium">Premium</option><option value="trialing">Trial</option><option value="past_due">Past due</option><option value="canceled">Canceled</option></select>
               <select name="status" aria-label="Filter by account status"><option value="all">All accounts</option><option value="enabled">Enabled</option><option value="disabled">Disabled</option><option value="online">Online now</option><option value="offline">Offline</option></select>
             </form>
             <div class="nyx-owner-table-wrap" data-owner-table aria-live="polite"></div>
@@ -378,25 +379,30 @@
 
     function renderUsers(data) {
       const users = data.users || [];
-      overlay.querySelector("[data-owner-user-count]").textContent = `${data.pagination.total.toLocaleString()} matching · ${data.pagination.scanned.toLocaleString()} total${data.pagination.truncated ? " (scan capped)" : ""}`;
+      const pagination = data.pagination || {};
+      const accounts = Number(pagination.accounts ?? pagination.scanned ?? 0);
+      const guests = Number(pagination.guests || 0);
+      overlay.querySelector("[data-owner-user-count]").textContent = `${Number(pagination.total || 0).toLocaleString()} matching · ${accounts.toLocaleString()} accounts · ${guests.toLocaleString()} guest${guests === 1 ? "" : "s"} online${pagination.truncated ? " (scan capped)" : ""}`;
       if (!users.length) {
         tableHost.innerHTML = '<div class="nyx-owner-empty"><strong>No users found</strong><span>Try changing the search or filters.</span></div>';
       } else {
         tableHost.innerHTML = `<table class="nyx-owner-table">
           <thead><tr><th>${sortButton("displayName", "User")}</th><th>${sortButton("role", "Role")}</th><th>${sortButton("subscriptionStatus", "Subscription")}</th><th>${sortButton("createdAt", "Created")}</th><th>${sortButton("lastSignInAt", "Last sign-in")}</th><th>${sortButton("lastActiveAt", "Last active")}</th><th>Email verified</th><th>${sortButton("status", "Status")}</th><th><span class="sr-only">Actions</span></th></tr></thead>
-          <tbody>${users.map(user => `<tr data-owner-user-row="${esc(user.uid)}">
-            <td><button class="nyx-owner-user-cell" type="button" data-owner-view-user="${esc(user.uid)}"><span class="nyx-owner-avatar">${ownerProfileImageMarkup(user.photoUrl, "", (user.displayName || "?").slice(0, 1).toUpperCase())}<i class="${user.online ? "online" : ""}"></i></span><span><span class="nyx-owner-user-name-row"><strong>${esc(user.displayName)}</strong><span class="nyx-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></span><small>@${esc(user.username)} · ${esc(user.email || "No email")}</small><span class="nyx-owner-mobile-access"><span class="nyx-owner-badge role-${esc(user.role)}">${roleIcon(user.role)}${esc(roleLabel(user.role))}</span><span class="nyx-owner-badge subscription-${esc(user.subscriptionStatus)}">${esc(subscriptionLabel(user.subscriptionStatus))}</span></span></span></button></td>
+          <tbody>${users.map(user => {
+            const guest = Boolean(user.guest);
+            return `<tr data-owner-user-row="${esc(user.uid)}"${guest ? ' data-owner-guest-row="true"' : ""}>
+            <td><button class="nyx-owner-user-cell" type="button" data-owner-view-user="${esc(user.uid)}"><span class="nyx-owner-avatar">${ownerProfileImageMarkup(user.photoUrl, "", (user.displayName || "?").slice(0, 1).toUpperCase())}<i class="${user.online ? "online" : ""}"></i></span><span><span class="nyx-owner-user-name-row"><strong>${esc(user.displayName)}</strong><span class="nyx-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></span><small>@${esc(user.username)} · ${esc(user.email || (guest ? "No account" : "No email"))}</small><span class="nyx-owner-mobile-access"><span class="nyx-owner-badge role-${esc(user.role)}">${roleIcon(user.role)}${esc(roleLabel(user.role))}</span><span class="nyx-owner-badge subscription-${esc(user.subscriptionStatus)}">${esc(subscriptionLabel(user.subscriptionStatus))}</span></span></span></button></td>
             <td><span class="nyx-owner-badge role-${esc(user.role)}">${roleIcon(user.role)}${esc(roleLabel(user.role))}</span></td>
             <td><span class="nyx-owner-badge subscription-${esc(user.subscriptionStatus)}">${esc(subscriptionLabel(user.subscriptionStatus))}</span></td>
             <td><span title="${esc(dateLabel(user.createdAt))}">${esc(relativeLabel(user.createdAt))}</span></td>
-            <td><span title="${esc(dateLabel(user.lastSignInAt))}">${esc(relativeLabel(user.lastSignInAt))}</span></td>
+            <td><span title="${esc(guest ? "No account" : dateLabel(user.lastSignInAt))}">${esc(guest ? "Not signed in" : relativeLabel(user.lastSignInAt))}</span></td>
             <td><span title="${esc(dateLabel(user.lastActiveAt))}">${esc(relativeLabel(user.lastActiveAt))}</span></td>
-            <td><span class="nyx-owner-verified ${user.deliverableEmail && user.emailVerified ? "verified" : ""}">${user.deliverableEmail ? (user.emailVerified ? "Verified" : "Unverified") : "N/A"}</span></td>
-            <td><span class="nyx-owner-account-state ${user.disabled ? "disabled" : "enabled"}"><i></i>${user.disabled ? "Disabled" : "Enabled"}</span></td>
+            <td><span class="nyx-owner-verified ${user.deliverableEmail && user.emailVerified ? "verified" : ""}">${guest ? "Guest" : (user.deliverableEmail ? (user.emailVerified ? "Verified" : "Unverified") : "N/A")}</span></td>
+            <td><span class="nyx-owner-account-state ${guest ? "guest" : (user.disabled ? "disabled" : "enabled")}"><i></i>${guest ? "Guest" : (user.disabled ? "Disabled" : "Enabled")}</span></td>
             <td><button class="nyx-owner-row-action" type="button" data-owner-view-user="${esc(user.uid)}" aria-label="View ${esc(user.displayName)}">${dashboardIcon("chevron")}</button></td>
-          </tr>`).join("")}</tbody></table>`;
+          </tr>`;
+          }).join("")}</tbody></table>`;
       }
-      const pagination = data.pagination || {};
       paginationHost.innerHTML = `<span>Page ${pagination.page || 1} of ${pagination.pages || 1}</span><div><label>Rows <select data-owner-page-size><option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option></select></label><button type="button" data-owner-page="${Math.max(1, (pagination.page || 1) - 1)}" ${(pagination.page || 1) <= 1 ? "disabled" : ""}>Previous</button><button type="button" data-owner-page="${Math.min(pagination.pages || 1, (pagination.page || 1) + 1)}" ${(pagination.page || 1) >= (pagination.pages || 1) ? "disabled" : ""}>Next</button></div>`;
       paginationHost.querySelector("[data-owner-page-size]").value = String(state.pageSize);
       void hydrateOwnerProfileMedia(tableHost);
@@ -600,6 +606,19 @@
     async function openUser(uid) {
       drawer.hidden = false;
       drawer.classList.remove("show");
+      const guest = (state.data?.users || []).find(user => user.uid === uid && user.guest);
+      if (guest) {
+        state.selectedUser = guest;
+        state.selectedCapabilities = {};
+        const avatar = ownerProfileImageMarkup("", "", (guest.displayName || "G").slice(0, 1).toUpperCase());
+        drawer.innerHTML = `<header><div class="nyx-owner-detail-avatar">${avatar}<i class="online"></i></div><div><span>${roleIcon("guest")}Guest session</span><h2>${esc(guest.displayName)}</h2><p class="nyx-owner-drawer-identity">@${esc(guest.username)} <span class="nyx-owner-presence-state online"><i></i>Online</span></p></div><button type="button" data-owner-drawer-close aria-label="Close guest details">${dashboardIcon("close")}</button></header>
+          <div class="nyx-owner-drawer-scroll">
+            <section class="nyx-owner-detail-grid">${detailValue("Identity", guest.displayName)}${detailValue("Guest ID", `@${guest.username}`)}${detailValue("Account", "No account created")}${detailValue("Presence", "Online now")}${detailValue("First seen", dateLabel(guest.createdAt))}${detailValue("Last active", dateLabel(guest.lastActiveAt))}</section>
+            <section class="nyx-owner-detail-section"><h3>Guest visitor</h3><p class="nyx-owner-action-note">Nyx uses the username saved by this browser's startup wizard. If the visitor skipped it, Nyx assigns a stable random guest name instead. Account, role, subscription, profile, and account-management controls become available only after the visitor signs in or creates an account.</p></section>
+          </div>`;
+        requestAnimationFrame(() => drawer.classList.add("show"));
+        return;
+      }
       drawer.innerHTML = '<div class="nyx-owner-drawer-loading"><i></i><i></i><i></i></div>';
       requestAnimationFrame(() => drawer.classList.add("show"));
       try {
@@ -729,7 +748,7 @@
     function exportCurrentPage() {
       const users = state.data?.users || [];
       if (!users.length) return notify("There are no users on this page to export.", "error");
-      const columns = ["uid", "displayName", "username", "email", "role", "subscriptionStatus", "createdAt", "lastSignInAt", "lastActiveAt", "emailVerified", "disabled"];
+      const columns = ["uid", "accountType", "displayName", "username", "email", "role", "subscriptionStatus", "createdAt", "lastSignInAt", "lastActiveAt", "emailVerified", "disabled"];
       const quote = value => `"${String(value ?? "").replaceAll('"', '""')}"`;
       const csv = [columns.join(","), ...users.map(user => columns.map(column => quote(user[column])).join(","))].join("\r\n");
       const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));

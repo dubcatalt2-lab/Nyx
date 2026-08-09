@@ -5816,10 +5816,13 @@
     const heartbeat=async()=>{
       if(document.visibilityState==='hidden') return;
       try{
+        const token=await nyxGetFirebaseToken();
+        const headers={'content-type':'text/plain;charset=UTF-8'};
+        if(token)headers.Authorization=`Bearer ${token}`;
         const response=await fetch(endpoint,{
           method:'POST',
-          headers:{'content-type':'text/plain;charset=UTF-8'},
-          body:JSON.stringify({sessionId}),
+          headers,
+          body:JSON.stringify({sessionId,userName:store.text('nyx.userName','').trim()}),
           cache:'no-store',
           keepalive:true
         });

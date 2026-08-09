@@ -193,13 +193,16 @@
 .nyx-owner-badge.role-support{border-color:#67c8b2;background:rgba(103,200,178,.1);color:#aee8da}
 .nyx-owner-badge.role-tester{border-color:#cb83dc;background:rgba(203,131,220,.1);color:#e9b8f3}
 .nyx-owner-badge.role-contributor{border-color:#8994aa;background:rgba(137,148,170,.1);color:#c8cfdd}
+.nyx-owner-badge.role-guest{border-color:#6ca7c9;background:rgba(108,167,201,.1);color:#b9def2}
 .nyx-owner-role-icon{display:inline-block;width:14px;height:14px;object-fit:contain}
 .nyx-owner-user-drawer>header>div:nth-child(2)>span{display:flex;align-items:center;gap:6px}
 .nyx-owner-badge.subscription-premium,.nyx-owner-badge.subscription-trialing{border-color:#e8bd64;background:rgba(232,189,100,.11);color:#f3d79b}
 .nyx-owner-badge.subscription-past_due{border-color:#f28b58;color:#ffbd9b}
+.nyx-owner-badge.subscription-none{border-color:#617089;background:rgba(97,112,137,.09);color:#aeb9ca}
 .nyx-owner-account-state{gap:5px;border:0;background:transparent}
 .nyx-owner-account-state i{width:6px;height:6px;border-radius:50%;background:#4fd18b}
 .nyx-owner-account-state.disabled{color:#ff9c9f}.nyx-owner-account-state.disabled i{background:#f05d63}
+.nyx-owner-account-state.guest{color:#9fcce4}.nyx-owner-account-state.guest i{background:#6ca7c9}
 .nyx-owner-verified{color:#db9c78;font-size:9px;font-weight:700}.nyx-owner-verified.verified{color:#65d99b}
 .nyx-owner-row-action{display:grid;width:26px;height:26px;place-items:center;padding:0;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--owner-muted);cursor:pointer}
 .nyx-owner-row-action:hover{border-color:var(--owner-line);background:var(--owner-panel-2);color:var(--owner-text)}

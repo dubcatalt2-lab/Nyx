@@ -61,6 +61,7 @@ The OVHcloud cutover was completed on 2026-08-08 and migrated from Nginx/Certbot
 - FreeDNS custom hostname: `networkforteachers.netw.ar` resolves to the OVH IPv4 address, is approved in `nyxCustomHostnames`, receives an automatic Caddy certificate, returns HTTP 200, and opens same-origin Wisp
 - Self-service custom domains are live at `/connect-domain`: anyone can point an A/AAAA hostname directly to `NYX_CUSTOM_HOST_IPS` and open it; the first HTTPS visit is authorized automatically without submitting the hostname or waiting for owner approval. The connection form remains an optional preflight that stores verified hostnames in server-only `nyxCustomHostnames`. Caddy authorization is loopback-only, preserves explicit disabled records, shares concurrent DNS checks, and uses a bounded five-minute positive/30-second negative cache.
 - Owner Dashboard redesign assets: cache-versioned stylesheet and script returned through the production homepage; desktop, 390x844, and 320x320 local interaction checks showed no horizontal overflow
+- Active visitors without an account use the username saved in their local Nyx startup wizard and appear in the Owner Dashboard as **Guest / No account** rows with limited session details and no account-management controls. A browser that skipped the name receives a deterministic random Nyx guest name instead. Authenticated presence heartbeats carry a verified Firebase token so signed-in browsers are excluded from the guest list instead of appearing twice. Guest identities do not add IP collection and expire with the existing 45-second presence window.
 - **Amazing Strange Rope Police**: transformed Unity loader uses the guarded worker callback through Ultraviolet; the selected Scramjet path loads the 66 MB legacy Unity data archive, creates its canvas, and shows no callback or DataView error through a 90-second production regression run
 - Homepage cursor effect: the background dots repel, fade, and return along the pointer path; the **Nyx** wordmark remains fixed with no cursor transform
 - Smartwatch stylesheet and cache-versioned application script: HTTP 200; the 320x320, 396x484, and 450x450 layouts keep essential browser controls and home actions reachable
@@ -106,6 +107,7 @@ Client preferences and much local UI state use browser storage. Cross-device acc
 - Settings and onboarding
 - AI workspace, model selection, conversations, temporary chats, image attachments, and API integration
 - Owner Dashboard, role permissions, subscriptions, premium access, profiles, activity, and audit records
+- Shared presence documents hold the stable guest label plus an authenticated account UID when a valid bearer token is present; direct browser access to `nyxPresenceSessions` remains denied by Firestore rules
 - About Nyx and its user-directed changelog
 - Pirate Cove search, sorting, pagination, remote catalogs, fallbacks, and full-screen player
 - Single-file export/download behavior

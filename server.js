@@ -65,10 +65,13 @@ if (!externalWispUrl) {
   wisp.options.wisp_motd = "Nyx embedded Wisp";
 }
 const presenceSessions = new Map();
+const presenceSessionFirstSeen = new Map();
 const presenceTtlMs = 45_000;
 const presenceCollectionName = "nyxPresenceSessions";
 const presenceCleanupIntervalMs = 5 * 60_000;
 let lastPresenceCleanupAt = 0;
+const nyxGuestAdjectives = Object.freeze(["Astral", "Blue", "Cosmic", "Dreaming", "Hidden", "Lunar", "Midnight", "Quiet", "Silver", "Starry", "Velvet", "Wandering"]);
+const nyxGuestNouns = Object.freeze(["Comet", "Echo", "Fox", "Moth", "Moon", "Nova", "Orbit", "Raven", "Shadow", "Spark", "Star", "Willow"]);
 const profileImageDataLimit = 850_000;
 const profileImageDocumentLimit = 900_000;
 const profileMediaEncodedLimit = 11_250_000;
@@ -1885,7 +1888,10 @@ app.get("/healthz", (_req, res) => {
 
 function pruneLocalPresence(now = Date.now()) {
   for (const [sessionId, lastSeen] of presenceSessions) {
-    if (now - lastSeen > presenceTtlMs) presenceSessions.delete(sessionId);
+    if (now - lastSeen > presenceTtlMs) {
+      presenceSessions.delete(sessionId);
+      presenceSessionFirstSeen.delete(sessionId);
+    }
   }
   return presenceSessions.size;
 }
@@ -1894,7 +1900,7 @@ function setPresenceCors(res) {
   res.set({
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Authorization, Content-Type",
     "Access-Control-Max-Age": "86400"
   });
 }
@@ -1924,12 +1930,67 @@ async function sharedPresenceCount(now = Date.now()) {
   return Number(aggregate.data().count) || 0;
 }
 
-async function recordSharedPresence(sessionId, now = Date.now()) {
+function nyxGuestIdentity(sessionId) {
+  const digest = createHash("sha256").update(`nyx-guest:${sessionId}`).digest();
+  const suffix = digest.readUInt16BE(2).toString().padStart(5, "0");
+  return {
+    id: digest.toString("hex").slice(0, 24),
+    displayName: `${nyxGuestAdjectives[digest[0] % nyxGuestAdjectives.length]} ${nyxGuestNouns[digest[1] % nyxGuestNouns.length]} ${suffix}`,
+    username: `guest-${digest.toString("hex").slice(0, 8)}`
+  };
+}
+
+function nyxStartupGuestName(value) {
+  const name = String(value || "")
+    .replace(/[\u0000-\u001f\u007f]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 48);
+  if (!name || /^(?:guest|profile|set username|user|username)$/i.test(name)) return "";
+  return name;
+}
+
+function nyxStartupGuestUsername(name, fallback) {
+  const username = String(name || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9_.-]+/g, "-")
+    .replace(/^[-_.]+|[-_.]+$/g, "")
+    .slice(0, 32);
+  return username || fallback;
+}
+
+async function nyxPresenceAccountUid(req) {
+  const match = String(req.get("authorization") || "").match(/^Bearer\s+(.+)$/i);
+  if (!match || !firebaseAdminModeConfigured()) return "";
+  try {
+    const firebase = await linkGeneratorFirebase();
+    const token = await firebase?.auth.verifyIdToken(match[1], true);
+    return String(token?.uid || "").slice(0, 128);
+  } catch {
+    return "";
+  }
+}
+
+async function recordSharedPresence(sessionId, accountUid = "", startupName = "", now = Date.now()) {
   presenceSessions.set(sessionId, now);
+  const firstSeen = presenceSessionFirstSeen.get(sessionId) || now;
+  presenceSessionFirstSeen.set(sessionId, firstSeen);
   const firebase = await linkGeneratorFirebase();
   if (!firebase) return pruneLocalPresence(now);
   const collection = firebase.firestore.collection(presenceCollectionName);
-  await collection.doc(sessionId).set({ lastSeen: now, updatedAt: new Date(now).toISOString() });
+  const guest = nyxGuestIdentity(sessionId);
+  const guestName = nyxStartupGuestName(startupName) || guest.displayName;
+  const guestUsername = nyxStartupGuestUsername(guestName, guest.username);
+  await collection.doc(sessionId).set({
+    lastSeen: now,
+    firstSeen,
+    accountUid,
+    guestName,
+    guestUsername,
+    updatedAt: new Date(now).toISOString()
+  });
   const aggregate = await collection.where("lastSeen", ">=", now - presenceTtlMs).count().get();
   void cleanupSharedPresence(collection, now - presenceTtlMs, now);
   return Number(aggregate.data().count) || 0;
@@ -1945,12 +2006,12 @@ async function presenceCount(now = Date.now()) {
   return pruneLocalPresence(now);
 }
 
-async function sendPresence(res, status = 200, countPromise = presenceCount()) {
+async function sendPresence(res, status = 200, countPromise = presenceCount(), extra = {}) {
   setPresenceCors(res);
   const online = await countPromise;
   res.status(status)
     .set("Cache-Control", "no-store")
-    .json({ online, ttl: presenceTtlMs });
+    .json({ online, ttl: presenceTtlMs, ...extra });
 }
 
 app.options(["/presence", "/api/presence"], (_req, res) => {
@@ -1964,21 +2025,32 @@ app.get(["/presence", "/api/presence"], async (_req, res) => {
 
 app.post(["/presence", "/api/presence"], express.text({ type: "text/plain", limit: "2kb" }), async (req, res) => {
   try {
-    const sessionId = String(JSON.parse(req.body || "{}").sessionId || "");
+    const payload = JSON.parse(req.body || "{}");
+    const sessionId = String(payload.sessionId || "");
     if (!/^[a-zA-Z0-9_-]{16,128}$/.test(sessionId)) {
       await sendPresence(res, 400);
       return;
     }
     const now = Date.now();
+    const accountUid = await nyxPresenceAccountUid(req);
+    const startupName = nyxStartupGuestName(payload.userName);
     let count;
     try {
-      count = await recordSharedPresence(sessionId, now);
+      count = await recordSharedPresence(sessionId, accountUid, startupName, now);
     } catch (error) {
       console.warn("Nyx shared presence heartbeat failed; using this server:", error?.message || error);
       presenceSessions.set(sessionId, now);
       count = pruneLocalPresence(now);
     }
-    await sendPresence(res, 200, Promise.resolve(count));
+    const randomGuestIdentity = nyxGuestIdentity(sessionId);
+    const guestName = startupName || randomGuestIdentity.displayName;
+    const guestIdentity = accountUid ? null : {
+      displayName: guestName,
+      username: nyxStartupGuestUsername(guestName, randomGuestIdentity.username)
+    };
+    await sendPresence(res, 200, Promise.resolve(count), {
+      guest: guestIdentity
+    });
   } catch {
     await sendPresence(res, 400);
   }
@@ -2673,6 +2745,52 @@ function nyxOwnerUserRecord(user, administration = {}, profileData = {}, activit
       avatarDecoration: profile.avatarDecoration
     }
   };
+}
+
+function nyxOwnerGuestRecord(document, now = Date.now()) {
+  const sessionId = String(document?.id || "");
+  if (!/^[a-zA-Z0-9_-]{16,128}$/.test(sessionId)) return null;
+  const data = document.data() || {};
+  if (String(data.accountUid || "").trim()) return null;
+  const lastSeenMs = Number(data.lastSeen || 0);
+  if (!Number.isFinite(lastSeenMs) || lastSeenMs <= 0 || lastSeenMs > now + 60_000 || now - lastSeenMs > presenceTtlMs) return null;
+  const recordedFirstSeenMs = Number(data.firstSeen || 0);
+  const firstSeenMs = Number.isFinite(recordedFirstSeenMs) && recordedFirstSeenMs > 0 && recordedFirstSeenMs <= lastSeenMs
+    ? recordedFirstSeenMs
+    : lastSeenMs;
+  const identity = nyxGuestIdentity(sessionId);
+  const displayName = String(data.guestName || identity.displayName).trim().slice(0, 80) || identity.displayName;
+  const username = String(data.guestUsername || identity.username).trim().replace(/^@+/, "").slice(0, 80) || identity.username;
+  return {
+    uid: `guest_${identity.id}`,
+    guest: true,
+    accountType: "guest",
+    displayName,
+    username,
+    email: "",
+    deliverableEmail: false,
+    role: "guest",
+    subscriptionStatus: "none",
+    monthlyRevenueCents: 0,
+    createdAt: new Date(firstSeenMs).toISOString(),
+    lastSignInAt: "",
+    lastActiveAt: new Date(lastSeenMs).toISOString(),
+    lastSeenIp: "",
+    lastSeenIpAt: "",
+    online: true,
+    emailVerified: false,
+    disabled: false,
+    photoUrl: "",
+    profile: {}
+  };
+}
+
+async function nyxActiveGuestUsers(firebase, now = Date.now()) {
+  const snapshot = await firebase.firestore.collection(presenceCollectionName)
+    .where("lastSeen", ">=", now - presenceTtlMs)
+    .limit(1_000)
+    .get();
+  return snapshot.docs.map(document => nyxOwnerGuestRecord(document, now)).filter(Boolean);
 }
 
 function nyxOwnerSortUsers(users, sort, direction) {
@@ -4761,24 +4879,27 @@ app.get("/api/owner-dashboard", async (req, res) => {
   res.set("Cache-Control", "no-store");
   try {
     const { firebase, actor } = await ownerDashboardActor(req, "users:view");
-    const [{ users: allUsers, truncated }, auditSnapshot] = await Promise.all([
+    const [{ users: accountUsers, truncated }, auditSnapshot, guestUsers] = await Promise.all([
       ownerDashboardSnapshot(firebase),
       nyxActorHasPermission(actor, "audit:view")
         ? firebase.firestore.collection("nyxAuditLog").orderBy("createdAtMs", "desc").limit(30).get()
-        : Promise.resolve(null)
+        : Promise.resolve(null),
+      nyxActiveGuestUsers(firebase)
     ]);
+    const allUsers = [...accountUsers, ...guestUsers];
     const now = Date.now();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
     const premiumStatuses = new Set(["premium", "trialing"]);
     const metrics = {
-      totalUsers: allUsers.length,
-      activeToday: allUsers.filter(user => (Date.parse(user.lastActiveAt || "") || 0) >= today.getTime()).length,
+      totalUsers: accountUsers.length,
+      guestUsers: guestUsers.length,
+      activeToday: accountUsers.filter(user => (Date.parse(user.lastActiveAt || "") || 0) >= today.getTime()).length,
       onlineUsers: allUsers.filter(user => user.online).length,
-      newSignups: allUsers.filter(user => (Date.parse(user.createdAt || "") || 0) >= sevenDaysAgo).length,
-      premiumSubscribers: allUsers.filter(user => premiumStatuses.has(user.subscriptionStatus)).length,
-      monthlyRevenueCents: allUsers.reduce((total, user) => total + (premiumStatuses.has(user.subscriptionStatus) ? user.monthlyRevenueCents : 0), 0)
+      newSignups: accountUsers.filter(user => (Date.parse(user.createdAt || "") || 0) >= sevenDaysAgo).length,
+      premiumSubscribers: accountUsers.filter(user => premiumStatuses.has(user.subscriptionStatus)).length,
+      monthlyRevenueCents: accountUsers.reduce((total, user) => total + (premiumStatuses.has(user.subscriptionStatus) ? user.monthlyRevenueCents : 0), 0)
     };
     const search = String(req.query.search || "").trim().toLowerCase().slice(0, 120);
     const role = String(req.query.role || "all").trim().toLowerCase();
@@ -4789,13 +4910,13 @@ app.get("/api/owner-dashboard", async (req, res) => {
       if (search && ![user.displayName, user.username, user.email, user.uid].some(value => String(value || "").toLowerCase().includes(search))) return false;
       if (role !== "all" && user.role !== role) return false;
       if (subscription !== "all" && user.subscriptionStatus !== subscription) return false;
-      if (status === "enabled" && user.disabled) return false;
-      if (status === "disabled" && !user.disabled) return false;
+      if (status === "enabled" && (user.guest || user.disabled)) return false;
+      if (status === "disabled" && (user.guest || !user.disabled)) return false;
       if (status === "online" && !user.online) return false;
       if (status === "offline" && user.online) return false;
       if (segment === "active_today" && (Date.parse(user.lastActiveAt || "") || 0) < today.getTime()) return false;
       if (segment === "online" && !user.online) return false;
-      if (segment === "new_7d" && (Date.parse(user.createdAt || "") || 0) < sevenDaysAgo) return false;
+      if (segment === "new_7d" && (user.guest || (Date.parse(user.createdAt || "") || 0) < sevenDaysAgo)) return false;
       if ((segment === "premium" || segment === "revenue") && !premiumStatuses.has(user.subscriptionStatus)) return false;
       return true;
     });
@@ -4821,7 +4942,7 @@ app.get("/api/owner-dashboard", async (req, res) => {
       access: nyxOwnerAccessPayload(actor),
       metrics,
       users: filtered.slice(offset, offset + pageSize),
-      pagination: { page, pageSize, pages, total: filtered.length, scanned: allUsers.length, truncated },
+      pagination: { page, pageSize, pages, total: filtered.length, scanned: allUsers.length, accounts: accountUsers.length, guests: guestUsers.length, truncated },
       recentActivity,
       generatedAt: new Date().toISOString()
     });

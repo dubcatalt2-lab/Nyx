@@ -21,7 +21,7 @@
 	}
 }
 
-__NYX_DOMAIN__, www.__NYX_DOMAIN__ {
+__NYX_DOMAIN__ {
 	import nyx_proxy
 }
 

@@ -16,11 +16,17 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 APP_DIR=$(cd -- "${SCRIPT_DIR}/.." && pwd)
 APP_OWNER=${SUDO_USER:-root}
 ENV_FILE=/etc/nyx/nyx.env
-NGINX_SITE=/etc/nginx/sites-available/nyx
+CADDY_FILE=/etc/caddy/Caddyfile
 
 echo "Installing Nyx for ${DOMAIN} from ${APP_DIR}"
 apt-get update
-apt-get install -y ca-certificates curl git nginx ufw fail2ban
+apt-get install -y ca-certificates curl git ufw fail2ban debian-keyring debian-archive-keyring apt-transport-https gnupg
+
+curl -1sLf https://dl.cloudsmith.io/public/caddy/stable/gpg.key | gpg --dearmor --batch --yes -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt > /etc/apt/sources.list.d/caddy-stable.list
+chmod o+r /usr/share/keyrings/caddy-stable-archive-keyring.gpg /etc/apt/sources.list.d/caddy-stable.list
+apt-get update
+apt-get install -y caddy
 
 NODE_MAJOR=$(node -p 'Number(process.versions.node.split(".")[0])' 2>/dev/null || echo 0)
 if [[ ${NODE_MAJOR} -lt 20 || ${NODE_MAJOR} -ge 25 ]]; then
@@ -57,39 +63,27 @@ fi
 
 sed "s|__NYX_ROOT__|${APP_DIR}|g" deploy/systemd/nyx.service.template > /etc/systemd/system/nyx.service
 
-if [[ ! -f ${NGINX_SITE} ]]; then
-  sed "s|__NYX_DOMAIN__|${DOMAIN}|g" deploy/nginx/nyx.conf.template > "${NGINX_SITE}"
-else
-  echo "Preserving existing ${NGINX_SITE} so certificate settings are not overwritten."
-fi
-ln -sfn "${NGINX_SITE}" /etc/nginx/sites-enabled/nyx
-rm -f /etc/nginx/sites-enabled/default
+CADDY_TMP=$(mktemp)
+sed "s|__NYX_DOMAIN__|${DOMAIN}|g" deploy/caddy/nyx.Caddyfile.template > "${CADDY_TMP}"
+caddy validate --config "${CADDY_TMP}" --adapter caddyfile
+install -m 0644 -o root -g root "${CADDY_TMP}" "${CADDY_FILE}"
+rm -f "${CADDY_TMP}"
 
-CF_REAL_IP_TMP=$(mktemp)
-{
-  echo "# Generated from Cloudflare's published origin networks by deploy/setup-ovh.sh."
-  while IFS= read -r range; do [[ -n ${range} ]] && printf 'set_real_ip_from %s;\n' "${range}"; done < <(curl -fsSL https://www.cloudflare.com/ips-v4)
-  while IFS= read -r range; do [[ -n ${range} ]] && printf 'set_real_ip_from %s;\n' "${range}"; done < <(curl -fsSL https://www.cloudflare.com/ips-v6)
-  echo "real_ip_header CF-Connecting-IP;"
-  echo "real_ip_recursive on;"
-} > "${CF_REAL_IP_TMP}"
-install -m 0644 -o root -g root "${CF_REAL_IP_TMP}" /etc/nginx/conf.d/cloudflare-real-ip.conf
-rm -f "${CF_REAL_IP_TMP}"
-
-nginx -t
 systemctl daemon-reload
-systemctl enable --now fail2ban nginx nyx
+systemctl enable --now fail2ban caddy nyx
 systemctl restart nyx
-systemctl reload nginx
+systemctl reload caddy
 
 ufw allow OpenSSH
-ufw allow 'Nginx Full'
+ufw allow 80/tcp
+ufw allow 443/tcp
+ufw allow 443/udp
 ufw --force enable
 
 sleep 1
 curl --fail --show-error http://127.0.0.1:8080/healthz >/dev/null
 echo
-echo "Nyx is running locally and Nginx is ready for ${DOMAIN}."
+echo "Nyx is running locally and Caddy is ready for ${DOMAIN}."
 echo "Secrets: sudo nano ${ENV_FILE}"
 echo "After editing secrets: sudo systemctl restart nyx"
-echo "Next, follow DEPLOYMENT.md to install HTTPS and change Cloudflare DNS."
+echo "Next, set NYX_CUSTOM_HOST_IPS in ${ENV_FILE}, then follow DEPLOYMENT.md to change Cloudflare DNS."

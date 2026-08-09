@@ -31,6 +31,12 @@ chgrp -R nyx "${APP_DIR}"
 chmod -R g+rX "${APP_DIR}"
 
 systemctl restart nyx
+CADDY_TMP=$(mktemp)
+sed "s|__NYX_DOMAIN__|${DOMAIN}|g" deploy/caddy/nyx.Caddyfile.template > "${CADDY_TMP}"
+caddy validate --config "${CADDY_TMP}" --adapter caddyfile
+install -m 0644 -o root -g root "${CADDY_TMP}" /etc/caddy/Caddyfile
+rm -f "${CADDY_TMP}"
+systemctl reload caddy
 sleep 1
 curl --fail --show-error http://127.0.0.1:8080/healthz >/dev/null
 echo "Nyx updated successfully."

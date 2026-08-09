@@ -1,12 +1,12 @@
 # Move Nyx to one OVHcloud VPS
 
-This runbook moves Nyx's website, API, and Wisp WebSocket service onto one Ubuntu VPS. Nginx is the public reverse proxy, Nyx listens only on local port `8080`, and systemd keeps it running. The application serves the generated, minified `dist/` build while the API and IP-ban guard continue to run through Express.
+This runbook moves Nyx's website, API, Wisp WebSocket service, and self-service custom domains onto one Ubuntu VPS. Caddy is the public reverse proxy and automatic HTTPS manager, Nyx listens only on local port `8080`, and systemd keeps both services running. The application serves the generated, minified `dist/` build while the API and IP-ban guard continue to run through Express.
 
 Netlify and Railway are intentionally left configured as a rollback until the OVH deployment has been stable. Do not cancel them or remove their files before completing the final verification.
 
 ## What to buy
 
-- One standard OVHcloud VPS with Ubuntu 24.04. A 2-vCPU, 4-GB RAM plan is a sensible starting point for Nyx.
+- One standard OVHcloud VPS with Ubuntu 24.04 or newer. A 2-vCPU, 4-GB RAM plan is a sensible starting point for Nyx.
 - Keep `nyxlearning.org` in the existing Cloudflare account. You do not need another domain, paid SSL, Plesk, cPanel, or web-hosting add-ons.
 - Do not expose port `8080`. Only SSH, HTTP, and HTTPS should be public.
 
@@ -73,14 +73,15 @@ sudo bash deploy/setup-ovh.sh nyxlearning.org
 
 The installer:
 
-- installs a supported Node.js release, Nginx, UFW, and Fail2ban;
+- installs a supported Node.js release, Caddy, UFW, and Fail2ban;
 - builds and validates Nyx for its same-origin Wisp endpoint, keeps the large bundled games that the Netlify build must omit, then removes build-only packages from the VPS;
 - creates an unprivileged, hardened `nyx` systemd service;
 - serves the generated `dist/` output through the same Express request/IP-ban guard as the API;
-- configures WebSocket forwarding for embedded Wisp;
-- trusts Cloudflare visitor-IP headers only from Cloudflare's published networks and overwrites spoofable forwarding headers;
+- configures WebSocket forwarding for embedded Wisp and uses the current browser hostname for its same-origin endpoint;
+- trusts Cloudflare visitor-IP headers only from Cloudflare's published networks and overwrites spoofable forwarding headers for direct custom domains;
+- configures Caddy On-Demand TLS with Nyx's database-backed hostname authorization endpoint;
 - opens only SSH, HTTP, and HTTPS; and
-- preserves the secret environment file and certificate-aware Nginx site when rerun.
+- preserves the secret environment file and reloads a validated Caddy configuration when rerun.
 
 ## 4. Add the environment variables
 
@@ -111,7 +112,13 @@ NYX_AI_API_KEY='...'
 
 Only add variables for features you use. Do not paste `curl` commands into this file, and never put the actual values in Git, Discord, screenshots, or chat. Keep the Firebase private key on one line with literal `\n` characters.
 
-For the one-server setup, leave `WISP_URL` commented out. Nyx then uses `wss://nyxlearning.org/wisp/`. `NYX_ALLOWED_ORIGINS` must include the exact production domain. `NYX_SITE_URL` and `OPENROUTER_API_KEY` are obsolete names and should not be added.
+For the one-server setup, leave `WISP_URL` commented out. Nyx then uses the current page hostname's `/wisp/` endpoint. Set `NYX_CUSTOM_HOST_IPS` to the VPS public address users will enter in FreeDNS:
+
+```dotenv
+NYX_CUSTOM_HOST_IPS=YOUR_VPS_IP
+```
+
+`NYX_ALLOWED_ORIGINS` must include the exact primary production domain. Verified custom domains are allowed only for same-host Wisp connections. `NYX_SITE_URL` and `OPENROUTER_API_KEY` are obsolete names and should not be added.
 
 Save Nano with `Ctrl+O`, Enter, then `Ctrl+X`. Apply and verify:
 
@@ -127,48 +134,22 @@ If it fails:
 sudo journalctl -u nyx -n 100 --no-pager
 ```
 
-## 5. Install HTTPS before changing DNS
+## 5. Validate Caddy before changing DNS
 
-Cloudflare's DNS challenge lets the VPS obtain a certificate before traffic is moved. In Cloudflare, create an API token limited to **Zone / DNS / Edit** for only `nyxlearning.org`. On the VPS:
-
-```bash
-sudo apt-get install -y certbot python3-certbot-nginx python3-certbot-dns-cloudflare
-sudo install -d -m 0700 /etc/letsencrypt
-sudo nano /etc/letsencrypt/cloudflare.ini
-```
-
-Put only this in that file:
-
-```ini
-dns_cloudflare_api_token = YOUR_LIMITED_CLOUDFLARE_DNS_TOKEN
-```
-
-Then:
+Caddy manages certificates and renewals without a Cloudflare API token. Validate both services on the VPS:
 
 ```bash
-sudo chmod 600 /etc/letsencrypt/cloudflare.ini
-sudo certbot run \
-  --authenticator dns-cloudflare \
-  --dns-cloudflare-credentials /etc/letsencrypt/cloudflare.ini \
-  --installer nginx \
-  -d nyxlearning.org \
-  -d www.nyxlearning.org
-sudo certbot renew --dry-run
-sudo nginx -t
+sudo caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+systemctl is-active caddy nyx
+curl --fail http://127.0.0.1:8080/healthz
+curl --fail http://127.0.0.1:8080/api/custom-hostnames/config
 ```
 
-Do not put this Cloudflare token in `/etc/nyx/nyx.env`; it belongs only in Certbot's root-only credential file.
+The custom-hostname response should show `"enabled":true` and the VPS address. Caddy obtains the public certificate after DNS points the hostname to this server; a forced local HTTPS request cannot complete issuance while public DNS still points somewhere else.
 
-## 6. Test the origin before cutover
+## 6. Prepare the DNS cutover
 
-From the Windows computer, force only this request to the VPS while public DNS still points to Netlify:
-
-```powershell
-curl.exe --resolve nyxlearning.org:443:YOUR_VPS_IP https://nyxlearning.org/healthz
-curl.exe --resolve nyxlearning.org:443:YOUR_VPS_IP https://nyxlearning.org/apps/link-checker/
-```
-
-The health response should report `"ok":true` and `"wisp":"embedded"`. Also test sign-in, Owner Dashboard, Link Checker, Pirate Cove, one proxied page, and one Wisp-backed game in a temporary hosts-file test or after cutover.
+Confirm that ports 80 and 443 reach the VPS and that Cloudflare's SSL/TLS encryption mode is **Full (strict)**. Do not create or store a Cloudflare API token for Caddy. Keep the former Netlify target recorded so the DNS change can be reversed if verification fails.
 
 ## 7. Change Cloudflare DNS
 
@@ -179,7 +160,7 @@ In **Cloudflare > DNS > Records**, change the existing `A` records:
 | A | `@` | `YOUR_VPS_IP` | Proxied |
 | A | `www` | `YOUR_VPS_IP` | Proxied |
 
-Remove only conflicting web `A`/`AAAA`/`CNAME` records after confirming what they do. Preserve mail records. In Cloudflare, use **SSL/TLS > Full (strict)** and keep WebSockets enabled.
+Remove only conflicting web `A`/`AAAA`/`CNAME` records after confirming what they do. In particular, replace an old proxied `www` CNAME to Netlify if `www` should be served by this VPS. Preserve mail records. In Cloudflare, use **SSL/TLS > Full (strict)** and keep WebSockets enabled.
 
 Keep the existing `nyx_ip_bans` IP List and WAF expression:
 
@@ -204,7 +185,15 @@ Verify:
 - Pirate Cove and a large Unity game;
 - Scramjet/Ultraviolet through embedded Wisp;
 - smartwatch layout if that device matters; and
-- HTTPS renewal with `sudo certbot renew --dry-run`.
+- automatic HTTPS issuance and renewal in Caddy's service log.
+
+Check Caddy's managed certificates and recent errors instead of running Certbot:
+
+```bash
+sudo journalctl -u caddy --since "30 minutes ago" --no-pager
+```
+
+For self-service FreeDNS aliases, users open `https://nyxlearning.org/connect-domain`, point an `A` record to the displayed VPS address, and submit the complete hostname. Nyx verifies DNS before authorizing Caddy to issue its certificate. See `docs/CUSTOM_DOMAINS.md` for the security model.
 
 Keep Netlify and Railway intact for at least 24 hours of stable production. Rollback is changing the Cloudflare web records back to the previous Netlify target. Only after the VPS is proven should you decide whether to cancel paid services or remove old deployment configuration.
 
@@ -224,8 +213,9 @@ Useful commands:
 ```bash
 sudo systemctl status nyx --no-pager
 sudo journalctl -u nyx -f
-sudo nginx -t
-sudo systemctl reload nginx
+sudo caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+sudo systemctl reload caddy
+sudo journalctl -u caddy -f
 sudo systemctl restart nyx
 curl --fail http://127.0.0.1:8080/healthz
 ```

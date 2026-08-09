@@ -251,7 +251,12 @@ async function nyxCustomHostnameResolvedIps(hostname) {
 
 async function nyxCustomHostnameAllowed(hostname) {
   const normalized = normalizeNyxCustomHostname(hostname);
-  if (!normalized || !firebaseAdminModeConfigured()) return false;
+  if (!normalized) return false;
+  const configuredHostnames = [...embeddedWispAllowedOrigins, process.env.NYX_PUBLIC_ORIGIN]
+    .map(value => normalizeNyxCustomHostname(value))
+    .filter(Boolean);
+  if (configuredHostnames.includes(normalized)) return true;
+  if (!firebaseAdminModeConfigured()) return false;
   const cached = nyxCustomHostnameAskCache.get(normalized);
   if (cached && cached.expiresAt > Date.now()) return cached.allowed;
   const firebase = await linkGeneratorFirebase();

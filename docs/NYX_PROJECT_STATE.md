@@ -22,7 +22,7 @@ Important release warning: production currently contains commits that are not on
 
 - Repository: `https://github.com/dubcatalt2-lab/Nyx.git`
 - Active branch: `agent/pirate-cove`
-- Latest release: Link Checker account-session reliability, same-origin account-token bridge, batched page scans, and Chromebook workspace sizing on `agent/pirate-cove`
+- Latest release: Caddy On-Demand TLS and self-service custom domains, Link Checker God Domains and unresolved-result double checks, account-session reliability, and Chromebook workspace sizing on `agent/pirate-cove`
 - `main` / `origin/main`: `0a654cc1c3e17faff12424ae1f2a1a4eb63f6a90`
 - Draft PR: `https://github.com/dubcatalt2-lab/Nyx/pull/34`
 - PR title: **Ship Pirate Cove and Owner Dashboard IP bans**
@@ -43,7 +43,7 @@ The following working-tree entries were deliberately left untracked and must not
 
 ## Current Production Verification
 
-The OVHcloud cutover was completed and production-verified on 2026-08-08. Cloudflare uses Full (strict), Certbot's DNS challenge and renewal dry run succeeded, Nginx and Nyx are enabled at boot, SSH uses key-only login, and Netlify/Railway remain available temporarily for rollback. The earlier smartwatch, game-performance, Pirate Cove, and Owner Dashboard IP-ban checks remain part of the release baseline:
+The OVHcloud cutover was completed on 2026-08-08 and migrated from Nginx/Certbot to Caddy on 2026-08-08. Cloudflare uses Full (strict), Caddy and Nyx are enabled at boot, Nginx is inactive and disabled, SSH uses key-only login, and Netlify/Railway remain available temporarily for rollback. The earlier smartwatch, game-performance, Pirate Cove, and Owner Dashboard IP-ban checks remain part of the release baseline:
 
 - `/assets/games/index.html`: HTTP 200 and contains **Pirate Cove**
 - `/assets/backgrounds/pirate-cove.gif`: HTTP 200 with `image/gif`
@@ -58,8 +58,8 @@ The OVHcloud cutover was completed and production-verified on 2026-08-08. Cloudf
 - `/api/link-checker/check`: `example.com` returned HTTP 200 with 18 vendor results and the configured paid plan, confirming the server-only OVH key is active
 - Firebase sign-in, Owner Dashboard user listing, IP-ban listing, Nyx AI, Bunny link-generator access, Pirate Cove, and a proxied page through embedded Wisp were verified after the cutover
 - FreeDNS inline vendor check: the production UI kept `example.com` in the scraper table and rendered all 18 vendor shields after the row refresh action (10 allowed, 2 blocked, 3 unknown, and 3 errors at verification time) with no horizontal overflow
-- FreeDNS custom hostname: `networkforteachers.netw.ar` resolves to the OVH IPv4 address, is included in the Nginx/Certbot certificate, and is permitted by the embedded-Wisp origin list
-- Self-service custom-domain support is staged in the working tree: `/connect-domain` verifies A/AAAA records against `NYX_CUSTOM_HOST_IPS`, stores approved hostnames in server-only `nyxCustomHostnames`, and supplies Caddy's constant-time On-Demand TLS authorization lookup. It is not live until the Caddy cutover and an OVH deployment are completed.
+- FreeDNS custom hostname: `networkforteachers.netw.ar` resolves to the OVH IPv4 address, is approved in `nyxCustomHostnames`, receives an automatic Caddy certificate, returns HTTP 200, and opens same-origin Wisp
+- Self-service custom domains are live at `/connect-domain`: Nyx verifies A/AAAA records against `NYX_CUSTOM_HOST_IPS`, stores approved hostnames in server-only `nyxCustomHostnames`, and supplies Caddy's constant-time On-Demand TLS authorization lookup. The page displayed `15.204.93.166`, enabled submission, and had no horizontal overflow at 390x844 during production verification.
 - Owner Dashboard redesign assets: cache-versioned stylesheet and script returned through the production homepage; desktop, 390x844, and 320x320 local interaction checks showed no horizontal overflow
 - **Amazing Strange Rope Police**: transformed Unity loader uses the guarded worker callback through Ultraviolet; the selected Scramjet path loads the 66 MB legacy Unity data archive, creates its canvas, and shows no callback or DataView error through a 90-second production regression run
 - Homepage cursor effect: the background dots repel, fade, and return along the pointer path; the **Nyx** wordmark remains fixed with no cursor transform
@@ -162,12 +162,12 @@ The Netlify build intentionally skips five bundled Minecraft HTML files larger t
 
 ### Current production
 
-- Static frontend, Express-backed HTTP routes, and embedded Wisp: OVHcloud VPS behind Nginx
+- Static frontend, Express-backed HTTP routes, and embedded Wisp: OVHcloud VPS behind Caddy
 - Public domain, edge proxy, and DNS: Cloudflare-managed `nyxlearning.org`
 - Accounts and shared profile/admin data: Firebase Authentication and Firestore
 - Rollback only: Netlify frontend and Railway Wisp remain configured until the OVH release is stable
 
-The VPS serves generated `dist/` through Express on local port 8080 and exposes the embedded Wisp endpoint through Nginx at `/wisp/`. Cloudflare visitor headers are trusted only after Nginx overwrites forwarding headers and only from Cloudflare networks.
+The VPS serves generated `dist/` through Express on local port 8080 and exposes the embedded Wisp endpoint through Caddy at `/wisp/`. Caddy trusts forwarded client headers only from Cloudflare's published networks, then overwrites `CF-Connecting-IP` with its parsed client address before proxying. Direct FreeDNS requests therefore cannot spoof the address used by Nyx IP logging and bans.
 
 ## IP Ban Controls
 
@@ -180,7 +180,7 @@ The VPS serves generated `dist/` through Express on local port 8080 and exposes 
 
 ### OVH deployment
 
-`DEPLOYMENT.md` and `deploy/` define the active single-OVHcloud-VPS deployment using Ubuntu 26.04, Nginx, systemd, and embedded Wisp. The installer builds the minified `dist/` output with the production same-origin Wisp URL and without Netlify's large-file omissions, serves it through Express so the application IP-ban guard also covers static pages, sanitizes forwarding headers, restricts Cloudflare visitor-IP trust to Cloudflare's published networks, and prunes build-only dependencies. `/etc/nyx/nyx.env` and the selected domain are preserved across reruns, and `deploy/update-ovh.sh` provides validated fast-forward updates.
+`DEPLOYMENT.md` and `deploy/` define the active single-OVHcloud-VPS deployment using Ubuntu 26.04, Caddy, systemd, and embedded Wisp. The installer builds the minified `dist/` output with a dynamic same-host Wisp URL and without Netlify's large-file omissions, serves it through Express so the application IP-ban guard also covers static pages, validates and reloads Caddy, sanitizes forwarding headers, restricts Cloudflare visitor-IP trust to Cloudflare's published networks, and prunes build-only dependencies. `/etc/nyx/nyx.env` and the selected domain are preserved across reruns, and `deploy/update-ovh.sh` provides validated fast-forward updates.
 
 ## Server Environment Variable Names
 
@@ -293,7 +293,8 @@ For Pirate Cove, test search, sort, pagination, card cover fallbacks, launch/ret
 ## Known Risks and Unresolved Areas
 
 - Fast full-registry scans depend on valid paid Nocturne account credentials in the VPS environment and on Nocturne's server-side queue. Provider outages or account changes can delay that external job. Nyx can stop polling without canceling it and reconnect later, but imported verdicts remain device-local.
-- Automatic FreeDNS/custom hostnames remain unavailable in production until the staged Caddy On-Demand TLS and `/connect-domain` release is deployed. The current live `networkforteachers.netw.ar` alias remains an exact manual Nginx/Certbot entry until that cutover finishes.
+- Cloudflare's `www.nyxlearning.org` record still targets the former Netlify origin. The Caddy template treats `www` as an allowed on-demand hostname but cannot issue its certificate until the Cloudflare record is changed to the OVH VPS. The apex and `networkforteachers.netw.ar` are live through Caddy; preserve the Netlify target as rollback information when fixing `www`.
+- Self-service custom domains intentionally accept only exact A/AAAA records resolving to `NYX_CUSTOM_HOST_IPS`. Certificate-authority issuance limits still apply, browser Firebase sessions are per hostname, and direct FreeDNS aliases do not inherit Cloudflare WAF protection. Keep registration rate limiting and the Caddy ask endpoint enabled.
 - Spotify authentication inside the proxied browser has been unreliable. Observed failures included invalid CSRF responses and reCAPTCHA timeouts on both the custom domain and localhost. Treat it as unresolved unless a fresh end-to-end login succeeds. Do not add another forced-engine or authentication workaround without tracing the exact request/cookie/origin flow.
 - Some external sites use bot protection, DRM, cross-origin isolation, OAuth restrictions, or security verification that may not work through a browser proxy. Distinguish an upstream restriction from a Nyx regression.
 - Large WebGL/Unity games can still exceed a device's available GPU memory or have their own performance defects. Pirate Cove's Auto performance mode reduces host rendering and game resolution, but it cannot guarantee that every third-party game is safe on every GPU.

@@ -2062,7 +2062,8 @@ app.get("/runtime-config.js", (_req, res) => {
   res.type("application/javascript").send(
     `globalThis.__NYX_RUNTIME_CONFIG__=Object.freeze(${JSON.stringify({
       wispUrl: externalWispUrl,
-      presenceUrl: publicOrigin ? `${publicOrigin}/api/presence` : ""
+      presenceUrl: publicOrigin ? `${publicOrigin}/api/presence` : "",
+      publicOrigin
     })});`
   );
 });
@@ -4103,7 +4104,10 @@ app.post("/api/account/register", async (req, res) => {
     const customToken = await firebase.auth.createCustomToken(account.uid);
     nyxAccountRegisterAttempts.delete(linkGeneratorClientId(req));
     invalidateOwnerDashboardSnapshot();
-    res.status(201).json({ customToken });
+    res.status(201).json({
+      customToken,
+      verificationRequired: Boolean(recoveryEmail)
+    });
   } catch (error) {
     const duplicateEmail = error?.code === "auth/email-already-exists";
     const duplicate = duplicateEmail || error?.status === 409;

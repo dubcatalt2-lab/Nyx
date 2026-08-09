@@ -720,7 +720,7 @@
       emailField.hidden=!registering;
       emailInput.disabled=!registering;
       forgotButton.hidden=registering;
-      footer.textContent=registering?'Add a recovery email so you can log in either way and reset a forgotten password.':'Log in with your username or recovery email.';
+      footer.textContent=registering?'Add a real email and Nyx will send a verification message. You can also leave it blank for a username-only account.':'Log in with your username or recovery email.';
       error.textContent='';
       error.classList.remove('success');
     };
@@ -759,7 +759,7 @@
       submit.disabled=true;
       error.textContent='';
       try{
-        const {signInWithCustomToken}=await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js');
+        const {sendEmailVerification,signInWithCustomToken}=await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js');
         const endpoint=mode==='register'?'/api/account/register':'/api/account/sign-in';
         const payload=mode==='register'?{username,email:recoveryEmail,password:passwordValue}:{identifier:rawIdentifier,password:passwordValue};
         const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
@@ -768,9 +768,21 @@
         const credential=await signInWithCustomToken(nyxFounderFirebaseAuth,data.customToken);
         nyxFounderSignedInUser=credential.user;
         await credential.user.getIdToken(true);
+        let verificationSent=false;
+        let verificationFailed=false;
+        if(mode==='register'&&data.verificationRequired&&credential.user.email){
+          try{
+            const configuredOrigin=String(globalThis.__NYX_RUNTIME_CONFIG__?.publicOrigin||'').trim();
+            const returnUrl=new URL('/',configuredOrigin||location.origin).href;
+            await sendEmailVerification(credential.user,{url:returnUrl,handleCodeInApp:false});
+            verificationSent=true;
+          }catch{
+            verificationFailed=true;
+          }
+        }
         await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile()]);
         close();
-        toast(mode==='register'?'Nyx profile created':'Signed in');
+        toast(mode==='register'?(verificationSent?'Account created — check your email to verify it.':(verificationFailed?'Account created, but the verification email could not be sent. Check Firebase email settings.':'Nyx profile created')):'Signed in');
       }catch(authError){
         error.textContent=nyxFriendlyFirebaseError(authError,'Account could not be completed. Try again.');
         submit.disabled=false;
@@ -1549,7 +1561,7 @@
   `;
   const nyxCreditsOwnerImageStyle=`.nyx-credits-owner-image{width:min(394px,100%);margin:0}.nyx-credits-owner-image img{display:block;width:100%;height:auto;border-radius:0}`;
   const DEFAULT_BROWSER_MODE='scramjet';
-  const DEFAULT_BROWSER_TRANSPORT='libcurl';
+  const DEFAULT_BROWSER_TRANSPORT='auto';
   const nyxFontOptions=[
     ['outfit','Outfit','Outfit,Arial,sans-serif'],
     ['raleway','Raleway','Raleway,Arial,sans-serif'],
@@ -3794,6 +3806,11 @@
     overlay.className='browser-shell-settings-overlay';
     overlay.innerHTML=`<main class="browser-shell-settings-panel" aria-label="Settings">${browserShellSettingsMarkup(browserShellPresetTiles())}</main>`;
     document.body.appendChild(overlay);
+    const transportSelect=overlay.querySelector('[data-browser-transport]');
+    if(transportSelect && !transportSelect.querySelector('option[value="auto"]')){
+      transportSelect.prepend(new Option('Auto (recommended)','auto'));
+      transportSelect.value=store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT);
+    }
     const effectBlock=overlay.querySelector('[data-effect-value]')?.closest('.settings-block');
     if(effectBlock){
       const privacyBlock=document.createElement('section');
@@ -5708,6 +5725,19 @@
     ])) return 'epoxy';
     if(hostMatches(host,['youtube.com','youtu.be','tcgplayer.com'])) return 'epoxy';
     return '';
+  }
+  function isYouTubeUrl(url){
+    return hostMatches(browserHost(url),['youtube.com','youtu.be']);
+  }
+  function youtubeEnglishUrl(url){
+    if(!isYouTubeUrl(url)) return url;
+    try{
+      const parsed=new URL(url,location.href);
+      parsed.searchParams.set('hl','en');
+      parsed.searchParams.set('gl','US');
+      parsed.searchParams.set('persist_hl','1');
+      return parsed.href;
+    }catch{return url}
   }
   function nativeUvUrl(url){
     const target=proxyTargetUrl(url);
@@ -8482,6 +8512,58 @@
       }
       install();
     }
+    function installYouTubeCompatibilityGuard(t){
+      const frame=t?.frame;
+      if(!frame) return;
+      const install=()=>{
+        try{
+          const frameHref=String(frame.contentWindow?.location?.href || frame.getAttribute('src') || '');
+          const source=browserShellSourceUrl(frameHref)
+            || browserShellSourceUrl(t.sourceUrl || t.url || '')
+            || t.sourceUrl || t.url || frameHref;
+          if(!isYouTubeUrl(source)) return;
+          const doc=frame.contentDocument;
+          if(!doc?.documentElement || !doc.querySelector('ytd-app,#movie_player,tp-yt-iron-overlay-backdrop')) return;
+          doc.documentElement.lang='en';
+          const cookies=String(doc.cookie || '');
+          if(!/(?:^|;\s*)PREF=[^;]*hl=en/i.test(cookies)){
+            doc.cookie='PREF=hl=en&gl=US; path=/; max-age=31536000; SameSite=Lax';
+            if(!t.youtubeLocaleReloaded){
+              t.youtubeLocaleReloaded=true;
+              setTimeout(()=>{
+                try{frame.contentWindow?.location?.reload()}catch{}
+              },80);
+              return;
+            }
+          }
+          const player=doc.querySelector('#movie_player');
+          try{player?.setPlaybackQualityRange?.('large','large')}catch{}
+          try{player?.setPlaybackQuality?.('large')}catch{}
+          doc.documentElement.dataset.nyxYouTubeCompatibility='english-480p';
+          if(doc.documentElement.dataset.nyxYouTubeNavigationWatch!=='true'){
+            doc.documentElement.dataset.nyxYouTubeNavigationWatch='true';
+            const reapply=()=>setTimeout(install,240);
+            doc.addEventListener('yt-navigate-finish',reapply);
+            doc.addEventListener('yt-page-data-updated',reapply);
+          }
+          if(!frame.classList.contains('active')){
+            try{player?.pauseVideo?.()}catch{}
+            doc.querySelectorAll('video,audio').forEach(media=>{try{media.pause()}catch{}});
+          }
+        }catch{}
+      };
+      if(frame.dataset.nyxYouTubeCompatibilityWatch!=='true'){
+        frame.dataset.nyxYouTubeCompatibilityWatch='true';
+        frame.addEventListener('load',()=>{
+          install();
+          setTimeout(install,350);
+          setTimeout(install,1400);
+          setTimeout(install,4200);
+          setTimeout(install,8000);
+        });
+      }
+      install();
+    }
     function shouldRelaxProxySandbox(url){
       const raw=browserShellSourceUrl(String(url || '')) || String(url || '');
       const host=browserHost(raw);
@@ -8609,6 +8691,7 @@
       const sourceUrl=t.sourceUrl || t.url || t.frame.getAttribute('src') || '';
       applyFrameInteractionPermissions(t.frame);
       installYouTubeCompositorGuard(t);
+      installYouTubeCompatibilityGuard(t);
       if(!popupProtectionEnabled() && shouldRelaxProxySandbox(sourceUrl)){
         t.frame.removeAttribute('sandbox');
         applyFrameInteractionPermissions(t.frame);
@@ -8666,6 +8749,14 @@
         win.querySelector('.browser-home').classList.remove('hidden');
         if(t?.opening) playBrowserShellPageReveal(win);
       }
+      state.tabs.forEach(tab=>{
+        if(tab===t) return;
+        try{
+          const doc=tab.frame?.contentDocument;
+          doc?.querySelector('#movie_player')?.pauseVideo?.();
+          doc?.querySelectorAll('video,audio').forEach(media=>media.pause());
+        }catch{}
+      });
       win.querySelector('.urlbar').value=browserShellDisplayValue(activeUrl); win.querySelector('.titlebar-title').textContent=browserChromeTitle(activeTitle,t?.sourceUrl || activeUrl); renderTabs(); bring(win);
       if(t?.url || !mappedShellTab?.url) updateBrowserShellLocation(t?.url || '',t?.id || '');
     }
@@ -8714,12 +8805,16 @@
       resetProxyInstallers();
     }
     function applyPreferredTransportForUrl(url,browserMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE))){
+      const siteTransport=preferredTransport(url);
+      if(isYouTubeUrl(url) && siteTransport){
+        setBrowserTransportOverride(siteTransport);
+        return;
+      }
       if(!transportAutoEnabled()){
         setBrowserTransportOverride('');
         return;
       }
-      const siteTransport=preferredTransport(url);
-      setBrowserTransportOverride(siteTransport || (browserMode==='auto' ? (prefersEpoxyTransport(url) ? 'epoxy' : 'libcurl') : ''));
+      setBrowserTransportOverride(siteTransport || (prefersEpoxyTransport(url) ? 'epoxy' : 'libcurl'));
     }
     function transportAutoEnabled(){
       return store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT)==='auto';
@@ -9293,7 +9388,7 @@
         return;
       }
       if(rawText && looksLikeUrl && !proxyInternal) document.querySelectorAll('.nyx-preflight').forEach(overlay=>overlay.remove());
-      const url=normalize(browserShellSourceUrl(raw) || raw); if(!url)return;
+      const url=youtubeEnglishUrl(normalize(browserShellSourceUrl(raw) || raw)); if(!url)return;
       win.querySelector('.urlbar').value=browserShellDisplayValue(url);
       if(isAnimexUrl(url) && t.animexPromptUrl!==url){
         t.animexPromptUrl=url;
@@ -11179,6 +11274,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
           <h2>Transport</h2>
           <p class="hint">Choose the installed network transport.</p>
           <select id="settingTransport">
+            <option value="auto">Auto (recommended)</option>
             <option value="epoxy">Epoxy over Wisp</option>
             <option value="wisp">Wisp endpoint</option>
             <option value="libcurl">Libcurl over Wisp</option>

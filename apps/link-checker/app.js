@@ -8,6 +8,7 @@
   const HISTORY_LIMIT=500;
   const FREEDNS_PAGE_SIZE=25;
   const FREEDNS_FULL_SAVE_BATCH=100;
+  const FREEDNS_FULL_IMPORT_CONCURRENCY=6;
   const FREEDNS_BULK_ACCESS_TTL_MS=5*60_000;
   const THEME_CLASSES=['theme-default','theme-ruby','theme-emerald','theme-sakura','theme-fresh'];
   const $=selector=>document.querySelector(selector);
@@ -614,32 +615,39 @@
       throw new DOMException('Stopped','AbortError');
     };
     const updateRemoteProgress=status=>{
-      const remoteTotal=Math.max(1,Number(status?.total)||total);const checked=Math.min(remoteTotal,Math.max(0,Number(status?.checked)||0));setFreednsFullProgress(checked,remoteTotal);
-      $('[data-freedns-progress-detail]').textContent='Nocturne is checking the registry on its server. Nyx will import the completed vendor results automatically.';
+      const checked=Math.max(0,Number(status?.checked)||0);const locallyReady=already+imported;setFreednsFullProgress(Math.max(locallyReady,Math.min(total,checked)),total);
+      $('[data-freedns-progress-detail]').textContent=`${locallyReady.toLocaleString()} saved verdicts loaded. Nocturne's server has checked ${checked.toLocaleString()} in the current refresh.`;
     };
     const reportFromProvider=entry=>({target:entry.domain,url:`https://${entry.domain}/`,results:Object.entries(entry.vendors||{}).map(([filter,value])=>({filter,blocked:value?.blocked===true?true:(value?.blocked===false?false:null),category:String(value?.category||''),error:String(value?.error||'')}))});
-    const importProviderResults=async()=>{
-      let page=1;let totalPages=1;
-      do{
-        const payload=await bulkFetch(`/full-scan/results?page=${page}`);totalPages=Math.max(1,Number(payload.totalPages)||1);
+    const importProviderResults=async(label='Loading saved Nocturne verdicts')=>{
+      const importPayload=(payload,page,totalPages)=>{
         for(const entry of Array.isArray(payload.domains)?payload.domains:[]){
           if(!wanted.has(entry.domain)||!entry.vendors||!Object.keys(entry.vendors).length)continue;
           storeFreednsVerdict(reportFromProvider(entry),entry.domain);wanted.delete(entry.domain);imported+=1;unsaved+=1;
           if(unsaved>=FREEDNS_FULL_SAVE_BATCH&&!flush()){storageFailed=true;throw new Error('This browser could not save more verdicts.');}
         }
-        setFreednsFullProgress(already+imported,total);$('[data-freedns-progress-detail]').textContent=`Importing completed vendor results: page ${page.toLocaleString()} of ${totalPages.toLocaleString()}.`;
-        page+=1;
-      }while(page<=totalPages&&!signal.aborted);
+        setFreednsFullProgress(already+imported,total);$('[data-freedns-progress-detail]').textContent=`${label}: page ${page.toLocaleString()} of ${totalPages.toLocaleString()} · ${(already+imported).toLocaleString()} ready.`;
+      };
+      const first=await bulkFetch('/full-scan/results?page=1');const totalPages=Math.max(1,Number(first.totalPages)||1);importPayload(first,1,totalPages);
+      for(let page=2;page<=totalPages&&!signal.aborted&&wanted.size;page+=FREEDNS_FULL_IMPORT_CONCURRENCY){
+        const pages=Array.from({length:Math.min(FREEDNS_FULL_IMPORT_CONCURRENCY,totalPages-page+1)},(_,index)=>page+index);
+        const payloads=await Promise.all(pages.map(current=>bulkFetch(`/full-scan/results?page=${current}`)));
+        payloads.forEach((payload,index)=>importPayload(payload,pages[index],totalPages));
+      }
     };
     let error=null;
     try{
-      let status=await bulkFetch('/full-scan/start',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});let observedRunning=status.running===true;let idlePolls=0;updateRemoteProgress(status);
-      while(!signal.aborted){
-        if(status.running===true){observedRunning=true;idlePolls=0;}
-        else if(idlePolls>=2&&(observedRunning||status.started===false))break;
-        await freednsDelay(2500,signal);status=await bulkFetch('/full-scan/status');updateRemoteProgress(status);if(!status.running)idlePolls+=1;
+      await importProviderResults();
+      if(!flush())throw new Error('This browser could not save more verdicts.');
+      if(wanted.size){
+        let status=await bulkFetch('/full-scan/start',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});let observedRunning=status.running===true;let idlePolls=0;updateRemoteProgress(status);
+        while(!signal.aborted){
+          if(status.running===true){observedRunning=true;idlePolls=0;}
+          else if(idlePolls>=2&&(observedRunning||status.started===false))break;
+          await freednsDelay(2500,signal);status=await bulkFetch('/full-scan/status');updateRemoteProgress(status);if(!status.running)idlePolls+=1;
+        }
+        if(!signal.aborted)await importProviderResults('Importing refreshed Nocturne verdicts');
       }
-      if(!signal.aborted)await importProviderResults();
     }catch(scanError){if(scanError.name!=='AbortError')error=scanError;}
     finally{
       if(!flush())storageFailed=true;

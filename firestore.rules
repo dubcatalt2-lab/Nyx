@@ -62,6 +62,20 @@ service cloud.firestore {
       }
     }
 
+    match /nyxChatConversations/{conversationId} {
+      allow read, write: if false;
+      match /messages/{messageId} {
+        allow read, write: if false;
+      }
+    }
+
+    match /nyxChatAttachments/{attachmentId} {
+      allow read, write: if false;
+      match /chunks/{chunkId} {
+        allow read, write: if false;
+      }
+    }
+
     match /nyxProfileMedia/{mediaId} {
       allow read, write: if false;
       match /chunks/{chunkId} {

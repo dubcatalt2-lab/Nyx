@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <title>Nyx Chat</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/icons/chat.svg">
-  <link rel="stylesheet" href="./styles.css?v=20260810-chat-v1">
+  <link rel="stylesheet" href="./styles.css?v=20260810-chat-v2">
 </head>
 <body>
   <svg class="chat-icon-sprite" aria-hidden="true">
@@ -19,6 +19,11 @@
     <symbol id="icon-arrow-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
     <symbol id="icon-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6M10 11v6M14 11v6"/></symbol>
     <symbol id="icon-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></symbol>
+    <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="icon-paperclip" viewBox="0 0 24 24"><path d="m21.4 11.6-8.9 8.9a6 6 0 0 1-8.5-8.5l9.6-9.6a4 4 0 0 1 5.7 5.7l-9.6 9.6a2 2 0 0 1-2.8-2.8l8.9-8.9"/></symbol>
+    <symbol id="icon-download" viewBox="0 0 24 24"><path d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14"/></symbol>
+    <symbol id="icon-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 10h.01M15.5 10h.01M8 14.5c1 1.3 2.3 2 4 2s3-.7 4-2"/></symbol>
+    <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
   </svg>
 
   <div class="chat-app" data-chat-app>
@@ -41,6 +46,11 @@
           <button class="icon-button mobile-only" type="button" data-sidebar-close aria-label="Close channels"><svg><use href="#icon-close"/></svg></button>
         </div>
         <nav class="channel-list" data-channel-list aria-label="Chat channels"></nav>
+        <div class="sidebar-heading direct-heading">
+          <span>Direct Messages</span>
+          <button class="sidebar-add" type="button" data-new-dm aria-label="Start a direct message"><svg><use href="#icon-plus"/></svg></button>
+        </div>
+        <nav class="direct-list" data-direct-list aria-label="Direct messages"></nav>
         <div class="chat-guidelines">
           <svg><use href="#icon-shield"/></svg>
           <p><strong>Keep Nyx welcoming.</strong><span>Do not share passwords, private details, or harmful content.</span></p>
@@ -51,7 +61,7 @@
       <main class="conversation">
         <header class="conversation-header">
           <button class="icon-button mobile-only" type="button" data-channels-toggle aria-label="Show channels"><svg><use href="#icon-menu"/></svg></button>
-          <span class="channel-symbol"><svg><use href="#icon-hash"/></svg></span>
+          <span class="channel-symbol" data-conversation-symbol><svg><use href="#icon-hash"/></svg></span>
           <div><h1 data-channel-title>General</h1><p data-channel-description>The main Nyx community chat.</p></div>
           <span class="connection-state" data-connection-state><i></i><span>Connecting</span></span>
         </header>
@@ -82,6 +92,10 @@
         </section>
 
         <form class="message-composer" data-message-form hidden>
+          <div class="mention-menu" data-mention-menu hidden></div>
+          <div class="attachment-preview-list" data-attachment-previews hidden></div>
+          <button class="composer-tool" type="button" data-attachment-button aria-label="Attach files" title="Attach files"><svg><use href="#icon-paperclip"/></svg></button>
+          <input type="file" data-attachment-input accept="image/png,image/jpeg,image/gif,image/webp,application/pdf,text/plain,.docx,.xlsx,.pptx" multiple hidden>
           <label>
             <span class="sr-only">Message</span>
             <textarea data-message-input rows="1" maxlength="1000" placeholder="Message #general"></textarea>
@@ -114,6 +128,11 @@
     <button class="icon-button dialog-close" type="button" data-member-dialog-close aria-label="Close profile"><svg><use href="#icon-close"/></svg></button>
     <div data-member-dialog-content></div>
   </dialog>
-  <script src="./app.js?v=20260810-chat-v1"></script>
+  <dialog class="dm-dialog" data-dm-dialog>
+    <header><div><h2>New direct message</h2><p>Choose a Nyx member.</p></div><button class="icon-button" type="button" data-dm-dialog-close aria-label="Close"><svg><use href="#icon-close"/></svg></button></header>
+    <input type="search" data-dm-search placeholder="Search members" autocomplete="off">
+    <div class="dm-picker-list" data-dm-picker-list></div>
+  </dialog>
+  <script src="./app.js?v=20260810-chat-v2"></script>
 </body>
 </html>

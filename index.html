@@ -61,7 +61,9 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
 (() => {
   const splash=document.getElementById('nyxStudyHubStartup');
   const root=document.documentElement;
+  const shownAt=performance.now();
   let removeTimer=0;
+  let autoDismissTimer=0;
   let finished=false;
   const removeSplash=()=>{
     splash?.remove();
@@ -70,6 +72,7 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
   const finishSplash=(duration=350)=>{
     if(finished)return;
     finished=true;
+    clearTimeout(autoDismissTimer);
     clearTimeout(removeTimer);
     splash?.classList.add('is-leaving');
     removeTimer=setTimeout(removeSplash,duration);
@@ -77,10 +80,12 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
   const onMessage=event=>{
     if(event.source!==splash?.contentWindow||event.data?.type!=='nyx-studyhub')return;
     if(event.data.action==='interactive-ready')return;
-    if(event.data.action==='math-passed')finishSplash(350);
+    if(event.data.action==='math-passed'&&performance.now()-shownAt>=3500)finishSplash(350);
   };
+  autoDismissTimer=setTimeout(()=>finishSplash(350),3500);
   addEventListener('message',onMessage);
   addEventListener('pagehide',()=>{
+    clearTimeout(autoDismissTimer);
     clearTimeout(removeTimer);
     removeEventListener('message',onMessage);
   },{once:true});
@@ -375,6 +380,6 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
 <script src="js/loading-screen.js?v=20260730-studyhub-input-v11"></script>
 <script src="js/pwa-install.js?v=20260803-singlefile-current-v5"></script>
 <script src="js/owner-dashboard.js?v=20260808-guest-identities-v13"></script>
-<script src="script.js?v=20260810-chat-v21"></script>
+<script src="script.js?v=20260810-chat-v22"></script>
 </body>
 </html>

@@ -465,9 +465,10 @@
       toast
     });
   }
-  async function openNyxProfileDirectory(){
+  async function openNyxProfileDirectory(requestedProfileUid=''){
     closeNyxAccountMenu();
     if(!nyxFounderSignedInUser){await openNyxAccountAccess();if(!nyxFounderSignedInUser)return}
+    requestedProfileUid=/^[A-Za-z0-9_-]{8,128}$/.test(String(requestedProfileUid||''))?String(requestedProfileUid):'';
     document.querySelector('.nyx-profile-directory-overlay')?.remove();
     const overlay=document.createElement('div');
     overlay.className='nyx-profile-directory-overlay';
@@ -490,7 +491,7 @@
     const search=overlay.querySelector('[data-profile-directory-search]');
     const roleLabel=role=>({owner:'Owner',co_owner:'Co-owner',admin:'Admin',manager:'Manager',developer:'Developer',moderator:'Moderator',support:'Support',tester:'Tester',contributor:'Contributor',member:'Member'}[role]||'Member');
     let entries=[];
-    let selectedUid='';
+    let selectedUid=requestedProfileUid;
     let searchTimer=0;
     let controller=null;
     const close=()=>{
@@ -538,8 +539,16 @@
       try{
         const token=await nyxGetFirebaseToken(true);
         if(!token)throw new Error('Sign in again to browse profiles.');
-        const data=await nyxProfileMediaFetch(`/api/profiles?search=${encodeURIComponent(search.value.trim())}`,{headers:{Authorization:`Bearer ${token}`},cache:'no-store',signal:controller.signal},'Profiles could not be loaded.');
-        entries=Array.isArray(data.profiles)?data.profiles:[];
+        if(requestedProfileUid){
+          const data=await nyxProfileMediaFetch(`/api/profiles/${encodeURIComponent(requestedProfileUid)}`,{headers:{Authorization:`Bearer ${token}`},cache:'no-store',signal:controller.signal},'Profile could not be loaded.');
+          entries=[{uid:data.uid,profile:data.profile,role:data.role||'member',online:Boolean(data.online),createdAt:data.createdAt,self:data.uid===nyxFounderSignedInUser?.uid}];
+          search.value='';
+          search.disabled=true;
+          search.placeholder='Viewing selected profile';
+        }else{
+          const data=await nyxProfileMediaFetch(`/api/profiles?search=${encodeURIComponent(search.value.trim())}`,{headers:{Authorization:`Bearer ${token}`},cache:'no-store',signal:controller.signal},'Profiles could not be loaded.');
+          entries=Array.isArray(data.profiles)?data.profiles:[];
+        }
         renderResults();
       }catch(error){
         if(error.name==='AbortError')return;
@@ -9579,7 +9588,7 @@
       const q=e.target.closest('[data-url]'); if(q){e.preventDefault(); navigate(q.dataset.url)}
     });
     const messageHandler=e=>{
-      if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:account-token-request','nyx:proxy-direct-fallback','nyx:close-tab'].includes(e.data?.type)) return;
+      if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:account-token-request','nyx:chat-open-profile','nyx:proxy-direct-fallback','nyx:close-tab'].includes(e.data?.type)) return;
       if(e.data.type==='nyx:account-token-request'){
         if(e.origin!==location.origin)return;
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
@@ -9594,6 +9603,15 @@
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
         const sourceShellTab=browserShellTabs.find(tab=>tab.browserTabId===sourceTab.id);
         if(sourceShellTab)closeBrowserShellTab(sourceShellTab.id);else closeTabById(sourceTab.id,true);
+        return;
+      }
+      if(e.data.type==='nyx:chat-open-profile'){
+        if(e.origin!==location.origin)return;
+        const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
+        let sourcePath='';try{sourcePath=new URL(sourceTab.sourceUrl||'',location.href).pathname}catch{}
+        if(!['/apps/chat/','/apps/chat/index.html'].includes(sourcePath))return;
+        const uid=String(e.data.uid||'').trim();if(!/^[A-Za-z0-9_-]{8,128}$/.test(uid))return;
+        void openNyxProfileDirectory(uid);
         return;
       }
       if(['nyx:ai-profile-request','nyx:ai-open-profile'].includes(e.data.type)&&(e.origin!==location.origin||!state.tabs.some(tab=>tab.frame.contentWindow===e.source)))return;

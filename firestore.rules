@@ -55,6 +55,13 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /nyxChatChannels/{channelId} {
+      allow read, write: if false;
+      match /messages/{messageId} {
+        allow read, write: if false;
+      }
+    }
+
     match /nyxProfileMedia/{mediaId} {
       allow read, write: if false;
       match /chunks/{chunkId} {

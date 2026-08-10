@@ -22,7 +22,7 @@ Important release warning: production currently contains commits that are not on
 
 - Repository: `https://github.com/dubcatalt2-lab/Nyx.git`
 - Active branch: `agent/pirate-cove`
-- Latest release: Caddy On-Demand TLS and self-service custom domains, Link Checker God Domains and unresolved-result double checks, account-session reliability, and Chromebook workspace sizing on `agent/pirate-cove`
+- Latest release: account-only Nyx community chat, Caddy On-Demand TLS and self-service custom domains, Link Checker God Domains and unresolved-result double checks, account-session reliability, and Chromebook workspace sizing on `agent/pirate-cove`
 - `main` / `origin/main`: `0a654cc1c3e17faff12424ae1f2a1a4eb63f6a90`
 - Draft PR: `https://github.com/dubcatalt2-lab/Nyx/pull/34`
 - PR title: **Ship Pirate Cove and Owner Dashboard IP bans**
@@ -51,6 +51,7 @@ The OVHcloud cutover was completed on 2026-08-08 and migrated from Nginx/Certbot
 - `/catclass-games`: HTTP 200 JSON
 - `/api/owner-dashboard/ip-bans`: HTTP 401 when unauthenticated, confirming the route and function bundle are live
 - `/apps/link-checker/`: HTTP 200 with the Nocturne-inspired dashboard, sidebar, matching vector action icons, in-app tab-closing **Back to Nyx** action, and FreeDNS Scraper UI
+- `/apps/chat/`: account-only Nyx community chat with General, Gaming, Study Hall, and Off Topic channels, responsive channel/member drawers, member presence, unread markers, message pagination, and author/moderator deletion
 - Link Checker God Domains and unresolved-result retry asset version `20260808-double-check-v12` is the current release candidate, and unauthenticated `/api/link-checker/full-scan/status` requests return HTTP 401
 - The OVH-only Nocturne account credentials successfully authenticated and read `/api/vendors/status` without exposing credentials or starting a scan
 - `/api/link-checker/freedns-registry?page=1`: HTTP 200 with 100 parsed registry entries; FreeDNS reported 21,163 entries across 212 pages at verification time
@@ -91,6 +92,7 @@ Nyx is primarily a vanilla HTML, CSS, and JavaScript application, not React or a
 - `scramjet/`, `scramjet.sw.js`: Scramjet proxy runtime
 - `baremux/`, `epoxy/`, `assets/transports/`: BareMux, Epoxy, and Libcurl transports
 - `assets/games/`: Pirate Cove UI, manifest, game launcher, and fallback behavior
+- `apps/chat/`: account-only community chat client and responsive Discord-inspired presentation
 - `assets/ugs/`, `assets/gn-math/`, `assets/gms-games/`, `assets/seraph/`: game sources and players
 - `netlify/functions/api.mjs`: wraps the Express app with `serverless-http`
 - `scripts/build-netlify.mjs`: produces generated `dist/` output and runtime configuration
@@ -109,6 +111,7 @@ Client preferences and much local UI state use browser storage. Cross-device acc
 - Settings and onboarding
 - AI workspace, model selection, conversations, temporary chats, image attachments, and API integration
 - Owner Dashboard, role permissions, subscriptions, premium access, profiles, activity, and audit records
+- Account-only community chat channels, message history, online member presentation, unread state, send limits, and author/moderator deletion
 - Shared presence documents hold the stable guest label plus an authenticated account UID when a valid bearer token is present; direct browser access to `nyxPresenceSessions` remains denied by Firestore rules
 - About Nyx and its user-directed changelog
 - Pirate Cove search, sorting, pagination, remote catalogs, fallbacks, and full-screen player
@@ -121,7 +124,8 @@ Client preferences and much local UI state use browser storage. Cross-device acc
 - The user's explicit proxy engine and transport choice should remain authoritative. Do not silently force a different engine for a site unless the user asks for that policy. YouTube is the one documented transport exception: either selected engine uses Epoxy for stable streamed playback, while the saved general transport remains unchanged.
 - Smartwatch-specific layout is limited to viewports no larger than 480px wide and 520px tall. It keeps Back, Reload, Home, the address field, and Menu visible; Forward, Bookmark, and Weather remain available outside that watch breakpoint.
 - Dense workspaces must account for ChromeOS display scaling: Link Checker and Nyx AI collapse their desktop sidebars at 1100px so filters, model controls, tables, and dropdowns retain the full content width. Larger laptop and desktop viewports keep the persistent sidebars. The main browser shell also has a viewport-driven short-laptop layout for 481-1100px-wide screens at 650px height or less; it compacts the homepage, account menu, weather report, and settings controls without changing the separate watch layout.
-- When Link Checker runs inside a Nyx tab, it obtains a fresh Firebase ID token from the authenticated same-origin parent through the narrowly scoped `nyx:account-token-request` bridge. The parent validates the requesting tab as `/apps/link-checker/` before replying. This avoids loading a second Firebase copy from Google's CDN, which managed Chromebooks can replace with an HTML block page. Direct standalone Link Checker pages retain the Firebase module fallback.
+- When Link Checker or Nyx Chat runs inside a Nyx tab, it obtains a fresh Firebase ID token from the authenticated same-origin parent through the narrowly scoped `nyx:account-token-request` bridge. The parent validates the requesting tab as the exact `/apps/link-checker/` or `/apps/chat/` path before replying. This avoids loading a second Firebase copy from Google's CDN, which managed Chromebooks can replace with an HTML block page. Direct standalone app pages retain the Firebase module fallback.
+- Nyx Chat uses the same narrowly scoped parent token bridge, with the parent accepting only the exact `/apps/chat/` and `/apps/link-checker/` paths. Chat is unavailable to guests. Its fixed community channels read and write through authenticated `/api/chat/*` routes; direct browser access to `nyxChatChannels` remains denied by Firestore rules. Messages are plain text up to 1,000 characters, rapid sends are throttled per account, authors can delete their own messages, and Moderator-or-higher roles can remove any message. The client polls the active channel for new messages, refreshes presence separately, stores only unread timestamps on the device, and keeps private credentials out of chat documents and browser code.
 - Scramjet requires browser Service Worker support. When the selected browser cannot provide it, keep the saved engine unchanged and offer the user a per-tab **Try direct mode** action; direct mode still depends on the destination allowing iframe embedding.
 - Keep the Developer Console implemented with Eruda unless the user explicitly requests otherwise.
 - Link Checker vendor scans go through Nyx's same-origin `/api/link-checker/*` server bridge to `lc.nocturne.lol`. Individual checks prefer the paid Nocturne account session and fall back to `NYX_LINK_CHECKER_API_KEY` only when account credentials are not configured. Fast page and full-registry scans require `NYX_LINK_CHECKER_ACCOUNT_USERNAME` and `NYX_LINK_CHECKER_ACCOUNT_PASSWORD`; Nyx keeps the resulting session cookie only in server memory and automatically signs in again after rejection or restart. Starting a full scan returns as soon as Nocturne accepts the job instead of waiting on a second provider status request, and the browser automatically retries transient provider timeouts, overload responses, and rate limits while the user keeps the scan active. Never put any of these values in client code, tracked files, documentation, logs, or commits.

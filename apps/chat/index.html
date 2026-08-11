@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <title>Nyx Chat</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/icons/chat.svg">
-  <link rel="stylesheet" href="./styles.css?v=20260810-chat-v5">
+  <link rel="stylesheet" href="./styles.css?v=20260810-chat-media-v7">
 </head>
 <body>
   <svg class="chat-icon-sprite" aria-hidden="true">
@@ -112,7 +112,7 @@
           <div class="mention-menu" data-mention-menu hidden></div>
           <div class="attachment-preview-list" data-attachment-previews hidden></div>
           <button class="composer-tool" type="button" data-attachment-button aria-label="Attach files" title="Attach files"><svg><use href="#icon-paperclip"/></svg></button>
-          <input type="file" data-attachment-input accept="image/png,image/jpeg,image/gif,image/webp,application/pdf,text/plain,.docx,.xlsx,.pptx" multiple hidden>
+          <input type="file" data-attachment-input accept="image/png,image/jpeg,image/gif,image/webp,audio/mpeg,audio/mp4,audio/ogg,audio/wav,audio/webm,video/mp4,video/ogg,video/quicktime,video/webm,application/pdf,text/plain,.docx,.xlsx,.pptx,.mp3,.m4a,.wav,.mp4,.m4v,.mov,.webm" multiple hidden>
           <label>
             <span class="sr-only">Message</span>
             <textarea data-message-input rows="1" maxlength="1000" placeholder="Message #general"></textarea>
@@ -161,6 +161,6 @@
       <div><button type="button" class="btn-subtle" data-channel-edit-cancel hidden>Cancel edit</button><button type="submit" class="primary-button" data-channel-save>Add channel</button></div>
     </form>
   </dialog>
-  <script src="./app.js?v=20260810-chat-v5"></script>
+  <script src="./app.js?v=20260810-chat-media-v7"></script>
 </body>
 </html>

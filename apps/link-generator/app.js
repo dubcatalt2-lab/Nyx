@@ -1,6 +1,6 @@
 (()=>{
   'use strict';
-  const LINK_CHECKER_API='https://getuwu.christmas/api/v1';
+  const LINK_CHECKER_API='/api/link-checker';
   const SESSION_KEY='nyx.linkGenerator.firebaseSession';
   const $=selector=>document.querySelector(selector);
   const refs={
@@ -301,19 +301,25 @@
     finally{setAuthBusy(false)}
   }
 
+  function filterKey(item){
+    return String(typeof item==='string' ? item : (item?.key || item?.filter || '')).trim().toLowerCase();
+  }
   function filterLabel(item){
-    const key=String(item?.key || item?.filter || '').toLowerCase();
-    const label=String(item?.label || item?.filter || item?.key || 'Content filter');
-    return key==='cisco' || /^cisco talos$/i.test(label) ? 'Cisco Umbrella' : label;
+    const key=filterKey(item);
+    const supplied=String(typeof item==='string' ? item : (item?.label || item?.filter || item?.key || 'Content filter'));
+    const labels={blocksi_ai:'Blocksi AI',cisco:'Cisco Umbrella',dnsfilter:'DNSFilter',fortiguard:'FortiGuard',goguardian:'GoGuardian',iboss:'iBoss',lanschool:'LanSchool',paloalto:'Palo Alto'};
+    if(labels[key]) return labels[key];
+    if(/^cisco talos$/i.test(supplied)) return 'Cisco Umbrella';
+    return supplied===key ? key.replace(/_/g,' ').replace(/\b\w/g,letter=>letter.toUpperCase()) : supplied;
   }
   async function loadFilters(){
     try{
-      const response=await readJson(await fetch(`${LINK_CHECKER_API}/filters`,{headers:{Accept:'application/json'},cache:'no-store'}));
-      const filters=Array.isArray(response) ? response : response.filters;
+      const response=await readJson(await fetch(`${LINK_CHECKER_API}/vendors`,{headers:{Accept:'application/json'},cache:'no-store'}));
+      const filters=Array.isArray(response) ? response : response.vendors;
       if(!Array.isArray(filters) || !filters.length) throw new Error('No filters are currently available.');
       refs.filter.textContent='';
       const prompt=document.createElement('option');prompt.value='';prompt.textContent='Choose a content filter';refs.filter.append(prompt);
-      filters.forEach(item=>{if(!item?.key)return;const option=document.createElement('option');option.value=String(item.key);option.textContent=filterLabel(item);refs.filter.append(option)});
+      filters.forEach(item=>{const key=filterKey(item);if(!key)return;const option=document.createElement('option');option.value=key;option.textContent=filterLabel(item);refs.filter.append(option)});
       refs.filter.disabled=false;
     }catch(error){refs.filter.innerHTML='<option value="">Filter list unavailable</option>';refs.filter.disabled=true;showNotice(`Could not load the content filters: ${error.message}`,'error')}
   }
@@ -345,9 +351,11 @@
   }
   async function checkOneGeneratedLink(url,filterKey){
     try{
-      const endpoint=new URL(`${LINK_CHECKER_API}/check`);endpoint.searchParams.set('url',url);endpoint.searchParams.set('filter',filterKey);
-      const report=await readJson(await fetch(endpoint,{headers:{Accept:'application/json'},cache:'no-store'}));
-      const result=Array.isArray(report?.results) ? report.results[0] : report?.result || report;
+      const report=await readJson(await fetch(`${LINK_CHECKER_API}/check`,{
+        method:'POST',headers:{Accept:'application/json','Content-Type':'application/json'},body:JSON.stringify({url,vendor:filterKey}),cache:'no-store'
+      }));
+      const vendorResults=report?.vendors&&typeof report.vendors==='object' ? report.vendors : {};
+      const result=vendorResults[filterKey] || Object.values(vendorResults)[0] || (Array.isArray(report?.results) ? report.results[0] : report?.result || report);
       if(result?.error || result?.ok===false) return 'error';
       if(result?.blocked===true) return 'blocked';
       if(result?.blocked===false) return 'allowed';

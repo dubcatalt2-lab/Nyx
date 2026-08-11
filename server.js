@@ -25,6 +25,7 @@ let cinebyAppCache = { source: "", expires: 0 };
 const gameCoverLookupCache = new Map();
 let duckMathGamesCache = { games: [], expires: 0, promise: null };
 let catClassGamesCache = { games: [], expires: 0, promise: null };
+let catClassCoverUrls = new Set();
 const app = express();
 
 function normalizePublicWispUrl(value) {
@@ -115,6 +116,8 @@ const nyxChatConversationIdPattern = /^[a-f0-9]{40}$/;
 const nyxChatAttachmentIdPattern = /^[a-f0-9]{40}$/;
 const nyxChatAttachmentMimeTypes = new Set([
   "image/gif", "image/jpeg", "image/png", "image/webp",
+  "audio/mpeg", "audio/mp4", "audio/ogg", "audio/wav", "audio/x-wav", "audio/webm",
+  "video/mp4", "video/ogg", "video/quicktime", "video/webm",
   "application/pdf", "text/plain",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -557,8 +560,11 @@ app.get("/game-cover", async (req, res) => {
     res.status(404).type("text/plain").send("No online cover found");
     return;
   }
-  res.setHeader("Cache-Control", "public, max-age=86400");
-  res.redirect(302, cover);
+  try {
+    await sendCatalogCover(res, cover);
+  } catch (error) {
+    res.status(502).type("text/plain").send(`Online cover network error: ${error?.message || error}`);
+  }
 });
 
 const duckMathGameHosts = new Set([
@@ -640,6 +646,110 @@ const catClassCatalogEndpoints = Object.freeze([
   { id: "edurocks", url: "https://catclass.net/api/g4m3-sources/edurocks" },
   { id: "truffled", url: "https://catclass.net/api/g4m3-sources/truffled" }
 ]);
+const catalogCoverHosts = new Set([
+  "catclass.net",
+  "school.catclass.xyz",
+  "selenite.cc",
+  "velara.cc",
+  "truffled.lol",
+  "edunet.climaref.cl",
+  "hub16x.netlify.app",
+  "rivegames.com",
+  "iogames.party",
+  "1v1lolreloaded.com",
+  "ubgwtf.gitlab.io",
+  "upload.wikimedia.org"
+]);
+const catalogCoverTypes = new Set([
+  "image/avif",
+  "image/gif",
+  "image/jpeg",
+  "image/png",
+  "image/webp"
+]);
+const catalogCoverByteLimit = 5 * 1024 * 1024;
+
+function safeCatalogCoverUrl(value) {
+  try {
+    const url = new URL(String(value || ""));
+    if (url.protocol !== "https:" || url.username || url.password || (url.port && url.port !== "443")) return null;
+    if (!catalogCoverHosts.has(url.hostname) || url.href.length > 2_000) return null;
+    url.hash = "";
+    return url;
+  } catch {
+    return null;
+  }
+}
+
+function catalogCoverFallback(value) {
+  const url = safeCatalogCoverUrl(value);
+  return url ? `/catalog-game-cover?url=${encodeURIComponent(url.href)}` : "";
+}
+
+async function sendCatalogCover(res, initialUrl) {
+  let url = safeCatalogCoverUrl(initialUrl);
+  if (!url) {
+    res.status(400).type("text/plain").send("Invalid catalog cover URL");
+    return;
+  }
+  for (let redirects = 0; redirects <= 2; redirects += 1) {
+    const upstream = await fetch(url, {
+      redirect: "manual",
+      headers: { "accept": "image/avif,image/webp,image/png,image/jpeg,image/gif", "user-agent": "nyx/1.0" },
+      signal: AbortSignal.timeout(10_000)
+    });
+    if (upstream.status >= 300 && upstream.status < 400 && upstream.headers.get("location")) {
+      url = safeCatalogCoverUrl(new URL(upstream.headers.get("location"), url).href);
+      if (!url) {
+        res.status(502).type("text/plain").send("Catalog cover redirected outside its approved source");
+        return;
+      }
+      continue;
+    }
+    if (!upstream.ok) {
+      res.status(upstream.status).type("text/plain").send(`Catalog cover returned ${upstream.status}`);
+      return;
+    }
+    const contentType = String(upstream.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+    const contentLength = Number(upstream.headers.get("content-length") || 0);
+    if (!catalogCoverTypes.has(contentType) || (contentLength && contentLength > catalogCoverByteLimit)) {
+      res.status(415).type("text/plain").send("Catalog cover did not return a supported image");
+      return;
+    }
+    const chunks = [];
+    let totalBytes = 0;
+    const reader = upstream.body?.getReader?.();
+    if (!reader) {
+      res.status(502).type("text/plain").send("Catalog cover returned no image body");
+      return;
+    }
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      if (totalBytes > catalogCoverByteLimit) {
+        await reader.cancel();
+        res.status(413).type("text/plain").send("Catalog cover is too large");
+        return;
+      }
+      chunks.push(Buffer.from(value));
+    }
+    const body = Buffer.concat(chunks, totalBytes);
+    if (!body.length) {
+      res.status(413).type("text/plain").send("Catalog cover is too large");
+      return;
+    }
+    res.set({
+      "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+      "Content-Type": contentType,
+      "Content-Length": String(body.length),
+      "X-Content-Type-Options": "nosniff"
+    });
+    res.send(body);
+    return;
+  }
+  res.status(502).type("text/plain").send("Catalog cover redirected too many times");
+}
 
 function safeCatalogUrl(value, base) {
   try {
@@ -701,7 +811,7 @@ function catClassCatalogItems(source, payload) {
 
     title = String(title || "").replace(/\s+/g, " ").trim().slice(0, 120);
     return title && url && !excludedExternalGame(title, url, cover)
-      ? [{ title, url, cover, provider: source }]
+      ? [{ title, url, cover, coverFallback: catalogCoverFallback(cover), provider: source }]
       : [];
   });
 }
@@ -732,6 +842,7 @@ async function loadCatClassGames() {
       }
     }
     if (!games.length) throw new Error("No CatClass catalog source was available");
+    catClassCoverUrls = new Set(games.map(game => safeCatalogCoverUrl(game.cover)?.href).filter(Boolean));
     catClassGamesCache = { games, expires: Date.now() + 30 * 60 * 1000, promise: null };
     return games;
   })();
@@ -750,6 +861,24 @@ app.get("/catclass-games", async (_req, res) => {
     res.json({ games });
   } catch (error) {
     res.status(502).json({ error: `CatClass list network error: ${error?.message || error}` });
+  }
+});
+
+app.get("/catalog-game-cover", async (req, res) => {
+  try {
+    const url = safeCatalogCoverUrl(req.query.url);
+    if (!url) {
+      res.status(400).type("text/plain").send("Invalid catalog cover URL");
+      return;
+    }
+    await loadCatClassGames();
+    if (!catClassCoverUrls.has(url.href)) {
+      res.status(404).type("text/plain").send("Catalog cover is not in the current game library");
+      return;
+    }
+    await sendCatalogCover(res, url);
+  } catch (error) {
+    res.status(502).type("text/plain").send(`Catalog cover network error: ${error?.message || error}`);
   }
 });
 
@@ -2894,6 +3023,8 @@ function nyxChatAttachmentMetadata(value) {
     mime,
     size,
     image: mime.startsWith("image/"),
+    audio: mime.startsWith("audio/"),
+    video: mime.startsWith("video/"),
     url: `/api/chat/attachments/${id}`
   };
 }
@@ -2969,7 +3100,8 @@ function nyxChatConversationPayload(document, viewerUid, membersByUid = new Map(
 
 async function nyxChatScope(firebase, uid, source = {}) {
   const rawScope = String(source.scope || "").trim().toLowerCase();
-  const rawChannel = String(source.channel || nyxChatChannel(rawScope) || "").trim();
+  const explicitChannel = String(source.channel || "").trim();
+  const rawChannel = explicitChannel || (!nyxChatConversationIdPattern.test(rawScope) && nyxChatChannelIdPattern.test(rawScope) ? rawScope : "");
   const channel = rawChannel ? nyxChatChannel(rawChannel) : "";
   if (channel) {
     const configuration = await loadNyxChatConfiguration(firebase);
@@ -5700,7 +5832,7 @@ app.get("/api/chat/attachments/:attachmentId", async (req, res) => {
       return;
     }
     const asciiName = metadata.name.replace(/[^A-Za-z0-9._ -]/g, "_").slice(0, 100) || "attachment";
-    const disposition = metadata.image ? "inline" : "attachment";
+    const disposition = metadata.image || metadata.audio || metadata.video ? "inline" : "attachment";
     res.set({
       "Content-Type": metadata.mime,
       "Content-Length": String(buffer.length),

@@ -374,7 +374,7 @@ async function adaptCatalog(catalog) {
         `https://cdn.jsdelivr.net/gh/a456pur/seraph@main/${thumbnailPath.split('/').map(encodeURIComponent).join('/')}`
       );
     } else if (catalog.format === 'external') {
-      covers.push(safeCover(item.cover), directCover(item.cover));
+      covers.push(safeCover(item.cover), safeCover(item.coverFallback), directCover(item.cover));
     }
 
     covers = [...new Set(covers.filter(Boolean))];
@@ -464,7 +464,9 @@ function makeCover(game) {
 
   const image = document.createElement('img');
   image.alt = '';
-  image.loading = 'lazy';
+  // Each page contains only 30 cards. Eager loading avoids Chromium's
+  // unreliable native lazy-image heuristics inside Nyx's embedded scroller.
+  image.loading = 'eager';
   image.decoding = 'async';
   image.referrerPolicy = 'no-referrer';
   let index = 0;

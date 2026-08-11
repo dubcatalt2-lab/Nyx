@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <title>Nyx Chat</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/icons/chat.svg">
-  <link rel="stylesheet" href="./styles.css?v=20260810-caffeine-v9">
+  <link rel="stylesheet" href="./styles.css?v=20260811-moderation-v11">
 </head>
 <body>
   <svg class="chat-icon-sprite" aria-hidden="true">
@@ -32,6 +32,8 @@
     <symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></symbol>
     <symbol id="icon-edit" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></symbol>
     <symbol id="icon-coffee" viewBox="0 0 24 24"><path d="M4 8h13v6a6 6 0 0 1-6 6H10a6 6 0 0 1-6-6Z"/><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17M7 4c0 1 1 1 1 2M11 3c0 1 1 1 1 2M15 4c0 1 1 1 1 2"/></symbol>
+    <symbol id="icon-reply" viewBox="0 0 24 24"><path d="m9 17-6-5 6-5v3h4a7 7 0 0 1 7 7v2a8 8 0 0 0-7-4H9Z"/></symbol>
+    <symbol id="icon-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
   </svg>
 
   <div class="chat-app" data-chat-app>
@@ -123,12 +125,13 @@
           <button class="send-button" data-send-button type="submit" aria-label="Send message"><svg><use href="#icon-send"/></svg></button>
         </form>
         <div class="chat-notice" data-chat-notice role="status" aria-live="polite" hidden></div>
+        <div class="message-context-menu" data-message-context-menu role="menu" hidden></div>
       </main>
 
       <aside class="member-sidebar" data-member-sidebar>
         <div class="sidebar-heading">
           <span>Members</span>
-          <button class="icon-button mobile-only" type="button" data-members-close aria-label="Close members"><svg><use href="#icon-close"/></svg></button>
+          <span class="sidebar-heading-actions"><button class="sidebar-add" type="button" data-flagged-searches aria-label="Review flagged searches" title="Review flagged searches" hidden><svg><use href="#icon-shield"/></svg></button><button class="icon-button mobile-only" type="button" data-members-close aria-label="Close members"><svg><use href="#icon-close"/></svg></button></span>
         </div>
         <div class="member-group">
           <h2>Online — <span data-online-label>0</span></h2>
@@ -175,6 +178,14 @@
     <p data-caffeine-gift-message></p>
     <div><button class="btn-subtle" type="button" data-caffeine-gift-later>Not now</button><button class="primary-button" type="button" data-caffeine-accept>Accept gift</button></div>
   </dialog>
-  <script src="./app.js?v=20260810-caffeine-v9"></script>
+  <dialog class="command-dialog" data-command-dialog>
+    <header><div><h2>Nyx Chat commands</h2><p>Commands available in this chat. Staff actions are always checked by the server.</p></div><button class="icon-button" type="button" data-command-close aria-label="Close"><svg><use href="#icon-close"/></svg></button></header>
+    <div class="command-list" data-command-list></div>
+  </dialog>
+  <dialog class="flagged-search-dialog" data-flagged-search-dialog>
+    <header><div><h2>Flagged searches</h2><p>Only searches classified as inappropriate are retained for 30 days. Ordinary searches are never recorded.</p></div><button class="icon-button" type="button" data-flagged-search-close aria-label="Close"><svg><use href="#icon-close"/></svg></button></header>
+    <div class="flagged-search-list" data-flagged-search-list></div>
+  </dialog>
+  <script src="./app.js?v=20260811-socket-chat-v12"></script>
 </body>
 </html>

@@ -2,13 +2,14 @@
 import { createServer } from "node:http";
 import { isIP } from "node:net";
 import { hostname } from "node:os";
-import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { lookup } from "node:dns/promises";
 import { createReadStream, readFileSync } from "node:fs";
 import { mkdir, open as openFile, stat, statfs, unlink } from "node:fs/promises";
 import { join, dirname, resolve } from "node:path";
 import { createRequire } from "node:module";
 import { server as wisp } from "@mercuryworkshop/wisp-js/server";
+import { Server as SocketIOServer } from "socket.io";
 
 // Using the process root keeps this file compatible with Netlify's CommonJS
 // function bundle while preserving normal `node server.js` behavior.
@@ -68,10 +69,8 @@ if (!externalWispUrl) {
 }
 const presenceSessions = new Map();
 const presenceSessionFirstSeen = new Map();
+const presenceSessionDetails = new Map();
 const presenceTtlMs = 45_000;
-const presenceCollectionName = "nyxPresenceSessions";
-const presenceCleanupIntervalMs = 5 * 60_000;
-let lastPresenceCleanupAt = 0;
 const nyxGuestAdjectives = Object.freeze(["Astral", "Blue", "Cosmic", "Dreaming", "Hidden", "Lunar", "Midnight", "Quiet", "Silver", "Starry", "Velvet", "Wandering"]);
 const nyxGuestNouns = Object.freeze(["Comet", "Echo", "Fox", "Moth", "Moon", "Nova", "Orbit", "Raven", "Shadow", "Spark", "Star", "Willow"]);
 const profileImageDataLimit = 850_000;
@@ -81,7 +80,8 @@ const profileMediaChunkLimit = 450_000;
 const profileMediaChunkCountLimit = 32;
 const ownerDashboardUserScanLimit = 5_000;
 const ownerDashboardPageSizeLimit = 100;
-const signedInOnlineWindowMs = 90_000;
+const signedInOnlineWindowMs = 6 * 60_000;
+const signedInPresence = new Map();
 const userActivityEventWindowMs = 15 * 60_000;
 const userActivityEventTimes = new Map();
 const nyxChatChannels = Object.freeze([
@@ -99,13 +99,24 @@ const nyxChatVoiceChannels = Object.freeze([
 const nyxChatChannelIdPattern = /^[a-z0-9][a-z0-9-]{1,47}$/;
 const nyxChatConfigurationCollection = "nyxChatConfiguration";
 const nyxChatConfigurationDocument = "channels";
-const nyxChatConfigurationTtlMs = 10_000;
+const nyxChatConfigurationTtlMs = 10 * 60_000;
 let nyxChatConfigurationCache = { expiresAt: 0, value: null, promise: null };
+const nyxChatIdentityCacheTtlMs = 15 * 60_000;
+const nyxChatIdentityCache = new Map();
+const nyxChatMemberDirectoryCacheTtlMs = 10 * 60_000;
+let nyxChatMemberDirectoryCache = { expiresAt: 0, value: null, promise: null };
+const nyxChatChannelActivityCacheTtlMs = 10 * 60_000;
+let nyxChatChannelActivityCache = { expiresAt: 0, value: new Map(), promise: null };
+let nyxChatRealtimeRevision = Date.now();
+const nyxChatRealtimeEvents = [];
+const nyxChatRealtimeEventLimit = 500;
+let nyxChatRealtimeDroppedBeforeRevision = 0;
+let nyxChatSocketServer = null;
 const nyxChatVoiceSessionIdPattern = /^[A-Za-z0-9_-]{16,128}$/;
 const nyxChatVoiceSignalTypes = new Set(["offer", "answer", "candidate"]);
-// Hidden browser tabs may throttle timers to roughly one callback per minute.
-// Keep a generous lease so switching away from Chat does not eject a live call.
-const nyxChatVoiceSessionTtlMs = 5 * 60_000;
+// Explicit leave requests end active calls. This long timeout only removes
+// abandoned in-memory presence after a browser or device disappears abruptly.
+const nyxChatVoiceStaleMs = 24 * 60 * 60_000;
 const nyxChatVoiceSignalTtlMs = 60_000;
 const nyxChatVoiceRoomLimit = 8;
 const nyxChatVoiceSessions = new Map();
@@ -116,6 +127,18 @@ const nyxChatMessageLimit = 1_000;
 const nyxChatSendWindowMs = 10_000;
 const nyxChatSendMaxPerWindow = 6;
 const nyxChatSendAttempts = new Map();
+const nyxFlaggedSearchCollection = "nyxFlaggedSearches";
+const nyxFlaggedSearchRetentionMs = 30 * 24 * 60 * 60_000;
+const nyxFlaggedSearchAttempts = new Map();
+let nyxFlaggedSearchLastCleanupAt = 0;
+const nyxFlaggedSearchPatterns = Object.freeze([
+  Object.freeze({ category: "Sexually explicit", pattern: /\b(?:porn(?:ography)?|xxx|hentai|rule\s*34|nudes?|sex\s+videos?)\b/i }),
+  Object.freeze({ category: "Child exploitation", pattern: /\b(?:csam|child\s+(?:porn|nudes?|sexual\s+content))\b/i }),
+  Object.freeze({ category: "Violence or threats", pattern: /\b(?:how\s+to\s+(?:make|build)\s+(?:a\s+)?bomb|school\s+shooting|(?:kill|murder)\s+(?:someone|a\s+person|my\s+(?:teacher|classmate|parent)))\b/i }),
+  Object.freeze({ category: "Self-harm instructions", pattern: /\b(?:how\s+to\s+(?:kill\s+myself|commit\s+suicide)|suicide\s+methods?|best\s+way\s+to\s+die|self[-\s]?harm\s+(?:methods?|tips))\b/i }),
+  Object.freeze({ category: "Illegal drugs", pattern: /\b(?:(?:buy|sell)\s+(?:fentanyl|cocaine|meth(?:amphetamine)?|heroin)|how\s+to\s+make\s+meth)\b/i }),
+  Object.freeze({ category: "Targeted cyber abuse", pattern: /\b(?:doxx?(?:ing)?|swat(?:ting)?\s+someone|ddos(?:ing)?|steal\s+(?:a\s+)?password|hack\s+(?:an?\s+)?account|grab\s+(?:someone(?:'s)?|a\s+person(?:'s)?)\s+ip)\b/i })
+]);
 const nyxChatConversationIdPattern = /^[a-f0-9]{40}$/;
 const nyxChatAttachmentIdPattern = /^[a-f0-9]{40}$/;
 const nyxCaffeineGiftIdPattern = /^[a-f0-9]{40}$/;
@@ -137,8 +160,9 @@ const nyxChatAttachmentEncodedLimit = 11_500_000;
 const nyxChatAttachmentChunkLimit = 450_000;
 const nyxChatAttachmentChunkCountLimit = 32;
 const nyxChatAttachmentUploadTtlMs = 60 * 60_000;
+// Historical streamed Owner uploads remain readable, but all new uploads are
+// constrained by the same 8 MB per-file and per-message limit.
 const nyxChatOwnerAttachmentFileLimit = 1024 * 1024 * 1024;
-const nyxChatOwnerAttachmentMessageLimit = 1024 * 1024 * 1024;
 const nyxChatOwnerAttachmentChunkLimit = 4 * 1024 * 1024;
 const nyxChatOwnerAttachmentChunkCountLimit = 256;
 const nyxChatAttachmentRoot = resolve(process.env.NYX_CHAT_ATTACHMENT_ROOT || "/var/lib/nyx/chat-attachments");
@@ -157,9 +181,11 @@ const nyxAccountPasswordResetMaxAttempts = 5;
 const ownerDashboardSnapshotTtlMs = 30_000;
 let ownerDashboardSnapshotCache = { expiresAt: 0, value: null, promise: null };
 const nyxIpBanCollectionName = "nyxIpBans";
-const nyxIpBanCacheTtlMs = 30_000;
+const nyxIpBanCacheTtlMs = 10 * 60_000;
+const nyxIpBanRetryDelayMs = 5 * 60_000;
 const nyxIpBanListLimit = 500;
-let nyxIpBanCache = { expiresAt: 0, bans: new Map(), promise: null };
+let nyxIpBanCache = { expiresAt: 0, retryAt: 0, bans: new Map(), promise: null, loaded: false };
+let nyxIpBanBootstrapPromise = null;
 const nyxCustomHostnameCollectionName = "nyxCustomHostnames";
 const nyxCustomHostnameRegistrationAttempts = new Map();
 const nyxCustomHostnameRegistrationWindowMs = 60 * 60_000;
@@ -398,40 +424,85 @@ function nyxIpBanRecord(id, data = {}) {
   };
 }
 
-async function nyxIpBans(firebase) {
+function refreshNyxIpBans(firebase, force = false) {
   const now = Date.now();
-  if (nyxIpBanCache.expiresAt > now) return nyxIpBanCache.bans;
+  if (!force && (nyxIpBanCache.expiresAt > now || nyxIpBanCache.retryAt > now)) return nyxIpBanCache.promise;
   if (nyxIpBanCache.promise) return nyxIpBanCache.promise;
-  nyxIpBanCache.promise = (async () => {
-    const snapshot = await firebase.firestore.collection(nyxIpBanCollectionName).limit(nyxIpBanListLimit).get();
-    const bans = new Map();
-    snapshot.docs.forEach(document => {
-      const ban = nyxIpBanRecord(document.id, document.data());
-      if (ban) bans.set(ban.ip, ban);
-    });
-    return bans;
+  const refresh = (async () => {
+    try {
+      const snapshot = await firebase.firestore.collection(nyxIpBanCollectionName).limit(nyxIpBanListLimit).get();
+      const bans = new Map();
+      snapshot.docs.forEach(document => {
+        const ban = nyxIpBanRecord(document.id, document.data());
+        if (ban) bans.set(ban.ip, ban);
+      });
+      nyxIpBanCache = {
+        expiresAt: Date.now() + nyxIpBanCacheTtlMs,
+        retryAt: 0,
+        bans,
+        promise: null,
+        loaded: true
+      };
+      return bans;
+    } catch (error) {
+      nyxIpBanCache = {
+        ...nyxIpBanCache,
+        expiresAt: 0,
+        retryAt: Date.now() + nyxIpBanRetryDelayMs,
+        promise: null
+      };
+      console.warn("Nyx IP ban refresh paused; using the last known list:", error?.message || error);
+      return nyxIpBanCache.bans;
+    }
   })();
-  try {
-    const bans = await nyxIpBanCache.promise;
-    nyxIpBanCache = { expiresAt: Date.now() + nyxIpBanCacheTtlMs, bans, promise: null };
-    return bans;
-  } catch (error) {
-    nyxIpBanCache.promise = null;
-    if (nyxIpBanCache.bans.size) return nyxIpBanCache.bans;
-    throw error;
-  }
+  nyxIpBanCache.promise = refresh;
+  return refresh;
 }
 
-function invalidateNyxIpBans() {
-  nyxIpBanCache = { expiresAt: 0, bans: new Map(), promise: null };
+async function nyxIpBans(firebase, { wait = false, force = false } = {}) {
+  const now = Date.now();
+  if (!force && nyxIpBanCache.expiresAt > now) return nyxIpBanCache.bans;
+  const refresh = refreshNyxIpBans(firebase, force);
+  if (wait && refresh) return refresh;
+  return nyxIpBanCache.bans;
 }
 
-async function nyxRequestIpIsBanned(req) {
+function queueNyxIpBanRefresh() {
+  const now = Date.now();
+  if (!firebaseAdminModeConfigured() || nyxIpBanCache.expiresAt > now || nyxIpBanCache.retryAt > now || nyxIpBanCache.promise || nyxIpBanBootstrapPromise) return;
+  nyxIpBanBootstrapPromise = Promise.resolve()
+    .then(() => linkGeneratorFirebase())
+    .then(firebase => firebase ? refreshNyxIpBans(firebase) : nyxIpBanCache.bans)
+    .catch(error => {
+      nyxIpBanCache = { ...nyxIpBanCache, expiresAt: 0, retryAt: Date.now() + nyxIpBanRetryDelayMs, promise: null };
+      console.warn("Nyx IP ban initialization paused; using the last known list:", error?.message || error);
+      return nyxIpBanCache.bans;
+    })
+    .finally(() => {
+      nyxIpBanBootstrapPromise = null;
+    });
+}
+
+function cacheNyxIpBan(ban) {
+  if (!ban?.ip) return;
+  const bans = new Map(nyxIpBanCache.bans);
+  bans.set(ban.ip, ban);
+  nyxIpBanCache = { ...nyxIpBanCache, bans, expiresAt: Date.now() + nyxIpBanCacheTtlMs, retryAt: 0, loaded: true };
+}
+
+function removeCachedNyxIpBan(ban) {
+  if (!ban?.ip) return;
+  const bans = new Map(nyxIpBanCache.bans);
+  bans.delete(ban.ip);
+  nyxIpBanCache = { ...nyxIpBanCache, bans, expiresAt: Date.now() + nyxIpBanCacheTtlMs, retryAt: 0, loaded: true };
+}
+
+function nyxRequestIpIsBanned(req) {
   if (!firebaseAdminModeConfigured()) return false;
   const ip = nyxClientIp(req);
   if (!ip) return false;
-  const firebase = await linkGeneratorFirebase();
-  return (await nyxIpBans(firebase)).has(ip);
+  queueNyxIpBanRefresh();
+  return nyxIpBanCache.bans.has(ip);
 }
 
 async function nyxIpBanGuard(req, res, next) {
@@ -447,7 +518,7 @@ async function nyxIpBanGuard(req, res, next) {
     }
     res.status(403).type("html").send(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nyx access blocked</title><style>html,body{margin:0;min-height:100%;display:grid;place-items:center;background:#0b101a;color:#f5f7fb;font:16px/1.5 system-ui,sans-serif}main{max-width:440px;padding:32px;text-align:center}h1{margin:0 0 10px;font-size:24px}p{margin:0;color:#b7c1d1}</style><main><h1>Access blocked</h1><p>This network has been blocked from Nyx.</p></main>`);
   } catch (error) {
-    console.error("Nyx IP ban check could not be completed:", error?.message || error);
+    console.warn("Nyx IP ban guard used its fail-open path:", error?.message || error);
     next();
   }
 }
@@ -2073,7 +2144,8 @@ app.get("/healthz", (_req, res) => {
   res.status(200).json({
     ok: true,
     service: "nyx",
-    wisp: externalWispUrl ? "external" : "embedded"
+    wisp: externalWispUrl ? "external" : "embedded",
+    chatRealtime: nyxChatSocketServer ? "socket.io" : "polling"
   });
 });
 
@@ -2082,6 +2154,7 @@ function pruneLocalPresence(now = Date.now()) {
     if (now - lastSeen > presenceTtlMs) {
       presenceSessions.delete(sessionId);
       presenceSessionFirstSeen.delete(sessionId);
+      presenceSessionDetails.delete(sessionId);
     }
   }
   return presenceSessions.size;
@@ -2094,31 +2167,6 @@ function setPresenceCors(res) {
     "Access-Control-Allow-Headers": "Authorization, Content-Type",
     "Access-Control-Max-Age": "86400"
   });
-}
-
-async function cleanupSharedPresence(collection, cutoff, now) {
-  if (now - lastPresenceCleanupAt < presenceCleanupIntervalMs) return;
-  lastPresenceCleanupAt = now;
-  try {
-    const stale = await collection.where("lastSeen", "<", cutoff).limit(100).get();
-    if (stale.empty) return;
-    const firebase = await linkGeneratorFirebase();
-    const batch = firebase.firestore.batch();
-    stale.docs.forEach(document => batch.delete(document.ref));
-    await batch.commit();
-  } catch (error) {
-    console.warn("Nyx presence cleanup was skipped:", error?.message || error);
-  }
-}
-
-async function sharedPresenceCount(now = Date.now()) {
-  const firebase = await linkGeneratorFirebase();
-  if (!firebase) return null;
-  const cutoff = now - presenceTtlMs;
-  const collection = firebase.firestore.collection(presenceCollectionName);
-  const aggregate = await collection.where("lastSeen", ">=", cutoff).count().get();
-  void cleanupSharedPresence(collection, cutoff, now);
-  return Number(aggregate.data().count) || 0;
 }
 
 function nyxGuestIdentity(sessionId) {
@@ -2157,43 +2205,31 @@ async function nyxPresenceAccountUid(req) {
   if (!match || !firebaseAdminModeConfigured()) return "";
   try {
     const firebase = await linkGeneratorFirebase();
-    const token = await firebase?.auth.verifyIdToken(match[1], true);
+    const token = await firebase?.auth.verifyIdToken(match[1], false);
     return String(token?.uid || "").slice(0, 128);
   } catch {
     return "";
   }
 }
 
-async function recordSharedPresence(sessionId, accountUid = "", startupName = "", now = Date.now()) {
+function recordLocalPresence(sessionId, accountUid = "", startupName = "", now = Date.now()) {
   presenceSessions.set(sessionId, now);
   const firstSeen = presenceSessionFirstSeen.get(sessionId) || now;
   presenceSessionFirstSeen.set(sessionId, firstSeen);
-  const firebase = await linkGeneratorFirebase();
-  if (!firebase) return pruneLocalPresence(now);
-  const collection = firebase.firestore.collection(presenceCollectionName);
   const guest = nyxGuestIdentity(sessionId);
   const guestName = nyxStartupGuestName(startupName) || guest.displayName;
   const guestUsername = nyxStartupGuestUsername(guestName, guest.username);
-  await collection.doc(sessionId).set({
+  presenceSessionDetails.set(sessionId, {
     lastSeen: now,
     firstSeen,
     accountUid,
     guestName,
-    guestUsername,
-    updatedAt: new Date(now).toISOString()
+    guestUsername
   });
-  const aggregate = await collection.where("lastSeen", ">=", now - presenceTtlMs).count().get();
-  void cleanupSharedPresence(collection, now - presenceTtlMs, now);
-  return Number(aggregate.data().count) || 0;
+  return pruneLocalPresence(now);
 }
 
-async function presenceCount(now = Date.now()) {
-  try {
-    const shared = await sharedPresenceCount(now);
-    if (shared !== null) return shared;
-  } catch (error) {
-    console.warn("Nyx shared presence is unavailable; using this server:", error?.message || error);
-  }
+function presenceCount(now = Date.now()) {
   return pruneLocalPresence(now);
 }
 
@@ -2225,14 +2261,7 @@ app.post(["/presence", "/api/presence"], express.text({ type: "text/plain", limi
     const now = Date.now();
     const accountUid = await nyxPresenceAccountUid(req);
     const startupName = nyxStartupGuestName(payload.userName);
-    let count;
-    try {
-      count = await recordSharedPresence(sessionId, accountUid, startupName, now);
-    } catch (error) {
-      console.warn("Nyx shared presence heartbeat failed; using this server:", error?.message || error);
-      presenceSessions.set(sessionId, now);
-      count = pruneLocalPresence(now);
-    }
+    const count = recordLocalPresence(sessionId, accountUid, startupName, now);
     const randomGuestIdentity = nyxGuestIdentity(sessionId);
     const guestName = startupName || randomGuestIdentity.displayName;
     const guestIdentity = accountUid ? null : {
@@ -3084,6 +3113,36 @@ function nyxChatText(value) {
     .trim();
 }
 
+function nyxFlaggedSearchClassification(value) {
+  const query = String(value || "").normalize("NFKC").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 180);
+  if (query.length < 3) return { query: "", category: "" };
+  const matched = nyxFlaggedSearchPatterns.find(rule => rule.pattern.test(query));
+  return { query: matched ? query : "", category: matched?.category || "" };
+}
+
+function consumeNyxFlaggedSearchAttempt(uid) {
+  const now = Date.now();
+  const active = (nyxFlaggedSearchAttempts.get(uid) || []).filter(timestamp => now - timestamp < 60 * 60_000);
+  if (active.length >= 30) {
+    const error = new Error("Search safety reporting is temporarily rate limited.");
+    error.status = 429;
+    throw error;
+  }
+  active.push(now);
+  nyxFlaggedSearchAttempts.set(uid, active);
+}
+
+async function cleanupNyxFlaggedSearches(firebase, now = Date.now()) {
+  if (now - nyxFlaggedSearchLastCleanupAt < 60 * 60_000) return;
+  nyxFlaggedSearchLastCleanupAt = now;
+  try {
+    const snapshot = await firebase.firestore.collection(nyxFlaggedSearchCollection).where("expiresAtMs", "<", now).limit(50).get();
+    await Promise.all(snapshot.docs.map(document => document.ref.delete()));
+  } catch (error) {
+    console.error("Nyx flagged-search cleanup failed:", error?.message || error);
+  }
+}
+
 function nyxChatCanModerate(role) {
   return nyxRolePolicy(role).rank >= nyxRolePolicy("moderator").rank;
 }
@@ -3333,31 +3392,318 @@ function nyxChatConsumeSendAttempt(uid) {
   }
 }
 
-async function nyxChatIdentity(firebase, token) {
-  const [profileSnapshot, administrationSnapshot] = await Promise.all([
-    firebase.firestore.collection("nyxUserProfiles").doc(token.uid).get(),
-    firebase.firestore.collection("nyxUserAdministration").doc(token.uid).get()
-  ]);
-  const profile = normalizeNyxUserProfile(profileSnapshot.data()?.profile, token);
-  const administration = administrationSnapshot.data() || {};
-  const role = nyxRoleForUser(token.uid, administration);
-  const caffeine = nyxCaffeineSubscription(administration).active;
-  return {
-    uid: token.uid,
-    displayName: profile.displayName,
-    handle: profile.handle,
-    avatarUrl: nyxChatAvatar(profile.avatarUrl),
-    role,
-    roleLabel: nyxRoleLabels[role] || nyxRoleLabels.member,
-    caffeine,
-    canModerate: nyxChatCanModerate(role),
-    canManageChannels: nyxChatCanManageChannels(role)
-  };
+function recordNyxChatRealtimeEvent(event = {}) {
+  nyxChatRealtimeRevision = Math.max(nyxChatRealtimeRevision + 1, Date.now());
+  nyxChatRealtimeEvents.push({
+    revision: nyxChatRealtimeRevision,
+    kind: String(event.kind || "message"),
+    scopeType: String(event.scopeType || ""),
+    scopeId: String(event.scopeId || ""),
+    participants: [...new Set((Array.isArray(event.participants) ? event.participants : []).map(value => String(value || "")).filter(Boolean))].slice(0, 4),
+    createdAtMs: Math.max(0, Number(event.createdAtMs || Date.now())),
+    lastMessageText: founderProfileText(event.lastMessageText, "", nyxChatMessageLimit),
+    lastMessageAuthorUid: String(event.lastMessageAuthorUid || "")
+  });
+  if (nyxChatRealtimeEvents.length > nyxChatRealtimeEventLimit) {
+    const removed = nyxChatRealtimeEvents.splice(0, nyxChatRealtimeEvents.length - nyxChatRealtimeEventLimit);
+    nyxChatRealtimeDroppedBeforeRevision = Math.max(nyxChatRealtimeDroppedBeforeRevision, Number(removed.at(-1)?.revision || 0));
+  }
+  return nyxChatRealtimeRevision;
 }
 
-async function authenticatedNyxChatUser(req) {
+function nyxChatEventMentionsIdentity(text, identity = {}) {
+  const lower = String(text || "").toLowerCase();
+  if (/(^|\s)@everyone\b/.test(lower)) return true;
+  const handle = String(identity.handle || "").toLowerCase();
+  if (!handle) return false;
+  return lower.split(/\s+/).some(token => token
+    .replace(/^[^@]*/, "")
+    .replace(/[^@a-z0-9_.-]+$/g, "") === handle);
+}
+
+function nyxChatSocketUserRoom(uid) {
+  return `nyx:user:${String(uid || "")}`;
+}
+
+function nyxChatSocketChannelRoom(channelId) {
+  return `nyx:channel:${String(channelId || "")}`;
+}
+
+function nyxChatSocketIdsForEvent(event = {}) {
+  if (!nyxChatSocketServer) return new Set();
+  const ids = new Set();
+  const rooms = [];
+  const participants = [...new Set((Array.isArray(event.participants) ? event.participants : [])
+    .map(value => String(value || ""))
+    .filter(Boolean))];
+  if (participants.length) rooms.push(...participants.map(nyxChatSocketUserRoom));
+  else if (event.scopeType === "channel" && event.scopeId) rooms.push(nyxChatSocketChannelRoom(event.scopeId));
+  if (!rooms.length) {
+    for (const socketId of nyxChatSocketServer.sockets.sockets.keys()) ids.add(socketId);
+    return ids;
+  }
+  for (const room of rooms) {
+    for (const socketId of nyxChatSocketServer.sockets.adapter.rooms.get(room) || []) ids.add(socketId);
+  }
+  return ids;
+}
+
+function nyxChatSocketEventForViewer(event = {}, socket) {
+  const uid = String(socket?.data?.uid || "");
+  const identity = socket?.data?.identity || {};
+  const payload = {
+    revision: Math.max(0, Number(event.revision || nyxChatRealtimeRevision)),
+    kind: String(event.kind || "update"),
+    scopeType: String(event.scopeType || ""),
+    scopeId: String(event.scopeId || ""),
+    createdAtMs: Math.max(0, Number(event.createdAtMs || Date.now()))
+  };
+  if (event.kind === "message" && event.messageDocument) {
+    payload.message = nyxChatMessagePayload(event.messageDocument, uid);
+    payload.mentionsViewer = nyxChatEventMentionsIdentity(event.messageText, identity);
+    payload.lastMessageAuthorUid = String(event.lastMessageAuthorUid || payload.message?.author?.uid || "");
+  } else if (event.kind === "delete") {
+    payload.messageId = String(event.messageId || "");
+  } else if (event.kind === "reaction") {
+    payload.messageId = String(event.messageId || "");
+    payload.reactions = nyxChatReactionPayload(event.reactions, uid);
+  } else if (event.kind === "presence") {
+    payload.uid = String(event.uid || "");
+    payload.online = event.online === true;
+  }
+  return payload;
+}
+
+function emitNyxChatSocketEvent(event = {}) {
+  if (!nyxChatSocketServer) return 0;
+  const socketIds = nyxChatSocketIdsForEvent(event);
+  for (const socketId of socketIds) {
+    const socket = nyxChatSocketServer.sockets.sockets.get(socketId);
+    if (socket) socket.emit("nyx:chat:event", nyxChatSocketEventForViewer(event, socket));
+  }
+  return socketIds.size;
+}
+
+async function authorizeNyxChatSocket(socket, rawToken) {
+  const value = String(rawToken || "").trim();
+  if (!value || value.length > 8_192 || !firebaseAdminModeConfigured()) throw new Error("Sign in to use Nyx Chat.");
+  const firebase = await linkGeneratorFirebase();
+  const token = await firebase.auth.verifyIdToken(value, true);
+  if (socket.data.uid && socket.data.uid !== token.uid) throw new Error("The Nyx Chat account changed.");
+  const [identity, configuration] = await Promise.all([
+    nyxChatIdentity(firebase, token),
+    loadNyxChatConfiguration(firebase)
+  ]);
+  const visibleChannels = new Set(configuration.textChannels
+    .filter(channel => nyxChatCanAccessChannel(identity.role, channel))
+    .map(channel => channel.id));
+  for (const room of [...socket.rooms]) {
+    if (room.startsWith("nyx:channel:") && !visibleChannels.has(room.slice("nyx:channel:".length))) socket.leave(room);
+  }
+  socket.join(nyxChatSocketUserRoom(token.uid));
+  for (const channelId of visibleChannels) socket.join(nyxChatSocketChannelRoom(channelId));
+  socket.data.uid = token.uid;
+  socket.data.identity = identity;
+  socket.data.token = value;
+  signedInPresence.set(token.uid, Date.now());
+  return { firebase, token, identity, configuration };
+}
+
+async function refreshNyxChatSocketAuthorizations() {
+  if (!nyxChatSocketServer) return;
+  await Promise.allSettled([...nyxChatSocketServer.sockets.sockets.values()].map(async socket => {
+    try {
+      await authorizeNyxChatSocket(socket, socket.data.token);
+    } catch {
+      socket.disconnect(true);
+    }
+  }));
+}
+
+function attachNyxChatSocketServer(server) {
+  if (nyxChatSocketServer) return nyxChatSocketServer;
+  const io = new SocketIOServer(server, {
+    path: "/socket.io",
+    serveClient: true,
+    maxHttpBufferSize: 100_000,
+    perMessageDeflate: false,
+    connectionStateRecovery: {
+      maxDisconnectionDuration: 2 * 60_000,
+      skipMiddlewares: false
+    },
+    allowRequest(req, callback) {
+      if (!embeddedWispOriginAllowed(req.headers.origin, req.headers.host)) {
+        callback("Origin is not allowed.", false);
+        return;
+      }
+      Promise.resolve(nyxRequestIpIsBanned(req))
+        .then(banned => callback(null, !banned))
+        .catch(error => {
+          console.error("Nyx Chat socket IP ban check could not be completed:", error?.message || error);
+          callback(null, true);
+        });
+    }
+  });
+  nyxChatSocketServer = io;
+  io.use(async (socket, next) => {
+    try {
+      await authorizeNyxChatSocket(socket, socket.handshake.auth?.token);
+      next();
+    } catch {
+      const error = new Error("Your Nyx Chat session has expired.");
+      error.data = { code: "NYX_CHAT_AUTH" };
+      next(error);
+    }
+  });
+  io.on("connection", socket => {
+    const uid = String(socket.data.uid || "");
+    socket.emit("nyx:chat:ready", { revision: nyxChatRealtimeRevision });
+    if (uid) emitNyxChatSocketEvent({ kind: "presence", uid, online: true });
+    socket.on("nyx:chat:authorize", async (value, acknowledge) => {
+      try {
+        await authorizeNyxChatSocket(socket, value?.token);
+        if (typeof acknowledge === "function") acknowledge({ ok: true });
+      } catch {
+        if (typeof acknowledge === "function") acknowledge({ ok: false, error: "Your Nyx Chat session has expired.", code: "NYX_CHAT_AUTH" });
+        socket.disconnect(true);
+      }
+    });
+    socket.on("nyx:voice:signal", (value, acknowledge) => {
+      try {
+        relayNyxChatVoiceSignal(uid, value);
+        if (typeof acknowledge === "function") acknowledge({ ok: true });
+      } catch (error) {
+        if (typeof acknowledge === "function") acknowledge({ ok: false, error: error.message || "The voice connection could not be relayed.", status: error.status || 503 });
+      }
+    });
+    socket.on("disconnect", () => {
+      if (!uid) return;
+      queueMicrotask(() => {
+        const remaining = nyxChatSocketServer?.sockets.adapter.rooms.get(nyxChatSocketUserRoom(uid))?.size || 0;
+        if (!remaining) emitNyxChatSocketEvent({ kind: "presence", uid, online: false });
+      });
+    });
+  });
+  return io;
+}
+
+async function nyxChatMemberDirectory(firebase) {
+  const now = Date.now();
+  if (nyxChatMemberDirectoryCache.value && nyxChatMemberDirectoryCache.expiresAt > now) return nyxChatMemberDirectoryCache.value;
+  if (nyxChatMemberDirectoryCache.promise) return nyxChatMemberDirectoryCache.promise;
+  const promise = (async () => {
+    const profileSnapshot = await firebase.firestore.collection("nyxUserProfiles").limit(250).get();
+    const uids = profileSnapshot.docs.map(document => document.id);
+    const [administration, activity] = await Promise.all([
+      firestoreDocumentsById(firebase.firestore, "nyxUserAdministration", uids),
+      firestoreDocumentsById(firebase.firestore, "nyxUserActivity", uids)
+    ]);
+    const ownerUid = founderProfileConfig().administratorUid;
+    return profileSnapshot.docs.map(document => {
+      const profile = normalizeNyxUserProfile(document.data()?.profile, { uid: document.id });
+      const memberAdministration = administration.get(document.id) || {};
+      const role = nyxRoleForUser(document.id, memberAdministration, ownerUid);
+      return {
+        uid: document.id,
+        displayName: profile.displayName,
+        handle: profile.handle,
+        avatarUrl: nyxChatAvatar(profile.avatarUrl),
+        role,
+        roleLabel: nyxRoleLabels[role] || nyxRoleLabels.member,
+        caffeine: nyxCaffeineSubscription(memberAdministration).active,
+        lastActiveAtMs: safeActivityTime(activity.get(document.id)?.lastActiveAtMs || activity.get(document.id)?.lastActiveAt)
+      };
+    });
+  })();
+  nyxChatMemberDirectoryCache.promise = promise;
   try {
-    return await authenticatedNyxUser(req);
+    const value = await promise;
+    nyxChatMemberDirectoryCache = { expiresAt: Date.now() + nyxChatMemberDirectoryCacheTtlMs, value, promise: null };
+    return value;
+  } catch (error) {
+    nyxChatMemberDirectoryCache.promise = null;
+    throw error;
+  }
+}
+
+async function nyxChatChannelActivity(firebase, channels) {
+  const ids = channels.map(channel => channel.id);
+  const now = Date.now();
+  if (nyxChatChannelActivityCache.expiresAt > now && ids.every(id => nyxChatChannelActivityCache.value.has(id))) {
+    return ids.map(id => [id, Number(nyxChatChannelActivityCache.value.get(id) || 0)]);
+  }
+  if (nyxChatChannelActivityCache.promise) {
+    await nyxChatChannelActivityCache.promise;
+    return ids.map(id => [id, Number(nyxChatChannelActivityCache.value.get(id) || 0)]);
+  }
+  const promise = (async () => {
+    const snapshots = await Promise.all(ids.map(id => firebase.firestore.collection("nyxChatChannels").doc(id).get()));
+    const value = new Map(nyxChatChannelActivityCache.value);
+    snapshots.forEach((snapshot, index) => value.set(ids[index], Number(snapshot.data()?.lastMessageAtMs || 0)));
+    nyxChatChannelActivityCache = { expiresAt: Date.now() + nyxChatChannelActivityCacheTtlMs, value, promise: null };
+  })();
+  nyxChatChannelActivityCache.promise = promise;
+  try {
+    await promise;
+  } catch (error) {
+    nyxChatChannelActivityCache.promise = null;
+    throw error;
+  }
+  return ids.map(id => [id, Number(nyxChatChannelActivityCache.value.get(id) || 0)]);
+}
+
+async function nyxChatIdentity(firebase, token) {
+  const uid = String(token.uid || "");
+  const now = Date.now();
+  const cached = nyxChatIdentityCache.get(uid);
+  if (cached?.value && cached.expiresAt > now) return cached.value;
+  if (cached?.promise) return cached.promise;
+  const promise = (async () => {
+    const [profileSnapshot, administrationSnapshot] = await Promise.all([
+      firebase.firestore.collection("nyxUserProfiles").doc(uid).get(),
+      firebase.firestore.collection("nyxUserAdministration").doc(uid).get()
+    ]);
+    const profile = normalizeNyxUserProfile(profileSnapshot.data()?.profile, token);
+    const administration = administrationSnapshot.data() || {};
+    const role = nyxRoleForUser(uid, administration);
+    const caffeine = nyxCaffeineSubscription(administration).active;
+    return {
+      uid,
+      displayName: profile.displayName,
+      handle: profile.handle,
+      avatarUrl: nyxChatAvatar(profile.avatarUrl),
+      role,
+      roleLabel: nyxRoleLabels[role] || nyxRoleLabels.member,
+      caffeine,
+      canModerate: nyxChatCanModerate(role),
+      canManageChannels: nyxChatCanManageChannels(role)
+    };
+  })();
+  nyxChatIdentityCache.set(uid, { value: null, expiresAt: 0, promise });
+  try {
+    const value = await promise;
+    nyxChatIdentityCache.set(uid, { value, expiresAt: Date.now() + nyxChatIdentityCacheTtlMs, promise: null });
+    if (nyxChatIdentityCache.size > 500) {
+      for (const [key, entry] of nyxChatIdentityCache) if (!entry?.value || entry.expiresAt <= Date.now()) nyxChatIdentityCache.delete(key);
+    }
+    return value;
+  } catch (error) {
+    nyxChatIdentityCache.delete(uid);
+    throw error;
+  }
+}
+
+async function authenticatedNyxChatUser(req, checkRevoked = true) {
+  try {
+    const result = await authenticatedNyxUser(req, checkRevoked);
+    const now = Date.now();
+    signedInPresence.set(result.token.uid, now);
+    if (signedInPresence.size > 1_000) {
+      for (const [uid, lastSeenAtMs] of signedInPresence) {
+        if (now - lastSeenAtMs > signedInOnlineWindowMs * 2) signedInPresence.delete(uid);
+      }
+    }
+    return result;
   } catch (error) {
     if (error.status === 401) error.message = "Sign in to use Nyx Chat.";
     throw error;
@@ -3371,7 +3717,7 @@ function nyxChatVoiceChannel(value) {
 
 function cleanupNyxChatVoice(now = Date.now()) {
   for (const [uid, session] of nyxChatVoiceSessions) {
-    if (!session || now - Number(session.lastSeenAtMs || 0) > nyxChatVoiceSessionTtlMs) {
+    if (!session || now - Number(session.lastSeenAtMs || 0) > nyxChatVoiceStaleMs) {
       nyxChatVoiceSessions.delete(uid);
       nyxChatVoiceSignals.delete(uid);
     }
@@ -3391,6 +3737,27 @@ function cleanupNyxChatVoice(now = Date.now()) {
     if (active.length) nyxChatVoiceSignalAttempts.set(uid, active);
     else nyxChatVoiceSignalAttempts.delete(uid);
   }
+}
+
+function nyxChatVoiceIceConfiguration(uid) {
+  const stun = {
+    urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"]
+  };
+  const urls = String(process.env.NYX_TURN_URLS || "")
+    .split(",")
+    .map(value => value.trim())
+    .filter(value => /^turns?:[^\s,]+$/i.test(value))
+    .slice(0, 8);
+  const secret = String(process.env.NYX_TURN_SHARED_SECRET || "").trim();
+  if (!urls.length || !secret) return { iceServers: [stun], relayConfigured: false };
+  const requestedTtl = Number.parseInt(String(process.env.NYX_TURN_TTL_SECONDS || "3600"), 10);
+  const ttlSeconds = Math.max(300, Math.min(86_400, Number.isFinite(requestedTtl) ? requestedTtl : 3_600));
+  const username = `${Math.floor(Date.now() / 1_000) + ttlSeconds}:${String(uid || "nyx").slice(0, 128)}`;
+  const credential = createHmac("sha1", secret).update(username).digest("base64");
+  return {
+    iceServers: [stun, { urls, username, credential, credentialType: "password" }],
+    relayConfigured: true
+  };
 }
 
 function consumeNyxChatVoiceAttempt(store, uid, windowMs, maximum, message) {
@@ -3432,13 +3799,15 @@ function nyxChatVoiceState(uid, sessionId = "", consumeSignals = false, channels
     signals = (nyxChatVoiceSignals.get(uid) || []).filter(signal => signal.toSessionId === sessionId);
     nyxChatVoiceSignals.delete(uid);
   }
+  const iceConfiguration = nyxChatVoiceIceConfiguration(uid);
   return {
     channels,
     participants: [...nyxChatVoiceSessions.values()].map(nyxChatVoiceParticipant).filter(participant => participant.uid && visibleChannelIds.has(participant.channelId)),
     joined,
     channelId: joined ? session.channelId : "",
     signals,
-    roomLimit: nyxChatVoiceRoomLimit
+    roomLimit: nyxChatVoiceRoomLimit,
+    ...iceConfiguration
   };
 }
 
@@ -3459,6 +3828,45 @@ function nyxChatVoiceSignal(value) {
   const sdp = String(description.sdp || "");
   if (description.type !== type || !sdp || sdp.length > 32_000) return null;
   return { type, description: { type, sdp } };
+}
+
+function emitNyxChatVoiceRefresh() {
+  nyxChatSocketServer?.emit("nyx:voice:refresh", { updatedAtMs: Date.now() });
+}
+
+function relayNyxChatVoiceSignal(uid, value) {
+  cleanupNyxChatVoice();
+  const sessionId = String(value?.sessionId || "").trim();
+  const toUid = String(value?.toUid || "").trim();
+  const sender = nyxChatVoiceSessions.get(uid);
+  const recipient = nyxChatVoiceSessions.get(toUid);
+  const signal = nyxChatVoiceSignal(value);
+  if (!sender || sender.sessionId !== sessionId) {
+    const error = new Error("Rejoin the voice channel before connecting.");
+    error.status = 409;
+    throw error;
+  }
+  consumeNyxChatVoiceAttempt(nyxChatVoiceSignalAttempts, uid, 10_000, 120, "Voice connection requests are arriving too quickly.");
+  if (!/^[A-Za-z0-9_-]{8,128}$/.test(toUid) || toUid === uid || !recipient || recipient.channelId !== sender.channelId || !signal) {
+    const error = new Error("That voice connection request is invalid.");
+    error.status = 400;
+    throw error;
+  }
+  const now = Date.now();
+  const delivered = {
+    id: randomBytes(12).toString("hex"),
+    ...signal,
+    fromUid: uid,
+    fromSessionId: sender.sessionId,
+    toSessionId: recipient.sessionId,
+    from: nyxChatVoiceParticipant(sender),
+    createdAtMs: now
+  };
+  const queue = (nyxChatVoiceSignals.get(toUid) || []).filter(item => now - Number(item.createdAtMs || 0) <= nyxChatVoiceSignalTtlMs).slice(-199);
+  queue.push(delivered);
+  nyxChatVoiceSignals.set(toUid, queue);
+  nyxChatSocketServer?.to(nyxChatSocketUserRoom(toUid)).emit("nyx:voice:signal", delivered);
+  return delivered;
 }
 
 function nyxOwnerGuestRecord(document, now = Date.now()) {
@@ -3499,12 +3907,12 @@ function nyxOwnerGuestRecord(document, now = Date.now()) {
   };
 }
 
-async function nyxActiveGuestUsers(firebase, now = Date.now()) {
-  const snapshot = await firebase.firestore.collection(presenceCollectionName)
-    .where("lastSeen", ">=", now - presenceTtlMs)
-    .limit(1_000)
-    .get();
-  return snapshot.docs.map(document => nyxOwnerGuestRecord(document, now)).filter(Boolean);
+async function nyxActiveGuestUsers(_firebase, now = Date.now()) {
+  pruneLocalPresence(now);
+  return [...presenceSessionDetails.entries()].map(([id, data]) => nyxOwnerGuestRecord({
+    id,
+    data: () => data
+  }, now)).filter(Boolean);
 }
 
 function nyxOwnerSortUsers(users, sort, direction) {
@@ -3559,6 +3967,11 @@ async function ownerDashboardSnapshot(firebase) {
 
 function invalidateOwnerDashboardSnapshot() {
   ownerDashboardSnapshotCache = { expiresAt: 0, value: null, promise: null };
+  nyxChatIdentityCache.clear();
+  nyxChatMemberDirectoryCache = { expiresAt: 0, value: null, promise: null };
+  const revision = recordNyxChatRealtimeEvent({ kind: "members" });
+  emitNyxChatSocketEvent({ kind: "members", revision });
+  void refreshNyxChatSocketAuthorizations();
 }
 
 function linkGeneratorClientId(req) {
@@ -5520,46 +5933,104 @@ app.get("/api/profiles/:uid", async (req, res) => {
   }
 });
 
+app.post("/api/moderation/flagged-searches", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  try {
+    const { firebase, token } = await authenticatedNyxUser(req);
+    const classification = nyxFlaggedSearchClassification(req.body?.query);
+    if (!classification.query || !classification.category) {
+      res.json({ stored: false });
+      return;
+    }
+    consumeNyxFlaggedSearchAttempt(token.uid);
+    const identity = await nyxChatIdentity(firebase, token);
+    const now = Date.now();
+    const bucket = Math.floor(now / (10 * 60_000));
+    const id = createHash("sha256")
+      .update(`${token.uid}\0${classification.query.toLowerCase()}\0${bucket}`)
+      .digest("hex");
+    await firebase.firestore.collection(nyxFlaggedSearchCollection).doc(id).set({
+      uid: token.uid,
+      displayName: identity.displayName,
+      handle: identity.handle,
+      role: identity.role,
+      query: classification.query,
+      category: classification.category,
+      createdAt: new Date(now).toISOString(),
+      createdAtMs: now,
+      expiresAtMs: now + nyxFlaggedSearchRetentionMs
+    }, { merge: true });
+    void cleanupNyxFlaggedSearches(firebase, now);
+    res.json({ stored: true });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Search safety reporting is unavailable." });
+  }
+});
+
+app.get("/api/chat/moderation/flagged-searches", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  try {
+    const { firebase, token } = await authenticatedNyxChatUser(req, false);
+    const identity = await nyxChatIdentity(firebase, token);
+    if (!nyxChatCanModerate(identity.role)) {
+      res.status(403).json({ error: "Moderator access is required." });
+      return;
+    }
+    const now = Date.now();
+    const snapshot = await firebase.firestore.collection(nyxFlaggedSearchCollection)
+      .orderBy("createdAtMs", "desc")
+      .limit(100)
+      .get();
+    const searches = snapshot.docs.flatMap(document => {
+      const data = document.data() || {};
+      if (Number(data.expiresAtMs || 0) <= now) return [];
+      const storedRole = String(data.role || "").trim().toLowerCase();
+      return [{
+        id: document.id,
+        uid: String(data.uid || ""),
+        displayName: founderProfileText(data.displayName, "Nyx member", 48),
+        handle: founderProfileText(data.handle, "@member", 40),
+        role: Object.prototype.hasOwnProperty.call(nyxRolePolicies, storedRole) ? storedRole : "member",
+        query: founderProfileText(data.query, "", 180),
+        category: founderProfileText(data.category, "Policy flagged", 48),
+        createdAt: safeDateIso(data.createdAt),
+        createdAtMs: safeActivityTime(data.createdAtMs)
+      }];
+    }).filter(item => item.uid && item.query);
+    void cleanupNyxFlaggedSearches(firebase, now);
+    res.json({ searches });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Flagged searches are unavailable." });
+  }
+});
+
 app.get("/api/chat/bootstrap", async (req, res) => {
   res.set("Cache-Control", "no-store");
   try {
     const { firebase, token } = await authenticatedNyxChatUser(req);
     const configuration = await loadNyxChatConfiguration(firebase);
-    const [me, profileSnapshot, latestActivity, conversationSnapshot, caffeine] = await Promise.all([
+    const [me, directory, latestActivity, conversationSnapshot, caffeine] = await Promise.all([
       nyxChatIdentity(firebase, token),
-      firebase.firestore.collection("nyxUserProfiles").limit(250).get(),
-      Promise.all(configuration.textChannels.map(async channel => {
-        const snapshot = await firebase.firestore.collection("nyxChatChannels").doc(channel.id)
-          .collection("messages").orderBy("createdAtMs", "desc").limit(1).get();
-        return [channel.id, Number(snapshot.docs[0]?.data()?.createdAtMs || 0)];
-      })),
+      nyxChatMemberDirectory(firebase),
+      nyxChatChannelActivity(firebase, configuration.textChannels),
       firebase.firestore.collection("nyxChatConversations").where("participants", "array-contains", token.uid).limit(100).get(),
       nyxCaffeineState(firebase, token.uid)
     ]);
-    const uids = profileSnapshot.docs.map(document => document.id);
-    const [administration, activity] = await Promise.all([
-      firestoreDocumentsById(firebase.firestore, "nyxUserAdministration", uids),
-      firestoreDocumentsById(firebase.firestore, "nyxUserActivity", uids)
-    ]);
-    const ownerUid = founderProfileConfig().administratorUid;
     const now = Date.now();
-    const members = profileSnapshot.docs.map(document => {
-      const profile = normalizeNyxUserProfile(document.data()?.profile, { uid: document.id });
-      const memberAdministration = administration.get(document.id) || {};
-      const role = nyxRoleForUser(document.id, memberAdministration, ownerUid);
-      const lastActiveAtMs = safeActivityTime(activity.get(document.id)?.lastActiveAtMs || activity.get(document.id)?.lastActiveAt);
-      return {
-        uid: document.id,
-        displayName: profile.displayName,
-        handle: profile.handle,
-        avatarUrl: nyxChatAvatar(profile.avatarUrl),
-        role,
-        roleLabel: nyxRoleLabels[role] || nyxRoleLabels.member,
-        caffeine: nyxCaffeineSubscription(memberAdministration).active,
-        online: Boolean(lastActiveAtMs && now - lastActiveAtMs <= signedInOnlineWindowMs),
-        self: document.id === token.uid
-      };
-    });
+    const members = directory.map(member => ({
+      ...member,
+      online: now - Math.max(Number(member.lastActiveAtMs || 0), Number(signedInPresence.get(member.uid) || 0)) <= signedInOnlineWindowMs,
+      self: member.uid === token.uid,
+      lastActiveAtMs: undefined
+    }));
     if (!members.some(member => member.uid === token.uid)) members.push({ ...me, online: true, self: true });
     members.sort((left, right) => {
       if (left.self !== right.self) return left.self ? -1 : 1;
@@ -5581,12 +6052,46 @@ app.get("/api/chat/bootstrap", async (req, res) => {
       conversations,
       voice: nyxChatVoiceState(token.uid, "", false, visibleVoiceChannels),
       caffeine,
+      revision: nyxChatRealtimeRevision,
       me,
       members: members.slice(0, 100),
       online: members.filter(member => member.online).length
     });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "Nyx Chat is unavailable." });
+  }
+});
+
+app.get("/api/chat/updates", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const { firebase, token } = await authenticatedNyxChatUser(req, false);
+    const since = Math.max(0, Number(req.query.since || 0));
+    const [identity, configuration] = await Promise.all([
+      nyxChatIdentity(firebase, token),
+      loadNyxChatConfiguration(firebase)
+    ]);
+    const visibleChannels = new Set(configuration.textChannels
+      .filter(channel => nyxChatCanAccessChannel(identity.role, channel))
+      .map(channel => channel.id));
+    const reset = Boolean(since && since < nyxChatRealtimeDroppedBeforeRevision);
+    const events = (reset ? [] : nyxChatRealtimeEvents.filter(event => event.revision > since)).flatMap(event => {
+      if (event.scopeType === "channel" && !visibleChannels.has(event.scopeId)) return [];
+      if (event.scopeType === "conversation" && !event.participants.includes(token.uid)) return [];
+      if (event.kind === "caffeine" && event.participants.length && !event.participants.includes(token.uid)) return [];
+      return [{
+        revision: event.revision,
+        kind: event.kind,
+        scopeType: event.scopeType,
+        scopeId: event.scopeId,
+        createdAtMs: event.createdAtMs,
+        mentionsViewer: event.kind === "message" && nyxChatEventMentionsIdentity(event.lastMessageText, identity),
+        lastMessageAuthorUid: event.lastMessageAuthorUid
+      }];
+    });
+    res.json({ revision: nyxChatRealtimeRevision, reset, events });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Chat updates are unavailable." });
   }
 });
 
@@ -5704,6 +6209,8 @@ app.post("/api/chat/caffeine/gifts", async (req, res) => {
       targetUid: recipientUid,
       details: { giftId }
     });
+    const revision = recordNyxChatRealtimeEvent({ kind: "caffeine", participants: [token.uid, recipientUid] });
+    emitNyxChatSocketEvent({ kind: "caffeine", participants: [token.uid, recipientUid], revision });
     res.status(201).json({ ok: true, caffeine: await nyxCaffeineState(firebase, token.uid) });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "The Caffeine gift could not be sent." });
@@ -5786,6 +6293,8 @@ app.post("/api/chat/caffeine/gifts/:giftId/accept", async (req, res) => {
       targetUid: token.uid,
       details: { giftId, giverUid }
     });
+    const revision = recordNyxChatRealtimeEvent({ kind: "caffeine", participants: [token.uid, giverUid] });
+    emitNyxChatSocketEvent({ kind: "caffeine", participants: [token.uid, giverUid], revision });
     res.json({ ok: true, subscriptionStatus: "premium", premiumAccess: true, caffeine: await nyxCaffeineState(firebase, token.uid) });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "The Caffeine gift could not be accepted." });
@@ -5872,6 +6381,7 @@ app.post("/api/chat/channels", async (req, res) => {
       updatedBy: token.uid
     }, { merge: true });
     nyxChatConfigurationCache = { expiresAt: now + nyxChatConfigurationTtlMs, value: next, promise: null };
+    nyxChatChannelActivityCache = { ...nyxChatChannelActivityCache, expiresAt: 0, promise: null };
     const validVoiceIds = new Set(voiceChannels.map(channel => channel.id));
     for (const [uid, session] of nyxChatVoiceSessions) {
       if (!validVoiceIds.has(session.channelId)) {
@@ -5879,12 +6389,16 @@ app.post("/api/chat/channels", async (req, res) => {
         nyxChatVoiceSignals.delete(uid);
       }
     }
+    emitNyxChatVoiceRefresh();
     await recordNyxAuditSafe(firebase, {
       actorUid: token.uid,
       actorEmail: token.email || "",
       action: `chat_channel_${action}`,
       details: { kind, channelId: changedId, name: action === "delete" ? "" : name, minimumRole }
     });
+    await refreshNyxChatSocketAuthorizations();
+    const revision = recordNyxChatRealtimeEvent({ kind: "configuration" });
+    emitNyxChatSocketEvent({ kind: "configuration", revision });
     res.json({
       ok: true,
       textChannels: textChannels.filter(channel => nyxChatCanAccessChannel(identity.role, channel)),
@@ -5898,7 +6412,7 @@ app.post("/api/chat/channels", async (req, res) => {
 app.get("/api/chat/voice/state", async (req, res) => {
   res.set("Cache-Control", "no-store");
   try {
-    const { firebase, token } = await authenticatedNyxChatUser(req);
+    const { firebase, token } = await authenticatedNyxChatUser(req, false);
     const configuration = await loadNyxChatConfiguration(firebase);
     const identity = await nyxChatIdentity(firebase, token);
     const visibleVoiceChannels = configuration.voiceChannels.filter(channel => nyxChatCanAccessChannel(identity.role, channel));
@@ -5940,6 +6454,7 @@ app.post("/api/chat/voice/join", async (req, res) => {
     const now = Date.now();
     nyxChatVoiceSignals.delete(token.uid);
     nyxChatVoiceSessions.set(token.uid, { uid: token.uid, sessionId, channelId, identity, joinedAtMs: now, lastSeenAtMs: now });
+    emitNyxChatVoiceRefresh();
     res.status(201).json(nyxChatVoiceState(token.uid, sessionId, true, visibleVoiceChannels));
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "The voice channel could not be joined." });
@@ -5959,6 +6474,7 @@ app.post("/api/chat/voice/leave", async (req, res) => {
     if (session && session.sessionId === sessionId) {
       nyxChatVoiceSessions.delete(token.uid);
       nyxChatVoiceSignals.delete(token.uid);
+      emitNyxChatVoiceRefresh();
     }
     res.json({ ok: true });
   } catch (error) {
@@ -5974,33 +6490,7 @@ app.post("/api/chat/voice/signal", async (req, res) => {
   }
   try {
     const { token } = await authenticatedNyxChatUser(req);
-    cleanupNyxChatVoice();
-    const sessionId = String(req.body?.sessionId || "").trim();
-    const toUid = String(req.body?.toUid || "").trim();
-    const sender = nyxChatVoiceSessions.get(token.uid);
-    const recipient = nyxChatVoiceSessions.get(toUid);
-    const signal = nyxChatVoiceSignal(req.body);
-    if (!sender || sender.sessionId !== sessionId) {
-      res.status(409).json({ error: "Rejoin the voice channel before connecting." });
-      return;
-    }
-    consumeNyxChatVoiceAttempt(nyxChatVoiceSignalAttempts, token.uid, 10_000, 120, "Voice connection requests are arriving too quickly.");
-    if (!/^[A-Za-z0-9_-]{8,128}$/.test(toUid) || toUid === token.uid || !recipient || recipient.channelId !== sender.channelId || !signal) {
-      res.status(400).json({ error: "That voice connection request is invalid." });
-      return;
-    }
-    const now = Date.now();
-    const queue = (nyxChatVoiceSignals.get(toUid) || []).filter(item => now - Number(item.createdAtMs || 0) <= nyxChatVoiceSignalTtlMs).slice(-199);
-    queue.push({
-      id: randomBytes(12).toString("hex"),
-      ...signal,
-      fromUid: token.uid,
-      fromSessionId: sender.sessionId,
-      toSessionId: recipient.sessionId,
-      from: nyxChatVoiceParticipant(sender),
-      createdAtMs: now
-    });
-    nyxChatVoiceSignals.set(toUid, queue);
+    relayNyxChatVoiceSignal(token.uid, req.body);
     res.status(202).json({ ok: true });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "The voice connection could not be relayed." });
@@ -6049,6 +6539,8 @@ app.post("/api/chat/conversations", async (req, res) => {
       updatedAtMs: Number(existing.data()?.updatedAtMs || now)
     }, { merge: true });
     const saved = await ref.get();
+    const revision = recordNyxChatRealtimeEvent({ kind: "conversation", scopeType: "conversation", scopeId: id, participants: [token.uid, participantUid] });
+    emitNyxChatSocketEvent({ kind: "conversation", scopeType: "conversation", scopeId: id, participants: [token.uid, participantUid], revision });
     res.status(existing.exists ? 200 : 201).json({ conversation: nyxChatConversationPayload(saved, token.uid, new Map([[participantUid, other]])) });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "The private conversation could not be opened." });
@@ -6118,6 +6610,8 @@ app.post("/api/chat/attachments/large/start", async (req, res) => {
     res.status(403).json({ error: "Cross-origin requests are not allowed." });
     return;
   }
+  res.status(413).json({ error: "Chat attachments are limited to 8 MB for every account." });
+  return;
   try {
     const { firebase, token } = await authenticatedNyxChatUser(req);
     const identity = await nyxChatIdentity(firebase, token);
@@ -6172,6 +6666,8 @@ app.put("/api/chat/attachments/large/:uploadId/:index", express.raw({ type: "app
     res.status(403).json({ error: "Cross-origin requests are not allowed." });
     return;
   }
+  res.status(413).json({ error: "Chat attachments are limited to 8 MB for every account." });
+  return;
   let lockId = "";
   try {
     const { firebase, token } = await authenticatedNyxChatUser(req);
@@ -6229,6 +6725,8 @@ app.post("/api/chat/attachments/large/:uploadId/complete", async (req, res) => {
     res.status(403).json({ error: "Cross-origin requests are not allowed." });
     return;
   }
+  res.status(413).json({ error: "Chat attachments are limited to 8 MB for every account." });
+  return;
   try {
     const { firebase, token } = await authenticatedNyxChatUser(req);
     const identity = await nyxChatIdentity(firebase, token);
@@ -6515,8 +7013,7 @@ app.post("/api/chat/messages", async (req, res) => {
       return nyxChatAttachmentMetadata({ id: attachmentIds[index], ...value });
     });
     const attachmentTotal = attachments.reduce((total, value) => total + Number(value?.size || 0), 0);
-    const attachmentLimit = identity.role === "owner" ? nyxChatOwnerAttachmentMessageLimit : nyxChatAttachmentMessageLimit;
-    if (attachments.some(value => !value) || attachments.some(value => value?.streamed && identity.role !== "owner") || attachmentTotal > attachmentLimit) {
+    if (attachments.some(value => !value) || attachments.some(value => value?.streamed) || attachmentTotal > nyxChatAttachmentMessageLimit) {
       res.status(400).json({ error: "One or more attachments are unavailable or the combined attachment size is too large." });
       return;
     }
@@ -6574,6 +7071,31 @@ app.post("/api/chat/messages", async (req, res) => {
       if (Number(error?.code) !== 6 && String(error?.code || "") !== "6") throw error;
     }
     const saved = await messageRef.get();
+    const revision = recordNyxChatRealtimeEvent({
+      kind: "message",
+      scopeType: scope.private ? "conversation" : "channel",
+      scopeId: scope.id,
+      participants: scope.participants || [],
+      createdAtMs,
+      lastMessageText: text,
+      lastMessageAuthorUid: token.uid
+    });
+    emitNyxChatSocketEvent({
+      kind: "message",
+      scopeType: scope.private ? "conversation" : "channel",
+      scopeId: scope.id,
+      participants: scope.participants || [],
+      createdAtMs,
+      lastMessageText: text,
+      lastMessageAuthorUid: token.uid,
+      messageDocument: saved,
+      revision
+    });
+    if (!scope.private) {
+      const activity = new Map(nyxChatChannelActivityCache.value);
+      activity.set(scope.id, createdAtMs);
+      nyxChatChannelActivityCache = { ...nyxChatChannelActivityCache, value: activity };
+    }
     res.status(201).json({ message: nyxChatMessagePayload(saved, token.uid) });
   } catch (error) {
     if (error.retryAfter) res.set("Retry-After", String(error.retryAfter));
@@ -6621,6 +7143,20 @@ app.delete("/api/chat/messages/:scope/:messageId", async (req, res) => {
     });
     await batch.commit();
     await Promise.allSettled(diskPaths.map(path => unlink(path)));
+    const revision = recordNyxChatRealtimeEvent({
+      kind: "delete",
+      scopeType: scope.private ? "conversation" : "channel",
+      scopeId: scope.id,
+      participants: scope.participants || []
+    });
+    emitNyxChatSocketEvent({
+      kind: "delete",
+      scopeType: scope.private ? "conversation" : "channel",
+      scopeId: scope.id,
+      participants: scope.participants || [],
+      messageId,
+      revision
+    });
     res.json({ ok: true, id: messageId, channel: scope.type === "channel" ? scope.id : "", conversationId: scope.private ? scope.id : "" });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "The message could not be deleted." });
@@ -6671,6 +7207,21 @@ app.post("/api/chat/messages/:scope/:messageId/reactions", async (req, res) => {
       reactions = current.filter(item => item.uids.length);
       transaction.set(messageRef, { reactions }, { merge: true });
     });
+    const revision = recordNyxChatRealtimeEvent({
+      kind: "reaction",
+      scopeType: scope.private ? "conversation" : "channel",
+      scopeId: scope.id,
+      participants: scope.participants || []
+    });
+    emitNyxChatSocketEvent({
+      kind: "reaction",
+      scopeType: scope.private ? "conversation" : "channel",
+      scopeId: scope.id,
+      participants: scope.participants || [],
+      messageId,
+      reactions,
+      revision
+    });
     res.json({ reactions: nyxChatReactionPayload(reactions, token.uid) });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "The reaction could not be saved." });
@@ -6686,23 +7237,23 @@ app.post("/api/activity/heartbeat", async (req, res) => {
   try {
     const { firebase, token } = await authenticatedNyxUser(req);
     const now = Date.now();
+    signedInPresence.set(token.uid, now);
     const timestamp = new Date(now).toISOString();
     const lastSeenIp = nyxClientIp(req);
     const administrationRef = firebase.firestore.collection("nyxUserAdministration").doc(token.uid);
-    const work = [
-      firebase.firestore.collection("nyxUserActivity").doc(token.uid).set({
+    const administration = await administrationRef.get();
+    const administrationData = administration.data() || {};
+    const work = [firebase.firestore.collection("nyxUserActivity").doc(token.uid).set({
         lastActiveAt: timestamp,
         lastActiveAtMs: now,
         onlineUntilMs: now + signedInOnlineWindowMs,
         updatedAt: timestamp
-      }, { merge: true }),
-      administrationRef.get()
-    ];
-    if (lastSeenIp) {
+      }, { merge: true })];
+    const recordedIpAt = Date.parse(String(administrationData.lastSeenIpAt || "")) || 0;
+    if (lastSeenIp && (normalizeNyxIp(administrationData.lastSeenIp) !== lastSeenIp || now - recordedIpAt >= 24 * 60 * 60_000)) {
       work.push(administrationRef.set({ lastSeenIp, lastSeenIpAt: timestamp, updatedAt: timestamp }, { merge: true }));
     }
-    const [, administration] = await Promise.all(work);
-    const administrationData = administration.data() || {};
+    await Promise.all(work);
     const role = nyxRoleForUser(token.uid, administrationData);
     const access = nyxOwnerAccessPayload({ role, permissions: nyxRolePolicy(role).permissions });
     const subscriptionStatus = normalizeSubscriptionStatus(administrationData.subscriptionStatus || administrationData.subscription?.status);
@@ -6901,7 +7452,7 @@ app.get("/api/owner-dashboard/ip-bans", async (req, res) => {
   res.set("Cache-Control", "no-store");
   try {
     const { firebase, actor } = await ownerDashboardActor(req, "network:bans");
-    const bans = [...(await nyxIpBans(firebase)).values()]
+    const bans = [...(await nyxIpBans(firebase, { wait: true })).values()]
       .sort((left, right) => Date.parse(right.createdAt || "") - Date.parse(left.createdAt || ""));
     res.json({ access: nyxOwnerAccessPayload(actor), bans, clientIp: nyxClientIp(req) });
   } catch (error) {
@@ -6938,7 +7489,6 @@ app.post("/api/owner-dashboard/ip-bans", async (req, res) => {
       updatedAt: new Date().toISOString(),
       updatedBy: String(token.email || token.uid).slice(0, 254)
     }, { merge: true });
-    invalidateNyxIpBans();
     await recordNyxAuditSafe(firebase, {
       actorUid: token.uid,
       actorEmail: token.email,
@@ -6946,6 +7496,7 @@ app.post("/api/owner-dashboard/ip-bans", async (req, res) => {
       details: { ip, reason }
     });
     const ban = nyxIpBanRecord(id, (await firebase.firestore.collection(nyxIpBanCollectionName).doc(id).get()).data());
+    cacheNyxIpBan(ban);
     res.status(existing.exists ? 200 : 201).json({ ban, access: nyxOwnerAccessPayload(actor) });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "The IP ban could not be saved." });
@@ -6973,7 +7524,7 @@ app.delete("/api/owner-dashboard/ip-bans/:id", async (req, res) => {
     }
     const ban = nyxIpBanRecord(id, snapshot.data());
     await reference.delete();
-    invalidateNyxIpBans();
+    removeCachedNyxIpBan(ban);
     await recordNyxAuditSafe(firebase, {
       actorUid: token.uid,
       actorEmail: token.email,
@@ -7107,6 +7658,7 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
         return;
       }
       const disabled = action === "disable" || action === "disable_with_ip_ban";
+      const moderationReason = founderProfileText(req.body?.reason, "", 180);
       const lastSeenIp = action === "disable_with_ip_ban" ? normalizeNyxIp(targetAdministration?.data()?.lastSeenIp) : "";
       if (action === "disable_with_ip_ban" && !lastSeenIp) {
         res.status(409).json({ error: "Nyx has not recorded an IP address for this account yet." });
@@ -7125,18 +7677,23 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
         const timestamp = new Date().toISOString();
         await banReference.set({
           ip: lastSeenIp,
-          reason: `Blocked with account ${String(target.email || uid).slice(0, 120)}`,
+          reason: founderProfileText(moderationReason ? `${moderationReason} — blocked with account ${String(target.email || uid).slice(0, 120)}` : `Blocked with account ${String(target.email || uid).slice(0, 120)}`, "Account IP ban", 240),
           createdAt: String(existingBan.data()?.createdAt || timestamp),
           createdBy: String(existingBan.data()?.createdBy || token.email || token.uid).slice(0, 254),
           updatedAt: timestamp,
           updatedBy: String(token.email || token.uid).slice(0, 254)
         }, { merge: true });
-        invalidateNyxIpBans();
+        cacheNyxIpBan(nyxIpBanRecord(banId, {
+          ip: lastSeenIp,
+          reason: founderProfileText(moderationReason ? `${moderationReason} — blocked with account ${String(target.email || uid).slice(0, 120)}` : `Blocked with account ${String(target.email || uid).slice(0, 120)}`, "Account IP ban", 240),
+          createdAt: String(existingBan.data()?.createdAt || timestamp),
+          createdBy: String(existingBan.data()?.createdBy || token.email || token.uid).slice(0, 254)
+        }));
         auditAction = "account_disabled_with_ip_ban";
-        auditDetails = { disabled: true, ip: lastSeenIp };
+        auditDetails = { disabled: true, ip: lastSeenIp, ...(moderationReason ? { reason: moderationReason } : {}) };
       } else {
         auditAction = disabled ? "account_disabled" : "account_enabled";
-        auditDetails = { disabled };
+        auditDetails = { disabled, ...(moderationReason ? { reason: moderationReason } : {}) };
       }
     } else if (action === "verify_email") {
       if (!nyxDeliverableEmail(target.email)) {
@@ -7625,14 +8182,18 @@ app.use((_req, res) => {
   res.sendFile(join(staticRoot, "index.html"));
 });
 
-export { app, externalWispUrl, normalizePublicWispUrl };
+export { app, attachNyxChatSocketServer, externalWispUrl, normalizePublicWispUrl };
 
 const isDirectRun = process.argv[1] && resolve(process.argv[1]) === join(__dirname, "server.js");
 if (isDirectRun) {
   const server = createServer((req, res) => app(req, res));
+  const chatSocketServer = attachNyxChatSocketServer(server);
 
   server.on("upgrade", async (req, socket, head) => {
     const upgradePath = new URL(req.url || "/", "http://localhost").pathname;
+    if (upgradePath === "/socket.io/" || upgradePath.startsWith("/socket.io/")) {
+      return;
+    }
     if (!externalWispUrl && (upgradePath === "/wisp/" || upgradePath === "/wisp")) {
       if (!embeddedWispOriginAllowed(req.headers.origin, req.headers.host)) {
         rejectWispUpgrade(socket);
@@ -7661,6 +8222,7 @@ if (isDirectRun) {
     console.log(`  http://localhost:${address.port}`);
     console.log(`  http://${hostname()}:${address.port}`);
     console.log(`  wisp transport: ${externalWispUrl || "same-host /wisp/"}`);
+    console.log("  chat realtime: same-host /socket.io/");
     console.log(`  static root: ${staticRoot}`);
     if (!externalWispUrl) console.log(embeddedWispAllowedOrigins.length ? `  allowed Wisp origins: ${embeddedWispAllowedOrigins.join(", ")}` : "  warning: embedded Wisp accepts every browser origin");
   });
@@ -7670,6 +8232,7 @@ if (isDirectRun) {
     if (shuttingDown) return;
     shuttingDown = true;
     console.log(`${signal} received; closing nyx server.`);
+    chatSocketServer.disconnectSockets(true);
     server.close(() => process.exit(0));
     setTimeout(() => process.exit(1), 10_000).unref();
   }

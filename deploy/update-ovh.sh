@@ -40,6 +40,9 @@ install -d -m 0750 -o nyx -g nyx /var/lib/nyx/chat-attachments
 sed "s|__NYX_ROOT__|${APP_DIR}|g" deploy/systemd/nyx.service.template > /etc/systemd/system/nyx.service
 systemctl daemon-reload
 systemctl restart nyx
+if [[ -x deploy/setup-turn.sh || -f deploy/setup-turn.sh ]]; then
+  bash deploy/setup-turn.sh
+fi
 CADDY_TMP=$(mktemp)
 sed "s|__NYX_DOMAIN__|${DOMAIN}|g" deploy/caddy/nyx.Caddyfile.template > "${CADDY_TMP}"
 caddy validate --config "${CADDY_TMP}" --adapter caddyfile

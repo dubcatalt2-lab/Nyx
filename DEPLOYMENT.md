@@ -1,8 +1,8 @@
 # Move Nyx to one OVHcloud VPS
 
-This runbook moves Nyx's website, API, Wisp WebSocket service, and self-service custom domains onto one Ubuntu VPS. Caddy is the public reverse proxy and automatic HTTPS manager, Nyx listens only on local port `8080`, and systemd keeps both services running. The application serves the generated, minified `dist/` build while the API and IP-ban guard continue to run through Express.
+This runbook runs Nyx's website, API, authenticated Socket.IO Chat, Wisp WebSocket service, and self-service custom domains on one Ubuntu VPS. Caddy is the public reverse proxy and automatic HTTPS manager, Nyx listens only on local port `8080`, and systemd keeps both services running. The application serves the generated, minified `dist/` build while the API and IP-ban guard continue to run through Express.
 
-Netlify and Railway are intentionally left configured as a rollback until the OVH deployment has been stable. Do not cancel them or remove their files before completing the final verification.
+OVH/Caddy is the active deployment target. Netlify is no longer an active Nyx host; legacy deployment files may remain in the repository but are not part of this runbook.
 
 ## What to buy
 
@@ -74,14 +74,14 @@ sudo bash deploy/setup-ovh.sh nyxlearning.org
 The installer:
 
 - installs a supported Node.js release, Caddy, UFW, and Fail2ban;
-- builds and validates Nyx for its same-origin Wisp endpoint, keeps the large bundled games that the Netlify build must omit, then removes build-only packages from the VPS;
+- builds and validates Nyx for its same-origin Wisp endpoint, keeps the large bundled games that constrained serverless builds omit, then removes build-only packages from the VPS;
 - creates an unprivileged, hardened `nyx` systemd service;
-- creates `/var/lib/nyx/chat-attachments` as the only writable persistent application state directory for Owner large chat uploads;
+- preserves `/var/lib/nyx/chat-attachments` as the only writable persistent application state directory for historical streamed attachments (new Chat uploads are capped at 8 MB and remain in the bounded attachment flow);
 - serves the generated `dist/` output through the same Express request/IP-ban guard as the API;
-- configures WebSocket forwarding for embedded Wisp and uses the current browser hostname for its same-origin endpoint;
+- forwards embedded Wisp and authenticated Socket.IO Chat WebSockets and uses the current browser hostname for their same-origin endpoints;
 - trusts Cloudflare visitor-IP headers only from Cloudflare's published networks and overwrites spoofable forwarding headers for direct custom domains;
 - configures Caddy On-Demand TLS with Nyx's database-backed hostname authorization endpoint;
-- opens only SSH, HTTP, and HTTPS; and
+- opens only SSH, HTTP, and HTTPS during base setup (the optional authenticated TURN step adds its bounded voice ports); and
 - preserves the secret environment file and reloads a validated Caddy configuration when rerun.
 
 ## 4. Add the environment variables
@@ -122,6 +122,28 @@ NYX_CHAT_ATTACHMENT_ROOT=/var/lib/nyx/chat-attachments
 
 `NYX_ALLOWED_ORIGINS` must include the exact primary production domain. Verified custom domains are allowed only for same-host Wisp connections. `NYX_SITE_URL` and `OPENROUTER_API_KEY` are obsolete names and should not be added.
 
+For reliable Chat voice calls across school, corporate, carrier, and symmetric-NAT networks, configure Nyx's authenticated TURN relay. Generate a unique secret on the VPS and add these lines to `/etc/nyx/nyx.env` (use the VPS IP or a DNS-only hostname; a proxied Cloudflare hostname cannot carry TURN traffic):
+
+```bash
+openssl rand -hex 32
+```
+
+```dotenv
+NYX_TURN_URLS='turn:YOUR_VPS_IP:3478?transport=udp,turn:YOUR_VPS_IP:3478?transport=tcp'
+NYX_TURN_SHARED_SECRET='PASTE_THE_RANDOM_VALUE_HERE'
+NYX_TURN_TTL_SECONDS=3600
+```
+
+Then install and configure the bounded coturn relay:
+
+```bash
+cd /var/www/nyx
+sudo bash deploy/setup-turn.sh
+systemctl is-active coturn
+```
+
+The script enables authenticated temporary credentials, limits each account and the UDP relay range, and opens TCP/UDP `3478` plus UDP `49160:49260` in UFW. If OVH's network firewall is enabled separately, allow those same ports there. Never put the TURN shared secret in Git or client code; Nyx sends browsers only short-lived HMAC credentials.
+
 Save Nano with `Ctrl+O`, Enter, then `Ctrl+X`. Apply and verify:
 
 ```bash
@@ -151,7 +173,7 @@ The custom-hostname response should show `"enabled":true` and the VPS address. C
 
 ## 6. Prepare the DNS cutover
 
-Confirm that ports 80 and 443 reach the VPS and that Cloudflare's SSL/TLS encryption mode is **Full (strict)**. Do not create or store a Cloudflare API token for Caddy. Keep the former Netlify target recorded so the DNS change can be reversed if verification fails.
+Confirm that ports 80 and 443 reach the VPS and that Cloudflare's SSL/TLS encryption mode is **Full (strict)**. Do not create or store a Cloudflare API token for Caddy.
 
 ## 7. Change Cloudflare DNS
 
@@ -162,7 +184,7 @@ In **Cloudflare > DNS > Records**, change the existing `A` records:
 | A | `@` | `YOUR_VPS_IP` | Proxied |
 | A | `www` | `YOUR_VPS_IP` | Proxied |
 
-Remove only conflicting web `A`/`AAAA`/`CNAME` records after confirming what they do. In particular, replace an old proxied `www` CNAME to Netlify if `www` should be served by this VPS. Preserve mail records. In Cloudflare, use **SSL/TLS > Full (strict)** and keep WebSockets enabled.
+Remove only conflicting web `A`/`AAAA`/`CNAME` records after confirming what they do. In particular, replace any legacy `www` CNAME if `www` should be served by this VPS. Preserve mail records. In Cloudflare, use **SSL/TLS > Full (strict)** and keep WebSockets enabled.
 
 Keep the existing `nyx_ip_bans` IP List and WAF expression:
 
@@ -197,7 +219,7 @@ sudo journalctl -u caddy --since "30 minutes ago" --no-pager
 
 For self-service FreeDNS aliases, users open `https://nyxlearning.org/connect-domain`, point an `A` record to the displayed VPS address, and submit the complete hostname. Nyx verifies DNS before authorizing Caddy to issue its certificate. See `docs/CUSTOM_DOMAINS.md` for the security model.
 
-Keep Netlify and Railway intact for at least 24 hours of stable production. Rollback is changing the Cloudflare web records back to the previous Netlify target. Only after the VPS is proven should you decide whether to cancel paid services or remove old deployment configuration.
+The active rollback mechanism is the OVH automated backup plus a known-good Git revision. Validate both before a high-risk update.
 
 ## Updating Nyx later
 

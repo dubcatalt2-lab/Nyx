@@ -368,7 +368,7 @@
       void sendNyxUserActivity('/api/activity/event',user);
       try{sessionStorage.setItem(`nyx.login-recorded.${user.uid}`,'1')}catch{}
     }
-    nyxUserActivityTimer=setInterval(()=>{if(document.visibilityState==='visible')void sendNyxUserActivity('/api/activity/heartbeat',user)},30000);
+    nyxUserActivityTimer=setInterval(()=>{if(document.visibilityState==='visible')void sendNyxUserActivity('/api/activity/heartbeat',user)},5*60*1000);
   }
   document.addEventListener('visibilitychange',()=>{
     document.querySelectorAll('[data-nyx-animated-source]').forEach(host=>{
@@ -1867,6 +1867,26 @@
     const savedEngine=String(store.text('nyx.engine','duckduckgo')).trim().toLowerCase();
     const engine=Object.prototype.hasOwnProperty.call(engines,savedEngine) ? savedEngine : 'duckduckgo';
     return engines[engine] + encodeURIComponent(String(query || '').trim());
+  }
+  const nyxFlaggedSearchHintPattern=/\b(?:porn(?:ography)?|xxx|hentai|rule\s*34|nudes?|sex\s+videos?|csam|child\s+(?:porn|nudes?|sexual\s+content)|how\s+to\s+(?:make|build)\s+(?:a\s+)?bomb|school\s+shooting|(?:kill|murder)\s+(?:someone|a\s+person|my\s+(?:teacher|classmate|parent))|how\s+to\s+(?:kill\s+myself|commit\s+suicide)|suicide\s+methods?|best\s+way\s+to\s+die|self[-\s]?harm\s+(?:methods?|tips)|(?:buy|sell)\s+(?:fentanyl|cocaine|meth(?:amphetamine)?|heroin)|how\s+to\s+make\s+meth|doxx?(?:ing)?|swat(?:ting)?\s+someone|ddos(?:ing)?|steal\s+(?:a\s+)?password|hack\s+(?:an?\s+)?account|grab\s+(?:someone(?:'s)?|a\s+person(?:'s)?)\s+ip)\b/i;
+  function nyxFlaggedSearchHint(value){
+    const query=String(value || '').normalize('NFKC').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,180);
+    return nyxFlaggedSearchHintPattern.test(query) ? query : '';
+  }
+  async function nyxReportFlaggedSearch(value){
+    const query=nyxFlaggedSearchHint(value);
+    if(!query || !nyxFounderSignedInUser) return;
+    try{
+      const token=await nyxGetFirebaseToken();
+      if(!token) return;
+      await fetch('/api/moderation/flagged-searches',{
+        method:'POST',
+        credentials:'same-origin',
+        keepalive:true,
+        headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},
+        body:JSON.stringify({query})
+      });
+    }catch{}
   }
   function unwrapAccidentalUrlSearch(value){
     const raw=String(value || '').trim();
@@ -9385,6 +9405,7 @@
       const looksLikeUrl=/^(?:[a-z][a-z0-9+.-]*:|[\w.-]+\.[a-z]{2,}(?:\/|$)|\/|\.\/|\.\.\/|assets\/)/i.test(rawText);
       const isSearchQuery=rawText && !forceMode && !looksLikeUrl && !proxyInternal;
       if(isSearchQuery){
+        void nyxReportFlaggedSearch(rawText);
         const url=selectedSearchUrl(rawText);
         document.querySelectorAll('.nyx-preflight').forEach(overlay=>overlay.remove());
         win.querySelector('.urlbar').value=browserShellDisplayValue(url);

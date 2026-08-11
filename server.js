@@ -4,7 +4,8 @@ import { isIP } from "node:net";
 import { hostname } from "node:os";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { lookup } from "node:dns/promises";
-import { readFileSync } from "node:fs";
+import { createReadStream, readFileSync } from "node:fs";
+import { mkdir, open as openFile, stat, statfs, unlink } from "node:fs/promises";
 import { join, dirname, resolve } from "node:path";
 import { createRequire } from "node:module";
 import { server as wisp } from "@mercuryworkshop/wisp-js/server";
@@ -87,7 +88,8 @@ const nyxChatChannels = Object.freeze([
   Object.freeze({ id: "general", name: "General", description: "The main Nyx community chat." }),
   Object.freeze({ id: "gaming", name: "Gaming", description: "Games, scores, and Pirate Cove." }),
   Object.freeze({ id: "study", name: "Study Hall", description: "Homework help and study talk." }),
-  Object.freeze({ id: "off-topic", name: "Off Topic", description: "Everything that belongs somewhere else." })
+  Object.freeze({ id: "off-topic", name: "Off Topic", description: "Everything that belongs somewhere else." }),
+  Object.freeze({ id: "staff-room", name: "Staff Room", description: "A private channel for moderators and staff.", minimumRole: "moderator" })
 ]);
 const nyxChatVoiceChannels = Object.freeze([
   Object.freeze({ id: "lounge", name: "Lounge", description: "Open voice chat for the Nyx community." }),
@@ -101,7 +103,9 @@ const nyxChatConfigurationTtlMs = 10_000;
 let nyxChatConfigurationCache = { expiresAt: 0, value: null, promise: null };
 const nyxChatVoiceSessionIdPattern = /^[A-Za-z0-9_-]{16,128}$/;
 const nyxChatVoiceSignalTypes = new Set(["offer", "answer", "candidate"]);
-const nyxChatVoiceSessionTtlMs = 30_000;
+// Hidden browser tabs may throttle timers to roughly one callback per minute.
+// Keep a generous lease so switching away from Chat does not eject a live call.
+const nyxChatVoiceSessionTtlMs = 5 * 60_000;
 const nyxChatVoiceSignalTtlMs = 60_000;
 const nyxChatVoiceRoomLimit = 8;
 const nyxChatVoiceSessions = new Map();
@@ -114,6 +118,9 @@ const nyxChatSendMaxPerWindow = 6;
 const nyxChatSendAttempts = new Map();
 const nyxChatConversationIdPattern = /^[a-f0-9]{40}$/;
 const nyxChatAttachmentIdPattern = /^[a-f0-9]{40}$/;
+const nyxCaffeineGiftIdPattern = /^[a-f0-9]{40}$/;
+const nyxCaffeineGiftCollection = "nyxCaffeineGifts";
+const nyxCaffeineGiftPendingMs = 7 * 24 * 60 * 60_000;
 const nyxChatAttachmentMimeTypes = new Set([
   "image/gif", "image/jpeg", "image/png", "image/webp",
   "audio/mpeg", "audio/mp4", "audio/ogg", "audio/wav", "audio/x-wav", "audio/webm",
@@ -123,13 +130,22 @@ const nyxChatAttachmentMimeTypes = new Set([
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   "application/vnd.openxmlformats-officedocument.presentationml.presentation"
 ]);
-const nyxChatAttachmentFileLimit = 5 * 1024 * 1024;
+const nyxChatAttachmentFileLimit = 8 * 1024 * 1024;
 const nyxChatAttachmentMessageLimit = 8 * 1024 * 1024;
 const nyxChatAttachmentCountLimit = 3;
-const nyxChatAttachmentEncodedLimit = 7_100_000;
+const nyxChatAttachmentEncodedLimit = 11_500_000;
 const nyxChatAttachmentChunkLimit = 450_000;
-const nyxChatAttachmentChunkCountLimit = 24;
+const nyxChatAttachmentChunkCountLimit = 32;
 const nyxChatAttachmentUploadTtlMs = 60 * 60_000;
+const nyxChatOwnerAttachmentFileLimit = 1024 * 1024 * 1024;
+const nyxChatOwnerAttachmentMessageLimit = 1024 * 1024 * 1024;
+const nyxChatOwnerAttachmentChunkLimit = 4 * 1024 * 1024;
+const nyxChatOwnerAttachmentChunkCountLimit = 256;
+const nyxChatAttachmentRoot = resolve(process.env.NYX_CHAT_ATTACHMENT_ROOT || "/var/lib/nyx/chat-attachments");
+const nyxChatAttachmentTickets = new Map();
+const nyxChatAttachmentUploads = new Set();
+const nyxChatAttachmentTicketTtlMs = 10 * 60_000;
+let nyxChatAttachmentLastCleanupAt = 0;
 const nyxChatReactionEmoji = new Set(["👍", "❤️", "😂", "😮", "😢", "🔥", "🎉", "👀"]);
 const nyxAccountSignInAttempts = new Map();
 const nyxAccountRegisterAttempts = new Map();
@@ -2734,6 +2750,72 @@ function hasPremiumSubscription(value) {
   return ["premium", "trialing"].includes(normalizeSubscriptionStatus(value));
 }
 
+function nyxCaffeineSubscription(administration = {}) {
+  const subscriptionStatus = normalizeSubscriptionStatus(administration.subscriptionStatus || administration.subscription?.status);
+  const source = String(administration.subscriptionSource || "").trim().toLowerCase();
+  const active = hasPremiumSubscription(subscriptionStatus);
+  return {
+    active,
+    subscriptionStatus,
+    giftDerived: active && source === "caffeine_gift",
+    directlyAssigned: active && source !== "caffeine_gift"
+  };
+}
+
+function nyxCaffeineGrantKey(uid, administration = {}) {
+  const seed = String(administration.caffeineGrantId || administration.subscriptionUpdatedAt || "legacy-premium").trim();
+  return createHash("sha256").update(`${String(uid || "")}:${seed}`, "utf8").digest("hex").slice(0, 40);
+}
+
+function nyxCaffeinePendingGift(value, now = Date.now()) {
+  const source = value && typeof value === "object" ? value : {};
+  const id = String(source.id || "").trim();
+  const giverUid = String(source.giverUid || "").trim();
+  const expiresAtMs = Math.max(0, Number(source.expiresAtMs || 0));
+  if (!nyxCaffeineGiftIdPattern.test(id) || !/^[A-Za-z0-9_-]{8,128}$/.test(giverUid) || expiresAtMs <= now) return null;
+  return {
+    id,
+    giverUid,
+    giverDisplayName: founderProfileText(source.giverDisplayName, "A Nyx member", 48),
+    giverHandle: `@${nyxProfileUsername(source.giverHandle, "nyx-user")}`,
+    createdAtMs: Math.max(0, Number(source.createdAtMs || 0)),
+    expiresAtMs
+  };
+}
+
+async function nyxCaffeineState(firebase, uid) {
+  const administrationRef = firebase.firestore.collection("nyxUserAdministration").doc(uid);
+  const administrationSnapshot = await administrationRef.get();
+  const administration = administrationSnapshot.data() || {};
+  const subscription = nyxCaffeineSubscription(administration);
+  const pendingGift = nyxCaffeinePendingGift(administration.pendingCaffeineGift);
+  let outgoingGift = null;
+  if (subscription.directlyAssigned) {
+    const giftId = nyxCaffeineGrantKey(uid, administration);
+    const giftSnapshot = await firebase.firestore.collection(nyxCaffeineGiftCollection).doc(giftId).get();
+    const gift = giftSnapshot.data() || {};
+    const status = String(gift.status || "").trim().toLowerCase();
+    const stillPending = status === "pending" && Number(gift.expiresAtMs || 0) > Date.now();
+    if (status === "accepted" || stillPending) {
+      outgoingGift = {
+        id: giftId,
+        status,
+        recipientDisplayName: founderProfileText(gift.recipientDisplayName, "Nyx member", 48),
+        createdAtMs: Math.max(0, Number(gift.createdAtMs || 0)),
+        acceptedAtMs: Math.max(0, Number(gift.acceptedAtMs || 0)),
+        expiresAtMs: Math.max(0, Number(gift.expiresAtMs || 0))
+      };
+    }
+  }
+  return {
+    active: subscription.active,
+    giftDerived: subscription.giftDerived,
+    canGift: subscription.directlyAssigned && !outgoingGift,
+    outgoingGift,
+    pendingGift
+  };
+}
+
 function nyxDeliverableEmail(value) {
   const email = String(value || "").trim();
   return Boolean(email && !/@account\.nyx\.local$/i.test(email) && !/\.local$/i.test(email));
@@ -2933,8 +3015,13 @@ function nyxChatChannelDefinition(value, fallback = null) {
   return {
     id,
     name: founderProfileText(source.name, fallback?.name || "Channel", 32),
-    description: founderProfileText(source.description, fallback?.description || "Nyx community channel.", 140)
+    description: founderProfileText(source.description, fallback?.description || "Nyx community channel.", 140),
+    minimumRole: nyxRolePolicies[String(source.minimumRole || fallback?.minimumRole || "member").trim().toLowerCase()] ? String(source.minimumRole || fallback?.minimumRole || "member").trim().toLowerCase() : "member"
   };
+}
+
+function nyxChatCanAccessChannel(role, channel) {
+  return nyxRolePolicy(role).rank >= nyxRolePolicy(channel?.minimumRole || "member").rank;
 }
 
 function normalizeNyxChatChannelList(value, defaults, limit) {
@@ -2952,10 +3039,16 @@ async function loadNyxChatConfiguration(firebase, force = false) {
   if (!force && nyxChatConfigurationCache.value && nyxChatConfigurationCache.expiresAt > now) return nyxChatConfigurationCache.value;
   if (!force && nyxChatConfigurationCache.promise) return nyxChatConfigurationCache.promise;
   const promise = (async () => {
-    const snapshot = await firebase.firestore.collection(nyxChatConfigurationCollection).doc(nyxChatConfigurationDocument).get();
+    const configurationRef = firebase.firestore.collection(nyxChatConfigurationCollection).doc(nyxChatConfigurationDocument);
+    const snapshot = await configurationRef.get();
     const data = snapshot.data() || {};
     const textChannels = normalizeNyxChatChannelList(data.textChannels, nyxChatChannels, 24);
     const voiceChannels = normalizeNyxChatChannelList(data.voiceChannels, nyxChatVoiceChannels, 12);
+    if (data.restrictedChannelsInitialized !== true) {
+      const staffChannel = nyxChatChannelDefinition(nyxChatChannels.find(channel => channel.id === "staff-room"));
+      if (staffChannel && !textChannels.some(channel => channel.id === staffChannel.id)) textChannels.push(staffChannel);
+      await configurationRef.set({ textChannels, restrictedChannelsInitialized: true }, { merge: true });
+    }
     const value = {
       textChannels: textChannels.length ? textChannels : [...nyxChatChannels],
       voiceChannels: voiceChannels.length ? voiceChannels : [...nyxChatVoiceChannels]
@@ -3016,17 +3109,93 @@ function nyxChatAttachmentMetadata(value) {
   const id = String(source.id || "").trim();
   const mime = String(source.mime || "").trim().toLowerCase();
   const size = Math.max(0, Number(source.size || 0));
-  if (!nyxChatAttachmentIdPattern.test(id) || !nyxChatAttachmentMimeTypes.has(mime) || !Number.isFinite(size) || size < 1 || size > nyxChatAttachmentFileLimit) return null;
+  const streamed = source.storage === "disk";
+  const sizeLimit = streamed ? nyxChatOwnerAttachmentFileLimit : nyxChatAttachmentFileLimit;
+  if (!nyxChatAttachmentIdPattern.test(id) || !nyxChatAttachmentMimeTypes.has(mime) || !Number.isFinite(size) || size < 1 || size > sizeLimit) return null;
   return {
     id,
     name: nyxChatAttachmentName(source.name),
     mime,
     size,
+    streamed,
     image: mime.startsWith("image/"),
     audio: mime.startsWith("audio/"),
     video: mime.startsWith("video/"),
     url: `/api/chat/attachments/${id}`
   };
+}
+
+function nyxChatAttachmentDiskPath(value) {
+  const id = String(value || "").trim();
+  if (!nyxChatAttachmentIdPattern.test(id)) return "";
+  const path = resolve(nyxChatAttachmentRoot, id);
+  return path.startsWith(`${nyxChatAttachmentRoot}${process.platform === "win32" ? "\\" : "/"}`) ? path : "";
+}
+
+async function nyxChatAttachmentAccess(firebase, uid, data = {}) {
+  if (data.scopeType === "conversation") {
+    await nyxChatScope(firebase, uid, { conversationId: data.scopeId });
+    return;
+  }
+  const channel = nyxChatChannel(data.scopeId);
+  if (!channel) {
+    const error = new Error("Attachment not found.");
+    error.status = 404;
+    throw error;
+  }
+  await nyxChatScope(firebase, uid, { channel });
+}
+
+function nyxChatAttachmentStream(req, res, metadata, path) {
+  const range = String(req.get("range") || "").match(/^bytes=(\d*)-(\d*)$/i);
+  let start = 0;
+  let end = metadata.size - 1;
+  if (range) {
+    if (range[1]) start = Number(range[1]);
+    if (range[2]) end = Number(range[2]);
+    if (!range[1] && range[2]) {
+      const suffix = Math.min(metadata.size, Number(range[2]));
+      start = metadata.size - suffix;
+      end = metadata.size - 1;
+    }
+    if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end < start || start >= metadata.size) {
+      res.status(416).set("Content-Range", `bytes */${metadata.size}`).end();
+      return;
+    }
+    end = Math.min(end, metadata.size - 1);
+  }
+  const asciiName = metadata.name.replace(/[^A-Za-z0-9._ -]/g, "_").slice(0, 100) || "attachment";
+  const disposition = metadata.image || metadata.audio || metadata.video ? "inline" : "attachment";
+  res.status(range ? 206 : 200).set({
+    "Accept-Ranges": "bytes",
+    "Content-Type": metadata.mime,
+    "Content-Length": String(end - start + 1),
+    "Content-Disposition": `${disposition}; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(metadata.name)}`,
+    "X-Content-Type-Options": "nosniff",
+    ...(range ? { "Content-Range": `bytes ${start}-${end}/${metadata.size}` } : {})
+  });
+  const stream = createReadStream(path, { start, end });
+  stream.on("error", () => {
+    if (!res.headersSent) res.status(404).end();
+    else res.destroy();
+  });
+  stream.pipe(res);
+}
+
+async function cleanupNyxChatDiskUploads(firebase, now = Date.now()) {
+  if (now - nyxChatAttachmentLastCleanupAt < 15 * 60_000) return;
+  nyxChatAttachmentLastCleanupAt = now;
+  try {
+    const snapshot = await firebase.firestore.collection("nyxChatAttachments").where("expiresAtMs", ">", 0).where("expiresAtMs", "<", now).limit(40).get();
+    const expired = snapshot.docs.filter(document => document.data()?.storage === "disk" && document.data()?.bound !== true);
+    await Promise.all(expired.map(async document => {
+      await document.ref.delete();
+      const path = nyxChatAttachmentDiskPath(document.id);
+      if (path) await unlink(path).catch(() => {});
+    }));
+  } catch (error) {
+    console.error("Nyx chat attachment cleanup failed:", error?.message || error);
+  }
 }
 
 function nyxChatReactionPayload(value, viewerUid) {
@@ -3057,7 +3226,8 @@ function nyxChatMessagePayload(document, viewerUid = "") {
       displayName: founderProfileText(author.displayName, "Nyx member", 48),
       handle: `@${nyxProfileUsername(author.handle, "nyx-user")}`,
       avatarUrl: nyxChatAvatar(author.avatarUrl),
-      role: nyxChatRole(author.role)
+      role: nyxChatRole(author.role),
+      caffeine: author.caffeine === true
     }
   };
 }
@@ -3076,7 +3246,8 @@ function nyxChatConversationMember(value, fallbackUid = "") {
     handle: `@${nyxProfileUsername(source.handle, "nyx-user")}`,
     avatarUrl: nyxChatAvatar(source.avatarUrl),
     role: nyxChatRole(source.role),
-    roleLabel: nyxRoleLabels[nyxChatRole(source.role)] || nyxRoleLabels.member
+    roleLabel: nyxRoleLabels[nyxChatRole(source.role)] || nyxRoleLabels.member,
+    caffeine: source.caffeine === true
   };
 }
 
@@ -3105,9 +3276,17 @@ async function nyxChatScope(firebase, uid, source = {}) {
   const channel = rawChannel ? nyxChatChannel(rawChannel) : "";
   if (channel) {
     const configuration = await loadNyxChatConfiguration(firebase);
-    if (!configuration.textChannels.some(entry => entry.id === channel)) {
+    const channelDefinition = configuration.textChannels.find(entry => entry.id === channel);
+    if (!channelDefinition) {
       const error = new Error("That chat channel does not exist.");
       error.status = 404;
+      throw error;
+    }
+    const administration = await firebase.firestore.collection("nyxUserAdministration").doc(uid).get();
+    const role = nyxRoleForUser(uid, administration.data() || {});
+    if (!nyxChatCanAccessChannel(role, channelDefinition)) {
+      const error = new Error("Your role cannot access that chat channel.");
+      error.status = 403;
       throw error;
     }
     return {
@@ -3160,7 +3339,9 @@ async function nyxChatIdentity(firebase, token) {
     firebase.firestore.collection("nyxUserAdministration").doc(token.uid).get()
   ]);
   const profile = normalizeNyxUserProfile(profileSnapshot.data()?.profile, token);
-  const role = nyxRoleForUser(token.uid, administrationSnapshot.data() || {});
+  const administration = administrationSnapshot.data() || {};
+  const role = nyxRoleForUser(token.uid, administration);
+  const caffeine = nyxCaffeineSubscription(administration).active;
   return {
     uid: token.uid,
     displayName: profile.displayName,
@@ -3168,6 +3349,7 @@ async function nyxChatIdentity(firebase, token) {
     avatarUrl: nyxChatAvatar(profile.avatarUrl),
     role,
     roleLabel: nyxRoleLabels[role] || nyxRoleLabels.member,
+    caffeine,
     canModerate: nyxChatCanModerate(role),
     canManageChannels: nyxChatCanManageChannels(role)
   };
@@ -3242,7 +3424,8 @@ function nyxChatVoiceState(uid, sessionId = "", consumeSignals = false, channels
   const now = Date.now();
   cleanupNyxChatVoice(now);
   const session = nyxChatVoiceSessions.get(uid);
-  const joined = Boolean(session && session.sessionId === sessionId && nyxChatVoiceSessionIdPattern.test(sessionId));
+  const visibleChannelIds = new Set(channels.map(channel => channel.id));
+  const joined = Boolean(session && visibleChannelIds.has(session.channelId) && session.sessionId === sessionId && nyxChatVoiceSessionIdPattern.test(sessionId));
   if (joined) session.lastSeenAtMs = now;
   let signals = [];
   if (joined && consumeSignals) {
@@ -3251,7 +3434,7 @@ function nyxChatVoiceState(uid, sessionId = "", consumeSignals = false, channels
   }
   return {
     channels,
-    participants: [...nyxChatVoiceSessions.values()].map(nyxChatVoiceParticipant).filter(participant => participant.uid && participant.channelId),
+    participants: [...nyxChatVoiceSessions.values()].map(nyxChatVoiceParticipant).filter(participant => participant.uid && visibleChannelIds.has(participant.channelId)),
     joined,
     channelId: joined ? session.channelId : "",
     signals,
@@ -5342,7 +5525,7 @@ app.get("/api/chat/bootstrap", async (req, res) => {
   try {
     const { firebase, token } = await authenticatedNyxChatUser(req);
     const configuration = await loadNyxChatConfiguration(firebase);
-    const [me, profileSnapshot, latestActivity, conversationSnapshot] = await Promise.all([
+    const [me, profileSnapshot, latestActivity, conversationSnapshot, caffeine] = await Promise.all([
       nyxChatIdentity(firebase, token),
       firebase.firestore.collection("nyxUserProfiles").limit(250).get(),
       Promise.all(configuration.textChannels.map(async channel => {
@@ -5350,7 +5533,8 @@ app.get("/api/chat/bootstrap", async (req, res) => {
           .collection("messages").orderBy("createdAtMs", "desc").limit(1).get();
         return [channel.id, Number(snapshot.docs[0]?.data()?.createdAtMs || 0)];
       })),
-      firebase.firestore.collection("nyxChatConversations").where("participants", "array-contains", token.uid).limit(100).get()
+      firebase.firestore.collection("nyxChatConversations").where("participants", "array-contains", token.uid).limit(100).get(),
+      nyxCaffeineState(firebase, token.uid)
     ]);
     const uids = profileSnapshot.docs.map(document => document.id);
     const [administration, activity] = await Promise.all([
@@ -5361,7 +5545,8 @@ app.get("/api/chat/bootstrap", async (req, res) => {
     const now = Date.now();
     const members = profileSnapshot.docs.map(document => {
       const profile = normalizeNyxUserProfile(document.data()?.profile, { uid: document.id });
-      const role = nyxRoleForUser(document.id, administration.get(document.id) || {}, ownerUid);
+      const memberAdministration = administration.get(document.id) || {};
+      const role = nyxRoleForUser(document.id, memberAdministration, ownerUid);
       const lastActiveAtMs = safeActivityTime(activity.get(document.id)?.lastActiveAtMs || activity.get(document.id)?.lastActiveAt);
       return {
         uid: document.id,
@@ -5370,6 +5555,7 @@ app.get("/api/chat/bootstrap", async (req, res) => {
         avatarUrl: nyxChatAvatar(profile.avatarUrl),
         role,
         roleLabel: nyxRoleLabels[role] || nyxRoleLabels.member,
+        caffeine: nyxCaffeineSubscription(memberAdministration).active,
         online: Boolean(lastActiveAtMs && now - lastActiveAtMs <= signedInOnlineWindowMs),
         self: document.id === token.uid
       };
@@ -5382,21 +5568,227 @@ app.get("/api/chat/bootstrap", async (req, res) => {
       return roleRank || String(left.displayName || "").localeCompare(String(right.displayName || ""), undefined, { sensitivity: "base", numeric: true });
     });
     const membersByUid = new Map(members.map(member => [member.uid, member]));
+    const visibleTextChannels = configuration.textChannels.filter(channel => nyxChatCanAccessChannel(me.role, channel));
+    const visibleVoiceChannels = configuration.voiceChannels.filter(channel => nyxChatCanAccessChannel(me.role, channel));
+    const visibleTextChannelIds = new Set(visibleTextChannels.map(channel => channel.id));
     const conversations = conversationSnapshot.docs
       .map(document => nyxChatConversationPayload(document, token.uid, membersByUid))
       .filter(Boolean)
       .sort((left, right) => right.updatedAtMs - left.updatedAtMs);
     res.json({
-      channels: configuration.textChannels,
-      latestActivity: Object.fromEntries(latestActivity),
+      channels: visibleTextChannels,
+      latestActivity: Object.fromEntries(latestActivity.filter(([channelId]) => visibleTextChannelIds.has(channelId))),
       conversations,
-      voice: nyxChatVoiceState(token.uid, "", false, configuration.voiceChannels),
+      voice: nyxChatVoiceState(token.uid, "", false, visibleVoiceChannels),
+      caffeine,
       me,
       members: members.slice(0, 100),
       online: members.filter(member => member.online).length
     });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "Nyx Chat is unavailable." });
+  }
+});
+
+app.get("/api/chat/caffeine", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const { firebase, token } = await authenticatedNyxChatUser(req);
+    res.json({ caffeine: await nyxCaffeineState(firebase, token.uid) });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Caffeine is unavailable." });
+  }
+});
+
+app.post("/api/chat/caffeine/gifts", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  try {
+    const { firebase, token } = await authenticatedNyxChatUser(req);
+    const recipientUid = String(req.body?.recipientUid || "").trim();
+    if (!/^[A-Za-z0-9_-]{8,128}$/.test(recipientUid) || recipientUid === token.uid) {
+      res.status(400).json({ error: "Choose another Nyx member for this Caffeine gift." });
+      return;
+    }
+    try {
+      await firebase.auth.getUser(recipientUid);
+    } catch (error) {
+      if (error?.code === "auth/user-not-found") {
+        res.status(404).json({ error: "That Nyx member was not found." });
+        return;
+      }
+      throw error;
+    }
+    const [giver, recipient] = await Promise.all([
+      nyxChatIdentity(firebase, token),
+      nyxChatIdentity(firebase, { uid: recipientUid })
+    ]);
+    const giverAdministrationRef = firebase.firestore.collection("nyxUserAdministration").doc(token.uid);
+    const recipientAdministrationRef = firebase.firestore.collection("nyxUserAdministration").doc(recipientUid);
+    let giftId = "";
+    const now = Date.now();
+    const expiresAtMs = now + nyxCaffeineGiftPendingMs;
+    await firebase.firestore.runTransaction(async transaction => {
+      const [giverAdministrationSnapshot, recipientAdministrationSnapshot] = await Promise.all([
+        transaction.get(giverAdministrationRef),
+        transaction.get(recipientAdministrationRef)
+      ]);
+      const giverAdministration = giverAdministrationSnapshot.data() || {};
+      const recipientAdministration = recipientAdministrationSnapshot.data() || {};
+      const giverSubscription = nyxCaffeineSubscription(giverAdministration);
+      if (!giverSubscription.directlyAssigned) {
+        const error = new Error(giverSubscription.active
+          ? "Caffeine received as a gift cannot be gifted again."
+          : "An active Caffeine subscription is required to send a gift.");
+        error.status = 403;
+        throw error;
+      }
+      if (nyxCaffeineSubscription(recipientAdministration).active) {
+        const error = new Error("That member already has Caffeine.");
+        error.status = 409;
+        throw error;
+      }
+      const pendingForRecipient = nyxCaffeinePendingGift(recipientAdministration.pendingCaffeineGift, now);
+      if (pendingForRecipient) {
+        const error = new Error("That member already has a Caffeine gift waiting for them.");
+        error.status = 409;
+        throw error;
+      }
+      giftId = nyxCaffeineGrantKey(token.uid, giverAdministration);
+      const giftRef = firebase.firestore.collection(nyxCaffeineGiftCollection).doc(giftId);
+      const giftSnapshot = await transaction.get(giftRef);
+      const existingGift = giftSnapshot.data() || {};
+      const existingStatus = String(existingGift.status || "").trim().toLowerCase();
+      if (existingStatus === "accepted") {
+        const error = new Error("You already shared the Caffeine gift from this subscription.");
+        error.status = 409;
+        throw error;
+      }
+      if (existingStatus === "pending" && Number(existingGift.expiresAtMs || 0) > now) {
+        const error = new Error("Your Caffeine gift is already waiting for someone to accept it.");
+        error.status = 409;
+        throw error;
+      }
+      const pendingGift = {
+        id: giftId,
+        giverUid: token.uid,
+        giverDisplayName: giver.displayName,
+        giverHandle: giver.handle,
+        createdAtMs: now,
+        expiresAtMs
+      };
+      transaction.set(giftRef, {
+        giverUid: token.uid,
+        giverDisplayName: giver.displayName,
+        giverHandle: giver.handle,
+        recipientUid,
+        recipientDisplayName: recipient.displayName,
+        recipientHandle: recipient.handle,
+        status: "pending",
+        createdAt: new Date(now).toISOString(),
+        createdAtMs: now,
+        expiresAt: new Date(expiresAtMs).toISOString(),
+        expiresAtMs,
+        acceptedAt: "",
+        acceptedAtMs: 0
+      });
+      transaction.set(recipientAdministrationRef, { pendingCaffeineGift: pendingGift, updatedAt: new Date(now).toISOString() }, { merge: true });
+    });
+    await recordNyxAuditSafe(firebase, {
+      actorUid: token.uid,
+      actorEmail: token.email || "",
+      action: "caffeine_gift_sent",
+      targetUid: recipientUid,
+      details: { giftId }
+    });
+    res.status(201).json({ ok: true, caffeine: await nyxCaffeineState(firebase, token.uid) });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "The Caffeine gift could not be sent." });
+  }
+});
+
+app.post("/api/chat/caffeine/gifts/:giftId/accept", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  const giftId = String(req.params.giftId || "").trim().toLowerCase();
+  if (!nyxCaffeineGiftIdPattern.test(giftId)) {
+    res.status(400).json({ error: "That Caffeine gift is invalid." });
+    return;
+  }
+  try {
+    const { firebase, token } = await authenticatedNyxChatUser(req);
+    const giftRef = firebase.firestore.collection(nyxCaffeineGiftCollection).doc(giftId);
+    const recipientAdministrationRef = firebase.firestore.collection("nyxUserAdministration").doc(token.uid);
+    let giverUid = "";
+    const now = Date.now();
+    await firebase.firestore.runTransaction(async transaction => {
+      const [giftSnapshot, recipientAdministrationSnapshot] = await Promise.all([
+        transaction.get(giftRef),
+        transaction.get(recipientAdministrationRef)
+      ]);
+      const gift = giftSnapshot.data() || {};
+      giverUid = String(gift.giverUid || "").trim();
+      if (!giftSnapshot.exists || gift.recipientUid !== token.uid || String(gift.status || "") !== "pending") {
+        const error = new Error("That Caffeine gift is no longer available.");
+        error.status = 404;
+        throw error;
+      }
+      if (Number(gift.expiresAtMs || 0) <= now) {
+        const error = new Error("That Caffeine gift expired. Ask the sender to share it again.");
+        error.status = 410;
+        throw error;
+      }
+      const recipientAdministration = recipientAdministrationSnapshot.data() || {};
+      if (nyxCaffeineSubscription(recipientAdministration).active) {
+        const error = new Error("Your account already has Caffeine.");
+        error.status = 409;
+        throw error;
+      }
+      const pendingGift = nyxCaffeinePendingGift(recipientAdministration.pendingCaffeineGift, now);
+      if (!pendingGift || pendingGift.id !== giftId) {
+        const error = new Error("That Caffeine gift is no longer assigned to your account.");
+        error.status = 409;
+        throw error;
+      }
+      const giverAdministrationRef = firebase.firestore.collection("nyxUserAdministration").doc(giverUid);
+      const giverAdministrationSnapshot = await transaction.get(giverAdministrationRef);
+      const giverAdministration = giverAdministrationSnapshot.data() || {};
+      if (!nyxCaffeineSubscription(giverAdministration).directlyAssigned || nyxCaffeineGrantKey(giverUid, giverAdministration) !== giftId) {
+        const error = new Error("The sender's Caffeine subscription is no longer active.");
+        error.status = 409;
+        throw error;
+      }
+      const timestamp = new Date(now).toISOString();
+      transaction.set(recipientAdministrationRef, {
+        subscriptionStatus: "premium",
+        monthlyRevenueCents: 0,
+        subscriptionSource: "caffeine_gift",
+        caffeineReceivedGiftId: giftId,
+        caffeineGrantId: "",
+        pendingCaffeineGift: null,
+        subscriptionUpdatedAt: timestamp,
+        updatedAt: timestamp
+      }, { merge: true });
+      transaction.set(giftRef, { status: "accepted", acceptedAt: timestamp, acceptedAtMs: now, expiresAt: "", expiresAtMs: 0 }, { merge: true });
+    });
+    linkCheckerBulkAccessCache.delete(token.uid);
+    ownerDashboardSnapshotCache = { expiresAt: 0, value: null, promise: null };
+    await recordNyxAuditSafe(firebase, {
+      actorUid: token.uid,
+      actorEmail: token.email || "",
+      action: "caffeine_gift_accepted",
+      targetUid: token.uid,
+      details: { giftId, giverUid }
+    });
+    res.json({ ok: true, subscriptionStatus: "premium", premiumAccess: true, caffeine: await nyxCaffeineState(firebase, token.uid) });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "The Caffeine gift could not be accepted." });
   }
 });
 
@@ -5426,6 +5818,12 @@ app.post("/api/chat/channels", async (req, res) => {
     const id = String(req.body?.id || "").trim().toLowerCase();
     const name = String(req.body?.name || "").replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 32);
     const description = String(req.body?.description || "").replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 140);
+    const requestedMinimumRole = String(req.body?.minimumRole || "member").trim().toLowerCase();
+    const minimumRole = nyxRolePolicies[requestedMinimumRole] ? requestedMinimumRole : "member";
+    if (nyxRolePolicy(minimumRole).rank > nyxRolePolicy(identity.role).rank) {
+      res.status(403).json({ error: "You cannot create a channel restricted above your own role." });
+      return;
+    }
     let changedId = id;
     if (action === "create") {
       if (!name) {
@@ -5440,11 +5838,15 @@ app.post("/api/chat/channels", async (req, res) => {
       const base = name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32) || "channel";
       const used = new Set([...textChannels, ...voiceChannels].map(channel => channel.id));
       do changedId = `${base}-${randomBytes(3).toString("hex")}`.slice(0, 48); while (used.has(changedId));
-      channels.push({ id: changedId, name, description: description || (kind === "voice" ? "Nyx community voice channel." : "Nyx community channel.") });
+      channels.push({ id: changedId, name, description: description || (kind === "voice" ? "Nyx community voice channel." : "Nyx community channel."), minimumRole });
     } else {
       const index = channels.findIndex(channel => channel.id === id);
       if (index < 0) {
         res.status(404).json({ error: "That chat channel was not found." });
+        return;
+      }
+      if (!nyxChatCanAccessChannel(identity.role, channels[index])) {
+        res.status(403).json({ error: "Your role cannot manage that restricted channel." });
         return;
       }
       if (action === "delete") {
@@ -5458,7 +5860,7 @@ app.post("/api/chat/channels", async (req, res) => {
           res.status(400).json({ error: "Enter a channel name." });
           return;
         }
-        channels[index] = { ...channels[index], name, description: description || channels[index].description };
+        channels[index] = { ...channels[index], name, description: description || channels[index].description, minimumRole };
       }
     }
     const next = { textChannels, voiceChannels };
@@ -5481,9 +5883,13 @@ app.post("/api/chat/channels", async (req, res) => {
       actorUid: token.uid,
       actorEmail: token.email || "",
       action: `chat_channel_${action}`,
-      details: { kind, channelId: changedId, name: action === "delete" ? "" : name }
+      details: { kind, channelId: changedId, name: action === "delete" ? "" : name, minimumRole }
     });
-    res.json({ ok: true, textChannels, voiceChannels });
+    res.json({
+      ok: true,
+      textChannels: textChannels.filter(channel => nyxChatCanAccessChannel(identity.role, channel)),
+      voiceChannels: voiceChannels.filter(channel => nyxChatCanAccessChannel(identity.role, channel))
+    });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "Chat channels could not be updated." });
   }
@@ -5494,12 +5900,14 @@ app.get("/api/chat/voice/state", async (req, res) => {
   try {
     const { firebase, token } = await authenticatedNyxChatUser(req);
     const configuration = await loadNyxChatConfiguration(firebase);
+    const identity = await nyxChatIdentity(firebase, token);
+    const visibleVoiceChannels = configuration.voiceChannels.filter(channel => nyxChatCanAccessChannel(identity.role, channel));
     const sessionId = String(req.query.sessionId || "").trim();
     if (sessionId && !nyxChatVoiceSessionIdPattern.test(sessionId)) {
       res.status(400).json({ error: "That voice session is invalid." });
       return;
     }
-    res.json(nyxChatVoiceState(token.uid, sessionId, Boolean(sessionId), configuration.voiceChannels));
+    res.json(nyxChatVoiceState(token.uid, sessionId, Boolean(sessionId), visibleVoiceChannels));
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "Voice channels are unavailable." });
   }
@@ -5514,9 +5922,11 @@ app.post("/api/chat/voice/join", async (req, res) => {
   try {
     const { firebase, token } = await authenticatedNyxChatUser(req);
     const configuration = await loadNyxChatConfiguration(firebase);
+    const identity = await nyxChatIdentity(firebase, token);
+    const visibleVoiceChannels = configuration.voiceChannels.filter(channel => nyxChatCanAccessChannel(identity.role, channel));
     const channelId = nyxChatVoiceChannel(req.body?.channelId);
     const sessionId = String(req.body?.sessionId || "").trim();
-    if (!channelId || !configuration.voiceChannels.some(channel => channel.id === channelId) || !nyxChatVoiceSessionIdPattern.test(sessionId)) {
+    if (!channelId || !visibleVoiceChannels.some(channel => channel.id === channelId) || !nyxChatVoiceSessionIdPattern.test(sessionId)) {
       res.status(400).json({ error: "Choose a valid Nyx voice channel." });
       return;
     }
@@ -5527,11 +5937,10 @@ app.post("/api/chat/voice/join", async (req, res) => {
       res.status(409).json({ error: `That voice channel is full (${nyxChatVoiceRoomLimit} people maximum).` });
       return;
     }
-    const identity = await nyxChatIdentity(firebase, token);
     const now = Date.now();
     nyxChatVoiceSignals.delete(token.uid);
     nyxChatVoiceSessions.set(token.uid, { uid: token.uid, sessionId, channelId, identity, joinedAtMs: now, lastSeenAtMs: now });
-    res.status(201).json(nyxChatVoiceState(token.uid, sessionId, true, configuration.voiceChannels));
+    res.status(201).json(nyxChatVoiceState(token.uid, sessionId, true, visibleVoiceChannels));
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "The voice channel could not be joined." });
   }
@@ -5651,9 +6060,11 @@ app.get("/api/chat/conversations", async (req, res) => {
   try {
     const { firebase, token } = await authenticatedNyxChatUser(req);
     const configuration = await loadNyxChatConfiguration(firebase);
+    const identity = await nyxChatIdentity(firebase, token);
+    const visibleTextChannels = configuration.textChannels.filter(channel => nyxChatCanAccessChannel(identity.role, channel));
     const [snapshot, channelSnapshots] = await Promise.all([
       firebase.firestore.collection("nyxChatConversations").where("participants", "array-contains", token.uid).limit(100).get(),
-      Promise.all(configuration.textChannels.map(channel => firebase.firestore.collection("nyxChatChannels").doc(channel.id).get()))
+      Promise.all(visibleTextChannels.map(channel => firebase.firestore.collection("nyxChatChannels").doc(channel.id).get()))
     ]);
     const conversations = snapshot.docs
       .map(document => nyxChatConversationPayload(document, token.uid))
@@ -5661,7 +6072,7 @@ app.get("/api/chat/conversations", async (req, res) => {
       .sort((left, right) => right.updatedAtMs - left.updatedAtMs);
     const channelActivity = Object.fromEntries(channelSnapshots.map((document, index) => {
       const value = document.data() || {};
-      return [configuration.textChannels[index].id, {
+      return [visibleTextChannels[index].id, {
         lastMessageAtMs: Math.max(0, Number(value.lastMessageAtMs || 0)),
         lastMessageText: founderProfileText(value.lastMessageText, "", 1_000),
         lastMessageAuthorUid: String(value.lastMessageAuthorUid || "")
@@ -5698,6 +6109,155 @@ app.get("/api/chat/messages", async (req, res) => {
     res.json({ channel: scope.type === "channel" ? scope.id : "", conversationId: scope.private ? scope.id : "", messages, hasMore: !after && snapshot.size === limit, viewerUid: token.uid });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "Chat messages are unavailable." });
+  }
+});
+
+app.post("/api/chat/attachments/large/start", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  try {
+    const { firebase, token } = await authenticatedNyxChatUser(req);
+    const identity = await nyxChatIdentity(firebase, token);
+    if (identity.role !== "owner") {
+      res.status(403).json({ error: "Only the Nyx Owner can upload files larger than 8 MB." });
+      return;
+    }
+    await cleanupNyxChatDiskUploads(firebase);
+    const uploadId = String(req.body?.uploadId || "").trim();
+    const mime = String(req.body?.mime || "").trim().toLowerCase();
+    const name = nyxChatAttachmentName(req.body?.name);
+    const size = Number(req.body?.size || 0);
+    const totalChunks = Math.ceil(size / nyxChatOwnerAttachmentChunkLimit);
+    if (!/^[A-Za-z0-9_-]{12,80}$/.test(uploadId) || !nyxChatAttachmentMimeTypes.has(mime) || !Number.isInteger(size) || size <= nyxChatAttachmentFileLimit || size > nyxChatOwnerAttachmentFileLimit || totalChunks < 1 || totalChunks > nyxChatOwnerAttachmentChunkCountLimit) {
+      res.status(400).json({ error: "Owner uploads must be a supported file larger than 8 MB and no larger than 1 GB." });
+      return;
+    }
+    const id = createHash("sha256").update(`${token.uid}:${uploadId}`).digest("hex").slice(0, 40);
+    const path = nyxChatAttachmentDiskPath(id);
+    if (!path) throw new Error("The attachment storage path is unavailable.");
+    const ref = firebase.firestore.collection("nyxChatAttachments").doc(id);
+    const existing = await ref.get();
+    const data = existing.data() || {};
+    if (existing.exists) {
+      if (data.ownerUid !== token.uid || data.storage !== "disk" || data.bound === true || data.mime !== mime || data.name !== name || Number(data.size) !== size) {
+        res.status(409).json({ error: "That attachment upload can no longer be changed." });
+        return;
+      }
+      res.json({ id, uploadId, nextIndex: Number(data.nextIndex || 0), receivedBytes: Number(data.receivedBytes || 0), totalChunks });
+      return;
+    }
+    await mkdir(nyxChatAttachmentRoot, { recursive: true, mode: 0o750 });
+    const filesystem = await statfs(nyxChatAttachmentRoot);
+    const availableBytes = Number(filesystem.bavail) * Number(filesystem.bsize);
+    if (!Number.isFinite(availableBytes) || availableBytes < size + nyxChatOwnerAttachmentFileLimit) {
+      res.status(507).json({ error: "The Nyx server does not have enough free space for that upload and its safety reserve." });
+      return;
+    }
+    const handle = await openFile(path, "wx", 0o640);
+    await handle.close();
+    const now = Date.now();
+    await ref.create({ id, ownerUid: token.uid, name, mime, size, storage: "disk", totalChunks, nextIndex: 0, receivedBytes: 0, complete: false, bound: false, createdAt: new Date(now).toISOString(), updatedAt: new Date(now).toISOString(), updatedAtMs: now, expiresAtMs: now + nyxChatAttachmentUploadTtlMs });
+    res.status(201).json({ id, uploadId, nextIndex: 0, receivedBytes: 0, totalChunks });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "The Owner attachment could not be started." });
+  }
+});
+
+app.put("/api/chat/attachments/large/:uploadId/:index", express.raw({ type: "application/octet-stream", limit: `${nyxChatOwnerAttachmentChunkLimit}b` }), async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  let lockId = "";
+  try {
+    const { firebase, token } = await authenticatedNyxChatUser(req);
+    const identity = await nyxChatIdentity(firebase, token);
+    if (identity.role !== "owner") {
+      res.status(403).json({ error: "Only the Nyx Owner can use large attachment uploads." });
+      return;
+    }
+    const uploadId = String(req.params.uploadId || "").trim();
+    const index = Number.parseInt(String(req.params.index || ""), 10);
+    if (!/^[A-Za-z0-9_-]{12,80}$/.test(uploadId) || !Number.isInteger(index) || index < 0 || !Buffer.isBuffer(req.body) || !req.body.length) {
+      res.status(400).json({ error: "That Owner attachment chunk is invalid." });
+      return;
+    }
+    const id = createHash("sha256").update(`${token.uid}:${uploadId}`).digest("hex").slice(0, 40);
+    lockId = id;
+    if (nyxChatAttachmentUploads.has(id)) {
+      res.status(409).json({ error: "That attachment is already receiving a chunk. Retry this part." });
+      return;
+    }
+    nyxChatAttachmentUploads.add(id);
+    const ref = firebase.firestore.collection("nyxChatAttachments").doc(id);
+    const snapshot = await ref.get();
+    const data = snapshot.data() || {};
+    const receivedBytes = Number(data.receivedBytes || 0);
+    const remaining = Number(data.size || 0) - receivedBytes;
+    const expectedSize = Math.min(nyxChatOwnerAttachmentChunkLimit, remaining);
+    if (!snapshot.exists || data.ownerUid !== token.uid || data.storage !== "disk" || data.complete === true || data.bound === true || index !== Number(data.nextIndex || 0) || index >= Number(data.totalChunks || 0) || req.body.length !== expectedSize) {
+      res.status(409).json({ error: "That attachment chunk is out of sequence or has the wrong size." });
+      return;
+    }
+    const path = nyxChatAttachmentDiskPath(id);
+    const handle = await openFile(path, "r+");
+    try {
+      await handle.write(req.body, 0, req.body.length, receivedBytes);
+      await handle.sync();
+    } finally {
+      await handle.close();
+    }
+    const nextIndex = index + 1;
+    const nextBytes = receivedBytes + req.body.length;
+    const now = Date.now();
+    await ref.set({ nextIndex, receivedBytes: nextBytes, updatedAt: new Date(now).toISOString(), updatedAtMs: now, expiresAtMs: now + nyxChatAttachmentUploadTtlMs }, { merge: true });
+    res.json({ id, received: index, nextIndex, receivedBytes: nextBytes });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "The Owner attachment chunk could not be uploaded." });
+  } finally {
+    if (lockId) nyxChatAttachmentUploads.delete(lockId);
+  }
+});
+
+app.post("/api/chat/attachments/large/:uploadId/complete", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  try {
+    const { firebase, token } = await authenticatedNyxChatUser(req);
+    const identity = await nyxChatIdentity(firebase, token);
+    if (identity.role !== "owner") {
+      res.status(403).json({ error: "Only the Nyx Owner can finish large attachment uploads." });
+      return;
+    }
+    const uploadId = String(req.params.uploadId || "").trim();
+    if (!/^[A-Za-z0-9_-]{12,80}$/.test(uploadId)) {
+      res.status(400).json({ error: "That Owner attachment upload is invalid." });
+      return;
+    }
+    const id = createHash("sha256").update(`${token.uid}:${uploadId}`).digest("hex").slice(0, 40);
+    const ref = firebase.firestore.collection("nyxChatAttachments").doc(id);
+    const snapshot = await ref.get();
+    const data = snapshot.data() || {};
+    if (!snapshot.exists || data.ownerUid !== token.uid || data.storage !== "disk" || data.bound === true || Number(data.receivedBytes || 0) !== Number(data.size || 0) || Number(data.nextIndex || 0) !== Number(data.totalChunks || 0)) {
+      res.status(409).json({ error: "That Owner attachment is incomplete." });
+      return;
+    }
+    const file = await stat(nyxChatAttachmentDiskPath(id));
+    if (!file.isFile() || file.size !== Number(data.size)) {
+      res.status(409).json({ error: "The stored attachment size does not match the upload." });
+      return;
+    }
+    await ref.set({ complete: true, completedAt: new Date().toISOString(), expiresAtMs: Date.now() + nyxChatAttachmentUploadTtlMs }, { merge: true });
+    res.json({ attachment: nyxChatAttachmentMetadata({ id, ...data, complete: true }) });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "The Owner attachment could not be completed." });
   }
 });
 
@@ -5788,6 +6348,72 @@ app.post("/api/chat/attachments/:uploadId/complete", async (req, res) => {
   }
 });
 
+app.post("/api/chat/attachments/:attachmentId/ticket", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  try {
+    const { firebase, token } = await authenticatedNyxChatUser(req);
+    const id = String(req.params.attachmentId || "").trim();
+    if (!nyxChatAttachmentIdPattern.test(id)) {
+      res.status(404).json({ error: "Attachment not found." });
+      return;
+    }
+    const snapshot = await firebase.firestore.collection("nyxChatAttachments").doc(id).get();
+    const data = snapshot.data() || {};
+    const metadata = nyxChatAttachmentMetadata({ id, ...data });
+    if (!snapshot.exists || !metadata?.streamed || data.complete !== true || data.bound !== true) {
+      res.status(404).json({ error: "Attachment not found." });
+      return;
+    }
+    await nyxChatAttachmentAccess(firebase, token.uid, data);
+    const ticket = randomBytes(32).toString("base64url");
+    const expiresAtMs = Date.now() + nyxChatAttachmentTicketTtlMs;
+    nyxChatAttachmentTickets.set(ticket, { id, uid: token.uid, expiresAtMs });
+    if (nyxChatAttachmentTickets.size > 2_000) {
+      const now = Date.now();
+      for (const [key, value] of nyxChatAttachmentTickets) if (Number(value?.expiresAtMs || 0) < now) nyxChatAttachmentTickets.delete(key);
+    }
+    res.json({ url: `/api/chat/attachments/${id}/stream?ticket=${encodeURIComponent(ticket)}`, expiresAtMs });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "The attachment link could not be created." });
+  }
+});
+
+app.get("/api/chat/attachments/:attachmentId/stream", async (req, res) => {
+  res.set("Cache-Control", "private, no-store");
+  try {
+    const id = String(req.params.attachmentId || "").trim();
+    const ticket = String(req.query.ticket || "").trim();
+    const grant = nyxChatAttachmentTickets.get(ticket);
+    if (!nyxChatAttachmentIdPattern.test(id) || !grant || grant.id !== id || Number(grant.expiresAtMs || 0) < Date.now()) {
+      if (ticket) nyxChatAttachmentTickets.delete(ticket);
+      res.status(404).end();
+      return;
+    }
+    const firebase = await linkGeneratorFirebase();
+    const snapshot = await firebase.firestore.collection("nyxChatAttachments").doc(id).get();
+    const data = snapshot.data() || {};
+    const metadata = nyxChatAttachmentMetadata({ id, ...data });
+    const path = nyxChatAttachmentDiskPath(id);
+    if (!snapshot.exists || !metadata?.streamed || data.complete !== true || data.bound !== true || !path) {
+      res.status(404).end();
+      return;
+    }
+    await nyxChatAttachmentAccess(firebase, grant.uid, data);
+    const file = await stat(path);
+    if (!file.isFile() || file.size !== metadata.size) {
+      res.status(404).end();
+      return;
+    }
+    nyxChatAttachmentStream(req, res, metadata, path);
+  } catch {
+    res.status(404).end();
+  }
+});
+
 app.get("/api/chat/attachments/:attachmentId", async (req, res) => {
   res.set("Cache-Control", "private, max-age=60");
   try {
@@ -5805,12 +6431,7 @@ app.get("/api/chat/attachments/:attachmentId", async (req, res) => {
       res.status(404).end();
       return;
     }
-    if (data.scopeType === "conversation") {
-      await nyxChatScope(firebase, token.uid, { conversationId: data.scopeId });
-    } else if (!nyxChatChannel(data.scopeId)) {
-      res.status(404).end();
-      return;
-    }
+    await nyxChatAttachmentAccess(firebase, token.uid, data);
     const totalChunks = Number(data.totalChunks || 0);
     if (totalChunks < 1 || totalChunks > nyxChatAttachmentChunkCountLimit) {
       res.status(404).end();
@@ -5893,7 +6514,9 @@ app.post("/api/chat/messages", async (req, res) => {
       if (!snapshot.exists || value.ownerUid !== token.uid || value.complete !== true || value.bound === true || Number(value.expiresAtMs || 0) < Date.now()) return null;
       return nyxChatAttachmentMetadata({ id: attachmentIds[index], ...value });
     });
-    if (attachments.some(value => !value) || attachments.reduce((total, value) => total + Number(value?.size || 0), 0) > nyxChatAttachmentMessageLimit) {
+    const attachmentTotal = attachments.reduce((total, value) => total + Number(value?.size || 0), 0);
+    const attachmentLimit = identity.role === "owner" ? nyxChatOwnerAttachmentMessageLimit : nyxChatAttachmentMessageLimit;
+    if (attachments.some(value => !value) || attachments.some(value => value?.streamed && identity.role !== "owner") || attachmentTotal > attachmentLimit) {
       res.status(400).json({ error: "One or more attachments are unavailable or the combined attachment size is too large." });
       return;
     }
@@ -5910,7 +6533,8 @@ app.post("/api/chat/messages", async (req, res) => {
         displayName: identity.displayName,
         handle: identity.handle,
         avatarUrl: identity.avatarUrl,
-        role: identity.role
+        role: identity.role,
+        caffeine: identity.caffeine
       },
       createdAt: new Date(createdAtMs).toISOString(),
       createdAtMs
@@ -5984,7 +6608,11 @@ app.delete("/api/chat/messages/:scope/:messageId", async (req, res) => {
     }
     const attachmentIds = (Array.isArray(messageSnapshot.data()?.attachments) ? messageSnapshot.data().attachments : []).map(value => String(value?.id || "")).filter(id => nyxChatAttachmentIdPattern.test(id));
     const attachmentRefs = attachmentIds.map(id => firebase.firestore.collection("nyxChatAttachments").doc(id));
-    const chunkSnapshots = await Promise.all(attachmentRefs.map(ref => ref.collection("chunks").get()));
+    const [attachmentSnapshots, chunkSnapshots] = await Promise.all([
+      Promise.all(attachmentRefs.map(ref => ref.get())),
+      Promise.all(attachmentRefs.map(ref => ref.collection("chunks").get()))
+    ]);
+    const diskPaths = attachmentSnapshots.map((snapshot, index) => snapshot.data()?.storage === "disk" ? nyxChatAttachmentDiskPath(attachmentIds[index]) : "").filter(Boolean);
     const batch = firebase.firestore.batch();
     batch.delete(messageRef);
     attachmentRefs.forEach((ref, index) => {
@@ -5992,6 +6620,7 @@ app.delete("/api/chat/messages/:scope/:messageId", async (req, res) => {
       batch.delete(ref);
     });
     await batch.commit();
+    await Promise.allSettled(diskPaths.map(path => unlink(path)));
     res.json({ ok: true, id: messageId, channel: scope.type === "channel" ? scope.id : "", conversationId: scope.private ? scope.id : "" });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "The message could not be deleted." });
@@ -6413,9 +7042,19 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
     } else if (action === "set_subscription") {
       const subscriptionStatus = normalizeSubscriptionStatus(req.body?.subscriptionStatus);
       const monthlyRevenueCents = Math.max(0, Math.min(100_000_000, Number.parseInt(String(req.body?.monthlyRevenueCents || "0"), 10) || 0));
+      const premium = hasPremiumSubscription(subscriptionStatus);
+      const currentAdministration = targetAdministration?.data() || (await firebase.firestore.collection("nyxUserAdministration").doc(uid).get()).data() || {};
+      const currentPremium = hasPremiumSubscription(currentAdministration.subscriptionStatus || currentAdministration.subscription?.status);
+      const caffeineGrantId = premium && currentPremium
+        ? String(currentAdministration.caffeineGrantId || randomBytes(12).toString("hex"))
+        : (premium ? randomBytes(12).toString("hex") : "");
       await firebase.firestore.collection("nyxUserAdministration").doc(uid).set({
         subscriptionStatus,
         monthlyRevenueCents,
+        subscriptionSource: "owner_dashboard",
+        caffeineGrantId,
+        caffeineReceivedGiftId: "",
+        pendingCaffeineGift: null,
         subscriptionUpdatedAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }, { merge: true });
@@ -6934,6 +7573,15 @@ app.post("/api/link-generator", async (req, res) => {
     res.status(error.status || 502).json({ error: error.status ? error.message : `Bunny could not create the link: ${String(error?.message || "Unknown error")}` });
   }
 });
+app.use((error, req, res, next) => {
+  if (!String(req.path || "").startsWith("/api/")) {
+    next(error);
+    return;
+  }
+  const tooLarge = error?.type === "entity.too.large" || Number(error?.status || error?.statusCode) === 413;
+  res.status(tooLarge ? 413 : 400).json({ error: tooLarge ? "That upload chunk is too large." : "The API request could not be processed." });
+});
+
 app.use(express.static(staticRoot));
 app.use("/uv/", express.static(uvPath));
 app.use("/scramjet/", express.static(scramjetPath));

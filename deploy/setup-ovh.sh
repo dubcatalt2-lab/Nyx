@@ -37,6 +37,7 @@ fi
 if ! id nyx >/dev/null 2>&1; then
   useradd --system --create-home --home-dir /var/lib/nyx --shell /usr/sbin/nologin nyx
 fi
+install -d -m 0750 -o nyx -g nyx /var/lib/nyx/chat-attachments
 
 cd "${APP_DIR}"
 runuser -u "${APP_OWNER}" -- npm ci

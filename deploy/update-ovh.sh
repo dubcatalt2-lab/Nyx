@@ -30,6 +30,9 @@ runuser -u "${APP_OWNER}" -- npm prune --omit=dev
 chgrp -R nyx "${APP_DIR}"
 chmod -R g+rX "${APP_DIR}"
 
+install -d -m 0750 -o nyx -g nyx /var/lib/nyx/chat-attachments
+sed "s|__NYX_ROOT__|${APP_DIR}|g" deploy/systemd/nyx.service.template > /etc/systemd/system/nyx.service
+systemctl daemon-reload
 systemctl restart nyx
 CADDY_TMP=$(mktemp)
 sed "s|__NYX_DOMAIN__|${DOMAIN}|g" deploy/caddy/nyx.Caddyfile.template > "${CADDY_TMP}"

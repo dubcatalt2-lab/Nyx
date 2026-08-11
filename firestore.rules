@@ -76,6 +76,10 @@ service cloud.firestore {
       }
     }
 
+    match /nyxCaffeineGifts/{giftId} {
+      allow read, write: if false;
+    }
+
     match /nyxChatConfiguration/{documentId} {
       allow read, write: if false;
     }

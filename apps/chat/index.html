@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <title>Nyx Chat</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/icons/chat.svg">
-  <link rel="stylesheet" href="./styles.css?v=20260810-chat-media-v7">
+  <link rel="stylesheet" href="./styles.css?v=20260810-caffeine-v9">
 </head>
 <body>
   <svg class="chat-icon-sprite" aria-hidden="true">
@@ -31,6 +31,7 @@
     <symbol id="icon-phone-off" viewBox="0 0 24 24"><path d="m3 3 18 18M8.5 8.5 6.8 6.8a2 2 0 0 0-2.8 0L2.8 8c-.7.7-.8 1.7-.3 2.5A23 23 0 0 0 13.5 21.5c.8.5 1.8.4 2.5-.3l1.2-1.2a2 2 0 0 0 0-2.8l-2.1-2.1a2 2 0 0 0-2.6-.2l-1.1.8M15.5 5.2c1.6.7 2.9 2 3.6 3.6M15 1c3.8.8 6.2 3.2 7 7"/></symbol>
     <symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></symbol>
     <symbol id="icon-edit" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></symbol>
+    <symbol id="icon-coffee" viewBox="0 0 24 24"><path d="M4 8h13v6a6 6 0 0 1-6 6H10a6 6 0 0 1-6-6Z"/><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17M7 4c0 1 1 1 1 2M11 3c0 1 1 1 1 2M15 4c0 1 1 1 1 2"/></symbol>
   </svg>
 
   <div class="chat-app" data-chat-app>
@@ -41,6 +42,7 @@
       </a>
       <div class="chat-topbar-actions">
         <span class="chat-online-count" data-online-count><i></i><b>0</b> online</span>
+        <button class="caffeine-button" type="button" data-caffeine-button aria-label="Open Caffeine"><svg><use href="#icon-coffee"/></svg><span>Caffeine</span></button>
         <button class="icon-button mobile-only" type="button" data-members-toggle aria-label="Show members"><svg><use href="#icon-users"/></svg></button>
         <button class="back-button" type="button" data-back-to-nyx><svg><use href="#icon-arrow-left"/></svg><span>Back to Nyx</span></button>
       </div>
@@ -158,9 +160,21 @@
       <input type="hidden" data-channel-edit-id>
       <label><span>Channel name</span><input type="text" data-channel-name maxlength="32" required placeholder="New channel"></label>
       <label><span>Description</span><textarea data-channel-description-input maxlength="140" rows="2" placeholder="What is this channel for?"></textarea></label>
+      <label><span>Who can access it</span><select data-channel-minimum-role><option value="member">Everyone</option><option value="contributor">Contributor and above</option><option value="tester">Tester and above</option><option value="support">Support and above</option><option value="moderator">Moderator and above</option><option value="developer">Developer and above</option><option value="manager">Manager and above</option><option value="admin">Admin and above</option><option value="co_owner">Co-owner and Owner</option><option value="owner">Owner only</option></select></label>
       <div><button type="button" class="btn-subtle" data-channel-edit-cancel hidden>Cancel edit</button><button type="submit" class="primary-button" data-channel-save>Add channel</button></div>
     </form>
   </dialog>
-  <script src="./app.js?v=20260810-chat-media-v7"></script>
+  <dialog class="caffeine-dialog" data-caffeine-dialog>
+    <header><div class="caffeine-heading"><span><svg><use href="#icon-coffee"/></svg></span><div><h2>Caffeine</h2><p>Nyx Premium, served as a cup of coffee.</p></div></div><button class="icon-button" type="button" data-caffeine-close aria-label="Close"><svg><use href="#icon-close"/></svg></button></header>
+    <p class="caffeine-status" data-caffeine-status></p>
+    <div class="caffeine-gift-list" data-caffeine-gift-list></div>
+  </dialog>
+  <dialog class="caffeine-gift-dialog" data-caffeine-gift-dialog>
+    <div class="caffeine-gift-mark"><svg><use href="#icon-coffee"/></svg></div>
+    <h2>A cup of Caffeine</h2>
+    <p data-caffeine-gift-message></p>
+    <div><button class="btn-subtle" type="button" data-caffeine-gift-later>Not now</button><button class="primary-button" type="button" data-caffeine-accept>Accept gift</button></div>
+  </dialog>
+  <script src="./app.js?v=20260810-caffeine-v9"></script>
 </body>
 </html>

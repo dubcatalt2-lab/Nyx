@@ -76,6 +76,7 @@ The installer:
 - installs a supported Node.js release, Caddy, UFW, and Fail2ban;
 - builds and validates Nyx for its same-origin Wisp endpoint, keeps the large bundled games that the Netlify build must omit, then removes build-only packages from the VPS;
 - creates an unprivileged, hardened `nyx` systemd service;
+- creates `/var/lib/nyx/chat-attachments` as the only writable persistent application state directory for Owner large chat uploads;
 - serves the generated `dist/` output through the same Express request/IP-ban guard as the API;
 - configures WebSocket forwarding for embedded Wisp and uses the current browser hostname for its same-origin endpoint;
 - trusts Cloudflare visitor-IP headers only from Cloudflare's published networks and overwrites spoofable forwarding headers for direct custom domains;
@@ -116,6 +117,7 @@ For the one-server setup, leave `WISP_URL` commented out. Nyx then uses the curr
 
 ```dotenv
 NYX_CUSTOM_HOST_IPS=YOUR_VPS_IP
+NYX_CHAT_ATTACHMENT_ROOT=/var/lib/nyx/chat-attachments
 ```
 
 `NYX_ALLOWED_ORIGINS` must include the exact primary production domain. Verified custom domains are allowed only for same-host Wisp connections. `NYX_SITE_URL` and `OPENROUTER_API_KEY` are obsolete names and should not be added.

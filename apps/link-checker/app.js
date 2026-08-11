@@ -192,8 +192,9 @@
       if(!auth.currentUser)return {resolved:true,premium:false,expiresAt:Date.now()+FREEDNS_BULK_ACCESS_TTL_MS,error:'Sign in to Nyx to use Premium full scans.',auth};
       const token=await auth.currentUser.getIdToken();
       const account=await fetchJson('/api/account/me',{cache:'no-store',headers:{Authorization:`Bearer ${token}`}});
-      const premium=account?.premiumAccess===true;
-      return {resolved:true,premium,expiresAt:Date.now()+FREEDNS_BULK_ACCESS_TTL_MS,error:premium?'':'A Premium subscription is required to check all domains.',auth};
+      const staffAccess=['owner','co_owner','admin','manager','developer','moderator'].includes(String(account?.role||''));
+      const premium=account?.premiumAccess===true||staffAccess;
+      return {resolved:true,premium,staffAccess,expiresAt:Date.now()+FREEDNS_BULK_ACCESS_TTL_MS,error:premium?'':'Premium, Trial, or Moderator access is required to check all domains.',auth};
     })();
     freednsBulkAccess={...freednsBulkAccess,promise:operation};
     try{return freednsBulkAccess={...(await operation),promise:null};}
@@ -203,7 +204,7 @@
   async function freednsBulkToken({force=false}={}){
     const access=await refreshFreednsBulkAccess(force);
     if(!access.auth?.currentUser)throw new Error(access.error||'Sign in to Nyx on the homepage before starting a full registry scan.');
-    if(!access.premium)throw new Error(access.error||'A Premium subscription is required to check all domains.');
+    if(!access.premium)throw new Error(access.error||'Premium, Trial, or Moderator access is required to check all domains.');
     return access.auth.currentUser.getIdToken();
   }
   async function checkTarget(target,vendor='',signal,{bulk=false}={}){
@@ -461,7 +462,7 @@
     refs.freednsStart.disabled=busy;
     refs.freednsStart.querySelector('span').textContent=freednsScraping?'Scraping…':'Scrape registry';
     refs.freednsCheckAll.disabled=busy||!vendors.length||!freednsCache.complete||!freednsBulkAccess.premium;
-    refs.freednsCheckAll.querySelector('span').textContent=freednsFullScanning?'Checking all…':(!freednsBulkAccess.resolved?'Checking access…':(freednsBulkAccess.premium?'Check all domains':'Premium required'));
+    refs.freednsCheckAll.querySelector('span').textContent=freednsFullScanning?'Checking all…':(!freednsBulkAccess.resolved?'Checking access…':(freednsBulkAccess.premium?'Check all domains':'Premium or Moderator'));
     refs.freednsCheckAll.title=freednsBulkAccess.premium?'Check every cached domain with all vendors':(freednsBulkAccess.error||'Premium access is being checked.');
     refs.freednsCheckPage.disabled=busy||!vendors.length||!freednsPageState().visible.length;
     refs.freednsCheckPage.querySelector('span').textContent=freednsPageScanning?'Checking…':'Check this page';
@@ -470,7 +471,7 @@
     refs.freednsDoubleCheck.hidden=busy||freednsDoubleCheckRemaining<=0;
     refs.freednsDoubleCheck.disabled=busy||!freednsBulkAccess.premium;
     refs.freednsDoubleCheck.querySelector('span').textContent=`Double check (${freednsDoubleCheckRemaining.toLocaleString()})`;
-    refs.freednsDoubleCheck.title=freednsBulkAccess.premium?'Retry only the domains still missing results':(freednsBulkAccess.error||'Premium access is required.');
+    refs.freednsDoubleCheck.title=freednsBulkAccess.premium?'Retry only the domains still missing results':(freednsBulkAccess.error||'Premium, Trial, or Moderator access is required.');
     refs.freednsStop.hidden=!busy;
     refs.freednsSearch.disabled=interactionBusy;refs.freednsStatus.disabled=interactionBusy;refs.freednsVendor.disabled=interactionBusy;
     $('[data-freedns-clear]').disabled=busy;

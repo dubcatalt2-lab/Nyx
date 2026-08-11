@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <title>Nyx Chat</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/icons/chat.svg">
-  <link rel="stylesheet" href="./styles.css?v=20260810-chat-v2">
+  <link rel="stylesheet" href="./styles.css?v=20260810-chat-v5">
 </head>
 <body>
   <svg class="chat-icon-sprite" aria-hidden="true">
@@ -24,6 +24,13 @@
     <symbol id="icon-download" viewBox="0 0 24 24"><path d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14"/></symbol>
     <symbol id="icon-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 10h.01M15.5 10h.01M8 14.5c1 1.3 2.3 2 4 2s3-.7 4-2"/></symbol>
     <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="icon-volume" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></symbol>
+    <symbol id="icon-mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8"/></symbol>
+    <symbol id="icon-mic-off" viewBox="0 0 24 24"><path d="m3 3 18 18M9 9v2a3 3 0 0 0 5.1 2.1M15 8V5a3 3 0 0 0-5.8-1M5 11a7 7 0 0 0 11.7 5.2M19 11a7 7 0 0 1-.7 3M12 18v4M8 22h8"/></symbol>
+    <symbol id="icon-headphones" viewBox="0 0 24 24"><path d="M4 14v-2a8 8 0 0 1 16 0v2M4 14h3v7H5a2 2 0 0 1-2-2v-3a2 2 0 0 1 1-2ZM20 14h-3v7h2a2 2 0 0 0 2-2v-3a2 2 0 0 0-1-2Z"/></symbol>
+    <symbol id="icon-phone-off" viewBox="0 0 24 24"><path d="m3 3 18 18M8.5 8.5 6.8 6.8a2 2 0 0 0-2.8 0L2.8 8c-.7.7-.8 1.7-.3 2.5A23 23 0 0 0 13.5 21.5c.8.5 1.8.4 2.5-.3l1.2-1.2a2 2 0 0 0 0-2.8l-2.1-2.1a2 2 0 0 0-2.6-.2l-1.1.8M15.5 5.2c1.6.7 2.9 2 3.6 3.6M15 1c3.8.8 6.2 3.2 7 7"/></symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></symbol>
+    <symbol id="icon-edit" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></symbol>
   </svg>
 
   <div class="chat-app" data-chat-app>
@@ -43,14 +50,24 @@
       <aside class="channel-sidebar" data-channel-sidebar>
         <div class="sidebar-heading">
           <span>Channels</span>
-          <button class="icon-button mobile-only" type="button" data-sidebar-close aria-label="Close channels"><svg><use href="#icon-close"/></svg></button>
+          <span class="sidebar-heading-actions"><button class="sidebar-add" type="button" data-manage-channels aria-label="Manage channels" title="Manage channels" hidden><svg><use href="#icon-settings"/></svg></button><button class="icon-button mobile-only" type="button" data-sidebar-close aria-label="Close channels"><svg><use href="#icon-close"/></svg></button></span>
         </div>
         <nav class="channel-list" data-channel-list aria-label="Chat channels"></nav>
+        <div class="sidebar-heading voice-heading"><span>Voice Channels</span></div>
+        <nav class="voice-channel-list" data-voice-channel-list aria-label="Voice channels"></nav>
         <div class="sidebar-heading direct-heading">
           <span>Direct Messages</span>
           <button class="sidebar-add" type="button" data-new-dm aria-label="Start a direct message"><svg><use href="#icon-plus"/></svg></button>
         </div>
         <nav class="direct-list" data-direct-list aria-label="Direct messages"></nav>
+        <section class="voice-panel" data-voice-panel hidden>
+          <div class="voice-panel-copy"><strong data-voice-status>Voice connected</strong><span data-voice-room></span></div>
+          <div class="voice-controls">
+            <button type="button" data-voice-mute aria-label="Mute microphone" title="Mute microphone"><svg><use href="#icon-mic"/></svg></button>
+            <button type="button" data-voice-deafen aria-label="Deafen" title="Deafen"><svg><use href="#icon-headphones"/></svg></button>
+            <button type="button" class="disconnect" data-voice-disconnect aria-label="Disconnect voice" title="Disconnect voice"><svg><use href="#icon-phone-off"/></svg></button>
+          </div>
+        </section>
         <div class="chat-guidelines">
           <svg><use href="#icon-shield"/></svg>
           <p><strong>Keep Nyx welcoming.</strong><span>Do not share passwords, private details, or harmful content.</span></p>
@@ -133,6 +150,17 @@
     <input type="search" data-dm-search placeholder="Search members" autocomplete="off">
     <div class="dm-picker-list" data-dm-picker-list></div>
   </dialog>
-  <script src="./app.js?v=20260810-chat-v2"></script>
+  <dialog class="channel-manager-dialog" data-channel-manager-dialog>
+    <header><div><h2>Manage channels</h2><p>Create, rename, or remove Nyx text and voice channels.</p></div><button class="icon-button" type="button" data-channel-manager-close aria-label="Close"><svg><use href="#icon-close"/></svg></button></header>
+    <div class="channel-kind-tabs"><button type="button" data-channel-kind="text" class="active">Text</button><button type="button" data-channel-kind="voice">Voice</button></div>
+    <div class="channel-manager-list" data-channel-manager-list></div>
+    <form class="channel-manager-form" data-channel-manager-form>
+      <input type="hidden" data-channel-edit-id>
+      <label><span>Channel name</span><input type="text" data-channel-name maxlength="32" required placeholder="New channel"></label>
+      <label><span>Description</span><textarea data-channel-description-input maxlength="140" rows="2" placeholder="What is this channel for?"></textarea></label>
+      <div><button type="button" class="btn-subtle" data-channel-edit-cancel hidden>Cancel edit</button><button type="submit" class="primary-button" data-channel-save>Add channel</button></div>
+    </form>
+  </dialog>
+  <script src="./app.js?v=20260810-chat-v5"></script>
 </body>
 </html>

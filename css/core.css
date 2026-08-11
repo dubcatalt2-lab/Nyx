@@ -1960,6 +1960,8 @@ body.browser-shell #desktop .desktop-app{
 .browser-tab.tab-closing{pointer-events:none;animation:none!important;display:none!important}
 @keyframes tabOut{to{opacity:0;transform:translateY(-8px) scale(.86);max-width:0;min-width:0;width:0;padding-left:0;padding-right:0;margin-left:-6px}}
 .browser-tab.active{background:rgba(255,255,255,.17)}
+.browser-tab.chat-unread{position:relative}
+.browser-tab.chat-unread::after{content:"";position:absolute;z-index:2;right:4px;top:3px;width:7px;height:7px;border-radius:50%;background:#f0445c;box-shadow:0 0 0 2px rgba(240,68,92,.18),0 0 8px rgba(240,68,92,.7);pointer-events:none}
 .browser-tab span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .browser-tab button,.new-tab{border:0;background:transparent;color:#cbd5e1}
 .browser-tab button{position:relative;color:transparent;font-size:0;transition:transform .58s cubic-bezier(.16,.86,.2,1),background .26s ease,color .26s ease}

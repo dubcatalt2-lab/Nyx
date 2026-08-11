@@ -193,7 +193,7 @@ The VPS serves generated `dist/` through Express on local port 8080 and exposes 
 
 ### OVH deployment
 
-`DEPLOYMENT.md` and `deploy/` define the active single-OVHcloud-VPS deployment using Ubuntu 26.04, Caddy, systemd, and embedded Wisp. The installer builds the minified `dist/` output with a dynamic same-host Wisp URL and without Netlify's large-file omissions, serves it through Express so the application IP-ban guard also covers static pages, validates and reloads Caddy, sanitizes forwarding headers, restricts Cloudflare visitor-IP trust to Cloudflare's published networks, and prunes build-only dependencies. `/etc/nyx/nyx.env` and the selected domain are preserved across reruns, and `deploy/update-ovh.sh` provides validated fast-forward updates.
+`DEPLOYMENT.md` and `deploy/` define the active single-OVHcloud-VPS deployment using Ubuntu 26.04, Caddy, systemd, and embedded Wisp. The installer builds the minified `dist/` output with a dynamic same-host Wisp URL and without Netlify's large-file omissions, serves it through Express so the application IP-ban guard also covers static pages, validates and reloads Caddy, sanitizes forwarding headers, restricts Cloudflare visitor-IP trust to Cloudflare's published networks, and prunes build-only dependencies. `/etc/nyx/nyx.env` and the selected domain are preserved across reruns, and `deploy/update-ovh.sh` provides validated fast-forward updates. If a pull changes the updater itself, it re-executes the new copy before applying deployment steps so new systemd or storage requirements are not skipped on that release.
 
 ## Server Environment Variable Names
 

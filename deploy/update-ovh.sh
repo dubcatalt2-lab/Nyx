@@ -22,7 +22,13 @@ if [[ ! ${DOMAIN} =~ ^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$ ]]; th
 fi
 
 cd "${APP_DIR}"
+UPDATE_SCRIPT_HASH=$(sha256sum "${BASH_SOURCE[0]}" | cut -d ' ' -f 1)
 runuser -u "${APP_OWNER}" -- git pull --ff-only
+UPDATED_SCRIPT_HASH=$(sha256sum "${BASH_SOURCE[0]}" | cut -d ' ' -f 1)
+if [[ ${UPDATE_SCRIPT_HASH} != "${UPDATED_SCRIPT_HASH}" && ${NYX_UPDATE_REEXEC:-0} != 1 ]]; then
+  echo "Nyx updater changed; restarting with the new deployment steps."
+  exec env NYX_UPDATE_REEXEC=1 bash "${BASH_SOURCE[0]}"
+fi
 runuser -u "${APP_OWNER}" -- npm ci
 runuser -u "${APP_OWNER}" -- env -u WISP_URL NYX_BUILD_TARGET=vps NYX_PUBLIC_ORIGIN="https://${DOMAIN}" npm run build:netlify
 runuser -u "${APP_OWNER}" -- npm run check:deploy

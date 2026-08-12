@@ -1873,18 +1873,37 @@
   }
   async function nyxRecordSearchHistory(value){
     const query=nyxSearchHistoryQuery(value);
-    if(!query || !nyxFounderSignedInUser) return;
+    if(!query) return false;
     try{
-      const token=await nyxGetFirebaseToken();
-      if(!token) return;
-      await fetch('/api/moderation/search-history',{
-        method:'POST',
-        credentials:'same-origin',
-        keepalive:true,
-        headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},
-        body:JSON.stringify({query})
-      });
-    }catch{}
+      await initializeFounderOwnerAccess();
+      const user=nyxFounderSignedInUser || nyxFounderFirebaseAuth?.currentUser;
+      if(!user) return false;
+      const send=async forceRefresh=>{
+        const token=await user.getIdToken(forceRefresh);
+        if(!token) throw new Error('Your sign-in session is unavailable.');
+        const response=await fetch('/api/moderation/search-history',{
+          method:'POST',
+          credentials:'same-origin',
+          keepalive:true,
+          headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},
+          body:JSON.stringify({query})
+        });
+        const payload=await response.json().catch(()=>({}));
+        return {response,payload};
+      };
+      let result=await send(false);
+      if(result.response.status===401) result=await send(true);
+      if(!result.response.ok || result.payload?.stored!==true) throw new Error(result.payload?.error || 'Nyx did not confirm the search-history write.');
+      if(!store.get('nyx.searchHistoryNoticeSeen',false)){
+        store.set('nyx.searchHistoryNoticeSeen',true);
+        toast('Signed-in searches are retained for 30 days and visible to authorized staff.');
+      }
+      return true;
+    }catch(error){
+      console.warn('Nyx search history could not save:',error?.message || error);
+      toast('Nyx could not save this search to Search history.');
+      return false;
+    }
   }
   function unwrapAccidentalUrlSearch(value){
     const raw=String(value || '').trim();
@@ -9405,10 +9424,6 @@
       const isSearchQuery=rawText && !forceMode && !looksLikeUrl && !proxyInternal;
       if(isSearchQuery){
         void nyxRecordSearchHistory(rawText);
-        if(nyxFounderSignedInUser && !store.get('nyx.searchHistoryNoticeSeen',false)){
-          store.set('nyx.searchHistoryNoticeSeen',true);
-          toast('Signed-in searches are retained for 30 days and visible to authorized staff.');
-        }
         const url=selectedSearchUrl(rawText);
         document.querySelectorAll('.nyx-preflight').forEach(overlay=>overlay.remove());
         win.querySelector('.urlbar').value=browserShellDisplayValue(url);

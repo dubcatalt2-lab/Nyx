@@ -1,6 +1,6 @@
 # Nyx Project State
 
-Last repository review: 2026-08-10
+Last repository review: 2026-08-11
 
 Workspace: repository root (`<repo-root>`)
 
@@ -22,7 +22,7 @@ Important release warning: production currently contains commits that are not on
 
 - Repository: `https://github.com/dubcatalt2-lab/Nyx.git`
 - Active branch: `agent/pirate-cove`
-- Latest release: commit `0ffbe1e` on `agent/pirate-cove`, with Firebase-authenticated Socket.IO delivery for live Chat and voice signaling, Discord-style message actions and applicable server-enforced moderation commands, role-ranked members, privacy-limited flagged-search review for Moderator-or-higher roles, Firestore quota-pressure safeguards, a uniform 8 MB Chat attachment cap, and authenticated coturn relay support. It preserves Caffeine gifting, private DMs, attachments, reactions, mentions, role-restricted channels, parent-tab alerts, Caddy On-Demand TLS, Link Checker, account-session reliability, and Chromebook workspace sizing.
+- Latest application release: commit `b93e4a6` on `agent/pirate-cove`, deployed to OVH on 2026-08-11. It adds the scoped TikTok Ultraviolet compatibility path, louder notifications for every incoming Chat message, persistent timed Chat mutes with required reasons, Founder Owner moderation hierarchy overrides, and Owner-private flagged-search review. It preserves Firebase-authenticated Socket.IO delivery, voice signaling and coturn, Caffeine gifting, private DMs, attachments, reactions, mentions, role-restricted channels, Caddy On-Demand TLS, Link Checker, account-session reliability, and Chromebook workspace sizing.
 - Unreleased working tree: none; only the protected untracked local work directories are present.
 - `main` / `origin/main`: `0a654cc1c3e17faff12424ae1f2a1a4eb63f6a90`
 - Draft PR: `https://github.com/dubcatalt2-lab/Nyx/pull/34`

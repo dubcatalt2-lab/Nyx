@@ -19,6 +19,7 @@
   });
   const ownerRoleIcons = Object.freeze({ co_owner: "owner", manager: "admin", support: "moderator", tester: "developer", contributor: "developer", guest: "member" });
   const ownerAssignableRoles = Object.freeze(["member", "contributor", "tester", "support", "moderator", "developer", "manager", "admin", "co_owner"]);
+  const ownerRoleRanks = Object.freeze({ owner: 100, co_owner: 90, admin: 80, manager: 70, developer: 60, moderator: 50, support: 40, tester: 30, contributor: 20, member: 10, guest: 0 });
   const roleLabel = value => ownerRoleLabels[value] || "Member";
   const roleIcon = role => `<img class="nyx-owner-role-icon" src="/assets/icons/roles/${esc(ownerRoleIcons[role] || role)}.png" alt="" aria-hidden="true">`;
   const roleOptions = (currentRole, allowedRoles = []) => {
@@ -390,8 +391,11 @@
           <thead><tr><th>${sortButton("displayName", "User")}</th><th>${sortButton("role", "Role")}</th><th>${sortButton("subscriptionStatus", "Subscription")}</th><th>${sortButton("createdAt", "Created")}</th><th>${sortButton("lastSignInAt", "Last sign-in")}</th><th>${sortButton("lastActiveAt", "Last active")}</th><th>Email verified</th><th>${sortButton("status", "Status")}</th><th><span class="sr-only">Actions</span></th></tr></thead>
           <tbody>${users.map(user => {
             const guest = Boolean(user.guest);
+            const canReviewSearches = !guest
+              && (ownerRoleRanks[state.access?.role] || 0) >= ownerRoleRanks.moderator
+              && (state.access?.role === "owner" || user.role !== "owner");
             return `<tr data-owner-user-row="${esc(user.uid)}"${guest ? ' data-owner-guest-row="true"' : ""}>
-            <td><button class="nyx-owner-user-cell" type="button" data-owner-view-user="${esc(user.uid)}"><span class="nyx-owner-avatar">${ownerProfileImageMarkup(user.photoUrl, "", (user.displayName || "?").slice(0, 1).toUpperCase())}<i class="${user.online ? "online" : ""}"></i></span><span><span class="nyx-owner-user-name-row"><strong>${esc(user.displayName)}</strong><span class="nyx-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></span><small>@${esc(user.username)} · ${esc(user.email || (guest ? "No account" : "No email"))}</small><span class="nyx-owner-mobile-access"><span class="nyx-owner-badge role-${esc(user.role)}">${roleIcon(user.role)}${esc(roleLabel(user.role))}</span><span class="nyx-owner-badge subscription-${esc(user.subscriptionStatus)}">${esc(subscriptionLabel(user.subscriptionStatus))}</span></span></span></button></td>
+            <td><div class="nyx-owner-user-entry"><button class="nyx-owner-user-cell" type="button" data-owner-view-user="${esc(user.uid)}"><span class="nyx-owner-avatar">${ownerProfileImageMarkup(user.photoUrl, "", (user.displayName || "?").slice(0, 1).toUpperCase())}<i class="${user.online ? "online" : ""}"></i></span><span><span class="nyx-owner-user-name-row"><strong>${esc(user.displayName)}</strong><span class="nyx-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></span><small>@${esc(user.username)} · ${esc(user.email || (guest ? "No account" : "No email"))}</small><span class="nyx-owner-mobile-access"><span class="nyx-owner-badge role-${esc(user.role)}">${roleIcon(user.role)}${esc(roleLabel(user.role))}</span><span class="nyx-owner-badge subscription-${esc(user.subscriptionStatus)}">${esc(subscriptionLabel(user.subscriptionStatus))}</span></span></span></button>${canReviewSearches ? `<button class="nyx-owner-search-shield" type="button" data-owner-flagged-searches="${esc(user.uid)}" aria-label="Review policy-flagged searches for ${esc(user.displayName)}" title="Review policy-flagged searches">${dashboardIcon("shield")}</button>` : ""}</div></td>
             <td><span class="nyx-owner-badge role-${esc(user.role)}">${roleIcon(user.role)}${esc(roleLabel(user.role))}</span></td>
             <td><span class="nyx-owner-badge subscription-${esc(user.subscriptionStatus)}">${esc(subscriptionLabel(user.subscriptionStatus))}</span></td>
             <td><span title="${esc(dateLabel(user.createdAt))}">${esc(relativeLabel(user.createdAt))}</span></td>
@@ -664,6 +668,30 @@
       }
     }
 
+    async function openFlaggedSearches(user) {
+      if (!user || user.guest) return;
+      drawer.hidden = false;
+      drawer.classList.remove("show");
+      state.selectedUser = user;
+      const avatar = ownerProfileImageMarkup(user.photoUrl, "", (user.displayName || "?").slice(0, 1).toUpperCase());
+      drawer.innerHTML = `<header><div class="nyx-owner-detail-avatar">${avatar}<i class="${user.online ? "online" : ""}"></i></div><div><span>${dashboardIcon("shield")}Moderation review</span><h2>${esc(user.displayName)}</h2><p class="nyx-owner-drawer-identity">@${esc(user.username)}</p></div><button type="button" data-owner-drawer-close aria-label="Close flagged searches">${dashboardIcon("close")}</button></header>
+        <div class="nyx-owner-drawer-scroll"><section class="nyx-owner-detail-section nyx-owner-flagged-searches"><h3>Policy-flagged searches</h3><p class="nyx-owner-action-note">Nyx never collects ordinary search history. This view only contains searches that matched the inappropriate-content safety classifier and should be treated as a moderation signal, not proof.</p><div class="nyx-owner-flagged-search-list"><div class="nyx-owner-drawer-loading"><i></i><i></i><i></i></div></div></section></div>`;
+      requestAnimationFrame(() => drawer.classList.add("show"));
+      void hydrateOwnerProfileMedia(drawer);
+      const list = drawer.querySelector(".nyx-owner-flagged-search-list");
+      try {
+        const result = await api(`/api/chat/moderation/flagged-searches?uid=${encodeURIComponent(user.uid)}`);
+        if (!list?.isConnected || state.selectedUser?.uid !== user.uid) return;
+        const searches = Array.isArray(result.searches) ? result.searches : [];
+        list.innerHTML = searches.length
+          ? searches.map(search => `<article><header><strong>${esc(search.category || "Policy flagged")}</strong><time datetime="${esc(search.createdAt)}" title="${esc(dateLabel(search.createdAt))}">${esc(relativeLabel(search.createdAt))}</time></header><p>${esc(search.query)}</p></article>`).join("")
+          : '<div class="nyx-owner-empty compact"><strong>No retained flagged searches</strong><span>This account has no matching records from the last 30 days.</span></div>';
+      } catch (error) {
+        if (!list?.isConnected) return;
+        list.innerHTML = `<div class="nyx-owner-error"><strong>Flagged searches could not load</strong><span>${esc(error.message)}</span></div>`;
+      }
+    }
+
     function closeDrawer() {
       drawer.classList.remove("show");
       setTimeout(() => { drawer.hidden = true; drawer.innerHTML = ""; }, 180);
@@ -797,6 +825,11 @@
       }
       const page = event.target.closest("[data-owner-page]")?.dataset.ownerPage;
       if (page) { state.page = Number(page) || 1; return void load({ preserveLoading: true }); }
+      const flaggedSearchUid = event.target.closest("[data-owner-flagged-searches]")?.dataset.ownerFlaggedSearches;
+      if (flaggedSearchUid) {
+        const user = (state.data?.users || []).find(item => item.uid === flaggedSearchUid);
+        if (user) return void openFlaggedSearches(user);
+      }
       const uid = event.target.closest("[data-owner-view-user]")?.dataset.ownerViewUser;
       if (uid) return void openUser(uid);
       if (event.target.closest("[data-owner-drawer-close]")) return closeDrawer();

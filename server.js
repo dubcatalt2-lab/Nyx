@@ -6035,10 +6035,16 @@ app.get("/api/chat/moderation/flagged-searches", async (req, res) => {
       res.status(403).json({ error: "Moderator access is required." });
       return;
     }
+    const requestedUid = String(req.query?.uid || "").trim();
+    if (requestedUid.length > 128 || /[\u0000-\u001f\u007f]/.test(requestedUid)) {
+      res.status(400).json({ error: "That account identifier is invalid." });
+      return;
+    }
     const now = Date.now();
-    const snapshot = await firebase.firestore.collection(nyxFlaggedSearchCollection)
-      .orderBy("createdAtMs", "desc")
-      .limit(100)
+    const collection = firebase.firestore.collection(nyxFlaggedSearchCollection);
+    const snapshot = await (requestedUid
+      ? collection.where("uid", "==", requestedUid).limit(100)
+      : collection.orderBy("createdAtMs", "desc").limit(100))
       .get();
     const ownerUid = founderProfileConfig().administratorUid;
     const searches = snapshot.docs.flatMap(document => {
@@ -6058,7 +6064,8 @@ app.get("/api/chat/moderation/flagged-searches", async (req, res) => {
         createdAt: safeDateIso(data.createdAt),
         createdAtMs: safeActivityTime(data.createdAtMs)
       }];
-    }).filter(item => item.uid && item.query);
+    }).filter(item => item.uid && item.query)
+      .sort((left, right) => right.createdAtMs - left.createdAtMs);
     void cleanupNyxFlaggedSearches(firebase, now);
     res.json({ searches });
   } catch (error) {

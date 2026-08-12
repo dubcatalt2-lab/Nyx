@@ -161,6 +161,11 @@
 .nyx-owner-table td{height:52px;padding:7px 11px;border-bottom:1px solid rgba(39,50,70,.7);color:#cfd7e6;white-space:nowrap}
 .nyx-owner-table tbody tr:hover{background:rgba(120,156,255,.045)}
 .nyx-owner-dashboard-overlay .nyx-owner-user-cell{display:flex!important;align-items:center!important;width:auto!important;min-width:220px!important;min-height:0!important;gap:9px!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;color:inherit!important;box-shadow:none!important;text-align:left!important;transform:none!important;cursor:pointer}
+.nyx-owner-user-entry{display:flex;align-items:center;gap:7px;min-width:0}
+.nyx-owner-search-shield{display:grid;flex:0 0 28px;width:28px;height:28px;place-items:center;padding:0;border:1px solid var(--owner-line);border-radius:8px;background:rgba(120,156,255,.06);color:var(--owner-accent);cursor:pointer;transition:border-color .16s ease,background .16s ease,color .16s ease,transform .16s ease}
+.nyx-owner-search-shield:hover{border-color:var(--owner-accent);background:rgba(120,156,255,.14);color:#c9d6ff;transform:translateY(-1px)}
+.nyx-owner-search-shield:focus-visible{outline:2px solid var(--owner-accent);outline-offset:2px}
+.nyx-owner-search-shield svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2}
 .nyx-owner-user-cell>span:last-child{display:grid;min-width:0;gap:2px}
 .nyx-owner-user-name-row{display:flex;align-items:center;min-width:0;gap:7px}
 .nyx-owner-user-cell strong{overflow:hidden;max-width:230px;color:var(--owner-text);font-size:11px;text-overflow:ellipsis}
@@ -253,6 +258,7 @@
 .nyx-owner-detail-avatar{width:54px;height:54px;border-radius:13px}
 .nyx-owner-detail-avatar i{width:10px;height:10px;border-color:#0e141e}
 .nyx-owner-user-drawer>header>div:nth-child(2){display:grid;min-width:0;gap:2px}
+.nyx-owner-user-drawer>header>div:nth-child(2)>span svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2}
 .nyx-owner-user-drawer>header span{color:var(--owner-accent);font-size:8px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
 .nyx-owner-user-drawer>header h2{overflow:hidden;margin:0;color:var(--owner-text);font-size:18px;text-overflow:ellipsis;white-space:nowrap}
 .nyx-owner-user-drawer>header p{margin:0;color:var(--owner-muted);font-size:10px}
@@ -368,6 +374,13 @@
 .nyx-owner-user-activity{display:grid;gap:6px}
 .nyx-owner-user-activity>p{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0;padding:7px 8px;border-radius:7px;background:#0b111b}
 .nyx-owner-user-activity strong{font-size:9px}.nyx-owner-user-activity span{color:var(--owner-muted);font-size:8px}
+.nyx-owner-flagged-searches>p{margin:0}
+.nyx-owner-flagged-search-list{display:grid;gap:8px}
+.nyx-owner-flagged-search-list article{display:grid;gap:7px;padding:10px;border:1px solid var(--owner-line);border-radius:9px;background:#0b111b}
+.nyx-owner-flagged-search-list article header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.nyx-owner-flagged-search-list article strong{color:#ffb0bf;font-size:9px;letter-spacing:.04em;text-transform:uppercase}
+.nyx-owner-flagged-search-list article time{color:var(--owner-muted);font-size:8px;white-space:nowrap}
+.nyx-owner-flagged-search-list article p{overflow-wrap:anywhere;margin:0;color:var(--owner-text);font-size:11px;line-height:1.45;white-space:normal}
 .nyx-owner-ip-ban-drawer{display:grid;align-content:start;gap:12px;padding:14px;overflow:auto}
 .nyx-owner-ip-ban-form{display:grid;gap:9px;margin-top:10px}
 .nyx-owner-ip-ban-form label{display:grid;gap:5px;color:var(--owner-muted);font-size:9px}

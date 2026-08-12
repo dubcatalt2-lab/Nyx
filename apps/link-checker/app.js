@@ -10,6 +10,8 @@
   const FREEDNS_FULL_SAVE_BATCH=100;
   const FREEDNS_FULL_IMPORT_CONCURRENCY=6;
   const FREEDNS_BULK_ACCESS_TTL_MS=5*60_000;
+  const FREEDNS_CACHE_TTL_MS=8*60*60_000;
+  const FREEDNS_CACHE_EXPIRY_POLL_MS=5*60_000;
   const THEME_CLASSES=['theme-default','theme-ruby','theme-emerald','theme-sakura','theme-fresh'];
   const $=selector=>document.querySelector(selector);
   const $$=selector=>[...document.querySelectorAll(selector)];
@@ -50,15 +52,44 @@
   let freednsBulkAccess={resolved:false,premium:false,expiresAt:0,error:'',promise:null};
   let freednsVisibleDomains=new Set();
   let freednsDetailController=null;
-  let freednsVerdicts=readJsonStorage(FREEDNS_VERDICTS_KEY,{vendors:[],verdicts:{},updatedAt:''});
-  if(!freednsVerdicts||!Array.isArray(freednsVerdicts.vendors)||!freednsVerdicts.verdicts||typeof freednsVerdicts.verdicts!=='object')freednsVerdicts={vendors:[],verdicts:{},updatedAt:''};
+  const storedFreednsVerdicts=readJsonStorage(FREEDNS_VERDICTS_KEY,{vendors:[],verdicts:{},updatedAt:''});
+  let freednsVerdictsNeedsMigration=Boolean(storedFreednsVerdicts?.verdicts&&!Array.isArray(storedFreednsVerdicts?.values)&&(storedFreednsVerdicts.updatedAt||Object.keys(storedFreednsVerdicts.verdicts).length));
+  let freednsVerdicts=expandFreednsVerdicts(storedFreednsVerdicts);
   const freednsChecking=new Set();
+  const freednsCacheExpiredOnLoad=expireFreednsCacheIfNeeded();
 
   function readJsonStorage(key,fallback){
     try{const value=JSON.parse(localStorage.getItem(key)||'null');return value===null ? fallback : value}catch{return fallback}
   }
   function writeJsonStorage(key,value){
     try{localStorage.setItem(key,JSON.stringify(value));return true}catch{return false}
+  }
+  function emptyFreednsCache(){return {domains:[],totalPages:0,totalDomains:0,lastScrapedAt:'',complete:false}}
+  function emptyFreednsVerdicts(){return {vendors:[],verdicts:{},updatedAt:''}}
+  function expandFreednsVerdicts(value){
+    if(!value||!Array.isArray(value.vendors))return emptyFreednsVerdicts();
+    if(Array.isArray(value.values)){
+      const verdicts={};value.values.forEach((compact,index)=>{const domain=freednsCache.domains[index]?.domain;if(domain&&typeof compact==='string'&&compact)verdicts[domain]=compact;});
+      return {vendors:value.vendors.map(String),verdicts,updatedAt:String(value.updatedAt||'')};
+    }
+    if(value.verdicts&&typeof value.verdicts==='object')return {vendors:value.vendors.map(String),verdicts:value.verdicts,updatedAt:String(value.updatedAt||'')};
+    return emptyFreednsVerdicts();
+  }
+  function compactFreednsVerdicts(){
+    return {version:2,vendors:[...freednsVerdicts.vendors],values:freednsCache.domains.map(entry=>String(freednsVerdicts.verdicts[entry.domain]||'')),updatedAt:freednsVerdicts.updatedAt};
+  }
+  function freednsCacheActivityTime(){
+    return Math.max(Date.parse(freednsCache.lastScrapedAt||'')||0,Date.parse(freednsVerdicts.updatedAt||'')||0);
+  }
+  function expireFreednsCacheIfNeeded({render=false,notify=false}={}){
+    if(freednsScraping||freednsPageScanning||freednsFullScanning)return false;
+    const updatedAt=freednsCacheActivityTime();
+    if(!updatedAt||Date.now()-updatedAt<FREEDNS_CACHE_TTL_MS)return false;
+    freednsCache=emptyFreednsCache();freednsVerdicts=emptyFreednsVerdicts();freednsVerdictsNeedsMigration=false;freednsPage=1;freednsGodMode=false;freednsDoubleCheckRemaining=0;
+    try{localStorage.removeItem(FREEDNS_KEY);localStorage.removeItem(FREEDNS_VERDICTS_KEY)}catch{}
+    if(render)renderWorkspace();
+    if(notify)showNotice('Cached FreeDNS domains and verdicts expired after eight hours and were removed from this device.');
+    return true;
   }
   function inheritedTheme(){
     try{return localStorage.getItem('nyx.theme') || 'default'}catch{return 'default'}
@@ -388,7 +419,11 @@
     }).join('');
     freednsVerdicts.updatedAt=new Date().toISOString();
   }
-  function saveFreednsVerdicts(){return writeJsonStorage(FREEDNS_VERDICTS_KEY,freednsVerdicts)}
+  function saveFreednsVerdicts(){
+    const saved=writeJsonStorage(FREEDNS_VERDICTS_KEY,compactFreednsVerdicts());
+    if(saved)freednsVerdictsNeedsMigration=false;
+    return saved;
+  }
   function hasStoredFreednsVerdict(domain){
     return freednsVendorSignature(freednsVerdicts.vendors)===freednsVendorSignature()&&String(freednsVerdicts.verdicts[domain]||'').length===vendors.length;
   }
@@ -485,7 +520,7 @@
     $('[data-freedns-pages]').textContent=freednsCache.totalPages?String(freednsCache.totalPages):'—';
     $('[data-freedns-public]').textContent=freednsCache.domains.filter(entry=>entry.status==='public').length.toLocaleString();
     $('[data-freedns-private]').textContent=freednsCache.domains.filter(entry=>entry.status==='private').length.toLocaleString();
-    $('[data-freedns-updated]').textContent=freednsCache.lastScrapedAt?`${freednsCache.complete?'Updated':'Partial scrape'} ${formatDate(freednsCache.lastScrapedAt)}`:'Not scraped on this device';
+    $('[data-freedns-updated]').textContent=freednsCache.lastScrapedAt?`${freednsCache.complete?'Updated':'Partial scrape'} ${formatDate(freednsCache.lastScrapedAt)} · clears after 8 hours`:'Not scraped on this device';
     refs.freednsList.replaceChildren();
     visible.forEach(entry=>{
       const row=document.createElement('article');row.className='freedns-row';
@@ -537,7 +572,11 @@
     if(signal.aborted)return Promise.reject(new DOMException('Stopped','AbortError'));
     return new Promise((resolve,reject)=>{const timer=setTimeout(resolve,milliseconds);signal.addEventListener('abort',()=>{clearTimeout(timer);reject(new DOMException('Stopped','AbortError'));},{once:true});});
   }
-  function saveFreednsCache(){return writeJsonStorage(FREEDNS_KEY,freednsCache)}
+  function saveFreednsCache(){
+    const saved=writeJsonStorage(FREEDNS_KEY,freednsCache);
+    if(saved&&freednsVerdicts.vendors.length)saveFreednsVerdicts();
+    return saved;
+  }
   async function startFreednsScrape(){
     if(freednsScraping)return;
     freednsAutoScanStarted=false;freednsDoubleCheckRemaining=0;freednsController?.abort();freednsController=new AbortController();const signal=freednsController.signal;setFreednsScraping(true);showNotice('');
@@ -563,7 +602,7 @@
   function clearFreednsCache(){
     if(freednsScraping||freednsPageScanning||freednsFullScanning){showNotice('Stop the active work before clearing the cache.','error',true);return;}
     if(!freednsCache.domains.length)return;if(!confirm('Clear the FreeDNS registry cache stored on this device?'))return;
-    freednsCache={domains:[],totalPages:0,totalDomains:0,lastScrapedAt:'',complete:false};freednsVerdicts={vendors:[],verdicts:{},updatedAt:''};freednsPage=1;freednsGodMode=false;freednsDoubleCheckRemaining=0;try{localStorage.removeItem(FREEDNS_KEY);localStorage.removeItem(FREEDNS_VERDICTS_KEY)}catch{}renderFreedns();showNotice('Local FreeDNS registry cache and saved verdicts cleared.');
+    freednsCache=emptyFreednsCache();freednsVerdicts=emptyFreednsVerdicts();freednsVerdictsNeedsMigration=false;freednsPage=1;freednsGodMode=false;freednsDoubleCheckRemaining=0;try{localStorage.removeItem(FREEDNS_KEY);localStorage.removeItem(FREEDNS_VERDICTS_KEY)}catch{}renderFreedns();showNotice('Local FreeDNS registry cache and saved verdicts cleared.');
   }
   function exportFreedns(){
     if(!freednsCache.domains.length){showNotice('Scrape the FreeDNS registry before exporting it.','error',true);return;}
@@ -743,5 +782,10 @@
     const theme=$('[data-setting-theme]');theme.value=settings.theme||'inherit';theme.addEventListener('change',()=>{settings.theme=theme.value;saveSettings();});
     const sidebar=$('[data-sidebar]');const shade=$('[data-sidebar-shade]');$('[data-sidebar-toggle]').addEventListener('click',()=>{sidebar.classList.add('open');shade.hidden=false;});shade.addEventListener('click',()=>{sidebar.classList.remove('open');shade.hidden=true;});
   }
-  settings={...defaultSettings,...settings};applyTheme();wireEvents();renderWorkspace();loadVendors();void refreshFreednsBulkAccess().catch(()=>{});
+  settings={...defaultSettings,...settings};
+  const verdictMigrationFailed=freednsVerdictsNeedsMigration&&!saveFreednsVerdicts();
+  applyTheme();wireEvents();renderWorkspace();loadVendors();void refreshFreednsBulkAccess().catch(()=>{});
+  if(freednsCacheExpiredOnLoad)showNotice('Cached FreeDNS domains and verdicts expired after eight hours and were removed from this device.');
+  else if(verdictMigrationFailed)showNotice('Nyx could not compact the existing verdict cache. Clear the FreeDNS cache before starting another full scan.','error',true);
+  setInterval(()=>expireFreednsCacheIfNeeded({render:true,notify:true}),FREEDNS_CACHE_EXPIRY_POLL_MS);
 })();

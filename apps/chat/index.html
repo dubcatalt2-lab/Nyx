@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <title>Nyx Chat</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/icons/chat.svg">
-  <link rel="stylesheet" href="./styles.css?v=20260811-moderation-v11">
+  <link rel="stylesheet" href="./styles.css?v=20260811-full-search-history-v12">
 </head>
 <body>
   <svg class="chat-icon-sprite" aria-hidden="true">
@@ -131,7 +131,7 @@
       <aside class="member-sidebar" data-member-sidebar>
         <div class="sidebar-heading">
           <span>Members</span>
-          <span class="sidebar-heading-actions"><button class="sidebar-add" type="button" data-flagged-searches aria-label="Review flagged searches" title="Review flagged searches" hidden><svg><use href="#icon-shield"/></svg></button><button class="icon-button mobile-only" type="button" data-members-close aria-label="Close members"><svg><use href="#icon-close"/></svg></button></span>
+          <span class="sidebar-heading-actions"><button class="sidebar-add" type="button" data-flagged-searches aria-label="Review search history" title="Review search history" hidden><svg><use href="#icon-shield"/></svg></button><button class="icon-button mobile-only" type="button" data-members-close aria-label="Close members"><svg><use href="#icon-close"/></svg></button></span>
         </div>
         <div class="member-group">
           <h2>Online — <span data-online-label>0</span></h2>
@@ -183,9 +183,9 @@
     <div class="command-list" data-command-list></div>
   </dialog>
   <dialog class="flagged-search-dialog" data-flagged-search-dialog>
-    <header><div><h2>Flagged searches</h2><p>Only searches classified as inappropriate are retained for 30 days. Ordinary searches are never recorded.</p></div><button class="icon-button" type="button" data-flagged-search-close aria-label="Close"><svg><use href="#icon-close"/></svg></button></header>
+    <header><div><h2>Search history</h2><p>Searches made through Nyx while signed in are retained for 30 days. Policy-classified searches are highlighted for review.</p></div><button class="icon-button" type="button" data-flagged-search-close aria-label="Close"><svg><use href="#icon-close"/></svg></button></header>
     <div class="flagged-search-list" data-flagged-search-list></div>
   </dialog>
-  <script src="./app.js?v=20260811-chat-mutes-v14"></script>
+  <script src="./app.js?v=20260811-full-search-history-v15"></script>
 </body>
 </html>

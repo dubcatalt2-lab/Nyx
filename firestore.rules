@@ -92,6 +92,10 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /nyxSearchHistory/{searchId} {
+      allow read, write: if false;
+    }
+
     match /nyxProfileMedia/{mediaId} {
       allow read, write: if false;
       match /chunks/{chunkId} {

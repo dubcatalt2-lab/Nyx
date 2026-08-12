@@ -132,11 +132,11 @@ const nyxChatMuteMinimumMs = 60_000;
 const nyxChatMuteMaximumMs = 28 * 24 * 60 * 60_000;
 const nyxChatMuteCacheTtlMs = 15_000;
 const nyxChatMuteCache = new Map();
-const nyxFlaggedSearchCollection = "nyxFlaggedSearches";
-const nyxFlaggedSearchRetentionMs = 30 * 24 * 60 * 60_000;
-const nyxFlaggedSearchAttempts = new Map();
-let nyxFlaggedSearchLastCleanupAt = 0;
-const nyxFlaggedSearchPatterns = Object.freeze([
+const nyxSearchHistoryCollection = "nyxSearchHistory";
+const nyxSearchHistoryRetentionMs = 30 * 24 * 60 * 60_000;
+const nyxSearchHistoryAttempts = new Map();
+let nyxSearchHistoryLastCleanupAt = 0;
+const nyxSearchHistoryPatterns = Object.freeze([
   Object.freeze({ category: "Sexually explicit", pattern: /\b(?:porn(?:ography)?|xxx|hentai|rule\s*34|nudes?|sex\s+videos?)\b/i }),
   Object.freeze({ category: "Child exploitation", pattern: /\b(?:csam|child\s+(?:porn|nudes?|sexual\s+content))\b/i }),
   Object.freeze({ category: "Violence or threats", pattern: /\b(?:how\s+to\s+(?:make|build)\s+(?:a\s+)?bomb|school\s+shooting|(?:kill|murder)\s+(?:someone|a\s+person|my\s+(?:teacher|classmate|parent)))\b/i }),
@@ -3119,33 +3119,33 @@ function nyxChatText(value) {
     .trim();
 }
 
-function nyxFlaggedSearchClassification(value) {
+function nyxSearchHistoryEntry(value) {
   const query = String(value || "").normalize("NFKC").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 180);
-  if (query.length < 3) return { query: "", category: "" };
-  const matched = nyxFlaggedSearchPatterns.find(rule => rule.pattern.test(query));
-  return { query: matched ? query : "", category: matched?.category || "" };
+  if (!query) return { query: "", category: "", flagged: false };
+  const matched = nyxSearchHistoryPatterns.find(rule => rule.pattern.test(query));
+  return { query, category: matched?.category || "Standard search", flagged: Boolean(matched) };
 }
 
-function consumeNyxFlaggedSearchAttempt(uid) {
+function consumeNyxSearchHistoryAttempt(uid) {
   const now = Date.now();
-  const active = (nyxFlaggedSearchAttempts.get(uid) || []).filter(timestamp => now - timestamp < 60 * 60_000);
-  if (active.length >= 30) {
-    const error = new Error("Search safety reporting is temporarily rate limited.");
+  const active = (nyxSearchHistoryAttempts.get(uid) || []).filter(timestamp => now - timestamp < 60 * 60_000);
+  if (active.length >= 300) {
+    const error = new Error("Search history recording is temporarily rate limited.");
     error.status = 429;
     throw error;
   }
   active.push(now);
-  nyxFlaggedSearchAttempts.set(uid, active);
+  nyxSearchHistoryAttempts.set(uid, active);
 }
 
-async function cleanupNyxFlaggedSearches(firebase, now = Date.now()) {
-  if (now - nyxFlaggedSearchLastCleanupAt < 60 * 60_000) return;
-  nyxFlaggedSearchLastCleanupAt = now;
+async function cleanupNyxSearchHistory(firebase, now = Date.now()) {
+  if (now - nyxSearchHistoryLastCleanupAt < 60 * 60_000) return;
+  nyxSearchHistoryLastCleanupAt = now;
   try {
-    const snapshot = await firebase.firestore.collection(nyxFlaggedSearchCollection).where("expiresAtMs", "<", now).limit(50).get();
+    const snapshot = await firebase.firestore.collection(nyxSearchHistoryCollection).where("expiresAtMs", "<", now).limit(200).get();
     await Promise.all(snapshot.docs.map(document => document.ref.delete()));
   } catch (error) {
-    console.error("Nyx flagged-search cleanup failed:", error?.message || error);
+    console.error("Nyx search-history cleanup failed:", error?.message || error);
   }
 }
 
@@ -5984,7 +5984,7 @@ app.get("/api/profiles/:uid", async (req, res) => {
   }
 });
 
-app.post("/api/moderation/flagged-searches", async (req, res) => {
+app.post(["/api/moderation/search-history", "/api/moderation/flagged-searches"], async (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) {
     res.status(403).json({ error: "Cross-origin requests are not allowed." });
@@ -5992,37 +5992,34 @@ app.post("/api/moderation/flagged-searches", async (req, res) => {
   }
   try {
     const { firebase, token } = await authenticatedNyxUser(req);
-    const classification = nyxFlaggedSearchClassification(req.body?.query);
-    if (!classification.query || !classification.category) {
+    const entry = nyxSearchHistoryEntry(req.body?.query);
+    if (!entry.query) {
       res.json({ stored: false });
       return;
     }
-    consumeNyxFlaggedSearchAttempt(token.uid);
+    consumeNyxSearchHistoryAttempt(token.uid);
     const identity = await nyxChatIdentity(firebase, token);
     const now = Date.now();
-    const bucket = Math.floor(now / (10 * 60_000));
-    const id = createHash("sha256")
-      .update(`${token.uid}\0${classification.query.toLowerCase()}\0${bucket}`)
-      .digest("hex");
-    await firebase.firestore.collection(nyxFlaggedSearchCollection).doc(id).set({
+    await firebase.firestore.collection(nyxSearchHistoryCollection).add({
       uid: token.uid,
       displayName: identity.displayName,
       handle: identity.handle,
       role: identity.role,
-      query: classification.query,
-      category: classification.category,
+      query: entry.query,
+      category: entry.category,
+      flagged: entry.flagged,
       createdAt: new Date(now).toISOString(),
       createdAtMs: now,
-      expiresAtMs: now + nyxFlaggedSearchRetentionMs
-    }, { merge: true });
-    void cleanupNyxFlaggedSearches(firebase, now);
+      expiresAtMs: now + nyxSearchHistoryRetentionMs
+    });
+    void cleanupNyxSearchHistory(firebase, now);
     res.json({ stored: true });
   } catch (error) {
-    res.status(error.status || 503).json({ error: error.message || "Search safety reporting is unavailable." });
+    res.status(error.status || 503).json({ error: error.message || "Search history is unavailable." });
   }
 });
 
-app.get("/api/chat/moderation/flagged-searches", async (req, res) => {
+app.get(["/api/chat/moderation/search-history", "/api/chat/moderation/flagged-searches"], async (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) {
     res.status(403).json({ error: "Cross-origin requests are not allowed." });
@@ -6041,10 +6038,10 @@ app.get("/api/chat/moderation/flagged-searches", async (req, res) => {
       return;
     }
     const now = Date.now();
-    const collection = firebase.firestore.collection(nyxFlaggedSearchCollection);
+    const collection = firebase.firestore.collection(nyxSearchHistoryCollection);
     const snapshot = await (requestedUid
-      ? collection.where("uid", "==", requestedUid).limit(100)
-      : collection.orderBy("createdAtMs", "desc").limit(100))
+      ? collection.where("uid", "==", requestedUid).limit(1000)
+      : collection.orderBy("createdAtMs", "desc").limit(250))
       .get();
     const ownerUid = founderProfileConfig().administratorUid;
     const searches = snapshot.docs.flatMap(document => {
@@ -6060,16 +6057,17 @@ app.get("/api/chat/moderation/flagged-searches", async (req, res) => {
         handle: founderProfileText(data.handle, "@member", 40),
         role: Object.prototype.hasOwnProperty.call(nyxRolePolicies, storedRole) ? storedRole : "member",
         query: founderProfileText(data.query, "", 180),
-        category: founderProfileText(data.category, "Policy flagged", 48),
+        category: founderProfileText(data.category, "Standard search", 48),
+        flagged: Boolean(data.flagged),
         createdAt: safeDateIso(data.createdAt),
         createdAtMs: safeActivityTime(data.createdAtMs)
       }];
     }).filter(item => item.uid && item.query)
       .sort((left, right) => right.createdAtMs - left.createdAtMs);
-    void cleanupNyxFlaggedSearches(firebase, now);
+    void cleanupNyxSearchHistory(firebase, now);
     res.json({ searches });
   } catch (error) {
-    res.status(error.status || 503).json({ error: error.message || "Flagged searches are unavailable." });
+    res.status(error.status || 503).json({ error: error.message || "Search history is unavailable." });
   }
 });
 

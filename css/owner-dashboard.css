@@ -378,7 +378,8 @@
 .nyx-owner-flagged-search-list{display:grid;gap:8px}
 .nyx-owner-flagged-search-list article{display:grid;gap:7px;padding:10px;border:1px solid var(--owner-line);border-radius:9px;background:#0b111b}
 .nyx-owner-flagged-search-list article header{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.nyx-owner-flagged-search-list article strong{color:#ffb0bf;font-size:9px;letter-spacing:.04em;text-transform:uppercase}
+.nyx-owner-flagged-search-list article strong{color:var(--owner-accent);font-size:9px;letter-spacing:.04em;text-transform:uppercase}
+.nyx-owner-flagged-search-list article.policy strong{color:#ffb0bf}
 .nyx-owner-flagged-search-list article time{color:var(--owner-muted);font-size:8px;white-space:nowrap}
 .nyx-owner-flagged-search-list article p{overflow-wrap:anywhere;margin:0;color:var(--owner-text);font-size:11px;line-height:1.45;white-space:normal}
 .nyx-owner-ip-ban-drawer{display:grid;align-content:start;gap:12px;padding:14px;overflow:auto}

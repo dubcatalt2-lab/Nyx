@@ -2797,6 +2797,19 @@ function nyxCaffeineSubscription(administration = {}) {
   };
 }
 
+function nyxCaffeineEntitlement(uid, administration = {}) {
+  const subscription = nyxCaffeineSubscription(administration);
+  const role = nyxRoleForUser(uid, administration);
+  const unlimited = role === "owner" || role === "co_owner";
+  return {
+    ...subscription,
+    active: unlimited || subscription.active,
+    giftDerived: !unlimited && subscription.giftDerived,
+    directlyAssigned: unlimited || subscription.directlyAssigned,
+    unlimited
+  };
+}
+
 function nyxCaffeineGrantKey(uid, administration = {}) {
   const seed = String(administration.caffeineGrantId || administration.subscriptionUpdatedAt || "legacy-premium").trim();
   return createHash("sha256").update(`${String(uid || "")}:${seed}`, "utf8").digest("hex").slice(0, 40);
@@ -2822,10 +2835,10 @@ async function nyxCaffeineState(firebase, uid) {
   const administrationRef = firebase.firestore.collection("nyxUserAdministration").doc(uid);
   const administrationSnapshot = await administrationRef.get();
   const administration = administrationSnapshot.data() || {};
-  const subscription = nyxCaffeineSubscription(administration);
-  const pendingGift = nyxCaffeinePendingGift(administration.pendingCaffeineGift);
+  const subscription = nyxCaffeineEntitlement(uid, administration);
+  const pendingGift = subscription.active ? null : nyxCaffeinePendingGift(administration.pendingCaffeineGift);
   let outgoingGift = null;
-  if (subscription.directlyAssigned) {
+  if (subscription.directlyAssigned && !subscription.unlimited) {
     const giftId = nyxCaffeineGrantKey(uid, administration);
     const giftSnapshot = await firebase.firestore.collection(nyxCaffeineGiftCollection).doc(giftId).get();
     const gift = giftSnapshot.data() || {};
@@ -2845,7 +2858,8 @@ async function nyxCaffeineState(firebase, uid) {
   return {
     active: subscription.active,
     giftDerived: subscription.giftDerived,
-    canGift: subscription.directlyAssigned && !outgoingGift,
+    unlimited: subscription.unlimited,
+    canGift: subscription.unlimited || (subscription.directlyAssigned && !outgoingGift),
     outgoingGift,
     pendingGift
   };
@@ -3661,7 +3675,7 @@ async function nyxChatMemberDirectory(firebase) {
         avatarUrl: nyxChatAvatar(profile.avatarUrl),
         role,
         roleLabel: nyxRoleLabels[role] || nyxRoleLabels.member,
-        caffeine: nyxCaffeineSubscription(memberAdministration).active,
+        caffeine: nyxCaffeineEntitlement(document.id, memberAdministration).active,
         lastActiveAtMs: safeActivityTime(activity.get(document.id)?.lastActiveAtMs || activity.get(document.id)?.lastActiveAt)
       };
     });
@@ -3717,7 +3731,7 @@ async function nyxChatIdentity(firebase, token) {
     const profile = normalizeNyxUserProfile(profileSnapshot.data()?.profile, token);
     const administration = administrationSnapshot.data() || {};
     const role = nyxRoleForUser(uid, administration);
-    const caffeine = nyxCaffeineSubscription(administration).active;
+    const caffeine = nyxCaffeineEntitlement(uid, administration).active;
     return {
       uid,
       displayName: profile.displayName,
@@ -6297,6 +6311,7 @@ app.post("/api/chat/caffeine/gifts", async (req, res) => {
     let giftId = "";
     const now = Date.now();
     const expiresAtMs = now + nyxCaffeineGiftPendingMs;
+    const unlimitedGiftId = randomBytes(20).toString("hex");
     await firebase.firestore.runTransaction(async transaction => {
       const [giverAdministrationSnapshot, recipientAdministrationSnapshot] = await Promise.all([
         transaction.get(giverAdministrationRef),
@@ -6304,7 +6319,7 @@ app.post("/api/chat/caffeine/gifts", async (req, res) => {
       ]);
       const giverAdministration = giverAdministrationSnapshot.data() || {};
       const recipientAdministration = recipientAdministrationSnapshot.data() || {};
-      const giverSubscription = nyxCaffeineSubscription(giverAdministration);
+      const giverSubscription = nyxCaffeineEntitlement(token.uid, giverAdministration);
       if (!giverSubscription.directlyAssigned) {
         const error = new Error(giverSubscription.active
           ? "Caffeine received as a gift cannot be gifted again."
@@ -6312,7 +6327,7 @@ app.post("/api/chat/caffeine/gifts", async (req, res) => {
         error.status = 403;
         throw error;
       }
-      if (nyxCaffeineSubscription(recipientAdministration).active) {
+      if (nyxCaffeineEntitlement(recipientUid, recipientAdministration).active) {
         const error = new Error("That member already has Caffeine.");
         error.status = 409;
         throw error;
@@ -6323,11 +6338,16 @@ app.post("/api/chat/caffeine/gifts", async (req, res) => {
         error.status = 409;
         throw error;
       }
-      giftId = nyxCaffeineGrantKey(token.uid, giverAdministration);
+      giftId = giverSubscription.unlimited ? unlimitedGiftId : nyxCaffeineGrantKey(token.uid, giverAdministration);
       const giftRef = firebase.firestore.collection(nyxCaffeineGiftCollection).doc(giftId);
       const giftSnapshot = await transaction.get(giftRef);
       const existingGift = giftSnapshot.data() || {};
       const existingStatus = String(existingGift.status || "").trim().toLowerCase();
+      if (giverSubscription.unlimited && giftSnapshot.exists) {
+        const error = new Error("A new Caffeine gift could not be created. Try again.");
+        error.status = 409;
+        throw error;
+      }
       if (existingStatus === "accepted") {
         const error = new Error("You already shared the Caffeine gift from this subscription.");
         error.status = 409;
@@ -6353,6 +6373,7 @@ app.post("/api/chat/caffeine/gifts", async (req, res) => {
         recipientUid,
         recipientDisplayName: recipient.displayName,
         recipientHandle: recipient.handle,
+        grantType: giverSubscription.unlimited ? "role_unlimited" : "subscription",
         status: "pending",
         createdAt: new Date(now).toISOString(),
         createdAtMs: now,
@@ -6413,7 +6434,7 @@ app.post("/api/chat/caffeine/gifts/:giftId/accept", async (req, res) => {
         throw error;
       }
       const recipientAdministration = recipientAdministrationSnapshot.data() || {};
-      if (nyxCaffeineSubscription(recipientAdministration).active) {
+      if (nyxCaffeineEntitlement(token.uid, recipientAdministration).active) {
         const error = new Error("Your account already has Caffeine.");
         error.status = 409;
         throw error;
@@ -6427,7 +6448,12 @@ app.post("/api/chat/caffeine/gifts/:giftId/accept", async (req, res) => {
       const giverAdministrationRef = firebase.firestore.collection("nyxUserAdministration").doc(giverUid);
       const giverAdministrationSnapshot = await transaction.get(giverAdministrationRef);
       const giverAdministration = giverAdministrationSnapshot.data() || {};
-      if (!nyxCaffeineSubscription(giverAdministration).directlyAssigned || nyxCaffeineGrantKey(giverUid, giverAdministration) !== giftId) {
+      const giverSubscription = nyxCaffeineEntitlement(giverUid, giverAdministration);
+      const unlimitedGift = String(gift.grantType || "").trim().toLowerCase() === "role_unlimited";
+      const validGiver = unlimitedGift
+        ? giverSubscription.unlimited
+        : giverSubscription.directlyAssigned && nyxCaffeineGrantKey(giverUid, giverAdministration) === giftId;
+      if (!validGiver) {
         const error = new Error("The sender's Caffeine subscription is no longer active.");
         error.status = 409;
         throw error;

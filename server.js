@@ -3476,14 +3476,16 @@ function recordNyxChatRealtimeEvent(event = {}) {
   return nyxChatRealtimeRevision;
 }
 
+function nyxChatMentionHandles(text) {
+  return [...String(text || "").toLowerCase().matchAll(/(?:^|[^a-z0-9_.-])@([a-z0-9_.-]+)/g)]
+    .map(match => match[1]);
+}
+
 function nyxChatEventMentionsIdentity(text, identity = {}) {
-  const lower = String(text || "").toLowerCase();
-  if (/(^|\s)@everyone\b/.test(lower)) return true;
-  const handle = String(identity.handle || "").toLowerCase();
-  if (!handle) return false;
-  return lower.split(/\s+/).some(token => token
-    .replace(/^[^@]*/, "")
-    .replace(/[^@a-z0-9_.-]+$/g, "") === handle);
+  const mentions = nyxChatMentionHandles(text);
+  if (mentions.includes("everyone")) return true;
+  const handle = String(identity.handle || "").toLowerCase().replace(/^@/, "");
+  return Boolean(handle && mentions.includes(handle));
 }
 
 function nyxChatSocketUserRoom(uid) {
@@ -7182,7 +7184,7 @@ app.post("/api/chat/messages", async (req, res) => {
     }
     nyxChatConsumeSendAttempt(token.uid);
     const identity = await nyxChatIdentity(firebase, token);
-    if (/(^|\s)@everyone\b/i.test(text) && !identity.canModerate) {
+    if (nyxChatMentionHandles(text).includes("everyone") && !identity.canModerate) {
       res.status(403).json({ error: "Only moderators and staff can mention @everyone." });
       return;
     }

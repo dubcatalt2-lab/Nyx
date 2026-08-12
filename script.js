@@ -30,7 +30,8 @@
   let nyxChatAudioContext=null;
   let nyxChatAudioUnlocked=false;
   function unlockNyxChatNotificationSound(){if(nyxChatAudioUnlocked)return;try{const Context=window.AudioContext||window.webkitAudioContext;if(!Context)return;nyxChatAudioContext=nyxChatAudioContext||new Context();void nyxChatAudioContext.resume();nyxChatAudioUnlocked=true}catch{}}
-  function playNyxChatNotificationSound(){const context=nyxChatAudioContext;if(!nyxChatAudioUnlocked||!context)return;try{void context.resume();const now=context.currentTime;[0,0.105].forEach((offset,index)=>{const oscillator=context.createOscillator();const gain=context.createGain();oscillator.type='sine';oscillator.frequency.setValueAtTime(index?740:620,now+offset);gain.gain.setValueAtTime(0.0001,now+offset);gain.gain.exponentialRampToValueAtTime(0.22,now+offset+0.012);gain.gain.exponentialRampToValueAtTime(0.0001,now+offset+0.14);oscillator.connect(gain);gain.connect(context.destination);oscillator.start(now+offset);oscillator.stop(now+offset+0.15)})}catch{}}
+  function nyxChatNotificationTones(kind){return kind==='mention'?[[0,780,.4,.18],[.09,980,.45,.18],[.18,1180,.5,.2]]:kind==='dm'?[[0,660,.34,.17],[.11,880,.38,.18]]:[[0,620,.3,.16],[.11,760,.34,.17]]}
+  function playNyxChatNotificationSound(kind='chat'){const context=nyxChatAudioContext;if(!nyxChatAudioUnlocked||!context)return;try{void context.resume();const now=context.currentTime;nyxChatNotificationTones(kind).forEach(([offset,frequency,peak,duration])=>{const oscillator=context.createOscillator();const gain=context.createGain();oscillator.type='sine';oscillator.frequency.setValueAtTime(frequency,now+offset);gain.gain.setValueAtTime(.0001,now+offset);gain.gain.exponentialRampToValueAtTime(peak,now+offset+.012);gain.gain.exponentialRampToValueAtTime(.0001,now+offset+duration);oscillator.connect(gain);gain.connect(context.destination);oscillator.start(now+offset);oscillator.stop(now+offset+duration+.01)})}catch{}}
   document.addEventListener('pointerdown',unlockNyxChatNotificationSound,{once:true,capture:true});
   document.addEventListener('keydown',unlockNyxChatNotificationSound,{once:true,capture:true});
   const NYX_DISPLAY_NAME_FONTS=Object.freeze([['gg-sans','gg sans'],['headline','Headline'],['rounded','Rounded'],['wide','Wide'],['slab','Slab'],['condensed','Condensed'],['mono-block','Mono Block'],['tempo','Tempo'],['sakura','Sakura'],['jellybean','Jellybean'],['modern','Modern'],['medieval','Medieval'],['eight-bit','8Bit'],['vampyre','Vampyre']]);
@@ -9677,7 +9678,8 @@
         chatNotificationIds.add(notificationId);if(chatNotificationIds.size>200)chatNotificationIds.delete(chatNotificationIds.values().next().value);
         sourceTab.chatUnread=true;
         renderTabs();
-        playNyxChatNotificationSound();
+        const notificationKind=e.data.kind==='mention'?'mention':e.data.kind==='dm'?'dm':'chat';
+        playNyxChatNotificationSound(notificationKind);
         return;
       }
       if(e.data.type==='nyx:subscription-refresh'){

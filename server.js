@@ -127,6 +127,11 @@ const nyxChatMessageLimit = 1_000;
 const nyxChatSendWindowMs = 10_000;
 const nyxChatSendMaxPerWindow = 6;
 const nyxChatSendAttempts = new Map();
+const nyxChatMuteCollection = "nyxChatMutes";
+const nyxChatMuteMinimumMs = 60_000;
+const nyxChatMuteMaximumMs = 28 * 24 * 60 * 60_000;
+const nyxChatMuteCacheTtlMs = 15_000;
+const nyxChatMuteCache = new Map();
 const nyxFlaggedSearchCollection = "nyxFlaggedSearches";
 const nyxFlaggedSearchRetentionMs = 30 * 24 * 60 * 60_000;
 const nyxFlaggedSearchAttempts = new Map();
@@ -2745,7 +2750,8 @@ function nyxOwnerUserCapabilities(actor, targetRole, targetUid, ownerUid = found
   const actorPolicy = nyxRolePolicy(actor.role);
   const targetPolicy = nyxRolePolicy(targetRole);
   const ownerManagingSelf = actor.role === "owner" && targetRole === "owner" && actor.uid === targetUid;
-  const targetProtected = targetUid === ownerUid || targetRole === "owner" || targetPolicy.rank >= actorPolicy.rank;
+  const founderOwnerOverride = actor.role === "owner" && actor.uid === ownerUid && targetUid !== ownerUid;
+  const targetProtected = !founderOwnerOverride && (targetUid === ownerUid || targetRole === "owner" || targetPolicy.rank >= actorPolicy.rank);
   const canManageTarget = !targetProtected;
   return {
     canViewAudit: nyxActorHasPermission(actor, "audit:view"),
@@ -3149,6 +3155,51 @@ function nyxChatCanModerate(role) {
 
 function nyxChatCanManageChannels(role) {
   return ["owner", "co_owner", "admin", "manager"].includes(String(role || ""));
+}
+
+function nyxChatMuteDuration(value) {
+  const match = String(value || "").trim().toLowerCase().match(/^(\d{1,4})\s*(m|min|mins|minute|minutes|h|hr|hrs|hour|hours|d|day|days|w|week|weeks)$/);
+  if (!match) return 0;
+  const amount = Number(match[1]);
+  const unit = match[2][0];
+  const multiplier = unit === "m" ? 60_000 : unit === "h" ? 60 * 60_000 : unit === "d" ? 24 * 60 * 60_000 : 7 * 24 * 60 * 60_000;
+  const durationMs = amount * multiplier;
+  return durationMs >= nyxChatMuteMinimumMs && durationMs <= nyxChatMuteMaximumMs ? durationMs : 0;
+}
+
+function nyxChatMutePayload(value, now = Date.now()) {
+  const source = value && typeof value === "object" ? value : {};
+  const expiresAtMs = Math.max(0, Number(source.expiresAtMs || 0));
+  if (expiresAtMs <= now) return null;
+  return {
+    targetUid: String(source.targetUid || ""),
+    reason: founderProfileText(source.reason, "No reason provided.", 180),
+    moderatorUid: String(source.moderatorUid || ""),
+    moderatorDisplayName: founderProfileText(source.moderatorDisplayName, "Nyx moderator", 48),
+    createdAtMs: Math.max(0, Number(source.createdAtMs || 0)),
+    expiresAtMs
+  };
+}
+
+async function nyxChatActiveMute(firebase, uid, now = Date.now()) {
+  const key = String(uid || "").trim();
+  if (!key) return null;
+  const cached = nyxChatMuteCache.get(key);
+  if (cached && cached.cacheExpiresAtMs > now) return cached.value;
+  const ref = firebase.firestore.collection(nyxChatMuteCollection).doc(key);
+  const snapshot = await ref.get();
+  const mute = snapshot.exists ? nyxChatMutePayload(snapshot.data(), now) : null;
+  nyxChatMuteCache.set(key, { value: mute, cacheExpiresAtMs: Math.min(mute?.expiresAtMs || Infinity, now + nyxChatMuteCacheTtlMs) });
+  if (snapshot.exists && !mute) void ref.delete().catch(() => {});
+  return mute;
+}
+
+async function assertNyxChatCanSend(firebase, uid) {
+  const mute = await nyxChatActiveMute(firebase, uid);
+  if (!mute) return;
+  const error = new Error(`You are muted from Nyx Chat until ${new Date(mute.expiresAtMs).toLocaleString("en-US")}. Reason: ${mute.reason}`);
+  error.status = 403;
+  throw error;
 }
 
 function nyxChatRole(value) {
@@ -5989,13 +6040,16 @@ app.get("/api/chat/moderation/flagged-searches", async (req, res) => {
       .orderBy("createdAtMs", "desc")
       .limit(100)
       .get();
+    const ownerUid = founderProfileConfig().administratorUid;
     const searches = snapshot.docs.flatMap(document => {
       const data = document.data() || {};
       if (Number(data.expiresAtMs || 0) <= now) return [];
       const storedRole = String(data.role || "").trim().toLowerCase();
+      const storedUid = String(data.uid || "");
+      if (identity.role !== "owner" && (storedUid === ownerUid || storedRole === "owner")) return [];
       return [{
         id: document.id,
-        uid: String(data.uid || ""),
+        uid: storedUid,
         displayName: founderProfileText(data.displayName, "Nyx member", 48),
         handle: founderProfileText(data.handle, "@member", 40),
         role: Object.prototype.hasOwnProperty.call(nyxRolePolicies, storedRole) ? storedRole : "member",
@@ -6009,6 +6063,108 @@ app.get("/api/chat/moderation/flagged-searches", async (req, res) => {
     res.json({ searches });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "Flagged searches are unavailable." });
+  }
+});
+
+app.post("/api/chat/moderation/mutes", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  try {
+    const { firebase, token } = await authenticatedNyxChatUser(req);
+    const action = String(req.body?.action || "mute").trim().toLowerCase();
+    const targetUid = String(req.body?.targetUid || "").trim();
+    if (!new Set(["mute", "unmute"]).has(action)) {
+      res.status(400).json({ error: "Choose mute or unmute." });
+      return;
+    }
+    if (!/^[A-Za-z0-9_-]{8,128}$/.test(targetUid) || targetUid === token.uid) {
+      res.status(400).json({ error: "Choose another Nyx member." });
+      return;
+    }
+    let targetUser;
+    try {
+      targetUser = await firebase.auth.getUser(targetUid);
+    } catch (error) {
+      if (error?.code === "auth/user-not-found") {
+        res.status(404).json({ error: "That Nyx member was not found." });
+        return;
+      }
+      throw error;
+    }
+    const [actorAdministrationSnapshot, targetAdministrationSnapshot, actorIdentity, targetIdentity] = await Promise.all([
+      firebase.firestore.collection("nyxUserAdministration").doc(token.uid).get(),
+      firebase.firestore.collection("nyxUserAdministration").doc(targetUid).get(),
+      nyxChatIdentity(firebase, token),
+      nyxChatIdentity(firebase, { uid: targetUid, email: targetUser.email || "", name: targetUser.displayName || "" })
+    ]);
+    const actorRole = nyxRoleForUser(token.uid, actorAdministrationSnapshot.data() || {});
+    const targetRole = nyxRoleForUser(targetUid, targetAdministrationSnapshot.data() || {});
+    if (!nyxChatCanModerate(actorRole)) {
+      res.status(403).json({ error: "Moderator access is required." });
+      return;
+    }
+    const founderOwnerOverride = actorRole === "owner" && token.uid === founderProfileConfig().administratorUid;
+    if (!founderOwnerOverride && nyxRolePolicy(targetRole).rank >= nyxRolePolicy(actorRole).rank) {
+      res.status(403).json({ error: "You can only mute members ranked below your role." });
+      return;
+    }
+    const ref = firebase.firestore.collection(nyxChatMuteCollection).doc(targetUid);
+    const now = Date.now();
+    if (action === "unmute") {
+      await ref.delete();
+      nyxChatMuteCache.set(targetUid, { value: null, cacheExpiresAtMs: now + nyxChatMuteCacheTtlMs });
+      await recordNyxAuditSafe(firebase, {
+        actorUid: token.uid,
+        actorEmail: token.email || "",
+        action: "chat_user_unmuted",
+        targetUid,
+        details: { targetRole }
+      });
+      res.json({ ok: true, targetUid, muted: false });
+      return;
+    }
+    const duration = String(req.body?.duration || "").trim();
+    const durationMs = nyxChatMuteDuration(duration);
+    const reason = founderProfileText(req.body?.reason, "", 180);
+    if (!durationMs) {
+      res.status(400).json({ error: "Enter a mute time from 1 minute through 4 weeks, such as 10m, 2h, 1d, or 1w." });
+      return;
+    }
+    if (!reason) {
+      res.status(400).json({ error: "A reason is required to mute a member." });
+      return;
+    }
+    const expiresAtMs = now + durationMs;
+    const value = {
+      targetUid,
+      targetDisplayName: targetIdentity.displayName,
+      targetHandle: targetIdentity.handle,
+      targetRole,
+      reason,
+      moderatorUid: token.uid,
+      moderatorDisplayName: actorIdentity.displayName,
+      moderatorRole: actorRole,
+      createdAt: new Date(now).toISOString(),
+      createdAtMs: now,
+      expiresAt: new Date(expiresAtMs).toISOString(),
+      expiresAtMs
+    };
+    await ref.set(value);
+    const mute = nyxChatMutePayload(value, now);
+    nyxChatMuteCache.set(targetUid, { value: mute, cacheExpiresAtMs: Math.min(expiresAtMs, now + nyxChatMuteCacheTtlMs) });
+    await recordNyxAuditSafe(firebase, {
+      actorUid: token.uid,
+      actorEmail: token.email || "",
+      action: "chat_user_muted",
+      targetUid,
+      details: { duration, durationMs, expiresAtMs, reason, targetRole }
+    });
+    res.status(201).json({ ok: true, targetUid, muted: true, mute });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "The chat mute could not be updated." });
   }
 });
 
@@ -6972,6 +7128,7 @@ app.post("/api/chat/messages", async (req, res) => {
   }
   try {
     const { firebase, token } = await authenticatedNyxChatUser(req);
+    await assertNyxChatCanSend(firebase, token.uid);
     const scope = await nyxChatScope(firebase, token.uid, { channel: req.body?.channel, conversationId: req.body?.conversationId });
     const text = nyxChatText(req.body?.text);
     const requestId = String(req.body?.requestId || "").trim();

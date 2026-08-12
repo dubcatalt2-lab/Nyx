@@ -22,8 +22,8 @@ Important release warning: production currently contains commits that are not on
 
 - Repository: `https://github.com/dubcatalt2-lab/Nyx.git`
 - Active branch: `agent/pirate-cove`
-- Latest application release: commit `b93e4a6` on `agent/pirate-cove`, deployed to OVH on 2026-08-11. It adds the scoped TikTok Ultraviolet compatibility path, louder notifications for every incoming Chat message, persistent timed Chat mutes with required reasons, Founder Owner moderation hierarchy overrides, and Owner-private flagged-search review. It preserves Firebase-authenticated Socket.IO delivery, voice signaling and coturn, Caffeine gifting, private DMs, attachments, reactions, mentions, role-restricted channels, Caddy On-Demand TLS, Link Checker, account-session reliability, and Chromebook workspace sizing.
-- Unreleased working tree: Owner Dashboard now shows an authorized per-account moderation shield that opens a server-filtered view of that user's retained policy-flagged searches. The protected untracked local work directories remain present and untouched.
+- Latest application release: commit `a08d30a` on `agent/pirate-cove`, deployed to OVH on 2026-08-11. Owner Dashboard now shows an authorized per-account moderation shield that opens a server-filtered view of that user's retained policy-flagged searches. It preserves the scoped TikTok Ultraviolet compatibility path, louder Chat notifications, persistent timed Chat mutes, Founder Owner moderation hierarchy overrides, Firebase-authenticated Socket.IO delivery, voice signaling and coturn, Caffeine gifting, private DMs, attachments, reactions, mentions, role-restricted channels, Caddy On-Demand TLS, Link Checker, account-session reliability, and Chromebook workspace sizing.
+- Unreleased working tree: none; only the protected untracked local work directories are present.
 - `main` / `origin/main`: `0a654cc1c3e17faff12424ae1f2a1a4eb63f6a90`
 - Draft PR: `https://github.com/dubcatalt2-lab/Nyx/pull/34`
 - PR title: **Ship Pirate Cove, account controls, Link Checker, custom domains, and Nyx Chat**

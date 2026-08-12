@@ -3163,6 +3163,21 @@ async function cleanupNyxSearchHistory(firebase, now = Date.now()) {
   }
 }
 
+async function nyxSearchHistoryClearCapability(firebase, identity, targetUid) {
+  const ownerUid = founderProfileConfig().administratorUid;
+  const administration = targetUid === ownerUid
+    ? { role: "owner" }
+    : (await firebase.firestore.collection("nyxUserAdministration").doc(targetUid).get()).data() || {};
+  const targetRole = nyxRoleForUser(targetUid, administration, ownerUid);
+  const actorRank = nyxRolePolicy(identity.role).rank;
+  const targetRank = nyxRolePolicy(targetRole).rank;
+  const founderOwner = identity.uid === ownerUid && identity.role === "owner";
+  return {
+    allowed: identity.uid === targetUid || founderOwner || (targetUid !== ownerUid && actorRank > targetRank),
+    targetRole
+  };
+}
+
 function nyxChatCanModerate(role) {
   return nyxRolePolicy(role).rank >= nyxRolePolicy("moderator").rank;
 }
@@ -6080,10 +6095,60 @@ app.get(["/api/chat/moderation/search-history", "/api/chat/moderation/flagged-se
       }];
     }).filter(item => item.uid && item.query)
       .sort((left, right) => right.createdAtMs - left.createdAtMs);
+    const clearCapability = requestedUid
+      ? await nyxSearchHistoryClearCapability(firebase, identity, requestedUid)
+      : null;
     void cleanupNyxSearchHistory(firebase, now);
-    res.json({ searches });
+    res.json({ searches, canClear: Boolean(clearCapability?.allowed), targetUid: requestedUid });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "Search history is unavailable." });
+  }
+});
+
+app.delete(["/api/chat/moderation/search-history", "/api/chat/moderation/flagged-searches"], async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  try {
+    const { firebase, token } = await authenticatedNyxChatUser(req, false);
+    const identity = await nyxChatIdentity(firebase, token);
+    if (!nyxChatCanModerate(identity.role)) {
+      res.status(403).json({ error: "Moderator access is required." });
+      return;
+    }
+    const targetUid = String(req.query?.uid || "").trim();
+    if (!/^[A-Za-z0-9_-]{8,128}$/.test(targetUid)) {
+      res.status(400).json({ error: "Choose a valid Nyx account." });
+      return;
+    }
+    const capability = await nyxSearchHistoryClearCapability(firebase, identity, targetUid);
+    if (!capability.allowed) {
+      res.status(403).json({ error: "You cannot clear search history for this account." });
+      return;
+    }
+    const collection = firebase.firestore.collection(nyxSearchHistoryCollection);
+    let deletedCount = 0;
+    while (true) {
+      const snapshot = await collection.where("uid", "==", targetUid).limit(400).get();
+      if (snapshot.empty) break;
+      const batch = firebase.firestore.batch();
+      snapshot.docs.forEach(document => batch.delete(document.ref));
+      await batch.commit();
+      deletedCount += snapshot.size;
+      if (snapshot.size < 400) break;
+    }
+    await recordNyxAuditSafe(firebase, {
+      actorUid: token.uid,
+      actorEmail: token.email || "",
+      action: "search_history_cleared",
+      targetUid,
+      details: { deletedCount, targetRole: capability.targetRole }
+    });
+    res.json({ cleared: true, deletedCount });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Search history could not be cleared." });
   }
 });
 

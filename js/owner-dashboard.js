@@ -675,7 +675,7 @@
       state.selectedUser = user;
       const avatar = ownerProfileImageMarkup(user.photoUrl, "", (user.displayName || "?").slice(0, 1).toUpperCase());
       drawer.innerHTML = `<header><div class="nyx-owner-detail-avatar">${avatar}<i class="${user.online ? "online" : ""}"></i></div><div><span>${dashboardIcon("shield")}Search review</span><h2>${esc(user.displayName)}</h2><p class="nyx-owner-drawer-identity">@${esc(user.username)}</p></div><button type="button" data-owner-drawer-close aria-label="Close search history">${dashboardIcon("close")}</button></header>
-        <div class="nyx-owner-drawer-scroll"><section class="nyx-owner-detail-section nyx-owner-flagged-searches"><h3>Search history</h3><p class="nyx-owner-action-note">Searches made through Nyx while this account is signed in are retained for 30 days. Policy-classified searches are highlighted, but a match is a moderation signal rather than proof.</p><div class="nyx-owner-flagged-search-list"><div class="nyx-owner-drawer-loading"><i></i><i></i><i></i></div></div></section></div>`;
+        <div class="nyx-owner-drawer-scroll"><section class="nyx-owner-detail-section nyx-owner-flagged-searches"><div class="nyx-owner-search-history-heading"><h3>Search history</h3><button type="button" data-owner-clear-search-history="${esc(user.uid)}" hidden>${dashboardIcon("trash")}Clear history</button></div><p class="nyx-owner-action-note">Searches made through Nyx while this account is signed in are retained for 30 days. Policy-classified searches are highlighted, but a match is a moderation signal rather than proof.</p><div class="nyx-owner-flagged-search-list"><div class="nyx-owner-drawer-loading"><i></i><i></i><i></i></div></div></section></div>`;
       requestAnimationFrame(() => drawer.classList.add("show"));
       void hydrateOwnerProfileMedia(drawer);
       const list = drawer.querySelector(".nyx-owner-flagged-search-list");
@@ -683,12 +683,35 @@
         const result = await api(`/api/chat/moderation/search-history?uid=${encodeURIComponent(user.uid)}`);
         if (!list?.isConnected || state.selectedUser?.uid !== user.uid) return;
         const searches = Array.isArray(result.searches) ? result.searches : [];
+        const clearButton = drawer.querySelector("[data-owner-clear-search-history]");
+        if (clearButton) clearButton.hidden = !(result.canClear && searches.length);
         list.innerHTML = searches.length
           ? searches.map(search => `<article class="${search.flagged ? "policy" : ""}"><header><strong>${esc(search.category || "Standard search")}</strong><time datetime="${esc(search.createdAt)}" title="${esc(dateLabel(search.createdAt))}">${esc(relativeLabel(search.createdAt))}</time></header><p>${esc(search.query)}</p></article>`).join("")
           : '<div class="nyx-owner-empty compact"><strong>No retained searches</strong><span>This account has no Nyx searches from the last 30 days.</span></div>';
       } catch (error) {
         if (!list?.isConnected) return;
         list.innerHTML = `<div class="nyx-owner-error"><strong>Search history could not load</strong><span>${esc(error.message)}</span></div>`;
+      }
+    }
+
+    async function clearSearchHistory(user) {
+      if (!user || user.guest) return;
+      const confirmed = await confirmAction({
+        title: "Clear this search history?",
+        message: `All retained Nyx searches for ${user.displayName} will be permanently deleted. This cannot be undone.`,
+        confirmLabel: "Clear history",
+        danger: true
+      });
+      if (!confirmed) return;
+      const button = drawer.querySelector("[data-owner-clear-search-history]");
+      if (button) button.disabled = true;
+      try {
+        const result = await api(`/api/chat/moderation/search-history?uid=${encodeURIComponent(user.uid)}`, { method: "DELETE" });
+        notify(`${Number(result.deletedCount || 0).toLocaleString()} search${Number(result.deletedCount || 0) === 1 ? "" : "es"} cleared.`);
+        await openSearchHistory(user);
+      } catch (error) {
+        notify(error.message || "Search history could not be cleared.", "error");
+        if (button?.isConnected) button.disabled = false;
       }
     }
 
@@ -830,6 +853,8 @@
         const user = (state.data?.users || []).find(item => item.uid === searchHistoryUid);
         if (user) return void openSearchHistory(user);
       }
+      const clearSearchHistoryUid = event.target.closest("[data-owner-clear-search-history]")?.dataset.ownerClearSearchHistory;
+      if (clearSearchHistoryUid && state.selectedUser?.uid === clearSearchHistoryUid) return void clearSearchHistory(state.selectedUser);
       const uid = event.target.closest("[data-owner-view-user]")?.dataset.ownerViewUser;
       if (uid) return void openUser(uid);
       if (event.target.closest("[data-owner-drawer-close]")) return closeDrawer();

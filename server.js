@@ -8410,11 +8410,25 @@ app.use("/~/sj/", (_req, res) => {
   main{max-width:560px;padding:28px;text-align:center}
   h1{font-size:20px;margin:0 0 10px}
   p{margin:0;color:#c8ced8}
+  button{margin-top:18px;border:1px solid #445066;border-radius:10px;background:#1b2230;color:#f5f7fb;padding:10px 15px;font:600 14px Raleway,Arial,sans-serif;cursor:pointer}
 </style>
 <main>
-  <h1>Scramjet route missed</h1>
-  <p>The Scramjet service worker did not claim this frame yet. Reload nyx and try again.</p>
-</main>`);
+  <h1>Reconnecting Scramjet</h1>
+  <p>Nyx is reconnecting this tab to the proxy service worker.</p>
+  <button type="button" onclick="location.reload()">Retry now</button>
+</main>
+<script>
+  (() => {
+    const key='nyx.scramjet-claim-retry:'+location.pathname;
+    const attempts=Number(sessionStorage.getItem(key)||0);
+    if(attempts<2){
+      sessionStorage.setItem(key,String(attempts+1));
+      setTimeout(()=>location.reload(),900);
+    }else{
+      sessionStorage.removeItem(key);
+    }
+  })();
+</script>`);
 });
 
 app.use((req, res, next) => {

@@ -14,11 +14,25 @@ function nyxScramjetRouteMissHtml() {
   main{max-width:560px;padding:28px;text-align:center}
   h1{font-size:20px;margin:0 0 10px}
   p{margin:0;color:#c8ced8}
+  button{margin-top:18px;border:1px solid #445066;border-radius:10px;background:#1b2230;color:#f5f7fb;padding:10px 15px;font:600 14px system-ui,sans-serif;cursor:pointer}
 </style>
 <main>
-  <h1>Scramjet route missed</h1>
-  <p>The Scramjet service worker did not reconnect to nyx in time. Reload nyx and try again.</p>
-</main>`;
+  <h1>Reconnecting Scramjet</h1>
+  <p>Nyx is reconnecting this tab to the proxy service worker.</p>
+  <button type="button" onclick="location.reload()">Retry now</button>
+</main>
+<script>
+  (() => {
+    const key='nyx.scramjet-route-retry:'+location.pathname;
+    const attempts=Number(sessionStorage.getItem(key)||0);
+    if(attempts<2){
+      sessionStorage.setItem(key,String(attempts+1));
+      setTimeout(()=>location.reload(),900);
+    }else{
+      sessionStorage.removeItem(key);
+    }
+  })();
+<\/script>`;
 }
 
 function nyxIsScramjetRequest(event) {
@@ -185,12 +199,18 @@ async function nyxNotifyScramjetControllers() {
 }
 
 async function nyxRouteAfterRevive(event) {
-  await nyxNotifyScramjetControllers();
-  for (let attempt = 0; attempt < 20; attempt += 1) {
+  const deadline = Date.now() + 7000;
+  let nextNotifyAt = 0;
+  while (Date.now() < deadline) {
+    const now = Date.now();
+    if (now >= nextNotifyAt) {
+      await nyxNotifyScramjetControllers();
+      nextNotifyAt = now + 500;
+    }
     if ($scramjetController.shouldRoute(event)) {
       return nyxRouteScramjet(event);
     }
-    await nyxDelay(50);
+    await nyxDelay(100);
   }
   return new Response(nyxScramjetRouteMissHtml(), {
     status: 502,

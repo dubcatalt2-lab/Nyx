@@ -2527,6 +2527,7 @@
   })();`;
   const proxyStateVersion='nyx-proxy-state-20260805-uv-unity-callback-v12';
   const scramjetStateVersion='nyx-scramjet-state-20260716-alpha2-spotify-epoxy-v1';
+  const scramjetServiceWorkerUrl='/scramjet.sw.js?v=nyx-sj-20260812-route-revive-v2';
   function installNyxConsoleDedupe(scope='top'){
     if(console.__nyxDedupeInstalled) return;
     const seen=new Map();
@@ -5851,12 +5852,28 @@
         const fresh=await navigator.serviceWorker.getRegistration(scope).catch(()=>null);
         return Boolean(fresh?.active || current?.active);
       }
+      async function waitForServiceWorkerScript(registration, scriptUrl, scope='/~/sj/'){
+        if(!registration || !('serviceWorker' in navigator)) return null;
+        const expected=new URL(scriptUrl,location.href).href;
+        const deadline=Date.now()+12000;
+        let current=registration;
+        while(Date.now()<deadline){
+          const fresh=await navigator.serviceWorker.getRegistration(scope).catch(()=>null);
+          if(fresh) current=fresh;
+          const active=current?.active;
+          if(active?.state==='activated' && active.scriptURL===expected) return active;
+          await new Promise(resolve=>setTimeout(resolve,120));
+        }
+        const fresh=await navigator.serviceWorker.getRegistration(scope).catch(()=>null);
+        const active=fresh?.active || current?.active || null;
+        return active?.state==='activated' && active.scriptURL===expected ? active : null;
+      }
       async function refreshScramjetServiceWorker(){
         if(!('serviceWorker' in navigator)) return false;
         const registration=await navigator.serviceWorker.getRegistration('/~/sj/');
         if(!registration) return false;
         await registration.update().catch(()=>null);
-        return waitForServiceWorkerActive(registration);
+        return Boolean(await waitForServiceWorkerScript(registration,scramjetServiceWorkerUrl));
       }
   function wispUrl(){
     const configured=String(globalThis.__NYX_RUNTIME_CONFIG__?.wispUrl || '').trim();
@@ -6060,6 +6077,17 @@
       config:scramjetConfig(),
       scramjetConfig:scramjetRuntimeConfig()
     });
+  }
+  async function reconnectScramjetController(controller,serviceworker,transport){
+    if(!controller || !serviceworker) return false;
+    controller.setTransport?.(transport);
+    if(controller.serviceWorkerController===serviceworker) return true;
+    if(typeof controller.setupMessagePort!=='function') return false;
+    controller.serviceWorkerController=serviceworker;
+    controller.guardServiceWorkerRevive=false;
+    controller.setupMessagePort();
+    await new Promise(resolve=>setTimeout(resolve,120));
+    return true;
   }
   async function loadScramjetRuntimeGuardSource(){
     if(scramjetRuntimeGuardSource) return scramjetRuntimeGuardSource;
@@ -6766,29 +6794,27 @@
       step='starting Scramjet transport';
       const transport=await createScramjetTransport();
       step='registering Scramjet service worker';
-      const registration=await navigator.serviceWorker.register('/scramjet.sw.js?v=nyx-sj-20260716-alpha2-v1',{scope:'/~/sj/',updateViaCache:'none'});
+      const registration=await navigator.serviceWorker.register(scramjetServiceWorkerUrl,{scope:'/~/sj/',updateViaCache:'none'});
       await registration.update().catch(()=>null);
       step='activating Scramjet service worker';
-      const active=await waitForServiceWorkerActive(registration);
-      if(!active) throw new Error('Scramjet service worker did not activate');
+      const serviceworker=await waitForServiceWorkerScript(registration,scramjetServiceWorkerUrl);
+      if(!serviceworker) throw new Error('Scramjet service worker did not activate');
       step='initializing Scramjet controller';
       try{
-        const serviceworker=registration.active || navigator.serviceWorker.controller;
-        if(!serviceworker) throw new Error('Scramjet service worker is not controlling this page yet');
         if(!scramjetController) scramjetController=createScramjetController(serviceworker,transport);
-        else scramjetController.setTransport?.(transport);
+        else if(!await reconnectScramjetController(scramjetController,serviceworker,transport)){
+          scramjetController=createScramjetController(serviceworker,transport);
+        }
         await scramjetController.wait();
       }catch(initError){
         if(!isScramjetIdbShapeError(initError)) throw initError;
         step='repairing Scramjet IndexedDB';
         await repairScramjetStorage();
-        const repairedRegistration=await navigator.serviceWorker.register('/scramjet.sw.js?v=nyx-sj-20260716-alpha2-v1',{scope:'/~/sj/',updateViaCache:'none'});
-        const repairedActive=await waitForServiceWorkerActive(repairedRegistration);
-        if(!repairedActive) throw new Error('Scramjet service worker did not activate after storage repair');
+        const repairedRegistration=await navigator.serviceWorker.register(scramjetServiceWorkerUrl,{scope:'/~/sj/',updateViaCache:'none'});
+        const repairedServiceworker=await waitForServiceWorkerScript(repairedRegistration,scramjetServiceWorkerUrl);
+        if(!repairedServiceworker) throw new Error('Scramjet service worker did not activate after storage repair');
         step='initializing Scramjet controller after storage repair';
-        const serviceworker=repairedRegistration.active || navigator.serviceWorker.controller;
-        if(!serviceworker) throw new Error('Scramjet service worker is not controlling this page yet');
-        scramjetController=createScramjetController(serviceworker,transport);
+        scramjetController=createScramjetController(repairedServiceworker,transport);
         await scramjetController.wait();
       }
       console.log('nyx Scramjet Engine: Ready',registration.scope);

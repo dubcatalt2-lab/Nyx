@@ -4131,3 +4131,11 @@ html[data-nyx-theme] body .nyx-profile-directory-card-host .nyx-user-profile-abo
   .nyx-avatar-decoration-candlelight>.nyx-avatar-decoration::after,
   .nyx-avatar-decoration-candlelight>.nyx-avatar-decoration>span{animation:none!important;clip-path:none!important;opacity:1!important;transform:none!important}
 }
+
+/* Compact homepage account menus are functional navigation surfaces, not
+   profile canvases. Keep experimental cosmetics out of this narrow layout. */
+.nyx-account-menu:not(.nyx-editor-menu-preview)>.nyx-account-menu-profile-effect,
+.nyx-account-menu:not(.nyx-editor-menu-preview) .nyx-account-menu-avatar>.nyx-avatar-decoration{
+  display:none!important;
+  animation:none!important;
+}

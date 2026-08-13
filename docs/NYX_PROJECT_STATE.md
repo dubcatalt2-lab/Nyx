@@ -22,8 +22,8 @@ Important release warning: production currently contains commits that are not on
 
 - Repository: `https://github.com/dubcatalt2-lab/Nyx.git`
 - Active branch: `agent/pirate-cove`
-- Latest application release: commit `825b393` on `agent/pirate-cove`, deployed to OVH and production-verified on 2026-08-12. It simplifies profile cosmetics to one animated blooming-rose border and one candlelight avatar decoration, keeps the rose layer persistently visible above profile surfaces without blocking controls, migrates saved IDs from the retired collections, and respects reduced-motion preferences.
-- Unreleased working tree: profile effects and avatar decorations are hidden from the compact homepage account menu because that variable-height navigation surface cannot safely frame them; full profile surfaces and the editor preview retain cosmetics. No deployment has been made. The protected untracked local work directories remain present and untouched.
+- Latest application release: commit `6a5c1f2` on `agent/pirate-cove`, deployed to OVH and production-verified on 2026-08-13. It suppresses profile effects and avatar decorations in the compact homepage account menu while retaining cosmetics on full profile surfaces and in the editor preview.
+- Unreleased working tree: no tracked application changes. The protected untracked local work directories remain present and untouched.
 - `main` / `origin/main`: `0a654cc1c3e17faff12424ae1f2a1a4eb63f6a90`
 - Draft PR: `https://github.com/dubcatalt2-lab/Nyx/pull/34`
 - PR title: **Ship Pirate Cove, account controls, Link Checker, custom domains, and Nyx Chat**

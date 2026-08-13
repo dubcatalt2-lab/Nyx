@@ -22,7 +22,7 @@ Important release warning: production currently contains commits that are not on
 
 - Repository: `https://github.com/dubcatalt2-lab/Nyx.git`
 - Active branch: `agent/pirate-cove`
-- Latest application release: commit `1b5d5a7` on `agent/pirate-cove`, validated locally on 2026-08-12 and pending OVH deployment. It replaces the older generic profile particles and decorations with six palette-aware animated signature scenes and six animated avatar pieces, migrates saved legacy cosmetic IDs, protects profile readability, and respects reduced-motion preferences.
+- Latest application release: commit `1b5d5a7` on `agent/pirate-cove`, deployed to OVH and production-verified on 2026-08-12. It replaces the older generic profile particles and decorations with six palette-aware animated signature scenes and six animated avatar pieces, migrates saved legacy cosmetic IDs, protects profile readability, and respects reduced-motion preferences.
 - Unreleased working tree: no tracked application changes. The protected untracked local work directories remain present and untouched.
 - `main` / `origin/main`: `0a654cc1c3e17faff12424ae1f2a1a4eb63f6a90`
 - Draft PR: `https://github.com/dubcatalt2-lab/Nyx/pull/34`

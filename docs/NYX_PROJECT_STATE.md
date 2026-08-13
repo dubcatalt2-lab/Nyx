@@ -108,6 +108,8 @@ Client preferences and much local UI state use browser storage. Cross-device acc
 - User-selected proxy engine and transport
 - Themes and custom recoloring
 - Homepage shortcuts, effects, profile/account controls, and search/course entry
+- Searches submitted while the preserved Chat app tab is active open in a separate browser tab and select that result tab immediately, leaving Chat connected in the background.
+- Browser-shell history records Scramjet URL changes as source URLs. Back/Forward restore those source entries, while a tab's initial blank entry returns to the Nyx new-tab surface instead of being sent through a proxy engine.
 - Profile customization, animated avatars and banners, decorations, effects, badges, roles, status, and profile directory
 - Settings and onboarding
 - AI workspace, model selection, conversations, temporary chats, image attachments, and API integration
@@ -197,7 +199,7 @@ The VPS serves generated `dist/` through Express on local port 8080 and exposes 
 
 ## Custom Roles and Profile Presentation
 
-- The configured Founder Owner is the only account allowed to create, edit, delete, or assign custom roles. Definitions live in the server-only `nyxCustomRoles` Firestore collection and contain a stable ID, display label, color, built-in hierarchy placement, and a validated list of existing Nyx permissions. Custom roles cannot create another Owner or invent arbitrary permission names.
+- The configured Founder Owner is the only account allowed to create, edit, delete, or assign custom roles. Definitions live in the server-only `nyxCustomRoles` Firestore collection and contain a stable ID, display label, color, built-in hierarchy placement, and a validated list of existing Nyx permissions. Owner Dashboard presents these definitions as a compact list and expands only the role currently being edited. The dashboard accepts either `#RRGGBB` or Minecraft `&0`–`&f` codes for the role color and normalizes them to a safe hex value. Custom roles cannot create another Owner or invent arbitrary permission names.
 - Assigning a custom role retains its built-in placement in `nyxUserAdministration.role`, records the custom role ID, and remembers the prior built-in role so removal can restore it. Direct built-in role changes clear any custom assignment. Owner Dashboard and Chat show the custom label/color while security comparisons continue using the placement rank.
 - Chat exposes `/roles`, Founder Owner-only `/roleadd` and `/roleremove`, plus `/userinfo`, `/avatar`, `/channelinfo`, `/poll`, and `/timestamp`. Command visibility is only a UI aid; every privileged mutation is re-authorized by the server.
 - Chat expands a bounded built-in set of recognized emoji shortcodes such as `:smiley:`, `:heart:`, and `:coffee:` before sending. Unknown shortcodes remain unchanged.

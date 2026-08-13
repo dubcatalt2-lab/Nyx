@@ -3546,7 +3546,7 @@
         activeBrowser.renderTabs?.();
         updateBrowserShellLocation('',created.id,true);
         renderBrowserShellTabs();
-        setTimeout(()=>document.querySelector('[data-browser-shell-url]')?.focus(),30);
+        if(options.focusAddress!==false) setTimeout(()=>document.querySelector('[data-browser-shell-url]')?.focus(),30);
       }
       return id;
     }
@@ -3580,7 +3580,7 @@
       activeBrowser?.renderTabs?.();
       updateBrowserShellLocation('',created?.id || '',true);
       renderBrowserShellTabs();
-      setTimeout(()=>document.querySelector('[data-browser-shell-url]')?.focus(),30);
+      if(options.focusAddress!==false) setTimeout(()=>document.querySelector('[data-browser-shell-url]')?.focus(),30);
     }
     updateDockFullscreenState();
     return id;
@@ -3654,6 +3654,16 @@
     shellTab.browserTabId=tab.id;
     activeBrowser.activate?.(tab.id);
     return tab;
+  }
+  function browserShellTabPreservesSearch(shellTab){
+    const source=browserShellSourceUrl(shellTab?.url || '');
+    if(!source) return false;
+    try{
+      const parsed=new URL(source,location.href);
+      return parsed.origin===location.origin && ['/apps/chat/','/apps/chat/index.html'].includes(parsed.pathname);
+    }catch{
+      return false;
+    }
   }
   function setBrowserShellActive(id){
     if(!browserShellTabs.some(tab=>tab.id===id)) return;
@@ -4052,14 +4062,25 @@
     const normalized=normalize(raw);
     const target=isSearchQuery ? selectedSearchUrl(raw) : (normalized || raw);
     const navigationValue=isSearchQuery ? raw : target;
-    const shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab) || browserShellTabs[0];
+    let shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab) || browserShellTabs[0];
+    if(browserShellTabPreservesSearch(shellTab)){
+      const resultShellId=openBrowserShellTab('',{focusAddress:false});
+      const resultShellTab=browserShellTabs.find(tab=>tab.id===resultShellId);
+      if(resultShellTab){
+        shellTab=resultShellTab;
+        setBrowserShellActive(resultShellId);
+      }
+    }
     if(activeBrowser?.win?.isConnected){
       ensureBrowserShellLinkedTab(shellTab);
+      if(shellTab?.browserTabId) activeBrowser.activate?.(shellTab.browserTabId);
       if(activeBrowser.navigate) activeBrowser.navigate(navigationValue);
       else openBrowser(navigationValue);
       const activeTab=activeBrowser?.tabs?.find(tab=>tab.id===shellTab?.browserTabId || tab.id===activeBrowser.active);
       if(activeTab){
         if(shellTab) shellTab.browserTabId=activeTab.id;
+        if(shellTab) browserShellActiveTab=shellTab.id;
+        activeBrowser.activate?.(activeTab.id);
         activeTab.url=target;
         activeTab.title=browserShellLabel(target);
         activeTab.icon=iconForUrl(target);
@@ -9303,12 +9324,20 @@
     function loadScramjetTab(t,url,addHistory=true){
       t.expectedEngine='scramjet';
       t.sourceUrl=url;
+      if(addHistory){
+        const currentHistory=browserShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
+        if(currentHistory!==url){
+          t.history=t.history.slice(0,t.index+1);
+          t.history.push(url);
+          t.index=t.history.length-1;
+        }
+      }
       const navigationIntent=t.navigationIntent || '';
       installScramjet().then(ok=>{
         if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
         if(!ok || !scramjetController){
           t.url=url;
-          setTabMeta(t,url,addHistory);
+          setTabMeta(t,url,false);
           t.actualEngine='scramjet-failed';
           t.frame.dataset.nyxExpectedEngine='scramjet';
           t.frame.dataset.nyxActualEngine='scramjet-failed';
@@ -9345,9 +9374,21 @@
           t.scramjetRuntimeGuarded=guardMode;
           t.scramjetFrame=scramjetController.createFrame(t.frame,{plugins});
           t.scramjetFrame.addEventListener?.('urlchange',event=>{
-            const next=String(event.url || '');
+            const next=browserShellSourceUrl(String(event.url || '')) || String(event.url || '');
             if(!next) return;
+            const currentHistory=browserShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
+            const previousSource=browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
+            const initialScramjetRedirect=t.scramjetHistoryPending===true;
+            if(initialScramjetRedirect){
+              t.scramjetHistoryPending=false;
+              if(t.index>=0) t.history[t.index]=next;
+            }else if(next!==currentHistory && next!==previousSource){
+              t.history=t.history.slice(0,t.index+1);
+              t.history.push(next);
+              t.index=t.history.length-1;
+            }
             t.url=next;
+            t.sourceUrl=next;
             t.title=titleForUrl(next);
             t.icon=iconForUrl(next);
             renderTabs();
@@ -9357,7 +9398,8 @@
             setTimeout(()=>syncLoadedTabIcon(t),120);
           });
         }
-        setTabMeta(t,url,addHistory);
+        setTabMeta(t,url,false);
+        t.scramjetHistoryPending=true;
         t.scramjetHealthRetries=0;
         t.scramjetRetries=0;
         watchProxyLoad(t,url,'scramjet');
@@ -9589,10 +9631,31 @@
       if(!t) return;
       const nextIndex=t.index+direction;
       if(nextIndex>=0 && nextIndex<t.history.length){
+        t.navigationIntent='history-'+Date.now()+Math.random().toString(16).slice(2);
+        t.loadWatchToken='superseded-'+t.navigationIntent;
+        t.transportWatchToken='superseded-'+t.navigationIntent;
         t.index=nextIndex;
         const stored=t.history[nextIndex];
+        if(isBrowserShellBlankUrl(stored)){
+          t.url='';
+          t.sourceUrl='';
+          t.title='New Tab';
+          t.icon=favicons.nyx;
+          t.expectedEngine='';
+          t.actualEngine='blank';
+          t.scramjetFrame=null;
+          clearFrameDocument(t);
+          t.frame.removeAttribute('src');
+          t.frame.classList.remove('active','transparent-internal-page');
+          win.classList.remove('internal-clear');
+          renderBrowserShellHomeMode(win);
+          renderTabs();
+          updateBrowserShellLocation('',t.id,true);
+          activate(t.id);
+          return;
+        }
         const source=browserShellSourceUrl(stored) || stored;
-        const engine=t.expectedEngine || detectBrowserEngine(stored,t);
+        const engine=selectedBrowserMode(source);
         if(engine==='scramjet'){
           loadScramjetTab(t,source,false);
         }else if(engine==='ultraviolet'){

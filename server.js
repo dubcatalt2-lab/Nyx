@@ -2792,6 +2792,19 @@ const nyxCustomRolePermissionCatalog = Object.freeze([
   ["chat:moderate", "Moderate Nyx Chat"], ["chat:manage_channels", "Manage Chat channels"], ["link-scanner:bulk", "Run full Link Checker scans"]
 ]);
 const nyxCustomRolePermissionSet = new Set(nyxCustomRolePermissionCatalog.map(([permission]) => permission));
+const nyxCustomRoleColorCodes = Object.freeze({
+  "0": "#000000", "1": "#0000aa", "2": "#00aa00", "3": "#00aaaa",
+  "4": "#aa0000", "5": "#aa00aa", "6": "#ffaa00", "7": "#aaaaaa",
+  "8": "#555555", "9": "#5555ff", a: "#55ff55", b: "#55ffff",
+  c: "#ff5555", d: "#ff55ff", e: "#ffff55", f: "#ffffff"
+});
+
+function nyxCustomRoleColor(value, fallback = "") {
+  const raw = String(value || "").trim().toLowerCase();
+  if (/^#[0-9a-f]{6}$/.test(raw)) return raw;
+  const code = raw.match(/^&([0-9a-f])$/)?.[1];
+  return code ? nyxCustomRoleColorCodes[code] : fallback;
+}
 
 function nyxCustomRolePermissions(value, fallbackRole = "member") {
   const fallback = nyxRolePolicy(fallbackRole).permissions.filter(permission => nyxCustomRolePermissionSet.has(permission));
@@ -2815,9 +2828,7 @@ function nyxCustomRoleRecord(id, value = {}) {
   const source = value && typeof value === "object" ? value : {};
   const roleId = nyxCustomRoleId(id || source.id);
   const baseRole = normalizeNyxRole(source.baseRole);
-  const color = /^#[0-9a-f]{6}$/i.test(String(source.color || "").trim())
-    ? String(source.color).trim().toLowerCase()
-    : "#8ea1ff";
+  const color = nyxCustomRoleColor(source.color, "#8ea1ff");
   if (!nyxCustomRoleIdPattern.test(roleId) || Object.prototype.hasOwnProperty.call(nyxRolePolicies, roleId)) return null;
   return {
     id: roleId,
@@ -7915,12 +7926,12 @@ app.post("/api/owner-dashboard/custom-roles", async (req, res) => {
     const label = founderProfileText(req.body?.label, "", 32);
     const id = nyxCustomRoleId(req.body?.id || label);
     const baseRole = String(req.body?.baseRole || "member").trim().toLowerCase();
-    const color = String(req.body?.color || "").trim().toLowerCase();
+    const color = nyxCustomRoleColor(req.body?.color);
     const permissions = nyxCustomRolePermissions(req.body?.permissions, baseRole);
     if (label.length < 2) return res.status(400).json({ error: "Custom role names must contain at least 2 characters." });
     if (!nyxCustomRoleIdPattern.test(id) || Object.prototype.hasOwnProperty.call(nyxRolePolicies, id)) return res.status(400).json({ error: "Choose a unique role ID containing letters, numbers, or hyphens." });
     if (!nyxAssignableRoles.includes(baseRole)) return res.status(400).json({ error: "Choose a valid role placement." });
-    if (!/^#[0-9a-f]{6}$/.test(color)) return res.status(400).json({ error: "Choose a valid six-digit role color." });
+    if (!color) return res.status(400).json({ error: "Choose a six-digit hex color or a Minecraft color code from &0 through &f." });
     const roles = await nyxCustomRoles(firebase);
     if (roles.size >= 50) return res.status(409).json({ error: "Nyx supports up to 50 custom roles." });
     const reference = firebase.firestore.collection(nyxCustomRoleCollection).doc(id);
@@ -7948,11 +7959,11 @@ app.patch("/api/owner-dashboard/custom-roles/:id", async (req, res) => {
     if (!existing.exists) return res.status(404).json({ error: "That custom role no longer exists." });
     const current = nyxCustomRoleRecord(id, existing.data());
     const label = founderProfileText(req.body?.label ?? current.label, "", 32);
-    const color = String(req.body?.color ?? current.color).trim().toLowerCase();
+    const color = nyxCustomRoleColor(req.body?.color ?? current.color);
     const baseRole = String(req.body?.baseRole ?? current.baseRole).trim().toLowerCase();
     const permissions = nyxCustomRolePermissions(req.body?.permissions ?? current.permissions, baseRole);
     if (label.length < 2) return res.status(400).json({ error: "Custom role names must contain at least 2 characters." });
-    if (!/^#[0-9a-f]{6}$/.test(color)) return res.status(400).json({ error: "Choose a valid six-digit role color." });
+    if (!color) return res.status(400).json({ error: "Choose a six-digit hex color or a Minecraft color code from &0 through &f." });
     if (!nyxAssignableRoles.includes(baseRole)) return res.status(400).json({ error: "Choose a valid role placement." });
     const timestamp = new Date().toISOString();
     await reference.set({ label, color, baseRole, permissions, updatedAt: timestamp, updatedBy: token.uid }, { merge: true });

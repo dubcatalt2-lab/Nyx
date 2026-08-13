@@ -23,7 +23,7 @@ Important release warning: production currently contains commits that are not on
 - Repository: `https://github.com/dubcatalt2-lab/Nyx.git`
 - Active branch: `agent/pirate-cove`
 - Latest application release: commit `cb1a04d` on `agent/pirate-cove`, deployed to OVH and production-verified on 2026-08-13. It switches searches away from the preserved Chat surface into the active result tab, repairs browser-shell Back/Forward history, and replaces the oversized custom-role forms with a compact expandable list supporting hex and Minecraft role color codes.
-- Unreleased working tree: no tracked application changes. The protected untracked local work directories remain present and untouched.
+- Unreleased working tree: Tide custom-role privacy is awaiting commit/deployment. The configured Owner and assigned Tide account retain the real Tide presentation; every other viewer receives a Moderator presentation with no Tide role metadata across profiles, Chat/bootstrap/messages/DMs/realtime events, and dashboard user records. Actual Tide permissions and hierarchy remain unchanged server-side. The protected untracked local work directories remain present and untouched.
 - `main` / `origin/main`: `0a654cc1c3e17faff12424ae1f2a1a4eb63f6a90`
 - Draft PR: `https://github.com/dubcatalt2-lab/Nyx/pull/34`
 - PR title: **Ship Pirate Cove, account controls, Link Checker, custom domains, and Nyx Chat**

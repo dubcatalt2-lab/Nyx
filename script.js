@@ -532,7 +532,7 @@
       selectedUid=entry.uid;
       resultsHost.querySelectorAll('[data-directory-profile]').forEach(button=>button.classList.toggle('active',button.dataset.directoryProfile===selectedUid));
       const profile=normalizeNyxUserProfile(entry.profile);
-      view.innerHTML=`<div class="nyx-profile-directory-view-head"><span>${entry.self?'Your public profile':roleLabel(entry.role)}</span><strong>${esc(profile.displayName)}</strong></div><div class="nyx-profile-directory-card-host">${nyxUserProfileCardMarkup(profile,{role:entry.role,createdAt:entry.createdAt})}</div>`;
+      view.innerHTML=`<div class="nyx-profile-directory-view-head"><span>${entry.self?'Your public profile':entry.customRole?.label||entry.roleLabel||roleLabel(entry.role)}</span><strong>${esc(profile.displayName)}</strong></div><div class="nyx-profile-directory-card-host">${nyxUserProfileCardMarkup(profile,{role:entry.role,customRole:entry.customRole,createdAt:entry.createdAt})}</div>`;
       nyxManageUserProfileGifs(view,profile);
     };
     const renderResults=()=>{
@@ -546,7 +546,7 @@
       resultsHost.innerHTML=entries.map(entry=>{
         const profile=normalizeNyxUserProfile(entry.profile);
         const avatar=profile.avatarUrl?`<img src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="">`:`<span>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</span>`;
-        return `<button type="button" data-directory-profile="${esc(entry.uid)}"><i class="nyx-profile-directory-avatar">${avatar}<em class="${entry.online?'online':''}" aria-label="${entry.online?'Online':'Offline'}"></em></i><span><strong>${esc(profile.displayName)}${entry.self?' <small>You</small>':''}</strong><small>${esc(profile.handle)}</small></span><b>${esc(roleLabel(entry.role))}</b></button>`;
+        return `<button type="button" data-directory-profile="${esc(entry.uid)}"><i class="nyx-profile-directory-avatar">${avatar}<em class="${entry.online?'online':''}" aria-label="${entry.online?'Online':'Offline'}"></em></i><span><strong>${esc(profile.displayName)}${entry.self?' <small>You</small>':''}</strong><small>${esc(profile.handle)}</small></span><b>${esc(entry.customRole?.label||entry.roleLabel||roleLabel(entry.role))}</b></button>`;
       }).join('');
       resultsHost.querySelectorAll('[data-directory-profile]').forEach(button=>{
         const entry=entries.find(item=>item.uid===button.dataset.directoryProfile);
@@ -567,7 +567,7 @@
         if(!token)throw new Error('Sign in again to browse profiles.');
         if(requestedProfileUid){
           const data=await nyxProfileMediaFetch(`/api/profiles/${encodeURIComponent(requestedProfileUid)}`,{headers:{Authorization:`Bearer ${token}`},cache:'no-store',signal:controller.signal},'Profile could not be loaded.');
-          entries=[{uid:data.uid,profile:data.profile,role:data.role||'member',online:Boolean(data.online),createdAt:data.createdAt,self:data.uid===nyxFounderSignedInUser?.uid}];
+          entries=[{uid:data.uid,profile:data.profile,role:data.role||'member',customRole:data.customRole||null,roleLabel:data.roleLabel||'',online:Boolean(data.online),createdAt:data.createdAt,self:data.uid===nyxFounderSignedInUser?.uid}];
           search.value='';
           search.disabled=true;
           search.placeholder='Viewing selected profile';
@@ -855,8 +855,10 @@
     const roleChip=role=>`<span class="nyx-user-role nyx-user-role-${role}"><img src="/assets/icons/roles/${roleIconKey(role)}.png" alt="" aria-hidden="true">${roleLabel(role)}</span>`;
     const availableRoles=['owner','co_owner','admin','manager','developer','moderator','support','tester','contributor','member'];
     const publicRole=availableRoles.includes(String(options.role||''))?String(options.role):'';
+    const customRole=options.customRole&&typeof options.customRole==='object'?options.customRole:null;
+    const customRoleChip=customRole?`<span class="nyx-user-role nyx-user-role-${esc(publicRole||'member')}"${/^#[0-9a-f]{6}$/i.test(String(customRole.color||''))?` style="--nyx-user-role-color:${esc(customRole.color)};border-color:${esc(customRole.color)};color:${esc(customRole.color)}"`:''}><img src="/assets/icons/roles/${roleIconKey(publicRole||'member')}.png" alt="" aria-hidden="true">${esc(customRole.label||roleLabel(publicRole))}</span>`:'';
     const roles=publicRole
-      ?roleChip(publicRole)
+      ?(customRoleChip||roleChip(publicRole))
       :(nyxFounderIsOwner
         ?`${roleChip('owner')}${roleChip('developer')}<span class="nyx-user-role nyx-user-role-founder">${symbol('founder')}Founder</span>`
         :roleChip(availableRoles.includes(nyxUserAccountRole)?nyxUserAccountRole:'member'));

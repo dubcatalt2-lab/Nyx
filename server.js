@@ -2593,7 +2593,7 @@ async function verifiedFounderOwner(req) {
       ? { role: "owner" }
       : (await firebase.firestore.collection("nyxUserAdministration").doc(token.uid).get()).data();
     const role = nyxRoleForUser(token.uid, administration, config.administratorUid);
-    const actor = { role, permissions: nyxRolePolicy(role).permissions };
+    const actor = { uid: token.uid, role, permissions: nyxRolePolicy(role).permissions };
     return { enabled: true, ...nyxOwnerAccessPayload(actor) };
   } catch {
     return { enabled: true, owner: false, dashboard: false, role: "member", roleLabel: "Member", permissions: [] };
@@ -2806,6 +2806,17 @@ function nyxCustomRoleColor(value, fallback = "") {
   return code ? nyxCustomRoleColorCodes[code] : fallback;
 }
 
+async function optionalAuthenticatedNyxUser(req) {
+  const firebase = await linkGeneratorFirebase();
+  const match = String(req.get("authorization") || "").match(/^Bearer\s+(.+)$/i);
+  if (!match) return { firebase, token: null };
+  try {
+    return { firebase, token: await firebase?.auth.verifyIdToken(match[1], true) || null };
+  } catch {
+    return { firebase, token: null };
+  }
+}
+
 function nyxCustomRolePermissions(value, fallbackRole = "member") {
   const fallback = nyxRolePolicy(fallbackRole).permissions.filter(permission => nyxCustomRolePermissionSet.has(permission));
   if (nyxRolePolicy(fallbackRole).rank >= nyxRolePolicy("moderator").rank) fallback.push("chat:moderate", "link-scanner:bulk");
@@ -2873,6 +2884,31 @@ function nyxPublicCustomRole(role) {
   return role ? { id: role.id, label: role.label, color: role.color, baseRole: role.baseRole, rank: role.rank, permissions: [...role.permissions] } : null;
 }
 
+const nyxPrivateCustomRoleIds = new Set(["tide"]);
+
+function nyxRolePresentation(role, customRole, subjectUid = "", viewerUid = "", ownerUid = founderProfileConfig().administratorUid) {
+  const normalizedRole = normalizeNyxRole(role);
+  const subject = String(subjectUid || "");
+  const viewer = String(viewerUid || "");
+  const privateRole = customRole && nyxPrivateCustomRoleIds.has(nyxCustomRoleId(customRole.id));
+  const canSeePrivateRole = !privateRole || Boolean(viewer && (viewer === subject || viewer === ownerUid));
+  if (!canSeePrivateRole) {
+    return { role: "moderator", roleLabel: nyxRoleLabels.moderator, customRole: null };
+  }
+  return {
+    role: normalizedRole,
+    roleLabel: customRole?.label || nyxRoleLabels[normalizedRole] || nyxRoleLabels.member,
+    customRole: nyxPublicCustomRole(customRole)
+  };
+}
+
+function nyxVisibleCustomRoles(roles, viewerUid = "", ownerUid = founderProfileConfig().administratorUid, viewerCustomRole = null) {
+  const viewer = String(viewerUid || "");
+  return [...roles.values()]
+    .filter(role => viewer === ownerUid || nyxCustomRoleId(viewerCustomRole?.id) === nyxCustomRoleId(role.id) || !nyxPrivateCustomRoleIds.has(nyxCustomRoleId(role.id)))
+    .map(nyxPublicCustomRole);
+}
+
 function nyxRolePolicy(role) {
   return nyxRolePolicies[role] || nyxRolePolicies.member;
 }
@@ -2887,10 +2923,11 @@ function nyxActorHasPermission(actor, permission) {
 
 function nyxOwnerAccessPayload(actor) {
   const policy = nyxRolePolicy(actor.role);
+  const presentation = nyxRolePresentation(actor.role, actor.customRole, actor.uid, actor.uid);
   return {
-    role: actor.role,
-    roleLabel: actor.customRole?.label || nyxRoleLabels[actor.role] || nyxRoleLabels.member,
-    customRole: nyxPublicCustomRole(actor.customRole),
+    role: presentation.role,
+    roleLabel: presentation.roleLabel,
+    customRole: presentation.customRole,
     owner: actor.role === "owner",
     dashboard: nyxActorHasPermission(actor, "dashboard:view"),
     permissions: [...actor.permissions],
@@ -3226,6 +3263,12 @@ function nyxOwnerUserRecord(user, administration = {}, profileData = {}, activit
   };
 }
 
+function nyxOwnerUserForViewer(user, viewerUid = "", ownerUid = founderProfileConfig().administratorUid) {
+  if (!user || user.guest) return user;
+  const presentation = nyxRolePresentation(user.role, user.customRole, user.uid, viewerUid, ownerUid);
+  return { ...user, role: presentation.role, customRole: presentation.customRole };
+}
+
 function nyxChatChannelDefinition(value, fallback = null) {
   const source = value && typeof value === "object" ? value : {};
   const id = String(source.id || fallback?.id || "").trim().toLowerCase();
@@ -3525,6 +3568,9 @@ function nyxChatMessagePayload(document, viewerUid = "") {
   const author = value.author && typeof value.author === "object" ? value.author : {};
   const createdAtMs = Math.max(0, Number(value.createdAtMs || 0));
   const conversationId = nyxChatConversationIdPattern.test(String(value.conversationId || "")) ? String(value.conversationId) : "";
+  const authorUid = String(author.uid || value.authorUid || "");
+  const authorCustomRole = nyxChatCustomRole(author.customRole);
+  const authorPresentation = nyxRolePresentation(nyxChatRole(author.role), authorCustomRole, authorUid, viewerUid);
   return {
     id: String(document?.id || ""),
     channel: conversationId ? "" : (nyxChatChannel(value.channel) || "general"),
@@ -3535,12 +3581,12 @@ function nyxChatMessagePayload(document, viewerUid = "") {
     createdAt: safeDateIso(value.createdAt, createdAtMs ? new Date(createdAtMs).toISOString() : ""),
     createdAtMs,
     author: {
-      uid: String(author.uid || value.authorUid || ""),
+      uid: authorUid,
       displayName: founderProfileText(author.displayName, "Nyx member", 48),
       handle: `@${nyxProfileUsername(author.handle, "nyx-user")}`,
       avatarUrl: nyxChatAvatar(author.avatarUrl),
-      role: nyxChatRole(author.role),
-      customRole: nyxChatCustomRole(author.customRole),
+      role: authorPresentation.role,
+      customRole: authorPresentation.customRole,
       caffeine: author.caffeine === true
     }
   };
@@ -3550,18 +3596,20 @@ function nyxChatConversationId(leftUid, rightUid) {
   return createHash("sha256").update([String(leftUid || ""), String(rightUid || "")].sort().join(":"), "utf8").digest("hex").slice(0, 40);
 }
 
-function nyxChatConversationMember(value, fallbackUid = "") {
+function nyxChatConversationMember(value, fallbackUid = "", viewerUid = "") {
   const source = value && typeof value === "object" ? value : {};
   const uid = String(source.uid || fallbackUid || "").trim();
   if (!/^[A-Za-z0-9_-]{8,128}$/.test(uid)) return null;
+  const customRole = nyxChatCustomRole(source.customRole);
+  const presentation = nyxRolePresentation(nyxChatRole(source.role), customRole, uid, viewerUid);
   return {
     uid,
     displayName: founderProfileText(source.displayName, "Nyx member", 48),
     handle: `@${nyxProfileUsername(source.handle, "nyx-user")}`,
     avatarUrl: nyxChatAvatar(source.avatarUrl),
-    role: nyxChatRole(source.role),
-    customRole: nyxChatCustomRole(source.customRole),
-    roleLabel: nyxChatCustomRole(source.customRole)?.label || nyxRoleLabels[nyxChatRole(source.role)] || nyxRoleLabels.member,
+    role: presentation.role,
+    customRole: presentation.customRole,
+    roleLabel: presentation.roleLabel,
     caffeine: source.caffeine === true
   };
 }
@@ -3572,7 +3620,7 @@ function nyxChatConversationPayload(document, viewerUid, membersByUid = new Map(
   if (!document?.id || participants.length !== 2 || !participants.includes(viewerUid)) return null;
   const otherUid = participants.find(uid => uid !== viewerUid) || viewerUid;
   const stored = value.participantProfiles && typeof value.participantProfiles === "object" ? value.participantProfiles[otherUid] : null;
-  const other = nyxChatConversationMember(membersByUid.get(otherUid) || stored, otherUid);
+  const other = nyxChatConversationMember(membersByUid.get(otherUid) || stored, otherUid, viewerUid);
   if (!other) return null;
   return {
     id: String(document.id),
@@ -3887,6 +3935,11 @@ async function nyxChatMemberDirectory(firebase) {
   }
 }
 
+function nyxChatMemberForViewer(member, viewerUid = "", ownerUid = founderProfileConfig().administratorUid) {
+  const presentation = nyxRolePresentation(member?.role, member?.customRole, member?.uid, viewerUid, ownerUid);
+  return { ...member, role: presentation.role, roleLabel: presentation.roleLabel, customRole: presentation.customRole };
+}
+
 async function nyxChatChannelActivity(firebase, channels) {
   const ids = channels.map(channel => channel.id);
   const now = Date.now();
@@ -4037,17 +4090,19 @@ function consumeNyxChatVoiceAttempt(store, uid, windowMs, maximum, message) {
   store.set(uid, active);
 }
 
-function nyxChatVoiceParticipant(session) {
+function nyxChatVoiceParticipant(session, viewerUid = "") {
   const identity = session?.identity && typeof session.identity === "object" ? session.identity : {};
+  const uid = String(session?.uid || "");
+  const presentation = nyxRolePresentation(nyxChatRole(identity.role), nyxChatCustomRole(identity.customRole), uid, viewerUid);
   return {
-    uid: String(session?.uid || ""),
+    uid,
     sessionId: String(session?.sessionId || ""),
     channelId: nyxChatVoiceChannel(session?.channelId),
     displayName: founderProfileText(identity.displayName, "Nyx member", 48),
     handle: `@${nyxProfileUsername(identity.handle, "nyx-user")}`,
     avatarUrl: nyxChatAvatar(identity.avatarUrl),
-    role: nyxChatRole(identity.role),
-    roleLabel: nyxRoleLabels[nyxChatRole(identity.role)] || nyxRoleLabels.member
+    role: presentation.role,
+    roleLabel: presentation.roleLabel
   };
 }
 
@@ -4066,7 +4121,7 @@ function nyxChatVoiceState(uid, sessionId = "", consumeSignals = false, channels
   const iceConfiguration = nyxChatVoiceIceConfiguration(uid);
   return {
     channels,
-    participants: [...nyxChatVoiceSessions.values()].map(nyxChatVoiceParticipant).filter(participant => participant.uid && visibleChannelIds.has(participant.channelId)),
+    participants: [...nyxChatVoiceSessions.values()].map(participant => nyxChatVoiceParticipant(participant, uid)).filter(participant => participant.uid && visibleChannelIds.has(participant.channelId)),
     joined,
     channelId: joined ? session.channelId : "",
     signals,
@@ -4123,7 +4178,7 @@ function relayNyxChatVoiceSignal(uid, value) {
     fromUid: uid,
     fromSessionId: sender.sessionId,
     toSessionId: recipient.sessionId,
-    from: nyxChatVoiceParticipant(sender),
+    from: nyxChatVoiceParticipant(sender, toUid),
     createdAtMs: now
   };
   const queue = (nyxChatVoiceSignals.get(toUid) || []).filter(item => now - Number(item.createdAtMs || 0) <= nyxChatVoiceSignalTtlMs).slice(-199);
@@ -5650,7 +5705,7 @@ app.get("/api/account/me", async (req, res) => {
     const administrationData = administration.data() || {};
     const role = nyxRoleForUser(token.uid, administrationData);
     const customRole = nyxAssignedCustomRole(administrationData, await nyxCustomRoles(firebase));
-    const access = nyxOwnerAccessPayload({ role, customRole, permissions: customRole?.permissions || nyxRolePolicy(role).permissions });
+    const access = nyxOwnerAccessPayload({ uid: token.uid, role, customRole, permissions: customRole?.permissions || nyxRolePolicy(role).permissions });
     const subscriptionStatus = normalizeSubscriptionStatus(administrationData.subscriptionStatus || administrationData.subscription?.status);
     res.json({
       uid: token.uid,
@@ -6140,9 +6195,10 @@ app.get("/api/profiles", async (req, res) => {
     const search = String(req.query.search || "").trim().toLowerCase().slice(0, 80);
     const snapshot = await firebase.firestore.collection("nyxUserProfiles").limit(250).get();
     const uids = snapshot.docs.map(document => document.id);
-    const [administration, activity] = await Promise.all([
+    const [administration, activity, customRoles] = await Promise.all([
       firestoreDocumentsById(firebase.firestore, "nyxUserAdministration", uids),
-      firestoreDocumentsById(firebase.firestore, "nyxUserActivity", uids)
+      firestoreDocumentsById(firebase.firestore, "nyxUserActivity", uids),
+      nyxCustomRoles(firebase)
     ]);
     const ownerUid = founderProfileConfig().administratorUid;
     const now = Date.now();
@@ -6151,10 +6207,15 @@ app.get("/api/profiles", async (req, res) => {
       const profile = normalizeNyxUserProfile(data.profile, { uid: document.id });
       const activityData = activity.get(document.id) || {};
       const lastActiveAtMs = safeActivityTime(activityData.lastActiveAtMs || activityData.lastActiveAt);
+      const memberAdministration = administration.get(document.id) || {};
+      const actualRole = nyxRoleForUser(document.id, memberAdministration, ownerUid);
+      const presentation = nyxRolePresentation(actualRole, nyxAssignedCustomRole(memberAdministration, customRoles), document.id, token.uid, ownerUid);
       return {
         uid: document.id,
         profile,
-        role: document.id === ownerUid ? "owner" : normalizeNyxRole(administration.get(document.id)?.role),
+        role: presentation.role,
+        customRole: presentation.customRole,
+        roleLabel: presentation.roleLabel,
         online: Boolean(lastActiveAtMs && now - lastActiveAtMs <= signedInOnlineWindowMs),
         createdAt: safeDateIso(data.createdAt),
         self: document.id === token.uid
@@ -6181,11 +6242,12 @@ app.get("/api/profiles/:uid", async (req, res) => {
     return;
   }
   try {
-    const firebase = await linkGeneratorFirebase();
-    const [snapshot, administrationSnapshot, activitySnapshot] = await Promise.all([
+    const { firebase, token } = await optionalAuthenticatedNyxUser(req);
+    const [snapshot, administrationSnapshot, activitySnapshot, customRoles] = await Promise.all([
       firebase.firestore.collection("nyxUserProfiles").doc(uid).get(),
       firebase.firestore.collection("nyxUserAdministration").doc(uid).get(),
-      firebase.firestore.collection("nyxUserActivity").doc(uid).get()
+      firebase.firestore.collection("nyxUserActivity").doc(uid).get(),
+      nyxCustomRoles(firebase)
     ]);
     if (!snapshot.exists) {
       res.status(404).json({ error: "Profile not found." });
@@ -6195,10 +6257,14 @@ app.get("/api/profiles/:uid", async (req, res) => {
     const activity = activitySnapshot.data() || {};
     const lastActiveAtMs = safeActivityTime(activity.lastActiveAtMs || activity.lastActiveAt);
     const ownerUid = founderProfileConfig().administratorUid;
+    const administration = administrationSnapshot.data() || {};
+    const presentation = nyxRolePresentation(nyxRoleForUser(uid, administration, ownerUid), nyxAssignedCustomRole(administration, customRoles), uid, token?.uid, ownerUid);
     res.json({
       uid,
       profile: normalizeNyxUserProfile(data.profile),
-      role: uid === ownerUid ? "owner" : normalizeNyxRole(administrationSnapshot.data()?.role),
+      role: presentation.role,
+      customRole: presentation.customRole,
+      roleLabel: presentation.roleLabel,
       online: Boolean(lastActiveAtMs && Date.now() - lastActiveAtMs <= signedInOnlineWindowMs),
       createdAt: String(data.createdAt || "")
     });
@@ -6267,18 +6333,26 @@ app.get(["/api/chat/moderation/search-history", "/api/chat/moderation/flagged-se
       : collection.orderBy("createdAtMs", "desc").limit(250))
       .get();
     const ownerUid = founderProfileConfig().administratorUid;
+    const searchUids = [...new Set(snapshot.docs.map(document => String(document.data()?.uid || "")).filter(uid => /^[A-Za-z0-9_-]{8,128}$/.test(uid)))];
+    const [searchAdministration, customRoles] = await Promise.all([
+      firestoreDocumentsById(firebase.firestore, "nyxUserAdministration", searchUids),
+      nyxCustomRoles(firebase)
+    ]);
     const searches = snapshot.docs.flatMap(document => {
       const data = document.data() || {};
       if (Number(data.expiresAtMs || 0) <= now) return [];
       const storedRole = String(data.role || "").trim().toLowerCase();
       const storedUid = String(data.uid || "");
-      if (identity.role !== "owner" && (storedUid === ownerUid || storedRole === "owner")) return [];
+      const administration = searchAdministration.get(storedUid) || { role: storedRole };
+      const actualRole = nyxRoleForUser(storedUid, administration, ownerUid);
+      if (identity.role !== "owner" && actualRole === "owner") return [];
+      const presentation = nyxRolePresentation(actualRole, nyxAssignedCustomRole(administration, customRoles), storedUid, identity.uid, ownerUid);
       return [{
         id: document.id,
         uid: storedUid,
         displayName: founderProfileText(data.displayName, "Nyx member", 48),
         handle: founderProfileText(data.handle, "@member", 40),
-        role: Object.prototype.hasOwnProperty.call(nyxRolePolicies, storedRole) ? storedRole : "member",
+        role: presentation.role,
         query: founderProfileText(data.query, "", 180),
         category: founderProfileText(data.category, "Standard search", 48),
         flagged: Boolean(data.flagged),
@@ -6461,7 +6535,7 @@ app.get("/api/chat/bootstrap", async (req, res) => {
     ]);
     const now = Date.now();
     const members = directory.map(member => ({
-      ...member,
+      ...nyxChatMemberForViewer(member, token.uid),
       online: now - Math.max(Number(member.lastActiveAtMs || 0), Number(signedInPresence.get(member.uid) || 0)) <= signedInOnlineWindowMs,
       self: member.uid === token.uid,
       lastActiveAtMs: undefined
@@ -6487,7 +6561,7 @@ app.get("/api/chat/bootstrap", async (req, res) => {
       conversations,
       voice: nyxChatVoiceState(token.uid, "", false, visibleVoiceChannels),
       caffeine,
-      customRoles: [...customRoles.values()].map(nyxPublicCustomRole),
+      customRoles: nyxVisibleCustomRoles(customRoles, token.uid, founderProfileConfig().administratorUid, me.customRole),
       revision: nyxChatRealtimeRevision,
       me,
       members: members.slice(0, 100),
@@ -6978,8 +7052,8 @@ app.post("/api/chat/conversations", async (req, res) => {
     await ref.set({
       participants: [token.uid, participantUid].sort(),
       participantProfiles: {
-        [token.uid]: nyxChatConversationMember(me, token.uid),
-        [participantUid]: nyxChatConversationMember(other, participantUid)
+        [token.uid]: nyxChatConversationMember(me, token.uid, token.uid),
+        [participantUid]: nyxChatConversationMember(other, participantUid, participantUid)
       },
       createdAt: String(existing.data()?.createdAt || new Date(now).toISOString()),
       createdAtMs: Number(existing.data()?.createdAtMs || now),
@@ -7706,7 +7780,7 @@ app.post("/api/activity/heartbeat", async (req, res) => {
     await Promise.all(work);
     const role = nyxRoleForUser(token.uid, administrationData);
     const customRole = nyxAssignedCustomRole(administrationData, await nyxCustomRoles(firebase));
-    const access = nyxOwnerAccessPayload({ role, customRole, permissions: customRole?.permissions || nyxRolePolicy(role).permissions });
+    const access = nyxOwnerAccessPayload({ uid: token.uid, role, customRole, permissions: customRole?.permissions || nyxRolePolicy(role).permissions });
     const subscriptionStatus = normalizeSubscriptionStatus(administrationData.subscriptionStatus || administrationData.subscription?.status);
     res.json({
       ok: true,
@@ -7776,7 +7850,8 @@ app.get("/api/owner-dashboard", async (req, res) => {
       nyxActiveGuestUsers(firebase),
       nyxCustomRoles(firebase)
     ]);
-    const allUsers = [...accountUsers, ...guestUsers];
+    const ownerUid = founderProfileConfig().administratorUid;
+    const allUsers = [...accountUsers.map(user => nyxOwnerUserForViewer(user, actor.uid, ownerUid)), ...guestUsers];
     const now = Date.now();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -7832,7 +7907,7 @@ app.get("/api/owner-dashboard", async (req, res) => {
       access: nyxOwnerAccessPayload(actor),
       metrics,
       users: filtered.slice(offset, offset + pageSize),
-      customRoles: [...customRoleMap.values()].map(nyxPublicCustomRole),
+      customRoles: nyxVisibleCustomRoles(customRoleMap, actor.uid, ownerUid, actor.customRole),
       pagination: { page, pageSize, pages, total: filtered.length, scanned: allUsers.length, accounts: accountUsers.length, guests: guestUsers.length, truncated },
       recentActivity,
       generatedAt: new Date().toISOString()
@@ -7863,7 +7938,11 @@ app.get("/api/owner-dashboard/users/:uid", async (req, res) => {
     ]);
     const targetRole = nyxRoleForUser(uid, administration.data(), ownerUid);
     const capabilities = nyxOwnerUserCapabilities(actor, targetRole, uid, ownerUid);
-    const record = nyxOwnerUserRecord(user, administration.data(), profile.data(), activity.data(), ownerUid, true, capabilities.canManageNetworkBans, customRoles);
+    const record = nyxOwnerUserForViewer(
+      nyxOwnerUserRecord(user, administration.data(), profile.data(), activity.data(), ownerUid, true, capabilities.canManageNetworkBans, customRoles),
+      actor.uid,
+      ownerUid
+    );
     record.recentActivity = audit ? audit.docs.map(document => {
       const data = document.data() || {};
       return { id: document.id, action: String(data.action || ""), actorEmail: String(data.actorEmail || ""), createdAt: safeDateIso(data.createdAt), details: data.details || {} };
@@ -8409,11 +8488,15 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
     ]);
     const updatedTargetRole = nyxRoleForUser(uid, administration.data(), ownerUid);
     const updatedCapabilities = nyxOwnerUserCapabilities(actor, updatedTargetRole, uid, ownerUid);
-    const record = nyxOwnerUserRecord(updated, administration.data(), profile.data(), activity.data(), ownerUid, true, updatedCapabilities.canManageNetworkBans, customRoles);
+    const record = nyxOwnerUserForViewer(
+      nyxOwnerUserRecord(updated, administration.data(), profile.data(), activity.data(), ownerUid, true, updatedCapabilities.canManageNetworkBans, customRoles),
+      actor.uid,
+      ownerUid
+    );
     res.json({
       user: record,
       access: nyxOwnerAccessPayload(actor),
-      customRoles: [...customRoles.values()].map(nyxPublicCustomRole),
+      customRoles: nyxVisibleCustomRoles(customRoles, actor.uid, ownerUid, actor.customRole),
       capabilities: updatedCapabilities
     });
   } catch (error) {
@@ -8827,7 +8910,7 @@ app.use((_req, res) => {
   res.sendFile(join(staticRoot, "index.html"));
 });
 
-export { app, attachNyxChatSocketServer, externalWispUrl, normalizePublicWispUrl };
+export { app, attachNyxChatSocketServer, externalWispUrl, normalizePublicWispUrl, nyxRolePresentation, nyxVisibleCustomRoles };
 
 const isDirectRun = process.argv[1] && resolve(process.argv[1]) === join(__dirname, "server.js");
 if (isDirectRun) {

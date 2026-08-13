@@ -175,6 +175,28 @@ body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-confirm button[type=s
 body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-action-grid button{background-color:#162238!important}
 body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-action-grid button.danger{background-color:rgba(251,113,133,.09)!important;color:#fda4af!important}
 
+/* Custom roles are an isolated form component; browser themes must not resize or repaint its controls. */
+.nyx-owner-custom-role-section{container-type:inline-size}
+.nyx-owner-custom-role-editor>.nyx-owner-custom-role-field{display:grid;min-width:0;align-content:end;gap:5px;color:var(--owner-muted)!important;font-size:9px;font-weight:700;line-height:1.25}
+body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-custom-role-editor>.nyx-owner-custom-role-field>:is(input:not([type=color]),select){display:block;width:100%!important;min-width:0!important;height:38px!important;min-height:38px!important;box-sizing:border-box;padding:0 10px!important;border:1px solid var(--owner-line)!important;border-radius:8px!important;outline:0;background:#0b111b!important;background-image:none!important;color:var(--owner-text)!important;-webkit-text-fill-color:var(--owner-text)!important;font:600 10px/1.2 var(--owner-display-font)!important;box-shadow:none!important}
+body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-custom-role-editor>.nyx-owner-custom-role-field>:is(input:not([type=color]),select):focus{border-color:var(--owner-accent)!important;box-shadow:0 0 0 3px rgba(56,189,248,.1)!important}
+.nyx-owner-custom-role-color-control{grid-template-columns:42px minmax(0,1fr)!important;gap:8px!important}
+body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-custom-role-color-picker{display:block!important;width:42px!important;min-width:42px!important;height:38px!important;min-height:38px!important;box-sizing:border-box;padding:3px!important;overflow:hidden;border:1px solid var(--owner-line)!important;border-radius:8px!important;background:#0b111b!important;background-image:none!important;cursor:pointer;box-shadow:none!important}
+.nyx-owner-custom-role-color-picker::-webkit-color-swatch-wrapper{padding:0}.nyx-owner-custom-role-color-picker::-webkit-color-swatch{border:0;border-radius:5px}.nyx-owner-custom-role-color-picker::-moz-color-swatch{border:0;border-radius:5px}
+.nyx-owner-custom-role-editor-actions{display:flex!important;align-items:center;flex-wrap:wrap;gap:8px!important}
+body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-custom-role-editor-actions>button{display:inline-flex!important;width:auto!important;min-width:0!important;height:34px!important;min-height:34px!important;align-items:center!important;justify-content:center!important;gap:6px!important;box-sizing:border-box;padding:0 12px!important;border:1px solid var(--owner-line)!important;border-radius:8px!important;background:#111b2c!important;background-image:none!important;color:var(--owner-text)!important;-webkit-text-fill-color:var(--owner-text)!important;font:750 9px/1 var(--owner-display-font)!important;box-shadow:none!important;cursor:pointer}
+body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-custom-role-editor-actions>.nyx-owner-custom-role-save{border-color:var(--owner-accent)!important;background:var(--owner-accent)!important;color:#04131e!important;-webkit-text-fill-color:#04131e!important}
+body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-custom-role-editor-actions>.nyx-owner-custom-role-save:hover{background:#62cef9!important}
+body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-custom-role-editor-actions>.nyx-owner-custom-role-cancel:hover{border-color:#3d5874!important;background:#18243a!important}
+body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-custom-role-editor-actions>button>svg{display:block!important;flex:0 0 14px!important;width:14px!important;height:14px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.9!important;stroke-linecap:round;stroke-linejoin:round}
+body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-custom-role-row>button{font:750 9px/1 var(--owner-display-font)!important;-webkit-text-fill-color:currentColor!important}
+body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-custom-role-row>button[data-owner-custom-role-delete]>svg{display:block!important;width:13px!important;height:13px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.9!important}
+
+@container (max-width:520px){
+  .nyx-owner-custom-role-form,.nyx-owner-custom-role-editor{grid-template-columns:minmax(0,1fr)!important;align-items:stretch!important}
+  .nyx-owner-custom-role-form label:first-child,.nyx-owner-custom-role-editor>.nyx-owner-custom-role-field,.nyx-owner-custom-role-permission-editor,.nyx-owner-custom-role-editor-actions{grid-column:1!important}
+}
+
 @media(max-width:1180px){
   .nyx-owner-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
   .nyx-owner-workspace{grid-template-columns:minmax(0,1fr) 280px}

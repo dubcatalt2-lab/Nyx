@@ -701,13 +701,13 @@
 
     function customRoleColorInput(color = "#8ea1ff") {
       const value = /^#[0-9a-f]{6}$/i.test(String(color || "")) ? String(color).toLowerCase() : "#8ea1ff";
-      return `<label>Color / code<span class="nyx-owner-custom-role-color-control"><span class="nyx-owner-custom-role-swatch" style="--owner-custom-role:${esc(value)}"></span><input name="color" type="text" value="${esc(value)}" maxlength="7" pattern="(?:#[0-9A-Fa-f]{6}|&amp;[0-9A-Fa-f])" title="Use a six-digit hex color or a Minecraft code from &amp;0 through &amp;f" placeholder="&amp;d or #ff55ff" required></span><small>Use #RRGGBB or &amp;0–&amp;f.</small></label>`;
+      return `<label class="nyx-owner-custom-role-field nyx-owner-custom-role-color-field">Color / code<span class="nyx-owner-custom-role-color-control"><input class="nyx-owner-custom-role-color-picker" data-owner-custom-role-color-picker type="color" value="${esc(value)}" aria-label="Choose role color"><input name="color" type="text" value="${esc(value)}" maxlength="7" pattern="(?:#[0-9A-Fa-f]{6}|&amp;[0-9A-Fa-f])" title="Use a six-digit hex color or a Minecraft code from &amp;0 through &amp;f" placeholder="&amp;d or #ff55ff" required></span><small>Pick a color or enter #RRGGBB / &amp;0–&amp;f.</small></label>`;
     }
 
     function renderCustomRoles() {
       const editingId = state.customRoleEditorId;
-      const editor = role => `<form class="nyx-owner-custom-role-editor" data-owner-custom-role-update="${esc(role.id)}"><label>Name<input name="label" maxlength="32" minlength="2" required value="${esc(role.label)}"></label>${customRoleColorInput(role.color)}<label>Placement<select name="baseRole">${customRolePlacementOptions(role.baseRole)}</select></label>${customRolePermissionOptions(role.permissions)}<div class="nyx-owner-custom-role-editor-actions"><button type="submit">${dashboardIcon("save")}Save changes</button><button type="button" data-owner-custom-role-cancel>Cancel</button></div></form>`;
-      const createEditor = `<form class="nyx-owner-custom-role-form nyx-owner-custom-role-editor" data-owner-custom-role-create><label>Name<input name="label" maxlength="32" minlength="2" required placeholder="Night Watch"></label><label>Role ID<input name="id" maxlength="32" pattern="[a-z0-9][a-z0-9-]{1,31}" placeholder="night-watch"></label>${customRoleColorInput()}<label>Placement<select name="baseRole">${customRolePlacementOptions("member")}</select></label>${customRolePermissionOptions([])}<div class="nyx-owner-custom-role-editor-actions"><button type="submit">${dashboardIcon("save")}Create role</button><button type="button" data-owner-custom-role-cancel>Cancel</button></div></form>`;
+      const editor = role => `<form class="nyx-owner-custom-role-editor" data-owner-custom-role-update="${esc(role.id)}"><label class="nyx-owner-custom-role-field">Name<input name="label" maxlength="32" minlength="2" required value="${esc(role.label)}"></label>${customRoleColorInput(role.color)}<label class="nyx-owner-custom-role-field">Placement<select name="baseRole">${customRolePlacementOptions(role.baseRole)}</select></label>${customRolePermissionOptions(role.permissions)}<div class="nyx-owner-custom-role-editor-actions"><button class="nyx-owner-custom-role-save" type="submit">${dashboardIcon("save")}<span>Save changes</span></button><button class="nyx-owner-custom-role-cancel" type="button" data-owner-custom-role-cancel>Cancel</button></div></form>`;
+      const createEditor = `<form class="nyx-owner-custom-role-form nyx-owner-custom-role-editor" data-owner-custom-role-create><label class="nyx-owner-custom-role-field">Name<input name="label" maxlength="32" minlength="2" required placeholder="Night Watch"></label><label class="nyx-owner-custom-role-field">Role ID<input name="id" maxlength="32" pattern="[a-z0-9][a-z0-9-]{1,31}" placeholder="night-watch"></label>${customRoleColorInput()}<label class="nyx-owner-custom-role-field">Placement<select name="baseRole">${customRolePlacementOptions("member")}</select></label>${customRolePermissionOptions([])}<div class="nyx-owner-custom-role-editor-actions"><button class="nyx-owner-custom-role-save" type="submit">${dashboardIcon("save")}<span>Create role</span></button><button class="nyx-owner-custom-role-cancel" type="button" data-owner-custom-role-cancel>Cancel</button></div></form>`;
       drawer.innerHTML = `<header class="nyx-owner-custom-role-header"><div><span>${dashboardIcon("users")}</span><div><h2>Custom roles</h2><p>Colors, hierarchy, permissions, and assignments.</p></div></div><button type="button" data-owner-drawer-close aria-label="Close custom roles">${dashboardIcon("close")}</button></header>
         <div class="nyx-owner-drawer-scroll nyx-owner-custom-role-drawer">
           <section class="nyx-owner-detail-section nyx-owner-custom-role-section"><div class="nyx-owner-custom-role-toolbar"><div><h3>Configured roles</h3><p class="nyx-owner-action-note">Placement controls hierarchy; selected permissions control access.</p></div><button type="button" data-owner-custom-role-new>${dashboardIcon("users")}New role</button></div>${editingId === "new" ? createEditor : ""}${state.customRoles.length ? `<div class="nyx-owner-custom-role-list">${state.customRoles.map(role => `<article class="nyx-owner-custom-role-item${editingId === role.id ? " editing" : ""}"><div class="nyx-owner-custom-role-row"><span class="nyx-owner-custom-role-dot" style="--owner-custom-role:${esc(role.color)}"></span><span class="nyx-owner-custom-role-copy"><strong>${esc(role.label)}</strong><small>${esc(role.id)}</small></span><span class="nyx-owner-custom-role-placement">${esc(roleLabel(role.baseRole))}</span><span class="nyx-owner-custom-role-permission-count">${Number(role.permissions?.length || 0)} perms</span><button type="button" data-owner-custom-role-edit="${esc(role.id)}">Edit</button><button class="danger" type="button" data-owner-custom-role-delete="${esc(role.id)}" aria-label="Delete ${esc(role.label)}">${dashboardIcon("trash")}</button></div>${editingId === role.id ? editor(role) : ""}</article>`).join("")}</div>` : '<p class="nyx-owner-action-note">No custom roles have been created yet.</p>'}</section>
@@ -1166,13 +1166,16 @@
     }
 
     function updateCustomRoleColorPreview(event) {
-      const color = event.target.closest('[name="color"]');
-      const control = color?.closest(".nyx-owner-custom-role-color-control");
+      const input = event.target.closest('[name="color"], [data-owner-custom-role-color-picker]');
+      const control = input?.closest(".nyx-owner-custom-role-color-control");
       if (control) {
         const codes = { "0": "#000000", "1": "#0000aa", "2": "#00aa00", "3": "#00aaaa", "4": "#aa0000", "5": "#aa00aa", "6": "#ffaa00", "7": "#aaaaaa", "8": "#555555", "9": "#5555ff", a: "#55ff55", b: "#55ffff", c: "#ff5555", d: "#ff55ff", e: "#ffff55", f: "#ffffff" };
-        const raw = String(color.value || "").trim().toLowerCase();
+        const color = control.querySelector('[name="color"]');
+        const picker = control.querySelector("[data-owner-custom-role-color-picker]");
+        if (input === picker && color) color.value = picker.value;
+        const raw = String(color?.value || "").trim().toLowerCase();
         const preview = /^#[0-9a-f]{6}$/.test(raw) ? raw : codes[raw.match(/^&([0-9a-f])$/)?.[1]];
-        if (preview) control.querySelector(".nyx-owner-custom-role-swatch")?.style.setProperty("--owner-custom-role", preview);
+        if (preview && picker && picker.value !== preview) picker.value = preview;
       }
     }
 

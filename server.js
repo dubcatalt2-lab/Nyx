@@ -2884,13 +2884,20 @@ function nyxPublicCustomRole(role) {
   return role ? { id: role.id, label: role.label, color: role.color, baseRole: role.baseRole, rank: role.rank, permissions: [...role.permissions] } : null;
 }
 
-const nyxPrivateCustomRoleIds = new Set(["tide"]);
+// Keep private role IDs explicit: privacy must follow the persisted role ID,
+// not its editable display label. `tide-stressed` is the live Tide role while
+// `tide` remains supported for older installations.
+const nyxPrivateCustomRoleIds = new Set(["tide", "tide-stressed"]);
+
+function nyxPrivateCustomRole(role) {
+  return Boolean(role && nyxPrivateCustomRoleIds.has(nyxCustomRoleId(role.id)));
+}
 
 function nyxRolePresentation(role, customRole, subjectUid = "", viewerUid = "", ownerUid = founderProfileConfig().administratorUid) {
   const normalizedRole = String(role || "").trim().toLowerCase() === "owner" ? "owner" : normalizeNyxRole(role);
   const subject = String(subjectUid || "");
   const viewer = String(viewerUid || "");
-  const privateRole = customRole && nyxPrivateCustomRoleIds.has(nyxCustomRoleId(customRole.id));
+  const privateRole = nyxPrivateCustomRole(customRole);
   const canSeePrivateRole = !privateRole || Boolean(viewer && (viewer === subject || viewer === ownerUid));
   if (!canSeePrivateRole) {
     return { role: "moderator", roleLabel: nyxRoleLabels.moderator, customRole: null };
@@ -2905,7 +2912,7 @@ function nyxRolePresentation(role, customRole, subjectUid = "", viewerUid = "", 
 function nyxVisibleCustomRoles(roles, viewerUid = "", ownerUid = founderProfileConfig().administratorUid, viewerCustomRole = null) {
   const viewer = String(viewerUid || "");
   return [...roles.values()]
-    .filter(role => viewer === ownerUid || nyxCustomRoleId(viewerCustomRole?.id) === nyxCustomRoleId(role.id) || !nyxPrivateCustomRoleIds.has(nyxCustomRoleId(role.id)))
+    .filter(role => viewer === ownerUid || nyxCustomRoleId(viewerCustomRole?.id) === nyxCustomRoleId(role.id) || !nyxPrivateCustomRole(role))
     .map(nyxPublicCustomRole);
 }
 

@@ -2887,7 +2887,7 @@ function nyxPublicCustomRole(role) {
 const nyxPrivateCustomRoleIds = new Set(["tide"]);
 
 function nyxRolePresentation(role, customRole, subjectUid = "", viewerUid = "", ownerUid = founderProfileConfig().administratorUid) {
-  const normalizedRole = normalizeNyxRole(role);
+  const normalizedRole = String(role || "").trim().toLowerCase() === "owner" ? "owner" : normalizeNyxRole(role);
   const subject = String(subjectUid || "");
   const viewer = String(viewerUid || "");
   const privateRole = customRole && nyxPrivateCustomRoleIds.has(nyxCustomRoleId(customRole.id));
@@ -2921,6 +2921,13 @@ function nyxActorHasPermission(actor, permission) {
   return Boolean(actor?.permissions?.includes(permission));
 }
 
+function nyxActorCanReviewSearchHistory(actor) {
+  if (!actor) return false;
+  return actor.customRole
+    ? Boolean(actor.customRole.permissions?.includes("chat:moderate"))
+    : nyxRolePolicy(actor.role).rank >= nyxRolePolicy("moderator").rank;
+}
+
 function nyxOwnerAccessPayload(actor) {
   const policy = nyxRolePolicy(actor.role);
   const presentation = nyxRolePresentation(actor.role, actor.customRole, actor.uid, actor.uid);
@@ -2930,6 +2937,7 @@ function nyxOwnerAccessPayload(actor) {
     customRole: presentation.customRole,
     owner: actor.role === "owner",
     dashboard: nyxActorHasPermission(actor, "dashboard:view"),
+    canReviewSearchHistory: nyxActorCanReviewSearchHistory(actor),
     permissions: [...actor.permissions],
     assignableRoles: nyxActorHasPermission(actor, "roles:write")
       ? nyxAssignableRoles.filter(role => nyxRolePolicy(role).rank <= policy.assignableRank)
@@ -7851,7 +7859,12 @@ app.get("/api/owner-dashboard", async (req, res) => {
       nyxCustomRoles(firebase)
     ]);
     const ownerUid = founderProfileConfig().administratorUid;
-    const allUsers = [...accountUsers.map(user => nyxOwnerUserForViewer(user, actor.uid, ownerUid)), ...guestUsers];
+    const canReviewSearchHistory = nyxActorCanReviewSearchHistory(actor);
+    const accountUsersForViewer = accountUsers.map(user => ({
+      ...nyxOwnerUserForViewer(user, actor.uid, ownerUid),
+      canReviewSearchHistory: canReviewSearchHistory && (actor.role === "owner" || user.role !== "owner")
+    }));
+    const allUsers = [...accountUsersForViewer, ...guestUsers];
     const now = Date.now();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -8910,7 +8923,7 @@ app.use((_req, res) => {
   res.sendFile(join(staticRoot, "index.html"));
 });
 
-export { app, attachNyxChatSocketServer, externalWispUrl, normalizePublicWispUrl, nyxRolePresentation, nyxVisibleCustomRoles };
+export { app, attachNyxChatSocketServer, externalWispUrl, normalizePublicWispUrl, nyxActorCanReviewSearchHistory, nyxRolePresentation, nyxVisibleCustomRoles };
 
 const isDirectRun = process.argv[1] && resolve(process.argv[1]) === join(__dirname, "server.js");
 if (isDirectRun) {

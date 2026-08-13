@@ -19,7 +19,6 @@
   });
   const ownerRoleIcons = Object.freeze({ co_owner: "owner", manager: "admin", support: "moderator", tester: "developer", contributor: "developer", guest: "member" });
   const ownerAssignableRoles = Object.freeze(["member", "contributor", "tester", "support", "moderator", "developer", "manager", "admin", "co_owner"]);
-  const ownerRoleRanks = Object.freeze({ owner: 100, co_owner: 90, admin: 80, manager: 70, developer: 60, moderator: 50, support: 40, tester: 30, contributor: 20, member: 10, guest: 0 });
   const roleLabel = value => ownerRoleLabels[value] || "Member";
   const userRoleLabel = user => user?.customRole?.label || roleLabel(user?.role);
   const userRoleColor = user => /^#[0-9a-f]{6}$/i.test(String(user?.customRole?.color || "")) ? user.customRole.color : "";
@@ -398,9 +397,7 @@
           <thead><tr><th>${sortButton("displayName", "User")}</th><th>${sortButton("role", "Role")}</th><th>${sortButton("subscriptionStatus", "Subscription")}</th><th>${sortButton("createdAt", "Created")}</th><th>${sortButton("lastSignInAt", "Last sign-in")}</th><th>${sortButton("lastActiveAt", "Last active")}</th><th>Email verified</th><th>${sortButton("status", "Status")}</th><th><span class="sr-only">Actions</span></th></tr></thead>
           <tbody>${users.map(user => {
             const guest = Boolean(user.guest);
-            const canReviewSearches = !guest
-              && (ownerRoleRanks[state.access?.role] || 0) >= ownerRoleRanks.moderator
-              && (state.access?.role === "owner" || user.role !== "owner");
+            const canReviewSearches = !guest && user.canReviewSearchHistory === true;
             return `<tr data-owner-user-row="${esc(user.uid)}"${guest ? ' data-owner-guest-row="true"' : ""}>
             <td><div class="nyx-owner-user-entry"><button class="nyx-owner-user-cell" type="button" data-owner-view-user="${esc(user.uid)}"><span class="nyx-owner-avatar">${ownerProfileImageMarkup(user.photoUrl, "", (user.displayName || "?").slice(0, 1).toUpperCase())}<i class="${user.online ? "online" : ""}"></i></span><span><span class="nyx-owner-user-name-row"><strong>${esc(user.displayName)}</strong><span class="nyx-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></span><small>@${esc(user.username)} · ${esc(user.email || (guest ? "No account" : "No email"))}</small><span class="nyx-owner-mobile-access"><span class="nyx-owner-badge role-${esc(user.role)}${user.customRole ? " custom-role" : ""}"${userRoleColor(user) ? ` style="--owner-custom-role:${esc(userRoleColor(user))}"` : ""}>${roleIcon(user.role)}${esc(userRoleLabel(user))}</span><span class="nyx-owner-badge subscription-${esc(user.subscriptionStatus)}">${esc(subscriptionLabel(user.subscriptionStatus))}</span></span></span></button>${canReviewSearches ? `<button class="nyx-owner-search-shield" type="button" data-owner-search-history="${esc(user.uid)}" aria-label="Review search history for ${esc(user.displayName)}" title="Review search history">${dashboardIcon("shield")}</button>` : ""}</div></td>
             <td><span class="nyx-owner-badge role-${esc(user.role)}${user.customRole ? " custom-role" : ""}"${userRoleColor(user) ? ` style="--owner-custom-role:${esc(userRoleColor(user))}"` : ""}>${roleIcon(user.role)}${esc(userRoleLabel(user))}</span></td>

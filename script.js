@@ -265,6 +265,12 @@
   function nyxDisplayNameStyleVars(profile={}){
     return `--nyx-name-color-primary:${profile.displayNameColorPrimary||'#ffffff'};--nyx-name-color-secondary:${profile.displayNameColorSecondary||'#8ea1ff'}`;
   }
+  const NYX_MINECRAFT_NAME_COLORS=Object.freeze({'0':'#000000','1':'#0000aa','2':'#00aa00','3':'#00aaaa','4':'#aa0000','5':'#aa00aa','6':'#ffaa00','7':'#aaaaaa','8':'#555555','9':'#5555ff',a:'#55ff55',b:'#55ffff',c:'#ff5555',d:'#ff55ff',e:'#ffff55',f:'#ffffff'});
+  function nyxFormatMinecraftDisplayName(element){if(!(element instanceof Element))return;const source=element.textContent||'';if(element.dataset.nyxMinecraftPlain===source)return;const pattern=/&([0-9a-fklmnor])/gi;if(!pattern.test(source)){delete element.dataset.nyxMinecraftPlain;element.classList.remove('nyx-minecraft-formatted-name');return}pattern.lastIndex=0;const fragment=document.createDocumentFragment();let cursor=0,match,style={};const append=text=>{if(!text)return;const span=document.createElement('span');span.textContent=text;if(style.color)span.style.color=style.color;if(style.bold)span.style.fontWeight='900';if(style.italic)span.style.fontStyle='italic';const decorations=[];if(style.underline)decorations.push('underline');if(style.strike)decorations.push('line-through');if(decorations.length)span.style.textDecoration=decorations.join(' ');fragment.append(span)};while((match=pattern.exec(source))){append(source.slice(cursor,match.index));cursor=pattern.lastIndex;const code=match[1].toLowerCase();if(NYX_MINECRAFT_NAME_COLORS[code])style={color:NYX_MINECRAFT_NAME_COLORS[code]};else if(code==='l')style.bold=true;else if(code==='o')style.italic=true;else if(code==='n')style.underline=true;else if(code==='m')style.strike=true;else if(code==='r')style={}}append(source.slice(cursor));element.replaceChildren(fragment);element.dataset.nyxMinecraftPlain=element.textContent||'';element.classList.add('nyx-minecraft-formatted-name')}
+  function nyxFormatMinecraftNames(root=document){if(root instanceof Element&&root.matches('.nyx-styled-display-name'))nyxFormatMinecraftDisplayName(root);root.querySelectorAll?.('.nyx-styled-display-name').forEach(nyxFormatMinecraftDisplayName)}
+  const nyxMinecraftNameObserver=new MutationObserver(records=>{records.forEach(record=>{const root=record.target instanceof Element?record.target:record.target.parentElement;if(root)nyxFormatMinecraftNames(root)})});
+  nyxMinecraftNameObserver.observe(document.documentElement,{subtree:true,childList:true,characterData:true});
+  queueMicrotask(()=>nyxFormatMinecraftNames());
   function nyxProfileEffectClass(profile={}){
     return `nyx-user-profile-effect-${profile.profileEffect||'none'} nyx-user-profile-custom-${profile.customEffectPattern||'starfield'}`;
   }
@@ -289,6 +295,8 @@
     const customEffectIntensity=Math.max(20,Math.min(100,Number(source.customEffectIntensity)||70));
     return {displayName:nyxFounderText(source.displayName,user?.displayName||username,48),handle:nyxFounderText(source.handle,`@${username}`,40).replace(/\s+/g,''),bio:String(source.bio||'').trim().slice(0,280),customStatus:String(source.customStatus||'').trim().slice(0,80),avatarUrl:nyxUserImage(source.avatarUrl,nyxUserImage(user?.photoURL)),bannerUrl:nyxUserImage(source.bannerUrl),accent:accentPrimary,accentPrimary,accentSecondary,bannerColor,displayNameFont,displayNameEffect,displayNameColorPrimary,displayNameColorSecondary,profileEffect:['none','glow','sparkle','aurora','holographic','fireflies','cosmic-dust','electric-storm','meteor-shower','cyber-grid','plasma','snowfall','embers','bubbles','custom'].includes(String(source.profileEffect||'').toLowerCase())?String(source.profileEffect).toLowerCase():'none',customEffectPattern,customEffectColorPrimary,customEffectColorSecondary,customEffectSpeed,customEffectIntensity,avatarDecoration:['none','starfall','orbit','laurel','neon-wings'].includes(String(source.avatarDecoration||'').toLowerCase())?String(source.avatarDecoration).toLowerCase():'none',status:['online','idle','dnd','offline'].includes(String(source.status||'').toLowerCase())?String(source.status).toLowerCase():'online'};
   }
+  const normalizeNyxUserProfileBase=normalizeNyxUserProfile;
+  normalizeNyxUserProfile=function(value={},user=nyxFounderSignedInUser){const profile=normalizeNyxUserProfileBase(value,user);const source=value&&typeof value==='object'?value:{};const effect=String(source.profileEffect||'').toLowerCase();const decoration=String(source.avatarDecoration||'').toLowerCase();if(['starlight-ribbon','cherry-bloom','ocean-caustics'].includes(effect))profile.profileEffect=effect;if(['crystal-crown','lunar-halo','rose-vines'].includes(decoration))profile.avatarDecoration=decoration;return profile};
   async function nyxGetFirebaseToken(forceRefresh=false){
     const user=nyxFounderSignedInUser;
     if(!user)return '';
@@ -1157,9 +1165,15 @@
     form.querySelector('[name="bannerColor"]')?.closest('label')?.classList.add('nyx-profile-banner-color-field');
     form.querySelector('[name="accentPrimary"]')?.closest('label')?.classList.add('nyx-profile-primary-color-field');
     form.querySelector('[name="accentSecondary"]')?.closest('label')?.classList.add('nyx-profile-secondary-color-field');
+    const minecraftDisplayNameField=form.querySelector('[name="displayName"]')?.closest('label');
+    if(minecraftDisplayNameField&&!minecraftDisplayNameField.querySelector('[data-nyx-minecraft-help]'))minecraftDisplayNameField.insertAdjacentHTML('beforeend','<small data-nyx-minecraft-help>Use Minecraft codes like &amp;b cyan, &amp;l bold, or &amp;r reset.</small>');
+    const profileEffectSelect=form.querySelector('[name="profileEffect"]');
+    profileEffectSelect?.querySelector('[value="custom"]')?.insertAdjacentHTML('beforebegin','<option value="starlight-ribbon">Starlight Ribbon</option><option value="cherry-bloom">Cherry Bloom</option><option value="ocean-caustics">Ocean Caustics</option>');
+    if(profileEffectSelect)profileEffectSelect.value=profile.profileEffect;
     const decorationField=document.createElement('label');
     decorationField.className='nyx-profile-field';
     decorationField.innerHTML=`<span class="nyx-profile-decoration-preview nyx-avatar-decoration-${esc(profile.avatarDecoration)}" data-nyx-decoration-preview style="--nyx-user-accent-primary:${profile.accentPrimary};--nyx-user-accent-secondary:${profile.accentSecondary}"><span class="nyx-profile-decoration-avatar">${profile.avatarUrl?`<img src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="">`:`<span>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</span>`}</span><i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i></span><span class="nyx-profile-decoration-label">Avatar decoration</span><select name="avatarDecoration"><option value="none">None</option><option value="starfall">Starfall</option><option value="orbit">Orbit</option><option value="laurel">Laurel</option><option value="neon-wings">Neon wings</option></select><small>Frames your avatar wherever it is shown.</small>`;
+    decorationField.querySelector('select')?.insertAdjacentHTML('beforeend','<option value="crystal-crown">Crystal Crown</option><option value="lunar-halo">Lunar Halo</option><option value="rose-vines">Rose Vines</option>');
     decorationField.classList.add('nyx-profile-decoration-field');
     form.querySelector('.nyx-profile-image-list')?.appendChild(decorationField);
     decorationField.querySelector('select').value=profile.avatarDecoration;

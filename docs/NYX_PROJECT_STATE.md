@@ -23,7 +23,7 @@ Important release warning: production currently contains commits that are not on
 - Repository: `https://github.com/dubcatalt2-lab/Nyx.git`
 - Active branch: `agent/pirate-cove`
 - Latest application release: commit `8c12608` on `agent/pirate-cove`, deployed to OVH on 2026-08-12. Scramjet service-worker recovery now waits for the newly registered worker revision, rebinds the existing controller and frames to that active worker, and repeatedly requests controller revival before showing a bounded automatic retry page. This prevents a normal worker update or restart from leaving a proxied tab on the **Scramjet route missed** dead end. The Owner Dashboard's selected-account Search history viewer offers a confirmed **Clear history** action when the current staff member may clear that target. The server permanently removes only that account's retained searches, records the deletion count in the audit log, and enforces role hierarchy: staff may clear their own or lower-ranked accounts, while only the Founder Owner may clear Owner history. Nyx Chat retains its ranked member sidebar, distinct readable special-role palettes, 4.8-second hover-only username wave, louder channel/DM notification tones, and stronger three-note direct-mention and `@everyone` ping. It preserves search-history recording, the scoped TikTok Ultraviolet compatibility path, persistent timed Chat mutes, Founder Owner moderation hierarchy overrides, Firebase-authenticated Socket.IO delivery, voice signaling and coturn, Caffeine, private DMs, attachments, reactions, mentions, role-restricted channels, Caddy On-Demand TLS, Link Checker, account-session reliability, and Chromebook workspace sizing.
-- Unreleased working tree: no tracked application changes. The protected untracked local work directories remain present and untouched.
+- Unreleased working tree: custom role administration, expanded Chat commands/emoji shortcodes, Minecraft-style display-name formatting, and new profile cosmetics are under validation. The protected untracked local work directories remain present and untouched.
 - `main` / `origin/main`: `0a654cc1c3e17faff12424ae1f2a1a4eb63f6a90`
 - Draft PR: `https://github.com/dubcatalt2-lab/Nyx/pull/34`
 - PR title: **Ship Pirate Cove, account controls, Link Checker, custom domains, and Nyx Chat**
@@ -194,6 +194,15 @@ The VPS serves generated `dist/` through Express on local port 8080 and exposes 
 - Netlify functions default `NYX_TRUST_PROXY` to `true` so the verified deployment headers can identify the source IP. A self-hosted deployment may set it only behind a proxy that overwrites client-supplied forwarding headers.
 - Production static files, APIs, and Wisp upgrades pass through Express's IP-ban guard on OVH. A matching Cloudflare IP List plus WAF rule remains the earliest edge block and prevents cached responses from bypassing the origin guard. The exact runbook is `docs/IP_BANS.md`. Do not add a Cloudflare API token to Nyx merely to synchronize the two lists.
 - Railway's direct Wisp endpoint is rollback-only and remains outside Cloudflare.
+
+## Custom Roles and Profile Presentation
+
+- The configured Founder Owner is the only account allowed to create, edit, delete, or assign custom roles. Definitions live in the server-only `nyxCustomRoles` Firestore collection and contain a stable ID, display label, color, built-in hierarchy placement, and a validated list of existing Nyx permissions. Custom roles cannot create another Owner or invent arbitrary permission names.
+- Assigning a custom role retains its built-in placement in `nyxUserAdministration.role`, records the custom role ID, and remembers the prior built-in role so removal can restore it. Direct built-in role changes clear any custom assignment. Owner Dashboard and Chat show the custom label/color while security comparisons continue using the placement rank.
+- Chat exposes `/roles`, Founder Owner-only `/roleadd` and `/roleremove`, plus `/userinfo`, `/avatar`, `/channelinfo`, `/poll`, and `/timestamp`. Command visibility is only a UI aid; every privileged mutation is re-authorized by the server.
+- Chat expands a bounded built-in set of recognized emoji shortcodes such as `:smiley:`, `:heart:`, and `:coffee:` before sending. Unknown shortcodes remain unchanged.
+- Display names may contain Minecraft-style `&` formatting codes for the 16 Bedrock colors plus bold, italic, underline, strikethrough, and reset. Formatting is presentation-only: canonical account usernames/handles remain plain and continue to control login, mentions, and uniqueness.
+- Profile cosmetics include the existing effects plus Starlight Ribbon, Cherry Bloom, Ocean Caustics, Crystal Crown, Lunar Halo, and Rose Vines. Values are allowlisted by the server and CSS respects reduced-motion preferences.
 
 ### OVH deployment
 

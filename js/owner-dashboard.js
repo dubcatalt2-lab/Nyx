@@ -21,6 +21,8 @@
   const ownerAssignableRoles = Object.freeze(["member", "contributor", "tester", "support", "moderator", "developer", "manager", "admin", "co_owner"]);
   const ownerRoleRanks = Object.freeze({ owner: 100, co_owner: 90, admin: 80, manager: 70, developer: 60, moderator: 50, support: 40, tester: 30, contributor: 20, member: 10, guest: 0 });
   const roleLabel = value => ownerRoleLabels[value] || "Member";
+  const userRoleLabel = user => user?.customRole?.label || roleLabel(user?.role);
+  const userRoleColor = user => /^#[0-9a-f]{6}$/i.test(String(user?.customRole?.color || "")) ? user.customRole.color : "";
   const roleIcon = role => `<img class="nyx-owner-role-icon" src="/assets/icons/roles/${esc(ownerRoleIcons[role] || role)}.png" alt="" aria-hidden="true">`;
   const roleOptions = (currentRole, allowedRoles = []) => {
     const allowed = new Set(allowedRoles);
@@ -242,7 +244,10 @@
       selectedUser: null,
       selectedCapabilities: null,
       ipBans: [],
-      ipBanClientIp: ""
+      ipBanClientIp: "",
+      customRoles: [],
+      customRolePlacements: [],
+      customRolePermissions: []
     };
     const overlay = document.createElement("section");
     overlay.className = "nyx-owner-dashboard-overlay";
@@ -266,6 +271,7 @@
               <div class="nyx-owner-quick-actions">
                 <button type="button" data-owner-online-only>${dashboardIcon("online")}Online users</button>
                 <button type="button" data-owner-export>${dashboardIcon("download")}Export page</button>
+                <button type="button" data-owner-custom-roles hidden>${dashboardIcon("users")}Custom roles</button>
                 <button type="button" data-owner-ip-bans hidden>${dashboardIcon("shield")}IP bans</button>
               </div>
             </header>
@@ -395,8 +401,8 @@
               && (ownerRoleRanks[state.access?.role] || 0) >= ownerRoleRanks.moderator
               && (state.access?.role === "owner" || user.role !== "owner");
             return `<tr data-owner-user-row="${esc(user.uid)}"${guest ? ' data-owner-guest-row="true"' : ""}>
-            <td><div class="nyx-owner-user-entry"><button class="nyx-owner-user-cell" type="button" data-owner-view-user="${esc(user.uid)}"><span class="nyx-owner-avatar">${ownerProfileImageMarkup(user.photoUrl, "", (user.displayName || "?").slice(0, 1).toUpperCase())}<i class="${user.online ? "online" : ""}"></i></span><span><span class="nyx-owner-user-name-row"><strong>${esc(user.displayName)}</strong><span class="nyx-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></span><small>@${esc(user.username)} · ${esc(user.email || (guest ? "No account" : "No email"))}</small><span class="nyx-owner-mobile-access"><span class="nyx-owner-badge role-${esc(user.role)}">${roleIcon(user.role)}${esc(roleLabel(user.role))}</span><span class="nyx-owner-badge subscription-${esc(user.subscriptionStatus)}">${esc(subscriptionLabel(user.subscriptionStatus))}</span></span></span></button>${canReviewSearches ? `<button class="nyx-owner-search-shield" type="button" data-owner-search-history="${esc(user.uid)}" aria-label="Review search history for ${esc(user.displayName)}" title="Review search history">${dashboardIcon("shield")}</button>` : ""}</div></td>
-            <td><span class="nyx-owner-badge role-${esc(user.role)}">${roleIcon(user.role)}${esc(roleLabel(user.role))}</span></td>
+            <td><div class="nyx-owner-user-entry"><button class="nyx-owner-user-cell" type="button" data-owner-view-user="${esc(user.uid)}"><span class="nyx-owner-avatar">${ownerProfileImageMarkup(user.photoUrl, "", (user.displayName || "?").slice(0, 1).toUpperCase())}<i class="${user.online ? "online" : ""}"></i></span><span><span class="nyx-owner-user-name-row"><strong>${esc(user.displayName)}</strong><span class="nyx-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></span><small>@${esc(user.username)} · ${esc(user.email || (guest ? "No account" : "No email"))}</small><span class="nyx-owner-mobile-access"><span class="nyx-owner-badge role-${esc(user.role)}${user.customRole ? " custom-role" : ""}"${userRoleColor(user) ? ` style="--owner-custom-role:${esc(userRoleColor(user))}"` : ""}>${roleIcon(user.role)}${esc(userRoleLabel(user))}</span><span class="nyx-owner-badge subscription-${esc(user.subscriptionStatus)}">${esc(subscriptionLabel(user.subscriptionStatus))}</span></span></span></button>${canReviewSearches ? `<button class="nyx-owner-search-shield" type="button" data-owner-search-history="${esc(user.uid)}" aria-label="Review search history for ${esc(user.displayName)}" title="Review search history">${dashboardIcon("shield")}</button>` : ""}</div></td>
+            <td><span class="nyx-owner-badge role-${esc(user.role)}${user.customRole ? " custom-role" : ""}"${userRoleColor(user) ? ` style="--owner-custom-role:${esc(userRoleColor(user))}"` : ""}>${roleIcon(user.role)}${esc(userRoleLabel(user))}</span></td>
             <td><span class="nyx-owner-badge subscription-${esc(user.subscriptionStatus)}">${esc(subscriptionLabel(user.subscriptionStatus))}</span></td>
             <td><span title="${esc(dateLabel(user.createdAt))}">${esc(relativeLabel(user.createdAt))}</span></td>
             <td><span title="${esc(guest ? "No account" : dateLabel(user.lastSignInAt))}">${esc(guest ? "Not signed in" : relativeLabel(user.lastSignInAt))}</span></td>
@@ -501,8 +507,17 @@
         const data = await api(`/api/owner-dashboard?${parameters}`, { signal: state.controller.signal });
         state.data = data;
         state.access = data.access || state.access;
+        state.customRoles = Array.isArray(data.customRoles) ? data.customRoles : state.customRoles;
         const ipBansButton = overlay.querySelector("[data-owner-ip-bans]");
         if (ipBansButton) ipBansButton.hidden = !state.access?.permissions?.includes("network:bans");
+        const customRolesButton = overlay.querySelector("[data-owner-custom-roles]");
+        if (customRolesButton) customRolesButton.hidden = state.access?.role !== "owner";
+        const roleFilter = overlay.querySelector('[name="role"]');
+        if (roleFilter) {
+          roleFilter.querySelectorAll("option[data-custom-role]").forEach(option => option.remove());
+          state.customRoles.forEach(role => roleFilter.insertAdjacentHTML("beforeend", `<option data-custom-role value="${esc(role.id)}">${esc(role.label)}</option>`));
+          roleFilter.value = state.role;
+        }
         const accessCopy = overlay.querySelector("[data-owner-access-copy]");
         if (accessCopy && state.access) accessCopy.textContent = `${state.access.roleLabel || roleLabel(state.access.role)} access · controls are limited to this role's permissions.`;
         renderMetrics(data.metrics);
@@ -633,9 +648,11 @@
         const avatar = ownerProfileImageMarkup(user.photoUrl, "", (user.displayName || "?").slice(0, 1).toUpperCase());
         const assignableRoles = access?.assignableRoles || [];
         const roleSelectOptions = assignableRoles.map(role => `<option value="${esc(role)}"${selected(user.role, role)}>${esc(roleLabel(role))}</option>`).join("");
-        const currentRoleOption = assignableRoles.includes(user.role) ? "" : `<option value="${esc(user.role)}" selected disabled>${esc(roleLabel(user.role))}</option>`;
+        const customRoleOptions = access?.role === "owner" ? state.customRoles.map(role => `<option value="custom:${esc(role.id)}"${user.customRole?.id === role.id ? " selected" : ""}>${esc(role.label)} · ${esc(roleLabel(role.baseRole))} placement</option>`).join("") : "";
+        const currentRoleValue = user.customRole ? `custom:${user.customRole.id}` : user.role;
+        const currentRoleOption = !user.customRole && !assignableRoles.includes(user.role) ? `<option value="${esc(user.role)}" selected disabled>${esc(roleLabel(user.role))}</option>` : "";
         const accessSection = capabilities.canSetRole || capabilities.canSetSubscription ? `<section class="nyx-owner-detail-section"><h3>Access</h3>
-          ${capabilities.canSetRole ? `<label>Current role<select data-owner-detail-role>${roleSelectOptions}${currentRoleOption}</select></label>${roleOptions(user.role, assignableRoles)}` : `<p class="nyx-owner-action-note">Role: ${esc(roleLabel(user.role))}</p>`}
+          ${capabilities.canSetRole ? `<label>Current role<select data-owner-detail-role>${roleSelectOptions}${customRoleOptions}${currentRoleOption}</select></label>${roleOptions(user.role, assignableRoles)}` : `<p class="nyx-owner-action-note">Role: ${esc(userRoleLabel(user))}</p>`}
           ${capabilities.canSetSubscription ? `<label>Subscription<select data-owner-detail-subscription><option value="free">Free</option><option value="premium">Premium</option><option value="trialing">Trial</option><option value="past_due">Past due</option><option value="canceled">Canceled</option></select></label><p class="nyx-owner-premium-note">Premium and Trial accounts receive Premium benefits automatically when they sign in. They do not need a Premium access code.</p><label>Monthly revenue <input data-owner-detail-revenue type="number" min="0" step="0.01" value="${((user.monthlyRevenueCents || 0) / 100).toFixed(2)}"></label>` : `<p class="nyx-owner-action-note">Subscription: ${esc(subscriptionLabel(user.subscriptionStatus))}</p>`}
           <div class="nyx-owner-detail-actions"><button type="button" data-owner-save-access>${dashboardIcon("save")}Save access</button></div></section>` : "";
         const accountActions = [
@@ -649,7 +666,7 @@
         const ipBanNote = capabilities.canManageNetworkBans ? (user.lastSeenIp ? `<p class="nyx-owner-action-note">Last seen IP: ${esc(user.lastSeenIp)} · ${esc(dateLabel(user.lastSeenIpAt))}. IP addresses can be shared or change over time.</p>` : '<p class="nyx-owner-action-note">No IP has been recorded for this account yet. Nyx records one after its next authenticated activity.</p>') : "";
         const accountActionsSection = accountActions ? `<section class="nyx-owner-detail-section"><h3>Account actions</h3>${!user.deliverableEmail && capabilities.canResetPassword ? '<p class="nyx-owner-action-note">This username-only account has no inbox. Create a secure reset link and give it directly to the account owner.</p>' : ""}${ipBanNote}<div class="nyx-owner-action-grid">${accountActions}</div></section>` : "";
         const recentActivitySection = capabilities.canViewAudit ? `<section class="nyx-owner-detail-section"><h3>Recent user activity</h3><div class="nyx-owner-user-activity">${(user.recentActivity || []).length ? user.recentActivity.map(event => `<p><strong>${esc(actionLabel(event.action))}</strong><span>${esc(relativeLabel(event.createdAt))}</span></p>`).join("") : "<span>No recorded account actions.</span>"}</div></section>` : "";
-        drawer.innerHTML = `<header><div class="nyx-owner-detail-avatar">${avatar}<i class="${user.online ? "online" : ""}"></i></div><div><span>${roleIcon(user.role)}${esc(roleLabel(user.role))} account</span><h2>${esc(user.displayName)}</h2><p class="nyx-owner-drawer-identity">@${esc(user.username)} <span class="nyx-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></p></div><button type="button" data-owner-drawer-close aria-label="Close user details">${dashboardIcon("close")}</button></header>
+        drawer.innerHTML = `<header><div class="nyx-owner-detail-avatar">${avatar}<i class="${user.online ? "online" : ""}"></i></div><div><span>${roleIcon(user.role)}${esc(userRoleLabel(user))} account</span><h2>${esc(user.displayName)}</h2><p class="nyx-owner-drawer-identity">@${esc(user.username)} <span class="nyx-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></p></div><button type="button" data-owner-drawer-close aria-label="Close user details">${dashboardIcon("close")}</button></header>
           <div class="nyx-owner-drawer-scroll">
             <section class="nyx-owner-detail-grid">${detailValue("Email", user.deliverableEmail ? user.email : "No email added")}${detailValue("Firebase UID", user.uid, "uid")}${detailValue("Presence", user.online ? "Online now" : "Offline")}${detailValue("Created", dateLabel(user.createdAt))}${detailValue("Last sign-in", dateLabel(user.lastSignInAt))}${detailValue("Last active", dateLabel(user.lastActiveAt))}${capabilities.canManageNetworkBans ? detailValue("Last seen IP", user.lastSeenIp || "Not recorded yet") : ""}${capabilities.canManageNetworkBans && user.lastSeenIp ? detailValue("IP last seen", dateLabel(user.lastSeenIpAt)) : ""}${detailValue("Email verified", user.deliverableEmail ? (user.emailVerified ? "Verified" : "Not verified") : "Not applicable · username-only")}</section>
             <section class="nyx-owner-detail-section nyx-owner-profile-management"><h3>Public profile</h3>${ownerProfilePreview(user)}${capabilities.canEditProfile ? `<details><summary>Edit this profile</summary>${ownerProfileEditor(user)}</details>` : ""}</section>
@@ -659,12 +676,71 @@
           </div>`;
         const roleSelect = drawer.querySelector("[data-owner-detail-role]");
         const subscriptionSelect = drawer.querySelector("[data-owner-detail-subscription]");
-        if (roleSelect) roleSelect.value = user.role;
+        const profileEffectSelect = drawer.querySelector('[name="profileEffect"]');
+        profileEffectSelect?.querySelector('[value="custom"]')?.insertAdjacentHTML("beforebegin", '<option value="starlight-ribbon">Starlight ribbon</option><option value="cherry-bloom">Cherry bloom</option><option value="ocean-caustics">Ocean caustics</option>');
+        if (profileEffectSelect) profileEffectSelect.value = user.profile?.profileEffect || "none";
+        const decorationSelect = drawer.querySelector('[name="avatarDecoration"]');
+        decorationSelect?.insertAdjacentHTML("beforeend", '<option value="crystal-crown">Crystal crown</option><option value="lunar-halo">Lunar halo</option><option value="rose-vines">Rose vines</option>');
+        if (decorationSelect) decorationSelect.value = user.profile?.avatarDecoration || "none";
+        if (roleSelect) roleSelect.value = currentRoleValue;
         if (subscriptionSelect) subscriptionSelect.value = user.subscriptionStatus;
-        syncRoleOptions(drawer, user.role);
+        syncRoleOptions(drawer, currentRoleValue);
         void hydrateOwnerProfileMedia(drawer);
       } catch (error) {
         drawer.innerHTML = `<div class="nyx-owner-error"><strong>User details could not load</strong><span>${esc(error.message)}</span><button type="button" data-owner-drawer-close>Close</button></div>`;
+      }
+    }
+
+    function customRolePlacementOptions(current = "member") {
+      return (state.customRolePlacements.length ? state.customRolePlacements : ownerAssignableRoles.map(id => ({ id, label: roleLabel(id) })))
+        .map(role => `<option value="${esc(role.id)}"${role.id === current ? " selected" : ""}>${esc(role.label)} placement</option>`).join("");
+    }
+
+    function customRolePermissionOptions(selectedPermissions = []) {
+      const selected = new Set(selectedPermissions);
+      return `<fieldset class="nyx-owner-custom-role-permissions"><legend>Permissions</legend>${state.customRolePermissions.map(permission => `<label><input type="checkbox" name="permissions" value="${esc(permission.id)}"${selected.has(permission.id) ? " checked" : ""}><span>${esc(permission.label)}</span><small>${esc(permission.id)}</small></label>`).join("")}</fieldset>`;
+    }
+
+    function renderCustomRoles() {
+      drawer.innerHTML = `<header><div><span>${dashboardIcon("users")}</span><h2>Custom roles</h2><p>Owner-only role colors, placement, and assignments.</p></div><button type="button" data-owner-drawer-close aria-label="Close custom roles">${dashboardIcon("close")}</button></header>
+        <div class="nyx-owner-drawer-scroll nyx-owner-custom-role-drawer">
+          <section class="nyx-owner-detail-section"><h3>Create a custom role</h3><p class="nyx-owner-action-note">Placement controls hierarchy. Permissions control exactly which Nyx administration tools the role can use. Custom roles cannot grant Owner access.</p><form class="nyx-owner-custom-role-form" data-owner-custom-role-create><label>Name<input name="label" maxlength="32" minlength="2" required placeholder="Night Watch"></label><label>Role ID<input name="id" maxlength="32" pattern="[a-z0-9][a-z0-9-]{1,31}" placeholder="night-watch"></label><label>Color<input name="color" type="color" value="#8ea1ff" required></label><label>Placement<select name="baseRole">${customRolePlacementOptions("member")}</select></label>${customRolePermissionOptions([])}<div class="nyx-owner-detail-actions"><button type="submit">${dashboardIcon("save")}Create role</button></div></form></section>
+          <section class="nyx-owner-detail-section"><h3>Configured roles</h3>${state.customRoles.length ? `<div class="nyx-owner-custom-role-list">${state.customRoles.map(role => `<form data-owner-custom-role-update="${esc(role.id)}"><span class="nyx-owner-custom-role-swatch" style="--owner-custom-role:${esc(role.color)}"></span><label>Name<input name="label" maxlength="32" minlength="2" required value="${esc(role.label)}"></label><label>Color<input name="color" type="color" value="${esc(role.color)}" required></label><label>Placement<select name="baseRole">${customRolePlacementOptions(role.baseRole)}</select></label>${customRolePermissionOptions(role.permissions)}<div><button type="submit">${dashboardIcon("save")}Save</button><button class="danger" type="button" data-owner-custom-role-delete="${esc(role.id)}">${dashboardIcon("trash")}Delete</button></div></form>`).join("")}</div>` : '<p class="nyx-owner-action-note">No custom roles have been created yet.</p>'}</section>
+        </div>`;
+    }
+
+    async function openCustomRoles() {
+      drawer.hidden = false;
+      drawer.classList.remove("show");
+      drawer.innerHTML = '<div class="nyx-owner-drawer-loading"><i></i><i></i><i></i></div>';
+      requestAnimationFrame(() => drawer.classList.add("show"));
+      state.selectedUser = null;
+      state.selectedCapabilities = null;
+      try {
+        const data = await api("/api/owner-dashboard/custom-roles");
+        state.customRoles = data.roles || [];
+        state.customRolePlacements = data.placements || [];
+        state.customRolePermissions = data.permissions || [];
+        state.access = data.access || state.access;
+        renderCustomRoles();
+      } catch (error) {
+        drawer.innerHTML = `<div class="nyx-owner-error"><strong>Custom roles could not load</strong><span>${esc(error.message)}</span><button type="button" data-owner-drawer-close>Close</button></div>`;
+      }
+    }
+
+    async function deleteCustomRole(id) {
+      const role = state.customRoles.find(entry => entry.id === id);
+      if (!role) return;
+      const confirmed = await confirmAction({ title: "Delete this custom role?", message: `${role.label} will be removed from every assigned account. Those accounts will return to their previous built-in role.`, confirmLabel: "Delete role", requireText: role.label, danger: true });
+      if (!confirmed) return;
+      try {
+        await api(`/api/owner-dashboard/custom-roles/${encodeURIComponent(id)}`, { method: "DELETE" });
+        state.customRoles = state.customRoles.filter(entry => entry.id !== id);
+        renderCustomRoles();
+        notify("Custom role deleted.");
+        await load({ preserveLoading: true });
+      } catch (error) {
+        notify(error.message || "The custom role could not be deleted.", "error");
       }
     }
 
@@ -815,7 +891,10 @@
       if (event.target === overlay || event.target.closest("[data-owner-close]")) return destroy();
       if (event.target.closest("[data-owner-refresh]")) return void load();
       if (event.target.closest("[data-owner-export]")) return exportCurrentPage();
+      if (event.target.closest("[data-owner-custom-roles]")) return void openCustomRoles();
       if (event.target.closest("[data-owner-ip-bans]")) return void openIpBans();
+      const customRoleDelete = event.target.closest("[data-owner-custom-role-delete]")?.dataset.ownerCustomRoleDelete;
+      if (customRoleDelete) return void deleteCustomRole(customRoleDelete);
       const unbanId = event.target.closest("[data-owner-unban]")?.dataset.ownerUnban;
       if (unbanId) return void removeIpBan(unbanId);
       const segment = event.target.closest("[data-owner-segment]")?.dataset.ownerSegment;
@@ -872,16 +951,24 @@
         const roleField = drawer.querySelector("[data-owner-detail-role]");
         const subscriptionField = drawer.querySelector("[data-owner-detail-subscription]");
         const revenueField = drawer.querySelector("[data-owner-detail-revenue]");
-        const role = roleField?.value || state.selectedUser?.role;
+        const role = roleField?.value || (state.selectedUser?.customRole ? `custom:${state.selectedUser.customRole.id}` : state.selectedUser?.role);
         const subscriptionStatus = subscriptionField?.value || state.selectedUser?.subscriptionStatus;
         const monthlyRevenueCents = revenueField ? Math.round((Number(revenueField.value) || 0) * 100) : state.selectedUser?.monthlyRevenueCents;
-        const roleChanged = Boolean(roleField && role !== state.selectedUser?.role);
+        const previousRole = state.selectedUser?.customRole ? `custom:${state.selectedUser.customRole.id}` : state.selectedUser?.role;
+        const roleChanged = Boolean(roleField && role !== previousRole);
         const subscriptionChanged = Boolean(subscriptionField && (subscriptionStatus !== state.selectedUser?.subscriptionStatus || monthlyRevenueCents !== state.selectedUser?.monthlyRevenueCents));
         return void (async () => {
           if (roleChanged) {
-            const confirmed = await confirmAction({ title: "Change account role?", message: `${state.selectedUser.email || state.selectedUser.displayName} will become ${roleLabel(role)}.`, confirmLabel: "Change role" });
+            const customRole = role.startsWith("custom:") ? state.customRoles.find(entry => entry.id === role.slice(7)) : null;
+            const nextLabel = customRole?.label || roleLabel(role);
+            const confirmed = await confirmAction({ title: "Change account role?", message: `${state.selectedUser.email || state.selectedUser.displayName} will become ${nextLabel}.`, confirmLabel: "Change role" });
             if (!confirmed) return;
-            await mutateUser("set_role", { role });
+            if (customRole) {
+              await api(`/api/owner-dashboard/custom-roles/${encodeURIComponent(customRole.id)}/assign`, { method: "POST", body: JSON.stringify({ uid: state.selectedUser.uid }) });
+              notify(`${customRole.label} assigned.`);
+              await openUser(state.selectedUser.uid);
+              await load({ preserveLoading: true });
+            } else await mutateUser("set_role", { role });
           }
           if (subscriptionChanged) await mutateUser("set_subscription", { subscriptionStatus, monthlyRevenueCents });
           if (!roleChanged && !subscriptionChanged) notify("No access changes to save.", "error");
@@ -941,6 +1028,30 @@
     }
 
     function onSubmit(event) {
+      const customRoleForm = event.target.closest("[data-owner-custom-role-create], [data-owner-custom-role-update]");
+      if (customRoleForm) {
+        event.preventDefault();
+        if (!customRoleForm.reportValidity()) return;
+        const values = new FormData(customRoleForm);
+        const id = customRoleForm.dataset.ownerCustomRoleUpdate || "";
+        const body = { label: values.get("label"), color: values.get("color"), baseRole: values.get("baseRole"), permissions: values.getAll("permissions") };
+        if (!id) body.id = values.get("id");
+        const submit = customRoleForm.querySelector('[type="submit"]');
+        submit.disabled = true;
+        void (async () => {
+          try {
+            const result = await api(id ? `/api/owner-dashboard/custom-roles/${encodeURIComponent(id)}` : "/api/owner-dashboard/custom-roles", { method: id ? "PATCH" : "POST", body: JSON.stringify(body) });
+            state.customRoles = id ? state.customRoles.map(role => role.id === id ? result.role : role) : [...state.customRoles, result.role];
+            state.customRoles.sort((left, right) => Number(right.rank || 0) - Number(left.rank || 0) || left.label.localeCompare(right.label));
+            renderCustomRoles();
+            notify(id ? "Custom role updated." : "Custom role created.");
+            await load({ preserveLoading: true });
+          } catch (error) {
+            notify(error.message || "The custom role could not be saved.", "error");
+          }
+        })().finally(() => { if (submit.isConnected) submit.disabled = false; });
+        return;
+      }
       const ipBanForm = event.target.closest("[data-owner-ip-ban-form]");
       if (ipBanForm) {
         event.preventDefault();

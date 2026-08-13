@@ -185,6 +185,10 @@ const nyxAccountRegisterMaxAttempts = 5;
 const nyxAccountPasswordResetMaxAttempts = 5;
 const ownerDashboardSnapshotTtlMs = 30_000;
 let ownerDashboardSnapshotCache = { expiresAt: 0, value: null, promise: null };
+const nyxCustomRoleCollection = "nyxCustomRoles";
+const nyxCustomRoleIdPattern = /^[a-z0-9][a-z0-9-]{1,31}$/;
+const nyxCustomRoleCacheTtlMs = 60_000;
+let nyxCustomRoleCache = { expiresAt: 0, value: new Map(), promise: null };
 const nyxIpBanCollectionName = "nyxIpBans";
 const nyxIpBanCacheTtlMs = 10 * 60_000;
 const nyxIpBanRetryDelayMs = 5 * 60_000;
@@ -2498,13 +2502,13 @@ function normalizeFounderProfile(value = {}) {
     displayNameEffect: ["solid", "gradient", "neon", "toon", "pop"].includes(String(source.displayNameEffect || "").toLowerCase()) ? String(source.displayNameEffect).toLowerCase() : founderProfileDefaults.displayNameEffect,
     displayNameColorPrimary,
     displayNameColorSecondary,
-    profileEffect: ["none", "glow", "sparkle", "aurora", "holographic", "fireflies", "cosmic-dust", "electric-storm", "meteor-shower", "cyber-grid", "plasma", "snowfall", "embers", "bubbles", "custom"].includes(String(source.profileEffect || "").toLowerCase()) ? String(source.profileEffect).toLowerCase() : founderProfileDefaults.profileEffect,
+    profileEffect: ["none", "glow", "sparkle", "aurora", "holographic", "fireflies", "cosmic-dust", "electric-storm", "meteor-shower", "cyber-grid", "plasma", "snowfall", "embers", "bubbles", "starlight-ribbon", "cherry-bloom", "ocean-caustics", "custom"].includes(String(source.profileEffect || "").toLowerCase()) ? String(source.profileEffect).toLowerCase() : founderProfileDefaults.profileEffect,
     customEffectPattern: ["starfield", "aurora", "comets", "grid"].includes(String(source.customEffectPattern || "").toLowerCase()) ? String(source.customEffectPattern).toLowerCase() : founderProfileDefaults.customEffectPattern,
     customEffectColorPrimary,
     customEffectColorSecondary,
     customEffectSpeed: Math.max(2, Math.min(18, Number(source.customEffectSpeed) || founderProfileDefaults.customEffectSpeed)),
     customEffectIntensity: Math.max(20, Math.min(100, Number(source.customEffectIntensity) || founderProfileDefaults.customEffectIntensity)),
-    avatarDecoration: ["none", "starfall", "orbit", "laurel", "neon-wings"].includes(String(source.avatarDecoration || "").toLowerCase()) ? String(source.avatarDecoration).toLowerCase() : founderProfileDefaults.avatarDecoration,
+    avatarDecoration: ["none", "starfall", "orbit", "laurel", "neon-wings", "crystal-crown", "lunar-halo", "rose-vines"].includes(String(source.avatarDecoration || "").toLowerCase()) ? String(source.avatarDecoration).toLowerCase() : founderProfileDefaults.avatarDecoration,
     status: ["online", "idle", "dnd", "offline"].includes(String(source.status || "").toLowerCase()) ? String(source.status).toLowerCase() : founderProfileDefaults.status,
     roles: roles.map(role => founderProfileText(role, "", 32)).filter(Boolean).slice(0, 8),
     badges: badges.map(badge => founderProfileText(badge, "", 32)).filter(Boolean).slice(0, 8),
@@ -2608,13 +2612,13 @@ function normalizeNyxUserProfile(value = {}, token = {}) {
     displayNameEffect: ["solid", "gradient", "neon", "toon", "pop"].includes(String(source.displayNameEffect || "").toLowerCase()) ? String(source.displayNameEffect).toLowerCase() : "solid",
     displayNameColorPrimary,
     displayNameColorSecondary,
-    profileEffect: ["none", "glow", "sparkle", "aurora", "holographic", "fireflies", "cosmic-dust", "electric-storm", "meteor-shower", "cyber-grid", "plasma", "snowfall", "embers", "bubbles", "custom"].includes(String(source.profileEffect || "").toLowerCase()) ? String(source.profileEffect).toLowerCase() : "none",
+    profileEffect: ["none", "glow", "sparkle", "aurora", "holographic", "fireflies", "cosmic-dust", "electric-storm", "meteor-shower", "cyber-grid", "plasma", "snowfall", "embers", "bubbles", "starlight-ribbon", "cherry-bloom", "ocean-caustics", "custom"].includes(String(source.profileEffect || "").toLowerCase()) ? String(source.profileEffect).toLowerCase() : "none",
     customEffectPattern: ["starfield", "aurora", "comets", "grid"].includes(String(source.customEffectPattern || "").toLowerCase()) ? String(source.customEffectPattern).toLowerCase() : "starfield",
     customEffectColorPrimary,
     customEffectColorSecondary,
     customEffectSpeed: Math.max(2, Math.min(18, Number(source.customEffectSpeed) || 7)),
     customEffectIntensity: Math.max(20, Math.min(100, Number(source.customEffectIntensity) || 70)),
-    avatarDecoration: ["none", "starfall", "orbit", "laurel", "neon-wings"].includes(String(source.avatarDecoration || "").toLowerCase()) ? String(source.avatarDecoration).toLowerCase() : "none",
+    avatarDecoration: ["none", "starfall", "orbit", "laurel", "neon-wings", "crystal-crown", "lunar-halo", "rose-vines"].includes(String(source.avatarDecoration || "").toLowerCase()) ? String(source.avatarDecoration).toLowerCase() : "none",
     status: ["online", "idle", "dnd", "offline"].includes(String(source.status || "").toLowerCase()) ? String(source.status).toLowerCase() : "online"
   };
 }
@@ -2719,6 +2723,83 @@ const nyxRoleLabels = Object.freeze({
   contributor: "Contributor",
   member: "Member"
 });
+const nyxCustomRolePermissionCatalog = Object.freeze([
+  ["dashboard:view", "Open Owner Dashboard"], ["users:view", "View accounts"], ["audit:view", "View audit logs"],
+  ["profiles:write", "Edit user profiles"], ["roles:write", "Assign built-in roles"], ["subscriptions:write", "Manage subscriptions"],
+  ["accounts:reset", "Create password resets"], ["accounts:verify", "Verify emails"], ["accounts:disable", "Disable accounts"],
+  ["accounts:delete", "Delete accounts"], ["network:bans", "Manage IP bans"], ["developer-console", "Open Developer Console"],
+  ["chat:moderate", "Moderate Nyx Chat"], ["chat:manage_channels", "Manage Chat channels"], ["link-scanner:bulk", "Run full Link Checker scans"]
+]);
+const nyxCustomRolePermissionSet = new Set(nyxCustomRolePermissionCatalog.map(([permission]) => permission));
+
+function nyxCustomRolePermissions(value, fallbackRole = "member") {
+  const fallback = nyxRolePolicy(fallbackRole).permissions.filter(permission => nyxCustomRolePermissionSet.has(permission));
+  if (nyxRolePolicy(fallbackRole).rank >= nyxRolePolicy("moderator").rank) fallback.push("chat:moderate", "link-scanner:bulk");
+  if (nyxRolePolicy(fallbackRole).rank >= nyxRolePolicy("manager").rank) fallback.push("chat:manage_channels");
+  if (!Array.isArray(value)) return [...fallback];
+  return [...new Set(value.map(permission => String(permission || "").trim()).filter(permission => nyxCustomRolePermissionSet.has(permission)))];
+}
+
+function nyxCustomRoleId(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-")
+    .slice(0, 32);
+}
+
+function nyxCustomRoleRecord(id, value = {}) {
+  const source = value && typeof value === "object" ? value : {};
+  const roleId = nyxCustomRoleId(id || source.id);
+  const baseRole = normalizeNyxRole(source.baseRole);
+  const color = /^#[0-9a-f]{6}$/i.test(String(source.color || "").trim())
+    ? String(source.color).trim().toLowerCase()
+    : "#8ea1ff";
+  if (!nyxCustomRoleIdPattern.test(roleId) || Object.prototype.hasOwnProperty.call(nyxRolePolicies, roleId)) return null;
+  return {
+    id: roleId,
+    label: founderProfileText(source.label, "Custom role", 32),
+    color,
+    baseRole,
+    rank: nyxRolePolicy(baseRole).rank,
+    permissions: nyxCustomRolePermissions(source.permissions, baseRole),
+    createdAt: safeDateIso(source.createdAt),
+    updatedAt: safeDateIso(source.updatedAt)
+  };
+}
+
+async function nyxCustomRoles(firebase, force = false) {
+  const now = Date.now();
+  if (!force && nyxCustomRoleCache.expiresAt > now) return nyxCustomRoleCache.value;
+  if (!force && nyxCustomRoleCache.promise) return nyxCustomRoleCache.promise;
+  const promise = (async () => {
+    const snapshot = await firebase.firestore.collection(nyxCustomRoleCollection).limit(100).get();
+    const roles = snapshot.docs.map(document => nyxCustomRoleRecord(document.id, document.data())).filter(Boolean);
+    roles.sort((left, right) => right.rank - left.rank || left.label.localeCompare(right.label, undefined, { sensitivity: "base" }));
+    return new Map(roles.map(role => [role.id, role]));
+  })();
+  nyxCustomRoleCache.promise = promise;
+  try {
+    const value = await promise;
+    nyxCustomRoleCache = { expiresAt: Date.now() + nyxCustomRoleCacheTtlMs, value, promise: null };
+    return value;
+  } catch (error) {
+    nyxCustomRoleCache.promise = null;
+    throw error;
+  }
+}
+
+function nyxAssignedCustomRole(administration = {}, roles = new Map()) {
+  const id = nyxCustomRoleId(administration.customRoleId);
+  const role = roles.get(id);
+  return role && role.baseRole === normalizeNyxRole(administration.role) ? role : null;
+}
+
+function nyxPublicCustomRole(role) {
+  return role ? { id: role.id, label: role.label, color: role.color, baseRole: role.baseRole, rank: role.rank, permissions: [...role.permissions] } : null;
+}
 
 function nyxRolePolicy(role) {
   return nyxRolePolicies[role] || nyxRolePolicies.member;
@@ -2736,7 +2817,8 @@ function nyxOwnerAccessPayload(actor) {
   const policy = nyxRolePolicy(actor.role);
   return {
     role: actor.role,
-    roleLabel: nyxRoleLabels[actor.role] || nyxRoleLabels.member,
+    roleLabel: actor.customRole?.label || nyxRoleLabels[actor.role] || nyxRoleLabels.member,
+    customRole: nyxPublicCustomRole(actor.customRole),
     owner: actor.role === "owner",
     dashboard: nyxActorHasPermission(actor, "dashboard:view"),
     permissions: [...actor.permissions],
@@ -2901,7 +2983,8 @@ async function ownerDashboardActor(req, requiredPermission = "dashboard:view") {
   }
   const role = nyxRoleForUser(token.uid, administration, ownerUid);
   const policy = nyxRolePolicy(role);
-  const actor = { uid: token.uid, role, permissions: policy.permissions, rank: policy.rank };
+  const customRole = token.uid === ownerUid ? null : nyxAssignedCustomRole(administration, await nyxCustomRoles(firebase));
+  const actor = { uid: token.uid, role, customRole, permissions: customRole?.permissions || policy.permissions, rank: customRole?.rank || policy.rank };
   if (requiredPermission && !nyxActorHasPermission(actor, requiredPermission)) {
     const error = new Error(`${nyxRoleLabels[role] || "Member"} does not have permission to open this area.`);
     error.status = 403;
@@ -2910,18 +2993,30 @@ async function ownerDashboardActor(req, requiredPermission = "dashboard:view") {
   return { firebase, token, actor, ownerUid };
 }
 
+async function nyxFounderOwnerActor(req) {
+  const context = await ownerDashboardActor(req, "dashboard:view");
+  if (context.actor.role !== "owner" || context.actor.uid !== context.ownerUid) {
+    const error = new Error("Only the configured Nyx Owner can manage custom roles.");
+    error.status = 403;
+    throw error;
+  }
+  return context;
+}
+
 async function linkCheckerBulkSubscriber(req) {
   const { firebase, token } = await authenticatedNyxUser(req, false);
   const cached = linkCheckerBulkAccessCache.get(token.uid);
   let subscriptionStatus = cached?.expiresAt > Date.now() ? cached.subscriptionStatus : "";
   let role = cached?.expiresAt > Date.now() ? cached.role : "";
+  let staffAccess = cached?.expiresAt > Date.now() ? cached.staffAccess === true : false;
   if (!subscriptionStatus || !role) {
     const administration = (await firebase.firestore.collection("nyxUserAdministration").doc(token.uid).get()).data() || {};
     subscriptionStatus = normalizeSubscriptionStatus(administration.subscriptionStatus || administration.subscription?.status);
     role = nyxRoleForUser(token.uid, administration);
-    linkCheckerBulkAccessCache.set(token.uid, { subscriptionStatus, role, expiresAt: Date.now() + linkCheckerBulkAccessCacheTtlMs });
+    const customRole = nyxAssignedCustomRole(administration, await nyxCustomRoles(firebase));
+    staffAccess = customRole ? customRole.permissions.includes("link-scanner:bulk") : nyxRolePolicy(role).rank >= nyxRolePolicy("moderator").rank;
+    linkCheckerBulkAccessCache.set(token.uid, { subscriptionStatus, role, staffAccess, expiresAt: Date.now() + linkCheckerBulkAccessCacheTtlMs });
   }
-  const staffAccess = nyxRolePolicy(role).rank >= nyxRolePolicy("moderator").rank;
   if (!hasPremiumSubscription(subscriptionStatus) && !staffAccess) {
     const error = new Error("Premium, Trial, or Moderator access is required to run a full registry scan.");
     error.status = 403;
@@ -3003,12 +3098,13 @@ async function listAllFirebaseUsers(auth, limit = ownerDashboardUserScanLimit) {
   return { users, truncated: Boolean(pageToken) };
 }
 
-function nyxOwnerUserRecord(user, administration = {}, profileData = {}, activity = {}, ownerUid = "", includeProfileMedia = false, includeNetworkDetails = false) {
+function nyxOwnerUserRecord(user, administration = {}, profileData = {}, activity = {}, ownerUid = "", includeProfileMedia = false, includeNetworkDetails = false, customRoles = new Map()) {
   const profile = normalizeNyxUserProfile(profileData?.profile);
   const email = String(user.email || "");
   const emailUsername = email.split("@")[0] || user.uid.slice(0, 8);
   const profileUsername = String(profile.handle || "").replace(/^@/, "");
   const role = nyxRoleForUser(user.uid, administration, ownerUid);
+  const customRole = nyxAssignedCustomRole(administration, customRoles);
   const subscriptionStatus = normalizeSubscriptionStatus(administration.subscriptionStatus || administration.subscription?.status);
   const monthlyRevenueCents = Math.max(0, Math.min(100_000_000, Number(administration.monthlyRevenueCents || administration.subscription?.monthlyRevenueCents || 0) || 0));
   const lastActiveAtMs = safeActivityTime(activity.lastActiveAtMs || activity.lastActiveAt);
@@ -3020,6 +3116,7 @@ function nyxOwnerUserRecord(user, administration = {}, profileData = {}, activit
     email,
     deliverableEmail: nyxDeliverableEmail(email),
     role,
+    customRole: nyxPublicCustomRole(customRole),
     subscriptionStatus,
     monthlyRevenueCents,
     createdAt: safeDateIso(user.metadata?.creationTime),
@@ -3346,6 +3443,11 @@ function nyxChatReactionPayload(value, viewerUid) {
   }).filter(Boolean);
 }
 
+function nyxChatCustomRole(value) {
+  const role = value && typeof value === "object" ? nyxCustomRoleRecord(value.id, value) : null;
+  return nyxPublicCustomRole(role);
+}
+
 function nyxChatMessagePayload(document, viewerUid = "") {
   const value = document?.data?.() || {};
   const author = value.author && typeof value.author === "object" ? value.author : {};
@@ -3366,6 +3468,7 @@ function nyxChatMessagePayload(document, viewerUid = "") {
       handle: `@${nyxProfileUsername(author.handle, "nyx-user")}`,
       avatarUrl: nyxChatAvatar(author.avatarUrl),
       role: nyxChatRole(author.role),
+      customRole: nyxChatCustomRole(author.customRole),
       caffeine: author.caffeine === true
     }
   };
@@ -3385,7 +3488,8 @@ function nyxChatConversationMember(value, fallbackUid = "") {
     handle: `@${nyxProfileUsername(source.handle, "nyx-user")}`,
     avatarUrl: nyxChatAvatar(source.avatarUrl),
     role: nyxChatRole(source.role),
-    roleLabel: nyxRoleLabels[nyxChatRole(source.role)] || nyxRoleLabels.member,
+    customRole: nyxChatCustomRole(source.customRole),
+    roleLabel: nyxChatCustomRole(source.customRole)?.label || nyxRoleLabels[nyxChatRole(source.role)] || nyxRoleLabels.member,
     caffeine: source.caffeine === true
   };
 }
@@ -3676,22 +3780,25 @@ async function nyxChatMemberDirectory(firebase) {
   const promise = (async () => {
     const profileSnapshot = await firebase.firestore.collection("nyxUserProfiles").limit(250).get();
     const uids = profileSnapshot.docs.map(document => document.id);
-    const [administration, activity] = await Promise.all([
+    const [administration, activity, customRoles] = await Promise.all([
       firestoreDocumentsById(firebase.firestore, "nyxUserAdministration", uids),
-      firestoreDocumentsById(firebase.firestore, "nyxUserActivity", uids)
+      firestoreDocumentsById(firebase.firestore, "nyxUserActivity", uids),
+      nyxCustomRoles(firebase)
     ]);
     const ownerUid = founderProfileConfig().administratorUid;
     return profileSnapshot.docs.map(document => {
       const profile = normalizeNyxUserProfile(document.data()?.profile, { uid: document.id });
       const memberAdministration = administration.get(document.id) || {};
       const role = nyxRoleForUser(document.id, memberAdministration, ownerUid);
+      const customRole = nyxAssignedCustomRole(memberAdministration, customRoles);
       return {
         uid: document.id,
         displayName: profile.displayName,
         handle: profile.handle,
         avatarUrl: nyxChatAvatar(profile.avatarUrl),
         role,
-        roleLabel: nyxRoleLabels[role] || nyxRoleLabels.member,
+        customRole: nyxPublicCustomRole(customRole),
+        roleLabel: customRole?.label || nyxRoleLabels[role] || nyxRoleLabels.member,
         caffeine: nyxCaffeineEntitlement(document.id, memberAdministration).active,
         lastActiveAtMs: safeActivityTime(activity.get(document.id)?.lastActiveAtMs || activity.get(document.id)?.lastActiveAt)
       };
@@ -3741,13 +3848,15 @@ async function nyxChatIdentity(firebase, token) {
   if (cached?.value && cached.expiresAt > now) return cached.value;
   if (cached?.promise) return cached.promise;
   const promise = (async () => {
-    const [profileSnapshot, administrationSnapshot] = await Promise.all([
+    const [profileSnapshot, administrationSnapshot, customRoles] = await Promise.all([
       firebase.firestore.collection("nyxUserProfiles").doc(uid).get(),
-      firebase.firestore.collection("nyxUserAdministration").doc(uid).get()
+      firebase.firestore.collection("nyxUserAdministration").doc(uid).get(),
+      nyxCustomRoles(firebase)
     ]);
     const profile = normalizeNyxUserProfile(profileSnapshot.data()?.profile, token);
     const administration = administrationSnapshot.data() || {};
     const role = nyxRoleForUser(uid, administration);
+    const customRole = nyxAssignedCustomRole(administration, customRoles);
     const caffeine = nyxCaffeineEntitlement(uid, administration).active;
     return {
       uid,
@@ -3755,10 +3864,11 @@ async function nyxChatIdentity(firebase, token) {
       handle: profile.handle,
       avatarUrl: nyxChatAvatar(profile.avatarUrl),
       role,
-      roleLabel: nyxRoleLabels[role] || nyxRoleLabels.member,
+      customRole: nyxPublicCustomRole(customRole),
+      roleLabel: customRole?.label || nyxRoleLabels[role] || nyxRoleLabels.member,
       caffeine,
-      canModerate: nyxChatCanModerate(role),
-      canManageChannels: nyxChatCanManageChannels(role)
+      canModerate: customRole ? customRole.permissions.includes("chat:moderate") : nyxChatCanModerate(role),
+      canManageChannels: customRole ? customRole.permissions.includes("chat:manage_channels") : nyxChatCanManageChannels(role)
     };
   })();
   nyxChatIdentityCache.set(uid, { value: null, expiresAt: 0, promise });
@@ -4020,10 +4130,11 @@ async function ownerDashboardSnapshot(firebase) {
   ownerDashboardSnapshotCache.promise = (async () => {
     const { users: authUsers, truncated } = await listAllFirebaseUsers(firebase.auth);
     const uids = authUsers.map(user => user.uid);
-    const [administration, profiles, activity] = await Promise.all([
+    const [administration, profiles, activity, customRoles] = await Promise.all([
       firestoreDocumentsById(firebase.firestore, "nyxUserAdministration", uids),
       firestoreDocumentsById(firebase.firestore, "nyxUserProfiles", uids, ["profile.displayName", "profile.handle", "profile.bio", "profile.customStatus", "profile.status"]),
-      firestoreDocumentsById(firebase.firestore, "nyxUserActivity", uids)
+      firestoreDocumentsById(firebase.firestore, "nyxUserActivity", uids),
+      nyxCustomRoles(firebase)
     ]);
     const ownerUid = founderProfileConfig().administratorUid;
     return {
@@ -4032,7 +4143,10 @@ async function ownerDashboardSnapshot(firebase) {
         administration.get(user.uid),
         profiles.get(user.uid),
         activity.get(user.uid),
-        ownerUid
+        ownerUid,
+        false,
+        false,
+        customRoles
       )),
       truncated
     };
@@ -4054,6 +4168,11 @@ function invalidateOwnerDashboardSnapshot() {
   const revision = recordNyxChatRealtimeEvent({ kind: "members" });
   emitNyxChatSocketEvent({ kind: "members", revision });
   void refreshNyxChatSocketAuthorizations();
+}
+
+function invalidateNyxCustomRoles() {
+  nyxCustomRoleCache = { expiresAt: 0, value: new Map(), promise: null };
+  invalidateOwnerDashboardSnapshot();
 }
 
 function linkGeneratorClientId(req) {
@@ -5458,7 +5577,8 @@ app.get("/api/account/me", async (req, res) => {
     ]);
     const administrationData = administration.data() || {};
     const role = nyxRoleForUser(token.uid, administrationData);
-    const access = nyxOwnerAccessPayload({ role, permissions: nyxRolePolicy(role).permissions });
+    const customRole = nyxAssignedCustomRole(administrationData, await nyxCustomRoles(firebase));
+    const access = nyxOwnerAccessPayload({ role, customRole, permissions: customRole?.permissions || nyxRolePolicy(role).permissions });
     const subscriptionStatus = normalizeSubscriptionStatus(administrationData.subscriptionStatus || administrationData.subscription?.status);
     res.json({
       uid: token.uid,
@@ -6059,7 +6179,7 @@ app.get(["/api/chat/moderation/search-history", "/api/chat/moderation/flagged-se
   try {
     const { firebase, token } = await authenticatedNyxChatUser(req, false);
     const identity = await nyxChatIdentity(firebase, token);
-    if (!nyxChatCanModerate(identity.role)) {
+    if (!identity.canModerate) {
       res.status(403).json({ error: "Moderator access is required." });
       return;
     }
@@ -6114,7 +6234,7 @@ app.delete(["/api/chat/moderation/search-history", "/api/chat/moderation/flagged
   try {
     const { firebase, token } = await authenticatedNyxChatUser(req, false);
     const identity = await nyxChatIdentity(firebase, token);
-    if (!nyxChatCanModerate(identity.role)) {
+    if (!identity.canModerate) {
       res.status(403).json({ error: "Moderator access is required." });
       return;
     }
@@ -6259,12 +6379,13 @@ app.get("/api/chat/bootstrap", async (req, res) => {
   try {
     const { firebase, token } = await authenticatedNyxChatUser(req);
     const configuration = await loadNyxChatConfiguration(firebase);
-    const [me, directory, latestActivity, conversationSnapshot, caffeine] = await Promise.all([
+    const [me, directory, latestActivity, conversationSnapshot, caffeine, customRoles] = await Promise.all([
       nyxChatIdentity(firebase, token),
       nyxChatMemberDirectory(firebase),
       nyxChatChannelActivity(firebase, configuration.textChannels),
       firebase.firestore.collection("nyxChatConversations").where("participants", "array-contains", token.uid).limit(100).get(),
-      nyxCaffeineState(firebase, token.uid)
+      nyxCaffeineState(firebase, token.uid),
+      nyxCustomRoles(firebase)
     ]);
     const now = Date.now();
     const members = directory.map(member => ({
@@ -6294,6 +6415,7 @@ app.get("/api/chat/bootstrap", async (req, res) => {
       conversations,
       voice: nyxChatVoiceState(token.uid, "", false, visibleVoiceChannels),
       caffeine,
+      customRoles: [...customRoles.values()].map(nyxPublicCustomRole),
       revision: nyxChatRealtimeRevision,
       me,
       members: members.slice(0, 100),
@@ -6564,7 +6686,7 @@ app.post("/api/chat/channels", async (req, res) => {
   try {
     const { firebase, token } = await authenticatedNyxChatUser(req);
     const identity = await nyxChatIdentity(firebase, token);
-    if (!nyxChatCanManageChannels(identity.role)) {
+    if (!identity.canManageChannels) {
       res.status(403).json({ error: "Only Owner, Co-owner, Admin, and Manager roles can manage chat channels." });
       return;
     }
@@ -7286,6 +7408,7 @@ app.post("/api/chat/messages", async (req, res) => {
         handle: identity.handle,
         avatarUrl: identity.avatarUrl,
         role: identity.role,
+        customRole: identity.customRole,
         caffeine: identity.caffeine
       },
       createdAt: new Date(createdAtMs).toISOString(),
@@ -7510,7 +7633,8 @@ app.post("/api/activity/heartbeat", async (req, res) => {
     }
     await Promise.all(work);
     const role = nyxRoleForUser(token.uid, administrationData);
-    const access = nyxOwnerAccessPayload({ role, permissions: nyxRolePolicy(role).permissions });
+    const customRole = nyxAssignedCustomRole(administrationData, await nyxCustomRoles(firebase));
+    const access = nyxOwnerAccessPayload({ role, customRole, permissions: customRole?.permissions || nyxRolePolicy(role).permissions });
     const subscriptionStatus = normalizeSubscriptionStatus(administrationData.subscriptionStatus || administrationData.subscription?.status);
     res.json({
       ok: true,
@@ -7572,12 +7696,13 @@ app.get("/api/owner-dashboard", async (req, res) => {
   res.set("Cache-Control", "no-store");
   try {
     const { firebase, actor } = await ownerDashboardActor(req, "users:view");
-    const [{ users: accountUsers, truncated }, auditSnapshot, guestUsers] = await Promise.all([
+    const [{ users: accountUsers, truncated }, auditSnapshot, guestUsers, customRoleMap] = await Promise.all([
       ownerDashboardSnapshot(firebase),
       nyxActorHasPermission(actor, "audit:view")
         ? firebase.firestore.collection("nyxAuditLog").orderBy("createdAtMs", "desc").limit(30).get()
         : Promise.resolve(null),
-      nyxActiveGuestUsers(firebase)
+      nyxActiveGuestUsers(firebase),
+      nyxCustomRoles(firebase)
     ]);
     const allUsers = [...accountUsers, ...guestUsers];
     const now = Date.now();
@@ -7601,7 +7726,7 @@ app.get("/api/owner-dashboard", async (req, res) => {
     const segment = String(req.query.segment || "all").trim().toLowerCase();
     let filtered = allUsers.filter(user => {
       if (search && ![user.displayName, user.username, user.email, user.uid].some(value => String(value || "").toLowerCase().includes(search))) return false;
-      if (role !== "all" && user.role !== role) return false;
+      if (role !== "all" && user.role !== role && user.customRole?.id !== role) return false;
       if (subscription !== "all" && user.subscriptionStatus !== subscription) return false;
       if (status === "enabled" && (user.guest || user.disabled)) return false;
       if (status === "disabled" && (user.guest || !user.disabled)) return false;
@@ -7635,6 +7760,7 @@ app.get("/api/owner-dashboard", async (req, res) => {
       access: nyxOwnerAccessPayload(actor),
       metrics,
       users: filtered.slice(offset, offset + pageSize),
+      customRoles: [...customRoleMap.values()].map(nyxPublicCustomRole),
       pagination: { page, pageSize, pages, total: filtered.length, scanned: allUsers.length, accounts: accountUsers.length, guests: guestUsers.length, truncated },
       recentActivity,
       generatedAt: new Date().toISOString()
@@ -7653,18 +7779,19 @@ app.get("/api/owner-dashboard/users/:uid", async (req, res) => {
   }
   try {
     const { firebase, actor, ownerUid } = await ownerDashboardActor(req, "users:view");
-    const [user, administration, profile, activity, audit] = await Promise.all([
+    const [user, administration, profile, activity, audit, customRoles] = await Promise.all([
       firebase.auth.getUser(uid),
       firebase.firestore.collection("nyxUserAdministration").doc(uid).get(),
       firebase.firestore.collection("nyxUserProfiles").doc(uid).get(),
       firebase.firestore.collection("nyxUserActivity").doc(uid).get(),
       nyxActorHasPermission(actor, "audit:view")
         ? firebase.firestore.collection("nyxAuditLog").where("targetUid", "==", uid).orderBy("createdAtMs", "desc").limit(20).get().catch(() => null)
-        : Promise.resolve(null)
+        : Promise.resolve(null),
+      nyxCustomRoles(firebase)
     ]);
     const targetRole = nyxRoleForUser(uid, administration.data(), ownerUid);
     const capabilities = nyxOwnerUserCapabilities(actor, targetRole, uid, ownerUid);
-    const record = nyxOwnerUserRecord(user, administration.data(), profile.data(), activity.data(), ownerUid, true, capabilities.canManageNetworkBans);
+    const record = nyxOwnerUserRecord(user, administration.data(), profile.data(), activity.data(), ownerUid, true, capabilities.canManageNetworkBans, customRoles);
     record.recentActivity = audit ? audit.docs.map(document => {
       const data = document.data() || {};
       return { id: document.id, action: String(data.action || ""), actorEmail: String(data.actorEmail || ""), createdAt: safeDateIso(data.createdAt), details: data.details || {} };
@@ -7700,6 +7827,180 @@ app.get("/api/owner-dashboard/audit", async (req, res) => {
     });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "Audit activity is unavailable." });
+  }
+});
+
+app.get("/api/owner-dashboard/custom-roles", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const { firebase, actor } = await nyxFounderOwnerActor(req);
+    const roles = await nyxCustomRoles(firebase);
+    res.json({
+      access: nyxOwnerAccessPayload(actor),
+      roles: [...roles.values()].map(nyxPublicCustomRole),
+      placements: nyxAssignableRoles.map(id => ({ id, label: nyxRoleLabels[id], rank: nyxRolePolicy(id).rank })),
+      permissions: nyxCustomRolePermissionCatalog.map(([id, label]) => ({ id, label }))
+    });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Custom roles are unavailable." });
+  }
+});
+
+app.post("/api/owner-dashboard/custom-roles", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
+  try {
+    const { firebase, token, actor } = await nyxFounderOwnerActor(req);
+    const label = founderProfileText(req.body?.label, "", 32);
+    const id = nyxCustomRoleId(req.body?.id || label);
+    const baseRole = String(req.body?.baseRole || "member").trim().toLowerCase();
+    const color = String(req.body?.color || "").trim().toLowerCase();
+    const permissions = nyxCustomRolePermissions(req.body?.permissions, baseRole);
+    if (label.length < 2) return res.status(400).json({ error: "Custom role names must contain at least 2 characters." });
+    if (!nyxCustomRoleIdPattern.test(id) || Object.prototype.hasOwnProperty.call(nyxRolePolicies, id)) return res.status(400).json({ error: "Choose a unique role ID containing letters, numbers, or hyphens." });
+    if (!nyxAssignableRoles.includes(baseRole)) return res.status(400).json({ error: "Choose a valid role placement." });
+    if (!/^#[0-9a-f]{6}$/.test(color)) return res.status(400).json({ error: "Choose a valid six-digit role color." });
+    const roles = await nyxCustomRoles(firebase);
+    if (roles.size >= 50) return res.status(409).json({ error: "Nyx supports up to 50 custom roles." });
+    const reference = firebase.firestore.collection(nyxCustomRoleCollection).doc(id);
+    if ((await reference.get()).exists) return res.status(409).json({ error: "A custom role with that ID already exists." });
+    const timestamp = new Date().toISOString();
+    await reference.set({ id, label, color, baseRole, permissions, createdAt: timestamp, updatedAt: timestamp, createdBy: token.uid, updatedBy: token.uid });
+    invalidateNyxCustomRoles();
+    const role = (await nyxCustomRoles(firebase, true)).get(id);
+    await recordNyxAuditSafe(firebase, { actorUid: token.uid, actorEmail: token.email, action: "custom_role_created", details: { id, label, color, baseRole, permissions } });
+    res.status(201).json({ role: nyxPublicCustomRole(role), access: nyxOwnerAccessPayload(actor) });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "The custom role could not be created." });
+  }
+});
+
+app.patch("/api/owner-dashboard/custom-roles/:id", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
+  const id = nyxCustomRoleId(req.params.id);
+  if (!nyxCustomRoleIdPattern.test(id)) return res.status(400).json({ error: "That custom role is invalid." });
+  try {
+    const { firebase, token, actor } = await nyxFounderOwnerActor(req);
+    const reference = firebase.firestore.collection(nyxCustomRoleCollection).doc(id);
+    const existing = await reference.get();
+    if (!existing.exists) return res.status(404).json({ error: "That custom role no longer exists." });
+    const current = nyxCustomRoleRecord(id, existing.data());
+    const label = founderProfileText(req.body?.label ?? current.label, "", 32);
+    const color = String(req.body?.color ?? current.color).trim().toLowerCase();
+    const baseRole = String(req.body?.baseRole ?? current.baseRole).trim().toLowerCase();
+    const permissions = nyxCustomRolePermissions(req.body?.permissions ?? current.permissions, baseRole);
+    if (label.length < 2) return res.status(400).json({ error: "Custom role names must contain at least 2 characters." });
+    if (!/^#[0-9a-f]{6}$/.test(color)) return res.status(400).json({ error: "Choose a valid six-digit role color." });
+    if (!nyxAssignableRoles.includes(baseRole)) return res.status(400).json({ error: "Choose a valid role placement." });
+    const timestamp = new Date().toISOString();
+    await reference.set({ label, color, baseRole, permissions, updatedAt: timestamp, updatedBy: token.uid }, { merge: true });
+    const assigned = await firebase.firestore.collection("nyxUserAdministration").where("customRoleId", "==", id).limit(5000).get();
+    if (baseRole !== current.baseRole) {
+      for (let offset = 0; offset < assigned.docs.length; offset += 450) {
+        const batch = firebase.firestore.batch();
+        assigned.docs.slice(offset, offset + 450).forEach(document => batch.set(document.ref, { role: baseRole, updatedAt: timestamp }, { merge: true }));
+        await batch.commit();
+      }
+    }
+    assigned.docs.forEach(document => linkCheckerBulkAccessCache.delete(document.id));
+    invalidateNyxCustomRoles();
+    const role = (await nyxCustomRoles(firebase, true)).get(id);
+    await recordNyxAuditSafe(firebase, { actorUid: token.uid, actorEmail: token.email, action: "custom_role_updated", details: { id, label, color, baseRole, permissions } });
+    res.json({ role: nyxPublicCustomRole(role), access: nyxOwnerAccessPayload(actor) });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "The custom role could not be updated." });
+  }
+});
+
+app.delete("/api/owner-dashboard/custom-roles/:id", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
+  const id = nyxCustomRoleId(req.params.id);
+  if (!nyxCustomRoleIdPattern.test(id)) return res.status(400).json({ error: "That custom role is invalid." });
+  try {
+    const { firebase, token, actor } = await nyxFounderOwnerActor(req);
+    const reference = firebase.firestore.collection(nyxCustomRoleCollection).doc(id);
+    const existing = await reference.get();
+    if (!existing.exists) return res.status(404).json({ error: "That custom role no longer exists." });
+    const assigned = await firebase.firestore.collection("nyxUserAdministration").where("customRoleId", "==", id).limit(5000).get();
+    const timestamp = new Date().toISOString();
+    for (let offset = 0; offset < assigned.docs.length; offset += 450) {
+      const batch = firebase.firestore.batch();
+      assigned.docs.slice(offset, offset + 450).forEach(document => {
+        const previousRole = normalizeNyxRole(document.data()?.customRolePreviousRole);
+        batch.set(document.ref, { role: previousRole === "owner" ? "member" : previousRole, customRoleId: "", customRolePreviousRole: "", updatedAt: timestamp }, { merge: true });
+      });
+      await batch.commit();
+    }
+    assigned.docs.forEach(document => linkCheckerBulkAccessCache.delete(document.id));
+    await reference.delete();
+    invalidateNyxCustomRoles();
+    await recordNyxAuditSafe(firebase, { actorUid: token.uid, actorEmail: token.email, action: "custom_role_deleted", details: { id, label: existing.data()?.label || id, unassignedUsers: assigned.size } });
+    res.json({ removed: true, id, unassignedUsers: assigned.size, access: nyxOwnerAccessPayload(actor) });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "The custom role could not be deleted." });
+  }
+});
+
+app.post("/api/owner-dashboard/custom-roles/:id/assign", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
+  const id = nyxCustomRoleId(req.params.id);
+  const uid = String(req.body?.uid || "").trim();
+  if (!nyxCustomRoleIdPattern.test(id) || !/^[A-Za-z0-9_-]{8,128}$/.test(uid)) return res.status(400).json({ error: "Choose a valid role and account." });
+  try {
+    const { firebase, token, actor, ownerUid } = await nyxFounderOwnerActor(req);
+    if (uid === ownerUid) return res.status(409).json({ error: "The configured Owner account cannot be assigned a custom role." });
+    const [roleSnapshot, target, administrationSnapshot] = await Promise.all([
+      firebase.firestore.collection(nyxCustomRoleCollection).doc(id).get(),
+      firebase.auth.getUser(uid),
+      firebase.firestore.collection("nyxUserAdministration").doc(uid).get()
+    ]);
+    if (!roleSnapshot.exists) return res.status(404).json({ error: "That custom role no longer exists." });
+    const role = nyxCustomRoleRecord(id, roleSnapshot.data());
+    if (!role) return res.status(409).json({ error: "That custom role is not configured correctly." });
+    const administration = administrationSnapshot.data() || {};
+    const previousRole = administration.customRoleId
+      ? normalizeNyxRole(administration.customRolePreviousRole)
+      : normalizeNyxRole(administration.role);
+    await administrationSnapshot.ref.set({
+      role: role.baseRole,
+      customRoleId: id,
+      customRolePreviousRole: previousRole === "owner" ? "member" : previousRole,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+    linkCheckerBulkAccessCache.delete(uid);
+    invalidateNyxCustomRoles();
+    await recordNyxAuditSafe(firebase, { actorUid: token.uid, actorEmail: token.email, action: "custom_role_assigned", targetUid: uid, targetEmail: target.email, details: { id, label: role.label, baseRole: role.baseRole } });
+    res.json({ assigned: true, uid, role: nyxPublicCustomRole(role), access: nyxOwnerAccessPayload(actor) });
+  } catch (error) {
+    res.status(error.code === "auth/user-not-found" ? 404 : (error.status || 503)).json({ error: error.message || "The custom role could not be assigned." });
+  }
+});
+
+app.delete("/api/owner-dashboard/custom-role-assignments/:uid", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
+  const uid = String(req.params.uid || "").trim();
+  if (!/^[A-Za-z0-9_-]{8,128}$/.test(uid)) return res.status(400).json({ error: "That user ID is invalid." });
+  try {
+    const { firebase, token, actor, ownerUid } = await nyxFounderOwnerActor(req);
+    if (uid === ownerUid) return res.status(409).json({ error: "The configured Owner account cannot be changed." });
+    const [target, administrationSnapshot] = await Promise.all([
+      firebase.auth.getUser(uid),
+      firebase.firestore.collection("nyxUserAdministration").doc(uid).get()
+    ]);
+    const administration = administrationSnapshot.data() || {};
+    if (!administration.customRoleId) return res.status(409).json({ error: "That account does not have a custom role." });
+    const restoredRole = normalizeNyxRole(administration.customRolePreviousRole);
+    await administrationSnapshot.ref.set({ role: restoredRole === "owner" ? "member" : restoredRole, customRoleId: "", customRolePreviousRole: "", updatedAt: new Date().toISOString() }, { merge: true });
+    linkCheckerBulkAccessCache.delete(uid);
+    invalidateNyxCustomRoles();
+    await recordNyxAuditSafe(firebase, { actorUid: token.uid, actorEmail: token.email, action: "custom_role_removed", targetUid: uid, targetEmail: target.email, details: { previousCustomRoleId: administration.customRoleId, restoredRole } });
+    res.json({ removed: true, uid, restoredRole, access: nyxOwnerAccessPayload(actor) });
+  } catch (error) {
+    res.status(error.code === "auth/user-not-found" ? 404 : (error.status || 503)).json({ error: error.message || "The custom role could not be removed." });
   }
 });
 
@@ -7843,7 +8144,8 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
         return;
       }
       const role = normalizeNyxRole(requestedRole);
-      await firebase.firestore.collection("nyxUserAdministration").doc(uid).set({ role, updatedAt: new Date().toISOString() }, { merge: true });
+      await firebase.firestore.collection("nyxUserAdministration").doc(uid).set({ role, customRoleId: "", customRolePreviousRole: "", updatedAt: new Date().toISOString() }, { merge: true });
+      linkCheckerBulkAccessCache.delete(uid);
       auditDetails = { role };
     } else if (action === "set_subscription") {
       const subscriptionStatus = normalizeSubscriptionStatus(req.body?.subscriptionStatus);
@@ -8026,18 +8328,20 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
       targetEmail: target.email,
       details: auditDetails
     });
-    const [updated, administration, profile, activity] = await Promise.all([
+    const [updated, administration, profile, activity, customRoles] = await Promise.all([
       firebase.auth.getUser(uid),
       firebase.firestore.collection("nyxUserAdministration").doc(uid).get(),
       firebase.firestore.collection("nyxUserProfiles").doc(uid).get(),
-      firebase.firestore.collection("nyxUserActivity").doc(uid).get()
+      firebase.firestore.collection("nyxUserActivity").doc(uid).get(),
+      nyxCustomRoles(firebase)
     ]);
     const updatedTargetRole = nyxRoleForUser(uid, administration.data(), ownerUid);
     const updatedCapabilities = nyxOwnerUserCapabilities(actor, updatedTargetRole, uid, ownerUid);
-    const record = nyxOwnerUserRecord(updated, administration.data(), profile.data(), activity.data(), ownerUid, true, updatedCapabilities.canManageNetworkBans);
+    const record = nyxOwnerUserRecord(updated, administration.data(), profile.data(), activity.data(), ownerUid, true, updatedCapabilities.canManageNetworkBans, customRoles);
     res.json({
       user: record,
       access: nyxOwnerAccessPayload(actor),
+      customRoles: [...customRoles.values()].map(nyxPublicCustomRole),
       capabilities: updatedCapabilities
     });
   } catch (error) {

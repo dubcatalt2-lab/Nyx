@@ -2449,6 +2449,65 @@ const founderProfileDefaults = Object.freeze({
   linkUrl: ""
 });
 
+const nyxProfileEffectValues = Object.freeze([
+  "none",
+  "chromatic-inferno",
+  "ghostfire",
+  "pirate-breach",
+  "kraken-depths",
+  "celestial-rift",
+  "stormforged"
+]);
+const nyxAvatarDecorationValues = Object.freeze([
+  "none",
+  "inferno-crown",
+  "corsair-crest",
+  "kraken-grasp",
+  "eclipse-halo",
+  "phoenix-wings",
+  "crystal-aegis"
+]);
+const nyxLegacyProfileEffectMap = Object.freeze({
+  glow: "celestial-rift",
+  sparkle: "celestial-rift",
+  aurora: "celestial-rift",
+  holographic: "celestial-rift",
+  fireflies: "ghostfire",
+  "cosmic-dust": "celestial-rift",
+  "electric-storm": "stormforged",
+  "meteor-shower": "stormforged",
+  "cyber-grid": "stormforged",
+  plasma: "chromatic-inferno",
+  snowfall: "ghostfire",
+  embers: "chromatic-inferno",
+  bubbles: "kraken-depths",
+  "starlight-ribbon": "celestial-rift",
+  "cherry-bloom": "ghostfire",
+  "ocean-caustics": "kraken-depths",
+  custom: "celestial-rift"
+});
+const nyxLegacyAvatarDecorationMap = Object.freeze({
+  starfall: "eclipse-halo",
+  orbit: "eclipse-halo",
+  laurel: "crystal-aegis",
+  "neon-wings": "phoenix-wings",
+  "crystal-crown": "crystal-aegis",
+  "lunar-halo": "eclipse-halo",
+  "rose-vines": "kraken-grasp"
+});
+
+function nyxProfileEffectValue(value, fallback = "none") {
+  const candidate = String(value || "").toLowerCase();
+  const migrated = nyxLegacyProfileEffectMap[candidate] || candidate;
+  return nyxProfileEffectValues.includes(migrated) ? migrated : fallback;
+}
+
+function nyxAvatarDecorationValue(value, fallback = "none") {
+  const candidate = String(value || "").toLowerCase();
+  const migrated = nyxLegacyAvatarDecorationMap[candidate] || candidate;
+  return nyxAvatarDecorationValues.includes(migrated) ? migrated : fallback;
+}
+
 function founderProfileConfig() {
   return { administratorUid: String(process.env.NYX_FOUNDER_PROFILE_ADMIN_UID || "").trim() };
 }
@@ -2502,13 +2561,13 @@ function normalizeFounderProfile(value = {}) {
     displayNameEffect: ["solid", "gradient", "neon", "toon", "pop"].includes(String(source.displayNameEffect || "").toLowerCase()) ? String(source.displayNameEffect).toLowerCase() : founderProfileDefaults.displayNameEffect,
     displayNameColorPrimary,
     displayNameColorSecondary,
-    profileEffect: ["none", "glow", "sparkle", "aurora", "holographic", "fireflies", "cosmic-dust", "electric-storm", "meteor-shower", "cyber-grid", "plasma", "snowfall", "embers", "bubbles", "starlight-ribbon", "cherry-bloom", "ocean-caustics", "custom"].includes(String(source.profileEffect || "").toLowerCase()) ? String(source.profileEffect).toLowerCase() : founderProfileDefaults.profileEffect,
+    profileEffect: nyxProfileEffectValue(source.profileEffect, founderProfileDefaults.profileEffect),
     customEffectPattern: ["starfield", "aurora", "comets", "grid"].includes(String(source.customEffectPattern || "").toLowerCase()) ? String(source.customEffectPattern).toLowerCase() : founderProfileDefaults.customEffectPattern,
     customEffectColorPrimary,
     customEffectColorSecondary,
     customEffectSpeed: Math.max(2, Math.min(18, Number(source.customEffectSpeed) || founderProfileDefaults.customEffectSpeed)),
     customEffectIntensity: Math.max(20, Math.min(100, Number(source.customEffectIntensity) || founderProfileDefaults.customEffectIntensity)),
-    avatarDecoration: ["none", "starfall", "orbit", "laurel", "neon-wings", "crystal-crown", "lunar-halo", "rose-vines"].includes(String(source.avatarDecoration || "").toLowerCase()) ? String(source.avatarDecoration).toLowerCase() : founderProfileDefaults.avatarDecoration,
+    avatarDecoration: nyxAvatarDecorationValue(source.avatarDecoration, founderProfileDefaults.avatarDecoration),
     status: ["online", "idle", "dnd", "offline"].includes(String(source.status || "").toLowerCase()) ? String(source.status).toLowerCase() : founderProfileDefaults.status,
     roles: roles.map(role => founderProfileText(role, "", 32)).filter(Boolean).slice(0, 8),
     badges: badges.map(badge => founderProfileText(badge, "", 32)).filter(Boolean).slice(0, 8),
@@ -2612,13 +2671,13 @@ function normalizeNyxUserProfile(value = {}, token = {}) {
     displayNameEffect: ["solid", "gradient", "neon", "toon", "pop"].includes(String(source.displayNameEffect || "").toLowerCase()) ? String(source.displayNameEffect).toLowerCase() : "solid",
     displayNameColorPrimary,
     displayNameColorSecondary,
-    profileEffect: ["none", "glow", "sparkle", "aurora", "holographic", "fireflies", "cosmic-dust", "electric-storm", "meteor-shower", "cyber-grid", "plasma", "snowfall", "embers", "bubbles", "starlight-ribbon", "cherry-bloom", "ocean-caustics", "custom"].includes(String(source.profileEffect || "").toLowerCase()) ? String(source.profileEffect).toLowerCase() : "none",
+    profileEffect: nyxProfileEffectValue(source.profileEffect),
     customEffectPattern: ["starfield", "aurora", "comets", "grid"].includes(String(source.customEffectPattern || "").toLowerCase()) ? String(source.customEffectPattern).toLowerCase() : "starfield",
     customEffectColorPrimary,
     customEffectColorSecondary,
     customEffectSpeed: Math.max(2, Math.min(18, Number(source.customEffectSpeed) || 7)),
     customEffectIntensity: Math.max(20, Math.min(100, Number(source.customEffectIntensity) || 70)),
-    avatarDecoration: ["none", "starfall", "orbit", "laurel", "neon-wings", "crystal-crown", "lunar-halo", "rose-vines"].includes(String(source.avatarDecoration || "").toLowerCase()) ? String(source.avatarDecoration).toLowerCase() : "none",
+    avatarDecoration: nyxAvatarDecorationValue(source.avatarDecoration),
     status: ["online", "idle", "dnd", "offline"].includes(String(source.status || "").toLowerCase()) ? String(source.status).toLowerCase() : "online"
   };
 }

@@ -2451,49 +2451,51 @@ const founderProfileDefaults = Object.freeze({
 
 const nyxProfileEffectValues = Object.freeze([
   "none",
-  "chromatic-inferno",
-  "ghostfire",
-  "pirate-breach",
-  "kraken-depths",
-  "celestial-rift",
-  "stormforged"
+  "blooming-roses"
 ]);
 const nyxAvatarDecorationValues = Object.freeze([
   "none",
-  "inferno-crown",
-  "corsair-crest",
-  "kraken-grasp",
-  "eclipse-halo",
-  "phoenix-wings",
-  "crystal-aegis"
+  "candlelight"
 ]);
 const nyxLegacyProfileEffectMap = Object.freeze({
-  glow: "celestial-rift",
-  sparkle: "celestial-rift",
-  aurora: "celestial-rift",
-  holographic: "celestial-rift",
-  fireflies: "ghostfire",
-  "cosmic-dust": "celestial-rift",
-  "electric-storm": "stormforged",
-  "meteor-shower": "stormforged",
-  "cyber-grid": "stormforged",
-  plasma: "chromatic-inferno",
-  snowfall: "ghostfire",
-  embers: "chromatic-inferno",
-  bubbles: "kraken-depths",
-  "starlight-ribbon": "celestial-rift",
-  "cherry-bloom": "ghostfire",
-  "ocean-caustics": "kraken-depths",
-  custom: "celestial-rift"
+  glow: "blooming-roses",
+  sparkle: "blooming-roses",
+  aurora: "blooming-roses",
+  holographic: "blooming-roses",
+  fireflies: "blooming-roses",
+  "cosmic-dust": "blooming-roses",
+  "electric-storm": "blooming-roses",
+  "meteor-shower": "blooming-roses",
+  "cyber-grid": "blooming-roses",
+  plasma: "blooming-roses",
+  snowfall: "blooming-roses",
+  embers: "blooming-roses",
+  bubbles: "blooming-roses",
+  "starlight-ribbon": "blooming-roses",
+  "cherry-bloom": "blooming-roses",
+  "ocean-caustics": "blooming-roses",
+  "chromatic-inferno": "blooming-roses",
+  ghostfire: "blooming-roses",
+  "pirate-breach": "blooming-roses",
+  "kraken-depths": "blooming-roses",
+  "celestial-rift": "blooming-roses",
+  stormforged: "blooming-roses",
+  custom: "blooming-roses"
 });
 const nyxLegacyAvatarDecorationMap = Object.freeze({
-  starfall: "eclipse-halo",
-  orbit: "eclipse-halo",
-  laurel: "crystal-aegis",
-  "neon-wings": "phoenix-wings",
-  "crystal-crown": "crystal-aegis",
-  "lunar-halo": "eclipse-halo",
-  "rose-vines": "kraken-grasp"
+  starfall: "candlelight",
+  orbit: "candlelight",
+  laurel: "candlelight",
+  "neon-wings": "candlelight",
+  "crystal-crown": "candlelight",
+  "lunar-halo": "candlelight",
+  "rose-vines": "candlelight",
+  "inferno-crown": "candlelight",
+  "corsair-crest": "candlelight",
+  "kraken-grasp": "candlelight",
+  "eclipse-halo": "candlelight",
+  "phoenix-wings": "candlelight",
+  "crystal-aegis": "candlelight"
 });
 
 function nyxProfileEffectValue(value, fallback = "none") {

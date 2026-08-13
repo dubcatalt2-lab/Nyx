@@ -23,7 +23,7 @@ Important release warning: production currently contains commits that are not on
 - Repository: `https://github.com/dubcatalt2-lab/Nyx.git`
 - Active branch: `agent/pirate-cove`
 - Latest application release: commit `1b5d5a7` on `agent/pirate-cove`, deployed to OVH and production-verified on 2026-08-12. It replaces the older generic profile particles and decorations with six palette-aware animated signature scenes and six animated avatar pieces, migrates saved legacy cosmetic IDs, protects profile readability, and respects reduced-motion preferences.
-- Unreleased working tree: no tracked application changes. The protected untracked local work directories remain present and untouched.
+- Unreleased working tree: the profile-cosmetic collection is being simplified to one animated blooming-rose profile border and one candlelight avatar decoration. Saved IDs from the retired collections migrate to these replacements; no deployment has been made. The protected untracked local work directories remain present and untouched.
 - `main` / `origin/main`: `0a654cc1c3e17faff12424ae1f2a1a4eb63f6a90`
 - Draft PR: `https://github.com/dubcatalt2-lab/Nyx/pull/34`
 - PR title: **Ship Pirate Cove, account controls, Link Checker, custom domains, and Nyx Chat**
@@ -202,7 +202,7 @@ The VPS serves generated `dist/` through Express on local port 8080 and exposes 
 - Chat exposes `/roles`, Founder Owner-only `/roleadd` and `/roleremove`, plus `/userinfo`, `/avatar`, `/channelinfo`, `/poll`, and `/timestamp`. Command visibility is only a UI aid; every privileged mutation is re-authorized by the server.
 - Chat expands a bounded built-in set of recognized emoji shortcodes such as `:smiley:`, `:heart:`, and `:coffee:` before sending. Unknown shortcodes remain unchanged.
 - Display names and Chat message bodies may contain Minecraft-style `&` formatting codes for the 16 Bedrock colors plus magic, bold, italic, underline, strikethrough, and reset. Message formatting is rendered through safe DOM nodes and composes with clickable mentions; formatting is presentation-only, while canonical account usernames/handles remain plain and continue to control login, mentions, and uniqueness.
-- Profile cosmetics use a curated allowlist of animated signature scenes and avatar pieces rather than the older generic particle/filter collection. Scene and decoration colors derive from the profile palette, saved legacy IDs migrate to the closest replacement, identity content remains on a protected readable surface, and every animation becomes static under reduced-motion preferences.
+- Profile cosmetics are being narrowed to simple, readable motifs: a blooming rose vine around the profile edge and candlelight around the avatar. Saved IDs from both earlier generic cosmetics and the retired signature-scene collection migrate to these replacements, identity content remains unobscured, and animations become static under reduced-motion preferences.
 
 ### OVH deployment
 

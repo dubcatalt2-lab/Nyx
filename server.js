@@ -35,6 +35,13 @@ const nyxMediaSearchCacheTtlMs = 5 * 60_000;
 const nyxMediaSearchCacheLimit = 200;
 const nyxMediaSearchWindowMs = 15 * 60_000;
 const nyxMediaSearchMaxAttempts = 60;
+const nyxMetingAssetResolutionCache = new Map();
+const nyxMetingAssetResolutionTtlMs = 5 * 60_000;
+const nyxMetingAssetResolutionCacheLimit = 500;
+const nyxMusicArtworkCache = new Map();
+const nyxMusicArtworkInflight = new Map();
+const nyxMusicArtworkCacheByteLimit = 32 * 1024 * 1024;
+let nyxMusicArtworkCacheBytes = 0;
 let nyxSoundCloudTokenCache = { accessToken: "", expiresAt: 0, promise: null };
 const nyxCustomRoleLabelLimit = 64;
 const app = express();
@@ -4542,7 +4549,7 @@ function nyxMetingAssetId(value, expectedType) {
 const nyxMusicArtworkTypes = new Set(["image/avif", "image/gif", "image/jpeg", "image/png", "image/webp"]);
 const nyxMusicArtworkByteLimit = 5 * 1024 * 1024;
 
-function nyxMusicArtworkUrl(value) {
+function nyxMusicAssetUrl(value) {
   try {
     const url = new URL(String(value || ""));
     const trustedHost = url.hostname === "api.qijieya.cn" || url.hostname === "music.126.net" || url.hostname.endsWith(".music.126.net");
@@ -4554,45 +4561,121 @@ function nyxMusicArtworkUrl(value) {
   }
 }
 
-async function sendNyxMusicArtwork(res, assetId) {
+function nyxCacheMetingAssetResolution(key, value) {
+  nyxMetingAssetResolutionCache.delete(key);
+  nyxMetingAssetResolutionCache.set(key, value);
+  while (nyxMetingAssetResolutionCache.size > nyxMetingAssetResolutionCacheLimit) {
+    nyxMetingAssetResolutionCache.delete(nyxMetingAssetResolutionCache.keys().next().value);
+  }
+}
+
+async function nyxResolveMetingAsset(assetId, type) {
+  const key = `${type}:${assetId}`;
+  const now = Date.now();
+  const cached = nyxMetingAssetResolutionCache.get(key);
+  if (cached?.url && cached.expiresAt > now) {
+    nyxCacheMetingAssetResolution(key, cached);
+    return cached.url;
+  }
+  if (cached?.promise) return cached.promise;
   const initial = new URL("https://api.qijieya.cn/meting/");
   initial.searchParams.set("server", "netease");
-  initial.searchParams.set("type", "pic");
+  initial.searchParams.set("type", type);
   initial.searchParams.set("id", assetId);
-  initial.searchParams.set("cover", "500");
-  let url = initial;
-  for (let redirects = 0; redirects <= 2; redirects += 1) {
+  if (type === "pic") initial.searchParams.set("cover", "500");
+  const promise = (async () => {
+    const upstream = await fetch(initial, {
+      redirect: "manual",
+      headers: {
+        accept: type === "pic" ? "image/avif,image/webp,image/png,image/jpeg,image/gif" : "audio/mpeg,audio/mp4,audio/*;q=0.9,*/*;q=0.1",
+        "user-agent": "nyx/1.0"
+      },
+      signal: AbortSignal.timeout(8_000)
+    });
+    const location = upstream.headers.get("location");
+    upstream.body?.cancel().catch(() => {});
+    if (upstream.status < 300 || upstream.status >= 400 || !location) {
+      throw new Error("The music provider did not return a media location.");
+    }
+    const url = nyxMusicAssetUrl(new URL(location, initial).href);
+    if (!url || url.hostname === "api.qijieya.cn") {
+      throw new Error("The music provider returned an invalid media location.");
+    }
+    nyxCacheMetingAssetResolution(key, { url, expiresAt: Date.now() + nyxMetingAssetResolutionTtlMs, promise: null });
+    return url;
+  })();
+  nyxCacheMetingAssetResolution(key, { url: "", expiresAt: 0, promise });
+  try {
+    return await promise;
+  } catch (error) {
+    if (nyxMetingAssetResolutionCache.get(key)?.promise === promise) nyxMetingAssetResolutionCache.delete(key);
+    throw error;
+  }
+}
+
+function nyxMusicAudioCandidates(value) {
+  const resolved = nyxMusicAssetUrl(value);
+  if (!resolved) return [];
+  const candidates = [];
+  for (const hostname of ["m801.music.126.net", "m804.music.126.net", resolved.hostname]) {
+    const candidate = new URL(resolved);
+    candidate.hostname = hostname;
+    if (!candidates.some(item => item.href === candidate.href)) candidates.push(candidate);
+  }
+  return candidates;
+}
+
+function nyxCachedMusicArtwork(assetId) {
+  const cached = nyxMusicArtworkCache.get(assetId);
+  if (!cached) return null;
+  nyxMusicArtworkCache.delete(assetId);
+  nyxMusicArtworkCache.set(assetId, cached);
+  return cached;
+}
+
+function nyxCacheMusicArtwork(assetId, artwork) {
+  const existing = nyxMusicArtworkCache.get(assetId);
+  if (existing) nyxMusicArtworkCacheBytes -= existing.body.length;
+  nyxMusicArtworkCache.delete(assetId);
+  if (artwork.body.length > nyxMusicArtworkCacheByteLimit) return;
+  nyxMusicArtworkCache.set(assetId, artwork);
+  nyxMusicArtworkCacheBytes += artwork.body.length;
+  while (nyxMusicArtworkCacheBytes > nyxMusicArtworkCacheByteLimit && nyxMusicArtworkCache.size) {
+    const oldestKey = nyxMusicArtworkCache.keys().next().value;
+    const oldest = nyxMusicArtworkCache.get(oldestKey);
+    nyxMusicArtworkCache.delete(oldestKey);
+    nyxMusicArtworkCacheBytes -= oldest?.body?.length || 0;
+  }
+}
+
+async function nyxLoadMusicArtwork(assetId) {
+  const cached = nyxCachedMusicArtwork(assetId);
+  if (cached) return cached;
+  if (nyxMusicArtworkInflight.has(assetId)) return nyxMusicArtworkInflight.get(assetId);
+  const promise = (async () => {
+    const url = await nyxResolveMetingAsset(assetId, "pic");
     const upstream = await fetch(url, {
       redirect: "manual",
       headers: { accept: "image/avif,image/webp,image/png,image/jpeg,image/gif", "user-agent": "nyx/1.0" },
-      signal: AbortSignal.timeout(12_000)
+      signal: AbortSignal.timeout(8_000)
     });
-    if (upstream.status >= 300 && upstream.status < 400 && upstream.headers.get("location")) {
-      url = nyxMusicArtworkUrl(new URL(upstream.headers.get("location"), url).href);
-      if (!url) {
-        res.status(502).end();
-        return;
-      }
-      continue;
-    }
     if (!upstream.ok) {
       upstream.body?.cancel().catch(() => {});
-      res.status(upstream.status === 404 ? 404 : 502).end();
-      return;
+      const error = new Error("The cover provider could not return this image.");
+      error.status = upstream.status;
+      throw error;
     }
     const upstreamContentType = String(upstream.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
     const contentType = upstreamContentType === "image/jpg" ? "image/jpeg" : upstreamContentType;
     const contentLength = Number(upstream.headers.get("content-length") || 0);
     if (!nyxMusicArtworkTypes.has(contentType) || (contentLength && contentLength > nyxMusicArtworkByteLimit)) {
       upstream.body?.cancel().catch(() => {});
-      res.status(415).end();
-      return;
+      const error = new Error("The cover provider returned an unsupported image.");
+      error.status = 415;
+      throw error;
     }
     const reader = upstream.body?.getReader?.();
-    if (!reader) {
-      res.status(502).end();
-      return;
-    }
+    if (!reader) throw new Error("The cover provider returned no image body.");
     const chunks = [];
     let totalBytes = 0;
     while (true) {
@@ -4601,25 +4684,43 @@ async function sendNyxMusicArtwork(res, assetId) {
       totalBytes += value.byteLength;
       if (totalBytes > nyxMusicArtworkByteLimit) {
         await reader.cancel();
-        res.status(413).end();
-        return;
+        const error = new Error("The cover image is too large.");
+        error.status = 413;
+        throw error;
       }
       chunks.push(Buffer.from(value));
     }
-    if (!totalBytes) {
-      res.status(502).end();
-      return;
-    }
-    const body = Buffer.concat(chunks, totalBytes);
-    res.set({
-      "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
-      "Content-Type": contentType,
-      "Content-Length": String(body.length),
-      "X-Content-Type-Options": "nosniff"
-    }).send(body);
-    return;
+    if (!totalBytes) throw new Error("The cover provider returned an empty image.");
+    const artwork = { body: Buffer.concat(chunks, totalBytes), contentType };
+    nyxCacheMusicArtwork(assetId, artwork);
+    return artwork;
+  })();
+  nyxMusicArtworkInflight.set(assetId, promise);
+  try {
+    return await promise;
+  } finally {
+    if (nyxMusicArtworkInflight.get(assetId) === promise) nyxMusicArtworkInflight.delete(assetId);
   }
-  res.status(502).end();
+}
+
+async function sendNyxMusicArtwork(res, assetId) {
+  const { body, contentType } = await nyxLoadMusicArtwork(assetId);
+  res.set({
+    "Cache-Control": "public, max-age=604800, stale-while-revalidate=2592000",
+    "Content-Type": contentType,
+    "Content-Length": String(body.length),
+    "X-Content-Type-Options": "nosniff"
+  }).send(body);
+}
+
+function primeNyxifyAssets(results) {
+  const tracks = Array.isArray(results) ? results.slice(0, 7) : [];
+  for (const track of tracks) {
+    const artworkId = String(track?.thumbnail || "").match(/\/api\/music\/artwork\/(\d{1,24})$/)?.[1];
+    if (artworkId) void nyxLoadMusicArtwork(artworkId).catch(() => {});
+    const trackId = String(track?.id || "").trim();
+    if (track?.provider === "meting" && /^\d{1,24}$/.test(trackId)) void nyxResolveMetingAsset(trackId, "url").catch(() => {});
+  }
 }
 
 async function nyxifySearch(query, limit) {
@@ -4655,6 +4756,7 @@ async function nyxifySearch(query, limit) {
     }];
   });
   nyxMediaCacheSearch(cacheKey, results);
+  primeNyxifyAssets(results);
   return results;
 }
 
@@ -4788,7 +4890,7 @@ app.get("/api/music/soundcloud/:trackId", async (req, res) => {
 
 app.get("/api/music/stream/:trackId", async (req, res) => {
   res.set({
-    "Cache-Control": "private, no-store",
+    "Cache-Control": "private, max-age=3600",
     "X-Content-Type-Options": "nosniff"
   });
   const trackId = String(req.params.trackId || "").trim();
@@ -4802,37 +4904,37 @@ app.get("/api/music/stream/:trackId", async (req, res) => {
     return;
   }
   const upstreamRange = requestedRange || (req.method === "HEAD" ? "bytes=0-0" : "bytes=0-1048575");
-  const endpoint = new URL("https://api.qijieya.cn/meting/");
-  endpoint.searchParams.set("server", "netease");
-  endpoint.searchParams.set("type", "url");
-  endpoint.searchParams.set("id", trackId);
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30_000);
+  const timeout = setTimeout(() => controller.abort(), 20_000);
   res.once("close", () => controller.abort());
   try {
+    const resolvedUrl = await nyxResolveMetingAsset(trackId, "url");
+    const candidates = nyxMusicAudioCandidates(resolvedUrl);
     let upstream = null;
     let lastError = null;
-    for (let attempt = 0; attempt < 3 && !controller.signal.aborted; attempt += 1) {
+    for (const candidateUrl of candidates) {
+      if (controller.signal.aborted) break;
       try {
-        const candidate = await fetch(endpoint, {
+        const candidate = await fetch(candidateUrl, {
           method: "GET",
           redirect: "follow",
-          signal: controller.signal,
+          signal: AbortSignal.any([controller.signal, AbortSignal.timeout(7_000)]),
           headers: {
             accept: "audio/mpeg,audio/mp4,audio/*;q=0.9,*/*;q=0.1",
             range: upstreamRange
           }
         });
-        if (candidate.status < 500 || attempt === 2) {
+        const candidateSource = nyxMusicAssetUrl(candidate.url);
+        const candidateType = String(candidate.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
+        if (candidateSource && [200, 206, 416].includes(candidate.status) && (candidateType.startsWith("audio/") || candidate.status === 416)) {
           upstream = candidate;
           break;
         }
         candidate.body?.cancel().catch(() => {});
       } catch (error) {
         lastError = error;
-        if (error?.name === "AbortError" || attempt === 2) throw error;
+        if (controller.signal.aborted) throw error;
       }
-      await new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1)));
     }
     if (!upstream) throw lastError || new Error("The music stream is temporarily unavailable.");
     clearTimeout(timeout);
@@ -9532,6 +9634,10 @@ if (isDirectRun) {
     console.log("  chat realtime: same-host /socket.io/");
     console.log(`  static root: ${staticRoot}`);
     if (!externalWispUrl) console.log(embeddedWispAllowedOrigins.length ? `  allowed Wisp origins: ${embeddedWispAllowedOrigins.join(", ")}` : "  warning: embedded Wisp accepts every browser origin");
+    const mediaWarmup = setTimeout(() => {
+      void nyxifyPreferredSearch("global hits", 20).catch(() => {});
+    }, 250);
+    mediaWarmup.unref();
   });
 
   let shuttingDown = false;

@@ -1,6 +1,6 @@
 # Nyx Project State
 
-Last repository review: 2026-08-13
+Last repository review: 2026-08-14
 
 Workspace: repository root (`<repo-root>`)
 
@@ -23,7 +23,7 @@ Important release warning: production currently contains commits that are not on
 - Repository: `https://github.com/dubcatalt2-lab/Nyx.git`
 - Active branch: `agent/pirate-cove`
 - Latest application release: commit `6055d1a` on `agent/pirate-cove`, deployed to OVH and production-verified on 2026-08-13. NyxTube is retired from the source application, home shortcuts, Apps list, deployment checks, environment template, and active media APIs; old app URLs redirect home and old API URLs return `410`. Nyxify retains its music-focused discovery home and now serves Meting cover art through a bounded fixed-target same-origin route, uses a clean circular play control, and consistently uses the existing Spotify-style icon for its shortcut, favicon, and in-app brand mark. Production verification confirmed the retired routes, same-origin JPEG artwork, healthy embedded Wisp, and active Nyx/Caddy/coturn services.
-- Working tree after the release contains only the protected untracked local work directories, which remain present and untouched.
+- Unreleased working tree: Nyxify now resolves and briefly caches fixed Meting media redirects, prefers the reachable `m801.music.126.net` audio edge with a bounded `m804`/provider-host fallback, keeps a 32 MB LRU of validated cover bytes, prewarms the seven discovery covers and stream locations after startup, and allows one hour of private browser range reuse. This removes the long wait caused by OVH timing out against `m701.music.126.net`. Local ChromeOS-sized verification loaded seven covers in 0.77 seconds and reached audio ready state 4 in another 0.88 seconds. These changes have not been committed, pushed, or deployed. The protected untracked local work directories remain present and untouched.
 - `main` / `origin/main`: `0a654cc1c3e17faff12424ae1f2a1a4eb63f6a90`
 - Draft PR: `https://github.com/dubcatalt2-lab/Nyx/pull/34`
 - PR title: **Ship Pirate Cove, account controls, Link Checker, custom domains, and Nyx Chat**
@@ -129,7 +129,7 @@ Client preferences and much local UI state use browser storage. Cross-device acc
 - About Nyx and its user-directed changelog
 - Pirate Cove search, sorting, pagination, remote catalogs, fallbacks, and full-screen player
 - Single-file export/download behavior
-- Nyxify search/playback through optional official SoundCloud and the public Meting-compatible fallback
+- Nyxify search/playback through optional official SoundCloud and the public Meting-compatible fallback, including its fixed-host CDN selection, bounded redirect/cover caches, and startup discovery prewarm
 
 ## Durable Product Instructions
 
@@ -338,7 +338,7 @@ For Pirate Cove, test search, sort, pagination, card cover fallbacks, launch/ret
 ## Known Risks and Unresolved Areas
 
 - Fast full-registry scans depend on valid paid Nocturne account credentials in the VPS environment and on Nocturne's server-side queue. Provider outages or account changes can delay that external job. Nyx can stop polling without canceling it and reconnect later, but imported verdicts remain device-local.
-- Nyxify uses SoundCloud only when a registered official app is configured; SoundCloud authentication, off-platform playback eligibility, and provider rate limits still apply. Without it, or during a temporary provider error, Nyxify falls back to the community-operated `api.qijieya.cn` Meting service, which has no guaranteed availability or service-level agreement.
+- Nyxify uses SoundCloud only when a registered official app is configured; SoundCloud authentication, off-platform playback eligibility, and provider rate limits still apply. Without it, or during a temporary provider error, Nyxify falls back to the community-operated `api.qijieya.cn` Meting service, which has no guaranteed availability or service-level agreement. The fallback resolves only validated NetEase media hosts, prefers the CDN edge verified reachable from OVH, and uses bounded caches, but a provider-wide outage can still interrupt new searches or uncached playback.
 - Voice calls now use the authenticated OVH coturn relay when direct WebRTC connectivity fails. Keep TCP/UDP 3478 and UDP 49160-49260 allowed through every active host/provider firewall; browser-to-browser audio still requires an end-to-end call test between two real accounts and networks after changes to WebRTC, Caddy, or OVH networking.
 - The search-history classifier is intentionally conservative and can still produce false positives or miss disguised harmful language. Its highlight is a moderation signal, not proof of wrongdoing. Search history is deliberately limited to explicit searches made through Nyx while signed in, retained for 30 days, and excludes destination URLs, clicked results, IP addresses, and search-engine metadata.
 - Historical streamed Owner chat attachments remain on the VPS disk and are not copied to external object storage. New uploads are uniformly limited to 8 MB; keep `/var/lib/nyx/chat-attachments` available until every historical streamed attachment has been removed or migrated.

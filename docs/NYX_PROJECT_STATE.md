@@ -22,8 +22,8 @@ Important release warning: production currently contains commits that are not on
 
 - Repository: `https://github.com/dubcatalt2-lab/Nyx.git`
 - Active branch: `agent/pirate-cove`
-- Latest application release: commit `6e4fa9a` on `agent/pirate-cove`, deployed to OVH and production-verified on 2026-08-13. The cleaned rose/candle cosmetics are visible above opaque profile panels and in the compact account card, while Lag Reducer leaves the rose artwork in its completed visible state instead of freezing the blooms at zero opacity.
-- Unreleased working tree: the preserved profile-decoration replay edits remain local, alongside separate NyxTube/NyxCloud official-API workspaces, the public-Meting-backed Nyxify music workspace, and longer formatted custom-role labels. None of these working-tree changes have been committed, pushed, or deployed. The protected untracked local work directories remain present and untouched.
+- Latest application release: commit `28edcf6` on `agent/pirate-cove`, deployed to OVH and production-verified on 2026-08-13. This release preserves the profile-decoration replay fix, adds the separate NyxTube, NyxCloud, and Nyxify workspaces, and extends safely rendered custom-role labels to 64 characters with Minecraft formatting. The three app pages and live Nyxify search were verified through `https://nyxlearning.org`; NyxTube and NyxCloud remain installed but report unconfigured until their provider credentials are added to `/etc/nyx/nyx.env`.
+- Unreleased working tree: no Nyx application changes. Only the protected untracked local work directories remain present and untouched.
 - `main` / `origin/main`: `0a654cc1c3e17faff12424ae1f2a1a4eb63f6a90`
 - Draft PR: `https://github.com/dubcatalt2-lab/Nyx/pull/34`
 - PR title: **Ship Pirate Cove, account controls, Link Checker, custom domains, and Nyx Chat**

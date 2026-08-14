@@ -5,10 +5,24 @@
   const likedKey = "nyx.nyxify.liked.v1";
   const playlistKey = "nyx.nyxify.playlists.v1";
 
+  function musicArtworkUrl(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    try {
+      const url = new URL(raw, location.origin);
+      if (url.origin === location.origin && /^\/api\/music\/artwork\/\d{1,24}$/.test(url.pathname)) return `${url.pathname}${url.search}`;
+      if (url.hostname === "api.qijieya.cn" && /^\/meting\/?$/.test(url.pathname) && String(url.searchParams.get("type") || "").toLowerCase() === "pic") {
+        const id = String(url.searchParams.get("id") || "").trim();
+        if (/^\d{1,24}$/.test(id)) return `/api/music/artwork/${encodeURIComponent(id)}`;
+      }
+    } catch {}
+    return raw;
+  }
+
   function readList(key, limit) {
     try {
       const value = JSON.parse(localStorage.getItem(key) || "[]");
-      return Array.isArray(value) ? value.filter(item => item?.streamUrl && item?.title).slice(0, limit) : [];
+      return Array.isArray(value) ? value.filter(item => item?.streamUrl && item?.title).slice(0, limit).map(item => ({ ...item, thumbnail: musicArtworkUrl(item.thumbnail) })) : [];
     } catch { return []; }
   }
 
@@ -202,9 +216,9 @@
     cover.append(fallback);
     if (track.thumbnail) {
       const image = document.createElement("img");
-      image.src = track.thumbnail;
+      image.src = musicArtworkUrl(track.thumbnail);
       image.alt = "";
-      image.loading = "lazy";
+      image.loading = "eager";
       image.referrerPolicy = "no-referrer";
       image.addEventListener("load", () => fallback.remove(), { once: true });
       image.addEventListener("error", () => image.remove(), { once: true });
@@ -263,16 +277,15 @@
       button.type = "button";
       button.className = "nyxify-queue-track";
       button.classList.toggle("active", trackKey(state.current) === trackKey(track));
+      const fallback = document.createElement("i");
+      fallback.innerHTML = iconMarkup("note");
+      button.append(fallback);
       if (track.thumbnail) {
         const image = document.createElement("img");
-        image.src = track.thumbnail;
         image.alt = "";
         image.referrerPolicy = "no-referrer";
-        button.append(image);
-      } else {
-        const fallback = document.createElement("i");
-        fallback.innerHTML = iconMarkup("note");
-        button.append(fallback);
+        image.addEventListener("load", () => fallback.replaceWith(image), { once: true });
+        image.src = musicArtworkUrl(track.thumbnail);
       }
       const copy = document.createElement("span");
       const title = document.createElement("strong");
@@ -324,17 +337,16 @@
     const button = document.createElement("button");
     button.type = "button";
     button.className = "nyxify-artist";
+    const fallback = document.createElement("i");
+    fallback.innerHTML = iconMarkup("note");
+    button.append(fallback);
     if (artist.thumbnail) {
       const image = document.createElement("img");
-      image.src = artist.thumbnail;
       image.alt = "";
-      image.loading = "lazy";
+      image.loading = "eager";
       image.referrerPolicy = "no-referrer";
-      button.append(image);
-    } else {
-      const fallback = document.createElement("i");
-      fallback.innerHTML = iconMarkup("note");
-      button.append(fallback);
+      image.addEventListener("load", () => fallback.replaceWith(image), { once: true });
+      image.src = musicArtworkUrl(artist.thumbnail);
     }
     const name = document.createElement("strong");
     name.textContent = artist.name;
@@ -386,9 +398,15 @@
     state.current = track;
     refs.playerTitle.textContent = track.title;
     refs.playerArtist.textContent = track.creator;
-    refs.playerCover.hidden = !track.thumbnail;
-    refs.playerFallback.hidden = Boolean(track.thumbnail);
-    if (track.thumbnail) refs.playerCover.src = track.thumbnail;
+    refs.playerCover.hidden = true;
+    refs.playerFallback.hidden = false;
+    if (track.thumbnail) {
+      refs.playerCover.onload = () => { refs.playerCover.hidden = false; refs.playerFallback.hidden = true; };
+      refs.playerCover.onerror = () => { refs.playerCover.hidden = true; refs.playerFallback.hidden = false; };
+      refs.playerCover.src = musicArtworkUrl(track.thumbnail);
+    } else {
+      refs.playerCover.removeAttribute("src");
+    }
     if (track.sourceUrl) {
       refs.playerSource.hidden = false;
       refs.playerSource.href = track.sourceUrl;

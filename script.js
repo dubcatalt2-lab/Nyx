@@ -2096,8 +2096,7 @@
     'docs.google.com':svgIcon(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#1a73e8"/><path d="M22 12h17l9 9v31H22z" fill="#fff"/><path d="M39 12v10h9" fill="#d2e3fc"/><path d="M27 31h16M27 37h16M27 43h12" stroke="#1a73e8" stroke-width="3" stroke-linecap="round"/></svg>`),
     'duck.ai':localIcon('duck-ai-logo.png'),
     'nyx-ai':localIcon('shortcut-nyx-ai.svg?v=3'),
-    'nyx-tube':localIcon('shortcut-nyxtube.svg?v=1'),
-    'nyxify':localIcon('shortcut-nyxify.svg?v=1'),
+    'nyxify':localIcon('shortcut-spotify.svg?v=1'),
     'nyx-chat':localIcon('chat.svg?v=1'),
     'link-checker':localIcon('link-checker.svg?v=2'),
     'link-generator':localIcon('link-generator.svg'),
@@ -7098,15 +7097,13 @@
   //apps-grid
   const nyxAiHomeShortcut={domain:'nyx-ai',title:'AI Tutor',url:'nyx://ai',favorite:false};
   const nyxAiHomeShortcutMigrationKey='nyx.homeShortcuts.aiShortcutV1';
-  const nyxTubeHomeShortcut={domain:'nyx-tube',title:'NyxTube',url:'/apps/nyxtube/',favorite:false};
   const nyxifyHomeShortcut={domain:'nyxify',title:'Nyxify',url:'/apps/nyxify/',favorite:false};
-  const nyxMediaHomeShortcutMigrationKey='nyx.homeShortcuts.mediaAppsV3';
+  const nyxMediaHomeShortcutMigrationKey='nyx.homeShortcuts.nyxifyOnlyV1';
   const defaultHomeShortcuts=[
     {domain:'geforcenow',title:'Course Library',url:'https://play.geforcenow.com/',favorite:true},
     {domain:'duck.ai',title:'Research Assistant',url:'https://duck.ai/',favorite:false},
     nyxAiHomeShortcut,
     {domain:'games',title:'Practice Lab',url:'/assets/games/',favorite:false},
-    nyxTubeHomeShortcut,
     {domain:'tiktok.com',title:'Quick Lessons',url:'https://www.tiktok.com/',favorite:false},
     nyxifyHomeShortcut,
     {domain:'discord.com',title:'Study Groups',url:'https://discord.com/app',favorite:false}
@@ -7133,6 +7130,7 @@
         const cleaned=saved
           .filter(item=>item?.url && item?.title)
           .filter(item=>String(item.url || '').trim().replace(/\/+$/,'').toLowerCase()!=='/apps/nyxcloud' && String(item.domain || '').trim().toLowerCase()!=='nyx-cloud')
+          .filter(item=>String(item.url || '').trim().replace(/\/+$/,'').toLowerCase()!=='/apps/nyxtube' && !['nyx-tube','nyxtube'].includes(String(item.domain || '').trim().toLowerCase()))
           .map(normalizeHomeShortcut);
         if(!store.get(nyxAiHomeShortcutMigrationKey,false)){
           if(!cleaned.some(item=>String(item.url || '').trim().toLowerCase()==='nyx://ai')){
@@ -7145,10 +7143,8 @@
           cleaned.forEach((item,index)=>{
             const url=String(item.url || '').trim().replace(/\/+$/,'').toLowerCase();
             const title=String(item.title || '').trim().toLowerCase();
-            if(url==='https://www.youtube.com' && title==='video lessons') cleaned[index]={...nyxTubeHomeShortcut};
             if(url==='https://open.spotify.com' && title==='focus audio') cleaned[index]={...nyxifyHomeShortcut};
           });
-          if(!cleaned.some(item=>String(item.url || '').trim().toLowerCase()==='/apps/nyxtube/')) cleaned.push({...nyxTubeHomeShortcut});
           if(!cleaned.some(item=>String(item.url || '').trim().toLowerCase()==='/apps/nyxify/')) cleaned.push({...nyxifyHomeShortcut});
           store.set(nyxMediaHomeShortcutMigrationKey,true);
         }
@@ -7172,8 +7168,7 @@
     if(key.includes('geforce')) return '/assets/icons/dock-nvidia.png';
     if(key==='games' || key.includes('study')) return '/assets/icons/dock-controller.png';
     if(key==='nyx-ai' || key==='ai') return '/assets/icons/shortcut-nyx-ai.svg?v=3';
-    if(key==='nyx-tube' || key==='nyxtube') return '/assets/icons/shortcut-nyxtube.svg?v=1';
-    if(key==='nyxify') return '/assets/icons/shortcut-nyxify.svg?v=1';
+    if(key==='nyxify') return '/assets/icons/shortcut-spotify.svg?v=1';
     if(key.includes('duck')) return '/assets/icons/shortcut-duckduckgo.svg';
     if(key.includes('youtube') || key==='youtu.be') return '/assets/icons/shortcut-youtube.svg';
     if(key.includes('tiktok')) return '/assets/icons/shortcut-tiktok.svg';
@@ -7509,7 +7504,6 @@
   }
   function quickTiles(){
     return [
-      ['nyx-tube','NyxTube','/apps/nyxtube/'],
       ['nyxify','Nyxify','/apps/nyxify/'],
       ['youtube.com','YouTube','https://www.youtube.com/'],
       ['games','Pirate Cove','/assets/games/'],

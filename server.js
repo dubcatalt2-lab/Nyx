@@ -4571,6 +4571,7 @@ app.get("/api/music/stream/:trackId", async (req, res) => {
     res.status(416).end();
     return;
   }
+  const upstreamRange = requestedRange || (req.method === "HEAD" ? "bytes=0-0" : "bytes=0-1048575");
   const endpoint = new URL("https://api.qijieya.cn/meting/");
   endpoint.searchParams.set("server", "netease");
   endpoint.searchParams.set("type", "url");
@@ -4580,12 +4581,12 @@ app.get("/api/music/stream/:trackId", async (req, res) => {
   res.once("close", () => controller.abort());
   try {
     const upstream = await fetch(endpoint, {
-      method: req.method === "HEAD" ? "HEAD" : "GET",
+      method: "GET",
       redirect: "follow",
       signal: controller.signal,
       headers: {
         accept: "audio/mpeg,audio/mp4,audio/*;q=0.9,*/*;q=0.1",
-        ...(requestedRange ? { range: requestedRange } : {})
+        range: upstreamRange
       }
     });
     clearTimeout(timeout);
@@ -4608,9 +4609,18 @@ app.get("/api/music/stream/:trackId", async (req, res) => {
       ...(upstream.headers.get("content-length") ? { "Content-Length": upstream.headers.get("content-length") } : {}),
       ...(upstream.headers.get("content-range") ? { "Content-Range": upstream.headers.get("content-range") } : {})
     };
-    res.status(upstream.status).set(headers);
-    if (req.method === "HEAD" || !upstream.body) {
+    if (req.method === "HEAD") {
+      const totalLength = String(upstream.headers.get("content-range") || "").match(/\/(\d+)$/)?.[1];
+      const headHeaders = { ...headers };
+      delete headHeaders["Content-Range"];
+      if (totalLength) headHeaders["Content-Length"] = totalLength;
+      res.status(200).set(headHeaders);
       upstream.body?.cancel().catch(() => {});
+      res.end();
+      return;
+    }
+    res.status(upstream.status).set(headers);
+    if (!upstream.body) {
       res.end();
       return;
     }

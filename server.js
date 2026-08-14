@@ -35,6 +35,7 @@ const nyxMediaSearchCacheTtlMs = 5 * 60_000;
 const nyxMediaSearchCacheLimit = 200;
 const nyxMediaSearchWindowMs = 15 * 60_000;
 const nyxMediaSearchMaxAttempts = 60;
+let nyxSoundCloudTokenCache = { accessToken: "", expiresAt: 0, promise: null };
 const nyxCustomRoleLabelLimit = 64;
 const app = express();
 
@@ -4350,6 +4351,12 @@ function sameOriginRequest(req) {
 
 function nyxMediaProviderConfigured(provider) {
   if (provider === "youtube") return Boolean(String(process.env.NYX_YOUTUBE_API_KEY || "").trim());
+  if (provider === "soundcloud") {
+    return Boolean(
+      String(process.env.NYX_SOUNDCLOUD_CLIENT_ID || "").trim() &&
+      String(process.env.NYX_SOUNDCLOUD_CLIENT_SECRET || "").trim()
+    );
+  }
   if (provider === "meting") return true;
   return false;
 }
@@ -4412,6 +4419,43 @@ async function nyxMediaFetchJson(url, options = {}, timeoutMs = 8_000) {
   }
 }
 
+async function nyxSoundCloudAccessToken(force = false) {
+  const now = Date.now();
+  if (!force && nyxSoundCloudTokenCache.accessToken && nyxSoundCloudTokenCache.expiresAt > now + 60_000) {
+    return nyxSoundCloudTokenCache.accessToken;
+  }
+  if (!force && nyxSoundCloudTokenCache.promise) return nyxSoundCloudTokenCache.promise;
+  const clientId = String(process.env.NYX_SOUNDCLOUD_CLIENT_ID || "").trim();
+  const clientSecret = String(process.env.NYX_SOUNDCLOUD_CLIENT_SECRET || "").trim();
+  if (!clientId || !clientSecret) {
+    const error = new Error("SoundCloud has not been connected to Nyxify yet.");
+    error.status = 503;
+    throw error;
+  }
+  const promise = nyxMediaFetchJson("https://secure.soundcloud.com/oauth/token", {
+    method: "POST",
+    headers: {
+      accept: "application/json; charset=utf-8",
+      authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
+      "content-type": "application/x-www-form-urlencoded"
+    },
+    body: "grant_type=client_credentials"
+  }, 10_000).then(payload => {
+    const accessToken = String(payload?.access_token || "").trim();
+    if (!accessToken) throw new Error("SoundCloud did not return an access token.");
+    const expiresIn = Math.max(300, Number(payload?.expires_in) || 3_600);
+    nyxSoundCloudTokenCache = { accessToken, expiresAt: Date.now() + expiresIn * 1_000, promise: null };
+    return accessToken;
+  });
+  nyxSoundCloudTokenCache.promise = promise;
+  try {
+    return await promise;
+  } catch (error) {
+    nyxSoundCloudTokenCache = { accessToken: "", expiresAt: 0, promise: null };
+    throw error;
+  }
+}
+
 function nyxHttpsUrl(value, allowedHosts = []) {
   try {
     const url = new URL(String(value || ""));
@@ -4461,6 +4505,97 @@ async function nyxTubeSearch(query, limit) {
   });
   nyxMediaCacheSearch(cacheKey, results);
   return results;
+}
+
+function nyxYouTubeDurationMs(value) {
+  const match = String(value || "").match(/^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/i);
+  if (!match) return 0;
+  return (((Number(match[1]) || 0) * 24 + (Number(match[2]) || 0)) * 60 * 60 + (Number(match[3]) || 0) * 60 + (Number(match[4]) || 0)) * 1_000;
+}
+
+async function nyxTubeFeed(limit) {
+  const cacheKey = `youtube:popular:us:${limit}`;
+  const cached = nyxMediaCachedSearch(cacheKey);
+  if (cached) return cached;
+  const key = String(process.env.NYX_YOUTUBE_API_KEY || "").trim();
+  if (!key) {
+    const error = new Error("NyxTube has not been configured by the administrator yet.");
+    error.status = 503;
+    throw error;
+  }
+  const endpoint = new URL("https://www.googleapis.com/youtube/v3/videos");
+  endpoint.searchParams.set("part", "snippet,contentDetails,statistics");
+  endpoint.searchParams.set("chart", "mostPopular");
+  endpoint.searchParams.set("regionCode", "US");
+  endpoint.searchParams.set("maxResults", String(limit));
+  endpoint.searchParams.set("key", key);
+  const payload = await nyxMediaFetchJson(endpoint);
+  const results = (Array.isArray(payload?.items) ? payload.items : []).flatMap(item => {
+    const id = String(item?.id || "").trim();
+    if (!/^[A-Za-z0-9_-]{11}$/.test(id)) return [];
+    const snippet = item?.snippet || {};
+    const thumbnail = nyxHttpsUrl(snippet?.thumbnails?.high?.url || snippet?.thumbnails?.medium?.url || snippet?.thumbnails?.default?.url, ["ytimg.com", "ggpht.com"]);
+    return [{
+      id,
+      provider: "youtube",
+      title: String(snippet?.title || "Untitled video").trim().slice(0, 180),
+      creator: String(snippet?.channelTitle || "YouTube").trim().slice(0, 100),
+      thumbnail,
+      publishedAt: safeDateIso(snippet?.publishedAt),
+      durationMs: nyxYouTubeDurationMs(item?.contentDetails?.duration),
+      viewCount: Math.max(0, Number(item?.statistics?.viewCount) || 0),
+      sourceUrl: `https://www.youtube.com/watch?v=${id}`
+    }];
+  });
+  nyxMediaCacheSearch(cacheKey, results);
+  return results;
+}
+
+async function nyxSoundCloudSearch(query, limit, retry = true) {
+  const cacheKey = `soundcloud:${query.toLowerCase()}:${limit}`;
+  const cached = nyxMediaCachedSearch(cacheKey);
+  if (cached) return cached;
+  const token = await nyxSoundCloudAccessToken(!retry);
+  const endpoint = new URL("https://api.soundcloud.com/tracks");
+  endpoint.searchParams.set("q", query);
+  endpoint.searchParams.set("access", "playable");
+  endpoint.searchParams.set("limit", String(limit));
+  endpoint.searchParams.set("linked_partitioning", "true");
+  try {
+    const payload = await nyxMediaFetchJson(endpoint, {
+      headers: {
+        accept: "application/json; charset=utf-8",
+        authorization: `OAuth ${token}`
+      }
+    }, 10_000);
+    const collection = Array.isArray(payload) ? payload : (Array.isArray(payload?.collection) ? payload.collection : []);
+    const results = collection.flatMap(item => {
+      const id = String(item?.id || "").trim();
+      const sourceUrl = nyxHttpsUrl(item?.permalink_url, ["soundcloud.com"]);
+      if (!/^\d{1,24}$/.test(id) || !sourceUrl || String(item?.access || "playable") !== "playable") return [];
+      const thumbnail = nyxHttpsUrl(item?.artwork_url || item?.user?.avatar_url, ["sndcdn.com"]);
+      return [{
+        id: `soundcloud-${id}`,
+        providerId: id,
+        provider: "soundcloud",
+        providerLabel: "SoundCloud",
+        title: String(item?.title || "Untitled track").trim().slice(0, 180),
+        creator: String(item?.metadata_artist || item?.user?.username || "SoundCloud artist").trim().slice(0, 100),
+        thumbnail,
+        durationMs: Math.max(0, Number(item?.duration) || 0),
+        streamUrl: `/api/music/soundcloud/${encodeURIComponent(id)}`,
+        sourceUrl
+      }];
+    });
+    nyxMediaCacheSearch(cacheKey, results);
+    return results;
+  } catch (error) {
+    if (retry && Number(error?.status) === 401) {
+      nyxSoundCloudTokenCache = { accessToken: "", expiresAt: 0, promise: null };
+      return nyxSoundCloudSearch(query, limit, false);
+    }
+    throw error;
+  }
 }
 
 function nyxMetingAssetUrl(value, expectedType) {
@@ -4516,6 +4651,18 @@ async function nyxifySearch(query, limit) {
   return results;
 }
 
+async function nyxifyPreferredSearch(query, limit) {
+  if (nyxMediaProviderConfigured("soundcloud")) {
+    try {
+      const results = await nyxSoundCloudSearch(query, limit);
+      if (results.length) return results;
+    } catch {
+      // Keep Nyxify useful during a temporary SoundCloud authentication or API outage.
+    }
+  }
+  return nyxifySearch(query, limit);
+}
+
 function nyxMediaSearchRequest(req, res, provider, search) {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) {
@@ -4536,7 +4683,7 @@ function nyxMediaSearchRequest(req, res, provider, search) {
     return;
   }
   Promise.resolve(search(query, limit))
-    .then(results => res.json({ provider, query, results }))
+    .then(results => res.json({ provider: results[0]?.provider || provider, query, results }))
     .catch(error => {
       const upstreamStatus = Number(error?.status) || 502;
       const status = upstreamStatus === 429 ? 429 : (upstreamStatus === 503 || upstreamStatus === 504 ? upstreamStatus : 502);
@@ -4550,11 +4697,91 @@ app.get("/api/nyxtube/status", (_req, res) => {
 
 app.get("/api/nyxtube/search", (req, res) => nyxMediaSearchRequest(req, res, "youtube", nyxTubeSearch));
 
-app.get("/api/nyxify/status", (_req, res) => {
-  res.set("Cache-Control", "no-store").json({ configured: true, provider: "meting" });
+app.get("/api/nyxtube/feed", (req, res) => {
+  res.set("Cache-Control", "private, max-age=120");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-site media requests are not allowed." });
+    return;
+  }
+  const limit = Math.max(1, Math.min(24, Number.parseInt(req.query?.limit, 10) || 18));
+  Promise.resolve(nyxTubeFeed(limit))
+    .then(results => res.json({ provider: "youtube", results }))
+    .catch(error => res.status(Number(error?.status) === 503 ? 503 : 502).json({ error: error?.message || "NyxTube's video feed is unavailable right now." }));
 });
 
-app.get("/api/nyxify/search", (req, res) => nyxMediaSearchRequest(req, res, "meting", nyxifySearch));
+app.get("/api/nyxify/status", (_req, res) => {
+  const soundCloudConfigured = nyxMediaProviderConfigured("soundcloud");
+  res.set("Cache-Control", "no-store").json({
+    configured: true,
+    provider: soundCloudConfigured ? "soundcloud" : "meting",
+    providerLabel: soundCloudConfigured ? "SoundCloud" : "Nyx music catalog",
+    fallback: "meting"
+  });
+});
+
+app.get("/api/nyxify/search", (req, res) => nyxMediaSearchRequest(req, res, "nyxify", nyxifyPreferredSearch));
+
+app.get("/api/music/soundcloud/:trackId", async (req, res) => {
+  res.set({
+    "Cache-Control": "private, no-store",
+    "X-Content-Type-Options": "nosniff"
+  });
+  const trackId = String(req.params.trackId || "").trim();
+  if (!/^\d{1,24}$/.test(trackId) || !nyxMediaProviderConfigured("soundcloud")) {
+    res.status(404).end();
+    return;
+  }
+  const requestedRange = String(req.get("range") || "").trim();
+  if (requestedRange && !/^bytes=\d*-\d*$/i.test(requestedRange)) {
+    res.status(416).end();
+    return;
+  }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20_000);
+  res.once("close", () => controller.abort());
+  try {
+    const token = await nyxSoundCloudAccessToken();
+    const endpoint = new URL(`https://api.soundcloud.com/tracks/${trackId}/stream`);
+    const upstream = await fetch(endpoint, {
+      method: "GET",
+      redirect: "follow",
+      signal: controller.signal,
+      headers: {
+        accept: "audio/mpeg,audio/mp4,audio/ogg,audio/*;q=0.9,*/*;q=0.1",
+        authorization: `OAuth ${token}`,
+        ...(requestedRange ? { range: requestedRange } : {})
+      }
+    });
+    clearTimeout(timeout);
+    const source = new URL(upstream.url);
+    const trustedSource = source.hostname === "api.soundcloud.com" || source.hostname === "soundcloud.com" || source.hostname.endsWith(".soundcloud.com") || source.hostname === "sndcdn.com" || source.hostname.endsWith(".sndcdn.com");
+    const contentType = String(upstream.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
+    if (!trustedSource || (!contentType.startsWith("audio/") && upstream.status !== 416) || ![200, 206, 416].includes(upstream.status)) {
+      upstream.body?.cancel().catch(() => {});
+      res.status(upstream.status === 404 ? 404 : 502).end();
+      return;
+    }
+    const headers = {
+      "Accept-Ranges": upstream.headers.get("accept-ranges") || "bytes",
+      ...(contentType ? { "Content-Type": contentType } : {}),
+      ...(upstream.headers.get("content-length") ? { "Content-Length": upstream.headers.get("content-length") } : {}),
+      ...(upstream.headers.get("content-range") ? { "Content-Range": upstream.headers.get("content-range") } : {})
+    };
+    res.status(upstream.status).set(headers);
+    if (req.method === "HEAD" || !upstream.body) {
+      upstream.body?.cancel().catch(() => {});
+      res.end();
+      return;
+    }
+    const stream = Readable.fromWeb(upstream.body);
+    stream.on("error", () => res.headersSent ? res.destroy() : res.status(502).end());
+    stream.pipe(res);
+  } catch (error) {
+    clearTimeout(timeout);
+    if (!res.headersSent) res.status(error?.name === "AbortError" ? 504 : 502).end();
+    else res.destroy();
+  }
+});
 
 app.get("/api/music/stream/:trackId", async (req, res) => {
   res.set({
@@ -4577,18 +4804,34 @@ app.get("/api/music/stream/:trackId", async (req, res) => {
   endpoint.searchParams.set("type", "url");
   endpoint.searchParams.set("id", trackId);
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15_000);
+  const timeout = setTimeout(() => controller.abort(), 30_000);
   res.once("close", () => controller.abort());
   try {
-    const upstream = await fetch(endpoint, {
-      method: "GET",
-      redirect: "follow",
-      signal: controller.signal,
-      headers: {
-        accept: "audio/mpeg,audio/mp4,audio/*;q=0.9,*/*;q=0.1",
-        range: upstreamRange
+    let upstream = null;
+    let lastError = null;
+    for (let attempt = 0; attempt < 3 && !controller.signal.aborted; attempt += 1) {
+      try {
+        const candidate = await fetch(endpoint, {
+          method: "GET",
+          redirect: "follow",
+          signal: controller.signal,
+          headers: {
+            accept: "audio/mpeg,audio/mp4,audio/*;q=0.9,*/*;q=0.1",
+            range: upstreamRange
+          }
+        });
+        if (candidate.status < 500 || attempt === 2) {
+          upstream = candidate;
+          break;
+        }
+        candidate.body?.cancel().catch(() => {});
+      } catch (error) {
+        lastError = error;
+        if (error?.name === "AbortError" || attempt === 2) throw error;
       }
-    });
+      await new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1)));
+    }
+    if (!upstream) throw lastError || new Error("The music stream is temporarily unavailable.");
     clearTimeout(timeout);
     const source = new URL(upstream.url);
     const trustedSource = source.hostname === "api.qijieya.cn" || source.hostname === "music.126.net" || source.hostname.endsWith(".music.126.net");

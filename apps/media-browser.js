@@ -12,6 +12,8 @@
     configured: false,
     busy: false,
     currentResult: null,
+    feed: [],
+    feedLoaded: false,
     standardPlayer: savedPlayerMode === "standard" || (!savedPlayerMode && isChromeOs)
   };
   const refs = {
@@ -32,6 +34,7 @@
     player: document.querySelector("[data-media-player]"),
     playerTitle: document.querySelector("[data-media-player-title]"),
     playerCreator: document.querySelector("[data-media-player-creator]"),
+    playerSource: document.querySelector("[data-media-player-source]"),
     playerFrame: document.querySelector("[data-media-player-frame]"),
     playerCompat: document.querySelector("[data-media-player-compat]"),
     playerClose: document.querySelector("[data-media-player-close]")
@@ -119,13 +122,27 @@
     refs.results.replaceChildren(root);
   }
 
-  function showLanding() {
-    refs.sectionTitle.textContent = "Discover videos";
-    refs.count.textContent = "";
-    emptyState(
-      `Search ${providerName}`,
-      "Find videos and watch through YouTube's privacy-enhanced player."
-    );
+  async function showLanding() {
+    refs.sectionTitle.textContent = "Popular videos";
+    if (state.feedLoaded) {
+      refs.count.textContent = `${state.feed.length} videos`;
+      refs.results.replaceChildren(...state.feed.map(resultCard));
+      return;
+    }
+    refs.count.textContent = "Loading...";
+    refs.results.replaceChildren(...Array.from({ length: 8 }, previewCard));
+    try {
+      const payload = await fetchJson(`${apiBase}/feed?limit=18`);
+      state.feed = Array.isArray(payload?.results) ? payload.results : [];
+      state.feedLoaded = true;
+      refs.count.textContent = `${state.feed.length} video${state.feed.length === 1 ? "" : "s"}`;
+      if (state.feed.length) refs.results.replaceChildren(...state.feed.map(resultCard));
+      else emptyState("Nothing popular right now", "Search for a video, creator, or topic instead.");
+    } catch (error) {
+      refs.count.textContent = "Feed unavailable";
+      emptyState("Search NyxTube", "The popular feed could not load, but video search is still ready.");
+      showNotice(error.message || "NyxTube could not load its video feed.");
+    }
   }
 
   function durationLabel(value) {
@@ -137,6 +154,7 @@
   function renderPlayerFrame(result) {
     refs.playerTitle.textContent = plainText(result.title);
     refs.playerCreator.textContent = plainText(result.creator);
+    if (refs.playerSource) refs.playerSource.href = result.sourceUrl;
     const frame = document.createElement("iframe");
     frame.title = `${plainText(result.title)} - ${providerName}`;
     frame.loading = "eager";
@@ -145,7 +163,7 @@
     frame.allowFullscreen = true;
     const playerHost = state.standardPlayer ? "www.youtube.com" : "www.youtube-nocookie.com";
     const origin = state.standardPlayer ? `&origin=${encodeURIComponent(location.origin)}` : "";
-    frame.src = `https://${playerHost}/embed/${encodeURIComponent(result.id)}?autoplay=1&playsinline=1&hl=en&rel=0${origin}`;
+    frame.src = `https://${playerHost}/embed/${encodeURIComponent(result.id)}?autoplay=1&playsinline=1&hl=en&cc_lang_pref=en&rel=0&enablejsapi=1${origin}`;
     refs.playerFrame.replaceChildren(frame);
     if (refs.playerCompat) {
       refs.playerCompat.textContent = state.standardPlayer ? "Use private player" : "Try standard player";
@@ -193,7 +211,9 @@
     title.textContent = plainText(result.title) || "Untitled";
     const creator = document.createElement("p");
     const duration = durationLabel(result.durationMs);
-    creator.textContent = duration ? `${plainText(result.creator)} - ${duration}` : plainText(result.creator);
+    const views = Math.max(0, Number(result.viewCount) || 0);
+    const viewsLabel = views >= 1_000_000 ? `${(views / 1_000_000).toFixed(views >= 10_000_000 ? 0 : 1)}M views` : (views >= 1_000 ? `${(views / 1_000).toFixed(views >= 10_000 ? 0 : 1)}K views` : "");
+    creator.textContent = [plainText(result.creator), viewsLabel, duration].filter(Boolean).join(" - ");
     copy.append(title, creator);
     const actions = document.createElement("div");
     actions.className = "media-result-actions";
@@ -257,7 +277,7 @@
   }));
   refs.focusSearch.forEach(button => button.addEventListener("click", () => refs.input.focus()));
   refs.home.forEach(button => button.addEventListener("click", () => {
-    if (state.configured) showLanding();
+    if (state.configured) void showLanding();
     else showConfigurationPreview();
   }));
   refs.playerClose.addEventListener("click", () => {

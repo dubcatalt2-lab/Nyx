@@ -21,32 +21,46 @@
 
   const state = {
     results: [],
+    discovery: [],
     recent: readList(recentKey, 24),
     liked: readList(likedKey, 100),
     playlists: readPlaylists(),
     currentIndex: -1,
     current: null,
     shuffled: false,
-    repeat: 0
+    repeat: 0,
+    activeView: "home",
+    discoveryLoaded: false,
+    discoveryBusy: false
   };
+
   const refs = {
     back: [...document.querySelectorAll("[data-back-to-nyx]")],
     focusSearch: [...document.querySelectorAll("[data-focus-search]")],
     viewButtons: [...document.querySelectorAll("[data-view]")],
+    mixButtons: [...document.querySelectorAll("[data-mix-query]")],
     createPlaylists: [...document.querySelectorAll("[data-create-playlist]")],
     playlistList: document.querySelector("[data-playlist-list]"),
+    likedCount: document.querySelector("[data-liked-count]"),
+    recentCount: document.querySelector("[data-recent-count]"),
     form: document.querySelector("[data-search-form]"),
     input: document.querySelector("[data-search-input]"),
     searchButton: document.querySelector("[data-search-button]"),
     searchButtonLabel: document.querySelector("[data-search-button-label]"),
     status: document.querySelector("[data-api-status]"),
     notice: document.querySelector("[data-notice]"),
+    homeView: document.querySelector("[data-home-view]"),
+    browseView: document.querySelector("[data-browse-view]"),
+    homePopular: document.querySelector("[data-home-popular]"),
+    homeArtists: document.querySelector("[data-home-artists]"),
+    showPopular: document.querySelector("[data-show-popular]"),
     title: document.querySelector("[data-section-title]"),
     count: document.querySelector("[data-result-count]"),
     results: document.querySelector("[data-results]"),
     audio: document.querySelector("[data-audio]"),
     playerTitle: document.querySelector("[data-player-title]"),
     playerArtist: document.querySelector("[data-player-artist]"),
+    playerSource: document.querySelector("[data-player-source]"),
     playerCover: document.querySelector("[data-player-cover]"),
     playerFallback: document.querySelector("[data-player-fallback]"),
     toggle: document.querySelector("[data-toggle-play]"),
@@ -78,9 +92,15 @@
     if (use) use.setAttribute("href", `#nyxify-icon-${name}`);
   }
 
+  function trackKey(track) {
+    return `${String(track?.provider || "music")}:${String(track?.providerId || track?.id || "")}`;
+  }
+
   function saveRecent(track) {
-    state.recent = [track, ...state.recent.filter(item => item.id !== track.id)].slice(0, 24);
+    const key = trackKey(track);
+    state.recent = [track, ...state.recent.filter(item => trackKey(item) !== key)].slice(0, 24);
     store(recentKey, state.recent);
+    updateLibraryCounts();
   }
 
   function setNotice(message = "") {
@@ -101,22 +121,43 @@
     return payload;
   }
 
-  function isLiked(track) {
-    return state.liked.some(item => item.id === track.id);
+  function updateLibraryCounts() {
+    refs.likedCount.textContent = `Playlist - ${state.liked.length} song${state.liked.length === 1 ? "" : "s"}`;
+    refs.recentCount.textContent = `${state.recent.length} recent track${state.recent.length === 1 ? "" : "s"}`;
   }
 
-  function toggleLiked(track) {
-    state.liked = isLiked(track) ? state.liked.filter(item => item.id !== track.id) : [track, ...state.liked].slice(0, 100);
+  function isLiked(track) {
+    const key = trackKey(track);
+    return state.liked.some(item => trackKey(item) === key);
+  }
+
+  function toggleLiked(track, button) {
+    const key = trackKey(track);
+    state.liked = isLiked(track) ? state.liked.filter(item => trackKey(item) !== key) : [track, ...state.liked].slice(0, 100);
     store(likedKey, state.liked);
-    render(state.results, refs.title.textContent);
+    updateLibraryCounts();
+    if (button) {
+      const liked = isLiked(track);
+      button.classList.toggle("active", liked);
+      button.innerHTML = iconMarkup(liked ? "heart-fill" : "heart");
+      button.setAttribute("aria-label", liked ? "Remove from liked songs" : "Add to liked songs");
+    }
   }
 
   function renderPlaylists() {
     refs.playlistList.replaceChildren(...state.playlists.map(playlist => {
       const button = document.createElement("button");
       button.type = "button";
-      button.textContent = playlist.name;
-      button.addEventListener("click", () => render(playlist.tracks, playlist.name));
+      const art = document.createElement("i");
+      art.innerHTML = iconMarkup("note");
+      const copy = document.createElement("span");
+      const title = document.createElement("strong");
+      title.textContent = playlist.name;
+      const count = document.createElement("small");
+      count.textContent = `Playlist - ${playlist.tracks.length} song${playlist.tracks.length === 1 ? "" : "s"}`;
+      copy.append(title, count);
+      button.append(art, copy);
+      button.addEventListener("click", () => renderBrowse(playlist.tracks, playlist.name));
       return button;
     }));
   }
@@ -141,11 +182,17 @@
     const choice = Number.parseInt(window.prompt(`Add to which playlist?\n${options}`, "1"), 10) - 1;
     const playlist = state.playlists[choice];
     if (!playlist) return;
-    if (!playlist.tracks.some(item => item.id === track.id)) playlist.tracks.push(track);
+    if (!playlist.tracks.some(item => trackKey(item) === trackKey(track))) playlist.tracks.push(track);
     savePlaylists();
   }
 
-  function card(track, index) {
+  function playFromCollection(track, collection) {
+    state.results = collection;
+    const index = collection.findIndex(item => trackKey(item) === trackKey(track));
+    void playTrack(Math.max(0, index));
+  }
+
+  function card(track, index, collection = state.results) {
     const article = document.createElement("article");
     article.className = "nyxify-card";
     const cover = document.createElement("div");
@@ -168,7 +215,7 @@
     play.className = "nyxify-card-play";
     play.setAttribute("aria-label", `Play ${track.title}`);
     play.innerHTML = iconMarkup("play");
-    play.addEventListener("click", event => { event.stopPropagation(); void playTrack(index); });
+    play.addEventListener("click", event => { event.stopPropagation(); playFromCollection(track, collection); });
     cover.append(play);
 
     const actions = document.createElement("div");
@@ -178,7 +225,7 @@
     like.classList.toggle("active", isLiked(track));
     like.setAttribute("aria-label", isLiked(track) ? "Remove from liked songs" : "Add to liked songs");
     like.innerHTML = iconMarkup(isLiked(track) ? "heart-fill" : "heart");
-    like.addEventListener("click", event => { event.stopPropagation(); toggleLiked(track); });
+    like.addEventListener("click", event => { event.stopPropagation(); toggleLiked(track, like); });
     const add = document.createElement("button");
     add.type = "button";
     add.innerHTML = iconMarkup("plus");
@@ -191,10 +238,21 @@
     const artist = document.createElement("p");
     artist.textContent = track.creator;
     article.append(actions, cover, title, artist);
+    if (track.sourceUrl) {
+      const source = document.createElement("a");
+      source.className = "nyxify-card-source";
+      source.href = track.sourceUrl;
+      source.target = "_blank";
+      source.rel = "noopener noreferrer";
+      source.textContent = track.providerLabel || (track.provider === "soundcloud" ? "SoundCloud" : "Source");
+      source.insertAdjacentHTML("beforeend", iconMarkup("external"));
+      source.addEventListener("click", event => event.stopPropagation());
+      article.append(source);
+    }
     article.tabIndex = 0;
-    article.addEventListener("click", () => void playTrack(index));
+    article.addEventListener("click", () => playFromCollection(track, collection));
     article.addEventListener("keydown", event => {
-      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); void playTrack(index); }
+      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); playFromCollection(track, collection); }
     });
     return article;
   }
@@ -204,7 +262,7 @@
       const button = document.createElement("button");
       button.type = "button";
       button.className = "nyxify-queue-track";
-      button.classList.toggle("active", state.current?.id === track.id);
+      button.classList.toggle("active", trackKey(state.current) === trackKey(track));
       if (track.thumbnail) {
         const image = document.createElement("img");
         image.src = track.thumbnail;
@@ -228,7 +286,23 @@
     }));
   }
 
-  function render(items, title) {
+  function activateView(view) {
+    state.activeView = view;
+    refs.viewButtons.forEach(button => button.classList.toggle("active", button.dataset.view === view));
+  }
+
+  function showHome() {
+    activateView("home");
+    refs.homeView.hidden = false;
+    refs.browseView.hidden = true;
+    setNotice("");
+    if (!state.discoveryLoaded && !state.discoveryBusy) void loadDiscovery();
+  }
+
+  function renderBrowse(items, title) {
+    activateView(title === "Liked songs" ? "liked" : (title === "Recently played" ? "library" : "search"));
+    refs.homeView.hidden = true;
+    refs.browseView.hidden = false;
     state.results = items;
     refs.title.textContent = title;
     refs.count.textContent = `${items.length} track${items.length === 1 ? "" : "s"}`;
@@ -242,8 +316,67 @@
       renderQueue();
       return;
     }
-    refs.results.replaceChildren(...items.map(card));
+    refs.results.replaceChildren(...items.map((track, index) => card(track, index, items)));
     renderQueue();
+  }
+
+  function artistButton(artist) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "nyxify-artist";
+    if (artist.thumbnail) {
+      const image = document.createElement("img");
+      image.src = artist.thumbnail;
+      image.alt = "";
+      image.loading = "lazy";
+      image.referrerPolicy = "no-referrer";
+      button.append(image);
+    } else {
+      const fallback = document.createElement("i");
+      fallback.innerHTML = iconMarkup("note");
+      button.append(fallback);
+    }
+    const name = document.createElement("strong");
+    name.textContent = artist.name;
+    const type = document.createElement("span");
+    type.textContent = "Artist";
+    button.append(name, type);
+    button.addEventListener("click", () => { refs.input.value = artist.name; void search(artist.name); });
+    return button;
+  }
+
+  function renderDiscovery(tracks) {
+    state.discovery = tracks;
+    refs.homePopular.replaceChildren(...tracks.slice(0, 7).map((track, index) => card(track, index, tracks)));
+    const seen = new Set();
+    const artists = [];
+    tracks.forEach(track => {
+      const name = String(track.creator || "").trim();
+      const key = name.toLowerCase();
+      if (!name || seen.has(key)) return;
+      seen.add(key);
+      artists.push({ name, thumbnail: track.thumbnail });
+    });
+    refs.homeArtists.replaceChildren(...artists.slice(0, 7).map(artistButton));
+  }
+
+  async function loadDiscovery() {
+    state.discoveryBusy = true;
+    try {
+      const payload = await fetchJson("/api/nyxify/search?q=global%20hits&limit=20");
+      const tracks = Array.isArray(payload?.results) ? payload.results : [];
+      if (tracks.length) {
+        state.discoveryLoaded = true;
+        renderDiscovery(tracks);
+      } else if (state.recent.length) {
+        renderDiscovery(state.recent);
+      }
+    } catch {
+      if (state.recent.length) renderDiscovery(state.recent);
+      else refs.homePopular.innerHTML = '<div class="nyxify-empty"><strong>Discovery is taking a break</strong><span>Search for a song or artist to keep listening.</span></div>';
+    } finally {
+      state.discoveryBusy = false;
+    }
   }
 
   async function playTrack(index) {
@@ -256,10 +389,19 @@
     refs.playerCover.hidden = !track.thumbnail;
     refs.playerFallback.hidden = Boolean(track.thumbnail);
     if (track.thumbnail) refs.playerCover.src = track.thumbnail;
+    if (track.sourceUrl) {
+      refs.playerSource.hidden = false;
+      refs.playerSource.href = track.sourceUrl;
+      refs.playerSource.firstChild.textContent = track.provider === "soundcloud" ? "SoundCloud " : "Open source ";
+    } else {
+      refs.playerSource.hidden = true;
+      refs.playerSource.removeAttribute("href");
+    }
     refs.audio.src = track.streamUrl;
     refs.audio.load();
     saveRecent(track);
     renderQueue();
+    setNotice("");
     try { await refs.audio.play(); } catch { setNotice("Press play to start this track. Your browser blocked automatic playback."); }
   }
 
@@ -268,18 +410,20 @@
     refs.input.readOnly = true;
     refs.searchButtonLabel.textContent = "Searching";
     setNotice("");
+    refs.homeView.hidden = true;
+    refs.browseView.hidden = false;
     refs.title.textContent = "Searching...";
     refs.count.textContent = "";
     try {
       const payload = await fetchJson(`/api/nyxify/search?q=${encodeURIComponent(query)}&limit=20`);
-      render(Array.isArray(payload?.results) ? payload.results : [], `Results for "${query}"`);
+      renderBrowse(Array.isArray(payload?.results) ? payload.results : [], `Results for \"${query}\"`);
     } catch (error) {
-      render([], "Search unavailable");
+      renderBrowse([], "Search unavailable");
       setNotice(error.message || "Nyxify could not complete that search.");
     } finally {
       refs.searchButton.disabled = false;
       refs.input.readOnly = false;
-      refs.searchButtonLabel.textContent = "Go";
+      refs.searchButtonLabel.textContent = "Search";
     }
   }
 
@@ -291,11 +435,17 @@
   });
   refs.focusSearch.forEach(button => button.addEventListener("click", () => refs.input.focus()));
   refs.viewButtons.forEach(button => button.addEventListener("click", () => {
-    refs.viewButtons.forEach(item => item.classList.toggle("active", item === button));
-    if (button.dataset.view === "liked") render(state.liked, "Liked songs");
-    else if (button.dataset.view === "library") render(state.recent, "Recently played");
-    else render(state.recent, state.recent.length ? "Recently played" : "Ready when you are");
+    const view = button.dataset.view;
+    if (view === "liked") renderBrowse(state.liked, "Liked songs");
+    else if (view === "library") renderBrowse(state.recent, "Recently played");
+    else showHome();
   }));
+  refs.mixButtons.forEach(button => button.addEventListener("click", () => {
+    const query = button.dataset.mixQuery || "";
+    refs.input.value = query;
+    void search(query);
+  }));
+  refs.showPopular.addEventListener("click", () => renderBrowse(state.discovery, "Popular tracks"));
   refs.createPlaylists.forEach(button => button.addEventListener("click", () => createPlaylist()));
   refs.back.forEach(button => button.addEventListener("click", () => {
     if (window.parent !== window) window.parent.postMessage({ type: "nyx:close-tab" }, location.origin);
@@ -303,6 +453,7 @@
   }));
   refs.toggle.addEventListener("click", () => {
     if (!state.current && state.results.length) { void playTrack(0); return; }
+    if (!state.current && state.discovery.length) { playFromCollection(state.discovery[0], state.discovery); return; }
     if (refs.audio.paused) void refs.audio.play(); else refs.audio.pause();
   });
   refs.previous.addEventListener("click", () => {
@@ -332,6 +483,7 @@
     refs.toggle.setAttribute("aria-label", "Play");
     refs.toggle.title = "Play";
   });
+  refs.audio.addEventListener("error", () => setNotice("This track could not start. Try it again or choose another result."));
   refs.audio.addEventListener("ended", () => {
     if (state.repeat === 2) { refs.audio.currentTime = 0; void refs.audio.play(); return; }
     if (!state.results.length) return;
@@ -355,11 +507,12 @@
   }));
   refs.queueClose.addEventListener("click", () => { refs.queue.hidden = true; });
 
-  render(state.recent, state.recent.length ? "Recently played" : "Ready when you are");
+  updateLibraryCounts();
   renderPlaylists();
-  fetchJson("/api/nyxify/status").then(() => {
+  showHome();
+  fetchJson("/api/nyxify/status").then(payload => {
     refs.status.classList.add("online");
-    refs.status.querySelector("span").textContent = "Catalog ready";
+    refs.status.querySelector("span").textContent = `${payload?.providerLabel || "Music catalog"} ready`;
   }).catch(() => {
     refs.status.classList.add("offline");
     refs.status.querySelector("span").textContent = "Catalog unavailable";

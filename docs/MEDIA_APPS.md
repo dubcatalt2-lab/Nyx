@@ -1,6 +1,6 @@
 # NyxTube and Nyxify setup
 
-Nyx keeps the YouTube provider credential on the OVH server. The browser calls same-origin Nyx routes and receives normalized public search results. NyxTube plays selected videos only through an official YouTube embedded player, while Nyxify searches its public Meting-compatible catalog and streams selected tracks through Nyx's fixed-target, same-origin music route. Neither app extracts raw YouTube media URLs.
+Nyx keeps every provider credential on the OVH server. Browsers call same-origin Nyx routes and receive normalized public results. NyxTube plays videos only through an official YouTube embedded player. Nyxify can prefer SoundCloud's official API and automatically falls back to the public Meting-compatible catalog. Neither app exposes provider credentials or extracts raw YouTube media URLs.
 
 ## NyxTube
 
@@ -14,13 +14,20 @@ Nyx keeps the YouTube provider credential on the OVH server. The browser calls s
    NYX_YOUTUBE_API_KEY='replace-with-youtube-data-api-key'
    ```
 
-NyxTube uses the official `search.list` endpoint for embeddable videos and the official YouTube IFrame player for playback. It normally uses YouTube's privacy-enhanced player; ChromeOS defaults to the standard player because managed-device filters more commonly allow that host, and the player header provides a saved compatibility toggle. Search is quota-limited by Google, so Nyx caches identical searches briefly and rate-limits callers.
+NyxTube uses the official `videos.list` popular feed and `search.list` endpoint for embeddable videos, then plays selections through the official YouTube IFrame player. ChromeOS defaults to the standard YouTube embed host because managed-device filters more commonly allow it; every player also offers the privacy-enhanced official host and an external YouTube link. A device administrator can still block both official hosts, which application code cannot override. Google quota applies, so Nyx caches feed and search results and rate-limits callers.
 
 ## Nyxify
 
-Nyxify uses the public Meting-compatible endpoint at `https://api.qijieya.cn/meting/`. The endpoint does not issue or require an API key, so there is no Nyxify secret to add to `/etc/nyx/nyx.env`.
+Nyxify works without another credential through its existing public Meting-compatible fallback. To prefer SoundCloud results and playback, register an official SoundCloud application, then add its two server credentials to `/etc/nyx/nyx.env`:
 
-Nyx sends searches through its same-origin `/api/nyxify/search` route, rate-limits callers, caches identical searches briefly, and validates returned stream, cover, and lyric URLs before sending normalized results to the browser. Playback uses `/api/music/stream/:trackId`, which accepts only numeric NetEase track IDs, follows only the fixed Meting endpoint and trusted NetEase audio hosts, supports byte ranges, and never accepts an arbitrary upstream URL. This keeps audio same-origin for managed Chromebooks without creating an open proxy. The app provides playback, queue, shuffle, repeat, recent history, liked songs, and device-local playlists. Catalog availability depends on the community-operated upstream service; it is not a Spotify API or a guaranteed service-level dependency.
+```dotenv
+NYX_SOUNDCLOUD_CLIENT_ID='replace-with-soundcloud-client-id'
+NYX_SOUNDCLOUD_CLIENT_SECRET='replace-with-soundcloud-client-secret'
+```
+
+Both values are required. Do not put either value in browser code, screenshots, commits, or documentation. Nyx exchanges them for a short-lived server token, searches only playable public tracks, displays the uploader and SoundCloud source link, and relays the selected fixed track ID through `/api/music/soundcloud/:trackId`. If credentials are missing or SoundCloud has a temporary API failure, searches fall back to the keyless catalog and playback uses `/api/music/stream/:trackId`.
+
+Both stream routes are fixed-target relays rather than arbitrary URL proxies. They validate numeric track IDs, trusted provider hosts, media response types, byte ranges, and timeouts. Nyxify's queue, shuffle/repeat state, listening history, liked songs, and playlists remain device-local.
 
 ## Apply and verify
 
@@ -32,4 +39,4 @@ curl --fail http://127.0.0.1:8080/api/nyxtube/status
 curl --fail http://127.0.0.1:8080/api/nyxify/status
 ```
 
-Each response should contain `"configured":true`. Then open `/apps/nyxtube/` and `/apps/nyxify/` through Nyx and run a harmless search. Never commit the YouTube provider credential.
+NyxTube should report `"configured":true`. Nyxify always reports configured and identifies its current preferred provider. Then open `/apps/nyxtube/` and `/apps/nyxify/`, load the video feed, run a harmless search in each app, and play one result. Never commit any provider credential.

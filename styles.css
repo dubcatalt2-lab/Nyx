@@ -4025,7 +4025,10 @@ html[data-nyx-theme] body .nyx-profile-directory-card-host .nyx-user-profile-abo
 .nyx-user-profile-effect-blooming-roses .nyx-user-profile-effect,
 .nyx-founder-effect-blooming-roses .nyx-founder-profile-effect{
   display:block!important;
-  z-index:3!important;
+  /* The artwork itself is transparent away from the left and bottom edges.
+     Keep it above the opaque profile body so the frame is not swallowed by
+     that body's stacking context. */
+  z-index:6!important;
   inset:0!important;
   overflow:hidden!important;
   border-radius:inherit;
@@ -4055,7 +4058,7 @@ html[data-nyx-theme] body .nyx-profile-directory-card-host .nyx-user-profile-abo
 }
 .nyx-user-profile-card.nyx-user-profile-effect-blooming-roses .nyx-user-profile-chrome{z-index:5!important}
 .nyx-user-profile-card.nyx-user-profile-effect-blooming-roses .nyx-user-profile-body{z-index:4!important}
-.nyx-editor-menu-preview.nyx-user-profile-effect-blooming-roses>.nyx-account-menu-profile-effect{z-index:3!important;inset:0!important}
+.nyx-editor-menu-preview.nyx-user-profile-effect-blooming-roses>.nyx-account-menu-profile-effect{z-index:6!important;inset:0!important}
 
 .nyx-avatar-decoration-candlelight>.nyx-avatar-decoration{
   display:block!important;
@@ -4113,10 +4116,28 @@ html[data-nyx-theme] body .nyx-profile-directory-card-host .nyx-user-profile-abo
   .nyx-avatar-decoration-candlelight>.nyx-avatar-decoration::after{animation:none!important;clip-path:none!important;opacity:1!important}
 }
 
+/* Lag Reducer disables every animation globally. Leave the cosmetics in their
+   completed frame instead of freezing the bloom artwork at opacity: 0. */
+body.lag-reducer .nyx-user-profile-effect-blooming-roses .nyx-user-profile-effect,
+body.lag-reducer .nyx-founder-effect-blooming-roses .nyx-founder-profile-effect,
+body.lag-reducer .nyx-user-profile-effect-blooming-roses .nyx-user-profile-effect::after,
+body.lag-reducer .nyx-founder-effect-blooming-roses .nyx-founder-profile-effect::after{
+  clip-path:none!important;
+  opacity:1!important;
+  transform:none!important;
+}
+
 /* Compact homepage account menus are functional navigation surfaces, not
    profile canvases. Keep experimental cosmetics out of this narrow layout. */
 .nyx-account-menu:not(.nyx-editor-menu-preview)>.nyx-account-menu-profile-effect,
 .nyx-account-menu:not(.nyx-editor-menu-preview) .nyx-account-menu-avatar>.nyx-avatar-decoration{
   display:none!important;
   animation:none!important;
+}
+
+/* The cleaned simple cosmetics are safe in the compact account card. Keep
+   the blanket above for retired/experimental values, then opt these two in. */
+.nyx-account-menu:not(.nyx-editor-menu-preview).nyx-user-profile-effect-blooming-roses>.nyx-account-menu-profile-effect,
+.nyx-account-menu:not(.nyx-editor-menu-preview) .nyx-account-menu-avatar.nyx-avatar-decoration-candlelight>.nyx-avatar-decoration{
+  display:block!important;
 }

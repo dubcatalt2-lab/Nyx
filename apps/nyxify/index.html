@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>Nyxify</title>
+  <link rel="icon" href="/assets/icons/shortcut-nyxify.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/apps/nyxify/app.css?v=20260813-nyxify-v1">
+</head>
+<body>
+  <div class="nyxify-app">
+    <aside class="nyxify-sidebar">
+      <a class="nyxify-logo" href="/" aria-label="Nyx home"><img src="/assets/icons/shortcut-nyxify.svg" alt=""><span>Nyxify</span></a>
+      <nav aria-label="Nyxify navigation">
+        <button type="button" class="active" data-view="home"><span aria-hidden="true">⌂</span> Home</button>
+        <button type="button" data-focus-search><span aria-hidden="true">⌕</span> Search</button>
+        <button type="button" data-view="library"><span aria-hidden="true">♫</span> Your library</button>
+        <button type="button" data-view="liked"><span aria-hidden="true">♥</span> Liked songs</button>
+      </nav>
+      <div class="nyxify-playlist-copy">
+        <strong>Made for Nyx</strong>
+        <span>Search public music and keep recent tracks on this device.</span>
+      </div>
+      <div class="nyxify-playlist-tools">
+        <button type="button" data-create-playlist>＋ Create playlist</button>
+        <div data-playlist-list></div>
+      </div>
+      <button class="nyxify-back" type="button" data-back-to-nyx>← Back to Nyx</button>
+    </aside>
+
+    <main class="nyxify-main">
+      <header class="nyxify-topbar">
+        <button class="nyxify-mobile-back" type="button" data-back-to-nyx aria-label="Back to Nyx">←</button>
+        <form data-search-form>
+          <span aria-hidden="true">⌕</span>
+          <input type="search" data-search-input minlength="2" maxlength="100" autocomplete="off" spellcheck="false" placeholder="What do you want to play?" aria-label="Search music">
+          <button type="submit" data-search-button>Search</button>
+        </form>
+        <span class="nyxify-api-status" data-api-status><i></i><span>Connecting</span></span>
+      </header>
+
+      <section class="nyxify-hero">
+        <span class="nyxify-kicker">NYX MUSIC</span>
+        <h1>Music for wherever you are.</h1>
+        <p>Search tracks, build a recent library, and keep listening while you browse Nyx.</p>
+      </section>
+
+      <nav class="nyxify-mobile-nav" aria-label="Nyxify library navigation">
+        <button type="button" data-view="home">Home</button>
+        <button type="button" data-view="liked">Liked</button>
+        <button type="button" data-view="library">Recent</button>
+        <button type="button" data-create-playlist>New playlist</button>
+      </nav>
+
+      <p class="nyxify-notice" data-notice hidden></p>
+      <section class="nyxify-content" aria-live="polite">
+        <header><h2 data-section-title>Start listening</h2><span data-result-count></span></header>
+        <div class="nyxify-grid" data-results></div>
+      </section>
+    </main>
+
+    <footer class="nyxify-player" data-player>
+      <div class="nyxify-now-playing">
+        <div class="nyxify-cover"><img data-player-cover alt="" hidden><span data-player-fallback>♫</span></div>
+        <span><strong data-player-title>Choose a track</strong><small data-player-artist>Nyxify</small></span>
+      </div>
+      <div class="nyxify-controls">
+        <button type="button" data-shuffle aria-label="Shuffle">⌘</button>
+        <button type="button" data-previous aria-label="Previous track">‹</button>
+        <button type="button" class="nyxify-play" data-toggle-play aria-label="Play">▶</button>
+        <button type="button" data-next aria-label="Next track">›</button>
+        <button type="button" data-repeat aria-label="Repeat">↻</button>
+      </div>
+      <div class="nyxify-progress">
+        <span data-current-time>0:00</span>
+        <input data-seek type="range" min="0" max="100" value="0" aria-label="Track progress">
+        <span data-duration>0:00</span>
+      </div>
+      <div class="nyxify-volume"><button type="button" data-queue-toggle aria-label="Show queue">☷</button><span aria-hidden="true">◖</span><input data-volume type="range" min="0" max="1" value="0.8" step="0.05" aria-label="Volume"></div>
+      <audio data-audio preload="metadata"></audio>
+    </footer>
+    <aside class="nyxify-queue" data-queue hidden>
+      <header><strong>Queue</strong><button type="button" data-queue-close aria-label="Close queue">×</button></header>
+      <div data-queue-list></div>
+    </aside>
+  </div>
+  <script src="/apps/nyxify/app.js?v=20260813-nyxify-v1"></script>
+</body>
+</html>

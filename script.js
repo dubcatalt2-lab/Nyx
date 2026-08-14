@@ -274,11 +274,11 @@
   }
   const NYX_MINECRAFT_NAME_COLORS=Object.freeze({'0':'#000000','1':'#0000aa','2':'#00aa00','3':'#00aaaa','4':'#aa0000','5':'#aa00aa','6':'#ffaa00','7':'#aaaaaa','8':'#555555','9':'#5555ff',a:'#55ff55',b:'#55ffff',c:'#ff5555',d:'#ff55ff',e:'#ffff55',f:'#ffffff'});
   const NYX_MINECRAFT_MAGIC_GLYPHS='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?#$%&*+-=';
-  function nyxApplyMinecraftNameStyle(node,style,index){node.classList.add('nyx-minecraft-segment');node.style.setProperty('--nyx-minecraft-index',String(index));if(style.color){node.style.color=style.color;node.style.setProperty('--nyx-minecraft-color',style.color)}if(style.bold)node.style.fontWeight='900';if(style.italic)node.style.fontStyle='italic';const decorations=[];if(style.underline)decorations.push('underline');if(style.strike)decorations.push('line-through');if(decorations.length)node.style.textDecoration=decorations.join(' ');if(style.magic){node.classList.add('nyx-minecraft-magic');node.dataset.nyxMinecraftMagicPlain=node.textContent;node.setAttribute('aria-label',node.textContent)}}
+  function nyxApplyMinecraftNameStyle(node,style,index){node.classList.add('nyx-minecraft-segment');node.style.setProperty('--nyx-minecraft-index',String(index));if(style.color){node.style.setProperty('color',style.color,'important');node.style.setProperty('--nyx-minecraft-color',style.color)}if(style.bold)node.style.setProperty('font-weight','900','important');if(style.italic)node.style.setProperty('font-style','italic','important');const decorations=[];if(style.underline)decorations.push('underline');if(style.strike)decorations.push('line-through');if(decorations.length)node.style.setProperty('text-decoration',decorations.join(' '),'important');if(style.magic){node.classList.add('nyx-minecraft-magic');node.dataset.nyxMinecraftMagicPlain=node.textContent;node.setAttribute('aria-label',node.textContent)}}
   function nyxFormatMinecraftDisplayName(element){if(!(element instanceof Element))return;const source=element.textContent||'';if(element.dataset.nyxMinecraftPlain===source)return;const pattern=/&([0-9a-fklmnor])/gi;if(!pattern.test(source)){delete element.dataset.nyxMinecraftPlain;element.classList.remove('nyx-minecraft-formatted-name');return}pattern.lastIndex=0;const fragment=document.createDocumentFragment();let cursor=0,match,style={},segmentIndex=0;const append=text=>{if(!text)return;const span=document.createElement('span');span.textContent=text;nyxApplyMinecraftNameStyle(span,style,segmentIndex++);fragment.append(span)};while((match=pattern.exec(source))){append(source.slice(cursor,match.index));cursor=pattern.lastIndex;const code=match[1].toLowerCase();if(NYX_MINECRAFT_NAME_COLORS[code])style={color:NYX_MINECRAFT_NAME_COLORS[code]};else if(code==='l')style.bold=true;else if(code==='o')style.italic=true;else if(code==='n')style.underline=true;else if(code==='m')style.strike=true;else if(code==='k')style.magic=true;else if(code==='r')style={}}append(source.slice(cursor));element.replaceChildren(fragment);element.dataset.nyxMinecraftPlain=element.textContent||'';element.classList.add('nyx-minecraft-formatted-name')}
   function nyxScrambleMinecraftMagic(){const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;document.querySelectorAll('.nyx-minecraft-magic').forEach(node=>{const plain=String(node.dataset.nyxMinecraftMagicPlain||'');if(!plain)return;node.textContent=Array.from(plain,char=>/\s/u.test(char)?char:reduced?'■':NYX_MINECRAFT_MAGIC_GLYPHS[Math.floor(Math.random()*NYX_MINECRAFT_MAGIC_GLYPHS.length)]).join('')})}
   setInterval(()=>{if(!document.hidden)nyxScrambleMinecraftMagic()},110);
-  function nyxFormatMinecraftNames(root=document){if(root instanceof Element&&root.matches('.nyx-styled-display-name'))nyxFormatMinecraftDisplayName(root);root.querySelectorAll?.('.nyx-styled-display-name').forEach(nyxFormatMinecraftDisplayName)}
+  function nyxFormatMinecraftNames(root=document){if(root instanceof Element&&root.matches('.nyx-styled-display-name,.nyx-minecraft-text'))nyxFormatMinecraftDisplayName(root);root.querySelectorAll?.('.nyx-styled-display-name,.nyx-minecraft-text').forEach(nyxFormatMinecraftDisplayName)}
   const nyxMinecraftNameObserver=new MutationObserver(records=>{records.forEach(record=>{const root=record.target instanceof Element?record.target:record.target.parentElement;if(root)nyxFormatMinecraftNames(root)})});
   nyxMinecraftNameObserver.observe(document.documentElement,{subtree:true,childList:true,characterData:true});
   queueMicrotask(()=>nyxFormatMinecraftNames());
@@ -532,7 +532,7 @@
       selectedUid=entry.uid;
       resultsHost.querySelectorAll('[data-directory-profile]').forEach(button=>button.classList.toggle('active',button.dataset.directoryProfile===selectedUid));
       const profile=normalizeNyxUserProfile(entry.profile);
-      view.innerHTML=`<div class="nyx-profile-directory-view-head"><span>${entry.self?'Your public profile':entry.customRole?.label||entry.roleLabel||roleLabel(entry.role)}</span><strong>${esc(profile.displayName)}</strong></div><div class="nyx-profile-directory-card-host">${nyxUserProfileCardMarkup(profile,{role:entry.role,customRole:entry.customRole,createdAt:entry.createdAt})}</div>`;
+      view.innerHTML=`<div class="nyx-profile-directory-view-head"><span class="nyx-minecraft-text">${entry.self?'Your public profile':esc(entry.customRole?.label||entry.roleLabel||roleLabel(entry.role))}</span><strong>${esc(profile.displayName)}</strong></div><div class="nyx-profile-directory-card-host">${nyxUserProfileCardMarkup(profile,{role:entry.role,customRole:entry.customRole,createdAt:entry.createdAt})}</div>`;
       nyxManageUserProfileGifs(view,profile);
     };
     const renderResults=()=>{
@@ -546,7 +546,7 @@
       resultsHost.innerHTML=entries.map(entry=>{
         const profile=normalizeNyxUserProfile(entry.profile);
         const avatar=profile.avatarUrl?`<img src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="">`:`<span>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</span>`;
-        return `<button type="button" data-directory-profile="${esc(entry.uid)}"><i class="nyx-profile-directory-avatar">${avatar}<em class="${entry.online?'online':''}" aria-label="${entry.online?'Online':'Offline'}"></em></i><span><strong>${esc(profile.displayName)}${entry.self?' <small>You</small>':''}</strong><small>${esc(profile.handle)}</small></span><b>${esc(entry.customRole?.label||entry.roleLabel||roleLabel(entry.role))}</b></button>`;
+        return `<button type="button" data-directory-profile="${esc(entry.uid)}"><i class="nyx-profile-directory-avatar">${avatar}<em class="${entry.online?'online':''}" aria-label="${entry.online?'Online':'Offline'}"></em></i><span><strong>${esc(profile.displayName)}${entry.self?' <small>You</small>':''}</strong><small>${esc(profile.handle)}</small></span><b class="nyx-minecraft-text">${esc(entry.customRole?.label||entry.roleLabel||roleLabel(entry.role))}</b></button>`;
       }).join('');
       resultsHost.querySelectorAll('[data-directory-profile]').forEach(button=>{
         const entry=entries.find(item=>item.uid===button.dataset.directoryProfile);
@@ -856,7 +856,7 @@
     const availableRoles=['owner','co_owner','admin','manager','developer','moderator','support','tester','contributor','member'];
     const publicRole=availableRoles.includes(String(options.role||''))?String(options.role):'';
     const customRole=options.customRole&&typeof options.customRole==='object'?options.customRole:null;
-    const customRoleChip=customRole?`<span class="nyx-user-role nyx-user-role-${esc(publicRole||'member')}"${/^#[0-9a-f]{6}$/i.test(String(customRole.color||''))?` style="--nyx-user-role-color:${esc(customRole.color)};border-color:${esc(customRole.color)};color:${esc(customRole.color)}"`:''}><img src="/assets/icons/roles/${roleIconKey(publicRole||'member')}.png" alt="" aria-hidden="true">${esc(customRole.label||roleLabel(publicRole))}</span>`:'';
+    const customRoleChip=customRole?`<span class="nyx-user-role nyx-user-role-${esc(publicRole||'member')}"${/^#[0-9a-f]{6}$/i.test(String(customRole.color||''))?` style="--nyx-user-role-color:${esc(customRole.color)};border-color:${esc(customRole.color)};color:${esc(customRole.color)}"`:''}><img src="/assets/icons/roles/${roleIconKey(publicRole||'member')}.png" alt="" aria-hidden="true"><span class="nyx-minecraft-text">${esc(customRole.label||roleLabel(publicRole))}</span></span>`:'';
     const roles=publicRole
       ?(customRoleChip||roleChip(publicRole))
       :(nyxFounderIsOwner
@@ -2097,6 +2097,9 @@
     'docs.google.com':svgIcon(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#1a73e8"/><path d="M22 12h17l9 9v31H22z" fill="#fff"/><path d="M39 12v10h9" fill="#d2e3fc"/><path d="M27 31h16M27 37h16M27 43h12" stroke="#1a73e8" stroke-width="3" stroke-linecap="round"/></svg>`),
     'duck.ai':localIcon('duck-ai-logo.png'),
     'nyx-ai':localIcon('shortcut-nyx-ai.svg?v=3'),
+    'nyx-tube':localIcon('shortcut-nyxtube.svg?v=1'),
+    'nyx-cloud':localIcon('shortcut-nyxcloud.svg?v=1'),
+    'nyxify':localIcon('shortcut-nyxify.svg?v=1'),
     'nyx-chat':localIcon('chat.svg?v=1'),
     'link-checker':localIcon('link-checker.svg?v=2'),
     'link-generator':localIcon('link-generator.svg'),
@@ -7097,14 +7100,19 @@
   //apps-grid
   const nyxAiHomeShortcut={domain:'nyx-ai',title:'AI Tutor',url:'nyx://ai',favorite:false};
   const nyxAiHomeShortcutMigrationKey='nyx.homeShortcuts.aiShortcutV1';
+  const nyxTubeHomeShortcut={domain:'nyx-tube',title:'NyxTube',url:'/apps/nyxtube/',favorite:false};
+  const nyxCloudHomeShortcut={domain:'nyx-cloud',title:'NyxCloud',url:'/apps/nyxcloud/',favorite:false};
+  const nyxifyHomeShortcut={domain:'nyxify',title:'Nyxify',url:'/apps/nyxify/',favorite:false};
+  const nyxMediaHomeShortcutMigrationKey='nyx.homeShortcuts.mediaAppsV2';
   const defaultHomeShortcuts=[
     {domain:'geforcenow',title:'Course Library',url:'https://play.geforcenow.com/',favorite:true},
     {domain:'duck.ai',title:'Research Assistant',url:'https://duck.ai/',favorite:false},
     nyxAiHomeShortcut,
     {domain:'games',title:'Practice Lab',url:'/assets/games/',favorite:false},
-    {domain:'youtube.com',title:'Video Lessons',url:'https://www.youtube.com/',favorite:false},
+    nyxTubeHomeShortcut,
     {domain:'tiktok.com',title:'Quick Lessons',url:'https://www.tiktok.com/',favorite:false},
-    {domain:'spotify.com',title:'Focus Audio',url:'https://open.spotify.com/',favorite:false},
+    nyxCloudHomeShortcut,
+    nyxifyHomeShortcut,
     {domain:'discord.com',title:'Study Groups',url:'https://discord.com/app',favorite:false}
   ];
   const educationShortcutTitles=new Map(defaultHomeShortcuts.map(item=>[String(item.url).replace(/\/+$/,''),item.title]));
@@ -7136,11 +7144,24 @@
           }
           store.set(nyxAiHomeShortcutMigrationKey,true);
         }
+        if(!store.get(nyxMediaHomeShortcutMigrationKey,false)){
+          cleaned.forEach((item,index)=>{
+            const url=String(item.url || '').trim().replace(/\/+$/,'').toLowerCase();
+            const title=String(item.title || '').trim().toLowerCase();
+            if(url==='https://www.youtube.com' && title==='video lessons') cleaned[index]={...nyxTubeHomeShortcut};
+            if(url==='https://open.spotify.com' && title==='focus audio') cleaned[index]={...nyxCloudHomeShortcut};
+          });
+          if(!cleaned.some(item=>String(item.url || '').trim().toLowerCase()==='/apps/nyxtube/')) cleaned.push({...nyxTubeHomeShortcut});
+          if(!cleaned.some(item=>String(item.url || '').trim().toLowerCase()==='/apps/nyxcloud/')) cleaned.push({...nyxCloudHomeShortcut});
+          if(!cleaned.some(item=>String(item.url || '').trim().toLowerCase()==='/apps/nyxify/')) cleaned.push({...nyxifyHomeShortcut});
+          store.set(nyxMediaHomeShortcutMigrationKey,true);
+        }
         if(JSON.stringify(cleaned)!==JSON.stringify(saved)) saveHomeShortcuts(cleaned);
         return cleaned;
       }
     }catch{}
     store.set(nyxAiHomeShortcutMigrationKey,true);
+    store.set(nyxMediaHomeShortcutMigrationKey,true);
     return defaultHomeShortcuts.map(item=>({...item}));
   }
   function saveHomeShortcuts(items){
@@ -7155,6 +7176,9 @@
     if(key.includes('geforce')) return '/assets/icons/dock-nvidia.png';
     if(key==='games' || key.includes('study')) return '/assets/icons/dock-controller.png';
     if(key==='nyx-ai' || key==='ai') return '/assets/icons/shortcut-nyx-ai.svg?v=3';
+    if(key==='nyx-tube' || key==='nyxtube') return '/assets/icons/shortcut-nyxtube.svg?v=1';
+    if(key==='nyx-cloud' || key==='nyxcloud') return '/assets/icons/shortcut-nyxcloud.svg?v=1';
+    if(key==='nyxify') return '/assets/icons/shortcut-nyxify.svg?v=1';
     if(key.includes('duck')) return '/assets/icons/shortcut-duckduckgo.svg';
     if(key.includes('youtube') || key==='youtu.be') return '/assets/icons/shortcut-youtube.svg';
     if(key.includes('tiktok')) return '/assets/icons/shortcut-tiktok.svg';
@@ -7490,6 +7514,9 @@
   }
   function quickTiles(){
     return [
+      ['nyx-tube','NyxTube','/apps/nyxtube/'],
+      ['nyx-cloud','NyxCloud','/apps/nyxcloud/'],
+      ['nyxify','Nyxify','/apps/nyxify/'],
       ['youtube.com','YouTube','https://www.youtube.com/'],
       ['games','Pirate Cove','/assets/games/'],
       ['nyx-chat','Nyx Chat','/apps/chat/'],

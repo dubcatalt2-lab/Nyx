@@ -419,6 +419,7 @@ html[data-nyx-theme] body .nyx-account-menu :is(h2,p,span):not(.nyx-styled-displ
 .nyx-user-role-list{display:flex;flex-wrap:wrap;gap:6px}
 .nyx-user-role{display:inline-flex;align-items:center;gap:5px;min-height:24px;padding:2px 8px 2px 5px;border:1px solid rgba(255,255,255,.2);border-radius:5px;background:rgba(255,255,255,.09);color:#f2f3f5;font-size:11px;font-weight:650;line-height:1}
 .nyx-user-role img{width:18px;height:18px;flex:0 0 18px;border-radius:4px;object-fit:cover}
+.nyx-user-role>.nyx-minecraft-text{min-width:0;max-width:100%;line-height:1.25;overflow-wrap:anywhere}
 .nyx-user-role .nyx-profile-symbol{width:14px;height:14px}
 .nyx-user-role-owner{border-color:color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 70%,transparent);background:color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 28%,#24252b);color:color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 35%,#fff)}
 .nyx-user-role-co_owner{border-color:color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 58%,#d5a85b);background:linear-gradient(120deg,color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 23%,#24252b),color-mix(in srgb,#d5a85b 16%,#24252b));color:#fff}
@@ -4116,15 +4117,26 @@ html[data-nyx-theme] body .nyx-profile-directory-card-host .nyx-user-profile-abo
   .nyx-avatar-decoration-candlelight>.nyx-avatar-decoration::after{animation:none!important;clip-path:none!important;opacity:1!important}
 }
 
-/* Lag Reducer disables every animation globally. Leave the cosmetics in their
-   completed frame instead of freezing the bloom artwork at opacity: 0. */
-body.lag-reducer .nyx-user-profile-effect-blooming-roses .nyx-user-profile-effect,
-body.lag-reducer .nyx-founder-effect-blooming-roses .nyx-founder-profile-effect,
-body.lag-reducer .nyx-user-profile-effect-blooming-roses .nyx-user-profile-effect::after,
-body.lag-reducer .nyx-founder-effect-blooming-roses .nyx-founder-profile-effect::after{
-  clip-path:none!important;
-  opacity:1!important;
-  transform:none!important;
+/* These two cosmetics are deliberately lightweight. Let them replay when a
+   profile is mounted even with Lag Reducer enabled, while the reduced-motion
+   rules above continue to provide a still completed frame when requested by
+   the operating system. */
+@media(prefers-reduced-motion:no-preference){
+  body.lag-reducer .nyx-user-profile-effect-blooming-roses .nyx-user-profile-effect,
+  body.lag-reducer .nyx-founder-effect-blooming-roses .nyx-founder-profile-effect{
+    animation:nyx-rose-vines-grow 1.35s cubic-bezier(.18,.78,.24,1) both,nyx-rose-vines-rest 7s ease-in-out 1.35s infinite!important;
+  }
+  body.lag-reducer .nyx-user-profile-effect-blooming-roses .nyx-user-profile-effect::after,
+  body.lag-reducer .nyx-founder-effect-blooming-roses .nyx-founder-profile-effect::after{
+    animation:nyx-roses-bloom .9s cubic-bezier(.16,.82,.25,1) .7s both,nyx-roses-rest 6.4s ease-in-out 1.6s infinite!important;
+  }
+  body.lag-reducer .nyx-avatar-decoration-candlelight>.nyx-avatar-decoration::before,
+  body.lag-reducer .nyx-avatar-decoration-candlelight>.nyx-avatar-decoration::after{
+    animation:nyx-candle-burn 2.4s ease-in-out infinite alternate!important;
+  }
+  body.lag-reducer .nyx-avatar-decoration-candlelight>.nyx-avatar-decoration::after{
+    animation-delay:-1.1s!important;
+  }
 }
 
 /* Compact homepage account menus are functional navigation surfaces, not

@@ -135,6 +135,36 @@
     return payload;
   }
 
+  function setMixCover(button, track) {
+    const cover = button?.querySelector("i");
+    const source = musicArtworkUrl(track?.thumbnail);
+    if (!cover || !source) return;
+    const image = document.createElement("img");
+    image.src = source;
+    image.alt = "";
+    image.loading = "eager";
+    image.decoding = "async";
+    image.referrerPolicy = "no-referrer";
+    image.addEventListener("load", () => {
+      cover.querySelectorAll("img").forEach(existing => {
+        if (existing !== image) existing.remove();
+      });
+      cover.classList.add("has-cover");
+    }, { once: true });
+    image.addEventListener("error", () => image.remove(), { once: true });
+    cover.append(image);
+  }
+
+  async function loadMixCovers() {
+    await Promise.allSettled(refs.mixButtons.map(async button => {
+      const query = String(button.dataset.mixQuery || "").trim();
+      if (!query) return;
+      const payload = await fetchJson(`/api/nyxify/search?q=${encodeURIComponent(query)}&limit=1`);
+      const leadingTrack = Array.isArray(payload?.results) ? payload.results[0] : null;
+      setMixCover(button, leadingTrack);
+    }));
+  }
+
   function updateLibraryCounts() {
     refs.likedCount.textContent = `Playlist - ${state.liked.length} song${state.liked.length === 1 ? "" : "s"}`;
     refs.recentCount.textContent = `${state.recent.length} recent track${state.recent.length === 1 ? "" : "s"}`;
@@ -528,6 +558,7 @@
   updateLibraryCounts();
   renderPlaylists();
   showHome();
+  void loadMixCovers();
   fetchJson("/api/nyxify/status").then(payload => {
     refs.status.classList.add("online");
     refs.status.querySelector("span").textContent = `${payload?.providerLabel || "Music catalog"} ready`;

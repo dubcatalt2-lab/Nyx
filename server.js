@@ -42,6 +42,11 @@ const nyxMusicArtworkCache = new Map();
 const nyxMusicArtworkInflight = new Map();
 const nyxMusicArtworkCacheByteLimit = 32 * 1024 * 1024;
 let nyxMusicArtworkCacheBytes = 0;
+const nyxMusicAudioPrefixCache = new Map();
+const nyxMusicAudioPrefixInflight = new Map();
+const nyxMusicAudioPrefixSize = 512 * 1024;
+const nyxMusicAudioPrefixCacheByteLimit = 8 * 1024 * 1024;
+let nyxMusicAudioPrefixCacheBytes = 0;
 let nyxSoundCloudTokenCache = { accessToken: "", expiresAt: 0, promise: null };
 const nyxCustomRoleLabelLimit = 64;
 const app = express();
@@ -4625,6 +4630,123 @@ function nyxMusicAudioCandidates(value) {
   return candidates;
 }
 
+async function nyxFetchMetingAudio(trackId, upstreamRange, signal) {
+  const resolvedUrl = await nyxResolveMetingAsset(trackId, "url");
+  let lastError = null;
+  for (const candidateUrl of nyxMusicAudioCandidates(resolvedUrl)) {
+    if (signal.aborted) break;
+    try {
+      const candidate = await fetch(candidateUrl, {
+        method: "GET",
+        redirect: "follow",
+        signal: AbortSignal.any([signal, AbortSignal.timeout(7_000)]),
+        headers: {
+          accept: "audio/mpeg,audio/mp4,audio/*;q=0.9,*/*;q=0.1",
+          range: upstreamRange
+        }
+      });
+      const candidateSource = nyxMusicAssetUrl(candidate.url);
+      const candidateType = String(candidate.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
+      if (candidateSource && [200, 206, 416].includes(candidate.status) && (candidateType.startsWith("audio/") || candidate.status === 416)) {
+        return candidate;
+      }
+      candidate.body?.cancel().catch(() => {});
+    } catch (error) {
+      lastError = error;
+      if (signal.aborted) throw error;
+    }
+  }
+  throw lastError || new Error("The music stream is temporarily unavailable.");
+}
+
+function nyxCachedMusicAudioPrefix(trackId) {
+  const cached = nyxMusicAudioPrefixCache.get(trackId);
+  if (!cached) return null;
+  nyxMusicAudioPrefixCache.delete(trackId);
+  nyxMusicAudioPrefixCache.set(trackId, cached);
+  return cached;
+}
+
+function nyxCacheMusicAudioPrefix(trackId, prefix) {
+  const existing = nyxMusicAudioPrefixCache.get(trackId);
+  if (existing) nyxMusicAudioPrefixCacheBytes -= existing.body.length;
+  nyxMusicAudioPrefixCache.delete(trackId);
+  if (prefix.body.length > nyxMusicAudioPrefixCacheByteLimit) return;
+  nyxMusicAudioPrefixCache.set(trackId, prefix);
+  nyxMusicAudioPrefixCacheBytes += prefix.body.length;
+  while (nyxMusicAudioPrefixCacheBytes > nyxMusicAudioPrefixCacheByteLimit && nyxMusicAudioPrefixCache.size) {
+    const oldestKey = nyxMusicAudioPrefixCache.keys().next().value;
+    const oldest = nyxMusicAudioPrefixCache.get(oldestKey);
+    nyxMusicAudioPrefixCache.delete(oldestKey);
+    nyxMusicAudioPrefixCacheBytes -= oldest?.body?.length || 0;
+  }
+}
+
+async function nyxLoadMusicAudioPrefix(trackId) {
+  const cached = nyxCachedMusicAudioPrefix(trackId);
+  if (cached) return cached;
+  if (nyxMusicAudioPrefixInflight.has(trackId)) return nyxMusicAudioPrefixInflight.get(trackId);
+  const promise = (async () => {
+    const upstream = await nyxFetchMetingAudio(trackId, `bytes=0-${nyxMusicAudioPrefixSize - 1}`, AbortSignal.timeout(20_000));
+    const contentType = String(upstream.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
+    const rangeMatch = String(upstream.headers.get("content-range") || "").match(/^bytes\s+0-(\d+)\/(\d+)$/i);
+    if (upstream.status !== 206 || !contentType.startsWith("audio/") || !rangeMatch) {
+      upstream.body?.cancel().catch(() => {});
+      throw new Error("The music provider did not return a cacheable audio prefix.");
+    }
+    const reader = upstream.body?.getReader?.();
+    if (!reader) throw new Error("The music provider returned no audio body.");
+    const chunks = [];
+    let totalBytes = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      if (totalBytes > nyxMusicAudioPrefixSize) {
+        await reader.cancel();
+        throw new Error("The music provider exceeded the preview cache limit.");
+      }
+      chunks.push(Buffer.from(value));
+    }
+    if (!totalBytes) throw new Error("The music provider returned an empty audio prefix.");
+    const prefix = { body: Buffer.concat(chunks, totalBytes), contentType, totalLength: Number(rangeMatch[2]) };
+    nyxCacheMusicAudioPrefix(trackId, prefix);
+    return prefix;
+  })();
+  nyxMusicAudioPrefixInflight.set(trackId, promise);
+  try {
+    return await promise;
+  } finally {
+    if (nyxMusicAudioPrefixInflight.get(trackId) === promise) nyxMusicAudioPrefixInflight.delete(trackId);
+  }
+}
+
+function sendNyxCachedMusicAudioPrefix(req, res, prefix) {
+  if (!prefix?.body?.length || !Number.isSafeInteger(prefix.totalLength) || prefix.totalLength <= 0) return false;
+  const requestedRange = String(req.get("range") || "").trim();
+  let start = 0;
+  let end = prefix.body.length - 1;
+  if (requestedRange) {
+    const match = requestedRange.match(/^bytes=(\d+)-(\d*)$/i);
+    if (!match) return false;
+    start = Number(match[1]);
+    if (!Number.isSafeInteger(start) || start < 0 || start >= prefix.body.length) return false;
+    if (match[2]) {
+      const requestedEnd = Number(match[2]);
+      if (!Number.isSafeInteger(requestedEnd) || requestedEnd < start || requestedEnd >= prefix.body.length) return false;
+      end = requestedEnd;
+    }
+  }
+  const body = prefix.body.subarray(start, end + 1);
+  res.status(206).set({
+    "Accept-Ranges": "bytes",
+    "Content-Type": prefix.contentType,
+    "Content-Length": String(body.length),
+    "Content-Range": `bytes ${start}-${end}/${prefix.totalLength}`
+  }).send(body);
+  return true;
+}
+
 function nyxCachedMusicArtwork(assetId) {
   const cached = nyxMusicArtworkCache.get(assetId);
   if (!cached) return null;
@@ -4713,13 +4835,16 @@ async function sendNyxMusicArtwork(res, assetId) {
   }).send(body);
 }
 
-function primeNyxifyAssets(results) {
+function primeNyxifyAssets(results, { audio = false } = {}) {
   const tracks = Array.isArray(results) ? results.slice(0, 7) : [];
   for (const track of tracks) {
     const artworkId = String(track?.thumbnail || "").match(/\/api\/music\/artwork\/(\d{1,24})$/)?.[1];
     if (artworkId) void nyxLoadMusicArtwork(artworkId).catch(() => {});
     const trackId = String(track?.id || "").trim();
-    if (track?.provider === "meting" && /^\d{1,24}$/.test(trackId)) void nyxResolveMetingAsset(trackId, "url").catch(() => {});
+    if (track?.provider === "meting" && /^\d{1,24}$/.test(trackId)) {
+      void nyxResolveMetingAsset(trackId, "url").catch(() => {});
+      if (audio) void nyxLoadMusicAudioPrefix(trackId).catch(() => {});
+    }
   }
 }
 
@@ -4904,39 +5029,18 @@ app.get("/api/music/stream/:trackId", async (req, res) => {
     return;
   }
   const upstreamRange = requestedRange || (req.method === "HEAD" ? "bytes=0-0" : "bytes=0-1048575");
+  if (req.method !== "HEAD") {
+    let prefix = nyxCachedMusicAudioPrefix(trackId);
+    if (!prefix && nyxMusicAudioPrefixInflight.has(trackId)) {
+      prefix = await nyxMusicAudioPrefixInflight.get(trackId).catch(() => null);
+    }
+    if (prefix && sendNyxCachedMusicAudioPrefix(req, res, prefix)) return;
+  }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20_000);
   res.once("close", () => controller.abort());
   try {
-    const resolvedUrl = await nyxResolveMetingAsset(trackId, "url");
-    const candidates = nyxMusicAudioCandidates(resolvedUrl);
-    let upstream = null;
-    let lastError = null;
-    for (const candidateUrl of candidates) {
-      if (controller.signal.aborted) break;
-      try {
-        const candidate = await fetch(candidateUrl, {
-          method: "GET",
-          redirect: "follow",
-          signal: AbortSignal.any([controller.signal, AbortSignal.timeout(7_000)]),
-          headers: {
-            accept: "audio/mpeg,audio/mp4,audio/*;q=0.9,*/*;q=0.1",
-            range: upstreamRange
-          }
-        });
-        const candidateSource = nyxMusicAssetUrl(candidate.url);
-        const candidateType = String(candidate.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
-        if (candidateSource && [200, 206, 416].includes(candidate.status) && (candidateType.startsWith("audio/") || candidate.status === 416)) {
-          upstream = candidate;
-          break;
-        }
-        candidate.body?.cancel().catch(() => {});
-      } catch (error) {
-        lastError = error;
-        if (controller.signal.aborted) throw error;
-      }
-    }
-    if (!upstream) throw lastError || new Error("The music stream is temporarily unavailable.");
+    const upstream = await nyxFetchMetingAudio(trackId, upstreamRange, controller.signal);
     clearTimeout(timeout);
     const source = new URL(upstream.url);
     const trustedSource = source.hostname === "api.qijieya.cn" || source.hostname === "music.126.net" || source.hostname.endsWith(".music.126.net");
@@ -9635,7 +9739,7 @@ if (isDirectRun) {
     console.log(`  static root: ${staticRoot}`);
     if (!externalWispUrl) console.log(embeddedWispAllowedOrigins.length ? `  allowed Wisp origins: ${embeddedWispAllowedOrigins.join(", ")}` : "  warning: embedded Wisp accepts every browser origin");
     const mediaWarmup = setTimeout(() => {
-      void nyxifyPreferredSearch("global hits", 20).catch(() => {});
+      void nyxifyPreferredSearch("global hits", 20).then(results => primeNyxifyAssets(results, { audio: true })).catch(() => {});
     }, 250);
     mediaWarmup.unref();
   });

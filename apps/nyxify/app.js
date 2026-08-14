@@ -31,13 +31,14 @@
   };
   const refs = {
     back: [...document.querySelectorAll("[data-back-to-nyx]")],
-    focusSearch: document.querySelector("[data-focus-search]"),
+    focusSearch: [...document.querySelectorAll("[data-focus-search]")],
     viewButtons: [...document.querySelectorAll("[data-view]")],
     createPlaylists: [...document.querySelectorAll("[data-create-playlist]")],
     playlistList: document.querySelector("[data-playlist-list]"),
     form: document.querySelector("[data-search-form]"),
     input: document.querySelector("[data-search-input]"),
     searchButton: document.querySelector("[data-search-button]"),
+    searchButtonLabel: document.querySelector("[data-search-button-label]"),
     status: document.querySelector("[data-api-status]"),
     notice: document.querySelector("[data-notice]"),
     title: document.querySelector("[data-section-title]"),
@@ -53,18 +54,28 @@
     next: document.querySelector("[data-next]"),
     shuffle: document.querySelector("[data-shuffle]"),
     repeat: document.querySelector("[data-repeat]"),
+    repeatOne: document.querySelector("[data-repeat-one]"),
     seek: document.querySelector("[data-seek]"),
     currentTime: document.querySelector("[data-current-time]"),
     duration: document.querySelector("[data-duration]"),
     volume: document.querySelector("[data-volume]"),
     queue: document.querySelector("[data-queue]"),
-    queueToggle: document.querySelector("[data-queue-toggle]"),
+    queueToggle: [...document.querySelectorAll("[data-queue-toggle]")],
     queueClose: document.querySelector("[data-queue-close]"),
     queueList: document.querySelector("[data-queue-list]")
   };
 
   function store(key, value) {
     try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+  }
+
+  function iconMarkup(name) {
+    return `<svg aria-hidden="true"><use href="#nyxify-icon-${name}"></use></svg>`;
+  }
+
+  function setButtonIcon(button, name) {
+    const use = button?.querySelector("use");
+    if (use) use.setAttribute("href", `#nyxify-icon-${name}`);
   }
 
   function saveRecent(track) {
@@ -140,7 +151,7 @@
     const cover = document.createElement("div");
     cover.className = "nyxify-card-cover";
     const fallback = document.createElement("span");
-    fallback.textContent = "\u266b";
+    fallback.innerHTML = iconMarkup("note");
     cover.append(fallback);
     if (track.thumbnail) {
       const image = document.createElement("img");
@@ -156,7 +167,7 @@
     play.type = "button";
     play.className = "nyxify-card-play";
     play.setAttribute("aria-label", `Play ${track.title}`);
-    play.textContent = "\u25b6";
+    play.innerHTML = iconMarkup("play");
     play.addEventListener("click", event => { event.stopPropagation(); void playTrack(index); });
     cover.append(play);
 
@@ -166,11 +177,11 @@
     like.type = "button";
     like.classList.toggle("active", isLiked(track));
     like.setAttribute("aria-label", isLiked(track) ? "Remove from liked songs" : "Add to liked songs");
-    like.textContent = isLiked(track) ? "\u2665" : "\u2661";
+    like.innerHTML = iconMarkup(isLiked(track) ? "heart-fill" : "heart");
     like.addEventListener("click", event => { event.stopPropagation(); toggleLiked(track); });
     const add = document.createElement("button");
     add.type = "button";
-    add.textContent = "+";
+    add.innerHTML = iconMarkup("plus");
     add.setAttribute("aria-label", "Add to playlist");
     add.addEventListener("click", event => { event.stopPropagation(); addToPlaylist(track); });
     actions.append(like, add);
@@ -201,7 +212,9 @@
         image.referrerPolicy = "no-referrer";
         button.append(image);
       } else {
-        button.append(document.createElement("i"));
+        const fallback = document.createElement("i");
+        fallback.innerHTML = iconMarkup("note");
+        button.append(fallback);
       }
       const copy = document.createElement("span");
       const title = document.createElement("strong");
@@ -222,7 +235,9 @@
     if (!items.length) {
       const empty = document.createElement("div");
       empty.className = "nyxify-empty";
-      empty.innerHTML = "<strong>No tracks here yet</strong><span>Search for music to begin your library.</span>";
+      const emptyTitle = title === "Liked songs" ? "No liked songs yet" : (title === "Recently played" ? "Your listening history is empty" : "Find something to play");
+      const emptyDetail = title === "Liked songs" ? "Tap the heart on a track to keep it here." : "Search for a song, artist, or album to get started.";
+      empty.innerHTML = `${iconMarkup("note")}<strong>${emptyTitle}</strong><span>${emptyDetail}</span>`;
       refs.results.replaceChildren(empty);
       renderQueue();
       return;
@@ -251,7 +266,7 @@
   async function search(query) {
     refs.searchButton.disabled = true;
     refs.input.readOnly = true;
-    refs.searchButton.textContent = "Searching";
+    refs.searchButtonLabel.textContent = "Searching";
     setNotice("");
     refs.title.textContent = "Searching...";
     refs.count.textContent = "";
@@ -264,7 +279,7 @@
     } finally {
       refs.searchButton.disabled = false;
       refs.input.readOnly = false;
-      refs.searchButton.textContent = "Search";
+      refs.searchButtonLabel.textContent = "Go";
     }
   }
 
@@ -274,12 +289,12 @@
     if (query.length < 2) { setNotice("Enter at least two characters to search."); refs.input.focus(); return; }
     void search(query);
   });
-  refs.focusSearch?.addEventListener("click", () => refs.input.focus());
+  refs.focusSearch.forEach(button => button.addEventListener("click", () => refs.input.focus()));
   refs.viewButtons.forEach(button => button.addEventListener("click", () => {
     refs.viewButtons.forEach(item => item.classList.toggle("active", item === button));
     if (button.dataset.view === "liked") render(state.liked, "Liked songs");
     else if (button.dataset.view === "library") render(state.recent, "Recently played");
-    else render(state.recent, state.recent.length ? "Recently played" : "Start listening");
+    else render(state.recent, state.recent.length ? "Recently played" : "Ready when you are");
   }));
   refs.createPlaylists.forEach(button => button.addEventListener("click", () => createPlaylist()));
   refs.back.forEach(button => button.addEventListener("click", () => {
@@ -303,16 +318,19 @@
   refs.repeat.addEventListener("click", () => {
     state.repeat = (state.repeat + 1) % 3;
     refs.repeat.classList.toggle("active", state.repeat > 0);
-    refs.repeat.textContent = state.repeat === 2 ? "\u21bb1" : "\u21bb";
+    refs.repeatOne.hidden = state.repeat !== 2;
     refs.repeat.title = state.repeat === 2 ? "Repeat one" : (state.repeat === 1 ? "Repeat all" : "Repeat off");
+    refs.repeat.setAttribute("aria-label", refs.repeat.title);
   });
   refs.audio.addEventListener("play", () => {
-    refs.toggle.textContent = "II";
+    setButtonIcon(refs.toggle, "pause");
     refs.toggle.setAttribute("aria-label", "Pause");
+    refs.toggle.title = "Pause";
   });
   refs.audio.addEventListener("pause", () => {
-    refs.toggle.textContent = "\u25b6";
+    setButtonIcon(refs.toggle, "play");
     refs.toggle.setAttribute("aria-label", "Play");
+    refs.toggle.title = "Play";
   });
   refs.audio.addEventListener("ended", () => {
     if (state.repeat === 2) { refs.audio.currentTime = 0; void refs.audio.play(); return; }
@@ -331,19 +349,19 @@
   });
   refs.volume.addEventListener("input", () => { refs.audio.volume = Number(refs.volume.value); });
   refs.audio.volume = Number(refs.volume.value);
-  refs.queueToggle.addEventListener("click", () => {
+  refs.queueToggle.forEach(button => button.addEventListener("click", () => {
     refs.queue.hidden = !refs.queue.hidden;
     if (!refs.queue.hidden) renderQueue();
-  });
+  }));
   refs.queueClose.addEventListener("click", () => { refs.queue.hidden = true; });
 
-  render(state.recent, state.recent.length ? "Recently played" : "Start listening");
+  render(state.recent, state.recent.length ? "Recently played" : "Ready when you are");
   renderPlaylists();
   fetchJson("/api/nyxify/status").then(() => {
     refs.status.classList.add("online");
-    refs.status.querySelector("span").textContent = "Music API ready";
+    refs.status.querySelector("span").textContent = "Catalog ready";
   }).catch(() => {
     refs.status.classList.add("offline");
-    refs.status.querySelector("span").textContent = "Music API unavailable";
+    refs.status.querySelector("span").textContent = "Catalog unavailable";
   });
 })();

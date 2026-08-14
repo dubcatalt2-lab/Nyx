@@ -2083,7 +2083,6 @@
     'newgrounds.com':localIcon('newgrounds-logo.svg'),
     'twitch.tv':localIcon('twitch-logo.png'),
     'kick.com':localIcon('kick-logo.svg'),
-    'soundcloud.com':localIcon('soundcloud-logo.png'),
     'pluto.tv':localIcon('plutotv-logo.png'),
     'skribbl.io':localIcon('skribbl-logo.png'),
     'slither.io':localIcon('slither-logo.png'),
@@ -2098,7 +2097,6 @@
     'duck.ai':localIcon('duck-ai-logo.png'),
     'nyx-ai':localIcon('shortcut-nyx-ai.svg?v=3'),
     'nyx-tube':localIcon('shortcut-nyxtube.svg?v=1'),
-    'nyx-cloud':localIcon('shortcut-nyxcloud.svg?v=1'),
     'nyxify':localIcon('shortcut-nyxify.svg?v=1'),
     'nyx-chat':localIcon('chat.svg?v=1'),
     'link-checker':localIcon('link-checker.svg?v=2'),
@@ -7101,9 +7099,8 @@
   const nyxAiHomeShortcut={domain:'nyx-ai',title:'AI Tutor',url:'nyx://ai',favorite:false};
   const nyxAiHomeShortcutMigrationKey='nyx.homeShortcuts.aiShortcutV1';
   const nyxTubeHomeShortcut={domain:'nyx-tube',title:'NyxTube',url:'/apps/nyxtube/',favorite:false};
-  const nyxCloudHomeShortcut={domain:'nyx-cloud',title:'NyxCloud',url:'/apps/nyxcloud/',favorite:false};
   const nyxifyHomeShortcut={domain:'nyxify',title:'Nyxify',url:'/apps/nyxify/',favorite:false};
-  const nyxMediaHomeShortcutMigrationKey='nyx.homeShortcuts.mediaAppsV2';
+  const nyxMediaHomeShortcutMigrationKey='nyx.homeShortcuts.mediaAppsV3';
   const defaultHomeShortcuts=[
     {domain:'geforcenow',title:'Course Library',url:'https://play.geforcenow.com/',favorite:true},
     {domain:'duck.ai',title:'Research Assistant',url:'https://duck.ai/',favorite:false},
@@ -7111,7 +7108,6 @@
     {domain:'games',title:'Practice Lab',url:'/assets/games/',favorite:false},
     nyxTubeHomeShortcut,
     {domain:'tiktok.com',title:'Quick Lessons',url:'https://www.tiktok.com/',favorite:false},
-    nyxCloudHomeShortcut,
     nyxifyHomeShortcut,
     {domain:'discord.com',title:'Study Groups',url:'https://discord.com/app',favorite:false}
   ];
@@ -7136,6 +7132,7 @@
       if(Array.isArray(saved)){
         const cleaned=saved
           .filter(item=>item?.url && item?.title)
+          .filter(item=>String(item.url || '').trim().replace(/\/+$/,'').toLowerCase()!=='/apps/nyxcloud' && String(item.domain || '').trim().toLowerCase()!=='nyx-cloud')
           .map(normalizeHomeShortcut);
         if(!store.get(nyxAiHomeShortcutMigrationKey,false)){
           if(!cleaned.some(item=>String(item.url || '').trim().toLowerCase()==='nyx://ai')){
@@ -7149,10 +7146,9 @@
             const url=String(item.url || '').trim().replace(/\/+$/,'').toLowerCase();
             const title=String(item.title || '').trim().toLowerCase();
             if(url==='https://www.youtube.com' && title==='video lessons') cleaned[index]={...nyxTubeHomeShortcut};
-            if(url==='https://open.spotify.com' && title==='focus audio') cleaned[index]={...nyxCloudHomeShortcut};
+            if(url==='https://open.spotify.com' && title==='focus audio') cleaned[index]={...nyxifyHomeShortcut};
           });
           if(!cleaned.some(item=>String(item.url || '').trim().toLowerCase()==='/apps/nyxtube/')) cleaned.push({...nyxTubeHomeShortcut});
-          if(!cleaned.some(item=>String(item.url || '').trim().toLowerCase()==='/apps/nyxcloud/')) cleaned.push({...nyxCloudHomeShortcut});
           if(!cleaned.some(item=>String(item.url || '').trim().toLowerCase()==='/apps/nyxify/')) cleaned.push({...nyxifyHomeShortcut});
           store.set(nyxMediaHomeShortcutMigrationKey,true);
         }
@@ -7177,7 +7173,6 @@
     if(key==='games' || key.includes('study')) return '/assets/icons/dock-controller.png';
     if(key==='nyx-ai' || key==='ai') return '/assets/icons/shortcut-nyx-ai.svg?v=3';
     if(key==='nyx-tube' || key==='nyxtube') return '/assets/icons/shortcut-nyxtube.svg?v=1';
-    if(key==='nyx-cloud' || key==='nyxcloud') return '/assets/icons/shortcut-nyxcloud.svg?v=1';
     if(key==='nyxify') return '/assets/icons/shortcut-nyxify.svg?v=1';
     if(key.includes('duck')) return '/assets/icons/shortcut-duckduckgo.svg';
     if(key.includes('youtube') || key==='youtu.be') return '/assets/icons/shortcut-youtube.svg';
@@ -7515,7 +7510,6 @@
   function quickTiles(){
     return [
       ['nyx-tube','NyxTube','/apps/nyxtube/'],
-      ['nyx-cloud','NyxCloud','/apps/nyxcloud/'],
       ['nyxify','Nyxify','/apps/nyxify/'],
       ['youtube.com','YouTube','https://www.youtube.com/'],
       ['games','Pirate Cove','/assets/games/'],
@@ -7548,7 +7542,6 @@
       ['newgrounds.com','Newgrounds','https://www.newgrounds.com/'],
       ['twitch.tv','Twitch','https://www.twitch.tv/'],
       ['kick.com','Kick','https://kick.com/'],
-      ['soundcloud.com','SoundCloud','https://soundcloud.com/'],
       ['pluto.tv','Pluto TV','https://pluto.tv/'],
       ['skribbl.io','Skribbl.io','https://skribbl.io/'],
       ['slither.io','Slither.io','https://slither.io/'],

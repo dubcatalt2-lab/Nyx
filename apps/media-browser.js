@@ -1,24 +1,39 @@
 (() => {
   "use strict";
 
-  const provider = document.body.dataset.provider === "soundcloud" ? "soundcloud" : "youtube";
-  const providerName = provider === "youtube" ? "YouTube" : "SoundCloud";
-  const appName = provider === "youtube" ? "NyxTube" : "NyxCloud";
-  const apiBase = provider === "youtube" ? "/api/nyxtube" : "/api/nyxcloud";
+  const provider = "youtube";
+  const providerName = "YouTube";
+  const appName = "NyxTube";
+  const apiBase = "/api/nyxtube";
+  const playerModeKey = "nyx.nyxtube.playerMode.v1";
+  const savedPlayerMode = localStorage.getItem(playerModeKey);
+  const isChromeOs = /\bCrOS\b/i.test(navigator.userAgent);
+  const state = {
+    configured: false,
+    busy: false,
+    currentResult: null,
+    standardPlayer: savedPlayerMode === "standard" || (!savedPlayerMode && isChromeOs)
+  };
   const refs = {
-    back: document.querySelector("[data-back-to-nyx]"),
+    back: [...document.querySelectorAll("[data-back-to-nyx]")],
+    home: [...document.querySelectorAll("[data-media-home]")],
+    focusSearch: [...document.querySelectorAll("[data-media-focus-search]")],
+    suggestions: [...document.querySelectorAll("[data-media-suggestion]")],
     form: document.querySelector("[data-media-search]"),
     input: document.querySelector("[data-media-query]"),
     submit: document.querySelector("[data-media-submit]"),
     status: document.querySelector("[data-media-status]"),
     statusText: document.querySelector("[data-media-status-text]"),
+    sectionTitle: document.querySelector("[data-media-section-title]"),
     count: document.querySelector("[data-media-count]"),
     notice: document.querySelector("[data-media-notice]"),
+    setup: document.querySelector("[data-media-setup]"),
     results: document.querySelector("[data-media-results]"),
     player: document.querySelector("[data-media-player]"),
     playerTitle: document.querySelector("[data-media-player-title]"),
     playerCreator: document.querySelector("[data-media-player-creator]"),
     playerFrame: document.querySelector("[data-media-player-frame]"),
+    playerCompat: document.querySelector("[data-media-player-compat]"),
     playerClose: document.querySelector("[data-media-player-close]")
   };
 
@@ -31,6 +46,12 @@
     return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[kind] || paths.play}</svg>`;
   }
 
+  function plainText(value) {
+    const element = document.createElement("textarea");
+    element.innerHTML = String(value || "");
+    return element.value.trim();
+  }
+
   async function fetchJson(path) {
     const response = await fetch(path, { headers: { accept: "application/json" } });
     const type = String(response.headers.get("content-type") || "");
@@ -39,24 +60,54 @@
     return payload;
   }
 
-  function setConfigured(configured) {
-    refs.status.classList.toggle("online", configured);
-    refs.status.classList.toggle("offline", !configured);
-    refs.statusText.textContent = configured ? `${providerName} API ready` : "Administrator setup required";
-    refs.submit.disabled = !configured;
-    refs.input.disabled = !configured;
-    if (!configured) showNotice(`${appName} is installed, but its server credentials have not been added to OVH yet.`);
-  }
-
   function showNotice(message = "") {
     refs.notice.textContent = message;
     refs.notice.hidden = !message;
   }
 
+  function previewCard() {
+    const article = document.createElement("article");
+    article.className = `media-preview media-preview-${provider}`;
+    const art = document.createElement("div");
+    art.className = "media-preview-art";
+    art.innerHTML = `<i></i><b>${icon("play")}</b>`;
+    const lines = document.createElement("div");
+    lines.className = "media-preview-lines";
+    lines.innerHTML = "<i></i><i></i>";
+    article.append(art, lines);
+    return article;
+  }
+
+  function showConfigurationPreview() {
+    const count = 8;
+    refs.sectionTitle.textContent = "Video feed preview";
+    refs.count.textContent = "Waiting for server connection";
+    refs.results.replaceChildren(...Array.from({ length: count }, (_, index) => previewCard(index)));
+  }
+
+  function setConfigured(configured) {
+    state.configured = configured;
+    document.body.classList.toggle("media-configured", configured);
+    document.body.classList.toggle("media-unconfigured", !configured);
+    refs.status.classList.toggle("online", configured);
+    refs.status.classList.toggle("offline", !configured);
+    refs.statusText.textContent = configured ? `${providerName} API ready` : "Setup needed";
+    refs.submit.disabled = !configured;
+    refs.input.disabled = !configured;
+    refs.setup.hidden = configured;
+    showNotice("");
+    if (configured) showLanding();
+    else showConfigurationPreview();
+  }
+
   function setBusy(busy) {
-    refs.submit.disabled = busy;
+    state.busy = busy;
+    refs.submit.disabled = busy || !state.configured;
     refs.input.readOnly = busy;
-    refs.submit.textContent = busy ? "Searching…" : `Search ${providerName}`;
+    const label = busy ? "Searching..." : `Search ${providerName}`;
+    const span = refs.submit.querySelector("span");
+    if (span) span.textContent = busy ? "Searching" : "Search";
+    else refs.submit.textContent = label;
   }
 
   function emptyState(title, detail) {
@@ -68,36 +119,55 @@
     refs.results.replaceChildren(root);
   }
 
+  function showLanding() {
+    refs.sectionTitle.textContent = "Discover videos";
+    refs.count.textContent = "";
+    emptyState(
+      `Search ${providerName}`,
+      "Find videos and watch through YouTube's privacy-enhanced player."
+    );
+  }
+
   function durationLabel(value) {
     const seconds = Math.max(0, Math.floor(Number(value || 0) / 1000));
     if (!seconds) return "";
-    const minutes = Math.floor(seconds / 60);
-    return `${minutes}:${String(seconds % 60).padStart(2, "0")}`;
+    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
   }
 
-  function play(result) {
-    refs.playerTitle.textContent = result.title;
-    refs.playerCreator.textContent = result.creator;
+  function renderPlayerFrame(result) {
+    refs.playerTitle.textContent = plainText(result.title);
+    refs.playerCreator.textContent = plainText(result.creator);
     const frame = document.createElement("iframe");
-    frame.title = `${result.title} — ${providerName}`;
+    frame.title = `${plainText(result.title)} - ${providerName}`;
     frame.loading = "eager";
     frame.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
     frame.referrerPolicy = "strict-origin-when-cross-origin";
     frame.allowFullscreen = true;
-    frame.src = provider === "youtube"
-      ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(result.id)}?autoplay=1&playsinline=1&hl=en&rel=0`
-      : `https://w.soundcloud.com/player/?url=${encodeURIComponent(result.sourceUrl)}&color=%23ff9a54&auto_play=true&hide_related=true&show_comments=false&show_user=true&show_reposts=false&visual=false`;
+    const playerHost = state.standardPlayer ? "www.youtube.com" : "www.youtube-nocookie.com";
+    const origin = state.standardPlayer ? `&origin=${encodeURIComponent(location.origin)}` : "";
+    frame.src = `https://${playerHost}/embed/${encodeURIComponent(result.id)}?autoplay=1&playsinline=1&hl=en&rel=0${origin}`;
     refs.playerFrame.replaceChildren(frame);
+    if (refs.playerCompat) {
+      refs.playerCompat.textContent = state.standardPlayer ? "Use private player" : "Try standard player";
+      refs.playerCompat.title = state.standardPlayer
+        ? "Switch to YouTube's privacy-enhanced player"
+        : "Use the standard YouTube player for managed-device compatibility";
+    }
+  }
+
+  function play(result) {
+    state.currentResult = result;
+    renderPlayerFrame(result);
     refs.player.hidden = false;
   }
 
   function resultCard(result) {
     const article = document.createElement("article");
-    article.className = "media-result";
+    article.className = `media-result media-result-${provider}`;
     const cover = document.createElement("div");
     cover.className = "media-result-cover";
     const fallback = document.createElement("span");
-    fallback.innerHTML = icon(provider === "youtube" ? "play" : "cloud");
+    fallback.innerHTML = icon("play");
     cover.append(fallback);
     if (result.thumbnail) {
       const image = document.createElement("img");
@@ -109,36 +179,50 @@
       image.addEventListener("error", () => image.remove(), { once: true });
       cover.append(image);
     }
+    const coverPlay = document.createElement("button");
+    coverPlay.type = "button";
+    coverPlay.className = "media-card-play";
+    coverPlay.setAttribute("aria-label", `Play ${plainText(result.title)}`);
+    coverPlay.innerHTML = icon("play");
+    coverPlay.addEventListener("click", () => play(result));
+    cover.append(coverPlay);
+
     const copy = document.createElement("div");
     copy.className = "media-result-copy";
     const title = document.createElement("h2");
-    title.textContent = result.title;
+    title.textContent = plainText(result.title) || "Untitled";
     const creator = document.createElement("p");
     const duration = durationLabel(result.durationMs);
-    creator.textContent = duration ? `${result.creator} · ${duration}` : result.creator;
+    creator.textContent = duration ? `${plainText(result.creator)} - ${duration}` : plainText(result.creator);
+    copy.append(title, creator);
     const actions = document.createElement("div");
     actions.className = "media-result-actions";
     const playButton = document.createElement("button");
     playButton.type = "button";
-    playButton.textContent = `Play in ${appName}`;
+    playButton.textContent = "Watch";
     playButton.addEventListener("click", () => play(result));
     const source = document.createElement("a");
     source.href = result.sourceUrl;
     source.target = "_blank";
     source.rel = "noopener noreferrer";
     source.title = `Open on ${providerName}`;
-    source.setAttribute("aria-label", `Open ${result.title} on ${providerName}`);
+    source.setAttribute("aria-label", `Open ${plainText(result.title)} on ${providerName}`);
     source.innerHTML = icon("external");
     actions.append(playButton, source);
-    copy.append(title, creator, actions);
+    copy.append(actions);
     article.append(cover, copy);
     return article;
   }
 
   async function search(query) {
+    if (!state.configured) {
+      refs.setup.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     setBusy(true);
     showNotice("");
-    refs.count.textContent = "Searching…";
+    refs.sectionTitle.textContent = `Results for "${query}"`;
+    refs.count.textContent = "Searching...";
     try {
       const payload = await fetchJson(`${apiBase}/search?q=${encodeURIComponent(query)}&limit=16`);
       const results = Array.isArray(payload?.results) ? payload.results : [];
@@ -166,20 +250,31 @@
     }
     void search(query);
   });
-
+  refs.suggestions.forEach(button => button.addEventListener("click", () => {
+    refs.input.value = button.dataset.mediaSuggestion || "";
+    if (state.configured) void search(refs.input.value);
+    else refs.setup.scrollIntoView({ behavior: "smooth", block: "center" });
+  }));
+  refs.focusSearch.forEach(button => button.addEventListener("click", () => refs.input.focus()));
+  refs.home.forEach(button => button.addEventListener("click", () => {
+    if (state.configured) showLanding();
+    else showConfigurationPreview();
+  }));
   refs.playerClose.addEventListener("click", () => {
     refs.player.hidden = true;
+    state.currentResult = null;
     refs.playerFrame.replaceChildren();
   });
-
-  refs.back.addEventListener("click", () => {
-    if (window.parent !== window) {
-      window.parent.postMessage({ type: "nyx:close-tab" }, location.origin);
-      return;
-    }
-    location.href = "/";
+  refs.playerCompat?.addEventListener("click", () => {
+    state.standardPlayer = !state.standardPlayer;
+    localStorage.setItem(playerModeKey, state.standardPlayer ? "standard" : "private");
+    if (state.currentResult) renderPlayerFrame(state.currentResult);
   });
+  refs.back.forEach(button => button.addEventListener("click", () => {
+    if (window.parent !== window) window.parent.postMessage({ type: "nyx:close-tab" }, location.origin);
+    else location.href = "/";
+  }));
 
-  emptyState(`Search ${providerName}`, provider === "youtube" ? "Find videos and play them with YouTube's official embedded player." : "Find playable tracks and listen through SoundCloud's official player.");
+  showConfigurationPreview();
   fetchJson(`${apiBase}/status`).then(payload => setConfigured(Boolean(payload?.configured))).catch(() => setConfigured(false));
 })();

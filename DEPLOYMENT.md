@@ -107,8 +107,6 @@ BUNNY_API_KEY='...'
 LINK_GENERATOR_ACCESS_CODE='...'
 NYX_SAFE_BROWSING_API_KEY='...'
 NYX_YOUTUBE_API_KEY='...'
-NYX_SOUNDCLOUD_CLIENT_ID='...'
-NYX_SOUNDCLOUD_CLIENT_SECRET='...'
 NYX_AI_API_KEY='...'
 ```
 
@@ -116,7 +114,7 @@ NYX_AI_API_KEY='...'
 
 Only add variables for features you use. Do not paste `curl` commands into this file, and never put the actual values in Git, Discord, screenshots, or chat. Keep the Firebase private key on one line with literal `\n` characters.
 
-`NYX_YOUTUBE_API_KEY` powers NyxTube search and should be restricted in Google Cloud to **YouTube Data API v3** and the VPS public IP. NyxCloud uses SoundCloud's server-side client-credentials flow; its client secret must never be placed in browser code. Nyxify uses the documented public Meting-compatible endpoint and requires no key or secret. See `docs/MEDIA_APPS.md` for provider registration and verification.
+`NYX_YOUTUBE_API_KEY` powers NyxTube search and should be restricted in Google Cloud to **YouTube Data API v3** and the VPS public IP. Nyxify uses the documented public Meting-compatible endpoint and requires no key or secret; its fixed `/api/music/stream/:trackId` relay makes playback same-origin and supports browser range requests. See `docs/MEDIA_APPS.md` for provider registration and verification.
 
 For the one-server setup, leave `WISP_URL` commented out. Nyx then uses the current page hostname's `/wisp/` endpoint. Set `NYX_CUSTOM_HOST_IPS` to the VPS public address users will enter in FreeDNS:
 

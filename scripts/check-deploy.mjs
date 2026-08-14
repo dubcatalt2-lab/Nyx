@@ -28,7 +28,7 @@ const requiredFiles = [
   "apps/media-browser.css",
   "apps/media-browser.js",
   "apps/nyxtube/index.html",
-  "apps/nyxcloud/index.html",
+  "apps/nyxtube/app.css",
   "apps/nyxify/index.html",
   "apps/nyxify/app.css",
   "apps/nyxify/app.js",

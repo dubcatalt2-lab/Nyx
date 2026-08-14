@@ -8,6 +8,7 @@ import { createReadStream, readFileSync } from "node:fs";
 import { mkdir, open as openFile, stat, statfs, unlink } from "node:fs/promises";
 import { join, dirname, resolve } from "node:path";
 import { createRequire } from "node:module";
+import { Readable } from "node:stream";
 import { server as wisp } from "@mercuryworkshop/wisp-js/server";
 import { Server as SocketIOServer } from "socket.io";
 
@@ -35,7 +36,6 @@ const nyxMediaSearchCacheLimit = 200;
 const nyxMediaSearchWindowMs = 15 * 60_000;
 const nyxMediaSearchMaxAttempts = 60;
 const nyxCustomRoleLabelLimit = 64;
-let nyxSoundCloudTokenCache = { accessToken: "", expiresAt: 0, promise: null };
 const app = express();
 
 function normalizePublicWispUrl(value) {
@@ -4350,12 +4350,6 @@ function sameOriginRequest(req) {
 
 function nyxMediaProviderConfigured(provider) {
   if (provider === "youtube") return Boolean(String(process.env.NYX_YOUTUBE_API_KEY || "").trim());
-  if (provider === "soundcloud") {
-    return Boolean(
-      String(process.env.NYX_SOUNDCLOUD_CLIENT_ID || "").trim() &&
-      String(process.env.NYX_SOUNDCLOUD_CLIENT_SECRET || "").trim()
-    );
-  }
   if (provider === "meting") return true;
   return false;
 }
@@ -4418,43 +4412,6 @@ async function nyxMediaFetchJson(url, options = {}, timeoutMs = 8_000) {
   }
 }
 
-async function nyxSoundCloudAccessToken(force = false) {
-  const now = Date.now();
-  if (!force && nyxSoundCloudTokenCache.accessToken && nyxSoundCloudTokenCache.expiresAt > now + 60_000) {
-    return nyxSoundCloudTokenCache.accessToken;
-  }
-  if (!force && nyxSoundCloudTokenCache.promise) return nyxSoundCloudTokenCache.promise;
-  const clientId = String(process.env.NYX_SOUNDCLOUD_CLIENT_ID || "").trim();
-  const clientSecret = String(process.env.NYX_SOUNDCLOUD_CLIENT_SECRET || "").trim();
-  if (!clientId || !clientSecret) {
-    const error = new Error("NyxCloud has not been configured by the administrator yet.");
-    error.status = 503;
-    throw error;
-  }
-  const promise = nyxMediaFetchJson("https://secure.soundcloud.com/oauth/token", {
-    method: "POST",
-    headers: {
-      accept: "application/json; charset=utf-8",
-      authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
-      "content-type": "application/x-www-form-urlencoded"
-    },
-    body: "grant_type=client_credentials"
-  }).then(payload => {
-    const accessToken = String(payload?.access_token || "").trim();
-    if (!accessToken) throw new Error("SoundCloud did not return an access token.");
-    const expiresIn = Math.max(300, Number(payload?.expires_in) || 3_600);
-    nyxSoundCloudTokenCache = { accessToken, expiresAt: Date.now() + expiresIn * 1_000, promise: null };
-    return accessToken;
-  });
-  nyxSoundCloudTokenCache.promise = promise;
-  try {
-    return await promise;
-  } catch (error) {
-    nyxSoundCloudTokenCache = { accessToken: "", expiresAt: 0, promise: null };
-    throw error;
-  }
-}
-
 function nyxHttpsUrl(value, allowedHosts = []) {
   try {
     const url = new URL(String(value || ""));
@@ -4506,50 +4463,6 @@ async function nyxTubeSearch(query, limit) {
   return results;
 }
 
-async function nyxCloudSearch(query, limit, retry = true) {
-  const cacheKey = `soundcloud:${query.toLowerCase()}:${limit}`;
-  const cached = nyxMediaCachedSearch(cacheKey);
-  if (cached) return cached;
-  const token = await nyxSoundCloudAccessToken(!retry);
-  const endpoint = new URL("https://api.soundcloud.com/tracks");
-  endpoint.searchParams.set("q", query);
-  endpoint.searchParams.set("access", "playable");
-  endpoint.searchParams.set("limit", String(limit));
-  endpoint.searchParams.set("linked_partitioning", "true");
-  try {
-    const payload = await nyxMediaFetchJson(endpoint, {
-      headers: {
-        accept: "application/json; charset=utf-8",
-        authorization: `OAuth ${token}`
-      }
-    });
-    const collection = Array.isArray(payload) ? payload : (Array.isArray(payload?.collection) ? payload.collection : []);
-    const results = collection.flatMap(item => {
-      const id = String(item?.id || "").trim();
-      const sourceUrl = nyxHttpsUrl(item?.permalink_url, ["soundcloud.com"]);
-      if (!/^\d+$/.test(id) || !sourceUrl) return [];
-      const artwork = nyxHttpsUrl(item?.artwork_url || item?.user?.avatar_url, ["sndcdn.com"]);
-      return [{
-        id,
-        provider: "soundcloud",
-        title: String(item?.title || "Untitled track").trim().slice(0, 180),
-        creator: String(item?.metadata_artist || item?.user?.username || "SoundCloud artist").trim().slice(0, 100),
-        thumbnail: artwork,
-        durationMs: Math.max(0, Number(item?.duration) || 0),
-        sourceUrl
-      }];
-    });
-    nyxMediaCacheSearch(cacheKey, results);
-    return results;
-  } catch (error) {
-    if (retry && Number(error?.status) === 401) {
-      nyxSoundCloudTokenCache = { accessToken: "", expiresAt: 0, promise: null };
-      return nyxCloudSearch(query, limit, false);
-    }
-    throw error;
-  }
-}
-
 function nyxMetingAssetUrl(value, expectedType) {
   try {
     const url = new URL(String(value || ""));
@@ -4581,11 +4494,11 @@ async function nyxifySearch(query, limit) {
     headers: { accept: "application/json; charset=utf-8" }
   }, 10_000);
   const results = (Array.isArray(payload) ? payload : []).flatMap((item, index) => {
-    const streamUrl = nyxMetingAssetUrl(item?.url, "url");
+    const upstreamStreamUrl = nyxMetingAssetUrl(item?.url, "url");
     const thumbnail = nyxMetingAssetUrl(item?.pic, "pic");
     const lyricsUrl = nyxMetingAssetUrl(item?.lrc, "lrc");
-    if (!streamUrl) return [];
-    const parsed = new URL(streamUrl);
+    if (!upstreamStreamUrl) return [];
+    const parsed = new URL(upstreamStreamUrl);
     const id = String(parsed.searchParams.get("id") || "");
     return [{
       id,
@@ -4593,7 +4506,7 @@ async function nyxifySearch(query, limit) {
       title: String(item?.name || "Untitled track").trim().slice(0, 180),
       creator: String(item?.artist || "Unknown artist").trim().slice(0, 100),
       thumbnail,
-      streamUrl,
+      streamUrl: `/api/music/stream/${encodeURIComponent(id)}`,
       lyricsUrl,
       sourceUrl: `https://music.163.com/#/song?id=${encodeURIComponent(id)}`,
       resultIndex: index
@@ -4637,17 +4550,90 @@ app.get("/api/nyxtube/status", (_req, res) => {
 
 app.get("/api/nyxtube/search", (req, res) => nyxMediaSearchRequest(req, res, "youtube", nyxTubeSearch));
 
-app.get("/api/nyxcloud/status", (_req, res) => {
-  res.set("Cache-Control", "no-store").json({ configured: nyxMediaProviderConfigured("soundcloud"), provider: "soundcloud" });
-});
-
-app.get("/api/nyxcloud/search", (req, res) => nyxMediaSearchRequest(req, res, "soundcloud", nyxCloudSearch));
-
 app.get("/api/nyxify/status", (_req, res) => {
   res.set("Cache-Control", "no-store").json({ configured: true, provider: "meting" });
 });
 
 app.get("/api/nyxify/search", (req, res) => nyxMediaSearchRequest(req, res, "meting", nyxifySearch));
+
+app.get("/api/music/stream/:trackId", async (req, res) => {
+  res.set({
+    "Cache-Control": "private, no-store",
+    "X-Content-Type-Options": "nosniff"
+  });
+  const trackId = String(req.params.trackId || "").trim();
+  if (!/^\d{1,24}$/.test(trackId)) {
+    res.status(404).end();
+    return;
+  }
+  const requestedRange = String(req.get("range") || "").trim();
+  if (requestedRange && !/^bytes=\d*-\d*$/i.test(requestedRange)) {
+    res.status(416).end();
+    return;
+  }
+  const endpoint = new URL("https://api.qijieya.cn/meting/");
+  endpoint.searchParams.set("server", "netease");
+  endpoint.searchParams.set("type", "url");
+  endpoint.searchParams.set("id", trackId);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15_000);
+  res.once("close", () => controller.abort());
+  try {
+    const upstream = await fetch(endpoint, {
+      method: req.method === "HEAD" ? "HEAD" : "GET",
+      redirect: "follow",
+      signal: controller.signal,
+      headers: {
+        accept: "audio/mpeg,audio/mp4,audio/*;q=0.9,*/*;q=0.1",
+        ...(requestedRange ? { range: requestedRange } : {})
+      }
+    });
+    clearTimeout(timeout);
+    const source = new URL(upstream.url);
+    const trustedSource = source.hostname === "api.qijieya.cn" || source.hostname === "music.126.net" || source.hostname.endsWith(".music.126.net");
+    const contentType = String(upstream.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
+    if (!trustedSource || (!contentType.startsWith("audio/") && upstream.status !== 416)) {
+      upstream.body?.cancel().catch(() => {});
+      res.status(502).end();
+      return;
+    }
+    if (![200, 206, 416].includes(upstream.status)) {
+      upstream.body?.cancel().catch(() => {});
+      res.status(upstream.status === 404 ? 404 : 502).end();
+      return;
+    }
+    const headers = {
+      "Accept-Ranges": upstream.headers.get("accept-ranges") || "bytes",
+      ...(contentType ? { "Content-Type": contentType } : {}),
+      ...(upstream.headers.get("content-length") ? { "Content-Length": upstream.headers.get("content-length") } : {}),
+      ...(upstream.headers.get("content-range") ? { "Content-Range": upstream.headers.get("content-range") } : {})
+    };
+    res.status(upstream.status).set(headers);
+    if (req.method === "HEAD" || !upstream.body) {
+      upstream.body?.cancel().catch(() => {});
+      res.end();
+      return;
+    }
+    const stream = Readable.fromWeb(upstream.body);
+    stream.on("error", () => {
+      if (!res.headersSent) res.status(502).end();
+      else res.destroy();
+    });
+    stream.pipe(res);
+  } catch (error) {
+    clearTimeout(timeout);
+    if (!res.headersSent) res.status(error?.name === "AbortError" ? 504 : 502).end();
+    else res.destroy();
+  }
+});
+
+app.all(["/api/nyxcloud/status", "/api/nyxcloud/search"], (_req, res) => {
+  res.set("Cache-Control", "no-store").status(410).json({ error: "NyxCloud has been retired." });
+});
+
+app.get(["/apps/nyxcloud", "/apps/nyxcloud/"], (_req, res) => {
+  res.redirect(302, "/");
+});
 
 function linkGeneratorRateState(clientId, now = Date.now()) {
   for (const [key, state] of linkGeneratorAttempts) {

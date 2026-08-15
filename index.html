@@ -15,7 +15,7 @@
 <meta name="twitter:title" content="StudyHub — Where Education Is Achievable">
 <meta name="twitter:description" content="StudyHub Learning Collective — where education is achievable. Learn alongside the exceptional with programs that pair rigorous foundations in mathematics and science with hands-on mentorship, turning knowledge into lasting mastery. From Foundation Studies through Advanced Specialization, Capstone Projects, and ongoing Career Mentorship, StudyHub helps every learner build the confidence and skills to achieve more.">
 <!-- //startup-cloak -->
-<link id="appFavicon" rel="icon" type="image/png" sizes="256x256" href="./assets/icons/nyx-logo.png">
+<link id="appFavicon" rel="icon" type="image/svg+xml" href="./assets/icons/studyhub.svg">
 <link rel="manifest" href="/app.webmanifest">
 <link rel="apple-touch-icon" href="/assets/icons/nyx-app-192.png">
 <meta name="theme-color" content="#0b1628">
@@ -33,19 +33,14 @@
 (() => {
   const favicon=document.getElementById('appFavicon');
   let savedIcon='';
-  let theme='default';
+  let savedPreset='';
   try{
     savedIcon=localStorage.getItem('nyx.tabFavicon') || '';
-    theme=localStorage.getItem('nyx.theme') || 'default';
+    savedPreset=localStorage.getItem('nyx.logo') || '';
   }catch{}
-  const isNyxSource=!savedIcon || /nyx-logo\.png/i.test(savedIcon);
-  if(savedIcon && !isNyxSource){
+  if(savedIcon && savedPreset && savedPreset!=='nyx'){
     favicon.href=savedIcon;
-    return;
   }
-  window.NyxLogo?.croppedUrl(theme).then(url=>{
-    favicon.href=url;
-  }).catch(()=>{});
 })();
 </script>
 <script src="startup.js?v=20260726-chromebook-layout-1"></script>
@@ -390,6 +385,6 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
 <script src="js/loading-screen.js?v=20260730-studyhub-input-v11"></script>
 <script src="js/pwa-install.js?v=20260803-singlefile-current-v5"></script>
 <script src="js/owner-dashboard.js?v=20260813-custom-role-formatting-v21"></script>
-<script src="script.js?v=20260814-profile-bloom-v38"></script>
+<script src="script.js?v=20260815-studyhub-tab-v39"></script>
 </body>
 </html>

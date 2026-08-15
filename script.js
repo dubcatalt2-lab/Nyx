@@ -2002,14 +2002,27 @@
   //favicons
   const favicons = {
     nyx:'./assets/icons/nyx-logo.png',
+    studyhub:'./assets/icons/studyhub.svg',
     classroom:`data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%23fbbc04'/%3E%3Crect x='8' y='10' width='48' height='40' rx='3' fill='%2334a853'/%3E%3Ccircle cx='32' cy='25' r='6' fill='white'/%3E%3Cpath d='M18 42c4-9 20-9 24 0' fill='white'/%3E%3C/svg%3E`,
     drive:'./assets/icons/googledrive-logo.webp',
     google:'./assets/icons/google-logo.png',
     classlink:'./assets/icons/classlink-logo.png'
   };
   const nyxTabTitle = '\u057c\u028f\u04fc';
+  const studyHubTabTitle = 'StudyHub — Where Education Is Achievable';
+  const studyHubTabFavicon = './assets/icons/studyhub.svg';
   let nyxTabFavicon = './assets/icons/nyx-logo.png';
   const nyxFaviconHref = () => $('appFavicon')?.href || nyxTabFavicon;
+  function migrateStudyHubTabIdentity(){
+    if(store.text('nyx.tabIdentityVersion','')==='studyhub-v1') return;
+    const savedPreset=store.text('nyx.logo','').trim();
+    if(!savedPreset || savedPreset==='nyx'){
+      store.setText('nyx.tabTitle',studyHubTabTitle);
+      store.setText('nyx.tabFavicon',studyHubTabFavicon);
+    }
+    store.setText('nyx.tabIdentityVersion','studyhub-v1');
+  }
+  migrateStudyHubTabIdentity();
   async function applyNyxLogoTheme(theme=store.text('nyx.theme','default')){
     if(!window.NyxLogo) return;
     try{
@@ -2020,7 +2033,7 @@
       if(store.text('nyx.theme','default')!==theme) return;
       favicons.nyx=compactUrl;
       nyxTabFavicon=compactUrl;
-      const nyxPresetSelected=store.text('nyx.logo','nyx')==='nyx';
+      const nyxPresetSelected=store.text('nyx.logo','nyx')==='nyx' && store.text('nyx.tabTitle','')===nyxTabTitle;
       if(nyxPresetSelected) store.setText('nyx.tabFavicon',compactUrl);
       if(nyxPresetSelected || !store.text('nyx.tabFavicon','')){
         const favicon=$('appFavicon');
@@ -13700,7 +13713,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
     if(finishNyxOpenStartup.done) return;
     finishNyxOpenStartup.done=true;
     if(store.text('nyx.tabTitle','') || store.text('nyx.tabFavicon','')) enforceStoredTabCloak();
-    else setCurrentTabCloak(nyxTabTitle,nyxTabFavicon,false);
+    else setCurrentTabCloak(studyHubTabTitle,studyHubTabFavicon,false);
     migrateGlassDefault();
     applyAutoHieroglyphPreference();
   }

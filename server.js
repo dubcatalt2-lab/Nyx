@@ -1868,6 +1868,8 @@ const nyxAiKnownCatalog = [
   ["qwen/qwen3-32b", "Qwen3 32B", "Qwen"],
   ["meta-llama/llama-4-scout-17b-16e-instruct", "Llama 4 Scout (Vision)", "Meta"],
   ["navy:gpt-5.4-mini", "ChatGPT 5.4 Mini", "OpenAI"],
+  ["navy:claude-opus-5", "Claude Opus 5", "Anthropic"],
+  ["navy:claude-opus-4.8", "Claude Opus 4.8", "Anthropic"],
   ["navy:gpt-4o-mini-search-preview", "GPT-4o Mini Search (Preview)", "OpenAI"],
   ["navy:gemini-3.1-pro-preview", "Gemini 3.1 Pro (Preview)", "Google"],
   ["navy:gemini-3.5-flash", "Gemini 3.5 Flash", "Google"],
@@ -2277,6 +2279,8 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
         model,
         system: `You are Nyx AI inside the Nyx browser. Be helpful, direct, and accurate. If you do not know something, say so plainly. Format responses with clean Markdown. Use Markdown table syntax for tables, and use standard LaTeX delimiters for mathematical notation. ${responseGuidance}`,
         messages,
+        level: responseDepth,
+        reasoning_effort: responseDepth === "off" ? "low" : responseDepth === "extended" ? "high" : "medium",
         temperature: Number(process.env.NYX_AI_TEMPERATURE || 0.7),
         max_tokens: maxTokens,
         stream: wantsStream

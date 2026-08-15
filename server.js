@@ -1887,10 +1887,38 @@ const nyxAiKnownCatalog = [
   ["navy:mistral-medium-3.5", "Mistral Medium 3.5", "Mistral AI"]
 ].map(([id, label, company = ""]) => ({ id, label, company }));
 
-let nyxAiCatalogCache = { expiresAt: 0, models: [] };
+const nyxAiCatalogCaches = new Map();
+const nyxAiCatalogCacheLimit = 50;
 
 function nyxAiKey() {
   return process.env.NYX_AI_API_KEY || "";
+}
+
+function nyxAiRequestCredential(req) {
+  const supplied = req.get("x-nyx-ai-api-key");
+  if (supplied === undefined) return { key: nyxAiKey(), personal: false };
+  const key = String(supplied || "").trim();
+  if (key.length < 8 || key.length > 512 || /[\s\x00-\x1f\x7f]/.test(key)) {
+    return { key: "", personal: true, invalid: true };
+  }
+  return { key, personal: true };
+}
+
+function nyxAiCredentialCacheKey(key, personal = false) {
+  if (!key) return personal ? "personal:missing" : "shared:missing";
+  return `${personal ? "personal" : "shared"}:${createHash("sha256").update(key).digest("hex")}`;
+}
+
+function nyxAiCatalogCache(cacheKey) {
+  return nyxAiCatalogCaches.get(cacheKey) || { expiresAt: 0, models: [] };
+}
+
+function nyxAiSetCatalogCache(cacheKey, cache) {
+  nyxAiCatalogCaches.delete(cacheKey);
+  nyxAiCatalogCaches.set(cacheKey, cache);
+  while (nyxAiCatalogCaches.size > nyxAiCatalogCacheLimit) {
+    nyxAiCatalogCaches.delete(nyxAiCatalogCaches.keys().next().value);
+  }
 }
 
 function nyxAiEndpoint() {
@@ -2013,13 +2041,14 @@ async function nyxAiProbeNocturneCatalog(candidates, key) {
   return candidates.filter((_model, index) => results[index] === "available");
 }
 
-async function nyxAiAvailableModels() {
+async function nyxAiAvailableModels(key = nyxAiKey(), personal = false) {
   const now = Date.now();
-  if (nyxAiCatalogCache.expiresAt > now) return nyxAiCatalogCache.models;
+  const cacheKey = nyxAiCredentialCacheKey(key, personal);
+  const cached = nyxAiCatalogCache(cacheKey);
+  if (cached.expiresAt > now) return cached.models;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 6000);
   try {
-    const key = nyxAiKey();
     const headers = { accept: "application/json" };
     if (key) headers.authorization = `Bearer ${key}`;
     const response = await fetch(nyxAiCatalogEndpoint(), {
@@ -2034,31 +2063,32 @@ async function nyxAiAvailableModels() {
       models = await nyxAiProbeNocturneCatalog(candidates, key);
     }
     if (!models.length) throw new Error("The AI model catalog was empty.");
-    nyxAiCatalogCache = { expiresAt: now + 3_600_000, models };
+    nyxAiSetCatalogCache(cacheKey, { expiresAt: now + 3_600_000, models });
   } catch {
-    nyxAiCatalogCache = {
+    nyxAiSetCatalogCache(cacheKey, {
       expiresAt: now + 60_000,
-      models: nyxAiCatalogCache.models
-    };
+      models: cached.models
+    });
   } finally {
     clearTimeout(timeout);
   }
-  return nyxAiCatalogCache.models;
+  return nyxAiCatalogCache(cacheKey).models;
 }
 
-async function nyxAiResolveModel(requestedModel) {
+async function nyxAiResolveModel(requestedModel, key, personal = false) {
   const providerModel = nyxAiModels[requestedModel] || requestedModel;
-  const models = await nyxAiAvailableModels();
+  const models = await nyxAiAvailableModels(key, personal);
   return models.some(item => item.id === providerModel) ? providerModel : "";
 }
 
-function nyxAiErrorMessage(data, status) {
+function nyxAiErrorMessage(data, status, secret = "") {
   const error = data?.error;
-  return String(
+  const message = String(
     (error && typeof error === "object" ? error.message : error)
     || data?.message
     || `Model request failed (${status}).`
   );
+  return secret ? message.split(secret).join("[redacted]") : message;
 }
 
 function nyxAiStreamText(data) {
@@ -2148,10 +2178,19 @@ setInterval(() => {
   }
 }, 3_600_000).unref();
 
-app.get("/api/nyx-ai/models", async (_req, res) => {
-  const models = await nyxAiAvailableModels();
+app.get("/api/nyx-ai/models", async (req, res) => {
+  const credential = nyxAiRequestCredential(req);
+  if (credential.invalid) {
+    res.status(400).json({ error: "Your personal Nocturne AI API key is not valid." });
+    return;
+  }
+  if (!credential.key) {
+    res.status(503).json({ error: credential.personal ? "Enter a personal Nocturne AI API key." : "Nyx AI is not configured." });
+    return;
+  }
+  const models = await nyxAiAvailableModels(credential.key, credential.personal);
   if (!models.length) {
-    res.status(503).json({ error: "Nyx could not verify the models available to the configured AI key." });
+    res.status(503).json({ error: credential.personal ? "Nyx could not verify any models for your personal API key." : "Nyx could not verify the models available to the configured AI key." });
     return;
   }
   const defaultProviderId = nyxAiModels["chatgpt-5.4-mini"];
@@ -2159,20 +2198,27 @@ app.get("/api/nyx-ai/models", async (_req, res) => {
     ? { ...item, id: "chatgpt-5.4-mini", providerId: item.id }
     : item);
   exposedModels.sort((left, right) => Number(right.id === "chatgpt-5.4-mini") - Number(left.id === "chatgpt-5.4-mini"));
-  res.setHeader("cache-control", "public, max-age=60, stale-while-revalidate=240");
-  res.json({ models: exposedModels });
+  // The URL is shared by server-key and personal-key requests. Never let a
+  // browser or intermediary reuse one credential scope's catalog for another.
+  res.setHeader("cache-control", "private, no-store");
+  res.json({ models: exposedModels, credential: credential.personal ? "personal" : "nyx" });
 });
 
 app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
-  const key = nyxAiKey();
+  const credential = nyxAiRequestCredential(req);
+  if (credential.invalid) {
+    res.status(400).json({ error: "Your personal Nocturne AI API key is not valid." });
+    return;
+  }
+  const key = credential.key;
   if (!key) {
     res.status(503).json({
-      error: "Nyx AI is not configured. Set NYX_AI_API_KEY in the server environment."
+      error: credential.personal ? "Enter a personal Nocturne AI API key." : "Nyx AI is not configured. Set NYX_AI_API_KEY in the server environment."
     });
     return;
   }
   const requestedModel = String(req.body?.model || "chatgpt-5.4-mini");
-  const model = await nyxAiResolveModel(requestedModel);
+  const model = await nyxAiResolveModel(requestedModel, key, credential.personal);
   if (!model) {
     res.status(400).json({ error: "Unknown Nyx AI model." });
     return;
@@ -2204,6 +2250,18 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   const messages = history.length ? history : [{ role: "user", content: prompt }];
   if (history.length && imageContext) messages[messages.length - 1] = { role: "user", content: prompt };
   const wantsStream = req.body?.stream !== false;
+  const responseDepth = ["off", "normal", "extended"].includes(req.body?.responseDepth) ? req.body.responseDepth : "normal";
+  const responseGuidance = responseDepth === "off"
+    ? "Answer concisely and do not add optional detail unless it is required for accuracy."
+    : responseDepth === "extended"
+      ? "Give a thorough, well-structured answer with useful context, tradeoffs, and concrete steps when applicable."
+      : "Give a balanced answer with enough explanation to be useful without unnecessary length.";
+  const configuredMaxTokens = Number(process.env.NYX_AI_MAX_TOKENS || 1200);
+  const maxTokens = responseDepth === "off"
+    ? Math.min(configuredMaxTokens, 700)
+    : responseDepth === "extended"
+      ? Math.max(configuredMaxTokens, 2200)
+      : configuredMaxTokens;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), nyxAiLimits.timeoutMs);
   res.once("close", () => controller.abort());
@@ -2217,10 +2275,10 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       },
       body: JSON.stringify({
         model,
-        system: "You are Nyx AI inside the Nyx browser. Be helpful, direct, and accurate. If you do not know something, say so plainly. Format responses with clean Markdown. Use Markdown table syntax for tables, and use standard LaTeX delimiters for mathematical notation.",
+        system: `You are Nyx AI inside the Nyx browser. Be helpful, direct, and accurate. If you do not know something, say so plainly. Format responses with clean Markdown. Use Markdown table syntax for tables, and use standard LaTeX delimiters for mathematical notation. ${responseGuidance}`,
         messages,
         temperature: Number(process.env.NYX_AI_TEMPERATURE || 0.7),
-        max_tokens: Number(process.env.NYX_AI_MAX_TOKENS || 1200),
+        max_tokens: maxTokens,
         stream: wantsStream
       })
     });
@@ -2246,7 +2304,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
           if (!raw || raw === "[DONE]") continue;
           const event = JSON.parse(raw);
           if (event?.type === "error") {
-            nyxAiWriteStreamChunk(res, `Nyx AI error: ${nyxAiErrorMessage(event, upstream.status)}`, model);
+            nyxAiWriteStreamChunk(res, `Nyx AI error: ${nyxAiErrorMessage(event, upstream.status, key)}`, model);
             continue;
           }
           nyxAiWriteStreamChunk(res, nyxAiStreamText(event), model);
@@ -2267,7 +2325,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     const data = await upstream.json().catch(() => ({}));
     if (!upstream.ok) {
       res.status(upstream.status).json({
-        error: nyxAiErrorMessage(data, upstream.status)
+        error: nyxAiErrorMessage(data, upstream.status, key)
       });
       return;
     }

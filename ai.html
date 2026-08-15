@@ -10,10 +10,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/vendor/katex/katex.min.css?v=20260814-ai-math-v1">
-  <link rel="stylesheet" href="/css/ai-workspace.css?v=20260814-profile-format-v7">
+  <link rel="stylesheet" href="/css/ai-workspace.css?v=20260815-personal-key-v8">
   <script src="/js/nyx-logo.js?v=20260717-theme-crescent-v1" defer></script>
   <script src="/assets/vendor/katex/katex.min.js?v=20260814-ai-math-v1" defer></script>
-  <script src="/js/ai-workspace.js?v=20260814-profile-format-v7" defer></script>
+  <script src="/js/ai-workspace.js?v=20260815-personal-key-v8" defer></script>
 </head>
 <body>
   <main class="ai-app" data-ai-app>
@@ -41,11 +41,25 @@
 
       <section class="ai-history" aria-labelledby="aiHistoryTitle">
         <header><h2 id="aiHistoryTitle">Chats</h2><span id="threadCount">0</span></header>
+        <label class="ai-history-search" for="threadSearch">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>
+          <input id="threadSearch" type="search" autocomplete="off" placeholder="Search chats">
+        </label>
         <div class="ai-thread-list" id="threadList" role="list"></div>
         <p class="ai-history-empty" id="historyEmpty">Your conversations will appear here.</p>
       </section>
 
       <footer class="ai-sidebar-footer">
+        <div class="ai-depth" role="group" aria-label="Response depth">
+          <button type="button" data-response-depth="off">Off</button>
+          <button type="button" data-response-depth="normal">Normal</button>
+          <button type="button" data-response-depth="extended">Extended</button>
+        </div>
+        <div class="ai-sidebar-model-summary"><span>Model</span><strong id="sidebarModelName">Loading…</strong></div>
+        <section class="ai-usage" aria-labelledby="aiUsageTitle">
+          <h2 id="aiUsageTitle">Your AI usage <small>estimated</small></h2>
+          <div><span><strong id="usageWeek">0</strong><small>tokens · 7d</small></span><span><strong id="usageAll">0</strong><small>all-time</small></span><span><strong id="usageRequests">0</strong><small>responses</small></span></div>
+        </section>
         <button class="ai-profile-button" id="aiProfile" type="button" aria-label="Open your Nyx profile">
           <span class="ai-profile-avatar"><img id="profileAvatar" alt="" hidden><span id="profileInitial">N</span></span>
           <span class="ai-profile-copy"><strong id="profileName">Profile</strong><small id="profileHandle">Open your Nyx profile</small></span>
@@ -72,6 +86,10 @@
         </div>
 
         <div class="ai-header-actions">
+          <button class="ai-key-settings" id="apiKeySettings" type="button" title="Personal Nocturne API key" aria-label="Set a personal Nocturne AI API key" aria-haspopup="dialog">
+            <span class="ai-key-status" aria-hidden="true"></span>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 8-8m-3 3 3 3m-6 0 2 2"/></svg>
+          </button>
           <div class="ai-model-picker" id="modelPicker">
             <button class="ai-model-trigger" id="modelTrigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="modelMenu">
               <span class="ai-model-status" aria-hidden="true"></span>
@@ -134,5 +152,37 @@
       </footer>
     </section>
   </main>
+
+  <dialog class="ai-key-dialog" id="apiKeyDialog" aria-labelledby="apiKeyTitle">
+    <form class="ai-key-card" id="apiKeyForm">
+      <header class="ai-key-header">
+        <span class="ai-key-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 8-8m-3 3 3 3m-6 0 2 2"/></svg>
+        </span>
+        <span><strong id="apiKeyTitle">Personal Nocturne key</strong><small>Use your own AI plan in Nyx</small></span>
+        <button class="ai-key-close" id="apiKeyClose" type="button" aria-label="Close API key settings">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg>
+        </button>
+      </header>
+      <div class="ai-key-body">
+        <label for="apiKeyInput">Nocturne AI API key</label>
+        <div class="ai-key-input-wrap">
+          <input id="apiKeyInput" type="password" minlength="8" maxlength="512" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste your API key">
+          <button id="apiKeyReveal" type="button" aria-label="Show API key" aria-pressed="false">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+          </button>
+        </div>
+        <label class="ai-key-remember"><input id="apiKeyRemember" type="checkbox"><span>Remember on this device</span></label>
+        <p class="ai-key-note">If unchecked, the key lasts only for this browser tab. It is sent only to Nyx's same-origin AI endpoint and is never saved to your account.</p>
+        <p class="ai-key-feedback" id="apiKeyFeedback" role="status" aria-live="polite"></p>
+      </div>
+      <footer class="ai-key-actions">
+        <button class="ai-key-remove" id="apiKeyRemove" type="button">Remove key</button>
+        <span></span>
+        <button class="ai-key-cancel" id="apiKeyCancel" type="button">Cancel</button>
+        <button class="ai-key-save" id="apiKeySave" type="submit">Use key</button>
+      </footer>
+    </form>
+  </dialog>
 </body>
 </html>

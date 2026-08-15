@@ -140,6 +140,10 @@ Client preferences and much local UI state use browser storage. Cross-device acc
 
 Nyx AI obtains its selectable catalog from the provider without exposing the server key. Nocturne's `/api/ai/config` catalog is session-based and returns only the anonymous model to API-key requests, so Nyx validates its known and explicitly configured candidate IDs with no-prompt authorization checks and caches the verified result for one hour. Those checks do not generate a completion or consume model output tokens. `NYX_AI_MODEL_IDS` may add newly issued provider model IDs to the candidate set without a code release. Do not restore unavailable models merely because they remain in an old static list. Assistant replies render Markdown tables, tab-separated tables, and standard `\(...\)` / `\[...\]` LaTeX with the locally served KaTeX runtime so managed devices do not depend on a third-party CDN.
 
+Users may optionally supply a personal Nocturne AI API key through the key control in the Nyx AI header. Personal keys stay in browser session storage by default, or local storage only after the user explicitly selects **Remember on this device**; they are never written to Firebase, source, server logs, or an API response. The browser sends the key only to Nyx's same-origin AI routes, the server uses it for that request, and verified model caches are isolated by a one-way credential digest. Removing it returns that browser to Nyx's shared server key. An invalid personal key must never silently fall back to the shared credential.
+
+The AI workspace includes local chat search, Off/Normal/Extended response-depth controls, the current model summary, and per-browser estimated token/response totals. Response depth is validated server-side and changes provider guidance/output size; it does not reveal private chain-of-thought. Usage totals are approximate character-based estimates kept only in browser storage because Nocturne's streaming response does not expose authoritative billing usage.
+
 ## Durable Product Instructions
 
 - Preserve functionality before changing presentation.

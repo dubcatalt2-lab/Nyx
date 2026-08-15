@@ -5,6 +5,10 @@
   const THREADS_KEY='nyx.aiThreads.v1';
   const ACTIVE_THREAD_KEY='nyx.aiActiveThread';
   const MODEL_KEY='nyx.aiModel';
+  const PERSONAL_KEY_SESSION='nyx.aiPersonalKey.session';
+  const PERSONAL_KEY_DEVICE='nyx.aiPersonalKey.device';
+  const RESPONSE_DEPTH_KEY='nyx.aiResponseDepth';
+  const USAGE_KEY='nyx.aiUsage.v1';
   const DEFAULT_MODEL='chatgpt-5.4-mini';
   const MAX_MESSAGES=40;
   const MAX_THREADS=40;
@@ -35,6 +39,12 @@
   const threadList=document.getElementById('threadList');
   const threadCount=document.getElementById('threadCount');
   const historyEmpty=document.getElementById('historyEmpty');
+  const threadSearch=document.getElementById('threadSearch');
+  const depthButtons=[...document.querySelectorAll('[data-response-depth]')];
+  const sidebarModelName=document.getElementById('sidebarModelName');
+  const usageWeek=document.getElementById('usageWeek');
+  const usageAll=document.getElementById('usageAll');
+  const usageRequests=document.getElementById('usageRequests');
   const profileButton=document.getElementById('aiProfile');
   const profileAvatar=document.getElementById('profileAvatar');
   const profileInitial=document.getElementById('profileInitial');
@@ -47,7 +57,18 @@
   const attachmentName=document.getElementById('attachmentName');
   const attachmentStatus=document.getElementById('attachmentStatus');
   const removeAttachment=document.getElementById('removeAttachment');
-  if(!app||!feed||!conversation||!form||!input||!send||!model||!modelPicker||!modelTrigger||!modelSelected||!modelMenu||!modelOptionsHost||!clear||!threadTitle||!sidebar||!sidebarToggle||!sidebarClose||!sidebarScrim||!newChat||!temporaryChat||!threadList||!threadCount||!historyEmpty||!profileButton||!profileAvatar||!profileInitial||!profileName||!profileHandle||!imageInput||!attachImage||!attachmentPreview||!attachmentThumbnail||!attachmentName||!attachmentStatus||!removeAttachment) return;
+  const apiKeySettings=document.getElementById('apiKeySettings');
+  const apiKeyDialog=document.getElementById('apiKeyDialog');
+  const apiKeyForm=document.getElementById('apiKeyForm');
+  const apiKeyInput=document.getElementById('apiKeyInput');
+  const apiKeyRemember=document.getElementById('apiKeyRemember');
+  const apiKeyReveal=document.getElementById('apiKeyReveal');
+  const apiKeyFeedback=document.getElementById('apiKeyFeedback');
+  const apiKeyRemove=document.getElementById('apiKeyRemove');
+  const apiKeyCancel=document.getElementById('apiKeyCancel');
+  const apiKeyClose=document.getElementById('apiKeyClose');
+  const apiKeySave=document.getElementById('apiKeySave');
+  if(!app||!feed||!conversation||!form||!input||!send||!model||!modelPicker||!modelTrigger||!modelSelected||!modelMenu||!modelOptionsHost||!clear||!threadTitle||!sidebar||!sidebarToggle||!sidebarClose||!sidebarScrim||!newChat||!temporaryChat||!threadList||!threadCount||!historyEmpty||!threadSearch||depthButtons.length!==3||!sidebarModelName||!usageWeek||!usageAll||!usageRequests||!profileButton||!profileAvatar||!profileInitial||!profileName||!profileHandle||!imageInput||!attachImage||!attachmentPreview||!attachmentThumbnail||!attachmentName||!attachmentStatus||!removeAttachment||!apiKeySettings||!apiKeyDialog||!apiKeyForm||!apiKeyInput||!apiKeyRemember||!apiKeyReveal||!apiKeyFeedback||!apiKeyRemove||!apiKeyCancel||!apiKeyClose||!apiKeySave) return;
 
   let activeController=null;
   let followStream=true;
@@ -58,6 +79,94 @@
   let temporaryMessages=[];
   let attachedImage=null;
   let imageOcrLoader=null;
+
+  function personalApiKey(){
+    return String(sessionStorage.getItem(PERSONAL_KEY_SESSION)||localStorage.getItem(PERSONAL_KEY_DEVICE)||'').trim();
+  }
+
+  function personalKeyRemembered(){
+    return Boolean(localStorage.getItem(PERSONAL_KEY_DEVICE));
+  }
+
+  function aiHeaders(headers={}){
+    const key=personalApiKey();
+    return key?{...headers,'x-nyx-ai-api-key':key}:headers;
+  }
+
+  function updateApiKeyControl(message='',state=''){
+    const active=Boolean(personalApiKey());
+    apiKeySettings.classList.toggle('has-personal-key',active);
+    apiKeySettings.setAttribute('aria-label',active?'Change your personal Nocturne AI API key':'Set a personal Nocturne AI API key');
+    apiKeySettings.title=active?'Using your personal Nocturne AI key':'Using Nyx AI key';
+    apiKeyRemove.disabled=!active;
+    apiKeyFeedback.className=`ai-key-feedback${state?` is-${state}`:''}`;
+    apiKeyFeedback.textContent=message||(active?'Your personal key is active.':'Nyx will use its shared AI key until you add your own.');
+  }
+
+  function openApiKeyDialog(){
+    const key=personalApiKey();
+    apiKeyInput.value=key;
+    apiKeyInput.type='password';
+    apiKeyReveal.setAttribute('aria-pressed','false');
+    apiKeyReveal.setAttribute('aria-label','Show API key');
+    apiKeyRemember.checked=personalKeyRemembered();
+    updateApiKeyControl();
+    apiKeyDialog.showModal();
+    requestAnimationFrame(()=>apiKeyInput.focus());
+  }
+
+  function closeApiKeyDialog(){
+    if(apiKeyDialog.open) apiKeyDialog.close();
+    apiKeySettings.focus();
+  }
+
+  function storePersonalApiKey(key,remember){
+    sessionStorage.removeItem(PERSONAL_KEY_SESSION);
+    localStorage.removeItem(PERSONAL_KEY_DEVICE);
+    (remember?localStorage:sessionStorage).setItem(remember?PERSONAL_KEY_DEVICE:PERSONAL_KEY_SESSION,key);
+  }
+
+  function removePersonalApiKey(){
+    sessionStorage.removeItem(PERSONAL_KEY_SESSION);
+    localStorage.removeItem(PERSONAL_KEY_DEVICE);
+  }
+
+  function responseDepth(){
+    const value=localStorage.getItem(RESPONSE_DEPTH_KEY)||'normal';
+    return ['off','normal','extended'].includes(value)?value:'normal';
+  }
+
+  function syncResponseDepth(){
+    const current=responseDepth();
+    depthButtons.forEach(button=>{
+      const selected=button.dataset.responseDepth===current;
+      button.classList.toggle('is-active',selected);
+      button.setAttribute('aria-pressed',String(selected));
+    });
+  }
+
+  function storedUsage(){
+    try{
+      const items=JSON.parse(localStorage.getItem(USAGE_KEY)||'[]');
+      return Array.isArray(items)?items.filter(item=>Number.isFinite(item?.at)&&Number.isFinite(item?.tokens)&&item.tokens>0).slice(-1000):[];
+    }catch{return[]}
+  }
+
+  function renderUsage(){
+    const items=storedUsage();
+    const cutoff=Date.now()-7*86_400_000;
+    const format=value=>new Intl.NumberFormat(undefined,{notation:value>=10_000?'compact':'standard',maximumFractionDigits:1}).format(value);
+    usageWeek.textContent=format(items.filter(item=>item.at>=cutoff).reduce((sum,item)=>sum+item.tokens,0));
+    usageAll.textContent=format(items.reduce((sum,item)=>sum+item.tokens,0));
+    usageRequests.textContent=format(items.length);
+  }
+
+  function recordUsage(prompt,answer){
+    const items=storedUsage();
+    items.push({at:Date.now(),tokens:Math.max(1,Math.ceil((String(prompt||'').length+String(answer||'').length)/4))});
+    try{localStorage.setItem(USAGE_KEY,JSON.stringify(items.slice(-1000)))}catch{}
+    renderUsage();
+  }
 
   function themeHex(value,fallback='#6687b2'){
     const raw=String(value||'').trim();
@@ -653,9 +762,12 @@
 
   function renderThreadList(){
     const items=[...threads].sort((left,right)=>right.updatedAt-left.updatedAt);
-    threadCount.textContent=String(items.length);
-    historyEmpty.hidden=items.length>0;
-    threadList.innerHTML=items.map(thread=>`<div role="listitem"><button class="ai-thread-button" type="button" data-thread-id="${escapeHtml(thread.id)}" aria-current="${!temporaryMode&&thread.id===activeThreadId?'true':'false'}"><span class="ai-thread-icon">${threadIcon()}</span><span class="ai-thread-copy"><strong>${escapeHtml(thread.title)}</strong><small>${escapeHtml(threadDate(thread.updatedAt))}</small></span></button></div>`).join('');
+    const query=threadSearch.value.trim().toLowerCase();
+    const visible=query?items.filter(thread=>`${thread.title}\n${thread.messages.map(item=>item.content).join('\n')}`.toLowerCase().includes(query)):items;
+    threadCount.textContent=query?`${visible.length}/${items.length}`:String(items.length);
+    historyEmpty.hidden=visible.length>0;
+    historyEmpty.textContent=items.length?(query?'No matching chats.':'Your conversations will appear here.'):'Your conversations will appear here.';
+    threadList.innerHTML=visible.map(thread=>`<div role="listitem"><button class="ai-thread-button" type="button" data-thread-id="${escapeHtml(thread.id)}" aria-current="${!temporaryMode&&thread.id===activeThreadId?'true':'false'}"><span class="ai-thread-icon">${threadIcon()}</span><span class="ai-thread-copy"><strong>${escapeHtml(thread.title)}</strong><small>${escapeHtml(threadDate(thread.updatedAt))}</small></span></button></div>`).join('');
     temporaryChat.setAttribute('aria-pressed',String(temporaryMode));
   }
 
@@ -838,6 +950,7 @@
     modelSelected.textContent=label;
     modelTrigger.title=`Model: ${label}`;
     modelTrigger.setAttribute('aria-label',`AI model: ${label}`);
+    sidebarModelName.textContent=label;
     modelOptionsHost.querySelectorAll('[data-model-id]').forEach(option=>{
       option.setAttribute('aria-selected',String(option.dataset.modelId===selected));
     });
@@ -891,7 +1004,7 @@
     modelTrigger.disabled=true;
     modelTrigger.setAttribute('aria-busy','true');
     try{
-      const response=await fetch('/api/nyx-ai/models',{headers:{accept:'application/json'}});
+      const response=await fetch('/api/nyx-ai/models',{headers:aiHeaders({accept:'application/json'})});
       const data=await response.json();
       if(!response.ok) throw new Error(data?.error||`Model catalog failed (${response.status})`);
       const next=Array.isArray(data?.models)?data.models.flatMap(item=>{
@@ -906,13 +1019,17 @@
       const selected=next.some(item=>item.id===saved)?saved:(next.some(item=>item.id===DEFAULT_MODEL)?DEFAULT_MODEL:next[0].id);
       renderModelOptions(next,selected);
       localStorage.setItem(MODEL_KEY,selected);
-      if(status) status.title=`${next.length} models available`;
+      if(status){status.classList.remove('is-warning');status.title=`${next.length} models available`}
+      if(personalApiKey()) updateApiKeyControl(`Your personal key is active with ${next.length} available model${next.length===1?'':'s'}.`,'success');
+      return true;
     }catch(error){
       console.warn('Nyx AI model catalog could not be loaded:',error);
       modelCatalog=[];
       renderModelOptions([],"");
       modelSelected.textContent='Models unavailable';
       if(status){status.classList.add('is-warning');status.title='The model list could not be verified'}
+      if(personalApiKey()) updateApiKeyControl(error?.message||'Nyx could not verify this API key.','error');
+      return false;
     }finally{
       const available=modelCatalog.length>0;
       model.disabled=!available;
@@ -1015,8 +1132,8 @@
       const response=await fetch('/api/nyx-ai',{
         method:'POST',
         signal:activeController.signal,
-        headers:{'content-type':'application/json'},
-        body:JSON.stringify({model:requestedModel,message:userText,messages:history,imageContext,stream:true})
+        headers:aiHeaders({'content-type':'application/json'}),
+        body:JSON.stringify({model:requestedModel,message:userText,messages:history,imageContext,responseDepth:responseDepth(),stream:true})
       });
       if(!response.ok){
         const data=await response.json().catch(()=>({}));
@@ -1052,6 +1169,7 @@
       setMessageContent(pending,clean);
       history.push({role:'assistant',content:clean});
       saveMessages(history);
+      recordUsage(userText,clean);
     }catch(error){
       if(error?.name==='AbortError') return;
       setMessageContent(pending,error?.message||'Nyx AI could not complete that request.',{error:true});
@@ -1199,6 +1317,41 @@
     }
     syncModelControl();
   });
+  apiKeySettings.addEventListener('click',openApiKeyDialog);
+  apiKeyClose.addEventListener('click',closeApiKeyDialog);
+  apiKeyCancel.addEventListener('click',closeApiKeyDialog);
+  apiKeyDialog.addEventListener('click',event=>{
+    if(event.target===apiKeyDialog) closeApiKeyDialog();
+  });
+  apiKeyReveal.addEventListener('click',()=>{
+    const reveal=apiKeyInput.type==='password';
+    apiKeyInput.type=reveal?'text':'password';
+    apiKeyReveal.setAttribute('aria-pressed',String(reveal));
+    apiKeyReveal.setAttribute('aria-label',reveal?'Hide API key':'Show API key');
+    apiKeyInput.focus();
+  });
+  apiKeyRemove.addEventListener('click',async()=>{
+    removePersonalApiKey();
+    apiKeyInput.value='';
+    apiKeyRemember.checked=false;
+    updateApiKeyControl('Personal key removed. Nyx is using its shared AI key.','success');
+    await loadModels();
+  });
+  apiKeyForm.addEventListener('submit',async event=>{
+    event.preventDefault();
+    const key=apiKeyInput.value.trim();
+    if(key.length<8||key.length>512||/[\s\x00-\x1f\x7f]/.test(key)){
+      updateApiKeyControl('Enter a valid API key without spaces.','error');
+      apiKeyInput.focus();
+      return;
+    }
+    storePersonalApiKey(key,apiKeyRemember.checked);
+    apiKeySave.disabled=true;
+    updateApiKeyControl('Checking your key with Nocturne…');
+    const valid=await loadModels();
+    apiKeySave.disabled=false;
+    if(valid) setTimeout(closeApiKeyDialog,450);
+  });
   clear.addEventListener('click',clearChat);
   newChat.addEventListener('click',()=>startNewChat());
   temporaryChat.addEventListener('click',()=>startNewChat({temporary:true}));
@@ -1206,6 +1359,11 @@
     const button=event.target.closest('[data-thread-id]');
     if(button) selectThread(button.dataset.threadId||'');
   });
+  threadSearch.addEventListener('input',renderThreadList);
+  depthButtons.forEach(button=>button.addEventListener('click',()=>{
+    localStorage.setItem(RESPONSE_DEPTH_KEY,button.dataset.responseDepth||'normal');
+    syncResponseDepth();
+  }));
   sidebarToggle.addEventListener('click',()=>setSidebarOpen(!app.classList.contains('is-sidebar-open')));
   sidebarClose.addEventListener('click',()=>setSidebarOpen(false));
   sidebarScrim.addEventListener('click',()=>setSidebarOpen(false));
@@ -1231,7 +1389,10 @@
   renderThreadList();
   render();
   autoGrow();
+  syncResponseDepth();
+  renderUsage();
   requestProfile();
+  updateApiKeyControl();
   void loadModels();
   input.focus();
 })();

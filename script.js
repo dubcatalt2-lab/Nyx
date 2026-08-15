@@ -1576,7 +1576,7 @@
           <li><time datetime="2026-07-31">Jul 31, 2026</time><div><strong>About Nyx refresh</strong><p>Reframed Credits as About Nyx with a new founder spotlight, contributor acknowledgements, and a clearer story of the project.</p></div></li>
         </ol>
       </section>
-      <footer class="nyx-credits-footer"><img src="/assets/icons/nyx-logo.png" alt="" aria-hidden="true"><div><strong>Nyx</strong><span>Thank you for making this space yours.</span></div><small>&copy; 2026 Nyx</small></footer>
+      <footer class="nyx-credits-footer"><img src="/assets/icons/nyx-logo.png" alt="" aria-hidden="true"><div><strong>Nyx</strong><span>Thank you for making this space yours.</span><a href="/about-nyx.html" target="_top">Public Nyx Learning page</a></div><small>&copy; 2026 Nyx</small></footer>
     </article>`;
   }
   function nyxCreditsFounderCardMarkup(){

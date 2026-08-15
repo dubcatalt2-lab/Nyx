@@ -2,6 +2,9 @@ import { access, readFile } from "node:fs/promises";
 
 const requiredFiles = [
   "index.html",
+  "about-nyx.html",
+  "robots.txt",
+  "sitemap.xml",
   "server.js",
   "script.js",
   "startup.js",

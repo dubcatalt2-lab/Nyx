@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /service/
+Disallow: /scramjet/
+Disallow: /uv/
+Disallow: /wisp/
+Disallow: /apps/chat/
+
+Sitemap: https://nyxlearning.org/sitemap.xml

@@ -14,9 +14,12 @@ const vpsBuild = process.env.NYX_BUILD_TARGET === "vps";
 const maxStaticFileBytes = vpsBuild ? Number.POSITIVE_INFINITY : 10_000_000;
 const rootFiles = new Set([
   "index.html",
+  "about-nyx.html",
   "ai.html",
   "nyx-singlefile.html",
   "app.webmanifest",
+  "robots.txt",
+  "sitemap.xml",
   "script.js",
   "startup.js",
   "startup-studyhub.html",

@@ -255,7 +255,7 @@
   function syncNyxAccountEntitlements(account={}){
     const previousStatus=nyxUserSubscriptionStatus;
     if(account.role)nyxUserAccountRole=String(account.role||'member');
-    if(typeof account.owner==='boolean')nyxFounderIsOwner=account.owner;
+    if(typeof account.founder==='boolean')nyxFounderIsOwner=account.founder;
     if(typeof account.dashboard==='boolean')nyxOwnerDashboardAccess=account.dashboard;
     if(Array.isArray(account.permissions))nyxUserPermissions=account.permissions.map(String);
     if(account.subscriptionStatus)nyxUserSubscriptionStatus=String(account.subscriptionStatus||'free').toLowerCase();
@@ -700,7 +700,7 @@
       const token=await nyxGetFirebaseToken(true);
       if(!token)throw new Error('Your owner session has expired.');
       const access=await nyxProfileMediaFetch('/api/founder-profile/owner',{headers:{Authorization:`Bearer ${token}`},cache:'no-store'},'Owner access is unavailable.');
-      nyxFounderIsOwner=Boolean(access?.owner);
+      nyxFounderIsOwner=Boolean(access?.founder);
       nyxOwnerDashboardAccess=Boolean(access?.dashboard);
       nyxUserPermissions=Array.isArray(access?.permissions)?access.permissions.map(String):[];
       if(access?.role)nyxUserAccountRole=String(access.role);

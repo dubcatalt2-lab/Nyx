@@ -18,7 +18,7 @@
     guest: "Guest"
   });
   const ownerRoleIcons = Object.freeze({ co_owner: "owner", manager: "admin", support: "moderator", tester: "developer", contributor: "developer", guest: "member" });
-  const ownerAssignableRoles = Object.freeze(["member", "contributor", "tester", "support", "moderator", "developer", "manager", "admin", "co_owner"]);
+  const ownerAssignableRoles = Object.freeze(["member", "contributor", "tester", "support", "moderator", "developer", "manager", "admin", "co_owner", "owner"]);
   const roleLabel = value => ownerRoleLabels[value] || "Member";
   const userRoleLabel = user => user?.customRole?.label || roleLabel(user?.role);
   const userRoleColor = user => /^#[0-9a-f]{6}$/i.test(String(user?.customRole?.color || "")) ? user.customRole.color : "";
@@ -26,7 +26,7 @@
   const roleOptions = (currentRole, allowedRoles = []) => {
     const allowed = new Set(allowedRoles);
     const roles = ownerAssignableRoles.filter(role => allowed.has(role) || role === currentRole);
-    return `<div class="nyx-owner-role-options" role="radiogroup" aria-label="Account role">${roles.map(role => `<button class="role-${esc(role)}${currentRole === role ? " active" : ""}" type="button" role="radio" aria-checked="${currentRole === role}" data-owner-role-option="${esc(role)}" ${allowed.has(role) ? "" : "disabled"}>${roleIcon(role)}<span>${esc(roleLabel(role))}</span></button>`).join("")}${currentRole === "owner" ? `<button class="role-owner active" type="button" role="radio" aria-checked="true" disabled>${roleIcon("owner")}<span>Owner</span></button>` : ""}</div>`;
+    return `<div class="nyx-owner-role-options" role="radiogroup" aria-label="Account role">${roles.map(role => `<button class="role-${esc(role)}${currentRole === role ? " active" : ""}" type="button" role="radio" aria-checked="${currentRole === role}" data-owner-role-option="${esc(role)}" ${allowed.has(role) ? "" : "disabled"}>${roleIcon(role)}<span>${esc(roleLabel(role))}</span></button>`).join("")}${currentRole === "owner" && !roles.includes("owner") ? `<button class="role-owner active" type="button" role="radio" aria-checked="true" disabled>${roleIcon("owner")}<span>Owner</span></button>` : ""}</div>`;
   };
   const syncRoleOptions = (root, selectedRole) => root?.querySelectorAll?.("[data-owner-role-option]").forEach(button => {
     const active = button.dataset.ownerRoleOption === selectedRole;
@@ -509,7 +509,7 @@
         const ipBansButton = overlay.querySelector("[data-owner-ip-bans]");
         if (ipBansButton) ipBansButton.hidden = !state.access?.permissions?.includes("network:bans");
         const customRolesButton = overlay.querySelector("[data-owner-custom-roles]");
-        if (customRolesButton) customRolesButton.hidden = state.access?.role !== "owner";
+        if (customRolesButton) customRolesButton.hidden = !state.access?.founder;
         const roleFilter = overlay.querySelector('[name="role"]');
         if (roleFilter) {
           roleFilter.querySelectorAll("option[data-custom-role]").forEach(option => option.remove());
@@ -646,7 +646,7 @@
         const avatar = ownerProfileImageMarkup(user.photoUrl, "", (user.displayName || "?").slice(0, 1).toUpperCase());
         const assignableRoles = access?.assignableRoles || [];
         const roleSelectOptions = assignableRoles.map(role => `<option value="${esc(role)}"${selected(user.role, role)}>${esc(roleLabel(role))}</option>`).join("");
-        const customRoleOptions = access?.role === "owner" ? state.customRoles.map(role => `<option value="custom:${esc(role.id)}"${user.customRole?.id === role.id ? " selected" : ""}>${esc(role.label)} · ${esc(roleLabel(role.baseRole))} placement</option>`).join("") : "";
+        const customRoleOptions = access?.founder ? state.customRoles.map(role => `<option value="custom:${esc(role.id)}"${user.customRole?.id === role.id ? " selected" : ""}>${esc(role.label)} · ${esc(roleLabel(role.baseRole))} placement</option>`).join("") : "";
         const currentRoleValue = user.customRole ? `custom:${user.customRole.id}` : user.role;
         const currentRoleOption = !user.customRole && !assignableRoles.includes(user.role) ? `<option value="${esc(user.role)}" selected disabled>${esc(roleLabel(user.role))}</option>` : "";
         const accessSection = capabilities.canSetRole || capabilities.canSetSubscription ? `<section class="nyx-owner-detail-section"><h3>Access</h3>

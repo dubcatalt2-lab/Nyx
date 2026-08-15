@@ -2801,10 +2801,10 @@ function normalizeFounderProfile(value = {}) {
 async function verifiedFounderOwner(req) {
   const config = founderProfileConfig();
   if (!config.administratorUid || !firebaseAdminModeConfigured()) {
-    return { enabled: false, owner: false, dashboard: false, role: "member", roleLabel: "Member", permissions: [] };
+    return { enabled: false, owner: false, founder: false, dashboard: false, role: "member", roleLabel: "Member", permissions: [] };
   }
   const match = String(req.get("authorization") || "").match(/^Bearer\s+(.+)$/i);
-  if (!match) return { enabled: true, owner: false, dashboard: false, role: "member", roleLabel: "Member", permissions: [] };
+  if (!match) return { enabled: true, owner: false, founder: false, dashboard: false, role: "member", roleLabel: "Member", permissions: [] };
   try {
     const firebase = await linkGeneratorFirebase();
     const token = await firebase?.auth.verifyIdToken(match[1], true);
@@ -2814,9 +2814,9 @@ async function verifiedFounderOwner(req) {
       : (await firebase.firestore.collection("nyxUserAdministration").doc(token.uid).get()).data();
     const role = nyxRoleForUser(token.uid, administration, config.administratorUid);
     const actor = { uid: token.uid, role, permissions: nyxRolePolicy(role).permissions };
-    return { enabled: true, ...nyxOwnerAccessPayload(actor) };
+    return { enabled: true, ...nyxOwnerAccessPayload(actor, config.administratorUid) };
   } catch {
-    return { enabled: true, owner: false, dashboard: false, role: "member", roleLabel: "Member", permissions: [] };
+    return { enabled: true, owner: false, founder: false, dashboard: false, role: "member", roleLabel: "Member", permissions: [] };
   }
 }
 
@@ -2959,14 +2959,14 @@ function safeActivityTime(value) {
 
 function normalizeNyxRole(value) {
   const role = String(value || "").trim().toLowerCase();
-  return ["co_owner", "admin", "manager", "developer", "moderator", "support", "tester", "contributor", "member"].includes(role) ? role : "member";
+  return ["owner", "co_owner", "admin", "manager", "developer", "moderator", "support", "tester", "contributor", "member"].includes(role) ? role : "member";
 }
 
 const nyxRolePolicies = Object.freeze({
   owner: Object.freeze({
     rank: 100,
     assignableRank: 90,
-    permissions: Object.freeze(["dashboard:view", "users:view", "audit:view", "profiles:write", "roles:write", "subscriptions:write", "accounts:reset", "accounts:verify", "accounts:disable", "accounts:delete", "network:bans", "developer-console", "founder:write"])
+    permissions: Object.freeze(["dashboard:view", "users:view", "audit:view", "profiles:write", "roles:write", "subscriptions:write", "accounts:reset", "accounts:verify", "accounts:disable", "accounts:delete", "network:bans", "developer-console"])
   }),
   co_owner: Object.freeze({
     rank: 90,
@@ -3148,6 +3148,13 @@ function nyxActorHasPermission(actor, permission) {
   return Boolean(actor?.permissions?.includes(permission));
 }
 
+function nyxAssignableRolesForActor(actor, ownerUid = founderProfileConfig().administratorUid) {
+  if (!nyxActorHasPermission(actor, "roles:write")) return [];
+  const policy = nyxRolePolicy(actor.role);
+  const roles = nyxAssignableRoles.filter(role => nyxRolePolicy(role).rank <= policy.assignableRank);
+  return actor.role === "owner" && actor.uid === ownerUid ? [...roles, "owner"] : roles;
+}
+
 function nyxActorCanReviewSearchHistory(actor) {
   if (!actor) return false;
   return actor.customRole
@@ -3155,20 +3162,19 @@ function nyxActorCanReviewSearchHistory(actor) {
     : nyxRolePolicy(actor.role).rank >= nyxRolePolicy("moderator").rank;
 }
 
-function nyxOwnerAccessPayload(actor) {
-  const policy = nyxRolePolicy(actor.role);
+function nyxOwnerAccessPayload(actor, ownerUid = founderProfileConfig().administratorUid) {
   const presentation = nyxRolePresentation(actor.role, actor.customRole, actor.uid, actor.uid);
+  const founder = actor.role === "owner" && actor.uid === ownerUid;
   return {
     role: presentation.role,
     roleLabel: presentation.roleLabel,
     customRole: presentation.customRole,
     owner: actor.role === "owner",
+    founder,
     dashboard: nyxActorHasPermission(actor, "dashboard:view"),
     canReviewSearchHistory: nyxActorCanReviewSearchHistory(actor),
     permissions: [...actor.permissions],
-    assignableRoles: nyxActorHasPermission(actor, "roles:write")
-      ? nyxAssignableRoles.filter(role => nyxRolePolicy(role).rank <= policy.assignableRank)
-      : []
+    assignableRoles: nyxAssignableRolesForActor(actor, ownerUid)
   };
 }
 
@@ -3189,9 +3195,7 @@ function nyxOwnerUserCapabilities(actor, targetRole, targetUid, ownerUid = found
     canDisableAccount: canManageTarget && nyxActorHasPermission(actor, "accounts:disable"),
     canManageNetworkBans: canManageTarget && nyxActorHasPermission(actor, "network:bans"),
     canDeleteAccount: canManageTarget && nyxActorHasPermission(actor, "accounts:delete"),
-    assignableRoles: nyxActorHasPermission(actor, "roles:write")
-      ? nyxAssignableRoles.filter(role => nyxRolePolicy(role).rank <= actorPolicy.assignableRank)
-      : []
+    assignableRoles: nyxAssignableRolesForActor(actor, ownerUid)
   };
 }
 
@@ -6692,6 +6696,7 @@ app.get("/api/account/me", async (req, res) => {
       emailVerified: Boolean(account.emailVerified),
       role,
       owner: access.owner,
+      founder: access.founder,
       dashboard: access.dashboard,
       permissions: access.permissions,
       subscriptionStatus,
@@ -7312,6 +7317,7 @@ app.get(["/api/chat/moderation/search-history", "/api/chat/moderation/flagged-se
       : collection.orderBy("createdAtMs", "desc").limit(250))
       .get();
     const ownerUid = founderProfileConfig().administratorUid;
+    const founderViewer = identity.role === "owner" && identity.uid === ownerUid;
     const searchUids = [...new Set(snapshot.docs.map(document => String(document.data()?.uid || "")).filter(uid => /^[A-Za-z0-9_-]{8,128}$/.test(uid)))];
     const [searchAdministration, customRoles] = await Promise.all([
       firestoreDocumentsById(firebase.firestore, "nyxUserAdministration", searchUids),
@@ -7324,7 +7330,7 @@ app.get(["/api/chat/moderation/search-history", "/api/chat/moderation/flagged-se
       const storedUid = String(data.uid || "");
       const administration = searchAdministration.get(storedUid) || { role: storedRole };
       const actualRole = nyxRoleForUser(storedUid, administration, ownerUid);
-      if (identity.role !== "owner" && actualRole === "owner") return [];
+      if (actualRole === "owner" && storedUid !== identity.uid && !founderViewer) return [];
       const presentation = nyxRolePresentation(actualRole, nyxAssignedCustomRole(administration, customRoles), storedUid, identity.uid, ownerUid);
       return [{
         id: document.id,
@@ -8766,6 +8772,7 @@ app.post("/api/activity/heartbeat", async (req, res) => {
       onlineUntil: new Date(now + signedInOnlineWindowMs).toISOString(),
       role,
       owner: access.owner,
+      founder: access.founder,
       dashboard: access.dashboard,
       permissions: access.permissions,
       subscriptionStatus,
@@ -9576,7 +9583,7 @@ app.put("/api/founder-profile", async (req, res) => {
     return;
   }
   const access = await verifiedFounderOwner(req);
-  if (!access.owner) {
+  if (!access.founder) {
     res.status(403).json({ error: "Only the signed-in founder account can publish this profile." });
     return;
   }

@@ -9876,10 +9876,6 @@ if (isDirectRun) {
     console.log("  chat realtime: same-host /socket.io/");
     console.log(`  static root: ${staticRoot}`);
     if (!externalWispUrl) console.log(embeddedWispAllowedOrigins.length ? `  allowed Wisp origins: ${embeddedWispAllowedOrigins.join(", ")}` : "  warning: embedded Wisp accepts every browser origin");
-    const mediaWarmup = setTimeout(() => {
-      void nyxifyPreferredSearch("global hits", 20).then(results => primeNyxifyAssets(results, { audio: true })).catch(() => {});
-    }, 250);
-    mediaWarmup.unref();
   });
 
   let shuttingDown = false;

@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <title>Nyxify</title>
   <link rel="icon" href="/assets/icons/shortcut-spotify.svg?v=1" type="image/svg+xml">
-  <link rel="stylesheet" href="/apps/nyxify/app.css?v=20260814-nyxify-v6">
+  <link rel="stylesheet" href="/apps/nyxify/app.css?v=20260814-nyxify-v7">
 </head>
 <body>
   <svg class="nyxify-symbols" aria-hidden="true">
@@ -72,12 +72,7 @@
           </div>
         </section>
 
-        <section class="nyxify-shelf">
-          <header><span><small>DISCOVER</small><h2>Popular tracks</h2></span><button type="button" data-show-popular>Show all</button></header>
-          <div class="nyxify-track-row" data-home-popular><div class="nyxify-skeleton-row" aria-label="Loading popular tracks"></div></div>
-        </section>
-
-        <section class="nyxify-shelf">
+        <section class="nyxify-shelf" data-home-artists-shelf hidden>
           <header><span><small>ARTISTS</small><h2>Artists to explore</h2></span></header>
           <div class="nyxify-artist-row" data-home-artists></div>
         </section>
@@ -130,6 +125,6 @@
       <div data-queue-list></div>
     </aside>
   </div>
-  <script src="/apps/nyxify/app.js?v=20260814-nyxify-v6"></script>
+  <script src="/apps/nyxify/app.js?v=20260814-nyxify-v7"></script>
 </body>
 </html>

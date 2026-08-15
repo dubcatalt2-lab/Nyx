@@ -35,7 +35,6 @@
 
   const state = {
     results: [],
-    discovery: [],
     recent: readList(recentKey, 24),
     liked: readList(likedKey, 100),
     playlists: readPlaylists(),
@@ -43,9 +42,7 @@
     current: null,
     shuffled: false,
     repeat: 0,
-    activeView: "home",
-    discoveryLoaded: false,
-    discoveryBusy: false
+    activeView: "home"
   };
 
   const refs = {
@@ -65,9 +62,8 @@
     notice: document.querySelector("[data-notice]"),
     homeView: document.querySelector("[data-home-view]"),
     browseView: document.querySelector("[data-browse-view]"),
-    homePopular: document.querySelector("[data-home-popular]"),
+    homeArtistsShelf: document.querySelector("[data-home-artists-shelf]"),
     homeArtists: document.querySelector("[data-home-artists]"),
-    showPopular: document.querySelector("[data-show-popular]"),
     title: document.querySelector("[data-section-title]"),
     count: document.querySelector("[data-result-count]"),
     results: document.querySelector("[data-results]"),
@@ -339,7 +335,7 @@
     refs.homeView.hidden = false;
     refs.browseView.hidden = true;
     setNotice("");
-    if (!state.discoveryLoaded && !state.discoveryBusy) void loadDiscovery();
+    renderArtists(state.recent);
   }
 
   function renderBrowse(items, title) {
@@ -387,9 +383,7 @@
     return button;
   }
 
-  function renderDiscovery(tracks) {
-    state.discovery = tracks;
-    refs.homePopular.replaceChildren(...tracks.slice(0, 7).map((track, index) => card(track, index, tracks)));
+  function renderArtists(tracks) {
     const seen = new Set();
     const artists = [];
     tracks.forEach(track => {
@@ -399,26 +393,9 @@
       seen.add(key);
       artists.push({ name, thumbnail: track.thumbnail });
     });
-    refs.homeArtists.replaceChildren(...artists.slice(0, 7).map(artistButton));
-  }
-
-  async function loadDiscovery() {
-    state.discoveryBusy = true;
-    try {
-      const payload = await fetchJson("/api/nyxify/search?q=global%20hits&limit=20");
-      const tracks = Array.isArray(payload?.results) ? payload.results : [];
-      if (tracks.length) {
-        state.discoveryLoaded = true;
-        renderDiscovery(tracks);
-      } else if (state.recent.length) {
-        renderDiscovery(state.recent);
-      }
-    } catch {
-      if (state.recent.length) renderDiscovery(state.recent);
-      else refs.homePopular.innerHTML = '<div class="nyxify-empty"><strong>Discovery is taking a break</strong><span>Search for a song or artist to keep listening.</span></div>';
-    } finally {
-      state.discoveryBusy = false;
-    }
+    const visibleArtists = artists.slice(0, 7);
+    refs.homeArtistsShelf.hidden = !visibleArtists.length;
+    refs.homeArtists.replaceChildren(...visibleArtists.map(artistButton));
   }
 
   async function playTrack(index) {
@@ -493,7 +470,6 @@
     refs.input.value = query;
     void search(query);
   }));
-  refs.showPopular.addEventListener("click", () => renderBrowse(state.discovery, "Popular tracks"));
   refs.createPlaylists.forEach(button => button.addEventListener("click", () => createPlaylist()));
   refs.back.forEach(button => button.addEventListener("click", () => {
     if (window.parent !== window) window.parent.postMessage({ type: "nyx:close-tab" }, location.origin);
@@ -501,7 +477,6 @@
   }));
   refs.toggle.addEventListener("click", () => {
     if (!state.current && state.results.length) { void playTrack(0); return; }
-    if (!state.current && state.discovery.length) { playFromCollection(state.discovery[0], state.discovery); return; }
     if (refs.audio.paused) void refs.audio.play(); else refs.audio.pause();
   });
   refs.previous.addEventListener("click", () => {

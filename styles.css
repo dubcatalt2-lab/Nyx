@@ -4033,13 +4033,13 @@ html[data-nyx-theme] body .nyx-profile-directory-card-host .nyx-user-profile-abo
   inset:0!important;
   overflow:hidden!important;
   border-radius:inherit;
-  opacity:.94!important;
+  opacity:.94;
   pointer-events:none!important;
   background:url("assets/profile/rose-vines.svg") left bottom/100% 100% no-repeat!important;
   filter:drop-shadow(0 2px 2px rgba(0,0,0,.46));
   transform:translateZ(0);
   transform-origin:left bottom;
-  animation:nyx-rose-vines-grow 1.35s cubic-bezier(.18,.78,.24,1) both,nyx-rose-vines-rest 7s ease-in-out 1.35s infinite;
+  animation:nyx-rose-vines-grow 3.2s cubic-bezier(.18,.72,.22,1) both,nyx-rose-vines-rest 8s ease-in-out 3.2s infinite;
 }
 .nyx-user-profile-effect-blooming-roses .nyx-user-profile-effect::before,
 .nyx-founder-effect-blooming-roses .nyx-founder-profile-effect::before{
@@ -4047,16 +4047,35 @@ html[data-nyx-theme] body .nyx-profile-directory-card-host .nyx-user-profile-abo
 }
 .nyx-user-profile-effect-blooming-roses .nyx-user-profile-effect::after,
 .nyx-founder-effect-blooming-roses .nyx-founder-profile-effect::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:url("assets/profile/rose-blooms.svg") left bottom/100% 100% no-repeat;
-  filter:drop-shadow(0 2px 2px rgba(0,0,0,.5));
-  opacity:0;
-  transform:scale(.94);
-  transform-origin:left bottom;
-  animation:nyx-roses-bloom .9s cubic-bezier(.16,.82,.25,1) .7s both,nyx-roses-rest 6.4s ease-in-out 1.6s infinite;
+  display:none!important;
 }
+.nyx-rose-bloom-stage{position:absolute;inset:0;display:block;pointer-events:none}
+.nyx-rose-bloom{
+  --nyx-rose-size:22px;
+  --nyx-rose-delay:1.55s;
+  --nyx-rose-turn:-8deg;
+  position:absolute;
+  left:4%;
+  top:97%;
+  display:block;
+  width:var(--nyx-rose-size);
+  height:var(--nyx-rose-size);
+  opacity:0;
+  background:url("assets/profile/rose-bloom.svg") center/contain no-repeat;
+  clip-path:circle(0 at 50% 50%);
+  filter:drop-shadow(0 2px 2px rgba(0,0,0,.52));
+  transform:translate(-50%,-50%) scale(.05) rotate(var(--nyx-rose-turn));
+  transform-origin:50% 50%;
+  animation:nyx-rose-bloom-open 1.9s cubic-bezier(.2,.72,.18,1) var(--nyx-rose-delay) both,nyx-rose-bloom-rest 7s ease-in-out calc(var(--nyx-rose-delay) + 1.9s) infinite;
+}
+.nyx-rose-bloom-1{--nyx-rose-size:17px;--nyx-rose-delay:3.05s;--nyx-rose-turn:-13deg;left:4.8%;top:68.6%}
+.nyx-rose-bloom-2{--nyx-rose-size:20px;--nyx-rose-delay:2.55s;--nyx-rose-turn:9deg;left:3.1%;top:81%}
+.nyx-rose-bloom-3{--nyx-rose-size:24px;--nyx-rose-delay:1.55s;--nyx-rose-turn:-7deg;left:4%;top:97%}
+.nyx-rose-bloom-4{--nyx-rose-size:19px;--nyx-rose-delay:1.85s;--nyx-rose-turn:8deg;left:13.6%;top:98%}
+.nyx-rose-bloom-5{--nyx-rose-size:26px;--nyx-rose-delay:2.15s;--nyx-rose-turn:-4deg;left:25%;top:98%}
+.nyx-rose-bloom-6{--nyx-rose-size:18px;--nyx-rose-delay:2.45s;--nyx-rose-turn:11deg;left:40.7%;top:98%}
+.nyx-rose-bloom-7{--nyx-rose-size:18px;--nyx-rose-delay:2.8s;--nyx-rose-turn:-10deg;left:89.8%;top:98%}
+.nyx-rose-bloom-8{--nyx-rose-size:22px;--nyx-rose-delay:3.1s;--nyx-rose-turn:7deg;left:96.8%;top:97.6%}
 .nyx-user-profile-card.nyx-user-profile-effect-blooming-roses .nyx-user-profile-chrome{z-index:5!important}
 .nyx-user-profile-card.nyx-user-profile-effect-blooming-roses .nyx-user-profile-body{z-index:4!important}
 .nyx-editor-menu-preview.nyx-user-profile-effect-blooming-roses>.nyx-account-menu-profile-effect{z-index:6!important;inset:0!important}
@@ -4084,22 +4103,25 @@ html[data-nyx-theme] body .nyx-profile-directory-card-host .nyx-user-profile-abo
 .nyx-avatar-decoration-candlelight>.nyx-avatar-decoration>span{display:none!important}
 
 @keyframes nyx-rose-vines-grow{
-  0%{clip-path:inset(100% 0 0 0);opacity:0}
-  18%{opacity:.72}
+  0%{clip-path:inset(100% 0 0 0);opacity:0;filter:drop-shadow(0 2px 1px rgba(0,0,0,.35))}
+  12%{opacity:.68}
+  64%{opacity:.9}
   100%{clip-path:inset(0);opacity:.94}
 }
 @keyframes nyx-rose-vines-rest{
   0%,100%{filter:drop-shadow(0 2px 2px rgba(0,0,0,.46))}
   50%{filter:drop-shadow(0 2px 3px rgba(0,0,0,.55)) brightness(1.035)}
 }
-@keyframes nyx-roses-bloom{
-  0%{opacity:0;transform:scale(.84)}
-  72%{opacity:1;transform:scale(1.025)}
-  100%{opacity:1;transform:scale(1)}
+@keyframes nyx-rose-bloom-open{
+  0%{opacity:0;clip-path:circle(0 at 50% 50%);transform:translate(-50%,-50%) scale(.05) rotate(calc(var(--nyx-rose-turn) - 9deg))}
+  16%{opacity:.88;clip-path:circle(16% at 50% 50%);transform:translate(-50%,-50%) scale(.16) rotate(calc(var(--nyx-rose-turn) - 5deg))}
+  43%{opacity:1;clip-path:circle(27% at 50% 50%);transform:translate(-50%,-50%) scale(.34) rotate(calc(var(--nyx-rose-turn) - 2deg))}
+  78%{opacity:1;clip-path:circle(72% at 50% 50%);transform:translate(-50%,-50%) scale(1.08) rotate(calc(var(--nyx-rose-turn) + 1deg))}
+  100%{opacity:1;clip-path:circle(72% at 50% 50%);transform:translate(-50%,-50%) scale(1) rotate(var(--nyx-rose-turn))}
 }
-@keyframes nyx-roses-rest{
-  0%,100%{transform:scale(1);filter:drop-shadow(0 2px 2px rgba(0,0,0,.5))}
-  50%{transform:scale(1.008);filter:drop-shadow(0 2px 3px rgba(0,0,0,.56)) brightness(1.025)}
+@keyframes nyx-rose-bloom-rest{
+  0%,100%{opacity:1;clip-path:circle(72% at 50% 50%);transform:translate(-50%,-50%) scale(1) rotate(var(--nyx-rose-turn));filter:drop-shadow(0 2px 2px rgba(0,0,0,.52))}
+  50%{opacity:1;clip-path:circle(72% at 50% 50%);transform:translate(-50%,-50%) scale(1.025) rotate(calc(var(--nyx-rose-turn) + 1deg));filter:drop-shadow(0 2px 3px rgba(0,0,0,.58)) brightness(1.025)}
 }
 @keyframes nyx-candle-burn{
   0%{filter:drop-shadow(-1px -2px 4px rgba(255,185,76,.74)) drop-shadow(0 4px 3px rgba(0,0,0,.5));translate:0 0}
@@ -4113,8 +4135,10 @@ html[data-nyx-theme] body .nyx-profile-directory-card-host .nyx-user-profile-abo
   .nyx-founder-effect-blooming-roses .nyx-founder-profile-effect,
   .nyx-founder-effect-blooming-roses .nyx-founder-profile-effect::before,
   .nyx-founder-effect-blooming-roses .nyx-founder-profile-effect::after,
+  .nyx-rose-bloom,
   .nyx-avatar-decoration-candlelight>.nyx-avatar-decoration::before,
   .nyx-avatar-decoration-candlelight>.nyx-avatar-decoration::after{animation:none!important;clip-path:none!important;opacity:1!important}
+  .nyx-rose-bloom{transform:translate(-50%,-50%) scale(1) rotate(var(--nyx-rose-turn))!important}
 }
 
 /* These two cosmetics are deliberately lightweight. Let them replay when a
@@ -4124,11 +4148,10 @@ html[data-nyx-theme] body .nyx-profile-directory-card-host .nyx-user-profile-abo
 @media(prefers-reduced-motion:no-preference){
   body.lag-reducer .nyx-user-profile-effect-blooming-roses .nyx-user-profile-effect,
   body.lag-reducer .nyx-founder-effect-blooming-roses .nyx-founder-profile-effect{
-    animation:nyx-rose-vines-grow 1.35s cubic-bezier(.18,.78,.24,1) both,nyx-rose-vines-rest 7s ease-in-out 1.35s infinite!important;
+    animation:nyx-rose-vines-grow 3.2s cubic-bezier(.18,.72,.22,1) both,nyx-rose-vines-rest 8s ease-in-out 3.2s infinite!important;
   }
-  body.lag-reducer .nyx-user-profile-effect-blooming-roses .nyx-user-profile-effect::after,
-  body.lag-reducer .nyx-founder-effect-blooming-roses .nyx-founder-profile-effect::after{
-    animation:nyx-roses-bloom .9s cubic-bezier(.16,.82,.25,1) .7s both,nyx-roses-rest 6.4s ease-in-out 1.6s infinite!important;
+  body.lag-reducer .nyx-rose-bloom{
+    animation:nyx-rose-bloom-open 1.9s cubic-bezier(.2,.72,.18,1) var(--nyx-rose-delay) both,nyx-rose-bloom-rest 7s ease-in-out calc(var(--nyx-rose-delay) + 1.9s) infinite!important;
   }
   body.lag-reducer .nyx-avatar-decoration-candlelight>.nyx-avatar-decoration::before,
   body.lag-reducer .nyx-avatar-decoration-candlelight>.nyx-avatar-decoration::after{
@@ -4145,11 +4168,4 @@ html[data-nyx-theme] body .nyx-profile-directory-card-host .nyx-user-profile-abo
 .nyx-account-menu:not(.nyx-editor-menu-preview) .nyx-account-menu-avatar>.nyx-avatar-decoration{
   display:none!important;
   animation:none!important;
-}
-
-/* The cleaned simple cosmetics are safe in the compact account card. Keep
-   the blanket above for retired/experimental values, then opt these two in. */
-.nyx-account-menu:not(.nyx-editor-menu-preview).nyx-user-profile-effect-blooming-roses>.nyx-account-menu-profile-effect,
-.nyx-account-menu:not(.nyx-editor-menu-preview) .nyx-account-menu-avatar.nyx-avatar-decoration-candlelight>.nyx-avatar-decoration{
-  display:block!important;
 }

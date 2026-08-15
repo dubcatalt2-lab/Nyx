@@ -206,6 +206,8 @@ button:disabled{cursor:not-allowed}
 .ai-profile-copy{min-width:0;display:grid;gap:3px}
 .ai-profile-copy strong,.ai-profile-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ai-profile-copy strong{color:var(--ai-text-soft);font-size:11px;font-weight:600}
+.ai-profile-copy strong>span{display:inline}
+.ai-profile-copy strong .ai-minecraft-magic{font-family:var(--ai-font-mono);letter-spacing:.02em;text-shadow:0 0 5px currentColor}
 .ai-profile-copy small{color:var(--ai-muted-dark);font-size:9px}
 .ai-profile-chevron{width:15px;height:15px;fill:none;stroke:var(--ai-muted-dark);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;transition:transform 160ms ease,stroke 160ms ease}
 .ai-profile-button:hover .ai-profile-chevron{transform:translateX(2px);stroke:var(--ai-accent-bright)}

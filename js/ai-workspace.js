@@ -709,14 +709,63 @@
     input.focus();
   }
 
+  const PROFILE_MINECRAFT_COLORS=Object.freeze({
+    '0':'#000000','1':'#0000aa','2':'#00aa00','3':'#00aaaa',
+    '4':'#aa0000','5':'#aa00aa','6':'#ffaa00','7':'#aaaaaa',
+    '8':'#555555','9':'#5555ff',a:'#55ff55',b:'#55ffff',
+    c:'#ff5555',d:'#ff55ff',e:'#ffff55',f:'#ffffff'
+  });
+
+  function visibleProfileName(value){
+    return String(value||'').replace(/&[0-9a-fklmnor]/gi,'').trim();
+  }
+
+  function renderProfileName(element,value){
+    const source=String(value||'');
+    const pattern=/&([0-9a-fklmnor])/gi;
+    const fragment=document.createDocumentFragment();
+    let cursor=0;
+    let match;
+    let style={};
+    const append=text=>{
+      if(!text) return;
+      const span=document.createElement('span');
+      span.textContent=text;
+      if(style.color) span.style.color=style.color;
+      if(style.bold) span.style.fontWeight='900';
+      if(style.italic) span.style.fontStyle='italic';
+      const decorations=[];
+      if(style.underline) decorations.push('underline');
+      if(style.strike) decorations.push('line-through');
+      if(decorations.length) span.style.textDecoration=decorations.join(' ');
+      if(style.magic) span.classList.add('ai-minecraft-magic');
+      fragment.append(span);
+    };
+    while((match=pattern.exec(source))){
+      append(source.slice(cursor,match.index));
+      cursor=pattern.lastIndex;
+      const code=match[1].toLowerCase();
+      if(PROFILE_MINECRAFT_COLORS[code]) style={color:PROFILE_MINECRAFT_COLORS[code]};
+      else if(code==='l') style.bold=true;
+      else if(code==='o') style.italic=true;
+      else if(code==='n') style.underline=true;
+      else if(code==='m') style.strike=true;
+      else if(code==='k') style.magic=true;
+      else if(code==='r') style={};
+    }
+    append(source.slice(cursor));
+    element.replaceChildren(fragment);
+    element.title=visibleProfileName(source)||'Profile';
+  }
+
   function updateProfile(profile={}){
     const fallbackName=String(localStorage.getItem('nyx.userName')||'Profile').trim()||'Profile';
     const name=String(profile.displayName||fallbackName).trim()||'Profile';
     const handle=String(profile.handle||'Open your Nyx profile').trim();
     const avatar=String(profile.avatarUrl||'').trim();
-    profileName.textContent=name;
+    renderProfileName(profileName,name);
     profileHandle.textContent=handle;
-    profileInitial.textContent=(name[0]||'N').toUpperCase();
+    profileInitial.textContent=(Array.from(visibleProfileName(name))[0]||'N').toUpperCase();
     if(/^(?:https?:|blob:|data:image\/|\/)/i.test(avatar)){
       profileAvatar.src=avatar;
       profileAvatar.hidden=false;

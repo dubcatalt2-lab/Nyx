@@ -327,7 +327,7 @@
 
   function isBlockStart(lines,index){
     const line=lines[index]||'';
-    return /^```/.test(line)||/^#{1,3}\s+/.test(line)||/^>\s?/.test(line)||/^\s*[-*+]\s+/.test(line)||/^\s*\d+[.)]\s+/.test(line)||/^\s*(?:---+|___+)\s*$/.test(line)||(line.includes('|')&&isTableDivider(lines[index+1]||''));
+    return /^```/.test(line)||/^#{1,3}\s+/.test(line)||/^>\s?/.test(line)||/^\s*[-*+]\s+/.test(line)||/^\s*\d+[.)]\s+/.test(line)||/^\s*(?:---+|___+)\s*$/.test(line)||line.includes('\t')||(line.includes('|')&&isTableDivider(lines[index+1]||''));
   }
 
   function markdown(value){

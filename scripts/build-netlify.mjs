@@ -145,6 +145,9 @@ async function writePatchedRuntimes(wispUrl) {
       ["/uv/uv.bundle.js", "uv/uv.bundle.js"],
       ["/baremux/index.mjs", "baremux/index.mjs"],
       ["/scramjet/scramjet.js", "scramjet/scramjet.js"],
+      ["/controller/controller.api.js", "controller/controller.api.js"],
+      ["/controller/controller.inject.js", "controller/controller.inject.js"],
+      ["/controller/controller.sw.js", "controller/controller.sw.js"],
       ["/nyx-scramjet-runtime-guard.js", "nyx-scramjet-runtime-guard.js"]
     ]);
     for (const [route, destination] of routes) {
@@ -196,6 +199,13 @@ async function removeUnavailableUgsEntries() {
   }
   await writeFile(catalogPath, JSON.stringify(available));
   console.log(`UGS catalog: ${available.length}/${games.length} deployable games`);
+}
+
+async function copyKatex() {
+  const source = join(dirname(require.resolve("katex/package.json")), "dist");
+  const destination = join(output, "assets", "vendor", "katex");
+  await mkdir(dirname(destination), { recursive: true });
+  await cp(source, destination, { recursive: true, force: true });
 }
 
 function runtimeMangleOptions(topLevel) {
@@ -287,6 +297,7 @@ async function main() {
   await mkdir(output, { recursive: true });
   await copyRepositoryStaticFiles();
   await copyEruda();
+  await copyKatex();
   await copyProxyRuntimes();
   await writePatchedRuntimes(wispUrl);
   await configureUv(wispUrl);

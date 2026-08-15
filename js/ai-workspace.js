@@ -263,11 +263,46 @@
     return window.NyxLogo?.apply(theme||localStorage.getItem('nyx.theme')||'default',document).catch?.(()=>{});
   }
 
+  function mathMarkup(value,displayMode=false){
+    const source=String(value??'').trim();
+    if(!source) return '';
+    try{
+      if(window.katex?.renderToString){
+        return window.katex.renderToString(source,{
+          displayMode:Boolean(displayMode),
+          throwOnError:false,
+          strict:'ignore',
+          trust:false,
+          output:'htmlAndMathml'
+        });
+      }
+    }catch(error){
+      console.warn('Nyx AI could not render math:',error);
+    }
+    const readable=source
+      .replace(/\\text\{([^{}]*)\}/g,'$1')
+      .replace(/\\[,;:!]/g,' ')
+      .replace(/\\(?:quad|qquad)\b/g,' ')
+      .replace(/\\(?:times|cdot)/g,' × ')
+      .replace(/\\leq?/g,'≤')
+      .replace(/\\geq?/g,'≥')
+      .replace(/\\neq/g,'≠')
+      .replace(/\\pm/g,'±')
+      .replace(/[{}]/g,'');
+    return `<span class="ai-math-fallback">${escapeHtml(readable)}</span>`;
+  }
+
   function inlineMarkdown(value){
     const code=[];
     let source=String(value??'').replace(/`([^`\n]+)`/g,(_match,text)=>{
       const token=`@@NYX_INLINE_${code.length}@@`;
       code.push(`<code>${escapeHtml(text)}</code>`);
+      return token;
+    });
+    const math=[];
+    source=source.replace(/\\\[([^\n]*?)\\\]|\\\(([^\n]*?)\\\)/g,(_match,display,inline)=>{
+      const token=`@@NYX_MATH_${math.length}@@`;
+      math.push(mathMarkup(display??inline,false));
       return token;
     });
     let html=escapeHtml(source);
@@ -276,6 +311,7 @@
     html=html.replace(/__([^_\n]+)__/g,'<strong>$1</strong>');
     html=html.replace(/~~([^~\n]+)~~/g,'<s>$1</s>');
     html=html.replace(/(^|[^*])\*([^*\n]+)\*/g,'$1<em>$2</em>');
+    math.forEach((token,index)=>{html=html.replace(`@@NYX_MATH_${index}@@`,token)});
     code.forEach((token,index)=>{html=html.replace(`@@NYX_INLINE_${index}@@`,token)});
     return html;
   }
@@ -309,6 +345,29 @@
         while(index<lines.length&&!/^```\s*$/.test(lines[index])){code.push(lines[index]);index+=1}
         if(index<lines.length) index+=1;
         blocks.push(`<div class="ai-code-block"><div class="ai-code-head"><span>${escapeHtml(language)}</span><button class="ai-code-copy" type="button" data-copy-code aria-label="Copy code"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"/></svg><span>Copy</span></button></div><pre><code>${escapeHtml(code.join('\n'))}</code></pre></div>`);
+        continue;
+      }
+
+      const displayMath=line.match(/^\s*(?:\\\[([\s\S]*?)\\\]|\$\$([\s\S]*?)\$\$)\s*$/);
+      if(displayMath){
+        blocks.push(`<div class="ai-math-block">${mathMarkup(displayMath[1]??displayMath[2],true)}</div>`);
+        index+=1;
+        continue;
+      }
+
+      if(line.includes('\t')){
+        const rows=[];
+        while(index<lines.length&&lines[index].includes('\t')&&lines[index].trim()){
+          rows.push(lines[index].split(/\t+/).map(cell=>cell.trim()));
+          index+=1;
+        }
+        const width=Math.max(0,...rows.map(row=>row.length));
+        if(rows.length>1&&width>1){
+          const headers=rows.shift();
+          blocks.push(`<div class="ai-table-wrap"><table><thead><tr>${Array.from({length:width},(_item,cellIndex)=>`<th>${inlineMarkdown(headers[cellIndex]||'')}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${Array.from({length:width},(_item,cellIndex)=>`<td>${inlineMarkdown(row[cellIndex]||'')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`);
+          continue;
+        }
+        blocks.push(`<p>${rows.flat().map(inlineMarkdown).join('<br>')}</p>`);
         continue;
       }
 
@@ -801,10 +860,14 @@
       if(status) status.title=`${next.length} models available`;
     }catch(error){
       console.warn('Nyx AI model catalog could not be loaded:',error);
-      if(status){status.classList.add('is-warning');status.title='Using the default model'}
+      modelCatalog=[];
+      renderModelOptions([],"");
+      modelSelected.textContent='Models unavailable';
+      if(status){status.classList.add('is-warning');status.title='The model list could not be verified'}
     }finally{
-      model.disabled=false;
-      modelTrigger.disabled=false;
+      const available=modelCatalog.length>0;
+      model.disabled=!available;
+      modelTrigger.disabled=!available;
       modelTrigger.removeAttribute('aria-busy');
     }
   }

@@ -2097,6 +2097,7 @@
     'duck.ai':localIcon('duck-ai-logo.png'),
     'nyx-ai':localIcon('shortcut-nyx-ai.svg?v=3'),
     'nyxify':localIcon('shortcut-spotify.svg?v=1'),
+    'aether.cx':localIcon('theatre-masks.svg?v=1'),
     'nyx-chat':localIcon('chat.svg?v=1'),
     'link-checker':localIcon('link-checker.svg?v=2'),
     'link-generator':localIcon('link-generator.svg'),
@@ -2252,6 +2253,7 @@
   let antiCloseConfirmHandler = null, antiCloseGestureHandler = null, antiCloseRearmTimer = null, antiCloseHadGesture = false;
   let renderedChromeMode = '';
   let uvInstallPromise = null;
+  let uvRegistration = null;
   let scramjetInstallPromise = null;
   let scramjetController = null;
   let bareMuxConnection = null;
@@ -2260,6 +2262,41 @@
   let browserTransportOverride = '';
   let scramjetInstallError = '';
   let nyxPresenceCount = null;
+  const proxyPrivacyGuardSource=`(() => {
+    if (typeof globalThis === "undefined" || globalThis.__nyxProxyPrivacyInstalled) return;
+    globalThis.__nyxProxyPrivacyInstalled = true;
+    const denied = Object.freeze({ code: 1, message: "Location access is disabled in Nyx private tabs." });
+    const fail = callback => {
+      if (typeof callback === "function") queueMicrotask(() => callback(denied));
+    };
+    const geolocation = Object.freeze({
+      getCurrentPosition(_success, error) { fail(error); },
+      watchPosition(_success, error) { fail(error); return 0; },
+      clearWatch() {}
+    });
+    try { Object.defineProperty(Navigator.prototype, "geolocation", { configurable: true, get: () => geolocation }); } catch {}
+    try { Object.defineProperty(navigator, "geolocation", { configurable: true, get: () => geolocation }); } catch {}
+    const nativeQuery = navigator.permissions?.query?.bind(navigator.permissions);
+    if (nativeQuery) {
+      try {
+        navigator.permissions.query = descriptor => {
+          if (String(descriptor?.name || "").toLowerCase() === "geolocation") {
+            const status = new EventTarget();
+            Object.defineProperties(status, {
+              state: { enumerable: true, value: "denied" },
+              onchange: { configurable: true, writable: true, value: null }
+            });
+            return Promise.resolve(status);
+          }
+          return nativeQuery(descriptor);
+        };
+      } catch {}
+    }
+  })();`;
+  function createProxyPrivacySessionId(){
+    const random=crypto.randomUUID?.() || `${Date.now()}_${Math.random().toString(36).slice(2)}_${Math.random().toString(36).slice(2)}`;
+    return `nyx_${String(random).replace(/[^a-z0-9_-]/gi,'_').slice(0,72)}`;
+  }
   //scramjet-runtime-guard
   let scramjetRuntimeGuardSource = '';
   const scramjetSpotifyChromeOsGuardSource=`(() => {
@@ -2549,9 +2586,9 @@
       window.$scramjet$pushsourcemap = window.$scramjet$pushsourcemap || noop;
     } catch {}
   })();`;
-  const proxyStateVersion='nyx-proxy-state-20260805-uv-unity-callback-v12';
-  const scramjetStateVersion='nyx-scramjet-state-20260716-alpha2-spotify-epoxy-v1';
-  const scramjetServiceWorkerUrl='/scramjet.sw.js?v=nyx-sj-20260812-route-revive-v2';
+  const proxyStateVersion='nyx-proxy-state-20260814-private-tabs-v13';
+  const scramjetStateVersion='nyx-scramjet-state-20260814-private-tabs-v2';
+  const scramjetServiceWorkerUrl='/scramjet.sw.js?v=nyx-sj-20260814-private-tabs-v3';
   function installNyxConsoleDedupe(scope='top'){
     if(console.__nyxDedupeInstalled) return;
     const seen=new Map();
@@ -5673,11 +5710,11 @@
   function rhBuildUrl(base,id,url){
     return base + id + '/' + url;
   }
-  function proxyModeUrl(mode,url){
+  function proxyModeUrl(mode,url,privacySessionId=''){
     mode=normalizeBrowserModeName(mode);
     const target=proxyTargetUrl(url);
     if(!target) return url;
-    if(mode==='ultraviolet') return nativeUvUrl(target) || target;
+    if(mode==='ultraviolet') return nativeUvUrl(target,privacySessionId) || target;
     if(mode==='scramjet') return scramjetUrl(target) || target;
     return url;
   }
@@ -5847,12 +5884,14 @@
       return parsed.href;
     }catch{return url}
   }
-  function nativeUvUrl(url){
+  function nativeUvUrl(url,privacySessionId=''){
     const target=proxyTargetUrl(url);
     if(!target) return '';
     const config=window.__uv$config;
     if(!config || typeof config.encodeUrl!=='function' || !config.prefix) return '';
-    return config.prefix + config.encodeUrl(target);
+    const session=/^nyx_[a-z0-9_-]{12,80}$/i.test(String(privacySessionId || '')) ? String(privacySessionId) : '';
+    const prefix=session ? `/service/${session}/` : config.prefix;
+    return prefix + config.encodeUrl(target);
   }
   function scramjetUrl(url){
     const target=proxyTargetUrl(url);
@@ -6127,6 +6166,44 @@
       scramjetConfig:scramjetRuntimeConfig()
     });
   }
+  async function createPrivateScramjetController(){
+    const base=scramjetController;
+    if(!base?.serviceWorkerController || !base?.transport) throw new Error('Scramjet private session is unavailable');
+    const controller=createScramjetController(base.serviceWorkerController,base.transport);
+    await controller.wait();
+    controller.loadSavedCookies=async()=>{};
+    controller.persistCookies=async()=>{};
+    controller.cookieSyncDirty=false;
+    controller.cookieUpdatedAt=Date.now();
+    try{controller.cookieJar?.clear?.()}catch{}
+    try{controller.cookieSyncChannel?.close?.()}catch{}
+    return controller;
+  }
+  function destroyProxyPrivacySession(tab){
+    if(!tab) return;
+    const controller=tab.privateScramjetController;
+    if(controller){
+      try{controller.cookieJar?.clear?.()}catch{}
+      try{controller.frames?.splice?.(0,controller.frames.length)}catch{}
+      try{controller.cookieSyncChannel?.close?.()}catch{}
+      try{controller.port?.close?.()}catch{}
+      tab.privateScramjetController=null;
+      tab.privateScramjetControllerPromise=null;
+      tab.scramjetFrame=null;
+    }
+    const sessionId=String(tab.privacySessionId || '');
+    if(/^nyx_[a-z0-9_-]{12,80}$/i.test(sessionId) && navigator.serviceWorker){
+      const message={type:'nyx:destroy-proxy-session',sessionId};
+      if(uvRegistration?.active) uvRegistration.active.postMessage(message);
+      else navigator.serviceWorker.getRegistration('/service/').then(registration=>{
+        registration?.active?.postMessage?.(message);
+      }).catch(()=>{});
+    }
+  }
+  window.addEventListener('pagehide',event=>{
+    if(event.persisted) return;
+    activeBrowser?.tabs?.forEach?.(tab=>destroyProxyPrivacySession(tab));
+  });
   async function reconnectScramjetController(controller,serviceworker,transport){
     if(!controller || !serviceworker) return false;
     controller.setTransport?.(transport);
@@ -6807,6 +6884,7 @@
         await existing.unregister().catch(()=>null);
       }
       const registration=await navigator.serviceWorker.register(config.sw || '/uv.sw.js',{scope:config.prefix,updateViaCache:'none'});
+      uvRegistration=registration;
       await registration.update().catch(()=>null);
       await waitForServiceWorkerActive(registration,config.prefix);
       await installBareMuxTransport();
@@ -6935,6 +7013,10 @@
   }
   function closeWindowAnimated(win){
     if(!win || win.classList.contains('closing')) return;
+    if(activeBrowser?.win===win){
+      activeBrowser.tabs?.forEach?.(tab=>destroyProxyPrivacySession(tab));
+      activeBrowser=null;
+    }
     $('minimizedTray')?.querySelector(`[data-restore="${win.dataset.winId}"]`)?.remove();
     updateMinimizedDock();
     win.classList.add('closing');
@@ -7518,7 +7600,7 @@
       ['duck.ai','Duck AI','https://duck.ai/'],
       ['nyx-ai','Nyx AI','nyx://ai'],
       ['wikipedia.org','Wikipedia','https://www.wikipedia.org/'],
-      ['cineby.at','Cineby','https://cineby.at/'],
+      ['aether.cx','Movies','https://aether.cx/'],
       ['tiktok.com','TikTok','https://www.tiktok.com/'],
       ['instagram.com','Instagram','https://www.instagram.com/'],
       ['snapchat.com','Snapchat','https://www.snapchat.com/'],
@@ -7925,7 +8007,7 @@
       const frame=document.createElement('iframe'); frame.className='view';
       applyFrameInteractionPermissions(frame);
       win.querySelector('.browser-body').appendChild(frame);
-      const tab={id,title:'New Tab',url:'',icon:favicons.nyx,history:[],index:-1,frame,opening:true};
+      const tab={id,title:'New Tab',url:'',icon:favicons.nyx,history:[],index:-1,frame,opening:true,privacySessionId:createProxyPrivacySessionId()};
       state.tabs.push(tab);
       activate(id);
       if(openUrl) navigate(openUrl,forceMode);
@@ -8016,6 +8098,7 @@
         close(){
           const index=state.tabs.findIndex(tab=>tab.id===t.id);
           if(index<0) return;
+          destroyProxyPrivacySession(t);
           t.frame.remove();
           state.tabs.splice(index,1);
           this.closed=true;
@@ -8734,7 +8817,7 @@
         'youtu.be'
       ]);
     }
-    const browserFrameAllow='autoplay; encrypted-media; fullscreen; keyboard-map; gamepad; clipboard-read; clipboard-write; camera; microphone; display-capture; accelerometer; gyroscope; magnetometer; xr-spatial-tracking; payment; publickey-credentials-get; identity-credentials-get; private-state-token-issuance; private-state-token-redemption';
+    const browserFrameAllow="geolocation 'none'; autoplay; encrypted-media; fullscreen; keyboard-map; gamepad; clipboard-read; clipboard-write; camera; microphone; display-capture; accelerometer; gyroscope; magnetometer; xr-spatial-tracking; payment; publickey-credentials-get; identity-credentials-get; private-state-token-issuance; private-state-token-redemption";
     const browserFrameAltKeys=new Set(['l','d','t','w','r','arrowleft','arrowright','tab']);
     function isBrowserFrameAltShortcut(key){
       key=String(key || '').toLowerCase();
@@ -9021,7 +9104,7 @@
           console.warn('nyx enforcing selected Ultraviolet engine.', {sourceUrl, expectedEngine, reason});
           installUltraviolet().then(ok=>{
             if(!state.tabs.includes(t)) return;
-            const proxied=ok ? proxyModeUrl('ultraviolet',sourceUrl) : '';
+            const proxied=ok ? proxyModeUrl('ultraviolet',sourceUrl,t.privacySessionId) : '';
             if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',sourceUrl);
             else loadSelectedSearchFallback(t,sourceUrl,'selected Ultraviolet engine unavailable');
           });
@@ -9055,7 +9138,7 @@
         console.warn('nyx scramjet failed; switching this tab to ultraviolet.', {sourceUrl, reason});
         installUltraviolet().then(ok=>{
           if(!state.tabs.includes(t)) return;
-          const proxied=ok ? proxyModeUrl('ultraviolet',sourceUrl) : '';
+          const proxied=ok ? proxyModeUrl('ultraviolet',sourceUrl,t.privacySessionId) : '';
           if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',sourceUrl);
           else loadSelectedSearchFallback(t,sourceUrl,'ultraviolet unavailable after scramjet failure');
         });
@@ -9100,7 +9183,7 @@
         if(expectedEngine==='scramjet') loadScramjetTab(t,sourceUrl,false);
         else if(expectedEngine==='ultraviolet'){
           installUltraviolet().then(ok=>{
-            const proxied=ok ? proxyModeUrl('ultraviolet',sourceUrl) : '';
+            const proxied=ok ? proxyModeUrl('ultraviolet',sourceUrl,t.privacySessionId) : '';
             if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',sourceUrl);
           });
         }
@@ -9292,7 +9375,7 @@
             loadScramjetTab(t,retrySource,false);
             return;
           }
-          const proxied=proxyModeUrl('ultraviolet',retrySource);
+          const proxied=proxyModeUrl('ultraviolet',retrySource,t.privacySessionId);
           if(proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',retrySource);
         };
         watchUvPresentation(t,sourceUrl || requestedSource);
@@ -9349,7 +9432,7 @@
         }
       }
       const navigationIntent=t.navigationIntent || '';
-      installScramjet().then(ok=>{
+      installScramjet().then(async ok=>{
         if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
         if(!ok || !scramjetController){
           t.url=url;
@@ -9372,11 +9455,25 @@
           replaceTabFrame(t);
         }
         if(!t.scramjetFrame){
+          if(!t.privateScramjetControllerPromise){
+            t.privateScramjetControllerPromise=createPrivateScramjetController().then(controller=>{
+              t.privateScramjetController=controller;
+              return controller;
+            });
+          }
+          const privateController=await t.privateScramjetControllerPromise;
+          if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent){
+            destroyProxyPrivacySession(t);
+            return;
+          }
           setFrameSandbox(t,true);
           t.frame.removeAttribute('src');
           clearFrameDocument(t);
           installPopupBridge(t);
-          const plugins=[createScramjetCompatibilityPlugin('','proxy-sri')];
+          const plugins=[
+            createScramjetCompatibilityPlugin('','proxy-sri'),
+            createScramjetCompatibilityPlugin(proxyPrivacyGuardSource,'privacy')
+          ];
           if(guardMode==='full') plugins.push(createScramjetCompatibilityPlugin(scramjetRuntimeGuardSource,'runtime-guard'));
           else if(guardMode==='spotify-chromeos') plugins.push(createScramjetCompatibilityPlugin(scramjetSpotifyChromeOsGuardSource,'spotify-chromeos'));
           else if(guardMode==='minimal') plugins.push(createScramjetCompatibilityPlugin(scramjetMinimalRuntimeGuardSource,'minimal-guard'));
@@ -9388,7 +9485,7 @@
             plugins.push(createScramjetCompatibilityPlugin('', 'cineby-disable-devtool'));
           }
           t.scramjetRuntimeGuarded=guardMode;
-          t.scramjetFrame=scramjetController.createFrame(t.frame,{plugins});
+          t.scramjetFrame=privateController.createFrame(t.frame,{plugins});
           t.scramjetFrame.addEventListener?.('urlchange',event=>{
             const next=browserShellSourceUrl(String(event.url || '')) || String(event.url || '');
             if(!next) return;
@@ -9449,6 +9546,16 @@
             if(isScramjetPath && loadednyx) retryScramjetTab(t,url);
           }catch{}
         },1800);
+      }).catch(error=>{
+        if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
+        console.warn('Nyx private Scramjet tab could not start:',error);
+        destroyProxyPrivacySession(t);
+        t.actualEngine='scramjet-failed';
+        t.frame.dataset.nyxExpectedEngine='scramjet';
+        t.frame.dataset.nyxActualEngine='scramjet-failed';
+        setFrameSandbox(t,true);
+        clearFrameDocument(t);
+        t.frame.srcdoc=proxyFailureHtml('The private tab session could not start. Reload Nyx and try again.','Scramjet',{allowDirect:true});
       });
     }
     function waitForTabResultPaint(t,timeout=4200){
@@ -9557,12 +9664,12 @@
           setTabMeta(t,url,true);
           installUltraviolet().then(ok=>{
             if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-            const proxied=ok ? proxyModeUrl(mode,url) : '';
+            const proxied=ok ? proxyModeUrl(mode,url,t.privacySessionId) : '';
             if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',url);
             else loadScramjetTab(t,url,false);
           });
         }else{
-          loadTab(t,proxyModeUrl(mode,url),true,mode || 'iframe',url);
+          loadTab(t,proxyModeUrl(mode,url,t.privacySessionId),true,mode || 'iframe',url);
         }
         return;
       }
@@ -9620,7 +9727,7 @@
         setTabMeta(t,url,true);
         installUltraviolet().then(ok=>{
           if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-          const proxied=ok ? proxyModeUrl(mode,url) : '';
+          const proxied=ok ? proxyModeUrl(mode,url,t.privacySessionId) : '';
           if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',url);
           else{
             console.warn('nyx UV Engine requested but unavailable or produced a non-UV URL:', {ok, proxied, url});
@@ -9639,7 +9746,7 @@
           }
         });
       }else{
-        loadTab(t,proxyModeUrl(mode,url),true,mode || 'iframe',url);
+        loadTab(t,proxyModeUrl(mode,url,t.privacySessionId),true,mode || 'iframe',url);
       }
     }
     function goFrameHistory(direction){
@@ -9677,7 +9784,7 @@
         }else if(engine==='ultraviolet'){
           installUltraviolet().then(ok=>{
             if(!ok || !state.tabs.includes(t)) return;
-            const proxied=String(stored).startsWith('/service/') ? stored : proxyModeUrl('ultraviolet',source);
+            const proxied=String(stored).startsWith('/service/') ? stored : proxyModeUrl('ultraviolet',source,t.privacySessionId);
             loadTab(t,proxied,false,'ultraviolet',source);
           });
         }else{
@@ -9705,7 +9812,9 @@
       if(index<0) return false;
         const nextIndex=state.tabs.findIndex(t=>t.id===tabId);
         if(nextIndex<0) return;
-        state.tabs[nextIndex].frame.remove();
+        const closingTab=state.tabs[nextIndex];
+        destroyProxyPrivacySession(closingTab);
+        closingTab.frame.remove();
         state.tabs.splice(nextIndex,1);
         if(!state.tabs.length){
           if(keepBlank) addTab();

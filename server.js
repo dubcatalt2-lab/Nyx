@@ -24,6 +24,7 @@ const scramjetControllerPath = dirname(require.resolve("@mercuryworkshop/scramje
 const epoxyPath = join(dirname(require.resolve("@mercuryworkshop/epoxy-transport")), "..", "dist");
 const libcurlPath = dirname(require.resolve("@mercuryworkshop/libcurl-transport"));
 const erudaPath = require.resolve("eruda");
+const katexPath = join(dirname(require.resolve("katex/package.json")), "dist");
 let cinebyAppCache = { source: "", expires: 0 };
 const gameCoverLookupCache = new Map();
 let duckMathGamesCache = { games: [], expires: 0, promise: null };
@@ -1021,7 +1022,45 @@ function patchedUvBundle() {
   const original = "rewriteImport(t,r,n=this.meta){return this.rewriteUrl(t,{...n,base:r})}";
   const patched = "rewriteImport(t,r,n=this.meta){return this.rewriteUrl(r,{...n,base:t})}";
   if (!source.includes(original)) throw new Error("Ultraviolet dynamic import signature changed");
-  return source.replace(original, patched);
+  const cookieDbOriginal = 'async function Xa(e){let t=await e("__op",1,';
+  const cookieDbPatched = 'async function Xa(e,t="__op"){let r=await e(t,1,';
+  const cookieDbReturnOriginal = 'return t.transaction(["cookies"],"readwrite").store.index("path"),t}';
+  const cookieDbReturnPatched = 'return r.transaction(["cookies"],"readwrite").store.index("path"),r}';
+  const cookieFactoryOriginal = 'db:()=>Xa(this.constructor.openDB),getCookies:ja';
+  const cookieFactoryPatched = 'db:()=>Xa(this.constructor.openDB,this.cookieDbName||"__op"),getCookies:ja';
+  const cookieNameOriginal = 'constructor(t={}){this.prefix=t.prefix||"/service/"';
+  const cookieNamePatched = 'constructor(t={}){this.cookieDbName=t.cookieDbName||"__op",this.prefix=t.prefix||"/service/"';
+  let result = source.replace(original, patched);
+  if (!result.includes(cookieDbOriginal) || !result.includes(cookieDbReturnOriginal) || !result.includes(cookieFactoryOriginal) || !result.includes(cookieNameOriginal)) {
+    throw new Error("Ultraviolet cookie storage signature changed");
+  }
+  result = result
+    .replace(cookieDbOriginal, cookieDbPatched)
+    .replace(cookieDbReturnOriginal, cookieDbReturnPatched)
+    .replace(cookieFactoryOriginal, cookieFactoryPatched)
+    .replace(cookieNameOriginal, cookieNamePatched);
+  return result;
+}
+
+function patchedScramjetControllerAsset(name) {
+  let source = readFileSync(join(scramjetControllerPath, name), "utf8");
+  if (name === "controller.sw.js") {
+    const original = '$controller$setCookie:{cookies:e,options:r,id:o}';
+    const patched = '$controller$setCookie:{cookies:e,options:r,id:o,controllerId:this.id}';
+    if (!source.includes(original)) throw new Error("Scramjet service-worker cookie sync signature changed");
+    source = source.replace(original, patched);
+  } else if (name === "controller.api.js") {
+    const original = 'let t=e.data.$controller$setCookie;t.options?.clear';
+    const patched = 'let t=e.data.$controller$setCookie;if(t.controllerId&&t.controllerId!==this.id)return;t.options?.clear';
+    if (!source.includes(original)) throw new Error("Scramjet controller cookie sync signature changed");
+    source = source.replace(original, patched);
+  } else if (name === "controller.inject.js") {
+    const original = 'let t=e.data.$controller$setCookie;if(t.options?.clear&&this.cookieJar.clear()';
+    const patched = 'let t=e.data.$controller$setCookie;if(t.controllerId&&!String(this.init.prefix?.pathname||"").includes("/"+t.controllerId+"/"))return;if(t.options?.clear&&this.cookieJar.clear()';
+    if (!source.includes(original)) throw new Error("Scramjet injected cookie sync signature changed");
+    source = source.replace(original, patched);
+  }
+  return source;
 }
 
 function patchedScramjetRuntime() {
@@ -1822,33 +1861,33 @@ const nyxAiModels = {
   "chatgpt-5.4-mini": process.env.NYX_AI_MODEL_CHATGPT_54_MINI || "navy:gpt-5.4-mini"
 };
 
-const nyxAiFallbackCatalog = [
-  ["llama-3.3-70b-versatile", "Llama 3.3 70B (Versatile)"],
-  ["openai/gpt-oss-120b", "GPT-OSS 120B"],
-  ["qwen/qwen3-32b", "Qwen3 32B"],
-  ["meta-llama/llama-4-scout-17b-16e-instruct", "Llama 4 Scout (Vision)"],
-  ["navy:gpt-5.4-mini", "ChatGPT 5.4 Mini"],
-  ["navy:claude-opus-5", "Claude Opus 5"],
-  ["navy:gpt-4o-mini-search-preview", "GPT-4o Mini Search (Preview)"],
-  ["navy:gemini-3.1-pro-preview", "Gemini 3.1 Pro (Preview)"],
-  ["navy:gemini-3.5-flash", "Gemini 3.5 Flash"],
-  ["navy:grok-4.3", "Grok 4.3"],
-  ["navy:grok-4.1-fast-reasoning", "Grok 4.1 Fast (Reasoning)"],
-  ["navy:deepseek-v4-pro", "DeepSeek V4 Pro"],
-  ["navy:llama-4-scout", "Llama 4 Scout"],
-  ["navy:mistral-medium-latest", "Mistral Medium"],
-  ["navy:kimi-k2.6", "Kimi K2.6"],
-  ["navy:nemotron-3-super", "Nemotron 3 Super"],
-  ["navy:mimo-v2.5-pro", "MiMo V2.5 Pro"],
-  ["navy:c4ai-aya-expanse-32b", "Aya Expanse 32B"],
-  ["navy:gpt-4o", "GPT-4o"],
-  ["navy:kimi-k2.5", "Kimi K2.5"],
-  ["navy:qwen3.5-397b-a17b", "Qwen3.5 397B A17B"],
-  ["navy:hermes-4-405b", "Hermes 4 405B"],
-  ["navy:mistral-medium-3.5", "Mistral Medium 3.5"]
-].map(([id, label]) => ({ id, label }));
+const nyxAiKnownCatalog = [
+  ["nocturne:flash", "DeepSeek V4 Flash", "DeepSeek"],
+  ["llama-3.3-70b-versatile", "Llama 3.3 70B (Versatile)", "Meta"],
+  ["openai/gpt-oss-120b", "GPT-OSS 120B", "OpenAI"],
+  ["qwen/qwen3-32b", "Qwen3 32B", "Qwen"],
+  ["meta-llama/llama-4-scout-17b-16e-instruct", "Llama 4 Scout (Vision)", "Meta"],
+  ["navy:gpt-5.4-mini", "ChatGPT 5.4 Mini", "OpenAI"],
+  ["navy:gpt-4o-mini-search-preview", "GPT-4o Mini Search (Preview)", "OpenAI"],
+  ["navy:gemini-3.1-pro-preview", "Gemini 3.1 Pro (Preview)", "Google"],
+  ["navy:gemini-3.5-flash", "Gemini 3.5 Flash", "Google"],
+  ["navy:grok-4.3", "Grok 4.3", "xAI"],
+  ["navy:grok-4.1-fast-reasoning", "Grok 4.1 Fast (Reasoning)", "xAI"],
+  ["navy:deepseek-v4-pro", "DeepSeek V4 Pro", "DeepSeek"],
+  ["navy:llama-4-scout", "Llama 4 Scout", "Meta"],
+  ["navy:mistral-medium-latest", "Mistral Medium", "Mistral AI"],
+  ["navy:kimi-k2.6", "Kimi K2.6", "Moonshot AI"],
+  ["navy:nemotron-3-super", "Nemotron 3 Super", "NVIDIA"],
+  ["navy:mimo-v2.5-pro", "MiMo V2.5 Pro", "Xiaomi"],
+  ["navy:c4ai-aya-expanse-32b", "Aya Expanse 32B", "Cohere"],
+  ["navy:gpt-4o", "GPT-4o", "OpenAI"],
+  ["navy:kimi-k2.5", "Kimi K2.5", "Moonshot AI"],
+  ["navy:qwen3.5-397b-a17b", "Qwen3.5 397B A17B", "Qwen"],
+  ["navy:hermes-4-405b", "Hermes 4 405B", "Nous Research"],
+  ["navy:mistral-medium-3.5", "Mistral Medium 3.5", "Mistral AI"]
+].map(([id, label, company = ""]) => ({ id, label, company }));
 
-let nyxAiCatalogCache = { expiresAt: 0, models: nyxAiFallbackCatalog };
+let nyxAiCatalogCache = { expiresAt: 0, models: [] };
 
 function nyxAiKey() {
   return process.env.NYX_AI_API_KEY || "";
@@ -1857,7 +1896,7 @@ function nyxAiKey() {
 function nyxAiEndpoint() {
   const explicitEndpoint = String(process.env.NYX_AI_ENDPOINT || "").trim();
   if (explicitEndpoint) return explicitEndpoint;
-  const baseUrl = String(process.env.NYX_AI_BASE_URL || "https://vilen.sbs").trim().replace(/\/+$/, "");
+  const baseUrl = String(process.env.NYX_AI_BASE_URL || "https://nocturne.lol").trim().replace(/\/+$/, "");
   return /\/api\/ai$/i.test(baseUrl) ? baseUrl : `${baseUrl}/api/ai`;
 }
 
@@ -1871,17 +1910,107 @@ function nyxAiNormalizeCatalog(models) {
   if (!Array.isArray(models)) return [];
   const seen = new Set();
   return models.flatMap(item => {
-    const id = String(item?.id || "").trim();
-    if (!/^[a-z0-9][a-z0-9._:/-]{0,127}$/i.test(id) || seen.has(id) || (item?.audience && item.audience !== "all")) return [];
+    const model = typeof item === "string" ? { id: item } : item;
+    const id = String(model?.id || model?.model || model?.name || "").trim();
+    if (!/^[a-z0-9][a-z0-9._:/-]{0,127}$/i.test(id) || seen.has(id) || (model?.audience && model.audience !== "all")) return [];
     seen.add(id);
     return [{
       id,
-      label: String(item?.label || id).trim().slice(0, 100) || id,
-      company: String(item?.company || "").trim().slice(0, 50),
-      vision: Boolean(item?.vision),
-      reasoning: Boolean(item?.reasoning)
+      label: String(model?.label || model?.displayName || model?.display_name || id).trim().slice(0, 100) || id,
+      company: String(model?.company || model?.provider || model?.owned_by || "").trim().slice(0, 50),
+      vision: Boolean(model?.vision),
+      reasoning: Boolean(model?.reasoning)
     }];
   });
+}
+
+function nyxAiCatalogModels(data) {
+  const candidates = [data?.models, data?.data, data?.result?.models, data?.result];
+  for (const candidate of candidates) {
+    const models = nyxAiNormalizeCatalog(candidate);
+    if (models.length) return models;
+  }
+  return [];
+}
+
+function nyxAiConfiguredCatalog() {
+  const configured = String(process.env.NYX_AI_MODEL_IDS || "")
+    .split(",")
+    .map(id => id.trim())
+    .filter(Boolean)
+    .map(id => ({ id, label: id }));
+  for (const [name, value] of Object.entries(process.env)) {
+    if (name.startsWith("NYX_AI_MODEL_") && value) configured.push({ id: value, label: value });
+  }
+  return nyxAiNormalizeCatalog(configured);
+}
+
+function nyxAiMergeCatalogs(...catalogs) {
+  const known = new Map(nyxAiKnownCatalog.map(item => [item.id, item]));
+  const merged = new Map();
+  for (const catalog of catalogs) {
+    for (const item of catalog || []) {
+      const reference = known.get(item.id);
+      merged.set(item.id, {
+        ...reference,
+        ...item,
+        label: item.label === item.id && reference?.label ? reference.label : item.label,
+        company: item.company || reference?.company || ""
+      });
+    }
+  }
+  return [...merged.values()];
+}
+
+function nyxAiUsesNocturne() {
+  try {
+    const endpoint = new URL(nyxAiEndpoint());
+    return endpoint.hostname === "nocturne.lol" && /\/api\/ai\/?$/i.test(endpoint.pathname);
+  } catch {
+    return false;
+  }
+}
+
+async function nyxAiProbeNocturneModel(model, key) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+  try {
+    const response = await fetch(nyxAiEndpoint(), {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json",
+        authorization: `Bearer ${key}`
+      },
+      body: JSON.stringify({ model: model.id })
+    });
+    const data = await response.json().catch(() => ({}));
+    const message = nyxAiErrorMessage(data, response.status);
+    if (response.status === 400 && /provide a ['\"]prompt['\"] string or a ['\"]messages['\"] array/i.test(message)) return "available";
+    if (/model .+ (?:is not available|is unavailable)|unknown .+ model|invalid .+ model/i.test(message)) return "unavailable";
+    return "error";
+  } catch {
+    return "error";
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function nyxAiProbeNocturneCatalog(candidates, key) {
+  const results = new Array(candidates.length);
+  let cursor = 0;
+  async function worker() {
+    for (;;) {
+      const index = cursor++;
+      if (index >= candidates.length) return;
+      results[index] = await nyxAiProbeNocturneModel(candidates[index], key);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(6, candidates.length) }, () => worker()));
+  const conclusive = results.some(result => result === "available" || result === "unavailable");
+  if (!conclusive) throw new Error("The AI provider did not return model availability.");
+  return candidates.filter((_model, index) => results[index] === "available");
 }
 
 async function nyxAiAvailableModels() {
@@ -1890,16 +2019,27 @@ async function nyxAiAvailableModels() {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 6000);
   try {
+    const key = nyxAiKey();
+    const headers = { accept: "application/json" };
+    if (key) headers.authorization = `Bearer ${key}`;
     const response = await fetch(nyxAiCatalogEndpoint(), {
       signal: controller.signal,
-      headers: { accept: "application/json" }
+      headers
     });
     const data = await response.json().catch(() => ({}));
-    const models = response.ok ? nyxAiNormalizeCatalog(data?.models) : [];
+    const providerModels = response.ok ? nyxAiCatalogModels(data) : [];
+    let models = providerModels;
+    if (key && nyxAiUsesNocturne()) {
+      const candidates = nyxAiMergeCatalogs(providerModels, nyxAiKnownCatalog, nyxAiConfiguredCatalog());
+      models = await nyxAiProbeNocturneCatalog(candidates, key);
+    }
     if (!models.length) throw new Error("The AI model catalog was empty.");
-    nyxAiCatalogCache = { expiresAt: now + 300_000, models };
+    nyxAiCatalogCache = { expiresAt: now + 3_600_000, models };
   } catch {
-    nyxAiCatalogCache = { expiresAt: now + 60_000, models: nyxAiFallbackCatalog };
+    nyxAiCatalogCache = {
+      expiresAt: now + 60_000,
+      models: nyxAiCatalogCache.models
+    };
   } finally {
     clearTimeout(timeout);
   }
@@ -1907,10 +2047,9 @@ async function nyxAiAvailableModels() {
 }
 
 async function nyxAiResolveModel(requestedModel) {
-  const alias = nyxAiModels[requestedModel];
-  if (alias) return alias;
+  const providerModel = nyxAiModels[requestedModel] || requestedModel;
   const models = await nyxAiAvailableModels();
-  return models.some(item => item.id === requestedModel) ? requestedModel : "";
+  return models.some(item => item.id === providerModel) ? providerModel : "";
 }
 
 function nyxAiErrorMessage(data, status) {
@@ -2011,20 +2150,14 @@ setInterval(() => {
 
 app.get("/api/nyx-ai/models", async (_req, res) => {
   const models = await nyxAiAvailableModels();
+  if (!models.length) {
+    res.status(503).json({ error: "Nyx could not verify the models available to the configured AI key." });
+    return;
+  }
   const defaultProviderId = nyxAiModels["chatgpt-5.4-mini"];
   const exposedModels = models.map(item => item.id === defaultProviderId
     ? { ...item, id: "chatgpt-5.4-mini", providerId: item.id }
     : item);
-  if (!exposedModels.some(item => item.id === "chatgpt-5.4-mini")) {
-    exposedModels.unshift({
-      id: "chatgpt-5.4-mini",
-      providerId: defaultProviderId,
-      label: "ChatGPT 5.4 Mini",
-      company: "ChatGPT",
-      vision: true,
-      reasoning: true
-    });
-  }
   exposedModels.sort((left, right) => Number(right.id === "chatgpt-5.4-mini") - Number(left.id === "chatgpt-5.4-mini"));
   res.setHeader("cache-control", "public, max-age=60, stale-while-revalidate=240");
   res.json({ models: exposedModels });
@@ -2084,7 +2217,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       },
       body: JSON.stringify({
         model,
-        system: "You are Nyx AI inside the Nyx browser. Be helpful, direct, and accurate. If you do not know something, say so plainly.",
+        system: "You are Nyx AI inside the Nyx browser. Be helpful, direct, and accurate. If you do not know something, say so plainly. Format responses with clean Markdown. Use Markdown table syntax for tables, and use standard LaTeX delimiters for mathematical notation.",
         messages,
         temperature: Number(process.env.NYX_AI_TEMPERATURE || 0.7),
         max_tokens: Number(process.env.NYX_AI_MAX_TOKENS || 1200),
@@ -2468,6 +2601,10 @@ const founderProfileDefaults = Object.freeze({
   badges: ["Founder"],
   linkLabel: "",
   linkUrl: ""
+});
+app.get(/^\/controller\/(controller\.(?:api|inject|sw)\.js)$/, (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  res.type("application/javascript").send(patchedScramjetControllerAsset(req.params[0]));
 });
 
 const nyxProfileEffectValues = Object.freeze([
@@ -9639,6 +9776,7 @@ app.use((error, req, res, next) => {
 });
 
 app.use(express.static(staticRoot));
+app.use("/assets/vendor/katex/", express.static(katexPath));
 app.use("/uv/", express.static(uvPath));
 app.use("/scramjet/", express.static(scramjetPath));
 app.use("/controller/", express.static(scramjetControllerPath));

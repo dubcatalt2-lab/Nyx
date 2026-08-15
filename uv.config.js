@@ -1,6 +1,9 @@
+var nyxUvSessionMatch = location.pathname.match(/^\/service\/(nyx_[a-z0-9_-]{12,80})\//i);
+var nyxUvSessionId = nyxUvSessionMatch?.[1] || "";
 self.__uv$config = {
-  prefix: "/service/",
-  bare: (location.hostname === "localhost" || location.hostname === "127.0.0.1") && (!location.port || location.port === "8080")
+  prefix: nyxUvSessionId ? `/service/${nyxUvSessionId}/` : "/service/",
+  cookieDbName: nyxUvSessionId ? `__nyx_uv_tab_${nyxUvSessionId}` : "__op",
+  bare: (location.hostname === "localhost" || location.hostname === "127.0.0.1")
     ? "/wisp/"
     : "wss://wisp.mercurywork.shop/",
   encodeUrl: Ultraviolet.codec.xor.encode,
@@ -8,6 +11,6 @@ self.__uv$config = {
   handler: "/uv/uv.handler.js",
   bundle: "/uv/uv.bundle.js",
   config: "/uv.config.js",
-  sw: "/uv.sw.js?v=nyx-uv-v8-20260805-unity-callback",
+  sw: "/uv.sw.js?v=nyx-uv-v9-20260814-private-tabs",
   client: "/uv/uv.client.js"
 };

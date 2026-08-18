@@ -12476,14 +12476,13 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
     const overlay=document.createElement('div');
     overlay.className='nyx-release-notes-overlay';
     overlay.innerHTML=`<section class="nyx-release-notes" role="dialog" aria-modal="true" aria-labelledby="nyxReleaseNotesTitle" aria-describedby="nyxReleaseNotesIntro">
-      <header><div><span>Nyx update</span><h1 id="nyxReleaseNotesTitle" tabindex="-1">A smoother Nyx is here.</h1></div><button type="button" data-nyx-release-notes-close aria-label="Close update log">&times;</button></header>
-      <p id="nyxReleaseNotesIntro">Here is everything included in this release.</p>
+      <header><div><span>What's New?</span><h1 id="nyxReleaseNotesTitle" tabindex="-1">The redesign is here.</h1></div><button type="button" data-nyx-release-notes-close aria-label="Close update log">&times;</button></header>
+      <p id="nyxReleaseNotesIntro">A cleaner home, browser, dashboard, settings, accounts, and AI experience—all in one update.</p>
       <ul>
         <li><strong>Refined browser experience</strong><span>Jet-black chrome, brighter controls, a taller toolbar, and a stable Mizu-style tab drawer with a direct developer-console button.</span></li>
         <li><strong>New Nyx home and dashboard</strong><span>Updated StudyHub identity, dot-style Nyx wordmark, smoother dashboard opening, and live performance information.</span></li>
         <li><strong>Better settings and accounts</strong><span>Organized settings sections, verified-email protection, and account cloud saves for supported Nyx preferences and same-origin games.</span></li>
         <li><strong>AI access controls</strong><span>Claude Opus 4.8 is Premium-only with a daily 2,000-token allowance; Owners retain full model access.</span></li>
-        <li><strong>Cleaner browsing</strong><span>Animex now opens without the old streaming prompt.</span></li>
       </ul>
       <footer><span>This update log is shown once per device or signed-in account.</span><button type="button" data-nyx-release-notes-close>Got it</button></footer>
     </section>`;

@@ -10554,7 +10554,7 @@
       const q=e.target.closest('[data-url]'); if(q){e.preventDefault(); navigate(q.dataset.url)}
     });
     const messageHandler=e=>{
-      if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:account-token-request','nyx:chat-open-profile','nyx:chat-notification','nyx:subscription-refresh','nyx:proxy-direct-fallback','nyx:cloud-game-load','nyx:cloud-game-save','nyx:close-tab'].includes(e.data?.type)) return;
+      if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:account-token-request','nyx:chat-open-profile','nyx:chat-notification','nyx:subscription-refresh','nyx:proxy-direct-fallback','nyx:cloud-game-load','nyx:cloud-game-save','nyx:close-tab','nyx:go-home'].includes(e.data?.type)) return;
       if(['nyx:cloud-game-load','nyx:cloud-game-save'].includes(e.data.type)){
         if(e.origin!==location.origin)return;
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
@@ -10589,6 +10589,14 @@
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
         const sourceShellTab=browserShellTabs.find(tab=>tab.browserTabId===sourceTab.id);
         if(sourceShellTab)closeBrowserShellTab(sourceShellTab.id);else closeTabById(sourceTab.id,true);
+        return;
+      }
+      if(e.data.type==='nyx:go-home'){
+        if(e.origin!==location.origin)return;
+        const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
+        let sourcePath='';try{sourcePath=new URL(sourceTab.sourceUrl||sourceTab.url||'',location.href).pathname}catch{}
+        if(!['/apps/chat/','/apps/chat/index.html'].includes(sourcePath))return;
+        setBrowserShellHomeActive();
         return;
       }
       if(e.data.type==='nyx:chat-open-profile'){

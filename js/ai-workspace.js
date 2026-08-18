@@ -79,6 +79,7 @@
   let temporaryMessages=[];
   let attachedImage=null;
   let imageOcrLoader=null;
+  let nyxAiAccountAuthPromise=null;
 
   function personalApiKey(){
     return String(sessionStorage.getItem(PERSONAL_KEY_SESSION)||localStorage.getItem(PERSONAL_KEY_DEVICE)||'').trim();
@@ -88,9 +89,33 @@
     return Boolean(localStorage.getItem(PERSONAL_KEY_DEVICE));
   }
 
-  function aiHeaders(headers={}){
+  async function nyxAiAccountToken(){
+    if(!nyxAiAccountAuthPromise){
+      nyxAiAccountAuthPromise=(async()=>{
+        try{
+          const configResponse=await fetch('/api/founder-profile/auth-config',{cache:'no-store'});
+          const config=await configResponse.json();
+          if(!config?.enabled||!config?.apiKey||!config?.projectId)return null;
+          const [{initializeApp,getApps},{getAuth,setPersistence,browserLocalPersistence}]=await Promise.all([
+            import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),
+            import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')
+          ]);
+          const firebaseApp=getApps().find(item=>item.name==='nyx-founder-owner')||initializeApp({apiKey:config.apiKey,authDomain:`${config.projectId}.firebaseapp.com`,projectId:config.projectId},'nyx-founder-owner');
+          const auth=getAuth(firebaseApp);
+          try{await setPersistence(auth,browserLocalPersistence)}catch{}
+          if(typeof auth.authStateReady==='function')await auth.authStateReady();
+          return auth;
+        }catch{return null}
+      })();
+    }
+    const auth=await nyxAiAccountAuthPromise;
+    try{return auth?.currentUser?await auth.currentUser.getIdToken():''}catch{return ''}
+  }
+
+  async function aiHeaders(headers={}){
     const key=personalApiKey();
-    return key?{...headers,'x-nyx-ai-api-key':key}:headers;
+    const token=await nyxAiAccountToken();
+    return {...headers,...(key?{'x-nyx-ai-api-key':key}:{}),...(token?{Authorization:`Bearer ${token}`}:{})};
   }
 
   function updateApiKeyControl(message='',state=''){
@@ -1004,7 +1029,7 @@
     modelTrigger.disabled=true;
     modelTrigger.setAttribute('aria-busy','true');
     try{
-      const response=await fetch('/api/nyx-ai/models',{headers:aiHeaders({accept:'application/json'})});
+      const response=await fetch('/api/nyx-ai/models',{headers:await aiHeaders({accept:'application/json'})});
       const data=await response.json();
       if(!response.ok) throw new Error(data?.error||`Model catalog failed (${response.status})`);
       const next=Array.isArray(data?.models)?data.models.flatMap(item=>{
@@ -1132,7 +1157,7 @@
       const response=await fetch('/api/nyx-ai',{
         method:'POST',
         signal:activeController.signal,
-        headers:aiHeaders({'content-type':'application/json'}),
+        headers:await aiHeaders({'content-type':'application/json'}),
         body:JSON.stringify({model:requestedModel,message:userText,messages:history,imageContext,responseDepth:responseDepth(),stream:true})
       });
       if(!response.ok){

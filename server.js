@@ -100,6 +100,11 @@ const profileImageDocumentLimit = 900_000;
 const profileMediaEncodedLimit = 11_250_000;
 const profileMediaChunkLimit = 450_000;
 const profileMediaChunkCountLimit = 32;
+const nyxCloudSaveCollection = "nyxCloudSaves";
+const nyxCloudPreferenceFieldLimit = 32;
+const nyxCloudGameStorageEntryLimit = 64;
+const nyxCloudStorageValueByteLimit = 24_000;
+const nyxCloudStorageByteLimit = 280_000;
 const ownerDashboardUserScanLimit = 5_000;
 const ownerDashboardPageSizeLimit = 100;
 const signedInOnlineWindowMs = 6 * 60_000;
@@ -2111,6 +2116,71 @@ function nyxAiWriteStreamChunk(res, text, model) {
 
 const nyxAiUsage = new Map();
 let nyxAiActiveRequests = 0;
+const nyxAiPremiumOpusModel = "navy:claude-opus-4.8";
+const nyxAiPremiumOpusDailyTokenLimit = 2_000;
+const nyxAiPremiumOpusUsageCollection = "nyxAiPremiumOpusUsage";
+
+function nyxAiUtcDay(now = new Date()) {
+  return now.toISOString().slice(0, 10);
+}
+
+async function nyxAiPremiumEntitlement(req) {
+  const match = String(req.get("authorization") || "").match(/^Bearer\s+(.+)$/i);
+  if (!match || !firebaseAdminModeConfigured()) return { premium: false, owner: false, firebase: null, uid: "" };
+  try {
+    const firebase = await linkGeneratorFirebase();
+    const token = await firebase?.auth.verifyIdToken(match[1], true);
+    if (!token?.uid) return { premium: false, owner: false, firebase: null, uid: "" };
+    const administration = await firebase.firestore.collection("nyxUserAdministration").doc(token.uid).get();
+    const administrationData = administration.data() || {};
+    const subscriptionStatus = normalizeSubscriptionStatus(administrationData.subscriptionStatus || administrationData.subscription?.status);
+    return { premium: hasPremiumSubscription(subscriptionStatus), owner: nyxRoleForUser(token.uid, administrationData) === "owner", firebase, uid: token.uid };
+  } catch {
+    return { premium: false, owner: false, firebase: null, uid: "" };
+  }
+}
+
+async function reserveNyxAiPremiumOpusTokens(firebase, uid, requestedTokens) {
+  const date = nyxAiUtcDay();
+  const reference = firebase.firestore.collection(nyxAiPremiumOpusUsageCollection).doc(`${uid}_${date}`);
+  const requested = Math.max(1, Math.min(nyxAiPremiumOpusDailyTokenLimit, Math.floor(Number(requestedTokens) || 1)));
+  const reservation = await firebase.firestore.runTransaction(async transaction => {
+    const snapshot = await transaction.get(reference);
+    const used = Math.max(0, Math.floor(Number(snapshot.data()?.tokens) || 0));
+    const remaining = Math.max(0, nyxAiPremiumOpusDailyTokenLimit - used);
+    if (!remaining) {
+      const error = new Error("Your 2,000 Claude Opus token allowance resets at 00:00 UTC.");
+      error.status = 429;
+      error.remaining = 0;
+      throw error;
+    }
+    const tokens = Math.min(requested, remaining);
+    transaction.set(reference, { uid, date, tokens: used + tokens, updatedAt: new Date().toISOString() }, { merge: true });
+    return { tokens, remaining: remaining - tokens };
+  });
+  return { ...reservation, reference, uid, date };
+}
+
+async function settleNyxAiPremiumOpusTokens(reservation, usedTokens) {
+  if (!reservation?.reference) return;
+  const used = Math.max(0, Math.min(reservation.tokens, Math.ceil(Number(usedTokens) || 0)));
+  await reservation.reference.firestore.runTransaction(async transaction => {
+    const snapshot = await transaction.get(reservation.reference);
+    const current = Math.max(0, Math.floor(Number(snapshot.data()?.tokens) || 0));
+    const tokens = Math.max(0, current - reservation.tokens + used);
+    transaction.set(reservation.reference, { tokens, updatedAt: new Date().toISOString() }, { merge: true });
+  });
+}
+
+function nyxAiCompletionTokens(event) {
+  const usage = event?.usage || event?.response?.usage || {};
+  const value = usage.completion_tokens ?? usage.output_tokens ?? usage.generated_tokens;
+  return Number.isFinite(Number(value)) ? Math.max(0, Number(value)) : 0;
+}
+
+function nyxAiEstimatedTokens(text) {
+  return Math.max(1, Math.ceil(String(text || "").trim().length / 4));
+}
 const nyxAiLimit = (name, fallback) => {
   const value = Number.parseInt(process.env[name] || "", 10);
   return Number.isFinite(value) && value > 0 ? value : fallback;
@@ -2190,7 +2260,9 @@ app.get("/api/nyx-ai/models", async (req, res) => {
     res.status(503).json({ error: credential.personal ? "Enter a personal Nocturne AI API key." : "Nyx AI is not configured." });
     return;
   }
-  const models = await nyxAiAvailableModels(credential.key, credential.personal);
+  const entitlement = await nyxAiPremiumEntitlement(req);
+  const models = (await nyxAiAvailableModels(credential.key, credential.personal))
+    .filter(item => entitlement.premium || entitlement.owner || item.id !== nyxAiPremiumOpusModel);
   if (!models.length) {
     res.status(503).json({ error: credential.personal ? "Nyx could not verify any models for your personal API key." : "Nyx could not verify the models available to the configured AI key." });
     return;
@@ -2203,7 +2275,7 @@ app.get("/api/nyx-ai/models", async (req, res) => {
   // The URL is shared by server-key and personal-key requests. Never let a
   // browser or intermediary reuse one credential scope's catalog for another.
   res.setHeader("cache-control", "private, no-store");
-  res.json({ models: exposedModels, credential: credential.personal ? "personal" : "nyx" });
+  res.json({ models: exposedModels, credential: credential.personal ? "personal" : "nyx", premium: entitlement.premium, owner: entitlement.owner });
 });
 
 app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
@@ -2223,6 +2295,12 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   const model = await nyxAiResolveModel(requestedModel, key, credential.personal);
   if (!model) {
     res.status(400).json({ error: "Unknown Nyx AI model." });
+    return;
+  }
+  const isPremiumOpus = model === nyxAiPremiumOpusModel;
+  const premiumEntitlement = isPremiumOpus ? await nyxAiPremiumEntitlement(req) : null;
+  if (isPremiumOpus && !premiumEntitlement?.premium && !premiumEntitlement?.owner) {
+    res.status(403).json({ error: "Claude Opus 4.8 is available to active Premium members only." });
     return;
   }
   const message = String(req.body?.message || "").trim();
@@ -2259,11 +2337,23 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       ? "Give a thorough, well-structured answer with useful context, tradeoffs, and concrete steps when applicable."
       : "Give a balanced answer with enough explanation to be useful without unnecessary length.";
   const configuredMaxTokens = Number(process.env.NYX_AI_MAX_TOKENS || 1200);
-  const maxTokens = responseDepth === "off"
+  let maxTokens = responseDepth === "off"
     ? Math.min(configuredMaxTokens, 700)
     : responseDepth === "extended"
       ? Math.max(configuredMaxTokens, 2200)
       : configuredMaxTokens;
+  let opusReservation = null;
+  let opusReservationSettled = false;
+  if (isPremiumOpus && !premiumEntitlement.owner) {
+    try {
+      opusReservation = await reserveNyxAiPremiumOpusTokens(premiumEntitlement.firebase, premiumEntitlement.uid, maxTokens);
+      maxTokens = Math.min(maxTokens, opusReservation.tokens);
+    } catch (error) {
+      if (error?.status === 429) res.setHeader("retry-after", String(Math.max(1, Math.ceil((Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() + 1) - Date.now()) / 1000))));
+      res.status(error?.status || 503).json({ error: error?.message || "Claude Opus usage is unavailable. Please try again." });
+      return;
+    }
+  }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), nyxAiLimits.timeoutMs);
   res.once("close", () => controller.abort());
@@ -2296,6 +2386,8 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       if (!reader) throw new Error("AI provider did not return a response stream.");
       const decoder = new TextDecoder();
       let buffer = "";
+      let generatedText = "";
+      let reportedTokens = 0;
       for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -2311,7 +2403,10 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
             nyxAiWriteStreamChunk(res, `Nyx AI error: ${nyxAiErrorMessage(event, upstream.status, key)}`, model);
             continue;
           }
-          nyxAiWriteStreamChunk(res, nyxAiStreamText(event), model);
+          const text = nyxAiStreamText(event);
+          generatedText += text;
+          reportedTokens = Math.max(reportedTokens, nyxAiCompletionTokens(event));
+          nyxAiWriteStreamChunk(res, text, model);
         }
       }
       buffer += decoder.decode();
@@ -2319,8 +2414,15 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
         const raw = buffer.trim().slice(5).trim();
         if (raw && raw !== "[DONE]") {
           const event = JSON.parse(raw);
-          nyxAiWriteStreamChunk(res, nyxAiStreamText(event), model);
+          const text = nyxAiStreamText(event);
+          generatedText += text;
+          reportedTokens = Math.max(reportedTokens, nyxAiCompletionTokens(event));
+          nyxAiWriteStreamChunk(res, text, model);
         }
+      }
+      if (opusReservation) {
+        await settleNyxAiPremiumOpusTokens(opusReservation, reportedTokens || nyxAiEstimatedTokens(generatedText));
+        opusReservationSettled = true;
       }
       res.write("data: [DONE]\n\n");
       res.end();
@@ -2334,6 +2436,10 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       return;
     }
     const text = data?.response || data?.text || data?.choices?.[0]?.message?.content || data?.choices?.[0]?.text || "";
+    if (opusReservation) {
+      await settleNyxAiPremiumOpusTokens(opusReservation, nyxAiCompletionTokens(data) || nyxAiEstimatedTokens(text));
+      opusReservationSettled = true;
+    }
     res.json({ text: String(text || "").trim(), model });
   } catch (error) {
     if (!res.headersSent) {
@@ -2960,6 +3066,54 @@ function safeActivityTime(value) {
 function normalizeNyxRole(value) {
   const role = String(value || "").trim().toLowerCase();
   return ["owner", "co_owner", "admin", "manager", "developer", "moderator", "support", "tester", "contributor", "member"].includes(role) ? role : "member";
+}
+
+function nyxCloudSaveError(message, status = 400) {
+  const error = new Error(message);
+  error.status = status;
+  return error;
+}
+
+function normalizeNyxCloudStorage(value, limit = nyxCloudGameStorageEntryLimit) {
+  const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const entries = [];
+  let totalBytes = 0;
+  for (const [rawKey, rawValue] of Object.entries(source)) {
+    if (entries.length >= limit) throw nyxCloudSaveError("This save has too many entries.");
+    const key = String(rawKey || "").trim();
+    const item = typeof rawValue === "string" ? rawValue : "";
+    if (!key || key.length > 160 || /[\u0000-\u001f]/.test(key)) throw nyxCloudSaveError("This save contains an invalid storage key.");
+    const itemBytes = Buffer.byteLength(item, "utf8");
+    if (itemBytes > nyxCloudStorageValueByteLimit) throw nyxCloudSaveError("A saved value is too large.", 413);
+    totalBytes += Buffer.byteLength(key, "utf8") + itemBytes;
+    if (totalBytes > nyxCloudStorageByteLimit) throw nyxCloudSaveError("This save is too large.", 413);
+    entries.push([key, item]);
+  }
+  return Object.fromEntries(entries);
+}
+
+function nyxCloudGameKey(value) {
+  const key = String(value || "").trim();
+  if (!key || key.length > 240 || /[\u0000-\u001f]/.test(key)) throw nyxCloudSaveError("That game save is invalid.");
+  return key;
+}
+
+function nyxCloudGameDocumentId(gameKey) {
+  return createHash("sha256").update(gameKey).digest("base64url");
+}
+
+function normalizeNyxCloudRemovedKeys(value) {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.map(item => String(item || "").trim()).filter(key => key && key.length <= 160 && !/[\u0000-\u001f]/.test(key)))].slice(0, nyxCloudGameStorageEntryLimit);
+}
+
+async function authenticatedVerifiedNyxCloudUser(req) {
+  const { firebase, token } = await authenticatedNyxUser(req);
+  const account = await firebase.auth.getUser(token.uid);
+  if (!nyxDeliverableEmail(account.email) || !account.emailVerified) {
+    throw nyxCloudSaveError("Verify a recovery email to use Nyx cloud saves.", 403);
+  }
+  return { firebase, token, account };
 }
 
 const nyxRolePolicies = Object.freeze({
@@ -4629,6 +4783,9 @@ async function nyxMediaFetchJson(url, options = {}, timeoutMs = 8_000) {
     }
     throw error;
   } finally {
+    if (opusReservation && !opusReservationSettled) {
+      try { await settleNyxAiPremiumOpusTokens(opusReservation, 0); } catch {}
+    }
     clearTimeout(timeout);
   }
 }
@@ -6704,6 +6861,87 @@ app.get("/api/account/me", async (req, res) => {
     });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "Account information is unavailable." });
+  }
+});
+
+app.get("/api/account/cloud-preferences", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const { firebase, token } = await authenticatedVerifiedNyxCloudUser(req);
+    const snapshot = await firebase.firestore.collection(nyxCloudSaveCollection).doc(token.uid).get();
+    res.json({
+      preferences: normalizeNyxCloudStorage(snapshot.data()?.preferences, nyxCloudPreferenceFieldLimit),
+      updatedAt: Number(snapshot.data()?.preferencesUpdatedAt || 0)
+    });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Cloud preferences are unavailable." });
+  }
+});
+
+app.put("/api/account/cloud-preferences", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  try {
+    const { firebase, token } = await authenticatedVerifiedNyxCloudUser(req);
+    const preferences = normalizeNyxCloudStorage(req.body?.preferences, nyxCloudPreferenceFieldLimit);
+    const now = Date.now();
+    await firebase.firestore.collection(nyxCloudSaveCollection).doc(token.uid).set({
+      preferences,
+      preferencesUpdatedAt: now,
+      preferencesUpdatedAtIso: new Date(now).toISOString()
+    }, { merge: true });
+    res.json({ saved: true, updatedAt: now });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Cloud preferences could not be saved." });
+  }
+});
+
+app.get("/api/account/cloud-games/:gameId", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const { firebase, token } = await authenticatedVerifiedNyxCloudUser(req);
+    const gameKey = nyxCloudGameKey(req.params.gameId);
+    const snapshot = await firebase.firestore.collection(nyxCloudSaveCollection).doc(token.uid).collection("games").doc(nyxCloudGameDocumentId(gameKey)).get();
+    const data = snapshot.data() || {};
+    res.json({
+      gameKey,
+      storage: String(data.gameKey || "") === gameKey ? normalizeNyxCloudStorage(data.storage) : {},
+      updatedAt: Number(data.updatedAt || 0)
+    });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Game cloud save is unavailable." });
+  }
+});
+
+app.put("/api/account/cloud-games/:gameId", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  try {
+    const { firebase, token } = await authenticatedVerifiedNyxCloudUser(req);
+    const gameKey = nyxCloudGameKey(req.params.gameId);
+    const storage = normalizeNyxCloudStorage(req.body?.storage);
+    const removed = normalizeNyxCloudRemovedKeys(req.body?.removed);
+    const reference = firebase.firestore.collection(nyxCloudSaveCollection).doc(token.uid).collection("games").doc(nyxCloudGameDocumentId(gameKey));
+    const now = Date.now();
+    const saved = await firebase.firestore.runTransaction(async transaction => {
+      const current = await transaction.get(reference);
+      const currentData = current.data() || {};
+      const merged = String(currentData.gameKey || "") === gameKey ? normalizeNyxCloudStorage(currentData.storage) : {};
+      Object.assign(merged, storage);
+      removed.forEach(key => delete merged[key]);
+      const normalized = normalizeNyxCloudStorage(merged);
+      transaction.set(reference, { gameKey, storage: normalized, updatedAt: now, updatedAtIso: new Date(now).toISOString() }, { merge: true });
+      return normalized;
+    });
+    res.json({ saved: true, entries: Object.keys(saved).length, updatedAt: now });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Game cloud save could not be saved." });
   }
 });
 

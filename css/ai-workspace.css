@@ -195,6 +195,8 @@ button:disabled{cursor:not-allowed}
 .ai-history-empty{align-self:start;margin:8px 9px;color:var(--ai-muted-dark);font-size:10px;line-height:1.5}
 .ai-history-empty[hidden]{display:none}
 .ai-sidebar-footer{display:grid;gap:8px;padding:10px;border-top:1px solid var(--ai-border)}
+.ai-effort-control{display:grid;gap:5px}
+.ai-effort-label{padding:0 3px;color:var(--ai-muted);font-size:8px;font-weight:700;letter-spacing:.09em;text-transform:uppercase}
 .ai-depth{height:36px;display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:3px;border:1px solid var(--ai-border);border-radius:10px;background:var(--ai-bg-deep)}
 .ai-depth button{min-width:0;padding:0 4px;border:0;border-radius:7px;background:transparent;color:var(--ai-muted-dark);font-size:9.5px;font-weight:600}
 .ai-depth button:hover{color:var(--ai-text-soft)}

@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/ai-workspace.css?v=20260815-personal-key-v8">
   <script src="/js/nyx-logo.js?v=20260717-theme-crescent-v1" defer></script>
   <script src="/assets/vendor/katex/katex.min.js?v=20260814-ai-math-v1" defer></script>
-  <script src="/js/ai-workspace.js?v=20260815-personal-key-v8" defer></script>
+  <script src="/js/ai-workspace.js?v=20260817-premium-opus-v9" defer></script>
 </head>
 <body>
   <main class="ai-app" data-ai-app>
@@ -50,10 +50,13 @@
       </section>
 
       <footer class="ai-sidebar-footer">
-        <div class="ai-depth" role="group" aria-label="Response depth">
-          <button type="button" data-response-depth="off">Off</button>
-          <button type="button" data-response-depth="normal">Normal</button>
-          <button type="button" data-response-depth="extended">Extended</button>
+        <div class="ai-effort-control">
+          <span class="ai-effort-label">Reasoning effort</span>
+          <div class="ai-depth" role="group" aria-label="AI reasoning effort">
+            <button type="button" data-response-depth="off" title="Faster answers with less reasoning">Low</button>
+            <button type="button" data-response-depth="normal" title="Balanced speed and reasoning">Medium</button>
+            <button type="button" data-response-depth="extended" title="More time for deeper reasoning">High</button>
+          </div>
         </div>
         <div class="ai-sidebar-model-summary"><span>Model</span><strong id="sidebarModelName">Loading…</strong></div>
         <section class="ai-usage" aria-labelledby="aiUsageTitle">

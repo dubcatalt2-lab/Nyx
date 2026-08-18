@@ -591,6 +591,115 @@ html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:is(body,#n
   }
 }
 
+/* The browser shell uses a deliberately neutral black-and-white chrome.  This
+   sits after the theme compatibility rules so tabs never inherit the old
+   blue-gray Midnight tint. */
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+  body.browser-shell.browser-shell.browser-shell:is(body,#nyx-jet-black-chrome):is(body,#nyx-jet-black-controls):is(body,#nyx-jet-black-tabs){
+  --nyx-chrome-base:#000!important;
+  --nyx-chrome-active:#151515!important;
+  --nyx-chrome-hover:#202020!important;
+  --nyx-chrome-accent:#fff!important;
+  --nyx-chrome-bright:#fff!important;
+  --nyx-shell-icon:#fff!important;
+  --nyx-home-wordmark:#fff!important;
+  --nyx-final-shortcut-icon:#fff!important;
+  background-color:#000!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+  body.browser-shell.browser-shell.browser-shell:is(body,#nyx-jet-black-chrome):is(body,#nyx-jet-black-controls):is(body,#nyx-jet-black-tabs)
+  :is(.top-os.top-os,.brand-mini,.browser-mode-address){
+  background-color:#000!important;
+  background-image:none!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+  body.browser-shell.browser-shell.browser-shell:is(body,#nyx-jet-black-chrome):is(body,#nyx-jet-black-controls):is(body,#nyx-jet-black-tabs)
+  .top-os.top-os .brand-mini > :is(.browser-mode-app-button,.browser-mode-shell-tab),
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+  body.browser-shell.browser-shell.browser-shell:is(body,#nyx-jet-black-chrome):is(body,#nyx-jet-black-controls):is(body,#nyx-jet-black-tabs)
+  .top-os.top-os form.browser-mode-address > :is(button,.browser-mode-url),
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+  body.browser-shell.browser-shell.browser-shell:is(body,#nyx-jet-black-chrome):is(body,#nyx-jet-black-controls):is(body,#nyx-jet-black-tabs)
+  .top-os.top-os .brand-mini > button[data-browser-shell-new-tab]{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  background-color:#000!important;
+  border-color:#292929!important;
+  box-shadow:none!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+  body.browser-shell.browser-shell.browser-shell:is(body,#nyx-jet-black-chrome):is(body,#nyx-jet-black-controls):is(body,#nyx-jet-black-tabs)
+  .top-os.top-os .brand-mini > :is(.browser-mode-app-button,.browser-mode-shell-tab).active{
+  background-color:#151515!important;
+  border-color:#fff!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+  body.browser-shell.browser-shell.browser-shell:is(body,#nyx-jet-black-chrome):is(body,#nyx-jet-black-controls):is(body,#nyx-jet-black-tabs)
+  .top-os.top-os :is(.brand-mini > :is(.browser-mode-app-button,.browser-mode-shell-tab),form.browser-mode-address > :is(button,.browser-mode-url)):is(:hover,:focus-visible),
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+  body.browser-shell.browser-shell.browser-shell:is(body,#nyx-jet-black-chrome):is(body,#nyx-jet-black-controls):is(body,#nyx-jet-black-tabs)
+  .top-os.top-os .brand-mini > button[data-browser-shell-new-tab]:hover{
+  background-color:#202020!important;
+  border-color:#fff!important;
+  box-shadow:none!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+  body.browser-shell.browser-shell.browser-shell:is(body,#nyx-jet-black-chrome):is(body,#nyx-jet-black-controls):is(body,#nyx-jet-black-tabs)
+  .top-os.top-os :is(.browser-mode-app-button,.browser-mode-shell-tab,.browser-mode-address button,.browser-mode-url,.browser-top-clock,.browser-mode-shell-tab-close),
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+  body.browser-shell.browser-shell.browser-shell:is(body,#nyx-jet-black-chrome):is(body,#nyx-jet-black-controls):is(body,#nyx-jet-black-tabs)
+  .top-os.top-os :is(.fresh-real-icon,.weather-cloud-icon,.browser-home-icon){
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+  body.browser-shell.browser-shell.browser-shell:is(body,#nyx-jet-black-chrome):is(body,#nyx-jet-black-controls):is(body,#nyx-jet-black-tabs)
+  .top-os.top-os :is(button svg,button svg *, .browser-mode-shell-tab-close svg, .browser-mode-shell-tab-close svg *){
+  stroke:#fff!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+  body.browser-shell.browser-shell.browser-shell:is(body,#nyx-jet-black-chrome):is(body,#nyx-jet-black-controls):is(body,#nyx-jet-black-tabs)
+  .top-os.top-os .brand-mini > button[data-browser-shell-home] > .browser-home-icon{
+  background:#fff!important;
+}
+
+/* Final tab-strip contract: normal browser sessions need compact, scrollable
+   tabs rather than fixed-size mockup cards. */
+@media(min-width:621px){
+  html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell:is(body,#nyx-tab-strip-stable):is(body,#nyx-tab-strip-layout):is(body,#nyx-tab-strip-controls) .top-os.top-os .brand-mini{
+    width:calc(100% - 300px)!important;
+    max-width:calc(100% - 300px)!important;
+    min-width:0!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    scrollbar-width:none!important;
+    gap:6px!important;
+  }
+  html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell:is(body,#nyx-tab-strip-stable):is(body,#nyx-tab-strip-layout):is(body,#nyx-tab-strip-controls) .top-os.top-os .brand-mini::-webkit-scrollbar{display:none!important}
+  html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell:is(body,#nyx-tab-strip-stable):is(body,#nyx-tab-strip-layout):is(body,#nyx-tab-strip-controls) .top-os.top-os .brand-mini > :is(.browser-mode-app-button,.browser-mode-shell-tab){
+    flex:0 0 clamp(112px,15vw,176px)!important;
+    width:clamp(112px,15vw,176px)!important;
+    min-width:112px!important;
+    max-width:176px!important;
+    height:34px!important;
+    min-height:34px!important;
+    max-height:34px!important;
+    padding:0 28px 0 11px!important;
+    gap:8px!important;
+    font-size:13px!important;
+  }
+  html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell:is(body,#nyx-tab-strip-stable):is(body,#nyx-tab-strip-layout):is(body,#nyx-tab-strip-controls) .top-os.top-os .brand-mini > button[data-browser-shell-new-tab]{
+    display:grid!important;
+    flex:0 0 34px!important;
+    width:34px!important;
+    min-width:34px!important;
+    max-width:34px!important;
+    height:34px!important;
+    min-height:34px!important;
+    max-height:34px!important;
+  }
+}
+
 @media(max-width:620px){
   html body.browser-shell.browser-shell{
     --nyx-interface-bar:94px!important;

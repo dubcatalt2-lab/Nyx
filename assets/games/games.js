@@ -42,6 +42,64 @@ const state = {
   pageSize: 30
 };
 
+const cloudGameRequests = new Map();
+let cloudGameRequestId = 0;
+let activeGameStorageBaseline = {};
+
+function cloudStorageSnapshot() {
+  const snapshot = {};
+  let total = 0;
+  try {
+    for (let index = 0; index < localStorage.length && Object.keys(snapshot).length < 64; index += 1) {
+      const key = localStorage.key(index);
+      if (!key || key.startsWith('nyx.') || key.startsWith('firebase:') || /[\u0000-\u001f]/.test(key)) continue;
+      const value = localStorage.getItem(key);
+      if (typeof value !== 'string' || new TextEncoder().encode(value).length > 24_000) continue;
+      total += new TextEncoder().encode(key).length + new TextEncoder().encode(value).length;
+      if (total > 280_000) break;
+      snapshot[key] = value;
+    }
+  } catch {}
+  return snapshot;
+}
+
+function requestCloudGameSave(type, payload = {}) {
+  if (parent === window) return Promise.resolve({});
+  const requestId = `game-${Date.now().toString(36)}-${(++cloudGameRequestId).toString(36)}`;
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      cloudGameRequests.delete(requestId);
+      reject(new Error('Cloud save did not respond.'));
+    }, 7_000);
+    cloudGameRequests.set(requestId, { resolve, reject, timer });
+    parent.postMessage({ type, requestId, ...payload }, location.origin);
+  });
+}
+
+async function restoreCloudGameStorage(game) {
+  if (!game?.key) return {};
+  try {
+    const result = await requestCloudGameSave('nyx:cloud-game-load', { gameKey: game.key });
+    const storage = result?.storage && typeof result.storage === 'object' ? result.storage : {};
+    Object.entries(storage).forEach(([key, value]) => {
+      if (typeof key === 'string' && typeof value === 'string' && !key.startsWith('nyx.') && !key.startsWith('firebase:')) localStorage.setItem(key, value);
+    });
+  } catch {}
+  return cloudStorageSnapshot();
+}
+
+function saveCloudGameStorage(game, baseline = {}) {
+  if (!game?.key) return;
+  const current = cloudStorageSnapshot();
+  const storage = {};
+  Object.entries(current).forEach(([key, value]) => {
+    if (baseline[key] !== value) storage[key] = value;
+  });
+  const removed = Object.keys(baseline).filter(key => !(key in current));
+  if (!Object.keys(storage).length && !removed.length) return;
+  void requestCloudGameSave('nyx:cloud-game-save', { gameKey: game.key, storage, removed }).catch(() => {});
+}
+
 function syncHostTheme() {
   if (parent === window) return;
   try {
@@ -685,7 +743,7 @@ function tryNextGameSource(reason = '') {
   else showGameFailure();
 }
 
-function openGame(game, updateHistory = true) {
+async function openGame(game, updateHistory = true) {
   if (!game) return;
   state.lastFocused = document.activeElement;
   state.activeGame = game;
@@ -697,6 +755,8 @@ function openGame(game, updateHistory = true) {
   elements.player.hidden = false;
   syncGamePerformanceMode();
   startGamePerformanceMonitor();
+  activeGameStorageBaseline = await restoreCloudGameStorage(game);
+  if (state.activeGame !== game) return;
   launchGameSource(state.activeSourceIndex);
   elements.close.focus();
   if (updateHistory) updateGameQuery(game.key);
@@ -704,6 +764,8 @@ function openGame(game, updateHistory = true) {
 }
 
 function closeGame() {
+  saveCloudGameStorage(state.activeGame, activeGameStorageBaseline);
+  activeGameStorageBaseline = {};
   clearSourceTimer();
   state.sourceAttempt += 1;
   state.activeGame = null;
@@ -790,10 +852,21 @@ elements.frame.addEventListener('load', () => {
 });
 elements.frame.addEventListener('error', () => tryNextGameSource('The current source could not be opened.'));
 window.addEventListener('message', event => {
+  if (event.origin === location.origin && event.data?.type === 'nyx:cloud-game-result') {
+    const request = cloudGameRequests.get(String(event.data.requestId || ''));
+    if (request) {
+      clearTimeout(request.timer);
+      cloudGameRequests.delete(String(event.data.requestId || ''));
+      if (event.data.error) request.reject(new Error(event.data.error));
+      else request.resolve(event.data);
+    }
+    return;
+  }
   if (event.source !== elements.frame.contentWindow || !state.activeGame) return;
   if (event.data?.type === 'nyx:game-launched') finishGameLaunch();
   if (event.data?.type === 'nyx:game-failed') tryNextGameSource('The current source reported a loading error.');
 });
+addEventListener('pagehide', () => saveCloudGameStorage(state.activeGame, activeGameStorageBaseline), { passive: true });
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && !elements.player.hidden && !document.fullscreenElement) closeGame();
 });

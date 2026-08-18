@@ -26,7 +26,7 @@
   const $ = id => document.getElementById(id);
   const qsa = (sel, root=document) => Array.from(root.querySelectorAll(sel));
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const store = {get(k,d){try{return JSON.parse(localStorage.getItem(k)) ?? d}catch{return d}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}, text(k,d=''){try{return localStorage.getItem(k) ?? d}catch{return d}}, setText(k,v){try{localStorage.setItem(k,String(v))}catch{}}};
+  const store = {get(k,d){try{return JSON.parse(localStorage.getItem(k)) ?? d}catch{return d}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}queueNyxCloudPreferencesSave?.()}, text(k,d=''){try{return localStorage.getItem(k) ?? d}catch{return d}}, setText(k,v){try{localStorage.setItem(k,String(v))}catch{}queueNyxCloudPreferencesSave?.()}};
   let nyxChatAudioContext=null;
   let nyxChatAudioUnlocked=false;
   function unlockNyxChatNotificationSound(){if(nyxChatAudioUnlocked)return;try{const Context=window.AudioContext||window.webkitAudioContext;if(!Context)return;nyxChatAudioContext=nyxChatAudioContext||new Context();void nyxChatAudioContext.resume();nyxChatAudioUnlocked=true}catch{}}
@@ -332,6 +332,86 @@
     try{return await request}
     finally{if(nyxFirebaseTokenPromise===request)nyxFirebaseTokenPromise=null}
   }
+  const NYX_CLOUD_PREFERENCE_KEYS=Object.freeze(['nyx.theme','nyx.customThemeColor','nyx.font','nyx.engine','nyx.browserMode','nyx.transport','nyx.visualEffect','nyx.visualEffectSpeed','nyx.visualEffectAmount','nyx.threeDBackgrounds','nyx.performanceTier','nyx.gamePerformanceMode','nyx.homeShortcuts']);
+  let nyxCloudPreferencesTimer=0;
+  let nyxCloudPreferencesInterval=0;
+  let nyxCloudPreferencesFingerprint='';
+  let nyxCloudPreferencesUserId='';
+  function nyxCloudPreferencesPayload(){
+    const preferences={};
+    NYX_CLOUD_PREFERENCE_KEYS.forEach(key=>{
+      const value=localStorage.getItem(key);
+      if(value!==null) preferences[key]=String(value);
+    });
+    return preferences;
+  }
+  function nyxCloudPreferencesDigest(){
+    try{return JSON.stringify(nyxCloudPreferencesPayload())}catch{return ''}
+  }
+  async function nyxCloudRequest(path,options={}){
+    const token=await nyxGetFirebaseToken();
+    if(!token) throw new Error('Sign in to use cloud saves.');
+    const response=await fetch(path,{...options,headers:{...(options.headers||{}),Authorization:`Bearer ${token}`},cache:'no-store'});
+    const payload=await response.json().catch(()=>({}));
+    if(!response.ok) throw new Error(payload.error||'Nyx cloud save is unavailable.');
+    return payload;
+  }
+  async function loadNyxCloudPreferences(){
+    const user=nyxFounderSignedInUser;
+    if(!user) return false;
+    const cloud=await nyxCloudRequest('/api/account/cloud-preferences');
+    const marker=localStorage.getItem('nyx.cloud.preferences.user');
+    const preferences=cloud?.preferences&&typeof cloud.preferences==='object'?cloud.preferences:{};
+    if(marker!==user.uid&&Object.keys(preferences).length){
+      NYX_CLOUD_PREFERENCE_KEYS.forEach(key=>{
+        if(typeof preferences[key]==='string') localStorage.setItem(key,preferences[key]);
+      });
+      applyUserSettings();
+      applyNyxPerformanceTier?.(getNyxPerformanceTier());
+    }
+    localStorage.setItem('nyx.cloud.preferences.user',user.uid);
+    nyxCloudPreferencesUserId=user.uid;
+    nyxCloudPreferencesFingerprint=marker!==user.uid&&!Object.keys(preferences).length?'':nyxCloudPreferencesDigest();
+    return true;
+  }
+  async function saveNyxCloudPreferences(){
+    const user=nyxFounderSignedInUser;
+    if(!user||nyxCloudPreferencesUserId!==user.uid) return false;
+    const fingerprint=nyxCloudPreferencesDigest();
+    if(fingerprint===nyxCloudPreferencesFingerprint) return true;
+    await nyxCloudRequest('/api/account/cloud-preferences',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({preferences:nyxCloudPreferencesPayload()})});
+    nyxCloudPreferencesFingerprint=fingerprint;
+    return true;
+  }
+  function queueNyxCloudPreferencesSave(){
+    if(!nyxFounderSignedInUser||!nyxCloudPreferencesUserId) return;
+    clearTimeout(nyxCloudPreferencesTimer);
+    nyxCloudPreferencesTimer=setTimeout(()=>{void saveNyxCloudPreferences().catch(()=>{})},900);
+  }
+  async function startNyxCloudPreferenceSync(){
+    clearInterval(nyxCloudPreferencesInterval);
+    try{await loadNyxCloudPreferences()}catch{}
+    if(nyxFounderSignedInUser){
+      nyxCloudPreferencesInterval=setInterval(()=>{void saveNyxCloudPreferences().catch(()=>{})},45_000);
+      queueNyxCloudPreferencesSave();
+    }
+  }
+  function stopNyxCloudPreferenceSync(){
+    clearTimeout(nyxCloudPreferencesTimer);
+    clearInterval(nyxCloudPreferencesInterval);
+    nyxCloudPreferencesTimer=0;
+    nyxCloudPreferencesInterval=0;
+    nyxCloudPreferencesFingerprint='';
+    nyxCloudPreferencesUserId='';
+  }
+  async function loadNyxCloudGameSave(gameKey){
+    const data=await nyxCloudRequest(`/api/account/cloud-games/${encodeURIComponent(String(gameKey||''))}`);
+    return data?.storage&&typeof data.storage==='object'?data.storage:{};
+  }
+  async function saveNyxCloudGameSave(gameKey,storage={},removed=[]){
+    return nyxCloudRequest(`/api/account/cloud-games/${encodeURIComponent(String(gameKey||''))}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storage,removed})});
+  }
+  window.NyxCloudSave={loadGame:loadNyxCloudGameSave,saveGame:saveNyxCloudGameSave};
   function nyxFriendlyFirebaseError(error,fallback='Your account request could not be completed.'){
     const code=String(error?.code||'').toLowerCase();
     const message=String(error?.message||'');
@@ -340,6 +420,60 @@
     if(code.includes('too-many-requests'))return 'Too many attempts. Wait a few minutes and try again.';
     if(code.includes('invalid-custom-token')||code.includes('custom-token-mismatch'))return 'Nyx could not start the Firebase session. Try logging in again.';
     return message&&!/^firebase:/i.test(message)?message:fallback;
+  }
+  function nyxNeedsEmailVerification(user=nyxFounderSignedInUser){
+    const email=String(user?.email||'').trim();
+    return Boolean(email&& !/@account\.nyx\.local$/i.test(email) && !user?.emailVerified);
+  }
+  async function sendNyxEmailVerification(user=nyxFounderSignedInUser){
+    if(!nyxNeedsEmailVerification(user)) return false;
+    const {sendEmailVerification}=await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js');
+    const configuredOrigin=String(globalThis.__NYX_RUNTIME_CONFIG__?.publicOrigin||'').trim();
+    const returnUrl=new URL('/',configuredOrigin||location.origin).href;
+    await sendEmailVerification(user,{url:returnUrl,handleCodeInApp:false});
+    return true;
+  }
+  function closeNyxEmailVerificationGate(){document.querySelector('.nyx-email-verification-overlay')?.remove()}
+  function openNyxEmailVerificationGate(options={}){
+    const user=nyxFounderSignedInUser;
+    if(!nyxNeedsEmailVerification(user)){closeNyxEmailVerificationGate();return}
+    let overlay=document.querySelector('.nyx-email-verification-overlay');
+    if(!overlay){
+      overlay=document.createElement('div');
+      overlay.className='nyx-account-overlay nyx-email-verification-overlay';
+      overlay.innerHTML='<section class="nyx-account-dialog" role="dialog" aria-modal="true" aria-labelledby="nyxEmailVerificationTitle"><div class="nyx-account-mark" aria-hidden="true"><span>✉</span></div><p id="nyxEmailVerificationTitle" class="nyx-account-title">Verify your email to finish setting up Nyx</p><p class="nyx-account-copy" data-nyx-email-verification-copy></p><div class="nyx-email-verification-actions"><button class="nyx-account-submit" data-nyx-email-resend type="button">Resend verification email</button><button class="nyx-account-secondary" data-nyx-email-refresh type="button">I verified my email</button><button class="nyx-account-secondary" data-nyx-email-signout type="button">Sign out</button></div><p class="nyx-account-footer" data-nyx-email-verification-status></p></section>';
+      document.body.appendChild(overlay);
+      const status=overlay.querySelector('[data-nyx-email-verification-status]');
+      const setBusy=(button,busy)=>{button.disabled=busy;button.textContent=busy?'Checking…':button.dataset.nyxEmailResend!==undefined?'Resend verification email':'I verified my email'};
+      overlay.addEventListener('click',async event=>{
+        const resend=event.target.closest('[data-nyx-email-resend]');
+        const refresh=event.target.closest('[data-nyx-email-refresh]');
+        if(event.target.closest('[data-nyx-email-signout]')){await signOutFounderOwner();return}
+        if(resend){
+          resend.disabled=true;
+          try{await sendNyxEmailVerification();status.textContent='Verification email sent. Check your inbox and spam folder.'}
+          catch(error){status.textContent=nyxFriendlyFirebaseError(error,'Nyx could not send the verification email. Check Firebase’s email template and try again.')}
+          finally{resend.disabled=false}
+        }
+        if(refresh){
+          setBusy(refresh,true);
+          try{
+            await nyxFounderSignedInUser?.reload();
+            nyxFounderSignedInUser=nyxFounderFirebaseAuth?.currentUser||nyxFounderSignedInUser;
+            if(!nyxNeedsEmailVerification()){
+              await nyxGetFirebaseToken(true);
+              closeNyxEmailVerificationGate();
+              syncFounderOwnerControls();
+              void startNyxCloudPreferenceSync();
+              toast('Email verified — cloud saves are now enabled.');
+            }else status.textContent='Nyx still cannot confirm this email. Open the link in your inbox, then try again.';
+          }catch(error){status.textContent=nyxFriendlyFirebaseError(error,'Nyx could not check your verification yet.')}
+          finally{if(document.body.contains(refresh))setBusy(refresh,false)}
+        }
+      });
+    }
+    overlay.querySelector('[data-nyx-email-verification-copy]').textContent=`We sent a verification link to ${String(user.email)}. Open it, then return here to continue.`;
+    overlay.querySelector('[data-nyx-email-verification-status]').textContent=options.sent?'Verification email sent. Check your inbox and spam folder.':'Your account is signed in, but verified-only features remain locked until you confirm your email.';
   }
   async function loadNyxUserProfile(){
     if(!nyxFounderSignedInUser) return null;
@@ -629,7 +763,7 @@
   function ensureNyxAccountButton(){
     const existing=document.getElementById('nyxAccountButton');
     const signedIn=Boolean(nyxFounderSignedInUser);
-    const host=document.body.classList.contains('browser-shell')?document.querySelector('.browser-home:not(.hidden) [data-nyx-profile-slot]')||document.querySelector('.browser-home [data-nyx-profile-slot]'):document.querySelector('.status-icons');
+    const host=document.body.classList.contains('browser-shell')?document.querySelector('.top-os [data-nyx-profile-slot]')||document.querySelector('.browser-home:not(.hidden) [data-nyx-profile-slot]')||document.querySelector('.browser-home [data-nyx-profile-slot]'):document.querySelector('.status-icons');
     if(!host){return}
     if(existing&&existing.parentElement!==host){closeNyxAccountMenu();existing.remove()}
     const button=document.getElementById('nyxAccountButton')||document.createElement('button');
@@ -671,7 +805,7 @@
   function syncFounderOwnerControls(){
     const configured=Boolean(nyxFounderAuthConfig.enabled);
     const signedIn=nyxFounderSignedInUser;
-    document.querySelectorAll('[data-founder-account-card]').forEach(card=>{card.hidden=!configured});
+    document.querySelectorAll('[data-founder-account-card]').forEach(card=>{card.hidden=false});
     document.querySelectorAll('[data-founder-profile-settings-card]').forEach(card=>{card.hidden=!nyxFounderIsOwner});
     document.querySelectorAll('[data-owner-dashboard-card]').forEach(card=>{card.hidden=!nyxOwnerDashboardAccess});
     document.querySelectorAll('[data-founder-account-status]').forEach(status=>{
@@ -681,6 +815,11 @@
       const roleName=String(nyxUserAccountRole||'member').replaceAll('_',' ').replace(/\b\w/g,letter=>letter.toUpperCase());
       status.textContent=nyxFounderIsOwner?'Signed in as the Nyx founder.':nyxOwnerDashboardAccess?`Signed in as ${roleName}.`:`Signed in. Firebase account ID: ${accountId}`;
     });
+    document.querySelectorAll('[data-nyx-cloud-save-status]').forEach(status=>{
+      if(!configured){status.textContent='Cloud saves become available when Nyx accounts are configured.';return}
+      if(!signedIn){status.textContent='Sign in with an email account to sync supported game progress and Nyx preferences.';return}
+      status.textContent=signedIn.emailVerified&&signedIn.email?'Cloud saves are enabled for this verified email account.':'Verify the email on this account to enable cloud saves.';
+    });
     document.querySelectorAll('[data-open-nyx-account]').forEach(button=>{button.hidden=!configured||Boolean(signedIn);});
     document.querySelectorAll('[data-nyx-account-sign-out]').forEach(button=>{button.hidden=!signedIn;});
     document.querySelectorAll('[data-open-nyx-profile]').forEach(button=>{if(button.id!=='nyxAccountButton') button.hidden=!signedIn;});
@@ -688,6 +827,7 @@
       presence.classList.toggle('nyx-owner-presence-action',Boolean(nyxOwnerDashboardAccess));
       presence.tabIndex=nyxOwnerDashboardAccess?0:-1;
       presence.setAttribute('aria-label',nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online');
+      presence.title=nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online';
     });
     ensureNyxAccountButton();
   }
@@ -721,7 +861,7 @@
         try{await setPersistence(nyxFounderFirebaseAuth,browserLocalPersistence)}
         catch(error){console.warn('Nyx could not enable persistent sign-in:',error)}
         if(typeof nyxFounderFirebaseAuth.authStateReady==='function')await nyxFounderFirebaseAuth.authStateReady();
-        onAuthStateChanged(nyxFounderFirebaseAuth,async user=>{nyxFounderSignedInUser=user||null;if(!user){stopNyxUserActivity();nyxUserProfile=null;nyxUserProfileCreatedAt='';nyxFounderIsOwner=false;nyxOwnerDashboardAccess=false;nyxUserPermissions=[];nyxUserAccountRole='member';nyxUserSubscriptionStatus='free';syncNyxAccountEntitlements();nyxUserAccountEmail='';await refreshFounderOwnerAccess();return}startNyxUserActivity(user);await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile()])});
+        onAuthStateChanged(nyxFounderFirebaseAuth,async user=>{nyxFounderSignedInUser=user||null;if(!user){closeNyxEmailVerificationGate();stopNyxUserActivity();stopNyxCloudPreferenceSync();nyxUserProfile=null;nyxUserProfileCreatedAt='';nyxFounderIsOwner=false;nyxOwnerDashboardAccess=false;nyxUserPermissions=[];nyxUserAccountRole='member';nyxUserSubscriptionStatus='free';syncNyxAccountEntitlements();nyxUserAccountEmail='';await refreshFounderOwnerAccess();return}startNyxUserActivity(user);if(nyxNeedsEmailVerification(user)){stopNyxCloudPreferenceSync();openNyxEmailVerificationGate()}else closeNyxEmailVerificationGate();await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile(),nyxNeedsEmailVerification(user)?Promise.resolve():startNyxCloudPreferenceSync()])});
       }catch(error){console.warn('Nyx owner sign-in could not initialize:',error);nyxFounderAuthConfig={enabled:false,ownerConfigured:false}}
       finally{syncFounderOwnerControls()}
     })();
@@ -798,7 +938,7 @@
       submit.disabled=true;
       error.textContent='';
       try{
-        const {sendEmailVerification,signInWithCustomToken}=await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js');
+        const {signInWithCustomToken}=await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js');
         const endpoint=mode==='register'?'/api/account/register':'/api/account/sign-in';
         const payload=mode==='register'?{username,email:recoveryEmail,password:passwordValue}:{identifier:rawIdentifier,password:passwordValue};
         const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
@@ -811,9 +951,7 @@
         let verificationFailed=false;
         if(mode==='register'&&data.verificationRequired&&credential.user.email){
           try{
-            const configuredOrigin=String(globalThis.__NYX_RUNTIME_CONFIG__?.publicOrigin||'').trim();
-            const returnUrl=new URL('/',configuredOrigin||location.origin).href;
-            await sendEmailVerification(credential.user,{url:returnUrl,handleCodeInApp:false});
+            await sendNyxEmailVerification(credential.user);
             verificationSent=true;
           }catch{
             verificationFailed=true;
@@ -821,7 +959,8 @@
         }
         await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile()]);
         close();
-        toast(mode==='register'?(verificationSent?'Account created — check your email to verify it.':(verificationFailed?'Account created, but the verification email could not be sent. Check Firebase email settings.':'Nyx profile created')):'Signed in');
+        if(nyxNeedsEmailVerification(credential.user)) openNyxEmailVerificationGate({sent:verificationSent});
+        toast(mode==='register'?(verificationSent?'Account created — verify your email to continue.':(verificationFailed?'Account created, but Nyx could not send the verification email. Use Resend verification email to try again.':'Nyx profile created')):'Signed in');
       }catch(authError){
         error.textContent=nyxFriendlyFirebaseError(authError,'Account could not be completed. Try again.');
         submit.disabled=false;
@@ -832,7 +971,7 @@
   async function signOutFounderOwner(){
     closeNyxAccountMenu();
     try{await nyxFounderFirebaseAuth?.signOut()}catch{}
-    nyxFirebaseTokenPromise=null;nyxFounderSignedInUser=null;nyxFounderIsOwner=false;nyxOwnerDashboardAccess=false;nyxUserPermissions=[];nyxUserAccountRole='member';nyxUserSubscriptionStatus='free';syncNyxAccountEntitlements();nyxUserAccountEmail='';nyxUserProfile=null;nyxUserProfileCreatedAt='';syncFounderOwnerControls();toast('Signed out');
+    nyxFirebaseTokenPromise=null;nyxFounderSignedInUser=null;stopNyxCloudPreferenceSync();nyxFounderIsOwner=false;nyxOwnerDashboardAccess=false;nyxUserPermissions=[];nyxUserAccountRole='member';nyxUserSubscriptionStatus='free';syncNyxAccountEntitlements();nyxUserAccountEmail='';nyxUserProfile=null;nyxUserProfileCreatedAt='';syncFounderOwnerControls();toast('Signed out');
   }
   function nyxUserProfileCardMarkup(profile=normalizeNyxUserProfile(nyxUserProfile),options={}){
     const joinedAt=String(options.createdAt||nyxUserProfileCreatedAt||'');
@@ -1770,9 +1909,6 @@
     setTimeout(()=>link.remove(),0);
     return true;
   }
-  function showAnimexMikuPrompt(onOk){
-    shownyxPrompt('Use MIKU for streaming',{onOk});
-  }
   //hieroglyph-text-effect
   const hieroglyphTextNodes = new WeakMap();
   const hieroglyphSkipSelector = 'script,style,noscript,textarea,input,select,option,iframe,canvas,svg,audio,video';
@@ -2112,10 +2248,10 @@
     'drive.google.com':localIcon('googledrive-logo.png'),
     'docs.google.com':svgIcon(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#1a73e8"/><path d="M22 12h17l9 9v31H22z" fill="#fff"/><path d="M39 12v10h9" fill="#d2e3fc"/><path d="M27 31h16M27 37h16M27 43h12" stroke="#1a73e8" stroke-width="3" stroke-linecap="round"/></svg>`),
     'duck.ai':localIcon('duck-ai-logo.png'),
-    'nyx-ai':localIcon('shortcut-nyx-ai.svg?v=3'),
+    'nyx-ai':localIcon('shortcut-nyx-ai.svg?v=6'),
     'nyxify':localIcon('shortcut-spotify.svg?v=1'),
     'aether.cx':localIcon('theatre-masks.svg?v=1'),
-    'nyx-chat':localIcon('chat.svg?v=1'),
+    'nyx-chat':localIcon('chat.svg?v=2'),
     'link-checker':localIcon('link-checker.svg?v=2'),
     'link-generator':localIcon('link-generator.svg'),
     'chess.com':localIcon('chess-logo.png'),
@@ -2772,10 +2908,97 @@
       button.addEventListener('blur',()=>aim(0));
     });
   }
+  function nyxDashboardIcon(name){
+    const icons={
+      dashboard:'<path d="M4 5.5h6.5V12H4zM13.5 5.5H20v4h-6.5zM13.5 12.5H20v6h-6.5zM4 14.5h6.5v4H4z"/>',
+      travel:'<path d="M5 18.5h14M7 15l3.2-9.5h3.6L17 15M8.5 11h7"/>',
+      media:'<path d="M5 6.5h14v11H5z"/><path d="m10 9.5 5 2.5-5 2.5z"/>',
+      ai:'<path d="M12 2a3 3 0 0 0-3 3v1H7a3 3 0 0 0-3 3v2H3a2 2 0 0 0 0 4h1v2a3 3 0 0 0 3 3h2v1a3 3 0 0 0 6 0v-1h2a3 3 0 0 0 3-3v-2h1a2 2 0 0 0 0-4h-1V9a3 3 0 0 0-3-3h-2V5a3 3 0 0 0-3-3z"/><circle cx="9" cy="11" r="1.2"/><circle cx="15" cy="11" r="1.2"/><path d="M9 16h6"/>',
+      extensions:'<path d="M8.5 3.5v4h-4v4h4v4h4v4h4v-4h4v-4h-4v-4h-4v-4z"/>',
+      performance:'<path d="M4 15a8 8 0 1 1 16 0"/><path d="m12 15 4-5"/><circle cx="12" cy="15" r="1.3"/>',
+      apps:'<path d="M5 5h5v5H5zM14 5h5v5h-5zM5 14h5v5H5zM14 14h5v5h-5z"/>',
+      settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+      chat:'<path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/><path d="M9 10v4M12 9v6M15 11v2"/>',
+      games:'<path d="M8 9h8a5 5 0 0 1 4.6 6.9l-.8 2a2 2 0 0 1-3.2.8L14.8 17H9.2l-1.8 1.7a2 2 0 0 1-3.2-.8l-.8-2A5 5 0 0 1 8 9z"/><path d="M8 12v4M6 14h4M16.5 13.2h.1M18.2 15h.1"/>',
+      music:'<path d="M9 18V6l9-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="15.5" cy="16" r="2.5"/>',
+      sparkle:'<path d="M12 2c.7 5.3 2.7 7.3 8 8-5.3.7-7.3 2.7-8 8-.7-5.3-2.7-7.3-8-8 5.3-.7 7.3-2.7 8-8Z"/><path d="M19 16.5c.25 1.8.95 2.5 2.75 2.75C19.95 19.5 19.25 20.2 19 22c-.25-1.8-.95-2.5-2.75-2.75C18.05 19 18.75 18.3 19 16.5Z"/>',
+      browse:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/>',
+      link:'<path d="M10 13a4 4 0 0 0 5.7 0l2.3-2.3A4 4 0 0 0 12.3 5L11 6.3M14 11a4 4 0 0 0-5.7 0L6 13.3A4 4 0 0 0 11.7 19l1.3-1.3"/>'
+    };
+    return `<svg viewBox="0 0 24 24" aria-hidden="true">${icons[name]||icons.apps}</svg>`;
+  }
+  function nyxHeaderIcon(name){
+    const icons={
+      chat:'<path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/><path d="M9 10v4M12 9v6M15 11v2"/>',
+      settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
+    };
+    return `<svg class="nyx-header-icon" viewBox="0 0 24 24" aria-hidden="true">${icons[name]||icons.chat}</svg>`;
+  }
+  function browserDashboardMarkup(){
+    const tab=(name,label)=>`<button class="${name==='dashboard'?'is-active':''}" data-nyx-dashboard-tab="${name}" type="button">${nyxDashboardIcon(name)}<span>${label}</span></button>`;
+    const action=(icon,title,copy,attrs)=>`<button ${attrs} type="button">${nyxDashboardIcon(icon)}<span><strong>${title}</strong><small>${copy}</small></span></button>`;
+    const meter=(name,icon)=>`<div class="nyx-dashboard-perf-meter"><div class="nyx-dashboard-perf-track"><i data-nyx-perf-meter="${name}"></i></div>${icon}</div>`;
+    const stat=(label,name,suffix='')=>`<div class="nyx-dashboard-perf-stat"><span>${label}</span><b data-nyx-perf-stat="${name}">&mdash;${suffix?` <small>${suffix}</small>`:''}</b></div>`;
+    const performance=`<div class="nyx-dashboard-performance" data-nyx-dashboard-performance><div class="nyx-dashboard-perf-meters">${meter('fps',nyxDashboardIcon('performance'))}${meter('memory','<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></svg>')}${meter('ping','<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r=".6"/></svg>')}</div><div class="nyx-dashboard-perf-stats">${stat('Frame rate','fps','fps')}${stat('JS memory','memory')}${stat('Ping','ping','ms')}${stat('CPU threads','cpu')}${stat('Service worker','worker')}${stat('Proxy engine','engine')}</div></div>`;
+    return `<div class="nyx-dashboard" data-nyx-dashboard><button class="browser-top-clock nyx-dashboard-trigger" data-nyx-dashboard-trigger type="button" aria-expanded="false" aria-label="Open dashboard"><span data-browser-shell-clock>--:--</span><i aria-hidden="true"></i><span>Dashboard</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></button><section class="nyx-dashboard-panel" aria-label="Nyx dashboard"><nav class="nyx-dashboard-tabs" aria-label="Dashboard sections">${tab('dashboard','Dashboard')}${tab('travel','Travel')}${tab('media','Media')}${tab('ai','AI')}${tab('extensions','Extensions')}${tab('performance','Perf')}</nav><div class="nyx-dashboard-pages"><div class="nyx-dashboard-page is-active" data-nyx-dashboard-page="dashboard"><article class="nyx-dashboard-time-card"><span>Time</span><strong data-nyx-dashboard-time>--:--</strong><small data-nyx-dashboard-date>Loading date</small></article><article class="nyx-dashboard-weather-card" data-nyx-dashboard-weather><span>Weather</span><strong><i aria-hidden="true"></i><b data-nyx-dashboard-weather-temp>--&deg;</b></strong><small data-nyx-dashboard-weather-desc>Loading weather</small><small class="nyx-dashboard-weather-place" data-nyx-dashboard-weather-place></small></article><article class="nyx-dashboard-session-card"><span>Session</span><div><small>Nyx</small><b>Online</b></div><div><small>Users online</small><b data-nyx-online-users>Connecting&hellip;</b></div><div><small>Session uptime</small><b data-nyx-dashboard-uptime>0m</b></div><div><small>Connection</small><b>Secure</b></div></article></div><div class="nyx-dashboard-page" data-nyx-dashboard-page="travel">${action('apps','Apps','Open every Nyx app','data-open="apps"')}${action('link','Bookmarks','Your saved destinations','data-open="links"')}${action('browse','Profiles','Browse Nyx members','data-open-nyx-profile-entry')}</div><div class="nyx-dashboard-page" data-nyx-dashboard-page="media">${action('music','Nyxify','Music and playlists','data-app-url="/apps/nyxify/"')}${action('media','Movies','Open the theater','data-app-url="https://aether.cx/"')}${action('games','Pirate Cove','Games library','data-app-url="/assets/games/"')}</div><div class="nyx-dashboard-page" data-nyx-dashboard-page="ai">${action('ai','Nyx AI','Ask, research, and create','data-app-url="nyx://ai"')}${action('browse','Duck AI','Private web assistant','data-app-url="https://duck.ai/"')}${action('settings','AI settings','Keys and preferences','data-open="settings"')}</div><div class="nyx-dashboard-page" data-nyx-dashboard-page="extensions">${action('link','Link Checker','Check domains and filters','data-app-url="/apps/link-checker/"')}${action('extensions','Link Generator','Create a Nyx link','data-app-url="/apps/link-generator/"')}${action('performance','Developer','Runtime tools','data-open="developer"')}</div><div class="nyx-dashboard-page" data-nyx-dashboard-page="performance">${performance}</div></div></section></div>`;
+  }
+  function browserCompactDashboardMarkup(){
+    const tile=(icon,label,name,attrs)=>`<button ${attrs} data-nyx-app-name="${name}" type="button">${icon==='ai'?'<span class="nyx-nocturne-ai-icon" aria-hidden="true"></span>':nyxDashboardIcon(icon)}<span>${label}</span></button>`;
+    return `<div class="nyx-dashboard nyx-dashboard-compact" data-nyx-dashboard><button class="browser-top-clock nyx-dashboard-trigger" data-nyx-dashboard-trigger type="button" aria-expanded="false" aria-label="Open dashboard"><span data-browser-shell-clock>--:--</span><i aria-hidden="true"></i><span>Dashboard</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></button><section class="nyx-dashboard-panel" data-nyx-app-launcher aria-label="Nyx dashboard"><header class="nyx-dashboard-appbar"><div><strong>Apps</strong><small>Everything in Nyx</small></div><label><span aria-hidden="true"></span><input data-nyx-app-search type="search" placeholder="Find an app" autocomplete="off"></label></header><div class="nyx-dashboard-app-grid" data-nyx-app-results>${tile('link','Link Checker','link checker','data-app-url="/apps/link-checker/"')}${tile('extensions','Link Generator','link generator','data-app-url="/apps/link-generator/"')}${tile('media','Movies','movies theater','data-app-url="https://aether.cx/"')}${tile('ai','Nyx AI','nyx ai','data-app-url="nyx://ai"')}${tile('music','Nyxify','nyxify music','data-app-url="/apps/nyxify/"')}${tile('chat','Chat','chat','data-app-url="/apps/chat/"')}${tile('games','Games','games pirate cove','data-app-url="/assets/games/"')}${tile('browse','Profiles','profiles members','data-open-nyx-profile-entry')}${tile('settings','Settings','settings preferences','data-open="settings"')}</div><footer class="nyx-dashboard-footer"><span><i aria-hidden="true"></i><b data-nyx-online-count>Connecting&hellip;</b></span><button data-open="apps" type="button">View all apps</button></footer></section></div>`;
+  }
   function renderChromeFixed(){
     const top=document.querySelector('.top-os');
     if(top){
       top.innerHTML='<div class="brand-mini"><button class="browser-mode-app-button active" data-browser-shell-home title="Current tab"><span class="browser-home-icon" aria-hidden="true"></span><span class="browser-home-label">Home</span></button><button class="browser-mode-tab" data-browser-shell-new-tab title="New tab"><span>New tab</span></button></div><span class="browser-top-clock" data-browser-shell-clock>--:--:--</span><form class="browser-mode-address" data-browser-shell-search><button class="browser-nav-control" data-browser-shell-back type="button" title="Back" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button><button class="browser-nav-control" data-browser-shell-forward type="button" title="Forward" aria-label="Forward"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button><button class="browser-nav-control" data-browser-shell-reload type="button" title="Reload" aria-label="Reload"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"></path><path d="M20 4v7h-7"></path></svg></button><button class="browser-nav-control" data-browser-shell-home-nav type="button" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8"></path><path d="M5 10v10h14V10"></path><path d="M9 20v-6h6v6"></path></svg></button><input class="browser-mode-url" data-browser-shell-url placeholder="Search or enter a URL" autocomplete="off"><button class="browser-mode-bookmark" data-browser-shell-bookmark type="button" title="Bookmark this tab" aria-pressed="false"><span class="fresh-real-icon" aria-hidden="true">☆</span></button><button class="browser-mode-weather" data-open="weather" type="button" title="Weather" aria-label="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button><button data-browser-shell-menu type="button" title="Menu"><span class="fresh-real-icon" aria-hidden="true">⋮</span></button></form><div class="browser-bookmark-panel" id="browserBookmarkPanel" hidden></div><div class="browser-mode-menu" id="browserModeMenu"><button data-browser-shell-new-tab type="button">New tab</button><button data-browser-bookmarks-toggle type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-browser-hieroglyph-toggle type="button">Hieroglyph Mode</button><button data-app-url="/assets/games/index.html" type="button">Pirate Cove</button><button data-app-url="/apps/chat/" type="button">Chat</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-shell-about-tab type="button">Open Tab in Abt:Blank</button></div>';
+      const legacyClock=top.querySelector(':scope > .browser-top-clock');
+      if(legacyClock) legacyClock.outerHTML=browserDashboardMarkup();
+      top.querySelector('.brand-mini [data-browser-shell-new-tab]')?.remove();
+      const shellAddress=top.querySelector('form.browser-mode-address');
+      shellAddress?.insertAdjacentHTML('afterbegin','<button class="browser-nav-control browser-tabs-toggle" data-browser-shell-tabs-toggle type="button" aria-expanded="false" aria-controls="nyxBrowserTabSidebar" title="Tabs" aria-label="Tabs"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"></rect><path d="M8 10h8M8 14h5"></path></svg></button>');
+      shellAddress?.querySelector('[data-open="weather"]')?.remove();
+      const bookmarkButton=shellAddress?.querySelector('[data-browser-shell-bookmark]');
+      if(bookmarkButton) bookmarkButton.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.4l6.1-.9z"></path></svg>';
+      const menuButton=shellAddress?.querySelector('[data-browser-shell-menu]');
+      if(menuButton){
+        menuButton.removeAttribute('data-browser-shell-menu');
+        menuButton.dataset.open='developer';
+        menuButton.setAttribute('title','Developer console');
+        menuButton.setAttribute('aria-label','Open developer console');
+        menuButton.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 8-4 4 4 4M16 8l4 4-4 4M14 5l-4 14"></path></svg>';
+      }
+      const fullscreenButton=document.createElement('button');
+      fullscreenButton.type='button';
+      fullscreenButton.dataset.pageFullscreen='';
+      fullscreenButton.setAttribute('title','Fullscreen');
+      fullscreenButton.setAttribute('aria-label','Fullscreen');
+      fullscreenButton.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H4a1 1 0 0 0-1 1v4M16 3h4a1 1 0 0 1 1 1v4M8 21H4a1 1 0 0 1-1-1v-4M16 21h4a1 1 0 0 0 1-1v-4"></path></svg>';
+      if(shellAddress){
+        const tabsButton=shellAddress.querySelector('[data-browser-shell-tabs-toggle]');
+        const backButton=shellAddress.querySelector('[data-browser-shell-back]');
+        const forwardButton=shellAddress.querySelector('[data-browser-shell-forward]');
+        const reloadButton=shellAddress.querySelector('[data-browser-shell-reload]');
+        const homeButton=shellAddress.querySelector('[data-browser-shell-home-nav]');
+        const urlField=shellAddress.querySelector('[data-browser-shell-url]');
+        shellAddress.replaceChildren(tabsButton,backButton,forwardButton,reloadButton,bookmarkButton,urlField,menuButton,homeButton,fullscreenButton);
+      }
+      const homeTabsToggle=document.createElement('button');
+      homeTabsToggle.type='button';
+      homeTabsToggle.className='nyx-home-tabs-toggle';
+      homeTabsToggle.dataset.browserShellTabsToggle='';
+      homeTabsToggle.setAttribute('aria-label','Tabs');
+      homeTabsToggle.setAttribute('aria-controls','nyxBrowserTabSidebar');
+      homeTabsToggle.setAttribute('aria-expanded','false');
+      homeTabsToggle.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"></rect><path d="M8 10h8M8 14h5"></path></svg>';
+      top.appendChild(homeTabsToggle);
+      const homeActions=document.createElement('nav');
+      homeActions.className='nyx-minimal-top-actions';
+      homeActions.setAttribute('aria-label','Nyx shortcuts');
+      homeActions.innerHTML=`<button data-app-url="/apps/chat/" type="button" aria-label="Chat">${nyxHeaderIcon('chat')}</button><button data-open="settings" type="button" aria-label="Settings">${nyxHeaderIcon('settings')}</button><span data-nyx-profile-slot></span>`;
+      top.appendChild(homeActions);
+      renderNyxPresence();
+      syncHomeWeatherWidgets();
+      syncNyxDashboardClock();
+      syncNyxDashboardPerformance();
       top.querySelectorAll('.brand-mini button[title],.browser-mode-address button[title]').forEach(button=>{
         if(!button.getAttribute('aria-label')) button.setAttribute('aria-label',button.getAttribute('title') || 'Browser control');
         button.removeAttribute('title');
@@ -2834,7 +3057,11 @@
       renderChromeFixed();
       if(nyxStartupOpened && browserShellNeedsStartupHome()) setBrowserShellHomeActive();
       else renderBrowserShellTabs();
-    }else renderChrome();
+    }else{
+      document.body.classList.remove('nyx-tab-sidebar-open');
+      document.getElementById('nyxBrowserTabSidebar')?.remove();
+      renderChrome();
+    }
     renderedChromeMode=mode;
     tick();
   }
@@ -3459,14 +3686,29 @@
       moveBrowserShellTab(tab.dataset.browserShellTab,target.id,direction>0);
     });
   }
+  function ensureBrowserShellTabSidebar(){
+    let sidebar=document.getElementById('nyxBrowserTabSidebar');
+    if(sidebar) return sidebar;
+    sidebar=document.createElement('aside');
+    sidebar.id='nyxBrowserTabSidebar';
+    sidebar.className='nyx-browser-tab-sidebar';
+    sidebar.setAttribute('aria-label','Browser tabs');
+    sidebar.innerHTML='<header><strong>Tabs</strong><div><button type="button" data-browser-bookmarks-toggle title="Bookmarks" aria-label="Bookmarks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h5l1.5 2H19v11H5z"></path></svg></button><button type="button" data-browser-shell-new-tab title="New tab" aria-label="New tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></header><div class="nyx-browser-tab-list" data-browser-shell-tab-list role="tablist" aria-label="Open tabs"></div>';
+    document.body.appendChild(sidebar);
+    return sidebar;
+  }
+  function browserShellTabDomain(tab){
+    const url=browserShellSourceUrl(tab?.url || '');
+    if(!url) return 'nyxlearning.org';
+    try{return new URL(url,location.href).hostname || 'nyxlearning.org'}catch{return browserShellLabel(url) || 'nyxlearning.org'}
+  }
   function renderBrowserShellTabs(){
     if(!document.body.classList.contains('browser-shell')) return;
     ensureBrowserShellHome();
-    const row=document.querySelector('body.browser-shell .brand-mini') || document.querySelector('.brand-mini');
-    if(!row) return;
-    row.querySelectorAll('.browser-mode-shell-tab').forEach(tab=>tab.remove());
-    const home=row.querySelector('[data-browser-shell-home]');
-    const plus=row.querySelector('[data-browser-shell-new-tab]');
+    const sidebar=ensureBrowserShellTabSidebar();
+    const list=sidebar.querySelector('[data-browser-shell-tab-list]');
+    const home=document.querySelector('body.browser-shell .brand-mini [data-browser-shell-home]');
+    if(!list) return;
     if(!browserShellTabs.length){
       browserShellActiveTab=null;
       const contentStateChanged=document.body.classList.contains('browser-content-active');
@@ -3478,6 +3720,7 @@
       }
       const input=document.querySelector('[data-browser-shell-url]');
       if(input && document.activeElement!==input) input.value='';
+      list.replaceChildren();
       return;
     }
     let active=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
@@ -3485,7 +3728,9 @@
       active=browserShellTabs[0];
       browserShellActiveTab=active.id;
     }
-    const activeShowsContent=!!(active.url && !isBrowserShellBlankUrl(active.url)) || (active.title!=='Home' && !isBrowserShellBlankUrl(active.url));
+    // A blank tab is still a real browser tab. Keeping it in the home-only
+    // chrome path hid the plus control and made the tab strip look broken.
+    const activeShowsContent=Boolean(active?.url) || active?.title!=='Home';
     const contentStateChanged=document.body.classList.contains('browser-content-active')!==activeShowsContent;
     document.body.classList.toggle('browser-content-active',activeShowsContent);
     if(contentStateChanged) queueMicrotask(()=>syncThemeVantaBackgrounds());
@@ -3496,31 +3741,36 @@
       home.title='Home';
       home.classList.toggle('active',active.title==='Home' && !active.url);
     }
-    browserShellTabs.filter(tab=>tab.url || tab.title!=='Home').forEach(tab=>{
-      const button=document.createElement('button');
-      button.type='button';
+    list.replaceChildren();
+    browserShellTabs.forEach(tab=>{
+      const item=document.createElement('div');
       const opening=browserShellOpeningTabs.has(tab.id);
-      button.className='browser-mode-tab browser-mode-shell-tab'+(tab.id===browserShellActiveTab?' active':'')+(opening?' tab-opening':'');
-      button.dataset.browserShellTab=tab.id;
-      button.draggable=true;
-      button.setAttribute('aria-grabbed','false');
-      button.title='Drag to reorder tab';
-      button.innerHTML=`<img class="browser-mode-tab-icon" alt="" src="${esc(browserChromeIcon(tab.icon,tab.url))}"><span>${esc(browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url))}</span><i class="browser-mode-shell-tab-close" data-browser-shell-close-tab="${esc(tab.id)}" aria-label="Close tab">x</i>`;
-      bindTabIconFallback(button.querySelector('.browser-mode-tab-icon'));
-      row.insertBefore(button,plus);
+      item.className='nyx-browser-tab-row'+(tab.id===browserShellActiveTab?' active':'')+(opening?' tab-opening':'');
+      item.dataset.browserShellTab=tab.id;
+      item.setAttribute('role','tab');
+      item.setAttribute('tabindex',tab.id===browserShellActiveTab?'0':'-1');
+      item.setAttribute('aria-selected',String(tab.id===browserShellActiveTab));
+      const close=browserShellTabs.length>1?`<button class="nyx-browser-tab-close" type="button" data-browser-shell-close-tab="${esc(tab.id)}" aria-label="Close ${esc(browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url))}">&times;</button>`:'';
+      item.innerHTML=`<img class="nyx-browser-tab-icon" alt="" src="${esc(browserChromeIcon(tab.icon,tab.url))}"><span><strong>${esc(browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url))}</strong><small>${esc(browserShellTabDomain(tab))}</small></span>${close}`;
+      bindTabIconFallback(item.querySelector('.nyx-browser-tab-icon'));
+      item.addEventListener('keydown',event=>{
+        if(event.key==='Enter' || event.key===' '){event.preventDefault();setBrowserShellActive(tab.id)}
+        if((event.key==='Delete' || event.key==='Backspace') && browserShellTabs.length>1){event.preventDefault();closeBrowserShellTab(tab.id)}
+      });
+      list.appendChild(item);
       if(opening){
         let openingFinished=false;
         const finishOpening=()=>{
           if(openingFinished) return;
           openingFinished=true;
           browserShellOpeningTabs.delete(tab.id);
-          button.classList.remove('tab-opening');
+          item.classList.remove('tab-opening');
         };
-        button.addEventListener('animationend',finishOpening,{once:true});
+        item.addEventListener('animationend',finishOpening,{once:true});
         setTimeout(finishOpening,1250);
       }
     });
-    installBrowserShellTabReordering(row);
+    document.querySelectorAll('[data-browser-shell-tabs-toggle]').forEach(button=>button.setAttribute('aria-expanded',String(document.body.classList.contains('nyx-tab-sidebar-open'))));
     const input=document.querySelector('[data-browser-shell-url]');
     if(input && document.activeElement!==input) input.value=browserShellDisplayValue(active.url);
     renderBrowserBookmarks();
@@ -3740,7 +3990,7 @@
   function animateActiveBrowserShellTab(){
     if(suppressHomeEntranceOnStartup) return;
     requestAnimationFrame(()=>{
-      const tab=document.querySelector('body.browser-shell .brand-mini > .active:is(.browser-mode-app-button,.browser-mode-shell-tab)');
+      const tab=document.querySelector('body.browser-shell .nyx-browser-tab-row.active,body.browser-shell .brand-mini > .active:is(.browser-mode-app-button,.browser-mode-shell-tab)');
       if(!tab) return;
       tab.classList.remove('tab-activating');
       void tab.offsetWidth;
@@ -3749,6 +3999,7 @@
     });
   }
   function setBrowserShellHomeActive(){
+    document.body.classList.remove('nyx-home-search-active');
     closeWeatherForWindowOpen();
     closeBrowserShellSettings();
     ensureBrowserShellHome();
@@ -3840,13 +4091,15 @@
       advanced:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"/></svg>'
     };
     const definitions=[
-      ['account','Account',settingsIcons.account,['account']],
-      ['privacy','Privacy',settingsIcons.privacy,['tab cloak','preset cloak','cloaking','panic key','website details','popup protection']],
-      ['customize','Customize',settingsIcons.customize,['theme','custom theme','font','effects','3d backgrounds','founder profile']],
-      ['browsing','Browsing',settingsIcons.browsing,['search engine','proxy engine','transport']],
-      ['advanced','Advanced',settingsIcons.advanced,[]]
+      ['appearance','Appearance',settingsIcons.customize,'Customize Nyx’s look and visual experience.',['theme','custom theme','font','effects','3d backgrounds','performance']],
+      ['search','Search & Cloak',settingsIcons.privacy,'Control search behavior and tab cloaking.',['tab cloak','preset cloak','cloaking']],
+      ['privacy','Privacy',settingsIcons.account,'Keep your browsing surface private and protected.',['private tabs','popup protection']],
+      ['proxy','Proxy',settingsIcons.browsing,'Choose how Nyx reaches the web.',['search engine','proxy engine','transport']],
+      ['advanced','Advanced',settingsIcons.advanced,'Configure power-user browser controls.',['panic key','display mode']],
+      ['account','Account',settingsIcons.account,'Manage your Nyx identity, cloud saves, and staff tools.',['account','cloud saves','owner dashboard','founder profile']],
+      ['about','About',settingsIcons.account,'Version details and local Nyx data.',['nyx','clear cache']]
     ];
-    const categoryFor=title=>definitions.find(([, , ,titles])=>titles.includes(title))?.[0] || 'advanced';
+    const categoryFor=title=>definitions.find(([, , , ,titles])=>titles.includes(title))?.[0] || 'advanced';
     const categories=new Map();
     definitions.forEach(([key,label])=>{
       const section=document.createElement('section');
@@ -3884,12 +4137,26 @@
     });
     source.remove();
 
+    const performance=document.createElement('section');
+    performance.className='settings-block';
+    performance.dataset.settingsSearch='performance high medium low animations effects';
+    performance.innerHTML=`<div class="nyx-settings-copy"><h2>Performance</h2><p>Choose the visual quality level for Nyx. Low minimizes motion and effects; Medium keeps normal motion with fewer heavy effects; High enables the full experience.</p></div><div class="nyx-settings-control"><div class="settings-actions" data-nyx-performance-options><button class="settings-action" data-nyx-performance-tier="low" type="button">Low</button><button class="settings-action" data-nyx-performance-tier="medium" type="button">Medium</button><button class="settings-action" data-nyx-performance-tier="high" type="button">High</button></div></div>`;
+    const activeTier=getNyxPerformanceTier();
+    performance.querySelectorAll('[data-nyx-performance-tier]').forEach(button=>button.classList.toggle('on',button.dataset.nyxPerformanceTier===activeTier));
+    categories.get('appearance').querySelector('.nyx-settings-group').appendChild(performance);
+
+    const about=document.createElement('section');
+    about.className='settings-block';
+    about.dataset.settingsSearch='about nyx version support reset cache';
+    about.innerHTML='<div class="nyx-settings-copy"><h2>Nyx</h2><p>Nyx Learning browser workspace. Settings are stored on this device unless they belong to your signed-in account.</p></div><div class="nyx-settings-control"><p class="nyx-settings-version">Version 2</p><div class="settings-actions"><button class="settings-action" data-clear-nyx-cache type="button">Reset local settings</button></div></div>';
+    categories.get('about').querySelector('.nyx-settings-group').appendChild(about);
+
     const side=document.createElement('aside');
     side.className='nyx-settings-side';
     side.innerHTML=`<label class="nyx-settings-filter"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input type="search" placeholder="Filter settings" aria-label="Filter settings"></label><nav class="nyx-settings-nav" aria-label="Settings categories">${definitions.map(([key,label,icon],index)=>`<button class="${index===0?'active':''}" data-settings-category-button="${key}" type="button"><span aria-hidden="true">${icon}</span>${label}</button>`).join('')}</nav>`;
     const header=document.createElement('header');
     header.className='nyx-settings-header';
-    header.innerHTML='<h1>Privacy</h1>';
+    header.innerHTML='<h1>Appearance</h1><p>Customize Nyx’s look and visual experience.</p>';
     app.prepend(side);
     main.prepend(header);
     categories.forEach(section=>main.appendChild(section));
@@ -3905,25 +4172,20 @@
         section.querySelectorAll('.settings-block').forEach(block=>{block.hidden=false});
       });
       buttons.forEach(button=>button.classList.toggle('active',button.dataset.settingsCategoryButton===key));
-      title.textContent=definitions.find(([category])=>category===key)?.[1] || 'Settings';
+      const definition=definitions.find(([category])=>category===key);
+      title.textContent=definition?.[1] || 'Settings';
+      header.querySelector('p').textContent=definition?.[3] || 'Adjust your Nyx preferences.';
       main.scrollTop=0;
     };
-    buttons.forEach(button=>button.addEventListener('click',()=>{
-      const category=button.dataset.settingsCategoryButton;
-      if(category==='account'){
-        if(nyxFounderSignedInUser) void openNyxUserProfile();
-        else void openNyxAccountAccess();
-        return;
-      }
-      activate(category);
-    }));
+    buttons.forEach(button=>button.addEventListener('click',()=>activate(button.dataset.settingsCategoryButton)));
     filter.addEventListener('input',()=>{
       const query=filter.value.trim().toLowerCase();
       if(!query){
-        activate(buttons.find(button=>button.classList.contains('active'))?.dataset.settingsCategoryButton || 'privacy');
+        activate(buttons.find(button=>button.classList.contains('active'))?.dataset.settingsCategoryButton || 'appearance');
         return;
       }
       title.textContent='Search Results';
+      header.querySelector('p').textContent='Matching settings across Nyx.';
       buttons.forEach(button=>button.classList.remove('active'));
       categories.forEach(section=>{
         let matches=0;
@@ -3936,7 +4198,7 @@
         section.classList.toggle('active',matches>0);
       });
     });
-    activate('privacy');
+    activate('appearance');
     syncFounderOwnerControls();
   }
   function openBrowserShellSettings(){
@@ -3998,6 +4260,9 @@
       accountBlock.hidden=true;
       accountBlock.dataset.founderAccountCard='';
       accountBlock.innerHTML='<h2><button class="nyx-account-settings-link" data-open-nyx-account-settings type="button">Account</button></h2><p data-founder-account-status>Sign in to manage your Nyx account.</p><div class="settings-actions"><button class="settings-action" data-open-nyx-account type="button">Create or sign in</button><button class="settings-action" data-open-nyx-profile type="button" hidden>Edit account</button><button class="settings-action" data-nyx-account-sign-out type="button" hidden>Sign out</button></div>';
+      const cloudSaveBlock=document.createElement('section');
+      cloudSaveBlock.className='settings-block';
+      cloudSaveBlock.innerHTML='<h2>Cloud Saves</h2><p data-nyx-cloud-save-status>Sign in with an email account to sync supported game progress and Nyx preferences.</p>';
       const resetBlock=document.createElement('section');
       resetBlock.className='settings-block';
       resetBlock.innerHTML=`<h2>Clear Cache</h2><p>Removes cookies, cache files, saved settings, proxy storage, and service workers, then reloads nyx like a fresh install.</p><div class="settings-actions"><button class="settings-action danger-action" data-clear-nyx-cache type="button">Clear Cache and Reset</button></div>`;
@@ -4007,6 +4272,7 @@
       effectBlock.before(backgroundsBlock);
       effectBlock.before(customThemeBlock);
       effectBlock.before(accountBlock);
+      effectBlock.before(cloudSaveBlock);
       effectBlock.before(ownerDashboardBlock);
       effectBlock.before(founderProfileBlock);
       effectBlock.before(resetBlock);
@@ -4200,7 +4466,7 @@
     if(!tab) return false;
     const discordFounderProfileStyle='.nyx-founder-profile-standard{display:block!important;max-width:620px!important;margin:0 auto!important;padding:0!important;overflow:hidden!important;border:1px solid color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 42%,transparent)!important;border-radius:16px!important;background:#111827!important;box-shadow:0 16px 42px rgba(0,0,0,.32)!important}.nyx-founder-profile-standard .nyx-founder-banner{height:140px!important;margin:0!important;background:var(--nyx-founder-accent,#8fb8ff)!important}.nyx-founder-profile-standard .nyx-founder-profile-content{display:block!important;padding:0 16px 18px!important}.nyx-founder-profile-standard .nyx-founder-image-wrap{width:88px!important;height:88px!important;margin:-45px 0 0!important;border:6px solid #111827!important;border-radius:50%!important;background:#111827!important}.nyx-founder-profile-standard .nyx-founder-image{border:0!important;border-radius:50%!important;background:#172338!important}.nyx-founder-profile-standard .nyx-founder-status{right:-2px!important;bottom:-2px!important;border:4px solid #111827!important}.nyx-founder-profile-standard .nyx-founder-copy{padding-top:13px!important}.nyx-founder-name-row{display:flex!important;align-items:center!important;gap:7px!important}.nyx-founder-profile-standard .nyx-founder-copy h3{margin:0!important;color:#f8fbff!important;font-size:24px!important;font-weight:700!important;letter-spacing:-.025em!important}.nyx-founder-owner-crown{color:#f0c85c!important;font-size:18px!important;line-height:1!important}.nyx-founder-profile-standard .nyx-founder-handle{margin:2px 0 10px!important;color:#b5c2d5!important;font-size:14px!important}.nyx-founder-profile-standard .nyx-founder-role{margin:0 0 11px!important;color:#9cadc4!important;font-size:11px!important;font-weight:600!important;letter-spacing:.09em!important}.nyx-founder-role-list{display:flex!important;flex-wrap:wrap!important;gap:7px!important;margin:0 0 12px!important}.nyx-founder-role-chip{display:inline-flex!important;align-items:center!important;gap:5px!important;padding:4px 8px!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:4px!important;background:rgba(255,255,255,.08)!important;color:#d9e3f1!important;font-size:11px!important;font-weight:650!important}.nyx-founder-role-owner{border-color:color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 78%,transparent)!important;background:color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 22%,transparent)!important;color:#fff!important}.nyx-founder-role-owner span{color:#f0c85c!important}.nyx-founder-profile-standard .nyx-founder-badges{margin:0 0 14px!important}.nyx-founder-profile-standard .nyx-founder-badge{border:0!important;border-radius:4px!important;background:rgba(255,255,255,.1)!important;color:#c9d7ea!important}.nyx-founder-about{padding-top:13px!important;border-top:1px solid rgba(255,255,255,.14)!important}.nyx-founder-about>strong{display:block!important;margin-bottom:7px!important;color:#f5f8ff!important;font-size:12px!important;font-weight:700!important;text-transform:uppercase!important}.nyx-founder-profile-standard .nyx-founder-bio{color:#d5dfec!important;font-size:14px!important;line-height:1.55!important}.nyx-founder-profile-standard .nyx-founder-link{margin-top:14px!important;color:#cbd9ff!important}@media(max-width:680px){.nyx-founder-profile-standard .nyx-founder-image-wrap{width:88px!important;margin:-45px 0 0!important}.nyx-founder-profile-standard .nyx-founder-copy{text-align:left!important}.nyx-founder-profile-standard .nyx-founder-badges{justify-content:flex-start!important}}';
     const pages={
-      apps:{title:'Apps',body:`<div class="browser-home browser-shell-page"><h1 class="home-heading">Apps</h1><p class="home-sub">Apps for stuff</p><div class="quick-grid apps-launch-grid">${quickTiles()}</div></div>`},
+      apps:{title:'Apps',body:`<style>html,body,.apps-shell-page{background:#000!important;background-image:none!important}</style><div class="browser-home browser-shell-page apps-shell-page"><h1 class="home-heading">Apps</h1><p class="home-sub">Everything in Nyx.</p><div class="quick-grid apps-launch-grid">${quickTiles()}</div></div>`},
       links:{title:'Bookmarks',body:`<div class="browser-home browser-shell-page"><h1 class="home-heading">Bookmarks</h1><p class="home-sub">Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>DuckDuckGo</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></div>`}
     };
     const page=pages[name] || pages.apps;
@@ -4360,7 +4626,7 @@
     `;
     const terminalPageScript=`(()=>{const output=document.querySelector('[data-nyx-terminal-output]');const input=document.querySelector('[data-nyx-terminal-input]');const write=(text,type='')=>{const row=document.createElement('div');row.className='nyx-terminal-line'+(type?' '+type:'');row.textContent=String(text);output.appendChild(row);output.scrollTop=output.scrollHeight};const run=raw=>{const command=String(raw||'').trim();if(!command)return;write('nyx> '+command,'command');const name=command.toLowerCase();if(name==='clear'){output.textContent='';return}if(name==='help'){write('Commands: help, status, theme, engine, origin, storage, date, clear');return}if(name==='status'){write('Nyx is '+(navigator.onLine?'online':'offline')+' · '+(navigator.platform||'browser'));return}if(name==='theme'){write('Theme: '+(document.body.className.match(/theme-([^ ]+)/)?.[1]||'default'));return}if(name==='engine'){write('Engine: '+(localStorage.getItem('nyx.browserMode')||'scramjet')+' · Transport: '+(localStorage.getItem('nyx.transport')||'libcurl'));return}if(name==='origin'){write('Origin: '+parent.location.origin);return}if(name==='storage'){write('Local settings entries: '+localStorage.length);return}if(name==='date'){write(new Date().toLocaleString());return}write('Unknown command: '+command+'. Type "help" for the command list.','error')};write('Nyx Developer Console');write('Type "help" to list commands. Browser DevTools cannot be opened by a webpage.');document.querySelector('[data-nyx-terminal-form]')?.addEventListener('submit',event=>{event.preventDefault();run(input?.value);if(input)input.value=''});setTimeout(()=>input?.focus(),50)})();`;
     const pages={
-      apps:{title:'Apps',body:`<section class="shell-page"><h1>Apps</h1><p>Apps</p><div class="quick-grid apps-launch-grid">${quickTiles()}</div></section>`},
+      apps:{title:'Apps',body:`<style>html,body,.apps-shell-page{background:#000!important;background-image:none!important}</style><section class="shell-page apps-shell-page"><h1>Apps</h1><p>Everything in Nyx.</p><div class="quick-grid apps-launch-grid">${quickTiles()}</div></section>`},
       links:{title:'Bookmarks',body:`<section class="shell-page"><h1>Bookmarks</h1><p>Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>DuckDuckGo</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></section>`},
       terms:{title:'Terms Of Service',style:utilityPageStyle,body:nyxTermsPageMarkup()},
       about:{title:'About Nyx',style:utilityPageStyle+nyxCreditsPresentationStyle+nyxCreditsOwnerImageStyle,body:nyxCreditsPageMarkup()},
@@ -4524,9 +4790,49 @@
     }
     applyUserSettings();
   }
+  const NYX_PERFORMANCE_TIER_KEY='nyx.performanceTier';
+  const NYX_PERFORMANCE_TIER_SOURCE_KEY='nyx.performanceTierSource';
+  const nyxPerformanceTiers=new Set(['high','medium','low']);
+  function getNyxPerformanceTier(){
+    let tier=store.text(NYX_PERFORMANCE_TIER_KEY,'').toLowerCase();
+    const source=store.text(NYX_PERFORMANCE_TIER_SOURCE_KEY,'').toLowerCase();
+    if(nyxPerformanceTiers.has(tier) && (source==='auto'||source==='explicit')) return tier;
+    const lowEnd=(navigator.deviceMemory && navigator.deviceMemory<=4) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency<=4);
+    // Older Nyx builds forced Lag Reducer on at boot. It is not an intentional
+    // user choice to migrate, otherwise normal desktops permanently lose motion.
+    tier=store.get('nyx.performanceLite',false) ? 'medium' : lowEnd ? 'medium' : 'high';
+    store.setText(NYX_PERFORMANCE_TIER_KEY,tier);
+    store.setText(NYX_PERFORMANCE_TIER_SOURCE_KEY,'auto');
+    return tier;
+  }
+  function applyNyxPerformanceTier(tier=getNyxPerformanceTier()){
+    tier=nyxPerformanceTiers.has(tier) ? tier : 'high';
+    const low=tier==='low';
+    const lite=tier==='medium'||low;
+    const root=document.documentElement;
+    root.dataset.perfTier=tier;
+    root.classList.toggle('perf-lite',lite);
+    root.classList.toggle('perf-min',low);
+    document.body.classList.toggle('lag-reducer',low);
+    document.body.classList.toggle('performance-lite',lite);
+    store.set('nyx.lagReducer',low);
+    store.set('nyx.performanceLite',tier==='medium');
+    qsa('[data-nyx-performance-tier]').forEach(button=>{
+      const active=button.dataset.nyxPerformanceTier===tier;
+      button.classList.toggle('is-active',active);
+      button.classList.toggle('on',active);
+      button.setAttribute('aria-pressed',String(active));
+    });
+    return tier;
+  }
+  function setNyxPerformanceTier(tier){
+    const next=nyxPerformanceTiers.has(tier) ? tier : 'high';
+    store.setText(NYX_PERFORMANCE_TIER_KEY,next);
+    store.setText(NYX_PERFORMANCE_TIER_SOURCE_KEY,'explicit');
+    return applyNyxPerformanceTier(next);
+  }
   function applyLagReducerSetting(){
-    const lag=store.get('nyx.lagReducer',false);
-    document.body.classList.toggle('lag-reducer',lag);
+    const lag=applyNyxPerformanceTier()==='low';
     if(lag){
       const welcome=$('welcomeScreen');
       if(welcome) welcome.classList.add('hidden','force-hidden');
@@ -4540,13 +4846,7 @@
     qsa('[data-switch="nyx.performanceLite"]').forEach(el=>el.classList.toggle('on',store.get('nyx.performanceLite',false)));
   }
   function syncPerformanceLite(){
-    const cores=Number(navigator.hardwareConcurrency || 8);
-    const memory=Number(navigator.deviceMemory || 8);
-    const isChromebook=/\bCrOS\b/i.test(navigator.userAgent || '');
-    const veryLowPower=isChromebook || cores<=2 || memory<=2;
-    const reducedMotion=matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
-    const enabled=!store.get('nyx.lagReducer',false) && (store.get('nyx.performanceLite',false) || veryLowPower || reducedMotion);
-    document.body.classList.toggle('performance-lite',enabled);
+    const enabled=applyNyxPerformanceTier()!=='high';
     if(enabled){
       document.documentElement.style.setProperty('--glass-blur','10px');
       document.documentElement.style.setProperty('--glass-saturate','1.08');
@@ -4702,7 +5002,8 @@
   function syncHomeDotFieldVisibility(){
     const hide=threeDBackgroundsEnabled() && !document.body.classList.contains('custom-bg-active');
     qsa('.nyx-home-dot-field').forEach(canvas=>{
-      if(hide) canvas.style.setProperty('display','none','important');
+      const isMinimalHome=Boolean(canvas.closest('.nyx-minimal-home'));
+      if(hide && !isMinimalHome) canvas.style.setProperty('display','none','important');
       else canvas.style.removeProperty('display');
     });
   }
@@ -5666,6 +5967,7 @@
 
       await startupProgress?.complete?.('Nyx is ready');
       scheduleNyxTermsAcceptanceGate(360);
+      scheduleNyxReleaseNotes(980);
     },0);
   }
   //url-normalization
@@ -6008,6 +6310,8 @@
   function renderNyxPresence(count=nyxPresenceCount){
     const label=Number.isFinite(count) ? `${count} online` : 'Connecting\u2026';
     qsa('[data-nyx-online-count]').forEach(element=>{element.textContent=label});
+    const usersLabel=Number.isFinite(count) ? `${count} users` : 'Connecting\u2026';
+    qsa('[data-nyx-online-users]').forEach(element=>{element.textContent=usersLabel});
   }
   function startNyxPresence(){
     if(startNyxPresence.started) return;
@@ -7191,6 +7495,8 @@
     updateWindowSizeClasses(win);
   }
   function browserBody(){
+    const minimalPresenceText=nyxPresenceCount===null ? 'Connecting\u2026' : `${nyxPresenceCount} online`;
+    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home nyx-minimal-home"><header class="nyx-minimal-homebar"><span class="nyx-minimal-wordmark"><i aria-hidden="true"></i>Nyx</span><nav aria-label="Account shortcuts"><button data-app-url="/apps/chat/" type="button" aria-label="Chat">${nyxDashboardIcon('chat')}</button><button data-open="settings" type="button" aria-label="Settings">${nyxDashboardIcon('settings')}</button><span data-nyx-profile-slot></span></nav></header><main class="browser-shell-start nyx-minimal-hero"><div class="nyx-minimal-brand"><span class="nyx-minimal-moon" aria-hidden="true"></span><h1>NYX</h1></div><form class="browser-blank-search nyx-home-search nyx-minimal-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Search or enter a URL" placeholder="Search or enter a URL" autocomplete="off" spellcheck="false"></form><nav class="nyx-minimal-shortcuts" aria-label="Nyx shortcuts"><button data-nyx-focus-search type="button">${nyxDashboardIcon('browse')}<span>Browse</span></button><button data-app-url="/assets/games/" type="button">${nyxDashboardIcon('games')}<span>Games</span></button><button data-app-url="/apps/chat/" type="button">${nyxDashboardIcon('chat')}<span>Chat</span></button><button class="nyx-minimal-ai" data-app-url="nyx://ai" type="button"><span class="nyx-nocturne-ai-icon" aria-hidden="true"></span><span>AI</span></button><button data-app-url="/apps/nyxify/" type="button">${nyxDashboardIcon('music')}<span>Music</span></button><button data-nyx-apps-toggle type="button" aria-expanded="false">${nyxDashboardIcon('apps')}<span>Apps</span></button></nav></main><div class="nyx-home-presence${nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="button" tabindex="${nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${minimalPresenceText}</span></div><aside class="nyx-app-launcher" data-nyx-app-launcher aria-hidden="true"><header><div><strong>Apps</strong><small>Everything in Nyx</small></div><button data-nyx-apps-close type="button" aria-label="Close apps">&times;</button></header><label><span aria-hidden="true"></span><input data-nyx-app-search type="search" placeholder="Find an app" autocomplete="off"></label><div class="nyx-app-launcher-grid" data-nyx-app-results><button data-app-url="/apps/link-checker/" data-nyx-app-name="link checker" type="button">${nyxDashboardIcon('link')}<span>Link Checker</span></button><button data-app-url="/apps/link-generator/" data-nyx-app-name="link generator" type="button">${nyxDashboardIcon('extensions')}<span>Link Generator</span></button><button data-app-url="https://aether.cx/" data-nyx-app-name="movies theater" type="button">${nyxDashboardIcon('media')}<span>Movies</span></button><button data-app-url="nyx://ai" data-nyx-app-name="nyx ai" type="button"><span class="nyx-nocturne-ai-icon" aria-hidden="true"></span><span>Nyx AI</span></button><button data-app-url="/apps/nyxify/" data-nyx-app-name="nyxify music" type="button">${nyxDashboardIcon('music')}<span>Nyxify</span></button><button data-app-url="/apps/chat/" data-nyx-app-name="chat" type="button">${nyxDashboardIcon('chat')}<span>Chat</span></button><button data-app-url="/assets/games/" data-nyx-app-name="games pirate cove" type="button">${nyxDashboardIcon('games')}<span>Games</span></button><button data-open-nyx-profile-entry data-nyx-app-name="profiles members" type="button">${nyxDashboardIcon('browse')}<span>Profiles</span></button><button data-open="settings" data-nyx-app-name="settings preferences" type="button">${nyxDashboardIcon('settings')}<span>Settings</span></button></div><div class="nyx-app-launcher-saved"><span>Your shortcuts</span><div class="quick-grid home-shortcut-grid" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div><button class="nyx-app-launcher-all" data-open="apps" type="button">View all apps</button></aside></div></div>`;
     const presenceText=nyxPresenceCount===null ? 'Connecting\u2026' : `${nyxPresenceCount} online`;
     return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence${nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="button" tabindex="${nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><button class="nyx-home-weather" data-home-weather data-open="weather" type="button" aria-label="Open weather report"><span class="nyx-home-weather-icon" data-home-weather-icon aria-hidden="true"><svg class="nyx-weather-symbol nyx-weather-symbol-partly-cloudy" viewBox="0 0 24 24" focusable="false"><circle class="nyx-weather-sun-fill" cx="8" cy="8" r="3.2"/><path class="nyx-weather-sun-ray" d="M8 2.3v1.4M3.97 3.97l1 1M2.3 8h1.4M12.03 3.97l-1 1M13.7 8h-1.4"/><path class="nyx-weather-cloud-fill" d="M7.2 19h10a4 4 0 0 0 .45-7.98A5.55 5.55 0 0 0 7.08 12.6 3.2 3.2 0 0 0 7.2 19Z"/></svg></span><strong data-home-weather-temp>--°</strong><span data-home-weather-desc>Loading</span></button><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1><form class="browser-blank-search nyx-home-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Find your course or enter a URL" placeholder="Find your Course" autocomplete="off" spellcheck="false"></form><nav class="nyx-home-actions" aria-label="Nyx home"><button data-open="apps" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-apps" aria-hidden="true"></span><span>Resources</span></button><button data-app-url="https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-study" aria-hidden="true"></span><span>Assignments</span></button><button data-open-nyx-profile-entry data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-profile" aria-hidden="true"></span><span>Student Profile</span></button><button data-open="settings" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-settings" aria-hidden="true"></span><span>Preferences</span></button></nav></main><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div><a class="nyx-home-link-checker" data-app-url="/apps/link-checker/" href="/apps/link-checker/">Link Checker</a><nav class="nyx-home-utility-links" aria-label="Nyx information and tools"><a data-app-url="/apps/chat/" href="/apps/chat/">Chat</a><a data-app-url="/apps/link-generator/" href="/apps/link-generator/">Link Generator</a><a data-open="terms" href="nyx://terms">Terms Of Service</a><a data-open="developer" href="nyx://developer">Developer Console</a><a data-open="about" href="nyx://about">About Us</a></nav></div></div>`;
   }
@@ -7267,7 +7573,7 @@
     const key=String(domain || title || '').toLowerCase();
     if(key.includes('geforce')) return '/assets/icons/dock-nvidia.png';
     if(key==='games' || key.includes('study')) return '/assets/icons/dock-controller.png';
-    if(key==='nyx-ai' || key==='ai') return '/assets/icons/shortcut-nyx-ai.svg?v=3';
+    if(key==='nyx-ai' || key==='ai') return '/assets/icons/shortcut-nyx-ai.svg?v=6';
     if(key==='nyxify') return '/assets/icons/shortcut-spotify.svg?v=1';
     if(key.includes('duck')) return '/assets/icons/shortcut-duckduckgo.svg';
     if(key.includes('youtube') || key==='youtu.be') return '/assets/icons/shortcut-youtube.svg';
@@ -7566,6 +7872,222 @@
     const scan=root=>{
       if(root?.matches?.('.browser-home')) initialize(root);
       root?.querySelectorAll?.('.browser-home').forEach(initialize);
+    };
+    new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>{
+      if(node.nodeType===1) scan(node);
+    }))).observe(document.body,{childList:true,subtree:true});
+    scan(document);
+  }
+  let interactiveHomeTitleDotsInstalled=false;
+  function installInteractiveHomeTitleDots(){
+    if(interactiveHomeTitleDotsInstalled) return;
+    interactiveHomeTitleDotsInstalled=true;
+    if(!window.requestAnimationFrame) return;
+    try{
+      if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    }catch{}
+    const initialize=title=>{
+      if(!title || title.dataset.nyxTitleDotField==='true') return;
+      title.dataset.nyxTitleDotField='true';
+      const label=title.textContent.trim();
+      if(!label) return;
+      const canvas=document.createElement('canvas');
+      canvas.className='nyx-title-dot-canvas';
+      canvas.setAttribute('aria-hidden','true');
+      const context=canvas.getContext('2d',{alpha:true});
+      if(!context) return;
+      const dotColor=getComputedStyle(title).color || '#e8e5f4';
+      title.append(canvas);
+      const ratio=Math.max(1,Math.min(devicePixelRatio || 1,2));
+      const canvasPadding=90;
+      const pointerRadius=55;
+      const repelStrength=2.2;
+      const spring=.05;
+      const friction=.82;
+      const fadeDistance=42;
+      let dotRadius=3;
+      let width=0;
+      let height=0;
+      let textLeft=canvasPadding;
+      let textTop=canvasPadding;
+      let textRight=canvasPadding;
+      let textBottom=canvasPadding;
+      let dots=[];
+      let frame=0;
+      let isReady=false;
+      let pointerInside=false;
+      let previousX=-9999;
+      let previousY=-9999;
+      let pointerX=-9999;
+      let pointerY=-9999;
+      const getFont=()=>{
+        const styles=getComputedStyle(title);
+        return {
+          value:`${styles.fontWeight || '500'} ${styles.fontSize || '48px'} ${styles.fontFamily || 'Inter, sans-serif'}`,
+          size:parseFloat(styles.fontSize) || 48,
+          letterSpacing:Number.isFinite(parseFloat(styles.letterSpacing)) ? parseFloat(styles.letterSpacing) : 0
+        };
+      };
+      const setup=()=>{
+        const font=getFont();
+        const measure=document.createElement('canvas').getContext('2d');
+        if(!measure) return;
+        measure.font=font.value;
+        const characters=Array.from(label);
+        const glyphWidths=characters.map(character=>measure.measureText(character).width);
+        const textWidth=Math.ceil(glyphWidths.reduce((total,width)=>total+width,0)+font.letterSpacing*Math.max(0,characters.length-1))+6;
+        const metrics=measure.measureText(label);
+        const ascent=metrics.actualBoundingBoxAscent || font.size*.8;
+        const descent=metrics.actualBoundingBoxDescent || font.size*.25;
+        const textHeight=Math.ceil(ascent+descent)+6;
+        width=textWidth+canvasPadding*2;
+        height=textHeight+canvasPadding*2;
+        canvas.style.width=width+'px';
+        canvas.style.height=height+'px';
+        canvas.style.left=`calc(50% - ${width/2}px)`;
+        canvas.style.top=`calc(50% - ${height/2}px)`;
+        canvas.width=Math.round(width*ratio);
+        canvas.height=Math.round(height*ratio);
+        context.setTransform(ratio,0,0,ratio,0,0);
+        const mask=document.createElement('canvas');
+        mask.width=Math.round(textWidth*ratio);
+        mask.height=Math.round(textHeight*ratio);
+        const maskContext=mask.getContext('2d',{willReadFrequently:true});
+        if(!maskContext) return;
+        maskContext.setTransform(ratio,0,0,ratio,0,0);
+        maskContext.font=font.value;
+        maskContext.textBaseline='alphabetic';
+        maskContext.fillStyle='#fff';
+        let glyphX=3;
+        characters.forEach((character,index)=>{
+          maskContext.fillText(character,glyphX,ascent+3);
+          glyphX+=glyphWidths[index]+font.letterSpacing;
+        });
+        let pixels;
+        try{pixels=maskContext.getImageData(0,0,mask.width,mask.height).data;}catch{return}
+        const spacing=Math.max(4,Math.round(font.size/11));
+        dotRadius=Math.max(2,spacing*.5);
+        const nextDots=[];
+        for(let y=0;y<textHeight;y+=spacing){
+          for(let x=0;x<textWidth;x+=spacing){
+            const pixel=(Math.round(y*ratio)*mask.width+Math.round(x*ratio))*4;
+            if(pixels[pixel+3]>130){
+              const homeX=x+canvasPadding;
+              const homeY=y+canvasPadding;
+              nextDots.push({homeX,homeY,x:homeX,y:homeY,vx:0,vy:0,opacity:1});
+            }
+          }
+        }
+        dots=nextDots;
+        textLeft=canvasPadding;
+        textTop=canvasPadding;
+        textRight=canvasPadding+textWidth;
+        textBottom=canvasPadding+textHeight;
+        isReady=true;
+        canvas.dataset.particleCount=String(dots.length);
+        canvas.dataset.pointerEffect='repel-and-return';
+        title.classList.add('nyx-title-dot-ready');
+        draw();
+      };
+      function render(){
+        context.clearRect(0,0,width,height);
+        context.fillStyle=dotColor;
+        for(const dot of dots){
+          if(dot.opacity<=.02) continue;
+          context.globalAlpha=Math.min(1,dot.opacity);
+          context.beginPath();
+          context.arc(dot.x,dot.y,dotRadius,0,Math.PI*2);
+          context.fill();
+        }
+        context.globalAlpha=1;
+      }
+      function draw(){
+        frame=0;
+        let unsettled=false;
+        const radiusSquared=pointerRadius*pointerRadius;
+        const deltaX=pointerX-previousX;
+        const deltaY=pointerY-previousY;
+        const segmentLengthSquared=deltaX*deltaX+deltaY*deltaY;
+        for(const dot of dots){
+          if(pointerInside){
+            let progress=segmentLengthSquared ? ((dot.x-previousX)*deltaX+(dot.y-previousY)*deltaY)/segmentLengthSquared : 0;
+            progress=Math.max(0,Math.min(1,progress));
+            const nearestX=previousX+progress*deltaX;
+            const nearestY=previousY+progress*deltaY;
+            const deltaDotX=dot.x-nearestX;
+            const deltaDotY=dot.y-nearestY;
+            const distanceSquared=deltaDotX*deltaDotX+deltaDotY*deltaDotY;
+            if(distanceSquared<radiusSquared){
+              const distance=Math.sqrt(distanceSquared) || .0001;
+              const strength=(1-distance/pointerRadius)*repelStrength;
+              dot.vx+=deltaDotX/distance*strength;
+              dot.vy+=deltaDotY/distance*strength;
+            }
+          }
+          dot.vx+=(dot.homeX-dot.x)*spring;
+          dot.vy+=(dot.homeY-dot.y)*spring;
+          dot.vx*=friction;
+          dot.vy*=friction;
+          dot.x+=dot.vx;
+          dot.y+=dot.vy;
+          const displacementX=dot.x-dot.homeX;
+          const displacementY=dot.y-dot.homeY;
+          const displacement=Math.sqrt(displacementX*displacementX+displacementY*displacementY);
+          dot.opacity=displacement>=fadeDistance ? 0 : 1-displacement/fadeDistance;
+          if(displacement>.35 || dot.vx*dot.vx+dot.vy*dot.vy>.05) unsettled=true;
+        }
+        previousX=pointerX;
+        previousY=pointerY;
+        render();
+        if(pointerInside || unsettled) frame=requestAnimationFrame(draw);
+      }
+      const requestFrame=()=>{
+        if(!frame && isReady) frame=requestAnimationFrame(draw);
+      };
+      const movePointer=event=>{
+        if(!isReady) return;
+        const bounds=canvas.getBoundingClientRect();
+        const x=event.clientX-bounds.left;
+        const y=event.clientY-bounds.top;
+        const inside=x>textLeft-pointerRadius && x<textRight+pointerRadius && y>textTop-pointerRadius && y<textBottom+pointerRadius;
+        if(inside && !pointerInside){
+          previousX=x;
+          previousY=y;
+        }
+        pointerX=x;
+        pointerY=y;
+        pointerInside=inside;
+        if(inside) requestFrame();
+      };
+      addEventListener('pointermove',movePointer,{passive:true});
+      addEventListener('pointerdown',movePointer,{passive:true});
+      addEventListener('pointerup',event=>{
+        if(event.pointerType==='touch'){
+          pointerInside=false;
+          requestFrame();
+        }
+      },{passive:true});
+      addEventListener('pointercancel',()=>{
+        pointerInside=false;
+        requestFrame();
+      },{passive:true});
+      document.addEventListener('mouseleave',()=>{
+        if(pointerInside){
+          pointerInside=false;
+          requestFrame();
+        }
+      });
+      setup();
+      document.fonts?.ready?.then(setup).catch(()=>{});
+      let resizeTimer=0;
+      addEventListener('resize',()=>{
+        clearTimeout(resizeTimer);
+        resizeTimer=setTimeout(setup,200);
+      },{passive:true});
+    };
+    const scan=root=>{
+      if(root?.matches?.('.nyx-minimal-brand h1')) initialize(root);
+      root?.querySelectorAll?.('.nyx-minimal-brand h1').forEach(initialize);
     };
     new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>{
       if(node.nodeType===1) scan(node);
@@ -9694,16 +10216,6 @@
       if(rawText && looksLikeUrl && !proxyInternal) document.querySelectorAll('.nyx-preflight').forEach(overlay=>overlay.remove());
       const url=youtubeEnglishUrl(normalize(browserShellSourceUrl(raw) || raw)); if(!url)return;
       win.querySelector('.urlbar').value=browserShellDisplayValue(url);
-      if(isAnimexUrl(url) && t.animexPromptUrl!==url){
-        t.animexPromptUrl=url;
-        const tabId=t.id;
-        showAnimexMikuPrompt(()=>{
-          if(!state.tabs.some(tab=>tab.id===tabId)) return;
-          activate(tabId);
-          navigate(url,forceMode);
-        });
-        return;
-      }
       const browserMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
       if(!forceMode || !browserTransportOverride) applyPreferredTransportForUrl(url,browserMode);
       updateBrowserShellLocation(url,t.id,true);
@@ -9901,7 +10413,27 @@
       const q=e.target.closest('[data-url]'); if(q){e.preventDefault(); navigate(q.dataset.url)}
     });
     const messageHandler=e=>{
-      if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:account-token-request','nyx:chat-open-profile','nyx:chat-notification','nyx:subscription-refresh','nyx:proxy-direct-fallback','nyx:close-tab'].includes(e.data?.type)) return;
+      if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:account-token-request','nyx:chat-open-profile','nyx:chat-notification','nyx:subscription-refresh','nyx:proxy-direct-fallback','nyx:cloud-game-load','nyx:cloud-game-save','nyx:close-tab'].includes(e.data?.type)) return;
+      if(['nyx:cloud-game-load','nyx:cloud-game-save'].includes(e.data.type)){
+        if(e.origin!==location.origin)return;
+        const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
+        let sourcePath='';try{sourcePath=new URL(sourceTab.sourceUrl||sourceTab.url||'',location.href).pathname}catch{}
+        if(!/^\/assets\/games\/(?:index\.html)?$/.test(sourcePath))return;
+        const requestId=String(e.data.requestId||'').slice(0,120);
+        const gameKey=String(e.data.gameKey||'').trim();
+        if(!requestId||!gameKey)return;
+        void (async()=>{
+          try{
+            const payload=e.data.type==='nyx:cloud-game-load'
+              ? {storage:await loadNyxCloudGameSave(gameKey)}
+              : await saveNyxCloudGameSave(gameKey,e.data.storage,e.data.removed);
+            e.source?.postMessage({type:'nyx:cloud-game-result',requestId,...payload},location.origin);
+          }catch(error){
+            e.source?.postMessage({type:'nyx:cloud-game-result',requestId,error:String(error?.message||'Cloud saves are unavailable.')},location.origin);
+          }
+        })();
+        return;
+      }
       if(e.data.type==='nyx:account-token-request'){
         if(e.origin!==location.origin)return;
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
@@ -10255,6 +10787,20 @@
         delete widget.dataset.loaded;
       }
     });
+    qsa('[data-nyx-dashboard-weather]').forEach(widget=>{
+      const temp=widget.querySelector('[data-nyx-dashboard-weather-temp]');
+      const desc=widget.querySelector('[data-nyx-dashboard-weather-desc]');
+      const place=widget.querySelector('[data-nyx-dashboard-weather-place]');
+      if(snapshot){
+        if(temp) temp.textContent=`${Math.round(snapshot.temperature_2m)}°`;
+        if(desc) desc.textContent=weatherDescription(snapshot.weather_code);
+        if(place) place.textContent=snapshot.place || '';
+      }else{
+        if(temp) temp.textContent='--°';
+        if(desc) desc.textContent='Loading weather';
+        if(place) place.textContent='';
+      }
+    });
   }
   function setWeatherStatus(text){
     const status=weatherPanel()?.querySelector('[data-weather-status]');
@@ -10305,7 +10851,7 @@
     panel.classList.add(weatherEffectClass(data.weather_code,data.wind_speed_10m,data.temperature_2m));
     renderWeatherForecast(daily);
     renderWeatherTime(timezone);
-    latestWeatherSnapshot={...data};
+    latestWeatherSnapshot={...data,place:place || 'Weather'};
     syncHomeWeatherWidgets();
     const restore=$('weatherRestore');
     if(restore) restore.dataset.weatherSummary=`${Math.round(data.temperature_2m)}° ${weatherDescription(data.weather_code)}`;
@@ -11914,6 +12460,53 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
       }
     },delay);
   }
+  const NYX_RELEASE_NOTES_VERSION='2026-08-17-interface-release';
+  let nyxReleaseNotesTimer=0;
+  function nyxReleaseNotesStorageKey(){
+    const accountId=String(nyxFounderSignedInUser?.uid || 'device').replace(/[^a-z0-9_-]/gi,'');
+    return `nyx.releaseNotes.${NYX_RELEASE_NOTES_VERSION}.${accountId || 'device'}`;
+  }
+  function closeNyxReleaseNotes(){
+    document.querySelector('.nyx-release-notes-overlay')?.remove();
+  }
+  function showNyxReleaseNotes(){
+    const storageKey=nyxReleaseNotesStorageKey();
+    if(store.text(storageKey,'')===NYX_RELEASE_NOTES_VERSION) return 'seen';
+    if($('setupScreen')?.classList.contains('show') || document.querySelector('.nyx-tos-gate,.nyx-email-verification-overlay,.nyx-preflight')) return 'deferred';
+    const overlay=document.createElement('div');
+    overlay.className='nyx-release-notes-overlay';
+    overlay.innerHTML=`<section class="nyx-release-notes" role="dialog" aria-modal="true" aria-labelledby="nyxReleaseNotesTitle" aria-describedby="nyxReleaseNotesIntro">
+      <header><div><span>Nyx update</span><h1 id="nyxReleaseNotesTitle" tabindex="-1">A smoother Nyx is here.</h1></div><button type="button" data-nyx-release-notes-close aria-label="Close update log">&times;</button></header>
+      <p id="nyxReleaseNotesIntro">Here is everything included in this release.</p>
+      <ul>
+        <li><strong>Refined browser experience</strong><span>Jet-black chrome, brighter controls, a taller toolbar, and a stable Mizu-style tab drawer with a direct developer-console button.</span></li>
+        <li><strong>New Nyx home and dashboard</strong><span>Updated StudyHub identity, dot-style Nyx wordmark, smoother dashboard opening, and live performance information.</span></li>
+        <li><strong>Better settings and accounts</strong><span>Organized settings sections, verified-email protection, and account cloud saves for supported Nyx preferences and same-origin games.</span></li>
+        <li><strong>AI access controls</strong><span>Claude Opus 4.8 is Premium-only with a daily 2,000-token allowance; Owners retain full model access.</span></li>
+        <li><strong>Cleaner browsing</strong><span>Animex now opens without the old streaming prompt.</span></li>
+      </ul>
+      <footer><span>This update log is shown once per device or signed-in account.</span><button type="button" data-nyx-release-notes-close>Got it</button></footer>
+    </section>`;
+    const close=()=>{
+      store.setText(storageKey,NYX_RELEASE_NOTES_VERSION);
+      closeNyxReleaseNotes();
+    };
+    overlay.addEventListener('click',event=>{
+      if(event.target===overlay || event.target.closest('[data-nyx-release-notes-close]')) close();
+    });
+    overlay.addEventListener('keydown',event=>{if(event.key==='Escape') close()});
+    document.body.appendChild(overlay);
+    requestAnimationFrame(()=>overlay.classList.add('show'));
+    setTimeout(()=>overlay.querySelector('#nyxReleaseNotesTitle')?.focus(),80);
+    return 'shown';
+  }
+  function scheduleNyxReleaseNotes(delay=760){
+    clearTimeout(nyxReleaseNotesTimer);
+    nyxReleaseNotesTimer=setTimeout(()=>{
+      if(!nyxStartupOpened) return;
+      if(showNyxReleaseNotes()==='deferred') scheduleNyxReleaseNotes(500);
+    },delay);
+  }
   function hideSetup(){
     const setup=$('setupScreen');
     if(!setup) return;
@@ -11955,6 +12548,16 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
       btn.setAttribute('aria-checked',String(!!initial));
       btn.onclick=()=>{
         const key=btn.dataset.switch;
+        if(key==='nyx.lagReducer' || key==='nyx.performanceLite'){
+          const current=getNyxPerformanceTier();
+          const next=key==='nyx.lagReducer'
+            ? (current==='low' ? 'high' : 'low')
+            : (current==='medium' ? 'high' : 'medium');
+          setNyxPerformanceTier(next);
+          applyUserSettings();
+          toast(next==='low' ? 'Performance set to Low' : next==='medium' ? 'Performance set to Medium' : 'Performance set to High');
+          return;
+        }
         const v=key==='nyx.popupProtection'
           ? !popupProtectionEnabled()
           : key==='nyx.browserShellMode'
@@ -11978,16 +12581,6 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
           qsa('[data-switch="nyx.hieroglyphText"].settings-action').forEach(el=>{el.textContent=hieroglyphTextEnabled()?'On':'Off'});
           applyHieroglyphText();
           toast('Auto Hieroglyph '+(v?'on':'off'));
-        }else if(key==='nyx.lagReducer'){
-          if(v){
-            store.set('nyx.backgroundEnhancer',false);
-            store.setText('nyx.glassLevel','0');
-          }
-          applyUserSettings();
-          toast('Lag Reducer '+(v?'on':'off'));
-        }else if(key==='nyx.performanceLite'){
-          applyUserSettings();
-          toast('Lite Mode '+(v?'on':'off'));
         }else if(key==='nyx.threeDBackgrounds'){
           applyUserSettings();
           toast('3D Backgrounds '+(v?'on':'off'));
@@ -12879,6 +13472,11 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
       e.stopPropagation();
     },true);
     document.addEventListener('input',e=>{
+      const appSearch=e.target.closest?.('[data-nyx-app-search]');
+      if(appSearch){
+        const query=String(appSearch.value || '').trim().toLowerCase();
+        appSearch.closest('[data-nyx-app-launcher]')?.querySelectorAll('[data-nyx-app-name]').forEach(button=>{button.hidden=Boolean(query)&&!String(button.dataset.nyxAppName || '').includes(query)});
+      }
       const input=e.target.closest?.('[data-browser-shell-url]');
       if(input) showBrowserSuggestions(input);
     });
@@ -13092,6 +13690,64 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
       }catch{}
     });
     document.addEventListener('click',async e=>{
+      const dashboard=e.target.closest?.('[data-nyx-dashboard]');
+      const dashboardTrigger=e.target.closest?.('[data-nyx-dashboard-trigger]');
+      if(dashboardTrigger){
+        e.preventDefault();
+        const open=!dashboard?.classList.contains('is-open');
+        qsa('[data-nyx-dashboard].is-open').forEach(item=>item.classList.remove('is-open'));
+        dashboard?.classList.toggle('is-open',open);
+        dashboardTrigger.setAttribute('aria-expanded',String(open));
+        return;
+      }
+      const dashboardTab=e.target.closest?.('[data-nyx-dashboard-tab]');
+      if(dashboardTab){
+        e.preventDefault();
+        const name=dashboardTab.dataset.nyxDashboardTab;
+        dashboard?.querySelectorAll('[data-nyx-dashboard-tab]').forEach(button=>button.classList.toggle('is-active',button===dashboardTab));
+        dashboard?.querySelectorAll('[data-nyx-dashboard-page]').forEach(page=>page.classList.toggle('is-active',page.dataset.nyxDashboardPage===name));
+        return;
+      }
+      const performanceTier=e.target.closest?.('[data-nyx-performance-tier]');
+      if(performanceTier){
+        e.preventDefault();
+        const tier=setNyxPerformanceTier(performanceTier.dataset.nyxPerformanceTier);
+        applyUserSettings();
+        toast(tier==='high' ? 'Performance set to High' : tier==='medium' ? 'Performance set to Medium' : 'Performance set to Low');
+        return;
+      }
+      if(!dashboard) qsa('[data-nyx-dashboard].is-open').forEach(item=>{item.classList.remove('is-open');item.querySelector('[data-nyx-dashboard-trigger]')?.setAttribute('aria-expanded','false')});
+      const appsToggle=e.target.closest?.('[data-nyx-apps-toggle]');
+      const appsLauncher=e.target.closest?.('.nyx-minimal-home')?.querySelector?.('[data-nyx-app-launcher]') || document.querySelector('[data-nyx-app-launcher]');
+      if(appsToggle){
+        e.preventDefault();
+        appsLauncher?.classList.remove('is-open');
+        appsLauncher?.setAttribute('aria-hidden','true');
+        appsToggle.setAttribute('aria-expanded','false');
+        openBrowserShellInternalTab('apps');
+        return;
+      }
+      if(e.target.closest?.('[data-nyx-apps-close]')){
+        e.preventDefault();
+        appsLauncher?.classList.remove('is-open');
+        appsLauncher?.setAttribute('aria-hidden','true');
+        document.querySelector('[data-nyx-apps-toggle]')?.setAttribute('aria-expanded','false');
+        return;
+      }
+      if(e.target.closest?.('[data-nyx-focus-search]')){
+        e.preventDefault();
+        document.body.classList.add('nyx-home-search-active');
+        requestAnimationFrame(()=>{
+          const search=document.querySelector('[data-browser-shell-url]');
+          search?.focus();
+          search?.select();
+        });
+        return;
+      }
+      if(e.target.closest?.('[data-nyx-app-launcher] [data-app-url],[data-nyx-app-launcher] [data-open],[data-nyx-app-launcher] [data-open-nyx-profile-entry]')){
+        appsLauncher?.classList.remove('is-open');
+        appsLauncher?.setAttribute('aria-hidden','true');
+      }
       const accountToggle=e.target.closest?.('[data-toggle-nyx-account-menu]');
       if(accountToggle){
         e.preventDefault();
@@ -13158,6 +13814,13 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
         e.stopPropagation();
         applyPreset(presetButton.dataset.preset || 'nyx');
         syncPresetCloakFields(presetButton.closest('.window,.settings-app,.browser-shell-settings-overlay') || document);
+        return;
+      }
+      const shellTabsToggle=e.target.closest('[data-browser-shell-tabs-toggle]');
+      if(shellTabsToggle){
+        e.preventDefault();
+        document.body.classList.toggle('nyx-tab-sidebar-open');
+        document.querySelectorAll('[data-browser-shell-tabs-toggle]').forEach(button=>button.setAttribute('aria-expanded',String(document.body.classList.contains('nyx-tab-sidebar-open'))));
         return;
       }
       const shellNew=e.target.closest('[data-browser-shell-new-tab]');
@@ -13684,12 +14347,61 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
     },true);
   }
   //clock
+  function syncNyxDashboardClock(date=new Date()){
+    const time=date.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+    const day=date.toLocaleDateString([],{weekday:'long',month:'long',day:'numeric'});
+    window.__nyxDashboardStartedAt=window.__nyxDashboardStartedAt || Date.now();
+    const elapsed=Math.max(0,Math.floor((Date.now()-window.__nyxDashboardStartedAt)/1000));
+    const uptime=elapsed>=3600?`${Math.floor(elapsed/3600)}h ${Math.floor((elapsed%3600)/60)}m`:`${Math.floor(elapsed/60)}m ${elapsed%60}s`;
+    qsa('[data-nyx-dashboard-time]').forEach(element=>{element.textContent=time});
+    qsa('[data-nyx-dashboard-date]').forEach(element=>{element.textContent=day});
+    qsa('[data-nyx-dashboard-uptime]').forEach(element=>{element.textContent=uptime});
+  }
+  let nyxDashboardPerformanceFrames=0;
+  let nyxDashboardPerformanceLast=performance.now();
+  let nyxDashboardPerformanceFps=60;
+  function nyxDashboardProxyEngine(){
+    const engine=store.text('nyx.browserMode','standard').trim().toLowerCase();
+    if(!engine || engine==='standard') return 'Standard';
+    return engine.replace(/(^|[-_\s])(\w)/g,(_,prefix,letter)=>prefix+letter.toUpperCase());
+  }
+  function syncNyxDashboardPerformance(){
+    const memory=performance.memory?.usedJSHeapSize;
+    const memoryText=Number.isFinite(memory) ? `${Math.max(1,Math.round(memory/1048576))} MB` : '—';
+    const rtt=Number(navigator.connection?.rtt);
+    const pingText=Number.isFinite(rtt) && rtt>0 ? `${rtt} ms` : '— ms';
+    const worker=navigator.serviceWorker?.controller ? 'Active' : 'Unavailable';
+    const values={fps:`${Math.max(1,Math.round(nyxDashboardPerformanceFps))} fps`,memory:memoryText,ping:pingText,cpu:String(navigator.hardwareConcurrency || '—'),worker,engine:nyxDashboardProxyEngine()};
+    qsa('[data-nyx-perf-stat]').forEach(stat=>{stat.textContent=values[stat.dataset.nyxPerfStat] || '—'});
+    const pingValue=Number.isFinite(rtt) && rtt>0 ? rtt : 0;
+    const meterValues={fps:Math.min(100,Math.max(4,nyxDashboardPerformanceFps/60*100)),memory:Number.isFinite(memory)?Math.min(100,Math.max(4,memory/134217728*100)):4,ping:pingValue?Math.min(100,Math.max(4,100-pingValue/3)):4};
+    qsa('[data-nyx-perf-meter]').forEach(meter=>{meter.style.height=`${meterValues[meter.dataset.nyxPerfMeter] || 4}%`});
+  }
+  function startNyxDashboardPerformance(){
+    if(startNyxDashboardPerformance.started) return;
+    startNyxDashboardPerformance.started=true;
+    const sample=now=>{
+      nyxDashboardPerformanceFrames+=1;
+      const elapsed=now-nyxDashboardPerformanceLast;
+      if(elapsed>=1000){
+        nyxDashboardPerformanceFps=nyxDashboardPerformanceFrames*1000/elapsed;
+        nyxDashboardPerformanceFrames=0;
+        nyxDashboardPerformanceLast=now;
+        syncNyxDashboardPerformance();
+      }
+      requestAnimationFrame(sample);
+    };
+    syncNyxDashboardPerformance();
+    requestAnimationFrame(sample);
+  }
   function tick(){
     const d=new Date();
     const short=d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
     const full=centerClockText(d);
     qsa('#clock').forEach(clock=>{clock.textContent=short});
-    qsa('#centerClock,[data-browser-shell-clock]').forEach(clock=>{clock.textContent=full});
+    qsa('#centerClock').forEach(clock=>{clock.textContent=full});
+    qsa('[data-browser-shell-clock]').forEach(clock=>{clock.textContent=short});
+    syncNyxDashboardClock(d);
   }
   function centerClockText(date=new Date()){
     return date.toLocaleTimeString([],{hour:'numeric',minute:'2-digit',second:'2-digit'});
@@ -13699,9 +14411,11 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
     if(clock?.dataset.running) return;
     if(clock) clock.dataset.running='true';
     const update=()=>{
-      const text=centerClockText();
+      const now=new Date();
+      const text=centerClockText(now);
       if(clock) clock.textContent=text;
-      qsa('[data-browser-shell-clock]').forEach(el=>{el.textContent=text});
+      qsa('[data-browser-shell-clock]').forEach(el=>{el.textContent=now.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})});
+      syncNyxDashboardClock(now);
     };
     update();
     setInterval(update,1000);
@@ -13723,8 +14437,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
     document.documentElement.classList.toggle('nyx-chromeos',isChromeOsUser());
     document.body.classList.add('runtime-lag-guard');
     updateResponsiveFit();
-    if(!localStorage.getItem('nyx.lagReducer')) store.set('nyx.lagReducer',true);
-    removeLegacyStartupPdfData(); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); installInteractiveHomeDots(); initWeatherPanel(); startCenterClock(); startNyxPresence(); startSpotifyChromeOsCompatibilitySweep(); loadFounderProfile(); initializeFounderOwnerAccess(); startNyx();
+    removeLegacyStartupPdfData(); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); installInteractiveHomeDots(); installInteractiveHomeTitleDots(); initWeatherPanel(); startCenterClock(); startNyxPresence(); startNyxDashboardPerformance(); startSpotifyChromeOsCompatibilitySweep(); loadFounderProfile(); initializeFounderOwnerAccess(); startNyx();
     if(hostedCloakEntry){
       scheduleHostedCloakLaunch();
       return;

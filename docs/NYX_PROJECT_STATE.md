@@ -1,6 +1,6 @@
 # Nyx Project State
 
-Last repository review: 2026-08-15
+Last repository review: 2026-08-16
 
 Workspace: repository root (`<repo-root>`)
 
@@ -23,7 +23,10 @@ Important release warning: production currently contains commits that are not on
 - Repository: `https://github.com/dubcatalt2-lab/Nyx.git`
 - Active branch: `agent/pirate-cove`
 - Latest application release: commit `8ce116b` on `agent/pirate-cove`, deployed to OVH and production-verified on 2026-08-15. Nyx supports multiple persisted Owner accounts while the configured Founder remains the sole hierarchy override and the only account that can promote or demote another Owner. Personal Nocturne AI keys, per-key verified catalogs, searchable chats, response-depth controls, search discovery, StudyHub tab identity, Nyxify, rose profiles, private tabs, Movies, KaTeX, Markdown/TSV, and earlier release behavior remain part of the baseline.
-- Working tree after the release contains only the protected untracked local work directories listed below. They remain present and untouched.
+- The next release consolidates the minimalist homepage update: the idle browser chrome collapses to the reference's slim black taskbar, the centered Nyx/search/shortcut composition uses its hairline controls and uniform circular icons, Browse expands/focuses the full address bar, Apps opens the complete jet-black app catalog, the clock opens the reference's horizontal Time/Weather/Session dashboard (including a short-height Chromebook layout), and Nyx AI exposes Low/Medium/High reasoning effort. Browser content uses a Mizu-style tab drawer, direct developer-console shortcut, and a taller jet-black toolbar.
+- The same unreleased work adds Nocturne-style settings categories and verified-email cloud saves. Cloud saves retain a vetted set of Nyx preferences and same-origin game local-storage changes per user/game; cross-origin games remain local-only because their storage is not safely readable by Nyx. Email-backed accounts now show a persistent resend/check-verification gate until Firebase confirms their email; username-only accounts remain supported without cloud-save eligibility.
+- Each release can present a versioned update log once per local device or signed-in account after startup/required gates are clear. It is client-side only and must not be used for sensitive information or server-side account state.
+- The protected untracked local work directories listed below remain present and untouched.
 - `main` / `origin/main`: `0a654cc1c3e17faff12424ae1f2a1a4eb63f6a90`
 - Draft PR: `https://github.com/dubcatalt2-lab/Nyx/pull/34`
 - PR title: **Ship Pirate Cove, account controls, Link Checker, custom domains, and Nyx Chat**
@@ -143,6 +146,8 @@ Client preferences and much local UI state use browser storage. Cross-device acc
 Nyx AI obtains its selectable catalog from the provider without exposing the server key. Nocturne's `/api/ai/config` catalog is session-based and returns only the anonymous model to API-key requests, so Nyx validates its known and explicitly configured candidate IDs with no-prompt authorization checks and caches the verified result for one hour. Those checks do not generate a completion or consume model output tokens. `NYX_AI_MODEL_IDS` may add newly issued provider model IDs to the candidate set without a code release. Do not restore unavailable models merely because they remain in an old static list. Assistant replies render Markdown tables, tab-separated tables, and standard `\(...\)` / `\[...\]` LaTeX with the locally served KaTeX runtime so managed devices do not depend on a third-party CDN.
 
 Users may optionally supply a personal Nocturne AI API key through the key control in the Nyx AI header. Personal keys stay in browser session storage by default, or local storage only after the user explicitly selects **Remember on this device**; they are never written to Firebase, source, server logs, or an API response. The browser sends the key only to Nyx's same-origin AI routes, the server uses it for that request, and verified model caches are isolated by a one-way credential digest. Removing it returns that browser to Nyx's shared server key. An invalid personal key must never silently fall back to the shared credential.
+
+Claude Opus 4.8 is withheld from the model catalog and rejected server-side unless the request carries a valid active Premium account token; this remains true when the browser supplies a personal AI key. Premium accounts receive a Firestore-backed 2,000 generated-token allowance per UTC day. The configured Owner role can use every provider-available model, including Opus, without that daily cap. Keep this entitlement and reservation logic server-side; the client picker is only a convenience layer.
 
 The AI workspace includes local chat search, Off/Normal/Extended response-depth controls, the current model summary, and per-browser estimated token/response totals. Response depth is validated server-side and maps to Nocturne's native `level` and `reasoning_effort` fields plus bounded output guidance; it does not reveal private chain-of-thought. Usage totals are approximate character-based estimates kept only in browser storage because Nocturne's streaming response does not expose authoritative billing usage. Nocturne does not publish a complete API-key model-list endpoint, so the per-key catalog is the intersection of Nyx's current candidate IDs and no-prompt authorization probes; keep current Claude candidates in that verified set rather than exposing them unconditionally.
 

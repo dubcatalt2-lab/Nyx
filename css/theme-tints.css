@@ -1218,13 +1218,13 @@ html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-
 /* Retire the original purple theme aliases. A few legacy pseudo-elements still
    read these names, so point them at the active palette as well. */
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell{
-  --theme-strong:var(--nyx-home-wordmark)!important;
+  --theme-strong:var(--nyx-home-text)!important;
   --theme-border:var(--nyx-home-line)!important;
   --theme-a:var(--nyx-chrome-accent)!important;
   --theme-b:var(--nyx-chrome-bright)!important;
   --accent:var(--nyx-chrome-accent)!important;
-  --nyx-shell-icon:var(--nyx-home-wordmark)!important;
-  --nyx-final-shortcut-icon:var(--nyx-home-wordmark)!important;
+  --nyx-shell-icon:var(--nyx-home-text)!important;
+  --nyx-final-shortcut-icon:var(--nyx-home-text)!important;
   --nyx-purple-edge:var(--nyx-home-line)!important;
   --nyx-purple-soft:color-mix(in srgb,var(--nyx-chrome-accent) 10%,transparent)!important;
   --glass2:color-mix(in srgb,var(--nyx-chrome-accent) 8%,transparent)!important;
@@ -1234,7 +1234,7 @@ html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .top-os.top-os .top-fullscreen{
   border-color:transparent!important;
   background:color-mix(in srgb,var(--nyx-chrome-accent) 10%,transparent)!important;
-  color:var(--nyx-home-wordmark)!important;
+  color:var(--nyx-home-text)!important;
   box-shadow:none!important;
 }
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .top-os.top-os .top-fullscreen:hover{
@@ -1503,7 +1503,7 @@ html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
     h1,h2,h3,h4,h5,h6,p,span,label,strong,b,a,button,
     input,select,textarea,option,legend,figcaption,dt,dd,li,th,td,caption,
     .tool-btn,.go-btn,.menu-btn,.user-chip,.browser-mode-url,.urlbar
-  ):not(.nyx-styled-display-name):not(.nyx-user-profile-effect):not(.nyx-avatar-decoration){
+  ):not(.nyx-styled-display-name):not(.nyx-user-profile-effect):not(.nyx-avatar-decoration):not(.nyx-minimal-home):not(.nyx-minimal-home *){
   color:var(--nyx-fern-text)!important;
   -webkit-text-fill-color:var(--nyx-fern-text)!important;
   text-shadow:none!important;
@@ -1588,7 +1588,7 @@ html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
 html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
   body.theme-fresh:is(body,#nyx-fern-global-specificity) :is(
     *,*::before,*::after
-  ):not(.nyx-styled-display-name):not(.nyx-user-profile-effect):not(.nyx-avatar-decoration){
+  ):not(.nyx-styled-display-name):not(.nyx-user-profile-effect):not(.nyx-avatar-decoration):not(.nyx-minimal-home):not(.nyx-minimal-home *){
   color:var(--nyx-fern-text)!important;
   -webkit-text-fill-color:var(--nyx-fern-text)!important;
   border-color:var(--nyx-fern-line)!important;

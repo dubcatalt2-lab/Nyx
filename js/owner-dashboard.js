@@ -658,6 +658,7 @@
           capabilities.canResetPassword ? `<button type="button" data-owner-user-action="send_password_reset" ${!user.deliverableEmail ? "disabled" : ""}>${dashboardIcon("mail")}Email reset link</button>` : "",
           capabilities.canVerifyEmail ? `<button type="button" data-owner-user-action="verify_email" ${user.emailVerified || !user.deliverableEmail ? "disabled" : ""}>${dashboardIcon("check")}Verify email</button>` : "",
           capabilities.canDisableAccount ? `<button type="button" data-owner-user-action="${user.disabled ? "enable" : "disable"}">${dashboardIcon(user.disabled ? "userCheck" : "userOff")}${user.disabled ? "Re-enable account" : "Disable account"}</button>` : "",
+          capabilities.canDisableAccount && !user.disabled ? `<button class="danger" type="button" data-owner-user-action="ban">${dashboardIcon("ban")}Ban account</button>` : "",
           capabilities.canDisableAccount && capabilities.canManageNetworkBans && !user.disabled && user.lastSeenIp ? `<button class="danger" type="button" data-owner-user-action="disable_with_ip_ban">${dashboardIcon("ban")}Disable + block IP</button>` : "",
           capabilities.canDeleteAccount ? `<button class="danger" type="button" data-owner-user-action="delete">${dashboardIcon("trash")}Delete account</button>` : ""
         ].filter(Boolean).join("");
@@ -818,6 +819,31 @@
       });
     }
 
+    function confirmAccountStatusAction({ title, message, confirmLabel, requireText = "" }) {
+      return new Promise(resolve => {
+        confirmHost.hidden = false;
+        confirmHost.innerHTML = `<form><h2>${esc(title)}</h2><p>${esc(message)}</p><label>Message shown to this member<textarea name="memberMessage" maxlength="500" rows="4" placeholder="Explain what happened and what they should do next." required></textarea><small>Required · 500 characters maximum · do not include private staff notes</small></label>${requireText ? `<label>Type <strong>${esc(requireText)}</strong> to confirm<input name="confirmation" autocomplete="off"></label>` : ""}<div><button type="button" data-owner-confirm-cancel>Cancel</button><button class="danger" type="submit" disabled>${esc(confirmLabel)}</button></div></form>`;
+        const form = confirmHost.querySelector("form");
+        const messageInput = form.elements.memberMessage;
+        const confirmationInput = form.elements.confirmation;
+        const submit = form.querySelector('[type="submit"]');
+        const sync = () => {
+          submit.disabled = !messageInput.value.trim() || Boolean(requireText && confirmationInput?.value.trim() !== requireText);
+        };
+        const finish = value => { confirmHost.hidden = true; confirmHost.innerHTML = ""; resolve(value); };
+        messageInput.addEventListener("input", sync);
+        confirmationInput?.addEventListener("input", sync);
+        form.addEventListener("submit", event => {
+          event.preventDefault();
+          const memberMessage = messageInput.value.trim();
+          if (!memberMessage || (requireText && confirmationInput?.value.trim() !== requireText)) return;
+          finish(memberMessage);
+        });
+        form.querySelector("[data-owner-confirm-cancel]").addEventListener("click", () => finish(null));
+        setTimeout(() => messageInput.focus(), 0);
+      });
+    }
+
     function showResetLink(resetLink) {
       confirmHost.hidden = false;
       confirmHost.innerHTML = `<form><h2>Password reset link</h2><p>Give this one-time Firebase link directly to the account owner. Nyx never reveals or stores their password.</p><label>Reset link<input name="resetLink" value="${esc(resetLink)}" readonly></label><div><button type="button" data-owner-reset-close>Close</button><button type="button" data-owner-reset-copy>Copy link</button></div></form>`;
@@ -841,8 +867,6 @@
       const user = state.selectedUser;
       if (!user) return;
       const confirmations = {
-        disable: ["Disable account?", `${user.email || user.displayName} will immediately lose access until re-enabled.`, "Disable", true],
-        disable_with_ip_ban: ["Disable account and block its IP?", `${user.email || user.displayName} will lose access, and ${user.lastSeenIp} will be blocked from Nyx server requests. Shared or changing IPs can affect other people.`, "Disable and block", true],
         enable: ["Re-enable account?", `${user.email || user.displayName} will be able to sign in again.`, "Re-enable", false],
         verify_email: ["Verify this email?", `Mark ${user.email} as verified in Firebase Authentication.`, "Verify", false],
         create_password_reset_link: ["Create a password reset link?", "The current password will remain private. Give the generated one-time link only to the account owner.", "Create link", false],
@@ -850,8 +874,21 @@
       };
       if (action === "delete") {
         const phrase = user.email || user.uid;
-        const confirmed = await confirmAction({ title: "Permanently delete account?", message: "This removes the Firebase Authentication account and its Nyx profile data. Audit history is retained.", confirmLabel: "Delete permanently", danger: true, requireText: phrase });
-        if (!confirmed) return;
+        const memberMessage = await confirmAccountStatusAction({ title: "Permanently delete account?", message: "This removes the Firebase Authentication account and its Nyx profile data. Audit history is retained, and the member will see your message if they try to use this account again.", confirmLabel: "Delete permanently", requireText: phrase });
+        if (memberMessage === null) return;
+        body = { ...body, reason: memberMessage };
+      } else if (action === "disable" || action === "ban" || action === "disable_with_ip_ban") {
+        const memberMessage = await confirmAccountStatusAction({
+          title: action === "disable" ? "Disable account?" : action === "ban" ? "Ban account?" : "Disable account and block its IP?",
+          message: action === "disable"
+            ? `${user.email || user.displayName} will immediately lose access until re-enabled.`
+            : action === "ban"
+              ? `${user.email || user.displayName} will immediately lose access and see this as an account ban until re-enabled.`
+              : `${user.email || user.displayName} will lose access, and ${user.lastSeenIp} will be blocked from Nyx server requests. Shared or changing IPs can affect other people.`,
+          confirmLabel: action === "disable" ? "Disable" : action === "ban" ? "Ban account" : "Disable and block"
+        });
+        if (memberMessage === null) return;
+        body = { ...body, reason: memberMessage };
       } else if (confirmations[action]) {
         const [title, message, confirmLabel, danger] = confirmations[action];
         if (!await confirmAction({ title, message, confirmLabel, danger })) return;

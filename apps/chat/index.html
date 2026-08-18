@@ -6,7 +6,8 @@
   <meta name="color-scheme" content="dark">
   <title>Nyx Chat</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/icons/chat.svg">
-  <link rel="stylesheet" href="./styles.css?v=20260813-chat-tools-screen-share-v24">
+  <link rel="stylesheet" href="./styles.css?v=20260818-chat-queue-v28">
+  <link rel="stylesheet" href="./polish.css?v=20260818-home-visual-system-v1">
 </head>
 <body>
   <svg class="chat-icon-sprite" aria-hidden="true">
@@ -142,6 +143,14 @@
     </div>
   </div>
 
+  <dialog class="chat-image-lightbox" data-image-lightbox aria-label="Image preview">
+    <button class="icon-button chat-image-lightbox-close" type="button" data-image-lightbox-close aria-label="Close image preview"><svg><use href="#icon-close"/></svg></button>
+    <figure>
+      <img data-image-lightbox-image alt="">
+      <figcaption data-image-lightbox-caption></figcaption>
+    </figure>
+  </dialog>
+
   <dialog class="member-dialog" data-member-dialog>
     <button class="icon-button dialog-close" type="button" data-member-dialog-close aria-label="Close profile"><svg><use href="#icon-close"/></svg></button>
     <div data-member-dialog-content></div>
@@ -182,6 +191,6 @@
     <header><div><h2>Search history</h2><p>Searches made through Nyx while signed in are retained for 30 days. Policy-classified searches are highlighted for review.</p></div><button class="icon-button" type="button" data-flagged-search-close aria-label="Close"><svg><use href="#icon-close"/></svg></button></header>
     <div class="flagged-search-list" data-flagged-search-list></div>
   </dialog>
-  <script src="./app.js?v=20260813-custom-role-formatting-v25"></script>
+  <script src="./app.js?v=20260818-chat-queue-v29"></script>
 </body>
 </html>

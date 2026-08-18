@@ -152,7 +152,7 @@ const nyxChatVoiceJoinAttempts = new Map();
 const nyxChatVoiceSignalAttempts = new Map();
 const nyxChatMessageLimit = 1_000;
 const nyxChatSendWindowMs = 10_000;
-const nyxChatSendMaxPerWindow = 6;
+const nyxChatSendMaxPerWindow = 12;
 const nyxChatSendAttempts = new Map();
 const nyxChatMuteCollection = "nyxChatMutes";
 const nyxChatMuteMinimumMs = 60_000;
@@ -3611,6 +3611,10 @@ function nyxOwnerUserRecord(user, administration = {}, profileData = {}, activit
   const monthlyRevenueCents = Math.max(0, Math.min(100_000_000, Number(administration.monthlyRevenueCents || administration.subscription?.monthlyRevenueCents || 0) || 0));
   const lastActiveAtMs = safeActivityTime(activity.lastActiveAtMs || activity.lastActiveAt);
   const now = Date.now();
+  const avatarSource = String(profile.avatarUrl || user.photoURL || "");
+  const listAvatarUrl = /^data:image\/(?:png|jpeg|webp|gif);base64,/i.test(avatarSource)
+    ? `/api/profile-avatar/${user.uid}`
+    : avatarSource.slice(0, 1_500);
   return {
     uid: user.uid,
     displayName: String(profile.displayName || user.displayName || emailUsername).slice(0, 80),
@@ -3629,7 +3633,7 @@ function nyxOwnerUserRecord(user, administration = {}, profileData = {}, activit
     online: Boolean(lastActiveAtMs && now - lastActiveAtMs <= signedInOnlineWindowMs),
     emailVerified: Boolean(user.emailVerified),
     disabled: Boolean(user.disabled),
-    photoUrl: includeProfileMedia ? String(profile.avatarUrl || user.photoURL || "") : (/^data:image\//i.test(String(profile.avatarUrl || user.photoURL || "")) ? "" : String(profile.avatarUrl || user.photoURL || "").slice(0, 1_500)),
+    photoUrl: includeProfileMedia ? avatarSource : listAvatarUrl,
     profile: {
       displayName: profile.displayName,
       handle: profile.handle,
@@ -3724,8 +3728,13 @@ function nyxChatChannel(value) {
   return nyxChatChannelIdPattern.test(channel) ? channel : "";
 }
 
-function nyxChatAvatar(value) {
+function nyxChatAvatar(value, uid = "") {
   const source = String(value || "").trim();
+  const normalizedUid = String(uid || "").trim();
+  if (/^data:image\/(?:png|jpeg|webp|gif);base64,/i.test(source) && /^[A-Za-z0-9_-]{8,128}$/.test(normalizedUid)) {
+    return `/api/profile-avatar/${normalizedUid}`;
+  }
+  if (/^\/assets\/[a-z0-9/_\-.]+$/i.test(source)) return source;
   if (/^\/api\/profile-media\/[A-Za-z0-9_-]{8,128}\/avatar\/[A-Za-z0-9_-]{12,80}$/.test(source)) return source;
   return /^https:\/\/[^\s]{1,1900}$/i.test(source) ? source : "";
 }
@@ -3977,7 +3986,7 @@ function nyxChatMessagePayload(document, viewerUid = "") {
       uid: authorUid,
       displayName: founderProfileText(author.displayName, "Nyx member", 48),
       handle: `@${nyxProfileUsername(author.handle, "nyx-user")}`,
-      avatarUrl: nyxChatAvatar(author.avatarUrl),
+      avatarUrl: nyxChatAvatar(author.avatarUrl, authorUid),
       role: authorPresentation.role,
       customRole: authorPresentation.customRole,
       caffeine: author.caffeine === true
@@ -3999,7 +4008,7 @@ function nyxChatConversationMember(value, fallbackUid = "", viewerUid = "") {
     uid,
     displayName: founderProfileText(source.displayName, "Nyx member", 48),
     handle: `@${nyxProfileUsername(source.handle, "nyx-user")}`,
-    avatarUrl: nyxChatAvatar(source.avatarUrl),
+    avatarUrl: nyxChatAvatar(source.avatarUrl, uid),
     role: presentation.role,
     customRole: presentation.customRole,
     roleLabel: presentation.roleLabel,
@@ -4025,7 +4034,7 @@ function nyxChatConversationPayload(document, viewerUid, membersByUid = new Map(
   };
 }
 
-async function nyxChatScope(firebase, uid, source = {}) {
+async function nyxChatScope(firebase, uid, source = {}, knownRole = "") {
   const rawScope = String(source.scope || "").trim().toLowerCase();
   const explicitChannel = String(source.channel || "").trim();
   const rawChannel = explicitChannel || (!nyxChatConversationIdPattern.test(rawScope) && nyxChatChannelIdPattern.test(rawScope) ? rawScope : "");
@@ -4038,8 +4047,9 @@ async function nyxChatScope(firebase, uid, source = {}) {
       error.status = 404;
       throw error;
     }
-    const administration = await firebase.firestore.collection("nyxUserAdministration").doc(uid).get();
-    const role = nyxRoleForUser(uid, administration.data() || {});
+    const role = knownRole
+      ? nyxChatRole(knownRole)
+      : nyxRoleForUser(uid, (await firebase.firestore.collection("nyxUserAdministration").doc(uid).get()).data() || {});
     if (!nyxChatCanAccessChannel(role, channelDefinition)) {
       const error = new Error("Your role cannot access that chat channel.");
       error.status = 403;
@@ -4308,7 +4318,7 @@ async function nyxChatMemberDirectory(firebase) {
         uid: document.id,
         displayName: profile.displayName,
         handle: profile.handle,
-        avatarUrl: nyxChatAvatar(profile.avatarUrl),
+        avatarUrl: nyxChatAvatar(profile.avatarUrl, document.id),
         role,
         customRole: nyxPublicCustomRole(customRole),
         roleLabel: customRole?.label || nyxRoleLabels[role] || nyxRoleLabels.member,
@@ -4380,7 +4390,7 @@ async function nyxChatIdentity(firebase, token) {
       uid,
       displayName: profile.displayName,
       handle: profile.handle,
-      avatarUrl: nyxChatAvatar(profile.avatarUrl),
+      avatarUrl: nyxChatAvatar(profile.avatarUrl, uid),
       role,
       customRole: nyxPublicCustomRole(customRole),
       roleLabel: customRole?.label || nyxRoleLabels[role] || nyxRoleLabels.member,
@@ -4493,7 +4503,7 @@ function nyxChatVoiceParticipant(session, viewerUid = "") {
     channelId: nyxChatVoiceChannel(session?.channelId),
     displayName: founderProfileText(identity.displayName, "Nyx member", 48),
     handle: `@${nyxProfileUsername(identity.handle, "nyx-user")}`,
-    avatarUrl: nyxChatAvatar(identity.avatarUrl),
+    avatarUrl: nyxChatAvatar(identity.avatarUrl, uid),
     role: presentation.role,
     roleLabel: presentation.roleLabel
   };
@@ -4652,7 +4662,7 @@ async function ownerDashboardSnapshot(firebase) {
     const uids = authUsers.map(user => user.uid);
     const [administration, profiles, activity, customRoles] = await Promise.all([
       firestoreDocumentsById(firebase.firestore, "nyxUserAdministration", uids),
-      firestoreDocumentsById(firebase.firestore, "nyxUserProfiles", uids, ["profile.displayName", "profile.handle", "profile.bio", "profile.customStatus", "profile.status"]),
+      firestoreDocumentsById(firebase.firestore, "nyxUserProfiles", uids, ["profile.displayName", "profile.handle", "profile.bio", "profile.customStatus", "profile.status", "profile.avatarUrl"]),
       firestoreDocumentsById(firebase.firestore, "nyxUserActivity", uids),
       nyxCustomRoles(firebase)
     ]);
@@ -6602,6 +6612,114 @@ async function resolveNyxAccountIdentifier(firebase, value) {
   return { authEmail: localAccountEmail, expectedUid: "", username, repairUsername: false };
 }
 
+const nyxAccountNoticeCollectionName = "nyxAccountNotices";
+const nyxAccountNoticeStatuses = new Set(["disabled", "banned", "deleted"]);
+
+function nyxAccountNoticeDocumentId(kind, value) {
+  const normalizedKind = String(kind || "").trim().toLowerCase();
+  const normalizedValue = String(value || "").trim().toLowerCase();
+  if (!normalizedKind || !normalizedValue) return "";
+  return createHash("sha256").update(`nyx-account-notice:${normalizedKind}:${normalizedValue}`).digest("hex");
+}
+
+function nyxAccountNoticeIdentifierEntries({ uid = "", email = "", username = "" } = {}) {
+  const entries = [];
+  const normalizedUid = String(uid || "").trim();
+  const normalizedEmail = normalizeNyxAccountEmail(email);
+  const normalizedUsername = nyxProfileUsername(String(username || "").replace(/^@+/, ""), "");
+  if (normalizedUid) entries.push({ kind: "uid", value: normalizedUid });
+  if (normalizedEmail) entries.push({ kind: "email", value: normalizedEmail });
+  if (normalizedUsername) entries.push({ kind: "username", value: normalizedUsername });
+  return entries.filter((entry, index, all) => all.findIndex(candidate => candidate.kind === entry.kind && candidate.value === entry.value) === index);
+}
+
+function nyxAccountNoticeEntriesForLogin(identifier, uid = "") {
+  const rawIdentifier = String(identifier || "").trim();
+  const usernameIdentifier = /^@[a-z0-9_.-]{3,32}$/i.test(rawIdentifier);
+  if (rawIdentifier.includes("@") && !usernameIdentifier) {
+    return nyxAccountNoticeIdentifierEntries({ uid, email: rawIdentifier });
+  }
+  return nyxAccountNoticeIdentifierEntries({ uid, username: rawIdentifier });
+}
+
+function nyxPublicAccountNotice(data) {
+  const status = nyxAccountNoticeStatuses.has(String(data?.status || "")) ? String(data.status) : "disabled";
+  const title = {
+    disabled: "Your Nyx account is disabled",
+    banned: "Your Nyx account is banned",
+    deleted: "Your Nyx account was deleted"
+  }[status];
+  const fallback = status === "deleted"
+    ? "This account is no longer available."
+    : "Contact Nyx staff if you believe this was a mistake.";
+  return {
+    status,
+    title,
+    message: founderProfileText(data?.message, fallback, 500),
+    updatedAt: String(data?.updatedAt || data?.createdAt || "")
+  };
+}
+
+async function findNyxAccountNotice(firebase, identifier, uid = "") {
+  const entries = nyxAccountNoticeEntriesForLogin(identifier, uid);
+  if (!entries.length) return null;
+  const snapshots = await Promise.all(entries.map(entry => {
+    const id = nyxAccountNoticeDocumentId(entry.kind, entry.value);
+    return firebase.firestore.collection(nyxAccountNoticeCollectionName).doc(id).get();
+  }));
+  const notices = snapshots
+    .filter(snapshot => snapshot.exists && nyxAccountNoticeStatuses.has(String(snapshot.data()?.status || "")))
+    .map(snapshot => snapshot.data())
+    .sort((left, right) => String(right.updatedAt || right.createdAt || "").localeCompare(String(left.updatedAt || left.createdAt || "")));
+  return notices[0] || null;
+}
+
+function stageNyxAccountNotice(batch, firebase, { uid, email, username, status, message }) {
+  if (!nyxAccountNoticeStatuses.has(status)) throw new Error("That account notice status is invalid.");
+  const timestamp = new Date().toISOString();
+  const entries = nyxAccountNoticeIdentifierEntries({ uid, email, username });
+  const document = {
+    status,
+    message: founderProfileText(message, "", 500),
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    version: 1
+  };
+  entries.forEach(entry => {
+    const id = nyxAccountNoticeDocumentId(entry.kind, entry.value);
+    batch.set(firebase.firestore.collection(nyxAccountNoticeCollectionName).doc(id), {
+      ...document,
+      identifierKind: entry.kind
+    });
+  });
+  return entries.length;
+}
+
+async function setNyxAccountNotice(firebase, notice) {
+  const batch = firebase.firestore.batch();
+  stageNyxAccountNotice(batch, firebase, notice);
+  await batch.commit();
+}
+
+async function clearNyxAccountNotice(firebase, { uid, email, username }) {
+  const entries = nyxAccountNoticeIdentifierEntries({ uid, email, username });
+  if (!entries.length) return;
+  const batch = firebase.firestore.batch();
+  entries.forEach(entry => {
+    const id = nyxAccountNoticeDocumentId(entry.kind, entry.value);
+    batch.delete(firebase.firestore.collection(nyxAccountNoticeCollectionName).doc(id));
+  });
+  await batch.commit();
+}
+
+async function nyxAccountNoticeUsername(firebase, uid, email = "") {
+  const profileSnapshot = await firebase.firestore.collection("nyxUserProfiles").doc(uid).get().catch(() => null);
+  return nyxProfileUsername(
+    profileSnapshot?.data()?.profile?.handle,
+    nyxProfileUsername(String(email || "").split("@")[0], "")
+  );
+}
+
 async function repairLegacyNyxUsername(firebase, uid, username) {
   if (!uid || !username) return;
   const profileRef = firebase.firestore.collection("nyxUserProfiles").doc(uid);
@@ -6651,15 +6769,23 @@ app.post("/api/account/register", async (req, res) => {
   try {
     const firebase = await linkGeneratorFirebase();
     const usernameRef = firebase.firestore.collection("nyxUsernames").doc(username);
-    const [usernameSnapshot, duplicateProfiles] = await Promise.all([
+    const email = recoveryEmail || `${username}@account.nyx.local`;
+    const [usernameSnapshot, duplicateProfiles, deletedUsernameNotice, deletedEmailNotice] = await Promise.all([
       usernameRef.get(),
-      firebase.firestore.collection("nyxUserProfiles").where("profile.handle", "==", `@${username}`).limit(1).get()
+      firebase.firestore.collection("nyxUserProfiles").where("profile.handle", "==", `@${username}`).limit(1).get(),
+      findNyxAccountNotice(firebase, username),
+      findNyxAccountNotice(firebase, email)
     ]);
+    const deletedNotice = [deletedUsernameNotice, deletedEmailNotice].find(notice => String(notice?.status || "") === "deleted");
+    if (deletedNotice) {
+      const accountStatus = nyxPublicAccountNotice(deletedNotice);
+      res.status(410).json({ error: `${accountStatus.title}. ${accountStatus.message}`, accountStatus });
+      return;
+    }
     if (usernameSnapshot.exists || !duplicateProfiles.empty) {
       res.status(409).json({ error: "That username is already taken." });
       return;
     }
-    const email = recoveryEmail || `${username}@account.nyx.local`;
     const account = await firebase.auth.createUser({
       email,
       password,
@@ -6746,6 +6872,12 @@ app.post("/api/account/sign-in", async (req, res) => {
     const firebase = await linkGeneratorFirebase();
     const resolved = await resolveNyxAccountIdentifier(firebase, identifier);
     if (!resolved?.authEmail) {
+      const storedNotice = await findNyxAccountNotice(firebase, identifier);
+      if (String(storedNotice?.status || "") === "deleted") {
+        const accountStatus = nyxPublicAccountNotice(storedNotice);
+        res.status(410).json({ error: `${accountStatus.title}. ${accountStatus.message}`, accountStatus });
+        return;
+      }
       res.status(401).json({ error: "Username, email, or password is incorrect." });
       return;
     }
@@ -6758,6 +6890,19 @@ app.post("/api/account/sign-in", async (req, res) => {
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok || !payload.localId || (expectedUid && payload.localId !== expectedUid)) {
+      const firebaseError = String(payload?.error?.message || "").trim().toUpperCase();
+      const storedNotice = await findNyxAccountNotice(firebase, identifier, expectedUid).catch(() => null);
+      const storedStatus = String(storedNotice?.status || "");
+      if (firebaseError.includes("USER_DISABLED") || storedStatus === "deleted") {
+        const accountStatus = nyxPublicAccountNotice(storedNotice || {
+          status: firebaseError.includes("USER_DISABLED") ? "disabled" : "deleted"
+        });
+        res.status(accountStatus.status === "deleted" ? 410 : 423).json({
+          error: `${accountStatus.title}. ${accountStatus.message}`,
+          accountStatus
+        });
+        return;
+      }
       res.status(response.status === 429 ? 429 : 401).json({
         error: response.status === 429 ? "Too many sign-in attempts. Try again later." : "Username, email, or password is incorrect."
       });
@@ -6772,6 +6917,14 @@ app.post("/api/account/sign-in", async (req, res) => {
     nyxAccountSignInAttempts.delete(linkGeneratorClientId(req));
     res.json({ customToken });
   } catch (error) {
+    const storedNotice = await linkGeneratorFirebase()
+      .then(firebase => findNyxAccountNotice(firebase, identifier))
+      .catch(() => null);
+    if (String(storedNotice?.status || "") === "deleted") {
+      const accountStatus = nyxPublicAccountNotice(storedNotice);
+      res.status(410).json({ error: `${accountStatus.title}. ${accountStatus.message}`, accountStatus });
+      return;
+    }
     const knownAccountError = ["auth/user-not-found", "auth/invalid-email"].includes(String(error?.code || ""));
     res.status(knownAccountError ? 401 : 503).json({
       error: knownAccountError ? "Username, email, or password is incorrect." : "Sign-in is temporarily unavailable."
@@ -7052,6 +7205,39 @@ app.put("/api/profiles/me", async (req, res) => {
     res.json({ uid: token.uid, profile, createdAt });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "Nyx Profile could not be saved." });
+  }
+});
+
+app.get("/api/profile-avatar/:uid", async (req, res) => {
+  const uid = String(req.params.uid || "").trim();
+  if (!firebaseAdminModeConfigured() || !/^[A-Za-z0-9_-]{8,128}$/.test(uid)) {
+    res.status(404).end();
+    return;
+  }
+  try {
+    const firebase = await linkGeneratorFirebase();
+    const snapshot = await firebase.firestore.collection("nyxUserProfiles").doc(uid).get();
+    const avatar = nyxProfileImage(snapshot.data()?.profile?.avatarUrl, "");
+    const match = avatar.match(/^data:(image\/(?:png|jpeg|webp|gif));base64,([A-Za-z0-9+/=]+)$/i);
+    if (!snapshot.exists || !match || match[2].length > profileImageDataLimit) {
+      res.status(404).end();
+      return;
+    }
+    const image = Buffer.from(match[2], "base64");
+    if (!image.length || image.length > profileImageDataLimit) {
+      res.status(404).end();
+      return;
+    }
+    res.set({
+      "Cache-Control": "private, max-age=300",
+      "Content-Type": match[1].toLowerCase(),
+      "Content-Length": String(image.length),
+      "Cross-Origin-Resource-Policy": "same-origin",
+      "X-Content-Type-Options": "nosniff"
+    }).send(image);
+  } catch (error) {
+    console.warn("Nyx legacy profile avatar could not be served:", error?.message || error);
+    res.status(404).end();
   }
 });
 
@@ -8717,8 +8903,11 @@ app.post("/api/chat/messages", async (req, res) => {
   }
   try {
     const { firebase, token } = await authenticatedNyxChatUser(req);
-    await assertNyxChatCanSend(firebase, token.uid);
-    const scope = await nyxChatScope(firebase, token.uid, { channel: req.body?.channel, conversationId: req.body?.conversationId });
+    const [identity] = await Promise.all([
+      nyxChatIdentity(firebase, token),
+      assertNyxChatCanSend(firebase, token.uid)
+    ]);
+    const scope = await nyxChatScope(firebase, token.uid, { channel: req.body?.channel, conversationId: req.body?.conversationId }, identity.role);
     const text = nyxChatText(req.body?.text);
     const requestId = String(req.body?.requestId || "").trim();
     const attachmentIds = [...new Set((Array.isArray(req.body?.attachmentIds) ? req.body.attachmentIds : []).map(value => String(value || "").trim()))];
@@ -8739,7 +8928,6 @@ app.post("/api/chat/messages", async (req, res) => {
       return;
     }
     nyxChatConsumeSendAttempt(token.uid);
-    const identity = await nyxChatIdentity(firebase, token);
     if (nyxChatMentionHandles(text).includes("everyone") && !identity.canModerate) {
       res.status(403).json({ error: "Only moderators and staff can mention @everyone." });
       return;
@@ -9500,6 +9688,7 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
       set_subscription: "canSetSubscription",
       set_profile: "canEditProfile",
       disable: "canDisableAccount",
+      ban: "canDisableAccount",
       enable: "canDisableAccount",
       verify_email: "canVerifyEmail",
       create_password_reset_link: "canResetPassword",
@@ -9510,10 +9699,22 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
     if (capabilityByAction[action]) {
       assertNyxOwnerCapability(capabilities, capabilityByAction[action], `Your ${nyxRoleLabels[actor.role] || "Member"} role cannot perform that action on this account.`);
     }
-    const ownerProtectedAction = ["set_role", "disable", "disable_with_ip_ban", "delete"].includes(action);
+    const ownerProtectedAction = ["set_role", "disable", "ban", "disable_with_ip_ban", "delete"].includes(action);
     if (uid === ownerUid && ownerProtectedAction) {
       res.status(409).json({ error: "The configured owner account cannot be demoted, disabled, or deleted." });
       return;
+    }
+    const rawMemberMessage = String(req.body?.reason || "").trim();
+    const memberMessage = founderProfileText(rawMemberMessage, "", 500);
+    if (["disable", "ban", "disable_with_ip_ban", "delete"].includes(action)) {
+      if (!memberMessage) {
+        res.status(400).json({ error: "Enter the message this member should see about the account action." });
+        return;
+      }
+      if (rawMemberMessage.length > 500) {
+        res.status(400).json({ error: "Keep the member-facing message to 500 characters or fewer." });
+        return;
+      }
     }
     let auditAction = action;
     let auditDetails = {};
@@ -9589,13 +9790,14 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
         avatarRemoved: req.body?.removeAvatar === true,
         bannerRemoved: req.body?.removeBanner === true
       };
-    } else if (action === "disable" || action === "enable" || action === "disable_with_ip_ban") {
+    } else if (action === "disable" || action === "ban" || action === "enable" || action === "disable_with_ip_ban") {
       if (action === "disable_with_ip_ban" && !capabilities.canManageNetworkBans) {
         res.status(403).json({ error: "Your role cannot manage IP bans for that account." });
         return;
       }
-      const disabled = action === "disable" || action === "disable_with_ip_ban";
-      const moderationReason = founderProfileText(req.body?.reason, "", 180);
+      const disabled = action === "disable" || action === "ban" || action === "disable_with_ip_ban";
+      const moderationReason = memberMessage;
+      const accountNoticeUsername = await nyxAccountNoticeUsername(firebase, uid, target.email);
       const lastSeenIp = action === "disable_with_ip_ban" ? normalizeNyxIp(targetAdministration?.data()?.lastSeenIp) : "";
       if (action === "disable_with_ip_ban" && !lastSeenIp) {
         res.status(409).json({ error: "Nyx has not recorded an IP address for this account yet." });
@@ -9607,6 +9809,22 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
       }
       await firebase.auth.updateUser(uid, { disabled });
       if (disabled) await firebase.auth.revokeRefreshTokens(uid);
+      if (disabled) {
+        try {
+          await setNyxAccountNotice(firebase, {
+            uid,
+            email: target.email,
+            username: accountNoticeUsername,
+            status: action === "ban" || action === "disable_with_ip_ban" ? "banned" : "disabled",
+            message: moderationReason
+          });
+        } catch (error) {
+          await firebase.auth.updateUser(uid, { disabled: false }).catch(() => {});
+          throw error;
+        }
+      } else {
+        await clearNyxAccountNotice(firebase, { uid, email: target.email, username: accountNoticeUsername });
+      }
       if (action === "disable_with_ip_ban") {
         const banId = nyxIpBanId(lastSeenIp);
         const banReference = firebase.firestore.collection(nyxIpBanCollectionName).doc(banId);
@@ -9629,7 +9847,7 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
         auditAction = "account_disabled_with_ip_ban";
         auditDetails = { disabled: true, ip: lastSeenIp, ...(moderationReason ? { reason: moderationReason } : {}) };
       } else {
-        auditAction = disabled ? "account_disabled" : "account_enabled";
+        auditAction = action === "ban" ? "account_banned" : (disabled ? "account_disabled" : "account_enabled");
         auditDetails = { disabled, ...(moderationReason ? { reason: moderationReason } : {}) };
       }
     } else if (action === "verify_email") {
@@ -9677,7 +9895,20 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
       const username = nyxProfileUsername(profileSnapshot.data()?.profile?.handle, nyxProfileUsername(String(target.email || "").split("@")[0], ""));
       const usernameRef = username ? firebase.firestore.collection("nyxUsernames").doc(username) : null;
       const usernameSnapshot = usernameRef ? await usernameRef.get() : null;
-      await firebase.auth.deleteUser(uid);
+      const deletedNotice = {
+        uid,
+        email: target.email,
+        username,
+        status: "deleted",
+        message: memberMessage
+      };
+      await setNyxAccountNotice(firebase, deletedNotice);
+      try {
+        await firebase.auth.deleteUser(uid);
+      } catch (error) {
+        await clearNyxAccountNotice(firebase, { uid, email: target.email, username }).catch(() => {});
+        throw error;
+      }
       const batch = firebase.firestore.batch();
       ["nyxUserProfiles", "nyxUserAdministration", "nyxUserActivity"].forEach(collectionName => {
         batch.delete(firebase.firestore.collection(collectionName).doc(uid));
@@ -9691,7 +9922,7 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
         action: "account_deleted",
         targetUid: uid,
         targetEmail: target.email,
-        details: { displayName: target.displayName || "" }
+        details: { displayName: target.displayName || "", reason: memberMessage }
       });
       res.json({ deleted: true, uid });
       return;

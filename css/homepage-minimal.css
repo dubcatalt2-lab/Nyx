@@ -185,6 +185,17 @@ html body.browser-shell .nyx-home-tabs-toggle>svg{width:17px!important;height:17
   html body.browser-shell .nyx-browser-tab-close{opacity:1!important}
 }
 
+/* The redesigned home is a stable black canvas in every theme. Themes may
+   tint its dots and controls, but legacy full-window theme surfaces cannot
+   repaint the canvas or change its component geometry. */
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+  body.browser-shell.browser-shell.browser-shell:is(body,#nyx-minimal-theme-canvas):is(body,#nyx-minimal-theme-layout)
+  .browser-window.browser-home-page .browser-home.nyx-minimal-home{
+  background:#000!important;
+  background-color:#000!important;
+  background-image:none!important;
+}
+
 /* Outrank the earlier two-row reference chrome: the tab drawer uses one
    Mizumath-style toolbar, with the URL field taking all remaining space. */
 @media(min-width:621px){
@@ -210,8 +221,8 @@ html body.browser-shell .nyx-home-tabs-toggle>svg{width:17px!important;height:17
   html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell.browser-content-active:is(body,#nyx-mizu-wide-toolbar):is(body,#nyx-mizu-wide-layout):is(body,#nyx-mizu-wide-controls) .top-os.top-os form.browser-mode-address>.browser-mode-url{width:auto!important;min-width:0!important;max-width:none!important;border-radius:calc(var(--nyx-mizu-control-size)/2)!important;font-size:clamp(14px,1.05vw,20px)!important}
   html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell.browser-content-active:is(body,#nyx-mizu-wide-toolbar):is(body,#nyx-mizu-wide-layout):is(body,#nyx-mizu-wide-controls) .top-os.top-os form.browser-mode-address button>svg{width:clamp(22px,1.2vw,28px)!important;height:clamp(22px,1.2vw,28px)!important}
   html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell.browser-content-active:is(body,#nyx-mizu-wide-toolbar):is(body,#nyx-mizu-wide-layout):is(body,#nyx-mizu-wide-controls) #desktop>.window.maximized{top:var(--nyx-mizu-toolbar-height)!important;height:calc(100dvh - var(--nyx-mizu-toolbar-height))!important;max-height:calc(100dvh - var(--nyx-mizu-toolbar-height))!important}
-  html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell.browser-content-active:is(body,#nyx-mizu-wide-toolbar):is(body,#nyx-mizu-wide-layout):is(body,#nyx-mizu-wide-controls) .top-os.top-os form.browser-mode-address>.browser-tabs-toggle{border:1px solid #292a39!important;border-radius:18px!important;background:#0d0e15!important;color:#d7d5ff!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.025)!important}
-  html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell.browser-content-active:is(body,#nyx-mizu-wide-toolbar):is(body,#nyx-mizu-wide-layout):is(body,#nyx-mizu-wide-controls) .top-os.top-os form.browser-mode-address>.browser-tabs-toggle:hover,html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell.browser-content-active:is(body,#nyx-mizu-wide-toolbar):is(body,#nyx-mizu-wide-layout):is(body,#nyx-mizu-wide-controls) .top-os.top-os form.browser-mode-address>.browser-tabs-toggle[aria-expanded="true"]{border-color:#d7d5ff!important;background:#171724!important}
+  html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell.browser-content-active:is(body,#nyx-mizu-wide-toolbar):is(body,#nyx-mizu-wide-layout):is(body,#nyx-mizu-wide-controls) .top-os.top-os form.browser-mode-address>.browser-tabs-toggle{border:1px solid color-mix(in srgb,var(--nyx-chrome-accent) 28%,var(--nyx-home-line))!important;border-radius:18px!important;background:var(--nyx-control-surface)!important;color:color-mix(in srgb,var(--nyx-chrome-accent) 28%,#eef0f5)!important;box-shadow:none!important}
+  html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell.browser-content-active:is(body,#nyx-mizu-wide-toolbar):is(body,#nyx-mizu-wide-layout):is(body,#nyx-mizu-wide-controls) .top-os.top-os form.browser-mode-address>.browser-tabs-toggle:hover,html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell.browser-content-active:is(body,#nyx-mizu-wide-toolbar):is(body,#nyx-mizu-wide-layout):is(body,#nyx-mizu-wide-controls) .top-os.top-os form.browser-mode-address>.browser-tabs-toggle[aria-expanded="true"]{border-color:color-mix(in srgb,var(--nyx-chrome-accent) 72%,#fff)!important;background:color-mix(in srgb,var(--nyx-chrome-accent) 12%,var(--nyx-unified-field))!important}
 }
 @media(max-width:480px){
   .nyx-minimal-top-actions{right:6px;height:55px;gap:5px}.nyx-minimal-top-actions>button{width:27px;height:27px}.nyx-minimal-top-actions .nyx-account-button{width:27px!important;height:27px!important;min-height:27px!important}
@@ -345,10 +356,7 @@ html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.brows
 /* Reference styling: hairline controls, one visual weight for every shortcut,
    and the horizontal Time / Weather / Session dashboard from the mockup. */
 html body.browser-shell.browser-shell{
-  --nyx-home-wordmark:#eceef4!important;
   --nyx-home-muted:#8b8da0!important;
-  --nyx-shell-icon:#eceef4!important;
-  --nyx-final-shortcut-icon:#eceef4!important;
 }
 html body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .top-os.top-os .brand-mini .browser-home-label{color:#eeeef5!important;font-size:9px!important;font-weight:520!important}
 html body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .top-os.top-os .brand-mini .browser-home-icon{width:11px!important;height:11px!important;filter:grayscale(1) brightness(1.8)!important;box-shadow:none!important}
@@ -389,7 +397,7 @@ html body.browser-shell .top-os>.nyx-dashboard{top:clamp(5px,.9vw,9px)}
 
 html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:is(body,#nyx-reference-search):is(body,#nyx-reference-controls) .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-search{width:min(370px,47vw)!important;max-width:none!important;border-color:#24242f!important;border-radius:6px!important;background:#000!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:is(body,#nyx-reference-search):is(body,#nyx-reference-controls) .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-search:focus-within{border-color:#55516d!important;box-shadow:0 0 0 2px rgba(117,95,214,.08)!important}
-html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:is(body,#nyx-reference-search):is(body,#nyx-reference-controls) .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-search .nyx-home-search-icon{order:1!important;width:12px!important;height:12px!important;flex:0 0 12px!important;margin:0 7px 0 0!important;background:#9697a8!important}
+html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:is(body,#nyx-reference-search):is(body,#nyx-reference-controls) .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-search .nyx-home-search-icon{order:1!important;width:12px!important;height:12px!important;flex:0 0 12px!important;margin:0 7px 0 0!important;background:color-mix(in srgb,var(--nyx-chrome-accent) 76%,#e8eaf0)!important}
 html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:is(body,#nyx-reference-search):is(body,#nyx-reference-controls) .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-search input{order:2!important;padding:0!important;font-size:10px!important;letter-spacing:0!important}
 html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:is(body,#nyx-reference-search-chrome):is(body,#nyx-reference-search-layout):is(body,#nyx-reference-search-controls) .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-search{width:min(370px,47vw)!important;max-width:none!important;height:clamp(23px,3.7vw,31px)!important;min-height:clamp(23px,3.7vw,31px)!important;max-height:clamp(23px,3.7vw,31px)!important}
 
@@ -531,7 +539,7 @@ html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.brows
   width:32px!important;
   min-width:32px!important;
   height:32px!important;
-  color:#f7f7f8!important;
+  color:var(--nyx-home-wordmark,#f7f7f8)!important;
   overflow:visible!important;
 }
 html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .top-os.top-os .nyx-minimal-top-actions>button>svg{
@@ -560,7 +568,7 @@ html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.brows
   height:36px!important;
   min-height:36px!important;
   overflow:visible!important;
-  border-color:#343541!important;
+  border-color:color-mix(in srgb,var(--nyx-home-wordmark,#f7f7f8) 30%,#25262e)!important;
   background:transparent!important;
   box-shadow:none!important;
 }
@@ -579,18 +587,18 @@ html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.brows
 html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .top-os.top-os .nyx-minimal-top-actions #nyxAccountButton.nyx-account-button-default>span{
   width:11px!important;
   height:11px!important;
-  border:1px solid #f7f7f8!important;
+  border:1px solid var(--nyx-home-wordmark,#f7f7f8)!important;
 }
 html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .top-os.top-os .nyx-minimal-top-actions #nyxAccountButton.nyx-account-button-default>span::before,
 html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .top-os.top-os .nyx-minimal-top-actions #nyxAccountButton.nyx-account-button-default>span::after{
-  background:#f7f7f8!important;
+  background:var(--nyx-home-wordmark,#f7f7f8)!important;
 }
 html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .top-os.top-os .nyx-minimal-top-actions #nyxAccountButton.nyx-account-button-default>span::before{top:2px!important;width:3px!important;height:3px!important}
 html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .top-os.top-os .nyx-minimal-top-actions #nyxAccountButton.nyx-account-button-default>span::after{bottom:1px!important;width:6px!important;height:3px!important}
-html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .top-os.top-os .nyx-dashboard-trigger{color:#f1f1f4!important}
+html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .top-os.top-os .nyx-dashboard-trigger{color:var(--nyx-home-wordmark,#f1f1f4)!important}
 html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .top-os.top-os .nyx-dashboard-trigger:hover,
-html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .top-os.top-os .nyx-dashboard.is-open .nyx-dashboard-trigger{border-color:#30313a!important;background:#090a0e!important;color:#fff!important}
-html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .top-os.top-os .nyx-dashboard-tabs>button.is-active::after{background:#f1f1f4!important}
+html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .top-os.top-os .nyx-dashboard.is-open .nyx-dashboard-trigger{border-color:var(--nyx-chrome-accent,#f1f1f4)!important;background:color-mix(in srgb,var(--nyx-chrome-accent,#9b8cf5) 12%,#08090d)!important;color:var(--nyx-chrome-bright,#fff)!important}
+html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .top-os.top-os .nyx-dashboard-tabs>button.is-active::after{background:var(--nyx-home-wordmark,#f1f1f4)!important}
 html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active):is(body,#nyx-final-actions):is(body,#nyx-final-actions-layout):is(body,#nyx-final-actions-controls) .top-os.top-os .nyx-minimal-top-actions{right:12px!important;gap:4px!important}
 html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active):is(body,#nyx-final-actions):is(body,#nyx-final-actions-layout):is(body,#nyx-final-actions-controls) .top-os.top-os .nyx-minimal-top-actions>button{width:32px!important;min-width:32px!important;height:32px!important;overflow:visible!important}
 html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active):is(body,#nyx-final-actions):is(body,#nyx-final-actions-layout):is(body,#nyx-final-actions-controls) .top-os.top-os .nyx-minimal-top-actions>button>svg{width:24px!important;height:24px!important;overflow:visible!important;stroke-width:1.65!important;transform-origin:center!important}
@@ -725,16 +733,16 @@ html[data-nyx-theme] body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified
   background-color:#000!important;
 }
 html[data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button{
-  color:#f7f7f8!important;
+  color:var(--nyx-home-wordmark,#f7f7f8)!important;
 }
 html body.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button,
 html body.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button>span:last-child,
 html body.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button>svg,
 html body.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button>.nyx-nocturne-ai-icon{
-  color:#f7f7f8!important;
+  color:var(--nyx-home-wordmark,#f7f7f8)!important;
 }
 html body.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="/apps/nyxify/"])::before{
-  background-color:#f7f7f8!important;
+  background-color:var(--nyx-home-wordmark,#f7f7f8)!important;
 }
 
 /* Match Nocturne's High / Medium / Low performance tiers. Medium removes
@@ -781,4 +789,725 @@ html.perf-min :is(#visualEffects,.nyx-home-dot-field){display:none!important}
   color:#08080c!important;
   -webkit-text-fill-color:#08080c!important;
   opacity:1!important;
+}
+
+/* Sparse constellation field and clean homepage hit areas. */
+html[data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home>.nyx-home-dot-field{
+  opacity:.78!important;
+  --nyx-dot-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 62%,#24262d);
+  --nyx-link-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 36%,#15171d);
+  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 18%,transparent));
+}
+.nyx-minimal-brand,
+.nyx-minimal-brand h1,
+.nyx-title-dot-canvas{
+  -webkit-user-select:none!important;
+  user-select:none!important;
+}
+.nyx-minimal-brand h1::selection{
+  background:transparent!important;
+  color:transparent!important;
+  -webkit-text-fill-color:transparent!important;
+}
+html body.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button{
+  overflow:visible!important;
+  outline:0!important;
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+html body.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button::before,
+html body.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button::after{
+  display:none!important;
+  content:none!important;
+}
+html body.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button:hover,
+html body.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button:focus-visible{
+  border-radius:0!important;
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+html body.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button:focus-visible>svg,
+html body.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button:focus-visible>.nyx-nocturne-ai-icon{
+  border-color:#747681!important;
+  outline:2px solid rgba(255,255,255,.22)!important;
+  outline-offset:3px!important;
+}
+
+/* Keep the default dashboard on one compact row. Other sections continue to
+   size themselves from their own content, including the performance view. */
+@media(min-width:701px) and (min-height:421px){
+  .nyx-dashboard-panel{width:min(700px,calc(100vw - 32px));padding:15px!important}
+  .nyx-dashboard-tabs{padding-bottom:9px!important}
+  .nyx-dashboard-pages{padding-top:10px!important}
+  .nyx-dashboard-page[data-nyx-dashboard-page="dashboard"].is-active{
+    grid-template-columns:minmax(0,.85fr) minmax(0,.9fr) minmax(220px,1.25fr)!important;
+    align-items:stretch!important;
+    gap:10px!important;
+  }
+  .nyx-dashboard-page[data-nyx-dashboard-page="dashboard"]>.nyx-dashboard-session-card{
+    grid-column:auto!important;
+    align-content:center!important;
+  }
+}
+
+/* The original layout remains supported internally, but its public selector is
+   intentionally hidden until both home designs can be maintained together. */
+.settings-block.nyx-home-design-setting{
+  display:none!important;
+}
+
+/* Final themed-home contract. The shell tab styles are intentionally much
+   stronger than ordinary page styles, so the redesigned home needs an equally
+   explicit exception: its Nyx mark is a transparent brand control, not a
+   rectangular active browser tab. */
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active):is(body,#nyx-themed-home-brand):is(body,#nyx-themed-home-shape):is(body,#nyx-themed-home-hover)
+.top-os.top-os .brand-mini>button[data-browser-shell-home]:is(.active,:hover,:focus-visible){
+  border-color:transparent!important;
+  border-radius:999px!important;
+  background:transparent!important;
+  background-color:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active):is(body,#nyx-themed-home-brand):is(body,#nyx-themed-home-shape):is(body,#nyx-themed-home-hover)
+.top-os.top-os .brand-mini>button[data-browser-shell-home]{
+  border-color:transparent!important;
+  border-radius:999px!important;
+  background:transparent!important;
+  color:var(--nyx-home-wordmark,#f3f3f7)!important;
+  -webkit-text-fill-color:var(--nyx-home-wordmark,#f3f3f7)!important;
+}
+html[data-nyx-theme] body.browser-shell:not(.browser-content-active):not(.nyx-home-search-active)
+.top-os .brand-mini>button[data-browser-shell-home]:focus-visible{
+  outline:2px solid color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 68%,transparent)!important;
+  outline-offset:2px!important;
+}
+html[data-nyx-theme] body.browser-shell:not(.browser-content-active):not(.nyx-home-search-active)
+.top-os .brand-mini>button[data-browser-shell-home]>.browser-home-icon{
+  background-color:var(--nyx-home-wordmark,#f3f3f7)!important;
+}
+html[data-nyx-theme] body.browser-shell:not(.browser-content-active):not(.nyx-home-search-active)
+.top-os .brand-mini>button[data-browser-shell-home]>.browser-home-label{
+  color:var(--nyx-home-wordmark,#f3f3f7)!important;
+  -webkit-text-fill-color:var(--nyx-home-wordmark,#f3f3f7)!important;
+}
+
+/* Icon-only homepage controls keep circular hit feedback. No outer control is
+   allowed to paint the square hover plate that previously appeared behind AI,
+   the header actions, or the tab-drawer control. */
+html[data-nyx-theme] body.browser-shell:not(.browser-content-active):not(.nyx-home-search-active)
+:is(.nyx-home-tabs-toggle,.nyx-minimal-top-actions>button){
+  border-radius:50%!important;
+  color:var(--nyx-home-wordmark,#f3f3f7)!important;
+  -webkit-text-fill-color:var(--nyx-home-wordmark,#f3f3f7)!important;
+}
+html[data-nyx-theme] body.browser-shell:not(.browser-content-active):not(.nyx-home-search-active)
+:is(.nyx-home-tabs-toggle,.nyx-minimal-top-actions>button):is(:hover,:focus-visible){
+  border-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 40%,transparent)!important;
+  border-radius:50%!important;
+  background:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 12%,transparent)!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+
+/* Apply the palette to the controls that were still pinned to neutral gray by
+   older reference-layout rules. Text stays readable by mixing, rather than
+   painting every surface a saturated theme color. */
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active):is(body,#nyx-themed-home-palette):is(body,#nyx-themed-home-controls):is(body,#nyx-themed-home-fields)
+.browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-search{
+  border-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 38%,#24242f)!important;
+}
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-minimal-search input{
+  color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 35%,#f4f4f7)!important;
+  -webkit-text-fill-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 35%,#f4f4f7)!important;
+}
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-minimal-search input::placeholder{
+  color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 45%,#777985)!important;
+  -webkit-text-fill-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 45%,#777985)!important;
+  opacity:1!important;
+}
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button>span:last-child{
+  color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 58%,#f1f1f5)!important;
+  -webkit-text-fill-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 58%,#f1f1f5)!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-home-presence{
+  color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 62%,#ececf2)!important;
+  -webkit-text-fill-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 62%,#ececf2)!important;
+}
+
+/* The tab drawer uses the same palette while retaining its jet-black canvas. */
+html[data-nyx-theme] body.browser-shell .nyx-browser-tab-sidebar{
+  border-right-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 30%,#202128)!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-browser-tab-sidebar>header{
+  border-bottom-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 28%,#202128)!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-browser-tab-sidebar>header>strong,
+html[data-nyx-theme] body.browser-shell .nyx-browser-tab-sidebar>header button{
+  color:var(--nyx-home-wordmark,#f3f3f7)!important;
+  -webkit-text-fill-color:var(--nyx-home-wordmark,#f3f3f7)!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-browser-tab-sidebar>header button{
+  border-radius:50%!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-browser-tab-sidebar>header button:is(:hover,:focus-visible){
+  border-radius:50%!important;
+  background:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 14%,transparent)!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-browser-tab-row:is(:hover,:focus-visible){
+  border-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 38%,#292a32)!important;
+  background:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 10%,#09090c)!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-browser-tab-row.active{
+  border-color:var(--nyx-home-wordmark,#f3f3f7)!important;
+  background:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 13%,#09090c)!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-browser-tab-row strong{
+  color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 46%,#f5f5f7)!important;
+  -webkit-text-fill-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 46%,#f5f5f7)!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-browser-tab-row small{
+  color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 42%,#8a8c96)!important;
+  -webkit-text-fill-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 42%,#8a8c96)!important;
+}
+
+/* Themes tint the redesigned home without replacing its black canvas or
+   changing any of its geometry. */
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home{
+  --nyx-dot-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 52%,#17201d);
+  --nyx-link-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 32%,#111916);
+}
+html body.browser-shell.theme-default:not(.theme-custom){--nyx-home-wordmark:#a99bf3!important;--nyx-shell-icon:#a99bf3!important;--nyx-final-shortcut-icon:#a99bf3!important}
+html body.browser-shell.theme-ruby{--nyx-home-wordmark:#fb7185!important;--nyx-shell-icon:#fb7185!important;--nyx-final-shortcut-icon:#fb7185!important}
+html body.browser-shell.theme-emerald{--nyx-home-wordmark:#34d399!important;--nyx-shell-icon:#34d399!important;--nyx-final-shortcut-icon:#34d399!important}
+html body.browser-shell.theme-sakura{--nyx-home-wordmark:#f9a8d4!important;--nyx-shell-icon:#f9a8d4!important;--nyx-final-shortcut-icon:#f9a8d4!important}
+html body.browser-shell.theme-midnight{--nyx-home-wordmark:#93c5fd!important;--nyx-shell-icon:#93c5fd!important;--nyx-final-shortcut-icon:#93c5fd!important}
+html body.browser-shell.theme-fresh{--nyx-home-wordmark:#a6c99c!important;--nyx-shell-icon:#a6c99c!important;--nyx-final-shortcut-icon:#a6c99c!important}
+html body.browser-shell.theme-custom{--nyx-home-wordmark:var(--nyx-custom-accent,#a99bf3)!important;--nyx-shell-icon:var(--nyx-custom-accent,#a99bf3)!important;--nyx-final-shortcut-icon:var(--nyx-custom-accent,#a99bf3)!important}
+html[data-nyx-theme] body.browser-shell .browser-window.browser-home-page,
+html[data-nyx-theme] body.browser-shell .browser-window.browser-home-page>.browser-body,
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home,
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home::before,
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home::after{
+  background-color:#000!important;
+}
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home::before,
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home::after{
+  background-image:none!important;
+}
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-minimal-brand h1:not(.nyx-title-dot-ready){
+  background:none!important;
+  color:var(--nyx-home-wordmark,#f7f7f8)!important;
+  -webkit-text-fill-color:var(--nyx-home-wordmark,#f7f7f8)!important;
+  text-shadow:0 0 18px color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 22%,transparent)!important;
+}
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-minimal-brand h1.nyx-title-dot-ready{
+  background:none!important;
+  color:transparent!important;
+  -webkit-text-fill-color:transparent!important;
+  text-shadow:none!important;
+  caret-color:transparent!important;
+  user-select:none!important;
+}
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-minimal-wordmark,
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button>svg{
+  color:var(--nyx-home-wordmark,#f7f7f8)!important;
+  -webkit-text-fill-color:var(--nyx-home-wordmark,#f7f7f8)!important;
+}
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-nocturne-ai-icon{
+  background-color:#060609!important;
+  color:var(--nyx-home-wordmark,#f7f7f8)!important;
+}
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button>span:last-child,
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-minimal-search input{
+  background:none!important;
+  color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 38%,#f3f3f6)!important;
+  -webkit-text-fill-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 38%,#f3f3f6)!important;
+}
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-minimal-search:focus-within{
+  border-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 64%,#fff)!important;
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 14%,transparent)!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-dashboard-tabs>button.is-active::after{
+  background:var(--nyx-home-wordmark,#f1f1f4)!important;
+}
+
+/* Fern-style palette behavior: surfaces stay restrained and black, while one
+   selected accent consistently colors controls, borders, icons, selection,
+   and focus feedback. Geometry and interaction hit areas never change. */
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home{
+  --nyx-minimal-accent:var(--nyx-home-wordmark,#9b8cf5);
+  --nyx-minimal-line:color-mix(in srgb,var(--nyx-minimal-accent) 30%,#24252d);
+  --nyx-minimal-soft:color-mix(in srgb,var(--nyx-minimal-accent) 12%,#09090d);
+  --nyx-minimal-hover:color-mix(in srgb,var(--nyx-minimal-accent) 19%,#0d0d12);
+}
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-minimal-search{
+  border-color:var(--nyx-minimal-line)!important;
+  background:#08080c!important;
+}
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-home-search-icon{
+  color:var(--nyx-minimal-accent)!important;
+  background-color:var(--nyx-minimal-accent)!important;
+}
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button>svg,
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button>.nyx-nocturne-ai-icon{
+  border-color:var(--nyx-minimal-line)!important;
+  color:var(--nyx-minimal-accent)!important;
+}
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="/apps/nyxify/"])::before{
+  border-color:var(--nyx-minimal-line)!important;
+  background-color:var(--nyx-minimal-accent)!important;
+}
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button:hover>svg,
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button:hover>.nyx-nocturne-ai-icon{
+  border-color:var(--nyx-chrome-bright,var(--nyx-minimal-accent))!important;
+  background:var(--nyx-minimal-soft)!important;
+  color:var(--nyx-chrome-bright,var(--nyx-minimal-accent))!important;
+}
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home>.nyx-home-presence{
+  border-color:var(--nyx-minimal-line)!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-dashboard-panel,
+html[data-nyx-theme] body.browser-shell .nyx-app-launcher{
+  border-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 34%,#22232b)!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-dashboard-tabs>button.is-active,
+html[data-nyx-theme] body.browser-shell .nyx-app-launcher-grid>button:hover,
+html[data-nyx-theme] body.browser-shell .nyx-app-launcher-all:hover{
+  background:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 14%,#0d0e13)!important;
+  border-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 48%,#2d2e37)!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-dashboard-page>button:hover,
+html[data-nyx-theme] body.browser-shell .nyx-dashboard-page>article{
+  border-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 24%,#20212b)!important;
+}
+html[data-nyx-theme] body.browser-shell .nyx-app-launcher-grid svg,
+html[data-nyx-theme] body.browser-shell .nyx-app-launcher-grid .nyx-nocturne-ai-icon,
+html[data-nyx-theme] body.browser-shell .nyx-dashboard-page>button>svg{
+  color:var(--nyx-home-wordmark,#9b8cf5)!important;
+}
+
+/* Settings is itself a browser tab. Keep the tab drawer above its content so
+   users can always switch away from Settings. */
+html body.browser-shell .nyx-browser-tab-sidebar{z-index:2301!important}
+
+/* The AI glyph is a mask inside the same circular control used by every
+   shortcut. Keep the mask tinted without painting the whole circle white. */
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-minimal-ai,
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-minimal-ai:is(:hover,:focus-visible){
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+  filter:none!important;
+}
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-minimal-ai>.nyx-nocturne-ai-icon{
+  background:#060609!important;
+}
+
+/* Small Chromebook, tablet, and phone viewports keep every homepage surface
+   inside the usable area without changing the desktop proportions. */
+@media(max-width:620px){
+  html body.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home>main.nyx-minimal-hero{
+    width:min(360px,calc(100vw - 24px))!important;
+    max-width:calc(100vw - 24px)!important;
+  }
+  html body.browser-shell .nyx-dashboard-panel,
+  html body.browser-shell .nyx-app-launcher{
+    width:calc(100vw - 16px)!important;
+    max-width:calc(100vw - 16px)!important;
+    max-height:calc(100dvh - 147px)!important;
+    overflow:auto!important;
+  }
+}
+
+/* Final palette boundary for the minimalist shell. `theme-tints.css` keeps a
+   deliberately broad compatibility layer for older pages; this later,
+   homepage-only contract prevents those legacy selectors from turning the
+   current shell neutral or changing an icon-only control back into a square. */
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active):is(body,#nyx-home-palette-final):is(body,#nyx-home-controls-final)
+.top-os.top-os .brand-mini>button[data-browser-shell-home],
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active):is(body,#nyx-home-palette-final):is(body,#nyx-home-controls-final)
+.top-os.top-os .brand-mini>button[data-browser-shell-home]:is(.active,:hover,:focus-visible){
+  border-color:transparent!important;
+  border-radius:999px!important;
+  background:transparent!important;
+  background-color:transparent!important;
+  background-image:none!important;
+  color:var(--nyx-home-wordmark,#f3f3f7)!important;
+  -webkit-text-fill-color:var(--nyx-home-wordmark,#f3f3f7)!important;
+  box-shadow:none!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active):is(body,#nyx-home-palette-final):is(body,#nyx-home-controls-final)
+.top-os.top-os .brand-mini>button[data-browser-shell-home] :is(.browser-home-icon,.browser-home-label){
+  color:var(--nyx-home-wordmark,#f3f3f7)!important;
+  -webkit-text-fill-color:var(--nyx-home-wordmark,#f3f3f7)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active):is(body,#nyx-home-palette-final):is(body,#nyx-home-controls-final)
+.top-os.top-os .brand-mini>button[data-browser-shell-home]>.browser-home-icon{
+  border-color:transparent!important;
+  background-color:var(--nyx-home-wordmark,#f3f3f7)!important;
+}
+
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active):is(body,#nyx-home-palette-final):is(body,#nyx-home-controls-final)
+.top-os.top-os :is(.nyx-minimal-top-actions>button,.nyx-home-tabs-toggle){
+  border-color:transparent!important;
+  border-radius:50%!important;
+  background:transparent!important;
+  background-color:transparent!important;
+  background-image:none!important;
+  color:var(--nyx-home-wordmark,#f3f3f7)!important;
+  -webkit-text-fill-color:var(--nyx-home-wordmark,#f3f3f7)!important;
+  box-shadow:none!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active):is(body,#nyx-home-palette-final):is(body,#nyx-home-controls-final)
+.top-os.top-os :is(.nyx-minimal-top-actions>button,.nyx-home-tabs-toggle) :is(svg,svg *){
+  color:var(--nyx-home-wordmark,#f3f3f7)!important;
+  stroke:currentColor!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active):is(body,#nyx-home-palette-final):is(body,#nyx-home-controls-final)
+.top-os.top-os :is(.nyx-minimal-top-actions>button,.nyx-home-tabs-toggle):is(:hover,:focus-visible){
+  border-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 42%,transparent)!important;
+  border-radius:50%!important;
+  background:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 13%,transparent)!important;
+  background-image:none!important;
+}
+
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active):is(body,#nyx-home-palette-final):is(body,#nyx-home-controls-final)
+.top-os.top-os .nyx-dashboard-trigger{
+  border-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 32%,#22232b)!important;
+  background:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 8%,#07080c)!important;
+  color:var(--nyx-home-wordmark,#f3f3f7)!important;
+  -webkit-text-fill-color:var(--nyx-home-wordmark,#f3f3f7)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active):is(body,#nyx-home-palette-final):is(body,#nyx-home-controls-final)
+.top-os.top-os .nyx-dashboard-trigger :is(span,i){
+  color:inherit!important;
+  -webkit-text-fill-color:inherit!important;
+}
+
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-home-palette-final):is(body,#nyx-home-controls-final)
+.browser-home.nyx-minimal-home .nyx-minimal-search{
+  border-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 38%,#24242f)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-home-palette-final):is(body,#nyx-home-controls-final)
+.browser-home.nyx-minimal-home .nyx-minimal-search input{
+  color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 38%,#f3f3f6)!important;
+  -webkit-text-fill-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 38%,#f3f3f6)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-home-palette-final):is(body,#nyx-home-controls-final)
+.browser-home.nyx-minimal-home .nyx-minimal-search input::placeholder{
+  color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 46%,#777985)!important;
+  -webkit-text-fill-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 46%,#777985)!important;
+  opacity:1!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-home-palette-final):is(body,#nyx-home-controls-final)
+.browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button{
+  border-radius:999px!important;
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-home-palette-final):is(body,#nyx-home-controls-final)
+.browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button>span:last-child{
+  color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 58%,#f1f1f5)!important;
+  -webkit-text-fill-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 58%,#f1f1f5)!important;
+}
+
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-home-palette-final):is(body,#nyx-home-controls-final)
+.nyx-browser-tab-sidebar{
+  border-right-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 32%,#202128)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-home-palette-final):is(body,#nyx-home-controls-final)
+.nyx-browser-tab-sidebar>header{
+  border-bottom-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 30%,#202128)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-home-palette-final):is(body,#nyx-home-controls-final)
+.nyx-browser-tab-sidebar>header :is(strong,button,button svg,button svg *){
+  color:var(--nyx-home-wordmark,#f3f3f7)!important;
+  -webkit-text-fill-color:var(--nyx-home-wordmark,#f3f3f7)!important;
+  stroke:currentColor!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-home-palette-final):is(body,#nyx-home-controls-final)
+.nyx-browser-tab-sidebar>header button{
+  border-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 24%,transparent)!important;
+  border-radius:50%!important;
+  background:transparent!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-home-palette-final):is(body,#nyx-home-controls-final)
+.nyx-browser-tab-row.active{
+  border-color:var(--nyx-home-wordmark,#f3f3f7)!important;
+  background:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 13%,#09090c)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-home-palette-final):is(body,#nyx-home-controls-final)
+.nyx-browser-tab-row strong{
+  color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 48%,#f5f5f7)!important;
+  -webkit-text-fill-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 48%,#f5f5f7)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-home-palette-final):is(body,#nyx-home-controls-final)
+.nyx-browser-tab-row small{
+  color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 42%,#8a8c96)!important;
+  -webkit-text-fill-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 42%,#8a8c96)!important;
+}
+
+/* Balanced theme contract. A selected theme is an accent, not a global text
+   color: ordinary copy and navigation remain neutral, while the wordmark,
+   focus rings, selected states, dots, and hover feedback carry the accent. */
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-palette):is(body,#nyx-balanced-copy)
+.browser-home.nyx-minimal-home .nyx-minimal-search{
+  border-color:color-mix(in srgb,var(--nyx-chrome-accent) 22%,var(--nyx-home-line))!important;
+  background:var(--nyx-unified-field)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-palette):is(body,#nyx-balanced-copy)
+.browser-home.nyx-minimal-home .nyx-minimal-search .nyx-home-search-icon{
+  color:color-mix(in srgb,var(--nyx-chrome-accent) 18%,#c8cdd7)!important;
+  background-color:color-mix(in srgb,var(--nyx-chrome-accent) 18%,#c8cdd7)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-palette):is(body,#nyx-balanced-copy)
+.browser-home.nyx-minimal-home .nyx-minimal-search input{
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-palette):is(body,#nyx-balanced-copy)
+.browser-home.nyx-minimal-home .nyx-minimal-search input::placeholder{
+  color:var(--nyx-home-muted)!important;
+  -webkit-text-fill-color:var(--nyx-home-muted)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-palette):is(body,#nyx-balanced-copy)
+.browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button>svg,
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-palette):is(body,#nyx-balanced-copy)
+.browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button>.nyx-nocturne-ai-icon{
+  border-color:color-mix(in srgb,var(--nyx-chrome-accent) 22%,var(--nyx-home-line))!important;
+  color:var(--nyx-home-text)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-palette):is(body,#nyx-balanced-copy)
+.browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="/apps/nyxify/"])::before{
+  border-color:color-mix(in srgb,var(--nyx-chrome-accent) 22%,var(--nyx-home-line))!important;
+  background-color:var(--nyx-home-text)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-palette):is(body,#nyx-balanced-copy)
+.browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button>span:last-child{
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active):is(body,#nyx-balanced-palette):is(body,#nyx-balanced-copy)
+.top-os.top-os :is(.nyx-minimal-top-actions>button,.nyx-home-tabs-toggle,.nyx-dashboard-trigger){
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active):is(body,#nyx-balanced-palette):is(body,#nyx-balanced-copy)
+.top-os.top-os :is(.nyx-minimal-top-actions>button,.nyx-home-tabs-toggle,.nyx-dashboard-trigger) :is(svg,svg *){
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+  stroke:currentColor!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-palette):is(body,#nyx-balanced-copy)
+:is(.nyx-dashboard-panel,.nyx-app-launcher) :is(h2,h3,strong,b,label){
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-palette):is(body,#nyx-balanced-copy)
+:is(.nyx-dashboard-panel,.nyx-app-launcher) :is(p,small){
+  color:var(--nyx-home-muted)!important;
+  -webkit-text-fill-color:var(--nyx-home-muted)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-palette):is(body,#nyx-balanced-copy)
+:is(.nyx-dashboard-page>button,.nyx-app-launcher-grid>button) :is(svg,.nyx-nocturne-ai-icon){
+  color:var(--nyx-home-text)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-palette):is(body,#nyx-balanced-copy)
+.nyx-browser-tab-sidebar>header :is(strong,button,button svg,button svg *){
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+  stroke:currentColor!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-palette):is(body,#nyx-balanced-copy)
+.nyx-browser-tab-row strong{
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-palette):is(body,#nyx-balanced-copy)
+.nyx-browser-tab-row small{
+  color:var(--nyx-home-muted)!important;
+  -webkit-text-fill-color:var(--nyx-home-muted)!important;
+}
+
+/* Dashboard tabs fill the header instead of leaving a dead strip after the
+   last item. Hover is a quiet underline transition; the theme color marks
+   the current section without painting every tab or label. */
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-dashboard):is(body,#nyx-balanced-dashboard-tabs)
+.nyx-dashboard-tabs>button{
+  min-width:0!important;
+  overflow:visible!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  background-image:none!important;
+  color:var(--nyx-home-muted)!important;
+  -webkit-text-fill-color:var(--nyx-home-muted)!important;
+  box-shadow:none!important;
+  transform:none!important;
+  transition:color .18s ease!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-dashboard):is(body,#nyx-balanced-dashboard-tabs)
+.nyx-dashboard-tabs>button::after{
+  right:18%!important;
+  left:18%!important;
+  opacity:0;
+  transform:scaleX(.35);
+  transform-origin:center;
+  background:var(--nyx-chrome-accent)!important;
+  transition:opacity .18s ease,transform .22s cubic-bezier(.2,.75,.25,1)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-dashboard):is(body,#nyx-balanced-dashboard-tabs)
+.nyx-dashboard-tabs>button:is(:hover,:focus-visible,.is-active){
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  color:var(--nyx-home-text)!important;
+  -webkit-text-fill-color:var(--nyx-home-text)!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-dashboard):is(body,#nyx-balanced-dashboard-tabs)
+.nyx-dashboard-tabs>button:hover::after{
+  opacity:.42;
+  transform:scaleX(.72);
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-dashboard):is(body,#nyx-balanced-dashboard-tabs)
+.nyx-dashboard-tabs>button.is-active::after{
+  opacity:1;
+  transform:scaleX(1);
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-dashboard):is(body,#nyx-balanced-dashboard-actions)
+.nyx-dashboard-page>button{
+  transition:background-color .18s ease,border-color .18s ease,transform .18s ease,box-shadow .18s ease!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-dashboard):is(body,#nyx-balanced-dashboard-actions)
+.nyx-dashboard-page>button:is(:hover,:focus-visible){
+  border-color:color-mix(in srgb,var(--nyx-chrome-accent) 28%,var(--nyx-home-line))!important;
+  border-radius:12px!important;
+  background:color-mix(in srgb,var(--nyx-chrome-accent) 5%,var(--nyx-unified-field))!important;
+  box-shadow:0 8px 20px rgba(0,0,0,.18)!important;
+  transform:translateY(-1px)!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-dashboard):is(body,#nyx-balanced-dashboard-tabs)
+.nyx-dashboard-tabs{
+  display:grid!important;
+  grid-template-columns:repeat(6,minmax(0,1fr))!important;
+  align-items:end!important;
+  gap:0!important;
+  width:100%!important;
+  overflow:visible!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-dashboard):is(body,#nyx-balanced-dashboard-tabs)
+.nyx-dashboard-tabs>button{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:100%!important;
+  padding-inline:5px!important;
+  text-align:center!important;
+  white-space:nowrap!important;
+}
+@media(max-width:620px){
+  html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+  body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-dashboard):is(body,#nyx-balanced-dashboard-tabs)
+  .top-os>.nyx-dashboard .nyx-dashboard-panel{
+    right:auto!important;
+    left:50%!important;
+    transform:translate(-50%,-10px) scale(.975)!important;
+  }
+  html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+  body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-dashboard):is(body,#nyx-balanced-dashboard-tabs)
+  .top-os>.nyx-dashboard:is(:hover,.is-open,:focus-within) .nyx-dashboard-panel{
+    transform:translate(-50%,0) scale(1)!important;
+  }
+}
+
+/* Browser navigation is utility chrome, not a theme accent. Keep every toolbar
+   glyph readable and consistently white while the address field is active.
+   This contract stays last so imported theme paint cannot recolor the icons. */
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell.browser-content-active:is(body,#nyx-neutral-toolbar):is(body,#nyx-neutral-toolbar-icons):is(body,#nyx-neutral-toolbar-paint):is(body,#nyx-neutral-toolbar-glyphs)
+.top-os.top-os form.browser-mode-address>button,
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell.browser-content-active:is(body,#nyx-neutral-toolbar):is(body,#nyx-neutral-toolbar-icons):is(body,#nyx-neutral-toolbar-paint):is(body,#nyx-neutral-toolbar-glyphs)
+.top-os.top-os form.browser-mode-address>button:is(:hover,:focus-visible,:active){
+  color:#f7f7fa!important;
+  -webkit-text-fill-color:#f7f7fa!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell.browser-content-active:is(body,#nyx-neutral-toolbar):is(body,#nyx-neutral-toolbar-icons):is(body,#nyx-neutral-toolbar-paint):is(body,#nyx-neutral-toolbar-glyphs)
+.top-os.top-os form.browser-mode-address>button :is(svg,svg *){
+  color:currentColor!important;
+  stroke:currentColor!important;
+}
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell.browser-content-active:is(body,#nyx-neutral-toolbar):is(body,#nyx-neutral-toolbar-icons):is(body,#nyx-neutral-toolbar-paint):is(body,#nyx-neutral-toolbar-glyphs)
+.top-os.top-os form.browser-mode-address>button[data-browser-shell-bookmark]::before{
+  background-color:#f7f7fa!important;
+  color:#f7f7fa!important;
+  -webkit-text-fill-color:#f7f7fa!important;
+}
+
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-release-dialog):is(body,#nyx-release-dialog-action):is(body,#nyx-release-dialog-text):is(body,#nyx-release-dialog-contrast)
+.nyx-release-notes footer button[data-nyx-release-notes-close]{
+  border-color:#f7f7fb!important;
+  background:#f7f7fb!important;
+  color:#08080c!important;
+  -webkit-text-fill-color:#08080c!important;
 }

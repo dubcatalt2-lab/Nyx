@@ -1212,6 +1212,7 @@
     if(event.origin!==location.origin) return;
     if(event.data?.type==='nyx:theme-sync') applyWorkspaceTheme(event.data.theme);
     if(event.data?.type==='nyx:ai-profile') updateProfile(event.data.profile||{});
+    if(event.data?.type==='nyx:ai-open-key-settings') openApiKeyDialog();
   });
   addEventListener('focus',requestProfile);
   addEventListener('storage',event=>{

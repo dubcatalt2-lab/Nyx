@@ -4396,7 +4396,8 @@ async function nyxChatIdentity(firebase, token) {
       roleLabel: customRole?.label || nyxRoleLabels[role] || nyxRoleLabels.member,
       caffeine,
       canModerate: customRole ? customRole.permissions.includes("chat:moderate") : nyxChatCanModerate(role),
-      canManageChannels: customRole ? customRole.permissions.includes("chat:manage_channels") : nyxChatCanManageChannels(role)
+      canManageChannels: customRole ? customRole.permissions.includes("chat:manage_channels") : nyxChatCanManageChannels(role),
+      canAssignRoles: customRole ? customRole.permissions.includes("roles:write") : nyxRolePolicy(role).permissions.includes("roles:write")
     };
   })();
   nyxChatIdentityCache.set(uid, { value: null, expiresAt: 0, promise });
@@ -7926,6 +7927,141 @@ app.post("/api/chat/moderation/mutes", async (req, res) => {
     res.status(201).json({ ok: true, targetUid, muted: true, mute });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "The chat mute could not be updated." });
+  }
+});
+
+app.post("/api/chat/moderation/warnings", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  try {
+    const { firebase, token } = await authenticatedNyxChatUser(req);
+    const targetUid = String(req.body?.targetUid || "").trim();
+    const rawReason = String(req.body?.reason || "").trim();
+    const reason = founderProfileText(rawReason, "", 500);
+    if (!/^[A-Za-z0-9_-]{8,128}$/.test(targetUid) || targetUid === token.uid) {
+      res.status(400).json({ error: "Choose another Nyx member." });
+      return;
+    }
+    if (!reason) {
+      res.status(400).json({ error: "A reason is required to warn a member." });
+      return;
+    }
+    if (rawReason.length > 500) {
+      res.status(400).json({ error: "Keep the warning reason to 500 characters or fewer." });
+      return;
+    }
+    let targetUser;
+    try {
+      targetUser = await firebase.auth.getUser(targetUid);
+    } catch (error) {
+      if (error?.code === "auth/user-not-found") {
+        res.status(404).json({ error: "That Nyx member was not found." });
+        return;
+      }
+      throw error;
+    }
+    const [actorAdministrationSnapshot, targetAdministrationSnapshot, actorIdentity, targetIdentity] = await Promise.all([
+      firebase.firestore.collection("nyxUserAdministration").doc(token.uid).get(),
+      firebase.firestore.collection("nyxUserAdministration").doc(targetUid).get(),
+      nyxChatIdentity(firebase, token),
+      nyxChatIdentity(firebase, { uid: targetUid, email: targetUser.email || "", name: targetUser.displayName || "" })
+    ]);
+    const actorRole = nyxRoleForUser(token.uid, actorAdministrationSnapshot.data() || {});
+    const targetRole = nyxRoleForUser(targetUid, targetAdministrationSnapshot.data() || {});
+    if (!actorIdentity.canModerate) {
+      res.status(403).json({ error: "Moderator access is required." });
+      return;
+    }
+    const ownerUid = founderProfileConfig().administratorUid;
+    const founderOwnerOverride = actorRole === "owner" && token.uid === ownerUid;
+    if (targetUid === ownerUid || (!founderOwnerOverride && nyxRolePolicy(targetRole).rank >= nyxRolePolicy(actorRole).rank)) {
+      res.status(403).json({ error: "You can only warn members ranked below your role." });
+      return;
+    }
+    const conversationId = nyxChatConversationId(token.uid, targetUid);
+    const conversationRef = firebase.firestore.collection("nyxChatConversations").doc(conversationId);
+    const conversationSnapshot = await conversationRef.get();
+    const now = Date.now();
+    const warningText = `⚠️ Official warning from ${actorIdentity.displayName}: ${reason}`;
+    const messageId = randomBytes(20).toString("hex");
+    const messageRef = conversationRef.collection("messages").doc(messageId);
+    const messageValue = {
+      channel: "",
+      conversationId,
+      text: warningText,
+      attachments: [],
+      reactions: [],
+      authorUid: token.uid,
+      author: {
+        uid: token.uid,
+        displayName: actorIdentity.displayName,
+        handle: actorIdentity.handle,
+        avatarUrl: actorIdentity.avatarUrl,
+        role: actorIdentity.role,
+        customRole: actorIdentity.customRole,
+        caffeine: actorIdentity.caffeine
+      },
+      moderation: { type: "warning", targetUid, reason },
+      createdAt: new Date(now).toISOString(),
+      createdAtMs: now
+    };
+    const batch = firebase.firestore.batch();
+    batch.set(conversationRef, {
+      participants: [token.uid, targetUid].sort(),
+      participantProfiles: {
+        [token.uid]: nyxChatConversationMember(actorIdentity, token.uid, token.uid),
+        [targetUid]: nyxChatConversationMember(targetIdentity, targetUid, targetUid)
+      },
+      createdAt: String(conversationSnapshot.data()?.createdAt || new Date(now).toISOString()),
+      createdAtMs: Number(conversationSnapshot.data()?.createdAtMs || now),
+      updatedAt: new Date(now).toISOString(),
+      updatedAtMs: now,
+      lastMessageAtMs: now,
+      lastMessageText: warningText.slice(0, 120),
+      lastMessageAuthorUid: token.uid
+    }, { merge: true });
+    batch.create(messageRef, messageValue);
+    await batch.commit();
+    const savedMessage = await messageRef.get();
+    await recordNyxAuditSafe(firebase, {
+      actorUid: token.uid,
+      actorEmail: token.email || "",
+      action: "chat_user_warned",
+      targetUid,
+      details: { reason, targetRole, conversationId, messageId }
+    });
+    const revision = recordNyxChatRealtimeEvent({
+      kind: "message",
+      scopeType: "conversation",
+      scopeId: conversationId,
+      participants: [token.uid, targetUid],
+      createdAtMs: now,
+      lastMessageText: warningText,
+      lastMessageAuthorUid: token.uid
+    });
+    emitNyxChatSocketEvent({
+      kind: "message",
+      scopeType: "conversation",
+      scopeId: conversationId,
+      participants: [token.uid, targetUid],
+      createdAtMs: now,
+      lastMessageText: warningText,
+      lastMessageAuthorUid: token.uid,
+      messageDocument: savedMessage,
+      revision
+    });
+    const savedConversation = await conversationRef.get();
+    res.status(201).json({
+      ok: true,
+      warning: { targetUid, reason, createdAtMs: now },
+      conversation: nyxChatConversationPayload(savedConversation, token.uid, new Map([[targetUid, targetIdentity]])),
+      message: nyxChatMessagePayload(savedMessage, token.uid)
+    });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "The warning could not be sent." });
   }
 });
 

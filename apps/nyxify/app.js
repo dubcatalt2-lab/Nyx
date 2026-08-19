@@ -35,6 +35,7 @@
 
   const state = {
     results: [],
+    homeChart: [],
     recent: readList(recentKey, 24),
     liked: readList(likedKey, 100),
     playlists: readPlaylists(),
@@ -49,8 +50,10 @@
     back: [...document.querySelectorAll("[data-back-to-nyx]")],
     focusSearch: [...document.querySelectorAll("[data-focus-search]")],
     viewButtons: [...document.querySelectorAll("[data-view]")],
-    mixButtons: [...document.querySelectorAll("[data-mix-query]")],
     createPlaylists: [...document.querySelectorAll("[data-create-playlist]")],
+    libraryToggle: [...document.querySelectorAll("[data-library-toggle]")],
+    libraryClose: document.querySelector("[data-library-close]"),
+    libraryPanel: document.querySelector("[data-library-panel]"),
     playlistList: document.querySelector("[data-playlist-list]"),
     likedCount: document.querySelector("[data-liked-count]"),
     recentCount: document.querySelector("[data-recent-count]"),
@@ -61,9 +64,8 @@
     status: document.querySelector("[data-api-status]"),
     notice: document.querySelector("[data-notice]"),
     homeView: document.querySelector("[data-home-view]"),
+    homeChart: document.querySelector("[data-home-chart]"),
     browseView: document.querySelector("[data-browse-view]"),
-    homeArtistsShelf: document.querySelector("[data-home-artists-shelf]"),
-    homeArtists: document.querySelector("[data-home-artists]"),
     title: document.querySelector("[data-section-title]"),
     count: document.querySelector("[data-result-count]"),
     results: document.querySelector("[data-results]"),
@@ -129,36 +131,6 @@
     const payload = type.includes("application/json") ? await response.json() : {};
     if (!response.ok) throw new Error(payload?.error || "Nyxify could not reach the music service.");
     return payload;
-  }
-
-  function setMixCover(button, track) {
-    const cover = button?.querySelector("i");
-    const source = musicArtworkUrl(track?.thumbnail);
-    if (!cover || !source) return;
-    const image = document.createElement("img");
-    image.src = source;
-    image.alt = "";
-    image.loading = "eager";
-    image.decoding = "async";
-    image.referrerPolicy = "no-referrer";
-    image.addEventListener("load", () => {
-      cover.querySelectorAll("img").forEach(existing => {
-        if (existing !== image) existing.remove();
-      });
-      cover.classList.add("has-cover");
-    }, { once: true });
-    image.addEventListener("error", () => image.remove(), { once: true });
-    cover.append(image);
-  }
-
-  async function loadMixCovers() {
-    await Promise.allSettled(refs.mixButtons.map(async button => {
-      const query = String(button.dataset.mixQuery || "").trim();
-      if (!query) return;
-      const payload = await fetchJson(`/api/nyxify/search?q=${encodeURIComponent(query)}&limit=1`);
-      const leadingTrack = Array.isArray(payload?.results) ? payload.results[0] : null;
-      setMixCover(button, leadingTrack);
-    }));
   }
 
   function updateLibraryCounts() {
@@ -232,11 +204,30 @@
     void playTrack(Math.max(0, index));
   }
 
+  function trackDurationLabel(track) {
+    const durationMs = Number(track?.durationMs) || 0;
+    return durationMs > 0 ? timeLabel(durationMs / 1000) : "--:--";
+  }
+
   function card(track, index, collection = state.results) {
     const article = document.createElement("article");
-    article.className = "nyxify-card";
+    article.className = "nyxify-track-row";
+    article.dataset.trackKey = trackKey(track);
+    article.classList.toggle("is-current", trackKey(state.current) === trackKey(track));
+
+    const number = document.createElement("div");
+    number.className = "nyxify-track-number";
+    const position = document.createElement("span");
+    position.textContent = String(index + 1);
+    const play = document.createElement("button");
+    play.type = "button";
+    play.setAttribute("aria-label", `Play ${track.title}`);
+    play.innerHTML = iconMarkup("play");
+    play.addEventListener("click", event => { event.stopPropagation(); playFromCollection(track, collection); });
+    number.append(position, play);
+
     const cover = document.createElement("div");
-    cover.className = "nyxify-card-cover";
+    cover.className = "nyxify-track-cover";
     const fallback = document.createElement("span");
     fallback.innerHTML = iconMarkup("note");
     cover.append(fallback);
@@ -250,16 +241,9 @@
       image.addEventListener("error", () => image.remove(), { once: true });
       cover.append(image);
     }
-    const play = document.createElement("button");
-    play.type = "button";
-    play.className = "nyxify-card-play";
-    play.setAttribute("aria-label", `Play ${track.title}`);
-    play.innerHTML = iconMarkup("play");
-    play.addEventListener("click", event => { event.stopPropagation(); playFromCollection(track, collection); });
-    cover.append(play);
 
     const actions = document.createElement("div");
-    actions.className = "nyxify-card-actions";
+    actions.className = "nyxify-track-actions";
     const like = document.createElement("button");
     like.type = "button";
     like.classList.toggle("active", isLiked(track));
@@ -273,22 +257,33 @@
     add.addEventListener("click", event => { event.stopPropagation(); addToPlaylist(track); });
     actions.append(like, add);
 
-    const title = document.createElement("h3");
+    const copy = document.createElement("div");
+    copy.className = "nyxify-track-copy";
+    const title = document.createElement("strong");
     title.textContent = track.title;
-    const artist = document.createElement("p");
+    const artist = document.createElement("small");
     artist.textContent = track.creator;
-    article.append(actions, cover, title, artist);
+    copy.append(title, artist);
+
+    const meta = document.createElement("div");
+    meta.className = "nyxify-track-meta";
     if (track.sourceUrl) {
       const source = document.createElement("a");
-      source.className = "nyxify-card-source";
       source.href = track.sourceUrl;
       source.target = "_blank";
       source.rel = "noopener noreferrer";
-      source.textContent = track.providerLabel || (track.provider === "soundcloud" ? "SoundCloud" : "Source");
-      source.insertAdjacentHTML("beforeend", iconMarkup("external"));
+      source.textContent = track.providerLabel || (track.provider === "soundcloud" ? "SoundCloud" : "Nyx music catalog");
       source.addEventListener("click", event => event.stopPropagation());
-      article.append(source);
+      meta.append(source);
+    } else {
+      meta.textContent = track.providerLabel || "Nyx music catalog";
     }
+
+    const duration = document.createElement("span");
+    duration.className = "nyxify-track-duration";
+    duration.textContent = trackDurationLabel(track);
+
+    article.append(number, cover, copy, meta, actions, duration);
     article.tabIndex = 0;
     article.addEventListener("click", () => playFromCollection(track, collection));
     article.addEventListener("keydown", event => {
@@ -335,7 +330,33 @@
     refs.homeView.hidden = false;
     refs.browseView.hidden = true;
     setNotice("");
-    renderArtists(state.recent);
+    if (state.homeChart.length) renderHomeChart(state.homeChart);
+  }
+
+  function emptyState(title, detail) {
+    const empty = document.createElement("div");
+    empty.className = "nyxify-empty";
+    empty.innerHTML = `${iconMarkup("note")}<strong>${title}</strong><span>${detail}</span>`;
+    return empty;
+  }
+
+  function renderHomeChart(items) {
+    state.homeChart = items;
+    if (!items.length) {
+      refs.homeChart.replaceChildren(emptyState("Find something to play", "Search for a song, artist, or album to get started."));
+      return;
+    }
+    refs.homeChart.replaceChildren(...items.map((track, index) => card(track, index, items)));
+  }
+
+  async function loadHomeChart() {
+    try {
+      const payload = await fetchJson("/api/nyxify/search?q=top%20songs&limit=10");
+      renderHomeChart(Array.isArray(payload?.results) ? payload.results : []);
+    } catch {
+      const fallback = state.recent.slice(0, 10);
+      renderHomeChart(fallback);
+    }
   }
 
   function renderBrowse(items, title) {
@@ -346,12 +367,9 @@
     refs.title.textContent = title;
     refs.count.textContent = `${items.length} track${items.length === 1 ? "" : "s"}`;
     if (!items.length) {
-      const empty = document.createElement("div");
-      empty.className = "nyxify-empty";
       const emptyTitle = title === "Liked songs" ? "No liked songs yet" : (title === "Recently played" ? "Your listening history is empty" : "Find something to play");
       const emptyDetail = title === "Liked songs" ? "Tap the heart on a track to keep it here." : "Search for a song, artist, or album to get started.";
-      empty.innerHTML = `${iconMarkup("note")}<strong>${emptyTitle}</strong><span>${emptyDetail}</span>`;
-      refs.results.replaceChildren(empty);
+      refs.results.replaceChildren(emptyState(emptyTitle, emptyDetail));
       renderQueue();
       return;
     }
@@ -359,50 +377,12 @@
     renderQueue();
   }
 
-  function artistButton(artist) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "nyxify-artist";
-    const fallback = document.createElement("i");
-    fallback.innerHTML = iconMarkup("note");
-    button.append(fallback);
-    if (artist.thumbnail) {
-      const image = document.createElement("img");
-      image.alt = "";
-      image.loading = "eager";
-      image.referrerPolicy = "no-referrer";
-      image.addEventListener("load", () => fallback.replaceWith(image), { once: true });
-      image.src = musicArtworkUrl(artist.thumbnail);
-    }
-    const name = document.createElement("strong");
-    name.textContent = artist.name;
-    const type = document.createElement("span");
-    type.textContent = "Artist";
-    button.append(name, type);
-    button.addEventListener("click", () => { refs.input.value = artist.name; void search(artist.name); });
-    return button;
-  }
-
-  function renderArtists(tracks) {
-    const seen = new Set();
-    const artists = [];
-    tracks.forEach(track => {
-      const name = String(track.creator || "").trim();
-      const key = name.toLowerCase();
-      if (!name || seen.has(key)) return;
-      seen.add(key);
-      artists.push({ name, thumbnail: track.thumbnail });
-    });
-    const visibleArtists = artists.slice(0, 7);
-    refs.homeArtistsShelf.hidden = !visibleArtists.length;
-    refs.homeArtists.replaceChildren(...visibleArtists.map(artistButton));
-  }
-
   async function playTrack(index) {
     const track = state.results[index];
     if (!track) return;
     state.currentIndex = index;
     state.current = track;
+    document.querySelectorAll(".nyxify-track-row").forEach(row => row.classList.toggle("is-current", row.dataset.trackKey === trackKey(track)));
     refs.playerTitle.textContent = track.title;
     refs.playerArtist.textContent = track.creator;
     refs.playerCover.hidden = true;
@@ -461,15 +441,15 @@
   refs.focusSearch.forEach(button => button.addEventListener("click", () => refs.input.focus()));
   refs.viewButtons.forEach(button => button.addEventListener("click", () => {
     const view = button.dataset.view;
+    if (refs.libraryPanel) refs.libraryPanel.hidden = true;
     if (view === "liked") renderBrowse(state.liked, "Liked songs");
     else if (view === "library") renderBrowse(state.recent, "Recently played");
     else showHome();
   }));
-  refs.mixButtons.forEach(button => button.addEventListener("click", () => {
-    const query = button.dataset.mixQuery || "";
-    refs.input.value = query;
-    void search(query);
+  refs.libraryToggle.forEach(button => button.addEventListener("click", () => {
+    refs.libraryPanel.hidden = !refs.libraryPanel.hidden;
   }));
+  refs.libraryClose?.addEventListener("click", () => { refs.libraryPanel.hidden = true; });
   refs.createPlaylists.forEach(button => button.addEventListener("click", () => createPlaylist()));
   refs.back.forEach(button => button.addEventListener("click", () => {
     if (window.parent !== window) window.parent.postMessage({ type: "nyx:close-tab" }, location.origin);
@@ -533,7 +513,7 @@
   updateLibraryCounts();
   renderPlaylists();
   showHome();
-  void loadMixCovers();
+  void loadHomeChart();
   fetchJson("/api/nyxify/status").then(payload => {
     refs.status.classList.add("online");
     refs.status.querySelector("span").textContent = `${payload?.providerLabel || "Music catalog"} ready`;

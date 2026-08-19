@@ -35,7 +35,6 @@
 
   const state = {
     results: [],
-    homeChart: [],
     recent: readList(recentKey, 24),
     liked: readList(likedKey, 100),
     playlists: readPlaylists(),
@@ -63,8 +62,6 @@
     searchButtonLabel: document.querySelector("[data-search-button-label]"),
     status: document.querySelector("[data-api-status]"),
     notice: document.querySelector("[data-notice]"),
-    homeView: document.querySelector("[data-home-view]"),
-    homeChart: document.querySelector("[data-home-chart]"),
     browseView: document.querySelector("[data-browse-view]"),
     title: document.querySelector("[data-section-title]"),
     count: document.querySelector("[data-result-count]"),
@@ -327,10 +324,8 @@
 
   function showHome() {
     activateView("home");
-    refs.homeView.hidden = false;
     refs.browseView.hidden = true;
     setNotice("");
-    if (state.homeChart.length) renderHomeChart(state.homeChart);
   }
 
   function emptyState(title, detail) {
@@ -340,28 +335,8 @@
     return empty;
   }
 
-  function renderHomeChart(items) {
-    state.homeChart = items;
-    if (!items.length) {
-      refs.homeChart.replaceChildren(emptyState("Find something to play", "Search for a song, artist, or album to get started."));
-      return;
-    }
-    refs.homeChart.replaceChildren(...items.map((track, index) => card(track, index, items)));
-  }
-
-  async function loadHomeChart() {
-    try {
-      const payload = await fetchJson("/api/nyxify/search?q=top%20songs&limit=10");
-      renderHomeChart(Array.isArray(payload?.results) ? payload.results : []);
-    } catch {
-      const fallback = state.recent.slice(0, 10);
-      renderHomeChart(fallback);
-    }
-  }
-
   function renderBrowse(items, title) {
     activateView(title === "Liked songs" ? "liked" : (title === "Recently played" ? "library" : "search"));
-    refs.homeView.hidden = true;
     refs.browseView.hidden = false;
     state.results = items;
     refs.title.textContent = title;
@@ -415,7 +390,6 @@
     refs.input.readOnly = true;
     refs.searchButtonLabel.textContent = "Searching";
     setNotice("");
-    refs.homeView.hidden = true;
     refs.browseView.hidden = false;
     refs.title.textContent = "Searching...";
     refs.count.textContent = "";
@@ -513,7 +487,6 @@
   updateLibraryCounts();
   renderPlaylists();
   showHome();
-  void loadHomeChart();
   fetchJson("/api/nyxify/status").then(payload => {
     refs.status.classList.add("online");
     refs.status.querySelector("span").textContent = `${payload?.providerLabel || "Music catalog"} ready`;

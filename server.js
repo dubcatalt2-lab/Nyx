@@ -9989,6 +9989,12 @@ const isDirectRun = process.argv[1] && resolve(process.argv[1]) === join(__dirna
 if (isDirectRun) {
   const server = createServer((req, res) => app(req, res));
   const chatSocketServer = attachNyxChatSocketServer(server);
+  const serverSockets = new Set();
+
+  server.on("connection", socket => {
+    serverSockets.add(socket);
+    socket.once("close", () => serverSockets.delete(socket));
+  });
 
   server.on("upgrade", async (req, socket, head) => {
     const upgradePath = new URL(req.url || "/", "http://localhost").pathname;
@@ -10030,7 +10036,10 @@ if (isDirectRun) {
     shuttingDown = true;
     chatSocketServer.disconnectSockets(true);
     server.close(() => process.exit(0));
-    setTimeout(() => process.exit(1), 10_000).unref();
+    setTimeout(() => {
+      for (const socket of serverSockets) socket.destroy();
+    }, 1_000).unref();
+    setTimeout(() => process.exit(0), 10_000).unref();
   }
   process.once("SIGTERM", () => shutdown("SIGTERM"));
   process.once("SIGINT", () => shutdown("SIGINT"));

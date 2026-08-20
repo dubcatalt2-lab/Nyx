@@ -7,15 +7,15 @@ html[data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-ho
   place-items:center!important;
   overflow:hidden!important;
   min-height:100%!important;
-  background:#000!important;
-  background-color:#000!important;
+  background:#111!important;
+  background-color:oklch(.1776 0 0)!important;
   background-image:none!important;
   color:#f6f7fb!important;
   isolation:isolate;
 }
 html[data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page .nyx-minimal-home::before,
 html[data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page .nyx-minimal-home::after{display:none!important;opacity:0!important;visibility:hidden!important}
-html[data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page .nyx-minimal-home>.nyx-home-dot-field{
+html[data-nyx-theme]:not(.perf-lite):not(.perf-min) body.browser-shell.browser-shell .browser-window.browser-home-page .nyx-minimal-home>.nyx-home-dot-field{
   display:block!important;
   z-index:0!important;
   opacity:.46!important;
@@ -63,47 +63,27 @@ html[data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-ho
 .nyx-minimal-shortcuts>button>svg,.nyx-minimal-shortcuts>button>.nyx-nocturne-ai-icon{display:grid;place-items:center;width:37px;height:37px;padding:9px;border:1px solid #252531;border-radius:50%;background:#060609;color:#bbb9d5;box-sizing:border-box;transition:border-color .2s ease,color .2s ease,background .2s ease,transform .2s ease}
 .nyx-minimal-shortcuts>button>svg{fill:none;stroke:currentColor;stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round}
 .nyx-nocturne-ai-icon{color:#bbb9d5}
-.nyx-minimal-shortcuts .nyx-nocturne-ai-icon::before,.nyx-app-launcher-grid .nyx-nocturne-ai-icon::before{content:"";display:block;width:100%;height:100%;background:currentColor;-webkit-mask:url('/assets/icons/shortcut-nyx-ai.svg?v=6') center/contain no-repeat;mask:url('/assets/icons/shortcut-nyx-ai.svg?v=6') center/contain no-repeat}
-.nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="/apps/nyxify/"])>svg{display:none!important}
-.nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="/apps/nyxify/"])::before{content:"";display:grid;width:37px;height:37px;padding:9px;border:1px solid #252531;border-radius:50%;background-color:#bbb9d5;box-sizing:border-box;transition:border-color .2s ease,background-color .2s ease,transform .2s ease;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-mask-size:17px 17px;mask-size:17px 17px}
+.nyx-minimal-shortcuts .nyx-nocturne-ai-icon::before{content:"";display:block;width:100%;height:100%;background:currentColor;-webkit-mask:url('/assets/icons/shortcut-nyx-ai.svg?v=6') center/contain no-repeat;mask:url('/assets/icons/shortcut-nyx-ai.svg?v=6') center/contain no-repeat}
+.nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="http://icefy.top/"])>svg{display:none!important}
+.nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="http://icefy.top/"])::before{content:"";display:grid;width:37px;height:37px;padding:9px;border:1px solid #252531;border-radius:50%;background-color:#bbb9d5;box-sizing:border-box;transition:border-color .2s ease,background-color .2s ease,transform .2s ease;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-mask-size:17px 17px;mask-size:17px 17px}
 .nyx-minimal-shortcuts>button[data-app-url="/assets/games/"]::before{-webkit-mask-image:url('/assets/icons/dock-controller.png');mask-image:url('/assets/icons/dock-controller.png')}
 .nyx-minimal-shortcuts>button[data-app-url="/apps/chat/"]::before{-webkit-mask-image:url('/assets/icons/chat.svg?v=2');mask-image:url('/assets/icons/chat.svg?v=2')}
-.nyx-minimal-shortcuts>button[data-app-url="/apps/nyxify/"]::before{-webkit-mask-image:url('/assets/icons/shortcut-spotify.svg?v=1');mask-image:url('/assets/icons/shortcut-spotify.svg?v=1')}
+.nyx-minimal-shortcuts>button[data-app-url="http://icefy.top/"]::before{-webkit-mask-image:url('/assets/icons/theatre-masks.svg?v=1');mask-image:url('/assets/icons/theatre-masks.svg?v=1')}
 .nyx-minimal-shortcuts>button>span:last-child{color:#a9a9b6;font-size:9px;line-height:1}
 .nyx-minimal-shortcuts>button:hover{background:transparent!important;box-shadow:none!important;transform:none!important}
 .nyx-minimal-shortcuts>button:hover>svg,.nyx-minimal-shortcuts>button:hover>.nyx-nocturne-ai-icon{border-color:#514b70;background:#0c0b12;color:#efedff;transform:translateY(-1px)}
-.nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="/apps/nyxify/"]):hover::before{background-color:#efedff;transform:translateY(-1px)}
+.nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="http://icefy.top/"]):hover::before{background-color:#efedff;transform:translateY(-1px)}
 html[data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home>.nyx-home-presence{position:absolute!important;z-index:3!important;inset:auto auto 15px 50%!important;display:inline-flex!important;align-items:center!important;gap:8px!important;width:auto!important;height:34px!important;min-height:34px!important;max-height:34px!important;padding:0 14px!important;border:1px solid #20212a!important;border-radius:999px!important;background:#07080c!important;color:#a6a7b3!important;font-size:12px!important;font-weight:560!important;line-height:1!important;box-shadow:0 8px 24px rgba(0,0,0,.28)!important;pointer-events:auto!important;transform:translateX(-50%)!important;transition:border-color .16s ease,background-color .16s ease,color .16s ease,box-shadow .16s ease!important}
 html[data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home>.nyx-home-presence.nyx-owner-presence-action:hover{border-color:#4e505c!important;background:#0d0e14!important;color:#f0f0f5!important;box-shadow:0 10px 28px rgba(0,0,0,.36)!important;transform:translateX(-50%)!important}
 html[data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home>.nyx-home-presence.nyx-owner-presence-action:focus-visible{border-color:#d7d7df!important;outline:2px solid rgba(255,255,255,.2)!important;outline-offset:2px!important;transform:translateX(-50%)!important}
 .nyx-minimal-home>.nyx-home-presence .nyx-home-presence-dot{width:10px!important;height:10px!important;min-width:10px!important;box-shadow:0 0 10px rgba(114,222,161,.62)!important}
+.nyx-minimal-utility-links{position:absolute;z-index:3;right:18px;bottom:18px;display:flex;align-items:center;gap:13px;font-size:10px;font-weight:560;letter-spacing:.01em;pointer-events:auto}
+.nyx-minimal-utility-links a{color:#737582;text-decoration:none;transition:color .16s ease}
+.nyx-minimal-utility-links a:hover{color:#f1f1f5}
+.nyx-minimal-utility-links a:focus-visible{color:#fff;outline:1px solid #5a5c68;outline-offset:4px;border-radius:2px}
+@media (max-width:600px){.nyx-minimal-utility-links{right:10px;bottom:58px;max-width:calc(100% - 20px);gap:10px;font-size:9px}}
 
 /* Compact app launcher; this is intentionally separate from the time panel. */
-.nyx-app-launcher{position:absolute;z-index:20;top:58px;left:18px;display:grid;gap:12px;width:min(344px,calc(100% - 36px));max-height:calc(100% - 80px);padding:15px;border:1px solid #242532;border-radius:15px;background:#0a0a0f;color:#f0f1f7;box-shadow:0 24px 70px rgba(0,0,0,.62);opacity:0;visibility:hidden;transform:translateY(-8px) scale(.985);transition:opacity .16s ease,visibility .16s ease,transform .16s ease;overflow:auto}
-.nyx-app-launcher.is-open{opacity:1;visibility:visible;transform:none}
-.nyx-app-launcher>header{display:flex;align-items:center;justify-content:space-between}
-.nyx-app-launcher>header>div{display:grid;gap:2px}.nyx-app-launcher>header strong{font-size:15px}.nyx-app-launcher>header small{color:#727487;font-size:9px}
-.nyx-app-launcher>header>button{width:28px;height:28px;padding:0;border:1px solid #282936;border-radius:8px;background:#101117;color:#aeb0bd;font-size:18px;box-shadow:none}
-.nyx-app-launcher>label{position:relative;display:flex;align-items:center;height:34px;padding:0 10px;border:1px solid #232431;border-radius:9px;background:#07070b}
-.nyx-app-launcher>label>span{width:13px;height:13px;margin-right:8px;border:1.5px solid #74768a;border-radius:50%}.nyx-app-launcher>label>span::after{content:"";display:block;width:5px;height:1.5px;margin:9px 0 0 9px;background:#74768a;transform:rotate(45deg)}
-.nyx-app-launcher>label input{width:100%;height:100%;padding:0;border:0;background:transparent;color:#eeeef5;font-size:10px;outline:0}
-.nyx-app-launcher-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
-.nyx-app-launcher-grid>button{display:grid;justify-items:center;align-content:center;gap:6px;min-height:64px;padding:8px 4px;border:1px solid transparent;border-radius:10px;background:#0e0f15;color:#b8bac8;box-shadow:none}
-.nyx-app-launcher-grid>button:hover{border-color:#313343;background:#14151d;color:#fff;transform:none}
-.nyx-app-launcher-grid>button[hidden]{display:none!important}
-.nyx-app-launcher-grid svg,.nyx-app-launcher-grid .nyx-nocturne-ai-icon{width:19px;height:19px;color:#aaa4d6;fill:none;stroke:currentColor;stroke-width:1.45;stroke-linecap:round;stroke-linejoin:round}
-.nyx-app-launcher-grid>button>span:last-child{font-size:9px;line-height:1.2;text-align:center}
-.nyx-app-launcher-saved{display:grid;gap:7px;padding-top:2px;border-top:1px solid #1d1e27}
-.nyx-app-launcher-saved>span{padding-top:8px;color:#727487;font-size:8px;font-weight:700;letter-spacing:.09em;text-transform:uppercase}
-.nyx-app-launcher .home-shortcut-grid{position:static!important;display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px!important;width:100%!important;margin:0!important;padding:0!important;transform:none!important}
-.nyx-app-launcher .home-shortcut-grid>.quick-tile{position:relative!important;width:auto!important;min-width:0!important;height:57px!important;min-height:57px!important;margin:0!important;padding:0!important;border:1px solid transparent!important;border-radius:9px!important;background:#0d0e13!important;box-shadow:none!important;opacity:1!important;filter:none!important;transform:none!important}
-.nyx-app-launcher .home-shortcut-open{display:grid!important;justify-items:center!important;align-content:center!important;gap:4px!important;width:100%!important;height:100%!important;padding:5px!important}
-.nyx-app-launcher .home-shortcut-open :is(img,.home-shortcut-glyph){width:18px!important;height:18px!important;min-height:18px!important;margin:0!important}
-.nyx-app-launcher .home-shortcut-open>span:last-child{max-width:100%;overflow:hidden;color:#a8aab7!important;font-size:7.5px!important;text-overflow:ellipsis;white-space:nowrap}
-.nyx-app-launcher .home-shortcut-menu-btn{top:1px!important;right:1px!important;width:16px!important;height:16px!important;min-height:16px!important;padding:0!important;font-size:10px!important}
-.nyx-app-launcher .home-shortcut-menu{z-index:3!important}
-.nyx-app-launcher-all{height:32px;border:1px solid #292a37;border-radius:9px;background:#101117;color:#bfc1ce;font-size:9px;font-weight:650;box-shadow:none}
-.nyx-app-launcher-all:hover{border-color:#48445f;background:#171620;color:#fff;transform:none}
 
 /* The clock opens a short, wide dashboard rather than a tall popover. */
 html body.browser-shell .top-os>.nyx-dashboard{position:absolute;z-index:80;top:4px;left:50%;width:auto;pointer-events:auto!important;transform:translateX(-50%)}
@@ -128,7 +108,17 @@ html body.browser-shell .nyx-dashboard-trigger{position:relative!important;inset
 .nyx-dashboard-page>button:hover{border-color:#38394a;background:#12131a;color:#fff;transform:none}
 .nyx-dashboard-page>button>svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.45;stroke-linecap:round;stroke-linejoin:round}.nyx-dashboard-page>button>span{min-width:0;display:grid;gap:4px}.nyx-dashboard-page>button strong{font-size:10px}.nyx-dashboard-page>button small{overflow:hidden;color:#6f7180;font-size:8px;text-overflow:ellipsis;white-space:nowrap}
 
+/* Compact live status: measured browser-to-Nyx /healthz round-trip time. */
+html body.browser-shell .top-os>.nyx-latency-bubble{position:absolute;z-index:80;top:9px;left:50%;display:inline-flex;align-items:center;justify-content:center;gap:7px;width:auto;min-width:68px;height:28px;padding:0 11px;border:1px solid rgba(114,116,135,.34);border-radius:999px;background:rgba(10,11,16,.9);color:#eceef4;font-size:11px;font-weight:650;line-height:1;letter-spacing:.01em;white-space:nowrap;pointer-events:none;transform:translateX(-50%);box-shadow:0 8px 24px rgba(0,0,0,.2);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.nyx-latency-bubble>i{display:block;width:6px;height:6px;border-radius:50%;background:#727487;box-shadow:0 0 0 3px rgba(114,116,135,.1);animation:nyx-latency-pulse 1.4s ease-in-out infinite}
+.nyx-latency-bubble.is-excellent{border-color:rgba(85,217,139,.34)}.nyx-latency-bubble.is-excellent>i{background:#55d98b;box-shadow:0 0 0 3px rgba(85,217,139,.11);animation:none}
+.nyx-latency-bubble.is-good{border-color:rgba(125,211,252,.34)}.nyx-latency-bubble.is-good>i{background:#7dd3fc;box-shadow:0 0 0 3px rgba(125,211,252,.11);animation:none}
+.nyx-latency-bubble.is-fair{border-color:rgba(250,204,21,.34)}.nyx-latency-bubble.is-fair>i{background:#facc15;box-shadow:0 0 0 3px rgba(250,204,21,.11);animation:none}
+.nyx-latency-bubble:is(.is-slow,.is-offline){border-color:rgba(251,113,133,.34)}.nyx-latency-bubble:is(.is-slow,.is-offline)>i{background:#fb7185;box-shadow:0 0 0 3px rgba(251,113,133,.11);animation:none}
+@keyframes nyx-latency-pulse{0%,100%{opacity:.45;transform:scale(.82)}50%{opacity:1;transform:scale(1)}}
+
 @media(max-width:700px){
+  html body.browser-shell .top-os>.nyx-latency-bubble{top:8px;min-width:64px;height:26px;padding:0 9px;font-size:10px}
   html body.browser-shell .top-os>.nyx-dashboard{left:auto;right:7px;transform:none}
   html body.browser-shell .nyx-dashboard-trigger>i,html body.browser-shell .nyx-dashboard-trigger>span:nth-of-type(2){display:none}
   .nyx-dashboard-panel{left:auto;right:0;width:min(430px,calc(100vw - 14px));height:min(420px,calc(100dvh - 128px));grid-template-columns:1fr;transform:translateY(-7px);overflow:auto}
@@ -168,7 +158,7 @@ html body.browser-shell .nyx-home-tabs-toggle:hover,html body.browser-shell .nyx
 html body.browser-shell .nyx-home-tabs-toggle>svg{width:17px!important;height:17px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important}
 @media(min-width:621px){
   html body.browser-shell.browser-content-active .top-os.top-os{display:block!important;height:56px!important;min-height:56px!important;max-height:56px!important;background:#000!important}
-  html body.browser-shell.browser-content-active .top-os.top-os .brand-mini,html body.browser-shell.browser-content-active .top-os.top-os>.nyx-dashboard,html body.browser-shell.browser-content-active .top-os.top-os>.nyx-minimal-top-actions{display:none!important}
+  html body.browser-shell.browser-content-active .top-os.top-os .brand-mini,html body.browser-shell.browser-content-active .top-os.top-os>.nyx-dashboard,html body.browser-shell.browser-content-active .top-os.top-os>.nyx-latency-bubble,html body.browser-shell.browser-content-active .top-os.top-os>.nyx-minimal-top-actions{display:none!important}
   html body.browser-shell.browser-content-active .top-os.top-os>.nyx-home-tabs-toggle{display:none!important}
   html body.browser-shell.browser-content-active .top-os.top-os form.browser-mode-address{position:absolute!important;inset:0!important;display:grid!important;grid-template-columns:repeat(5,36px) minmax(120px,1fr) repeat(2,36px)!important;align-items:center!important;gap:8px!important;width:100%!important;height:56px!important;min-height:56px!important;margin:0!important;padding:0 16px!important;background:#000!important}
   html body.browser-shell.browser-content-active .top-os.top-os form.browser-mode-address>:is(button,.browser-mode-url){width:auto!important;min-width:0!important;height:36px!important;min-height:36px!important;max-height:36px!important;color:#fff!important;-webkit-text-fill-color:#fff!important}
@@ -185,14 +175,14 @@ html body.browser-shell .nyx-home-tabs-toggle>svg{width:17px!important;height:17
   html body.browser-shell .nyx-browser-tab-close{opacity:1!important}
 }
 
-/* The redesigned home is a stable black canvas in every theme. Themes may
+/* The redesigned home is a stable charcoal canvas in every theme. Themes may
    tint its dots and controls, but legacy full-window theme surfaces cannot
    repaint the canvas or change its component geometry. */
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
   body.browser-shell.browser-shell.browser-shell:is(body,#nyx-minimal-theme-canvas):is(body,#nyx-minimal-theme-layout)
   .browser-window.browser-home-page .browser-home.nyx-minimal-home{
-  background:#000!important;
-  background-color:#000!important;
+  background:#111!important;
+  background-color:oklch(.1776 0 0)!important;
   background-image:none!important;
 }
 
@@ -227,10 +217,9 @@ html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
 @media(max-width:480px){
   .nyx-minimal-top-actions{right:6px;height:55px;gap:5px}.nyx-minimal-top-actions>button{width:27px;height:27px}.nyx-minimal-top-actions .nyx-account-button{width:27px!important;height:27px!important;min-height:27px!important}
   html[data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home>main.nyx-minimal-hero{width:min(330px,calc(100% - 24px))!important;transform:translate(-50%,-50%)!important}.nyx-minimal-brand h1{font-size:27px!important}.nyx-minimal-brand p{font-size:10px}
-  html body.browser-shell .browser-window.browser-home-page .nyx-minimal-search{height:38px!important}.nyx-minimal-shortcuts{grid-template-columns:repeat(3,50px);gap:14px 11px}html[data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page .nyx-minimal-home .nyx-minimal-shortcuts>button{width:50px!important;min-width:50px!important}.nyx-minimal-shortcuts>button>svg,.nyx-minimal-shortcuts>button>.nyx-nocturne-ai-icon,.nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="/apps/nyxify/"])::before{width:35px;height:35px;padding:9px}
-  .nyx-app-launcher{top:49px;left:8px;width:calc(100% - 16px);max-height:calc(100% - 60px)}
+  html body.browser-shell .browser-window.browser-home-page .nyx-minimal-search{height:38px!important}.nyx-minimal-shortcuts{grid-template-columns:repeat(3,50px);gap:14px 11px}html[data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page .nyx-minimal-home .nyx-minimal-shortcuts>button{width:50px!important;min-width:50px!important}.nyx-minimal-shortcuts>button>svg,.nyx-minimal-shortcuts>button>.nyx-nocturne-ai-icon,.nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="http://icefy.top/"])::before{width:35px;height:35px;padding:9px}
 }
-@media(prefers-reduced-motion:reduce){.nyx-dashboard-panel,.nyx-app-launcher,.nyx-minimal-shortcuts>button>svg,.nyx-minimal-shortcuts>button>.nyx-nocturne-ai-icon,.nyx-minimal-shortcuts>button::before{transition:none!important}.nyx-title-dot-canvas{filter:none!important}}
+@media(prefers-reduced-motion:reduce){.nyx-dashboard-panel,.nyx-minimal-shortcuts>button>svg,.nyx-minimal-shortcuts>button>.nyx-nocturne-ai-icon,.nyx-minimal-shortcuts>button::before{transition:none!important}.nyx-latency-bubble>i{animation:none!important}.nyx-title-dot-canvas{filter:none!important}}
 
 /* The clock dashboard mirrors the compact horizontal app palette: one search,
    one row of familiar Nyx tools, and a single route to the complete app list. */
@@ -246,9 +235,9 @@ html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
 .nyx-dashboard-app-grid>button>svg,.nyx-dashboard-app-grid>button>.nyx-nocturne-ai-icon{display:grid;place-items:center;width:18px;height:18px;color:#aaa6cb;fill:none;stroke:currentColor;stroke-width:1.45;stroke-linecap:round;stroke-linejoin:round}
 .nyx-dashboard-app-grid .nyx-nocturne-ai-icon::before{content:"";display:block;width:100%;height:100%;background:currentColor;-webkit-mask:url('/assets/icons/shortcut-nyx-ai.svg?v=6') center/contain no-repeat;mask:url('/assets/icons/shortcut-nyx-ai.svg?v=6') center/contain no-repeat}
 .nyx-dashboard-app-grid>button>span:last-child{max-width:100%;overflow:hidden;color:inherit;font-size:7px;line-height:1.15;text-align:center;text-overflow:ellipsis;white-space:nowrap}
-.nyx-dashboard-app-grid>button:is([data-app-url="/apps/link-checker/"],[data-app-url="/apps/link-generator/"],[data-app-url="https://aether.cx/"],[data-app-url="/apps/nyxify/"],[data-app-url="/apps/chat/"],[data-app-url="/assets/games/"],[data-open="settings"])>svg{display:none!important}
-.nyx-dashboard-app-grid>button:is([data-app-url="/apps/link-checker/"],[data-app-url="/apps/link-generator/"],[data-app-url="https://aether.cx/"],[data-app-url="/apps/nyxify/"],[data-app-url="/apps/chat/"],[data-app-url="/assets/games/"],[data-open="settings"])::before{content:"";display:block;width:18px;height:18px;background:currentColor;-webkit-mask:var(--nyx-dashboard-glyph) center/contain no-repeat;mask:var(--nyx-dashboard-glyph) center/contain no-repeat}
-.nyx-dashboard-app-grid>button[data-app-url="/apps/link-checker/"]{--nyx-dashboard-glyph:url('/assets/icons/link-checker.svg?v=2')}.nyx-dashboard-app-grid>button[data-app-url="/apps/link-generator/"]{--nyx-dashboard-glyph:url('/assets/icons/link-generator.svg')}.nyx-dashboard-app-grid>button[data-app-url="https://aether.cx/"]{--nyx-dashboard-glyph:url('/assets/icons/theatre-masks.svg?v=1')}.nyx-dashboard-app-grid>button[data-app-url="/apps/nyxify/"]{--nyx-dashboard-glyph:url('/assets/icons/shortcut-spotify.svg?v=1')}.nyx-dashboard-app-grid>button[data-app-url="/apps/chat/"]{--nyx-dashboard-glyph:url('/assets/icons/chat.svg?v=2')}.nyx-dashboard-app-grid>button[data-app-url="/assets/games/"]{--nyx-dashboard-glyph:url('/assets/icons/dock-controller.png')}.nyx-dashboard-app-grid>button[data-open="settings"]{--nyx-dashboard-glyph:url('/assets/icons/dock-settings.png')}
+.nyx-dashboard-app-grid>button:is([data-app-url="/apps/link-checker/"],[data-app-url="/apps/link-generator/"],[data-app-url="https://aether.cx/"],[data-app-url="http://icefy.top/"],[data-app-url="/apps/chat/"],[data-app-url="/assets/games/"],[data-open="settings"])>svg{display:none!important}
+.nyx-dashboard-app-grid>button:is([data-app-url="/apps/link-checker/"],[data-app-url="/apps/link-generator/"],[data-app-url="https://aether.cx/"],[data-app-url="http://icefy.top/"],[data-app-url="/apps/chat/"],[data-app-url="/assets/games/"],[data-open="settings"])::before{content:"";display:block;width:18px;height:18px;background:currentColor;-webkit-mask:var(--nyx-dashboard-glyph) center/contain no-repeat;mask:var(--nyx-dashboard-glyph) center/contain no-repeat}
+.nyx-dashboard-app-grid>button[data-app-url="/apps/link-checker/"]{--nyx-dashboard-glyph:url('/assets/icons/link-checker.svg?v=2')}.nyx-dashboard-app-grid>button[data-app-url="/apps/link-generator/"]{--nyx-dashboard-glyph:url('/assets/icons/link-generator.svg')}.nyx-dashboard-app-grid>button[data-app-url="https://aether.cx/"]{--nyx-dashboard-glyph:url('/assets/icons/theatre-masks.svg?v=1')}.nyx-dashboard-app-grid>button[data-app-url="http://icefy.top/"]{--nyx-dashboard-glyph:url('/assets/icons/theatre-masks.svg?v=1')}.nyx-dashboard-app-grid>button[data-app-url="/apps/chat/"]{--nyx-dashboard-glyph:url('/assets/icons/chat.svg?v=2')}.nyx-dashboard-app-grid>button[data-app-url="/assets/games/"]{--nyx-dashboard-glyph:url('/assets/icons/dock-controller.png')}.nyx-dashboard-app-grid>button[data-open="settings"]{--nyx-dashboard-glyph:url('/assets/icons/dock-settings.png')}
 .nyx-dashboard-footer{display:flex;align-items:center;justify-content:space-between;min-height:22px;padding-top:7px;border-top:1px solid #1c1d25}.nyx-dashboard-footer>span{display:flex;align-items:center;gap:5px;color:#77798a;font-size:7px}.nyx-dashboard-footer>span i{width:4px;height:4px;border-radius:50%;background:#6edea1;box-shadow:0 0 6px rgba(110,222,161,.45)}.nyx-dashboard-footer b{font-weight:500}.nyx-dashboard-footer>button{height:23px;padding:0 9px;border:1px solid #252633;border-radius:7px;background:#101117;color:#aaaabd;font-size:7px;box-shadow:none;transform:none}.nyx-dashboard-footer>button:hover{border-color:#343646;color:#fff;transform:none}
 @media(max-width:700px){.nyx-dashboard-compact .nyx-dashboard-panel{right:0;left:auto;width:min(360px,calc(100vw - 14px));height:auto;max-height:min(430px,calc(100dvh - 65px));grid-template-columns:none;transform:translateY(-7px);overflow:auto}.nyx-dashboard-compact.is-open .nyx-dashboard-panel,.nyx-dashboard-compact:hover .nyx-dashboard-panel,.nyx-dashboard-compact:focus-within .nyx-dashboard-panel{transform:none}.nyx-dashboard-appbar{align-items:flex-start}.nyx-dashboard-appbar>label{width:150px}.nyx-dashboard-app-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.nyx-dashboard-app-grid>button{height:55px}}
 
@@ -336,19 +325,19 @@ html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.brows
   html[data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page .nyx-minimal-home .nyx-minimal-shortcuts>button{width:clamp(52px,5.5vw,86px)!important;min-width:clamp(52px,5.5vw,86px)!important;gap:clamp(7px,1dvh,10px)!important}
   .nyx-minimal-shortcuts>button>svg,
   .nyx-minimal-shortcuts>button>.nyx-nocturne-ai-icon,
-  .nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="/apps/nyxify/"])::before{
+  .nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="http://icefy.top/"])::before{
     width:clamp(37px,6.2dvh,59px);
     height:clamp(37px,6.2dvh,59px);
     padding:clamp(9px,1.35dvh,13px);
   }
-  .nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="/apps/nyxify/"])::before{-webkit-mask-size:clamp(17px,2.55dvh,24px) clamp(17px,2.55dvh,24px);mask-size:clamp(17px,2.55dvh,24px) clamp(17px,2.55dvh,24px)}
+  .nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="http://icefy.top/"])::before{-webkit-mask-size:clamp(17px,2.55dvh,24px) clamp(17px,2.55dvh,24px);mask-size:clamp(17px,2.55dvh,24px) clamp(17px,2.55dvh,24px)}
   .nyx-minimal-shortcuts>button>span:last-child{font-size:clamp(9px,1.2dvh,12px)}
   html body.browser-shell .top-os>.nyx-dashboard{top:calc((var(--nyx-reference-bar) - clamp(38px,5.4dvh,51px))/2)}
   html body.browser-shell .nyx-dashboard-trigger{height:clamp(38px,5.4dvh,51px)!important;min-height:clamp(38px,5.4dvh,51px)!important;padding-inline:clamp(13px,1.2vw,20px)!important;font-size:clamp(11px,1.25dvh,13px)!important}
   .nyx-dashboard-compact .nyx-dashboard-panel{top:calc(clamp(38px,5.4dvh,51px) + 7px);width:min(920px,56vw);padding:clamp(12px,1.65dvh,16px);gap:clamp(10px,1.35dvh,13px)}
   .nyx-dashboard-app-grid{gap:clamp(5px,.55vw,9px)}
   .nyx-dashboard-app-grid>button{height:clamp(58px,8.2dvh,77px)}
-  .nyx-dashboard-app-grid>button>svg,.nyx-dashboard-app-grid>button>.nyx-nocturne-ai-icon,.nyx-dashboard-app-grid>button:is([data-app-url="/apps/link-checker/"],[data-app-url="/apps/link-generator/"],[data-app-url="https://aether.cx/"],[data-app-url="/apps/nyxify/"],[data-app-url="/apps/chat/"],[data-app-url="/assets/games/"],[data-open="settings"])::before{width:clamp(18px,2.65dvh,25px);height:clamp(18px,2.65dvh,25px)}
+  .nyx-dashboard-app-grid>button>svg,.nyx-dashboard-app-grid>button>.nyx-nocturne-ai-icon,.nyx-dashboard-app-grid>button:is([data-app-url="/apps/link-checker/"],[data-app-url="/apps/link-generator/"],[data-app-url="https://aether.cx/"],[data-app-url="http://icefy.top/"],[data-app-url="/apps/chat/"],[data-app-url="/assets/games/"],[data-open="settings"])::before{width:clamp(18px,2.65dvh,25px);height:clamp(18px,2.65dvh,25px)}
   .nyx-dashboard-app-grid>button>span:last-child{font-size:clamp(7px,1.05dvh,10px)}
   body:has(.nyx-dashboard:is(:hover,.is-open,:focus-within)) .nyx-minimal-brand{opacity:0;transform:translateY(-6px)}
 }
@@ -401,8 +390,8 @@ html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:is(body,#n
 html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:is(body,#nyx-reference-search):is(body,#nyx-reference-controls) .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-search input{order:2!important;padding:0!important;font-size:10px!important;letter-spacing:0!important}
 html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:is(body,#nyx-reference-search-chrome):is(body,#nyx-reference-search-layout):is(body,#nyx-reference-search-controls) .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-search{width:min(370px,47vw)!important;max-width:none!important;height:clamp(23px,3.7vw,31px)!important;min-height:clamp(23px,3.7vw,31px)!important;max-height:clamp(23px,3.7vw,31px)!important}
 
-.nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="/apps/nyxify/"])>svg{display:grid!important}
-.nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="/apps/nyxify/"])::before{display:none!important}
+.nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="http://icefy.top/"])>svg{display:grid!important}
+.nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="http://icefy.top/"])::before{display:none!important}
 .nyx-minimal-shortcuts>button>svg{border-color:#26262f;background:#08070f;color:#e7e7ee;stroke-width:1.3}
 .nyx-minimal-shortcuts>button>span:last-child{color:#b5b5c0;font-size:8px}
 .nyx-minimal-shortcuts>button:hover>svg{border-color:#3a3a46;background:#0c0a17;color:#ffffff}
@@ -635,7 +624,7 @@ html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.brows
   html[data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page .nyx-minimal-home .nyx-minimal-shortcuts>button{width:62px!important;min-width:62px!important;gap:9px!important}
   .nyx-minimal-shortcuts>button>svg,
   .nyx-minimal-shortcuts>button>.nyx-nocturne-ai-icon,
-  .nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="/apps/nyxify/"])::before{width:44px!important;height:44px!important;padding:10px!important}
+  .nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="http://icefy.top/"])::before{width:44px!important;height:44px!important;padding:10px!important}
   .nyx-minimal-shortcuts>button>span:last-child{font-size:10px!important}
 }
 
@@ -684,7 +673,7 @@ html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.brows
   html[data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page .nyx-minimal-home .nyx-minimal-shortcuts>button{width:64px!important;min-width:64px!important}
   .nyx-minimal-shortcuts>button>svg,
   .nyx-minimal-shortcuts>button>.nyx-nocturne-ai-icon,
-  .nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="/apps/nyxify/"])::before{width:46px!important;height:46px!important}
+  .nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="http://icefy.top/"])::before{width:46px!important;height:46px!important}
 }
 
 /* Use the original supplied Nyx artwork instead of redrawing its crescent. */
@@ -715,13 +704,13 @@ html body.browser-shell .browser-window.browser-home-page .browser-home.nyx-mini
   html body.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-brand h1{font-size:36px!important}
 }
 
-/* Keep the home chrome truly black and give every home action the same
+/* Keep the home field Fern-charcoal and give every home action the same
    high-contrast white treatment as the header controls. */
 html body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active),
 html body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .browser-window.browser-home-page,
 html body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .browser-home.nyx-minimal-home{
-  background:#000!important;
-  background-color:#000!important;
+  background:#111!important;
+  background-color:oklch(.1776 0 0)!important;
 }
 html[data-nyx-theme] body.browser-shell.browser-shell:has(.browser-home.nyx-minimal-home) .top-os{
   background:#000!important;
@@ -741,7 +730,7 @@ html body.browser-shell .browser-window.browser-home-page .browser-home.nyx-mini
 html body.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button>.nyx-nocturne-ai-icon{
   color:var(--nyx-home-wordmark,#f7f7f8)!important;
 }
-html body.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="/apps/nyxify/"])::before{
+html body.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="http://icefy.top/"])::before{
   background-color:var(--nyx-home-wordmark,#f7f7f8)!important;
 }
 
@@ -759,7 +748,7 @@ html body.browser-shell .browser-window.browser-home-page .browser-home.nyx-mini
 .nyx-dashboard-perf-stat{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #1c1c29;color:#aaa2c7;font-size:14px;font-weight:520}
 .nyx-dashboard-perf-stat:last-child{border-bottom:0}
 .nyx-dashboard-perf-stat>b{color:#e8e5f2;font-size:15px;font-weight:680;text-align:right;white-space:nowrap}.nyx-dashboard-perf-stat>b small{color:#9790b3;font-size:11px;font-weight:600}
-html.perf-lite .nyx-home-dot-field{display:none!important}
+html.perf-lite .nyx-home-dot-field{opacity:.62!important;filter:none!important}
 html.perf-lite .nyx-dashboard-panel{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 html.perf-min *,html.perf-min *::before,html.perf-min *::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
 html.perf-min :is(#visualEffects,.nyx-home-dot-field){display:none!important}
@@ -793,10 +782,10 @@ html.perf-min :is(#visualEffects,.nyx-home-dot-field){display:none!important}
 
 /* Sparse constellation field and clean homepage hit areas. */
 html[data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home>.nyx-home-dot-field{
-  opacity:.78!important;
-  --nyx-dot-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 62%,#24262d);
-  --nyx-link-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 36%,#15171d);
-  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 18%,transparent));
+  opacity:.9!important;
+  --nyx-dot-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 24%,#718f84)!important;
+  --nyx-link-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 14%,#30433c)!important;
+  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 10%,rgba(112,153,138,.26)));
 }
 .nyx-minimal-brand,
 .nyx-minimal-brand h1,
@@ -978,11 +967,13 @@ html[data-nyx-theme] body.browser-shell .nyx-browser-tab-row small{
   -webkit-text-fill-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 42%,#8a8c96)!important;
 }
 
-/* Themes tint the redesigned home without replacing its black canvas or
+/* Themes tint the redesigned home without replacing its charcoal canvas or
    changing any of its geometry. */
 html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home{
-  --nyx-dot-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 52%,#17201d);
-  --nyx-link-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 32%,#111916);
+  --nyx-dot-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 24%,#718f84);
+  --nyx-link-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 14%,#30433c);
+  --nyx-constellation-dot-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 72%,#8aa99e);
+  --nyx-constellation-link-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 52%,#40534c);
 }
 html body.browser-shell.theme-default:not(.theme-custom){--nyx-home-wordmark:#a99bf3!important;--nyx-shell-icon:#a99bf3!important;--nyx-final-shortcut-icon:#a99bf3!important}
 html body.browser-shell.theme-ruby{--nyx-home-wordmark:#fb7185!important;--nyx-shell-icon:#fb7185!important;--nyx-final-shortcut-icon:#fb7185!important}
@@ -1061,7 +1052,7 @@ html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-mini
   border-color:var(--nyx-minimal-line)!important;
   color:var(--nyx-minimal-accent)!important;
 }
-html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="/apps/nyxify/"])::before{
+html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="http://icefy.top/"])::before{
   border-color:var(--nyx-minimal-line)!important;
   background-color:var(--nyx-minimal-accent)!important;
 }
@@ -1074,13 +1065,10 @@ html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-mini
 html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home>.nyx-home-presence{
   border-color:var(--nyx-minimal-line)!important;
 }
-html[data-nyx-theme] body.browser-shell .nyx-dashboard-panel,
-html[data-nyx-theme] body.browser-shell .nyx-app-launcher{
+html[data-nyx-theme] body.browser-shell .nyx-dashboard-panel{
   border-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 34%,#22232b)!important;
 }
-html[data-nyx-theme] body.browser-shell .nyx-dashboard-tabs>button.is-active,
-html[data-nyx-theme] body.browser-shell .nyx-app-launcher-grid>button:hover,
-html[data-nyx-theme] body.browser-shell .nyx-app-launcher-all:hover{
+html[data-nyx-theme] body.browser-shell .nyx-dashboard-tabs>button.is-active{
   background:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 14%,#0d0e13)!important;
   border-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 48%,#2d2e37)!important;
 }
@@ -1088,8 +1076,6 @@ html[data-nyx-theme] body.browser-shell .nyx-dashboard-page>button:hover,
 html[data-nyx-theme] body.browser-shell .nyx-dashboard-page>article{
   border-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 24%,#20212b)!important;
 }
-html[data-nyx-theme] body.browser-shell .nyx-app-launcher-grid svg,
-html[data-nyx-theme] body.browser-shell .nyx-app-launcher-grid .nyx-nocturne-ai-icon,
 html[data-nyx-theme] body.browser-shell .nyx-dashboard-page>button>svg{
   color:var(--nyx-home-wordmark,#9b8cf5)!important;
 }
@@ -1118,8 +1104,7 @@ html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home .nyx-mini
     width:min(360px,calc(100vw - 24px))!important;
     max-width:calc(100vw - 24px)!important;
   }
-  html body.browser-shell .nyx-dashboard-panel,
-  html body.browser-shell .nyx-app-launcher{
+  html body.browser-shell .nyx-dashboard-panel{
     width:calc(100vw - 16px)!important;
     max-width:calc(100vw - 16px)!important;
     max-height:calc(100dvh - 147px)!important;
@@ -1315,7 +1300,7 @@ body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-palette):is
 }
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
 body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-palette):is(body,#nyx-balanced-copy)
-.browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="/apps/nyxify/"])::before{
+.browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button:is([data-app-url="/assets/games/"],[data-app-url="/apps/chat/"],[data-app-url="http://icefy.top/"])::before{
   border-color:color-mix(in srgb,var(--nyx-chrome-accent) 22%,var(--nyx-home-line))!important;
   background-color:var(--nyx-home-text)!important;
 }
@@ -1340,19 +1325,19 @@ body.browser-shell.browser-shell.browser-shell:not(.browser-content-active):not(
 }
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
 body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-palette):is(body,#nyx-balanced-copy)
-:is(.nyx-dashboard-panel,.nyx-app-launcher) :is(h2,h3,strong,b,label){
+.nyx-dashboard-panel :is(h2,h3,strong,b,label){
   color:var(--nyx-home-text)!important;
   -webkit-text-fill-color:var(--nyx-home-text)!important;
 }
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
 body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-palette):is(body,#nyx-balanced-copy)
-:is(.nyx-dashboard-panel,.nyx-app-launcher) :is(p,small){
+.nyx-dashboard-panel :is(p,small){
   color:var(--nyx-home-muted)!important;
   -webkit-text-fill-color:var(--nyx-home-muted)!important;
 }
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
 body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-palette):is(body,#nyx-balanced-copy)
-:is(.nyx-dashboard-page>button,.nyx-app-launcher-grid>button) :is(svg,.nyx-nocturne-ai-icon){
+.nyx-dashboard-page>button :is(svg,.nyx-nocturne-ai-icon){
   color:var(--nyx-home-text)!important;
 }
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
@@ -1510,4 +1495,39 @@ body.browser-shell.browser-shell.browser-shell:is(body,#nyx-release-dialog):is(b
   background:#f7f7fb!important;
   color:#08080c!important;
   -webkit-text-fill-color:#08080c!important;
+}
+
+/* The redesigned home always owns its lightweight Fern field. Older theme,
+   3D-background, and performance selectors must not hide or dim this canvas. */
+html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell :is(.apps-panel,.shell-page,.browser-shell-page) .apps-launch-grid>.quick-tile{
+  transition:transform .22s cubic-bezier(.16,1,.3,1),border-color .18s ease,background-color .18s ease,box-shadow .18s ease!important;
+}
+html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell :is(.apps-panel,.shell-page,.browser-shell-page) .apps-launch-grid>.quick-tile:is(:hover,:focus-visible){
+  transform:translateY(-5px) scale(1.025)!important;
+}
+html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell :is(.apps-panel,.shell-page,.browser-shell-page) .apps-launch-grid>.quick-tile:is(:hover,:focus-visible) .quick-icon{
+  transform:scale(1.08)!important;
+}
+@media(prefers-reduced-motion:reduce){
+  html[data-nyx-theme] body.browser-shell .apps-launch-grid>.quick-tile:is(:hover,:focus-visible),
+  html[data-nyx-theme] body.browser-shell .apps-launch-grid>.quick-tile:is(:hover,:focus-visible) .quick-icon{transform:none!important}
+}
+
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme]:not(.perf-lite):not(.perf-min)
+body.browser-shell.browser-shell.browser-shell:is(body,#nyx-fern-field):is(body,#nyx-fern-field-visibility):is(body,#nyx-fern-field-palette)
+.browser-window.browser-home-page .browser-home.nyx-minimal-home>.nyx-home-dot-field{
+  display:block!important;
+  visibility:visible!important;
+  opacity:.9!important;
+  --nyx-dot-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 24%,#718f84)!important;
+  --nyx-link-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 14%,#30433c)!important;
+}
+html[data-nyx-theme].perf-lite.perf-lite.perf-lite body.browser-shell.browser-shell.browser-shell:is(body,#nyx-perf-lite-dots):is(body,#nyx-perf-lite-canvas):is(body,#nyx-perf-lite-home) .browser-window.browser-home-page .browser-home.nyx-minimal-home>.nyx-home-dot-field{
+  display:block!important;
+  visibility:visible!important;
+  opacity:.62!important;
+  filter:none!important;
+}
+html[data-nyx-theme].perf-min.perf-min.perf-min body.browser-shell.browser-shell.browser-shell:is(body,#nyx-perf-min-dots):is(body,#nyx-perf-min-canvas):is(body,#nyx-perf-min-home) .browser-window.browser-home-page .browser-home.nyx-minimal-home>.nyx-home-dot-field{
+  display:none!important;
 }

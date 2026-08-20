@@ -78,7 +78,7 @@
       <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
     </div>
   </div>
-  <iframe id="gameFrame" class="game-frame" title="GN Math game" allow="fullscreen; gamepad; autoplay; keyboard-map; clipboard-read; clipboard-write; camera; microphone; display-capture; accelerometer; gyroscope; magnetometer; xr-spatial-tracking" allowfullscreen tabindex="0"></iframe>
+  <iframe id="gameFrame" class="game-frame" title="GN Math game" sandbox="allow-scripts allow-forms allow-modals allow-downloads allow-pointer-lock allow-presentation" allow="fullscreen; gamepad; autoplay; keyboard-map; clipboard-read; clipboard-write; camera; microphone; display-capture; accelerometer; gyroscope; magnetometer; xr-spatial-tracking" allowfullscreen tabindex="0"></iframe>
   <script>
     const loading=document.querySelector('.loading');
     const status=document.getElementById('status');
@@ -123,6 +123,7 @@
     let progressTimer=0;
     let gameLaunched=false;
     let gameLoadStarted=0;
+    let gameReadySignal=false;
 
     function setGameProgress(value,label='Loading'){
       const percent=Math.max(0,Math.min(100,Math.round(value)));
@@ -146,7 +147,7 @@
 
     function finishGameProgress(){
       if(gameLaunched) return;
-      if(!gameSurfaceReady()){
+      if(!gameReadySignal && !gameSurfaceReady()){
         if(performance.now()-gameLoadStarted>11000){
           fail('This game loaded a blank screen. One of its required files is missing or blocked.');
           return;
@@ -194,14 +195,14 @@
     }
 
     function safeGamePath(path){
-      if(!path || path.includes('..') || !/^[a-z0-9_.-]+\.html$/i.test(path)) return '';
+      if(!path || path.includes('..') || !/^[a-z0-9_.-]+\.html(?:-[a-z0-9]+)?$/i.test(path)) return '';
       return path;
     }
 
     function cleanGnMathHtml(html,path){
-      const rawBase=`https://raw.githubusercontent.com/gn-math/html/main/${path}`;
+      const rawBase=`https://raw.githubusercontent.com/freebuisness/html/main/${path}`;
       const baseUrl=rawBase.slice(0,rawBase.lastIndexOf('/') + 1);
-      const repoRoot='https://raw.githubusercontent.com/gn-math/html/main/';
+      const repoRoot='https://raw.githubusercontent.com/freebuisness/html/main/';
       const proxyUrl=url=>`${location.origin}/gn-math-proxy?url=${encodeURIComponent(url)}`;
       const sourceHtml=String(html || '').replace(
         /https?:\/\/cdn\.jsdelivr\.net\/gh\/genizy\/fnaf@[^/"'<>\s]+/gi,
@@ -232,14 +233,76 @@
         .replace(/((?:src|href)=["'])(?![a-z][a-z0-9+.-]*:|\/\/|#|data:|blob:)([^"']+)/gi,(_match,prefix,raw)=>`${prefix}${toProxy(raw)}`)
         .replace(/((?:dataUrl|codeUrl|asmUrl|memUrl|frameworkUrl|loaderUrl)\s*[:=]\s*["'])(?![a-z][a-z0-9+.-]*:|\/\/|#|data:|blob:)([^"']+)/gi,(_match,prefix,raw)=>`${prefix}${toProxy(raw)}`)
         .replace(/https?:\/\/[^\s"'<>\\)]+/gi,raw=>toProxy(raw));
-      const safeFetchGuard=`<script>(()=>{const nativeFetch=window.fetch?.bind(window);if(nativeFetch)window.fetch=(input,init)=>{const url=input instanceof Request?input.url:String(input||'');if(/^about:/i.test(url))return Promise.resolve(new Response(null,{status:204,statusText:'No Content'}));return nativeFetch(input,init)};try{const nativeOpen=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(method,url,...rest){if(/^about:/i.test(String(url||'')))url='data:,';return nativeOpen.call(this,method,url,...rest)}}catch{}try{const sw=navigator.serviceWorker;const getRegistration=sw?.getRegistration?.bind(sw);if(getRegistration)sw.getRegistration=url=>{try{if(url&&new URL(url,document.baseURI).origin!==location.origin)return Promise.resolve(undefined)}catch{}return getRegistration(url)}}catch{}})()<\/script>`;
+      const safeFetchGuard=`<script>(()=>{
+        const memoryStorage=()=>{
+          const values=new Map();
+          const api={
+            get length(){return values.size},
+            key:index=>[...values.keys()][Number(index)] ?? null,
+            getItem:key=>values.has(String(key)) ? values.get(String(key)) : null,
+            setItem:(key,value)=>values.set(String(key),String(value)),
+            removeItem:key=>values.delete(String(key)),
+            clear:()=>values.clear()
+          };
+          return new Proxy(api,{
+            get:(target,key)=>key in target ? Reflect.get(target,key,target) : api.getItem(key),
+            set:(target,key,value)=>{if(key in target)return Reflect.set(target,key,value,target);api.setItem(key,value);return true},
+            deleteProperty:(_target,key)=>{api.removeItem(key);return true}
+          });
+        };
+        for(const name of ['localStorage','sessionStorage']){
+          try{window[name].getItem('__nyx_storage_probe__')}
+          catch{try{Object.defineProperty(window,name,{configurable:true,value:memoryStorage()})}catch{}}
+        }
+        try{void document.cookie}
+        catch{
+          try{
+            const cookies=new Map();
+            Object.defineProperty(document,'cookie',{
+              configurable:true,
+              get:()=>[...cookies].map(([key,value])=>key+'='+value).join('; '),
+              set:value=>{
+                const parts=String(value || '').split(';');
+                const pair=parts.shift() || '';
+                const split=pair.indexOf('=');
+                if(split<1)return;
+                const key=pair.slice(0,split).trim();
+                const content=pair.slice(split+1).trim();
+                const expired=parts.some(part=>/^\\s*max-age\\s*=\\s*0\\s*$/i.test(part) || /^\\s*expires\\s*=.*1970/i.test(part));
+                if(expired)cookies.delete(key);else cookies.set(key,content);
+              }
+            })
+          }catch{}
+        }
+        const nativeFetch=window.fetch?.bind(window);
+        if(nativeFetch)window.fetch=(input,init)=>{
+          const url=input instanceof Request?input.url:String(input||'');
+          if(/^about:/i.test(url))return Promise.resolve(new Response(null,{status:204,statusText:'No Content'}));
+          return nativeFetch(input,init)
+        };
+        try{
+          const nativeOpen=XMLHttpRequest.prototype.open;
+          XMLHttpRequest.prototype.open=function(method,url,...rest){
+            if(/^about:/i.test(String(url||'')))url='data:,';
+            return nativeOpen.call(this,method,url,...rest)
+          }
+        }catch{}
+        try{
+          const sw=navigator.serviceWorker;
+          const getRegistration=sw?.getRegistration?.bind(sw);
+          if(getRegistration)sw.getRegistration=url=>{
+            try{if(url&&new URL(url,document.baseURI).origin!==location.origin)return Promise.resolve(undefined)}catch{}
+            return getRegistration(url)
+          }
+        }catch{}
+      })()<\/script>`;
       const guard=`<script>
         (() => {
           const ready=()=>parent.postMessage({type:'gn-math:ready'},'*');
           const fail=(message,url='')=>parent.postMessage({type:'gn-math:error',message,url},'*');
            const ignorable=/adinplay|googletagmanager|google-analytics|googlesyndication|doubleclick|facebook|recaptcha|cdn\\.r9x\\.in|pagead/i;
           const important=/\\.(?:wasm|data|unityweb|json|swf|zip|7z|js)(?:[?#]|$)|\\/Build\\//i;
-          const repoRoot='https://raw.githubusercontent.com/gn-math/html/main/';
+          const repoRoot='https://raw.githubusercontent.com/freebuisness/html/main/';
           const prox='${location.origin}/gn-math-proxy?url=';
           const proxHosts=['cdn.jsdelivr.net','raw.githubusercontent.com','rawcdn.githack.com','raw.githack.com'];
           const own=url=>{
@@ -262,7 +325,20 @@
           const nativeOpen=XMLHttpRequest.prototype.open;
           XMLHttpRequest.prototype.open=function(method,url,...rest){return nativeOpen.call(this,method,own(url),...rest)};
           const NativeWorker=window.Worker;
-          if(NativeWorker) window.Worker=function(url,opts){return new NativeWorker(own(url),opts)};
+          if(NativeWorker){
+            window.Worker=function(url,opts){
+              const target=own(url);
+              if(!/^https?:/i.test(target)) return new NativeWorker(target,opts);
+              const isModule=opts?.type==='module';
+              const source=isModule ? 'import '+JSON.stringify(target)+';' : 'importScripts('+JSON.stringify(target)+');';
+              const blob=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));
+              const worker=new NativeWorker(blob,opts);
+              setTimeout(()=>URL.revokeObjectURL(blob),5000);
+              return worker;
+            };
+            window.Worker.prototype=NativeWorker.prototype;
+            Object.setPrototypeOf(window.Worker,NativeWorker);
+          }
           const nativeAlert=window.alert?.bind(window);
           window.alert=message=>{
             const text=String(message || '');
@@ -272,7 +348,7 @@
             }
             nativeAlert?.(message);
           };
-          window.open=(url)=>{ if(url) location.href=url; return null; };
+          window.open=()=>null;
           window.addEventListener('load',()=>setTimeout(ready,650));
           document.addEventListener('DOMContentLoaded',()=>setTimeout(ready,1800));
           setTimeout(ready,4500);
@@ -314,6 +390,7 @@
     window.addEventListener('message',event=>{
       if(event.source!==frame.contentWindow) return;
       if(event.data?.type==='gn-math:ready'){
+        gameReadySignal=true;
         finishGameProgress();
         return;
       }
@@ -329,7 +406,7 @@
       fail('Missing GN Math game path.');
     }else{
       startGameProgress();
-      const rawUrl=`https://raw.githubusercontent.com/gn-math/html/main/${encodeURIComponent(gamePath)}`;
+      const rawUrl=`https://raw.githubusercontent.com/freebuisness/html/main/${encodeURIComponent(gamePath)}`;
       setGameProgress(22);
       fetch(`/gn-math-fetch?path=${encodeURIComponent(gamePath)}`,{cache:'no-store'})
         .then(response=>{

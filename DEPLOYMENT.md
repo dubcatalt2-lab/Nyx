@@ -106,16 +106,12 @@ NYX_LINK_CHECKER_ACCOUNT_PASSWORD='...'
 BUNNY_API_KEY='...'
 LINK_GENERATOR_ACCESS_CODE='...'
 NYX_SAFE_BROWSING_API_KEY='...'
-NYX_SOUNDCLOUD_CLIENT_ID='...'
-NYX_SOUNDCLOUD_CLIENT_SECRET='...'
 NYX_AI_API_KEY='...'
 ```
 
 `NYX_LINK_CHECKER_API_KEY` powers individual row and page checks. Fast Premium FreeDNS full scans require the separate Nocturne account username and password so Nyx can start Nocturne's server-side `/api/scan` job instead of making more than 20,000 rate-limited `/api/check` calls. These credentials stay in `/etc/nyx/nyx.env`; never add them to Git or client code. Authenticated check concurrency ceilings default to 12 requests per account and 48 globally and can be tuned with `NYX_LINK_CHECKER_BULK_CONCURRENCY_PER_USER` and `NYX_LINK_CHECKER_BULK_CONCURRENCY_GLOBAL`.
 
 Only add variables for features you use. Do not paste `curl` commands into this file, and never put the actual values in Git, Discord, screenshots, or chat. Keep the Firebase private key on one line with literal `\n` characters.
-
-Nyxify can prefer an official SoundCloud application when `NYX_SOUNDCLOUD_CLIENT_ID` and `NYX_SOUNDCLOUD_CLIENT_SECRET` are both configured. If they are absent or SoundCloud is temporarily unavailable, Nyxify uses its documented public Meting-compatible fallback. Playback and Meting artwork stay same-origin, and provider credentials remain server-only. See `docs/MEDIA_APPS.md` for provider registration and verification.
 
 For the one-server setup, leave `WISP_URL` commented out. Nyx then uses the current page hostname's `/wisp/` endpoint. Set `NYX_CUSTOM_HOST_IPS` to the VPS public address users will enter in FreeDNS:
 

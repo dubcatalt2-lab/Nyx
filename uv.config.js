@@ -11,6 +11,6 @@ self.__uv$config = {
   handler: "/uv/uv.handler.js",
   bundle: "/uv/uv.bundle.js",
   config: "/uv.config.js",
-  sw: "/uv.sw.js?v=nyx-uv-v9-20260814-private-tabs",
+  sw: "/uv.sw.js?v=nyx-uv-v10-20260820-quiet-browser",
   client: "/uv/uv.client.js"
 };

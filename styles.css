@@ -4225,7 +4225,6 @@ body.browser-shell.browser-shell.browser-shell:is(body,#nyx-balanced-theme):is(b
    Give only those marks an off-white plate so they remain legible without
    tinting the rest of the branded Apps grid. */
 html[data-nyx-theme] body.browser-shell .apps-launch-grid .quick-tile:is(
-  [data-domain="nyxify"],
   [data-domain="geforcenow"],
   [data-domain="x.com"]
 ) .quick-icon{
@@ -4237,7 +4236,6 @@ html[data-nyx-theme] body.browser-shell .apps-launch-grid .quick-tile:is(
   box-shadow:0 8px 24px rgba(0,0,0,.24)!important;
 }
 html[data-nyx-theme] body.browser-shell .apps-launch-grid .quick-tile:is(
-  [data-domain="nyxify"],
   [data-domain="geforcenow"],
   [data-domain="x.com"]
 ):is(:hover,:focus-visible) .quick-icon{

@@ -249,11 +249,6 @@ async function nyxUvFetch(event) {
     return emptyNeutralizedScriptResponse(event);
   }
   const response = await patchUvUnityWorkerCallbacks(event, await uvFetchWithAssetRetry(event, engine));
-  if (response.status >= 400) {
-    try {
-      console.warn("[nyx UV upstream error]", response.status, event.request.method, proxiedSourceUrl(event.request.url) || event.request.url);
-    } catch {}
-  }
   const contentType = response.headers.get("content-type") || "";
   const expectsAsset = uvRequestExpectsAsset(event);
   const badAssetMime = expectsAsset

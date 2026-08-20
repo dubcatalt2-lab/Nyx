@@ -1,14 +1,12 @@
 ﻿import express from "express";
 import { createServer } from "node:http";
 import { isIP } from "node:net";
-import { hostname } from "node:os";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { lookup } from "node:dns/promises";
 import { createReadStream, readFileSync } from "node:fs";
 import { mkdir, open as openFile, stat, statfs, unlink } from "node:fs/promises";
 import { join, dirname, resolve } from "node:path";
 import { createRequire } from "node:module";
-import { Readable } from "node:stream";
 import { server as wisp } from "@mercuryworkshop/wisp-js/server";
 import { Server as SocketIOServer } from "socket.io";
 
@@ -30,25 +28,6 @@ const gameCoverLookupCache = new Map();
 let duckMathGamesCache = { games: [], expires: 0, promise: null };
 let catClassGamesCache = { games: [], expires: 0, promise: null };
 let catClassCoverUrls = new Set();
-const nyxMediaSearchCache = new Map();
-const nyxMediaSearchAttempts = new Map();
-const nyxMediaSearchCacheTtlMs = 5 * 60_000;
-const nyxMediaSearchCacheLimit = 200;
-const nyxMediaSearchWindowMs = 15 * 60_000;
-const nyxMediaSearchMaxAttempts = 60;
-const nyxMetingAssetResolutionCache = new Map();
-const nyxMetingAssetResolutionTtlMs = 5 * 60_000;
-const nyxMetingAssetResolutionCacheLimit = 500;
-const nyxMusicArtworkCache = new Map();
-const nyxMusicArtworkInflight = new Map();
-const nyxMusicArtworkCacheByteLimit = 32 * 1024 * 1024;
-let nyxMusicArtworkCacheBytes = 0;
-const nyxMusicAudioPrefixCache = new Map();
-const nyxMusicAudioPrefixInflight = new Map();
-const nyxMusicAudioPrefixSize = 512 * 1024;
-const nyxMusicAudioPrefixCacheByteLimit = 8 * 1024 * 1024;
-let nyxMusicAudioPrefixCacheBytes = 0;
-let nyxSoundCloudTokenCache = { accessToken: "", expiresAt: 0, promise: null };
 const nyxCustomRoleLabelLimit = 64;
 const app = express();
 
@@ -213,6 +192,51 @@ const nyxAccountPasswordResetMaxAttempts = 5;
 const ownerDashboardSnapshotTtlMs = 30_000;
 let ownerDashboardSnapshotCache = { expiresAt: 0, value: null, promise: null };
 const nyxCustomRoleCollection = "nyxCustomRoles";
+const nyxGlobalAppsCollection = "nyxConfiguration";
+const nyxGlobalAppsDocument = "globalApps";
+const nyxGlobalAppsLimit = 100;
+const nyxDefaultGlobalApps = Object.freeze([
+  { id: "link-checker", icon: "link-checker", name: "Link Checker", url: "/apps/link-checker/" },
+  { id: "link-generator", icon: "link-generator", name: "Link Generator", url: "/apps/link-generator/" },
+  { id: "youtube", icon: "youtube.com", name: "YouTube", url: "https://www.youtube.com/" },
+  { id: "pirate-cove", icon: "games", name: "Pirate Cove", url: "/assets/games/" },
+  { id: "nyx-chat", icon: "nyx-chat", name: "Nyx Chat", url: "/apps/chat/" },
+  { id: "geforce-now", icon: "geforcenow", name: "GeForce Now", url: "https://play.geforcenow.com/" },
+  { id: "roblox", icon: "roblox.com", name: "Roblox", url: "https://web.cloudmoonapp.com/game/com.roblox.client/" },
+  { id: "discord", icon: "discord.com", name: "Discord", url: "https://discord.com/app" },
+  { id: "spotify", icon: "spotify.com", name: "Spotify", url: "https://open.spotify.com/" },
+  { id: "music", icon: "traxmojo.com", name: "Music", url: "https://traxmojo.com/" },
+  { id: "google", icon: "google.com", name: "Google", url: "https://www.google.com/" },
+  { id: "study", icon: "docs.google.com", name: "Study", url: "https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" },
+  { id: "duck-ai", icon: "duck.ai", name: "Duck AI", url: "https://duck.ai/" },
+  { id: "nyx-ai", icon: "nyx-ai", name: "Nyx AI", url: "nyx://ai" },
+  { id: "wikipedia", icon: "wikipedia.org", name: "Wikipedia", url: "https://www.wikipedia.org/" },
+  { id: "movies", icon: "icefy.top", name: "Movies", url: "http://icefy.top/" },
+  { id: "more-movie-sites", icon: "fmhy.net", name: "More Movie Sites", url: "https://fmhy.net/video#p-stream-forks" },
+  { id: "tiktok", icon: "tiktok.com", name: "TikTok", url: "https://www.tiktok.com/" },
+  { id: "instagram", icon: "instagram.com", name: "Instagram", url: "https://www.instagram.com/" },
+  { id: "snapchat", icon: "snapchat.com", name: "Snapchat", url: "https://www.snapchat.com/" },
+  { id: "amazon", icon: "amazon.com", name: "Amazon", url: "https://www.amazon.com/" },
+  { id: "reddit", icon: "reddit.com", name: "Reddit", url: "https://www.reddit.com/" },
+  { id: "twitter", icon: "x.com", name: "Twitter", url: "https://x.com/" },
+  { id: "tcgplayer", icon: "tcgplayer.com", name: "TCGPlayer", url: "https://www.tcgplayer.com/" },
+  { id: "cps-test", icon: "cpstest.org", name: "CPS Test", url: "https://cpstest.org/" },
+  { id: "chess", icon: "chess.com", name: "Chess.com", url: "https://www.chess.com/" },
+  { id: "animex", icon: "animex.one", name: "Animex", url: "https://animex.one/" },
+  { id: "chatgpt", icon: "chatgpt.com", name: "AI", url: "https://chatgpt.com/" },
+  { id: "steam", icon: "store.steampowered.com", name: "Steam", url: "https://store.steampowered.com/" },
+  { id: "crunchyroll", icon: "crunchyroll.com", name: "Crunchyroll", url: "https://www.crunchyroll.com/" },
+  { id: "crazygames", icon: "crazygames.com", name: "CrazyGames", url: "https://www.crazygames.com/" },
+  { id: "newgrounds", icon: "newgrounds.com", name: "Newgrounds", url: "https://www.newgrounds.com/" },
+  { id: "twitch", icon: "twitch.tv", name: "Twitch", url: "https://www.twitch.tv/" },
+  { id: "kick", icon: "kick.com", name: "Kick", url: "https://kick.com/" },
+  { id: "pluto-tv", icon: "pluto.tv", name: "Pluto TV", url: "https://pluto.tv/" },
+  { id: "skribbl", icon: "skribbl.io", name: "Skribbl.io", url: "https://skribbl.io/" },
+  { id: "slither", icon: "slither.io", name: "Slither.io", url: "https://slither.io/" },
+  { id: "geoguessr", icon: "geoguessr.com", name: "GeoGuessr", url: "https://www.geoguessr.com/" },
+  { id: "y8-games", icon: "y8.com", name: "Y8 Games", url: "https://www.y8.com/" },
+  { id: "itch", icon: "itch.io", name: "itch.io", url: "https://itch.io/" }
+]);
 const nyxCustomRoleIdPattern = /^[a-z0-9][a-z0-9-]{1,31}$/;
 const nyxCustomRoleCacheTtlMs = 60_000;
 let nyxCustomRoleCache = { expiresAt: 0, value: new Map(), promise: null };
@@ -1480,6 +1504,8 @@ app.get("/seraph-asset", async (req, res) => {
 const gnMathGamesCache = { timestamp: 0, games: [] };
 const gnMathTitleCache = new Map();
 const gnMathRepos = new Set(["html", "covers", "assets"]);
+const gnMathOwner = "freebuisness";
+const gnMathZonesUrl = `https://raw.githubusercontent.com/${gnMathOwner}/assets/main/zones.json`;
 
 function safeGnMathPath(path) {
   const clean = String(path || "").replace(/^\/+/, "");
@@ -1489,14 +1515,39 @@ function safeGnMathPath(path) {
 
 function safeGnMathHtmlPath(path) {
   const clean = safeGnMathPath(path);
-  if (!clean || !/^[a-z0-9_.-]+\.html$/i.test(clean)) return "";
+  if (!clean || !/^[a-z0-9_.-]+\.html(?:-[a-z0-9]+)?$/i.test(clean)) return "";
   return clean;
+}
+
+function gnMathZonePath(value) {
+  return safeGnMathHtmlPath(String(value || "").replace(/^\{HTML_URL\}\/?/i, ""));
+}
+
+function gnMathZoneCover(value, fallbackPath = "") {
+  const path = safeGnMathPath(String(value || "").replace(/^\{COVER_URL\}\/?/i, "")) || gnMathCoverName(fallbackPath);
+  return path ? `/gn-math-asset?repo=covers&path=${encodeURIComponent(path)}` : "";
 }
 
 function gnMathCoverName(path) {
   const id = String(path || "").match(/^\d+/)?.[0];
   return id ? `${id}.png` : "";
 }
+
+function setGnMathCors(req, res) {
+  const origin = String(req.headers.origin || "");
+  res.setHeader("Access-Control-Allow-Origin", origin === "null" ? "null" : "*");
+  if (origin === "null") res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Range");
+  res.setHeader("Access-Control-Expose-Headers", "Accept-Ranges, Content-Length, Content-Range");
+  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+  res.setHeader("Vary", "Origin");
+}
+
+app.options(["/gn-math-fetch", "/gn-math-asset", "/gn-math-proxy"], (req, res) => {
+  setGnMathCors(req, res);
+  res.sendStatus(204);
+});
 
 function extractTitle(html, fallback) {
   const match = String(html || "").match(/<title[^>]*>([\s\S]*?)<\/title>/i);
@@ -1523,30 +1574,26 @@ app.get("/gn-math-games", async (_req, res) => {
     return;
   }
   try {
-    const [htmlResponse, coverResponse] = await Promise.all([
-      fetch("https://api.github.com/repos/gn-math/html/contents/", {
-        headers: { "accept": "application/vnd.github+json", "user-agent": "nyx/1.0" }
-      }),
-      fetch("https://api.github.com/repos/gn-math/covers/contents/", {
-        headers: { "accept": "application/vnd.github+json", "user-agent": "nyx/1.0" }
-      })
-    ]);
-    if (!htmlResponse.ok) throw new Error(`HTML HTTP ${htmlResponse.status}`);
-    if (!coverResponse.ok) throw new Error(`Covers HTTP ${coverResponse.status}`);
-    const items = await htmlResponse.json();
-    const covers = new Set((await coverResponse.json())
-      .filter(item => item?.type === "file")
-      .map(item => item.name));
-    const games = (Array.isArray(items) ? items : [])
-      .filter(item => item?.type === "file" && /\.html?$/i.test(item.name))
-      .map(item => {
-        const cover = gnMathCoverName(item.name);
+    const zonesResponse = await fetch(gnMathZonesUrl, {
+      headers: { "accept": "application/json", "user-agent": "nyx/1.0" }
+    });
+    if (!zonesResponse.ok) throw new Error(`Zones HTTP ${zonesResponse.status}`);
+    const zones = await zonesResponse.json();
+    const games = (Array.isArray(zones) ? zones : [])
+      .map(zone => {
+        const path = gnMathZonePath(zone?.url);
+        if (!path) return null;
         return {
-          path: item.name,
-          title: gnMathTitleCache.get(item.name) || "",
-          cover: cover && covers.has(cover) ? `/gn-math-asset?repo=covers&path=${encodeURIComponent(cover)}` : ""
+          id: String(zone.id ?? ""),
+          path,
+          title: String(zone.name || gnMathTitleCache.get(path) || ""),
+          author: String(zone.author || ""),
+          authorLink: String(zone.authorLink || ""),
+          tags: Array.isArray(zone.special) ? zone.special.map(tag => String(tag)) : [],
+          cover: gnMathZoneCover(zone.cover, path)
         };
       })
+      .filter(Boolean)
       .sort((a, b) => a.path.localeCompare(b.path, undefined, { numeric: true }));
     gnMathGamesCache.timestamp = now;
     gnMathGamesCache.games = games;
@@ -1568,7 +1615,7 @@ app.get("/gn-math-title", async (req, res) => {
     return;
   }
   try {
-    const html = await fetchText(`https://raw.githubusercontent.com/gn-math/html/main/${path}`);
+    const html = await fetchText(`https://raw.githubusercontent.com/${gnMathOwner}/html/main/${path}`);
     const title = extractTitle(html, "");
     if (title) gnMathTitleCache.set(path, title);
     res.setHeader("Cache-Control", "public, max-age=86400");
@@ -1579,13 +1626,14 @@ app.get("/gn-math-title", async (req, res) => {
 });
 
 app.get("/gn-math-fetch", async (req, res) => {
+  setGnMathCors(req, res);
   const path = safeGnMathHtmlPath(req.query.path);
   if (!path) {
     res.status(400).type("text/plain").send("Invalid GN Math path");
     return;
   }
   try {
-    const html = await fetchText(`https://raw.githubusercontent.com/gn-math/html/main/${path}`);
+    const html = await fetchText(`https://raw.githubusercontent.com/${gnMathOwner}/html/main/${path}`);
     const title = extractTitle(html, "");
     if (title) gnMathTitleCache.set(path, title);
     res.setHeader("Cache-Control", "public, max-age=300");
@@ -1596,6 +1644,7 @@ app.get("/gn-math-fetch", async (req, res) => {
 });
 
 app.get("/gn-math-asset", async (req, res) => {
+  setGnMathCors(req, res);
   const repo = String(req.query.repo || "");
   const path = safeGnMathPath(req.query.path);
   if (!gnMathRepos.has(repo) || !path) {
@@ -1603,7 +1652,7 @@ app.get("/gn-math-asset", async (req, res) => {
     return;
   }
   try {
-    const upstream = await fetch(`https://raw.githubusercontent.com/gn-math/${repo}/main/${path}`, {
+    const upstream = await fetch(`https://raw.githubusercontent.com/${gnMathOwner}/${repo}/main/${path}`, {
       headers: {
         "accept": "*/*",
         "user-agent": "nyx/1.0"
@@ -1750,6 +1799,7 @@ function rewriteGnMathJsonAssets(url, result) {
 }
 
 app.get("/gn-math-proxy", async (req, res) => {
+  setGnMathCors(req, res);
   const url = safeGnMathProxyUrl(req.query.url);
   if (!url) {
     res.status(400).type("text/plain").send("Invalid GN Math proxy URL");
@@ -2736,6 +2786,69 @@ async function linkGeneratorFirebase() {
   return linkGeneratorFirebasePromise;
 }
 
+function nyxGlobalAppName(value) {
+  return String(value || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 48);
+}
+
+function nyxGlobalAppUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw || raw.length > 2048 || /^\/\//.test(raw)) return "";
+  if (/^\/(?!\/)[^\s]*$/.test(raw)) return raw;
+  if (/^nyx:\/\/[a-z0-9][a-z0-9/_-]*$/i.test(raw)) return raw;
+  try {
+    const parsed = new URL(raw);
+    if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password) return "";
+    return parsed.href;
+  } catch {
+    return "";
+  }
+}
+
+function nyxGlobalAppIcon(value, url = "") {
+  const explicit = String(value || "").trim().toLowerCase();
+  if (/^[a-z0-9][a-z0-9.-]{0,79}$/.test(explicit)) return explicit;
+  if (/^nyx:\/\/ai$/i.test(url)) return "nyx-ai";
+  if (/^\/(?:apps\/chat|assets\/games)(?:\/|$)/i.test(url)) return /chat/i.test(url) ? "nyx-chat" : "games";
+  if (/^\/apps\/link-checker(?:\/|$)/i.test(url)) return "link-checker";
+  if (/^\/apps\/link-generator(?:\/|$)/i.test(url)) return "link-generator";
+  try {
+    return new URL(url).hostname.replace(/^www\./, "").toLowerCase().slice(0, 80) || "apps";
+  } catch {
+    return "apps";
+  }
+}
+
+function nyxGlobalAppId(value, name = "", url = "") {
+  const source = String(value || name || "app").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 48) || "app";
+  if (/^[a-z0-9][a-z0-9-]{1,63}$/.test(String(value || ""))) return String(value).toLowerCase();
+  const suffix = createHash("sha256").update(`${name}\n${url}`).digest("hex").slice(0, 8);
+  return `${source}-${suffix}`.slice(0, 63).replace(/-+$/g, "");
+}
+
+function nyxNormalizeGlobalApp(value, { requireName = false } = {}) {
+  const name = nyxGlobalAppName(value?.name);
+  const url = nyxGlobalAppUrl(value?.url);
+  if ((requireName && name.length < 2) || !name || !url) return null;
+  const id = nyxGlobalAppId(value?.id, name, url);
+  return { id, icon: nyxGlobalAppIcon(value?.icon, url), name, url };
+}
+
+function nyxDefaultGlobalAppsPayload() {
+  return nyxDefaultGlobalApps.map(app => ({ ...app }));
+}
+
+function nyxGlobalAppsFromSnapshot(snapshot) {
+  if (!snapshot?.exists) return nyxDefaultGlobalAppsPayload();
+  const stored = snapshot.data()?.apps;
+  if (!Array.isArray(stored)) return nyxDefaultGlobalAppsPayload();
+  return stored.slice(0, nyxGlobalAppsLimit).map(app => nyxNormalizeGlobalApp(app)).filter(Boolean);
+}
+
+async function nyxGlobalApps(firebase) {
+  const reference = firebase.firestore.collection(nyxGlobalAppsCollection).doc(nyxGlobalAppsDocument);
+  return nyxGlobalAppsFromSnapshot(await reference.get());
+}
+
 function secretMatches(actual, expected) {
   const left = createHash("sha256").update(String(actual || "")).digest();
   const right = createHash("sha256").update(String(expected || "")).digest();
@@ -3498,7 +3611,7 @@ async function ownerDashboardActor(req, requiredPermission = "dashboard:view") {
 async function nyxFounderOwnerActor(req) {
   const context = await ownerDashboardActor(req, "dashboard:view");
   if (context.actor.role !== "owner" || context.actor.uid !== context.ownerUid) {
-    const error = new Error("Only the configured Nyx Owner can manage custom roles.");
+    const error = new Error("Only the configured Nyx Owner can manage this area.");
     error.status = 403;
     throw error;
   }
@@ -4728,737 +4841,6 @@ function sameOriginRequest(req) {
     return false;
   }
 }
-
-function nyxMediaProviderConfigured(provider) {
-  if (provider === "soundcloud") {
-    return Boolean(
-      String(process.env.NYX_SOUNDCLOUD_CLIENT_ID || "").trim() &&
-      String(process.env.NYX_SOUNDCLOUD_CLIENT_SECRET || "").trim()
-    );
-  }
-  if (provider === "meting") return true;
-  return false;
-}
-
-function nyxMediaSearchRateState(clientId, now = Date.now()) {
-  for (const [key, state] of nyxMediaSearchAttempts) {
-    if (now - state.windowStarted > nyxMediaSearchWindowMs) nyxMediaSearchAttempts.delete(key);
-  }
-  let state = nyxMediaSearchAttempts.get(clientId);
-  if (!state || now - state.windowStarted > nyxMediaSearchWindowMs) {
-    state = { attempts: 0, windowStarted: now };
-    nyxMediaSearchAttempts.set(clientId, state);
-  }
-  return state;
-}
-
-function nyxMediaCachedSearch(key) {
-  const cached = nyxMediaSearchCache.get(key);
-  if (!cached) return null;
-  if (cached.expiresAt <= Date.now()) {
-    nyxMediaSearchCache.delete(key);
-    return null;
-  }
-  nyxMediaSearchCache.delete(key);
-  nyxMediaSearchCache.set(key, cached);
-  return cached.results;
-}
-
-function nyxMediaCacheSearch(key, results) {
-  nyxMediaSearchCache.delete(key);
-  nyxMediaSearchCache.set(key, { expiresAt: Date.now() + nyxMediaSearchCacheTtlMs, results });
-  while (nyxMediaSearchCache.size > nyxMediaSearchCacheLimit) {
-    const oldest = nyxMediaSearchCache.keys().next().value;
-    nyxMediaSearchCache.delete(oldest);
-  }
-}
-
-async function nyxMediaFetchJson(url, options = {}, timeoutMs = 8_000) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch(url, { ...options, signal: controller.signal });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      const message = String(payload?.error?.message || payload?.message || payload?.error || "The media provider rejected the request.").slice(0, 240);
-      const error = new Error(message);
-      error.status = response.status;
-      throw error;
-    }
-    return payload;
-  } catch (error) {
-    if (error?.name === "AbortError") {
-      const timeoutError = new Error("The media provider timed out. Try again shortly.");
-      timeoutError.status = 504;
-      throw timeoutError;
-    }
-    throw error;
-  } finally {
-    if (opusReservation && !opusReservationSettled) {
-      try { await settleNyxAiPremiumOpusTokens(opusReservation, 0); } catch {}
-    }
-    clearTimeout(timeout);
-  }
-}
-
-async function nyxSoundCloudAccessToken(force = false) {
-  const now = Date.now();
-  if (!force && nyxSoundCloudTokenCache.accessToken && nyxSoundCloudTokenCache.expiresAt > now + 60_000) {
-    return nyxSoundCloudTokenCache.accessToken;
-  }
-  if (!force && nyxSoundCloudTokenCache.promise) return nyxSoundCloudTokenCache.promise;
-  const clientId = String(process.env.NYX_SOUNDCLOUD_CLIENT_ID || "").trim();
-  const clientSecret = String(process.env.NYX_SOUNDCLOUD_CLIENT_SECRET || "").trim();
-  if (!clientId || !clientSecret) {
-    const error = new Error("SoundCloud has not been connected to Nyxify yet.");
-    error.status = 503;
-    throw error;
-  }
-  const promise = nyxMediaFetchJson("https://secure.soundcloud.com/oauth/token", {
-    method: "POST",
-    headers: {
-      accept: "application/json; charset=utf-8",
-      authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
-      "content-type": "application/x-www-form-urlencoded"
-    },
-    body: "grant_type=client_credentials"
-  }, 10_000).then(payload => {
-    const accessToken = String(payload?.access_token || "").trim();
-    if (!accessToken) throw new Error("SoundCloud did not return an access token.");
-    const expiresIn = Math.max(300, Number(payload?.expires_in) || 3_600);
-    nyxSoundCloudTokenCache = { accessToken, expiresAt: Date.now() + expiresIn * 1_000, promise: null };
-    return accessToken;
-  });
-  nyxSoundCloudTokenCache.promise = promise;
-  try {
-    return await promise;
-  } catch (error) {
-    nyxSoundCloudTokenCache = { accessToken: "", expiresAt: 0, promise: null };
-    throw error;
-  }
-}
-
-function nyxHttpsUrl(value, allowedHosts = []) {
-  try {
-    const url = new URL(String(value || ""));
-    if (url.protocol !== "https:") return "";
-    if (allowedHosts.length && !allowedHosts.some(host => url.hostname === host || url.hostname.endsWith(`.${host}`))) return "";
-    url.username = "";
-    url.password = "";
-    return url.href;
-  } catch {
-    return "";
-  }
-}
-
-async function nyxSoundCloudSearch(query, limit, retry = true) {
-  const cacheKey = `soundcloud:${query.toLowerCase()}:${limit}`;
-  const cached = nyxMediaCachedSearch(cacheKey);
-  if (cached) return cached;
-  const token = await nyxSoundCloudAccessToken(!retry);
-  const endpoint = new URL("https://api.soundcloud.com/tracks");
-  endpoint.searchParams.set("q", query);
-  endpoint.searchParams.set("access", "playable");
-  endpoint.searchParams.set("limit", String(limit));
-  endpoint.searchParams.set("linked_partitioning", "true");
-  try {
-    const payload = await nyxMediaFetchJson(endpoint, {
-      headers: {
-        accept: "application/json; charset=utf-8",
-        authorization: `OAuth ${token}`
-      }
-    }, 10_000);
-    const collection = Array.isArray(payload) ? payload : (Array.isArray(payload?.collection) ? payload.collection : []);
-    const results = collection.flatMap(item => {
-      const id = String(item?.id || "").trim();
-      const sourceUrl = nyxHttpsUrl(item?.permalink_url, ["soundcloud.com"]);
-      if (!/^\d{1,24}$/.test(id) || !sourceUrl || String(item?.access || "playable") !== "playable") return [];
-      const thumbnail = nyxHttpsUrl(item?.artwork_url || item?.user?.avatar_url, ["sndcdn.com"]);
-      return [{
-        id: `soundcloud-${id}`,
-        providerId: id,
-        provider: "soundcloud",
-        providerLabel: "SoundCloud",
-        title: String(item?.title || "Untitled track").trim().slice(0, 180),
-        creator: String(item?.metadata_artist || item?.user?.username || "SoundCloud artist").trim().slice(0, 100),
-        thumbnail,
-        durationMs: Math.max(0, Number(item?.duration) || 0),
-        streamUrl: `/api/music/soundcloud/${encodeURIComponent(id)}`,
-        sourceUrl
-      }];
-    });
-    nyxMediaCacheSearch(cacheKey, results);
-    return results;
-  } catch (error) {
-    if (retry && Number(error?.status) === 401) {
-      nyxSoundCloudTokenCache = { accessToken: "", expiresAt: 0, promise: null };
-      return nyxSoundCloudSearch(query, limit, false);
-    }
-    throw error;
-  }
-}
-
-function nyxMetingAssetUrl(value, expectedType) {
-  try {
-    const url = new URL(String(value || ""));
-    if (url.protocol !== "https:" || url.hostname !== "api.qijieya.cn" || !/^\/meting\/?$/.test(url.pathname)) return "";
-    if (String(url.searchParams.get("type") || "").toLowerCase() !== expectedType) return "";
-    const id = String(url.searchParams.get("id") || "").trim();
-    if (!/^\d{1,24}$/.test(id)) return "";
-    const normalized = new URL("https://api.qijieya.cn/meting/");
-    normalized.searchParams.set("server", "netease");
-    normalized.searchParams.set("type", expectedType);
-    normalized.searchParams.set("id", id);
-    if (expectedType === "pic") normalized.searchParams.set("cover", "500");
-    return normalized.href;
-  } catch {
-    return "";
-  }
-}
-
-function nyxMetingAssetId(value, expectedType) {
-  const normalized = nyxMetingAssetUrl(value, expectedType);
-  if (!normalized) return "";
-  return String(new URL(normalized).searchParams.get("id") || "").trim();
-}
-
-const nyxMusicArtworkTypes = new Set(["image/avif", "image/gif", "image/jpeg", "image/png", "image/webp"]);
-const nyxMusicArtworkByteLimit = 5 * 1024 * 1024;
-
-function nyxMusicAssetUrl(value) {
-  try {
-    const url = new URL(String(value || ""));
-    const trustedHost = url.hostname === "api.qijieya.cn" || url.hostname === "music.126.net" || url.hostname.endsWith(".music.126.net");
-    if (url.protocol !== "https:" || url.username || url.password || (url.port && url.port !== "443") || !trustedHost) return null;
-    url.hash = "";
-    return url;
-  } catch {
-    return null;
-  }
-}
-
-function nyxCacheMetingAssetResolution(key, value) {
-  nyxMetingAssetResolutionCache.delete(key);
-  nyxMetingAssetResolutionCache.set(key, value);
-  while (nyxMetingAssetResolutionCache.size > nyxMetingAssetResolutionCacheLimit) {
-    nyxMetingAssetResolutionCache.delete(nyxMetingAssetResolutionCache.keys().next().value);
-  }
-}
-
-async function nyxResolveMetingAsset(assetId, type) {
-  const key = `${type}:${assetId}`;
-  const now = Date.now();
-  const cached = nyxMetingAssetResolutionCache.get(key);
-  if (cached?.url && cached.expiresAt > now) {
-    nyxCacheMetingAssetResolution(key, cached);
-    return cached.url;
-  }
-  if (cached?.promise) return cached.promise;
-  const initial = new URL("https://api.qijieya.cn/meting/");
-  initial.searchParams.set("server", "netease");
-  initial.searchParams.set("type", type);
-  initial.searchParams.set("id", assetId);
-  if (type === "pic") initial.searchParams.set("cover", "500");
-  const promise = (async () => {
-    const upstream = await fetch(initial, {
-      redirect: "manual",
-      headers: {
-        accept: type === "pic" ? "image/avif,image/webp,image/png,image/jpeg,image/gif" : "audio/mpeg,audio/mp4,audio/*;q=0.9,*/*;q=0.1",
-        "user-agent": "nyx/1.0"
-      },
-      signal: AbortSignal.timeout(8_000)
-    });
-    const location = upstream.headers.get("location");
-    upstream.body?.cancel().catch(() => {});
-    if (upstream.status < 300 || upstream.status >= 400 || !location) {
-      throw new Error("The music provider did not return a media location.");
-    }
-    const url = nyxMusicAssetUrl(new URL(location, initial).href);
-    if (!url || url.hostname === "api.qijieya.cn") {
-      throw new Error("The music provider returned an invalid media location.");
-    }
-    nyxCacheMetingAssetResolution(key, { url, expiresAt: Date.now() + nyxMetingAssetResolutionTtlMs, promise: null });
-    return url;
-  })();
-  nyxCacheMetingAssetResolution(key, { url: "", expiresAt: 0, promise });
-  try {
-    return await promise;
-  } catch (error) {
-    if (nyxMetingAssetResolutionCache.get(key)?.promise === promise) nyxMetingAssetResolutionCache.delete(key);
-    throw error;
-  }
-}
-
-function nyxMusicAudioCandidates(value) {
-  const resolved = nyxMusicAssetUrl(value);
-  if (!resolved) return [];
-  const candidates = [];
-  for (const hostname of ["m801.music.126.net", "m804.music.126.net", resolved.hostname]) {
-    const candidate = new URL(resolved);
-    candidate.hostname = hostname;
-    if (!candidates.some(item => item.href === candidate.href)) candidates.push(candidate);
-  }
-  return candidates;
-}
-
-async function nyxFetchMetingAudio(trackId, upstreamRange, signal) {
-  const resolvedUrl = await nyxResolveMetingAsset(trackId, "url");
-  let lastError = null;
-  for (const candidateUrl of nyxMusicAudioCandidates(resolvedUrl)) {
-    if (signal.aborted) break;
-    try {
-      const candidate = await fetch(candidateUrl, {
-        method: "GET",
-        redirect: "follow",
-        signal: AbortSignal.any([signal, AbortSignal.timeout(7_000)]),
-        headers: {
-          accept: "audio/mpeg,audio/mp4,audio/*;q=0.9,*/*;q=0.1",
-          range: upstreamRange
-        }
-      });
-      const candidateSource = nyxMusicAssetUrl(candidate.url);
-      const candidateType = String(candidate.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
-      if (candidateSource && [200, 206, 416].includes(candidate.status) && (candidateType.startsWith("audio/") || candidate.status === 416)) {
-        return candidate;
-      }
-      candidate.body?.cancel().catch(() => {});
-    } catch (error) {
-      lastError = error;
-      if (signal.aborted) throw error;
-    }
-  }
-  throw lastError || new Error("The music stream is temporarily unavailable.");
-}
-
-function nyxCachedMusicAudioPrefix(trackId) {
-  const cached = nyxMusicAudioPrefixCache.get(trackId);
-  if (!cached) return null;
-  nyxMusicAudioPrefixCache.delete(trackId);
-  nyxMusicAudioPrefixCache.set(trackId, cached);
-  return cached;
-}
-
-function nyxCacheMusicAudioPrefix(trackId, prefix) {
-  const existing = nyxMusicAudioPrefixCache.get(trackId);
-  if (existing) nyxMusicAudioPrefixCacheBytes -= existing.body.length;
-  nyxMusicAudioPrefixCache.delete(trackId);
-  if (prefix.body.length > nyxMusicAudioPrefixCacheByteLimit) return;
-  nyxMusicAudioPrefixCache.set(trackId, prefix);
-  nyxMusicAudioPrefixCacheBytes += prefix.body.length;
-  while (nyxMusicAudioPrefixCacheBytes > nyxMusicAudioPrefixCacheByteLimit && nyxMusicAudioPrefixCache.size) {
-    const oldestKey = nyxMusicAudioPrefixCache.keys().next().value;
-    const oldest = nyxMusicAudioPrefixCache.get(oldestKey);
-    nyxMusicAudioPrefixCache.delete(oldestKey);
-    nyxMusicAudioPrefixCacheBytes -= oldest?.body?.length || 0;
-  }
-}
-
-async function nyxLoadMusicAudioPrefix(trackId) {
-  const cached = nyxCachedMusicAudioPrefix(trackId);
-  if (cached) return cached;
-  if (nyxMusicAudioPrefixInflight.has(trackId)) return nyxMusicAudioPrefixInflight.get(trackId);
-  const promise = (async () => {
-    const upstream = await nyxFetchMetingAudio(trackId, `bytes=0-${nyxMusicAudioPrefixSize - 1}`, AbortSignal.timeout(20_000));
-    const contentType = String(upstream.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
-    const rangeMatch = String(upstream.headers.get("content-range") || "").match(/^bytes\s+0-(\d+)\/(\d+)$/i);
-    if (upstream.status !== 206 || !contentType.startsWith("audio/") || !rangeMatch) {
-      upstream.body?.cancel().catch(() => {});
-      throw new Error("The music provider did not return a cacheable audio prefix.");
-    }
-    const reader = upstream.body?.getReader?.();
-    if (!reader) throw new Error("The music provider returned no audio body.");
-    const chunks = [];
-    let totalBytes = 0;
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      totalBytes += value.byteLength;
-      if (totalBytes > nyxMusicAudioPrefixSize) {
-        await reader.cancel();
-        throw new Error("The music provider exceeded the preview cache limit.");
-      }
-      chunks.push(Buffer.from(value));
-    }
-    if (!totalBytes) throw new Error("The music provider returned an empty audio prefix.");
-    const prefix = { body: Buffer.concat(chunks, totalBytes), contentType, totalLength: Number(rangeMatch[2]) };
-    nyxCacheMusicAudioPrefix(trackId, prefix);
-    return prefix;
-  })();
-  nyxMusicAudioPrefixInflight.set(trackId, promise);
-  try {
-    return await promise;
-  } finally {
-    if (nyxMusicAudioPrefixInflight.get(trackId) === promise) nyxMusicAudioPrefixInflight.delete(trackId);
-  }
-}
-
-function sendNyxCachedMusicAudioPrefix(req, res, prefix) {
-  if (!prefix?.body?.length || !Number.isSafeInteger(prefix.totalLength) || prefix.totalLength <= 0) return false;
-  const requestedRange = String(req.get("range") || "").trim();
-  let start = 0;
-  let end = prefix.body.length - 1;
-  if (requestedRange) {
-    const match = requestedRange.match(/^bytes=(\d+)-(\d*)$/i);
-    if (!match) return false;
-    start = Number(match[1]);
-    if (!Number.isSafeInteger(start) || start < 0 || start >= prefix.body.length) return false;
-    if (match[2]) {
-      const requestedEnd = Number(match[2]);
-      if (!Number.isSafeInteger(requestedEnd) || requestedEnd < start || requestedEnd >= prefix.body.length) return false;
-      end = requestedEnd;
-    }
-  }
-  const body = prefix.body.subarray(start, end + 1);
-  res.status(206).set({
-    "Accept-Ranges": "bytes",
-    "Content-Type": prefix.contentType,
-    "Content-Length": String(body.length),
-    "Content-Range": `bytes ${start}-${end}/${prefix.totalLength}`
-  }).send(body);
-  return true;
-}
-
-function nyxCachedMusicArtwork(assetId) {
-  const cached = nyxMusicArtworkCache.get(assetId);
-  if (!cached) return null;
-  nyxMusicArtworkCache.delete(assetId);
-  nyxMusicArtworkCache.set(assetId, cached);
-  return cached;
-}
-
-function nyxCacheMusicArtwork(assetId, artwork) {
-  const existing = nyxMusicArtworkCache.get(assetId);
-  if (existing) nyxMusicArtworkCacheBytes -= existing.body.length;
-  nyxMusicArtworkCache.delete(assetId);
-  if (artwork.body.length > nyxMusicArtworkCacheByteLimit) return;
-  nyxMusicArtworkCache.set(assetId, artwork);
-  nyxMusicArtworkCacheBytes += artwork.body.length;
-  while (nyxMusicArtworkCacheBytes > nyxMusicArtworkCacheByteLimit && nyxMusicArtworkCache.size) {
-    const oldestKey = nyxMusicArtworkCache.keys().next().value;
-    const oldest = nyxMusicArtworkCache.get(oldestKey);
-    nyxMusicArtworkCache.delete(oldestKey);
-    nyxMusicArtworkCacheBytes -= oldest?.body?.length || 0;
-  }
-}
-
-async function nyxLoadMusicArtwork(assetId) {
-  const cached = nyxCachedMusicArtwork(assetId);
-  if (cached) return cached;
-  if (nyxMusicArtworkInflight.has(assetId)) return nyxMusicArtworkInflight.get(assetId);
-  const promise = (async () => {
-    const url = await nyxResolveMetingAsset(assetId, "pic");
-    const upstream = await fetch(url, {
-      redirect: "manual",
-      headers: { accept: "image/avif,image/webp,image/png,image/jpeg,image/gif", "user-agent": "nyx/1.0" },
-      signal: AbortSignal.timeout(8_000)
-    });
-    if (!upstream.ok) {
-      upstream.body?.cancel().catch(() => {});
-      const error = new Error("The cover provider could not return this image.");
-      error.status = upstream.status;
-      throw error;
-    }
-    const upstreamContentType = String(upstream.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
-    const contentType = upstreamContentType === "image/jpg" ? "image/jpeg" : upstreamContentType;
-    const contentLength = Number(upstream.headers.get("content-length") || 0);
-    if (!nyxMusicArtworkTypes.has(contentType) || (contentLength && contentLength > nyxMusicArtworkByteLimit)) {
-      upstream.body?.cancel().catch(() => {});
-      const error = new Error("The cover provider returned an unsupported image.");
-      error.status = 415;
-      throw error;
-    }
-    const reader = upstream.body?.getReader?.();
-    if (!reader) throw new Error("The cover provider returned no image body.");
-    const chunks = [];
-    let totalBytes = 0;
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      totalBytes += value.byteLength;
-      if (totalBytes > nyxMusicArtworkByteLimit) {
-        await reader.cancel();
-        const error = new Error("The cover image is too large.");
-        error.status = 413;
-        throw error;
-      }
-      chunks.push(Buffer.from(value));
-    }
-    if (!totalBytes) throw new Error("The cover provider returned an empty image.");
-    const artwork = { body: Buffer.concat(chunks, totalBytes), contentType };
-    nyxCacheMusicArtwork(assetId, artwork);
-    return artwork;
-  })();
-  nyxMusicArtworkInflight.set(assetId, promise);
-  try {
-    return await promise;
-  } finally {
-    if (nyxMusicArtworkInflight.get(assetId) === promise) nyxMusicArtworkInflight.delete(assetId);
-  }
-}
-
-async function sendNyxMusicArtwork(res, assetId) {
-  const { body, contentType } = await nyxLoadMusicArtwork(assetId);
-  res.set({
-    "Cache-Control": "public, max-age=604800, stale-while-revalidate=2592000",
-    "Content-Type": contentType,
-    "Content-Length": String(body.length),
-    "X-Content-Type-Options": "nosniff"
-  }).send(body);
-}
-
-function primeNyxifyAssets(results, { audio = false } = {}) {
-  const tracks = Array.isArray(results) ? results.slice(0, 7) : [];
-  for (const track of tracks) {
-    const artworkId = String(track?.thumbnail || "").match(/\/api\/music\/artwork\/(\d{1,24})$/)?.[1];
-    if (artworkId) void nyxLoadMusicArtwork(artworkId).catch(() => {});
-    const trackId = String(track?.id || "").trim();
-    if (track?.provider === "meting" && /^\d{1,24}$/.test(trackId)) {
-      void nyxResolveMetingAsset(trackId, "url").catch(() => {});
-      if (audio) void nyxLoadMusicAudioPrefix(trackId).catch(() => {});
-    }
-  }
-}
-
-async function nyxifySearch(query, limit) {
-  const cacheKey = `meting:${query.toLowerCase()}:${limit}`;
-  const cached = nyxMediaCachedSearch(cacheKey);
-  if (cached) return cached;
-  const endpoint = new URL("https://api.qijieya.cn/meting/");
-  endpoint.searchParams.set("server", "netease");
-  endpoint.searchParams.set("type", "search");
-  endpoint.searchParams.set("id", query);
-  endpoint.searchParams.set("limit", String(limit));
-  const payload = await nyxMediaFetchJson(endpoint, {
-    headers: { accept: "application/json; charset=utf-8" }
-  }, 10_000);
-  const results = (Array.isArray(payload) ? payload : []).flatMap((item, index) => {
-    const upstreamStreamUrl = nyxMetingAssetUrl(item?.url, "url");
-    const thumbnailId = nyxMetingAssetId(item?.pic, "pic");
-    const thumbnail = thumbnailId ? `/api/music/artwork/${encodeURIComponent(thumbnailId)}` : "";
-    const lyricsUrl = nyxMetingAssetUrl(item?.lrc, "lrc");
-    if (!upstreamStreamUrl) return [];
-    const parsed = new URL(upstreamStreamUrl);
-    const id = String(parsed.searchParams.get("id") || "");
-    return [{
-      id,
-      provider: "meting",
-      title: String(item?.name || "Untitled track").trim().slice(0, 180),
-      creator: String(item?.artist || "Unknown artist").trim().slice(0, 100),
-      thumbnail,
-      streamUrl: `/api/music/stream/${encodeURIComponent(id)}`,
-      lyricsUrl,
-      sourceUrl: `https://music.163.com/#/song?id=${encodeURIComponent(id)}`,
-      resultIndex: index
-    }];
-  });
-  nyxMediaCacheSearch(cacheKey, results);
-  primeNyxifyAssets(results);
-  return results;
-}
-
-async function nyxifyPreferredSearch(query, limit) {
-  if (nyxMediaProviderConfigured("soundcloud")) {
-    try {
-      const results = await nyxSoundCloudSearch(query, limit);
-      if (results.length) return results;
-    } catch {
-      // Keep Nyxify useful during a temporary SoundCloud authentication or API outage.
-    }
-  }
-  return nyxifySearch(query, limit);
-}
-
-function nyxMediaSearchRequest(req, res, provider, search) {
-  res.set("Cache-Control", "no-store");
-  if (!sameOriginRequest(req)) {
-    res.status(403).json({ error: "Cross-site media searches are not allowed." });
-    return;
-  }
-  const query = String(req.query?.q || "").trim().replace(/\s+/g, " ").slice(0, 100);
-  const limit = Math.max(1, Math.min(20, Number.parseInt(req.query?.limit, 10) || 12));
-  if (query.length < 2) {
-    res.status(400).json({ error: "Enter at least two characters to search." });
-    return;
-  }
-  const rate = nyxMediaSearchRateState(`${provider}:${linkGeneratorClientId(req)}`);
-  rate.attempts += 1;
-  if (rate.attempts > nyxMediaSearchMaxAttempts) {
-    const retryAfter = Math.max(1, Math.ceil((rate.windowStarted + nyxMediaSearchWindowMs - Date.now()) / 1_000));
-    res.set("Retry-After", String(retryAfter)).status(429).json({ error: "Too many media searches. Try again shortly." });
-    return;
-  }
-  Promise.resolve(search(query, limit))
-    .then(results => res.json({ provider: results[0]?.provider || provider, query, results }))
-    .catch(error => {
-      const upstreamStatus = Number(error?.status) || 502;
-      const status = upstreamStatus === 429 ? 429 : (upstreamStatus === 503 || upstreamStatus === 504 ? upstreamStatus : 502);
-      res.status(status).json({ error: error?.message || `${provider} search is unavailable right now.` });
-    });
-}
-
-app.get("/api/nyxify/status", (_req, res) => {
-  const soundCloudConfigured = nyxMediaProviderConfigured("soundcloud");
-  res.set("Cache-Control", "no-store").json({
-    configured: true,
-    provider: soundCloudConfigured ? "soundcloud" : "meting",
-    providerLabel: soundCloudConfigured ? "SoundCloud" : "Nyx music catalog",
-    fallback: "meting"
-  });
-});
-
-app.get("/api/nyxify/search", (req, res) => nyxMediaSearchRequest(req, res, "nyxify", nyxifyPreferredSearch));
-
-app.get("/api/music/artwork/:assetId", async (req, res) => {
-  const assetId = String(req.params.assetId || "").trim();
-  if (!/^\d{1,24}$/.test(assetId)) {
-    res.status(404).end();
-    return;
-  }
-  try {
-    await sendNyxMusicArtwork(res, assetId);
-  } catch {
-    if (!res.headersSent) res.status(502).end();
-    else res.destroy();
-  }
-});
-
-app.get("/api/music/soundcloud/:trackId", async (req, res) => {
-  res.set({
-    "Cache-Control": "private, no-store",
-    "X-Content-Type-Options": "nosniff"
-  });
-  const trackId = String(req.params.trackId || "").trim();
-  if (!/^\d{1,24}$/.test(trackId) || !nyxMediaProviderConfigured("soundcloud")) {
-    res.status(404).end();
-    return;
-  }
-  const requestedRange = String(req.get("range") || "").trim();
-  if (requestedRange && !/^bytes=\d*-\d*$/i.test(requestedRange)) {
-    res.status(416).end();
-    return;
-  }
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20_000);
-  res.once("close", () => controller.abort());
-  try {
-    const token = await nyxSoundCloudAccessToken();
-    const endpoint = new URL(`https://api.soundcloud.com/tracks/${trackId}/stream`);
-    const upstream = await fetch(endpoint, {
-      method: "GET",
-      redirect: "follow",
-      signal: controller.signal,
-      headers: {
-        accept: "audio/mpeg,audio/mp4,audio/ogg,audio/*;q=0.9,*/*;q=0.1",
-        authorization: `OAuth ${token}`,
-        ...(requestedRange ? { range: requestedRange } : {})
-      }
-    });
-    clearTimeout(timeout);
-    const source = new URL(upstream.url);
-    const trustedSource = source.hostname === "api.soundcloud.com" || source.hostname === "soundcloud.com" || source.hostname.endsWith(".soundcloud.com") || source.hostname === "sndcdn.com" || source.hostname.endsWith(".sndcdn.com");
-    const contentType = String(upstream.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
-    if (!trustedSource || (!contentType.startsWith("audio/") && upstream.status !== 416) || ![200, 206, 416].includes(upstream.status)) {
-      upstream.body?.cancel().catch(() => {});
-      res.status(upstream.status === 404 ? 404 : 502).end();
-      return;
-    }
-    const headers = {
-      "Accept-Ranges": upstream.headers.get("accept-ranges") || "bytes",
-      ...(contentType ? { "Content-Type": contentType } : {}),
-      ...(upstream.headers.get("content-length") ? { "Content-Length": upstream.headers.get("content-length") } : {}),
-      ...(upstream.headers.get("content-range") ? { "Content-Range": upstream.headers.get("content-range") } : {})
-    };
-    res.status(upstream.status).set(headers);
-    if (req.method === "HEAD" || !upstream.body) {
-      upstream.body?.cancel().catch(() => {});
-      res.end();
-      return;
-    }
-    const stream = Readable.fromWeb(upstream.body);
-    stream.on("error", () => res.headersSent ? res.destroy() : res.status(502).end());
-    stream.pipe(res);
-  } catch (error) {
-    clearTimeout(timeout);
-    if (!res.headersSent) res.status(error?.name === "AbortError" ? 504 : 502).end();
-    else res.destroy();
-  }
-});
-
-app.get("/api/music/stream/:trackId", async (req, res) => {
-  res.set({
-    "Cache-Control": "private, max-age=3600",
-    "X-Content-Type-Options": "nosniff"
-  });
-  const trackId = String(req.params.trackId || "").trim();
-  if (!/^\d{1,24}$/.test(trackId)) {
-    res.status(404).end();
-    return;
-  }
-  const requestedRange = String(req.get("range") || "").trim();
-  if (requestedRange && !/^bytes=\d*-\d*$/i.test(requestedRange)) {
-    res.status(416).end();
-    return;
-  }
-  const upstreamRange = requestedRange || (req.method === "HEAD" ? "bytes=0-0" : "bytes=0-1048575");
-  if (req.method !== "HEAD") {
-    let prefix = nyxCachedMusicAudioPrefix(trackId);
-    if (!prefix && nyxMusicAudioPrefixInflight.has(trackId)) {
-      prefix = await nyxMusicAudioPrefixInflight.get(trackId).catch(() => null);
-    }
-    if (prefix && sendNyxCachedMusicAudioPrefix(req, res, prefix)) return;
-  }
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20_000);
-  res.once("close", () => controller.abort());
-  try {
-    const upstream = await nyxFetchMetingAudio(trackId, upstreamRange, controller.signal);
-    clearTimeout(timeout);
-    const source = new URL(upstream.url);
-    const trustedSource = source.hostname === "api.qijieya.cn" || source.hostname === "music.126.net" || source.hostname.endsWith(".music.126.net");
-    const contentType = String(upstream.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
-    if (!trustedSource || (!contentType.startsWith("audio/") && upstream.status !== 416)) {
-      upstream.body?.cancel().catch(() => {});
-      res.status(502).end();
-      return;
-    }
-    if (![200, 206, 416].includes(upstream.status)) {
-      upstream.body?.cancel().catch(() => {});
-      res.status(upstream.status === 404 ? 404 : 502).end();
-      return;
-    }
-    const headers = {
-      "Accept-Ranges": upstream.headers.get("accept-ranges") || "bytes",
-      ...(contentType ? { "Content-Type": contentType } : {}),
-      ...(upstream.headers.get("content-length") ? { "Content-Length": upstream.headers.get("content-length") } : {}),
-      ...(upstream.headers.get("content-range") ? { "Content-Range": upstream.headers.get("content-range") } : {})
-    };
-    if (req.method === "HEAD") {
-      const totalLength = String(upstream.headers.get("content-range") || "").match(/\/(\d+)$/)?.[1];
-      const headHeaders = { ...headers };
-      delete headHeaders["Content-Range"];
-      if (totalLength) headHeaders["Content-Length"] = totalLength;
-      res.status(200).set(headHeaders);
-      upstream.body?.cancel().catch(() => {});
-      res.end();
-      return;
-    }
-    res.status(upstream.status).set(headers);
-    if (!upstream.body) {
-      res.end();
-      return;
-    }
-    const stream = Readable.fromWeb(upstream.body);
-    stream.on("error", () => {
-      if (!res.headersSent) res.status(502).end();
-      else res.destroy();
-    });
-    stream.pipe(res);
-  } catch (error) {
-    clearTimeout(timeout);
-    if (!res.headersSent) res.status(error?.name === "AbortError" ? 504 : 502).end();
-    else res.destroy();
-  }
-});
 
 app.all(["/api/nyxcloud/status", "/api/nyxcloud/search"], (_req, res) => {
   res.set("Cache-Control", "no-store").status(410).json({ error: "NyxCloud has been retired." });
@@ -9386,6 +8768,90 @@ app.post("/api/activity/event", async (req, res) => {
   }
 });
 
+app.get("/api/apps", async (_req, res) => {
+  res.set("Cache-Control", "public, max-age=30, must-revalidate");
+  try {
+    const firebase = await linkGeneratorFirebase();
+    const apps = firebase ? await nyxGlobalApps(firebase) : nyxDefaultGlobalAppsPayload();
+    res.json({ apps });
+  } catch (error) {
+    console.warn("Global app catalog is using built-in defaults:", error?.message || error);
+    res.json({ apps: nyxDefaultGlobalAppsPayload() });
+  }
+});
+
+app.get("/api/owner-dashboard/apps", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const { firebase, actor } = await nyxFounderOwnerActor(req);
+    res.json({ apps: await nyxGlobalApps(firebase), access: nyxOwnerAccessPayload(actor) });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "The global app catalog is unavailable." });
+  }
+});
+
+app.post("/api/owner-dashboard/apps", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
+  try {
+    const { firebase, token, actor } = await nyxFounderOwnerActor(req);
+    const appRecord = nyxNormalizeGlobalApp(req.body, { requireName: true });
+    if (!appRecord) return res.status(400).json({ error: "Enter an app name and a valid HTTP, HTTPS, Nyx, or same-origin path." });
+    const reference = firebase.firestore.collection(nyxGlobalAppsCollection).doc(nyxGlobalAppsDocument);
+    const apps = await firebase.firestore.runTransaction(async transaction => {
+      const current = nyxGlobalAppsFromSnapshot(await transaction.get(reference));
+      if (current.length >= nyxGlobalAppsLimit) {
+        const error = new Error(`Nyx supports up to ${nyxGlobalAppsLimit} global apps.`);
+        error.status = 409;
+        throw error;
+      }
+      if (current.some(entry => entry.url.toLowerCase() === appRecord.url.toLowerCase())) {
+        const error = new Error("That app URL is already in the catalog.");
+        error.status = 409;
+        throw error;
+      }
+      if (current.some(entry => entry.id === appRecord.id)) {
+        appRecord.id = nyxGlobalAppId("", appRecord.name, `${appRecord.url}:${Date.now()}`);
+      }
+      const next = [...current, appRecord];
+      transaction.set(reference, { apps: next, updatedAt: new Date().toISOString(), updatedBy: token.uid }, { merge: true });
+      return next;
+    });
+    await recordNyxAuditSafe(firebase, { actorUid: token.uid, actorEmail: token.email, action: "global_app_created", details: { id: appRecord.id, name: appRecord.name, url: appRecord.url } });
+    res.status(201).json({ app: appRecord, apps, access: nyxOwnerAccessPayload(actor) });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "The app could not be added." });
+  }
+});
+
+app.delete("/api/owner-dashboard/apps/:id", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
+  const id = String(req.params.id || "").trim().toLowerCase();
+  if (!/^[a-z0-9][a-z0-9-]{1,63}$/.test(id)) return res.status(400).json({ error: "That app ID is invalid." });
+  try {
+    const { firebase, token, actor } = await nyxFounderOwnerActor(req);
+    const reference = firebase.firestore.collection(nyxGlobalAppsCollection).doc(nyxGlobalAppsDocument);
+    let removed = null;
+    const apps = await firebase.firestore.runTransaction(async transaction => {
+      const current = nyxGlobalAppsFromSnapshot(await transaction.get(reference));
+      removed = current.find(entry => entry.id === id) || null;
+      if (!removed) {
+        const error = new Error("That app is not in the catalog.");
+        error.status = 404;
+        throw error;
+      }
+      const next = current.filter(entry => entry.id !== id);
+      transaction.set(reference, { apps: next, updatedAt: new Date().toISOString(), updatedBy: token.uid }, { merge: true });
+      return next;
+    });
+    await recordNyxAuditSafe(firebase, { actorUid: token.uid, actorEmail: token.email, action: "global_app_removed", details: { id: removed.id, name: removed.name, url: removed.url } });
+    res.json({ ok: true, removed, apps, access: nyxOwnerAccessPayload(actor) });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "The app could not be removed." });
+  }
+});
+
 app.get("/api/owner-dashboard", async (req, res) => {
   res.set("Cache-Control", "no-store");
   try {
@@ -10440,6 +9906,16 @@ app.post("/api/link-generator", async (req, res) => {
     res.status(error.status || 502).json({ error: error.status ? error.message : `Bunny could not create the link: ${String(error?.message || "Unknown error")}` });
   }
 });
+
+app.get("/download/nyx-singlefile.html", (_req, res) => {
+  res.set("Cache-Control", "no-store");
+  res.download(join(staticRoot, "nyx-singlefile.html"), "Nyx-Download.html");
+});
+
+app.use("/api", (_req, res) => {
+  res.status(404).json({ error: "API route not found." });
+});
+
 app.use((error, req, res, next) => {
   if (!String(req.path || "").startsWith("/api/")) {
     next(error);
@@ -10543,20 +10019,15 @@ if (isDirectRun) {
 
   server.listen(port, "0.0.0.0", () => {
     const address = server.address();
-    console.log("nyx running with Ultraviolet and Scramjet:");
-    console.log(`  http://localhost:${address.port}`);
-    console.log(`  http://${hostname()}:${address.port}`);
-    console.log(`  wisp transport: ${externalWispUrl || "same-host /wisp/"}`);
-    console.log("  chat realtime: same-host /socket.io/");
-    console.log(`  static root: ${staticRoot}`);
-    if (!externalWispUrl) console.log(embeddedWispAllowedOrigins.length ? `  allowed Wisp origins: ${embeddedWispAllowedOrigins.join(", ")}` : "  warning: embedded Wisp accepts every browser origin");
+    if (typeof process.send === "function" && address && typeof address === "object") {
+      process.send({ type: "nyx:listening", port: address.port });
+    }
   });
 
   let shuttingDown = false;
   function shutdown(signal) {
     if (shuttingDown) return;
     shuttingDown = true;
-    console.log(`${signal} received; closing nyx server.`);
     chatSocketServer.disconnectSockets(true);
     server.close(() => process.exit(0));
     setTimeout(() => process.exit(1), 10_000).unref();

@@ -78,16 +78,22 @@
 <script src="startup.js?v=20260726-chromebook-layout-1"></script>
   <link rel="stylesheet" href="styles.css?v=20260818-balanced-themes-v113">
 <link rel="stylesheet" href="css/public-profile-polish.css?v=20260731-v1">
-<link rel="stylesheet" href="css/owner-dashboard-polish.css?v=20260818-account-notices-v6">
+<link rel="stylesheet" href="css/owner-dashboard-polish.css?v=20260820-global-apps-v8">
 <link id="nyxBrowserMicrointeractionsStyles" rel="stylesheet" href="css/browser-microinteractions.css?v=20260818-original-home-v26">
 <link rel="stylesheet" href="css/watch.css?v=20260806-watch-layout-v1">
 <link rel="stylesheet" href="css/compact-laptop.css?v=20260808-short-viewport-v1">
-<link id="nyxHomepageMinimalStyles" rel="stylesheet" href="css/homepage-minimal.css?v=20260818-neutral-toolbar-v92">
+<link id="nyxHomepageMinimalStyles" rel="stylesheet" href="css/homepage-minimal.css?v=20260820-themed-constellations-v104">
 <script>
 (() => {
   let original=false;
+  let browserShell=true;
   try{original=localStorage.getItem('nyx.homeDesign')==='original'}catch{}
+  try{
+    const saved=localStorage.getItem('nyx.browserShellMode');
+    browserShell=saved===null ? true : JSON.parse(saved)!==false;
+  }catch{}
   document.documentElement.dataset.nyxHomeDesign=original ? 'original' : 'redesigned';
+  document.documentElement.classList.toggle('nyx-browser-shell-expected',browserShell);
   if(original){
     document.getElementById('nyxBrowserMicrointeractionsStyles').disabled=true;
     document.getElementById('nyxHomepageMinimalStyles').disabled=true;
@@ -95,6 +101,9 @@
 })();
 </script>
 <style>
+/* Do not paint the legacy Windows desktop while Browser mode is restoring.
+   The startup cover remains visible until the browser shell is mounted. */
+html.nyx-browser-shell-expected body:not(.browser-shell)>:is(#customBgImage,#nyxWaveBg,#defaultVantaBg,#rubyVantaBg,#whiteVantaBg,#emeraldVantaBg,#sakuraVantaBg,#visualEffects,.top-os,#desktop,#weatherRestore,.dock){visibility:hidden!important}
 html.nyx-studyhub-starting,html.nyx-studyhub-starting body{overflow:hidden!important}
 #nyxStudyHubStartup{position:fixed;z-index:2147483647;inset:0;display:block;width:100vw;height:100dvh;border:0;background:#f2eee4;opacity:1;pointer-events:auto!important;transition:opacity .35s ease;isolation:isolate}
 #nyxStudyHubStartup.is-leaving{opacity:0;pointer-events:none}
@@ -427,8 +436,8 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
 <script src="./assets/vendor/vanta.clouds.min.js"></script>
 <script src="/runtime-config.js"></script>
 <script src="js/loading-screen.js?v=20260730-studyhub-input-v11"></script>
-<script src="js/pwa-install.js?v=20260803-singlefile-current-v5"></script>
-<script src="js/owner-dashboard.js?v=20260818-account-notices-v23"></script>
-<script src="script.js?v=20260818-ai-settings-v89"></script>
+<script src="js/pwa-install.js?v=20260820-singlefile-download-v8"></script>
+<script src="js/owner-dashboard.js?v=20260820-global-apps-v25"></script>
+<script src="script.js?v=20260820-themed-constellations-v109"></script>
 </body>
 </html>

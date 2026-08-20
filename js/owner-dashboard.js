@@ -218,7 +218,8 @@
       userCheck: '<path d="M15 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M8 11a4 4 0 1 0 0-8M16 11l2 2 4-4"/>',
       ban: '<circle cx="12" cy="12" r="9"/><path d="m6 6 12 12"/>',
       trash: '<path d="M4 7h16M9 7V4h6v3M18 7l-1 14H7L6 7M10 11v6M14 11v6"/>',
-      save: '<path d="M5 3h12l2 2v16H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/>'
+      save: '<path d="M5 3h12l2 2v16H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/>',
+      apps: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>'
     };
     return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name] || ""}</svg>`;
   }
@@ -247,7 +248,8 @@
       customRoles: [],
       customRolePlacements: [],
       customRolePermissions: [],
-      customRoleEditorId: ""
+      customRoleEditorId: "",
+      globalApps: []
     };
     const overlay = document.createElement("section");
     overlay.className = "nyx-owner-dashboard-overlay";
@@ -271,6 +273,7 @@
               <div class="nyx-owner-quick-actions">
                 <button type="button" data-owner-online-only>${dashboardIcon("online")}Online users</button>
                 <button type="button" data-owner-export>${dashboardIcon("download")}Export page</button>
+                <button type="button" data-owner-global-apps hidden>${dashboardIcon("apps")}Manage apps</button>
                 <button type="button" data-owner-custom-roles hidden>${dashboardIcon("users")}Custom roles</button>
                 <button type="button" data-owner-ip-bans hidden>${dashboardIcon("shield")}IP bans</button>
               </div>
@@ -510,6 +513,8 @@
         if (ipBansButton) ipBansButton.hidden = !state.access?.permissions?.includes("network:bans");
         const customRolesButton = overlay.querySelector("[data-owner-custom-roles]");
         if (customRolesButton) customRolesButton.hidden = !state.access?.founder;
+        const globalAppsButton = overlay.querySelector("[data-owner-global-apps]");
+        if (globalAppsButton) globalAppsButton.hidden = !state.access?.founder;
         const roleFilter = overlay.querySelector('[name="role"]');
         if (roleFilter) {
           roleFilter.querySelectorAll("option[data-custom-role]").forEach(option => option.remove());
@@ -687,6 +692,51 @@
         void hydrateOwnerProfileMedia(drawer);
       } catch (error) {
         drawer.innerHTML = `<div class="nyx-owner-error"><strong>User details could not load</strong><span>${esc(error.message)}</span><button type="button" data-owner-drawer-close>Close</button></div>`;
+      }
+    }
+
+    function publishGlobalApps() {
+      window.dispatchEvent(new CustomEvent("nyx:global-apps-changed", { detail: { apps: state.globalApps } }));
+    }
+
+    function renderGlobalApps() {
+      drawer.innerHTML = `<header class="nyx-owner-global-app-header"><div><span>${dashboardIcon("apps")}</span><div><h2>Apps for everyone</h2><p>Add or remove apps from every user's Apps page.</p></div></div><button type="button" data-owner-drawer-close aria-label="Close global apps">${dashboardIcon("close")}</button></header>
+        <div class="nyx-owner-drawer-scroll nyx-owner-global-app-drawer">
+          <section class="nyx-owner-detail-section"><h3>Add an app</h3><form class="nyx-owner-global-app-form" data-owner-global-app-form><label>Name<input name="name" minlength="2" maxlength="48" autocomplete="off" required placeholder="Example app"></label><label>URL or Nyx path<input name="url" maxlength="2048" autocomplete="off" spellcheck="false" required placeholder="https://example.com/ or /apps/example/"></label><div class="nyx-owner-detail-actions"><button type="submit">${dashboardIcon("apps")}<span>Add for everyone</span></button></div></form></section>
+          <section class="nyx-owner-detail-section"><div class="nyx-owner-global-app-heading"><div><h3>Published apps</h3><p class="nyx-owner-action-note">Changes appear in open Nyx sessions within one minute.</p></div><span>${state.globalApps.length}</span></div>${state.globalApps.length ? `<div class="nyx-owner-global-app-list">${state.globalApps.map(app => `<article><span class="nyx-owner-global-app-icon">${dashboardIcon("apps")}</span><div><strong>${esc(app.name)}</strong><small>${esc(app.url)}</small></div><button class="danger" type="button" data-owner-global-app-delete="${esc(app.id)}" aria-label="Remove ${esc(app.name)}">${dashboardIcon("trash")}Remove</button></article>`).join("")}</div>` : '<p class="nyx-owner-action-note">No apps are currently published.</p>'}</section>
+        </div>`;
+    }
+
+    async function openGlobalApps() {
+      drawer.hidden = false;
+      drawer.classList.remove("show");
+      drawer.innerHTML = '<div class="nyx-owner-drawer-loading"><i></i><i></i><i></i></div>';
+      requestAnimationFrame(() => drawer.classList.add("show"));
+      state.selectedUser = null;
+      state.selectedCapabilities = null;
+      try {
+        const data = await api("/api/owner-dashboard/apps");
+        state.globalApps = Array.isArray(data.apps) ? data.apps : [];
+        state.access = data.access || state.access;
+        renderGlobalApps();
+      } catch (error) {
+        drawer.innerHTML = `<div class="nyx-owner-error"><strong>Apps could not load</strong><span>${esc(error.message)}</span><button type="button" data-owner-drawer-close>Close</button></div>`;
+      }
+    }
+
+    async function deleteGlobalApp(id) {
+      const app = state.globalApps.find(entry => entry.id === id);
+      if (!app) return;
+      const confirmed = await confirmAction({ title: "Remove this app for everyone?", message: `${app.name} will disappear from the Nyx app catalog for every user.`, confirmLabel: "Remove app", danger: true });
+      if (!confirmed) return;
+      try {
+        const result = await api(`/api/owner-dashboard/apps/${encodeURIComponent(id)}`, { method: "DELETE" });
+        state.globalApps = Array.isArray(result.apps) ? result.apps : state.globalApps.filter(entry => entry.id !== id);
+        renderGlobalApps();
+        publishGlobalApps();
+        notify("App removed for everyone.");
+      } catch (error) {
+        notify(error.message || "The app could not be removed.", "error");
       }
     }
 
@@ -933,6 +983,7 @@
       if (event.target === overlay || event.target.closest("[data-owner-close]")) return destroy();
       if (event.target.closest("[data-owner-refresh]")) return void load();
       if (event.target.closest("[data-owner-export]")) return exportCurrentPage();
+      if (event.target.closest("[data-owner-global-apps]")) return void openGlobalApps();
       if (event.target.closest("[data-owner-custom-roles]")) return void openCustomRoles();
       if (event.target.closest("[data-owner-ip-bans]")) return void openIpBans();
       if (event.target.closest("[data-owner-custom-role-new]")) {
@@ -955,6 +1006,8 @@
       }
       const customRoleDelete = event.target.closest("[data-owner-custom-role-delete]")?.dataset.ownerCustomRoleDelete;
       if (customRoleDelete) return void deleteCustomRole(customRoleDelete);
+      const globalAppDelete = event.target.closest("[data-owner-global-app-delete]")?.dataset.ownerGlobalAppDelete;
+      if (globalAppDelete) return void deleteGlobalApp(globalAppDelete);
       const unbanId = event.target.closest("[data-owner-unban]")?.dataset.ownerUnban;
       if (unbanId) return void removeIpBan(unbanId);
       const segment = event.target.closest("[data-owner-segment]")?.dataset.ownerSegment;
@@ -1088,6 +1141,26 @@
     }
 
     function onSubmit(event) {
+      const globalAppForm = event.target.closest("[data-owner-global-app-form]");
+      if (globalAppForm) {
+        event.preventDefault();
+        if (!globalAppForm.reportValidity()) return;
+        const submit = globalAppForm.querySelector('[type="submit"]');
+        submit.disabled = true;
+        void (async () => {
+          try {
+            const values = new FormData(globalAppForm);
+            const result = await api("/api/owner-dashboard/apps", { method: "POST", body: JSON.stringify({ name: values.get("name"), url: values.get("url") }) });
+            state.globalApps = Array.isArray(result.apps) ? result.apps : [...state.globalApps, result.app];
+            renderGlobalApps();
+            publishGlobalApps();
+            notify("App added for everyone.");
+          } catch (error) {
+            notify(error.message || "The app could not be added.", "error");
+          }
+        })().finally(() => { if (submit.isConnected) submit.disabled = false; });
+        return;
+      }
       const customRoleForm = event.target.closest("[data-owner-custom-role-create], [data-owner-custom-role-update]");
       if (customRoleForm) {
         event.preventDefault();

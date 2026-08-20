@@ -27,7 +27,13 @@
   const qsa = (sel, root=document) => Array.from(root.querySelectorAll(sel));
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const store = {get(k,d){try{return JSON.parse(localStorage.getItem(k)) ?? d}catch{return d}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}queueNyxCloudPreferencesSave?.()}, text(k,d=''){try{return localStorage.getItem(k) ?? d}catch{return d}}, setText(k,v){try{localStorage.setItem(k,String(v))}catch{}queueNyxCloudPreferencesSave?.()}};
-  let nyxChatAudioContext=null;
+  try{
+    const savedShortcuts=JSON.parse(localStorage.getItem('nyx.homeShortcuts')||'[]');
+    if(Array.isArray(savedShortcuts)){
+      const activeShortcuts=savedShortcuts.filter(item=>String(item?.url||'').trim().replace(/\/+$/,'').toLowerCase()!=='/apps/nyxify'&&String(item?.domain||'').trim().toLowerCase()!=='nyxify');
+      if(activeShortcuts.length!==savedShortcuts.length)localStorage.setItem('nyx.homeShortcuts',JSON.stringify(activeShortcuts));
+    }
+  }catch{}
   let nyxChatAudioUnlocked=false;
   function unlockNyxChatNotificationSound(){if(nyxChatAudioUnlocked)return;try{const Context=window.AudioContext||window.webkitAudioContext;if(!Context)return;nyxChatAudioContext=nyxChatAudioContext||new Context();void nyxChatAudioContext.resume();nyxChatAudioUnlocked=true}catch{}}
   function nyxChatNotificationTones(kind){return kind==='mention'?[[0,780,.4,.18],[.09,980,.45,.18],[.18,1180,.5,.2]]:kind==='dm'?[[0,660,.34,.17],[.11,880,.38,.18]]:[[0,620,.3,.16],[.11,760,.34,.17]]}
@@ -1792,63 +1798,87 @@
   function popupProtectionForUrl(url){
     return popupProtectionEnabled() || requiresContainedPopupNavigation(url);
   }
-  const aetherInjectedOverlaySignature=/(?:reminder\s*\(\s*\d+\s*\)[\s\S]{0,180}download\s+pending)|(?:download\s+pending[\s\S]{0,180}finish\s+it\s+now)|(?:finish\s+it\s+now[\s\S]{0,180}(?:close|continue))|(?:\[\s*\d+\s*\]\s*update\s*:\s*opera\s+browser[\s\S]{0,180}install)|(?:install\s+opera\s+browser[\s\S]{0,180}install\s+for\s+free)/i;
-  function isAetherInjectedOverlay(node){
+  const browserAdResourceSignature=/(?:^|[./_-])(?:adservice|adserver|adnxs|adsrvr|adsterra|advertising|amazon-adsystem|criteo|doubleclick|exoclick|googlesyndication|googleadservices|mgid|onclickads|openx|outbrain|pagead|popads|propellerads|pubmatic|revcontent|rubiconproject|taboola|trafficjunky)(?:[./?&=_-]|$)/i;
+  const browserAdElementSelector='iframe[src*="doubleclick"],iframe[src*="googlesyndication"],iframe[src*="googleadservices"],iframe[src*="adservice"],iframe[src*="adnxs"],iframe[src*="taboola"],iframe[src*="outbrain"],script[src*="doubleclick"],script[src*="googlesyndication"],script[src*="googleadservices"],script[src*="adservice"],.adsbygoogle,[data-ad-client],[data-ad-slot],[id^="google_ads"],[id*="google_ads"],[class~="ad-container"],[class~="ad-banner"],[class~="advertisement"]';
+  const browserInjectedAdSignature=/(?:reminder\s*\(\s*\d+\s*\)[\s\S]{0,180}download\s+pending)|(?:download\s+pending[\s\S]{0,180}finish\s+it\s+now)|(?:finish\s+it\s+now[\s\S]{0,180}(?:close|continue))|(?:\[\s*\d+\s*\]\s*update\s*:\s*opera\s+browser[\s\S]{0,180}install)|(?:install\s+(?:opera\s+browser|browser\s+update|extension)[\s\S]{0,180}(?:install\s+for\s+free|continue|download))|(?:sponsored\s+(?:download|update)[\s\S]{0,120}(?:install|continue))/i;
+  const knownNyxOverlaySelector='.nyx-prompt-shade,.nyx-modal-shade,.setup-screen,.setup-panel,.lock-screen,.nyx-browser-tab-sidebar,.nyx-dashboard-menu,.nyx-account-menu,.context-menu,[data-nyx-owned-overlay]';
+  function isBrowserInjectedOverlay(node){
     if(!(node instanceof Element) || node===document.body || node===document.documentElement) return false;
-    if(node.matches('#desktop,.top-os,.window,.browser-window,.browser-body,.browser-home,.nyx-prompt-shade,.nyx-modal-shade')) return false;
+    if(node.matches('#desktop,.top-os,.window,.browser-window,.browser-body,.browser-home,#nyxStudyHubStartup,#nyxWaveBg,#setupLaunchScreen,.nyx-prompt-shade,.nyx-modal-shade')) return false;
+    if(node.closest(knownNyxOverlaySelector)) return false;
+    const frames=node.matches('iframe') ? [node] : [...node.querySelectorAll('iframe')];
+    if(frames.some(frame=>!frame.matches('#nyxStudyHubStartup,#nyxWaveBg,.browser-body > iframe.view,iframe[title="nyx"]'))) return true;
+    const resource=String(node.getAttribute('src') || node.getAttribute('href') || node.getAttribute('data-src') || '');
+    if(resource && browserAdResourceSignature.test(resource)) return true;
     const text=String(node.innerText || node.textContent || '').replace(/\s+/g,' ').trim().slice(0,1200);
-    return aetherInjectedOverlaySignature.test(text);
+    if(browserInjectedAdSignature.test(text)) return true;
+    try{
+      const style=getComputedStyle(node);
+      const rect=node.getBoundingClientRect();
+      const viewportArea=Math.max(1,innerWidth*innerHeight);
+      const area=Math.max(0,rect.width)*Math.max(0,rect.height);
+      const zIndex=Number.parseInt(style.zIndex,10);
+      const layered=style.position==='fixed' || style.position==='sticky' || (style.position==='absolute' && Number.isFinite(zIndex) && zIndex>=1000);
+      const large=area>=viewportArea*.12 || (rect.width>=innerWidth*.72 && rect.height>=72);
+      const interactive=!!node.querySelector('a[href],button,form,iframe,img[src],video') || node.matches('a[href],button,form,iframe,img[src],video');
+      return layered && large && interactive && (!Number.isFinite(zIndex) || zIndex>=100);
+    }catch{return false}
   }
-  function aetherInjectedOverlayRoot(node){
+  function browserInjectedOverlayRoot(node){
     let root=node instanceof Element ? node : node?.parentElement;
     if(!root) return null;
-    let candidate=isAetherInjectedOverlay(root) ? root : null;
+    let candidate=isBrowserInjectedOverlay(root) ? root : null;
     for(let depth=0;root?.parentElement && depth<8;depth+=1){
       const parent=root.parentElement;
       if(parent===document.body || parent===document.documentElement) break;
       if(parent.matches('#desktop,.top-os,.window,.browser-window,.browser-body,.browser-home')) break;
       root=parent;
-      if(isAetherInjectedOverlay(root)) candidate=root;
+      if(isBrowserInjectedOverlay(root)) candidate=root;
     }
     return candidate;
   }
-  function cleanupAetherInjectedOverlays(root=document){
+  function cleanupBrowserInjectedAds(root=document){
     const candidates=[];
     if(root instanceof Element) candidates.push(root);
     root.querySelectorAll?.('body > *, #desktop > *, .browser-window > *')?.forEach(node=>candidates.push(node));
     const removed=new Set();
     for(const candidate of candidates){
-      const overlay=aetherInjectedOverlayRoot(candidate);
+      const overlay=browserInjectedOverlayRoot(candidate);
       if(!overlay || removed.has(overlay) || !overlay.isConnected) continue;
       removed.add(overlay);
       overlay.remove();
-      console.info('Nyx removed an Aether ad overlay that escaped its browser tab.');
+      console.info('Nyx removed an ad overlay that escaped its browser tab.');
     }
     return removed.size;
   }
-  let aetherOverlayQuarantineInstalled=false;
-  let aetherOverlayQuarantineUntil=0;
-  function installAetherOverlayQuarantine(){
-    if(aetherOverlayQuarantineInstalled || !document.documentElement) return;
-    aetherOverlayQuarantineInstalled=true;
+  let browserOverlayQuarantineInstalled=false;
+  let browserOverlayQuarantineUntil=0;
+  function installBrowserOverlayQuarantine(){
+    if(browserOverlayQuarantineInstalled || !document.documentElement) return;
+    browserOverlayQuarantineInstalled=true;
+    const inspectRoot=root=>{
+      const overlay=browserInjectedOverlayRoot(root);
+      if(overlay?.isConnected){
+        overlay.remove();
+        console.info('Nyx blocked an ad overlay from leaving its browser tab.');
+      }
+    };
     const inspect=records=>{
-      if(!document.querySelector('iframe[data-nyx-aether-contained="true"]') && Date.now()>aetherOverlayQuarantineUntil) return;
+      if(!popupProtectionEnabled()) return;
+      if(!document.querySelector('iframe[data-nyx-browser-contained="true"]') && Date.now()>browserOverlayQuarantineUntil) return;
       for(const record of records){
-        const roots=[];
-        if(record.type==='childList') record.addedNodes.forEach(node=>roots.push(node));
-        for(const root of roots){
-          const overlay=aetherInjectedOverlayRoot(root);
-          if(overlay?.isConnected){
-            overlay.remove();
-            console.info('Nyx blocked an Aether ad overlay from leaving its browser tab.');
-          }
-        }
+        if(record.type!=='childList') continue;
+        record.addedNodes.forEach(root=>{
+          inspectRoot(root);
+          setTimeout(()=>inspectRoot(root),0);
+          setTimeout(()=>inspectRoot(root),80);
+        });
       }
     };
     new MutationObserver(inspect).observe(document.documentElement,{childList:true,subtree:true});
-    cleanupAetherInjectedOverlays();
+    cleanupBrowserInjectedAds();
   }
-  installAetherOverlayQuarantine();
+  installBrowserOverlayQuarantine();
   function isAnimexUrl(url){
     try{
       const host=new URL(normalize(url),location.href).hostname.replace(/^www\./,'').toLowerCase();
@@ -2080,7 +2110,6 @@
         if(nyxEarlyConsoleBuffering){
           const buffered=nyxEarlyConsoleEntries.splice(0);
           nyxEarlyConsoleBuffering=false;
-          console.info(`[Nyx] Developer Console connected. Replaying ${buffered.length} earlier message${buffered.length===1?'':'s'}.`);
           buffered.forEach(item=>{
             const method=typeof console[item.level]==='function' ? item.level : 'log';
             console[method](`[${item.time.toLocaleTimeString()}]`,...item.args);
@@ -2321,8 +2350,9 @@
     'docs.google.com':svgIcon(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#1a73e8"/><path d="M22 12h17l9 9v31H22z" fill="#fff"/><path d="M39 12v10h9" fill="#d2e3fc"/><path d="M27 31h16M27 37h16M27 43h12" stroke="#1a73e8" stroke-width="3" stroke-linecap="round"/></svg>`),
     'duck.ai':localIcon('duck-ai-logo.png'),
     'nyx-ai':localIcon('shortcut-nyx-ai.svg?v=6'),
-    'nyxify':localIcon('shortcut-spotify.svg?v=1'),
     'aether.cx':localIcon('theatre-masks.svg?v=1'),
+    'icefy.top':localIcon('theatre-masks.svg?v=1'),
+    'fmhy.net':localIcon('theatre-masks.svg?v=1'),
     'nyx-chat':localIcon('chat.svg?v=2'),
     'link-checker':localIcon('link-checker.svg?v=2'),
     'link-generator':localIcon('link-generator.svg'),
@@ -2558,6 +2588,96 @@
       };
       defineNavigatorValue("userAgentData", desktopData);
     }
+  })();`;
+  const browserAdBlockRuntimeSource=`(() => {
+    if (typeof window === "undefined" || window.__nyxBrowserAdBlock) return;
+    window.__nyxBrowserAdBlock = true;
+    const blockedResource=${browserAdResourceSignature};
+    const adSelector=${JSON.stringify(browserAdElementSelector)};
+    const protectionEnabled=()=>{
+      try {
+        const value=localStorage.getItem("nyx.popupProtection");
+        return value==null || JSON.parse(value)!==false;
+      } catch { return true; }
+    };
+    const blocked=value=>protectionEnabled() && blockedResource.test(String(value || ""));
+    const neutralValue=node=>String(node?.tagName || "").toUpperCase()==="IMG"
+      ? "data:image/gif;base64,R0lGODlhAQABAAAAACw="
+      : "about:blank";
+    const resourceValue=node=>node?.src || node?.href || node?.getAttribute?.("src") || node?.getAttribute?.("href") || node?.getAttribute?.("data-src") || "";
+    const removeAd=node=>{
+      try {
+        if (!protectionEnabled() || !node || node.nodeType!==1) return false;
+        if (node.matches?.(adSelector) || blocked(resourceValue(node))) {
+          node.remove?.();
+          return true;
+        }
+      } catch {}
+      return false;
+    };
+    const clean=root=>{
+      try {
+        if (!protectionEnabled()) return;
+        if (root?.nodeType===1) removeAd(root);
+        root?.querySelectorAll?.(adSelector)?.forEach(removeAd);
+        root?.querySelectorAll?.("script[src],iframe[src],img[src],link[href]")?.forEach(node=>{if(blocked(resourceValue(node)))removeAd(node)});
+      } catch {}
+    };
+    try {
+      const style=document.createElement("style");
+      style.id="nyx-browser-ad-block-style";
+      style.textContent=adSelector+"{display:none!important;visibility:hidden!important;pointer-events:none!important;width:0!important;height:0!important;min-width:0!important;min-height:0!important}";
+      (document.head || document.documentElement).appendChild(style);
+    } catch {}
+    try {
+      const nativeFetch=window.fetch?.bind(window);
+      if(nativeFetch) window.fetch=(input,init)=>{
+        const url=input instanceof Request ? input.url : input;
+        if(blocked(url)) return Promise.resolve(new Response(null,{status:204,statusText:"No Content"}));
+        return nativeFetch(input,init);
+      };
+    } catch {}
+    try {
+      const nativeOpen=XMLHttpRequest.prototype.open;
+      XMLHttpRequest.prototype.open=function(method,url,...rest){
+        return nativeOpen.call(this,method,blocked(url) ? "data:," : url,...rest);
+      };
+    } catch {}
+    try {
+      if(navigator.sendBeacon){
+        const nativeBeacon=navigator.sendBeacon.bind(navigator);
+        navigator.sendBeacon=(url,data)=>blocked(url) ? true : nativeBeacon(url,data);
+      }
+    } catch {}
+    try {
+      const nativeAppend=Node.prototype.appendChild;
+      Node.prototype.appendChild=function(node){
+        if(removeAd(node)) return node;
+        return nativeAppend.call(this,node);
+      };
+      const nativeInsert=Node.prototype.insertBefore;
+      Node.prototype.insertBefore=function(node,before){
+        if(removeAd(node)) return node;
+        return nativeInsert.call(this,node,before);
+      };
+      const nativeSetAttribute=Element.prototype.setAttribute;
+      Element.prototype.setAttribute=function(name,value){
+        const key=String(name || "").toLowerCase();
+        if((key==="src" || key==="href" || key==="data-src") && blocked(value)){
+          if(key==="src") return nativeSetAttribute.call(this,key,neutralValue(this));
+          this.removeAttribute(key);
+          return;
+        }
+        return nativeSetAttribute.call(this,name,value);
+      };
+    } catch {}
+    try {
+      new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(clean)))
+        .observe(document.documentElement,{childList:true,subtree:true,attributes:false});
+    } catch {}
+    document.addEventListener("DOMContentLoaded",()=>clean(document),{once:true});
+    addEventListener("load",()=>clean(document),{once:true});
+    clean(document);
   })();`;
   const scramjetMinimalRuntimeGuardSource=`(() => {
     if (typeof window === "undefined" || window.__nyxScramjetMinimalGuards) return;
@@ -2935,7 +3055,7 @@
       const items=[...scope.querySelectorAll(selector)];
       items.slice(1).forEach(item=>item.remove());
     };
-    keepOne('form.browser-mode-address [data-browser-shell-bookmark]');
+    keepOne('form.browser-mode-address [data-browser-shell-settings]');
     keepOne('form.browser-mode-address .browser-mode-weather');
     keepOne('form.browser-mode-address [data-browser-shell-menu]');
     keepOne('#browserBookmarkPanel');
@@ -3006,32 +3126,22 @@
     };
     return `<svg class="nyx-header-icon" viewBox="0 0 24 24" aria-hidden="true">${icons[name]||icons.chat}</svg>`;
   }
-  function browserDashboardMarkup(){
-    const tab=(name,label)=>`<button class="${name==='dashboard'?'is-active':''}" data-nyx-dashboard-tab="${name}" type="button">${nyxDashboardIcon(name)}<span>${label}</span></button>`;
-    const action=(icon,title,copy,attrs)=>`<button ${attrs} type="button">${nyxDashboardIcon(icon)}<span><strong>${title}</strong><small>${copy}</small></span></button>`;
-    const meter=(name,icon)=>`<div class="nyx-dashboard-perf-meter"><div class="nyx-dashboard-perf-track"><i data-nyx-perf-meter="${name}"></i></div>${icon}</div>`;
-    const stat=(label,name,suffix='')=>`<div class="nyx-dashboard-perf-stat"><span>${label}</span><b data-nyx-perf-stat="${name}">&mdash;${suffix?` <small>${suffix}</small>`:''}</b></div>`;
-    const performance=`<div class="nyx-dashboard-performance" data-nyx-dashboard-performance><div class="nyx-dashboard-perf-meters">${meter('fps',nyxDashboardIcon('performance'))}${meter('memory','<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></svg>')}${meter('ping','<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r=".6"/></svg>')}</div><div class="nyx-dashboard-perf-stats">${stat('Frame rate','fps')}${stat('JS heap','memory')}${stat('Nyx latency','ping')}${stat('CPU threads','cpu')}${stat('Service worker','worker')}${stat('Proxy engine','engine')}</div></div>`;
-    return `<div class="nyx-dashboard" data-nyx-dashboard><button class="browser-top-clock nyx-dashboard-trigger" data-nyx-dashboard-trigger type="button" aria-expanded="false" aria-label="Open dashboard"><span data-browser-shell-clock>--:--</span><i aria-hidden="true"></i><span>Dashboard</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></button><section class="nyx-dashboard-panel" aria-label="Nyx dashboard"><nav class="nyx-dashboard-tabs" aria-label="Dashboard sections">${tab('dashboard','Dashboard')}${tab('travel','Travel')}${tab('media','Media')}${tab('ai','AI')}${tab('extensions','Extensions')}${tab('performance','Performance')}</nav><div class="nyx-dashboard-pages"><div class="nyx-dashboard-page is-active" data-nyx-dashboard-page="dashboard"><article class="nyx-dashboard-time-card"><span>Time</span><strong data-nyx-dashboard-time>--:--</strong><small data-nyx-dashboard-date>Loading date</small></article><article class="nyx-dashboard-weather-card" data-nyx-dashboard-weather><span>Weather</span><strong><i aria-hidden="true"></i><b data-nyx-dashboard-weather-temp>--&deg;</b></strong><small data-nyx-dashboard-weather-desc>Loading weather</small><small class="nyx-dashboard-weather-place" data-nyx-dashboard-weather-place></small></article><article class="nyx-dashboard-session-card"><span>Session</span><div><small>Nyx</small><b>Online</b></div><div><small>Users online</small><b data-nyx-online-users>Connecting&hellip;</b></div><div><small>Session uptime</small><b data-nyx-dashboard-uptime>0m</b></div><div><small>Connection</small><b>Secure</b></div></article></div><div class="nyx-dashboard-page" data-nyx-dashboard-page="travel">${action('apps','Apps','Open every Nyx app','data-open="apps"')}${action('link','Bookmarks','Your saved destinations','data-open="links"')}${action('browse','Profiles','Browse Nyx members','data-open-nyx-profile-entry')}</div><div class="nyx-dashboard-page" data-nyx-dashboard-page="media">${action('music','Nyxify','Music and playlists','data-app-url="/apps/nyxify/"')}${action('media','Movies','Open the theater','data-app-url="https://aether.cx/"')}${action('games','Pirate Cove','Games library','data-app-url="/assets/games/"')}</div><div class="nyx-dashboard-page" data-nyx-dashboard-page="ai">${action('ai','Nyx AI','Ask, research, and create','data-app-url="nyx://ai"')}${action('browse','Duck AI','Private web assistant','data-app-url="https://duck.ai/"')}${action('settings','AI settings','Keys and preferences','data-nyx-ai-settings')}</div><div class="nyx-dashboard-page" data-nyx-dashboard-page="extensions">${action('link','Link Checker','Check domains and filters','data-app-url="/apps/link-checker/"')}${action('extensions','Link Generator','Create a Nyx link','data-app-url="/apps/link-generator/"')}${action('performance','Developer','Runtime tools','data-open="developer"')}</div><div class="nyx-dashboard-page" data-nyx-dashboard-page="performance">${performance}</div></div></section></div>`;
-  }
-  function browserCompactDashboardMarkup(){
-    const tile=(icon,label,name,attrs)=>`<button ${attrs} data-nyx-app-name="${name}" type="button">${icon==='ai'?'<span class="nyx-nocturne-ai-icon" aria-hidden="true"></span>':nyxDashboardIcon(icon)}<span>${label}</span></button>`;
-    return `<div class="nyx-dashboard nyx-dashboard-compact" data-nyx-dashboard><button class="browser-top-clock nyx-dashboard-trigger" data-nyx-dashboard-trigger type="button" aria-expanded="false" aria-label="Open dashboard"><span data-browser-shell-clock>--:--</span><i aria-hidden="true"></i><span>Dashboard</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></button><section class="nyx-dashboard-panel" data-nyx-app-launcher aria-label="Nyx dashboard"><header class="nyx-dashboard-appbar"><div><strong>Apps</strong><small>Everything in Nyx</small></div><label><span aria-hidden="true"></span><input data-nyx-app-search type="search" placeholder="Find an app" autocomplete="off"></label></header><div class="nyx-dashboard-app-grid" data-nyx-app-results>${tile('link','Link Checker','link checker','data-app-url="/apps/link-checker/"')}${tile('extensions','Link Generator','link generator','data-app-url="/apps/link-generator/"')}${tile('media','Movies','movies theater','data-app-url="https://aether.cx/"')}${tile('ai','Nyx AI','nyx ai','data-app-url="nyx://ai"')}${tile('music','Nyxify','nyxify music','data-app-url="/apps/nyxify/"')}${tile('chat','Chat','chat','data-app-url="/apps/chat/"')}${tile('games','Games','games pirate cove','data-app-url="/assets/games/"')}${tile('browse','Profiles','profiles members','data-open-nyx-profile-entry')}${tile('settings','Settings','settings preferences','data-open="settings"')}</div><footer class="nyx-dashboard-footer"><span><i aria-hidden="true"></i><b data-nyx-online-count>Connecting&hellip;</b></span><button data-open="apps" type="button">View all apps</button></footer></section></div>`;
+  function browserLatencyBubbleMarkup(){
+    return '<div class="nyx-latency-bubble is-sampling" data-nyx-latency-bubble role="status" aria-live="polite" aria-label="Measuring Nyx latency"><i aria-hidden="true"></i><span data-nyx-latency-value>-- ms</span></div>';
   }
   function renderChromeFixed(){
     const top=document.querySelector('.top-os');
     if(top){
       const redesignedHome=store.text('nyx.homeDesign','redesigned')!=='original';
-      top.innerHTML='<div class="brand-mini"><button class="browser-mode-app-button active" data-browser-shell-home title="Current tab"><span class="browser-home-icon" aria-hidden="true"></span><span class="browser-home-label">Home</span></button><button class="browser-mode-tab" data-browser-shell-new-tab title="New tab"><span>New tab</span></button></div><span class="browser-top-clock" data-browser-shell-clock>--:--:--</span><form class="browser-mode-address" data-browser-shell-search><button class="browser-nav-control" data-browser-shell-back type="button" title="Back" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button><button class="browser-nav-control" data-browser-shell-forward type="button" title="Forward" aria-label="Forward"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button><button class="browser-nav-control" data-browser-shell-reload type="button" title="Reload" aria-label="Reload"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"></path><path d="M20 4v7h-7"></path></svg></button><button class="browser-nav-control" data-browser-shell-home-nav type="button" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8"></path><path d="M5 10v10h14V10"></path><path d="M9 20v-6h6v6"></path></svg></button><input class="browser-mode-url" data-browser-shell-url placeholder="Search or enter a URL" autocomplete="off"><button class="browser-mode-bookmark" data-browser-shell-bookmark type="button" title="Bookmark this tab" aria-pressed="false"><span class="fresh-real-icon" aria-hidden="true">☆</span></button><button class="browser-mode-weather" data-open="weather" type="button" title="Weather" aria-label="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button><button data-browser-shell-menu type="button" title="Menu"><span class="fresh-real-icon" aria-hidden="true">⋮</span></button></form><div class="browser-bookmark-panel" id="browserBookmarkPanel" hidden></div><div class="browser-mode-menu" id="browserModeMenu"><button data-browser-shell-new-tab type="button">New tab</button><button data-browser-bookmarks-toggle type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-browser-hieroglyph-toggle type="button">Hieroglyph Mode</button><button data-app-url="/assets/games/index.html" type="button">Pirate Cove</button><button data-app-url="/apps/chat/" type="button">Chat</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-shell-about-tab type="button">Open Tab in Abt:Blank</button></div>';
+      top.innerHTML='<div class="brand-mini"><button class="browser-mode-app-button active" data-browser-shell-home title="Current tab"><span class="browser-home-icon" aria-hidden="true"></span><span class="browser-home-label">Home</span></button><button class="browser-mode-tab" data-browser-shell-new-tab title="New tab"><span>New tab</span></button></div><span class="browser-top-clock" data-browser-shell-clock>--:--:--</span><form class="browser-mode-address" data-browser-shell-search><button class="browser-nav-control" data-browser-shell-back type="button" title="Back" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button><button class="browser-nav-control" data-browser-shell-forward type="button" title="Forward" aria-label="Forward"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button><button class="browser-nav-control" data-browser-shell-reload type="button" title="Reload" aria-label="Reload"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"></path><path d="M20 4v7h-7"></path></svg></button><button class="browser-nav-control" data-browser-shell-home-nav type="button" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8"></path><path d="M5 10v10h14V10"></path><path d="M9 20v-6h6v6"></path></svg></button><input class="browser-mode-url" data-browser-shell-url placeholder="Search or enter a URL" autocomplete="off"><button class="browser-mode-bookmark browser-mode-settings" data-browser-shell-settings data-open="settings" type="button" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button><button class="browser-mode-weather" data-open="weather" type="button" title="Weather" aria-label="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button><button data-browser-shell-menu type="button" title="Menu"><span class="fresh-real-icon" aria-hidden="true">⋮</span></button></form><div class="browser-bookmark-panel" id="browserBookmarkPanel" hidden></div><div class="browser-mode-menu" id="browserModeMenu"><button data-browser-shell-new-tab type="button">New tab</button><button data-browser-bookmarks-toggle type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-browser-hieroglyph-toggle type="button">Hieroglyph Mode</button><button data-app-url="/assets/games/index.html" type="button">Pirate Cove</button><button data-app-url="/apps/chat/" type="button">Chat</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-shell-about-tab type="button">Open Tab in Abt:Blank</button></div>';
       if(redesignedHome){
       const legacyClock=top.querySelector(':scope > .browser-top-clock');
-      if(legacyClock) legacyClock.outerHTML=browserDashboardMarkup();
+      if(legacyClock) legacyClock.outerHTML=browserLatencyBubbleMarkup();
       top.querySelector('.brand-mini [data-browser-shell-new-tab]')?.remove();
       const shellAddress=top.querySelector('form.browser-mode-address');
       shellAddress?.insertAdjacentHTML('afterbegin','<button class="browser-nav-control browser-tabs-toggle" data-browser-shell-tabs-toggle type="button" aria-expanded="false" aria-controls="nyxBrowserTabSidebar" title="Tabs" aria-label="Tabs"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"></rect><path d="M8 10h8M8 14h5"></path></svg></button>');
       shellAddress?.querySelector('[data-open="weather"]')?.remove();
-      const bookmarkButton=shellAddress?.querySelector('[data-browser-shell-bookmark]');
-      if(bookmarkButton) bookmarkButton.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.4l6.1-.9z"></path></svg>';
+      const settingsButton=shellAddress?.querySelector('[data-browser-shell-settings]');
       const menuButton=shellAddress?.querySelector('[data-browser-shell-menu]');
       if(menuButton){
         menuButton.removeAttribute('data-browser-shell-menu');
@@ -3053,7 +3163,7 @@
         const reloadButton=shellAddress.querySelector('[data-browser-shell-reload]');
         const homeButton=shellAddress.querySelector('[data-browser-shell-home-nav]');
         const urlField=shellAddress.querySelector('[data-browser-shell-url]');
-        shellAddress.replaceChildren(tabsButton,backButton,forwardButton,reloadButton,bookmarkButton,urlField,menuButton,homeButton,fullscreenButton);
+        shellAddress.replaceChildren(tabsButton,backButton,forwardButton,reloadButton,settingsButton,urlField,menuButton,homeButton,fullscreenButton);
       }
       const homeTabsToggle=document.createElement('button');
       homeTabsToggle.type='button';
@@ -3071,8 +3181,7 @@
       top.appendChild(homeActions);
       renderNyxPresence();
       syncHomeWeatherWidgets();
-      syncNyxDashboardClock();
-      syncNyxDashboardPerformance();
+      syncNyxLatencyBubble();
       }
       top.querySelectorAll('.brand-mini button[title],.browser-mode-address button[title]').forEach(button=>{
         if(!button.getAttribute('aria-label')) button.setAttribute('aria-label',button.getAttribute('title') || 'Browser control');
@@ -3138,10 +3247,11 @@
       renderChrome();
     }
     renderedChromeMode=mode;
+    document.documentElement.classList.remove('nyx-browser-shell-expected');
     tick();
   }
   //browser-url-display
-  function browserShellSourceUrl(url){
+  function browserShellSourceUrl(url,decodeDepth=0){
     const raw=String(url || '').trim();
     if(!raw) return '';
     if(!/^(?:[a-z][a-z0-9+.-]*:|\/|\.\/|\.\.\/)/i.test(raw) && !/^[^\s]+\.[^\s]{2,}(?:[/?#]|$)/.test(raw)) return raw;
@@ -3165,11 +3275,17 @@
       const uvStart=parsed.origin + uvPrefix;
       const scramjetStart=parsed.origin + '/scramjet/service/';
       const scramjetV2Match=parsed.pathname.match(/^\/~\/sj\/[^/]+\/[^/]+\/([^?#]*)/);
-      if(parsed.href.startsWith(uvStart)){
-        const decoded=decodeUvPart(parsed.href.slice(uvStart.length));
+      if(parsed.origin===location.origin && parsed.href.startsWith(uvStart)){
+        let encoded=parsed.href.slice(uvStart.length);
+        const privateSession=encoded.match(/^nyx_[a-z0-9_-]{12,80}\/(.+)$/i);
+        if(privateSession) encoded=privateSession[1];
+        const decoded=decodeUvPart(encoded);
+        if(decoded && decoded!==raw && decodeDepth<3){
+          return browserShellSourceUrl(decoded,decodeDepth+1) || decoded;
+        }
         try{return new URL(decoded).href}catch{return decoded}
       }
-      if(parsed.href.startsWith(scramjetStart)){
+      if(parsed.origin===location.origin && parsed.href.startsWith(scramjetStart)){
         const decoded=decodeUriPart(parsed.href.slice(scramjetStart.length));
         try{return new URL(decoded).href}catch{return decoded}
       }
@@ -4529,7 +4645,7 @@
     if(!tab) return false;
     const discordFounderProfileStyle='.nyx-founder-profile-standard{display:block!important;max-width:620px!important;margin:0 auto!important;padding:0!important;overflow:hidden!important;border:1px solid color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 42%,transparent)!important;border-radius:16px!important;background:#111827!important;box-shadow:0 16px 42px rgba(0,0,0,.32)!important}.nyx-founder-profile-standard .nyx-founder-banner{height:140px!important;margin:0!important;background:var(--nyx-founder-accent,#8fb8ff)!important}.nyx-founder-profile-standard .nyx-founder-profile-content{display:block!important;padding:0 16px 18px!important}.nyx-founder-profile-standard .nyx-founder-image-wrap{width:88px!important;height:88px!important;margin:-45px 0 0!important;border:6px solid #111827!important;border-radius:50%!important;background:#111827!important}.nyx-founder-profile-standard .nyx-founder-image{border:0!important;border-radius:50%!important;background:#172338!important}.nyx-founder-profile-standard .nyx-founder-status{right:-2px!important;bottom:-2px!important;border:4px solid #111827!important}.nyx-founder-profile-standard .nyx-founder-copy{padding-top:13px!important}.nyx-founder-name-row{display:flex!important;align-items:center!important;gap:7px!important}.nyx-founder-profile-standard .nyx-founder-copy h3{margin:0!important;color:#f8fbff!important;font-size:24px!important;font-weight:700!important;letter-spacing:-.025em!important}.nyx-founder-owner-crown{color:#f0c85c!important;font-size:18px!important;line-height:1!important}.nyx-founder-profile-standard .nyx-founder-handle{margin:2px 0 10px!important;color:#b5c2d5!important;font-size:14px!important}.nyx-founder-profile-standard .nyx-founder-role{margin:0 0 11px!important;color:#9cadc4!important;font-size:11px!important;font-weight:600!important;letter-spacing:.09em!important}.nyx-founder-role-list{display:flex!important;flex-wrap:wrap!important;gap:7px!important;margin:0 0 12px!important}.nyx-founder-role-chip{display:inline-flex!important;align-items:center!important;gap:5px!important;padding:4px 8px!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:4px!important;background:rgba(255,255,255,.08)!important;color:#d9e3f1!important;font-size:11px!important;font-weight:650!important}.nyx-founder-role-owner{border-color:color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 78%,transparent)!important;background:color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 22%,transparent)!important;color:#fff!important}.nyx-founder-role-owner span{color:#f0c85c!important}.nyx-founder-profile-standard .nyx-founder-badges{margin:0 0 14px!important}.nyx-founder-profile-standard .nyx-founder-badge{border:0!important;border-radius:4px!important;background:rgba(255,255,255,.1)!important;color:#c9d7ea!important}.nyx-founder-about{padding-top:13px!important;border-top:1px solid rgba(255,255,255,.14)!important}.nyx-founder-about>strong{display:block!important;margin-bottom:7px!important;color:#f5f8ff!important;font-size:12px!important;font-weight:700!important;text-transform:uppercase!important}.nyx-founder-profile-standard .nyx-founder-bio{color:#d5dfec!important;font-size:14px!important;line-height:1.55!important}.nyx-founder-profile-standard .nyx-founder-link{margin-top:14px!important;color:#cbd9ff!important}@media(max-width:680px){.nyx-founder-profile-standard .nyx-founder-image-wrap{width:88px!important;margin:-45px 0 0!important}.nyx-founder-profile-standard .nyx-founder-copy{text-align:left!important}.nyx-founder-profile-standard .nyx-founder-badges{justify-content:flex-start!important}}';
     const pages={
-      apps:{title:'Apps',body:`<style>html,body,.apps-shell-page{background:#000!important;background-image:none!important}</style><div class="browser-home browser-shell-page apps-shell-page"><h1 class="home-heading">Apps</h1><p class="home-sub">Everything in Nyx.</p><div class="quick-grid apps-launch-grid">${quickTiles()}</div></div>`},
+      apps:{title:'Apps',body:`<style>html,body,.apps-shell-page{background:#000!important;background-image:none!important}</style><div class="browser-home browser-shell-page apps-shell-page"><h1 class="home-heading">Apps</h1><p class="home-sub">Everything in Nyx.</p><div class="quick-grid apps-launch-grid" data-nyx-global-app-grid>${quickTiles()}</div></div>`},
       links:{title:'Bookmarks',body:`<div class="browser-home browser-shell-page"><h1 class="home-heading">Bookmarks</h1><p class="home-sub">Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>DuckDuckGo</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></div>`}
     };
     const page=pages[name] || pages.apps;
@@ -4575,7 +4691,7 @@
     const internalPageBg=normalizeBgValue(currentBrowserBackgroundValue());
     const internalBgStyle='background:linear-gradient(rgba(0,0,0,.10),rgba(0,0,0,.16)),'+internalPageBg+'!important;background-size:cover!important;background-position:left center!important;background-repeat:no-repeat!important;background-color:#05060c!important;filter:none!important;';
     const settingsClearAroundStyle='';
-    const clearInternalPageStyle=/^(apps)$/i.test(String(page.title || '')) ? 'html,body,.shell-page,.browser-shell-page{min-height:100vh!important;'+internalBgStyle+'}html::before,html::after,body::before,body::after{display:none!important;content:none!important}.shell-page,.browser-shell-page{box-shadow:none!important;backdrop-filter:none!important;filter:none!important}.shell-page::before,.shell-page::after,.browser-shell-page::before,.browser-shell-page::after{display:none!important;content:none!important}.shell-page h1,.browser-shell-page h1,.shell-page p,.browser-shell-page p,.quick-tile span{color:#f8f5ff!important;-webkit-text-fill-color:#f8f5ff!important;opacity:1!important;visibility:visible!important;background:none!important;background-image:none!important;text-shadow:none!important}.quick-grid{gap:18px!important}.quick-tile{height:106px!important;background:transparent!important;background-image:none!important;border:1px solid transparent!important;border-radius:10px!important;box-shadow:none!important;backdrop-filter:none!important;filter:none!important}.quick-icon{width:58px!important;height:58px!important;background:transparent!important;background-image:none!important;border-color:transparent!important;border-radius:9px!important;box-shadow:none!important;backdrop-filter:none!important;filter:none!important}.quick-tile:hover{background:rgba(8,7,13,.32)!important;background-image:none!important;border-color:rgba(190,148,255,.54)!important;box-shadow:0 10px 28px rgba(0,0,0,.22)!important;transform:none!important;backdrop-filter:blur(3px)!important;-webkit-backdrop-filter:blur(3px)!important}.quick-tile:hover .quick-icon{background:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important;transform:none!important}.quick-tile span{font-size:13px!important;font-weight:400!important}' : '';
+    const clearInternalPageStyle=/^(apps)$/i.test(String(page.title || '')) ? 'html,body,.shell-page,.browser-shell-page{min-height:100vh!important;'+internalBgStyle+'}html::before,html::after,body::before,body::after{display:none!important;content:none!important}.shell-page,.browser-shell-page{box-shadow:none!important;backdrop-filter:none!important;filter:none!important}.shell-page::before,.shell-page::after,.browser-shell-page::before,.browser-shell-page::after{display:none!important;content:none!important}.shell-page h1,.browser-shell-page h1,.shell-page p,.browser-shell-page p,.quick-tile span{color:#f8f5ff!important;-webkit-text-fill-color:#f8f5ff!important;opacity:1!important;visibility:visible!important;background:none!important;background-image:none!important;text-shadow:none!important}.quick-grid{gap:18px!important}.quick-tile{height:106px!important;background:transparent!important;background-image:none!important;border:1px solid transparent!important;border-radius:10px!important;box-shadow:none!important;backdrop-filter:none!important;filter:none!important;transition:transform .22s cubic-bezier(.16,1,.3,1),border-color .18s ease,background-color .18s ease,box-shadow .18s ease!important}.quick-icon{width:58px!important;height:58px!important;background:transparent!important;background-image:none!important;border-color:transparent!important;border-radius:9px!important;box-shadow:none!important;backdrop-filter:none!important;filter:none!important;transition:transform .22s cubic-bezier(.16,1,.3,1)!important}.quick-tile:is(:hover,:focus-visible){background:rgba(8,7,13,.32)!important;background-image:none!important;border-color:rgba(190,148,255,.54)!important;box-shadow:0 14px 32px rgba(0,0,0,.28)!important;transform:translateY(-5px) scale(1.025)!important;backdrop-filter:blur(3px)!important;-webkit-backdrop-filter:blur(3px)!important}.quick-tile:is(:hover,:focus-visible) .quick-icon{background:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important;transform:scale(1.08)!important}.quick-tile span{font-size:13px!important;font-weight:400!important}@media(prefers-reduced-motion:reduce){.quick-tile,.quick-icon{transition:none!important}.quick-tile:is(:hover,:focus-visible){transform:none!important}.quick-tile:is(:hover,:focus-visible) .quick-icon{transform:none!important}}' : '';
     const internalAppsLaunchStyle=/^(apps)$/i.test(String(page.title || '')) ? '.apps-launch-grid{grid-template-columns:repeat(auto-fill,minmax(178px,1fr))!important;gap:24px!important}.apps-launch-grid .quick-tile{height:178px!important;min-height:178px!important;border-radius:18px!important;animation:appTileOpenRise .62s cubic-bezier(.18,.82,.2,1) both!important;animation-delay:var(--tile-delay,0ms)!important}.apps-launch-grid .quick-icon{width:98px!important;height:98px!important;border-radius:18px!important}.apps-launch-grid .quick-tile[data-domain="traxmojo.com"] .quick-icon{width:150px!important;height:150px!important;max-width:150px!important;max-height:150px!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}.apps-launch-grid .quick-tile span{font-size:16px!important}@keyframes appTileOpenRise{0%{opacity:0;transform:translate(-34px,42px) scale(.78);filter:blur(8px)}64%{opacity:1;transform:translate(4px,-5px) scale(1.025);filter:blur(0)}100%{opacity:1;transform:translate(0,0) scale(1);filter:blur(0)}}' : '';
     const internalAppsHazeStyle=/^(apps)$/i.test(String(page.title || '')) ? 'html,body{position:relative!important;isolation:isolate!important}body::before{content:""!important;display:block!important;position:fixed!important;inset:-18px!important;z-index:0!important;pointer-events:none!important;background:rgba(54,76,110,.34)!important;backdrop-filter:blur(11px) saturate(.82)!important;-webkit-backdrop-filter:blur(11px) saturate(.82)!important}.shell-page{position:relative!important;z-index:1!important;background:transparent!important}.theme-ruby::before{background:rgba(125,22,39,.38)!important}.theme-emerald::before{background:rgba(4,92,65,.36)!important}.theme-sakura::before{background:rgba(190,55,120,.32)!important}.theme-fresh::before{background:rgba(65,91,67,.34)!important}.apps-launch-grid{position:relative!important;z-index:2!important}' : '';
     const finalInternalBackgroundStyle='body.theme-ruby{--theme-bg:linear-gradient(rgba(60,0,12,.10),rgba(60,0,12,.22)),url("assets/backgrounds/nyx-blue-light-trails.jpg")!important}body.theme-emerald{--theme-bg:linear-gradient(rgba(0,24,12,.08),rgba(0,24,12,.20)),url("assets/backgrounds/nyx-blue-light-trails.jpg")!important}body.theme-sakura{--theme-bg:linear-gradient(rgba(40,0,28,.06),rgba(40,0,28,.18)),url("assets/backgrounds/nyx-blue-light-trails.jpg")!important}body.theme-ruby .shell-page,body.theme-ruby .browser-shell-page,body.theme-emerald .shell-page,body.theme-emerald .browser-shell-page,body.theme-sakura .shell-page,body.theme-sakura .browser-shell-page{background:var(--theme-bg)!important;background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important}';
@@ -4591,7 +4707,7 @@
     const internalRoseVisibilityStyle='';
     const internalCustomPalette=nyxCustomThemePalette();
     const internalUnifiedThemeStyle='html{--nyx-page-canvas:#151d2b;--nyx-page-top:#09111d;--nyx-page-field:#111a29;--nyx-page-panel:#141f31;--nyx-page-active:#1a293e;--nyx-page-line:#2a3b54;--nyx-page-text:#d4deec;--nyx-page-muted:#899bb5;--nyx-page-accent:#6687b2;--nyx-page-bright:#91acd2;--nyx-app-canvas:var(--nyx-page-canvas)!important;--nyx-app-dot:#202b3d!important;--nyx-app-line:var(--nyx-page-line)!important;--nyx-app-text:var(--nyx-page-text)!important}html[data-nyx-theme="midnight"]{--nyx-page-canvas:#0a1029;--nyx-page-top:#050817;--nyx-page-field:#111a3b;--nyx-page-panel:#141f31;--nyx-page-active:#1b2a40;--nyx-page-line:#2d405b;--nyx-page-text:#d6e1f0;--nyx-page-muted:#8fa2bc;--nyx-page-accent:#6f8fb9;--nyx-page-bright:#9eb7d9;--nyx-app-dot:#223047!important}html[data-nyx-theme="ruby"]{--nyx-page-canvas:#291219;--nyx-page-top:#16080d;--nyx-page-field:#351018;--nyx-page-panel:#211922;--nyx-page-active:#35202a;--nyx-page-line:#50333c;--nyx-page-text:#e2d7da;--nyx-page-muted:#aa9198;--nyx-page-accent:#a56573;--nyx-page-bright:#c99aa4;--nyx-app-dot:#332733!important}html[data-nyx-theme="emerald"]{--nyx-page-canvas:#0e251b;--nyx-page-top:#07130e;--nyx-page-field:#123126;--nyx-page-panel:#172224;--nyx-page-active:#203531;--nyx-page-line:#2f4a42;--nyx-page-text:#d4e2dd;--nyx-page-muted:#879f98;--nyx-page-accent:#628f80;--nyx-page-bright:#91bdae;--nyx-app-dot:#24343a!important}html[data-nyx-theme="sakura"]{--nyx-page-canvas:#281522;--nyx-page-top:#150a12;--nyx-page-field:#35162f;--nyx-page-panel:#211a23;--nyx-page-active:#332536;--nyx-page-line:#4c3748;--nyx-page-text:#e2d9e0;--nyx-page-muted:#a892a2;--nyx-page-accent:#9e718f;--nyx-page-bright:#c6a0ba;--nyx-app-dot:#332936!important}html[data-nyx-theme="fresh"]{--nyx-page-canvas:#162019;--nyx-page-top:#0b130d;--nyx-page-field:#121b14;--nyx-page-panel:#19241b;--nyx-page-active:#263526;--nyx-page-line:#354b36;--nyx-page-text:#d9e5d6;--nyx-page-muted:#91a68d;--nyx-page-accent:#728f6b;--nyx-page-bright:#a2bd9a;--nyx-app-dot:#28382b!important}html[data-nyx-theme="custom"]{--nyx-page-canvas:'+internalCustomPalette.canvas+';--nyx-page-top:'+internalCustomPalette.top+';--nyx-page-field:'+internalCustomPalette.field+';--nyx-page-panel:'+internalCustomPalette.panel+';--nyx-page-active:'+internalCustomPalette.line+';--nyx-page-line:'+internalCustomPalette.line+';--nyx-page-text:'+internalCustomPalette.text+';--nyx-page-muted:'+internalCustomPalette.muted+';--nyx-page-accent:'+internalCustomPalette.accent+';--nyx-page-bright:'+internalCustomPalette.bright+';--nyx-app-dot:'+internalCustomPalette.dot+'!important}html{min-height:100%!important;background-color:var(--nyx-page-canvas)!important;color-scheme:dark!important}html body{--theme-a:var(--nyx-page-accent)!important;--theme-b:var(--nyx-page-bright)!important;--theme-strong:var(--nyx-page-text)!important;--theme-border:var(--nyx-page-line)!important;min-height:100vh!important;background-color:transparent!important;background-image:none!important;color:var(--nyx-page-text)!important;-webkit-text-fill-color:var(--nyx-page-text)!important}.shell-page,.browser-shell-page{background-color:transparent!important;background-image:none!important;color:var(--nyx-page-text)!important}.shell-page :is(h1,h2,h3,strong),.browser-shell-page :is(h1,h2,h3,strong),.settings-main :is(h1,h2,h3,strong){background:none!important;color:var(--nyx-page-text)!important;-webkit-text-fill-color:var(--nyx-page-text)!important;text-shadow:none!important}.shell-page p,.browser-shell-page p,.settings-main p,.settings-range,.settings-range span{background:none!important;color:var(--nyx-page-muted)!important;-webkit-text-fill-color:var(--nyx-page-muted)!important;text-shadow:none!important}.settings-app{background:var(--nyx-page-canvas)!important;background-image:none!important;color:var(--nyx-page-text)!important}.settings-side{background:var(--nyx-page-canvas)!important;background-image:none!important;border-color:var(--nyx-page-line)!important;color:var(--nyx-page-muted)!important}.settings-main{background:var(--nyx-page-canvas)!important;background-image:none!important;border-color:var(--nyx-page-line)!important}.settings-side button{background:transparent!important;background-image:none!important;border-color:transparent!important;color:var(--nyx-page-muted)!important;-webkit-text-fill-color:var(--nyx-page-muted)!important}.settings-side button:is(:hover,.active){background:var(--nyx-page-active)!important;color:var(--nyx-page-text)!important;-webkit-text-fill-color:var(--nyx-page-text)!important}.settings-section .settings-block{background:color-mix(in srgb,var(--nyx-page-panel) 90%,var(--nyx-page-canvas))!important;background-image:none!important;border-color:var(--nyx-page-line)!important;color:var(--nyx-page-text)!important}.settings-section .settings-block h2{color:var(--nyx-page-text)!important;-webkit-text-fill-color:var(--nyx-page-text)!important}.settings-section .settings-block p{color:var(--nyx-page-muted)!important;-webkit-text-fill-color:var(--nyx-page-muted)!important}.settings-app :is(input:not([type="range"]),select,textarea,.settings-input,.settings-select,.panic-key-display){background:var(--nyx-page-field)!important;background-image:none!important;border-color:var(--nyx-page-line)!important;color:var(--nyx-page-text)!important;-webkit-text-fill-color:var(--nyx-page-text)!important;caret-color:var(--nyx-page-bright)!important}.settings-app :is(input,textarea)::placeholder{color:var(--nyx-page-muted)!important;-webkit-text-fill-color:var(--nyx-page-muted)!important;opacity:.82!important}.settings-app :is(.settings-action,.settings-block button,.settings-input::file-selector-button){background:var(--nyx-page-active)!important;background-image:none!important;border-color:var(--nyx-page-line)!important;color:var(--nyx-page-text)!important;-webkit-text-fill-color:var(--nyx-page-text)!important;box-shadow:none!important;text-shadow:none!important}.settings-app :is(.settings-action,.settings-block button,.settings-input::file-selector-button):hover{background:color-mix(in srgb,var(--nyx-page-active) 78%,var(--nyx-page-accent))!important;border-color:var(--nyx-page-bright)!important;filter:none!important}.quick-tile{background:transparent!important;background-image:none!important;border-color:transparent!important;color:var(--nyx-page-text)!important;-webkit-text-fill-color:var(--nyx-page-text)!important;box-shadow:none!important}.quick-tile span{background:none!important;color:var(--nyx-page-text)!important;-webkit-text-fill-color:var(--nyx-page-text)!important}.quick-tile:hover{background:color-mix(in srgb,var(--nyx-page-active) 72%,transparent)!important;background-image:none!important;border-color:var(--nyx-page-line)!important;box-shadow:none!important}.quick-combo,select option,select optgroup{background:var(--nyx-page-field)!important;color:var(--nyx-page-text)!important;-webkit-text-fill-color:var(--nyx-page-text)!important;border-color:var(--nyx-page-line)!important}.nyx-founder-profile:not(.nyx-founder-profile-standard){background:color-mix(in srgb,var(--nyx-page-panel) 90%,var(--nyx-page-canvas))!important;border-color:var(--nyx-page-line)!important}::selection{background:var(--nyx-page-accent)!important;color:#081018!important;-webkit-text-fill-color:#081018!important}';
-    const internalBalancedThemeStyle='html{--nyx-page-canvas:#080a0f!important;--nyx-page-top:#090b10!important;--nyx-page-field:#0f131b!important;--nyx-page-panel:#131823!important;--nyx-page-active:#171c28!important;--nyx-page-line:rgba(255,255,255,.085)!important;--nyx-page-text:#f1f3f7!important;--nyx-page-muted:#929aaa!important;--nyx-app-canvas:#080a0f!important;--nyx-app-line:rgba(255,255,255,.085)!important;--nyx-app-text:#f1f3f7!important}html[data-nyx-theme="midnight"]{--nyx-page-accent:#9eb7d9!important;--nyx-page-bright:#bdd0e8!important}html[data-nyx-theme="default"]{--nyx-page-accent:#9b8cf5!important;--nyx-page-bright:#b5aaf8!important}html[data-nyx-theme="ruby"]{--nyx-page-accent:#d58b9a!important;--nyx-page-bright:#e4a9b5!important}html[data-nyx-theme="emerald"]{--nyx-page-accent:#82c4ae!important;--nyx-page-bright:#a6d8c7!important}html[data-nyx-theme="sakura"]{--nyx-page-accent:#d5a2c6!important;--nyx-page-bright:#e2b7d4!important}html[data-nyx-theme="fresh"]{--nyx-page-accent:#a6c99c!important;--nyx-page-bright:#b8d5b0!important}html[data-nyx-theme="custom"]{--nyx-page-accent:'+internalCustomPalette.accent+'!important;--nyx-page-bright:'+internalCustomPalette.bright+'!important}html body,html body :is(h1,h2,h3,strong,label,.quick-tile span){color:var(--nyx-page-text)!important;-webkit-text-fill-color:var(--nyx-page-text)!important;text-shadow:none!important}html body :is(p,small){color:var(--nyx-page-muted)!important;-webkit-text-fill-color:var(--nyx-page-muted)!important;text-shadow:none!important}.settings-app,.settings-main,.settings-side{background-color:var(--nyx-page-canvas)!important;background-image:none!important}.settings-section .settings-block{background:var(--nyx-page-panel)!important;background-image:none!important;border-color:var(--nyx-page-line)!important}.settings-side button,.settings-app :is(.settings-action,.settings-block button){color:var(--nyx-page-text)!important;-webkit-text-fill-color:var(--nyx-page-text)!important}.settings-side button:is(:hover,.active),.settings-app :is(.settings-action,.settings-block button):hover{background:var(--nyx-page-active)!important;border-color:color-mix(in srgb,var(--nyx-page-accent) 55%,var(--nyx-page-line))!important}.apps-launch-grid .quick-tile:is([data-domain="nyxify"],[data-domain="geforcenow"],[data-domain="x.com"]) .quick-icon{box-sizing:border-box!important;padding:18px!important;border:1px solid rgba(255,255,255,.16)!important;background:#f2f3f6!important;background-image:none!important;box-shadow:0 8px 24px rgba(0,0,0,.24)!important}.apps-launch-grid .quick-tile:is([data-domain="nyxify"],[data-domain="geforcenow"],[data-domain="x.com"]):hover .quick-icon{border-color:color-mix(in srgb,var(--nyx-page-accent) 48%,#fff)!important}';
+    const internalBalancedThemeStyle='html{--nyx-page-canvas:#080a0f!important;--nyx-page-top:#090b10!important;--nyx-page-field:#0f131b!important;--nyx-page-panel:#131823!important;--nyx-page-active:#171c28!important;--nyx-page-line:rgba(255,255,255,.085)!important;--nyx-page-text:#f1f3f7!important;--nyx-page-muted:#929aaa!important;--nyx-app-canvas:#080a0f!important;--nyx-app-line:rgba(255,255,255,.085)!important;--nyx-app-text:#f1f3f7!important}html[data-nyx-theme="midnight"]{--nyx-page-accent:#9eb7d9!important;--nyx-page-bright:#bdd0e8!important}html[data-nyx-theme="default"]{--nyx-page-accent:#9b8cf5!important;--nyx-page-bright:#b5aaf8!important}html[data-nyx-theme="ruby"]{--nyx-page-accent:#d58b9a!important;--nyx-page-bright:#e4a9b5!important}html[data-nyx-theme="emerald"]{--nyx-page-accent:#82c4ae!important;--nyx-page-bright:#a6d8c7!important}html[data-nyx-theme="sakura"]{--nyx-page-accent:#d5a2c6!important;--nyx-page-bright:#e2b7d4!important}html[data-nyx-theme="fresh"]{--nyx-page-accent:#a6c99c!important;--nyx-page-bright:#b8d5b0!important}html[data-nyx-theme="custom"]{--nyx-page-accent:'+internalCustomPalette.accent+'!important;--nyx-page-bright:'+internalCustomPalette.bright+'!important}html body,html body :is(h1,h2,h3,strong,label,.quick-tile span){color:var(--nyx-page-text)!important;-webkit-text-fill-color:var(--nyx-page-text)!important;text-shadow:none!important}html body :is(p,small){color:var(--nyx-page-muted)!important;-webkit-text-fill-color:var(--nyx-page-muted)!important;text-shadow:none!important}.settings-app,.settings-main,.settings-side{background-color:var(--nyx-page-canvas)!important;background-image:none!important}.settings-section .settings-block{background:var(--nyx-page-panel)!important;background-image:none!important;border-color:var(--nyx-page-line)!important}.settings-side button,.settings-app :is(.settings-action,.settings-block button){color:var(--nyx-page-text)!important;-webkit-text-fill-color:var(--nyx-page-text)!important}.settings-side button:is(:hover,.active),.settings-app :is(.settings-action,.settings-block button):hover{background:var(--nyx-page-active)!important;border-color:color-mix(in srgb,var(--nyx-page-accent) 55%,var(--nyx-page-line))!important}.apps-launch-grid .quick-tile:is([data-domain="geforcenow"],[data-domain="x.com"]) .quick-icon{box-sizing:border-box!important;padding:18px!important;border:1px solid rgba(255,255,255,.16)!important;background:#f2f3f6!important;background-image:none!important;box-shadow:0 8px 24px rgba(0,0,0,.24)!important}.apps-launch-grid .quick-tile:is([data-domain="geforcenow"],[data-domain="x.com"]):hover .quick-icon{border-color:color-mix(in srgb,var(--nyx-page-accent) 48%,#fff)!important}';
     const internalFreshGeometryStyle='html[data-nyx-theme="fresh"] body.theme-fresh .quick-tile{background:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important}html[data-nyx-theme="fresh"] body.theme-fresh .quick-tile:hover{background:color-mix(in srgb,var(--nyx-page-active) 72%,transparent)!important;border-color:var(--nyx-page-line)!important}'+internalSignatureMotionStyle+internalSimpleProfileStyle+internalBloomStageStyle+internalRoseVisibilityStyle;
     const panicFrameScript='let NYX_PANIC_CAPTURE=false;function nyxPanicCombo(e){const key=String(e.key||"").trim();if(!key||["Control","Shift","Alt","Meta"].includes(key))return "";const parts=[];if(e.ctrlKey)parts.push("Ctrl");if(e.altKey)parts.push("Alt");if(e.shiftKey)parts.push("Shift");if(e.metaKey)parts.push("Meta");parts.push(key.length===1?key.toUpperCase():key.replace(/^Arrow/,""));return parts.join("+")}document.addEventListener("click",e=>{if(e.target.closest("[data-panic-capture]"))NYX_PANIC_CAPTURE=true;if(e.target.closest("[data-panic-clear]"))NYX_PANIC_CAPTURE=false},true);document.addEventListener("keydown",e=>{if(!NYX_PANIC_CAPTURE)return;const combo=nyxPanicCombo(e);if(!combo)return;e.preventDefault();e.stopPropagation();NYX_PANIC_CAPTURE=false;document.querySelectorAll("[data-panic-key-display]").forEach(el=>el.textContent=combo);parent.postMessage({type:"nyx:panic-key-set",combo},"*")},true);';
     const internalPaintScript='';
@@ -4688,9 +4804,9 @@
       .nyx-founder-effect-bubbles .nyx-founder-profile-effect{display:block;opacity:.72;background-image:radial-gradient(circle,transparent 0 5px,rgba(255,255,255,.58) 6px 7px,transparent 8px),radial-gradient(circle,transparent 0 9px,color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 72%,#fff) 10px 11px,transparent 12px),radial-gradient(circle,transparent 0 13px,rgba(213,243,255,.5) 14px 15px,transparent 16px);background-size:93px 131px,157px 191px,229px 271px;background-position:9px 120%,62px 135%,133px 150%;mix-blend-mode:screen;filter:drop-shadow(0 0 4px rgba(207,239,255,.55));animation:nyx-founder-bubbles 10s linear infinite}
       @keyframes nyx-founder-name-gradient{0%,100%{background-position:0 50%}50%{background-position:100% 50%}}@keyframes nyx-founder-name-neon{0%,100%{filter:brightness(.9)}50%{filter:brightness(1.28)}}@keyframes nyx-founder-name-pop{0%,82%,100%{transform:translateY(0) scale(1)}88%{transform:translateY(-2px) scale(1.035)}93%{transform:translateY(0) scale(.985)}}@keyframes nyx-founder-sparkle{to{background-position:150px -150px,-193px -193px,221px -221px,-169px 169px,247px -247px}}@keyframes nyx-founder-aurora{50%{background-position:100% 0}}@keyframes nyx-founder-holographic{to{background-position:250% 0}}@keyframes nyx-founder-fireflies{50%{background-position:35px -54px;transform:translateY(-10px)}}@keyframes nyx-founder-cosmic-dust{to{background-position:0 0,127px -149px,-181px -167px,211px -193px,-157px 223px,239px -179px}}@keyframes nyx-founder-electric-storm{0%,16%,18%,55%,57%,100%{opacity:.08}17%,56%{opacity:.88}17.4%,56.4%{opacity:.28}17.8%,56.8%{opacity:.72}40%{background-position:-50% 90%,140% -20%}}@keyframes nyx-founder-meteor-shower{to{background-position:18% 260px,72% 320px,38% 300px}}@keyframes nyx-founder-cyber-grid{to{background-position:0 68px,68px 0,0 0}}@keyframes nyx-founder-plasma{to{transform:rotate(360deg) scale(1.06)}}@keyframes nyx-founder-snowfall{to{background-position:12px 650px,63px 620px,116px 590px}}@keyframes nyx-founder-embers{to{background-position:18px -280px,56px -370px,174px -450px}}@keyframes nyx-founder-bubbles{to{background-position:31px -290px,39px -390px,178px -510px}}@keyframes nyx-founder-decoration-orbit{to{transform:rotate(360deg)}}@keyframes nyx-founder-decoration-twinkle{0%,100%{opacity:.55;filter:brightness(.85)}50%{opacity:1;filter:brightness(1.35)}}@media(prefers-reduced-motion:reduce){.nyx-founder-profile-effect,.nyx-avatar-decoration,.nyx-styled-display-name{animation:none!important}}
     `;
-    const terminalPageScript=`(()=>{const output=document.querySelector('[data-nyx-terminal-output]');const input=document.querySelector('[data-nyx-terminal-input]');const write=(text,type='')=>{const row=document.createElement('div');row.className='nyx-terminal-line'+(type?' '+type:'');row.textContent=String(text);output.appendChild(row);output.scrollTop=output.scrollHeight};const run=raw=>{const command=String(raw||'').trim();if(!command)return;write('nyx> '+command,'command');const name=command.toLowerCase();if(name==='clear'){output.textContent='';return}if(name==='help'){write('Commands: help, status, theme, engine, origin, storage, date, clear');return}if(name==='status'){write('Nyx is '+(navigator.onLine?'online':'offline')+' · '+(navigator.platform||'browser'));return}if(name==='theme'){write('Theme: '+(document.body.className.match(/theme-([^ ]+)/)?.[1]||'default'));return}if(name==='engine'){write('Engine: '+(localStorage.getItem('nyx.browserMode')||'scramjet')+' · Transport: '+(localStorage.getItem('nyx.transport')||'libcurl'));return}if(name==='origin'){write('Origin: '+parent.location.origin);return}if(name==='storage'){write('Local settings entries: '+localStorage.length);return}if(name==='date'){write(new Date().toLocaleString());return}write('Unknown command: '+command+'. Type "help" for the command list.','error')};write('Nyx Developer Console');write('Type "help" to list commands. Browser DevTools cannot be opened by a webpage.');document.querySelector('[data-nyx-terminal-form]')?.addEventListener('submit',event=>{event.preventDefault();run(input?.value);if(input)input.value=''});setTimeout(()=>input?.focus(),50)})();`;
+    const terminalPageScript=`(()=>{const output=document.querySelector('[data-nyx-terminal-output]');const input=document.querySelector('[data-nyx-terminal-input]');const write=(text,type='')=>{const row=document.createElement('div');row.className='nyx-terminal-line'+(type?' '+type:'');row.textContent=String(text);output.appendChild(row);output.scrollTop=output.scrollHeight};const run=raw=>{const command=String(raw||'').trim();if(!command)return;write('nyx> '+command,'command');const name=command.toLowerCase();if(name==='clear'){output.textContent='';return}if(name==='help'){write('Commands: help, status, theme, origin, storage, date, clear');return}if(name==='status'){write('Nyx is '+(navigator.onLine?'online':'offline')+' · '+(navigator.platform||'browser'));return}if(name==='theme'){write('Theme: '+(document.body.className.match(/theme-([^ ]+)/)?.[1]||'default'));return}if(name==='origin'){write('Origin: '+parent.location.origin);return}if(name==='storage'){write('Local settings entries: '+localStorage.length);return}if(name==='date'){write(new Date().toLocaleString());return}write('Unknown command: '+command+'. Type "help" for the command list.','error')};write('Nyx Developer Console');write('Type "help" to list commands. Browser DevTools cannot be opened by a webpage.');document.querySelector('[data-nyx-terminal-form]')?.addEventListener('submit',event=>{event.preventDefault();run(input?.value);if(input)input.value=''});setTimeout(()=>input?.focus(),50)})();`;
     const pages={
-      apps:{title:'Apps',body:`<style>html,body,.apps-shell-page{background:#000!important;background-image:none!important}</style><section class="shell-page apps-shell-page"><h1>Apps</h1><p>Everything in Nyx.</p><div class="quick-grid apps-launch-grid">${quickTiles()}</div></section>`},
+      apps:{title:'Apps',body:`<style>html,body,.apps-shell-page{background:#000!important;background-image:none!important}</style><section class="shell-page apps-shell-page"><h1>Apps</h1><p>Everything in Nyx.</p><div class="quick-grid apps-launch-grid" data-nyx-global-app-grid>${quickTiles()}</div></section>`},
       links:{title:'Bookmarks',body:`<section class="shell-page"><h1>Bookmarks</h1><p>Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>DuckDuckGo</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></section>`},
       terms:{title:'Terms Of Service',style:utilityPageStyle,body:nyxTermsPageMarkup()},
       about:{title:'About Nyx',style:utilityPageStyle+nyxCreditsPresentationStyle+nyxCreditsOwnerImageStyle,body:nyxCreditsPageMarkup()},
@@ -6233,27 +6349,8 @@
     if(mode!=='auto') return mode;
     return bestBrowserMode(url);
   }
-  function proxySelectionInfo(url,forceMode=''){
-    const savedMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
-    const mode=forceMode || selectedBrowserMode(url);
-    const savedTransport=store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT);
-    return {
-      url,
-      savedMode,
-      forcedMode:forceMode || '',
-      selectedMode:mode,
-      savedTransport,
-      activeTransport:browserTransportOverride || savedTransport
-    };
-  }
-  function logProxySelection(url,forceMode='',phase='navigate'){
-    const info=proxySelectionInfo(url,forceMode);
-    window.nyxProxySelection=info;
-    console.log('nyx proxy selection', {...info, phase});
-    return info;
-  }
   function appCompatibilityMode(url){
-    if(hostMatches(browserHost(url),['crazygames.com','tiktok.com'])) return 'ultraviolet';
+    if(hostMatches(browserHost(url),['aether.cx','crazygames.com','tiktok.com'])) return 'ultraviolet';
     return '';
   }
   function preferredTransport(url){
@@ -6457,7 +6554,6 @@
           await setTransportWithRetry('/assets/transports/libcurl-baremux.mjs', [{ wisp, websocket: wisp }]);
           return connection;
         }catch(error){
-          console.warn('nyx libcurl BareMux transport failed.', error);
           throw error;
         }
       }
@@ -6496,12 +6592,7 @@
           new Promise((_,reject)=>setTimeout(()=>reject(new Error(`Scramjet ${transport} transport timed out while connecting to ${wisp}`)),7000))
         ]);
       }catch(error){
-        if(transport==='libcurl'){
-          console.warn('nyx libcurl Scramjet transport failed.', error);
-          throw error;
-        }else{
-          throw error;
-        }
+        throw error;
       }
     }
     scramjetTransportKey=`${transport}:${wisp}`;
@@ -6636,12 +6727,19 @@
     const children=target?.childNodes || target?.children;
     if(!Array.isArray(children)) return;
     if(children.some(child=>child?.attribs?.['data-nyx-runtime-guard']===key)) return;
-    children.unshift({
+    const script={
       type:'script',
       name:'script',
       attribs:{'data-nyx-runtime-guard':key},
-      children:[{type:'text',data:source || 'void 0;'}]
-    });
+      children:[],
+      parent:target,
+      prev:null,
+      next:children[0] || null
+    };
+    const sourceNode={type:'text',data:source || 'void 0;',parent:script,prev:null,next:null};
+    script.children.push(sourceNode);
+    if(children[0]) children[0].prev=script;
+    children.unshift(script);
   }
   function shouldUseScramjetRuntimeGuard(url){
     return false;
@@ -6884,11 +6982,6 @@
       recoveryStarted=true;
       t.scramjetPresentationRetries=retries+1;
       t.scramjetHealthWatchToken='recovering-'+token;
-      console.warn('nyx detected an incomplete first proxy render; retrying the page automatically.',{
-        sourceUrl:source,
-        reason,
-        attempt:t.scramjetPresentationRetries
-      });
       if(t.scramjetPresentationRetries>1){
         await refreshScramjetServiceWorker().catch(()=>false);
         scramjetInstallPromise=null;
@@ -6960,10 +7053,6 @@
       recoveryStarted=true;
       t.uvPresentationRetries=Number(t.uvPresentationRetries || 0)+1;
       t.uvPresentationWatchToken='recovering-'+token;
-      console.warn('nyx detected an incomplete UV page; applying the compatible recovery path.',{
-        sourceUrl:source,
-        reason
-      });
       if(reason==='YouTube component styles did not initialize'){
         if(typeof t.retryUvPresentation==='function') t.retryUvPresentation(source,reason);
         return;
@@ -7287,10 +7376,8 @@
       await registration.update().catch(()=>null);
       await waitForServiceWorkerActive(registration,config.prefix);
       await installBareMuxTransport();
-      console.log('nyx UV Engine: Ready',registration.scope);
       return true;
     })().catch(err=>{
-      console.warn('nyx UV Engine unavailable:',err);
       uvInstallPromise=null;
       return false;
     });
@@ -7343,11 +7430,9 @@
         scramjetController=createScramjetController(repairedServiceworker,transport);
         await scramjetController.wait();
       }
-      console.log('nyx Scramjet Engine: Ready',registration.scope);
       scramjetInstallError='';
       return true;
     })().catch(err=>{
-      console.warn('nyx Scramjet Engine unavailable:',err);
       scramjetInstallError=`Failed while ${step}: ${err?.message || err}`;
       scramjetController=null;
       scramjetInstallPromise=null;
@@ -7573,22 +7658,21 @@
   }
   function browserBody(){
     const minimalPresenceText=nyxPresenceCount===null ? 'Connecting\u2026' : `${nyxPresenceCount} online`;
-    if(store.text('nyx.homeDesign','redesigned')!=='original') return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home nyx-minimal-home"><header class="nyx-minimal-homebar"><span class="nyx-minimal-wordmark"><i aria-hidden="true"></i>Nyx</span><nav aria-label="Account shortcuts"><button data-app-url="/apps/chat/" type="button" aria-label="Chat">${nyxDashboardIcon('chat')}</button><button data-open="settings" type="button" aria-label="Settings">${nyxDashboardIcon('settings')}</button><span data-nyx-profile-slot></span></nav></header><main class="browser-shell-start nyx-minimal-hero"><div class="nyx-minimal-brand"><span class="nyx-minimal-moon" aria-hidden="true"></span><h1>NYX</h1></div><form class="browser-blank-search nyx-home-search nyx-minimal-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Search or enter a URL" placeholder="Search or enter a URL" autocomplete="off" spellcheck="false"></form><nav class="nyx-minimal-shortcuts" aria-label="Nyx shortcuts"><button data-nyx-focus-search type="button">${nyxDashboardIcon('browse')}<span>Browse</span></button><button data-app-url="/assets/games/" type="button">${nyxDashboardIcon('games')}<span>Games</span></button><button data-app-url="/apps/chat/" type="button">${nyxDashboardIcon('chat')}<span>Chat</span></button><button class="nyx-minimal-ai" data-app-url="nyx://ai" type="button"><span class="nyx-nocturne-ai-icon" aria-hidden="true"></span><span>AI</span></button><button data-app-url="/apps/nyxify/" type="button">${nyxDashboardIcon('music')}<span>Music</span></button><button data-nyx-apps-toggle type="button" aria-expanded="false">${nyxDashboardIcon('apps')}<span>Apps</span></button></nav></main><div class="nyx-home-presence${nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="button" tabindex="${nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${minimalPresenceText}</span></div><aside class="nyx-app-launcher" data-nyx-app-launcher aria-hidden="true"><header><div><strong>Apps</strong><small>Everything in Nyx</small></div><button data-nyx-apps-close type="button" aria-label="Close apps">&times;</button></header><label><span aria-hidden="true"></span><input data-nyx-app-search type="search" placeholder="Find an app" autocomplete="off"></label><div class="nyx-app-launcher-grid" data-nyx-app-results><button data-app-url="/apps/link-checker/" data-nyx-app-name="link checker" type="button">${nyxDashboardIcon('link')}<span>Link Checker</span></button><button data-app-url="/apps/link-generator/" data-nyx-app-name="link generator" type="button">${nyxDashboardIcon('extensions')}<span>Link Generator</span></button><button data-app-url="https://aether.cx/" data-nyx-app-name="movies theater" type="button">${nyxDashboardIcon('media')}<span>Movies</span></button><button data-app-url="nyx://ai" data-nyx-app-name="nyx ai" type="button"><span class="nyx-nocturne-ai-icon" aria-hidden="true"></span><span>Nyx AI</span></button><button data-app-url="/apps/nyxify/" data-nyx-app-name="nyxify music" type="button">${nyxDashboardIcon('music')}<span>Nyxify</span></button><button data-app-url="/apps/chat/" data-nyx-app-name="chat" type="button">${nyxDashboardIcon('chat')}<span>Chat</span></button><button data-app-url="/assets/games/" data-nyx-app-name="games pirate cove" type="button">${nyxDashboardIcon('games')}<span>Games</span></button><button data-open-nyx-profile-entry data-nyx-app-name="profiles members" type="button">${nyxDashboardIcon('browse')}<span>Profiles</span></button><button data-open="settings" data-nyx-app-name="settings preferences" type="button">${nyxDashboardIcon('settings')}<span>Settings</span></button></div><div class="nyx-app-launcher-saved"><span>Your shortcuts</span><div class="quick-grid home-shortcut-grid" data-home-shortcuts>${browserHomeShortcutTiles()}</div></div><button class="nyx-app-launcher-all" data-open="apps" type="button">View all apps</button></aside></div></div>`;
+    if(store.text('nyx.homeDesign','redesigned')!=='original') return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home nyx-minimal-home"><header class="nyx-minimal-homebar"><span class="nyx-minimal-wordmark"><i aria-hidden="true"></i>Nyx</span><nav aria-label="Account shortcuts"><button data-app-url="/apps/chat/" type="button" aria-label="Chat">${nyxDashboardIcon('chat')}</button><button data-open="settings" type="button" aria-label="Settings">${nyxDashboardIcon('settings')}</button><span data-nyx-profile-slot></span></nav></header><main class="browser-shell-start nyx-minimal-hero"><div class="nyx-minimal-brand"><span class="nyx-minimal-moon" aria-hidden="true"></span><h1>NYX</h1></div><form class="browser-blank-search nyx-home-search nyx-minimal-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Search or enter a URL" placeholder="Search or enter a URL" autocomplete="off" spellcheck="false"></form><nav class="nyx-minimal-shortcuts" aria-label="Nyx shortcuts"><button data-nyx-focus-search type="button">${nyxDashboardIcon('browse')}<span>Browse</span></button><button data-app-url="/assets/games/" type="button">${nyxDashboardIcon('games')}<span>Games</span></button><button data-app-url="/apps/chat/" type="button">${nyxDashboardIcon('chat')}<span>Chat</span></button><button class="nyx-minimal-ai" data-app-url="nyx://ai" type="button"><span class="nyx-nocturne-ai-icon" aria-hidden="true"></span><span>AI</span></button><button data-app-url="http://icefy.top/" type="button">${nyxDashboardIcon('media')}<span>Movies</span></button><button data-nyx-apps-toggle type="button">${nyxDashboardIcon('apps')}<span>Apps</span></button></nav></main><nav class="nyx-minimal-utility-links" aria-label="Nyx tools and terms"><a data-app-url="/apps/link-checker/" href="/apps/link-checker/">Link Checker</a><a data-app-url="/apps/link-generator/" href="/apps/link-generator/">Link Generator</a><a data-open="terms" href="nyx://terms">Terms of Service</a></nav><div class="nyx-home-presence${nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="button" tabindex="${nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${minimalPresenceText}</span></div></div></div>`;
     const presenceText=nyxPresenceCount===null ? 'Connecting\u2026' : `${nyxPresenceCount} online`;
     return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence${nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="button" tabindex="${nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><button class="nyx-home-weather" data-home-weather data-open="weather" type="button" aria-label="Open weather report"><span class="nyx-home-weather-icon" data-home-weather-icon aria-hidden="true"><svg class="nyx-weather-symbol nyx-weather-symbol-partly-cloudy" viewBox="0 0 24 24" focusable="false"><circle class="nyx-weather-sun-fill" cx="8" cy="8" r="3.2"/><path class="nyx-weather-sun-ray" d="M8 2.3v1.4M3.97 3.97l1 1M2.3 8h1.4M12.03 3.97l-1 1M13.7 8h-1.4"/><path class="nyx-weather-cloud-fill" d="M7.2 19h10a4 4 0 0 0 .45-7.98A5.55 5.55 0 0 0 7.08 12.6 3.2 3.2 0 0 0 7.2 19Z"/></svg></span><strong data-home-weather-temp>--°</strong><span data-home-weather-desc>Loading</span></button><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1><form class="browser-blank-search nyx-home-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Find your course or enter a URL" placeholder="Find your Course" autocomplete="off" spellcheck="false"></form><nav class="nyx-home-actions" aria-label="Nyx home"><button data-open="apps" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-apps" aria-hidden="true"></span><span>Resources</span></button><button data-app-url="https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-study" aria-hidden="true"></span><span>Assignments</span></button><button data-open-nyx-profile-entry data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-profile" aria-hidden="true"></span><span>Student Profile</span></button><button data-open="settings" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-settings" aria-hidden="true"></span><span>Preferences</span></button></nav></main><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div><a class="nyx-home-link-checker" data-app-url="/apps/link-checker/" href="/apps/link-checker/">Link Checker</a><nav class="nyx-home-utility-links" aria-label="Nyx information and tools"><a data-app-url="/apps/chat/" href="/apps/chat/">Chat</a><a data-app-url="/apps/link-generator/" href="/apps/link-generator/">Link Generator</a><a data-open="terms" href="nyx://terms">Terms Of Service</a><a data-open="developer" href="nyx://developer">Developer Console</a><a data-open="about" href="nyx://about">About Us</a></nav></div></div>`;
   }
   //apps-grid
   const nyxAiHomeShortcut={domain:'nyx-ai',title:'AI Tutor',url:'nyx://ai',favorite:false};
   const nyxAiHomeShortcutMigrationKey='nyx.homeShortcuts.aiShortcutV1';
-  const nyxifyHomeShortcut={domain:'nyxify',title:'Nyxify',url:'/apps/nyxify/',favorite:false};
-  const nyxMediaHomeShortcutMigrationKey='nyx.homeShortcuts.nyxifyOnlyV1';
+  const moviesHomeShortcut={domain:'icefy.top',title:'Movies',url:'http://icefy.top/',favorite:false};
   const defaultHomeShortcuts=[
     {domain:'geforcenow',title:'Course Library',url:'https://play.geforcenow.com/',favorite:true},
     {domain:'duck.ai',title:'Research Assistant',url:'https://duck.ai/',favorite:false},
     nyxAiHomeShortcut,
     {domain:'games',title:'Practice Lab',url:'/assets/games/',favorite:false},
     {domain:'tiktok.com',title:'Quick Lessons',url:'https://www.tiktok.com/',favorite:false},
-    nyxifyHomeShortcut,
+    moviesHomeShortcut,
     {domain:'discord.com',title:'Study Groups',url:'https://discord.com/app',favorite:false}
   ];
   const educationShortcutTitles=new Map(defaultHomeShortcuts.map(item=>[String(item.url).replace(/\/+$/,''),item.title]));
@@ -7614,6 +7698,7 @@
           .filter(item=>item?.url && item?.title)
           .filter(item=>String(item.url || '').trim().replace(/\/+$/,'').toLowerCase()!=='/apps/nyxcloud' && String(item.domain || '').trim().toLowerCase()!=='nyx-cloud')
           .filter(item=>String(item.url || '').trim().replace(/\/+$/,'').toLowerCase()!=='/apps/nyxtube' && !['nyx-tube','nyxtube'].includes(String(item.domain || '').trim().toLowerCase()))
+          .filter(item=>String(item.url || '').trim().replace(/\/+$/,'').toLowerCase()!=='/apps/nyxify' && String(item.domain || '').trim().toLowerCase()!=='nyxify')
           .map(normalizeHomeShortcut);
         if(!store.get(nyxAiHomeShortcutMigrationKey,false)){
           if(!cleaned.some(item=>String(item.url || '').trim().toLowerCase()==='nyx://ai')){
@@ -7622,21 +7707,11 @@
           }
           store.set(nyxAiHomeShortcutMigrationKey,true);
         }
-        if(!store.get(nyxMediaHomeShortcutMigrationKey,false)){
-          cleaned.forEach((item,index)=>{
-            const url=String(item.url || '').trim().replace(/\/+$/,'').toLowerCase();
-            const title=String(item.title || '').trim().toLowerCase();
-            if(url==='https://open.spotify.com' && title==='focus audio') cleaned[index]={...nyxifyHomeShortcut};
-          });
-          if(!cleaned.some(item=>String(item.url || '').trim().toLowerCase()==='/apps/nyxify/')) cleaned.push({...nyxifyHomeShortcut});
-          store.set(nyxMediaHomeShortcutMigrationKey,true);
-        }
         if(JSON.stringify(cleaned)!==JSON.stringify(saved)) saveHomeShortcuts(cleaned);
         return cleaned;
       }
     }catch{}
     store.set(nyxAiHomeShortcutMigrationKey,true);
-    store.set(nyxMediaHomeShortcutMigrationKey,true);
     return defaultHomeShortcuts.map(item=>({...item}));
   }
   function saveHomeShortcuts(items){
@@ -7651,7 +7726,6 @@
     if(key.includes('geforce')) return '/assets/icons/dock-nvidia.png';
     if(key==='games' || key.includes('study')) return '/assets/icons/dock-controller.png';
     if(key==='nyx-ai' || key==='ai') return '/assets/icons/shortcut-nyx-ai.svg?v=6';
-    if(key==='nyxify') return '/assets/icons/shortcut-spotify.svg?v=1';
     if(key.includes('duck')) return '/assets/icons/shortcut-duckduckgo.svg';
     if(key.includes('youtube') || key==='youtu.be') return '/assets/icons/shortcut-youtube.svg';
     if(key.includes('tiktok')) return '/assets/icons/shortcut-tiktok.svg';
@@ -7762,7 +7836,7 @@
   function playNyxStartupReveal(){
     const body=document.body;
     const targets=[
-      ...document.querySelectorAll('body.browser-shell .top-os .brand-mini > button, body.browser-shell .top-os > .browser-top-clock, body.browser-shell .top-os .browser-mode-address > *, body.browser-shell .browser-home [data-home-shortcuts], body.browser-shell .browser-home [data-home-shortcuts] > .quick-tile')
+      ...document.querySelectorAll('body.browser-shell .top-os .brand-mini > button, body.browser-shell .top-os > :is(.browser-top-clock,.nyx-latency-bubble), body.browser-shell .top-os .browser-mode-address > *, body.browser-shell .browser-home [data-home-shortcuts], body.browser-shell .browser-home [data-home-shortcuts] > .quick-tile')
     ];
     document.querySelectorAll('.shortcut-entrance').forEach(el=>el.classList.remove('shortcut-entrance'));
     document.querySelectorAll('.tab-opening,.tab-activating').forEach(el=>el.classList.remove('tab-opening','tab-activating'));
@@ -7788,7 +7862,7 @@
     ];
     tabItems.forEach((el,index)=>animateHomeElement(el,index,{delay:45+(index*65),duration:650,start:'translate(-24px,34px) scale(.88)',mid:'translate(-7px,10px) scale(.97)'}));
     const toolbarItems=[
-      ...document.querySelectorAll('body.browser-shell [data-browser-shell-back], body.browser-shell [data-browser-shell-forward], body.browser-shell [data-browser-shell-reload], body.browser-shell [data-browser-shell-home-nav], body.browser-shell [data-browser-shell-url], body.browser-shell [data-browser-shell-bookmark], body.browser-shell .browser-mode-weather, body.browser-shell [data-browser-shell-menu], body.browser-shell #clock')
+      ...document.querySelectorAll('body.browser-shell [data-browser-shell-back], body.browser-shell [data-browser-shell-forward], body.browser-shell [data-browser-shell-reload], body.browser-shell [data-browser-shell-home-nav], body.browser-shell [data-browser-shell-url], body.browser-shell [data-browser-shell-settings], body.browser-shell .browser-mode-weather, body.browser-shell [data-browser-shell-menu], body.browser-shell #clock')
     ];
     toolbarItems.forEach((el,index)=>animateHomeElement(el,index,{delay:120+(index*58),duration:690,start:'translate(-26px,38px) scale(.9)',mid:'translate(-8px,12px) scale(.98)'}));
   }
@@ -7858,6 +7932,7 @@
       const state={width:0,height:0,dots:[],links:[],pointer:null,previousPointer:null,frame:0};
       const radius=55;
       const fadeDistance=42;
+      const fieldMotionAllowed=()=>!reducedMotion.matches && !document.documentElement.classList.contains('perf-lite') && !document.documentElement.classList.contains('perf-min');
       const requestFrame=()=>{
         if(!state.frame) state.frame=requestAnimationFrame(draw);
       };
@@ -7885,41 +7960,49 @@
           state.dots.push(dot);
           return state.dots.length-1;
         };
-        const backgroundCount=Math.max(24,Math.min(86,Math.round(width*height/17500)));
+        const lightweight=document.documentElement.classList.contains('perf-lite');
+        const backgroundCount=lightweight
+          ? Math.max(24,Math.min(96,Math.round(width*height/18000)))
+          : Math.max(36,Math.min(180,Math.round(width*height/10000)));
         for(let index=0;index<backgroundCount;index++){
           addDot(
             18+random()*Math.max(1,width-36),
             16+random()*Math.max(1,height-32),
-            .55+random()*1.05,
-            .22+random()*.5
+            .38+random()*.78,
+            .16+random()*.42
           );
         }
-        const clusterCount=width<620 ? 2 : Math.max(3,Math.min(5,Math.round(width/430)));
+        const clusterCount=width<620 ? 2 : lightweight ? 3 : Math.max(3,Math.min(4,Math.round(width/480)));
         const anchors=[
-          [.14,.2],[.83,.17],[.12,.76],[.86,.72],[.52,.12],[.54,.86]
+          [.28,.08],[.065,.42],[.58,.86],[.91,.17],[.88,.7]
         ];
         for(let cluster=0;cluster<clusterCount;cluster++){
           const anchor=anchors[cluster%anchors.length];
-          const centerX=width*(anchor[0]+(random()-.5)*.08);
-          const centerY=height*(anchor[1]+(random()-.5)*.08);
-          const count=5+Math.floor(random()*3);
-          let previousIndex=-1;
+          const centerX=width*(anchor[0]+(random()-.5)*.05);
+          const centerY=height*(anchor[1]+(random()-.5)*.05);
+          const count=7+Math.floor(random()*4);
+          const clusterDots=[];
           for(let node=0;node<count;node++){
             const angle=random()*Math.PI*2;
-            const distance=10+random()*(width<620?36:58);
+            const distance=12+random()*(width<620?44:72);
             const dotIndex=addDot(
               Math.max(12,Math.min(width-12,centerX+Math.cos(angle)*distance)),
-              Math.max(12,Math.min(height-12,centerY+Math.sin(angle)*distance*.7)),
-              .85+random()*1.25,
-              .52+random()*.36,
+              Math.max(12,Math.min(height-12,centerY+Math.sin(angle)*distance*.75)),
+              .72+random()*1.12,
+              .46+random()*.38,
               cluster
             );
-            if(previousIndex>=0) state.links.push([previousIndex,dotIndex]);
-            previousIndex=dotIndex;
+            const nearest=clusterDots
+              .map(index=>({index,distance:Math.hypot(state.dots[index].homeX-state.dots[dotIndex].homeX,state.dots[index].homeY-state.dots[dotIndex].homeY)}))
+              .sort((a,b)=>a.distance-b.distance);
+            if(nearest[0]) state.links.push([nearest[0].index,dotIndex]);
+            if(nearest[1] && random()<.58) state.links.push([nearest[1].index,dotIndex]);
+            clusterDots.push(dotIndex);
           }
         }
         canvas.dataset.particleCount=String(state.dots.length);
         canvas.dataset.constellationCount=String(clusterCount);
+        canvas.dataset.backgroundStyle='fern-star-network';
         canvas.dataset.pointerEffect='constellation-repel-and-return';
         requestFrame();
       };
@@ -7927,9 +8010,10 @@
         state.frame=0;
         context.clearRect(0,0,state.width,state.height);
         const styles=getComputedStyle(home);
-        const dotColor=styles.getPropertyValue('--nyx-dot-color').trim() || '#759488';
-        const linkColor=styles.getPropertyValue('--nyx-link-color').trim() || '#4c675f';
-        const pointer=reducedMotion.matches ? null : state.pointer;
+        const dotColor=styles.getPropertyValue('--nyx-constellation-dot-color').trim() || styles.getPropertyValue('--nyx-dot-color').trim() || '#759488';
+        const linkColor=styles.getPropertyValue('--nyx-constellation-link-color').trim() || styles.getPropertyValue('--nyx-link-color').trim() || '#4c675f';
+        const motionAllowed=fieldMotionAllowed();
+        const pointer=motionAllowed ? state.pointer : null;
         const previous=state.previousPointer || pointer;
         const segmentX=pointer && previous ? pointer.x-previous.x : 0;
         const segmentY=pointer && previous ? pointer.y-previous.y : 0;
@@ -7964,12 +8048,12 @@
           if(displacement>.18 || dot.vx*dot.vx+dot.vy*dot.vy>.02) unsettled=true;
         }
         context.strokeStyle=linkColor;
-        context.lineWidth=.7;
+        context.lineWidth=.55;
         for(const [fromIndex,toIndex] of state.links){
           const from=state.dots[fromIndex];
           const to=state.dots[toIndex];
           if(!from || !to) continue;
-          context.globalAlpha=Math.min(from.opacity*from.alpha,to.opacity*to.alpha)*.34;
+          context.globalAlpha=Math.min(from.opacity*from.alpha,to.opacity*to.alpha)*.3;
           context.beginPath();
           context.moveTo(from.x,from.y);
           context.lineTo(to.x,to.y);
@@ -7984,9 +8068,14 @@
         }
         context.globalAlpha=1;
         if(pointer) state.previousPointer={...pointer};
-        if((state.pointer && !reducedMotion.matches) || unsettled) requestFrame();
+        if((state.pointer && motionAllowed) || unsettled) requestFrame();
       }
       home.addEventListener('pointermove',event=>{
+        if(!fieldMotionAllowed()){
+          state.pointer=null;
+          state.previousPointer=null;
+          return;
+        }
         const rect=home.getBoundingClientRect();
         const next={x:event.clientX-rect.left,y:event.clientY-rect.top};
         state.previousPointer=state.pointer || next;
@@ -7997,6 +8086,7 @@
         state.pointer=null;
         requestFrame();
       },{passive:true});
+      addEventListener('nyx:themechange',requestFrame);
       if(typeof ResizeObserver==='function') new ResizeObserver(resize).observe(home);
       else addEventListener('resize',resize,{passive:true});
       resize();
@@ -8271,47 +8361,49 @@
     saveHomeShortcuts(items);
     renderHomeShortcuts();
   }
+  const nyxDefaultGlobalApps=[
+    ['link-checker','link-checker','Link Checker','/apps/link-checker/'],['link-generator','link-generator','Link Generator','/apps/link-generator/'],['youtube','youtube.com','YouTube','https://www.youtube.com/'],['pirate-cove','games','Pirate Cove','/assets/games/'],['nyx-chat','nyx-chat','Nyx Chat','/apps/chat/'],['geforce-now','geforcenow','GeForce Now','https://play.geforcenow.com/'],['roblox','roblox.com','Roblox','https://web.cloudmoonapp.com/game/com.roblox.client/'],['discord','discord.com','Discord','https://discord.com/app'],['spotify','spotify.com','Spotify','https://open.spotify.com/'],['music','traxmojo.com','Music','https://traxmojo.com/'],['google','google.com','Google','https://www.google.com/'],['study','docs.google.com','Study','https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0'],['duck-ai','duck.ai','Duck AI','https://duck.ai/'],['nyx-ai','nyx-ai','Nyx AI','nyx://ai'],['wikipedia','wikipedia.org','Wikipedia','https://www.wikipedia.org/'],['movies','icefy.top','Movies','http://icefy.top/'],['more-movie-sites','fmhy.net','More Movie Sites','https://fmhy.net/video#p-stream-forks'],['tiktok','tiktok.com','TikTok','https://www.tiktok.com/'],['instagram','instagram.com','Instagram','https://www.instagram.com/'],['snapchat','snapchat.com','Snapchat','https://www.snapchat.com/'],['amazon','amazon.com','Amazon','https://www.amazon.com/'],['reddit','reddit.com','Reddit','https://www.reddit.com/'],['twitter','x.com','Twitter','https://x.com/'],['tcgplayer','tcgplayer.com','TCGPlayer','https://www.tcgplayer.com/'],['cps-test','cpstest.org','CPS Test','https://cpstest.org/'],['chess','chess.com','Chess.com','https://www.chess.com/'],['animex','animex.one','Animex','https://animex.one/'],['chatgpt','chatgpt.com','AI','https://chatgpt.com/'],['steam','store.steampowered.com','Steam','https://store.steampowered.com/'],['crunchyroll','crunchyroll.com','Crunchyroll','https://www.crunchyroll.com/'],['crazygames','crazygames.com','CrazyGames','https://www.crazygames.com/'],['newgrounds','newgrounds.com','Newgrounds','https://www.newgrounds.com/'],['twitch','twitch.tv','Twitch','https://www.twitch.tv/'],['kick','kick.com','Kick','https://kick.com/'],['pluto-tv','pluto.tv','Pluto TV','https://pluto.tv/'],['skribbl','skribbl.io','Skribbl.io','https://skribbl.io/'],['slither','slither.io','Slither.io','https://slither.io/'],['geoguessr','geoguessr.com','GeoGuessr','https://www.geoguessr.com/'],['y8-games','y8.com','Y8 Games','https://www.y8.com/'],['itch','itch.io','itch.io','https://itch.io/']
+  ].map(([id,icon,name,url])=>({id,icon,name,url}));
+  let nyxGlobalApps=nyxDefaultGlobalApps.map(app=>({...app}));
+  function normalizeNyxGlobalApp(app){
+    const id=String(app?.id||'').trim().toLowerCase();
+    const icon=String(app?.icon||'apps').trim().toLowerCase();
+    const name=String(app?.name||'').trim();
+    const url=String(app?.url||'').trim();
+    if(!/^[a-z0-9][a-z0-9-]{1,63}$/.test(id) || !name || !url) return null;
+    return {id,icon,name:name.slice(0,48),url:url.slice(0,2048)};
+  }
+  function globalAppIcon(app){return appIcons[app.icon] || iconForUrl(app.url) || appIcon('apps')}
   function quickTiles(){
-    return [
-      ['nyxify','Nyxify','/apps/nyxify/'],
-      ['youtube.com','YouTube','https://www.youtube.com/'],
-      ['games','Pirate Cove','/assets/games/'],
-      ['nyx-chat','Nyx Chat','/apps/chat/'],
-      ['geforcenow','GeForce Now','https://play.geforcenow.com/'],
-      ['roblox.com','Roblox','https://web.cloudmoonapp.com/game/com.roblox.client/'],
-      ['discord.com','Discord','https://discord.com/app'],
-      ['spotify.com','Spotify','https://open.spotify.com/'],
-      ['traxmojo.com','Music','https://traxmojo.com/'],
-      ['google.com','Google','https://www.google.com/'],
-      ['docs.google.com','Study','https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0'],
-      ['duck.ai','Duck AI','https://duck.ai/'],
-      ['nyx-ai','Nyx AI','nyx://ai'],
-      ['wikipedia.org','Wikipedia','https://www.wikipedia.org/'],
-      ['aether.cx','Movies','https://aether.cx/'],
-      ['tiktok.com','TikTok','https://www.tiktok.com/'],
-      ['instagram.com','Instagram','https://www.instagram.com/'],
-      ['snapchat.com','Snapchat','https://www.snapchat.com/'],
-      ['amazon.com','Amazon','https://www.amazon.com/'],
-      ['reddit.com','Reddit','https://www.reddit.com/'],
-      ['x.com','Twitter','https://x.com/'],
-      ['tcgplayer.com','TCGPlayer','https://www.tcgplayer.com/'],
-      ['cpstest.org','CPS Test','https://cpstest.org/'],
-      ['chess.com','Chess.com','https://www.chess.com/'],
-      ['animex.one','Animex','https://animex.one/'],
-      ['chatgpt.com','AI','https://chatgpt.com/'],
-      ['store.steampowered.com','Steam','https://store.steampowered.com/'],
-      ['crunchyroll.com','Crunchyroll','https://www.crunchyroll.com/'],
-      ['crazygames.com','CrazyGames','https://www.crazygames.com/'],
-      ['newgrounds.com','Newgrounds','https://www.newgrounds.com/'],
-      ['twitch.tv','Twitch','https://www.twitch.tv/'],
-      ['kick.com','Kick','https://kick.com/'],
-      ['pluto.tv','Pluto TV','https://pluto.tv/'],
-      ['skribbl.io','Skribbl.io','https://skribbl.io/'],
-      ['slither.io','Slither.io','https://slither.io/'],
-      ['geoguessr.com','GeoGuessr','https://www.geoguessr.com/'],
-      ['y8.com','Y8 Games','https://www.y8.com/'],
-      ['itch.io','itch.io','https://itch.io/']
-    ].map(([domain,n,u],i)=>`<button class="quick-tile" draggable="true" style="--tile-delay:${Math.min(i,18)*34}ms" data-domain="${esc(domain)}" data-app-url="${esc(u)}"><img class="quick-icon" alt="" src="${appIcon(domain)}"><span>${esc(n)}</span></button>`).join('');
+    return nyxGlobalApps.map((app,i)=>`<button class="quick-tile" draggable="true" style="--tile-delay:${Math.min(i,18)*34}ms" data-global-app-id="${esc(app.id)}" data-domain="${esc(app.icon)}" data-app-url="${esc(app.url)}"><img class="quick-icon" alt="" draggable="false" referrerpolicy="no-referrer" src="${esc(globalAppIcon(app))}"><span>${esc(app.name)}</span></button>`).join('');
+  }
+  function renderNyxGlobalApps(){
+    const documents=[document];
+    document.querySelectorAll('iframe').forEach(frame=>{try{if(frame.contentDocument) documents.push(frame.contentDocument)}catch{}});
+    documents.forEach(doc=>doc.querySelectorAll('[data-nyx-global-app-grid]').forEach(grid=>{grid.innerHTML=quickTiles()}));
+  }
+  async function loadNyxGlobalApps(){
+    try{
+      const response=await fetch('/api/apps',{headers:{Accept:'application/json'},cache:'no-store'});
+      const payload=await response.json();
+      if(!response.ok || !Array.isArray(payload?.apps)) throw new Error(payload?.error||'App catalog unavailable');
+      nyxGlobalApps=payload.apps.map(normalizeNyxGlobalApp).filter(Boolean);
+      renderNyxGlobalApps();
+    }catch(error){console.warn('Nyx app catalog is using built-in defaults:',error?.message||error)}
+    return nyxGlobalApps;
+  }
+  function startNyxGlobalApps(){
+    if(startNyxGlobalApps.started) return;
+    startNyxGlobalApps.started=true;
+    void loadNyxGlobalApps();
+    addEventListener('nyx:global-apps-changed',event=>{
+      const apps=event.detail?.apps;
+      if(Array.isArray(apps)){
+        nyxGlobalApps=apps.map(normalizeNyxGlobalApp).filter(Boolean);
+        renderNyxGlobalApps();
+      }else void loadNyxGlobalApps();
+    });
+    setInterval(()=>{if(!document.hidden) void loadNyxGlobalApps()},60_000);
   }
   function cleanBrowserControls(win){
     const back=win.querySelector('[data-back]'), forward=win.querySelector('[data-forward]'), reload=win.querySelector('[data-reload]'), menu=win.querySelector('[data-menu]');
@@ -9088,8 +9180,41 @@
         collapseEmptyImageGap();
       },delay));
     }
+    function installBrowserAdProtection(t){
+      if(!t?.frame) return false;
+      try{
+        const frameWindow=t.frame.contentWindow;
+        if(!frameWindow || frameWindow===window) return false;
+        if(!frameWindow.__nyxBrowserAdBlock) frameWindow.eval(browserAdBlockRuntimeSource);
+        return !!frameWindow.__nyxBrowserAdBlock;
+      }catch{
+        try{
+          const doc=t.frame.contentDocument;
+          if(!doc?.documentElement) return false;
+          let style=doc.getElementById('nyx-browser-ad-block-style');
+          if(!style){
+            style=doc.createElement('style');
+            style.id='nyx-browser-ad-block-style';
+            style.textContent=browserAdElementSelector+'{display:none!important;visibility:hidden!important;pointer-events:none!important;width:0!important;height:0!important}';
+            (doc.head || doc.documentElement).appendChild(style);
+          }
+          doc.querySelectorAll(browserAdElementSelector).forEach(node=>node.remove());
+          return true;
+        }catch{return false}
+      }
+    }
     function installPopupBridge(t){
-      if(!t?.frame || t.popupBridgeInstalled) return;
+      if(!t?.frame) return;
+      if(t.frame.dataset.nyxAdGuardWatch!=='true'){
+        t.frame.dataset.nyxAdGuardWatch='true';
+        t.frame.addEventListener('load',()=>{
+          installBrowserAdProtection(t);
+          setTimeout(()=>installBrowserAdProtection(t),80);
+          setTimeout(()=>installBrowserAdProtection(t),500);
+        });
+      }
+      installBrowserAdProtection(t);
+      if(t.popupBridgeInstalled) return;
       if(t.frame.dataset.nyxDuckImageLoadFix!=='true'){
         t.frame.dataset.nyxDuckImageLoadFix='true';
         t.frame.addEventListener('load',()=>setTimeout(()=>installDuckDuckGoImageViewportFix(t),40));
@@ -9102,6 +9227,8 @@
             const frameHref=String(t.frame?.contentWindow?.location?.href || '');
             const source=browserShellSourceUrl(frameHref);
             if(!/^https?:\/\//i.test(source) || source===location.href) return;
+            const parsedSource=new URL(source,location.href);
+            if(parsedSource.origin===location.origin && (parsedSource.pathname==='/unidentified' || parsedSource.pathname.startsWith('/service/') || parsedSource.pathname.startsWith('/~/sj/'))) return;
             installDuckDuckGoImageViewportFix(t);
             t.url=source;
             t.sourceUrl=source;
@@ -9610,8 +9737,7 @@
       if(!t?.frame) return;
       const sourceUrl=t.sourceUrl || t.url || t.frame.getAttribute('src') || '';
       const containPopups=popupProtectionForUrl(sourceUrl);
-      const containAether=requiresContainedPopupNavigation(sourceUrl);
-      t.frame.dataset.nyxAetherContained=containAether ? 'true' : 'false';
+      t.frame.dataset.nyxBrowserContained=containPopups ? 'true' : 'false';
       applyFrameInteractionPermissions(t.frame);
       installYouTubeCompositorGuard(t);
       installYouTubeCompatibilityGuard(t);
@@ -9655,7 +9781,7 @@
       installPopupBridge(t);
     }
     function activate(id){
-      cleanupAetherInjectedOverlays();
+      cleanupBrowserInjectedAds();
       state.active=id; const t=current();
       if(t?.chatUnread)t.chatUnread=false;
       let mappedShellTab=null;
@@ -9664,6 +9790,7 @@
         if(mappedShellTab) browserShellActiveTab=mappedShellTab.id;
       }
       const activeUrl=t?.url || mappedShellTab?.url || '';
+      const activeLocation=browserShellSourceUrl(t?.sourceUrl || activeUrl) || t?.sourceUrl || activeUrl;
       const activeTitle=t?.title || mappedShellTab?.title || 'New Tab';
       const activeIsBlank=isBrowserShellBlankUrl(activeUrl);
       win.classList.toggle('internal-clear',!!t?.frame?.classList.contains('transparent-internal-page'));
@@ -9689,8 +9816,8 @@
           doc?.querySelectorAll('video,audio').forEach(media=>media.pause());
         }catch{}
       });
-      win.querySelector('.urlbar').value=browserShellDisplayValue(activeUrl); win.querySelector('.titlebar-title').textContent=browserChromeTitle(activeTitle,t?.sourceUrl || activeUrl); renderTabs(); bring(win);
-      if(t?.url || !mappedShellTab?.url) updateBrowserShellLocation(t?.url || '',t?.id || '');
+      win.querySelector('.urlbar').value=browserShellDisplayValue(activeLocation); win.querySelector('.titlebar-title').textContent=browserChromeTitle(activeTitle,activeLocation); renderTabs(); bring(win);
+      if(t?.url || !mappedShellTab?.url) updateBrowserShellLocation(activeLocation,t?.id || '');
     }
     function detectBrowserEngine(url,t){
       const raw=String(url || '');
@@ -9706,24 +9833,6 @@
       if(!t) return;
       t.expectedEngine=expected || t.expectedEngine || '';
       t.actualEngine=detectBrowserEngine(url,t);
-      t.frame?.dataset && (t.frame.dataset.nyxExpectedEngine=t.expectedEngine || '');
-      t.frame?.dataset && (t.frame.dataset.nyxActualEngine=t.actualEngine || '');
-      if(t.expectedEngine && t.expectedEngine!==t.actualEngine && !(t.expectedEngine==='scramjet' && t.actualEngine==='scramjet-legacy')){
-        console.warn(`nyx Browser Engine mismatch during ${phase}: expected ${t.expectedEngine}, actual ${t.actualEngine}`, {url, frameSrc:t.frame?.getAttribute?.('src') || '', tab:t});
-      }else if(t.expectedEngine){
-        console.log(`nyx Browser Engine verified: ${t.expectedEngine}`, {url, phase});
-      }
-    }
-    function assertProxyPath(mode,url){
-      if(mode==='scramjet' && String(url || '').startsWith('/service/')){
-        console.warn('nyx blocked UV URL from loading in Scramjet mode:', url);
-        return false;
-      }
-      if(mode==='ultraviolet' && String(url || '').startsWith('/~/sj/')){
-        console.warn('nyx blocked Scramjet URL from loading in UV mode:', url);
-        return false;
-      }
-      return true;
     }
     function resetProxyInstallers(){
       uvInstallPromise=null;
@@ -9768,7 +9877,6 @@
       const key=String(sourceUrl);
       if(t.selectedSearchFallbackKey===key) return false;
       t.selectedSearchFallbackKey=key;
-      console.warn('nyx proxy could not load the requested page.', {sourceUrl:key, reason});
       t.url=key;
       t.sourceUrl=key;
       t.title=browserShellLabel(key);
@@ -9788,12 +9896,10 @@
       const configuredMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
       if(configuredMode!=='auto'){
         if(configuredMode==='scramjet' && expectedEngine!=='scramjet'){
-          console.warn('nyx enforcing selected Scramjet engine.', {sourceUrl, expectedEngine, reason});
           loadScramjetTab(t,sourceUrl,false);
           return true;
         }
         if(configuredMode==='ultraviolet' && expectedEngine!=='ultraviolet'){
-          console.warn('nyx enforcing selected Ultraviolet engine.', {sourceUrl, expectedEngine, reason});
           installUltraviolet().then(ok=>{
             if(!state.tabs.includes(t)) return;
             const proxied=ok ? proxyModeUrl('ultraviolet',sourceUrl,t.privacySessionId) : '';
@@ -9809,16 +9915,13 @@
         }
       }
       if(isSpotifyFamilyUrl(sourceUrl) && expectedEngine==='scramjet'){
-        if(attempts[key]===1) console.warn('nyx Spotify is staying on Scramjet with the user-selected transport; not switching engines.', {sourceUrl, transport:proxyTransportName(), reason});
         return false;
       }
       if(expectedEngine==='scramjet' && configuredMode==='auto'){
-        console.warn('nyx Auto exhausted its Scramjet transports; keeping the selected engine.', {sourceUrl, reason});
         return loadSelectedSearchFallback(t,sourceUrl,reason || 'Scramjet transports exhausted');
       }
       if(expectedEngine==='scramjet' && configuredMode==='scramjet'){
         if(attempts[key]>3) return loadSelectedSearchFallback(t,sourceUrl,reason || 'scramjet retries exhausted');
-        console.warn('nyx Scramjet is selected; retrying Scramjet instead of switching engines.', {sourceUrl, reason});
         loadScramjetTab(t,sourceUrl,false);
         return true;
       }
@@ -9827,7 +9930,6 @@
       }
       if(attempts[key]>3) return loadSelectedSearchFallback(t,sourceUrl,reason || 'proxy fallback exhausted');
       if(expectedEngine==='scramjet'){
-        console.warn('nyx scramjet failed; switching this tab to ultraviolet.', {sourceUrl, reason});
         installUltraviolet().then(ok=>{
           if(!state.tabs.includes(t)) return;
           const proxied=ok ? proxyModeUrl('ultraviolet',sourceUrl,t.privacySessionId) : '';
@@ -9837,7 +9939,6 @@
         return true;
       }
       if(expectedEngine==='ultraviolet'){
-        console.warn('nyx ultraviolet failed; switching this tab to scramjet.', {sourceUrl, reason});
         loadScramjetTab(t,sourceUrl,false);
         return true;
       }
@@ -9857,7 +9958,6 @@
         const attempts=t.transportRetries || (t.transportRetries={});
         attempts[key]=(attempts[key] || 0) + 1;
         if(isSpotifyFamilyUrl(sourceUrl) && expectedEngine==='scramjet'){
-          if(attempts[key]===1) console.warn('nyx Spotify transport warning; preserving the user-selected transport.', {sourceUrl, transport:proxyTransportName()});
           return;
         }
         if(attempts[key]>2){
@@ -9870,7 +9970,6 @@
         }
         const currentTransport=proxyTransportName();
         const nextTransport=transportRetryOrder(currentTransport)[0] || DEFAULT_BROWSER_TRANSPORT;
-        console.warn('nyx proxy transport failed; retrying same engine with safer transport.', {expectedEngine, sourceUrl, currentTransport, nextTransport});
         setBrowserTransportOverride(nextTransport);
         if(expectedEngine==='scramjet') loadScramjetTab(t,sourceUrl,false);
         else if(expectedEngine==='ultraviolet'){
@@ -9962,7 +10061,6 @@
         if(isSpotifyFamilyUrl(sourceUrl) && expectedEngine==='scramjet'){
           if(!t.spotifyPinnedNoticeShown){
             t.spotifyPinnedNoticeShown=true;
-            console.warn('nyx Spotify is staying on Scramjet with the user-selected transport; skipping timeout engine fallback.', {sourceUrl, transport:proxyTransportName()});
           }
           return;
         }
@@ -9978,7 +10076,6 @@
         if(t.url!==sourceUrl && !currentUrl.startsWith('/service/') && !currentUrl.startsWith('/~/sj/') && !currentUrl.startsWith('/scramjet/service/')) return;
         t.fallbackAttempts=(t.fallbackAttempts || 0) + 1;
         if(t.fallbackAttempts>4) return;
-        console.warn(`nyx ${expectedEngine || 'proxy'} load timed out, trying fallback`, {sourceUrl, transport:browserTransportOverride || store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT)});
         const browserMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
         const canAutoTransport=transportAutoEnabled();
         const currentTransport=proxyTransportName();
@@ -10028,12 +10125,8 @@
     function loadTab(t,url,addHistory=true,expectedEngine='',sourceUrl=''){
       const requestedSource=sourceUrl || (/^https?:/i.test(url) ? url : '');
       if(expectedEngine==='iframe' && hostMatches(browserHost(requestedSource),['cineby.at'])){
-        console.warn('nyx blocked a direct Cineby frame because Cineby denies iframe embedding; using Scramjet.', {sourceUrl:requestedSource});
         loadScramjetTab(t,requestedSource,addHistory);
         return;
-      }
-      if(expectedEngine && !assertProxyPath(expectedEngine,url)){
-        console.warn('nyx continuing despite engine path mismatch so the site can still attempt to load.');
       }
       t.expectedEngine=expectedEngine || t.expectedEngine || '';
       t.sourceUrl=sourceUrl || (/^https?:/i.test(url) ? url : t.sourceUrl || '');
@@ -10076,7 +10169,7 @@
       markBrowserEngine(t,expectedEngine,url,'iframe-src');
       renderTabs();
       activate(t.id);
-      updateBrowserShellLocation(url,t.id);
+      updateBrowserShellLocation(browserShellSourceUrl(t.sourceUrl || url) || t.sourceUrl || url,t.id);
     }
     function setTabMeta(t,url,addHistory=true){
       t.url=url;
@@ -10130,8 +10223,6 @@
           t.url=url;
           setTabMeta(t,url,false);
           t.actualEngine='scramjet-failed';
-          t.frame.dataset.nyxExpectedEngine='scramjet';
-          t.frame.dataset.nyxActualEngine='scramjet-failed';
           setFrameSandbox(t,true);
           clearFrameDocument(t);
           t.frame.srcdoc=proxyFailureHtml(scramjetInstallError,'Scramjet',{allowDirect:true});
@@ -10164,7 +10255,8 @@
           installPopupBridge(t);
           const plugins=[
             createScramjetCompatibilityPlugin('','proxy-sri'),
-            createScramjetCompatibilityPlugin(proxyPrivacyGuardSource,'privacy')
+            createScramjetCompatibilityPlugin(proxyPrivacyGuardSource,'privacy'),
+            createScramjetCompatibilityPlugin(browserAdBlockRuntimeSource,'ad-block')
           ];
           if(guardMode==='full') plugins.push(createScramjetCompatibilityPlugin(scramjetRuntimeGuardSource,'runtime-guard'));
           else if(guardMode==='spotify-chromeos') plugins.push(createScramjetCompatibilityPlugin(scramjetSpotifyChromeOsGuardSource,'spotify-chromeos'));
@@ -10238,13 +10330,10 @@
             if(isScramjetPath && loadednyx) retryScramjetTab(t,url);
           }catch{}
         },1800);
-      }).catch(error=>{
+      }).catch(()=>{
         if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-        console.warn('Nyx private Scramjet tab could not start:',error);
         destroyProxyPrivacySession(t);
         t.actualEngine='scramjet-failed';
-        t.frame.dataset.nyxExpectedEngine='scramjet';
-        t.frame.dataset.nyxActualEngine='scramjet-failed';
         setFrameSandbox(t,true);
         clearFrameDocument(t);
         t.frame.srcdoc=proxyFailureHtml('The private tab session could not start. Reload Nyx and try again.','Scramjet',{allowDirect:true});
@@ -10342,7 +10431,6 @@
         if(!forceMode || !browserTransportOverride) applyPreferredTransportForUrl(url,browserMode);
         updateBrowserShellLocation(url,t.id,true);
         const mode=forceMode || selectedBrowserMode(url);
-        logProxySelection(url,forceMode,'search');
         if(browserMode==='auto' && mode==='iframe' && directOnly(url)){
           loadScramjetTab(t,url,true);
         }else if(mode==='rammerhead'){
@@ -10393,7 +10481,6 @@
         }
       }catch{}
       const mode=forceMode || selectedBrowserMode(url);
-      logProxySelection(url,forceMode,'navigate');
       if(browserMode==='auto' && mode==='iframe' && directOnly(url)){
         loadScramjetTab(t,url,true);
         return;
@@ -10412,7 +10499,6 @@
           const proxied=ok ? proxyModeUrl(mode,url,t.privacySessionId) : '';
           if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',url);
           else{
-            console.warn('nyx UV Engine requested but unavailable or produced a non-UV URL:', {ok, proxied, url});
             if(browserMode==='auto' && !document.body.classList.contains('browser-shell')){
               loadScramjetTab(t,url,false);
               return;
@@ -10420,8 +10506,6 @@
             t.url=url;
             setTabMeta(t,url,false);
             t.actualEngine='ultraviolet-failed';
-            t.frame.dataset.nyxExpectedEngine='ultraviolet';
-            t.frame.dataset.nyxActualEngine='ultraviolet-failed';
             setFrameSandbox(t,true);
             clearFrameDocument(t);
             t.frame.srcdoc=proxyFailureHtml('Refresh once so the updated service worker can register, then try again.','Ultraviolet');
@@ -10495,11 +10579,11 @@
         const nextIndex=state.tabs.findIndex(t=>t.id===tabId);
         if(nextIndex<0) return;
         const closingTab=state.tabs[nextIndex];
-        if(requiresContainedPopupNavigation(closingTab.sourceUrl || closingTab.url || closingTab.frame?.getAttribute('src') || '')) aetherOverlayQuarantineUntil=Date.now()+30000;
+        if(closingTab.frame?.dataset?.nyxBrowserContained==='true') browserOverlayQuarantineUntil=Date.now()+30000;
         destroyProxyPrivacySession(closingTab);
         closingTab.frame.remove();
         state.tabs.splice(nextIndex,1);
-        cleanupAetherInjectedOverlays();
+        cleanupBrowserInjectedAds();
         if(!state.tabs.length){
           if(keepBlank) addTab();
           else renderTabs();
@@ -10756,11 +10840,6 @@
           uvInstallPromise=null;
         }
         store.setText('nyx.transport',nextTransport);
-        console.log('nyx browser settings saved', {
-          engine:store.text('nyx.engine','duckduckgo'),
-          browserMode:normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE)),
-          transport:store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT)
-        });
         applyUserSettings();
         toast('Browser settings saved');
         return;
@@ -12082,7 +12161,7 @@
     chat.scrollTop=chat.scrollHeight;
   }
   function openApps(){
-    makeWindow({title:'Apps',left:'12vw',top:'90px',width:'600px',height:'430px',body:`<div class="panel"><h1>Apps</h1><div class="quick-grid apps-launch-grid">${quickTiles()}<button class="quick-tile" style="--tile-delay:612ms" data-open="settings"><b>Set</b><span>Settings</span></button></div></div>`});
+    makeWindow({title:'Apps',left:'12vw',top:'90px',width:'600px',height:'430px',body:`<div class="panel"><h1>Apps</h1><div class="quick-grid apps-launch-grid" data-nyx-global-app-grid>${quickTiles()}</div></div>`});
   }
   function openLinks(){
     makeWindow({title:'Links',left:'18vw',top:'100px',width:'520px',height:'380px',body:`<div class="panel"><h1>Links</h1><div class="glass-grid"><div class="glass-card"><h2>Search Engines</h2><button data-url="https://www.google.com/">Google</button><button data-url="https://duckduckgo.com/">DuckDuckGo</button></div><div class="glass-card"><h2>School</h2><button data-url="https://docs.google.com/">Docs</button><button data-url="https://classroom.google.com/">Classroom</button></div></div></div>`});
@@ -12132,7 +12211,7 @@
       return;
     }
     if(name==='help'){
-      nyxTerminalWrite(output,'Commands: help, status, theme, engine, origin, storage, date, clear');
+      nyxTerminalWrite(output,'Commands: help, status, theme, origin, storage, date, clear');
       nyxTerminalWrite(output,'Staff commands (based on your assigned role): owner help');
       return;
     }
@@ -12173,10 +12252,6 @@
       nyxTerminalWrite(output,'Theme: '+active);
       return;
     }
-    if(name==='engine'){
-      nyxTerminalWrite(output,`Engine: ${store.text('nyx.browserMode',DEFAULT_BROWSER_MODE)} · Transport: ${store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT)}`);
-      return;
-    }
     if(name==='origin'){
       nyxTerminalWrite(output,'Origin: '+location.origin);
       return;
@@ -12197,7 +12272,7 @@
     return openBrowserShellInternalTab('developer');
   }
   openApps = function(){
-    makeWindow({title:'Apps',left:'8vw',top:'64px',width:'960px',height:'650px',body:`<div class="panel apps-panel"><h1>Apps</h1><div class="quick-grid apps-launch-grid">${quickTiles()}</div></div>`});
+    makeWindow({title:'Apps',left:'8vw',top:'64px',width:'960px',height:'650px',body:`<div class="panel apps-panel"><h1>Apps</h1><div class="quick-grid apps-launch-grid" data-nyx-global-app-grid>${quickTiles()}</div></div>`});
   };
   //settings-window
   function settingsBody(){
@@ -13250,9 +13325,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
         const worker=new SharedWorker('/baremux/worker.js','bare-mux-worker');
         const replyPort=event.data.port;
         MessagePort.prototype.postMessage.call(replyPort,worker.port,[worker.port]);
-      }catch(error){
-        console.warn('nyx BareMux port reply failed:',error);
-      }
+      }catch{}
     });
   }
   function installAntiClose(){
@@ -13633,11 +13706,6 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
       e.stopPropagation();
     },true);
     document.addEventListener('input',e=>{
-      const appSearch=e.target.closest?.('[data-nyx-app-search]');
-      if(appSearch){
-        const query=String(appSearch.value || '').trim().toLowerCase();
-        appSearch.closest('[data-nyx-app-launcher]')?.querySelectorAll('[data-nyx-app-name]').forEach(button=>{button.hidden=Boolean(query)&&!String(button.dataset.nyxAppName || '').includes(query)});
-      }
       const input=e.target.closest?.('[data-browser-shell-url]');
       if(input) showBrowserSuggestions(input);
     });
@@ -13851,28 +13919,6 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
       }catch{}
     });
     document.addEventListener('click',async e=>{
-      const dashboard=e.target.closest?.('[data-nyx-dashboard]');
-      const dashboardTrigger=e.target.closest?.('[data-nyx-dashboard-trigger]');
-      if(dashboardTrigger){
-        e.preventDefault();
-        const open=!dashboard?.classList.contains('is-open');
-        qsa('[data-nyx-dashboard].is-open').forEach(item=>item.classList.remove('is-open'));
-        dashboard?.classList.toggle('is-open',open);
-        dashboardTrigger.setAttribute('aria-expanded',String(open));
-        return;
-      }
-      const dashboardTab=e.target.closest?.('[data-nyx-dashboard-tab]');
-      if(dashboardTab){
-        e.preventDefault();
-        const name=dashboardTab.dataset.nyxDashboardTab;
-        dashboard?.querySelectorAll('[data-nyx-dashboard-tab]').forEach(button=>button.classList.toggle('is-active',button===dashboardTab));
-        dashboard?.querySelectorAll('[data-nyx-dashboard-page]').forEach(page=>page.classList.toggle('is-active',page.dataset.nyxDashboardPage===name));
-        if(name==='performance'){
-          syncNyxDashboardPerformance();
-          void sampleNyxDashboardLatency(true);
-        }
-        return;
-      }
       if(e.target.closest?.('[data-nyx-ai-settings]')){
         e.preventDefault();
         openNyxAiSettings();
@@ -13886,37 +13932,18 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
         toast(tier==='high' ? 'Performance set to High' : tier==='medium' ? 'Performance set to Medium' : 'Performance set to Low');
         return;
       }
-      if(!dashboard) qsa('[data-nyx-dashboard].is-open').forEach(item=>{item.classList.remove('is-open');item.querySelector('[data-nyx-dashboard-trigger]')?.setAttribute('aria-expanded','false')});
       const appsToggle=e.target.closest?.('[data-nyx-apps-toggle]');
-      const appsLauncher=e.target.closest?.('.nyx-minimal-home')?.querySelector?.('[data-nyx-app-launcher]') || document.querySelector('[data-nyx-app-launcher]');
       if(appsToggle){
         e.preventDefault();
-        appsLauncher?.classList.remove('is-open');
-        appsLauncher?.setAttribute('aria-hidden','true');
-        appsToggle.setAttribute('aria-expanded','false');
         openBrowserShellInternalTab('apps');
-        return;
-      }
-      if(e.target.closest?.('[data-nyx-apps-close]')){
-        e.preventDefault();
-        appsLauncher?.classList.remove('is-open');
-        appsLauncher?.setAttribute('aria-hidden','true');
-        document.querySelector('[data-nyx-apps-toggle]')?.setAttribute('aria-expanded','false');
         return;
       }
       if(e.target.closest?.('[data-nyx-focus-search]')){
         e.preventDefault();
-        document.body.classList.add('nyx-home-search-active');
-        requestAnimationFrame(()=>{
-          const search=document.querySelector('[data-browser-shell-url]');
-          search?.focus();
-          search?.select();
-        });
+        document.body.classList.remove('nyx-home-search-active');
+        openBrowserShellTab();
+        document.querySelector('[data-browser-shell-url]')?.focus();
         return;
-      }
-      if(e.target.closest?.('[data-nyx-app-launcher] [data-app-url],[data-nyx-app-launcher] [data-open],[data-nyx-app-launcher] [data-open-nyx-profile-entry]')){
-        appsLauncher?.classList.remove('is-open');
-        appsLauncher?.setAttribute('aria-hidden','true');
       }
       const accountToggle=e.target.closest?.('[data-toggle-nyx-account-menu]');
       if(accountToggle){
@@ -14144,6 +14171,12 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
         const browserModeOpen=e.target.closest('[data-open]');
         if(browserModeOpen){
           const v=browserModeOpen.dataset.open;
+          if(v==='browser'){
+            e.preventDefault();
+            document.body.classList.remove('menu-open');
+            setBrowserShellHomeActive();
+            return;
+          }
           if(v==='settings'){
             e.preventDefault();
             document.body.classList.remove('menu-open');
@@ -14221,11 +14254,6 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
           uvInstallPromise=null;
         }
         store.setText('nyx.transport', nextTransport);
-        console.log('nyx browser settings saved', {
-          engine:store.text('nyx.engine','duckduckgo'),
-          browserMode:normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE)),
-          transport:store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT)
-        });
         applyUserSettings(); toast('Browser settings saved'); return;
       }
       const bgChoice=e.target.closest('[data-bg-choice]');
@@ -14674,6 +14702,96 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
     syncNyxDashboardPerformance();
     requestAnimationFrame(sample);
   }
+  // Live round-trip latency to Nyx's same-origin health endpoint.
+  let nyxLatencyMs=null;
+  let nyxLatencyQuality='sampling';
+  let nyxLatencySampledAt=0;
+  let nyxLatencyProbe=null;
+  let nyxLatencySamples=[];
+  function nyxLatencyQualityFor(ms){
+    if(!Number.isFinite(ms)) return nyxLatencyQuality==='offline' ? 'offline' : 'sampling';
+    if(ms<=100) return 'excellent';
+    if(ms<=200) return 'good';
+    if(ms<=400) return 'fair';
+    return 'slow';
+  }
+  function syncNyxLatencyBubble(){
+    const bubble=document.querySelector('[data-nyx-latency-bubble]');
+    if(!bubble) return;
+    const value=bubble.querySelector('[data-nyx-latency-value]');
+    const text=Number.isFinite(nyxLatencyMs) ? `${nyxLatencyMs} ms` : nyxLatencyQuality==='offline' ? 'Offline' : '-- ms';
+    const qualityLabel={excellent:'Excellent',good:'Good',fair:'Fair',slow:'Slow',offline:'Offline',sampling:'Measuring'}[nyxLatencyQuality] || 'Measuring';
+    bubble.className=`nyx-latency-bubble is-${nyxLatencyQuality}`;
+    if(value) value.textContent=text;
+    const label=Number.isFinite(nyxLatencyMs) ? `Nyx latency ${nyxLatencyMs} milliseconds, ${qualityLabel}` : `Nyx status ${qualityLabel}`;
+    bubble.setAttribute('aria-label',label);
+    bubble.title=label;
+  }
+  function recordNyxLatencySample(measured){
+    nyxLatencySamples.push(measured);
+    if(nyxLatencySamples.length>5) nyxLatencySamples=nyxLatencySamples.slice(-5);
+    const sorted=[...nyxLatencySamples].sort((a,b)=>a-b);
+    const middle=Math.floor(sorted.length/2);
+    nyxLatencyMs=sorted[middle];
+    nyxLatencyQuality=nyxLatencyQualityFor(nyxLatencyMs);
+  }
+  async function sampleNyxLatency(force=false,publish=true){
+    if(document.hidden || nyxLatencyProbe) return nyxLatencyProbe;
+    const now=Date.now();
+    if(!force && now-nyxLatencySampledAt<8000) return null;
+    nyxLatencySampledAt=now;
+    const request=(async()=>{
+      const controller=new AbortController();
+      const timeout=setTimeout(()=>controller.abort(),5000);
+      const started=performance.now();
+      try{
+        const response=await fetch(`/healthz?ping=${now}`,{cache:'no-store',headers:{Accept:'application/json'},signal:controller.signal});
+        const payload=await response.json();
+        if(!response.ok || payload?.ok!==true) throw new Error('health check failed');
+        recordNyxLatencySample(Math.max(1,Math.round(performance.now()-started)));
+      }catch{
+        nyxLatencyMs=null;
+        nyxLatencyQuality='offline';
+        nyxLatencySamples=[];
+      }finally{
+        clearTimeout(timeout);
+        if(publish) syncNyxLatencyBubble();
+      }
+    })();
+    nyxLatencyProbe=request;
+    try{return await request}
+    finally{if(nyxLatencyProbe===request) nyxLatencyProbe=null}
+  }
+  async function calibrateNyxLatency(){
+    nyxLatencyMs=null;
+    nyxLatencyQuality='sampling';
+    nyxLatencySamples=[];
+    syncNyxLatencyBubble();
+    for(let sample=0;sample<3;sample+=1){
+      await sampleNyxLatency(true,false);
+      if(nyxLatencyQuality==='offline') break;
+      if(sample<2) await new Promise(resolve=>setTimeout(resolve,150));
+    }
+    syncNyxLatencyBubble();
+  }
+  function startNyxLatencyMonitor(){
+    if(startNyxLatencyMonitor.started) return;
+    startNyxLatencyMonitor.started=true;
+    syncNyxLatencyBubble();
+    void calibrateNyxLatency();
+    const refresh=()=>{if(!document.hidden) void sampleNyxLatency(true)};
+    document.addEventListener('visibilitychange',()=>{
+      if(!document.hidden && Date.now()-nyxLatencySampledAt>5000) refresh();
+    });
+    addEventListener('online',refresh);
+    addEventListener('offline',()=>{
+      nyxLatencyMs=null;
+      nyxLatencyQuality='offline';
+      nyxLatencySamples=[];
+      syncNyxLatencyBubble();
+    });
+    setInterval(refresh,10000);
+  }
   function tick(){
     const d=new Date();
     const short=d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
@@ -14681,7 +14799,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
     qsa('#clock').forEach(clock=>{clock.textContent=short});
     qsa('#centerClock').forEach(clock=>{clock.textContent=full});
     qsa('[data-browser-shell-clock]').forEach(clock=>{clock.textContent=short});
-    syncNyxDashboardClock(d);
+    syncNyxLatencyBubble();
   }
   function centerClockText(date=new Date()){
     return date.toLocaleTimeString([],{hour:'numeric',minute:'2-digit',second:'2-digit'});
@@ -14695,7 +14813,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
       const text=centerClockText(now);
       if(clock) clock.textContent=text;
       qsa('[data-browser-shell-clock]').forEach(el=>{el.textContent=now.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})});
-      syncNyxDashboardClock(now);
+      syncNyxLatencyBubble();
     };
     update();
     setInterval(update,1000);
@@ -14717,7 +14835,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
     document.documentElement.classList.toggle('nyx-chromeos',isChromeOsUser());
     document.body.classList.add('runtime-lag-guard');
     updateResponsiveFit();
-    removeLegacyStartupPdfData(); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); installInteractiveHomeDots(); installInteractiveHomeTitleDots(); initWeatherPanel(); startCenterClock(); startNyxPresence(); startNyxDashboardPerformance(); startSpotifyChromeOsCompatibilitySweep(); loadFounderProfile(); initializeFounderOwnerAccess(); startNyx();
+    removeLegacyStartupPdfData(); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); startNyxGlobalApps(); installInteractiveHomeDots(); installInteractiveHomeTitleDots(); initWeatherPanel(); startCenterClock(); startNyxPresence(); startNyxLatencyMonitor(); startSpotifyChromeOsCompatibilitySweep(); loadFounderProfile(); initializeFounderOwnerAccess(); startNyx();
     if(hostedCloakEntry){
       scheduleHostedCloakLaunch();
       return;

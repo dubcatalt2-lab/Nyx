@@ -118,13 +118,13 @@ async function waitForLocalServer(child) {
   return new Promise((resolveReady, reject) => {
     let log = "";
     const timer = setTimeout(() => reject(new Error(`Timed out starting the build server.\n${log}`)), 20_000);
+    child.on("message", message => {
+      if (message?.type !== "nyx:listening" || !Number.isInteger(message.port)) return;
+      clearTimeout(timer);
+      resolveReady(message.port);
+    });
     child.stdout.on("data", chunk => {
       log += chunk.toString();
-      const match = log.match(/http:\/\/localhost:(\d+)/);
-      if (match) {
-        clearTimeout(timer);
-        resolveReady(Number(match[1]));
-      }
     });
     child.stderr.on("data", chunk => { log += chunk.toString(); });
     child.once("exit", code => {
@@ -138,7 +138,7 @@ async function writePatchedRuntimes(wispUrl) {
   const child = spawn(process.execPath, [join(root, "server.js")], {
     cwd: root,
     env: { ...process.env, PORT: "0", WISP_URL: wispUrl },
-    stdio: ["ignore", "pipe", "pipe"]
+    stdio: ["ignore", "pipe", "pipe", "ipc"]
   });
   try {
     const port = await waitForLocalServer(child);

@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <title>Nyx Chat</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/icons/chat.svg">
-  <link rel="stylesheet" href="./styles.css?v=20260818-chat-queue-v28">
+  <link rel="stylesheet" href="./styles.css?v=20260820-chat-smoothness-v30">
   <link rel="stylesheet" href="./polish.css?v=20260818-home-visual-system-v1">
 </head>
 <body>
@@ -117,7 +117,7 @@
         </section>
 
         <form class="message-composer" data-message-form hidden>
-          <div class="mention-menu" data-mention-menu hidden></div>
+          <div class="mention-menu" data-mention-menu role="listbox" aria-label="Message suggestions" hidden></div>
           <div class="attachment-preview-list" data-attachment-previews hidden></div>
           <button class="composer-tool" type="button" data-attachment-button aria-label="Attach files" title="Attach files"><svg><use href="#icon-paperclip"/></svg></button>
           <input type="file" data-attachment-input accept="image/png,image/jpeg,image/gif,image/webp,audio/mpeg,audio/mp4,audio/ogg,audio/wav,audio/webm,video/mp4,video/ogg,video/quicktime,video/webm,application/pdf,text/plain,.docx,.xlsx,.pptx,.mp3,.m4a,.wav,.mp4,.m4v,.mov,.webm" multiple hidden>
@@ -191,6 +191,6 @@
     <header><div><h2>Search history</h2><p>Searches made through Nyx while signed in are retained for 30 days. Policy-classified searches are highlighted for review.</p></div><button class="icon-button" type="button" data-flagged-search-close aria-label="Close"><svg><use href="#icon-close"/></svg></button></header>
     <div class="flagged-search-list" data-flagged-search-list></div>
   </dialog>
-  <script src="./app.js?v=20260818-chat-moderation-v31"></script>
+  <script src="./app.js?v=20260820-chat-smoothness-v33"></script>
 </body>
 </html>

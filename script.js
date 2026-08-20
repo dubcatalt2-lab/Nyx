@@ -1803,7 +1803,7 @@
   const browserAdResourceSignature=/(?:^|[./_-])(?:adservice|adserver|adnxs|adsrvr|adsterra|advertising|amazon-adsystem|criteo|doubleclick|exoclick|googlesyndication|googleadservices|mgid|onclickads|openx|outbrain|pagead|popads|propellerads|pubmatic|revcontent|rubiconproject|taboola|trafficjunky)(?:[./?&=_-]|$)/i;
   const browserAdElementSelector='iframe[src*="doubleclick"],iframe[src*="googlesyndication"],iframe[src*="googleadservices"],iframe[src*="adservice"],iframe[src*="adnxs"],iframe[src*="taboola"],iframe[src*="outbrain"],script[src*="doubleclick"],script[src*="googlesyndication"],script[src*="googleadservices"],script[src*="adservice"],.adsbygoogle,[data-ad-client],[data-ad-slot],[id^="google_ads"],[id*="google_ads"],[class~="ad-container"],[class~="ad-banner"],[class~="advertisement"]';
   const browserInjectedAdSignature=/(?:reminder\s*\(\s*\d+\s*\)[\s\S]{0,180}download\s+pending)|(?:download\s+pending[\s\S]{0,180}finish\s+it\s+now)|(?:finish\s+it\s+now[\s\S]{0,180}(?:close|continue))|(?:\[\s*\d+\s*\]\s*update\s*:\s*opera\s+browser[\s\S]{0,180}install)|(?:install\s+(?:opera\s+browser|browser\s+update|extension)[\s\S]{0,180}(?:install\s+for\s+free|continue|download))|(?:sponsored\s+(?:download|update)[\s\S]{0,120}(?:install|continue))/i;
-  const knownNyxOverlaySelector='.nyx-prompt-shade,.nyx-modal-shade,.nyx-download-safety-shade,.nyx-tos-gate,.nyx-release-notes-overlay,.setup-screen,.setup-panel,.lock-screen,.nyx-browser-tab-sidebar,.browser-shell-settings-overlay,.nyx-dashboard-menu,.nyx-account-menu,.nyx-account-overlay,.nyx-user-profile-overlay,.nyx-profile-directory-overlay,.nyx-founder-editor-overlay,.context-menu,[data-nyx-owned-overlay]';
+  const knownNyxOverlaySelector='.nyx-prompt-shade,.nyx-modal-shade,.nyx-download-safety-shade,.nyx-tos-gate,.nyx-release-notes-overlay,.setup-screen,.setup-panel,.lock-screen,.nyx-browser-tab-sidebar,.browser-shell-settings-overlay,.nyx-dashboard-menu,.nyx-account-menu,.nyx-account-overlay,.nyx-user-profile-overlay,.nyx-profile-directory-overlay,.nyx-founder-editor-overlay,.nyx-owner-dashboard-overlay,.context-menu,[data-nyx-owned-overlay]';
   function isBrowserInjectedOverlay(node){
     if(!(node instanceof Element) || node===document.body || node===document.documentElement) return false;
     if(node.matches('#desktop,.top-os,.window,.browser-window,.browser-body,.browser-home,#nyxStudyHubStartup,#nyxWaveBg,#setupLaunchScreen,.nyx-prompt-shade,.nyx-modal-shade')) return false;
@@ -3301,6 +3301,33 @@
       return raw;
     }
   }
+  function browserShellRejectFrameLocation(source,expected=''){
+    const raw=String(source || '').trim();
+    if(!raw || /^\/?unidentified(?:[/?#]|$)/i.test(raw)) return true;
+    try{
+      const parsed=new URL(raw,location.href);
+      if(parsed.origin!==location.origin) return false;
+      if(parsed.pathname==='/unidentified' || parsed.pathname.startsWith('/service/') || parsed.pathname.startsWith('/~/sj/') || parsed.pathname.startsWith('/scramjet/service/')) return true;
+      const previous=browserShellSourceUrl(expected) || String(expected || '').trim();
+      if(!previous) return false;
+      const previousUrl=new URL(previous,location.href);
+      return /^https?:$/.test(previousUrl.protocol) && previousUrl.origin!==location.origin;
+    }catch{
+      return false;
+    }
+  }
+  function browserShellClipboardText(value,expected=''){
+    const raw=String(value || '');
+    const trimmed=raw.trim();
+    if(!trimmed) return raw;
+    if(!/^https?:\/\//i.test(trimmed) && !/^\/(?:service\/|~\/sj\/|scramjet\/service\/)/i.test(trimmed) && !/^\/?unidentified(?:[/?#]|$)/i.test(trimmed)) return raw;
+    const decoded=browserShellSourceUrl(trimmed) || trimmed;
+    if(browserShellRejectFrameLocation(decoded,expected)){
+      const fallback=browserShellSourceUrl(expected) || String(expected || '').trim();
+      return /^https?:\/\//i.test(fallback) ? fallback : raw;
+    }
+    return /^https?:\/\//i.test(decoded) ? decoded : raw;
+  }
   function browserShellLabel(url){
     if(!url) return 'Home';
     if(String(url).trim().toLowerCase()==='nyx://settings') return 'Settings';
@@ -3554,12 +3581,73 @@
     document.execCommand('insertText',false,text);
   }
   async function writeClipboard(text){
+    const cleanText=browserShellClipboardText(text,currentBrowserShellUrl());
     try{
-      await navigator.clipboard?.writeText(text);
-      return true;
-    }catch{
-      return document.execCommand?.('copy');
-    }
+      if(navigator.clipboard?.writeText){
+        await navigator.clipboard.writeText(cleanText);
+        return true;
+      }
+    }catch{}
+    const helper=document.createElement('textarea');
+    helper.value=cleanText;
+    helper.setAttribute('readonly','');
+    helper.style.cssText='position:fixed;left:-9999px;top:0;opacity:0';
+    document.body.appendChild(helper);
+    helper.select();
+    let copied=false;
+    try{copied=Boolean(document.execCommand?.('copy'))}catch{}
+    helper.remove();
+    return copied;
+  }
+  let nyxBrowserLinkMenu=null;
+  let nyxBrowserLinkMenuCleanup=null;
+  function closeBrowserLinkMenu(){
+    nyxBrowserLinkMenuCleanup?.();
+    nyxBrowserLinkMenuCleanup=null;
+    nyxBrowserLinkMenu?.remove();
+    nyxBrowserLinkMenu=null;
+  }
+  function showBrowserLinkMenu(url,x,y){
+    closeBrowserLinkMenu();
+    const cleanUrl=browserShellClipboardText(url,currentBrowserShellUrl());
+    if(!/^https?:\/\//i.test(cleanUrl)) return false;
+    const menu=document.createElement('div');
+    menu.className='nyx-browser-link-menu';
+    menu.dataset.nyxOwnedOverlay='';
+    menu.setAttribute('role','menu');
+    menu.setAttribute('aria-label','Link actions');
+    menu.innerHTML='<button type="button" role="menuitem" data-nyx-copy-clean-link>Copy link</button><button type="button" role="menuitem" data-nyx-open-clean-link>Open link in new tab</button>';
+    document.body.appendChild(menu);
+    const bounds=menu.getBoundingClientRect();
+    menu.style.left=`${Math.max(8,Math.min(Number(x || 0),innerWidth-bounds.width-8))}px`;
+    menu.style.top=`${Math.max(8,Math.min(Number(y || 0),innerHeight-bounds.height-8))}px`;
+    nyxBrowserLinkMenu=menu;
+    const closeFromOutside=event=>{
+      if(!menu.contains(event.target)) closeBrowserLinkMenu();
+    };
+    const closeFromKeyboard=event=>{
+      if(event.key==='Escape') closeBrowserLinkMenu();
+    };
+    document.addEventListener('pointerdown',closeFromOutside,true);
+    document.addEventListener('keydown',closeFromKeyboard,true);
+    nyxBrowserLinkMenuCleanup=()=>{
+      document.removeEventListener('pointerdown',closeFromOutside,true);
+      document.removeEventListener('keydown',closeFromKeyboard,true);
+    };
+    menu.addEventListener('click',async event=>{
+      if(event.target.closest('[data-nyx-copy-clean-link]')){
+        const copied=await writeClipboard(cleanUrl);
+        closeBrowserLinkMenu();
+        toast(copied?'Link copied':'Could not copy the link');
+        return;
+      }
+      if(event.target.closest('[data-nyx-open-clean-link]')){
+        closeBrowserLinkMenu();
+        openBrowserShellAppTab(cleanUrl);
+      }
+    });
+    menu.querySelector('button')?.focus({preventScroll:true});
+    return true;
   }
   function switchBrowserShellTabByIndex(index){
     if(!document.body.classList.contains('browser-shell')) return false;
@@ -9205,8 +9293,50 @@
         }catch{return false}
       }
     }
+    function installBrowserLinkContextMenu(t){
+      if(!t?.frame) return;
+      const currentSource=()=>{
+        let frameHref='';
+        try{frameHref=String(t.frame.contentWindow?.location?.href || '')}catch{}
+        const previous=browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
+        const frameSource=browserShellSourceUrl(frameHref);
+        return frameSource && !browserShellRejectFrameLocation(frameSource,previous) ? frameSource : previous;
+      };
+      const attach=()=>{
+        try{
+          const doc=t.frame.contentDocument;
+          if(!doc?.documentElement || doc.documentElement.dataset.nyxLinkContextMenu==='true') return;
+          doc.documentElement.dataset.nyxLinkContextMenu='true';
+          doc.addEventListener('pointerdown',closeBrowserLinkMenu,true);
+          doc.addEventListener('contextmenu',event=>{
+            const link=event.target?.closest?.('a[href]');
+            if(!link) return;
+            const raw=String(link.href || link.getAttribute('href') || '').trim();
+            const decoded=browserShellSourceUrl(raw) || raw;
+            let resolved='';
+            try{resolved=new URL(decoded,currentSource()).href}catch{return}
+            const cleanUrl=browserShellClipboardText(resolved,currentSource());
+            if(!/^https?:\/\//i.test(cleanUrl)) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            const frameBounds=t.frame.getBoundingClientRect();
+            showBrowserLinkMenu(cleanUrl,frameBounds.left+event.clientX,frameBounds.top+event.clientY);
+          },true);
+        }catch{}
+      };
+      if(t.frame.dataset.nyxLinkContextMenuWatch!=='true'){
+        t.frame.dataset.nyxLinkContextMenuWatch='true';
+        t.frame.addEventListener('load',()=>{
+          attach();
+          setTimeout(attach,50);
+          setTimeout(attach,250);
+        });
+      }
+      attach();
+    }
     function installPopupBridge(t){
       if(!t?.frame) return;
+      installBrowserLinkContextMenu(t);
       if(t.frame.dataset.nyxAdGuardWatch!=='true'){
         t.frame.dataset.nyxAdGuardWatch='true';
         t.frame.addEventListener('load',()=>{
@@ -9229,8 +9359,8 @@
             const frameHref=String(t.frame?.contentWindow?.location?.href || '');
             const source=browserShellSourceUrl(frameHref);
             if(!/^https?:\/\//i.test(source) || source===location.href) return;
-            const parsedSource=new URL(source,location.href);
-            if(parsedSource.origin===location.origin && (parsedSource.pathname==='/unidentified' || parsedSource.pathname.startsWith('/service/') || parsedSource.pathname.startsWith('/~/sj/'))) return;
+            const previousSource=browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
+            if(browserShellRejectFrameLocation(source,previousSource)) return;
             installDuckDuckGoImageViewportFix(t);
             t.url=source;
             t.sourceUrl=source;
@@ -9257,10 +9387,9 @@
       const currentBridgeUrl=()=>{
         let frameHref='';
         try{frameHref=String(t.frame?.contentWindow?.location?.href || '')}catch{}
-        return browserShellSourceUrl(frameHref)
-          || browserShellSourceUrl(t.url || '')
-          || browserShellSourceUrl(t.sourceUrl || '')
-          || t.url || t.sourceUrl || bridgeUrl;
+        const previous=browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || bridgeUrl;
+        const frameSource=browserShellSourceUrl(frameHref);
+        return frameSource && !browserShellRejectFrameLocation(frameSource,previous) ? frameSource : previous;
       };
       const popupProtectionActive=()=>popupProtectionForUrl(currentBridgeUrl());
       const isTrustedGeneratedLink=link=>{
@@ -9376,6 +9505,17 @@
           const frameWindow=t.frame.contentWindow;
           if(frameWindow && !frameWindow.__nyxOpenBridge){
             frameWindow.__nyxOpenBridge=true;
+            const frameClipboard=frameWindow.navigator?.clipboard;
+            if(frameClipboard?.writeText && !frameClipboard.__nyxCleanWriteText){
+              const nativeWriteText=frameClipboard.writeText.bind(frameClipboard);
+              try{
+                Object.defineProperty(frameClipboard,'writeText',{
+                  configurable:true,
+                  value:value=>nativeWriteText(browserShellClipboardText(value,currentBridgeUrl()))
+                });
+                Object.defineProperty(frameClipboard,'__nyxCleanWriteText',{value:true});
+              }catch{}
+            }
             const nativeFrameOpen=frameWindow.open?.bind(frameWindow);
             const nyxPopup=(popupUrl,target,features)=>{
               if(isDownloadUrl(popupUrl) && requestFrameDownload(popupUrl)) return frameWindow;
@@ -9465,6 +9605,13 @@
           doc.addEventListener('submit',trapSearchSubmit,true);
           doc.addEventListener('click',trapLink,true);
           doc.addEventListener('auxclick',trapLink,true);
+          doc.addEventListener('copy',event=>{
+            const selected=String(doc.getSelection?.() || '');
+            const cleaned=browserShellClipboardText(selected,currentBridgeUrl());
+            if(!selected || cleaned===selected || !event.clipboardData) return;
+            event.preventDefault();
+            event.clipboardData.setData('text/plain',cleaned);
+          },true);
           doc.addEventListener('submit',event=>{
             const form=event.target;
             if(!popupProtectionActive()) return;

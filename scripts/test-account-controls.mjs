@@ -75,6 +75,7 @@ try{
   await page.route('**/api/**',async route=>{
     const url=new URL(route.request().url());
     const path=url.pathname;
+    const method=route.request().method();
     const json=body=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
     if(path==='/api/founder-profile/auth-config')return json({enabled:true,projectId:'nyx-test',apiKey:'test',ownerConfigured:true});
     if(path==='/api/founder-profile/owner')return json({founder:true,dashboard:true,role:'owner',permissions:[]});
@@ -90,7 +91,8 @@ try{
       channels:[{id:'general',name:'general',description:'Test channel'}],conversations:[],latestActivity:{},revision:1,
       voice:{channels:[],participants:[]}
     });
-    if(path==='/api/chat/messages')return json({messages:[],hasMore:false});
+    if(path==='/api/chat/messages'&&method==='POST')return json({message:{id:'test-message-2',text:'Smooth send',attachments:[],reactions:[],createdAt:'2026-08-20T20:01:00.000Z',createdAtMs:1787256060000,author:{uid:'test-user-1234',displayName:'Account Test',handle:'@account-test',role:'owner'}}});
+    if(path==='/api/chat/messages')return json({messages:[{id:'test-message-1',text:'Existing message',attachments:[],reactions:[],createdAt:'2026-08-20T20:00:00.000Z',createdAtMs:1787256000000,author:{uid:'test-member-5678',displayName:'Chat Member',handle:'@chat-member',role:'member'}}],hasMore:false});
     if(path==='/api/chat/conversations')return json({conversations:[],channelActivity:{}});
     if(path==='/api/chat/caffeine')return json({caffeine:null});
     if(path==='/api/chat/voice/status')return json({channels:[],participants:[]});
@@ -147,6 +149,68 @@ try{
   await page.waitForSelector('.nyx-minimal-home');
   await page.waitForSelector('#nyxAccountButton.nyx-account-button-rich',{timeout:15_000});
 
+  const externalPathUrl='https://google.com/pokemon';
+  await page.locator('[data-browser-blank-input]').first().fill(externalPathUrl);
+  await page.locator('[data-browser-blank-input]').first().press('Enter');
+  await page.waitForFunction(()=>[...document.querySelectorAll('.browser-window iframe.view')].some(frame=>String(frame.getAttribute('src') || '').includes('/~/sj/')));
+  await page.waitForFunction(()=>[...document.querySelectorAll('.browser-window iframe.view')].some(frame=>{
+    try{return String(frame.getAttribute('src') || '').includes('/~/sj/') && !!frame.contentDocument?.documentElement}catch{return false}
+  }));
+  await page.evaluate(()=>{
+    Object.defineProperty(navigator,'clipboard',{
+      configurable:true,
+      value:{writeText:async value=>{globalThis.__nyxCopiedLink=String(value)}}
+    });
+    const frame=[...document.querySelectorAll('.browser-window iframe.view')].find(node=>String(node.getAttribute('src') || '').includes('/~/sj/'));
+    frame.dispatchEvent(new Event('load'));
+  });
+  await page.waitForTimeout(300);
+  await page.evaluate(()=>{
+    const frame=[...document.querySelectorAll('.browser-window iframe.view')].find(node=>String(node.getAttribute('src') || '').includes('/~/sj/'));
+    frame.dispatchEvent(new Event('load'));
+    const link=frame.contentDocument.createElement('a');
+    link.textContent='Cineby test link';
+    link.href=`${location.origin}/~/sj/tbsmrs4y/0jbe7xpv/https%3A%2F%2Fcineby.at%2F?%24rfp=strict-origin-when-cross-origin&%24io=https%3A%2F%2Ffmhy.net`;
+    frame.contentDocument.documentElement.appendChild(link);
+    link.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:24,clientY:24}));
+  });
+  await page.locator('.nyx-browser-link-menu').waitFor();
+  await page.locator('[data-nyx-copy-clean-link]').click();
+  assert.equal(await page.evaluate(()=>globalThis.__nyxCopiedLink),'https://cineby.at/','Right-click Copy link exposed a Scramjet URL');
+  await page.evaluate(()=>{
+    const frame=[...document.querySelectorAll('.browser-window iframe.view')].find(node=>String(node.getAttribute('src') || '').includes('/~/sj/'));
+    frame.src='/4poekf=4watepo/w4geriaerjmgotbg';
+  });
+  await page.waitForFunction(()=>[...document.querySelectorAll('.browser-window iframe.view')].some(frame=>{
+    try{return frame.contentWindow.location.pathname==='/4poekf=4watepo/w4geriaerjmgotbg'}catch{return false}
+  }));
+  await page.evaluate(()=>{
+    const frame=[...document.querySelectorAll('.browser-window iframe.view')].find(node=>{
+      try{return node.contentWindow.location.pathname==='/4poekf=4watepo/w4geriaerjmgotbg'}catch{return false}
+    });
+    frame.dispatchEvent(new Event('load'));
+  });
+  await page.waitForTimeout(100);
+  assert.equal(await page.locator('.browser-window .urlbar').inputValue(),externalPathUrl,'Proxy path replaced the real legacy address');
+  assert.equal(await page.locator('[data-browser-shell-url]').inputValue(),externalPathUrl,'Proxy path replaced the real shell address');
+  await page.locator('[data-browser-shell-home]').first().evaluate(button=>button.click());
+  await page.waitForSelector('.nyx-minimal-home');
+
+  const containedBrowserFrame=page.locator('.browser-window iframe.view').first();
+  await containedBrowserFrame.evaluate(frame=>{
+    frame.dataset.nyxBrowserContained='true';
+  });
+  await page.locator('#nyxAccountButton').click();
+  await page.locator('[data-nyx-account-menu-action="owner-dashboard"]').click();
+  await page.waitForSelector('.nyx-owner-dashboard-overlay');
+  await page.waitForTimeout(350);
+  assert.equal(await page.locator('.nyx-owner-dashboard-overlay').count(),1,'Owner Dashboard was removed after opening');
+  await page.locator('[data-owner-close]').click();
+  await page.waitForSelector('.nyx-owner-dashboard-overlay',{state:'detached'});
+  await containedBrowserFrame.evaluate(frame=>{
+    delete frame.dataset.nyxBrowserContained;
+  });
+
   await page.locator('#nyxAccountButton').click();
   await page.locator('[data-nyx-account-menu-action="edit"]').click();
   await page.waitForSelector('.nyx-user-profile-overlay.show');
@@ -183,6 +247,20 @@ try{
   if(!chatFrame)await page.waitForTimeout(500);
   const activeChatFrame=page.frames().find(frame=>new URL(frame.url()).pathname==='/apps/chat/');
   assert.ok(activeChatFrame,'Embedded Chat frame did not open');
+  const existingMessage=activeChatFrame.locator('[data-message-id="test-message-1"]');
+  await existingMessage.waitFor();
+  await existingMessage.evaluate(node=>{node.dataset.renderIdentity='retained'});
+  const chatInput=activeChatFrame.locator('[data-message-input]');
+  await chatInput.fill(':sku');
+  await activeChatFrame.locator('.mention-menu:not([hidden])').waitFor();
+  assert.equal(await activeChatFrame.locator('.mention-option').first().locator('strong').textContent(),':skull:','Emoji shortcode suggestion did not rank the matching emoji first');
+  await chatInput.press('Enter');
+  assert.equal(await chatInput.inputValue(),'\u{1F480} ','Emoji suggestion did not insert the selected emoji');
+  await chatInput.fill('');
+  await chatInput.fill('Smooth send');
+  await chatInput.press('Enter');
+  await activeChatFrame.locator('[data-message-id="test-message-2"]').waitFor();
+  assert.equal(await existingMessage.getAttribute('data-render-identity'),'retained','An unchanged message was rebuilt during a realtime-style send');
   await activeChatFrame.waitForSelector('.member-button');
   await activeChatFrame.locator('.member-button').filter({hasText:'Chat Member'}).click();
   await page.waitForSelector('.nyx-profile-directory-overlay.show',{timeout:5_000});
@@ -192,7 +270,7 @@ try{
   assert.match(await page.locator('.nyx-profile-directory-view-head').textContent(),/Chat Member/);
 
   assert.deepEqual(pageErrors,[],`Browser errors: ${pageErrors.join(' | ')}`);
-  console.log('Homepage constellation, colored app icons, account controls, and embedded Chat profile regression passed.');
+  console.log('Homepage constellation, browser URL privacy, colored app icons, account controls, and embedded Chat profile regression passed.');
 }finally{
   await browser?.close().catch(()=>{});
   if(server.exitCode===null)server.kill();

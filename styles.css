@@ -4252,3 +4252,34 @@ html[data-nyx-theme] body.browser-shell .browser-shell-page:has(.apps-launch-gri
   color:var(--nyx-home-muted)!important;
   -webkit-text-fill-color:var(--nyx-home-muted)!important;
 }
+
+.nyx-browser-link-menu{
+  position:fixed;
+  z-index:2147483646;
+  display:grid;
+  min-width:190px;
+  padding:6px;
+  border:1px solid color-mix(in srgb,var(--nyx-chrome-accent,#8fb8ff) 38%,#3d414b);
+  border-radius:10px;
+  background:#121318;
+  box-shadow:0 16px 38px rgba(0,0,0,.5);
+}
+.nyx-browser-link-menu button{
+  width:100%;
+  min-height:36px;
+  padding:8px 10px;
+  border:0;
+  border-radius:7px;
+  background:transparent;
+  color:#f1f3f7;
+  font-family:inherit;
+  font-size:13px;
+  font-weight:600;
+  line-height:1.2;
+  text-align:left;
+  cursor:pointer;
+}
+.nyx-browser-link-menu button:is(:hover,:focus-visible){
+  outline:0;
+  background:color-mix(in srgb,var(--nyx-chrome-accent,#8fb8ff) 18%,#181a20);
+}

@@ -772,6 +772,7 @@ html.perf-min :is(#visualEffects,.nyx-home-dot-field){display:none!important}
 @media(max-width:520px){.nyx-release-notes-overlay{padding:12px}.nyx-release-notes{max-height:calc(100dvh - 24px);border-radius:18px}.nyx-release-notes header{padding:20px 19px 11px}.nyx-release-notes>p{padding:0 19px}.nyx-release-notes ul{padding:0 19px}.nyx-release-notes footer{align-items:flex-start;flex-direction:column;padding:16px 19px 19px}.nyx-release-notes footer button{width:100%}}
 
 /* Keep the release acknowledgement legible over every saved Nyx theme. */
+.nyx-release-notes footer{justify-content:flex-end}
 .nyx-release-notes footer button[data-nyx-release-notes-close]{
   border-color:#f7f7fb!important;
   background:#f7f7fb!important;

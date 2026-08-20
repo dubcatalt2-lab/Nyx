@@ -12864,16 +12864,31 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
   const NYX_RELEASE_NOTES_VERSION='2026-08-17-interface-release';
   let nyxReleaseNotesTimer=0;
   function nyxReleaseNotesStorageKey(){
-    const accountId=String(nyxFounderSignedInUser?.uid || 'device').replace(/[^a-z0-9_-]/gi,'');
-    return `nyx.releaseNotes.${NYX_RELEASE_NOTES_VERSION}.${accountId || 'device'}`;
+    return `nyx.releaseNotes.${NYX_RELEASE_NOTES_VERSION}.seen`;
+  }
+  function nyxReleaseNotesWereSeen(){
+    const storageKey=nyxReleaseNotesStorageKey();
+    if(store.text(storageKey,'')===NYX_RELEASE_NOTES_VERSION) return true;
+    const legacyPrefix=`nyx.releaseNotes.${NYX_RELEASE_NOTES_VERSION}.`;
+    try{
+      for(let index=0;index<localStorage.length;index++){
+        const key=localStorage.key(index);
+        if(key?.startsWith(legacyPrefix) && localStorage.getItem(key)===NYX_RELEASE_NOTES_VERSION){
+          store.setText(storageKey,NYX_RELEASE_NOTES_VERSION);
+          return true;
+        }
+      }
+    }catch{}
+    return false;
   }
   function closeNyxReleaseNotes(){
     document.querySelector('.nyx-release-notes-overlay')?.remove();
   }
   function showNyxReleaseNotes(){
     const storageKey=nyxReleaseNotesStorageKey();
-    if(store.text(storageKey,'')===NYX_RELEASE_NOTES_VERSION) return 'seen';
+    if(nyxReleaseNotesWereSeen()) return 'seen';
     if($('setupScreen')?.classList.contains('show') || document.querySelector('.nyx-tos-gate,.nyx-email-verification-overlay,.nyx-preflight')) return 'deferred';
+    store.setText(storageKey,NYX_RELEASE_NOTES_VERSION);
     const overlay=document.createElement('div');
     overlay.className='nyx-release-notes-overlay';
     overlay.innerHTML=`<section class="nyx-release-notes" role="dialog" aria-modal="true" aria-labelledby="nyxReleaseNotesTitle" aria-describedby="nyxReleaseNotesIntro">
@@ -12885,7 +12900,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
         <li><strong>Your settings, easier to manage</strong><span>Account and preference settings are simpler to find, and verified members can keep supported preferences and game saves available across their devices.</span></li>
         <li><strong>More ways to use Nyx AI</strong><span>Premium members can use Claude Opus 4.8 for up to 2,000 tokens each day, with model and effort controls that make it easier to choose how Nyx AI responds.</span></li>
       </ul>
-      <footer><span>You’ll only see this update once on each device or Nyx account.</span><button type="button" data-nyx-release-notes-close>Got it</button></footer>
+      <footer><button type="button" data-nyx-release-notes-close>Got it</button></footer>
     </section>`;
     const close=()=>{
       store.setText(storageKey,NYX_RELEASE_NOTES_VERSION);

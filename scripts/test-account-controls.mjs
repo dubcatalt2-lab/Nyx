@@ -58,8 +58,10 @@ try{
     localStorage.setItem('nyx.browserShellMode','true');
     localStorage.setItem('nyx.homeDesign','redesigned');
     localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');
-    localStorage.setItem('nyx.releaseNotes.2026-08-17-interface-release.device','2026-08-17-interface-release');
-    localStorage.setItem('nyx.releaseNotes.2026-08-17-interface-release.test-user-1234','2026-08-17-interface-release');
+    if(sessionStorage.getItem('nyx.test.releaseNotesFresh')!=='true'){
+      localStorage.setItem('nyx.releaseNotes.2026-08-17-interface-release.device','2026-08-17-interface-release');
+      localStorage.setItem('nyx.releaseNotes.2026-08-17-interface-release.test-user-1234','2026-08-17-interface-release');
+    }
     globalThis.__nyxMockSignOuts=0;
     const removeStartup=()=>{
       document.querySelector('#nyxStudyHubStartup')?.remove();
@@ -268,6 +270,19 @@ try{
   assert.equal(await page.locator('.nyx-profile-directory-overlay.show').count(),1,'Chat profile was removed after opening');
   await page.waitForSelector('.nyx-profile-directory-view-head',{timeout:10_000});
   assert.match(await page.locator('.nyx-profile-directory-view-head').textContent(),/Chat Member/);
+
+  await page.evaluate(()=>{
+    sessionStorage.setItem('nyx.test.releaseNotesFresh','true');
+    Object.keys(localStorage).filter(key=>key.startsWith('nyx.releaseNotes.2026-08-17-interface-release.')).forEach(key=>localStorage.removeItem(key));
+  });
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.waitForSelector('.nyx-release-notes-overlay.show',{timeout:10_000});
+  assert.equal(await page.locator('.nyx-release-notes footer span').count(),0,'Release notes still showed the one-time explanatory text');
+  assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.releaseNotes.2026-08-17-interface-release.seen')),'2026-08-17-interface-release','Release notes were not acknowledged when shown');
+  await page.locator('.nyx-release-notes [data-nyx-release-notes-close]').last().click();
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.waitForTimeout(1400);
+  assert.equal(await page.locator('.nyx-release-notes-overlay').count(),0,'Release notes appeared again after acknowledgement');
 
   assert.deepEqual(pageErrors,[],`Browser errors: ${pageErrors.join(' | ')}`);
   console.log('Homepage constellation, browser URL privacy, colored app icons, account controls, and embedded Chat profile regression passed.');

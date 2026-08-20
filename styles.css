@@ -1904,6 +1904,7 @@ html[data-nyx-theme] body .nyx-account-menu-profile-effect{
   z-index:3!important;
   inset:0!important;
   border-radius:inherit;
+  pointer-events:none!important;
 }
 
 .nyx-user-profile-effect-custom .nyx-user-profile-effect{

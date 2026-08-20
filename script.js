@@ -873,10 +873,12 @@
     })();
     return nyxFounderAuthReadyPromise;
   }
-  async function openNyxAccountAccess(){
+  async function openNyxAccountAccess(options={}){
     closeNyxAccountMenu();
     await initializeFounderOwnerAccess();
     if(!nyxFounderFirebaseAuth) return toast('Nyx accounts are not configured yet.');
+    const switching=Boolean(options.switching&&nyxFounderSignedInUser);
+    const previousUid=String(nyxFounderSignedInUser?.uid||'');
     document.querySelector('.nyx-account-overlay')?.remove();
     const overlay=document.createElement('div');
     overlay.className='nyx-account-overlay';
@@ -894,6 +896,7 @@
     const footer=overlay.querySelector('.nyx-account-footer');
     const error=form.querySelector('.nyx-founder-editor-error');
     const accountStatusNotice=form.querySelector('[data-nyx-account-status]');
+    if(switching)overlay.querySelector('#nyxAccountTitle').textContent='Switch accounts';
     const clearAccountStatusNotice=()=>{accountStatusNotice.hidden=true;accountStatusNotice.className='nyx-account-status-notice';accountStatusNotice.querySelector('strong').textContent='';accountStatusNotice.querySelector('p').textContent=''};
     const showAccountStatusNotice=status=>{const accountStatus=status&&typeof status==='object'?status:{};accountStatusNotice.className=`nyx-account-status-notice nyx-account-status-${String(accountStatus.status||'disabled').replace(/[^a-z-]/g,'')}`;accountStatusNotice.querySelector('strong').textContent=String(accountStatus.title||'This account is unavailable');accountStatusNotice.querySelector('p').textContent=String(accountStatus.message||'Contact Nyx staff for help.');accountStatusNotice.hidden=false};
     const update=()=>{
@@ -908,7 +911,7 @@
       emailField.hidden=!registering;
       emailInput.disabled=!registering;
       forgotButton.hidden=registering;
-      footer.textContent=registering?'Add a real email and Nyx will send a verification message. You can also leave it blank for a username-only account.':'Log in with your username or recovery email.';
+      footer.textContent=registering?'Add a real email and Nyx will send a verification message. You can also leave it blank for a username-only account.':switching?'Your current account stays signed in until another login succeeds.':'Log in with your username or recovery email.';
       error.textContent='';
       error.classList.remove('success');
       clearAccountStatusNotice();
@@ -971,7 +974,7 @@
         await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile()]);
         close();
         if(nyxNeedsEmailVerification(credential.user)) openNyxEmailVerificationGate({sent:verificationSent});
-        toast(mode==='register'?(verificationSent?'Account created — verify your email to continue.':(verificationFailed?'Account created, but Nyx could not send the verification email. Use Resend verification email to try again.':'Nyx profile created')):'Signed in');
+        toast(mode==='register'?(verificationSent?'Account created — verify your email to continue.':(verificationFailed?'Account created, but Nyx could not send the verification email. Use Resend verification email to try again.':'Nyx profile created')):switching?(String(credential.user.uid||'')===previousUid?'Already signed in to this account':'Account switched'):'Signed in');
       }catch(authError){
         error.textContent=authError?.accountStatus?'':nyxFriendlyFirebaseError(authError,'Account could not be completed. Try again.');
         submit.disabled=false;
@@ -1120,7 +1123,7 @@
   async function openNyxUserProfile(){
     closeNyxAccountMenu();
     if(!nyxFounderSignedInUser){await openNyxAccountAccess();if(!nyxFounderSignedInUser)return}
-    await loadNyxUserProfile();
+    if(!nyxUserProfile)await loadNyxUserProfile();
     document.querySelector('.nyx-user-profile-overlay')?.remove();
     const profile=normalizeNyxUserProfile(nyxUserProfile);
     const accountUsername=nyxAccountUsername(String(nyxFounderSignedInUser?.email||'').split('@')[0]);
@@ -1207,7 +1210,7 @@
       if(!action)return;
       if(action==='status'){const field=overlay.querySelector('[name="status"]');field?.scrollIntoView({block:'center',behavior:'smooth'});field?.focus();try{field?.showPicker?.()}catch{}return}
       if(action==='custom-status'){const field=overlay.querySelector('[name="customStatus"]');field?.scrollIntoView({block:'center',behavior:'smooth'});field?.focus();field?.select();return}
-      if(action==='switch-account'){close();await signOutFounderOwner();await openNyxAccountAccess()}
+      if(action==='switch-account'){close();await openNyxAccountAccess({switching:true})}
     });
     const form=overlay.querySelector('form');
     const pendingMediaPreparations=new Map();
@@ -1248,8 +1251,7 @@
       setProfileSwitchMenu(false);
       close();
       await new Promise(resolve=>setTimeout(resolve,250));
-      await signOutFounderOwner();
-      await openNyxAccountAccess();
+      await openNyxAccountAccess({switching:true});
     };
     profileSwitchToggle.addEventListener('click',event=>{
       event.stopPropagation();
@@ -1801,7 +1803,7 @@
   const browserAdResourceSignature=/(?:^|[./_-])(?:adservice|adserver|adnxs|adsrvr|adsterra|advertising|amazon-adsystem|criteo|doubleclick|exoclick|googlesyndication|googleadservices|mgid|onclickads|openx|outbrain|pagead|popads|propellerads|pubmatic|revcontent|rubiconproject|taboola|trafficjunky)(?:[./?&=_-]|$)/i;
   const browserAdElementSelector='iframe[src*="doubleclick"],iframe[src*="googlesyndication"],iframe[src*="googleadservices"],iframe[src*="adservice"],iframe[src*="adnxs"],iframe[src*="taboola"],iframe[src*="outbrain"],script[src*="doubleclick"],script[src*="googlesyndication"],script[src*="googleadservices"],script[src*="adservice"],.adsbygoogle,[data-ad-client],[data-ad-slot],[id^="google_ads"],[id*="google_ads"],[class~="ad-container"],[class~="ad-banner"],[class~="advertisement"]';
   const browserInjectedAdSignature=/(?:reminder\s*\(\s*\d+\s*\)[\s\S]{0,180}download\s+pending)|(?:download\s+pending[\s\S]{0,180}finish\s+it\s+now)|(?:finish\s+it\s+now[\s\S]{0,180}(?:close|continue))|(?:\[\s*\d+\s*\]\s*update\s*:\s*opera\s+browser[\s\S]{0,180}install)|(?:install\s+(?:opera\s+browser|browser\s+update|extension)[\s\S]{0,180}(?:install\s+for\s+free|continue|download))|(?:sponsored\s+(?:download|update)[\s\S]{0,120}(?:install|continue))/i;
-  const knownNyxOverlaySelector='.nyx-prompt-shade,.nyx-modal-shade,.setup-screen,.setup-panel,.lock-screen,.nyx-browser-tab-sidebar,.nyx-dashboard-menu,.nyx-account-menu,.context-menu,[data-nyx-owned-overlay]';
+  const knownNyxOverlaySelector='.nyx-prompt-shade,.nyx-modal-shade,.nyx-download-safety-shade,.nyx-tos-gate,.nyx-release-notes-overlay,.setup-screen,.setup-panel,.lock-screen,.nyx-browser-tab-sidebar,.browser-shell-settings-overlay,.nyx-dashboard-menu,.nyx-account-menu,.nyx-account-overlay,.nyx-user-profile-overlay,.nyx-profile-directory-overlay,.nyx-founder-editor-overlay,.context-menu,[data-nyx-owned-overlay]';
   function isBrowserInjectedOverlay(node){
     if(!(node instanceof Element) || node===document.body || node===document.documentElement) return false;
     if(node.matches('#desktop,.top-os,.window,.browser-window,.browser-body,.browser-home,#nyxStudyHubStartup,#nyxWaveBg,#setupLaunchScreen,.nyx-prompt-shade,.nyx-modal-shade')) return false;
@@ -2332,17 +2334,17 @@
     'x.com':localIcon('x-logo.png'),
     'chatgpt.com':localIcon('chatgpt-logo.webp'),
     'store.steampowered.com':localIcon('steam-logo.ico'),
-    'crunchyroll.com':localIcon('crunchyroll-logo.svg'),
+    'crunchyroll.com':localIcon('crunchyroll-color.png'),
     'crazygames.com':localIcon('crazygames-logo.png'),
-    'newgrounds.com':localIcon('newgrounds-logo.svg'),
+    'newgrounds.com':localIcon('newgrounds-color.png'),
     'twitch.tv':localIcon('twitch-logo.png'),
-    'kick.com':localIcon('kick-logo.svg'),
+    'kick.com':localIcon('kick-color.png'),
     'pluto.tv':localIcon('plutotv-logo.png'),
     'skribbl.io':localIcon('skribbl-logo.png'),
     'slither.io':localIcon('slither-logo.png'),
     'geoguessr.com':localIcon('geoguessr-logo.png'),
     'y8.com':localIcon('y8-logo.png'),
-    'itch.io':localIcon('itchio-logo.svg'),
+    'itch.io':localIcon('itchio-app-icon.svg'),
     'tcgplayer.com':localIcon('tcgplayer-logo.webp'),
     'cpstest.org':localIcon('cps-logo.png'),
     'classlink.com':localIcon('classlink-logo.png'),
@@ -7972,9 +7974,9 @@
             .16+random()*.42
           );
         }
-        const clusterCount=width<620 ? 2 : lightweight ? 3 : Math.max(3,Math.min(4,Math.round(width/480)));
+        const clusterCount=width<620 ? 3 : lightweight ? 4 : Math.max(5,Math.min(7,Math.round(width/360)));
         const anchors=[
-          [.28,.08],[.065,.42],[.58,.86],[.91,.17],[.88,.7]
+          [.28,.08],[.065,.42],[.58,.86],[.91,.17],[.88,.7],[.5,.28],[.32,.72]
         ];
         for(let cluster=0;cluster<clusterCount;cluster++){
           const anchor=anchors[cluster%anchors.length];
@@ -10650,6 +10652,21 @@
       const app=e.target.closest('[data-app-url]'); if(app){e.preventDefault(); if(String(app.dataset.appUrl || '').trim().toLowerCase()==='nyx://ai') openBrowserShellAppTab('nyx://ai'); else if(document.body.classList.contains('browser-shell')) openBrowserShellAppTab(app.dataset.appUrl); else navigate(app.dataset.appUrl,appCompatibilityMode(app.dataset.appUrl)); return}
       const q=e.target.closest('[data-url]'); if(q){e.preventDefault(); navigate(q.dataset.url)}
     });
+    const browserMessageSourcePath=tab=>{
+      const candidates=[tab?.sourceUrl,tab?.url,tab?.frame?.getAttribute?.('src')];
+      try{candidates.push(tab?.frame?.contentWindow?.location?.href)}catch{}
+      for(const candidate of candidates){
+        if(!candidate)continue;
+        try{
+          const source=browserShellSourceUrl(candidate)||candidate;
+          const parsed=new URL(source,location.href);
+          if(parsed.origin===location.origin)return parsed.pathname;
+        }catch{}
+      }
+      return '';
+    };
+    const nyxChatSourcePath=path=>['/apps/chat','/apps/chat/','/apps/chat/index.html'].includes(path);
+    const nyxAccountClientSourcePath=path=>nyxChatSourcePath(path)||['/apps/link-checker','/apps/link-checker/','/apps/link-checker/index.html'].includes(path);
     const messageHandler=e=>{
       if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:account-token-request','nyx:chat-open-profile','nyx:chat-notification','nyx:subscription-refresh','nyx:proxy-direct-fallback','nyx:cloud-game-load','nyx:cloud-game-save','nyx:close-tab','nyx:go-home'].includes(e.data?.type)) return;
       if(['nyx:cloud-game-load','nyx:cloud-game-save'].includes(e.data.type)){
@@ -10675,8 +10692,8 @@
       if(e.data.type==='nyx:account-token-request'){
         if(e.origin!==location.origin)return;
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
-        let sourcePath='';try{sourcePath=new URL(sourceTab.sourceUrl||'',location.href).pathname}catch{}
-        if(!['/apps/link-checker/','/apps/link-checker/index.html','/apps/chat/','/apps/chat/index.html'].includes(sourcePath))return;
+        const sourcePath=browserMessageSourcePath(sourceTab);
+        if(!nyxAccountClientSourcePath(sourcePath))return;
         const requestId=String(e.data.requestId||'').slice(0,120);if(!requestId)return;
         void (async()=>{const token=await nyxGetFirebaseToken();e.source?.postMessage({type:'nyx:account-token-response',requestId,token},location.origin)})();
         return;
@@ -10691,25 +10708,25 @@
       if(e.data.type==='nyx:go-home'){
         if(e.origin!==location.origin)return;
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
-        let sourcePath='';try{sourcePath=new URL(sourceTab.sourceUrl||sourceTab.url||'',location.href).pathname}catch{}
-        if(!['/apps/chat/','/apps/chat/index.html'].includes(sourcePath))return;
+        const sourcePath=browserMessageSourcePath(sourceTab);
+        if(!nyxChatSourcePath(sourcePath))return;
         setBrowserShellHomeActive();
         return;
       }
       if(e.data.type==='nyx:chat-open-profile'){
         if(e.origin!==location.origin)return;
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
-        let sourcePath='';try{sourcePath=new URL(sourceTab.sourceUrl||'',location.href).pathname}catch{}
-        if(!['/apps/chat/','/apps/chat/index.html'].includes(sourcePath))return;
+        const sourcePath=browserMessageSourcePath(sourceTab);
+        if(!nyxChatSourcePath(sourcePath))return;
         const uid=String(e.data.uid||'').trim();if(!/^[A-Za-z0-9_-]{8,128}$/.test(uid))return;
-        void openNyxProfileDirectory(uid);
+        void openNyxProfileDirectory(uid).catch(()=>toast('That profile could not be opened.'));
         return;
       }
       if(e.data.type==='nyx:chat-notification'){
         if(e.origin!==location.origin)return;
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
-        let sourcePath='';try{sourcePath=new URL(sourceTab.sourceUrl||'',location.href).pathname}catch{}
-        if(!['/apps/chat/','/apps/chat/index.html'].includes(sourcePath))return;
+        const sourcePath=browserMessageSourcePath(sourceTab);
+        if(!nyxChatSourcePath(sourcePath))return;
         const notificationId=String(e.data.notificationId||'').trim().slice(0,180);if(!notificationId||chatNotificationIds.has(notificationId))return;
         chatNotificationIds.add(notificationId);if(chatNotificationIds.size>200)chatNotificationIds.delete(chatNotificationIds.values().next().value);
         sourceTab.chatUnread=true;
@@ -10721,8 +10738,8 @@
       if(e.data.type==='nyx:subscription-refresh'){
         if(e.origin!==location.origin)return;
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
-        let sourcePath='';try{sourcePath=new URL(sourceTab.sourceUrl||'',location.href).pathname}catch{}
-        if(!['/apps/chat/','/apps/chat/index.html'].includes(sourcePath))return;
+        const sourcePath=browserMessageSourcePath(sourceTab);
+        if(!nyxChatSourcePath(sourcePath))return;
         void loadNyxUserProfile();
         return;
       }
@@ -13988,8 +14005,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
           return;
         }
         if(accountMenuAction==='switch'){
-          await signOutFounderOwner();
-          await openNyxAccountAccess();
+          await openNyxAccountAccess({switching:true});
           return;
         }
       }

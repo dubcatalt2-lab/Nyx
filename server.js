@@ -147,6 +147,7 @@ const nyxChatSendWindowMs = 10_000;
 const nyxChatSendMaxPerWindow = 12;
 const nyxChatSendAttempts = new Map();
 const nyxChatMuteCollection = "nyxChatMutes";
+const nyxChatTemporaryBanCollection = "nyxChatTemporaryBans";
 const nyxChatMuteMinimumMs = 60_000;
 const nyxChatMuteMaximumMs = 28 * 24 * 60 * 60_000;
 const nyxChatMuteCacheTtlMs = 15_000;
@@ -1934,24 +1935,24 @@ const nyxAiKnownCatalog = [
   ["llama-3.3-70b-versatile", "Llama 3.3 70B (Versatile)", "Meta"],
   ["openai/gpt-oss-120b", "GPT-OSS 120B", "OpenAI"],
   ["qwen/qwen3-32b", "Qwen3 32B", "Qwen"],
-  ["meta-llama/llama-4-scout-17b-16e-instruct", "Llama 4 Scout (Vision)", "Meta", true],
-  ["navy:gpt-5.4-mini", "ChatGPT 5.4 Mini", "OpenAI", true],
-  ["navy:claude-opus-5", "Claude Opus 5", "Anthropic", true],
-  ["navy:claude-opus-4.8", "Claude Opus 4.8", "Anthropic", true],
-  ["navy:gpt-4o-mini-search-preview", "GPT-4o Mini Search (Preview)", "OpenAI", true],
-  ["navy:gemini-3.1-pro-preview", "Gemini 3.1 Pro (Preview)", "Google", true],
-  ["navy:gemini-3.5-flash", "Gemini 3.5 Flash", "Google", true],
+  ["meta-llama/llama-4-scout-17b-16e-instruct", "Llama 4 Scout (Vision)", "Meta"],
+  ["navy:gpt-5.4-mini", "ChatGPT 5.4 Mini", "OpenAI"],
+  ["navy:claude-opus-5", "Claude Opus 5", "Anthropic"],
+  ["navy:claude-opus-4.8", "Claude Opus 4.8", "Anthropic"],
+  ["navy:gpt-4o-mini-search-preview", "GPT-4o Mini Search (Preview)", "OpenAI"],
+  ["navy:gemini-3.1-pro-preview", "Gemini 3.1 Pro (Preview)", "Google"],
+  ["navy:gemini-3.5-flash", "Gemini 3.5 Flash", "Google"],
   ["navy:grok-4.3", "Grok 4.3", "xAI"],
   ["navy:grok-4.1-fast-reasoning", "Grok 4.1 Fast (Reasoning)", "xAI"],
   ["navy:deepseek-v4-pro", "DeepSeek V4 Pro", "DeepSeek"],
-  ["navy:llama-4-scout", "Llama 4 Scout", "Meta", true],
+  ["navy:llama-4-scout", "Llama 4 Scout", "Meta"],
   ["navy:mistral-medium-latest", "Mistral Medium", "Mistral AI"],
   ["navy:kimi-k2.6", "Kimi K2.6", "Moonshot AI"],
   ["navy:nemotron-3-super", "Nemotron 3 Super", "NVIDIA"],
   ["navy:mimo-v2.5-pro", "MiMo V2.5 Pro", "Xiaomi"],
   ["navy:c4ai-aya-expanse-32b", "Aya Expanse 32B", "Cohere"],
-  ["navy:gpt-4o", "GPT-4o", "OpenAI", true],
-  ["navy:kimi-k2.5", "Kimi K2.5", "Moonshot AI", true],
+  ["navy:gpt-4o", "GPT-4o", "OpenAI"],
+  ["navy:kimi-k2.5", "Kimi K2.5", "Moonshot AI"],
   ["navy:qwen3.5-397b-a17b", "Qwen3.5 397B A17B", "Qwen"],
   ["navy:hermes-4-405b", "Hermes 4 405B", "Nous Research"],
   ["navy:mistral-medium-3.5", "Mistral Medium 3.5", "Mistral AI"]
@@ -4108,6 +4109,72 @@ function nyxChatMutePayload(value, now = Date.now()) {
   };
 }
 
+function nyxChatTemporaryBanPayload(value, now = Date.now()) {
+  const source = value && typeof value === "object" ? value : {};
+  const expiresAtMs = Math.max(0, Number(source.expiresAtMs || 0));
+  if (expiresAtMs <= now) return null;
+  return {
+    targetUid: String(source.targetUid || ""),
+    targetDisplayName: founderProfileText(source.targetDisplayName, "Nyx member", 80),
+    targetHandle: founderProfileText(source.targetHandle, "", 80),
+    targetRole: normalizeNyxRole(source.targetRole),
+    reason: founderProfileText(source.reason, "No reason provided.", 500),
+    moderatorUid: String(source.moderatorUid || ""),
+    moderatorDisplayName: founderProfileText(source.moderatorDisplayName, "Nyx moderator", 80),
+    createdAtMs: Math.max(0, Number(source.createdAtMs || 0)),
+    expiresAtMs
+  };
+}
+
+async function nyxChatActiveTemporaryBan(firebase, uid, now = Date.now()) {
+  const reference = firebase.firestore.collection(nyxChatTemporaryBanCollection).doc(String(uid || "").trim());
+  const snapshot = await reference.get();
+  if (!snapshot.exists) return null;
+  const ban = nyxChatTemporaryBanPayload(snapshot.data(), now);
+  if (ban) return ban;
+  await releaseExpiredNyxChatTemporaryBans(firebase, now);
+  return null;
+}
+
+async function releaseExpiredNyxChatTemporaryBans(firebase, now = Date.now()) {
+  const snapshot = await firebase.firestore.collection(nyxChatTemporaryBanCollection).where("expiresAtMs", "<=", now).limit(100).get();
+  for (const document of snapshot.docs) {
+    const value = document.data() || {};
+    const uid = String(value.targetUid || document.id || "").trim();
+    try {
+      if (/^[A-Za-z0-9_-]{8,128}$/.test(uid)) {
+        const user = await firebase.auth.getUser(uid).catch(error => {
+          if (error?.code === "auth/user-not-found") return null;
+          throw error;
+        });
+        if (user) {
+          await firebase.auth.updateUser(uid, { disabled: false });
+          await clearNyxAccountNotice(firebase, {
+            uid,
+            email: user.email || String(value.targetEmail || ""),
+            username: String(value.targetUsername || "") || await nyxAccountNoticeUsername(firebase, uid, user.email || "")
+          });
+        }
+      }
+      await document.ref.delete();
+      nyxChatIdentityCache.delete(uid);
+    } catch (error) {
+      console.warn("Nyx temporary-ban release will retry:", error?.message || error);
+    }
+  }
+}
+
+let nyxChatTemporaryBanSweepPromise = null;
+function queueNyxChatTemporaryBanSweep() {
+  if (nyxChatTemporaryBanSweepPromise || !firebaseAdminModeConfigured()) return;
+  nyxChatTemporaryBanSweepPromise = Promise.resolve()
+    .then(() => linkGeneratorFirebase())
+    .then(firebase => firebase && releaseExpiredNyxChatTemporaryBans(firebase))
+    .catch(error => console.warn("Nyx temporary-ban sweep paused:", error?.message || error))
+    .finally(() => { nyxChatTemporaryBanSweepPromise = null; });
+}
+setInterval(queueNyxChatTemporaryBanSweep, 60_000).unref();
+
 async function nyxChatActiveMute(firebase, uid, now = Date.now()) {
   const key = String(uid || "").trim();
   if (!key) return null;
@@ -4701,6 +4768,12 @@ async function nyxChatIdentity(firebase, token) {
 async function authenticatedNyxChatUser(req, checkRevoked = true) {
   try {
     const result = await authenticatedNyxUser(req, checkRevoked);
+    const temporaryBan = await nyxChatActiveTemporaryBan(result.firebase, result.token.uid);
+    if (temporaryBan) {
+      const error = new Error(`You are temporarily banned from Nyx Chat until ${new Date(temporaryBan.expiresAtMs).toLocaleString("en-US")}. Reason: ${temporaryBan.reason}`);
+      error.status = 403;
+      throw error;
+    }
     const now = Date.now();
     signedInPresence.set(result.token.uid, now);
     if (signedInPresence.size > 1_000) {
@@ -7483,6 +7556,140 @@ app.post("/api/chat/moderation/mutes", async (req, res) => {
   }
 });
 
+app.post("/api/chat/moderation/temp-bans", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  try {
+    const { firebase, token } = await authenticatedNyxChatUser(req);
+    await releaseExpiredNyxChatTemporaryBans(firebase);
+    const action = String(req.body?.action || "tempban").trim().toLowerCase();
+    const actorIdentity = await nyxChatIdentity(firebase, token);
+    if (!actorIdentity.canModerate) {
+      res.status(403).json({ error: "Moderator access is required." });
+      return;
+    }
+    if (action === "list") {
+      const now = Date.now();
+      const snapshot = await firebase.firestore.collection(nyxChatTemporaryBanCollection).orderBy("expiresAtMs", "asc").limit(100).get();
+      res.json({ bans: snapshot.docs.map(document => nyxChatTemporaryBanPayload(document.data(), now)).filter(Boolean) });
+      return;
+    }
+    if (!new Set(["tempban", "untempban", "duration"]).has(action)) {
+      res.status(400).json({ error: "Choose tempban, untempban, duration, or list." });
+      return;
+    }
+    const targetUid = String(req.body?.targetUid || "").trim();
+    if (!/^[A-Za-z0-9_-]{8,128}$/.test(targetUid) || targetUid === token.uid) {
+      res.status(400).json({ error: "Choose another Nyx member." });
+      return;
+    }
+    const targetUser = await firebase.auth.getUser(targetUid).catch(error => {
+      if (error?.code === "auth/user-not-found") return null;
+      throw error;
+    });
+    if (!targetUser) {
+      res.status(404).json({ error: "That Nyx member was not found." });
+      return;
+    }
+    const [actorAdministrationSnapshot, targetAdministrationSnapshot, targetIdentity] = await Promise.all([
+      firebase.firestore.collection("nyxUserAdministration").doc(token.uid).get(),
+      firebase.firestore.collection("nyxUserAdministration").doc(targetUid).get(),
+      nyxChatIdentity(firebase, { uid: targetUid, email: targetUser.email || "", name: targetUser.displayName || "" })
+    ]);
+    const actorRole = nyxRoleForUser(token.uid, actorAdministrationSnapshot.data() || {});
+    const targetRole = nyxRoleForUser(targetUid, targetAdministrationSnapshot.data() || {});
+    const founderOwnerOverride = actorRole === "owner" && token.uid === founderProfileConfig().administratorUid;
+    if (!founderOwnerOverride && nyxRolePolicy(targetRole).rank >= nyxRolePolicy(actorRole).rank) {
+      res.status(403).json({ error: "You can only temporarily ban members ranked below your role." });
+      return;
+    }
+    const reference = firebase.firestore.collection(nyxChatTemporaryBanCollection).doc(targetUid);
+    const now = Date.now();
+    if (action === "untempban") {
+      const existing = await reference.get();
+      if (!existing.exists) {
+        res.status(404).json({ error: "That member does not have an active temporary ban." });
+        return;
+      }
+      await firebase.auth.updateUser(targetUid, { disabled: false });
+      await clearNyxAccountNotice(firebase, { uid: targetUid, email: targetUser.email || "", username: await nyxAccountNoticeUsername(firebase, targetUid, targetUser.email || "") });
+      await reference.delete();
+      nyxChatIdentityCache.delete(targetUid);
+      await recordNyxAuditSafe(firebase, { actorUid: token.uid, actorEmail: token.email || "", action: "chat_temporary_ban_lifted", targetUid, details: { targetRole } });
+      res.json({ ok: true, targetUid, lifted: true });
+      return;
+    }
+    const duration = String(req.body?.duration || "").trim();
+    const durationMs = nyxChatMuteDuration(duration);
+    if (!durationMs) {
+      res.status(400).json({ error: "Enter a time from 1 minute through 4 weeks, such as 10m, 2h, 1d, or 1w." });
+      return;
+    }
+    if (action === "duration") {
+      const existing = await reference.get();
+      if (!existing.exists || !nyxChatTemporaryBanPayload(existing.data(), now)) {
+        res.status(404).json({ error: "That member does not have an active temporary ban." });
+        return;
+      }
+      const expiresAtMs = now + durationMs;
+      await reference.set({ expiresAtMs, expiresAt: new Date(expiresAtMs).toISOString(), updatedAtMs: now, updatedAt: new Date(now).toISOString(), updatedByUid: token.uid }, { merge: true });
+      await recordNyxAuditSafe(firebase, { actorUid: token.uid, actorEmail: token.email || "", action: "chat_temporary_ban_duration_changed", targetUid, details: { duration, durationMs, expiresAtMs, targetRole } });
+      res.json({ ok: true, targetUid, ban: nyxChatTemporaryBanPayload({ ...existing.data(), expiresAtMs }, now) });
+      return;
+    }
+    const rawReason = String(req.body?.reason || "").trim();
+    const reason = founderProfileText(rawReason, "", 500);
+    if (!reason) {
+      res.status(400).json({ error: "A reason is required to temporarily ban a member." });
+      return;
+    }
+    if (rawReason.length > 500) {
+      res.status(400).json({ error: "Keep the temporary-ban reason to 500 characters or fewer." });
+      return;
+    }
+    if (targetUser.disabled) {
+      res.status(409).json({ error: "This account is already disabled; use the Owner Dashboard to review its existing restriction." });
+      return;
+    }
+    const expiresAtMs = now + durationMs;
+    const targetUsername = await nyxAccountNoticeUsername(firebase, targetUid, targetUser.email || "");
+    const value = {
+      targetUid,
+      targetEmail: targetUser.email || "",
+      targetUsername,
+      targetDisplayName: targetIdentity.displayName,
+      targetHandle: targetIdentity.handle,
+      targetRole,
+      reason,
+      moderatorUid: token.uid,
+      moderatorDisplayName: actorIdentity.displayName,
+      moderatorRole: actorRole,
+      createdAt: new Date(now).toISOString(),
+      createdAtMs: now,
+      expiresAt: new Date(expiresAtMs).toISOString(),
+      expiresAtMs
+    };
+    await reference.set(value);
+    try {
+      await firebase.auth.updateUser(targetUid, { disabled: true });
+      await firebase.auth.revokeRefreshTokens(targetUid);
+      await setNyxAccountNotice(firebase, { uid: targetUid, email: targetUser.email || "", username: targetUsername, status: "banned", message: `Temporary ban until ${new Date(expiresAtMs).toLocaleString("en-US")}: ${reason}` });
+    } catch (error) {
+      await reference.delete().catch(() => {});
+      await firebase.auth.updateUser(targetUid, { disabled: false }).catch(() => {});
+      throw error;
+    }
+    nyxChatIdentityCache.delete(targetUid);
+    await recordNyxAuditSafe(firebase, { actorUid: token.uid, actorEmail: token.email || "", action: "chat_user_temporarily_banned", targetUid, details: { duration, durationMs, expiresAtMs, reason, targetRole } });
+    res.status(201).json({ ok: true, targetUid, ban: nyxChatTemporaryBanPayload(value, now) });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "The temporary ban could not be updated." });
+  }
+});
+
 app.post("/api/chat/moderation/warnings", async (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) {
@@ -9570,6 +9777,7 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
       }
       const disabled = action === "disable" || action === "ban" || action === "disable_with_ip_ban";
       const moderationReason = memberMessage;
+      await firebase.firestore.collection(nyxChatTemporaryBanCollection).doc(uid).delete();
       const accountNoticeUsername = await nyxAccountNoticeUsername(firebase, uid, target.email);
       const lastSeenIp = action === "disable_with_ip_ban" ? normalizeNyxIp(targetAdministration?.data()?.lastSeenIp) : "";
       if (action === "disable_with_ip_ban" && !lastSeenIp) {

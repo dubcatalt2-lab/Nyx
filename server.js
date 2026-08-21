@@ -1917,32 +1917,32 @@ const nyxAiModels = {
 };
 
 const nyxAiKnownCatalog = [
-  ["nocturne:flash", "DeepSeek V4 Flash", "DeepSeek"],
+  ["nocturne:flash", "DeepSeek V4 Flash", "DeepSeek", true],
   ["llama-3.3-70b-versatile", "Llama 3.3 70B (Versatile)", "Meta"],
   ["openai/gpt-oss-120b", "GPT-OSS 120B", "OpenAI"],
   ["qwen/qwen3-32b", "Qwen3 32B", "Qwen"],
-  ["meta-llama/llama-4-scout-17b-16e-instruct", "Llama 4 Scout (Vision)", "Meta"],
-  ["navy:gpt-5.4-mini", "ChatGPT 5.4 Mini", "OpenAI"],
-  ["navy:claude-opus-5", "Claude Opus 5", "Anthropic"],
-  ["navy:claude-opus-4.8", "Claude Opus 4.8", "Anthropic"],
-  ["navy:gpt-4o-mini-search-preview", "GPT-4o Mini Search (Preview)", "OpenAI"],
-  ["navy:gemini-3.1-pro-preview", "Gemini 3.1 Pro (Preview)", "Google"],
-  ["navy:gemini-3.5-flash", "Gemini 3.5 Flash", "Google"],
+  ["meta-llama/llama-4-scout-17b-16e-instruct", "Llama 4 Scout (Vision)", "Meta", true],
+  ["navy:gpt-5.4-mini", "ChatGPT 5.4 Mini", "OpenAI", true],
+  ["navy:claude-opus-5", "Claude Opus 5", "Anthropic", true],
+  ["navy:claude-opus-4.8", "Claude Opus 4.8", "Anthropic", true],
+  ["navy:gpt-4o-mini-search-preview", "GPT-4o Mini Search (Preview)", "OpenAI", true],
+  ["navy:gemini-3.1-pro-preview", "Gemini 3.1 Pro (Preview)", "Google", true],
+  ["navy:gemini-3.5-flash", "Gemini 3.5 Flash", "Google", true],
   ["navy:grok-4.3", "Grok 4.3", "xAI"],
   ["navy:grok-4.1-fast-reasoning", "Grok 4.1 Fast (Reasoning)", "xAI"],
   ["navy:deepseek-v4-pro", "DeepSeek V4 Pro", "DeepSeek"],
-  ["navy:llama-4-scout", "Llama 4 Scout", "Meta"],
+  ["navy:llama-4-scout", "Llama 4 Scout", "Meta", true],
   ["navy:mistral-medium-latest", "Mistral Medium", "Mistral AI"],
   ["navy:kimi-k2.6", "Kimi K2.6", "Moonshot AI"],
   ["navy:nemotron-3-super", "Nemotron 3 Super", "NVIDIA"],
   ["navy:mimo-v2.5-pro", "MiMo V2.5 Pro", "Xiaomi"],
   ["navy:c4ai-aya-expanse-32b", "Aya Expanse 32B", "Cohere"],
-  ["navy:gpt-4o", "GPT-4o", "OpenAI"],
-  ["navy:kimi-k2.5", "Kimi K2.5", "Moonshot AI"],
+  ["navy:gpt-4o", "GPT-4o", "OpenAI", true],
+  ["navy:kimi-k2.5", "Kimi K2.5", "Moonshot AI", true],
   ["navy:qwen3.5-397b-a17b", "Qwen3.5 397B A17B", "Qwen"],
   ["navy:hermes-4-405b", "Hermes 4 405B", "Nous Research"],
   ["navy:mistral-medium-3.5", "Mistral Medium 3.5", "Mistral AI"]
-].map(([id, label, company = ""]) => ({ id, label, company }));
+].map(([id, label, company = "", vision = false]) => ({ id, label, company, vision }));
 
 const nyxAiCatalogCaches = new Map();
 const nyxAiCatalogCacheLimit = 50;
@@ -2040,7 +2040,9 @@ function nyxAiMergeCatalogs(...catalogs) {
         ...reference,
         ...item,
         label: item.label === item.id && reference?.label ? reference.label : item.label,
-        company: item.company || reference?.company || ""
+        company: item.company || reference?.company || "",
+        vision: Boolean(item.vision || reference?.vision),
+        reasoning: Boolean(item.reasoning || reference?.reasoning)
       });
     }
   }
@@ -2135,7 +2137,8 @@ async function nyxAiAvailableModels(key = nyxAiKey(), personal = false) {
 async function nyxAiResolveModel(requestedModel, key, personal = false) {
   const providerModel = nyxAiModels[requestedModel] || requestedModel;
   const models = await nyxAiAvailableModels(key, personal);
-  return models.some(item => item.id === providerModel) ? providerModel : "";
+  const match = models.find(item => item.id === providerModel);
+  return match ? { ...match, id: providerModel } : null;
 }
 
 function nyxAiErrorMessage(data, status, secret = "") {
@@ -2151,7 +2154,25 @@ function nyxAiErrorMessage(data, status, secret = "") {
 function nyxAiStreamText(data) {
   if (!data || typeof data !== "object") return "";
   if (data.type === "delta") return String(data.text || data.delta || "");
-  return String(data?.choices?.[0]?.delta?.content || data?.choices?.[0]?.text || "");
+  const content = data?.choices?.[0]?.delta?.content ?? data?.choices?.[0]?.text ?? "";
+  if (Array.isArray(content)) return content.map(item => typeof item === "string" ? item : item?.text || item?.content || "").join("");
+  if (content && typeof content === "object") return String(content.text || content.content || "");
+  return String(content || "");
+}
+
+function nyxAiCompletionText(data) {
+  const content = data?.response || data?.text || data?.choices?.[0]?.message?.content || data?.choices?.[0]?.text || "";
+  if (Array.isArray(content)) return content.map(item => typeof item === "string" ? item : item?.text || item?.content || "").join("");
+  return String(content || "");
+}
+
+function nyxAiLooksCorrupted(text) {
+  const value = String(text || "").trim();
+  if (value.length < 14 || /\s/.test(value)) return false;
+  const characters = [...value];
+  const wordRuns = value.match(/\p{L}{3,}/gu) || [];
+  const suspicious = characters.filter(character => /[{}\[\]\\|^~`]|\d/.test(character)).length;
+  return wordRuns.length === 0 && suspicious / characters.length >= 0.38;
 }
 
 function nyxAiWriteStreamChunk(res, text, model) {
@@ -2164,8 +2185,85 @@ function nyxAiWriteStreamChunk(res, text, model) {
   })}\n\n`);
 }
 
+function nyxAiWriteStreamReplacement(res, text, model) {
+  if (!text) return;
+  res.write(`data: ${JSON.stringify({
+    id: "nyx-ai",
+    object: "chat.completion.chunk",
+    model,
+    nyx_replace: true,
+    choices: [{ index: 0, delta: { content: String(text) }, finish_reason: null }]
+  })}\n\n`);
+}
+
+function nyxAiImage(value) {
+  const dataUrl = String(value?.dataUrl || "").trim();
+  const match = dataUrl.match(/^data:(image\/(?:png|jpeg|webp|gif));base64,([a-z0-9+/=]+)$/i);
+  if (!match || dataUrl.length > 1_500_000) return null;
+  const buffer = Buffer.from(match[2], "base64");
+  if (!buffer.length || buffer.length > 1_100_000) return null;
+  return { mime: match[1].toLowerCase(), bytes: buffer.length, buffer };
+}
+
+function nyxAiPruneImageTickets(now = Date.now()) {
+  for (const [token, ticket] of nyxAiImageTickets) {
+    if (ticket.expiresAt <= now) nyxAiImageTickets.delete(token);
+  }
+  while (nyxAiImageTickets.size >= nyxAiImageTicketLimit) {
+    nyxAiImageTickets.delete(nyxAiImageTickets.keys().next().value);
+  }
+}
+
+function nyxAiCreateImageTicket(image) {
+  nyxAiPruneImageTickets();
+  const token = randomBytes(32).toString("base64url");
+  nyxAiImageTickets.set(token, {
+    buffer: image.buffer,
+    mime: image.mime,
+    expiresAt: Date.now() + nyxAiImageTicketTtlMs
+  });
+  return token;
+}
+
+function nyxAiPublicImageUrl(req, token) {
+  const configuredOrigin = String(process.env.NYX_PUBLIC_ORIGIN || "").trim();
+  const requestOrigin = `${req.protocol}://${req.get("host") || ""}`;
+  try {
+    const origin = new URL(configuredOrigin || requestOrigin);
+    if (!["http:", "https:"].includes(origin.protocol)) return "";
+    return new URL(`/api/nyx-ai/image/${token}`, origin.origin).href;
+  } catch {
+    return "";
+  }
+}
+
+async function nyxAiRetryCorruptedCompletion(endpoint, key, payload, signal) {
+  const response = await fetch(endpoint, {
+    method: "POST",
+    signal,
+    headers: {
+      "content-type": "application/json",
+      "authorization": `Bearer ${key}`
+    },
+    body: JSON.stringify({
+      ...payload,
+      system: `${payload.system} A previous attempt produced corrupted symbols. Return one clean, readable answer using ordinary language and valid Markdown.`,
+      temperature: Math.min(0.2, Number(payload.temperature) || 0.2),
+      stream: false
+    })
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) return { text: "", tokens: 0 };
+  const text = nyxAiCompletionText(data).trim();
+  if (!text || nyxAiLooksCorrupted(text)) return { text: "", tokens: nyxAiCompletionTokens(data) };
+  return { text, tokens: nyxAiCompletionTokens(data) };
+}
+
 const nyxAiUsage = new Map();
 let nyxAiActiveRequests = 0;
+const nyxAiImageTickets = new Map();
+const nyxAiImageTicketTtlMs = 90_000;
+const nyxAiImageTicketLimit = 12;
 const nyxAiPremiumOpusModel = "navy:claude-opus-4.8";
 const nyxAiPremiumOpusDailyTokenLimit = 2_000;
 const nyxAiPremiumOpusUsageCollection = "nyxAiPremiumOpusUsage";
@@ -2328,6 +2426,23 @@ app.get("/api/nyx-ai/models", async (req, res) => {
   res.json({ models: exposedModels, credential: credential.personal ? "personal" : "nyx", premium: entitlement.premium, owner: entitlement.owner });
 });
 
+app.get("/api/nyx-ai/image/:token", (req, res) => {
+  nyxAiPruneImageTickets();
+  const token = String(req.params?.token || "");
+  const ticket = /^[A-Za-z0-9_-]{43}$/.test(token) ? nyxAiImageTickets.get(token) : null;
+  if (!ticket || ticket.expiresAt <= Date.now()) {
+    if (ticket) nyxAiImageTickets.delete(token);
+    res.set("Cache-Control", "no-store").status(404).end();
+    return;
+  }
+  res.set({
+    "Cache-Control": "private, no-store, max-age=0",
+    "Content-Type": ticket.mime,
+    "Content-Length": String(ticket.buffer.length),
+    "X-Content-Type-Options": "nosniff"
+  }).send(ticket.buffer);
+});
+
 app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   const credential = nyxAiRequestCredential(req);
   if (credential.invalid) {
@@ -2342,11 +2457,12 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     return;
   }
   const requestedModel = String(req.body?.model || "chatgpt-5.4-mini");
-  const model = await nyxAiResolveModel(requestedModel, key, credential.personal);
-  if (!model) {
+  const modelInfo = await nyxAiResolveModel(requestedModel, key, credential.personal);
+  if (!modelInfo) {
     res.status(400).json({ error: "Unknown Nyx AI model." });
     return;
   }
+  const model = modelInfo.id;
   const isPremiumOpus = model === nyxAiPremiumOpusModel;
   const premiumEntitlement = isPremiumOpus ? await nyxAiPremiumEntitlement(req) : null;
   if (isPremiumOpus && !premiumEntitlement?.premium && !premiumEntitlement?.owner) {
@@ -2355,6 +2471,16 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   }
   const message = String(req.body?.message || "").trim();
   const imageContext = String(req.body?.imageContext || "").trim();
+  const suppliedImage = req.body?.image;
+  const image = suppliedImage ? nyxAiImage(suppliedImage) : null;
+  if (suppliedImage && !image) {
+    res.status(413).json({ error: "That image is unsupported or too large after preparation." });
+    return;
+  }
+  if (image && !modelInfo.vision) {
+    res.status(400).json({ error: "The selected AI model cannot read images. Choose a model marked Vision and try again." });
+    return;
+  }
   if (message.length > nyxAiLimits.promptChars) {
     res.status(413).json({ error: `Message is too long. The limit is ${nyxAiLimits.promptChars} characters.` });
     return;
@@ -2371,14 +2497,30 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     res.status(413).json({ error: "This conversation is too long. Clear the chat and try again." });
     return;
   }
-  if (!message && !imageContext && !history.length) {
+  if (!message && !imageContext && !image && !history.length) {
     res.status(400).json({ error: "Message is required." });
     return;
   }
   const endpoint = nyxAiEndpoint();
-  const prompt = imageContext ? `${message || "Answer the attached image."}\n\nImage context from Nyx OCR/analysis:\n${imageContext}` : message;
+  const prompt = imageContext ? `${message || "Answer the attached image."}\n\nAdditional image details from Nyx:\n${imageContext}` : message;
   const messages = history.length ? history : [{ role: "user", content: prompt }];
-  if (history.length && imageContext) messages[messages.length - 1] = { role: "user", content: prompt };
+  if (history.length && (imageContext || image)) messages[messages.length - 1] = { role: "user", content: prompt };
+  if (image) {
+    const imageToken = nyxAiCreateImageTicket(image);
+    const imageUrl = nyxAiPublicImageUrl(req, imageToken);
+    if (!imageUrl) {
+      nyxAiImageTickets.delete(imageToken);
+      res.status(503).json({ error: "Nyx image delivery is not configured on this server." });
+      return;
+    }
+    messages[messages.length - 1] = {
+      role: "user",
+      content: [
+        { type: "text", text: prompt || "Analyze this image carefully and answer the user's request." },
+        { type: "image_url", image_url: { url: imageUrl } }
+      ]
+    };
+  }
   const wantsStream = req.body?.stream !== false;
   const responseDepth = ["off", "normal", "extended"].includes(req.body?.responseDepth) ? req.body.responseDepth : "normal";
   const responseGuidance = responseDepth === "off"
@@ -2407,6 +2549,16 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), nyxAiLimits.timeoutMs);
   res.once("close", () => controller.abort());
+  const providerPayload = {
+    model,
+    system: `You are Nyx AI inside the Nyx browser. Be helpful, direct, and accurate. If you do not know something, say so plainly. Never output corrupted symbols or token fragments; every answer must be readable natural language or valid code requested by the user. Format responses with clean Markdown. Use Markdown table syntax for tables, and use standard LaTeX delimiters for mathematical notation. ${responseGuidance}`,
+    messages,
+    level: responseDepth,
+    reasoning_effort: responseDepth === "off" ? "low" : responseDepth === "extended" ? "high" : "medium",
+    temperature: Number(process.env.NYX_AI_TEMPERATURE || 0.45),
+    max_tokens: maxTokens,
+    stream: wantsStream
+  };
   try {
     const upstream = await fetch(endpoint, {
       method: "POST",
@@ -2415,16 +2567,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
         "content-type": "application/json",
         "authorization": `Bearer ${key}`
       },
-      body: JSON.stringify({
-        model,
-        system: `You are Nyx AI inside the Nyx browser. Be helpful, direct, and accurate. If you do not know something, say so plainly. Format responses with clean Markdown. Use Markdown table syntax for tables, and use standard LaTeX delimiters for mathematical notation. ${responseGuidance}`,
-        messages,
-        level: responseDepth,
-        reasoning_effort: responseDepth === "off" ? "low" : responseDepth === "extended" ? "high" : "medium",
-        temperature: Number(process.env.NYX_AI_TEMPERATURE || 0.7),
-        max_tokens: maxTokens,
-        stream: wantsStream
-      })
+      body: JSON.stringify(providerPayload)
     });
     if (wantsStream && upstream.ok) {
       res.status(200);
@@ -2470,6 +2613,13 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
           nyxAiWriteStreamChunk(res, text, model);
         }
       }
+      if (nyxAiLooksCorrupted(generatedText)) {
+        const retry = await nyxAiRetryCorruptedCompletion(endpoint, key, providerPayload, controller.signal).catch(() => ({ text: "", tokens: 0 }));
+        const replacement = retry.text || "That model returned a corrupted reply twice. Please try again or choose another model.";
+        nyxAiWriteStreamReplacement(res, replacement, model);
+        generatedText = replacement;
+        reportedTokens += retry.tokens || nyxAiEstimatedTokens(replacement);
+      }
       if (opusReservation) {
         await settleNyxAiPremiumOpusTokens(opusReservation, reportedTokens || nyxAiEstimatedTokens(generatedText));
         opusReservationSettled = true;
@@ -2485,7 +2635,11 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       });
       return;
     }
-    const text = data?.response || data?.text || data?.choices?.[0]?.message?.content || data?.choices?.[0]?.text || "";
+    let text = nyxAiCompletionText(data);
+    if (nyxAiLooksCorrupted(text)) {
+      const retry = await nyxAiRetryCorruptedCompletion(endpoint, key, providerPayload, controller.signal).catch(() => ({ text: "", tokens: 0 }));
+      text = retry.text || "That model returned a corrupted reply twice. Please try again or choose another model.";
+    }
     if (opusReservation) {
       await settleNyxAiPremiumOpusTokens(opusReservation, nyxAiCompletionTokens(data) || nyxAiEstimatedTokens(text));
       opusReservationSettled = true;
@@ -2725,7 +2879,7 @@ function linkGeneratorConfig() {
   const premiumBatchLimit = Math.max(1, Math.min(10, Number.parseInt(process.env.LINK_GENERATOR_PREMIUM_BATCH_LIMIT || "10", 10) || 10));
   let origin = "";
   try {
-    const parsed = new URL(process.env.NYX_PUBLIC_ORIGIN || "https://nyxlearning.netlify.app");
+    const parsed = new URL(process.env.NYX_PUBLIC_ORIGIN || "https://nyxlearning.org");
     if (parsed.protocol === "https:" || parsed.protocol === "http:") {
       parsed.pathname = parsed.pathname.replace(/\/$/, "");
       parsed.search = "";

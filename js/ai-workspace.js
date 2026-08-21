@@ -14,6 +14,15 @@
   const MAX_THREADS=40;
   const MAX_INPUT_HEIGHT=190;
   const MAX_IMAGE_BYTES=8*1024*1024;
+  const MAX_PREPARED_IMAGE_CHARS=1200000;
+  const MAX_PREPARED_IMAGE_EDGE=1600;
+  const SUPPORTED_IMAGE_TYPES=new Set(['image/png','image/jpeg','image/webp','image/gif']);
+  const KNOWN_VISION_MODELS=new Set([
+    'chatgpt-5.4-mini','nocturne:flash','meta-llama/llama-4-scout-17b-16e-instruct',
+    'navy:gpt-5.4-mini','navy:gpt-4o-mini-search-preview','navy:gemini-3.1-pro-preview',
+    'navy:gemini-3.5-flash','navy:claude-opus-5','navy:claude-opus-4.8',
+    'navy:llama-4-scout','navy:gpt-4o','navy:kimi-k2.5'
+  ]);
 
   const app=document.querySelector('[data-ai-app]');
   const feed=document.getElementById('feed');
@@ -72,13 +81,12 @@
 
   let activeController=null;
   let followStream=true;
-  let modelCatalog=[{id:DEFAULT_MODEL,label:'GPT-5.4 Mini',company:'ChatGPT'}];
+  let modelCatalog=[{id:DEFAULT_MODEL,label:'GPT-5.4 Mini',company:'ChatGPT',vision:true}];
   let threads=[];
   let activeThreadId='';
   let temporaryMode=false;
   let temporaryMessages=[];
   let attachedImage=null;
-  let imageOcrLoader=null;
   let nyxAiAccountAuthPromise=null;
 
   function personalApiKey(){
@@ -572,7 +580,7 @@
     attachedImage=null;
     imageInput.value='';
     attachmentPreview.hidden=true;
-    attachmentPreview.classList.remove('is-error');
+    attachmentPreview.classList.remove('is-error','is-file-error');
     attachmentThumbnail.hidden=false;
     attachmentThumbnail.removeAttribute('src');
     attachmentName.textContent='';
@@ -584,7 +592,7 @@
   function showAttachmentError(message){
     clearAttachment();
     attachmentPreview.hidden=false;
-    attachmentPreview.classList.add('is-error');
+    attachmentPreview.classList.add('is-error','is-file-error');
     attachmentThumbnail.hidden=true;
     attachmentName.textContent='Image not attached';
     setAttachmentStatus(message);
@@ -593,7 +601,7 @@
   function setAttachment(image){
     attachedImage=image;
     attachmentPreview.hidden=false;
-    attachmentPreview.classList.remove('is-error');
+    attachmentPreview.classList.remove('is-error','is-file-error');
     attachmentThumbnail.hidden=false;
     attachmentThumbnail.src=image.dataUrl;
     attachmentName.textContent=image.name;
@@ -603,7 +611,7 @@
   }
 
   function readImageFile(file){
-    if(!file||!String(file.type||'').startsWith('image/')){
+    if(!file||!SUPPORTED_IMAGE_TYPES.has(String(file.type||'').toLowerCase())){
       showAttachmentError('Choose a PNG, JPG, WebP, or GIF image.');
       return Promise.resolve(null);
     }
@@ -626,73 +634,45 @@
     });
   }
 
-  function loadImageOcr(){
-    if(window.Tesseract) return Promise.resolve(window.Tesseract);
-    if(imageOcrLoader) return imageOcrLoader;
-    imageOcrLoader=new Promise((resolve,reject)=>{
-      const script=document.createElement('script');
-      script.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-      script.onload=()=>window.Tesseract?resolve(window.Tesseract):reject(new Error('OCR library did not start.'));
-      script.onerror=()=>reject(new Error('OCR library could not load.'));
-      document.head.appendChild(script);
-    });
-    return imageOcrLoader;
-  }
-
-  function analyzeImage(dataUrl){
-    return new Promise(resolve=>{
+  function prepareImageForModel(source){
+    if(!source?.dataUrl) return Promise.reject(new Error('The attached image is unavailable.'));
+    return new Promise((resolve,reject)=>{
       const image=new Image();
       image.onload=()=>{
         try{
-          const canvas=document.createElement('canvas');
-          const max=96;
-          const scale=Math.min(1,max/Math.max(image.naturalWidth,image.naturalHeight));
-          canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));
-          canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));
-          const context=canvas.getContext('2d',{willReadFrequently:true});
-          if(!context) throw new Error('Canvas is unavailable.');
-          context.drawImage(image,0,0,canvas.width,canvas.height);
-          const pixels=context.getImageData(0,0,canvas.width,canvas.height).data;
-          let red=0,green=0,blue=0,light=0,dark=0,count=0;
-          for(let index=0;index<pixels.length;index+=16){
-            const r=pixels[index],g=pixels[index+1],b=pixels[index+2];
-            const luminance=(r+g+b)/3;
-            red+=r;green+=g;blue+=b;count+=1;
-            if(luminance>200) light+=1;
-            if(luminance<55) dark+=1;
+          const originalWidth=Math.max(1,image.naturalWidth||1);
+          const originalHeight=Math.max(1,image.naturalHeight||1);
+          if(source.dataUrl.length<=MAX_PREPARED_IMAGE_CHARS){
+            resolve({dataUrl:source.dataUrl,mime:source.type,width:originalWidth,height:originalHeight});
+            return;
           }
-          red=Math.round(red/count);green=Math.round(green/count);blue=Math.round(blue/count);
-          const brightness=Math.round((red+green+blue)/3);
-          resolve(`Image details: ${image.naturalWidth}x${image.naturalHeight}px. Average color rgb(${red}, ${green}, ${blue}). Overall brightness is about ${brightness}/255. Bright areas: ${Math.round(light/count*100)}%. Dark areas: ${Math.round(dark/count*100)}%.`);
-        }catch{
-          resolve(`Image details: ${image.naturalWidth}x${image.naturalHeight}px.`);
-        }
+          const canvas=document.createElement('canvas');
+          const context=canvas.getContext('2d');
+          if(!context) throw new Error('Image preparation is unavailable.');
+          let scale=Math.min(1,MAX_PREPARED_IMAGE_EDGE/Math.max(originalWidth,originalHeight));
+          let prepared='';
+          for(let attempt=0;attempt<7;attempt+=1){
+            canvas.width=Math.max(1,Math.round(originalWidth*scale));
+            canvas.height=Math.max(1,Math.round(originalHeight*scale));
+            context.fillStyle='#ffffff';
+            context.fillRect(0,0,canvas.width,canvas.height);
+            context.drawImage(image,0,0,canvas.width,canvas.height);
+            prepared=canvas.toDataURL('image/jpeg',Math.max(.52,.9-attempt*.07));
+            if(prepared.length<=MAX_PREPARED_IMAGE_CHARS) break;
+            scale*=.82;
+          }
+          if(!prepared||prepared.length>MAX_PREPARED_IMAGE_CHARS) throw new Error('Nyx could not prepare that image within the upload limit.');
+          resolve({dataUrl:prepared,mime:'image/jpeg',width:originalWidth,height:originalHeight});
+        }catch(error){reject(error)}
       };
-      image.onerror=()=>resolve('Nyx could not inspect the image pixels.');
-      image.src=dataUrl;
+      image.onerror=()=>reject(new Error('Nyx could not decode that image.'));
+      image.src=source.dataUrl;
     });
   }
 
-  async function readImageContext(image){
-    if(!image?.dataUrl) return '';
-    setAttachmentStatus('Reading image details…');
-    const visual=await analyzeImage(image.dataUrl);
-    try{
-      const Tesseract=await loadImageOcr();
-      const result=await Tesseract.recognize(image.dataUrl,'eng',{
-        logger:event=>{
-          if(!event?.status) return;
-          const progress=Number.isFinite(event.progress)?` ${Math.round(event.progress*100)}%`:'';
-          setAttachmentStatus(`Reading text: ${event.status}${progress}`);
-        }
-      });
-      const text=String(result?.data?.text||'').trim().slice(0,12000);
-      setAttachmentStatus(text?'Image text read':'No clear text found');
-      return text?`${visual}\n\nText read from the image:\n${text}`:`${visual}\n\nNo clear readable text was found in the image.`;
-    }catch(error){
-      setAttachmentStatus('Using basic image details');
-      return `${visual}\n\nOCR was unavailable (${error?.message||'unknown error'}).`;
-    }
+  function ensureVisionModel(){
+    const current=modelCatalog.find(item=>item.id===model.value);
+    return current?.vision?current:null;
   }
 
   function setMessageContent(message,text,{error=false,thinking=false}={}){
@@ -953,7 +933,7 @@
   }
 
   function modelOptions(models){
-    return groupedModels(models).map(([company,items])=>`<optgroup label="${escapeHtml(company)}">${items.map(item=>`<option value="${escapeHtml(item.id)}">${escapeHtml(item.label)}</option>`).join('')}</optgroup>`).join('');
+    return groupedModels(models).map(([company,items])=>`<optgroup label="${escapeHtml(company)}">${items.map(item=>`<option value="${escapeHtml(item.id)}">${escapeHtml(item.label)}${item.vision?' · Vision':''}</option>`).join('')}</optgroup>`).join('');
   }
 
   function modelMenuOptions(models,selected){
@@ -962,7 +942,7 @@
       return `<section class="ai-model-group" role="group" aria-labelledby="${groupId}">
         <p class="ai-model-group-label" id="${groupId}">${escapeHtml(company)}</p>
         ${items.map(item=>`<button class="ai-model-option" type="button" role="option" data-model-id="${escapeHtml(item.id)}" aria-selected="${item.id===selected?'true':'false'}">
-          <span class="ai-model-option-label">${escapeHtml(item.label)}</span>
+          <span class="ai-model-option-label">${escapeHtml(item.label)}${item.vision?' · Vision':''}</span>
           <span class="ai-model-option-check" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="m5 10 3 3 7-7"/></svg></span>
         </button>`).join('')}
       </section>`;
@@ -1036,15 +1016,21 @@
         const id=String(item?.id||'').trim();
         const label=String(item?.label||id).trim();
         const company=String(item?.company||'').trim();
-        return id&&label?[{id,label,company}]:[];
+        return id&&label?[{id,label,company,vision:Boolean(item?.vision)||KNOWN_VISION_MODELS.has(id),reasoning:Boolean(item?.reasoning)}]:[];
       }):[];
       if(!next.length) throw new Error('No models are currently available.');
-      modelCatalog=next;
       const saved=activeThread()?.model||localStorage.getItem(MODEL_KEY)||DEFAULT_MODEL;
+      const savedLabel=modelCatalog.find(item=>item.id===saved)?.label||saved;
+      modelCatalog=next;
       const selected=next.some(item=>item.id===saved)?saved:(next.some(item=>item.id===DEFAULT_MODEL)?DEFAULT_MODEL:next[0].id);
       renderModelOptions(next,selected);
-      localStorage.setItem(MODEL_KEY,selected);
-      if(status){status.classList.remove('is-warning');status.title=`${next.length} models available`}
+      if(selected===saved){
+        localStorage.setItem(MODEL_KEY,selected);
+        if(status){status.classList.remove('is-warning');status.title=`${next.length} models available`}
+      }else if(status){
+        status.classList.add('is-warning');
+        status.title=`${savedLabel} is temporarily unavailable. Nyx will restore it when it returns.`;
+      }
       if(personalApiKey()) updateApiKeyControl(`Your personal key is active with ${next.length} available model${next.length===1?'':'s'}.`,'success');
       return true;
     }catch(error){
@@ -1133,6 +1119,13 @@
     const prompt=input.value.trim();
     const attachment=attachedImage;
     if((!prompt&&!attachment)||send.disabled) return;
+    const visionModel=attachment?ensureVisionModel():null;
+    if(attachment&&!visionModel){
+      attachmentPreview.classList.add('is-error');
+      setAttachmentStatus(`${modelLabel(model.value)} cannot read images. Choose a model marked Vision.`);
+      return;
+    }
+    const requestedModel=(visionModel?.id||model.value)||DEFAULT_MODEL;
     const userText=prompt||'Please analyze this image.';
     const history=savedMessages();
     if(!history.length) updateThreadTitle([{role:'user',content:userText}]);
@@ -1142,7 +1135,6 @@
     input.value='';
     autoGrow();
     const pending=addMessage('assistant','',{thinking:true});
-    const requestedModel=model.value||DEFAULT_MODEL;
     activeController=new AbortController();
     setBusy(true);
     let answer='';
@@ -1153,12 +1145,14 @@
       scrollToBottom();
     };
     try{
-      const imageContext=attachment?await readImageContext(attachment):'';
+      const preparedImage=attachment?await prepareImageForModel(attachment):null;
+      const imageContext=preparedImage?`Original image dimensions: ${preparedImage.width}x${preparedImage.height}px.`:'';
+      if(preparedImage) setAttachmentStatus('Sending the full image to the vision model…');
       const response=await fetch('/api/nyx-ai',{
         method:'POST',
         signal:activeController.signal,
         headers:await aiHeaders({'content-type':'application/json'}),
-        body:JSON.stringify({model:requestedModel,message:userText,messages:history,imageContext,responseDepth:responseDepth(),stream:true})
+        body:JSON.stringify({model:requestedModel,message:userText,messages:history,imageContext,image:preparedImage,responseDepth:responseDepth(),stream:true})
       });
       if(!response.ok){
         const data=await response.json().catch(()=>({}));
@@ -1168,26 +1162,29 @@
       const reader=response.body.getReader();
       const decoder=new TextDecoder();
       let buffer='';
+      const consumeLine=line=>{
+        if(!line.startsWith('data:')) return;
+        const raw=line.slice(5).trim();
+        if(!raw||raw==='[DONE]') return;
+        try{
+          const data=JSON.parse(raw);
+          const token=data?.choices?.[0]?.delta?.content||data?.choices?.[0]?.text||'';
+          if(token){
+            answer=data?.nyx_replace===true?String(token):answer+token;
+            if(!renderFrame) renderFrame=requestAnimationFrame(renderAnswer);
+          }
+        }catch{}
+      };
       for(;;){
         const part=await reader.read();
         if(part.done) break;
         buffer+=decoder.decode(part.value,{stream:true});
         const lines=buffer.split(/\r?\n/);
         buffer=lines.pop()||'';
-        for(const line of lines){
-          if(!line.startsWith('data:')) continue;
-          const raw=line.slice(5).trim();
-          if(!raw||raw==='[DONE]') continue;
-          try{
-            const data=JSON.parse(raw);
-            const token=data?.choices?.[0]?.delta?.content||data?.choices?.[0]?.text||'';
-            if(token){
-              answer+=token;
-              if(!renderFrame) renderFrame=requestAnimationFrame(renderAnswer);
-            }
-          }catch{}
-        }
+        lines.forEach(consumeLine);
       }
+      buffer+=decoder.decode();
+      buffer.split(/\r?\n/).forEach(consumeLine);
       if(renderFrame){cancelAnimationFrame(renderFrame);renderAnswer()}
       const clean=answer.trim();
       if(!clean) throw new Error('The selected model returned an empty response.');

@@ -3,7 +3,7 @@
 
   let installPrompt = null;
   let lastMessage = "";
-  const SINGLE_FILE_RELEASE = "2026.08.20.1";
+  const SINGLE_FILE_RELEASE = "2026.08.20.2";
 
   function isInstalled() {
     return window.matchMedia?.("(display-mode: standalone)")?.matches

@@ -3129,7 +3129,36 @@
     return `<svg class="nyx-header-icon" viewBox="0 0 24 24" aria-hidden="true">${icons[name]||icons.chat}</svg>`;
   }
   function browserLatencyBubbleMarkup(){
-    return '<div class="nyx-latency-bubble is-sampling" data-nyx-latency-bubble role="status" aria-live="polite" aria-label="Measuring Nyx latency"><i aria-hidden="true"></i><span data-nyx-latency-value>-- ms</span></div>';
+    return `<div class="nyx-latency-bubble is-sampling" data-nyx-latency-bubble tabindex="0" role="group" aria-label="Measuring Nyx latency" aria-describedby="nyxLatencyDetails">
+      <i aria-hidden="true"></i><span data-nyx-latency-value role="status" aria-live="polite">-- ms</span>
+      <section class="nyx-latency-details" id="nyxLatencyDetails" data-nyx-latency-details aria-label="Live Nyx connection details">
+        <header><span>Nyx connection</span><strong data-nyx-latency-quality>Measuring</strong></header>
+        <div class="nyx-latency-chart" data-nyx-latency-chart>
+          <svg viewBox="0 0 280 96" preserveAspectRatio="none" role="img" aria-label="Waiting for latency samples">
+            <defs><linearGradient id="nyxLatencyArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".24"></stop><stop offset="1" stop-color="currentColor" stop-opacity="0"></stop></linearGradient></defs>
+            <path class="nyx-latency-grid" d="M0 16H280M0 48H280M0 80H280"></path>
+            <path class="nyx-latency-area" data-nyx-latency-area></path>
+            <path class="nyx-latency-line" data-nyx-latency-line></path>
+            <circle class="nyx-latency-point" data-nyx-latency-point r="3" cx="0" cy="0" hidden></circle>
+          </svg>
+          <span class="nyx-latency-axis nyx-latency-axis-high" data-nyx-latency-axis-high>400 ms</span>
+          <span class="nyx-latency-axis nyx-latency-axis-low">0 ms</span>
+          <span class="nyx-latency-chart-empty" data-nyx-latency-chart-empty>Collecting samples…</span>
+        </div>
+        <div class="nyx-latency-stats">
+          <span><small>Current</small><strong data-nyx-latency-current>-- ms</strong></span>
+          <span><small>Stable</small><strong data-nyx-latency-stable>-- ms</strong></span>
+          <span><small>Range</small><strong data-nyx-latency-range>-- ms</strong></span>
+        </div>
+        <div class="nyx-latency-health">
+          <span>Health<strong data-nyx-health-overall>Checking</strong></span>
+          <span>Browser<strong data-nyx-health-browser>Online</strong></span>
+          <span>Wisp<strong data-nyx-health-wisp>Checking</strong></span>
+          <span>Chat<strong data-nyx-health-chat>Checking</strong></span>
+        </div>
+        <footer data-nyx-latency-updated>Waiting for the first health check</footer>
+      </section>
+    </div>`;
   }
   function renderChromeFixed(){
     const top=document.querySelector('.top-os');
@@ -3165,7 +3194,7 @@
         const reloadButton=shellAddress.querySelector('[data-browser-shell-reload]');
         const homeButton=shellAddress.querySelector('[data-browser-shell-home-nav]');
         const urlField=shellAddress.querySelector('[data-browser-shell-url]');
-        shellAddress.replaceChildren(tabsButton,backButton,forwardButton,reloadButton,settingsButton,urlField,menuButton,homeButton,fullscreenButton);
+        shellAddress.replaceChildren(tabsButton,backButton,forwardButton,reloadButton,homeButton,urlField,menuButton,settingsButton,fullscreenButton);
       }
       const homeTabsToggle=document.createElement('button');
       homeTabsToggle.type='button';
@@ -14886,6 +14915,10 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
   let nyxLatencySampledAt=0;
   let nyxLatencyProbe=null;
   let nyxLatencySamples=[];
+  let nyxLatencyHistory=[];
+  let nyxLatencyLatestMs=null;
+  let nyxLatencyHealth={ok:null,service:'',wisp:'',chatRealtime:''};
+  let nyxLatencyLastSuccessAt=0;
   function nyxLatencyQualityFor(ms){
     if(!Number.isFinite(ms)) return nyxLatencyQuality==='offline' ? 'offline' : 'sampling';
     if(ms<=100) return 'excellent';
@@ -14903,9 +14936,75 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
     if(value) value.textContent=text;
     const label=Number.isFinite(nyxLatencyMs) ? `Nyx latency ${nyxLatencyMs} milliseconds, ${qualityLabel}` : `Nyx status ${qualityLabel}`;
     bubble.setAttribute('aria-label',label);
-    bubble.title=label;
+    const setText=(selector,next)=>{const target=bubble.querySelector(selector);if(target) target.textContent=next};
+    const finiteHistory=nyxLatencyHistory.filter(entry=>Number.isFinite(entry.ms));
+    const recentValues=finiteHistory.map(entry=>entry.ms);
+    const rangeMin=recentValues.length ? Math.min(...recentValues) : null;
+    const rangeMax=recentValues.length ? Math.max(...recentValues) : null;
+    setText('[data-nyx-latency-quality]',qualityLabel);
+    setText('[data-nyx-latency-current]',Number.isFinite(nyxLatencyLatestMs) ? `${nyxLatencyLatestMs} ms` : '-- ms');
+    setText('[data-nyx-latency-stable]',Number.isFinite(nyxLatencyMs) ? `${nyxLatencyMs} ms` : '-- ms');
+    setText('[data-nyx-latency-range]',Number.isFinite(rangeMin) ? `${rangeMin}–${rangeMax} ms` : '-- ms');
+    setText('[data-nyx-health-overall]',nyxLatencyHealth.ok===true ? 'Healthy' : nyxLatencyHealth.ok===false ? 'Unavailable' : 'Checking');
+    setText('[data-nyx-health-browser]',navigator.onLine ? 'Online' : 'Offline');
+    setText('[data-nyx-health-wisp]',nyxLatencyHealth.ok===false ? 'Unavailable' : nyxLatencyHealth.wisp ? nyxLatencyHealth.wisp==='embedded' ? 'Embedded' : nyxLatencyHealth.wisp : 'Checking');
+    setText('[data-nyx-health-chat]',nyxLatencyHealth.ok===false ? 'Unavailable' : nyxLatencyHealth.chatRealtime ? nyxLatencyHealth.chatRealtime==='socket.io' ? 'Realtime' : nyxLatencyHealth.chatRealtime : 'Checking');
+    const updatedPrefix=nyxLatencyHealth.ok===false ? 'Last healthy' : 'Updated';
+    setText('[data-nyx-latency-updated]',nyxLatencyLastSuccessAt ? `${updatedPrefix} ${new Date(nyxLatencyLastSuccessAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit',second:'2-digit'})} · every 3 seconds` : 'Waiting for the first health check');
+    const svg=bubble.querySelector('[data-nyx-latency-chart] svg');
+    const line=bubble.querySelector('[data-nyx-latency-line]');
+    const area=bubble.querySelector('[data-nyx-latency-area]');
+    const point=bubble.querySelector('[data-nyx-latency-point]');
+    const empty=bubble.querySelector('[data-nyx-latency-chart-empty]');
+    if(svg && line && area && point){
+      const chartWidth=280;
+      const chartTop=9;
+      const chartBottom=87;
+      const chartHeight=chartBottom-chartTop;
+      const chartMax=Math.max(400,Math.ceil((rangeMax || 0)/100)*100);
+      const points=nyxLatencyHistory.map((entry,index)=>({
+        ms:entry.ms,
+        x:nyxLatencyHistory.length===1 ? chartWidth/2 : index/(nyxLatencyHistory.length-1)*chartWidth,
+        y:Number.isFinite(entry.ms) ? chartBottom-Math.min(entry.ms,chartMax)/chartMax*chartHeight : null
+      }));
+      let linePath='';
+      let areaPath='';
+      let segment=[];
+      const flushSegment=()=>{
+        if(!segment.length) return;
+        const segmentLine=segment.map((item,index)=>`${index ? 'L' : 'M'}${item.x.toFixed(1)} ${item.y.toFixed(1)}`).join(' ');
+        linePath+=`${linePath ? ' ' : ''}${segmentLine}`;
+        areaPath+=`${areaPath ? ' ' : ''}${segmentLine} L${segment.at(-1).x.toFixed(1)} ${chartBottom} L${segment[0].x.toFixed(1)} ${chartBottom} Z`;
+        segment=[];
+      };
+      points.forEach(item=>{if(Number.isFinite(item.y)) segment.push(item);else flushSegment()});
+      flushSegment();
+      line.setAttribute('d',linePath);
+      area.setAttribute('d',areaPath);
+      const latest=[...points].reverse().find(item=>Number.isFinite(item.y));
+      if(latest){
+        point.setAttribute('cx',latest.x.toFixed(1));
+        point.setAttribute('cy',latest.y.toFixed(1));
+        point.hidden=false;
+      }else point.hidden=true;
+      const latestLabel=Number.isFinite(nyxLatencyLatestMs) ? `latest ${nyxLatencyLatestMs} milliseconds` : 'currently offline';
+      svg.setAttribute('aria-label',recentValues.length ? `Latency history from ${rangeMin} to ${rangeMax} milliseconds; ${latestLabel}` : 'Waiting for latency samples');
+      setText('[data-nyx-latency-axis-high]',`${chartMax} ms`);
+      if(empty) empty.hidden=recentValues.length>0;
+    }
   }
-  function recordNyxLatencySample(measured){
+  function recordNyxLatencySample(measured,payload){
+    const sampledAt=Date.now();
+    nyxLatencyLatestMs=measured;
+    nyxLatencyHistory.push({ms:measured,at:sampledAt});
+    if(nyxLatencyHistory.length>24) nyxLatencyHistory=nyxLatencyHistory.slice(-24);
+    nyxLatencyHealth={
+      ok:true,
+      service:String(payload?.service || 'nyx'),
+      wisp:String(payload?.wisp || ''),
+      chatRealtime:String(payload?.chatRealtime || '')
+    };
+    nyxLatencyLastSuccessAt=sampledAt;
     nyxLatencySamples.push(measured);
     if(nyxLatencySamples.length>5) nyxLatencySamples=nyxLatencySamples.slice(-5);
     const sorted=[...nyxLatencySamples].sort((a,b)=>a-b);
@@ -14916,7 +15015,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
   async function sampleNyxLatency(force=false,publish=true){
     if(document.hidden || nyxLatencyProbe) return nyxLatencyProbe;
     const now=Date.now();
-    if(!force && now-nyxLatencySampledAt<8000) return null;
+    if(!force && now-nyxLatencySampledAt<2500) return null;
     nyxLatencySampledAt=now;
     const request=(async()=>{
       const controller=new AbortController();
@@ -14926,11 +15025,15 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
         const response=await fetch(`/healthz?ping=${now}`,{cache:'no-store',headers:{Accept:'application/json'},signal:controller.signal});
         const payload=await response.json();
         if(!response.ok || payload?.ok!==true) throw new Error('health check failed');
-        recordNyxLatencySample(Math.max(1,Math.round(performance.now()-started)));
+        recordNyxLatencySample(Math.max(1,Math.round(performance.now()-started)),payload);
       }catch{
         nyxLatencyMs=null;
+        nyxLatencyLatestMs=null;
         nyxLatencyQuality='offline';
         nyxLatencySamples=[];
+        nyxLatencyHealth={...nyxLatencyHealth,ok:false};
+        nyxLatencyHistory.push({ms:null,at:Date.now()});
+        if(nyxLatencyHistory.length>24) nyxLatencyHistory=nyxLatencyHistory.slice(-24);
       }finally{
         clearTimeout(timeout);
         if(publish) syncNyxLatencyBubble();
@@ -14942,8 +15045,12 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
   }
   async function calibrateNyxLatency(){
     nyxLatencyMs=null;
+    nyxLatencyLatestMs=null;
     nyxLatencyQuality='sampling';
     nyxLatencySamples=[];
+    nyxLatencyHistory=[];
+    nyxLatencyHealth={ok:null,service:'',wisp:'',chatRealtime:''};
+    nyxLatencyLastSuccessAt=0;
     syncNyxLatencyBubble();
     for(let sample=0;sample<3;sample+=1){
       await sampleNyxLatency(true,false);
@@ -14959,16 +15066,20 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
     void calibrateNyxLatency();
     const refresh=()=>{if(!document.hidden) void sampleNyxLatency(true)};
     document.addEventListener('visibilitychange',()=>{
-      if(!document.hidden && Date.now()-nyxLatencySampledAt>5000) refresh();
+      if(!document.hidden && Date.now()-nyxLatencySampledAt>1500) refresh();
     });
     addEventListener('online',refresh);
     addEventListener('offline',()=>{
       nyxLatencyMs=null;
+      nyxLatencyLatestMs=null;
       nyxLatencyQuality='offline';
       nyxLatencySamples=[];
+      nyxLatencyHealth={...nyxLatencyHealth,ok:false};
+      nyxLatencyHistory.push({ms:null,at:Date.now()});
+      if(nyxLatencyHistory.length>24) nyxLatencyHistory=nyxLatencyHistory.slice(-24);
       syncNyxLatencyBubble();
     });
-    setInterval(refresh,10000);
+    setInterval(refresh,3000);
   }
   function tick(){
     const d=new Date();

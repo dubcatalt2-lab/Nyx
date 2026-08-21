@@ -23,6 +23,19 @@ const epoxyPath = join(dirname(require.resolve("@mercuryworkshop/epoxy-transport
 const libcurlPath = dirname(require.resolve("@mercuryworkshop/libcurl-transport"));
 const erudaPath = require.resolve("eruda");
 const katexPath = join(dirname(require.resolve("katex/package.json")), "dist");
+const nyxEmojiMartData = require("@emoji-mart/data");
+const nyxChatEmojiShortcodes = Object.create(null);
+for (const emoji of Object.values(nyxEmojiMartData.emojis || {})) {
+  const name = String(emoji?.id || "").toLowerCase();
+  const native = String(emoji?.skins?.[0]?.native || "");
+  if (/^[a-z0-9_+-]{1,64}$/.test(name) && native) nyxChatEmojiShortcodes[name] = native;
+}
+for (const [alias, canonical] of Object.entries(nyxEmojiMartData.aliases || {})) {
+  const name = String(alias || "").toLowerCase();
+  const native = nyxChatEmojiShortcodes[String(canonical || "").toLowerCase()];
+  if (/^[a-z0-9_+-]{1,64}$/.test(name) && native) nyxChatEmojiShortcodes[name] = native;
+}
+const nyxChatEmojiCatalogScript = `globalThis.NYX_EMOJI_SHORTCODES=Object.freeze(${JSON.stringify(nyxChatEmojiShortcodes)});\n`;
 let cinebyAppCache = { source: "", expires: 0 };
 const gameCoverLookupCache = new Map();
 let duckMathGamesCache = { games: [], expires: 0, promise: null };
@@ -2869,6 +2882,10 @@ app.get("/nyx-compat/cineby-app.js", async (_req, res) => {
     res.status(502).type("application/javascript").send(`throw new Error(${JSON.stringify(`Nyx Cineby compatibility failed: ${error.message}`)});`);
   }
 });
+app.get("/apps/chat/emoji-catalog.js", (_req, res) => {
+  res.type("application/javascript").set("Cache-Control", "public, max-age=31536000, immutable").send(nyxChatEmojiCatalogScript);
+});
+
 app.get("/assets/vendor/eruda.min.js", (_req, res) => {
   res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
   res.type("application/javascript").sendFile(erudaPath);

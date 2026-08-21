@@ -18,6 +18,7 @@
     "node": ">=20 <25"
   },
   "dependencies": {
+    "@emoji-mart/data": "^1.2.1",
     "@mercuryworkshop/bare-mux": "2.1.9",
     "@mercuryworkshop/epoxy-transport": "^2.1.28",
     "@mercuryworkshop/libcurl-transport": "^2.0.5",

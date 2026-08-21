@@ -185,6 +185,7 @@
   </dialog>
   <dialog class="command-dialog" data-command-dialog>
     <header><div><h2>Nyx Chat commands</h2><p>Commands available in this chat. Staff actions are always checked by the server.</p></div><button class="icon-button" type="button" data-command-close aria-label="Close"><svg><use href="#icon-close"/></svg></button></header>
+    <label class="command-prefix-control">Command prefix<input data-command-prefix maxlength="2" inputmode="text" autocomplete="off" aria-label="Command prefix"><small>Use one or two symbols, such as <code>!</code> or <code>?</code>. Saved on this device.</small></label>
     <div class="command-list" data-command-list></div>
   </dialog>
   <dialog class="flagged-search-dialog" data-flagged-search-dialog>
@@ -192,6 +193,6 @@
     <div class="flagged-search-list" data-flagged-search-list></div>
   </dialog>
   <script src="./emoji-catalog.js?v=20260821-unicode-emoji-catalog-v36"></script>
-  <script src="./app.js?v=20260821-unicode-emoji-catalog-v36"></script>
+  <script src="./app.js?v=20260821-command-prefix-v37"></script>
 </body>
 </html>

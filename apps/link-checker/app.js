@@ -8,7 +8,9 @@
   const HISTORY_LIMIT=500;
   const FREEDNS_PAGE_SIZE=25;
   const FREEDNS_FULL_SAVE_BATCH=100;
-  const FREEDNS_FULL_IMPORT_CONCURRENCY=6;
+  // Full-scan results are served by the shared Nocturne account. Two parallel
+  // pages keep imports responsive without repeatedly tripping its quota.
+  const FREEDNS_FULL_IMPORT_CONCURRENCY=2;
   const FREEDNS_BULK_ACCESS_TTL_MS=5*60_000;
   const FREEDNS_CACHE_TTL_MS=8*60*60_000;
   const FREEDNS_CACHE_EXPIRY_POLL_MS=5*60_000;
@@ -674,7 +676,7 @@
           const status=Number(error.status);const transient=[429,502,504].includes(status)||(status===503&&Number(error.retryAfterMs)>0)||error instanceof TypeError;
           if(!transient)throw error;
           failures+=1;
-          const waitMs=Math.max(1500,Math.min(5000,Number(error.retryAfterMs)||1500+failures*500));
+          const waitMs=Math.max(3000,Math.min(60000,Number(error.retryAfterMs)||3000+failures*1000));
           $('[data-freedns-progress-detail]').textContent='Nocturne is busy. Nyx is retrying automatically without stopping the full scan.';
           await freednsDelay(waitMs,signal);
         }

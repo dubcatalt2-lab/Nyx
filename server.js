@@ -5397,13 +5397,13 @@ async function linkCheckerCheckRequest(target, vendor = "", { requireAccount = f
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url: target.href, ...(vendor ? { vendor } : {}) })
   };
-  if (linkCheckerAccountConfigured()) {
-    return linkCheckerAccountRequest("/api/check", options);
-  }
   if (requireAccount) {
-    const error = new Error("Fast page scans require the Nocturne account credentials in the VPS environment.");
-    error.status = 503;
-    throw error;
+    if (!linkCheckerAccountConfigured()) {
+      const error = new Error("Fast page scans require the Nocturne account credentials in the VPS environment.");
+      error.status = 503;
+      throw error;
+    }
+    return linkCheckerAccountRequest("/api/check", options);
   }
   return linkCheckerUpstream("/api/check", options);
 }
@@ -5726,7 +5726,9 @@ app.post("/api/link-checker/page-scan", async (req, res) => {
       }
     }
   };
-  await Promise.all(Array.from({ length: Math.min(6, targets.length) }, worker));
+  // The Nocturne account is shared by every Nyx member. Keep premium page
+  // scans deliberately small so one page cannot exhaust that account's quota.
+  await Promise.all(Array.from({ length: Math.min(2, targets.length) }, worker));
   if (!results.some((result) => result?.report)) {
     const first = results[0] || {};
     const status = Number(first.status) || 502;
@@ -5777,7 +5779,7 @@ app.post("/api/link-checker/check", async (req, res) => {
     return;
   }
   try {
-    const payload = await linkCheckerCheckRequest(target, vendor);
+    const payload = await linkCheckerCheckRequest(target, vendor, { requireAccount: bulk });
     res.json(payload);
   } catch (error) {
     if (error.retryAfter) res.set("Retry-After", String(error.retryAfter));

@@ -5265,6 +5265,8 @@
   }
   function nyxCustomThemePalette(color=store.text('nyx.customThemeColor',nyxCustomThemeDefaults.base)){
     const base=nyxThemeHex(color);
+    const maxChannel=Math.max(...[1,3,5].map(index=>parseInt(base.slice(index,index+2),16)));
+    const constellationLighten=maxChannel===0 ? 100 : maxChannel<96 ? 78 : maxChannel<176 ? 58 : 38;
     return {
       base,
       canvas:nyxShadeHex(base,-84),
@@ -5276,12 +5278,13 @@
       bright:nyxShadeHex(base,38),
       text:'#f4f7ff',
       muted:nyxShadeHex(base,48),
-      dot:nyxShadeHex(base,-67)
+      dot:nyxShadeHex(base,-67),
+      'constellation-dot':nyxShadeHex(base,constellationLighten)
     };
   }
   function applyCustomThemePalette(theme=normalizeNyxTheme(store.text('nyx.theme','default'))){
     const root=document.documentElement;
-    const names=['base','canvas','top','field','panel','line','accent','bright','text','muted','dot'];
+    const names=['base','canvas','top','field','panel','line','accent','bright','text','muted','dot','constellation-dot'];
     if(theme!=='custom'){
       names.forEach(name=>root.style.removeProperty('--nyx-custom-'+name));
       root.style.removeProperty('--nyx-custom-logo-filter');

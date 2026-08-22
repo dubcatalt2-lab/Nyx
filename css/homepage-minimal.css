@@ -1,14 +1,14 @@
 /* Nyx's browser home is intentionally quiet. Existing custom backgrounds and
-   application windows remain available, but the default landing surface is
-   stable black and all navigation stays inside Nyx's tab system. */
+   application windows remain available, while the landing surface follows the
+   selected theme and all navigation stays inside Nyx's tab system. */
 html[data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home{
   position:relative!important;
   display:grid!important;
   place-items:center!important;
   overflow:hidden!important;
   min-height:100%!important;
-  background:#111!important;
-  background-color:oklch(.1776 0 0)!important;
+  background:var(--nyx-home-canvas,#111)!important;
+  background-color:var(--nyx-home-canvas,#111)!important;
   background-image:none!important;
   color:#f6f7fb!important;
   isolation:isolate;
@@ -185,14 +185,13 @@ html body.browser-shell .nyx-home-tabs-toggle>svg{width:17px!important;height:17
   html body.browser-shell .nyx-browser-tab-close{opacity:1!important}
 }
 
-/* The redesigned home is a stable charcoal canvas in every theme. Themes may
-   tint its dots and controls, but legacy full-window theme surfaces cannot
-   repaint the canvas or change its component geometry. */
+/* The redesigned home owns a theme-derived canvas. Legacy full-window theme
+   surfaces cannot repaint it or change its component geometry. */
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
   body.browser-shell.browser-shell.browser-shell:is(body,#nyx-minimal-theme-canvas):is(body,#nyx-minimal-theme-layout)
   .browser-window.browser-home-page .browser-home.nyx-minimal-home{
-  background:#111!important;
-  background-color:oklch(.1776 0 0)!important;
+  background:var(--nyx-home-canvas,#111)!important;
+  background-color:var(--nyx-home-canvas,#111)!important;
   background-image:none!important;
 }
 
@@ -714,13 +713,13 @@ html body.browser-shell .browser-window.browser-home-page .browser-home.nyx-mini
   html body.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-brand h1{font-size:36px!important}
 }
 
-/* Keep the home field Fern-charcoal and give every home action the same
-   high-contrast white treatment as the header controls. */
+/* Keep the home field tied to the active theme and give every home action the
+   same high-contrast white treatment as the header controls. */
 html body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active),
 html body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .browser-window.browser-home-page,
 html body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .browser-home.nyx-minimal-home{
-  background:#111!important;
-  background-color:oklch(.1776 0 0)!important;
+  background:var(--nyx-home-canvas,#111)!important;
+  background-color:var(--nyx-home-canvas,#111)!important;
 }
 html[data-nyx-theme] body.browser-shell.browser-shell:has(.browser-home.nyx-minimal-home) .top-os{
   background:#000!important;
@@ -983,16 +982,16 @@ html[data-nyx-theme] body.browser-shell .nyx-browser-tab-row small{
 html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home{
   --nyx-dot-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 24%,#718f84);
   --nyx-link-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 14%,#30433c);
-  --nyx-constellation-dot-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 72%,#8aa99e);
+  --nyx-constellation-dot-color:var(--nyx-home-constellation-dot,color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 58%,#fff));
   --nyx-constellation-link-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 52%,#40534c);
 }
-html body.browser-shell.theme-default:not(.theme-custom){--nyx-home-wordmark:#a99bf3!important;--nyx-shell-icon:#a99bf3!important;--nyx-final-shortcut-icon:#a99bf3!important}
-html body.browser-shell.theme-ruby{--nyx-home-wordmark:#fb7185!important;--nyx-shell-icon:#fb7185!important;--nyx-final-shortcut-icon:#fb7185!important}
-html body.browser-shell.theme-emerald{--nyx-home-wordmark:#34d399!important;--nyx-shell-icon:#34d399!important;--nyx-final-shortcut-icon:#34d399!important}
-html body.browser-shell.theme-sakura{--nyx-home-wordmark:#f9a8d4!important;--nyx-shell-icon:#f9a8d4!important;--nyx-final-shortcut-icon:#f9a8d4!important}
-html body.browser-shell.theme-midnight{--nyx-home-wordmark:#93c5fd!important;--nyx-shell-icon:#93c5fd!important;--nyx-final-shortcut-icon:#93c5fd!important}
-html body.browser-shell.theme-fresh{--nyx-home-wordmark:#a6c99c!important;--nyx-shell-icon:#a6c99c!important;--nyx-final-shortcut-icon:#a6c99c!important}
-html body.browser-shell.theme-custom{--nyx-home-wordmark:var(--nyx-custom-accent,#a99bf3)!important;--nyx-shell-icon:var(--nyx-custom-accent,#a99bf3)!important;--nyx-final-shortcut-icon:var(--nyx-custom-accent,#a99bf3)!important}
+html body.browser-shell.theme-default:not(.theme-custom){--nyx-home-canvas:color-mix(in srgb,#a99bf3 13%,#000)!important;--nyx-home-constellation-dot:color-mix(in srgb,#a99bf3 58%,#fff)!important;--nyx-home-wordmark:#a99bf3!important;--nyx-shell-icon:#a99bf3!important;--nyx-final-shortcut-icon:#a99bf3!important}
+html body.browser-shell.theme-ruby{--nyx-home-canvas:color-mix(in srgb,#fb7185 13%,#000)!important;--nyx-home-constellation-dot:color-mix(in srgb,#fb7185 58%,#fff)!important;--nyx-home-wordmark:#fb7185!important;--nyx-shell-icon:#fb7185!important;--nyx-final-shortcut-icon:#fb7185!important}
+html body.browser-shell.theme-emerald{--nyx-home-canvas:color-mix(in srgb,#34d399 13%,#000)!important;--nyx-home-constellation-dot:color-mix(in srgb,#34d399 58%,#fff)!important;--nyx-home-wordmark:#34d399!important;--nyx-shell-icon:#34d399!important;--nyx-final-shortcut-icon:#34d399!important}
+html body.browser-shell.theme-sakura{--nyx-home-canvas:color-mix(in srgb,#f9a8d4 13%,#000)!important;--nyx-home-constellation-dot:color-mix(in srgb,#f9a8d4 58%,#fff)!important;--nyx-home-wordmark:#f9a8d4!important;--nyx-shell-icon:#f9a8d4!important;--nyx-final-shortcut-icon:#f9a8d4!important}
+html body.browser-shell.theme-midnight{--nyx-home-canvas:color-mix(in srgb,#93c5fd 13%,#000)!important;--nyx-home-constellation-dot:color-mix(in srgb,#93c5fd 58%,#fff)!important;--nyx-home-wordmark:#93c5fd!important;--nyx-shell-icon:#93c5fd!important;--nyx-final-shortcut-icon:#93c5fd!important}
+html body.browser-shell.theme-fresh{--nyx-home-canvas:color-mix(in srgb,#a6c99c 13%,#000)!important;--nyx-home-constellation-dot:color-mix(in srgb,#a6c99c 58%,#fff)!important;--nyx-home-wordmark:#a6c99c!important;--nyx-shell-icon:#a6c99c!important;--nyx-final-shortcut-icon:#a6c99c!important}
+html body.browser-shell.theme-custom{--nyx-home-canvas:var(--nyx-custom-canvas,#000)!important;--nyx-home-constellation-dot:var(--nyx-custom-constellation-dot,#fff)!important;--nyx-home-wordmark:var(--nyx-custom-accent,#a99bf3)!important;--nyx-shell-icon:var(--nyx-custom-accent,#a99bf3)!important;--nyx-final-shortcut-icon:var(--nyx-custom-accent,#a99bf3)!important}
 html[data-nyx-theme] body.browser-shell .browser-window.browser-home-page,
 html[data-nyx-theme] body.browser-shell .browser-window.browser-home-page>.browser-body,
 html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home,

@@ -4,246 +4,62 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#070910">
-  <meta name="nyx-release" content="2026.08.20.2">
-  <title>Nyx</title>
+  <meta name="theme-color" content="#07090d">
+  <meta name="nyx-release" content="2026.08.21.1">
+  <title>Nyx Portable Arcade</title>
   <style>
-    :root {
-      color-scheme: dark;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #070910;
-      color: #f4f6fb;
-    }
-
-    * { box-sizing: border-box; }
-
-    html,
-    body {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      overflow: hidden;
-      background: #070910;
-    }
-
-    button,
-    a { font: inherit; }
-
-    .nyx-launcher {
-      position: fixed;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      overflow: hidden;
-      background:
-        radial-gradient(circle at 50% 38%, rgba(147, 130, 245, 0.11), transparent 34rem),
-        #070910;
-    }
-
-    .nyx-launcher::before {
-      position: absolute;
-      inset: 0;
-      background-image: radial-gradient(circle, rgba(196, 202, 220, 0.12) 1px, transparent 1.2px);
-      background-size: 28px 28px;
-      opacity: 0.22;
-      content: "";
-      pointer-events: none;
-    }
-
-    .nyx-boot {
-      position: relative;
-      z-index: 1;
-      display: grid;
-      width: min(30rem, calc(100vw - 3rem));
-      justify-items: center;
-      gap: 1rem;
-      padding: 2rem;
-      text-align: center;
-      transition: opacity 180ms ease, visibility 180ms ease;
-    }
-
-    .nyx-boot[hidden] {
-      display: grid;
-      visibility: hidden;
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .nyx-mark {
-      width: 3.25rem;
-      height: 3.25rem;
-      filter: drop-shadow(0 0 1.25rem rgba(147, 130, 245, 0.3));
-      animation: nyx-float 2.8s ease-in-out infinite;
-    }
-
-    .nyx-title {
-      margin: 0;
-      font-size: 1.5rem;
-      font-weight: 650;
-      letter-spacing: -0.025em;
-    }
-
-    .nyx-status {
-      min-height: 1.25rem;
-      margin: 0;
-      color: #929aaa;
-      font-size: 0.875rem;
-      line-height: 1.5;
-    }
-
-    .nyx-actions {
-      display: none;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.625rem;
-      margin-top: 0.35rem;
-    }
-
-    .nyx-boot.is-delayed .nyx-actions,
-    .nyx-boot.is-offline .nyx-actions { display: flex; }
-
-    .nyx-action {
-      min-height: 2.5rem;
-      border: 1px solid rgba(255, 255, 255, 0.09);
-      border-radius: 0.75rem;
-      padding: 0.6rem 0.9rem;
-      background: rgba(15, 20, 32, 0.88);
-      color: #f4f6fb;
-      text-decoration: none;
-      cursor: pointer;
-      transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
-    }
-
-    .nyx-action:hover {
-      border-color: rgba(147, 130, 245, 0.42);
-      background: rgba(24, 29, 45, 0.96);
-      transform: translateY(-1px);
-    }
-
-    .nyx-action:active { transform: scale(0.98); }
-
-    .nyx-action:focus-visible {
-      outline: 3px solid rgba(147, 130, 245, 0.44);
-      outline-offset: 2px;
-    }
-
-    #nyxApp {
-      position: absolute;
-      z-index: 2;
-      inset: 0;
-      display: block;
-      width: 100%;
-      height: 100%;
-      border: 0;
-      background: #070910;
-      opacity: 0;
-      transition: opacity 180ms ease;
-    }
-
-    #nyxApp.is-ready { opacity: 1; }
-
-    @keyframes nyx-float {
-      50% { transform: translateY(-0.3rem); }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *,
-      *::before,
-      *::after {
-        scroll-behavior: auto !important;
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-      }
-    }
+    :root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;--bg:#07090d;--panel:#0d1017;--line:#252a36;--text:#f4f6fb;--muted:#9098a8;--accent:#83d8bd;--accent2:#8c7cff}
+    *{box-sizing:border-box}html,body{min-width:100%;min-height:100%;margin:0;background:var(--bg);color:var(--text)}button{font:inherit}.stars{position:fixed;inset:0;pointer-events:none;opacity:.28;background-image:radial-gradient(circle at 8% 18%,var(--accent) 0 1px,transparent 1.6px),radial-gradient(circle at 24% 67%,var(--accent2) 0 1px,transparent 1.5px),radial-gradient(circle at 44% 28%,var(--accent) 0 1.2px,transparent 1.8px),radial-gradient(circle at 72% 15%,var(--accent2) 0 1px,transparent 1.6px),radial-gradient(circle at 90% 72%,var(--accent) 0 1.2px,transparent 1.8px);background-size:340px 280px}
+    .app{position:relative;width:min(1100px,calc(100% - 32px));margin:auto;padding:28px 0 48px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:28px}.brand{display:flex;align-items:center;gap:12px}.moon{width:36px;height:36px;border-radius:50%;background:var(--accent);box-shadow:0 0 28px color-mix(in srgb,var(--accent) 30%,transparent);position:relative}.moon:after{content:"";position:absolute;width:32px;height:32px;left:12px;top:-5px;border-radius:50%;background:var(--bg)}h1,h2,p{margin:0}.brand h1{font-size:19px}.brand p,.eyebrow,.help{color:var(--muted);font-size:13px}.offline{border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line));border-radius:999px;padding:8px 12px;color:var(--accent);font-size:12px;background:color-mix(in srgb,var(--accent) 7%,transparent)}
+    .hero{padding:28px;border:1px solid var(--line);border-radius:24px;background:linear-gradient(145deg,color-mix(in srgb,var(--accent2) 8%,var(--panel)),var(--panel));margin-bottom:18px}.hero h2{margin:6px 0 8px;font-size:clamp(28px,5vw,52px);letter-spacing:-.045em}.hero p{color:var(--muted);line-height:1.55;max-width:650px}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.game-card{min-height:142px;border:1px solid var(--line);border-radius:18px;padding:18px;background:var(--panel);color:var(--text);text-align:left;cursor:pointer;transition:transform .16s,border-color .16s,background .16s}.game-card:hover,.game-card:focus-visible{transform:translateY(-3px);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 7%,var(--panel));outline:none}.game-card span{display:grid;place-items:center;width:42px;height:42px;margin-bottom:18px;border-radius:13px;background:color-mix(in srgb,var(--accent) 12%,#11151e);font-size:22px}.game-card strong{display:block;font-size:16px}.game-card small{display:block;margin-top:5px;color:var(--muted)}
+    .player{position:fixed;z-index:10;inset:0;display:grid;grid-template-rows:auto 1fr;background:var(--bg)}.player[hidden],.memory[hidden],canvas[hidden],.touch[hidden]{display:none!important}.toolbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line);background:rgba(7,9,13,.92);backdrop-filter:blur(16px)}.toolbar h2{font-size:15px}.toolbar-actions{justify-self:end;display:flex;gap:8px}.control{min-height:38px;border:1px solid var(--line);border-radius:10px;padding:8px 13px;background:var(--panel);color:var(--text);cursor:pointer}.control:hover,.control:focus-visible{border-color:var(--accent);outline:none}.stage{display:grid;place-items:center;min-height:0;padding:18px;overflow:auto;background:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--accent2) 9%,transparent),transparent 34rem)}.game-wrap{display:grid;justify-items:center;gap:13px;width:min(100%,760px)}canvas{display:block;width:min(100%,720px);height:auto;max-height:calc(100dvh - 140px);border:1px solid var(--line);border-radius:18px;background:#090c12;box-shadow:0 24px 80px rgba(0,0,0,.38);touch-action:none}.score{font-variant-numeric:tabular-nums;color:var(--accent);font-weight:700}.memory{display:grid;grid-template-columns:repeat(4,minmax(58px,100px));gap:10px}.memory button{aspect-ratio:1;border:1px solid var(--line);border-radius:15px;background:var(--panel);color:transparent;font-size:30px;cursor:pointer;transition:transform .16s,background .16s}.memory button:hover{transform:translateY(-2px);border-color:var(--accent)}.memory button.open,.memory button.done{color:var(--text);background:color-mix(in srgb,var(--accent) 12%,var(--panel))}.memory button.done{opacity:.55}.touch{display:none;grid-template-columns:repeat(3,52px);gap:7px}.touch button{width:52px;height:44px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text)}.touch .up{grid-column:2}.touch .left{grid-column:1}.touch .down{grid-column:2}.touch .right{grid-column:3}
+    @media(max-width:720px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.toolbar{grid-template-columns:auto 1fr}.toolbar h2{text-align:center}.toolbar-actions{display:none}.hero{padding:22px}.app{width:min(100% - 20px,1100px);padding-top:16px}.touch{display:grid}}
+    @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
   </style>
 </head>
 <body>
-  <main class="nyx-launcher">
-    <section class="nyx-boot" id="nyxBoot" aria-live="polite">
-      <svg class="nyx-mark" viewBox="0 0 64 64" aria-hidden="true">
-        <defs>
-          <linearGradient id="nyxMoon" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#d9d3ff"/>
-            <stop offset="1" stop-color="#8b7bea"/>
-          </linearGradient>
-        </defs>
-        <circle cx="32" cy="32" r="27" fill="url(#nyxMoon)"/>
-        <circle cx="44" cy="21" r="25" fill="#070910"/>
-      </svg>
-      <h1 class="nyx-title">Opening Nyx</h1>
-      <p class="nyx-status" id="nyxStatus">Loading the latest Nyx release&hellip;</p>
-      <div class="nyx-actions">
-        <button class="nyx-action" id="nyxRetry" type="button">Try again</button>
-        <a class="nyx-action" href="https://nyxlearning.org/?source=single-file" target="_blank" rel="noopener noreferrer">Open directly</a>
-      </div>
+  <div class="stars" aria-hidden="true"></div>
+  <main class="app">
+    <header class="topbar"><div class="brand"><i class="moon" aria-hidden="true"></i><div><h1>Nyx Portable Arcade</h1><p>Games-only single file</p></div></div><span class="offline">Works offline</span></header>
+    <section class="hero"><p class="eyebrow">NYX / POCKET ARCADE</p><h2>Pick a game.</h2><p>Everything on this page is built into this HTML file. It does not embed Nyx, contact nyxlearning.org, load ads, or download game code after you open it.</p></section>
+    <section class="grid" aria-label="Games">
+      <button class="game-card" data-game="snake"><span>🐍</span><strong>Snake</strong><small>Arrows or WASD</small></button>
+      <button class="game-card" data-game="pong"><span>🏓</span><strong>Pong</strong><small>W/S or pointer</small></button>
+      <button class="game-card" data-game="breakout"><span>🧱</span><strong>Breakout</strong><small>Arrows or pointer</small></button>
+      <button class="game-card" data-game="memory"><span>🌙</span><strong>Moon Match</strong><small>Match every pair</small></button>
     </section>
-
-    <iframe
-      id="nyxApp"
-      title="Nyx"
-      allow="autoplay; camera; clipboard-read; clipboard-write; display-capture; fullscreen; gamepad; geolocation; microphone; picture-in-picture; pointer-lock"
-      allowfullscreen
-      referrerpolicy="no-referrer"
-    ></iframe>
   </main>
-
+  <section class="player" id="player" role="dialog" aria-modal="true" aria-labelledby="gameTitle" hidden>
+    <header class="toolbar"><button class="control" id="close" type="button">← Arcade</button><h2 id="gameTitle">Game</h2><div class="toolbar-actions"><button class="control" id="restart" type="button">Restart</button><button class="control" id="fullscreen" type="button">Fullscreen</button></div></header>
+    <div class="stage"><div class="game-wrap"><div class="score" id="score"></div><canvas id="canvas" width="720" height="480"></canvas><div class="memory" id="memory" hidden></div><p class="help" id="help"></p><div class="touch" id="touch"><button class="up" data-key="ArrowUp">↑</button><button class="left" data-key="ArrowLeft">←</button><button class="down" data-key="ArrowDown">↓</button><button class="right" data-key="ArrowRight">→</button></div></div></div>
+  </section>
   <script>
-    (() => {
+    (()=>{
       "use strict";
-
-      const NYX_URL = "https://nyxlearning.org/";
-      const NYX_RELEASE = "2026.08.20.2";
-      const frame = document.getElementById("nyxApp");
-      const boot = document.getElementById("nyxBoot");
-      const status = document.getElementById("nyxStatus");
-      const retry = document.getElementById("nyxRetry");
-      let delayedTimer = 0;
-
-      const latestNyxUrl = () => {
-        const url = new URL(NYX_URL);
-        url.searchParams.set("source", "single-file");
-        url.searchParams.set("release", NYX_RELEASE);
-        url.searchParams.set("fresh", Date.now().toString(36));
-        return url.href;
-      };
-
-      const showWaitingState = () => {
-        boot.hidden = false;
-        boot.classList.remove("is-delayed", "is-offline");
-        status.textContent = navigator.onLine
-          ? "Loading the latest Nyx release…"
-          : "You appear to be offline. Nyx needs an internet connection.";
-        if (!navigator.onLine) boot.classList.add("is-offline");
-      };
-
-      const loadNyx = () => {
-        clearTimeout(delayedTimer);
-        frame.classList.remove("is-ready");
-        showWaitingState();
-        if (!navigator.onLine) {
-          frame.removeAttribute("src");
-          return;
-        }
-        frame.src = latestNyxUrl();
-        delayedTimer = window.setTimeout(() => {
-          if (frame.classList.contains("is-ready")) return;
-          boot.classList.add("is-delayed");
-          status.textContent = "Nyx is taking longer than expected to respond.";
-        }, 12000);
-      };
-
-      frame.addEventListener("load", () => {
-        clearTimeout(delayedTimer);
-        frame.classList.add("is-ready");
-        boot.hidden = true;
-      });
-
-      retry.addEventListener("click", loadNyx);
-      window.addEventListener("online", loadNyx);
-      window.addEventListener("offline", showWaitingState);
-
-      loadNyx();
+      const player=document.getElementById("player"),canvas=document.getElementById("canvas"),ctx=canvas.getContext("2d"),memory=document.getElementById("memory"),score=document.getElementById("score"),help=document.getElementById("help"),title=document.getElementById("gameTitle"),touch=document.getElementById("touch");
+      const accent=()=>getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()||"#83d8bd";
+      let active="",frame=0,timer=0,keys=new Set(),state={};
+      const stop=()=>{cancelAnimationFrame(frame);clearInterval(timer);frame=timer=0;keys.clear()};
+      const clear=()=>{ctx.fillStyle="#090c12";ctx.fillRect(0,0,canvas.width,canvas.height)};
+      const label=value=>{score.textContent=value};
+      const keyDown=key=>{keys.add(key);if(active==="snake")snakeTurn(key)};
+      addEventListener("keydown",event=>{if(player.hidden)return;if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(event.key))event.preventDefault();keyDown(event.key.toLowerCase())});
+      addEventListener("keyup",event=>keys.delete(event.key.toLowerCase()));
+      touch.addEventListener("pointerdown",event=>{const key=event.target.closest("button")?.dataset.key;if(key)keyDown(key.toLowerCase())});
+      touch.addEventListener("pointerup",()=>keys.clear());
+      function fitPointer(event){const box=canvas.getBoundingClientRect();return{x:(event.clientX-box.left)*canvas.width/box.width,y:(event.clientY-box.top)*canvas.height/box.height}}
+      canvas.addEventListener("pointermove",event=>{if(!active)return;const point=fitPointer(event);if(active==="pong")state.py=point.y-state.ph/2;if(active==="breakout")state.px=point.x-state.pw/2});
+      function open(name){stop();active=name;player.hidden=false;canvas.hidden=name==="memory";memory.hidden=name!=="memory";touch.hidden=name==="memory";({snake:startSnake,pong:startPong,breakout:startBreakout,memory:startMemory}[name])();document.getElementById("close").focus()}
+      function close(){stop();active="";player.hidden=true}
+      document.querySelectorAll("[data-game]").forEach(button=>button.addEventListener("click",()=>open(button.dataset.game)));
+      document.getElementById("close").addEventListener("click",close);
+      document.getElementById("restart").addEventListener("click",()=>active&&open(active));
+      document.getElementById("fullscreen").addEventListener("click",()=>document.fullscreenElement?document.exitFullscreen():player.requestFullscreen());
+      function snakeTurn(key){const directions={arrowup:[0,-1],w:[0,-1],arrowdown:[0,1],s:[0,1],arrowleft:[-1,0],a:[-1,0],arrowright:[1,0],d:[1,0]},next=directions[key];if(next&&!(next[0]===-state.dir[0]&&next[1]===-state.dir[1]))state.next=next}
+      function startSnake(){title.textContent="Snake";help.textContent="Use arrow keys or WASD. Eat the stars and avoid yourself.";state={snake:[{x:12,y:10},{x:11,y:10},{x:10,y:10}],dir:[1,0],next:[1,0],food:{x:20,y:10},points:0,over:false};label("Score 0");const draw=()=>{clear();const size=24;ctx.fillStyle="#1b2130";for(let x=0;x<30;x++)for(let y=0;y<20;y++)ctx.fillRect(x*size+1,y*size+1,size-2,size-2);ctx.fillStyle=accent();state.snake.forEach(part=>ctx.fillRect(part.x*size+3,part.y*size+3,size-6,size-6));ctx.fillStyle="#ffe47a";ctx.font="18px system-ui";ctx.fillText("★",state.food.x*size+3,state.food.y*size+19);if(state.over){ctx.fillStyle="rgba(7,9,13,.78)";ctx.fillRect(0,0,720,480);ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="700 30px system-ui";ctx.fillText("Game over",360,225);ctx.font="16px system-ui";ctx.fillText("Choose Restart to play again",360,258);ctx.textAlign="left"}};draw();timer=setInterval(()=>{if(state.over)return;state.dir=state.next;const head={x:state.snake[0].x+state.dir[0],y:state.snake[0].y+state.dir[1]};if(head.x<0||head.x>=30||head.y<0||head.y>=20||state.snake.some(p=>p.x===head.x&&p.y===head.y)){state.over=true;draw();return}state.snake.unshift(head);if(head.x===state.food.x&&head.y===state.food.y){state.points++;label(`Score ${state.points}`);do state.food={x:Math.floor(Math.random()*30),y:Math.floor(Math.random()*20)};while(state.snake.some(p=>p.x===state.food.x&&p.y===state.food.y))}else state.snake.pop();draw()},105)}
+      function startPong(){title.textContent="Pong";help.textContent="Move with W/S, arrows, or your pointer. First to 7 wins.";state={py:190,ph:100,ai:190,ball:{x:360,y:240,vx:5,vy:3.2},you:0,cpu:0,over:false};const resetBall=direction=>state.ball={x:360,y:240,vx:5*direction,vy:(Math.random()-.5)*7};const loop=()=>{if(keys.has("w")||keys.has("arrowup"))state.py-=7;if(keys.has("s")||keys.has("arrowdown"))state.py+=7;state.py=Math.max(0,Math.min(480-state.ph,state.py));state.ai+=Math.sign(state.ball.y-(state.ai+50))*4;state.ai=Math.max(0,Math.min(380,state.ai));if(!state.over){const b=state.ball;b.x+=b.vx;b.y+=b.vy;if(b.y<8||b.y>472)b.vy*=-1;if(b.x<36&&b.x>20&&b.y>state.py&&b.y<state.py+state.ph&&b.vx<0)b.vx=Math.abs(b.vx)*1.04;if(b.x>684&&b.x<700&&b.y>state.ai&&b.y<state.ai+100&&b.vx>0)b.vx=-Math.abs(b.vx)*1.04;if(b.x<0){state.cpu++;resetBall(1)}if(b.x>720){state.you++;resetBall(-1)}if(state.you===7||state.cpu===7)state.over=true}clear();ctx.setLineDash([10,12]);ctx.strokeStyle="#303746";ctx.beginPath();ctx.moveTo(360,0);ctx.lineTo(360,480);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=accent();ctx.fillRect(22,state.py,13,state.ph);ctx.fillStyle="#8c7cff";ctx.fillRect(685,state.ai,13,100);ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(state.ball.x,state.ball.y,8,0,Math.PI*2);ctx.fill();label(`${state.you}  —  ${state.cpu}`);if(state.over){ctx.fillStyle="rgba(7,9,13,.76)";ctx.fillRect(0,0,720,480);ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="700 30px system-ui";ctx.fillText(state.you===7?"You win!":"CPU wins",360,242);ctx.textAlign="left"}frame=requestAnimationFrame(loop)};loop()}
+      function startBreakout(){title.textContent="Breakout";help.textContent="Move with arrows, A/D, or your pointer. Clear every brick.";const bricks=[];for(let row=0;row<6;row++)for(let col=0;col<10;col++)bricks.push({x:17+col*69,y:42+row*30,w:60,h:19,on:true,row});state={px:285,pw:150,ball:{x:360,y:395,vx:4.2,vy:-4.8},bricks,points:0,over:false};const loop=()=>{if(keys.has("a")||keys.has("arrowleft"))state.px-=8;if(keys.has("d")||keys.has("arrowright"))state.px+=8;state.px=Math.max(0,Math.min(720-state.pw,state.px));const b=state.ball;if(!state.over){b.x+=b.vx;b.y+=b.vy;if(b.x<8||b.x>712)b.vx*=-1;if(b.y<8)b.vy=Math.abs(b.vy);if(b.y>438&&b.y<460&&b.x>state.px&&b.x<state.px+state.pw&&b.vy>0){b.vy=-Math.abs(b.vy);b.vx+=(b.x-(state.px+state.pw/2))*.03}for(const brick of state.bricks){if(brick.on&&b.x>brick.x&&b.x<brick.x+brick.w&&b.y>brick.y&&b.y<brick.y+brick.h){brick.on=false;b.vy*=-1;state.points++;break}}if(b.y>490||state.points===state.bricks.length)state.over=true}clear();for(const brick of state.bricks)if(brick.on){ctx.fillStyle=`hsl(${155+brick.row*15} 60% ${62-brick.row*3}%)`;ctx.fillRect(brick.x,brick.y,brick.w,brick.h)}ctx.fillStyle=accent();ctx.fillRect(state.px,448,state.pw,14);ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(b.x,b.y,8,0,Math.PI*2);ctx.fill();label(`Bricks ${state.points}/${state.bricks.length}`);if(state.over){ctx.fillStyle="rgba(7,9,13,.78)";ctx.fillRect(0,0,720,480);ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="700 30px system-ui";ctx.fillText(state.points===state.bricks.length?"Board cleared!":"Game over",360,242);ctx.textAlign="left"}frame=requestAnimationFrame(loop)};loop()}
+      function startMemory(){title.textContent="Moon Match";help.textContent="Open two cards at a time and match every pair.";const icons=["🌙","⭐","🪐","☄️","🌌","🚀","🛰️","🌑"],cards=[...icons,...icons].sort(()=>Math.random()-.5).map((icon,index)=>({icon,index,open:false,done:false}));state={cards,first:null,locked:false,moves:0,done:0};memory.innerHTML="";const render=()=>{memory.querySelectorAll("button").forEach((button,index)=>{const card=cards[index];button.textContent=card.icon;button.className=card.done?"done":card.open?"open":""});label(`Moves ${state.moves} · Pairs ${state.done}/8`)};cards.forEach((card,index)=>{const button=document.createElement("button");button.type="button";button.setAttribute("aria-label",`Card ${index+1}`);button.addEventListener("click",()=>{if(state.locked||card.open||card.done)return;card.open=true;if(state.first===null){state.first=index;render();return}state.moves++;const first=cards[state.first];if(first.icon===card.icon){first.done=card.done=true;state.done++;state.first=null;render()}else{state.locked=true;render();setTimeout(()=>{first.open=card.open=false;state.first=null;state.locked=false;render()},650)}});memory.append(button)});render()}
     })();
   </script>
 </body>

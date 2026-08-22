@@ -3335,9 +3335,14 @@
     if(!raw || /^\/?unidentified(?:[/?#]|$)/i.test(raw)) return true;
     try{
       const parsed=new URL(raw,location.href);
+      const previous=browserShellSourceUrl(expected) || String(expected || '').trim();
+      if(/^\/unidentified\/?$/i.test(parsed.pathname) && previous){
+        const previousUrl=new URL(previous,location.href);
+        const sameSite=browserHost(parsed.href)===browserHost(previousUrl.href);
+        if(sameSite && !/^\/unidentified\/?$/i.test(previousUrl.pathname)) return true;
+      }
       if(parsed.origin!==location.origin) return false;
       if(parsed.pathname==='/unidentified' || parsed.pathname.startsWith('/service/') || parsed.pathname.startsWith('/~/sj/') || parsed.pathname.startsWith('/scramjet/service/')) return true;
-      const previous=browserShellSourceUrl(expected) || String(expected || '').trim();
       if(!previous) return false;
       const previousUrl=new URL(previous,location.href);
       return /^https?:$/.test(previousUrl.protocol) && previousUrl.origin!==location.origin;
@@ -9363,6 +9368,17 @@
       }
       attach();
     }
+    function recoverRejectedScramjetLocation(t,rejectedSource,previousSource){
+      const recoverySource=/^https?:\/\//i.test(previousSource) ? previousSource : '';
+      if(!t?.scramjetFrame || !recoverySource) return;
+      const recoveryKey=`${recoverySource}\n${rejectedSource}`;
+      if(t.scramjetRejectedLocationKey===recoveryKey) return;
+      t.scramjetRejectedLocationKey=recoveryKey;
+      setTimeout(()=>{
+        if(!state.tabs.includes(t) || t.scramjetRejectedLocationKey!==recoveryKey) return;
+        try{t.scramjetFrame.go(recoverySource)}catch{}
+      },160);
+    }
     function installPopupBridge(t){
       if(!t?.frame) return;
       installBrowserLinkContextMenu(t);
@@ -9391,7 +9407,11 @@
             const source=browserShellSourceUrl(frameHref);
             if(!/^https?:\/\//i.test(source) || source===location.href) return;
             const previousSource=browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
-            if(browserShellRejectFrameLocation(source,previousSource)) return;
+            if(browserShellRejectFrameLocation(source,previousSource)){
+              recoverRejectedScramjetLocation(t,source,previousSource);
+              return;
+            }
+            t.scramjetRejectedLocationKey='';
             const currentHistory=browserShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
             if(pendingFrameNavigation && pendingFrameNavigation.index===t.index){
               if(source!==currentHistory && t.index>=0) t.history[t.index]=source;
@@ -10462,8 +10482,13 @@
           t.scramjetFrame.addEventListener?.('urlchange',event=>{
             const next=browserShellSourceUrl(String(event.url || '')) || String(event.url || '');
             if(!next) return;
-            const currentHistory=browserShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
             const previousSource=browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
+            if(browserShellRejectFrameLocation(next,previousSource)){
+              recoverRejectedScramjetLocation(t,next,previousSource);
+              return;
+            }
+            t.scramjetRejectedLocationKey='';
+            const currentHistory=browserShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
             const initialScramjetRedirect=t.scramjetHistoryPending===true;
             if(initialScramjetRedirect){
               t.scramjetHistoryPending=false;
@@ -14961,7 +14986,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
     setText('[data-nyx-health-wisp]',nyxLatencyHealth.ok===false ? 'Unavailable' : nyxLatencyHealth.wisp ? nyxLatencyHealth.wisp==='embedded' ? 'Embedded' : nyxLatencyHealth.wisp : 'Checking');
     setText('[data-nyx-health-chat]',nyxLatencyHealth.ok===false ? 'Unavailable' : nyxLatencyHealth.chatRealtime ? nyxLatencyHealth.chatRealtime==='socket.io' ? 'Realtime' : nyxLatencyHealth.chatRealtime : 'Checking');
     const updatedPrefix=nyxLatencyHealth.ok===false ? 'Last healthy' : 'Updated';
-    setText('[data-nyx-latency-updated]',nyxLatencyLastSuccessAt ? `${updatedPrefix} ${new Date(nyxLatencyLastSuccessAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit',second:'2-digit'})} · every 3 seconds` : 'Waiting for the first health check');
+    setText('[data-nyx-latency-updated]',nyxLatencyLastSuccessAt ? `${updatedPrefix} ${new Date(nyxLatencyLastSuccessAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit',second:'2-digit'})} · every second` : 'Waiting for the first health check');
     const svg=bubble.querySelector('[data-nyx-latency-chart] svg');
     const line=bubble.querySelector('[data-nyx-latency-line]');
     const area=bubble.querySelector('[data-nyx-latency-area]');
@@ -15026,7 +15051,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
   async function sampleNyxLatency(force=false,publish=true){
     if(document.hidden || nyxLatencyProbe) return nyxLatencyProbe;
     const now=Date.now();
-    if(!force && now-nyxLatencySampledAt<2500) return null;
+    if(!force && now-nyxLatencySampledAt<900) return null;
     nyxLatencySampledAt=now;
     const request=(async()=>{
       const controller=new AbortController();
@@ -15077,7 +15102,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
     void calibrateNyxLatency();
     const refresh=()=>{if(!document.hidden) void sampleNyxLatency(true)};
     document.addEventListener('visibilitychange',()=>{
-      if(!document.hidden && Date.now()-nyxLatencySampledAt>1500) refresh();
+      if(!document.hidden && Date.now()-nyxLatencySampledAt>900) refresh();
     });
     addEventListener('online',refresh);
     addEventListener('offline',()=>{
@@ -15090,7 +15115,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
       if(nyxLatencyHistory.length>24) nyxLatencyHistory=nyxLatencyHistory.slice(-24);
       syncNyxLatencyBubble();
     });
-    setInterval(refresh,3000);
+    setInterval(refresh,1000);
   }
   function tick(){
     const d=new Date();

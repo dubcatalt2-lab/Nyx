@@ -16,13 +16,9 @@
   const MAX_IMAGE_BYTES=8*1024*1024;
   const MAX_PREPARED_IMAGE_CHARS=1200000;
   const MAX_PREPARED_IMAGE_EDGE=1600;
+  const MAX_TEXT_ATTACHMENT_CHARS=18000;
   const SUPPORTED_IMAGE_TYPES=new Set(['image/png','image/jpeg','image/webp','image/gif']);
-  const KNOWN_VISION_MODELS=new Set([
-    'chatgpt-5.4-mini','nocturne:flash','meta-llama/llama-4-scout-17b-16e-instruct',
-    'navy:gpt-5.4-mini','navy:gpt-4o-mini-search-preview','navy:gemini-3.1-pro-preview',
-    'navy:gemini-3.5-flash','navy:claude-opus-5','navy:claude-opus-4.8',
-    'navy:llama-4-scout','navy:gpt-4o','navy:kimi-k2.5'
-  ]);
+  const KNOWN_VISION_MODELS=new Set(['nocturne:flash']);
 
   const app=document.querySelector('[data-ai-app]');
   const feed=document.getElementById('feed');
@@ -87,6 +83,7 @@
   let temporaryMode=false;
   let temporaryMessages=[];
   let attachedImage=null;
+  let attachedText=null;
   let nyxAiAccountAuthPromise=null;
 
   function personalApiKey(){
@@ -300,9 +297,21 @@
     })[character]);
   }
 
+  function normalizedTextAttachment(value){
+    const content=String(value?.content||'');
+    if(!content||content.length>MAX_TEXT_ATTACHMENT_CHARS) return null;
+    const name=String(value?.name||'pasted-text.txt').replace(/[\\/:*?"<>|\x00-\x1f]/g,'-').slice(0,100)||'pasted-text.txt';
+    return {name:name.toLowerCase().endsWith('.txt')?name:`${name}.txt`,content,size:Number(value?.size)||new Blob([content],{type:'text/plain'}).size};
+  }
+
   function normalizedMessages(value){
     return Array.isArray(value)
-      ? value.filter(item=>item&&['user','assistant'].includes(item.role)&&String(item.content||'').trim()).map(item=>({role:item.role,content:String(item.content)})).slice(-MAX_MESSAGES)
+      ? value.filter(item=>item&&['user','assistant'].includes(item.role)&&String(item.content||'').trim()).map(item=>{
+          const message={role:item.role,content:String(item.content)};
+          const textAttachment=item.role==='user'?normalizedTextAttachment(item.textAttachment):null;
+          if(textAttachment) message.textAttachment=textAttachment;
+          return message;
+        }).slice(-MAX_MESSAGES)
       : [];
   }
 
@@ -576,38 +585,82 @@
     attachmentStatus.textContent=String(text||'');
   }
 
+  function formatAttachmentSize(size){
+    const bytes=Math.max(0,Number(size)||0);
+    if(bytes<1024) return `${bytes} B`;
+    return `${(bytes/1024).toFixed(bytes<10240?1:0)} KB`;
+  }
+
+  function pastedTextFileName(){
+    const now=new Date();
+    const pad=value=>String(value).padStart(2,'0');
+    return `pasted-text-${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.txt`;
+  }
+
   function clearAttachment(){
     attachedImage=null;
+    attachedText=null;
     imageInput.value='';
     attachmentPreview.hidden=true;
-    attachmentPreview.classList.remove('is-error','is-file-error');
+    attachmentPreview.classList.remove('is-error','is-file-error','is-text-file');
     attachmentThumbnail.hidden=false;
     attachmentThumbnail.removeAttribute('src');
     attachmentName.textContent='';
     setAttachmentStatus('Ready to send');
     attachImage.classList.remove('has-attachment');
     attachImage.setAttribute('aria-label','Attach an image');
+    removeAttachment.title='Remove attachment';
+    removeAttachment.setAttribute('aria-label','Remove attachment');
   }
 
-  function showAttachmentError(message){
+  function showAttachmentError(message,label='Image not attached'){
     clearAttachment();
     attachmentPreview.hidden=false;
     attachmentPreview.classList.add('is-error','is-file-error');
     attachmentThumbnail.hidden=true;
-    attachmentName.textContent='Image not attached';
+    attachmentName.textContent=label;
     setAttachmentStatus(message);
   }
 
   function setAttachment(image){
+    attachedText=null;
     attachedImage=image;
     attachmentPreview.hidden=false;
-    attachmentPreview.classList.remove('is-error','is-file-error');
+    attachmentPreview.classList.remove('is-error','is-file-error','is-text-file');
     attachmentThumbnail.hidden=false;
     attachmentThumbnail.src=image.dataUrl;
     attachmentName.textContent=image.name;
     setAttachmentStatus('Ready to send');
     attachImage.classList.add('has-attachment');
     attachImage.setAttribute('aria-label',`Replace attached image: ${image.name}`);
+    removeAttachment.title='Remove image';
+    removeAttachment.setAttribute('aria-label','Remove attached image');
+  }
+
+  function setTextAttachment(content){
+    const text=String(content||'');
+    if(!text) return null;
+    if(text.length>MAX_TEXT_ATTACHMENT_CHARS){
+      showAttachmentError(`Pasted text is limited to ${MAX_TEXT_ATTACHMENT_CHARS.toLocaleString()} characters.`,`Text file not attached`);
+      return null;
+    }
+    const attachment=normalizedTextAttachment({name:pastedTextFileName(),content:text});
+    if(!attachment) return null;
+    attachedImage=null;
+    attachedText=attachment;
+    imageInput.value='';
+    attachmentPreview.hidden=false;
+    attachmentPreview.classList.remove('is-error','is-file-error');
+    attachmentPreview.classList.add('is-text-file');
+    attachmentThumbnail.hidden=true;
+    attachmentThumbnail.removeAttribute('src');
+    attachmentName.textContent=attachment.name;
+    setAttachmentStatus(`${formatAttachmentSize(attachment.size)} · Ready to send`);
+    attachImage.classList.remove('has-attachment');
+    attachImage.setAttribute('aria-label','Attach an image (replaces the text file)');
+    removeAttachment.title='Remove text file';
+    removeAttachment.setAttribute('aria-label','Remove attached text file');
+    return attachment;
   }
 
   function readImageFile(file){
@@ -672,7 +725,10 @@
 
   function ensureVisionModel(){
     const current=modelCatalog.find(item=>item.id===model.value);
-    return current?.vision?current:null;
+    if(current?.vision) return current;
+    return modelCatalog.find(item=>item.id==='nocturne:flash'&&item.vision)
+      ||modelCatalog.find(item=>item.vision)
+      ||null;
   }
 
   function setMessageContent(message,text,{error=false,thinking=false}={}){
@@ -690,6 +746,19 @@
       return;
     }
     content.innerHTML=markdown(text);
+  }
+
+  function downloadTextAttachment(attachment){
+    const normalized=normalizedTextAttachment(attachment);
+    if(!normalized) return;
+    const url=URL.createObjectURL(new Blob([normalized.content],{type:'text/plain;charset=utf-8'}));
+    const link=document.createElement('a');
+    link.href=url;
+    link.download=normalized.name;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
 
   function addMessage(role,text,{error=false,thinking=false,attachment=null}={}){
@@ -714,6 +783,18 @@
       caption.textContent=attachment.name||'Attached image';
       figure.append(image,caption);
       message.querySelector('.ai-message-content')?.before(figure);
+    }else if(attachment?.content&&!assistant){
+      const textAttachment=normalizedTextAttachment(attachment);
+      if(textAttachment){
+        const file=document.createElement('button');
+        file.className='ai-message-attachment ai-message-text-attachment';
+        file.type='button';
+        file.dataset.downloadTextAttachment='';
+        file.title=`Download ${textAttachment.name}`;
+        file.innerHTML=`<span class="ai-text-file-icon" aria-hidden="true">TXT</span><span class="ai-text-file-copy"><strong>${escapeHtml(textAttachment.name)}</strong><small>${escapeHtml(formatAttachmentSize(textAttachment.size))} · Download</small></span>`;
+        file._nyxTextAttachment=textAttachment;
+        message.querySelector('.ai-message-content')?.before(file);
+      }
     }
     setMessageContent(message,text,{error,thinking});
     conversation.appendChild(message);
@@ -912,7 +993,7 @@
       conversation.innerHTML=welcome();
     }else{
       conversation.classList.remove('is-empty');
-      items.forEach(item=>addMessage(item.role,item.content));
+      items.forEach(item=>addMessage(item.role,item.content,{attachment:item.textAttachment||null}));
     }
     updateThreadTitle(items);
     applyLogoTheme();
@@ -1117,21 +1198,24 @@
 
   async function submitPrompt(){
     const prompt=input.value.trim();
-    const attachment=attachedImage;
-    if((!prompt&&!attachment)||send.disabled) return;
-    const visionModel=attachment?ensureVisionModel():null;
-    if(attachment&&!visionModel){
+    const imageAttachment=attachedImage;
+    const textAttachment=attachedText;
+    if((!prompt&&!imageAttachment&&!textAttachment)||send.disabled) return;
+    const visionModel=imageAttachment?ensureVisionModel():null;
+    if(imageAttachment&&!visionModel){
       attachmentPreview.classList.add('is-error');
       setAttachmentStatus(`${modelLabel(model.value)} cannot read images. Choose a model marked Vision.`);
       return;
     }
-    const requestedModel=(visionModel?.id||model.value)||DEFAULT_MODEL;
-    const userText=prompt||'Please analyze this image.';
+    const selectedModelId=model.value||DEFAULT_MODEL;
+    const requestedModel=(visionModel?.id||selectedModelId)||DEFAULT_MODEL;
+    const temporaryVisionFallback=Boolean(imageAttachment&&visionModel&&visionModel.id!==selectedModelId);
+    const userText=prompt||(imageAttachment?'Please analyze this image.':'Please review the attached text file.');
     const history=savedMessages();
     if(!history.length) updateThreadTitle([{role:'user',content:userText}]);
-    history.push({role:'user',content:userText});
+    history.push({role:'user',content:userText,...(textAttachment?{textAttachment}: {})});
     saveMessages(history);
-    addMessage('user',userText,{attachment});
+    addMessage('user',userText,{attachment:imageAttachment||textAttachment});
     input.value='';
     autoGrow();
     const pending=addMessage('assistant','',{thinking:true});
@@ -1145,14 +1229,18 @@
       scrollToBottom();
     };
     try{
-      const preparedImage=attachment?await prepareImageForModel(attachment):null;
+      const preparedImage=imageAttachment?await prepareImageForModel(imageAttachment):null;
       const imageContext=preparedImage?`Original image dimensions: ${preparedImage.width}x${preparedImage.height}px.`:'';
-      if(preparedImage) setAttachmentStatus('Sending the full image to the vision model…');
+      if(preparedImage){
+        setAttachmentStatus(temporaryVisionFallback
+          ? `${modelLabel(visionModel.id)} is reading this image; ${modelLabel(selectedModelId)} stays selected.`
+          : `Sending the full image to ${modelLabel(requestedModel)}…`);
+      }
       const response=await fetch('/api/nyx-ai',{
         method:'POST',
         signal:activeController.signal,
         headers:await aiHeaders({'content-type':'application/json'}),
-        body:JSON.stringify({model:requestedModel,message:userText,messages:history,imageContext,image:preparedImage,responseDepth:responseDepth(),stream:true})
+        body:JSON.stringify({model:requestedModel,message:userText,messages:history,textAttachment,imageContext,image:preparedImage,responseDepth:responseDepth(),stream:true})
       });
       if(!response.ok){
         const data=await response.json().catch(()=>({}));
@@ -1234,6 +1322,11 @@
       form.requestSubmit();
       return;
     }
+    const textDownload=event.target.closest('[data-download-text-attachment]');
+    if(textDownload){
+      downloadTextAttachment(textDownload._nyxTextAttachment);
+      return;
+    }
     const copyCode=event.target.closest('[data-copy-code]');
     if(copyCode){
       await copyText(copyCode.closest('.ai-code-block')?.querySelector('pre code')?.textContent||'');
@@ -1256,7 +1349,18 @@
   });
   input.addEventListener('paste',event=>{
     const image=[...(event.clipboardData?.files||[])].find(file=>String(file.type||'').startsWith('image/'));
-    if(image) void readImageFile(image);
+    if(image){
+      void readImageFile(image);
+      return;
+    }
+    const pastedText=String(event.clipboardData?.getData('text/plain')||'');
+    const selectedLength=Math.max(0,(input.selectionEnd||0)-(input.selectionStart||0));
+    const nextLength=input.value.length-selectedLength+pastedText.length;
+    if(pastedText&&nextLength>Number(input.maxLength||4000)){
+      event.preventDefault();
+      setTextAttachment(pastedText);
+      autoGrow();
+    }
   });
   form.addEventListener('dragenter',event=>{
     if([...(event.dataTransfer?.items||[])].some(item=>item.kind==='file')) form.classList.add('is-dragging');

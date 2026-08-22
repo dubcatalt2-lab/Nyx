@@ -2354,9 +2354,27 @@ const nyxAiLimits = {
   perIpConcurrent: nyxAiLimit("NYX_AI_CONCURRENT_PER_IP", 2),
   globalConcurrent: nyxAiLimit("NYX_AI_CONCURRENT_GLOBAL", 3),
   promptChars: nyxAiLimit("NYX_AI_MAX_PROMPT_CHARS", 4000),
+  textAttachmentChars: nyxAiLimit("NYX_AI_MAX_TEXT_ATTACHMENT_CHARS", 18000),
   contextChars: nyxAiLimit("NYX_AI_MAX_CONTEXT_CHARS", 24000),
   timeoutMs: nyxAiLimit("NYX_AI_TIMEOUT_MS", 45000)
 };
+
+function nyxAiTextAttachment(value) {
+  if (!value || typeof value !== "object") return null;
+  const content = String(value.content || "");
+  if (!content || content.length > nyxAiLimits.textAttachmentChars) return null;
+  let name = String(value.name || "pasted-text.txt")
+    .replace(/[\\/:*?"<>|\x00-\x1f]/g, "-")
+    .slice(0, 100) || "pasted-text.txt";
+  if (!name.toLowerCase().endsWith(".txt")) name += ".txt";
+  return { name, content };
+}
+
+function nyxAiTextAttachmentPrompt(message, attachment) {
+  const prompt = String(message || "Please review the attached text file.").trim();
+  if (!attachment) return prompt;
+  return `${prompt}\n\nAttached text file: ${attachment.name}\n--- BEGIN ATTACHED TEXT ---\n${attachment.content}\n--- END ATTACHED TEXT ---`;
+}
 
 function nyxAiClientId(req) {
   const forwarded = process.env.NYX_TRUST_PROXY === "true"
@@ -2485,6 +2503,12 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     return;
   }
   const message = String(req.body?.message || "").trim();
+  const suppliedTextAttachment = req.body?.textAttachment;
+  const textAttachment = suppliedTextAttachment ? nyxAiTextAttachment(suppliedTextAttachment) : null;
+  if (suppliedTextAttachment && !textAttachment) {
+    res.status(413).json({ error: `Text attachments are limited to ${nyxAiLimits.textAttachmentChars} characters.` });
+    return;
+  }
   const imageContext = String(req.body?.imageContext || "").trim();
   const suppliedImage = req.body?.image;
   const image = suppliedImage ? nyxAiImage(suppliedImage) : null;
@@ -2500,24 +2524,31 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     res.status(413).json({ error: `Message is too long. The limit is ${nyxAiLimits.promptChars} characters.` });
     return;
   }
-  const history = Array.isArray(req.body?.messages)
-    ? req.body.messages.slice(-20).map(item => ({
-        role: item?.role === "assistant" ? "assistant" : "user",
-        content: String(item?.content || "").slice(0, 12000)
-      })).filter(item => item.content.trim())
-    : [];
+  const sourceHistory = Array.isArray(req.body?.messages) ? req.body.messages.slice(-20) : [];
+  const history = sourceHistory
+    .map((item, index) => {
+      const role = item?.role === "assistant" ? "assistant" : "user";
+      const itemAttachment = role === "user"
+        ? (index === sourceHistory.length - 1 && textAttachment ? textAttachment : nyxAiTextAttachment(item?.textAttachment))
+        : null;
+      const content = nyxAiTextAttachmentPrompt(String(item?.content || ""), itemAttachment)
+        .slice(0, nyxAiLimits.contextChars);
+      return { role, content };
+    }).filter(item => item.content.trim());
   let contextChars = imageContext.length;
   for (const item of history) contextChars += item.content.length;
+  if (!history.length && textAttachment) contextChars += textAttachment.content.length;
   if (contextChars > nyxAiLimits.contextChars) {
     res.status(413).json({ error: "This conversation is too long. Clear the chat and try again." });
     return;
   }
-  if (!message && !imageContext && !image && !history.length) {
+  if (!message && !imageContext && !image && !textAttachment && !history.length) {
     res.status(400).json({ error: "Message is required." });
     return;
   }
   const endpoint = nyxAiEndpoint();
-  const prompt = imageContext ? `${message || "Answer the attached image."}\n\nAdditional image details from Nyx:\n${imageContext}` : message;
+  const textPrompt = nyxAiTextAttachmentPrompt(message, textAttachment);
+  const prompt = imageContext ? `${textPrompt || "Answer the attached image."}\n\nAdditional image details from Nyx:\n${imageContext}` : textPrompt;
   const messages = history.length ? history : [{ role: "user", content: prompt }];
   if (history.length && (imageContext || image)) messages[messages.length - 1] = { role: "user", content: prompt };
   if (image) {
@@ -10291,7 +10322,7 @@ app.post("/api/link-generator", async (req, res) => {
 
 app.get("/download/nyx-singlefile.html", (_req, res) => {
   res.set("Cache-Control", "no-store");
-  res.download(join(staticRoot, "nyx-singlefile.html"), "Nyx-Download.html");
+  res.download(join(staticRoot, "nyx-singlefile.html"), "Nyx-Games.html");
 });
 
 app.use("/api", (_req, res) => {

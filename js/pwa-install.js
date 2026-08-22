@@ -3,7 +3,7 @@
 
   let installPrompt = null;
   let lastMessage = "";
-  const SINGLE_FILE_RELEASE = "2026.08.21.1";
+  const SINGLE_FILE_RELEASE = "2026.08.20.2";
 
   function isInstalled() {
     return window.matchMedia?.("(display-mode: standalone)")?.matches
@@ -33,7 +33,7 @@
       <p data-install-nyx-status>Installs Nyx as an app with its own window and desktop icon.</p>`;
     const control = `<div class="settings-actions nyx-install-actions">
       <button class="${kind === "legacy" ? "" : "settings-action"}" data-install-nyx type="button">Install Nyx</button>
-      <button class="${kind === "legacy" ? "" : "settings-action"}" data-download-nyx-singlefile type="button">Download Games File</button>
+      <button class="${kind === "legacy" ? "" : "settings-action"}" data-download-nyx-singlefile type="button">Download Single File</button>
     </div>`;
     card.innerHTML = kind === "dashboard"
       ? `<div class="nyx-settings-copy">${copy}</div><div class="nyx-settings-control">${control}</div>`
@@ -120,7 +120,7 @@
     const source = new URL("/nyx-singlefile.html", window.location.href);
     source.searchParams.set("release", SINGLE_FILE_RELEASE);
     source.searchParams.set("fresh", Date.now().toString(36));
-    const previousLabel = button?.textContent || "Download Games File";
+    const previousLabel = button?.textContent || "Download Single File";
     if (button) {
       button.disabled = true;
       button.textContent = "Downloading…";
@@ -134,12 +134,12 @@
       const objectUrl = URL.createObjectURL(new Blob([markup], { type: "text/html;charset=utf-8" }));
       const link = document.createElement("a");
       link.href = objectUrl;
-      link.download = "Nyx-Games.html";
+      link.download = "Nyx-Download.html";
       link.hidden = true;
       document.body.appendChild(link);
       link.click();
       window.setTimeout(() => { link.remove(); URL.revokeObjectURL(objectUrl); }, 60_000);
-      if (status) status.textContent = "Nyx-Games.html was saved. It contains four offline games and does not load the Nyx website.";
+      if (status) status.textContent = "Nyx-Download.html was saved. Open it from your Downloads folder.";
     } catch {
       if (status) status.textContent = "Nyx could not create the download. Check your connection and try again.";
     } finally {

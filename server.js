@@ -2280,7 +2280,7 @@ const nyxAiImageTickets = new Map();
 const nyxAiImageTicketTtlMs = 90_000;
 const nyxAiImageTicketLimit = 12;
 const nyxAiPremiumOpusModel = "navy:claude-opus-4.8";
-const nyxAiPremiumOpusDailyTokenLimit = 2_000;
+const nyxAiPremiumOpusDailyTokenLimit = 50_000;
 const nyxAiPremiumOpusUsageCollection = "nyxAiPremiumOpusUsage";
 
 function nyxAiUtcDay(now = new Date()) {
@@ -2312,7 +2312,7 @@ async function reserveNyxAiPremiumOpusTokens(firebase, uid, requestedTokens) {
     const used = Math.max(0, Math.floor(Number(snapshot.data()?.tokens) || 0));
     const remaining = Math.max(0, nyxAiPremiumOpusDailyTokenLimit - used);
     if (!remaining) {
-      const error = new Error("Your 2,000 Claude Opus token allowance resets at 00:00 UTC.");
+      const error = new Error(`Your ${nyxAiPremiumOpusDailyTokenLimit.toLocaleString("en-US")} Claude Opus credit allowance resets at 00:00 UTC.`);
       error.status = 429;
       error.remaining = 0;
       throw error;
@@ -10322,7 +10322,7 @@ app.post("/api/link-generator", async (req, res) => {
 
 app.get("/download/nyx-singlefile.html", (_req, res) => {
   res.set("Cache-Control", "no-store");
-  res.download(join(staticRoot, "nyx-singlefile.html"), "Nyx-Games.html");
+  res.download(join(staticRoot, "nyx-singlefile.html"), "Nyx-Download.html");
 });
 
 app.use("/api", (_req, res) => {

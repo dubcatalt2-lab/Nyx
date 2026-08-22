@@ -12963,7 +12963,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
         <li><strong>A cleaner way to browse</strong><span>Nyx now feels calmer and easier to use, with clearer controls, more room for pages, and a tab drawer that stays out of the way until you need it.</span></li>
         <li><strong>A new home for Nyx</strong><span>Search, games, chat, AI, music, and the full app library are now easier to reach, with a live dashboard that keeps useful details close without crowding your screen.</span></li>
         <li><strong>Your settings, easier to manage</strong><span>Account and preference settings are simpler to find, and verified members can keep supported preferences and game saves available across their devices.</span></li>
-        <li><strong>More ways to use Nyx AI</strong><span>Premium members can use Claude Opus 4.8 for up to 2,000 tokens each day, with model and effort controls that make it easier to choose how Nyx AI responds.</span></li>
+        <li><strong>More ways to use Nyx AI</strong><span>Premium members receive 50,000 Claude Opus AI credits each day, with model and effort controls that make it easier to choose how Nyx AI responds.</span></li>
       </ul>
       <footer><button type="button" data-nyx-release-notes-close>Got it</button></footer>
     </section>`;

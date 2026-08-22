@@ -1937,6 +1937,7 @@ const nyxAiKnownCatalog = [
   ["qwen/qwen3-32b", "Qwen3 32B", "Qwen"],
   ["meta-llama/llama-4-scout-17b-16e-instruct", "Llama 4 Scout (Vision)", "Meta"],
   ["navy:gpt-5.4-mini", "ChatGPT 5.4 Mini", "OpenAI"],
+  ["navy:claude-sonnet-4.5", "Claude Sonnet 4.5", "Anthropic"],
   ["navy:claude-opus-5", "Claude Opus 5", "Anthropic"],
   ["navy:claude-opus-4.8", "Claude Opus 4.8", "Anthropic"],
   ["navy:gpt-4o-mini-search-preview", "GPT-4o Mini Search (Preview)", "OpenAI"],

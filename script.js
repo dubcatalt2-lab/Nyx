@@ -9384,12 +9384,22 @@
       if(t.frame.dataset.nyxLocationSync!=='true'){
         t.frame.dataset.nyxLocationSync='true';
         t.frame.addEventListener('load',()=>setTimeout(()=>{
+          const pendingFrameNavigation=t.frameHistoryPending || null;
+          t.frameHistoryPending=null;
           try{
             const frameHref=String(t.frame?.contentWindow?.location?.href || '');
             const source=browserShellSourceUrl(frameHref);
             if(!/^https?:\/\//i.test(source) || source===location.href) return;
             const previousSource=browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
             if(browserShellRejectFrameLocation(source,previousSource)) return;
+            const currentHistory=browserShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
+            if(pendingFrameNavigation && pendingFrameNavigation.index===t.index){
+              if(source!==currentHistory && t.index>=0) t.history[t.index]=source;
+            }else if(source!==currentHistory && source!==previousSource){
+              t.history=t.history.slice(0,t.index+1);
+              t.history.push(source);
+              t.index=t.history.length-1;
+            }
             installDuckDuckGoImageViewportFix(t);
             t.url=source;
             t.sourceUrl=source;
@@ -10343,6 +10353,7 @@
         };
         watchUvPresentation(t,sourceUrl || requestedSource);
       }else t.retryUvPresentation=null;
+      t.frameHistoryPending={index:t.index};
       t.frame.src=url;
       markBrowserEngine(t,expectedEngine,url,'iframe-src');
       renderTabs();

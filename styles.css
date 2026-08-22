@@ -11,7 +11,7 @@
 @import url("./css/home-utilities.css?v=20260726-copyright-v8");
 @import url("./css/hover-consistency.css?v=20260818-round-home-shortcuts-v19");
 @import url("./css/weather-redesign.css?v=20260730-symbols-v12");
-@import url("./css/theme-tints.css?v=20260818-balanced-palette-v31");
+@import url("./css/theme-tints.css?v=20260822-black-home-v32");
 @import url("./css/setup-wizard.css?v=20260728-fern-v5");
 @import url("./css/credits.css?v=20260730-discord-view-v6");
 @import url("./css/interface-scale.css?v=20260727-themed-menu-v9");
@@ -510,14 +510,17 @@ html[data-nyx-theme] body.browser-shell .top-os.top-os{
   border-bottom-color:var(--nyx-home-line)!important;
   color:var(--nyx-home-text)!important;
 }
-html[data-nyx-theme] body.browser-shell:not(.three-d-backgrounds):not(.custom-bg-active),
+html[data-nyx-theme] body.browser-shell:not(.three-d-backgrounds):not(.custom-bg-active){
+  background-color:var(--nyx-unified-canvas)!important;
+  background-image:none!important;
+}
 html[data-nyx-theme] body.browser-shell:not(.three-d-backgrounds):not(.custom-bg-active) :is(
   .browser-window.browser-home-page,
   .browser-window.maximized.browser-blank,
   .browser-window.maximized:has(.browser-home:not(.hidden)),
   .browser-home
 ){
-  background-color:var(--nyx-unified-canvas)!important;
+  background-color:#000!important;
   background-image:none!important;
 }
 

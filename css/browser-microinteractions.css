@@ -806,7 +806,7 @@ html[data-nyx-theme="midnight"][data-nyx-theme="midnight"]
 }
 html[data-nyx-theme="midnight"][data-nyx-theme="midnight"]
   body.browser-shell.browser-shell.theme-midnight:not(.custom-bg-active):is(body,#nyx-midnight-final-1):is(body,#nyx-midnight-final-2):is(body,#nyx-midnight-final-3):is(body,#nyx-midnight-final-4)
-  :is(#desktop,.browser-window.maximized,.browser-home,.browser-shell-settings-overlay){
+  :is(#desktop,.browser-window.maximized:not(.browser-home-page),.browser-shell-settings-overlay){
   background-color:#0d0e12!important;
 }
 

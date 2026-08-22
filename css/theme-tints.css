@@ -151,7 +151,7 @@ html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-eme
 }
 html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh):not(.custom-bg-active)
   :is(.browser-window.browser-home-page,.browser-window.maximized.browser-blank,.browser-window.maximized:has(.browser-home:not(.hidden)),.browser-home){
-  background:var(--nyx-unified-canvas)!important;
+  background:#000!important;
   background-image:none!important;
   border-color:var(--nyx-home-line)!important;
 }

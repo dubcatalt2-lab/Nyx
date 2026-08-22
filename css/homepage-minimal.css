@@ -977,26 +977,28 @@ html[data-nyx-theme] body.browser-shell .nyx-browser-tab-row small{
   -webkit-text-fill-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 42%,#8a8c96)!important;
 }
 
-/* Themes tint the redesigned home without replacing its charcoal canvas or
-   changing any of its geometry. */
+/* The redesigned home keeps a pure-black canvas. Themes only tint the
+   constellation network and the surrounding interface. */
 html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home{
   --nyx-dot-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 24%,#718f84);
   --nyx-link-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 14%,#30433c);
   --nyx-constellation-dot-color:var(--nyx-home-constellation-dot,color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 58%,#fff));
   --nyx-constellation-link-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 52%,#40534c);
 }
-html body.browser-shell.theme-default:not(.theme-custom){--nyx-home-canvas:color-mix(in srgb,#a99bf3 13%,#000)!important;--nyx-home-constellation-dot:color-mix(in srgb,#a99bf3 58%,#fff)!important;--nyx-home-wordmark:#a99bf3!important;--nyx-shell-icon:#a99bf3!important;--nyx-final-shortcut-icon:#a99bf3!important}
-html body.browser-shell.theme-ruby{--nyx-home-canvas:color-mix(in srgb,#fb7185 13%,#000)!important;--nyx-home-constellation-dot:color-mix(in srgb,#fb7185 58%,#fff)!important;--nyx-home-wordmark:#fb7185!important;--nyx-shell-icon:#fb7185!important;--nyx-final-shortcut-icon:#fb7185!important}
-html body.browser-shell.theme-emerald{--nyx-home-canvas:color-mix(in srgb,#34d399 13%,#000)!important;--nyx-home-constellation-dot:color-mix(in srgb,#34d399 58%,#fff)!important;--nyx-home-wordmark:#34d399!important;--nyx-shell-icon:#34d399!important;--nyx-final-shortcut-icon:#34d399!important}
-html body.browser-shell.theme-sakura{--nyx-home-canvas:color-mix(in srgb,#f9a8d4 13%,#000)!important;--nyx-home-constellation-dot:color-mix(in srgb,#f9a8d4 58%,#fff)!important;--nyx-home-wordmark:#f9a8d4!important;--nyx-shell-icon:#f9a8d4!important;--nyx-final-shortcut-icon:#f9a8d4!important}
-html body.browser-shell.theme-midnight{--nyx-home-canvas:color-mix(in srgb,#93c5fd 13%,#000)!important;--nyx-home-constellation-dot:color-mix(in srgb,#93c5fd 58%,#fff)!important;--nyx-home-wordmark:#93c5fd!important;--nyx-shell-icon:#93c5fd!important;--nyx-final-shortcut-icon:#93c5fd!important}
-html body.browser-shell.theme-fresh{--nyx-home-canvas:color-mix(in srgb,#a6c99c 13%,#000)!important;--nyx-home-constellation-dot:color-mix(in srgb,#a6c99c 58%,#fff)!important;--nyx-home-wordmark:#a6c99c!important;--nyx-shell-icon:#a6c99c!important;--nyx-final-shortcut-icon:#a6c99c!important}
-html body.browser-shell.theme-custom{--nyx-home-canvas:var(--nyx-custom-canvas,#000)!important;--nyx-home-constellation-dot:var(--nyx-custom-constellation-dot,#fff)!important;--nyx-home-wordmark:var(--nyx-custom-accent,#a99bf3)!important;--nyx-shell-icon:var(--nyx-custom-accent,#a99bf3)!important;--nyx-final-shortcut-icon:var(--nyx-custom-accent,#a99bf3)!important}
-html[data-nyx-theme] body.browser-shell .browser-window.browser-home-page,
-html[data-nyx-theme] body.browser-shell .browser-window.browser-home-page>.browser-body,
-html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home,
-html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home::before,
-html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home::after{
+html body.browser-shell.theme-default:not(.theme-custom){--nyx-home-canvas:#000!important;--nyx-home-constellation-dot:color-mix(in srgb,#a99bf3 58%,#fff)!important;--nyx-home-wordmark:#a99bf3!important;--nyx-shell-icon:#a99bf3!important;--nyx-final-shortcut-icon:#a99bf3!important}
+html body.browser-shell.theme-ruby{--nyx-home-canvas:#000!important;--nyx-home-constellation-dot:color-mix(in srgb,#fb7185 58%,#fff)!important;--nyx-home-wordmark:#fb7185!important;--nyx-shell-icon:#fb7185!important;--nyx-final-shortcut-icon:#fb7185!important}
+html body.browser-shell.theme-emerald{--nyx-home-canvas:#000!important;--nyx-home-constellation-dot:color-mix(in srgb,#34d399 58%,#fff)!important;--nyx-home-wordmark:#34d399!important;--nyx-shell-icon:#34d399!important;--nyx-final-shortcut-icon:#34d399!important}
+html body.browser-shell.theme-sakura{--nyx-home-canvas:#000!important;--nyx-home-constellation-dot:color-mix(in srgb,#f9a8d4 58%,#fff)!important;--nyx-home-wordmark:#f9a8d4!important;--nyx-shell-icon:#f9a8d4!important;--nyx-final-shortcut-icon:#f9a8d4!important}
+html body.browser-shell.theme-midnight{--nyx-home-canvas:#000!important;--nyx-home-constellation-dot:color-mix(in srgb,#93c5fd 58%,#fff)!important;--nyx-home-wordmark:#93c5fd!important;--nyx-shell-icon:#93c5fd!important;--nyx-final-shortcut-icon:#93c5fd!important}
+html body.browser-shell.theme-fresh{--nyx-home-canvas:#000!important;--nyx-home-constellation-dot:color-mix(in srgb,#a6c99c 58%,#fff)!important;--nyx-home-wordmark:#a6c99c!important;--nyx-shell-icon:#a6c99c!important;--nyx-final-shortcut-icon:#a6c99c!important}
+html body.browser-shell.theme-custom{--nyx-home-canvas:#000!important;--nyx-home-constellation-dot:var(--nyx-custom-constellation-dot,#fff)!important;--nyx-home-wordmark:var(--nyx-custom-accent,#a99bf3)!important;--nyx-shell-icon:var(--nyx-custom-accent,#a99bf3)!important;--nyx-final-shortcut-icon:var(--nyx-custom-accent,#a99bf3)!important}
+html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page,
+html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page>.browser-body,
+html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell .browser-home.nyx-minimal-home,
+html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell .browser-home.nyx-minimal-home::before,
+html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell .browser-home.nyx-minimal-home::after{
+  background:#000!important;
+  background-image:none!important;
   background-color:#000!important;
 }
 html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home::before,

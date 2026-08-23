@@ -234,7 +234,7 @@
       subscription: "all",
       status: "all",
       segment: "all",
-      sort: "createdAt",
+      sort: "lastActiveAt",
       direction: "desc",
       data: null,
       access: null,
@@ -397,7 +397,7 @@
         tableHost.innerHTML = '<div class="nyx-owner-empty"><strong>No users found</strong><span>Try changing the search or filters.</span></div>';
       } else {
         tableHost.innerHTML = `<table class="nyx-owner-table">
-          <thead><tr><th>${sortButton("displayName", "User")}</th><th>${sortButton("role", "Role")}</th><th>${sortButton("subscriptionStatus", "Subscription")}</th><th>${sortButton("createdAt", "Created")}</th><th>${sortButton("lastSignInAt", "Last sign-in")}</th><th>${sortButton("lastActiveAt", "Last active")}</th><th>Email verified</th><th>${sortButton("status", "Status")}</th><th><span class="sr-only">Actions</span></th></tr></thead>
+          <thead><tr><th>${sortButton("displayName", "User")}</th><th>${sortButton("role", "Role")}</th><th>${sortButton("subscriptionStatus", "Subscription")}</th><th>${sortButton("lastSignInAt", "Last sign-in")}</th><th>${sortButton("lastActiveAt", "Last active")}</th><th>Email verified</th><th>${sortButton("status", "Status")}</th><th><span class="sr-only">Actions</span></th></tr></thead>
           <tbody>${users.map(user => {
             const guest = Boolean(user.guest);
             const canReviewSearches = !guest && user.canReviewSearchHistory === true;
@@ -405,7 +405,6 @@
             <td><div class="nyx-owner-user-entry"><button class="nyx-owner-user-cell" type="button" data-owner-view-user="${esc(user.uid)}"><span class="nyx-owner-avatar">${ownerProfileImageMarkup(user.photoUrl, "", (user.displayName || "?").slice(0, 1).toUpperCase())}<i class="${user.online ? "online" : ""}"></i></span><span><span class="nyx-owner-user-name-row"><strong>${esc(user.displayName)}</strong><span class="nyx-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></span><small>@${esc(user.username)} · ${esc(user.email || (guest ? "No account" : "No email"))}</small><span class="nyx-owner-mobile-access"><span class="nyx-owner-badge role-${esc(user.role)}${user.customRole ? " custom-role" : ""}"${userRoleColor(user) ? ` style="--owner-custom-role:${esc(userRoleColor(user))}"` : ""}>${roleIcon(user.role)}<span class="nyx-minecraft-text">${esc(userRoleLabel(user))}</span></span><span class="nyx-owner-badge subscription-${esc(user.subscriptionStatus)}">${esc(subscriptionLabel(user.subscriptionStatus))}</span></span></span></button>${canReviewSearches ? `<button class="nyx-owner-search-shield" type="button" data-owner-search-history="${esc(user.uid)}" aria-label="Review search history for ${esc(user.displayName)}" title="Review search history">${dashboardIcon("shield")}</button>` : ""}</div></td>
             <td><span class="nyx-owner-badge role-${esc(user.role)}${user.customRole ? " custom-role" : ""}"${userRoleColor(user) ? ` style="--owner-custom-role:${esc(userRoleColor(user))}"` : ""}>${roleIcon(user.role)}<span class="nyx-minecraft-text">${esc(userRoleLabel(user))}</span></span></td>
             <td><span class="nyx-owner-badge subscription-${esc(user.subscriptionStatus)}">${esc(subscriptionLabel(user.subscriptionStatus))}</span></td>
-            <td><span title="${esc(dateLabel(user.createdAt))}">${esc(relativeLabel(user.createdAt))}</span></td>
             <td><span title="${esc(guest ? "No account" : dateLabel(user.lastSignInAt))}">${esc(guest ? "Not signed in" : relativeLabel(user.lastSignInAt))}</span></td>
             <td><span title="${esc(dateLabel(user.lastActiveAt))}">${esc(relativeLabel(user.lastActiveAt))}</span></td>
             <td><span class="nyx-owner-verified ${user.deliverableEmail && user.emailVerified ? "verified" : ""}">${guest ? "Guest" : (user.deliverableEmail ? (user.emailVerified ? "Verified" : "Unverified") : "N/A")}</span></td>
@@ -672,7 +671,7 @@
         const recentActivitySection = capabilities.canViewAudit ? `<section class="nyx-owner-detail-section"><h3>Recent user activity</h3><div class="nyx-owner-user-activity">${(user.recentActivity || []).length ? user.recentActivity.map(event => `<p><strong>${esc(actionLabel(event.action))}</strong><span>${esc(relativeLabel(event.createdAt))}</span></p>`).join("") : "<span>No recorded account actions.</span>"}</div></section>` : "";
         drawer.innerHTML = `<header><div class="nyx-owner-detail-avatar">${avatar}<i class="${user.online ? "online" : ""}"></i></div><div><span>${roleIcon(user.role)}<span class="nyx-minecraft-text">${esc(userRoleLabel(user))}</span> account</span><h2>${esc(user.displayName)}</h2><p class="nyx-owner-drawer-identity">@${esc(user.username)} <span class="nyx-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></p></div><button type="button" data-owner-drawer-close aria-label="Close user details">${dashboardIcon("close")}</button></header>
           <div class="nyx-owner-drawer-scroll">
-            <section class="nyx-owner-detail-grid">${detailValue("Email", user.deliverableEmail ? user.email : "No email added")}${detailValue("Firebase UID", user.uid, "uid")}${detailValue("Presence", user.online ? "Online now" : "Offline")}${detailValue("Created", dateLabel(user.createdAt))}${detailValue("Last sign-in", dateLabel(user.lastSignInAt))}${detailValue("Last active", dateLabel(user.lastActiveAt))}${capabilities.canManageNetworkBans ? detailValue("Last seen IP", user.lastSeenIp || "Not recorded yet") : ""}${capabilities.canManageNetworkBans && user.lastSeenIp ? detailValue("IP last seen", dateLabel(user.lastSeenIpAt)) : ""}${detailValue("Email verified", user.deliverableEmail ? (user.emailVerified ? "Verified" : "Not verified") : "Not applicable · username-only")}</section>
+            <section class="nyx-owner-detail-grid">${detailValue("Email", user.deliverableEmail ? user.email : "No email added")}${detailValue("Firebase UID", user.uid, "uid")}${detailValue("Presence", user.online ? "Online now" : "Offline")}${detailValue("Last sign-in", dateLabel(user.lastSignInAt))}${detailValue("Last active", dateLabel(user.lastActiveAt))}${capabilities.canManageNetworkBans ? detailValue("Last seen IP", user.lastSeenIp || "Not recorded yet") : ""}${capabilities.canManageNetworkBans && user.lastSeenIp ? detailValue("IP last seen", dateLabel(user.lastSeenIpAt)) : ""}${detailValue("Email verified", user.deliverableEmail ? (user.emailVerified ? "Verified" : "Not verified") : "Not applicable · username-only")}</section>
             <section class="nyx-owner-detail-section nyx-owner-profile-management"><h3>Public profile</h3>${ownerProfilePreview(user)}${capabilities.canEditProfile ? `<details><summary>Edit this profile</summary>${ownerProfileEditor(user)}</details>` : ""}</section>
             ${accessSection}
             ${accountActionsSection}
@@ -967,7 +966,7 @@
     function exportCurrentPage() {
       const users = state.data?.users || [];
       if (!users.length) return notify("There are no users on this page to export.", "error");
-      const columns = ["uid", "accountType", "displayName", "username", "email", "role", "subscriptionStatus", "createdAt", "lastSignInAt", "lastActiveAt", "emailVerified", "disabled"];
+      const columns = ["uid", "accountType", "displayName", "username", "email", "role", "subscriptionStatus", "lastSignInAt", "lastActiveAt", "emailVerified", "disabled"];
       const quote = value => `"${String(value ?? "").replaceAll('"', '""')}"`;
       const csv = [columns.join(","), ...users.map(user => columns.map(column => quote(user[column])).join(","))].join("\r\n");
       const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));

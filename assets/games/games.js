@@ -720,6 +720,17 @@ function launchGameSource(index, reason = '') {
     ? `Trying another source… ${index + 1} of ${sources.length}`
     : `Loading game…${sources.length > 1 ? ` Source ${index + 1} of ${sources.length}` : ''}`;
   setPlayerLoading(message);
+  try {
+    let owner = window;
+    for (let depth = 0; depth < 4; depth += 1) {
+      if (typeof owner.nyxInstallGameAdProtection === 'function') {
+        owner.nyxInstallGameAdProtection(elements.frame);
+        break;
+      }
+      if (owner.parent === owner) break;
+      owner = owner.parent;
+    }
+  } catch {}
   elements.frame.src = source.url;
 
   let sameOrigin = false;

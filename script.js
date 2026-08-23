@@ -1758,6 +1758,15 @@
   const nyxCreditsOwnerImageStyle=`.nyx-credits-owner-image{width:min(394px,100%);margin:0}.nyx-credits-owner-image img{display:block;width:100%;height:auto;border-radius:0}`;
   const DEFAULT_BROWSER_MODE='scramjet';
   const DEFAULT_BROWSER_TRANSPORT='auto';
+  function normalizeBrowserTransportName(value=DEFAULT_BROWSER_TRANSPORT){
+    const name=String(value || DEFAULT_BROWSER_TRANSPORT).trim().toLowerCase();
+    if(name==='libcurl' || name==='libcurlraw') return 'libcurlRaw';
+    if(name==='epoxy' || name==='wisp' || name==='auto') return name;
+    return DEFAULT_BROWSER_TRANSPORT;
+  }
+  if(String(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT)).toLowerCase()==='libcurl'){
+    store.setText('nyx.transport','libcurlRaw');
+  }
   const nyxFontOptions=[
     ['outfit','Outfit','Outfit,Arial,sans-serif'],
     ['raleway','Raleway','Raleway,Arial,sans-serif'],
@@ -1800,8 +1809,8 @@
   function popupProtectionForUrl(url){
     return popupProtectionEnabled() || requiresContainedPopupNavigation(url);
   }
-  const browserAdResourceSignature=/(?:^|[./_-])(?:adservice|adserver|adnxs|adsrvr|adsterra|advertising|amazon-adsystem|criteo|doubleclick|exoclick|googlesyndication|googleadservices|mgid|onclickads|openx|outbrain|pagead|popads|propellerads|pubmatic|revcontent|rubiconproject|taboola|trafficjunky)(?:[./?&=_-]|$)/i;
-  const browserAdElementSelector='iframe[src*="doubleclick"],iframe[src*="googlesyndication"],iframe[src*="googleadservices"],iframe[src*="adservice"],iframe[src*="adnxs"],iframe[src*="taboola"],iframe[src*="outbrain"],script[src*="doubleclick"],script[src*="googlesyndication"],script[src*="googleadservices"],script[src*="adservice"],.adsbygoogle,[data-ad-client],[data-ad-slot],[id^="google_ads"],[id*="google_ads"],[class~="ad-container"],[class~="ad-banner"],[class~="advertisement"]';
+  const browserAdResourceSignature=/(?:^|[./_-])(?:adinplay|adpushup|adservice|adserver|adnxs|adsrvr|adsterra|advertising|amazon-adsystem|clickadu|criteo|doubleclick|exoclick|googleadservices|googlesyndication|hilltopads|intergi|mgid|monetag|onclickads|openx|outbrain|pagead|playwire|popads|popcash|propellerads|pubmatic|r9x|revcontent|rubiconproject|taboola|trafficjunky|venatus)(?:[./?&=_-]|$)/i;
+  const browserAdElementSelector='iframe[src*="adinplay"],iframe[src*="doubleclick"],iframe[src*="googlesyndication"],iframe[src*="googleadservices"],iframe[src*="adservice"],iframe[src*="adnxs"],iframe[src*="playwire"],iframe[src*="r9x.in"],iframe[src*="taboola"],iframe[src*="outbrain"],script[src*="adinplay"],script[src*="doubleclick"],script[src*="googlesyndication"],script[src*="googleadservices"],script[src*="adservice"],script[src*="playwire"],script[src*="r9x.in"],.adsbygoogle,[data-ad-client],[data-ad-slot],[id^="google_ads"],[id*="google_ads"],[id^="ad-container"],[class~="ad-container"],[class~="ad-banner"],[class~="ad-wrapper"],[class~="advertisement"]';
   const browserInjectedAdSignature=/(?:reminder\s*\(\s*\d+\s*\)[\s\S]{0,180}download\s+pending)|(?:download\s+pending[\s\S]{0,180}finish\s+it\s+now)|(?:finish\s+it\s+now[\s\S]{0,180}(?:close|continue))|(?:\[\s*\d+\s*\]\s*update\s*:\s*opera\s+browser[\s\S]{0,180}install)|(?:install\s+(?:opera\s+browser|browser\s+update|extension)[\s\S]{0,180}(?:install\s+for\s+free|continue|download))|(?:sponsored\s+(?:download|update)[\s\S]{0,120}(?:install|continue))/i;
   const knownNyxOverlaySelector='.nyx-prompt-shade,.nyx-modal-shade,.nyx-download-safety-shade,.nyx-tos-gate,.nyx-release-notes-overlay,.setup-screen,.setup-panel,.lock-screen,.nyx-browser-tab-sidebar,.browser-shell-settings-overlay,.nyx-dashboard-menu,.nyx-account-menu,.nyx-account-overlay,.nyx-user-profile-overlay,.nyx-profile-directory-overlay,.nyx-founder-editor-overlay,.nyx-owner-dashboard-overlay,.context-menu,[data-nyx-owned-overlay]';
   function isBrowserInjectedOverlay(node){
@@ -2556,6 +2565,41 @@
   }
   //scramjet-runtime-guard
   let scramjetRuntimeGuardSource = '';
+  const scramjetNvidiaAuthGuardSource=`(() => {
+    if (typeof window === "undefined" || window.__nyxNvidiaAuthCompatibility) return;
+    let hostname="";
+    let address="";
+    try { hostname=String(location.hostname || "").replace(/^www\./i, "").toLowerCase(); } catch {}
+    try { address=decodeURIComponent(String(location.href || "")).toLowerCase(); } catch { address=String(location.href || "").toLowerCase(); }
+    const supportedHost=/(^|\.)(geforcenow\.com|nvidia\.com|nvidiagrid\.net)$/;
+    if (!supportedHost.test(hostname) && !/(geforcenow\.com|nvidia\.com|nvidiagrid\.net)/.test(address)) return;
+    window.__nyxNvidiaAuthCompatibility=true;
+    const grantedStatus=()=>{
+      const status=new EventTarget();
+      Object.defineProperties(status,{
+        state:{enumerable:true,value:"granted"},
+        onchange:{configurable:true,writable:true,value:null}
+      });
+      return status;
+    };
+    const permissions=navigator.permissions;
+    const nativeQuery=permissions?.query?.bind(permissions);
+    if (permissions && nativeQuery) {
+      const query=descriptor=>String(descriptor?.name || "").toLowerCase()==="storage-access"
+        ? Promise.resolve(grantedStatus())
+        : nativeQuery(descriptor);
+      try { Object.defineProperty(permissions,"query",{configurable:true,value:query}); }
+      catch { try { permissions.query=query; } catch {} }
+    }
+    const storageHandle=()=>({
+      localStorage:window.localStorage,
+      sessionStorage:window.sessionStorage
+    });
+    try { Object.defineProperty(Document.prototype,"hasStorageAccess",{configurable:true,value:()=>Promise.resolve(true)}); } catch {}
+    try { Object.defineProperty(Document.prototype,"requestStorageAccess",{configurable:true,value:()=>Promise.resolve(storageHandle())}); } catch {}
+    try { Object.defineProperty(document,"hasStorageAccess",{configurable:true,value:()=>Promise.resolve(true)}); } catch {}
+    try { Object.defineProperty(document,"requestStorageAccess",{configurable:true,value:()=>Promise.resolve(storageHandle())}); } catch {}
+  })();`;
   const scramjetSpotifyChromeOsGuardSource=`(() => {
     if (typeof window === "undefined" || window.__nyxSpotifyChromeOsCompatibility) return;
     const nativeUserAgent = String(navigator.userAgent || "");
@@ -4332,7 +4376,7 @@
     const engine=esc(store.text('nyx.engine','duckduckgo'));
     const savedBrowserMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
     const browserMode=esc(savedBrowserMode==='rammerhead' ? 'auto' : savedBrowserMode);
-    const transport=esc(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT));
+    const transport=esc(normalizeBrowserTransportName(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT)));
     const theme=esc(store.text('nyx.theme','default'));
     const effect=esc(store.text('nyx.visualEffect','none'));
     const effectSpeed=esc(store.text('nyx.visualEffectSpeed','1.1'));
@@ -4354,8 +4398,8 @@
     store.setText('nyx.browserMode', normalizeBrowserModeName(mode?.value || DEFAULT_BROWSER_MODE));
     if(font) store.setText('nyx.font',nyxFontChoice(font.value)[0]);
     if(homeDesign) store.setText('nyx.homeDesign',homeDesign.value==='original' ? 'original' : 'redesigned');
-    const nextTransport=transport?.value || DEFAULT_BROWSER_TRANSPORT;
-    if(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT)!==nextTransport){
+    const nextTransport=normalizeBrowserTransportName(transport?.value);
+    if(normalizeBrowserTransportName(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT))!==nextTransport){
       scramjetInstallPromise=null;
       scramjetController=null;
       scramjetTransport=null;
@@ -4514,9 +4558,14 @@
     overlay.innerHTML=`<main class="browser-shell-settings-panel" aria-label="Settings">${browserShellSettingsMarkup(browserShellPresetTiles())}</main>`;
     document.body.appendChild(overlay);
     const transportSelect=overlay.querySelector('[data-browser-transport]');
+    const legacyLibcurlOption=transportSelect?.querySelector('option[value="libcurl"]');
+    if(legacyLibcurlOption){
+      legacyLibcurlOption.value='libcurlRaw';
+      legacyLibcurlOption.textContent='Libcurl Raw over Wisp';
+    }
     if(transportSelect && !transportSelect.querySelector('option[value="auto"]')){
       transportSelect.prepend(new Option('Auto (recommended)','auto'));
-      transportSelect.value=store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT);
+      transportSelect.value=normalizeBrowserTransportName(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT));
     }
     const effectBlock=overlay.querySelector('[data-effect-value]')?.closest('.settings-block');
     if(effectBlock){
@@ -6365,9 +6414,51 @@
     return ready ? (proxyModeUrl('ultraviolet',target) || target) : target;
   };
   const nyxManagedGameFrames=new WeakMap();
+  const nyxAdProtectedGameFrames=new WeakSet();
+  const nyxAdProtectedGameDocuments=new WeakSet();
+  function installGameFrameAdProtection(frame){
+    if(String(frame?.tagName || '').toLowerCase()!=='iframe') return false;
+    const protect=()=>{
+      let frameWindow=null;
+      let frameDocument=null;
+      try{
+        frameWindow=frame.contentWindow;
+        frameDocument=frame.contentDocument;
+        if(frameWindow && frameWindow!==window){
+          if(!frameWindow.__nyxBrowserAdBlock) frameWindow.eval(browserAdBlockRuntimeSource);
+          if(!frameWindow.__nyxScramjetMinimalGuards) frameWindow.eval(scramjetMinimalRuntimeGuardSource);
+        }
+      }catch{}
+      if(!frameDocument?.documentElement) return false;
+      const protectDescendants=root=>{
+        if(root?.matches?.('iframe')) installGameFrameAdProtection(root);
+        root?.querySelectorAll?.('iframe')?.forEach(installGameFrameAdProtection);
+      };
+      protectDescendants(frameDocument);
+      if(!nyxAdProtectedGameDocuments.has(frameDocument)){
+        nyxAdProtectedGameDocuments.add(frameDocument);
+        try{
+          new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(protectDescendants)))
+            .observe(frameDocument.documentElement,{childList:true,subtree:true});
+        }catch{}
+      }
+      return !!frameWindow?.__nyxBrowserAdBlock;
+    };
+    if(!nyxAdProtectedGameFrames.has(frame)){
+      nyxAdProtectedGameFrames.add(frame);
+      frame.addEventListener('load',()=>{
+        protect();
+        setTimeout(protect,80);
+        setTimeout(protect,500);
+      });
+    }
+    return protect();
+  }
+  window.nyxInstallGameAdProtection=frame=>installGameFrameAdProtection(frame);
   window.nyxLaunchGameFrame=async (frame,url)=>{
     const target=proxyTargetUrl(url);
     if(!target) return {managed:false,engine:'',url:''};
+    installGameFrameAdProtection(frame);
     const mode=selectedBrowserMode(target);
     if(mode==='scramjet' && String(frame?.tagName || '').toLowerCase()==='iframe'){
       const ready=await installScramjet();
@@ -6375,7 +6466,11 @@
         let managed=nyxManagedGameFrames.get(frame);
         if(!managed){
           frame.removeAttribute('src');
-          managed=scramjetController.createFrame(frame,{plugins:[createScramjetCompatibilityPlugin('','proxy-sri')]});
+          managed=scramjetController.createFrame(frame,{plugins:[
+            createScramjetCompatibilityPlugin('','proxy-sri'),
+            createScramjetCompatibilityPlugin(browserAdBlockRuntimeSource,'ad-block'),
+            createScramjetCompatibilityPlugin(scramjetMinimalRuntimeGuardSource,'minimal-guard')
+          ]});
           nyxManagedGameFrames.set(frame,managed);
         }
         managed.go(target);
@@ -6478,18 +6573,6 @@
   }
   function appCompatibilityMode(url){
     if(hostMatches(browserHost(url),['aether.cx','crazygames.com','tiktok.com'])) return 'ultraviolet';
-    return '';
-  }
-  function preferredTransport(url){
-    const host=browserHost(url);
-    if(hostMatches(host,[
-      'spotify.com','open.spotify.com',
-      'accounts.spotify.com','spotifycdn.com','scdn.co','accounts.scdn.co',
-      'google.com','gstatic.com','recaptcha.net',
-      'traxmojo.com',
-      'animex.one','tcgplayer.com'
-    ])) return 'epoxy';
-    if(hostMatches(host,['youtube.com','youtu.be','tcgplayer.com'])) return 'epoxy';
     return '';
   }
   function isYouTubeUrl(url){
@@ -6674,9 +6757,9 @@
       }
       throw lastError;
     };
-    const transport=browserTransportOverride || store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT);
+    const transport=normalizeBrowserTransportName(browserTransportOverride || store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT));
     try{
-      if(transport==='libcurl'){
+      if(transport==='libcurlRaw'){
         try{
           await setTransportWithRetry('/assets/transports/libcurl-baremux.mjs', [{ wisp, websocket: wisp }]);
           return connection;
@@ -6691,7 +6774,7 @@
       await setTransportWithRetry('/epoxy/index.mjs', [{ wisp, wisp_v2: true }]);
       return connection;
     }catch(firstError){
-      if(transport==='libcurl') throw firstError;
+      if(transport==='libcurlRaw') throw firstError;
       await setTransportWithRetry('/epoxy/index.mjs', [{ wisp, wisp_v2: false }]).catch(()=>{
         throw firstError;
       });
@@ -6699,12 +6782,12 @@
     }
   }
   async function createScramjetTransport(){
-    const transport=browserTransportOverride || store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT);
+    const transport=normalizeBrowserTransportName(browserTransportOverride || store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT));
     const key=`${transport}:${wispUrl()}`;
     if(scramjetTransport && scramjetTransportKey===key) return scramjetTransport;
     const wisp=wispUrl();
     const buildTransport=async name=>{
-      if(name==='libcurl'){
+      if(name==='libcurlRaw'){
         const { default: LibcurlClient } = await import('/assets/transports/libcurl-scramjet.mjs');
         return new LibcurlClient({ wisp, websocket: wisp });
       }
@@ -6892,6 +6975,15 @@
   }
   function shouldUseScramjetHelperGuard(url){
     return false;
+  }
+  function isNvidiaAuthFamilyUrl(url){
+    const raw=String(url || '');
+    const host=browserHost(browserShellSourceUrl(raw) || raw);
+    return !!host && hostMatches(host,[
+      'geforcenow.com',
+      'nvidia.com',
+      'nvidiagrid.net'
+    ]);
   }
   function shouldStripScramjetDuckDuckGoScripts(url){
     return false;
@@ -8637,8 +8729,8 @@
   async function preflightLibcurlReady(){
     if(location.protocol==='file:') return true;
     const checks=await Promise.allSettled([
+      preflightFetchOk('/libcurl/index.mjs',2600),
       preflightFetchOk('/assets/transports/libcurl-baremux.mjs',2600),
-      preflightFetchOk('/assets/transports/libcurl-scramjet.mjs',2600),
       preflightImportOk('/assets/transports/libcurl-scramjet.mjs',4200)
     ]);
     return checks.every(check=>check.status==='fulfilled' && check.value);
@@ -8898,12 +8990,6 @@
     },true);
     function directOnly(url){
       return false;
-    }
-    function prefersEpoxyTransport(url){
-      try{
-        const h=new URL(url).hostname.replace(/^www\./,'');
-        return ['spotify.com','open.spotify.com','animex.one','traxmojo.com','youtube.com','youtu.be','tcgplayer.com'].some(d=>h===d||h.endsWith('.'+d));
-      }catch{return false}
     }
     function showBrowserMessage(t,url){
       loadScramjetTab(t,url,false);
@@ -9581,6 +9667,9 @@
             const nativeFrameOpen=frameWindow.open?.bind(frameWindow);
             const nyxPopup=(popupUrl,target,features)=>{
               if(isDownloadUrl(popupUrl) && requestFrameDownload(popupUrl)) return frameWindow;
+              if(String(target || '').toLowerCase()==='_self'){
+                return nativeFrameOpen ? nativeFrameOpen(popupUrl,target,features) : null;
+              }
               if(!popupProtectionActive()) return nativeFrameOpen ? nativeFrameOpen(popupUrl,target,features) : null;
               if(followSameOriginPopup(popupUrl)) return frameWindow;
               return openPopupTab(popupUrl || 'about:blank');
@@ -10052,30 +10141,26 @@
       scramjetTransportKey='';
     }
     function setBrowserTransportOverride(next){
+      next=next ? normalizeBrowserTransportName(next) : '';
       if(browserTransportOverride===next) return;
       browserTransportOverride=next;
       resetProxyInstallers();
     }
     function applyPreferredTransportForUrl(url,browserMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE))){
-      const siteTransport=preferredTransport(url);
-      if(isYouTubeUrl(url) && siteTransport){
-        setBrowserTransportOverride(siteTransport);
-        return;
-      }
       if(!transportAutoEnabled()){
         setBrowserTransportOverride('');
         return;
       }
-      setBrowserTransportOverride(siteTransport || (prefersEpoxyTransport(url) ? 'epoxy' : 'libcurl'));
+      setBrowserTransportOverride('libcurlRaw');
     }
     function transportAutoEnabled(){
-      return store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT)==='auto';
+      return normalizeBrowserTransportName(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT))==='auto';
     }
     function proxyTransportName(){
-      return browserTransportOverride || store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT);
+      return normalizeBrowserTransportName(browserTransportOverride || store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT));
     }
     function transportRetryOrder(current){
-      const ordered=['epoxy','wisp','libcurl'];
+      const ordered=['epoxy','wisp','libcurlRaw'];
       const index=ordered.indexOf(current);
       if(index<0) return ordered;
       return [...ordered.slice(index+1),...ordered.slice(0,index)];
@@ -10445,7 +10530,7 @@
           replaceTabFrame(t);
         }
         const spotifyChromeOsCompatibility=/\bCrOS\b/i.test(String(navigator.userAgent || '')) && isSpotifyFamilyUrl(url);
-        const guardMode=spotifyChromeOsCompatibility ? 'spotify-chromeos' : (shouldUseScramjetRuntimeGuard(url) ? 'full' : (shouldUseScramjetMinimalGuard(url) ? 'minimal' : (shouldUseScramjetHelperGuard(url) ? 'helper' : 'none')));
+        const guardMode=isNvidiaAuthFamilyUrl(url) ? 'nvidia-auth' : (spotifyChromeOsCompatibility ? 'spotify-chromeos' : (shouldUseScramjetRuntimeGuard(url) ? 'full' : (shouldUseScramjetMinimalGuard(url) ? 'minimal' : (shouldUseScramjetHelperGuard(url) ? 'helper' : 'none'))));
         if(t.scramjetFrame && t.scramjetRuntimeGuarded!==guardMode){
           replaceTabFrame(t);
         }
@@ -10471,6 +10556,7 @@
             createScramjetCompatibilityPlugin(browserAdBlockRuntimeSource,'ad-block')
           ];
           if(guardMode==='full') plugins.push(createScramjetCompatibilityPlugin(scramjetRuntimeGuardSource,'runtime-guard'));
+          else if(guardMode==='nvidia-auth') plugins.push(createScramjetCompatibilityPlugin(scramjetNvidiaAuthGuardSource,'nvidia-auth'));
           else if(guardMode==='spotify-chromeos') plugins.push(createScramjetCompatibilityPlugin(scramjetSpotifyChromeOsGuardSource,'spotify-chromeos'));
           else if(guardMode==='minimal') plugins.push(createScramjetCompatibilityPlugin(scramjetMinimalRuntimeGuardSource,'minimal-guard'));
           else if(guardMode==='helper') plugins.push(createScramjetCompatibilityPlugin(scramjetHelperRuntimeGuardSource,'helper-guard'));
@@ -11062,9 +11148,9 @@
       if(e.data.type==='nyx:browser-settings'){
         store.setText('nyx.engine',e.data.engine || 'duckduckgo');
         store.setText('nyx.browserMode',normalizeBrowserModeName(e.data.browserMode || DEFAULT_BROWSER_MODE));
-        const nextTransport=e.data.transport || DEFAULT_BROWSER_TRANSPORT;
+        const nextTransport=normalizeBrowserTransportName(e.data.transport);
         browserTransportOverride='';
-        if(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT)!==nextTransport){
+        if(normalizeBrowserTransportName(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT))!==nextTransport){
           scramjetInstallPromise=null;
           scramjetController=null;
           scramjetTransport=null;
@@ -12649,7 +12735,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
             <option value="auto">Auto (recommended)</option>
             <option value="epoxy">Epoxy over Wisp</option>
             <option value="wisp">Wisp endpoint</option>
-            <option value="libcurl">Libcurl over Wisp</option>
+            <option value="libcurlRaw">Libcurl Raw over Wisp</option>
           </select>
           <button data-save-browser>Save Browser Settings</button>
         </section>
@@ -12695,7 +12781,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
       modeSel.value=mode==='rammerhead' ? 'auto' : mode;
     }
     const transportSel=win.querySelector('#settingTransport');
-    if(transportSel) transportSel.value=store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT);
+    if(transportSel) transportSel.value=normalizeBrowserTransportName(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT));
     applyVisualEffectSetting();
     syncSwitches(win);
     syncFounderOwnerControls();
@@ -14490,9 +14576,9 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
         const transport=win?.querySelector('#settingTransport');
         store.setText('nyx.engine', input?.value || 'duckduckgo');
         store.setText('nyx.browserMode', normalizeBrowserModeName(mode?.value || DEFAULT_BROWSER_MODE));
-        const nextTransport=transport?.value || DEFAULT_BROWSER_TRANSPORT;
+        const nextTransport=normalizeBrowserTransportName(transport?.value);
         browserTransportOverride='';
-        if(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT)!==nextTransport){
+        if(normalizeBrowserTransportName(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT))!==nextTransport){
           scramjetInstallPromise=null;
           scramjetController=null;
           scramjetTransport=null;

@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <title>Nyx Chat</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/icons/chat.svg">
-  <link rel="stylesheet" href="./styles.css?v=20260820-chat-smoothness-v30">
+  <link rel="stylesheet" href="./styles.css?v=20260823-custom-commands-v31">
   <link rel="stylesheet" href="./polish.css?v=20260818-home-visual-system-v1">
 </head>
 <body>
@@ -186,6 +186,18 @@
   <dialog class="command-dialog" data-command-dialog>
     <header><div><h2>Nyx Chat commands</h2><p>Commands available in this chat. Staff actions are always checked by the server.</p></div><button class="icon-button" type="button" data-command-close aria-label="Close"><svg><use href="#icon-close"/></svg></button></header>
     <label class="command-prefix-control">Command prefix<input data-command-prefix maxlength="2" inputmode="text" autocomplete="off" aria-label="Command prefix"><small>Use one or two symbols, such as <code>!</code> or <code>?</code>. Saved on this device.</small></label>
+    <section class="custom-command-manager" data-custom-command-manager hidden>
+      <header><div><h3>Custom commands</h3><p>Create shared response commands for everyone. Templates: <code>{user}</code>, <code>{handle}</code>, <code>{channel}</code>, <code>{args}</code>, and <code>{1}</code>.</p></div></header>
+      <div class="custom-command-list" data-custom-command-list></div>
+      <form class="custom-command-form" data-custom-command-form>
+        <input type="hidden" data-custom-command-previous>
+        <label>Name<input data-custom-command-name maxlength="32" pattern="[a-z][a-z0-9-]{0,31}" placeholder="rules" autocomplete="off" required></label>
+        <label>Aliases <input data-custom-command-aliases maxlength="180" placeholder="rule, info" autocomplete="off"><small>Optional, separated by commas.</small></label>
+        <label>Description<input data-custom-command-description maxlength="120" placeholder="Show the server rules" autocomplete="off"></label>
+        <label>Response<textarea data-custom-command-response maxlength="1000" rows="3" placeholder="Hi {user}, read the rules here…" required></textarea></label>
+        <div><button class="btn-subtle" type="button" data-custom-command-cancel hidden>Cancel edit</button><button class="primary-button" type="submit" data-custom-command-save>Save command</button></div>
+      </form>
+    </section>
     <div class="command-list" data-command-list></div>
   </dialog>
   <dialog class="flagged-search-dialog" data-flagged-search-dialog>
@@ -193,6 +205,6 @@
     <div class="flagged-search-list" data-flagged-search-list></div>
   </dialog>
   <script src="./emoji-catalog.js?v=20260821-unicode-emoji-catalog-v36"></script>
-  <script src="./app.js?v=20260821-temporary-bans-v38"></script>
+  <script src="./app.js?v=20260823-purge-v40"></script>
 </body>
 </html>

@@ -338,7 +338,7 @@
     try{return await request}
     finally{if(nyxFirebaseTokenPromise===request)nyxFirebaseTokenPromise=null}
   }
-  const NYX_CLOUD_PREFERENCE_KEYS=Object.freeze(['nyx.theme','nyx.customThemeColor','nyx.font','nyx.engine','nyx.browserMode','nyx.transport','nyx.visualEffect','nyx.visualEffectSpeed','nyx.visualEffectAmount','nyx.threeDBackgrounds','nyx.performanceTier','nyx.gamePerformanceMode','nyx.homeDesign','nyx.homeShortcuts']);
+  const NYX_CLOUD_PREFERENCE_KEYS=Object.freeze(['nyx.theme','nyx.customThemeColor','nyx.font','nyx.engine','nyx.browserMode','nyx.transport','nyx.visualEffect','nyx.visualEffectSpeed','nyx.visualEffectAmount','nyx.threeDBackgrounds','nyx.performanceTier','nyx.gamePerformanceMode','nyx.homeDesign','nyx.tabDesign','nyx.homeShortcuts']);
   let nyxCloudPreferencesTimer=0;
   let nyxCloudPreferencesInterval=0;
   let nyxCloudPreferencesFingerprint='';
@@ -3231,6 +3231,14 @@
       fullscreenButton.setAttribute('title','Fullscreen');
       fullscreenButton.setAttribute('aria-label','Fullscreen');
       fullscreenButton.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H4a1 1 0 0 0-1 1v4M16 3h4a1 1 0 0 1 1 1v4M8 21H4a1 1 0 0 1-1-1v-4M16 21h4a1 1 0 0 0 1-1v-4"></path></svg>';
+      const bookmarkButton=document.createElement('button');
+      bookmarkButton.type='button';
+      bookmarkButton.className='browser-nav-control browser-mode-bookmark';
+      bookmarkButton.dataset.browserShellBookmark='';
+      bookmarkButton.setAttribute('title','Bookmark this page');
+      bookmarkButton.setAttribute('aria-label','Bookmark this page');
+      bookmarkButton.setAttribute('aria-pressed','false');
+      bookmarkButton.textContent='☆';
       if(shellAddress){
         const tabsButton=shellAddress.querySelector('[data-browser-shell-tabs-toggle]');
         const backButton=shellAddress.querySelector('[data-browser-shell-back]');
@@ -3238,7 +3246,7 @@
         const reloadButton=shellAddress.querySelector('[data-browser-shell-reload]');
         const homeButton=shellAddress.querySelector('[data-browser-shell-home-nav]');
         const urlField=shellAddress.querySelector('[data-browser-shell-url]');
-        shellAddress.replaceChildren(tabsButton,backButton,forwardButton,reloadButton,homeButton,urlField,menuButton,settingsButton,fullscreenButton);
+        shellAddress.replaceChildren(tabsButton,backButton,forwardButton,reloadButton,homeButton,urlField,menuButton,bookmarkButton,settingsButton,fullscreenButton);
       }
       const homeTabsToggle=document.createElement('button');
       homeTabsToggle.type='button';
@@ -3999,7 +4007,7 @@
     let draggedId='';
     row.addEventListener('dragstart',event=>{
       const tab=event.target.closest?.('[data-browser-shell-tab]');
-      if(!tab || event.target.closest?.('[data-browser-shell-close-tab]')){event.preventDefault();return}
+      if(!tab || event.target.closest?.('button')){event.preventDefault();return}
       draggedId=tab.dataset.browserShellTab || '';
       if(!draggedId){event.preventDefault();return}
       tab.classList.add('tab-dragging');
@@ -4056,6 +4064,24 @@
     document.body.appendChild(sidebar);
     return sidebar;
   }
+  function normalizeBrowserTabDesign(value){
+    return String(value || '').trim().toLowerCase()==='list' ? 'list' : 'bar';
+  }
+  function applyBrowserTabDesignSetting(){
+    const design=normalizeBrowserTabDesign(store.text('nyx.tabDesign','bar'));
+    if(store.text('nyx.tabDesign','bar')!==design) store.setText('nyx.tabDesign',design);
+    document.documentElement.dataset.nyxTabDesign=design;
+    document.body.dataset.nyxTabDesign=design;
+    document.body.classList.toggle('nyx-tab-design-list',design==='list');
+    if(design==='list') document.body.classList.remove('nyx-tab-sidebar-open');
+    qsa('[data-tab-design-value]').forEach(select=>{select.value=design});
+    document.querySelectorAll('[data-browser-shell-tabs-toggle]').forEach(button=>{
+      button.setAttribute('aria-hidden',String(design==='list'));
+      button.tabIndex=design==='list' ? -1 : 0;
+      button.setAttribute('aria-expanded',String(design==='bar' && document.body.classList.contains('nyx-tab-sidebar-open')));
+    });
+    renderBrowserShellTabs();
+  }
   function browserShellTabDomain(tab){
     const url=browserShellSourceUrl(tab?.url || '');
     if(!url) return 'nyxlearning.org';
@@ -4101,6 +4127,7 @@
       home.classList.toggle('active',active.title==='Home' && !active.url);
     }
     list.replaceChildren();
+    const tabListDesign=normalizeBrowserTabDesign(store.text('nyx.tabDesign','bar'))==='list';
     browserShellTabs.forEach(tab=>{
       const item=document.createElement('div');
       const opening=browserShellOpeningTabs.has(tab.id);
@@ -4113,10 +4140,23 @@
       item.innerHTML=`<img class="nyx-browser-tab-icon" alt="" src="${esc(browserChromeIcon(tab.icon,tab.url))}"><span><strong>${esc(browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url))}</strong><small>${esc(browserShellTabDomain(tab))}</small></span>${close}`;
       bindTabIconFallback(item.querySelector('.nyx-browser-tab-icon'));
       item.addEventListener('keydown',event=>{
+        if(event.target.closest?.('button')) return;
         if(event.key==='Enter' || event.key===' '){event.preventDefault();setBrowserShellActive(tab.id)}
         if((event.key==='Delete' || event.key==='Backspace') && browserShellTabs.length>1){event.preventDefault();closeBrowserShellTab(tab.id)}
       });
-      list.appendChild(item);
+      if(tabListDesign){
+        const slot=document.createElement('div');
+        slot.className='nyx-browser-tab-slot';
+        const add=document.createElement('button');
+        add.className='nyx-browser-tab-add';
+        add.type='button';
+        add.dataset.browserShellNewTabAfter=tab.id;
+        add.setAttribute('aria-label',`Open a new tab after ${browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url)}`);
+        add.title='New tab';
+        add.textContent='+';
+        slot.append(item,add);
+        list.appendChild(slot);
+      }else list.appendChild(item);
       if(opening){
         let openingFinished=false;
         const finishOpening=()=>{
@@ -4217,6 +4257,27 @@
       if(options.focusAddress!==false) setTimeout(()=>document.querySelector('[data-browser-shell-url]')?.focus(),30);
     }
     updateDockFullscreenState();
+    return id;
+  }
+  function openBrowserShellTabAfter(afterId){
+    const id=openBrowserShellTab('',{focusAddress:false});
+    const created=browserShellTabs.find(tab=>tab.id===id);
+    const after=browserShellTabs.find(tab=>tab.id===afterId);
+    if(!created || !after) return id;
+    browserShellTabs.splice(browserShellTabs.indexOf(created),1);
+    browserShellTabs.splice(browserShellTabs.indexOf(after)+1,0,created);
+    if(activeBrowser?.tabs?.length){
+      const rank=new Map(browserShellTabs.map((tab,index)=>[tab.browserTabId,index]).filter(([tabId])=>tabId));
+      const originalOrder=new Map(activeBrowser.tabs.map((tab,index)=>[tab.id,index]));
+      activeBrowser.tabs.sort((left,right)=>{
+        const leftRank=rank.has(left.id)?rank.get(left.id):Number.MAX_SAFE_INTEGER;
+        const rightRank=rank.has(right.id)?rank.get(right.id):Number.MAX_SAFE_INTEGER;
+        return leftRank-rightRank || originalOrder.get(left.id)-originalOrder.get(right.id);
+      });
+      activeBrowser.renderTabs?.();
+    }
+    renderBrowserShellTabs();
+    setTimeout(()=>document.querySelector('[data-browser-shell-url]')?.focus(),30);
     return id;
   }
   function openBrowserShellInternalTab(name){
@@ -4394,10 +4455,12 @@
     const transport=root.querySelector('[data-browser-transport]');
     const font=root.querySelector('[data-font-value]');
     const homeDesign=root.querySelector('[data-home-design-value]');
+    const tabDesign=root.querySelector('[data-tab-design-value]');
     store.setText('nyx.engine', engine?.value || 'duckduckgo');
     store.setText('nyx.browserMode', normalizeBrowserModeName(mode?.value || DEFAULT_BROWSER_MODE));
     if(font) store.setText('nyx.font',nyxFontChoice(font.value)[0]);
     if(homeDesign) store.setText('nyx.homeDesign',homeDesign.value==='original' ? 'original' : 'redesigned');
+    if(tabDesign) store.setText('nyx.tabDesign',normalizeBrowserTabDesign(tabDesign.value));
     const nextTransport=normalizeBrowserTransportName(transport?.value);
     if(normalizeBrowserTransportName(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT))!==nextTransport){
       scramjetInstallPromise=null;
@@ -4434,7 +4497,7 @@
       advanced:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"/></svg>'
     };
     const definitions=[
-      ['appearance','Appearance',settingsIcons.customize,'Customize Nyx’s look and visual experience.',['theme','custom theme','font','effects','3d backgrounds','performance']],
+      ['appearance','Appearance',settingsIcons.customize,'Customize Nyx’s look and visual experience.',['theme','custom theme','font','effects','3d backgrounds','performance','tab design']],
       ['search','Search & Cloak',settingsIcons.privacy,'Control search behavior and tab cloaking.',['tab cloak','preset cloak','cloaking']],
       ['privacy','Privacy',settingsIcons.account,'Keep your browsing surface private and protected.',['private tabs','popup protection']],
       ['proxy','Proxy',settingsIcons.browsing,'Choose how Nyx reaches the web.',['search engine','proxy engine','transport']],
@@ -4574,6 +4637,10 @@
       homeDesignBlock.hidden=true;
       const homeDesign=store.text('nyx.homeDesign','redesigned')==='original' ? 'original' : 'redesigned';
       homeDesignBlock.innerHTML=`<h2>Home Design</h2><p>Use the current streamlined home, or switch back to the original Nyx layout.</p><select class="settings-select" data-home-design-value><option value="redesigned" ${homeDesign==='redesigned'?'selected':''}>Redesigned</option><option value="original" ${homeDesign==='original'?'selected':''}>Original</option></select>`;
+      const tabDesignBlock=document.createElement('section');
+      tabDesignBlock.className='settings-block nyx-tab-design-setting';
+      const tabDesign=normalizeBrowserTabDesign(store.text('nyx.tabDesign','bar'));
+      tabDesignBlock.innerHTML=`<h2>Tab Design</h2><p>Tab bar keeps the compact tabs button and drawer. Tab list keeps every open tab visible in a horizontal strip.</p><select class="settings-select" data-tab-design-value><option value="bar" ${tabDesign==='bar'?'selected':''}>Tab bar</option><option value="list" ${tabDesign==='list'?'selected':''}>Tab list</option></select>`;
       const privacyBlock=document.createElement('section');
       privacyBlock.className='settings-block';
       const hideDetails=websiteDetailsHidden();
@@ -4621,6 +4688,7 @@
       resetBlock.innerHTML=`<h2>Clear Cache</h2><p>Removes cookies, cache files, saved settings, proxy storage, and service workers, then reloads nyx like a fresh install.</p><div class="settings-actions"><button class="settings-action danger-action" data-clear-nyx-cache type="button">Clear Cache and Reset</button></div>`;
       effectBlock.before(privacyBlock);
       effectBlock.before(homeDesignBlock);
+      effectBlock.before(tabDesignBlock);
       effectBlock.before(lagBlock);
       effectBlock.before(liteBlock);
       effectBlock.before(backgroundsBlock);
@@ -5745,6 +5813,7 @@
     applyLagReducerSetting();
     applyBrowserShellMode();
     applyHomeDesignSetting();
+    applyBrowserTabDesignSetting();
     applyThemeSetting();
     syncPerformanceLite();
     syncThemeVantaBackgrounds();
@@ -14348,8 +14417,17 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
       const shellTabsToggle=e.target.closest('[data-browser-shell-tabs-toggle]');
       if(shellTabsToggle){
         e.preventDefault();
+        if(normalizeBrowserTabDesign(store.text('nyx.tabDesign','bar'))==='list') return;
         document.body.classList.toggle('nyx-tab-sidebar-open');
         document.querySelectorAll('[data-browser-shell-tabs-toggle]').forEach(button=>button.setAttribute('aria-expanded',String(document.body.classList.contains('nyx-tab-sidebar-open'))));
+        return;
+      }
+      const shellNewAfter=e.target.closest('[data-browser-shell-new-tab-after]');
+      if(shellNewAfter){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        document.body.classList.remove('menu-open');
+        openBrowserShellTabAfter(shellNewAfter.dataset.browserShellNewTabAfter);
         return;
       }
       const shellNew=e.target.closest('[data-browser-shell-new-tab]');
@@ -14812,6 +14890,14 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
         applyHomeDesignSetting();
         toast(homeDesign==='original' ? 'Original home restored' : 'Redesigned home enabled');
         setTimeout(()=>location.reload(),240);
+        return;
+      }
+      if(browserSettingsRoot && e.target.closest?.('[data-tab-design-value]')){
+        const design=normalizeBrowserTabDesign(e.target.value);
+        store.setText('nyx.tabDesign',design);
+        applyBrowserTabDesignSetting();
+        queueNyxCloudPreferencesSave();
+        toast(design==='list' ? 'Horizontal tab list enabled' : 'Tab bar enabled');
         return;
       }
       if(browserSettingsRoot && e.target.closest?.('[data-theme-value]')){

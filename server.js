@@ -116,6 +116,10 @@ const nyxChatVoiceChannels = Object.freeze([
   Object.freeze({ id: "study-voice", name: "Study Room", description: "A quieter room for studying together." })
 ]);
 const nyxChatChannelIdPattern = /^[a-z0-9][a-z0-9-]{1,47}$/;
+const nyxChatCustomCommandNamePattern = /^[a-z][a-z0-9-]{0,31}$/;
+const nyxChatReservedCommandNames = new Set([
+  "afk", "avatar", "back", "ban", "basedecode", "baseencode", "binary", "bold", "brb", "calc", "channelinfo", "channels", "choose", "clap", "code", "coinflip", "color", "copyid", "date", "deafen", "demote", "disconnect", "dm", "dms", "duration", "formatcodes", "giftcaffeine", "giftcaffiene", "help", "hex", "ipban", "italic", "join", "length", "lock", "lower", "magicball", "me", "membercount", "micmute", "micunmute", "mock", "moderations", "mute", "onlinecount", "ping", "poll", "purge", "quote", "rainbow", "random", "remind", "reverse", "roleadd", "roleremove", "roles", "roll", "rot", "rps", "say", "serverinfo", "shrug", "space", "status", "strike", "tableflip", "tempban", "tempbans", "time", "timeout", "timer", "timestamp", "timezone", "title", "topic", "unban", "undeafen", "underline", "unflip", "unix", "unlock", "unmute", "untempban", "upper", "userinfo", "voicechannels", "warn", "welcome", "who", "words"
+]);
 const nyxChatConfigurationCollection = "nyxChatConfiguration";
 const nyxChatConfigurationDocument = "channels";
 const nyxChatConfigurationTtlMs = 10 * 60_000;
@@ -4009,6 +4013,37 @@ function normalizeNyxChatChannelList(value, defaults, limit) {
   }).slice(0, limit);
 }
 
+function nyxChatCustomCommand(value) {
+  const source = value && typeof value === "object" ? value : {};
+  const name = String(source.name || source.id || "").trim().toLowerCase();
+  if (!nyxChatCustomCommandNamePattern.test(name) || nyxChatReservedCommandNames.has(name)) return null;
+  const response = String(source.response || "")
+    .replace(/\r\n?/g, "\n")
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "")
+    .trim()
+    .slice(0, 1000);
+  if (!response) return null;
+  const rawAliases = Array.isArray(source.aliases) ? source.aliases : String(source.aliases || "").split(",");
+  const aliases = [...new Set(rawAliases.map(alias => String(alias || "").trim().toLowerCase()).filter(alias => nyxChatCustomCommandNamePattern.test(alias) && alias !== name && !nyxChatReservedCommandNames.has(alias)))].slice(0, 8);
+  return {
+    id: name,
+    name,
+    aliases,
+    response,
+    description: founderProfileText(source.description, "Custom Nyx Chat response.", 120)
+  };
+}
+
+function normalizeNyxChatCustomCommands(value) {
+  const commands = Array.isArray(value) ? value : [];
+  const seen = new Set();
+  return commands.map(nyxChatCustomCommand).filter(command => {
+    if (!command || seen.has(command.name)) return false;
+    seen.add(command.name);
+    return true;
+  }).slice(0, 50);
+}
+
 async function loadNyxChatConfiguration(firebase, force = false) {
   const now = Date.now();
   if (!force && nyxChatConfigurationCache.value && nyxChatConfigurationCache.expiresAt > now) return nyxChatConfigurationCache.value;
@@ -4019,6 +4054,7 @@ async function loadNyxChatConfiguration(firebase, force = false) {
     const data = snapshot.data() || {};
     const textChannels = normalizeNyxChatChannelList(data.textChannels, nyxChatChannels, 24);
     const voiceChannels = normalizeNyxChatChannelList(data.voiceChannels, nyxChatVoiceChannels, 12);
+    const customCommands = normalizeNyxChatCustomCommands(data.customCommands);
     if (data.restrictedChannelsInitialized !== true) {
       const staffChannel = nyxChatChannelDefinition(nyxChatChannels.find(channel => channel.id === "staff-room"));
       if (staffChannel && !textChannels.some(channel => channel.id === staffChannel.id)) textChannels.push(staffChannel);
@@ -4026,7 +4062,8 @@ async function loadNyxChatConfiguration(firebase, force = false) {
     }
     const value = {
       textChannels: textChannels.length ? textChannels : [...nyxChatChannels],
-      voiceChannels: voiceChannels.length ? voiceChannels : [...nyxChatVoiceChannels]
+      voiceChannels: voiceChannels.length ? voiceChannels : [...nyxChatVoiceChannels],
+      customCommands
     };
     nyxChatConfigurationCache = { expiresAt: Date.now() + nyxChatConfigurationTtlMs, value, promise: null };
     return value;
@@ -4492,7 +4529,8 @@ function recordNyxChatRealtimeEvent(event = {}) {
     participants: [...new Set((Array.isArray(event.participants) ? event.participants : []).map(value => String(value || "")).filter(Boolean))].slice(0, 4),
     createdAtMs: Math.max(0, Number(event.createdAtMs || Date.now())),
     lastMessageText: founderProfileText(event.lastMessageText, "", nyxChatMessageLimit),
-    lastMessageAuthorUid: String(event.lastMessageAuthorUid || "")
+    lastMessageAuthorUid: String(event.lastMessageAuthorUid || ""),
+    messageIds: [...new Set((Array.isArray(event.messageIds) ? event.messageIds : []).map(value => String(value || "")).filter(value => /^[a-f0-9]{40}$/.test(value)))].slice(0, 100)
   });
   if (nyxChatRealtimeEvents.length > nyxChatRealtimeEventLimit) {
     const removed = nyxChatRealtimeEvents.splice(0, nyxChatRealtimeEvents.length - nyxChatRealtimeEventLimit);
@@ -4556,6 +4594,8 @@ function nyxChatSocketEventForViewer(event = {}, socket) {
     payload.lastMessageAuthorUid = String(event.lastMessageAuthorUid || payload.message?.author?.uid || "");
   } else if (event.kind === "delete") {
     payload.messageId = String(event.messageId || "");
+  } else if (event.kind === "purge") {
+    payload.messageIds = Array.isArray(event.messageIds) ? event.messageIds : [];
   } else if (event.kind === "reaction") {
     payload.messageId = String(event.messageId || "");
     payload.reactions = nyxChatReactionPayload(event.reactions, uid);
@@ -7901,6 +7941,7 @@ app.get("/api/chat/bootstrap", async (req, res) => {
       voice: nyxChatVoiceState(token.uid, "", false, visibleVoiceChannels),
       caffeine,
       customRoles: nyxVisibleCustomRoles(customRoles, token.uid, founderProfileConfig().administratorUid, me.customRole),
+      customCommands: configuration.customCommands,
       revision: nyxChatRealtimeRevision,
       me,
       members: members.slice(0, 100),
@@ -8233,7 +8274,7 @@ app.post("/api/chat/channels", async (req, res) => {
         channels[index] = { ...channels[index], name, description: description || channels[index].description, minimumRole };
       }
     }
-    const next = { textChannels, voiceChannels };
+    const next = { ...configuration, textChannels, voiceChannels };
     const now = Date.now();
     await firebase.firestore.collection(nyxChatConfigurationCollection).doc(nyxChatConfigurationDocument).set({
       ...next,
@@ -8267,6 +8308,85 @@ app.post("/api/chat/channels", async (req, res) => {
     });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "Chat channels could not be updated." });
+  }
+});
+
+app.post("/api/chat/custom-commands", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  try {
+    const { firebase, token } = await authenticatedNyxChatUser(req);
+    const identity = await nyxChatIdentity(firebase, token);
+    if (identity.role !== "owner") {
+      res.status(403).json({ error: "Only the Nyx Owner can manage custom commands." });
+      return;
+    }
+    const action = String(req.body?.action || "save").trim().toLowerCase();
+    if (!new Set(["save", "delete"]).has(action)) {
+      res.status(400).json({ error: "Choose save or delete." });
+      return;
+    }
+    const configuration = await loadNyxChatConfiguration(firebase, true);
+    const customCommands = configuration.customCommands.map(command => ({ ...command, aliases: [...command.aliases] }));
+    const previousName = String(req.body?.previousName || req.body?.name || "").trim().toLowerCase();
+    if (!nyxChatCustomCommandNamePattern.test(previousName)) {
+      res.status(400).json({ error: "Command names must start with a letter and use only lowercase letters, numbers, or hyphens." });
+      return;
+    }
+    let changedName = previousName;
+    if (action === "delete") {
+      const index = customCommands.findIndex(command => command.name === previousName);
+      if (index < 0) {
+        res.status(404).json({ error: "That custom command was not found." });
+        return;
+      }
+      customCommands.splice(index, 1);
+    } else {
+      const command = nyxChatCustomCommand(req.body);
+      if (!command) {
+        res.status(400).json({ error: "Enter a non-reserved command name and a response of 1,000 characters or fewer." });
+        return;
+      }
+      changedName = command.name;
+      const usedNames = new Set(customCommands.filter(item => item.name !== previousName).flatMap(item => [item.name, ...item.aliases]));
+      if (usedNames.has(command.name) || command.aliases.some(alias => usedNames.has(alias))) {
+        res.status(409).json({ error: "Another custom command already uses that name or alias." });
+        return;
+      }
+      const previousIndex = customCommands.findIndex(item => item.name === previousName);
+      if (previousIndex >= 0) customCommands.splice(previousIndex, 1, command);
+      else {
+        if (customCommands.length >= 50) {
+          res.status(409).json({ error: "Nyx Chat supports up to 50 custom commands." });
+          return;
+        }
+        customCommands.push(command);
+      }
+    }
+    customCommands.sort((left, right) => left.name.localeCompare(right.name));
+    const next = { ...configuration, customCommands };
+    const now = Date.now();
+    await firebase.firestore.collection(nyxChatConfigurationCollection).doc(nyxChatConfigurationDocument).set({
+      customCommands,
+      updatedAt: new Date(now).toISOString(),
+      updatedAtMs: now,
+      updatedBy: token.uid
+    }, { merge: true });
+    nyxChatConfigurationCache = { expiresAt: now + nyxChatConfigurationTtlMs, value: next, promise: null };
+    await recordNyxAuditSafe(firebase, {
+      actorUid: token.uid,
+      actorEmail: token.email || "",
+      action: `chat_custom_command_${action === "delete" ? "deleted" : "saved"}`,
+      details: { commandName: changedName, previousName: previousName === changedName ? "" : previousName }
+    });
+    const revision = recordNyxChatRealtimeEvent({ kind: "configuration" });
+    emitNyxChatSocketEvent({ kind: "configuration", revision });
+    res.json({ ok: true, customCommands });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Custom commands could not be updated." });
   }
 });
 
@@ -8968,6 +9088,90 @@ app.post("/api/chat/messages", async (req, res) => {
   }
 });
 
+async function deleteNyxChatMessageDocuments(firebase, documents = []) {
+  const messages = [...new Map(documents.filter(document => document?.exists).map(document => [String(document.id || ""), document])).values()];
+  const attachmentIds = [...new Set(messages.flatMap(document => (Array.isArray(document.data()?.attachments) ? document.data().attachments : []).map(value => String(value?.id || "")).filter(id => nyxChatAttachmentIdPattern.test(id))))];
+  const attachmentRefs = attachmentIds.map(id => firebase.firestore.collection("nyxChatAttachments").doc(id));
+  const [attachmentSnapshots, chunkSnapshots] = await Promise.all([
+    Promise.all(attachmentRefs.map(ref => ref.get())),
+    Promise.all(attachmentRefs.map(ref => ref.collection("chunks").get()))
+  ]);
+  const diskPaths = attachmentSnapshots.map((snapshot, index) => snapshot.data()?.storage === "disk" ? nyxChatAttachmentDiskPath(attachmentIds[index]) : "").filter(Boolean);
+  const deleteRefs = [...messages.map(document => document.ref), ...attachmentRefs, ...chunkSnapshots.flatMap(snapshot => snapshot.docs.map(document => document.ref))];
+  for (let offset = 0; offset < deleteRefs.length; offset += 400) {
+    const batch = firebase.firestore.batch();
+    deleteRefs.slice(offset, offset + 400).forEach(ref => batch.delete(ref));
+    await batch.commit();
+  }
+  await Promise.allSettled(diskPaths.map(path => unlink(path)));
+  return messages.map(document => String(document.id || "")).filter(id => /^[a-f0-9]{40}$/.test(id));
+}
+
+app.post("/api/chat/messages/purge", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not allowed." });
+    return;
+  }
+  try {
+    const { firebase, token } = await authenticatedNyxChatUser(req);
+    const identity = await nyxChatIdentity(firebase, token);
+    if (!identity.canModerate) {
+      res.status(403).json({ error: "Only moderators and staff can purge channel messages." });
+      return;
+    }
+    const count = Number(req.body?.count ?? 10);
+    if (!Number.isInteger(count) || count < 1 || count > 100) {
+      res.status(400).json({ error: "Choose between 1 and 100 messages." });
+      return;
+    }
+    const scope = await nyxChatScope(firebase, token.uid, { channel: req.body?.channel }, identity.role);
+    if (scope.private) {
+      res.status(400).json({ error: "Message purging is only available in text channels." });
+      return;
+    }
+    const snapshot = await scope.messages.orderBy("createdAtMs", "desc").limit(count).get();
+    const deletedIds = await deleteNyxChatMessageDocuments(firebase, snapshot.docs);
+    const latestSnapshot = await scope.messages.orderBy("createdAtMs", "desc").limit(1).get();
+    const latest = latestSnapshot.docs[0]?.data() || {};
+    const latestAttachments = Array.isArray(latest.attachments) ? latest.attachments : [];
+    const lastMessageAtMs = Math.max(0, Number(latest.createdAtMs || 0));
+    const lastMessageText = nyxChatText(latest.text).slice(0, nyxChatMessageLimit) || (latestAttachments.length ? `Attached ${latestAttachments.length === 1 ? latestAttachments[0]?.name || "a file" : `${latestAttachments.length} files`}` : "");
+    await scope.ref.set({
+      updatedAt: new Date().toISOString(),
+      updatedAtMs: Date.now(),
+      lastMessageAtMs,
+      lastMessageText,
+      lastMessageAuthorUid: String(latest.authorUid || latest.author?.uid || "")
+    }, { merge: true });
+    const activity = new Map(nyxChatChannelActivityCache.value);
+    activity.set(scope.id, lastMessageAtMs);
+    nyxChatChannelActivityCache = { ...nyxChatChannelActivityCache, value: activity };
+    await recordNyxAuditSafe(firebase, {
+      actorUid: token.uid,
+      actorEmail: token.email || "",
+      action: "chat_messages_purged",
+      details: { channelId: scope.id, requestedCount: count, deletedCount: deletedIds.length }
+    });
+    const revision = recordNyxChatRealtimeEvent({
+      kind: "purge",
+      scopeType: "channel",
+      scopeId: scope.id,
+      messageIds: deletedIds
+    });
+    emitNyxChatSocketEvent({
+      kind: "purge",
+      scopeType: "channel",
+      scopeId: scope.id,
+      messageIds: deletedIds,
+      revision
+    });
+    res.json({ ok: true, channel: scope.id, deletedCount: deletedIds.length, deletedIds });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Channel messages could not be purged." });
+  }
+});
+
 app.delete("/api/chat/messages/:scope/:messageId", async (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) {
@@ -8993,21 +9197,7 @@ app.delete("/api/chat/messages/:scope/:messageId", async (req, res) => {
       res.status(403).json({ error: "You can only delete your own messages." });
       return;
     }
-    const attachmentIds = (Array.isArray(messageSnapshot.data()?.attachments) ? messageSnapshot.data().attachments : []).map(value => String(value?.id || "")).filter(id => nyxChatAttachmentIdPattern.test(id));
-    const attachmentRefs = attachmentIds.map(id => firebase.firestore.collection("nyxChatAttachments").doc(id));
-    const [attachmentSnapshots, chunkSnapshots] = await Promise.all([
-      Promise.all(attachmentRefs.map(ref => ref.get())),
-      Promise.all(attachmentRefs.map(ref => ref.collection("chunks").get()))
-    ]);
-    const diskPaths = attachmentSnapshots.map((snapshot, index) => snapshot.data()?.storage === "disk" ? nyxChatAttachmentDiskPath(attachmentIds[index]) : "").filter(Boolean);
-    const batch = firebase.firestore.batch();
-    batch.delete(messageRef);
-    attachmentRefs.forEach((ref, index) => {
-      chunkSnapshots[index].docs.forEach(document => batch.delete(document.ref));
-      batch.delete(ref);
-    });
-    await batch.commit();
-    await Promise.allSettled(diskPaths.map(path => unlink(path)));
+    await deleteNyxChatMessageDocuments(firebase, [messageSnapshot]);
     const revision = recordNyxChatRealtimeEvent({
       kind: "delete",
       scopeType: scope.private ? "conversation" : "channel",

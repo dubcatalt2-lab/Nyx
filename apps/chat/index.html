@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <title>Nyx Chat</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/icons/chat.svg">
-  <link rel="stylesheet" href="./styles.css?v=20260823-custom-commands-v31">
+  <link rel="stylesheet" href="./styles.css?v=20260823-guidelines-dismiss-v32">
   <link rel="stylesheet" href="./polish.css?v=20260818-home-visual-system-v1">
 </head>
 <body>
@@ -75,9 +75,10 @@
             <button type="button" class="disconnect" data-voice-disconnect aria-label="Disconnect voice" title="Disconnect voice"><svg><use href="#icon-phone-off"/></svg></button>
           </div>
         </section>
-        <div class="chat-guidelines">
+        <div class="chat-guidelines" data-chat-guidelines>
           <svg><use href="#icon-shield"/></svg>
           <p><strong>Keep Nyx welcoming.</strong><span>Do not share passwords, private details, or harmful content.</span></p>
+          <button class="chat-guidelines-dismiss" type="button" data-chat-guidelines-dismiss aria-label="Dismiss safety reminder" title="Dismiss"><svg><use href="#icon-close"/></svg></button>
         </div>
         <div class="current-user" data-current-user hidden></div>
       </aside>
@@ -205,6 +206,6 @@
     <div class="flagged-search-list" data-flagged-search-list></div>
   </dialog>
   <script src="./emoji-catalog.js?v=20260821-unicode-emoji-catalog-v36"></script>
-  <script src="./app.js?v=20260823-purge-v40"></script>
+  <script src="./app.js?v=20260823-guidelines-dismiss-v41"></script>
 </body>
 </html>

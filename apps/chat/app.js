@@ -13,6 +13,7 @@
   const MAX_MESSAGE_ATTACHMENTS=8*1024*1024;
   const CHUNK_LENGTH=400000;
   const COMMAND_PREFIX_STORAGE_KEY='nyx-chat-command-prefix';
+  const GUIDELINES_DISMISSED_STORAGE_KEY='nyx-chat-guidelines-dismissed';
   const normalizeCommandPrefix=value=>/^[^\w\s:@]{1,2}$/u.test(String(value||'').trim())?String(value).trim():'/';
   const escapeRegExp=value=>String(value).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
   let commandPrefix=normalizeCommandPrefix(localStorage.getItem(COMMAND_PREFIX_STORAGE_KEY));
@@ -134,6 +135,8 @@
   refs.customCommandResponse=document.querySelector('[data-custom-command-response]');
   refs.customCommandCancel=document.querySelector('[data-custom-command-cancel]');
   refs.customCommandSave=document.querySelector('[data-custom-command-save]');
+  refs.guidelines=document.querySelector('[data-chat-guidelines]');
+  refs.guidelinesDismiss=document.querySelector('[data-chat-guidelines-dismiss]');
   const state={token:'',tokenExpiresAt:0,parentAuth:null,directAuthPromise:null,me:null,members:[],customRoles:[],customCommands:[],channels:[],conversations:[],latestActivity:{},revision:0,active:{type:'channel',id:'general'},messages:new Map(),hasMore:new Map(),loaded:new Set(),pollTimer:0,dmPollTimer:0,bootstrapTimer:0,caffeineTimer:0,noticeTimer:0,busy:false,sendQueue:Promise.resolve(),queuedSends:0,lastRead:readLastRead(),files:[],blobUrls:new Map(),blobExpires:new Map(),blobPromises:new Map(),audioContext:null,audioUnlocked:false,dmNotificationsReady:false,notifiedDm:new Set(),mentionItems:[],mentionIndex:0,mentionRange:null,voiceChannels:[],voiceParticipants:[],voiceSignalIds:new Set(),voiceSessionId:'',voiceChannelId:'',voiceStream:null,voiceScreenStream:null,voiceScreenBusy:false,voicePeers:new Map(),voicePollTimer:0,voicePolling:false,voiceBusy:false,voiceMuted:false,voiceDeafened:false,voiceIceServers:[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']}],voiceRelayConfigured:false,channelManagerKind:'text',channelManagerBusy:false,caffeine:null,shownCaffeineGift:'',contextMessage:null,socket:null,socketConnected:false,socketClientPromise:null,socketAuthRefreshTimer:0,socketLastAuthRetryAt:0,lastFallbackAt:0};
   const voiceBoostTimer=setInterval(()=>boostVoiceAudio(),500);
 
@@ -142,6 +145,8 @@
   const activeConversation=()=>state.active.type==='dm'?state.conversations.find(item=>item.id===state.active.id):null;
   function readLastRead(){try{const value=JSON.parse(localStorage.getItem('nyx.chat.lastRead')||'{}');return value&&typeof value==='object'?value:{}}catch{return {}}}
   function saveLastRead(){try{localStorage.setItem('nyx.chat.lastRead',JSON.stringify(state.lastRead))}catch{}}
+  function applyGuidelinesPreference(){try{refs.guidelines.hidden=localStorage.getItem(GUIDELINES_DISMISSED_STORAGE_KEY)==='1'}catch{refs.guidelines.hidden=false}}
+  function dismissGuidelines(){refs.guidelines.hidden=true;try{localStorage.setItem(GUIDELINES_DISMISSED_STORAGE_KEY,'1')}catch{}}
   function setConnection(label,type=''){refs.connection.classList.toggle('connected',type==='connected');refs.connection.classList.toggle('error',type==='error');refs.connection.querySelector('span').textContent=label}
   function showNotice(message,type='error'){clearTimeout(state.noticeTimer);refs.notice.textContent=String(message||'Something went wrong.');refs.notice.classList.toggle('success',type==='success');refs.notice.hidden=false;state.noticeTimer=setTimeout(()=>{refs.notice.hidden=true},5000)}
   function closeDrawers(){refs.app.classList.remove('channels-open','members-open');refs.shade.hidden=true}
@@ -714,6 +719,7 @@
   async function boot(){refs.loading.hidden=false;refs.gate.hidden=true;refs.scroller.hidden=true;refs.form.hidden=true;setConnection('Connecting');try{await accountToken();if(!state.token){showSignin();return}await refreshBootstrap({initial:true});refs.loading.hidden=true;refs.scroller.hidden=false;refs.form.hidden=false;refs.gate.hidden=true;updateComposer();setConnection('Live','connected');void connectChatSocket();scheduleVoicePoll(5000);clearInterval(state.pollTimer);state.pollTimer=setInterval(()=>{if(!document.hidden&&!state.busy)void refreshUpdates().catch(error=>{setConnection('Retrying','error');if(error.status===401)showSignin()})},UPDATE_POLL_MS);clearInterval(state.dmPollTimer);clearInterval(state.bootstrapTimer);state.bootstrapTimer=setInterval(()=>{if(!document.hidden&&!state.busy)void refreshBootstrap().catch(()=>{})},BOOTSTRAP_REFRESH_MS);clearInterval(state.caffeineTimer)}catch(error){if(error.status===401)showSignin();else{refs.loading.hidden=true;refs.gate.hidden=false;refs.gate.querySelector('h2').textContent='Nyx Chat could not open';refs.gate.querySelector('p').textContent=error.message||'Try again shortly.';setConnection('Unavailable','error')}}}
 
   document.querySelectorAll('[data-back-to-nyx]').forEach(button=>button.addEventListener('click',event=>{event.preventDefault();if(window.parent!==window)window.parent.postMessage({type:'nyx:go-home'},location.origin);else location.href='/'}));
+  refs.guidelinesDismiss?.addEventListener('click',dismissGuidelines);applyGuidelinesPreference();
   document.querySelector('[data-channels-toggle]')?.addEventListener('click',()=>openDrawer('channels'));document.querySelector('[data-members-toggle]')?.addEventListener('click',()=>openDrawer('members'));document.querySelector('[data-sidebar-close]')?.addEventListener('click',closeDrawers);document.querySelector('[data-members-close]')?.addEventListener('click',closeDrawers);refs.shade.addEventListener('click',closeDrawers);
   document.querySelector('[data-new-dm]')?.addEventListener('click',openDmPicker);document.querySelector('[data-dm-dialog-close]')?.addEventListener('click',()=>refs.dmDialog.close());refs.dmSearch.addEventListener('input',()=>renderDmPicker(refs.dmSearch.value));refs.dmDialog.addEventListener('click',event=>{if(event.target===refs.dmDialog)refs.dmDialog.close()});
   refs.manageChannels?.addEventListener('click',openChannelManager);document.querySelector('[data-channel-manager-close]')?.addEventListener('click',()=>refs.channelManagerDialog.close());refs.channelManagerDialog?.addEventListener('click',event=>{if(event.target===refs.channelManagerDialog)refs.channelManagerDialog.close()});document.querySelectorAll('[data-channel-kind]').forEach(button=>button.addEventListener('click',()=>{state.channelManagerKind=button.dataset.channelKind==='voice'?'voice':'text';resetChannelEditor();renderChannelManager()}));refs.channelManagerForm?.addEventListener('submit',saveManagedChannel);refs.channelEditCancel?.addEventListener('click',resetChannelEditor);

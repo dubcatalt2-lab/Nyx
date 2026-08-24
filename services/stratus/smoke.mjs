@@ -64,9 +64,15 @@ try {
     embedResponse.headers.get("x-frame-options") !== "SAMEORIGIN" ||
     !String(embedResponse.headers.get("content-security-policy") || "").includes("frame-ancestors 'self'") ||
     !embed.includes("/cloud/v1/embed-data?id=") ||
-    embed.includes("/api/cloud/embed-data?id=")
+    embed.includes("/api/cloud/embed-data?id=") ||
+    !embed.includes("pendingMoveX += moveX") ||
+    !embed.includes("let cachedVideoRect = null") ||
+    !embed.includes("requestPointerLock({ unadjustedMovement: true })") ||
+    !embed.includes("const localCursorEl = document.createElement(\"img\")") ||
+    embed.includes("if (document.pointerLockElement === streamEl) document.exitPointerLock()") ||
+    !embed.includes("flushMouse();\n            if (_dc && _dc.readyState === \"open\") sendGamepad();")
   ) {
-    throw new Error("The generated embed client did not use the active embed-data route.");
+    throw new Error("The generated embed client did not include the active route and low-latency mouse path.");
   }
 
   const unauthenticated = await request("/cloud/v1/createSession", {

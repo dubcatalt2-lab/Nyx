@@ -187,12 +187,258 @@ function buildRuntimeSource(source, config) {
 }
 
 function buildRuntimeEmbed(source) {
-  return replaceOnce(
+  let output = replaceOnce(
     source,
     "/api/cloud/embed-data?id=",
     "/cloud/v1/embed-data?id=",
     "embed-data route"
   );
+  output = replaceOnce(
+    output,
+    `        let mouseButtons = 0;
+        const activeKeys = new Set();`,
+    `        let mouseButtons = 0;
+        let pendingMoveX = 0, pendingMoveY = 0;
+        const activeKeys = new Set();`,
+    "coalesced mouse state"
+  );
+  output = replaceOnce(
+    output,
+    `        function getVideoRect() {
+            const rect = streamEl.getBoundingClientRect();
+            const vw   = streamEl.videoWidth  || rect.width;
+            const vh   = streamEl.videoHeight || rect.height;
+            const scale = Math.min(rect.width / vw, rect.height / vh);
+            const rw = vw * scale, rh = vh * scale;
+            return {
+                left:   rect.left + (rect.width  - rw) / 2,
+                top:    rect.top  + (rect.height - rh) / 2,
+                width:  rw,
+                height: rh,
+            };
+        }`,
+    `        let cachedVideoRect = null;
+        function invalidateVideoRect() {
+            cachedVideoRect = null;
+        }
+        function getVideoRect() {
+            if (cachedVideoRect) return cachedVideoRect;
+            const rect = streamEl.getBoundingClientRect();
+            const vw   = streamEl.videoWidth  || rect.width;
+            const vh   = streamEl.videoHeight || rect.height;
+            const scale = Math.min(rect.width / vw, rect.height / vh);
+            const rw = vw * scale, rh = vh * scale;
+            cachedVideoRect = {
+                left:   rect.left + (rect.width  - rw) / 2,
+                top:    rect.top  + (rect.height - rh) / 2,
+                width:  rw,
+                height: rh,
+            };
+            return cachedVideoRect;
+        }
+        new ResizeObserver(invalidateVideoRect).observe(streamEl);
+        streamEl.addEventListener("loadedmetadata", invalidateVideoRect);
+        document.addEventListener("fullscreenchange", invalidateVideoRect);
+        window.addEventListener("resize", invalidateVideoRect, { passive: true });`,
+    "cached video geometry"
+  );
+  output = replaceOnce(
+    output,
+    `        function setupCursorHandling(dc) {
+            const MIMEMAP = { 0: "image/x-icon", 1: "image/jpeg", 2: "image/png", 3: "image/gif" };
+            let currentCursorUrl = null;
+            dc.onmessage = (e) => {
+                if (!(e.data instanceof ArrayBuffer)) return;
+                const v = new DataView(e.data);
+                if (v.byteLength > 4 && v.getUint8(0) === 163 && v.getUint8(1) === 6) {
+                    if (v.byteLength <= 32) {
+                        streamEl.style.cursor = "none";
+                        if (currentCursorUrl) { URL.revokeObjectURL(currentCursorUrl); currentCursorUrl = null; }
+                    } else {
+                        const mimeType = MIMEMAP[v.getUint8(2)] || "image/png";
+                        const hotX = v.getUint8(3), hotY = v.getUint8(4);
+                        const blob = new Blob([e.data.slice(5)], { type: mimeType });
+                        if (currentCursorUrl) URL.revokeObjectURL(currentCursorUrl);
+                        currentCursorUrl = URL.createObjectURL(blob);
+                        streamEl.style.cursor = \`url(\${currentCursorUrl}) \${hotX} \${hotY}, default\`;
+                        if (document.pointerLockElement === streamEl) document.exitPointerLock();
+                    }
+                }
+            };
+        }`,
+    `        const localCursorEl = document.createElement("img");
+        localCursorEl.alt = "";
+        localCursorEl.setAttribute("aria-hidden", "true");
+        Object.assign(localCursorEl.style, {
+            position: "fixed",
+            left: "0",
+            top: "0",
+            zIndex: "40",
+            pointerEvents: "none",
+            display: "none",
+            maxWidth: "none",
+            maxHeight: "none"
+        });
+        document.body.appendChild(localCursorEl);
+        let currentCursorUrl = null;
+        let cursorHotX = 0, cursorHotY = 0;
+        function updateLocalCursor() {
+            if (!pointerLocked || !currentCursorUrl) return;
+            localCursorEl.style.transform = \`translate3d(\${curX - cursorHotX}px, \${curY - cursorHotY}px, 0)\`;
+        }
+        function syncCursorPresentation() {
+            if (pointerLocked) {
+                streamEl.style.cursor = "none";
+                localCursorEl.style.display = currentCursorUrl ? "block" : "none";
+                updateLocalCursor();
+            } else {
+                localCursorEl.style.display = "none";
+                streamEl.style.cursor = currentCursorUrl
+                    ? \`url(\${currentCursorUrl}) \${cursorHotX} \${cursorHotY}, default\`
+                    : "none";
+            }
+        }
+        function setupCursorHandling(dc) {
+            const MIMEMAP = { 0: "image/x-icon", 1: "image/jpeg", 2: "image/png", 3: "image/gif" };
+            dc.onmessage = (e) => {
+                if (!(e.data instanceof ArrayBuffer)) return;
+                const v = new DataView(e.data);
+                if (v.byteLength > 4 && v.getUint8(0) === 163 && v.getUint8(1) === 6) {
+                    if (v.byteLength <= 32) {
+                        if (currentCursorUrl) URL.revokeObjectURL(currentCursorUrl);
+                        currentCursorUrl = null;
+                        localCursorEl.removeAttribute("src");
+                    } else {
+                        const mimeType = MIMEMAP[v.getUint8(2)] || "image/png";
+                        cursorHotX = v.getUint8(3);
+                        cursorHotY = v.getUint8(4);
+                        const blob = new Blob([e.data.slice(5)], { type: mimeType });
+                        if (currentCursorUrl) URL.revokeObjectURL(currentCursorUrl);
+                        currentCursorUrl = URL.createObjectURL(blob);
+                        localCursorEl.src = currentCursorUrl;
+                    }
+                    syncCursorPresentation();
+                }
+            };
+        }`,
+    "persistent pointer-lock cursor"
+  );
+  output = replaceOnce(
+    output,
+    `                sendMouse(moveX, moveY, 0);
+            } else {`,
+    `                pendingMoveX += moveX;
+                pendingMoveY += moveY;
+            } else {`,
+    "coalesced mouse movement"
+  );
+  output = replaceOnce(
+    output,
+    `        document.addEventListener("mousedown", (e) => {
+            if (!streamFocused || !_dc) return;
+            if (streamEl.style.cursor === "none" && !pointerLocked) {
+                streamEl.requestPointerLock().catch(() => {});
+            }
+            mouseButtons = e.buttons;
+            sendMouse(0, 0, 0);
+        });`,
+    `        document.addEventListener("mousedown", (e) => {
+            if (!_dc || e.target !== streamEl) return;
+            if (!streamFocused) {
+                streamFocused = true;
+                navigator.keyboard?.lock?.().catch(() => {});
+            }
+            if (!pointerLocked) {
+                curX = e.clientX;
+                curY = e.clientY;
+                streamEl.requestPointerLock({ unadjustedMovement: true })
+                    .catch(() => streamEl.requestPointerLock().catch(() => {}));
+            }
+            flushMouse();
+            mouseButtons = e.buttons;
+            sendMouse(0, 0, 0);
+        });`,
+    "first-click mouse capture"
+  );
+  output = replaceOnce(
+    output,
+    `            } else {
+                navigator.keyboard?.unlock?.();
+            }
+        });`,
+    `            } else {
+                navigator.keyboard?.unlock?.();
+            }
+            syncCursorPresentation();
+        });`,
+    "pointer-lock cursor presentation"
+  );
+  output = replaceOnce(
+    output,
+    `                    curX = r.left + vMouseX;
+                    curY = r.top  + vMouseY;
+                } else {`,
+    `                    curX = r.left + vMouseX;
+                    curY = r.top  + vMouseY;
+                    updateLocalCursor();
+                } else {`,
+    "virtual cursor movement"
+  );
+  output = replaceOnce(
+    output,
+    `            mouseButtons = e.buttons;
+            sendMouse(0, 0, 0);
+        });
+        document.addEventListener("contextmenu"`,
+    `            flushMouse();
+            mouseButtons = e.buttons;
+            sendMouse(0, 0, 0);
+        });
+        document.addEventListener("contextmenu"`,
+    "mouse release ordering"
+  );
+  output = replaceOnce(
+    output,
+    `        function sendMouse(moveX = 0, moveY = 0, scroll = 0) {
+            moveX = Math.max(-127, Math.min(127, moveX));
+            moveY = Math.max(-127, Math.min(127, moveY));
+            const r    = getVideoRect();`,
+    `        function flushMouse() {
+            if (!_dc || _dc.readyState !== "open") {
+                pendingMoveX = 0;
+                pendingMoveY = 0;
+                return;
+            }
+            let moveX = pendingMoveX;
+            let moveY = pendingMoveY;
+            pendingMoveX = 0;
+            pendingMoveY = 0;
+            if (!moveX && !moveY) return;
+            const rect = getVideoRect();
+            while (moveX || moveY) {
+                const stepX = Math.max(-127, Math.min(127, moveX));
+                const stepY = Math.max(-127, Math.min(127, moveY));
+                sendMouse(stepX, stepY, 0, rect);
+                moveX -= stepX;
+                moveY -= stepY;
+            }
+        }
+        function sendMouse(moveX = 0, moveY = 0, scroll = 0, rect = null) {
+            moveX = Math.max(-127, Math.min(127, moveX));
+            moveY = Math.max(-127, Math.min(127, moveY));
+            const r    = rect || getVideoRect();`,
+    "frame-paced mouse sender"
+  );
+  output = replaceOnce(
+    output,
+    `        function inputLoop() {
+            if (_dc && _dc.readyState === "open") sendGamepad();`,
+    `        function inputLoop() {
+            flushMouse();
+            if (_dc && _dc.readyState === "open") sendGamepad();`,
+    "frame-paced input loop"
+  );
+  return output;
 }
 
 async function prepareRuntime() {

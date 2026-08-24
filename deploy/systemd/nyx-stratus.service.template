@@ -1,5 +1,5 @@
 [Unit]
-Description=Nyx web application
+Description=Nyx self-hosted Stratus cloud-gaming service
 After=network-online.target
 Wants=network-online.target
 
@@ -7,13 +7,13 @@ Wants=network-online.target
 Type=simple
 User=nyx
 Group=nyx
-WorkingDirectory=__NYX_ROOT__
-EnvironmentFile=-/etc/nyx/nyx.env
-EnvironmentFile=-/etc/nyx/stratus.env
-ExecStart=/usr/bin/node __NYX_ROOT__/server.js
+WorkingDirectory=__NYX_ROOT__/services/stratus
+EnvironmentFile=/etc/nyx/stratus.env
+Environment=STRATUS_RUNTIME_DIR=/var/lib/nyx-stratus/runtime
+ExecStart=/usr/bin/node __NYX_ROOT__/services/stratus/launcher.mjs
 Restart=on-failure
-RestartSec=5
-TimeoutStopSec=15
+RestartSec=10
+TimeoutStopSec=20
 NoNewPrivileges=true
 PrivateTmp=true
 PrivateDevices=true
@@ -24,9 +24,9 @@ ProtectKernelModules=true
 ProtectKernelTunables=true
 ProtectKernelLogs=true
 ProtectClock=true
-StateDirectory=nyx
+StateDirectory=nyx-stratus
 StateDirectoryMode=0750
-ReadWritePaths=/var/lib/nyx/chat-attachments
+ReadWritePaths=/var/lib/nyx-stratus
 RestrictSUIDSGID=true
 RestrictRealtime=true
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
@@ -35,6 +35,7 @@ CapabilityBoundingSet=
 AmbientCapabilities=
 UMask=0027
 LimitNOFILE=65536
+TasksMax=256
 
 [Install]
 WantedBy=multi-user.target

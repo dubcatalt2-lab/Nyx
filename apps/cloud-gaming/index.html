@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Cloud Gaming · Nyx</title>
+  <link rel="stylesheet" href="/apps/cloud-gaming/styles.css?v=2">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" data-home aria-label="Return to Nyx home">
+      <span class="brand-mark" aria-hidden="true">☾</span>
+      <span><strong>Cloud Gaming</strong><small>Powered through Nyx</small></span>
+    </a>
+    <div class="provider-state" data-provider-state><span></span><b>Checking provider</b></div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">STREAM FROM THE CLOUD</p>
+        <h1>Pick a game.<br>Play in Nyx.</h1>
+        <p class="intro">Your Nyx account starts and controls the session. Provider credentials stay protected on the Nyx server.</p>
+      </div>
+      <div class="hero-orbit" aria-hidden="true"><span></span><i></i><b></b></div>
+    </section>
+
+    <section class="catalog-shell" aria-labelledby="catalog-title">
+      <div class="catalog-heading">
+        <div><p class="eyebrow">LIBRARY</p><h2 id="catalog-title">Cloud games</h2></div>
+        <div class="catalog-tools">
+          <label class="search"><span aria-hidden="true">⌕</span><input data-search type="search" placeholder="Search games" autocomplete="off"></label>
+          <label class="tag-filter"><span class="sr-only">Filter by category</span><select data-tag><option value="">All categories</option></select></label>
+        </div>
+      </div>
+      <div class="notice" data-notice role="status">Connecting to Nyx…</div>
+      <div class="game-grid" data-grid aria-live="polite"></div>
+      <p class="empty" data-empty hidden>No games match that search.</p>
+    </section>
+  </main>
+
+  <section class="launch-layer" data-launch-layer hidden aria-live="assertive">
+    <div class="launch-card">
+      <div class="launch-spinner" aria-hidden="true"><span></span></div>
+      <p class="eyebrow">PREPARING SESSION</p>
+      <h2 data-launch-title>Starting game</h2>
+      <p data-launch-status>Connecting to the cloud provider…</p>
+      <div class="launch-progress"><i data-launch-progress></i></div>
+      <button class="secondary" data-cancel type="button">Cancel</button>
+    </div>
+  </section>
+
+  <section class="player-layer" data-player-layer hidden>
+    <header>
+      <div><span class="live-dot" aria-hidden="true"></span><strong data-player-title>Cloud Gaming</strong><small data-player-time>Connecting</small></div>
+      <nav aria-label="Player controls">
+        <button data-fullscreen type="button">Fullscreen</button>
+        <button class="danger" data-close type="button">End session</button>
+      </nav>
+    </header>
+    <iframe data-player title="Cloud game stream" allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+  </section>
+
+  <script src="/apps/cloud-gaming/app.js?v=2"></script>
+</body>
+</html>

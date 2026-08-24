@@ -199,6 +199,7 @@ AI image attachments use the selected provider model's actual vision input rathe
 - Link Generator obtains its selectable vendor list and performs its post-generation vendor check through Nyx's same-origin Link Checker bridge. It must not call a legacy third-party filter endpoint directly from the browser. The vendor list may contain string keys or keyed objects, and the client normalizes both shapes before populating the selector.
 - NyxTube is retired. It must not appear in default or saved internal home shortcuts, the Apps list, deployment-required files, environment templates, or active catalog APIs. Old `/apps/nyxtube/` requests redirect home and old `/api/nyxtube/*` requests return `410` so stale browser state fails cleanly.
 - Nyxify and its music API are retired and removed. The redesigned homepage now uses **Movies** in the former music-shortcut position, and the Apps workspace exposes the same primary movie entry at `https://aether.cx/` with Nyx's theatre-mask icon. Saved and server-stored copies of the retired `http://icefy.top/` entry migrate to Aether. A separate **More Movie Sites** entry opens FMHY's `https://fmhy.net/video#p-stream-forks` directory through the normal Nyx browser path. Do not restore Nyxify, Icefy, or Cineby unless the user requests another provider change.
+- The unreleased Cloud Gaming workspace at `/apps/cloud-gaming/` is an optional server-side Stratus connector. The browser authenticates with the existing Nyx account bridge, reads the public catalog through Nyx, and receives only filtered session state; the API key stays in the OVH environment and must never be returned to client code or committed. Nyx limits launches, active sessions, queue polling, and keepalives, keeps session ownership in the single OVH process, and explicitly quits stale sessions. Without a configured key the workspace remains visibly in setup-required mode and cannot launch a game. Hosted mode uses `NYX_STRATUS_API_KEY`; self-hosted mode runs the separately installed `nyx-stratus` service from `services/stratus/`, reads the shared `STRATUS_API_KEY` from `/etc/nyx/stratus.env`, and calls it only over loopback. The self-hosted service vendors the authorized AGPL upstream at pinned commit `bd760513ce7616e955181dfd18017e2a6c278e3c`, verifies the source before generating its runtime, binds to `127.0.0.1:3001`, uses a zero-by-default idle account pool, applies bounded sessions/rates and longer provisioning timeouts, corrects the pinned embed client's obsolete `/api/cloud/embed-data` request to `/cloud/v1/embed-data`, uses the explicit public HTTPS origin for WSS, and publishes source/license metadata. Caddy exposes only embed, embed-data, signaling, health, and source paths; session creation and management never become public routes.
 - The Netlify build uses Terser to mangle private identifiers in Nyx's first-party browser and service-worker runtimes. Repository sources remain readable, user-facing labels and storage/message values remain unchanged, and required public contracts such as `__uv$config`, `__NYX_RUNTIME_CONFIG__`, service-worker routes, and third-party runtime APIs must never be property-mangled or renamed.
 - Nyx presents the non-account Link Checker workspace in a Nocturne-inspired sidebar and table layout, with a local dashboard, single all-vendor or selected-vendor checks, device-local history, filters, CSV/JSON exports, preferences, vendor reports, and public RDAP registration details. Its **Back to Nyx** action closes the containing Nyx browser tab when embedded and returns to `/` when opened directly. Its FreeDNS Scraper reads the public `freedns.afraid.org` registry through a fixed-target same-origin route and stores the collected registry only in that browser, including the public owner and added-date fields. When the scraper is opened, the first 25-domain page is checked automatically if its rows have no saved verdicts; **Check this page** sends one bounded batch of up to 25 URLs to Nyx, which checks them through the paid account session with bounded server concurrency instead of starting separately rate-limited browser requests or displaying a cooldown countdown. Signed-in Premium/Trial accounts and Moderator-or-higher staff roles can run **Check all domains**; ordinary free members cannot. A full scan first imports Nocturne's existing cached `/api/domains` vendor maps in bounded parallel page batches and updates visible progress from saved verdicts, matching Nocturne's fast cached-first presentation. Nyx starts or reconnects to the account-authenticated server-side `/api/scan` job only for domains still missing results, polls `/api/vendors/status` without allowing a slow provider counter to move local progress backward, then imports refreshed results. Compact device-local verdicts are saved in 100-result checkpoints using a registry-indexed array rather than repeating every domain key; legacy object caches migrate on load. This avoids one browser `/api/check` request per domain, its 15-minute burst cooldown, and the local-storage quota failure caused by the older verbose format. The registry and verdict cache clear together after eight hours without cache activity; expiry is deferred while scraping or scanning is active, and a periodic check also releases the in-memory arrays in tabs left open. Stopping Nyx polling does not cancel the provider job; the next click reconnects and imports its results. Ordinary single checks retain Nyx's 30-per-15-minute client allowance but prefer the paid account session upstream. Each row also has an explicit refresh action, and vendor results appear as allowed, blocked, unknown, or error shields. After a result is saved and scanning is idle, the compact shield group is clickable and opens a responsive detail dialog with every vendor state, refreshed category data when available, FreeDNS metadata, and public RDAP registration fields; failure to refresh preserves the compact result display. Nocturne account, upgrade, admin, API-key-management, and scrape controls remain deliberately unexposed.
 - **God Domains** is a device-local ranking toggle over saved FreeDNS verdicts. It preserves text and public/private filters, hides unchecked domains, ranks by the greatest number of unblocked vendors followed by fewer blocked and unknown results, and shows each row's unblocked/checked score. It does not start checks or alter the cached-first scan pipeline.
@@ -244,9 +245,10 @@ The Netlify build intentionally skips five bundled Minecraft HTML files larger t
 - Static frontend, Express-backed HTTP routes, authenticated Socket.IO Chat, and embedded Wisp: OVHcloud VPS behind Caddy
 - Public domain, edge proxy, and DNS: Cloudflare-managed `nyxlearning.org`
 - Accounts and shared profile/admin data: Firebase Authentication and Firestore
+- Optional self-hosted Cloud Gaming: separate loopback-only `nyx-stratus` systemd service, enabled only when `/etc/nyx/stratus.env` contains a key
 - Netlify is not an active deployment target; Railway Wisp remains a legacy fallback only
 
-The VPS serves generated `dist/` through Express on local port 8080 and exposes authenticated Socket.IO at `/socket.io/` plus embedded Wisp at `/wisp/` through Caddy. Caddy trusts forwarded client headers only from Cloudflare's published networks, then overwrites `CF-Connecting-IP`, `X-NF-Client-Connection-IP`, and `X-Real-IP` with its parsed client address before proxying. Direct FreeDNS requests therefore cannot spoof the address used by Nyx IP logging, bans, or IP-restricted Chat channels.
+The VPS serves generated `dist/` through Express on local port 8080 and exposes authenticated Socket.IO at `/socket.io/` plus embedded Wisp at `/wisp/` through Caddy. When configured, Caddy also forwards the narrow browser-facing Stratus path set to loopback port 3001 and returns 404 for its private management paths. Caddy trusts forwarded client headers only from Cloudflare's published networks, then overwrites `CF-Connecting-IP`, `X-NF-Client-Connection-IP`, and `X-Real-IP` with its parsed client address before proxying. Direct FreeDNS requests therefore cannot spoof the address used by Nyx IP logging, bans, IP-restricted Chat channels, or Stratus public-path rate limits.
 
 ## IP Ban Controls
 
@@ -285,7 +287,7 @@ The VPS serves generated `dist/` through Express on local port 8080 and exposes 
 
 ### OVH deployment
 
-`DEPLOYMENT.md` and `deploy/` define the active single-OVHcloud-VPS deployment using Ubuntu 26.04, Caddy, systemd, authenticated Socket.IO Chat, and embedded Wisp. The installer builds the minified `dist/` output with a dynamic same-host Wisp URL and all large game assets, serves it through Express so the application IP-ban guard also covers static pages, validates and reloads Caddy, sanitizes forwarding headers, restricts Cloudflare visitor-IP trust to Cloudflare's published networks, and prunes build-only dependencies. `/etc/nyx/nyx.env` and the selected domain are preserved across reruns, and `deploy/update-ovh.sh` provides validated fast-forward updates. If a pull changes the updater itself, it re-executes the new copy before applying deployment steps so new systemd or storage requirements are not skipped on that release.
+`DEPLOYMENT.md` and `deploy/` define the active single-OVHcloud-VPS deployment using Ubuntu 26.04, Caddy, systemd, authenticated Socket.IO Chat, and embedded Wisp. The installer builds the minified `dist/` output with a dynamic same-host Wisp URL and all large game assets, serves it through Express so the application IP-ban guard also covers static pages, validates and reloads Caddy, sanitizes forwarding headers, restricts Cloudflare visitor-IP trust to Cloudflare's published networks, and prunes build-only dependencies. It installs the optional Stratus dependencies and unit separately, but enables that service only when the root-owned `/etc/nyx/stratus.env` contains a strong key. `/etc/nyx/nyx.env`, `/etc/nyx/stratus.env`, and the selected domain are preserved across reruns, and `deploy/update-ovh.sh` provides validated fast-forward updates. If a pull changes the updater itself, it re-executes the new copy before applying deployment steps so new systemd or storage requirements are not skipped on that release.
 
 ## Server Environment Variable Names
 
@@ -334,6 +336,16 @@ Other server features:
 - `NYX_LINK_CHECKER_BULK_CONCURRENCY_PER_USER`
 - `NYX_LINK_CHECKER_BULK_CONCURRENCY_GLOBAL`
 - `NYX_SAFE_BROWSING_API_KEY` or `GOOGLE_SAFE_BROWSING_API_KEY`
+- `NYX_STRATUS_API_KEY` (optional; issued Cloud Gaming provider credential, OVH only)
+- `NYX_STRATUS_API_BASE_URL` (optional provider origin override)
+- `NYX_STRATUS_PUBLIC_BASE_URL` (optional browser-facing embed origin; required when the API base is loopback)
+- `NYX_STRATUS_CATALOG_URL` (optional public game-catalog override)
+- `NYX_STRATUS_MAX_ACTIVE_SESSIONS` (optional global in-process session cap)
+- `NYX_STRATUS_CREATE_TIMEOUT_MS` (optional Nyx-to-provider provisioning timeout)
+- `STRATUS_API_KEY` (optional self-hosted shared secret in `/etc/nyx/stratus.env`; never commit)
+- `STRATUS_PUBLIC_ORIGIN`, `STRATUS_PORT`, `STRATUS_SOURCE_URL`
+- `STRATUS_MAX_CONCURRENT_SESSIONS`, `STRATUS_MAX_SESSION_SECONDS`, `STRATUS_CREATE_TIMEOUT_MS`, `STRATUS_ACCOUNT_POOL_TARGET`
+- `STRATUS_LIMIT_PER_MINUTE`, `STRATUS_LIMIT_PER_HOUR`, `STRATUS_LIMIT_PER_DAY`, `STRATUS_LIMIT_PER_MONTH`
 
 Inspect `server.js`, `wisp-server.js`, and deployment settings before adding or renaming variables.
 
@@ -344,6 +356,13 @@ Install and run locally:
 ```powershell
 npm ci
 npm start
+```
+
+Verify the pinned optional Stratus service without creating an account or contacting its game provider:
+
+```powershell
+npm ci --prefix services/stratus
+npm run check --prefix services/stratus
 ```
 
 Local URL and health check:

@@ -2200,6 +2200,7 @@
   }
   function canonicalAddressInput(value){
     const raw=unwrapAccidentalUrlSearch(value);
+    if(/^apps\//i.test(raw)) return `/${raw}`;
     if(/^(?:localhost|(?:\d{1,3}\.){3}\d{1,3})(?::\d+)?(?:\/|$)/i.test(raw)) return 'http://'+raw;
     if(/^[\w.-]+\.[a-z]{2,}(?:[\/:?#]|$)/i.test(raw) && !/^[a-z][a-z0-9+.-]*:/i.test(raw)) return 'https://'+raw;
     return raw;
@@ -2368,6 +2369,7 @@
     'icefy.top':localIcon('theatre-masks.svg?v=1'),
     'fmhy.net':localIcon('theatre-masks.svg?v=1'),
     'nyx-chat':localIcon('chat.svg?v=2'),
+    'cloud-gaming':localIcon('cloud-gaming.svg?v=1'),
     'link-checker':localIcon('link-checker.svg?v=2'),
     'link-generator':localIcon('link-generator.svg'),
     'chess.com':localIcon('chess-logo.png'),
@@ -2431,6 +2433,7 @@
     const raw=String(url || '').trim();
     if(!raw || raw==='about:blank' || raw.startsWith('nyx://')) return favicons.nyx;
     if(/(?:^|\/)apps\/chat(?:\/|$)/i.test(raw)) return appIcon('nyx-chat');
+    if(/(?:^|\/)apps\/cloud-gaming(?:\/|$)/i.test(raw)) return appIcon('cloud-gaming');
     if(/(?:^|\/)apps\/link-checker(?:\/|$)/i.test(raw)) return appIcon('link-checker');
     if(/(?:^|\/)apps\/link-generator(?:\/|$)/i.test(raw)) return appIcon('link-generator');
     const source=typeof browserShellSourceUrl==='function' ? (browserShellSourceUrl(raw) || raw) : raw;
@@ -3338,7 +3341,8 @@
   }
   //browser-url-display
   function browserShellSourceUrl(url,decodeDepth=0){
-    const raw=String(url || '').trim();
+    const initial=String(url || '').trim();
+    const raw=/^apps\//i.test(initial) ? `/${initial}` : initial;
     if(!raw) return '';
     if(!/^(?:[a-z][a-z0-9+.-]*:|\/|\.\/|\.\.\/)/i.test(raw) && !/^[^\s]+\.[^\s]{2,}(?:[/?#]|$)/.test(raw)) return raw;
     const decodeUriPart=value=>{
@@ -3430,6 +3434,7 @@
       if(parsed.origin===location.origin && parsed.pathname.includes('/assets/seraph/')) return 'Seraph Study';
       if(parsed.origin===location.origin && parsed.pathname.includes('/assets/ugs/')) return 'Pirate Cove';
       if(parsed.origin===location.origin && parsed.pathname.includes('/apps/chat/')) return 'Nyx Chat';
+      if(parsed.origin===location.origin && parsed.pathname.includes('/apps/cloud-gaming/')) return 'Cloud Gaming';
       if(parsed.origin===location.origin && parsed.pathname.includes('/apps/link-checker/')) return 'Link Checker';
       if(parsed.origin===location.origin && parsed.pathname.includes('/apps/link-generator/')) return 'Link Generator';
       if(parsed.origin===location.origin) return parsed.pathname.split('/').filter(Boolean).pop() || 'nyx';
@@ -6426,7 +6431,8 @@
   }
   //url-normalization
   function normalize(v){
-    const raw=String(v||'').trim(); if(!raw)return '';
+    const input=String(v||'').trim(); if(!input)return '';
+    const raw=/^apps\//i.test(input) ? `/${input}` : input;
     if(shouldTriggerSixtySevenJumpscare(raw)){
       showSixtySevenJumpscare();
       return '';
@@ -6436,7 +6442,7 @@
     if(/^(blob:|data:text\/html)/i.test(raw)) return raw;
     if(/^data:text\/html/i.test(raw)) return raw;
     if(/^https?:\/\//i.test(raw)) target=raw;
-    else if(/^(\/|\.\/|\.\.\/|assets\/)/i.test(raw)){
+    else if(/^(\/|\.\/|\.\.\/|assets\/|apps\/)/i.test(raw)){
       try{target=new URL(raw,location.href).href}catch{target=raw}
     }
     else if(/^[\w.-]+\.[a-z]{2,}(\/.*)?$/i.test(raw) && !raw.includes(' ')) target='https://'+raw;
@@ -7982,7 +7988,7 @@
   const educationShortcutTitles=new Map(defaultHomeShortcuts.map(item=>[String(item.url).replace(/\/+$/,''),item.title]));
   function normalizeInternalAppUrl(url){
     const raw=String(url || '').trim();
-    if(/^assets\//i.test(raw)) return `/${raw}`;
+    if(/^(?:assets|apps)\//i.test(raw)) return `/${raw}`;
     return raw;
   }
   function normalizeHomeShortcut(item){
@@ -8670,14 +8676,14 @@
     renderHomeShortcuts();
   }
   const nyxDefaultGlobalApps=[
-    ['link-checker','link-checker','Link Checker','/apps/link-checker/'],['link-generator','link-generator','Link Generator','/apps/link-generator/'],['youtube','youtube.com','YouTube','https://www.youtube.com/'],['pirate-cove','games','Pirate Cove','/assets/games/'],['nyx-chat','nyx-chat','Nyx Chat','/apps/chat/'],['geforce-now','geforcenow','GeForce Now','https://play.geforcenow.com/'],['roblox','roblox.com','Roblox','https://web.cloudmoonapp.com/game/com.roblox.client/'],['discord','discord.com','Discord','https://discord.com/app'],['spotify','spotify.com','Spotify','https://open.spotify.com/'],['music','traxmojo.com','Music','https://traxmojo.com/'],['google','google.com','Google','https://www.google.com/'],['study','docs.google.com','Study','https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0'],['duck-ai','duck.ai','Duck AI','https://duck.ai/'],['nyx-ai','nyx-ai','Nyx AI','nyx://ai'],['wikipedia','wikipedia.org','Wikipedia','https://www.wikipedia.org/'],['movies','aether.cx','Movies','https://aether.cx/'],['more-movie-sites','fmhy.net','More Movie Sites','https://fmhy.net/video#p-stream-forks'],['tiktok','tiktok.com','TikTok','https://www.tiktok.com/'],['instagram','instagram.com','Instagram','https://www.instagram.com/'],['snapchat','snapchat.com','Snapchat','https://www.snapchat.com/'],['amazon','amazon.com','Amazon','https://www.amazon.com/'],['reddit','reddit.com','Reddit','https://www.reddit.com/'],['twitter','x.com','Twitter','https://x.com/'],['tcgplayer','tcgplayer.com','TCGPlayer','https://www.tcgplayer.com/'],['cps-test','cpstest.org','CPS Test','https://cpstest.org/'],['chess','chess.com','Chess.com','https://www.chess.com/'],['animex','animex.one','Animex','https://animex.one/'],['chatgpt','chatgpt.com','AI','https://chatgpt.com/'],['steam','store.steampowered.com','Steam','https://store.steampowered.com/'],['crunchyroll','crunchyroll.com','Crunchyroll','https://www.crunchyroll.com/'],['crazygames','crazygames.com','CrazyGames','https://www.crazygames.com/'],['newgrounds','newgrounds.com','Newgrounds','https://www.newgrounds.com/'],['twitch','twitch.tv','Twitch','https://www.twitch.tv/'],['kick','kick.com','Kick','https://kick.com/'],['pluto-tv','pluto.tv','Pluto TV','https://pluto.tv/'],['skribbl','skribbl.io','Skribbl.io','https://skribbl.io/'],['slither','slither.io','Slither.io','https://slither.io/'],['geoguessr','geoguessr.com','GeoGuessr','https://www.geoguessr.com/'],['y8-games','y8.com','Y8 Games','https://www.y8.com/'],['itch','itch.io','itch.io','https://itch.io/']
+    ['link-checker','link-checker','Link Checker','/apps/link-checker/'],['link-generator','link-generator','Link Generator','/apps/link-generator/'],['youtube','youtube.com','YouTube','https://www.youtube.com/'],['pirate-cove','games','Pirate Cove','/assets/games/'],['cloud-gaming','cloud-gaming','Cloud Gaming','/apps/cloud-gaming/'],['nyx-chat','nyx-chat','Nyx Chat','/apps/chat/'],['geforce-now','geforcenow','GeForce Now','https://play.geforcenow.com/'],['roblox','roblox.com','Roblox','https://web.cloudmoonapp.com/game/com.roblox.client/'],['discord','discord.com','Discord','https://discord.com/app'],['spotify','spotify.com','Spotify','https://open.spotify.com/'],['music','traxmojo.com','Music','https://traxmojo.com/'],['google','google.com','Google','https://www.google.com/'],['study','docs.google.com','Study','https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0'],['duck-ai','duck.ai','Duck AI','https://duck.ai/'],['nyx-ai','nyx-ai','Nyx AI','nyx://ai'],['wikipedia','wikipedia.org','Wikipedia','https://www.wikipedia.org/'],['movies','aether.cx','Movies','https://aether.cx/'],['more-movie-sites','fmhy.net','More Movie Sites','https://fmhy.net/video#p-stream-forks'],['tiktok','tiktok.com','TikTok','https://www.tiktok.com/'],['instagram','instagram.com','Instagram','https://www.instagram.com/'],['snapchat','snapchat.com','Snapchat','https://www.snapchat.com/'],['amazon','amazon.com','Amazon','https://www.amazon.com/'],['reddit','reddit.com','Reddit','https://www.reddit.com/'],['twitter','x.com','Twitter','https://x.com/'],['tcgplayer','tcgplayer.com','TCGPlayer','https://www.tcgplayer.com/'],['cps-test','cpstest.org','CPS Test','https://cpstest.org/'],['chess','chess.com','Chess.com','https://www.chess.com/'],['animex','animex.one','Animex','https://animex.one/'],['chatgpt','chatgpt.com','AI','https://chatgpt.com/'],['steam','store.steampowered.com','Steam','https://store.steampowered.com/'],['crunchyroll','crunchyroll.com','Crunchyroll','https://www.crunchyroll.com/'],['crazygames','crazygames.com','CrazyGames','https://www.crazygames.com/'],['newgrounds','newgrounds.com','Newgrounds','https://www.newgrounds.com/'],['twitch','twitch.tv','Twitch','https://www.twitch.tv/'],['kick','kick.com','Kick','https://kick.com/'],['pluto-tv','pluto.tv','Pluto TV','https://pluto.tv/'],['skribbl','skribbl.io','Skribbl.io','https://skribbl.io/'],['slither','slither.io','Slither.io','https://slither.io/'],['geoguessr','geoguessr.com','GeoGuessr','https://www.geoguessr.com/'],['y8-games','y8.com','Y8 Games','https://www.y8.com/'],['itch','itch.io','itch.io','https://itch.io/']
   ].map(([id,icon,name,url])=>({id,icon,name,url}));
   let nyxGlobalApps=nyxDefaultGlobalApps.map(app=>({...app}));
   function normalizeNyxGlobalApp(app){
     const id=String(app?.id||'').trim().toLowerCase();
     const icon=String(app?.icon||'apps').trim().toLowerCase();
     const name=String(app?.name||'').trim();
-    const url=String(app?.url||'').trim();
+    const url=normalizeInternalAppUrl(app?.url);
     if(!/^[a-z0-9][a-z0-9-]{1,63}$/.test(id) || !name || !url) return null;
     return {id,icon,name:name.slice(0,48),url:url.slice(0,2048)};
   }
@@ -10811,7 +10817,7 @@
       }
       const rawText=canonicalAddressInput(raw);
       const proxyInternal=/^(?:\/service\/|\/~\/sj\/|\/scramjet\/service\/|nyx:\/\/)/i.test(rawText);
-      const looksLikeUrl=/^(?:[a-z][a-z0-9+.-]*:|[\w.-]+\.[a-z]{2,}(?:\/|$)|\/|\.\/|\.\.\/|assets\/)/i.test(rawText);
+      const looksLikeUrl=/^(?:[a-z][a-z0-9+.-]*:|[\w.-]+\.[a-z]{2,}(?:\/|$)|\/|\.\/|\.\.\/|assets\/|apps\/)/i.test(rawText);
       const isSearchQuery=rawText && !forceMode && !looksLikeUrl && !proxyInternal;
       if(isSearchQuery){
         void nyxRecordSearchHistory(rawText);
@@ -10867,7 +10873,7 @@
           updateBrowserShellLocation('',t.id,true);
           return;
         }
-        if(parsed.origin===location.origin && (parsed.pathname.includes('/assets/') || parsed.pathname.endsWith('/index.html'))){
+        if(parsed.origin===location.origin && (parsed.pathname.includes('/assets/') || parsed.pathname.includes('/apps/') || parsed.pathname.endsWith('/index.html'))){
           loadTab(t,parsed.href,true,'iframe');
           return;
         }
@@ -11056,7 +11062,7 @@
       return '';
     };
     const nyxChatSourcePath=path=>['/apps/chat','/apps/chat/','/apps/chat/index.html'].includes(path);
-    const nyxAccountClientSourcePath=path=>nyxChatSourcePath(path)||['/apps/link-checker','/apps/link-checker/','/apps/link-checker/index.html'].includes(path);
+    const nyxAccountClientSourcePath=path=>nyxChatSourcePath(path)||['/apps/link-checker','/apps/link-checker/','/apps/link-checker/index.html','/apps/cloud-gaming','/apps/cloud-gaming/','/apps/cloud-gaming/index.html'].includes(path);
     const messageHandler=e=>{
       if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:account-token-request','nyx:chat-open-profile','nyx:chat-notification','nyx:subscription-refresh','nyx:proxy-direct-fallback','nyx:cloud-game-load','nyx:cloud-game-save','nyx:close-tab','nyx:go-home'].includes(e.data?.type)) return;
       if(['nyx:cloud-game-load','nyx:cloud-game-save'].includes(e.data.type)){

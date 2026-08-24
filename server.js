@@ -103,6 +103,14 @@ const signedInOnlineWindowMs = 6 * 60_000;
 const signedInPresence = new Map();
 const userActivityEventWindowMs = 15 * 60_000;
 const userActivityEventTimes = new Map();
+const nyxCloudGamingSessionIdPattern = /^[a-f0-9-]{16,80}$/i;
+const nyxCloudGamingSessions = new Map();
+const nyxCloudGamingProvisioningUsers = new Set();
+const nyxCloudGamingCreateAttempts = new Map();
+const nyxCloudGamingCreateWindowMs = 10 * 60_000;
+const nyxCloudGamingCreateMaxAttempts = 3;
+const nyxCloudGamingCatalogTtlMs = 30 * 60_000;
+let nyxCloudGamingCatalogCache = { expiresAt: 0, games: [], promise: null };
 const nyxSchoolChatAllowedIp = "206.15.249.212";
 const nyxSchoolChatChannelId = "school";
 const nyxSchoolChatChannelName = "Group Chat for School!";
@@ -217,11 +225,14 @@ const nyxCustomRoleCollection = "nyxCustomRoles";
 const nyxGlobalAppsCollection = "nyxConfiguration";
 const nyxGlobalAppsDocument = "globalApps";
 const nyxGlobalAppsLimit = 100;
+const nyxCloudGamingAppMigrationField = "cloudGamingAppInitialized";
+const nyxCloudGamingGlobalApp = Object.freeze({ id: "cloud-gaming", icon: "cloud-gaming", name: "Cloud Gaming", url: "/apps/cloud-gaming/" });
 const nyxDefaultGlobalApps = Object.freeze([
   { id: "link-checker", icon: "link-checker", name: "Link Checker", url: "/apps/link-checker/" },
   { id: "link-generator", icon: "link-generator", name: "Link Generator", url: "/apps/link-generator/" },
   { id: "youtube", icon: "youtube.com", name: "YouTube", url: "https://www.youtube.com/" },
   { id: "pirate-cove", icon: "games", name: "Pirate Cove", url: "/assets/games/" },
+  nyxCloudGamingGlobalApp,
   { id: "nyx-chat", icon: "nyx-chat", name: "Nyx Chat", url: "/apps/chat/" },
   { id: "geforce-now", icon: "geforcenow", name: "GeForce Now", url: "https://play.geforcenow.com/" },
   { id: "roblox", icon: "roblox.com", name: "Roblox", url: "https://web.cloudmoonapp.com/game/com.roblox.client/" },
@@ -3021,6 +3032,7 @@ function nyxGlobalAppIcon(value, url = "") {
   if (/^[a-z0-9][a-z0-9.-]{0,79}$/.test(explicit)) return explicit;
   if (/^nyx:\/\/ai$/i.test(url)) return "nyx-ai";
   if (/^\/(?:apps\/chat|assets\/games)(?:\/|$)/i.test(url)) return /chat/i.test(url) ? "nyx-chat" : "games";
+  if (/^\/apps\/cloud-gaming(?:\/|$)/i.test(url)) return "cloud-gaming";
   if (/^\/apps\/link-checker(?:\/|$)/i.test(url)) return "link-checker";
   if (/^\/apps\/link-generator(?:\/|$)/i.test(url)) return "link-generator";
   try {
@@ -3064,7 +3076,24 @@ function nyxGlobalAppsFromSnapshot(snapshot) {
 
 async function nyxGlobalApps(firebase) {
   const reference = firebase.firestore.collection(nyxGlobalAppsCollection).doc(nyxGlobalAppsDocument);
-  return nyxGlobalAppsFromSnapshot(await reference.get());
+  const snapshot = await reference.get();
+  if (snapshot.data()?.[nyxCloudGamingAppMigrationField] === true) return nyxGlobalAppsFromSnapshot(snapshot);
+  return firebase.firestore.runTransaction(async transaction => {
+    const currentSnapshot = await transaction.get(reference);
+    const apps = nyxGlobalAppsFromSnapshot(currentSnapshot);
+    if (currentSnapshot.data()?.[nyxCloudGamingAppMigrationField] !== true) {
+      if (apps.length < nyxGlobalAppsLimit && !apps.some(item => item.id === nyxCloudGamingGlobalApp.id || item.url === nyxCloudGamingGlobalApp.url)) {
+        const pirateCoveIndex = apps.findIndex(item => item.id === "pirate-cove");
+        apps.splice(pirateCoveIndex >= 0 ? pirateCoveIndex + 1 : apps.length, 0, { ...nyxCloudGamingGlobalApp });
+      }
+      transaction.set(reference, {
+        apps,
+        [nyxCloudGamingAppMigrationField]: true,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    }
+    return apps;
+  });
 }
 
 function secretMatches(actual, expected) {
@@ -5204,6 +5233,221 @@ function sameOriginRequest(req) {
     return false;
   }
 }
+
+function nyxCloudGamingBoundedInteger(value, fallback, minimum, maximum) {
+  const parsed = Number.parseInt(String(value || ""), 10);
+  return Number.isInteger(parsed) ? Math.min(maximum, Math.max(minimum, parsed)) : fallback;
+}
+
+function nyxCloudGamingHttpsUrl(value, { allowLocalHttp = false, originOnly = false } = {}) {
+  try {
+    const parsed = new URL(String(value || "").trim());
+    const localHttp = allowLocalHttp && parsed.protocol === "http:" && ["127.0.0.1", "localhost", "::1"].includes(parsed.hostname);
+    if (parsed.protocol !== "https:" && !localHttp) return "";
+    if (parsed.username || parsed.password || parsed.hash) return "";
+    if (originOnly && (parsed.pathname !== "/" || parsed.search)) return "";
+    return originOnly ? parsed.origin : parsed.href;
+  } catch {
+    return "";
+  }
+}
+
+function nyxCloudGamingConfig() {
+  const sharedApiKeyValue = String(process.env.STRATUS_API_KEY || "").trim();
+  const sharedApiKey = sharedApiKeyValue.length >= 32 && sharedApiKeyValue.length <= 256 && !/\s/.test(sharedApiKeyValue) ? sharedApiKeyValue : "";
+  const apiKey = String(process.env.NYX_STRATUS_API_KEY || sharedApiKey).trim();
+  const selfHosted = Boolean(sharedApiKey);
+  const localPort = nyxCloudGamingBoundedInteger(process.env.STRATUS_PORT, 3001, 1024, 65_535);
+  const baseUrl = nyxCloudGamingHttpsUrl(
+    process.env.NYX_STRATUS_API_BASE_URL || (selfHosted ? `http://127.0.0.1:${localPort}` : "https://api.stratus.lol"),
+    { allowLocalHttp: true, originOnly: true }
+  );
+  const publicBaseUrl = nyxCloudGamingHttpsUrl(
+    process.env.NYX_STRATUS_PUBLIC_BASE_URL || process.env.STRATUS_PUBLIC_ORIGIN || baseUrl,
+    { allowLocalHttp: true, originOnly: true }
+  );
+  const catalogUrl = nyxCloudGamingHttpsUrl(process.env.NYX_STRATUS_CATALOG_URL || "https://raw.githubusercontent.com/x8rr/stratus-api/main/cloud.json");
+  return {
+    apiKey,
+    baseUrl,
+    publicBaseUrl,
+    catalogUrl,
+    selfHosted,
+    configured: Boolean(apiKey && baseUrl && publicBaseUrl),
+    maxActiveSessions: nyxCloudGamingBoundedInteger(process.env.NYX_STRATUS_MAX_ACTIVE_SESSIONS || process.env.STRATUS_MAX_CONCURRENT_SESSIONS, 4, 1, 20),
+    createTimeoutMs: nyxCloudGamingBoundedInteger(process.env.NYX_STRATUS_CREATE_TIMEOUT_MS, selfHosted ? 210_000 : 120_000, 60_000, 330_000)
+  };
+}
+
+function nyxCloudGamingError(message, status = 502) {
+  const error = new Error(String(message || "Cloud Gaming is unavailable.").slice(0, 240));
+  error.status = status;
+  return error;
+}
+
+function nyxCloudGamingImageUrl(value) {
+  const url = nyxCloudGamingHttpsUrl(value);
+  return url && url.length <= 2_048 ? url : "";
+}
+
+function nyxCloudGamingGame(value) {
+  const source = value && typeof value === "object" ? value : {};
+  const key = String(source.game_key || "").trim();
+  const name = String(source.name || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 100);
+  if (!/^[a-z0-9][a-z0-9_-]{1,127}$/i.test(key) || !name) return null;
+  return {
+    key,
+    name,
+    description: String(source.description || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 600),
+    image: nyxCloudGamingImageUrl(source.image),
+    cover: nyxCloudGamingImageUrl(source.cover),
+    tags: [...new Set((Array.isArray(source.tags) ? source.tags : []).map(tag => String(tag || "").replace(/[^a-z0-9 +&/-]/gi, "").trim().slice(0, 32)).filter(Boolean))].slice(0, 8)
+  };
+}
+
+async function nyxCloudGamingCatalog(force = false) {
+  const now = Date.now();
+  if (!force && nyxCloudGamingCatalogCache.games.length && nyxCloudGamingCatalogCache.expiresAt > now) return nyxCloudGamingCatalogCache.games;
+  if (!force && nyxCloudGamingCatalogCache.promise) return nyxCloudGamingCatalogCache.promise;
+  const promise = (async () => {
+    const { catalogUrl } = nyxCloudGamingConfig();
+    if (!catalogUrl) throw nyxCloudGamingError("The Cloud Gaming catalog URL is not configured correctly.", 503);
+    const response = await fetch(catalogUrl, {
+      headers: { Accept: "application/json", "User-Agent": "Nyx-Cloud-Gaming/1.0" },
+      redirect: "error",
+      signal: AbortSignal.timeout(15_000)
+    });
+    if (!response.ok) throw nyxCloudGamingError(`The Cloud Gaming catalog returned ${response.status}.`);
+    const payload = await response.json();
+    const games = (Array.isArray(payload) ? payload : []).slice(0, 500).map(nyxCloudGamingGame).filter(Boolean);
+    if (!games.length) throw nyxCloudGamingError("The Cloud Gaming catalog was empty.");
+    nyxCloudGamingCatalogCache = { expiresAt: Date.now() + nyxCloudGamingCatalogTtlMs, games, promise: null };
+    return games;
+  })();
+  nyxCloudGamingCatalogCache.promise = promise;
+  try {
+    return await promise;
+  } catch (error) {
+    nyxCloudGamingCatalogCache.promise = null;
+    throw error;
+  }
+}
+
+async function nyxCloudGamingUser(req) {
+  try {
+    return await authenticatedNyxUser(req);
+  } catch (error) {
+    if (error.status === 401) error.message = "Sign in to use Cloud Gaming.";
+    throw error;
+  }
+}
+
+function nyxCloudGamingCreateRate(uid, now = Date.now()) {
+  const attempts = (nyxCloudGamingCreateAttempts.get(uid) || []).filter(timestamp => timestamp > now - nyxCloudGamingCreateWindowMs);
+  attempts.push(now);
+  nyxCloudGamingCreateAttempts.set(uid, attempts);
+  return attempts.length <= nyxCloudGamingCreateMaxAttempts;
+}
+
+function nyxCloudGamingSessionFor(uid, value) {
+  const sessionId = String(value || "").trim();
+  if (!nyxCloudGamingSessionIdPattern.test(sessionId)) throw nyxCloudGamingError("That Cloud Gaming session is invalid.", 400);
+  const session = nyxCloudGamingSessions.get(sessionId);
+  if (!session || session.uid !== uid) throw nyxCloudGamingError("That Cloud Gaming session is no longer available.", 404);
+  return session;
+}
+
+function nyxCloudGamingEmbedUrl(sessionId) {
+  const { publicBaseUrl } = nyxCloudGamingConfig();
+  if (!publicBaseUrl) return "";
+  const url = new URL("/cloud/v1/embed", `${publicBaseUrl}/`);
+  url.searchParams.set("id", sessionId);
+  return url.href;
+}
+
+function nyxCloudGamingSessionPayload(session) {
+  return {
+    id: session.id,
+    gameKey: session.gameKey,
+    gameName: session.gameName,
+    state: session.state,
+    queuePosition: Number.isFinite(session.queuePosition) ? session.queuePosition : null,
+    embedUrl: session.state === "active" ? nyxCloudGamingEmbedUrl(session.id) : "",
+    startedAtMs: Number(session.startedAtMs || 0),
+    maxSeconds: Number(session.maxSeconds || 0)
+  };
+}
+
+async function nyxCloudGamingUpstream(path, { method = "GET", body, signal } = {}) {
+  const config = nyxCloudGamingConfig();
+  if (!config.configured) throw nyxCloudGamingError("Cloud Gaming needs a Stratus API key in the OVH environment.", 503);
+  const target = new URL(path, `${config.baseUrl}/`);
+  if (target.origin !== new URL(config.baseUrl).origin) throw nyxCloudGamingError("The Cloud Gaming provider URL was rejected.", 500);
+  return fetch(target, {
+    method,
+    headers: {
+      Accept: "application/json, application/x-ndjson",
+      "x-api-key": config.apiKey,
+      ...(body === undefined ? {} : { "Content-Type": "application/json" })
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+    redirect: "manual",
+    signal: signal || AbortSignal.timeout(30_000)
+  });
+}
+
+async function nyxCloudGamingUpstreamJson(path, options = {}) {
+  const response = await nyxCloudGamingUpstream(path, options);
+  let payload = null;
+  try { payload = await response.json(); } catch {}
+  if (!response.ok) {
+    const message = String(payload?.error || `The Cloud Gaming provider returned ${response.status}.`).slice(0, 240);
+    throw nyxCloudGamingError(message, response.status >= 400 && response.status < 500 ? response.status : 502);
+  }
+  return payload && typeof payload === "object" ? payload : {};
+}
+
+function nyxCloudGamingSafeEvent(value) {
+  const source = value && typeof value === "object" ? value : {};
+  const status = ["creating_account", "account_ready", "requesting_game", "queue", "finished_queue", "error"].includes(source.status) ? source.status : "working";
+  const event = { status };
+  if (nyxCloudGamingSessionIdPattern.test(String(source.uuid || ""))) event.id = String(source.uuid);
+  if (Number.isFinite(Number(source.queue_pos))) event.queuePosition = Math.max(0, Number(source.queue_pos));
+  if (status === "error") event.error = String(source.error || "The Cloud Gaming provider could not start this game.").slice(0, 240);
+  return event;
+}
+
+function nyxCloudGamingProviderUsage(payload) {
+  const quota = payload?.quota && typeof payload.quota === "object" ? payload.quota : {};
+  const safeQuota = {};
+  for (const period of ["minute", "hour", "day", "month"]) {
+    const item = quota[period];
+    if (!item || typeof item !== "object") continue;
+    safeQuota[period] = { used: Math.max(0, Number(item.used || 0)), limit: Math.max(0, Number(item.limit || 0)) };
+  }
+  return {
+    sessionTimeUsedSeconds: Math.max(0, Number(payload?.session_time_used_seconds || 0)),
+    sessionTimeLimitSeconds: Math.max(0, Number(payload?.session_time_limit_seconds || 0)),
+    quota: safeQuota
+  };
+}
+
+const nyxCloudGamingCleanupTimer = setInterval(() => {
+  const now = Date.now();
+  for (const [id, session] of nyxCloudGamingSessions) {
+    const stale = now - Number(session.lastSeenAtMs || session.createdAtMs || 0) > 90_000;
+    const expired = now - Number(session.createdAtMs || 0) > 35 * 60_000;
+    if (!stale && !expired) continue;
+    nyxCloudGamingSessions.delete(id);
+    void nyxCloudGamingUpstreamJson("/cloud/v1/quitSession", { method: "POST", body: { uuid: id } }).catch(() => {});
+  }
+  for (const [uid, attempts] of nyxCloudGamingCreateAttempts) {
+    const recent = attempts.filter(timestamp => timestamp > now - nyxCloudGamingCreateWindowMs);
+    if (recent.length) nyxCloudGamingCreateAttempts.set(uid, recent);
+    else nyxCloudGamingCreateAttempts.delete(uid);
+  }
+}, 30_000);
+nyxCloudGamingCleanupTimer.unref?.();
 
 app.all(["/api/nyxcloud/status", "/api/nyxcloud/search"], (_req, res) => {
   res.set("Cache-Control", "no-store").status(410).json({ error: "NyxCloud has been retired." });
@@ -9426,6 +9670,211 @@ app.post("/api/activity/event", async (req, res) => {
   }
 });
 
+app.get("/api/cloud-gaming/status", (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
+  const config = nyxCloudGamingConfig();
+  res.json({ configured: config.configured, provider: "Stratus", selfHosted: config.selfHosted, signInRequired: true, maxActiveSessions: config.maxActiveSessions });
+});
+
+app.get("/api/cloud-gaming/catalog", async (req, res) => {
+  res.set("Cache-Control", "private, max-age=300");
+  if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
+  try {
+    await nyxCloudGamingUser(req);
+    const games = await nyxCloudGamingCatalog();
+    res.json({ games, updatedAt: new Date().toISOString() });
+  } catch (error) {
+    res.status(error.status || 502).json({ error: error.message || "The Cloud Gaming catalog is unavailable." });
+  }
+});
+
+app.get("/api/cloud-gaming/session", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
+  try {
+    const { token } = await nyxCloudGamingUser(req);
+    const session = [...nyxCloudGamingSessions.values()].find(item => item.uid === token.uid) || null;
+    res.json({ session: session ? nyxCloudGamingSessionPayload(session) : null });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Cloud Gaming session state is unavailable." });
+  }
+});
+
+app.post("/api/cloud-gaming/sessions", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
+  let uid = "";
+  let controller = null;
+  let timeout = null;
+  let closed = null;
+  try {
+    const config = nyxCloudGamingConfig();
+    if (!config.configured) throw nyxCloudGamingError("Cloud Gaming needs a Stratus API key in the OVH environment.", 503);
+    const authenticated = await nyxCloudGamingUser(req);
+    uid = authenticated.token.uid;
+    if (nyxCloudGamingProvisioningUsers.has(uid)) throw nyxCloudGamingError("Your Cloud Gaming session is already being prepared.", 409);
+    const existing = [...nyxCloudGamingSessions.values()].find(item => item.uid === uid);
+    if (existing) throw nyxCloudGamingError("Close your current Cloud Gaming session before starting another.", 409);
+    if (nyxCloudGamingProvisioningUsers.size + nyxCloudGamingSessions.size >= config.maxActiveSessions) {
+      throw nyxCloudGamingError("Cloud Gaming is at capacity. Try again after another session ends.", 429);
+    }
+    if (!nyxCloudGamingCreateRate(uid)) {
+      res.set("Retry-After", String(Math.ceil(nyxCloudGamingCreateWindowMs / 1000)));
+      throw nyxCloudGamingError("Too many Cloud Gaming launch attempts. Try again later.", 429);
+    }
+    const gameKey = String(req.body?.gameKey || "").trim();
+    const games = await nyxCloudGamingCatalog();
+    const game = games.find(item => item.key === gameKey);
+    if (!game) throw nyxCloudGamingError("Choose a game from the current Cloud Gaming catalog.", 400);
+
+    nyxCloudGamingProvisioningUsers.add(uid);
+    controller = new AbortController();
+    timeout = setTimeout(() => controller.abort(), config.createTimeoutMs);
+    closed = () => { if (!res.writableEnded) controller.abort(); };
+    res.once("close", closed);
+    const upstream = await nyxCloudGamingUpstream("/cloud/v1/createSession", {
+      method: "POST",
+      body: { game_key: game.key },
+      signal: controller.signal
+    });
+    if (!upstream.ok || !upstream.body) {
+      let payload = null;
+      try { payload = await upstream.json(); } catch {}
+      throw nyxCloudGamingError(payload?.error || `The Cloud Gaming provider returned ${upstream.status}.`, upstream.status >= 400 && upstream.status < 500 ? upstream.status : 502);
+    }
+
+    res.status(200).type("application/x-ndjson");
+    res.set("X-Content-Type-Options", "nosniff");
+    res.flushHeaders?.();
+    const reader = upstream.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let terminal = false;
+    while (!terminal) {
+      const { done, value } = await reader.read();
+      buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+      const lines = buffer.split(/\r?\n/);
+      buffer = done ? "" : lines.pop() || "";
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        let source;
+        try { source = JSON.parse(line); } catch { continue; }
+        const event = nyxCloudGamingSafeEvent(source);
+        if (event.id) {
+          const state = event.status === "queue" ? "queued" : event.status === "finished_queue" ? "ready" : "preparing";
+          const current = nyxCloudGamingSessions.get(event.id) || {
+            id: event.id,
+            uid,
+            gameKey: game.key,
+            gameName: game.name,
+            createdAtMs: Date.now(),
+            startedAtMs: 0,
+            maxSeconds: 0
+          };
+          current.state = state;
+          current.queuePosition = event.queuePosition;
+          current.lastSeenAtMs = Date.now();
+          nyxCloudGamingSessions.set(event.id, current);
+        }
+        if (event.status === "error") {
+          for (const [id, session] of nyxCloudGamingSessions) if (session.uid === uid && session.state !== "active") nyxCloudGamingSessions.delete(id);
+          terminal = true;
+        }
+        res.write(`${JSON.stringify(event)}\n`);
+      }
+      if (done) break;
+    }
+    res.end();
+  } catch (error) {
+    const message = error?.name === "AbortError" ? "Cloud Gaming took too long to prepare the session." : error?.message || "Cloud Gaming could not start this game.";
+    if (res.headersSent) {
+      if (!res.writableEnded) res.end(`${JSON.stringify({ status: "error", error: String(message).slice(0, 240) })}\n`);
+    } else {
+      res.status(error.status || 502).json({ error: String(message).slice(0, 240) });
+    }
+  } finally {
+    if (uid) nyxCloudGamingProvisioningUsers.delete(uid);
+    if (timeout) clearTimeout(timeout);
+    if (closed) res.off("close", closed);
+  }
+});
+
+app.get("/api/cloud-gaming/sessions/:id/queue", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
+  try {
+    const { token } = await nyxCloudGamingUser(req);
+    const session = nyxCloudGamingSessionFor(token.uid, req.params.id);
+    const payload = await nyxCloudGamingUpstreamJson(`/cloud/v1/getQueue?uuid=${encodeURIComponent(session.id)}`);
+    const event = nyxCloudGamingSafeEvent(payload);
+    session.lastSeenAtMs = Date.now();
+    if (event.status === "queue") {
+      session.state = "queued";
+      session.queuePosition = event.queuePosition;
+    } else if (event.status === "finished_queue") {
+      session.state = "ready";
+      session.queuePosition = null;
+    }
+    res.json({ ...event, session: nyxCloudGamingSessionPayload(session) });
+  } catch (error) {
+    res.status(error.status || 502).json({ error: error.message || "The Cloud Gaming queue is unavailable." });
+  }
+});
+
+app.post("/api/cloud-gaming/sessions/:id/start", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
+  try {
+    const { token } = await nyxCloudGamingUser(req);
+    const session = nyxCloudGamingSessionFor(token.uid, req.params.id);
+    if (session.state !== "ready") throw nyxCloudGamingError("This Cloud Gaming session is not ready yet.", 409);
+    const payload = await nyxCloudGamingUpstreamJson("/cloud/v1/startGame", { method: "POST", body: { uuid: session.id } });
+    if (!Array.isArray(payload.ice_servers) || !nyxCloudGamingHttpsUrl(String(payload.signaling_ws || "").replace(/^wss:/i, "https:"))) {
+      throw nyxCloudGamingError("The Cloud Gaming provider returned incomplete WebRTC details.");
+    }
+    session.state = "active";
+    session.startedAtMs = Date.now();
+    session.lastSeenAtMs = Date.now();
+    session.maxSeconds = nyxCloudGamingBoundedInteger(payload.max_seconds, 900, 60, 1_200);
+    res.json({ session: nyxCloudGamingSessionPayload(session) });
+  } catch (error) {
+    res.status(error.status || 502).json({ error: error.message || "The Cloud Gaming stream could not start." });
+  }
+});
+
+app.post("/api/cloud-gaming/sessions/:id/ping", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
+  try {
+    const { token } = await nyxCloudGamingUser(req, false);
+    const session = nyxCloudGamingSessionFor(token.uid, req.params.id);
+    if (session.state !== "active") throw nyxCloudGamingError("That Cloud Gaming session is not active.", 409);
+    const payload = await nyxCloudGamingUpstreamJson("/cloud/v1/pingSession", { method: "POST", body: { uuid: session.id } });
+    session.lastSeenAtMs = Date.now();
+    res.json(nyxCloudGamingProviderUsage(payload));
+  } catch (error) {
+    res.status(error.status || 502).json({ error: error.message || "The Cloud Gaming keepalive failed." });
+  }
+});
+
+app.delete("/api/cloud-gaming/sessions/:id", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
+  try {
+    const { token } = await nyxCloudGamingUser(req, false);
+    const session = nyxCloudGamingSessionFor(token.uid, req.params.id);
+    try {
+      await nyxCloudGamingUpstreamJson("/cloud/v1/quitSession", { method: "POST", body: { uuid: session.id } });
+    } finally {
+      nyxCloudGamingSessions.delete(session.id);
+    }
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(error.status || 502).json({ error: error.message || "The Cloud Gaming session could not be closed." });
+  }
+});
+
 app.get("/api/apps", async (_req, res) => {
   res.set("Cache-Control", "public, max-age=30, must-revalidate");
   try {
@@ -10626,6 +11075,7 @@ app.use((req, res, next) => {
   const path = String(req.path || "");
   const shouldNotServeNyx =
     path.startsWith("/assets/") ||
+    path.startsWith("/apps/") ||
     path.startsWith("/games/") ||
     path.startsWith("/images/") ||
     path.startsWith("/js/") ||

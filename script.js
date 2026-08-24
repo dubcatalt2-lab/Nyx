@@ -2369,7 +2369,7 @@
     'icefy.top':localIcon('theatre-masks.svg?v=1'),
     'fmhy.net':localIcon('theatre-masks.svg?v=1'),
     'nyx-chat':localIcon('chat.svg?v=2'),
-    'cloud-gaming':localIcon('cloud-gaming.svg?v=1'),
+    'cloud-gaming':localIcon('cloud-gaming.svg?v=2'),
     'link-checker':localIcon('link-checker.svg?v=2'),
     'link-generator':localIcon('link-generator.svg'),
     'chess.com':localIcon('chess-logo.png'),

@@ -91,6 +91,25 @@ function buildRuntimeSource(source, config) {
 
   output = replaceOnce(
     output,
+    `let poolFilling = false;`,
+    `let poolFilling = false;\nlet poolFillPromise = null;`,
+    "shared account-pool preparation"
+  );
+  output = replaceOnce(
+    output,
+    `async function fillPool() {`,
+    `async function fillPoolWork() {`,
+    "account-pool worker"
+  );
+  output = replaceOnce(
+    output,
+    `async function createAccount() {\n  if (pool.length > 0) {\n    const acc = pool.shift();\n    logSys(chalk.gray(\`pool: served account (\${pool.length} remaining)\`));\n    fillPool().catch(() => {});\n    return acc;\n  }\n  logSys(chalk.gray("pool: miss — creating account on demand"));\n  const acc = await createAccountRaw();\n  fillPool().catch(() => {});\n  return acc;\n}`,
+    `function fillPool() {\n  if (poolFillPromise) return poolFillPromise;\n  poolFillPromise = fillPoolWork().finally(() => {\n    poolFillPromise = null;\n  });\n  return poolFillPromise;\n}\n\nasync function createAccount() {\n  if (pool.length > 0) {\n    const acc = pool.shift();\n    logSys(chalk.gray(\`pool: served account (\${pool.length} remaining)\`));\n    fillPool().catch(() => {});\n    return acc;\n  }\n  if (poolFillPromise) {\n    logSys(chalk.gray("pool: waiting for prepared account"));\n    await poolFillPromise;\n    if (pool.length > 0) {\n      const acc = pool.shift();\n      logSys(chalk.gray(\`pool: served account (\${pool.length} remaining)\`));\n      fillPool().catch(() => {});\n      return acc;\n    }\n  }\n  logSys(chalk.gray("pool: miss — creating account on demand"));\n  const acc = await createAccountRaw();\n  fillPool().catch(() => {});\n  return acc;\n}`,
+    "account-pool launch coordination"
+  );
+
+  output = replaceOnce(
+    output,
     `  const loginRes = await raccoonFetch("/users/emailLogin", {\n    method: "POST",\n    headers: h,\n    body: new URLSearchParams({ email, password: raccoonPassword, ...base }),\n  });\n  const loginData = await loginRes.json();`,
     `  const loginOptions = {\n    method: "POST",\n    headers: h,\n    body: new URLSearchParams({ email, password: raccoonPassword, ...base }),\n  };\n  let loginRes;\n  let loginData;\n  for (let attempt = 0; attempt < 2; attempt++) {\n    try {\n      loginRes = await raccoonFetch("/users/emailLogin", loginOptions);\n      loginData = await loginRes.json();\n      break;\n    } catch (error) {\n      if (attempt === 1) throw error;\n      logSys(chalk.gray("account login response interrupted - retrying"));\n      await new Promise(resolve => setTimeout(resolve, 750));\n    }\n  }`,
     "provider login response retry"

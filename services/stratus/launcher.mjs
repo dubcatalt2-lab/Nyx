@@ -91,6 +91,20 @@ function buildRuntimeSource(source, config) {
 
   output = replaceOnce(
     output,
+    `  const loginRes = await raccoonFetch("/users/emailLogin", {\n    method: "POST",\n    headers: h,\n    body: new URLSearchParams({ email, password: raccoonPassword, ...base }),\n  });\n  const loginData = await loginRes.json();`,
+    `  const loginOptions = {\n    method: "POST",\n    headers: h,\n    body: new URLSearchParams({ email, password: raccoonPassword, ...base }),\n  };\n  let loginRes;\n  let loginData;\n  for (let attempt = 0; attempt < 2; attempt++) {\n    try {\n      loginRes = await raccoonFetch("/users/emailLogin", loginOptions);\n      loginData = await loginRes.json();\n      break;\n    } catch (error) {\n      if (attempt === 1) throw error;\n      logSys(chalk.gray("account login response interrupted - retrying"));\n      await new Promise(resolve => setTimeout(resolve, 750));\n    }\n  }`,
+    "provider login response retry"
+  );
+
+  output = replaceOnce(
+    output,
+    `  } catch (e) {\n    releaseAccountSlot(apiKey);\n    push({ status: "error", error: e.message });\n    killSession(uuid, "creation_error");\n  }`,
+    `  } catch (e) {\n    releaseAccountSlot(apiKey);\n    const rawError = String(e?.message || "Cloud Gaming provider error");\n    logApi(apiKey, chalk.red(\`createSession error - \${rawError}\`));\n    const publicError = /terminated|fetch failed|aborted|econnreset|etimedout|socket/i.test(rawError)\n      ? "The cloud provider connection was interrupted. Please retry."\n      : rawError;\n    push({ status: "error", error: publicError });\n    killSession(uuid, "creation_error");\n  }`,
+    "provider creation error reporting"
+  );
+
+  output = replaceOnce(
+    output,
     `  doStopGame(session).catch(() => {});\n  sessions.delete(uuid);`,
     `  const stopPromise = doStopGame(session).catch(() => {});\n  sessions.delete(uuid);`,
     "session stop tracking"
@@ -160,7 +174,7 @@ async function prepareRuntime() {
     maxConcurrentSessions: boundedInteger("STRATUS_MAX_CONCURRENT_SESSIONS", 4, 1, 12),
     maxSessionSeconds: boundedInteger("STRATUS_MAX_SESSION_SECONDS", 900, 60, 1_140),
     createTimeoutMs: boundedInteger("STRATUS_CREATE_TIMEOUT_MS", 180_000, 60_000, 300_000),
-    poolTarget: boundedInteger("STRATUS_ACCOUNT_POOL_TARGET", 0, 0, 2),
+    poolTarget: boundedInteger("STRATUS_ACCOUNT_POOL_TARGET", 1, 0, 2),
     perMinute: boundedInteger("STRATUS_LIMIT_PER_MINUTE", 4, 1, 30),
     perHour: boundedInteger("STRATUS_LIMIT_PER_HOUR", 20, 1, 300),
     perDay: boundedInteger("STRATUS_LIMIT_PER_DAY", 80, 1, 2_000),

@@ -24,7 +24,7 @@ To start it locally, set a throwaway development key and local public origin in 
 - The process listens only on `127.0.0.1:3001` by default.
 - Caddy exposes only the embed, embed-data, signaling, health, and source paths.
 - Session creation and management remain private loopback calls from the Nyx server.
-- The idle account pool defaults to zero.
+- The idle account pool defaults to one so launches normally use a prepared provider account instead of waiting through account provisioning.
 - Concurrency, duration, and rolling launch limits are bounded by environment configuration.
 - `/var/lib/nyx-stratus/runtime` contains the generated API and secret-bearing `sites.json` with restricted permissions.
 

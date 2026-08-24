@@ -166,6 +166,19 @@ function buildRuntimeSource(source, config) {
 
   output = replaceOnce(
     output,
+    `        if (data.from === gl_key && data.body?.code === 200) {\n          toClient({ type: "game_ready" });\n        }`,
+    `        if (data.from === gl_key && data.body?.code === 200) {\n          session.game_ready = true;\n          toClient({ type: "game_ready" });\n        }`,
+    "provider readiness retention"
+  );
+  output = replaceOnce(
+    output,
+    `    session.clientWs = ws;\n\n    ws.on("message", (raw) => {`,
+    `    session.clientWs = ws;\n    if (session.game_ready && ws.readyState === WebSocket.OPEN) {\n      ws.send(JSON.stringify({ type: "game_ready" }));\n    }\n\n    ws.on("message", (raw) => {`,
+    "late player readiness replay"
+  );
+
+  output = replaceOnce(
+    output,
     `httpServer.listen(PORT, () => {`,
     `let shuttingDown = false;\nfunction shutdown(signal) {\n  if (shuttingDown) return;\n  shuttingDown = true;\n  logSys(chalk.gray(\`shutdown: \${signal}\`));\n  const stops = [...sessions.keys()].map(uuid => killSession(uuid, "service_shutdown"));\n  Promise.allSettled(stops).finally(() => httpServer.close(() => process.exit(0)));\n  setTimeout(() => process.exit(1), 10_000).unref();\n}\nprocess.once("SIGTERM", () => shutdown("SIGTERM"));\nprocess.once("SIGINT", () => shutdown("SIGINT"));\n\nhttpServer.listen(PORT, "127.0.0.1", () => {`,
     "loopback binding and graceful shutdown"

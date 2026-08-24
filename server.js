@@ -229,7 +229,7 @@ const nyxDefaultGlobalApps = Object.freeze([
   { id: "duck-ai", icon: "duck.ai", name: "Duck AI", url: "https://duck.ai/" },
   { id: "nyx-ai", icon: "nyx-ai", name: "Nyx AI", url: "nyx://ai" },
   { id: "wikipedia", icon: "wikipedia.org", name: "Wikipedia", url: "https://www.wikipedia.org/" },
-  { id: "movies", icon: "icefy.top", name: "Movies", url: "http://icefy.top/" },
+  { id: "movies", icon: "aether.cx", name: "Movies", url: "https://aether.cx/" },
   { id: "more-movie-sites", icon: "fmhy.net", name: "More Movie Sites", url: "https://fmhy.net/video#p-stream-forks" },
   { id: "tiktok", icon: "tiktok.com", name: "TikTok", url: "https://www.tiktok.com/" },
   { id: "instagram", icon: "instagram.com", name: "Instagram", url: "https://www.instagram.com/" },
@@ -3049,7 +3049,13 @@ function nyxGlobalAppsFromSnapshot(snapshot) {
   if (!snapshot?.exists) return nyxDefaultGlobalAppsPayload();
   const stored = snapshot.data()?.apps;
   if (!Array.isArray(stored)) return nyxDefaultGlobalAppsPayload();
-  return stored.slice(0, nyxGlobalAppsLimit).map(app => nyxNormalizeGlobalApp(app)).filter(Boolean);
+  return stored.slice(0, nyxGlobalAppsLimit).map(app => {
+    const normalized = nyxNormalizeGlobalApp(app);
+    if (normalized?.id === "movies" && normalized.url === "http://icefy.top/") {
+      return { ...normalized, icon: "aether.cx", url: "https://aether.cx/" };
+    }
+    return normalized;
+  }).filter(Boolean);
 }
 
 async function nyxGlobalApps(firebase) {

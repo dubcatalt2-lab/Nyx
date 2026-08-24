@@ -1,125 +1,77 @@
-/* First-run setup uses the same quiet, tinted canvas as the Nyx home screen. */
+/* First-run setup follows the redesigned Nyx shell: a pure-black canvas,
+   neutral chrome, and an accent that previews the selected theme. */
 html body.setup-active{
-  --setup-canvas:var(--nyx-unified-canvas,#151d2b);
-  --setup-surface:var(--nyx-load-surface,#101827);
-  --setup-deep:var(--nyx-load-deep-bg,#050912);
-  --setup-control:var(--nyx-chrome-base,#0d1624);
-  --setup-control-hover:var(--nyx-chrome-hover,#203149);
-  --setup-selected:var(--nyx-chrome-active,#1a293e);
-  --setup-accent:var(--nyx-load-accent,#6687b2);
-  --setup-bright:var(--nyx-load-mid,#91acd2);
-  --setup-text:var(--nyx-load-bright,#d4deec);
-  --setup-muted:var(--nyx-load-muted,#899bb5);
-  --setup-line:color-mix(in srgb,var(--setup-accent) 42%,transparent);
-  --setup-line-soft:color-mix(in srgb,var(--setup-bright) 17%,transparent);
+  --setup-canvas:#000;
+  --setup-surface:#08080c;
+  --setup-deep:#030305;
+  --setup-control:#101014;
+  --setup-control-hover:#18171e;
+  --setup-selected:color-mix(in srgb,var(--setup-accent) 18%,#111116);
+  --setup-accent:var(--theme-accent,#a78bfa);
+  --setup-bright:color-mix(in srgb,var(--setup-accent) 76%,#fff);
+  --setup-text:#f7f7fb;
+  --setup-muted:#9896a2;
+  --setup-line:color-mix(in srgb,var(--setup-accent) 46%,transparent);
+  --setup-line-soft:rgba(255,255,255,.1);
 }
 
 html body #setupScreen[data-preview-theme="default"]{
-  --setup-canvas:#151d2b;
-  --setup-surface:#101827;
-  --setup-deep:#050912;
-  --setup-control:#0d1624;
-  --setup-control-hover:#203149;
-  --setup-selected:#1a293e;
-  --setup-accent:#6687b2;
-  --setup-bright:#91acd2;
-  --setup-text:#d4deec;
-  --setup-muted:#899bb5;
+  --setup-accent:#a78bfa;
+  --setup-bright:#c4b5fd;
 }
 
 html body #setupScreen[data-preview-theme="midnight"]{
-  --setup-canvas:#070b12;
-  --setup-surface:#090e18;
-  --setup-deep:#020408;
-  --setup-control:#080e18;
-  --setup-control-hover:#101a2a;
-  --setup-selected:#16243a;
-  --setup-accent:#49678f;
-  --setup-bright:#7494bd;
-  --setup-text:#afbed2;
-  --setup-muted:#687b96;
+  --setup-accent:#6f8fb9;
+  --setup-bright:#9ab5d8;
 }
 
 html body #setupScreen[data-preview-theme="ruby"]{
-  --setup-canvas:#1a1418;
-  --setup-surface:#181116;
-  --setup-deep:#080507;
-  --setup-control:#1a1117;
-  --setup-control-hover:#2d1c24;
-  --setup-selected:#39232d;
   --setup-accent:#9f5f6d;
   --setup-bright:#c18491;
-  --setup-text:#ddbec5;
-  --setup-muted:#9d7d86;
 }
 
 html body #setupScreen[data-preview-theme="emerald"]{
-  --setup-canvas:#121b1b;
-  --setup-surface:#101918;
-  --setup-deep:#050909;
-  --setup-control:#0e1917;
-  --setup-control-hover:#1b2c27;
-  --setup-selected:#243a33;
   --setup-accent:#568879;
   --setup-bright:#7fb19f;
-  --setup-text:#c0d8cf;
-  --setup-muted:#79978d;
 }
 
 html body #setupScreen[data-preview-theme="sakura"]{
-  --setup-canvas:#1b161c;
-  --setup-surface:#191219;
-  --setup-deep:#080509;
-  --setup-control:#1a121a;
-  --setup-control-hover:#2d202d;
-  --setup-selected:#39283a;
   --setup-accent:#956781;
   --setup-bright:#b98ba8;
-  --setup-text:#d9bfce;
-  --setup-muted:#9b7f91;
 }
 
 html body #setupScreen[data-preview-theme="fresh"]{
-  --setup-canvas:#162019;
-  --setup-surface:#131c15;
-  --setup-deep:#060a07;
-  --setup-control:#111a13;
-  --setup-control-hover:#233225;
-  --setup-selected:#2d402f;
   --setup-accent:#728f6b;
   --setup-bright:#a2bd9a;
-  --setup-text:#d9e5d6;
-  --setup-muted:#91a68d;
   --setup-line:rgba(114,143,107,.42);
-  --setup-line-soft:rgba(162,189,154,.17);
 }
 
 html body .setup-screen{
   padding:clamp(12px,2.4vw,28px);
-  background-color:color-mix(in srgb,var(--setup-canvas) 94%,#03060c);
+  background-color:#000;
   background-image:
-    radial-gradient(circle at center,color-mix(in srgb,var(--setup-accent) 18%,transparent) 1.6px,transparent 1.9px),
-    linear-gradient(color-mix(in srgb,var(--setup-deep) 14%,transparent),color-mix(in srgb,var(--setup-deep) 36%,transparent));
-  background-size:24px 24px,auto;
-  background-position:0 0,0 0;
+    radial-gradient(circle at 9% 16%,color-mix(in srgb,var(--setup-bright) 82%,transparent) 0 1.6px,transparent 2px),
+    radial-gradient(circle at 18% 75%,color-mix(in srgb,var(--setup-accent) 58%,transparent) 0 1.3px,transparent 1.8px),
+    radial-gradient(circle at 83% 19%,color-mix(in srgb,var(--setup-bright) 68%,transparent) 0 1.5px,transparent 2px),
+    radial-gradient(circle at 91% 81%,color-mix(in srgb,var(--setup-accent) 52%,transparent) 0 1.2px,transparent 1.7px);
   backdrop-filter:none;
   -webkit-backdrop-filter:none;
 }
 
 html body .setup-panel{
   position:relative;
-  width:min(820px,calc(100vw - 28px));
-  min-height:min(570px,calc(100vh - 40px));
+  width:min(860px,calc(100vw - 28px));
+  min-height:min(590px,calc(100vh - 40px));
   max-height:calc(100vh - 40px);
   padding:0;
   overflow:hidden;
   border:1px solid var(--setup-line);
-  border-radius:22px;
-  background:color-mix(in srgb,var(--setup-surface) 94%,transparent);
+  border-radius:20px;
+  background:var(--setup-surface);
   color:var(--setup-text);
-  box-shadow:0 28px 80px rgba(0,0,0,.42),inset 0 1px 0 var(--setup-line-soft);
-  backdrop-filter:blur(26px) saturate(1.08);
-  -webkit-backdrop-filter:blur(26px) saturate(1.08);
+  box-shadow:0 32px 90px rgba(0,0,0,.72),inset 0 1px 0 rgba(255,255,255,.04);
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
 }
 
 html body .setup-header{
@@ -134,7 +86,7 @@ html body .setup-header{
   column-gap:28px;
   padding:25px 28px 23px;
   border-bottom:1px solid var(--setup-line-soft);
-  background:linear-gradient(135deg,color-mix(in srgb,var(--setup-bright) 6%,transparent),transparent 52%);
+  background:#08080c;
 }
 
 html body .setup-eyebrow{
@@ -142,7 +94,7 @@ html body .setup-eyebrow{
   margin:0 0 7px;
   color:var(--setup-bright);
   font-size:10px;
-  font-weight:600;
+  font-weight:700;
   letter-spacing:.18em;
   line-height:1;
 }
@@ -154,7 +106,7 @@ html body .setup-panel .setup-header h1{
   -webkit-text-fill-color:var(--setup-text)!important;
   background:none!important;
   font-size:clamp(27px,3.2vw,38px);
-  font-weight:500;
+  font-weight:600;
   letter-spacing:-.035em;
   line-height:1.04;
   filter:none!important;
@@ -180,8 +132,8 @@ html body .setup-progress{
   margin:0;
   padding:10px 12px;
   border:1px solid var(--setup-line-soft);
-  border-radius:12px;
-  background:color-mix(in srgb,var(--setup-deep) 58%,transparent);
+  border-radius:999px;
+  background:#030305;
 }
 
 html body .setup-dot,
@@ -197,6 +149,7 @@ html body .setup-dot.active{
 
 html body .setup-dot.active{
   background:var(--setup-bright);
+  box-shadow:0 0 10px color-mix(in srgb,var(--setup-accent) 58%,transparent);
 }
 
 html body .setup-grid{
@@ -244,10 +197,10 @@ html body .setup-welcome-logo{
   height:84px;
   margin-bottom:5px;
   border:1px solid var(--setup-line);
-  border-radius:24px;
-  background:var(--setup-control);
+  border-radius:22px;
+  background:#0d0d12;
   color:var(--setup-bright);
-  box-shadow:inset 0 1px 0 var(--setup-line-soft);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 36px rgba(0,0,0,.35);
 }
 
 html body .setup-welcome-logo :is(img,svg){
@@ -306,9 +259,9 @@ html body .setup-field select{
   width:100%;
   min-height:46px;
   border:1px solid var(--setup-line-soft);
-  border-radius:13px;
+  border-radius:12px;
   outline:0;
-  background:color-mix(in srgb,var(--setup-control) 88%,transparent);
+  background:var(--setup-control);
   color:var(--setup-text);
   -webkit-text-fill-color:var(--setup-text);
   padding:0 14px;
@@ -350,7 +303,7 @@ html body .setup-theme-card{
   gap:8px;
   border:1px solid var(--setup-line-soft);
   border-radius:14px;
-  background:color-mix(in srgb,var(--setup-control) 84%,transparent);
+  background:var(--setup-control);
   color:var(--setup-text);
   box-shadow:inset 0 1px 0 color-mix(in srgb,var(--setup-bright) 5%,transparent);
 }
@@ -481,7 +434,7 @@ html body .setup-actions{
   margin:0;
   padding:17px 28px;
   border-top:1px solid var(--setup-line-soft);
-  background:color-mix(in srgb,var(--setup-deep) 34%,transparent);
+  background:#050508;
 }
 
 html body .setup-copyright{
@@ -498,7 +451,7 @@ html body .setup-actions button{
   height:40px;
   border:1px solid var(--setup-line-soft);
   border-radius:12px;
-  background:color-mix(in srgb,var(--setup-control) 82%,transparent);
+  background:var(--setup-control);
   color:var(--setup-text);
   -webkit-text-fill-color:var(--setup-text);
   padding:0 16px;
@@ -519,11 +472,17 @@ html body .setup-actions button:active{
   transform:none;
 }
 
-html body .setup-actions .primary,
-html body .setup-actions .primary:hover{
-  border-color:color-mix(in srgb,var(--setup-bright) 58%,transparent);
-  background:var(--setup-selected);
-  color:var(--setup-text);
+html body #setupScreen .setup-actions button.primary,
+html body #setupScreen .setup-actions button.primary:hover{
+  border-color:var(--setup-bright)!important;
+  background:var(--setup-bright)!important;
+  color:#09090c!important;
+  -webkit-text-fill-color:#09090c!important;
+}
+
+html body #setupScreen .setup-actions button.primary:focus-visible{
+  outline:2px solid var(--setup-bright);
+  outline-offset:3px;
 }
 
 html body .setup-actions [data-skip-setup]{

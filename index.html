@@ -82,7 +82,7 @@
 })();
 </script>
 <script src="startup.js?v=20260726-chromebook-layout-1"></script>
-  <link rel="stylesheet" href="styles.css?v=20260823-setup-redesign-v119">
+  <link rel="stylesheet" href="styles.css?v=20260823-school-onboarding-v120">
 <link rel="stylesheet" href="css/public-profile-polish.css?v=20260731-v1">
 <link rel="stylesheet" href="css/owner-dashboard-polish.css?v=20260820-global-apps-v8">
 <link id="nyxBrowserMicrointeractionsStyles" rel="stylesheet" href="css/browser-microinteractions.css?v=20260822-black-home-v27">
@@ -182,6 +182,7 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
         <span class="setup-dot"></span>
         <span class="setup-dot"></span>
         <span class="setup-dot"></span>
+        <span class="setup-dot"></span>
       </div>
     </div>
     <div class="setup-grid">
@@ -195,13 +196,29 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
       </section>
       <section class="setup-step" data-setup-step="1">
         <h2>Profile</h2>
-        <p>Choose the name Nyx uses for your home screen.</p>
+        <p>Choose a username. Nyx will offer to turn it into an account on the next step.</p>
         <div class="setup-name">
           <label for="setupName">Username</label>
           <input id="setupName" placeholder="Set username" autocomplete="nickname">
         </div>
       </section>
       <section class="setup-step" data-setup-step="2">
+        <h2>Create your Nyx account</h2>
+        <p>Secure the username you just chose so your profile and supported settings can follow you across devices.</p>
+        <div class="setup-account-card" data-setup-account-card>
+          <span class="setup-account-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path></svg></span>
+          <div class="setup-account-copy">
+            <strong data-setup-account-title>Create a free account</strong>
+            <span data-setup-account-status>Your username will be filled in automatically. Add a password to finish creating the account.</span>
+          </div>
+          <div class="setup-account-actions">
+            <button class="primary" data-setup-create-account type="button">Create account</button>
+            <button data-setup-sign-in type="button">I already have one</button>
+          </div>
+        </div>
+        <p class="setup-account-note">Already signed in? Nyx skips this step. You can also continue as a guest and create an account later.</p>
+      </section>
+      <section class="setup-step" data-setup-step="3">
         <h2>Look</h2>
         <p>Pick a theme by previewing how Nyx will look.</p>
         <div class="setup-field setup-hidden-select">
@@ -242,7 +259,7 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
           </button>
         </div>
       </section>
-      <section class="setup-step" data-setup-step="3">
+      <section class="setup-step" data-setup-step="4">
         <h2>Effects</h2>
         <p>Choose the particles Nyx shows in browser mode.</p>
         <div class="setup-field">
@@ -258,7 +275,7 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
           </select>
         </div>
       </section>
-      <section class="setup-step" data-setup-step="4">
+      <section class="setup-step" data-setup-step="5">
         <h2>Browser</h2>
         <p>Pick how browsing and search should open.</p>
         <div class="setup-custom-grid">
@@ -281,7 +298,7 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
           </div>
         </div>
       </section>
-      <section class="setup-step" data-setup-step="5">
+      <section class="setup-step" data-setup-step="6">
         <h2>Font</h2>
         <p>Choose the text style used across Nyx.</p>
         <div class="setup-field">
@@ -289,7 +306,7 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
           <select id="setupFont" data-font-value></select>
         </div>
       </section>
-      <section class="setup-step" data-setup-step="6">
+      <section class="setup-step" data-setup-step="7">
         <h2>Preview</h2>
         <p>Quick check before Nyx launches.</p>
         <div class="setup-final-preview">
@@ -307,7 +324,7 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
           </div>
         </div>
       </section>
-      <section class="setup-step" data-setup-step="7">
+      <section class="setup-step" data-setup-step="8">
         <div class="setup-shortcut-page">
           <h2>Shortcuts</h2>
           <p class="setup-shortcut-intro">Nyx uses Left Alt for browser controls so the shortcuts still feel familiar while staying inside Nyx.</p>
@@ -447,6 +464,6 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
 <script src="js/loading-screen.js?v=20260730-studyhub-input-v11"></script>
 <script src="js/pwa-install.js?v=20260820-singlefile-local-url-v9"></script>
 <script src="js/owner-dashboard.js?v=20260822-hide-created-v26"></script>
-<script src="script.js?v=20260823-tab-escape-aether-v135"></script>
+<script src="script.js?v=20260823-school-onboarding-v136"></script>
 </body>
 </html>

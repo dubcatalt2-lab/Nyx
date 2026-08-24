@@ -8,7 +8,7 @@ The Express application checks the list before handling each request. Ban-list r
 
 ## Production IP forwarding
 
-On Netlify, `netlify/functions/api.mjs` enables `NYX_TRUST_PROXY` by default so the application can use Netlify's `x-nf-client-connection-ip` header, then Cloudflare's `cf-connecting-ip` header, and finally `x-forwarded-for`. A self-hosted deployment must set `NYX_TRUST_PROXY=true` only when its reverse proxy replaces these headers; otherwise leave it unset so a direct client cannot spoof an address.
+On Netlify, `netlify/functions/api.mjs` enables `NYX_TRUST_PROXY` by default so the application can use Cloudflare's `cf-connecting-ip` header, then Netlify's `x-nf-client-connection-ip` header, and finally `x-forwarded-for`. A self-hosted deployment must set `NYX_TRUST_PROXY=true` only when its reverse proxy replaces these headers; otherwise leave it unset so a direct client cannot spoof an address. The OVH Caddy template overwrites both preferred headers with Caddy's trusted client address before proxying to Nyx.
 
 The prepared OVH Nginx configuration does this safely: it accepts `CF-Connecting-IP` only from Cloudflare's published source networks, converts the verified address into Nginx's `$remote_addr`, and overwrites every forwarding header sent to Nyx. Because the VPS serves `dist/` through Express, its application ban guard covers static pages, API routes, and embedded-Wisp upgrades. Keep the Cloudflare WAF list anyway so blocked traffic is rejected before reaching the VPS.
 

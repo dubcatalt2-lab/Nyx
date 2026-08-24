@@ -126,7 +126,7 @@ html body .setup-panel .setup-header > p{
 html body .setup-progress{
   grid-area:progress;
   display:grid;
-  grid-template-columns:repeat(8,12px);
+  grid-template-columns:repeat(9,12px);
   gap:7px;
   align-self:center;
   margin:0;
@@ -480,6 +480,92 @@ html body #setupScreen .setup-actions button.primary:hover{
   -webkit-text-fill-color:#09090c!important;
 }
 
+html body .setup-account-card{
+  display:grid;
+  grid-template-columns:52px minmax(0,1fr) auto;
+  align-items:center;
+  gap:16px;
+  min-height:138px;
+  padding:20px;
+  border:1px solid var(--setup-line);
+  border-radius:16px;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--setup-accent) 9%,var(--setup-control)),var(--setup-deep));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+html body .setup-account-card.is-ready{
+  border-color:var(--setup-bright);
+  background:color-mix(in srgb,var(--setup-accent) 14%,var(--setup-control));
+}
+
+html body .setup-account-icon{
+  width:52px;
+  height:52px;
+  display:grid;
+  place-items:center;
+  border:1px solid var(--setup-line);
+  border-radius:15px;
+  background:var(--setup-deep);
+  color:var(--setup-bright);
+}
+
+html body .setup-account-icon svg{
+  width:27px;
+  height:27px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.7;
+  stroke-linecap:round;
+}
+
+html body .setup-account-copy{
+  min-width:0;
+  display:grid;
+  gap:6px;
+}
+
+html body .setup-account-copy strong{
+  color:var(--setup-text);
+  font-size:16px;
+  font-weight:600;
+}
+
+html body .setup-account-copy span,
+html body .setup-account-note{
+  color:var(--setup-muted)!important;
+  -webkit-text-fill-color:var(--setup-muted)!important;
+  font-size:12px;
+  line-height:1.45;
+}
+
+html body .setup-account-note{
+  margin:0;
+}
+
+html body .setup-account-actions{
+  display:grid;
+  gap:8px;
+}
+
+html body .setup-account-actions button{
+  min-width:154px;
+  min-height:40px;
+  border:1px solid var(--setup-line-soft);
+  border-radius:11px;
+  background:var(--setup-control);
+  color:var(--setup-text);
+  -webkit-text-fill-color:var(--setup-text);
+  padding:0 14px;
+  font-weight:500;
+}
+
+html body #setupScreen .setup-account-actions button.primary{
+  border-color:var(--setup-bright);
+  background:var(--setup-bright);
+  color:#09090c;
+  -webkit-text-fill-color:#09090c;
+}
+
 html body #setupScreen .setup-actions button.primary:focus-visible{
   outline:2px solid var(--setup-bright);
   outline-offset:3px;
@@ -510,7 +596,7 @@ html body .setup-actions [data-skip-setup]:hover{
     padding:21px 20px 18px;
   }
   html body .setup-progress{
-    grid-template-columns:repeat(8,minmax(12px,1fr));
+    grid-template-columns:repeat(9,minmax(12px,1fr));
     width:100%;
     margin-top:16px;
     padding:8px 10px;
@@ -531,6 +617,12 @@ html body .setup-actions [data-skip-setup]:hover{
   html body .setup-final-preview{
     grid-template-columns:1fr;
   }
+  html body .setup-account-card{
+    grid-template-columns:44px minmax(0,1fr);
+  }
+  html body .setup-account-icon{width:44px;height:44px;border-radius:13px}
+  html body .setup-account-actions{grid-column:1/-1;grid-template-columns:1fr 1fr}
+  html body .setup-account-actions button{min-width:0}
 }
 
 @media(max-width:480px){
@@ -546,6 +638,8 @@ html body .setup-actions [data-skip-setup]:hover{
   html body .setup-welcome-step{min-height:290px}
   html body .setup-actions button{min-width:70px;padding:0 12px}
   html body .setup-copyright{display:none}
+  html body .setup-account-card{padding:16px;gap:12px}
+  html body .setup-account-actions{grid-template-columns:1fr}
   html body .setup-shortcut-card{
     min-height:54px;
     flex-direction:row;

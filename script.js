@@ -867,7 +867,7 @@
         try{await setPersistence(nyxFounderFirebaseAuth,browserLocalPersistence)}
         catch(error){console.warn('Nyx could not enable persistent sign-in:',error)}
         if(typeof nyxFounderFirebaseAuth.authStateReady==='function')await nyxFounderFirebaseAuth.authStateReady();
-        onAuthStateChanged(nyxFounderFirebaseAuth,async user=>{nyxFounderSignedInUser=user||null;if(!user){closeNyxEmailVerificationGate();stopNyxUserActivity();stopNyxCloudPreferenceSync();nyxUserProfile=null;nyxUserProfileCreatedAt='';nyxFounderIsOwner=false;nyxOwnerDashboardAccess=false;nyxUserPermissions=[];nyxUserAccountRole='member';nyxUserSubscriptionStatus='free';syncNyxAccountEntitlements();nyxUserAccountEmail='';await refreshFounderOwnerAccess();return}startNyxUserActivity(user);if(nyxNeedsEmailVerification(user)){stopNyxCloudPreferenceSync();openNyxEmailVerificationGate()}else closeNyxEmailVerificationGate();await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile(),nyxNeedsEmailVerification(user)?Promise.resolve():startNyxCloudPreferenceSync()])});
+        onAuthStateChanged(nyxFounderFirebaseAuth,async user=>{nyxFounderSignedInUser=user||null;syncSetupAccountStep();if(!user){closeNyxEmailVerificationGate();stopNyxUserActivity();stopNyxCloudPreferenceSync();nyxUserProfile=null;nyxUserProfileCreatedAt='';nyxFounderIsOwner=false;nyxOwnerDashboardAccess=false;nyxUserPermissions=[];nyxUserAccountRole='member';nyxUserSubscriptionStatus='free';syncNyxAccountEntitlements();nyxUserAccountEmail='';await refreshFounderOwnerAccess();return}startNyxUserActivity(user);if(nyxNeedsEmailVerification(user)){stopNyxCloudPreferenceSync();openNyxEmailVerificationGate()}else closeNyxEmailVerificationGate();await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile(),nyxNeedsEmailVerification(user)?Promise.resolve():startNyxCloudPreferenceSync()]);syncSetupAccountStep()});
       }catch(error){console.warn('Nyx owner sign-in could not initialize:',error);nyxFounderAuthConfig={enabled:false,ownerConfigured:false}}
       finally{syncFounderOwnerControls()}
     })();
@@ -884,7 +884,7 @@
     overlay.className='nyx-account-overlay';
     overlay.innerHTML='<section class="nyx-account-dialog" role="dialog" aria-modal="true" aria-labelledby="nyxAccountTitle"><button class="nyx-founder-editor-close" data-close-nyx-account type="button" aria-label="Close">×</button><div class="nyx-account-mark" aria-hidden="true"><span>☾</span></div><p id="nyxAccountTitle" class="nyx-account-title">Log in or register to continue</p><div class="nyx-account-tabs" role="tablist" aria-label="Account action"><button class="nyx-account-tab active" data-nyx-account-tab="signin" type="button" role="tab" aria-selected="true">Log in</button><button class="nyx-account-tab" data-nyx-account-tab="register" type="button" role="tab" aria-selected="false">Register</button></div><form><label data-nyx-account-identifier-label><span>Username or email</span><input name="username" autocomplete="username" minlength="3" maxlength="254" placeholder="username or email" required></label><label data-nyx-account-email hidden><span>Recovery email <small>Recommended</small></span><input name="email" type="email" autocomplete="email" maxlength="254" placeholder="you@example.com"></label><label>Password<input name="password" type="password" autocomplete="current-password" minlength="8" placeholder="your password" required></label><section class="nyx-account-status-notice" data-nyx-account-status hidden aria-live="assertive"><strong></strong><p></p></section><p class="nyx-founder-editor-error" aria-live="polite"></p><button class="nyx-account-submit" type="submit">Log in</button><button class="nyx-account-forgot" data-nyx-forgot-password type="button">Forgot password?</button></form><p class="nyx-account-footer">Log in with your username or recovery email.</p></section>';
     document.body.appendChild(overlay);
-    let mode='signin';
+    let mode=options.mode==='register'?'register':'signin';
     const form=overlay.querySelector('form');
     const submit=form.querySelector('[type="submit"]');
     const password=form.querySelector('[name="password"]');
@@ -897,6 +897,8 @@
     const error=form.querySelector('.nyx-founder-editor-error');
     const accountStatusNotice=form.querySelector('[data-nyx-account-status]');
     if(switching)overlay.querySelector('#nyxAccountTitle').textContent='Switch accounts';
+    else if(mode==='register')overlay.querySelector('#nyxAccountTitle').textContent='Create your Nyx account';
+    if(mode==='register'&&options.username)identifier.value=nyxAccountUsername(options.username);
     const clearAccountStatusNotice=()=>{accountStatusNotice.hidden=true;accountStatusNotice.className='nyx-account-status-notice';accountStatusNotice.querySelector('strong').textContent='';accountStatusNotice.querySelector('p').textContent=''};
     const showAccountStatusNotice=status=>{const accountStatus=status&&typeof status==='object'?status:{};accountStatusNotice.className=`nyx-account-status-notice nyx-account-status-${String(accountStatus.status||'disabled').replace(/[^a-z-]/g,'')}`;accountStatusNotice.querySelector('strong').textContent=String(accountStatus.title||'This account is unavailable');accountStatusNotice.querySelector('p').textContent=String(accountStatus.message||'Contact Nyx staff for help.');accountStatusNotice.hidden=false};
     const update=()=>{
@@ -972,6 +974,7 @@
           }
         }
         await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile()]);
+        syncSetupAccountStep();
         close();
         if(nyxNeedsEmailVerification(credential.user)) openNyxEmailVerificationGate({sent:verificationSent});
         toast(mode==='register'?(verificationSent?'Account created — verify your email to continue.':(verificationFailed?'Account created, but Nyx could not send the verification email. Use Resend verification email to try again.':'Nyx profile created')):switching?(String(credential.user.uid||'')===previousUid?'Already signed in to this account':'Account switched'):'Signed in');
@@ -12876,7 +12879,8 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
   let setupStepIndex=0;
   const setupStepTitles=[
     'Welcome to Nyx. Customize your experience.',
-    'Pick the basics before nyx opens.',
+    'Choose the username Nyx will use.',
+    'Create an account or continue as a guest.',
     'Preview the theme Nyx starts with.',
     'Choose how much motion you want.',
     'Choose your browser defaults.',
@@ -12884,6 +12888,22 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
     'Check everything before launch.',
     'Learn the controls before launch.'
   ];
+  function syncSetupAccountStep(){
+    const setup=$('setupScreen');
+    if(!setup)return;
+    const card=setup.querySelector('[data-setup-account-card]');
+    const title=setup.querySelector('[data-setup-account-title]');
+    const status=setup.querySelector('[data-setup-account-status]');
+    const actions=setup.querySelector('.setup-account-actions');
+    const signedIn=Boolean(nyxFounderSignedInUser);
+    card?.classList.toggle('is-ready',signedIn);
+    if(title)title.textContent=signedIn?'Account ready':'Create a free account';
+    if(status)status.textContent=signedIn
+      ?`Signed in${nyxFounderSignedInUser?.displayName?` as ${nyxFounderSignedInUser.displayName}`:''}. Nyx will skip this step.`
+      :'Your username will be filled in automatically. Add a password to finish creating the account.';
+    if(actions)actions.hidden=signedIn;
+    if(signedIn&&setup.classList.contains('show')&&setupStepIndex===2)setTimeout(()=>setSetupStep(3),120);
+  }
   function setupOptionText(select){
     return select?.options?.[select.selectedIndex]?.textContent?.trim() || select?.value || '';
   }
@@ -12937,12 +12957,21 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
     if(back) back.hidden=setupStepIndex===0;
     if(next){
       next.hidden=setupStepIndex===steps.length-1;
-      next.textContent=setupStepIndex===0 ? 'Enter' : 'Next';
+      next.textContent=setupStepIndex===0?'Enter':setupStepIndex===2&&!nyxFounderSignedInUser?'Continue as guest':'Next';
     }
     if(finish) finish.hidden=setupStepIndex!==steps.length-1;
     updateSetupPreview();
   }
   function moveSetupStep(delta=1){
+    if(delta>0&&setupStepIndex===1){
+      if(nyxFounderSignedInUser){setSetupStep(3);return}
+      const username=String($('setupName')?.value||'').trim();
+      setSetupStep(2);
+      if(username.length>=3&&nyxAccountUsername(username)===username.toLowerCase().replace(/^@+/,'')){
+        setTimeout(()=>void openNyxAccountAccess({mode:'register',username}),80);
+      }
+      return;
+    }
     setSetupStep(setupStepIndex + delta);
   }
   function wireSetupWizardControls(setup=$('setupScreen')){
@@ -12960,12 +12989,14 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
         updateSetupPreview();
         return;
       }
-      const button=event.target.closest?.('[data-setup-next],[data-setup-back],[data-finish-setup],[data-skip-setup]');
+      const button=event.target.closest?.('[data-setup-next],[data-setup-back],[data-finish-setup],[data-skip-setup],[data-setup-create-account],[data-setup-sign-in]');
       if(!button || !setup.contains(button)) return;
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation?.();
-      if(button.matches('[data-setup-next]')) moveSetupStep(1);
+      if(button.matches('[data-setup-create-account]')) void openNyxAccountAccess({mode:'register',username:String($('setupName')?.value||'').trim()});
+      else if(button.matches('[data-setup-sign-in]')) void openNyxAccountAccess({mode:'signin'});
+      else if(button.matches('[data-setup-next]')) moveSetupStep(1);
       else if(button.matches('[data-setup-back]')) moveSetupStep(-1);
       else if(button.matches('[data-finish-setup]')) finishSetupCustomization();
       else if(button.matches('[data-skip-setup]')){
@@ -13022,6 +13053,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
     }
     syncSetupThemeCards();
     updateSetupPreview();
+    syncSetupAccountStep();
     document.body.classList.add('setup-active');
     setup.classList.add('show');
     setup.setAttribute('aria-hidden','false');

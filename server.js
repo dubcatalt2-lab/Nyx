@@ -103,12 +103,16 @@ const signedInOnlineWindowMs = 6 * 60_000;
 const signedInPresence = new Map();
 const userActivityEventWindowMs = 15 * 60_000;
 const userActivityEventTimes = new Map();
+const nyxSchoolChatAllowedIp = "206.15.249.212";
+const nyxSchoolChatChannelId = "school";
+const nyxSchoolChatChannelName = "Group Chat for School!";
 const nyxChatChannels = Object.freeze([
   Object.freeze({ id: "general", name: "General", description: "The main Nyx community chat." }),
   Object.freeze({ id: "gaming", name: "Gaming", description: "Games, scores, and Pirate Cove." }),
   Object.freeze({ id: "study", name: "Study Hall", description: "Homework help and study talk." }),
   Object.freeze({ id: "off-topic", name: "Off Topic", description: "Everything that belongs somewhere else." }),
-  Object.freeze({ id: "staff-room", name: "Staff Room", description: "A private channel for moderators and staff.", minimumRole: "moderator" })
+  Object.freeze({ id: "staff-room", name: "Staff Room", description: "A private channel for moderators and staff.", minimumRole: "moderator" }),
+  Object.freeze({ id: nyxSchoolChatChannelId, name: nyxSchoolChatChannelName, description: "A school network-only group chat." })
 ]);
 const nyxChatVoiceChannels = Object.freeze([
   Object.freeze({ id: "lounge", name: "Lounge", description: "Open voice chat for the Nyx community." }),
@@ -349,7 +353,7 @@ function nyxRequestHeader(req, name) {
 
 function nyxClientIp(req) {
   const forwarded = process.env.NYX_TRUST_PROXY === "true"
-    ? String(nyxRequestHeader(req, "x-nf-client-connection-ip") || nyxRequestHeader(req, "cf-connecting-ip") || nyxRequestHeader(req, "x-forwarded-for") || "").split(",")[0]
+    ? String(nyxRequestHeader(req, "cf-connecting-ip") || nyxRequestHeader(req, "x-nf-client-connection-ip") || nyxRequestHeader(req, "x-forwarded-for") || "").split(",")[0]
     : "";
   return normalizeNyxIp(forwarded) || normalizeNyxIp(req.socket?.remoteAddress);
 }
@@ -4005,8 +4009,15 @@ function nyxChatChannelDefinition(value, fallback = null) {
   };
 }
 
-function nyxChatCanAccessChannel(role, channel) {
-  return nyxRolePolicy(role).rank >= nyxRolePolicy(channel?.minimumRole || "member").rank;
+function nyxChatIsSchoolRestrictedChannel(channel) {
+  const id = String(channel?.id || "").trim().toLowerCase();
+  const name = String(channel?.name || "").trim().toLowerCase();
+  return id === nyxSchoolChatChannelId || name === nyxSchoolChatChannelName.toLowerCase();
+}
+
+function nyxChatCanAccessChannel(role, channel, clientIp = "") {
+  if (nyxRolePolicy(role).rank < nyxRolePolicy(channel?.minimumRole || "member").rank) return false;
+  return !nyxChatIsSchoolRestrictedChannel(channel) || normalizeNyxIp(clientIp) === nyxSchoolChatAllowedIp;
 }
 
 function normalizeNyxChatChannelList(value, defaults, limit) {
@@ -4061,10 +4072,19 @@ async function loadNyxChatConfiguration(firebase, force = false) {
     const textChannels = normalizeNyxChatChannelList(data.textChannels, nyxChatChannels, 24);
     const voiceChannels = normalizeNyxChatChannelList(data.voiceChannels, nyxChatVoiceChannels, 12);
     const customCommands = normalizeNyxChatCustomCommands(data.customCommands);
+    const configurationUpdates = {};
     if (data.restrictedChannelsInitialized !== true) {
       const staffChannel = nyxChatChannelDefinition(nyxChatChannels.find(channel => channel.id === "staff-room"));
       if (staffChannel && !textChannels.some(channel => channel.id === staffChannel.id)) textChannels.push(staffChannel);
-      await configurationRef.set({ textChannels, restrictedChannelsInitialized: true }, { merge: true });
+      configurationUpdates.restrictedChannelsInitialized = true;
+    }
+    if (data.schoolChannelInitialized !== true) {
+      const schoolChannel = nyxChatChannelDefinition(nyxChatChannels.find(channel => channel.id === nyxSchoolChatChannelId));
+      if (schoolChannel && !textChannels.some(channel => channel.id === schoolChannel.id)) textChannels.push(schoolChannel);
+      configurationUpdates.schoolChannelInitialized = true;
+    }
+    if (Object.keys(configurationUpdates).length) {
+      await configurationRef.set({ textChannels, ...configurationUpdates }, { merge: true });
     }
     const value = {
       textChannels: textChannels.length ? textChannels : [...nyxChatChannels],
@@ -4311,9 +4331,9 @@ function nyxChatAttachmentDiskPath(value) {
   return path.startsWith(`${nyxChatAttachmentRoot}${process.platform === "win32" ? "\\" : "/"}`) ? path : "";
 }
 
-async function nyxChatAttachmentAccess(firebase, uid, data = {}) {
+async function nyxChatAttachmentAccess(firebase, uid, data = {}, clientIp = "") {
   if (data.scopeType === "conversation") {
-    await nyxChatScope(firebase, uid, { conversationId: data.scopeId });
+    await nyxChatScope(firebase, uid, { conversationId: data.scopeId }, "", clientIp);
     return;
   }
   const channel = nyxChatChannel(data.scopeId);
@@ -4322,7 +4342,7 @@ async function nyxChatAttachmentAccess(firebase, uid, data = {}) {
     error.status = 404;
     throw error;
   }
-  await nyxChatScope(firebase, uid, { channel });
+  await nyxChatScope(firebase, uid, { channel }, "", clientIp);
 }
 
 function nyxChatAttachmentStream(req, res, metadata, path) {
@@ -4460,7 +4480,7 @@ function nyxChatConversationPayload(document, viewerUid, membersByUid = new Map(
   };
 }
 
-async function nyxChatScope(firebase, uid, source = {}, knownRole = "") {
+async function nyxChatScope(firebase, uid, source = {}, knownRole = "", clientIp = "") {
   const rawScope = String(source.scope || "").trim().toLowerCase();
   const explicitChannel = String(source.channel || "").trim();
   const rawChannel = explicitChannel || (!nyxChatConversationIdPattern.test(rawScope) && nyxChatChannelIdPattern.test(rawScope) ? rawScope : "");
@@ -4476,7 +4496,12 @@ async function nyxChatScope(firebase, uid, source = {}, knownRole = "") {
     const role = knownRole
       ? nyxChatRole(knownRole)
       : nyxRoleForUser(uid, (await firebase.firestore.collection("nyxUserAdministration").doc(uid).get()).data() || {});
-    if (!nyxChatCanAccessChannel(role, channelDefinition)) {
+    if (!nyxChatCanAccessChannel(role, channelDefinition, clientIp)) {
+      if (nyxChatIsSchoolRestrictedChannel(channelDefinition)) {
+        const error = new Error("That chat channel does not exist.");
+        error.status = 404;
+        throw error;
+      }
       const error = new Error("Your role cannot access that chat channel.");
       error.status = 403;
       throw error;
@@ -4632,8 +4657,12 @@ async function authorizeNyxChatSocket(socket, rawToken) {
     nyxChatIdentity(firebase, token),
     loadNyxChatConfiguration(firebase)
   ]);
+  const clientIp = nyxClientIp(socket.request);
   const visibleChannels = new Set(configuration.textChannels
-    .filter(channel => nyxChatCanAccessChannel(identity.role, channel))
+    .filter(channel => nyxChatCanAccessChannel(identity.role, channel, clientIp))
+    .map(channel => channel.id));
+  const visibleVoiceChannels = new Set(configuration.voiceChannels
+    .filter(channel => nyxChatCanAccessChannel(identity.role, channel, clientIp))
     .map(channel => channel.id));
   for (const room of [...socket.rooms]) {
     if (room.startsWith("nyx:channel:") && !visibleChannels.has(room.slice("nyx:channel:".length))) socket.leave(room);
@@ -4643,6 +4672,13 @@ async function authorizeNyxChatSocket(socket, rawToken) {
   socket.data.uid = token.uid;
   socket.data.identity = identity;
   socket.data.token = value;
+  socket.data.visibleVoiceChannelIds = [...visibleVoiceChannels];
+  const voiceSession = nyxChatVoiceSessions.get(token.uid);
+  if (voiceSession && !visibleVoiceChannels.has(voiceSession.channelId)) {
+    nyxChatVoiceSessions.delete(token.uid);
+    nyxChatVoiceSignals.delete(token.uid);
+    emitNyxChatVoiceRefresh();
+  }
   signedInPresence.set(token.uid, Date.now());
   return { firebase, token, identity, configuration };
 }
@@ -4708,7 +4744,7 @@ function attachNyxChatSocketServer(server) {
     });
     socket.on("nyx:voice:signal", (value, acknowledge) => {
       try {
-        relayNyxChatVoiceSignal(uid, value);
+        relayNyxChatVoiceSignal(uid, value, new Set(socket.data.visibleVoiceChannelIds || []));
         if (typeof acknowledge === "function") acknowledge({ ok: true });
       } catch (error) {
         if (typeof acknowledge === "function") acknowledge({ ok: false, error: error.message || "The voice connection could not be relayed.", status: error.status || 503 });
@@ -4992,7 +5028,7 @@ function emitNyxChatVoiceRefresh() {
   nyxChatSocketServer?.emit("nyx:voice:refresh", { updatedAtMs: Date.now() });
 }
 
-function relayNyxChatVoiceSignal(uid, value) {
+function relayNyxChatVoiceSignal(uid, value, allowedChannelIds = null) {
   cleanupNyxChatVoice();
   const sessionId = String(value?.sessionId || "").trim();
   const toUid = String(value?.toUid || "").trim();
@@ -5002,6 +5038,11 @@ function relayNyxChatVoiceSignal(uid, value) {
   if (!sender || sender.sessionId !== sessionId) {
     const error = new Error("Rejoin the voice channel before connecting.");
     error.status = 409;
+    throw error;
+  }
+  if (allowedChannelIds instanceof Set && !allowedChannelIds.has(sender.channelId)) {
+    const error = new Error("Rejoin an available voice channel before connecting.");
+    error.status = 403;
     throw error;
   }
   consumeNyxChatVoiceAttempt(nyxChatVoiceSignalAttempts, uid, 10_000, 120, "Voice connection requests are arriving too quickly.");
@@ -7933,8 +7974,9 @@ app.get("/api/chat/bootstrap", async (req, res) => {
       return roleRank || String(left.displayName || "").localeCompare(String(right.displayName || ""), undefined, { sensitivity: "base", numeric: true });
     });
     const membersByUid = new Map(members.map(member => [member.uid, member]));
-    const visibleTextChannels = configuration.textChannels.filter(channel => nyxChatCanAccessChannel(me.role, channel));
-    const visibleVoiceChannels = configuration.voiceChannels.filter(channel => nyxChatCanAccessChannel(me.role, channel));
+    const clientIp = nyxClientIp(req);
+    const visibleTextChannels = configuration.textChannels.filter(channel => nyxChatCanAccessChannel(me.role, channel, clientIp));
+    const visibleVoiceChannels = configuration.voiceChannels.filter(channel => nyxChatCanAccessChannel(me.role, channel, clientIp));
     const visibleTextChannelIds = new Set(visibleTextChannels.map(channel => channel.id));
     const conversations = conversationSnapshot.docs
       .map(document => nyxChatConversationPayload(document, token.uid, membersByUid))
@@ -7967,8 +8009,9 @@ app.get("/api/chat/updates", async (req, res) => {
       nyxChatIdentity(firebase, token),
       loadNyxChatConfiguration(firebase)
     ]);
+    const clientIp = nyxClientIp(req);
     const visibleChannels = new Set(configuration.textChannels
-      .filter(channel => nyxChatCanAccessChannel(identity.role, channel))
+      .filter(channel => nyxChatCanAccessChannel(identity.role, channel, clientIp))
       .map(channel => channel.id));
     const reset = Boolean(since && since < nyxChatRealtimeDroppedBeforeRevision);
     const events = (reset ? [] : nyxChatRealtimeEvents.filter(event => event.revision > since)).flatMap(event => {
@@ -8262,7 +8305,7 @@ app.post("/api/chat/channels", async (req, res) => {
         res.status(404).json({ error: "That chat channel was not found." });
         return;
       }
-      if (!nyxChatCanAccessChannel(identity.role, channels[index])) {
+      if (!nyxChatCanAccessChannel(identity.role, channels[index], nyxClientIp(req))) {
         res.status(403).json({ error: "Your role cannot manage that restricted channel." });
         return;
       }
@@ -8309,8 +8352,8 @@ app.post("/api/chat/channels", async (req, res) => {
     emitNyxChatSocketEvent({ kind: "configuration", revision });
     res.json({
       ok: true,
-      textChannels: textChannels.filter(channel => nyxChatCanAccessChannel(identity.role, channel)),
-      voiceChannels: voiceChannels.filter(channel => nyxChatCanAccessChannel(identity.role, channel))
+      textChannels: textChannels.filter(channel => nyxChatCanAccessChannel(identity.role, channel, nyxClientIp(req))),
+      voiceChannels: voiceChannels.filter(channel => nyxChatCanAccessChannel(identity.role, channel, nyxClientIp(req)))
     });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "Chat channels could not be updated." });
@@ -8402,7 +8445,7 @@ app.get("/api/chat/voice/state", async (req, res) => {
     const { firebase, token } = await authenticatedNyxChatUser(req, false);
     const configuration = await loadNyxChatConfiguration(firebase);
     const identity = await nyxChatIdentity(firebase, token);
-    const visibleVoiceChannels = configuration.voiceChannels.filter(channel => nyxChatCanAccessChannel(identity.role, channel));
+    const visibleVoiceChannels = configuration.voiceChannels.filter(channel => nyxChatCanAccessChannel(identity.role, channel, nyxClientIp(req)));
     const sessionId = String(req.query.sessionId || "").trim();
     if (sessionId && !nyxChatVoiceSessionIdPattern.test(sessionId)) {
       res.status(400).json({ error: "That voice session is invalid." });
@@ -8424,7 +8467,7 @@ app.post("/api/chat/voice/join", async (req, res) => {
     const { firebase, token } = await authenticatedNyxChatUser(req);
     const configuration = await loadNyxChatConfiguration(firebase);
     const identity = await nyxChatIdentity(firebase, token);
-    const visibleVoiceChannels = configuration.voiceChannels.filter(channel => nyxChatCanAccessChannel(identity.role, channel));
+    const visibleVoiceChannels = configuration.voiceChannels.filter(channel => nyxChatCanAccessChannel(identity.role, channel, nyxClientIp(req)));
     const channelId = nyxChatVoiceChannel(req.body?.channelId);
     const sessionId = String(req.body?.sessionId || "").trim();
     if (!channelId || !visibleVoiceChannels.some(channel => channel.id === channelId) || !nyxChatVoiceSessionIdPattern.test(sessionId)) {
@@ -8476,8 +8519,15 @@ app.post("/api/chat/voice/signal", async (req, res) => {
     return;
   }
   try {
-    const { token } = await authenticatedNyxChatUser(req);
-    relayNyxChatVoiceSignal(token.uid, req.body);
+    const { firebase, token } = await authenticatedNyxChatUser(req);
+    const [configuration, identity] = await Promise.all([
+      loadNyxChatConfiguration(firebase),
+      nyxChatIdentity(firebase, token)
+    ]);
+    const visibleVoiceChannelIds = new Set(configuration.voiceChannels
+      .filter(channel => nyxChatCanAccessChannel(identity.role, channel, nyxClientIp(req)))
+      .map(channel => channel.id));
+    relayNyxChatVoiceSignal(token.uid, req.body, visibleVoiceChannelIds);
     res.status(202).json({ ok: true });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "The voice connection could not be relayed." });
@@ -8540,7 +8590,7 @@ app.get("/api/chat/conversations", async (req, res) => {
     const { firebase, token } = await authenticatedNyxChatUser(req);
     const configuration = await loadNyxChatConfiguration(firebase);
     const identity = await nyxChatIdentity(firebase, token);
-    const visibleTextChannels = configuration.textChannels.filter(channel => nyxChatCanAccessChannel(identity.role, channel));
+    const visibleTextChannels = configuration.textChannels.filter(channel => nyxChatCanAccessChannel(identity.role, channel, nyxClientIp(req)));
     const [snapshot, channelSnapshots] = await Promise.all([
       firebase.firestore.collection("nyxChatConversations").where("participants", "array-contains", token.uid).limit(100).get(),
       Promise.all(visibleTextChannels.map(channel => firebase.firestore.collection("nyxChatChannels").doc(channel.id).get()))
@@ -8567,7 +8617,7 @@ app.get("/api/chat/messages", async (req, res) => {
   res.set("Cache-Control", "no-store");
   try {
     const { firebase, token } = await authenticatedNyxChatUser(req);
-    const scope = await nyxChatScope(firebase, token.uid, { channel: req.query.channel, conversation: req.query.conversation });
+    const scope = await nyxChatScope(firebase, token.uid, { channel: req.query.channel, conversation: req.query.conversation }, "", nyxClientIp(req));
     const after = Math.max(0, Number(req.query.after || 0));
     const before = Math.max(0, Number(req.query.before || 0));
     let query = scope.messages;
@@ -8853,7 +8903,7 @@ app.post("/api/chat/attachments/:attachmentId/ticket", async (req, res) => {
       res.status(404).json({ error: "Attachment not found." });
       return;
     }
-    await nyxChatAttachmentAccess(firebase, token.uid, data);
+    await nyxChatAttachmentAccess(firebase, token.uid, data, nyxClientIp(req));
     const ticket = randomBytes(32).toString("base64url");
     const expiresAtMs = Date.now() + nyxChatAttachmentTicketTtlMs;
     nyxChatAttachmentTickets.set(ticket, { id, uid: token.uid, expiresAtMs });
@@ -8887,7 +8937,7 @@ app.get("/api/chat/attachments/:attachmentId/stream", async (req, res) => {
       res.status(404).end();
       return;
     }
-    await nyxChatAttachmentAccess(firebase, grant.uid, data);
+    await nyxChatAttachmentAccess(firebase, grant.uid, data, nyxClientIp(req));
     const file = await stat(path);
     if (!file.isFile() || file.size !== metadata.size) {
       res.status(404).end();
@@ -8916,7 +8966,7 @@ app.get("/api/chat/attachments/:attachmentId", async (req, res) => {
       res.status(404).end();
       return;
     }
-    await nyxChatAttachmentAccess(firebase, token.uid, data);
+    await nyxChatAttachmentAccess(firebase, token.uid, data, nyxClientIp(req));
     const totalChunks = Number(data.totalChunks || 0);
     if (totalChunks < 1 || totalChunks > nyxChatAttachmentChunkCountLimit) {
       res.status(404).end();
@@ -8963,7 +9013,7 @@ app.post("/api/chat/messages", async (req, res) => {
       nyxChatIdentity(firebase, token),
       assertNyxChatCanSend(firebase, token.uid)
     ]);
-    const scope = await nyxChatScope(firebase, token.uid, { channel: req.body?.channel, conversationId: req.body?.conversationId }, identity.role);
+    const scope = await nyxChatScope(firebase, token.uid, { channel: req.body?.channel, conversationId: req.body?.conversationId }, identity.role, nyxClientIp(req));
     const text = nyxChatText(req.body?.text);
     const requestId = String(req.body?.requestId || "").trim();
     const attachmentIds = [...new Set((Array.isArray(req.body?.attachmentIds) ? req.body.attachmentIds : []).map(value => String(value || "").trim()))];
@@ -9131,7 +9181,7 @@ app.post("/api/chat/messages/purge", async (req, res) => {
       res.status(400).json({ error: "Choose between 1 and 100 messages." });
       return;
     }
-    const scope = await nyxChatScope(firebase, token.uid, { channel: req.body?.channel }, identity.role);
+    const scope = await nyxChatScope(firebase, token.uid, { channel: req.body?.channel }, identity.role, nyxClientIp(req));
     if (scope.private) {
       res.status(400).json({ error: "Message purging is only available in text channels." });
       return;
@@ -9186,7 +9236,7 @@ app.delete("/api/chat/messages/:scope/:messageId", async (req, res) => {
   }
   try {
     const { firebase, token } = await authenticatedNyxChatUser(req);
-    const scope = await nyxChatScope(firebase, token.uid, { scope: req.params.scope });
+    const scope = await nyxChatScope(firebase, token.uid, { scope: req.params.scope }, "", nyxClientIp(req));
     const messageId = String(req.params.messageId || "").trim();
     if (!/^[a-f0-9]{40}$/.test(messageId)) {
       res.status(404).json({ error: "Message not found." });
@@ -9232,7 +9282,7 @@ app.post("/api/chat/messages/:scope/:messageId/reactions", async (req, res) => {
   }
   try {
     const { firebase, token } = await authenticatedNyxChatUser(req);
-    const scope = await nyxChatScope(firebase, token.uid, { scope: req.params.scope });
+    const scope = await nyxChatScope(firebase, token.uid, { scope: req.params.scope }, "", nyxClientIp(req));
     const messageId = String(req.params.messageId || "").trim();
     const emoji = String(req.body?.emoji || "");
     if (!/^[a-f0-9]{40}$/.test(messageId) || !nyxChatReactionEmoji.has(emoji)) {
@@ -10592,7 +10642,7 @@ app.use((_req, res) => {
   res.sendFile(join(staticRoot, "index.html"));
 });
 
-export { app, attachNyxChatSocketServer, externalWispUrl, normalizePublicWispUrl, nyxActorCanReviewSearchHistory, nyxRolePresentation, nyxVisibleCustomRoles };
+export { app, attachNyxChatSocketServer, externalWispUrl, normalizePublicWispUrl, nyxActorCanReviewSearchHistory, nyxChatCanAccessChannel, nyxChatIsSchoolRestrictedChannel, nyxClientIp, nyxRolePresentation, nyxVisibleCustomRoles };
 
 const isDirectRun = process.argv[1] && resolve(process.argv[1]) === join(__dirname, "server.js");
 if (isDirectRun) {

@@ -14195,7 +14195,7 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
       }
     });
     document.addEventListener('keydown',e=>{
-      if(e.key!=='Escape' || e.defaultPrevented || !document.body.classList.contains('nyx-tab-sidebar-open')) return;
+      if(e.key!=='Escape' || !document.body.classList.contains('nyx-tab-sidebar-open')) return;
       e.preventDefault();
       setBrowserTabSidebarOpen(false,{restoreFocus:true});
     });

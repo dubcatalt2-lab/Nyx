@@ -66,11 +66,15 @@ try {
     !embed.includes("/cloud/v1/embed-data?id=") ||
     embed.includes("/api/cloud/embed-data?id=") ||
     !embed.includes("pendingMoveX += moveX") ||
+    !embed.includes("const MOUSE_FLUSH_INTERVAL_MS = 8") ||
+    !embed.includes('const pointerMovementEvent = "onpointerrawupdate" in window ? "pointerrawupdate" : "mousemove"') ||
+    !embed.includes("if (_dc.bufferedAmount > MAX_MOUSE_BUFFERED_BYTES) return") ||
+    !embed.includes("setInterval(flushMouse, MOUSE_FLUSH_INTERVAL_MS)") ||
     !embed.includes("let cachedVideoRect = null") ||
     !embed.includes("requestPointerLock({ unadjustedMovement: true })") ||
     !embed.includes("const localCursorEl = document.createElement(\"img\")") ||
     embed.includes("if (document.pointerLockElement === streamEl) document.exitPointerLock()") ||
-    !embed.includes("flushMouse();\n            if (_dc && _dc.readyState === \"open\") sendGamepad();")
+    embed.includes("flushMouse();\n            if (_dc && _dc.readyState === \"open\") sendGamepad();")
   ) {
     throw new Error("The generated embed client did not include the active route and low-latency mouse path.");
   }

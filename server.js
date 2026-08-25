@@ -838,6 +838,7 @@ const catalogCoverHosts = new Set([
   "iogames.party",
   "1v1lolreloaded.com",
   "ubgwtf.gitlab.io",
+  "download-oss.raccoongame.com",
   "upload.wikimedia.org"
 ]);
 const catalogCoverTypes = new Set([
@@ -5305,6 +5306,18 @@ function nyxCloudGamingGame(value) {
   };
 }
 
+function nyxCloudGamingGamePayload(game) {
+  const hasArtwork = Boolean(game?.image || game?.cover);
+  return {
+    key: game.key,
+    name: game.name,
+    description: game.description,
+    image: hasArtwork ? `/api/cloud-gaming/art/${encodeURIComponent(game.key)}` : "",
+    cover: "",
+    tags: [...game.tags]
+  };
+}
+
 async function nyxCloudGamingCatalog(force = false) {
   const now = Date.now();
   if (!force && nyxCloudGamingCatalogCache.games.length && nyxCloudGamingCatalogCache.expiresAt > now) return nyxCloudGamingCatalogCache.games;
@@ -9683,9 +9696,26 @@ app.get("/api/cloud-gaming/catalog", async (req, res) => {
   try {
     await nyxCloudGamingUser(req);
     const games = await nyxCloudGamingCatalog();
-    res.json({ games, updatedAt: new Date().toISOString() });
+    res.json({ games: games.map(nyxCloudGamingGamePayload), updatedAt: new Date().toISOString() });
   } catch (error) {
     res.status(error.status || 502).json({ error: error.message || "The Cloud Gaming catalog is unavailable." });
+  }
+});
+
+app.get("/api/cloud-gaming/art/:key", async (req, res) => {
+  if (!sameOriginRequest(req)) return res.status(403).type("text/plain").send("Cross-origin requests are not allowed.");
+  const key = String(req.params.key || "").trim();
+  if (!/^[a-z0-9][a-z0-9_-]{1,127}$/i.test(key)) return res.status(400).type("text/plain").send("Invalid Cloud Gaming title.");
+  try {
+    const games = await nyxCloudGamingCatalog();
+    const game = games.find(item => item.key === key);
+    const artwork = safeCatalogCoverUrl(game?.image || game?.cover);
+    if (!game || !artwork || artwork.hostname !== "download-oss.raccoongame.com") {
+      return res.status(404).type("text/plain").send("Cloud Gaming artwork is unavailable.");
+    }
+    await sendCatalogCover(res, artwork.href);
+  } catch (error) {
+    if (!res.headersSent) res.status(502).type("text/plain").send(`Cloud Gaming artwork network error: ${error?.message || error}`);
   }
 });
 
@@ -9836,7 +9866,7 @@ app.post("/api/cloud-gaming/sessions/:id/start", async (req, res) => {
     session.state = "active";
     session.startedAtMs = Date.now();
     session.lastSeenAtMs = Date.now();
-    session.maxSeconds = nyxCloudGamingBoundedInteger(payload.max_seconds, 900, 60, 1_200);
+    session.maxSeconds = nyxCloudGamingBoundedInteger(payload.max_seconds, 1_140, 60, 1_140);
     res.json({ session: nyxCloudGamingSessionPayload(session) });
   } catch (error) {
     res.status(error.status || 502).json({ error: error.message || "The Cloud Gaming stream could not start." });

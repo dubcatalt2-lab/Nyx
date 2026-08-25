@@ -199,8 +199,17 @@ function buildRuntimeEmbed(source) {
         const activeKeys = new Set();`,
     `        let mouseButtons = 0;
         let pendingMoveX = 0, pendingMoveY = 0;
+        const MOUSE_FLUSH_INTERVAL_MS = 8;
+        const MAX_MOUSE_BUFFERED_BYTES = 1024;
         const activeKeys = new Set();`,
     "coalesced mouse state"
+  );
+  output = replaceOnce(
+    output,
+    `        document.addEventListener("mousemove", (e) => {`,
+    `        const pointerMovementEvent = "onpointerrawupdate" in window ? "pointerrawupdate" : "mousemove";
+        document.addEventListener(pointerMovementEvent, (e) => {`,
+    "raw pointer movement"
   );
   output = replaceOnce(
     output,
@@ -409,6 +418,7 @@ function buildRuntimeEmbed(source) {
                 pendingMoveY = 0;
                 return;
             }
+            if (_dc.bufferedAmount > MAX_MOUSE_BUFFERED_BYTES) return;
             let moveX = pendingMoveX;
             let moveY = pendingMoveY;
             pendingMoveX = 0;
@@ -416,6 +426,11 @@ function buildRuntimeEmbed(source) {
             if (!moveX && !moveY) return;
             const rect = getVideoRect();
             while (moveX || moveY) {
+                if (_dc.bufferedAmount > MAX_MOUSE_BUFFERED_BYTES) {
+                    pendingMoveX += moveX;
+                    pendingMoveY += moveY;
+                    return;
+                }
                 const stepX = Math.max(-127, Math.min(127, moveX));
                 const stepY = Math.max(-127, Math.min(127, moveY));
                 sendMouse(stepX, stepY, 0, rect);
@@ -431,12 +446,12 @@ function buildRuntimeEmbed(source) {
   );
   output = replaceOnce(
     output,
-    `        function inputLoop() {
-            if (_dc && _dc.readyState === "open") sendGamepad();`,
-    `        function inputLoop() {
-            flushMouse();
-            if (_dc && _dc.readyState === "open") sendGamepad();`,
-    "frame-paced input loop"
+    `        }
+        requestAnimationFrame(inputLoop);`,
+    `        }
+        setInterval(flushMouse, MOUSE_FLUSH_INTERVAL_MS);
+        requestAnimationFrame(inputLoop);`,
+    "low-latency mouse pump"
   );
   return output;
 }
@@ -450,7 +465,7 @@ async function prepareRuntime() {
     sourceUrl: httpsSourceUrl(),
     port: boundedInteger("STRATUS_PORT", 3001, 1024, 65_535),
     maxConcurrentSessions: boundedInteger("STRATUS_MAX_CONCURRENT_SESSIONS", 4, 1, 12),
-    maxSessionSeconds: boundedInteger("STRATUS_MAX_SESSION_SECONDS", 900, 60, 1_140),
+    maxSessionSeconds: boundedInteger("STRATUS_MAX_SESSION_SECONDS", 1_140, 60, 1_140),
     createTimeoutMs: boundedInteger("STRATUS_CREATE_TIMEOUT_MS", 180_000, 60_000, 300_000),
     poolTarget: boundedInteger("STRATUS_ACCOUNT_POOL_TARGET", 1, 0, 2),
     perMinute: boundedInteger("STRATUS_LIMIT_PER_MINUTE", 4, 1, 30),

@@ -17,14 +17,20 @@ if [[ ! -f ${REQUIREMENTS_FILE} ]]; then
   exit 1
 fi
 
-if ! command -v python3 >/dev/null 2>&1 || ! python3 -m venv --help >/dev/null 2>&1; then
+if ! command -v python3 >/dev/null 2>&1; then
   apt-get update
-  DEBIAN_FRONTEND=noninteractive apt-get install -y python3 python3-venv
+  DEBIAN_FRONTEND=noninteractive apt-get install -y python3
+fi
+
+if ! python3 -c 'import ensurepip' >/dev/null 2>&1; then
+  PYTHON_SERIES=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+  apt-get update
+  DEBIAN_FRONTEND=noninteractive apt-get install -y python3-venv "python${PYTHON_SERIES}-venv"
 fi
 
 install -d -m 0750 -o root -g nyx "${INSTALL_ROOT}"
 if [[ ! -x ${VENV_DIR}/bin/python ]]; then
-  python3 -m venv "${VENV_DIR}"
+  python3 -m venv --clear "${VENV_DIR}"
 fi
 
 REQUIRED_VERSION=$(sed -nE 's/^yt-dlp\[default\]==([0-9.]+)$/\1/p' "${REQUIREMENTS_FILE}")

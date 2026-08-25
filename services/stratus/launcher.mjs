@@ -85,7 +85,27 @@ function replaceOnce(source, find, replacement, label) {
 
 function buildRuntimeSource(source, config) {
   let output = source;
-  output = replaceOnce(output, "const PORT = 3001;", `const PORT = ${config.port};`, "listen port");
+  output = replaceOnce(output, `const { randomUUID, createDecipheriv } = require("crypto");`, `const { randomUUID, createDecipheriv, createHmac } = require("crypto");`, "TURN credential crypto");
+  output = replaceOnce(output, "const PORT = 3001;", `const PORT = ${config.port};
+
+function nyxTurnIceServer(sessionId) {
+  const urls = String(process.env.NYX_TURN_URLS || "")
+    .split(",")
+    .map(value => value.trim())
+    .filter(value => /^turns?:[^\\s,]+$/i.test(value))
+    .slice(0, 8);
+  const secret = String(process.env.NYX_TURN_SHARED_SECRET || "").trim();
+  if (!urls.length || !secret) return null;
+  const requestedTtl = Number.parseInt(String(process.env.NYX_TURN_TTL_SECONDS || "3600"), 10);
+  const ttlSeconds = Math.max(300, Math.min(7200, Number.isFinite(requestedTtl) ? requestedTtl : 3600));
+  const username = \`\${Math.floor(Date.now() / 1000) + ttlSeconds}:cloud-\${String(sessionId || "nyx").slice(0, 64)}\`;
+  return {
+    urls,
+    username,
+    credential: createHmac("sha1", secret).update(username).digest("base64"),
+    credentialType: "password",
+  };
+}`, "listen port and Nyx TURN relay");
   output = replaceOnce(output, "const MAX_SESSION_SECONDS = 19 * 60;", `const MAX_SESSION_SECONDS = ${config.maxSessionSeconds};`, "session cap");
   output = replaceOnce(output, "const POOL_TARGET = 5;", `const POOL_TARGET = ${config.poolTarget};`, "idle account pool");
 
@@ -118,8 +138,31 @@ function buildRuntimeSource(source, config) {
   output = replaceOnce(
     output,
     `  } catch (e) {\n    releaseAccountSlot(apiKey);\n    push({ status: "error", error: e.message });\n    killSession(uuid, "creation_error");\n  }`,
-    `  } catch (e) {\n    releaseAccountSlot(apiKey);\n    const rawError = String(e?.message || "Cloud Gaming provider error");\n    logApi(apiKey, chalk.red(\`createSession error - \${rawError}\`));\n    const publicError = /terminated|fetch failed|aborted|econnreset|etimedout|socket/i.test(rawError)\n      ? "The cloud provider connection was interrupted. Please retry."\n      : rawError;\n    push({ status: "error", error: publicError });\n    killSession(uuid, "creation_error");\n  }`,
+    `  } catch (e) {\n    releaseAccountSlot(apiKey);\n    const rawError = String(e?.message || "Cloud Gaming provider error");\n    const logError = rawError.replace(/\\s+/g, " ").slice(0, 240);\n    logApi(apiKey, chalk.red(\`createSession error - \${logError}\`));\n    const publicError = /terminated|fetch failed|aborted|econnreset|etimedout|socket|<!doctype|<html|cloudflare|unexpected token|not valid json/i.test(rawError)\n      ? "The cloud provider connection was interrupted. Please retry."\n      : rawError.replace(/\\s+/g, " ").slice(0, 240);\n    push({ status: "error", error: publicError });\n    killSession(uuid, "creation_error");\n  }`,
     "provider creation error reporting"
+  );
+
+  output = replaceOnce(
+    output,
+    `  const iceServers = [
+    { urls: "stun:stun.l.google.com:19302" },
+    ...(session.turns || []).map((t) => ({
+      urls: t.turn_url,
+      username: t.turn_user,
+      credential: t.turn_password,
+    })),
+  ];`,
+    `  const localTurn = nyxTurnIceServer(uuid);
+  const iceServers = [
+    { urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] },
+    ...(session.turns || []).map((t) => ({
+      urls: t.turn_url,
+      username: t.turn_user,
+      credential: t.turn_password,
+    })),
+    ...(localTurn ? [localTurn] : []),
+  ];`,
+    "managed Chromebook TURN fallback"
   );
 
   output = replaceOnce(
@@ -192,6 +235,89 @@ function buildRuntimeEmbed(source) {
     "/api/cloud/embed-data?id=",
     "/cloud/v1/embed-data?id=",
     "embed-data route"
+  );
+  output = replaceOnce(
+    output,
+    `        let pc   = null;
+        let _dc  = null;
+        let sigWs = null;`,
+    `        let pc   = null;
+        let _dc  = null;
+        let sigWs = null;
+        let connectionTimer = null;`,
+    "player connection deadline"
+  );
+  output = replaceOnce(
+    output,
+    `                        pc.ontrack = (ev) => {
+                            if (!streamEl.srcObject) streamEl.srcObject = new MediaStream();
+                            streamEl.srcObject.addTrack(ev.track);
+                        };`,
+    `                        pc.ontrack = (ev) => {
+                            if (!streamEl.srcObject) streamEl.srcObject = new MediaStream();
+                            if (!streamEl.srcObject.getTracks().some(track => track.id === ev.track.id)) {
+                                streamEl.srcObject.addTrack(ev.track);
+                            }
+                            const startPlayback = () => streamEl.play().catch(() => {});
+                            if (ev.track.muted) ev.track.addEventListener("unmute", startPlayback, { once: true });
+                            else startPlayback();
+                        };`,
+    "track-driven Chromebook playback"
+  );
+  output = replaceOnce(
+    output,
+    `                        pc.oniceconnectionstatechange = () => {
+                            const s = pc.iceConnectionState;
+                            if (s === "connected" || s === "completed") onLive();
+                            if (s === "failed") showEnded();
+                        };
+                        const offer = await pc.createOffer();`,
+    `                        pc.oniceconnectionstatechange = () => {
+                            const s = pc.iceConnectionState;
+                            if (s === "failed") showEnded("The video connection failed. Try another network or check that WebRTC is allowed.");
+                        };
+                        clearTimeout(connectionTimer);
+                        connectionTimer = setTimeout(() => {
+                            if (streamEl.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+                                showEnded("No video reached this device. Check that WebRTC and TURN are allowed on this network.");
+                            }
+                        }, 25000);
+                        const offer = await pc.createOffer();`,
+    "visible Chromebook connection failure"
+  );
+  output = replaceOnce(
+    output,
+    `            sigWs.onclose = () => showEnded();
+            sigWs.onerror = () => showEnded();`,
+    `            sigWs.onclose = () => {
+                if (!pc || !["connected", "completed"].includes(pc.iceConnectionState)) showEnded("Cloud Gaming signaling disconnected.");
+            };
+            sigWs.onerror = () => {
+                if (!pc || !["connected", "completed"].includes(pc.iceConnectionState)) showEnded("Cloud Gaming signaling failed.");
+            };`,
+    "nonfatal post-connect signaling close"
+  );
+  output = replaceOnce(
+    output,
+    `        function onLive() {
+            hideConnecting();`,
+    `        streamEl.addEventListener("playing", onLive, { once: true });
+        function onLive() {
+            clearTimeout(connectionTimer);
+            connectionTimer = null;
+            hideConnecting();`,
+    "media-driven live state"
+  );
+  output = replaceOnce(
+    output,
+    `        function showEnded() {
+            hideConnecting();`,
+    `        function showEnded(message = "Session ended") {
+            clearTimeout(connectionTimer);
+            connectionTimer = null;
+            endedOverlay.querySelector("span").textContent = message;
+            hideConnecting();`,
+    "specific player failure messages"
   );
   output = replaceOnce(
     output,

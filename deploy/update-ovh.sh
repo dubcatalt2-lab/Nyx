@@ -10,10 +10,22 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 APP_DIR=$(cd -- "${SCRIPT_DIR}/.." && pwd)
 APP_OWNER=${SUDO_USER:-root}
 DOMAIN_FILE=/etc/nyx/domain
+ENV_FILE=/etc/nyx/nyx.env
 STRATUS_ENV_FILE=/etc/nyx/stratus.env
+STRATUS_TURN_ENV_FILE=/etc/nyx/stratus-turn.env
 
 stratus_is_configured() {
   [[ -f ${STRATUS_ENV_FILE} ]] && grep -Eq "^[[:space:]]*STRATUS_API_KEY=['\"]?[A-Za-z0-9_./:+-]{32,256}['\"]?[[:space:]]*$" "${STRATUS_ENV_FILE}"
+}
+
+sync_stratus_turn_environment() {
+  local turn_tmp
+  turn_tmp=$(mktemp)
+  if [[ -f ${ENV_FILE} ]]; then
+    grep -E '^[[:space:]]*NYX_TURN_(URLS|SHARED_SECRET|TTL_SECONDS)=' "${ENV_FILE}" > "${turn_tmp}" || true
+  fi
+  install -m 0640 -o root -g nyx "${turn_tmp}" "${STRATUS_TURN_ENV_FILE}"
+  rm -f "${turn_tmp}"
 }
 
 if [[ ! -f ${DOMAIN_FILE} ]]; then
@@ -53,6 +65,7 @@ chmod -R g+rX "${APP_DIR}"
 install -d -m 0750 -o nyx -g nyx /var/lib/nyx/chat-attachments
 install -d -m 0750 -o nyx -g nyx /var/lib/nyx/vision-models
 install -d -m 0750 -o nyx -g nyx /var/lib/nyx-stratus
+sync_stratus_turn_environment
 runuser -u nyx -- env NYX_AI_VISION_CACHE_DIR=/var/lib/nyx/vision-models npm run prepare:vision
 sed "s|__NYX_ROOT__|${APP_DIR}|g" deploy/systemd/nyx.service.template > /etc/systemd/system/nyx.service
 sed "s|__NYX_ROOT__|${APP_DIR}|g" deploy/systemd/nyx-stratus.service.template > /etc/systemd/system/nyx-stratus.service

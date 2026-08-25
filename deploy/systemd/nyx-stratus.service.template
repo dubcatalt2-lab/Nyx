@@ -8,6 +8,7 @@ Type=simple
 User=nyx
 Group=nyx
 WorkingDirectory=__NYX_ROOT__/services/stratus
+EnvironmentFile=-/etc/nyx/stratus-turn.env
 EnvironmentFile=/etc/nyx/stratus.env
 Environment=STRATUS_RUNTIME_DIR=/var/lib/nyx-stratus/runtime
 ExecStart=/usr/bin/node __NYX_ROOT__/services/stratus/launcher.mjs

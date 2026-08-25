@@ -5406,10 +5406,18 @@ async function nyxCloudGamingUpstreamJson(path, options = {}) {
   let payload = null;
   try { payload = await response.json(); } catch {}
   if (!response.ok) {
-    const message = String(payload?.error || `The Cloud Gaming provider returned ${response.status}.`).slice(0, 240);
+    const message = nyxCloudGamingPublicError(payload?.error, `The Cloud Gaming provider returned ${response.status}.`);
     throw nyxCloudGamingError(message, response.status >= 400 && response.status < 500 ? response.status : 502);
   }
   return payload && typeof payload === "object" ? payload : {};
+}
+
+function nyxCloudGamingPublicError(value, fallback = "The Cloud Gaming provider is temporarily unavailable. Try again in a moment.") {
+  const message = String(value || "").trim();
+  if (!message || /<!doctype\s+html|<html\b|<body\b|cloudflare|unexpected token.+json|not valid json/i.test(message) || /<[a-z][\s\S]*>/i.test(message)) {
+    return fallback;
+  }
+  return message.replace(/\s+/g, " ").slice(0, 240);
 }
 
 function nyxCloudGamingSafeEvent(value) {
@@ -5418,7 +5426,7 @@ function nyxCloudGamingSafeEvent(value) {
   const event = { status };
   if (nyxCloudGamingSessionIdPattern.test(String(source.uuid || ""))) event.id = String(source.uuid);
   if (Number.isFinite(Number(source.queue_pos))) event.queuePosition = Math.max(0, Number(source.queue_pos));
-  if (status === "error") event.error = String(source.error || "The Cloud Gaming provider could not start this game.").slice(0, 240);
+  if (status === "error") event.error = nyxCloudGamingPublicError(source.error, "The Cloud Gaming provider could not start this game. Try again in a moment.");
   return event;
 }
 
@@ -9857,7 +9865,7 @@ app.post("/api/cloud-gaming/sessions", async (req, res) => {
     }
     res.end();
   } catch (error) {
-    const message = error?.name === "AbortError" ? "Cloud Gaming took too long to prepare the session." : error?.message || "Cloud Gaming could not start this game.";
+    const message = error?.name === "AbortError" ? "Cloud Gaming took too long to prepare the session." : nyxCloudGamingPublicError(error?.message, "Cloud Gaming could not start this game. Try again in a moment.");
     if (res.headersSent) {
       if (!res.writableEnded) res.end(`${JSON.stringify({ status: "error", error: String(message).slice(0, 240) })}\n`);
     } else {

@@ -6772,6 +6772,9 @@
     return `${protocol}//${location.host}/wisp/`;
   }
   function nyxPresenceUrl(){
+    if(hasHostedBackend()){
+      try{return new URL('/api/presence',location.origin).href}catch{}
+    }
     const configured=String(globalThis.__NYX_RUNTIME_CONFIG__?.presenceUrl||'').trim();
     if(configured){
       try{
@@ -6788,11 +6791,22 @@
       return endpoint.href;
     }catch{return ''}
   }
-  function renderNyxPresence(count=nyxPresenceCount){
-    const label=Number.isFinite(count) ? `${count} online` : 'Connecting\u2026';
+  function renderNyxPresence(count=nyxPresenceCount,state='connecting'){
+    const pendingLabel=state==='unavailable' ? 'Unavailable' : 'Connecting\u2026';
+    const label=Number.isFinite(count) ? `${count} online` : pendingLabel;
     qsa('[data-nyx-online-count]').forEach(element=>{element.textContent=label});
-    const usersLabel=Number.isFinite(count) ? `${count} users` : 'Connecting\u2026';
+    const usersLabel=Number.isFinite(count) ? `${count} users` : pendingLabel;
     qsa('[data-nyx-online-users]').forEach(element=>{element.textContent=usersLabel});
+  }
+  async function nyxPresenceFirebaseToken(timeoutMs=1200){
+    let timer=0;
+    try{
+      return await Promise.race([
+        nyxGetFirebaseToken(),
+        new Promise(resolve=>{timer=setTimeout(()=>resolve(''),timeoutMs)})
+      ]);
+    }catch{return ''}
+    finally{clearTimeout(timer)}
   }
   function startNyxPresence(){
     if(startNyxPresence.started) return;
@@ -6809,18 +6823,24 @@
     }catch{
       sessionId=`${Date.now()}_${Math.random().toString(36).slice(2)}`;
     }
-    const heartbeat=async()=>{
-      if(document.visibilityState==='hidden') return;
+    let heartbeatActive=false;
+    const heartbeat=async(force=false)=>{
+      if(heartbeatActive || (!force&&document.visibilityState==='hidden')) return;
+      heartbeatActive=true;
+      let requestTimer=0;
       try{
-        const token=await nyxGetFirebaseToken();
+        const token=await nyxPresenceFirebaseToken();
         const headers={'content-type':'text/plain;charset=UTF-8'};
         if(token)headers.Authorization=`Bearer ${token}`;
+        const controller=typeof AbortController==='function' ? new AbortController() : null;
+        if(controller)requestTimer=setTimeout(()=>controller.abort(),8000);
         const response=await fetch(endpoint,{
           method:'POST',
           headers,
           body:JSON.stringify({sessionId,userName:store.text('nyx.userName','').trim()}),
           cache:'no-store',
-          keepalive:true
+          keepalive:true,
+          signal:controller?.signal
         });
         if(!response.ok) throw new Error(`Presence returned ${response.status}`);
         const payload=await response.json();
@@ -6829,10 +6849,13 @@
         nyxPresenceCount=Math.floor(count);
         renderNyxPresence();
       }catch{
-        renderNyxPresence(null);
+        if(!Number.isFinite(nyxPresenceCount))renderNyxPresence(null,'unavailable');
+      }finally{
+        clearTimeout(requestTimer);
+        heartbeatActive=false;
       }
     };
-    heartbeat();
+    heartbeat(true);
     setInterval(heartbeat,15_000);
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible') heartbeat()});
   }

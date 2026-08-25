@@ -134,6 +134,20 @@ NYX_TURN_SHARED_SECRET='PASTE_THE_RANDOM_VALUE_HERE'
 NYX_TURN_TTL_SECONDS=3600
 ```
 
+For networks that block plain TURN on `3478`, coturn can also listen with TLS on
+`5349`. Use a DNS-only hostname whose certificate matches the TURN address:
+
+```dotenv
+NYX_TURN_TLS_PORT=5349
+NYX_TURN_TLS_CERT='/path/to/fullchain.pem'
+NYX_TURN_TLS_KEY='/path/to/private-key.pem'
+NYX_TURN_URLS='turn:YOUR_VPS_IP:3478?transport=udp,turn:YOUR_VPS_IP:3478?transport=tcp,turns:YOUR_TURN_HOST:5349?transport=tcp'
+```
+
+Port `443` cannot be assigned directly to coturn on the current single-address
+host because Caddy already owns HTTPS there; it needs a dedicated address or a
+reviewed layer-4 multiplexer.
+
 Then install and configure the bounded coturn relay:
 
 ```bash
@@ -142,7 +156,7 @@ sudo bash deploy/setup-turn.sh
 systemctl is-active coturn
 ```
 
-The script enables authenticated temporary credentials, limits each account and the UDP relay range, and opens TCP/UDP `3478` plus UDP `49160:49260` in UFW. If OVH's network firewall is enabled separately, allow those same ports there. Never put the TURN shared secret in Git or client code; Nyx sends browsers only short-lived HMAC credentials.
+The script enables authenticated temporary credentials, limits each account and the UDP relay range, and opens TCP/UDP `3478` plus UDP `49160:49260` in UFW. When the TLS variables are configured, it also opens the selected TLS TCP port. If OVH's network firewall is enabled separately, allow those same ports there. Never put the TURN shared secret or private key in Git or client code; Nyx sends browsers only short-lived HMAC credentials.
 
 Save Nano with `Ctrl+O`, Enter, then `Ctrl+X`. Apply and verify:
 

@@ -51,6 +51,22 @@ no-cli
 no-loopback-peers
 no-multicast-peers
 EOF
+
+TURN_TLS_PORT=${NYX_TURN_TLS_PORT:-}
+TURN_TLS_CERT=${NYX_TURN_TLS_CERT:-}
+TURN_TLS_KEY=${NYX_TURN_TLS_KEY:-}
+if [[ -n ${TURN_TLS_PORT} || -n ${TURN_TLS_CERT} || -n ${TURN_TLS_KEY} ]]; then
+  if [[ ! ${TURN_TLS_PORT} =~ ^[0-9]+$ ]] || (( TURN_TLS_PORT < 1 || TURN_TLS_PORT > 65535 )); then
+    echo "NYX_TURN_TLS_PORT must be a valid TCP port."
+    exit 1
+  fi
+  if [[ ! -r ${TURN_TLS_CERT} || ! -r ${TURN_TLS_KEY} ]]; then
+    echo "NYX_TURN_TLS_CERT and NYX_TURN_TLS_KEY must be readable certificate files."
+    exit 1
+  fi
+  printf 'tls-listening-port=%s\ncert=%s\npkey=%s\nno-tlsv1\nno-tlsv1_1\n' \
+    "${TURN_TLS_PORT}" "${TURN_TLS_CERT}" "${TURN_TLS_KEY}" >> "${TURN_TMP}"
+fi
 TURN_GROUP=turnserver
 getent group "${TURN_GROUP}" >/dev/null 2>&1 || TURN_GROUP=root
 install -m 0640 -o root -g "${TURN_GROUP}" "${TURN_TMP}" /etc/turnserver.conf
@@ -63,8 +79,15 @@ rm -f "${DEFAULT_TMP}"
 
 ufw allow 3478/udp
 ufw allow 3478/tcp
+if [[ -n ${TURN_TLS_PORT} ]]; then
+  ufw allow "${TURN_TLS_PORT}/tcp"
+fi
 ufw allow 49160:49260/udp
 systemctl unmask coturn.service >/dev/null 2>&1 || true
 systemctl enable --now coturn
 systemctl restart coturn
-echo "Nyx TURN relay is active."
+if [[ -n ${TURN_TLS_PORT} ]]; then
+  echo "Nyx TURN relay is active with TURN-over-TLS on TCP ${TURN_TLS_PORT}."
+else
+  echo "Nyx TURN relay is active. Configure NYX_TURN_TLS_PORT/CERT/KEY for restrictive networks."
+fi

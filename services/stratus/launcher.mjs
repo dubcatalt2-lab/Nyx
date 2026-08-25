@@ -111,8 +111,147 @@ function nyxTurnIceServer(sessionId) {
 
   output = replaceOnce(
     output,
+    `async function getVerificationCode(mailJwt, maxRetries = 30) {
+  const headers = {
+    Authorization: \`Bearer \${mailJwt}\`,
+    "Content-Type": "application/json",
+  };
+  for (let i = 0; i < maxRetries; i++) {
+    await new Promise((r) => setTimeout(r, 3000));
+    try {
+      const res = await fetchWithTimeout("https://api.mail.tm/messages?page=1", {
+        headers,
+      });
+      const data = await res.json();
+      if (data["hydra:member"]?.length > 0) {
+        const msgId = data["hydra:member"][0].id;
+        const full = await (
+          await fetchWithTimeout(\`https://api.mail.tm/messages/\${msgId}\`, {
+            headers,
+          })
+        ).json();
+        const match = (full.text || full.html || "")
+          .replace(/<[^>]*>/g, "")
+          .match(/\\b\\d{6}\\b/);
+        if (match) return match[0];
+      }
+    } catch {}
+  }
+  throw new Error("Timeout getting verification code");
+}`,
+    `async function getVerificationCode(mailJwt, maxRetries = 60) {
+  const headers = {
+    Authorization: \`Bearer \${mailJwt}\`,
+    "Content-Type": "application/json",
+  };
+  for (let i = 0; i < maxRetries; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      const res = await fetchWithTimeout("https://api.mail.tm/messages?page=1", { headers });
+      if (!res.ok) continue;
+      const data = await res.json();
+      const messages = Array.isArray(data["hydra:member"]) ? data["hydra:member"].slice(0, 6) : [];
+      for (const message of messages) {
+        const msgId = String(message?.id || "");
+        if (!msgId) continue;
+        const fullResponse = await fetchWithTimeout(\`https://api.mail.tm/messages/\${msgId}\`, { headers });
+        if (!fullResponse.ok) continue;
+        const full = await fullResponse.json();
+        const text = [full.subject, full.intro, full.text, ...(Array.isArray(full.html) ? full.html : [full.html])]
+          .filter(Boolean)
+          .join(" ")
+          .replace(/<[^>]*>/g, " ")
+          .replace(/&nbsp;|&#160;/gi, " ")
+          .replace(/\\s+/g, " ");
+        const match = text.match(/(?:^|\\D)(\\d{6})(?:\\D|$)/);
+        if (match) return match[1];
+      }
+    } catch {}
+  }
+  throw new Error("Timeout getting verification code");
+}`,
+    "reliable mailbox verification parsing"
+  );
+
+  output = replaceOnce(
+    output,
+    `  const domainData = await (
+    await fetchWithTimeout("https://api.mail.tm/domains")
+  ).json();
+  if (!domainData["hydra:member"]?.length)
+    throw new Error("No Mail.tm domains available");
+  const domain = domainData["hydra:member"][0].domain;
+
+  const mailUser = \`rcn_\${Math.random().toString(36).substring(2, 11)}\`;
+  const email = \`\${mailUser}@\${domain}\`;
+  const mailPassword = generatePassword();
+  const raccoonPassword = generatePassword();
+  const sn = generateSN();
+
+  const regRes = await fetchWithTimeout("https://api.mail.tm/accounts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ address: email, password: mailPassword }),
+  });
+  if (!regRes.ok) throw new Error("Failed to register Mail.tm mailbox");
+
+  const tokenRes = await fetchWithTimeout("https://api.mail.tm/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ address: email, password: mailPassword }),
+  });
+  if (!tokenRes.ok) throw new Error("Failed to get Mail.tm token");
+  const { token: mailJwt } = await tokenRes.json();`,
+    `  const domainResponse = await fetchWithTimeout("https://api.mail.tm/domains?page=1");
+  if (!domainResponse.ok) throw new Error("Mail.tm domains are unavailable");
+  const domainData = await domainResponse.json();
+  const domains = (Array.isArray(domainData["hydra:member"]) ? domainData["hydra:member"] : [])
+    .map(entry => String(entry?.domain || "").trim().toLowerCase())
+    .filter(domain => /^[a-z0-9.-]+$/.test(domain));
+  if (!domains.length) throw new Error("No Mail.tm domains available");
+
+  let email = "";
+  let mailJwt = "";
+  const raccoonPassword = generatePassword();
+  const sn = generateSN();
+  const mailboxAttempts = Math.min(12, Math.max(4, domains.length * 3));
+  for (let attempt = 0; attempt < mailboxAttempts && !mailJwt; attempt++) {
+    const domain = domains[attempt % domains.length];
+    const mailUser = \`rcn_\${Math.random().toString(36).substring(2, 12)}\`;
+    const candidateEmail = \`\${mailUser}@\${domain}\`;
+    const mailPassword = generatePassword();
+    try {
+      const regRes = await fetchWithTimeout("https://api.mail.tm/accounts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address: candidateEmail, password: mailPassword }),
+      });
+      if (!regRes.ok) {
+        if (regRes.status === 429) await new Promise(resolve => setTimeout(resolve, 1250 + attempt * 250));
+        continue;
+      }
+      const tokenRes = await fetchWithTimeout("https://api.mail.tm/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address: candidateEmail, password: mailPassword }),
+      });
+      if (!tokenRes.ok) continue;
+      const tokenPayload = await tokenRes.json();
+      if (!tokenPayload?.token) continue;
+      email = candidateEmail;
+      mailJwt = tokenPayload.token;
+    } catch {
+      await new Promise(resolve => setTimeout(resolve, 500 + attempt * 150));
+    }
+  }
+  if (!email || !mailJwt) throw new Error("Failed to prepare a Mail.tm mailbox");`,
+    "resilient mailbox domain rotation"
+  );
+
+  output = replaceOnce(
+    output,
     `let poolFilling = false;`,
-    `let poolFilling = false;\nlet poolFillPromise = null;`,
+    `let poolFilling = false;\nlet poolFillPromise = null;\nlet poolRetryTimer = null;\nlet poolRetryDelayMs = 5000;`,
     "shared account-pool preparation"
   );
   output = replaceOnce(
@@ -120,6 +259,30 @@ function nyxTurnIceServer(sessionId) {
     `async function fillPool() {`,
     `async function fillPoolWork() {`,
     "account-pool worker"
+  );
+  output = replaceOnce(
+    output,
+    `        pool.push(acc);
+        logSys(chalk.gray(\`pool: ready (\${pool.length}/\${POOL_TARGET})\`));
+      } catch (e) {
+        logSys(chalk.red(\`pool: fill error — \${e.message}\`));
+        break;`,
+    `        pool.push(acc);
+        poolRetryDelayMs = 5000;
+        logSys(chalk.gray(\`pool: ready (\${pool.length}/\${POOL_TARGET})\`));
+      } catch (e) {
+        logSys(chalk.red(\`pool: fill error - \${e.message}\`));
+        if (!poolRetryTimer && pool.length < POOL_TARGET) {
+          const delay = poolRetryDelayMs;
+          poolRetryDelayMs = Math.min(120000, Math.round(poolRetryDelayMs * 1.8));
+          poolRetryTimer = setTimeout(() => {
+            poolRetryTimer = null;
+            fillPool().catch(() => {});
+          }, delay);
+          poolRetryTimer.unref?.();
+        }
+        break;`,
+    "prepared-account refill backoff"
   );
   output = replaceOnce(
     output,

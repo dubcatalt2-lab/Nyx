@@ -33,7 +33,7 @@
       const activeShortcuts=savedShortcuts.filter(item=>{
         const url=String(item?.url||'').trim().replace(/\/+$/,'').toLowerCase();
         const domain=String(item?.domain||'').trim().toLowerCase();
-        return !['/apps/nyxtube','/apps/nyxify'].includes(url)&&!['nyx-tube','nyxtube','nyxify'].includes(domain);
+        return url!=='/apps/nyxtube'&&!['nyx-tube','nyxtube'].includes(domain);
       });
       if(activeShortcuts.length!==savedShortcuts.length)localStorage.setItem('nyx.homeShortcuts',JSON.stringify(activeShortcuts));
     }
@@ -2374,6 +2374,7 @@
     'fmhy.net':localIcon('theatre-masks.svg?v=1'),
     'nyx-chat':localIcon('chat.svg?v=2'),
     'cloud-gaming':localIcon('cloud-gaming.svg?v=2'),
+    'nyxify':localIcon('shortcut-nyxify.svg?v=2'),
     'link-checker':localIcon('link-checker.svg?v=2'),
     'link-generator':localIcon('link-generator.svg'),
     'chess.com':localIcon('chess-logo.png'),
@@ -8016,7 +8017,6 @@
           .filter(item=>item?.url && item?.title)
           .filter(item=>String(item.url || '').trim().replace(/\/+$/,'').toLowerCase()!=='/apps/nyxcloud' && String(item.domain || '').trim().toLowerCase()!=='nyx-cloud')
           .filter(item=>String(item.url || '').trim().replace(/\/+$/,'').toLowerCase()!=='/apps/nyxtube' && !['nyx-tube','nyxtube'].includes(String(item.domain || '').trim().toLowerCase()))
-          .filter(item=>String(item.url || '').trim().replace(/\/+$/,'').toLowerCase()!=='/apps/nyxify' && String(item.domain || '').trim().toLowerCase()!=='nyxify')
           .map(normalizeHomeShortcut);
         if(!store.get(nyxAiHomeShortcutMigrationKey,false)){
           if(!cleaned.some(item=>String(item.url || '').trim().toLowerCase()==='nyx://ai')){
@@ -8680,7 +8680,7 @@
     renderHomeShortcuts();
   }
   const nyxDefaultGlobalApps=[
-    ['link-checker','link-checker','Link Checker','/apps/link-checker/'],['link-generator','link-generator','Link Generator','/apps/link-generator/'],['youtube','youtube.com','YouTube','https://www.youtube.com/'],['pirate-cove','games','GAMES','/assets/games/'],['nyx-chat','nyx-chat','Nyx Chat','/apps/chat/'],['geforce-now','geforcenow','GeForce Now','https://play.geforcenow.com/'],['roblox','roblox.com','Roblox','https://web.cloudmoonapp.com/game/com.roblox.client/'],['discord','discord.com','Discord','https://discord.com/app'],['spotify','spotify.com','Spotify','https://open.spotify.com/'],['google','google.com','Google','https://www.google.com/'],['study','docs.google.com','Study','https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0'],['duck-ai','duck.ai','Duck AI','https://duck.ai/'],['nyx-ai','nyx-ai','Nyx AI','nyx://ai'],['wikipedia','wikipedia.org','Wikipedia','https://www.wikipedia.org/'],['movies','aether.cx','Movies','https://aether.cx/'],['more-movie-sites','fmhy.net','More Movie Sites','https://fmhy.net/video#p-stream-forks'],['tiktok','tiktok.com','TikTok','https://www.tiktok.com/'],['instagram','instagram.com','Instagram','https://www.instagram.com/'],['snapchat','snapchat.com','Snapchat','https://www.snapchat.com/'],['amazon','amazon.com','Amazon','https://www.amazon.com/'],['reddit','reddit.com','Reddit','https://www.reddit.com/'],['twitter','x.com','Twitter','https://x.com/'],['tcgplayer','tcgplayer.com','TCGPlayer','https://www.tcgplayer.com/'],['cps-test','cpstest.org','CPS Test','https://cpstest.org/'],['chess','chess.com','Chess.com','https://www.chess.com/'],['animex','animex.one','Animex','https://animex.one/'],['chatgpt','chatgpt.com','AI','https://chatgpt.com/'],['steam','store.steampowered.com','Steam','https://store.steampowered.com/'],['crunchyroll','crunchyroll.com','Crunchyroll','https://www.crunchyroll.com/'],['crazygames','crazygames.com','CrazyGames','https://www.crazygames.com/'],['newgrounds','newgrounds.com','Newgrounds','https://www.newgrounds.com/'],['twitch','twitch.tv','Twitch','https://www.twitch.tv/'],['kick','kick.com','Kick','https://kick.com/'],['pluto-tv','pluto.tv','Pluto TV','https://pluto.tv/'],['skribbl','skribbl.io','Skribbl.io','https://skribbl.io/'],['slither','slither.io','Slither.io','https://slither.io/'],['geoguessr','geoguessr.com','GeoGuessr','https://www.geoguessr.com/'],['y8-games','y8.com','Y8 Games','https://www.y8.com/'],['itch','itch.io','itch.io','https://itch.io/']
+    ['link-checker','link-checker','Link Checker','/apps/link-checker/'],['link-generator','link-generator','Link Generator','/apps/link-generator/'],['youtube','youtube.com','YouTube','https://www.youtube.com/'],['pirate-cove','games','GAMES','/assets/games/'],['nyx-chat','nyx-chat','Nyx Chat','/apps/chat/'],['geforce-now','geforcenow','GeForce Now','https://play.geforcenow.com/'],['roblox','roblox.com','Roblox','https://web.cloudmoonapp.com/game/com.roblox.client/'],['discord','discord.com','Discord','https://discord.com/app'],['spotify','spotify.com','Spotify','https://open.spotify.com/'],['nyxify','nyxify','Nyxify','/apps/nyxify/'],['google','google.com','Google','https://www.google.com/'],['study','docs.google.com','Study','https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0'],['duck-ai','duck.ai','Duck AI','https://duck.ai/'],['nyx-ai','nyx-ai','Nyx AI','nyx://ai'],['wikipedia','wikipedia.org','Wikipedia','https://www.wikipedia.org/'],['movies','aether.cx','Movies','https://aether.cx/'],['more-movie-sites','fmhy.net','More Movie Sites','https://fmhy.net/video#p-stream-forks'],['tiktok','tiktok.com','TikTok','https://www.tiktok.com/'],['instagram','instagram.com','Instagram','https://www.instagram.com/'],['snapchat','snapchat.com','Snapchat','https://www.snapchat.com/'],['amazon','amazon.com','Amazon','https://www.amazon.com/'],['reddit','reddit.com','Reddit','https://www.reddit.com/'],['twitter','x.com','Twitter','https://x.com/'],['tcgplayer','tcgplayer.com','TCGPlayer','https://www.tcgplayer.com/'],['cps-test','cpstest.org','CPS Test','https://cpstest.org/'],['chess','chess.com','Chess.com','https://www.chess.com/'],['animex','animex.one','Animex','https://animex.one/'],['chatgpt','chatgpt.com','AI','https://chatgpt.com/'],['steam','store.steampowered.com','Steam','https://store.steampowered.com/'],['crunchyroll','crunchyroll.com','Crunchyroll','https://www.crunchyroll.com/'],['crazygames','crazygames.com','CrazyGames','https://www.crazygames.com/'],['newgrounds','newgrounds.com','Newgrounds','https://www.newgrounds.com/'],['twitch','twitch.tv','Twitch','https://www.twitch.tv/'],['kick','kick.com','Kick','https://kick.com/'],['pluto-tv','pluto.tv','Pluto TV','https://pluto.tv/'],['skribbl','skribbl.io','Skribbl.io','https://skribbl.io/'],['slither','slither.io','Slither.io','https://slither.io/'],['geoguessr','geoguessr.com','GeoGuessr','https://www.geoguessr.com/'],['y8-games','y8.com','Y8 Games','https://www.y8.com/'],['itch','itch.io','itch.io','https://itch.io/']
   ].map(([id,icon,name,url])=>({id,icon,name,url}));
   let nyxGlobalApps=nyxDefaultGlobalApps.map(app=>({...app}));
   function normalizeNyxGlobalApp(app){
@@ -8705,7 +8705,7 @@
       const response=await fetch('/api/apps',{headers:{Accept:'application/json'},cache:'no-store'});
       const payload=await response.json();
       if(!response.ok || !Array.isArray(payload?.apps)) throw new Error(payload?.error||'App catalog unavailable');
-      nyxGlobalApps=payload.apps.map(normalizeNyxGlobalApp).filter(app=>app&&!['nyxtube','nyx-tube','nyxify'].includes(app.id)&&!['/apps/nyxtube','/apps/nyxify'].includes(app.url.replace(/\/+$/,'').toLowerCase()));
+      nyxGlobalApps=payload.apps.map(normalizeNyxGlobalApp).filter(app=>app&&!['nyxtube','nyx-tube'].includes(app.id)&&app.url.replace(/\/+$/,'').toLowerCase()!=='/apps/nyxtube');
       renderNyxGlobalApps();
     }catch(error){console.warn('Nyx app catalog is using built-in defaults:',error?.message||error)}
     return nyxGlobalApps;

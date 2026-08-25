@@ -316,8 +316,21 @@ function buildRuntimeEmbed(source) {
             clearTimeout(connectionTimer);
             connectionTimer = null;
             endedOverlay.querySelector("span").textContent = message;
+            if (window.parent !== window) window.parent.postMessage({ type: "nyx:cloud-player-error", message }, location.origin);
             hideConnecting();`,
     "specific player failure messages"
+  );
+  output = replaceOnce(
+    output,
+    `            if (!id) return;
+            try {`,
+    `            if (!id) return;
+            if (typeof RTCPeerConnection !== "function") {
+                showEnded("WebRTC is disabled by this Chromebook or browser policy. Ask the device administrator to allow WebRTC.");
+                return;
+            }
+            try {`,
+    "disabled WebRTC capability detection"
   );
   output = replaceOnce(
     output,

@@ -4,20 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#000000">
-  <title>Nyxify</title>
+  <title>Nyxify/built in music</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/apps/nyxify/icons.css?v=20260825-nyx-v2">
-  <link rel="stylesheet" href="/apps/nyxify/app.css?v=20260825-nyx-v2">
+  <link rel="stylesheet" href="/apps/nyxify/app.css?v=20260825-generated-playlists-v5">
 </head>
 <body>
   <canvas id="stars"></canvas>
 
   <header>
-    <div class="nyxify-brand" aria-label="Nyxify">
-      <img src="/assets/icons/shortcut-nyxify.svg" alt="">
-      <span><strong>Nyxify</strong><small>Music in Nyx</small></span>
+    <div class="nyxify-brand" aria-label="Nyxify/built in music">
+      <img src="/assets/icons/shortcut-nyxify.svg?v=3" alt="">
+      <span><strong>Nyxify/built in music</strong><small>Music in Nyx</small></span>
     </div>
     <form class="searchbox" id="searchForm">
       <i class="material-symbols--search-rounded"></i>
@@ -57,7 +57,7 @@
         <div class="mod-list" id="historyList"></div>
       </section>
       <section class="module playlist-module">
-        <div class="mod-head"><span>Playlists</span><button type="button" class="module-add" id="newPlaylistBtn" aria-label="Create playlist">+</button></div>
+        <div class="mod-head"><span>Playlists</span><button type="button" class="module-add" id="newPlaylistBtn" aria-label="Create playlist"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v8M8 12h8"></path></svg></button></div>
         <div class="playlist-sync" id="playlistSync">Saved on this device</div>
         <div class="mod-list" id="playlistList"></div>
       </section>
@@ -94,7 +94,7 @@
           <span class="p-title" id="pTitle">&nbsp;</span>
         </div>
         <div class="p-actions">
-          <button type="button" class="ibtn" id="pPlaylist" title="add to playlist" aria-label="add to playlist">+</button>
+          <button type="button" class="ibtn" id="pPlaylist" title="add to playlist" aria-label="add to playlist"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v8M8 12h8"></path></svg></button>
           <button type="button" class="like-btn" id="pLike" title="like" aria-label="like" aria-pressed="false"><i class="ic-heart"></i></button>
           <a class="ibtn hide-sm" id="dlBtn" title="download song" aria-label="download song"><i class="material-symbols--download-rounded"></i></a>
         </div>
@@ -131,6 +131,6 @@
 
   <audio id="audio" preload="metadata"></audio>
 
-  <script src="/apps/nyxify/app.js?v=20260825-nyx-v2"></script>
+  <script src="/apps/nyxify/app.js?v=20260825-generated-playlists-v5"></script>
 </body>
 </html>

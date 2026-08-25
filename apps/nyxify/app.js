@@ -28,11 +28,15 @@ let detail = null;
 let reqid = 0;
 let dragging = false;
 let activePlaylistId = '';
+let playlistAddTargetId = '';
 let playlistDialogTrack = null;
 let playlists = [];
 let playlistToken = '';
 let playlistTokenExpiresAt = 0;
 let playlistAuthPromise = null;
+const playlistCoverDataLimit = 18000;
+const playlistCoverFileLimit = 8 * 1024 * 1024;
+const playlistAccentCache = new Map();
 
 let queue = [];
 let qindex = -1;
@@ -67,12 +71,24 @@ function playlisttrack(track) {
   };
 }
 
+function normalizedplaylistcover(value) {
+  const cover = String(value || '').replace(/\s/g, '');
+  return /^data:image\/(?:jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(cover) && cover.length <= playlistCoverDataLimit ? cover : '';
+}
+
+function normalizedplaylistaccent(value) {
+  const accent = String(value || '').trim();
+  return validhex(accent) ? accent.toLowerCase() : '';
+}
+
 function localplaylists() {
   try {
     const stored = JSON.parse(localStorage.getItem('nyx_nyxify_playlists') || '[]');
     return Array.isArray(stored) ? stored.slice(0, 16).map(item => ({
       id: /^[A-Za-z0-9_-]{8,64}$/.test(String(item?.id || '')) ? String(item.id) : `playlist_${crypto.randomUUID().replace(/-/g, '')}`,
       name: String(item?.name || 'Playlist').trim().slice(0, 48) || 'Playlist',
+      cover: normalizedplaylistcover(item?.cover),
+      accent: normalizedplaylistaccent(item?.accent),
       tracks: (Array.isArray(item?.tracks) ? item.tracks : []).slice(0, 150).map(playlisttrack).filter(track => track.id && track.title)
     })) : [];
   } catch (_) {
@@ -286,12 +302,19 @@ function showloading(name) {
   trackList.style.display = '';
 }
 
-function buildrow(t, list) {
+function buildrow(t, list, options = {}) {
   const row = document.createElement('div');
   row.className = 'row' + (curtrack && curtrack.id === t.id ? ' playing' : '');
   row.dataset.id = t.id;
 
   const liked = isliked(t.id);
+  const addTarget = playlistAddTargetId ? playlists.find(item => item.id === playlistAddTargetId) : null;
+  const alreadyAdded = !!addTarget?.tracks.some(item => item.id === t.id);
+  const playlistAction = options.playlistId
+    ? `<span class="playlist-track-actions"><button type="button" class="playlist-track-action playlist-track-seed" aria-label="Create a new playlist from ${esc(t.title)}" title="Create a new playlist from this song"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 .9 3.1L16 7l-3.1.9L12 11l-.9-3.1L8 7l3.1-.9L12 3Zm6 8 .7 2.3L21 14l-2.3.7L18 17l-.7-2.3L15 14l2.3-.7L18 11ZM8 11l1.4 4.6L14 17l-4.6 1.4L8 23l-1.4-4.6L2 17l4.6-1.4L8 11Z"></path></svg></button><button type="button" class="playlist-track-action playlist-track-shuffle" aria-label="Shuffle ${esc(options.playlistName || 'this playlist')}" title="Shuffle this playlist"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h2.2c4.8 0 6.7 10 11.6 10H20M17 14l3 3-3 3M4 17h2.2c1.8 0 3.2-1.4 4.5-3.2M14.2 9.4c1-1.4 2.1-2.4 3.6-2.4H20M17 4l3 3-3 3"></path></svg></button><button type="button" class="playlist-track-action playlist-track-remove" aria-label="Remove ${esc(t.title)} from playlist">&times;</button></span>`
+    : addTarget
+      ? `<button type="button" class="playlist-track-action playlist-track-add${alreadyAdded ? ' added' : ''}" aria-label="${alreadyAdded ? 'Already in playlist' : `Add ${esc(t.title)} to playlist`}" ${alreadyAdded ? 'disabled' : ''}>${alreadyAdded ? '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m8.5 12.5 2.2 2.2 4.8-5.2"></path></svg>' : '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v8M8 12h8"></path></svg>'}</button>`
+      : '';
   const artistHtml = `<span class="alink">${esc(t.artist)}</span>`;
   const sub = t.album ? `${artistHtml} · ${esc(t.album)}` : artistHtml;
 
@@ -305,6 +328,7 @@ function buildrow(t, list) {
       <div class="t-sub">${sub}</div>
     </div>
     <span class="t-duration">${fmt(t.duration)}</span>
+    ${playlistAction}
     <button type="button" class="like-btn${liked ? ' liked' : ''}" aria-pressed="${liked}" aria-label="${liked ? 'unlike' : 'like'}">
       <i class="${liked ? 'mingcute--heart-fill' : 'ic-heart'}"></i>
     </button>`;
@@ -312,13 +336,34 @@ function buildrow(t, list) {
   makeclickable(row, `play ${t.title} by ${t.artist}`, () => playtrack(t, list));
 
   row.addEventListener('click', e => {
-    if (e.target.closest('.like-btn')) return;
-    if (e.target.closest('.alink')) {
+    if (e.target.closest('.like-btn, .playlist-track-action')) return;
+    if (e.target.closest('.alink') && !playlistAddTargetId) {
       e.stopPropagation();
       if (t.artistId) opendetail('artist', t.artistId, t.artist);
       return;
     }
     playtrack(t, list);
+  });
+
+  row.querySelector('.playlist-track-add')?.addEventListener('click', event => {
+    event.stopPropagation();
+    if (!playlistAddTargetId || !addtoplaylist(playlistAddTargetId, t)) return;
+    event.currentTarget.classList.add('added');
+    event.currentTarget.disabled = true;
+    event.currentTarget.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m8.5 12.5 2.2 2.2 4.8-5.2"></path></svg>';
+    event.currentTarget.setAttribute('aria-label', 'Already in playlist');
+  });
+  row.querySelector('.playlist-track-remove')?.addEventListener('click', event => {
+    event.stopPropagation();
+    removefromplaylist(options.playlistId, t.id);
+  });
+  row.querySelector('.playlist-track-seed')?.addEventListener('click', event => {
+    event.stopPropagation();
+    void createplaylistfromtrack(t, event.currentTarget);
+  });
+  row.querySelector('.playlist-track-shuffle')?.addEventListener('click', event => {
+    event.stopPropagation();
+    shuffleplaylist(options.playlistId);
   });
 
   bindheart(row.querySelector('.like-btn'), t);
@@ -348,10 +393,10 @@ function buildcard(g, type) {
   return card;
 }
 
-function renderrowsinto(container, list) {
+function renderrowsinto(container, list, options = {}) {
   container.innerHTML = '';
   container.style.display = list.length ? '' : 'none';
-  list.forEach(t => container.appendChild(buildrow(t, list)));
+  list.forEach(t => container.appendChild(buildrow(t, list, options)));
 }
 
 function showrows(list) {
@@ -489,6 +534,7 @@ function renderdetail() {
 
 function rendermain() {
   if (activePlaylistId) return renderplaylistview();
+  if (playlistAddTargetId) return renderplaylistaddview();
   if (detail) return detail.data ? renderdetail() : showloading(detail.name);
   if (!results.length) {
     return showempty(query ? 'No results' : 'Find something to play',
@@ -501,6 +547,11 @@ function rendermain() {
 }
 
 crumbEl.addEventListener('click', () => {
+  if (playlistAddTargetId) {
+    const playlistId = playlistAddTargetId;
+    playlistAddTargetId = '';
+    return openplaylist(playlistId);
+  }
   detail = null;
   activePlaylistId = '';
   rendermain();
@@ -508,6 +559,7 @@ crumbEl.addEventListener('click', () => {
 
 document.querySelectorAll('.filter').forEach(btn => {
   btn.addEventListener('click', () => {
+    playlistAddTargetId = '';
     detail = null;
     activePlaylistId = '';
     setfilter(btn.dataset.filter);
@@ -547,6 +599,185 @@ function rendermini(container, list, emptymsg) {
   });
 }
 
+function playlistcoverelement(playlist, compact = false) {
+  const cover = document.createElement('span');
+  cover.className = `playlist-cover${compact ? ' compact' : ''}`;
+  const artwork = playlist?.cover ? [playlist.cover] : [];
+  if (!artwork.length) {
+    for (const track of playlist?.tracks || []) {
+      if (!track.cover || artwork.includes(track.cover)) continue;
+      artwork.push(track.cover);
+      if (artwork.length === 4) break;
+    }
+  }
+  cover.dataset.count = String(artwork.length);
+  if (!artwork.length) {
+    const icon = document.createElement('i');
+    icon.className = 'mingcute--music-line';
+    cover.appendChild(icon);
+    return cover;
+  }
+  artwork.forEach(src => {
+    const image = document.createElement('img');
+    image.src = src;
+    image.alt = '';
+    image.loading = 'lazy';
+    cover.appendChild(image);
+  });
+  return cover;
+}
+
+function playlistaccentstyle(node, accent) {
+  if (!node || !validhex(accent)) return;
+  const channels = hexrgb(accent);
+  const luminance = channels[0] * .299 + channels[1] * .587 + channels[2] * .114;
+  node.style.setProperty('--playlist-cover-rgb', channels.join(', '));
+  node.style.setProperty('--playlist-cover-ink', luminance > 158 ? '#06070a' : '#f7f8fb');
+}
+
+function playlistedgeaccent(canvas) {
+  const context = canvas.getContext('2d', { willReadFrequently: true });
+  const { width, height } = canvas;
+  const pixels = context.getImageData(0, 0, width, height).data;
+  const edgeX = Math.max(1, Math.round(width * .16));
+  const edgeY = Math.max(1, Math.round(height * .16));
+  const buckets = new Map();
+  for (let y = 0; y < height; y += 2) {
+    for (let x = 0; x < width; x += 2) {
+      if (x >= edgeX && x < width - edgeX && y >= edgeY && y < height - edgeY) continue;
+      const index = (y * width + x) * 4;
+      if (pixels[index + 3] < 180) continue;
+      const r = pixels[index], g = pixels[index + 1], b = pixels[index + 2];
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      const saturation = max ? (max - min) / max : 0;
+      const key = `${r >> 5}-${g >> 5}-${b >> 5}`;
+      const bucket = buckets.get(key) || { count: 0, score: 0, r: 0, g: 0, b: 0 };
+      bucket.count += 1;
+      bucket.score += .7 + saturation * .7;
+      bucket.r += r;
+      bucket.g += g;
+      bucket.b += b;
+      buckets.set(key, bucket);
+    }
+  }
+  const selected = [...buckets.values()].sort((a, b) => b.score - a.score)[0];
+  if (!selected) return '#777b86';
+  let channels = [selected.r, selected.g, selected.b].map(value => Math.round(value / selected.count));
+  const brightness = channels[0] * .299 + channels[1] * .587 + channels[2] * .114;
+  if (brightness < 42) channels = channels.map(value => Math.round(value + (255 - value) * .22));
+  if (brightness > 225) channels = channels.map(value => Math.round(value * .82));
+  return `#${channels.map(value => value.toString(16).padStart(2, '0')).join('')}`;
+}
+
+function playlistimageload(source) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.decoding = 'async';
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error('That image could not be opened.'));
+    image.src = source;
+  });
+}
+
+function playlistfiledata(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('That image could not be read.'));
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function prepareplaylistcover(file) {
+  if (!file || !new Set(['image/jpeg', 'image/png', 'image/webp']).has(file.type)) throw new Error('Choose a PNG, JPG, or WebP image.');
+  if (file.size > playlistCoverFileLimit) throw new Error('Playlist covers must be 8 MB or smaller.');
+  const source = await playlistfiledata(file);
+  const image = await playlistimageload(source);
+  const side = Math.min(image.naturalWidth, image.naturalHeight);
+  if (!side) throw new Error('That image has no usable pixels.');
+  const sourceX = (image.naturalWidth - side) / 2;
+  const sourceY = (image.naturalHeight - side) / 2;
+  const sample = document.createElement('canvas');
+  sample.width = 128;
+  sample.height = 128;
+  sample.getContext('2d', { alpha: false }).drawImage(image, sourceX, sourceY, side, side, 0, 0, 128, 128);
+  const accent = playlistedgeaccent(sample);
+  const attempts = [[320, .82], [288, .74], [256, .66], [224, .58], [192, .52], [160, .46], [128, .42]];
+  for (const [size, quality] of attempts) {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    canvas.getContext('2d', { alpha: false }).drawImage(image, sourceX, sourceY, side, side, 0, 0, size, size);
+    const cover = canvas.toDataURL('image/webp', quality);
+    if (cover.length <= playlistCoverDataLimit) return { cover, accent };
+  }
+  throw new Error('That image could not be compressed enough. Try a simpler image.');
+}
+
+async function playlistaccentfromsource(source) {
+  if (!source) return '';
+  if (!playlistAccentCache.has(source)) {
+    playlistAccentCache.set(source, (async () => {
+      try {
+        const image = await playlistimageload(source);
+        const side = Math.min(image.naturalWidth, image.naturalHeight);
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        canvas.getContext('2d', { alpha: false }).drawImage(image, (image.naturalWidth - side) / 2, (image.naturalHeight - side) / 2, side, side, 0, 0, 64, 64);
+        return playlistedgeaccent(canvas);
+      } catch (_) {
+        return '';
+      }
+    })());
+  }
+  return playlistAccentCache.get(source);
+}
+
+function playlistcovereditor(playlist) {
+  const editor = document.createElement('div');
+  editor.className = 'playlist-cover-editor';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'playlist-cover-change';
+  button.setAttribute('aria-label', `Change cover for ${playlist.name}`);
+  button.appendChild(playlistcoverelement(playlist));
+  const prompt = document.createElement('span');
+  prompt.className = 'playlist-cover-prompt';
+  prompt.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.2 6.5 9.5 4h5l1.3 2.5H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h3.2Z"></path><circle cx="12" cy="13" r="3.5"></circle></svg><span>Change cover</span>';
+  button.appendChild(prompt);
+  const input = document.createElement('input');
+  input.className = 'playlist-cover-input';
+  input.type = 'file';
+  input.accept = 'image/png,image/jpeg,image/webp';
+  input.hidden = true;
+  button.addEventListener('click', () => input.click());
+  input.addEventListener('change', async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    const status = detailView.querySelector('.playlist-cover-status');
+    button.disabled = true;
+    if (status) status.textContent = 'Preparing cover…';
+    try {
+      const prepared = await prepareplaylistcover(file);
+      playlist.cover = prepared.cover;
+      playlist.accent = prepared.accent;
+      await persistplaylists();
+      renderplaylistview();
+      const updatedStatus = detailView.querySelector('.playlist-cover-status');
+      if (updatedStatus) updatedStatus.textContent = 'Cover updated.';
+    } catch (error) {
+      button.disabled = false;
+      if (status) status.textContent = error.message;
+    } finally {
+      input.value = '';
+    }
+  });
+  editor.append(button, input);
+  if (validhex(playlist.accent)) playlistaccentstyle(editor, playlist.accent);
+  return editor;
+}
+
 function renderplaylists() {
   playlistList.innerHTML = '';
   if (!playlists.length) {
@@ -559,14 +790,18 @@ function renderplaylists() {
   playlists.forEach(playlist => {
     const entry = document.createElement('div');
     entry.className = 'playlist-entry';
+    if (validhex(playlist.accent)) playlistaccentstyle(entry, playlist.accent);
     const open = document.createElement('button');
     open.type = 'button';
     open.className = 'playlist-open';
+    const meta = document.createElement('span');
+    meta.className = 'playlist-open-meta';
     const name = document.createElement('strong');
     name.textContent = playlist.name;
     const count = document.createElement('small');
     count.textContent = `${playlist.tracks.length} ${playlist.tracks.length === 1 ? 'track' : 'tracks'}`;
-    open.append(name, count);
+    meta.append(name, count);
+    open.append(playlistcoverelement(playlist, true), meta);
     open.addEventListener('click', () => openplaylist(playlist.id));
     const remove = document.createElement('button');
     remove.type = 'button';
@@ -577,6 +812,7 @@ function renderplaylists() {
       if (!confirm(`Delete "${playlist.name}"?`)) return;
       playlists = playlists.filter(item => item.id !== playlist.id);
       if (activePlaylistId === playlist.id) activePlaylistId = '';
+      if (playlistAddTargetId === playlist.id) playlistAddTargetId = '';
       void persistplaylists();
       rendermain();
     });
@@ -629,6 +865,7 @@ function openplaylist(id) {
   const playlist = playlists.find(item => item.id === id);
   if (!playlist) return;
   activePlaylistId = id;
+  playlistAddTargetId = '';
   detail = null;
   renderplaylistview();
 }
@@ -641,14 +878,123 @@ function renderplaylistview() {
   }
   hideviews();
   crumbEl.style.display = '';
-  crumbText.textContent = `${playlist.name} · ${playlist.tracks.length} tracks`;
-  if (!playlist.tracks.length) {
-    showempty('This playlist is empty', 'Play a song, then use + in the player to add it.');
-    crumbEl.style.display = '';
-    crumbText.textContent = `${playlist.name} · 0 tracks`;
-    return;
+  crumbText.textContent = 'Playlists';
+
+  detailView.innerHTML = '';
+  const hero = document.createElement('section');
+  hero.className = 'playlist-hero';
+  const savedAccent = normalizedplaylistaccent(playlist.accent);
+  if (savedAccent) playlistaccentstyle(hero, savedAccent);
+  else {
+    const source = playlist.cover || playlist.tracks.find(track => track.cover)?.cover || '';
+    void playlistaccentfromsource(source).then(accent => {
+      if (hero.isConnected && accent) playlistaccentstyle(hero, accent);
+    });
   }
-  renderrowsinto(trackList, playlist.tracks);
+  const info = document.createElement('div');
+  info.className = 'playlist-hero-info';
+  const eyebrow = document.createElement('span');
+  eyebrow.className = 'playlist-eyebrow';
+  eyebrow.textContent = 'Playlist';
+  const title = document.createElement('h2');
+  title.textContent = playlist.name;
+  const summary = document.createElement('p');
+  summary.textContent = `${playlist.tracks.length} ${playlist.tracks.length === 1 ? 'song' : 'songs'} · Nyxify/built in music`;
+  const actions = document.createElement('div');
+  actions.className = 'playlist-hero-actions';
+  const play = document.createElement('button');
+  play.type = 'button';
+  play.className = 'playlist-play-all';
+  play.disabled = !playlist.tracks.length;
+  play.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.8v12.4L18 12Z"></path></svg><span>Play</span>';
+  play.addEventListener('click', () => {
+    if (playlist.tracks.length) playtrack(playlist.tracks[0], playlist.tracks);
+  });
+  const add = document.createElement('button');
+  add.type = 'button';
+  add.className = 'playlist-add-songs';
+  add.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v8M8 12h8"></path></svg><span>Add songs</span>';
+  add.addEventListener('click', () => startplaylistadd(playlist.id));
+  actions.append(play, add);
+  if (playlist.cover) {
+    const reset = document.createElement('button');
+    reset.type = 'button';
+    reset.className = 'playlist-reset-cover';
+    reset.textContent = 'Use song covers';
+    reset.addEventListener('click', async () => {
+      playlist.cover = '';
+      playlist.accent = '';
+      await persistplaylists();
+      renderplaylistview();
+    });
+    actions.appendChild(reset);
+  }
+  const coverStatus = document.createElement('span');
+  coverStatus.className = 'playlist-cover-status';
+  coverStatus.setAttribute('role', 'status');
+  info.append(eyebrow, title, summary, actions, coverStatus);
+  hero.append(playlistcovereditor(playlist), info);
+  detailView.appendChild(hero);
+
+  if (!playlist.tracks.length) {
+    const empty = document.createElement('section');
+    empty.className = 'playlist-empty';
+    empty.innerHTML = '<strong>Your playlist is empty</strong><span>Use Add songs to find music for it.</span>';
+    detailView.appendChild(empty);
+  } else {
+    const seedHint = document.createElement('div');
+    seedHint.className = 'playlist-seed-hint';
+    seedHint.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 .9 3.1L16 7l-3.1.9L12 11l-.9-3.1L8 7l3.1-.9L12 3Zm6 8 .7 2.3L21 14l-2.3.7L18 17l-.7-2.3L15 14l2.3-.7L18 11ZM8 11l1.4 4.6L14 17l-4.6 1.4L8 23l-1.4-4.6L2 17l4.6-1.4L8 11Z"></path></svg><span>Sparkle creates a separate playlist from a song. Shuffle randomizes this playlist for playback.</span>';
+    detailView.appendChild(seedHint);
+    const list = document.createElement('div');
+    list.className = 'playlist-track-list';
+    renderrowsinto(list, playlist.tracks, { playlistId: playlist.id, playlistName: playlist.name });
+    detailView.appendChild(list);
+  }
+  detailView.style.display = '';
+}
+
+function startplaylistadd(id) {
+  const playlist = playlists.find(item => item.id === id);
+  if (!playlist) return;
+  playlistAddTargetId = id;
+  activePlaylistId = '';
+  detail = null;
+  query = '';
+  results = [];
+  searchInput.value = '';
+  renderplaylistaddview();
+  searchInput.focus();
+}
+
+function renderplaylistaddview() {
+  const playlist = playlists.find(item => item.id === playlistAddTargetId);
+  if (!playlist) {
+    playlistAddTargetId = '';
+    return rendermain();
+  }
+  hideviews();
+  crumbEl.style.display = '';
+  crumbText.textContent = `Back to ${playlist.name}`;
+  detailView.innerHTML = '';
+  const heading = document.createElement('section');
+  heading.className = 'playlist-add-heading';
+  const copy = document.createElement('div');
+  copy.innerHTML = `<span>Add to playlist</span><strong>${esc(playlist.name)}</strong><small>Search above, then use + beside any song.</small>`;
+  heading.append(playlistcoverelement(playlist, true), copy);
+  detailView.appendChild(heading);
+  if (!results.length) {
+    const empty = document.createElement('section');
+    empty.className = 'playlist-empty compact';
+    empty.innerHTML = `<strong>${query ? 'No songs found' : 'Find songs for this playlist'}</strong><span>${query ? `Nothing matched “${esc(query)}”.` : 'Type a song or artist into the search bar.'}</span>`;
+    detailView.appendChild(empty);
+  } else {
+    const list = document.createElement('div');
+    list.className = 'playlist-track-list playlist-add-results';
+    renderrowsinto(list, results);
+    detailView.appendChild(list);
+  }
+  detailView.style.display = '';
 }
 
 async function persistplaylists() {
@@ -670,18 +1016,107 @@ async function persistplaylists() {
 
 function addtoplaylist(id, track) {
   const playlist = playlists.find(item => item.id === id);
-  if (!playlist || !track) return;
+  if (!playlist || !track) return false;
   if (playlist.tracks.some(item => item.id === track.id)) {
     playlistMessage.textContent = `Already in ${playlist.name}.`;
-    return;
+    return false;
   }
   if (playlist.tracks.length >= 150) {
     playlistMessage.textContent = 'This playlist has reached 150 tracks.';
-    return;
+    return false;
   }
   playlist.tracks.push(playlisttrack(track));
   playlistMessage.textContent = `Added to ${playlist.name}.`;
   void persistplaylists();
+  return true;
+}
+
+function removefromplaylist(id, trackId) {
+  const playlist = playlists.find(item => item.id === id);
+  if (!playlist) return;
+  const next = playlist.tracks.filter(track => track.id !== trackId);
+  if (next.length === playlist.tracks.length) return;
+  playlist.tracks = next;
+  playlistMessage.textContent = `Removed from ${playlist.name}.`;
+  void persistplaylists();
+  renderplaylistview();
+}
+
+function generatedplaylistname(seed) {
+  const rawBase = `${String(seed?.title || 'Song').trim() || 'Song'} Mix`;
+  const taken = new Set(playlists.map(playlist => playlist.name.toLowerCase()));
+  for (let number = 1; number <= playlists.length + 2; number++) {
+    const suffix = number === 1 ? '' : ` ${number}`;
+    const candidate = `${rawBase.slice(0, 48 - suffix.length).trim()}${suffix}`;
+    if (!taken.has(candidate.toLowerCase())) return candidate;
+  }
+  return `New Mix ${Date.now().toString(36).slice(-5)}`;
+}
+
+function shuffleplaylist(id) {
+  const playlist = playlists.find(item => item.id === id);
+  if (!playlist?.tracks.length) return;
+  const shuffled = playlist.tracks.map(playlisttrack);
+  for (let index = shuffled.length - 1; index > 0; index--) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  playtrack(shuffled[0], shuffled);
+  playlistMessage.textContent = `Shuffling ${playlist.name}.`;
+}
+
+async function createplaylistfromtrack(seed, button) {
+  if (!seed || button?.disabled) return;
+  if (playlists.length >= 16) {
+    playlistMessage.textContent = 'You can have up to 16 playlists.';
+    return;
+  }
+  const usedTracks = playlists.reduce((total, playlist) => total + playlist.tracks.length, 0);
+  const remainingLibraryTracks = Math.max(0, 1200 - usedTracks);
+  if (!remainingLibraryTracks) {
+    playlistMessage.textContent = 'Your playlist library has reached its track limit.';
+    return;
+  }
+  if (button) button.disabled = true;
+  playlistMessage.textContent = `Creating a new playlist from ${seed.title}…`;
+  let matches = [];
+  let searchFailed = false;
+  try {
+    const searchSeed = String(seed.artist || seed.title || '').trim();
+    if (!searchSeed) throw new Error('This song does not have enough catalog information.');
+    const response = await fetch(`/api/nyxify/search?q=${encodeURIComponent(searchSeed)}`);
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || `HTTP ${response.status}`);
+    matches = Array.isArray(payload.data) ? payload.data : [];
+  } catch (_) {
+    searchFailed = true;
+  }
+  try {
+    const seen = new Set([String(seed.id)]);
+    const room = Math.max(0, Math.min(17, remainingLibraryTracks - 1));
+    const additions = matches.filter(track => {
+      const id = String(track?.id || '');
+      if (!id || seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    }).slice(0, room).map(playlisttrack);
+    const playlist = {
+      id: playlistid(),
+      name: generatedplaylistname(seed),
+      cover: '',
+      accent: await playlistaccentfromsource(seed.cover),
+      tracks: [playlisttrack(seed), ...additions]
+    };
+    playlists.push(playlist);
+    await persistplaylists();
+    openplaylist(playlist.id);
+    playlistMessage.textContent = searchFailed
+      ? `Created ${playlist.name} with ${seed.title}; more matches were unavailable.`
+      : `Created ${playlist.name} with ${playlist.tracks.length} ${playlist.tracks.length === 1 ? 'song' : 'songs'}.`;
+  } catch (error) {
+    playlistMessage.textContent = `Could not create the playlist: ${error.message}`;
+    if (button?.isConnected) button.disabled = false;
+  }
 }
 
 async function loadplaylists() {
@@ -738,7 +1173,7 @@ document.getElementById('playlistCreateForm').addEventListener('submit', event =
     playlistMessage.textContent = 'A playlist with that name already exists.';
     return;
   }
-  const playlist = { id: playlistid(), name, tracks: playlistDialogTrack ? [playlisttrack(playlistDialogTrack)] : [] };
+  const playlist = { id: playlistid(), name, cover: '', accent: '', tracks: playlistDialogTrack ? [playlisttrack(playlistDialogTrack)] : [] };
   playlists.push(playlist);
   playlistName.value = '';
   playlistMessage.textContent = playlistDialogTrack ? `Created ${name} and added the song.` : `Created ${name}.`;
@@ -769,7 +1204,14 @@ document.getElementById('searchForm').addEventListener('submit', async e => {
     setfilter('everything');
     rendermain();
   } catch (err) {
-    showempty('Search failed', err.message, true);
+    if (playlistAddTargetId) {
+      query = q;
+      results = [];
+      renderplaylistaddview();
+      playlistMessage.textContent = `Search failed: ${err.message}`;
+    } else {
+      showempty('Search failed', err.message, true);
+    }
   }
 });
 

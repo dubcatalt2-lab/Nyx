@@ -123,6 +123,8 @@ const nyxifyArtworkInflight = new Map();
 const nyxifyPlaylistLimit = 16;
 const nyxifyPlaylistTrackLimit = 150;
 const nyxifyPlaylistTotalTrackLimit = 1_200;
+const nyxifyPlaylistCoverDataLimit = 18_000;
+const nyxifyPlaylistCoverLibraryLimit = 300_000;
 const nyxifyArtworkTypes = new Set(["image/avif", "image/gif", "image/jpeg", "image/png", "image/webp"]);
 const nyxifyAudioTypes = new Set(["application/octet-stream", "audio/aac", "audio/flac", "audio/mp4", "audio/mpeg", "audio/ogg", "audio/wav", "audio/webm"]);
 const nyxifyArtworkByteLimit = 5 * 1024 * 1024;
@@ -247,7 +249,8 @@ const nyxCloudGamingGamesMergeMigrationField = "cloudGamingMergedIntoGames";
 const nyxCloudGamingGlobalApp = Object.freeze({ id: "cloud-gaming", icon: "cloud-gaming", name: "Cloud Gaming", url: "/apps/cloud-gaming/" });
 const nyxMediaAppsRetiredField = "nyxMediaAppsRetired";
 const nyxifyReintroducedField = "nyxifyMizuPlayerInitialized";
-const nyxifyGlobalApp = Object.freeze({ id: "nyxify", icon: "nyxify", name: "Nyxify", url: "/apps/nyxify/" });
+const nyxifyBuiltInMusicNameField = "nyxifyBuiltInMusicName";
+const nyxifyGlobalApp = Object.freeze({ id: "nyxify", icon: "nyxify", name: "Nyxify/built in music", url: "/apps/nyxify/" });
 const nyxGamesAppMigrationField = "gamesAppRenamed";
 const nyxGamesGlobalApp = Object.freeze({ id: "pirate-cove", icon: "games", name: "GAMES", url: "/assets/games/" });
 const nyxDefaultGlobalApps = Object.freeze([
@@ -3059,6 +3062,9 @@ function nyxGlobalAppsFromSnapshot(snapshot) {
     if (normalized?.id === nyxGamesGlobalApp.id && normalized.url === nyxGamesGlobalApp.url) {
       return { ...normalized, icon: nyxGamesGlobalApp.icon, name: nyxGamesGlobalApp.name };
     }
+    if (normalized?.id === nyxifyGlobalApp.id && normalized.url === nyxifyGlobalApp.url) {
+      return { ...normalized, icon: nyxifyGlobalApp.icon, name: nyxifyGlobalApp.name };
+    }
     return normalized;
   }).filter(app => app && !nyxRetiredMediaApp(app));
 }
@@ -3066,7 +3072,7 @@ function nyxGlobalAppsFromSnapshot(snapshot) {
 async function nyxGlobalApps(firebase) {
   const reference = firebase.firestore.collection(nyxGlobalAppsCollection).doc(nyxGlobalAppsDocument);
   const snapshot = await reference.get();
-  if (snapshot.data()?.[nyxCloudGamingAppMigrationField] === true && snapshot.data()?.[nyxCloudGamingGamesMergeMigrationField] === true && snapshot.data()?.[nyxMediaAppsRetiredField] === true && snapshot.data()?.[nyxifyReintroducedField] === true && snapshot.data()?.[nyxGamesAppMigrationField] === true) return nyxGlobalAppsFromSnapshot(snapshot);
+  if (snapshot.data()?.[nyxCloudGamingAppMigrationField] === true && snapshot.data()?.[nyxCloudGamingGamesMergeMigrationField] === true && snapshot.data()?.[nyxMediaAppsRetiredField] === true && snapshot.data()?.[nyxifyReintroducedField] === true && snapshot.data()?.[nyxifyBuiltInMusicNameField] === true && snapshot.data()?.[nyxGamesAppMigrationField] === true) return nyxGlobalAppsFromSnapshot(snapshot);
   return firebase.firestore.runTransaction(async transaction => {
     const currentSnapshot = await transaction.get(reference);
     const apps = nyxGlobalAppsFromSnapshot(currentSnapshot);
@@ -3096,6 +3102,15 @@ async function nyxGlobalApps(firebase) {
       transaction.set(reference, {
         apps,
         [nyxifyReintroducedField]: true,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    }
+    if (currentSnapshot.data()?.[nyxifyBuiltInMusicNameField] !== true) {
+      const nyxifyIndex = apps.findIndex(item => item.id === nyxifyGlobalApp.id && item.url === nyxifyGlobalApp.url);
+      if (nyxifyIndex >= 0) apps.splice(nyxifyIndex, 1, { ...nyxifyGlobalApp });
+      transaction.set(reference, {
+        apps,
+        [nyxifyBuiltInMusicNameField]: true,
         updatedAt: new Date().toISOString()
       }, { merge: true });
     }
@@ -5337,6 +5352,9 @@ function nyxifyPlaylistRecord(value) {
   const id = String(source.id || "").trim();
   const name = nyxifyCleanText(source.name, "", 48);
   if (!/^[A-Za-z0-9_-]{8,64}$/.test(id) || !name) throw nyxCloudSaveError("A Nyxify playlist is invalid.");
+  const rawCover = String(source.cover || "").replace(/\s/g, "");
+  const cover = /^data:image\/(?:jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(rawCover) && rawCover.length <= nyxifyPlaylistCoverDataLimit ? rawCover : "";
+  const accent = /^#[0-9a-f]{6}$/i.test(String(source.accent || "").trim()) ? String(source.accent).trim().toLowerCase() : "";
   const seen = new Set();
   const tracks = [];
   for (const value of Array.isArray(source.tracks) ? source.tracks.slice(0, nyxifyPlaylistTrackLimit) : []) {
@@ -5345,7 +5363,7 @@ function nyxifyPlaylistRecord(value) {
     seen.add(track.id);
     tracks.push(track);
   }
-  return { id, name, tracks };
+  return { id, name, cover, accent, tracks };
 }
 
 function nyxifyPlaylistLibrary(value) {
@@ -5353,11 +5371,14 @@ function nyxifyPlaylistLibrary(value) {
   if (value.length > nyxifyPlaylistLimit) throw nyxCloudSaveError(`Nyxify supports up to ${nyxifyPlaylistLimit} playlists.`);
   const ids = new Set();
   let totalTracks = 0;
+  let totalCoverData = 0;
   return value.map(nyxifyPlaylistRecord).filter(playlist => {
     if (ids.has(playlist.id)) throw nyxCloudSaveError("Nyxify received a duplicate playlist.");
     ids.add(playlist.id);
     totalTracks += playlist.tracks.length;
+    totalCoverData += playlist.cover.length;
     if (totalTracks > nyxifyPlaylistTotalTrackLimit) throw nyxCloudSaveError("The Nyxify playlist library is too large.", 413);
+    if (totalCoverData > nyxifyPlaylistCoverLibraryLimit) throw nyxCloudSaveError("The Nyxify playlist artwork library is too large.", 413);
     return true;
   });
 }

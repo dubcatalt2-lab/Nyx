@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="dark">
   <title>Cloud Gaming · Nyx</title>
-  <link rel="stylesheet" href="/apps/cloud-gaming/styles.css?v=3">
+  <script>if(new URLSearchParams(location.search).get('embedded')==='games')document.documentElement.classList.add('games-embedded')</script>
+  <link rel="stylesheet" href="/apps/cloud-gaming/styles.css?v=4">
 </head>
 <body>
   <header class="topbar">
@@ -62,6 +63,6 @@
     <iframe data-player title="Cloud game stream" allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write" referrerpolicy="strict-origin-when-cross-origin"></iframe>
   </section>
 
-  <script src="/apps/cloud-gaming/app.js?v=3"></script>
+  <script src="/apps/cloud-gaming/app.js?v=4"></script>
 </body>
 </html>

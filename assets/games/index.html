@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
   <title>GAMES | Nyx</title>
-  <link rel="stylesheet" href="/assets/games/games.css?v=20260824-games-black-v1">
-<script type="module" src="/assets/games/games.js?v=20260824-games-brand-v1"></script>
+  <link rel="stylesheet" href="/assets/games/games.css?v=20260824-games-cloud-v1">
+  <script type="module" src="/assets/games/games.js?v=20260824-games-cloud-v1"></script>
 </head>
 <body>
   <main class="library">
@@ -21,6 +21,12 @@
       <p class="subtitle">Pick a game and play instantly.</p>
     </header>
 
+    <nav class="game-view-switch" aria-label="Game type">
+      <button class="game-view-button active" type="button" data-game-view="all" aria-pressed="true">All Games</button>
+      <button class="game-view-button" type="button" data-game-view="cloud" aria-pressed="false">Cloud Gaming</button>
+    </nav>
+
+    <section id="localGamesView" class="games-view">
     <section class="catalog-tools" aria-label="Browse games">
       <label class="search-field">
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -70,6 +76,11 @@
       </svg>
       <h2>No games found</h2>
       <p>Try a shorter or different search.</p>
+    </section>
+    </section>
+
+    <section id="cloudGamesView" class="games-view cloud-games-view" hidden>
+      <iframe id="cloudGamingFrame" title="Cloud Gaming" allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write" allowfullscreen></iframe>
     </section>
   </main>
 

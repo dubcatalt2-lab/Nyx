@@ -7,7 +7,6 @@ import { createReadStream, readFileSync } from "node:fs";
 import { mkdir, open as openFile, stat, statfs, unlink } from "node:fs/promises";
 import { join, dirname, resolve } from "node:path";
 import { createRequire } from "node:module";
-import { Readable } from "node:stream";
 import { server as wisp } from "@mercuryworkshop/wisp-js/server";
 import { Server as SocketIOServer } from "socket.io";
 
@@ -112,32 +111,6 @@ const nyxCloudGamingCreateWindowMs = 10 * 60_000;
 const nyxCloudGamingCreateMaxAttempts = 3;
 const nyxCloudGamingCatalogTtlMs = 30 * 60_000;
 let nyxCloudGamingCatalogCache = { expiresAt: 0, games: [], promise: null };
-const nyxifyApiOrigin = "https://api.audius.co";
-const nyxifyTrackIdPattern = /^[A-Za-z0-9_-]{1,64}$/;
-const nyxifyCatalogCacheTtlMs = 90_000;
-const nyxifyTrackCacheTtlMs = 10 * 60_000;
-const nyxifyCatalogCache = new Map();
-const nyxifyTrackCache = new Map();
-const nyxifyAssetHosts = new Set([
-  "api.audius.co",
-  "audius.co"
-]);
-const nyxifyAssetHostSuffixes = Object.freeze([
-  ".audius.co",
-  ".audiusindex.org",
-  ".theblueprint.xyz",
-  ".monophonic.digital",
-  ".open-audio-validator.com",
-  ".r2.cloudflarestorage.com",
-  ".figment.io",
-  ".staked.cloud",
-  ".zeogrid.com",
-  ".bdnodes.net",
-  ".decentralizeaudio.xyz"
-]);
-const nyxifyArtworkTypes = new Set(["image/avif", "image/gif", "image/jpeg", "image/png", "image/webp"]);
-const nyxifyAudioTypes = new Set(["application/octet-stream", "audio/aac", "audio/flac", "audio/mp4", "audio/mpeg", "audio/ogg", "audio/wav", "audio/webm"]);
-const nyxifyArtworkByteLimit = 5 * 1024 * 1024;
 const nyxSchoolChatAllowedIp = "206.15.249.212";
 const nyxSchoolChatChannelId = "school";
 const nyxSchoolChatChannelName = "Group Chat for School!";
@@ -253,9 +226,9 @@ const nyxGlobalAppsCollection = "nyxConfiguration";
 const nyxGlobalAppsDocument = "globalApps";
 const nyxGlobalAppsLimit = 100;
 const nyxCloudGamingAppMigrationField = "cloudGamingAppInitialized";
+const nyxCloudGamingGamesMergeMigrationField = "cloudGamingMergedIntoGames";
 const nyxCloudGamingGlobalApp = Object.freeze({ id: "cloud-gaming", icon: "cloud-gaming", name: "Cloud Gaming", url: "/apps/cloud-gaming/" });
-const nyxifyAppMigrationField = "nyxifyAudiusAppInitialized";
-const nyxifyGlobalApp = Object.freeze({ id: "nyxify", icon: "nyxify", name: "Nyxify", url: "/apps/nyxify/" });
+const nyxMediaAppsRetiredField = "nyxMediaAppsRetired";
 const nyxGamesAppMigrationField = "gamesAppRenamed";
 const nyxGamesGlobalApp = Object.freeze({ id: "pirate-cove", icon: "games", name: "GAMES", url: "/assets/games/" });
 const nyxDefaultGlobalApps = Object.freeze([
@@ -263,13 +236,11 @@ const nyxDefaultGlobalApps = Object.freeze([
   { id: "link-generator", icon: "link-generator", name: "Link Generator", url: "/apps/link-generator/" },
   { id: "youtube", icon: "youtube.com", name: "YouTube", url: "https://www.youtube.com/" },
   nyxGamesGlobalApp,
-  nyxCloudGamingGlobalApp,
   { id: "nyx-chat", icon: "nyx-chat", name: "Nyx Chat", url: "/apps/chat/" },
   { id: "geforce-now", icon: "geforcenow", name: "GeForce Now", url: "https://play.geforcenow.com/" },
   { id: "roblox", icon: "roblox.com", name: "Roblox", url: "https://web.cloudmoonapp.com/game/com.roblox.client/" },
   { id: "discord", icon: "discord.com", name: "Discord", url: "https://discord.com/app" },
   { id: "spotify", icon: "spotify.com", name: "Spotify", url: "https://open.spotify.com/" },
-  nyxifyGlobalApp,
   { id: "google", icon: "google.com", name: "Google", url: "https://www.google.com/" },
   { id: "study", icon: "docs.google.com", name: "Study", url: "https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" },
   { id: "duck-ai", icon: "duck.ai", name: "Duck AI", url: "https://duck.ai/" },
@@ -3064,7 +3035,6 @@ function nyxGlobalAppIcon(value, url = "") {
   if (/^[a-z0-9][a-z0-9.-]{0,79}$/.test(explicit)) return explicit;
   if (/^nyx:\/\/ai$/i.test(url)) return "nyx-ai";
   if (/^\/(?:apps\/chat|assets\/games)(?:\/|$)/i.test(url)) return /chat/i.test(url) ? "nyx-chat" : "games";
-  if (/^\/apps\/nyxify(?:\/|$)/i.test(url)) return "nyxify";
   if (/^\/apps\/cloud-gaming(?:\/|$)/i.test(url)) return "cloud-gaming";
   if (/^\/apps\/link-checker(?:\/|$)/i.test(url)) return "link-checker";
   if (/^\/apps\/link-generator(?:\/|$)/i.test(url)) return "link-generator";
@@ -3090,6 +3060,14 @@ function nyxNormalizeGlobalApp(value, { requireName = false } = {}) {
   return { id, icon: nyxGlobalAppIcon(value?.icon, url), name, url };
 }
 
+function nyxRetiredMediaApp(value) {
+  const id = String(value?.id || "").trim().toLowerCase();
+  const url = String(value?.url || "").trim().replace(/\/+$/, "").toLowerCase();
+  if (["nyxtube", "nyx-tube", "nyxify"].includes(id)) return true;
+  if (["/apps/nyxtube", "/apps/nyxify"].includes(url)) return true;
+  return id === "music" && url === "https://traxmojo.com";
+}
+
 function nyxDefaultGlobalAppsPayload() {
   return nyxDefaultGlobalApps.map(app => ({ ...app }));
 }
@@ -3107,13 +3085,13 @@ function nyxGlobalAppsFromSnapshot(snapshot) {
       return { ...normalized, icon: nyxGamesGlobalApp.icon, name: nyxGamesGlobalApp.name };
     }
     return normalized;
-  }).filter(Boolean);
+  }).filter(app => app && !nyxRetiredMediaApp(app));
 }
 
 async function nyxGlobalApps(firebase) {
   const reference = firebase.firestore.collection(nyxGlobalAppsCollection).doc(nyxGlobalAppsDocument);
   const snapshot = await reference.get();
-  if (snapshot.data()?.[nyxCloudGamingAppMigrationField] === true && snapshot.data()?.[nyxifyAppMigrationField] === true && snapshot.data()?.[nyxGamesAppMigrationField] === true) return nyxGlobalAppsFromSnapshot(snapshot);
+  if (snapshot.data()?.[nyxCloudGamingAppMigrationField] === true && snapshot.data()?.[nyxCloudGamingGamesMergeMigrationField] === true && snapshot.data()?.[nyxMediaAppsRetiredField] === true && snapshot.data()?.[nyxGamesAppMigrationField] === true) return nyxGlobalAppsFromSnapshot(snapshot);
   return firebase.firestore.runTransaction(async transaction => {
     const currentSnapshot = await transaction.get(reference);
     const apps = nyxGlobalAppsFromSnapshot(currentSnapshot);
@@ -3128,17 +3106,10 @@ async function nyxGlobalApps(firebase) {
         updatedAt: new Date().toISOString()
       }, { merge: true });
     }
-    if (currentSnapshot.data()?.[nyxifyAppMigrationField] !== true) {
-      const retiredMusicIndex = apps.findIndex(item => item.id === "music" && item.url === "https://traxmojo.com/");
-      const existingNyxifyIndex = apps.findIndex(item => item.id === nyxifyGlobalApp.id || item.url === nyxifyGlobalApp.url);
-      if (retiredMusicIndex >= 0 && existingNyxifyIndex < 0) apps.splice(retiredMusicIndex, 1, { ...nyxifyGlobalApp });
-      else if (existingNyxifyIndex < 0 && apps.length < nyxGlobalAppsLimit) {
-        const spotifyIndex = apps.findIndex(item => item.id === "spotify");
-        apps.splice(spotifyIndex >= 0 ? spotifyIndex + 1 : apps.length, 0, { ...nyxifyGlobalApp });
-      } else if (retiredMusicIndex >= 0) apps.splice(retiredMusicIndex, 1);
+    if (currentSnapshot.data()?.[nyxMediaAppsRetiredField] !== true) {
       transaction.set(reference, {
         apps,
-        [nyxifyAppMigrationField]: true,
+        [nyxMediaAppsRetiredField]: true,
         updatedAt: new Date().toISOString()
       }, { merge: true });
     }
@@ -3148,6 +3119,15 @@ async function nyxGlobalApps(firebase) {
       transaction.set(reference, {
         apps,
         [nyxGamesAppMigrationField]: true,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    }
+    if (currentSnapshot.data()?.[nyxCloudGamingGamesMergeMigrationField] !== true) {
+      const cloudGamingIndex = apps.findIndex(item => item.id === nyxCloudGamingGlobalApp.id && item.url === nyxCloudGamingGlobalApp.url);
+      if (cloudGamingIndex >= 0) apps.splice(cloudGamingIndex, 1);
+      transaction.set(reference, {
+        apps,
+        [nyxCloudGamingGamesMergeMigrationField]: true,
         updatedAt: new Date().toISOString()
       }, { merge: true });
     }
@@ -5293,222 +5273,6 @@ function sameOriginRequest(req) {
   }
 }
 
-function nyxifySafeAssetUrl(value) {
-  try {
-    const url = new URL(String(value || "").trim());
-    const hostname = url.hostname.toLowerCase();
-    const approvedHost = nyxifyAssetHosts.has(hostname) || nyxifyAssetHostSuffixes.some(suffix => hostname.endsWith(suffix));
-    if (url.protocol !== "https:" || url.username || url.password || url.port || url.hash || !approvedHost || url.href.length > 8_192) return null;
-    return url;
-  } catch {
-    return null;
-  }
-}
-
-function nyxifyCacheSet(cache, key, value, ttlMs, limit = 200) {
-  cache.delete(key);
-  cache.set(key, { value, expiresAt: Date.now() + ttlMs });
-  while (cache.size > limit) cache.delete(cache.keys().next().value);
-  return value;
-}
-
-function nyxifyCacheGet(cache, key) {
-  const cached = cache.get(key);
-  if (!cached) return null;
-  if (cached.expiresAt <= Date.now()) {
-    cache.delete(key);
-    return null;
-  }
-  cache.delete(key);
-  cache.set(key, cached);
-  return cached.value;
-}
-
-async function nyxifyApiJson(pathname, searchParams = {}) {
-  const target = new URL(pathname, `${nyxifyApiOrigin}/v1/`);
-  if (target.origin !== nyxifyApiOrigin || !target.pathname.startsWith("/v1/")) throw new Error("Nyxify rejected an invalid catalog request.");
-  for (const [name, value] of Object.entries(searchParams)) target.searchParams.set(name, String(value));
-  const response = await fetch(target, {
-    headers: { Accept: "application/json", "User-Agent": "Nyxify/1.0" },
-    redirect: "error",
-    signal: AbortSignal.timeout(12_000)
-  });
-  if (!response.ok) throw new Error(`The Audius catalog returned ${response.status}.`);
-  const payload = await response.json();
-  return payload && typeof payload === "object" ? payload : {};
-}
-
-function nyxifySourceUrl(permalink) {
-  const path = String(permalink || "").trim();
-  if (!/^\/[A-Za-z0-9._~!$&'()*+,;=:@%/-]{1,500}$/.test(path)) return "https://audius.co/";
-  return new URL(path, "https://audius.co/").href;
-}
-
-function nyxifyTrackRecord(value) {
-  const source = value && typeof value === "object" ? value : {};
-  const id = String(source.id || "").trim();
-  const title = String(source.title || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 180);
-  if (!nyxifyTrackIdPattern.test(id) || !title || source.is_streamable === false || source.access?.stream === false) return null;
-  const creator = String(source.user?.name || source.user?.handle || "Audius artist").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 100) || "Audius artist";
-  const artwork = nyxifySafeAssetUrl(source.artwork?.["480x480"] || source.artwork?.["1000x1000"] || source.artwork?.["150x150"]);
-  const artworks = [];
-  if (artwork) artworks.push(artwork.href);
-  if (artwork && Array.isArray(source.artwork?.mirrors)) {
-    for (const mirror of source.artwork.mirrors) {
-      try {
-        const candidate = nyxifySafeAssetUrl(new URL(`${artwork.pathname}${artwork.search}`, `${String(mirror || "").replace(/\/$/, "")}/`).href);
-        if (candidate && !artworks.includes(candidate.href)) artworks.push(candidate.href);
-      } catch {}
-    }
-  }
-  const cached = {
-    id,
-    artworks: artworks.slice(0, 5),
-    sourceUrl: nyxifySourceUrl(source.permalink)
-  };
-  nyxifyCacheSet(nyxifyTrackCache, id, cached, nyxifyTrackCacheTtlMs, 500);
-  return {
-    id,
-    provider: "audius",
-    providerLabel: "Audius",
-    title,
-    creator,
-    genre: String(source.genre || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 60),
-    durationMs: Math.max(0, Math.min(14_400_000, Math.round(Number(source.duration) || 0) * 1000)),
-    thumbnail: artworks.length ? `/api/nyxify/art/${encodeURIComponent(id)}` : "",
-    streamUrl: `/api/nyxify/stream/${encodeURIComponent(id)}`,
-    sourceUrl: cached.sourceUrl
-  };
-}
-
-function nyxifySearchText(value) {
-  return String(value || "")
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function nyxifyRankSearchResults(tracks, query) {
-  const normalizedQuery = nyxifySearchText(query).replace(/\s+by\s+/g, " ");
-  const tokens = [...new Set(normalizedQuery.split(" ").filter(token => token.length > 1 && token !== "by"))];
-  if (!tokens.length) return [];
-  const minimumMatches = tokens.length === 1 ? 1 : Math.max(2, Math.ceil(tokens.length * 0.65));
-  const ranked = tracks.map((track, sourceIndex) => {
-    const title = nyxifySearchText(track.title);
-    const creator = nyxifySearchText(track.creator);
-    const combined = `${title} ${creator}`.trim();
-    const titleMatches = tokens.filter(token => title.includes(token)).length;
-    const creatorMatches = tokens.filter(token => creator.includes(token)).length;
-    const matches = tokens.filter(token => combined.includes(token)).length;
-    let score = titleMatches * 70 + creatorMatches * 18;
-    if (title === normalizedQuery) score += 400;
-    else if (title.includes(normalizedQuery)) score += 250;
-    if (combined === normalizedQuery) score += 350;
-    else if (combined.includes(normalizedQuery)) score += 180;
-    if (creator === normalizedQuery) score += 160;
-    if (matches === tokens.length) score += 140;
-    if (titleMatches === tokens.length) score += 220;
-    if (title.startsWith(tokens[0])) score += 20;
-    return { track, title, creator, matches, titleMatches, score, sourceIndex };
-  }).filter(item => item.matches >= minimumMatches && item.titleMatches > 0);
-  ranked.sort((left, right) => right.score - left.score || left.sourceIndex - right.sourceIndex);
-  const seen = new Set();
-  return ranked.filter(item => {
-    const identity = `${item.title}\u0000${item.creator}`;
-    if (seen.has(identity)) return false;
-    seen.add(identity);
-    return true;
-  }).map(item => item.track);
-}
-
-async function nyxifyTracks({ query = "", limit = 24 } = {}) {
-  const normalizedQuery = String(query || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 100);
-  const boundedLimit = Math.max(1, Math.min(40, Number.parseInt(limit, 10) || 24));
-  const key = normalizedQuery ? `search:${normalizedQuery.toLowerCase()}:${boundedLimit}` : `trending:${boundedLimit}`;
-  const cached = nyxifyCacheGet(nyxifyCatalogCache, key);
-  if (cached) return cached.map(track => ({ ...track }));
-  const payload = normalizedQuery
-    ? await nyxifyApiJson("tracks/search", { query: normalizedQuery, limit: Math.min(50, Math.max(boundedLimit, 40)) })
-    : await nyxifyApiJson("tracks/trending", { time: "week", limit: boundedLimit });
-  const values = Array.isArray(payload.data) ? payload.data : [];
-  const normalizedTracks = values.map(nyxifyTrackRecord).filter(Boolean);
-  const tracks = (normalizedQuery ? nyxifyRankSearchResults(normalizedTracks, normalizedQuery) : normalizedTracks).slice(0, boundedLimit);
-  nyxifyCacheSet(nyxifyCatalogCache, key, tracks, nyxifyCatalogCacheTtlMs, 100);
-  return tracks.map(track => ({ ...track }));
-}
-
-async function nyxifyTrackAsset(trackId) {
-  const cached = nyxifyCacheGet(nyxifyTrackCache, trackId);
-  if (cached) return cached;
-  const payload = await nyxifyApiJson(`tracks/${encodeURIComponent(trackId)}`);
-  const source = payload?.data && typeof payload.data === "object" ? payload.data : null;
-  const record = source ? nyxifyTrackRecord(source) : null;
-  if (!record) return null;
-  return nyxifyCacheGet(nyxifyTrackCache, trackId);
-}
-
-async function nyxifyFetchAsset(initialUrl, headers) {
-  let target = nyxifySafeAssetUrl(initialUrl);
-  if (!target) throw new Error("Nyxify rejected an invalid media host.");
-  for (let redirects = 0; redirects <= 3; redirects += 1) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15_000);
-    let response;
-    try {
-      response = await fetch(target, { headers, redirect: "manual", signal: controller.signal });
-    } finally {
-      clearTimeout(timeout);
-    }
-    const location = response.headers.get("location");
-    if (response.status >= 300 && response.status < 400 && location) {
-      response.body?.cancel().catch(() => {});
-      target = nyxifySafeAssetUrl(new URL(location, target).href);
-      if (!target) throw new Error("Nyxify rejected a media redirect.");
-      continue;
-    }
-    return response;
-  }
-  throw new Error("Nyxify media redirected too many times.");
-}
-
-async function nyxifySendArtwork(res, artworkUrl) {
-  const upstream = await nyxifyFetchAsset(artworkUrl, { Accept: "image/avif,image/webp,image/png,image/jpeg,image/gif", "User-Agent": "Nyxify/1.0" });
-  if (!upstream.ok) {
-    upstream.body?.cancel().catch(() => {});
-    throw new Error(`Artwork returned ${upstream.status}.`);
-  }
-  const contentType = String(upstream.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
-  const contentLength = Number(upstream.headers.get("content-length") || 0);
-  if (!nyxifyArtworkTypes.has(contentType) || (contentLength && contentLength > nyxifyArtworkByteLimit)) {
-    upstream.body?.cancel().catch(() => {});
-    throw new Error("Artwork returned an unsupported image.");
-  }
-  const reader = upstream.body?.getReader?.();
-  if (!reader) throw new Error("Artwork returned no image body.");
-  const chunks = [];
-  let totalBytes = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    totalBytes += value.byteLength;
-    if (totalBytes > nyxifyArtworkByteLimit) {
-      await reader.cancel();
-      throw new Error("Artwork is too large.");
-    }
-    chunks.push(Buffer.from(value));
-  }
-  if (!totalBytes) throw new Error("Artwork returned an empty image.");
-  res.set({
-    "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
-    "Content-Type": contentType,
-    "Content-Length": String(totalBytes),
-    "X-Content-Type-Options": "nosniff"
-  }).send(Buffer.concat(chunks, totalBytes));
-}
-
 function nyxCloudGamingBoundedInteger(value, fallback, minimum, maximum) {
   const parsed = Number.parseInt(String(value || ""), 10);
   return Number.isInteger(parsed) ? Math.min(maximum, Math.max(minimum, parsed)) : fallback;
@@ -5749,6 +5513,10 @@ app.get(["/apps/nyxcloud", "/apps/nyxcloud/"], (_req, res) => {
 });
 
 app.get(["/apps/nyxtube", "/apps/nyxtube/"], (_req, res) => {
+  res.redirect(302, "/");
+});
+
+app.get(["/apps/nyxify", "/apps/nyxify/"], (_req, res) => {
   res.redirect(302, "/");
 });
 
@@ -9957,97 +9725,8 @@ app.post("/api/activity/event", async (req, res) => {
   }
 });
 
-app.get("/api/nyxify/status", (req, res) => {
-  res.set("Cache-Control", "public, max-age=60");
-  if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
-  res.json({ configured: true, provider: "audius", providerLabel: "Audius open music catalog" });
-});
-
-app.get("/api/nyxify/featured", async (req, res) => {
-  res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
-  if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
-  try {
-    res.json({ results: await nyxifyTracks({ limit: req.query.limit }), provider: "audius" });
-  } catch (error) {
-    res.status(502).json({ error: error.message || "Nyxify could not load music right now." });
-  }
-});
-
-app.get("/api/nyxify/search", async (req, res) => {
-  res.set("Cache-Control", "private, max-age=30");
-  if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
-  const query = String(req.query.q || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 100);
-  if (query.length < 2) return res.status(400).json({ error: "Enter at least two characters to search." });
-  try {
-    res.json({ results: await nyxifyTracks({ query, limit: req.query.limit }), query, provider: "audius" });
-  } catch (error) {
-    res.status(502).json({ error: error.message || "Nyxify could not search the catalog right now." });
-  }
-});
-
-app.get("/api/nyxify/art/:trackId", async (req, res) => {
-  if (!sameOriginRequest(req)) return res.status(403).type("text/plain").send("Cross-origin requests are not allowed.");
-  const trackId = String(req.params.trackId || "").trim();
-  if (!nyxifyTrackIdPattern.test(trackId)) return res.status(400).type("text/plain").send("Invalid Nyxify track.");
-  try {
-    const track = await nyxifyTrackAsset(trackId);
-    if (!track?.artworks?.length) return res.status(404).type("text/plain").send("Track artwork is unavailable.");
-    let lastError = null;
-    for (const artwork of track.artworks) {
-      try {
-        await nyxifySendArtwork(res, artwork);
-        return;
-      } catch (error) {
-        lastError = error;
-      }
-    }
-    throw lastError || new Error("Track artwork is unavailable.");
-  } catch (error) {
-    if (!res.headersSent) res.status(502).type("text/plain").send(`Nyxify artwork error: ${error.message || error}`);
-    else res.destroy();
-  }
-});
-
-app.get("/api/nyxify/stream/:trackId", async (req, res) => {
-  res.set({ "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" });
-  if (!sameOriginRequest(req)) return res.status(403).type("text/plain").send("Cross-origin requests are not allowed.");
-  const trackId = String(req.params.trackId || "").trim();
-  if (!nyxifyTrackIdPattern.test(trackId)) return res.status(400).type("text/plain").send("Invalid Nyxify track.");
-  const range = String(req.get("range") || "").trim();
-  if (range && !/^bytes=\d*-\d*$/i.test(range)) return res.status(416).type("text/plain").send("Invalid audio range.");
-  try {
-    const target = new URL(`/v1/tracks/${encodeURIComponent(trackId)}/stream`, nyxifyApiOrigin);
-    target.searchParams.set("skip_play_count", "false");
-    const upstream = await nyxifyFetchAsset(target.href, {
-      Accept: "audio/mpeg,audio/mp4,audio/aac,audio/ogg,audio/webm,application/octet-stream",
-      ...(range ? { Range: range } : {}),
-      "User-Agent": "Nyxify/1.0"
-    });
-    if (![200, 206].includes(upstream.status)) {
-      upstream.body?.cancel().catch(() => {});
-      return res.status(upstream.status === 404 ? 404 : 502).type("text/plain").send("This track is not currently streamable.");
-    }
-    const contentType = String(upstream.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
-    if (!nyxifyAudioTypes.has(contentType) || !upstream.body) {
-      upstream.body?.cancel().catch(() => {});
-      return res.status(415).type("text/plain").send("The music provider returned unsupported audio.");
-    }
-    const headers = { "Content-Type": contentType, "Content-Disposition": "inline" };
-    for (const name of ["accept-ranges", "content-length", "content-range"]) {
-      const value = upstream.headers.get(name);
-      if (value) headers[name] = value;
-    }
-    res.status(upstream.status).set(headers);
-    const stream = Readable.fromWeb(upstream.body);
-    const close = () => stream.destroy();
-    res.once("close", close);
-    stream.once("error", () => { if (!res.writableEnded) res.destroy(); });
-    stream.once("end", () => res.off("close", close));
-    stream.pipe(res);
-  } catch (error) {
-    if (!res.headersSent) res.status(error?.name === "AbortError" ? 504 : 502).type("text/plain").send("Nyxify could not start this track.");
-    else res.destroy();
-  }
+app.all(["/api/nyxify/status", "/api/nyxify/featured", "/api/nyxify/search", "/api/nyxify/art/:trackId", "/api/nyxify/stream/:trackId"], (_req, res) => {
+  res.set("Cache-Control", "no-store").status(410).json({ error: "Nyxify has been retired." });
 });
 
 app.get("/api/cloud-gaming/status", (req, res) => {

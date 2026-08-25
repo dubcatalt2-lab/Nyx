@@ -20,7 +20,11 @@ const elements = {
   performanceLabel: document.getElementById('performanceGameLabel'),
   close: document.getElementById('closePlayer'),
   reload: document.getElementById('reloadGame'),
-  fullscreen: document.getElementById('fullscreenGame')
+  fullscreen: document.getElementById('fullscreenGame'),
+  viewButtons: [...document.querySelectorAll('[data-game-view]')],
+  localView: document.getElementById('localGamesView'),
+  cloudView: document.getElementById('cloudGamesView'),
+  cloudFrame: document.getElementById('cloudGamingFrame')
 };
 
 const state = {
@@ -45,6 +49,34 @@ const state = {
 const cloudGameRequests = new Map();
 let cloudGameRequestId = 0;
 let activeGameStorageBaseline = {};
+const cloudAuthRelays = new Map();
+
+function setGameView(view, updateUrl = true) {
+  const nextView = view === 'cloud' ? 'cloud' : 'all';
+  elements.localView.hidden = nextView !== 'all';
+  elements.cloudView.hidden = nextView !== 'cloud';
+  for (const button of elements.viewButtons) {
+    const active = button.dataset.gameView === nextView;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  }
+  if (nextView === 'cloud' && !elements.cloudFrame.src) {
+    elements.cloudFrame.src = '/apps/cloud-gaming/?embedded=games';
+  }
+  if (updateUrl) {
+    try {
+      const url = new URL(location.href);
+      url.hash = nextView === 'cloud' ? 'cloud' : '';
+      history.replaceState(null, '', url);
+    } catch {}
+  }
+}
+
+for (const button of elements.viewButtons) {
+  button.addEventListener('click', () => setGameView(button.dataset.gameView));
+}
+
+setGameView(location.hash.toLowerCase() === '#cloud' ? 'cloud' : 'all', false);
 
 function cloudStorageSnapshot() {
   const snapshot = {};
@@ -832,6 +864,27 @@ elements.frame.addEventListener('load', () => {
 });
 elements.frame.addEventListener('error', () => tryNextGameSource('The current source could not be opened.'));
 window.addEventListener('message', event => {
+  if (event.origin === location.origin && event.source === elements.cloudFrame.contentWindow && event.data?.type === 'nyx:account-token-request') {
+    const childRequestId = String(event.data.requestId || '').slice(0, 120);
+    if (!childRequestId || parent === window) return;
+    const relayRequestId = `games-cloud-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+    cloudAuthRelays.set(relayRequestId, { childRequestId, source: event.source });
+    setTimeout(() => cloudAuthRelays.delete(relayRequestId), 5_000);
+    parent.postMessage({ type: 'nyx:account-token-request', requestId: relayRequestId }, location.origin);
+    return;
+  }
+  if (event.origin === location.origin && event.source === parent && event.data?.type === 'nyx:account-token-response') {
+    const relayRequestId = String(event.data.requestId || '');
+    const relay = cloudAuthRelays.get(relayRequestId);
+    if (!relay) return;
+    cloudAuthRelays.delete(relayRequestId);
+    relay.source?.postMessage({ type: 'nyx:account-token-response', requestId: relay.childRequestId, token: String(event.data.token || '') }, location.origin);
+    return;
+  }
+  if (event.origin === location.origin && event.source === elements.cloudFrame.contentWindow && event.data?.type === 'nyx:games-view') {
+    setGameView(event.data.view);
+    return;
+  }
   if (event.origin === location.origin && event.data?.type === 'nyx:cloud-game-result') {
     const request = cloudGameRequests.get(String(event.data.requestId || ''));
     if (request) {

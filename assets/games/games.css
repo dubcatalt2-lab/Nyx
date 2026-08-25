@@ -120,6 +120,73 @@ h1 {
   line-height: 1.5;
 }
 
+.game-view-switch {
+  width: max-content;
+  max-width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  margin: 24px auto 0;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(10, 12, 18, 0.9);
+}
+
+.game-view-button {
+  min-width: 128px;
+  height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  padding: 0 17px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    color var(--motion) ease,
+    background-color var(--motion) ease,
+    box-shadow var(--motion) ease,
+    transform var(--motion) ease;
+}
+
+.game-view-button:hover,
+.game-view-button:focus-visible {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.game-view-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.game-view-button:active { transform: scale(0.98); }
+
+.game-view-button.active {
+  background: var(--accent-soft);
+  color: color-mix(in srgb, var(--accent) 72%, white);
+  box-shadow: inset 0 0 0 1px var(--accent-border);
+}
+
+.games-view[hidden] { display: none; }
+
+.cloud-games-view {
+  margin-top: 22px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: #000;
+}
+
+.cloud-games-view iframe {
+  width: 100%;
+  height: max(650px, calc(100vh - 285px));
+  display: block;
+  border: 0;
+  background: #000;
+}
+
 .catalog-tools {
   width: min(760px, 100%);
   display: grid;
@@ -608,6 +675,10 @@ body.game-performance-active .player iframe {
   .cove-mark { width: 44px; height: 44px; border-radius: 13px; }
   .subtitle { font-size: 14px; }
   .catalog-tools { margin-top: 23px; }
+  .game-view-switch { width: 100%; }
+  .game-view-button { min-width: 0; padding-inline: 10px; }
+  .cloud-games-view { margin-inline: -8px; border-radius: 14px; }
+  .cloud-games-view iframe { height: max(620px, calc(100vh - 250px)); }
   .game-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .game-card { border-radius: 12px; }
   .game-name {

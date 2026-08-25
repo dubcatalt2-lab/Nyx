@@ -41,6 +41,7 @@ if [[ ! -f ${STRATUS_ENV_FILE} ]]; then
   rm -f "${STRATUS_ENV_TMP}"
   echo "Created ${STRATUS_ENV_FILE}. Add a generated key there to enable self-hosted Cloud Gaming."
 fi
+bash "${SCRIPT_DIR}/install-ytdlp.sh"
 runuser -u "${APP_OWNER}" -- npm ci
 runuser -u "${APP_OWNER}" -- npm ci --prefix services/stratus --omit=dev --ignore-scripts
 runuser -u "${APP_OWNER}" -- env -u WISP_URL NYX_BUILD_TARGET=vps NYX_PUBLIC_ORIGIN="https://${DOMAIN}" npm run build:netlify

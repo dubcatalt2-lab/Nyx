@@ -51,7 +51,9 @@ const requiredFiles = [
   "services/stratus/upstream/public/e.html",
   "services/stratus/UPSTREAM-LICENSE",
   "deploy/setup-ovh.sh",
-  "deploy/update-ovh.sh"
+  "deploy/update-ovh.sh",
+  "deploy/install-ytdlp.sh",
+  "deploy/requirements-yt-dlp.txt"
 ];
 
 const missing = [];

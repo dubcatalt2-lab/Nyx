@@ -1,0 +1,2 @@
+# Server-side tool only. Nyx does not pass URLs to yt-dlp or expose it through an API.
+yt-dlp[default]==2026.08.19

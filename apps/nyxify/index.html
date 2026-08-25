@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#070910">
+  <title>Nyxify</title>
+  <link rel="icon" href="/assets/icons/shortcut-nyxify.svg?v=2" type="image/svg+xml">
+  <link rel="stylesheet" href="/apps/nyxify/app.css?v=20260825-audius-v2">
+</head>
+<body>
+  <svg class="symbols" aria-hidden="true">
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3.5 10.5 8.5-7 8.5 7v9.3h-5.7v-5.7H9.2v5.7H3.5z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.6" cy="10.6" r="6.2"/><path d="m15.3 15.3 4.3 4.3"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M20.6 5.9a5 5 0 0 0-7.1 0L12 7.4l-1.5-1.5a5 5 0 1 0-7.1 7.1l8.6 8 8.6-8a5 5 0 0 0 0-7.1Z"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.2 2"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M5 6h11M5 12h11M5 18h8M18 15v5M18 15l3-1v4"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="m14.5 5-7 7 7 7"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 5.8 10.4 6.2L8 18.2z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M7 6h4v12H7zM13 6h4v12h-4z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-prev" viewBox="0 0 24 24"><path d="M6.5 5v14M18 6.5 9.3 12l8.7 5.5z"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path d="M17.5 5v14M6 6.5l8.7 5.5L6 17.5z"/></symbol>
+    <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M4 7h3c4.7 0 5.3 10 10 10h3M17 14l3 3-3 3M4 17h3c1.4 0 2.4-.8 3.3-2M13.8 9c.9-1.2 1.9-2 3.2-2h3M17 4l3 3-3 3"/></symbol>
+    <symbol id="i-repeat" viewBox="0 0 24 24"><path d="M17 5l3 2.5-3 2.5M20 7.5H8a4 4 0 0 0-4 4M7 19l-3-2.5L7 14M4 16.5h12a4 4 0 0 0 4-4"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4zM16 9a4.3 4.3 0 0 1 0 6M18.5 6.5a7.8 7.8 0 0 1 0 11"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><path d="M9 17V6.5L19 4v10.5M9 17a3 3 0 1 1-3-3 3 3 0 0 1 3 3Zm10-2.5a3 3 0 1 1-3-3 3 3 0 0 1 3 3Z"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 5h5v5M19 5l-8 8M17 13v5H6V7h5"/></symbol>
+  </svg>
+
+  <div class="ambient" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+  <header class="search-header">
+    <a class="compact-brand" href="/" aria-label="Back to Nyx"><img src="/assets/icons/shortcut-nyxify.svg?v=2" alt=""><span>Nyxify</span></a>
+    <form class="searchbox" data-search-form>
+      <svg><use href="#i-search"/></svg>
+      <input data-search-input type="search" minlength="2" maxlength="100" autocomplete="off" spellcheck="false" placeholder="search songs or artists..." aria-label="Search songs or artists">
+      <kbd>/</kbd>
+    </form>
+    <span class="status" data-status><i></i><span>connecting</span></span>
+  </header>
+
+  <div class="shell">
+    <aside class="sidebar" aria-label="Nyxify library">
+      <button class="filter active" type="button" data-view="discover"><svg><use href="#i-home"/></svg><span>everything</span></button>
+      <button class="filter" type="button" data-focus-search><svg><use href="#i-search"/></svg><span>search</span></button>
+      <button class="filter" type="button" data-view="liked"><svg><use href="#i-heart"/></svg><span>liked</span></button>
+      <button class="filter" type="button" data-view="recent"><svg><use href="#i-clock"/></svg><span>history</span></button>
+      <button class="filter" type="button" data-queue-toggle><svg><use href="#i-list"/></svg><span>next up</span></button>
+
+      <section class="playlists">
+        <header><span>playlists</span><button type="button" data-create-playlist aria-label="Create playlist"><svg><use href="#i-plus"/></svg></button></header>
+        <div data-playlists></div>
+      </section>
+      <button class="filter back" type="button" data-back><svg><use href="#i-back"/></svg><span>back to Nyx</span></button>
+    </aside>
+
+    <main>
+      <div class="notice" data-notice hidden></div>
+      <section class="content" data-content>
+        <header class="section-heading">
+          <div><span data-kicker>DISCOVER</span><h1 data-title>trending now</h1></div>
+          <small data-count></small>
+        </header>
+        <div class="catalog-note" data-catalog-note>Music published for streaming on Audius. Search results are uploads from their creators, not a copy of every commercial catalog.</div>
+        <div class="track-list" data-results aria-live="polite"></div>
+      </section>
+    </main>
+
+    <aside class="rail">
+      <section class="module">
+        <header><span>liked</span><b data-liked-count>0</b></header>
+        <div class="mini-list" data-liked-list></div>
+      </section>
+      <section class="module">
+        <header><span>history</span></header>
+        <div class="mini-list" data-history-list></div>
+      </section>
+    </aside>
+  </div>
+
+  <section class="player" data-player aria-label="Music player">
+    <div class="player-inner">
+      <div class="controls">
+        <button type="button" data-shuffle aria-label="Shuffle"><svg><use href="#i-shuffle"/></svg></button>
+        <button type="button" data-previous aria-label="Previous"><svg><use href="#i-prev"/></svg></button>
+        <button class="play" type="button" data-play aria-label="Play"><svg><use href="#i-play"/></svg></button>
+        <button type="button" data-next aria-label="Next"><svg><use href="#i-next"/></svg></button>
+        <button type="button" data-repeat aria-label="Repeat off"><svg><use href="#i-repeat"/></svg><small data-repeat-one hidden>1</small></button>
+      </div>
+      <div class="timeline"><span data-current>0:00</span><input data-seek type="range" min="0" max="1000" value="0" aria-label="Track position"><span data-duration>0:00</span></div>
+      <div class="now-playing">
+        <div class="player-cover"><img data-player-cover alt="" hidden><span data-player-fallback><svg><use href="#i-note"/></svg></span></div>
+        <div class="player-copy"><small data-player-artist>Choose a track</small><strong data-player-title>Nothing playing</strong><a data-player-source hidden target="_blank" rel="noopener noreferrer">Audius <svg><use href="#i-external"/></svg></a></div>
+        <button type="button" data-player-like aria-label="Like current track"><svg><use href="#i-heart"/></svg></button>
+      </div>
+      <div class="volume"><button type="button" data-queue-toggle aria-label="Open queue"><svg><use href="#i-list"/></svg></button><svg><use href="#i-volume"/></svg><input data-volume type="range" min="0" max="1" step="0.02" value="0.8" aria-label="Volume"></div>
+      <audio data-audio preload="metadata"></audio>
+    </div>
+  </section>
+
+  <aside class="queue-panel" data-queue hidden>
+    <header><div><strong>next up</strong><small data-queue-count>Your queue</small></div><button type="button" data-queue-close aria-label="Close queue"><svg><use href="#i-close"/></svg></button></header>
+    <div data-queue-list></div>
+  </aside>
+
+  <script src="/apps/nyxify/app.js?v=20260825-audius-v2"></script>
+</body>
+</html>

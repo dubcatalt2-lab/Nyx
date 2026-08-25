@@ -1,7 +1,7 @@
 :root {
   color-scheme: dark;
-  --page: #060811;
-  --page-deep: #03050b;
+  --page: #000;
+  --page-deep: #000;
   --surface: rgba(17, 21, 33, 0.88);
   --surface-raised: rgba(22, 27, 42, 0.96);
   --surface-hover: rgba(28, 34, 52, 0.96);
@@ -14,7 +14,6 @@
   --accent-border: color-mix(in srgb, var(--accent) 48%, transparent);
   --shadow: 0 18px 44px rgba(0, 0, 0, 0.32);
   --motion: 180ms;
-  --cove-parallax-y: 0px;
 }
 
 * { box-sizing: border-box; }
@@ -29,51 +28,13 @@ body {
   position: relative;
   isolation: isolate;
   overflow-x: hidden;
-  background: var(--page-deep);
+  background: #000;
   color: var(--text);
   font-family: Outfit, Inter, "Segoe UI", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-body::before,
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  pointer-events: none;
-}
-
-/* The player covers the library completely. Stop painting the animated cove
-   and the card grid while a game owns the screen. */
-body.game-active::before,
-body.game-active::after {
-  content: none;
-  background-image: none;
-  transform: none;
-}
-
 body.game-active .library { display: none; }
-
-body::before {
-  inset: -70vh 0;
-  background-color: #083844;
-  background-image: url("/assets/backgrounds/pirate-cove.gif");
-  background-position: center 70vh;
-  background-repeat: repeat-y;
-  background-size: 100% 100vh;
-  image-rendering: pixelated;
-  transform: translate3d(0, var(--cove-parallax-y), 0);
-  transform-origin: center top;
-  will-change: transform;
-}
-
-body::after {
-  z-index: -1;
-  background:
-    radial-gradient(circle at 50% -14%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 38%),
-    linear-gradient(180deg, rgba(3, 5, 12, 0.58) 0%, rgba(3, 5, 12, 0.74) 48%, rgba(3, 5, 12, 0.9) 100%);
-}
 
 button,
 input,

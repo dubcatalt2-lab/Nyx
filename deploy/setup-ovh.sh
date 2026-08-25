@@ -44,6 +44,7 @@ if ! id nyx >/dev/null 2>&1; then
 fi
 install -d -m 0750 -o nyx -g nyx /var/lib/nyx/chat-attachments
 install -d -m 0750 -o nyx -g nyx /var/lib/nyx-stratus
+bash "${SCRIPT_DIR}/install-ytdlp.sh"
 
 cd "${APP_DIR}"
 runuser -u "${APP_OWNER}" -- npm ci

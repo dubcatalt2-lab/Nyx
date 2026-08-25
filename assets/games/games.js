@@ -115,7 +115,7 @@ function syncHostTheme() {
     ].map(value => value.trim()).find(value => value && CSS.supports('color', value));
     if (accent) document.documentElement.style.setProperty('--accent', accent);
   } catch {
-    // Pirate Cove remains usable when opened outside the same-origin Nyx shell.
+    // Games remains usable when opened outside the same-origin Nyx shell.
   }
 }
 
@@ -130,37 +130,6 @@ function watchHostTheme() {
 }
 
 watchHostTheme();
-
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-let coveParallaxFrame = 0;
-let coveParallaxCurrent = 0;
-let coveParallaxTarget = 0;
-
-function renderCoveParallax() {
-  coveParallaxFrame = 0;
-  const distance = coveParallaxTarget - coveParallaxCurrent;
-  coveParallaxCurrent += distance * 0.14;
-  if (Math.abs(distance) < 0.08) coveParallaxCurrent = coveParallaxTarget;
-  document.documentElement.style.setProperty('--cove-parallax-y', `${coveParallaxCurrent.toFixed(2)}px`);
-  if (coveParallaxCurrent !== coveParallaxTarget) coveParallaxFrame = requestAnimationFrame(renderCoveParallax);
-}
-
-function updateCoveParallax() {
-  if (reducedMotion.matches) {
-    coveParallaxTarget = 0;
-  } else {
-    const gridTop = elements.grid.getBoundingClientRect().top + scrollY;
-    const revealStart = Math.max(0, gridTop - innerHeight * 0.48);
-    const revealedRows = Math.max(0, scrollY - revealStart);
-    coveParallaxTarget = -Math.min(revealedRows * 0.16, innerHeight * 0.58);
-  }
-  if (!coveParallaxFrame) coveParallaxFrame = requestAnimationFrame(renderCoveParallax);
-}
-
-addEventListener('scroll', updateCoveParallax, { passive: true });
-addEventListener('resize', updateCoveParallax, { passive: true });
-reducedMotion.addEventListener?.('change', updateCoveParallax);
-updateCoveParallax();
 
 const ugsPlayerOverrides = new Map([
   ['F/clfnafps.html', 'https://classroomlesson.github.io/basic-ruffle-player/html/fnaf_pizzeria_simulator/index.html'],

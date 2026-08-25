@@ -8,6 +8,7 @@
     "start:wisp": "node wisp-server.js",
     "dev": "node server.js",
     "dev:accounts": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-local-accounts.ps1",
+    "prepare:vision": "node scripts/warm-vision-model.mjs",
     "sync:gn-math": "node scripts/sync-gn-math.mjs",
     "test:account-controls": "node scripts/test-account-controls.mjs",
     "build:netlify": "node scripts/build-netlify.mjs",
@@ -19,6 +20,7 @@
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",
+    "@huggingface/transformers": "^4.2.0",
     "@mercuryworkshop/bare-mux": "2.1.9",
     "@mercuryworkshop/epoxy-transport": "^2.1.28",
     "@mercuryworkshop/libcurl-transport": "^2.0.5",

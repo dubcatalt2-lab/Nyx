@@ -51,7 +51,9 @@ chgrp -R nyx "${APP_DIR}"
 chmod -R g+rX "${APP_DIR}"
 
 install -d -m 0750 -o nyx -g nyx /var/lib/nyx/chat-attachments
+install -d -m 0750 -o nyx -g nyx /var/lib/nyx/vision-models
 install -d -m 0750 -o nyx -g nyx /var/lib/nyx-stratus
+runuser -u nyx -- env NYX_AI_VISION_CACHE_DIR=/var/lib/nyx/vision-models npm run prepare:vision
 sed "s|__NYX_ROOT__|${APP_DIR}|g" deploy/systemd/nyx.service.template > /etc/systemd/system/nyx.service
 sed "s|__NYX_ROOT__|${APP_DIR}|g" deploy/systemd/nyx-stratus.service.template > /etc/systemd/system/nyx-stratus.service
 systemctl daemon-reload

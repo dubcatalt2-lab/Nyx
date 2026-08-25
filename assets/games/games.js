@@ -885,6 +885,10 @@ window.addEventListener('message', event => {
     setGameView(event.data.view);
     return;
   }
+  if (event.origin === location.origin && event.source === elements.cloudFrame.contentWindow && event.data?.type === 'nyx:cloud-player') {
+    document.body.classList.toggle('cloud-session-active', event.data.active === true);
+    return;
+  }
   if (event.origin === location.origin && event.data?.type === 'nyx:cloud-game-result') {
     const request = cloudGameRequests.get(String(event.data.requestId || ''));
     if (request) {
@@ -898,6 +902,10 @@ window.addEventListener('message', event => {
   if (event.source !== elements.frame.contentWindow || !state.activeGame) return;
   if (event.data?.type === 'nyx:game-launched') finishGameLaunch();
   if (event.data?.type === 'nyx:game-failed') tryNextGameSource('The current source reported a loading error.');
+});
+
+elements.cloudFrame.addEventListener('load', () => {
+  document.body.classList.remove('cloud-session-active');
 });
 addEventListener('pagehide', () => saveCloudGameStorage(state.activeGame, activeGameStorageBaseline), { passive: true });
 document.addEventListener('keydown', event => {

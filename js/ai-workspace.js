@@ -723,14 +723,6 @@
     });
   }
 
-  function ensureVisionModel(){
-    const current=modelCatalog.find(item=>item.id===model.value);
-    if(current?.vision) return current;
-    return modelCatalog.find(item=>item.id==='nocturne:flash'&&item.vision)
-      ||modelCatalog.find(item=>item.vision)
-      ||null;
-  }
-
   function setMessageContent(message,text,{error=false,thinking=false}={}){
     const content=message.querySelector('.ai-message-content');
     if(!content) return;
@@ -1201,15 +1193,8 @@
     const imageAttachment=attachedImage;
     const textAttachment=attachedText;
     if((!prompt&&!imageAttachment&&!textAttachment)||send.disabled) return;
-    const visionModel=imageAttachment?ensureVisionModel():null;
-    if(imageAttachment&&!visionModel){
-      attachmentPreview.classList.add('is-error');
-      setAttachmentStatus(`${modelLabel(model.value)} cannot read images. Choose a model marked Vision.`);
-      return;
-    }
     const selectedModelId=model.value||DEFAULT_MODEL;
-    const requestedModel=(visionModel?.id||selectedModelId)||DEFAULT_MODEL;
-    const temporaryVisionFallback=Boolean(imageAttachment&&visionModel&&visionModel.id!==selectedModelId);
+    const requestedModel=selectedModelId||DEFAULT_MODEL;
     const userText=prompt||(imageAttachment?'Please analyze this image.':'Please review the attached text file.');
     const history=savedMessages();
     if(!history.length) updateThreadTitle([{role:'user',content:userText}]);
@@ -1232,9 +1217,7 @@
       const preparedImage=imageAttachment?await prepareImageForModel(imageAttachment):null;
       const imageContext=preparedImage?`Original image dimensions: ${preparedImage.width}x${preparedImage.height}px.`:'';
       if(preparedImage){
-        setAttachmentStatus(temporaryVisionFallback
-          ? `${modelLabel(visionModel.id)} is reading this image; ${modelLabel(selectedModelId)} stays selected.`
-          : `Sending the full image to ${modelLabel(requestedModel)}…`);
+        setAttachmentStatus(`Nyx is reading this image for ${modelLabel(requestedModel)}…`);
       }
       const response=await fetch('/api/nyx-ai',{
         method:'POST',

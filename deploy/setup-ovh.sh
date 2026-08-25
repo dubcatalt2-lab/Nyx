@@ -43,6 +43,7 @@ if ! id nyx >/dev/null 2>&1; then
   useradd --system --create-home --home-dir /var/lib/nyx --shell /usr/sbin/nologin nyx
 fi
 install -d -m 0750 -o nyx -g nyx /var/lib/nyx/chat-attachments
+install -d -m 0750 -o nyx -g nyx /var/lib/nyx/vision-models
 install -d -m 0750 -o nyx -g nyx /var/lib/nyx-stratus
 bash "${SCRIPT_DIR}/install-ytdlp.sh"
 
@@ -54,6 +55,7 @@ runuser -u "${APP_OWNER}" -- npm run check:deploy
 runuser -u "${APP_OWNER}" -- npm prune --omit=dev
 chgrp -R nyx "${APP_DIR}"
 chmod -R g+rX "${APP_DIR}"
+runuser -u nyx -- env NYX_AI_VISION_CACHE_DIR=/var/lib/nyx/vision-models npm run prepare:vision
 
 install -d -m 0750 -o root -g nyx /etc/nyx
 DOMAIN_TMP=$(mktemp)

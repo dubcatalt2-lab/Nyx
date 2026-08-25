@@ -36,6 +36,37 @@ body {
 
 body.game-active .library { display: none; }
 
+body.cloud-session-active {
+  height: 100vh;
+  overflow: hidden;
+}
+
+body.cloud-session-active .library {
+  width: 100%;
+  height: 100vh;
+  min-height: 0;
+  padding: 0;
+}
+
+body.cloud-session-active .cove-header,
+body.cloud-session-active .game-view-switch,
+body.cloud-session-active #localGamesView {
+  display: none;
+}
+
+body.cloud-session-active .cloud-games-view {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+body.cloud-session-active .cloud-games-view iframe {
+  height: 100%;
+}
+
 button,
 input,
 select { font: inherit; }

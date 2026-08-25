@@ -29,7 +29,7 @@ if ! python3 -c 'import ensurepip' >/dev/null 2>&1; then
 fi
 
 install -d -m 0750 -o root -g nyx "${INSTALL_ROOT}"
-if [[ ! -x ${VENV_DIR}/bin/python ]]; then
+if [[ ! -x ${VENV_DIR}/bin/python ]] || ! "${VENV_DIR}/bin/python" -m pip --version >/dev/null 2>&1; then
   python3 -m venv --clear "${VENV_DIR}"
 fi
 

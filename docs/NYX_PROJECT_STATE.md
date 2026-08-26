@@ -22,7 +22,7 @@ Important release warning: production currently contains commits that are not on
 
 - Repository: `https://github.com/dubcatalt2-lab/Nyx.git`
 - Active branch: `agent/pirate-cove`
-- Latest application release: commit `fdbff87` on `agent/pirate-cove`, deployed to OVH and production-verified on 2026-08-25. Nyxify now opens on a **Home** view backed by a five-minute, server-normalized current Deezer chart and shows popular tracks, artists, and albums without exposing third-party catalog URLs to the browser. Artwork remains same-origin, falls back from the authorized provider to a fixed Deezer image origin, and uses a client-side Nyxify placeholder if both sources fail. Account playlists appear below Albums, and a responsive Now Playing rail shows the current cover, track, artist, album, playback context, playlist membership, and next queued song; Liked, History, and Playlists remain visible beside the catalog at medium widths and stack below it on narrow screens. Nyxify audio is preserved when the user switches Nyx tabs. The homepage presence counter also uses a same-origin endpoint on every production domain, bounds Firebase-token and network waits, prevents overlapping heartbeats, and reports **Unavailable** instead of remaining on **Connecting…** when a managed device blocks the request. Nyxify discovery and Octave-backed playback remain relayed through bounded same-origin Nyx routes, and guest-local/Firebase-backed playlists retain custom covers, cover-derived accents, search-to-add, shuffle, and sparkle-generated companion playlists. Cloud Gaming remains a view inside **GAMES**, NyxTube remains retired, and protected provider and Stratus credentials remain server-only in `/etc/nyx/nyx.env` and `/etc/nyx/stratus.env`.
+- Latest application release: commit `026249f` on `agent/pirate-cove`, deployed to OVH and production-verified on 2026-08-25. Nyxify serializes full-library account writes so a slower earlier save cannot replace newer playlist state, preserves local mutations when the initial cloud read finishes late, and verifies that Firebase retained a selected custom cover before reporting it as synced. Guest-only and failed account saves now say that the artwork remains on the current device instead of falsely reporting success. The release retains the Nyxify **Home** chart, popular tracks/artists/albums, persistent cross-tab playback, responsive Now Playing/library rail, same-origin artwork and audio routes, guest-local/Firebase-backed playlists, cover-derived accents, search-to-add, shuffle, and sparkle-generated companion playlists. Cloud Gaming remains a view inside **GAMES**, NyxTube remains retired, and protected provider and Stratus credentials remain server-only in `/etc/nyx/nyx.env` and `/etc/nyx/stratus.env`.
 - The release baseline includes Nocturne-style settings categories and verified-email cloud saves. Cloud saves retain a vetted set of Nyx preferences and same-origin game local-storage changes per user/game; cross-origin games remain local-only because their storage is not safely readable by Nyx. Email-backed accounts show a persistent resend/check-verification gate until Firebase confirms their email; username-only accounts remain supported without cloud-save eligibility.
 - Each release can present a versioned update log once per browser profile after startup/required gates are clear. The acknowledgement is client-side, migrates older device/account markers, and must not be used for sensitive information or server-side account state.
 - The protected untracked local work directories listed below remain present and untouched.
@@ -47,6 +47,7 @@ The OVHcloud cutover was completed on 2026-08-08 and migrated from Nginx/Certbot
 
 - `/assets/games/index.html`: HTTP 200 and contains **GAMES**
 - `/healthz`: HTTP 200 JSON with `"wisp":"embedded"` on both apex and `www`
+- 2026-08-25 Nyxify custom-cover sync release: OVH fast-forwarded to `026249f`, rebuilt Nyx, passed deployment and branding checks, and kept `nyx`, `caddy`, and `coturn` active. The apex, `www`, and FreeDNS alias health routes returned HTTP 200 with embedded Wisp and Socket.IO Chat, and the post-restart Nyx journal contained no application errors. An authenticated production API probe preserved a custom image exactly through PUT, Firestore, and GET, then removed its temporary user and document. Local and production Chromium two-device regressions changed a cover while a deliberately delayed initial cloud read was outstanding, confirmed the newer account write survived, and loaded the exact synced artwork in a clean browser context with no page errors.
 - 2026-08-25 Nyxify Home, persistent playback, and responsive-rail release: OVH fast-forwarded through application revisions `40159bd` and `fdbff87`, rebuilt Nyx, passed deployment and branding checks, and kept `nyx`, `caddy`, `coturn`, and `nyx-stratus` active. The apex, `www`, and FreeDNS alias health routes returned HTTP 200 with embedded Wisp and Socket.IO Chat, and recent warning-priority Nyx and Stratus and error-priority Caddy journals contained no entries. Production Chromium rendered 12 visible weekly tracks plus eight popular artists and albums, loaded same-origin cover art and an actual audio stream, updated the Now Playing rail, preserved playback while switching from Nyxify to Chat, and reported no page or request errors. Responsive production runs at 920, 800, and 680 CSS pixels kept Liked, History, and Playlists rendered without horizontal overflow; the 920-pixel view retained the side rail while narrower views stacked it below the catalog.
 - 2026-08-25 Chromebook presence release: OVH fast-forwarded to `6264ab1`, rebuilt Nyx, passed deployment and branding checks, and kept `nyx`, `caddy`, `coturn`, and `nyx-stratus` active. The apex, `www`, and FreeDNS alias health routes returned HTTP 200 with embedded Wisp and Socket.IO Chat, while warning-priority Nyx and Stratus and error-priority Caddy journals contained no entries. Production Chromium with a ChromeOS user agent resolved the homepage counter on all three domains, confirmed every presence POST stayed on that page's origin, showed **Unavailable** under a simulated blocked endpoint instead of hanging on **Connecting…**, and reported no page errors. An instrumented local ChromeOS run also verified that an indefinitely delayed Firebase token no longer blocks the first presence result.
 - 2026-08-25 Nyxify playlist and Apps-layout release: OVH fast-forwarded to `add0e0a`, rebuilt Nyx, passed deployment and branding checks, and kept `nyx`, `caddy`, `coturn`, and `nyx-stratus` active. The apex, `www`, and FreeDNS alias health routes returned HTTP 200 with embedded Wisp and Socket.IO Chat, and the warning-priority Nyx, Stratus, and error-priority Caddy journals contained no entries. Production Chromium confirmed the four-column Apps catalog and **Nyxify/built in music** label, returned 10 real results for **DAISIES** / **Justin Bieber**, created an 18-track companion playlist while preserving the one-track source, exposed shuffle and sparkle controls, rendered without mobile horizontal overflow, and reported no page errors.
@@ -391,7 +392,7 @@ Account-oriented local helper:
 npm run dev:accounts
 ```
 
-Build and validate Netlify output:
+Build and validate generated output (the legacy script name does not imply a Netlify deployment):
 
 ```powershell
 npm run build:netlify
@@ -401,7 +402,7 @@ npm run check:deploy
 Production deployment, only after explicit user authorization:
 
 ```powershell
-npx netlify-cli deploy --prod --dir=dist
+ssh -o BatchMode=yes -o ConnectTimeout=15 ubuntu@15.204.93.166 "cd /var/www/nyx && sudo bash deploy/update-ovh.sh"
 ```
 
 Firestore rules are a separate deployment:
@@ -410,7 +411,7 @@ Firestore rules are a separate deployment:
 firebase deploy --only firestore:rules
 ```
 
-Do not edit `dist/` directly. It is regenerated by `npm run build:netlify` and by Netlify's configured build command.
+Do not edit `dist/` directly. It is regenerated by `npm run build:netlify` locally and by the OVH update script during deployment. Netlify is not an active deployment target.
 
 ## Validation Expectations
 

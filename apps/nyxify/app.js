@@ -47,6 +47,8 @@ let playlists = [];
 let playlistToken = '';
 let playlistTokenExpiresAt = 0;
 let playlistAuthPromise = null;
+let playlistSaveChain = Promise.resolve();
+let playlistMutationRevision = 0;
 const playlistCoverDataLimit = 18000;
 const playlistCoverFileLimit = 8 * 1024 * 1024;
 const playlistAccentCache = new Map();
@@ -870,10 +872,14 @@ function playlistcovereditor(playlist) {
       const prepared = await prepareplaylistcover(file);
       playlist.cover = prepared.cover;
       playlist.accent = prepared.accent;
-      await persistplaylists();
+      const save = await persistplaylists({ verifyCover: { id: playlist.id, cover: prepared.cover } });
       renderplaylistview();
       const updatedStatus = detailView.querySelector('.playlist-cover-status');
-      if (updatedStatus) updatedStatus.textContent = 'Cover updated.';
+      if (updatedStatus) {
+        if (save.synced) updatedStatus.textContent = 'Cover synced to your account.';
+        else if (save.error) updatedStatus.textContent = `Cover saved on this device. ${save.error.message}`;
+        else updatedStatus.textContent = 'Cover saved on this device. Sign in to sync it.';
+      }
     } catch (error) {
       button.disabled = false;
       if (status) status.textContent = error.message;
@@ -1134,20 +1140,38 @@ function renderplaylistaddview() {
   detailView.style.display = '';
 }
 
-async function persistplaylists() {
+async function persistplaylists(options = {}) {
+  const revision = ++playlistMutationRevision;
+  const snapshot = JSON.parse(JSON.stringify(playlists));
   saveplaylistlocal();
   renderplaylists();
   renderplaylistchoices();
-  try {
+  const save = async () => {
     const payload = await playlistrequest('/api/nyxify/playlists', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ playlists })
+      body: JSON.stringify({ playlists: snapshot })
     });
-    playlistSync.textContent = payload ? 'Synced to your account' : 'Saved on this device';
+    if (!payload) return { synced: false, reason: 'signed-out' };
+    if (options.verifyCover) {
+      const expected = normalizedplaylistcover(options.verifyCover.cover);
+      const saved = (Array.isArray(payload.playlists) ? payload.playlists : []).find(item => item?.id === options.verifyCover.id);
+      if (!expected || normalizedplaylistcover(saved?.cover) !== expected) {
+        throw new Error('Account sync did not retain the custom cover. Try it again.');
+      }
+    }
+    return { synced: true, payload };
+  };
+  const pending = playlistSaveChain.then(save, save);
+  playlistSaveChain = pending.catch(() => {});
+  try {
+    const result = await pending;
+    if (revision === playlistMutationRevision) playlistSync.textContent = result.synced ? 'Synced to your account' : 'Saved on this device';
+    return result;
   } catch (error) {
-    playlistSync.textContent = 'Saved locally · account sync unavailable';
+    if (revision === playlistMutationRevision) playlistSync.textContent = 'Saved locally · account sync unavailable';
     playlistMessage.textContent = error.message || 'Account sync is unavailable.';
+    return { synced: false, reason: 'error', error };
   }
 }
 
@@ -1259,10 +1283,15 @@ async function createplaylistfromtrack(seed, button) {
 async function loadplaylists() {
   playlists = localplaylists();
   renderplaylists();
+  const loadRevision = playlistMutationRevision;
   try {
     const payload = await playlistrequest('/api/nyxify/playlists');
     if (!payload) {
       playlistSync.textContent = 'Saved on this device';
+      return;
+    }
+    if (playlistMutationRevision !== loadRevision) {
+      await playlistSaveChain;
       return;
     }
     const remote = Array.isArray(payload.playlists) ? payload.playlists : [];

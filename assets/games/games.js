@@ -16,6 +16,7 @@ const elements = {
   playerLoadingText: document.getElementById('playerLoadingText'),
   playerRetry: document.getElementById('retryGame'),
   frame: document.getElementById('gameFrame'),
+  provider: document.getElementById('gameProvider'),
   performance: document.getElementById('performanceGame'),
   performanceLabel: document.getElementById('performanceGameLabel'),
   close: document.getElementById('closePlayer'),
@@ -50,6 +51,49 @@ const cloudGameRequests = new Map();
 let cloudGameRequestId = 0;
 let activeGameStorageBaseline = {};
 const cloudAuthRelays = new Map();
+const luminCoverUrls = new Map();
+let luminSdkPromise = null;
+let luminReadyPromise = null;
+
+function loadLuminSdk(sdkUrl, sdkIntegrity = '') {
+  if (window.Lumin?.init) return Promise.resolve(window.Lumin);
+  if (luminSdkPromise) return luminSdkPromise;
+  luminSdkPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = sdkUrl;
+    script.async = true;
+    script.referrerPolicy = 'no-referrer';
+    if (sdkIntegrity) {
+      script.integrity = sdkIntegrity;
+      script.crossOrigin = 'anonymous';
+    }
+    script.addEventListener('load', () => window.Lumin?.init
+      ? resolve(window.Lumin)
+      : reject(new Error('LuminSDK loaded without exposing its API')), { once: true });
+    script.addEventListener('error', () => reject(new Error('LuminSDK could not be loaded')), { once: true });
+    document.head.append(script);
+  }).catch(error => {
+    luminSdkPromise = null;
+    throw error;
+  });
+  return luminSdkPromise;
+}
+
+async function ensureLuminReady(
+  sdkUrl = state.manifest?.catalogs?.find(catalog => catalog.format === 'lumin')?.sdkUrl,
+  sdkIntegrity = state.manifest?.catalogs?.find(catalog => catalog.format === 'lumin')?.sdkIntegrity
+) {
+  if (luminReadyPromise) return luminReadyPromise;
+  luminReadyPromise = (async () => {
+    const lumin = await loadLuminSdk(sdkUrl, sdkIntegrity);
+    await lumin.init({ headless: true });
+    return lumin;
+  })().catch(error => {
+    luminReadyPromise = null;
+    throw error;
+  });
+  return luminReadyPromise;
+}
 
 function setGameView(view, updateUrl = true) {
   const nextView = view === 'cloud' ? 'cloud' : 'all';
@@ -280,7 +324,7 @@ function gameTitleScore(title, source = '') {
   if (clean.length > 48) score -= clean.length - 48;
   if (/[?@]|(?:template|wrapper|play online|demo)$/i.test(clean)) score -= 35;
   if (source === 'duckmath') score += 5;
-  if (source === 'seraph') score += 3;
+  if (source === 'lumin') score += 3;
   return score;
 }
 
@@ -379,6 +423,45 @@ function excludedGameItem(item) {
 }
 
 async function adaptCatalog(catalog) {
+  if (catalog.format === 'lumin') {
+    const lumin = await ensureLuminReady(catalog.sdkUrl, catalog.sdkIntegrity);
+    const games = [];
+    const limit = 100;
+    let page = 1;
+    let pages = 1;
+    do {
+      const result = await lumin.getGames({ page, limit });
+      const items = Array.isArray(result?.games) ? result.games : [];
+      games.push(...items);
+      pages = Math.max(1, Number(result?.pages) || 1);
+      page += 1;
+    } while (page <= pages);
+
+    return games.flatMap(item => {
+      const id = String(item?.id || '').trim();
+      const title = cleanGameTitle(item?.name || id, 'lumin');
+      if (!id || !title) return [];
+      const player = `lumin-game:${id}`;
+      const cover = item?.image_token ? `lumin-cover:${item.image_token}` : '';
+      return [{
+        key: gameKey(title),
+        title,
+        url: player,
+        cover,
+        covers: cover ? [cover] : [],
+        priority: Number(catalog.priority) || 0,
+        source: catalog.id,
+        sources: [{
+          url: player,
+          source: catalog.id,
+          priority: Number(catalog.priority) || 0,
+          title,
+          luminId: id
+        }]
+      }];
+    });
+  }
+
   const response = await fetch(catalog.url, { cache: 'no-store' });
   if (!response.ok) throw new Error(`${catalog.id} returned ${response.status}`);
   const items = rawItems(await response.json());
@@ -397,11 +480,9 @@ async function adaptCatalog(catalog) {
     if (excludedGameItem(item)) return [];
     const path = String(item.path || '').replace(/^\/+/, '');
     if (!path && catalog.format !== 'duckmath' && catalog.format !== 'external') return [];
-    if (catalog.format === 'seraph' && !/(^|\/)index\.html?$/i.test(path)) return [];
-
     const suppliedTitle = String(item.title || item.name || '').replace(/\s+/g, ' ').trim();
     if (/^@[a-f0-9]{24,}$/i.test(suppliedTitle)) return [];
-    const title = cleanGameTitle(catalog.format === 'seraph' || catalog.format === 'duckmath'
+    const title = cleanGameTitle(catalog.format === 'duckmath'
       ? titleCase(suppliedTitle || path)
       : suppliedTitle || titleCase(path), catalog.format);
     if (!title) return [];
@@ -426,12 +507,6 @@ async function adaptCatalog(catalog) {
         player = fillTemplate(catalog.gbaPlayer, { romId: item.romId });
       }
       covers.push(safeCover(item.cover), directCover(item.cover));
-    } else if (catalog.format === 'seraph' && item.thumbnail) {
-      const thumbnailPath = String(item.thumbnail).replace(/^\/+/, '');
-      covers.push(
-        `/seraph-asset?path=${encodeURIComponent(thumbnailPath)}`,
-        `https://cdn.jsdelivr.net/gh/a456pur/seraph@main/${thumbnailPath.split('/').map(encodeURIComponent).join('/')}`
-      );
     } else if (catalog.format === 'external') {
       covers.push(safeCover(item.cover), safeCover(item.coverFallback), directCover(item.cover));
     }
@@ -529,7 +604,26 @@ function makeCover(game) {
   image.decoding = 'async';
   image.referrerPolicy = 'no-referrer';
   let index = 0;
-  image.src = game.covers[index];
+  const setImageSource = async source => {
+    if (!source.startsWith('lumin-cover:')) {
+      image.src = source;
+      return;
+    }
+    const token = source.slice('lumin-cover:'.length);
+    try {
+      let url = luminCoverUrls.get(token);
+      if (!url) {
+        const lumin = await ensureLuminReady();
+        url = await lumin.getImageUrl(token);
+        if (url) luminCoverUrls.set(token, url);
+      }
+      if (url) image.src = url;
+      else image.dispatchEvent(new Event('error'));
+    } catch {
+      image.dispatchEvent(new Event('error'));
+    }
+  };
+  void setImageSource(game.covers[index]);
   image.addEventListener('load', () => {
     image.classList.add('loaded');
     fallback.remove();
@@ -537,7 +631,7 @@ function makeCover(game) {
   image.addEventListener('error', () => {
     index += 1;
     if (index < game.covers.length) {
-      image.src = game.covers[index];
+      void setImageSource(game.covers[index]);
     } else {
       image.remove();
     }
@@ -551,6 +645,7 @@ function makeCard(game) {
   card.className = 'game-card';
   card.type = 'button';
   card.dataset.gameKey = game.key;
+  card.dataset.gameSource = game.source;
   card.setAttribute('aria-label', `Play ${game.title}`);
   card.append(makeCover(game));
 
@@ -691,6 +786,42 @@ function gameSources(game = state.activeGame) {
     : [{ url: game.url, source: game.source || 'game', priority: game.priority || 0 }];
 }
 
+function gameProviderLabel(source, index) {
+  const labels = {
+    local: 'Nyx Archive',
+    gn: 'GN Math',
+    gms: 'GMS',
+    lumin: 'Lumin',
+    catclass: 'CatClass',
+    duckmath: 'DuckMath'
+  };
+  return labels[source?.source] || `Provider ${index + 1}`;
+}
+
+function syncGameProvider() {
+  if (!elements.provider) return;
+  const sources = gameSources();
+  const baseLabels = sources.map(gameProviderLabel);
+  const labelTotals = new Map();
+  const labelIndexes = new Map();
+  baseLabels.forEach(label => labelTotals.set(label, (labelTotals.get(label) || 0) + 1));
+  const options = sources.map((source, index) => {
+    const option = document.createElement('option');
+    const label = baseLabels[index];
+    const labelIndex = (labelIndexes.get(label) || 0) + 1;
+    labelIndexes.set(label, labelIndex);
+    option.value = String(index);
+    option.textContent = labelTotals.get(label) > 1 ? `${label} ${labelIndex}` : label;
+    return option;
+  });
+  elements.provider.replaceChildren(...options);
+  elements.provider.value = String(Math.min(state.activeSourceIndex, Math.max(0, sources.length - 1)));
+  elements.provider.disabled = sources.length < 2;
+  elements.provider.title = sources.length > 1
+    ? `${sources.length} providers available`
+    : 'Only one provider is available for this game';
+}
+
 function finishGameLaunch() {
   if (!state.activeGame) return;
   clearSourceTimer();
@@ -705,7 +836,7 @@ function showGameFailure() {
   try { parent.postMessage({ type: 'nyx:game-failed' }, '*'); } catch {}
 }
 
-function launchGameSource(index, reason = '') {
+async function launchGameSource(index, reason = '') {
   const sources = gameSources();
   if (!state.activeGame || index < 0 || index >= sources.length) {
     showGameFailure();
@@ -714,6 +845,7 @@ function launchGameSource(index, reason = '') {
 
   clearSourceTimer();
   state.activeSourceIndex = index;
+  syncGameProvider();
   state.sourceAttempt += 1;
   const attempt = state.sourceAttempt;
   const source = sources[index];
@@ -732,15 +864,28 @@ function launchGameSource(index, reason = '') {
       owner = owner.parent;
     }
   } catch {}
-  elements.frame.src = source.url;
+  let playableUrl = source.url;
+  if (source.source === 'lumin') {
+    try {
+      const lumin = await ensureLuminReady();
+      const result = await lumin.getGameUrl(source.luminId || source.url.slice('lumin-game:'.length));
+      playableUrl = String(result?.url || '');
+      if (!playableUrl) throw new Error('LuminSDK did not return a playable URL');
+    } catch {
+      if (attempt === state.sourceAttempt && state.activeGame) tryNextGameSource('The Lumin game could not be prepared.');
+      return;
+    }
+  }
+  if (attempt !== state.sourceAttempt || !state.activeGame) return;
+  elements.frame.src = playableUrl;
 
   let sameOrigin = false;
-  try { sameOrigin = new URL(source.url, location.href).origin === location.origin; } catch {}
-  if (sameOrigin) {
+  try { sameOrigin = new URL(playableUrl, location.href).origin === location.origin; } catch {}
+  if (sameOrigin || source.source === 'lumin') {
     state.sourceTimer = setTimeout(() => {
       if (attempt !== state.sourceAttempt || !state.activeGame) return;
       launchGameSource(index + 1, 'The current source did not finish loading.');
-    }, 18_000);
+    }, source.source === 'lumin' ? 25_000 : 18_000);
   }
 }
 
@@ -762,6 +907,7 @@ async function openGame(game, updateHistory = true) {
   state.performanceAutoTriggered = false;
   const firstAvailable = gameSources(game).findIndex(source => !state.failedSources.has(source.url));
   state.activeSourceIndex = firstAvailable >= 0 ? firstAvailable : 0;
+  syncGameProvider();
   elements.playerTitle.textContent = game.title;
   elements.frame.title = game.title;
   elements.player.hidden = false;
@@ -826,6 +972,13 @@ elements.sort.addEventListener('change', resetResults);
 elements.previousPage.addEventListener('click', () => changePage(state.page - 1));
 elements.nextPage.addEventListener('click', () => changePage(state.page + 1));
 elements.close.addEventListener('click', closeGame);
+elements.provider?.addEventListener('change', () => {
+  const index = Number(elements.provider.value);
+  const sources = gameSources();
+  if (!Number.isInteger(index) || index < 0 || index >= sources.length) return;
+  state.failedSources.delete(sources[index].url);
+  launchGameSource(index, 'Switching provider...');
+});
 elements.performance?.addEventListener('click', () => {
   const modes = ['auto', 'on', 'off'];
   state.performancePreference = modes[(modes.indexOf(state.performancePreference) + 1) % modes.length];
@@ -854,7 +1007,7 @@ elements.frame.addEventListener('load', () => {
   try {
     const parsed = new URL(source?.url || '', location.href);
     sameOrigin = parsed.origin === location.origin;
-    managedRunner = sameOrigin && /^\/assets\/(?:ugs|gn-math|gms-games|reds-misc|seraph)\/play\.html$/i.test(parsed.pathname);
+    managedRunner = sameOrigin && /^\/assets\/(?:ugs|gn-math|gms-games|reds-misc)\/play\.html$/i.test(parsed.pathname);
     if (sameOrigin && parsed.pathname === '/assets/games/remote-play.html') managedRunner = true;
   } catch {}
   // Nyx's runner pages own their detailed loading/error state. Reveal them as

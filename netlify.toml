@@ -30,12 +30,6 @@
   force = true
 
 [[redirects]]
-  from = "/seraph-*"
-  to = "/.netlify/functions/api/seraph-:splat"
-  status = 200
-  force = true
-
-[[redirects]]
   from = "/gn-math-*"
   to = "/.netlify/functions/api/gn-math-:splat"
   status = 200

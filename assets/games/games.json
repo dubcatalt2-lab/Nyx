@@ -26,10 +26,10 @@
       "priority": 30
     },
     {
-      "id": "seraph",
-      "format": "seraph",
-      "url": "/assets/seraph/games.json",
-      "player": "/assets/seraph/play.html?game={path}",
+      "id": "lumin",
+      "format": "lumin",
+      "sdkUrl": "https://cdn.jsdelivr.net/gh/luminsdk/script@e1107337f26529e032d7873cbbb310d485d5d403/lumin.min.js",
+      "sdkIntegrity": "sha384-SgXJY217C22inNWfmmJ3ffxB1rIh4BmSkT9PDfvMqXoNI1p/td9wKrAjt8SboUHv",
       "priority": 20
     },
     {

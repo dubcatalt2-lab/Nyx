@@ -2371,6 +2371,7 @@
     'nyx-ai':localIcon('shortcut-nyx-ai.svg?v=6'),
     'aether.cx':localIcon('theatre-masks.svg?v=1'),
     'icefy.top':localIcon('theatre-masks.svg?v=1'),
+    'cinejoy.to':localIcon('theatre-masks.svg?v=1'),
     'fmhy.net':localIcon('theatre-masks.svg?v=1'),
     'nyx-chat':localIcon('chat.svg?v=2'),
     'cloud-gaming':localIcon('cloud-gaming.svg?v=2'),
@@ -2442,7 +2443,7 @@
     if(/(?:^|\/)apps\/link-checker(?:\/|$)/i.test(raw)) return appIcon('link-checker');
     if(/(?:^|\/)apps\/link-generator(?:\/|$)/i.test(raw)) return appIcon('link-generator');
     const source=typeof browserShellSourceUrl==='function' ? (browserShellSourceUrl(raw) || raw) : raw;
-    if(source.startsWith('assets/games/') || source.startsWith('assets/ugs/') || source.startsWith('assets/seraph/') || source.startsWith('/assets/games/') || source.startsWith('/assets/ugs/') || source.startsWith('/assets/seraph/')) return appIcon('games');
+    if(source.startsWith('assets/games/') || source.startsWith('assets/ugs/') || source.startsWith('/assets/games/') || source.startsWith('/assets/ugs/')) return appIcon('games');
     try{
       const host=new URL(source,location.href).hostname.replace(/^www\./,'').toLowerCase();
       if(appIcons[host]) return appIcons[host];
@@ -2495,7 +2496,7 @@
     if(/(?:^|\/)apps\/link-generator(?:\/|$)/i.test(raw)) return 'Link Generator';
     if(raw==='nyx://ai') return 'Nyx AI';
     if(raw.startsWith('nyx://')) return raw.replace('nyx://','nyx ');
-    if(raw.startsWith('assets/games/') || raw.startsWith('assets/ugs/') || raw.startsWith('assets/seraph/') || raw.startsWith('/assets/games/') || raw.startsWith('/assets/ugs/') || raw.startsWith('/assets/seraph/')) return 'GAMES';
+    if(raw.startsWith('assets/games/') || raw.startsWith('assets/ugs/') || raw.startsWith('/assets/games/') || raw.startsWith('/assets/ugs/')) return 'GAMES';
     try{return new URL(raw,location.href).hostname.replace(/^www\./,'') || 'New Tab'}catch{return 'New Tab'}
   }
   function websiteDetailsHidden(){
@@ -3208,7 +3209,7 @@
         <div class="nyx-latency-health">
           <span>Health<strong data-nyx-health-overall>Checking</strong></span>
           <span>Browser<strong data-nyx-health-browser>Online</strong></span>
-          <span>Wisp<strong data-nyx-health-wisp>Checking</strong></span>
+          <span>Relay<strong data-nyx-health-wisp>Checking</strong></span>
           <span>Chat<strong data-nyx-health-chat>Checking</strong></span>
         </div>
         <footer data-nyx-latency-updated>Waiting for the first health check</footer>
@@ -3436,7 +3437,6 @@
       const parsed=new URL(browserShellSourceUrl(url),location.href);
       if(parsed.origin===location.origin && parsed.pathname==='/search') return parsed.searchParams.get('q') || 'Search';
       if(parsed.origin===location.origin && parsed.pathname.includes('/assets/games/')) return 'GAMES';
-      if(parsed.origin===location.origin && parsed.pathname.includes('/assets/seraph/')) return 'Seraph Study';
       if(parsed.origin===location.origin && parsed.pathname.includes('/assets/ugs/')) return 'GAMES';
       if(parsed.origin===location.origin && parsed.pathname.includes('/apps/chat/')) return 'Nyx Chat';
       if(parsed.origin===location.origin && parsed.pathname.includes('/apps/cloud-gaming/')) return 'Cloud Gaming';
@@ -3778,7 +3778,7 @@
   async function requestNyxKeyboardLock(){
     const activeTab=activeBrowser?.tabs?.find?.(tab=>tab.id===activeBrowser.active);
     const activeSource=String(browserShellSourceUrl(activeTab?.sourceUrl || activeTab?.url || '') || activeTab?.sourceUrl || activeTab?.url || '');
-    if(/(?:pixelclient\.xyz|play\.geforcenow\.com|geforcenow\.com|\/assets\/(?:games|ugs|seraph|gn-math|gms-games)\/)/i.test(activeSource)){
+    if(/(?:pixelclient\.xyz|play\.geforcenow\.com|geforcenow\.com|\/assets\/(?:games|ugs|gn-math|gms-games)\/)/i.test(activeSource)){
       await releaseNyxKeyboardLock();
       return;
     }
@@ -4468,7 +4468,7 @@
     const effect=esc(store.text('nyx.visualEffect','none'));
     const effectSpeed=esc(store.text('nyx.visualEffectSpeed','1.1'));
     const effectAmount=esc(store.text('nyx.visualEffectAmount','16'));
-    return `<section class="settings-app settings-single-pane browser-only-settings"><main class="settings-main"><h1>Browser Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="nyx" type="button">Reset</button></div></section><section class="settings-block"><h2>Preset Cloak</h2><select class="settings-select" data-preset-select><option value="nyx" ${currentPreset==='nyx'?'selected':''}>ռʏӼ</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Cloaking</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original tab redirect URL"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Auto Cloak</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Redirect original after launch</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save Cloak Settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Panic Key</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Display Mode</h2><p>Switch back to the Windows-style desktop layout.</p><p>Windows mode is no longer maintained. If you run into any issues, thats not my problem&#x1F494;</p><div class="settings-actions"><button class="settings-action" data-browser-shell-toggle data-enabled="false" type="button">Switch to Windows Mode</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>Search Engine</h2><select class="settings-select" data-browser-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>DuckDuckGo</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Proxy Engine</h2><select class="settings-select" data-browser-mode-select><option value="auto" ${browserMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${browserMode==='scramjet'?'selected':''}>Scramjet</option><option value="ultraviolet" ${browserMode==='ultraviolet'?'selected':''}>Ultraviolet</option><option value="iframe" ${browserMode==='iframe'?'selected':''}>Iframe</option></select></section><section class="settings-block"><h2>Transport</h2><select class="settings-select" data-browser-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Epoxy over Wisp</option><option value="wisp" ${transport==='wisp'?'selected':''}>Wisp endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Libcurl over Wisp</option></select><div class="settings-actions"><button class="settings-action" data-browser-settings-save type="button">Save Browser Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
+    return `<section class="settings-app settings-single-pane browser-only-settings"><main class="settings-main"><h1>Browser Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="nyx" type="button">Reset</button></div></section><section class="settings-block"><h2>Preset Cloak</h2><select class="settings-select" data-preset-select><option value="nyx" ${currentPreset==='nyx'?'selected':''}>ռʏӼ</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Cloaking</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original tab redirect URL"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Auto Cloak</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Redirect original after launch</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save Cloak Settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Panic Key</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Display Mode</h2><p>Switch back to the Windows-style desktop layout.</p><p>Windows mode is no longer maintained. If you run into any issues, thats not my problem&#x1F494;</p><div class="settings-actions"><button class="settings-action" data-browser-shell-toggle data-enabled="false" type="button">Switch to Windows Mode</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>Search Engine</h2><select class="settings-select" data-browser-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>DuckDuckGo</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Proxy Engine</h2><select class="settings-select" data-browser-mode-select><option value="auto" ${browserMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${browserMode==='scramjet'?'selected':''}>Scrapmmy</option><option value="ultraviolet" ${browserMode==='ultraviolet'?'selected':''}>Violet</option><option value="iframe" ${browserMode==='iframe'?'selected':''}>Iframe</option></select></section><section class="settings-block"><h2>Transport</h2><select class="settings-select" data-browser-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Eppy over Relay</option><option value="wisp" ${transport==='wisp'?'selected':''}>Relay endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Libby over Relay</option></select><div class="settings-actions"><button class="settings-action" data-browser-settings-save type="button">Save Browser Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
   }
   function browserShellPresetTiles(){
     return `<button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${nyxTabFavicon}"><span>ռʏӼ tab</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
@@ -4650,7 +4650,7 @@
     const legacyLibcurlOption=transportSelect?.querySelector('option[value="libcurl"]');
     if(legacyLibcurlOption){
       legacyLibcurlOption.value='libcurlRaw';
-      legacyLibcurlOption.textContent='Libcurl Raw over Wisp';
+      legacyLibcurlOption.textContent='Libby over Relay';
     }
     if(transportSelect && !transportSelect.querySelector('option[value="auto"]')){
       transportSelect.prepend(new Option('Auto (recommended)','auto'));
@@ -7724,34 +7724,34 @@
   }
   function installScramjet(){
     if(scramjetInstallPromise) return scramjetInstallPromise;
-    let step='starting Scramjet';
+    let step='starting Scrapmmy';
     scramjetInstallPromise=(async()=>{
       step='checking browser support';
       if(location.protocol==='file:'){
-        scramjetInstallError='Scramjet needs Nyx to be opened from its website, not as a local file.';
+        scramjetInstallError='Scrapmmy needs Nyx to be opened from its website, not as a local file.';
         return false;
       }
       if(!('serviceWorker' in navigator)){
-        scramjetInstallError='This browser does not support the Service Workers Scramjet needs. Some watch browsers do not provide that feature.';
+        scramjetInstallError='This browser does not support the Service Workers Scrapmmy needs. Some watch browsers do not provide that feature.';
         return false;
       }
-      step='resetting stale Scramjet state';
+      step='resetting stale Scrapmmy state';
       await ensureFreshProxyState();
       await ensureFreshScramjetState();
-      step='loading Scramjet assets';
+      step='loading Scrapmmy assets';
       if(!window.$scramjet) await loadScript('/scramjet/scramjet.js');
       if(!window.$scramjetController) await loadScript('/controller/controller.api.js');
-      step='loading Scramjet runtime guard';
+      step='loading Scrapmmy runtime guard';
       await loadScramjetRuntimeGuardSource();
-      step='starting Scramjet transport';
+      step='starting Scrapmmy relay';
       const transport=await createScramjetTransport();
-      step='registering Scramjet service worker';
+      step='registering Scrapmmy service worker';
       const registration=await navigator.serviceWorker.register(scramjetServiceWorkerUrl,{scope:'/~/sj/',updateViaCache:'none'});
       await registration.update().catch(()=>null);
-      step='activating Scramjet service worker';
+      step='activating Scrapmmy service worker';
       const serviceworker=await waitForServiceWorkerScript(registration,scramjetServiceWorkerUrl);
-      if(!serviceworker) throw new Error('Scramjet service worker did not activate');
-      step='initializing Scramjet controller';
+      if(!serviceworker) throw new Error('Scrapmmy service worker did not activate');
+      step='initializing Scrapmmy controller';
       try{
         if(!scramjetController) scramjetController=createScramjetController(serviceworker,transport);
         else if(!await reconnectScramjetController(scramjetController,serviceworker,transport)){
@@ -7760,12 +7760,12 @@
         await scramjetController.wait();
       }catch(initError){
         if(!isScramjetIdbShapeError(initError)) throw initError;
-        step='repairing Scramjet IndexedDB';
+        step='repairing Scrapmmy storage';
         await repairScramjetStorage();
         const repairedRegistration=await navigator.serviceWorker.register(scramjetServiceWorkerUrl,{scope:'/~/sj/',updateViaCache:'none'});
         const repairedServiceworker=await waitForServiceWorkerScript(repairedRegistration,scramjetServiceWorkerUrl);
-        if(!repairedServiceworker) throw new Error('Scramjet service worker did not activate after storage repair');
-        step='initializing Scramjet controller after storage repair';
+        if(!repairedServiceworker) throw new Error('Scrapmmy service worker did not activate after storage repair');
+        step='initializing Scrapmmy controller after storage repair';
         scramjetController=createScramjetController(repairedServiceworker,transport);
         await scramjetController.wait();
       }
@@ -7997,14 +7997,14 @@
   }
   function browserBody(){
     const minimalPresenceText=nyxPresenceCount===null ? 'Connecting\u2026' : `${nyxPresenceCount} online`;
-    if(store.text('nyx.homeDesign','redesigned')!=='original') return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home nyx-minimal-home"><header class="nyx-minimal-homebar"><span class="nyx-minimal-wordmark"><i aria-hidden="true"></i>Nyx</span><nav aria-label="Account shortcuts"><button data-app-url="/apps/chat/" type="button" aria-label="Chat">${nyxDashboardIcon('chat')}</button><button data-open="settings" type="button" aria-label="Settings">${nyxDashboardIcon('settings')}</button><span data-nyx-profile-slot></span></nav></header><main class="browser-shell-start nyx-minimal-hero"><div class="nyx-minimal-brand"><span class="nyx-minimal-moon" aria-hidden="true"></span><h1>NYX</h1></div><form class="browser-blank-search nyx-home-search nyx-minimal-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Search or enter a URL" placeholder="Search or enter a URL" autocomplete="off" spellcheck="false"></form><nav class="nyx-minimal-shortcuts" aria-label="Nyx shortcuts"><button data-nyx-focus-search type="button">${nyxDashboardIcon('browse')}<span>Browse</span></button><button data-app-url="/assets/games/" type="button">${nyxDashboardIcon('games')}<span>Games</span></button><button data-app-url="/apps/chat/" type="button">${nyxDashboardIcon('chat')}<span>Chat</span></button><button class="nyx-minimal-ai" data-app-url="nyx://ai" type="button"><span class="nyx-nocturne-ai-icon" aria-hidden="true"></span><span>AI</span></button><button data-app-url="https://aether.cx/" type="button">${nyxDashboardIcon('media')}<span>Movies</span></button><button data-nyx-apps-toggle type="button">${nyxDashboardIcon('apps')}<span>Apps</span></button></nav></main><nav class="nyx-minimal-utility-links" aria-label="Nyx tools and terms"><a data-app-url="/apps/link-checker/" href="/apps/link-checker/">Link Checker</a><a data-app-url="/apps/link-generator/" href="/apps/link-generator/">Link Generator</a><a data-open="terms" href="nyx://terms">Terms of Service</a></nav><div class="nyx-home-presence${nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="button" tabindex="${nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${minimalPresenceText}</span></div></div></div>`;
+    if(store.text('nyx.homeDesign','redesigned')!=='original') return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home nyx-minimal-home"><header class="nyx-minimal-homebar"><span class="nyx-minimal-wordmark"><i aria-hidden="true"></i>Nyx</span><nav aria-label="Account shortcuts"><button data-app-url="/apps/chat/" type="button" aria-label="Chat">${nyxDashboardIcon('chat')}</button><button data-open="settings" type="button" aria-label="Settings">${nyxDashboardIcon('settings')}</button><span data-nyx-profile-slot></span></nav></header><main class="browser-shell-start nyx-minimal-hero"><div class="nyx-minimal-brand"><span class="nyx-minimal-moon" aria-hidden="true"></span><h1>NYX</h1></div><form class="browser-blank-search nyx-home-search nyx-minimal-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Search or enter a URL" placeholder="Search or enter a URL" autocomplete="off" spellcheck="false"></form><nav class="nyx-minimal-shortcuts" aria-label="Nyx shortcuts"><button data-nyx-focus-search type="button">${nyxDashboardIcon('browse')}<span>Browse</span></button><button data-app-url="/assets/games/" type="button">${nyxDashboardIcon('games')}<span>Games</span></button><button data-app-url="/apps/chat/" type="button">${nyxDashboardIcon('chat')}<span>Chat</span></button><button class="nyx-minimal-ai" data-app-url="nyx://ai" type="button"><span class="nyx-nocturne-ai-icon" aria-hidden="true"></span><span>AI</span></button><button data-app-url="https://cinejoy.to/" type="button">${nyxDashboardIcon('media')}<span>Movies</span></button><button data-nyx-apps-toggle type="button">${nyxDashboardIcon('apps')}<span>Apps</span></button></nav></main><nav class="nyx-minimal-utility-links" aria-label="Nyx tools and terms"><a data-app-url="/apps/link-checker/" href="/apps/link-checker/">Link Checker</a><a data-app-url="/apps/link-generator/" href="/apps/link-generator/">Link Generator</a><a data-open="terms" href="nyx://terms">Terms of Service</a></nav><div class="nyx-home-presence${nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="button" tabindex="${nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${minimalPresenceText}</span></div></div></div>`;
     const presenceText=nyxPresenceCount===null ? 'Connecting\u2026' : `${nyxPresenceCount} online`;
     return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence${nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="button" tabindex="${nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><button class="nyx-home-weather" data-home-weather data-open="weather" type="button" aria-label="Open weather report"><span class="nyx-home-weather-icon" data-home-weather-icon aria-hidden="true"><svg class="nyx-weather-symbol nyx-weather-symbol-partly-cloudy" viewBox="0 0 24 24" focusable="false"><circle class="nyx-weather-sun-fill" cx="8" cy="8" r="3.2"/><path class="nyx-weather-sun-ray" d="M8 2.3v1.4M3.97 3.97l1 1M2.3 8h1.4M12.03 3.97l-1 1M13.7 8h-1.4"/><path class="nyx-weather-cloud-fill" d="M7.2 19h10a4 4 0 0 0 .45-7.98A5.55 5.55 0 0 0 7.08 12.6 3.2 3.2 0 0 0 7.2 19Z"/></svg></span><strong data-home-weather-temp>--°</strong><span data-home-weather-desc>Loading</span></button><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1><form class="browser-blank-search nyx-home-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Find your course or enter a URL" placeholder="Find your Course" autocomplete="off" spellcheck="false"></form><nav class="nyx-home-actions" aria-label="Nyx home"><button data-open="apps" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-apps" aria-hidden="true"></span><span>Resources</span></button><button data-app-url="https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-study" aria-hidden="true"></span><span>Assignments</span></button><button data-open-nyx-profile-entry data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-profile" aria-hidden="true"></span><span>Student Profile</span></button><button data-open="settings" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-settings" aria-hidden="true"></span><span>Preferences</span></button></nav></main><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div><a class="nyx-home-link-checker" data-app-url="/apps/link-checker/" href="/apps/link-checker/">Link Checker</a><nav class="nyx-home-utility-links" aria-label="Nyx information and tools"><a data-app-url="/apps/chat/" href="/apps/chat/">Chat</a><a data-app-url="/apps/link-generator/" href="/apps/link-generator/">Link Generator</a><a data-open="terms" href="nyx://terms">Terms Of Service</a><a data-open="developer" href="nyx://developer">Developer Console</a><a data-open="about" href="nyx://about">About Us</a></nav></div></div>`;
   }
   //apps-grid
   const nyxAiHomeShortcut={domain:'nyx-ai',title:'AI Tutor',url:'nyx://ai',favorite:false};
   const nyxAiHomeShortcutMigrationKey='nyx.homeShortcuts.aiShortcutV1';
-  const moviesHomeShortcut={domain:'aether.cx',title:'Movies',url:'https://aether.cx/',favorite:false};
+  const moviesHomeShortcut={domain:'cinejoy.to',title:'Movies',url:'https://cinejoy.to/',favorite:false};
   const defaultHomeShortcuts=[
     {domain:'geforcenow',title:'Course Library',url:'https://play.geforcenow.com/',favorite:true},
     {domain:'duck.ai',title:'Research Assistant',url:'https://duck.ai/',favorite:false},
@@ -8022,9 +8022,9 @@
   }
   function normalizeHomeShortcut(item){
     const next={...item,url:normalizeInternalAppUrl(item?.url)};
-    if(String(next.url || '').trim().replace(/\/+$/,'').toLowerCase()==='http://icefy.top'){
-      next.url='https://aether.cx/';
-      next.domain='aether.cx';
+    if(['http://icefy.top','https://aether.cx'].includes(String(next.url || '').trim().replace(/\/+$/,'').toLowerCase())){
+      next.url='https://cinejoy.to/';
+      next.domain='cinejoy.to';
     }
     if(next.url==='/assets/games/index.html') next.url='/assets/games/';
     if(next.url==='/assets/games/'){
@@ -8704,7 +8704,7 @@
     renderHomeShortcuts();
   }
   const nyxDefaultGlobalApps=[
-    ['link-checker','link-checker','Link Checker','/apps/link-checker/'],['link-generator','link-generator','Link Generator','/apps/link-generator/'],['youtube','youtube.com','YouTube','https://www.youtube.com/'],['pirate-cove','games','GAMES','/assets/games/'],['nyx-chat','nyx-chat','Nyx Chat','/apps/chat/'],['geforce-now','geforcenow','GeForce Now','https://play.geforcenow.com/'],['roblox','roblox.com','Roblox','https://web.cloudmoonapp.com/game/com.roblox.client/'],['discord','discord.com','Discord','https://discord.com/app'],['spotify','spotify.com','Spotify','https://open.spotify.com/'],['nyxify','nyxify','Nyxify/built in music','/apps/nyxify/'],['google','google.com','Google','https://www.google.com/'],['study','docs.google.com','Study','https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0'],['duck-ai','duck.ai','Duck AI','https://duck.ai/'],['nyx-ai','nyx-ai','Nyx AI','nyx://ai'],['wikipedia','wikipedia.org','Wikipedia','https://www.wikipedia.org/'],['movies','aether.cx','Movies','https://aether.cx/'],['more-movie-sites','fmhy.net','More Movie Sites','https://fmhy.net/video#p-stream-forks'],['tiktok','tiktok.com','TikTok','https://www.tiktok.com/'],['instagram','instagram.com','Instagram','https://www.instagram.com/'],['snapchat','snapchat.com','Snapchat','https://www.snapchat.com/'],['amazon','amazon.com','Amazon','https://www.amazon.com/'],['reddit','reddit.com','Reddit','https://www.reddit.com/'],['twitter','x.com','Twitter','https://x.com/'],['tcgplayer','tcgplayer.com','TCGPlayer','https://www.tcgplayer.com/'],['cps-test','cpstest.org','CPS Test','https://cpstest.org/'],['chess','chess.com','Chess.com','https://www.chess.com/'],['animex','animex.one','Animex','https://animex.one/'],['chatgpt','chatgpt.com','AI','https://chatgpt.com/'],['steam','store.steampowered.com','Steam','https://store.steampowered.com/'],['crunchyroll','crunchyroll.com','Crunchyroll','https://www.crunchyroll.com/'],['crazygames','crazygames.com','CrazyGames','https://www.crazygames.com/'],['newgrounds','newgrounds.com','Newgrounds','https://www.newgrounds.com/'],['twitch','twitch.tv','Twitch','https://www.twitch.tv/'],['kick','kick.com','Kick','https://kick.com/'],['pluto-tv','pluto.tv','Pluto TV','https://pluto.tv/'],['skribbl','skribbl.io','Skribbl.io','https://skribbl.io/'],['slither','slither.io','Slither.io','https://slither.io/'],['geoguessr','geoguessr.com','GeoGuessr','https://www.geoguessr.com/'],['y8-games','y8.com','Y8 Games','https://www.y8.com/'],['itch','itch.io','itch.io','https://itch.io/']
+    ['link-checker','link-checker','Link Checker','/apps/link-checker/'],['link-generator','link-generator','Link Generator','/apps/link-generator/'],['youtube','youtube.com','YouTube','https://www.youtube.com/'],['pirate-cove','games','GAMES','/assets/games/'],['nyx-chat','nyx-chat','Nyx Chat','/apps/chat/'],['geforce-now','geforcenow','GeForce Now','https://play.geforcenow.com/'],['roblox','roblox.com','Roblox','https://web.cloudmoonapp.com/game/com.roblox.client/'],['discord','discord.com','Discord','https://discord.com/app'],['spotify','spotify.com','Spotify','https://open.spotify.com/'],['nyxify','nyxify','Nyxify/built in music','/apps/nyxify/'],['google','google.com','Google','https://www.google.com/'],['study','docs.google.com','Study','https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0'],['duck-ai','duck.ai','Duck AI','https://duck.ai/'],['nyx-ai','nyx-ai','Nyx AI','nyx://ai'],['wikipedia','wikipedia.org','Wikipedia','https://www.wikipedia.org/'],['movies','cinejoy.to','Movies','https://cinejoy.to/'],['more-movie-sites','fmhy.net','More Movie Sites','https://fmhy.net/video#p-stream-forks'],['tiktok','tiktok.com','TikTok','https://www.tiktok.com/'],['instagram','instagram.com','Instagram','https://www.instagram.com/'],['snapchat','snapchat.com','Snapchat','https://www.snapchat.com/'],['amazon','amazon.com','Amazon','https://www.amazon.com/'],['reddit','reddit.com','Reddit','https://www.reddit.com/'],['twitter','x.com','Twitter','https://x.com/'],['tcgplayer','tcgplayer.com','TCGPlayer','https://www.tcgplayer.com/'],['cps-test','cpstest.org','CPS Test','https://cpstest.org/'],['chess','chess.com','Chess.com','https://www.chess.com/'],['animex','animex.one','Animex','https://animex.one/'],['chatgpt','chatgpt.com','AI','https://chatgpt.com/'],['steam','store.steampowered.com','Steam','https://store.steampowered.com/'],['crunchyroll','crunchyroll.com','Crunchyroll','https://www.crunchyroll.com/'],['crazygames','crazygames.com','CrazyGames','https://www.crazygames.com/'],['newgrounds','newgrounds.com','Newgrounds','https://www.newgrounds.com/'],['twitch','twitch.tv','Twitch','https://www.twitch.tv/'],['kick','kick.com','Kick','https://kick.com/'],['pluto-tv','pluto.tv','Pluto TV','https://pluto.tv/'],['skribbl','skribbl.io','Skribbl.io','https://skribbl.io/'],['slither','slither.io','Slither.io','https://slither.io/'],['geoguessr','geoguessr.com','GeoGuessr','https://www.geoguessr.com/'],['y8-games','y8.com','Y8 Games','https://www.y8.com/'],['itch','itch.io','itch.io','https://itch.io/']
   ].map(([id,icon,name,url])=>({id,icon,name,url}));
   let nyxGlobalApps=nyxDefaultGlobalApps.map(app=>({...app}));
   function normalizeNyxGlobalApp(app){
@@ -9088,7 +9088,7 @@
     function current(){return state.tabs.find(t=>t.id===state.active)}
     function isGameInputTab(t=current()){
       const source=String(browserShellSourceUrl(t?.sourceUrl || t?.url || '') || t?.sourceUrl || t?.url || '');
-      if(/(?:play\.geforcenow\.com|geforcenow\.com|nvidia|pixelclient\.xyz|\/assets\/games\/|\/assets\/ugs\/|\/assets\/seraph\/|\/assets\/gn-math\/|\/assets\/gms-games\/)/i.test(source)) return true;
+      if(/(?:play\.geforcenow\.com|geforcenow\.com|nvidia|pixelclient\.xyz|\/assets\/games\/|\/assets\/ugs\/|\/assets\/gn-math\/|\/assets\/gms-games\/)/i.test(source)) return true;
       try{return !!t?.frame?.contentDocument?.querySelector('canvas,[role="application"],[data-testid*="game" i],[class*="game" i],[id*="game" i]')}catch{return false}
     }
     function focusActiveGameFrame(){
@@ -10325,7 +10325,7 @@
             if(!state.tabs.includes(t)) return;
             const proxied=ok ? proxyModeUrl('ultraviolet',sourceUrl,t.privacySessionId) : '';
             if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',sourceUrl);
-            else loadSelectedSearchFallback(t,sourceUrl,'selected Ultraviolet engine unavailable');
+            else loadSelectedSearchFallback(t,sourceUrl,'selected Violet engine unavailable');
           });
           return true;
         }
@@ -10339,15 +10339,15 @@
         return false;
       }
       if(expectedEngine==='scramjet' && configuredMode==='auto'){
-        return loadSelectedSearchFallback(t,sourceUrl,reason || 'Scramjet transports exhausted');
+        return loadSelectedSearchFallback(t,sourceUrl,reason || 'Scrapmmy relays exhausted');
       }
       if(expectedEngine==='scramjet' && configuredMode==='scramjet'){
-        if(attempts[key]>3) return loadSelectedSearchFallback(t,sourceUrl,reason || 'scramjet retries exhausted');
+        if(attempts[key]>3) return loadSelectedSearchFallback(t,sourceUrl,reason || 'Scrapmmy retries exhausted');
         loadScramjetTab(t,sourceUrl,false);
         return true;
       }
       if(expectedEngine==='ultraviolet' && configuredMode==='ultraviolet'){
-        return loadSelectedSearchFallback(t,sourceUrl,reason || 'ultraviolet failed while selected');
+        return loadSelectedSearchFallback(t,sourceUrl,reason || 'Violet failed while selected');
       }
       if(attempts[key]>3) return loadSelectedSearchFallback(t,sourceUrl,reason || 'proxy fallback exhausted');
       if(expectedEngine==='scramjet'){
@@ -10355,7 +10355,7 @@
           if(!state.tabs.includes(t)) return;
           const proxied=ok ? proxyModeUrl('ultraviolet',sourceUrl,t.privacySessionId) : '';
           if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',sourceUrl);
-          else loadSelectedSearchFallback(t,sourceUrl,'ultraviolet unavailable after scramjet failure');
+          else loadSelectedSearchFallback(t,sourceUrl,'Violet unavailable after Scrapmmy failure');
         });
         return true;
       }
@@ -10522,7 +10522,7 @@
             handled=true;
           }else if(browserMode==='auto'){
             if(canAutoTransport) setBrowserTransportOverride('epoxy');
-            loadSelectedSearchFallback(t,sourceUrl,'Scramjet transports exhausted');
+            loadSelectedSearchFallback(t,sourceUrl,'Scrapmmy relays exhausted');
             handled=true;
           }
         }
@@ -10647,7 +10647,7 @@
           t.actualEngine='scramjet-failed';
           setFrameSandbox(t,true);
           clearFrameDocument(t);
-          t.frame.srcdoc=proxyFailureHtml(scramjetInstallError,'Scramjet',{allowDirect:true});
+          t.frame.srcdoc=proxyFailureHtml(scramjetInstallError,'Scrapmmy',{allowDirect:true});
           return;
         }
         const existingFrameSrc=String(t.frame.getAttribute('src') || '');
@@ -10764,7 +10764,7 @@
         t.actualEngine='scramjet-failed';
         setFrameSandbox(t,true);
         clearFrameDocument(t);
-        t.frame.srcdoc=proxyFailureHtml('The private tab session could not start. Reload Nyx and try again.','Scramjet',{allowDirect:true});
+        t.frame.srcdoc=proxyFailureHtml('The private tab session could not start. Reload Nyx and try again.','Scrapmmy',{allowDirect:true});
       });
     }
     function waitForTabResultPaint(t,timeout=4200){
@@ -10936,7 +10936,7 @@
             t.actualEngine='ultraviolet-failed';
             setFrameSandbox(t,true);
             clearFrameDocument(t);
-            t.frame.srcdoc=proxyFailureHtml('Refresh once so the updated service worker can register, then try again.','Ultraviolet');
+            t.frame.srcdoc=proxyFailureHtml('Refresh once so the updated service worker can register, then try again.','Violet');
           }
         });
       }else{
@@ -12843,13 +12843,13 @@
       <div class="settings-grid">
         <section class="settings-card">
           <h2>Change Proxy</h2>
-          <p>This setting changes the browser's proxy to either UV or SJ.
-SJ supports more websites however, there will be some websites where UV is superior.
-Auto uses Scramjet with Libcurl by default and can still recover with another transport if the connection fails.</p>
+          <p>Choose the browser engine Nyx uses for external sites.
+Scrapmmy supports more websites, while Violet can work better for some pages.
+Auto uses Scrapmmy with Libby by default and can recover with another relay if the connection fails.</p>
           <select id="settingBrowserMode">
-            <option value="auto">Auto (Scramjet + Libcurl)</option>
-            <option value="scramjet">Use Scramjet</option>
-            <option value="ultraviolet">Use Ultraviolet</option>
+            <option value="auto">Auto (Scrapmmy + Libby)</option>
+            <option value="scramjet">Use Scrapmmy</option>
+            <option value="ultraviolet">Use Violet</option>
             <option value="iframe">Iframe</option>
           </select>
         </section>
@@ -12858,9 +12858,9 @@ Auto uses Scramjet with Libcurl by default and can still recover with another tr
           <p class="hint">Choose the installed network transport.</p>
           <select id="settingTransport">
             <option value="auto">Auto (recommended)</option>
-            <option value="epoxy">Epoxy over Wisp</option>
-            <option value="wisp">Wisp endpoint</option>
-            <option value="libcurlRaw">Libcurl Raw over Wisp</option>
+            <option value="epoxy">Eppy over Relay</option>
+            <option value="wisp">Relay endpoint</option>
+            <option value="libcurlRaw">Libby over Relay</option>
           </select>
           <button data-save-browser>Save Browser Settings</button>
         </section>

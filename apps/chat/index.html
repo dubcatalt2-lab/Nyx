@@ -6,8 +6,8 @@
   <meta name="color-scheme" content="dark">
   <title>Nyx Chat</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/icons/chat.svg">
-  <link rel="stylesheet" href="./styles.css?v=20260823-guidelines-dismiss-v32">
-  <link rel="stylesheet" href="./polish.css?v=20260818-home-visual-system-v1">
+  <link rel="stylesheet" href="./styles.css?v=20260826-unified-navigation-v33">
+  <link rel="stylesheet" href="./polish.css?v=20260826-unified-navigation-v2">
 </head>
 <body>
   <svg class="chat-icon-sprite" aria-hidden="true">
@@ -54,31 +54,33 @@
 
     <div class="chat-layout">
       <aside class="channel-sidebar" data-channel-sidebar>
-        <div class="sidebar-heading">
-          <span>Channels</span>
-          <span class="sidebar-heading-actions"><button class="sidebar-add" type="button" data-manage-channels aria-label="Manage channels" title="Manage channels" hidden><svg><use href="#icon-settings"/></svg></button><button class="icon-button mobile-only" type="button" data-sidebar-close aria-label="Close channels"><svg><use href="#icon-close"/></svg></button></span>
-        </div>
-        <nav class="channel-list" data-channel-list aria-label="Chat channels"></nav>
-        <div class="sidebar-heading voice-heading"><span>Voice Channels</span></div>
-        <nav class="voice-channel-list" data-voice-channel-list aria-label="Voice channels"></nav>
-        <div class="sidebar-heading direct-heading">
-          <span>Direct Messages</span>
-          <button class="sidebar-add" type="button" data-new-dm aria-label="Start a direct message"><svg><use href="#icon-plus"/></svg></button>
-        </div>
-        <nav class="direct-list" data-direct-list aria-label="Direct messages"></nav>
-        <section class="voice-panel" data-voice-panel hidden>
-          <div class="voice-panel-copy"><strong data-voice-status>Voice connected</strong><span data-voice-room></span></div>
-          <div class="voice-controls">
-            <button type="button" data-voice-mute aria-label="Mute microphone" title="Mute microphone"><svg><use href="#icon-mic"/></svg></button>
-            <button type="button" data-voice-deafen aria-label="Deafen" title="Deafen"><svg><use href="#icon-headphones"/></svg></button>
-            <button type="button" data-voice-screen aria-label="Share screen" title="Share screen"><svg><use href="#icon-screen-share"/></svg></button>
-            <button type="button" class="disconnect" data-voice-disconnect aria-label="Disconnect voice" title="Disconnect voice"><svg><use href="#icon-phone-off"/></svg></button>
+        <div class="chat-navigation-scroll" data-chat-navigation-scroll>
+          <div class="sidebar-heading">
+            <span>Channels</span>
+            <span class="sidebar-heading-actions"><button class="sidebar-add" type="button" data-manage-channels aria-label="Manage channels" title="Manage channels" hidden><svg><use href="#icon-settings"/></svg></button><button class="icon-button mobile-only" type="button" data-sidebar-close aria-label="Close channels"><svg><use href="#icon-close"/></svg></button></span>
           </div>
-        </section>
-        <div class="chat-guidelines" data-chat-guidelines>
-          <svg><use href="#icon-shield"/></svg>
-          <p><strong>Keep Nyx welcoming.</strong><span>Do not share passwords, private details, or harmful content.</span></p>
-          <button class="chat-guidelines-dismiss" type="button" data-chat-guidelines-dismiss aria-label="Dismiss safety reminder" title="Dismiss"><svg><use href="#icon-close"/></svg></button>
+          <nav class="channel-list" data-channel-list aria-label="Chat channels"></nav>
+          <div class="sidebar-heading voice-heading"><span>Voice Channels</span></div>
+          <nav class="voice-channel-list" data-voice-channel-list aria-label="Voice channels"></nav>
+          <section class="voice-panel" data-voice-panel hidden>
+            <div class="voice-panel-copy"><strong data-voice-status>Voice connected</strong><span data-voice-room></span></div>
+            <div class="voice-controls">
+              <button type="button" data-voice-mute aria-label="Mute microphone" title="Mute microphone"><svg><use href="#icon-mic"/></svg></button>
+              <button type="button" data-voice-deafen aria-label="Deafen" title="Deafen"><svg><use href="#icon-headphones"/></svg></button>
+              <button type="button" data-voice-screen aria-label="Share screen" title="Share screen"><svg><use href="#icon-screen-share"/></svg></button>
+              <button type="button" class="disconnect" data-voice-disconnect aria-label="Disconnect voice" title="Disconnect voice"><svg><use href="#icon-phone-off"/></svg></button>
+            </div>
+          </section>
+          <div class="sidebar-heading direct-heading">
+            <span>Direct Messages</span>
+            <button class="sidebar-add" type="button" data-new-dm aria-label="Start a direct message"><svg><use href="#icon-plus"/></svg></button>
+          </div>
+          <nav class="direct-list" data-direct-list aria-label="Direct messages"></nav>
+          <div class="chat-guidelines" data-chat-guidelines>
+            <svg><use href="#icon-shield"/></svg>
+            <p><strong>Keep Nyx welcoming.</strong><span>Do not share passwords, private details, or harmful content.</span></p>
+            <button class="chat-guidelines-dismiss" type="button" data-chat-guidelines-dismiss aria-label="Dismiss safety reminder" title="Dismiss"><svg><use href="#icon-close"/></svg></button>
+          </div>
         </div>
         <div class="current-user" data-current-user hidden></div>
       </aside>

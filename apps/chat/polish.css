@@ -49,6 +49,7 @@ html,body{background:#000}
 .chat-layout{grid-template-columns:218px minmax(0,1fr) 230px;height:calc(100dvh - 54px)}
 .channel-sidebar,.member-sidebar{background:rgba(5,6,9,.96)}
 .channel-sidebar{border-right-color:var(--chat-line-soft)}.member-sidebar{border-left-color:var(--chat-line-soft)}
+.chat-navigation-scroll{scrollbar-color:#2d2e36 transparent}
 .sidebar-heading{height:49px;padding:0 14px;color:#747680;font-size:8px;letter-spacing:.14em}
 .sidebar-add{border:1px solid transparent;border-radius:50%;color:#777983}.sidebar-add:hover{border-color:var(--chat-line);background:#0e0f14;color:#fff}
 .channel-list,.direct-list,.voice-channel-list{padding-right:8px;padding-left:8px;scrollbar-color:#2d2e36 transparent}

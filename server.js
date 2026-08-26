@@ -256,6 +256,8 @@ const nyxifyBuiltInMusicNameField = "nyxifyBuiltInMusicName";
 const nyxifyGlobalApp = Object.freeze({ id: "nyxify", icon: "nyxify", name: "Nyxify/built in music", url: "/apps/nyxify/" });
 const nyxGamesAppMigrationField = "gamesAppRenamed";
 const nyxGamesGlobalApp = Object.freeze({ id: "pirate-cove", icon: "games", name: "GAMES", url: "/assets/games/" });
+const nyxMoviesCinejoyMigrationField = "moviesCinejoyTarget";
+const nyxMoviesGlobalApp = Object.freeze({ id: "movies", icon: "cinejoy.to", name: "Movies", url: "https://cinejoy.to/" });
 const nyxDefaultGlobalApps = Object.freeze([
   { id: "link-checker", icon: "link-checker", name: "Link Checker", url: "/apps/link-checker/" },
   { id: "link-generator", icon: "link-generator", name: "Link Generator", url: "/apps/link-generator/" },
@@ -272,7 +274,7 @@ const nyxDefaultGlobalApps = Object.freeze([
   { id: "duck-ai", icon: "duck.ai", name: "Duck AI", url: "https://duck.ai/" },
   { id: "nyx-ai", icon: "nyx-ai", name: "Nyx AI", url: "nyx://ai" },
   { id: "wikipedia", icon: "wikipedia.org", name: "Wikipedia", url: "https://www.wikipedia.org/" },
-  { id: "movies", icon: "aether.cx", name: "Movies", url: "https://aether.cx/" },
+  nyxMoviesGlobalApp,
   { id: "more-movie-sites", icon: "fmhy.net", name: "More Movie Sites", url: "https://fmhy.net/video#p-stream-forks" },
   { id: "tiktok", icon: "tiktok.com", name: "TikTok", url: "https://www.tiktok.com/" },
   { id: "instagram", icon: "instagram.com", name: "Instagram", url: "https://www.instagram.com/" },
@@ -1485,82 +1487,8 @@ function scramjetRuntimeGuard() {
 })();`;
 }
 
-function safeSeraphPath(path) {
-  const clean = String(path || "").replace(/^\/+/, "");
-  if (!clean || clean.includes("..") || !/^[a-z0-9_./-]+$/i.test(clean)) return "";
-  if (/(^|\/)(?:404|408)\.html$/i.test(clean)) return "";
-  return clean;
-}
-
-app.get("/seraph-fetch", async (req, res) => {
-  const path = safeSeraphPath(req.query.path);
-  if (!path) {
-    res.status(400).type("text/plain").send("Invalid Seraph path");
-    return;
-  }
-  const upstreamUrl = `https://cdn.jsdelivr.net/gh/a456pur/seraph@main/games/${path}`;
-  try {
-    const upstream = await fetch(upstreamUrl, {
-      headers: {
-        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "user-agent": "nyx/1.0"
-      }
-    });
-    if (!upstream.ok) {
-      res.status(upstream.status).type("text/plain").send(`Seraph upstream returned ${upstream.status}`);
-      return;
-    }
-    res.setHeader("Cache-Control", "public, max-age=300");
-    res.type("html").send(await upstream.text());
-  } catch (error) {
-    res.status(502).type("text/plain").send(`Seraph network error: ${error?.message || error}`);
-  }
-});
-
-function safeSeraphAssetPath(path) {
-  const clean = String(path || "").replace(/^\/+/, "");
-  if (!clean || clean.includes("..") || !/^[a-z0-9_./?&=%-]+$/i.test(clean)) return "";
-  return clean;
-}
-
-function rewriteSeraphCss(css, assetPath) {
-  const base = new URL(String(assetPath || ""), "https://seraph.local/");
-  return String(css || "").replace(/url\(\s*(["']?)(?![a-z][a-z0-9+.-]*:|\/\/|#|data:|blob:)([^"')]+)\1\s*\)/gi, (match, quote, raw) => {
-    try {
-      const resolved = new URL(String(raw || "").trim(), base).pathname.replace(/^\/+/, "");
-      return `url(${quote}/seraph-asset?path=${encodeURIComponent(resolved)}${quote})`;
-    } catch {
-      return match;
-    }
-  });
-}
-
-app.get("/seraph-asset", async (req, res) => {
-  const path = safeSeraphAssetPath(req.query.path);
-  if (!path) {
-    res.status(400).type("text/plain").send("Invalid Seraph asset path");
-    return;
-  }
-  const upstreamUrl = `https://cdn.jsdelivr.net/gh/a456pur/seraph@main/${path}`;
-  try {
-    const upstream = await fetch(upstreamUrl, {
-      headers: {
-        "accept": "*/*",
-        "user-agent": "nyx/1.0"
-      }
-    });
-    if (!upstream.ok) {
-      res.status(upstream.status).type("text/plain").send(`Seraph asset returned ${upstream.status}`);
-      return;
-    }
-    const contentType = upstream.headers.get("content-type");
-    if (contentType) res.setHeader("Content-Type", contentType);
-    res.setHeader("Cache-Control", "public, max-age=3600");
-    const buffer = Buffer.from(await upstream.arrayBuffer());
-    res.send(/text\/css/i.test(contentType || "") || /\.css(?:$|\?)/i.test(path) ? Buffer.from(rewriteSeraphCss(buffer.toString("utf8"), path)) : buffer);
-  } catch (error) {
-    res.status(502).type("text/plain").send(`Seraph asset network error: ${error?.message || error}`);
-  }
+app.get(["/seraph-fetch", "/seraph-asset"], (_req, res) => {
+  res.status(404).type("text/plain").send("Not found");
 });
 
 const gnMathGamesCache = { timestamp: 0, games: [] };
@@ -3059,8 +2987,8 @@ function nyxGlobalAppsFromSnapshot(snapshot) {
   if (!Array.isArray(stored)) return nyxDefaultGlobalAppsPayload();
   return stored.slice(0, nyxGlobalAppsLimit).map(app => {
     const normalized = nyxNormalizeGlobalApp(app);
-    if (normalized?.id === "movies" && normalized.url === "http://icefy.top/") {
-      return { ...normalized, icon: "aether.cx", url: "https://aether.cx/" };
+    if (normalized?.id === nyxMoviesGlobalApp.id && ["http://icefy.top/", "https://aether.cx/"].includes(normalized.url)) {
+      return { ...nyxMoviesGlobalApp };
     }
     if (normalized?.id === nyxGamesGlobalApp.id && normalized.url === nyxGamesGlobalApp.url) {
       return { ...normalized, icon: nyxGamesGlobalApp.icon, name: nyxGamesGlobalApp.name };
@@ -3075,7 +3003,7 @@ function nyxGlobalAppsFromSnapshot(snapshot) {
 async function nyxGlobalApps(firebase) {
   const reference = firebase.firestore.collection(nyxGlobalAppsCollection).doc(nyxGlobalAppsDocument);
   const snapshot = await reference.get();
-  if (snapshot.data()?.[nyxCloudGamingAppMigrationField] === true && snapshot.data()?.[nyxCloudGamingGamesMergeMigrationField] === true && snapshot.data()?.[nyxMediaAppsRetiredField] === true && snapshot.data()?.[nyxifyReintroducedField] === true && snapshot.data()?.[nyxifyBuiltInMusicNameField] === true && snapshot.data()?.[nyxGamesAppMigrationField] === true) return nyxGlobalAppsFromSnapshot(snapshot);
+  if (snapshot.data()?.[nyxCloudGamingAppMigrationField] === true && snapshot.data()?.[nyxCloudGamingGamesMergeMigrationField] === true && snapshot.data()?.[nyxMediaAppsRetiredField] === true && snapshot.data()?.[nyxifyReintroducedField] === true && snapshot.data()?.[nyxifyBuiltInMusicNameField] === true && snapshot.data()?.[nyxGamesAppMigrationField] === true && snapshot.data()?.[nyxMoviesCinejoyMigrationField] === true) return nyxGlobalAppsFromSnapshot(snapshot);
   return firebase.firestore.runTransaction(async transaction => {
     const currentSnapshot = await transaction.get(reference);
     const apps = nyxGlobalAppsFromSnapshot(currentSnapshot);
@@ -3123,6 +3051,15 @@ async function nyxGlobalApps(firebase) {
       transaction.set(reference, {
         apps,
         [nyxGamesAppMigrationField]: true,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    }
+    if (currentSnapshot.data()?.[nyxMoviesCinejoyMigrationField] !== true) {
+      const moviesIndex = apps.findIndex(item => item.id === nyxMoviesGlobalApp.id);
+      if (moviesIndex >= 0) apps.splice(moviesIndex, 1, { ...nyxMoviesGlobalApp });
+      transaction.set(reference, {
+        apps,
+        [nyxMoviesCinejoyMigrationField]: true,
         updatedAt: new Date().toISOString()
       }, { merge: true });
     }
@@ -11672,7 +11609,7 @@ app.use("/~/sj/", (_req, res) => {
   button{margin-top:18px;border:1px solid #445066;border-radius:10px;background:#1b2230;color:#f5f7fb;padding:10px 15px;font:600 14px Raleway,Arial,sans-serif;cursor:pointer}
 </style>
 <main>
-  <h1>Reconnecting Scramjet</h1>
+  <h1>Reconnecting Scrapmmy</h1>
   <p>Nyx is reconnecting this tab to the proxy service worker.</p>
   <button type="button" onclick="location.reload()">Retry now</button>
 </main>

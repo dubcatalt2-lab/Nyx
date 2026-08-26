@@ -1,5 +1,30 @@
 # Nyx Agent Guidance
 
+## Completion sound
+
+- Play the sound only immediately before either (1) a final response that completes an explicit user request or (2) a message or UI prompt that requests user input needed to continue.
+- User-input requests include clarification questions, required choices, approval prompts, missing-information requests, and blocking questions. Play the sound immediately before asking, even though the overall task is not yet complete.
+- Do not play it for commentary, progress updates, unsolicited messages, proactive suggestions, waiting or monitoring notices that do not request input, or any other non-final response.
+- A direct answer to an explicit user question counts as completing that request, including short answers and tasks that do not modify files.
+- For either eligible event, run the following louder two-hit sound from the repository root in the foreground:
+
+  `powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\play-completion-sound.ps1"`
+
+- Wait for the command to finish successfully before sending the eligible final response or requesting user input.
+- After the sound command succeeds, immediately send the eligible final response or issue the user-input request. Do not run additional work tools or commands; the product's user-input request mechanism is the only permitted tool after the sound.
+- Do not run the sound command as a background process.
+- If the two-note sound fails, run this fallback sound in the foreground:
+
+  `powershell.exe -NoProfile -Command "[Console]::Beep(440,300); Start-Sleep -Milliseconds 80; [Console]::Beep(360,420)"`
+
+- If both commands fail or are unavailable, state that plainly in the eligible final response or user-input request.
+
+## Platform
+
+- These commands are intended for Windows 10 or Windows 11.
+- When using WSL, invoke `powershell.exe` as shown so the sound plays through Windows.
+- A remote SSH or container host may not have access to the local computer's speakers.
+
 Before changing this repository:
 
 1. Read `docs/NYX_PROJECT_STATE.md` completely.

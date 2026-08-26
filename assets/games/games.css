@@ -566,8 +566,40 @@ h1 {
 
 .player-actions {
   display: flex;
+  min-width: 0;
   justify-content: flex-end;
   gap: 7px;
+}
+
+.provider-field {
+  display: flex;
+  min-width: 0;
+}
+
+.provider-field select {
+  width: clamp(105px, 12vw, 170px);
+  height: 40px;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 0 30px 0 11px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.provider-field select:hover,
+.provider-field select:focus-visible {
+  border-color: var(--accent-border);
+  outline: none;
+}
+
+.provider-field select:disabled {
+  cursor: default;
+  opacity: 0.72;
 }
 
 .performance-button svg {
@@ -731,6 +763,7 @@ body.game-performance-active .player iframe {
   .page-info { min-width: 72px; font-size: 12px; }
   .performance-button { width: 40px; padding: 0; }
   .performance-button span { display: none; }
+  .provider-field select { width: 96px; }
 }
 
 @media (hover: none) and (pointer: coarse) {

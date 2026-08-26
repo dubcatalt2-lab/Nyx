@@ -113,9 +113,12 @@ const nyxCloudGamingCreateMaxAttempts = 3;
 const nyxCloudGamingCatalogTtlMs = 30 * 60_000;
 let nyxCloudGamingCatalogCache = { expiresAt: 0, games: [], promise: null };
 const nyxifyProviderOrigin = "https://mizumath.com";
+const nyxifyChartOrigin = "https://api.deezer.com";
+const nyxifyArtworkFallbackOrigin = "https://e-cdns-images.dzcdn.net";
 const nyxifyTrackIdPattern = /^\d{1,20}$/;
 const nyxifyCoverPathPattern = /^\/img\/images\/(?:cover|artist)\/[a-f0-9]{32}\/[A-Za-z0-9._-]{1,128}$/i;
 const nyxifyCatalogCacheTtlMs = 90_000;
+const nyxifyHomeCacheTtlMs = 5 * 60_000;
 const nyxifyCatalogCache = new Map();
 const nyxifyArtworkCacheTtlMs = 30 * 60_000;
 const nyxifyArtworkCache = new Map();
@@ -5308,6 +5311,22 @@ function nyxifyCoverUrl(value) {
   return path ? `/api/nyxify/cover?path=${encodeURIComponent(path)}` : "";
 }
 
+function nyxifyChartArtworkPath(kind, value) {
+  const hash = String(value || "").trim().toLowerCase();
+  if (!new Set(["artist", "cover"]).has(kind) || !/^[a-f0-9]{32}$/.test(hash)) return "";
+  return `/img/images/${kind}/${hash}/250x250-000000-80-0-0.jpg`;
+}
+
+function nyxifyChartArtworkFromUrl(kind, value) {
+  try {
+    const parsed = new URL(String(value || ""));
+    const match = parsed.pathname.match(/^\/images\/(?:artist|cover)\/([a-f0-9]{32})\//i);
+    return match ? nyxifyChartArtworkPath(kind, match[1]) : "";
+  } catch {
+    return "";
+  }
+}
+
 function nyxifySourceCoverPath(value) {
   const direct = nyxifyCoverPath(value);
   if (direct) return direct;
@@ -5419,6 +5438,67 @@ async function nyxifySearch(query) {
   return structuredClone(result);
 }
 
+async function nyxifyHome() {
+  const key = "home:global";
+  const cached = nyxifyCacheGet(nyxifyCatalogCache, key);
+  if (cached) return structuredClone(cached);
+  const target = new URL("/chart", nyxifyChartOrigin);
+  target.searchParams.set("limit", "24");
+  const response = await fetch(target, {
+    headers: { Accept: "application/json", "User-Agent": "Nyxify/1.0" },
+    redirect: "error",
+    signal: AbortSignal.timeout(15_000)
+  });
+  if (!response.ok) throw new Error(`The weekly music chart returned ${response.status}.`);
+  const contentType = String(response.headers.get("content-type") || "").toLowerCase();
+  const contentLength = Number(response.headers.get("content-length") || 0);
+  if (!contentType.includes("application/json") || (contentLength && contentLength > nyxifyJsonByteLimit)) {
+    await response.body?.cancel().catch(() => {});
+    throw new Error("The weekly music chart returned an invalid response.");
+  }
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (!bytes.length || bytes.length > nyxifyJsonByteLimit) throw new Error("The weekly music chart response was too large.");
+  const payload = JSON.parse(bytes.toString("utf8"));
+  const tracks = (Array.isArray(payload?.tracks?.data) ? payload.tracks.data : []).slice(0, 24).map(value => {
+    const cover = nyxifyChartArtworkPath("cover", value?.md5_image || value?.album?.md5_image);
+    return nyxifyTrackRecord({
+      id: value?.id,
+      title: value?.title,
+      artist: value?.artist?.name,
+      artistId: value?.artist?.id,
+      album: value?.album?.title,
+      albumId: value?.album?.id,
+      cover,
+      duration: value?.duration
+    });
+  }).filter(Boolean);
+  const artists = (Array.isArray(payload?.artists?.data) ? payload.artists.data : []).slice(0, 16).map((value, index) => {
+    const id = String(value?.id || "").trim();
+    const name = nyxifyCleanText(value?.name, "", 120);
+    if (!nyxifyTrackIdPattern.test(id) || !name) return null;
+    const coverPath = nyxifyChartArtworkFromUrl("artist", value?.picture_medium || value?.picture_big);
+    return { id, key: name, name, cover: nyxifyCoverUrl(coverPath), count: 0, position: index + 1 };
+  }).filter(Boolean);
+  const albums = (Array.isArray(payload?.albums?.data) ? payload.albums.data : []).slice(0, 16).map((value, index) => {
+    const id = String(value?.id || "").trim();
+    const title = nyxifyCleanText(value?.title, "", 160);
+    if (!nyxifyTrackIdPattern.test(id) || !title) return null;
+    const coverPath = nyxifyChartArtworkPath("cover", value?.md5_image);
+    return {
+      id,
+      key: title,
+      title,
+      artist: nyxifyCleanText(value?.artist?.name, "Unknown artist", 120),
+      cover: nyxifyCoverUrl(coverPath),
+      count: 0,
+      position: index + 1
+    };
+  }).filter(Boolean);
+  const result = { updatedAt: new Date().toISOString(), tracks, artists, albums };
+  nyxifyCacheSet(nyxifyCatalogCache, key, result, nyxifyHomeCacheTtlMs, 100);
+  return structuredClone(result);
+}
+
 async function nyxifyDetail(type, id) {
   if (!new Set(["artist", "album"]).has(type) || !nyxifyTrackIdPattern.test(id)) throw new Error("Invalid Nyxify detail request.");
   const key = `${type}:${id}`;
@@ -5483,6 +5563,17 @@ async function nyxifyFetchAsset(initialUrl, headers) {
   throw new Error("Nyxify media redirected too many times.");
 }
 
+function nyxifyArtworkFallbackUrl(artworkPath) {
+  const match = String(artworkPath || "").match(/^\/img\/images\/(artist|cover)\/([a-f0-9]{32})\/([A-Za-z0-9._-]{1,128})$/i);
+  if (!match) return null;
+  return new URL(`/images/${match[1].toLowerCase()}/${match[2].toLowerCase()}/${match[3]}`, nyxifyArtworkFallbackOrigin);
+}
+
+async function nyxifyFetchFallbackArtwork(target, headers) {
+  if (!(target instanceof URL) || target.origin !== nyxifyArtworkFallbackOrigin) throw new Error("Nyxify rejected an invalid artwork fallback.");
+  return fetch(target, { headers, redirect: "error", signal: AbortSignal.timeout(15_000) });
+}
+
 async function nyxifyLoadArtwork(artworkPath) {
   const path = nyxifyCoverPath(artworkPath);
   if (!path) throw new Error("Invalid Nyxify artwork path.");
@@ -5491,13 +5582,18 @@ async function nyxifyLoadArtwork(artworkPath) {
   if (nyxifyArtworkInflight.has(path)) return nyxifyArtworkInflight.get(path);
   const pending = (async () => {
     let lastError = null;
-    for (let attempt = 0; attempt < 2; attempt += 1) {
+    const fallbackTarget = nyxifyArtworkFallbackUrl(path);
+    const sources = [
+      () => nyxifyFetchAsset(nyxifyProviderUrl(path), { Accept: "image/avif,image/webp,image/png,image/jpeg,image/gif", "User-Agent": "Nyxify/1.0" }),
+      ...(fallbackTarget ? [() => nyxifyFetchFallbackArtwork(fallbackTarget, { Accept: "image/avif,image/webp,image/png,image/jpeg,image/gif", "User-Agent": "Nyxify/1.0" })] : [])
+    ];
+    for (let attempt = 0; attempt < sources.length; attempt += 1) {
       try {
-        const upstream = await nyxifyFetchAsset(nyxifyProviderUrl(path), { Accept: "image/avif,image/webp,image/png,image/jpeg,image/gif", "User-Agent": "Nyxify/1.0" });
+        const upstream = await sources[attempt]();
         if (!upstream.ok) {
           const status = upstream.status;
           upstream.body?.cancel().catch(() => {});
-          if ((status === 429 || status >= 500) && attempt === 0) throw new Error(`Artwork temporarily returned ${status}.`);
+          if (attempt + 1 < sources.length) throw new Error(`Artwork source returned ${status}.`);
           throw new Error(`Artwork returned ${status}.`);
         }
         const contentType = String(upstream.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
@@ -5525,7 +5621,7 @@ async function nyxifyLoadArtwork(artworkPath) {
         return nyxifyCacheSet(nyxifyArtworkCache, path, result, nyxifyArtworkCacheTtlMs, 24);
       } catch (error) {
         lastError = error;
-        if (attempt === 0) await new Promise(resolve => setTimeout(resolve, 180));
+        if (attempt + 1 < sources.length) await new Promise(resolve => setTimeout(resolve, 80));
       }
     }
     throw lastError || new Error("Artwork is unavailable.");
@@ -10083,6 +10179,16 @@ app.get("/api/nyxify/status", (req, res) => {
   res.set("Cache-Control", "public, max-age=60");
   if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
   res.json({ configured: true, provider: "deezer-octave", providerLabel: "Deezer search · Octave playback" });
+});
+
+app.get("/api/nyxify/home", async (req, res) => {
+  res.set("Cache-Control", "public, max-age=300, stale-while-revalidate=900");
+  if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
+  try {
+    res.json(await nyxifyHome());
+  } catch (error) {
+    res.status(502).json({ error: error.message || "Nyxify could not load the weekly chart right now." });
+  }
 });
 
 app.get("/api/nyxify/search", async (req, res) => {

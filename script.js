@@ -10231,8 +10231,10 @@
           const tabSource=browserShellSourceUrl(tab.sourceUrl||tab.url||'') || tab.sourceUrl || tab.url || tab.frame?.getAttribute('src') || '';
           tabPath=new URL(tabSource,location.href).pathname;
         }catch{}
-        // Chat voice is expected to continue while another Nyx tab is selected.
-        if(['/apps/chat/','/apps/chat/index.html'].includes(tabPath)) return;
+        // Realtime calls and Nyxify music are expected to continue while
+        // another Nyx tab is selected. The iframe stays mounted; only its
+        // visibility changes, so preserve its active media element as well.
+        if(['/apps/chat/','/apps/chat/index.html','/apps/nyxify/','/apps/nyxify/index.html'].includes(tabPath)) return;
         try{
           const doc=tab.frame?.contentDocument;
           doc?.querySelector('#movie_player')?.pauseVideo?.();

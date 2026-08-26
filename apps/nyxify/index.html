@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/apps/nyxify/icons.css?v=20260825-nyx-v2">
-  <link rel="stylesheet" href="/apps/nyxify/app.css?v=20260825-generated-playlists-v5">
+  <link rel="stylesheet" href="/apps/nyxify/app.css?v=20260825-home-now-playing-v6">
 </head>
 <body>
   <canvas id="stars"></canvas>
@@ -29,10 +29,14 @@
 
   <div class="shell" id="shell">
     <aside class="sidebar">
-      <button type="button" class="filter active" data-filter="everything">Everything</button>
+      <button type="button" class="filter active" data-filter="home">Home</button>
       <button type="button" class="filter" data-filter="tracks">Tracks</button>
       <button type="button" class="filter" data-filter="artists">Artists</button>
       <button type="button" class="filter" data-filter="albums">Albums</button>
+      <div class="sidebar-library">
+        <div class="sidebar-library-head"><span>Your playlists</span><button type="button" id="sidebarNewPlaylist" aria-label="Create playlist">+</button></div>
+        <div class="sidebar-playlists" id="sidebarPlaylistList"></div>
+      </div>
     </aside>
 
     <main>
@@ -48,6 +52,17 @@
     </main>
 
     <aside class="rail">
+      <section class="module now-playing-module" id="nowPlayingModule" hidden>
+        <div class="mod-head"><span>Now playing</span><small id="nowPlayingContext">Nyxify</small></div>
+        <div class="now-playing-body">
+          <img class="now-playing-art" id="nowPlayingArt" alt="Current track cover">
+          <div class="now-playing-title" id="nowPlayingTitle"></div>
+          <button type="button" class="now-playing-link" id="nowPlayingArtist"></button>
+          <button type="button" class="now-playing-link now-playing-album" id="nowPlayingAlbum"></button>
+          <div class="now-playing-playlists" id="nowPlayingPlaylists"></div>
+          <div class="now-playing-next" id="nowPlayingNext"></div>
+        </div>
+      </section>
       <section class="module">
         <div class="mod-head"><span>Liked</span><b id="likedCount">0</b></div>
         <div class="mod-list" id="likedList"></div>
@@ -131,6 +146,6 @@
 
   <audio id="audio" preload="metadata"></audio>
 
-  <script src="/apps/nyxify/app.js?v=20260825-generated-playlists-v5"></script>
+  <script src="/apps/nyxify/app.js?v=20260825-home-now-playing-v6"></script>
 </body>
 </html>

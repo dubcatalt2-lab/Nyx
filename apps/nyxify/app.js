@@ -13,17 +13,30 @@ const playBtn = document.getElementById('playBtn');
 const playIcon = document.getElementById('playIcon');
 const searchInput = document.getElementById('searchInput');
 const playlistList = document.getElementById('playlistList');
+const sidebarPlaylistList = document.getElementById('sidebarPlaylistList');
 const playlistSync = document.getElementById('playlistSync');
 const playlistDialog = document.getElementById('playlistDialog');
 const playlistChoices = document.getElementById('playlistChoices');
 const playlistName = document.getElementById('playlistName');
 const playlistMessage = document.getElementById('playlistMessage');
 const pPlaylist = document.getElementById('pPlaylist');
+const nowPlayingModule = document.getElementById('nowPlayingModule');
+const nowPlayingArt = document.getElementById('nowPlayingArt');
+const nowPlayingContext = document.getElementById('nowPlayingContext');
+const nowPlayingTitle = document.getElementById('nowPlayingTitle');
+const nowPlayingArtist = document.getElementById('nowPlayingArtist');
+const nowPlayingAlbum = document.getElementById('nowPlayingAlbum');
+const nowPlayingPlaylists = document.getElementById('nowPlayingPlaylists');
+const nowPlayingNext = document.getElementById('nowPlayingNext');
 
 let curtrack = null;
 let results = [];
 let query = '';
-let mode = 'everything';
+let mode = 'home';
+let homeData = { tracks: [], artists: [], albums: [] };
+let homeLoading = true;
+let homeError = '';
+let playbackContext = 'Nyxify';
 let detail = null;
 let reqid = 0;
 let dragging = false;
@@ -45,6 +58,24 @@ let shuffleon = localStorage.getItem('nyx_nyxify_shuffle') === '1';
 let repeatmode = localStorage.getItem('nyx_nyxify_repeat') || 'off';
 let playershown = false;
 let queueopen = false;
+
+const coverFallback = '/assets/icons/shortcut-nyxify.svg?v=3';
+
+document.addEventListener('error', event => {
+  const image = event.target;
+  if (!(image instanceof HTMLImageElement) || image.dataset.coverFallback === '1') return;
+  image.dataset.coverFallback = '1';
+  image.classList.add('cover-fallback');
+  image.src = coverFallback;
+}, true);
+
+function setcover(image, source, alt = '') {
+  if (!image) return;
+  delete image.dataset.coverFallback;
+  image.classList.remove('cover-fallback');
+  image.alt = alt;
+  image.src = source || coverFallback;
+}
 
 function fmt(s) {
   s = Math.max(0, Math.floor(s || 0));
@@ -239,9 +270,9 @@ function bindheart(btn, track) {
   });
 }
 
-function groups(type) {
+function groups(type, source = results) {
   const seen = new Map();
-  for (const t of results) {
+  for (const t of source) {
     const key = type === 'artist' ? t.artist : t.album;
     const gid = type === 'artist' ? t.artistId : t.albumId;
     if (!key || !gid) continue;
@@ -373,13 +404,20 @@ function buildrow(t, list, options = {}) {
 function buildcard(g, type) {
   const card = document.createElement('div');
   card.className = 'card';
+  const meta = g.artist
+    ? g.artist
+    : Number(g.count) > 0
+      ? `${g.count} ${g.count === 1 ? 'track' : 'tracks'}`
+      : Number(g.position) > 0
+        ? `#${g.position} this week`
+        : type === 'artist' ? 'Popular artist' : 'Popular album';
   card.innerHTML = `
     <div class="card-art">
       <img src="${esc(g.cover)}" alt="" loading="lazy">
       <button type="button" class="card-play" aria-label="play ${esc(g.key)}"><i class="line-md--play-filled"></i></button>
     </div>
     <span class="c-name">${esc(g.key)}</span>
-    <span class="c-count">${g.count} ${g.count === 1 ? 'track' : 'tracks'}</span>`;
+    <span class="c-count">${esc(meta)}</span>`;
 
   makeclickable(card, `open ${g.key}`, () => opendetail(type, g.id, g.key));
   card.addEventListener('click', e => {
@@ -405,11 +443,11 @@ function showrows(list) {
   renderrowsinto(trackList, list);
 }
 
-function showcards(type) {
+function showcards(type, source = groups(type)) {
   hideviews();
   crumbEl.style.display = 'none';
 
-  const list = groups(type);
+  const list = source;
   cardGrid.innerHTML = '';
   cardGrid.style.display = list.length ? '' : 'none';
   list.forEach(g => cardGrid.appendChild(buildcard(g, type)));
@@ -417,6 +455,44 @@ function showcards(type) {
   if (!list.length) {
     showempty(`No ${type}s yet`, 'Results will appear here after you search.');
   }
+}
+
+function homesection(title, subtitle, content, className = '') {
+  const section = document.createElement('section');
+  section.className = `home-section ${className}`.trim();
+  const heading = document.createElement('div');
+  heading.className = 'home-section-head';
+  const copy = document.createElement('div');
+  const name = document.createElement('h2');
+  name.textContent = title;
+  const detailText = document.createElement('p');
+  detailText.textContent = subtitle;
+  copy.append(name, detailText);
+  heading.appendChild(copy);
+  section.append(heading, content);
+  return section;
+}
+
+function showhomechart() {
+  hideviews();
+  crumbEl.style.display = 'none';
+  detailView.innerHTML = '';
+
+  const tracks = document.createElement('div');
+  tracks.className = 'home-track-list';
+  renderrowsinto(tracks, homeData.tracks.slice(0, 12));
+  detailView.appendChild(homesection('Popular tracks this week', 'What people are playing right now.', tracks, 'home-tracks'));
+
+  const artists = document.createElement('div');
+  artists.className = 'cards home-cards';
+  homeData.artists.slice(0, 8).forEach(item => artists.appendChild(buildcard(item, 'artist')));
+  detailView.appendChild(homesection('Popular artists', 'Artists trending across the current chart.', artists));
+
+  const albums = document.createElement('div');
+  albums.className = 'cards home-cards';
+  homeData.albums.slice(0, 8).forEach(item => albums.appendChild(buildcard(item, 'album')));
+  detailView.appendChild(homesection('Popular albums', 'Albums listeners are coming back to this week.', albums));
+  detailView.style.display = '';
 }
 
 function showeverythinghome() {
@@ -533,17 +609,24 @@ function renderdetail() {
 }
 
 function rendermain() {
+  rendersidebarplaylists();
   if (activePlaylistId) return renderplaylistview();
   if (playlistAddTargetId) return renderplaylistaddview();
   if (detail) return detail.data ? renderdetail() : showloading(detail.name);
-  if (!results.length) {
-    return showempty(query ? 'No results' : 'Find something to play',
-      query ? `Nothing matched "${query}".` : 'Search for a song, artist, or album.');
+  if (query) {
+    if (!results.length) return showempty('No results', `Nothing matched "${query}".`);
+    if (mode === 'home') return showeverythinghome();
+    if (mode === 'artists') return showcards('artist');
+    if (mode === 'albums') return showcards('album');
+    return showrows(results);
   }
-  if (mode === 'everything') return showeverythinghome();
-  if (mode === 'artists') return showcards('artist');
-  if (mode === 'albums') return showcards('album');
-  showrows(results);
+  if (homeLoading) return showloading();
+  if (homeError && !homeData.tracks.length) return showempty('Home is unavailable', homeError, true);
+  if (mode === 'home') return showhomechart();
+  if (mode === 'artists') return showcards('artist', homeData.artists);
+  if (mode === 'albums') return showcards('album', homeData.albums);
+  if (homeData.tracks.length) return showrows(homeData.tracks);
+  showempty('Nothing is charting yet', 'Try searching for a song, artist, or album.');
 }
 
 crumbEl.addEventListener('click', () => {
@@ -563,10 +646,35 @@ document.querySelectorAll('.filter').forEach(btn => {
     detail = null;
     activePlaylistId = '';
     setfilter(btn.dataset.filter);
-    if (!results.length) return showempty('Find something to play', 'Search for a song, artist, or album.');
+    if (btn.dataset.filter === 'home') {
+      query = '';
+      results = [];
+      searchInput.value = '';
+    }
     rendermain();
   });
 });
+
+async function loadhome() {
+  homeLoading = true;
+  homeError = '';
+  if (!query && !activePlaylistId && !detail) rendermain();
+  try {
+    const response = await fetch('/api/nyxify/home');
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || `HTTP ${response.status}`);
+    homeData = {
+      tracks: Array.isArray(payload.tracks) ? payload.tracks : [],
+      artists: Array.isArray(payload.artists) ? payload.artists : [],
+      albums: Array.isArray(payload.albums) ? payload.albums : []
+    };
+  } catch (error) {
+    homeError = error.message || 'The weekly chart could not load.';
+  } finally {
+    homeLoading = false;
+    if (!query && !activePlaylistId && !detail && !playlistAddTargetId) rendermain();
+  }
+}
 
 function rendermini(container, list, emptymsg) {
   container.innerHTML = '';
@@ -778,8 +886,36 @@ function playlistcovereditor(playlist) {
   return editor;
 }
 
+function rendersidebarplaylists() {
+  sidebarPlaylistList.innerHTML = '';
+  if (!playlists.length) {
+    const empty = document.createElement('span');
+    empty.className = 'sidebar-playlist-empty';
+    empty.textContent = 'No playlists yet';
+    sidebarPlaylistList.appendChild(empty);
+    return;
+  }
+  playlists.forEach(playlist => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'sidebar-playlist';
+    button.classList.toggle('active', activePlaylistId === playlist.id);
+    const label = document.createElement('span');
+    const name = document.createElement('strong');
+    name.textContent = playlist.name;
+    const count = document.createElement('small');
+    count.textContent = `${playlist.tracks.length} songs`;
+    label.append(name, count);
+    button.append(playlistcoverelement(playlist, true), label);
+    button.addEventListener('click', () => openplaylist(playlist.id));
+    sidebarPlaylistList.appendChild(button);
+  });
+}
+
 function renderplaylists() {
   playlistList.innerHTML = '';
+  rendersidebarplaylists();
+  rendernowplaying();
   if (!playlists.length) {
     const empty = document.createElement('div');
     empty.className = 'mod-empty';
@@ -867,6 +1003,7 @@ function openplaylist(id) {
   activePlaylistId = id;
   playlistAddTargetId = '';
   detail = null;
+  rendersidebarplaylists();
   renderplaylistview();
 }
 
@@ -1156,6 +1293,7 @@ function refreshlikes() {
 }
 
 document.getElementById('newPlaylistBtn').addEventListener('click', () => openplaylistdialog());
+document.getElementById('sidebarNewPlaylist').addEventListener('click', () => openplaylistdialog());
 document.getElementById('playlistDialogClose').addEventListener('click', () => playlistDialog.close());
 document.getElementById('playlistCreateForm').addEventListener('submit', event => {
   event.preventDefault();
@@ -1201,7 +1339,7 @@ document.getElementById('searchForm').addEventListener('submit', async e => {
     results = data.data || [];
     detail = null;
     activePlaylistId = '';
-    setfilter('everything');
+    setfilter('home');
     rendermain();
   } catch (err) {
     if (playlistAddTargetId) {
@@ -1235,18 +1373,75 @@ function setplayershown(v) {
   requestAnimationFrame(updatebodypad);
 }
 
-function playtrack(t, list) {
+function inferplaycontext(list) {
+  const activePlaylist = playlists.find(item => item.id === activePlaylistId) || playlists.find(item => item.tracks === list);
+  if (activePlaylist) return `Playlist · ${activePlaylist.name}`;
+  if (detail?.name) return `${detail.type === 'artist' ? 'Artist' : 'Album'} · ${detail.name}`;
+  if (query) return `Search · ${query}`;
+  if (list === homeData.tracks || (Array.isArray(list) && list.length && list.every(item => homeData.tracks.some(track => track.id === item.id)))) return 'Popular this week';
+  return 'Nyxify';
+}
+
+function rendernowplaying() {
+  nowPlayingModule.hidden = !curtrack;
+  if (!curtrack) return;
+  setcover(nowPlayingArt, curtrack.cover, `${curtrack.title} cover`);
+  nowPlayingContext.textContent = playbackContext || 'Nyxify';
+  nowPlayingTitle.textContent = curtrack.title;
+  nowPlayingArtist.textContent = curtrack.artist || 'Unknown artist';
+  nowPlayingArtist.disabled = !curtrack.artistId;
+  nowPlayingArtist.onclick = () => {
+    if (curtrack?.artistId) opendetail('artist', curtrack.artistId, curtrack.artist);
+  };
+  nowPlayingAlbum.hidden = !curtrack.album;
+  nowPlayingAlbum.textContent = curtrack.album || '';
+  nowPlayingAlbum.disabled = !curtrack.albumId;
+  nowPlayingAlbum.onclick = () => {
+    if (curtrack?.albumId) opendetail('album', curtrack.albumId, curtrack.album);
+  };
+
+  const memberships = playlists.filter(playlist => playlist.tracks.some(track => track.id === curtrack.id));
+  nowPlayingPlaylists.innerHTML = '';
+  if (memberships.length) {
+    const label = document.createElement('span');
+    label.textContent = 'In your playlists';
+    nowPlayingPlaylists.appendChild(label);
+    memberships.forEach(playlist => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = playlist.name;
+      button.addEventListener('click', () => openplaylist(playlist.id));
+      nowPlayingPlaylists.appendChild(button);
+    });
+  }
+
+  const next = queue[qindex + 1];
+  nowPlayingNext.innerHTML = '';
+  if (next) {
+    const label = document.createElement('span');
+    label.textContent = 'Next in queue';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = `${next.title} · ${next.artist}`;
+    button.addEventListener('click', () => playat(qindex + 1));
+    nowPlayingNext.append(label, button);
+  }
+}
+
+function playtrack(t, list, context = '') {
+  const nextContext = context || inferplaycontext(list);
   curtrack = t;
   queue = (list || results).slice();
   qindex = queue.findIndex(x => x.id === t.id);
   if (qindex === -1) { queue.unshift(t); qindex = 0; }
+  playbackContext = nextContext;
 
   pushhistory(t);
 
   audio.src = `/api/nyxify/stream/${t.id}`;
   audio.play();
 
-  document.getElementById('pArt').src = t.cover || '';
+  setcover(document.getElementById('pArt'), t.cover, `${t.title} cover`);
   document.getElementById('pTitle').textContent = t.title;
   document.getElementById('pArtist').textContent = t.artist;
   document.getElementById('timeTotal').textContent = fmt(t.duration);
@@ -1265,11 +1460,12 @@ function playtrack(t, list) {
   setplayingid(t.id);
   refreshlikes();
   renderqueue();
+  rendernowplaying();
   setplayershown(true);
 }
 
 function playat(i) {
-  if (i >= 0 && i < queue.length) playtrack(queue[i], queue);
+  if (i >= 0 && i < queue.length) playtrack(queue[i], queue, playbackContext);
 }
 
 function resetend() {
@@ -1339,6 +1535,7 @@ repeatBtn.addEventListener('click', () => {
 playBtn.addEventListener('click', () => {
   if (!curtrack) {
     if (results.length) playtrack(results[0]);
+    else if (homeData.tracks.length) playtrack(homeData.tracks[0], homeData.tracks, 'Popular this week');
     else if (getlikes().length) playtrack(getlikes()[0]);
     return;
   }
@@ -1374,6 +1571,7 @@ document.getElementById('qHide').addEventListener('click', () => setqueueopen(fa
 document.getElementById('qClear').addEventListener('click', () => {
   queue = queue.slice(0, qindex + 1);
   renderqueue();
+  rendernowplaying();
 });
 
 function renderqueue() {
@@ -1673,6 +1871,7 @@ setplayershown(false);
 refreshlikes();
 renderqueue();
 void loadplaylists();
+void loadhome();
 
 function setmedia(t) {
   if (!('mediaSession' in navigator)) return;

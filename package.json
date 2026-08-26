@@ -13,7 +13,6 @@
     "test:account-controls": "node scripts/test-account-controls.mjs",
     "test:nyxify-covers": "node scripts/test-nyxify-playlist-covers.mjs",
     "test:nyxify-player": "node scripts/test-nyxify-player.mjs",
-    "test:freedns-links": "node scripts/test-freedns-links.mjs",
     "build:netlify": "node scripts/build-netlify.mjs",
     "check:branding": "node scripts/check-branding.mjs",
     "check:deploy": "node scripts/check-deploy.mjs && npm run check:branding"

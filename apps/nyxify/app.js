@@ -81,8 +81,10 @@ function setcover(image, source, alt = '') {
 
 function fmt(s) {
   s = Math.max(0, Math.floor(s || 0));
-  const m = Math.floor(s / 60), r = s % 60;
-  return `${m}:${String(r).padStart(2, '0')}`;
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const r = s % 60;
+  return h ? `${h}:${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}` : `${m}:${String(r).padStart(2, '0')}`;
 }
 
 function esc(str) {
@@ -1458,6 +1460,7 @@ function rendernowplaying() {
 }
 
 function playtrack(t, list, context = '') {
+  cancelqueuedseek();
   const nextContext = context || inferplaycontext(list);
   curtrack = t;
   queue = (list || results).slice();
@@ -1472,7 +1475,9 @@ function playtrack(t, list, context = '') {
 
   setcover(document.getElementById('pArt'), t.cover, `${t.title} cover`);
   document.getElementById('pTitle').textContent = t.title;
+  document.getElementById('pTitle').title = t.title;
   document.getElementById('pArtist').textContent = t.artist;
+  document.getElementById('pArtist').title = t.artist;
   document.getElementById('timeTotal').textContent = fmt(t.duration);
 
   dlBtn.href = `/api/nyxify/stream/${t.id}`;
@@ -1637,6 +1642,8 @@ function renderqueue() {
 
 const timeCur = document.getElementById('timeCur');
 let pendingseek = null;
+let queuedseek = null;
+let seekapplytimer = null;
 
 function knowndur() {
   if (isFinite(audio.duration) && audio.duration) return audio.duration;
@@ -1660,41 +1667,88 @@ audio.addEventListener('loadedmetadata', () => {
   }
 });
 
-audio.addEventListener('seeked', () => updateseek(audio.currentTime));
+audio.addEventListener('seeked', () => {
+  if (!dragging) updateseek(audio.currentTime);
+});
 
 audio.addEventListener('timeupdate', () => {
   if (dragging || audio.seeking) return;
   updateseek(audio.currentTime);
 });
 
-seekBar.addEventListener('input', () => {
+function seekbartarget() {
+  const value = Math.min(100, Math.max(0, Number.parseFloat(seekBar.value) || 0));
+  let target = (value / 100) * knowndur();
+  target = Math.max(target, 0);
+  if (isFinite(audio.duration) && audio.duration) target = Math.min(target, Math.max(audio.duration - 0.25, 0));
+  return target;
+}
+
+function applyseek(target) {
+  if (!curtrack) return;
+  if (audio.readyState >= HTMLMediaElement.HAVE_METADATA && isFinite(audio.duration) && audio.duration) {
+    try {
+      audio.currentTime = target;
+      pendingseek = null;
+      return;
+    } catch (_) {}
+  }
+  pendingseek = target;
+}
+
+function scheduleseek(target) {
+  queuedseek = target;
+  if (seekapplytimer != null) return;
+  seekapplytimer = setTimeout(() => {
+    seekapplytimer = null;
+    const next = queuedseek;
+    queuedseek = null;
+    applyseek(next);
+  }, 75);
+}
+
+function flushseek(target) {
+  if (seekapplytimer != null) clearTimeout(seekapplytimer);
+  seekapplytimer = null;
+  queuedseek = null;
+  applyseek(target);
+}
+
+function cancelqueuedseek() {
+  if (seekapplytimer != null) clearTimeout(seekapplytimer);
+  seekapplytimer = null;
+  queuedseek = null;
+  pendingseek = null;
+  dragging = false;
+  seekBar.classList.remove('dragging');
+}
+
+function beginseek() {
   dragging = true;
   seekBar.classList.add('dragging');
-  const sec = (parseFloat(seekBar.value) / 100) * knowndur();
+}
+
+seekBar.addEventListener('pointerdown', beginseek);
+seekBar.addEventListener('input', () => {
+  beginseek();
+  const sec = seekbartarget();
   seekBar.style.setProperty('--fill', seekBar.value + '%');
   timeCur.textContent = fmt(sec);
+  scheduleseek(sec);
 });
 
 function commitseek() {
   seekBar.classList.remove('dragging');
   dragging = false;
   if (!curtrack) return;
-
-  let target = (parseFloat(seekBar.value) / 100) * knowndur();
-  target = Math.max(target, 0);
-  if (isFinite(audio.duration) && audio.duration) {
-    target = Math.min(target, Math.max(audio.duration - 0.25, 0));
-  }
-
-  if (isFinite(audio.duration) && audio.duration) {
-    try { audio.currentTime = target; } catch (_) {}
-  } else {
-    pendingseek = target;
-  }
+  const target = seekbartarget();
+  flushseek(target);
   updateseek(target);
 }
 seekBar.addEventListener('change', commitseek);
 seekBar.addEventListener('pointerup', commitseek);
+seekBar.addEventListener('pointercancel', commitseek);
+seekBar.addEventListener('blur', commitseek);
 
 function skipby(sec) {
   if (!curtrack) return;

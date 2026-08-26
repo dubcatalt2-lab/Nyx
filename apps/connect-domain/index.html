@@ -4,41 +4,78 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <title>Connect a domain · Nyx</title>
-  <link rel="stylesheet" href="/apps/connect-domain/styles.css?v=20260808-auto-domain-1">
+  <title>FreeDNS Links - Nyx</title>
+  <link rel="stylesheet" href="/apps/connect-domain/styles.css?v=20260826-freedns-assisted-2">
 </head>
 <body>
   <main class="domain-shell">
-    <a class="back-link" href="/" aria-label="Back to Nyx">← Back to Nyx</a>
+    <a class="back-link" href="/" aria-label="Back to Nyx">&larr; Back to Nyx</a>
     <section class="domain-card">
       <div class="domain-mark" aria-hidden="true">◎</div>
-      <p class="eyebrow">NYX CUSTOM DOMAINS</p>
-      <h1>Point your FreeDNS domain to Nyx</h1>
-      <p class="intro">Create the DNS record, then open your new hostname. Nyx connects it automatically&mdash;there is nothing to submit and no owner approval.</p>
+      <p class="eyebrow">NYX FREEDNS LINKS</p>
+      <h1>Create a FreeDNS link</h1>
+      <p class="intro">Choose the hostname in Nyx, finish the protected record form directly on FreeDNS, then let Nyx verify the result and prepare HTTPS.</p>
 
       <div class="record-card">
         <span>A record destination</span>
-        <code data-target-ip>Loading…</code>
+        <code data-target-ip>Loading...</code>
         <button type="button" data-copy-ip>Copy</button>
       </div>
 
-      <ol class="steps">
-        <li>Create an <strong>A</strong> record at FreeDNS using the address above.</li>
-        <li>Wait for the DNS change to appear publicly.</li>
-        <li>Open your complete hostname with <strong>https://</strong>. Nyx prepares HTTPS on the first visit.</li>
-      </ol>
-
-      <form data-domain-form>
-        <label for="hostname">Optional: check the connection now</label>
-        <div class="domain-entry">
-          <input id="hostname" name="hostname" type="text" inputmode="url" autocomplete="url" placeholder="example.yourfreednsdomain.com" required maxlength="253">
-          <button type="submit" data-submit>Check domain</button>
+      <form class="generator" data-domain-form>
+        <div class="generator-grid">
+          <label for="link-name">Link name
+            <input id="link-name" name="linkName" type="text" inputmode="url" autocomplete="off" placeholder="study-room" required maxlength="63" pattern="[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?">
+            <small>Letters, numbers, and hyphens only.</small>
+          </label>
+          <label for="base-domain">FreeDNS domain
+            <select id="base-domain" name="baseDomain" data-base-domain required>
+              <option value="">Loading public FreeDNS domains...</option>
+            </select>
+            <small>Popular public domains come from FreeDNS's registry.</small>
+          </label>
+          <label class="custom-domain" for="custom-domain" data-custom-domain hidden>Other FreeDNS domain
+            <input id="custom-domain" name="customDomain" type="text" inputmode="url" autocomplete="off" placeholder="example.mooo.com" maxlength="253">
+            <small>Enter only the shared base domain, without the link name.</small>
+          </label>
         </div>
+
+        <div class="preview-card">
+          <span>Your link</span>
+          <code data-hostname-preview>Choose a name and domain</code>
+        </div>
+
+        <div class="domain-actions">
+          <button type="button" data-open-freedns disabled>Continue in FreeDNS</button>
+          <button type="submit" class="secondary" data-submit disabled>Verify and connect</button>
+        </div>
+        <p class="privacy-note">The embedded page is served by FreeDNS. Nyx does not receive your FreeDNS password or CAPTCHA answer.</p>
       </form>
 
       <div class="status" data-status hidden role="status" aria-live="polite"></div>
     </section>
   </main>
-  <script src="/apps/connect-domain/app.js?v=20260808-auto-domain-1" defer></script>
+
+  <dialog class="freedns-dialog" data-freedns-dialog aria-labelledby="freedns-dialog-title">
+    <div class="freedns-dialog-shell">
+      <header>
+        <div><span>FreeDNS setup</span><strong id="freedns-dialog-title" data-freedns-dialog-host>Complete the record</strong></div>
+        <button type="button" class="dialog-close" data-dialog-close aria-label="Close FreeDNS setup">&times;</button>
+      </header>
+      <div class="freedns-help">
+        <span>Record type <strong>A</strong></span>
+        <span>Destination <code data-dialog-ip>Loading...</code></span>
+        <button type="button" data-dialog-copy>Copy IP</button>
+        <a data-freedns-external href="https://freedns.afraid.org/subdomain/" target="_blank" rel="noopener noreferrer">Open in a new tab</a>
+      </div>
+      <iframe data-freedns-frame title="FreeDNS record setup" loading="lazy" referrerpolicy="no-referrer" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
+      <footer>
+        <p>Sign in and solve FreeDNS's CAPTCHA there. When the A record is saved, return here.</p>
+        <button type="button" data-created-verify>I created it - verify</button>
+      </footer>
+    </div>
+  </dialog>
+
+  <script src="/apps/connect-domain/app.js?v=20260826-freedns-assisted-2" defer></script>
 </body>
 </html>

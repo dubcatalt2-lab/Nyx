@@ -2789,7 +2789,7 @@ function nyxGroqChatModelId(value) {
   // These are advertised by the current project catalog but the configured
   // Groq credential rejects them for Chat Completions (or returns a retired
   // model). Do not offer a model that Nyx has already verified cannot chat.
-  return !/^(?:allam-2-7b|groq\/compound(?:-mini)?|meta-llama\/llama-3\.3-70b-versatile)$/i.test(id);
+  return !/^(?:allam-2-7b|groq\/compound(?:-mini)?|(?:meta-llama\/)?llama-3\.3-70b-versatile)$/i.test(id);
 }
 
 async function nyxGroqAvailableModels(config = nyxGroqConfig()) {

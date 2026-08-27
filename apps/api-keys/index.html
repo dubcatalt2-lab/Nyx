@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Nyx API Keys</title>
+  <link rel="icon" type="image/png" href="../../assets/icons/nyx-app-192.png">
+  <link rel="stylesheet" href="./styles.css?v=20260826-api-keys-1">
+</head>
+<body>
+  <main class="utility-shell key-shell">
+    <header class="utility-header">
+      <a class="brand-lockup" href="../../" target="_top" aria-label="Back to Nyx"><span class="brand-mark"><img src="../../assets/icons/nyx-app-192.png" alt=""></span><span class="brand-copy"><strong>nyx</strong><span>developer</span></span></a>
+      <span class="service-status" data-status><i aria-hidden="true"></i><span>Checking service</span></span>
+    </header>
+
+    <section class="utility-intro" aria-labelledby="page-title">
+      <span class="intro-mark" aria-hidden="true">⌘</span>
+      <div><h1 id="page-title">API Keys</h1><p>Nyx developer access</p></div>
+    </section>
+
+    <section class="surface keys-card">
+      <div class="section-bar">
+        <div class="section-id"><span class="step-number">01</span><div><h2>Your Nyx keys</h2><p>Create a revocable key for the Nyx AI gateway. Provider credentials never leave Nyx.</p></div></div>
+        <button class="primary-action" data-create type="button">Create key</button>
+      </div>
+      <div class="notice" data-notice role="status" aria-live="polite" hidden></div>
+      <div class="key-list" data-key-list><p class="empty">Sign in to Nyx to manage API keys.</p></div>
+    </section>
+
+    <section class="surface docs-card" aria-labelledby="use-title">
+      <div class="section-bar"><div class="section-id"><span class="step-number">02</span><div><h2 id="use-title">Use your key</h2><p>Store it only in your app's server environment. It is shown once when created.</p></div></div></div>
+      <pre><code>curl https://nyxlearning.org/api/v1/ai \
+  -H "Authorization: Bearer nyx_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"openai/gpt-oss-120b","messages":[{"role":"user","content":"Say hello."}]}'</code></pre>
+      <p class="limits" data-limits></p>
+    </section>
+  </main>
+
+  <dialog class="key-dialog" data-dialog aria-labelledby="key-dialog-title">
+    <form method="dialog" data-key-form>
+      <button class="dialog-close" value="cancel" aria-label="Close">×</button>
+      <p class="eyebrow">New key</p><h2 id="key-dialog-title">Name this key</h2>
+      <p>Use one key per app or environment so you can revoke access cleanly later.</p>
+      <label><span>Key name</span><input data-label maxlength="60" minlength="2" autocomplete="off" placeholder="My app – production" required></label>
+      <footer><button class="secondary-action" value="cancel">Cancel</button><button class="primary-action" data-create-confirm value="default">Create key</button></footer>
+    </form>
+  </dialog>
+
+  <dialog class="key-dialog reveal-dialog" data-reveal-dialog aria-labelledby="reveal-title">
+    <form method="dialog">
+      <p class="eyebrow">Copy it now</p><h2 id="reveal-title">Your Nyx API key</h2>
+      <p>This is the only time Nyx can show the full key. Store it in a password manager or server secret.</p>
+      <textarea data-reveal readonly rows="4" aria-label="New Nyx API key"></textarea>
+      <footer><button class="secondary-action" value="close">Close</button><button class="primary-action" data-copy type="button">Copy key</button></footer>
+    </form>
+  </dialog>
+  <script src="./app.js?v=20260826-api-keys-1"></script>
+</body>
+</html>

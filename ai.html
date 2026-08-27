@@ -10,10 +10,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/vendor/katex/katex.min.css?v=20260814-ai-math-v1">
-  <link rel="stylesheet" href="/css/ai-workspace.css?v=20260826-provider-switcher-v12">
+  <link rel="stylesheet" href="/css/ai-workspace.css?v=20260826-provider-switcher-v13">
   <script src="/js/nyx-logo.js?v=20260717-theme-crescent-v1" defer></script>
   <script src="/assets/vendor/katex/katex.min.js?v=20260814-ai-math-v1" defer></script>
-  <script src="/js/ai-workspace.js?v=20260826-api-keys-v19" defer></script>
+  <script src="/js/ai-workspace.js?v=20260826-api-keys-v20" defer></script>
 </head>
 <body>
   <main class="ai-app" data-ai-app>
@@ -96,6 +96,7 @@
           <select class="ai-provider-select" id="providerSelect" aria-label="Shared AI provider" title="Shared AI provider">
             <option value="shared">Nyx Shared</option>
           </select>
+          <span class="ai-provider-state" id="providerState" hidden></span>
           <div class="ai-model-picker" id="modelPicker">
             <button class="ai-model-trigger" id="modelTrigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="modelMenu">
               <span class="ai-model-status" aria-hidden="true"></span>

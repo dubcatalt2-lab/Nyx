@@ -29,6 +29,7 @@
   const send=document.getElementById('send');
   const model=document.getElementById('model');
   const providerSelect=document.getElementById('providerSelect');
+  const providerState=document.getElementById('providerState');
   const modelPicker=document.getElementById('modelPicker');
   const modelTrigger=document.getElementById('modelTrigger');
   const modelSelected=document.getElementById('modelSelected');
@@ -156,7 +157,11 @@
   function syncProviderControl(){
     const personal=Boolean(personalApiKey());
     providerSelect.disabled=personal||globalProviders.length<2;
-    providerSelect.title=personal?'Your personal key chooses the provider':'Shared AI provider';
+    providerSelect.title=personal?'Your personal key chooses the provider. Remove it to switch shared providers.':globalProviders.length<2?'Only one shared provider is configured.':'Shared AI provider';
+    if(providerState){
+      providerState.hidden=!personal;
+      providerState.textContent=personal?`Personal ${personalKeyProvider()} key active`:'';
+    }
   }
 
   function renderProviders(){

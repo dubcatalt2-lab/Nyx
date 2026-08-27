@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <title>Nyx API Keys</title>
   <link rel="icon" type="image/png" href="../../assets/icons/nyx-app-192.png">
-  <link rel="stylesheet" href="./styles.css?v=20260826-api-keys-1">
+  <link rel="stylesheet" href="./styles.css?v=20260826-api-keys-2">
 </head>
 <body>
   <main class="utility-shell key-shell">
@@ -52,11 +52,11 @@
   <dialog class="key-dialog reveal-dialog" data-reveal-dialog aria-labelledby="reveal-title">
     <form method="dialog">
       <p class="eyebrow">Copy it now</p><h2 id="reveal-title">Your Nyx API key</h2>
-      <p>This is the only time Nyx can show the full key. Store it in a password manager or server secret.</p>
+      <p>Copy it now. Nyx keeps it available only in this browser tab; the server stores a one-way hash and cannot recover it later.</p>
       <div class="key-reveal-control"><input data-reveal type="password" readonly aria-label="New Nyx API key"><button class="secondary-action" data-toggle-reveal type="button" aria-pressed="false">Show key</button></div>
       <footer><button class="secondary-action" value="close">Close</button><button class="primary-action" data-copy type="button">Copy key</button></footer>
     </form>
   </dialog>
-  <script src="./app.js?v=20260826-api-keys-2"></script>
+  <script src="./app.js?v=20260826-api-keys-3"></script>
 </body>
 </html>

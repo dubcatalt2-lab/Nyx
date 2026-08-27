@@ -1,0 +1,19 @@
+Nyx Proprietary License
+
+Copyright (c) 2026 Nyx. All rights reserved.
+
+The original Nyx source code, user interface, visual design, branding, and
+documentation in this repository are proprietary. Except with prior written
+permission from Nyx, no person may copy, reproduce, modify, distribute,
+publish, sublicense, sell, or create derivative works from those materials.
+
+Permission to access the public Nyx website does not grant permission to
+reuse its source code, user interface, visual design, branding, or assets.
+
+Third-party software, open-source dependencies, and externally licensed
+assets included in this repository are excluded from this license and remain
+subject to their own license terms. In particular, the separately identified
+Stratus service and its vendored upstream source retain their applicable AGPL
+and attribution obligations.
+
+For licensing requests, contact the Nyx owner through the official Nyx site.

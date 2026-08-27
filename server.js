@@ -19,6 +19,7 @@ const require = createRequire(join(__dirname, "package.json"));
 const { uvPath } = require("@titaniumnetwork-dev/ultraviolet");
 const { baremuxPath } = require("@mercuryworkshop/bare-mux/node");
 const { scramjetPath } = require("@mercuryworkshop/scramjet/path");
+const { scramjetPath: scramjetV1Path } = require("@mercuryworkshop/scramjet-v1/path");
 const scramjetControllerPath = dirname(require.resolve("@mercuryworkshop/scramjet-controller"));
 const epoxyPath = join(dirname(require.resolve("@mercuryworkshop/epoxy-transport")), "..", "dist");
 const libcurlPath = dirname(require.resolve("@mercuryworkshop/libcurl-transport"));
@@ -257,7 +258,7 @@ const nyxifyGlobalApp = Object.freeze({ id: "nyxify", icon: "nyxify", name: "Nyx
 const nyxApiKeysAppMigrationField = "nyxApiKeysAppInitialized";
 const nyxApiKeysGlobalApp = Object.freeze({ id: "nyx-api-keys", icon: "api-keys", name: "Nyx API Keys", url: "/apps/api-keys/" });
 const nyxGamesAppMigrationField = "gamesAppRenamed";
-const nyxGamesGlobalApp = Object.freeze({ id: "pirate-cove", icon: "games", name: "GAMES", url: "/assets/games/" });
+const nyxGamesGlobalApp = Object.freeze({ id: "pirate-cove", icon: "games", name: "Sparkschool", url: "/assets/games/" });
 const nyxMoviesCinejoyMigrationField = "moviesCinejoyTarget";
 const nyxMoviesGlobalApp = Object.freeze({ id: "movies", icon: "cinejoy.to", name: "Movies", url: "https://cinejoy.to/" });
 const nyxDefaultGlobalApps = Object.freeze([
@@ -275,7 +276,7 @@ const nyxDefaultGlobalApps = Object.freeze([
   { id: "google", icon: "google.com", name: "Google", url: "https://www.google.com/" },
   { id: "study", icon: "docs.google.com", name: "Study", url: "https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" },
   { id: "duck-ai", icon: "duck.ai", name: "Duck AI", url: "https://duck.ai/" },
-  { id: "nyx-ai", icon: "nyx-ai", name: "Nyx AI", url: "nyx://ai" },
+  { id: "nyx-ai", icon: "nyx-ai", name: "Scrapmmy AI", url: "nyx://ai" },
   { id: "wikipedia", icon: "wikipedia.org", name: "Wikipedia", url: "https://www.wikipedia.org/" },
   nyxMoviesGlobalApp,
   { id: "more-movie-sites", icon: "fmhy.net", name: "More Movie Sites", url: "https://fmhy.net/video#p-stream-forks" },
@@ -671,6 +672,10 @@ app.use((req, res, next) => {
     "/uv/uv.handler.js",
     "/baremux/index.mjs",
     "/scramjet/scramjet.js",
+    "/scramjet-v1/scramjet.all.js",
+    "/scramjet-v1/scramjet.sync.js",
+    "/scramjet-v1/scramjet.wasm.wasm",
+    "/scramjet-v1.sw.js",
     "/nyx-scramjet-runtime-guard.js"
   ]);
   const noStorePrefix = /^\/(?:assets\/(?:gms-games|reds-misc)\/|gms-games-|reds-misc-)/i.test(req.path);
@@ -2398,12 +2403,12 @@ async function nyxAiRateLimit(req, res, next) {
       ? Math.max(1, Math.ceil((60_000 - (now - usage.minute[0])) / 1000))
       : Math.max(1, Math.ceil((86_400_000 - (now - usage.day[0])) / 1000));
     res.setHeader("retry-after", retryAfter);
-    res.status(429).json({ error: "Nyx AI usage limit reached. Please try again later." });
+    res.status(429).json({ error: "Scrapmmy AI usage limit reached. Please try again later." });
     return;
   }
   if (usage.active >= nyxAiLimits.perIpConcurrent || nyxAiActiveRequests >= nyxAiLimits.globalConcurrent) {
     res.setHeader("retry-after", "10");
-    res.status(429).json({ error: "Nyx AI is busy. Please wait for another response to finish." });
+    res.status(429).json({ error: "Scrapmmy AI is busy. Please wait for another response to finish." });
     return;
   }
   usage.minute.push(now);
@@ -2452,7 +2457,7 @@ app.get("/api/nyx-ai/models", async (req, res) => {
     return;
   }
   if (!credential.key) {
-    res.status(503).json({ error: credential.personal ? "Enter a personal Nocturne AI API key." : "Nyx AI is not configured." });
+    res.status(503).json({ error: credential.personal ? "Enter a personal Nocturne AI API key." : "Scrapmmy AI is not configured." });
     return;
   }
   if (credential.nyxGateway || credential.globalProvider === "groq") {
@@ -2530,14 +2535,14 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   const key = credential.key;
   if (!key) {
     res.status(503).json({
-      error: credential.personal ? "Enter a personal Nocturne AI API key." : "Nyx AI is not configured. Set NYX_AI_API_KEY in the server environment."
+      error: credential.personal ? "Enter a personal Nocturne AI API key." : "Scrapmmy AI is not configured. Set NYX_AI_API_KEY in the server environment."
     });
     return;
   }
   const requestedModel = String(req.body?.model || "chatgpt-5.4-mini");
   const modelInfo = await nyxAiResolveModel(requestedModel, key, credential.personal, credential.provider);
   if (!modelInfo) {
-    res.status(400).json({ error: "Unknown Nyx AI model." });
+    res.status(400).json({ error: "Unknown Scrapmmy AI model." });
     return;
   }
   const model = modelInfo.id;
@@ -2650,7 +2655,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), nyxAiLimits.timeoutMs);
   res.once("close", () => controller.abort());
-  const system = `You are Nyx AI inside the Nyx browser. Be helpful, direct, and accurate. If you do not know something, say so plainly. Never output corrupted symbols or token fragments; every answer must be readable natural language or valid code requested by the user. Format responses with clean Markdown. Use Markdown table syntax for tables, and use standard LaTeX delimiters for mathematical notation. If the latest user message includes a [NYX VERIFIED IMAGE ATTACHMENT] block, an actual image upload was received and locally inspected. Treat that block as visual evidence from the attachment, not as a user-written description. Answer the image request directly from the evidence; never claim that no image was attached, characterize the visual evidence as a vague user description, or ask the user to upload the same image again. ${responseGuidance}`;
+  const system = `You are Scrapmmy AI inside the Nyx browser. Be helpful, direct, and accurate. If you do not know something, say so plainly. Never output corrupted symbols or token fragments; every answer must be readable natural language or valid code requested by the user. Format responses with clean Markdown. Use Markdown table syntax for tables, and use standard LaTeX delimiters for mathematical notation. If the latest user message includes a [NYX VERIFIED IMAGE ATTACHMENT] block, an actual image upload was received and locally inspected. Treat that block as visual evidence from the attachment, not as a user-written description. Answer the image request directly from the evidence; never claim that no image was attached, characterize the visual evidence as a vague user description, or ask the user to upload the same image again. ${responseGuidance}`;
   const providerPayload = credential.provider?.id === "navy" ? {
     model,
     messages: [{ role: "system", content: system }, ...messages],
@@ -2701,7 +2706,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
           if (!raw || raw === "[DONE]") continue;
           const event = JSON.parse(raw);
           if (event?.type === "error") {
-            nyxAiWriteStreamChunk(res, `Nyx AI error: ${nyxAiErrorMessage(event, upstream.status, key)}`, model);
+            nyxAiWriteStreamChunk(res, `Scrapmmy AI error: ${nyxAiErrorMessage(event, upstream.status, key)}`, model);
             continue;
           }
           const text = nyxAiStreamText(event);
@@ -2764,7 +2769,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   } catch (error) {
     if (!res.headersSent) {
       const timedOut = error?.name === "AbortError";
-      res.status(timedOut ? 504 : 502).json({ error: timedOut ? "Nyx AI timed out. Please try again." : `Nyx AI request failed: ${error?.message || error}` });
+      res.status(timedOut ? 504 : 502).json({ error: timedOut ? "Scrapmmy AI timed out. Please try again." : `Scrapmmy AI request failed: ${error?.message || error}` });
     } else if (!res.writableEnded) {
       res.end();
     }
@@ -12349,6 +12354,7 @@ app.use(express.static(staticRoot));
 app.use("/assets/vendor/katex/", express.static(katexPath));
 app.use("/uv/", express.static(uvPath));
 app.use("/scramjet/", express.static(scramjetPath));
+app.use("/scramjet-v1/", express.static(scramjetV1Path));
 app.use("/controller/", express.static(scramjetControllerPath));
 app.use("/baremux/", express.static(baremuxPath));
 app.use("/epoxy/", express.static(epoxyPath));

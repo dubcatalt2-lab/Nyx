@@ -2209,6 +2209,15 @@
     if(/^[\w.-]+\.[a-z]{2,}(?:[\/:?#]|$)/i.test(raw) && !/^[a-z][a-z0-9+.-]*:/i.test(raw)) return 'https://'+raw;
     return raw;
   }
+  function isNyxFirstPartyAppUrl(value){
+    const raw=String(value || '').trim();
+    if(!raw || /^nyx:\/\//i.test(raw)) return false;
+    try{
+      const target=new URL(raw,location.href);
+      return target.origin===location.origin
+        && (/^\/(?:apps|assets)(?:\/|$)/i.test(target.pathname) || /^\/ai\.html$/i.test(target.pathname));
+    }catch{return false}
+  }
   const sixtySevenJumpscareSrc='assets/jumpscares/676767.gif';
   function shouldTriggerSixtySevenJumpscare(value){
     return String(value || '').trim()==='67';
@@ -2497,9 +2506,9 @@
     if(/(?:^|\/)apps\/link-checker(?:\/|$)/i.test(raw)) return 'Link Checker';
     if(/(?:^|\/)apps\/link-generator(?:\/|$)/i.test(raw)) return 'Link Generator';
     if(/(?:^|\/)apps\/api-keys(?:\/|$)/i.test(raw)) return 'Nyx API Keys';
-    if(raw==='nyx://ai') return 'Nyx AI';
+    if(raw==='nyx://ai') return 'Scrapmmy AI';
     if(raw.startsWith('nyx://')) return raw.replace('nyx://','nyx ');
-    if(raw.startsWith('assets/games/') || raw.startsWith('assets/ugs/') || raw.startsWith('/assets/games/') || raw.startsWith('/assets/ugs/')) return 'GAMES';
+    if(raw.startsWith('assets/games/') || raw.startsWith('assets/ugs/') || raw.startsWith('/assets/games/') || raw.startsWith('/assets/ugs/')) return 'Sparkschool';
     try{return new URL(raw,location.href).hostname.replace(/^www\./,'') || 'New Tab'}catch{return 'New Tab'}
   }
   function websiteDetailsHidden(){
@@ -2537,6 +2546,9 @@
   let uvRegistration = null;
   let scramjetInstallPromise = null;
   let scramjetController = null;
+  let scramjetV1InstallPromise = null;
+  let scramjetV1Controller = null;
+  let scramjetV1InstallError = '';
   let bareMuxConnection = null;
   let scramjetTransport = null;
   let scramjetTransportKey = '';
@@ -2995,6 +3007,7 @@
   const proxyStateVersion='nyx-proxy-state-20260814-private-tabs-v13';
   const scramjetStateVersion='nyx-scramjet-state-20260814-private-tabs-v2';
   const scramjetServiceWorkerUrl='/scramjet.sw.js?v=nyx-sj-20260814-private-tabs-v3';
+  const scramjetV1ServiceWorkerUrl='/scramjet-v1.sw.js?v=nyx-sj-v1-20260827-v1';
   function installNyxConsoleDedupe(scope='top'){
     if(console.__nyxDedupeInstalled) return;
     const seen=new Map();
@@ -3439,8 +3452,8 @@
     try{
       const parsed=new URL(browserShellSourceUrl(url),location.href);
       if(parsed.origin===location.origin && parsed.pathname==='/search') return parsed.searchParams.get('q') || 'Search';
-      if(parsed.origin===location.origin && parsed.pathname.includes('/assets/games/')) return 'GAMES';
-      if(parsed.origin===location.origin && parsed.pathname.includes('/assets/ugs/')) return 'GAMES';
+      if(parsed.origin===location.origin && parsed.pathname.includes('/assets/games/')) return 'Sparkschool';
+      if(parsed.origin===location.origin && parsed.pathname.includes('/assets/ugs/')) return 'Sparkschool';
       if(parsed.origin===location.origin && parsed.pathname.includes('/apps/chat/')) return 'Nyx Chat';
       if(parsed.origin===location.origin && parsed.pathname.includes('/apps/cloud-gaming/')) return 'Cloud Gaming';
       if(parsed.origin===location.origin && parsed.pathname.includes('/apps/link-checker/')) return 'Link Checker';
@@ -4360,7 +4373,11 @@
     if(/^nyx:\/\/(terms|developer|about|credits)$/i.test(String(url || '').trim())){
       return openBrowserShellInternalTab(String(url).trim().slice(6).toLowerCase());
     }
-    const id=openBrowserShellTab(url || '',{forceMode:appCompatibilityMode(url)});
+    // Nyx-hosted apps are normal same-origin pages. Never send them through a
+    // proxy worker: doing so can leave a newly opened app tab waiting for
+    // Scramjet even though the app can load directly.
+    const forceMode=isNyxFirstPartyAppUrl(url) ? 'iframe' : appCompatibilityMode(url);
+    const id=openBrowserShellTab(url || '',{forceMode});
     if(id) browserShellActiveTab=id;
     renderBrowserShellTabs();
     return id;
@@ -5008,7 +5025,7 @@
     if(!tab) return false;
     if(/^ai$/i.test(String(name || ''))){
       tab.url='nyx://ai';
-      tab.title='Nyx AI';
+      tab.title='Scrapmmy AI';
       tab.icon=favicons.nyx;
       state.win.classList.remove('internal-clear','browser-blank');
       tab.frame.classList.remove('transparent-internal-page');
@@ -6560,21 +6577,26 @@
     if(!target) return {managed:false,engine:'',url:''};
     installGameFrameAdProtection(frame);
     const mode=selectedBrowserMode(target);
-    if(mode==='scramjet' && String(frame?.tagName || '').toLowerCase()==='iframe'){
-      const ready=await installScramjet();
-      if(ready && scramjetController){
+    if((mode==='scramjet' || mode==='scramjet-v1') && String(frame?.tagName || '').toLowerCase()==='iframe'){
+      const useV1=mode==='scramjet-v1';
+      const ready=await (useV1 ? installScramjetV1() : installScramjet());
+      const controller=useV1 ? scramjetV1Controller : scramjetController;
+      if(ready && controller){
         let managed=nyxManagedGameFrames.get(frame);
-        if(!managed){
+        if(!managed || managed.__nyxScramjetVersion!==(useV1 ? 'v1' : 'v2')){
           frame.removeAttribute('src');
-          managed=scramjetController.createFrame(frame,{plugins:[
-            createScramjetCompatibilityPlugin('','proxy-sri'),
-            createScramjetCompatibilityPlugin(browserAdBlockRuntimeSource,'ad-block'),
-            createScramjetCompatibilityPlugin(scramjetMinimalRuntimeGuardSource,'minimal-guard')
-          ]});
+          managed=useV1
+            ? controller.createFrame(frame)
+            : controller.createFrame(frame,{plugins:[
+                createScramjetCompatibilityPlugin('','proxy-sri'),
+                createScramjetCompatibilityPlugin(browserAdBlockRuntimeSource,'ad-block'),
+                createScramjetCompatibilityPlugin(scramjetMinimalRuntimeGuardSource,'minimal-guard')
+              ]});
+          managed.__nyxScramjetVersion=useV1 ? 'v1' : 'v2';
           nyxManagedGameFrames.set(frame,managed);
         }
         managed.go(target);
-        return {managed:true,engine:'scramjet',url:target};
+        return {managed:true,engine:useV1 ? 'scramjet-v1' : 'scramjet',url:target};
       }
     }
     if(mode==='iframe') return {managed:false,engine:'iframe',url:target};
@@ -6592,7 +6614,8 @@
     }
     value=String(value || 'auto').trim().toLowerCase();
     if(value==='uv' || value==='ultra' || value==='ultraviolet') return 'ultraviolet';
-    if(value==='sj' || value==='scram' || value==='scramjet') return 'scramjet';
+    if(value==='sj' || value==='scram' || value==='scramjet' || value==='scramjet-v2' || value==='sjv2') return 'scramjet';
+    if(value==='scramjet-v1' || value==='sjv1' || value==='scram-v1') return 'scramjet-v1';
     if(value==='rh' || value==='rammerhead') return 'rammerhead';
     if(value==='direct' || value==='iframe') return 'iframe';
     return value || 'auto';
@@ -7725,6 +7748,72 @@
     });
     return uvInstallPromise;
   }
+  function scramjetV1Config(){
+    return {
+      prefix:'/~/sj-v1/',
+      files:{
+        all:'/scramjet-v1/scramjet.all.js',
+        wasm:'/scramjet-v1/scramjet.wasm.wasm',
+        sync:'/scramjet-v1/scramjet.sync.js'
+      }
+    };
+  }
+  async function initializeScramjetV1Controller(serviceworker){
+    const api=window.$scramjetLoadController?.();
+    const Controller=api?.ScramjetController;
+    if(!Controller) throw new Error('Scramjet v1 controller API did not load');
+    const controller=new Controller(scramjetV1Config());
+    const serviceWorkerContainer=navigator.serviceWorker;
+    const ownController=Object.getOwnPropertyDescriptor(serviceWorkerContainer,'controller');
+    let shadowed=false;
+    let initialized=false;
+    try{
+      Object.defineProperty(serviceWorkerContainer,'controller',{configurable:true,get:()=>serviceworker});
+      shadowed=true;
+      await controller.init();
+      initialized=true;
+    }finally{
+      if(shadowed){
+        if(ownController) Object.defineProperty(serviceWorkerContainer,'controller',ownController);
+        else delete serviceWorkerContainer.controller;
+      }
+    }
+    if(!initialized){
+      await controller.init();
+      const db=await controller.openIDB();
+      const config=await db.get('config','config');
+      if(!config) throw new Error('Scramjet v1 configuration did not initialize');
+      serviceworker.postMessage({scramjet$type:'loadConfig',config});
+    }
+    return controller;
+  }
+  function installScramjetV1(){
+    if(scramjetV1InstallPromise) return scramjetV1InstallPromise;
+    let step='starting Scramjet v1';
+    scramjetV1InstallPromise=(async()=>{
+      if(location.protocol==='file:') throw new Error('Scramjet v1 needs Nyx to be opened from its website, not as a local file.');
+      if(!('serviceWorker' in navigator)) throw new Error('This browser does not support the Service Workers Scramjet v1 needs.');
+      step='loading Scramjet v1 assets';
+      if(!window.$scramjetLoadController) await loadScript('/scramjet-v1/scramjet.all.js');
+      step='starting relay';
+      await installBareMuxTransport();
+      step='registering service worker';
+      const registration=await navigator.serviceWorker.register(scramjetV1ServiceWorkerUrl,{scope:'/~/sj-v1/',updateViaCache:'none'});
+      await registration.update().catch(()=>null);
+      const serviceworker=await waitForServiceWorkerScript(registration,scramjetV1ServiceWorkerUrl,'/~/sj-v1/');
+      if(!serviceworker) throw new Error('Scramjet v1 service worker did not activate');
+      step='initializing controller';
+      if(!scramjetV1Controller) scramjetV1Controller=await initializeScramjetV1Controller(serviceworker);
+      scramjetV1InstallError='';
+      return true;
+    })().catch(error=>{
+      scramjetV1Controller=null;
+      scramjetV1InstallPromise=null;
+      scramjetV1InstallError=`Failed while ${step}: ${error?.message || error}`;
+      return false;
+    });
+    return scramjetV1InstallPromise;
+  }
   function installScramjet(){
     if(scramjetInstallPromise) return scramjetInstallPromise;
     let step='starting Scrapmmy';
@@ -8716,7 +8805,8 @@
     const name=String(app?.name||'').trim();
     const url=normalizeInternalAppUrl(app?.url);
     if(!/^[a-z0-9][a-z0-9-]{1,63}$/.test(id) || !name || !url) return null;
-    return {id,icon,name:name.slice(0,48),url:url.slice(0,2048)};
+    const visibleName={"pirate-cove":"Sparkschool","nyx-ai":"Scrapmmy AI"}[id] || name;
+    return {id,icon,name:visibleName.slice(0,48),url:url.slice(0,2048)};
   }
   function globalAppIcon(app){return appIcons[app.icon] || iconForUrl(app.url) || appIcon('apps')}
   function quickTiles(){
@@ -8821,6 +8911,7 @@
     const mode=preflightBrowserModeForTarget(target);
     if(mode==='iframe') return true;
     if(mode==='ultraviolet') return installUltraviolet();
+    if(mode==='scramjet-v1') return installScramjetV1();
     if(mode==='scramjet') return installScramjet();
     const results=await Promise.allSettled([installScramjet(),installUltraviolet()]);
     return results.some(result=>result.status==='fulfilled' && result.value);
@@ -8829,6 +8920,7 @@
     if(location.protocol==='file:') return false;
     const mode=preflightBrowserModeForTarget(target);
     if(mode==='iframe') return true;
+    if(mode==='scramjet-v1') return !!(await installBareMuxTransport());
     if(mode==='scramjet') return !!(await createScramjetTransport());
     return !!(await installBareMuxTransport());
   }
@@ -10209,6 +10301,7 @@
       t.frame.replaceWith(frame);
       t.frame=frame;
       t.scramjetFrame=null;
+      t.scramjetVersion='';
       t.scramjetRuntimeGuarded=null;
       t.popupBridgeInstalled=false;
       setFrameSandbox(t,true);
@@ -10638,6 +10731,75 @@
       },220);
       return true;
     }
+    function loadScramjetV1Tab(t,url,addHistory=true){
+      t.expectedEngine='scramjet-v1';
+      t.sourceUrl=url;
+      if(addHistory){
+        const currentHistory=browserShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
+        if(currentHistory!==url){
+          t.history=t.history.slice(0,t.index+1);
+          t.history.push(url);
+          t.index=t.history.length-1;
+        }
+      }
+      const navigationIntent=t.navigationIntent || '';
+      installScramjetV1().then(ok=>{
+        if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
+        if(!ok || !scramjetV1Controller){
+          t.url=url;
+          setTabMeta(t,url,false);
+          t.actualEngine='scramjet-v1-failed';
+          setFrameSandbox(t,true);
+          clearFrameDocument(t);
+          t.frame.srcdoc=proxyFailureHtml(scramjetV1InstallError,'Scramjet v1',{allowDirect:true});
+          return;
+        }
+        if(t.scramjetFrame && t.scramjetVersion!=='v1') replaceTabFrame(t);
+        if(!t.scramjetFrame){
+          setFrameSandbox(t,true);
+          t.frame.removeAttribute('src');
+          clearFrameDocument(t);
+          installPopupBridge(t);
+          t.scramjetFrame=scramjetV1Controller.createFrame(t.frame);
+          t.scramjetVersion='v1';
+          t.scramjetFrame.addEventListener?.('urlchange',event=>{
+            const next=browserShellSourceUrl(String(event.url || '')) || String(event.url || '');
+            if(!next) return;
+            const previousSource=browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
+            const currentHistory=browserShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
+            if(t.scramjetHistoryPending){
+              t.scramjetHistoryPending=false;
+              if(t.index>=0) t.history[t.index]=next;
+            }else if(next!==currentHistory && next!==previousSource){
+              t.history=t.history.slice(0,t.index+1);
+              t.history.push(next);
+              t.index=t.history.length-1;
+            }
+            t.url=next;
+            t.sourceUrl=next;
+            t.title=titleForUrl(next);
+            t.icon=iconForUrl(next);
+            renderTabs();
+            if(t.id===state.active) win.querySelector('.urlbar').value=browserShellDisplayValue(next);
+            updateBrowserShellLocation(next,t.id);
+            setTimeout(()=>syncLoadedTabIcon(t),120);
+          });
+        }
+        setTabMeta(t,url,false);
+        t.scramjetHistoryPending=true;
+        clearFrameDocument(t);
+        try{
+          t.scramjetFrame.go(url);
+          markBrowserEngine(t,'scramjet-v1',String(t.frame.getAttribute('src') || url),'scramjet-v1');
+        }catch(error){
+          t.actualEngine='scramjet-v1-failed';
+          t.frame.srcdoc=proxyFailureHtml(error?.message || 'Scramjet v1 could not open this page.','Scramjet v1',{allowDirect:true});
+        }
+      }).catch(()=>{
+        if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
+        t.actualEngine='scramjet-v1-failed';
+      });
+    }
     function loadScramjetTab(t,url,addHistory=true){
       t.expectedEngine='scramjet';
       t.sourceUrl=url;
@@ -10877,6 +11039,8 @@
             if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
             loadTab(t,finalUrl,true,'rammerhead',url);
           });
+        }else if(mode==='scramjet-v1'){
+          loadScramjetV1Tab(t,url,true);
         }else if(mode==='scramjet'){
           loadScramjetTab(t,url,true);
         }else if(mode==='ultraviolet'){
@@ -10929,6 +11093,8 @@
           if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
           loadTab(t,finalUrl,true,'rammerhead');
         });
+      }else if(mode==='scramjet-v1'){
+        loadScramjetV1Tab(t,url,true);
       }else if(mode==='scramjet'){
         loadScramjetTab(t,url,true);
       }else if(mode==='ultraviolet'){
@@ -10984,7 +11150,9 @@
         }
         const source=browserShellSourceUrl(stored) || stored;
         const engine=selectedBrowserMode(source);
-        if(engine==='scramjet'){
+        if(engine==='scramjet-v1'){
+          loadScramjetV1Tab(t,source,false);
+        }else if(engine==='scramjet'){
           loadScramjetTab(t,source,false);
         }else if(engine==='ultraviolet'){
           installUltraviolet().then(ok=>{
@@ -11535,7 +11703,7 @@
     const panel=weatherPanel();
     if(!panel || !data) return;
     panel.querySelector('[data-weather-temp]').innerHTML=Math.round(data.temperature_2m)+'&deg;';
-    panel.querySelector('[data-weather-place]').textContent=place || 'Weather';
+    panel.querySelector('[data-weather-place]').textContent=place || 'Skyglass';
     panel.querySelector('[data-weather-desc]').textContent=weatherDescription(data.weather_code);
     panel.querySelector('[data-weather-icon]').innerHTML=weatherIcon(data.weather_code,data.is_day!==0);
     panel.querySelector('[data-weather-feels]').innerHTML=Math.round(data.apparent_temperature ?? data.temperature_2m)+'&deg;';
@@ -11546,7 +11714,7 @@
     panel.classList.add(weatherEffectClass(data.weather_code,data.wind_speed_10m,data.temperature_2m));
     renderWeatherForecast(daily);
     renderWeatherTime(timezone);
-    latestWeatherSnapshot={...data,place:place || 'Weather'};
+    latestWeatherSnapshot={...data,place:place || 'Skyglass'};
     syncHomeWeatherWidgets();
     const restore=$('weatherRestore');
     if(restore) restore.dataset.weatherSummary=`${Math.round(data.temperature_2m)}° ${weatherDescription(data.weather_code)}`;
@@ -11635,7 +11803,7 @@
       store.setText('nyx.weatherTimezone',tz);
       renderWeather(json.current,place,tz,json.daily);
     }catch{
-      setWeatherStatus('Weather unavailable right now');
+      setWeatherStatus('Skyglass is unavailable right now');
     }
   }
   async function searchWeatherPlace(query){
@@ -11853,7 +12021,7 @@
       });
       document.querySelectorAll('[data-nyx-ai-model-label]').forEach(label=>{label.textContent=nyxAiModelLabel(selected)});
     }catch(error){
-      console.warn('Nyx AI model catalog could not be loaded:',error);
+      console.warn('Scrapmmy AI model catalog could not be loaded:',error);
     }
   }
   void nyxAiLoadModels();
@@ -11895,7 +12063,7 @@
             <div class="lion-ai-mark" data-nyx-logo aria-label="Nyx"></div>
             <div class="lion-ai-title">
               <h1 data-lion-ai-thread-title>New chat</h1>
-              <span>Nyx AI workspace</span>
+              <span>Scrapmmy AI workspace</span>
             </div>
           </div>
           <div class="lion-ai-head-actions">
@@ -11918,16 +12086,16 @@
               <span aria-hidden="true">＋</span>
               <input type="file" accept="image/*" data-lion-ai-image>
             </label>
-            <textarea class="lion-ai-input" data-lion-ai-input placeholder="Ask Nyx AI anything..." autocomplete="off" spellcheck="true"></textarea>
+            <textarea class="lion-ai-input" data-lion-ai-input placeholder="Ask Scrapmmy AI anything..." autocomplete="off" spellcheck="true"></textarea>
             <button class="lion-ai-send" type="submit" title="Send" aria-label="Send">↑</button>
           </form>
-          <p>Nyx AI can make mistakes. Verify important information.</p>
+          <p>Scrapmmy AI can make mistakes. Verify important information.</p>
         </footer>
       </main>
     </div>`;
   }
   function openLionAI(){
-    const win=makeWindow({title:'Nyx AI',className:'lion-ai-window',left:'7vw',top:'52px',width:'min(1080px,88vw)',height:'min(760px,calc(100vh - 76px))',autoMaximize:false,body:lionAiBody()});
+    const win=makeWindow({title:'Scrapmmy AI',className:'lion-ai-window',left:'7vw',top:'52px',width:'min(1080px,88vw)',height:'min(760px,calc(100vh - 76px))',autoMaximize:false,body:lionAiBody()});
     lionAiRestoreChat(win);
     setTimeout(()=>win.querySelector('[data-lion-ai-input]')?.focus(),80);
   }
@@ -12551,7 +12719,7 @@
         stream:true
       })
     });
-    if(!res.ok){const data=await res.json().catch(()=>({}));throw new Error(data?.error || `Nyx AI failed (${res.status})`)}
+    if(!res.ok){const data=await res.json().catch(()=>({}));throw new Error(data?.error || `Scrapmmy AI failed (${res.status})`)}
     if(!res.body) throw new Error('The selected model did not return a stream.');
     const reader=res.body.getReader(),decoder=new TextDecoder();
     let buffer='',text='';
@@ -12577,7 +12745,7 @@
     try{
       return await nyxAiModelAnswer(prompt,win,imageContext,onChunk);
     }catch(err){
-      return `Nyx AI could not reach the selected model.\n\n${err.message}\n\nSet NYX_AI_API_KEY on the server. The configured Vilen model can be changed with the matching NYX_AI_MODEL_* environment variable.`;
+      return `Scrapmmy AI could not reach the selected model.\n\n${err.message}\n\nSet NYX_AI_API_KEY on the server. The configured Vilen model can be changed with the matching NYX_AI_MODEL_* environment variable.`;
     }
   }
   function lionAiRespond(prompt){
@@ -12859,7 +13027,8 @@ Scrapmmy supports more websites, while Violet can work better for some pages.
 Auto uses Scrapmmy with Libby by default and can recover with another relay if the connection fails.</p>
           <select id="settingBrowserMode">
             <option value="auto">Auto (Scrapmmy + Libby)</option>
-            <option value="scramjet">Use Scrapmmy</option>
+            <option value="scramjet">Use Scrapmmy (Scramjet v2)</option>
+            <option value="scramjet-v1">Use Scramjet v1</option>
             <option value="ultraviolet">Use Violet</option>
             <option value="iframe">Iframe</option>
           </select>
@@ -13209,7 +13378,7 @@ Auto uses Scrapmmy with Libby by default and can recover with another relay if t
         <li><strong>A cleaner way to browse</strong><span>Nyx now feels calmer and easier to use, with clearer controls, more room for pages, and a tab drawer that stays out of the way until you need it.</span></li>
         <li><strong>A new home for Nyx</strong><span>Search, games, chat, AI, music, and the full app library are now easier to reach, with a live dashboard that keeps useful details close without crowding your screen.</span></li>
         <li><strong>Your settings, easier to manage</strong><span>Account and preference settings are simpler to find, and verified members can keep supported preferences and game saves available across their devices.</span></li>
-        <li><strong>More ways to use Nyx AI</strong><span>Premium members receive 50,000 Claude Opus AI credits each day, with model and effort controls that make it easier to choose how Nyx AI responds.</span></li>
+        <li><strong>More ways to use Scrapmmy AI</strong><span>Premium members receive 50,000 Claude Opus AI credits each day, with model and effort controls that make it easier to choose how Scrapmmy AI responds.</span></li>
       </ul>
       <footer><button type="button" data-nyx-release-notes-close>Got it</button></footer>
     </section>`;
@@ -15426,6 +15595,58 @@ Auto uses Scrapmmy with Libby by default and can recover with another relay if t
       field.style.setProperty('--nyx-search-hover-y',`${event.clientY-bounds.top}px`);
     },{passive:true});
   }
+  function applyUserFacingProductAliases(scope=document){
+    const root=scope?.querySelectorAll ? scope : document;
+    const setLabel=(selector,label)=>{
+      root.querySelectorAll(selector).forEach(element=>{
+        element.setAttribute('title',label);
+        element.setAttribute('aria-label',label);
+        const textNode=[...element.children].find(child=>child.tagName==='SPAN' && child.getAttribute('aria-hidden')!=='true');
+        if(textNode) textNode.textContent=label;
+        else if(!element.children.length) element.textContent=label;
+      });
+    };
+    setLabel('[data-app-url="/assets/games/"],[data-app-url="/assets/games/index.html"]','Sparkschool');
+    setLabel('[data-app-url="nyx://ai"]','Scrapmmy AI');
+    root.querySelectorAll('[data-open="weather"]').forEach(element=>{
+      element.setAttribute('title','Skyglass');
+      element.setAttribute('aria-label','Skyglass');
+    });
+    root.querySelectorAll('input[data-browser-blank-input],input[data-browser-shell-url]').forEach(input=>{
+      input.placeholder='Scout or enter a URL';
+      input.setAttribute('aria-label','Scout or enter a URL');
+    });
+    root.querySelectorAll('[data-browser-mode-select],#settingBrowserMode').forEach(select=>{
+      const v2=select.querySelector('option[value="scramjet"]');
+      if(v2) v2.textContent='Scrapmmy';
+      if(!select.querySelector('option[value="scramjet-v1"]')){
+        const option=new Option('Scramjet v1','scramjet-v1');
+        select.querySelector('option[value="ultraviolet"]')?.before(option) || select.append(option);
+      }
+      if(select.matches('[data-browser-mode-select]')){
+        const saved=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
+        if(select.querySelector(`option[value="${saved}"]`)) select.value=saved;
+      }
+    });
+  }
+  function installUserFacingProductAliases(){
+    if(installUserFacingProductAliases.done) return;
+    installUserFacingProductAliases.done=true;
+    applyUserFacingProductAliases();
+    document.addEventListener('load',event=>{
+      const frame=event.target;
+      if(!(frame instanceof HTMLIFrameElement)) return;
+      try{applyUserFacingProductAliases(frame.contentDocument)}catch{}
+    },true);
+    const observer=new MutationObserver(records=>{
+      for(const record of records){
+        for(const node of record.addedNodes){
+          if(node.nodeType===Node.ELEMENT_NODE) applyUserFacingProductAliases(node);
+        }
+      }
+    });
+    observer.observe(document.body,{childList:true,subtree:true});
+  }
   function finishNyxOpenStartup(){
     if(finishNyxOpenStartup.done) return;
     finishNyxOpenStartup.done=true;
@@ -15439,7 +15660,7 @@ Auto uses Scrapmmy with Libby by default and can recover with another relay if t
     if(hostedCloakEntry) document.body.classList.add('hosted-cloak-entry');
     document.documentElement.classList.toggle('nyx-chromeos',isChromeOsUser());
     document.body.classList.add('runtime-lag-guard');
-    updateResponsiveFit(); installHomeSearchPointerBorder();
+    updateResponsiveFit(); installHomeSearchPointerBorder(); installUserFacingProductAliases();
     removeLegacyStartupPdfData(); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); startNyxGlobalApps(); installInteractiveHomeDots(); installInteractiveHomeTitleDots(); initWeatherPanel(); startCenterClock(); startNyxPresence(); startNyxLatencyMonitor(); startSpotifyChromeOsCompatibilitySweep(); loadFounderProfile(); initializeFounderOwnerAccess(); startNyx();
     if(hostedCloakEntry){
       scheduleHostedCloakLaunch();

@@ -2270,6 +2270,9 @@ let nyxAiActiveRequests = 0;
 const nyxAiPremiumOpusModel = "navy:claude-opus-4.8";
 const nyxAiPremiumOpusDailyTokenLimit = 50_000;
 const nyxAiPremiumOpusUsageCollection = "nyxAiPremiumOpusUsage";
+const nyxAiNavyRegularDailyTokenLimit = 1_500;
+const nyxAiNavyPremiumDailyTokenLimit = 5_000;
+const nyxAiNavyUsageCollection = "nyxAiNavyUsage";
 
 function nyxAiUtcDay(now = new Date()) {
   return now.toISOString().slice(0, 10);
@@ -2539,7 +2542,8 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   }
   const model = modelInfo.id;
   const isPremiumOpus = model === nyxAiPremiumOpusModel;
-  const premiumEntitlement = isPremiumOpus ? await nyxAiPremiumEntitlement(req) : null;
+  const isSharedNavy = credential.globalProvider === "navy";
+  const premiumEntitlement = isPremiumOpus || isSharedNavy ? await nyxAiPremiumEntitlement(req) : null;
   if (isPremiumOpus && !premiumEntitlement?.premium && !premiumEntitlement?.owner) {
     res.status(403).json({ error: "Claude Opus 4.8 is available to active Premium members only." });
     return;
@@ -2621,6 +2625,18 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       : configuredMaxTokens;
   let opusReservation = null;
   let opusReservationSettled = false;
+  let navyReservation = null;
+  let navyReservationSettled = false;
+  if (isSharedNavy) {
+    try {
+      navyReservation = await reserveNyxAiNavyTokens(premiumEntitlement, maxTokens);
+      if (navyReservation) maxTokens = Math.min(maxTokens, navyReservation.tokens);
+    } catch (error) {
+      if (error?.status === 429) res.setHeader("retry-after", String(Math.max(1, Math.ceil((Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() + 1) - Date.now()) / 1000))));
+      res.status(error?.status || 503).json({ error: error?.message || "Shared Navy AI usage is unavailable. Please try again." });
+      return;
+    }
+  }
   if (isPremiumOpus && !premiumEntitlement.owner) {
     try {
       opusReservation = await reserveNyxAiPremiumOpusTokens(premiumEntitlement.firebase, premiumEntitlement.uid, maxTokens);
@@ -2716,6 +2732,10 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
         await settleNyxAiPremiumOpusTokens(opusReservation, reportedTokens || nyxAiEstimatedTokens(generatedText));
         opusReservationSettled = true;
       }
+      if (navyReservation) {
+        await settleNyxAiNavyTokens(navyReservation, reportedTokens || nyxAiEstimatedTokens(generatedText));
+        navyReservationSettled = true;
+      }
       res.write("data: [DONE]\n\n");
       res.end();
       return;
@@ -2736,6 +2756,10 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       await settleNyxAiPremiumOpusTokens(opusReservation, nyxAiCompletionTokens(data) || nyxAiEstimatedTokens(text));
       opusReservationSettled = true;
     }
+    if (navyReservation) {
+      await settleNyxAiNavyTokens(navyReservation, nyxAiCompletionTokens(data) || nyxAiEstimatedTokens(text));
+      navyReservationSettled = true;
+    }
     res.json({ text: String(text || "").trim(), model });
   } catch (error) {
     if (!res.headersSent) {
@@ -2746,6 +2770,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     }
   } finally {
     clearTimeout(timeout);
+    if (navyReservation && !navyReservationSettled) await settleNyxAiNavyTokens(navyReservation, 0).catch(() => {});
     req.nyxAiRelease?.();
   }
 });
@@ -2832,6 +2857,45 @@ function nyxApiKeyCors(res) {
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Max-Age": "600",
     "Vary": "Origin"
+  });
+}
+
+async function reserveNyxAiNavyTokens(entitlement, requestedTokens) {
+  if (entitlement?.owner) return null;
+  if (!entitlement?.firebase || !entitlement?.uid) {
+    const error = new Error("Sign in to use Nyx's shared Navy AI provider.");
+    error.status = 401;
+    throw error;
+  }
+  const limit = entitlement.premium ? nyxAiNavyPremiumDailyTokenLimit : nyxAiNavyRegularDailyTokenLimit;
+  const date = nyxAiUtcDay();
+  const reference = entitlement.firebase.firestore.collection(nyxAiNavyUsageCollection).doc(`${entitlement.uid}_${date}`);
+  const requested = Math.max(1, Math.min(limit, Math.floor(Number(requestedTokens) || 1)));
+  const reservation = await entitlement.firebase.firestore.runTransaction(async transaction => {
+    const snapshot = await transaction.get(reference);
+    const used = Math.max(0, Math.floor(Number(snapshot.data()?.tokens) || 0));
+    const remaining = Math.max(0, limit - used);
+    if (!remaining) {
+      const error = new Error(`Your ${limit.toLocaleString("en-US")} shared Navy AI generated-token allowance resets at 00:00 UTC.`);
+      error.status = 429;
+      error.remaining = 0;
+      throw error;
+    }
+    const tokens = Math.min(requested, remaining);
+    transaction.set(reference, { uid: entitlement.uid, date, tokens: used + tokens, updatedAt: new Date().toISOString() }, { merge: true });
+    return { tokens, remaining: remaining - tokens };
+  });
+  return { ...reservation, reference, limit, uid: entitlement.uid, date };
+}
+
+async function settleNyxAiNavyTokens(reservation, usedTokens) {
+  if (!reservation?.reference) return;
+  const used = Math.max(0, Math.min(reservation.tokens, Math.ceil(Number(usedTokens) || 0)));
+  await reservation.reference.firestore.runTransaction(async transaction => {
+    const snapshot = await transaction.get(reservation.reference);
+    const current = Math.max(0, Math.floor(Number(snapshot.data()?.tokens) || 0));
+    const tokens = Math.max(0, current - reservation.tokens + used);
+    transaction.set(reservation.reference, { tokens, updatedAt: new Date().toISOString() }, { merge: true });
   });
 }
 

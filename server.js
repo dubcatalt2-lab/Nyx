@@ -2030,7 +2030,8 @@ function nyxAiNormalizeCatalog(models) {
       company: String(model?.company || model?.provider || model?.owned_by || "").trim().slice(0, 50),
       endpoint: String(model?.endpoint || "").trim().slice(0, 80),
       vision: Boolean(model?.vision),
-      reasoning: Boolean(model?.reasoning)
+      reasoning: Boolean(model?.reasoning),
+      premium: model?.premium === true || String(model?.premium || "").trim().toLowerCase() === "true"
     }];
   });
 }
@@ -2143,7 +2144,7 @@ async function nyxAiAvailableModels(key = nyxAiKey(), personal = false, provider
     const data = await response.json().catch(() => ({}));
     const providerModels = response.ok ? nyxAiCatalogModels(data) : [];
     let models = provider?.id === "navy"
-      ? providerModels.filter(model => !model.endpoint || /chat|response/i.test(model.endpoint))
+      ? providerModels.filter(model => (!model.endpoint || /chat|response/i.test(model.endpoint)) && !model.premium)
       : providerModels;
     if (key && nyxAiUsesNocturne(provider)) {
       const candidates = nyxAiMergeCatalogs(providerModels, nyxAiKnownCatalog, nyxAiConfiguredCatalog());
@@ -2370,19 +2371,26 @@ function nyxAiClientId(req) {
   return forwarded || req.socket.remoteAddress || "unknown";
 }
 
-function nyxAiRateLimit(req, res, next) {
+async function nyxAiRateLimit(req, res, next) {
   const now = Date.now();
   const clientId = nyxAiClientId(req);
-  const usage = nyxAiUsage.get(clientId) || { minute: [], day: [], active: 0, seen: now };
+  // AI requests from the workspace include the signed-in account token even
+  // when the user supplies a personal provider key. Keep anonymous traffic
+  // IP-scoped, but do not make a Premium member share a daily AI ceiling with
+  // everybody else on a school or home connection.
+  const entitlement = await nyxAiPremiumEntitlement(req);
+  const unlimitedDaily = Boolean(entitlement.premium || entitlement.owner);
+  const usageId = entitlement.uid ? `account:${entitlement.uid}` : `ip:${clientId}`;
+  const usage = nyxAiUsage.get(usageId) || { minute: [], day: [], active: 0, seen: now };
   usage.minute = usage.minute.filter(time => now - time < 60_000);
   usage.day = usage.day.filter(time => now - time < 86_400_000);
   usage.seen = now;
-  nyxAiUsage.set(clientId, usage);
+  nyxAiUsage.set(usageId, usage);
   res.setHeader("x-ratelimit-limit-minute", nyxAiLimits.minute);
   res.setHeader("x-ratelimit-remaining-minute", Math.max(0, nyxAiLimits.minute - usage.minute.length));
-  res.setHeader("x-ratelimit-limit-day", nyxAiLimits.daily);
-  res.setHeader("x-ratelimit-remaining-day", Math.max(0, nyxAiLimits.daily - usage.day.length));
-  if (usage.minute.length >= nyxAiLimits.minute || usage.day.length >= nyxAiLimits.daily) {
+  res.setHeader("x-ratelimit-limit-day", unlimitedDaily ? "unlimited" : nyxAiLimits.daily);
+  res.setHeader("x-ratelimit-remaining-day", unlimitedDaily ? "unlimited" : Math.max(0, nyxAiLimits.daily - usage.day.length));
+  if (usage.minute.length >= nyxAiLimits.minute || (!unlimitedDaily && usage.day.length >= nyxAiLimits.daily)) {
     const retryAfter = usage.minute.length >= nyxAiLimits.minute
       ? Math.max(1, Math.ceil((60_000 - (now - usage.minute[0])) / 1000))
       : Math.max(1, Math.ceil((86_400_000 - (now - usage.day[0])) / 1000));
@@ -2396,7 +2404,7 @@ function nyxAiRateLimit(req, res, next) {
     return;
   }
   usage.minute.push(now);
-  usage.day.push(now);
+  if (!unlimitedDaily) usage.day.push(now);
   usage.active += 1;
   nyxAiActiveRequests += 1;
   let released = false;

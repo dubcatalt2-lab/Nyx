@@ -2781,7 +2781,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
 const nyxApiKeyCollection = "nyxApiKeys";
 const nyxApiKeyUsageCollection = "nyxApiKeyUsage";
 const nyxApiKeyTokenUsageCollection = "nyxApiKeyTokenUsage";
-const nyxApiKeyMaximumPerUser = 12;
+const nyxApiKeyMaximumPerUser = 5;
 const nyxApiKeyMinuteUsage = new Map();
 let nyxGroqModelsCache = { expiresAt: 0, models: [] };
 

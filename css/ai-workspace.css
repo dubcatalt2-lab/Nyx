@@ -287,6 +287,9 @@ button:disabled{cursor:not-allowed}
   white-space:nowrap;
 }
 .ai-header-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.ai-provider-select{height:38px;max-width:132px;padding:0 26px 0 10px;border:1px solid var(--ai-border);border-radius:10px;background:var(--ai-surface);color:var(--ai-text-soft);font-size:11px;font-weight:600;outline:0}
+.ai-provider-select:hover,.ai-provider-select:focus{border-color:var(--ai-theme-hover-border);background:var(--ai-surface-raised)}
+.ai-provider-select:disabled{opacity:.62}
 .ai-key-settings{
   position:relative;
   width:38px;
@@ -855,6 +858,7 @@ button:disabled{cursor:not-allowed}
   .ai-brand-copy h1{font-size:14px}
   .ai-header-divider,.ai-thread-title{display:none}
   .ai-header-actions{min-width:0;flex:1;justify-content:flex-end}
+  .ai-provider-select{max-width:112px}
   .ai-model-picker{min-width:0;width:min(220px,55vw)}
   .ai-model-trigger{height:36px}
   .ai-clear{width:36px;height:36px;padding:0;justify-content:center}
@@ -869,6 +873,7 @@ button:disabled{cursor:not-allowed}
 }
 
 @media(max-width:560px){
+  .ai-provider-select{max-width:88px;padding-left:7px;padding-right:18px;font-size:10px}
   .ai-key-settings{width:34px;height:34px;flex-basis:34px}
   .ai-model-picker{width:min(155px,44vw)}
   .ai-model-trigger{padding-left:9px;padding-right:8px;gap:7px}

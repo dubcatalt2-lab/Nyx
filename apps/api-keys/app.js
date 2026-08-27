@@ -1,7 +1,7 @@
 (()=>{
   'use strict';
   const $=selector=>document.querySelector(selector);
-  const refs={status:$('[data-status]'),notice:$('[data-notice]'),list:$('[data-key-list]'),create:$('[data-create]'),dialog:$('[data-dialog]'),form:$('[data-key-form]'),label:$('[data-label]'),confirm:$('[data-create-confirm]'),revealDialog:$('[data-reveal-dialog]'),reveal:$('[data-reveal]'),copy:$('[data-copy]'),limits:$('[data-limits]')};
+  const refs={status:$('[data-status]'),notice:$('[data-notice]'),list:$('[data-key-list]'),create:$('[data-create]'),dialog:$('[data-dialog]'),form:$('[data-key-form]'),label:$('[data-label]'),confirm:$('[data-create-confirm]'),revealDialog:$('[data-reveal-dialog]'),reveal:$('[data-reveal]'),toggleReveal:$('[data-toggle-reveal]'),copy:$('[data-copy]'),limits:$('[data-limits]')};
   let accountToken='';
   let configured=false;
 
@@ -68,8 +68,10 @@
     if(event.submitter?.value==='cancel')return;
     event.preventDefault();const label=refs.label.value.trim();if(label.length<2){refs.label.focus();return}
     refs.confirm.disabled=true;refs.confirm.textContent='Creating…';
-    try{const result=await api('/api/nyx-api-keys',{method:'POST',body:JSON.stringify({label})});refs.dialog.close();refs.reveal.value=result.key||'';refs.revealDialog.showModal();await loadKeys()}catch(error){notice(error.message,'error')}finally{refs.confirm.disabled=false;refs.confirm.textContent='Create key'}
+    try{const result=await api('/api/nyx-api-keys',{method:'POST',body:JSON.stringify({label})});if(!result.key)throw new Error('Nyx could not reveal the new key. Create a new key and copy it immediately.');refs.dialog.close();refs.reveal.value=result.key;refs.reveal.type='password';refs.toggleReveal.setAttribute('aria-pressed','false');refs.toggleReveal.textContent='Show key';refs.revealDialog.showModal();refs.reveal.focus();await loadKeys()}catch(error){notice(error.message,'error')}finally{refs.confirm.disabled=false;refs.confirm.textContent='Create key'}
   });
+  refs.toggleReveal.addEventListener('click',()=>{const show=refs.reveal.type==='password';refs.reveal.type=show?'text':'password';refs.toggleReveal.setAttribute('aria-pressed',String(show));refs.toggleReveal.textContent=show?'Hide key':'Show key';refs.reveal.focus()});
   refs.copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(refs.reveal.value);refs.copy.textContent='Copied';setTimeout(()=>refs.copy.textContent='Copy key',1200)}catch{refs.reveal.select();document.execCommand('copy')}});
+  refs.revealDialog.addEventListener('close',()=>{refs.reveal.value='';refs.reveal.type='password';refs.toggleReveal.setAttribute('aria-pressed','false');refs.toggleReveal.textContent='Show key'});
   applyTheme();void load();
 })();

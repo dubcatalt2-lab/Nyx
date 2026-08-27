@@ -53,10 +53,10 @@
     <form method="dialog">
       <p class="eyebrow">Copy it now</p><h2 id="reveal-title">Your Nyx API key</h2>
       <p>This is the only time Nyx can show the full key. Store it in a password manager or server secret.</p>
-      <textarea data-reveal readonly rows="4" aria-label="New Nyx API key"></textarea>
+      <div class="key-reveal-control"><input data-reveal type="password" readonly aria-label="New Nyx API key"><button class="secondary-action" data-toggle-reveal type="button" aria-pressed="false">Show key</button></div>
       <footer><button class="secondary-action" value="close">Close</button><button class="primary-action" data-copy type="button">Copy key</button></footer>
     </form>
   </dialog>
-  <script src="./app.js?v=20260826-api-keys-1"></script>
+  <script src="./app.js?v=20260826-api-keys-2"></script>
 </body>
 </html>

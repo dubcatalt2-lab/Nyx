@@ -7,6 +7,7 @@
   const MODEL_KEY='nyx.aiModel';
   const PERSONAL_KEY_SESSION='nyx.aiPersonalKey.session';
   const PERSONAL_KEY_DEVICE='nyx.aiPersonalKey.device';
+  const PROVIDER_KEY='nyx.aiSharedProvider';
   const RESPONSE_DEPTH_KEY='nyx.aiResponseDepth';
   const USAGE_KEY='nyx.aiUsage.v1';
   const DEFAULT_MODEL='chatgpt-5.4-mini';
@@ -27,6 +28,7 @@
   const input=document.getElementById('input');
   const send=document.getElementById('send');
   const model=document.getElementById('model');
+  const providerSelect=document.getElementById('providerSelect');
   const modelPicker=document.getElementById('modelPicker');
   const modelTrigger=document.getElementById('modelTrigger');
   const modelSelected=document.getElementById('modelSelected');
@@ -73,7 +75,7 @@
   const apiKeyCancel=document.getElementById('apiKeyCancel');
   const apiKeyClose=document.getElementById('apiKeyClose');
   const apiKeySave=document.getElementById('apiKeySave');
-  if(!app||!feed||!conversation||!form||!input||!send||!model||!modelPicker||!modelTrigger||!modelSelected||!modelMenu||!modelOptionsHost||!clear||!threadTitle||!sidebar||!sidebarToggle||!sidebarClose||!sidebarScrim||!newChat||!temporaryChat||!threadList||!threadCount||!historyEmpty||!threadSearch||depthButtons.length!==3||!sidebarModelName||!usageWeek||!usageAll||!usageRequests||!profileButton||!profileAvatar||!profileInitial||!profileName||!profileHandle||!imageInput||!attachImage||!attachmentPreview||!attachmentThumbnail||!attachmentName||!attachmentStatus||!removeAttachment||!apiKeySettings||!apiKeyDialog||!apiKeyForm||!apiKeyInput||!apiKeyRemember||!apiKeyReveal||!apiKeyFeedback||!apiKeyRemove||!apiKeyCancel||!apiKeyClose||!apiKeySave) return;
+  if(!app||!feed||!conversation||!form||!input||!send||!model||!providerSelect||!modelPicker||!modelTrigger||!modelSelected||!modelMenu||!modelOptionsHost||!clear||!threadTitle||!sidebar||!sidebarToggle||!sidebarClose||!sidebarScrim||!newChat||!temporaryChat||!threadList||!threadCount||!historyEmpty||!threadSearch||depthButtons.length!==3||!sidebarModelName||!usageWeek||!usageAll||!usageRequests||!profileButton||!profileAvatar||!profileInitial||!profileName||!profileHandle||!imageInput||!attachImage||!attachmentPreview||!attachmentThumbnail||!attachmentName||!attachmentStatus||!removeAttachment||!apiKeySettings||!apiKeyDialog||!apiKeyForm||!apiKeyInput||!apiKeyRemember||!apiKeyReveal||!apiKeyFeedback||!apiKeyRemove||!apiKeyCancel||!apiKeyClose||!apiKeySave) return;
 
   let activeController=null;
   let followStream=true;
@@ -85,9 +87,12 @@
   let attachedImage=null;
   let attachedText=null;
   let nyxAiAccountAuthPromise=null;
+  let globalProviders=[];
 
   function personalKeyProvider(key=personalApiKey()){
-    return /^nyx_[A-Za-z0-9_-]{16}_[A-Za-z0-9_-]{43}$/.test(String(key||''))?'Nyx':'Nocturne';
+    const value=String(key||'');
+    if(/^nyx_[A-Za-z0-9_-]{16}_[A-Za-z0-9_-]{43}$/.test(value)) return 'Nyx';
+    return /^sk-navy-/i.test(value)?'Navy':'Nocturne';
   }
 
   function personalApiKey(){
@@ -139,7 +144,40 @@
   async function aiHeaders(headers={}){
     const key=personalApiKey();
     const token=await nyxAiAccountToken();
-    return {...headers,...(key?{'x-nyx-ai-api-key':key}:{}),...(token?{Authorization:`Bearer ${token}`}:{})};
+    const provider=String(providerSelect.value||'shared');
+    return {...headers,...(key?{'x-nyx-ai-api-key':key}:{'x-nyx-ai-provider':provider}),...(token?{Authorization:`Bearer ${token}`}:{})};
+  }
+
+  function selectedProvider(){
+    const saved=String(localStorage.getItem(PROVIDER_KEY)||'shared');
+    return globalProviders.some(provider=>provider.id===saved)?saved:(globalProviders[0]?.id||'shared');
+  }
+
+  function syncProviderControl(){
+    const personal=Boolean(personalApiKey());
+    providerSelect.disabled=personal||globalProviders.length<2;
+    providerSelect.title=personal?'Your personal key chooses the provider':'Shared AI provider';
+  }
+
+  function renderProviders(){
+    const selected=selectedProvider();
+    providerSelect.innerHTML=globalProviders.map(provider=>`<option value="${escapeHtml(provider.id)}">${escapeHtml(provider.label)}</option>`).join('')||'<option value="shared">Nyx Shared</option>';
+    providerSelect.value=selected;
+    syncProviderControl();
+  }
+
+  async function loadProviders(){
+    try{
+      const response=await fetch('/api/nyx-ai/providers',{headers:await aiHeaders({accept:'application/json'})});
+      const data=await response.json();
+      if(!response.ok) throw new Error(data?.error||'Shared providers are unavailable.');
+      globalProviders=Array.isArray(data?.providers)?data.providers.flatMap(item=>{
+        const id=String(item?.id||'').trim();
+        const label=String(item?.label||id).trim();
+        return /^[a-z][a-z0-9-]{0,30}$/i.test(id)&&label?[{id,label}]:[];
+      }):[];
+    }catch{globalProviders=[]}
+    renderProviders();
   }
 
   function updateApiKeyControl(message='',state=''){
@@ -151,6 +189,7 @@
     apiKeyRemove.disabled=!active;
     apiKeyFeedback.className=`ai-key-feedback${state?` is-${state}`:''}`;
     apiKeyFeedback.textContent=message||(active?`Your personal ${provider} key is active.`:'Nyx will use its shared AI key until you add your own.');
+    syncProviderControl();
   }
 
   function openApiKeyDialog(){
@@ -1459,7 +1498,7 @@
     removePersonalApiKey();
     apiKeyInput.value='';
     apiKeyRemember.checked=false;
-    updateApiKeyControl('Personal key removed. Nyx is using its shared AI key.','success');
+    updateApiKeyControl(`Personal key removed. Nyx is using ${providerSelect.options[providerSelect.selectedIndex]?.text||'its shared AI key'}.`,'success');
     await loadModels();
   });
   apiKeyForm.addEventListener('submit',async event=>{
@@ -1476,6 +1515,11 @@
     const valid=await loadModels();
     apiKeySave.disabled=false;
     if(valid) setTimeout(closeApiKeyDialog,450);
+  });
+  providerSelect.addEventListener('change',async()=>{
+    if(personalApiKey()) return;
+    localStorage.setItem(PROVIDER_KEY,providerSelect.value||'shared');
+    await loadModels();
   });
   clear.addEventListener('click',clearChat);
   newChat.addEventListener('click',()=>startNewChat());
@@ -1518,6 +1562,6 @@
   renderUsage();
   requestProfile();
   updateApiKeyControl();
-  void loadModels();
+  void (async()=>{await loadProviders();await loadModels()})();
   input.focus();
 })();

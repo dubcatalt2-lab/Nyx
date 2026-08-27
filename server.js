@@ -1945,19 +1945,48 @@ function nyxAiKey() {
   return process.env.NYX_AI_API_KEY || "";
 }
 
+function nyxAiNavyProvider(key = process.env.NYX_NAVY_API_KEY || "") {
+  return {
+    id: "navy",
+    label: "Navy AI",
+    key: String(key || "").trim(),
+    endpoint: "https://api.navy/v1/chat/completions",
+    catalogEndpoint: "https://api.navy/v1/models"
+  };
+}
+
+function nyxAiSharedProvider() {
+  return { id: "shared", label: "Nyx Shared", key: nyxAiKey(), endpoint: nyxAiEndpoint(), catalogEndpoint: nyxAiCatalogEndpoint() };
+}
+
+function nyxAiGlobalProvider(value) {
+  const id = String(value || "shared").trim().toLowerCase();
+  if (id === "navy") return nyxAiNavyProvider();
+  if (id === "groq") {
+    const config = nyxGroqConfig();
+    return { id: "groq", label: "Groq", key: config.apiKey, configured: config.configured };
+  }
+  return nyxAiSharedProvider();
+}
+
 function nyxAiRequestCredential(req) {
   const supplied = req.get("x-nyx-ai-api-key");
-  if (supplied === undefined) return { key: nyxAiKey(), personal: false };
+  if (supplied === undefined) {
+    const requestedProvider = String(req.get("x-nyx-ai-provider") || "shared").trim().toLowerCase();
+    const provider = nyxAiGlobalProvider(requestedProvider);
+    if (!provider.key) return { key: "", personal: false, provider, invalidProvider: requestedProvider !== "shared" };
+    return { key: provider.key, personal: false, provider, globalProvider: provider.id };
+  }
   const key = String(supplied || "").trim();
   if (key.length < 8 || key.length > 512 || /[\s\x00-\x1f\x7f]/.test(key)) {
     return { key: "", personal: true, invalid: true };
   }
-  return { key, personal: true, nyxGateway: Boolean(nyxApiKeyParts(key)) };
+  return { key, personal: true, nyxGateway: Boolean(nyxApiKeyParts(key)), provider: /^sk-navy-/i.test(key) ? nyxAiNavyProvider(key) : nyxAiSharedProvider() };
 }
 
-function nyxAiCredentialCacheKey(key, personal = false) {
+function nyxAiCredentialCacheKey(key, personal = false, providerId = "shared") {
   if (!key) return personal ? "personal:missing" : "shared:missing";
-  return `${personal ? "personal" : "shared"}:${createHash("sha256").update(key).digest("hex")}`;
+  return `${providerId}:${personal ? "personal" : "shared"}:${createHash("sha256").update(key).digest("hex")}`;
 }
 
 function nyxAiCatalogCache(cacheKey) {
@@ -1972,14 +2001,16 @@ function nyxAiSetCatalogCache(cacheKey, cache) {
   }
 }
 
-function nyxAiEndpoint() {
+function nyxAiEndpoint(provider = null) {
+  if (provider?.endpoint) return provider.endpoint;
   const explicitEndpoint = String(process.env.NYX_AI_ENDPOINT || "").trim();
   if (explicitEndpoint) return explicitEndpoint;
   const baseUrl = String(process.env.NYX_AI_BASE_URL || "https://nocturne.lol").trim().replace(/\/+$/, "");
   return /\/api\/ai$/i.test(baseUrl) ? baseUrl : `${baseUrl}/api/ai`;
 }
 
-function nyxAiCatalogEndpoint() {
+function nyxAiCatalogEndpoint(provider = null) {
+  if (provider?.catalogEndpoint) return provider.catalogEndpoint;
   const explicitEndpoint = String(process.env.NYX_AI_MODELS_ENDPOINT || "").trim();
   if (explicitEndpoint) return explicitEndpoint;
   return `${nyxAiEndpoint().replace(/\/+$/, "")}/config`;
@@ -1997,6 +2028,7 @@ function nyxAiNormalizeCatalog(models) {
       id,
       label: String(model?.label || model?.displayName || model?.display_name || id).trim().slice(0, 100) || id,
       company: String(model?.company || model?.provider || model?.owned_by || "").trim().slice(0, 50),
+      endpoint: String(model?.endpoint || "").trim().slice(0, 80),
       vision: Boolean(model?.vision),
       reasoning: Boolean(model?.reasoning)
     }];
@@ -2043,9 +2075,9 @@ function nyxAiMergeCatalogs(...catalogs) {
   return [...merged.values()];
 }
 
-function nyxAiUsesNocturne() {
+function nyxAiUsesNocturne(provider = null) {
   try {
-    const endpoint = new URL(nyxAiEndpoint());
+    const endpoint = new URL(nyxAiEndpoint(provider));
     return endpoint.hostname === "nocturne.lol" && /\/api\/ai\/?$/i.test(endpoint.pathname);
   } catch {
     return false;
@@ -2094,9 +2126,9 @@ async function nyxAiProbeNocturneCatalog(candidates, key) {
   return candidates.filter((_model, index) => results[index] === "available");
 }
 
-async function nyxAiAvailableModels(key = nyxAiKey(), personal = false) {
+async function nyxAiAvailableModels(key = nyxAiKey(), personal = false, provider = null) {
   const now = Date.now();
-  const cacheKey = nyxAiCredentialCacheKey(key, personal);
+  const cacheKey = nyxAiCredentialCacheKey(key, personal, provider?.id || "shared");
   const cached = nyxAiCatalogCache(cacheKey);
   if (cached.expiresAt > now) return cached.models;
   const controller = new AbortController();
@@ -2104,14 +2136,16 @@ async function nyxAiAvailableModels(key = nyxAiKey(), personal = false) {
   try {
     const headers = { accept: "application/json" };
     if (key) headers.authorization = `Bearer ${key}`;
-    const response = await fetch(nyxAiCatalogEndpoint(), {
+    const response = await fetch(nyxAiCatalogEndpoint(provider), {
       signal: controller.signal,
       headers
     });
     const data = await response.json().catch(() => ({}));
     const providerModels = response.ok ? nyxAiCatalogModels(data) : [];
-    let models = providerModels;
-    if (key && nyxAiUsesNocturne()) {
+    let models = provider?.id === "navy"
+      ? providerModels.filter(model => !model.endpoint || /chat|response/i.test(model.endpoint))
+      : providerModels;
+    if (key && nyxAiUsesNocturne(provider)) {
       const candidates = nyxAiMergeCatalogs(providerModels, nyxAiKnownCatalog, nyxAiConfiguredCatalog());
       models = await nyxAiProbeNocturneCatalog(candidates, key);
     }
@@ -2128,9 +2162,9 @@ async function nyxAiAvailableModels(key = nyxAiKey(), personal = false) {
   return nyxAiCatalogCache(cacheKey).models;
 }
 
-async function nyxAiResolveModel(requestedModel, key, personal = false) {
+async function nyxAiResolveModel(requestedModel, key, personal = false, provider = null) {
   const providerModel = nyxAiModels[requestedModel] || requestedModel;
-  const models = await nyxAiAvailableModels(key, personal);
+  const models = await nyxAiAvailableModels(key, personal, provider);
   const match = models.find(item => item.id === providerModel);
   return match ? { ...match, id: providerModel } : null;
 }
@@ -2384,17 +2418,33 @@ setInterval(() => {
   }
 }, 3_600_000).unref();
 
+app.get("/api/nyx-ai/providers", (_req, res) => {
+  const shared = nyxAiSharedProvider();
+  const navy = nyxAiNavyProvider();
+  const groq = nyxAiGlobalProvider("groq");
+  res.setHeader("cache-control", "private, no-store");
+  res.json({ providers: [
+    ...(shared.key ? [{ id: "shared", label: shared.label }] : []),
+    ...(groq.key ? [{ id: "groq", label: groq.label }] : []),
+    ...(navy.key ? [{ id: "navy", label: navy.label }] : [])
+  ] });
+});
+
 app.get("/api/nyx-ai/models", async (req, res) => {
   const credential = nyxAiRequestCredential(req);
   if (credential.invalid) {
-    res.status(400).json({ error: "Your personal Nocturne AI API key is not valid." });
+    res.status(400).json({ error: "Your personal Nyx, Navy, or Nocturne AI API key is not valid." });
+    return;
+  }
+  if (credential.invalidProvider) {
+    res.status(503).json({ error: "That shared AI provider is not configured by the service owner." });
     return;
   }
   if (!credential.key) {
     res.status(503).json({ error: credential.personal ? "Enter a personal Nocturne AI API key." : "Nyx AI is not configured." });
     return;
   }
-  if (credential.nyxGateway) {
+  if (credential.nyxGateway || credential.globalProvider === "groq") {
     try {
       const config = nyxGroqConfig();
       if (!config.configured) {
@@ -2402,18 +2452,22 @@ app.get("/api/nyx-ai/models", async (req, res) => {
         error.status = 503;
         throw error;
       }
-      const authenticated = await nyxApiKeyAuthenticateValue(credential.key);
-      const entitlement = await nyxApiKeyOwnerEntitlement(authenticated.firebase, authenticated.ownerUid);
       const models = await nyxGroqAvailableModels(config);
       res.setHeader("cache-control", "private, no-store");
-      res.json({ models, credential: "nyx-api-key", premium: entitlement.premium, owner: entitlement.owner });
+      if (credential.nyxGateway) {
+        const authenticated = await nyxApiKeyAuthenticateValue(credential.key);
+        const entitlement = await nyxApiKeyOwnerEntitlement(authenticated.firebase, authenticated.ownerUid);
+        res.json({ models, credential: "nyx-api-key", premium: entitlement.premium, owner: entitlement.owner });
+      } else {
+        res.json({ models, credential: "groq" });
+      }
     } catch (error) {
       res.status(error.status || 503).json({ error: error.message || "Nyx could not verify this Nyx API key." });
     }
     return;
   }
   const entitlement = await nyxAiPremiumEntitlement(req);
-  const models = (await nyxAiAvailableModels(credential.key, credential.personal))
+  const models = (await nyxAiAvailableModels(credential.key, credential.personal, credential.provider))
     .filter(item => entitlement.premium || entitlement.owner || item.id !== nyxAiPremiumOpusModel);
   if (!models.length) {
     res.status(503).json({ error: credential.personal ? "Nyx could not verify any models for your personal API key." : "Nyx could not verify the models available to the configured AI key." });
@@ -2427,13 +2481,17 @@ app.get("/api/nyx-ai/models", async (req, res) => {
   // The URL is shared by server-key and personal-key requests. Never let a
   // browser or intermediary reuse one credential scope's catalog for another.
   res.setHeader("cache-control", "private, no-store");
-  res.json({ models: exposedModels, credential: credential.personal ? "personal" : "nyx", premium: entitlement.premium, owner: entitlement.owner });
+  res.json({ models: exposedModels, credential: credential.personal ? "personal" : credential.globalProvider || "shared", premium: entitlement.premium, owner: entitlement.owner });
 });
 
 app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   const credential = nyxAiRequestCredential(req);
   if (credential.invalid) {
-    res.status(400).json({ error: "Your personal Nocturne AI API key is not valid." });
+    res.status(400).json({ error: "Your personal Nyx, Navy, or Nocturne AI API key is not valid." });
+    return;
+  }
+  if (credential.invalidProvider) {
+    res.status(503).json({ error: "That shared AI provider is not configured by the service owner." });
     return;
   }
   if (credential.nyxGateway) {
@@ -2441,6 +2499,17 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       await nyxAiGatewayChat(req, res, credential.key);
     } catch (error) {
       if (!res.headersSent) res.status(error.status || 502).json({ error: error.message || "Nyx API could not complete this request." });
+      else if (!res.writableEnded) res.end();
+    } finally {
+      req.nyxAiRelease?.();
+    }
+    return;
+  }
+  if (credential.globalProvider === "groq") {
+    try {
+      await nyxAiGlobalGroqChat(req, res);
+    } catch (error) {
+      if (!res.headersSent) res.status(error.status || 502).json({ error: error.message || "Groq could not complete this request." });
       else if (!res.writableEnded) res.end();
     } finally {
       req.nyxAiRelease?.();
@@ -2455,7 +2524,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     return;
   }
   const requestedModel = String(req.body?.model || "chatgpt-5.4-mini");
-  const modelInfo = await nyxAiResolveModel(requestedModel, key, credential.personal);
+  const modelInfo = await nyxAiResolveModel(requestedModel, key, credential.personal, credential.provider);
   if (!modelInfo) {
     res.status(400).json({ error: "Unknown Nyx AI model." });
     return;
@@ -2507,7 +2576,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     res.status(400).json({ error: "Message is required." });
     return;
   }
-  const endpoint = nyxAiEndpoint();
+  const endpoint = nyxAiEndpoint(credential.provider);
   const textPrompt = nyxAiTextAttachmentPrompt(message, textAttachment);
   const prompt = imageContext ? `${textPrompt || "Answer the attached image."}\n\nAdditional image details from Nyx:\n${imageContext}` : textPrompt;
   const messages = history.length ? history : [{ role: "user", content: prompt }];
@@ -2557,9 +2626,16 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), nyxAiLimits.timeoutMs);
   res.once("close", () => controller.abort());
-  const providerPayload = {
+  const system = `You are Nyx AI inside the Nyx browser. Be helpful, direct, and accurate. If you do not know something, say so plainly. Never output corrupted symbols or token fragments; every answer must be readable natural language or valid code requested by the user. Format responses with clean Markdown. Use Markdown table syntax for tables, and use standard LaTeX delimiters for mathematical notation. If the latest user message includes a [NYX VERIFIED IMAGE ATTACHMENT] block, an actual image upload was received and locally inspected. Treat that block as visual evidence from the attachment, not as a user-written description. Answer the image request directly from the evidence; never claim that no image was attached, characterize the visual evidence as a vague user description, or ask the user to upload the same image again. ${responseGuidance}`;
+  const providerPayload = credential.provider?.id === "navy" ? {
     model,
-    system: `You are Nyx AI inside the Nyx browser. Be helpful, direct, and accurate. If you do not know something, say so plainly. Never output corrupted symbols or token fragments; every answer must be readable natural language or valid code requested by the user. Format responses with clean Markdown. Use Markdown table syntax for tables, and use standard LaTeX delimiters for mathematical notation. If the latest user message includes a [NYX VERIFIED IMAGE ATTACHMENT] block, an actual image upload was received and locally inspected. Treat that block as visual evidence from the attachment, not as a user-written description. Answer the image request directly from the evidence; never claim that no image was attached, characterize the visual evidence as a vague user description, or ask the user to upload the same image again. ${responseGuidance}`,
+    messages: [{ role: "system", content: system }, ...messages],
+    temperature: Number(process.env.NYX_AI_TEMPERATURE || 0.45),
+    max_tokens: maxTokens,
+    stream: wantsStream
+  } : {
+    model,
+    system,
     messages,
     level: responseDepth,
     reasoning_effort: responseDepth === "off" ? "low" : responseDepth === "extended" ? "high" : "medium",
@@ -3099,6 +3175,54 @@ app.post("/api/v1/ai", async (req, res) => {
     if (tokenReservation && !tokenReservationSettled) await settleNyxApiKeyTokens(tokenReservation, 0).catch(() => {});
   }
 });
+
+// Shared Groq is selected only by a same-origin Nyx AI client. The browser
+// receives model IDs and responses, never the provider credential.
+async function nyxAiGlobalGroqChat(req, res) {
+  const config = nyxGroqConfig();
+  if (!config.configured) {
+    const error = new Error("Groq is not configured by the service owner yet.");
+    error.status = 503;
+    throw error;
+  }
+  const sourceMessages = Array.isArray(req.body?.messages) ? req.body.messages : [];
+  const imageContext = String(req.body?.imageContext || "").trim();
+  const messages = sourceMessages.map((item, index) => {
+    if (index !== sourceMessages.length - 1 || item?.role === "assistant" || !imageContext) return item;
+    return { ...item, content: `${String(item?.content || req.body?.message || "").trim()}\n\nAdditional image details from Nyx:\n${imageContext}`.trim() };
+  });
+  const payload = await nyxApiKeyChatPayload({
+    ...req.body,
+    prompt: req.body?.message,
+    messages,
+    max_tokens: config.maxTokens,
+    stream: req.body?.stream !== false
+  }, config);
+  const upstream = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${config.apiKey}` },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(45_000)
+  });
+  if (!upstream.ok) {
+    const data = await upstream.json().catch(() => ({}));
+    const error = new Error(String(data?.error?.message || "Groq could not complete this request.").slice(0, 240));
+    error.status = upstream.status === 429 ? 429 : 502;
+    throw error;
+  }
+  if (payload.stream && upstream.body) {
+    res.status(200).set({ "content-type": "text/event-stream; charset=utf-8", "cache-control": "no-cache, no-transform", connection: "keep-alive" });
+    const reader = upstream.body.getReader();
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      res.write(Buffer.from(value));
+    }
+    res.end();
+    return;
+  }
+  res.json(await upstream.json().catch(() => ({})));
+}
 
 // The Nyx AI workspace accepts a user's Nyx key in its existing personal-key
 // control. It reaches the same server-only Groq gateway as external clients;

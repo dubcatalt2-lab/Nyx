@@ -11103,7 +11103,7 @@
       return '';
     };
     const nyxChatSourcePath=path=>['/apps/chat','/apps/chat/','/apps/chat/index.html'].includes(path);
-    const nyxAccountClientSourcePath=path=>nyxChatSourcePath(path)||['/ai.html','/assets/games','/assets/games/','/assets/games/index.html','/apps/link-checker','/apps/link-checker/','/apps/link-checker/index.html','/apps/cloud-gaming','/apps/cloud-gaming/','/apps/cloud-gaming/index.html'].includes(path);
+    const nyxAccountClientSourcePath=path=>nyxChatSourcePath(path)||['/ai.html','/assets/games','/assets/games/','/assets/games/index.html','/apps/link-checker','/apps/link-checker/','/apps/link-checker/index.html','/apps/cloud-gaming','/apps/cloud-gaming/','/apps/cloud-gaming/index.html','/apps/api-keys','/apps/api-keys/','/apps/api-keys/index.html'].includes(path);
     const messageHandler=e=>{
       if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:account-token-request','nyx:chat-open-profile','nyx:chat-notification','nyx:subscription-refresh','nyx:proxy-direct-fallback','nyx:cloud-game-load','nyx:cloud-game-save','nyx:close-tab','nyx:go-home'].includes(e.data?.type)) return;
       if(['nyx:cloud-game-load','nyx:cloud-game-save'].includes(e.data.type)){

@@ -213,12 +213,6 @@
     return '#'+[1,3,5].map(index=>channel(index).toString(16).padStart(2,'0')).join('');
   }
 
-  function themeForeground(value){
-    const color=themeHex(value);
-    const channels=[1,3,5].map(index=>parseInt(color.slice(index,index+2),16)/255).map(channel=>channel<=.04045?channel/12.92:Math.pow((channel+.055)/1.055,2.4));
-    return channels[0]*.2126+channels[1]*.7152+channels[2]*.0722>.48?'#071018':'#f7f9ff';
-  }
-
   function parentThemePalette(){
     try{
       if(parent===window||parent.location.origin!==location.origin) return null;
@@ -265,23 +259,24 @@
     const palette=parentThemePalette()||fallbackThemePalette(clean);
     const root=document.documentElement;
     const values={
-      '--ai-bg':palette.canvas,
-      '--ai-bg-deep':palette.deep,
-      '--ai-surface':palette.surface,
-      '--ai-surface-raised':palette.raised,
-      '--ai-surface-hover':palette.hover,
-      '--ai-border':`color-mix(in srgb,${palette.line} 62%,transparent)`,
-      '--ai-border-strong':`color-mix(in srgb,${palette.bright} 34%,${palette.line})`,
-      '--ai-text':palette.text,
-      '--ai-text-soft':`color-mix(in srgb,${palette.text} 84%,${palette.muted})`,
-      '--ai-muted':palette.muted,
-      '--ai-muted-dark':`color-mix(in srgb,${palette.muted} 72%,${palette.canvas})`,
-      '--ai-accent':palette.accent,
-      '--ai-accent-bright':palette.bright,
-      '--ai-accent-soft':`color-mix(in srgb,${palette.accent} 14%,transparent)`,
-      '--ai-accent-border':`color-mix(in srgb,${palette.bright} 42%,transparent)`,
-      '--ai-accent-foreground':themeForeground(palette.accent),
-      '--ai-accent-glow':`color-mix(in srgb,${palette.accent} 28%,transparent)`
+      '--ai-bg':'#000000',
+      '--ai-bg-deep':'#000000',
+      '--ai-surface':'#080808',
+      '--ai-surface-raised':'#0e0e0e',
+      '--ai-surface-hover':'#141414',
+      '--ai-border':'rgba(255,255,255,.10)',
+      '--ai-border-strong':'rgba(255,255,255,.18)',
+      '--ai-text':'#f7f7f8',
+      '--ai-text-soft':'#d7d7db',
+      '--ai-muted':'#929299',
+      '--ai-muted-dark':'#68686f',
+      '--ai-accent':'#d7d7dc',
+      '--ai-accent-bright':'#f7f7f8',
+      '--ai-accent-soft':'rgba(255,255,255,.07)',
+      '--ai-accent-border':'rgba(255,255,255,.18)',
+      '--ai-accent-foreground':'#050505',
+      '--ai-accent-glow':'rgba(255,255,255,.08)',
+      '--ai-theme-hover-border':`color-mix(in srgb,${palette.bright} 82%,#ffffff 8%)`
     };
     Object.entries(values).forEach(([name,value])=>root.style.setProperty(name,value));
     root.dataset.nyxTheme=clean;

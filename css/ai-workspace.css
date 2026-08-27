@@ -665,6 +665,7 @@ button:disabled{cursor:not-allowed}
 }
 .ai-message-content>:first-child{margin-top:0}
 .ai-message-content>:last-child{margin-bottom:0}
+.ai-reasoning{margin:1px 0 14px;border:1px solid var(--ai-border);border-radius:12px;background:color-mix(in srgb,var(--ai-surface-raised) 82%,transparent);overflow:hidden}.ai-reasoning summary{display:flex;align-items:center;gap:8px;min-height:35px;padding:0 12px;cursor:pointer;color:var(--ai-muted);font-size:11px;font-weight:600;list-style:none;user-select:none}.ai-reasoning summary::-webkit-details-marker{display:none}.ai-reasoning summary::before{content:'›';display:grid;place-items:center;width:14px;height:14px;color:var(--ai-accent-bright);font-size:17px;font-weight:400;line-height:1;transition:transform 160ms ease}.ai-reasoning[open] summary{border-bottom:1px solid var(--ai-border);color:var(--ai-text-soft)}.ai-reasoning[open] summary::before{transform:rotate(90deg)}.ai-reasoning-body{padding:11px 13px 12px;color:var(--ai-muted);font-size:12px;line-height:1.65}.ai-reasoning-body p{margin:0 0 10px}.ai-reasoning-body>:last-child{margin-bottom:0}.ai-reasoning-body code{font-size:.86em}
 .ai-message-content p{margin:0 0 14px}
 .ai-message-content h1,.ai-message-content h2,.ai-message-content h3{
   margin:25px 0 10px;

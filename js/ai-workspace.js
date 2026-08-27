@@ -365,12 +365,15 @@
 
   function normalizedMessages(value){
     return Array.isArray(value)
-      ? value.filter(item=>item&&['user','assistant'].includes(item.role)&&String(item.content||'').trim()).map(item=>{
-          const message={role:item.role,content:String(item.content)};
+      ? value.map(item=>{
+          if(!item||!['user','assistant'].includes(item.role)) return null;
+          const content=item.role==='assistant'?responseParts(item.content).answer.trim():String(item.content||'').trim();
+          if(!content) return null;
+          const message={role:item.role,content};
           const textAttachment=item.role==='user'?normalizedTextAttachment(item.textAttachment):null;
           if(textAttachment) message.textAttachment=textAttachment;
           return message;
-        }).slice(-MAX_MESSAGES)
+        }).filter(Boolean).slice(-MAX_MESSAGES)
       : [];
   }
 
@@ -782,21 +785,69 @@
     });
   }
 
+  function responseParts(value){
+    const source=String(value||'');
+    const tag=/<\/?think\b[^>]*>/gi;
+    let answer='';
+    let reasoning='';
+    let cursor=0;
+    let inThinking=false;
+    let match;
+    while((match=tag.exec(source))){
+      const chunk=source.slice(cursor,match.index);
+      if(inThinking) reasoning+=chunk;
+      else answer+=chunk;
+      if(/^<\//.test(match[0])) inThinking=false;
+      else inThinking=true;
+      cursor=match.index+match[0].length;
+    }
+    const tail=source.slice(cursor);
+    if(inThinking) reasoning+=tail;
+    else answer+=tail;
+    if(!inThinking){
+      const unfinished=answer.match(/<\/?t(?:h(?:i(?:n(?:k)?)?)?)?$/i);
+      if(unfinished) answer=answer.slice(0,-unfinished[0].length);
+    }
+    return {answer,reasoning};
+  }
+
+  function appendReasoning(content,text){
+    const details=document.createElement('details');
+    details.className='ai-reasoning';
+    const summary=document.createElement('summary');
+    summary.textContent='Thinking';
+    const body=document.createElement('div');
+    body.className='ai-reasoning-body';
+    body.innerHTML=markdown(text);
+    details.append(summary,body);
+    content.appendChild(details);
+  }
+
   function setMessageContent(message,text,{error=false,thinking=false}={}){
     const content=message.querySelector('.ai-message-content');
     if(!content) return;
-    message._nyxMessageText=String(text||'');
     message.classList.toggle('ai-message-error',error);
     message.classList.toggle('is-thinking',thinking);
     if(thinking){
+      message._nyxMessageText='';
       content.innerHTML='<span class="ai-thinking" aria-label="Nyx AI is thinking"><i></i><i></i><i></i></span>';
       return;
     }
     if(message.classList.contains('ai-message-user')||error){
+      message._nyxMessageText=String(text||'');
       content.textContent=String(text||'');
       return;
     }
-    content.innerHTML=markdown(text);
+    const parts=responseParts(text);
+    message._nyxMessageText=parts.answer.trim();
+    content.replaceChildren();
+    if(parts.reasoning.trim()) appendReasoning(content,parts.reasoning.trim());
+    if(parts.answer.trim()){
+      const answer=document.createElement('div');
+      answer.className='ai-answer';
+      answer.innerHTML=markdown(parts.answer.trim());
+      content.appendChild(answer);
+    }
   }
 
   function downloadTextAttachment(attachment){
@@ -1317,11 +1368,12 @@
       buffer.split(/\r?\n/).forEach(consumeLine);
       if(renderFrame){cancelAnimationFrame(renderFrame);renderAnswer()}
       const clean=answer.trim();
-      if(!clean) throw new Error('This model did not produce a final answer. Try again or choose another available model.');
+      const finalAnswer=responseParts(clean).answer.trim();
+      if(!finalAnswer) throw new Error('This model did not produce a final answer. Try again or choose another available model.');
       setMessageContent(pending,clean);
-      history.push({role:'assistant',content:clean});
+      history.push({role:'assistant',content:finalAnswer});
       saveMessages(history);
-      recordUsage(userText,clean);
+      recordUsage(userText,finalAnswer);
     }catch(error){
       if(error?.name==='AbortError') return;
       setMessageContent(pending,error?.message||'Nyx AI could not complete that request.',{error:true});

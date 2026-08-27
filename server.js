@@ -2780,10 +2780,20 @@ async function nyxApiKeyAuthenticate(req) {
   return nyxApiKeyAuthenticateValue(nyxApiKeyFromRequest(req));
 }
 
+function nyxGroqChatModelId(value) {
+  const id = String(value || "").trim();
+  if (!/^[A-Za-z0-9._:/-]{2,120}$/.test(id)) return false;
+  // `/models` covers every Groq modality. Nyx AI uses Chat Completions, so
+  // never offer speech, transcription, or safety-only models in its picker.
+  return !/(?:^|[-_/])(?:whisper|orpheus|prompt-guard)(?:[-_/]|$)|safeguard/i.test(id);
+}
+
 async function nyxGroqAvailableModels(config = nyxGroqConfig()) {
   const now = Date.now();
   if (nyxGroqModelsCache.expiresAt > now && nyxGroqModelsCache.models.length) return nyxGroqModelsCache.models;
-  const fallback = config.models.map(id => ({ id, label: id, company: "Groq" }));
+  const fallback = config.models
+    .filter(nyxGroqChatModelId)
+    .map(id => ({ id, label: id, company: "Groq" }));
   if (!config.configured) return fallback;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8_000);
@@ -2796,10 +2806,12 @@ async function nyxGroqAvailableModels(config = nyxGroqConfig()) {
     const models = Array.isArray(data?.data)
       ? data.data.flatMap(item => {
         const id = String(item?.id || "").trim();
-        return /^[A-Za-z0-9._:/-]{2,120}$/.test(id) ? [{ id, label: id, company: String(item?.owned_by || "Groq").slice(0, 50) || "Groq" }] : [];
+        return nyxGroqChatModelId(id) ? [{ id, label: id, company: String(item?.owned_by || "Groq").slice(0, 50) || "Groq" }] : [];
       })
       : [];
-    const merged = nyxAiMergeCatalogs(models, fallback);
+    // Keep the service owner's configured text model first, then add every
+    // other chat-capable model returned for this Groq project.
+    const merged = nyxAiMergeCatalogs(fallback, models);
     if (!response.ok || !merged.length) throw new Error("Groq did not return an available model catalog.");
     nyxGroqModelsCache = { expiresAt: now + 5 * 60_000, models: merged };
   } catch {
@@ -2918,7 +2930,11 @@ async function nyxApiKeyChatPayload(value, config) {
   }
   const requestedTokens = Number.parseInt(String(source.max_tokens || config.maxTokens), 10);
   const maxTokens = Number.isInteger(requestedTokens) ? Math.max(1, Math.min(config.maxTokens, requestedTokens)) : config.maxTokens;
-  return { model, messages, max_tokens: maxTokens, temperature: Math.max(0, Math.min(1, Number(source.temperature) || 0.4)), stream: source.stream === true };
+  const payload = { model, messages, max_tokens: maxTokens, temperature: Math.max(0, Math.min(1, Number(source.temperature) || 0.4)), stream: source.stream === true };
+  // GPT-OSS can otherwise use a modest capped completion entirely on hidden
+  // reasoning tokens, leaving the chat UI with no visible answer.
+  if (/^openai\/gpt-oss-(?:20b|120b)$/i.test(model)) payload.reasoning_effort = "low";
+  return payload;
 }
 
 app.get("/api/nyx-api-keys/status", async (req, res) => {

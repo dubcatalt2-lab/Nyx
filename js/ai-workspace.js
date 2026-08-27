@@ -1273,7 +1273,7 @@
       buffer.split(/\r?\n/).forEach(consumeLine);
       if(renderFrame){cancelAnimationFrame(renderFrame);renderAnswer()}
       const clean=answer.trim();
-      if(!clean) throw new Error('The selected model returned an empty response.');
+      if(!clean) throw new Error('This model did not produce a final answer. Try again or choose another available model.');
       setMessageContent(pending,clean);
       history.push({role:'assistant',content:clean});
       saveMessages(history);

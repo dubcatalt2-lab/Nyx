@@ -86,6 +86,10 @@
   let attachedText=null;
   let nyxAiAccountAuthPromise=null;
 
+  function personalKeyProvider(key=personalApiKey()){
+    return /^nyx_[A-Za-z0-9_-]{16}_[A-Za-z0-9_-]{43}$/.test(String(key||''))?'Nyx':'Nocturne';
+  }
+
   function personalApiKey(){
     return String(sessionStorage.getItem(PERSONAL_KEY_SESSION)||localStorage.getItem(PERSONAL_KEY_DEVICE)||'').trim();
   }
@@ -94,7 +98,22 @@
     return Boolean(localStorage.getItem(PERSONAL_KEY_DEVICE));
   }
 
+  async function nyxAiParentToken(){
+    if(parent===window) return '';
+    const requestId=`ai-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    return new Promise(resolve=>{
+      let settled=false;
+      const finish=value=>{if(settled)return;settled=true;clearTimeout(timeout);removeEventListener('message',receive);resolve(String(value||''));};
+      const receive=event=>{if(event.source===parent&&event.origin===location.origin&&event.data?.type==='nyx:account-token-response'&&event.data.requestId===requestId)finish(event.data.token);};
+      const timeout=setTimeout(()=>finish(''),2500);
+      addEventListener('message',receive);
+      parent.postMessage({type:'nyx:account-token-request',requestId},location.origin);
+    });
+  }
+
   async function nyxAiAccountToken(){
+    const parentToken=await nyxAiParentToken();
+    if(parentToken) return parentToken;
     if(!nyxAiAccountAuthPromise){
       nyxAiAccountAuthPromise=(async()=>{
         try{
@@ -125,12 +144,13 @@
 
   function updateApiKeyControl(message='',state=''){
     const active=Boolean(personalApiKey());
+    const provider=personalKeyProvider();
     apiKeySettings.classList.toggle('has-personal-key',active);
-    apiKeySettings.setAttribute('aria-label',active?'Change your personal Nocturne AI API key':'Set a personal Nocturne AI API key');
-    apiKeySettings.title=active?'Using your personal Nocturne AI key':'Using Nyx AI key';
+    apiKeySettings.setAttribute('aria-label',active?`Change your personal ${provider} AI API key`:'Set a personal Nyx or Nocturne AI API key');
+    apiKeySettings.title=active?`Using your personal ${provider} AI key`:'Using Nyx AI key';
     apiKeyRemove.disabled=!active;
     apiKeyFeedback.className=`ai-key-feedback${state?` is-${state}`:''}`;
-    apiKeyFeedback.textContent=message||(active?'Your personal key is active.':'Nyx will use its shared AI key until you add your own.');
+    apiKeyFeedback.textContent=message||(active?`Your personal ${provider} key is active.`:'Nyx will use its shared AI key until you add your own.');
   }
 
   function openApiKeyDialog(){
@@ -1452,7 +1472,7 @@
     }
     storePersonalApiKey(key,apiKeyRemember.checked);
     apiKeySave.disabled=true;
-    updateApiKeyControl('Checking your key with Nocturne…');
+    updateApiKeyControl(`Checking your ${personalKeyProvider(key)} key…`);
     const valid=await loadModels();
     apiKeySave.disabled=false;
     if(valid) setTimeout(closeApiKeyDialog,450);

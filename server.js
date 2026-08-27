@@ -1952,7 +1952,7 @@ function nyxAiRequestCredential(req) {
   if (key.length < 8 || key.length > 512 || /[\s\x00-\x1f\x7f]/.test(key)) {
     return { key: "", personal: true, invalid: true };
   }
-  return { key, personal: true };
+  return { key, personal: true, nyxGateway: Boolean(nyxApiKeyParts(key)) };
 }
 
 function nyxAiCredentialCacheKey(key, personal = false) {
@@ -2394,6 +2394,24 @@ app.get("/api/nyx-ai/models", async (req, res) => {
     res.status(503).json({ error: credential.personal ? "Enter a personal Nocturne AI API key." : "Nyx AI is not configured." });
     return;
   }
+  if (credential.nyxGateway) {
+    try {
+      const config = nyxGroqConfig();
+      if (!config.configured) {
+        const error = new Error("Nyx API Keys are not configured by the service owner yet.");
+        error.status = 503;
+        throw error;
+      }
+      const authenticated = await nyxApiKeyAuthenticateValue(credential.key);
+      const entitlement = await nyxApiKeyOwnerEntitlement(authenticated.firebase, authenticated.ownerUid);
+      const models = await nyxGroqAvailableModels(config);
+      res.setHeader("cache-control", "private, no-store");
+      res.json({ models, credential: "nyx-api-key", premium: entitlement.premium, owner: entitlement.owner });
+    } catch (error) {
+      res.status(error.status || 503).json({ error: error.message || "Nyx could not verify this Nyx API key." });
+    }
+    return;
+  }
   const entitlement = await nyxAiPremiumEntitlement(req);
   const models = (await nyxAiAvailableModels(credential.key, credential.personal))
     .filter(item => entitlement.premium || entitlement.owner || item.id !== nyxAiPremiumOpusModel);
@@ -2416,6 +2434,17 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   const credential = nyxAiRequestCredential(req);
   if (credential.invalid) {
     res.status(400).json({ error: "Your personal Nocturne AI API key is not valid." });
+    return;
+  }
+  if (credential.nyxGateway) {
+    try {
+      await nyxAiGatewayChat(req, res, credential.key);
+    } catch (error) {
+      if (!res.headersSent) res.status(error.status || 502).json({ error: error.message || "Nyx API could not complete this request." });
+      else if (!res.writableEnded) res.end();
+    } finally {
+      req.nyxAiRelease?.();
+    }
     return;
   }
   const key = credential.key;
@@ -2645,6 +2674,7 @@ const nyxApiKeyUsageCollection = "nyxApiKeyUsage";
 const nyxApiKeyTokenUsageCollection = "nyxApiKeyTokenUsage";
 const nyxApiKeyMaximumPerUser = 12;
 const nyxApiKeyMinuteUsage = new Map();
+let nyxGroqModelsCache = { expiresAt: 0, models: [] };
 
 function nyxApiKeyInteger(name, fallback, minimum, maximum) {
   const value = Number.parseInt(String(process.env[name] || ""), 10);
@@ -2721,8 +2751,8 @@ function nyxApiKeyCors(res) {
   });
 }
 
-async function nyxApiKeyAuthenticate(req) {
-  const parts = nyxApiKeyParts(nyxApiKeyFromRequest(req));
+async function nyxApiKeyAuthenticateValue(value) {
+  const parts = nyxApiKeyParts(value);
   if (!parts) {
     const error = new Error("A valid Nyx API key is required.");
     error.status = 401;
@@ -2744,6 +2774,40 @@ async function nyxApiKeyAuthenticate(req) {
     throw error;
   }
   return { firebase, snapshot, ownerUid: String(snapshot.data()?.ownerUid || ""), key: nyxApiKeyPublic(snapshot) };
+}
+
+async function nyxApiKeyAuthenticate(req) {
+  return nyxApiKeyAuthenticateValue(nyxApiKeyFromRequest(req));
+}
+
+async function nyxGroqAvailableModels(config = nyxGroqConfig()) {
+  const now = Date.now();
+  if (nyxGroqModelsCache.expiresAt > now && nyxGroqModelsCache.models.length) return nyxGroqModelsCache.models;
+  const fallback = config.models.map(id => ({ id, label: id, company: "Groq" }));
+  if (!config.configured) return fallback;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8_000);
+  try {
+    const response = await fetch("https://api.groq.com/openai/v1/models", {
+      headers: { authorization: `Bearer ${config.apiKey}`, accept: "application/json" },
+      signal: controller.signal
+    });
+    const data = await response.json().catch(() => ({}));
+    const models = Array.isArray(data?.data)
+      ? data.data.flatMap(item => {
+        const id = String(item?.id || "").trim();
+        return /^[A-Za-z0-9._:/-]{2,120}$/.test(id) ? [{ id, label: id, company: String(item?.owned_by || "Groq").slice(0, 50) || "Groq" }] : [];
+      })
+      : [];
+    const merged = nyxAiMergeCatalogs(models, fallback);
+    if (!response.ok || !merged.length) throw new Error("Groq did not return an available model catalog.");
+    nyxGroqModelsCache = { expiresAt: now + 5 * 60_000, models: merged };
+  } catch {
+    nyxGroqModelsCache = { expiresAt: now + 60_000, models: fallback };
+  } finally {
+    clearTimeout(timeout);
+  }
+  return nyxGroqModelsCache.models;
 }
 
 async function nyxApiKeyOwnerEntitlement(firebase, uid) {
@@ -2826,10 +2890,11 @@ async function nyxApiKeyConsume(firebase, key, config) {
   nyxApiKeyMinuteUsage.set(key.id, minuteTimes);
 }
 
-function nyxApiKeyChatPayload(value, config) {
+async function nyxApiKeyChatPayload(value, config) {
   const source = value && typeof value === "object" ? value : {};
   const model = String(source.model || config.defaultModel).trim();
-  if (!config.models.includes(model)) {
+  const availableModels = await nyxGroqAvailableModels(config);
+  if (!availableModels.some(item => item.id === model)) {
     const error = new Error("That model is not available to this Nyx API key.");
     error.status = 400;
     throw error;
@@ -2927,10 +2992,11 @@ app.options("/api/v1/ai", (_req, res) => {
   res.status(204).end();
 });
 
-app.get("/api/v1/ai", (_req, res) => {
+app.get("/api/v1/ai", async (_req, res) => {
   nyxApiKeyCors(res);
   const config = nyxGroqConfig();
-  res.json({ service: "Nyx API", configured: config.configured, endpoint: "/api/v1/ai", authentication: "Authorization: Bearer nyx_... or X-API-Key", models: config.configured ? config.models : [] });
+  const models = config.configured ? await nyxGroqAvailableModels(config) : [];
+  res.json({ service: "Nyx API", configured: config.configured, endpoint: "/api/v1/ai", authentication: "Authorization: Bearer nyx_... or X-API-Key", models: models.map(item => item.id) });
 });
 
 app.post("/api/v1/ai", async (req, res) => {
@@ -2945,7 +3011,7 @@ app.post("/api/v1/ai", async (req, res) => {
       throw error;
     }
     const authenticated = await nyxApiKeyAuthenticate(req);
-    const payload = nyxApiKeyChatPayload(req.body, config);
+    const payload = await nyxApiKeyChatPayload(req.body, config);
     tokenReservation = await reserveNyxApiKeyTokens(authenticated.firebase, authenticated.ownerUid, payload.max_tokens, config);
     if (tokenReservation) payload.max_tokens = tokenReservation.tokens;
     try {
@@ -3013,6 +3079,89 @@ app.post("/api/v1/ai", async (req, res) => {
     if (tokenReservation && !tokenReservationSettled) await settleNyxApiKeyTokens(tokenReservation, 0).catch(() => {});
   }
 });
+
+// The Nyx AI workspace accepts a user's Nyx key in its existing personal-key
+// control. It reaches the same server-only Groq gateway as external clients;
+// the browser never receives the provider credential.
+async function nyxAiGatewayChat(req, res, keyValue) {
+  const config = nyxGroqConfig();
+  if (!config.configured) {
+    const error = new Error("Nyx API Keys are not configured by the service owner yet.");
+    error.status = 503;
+    throw error;
+  }
+  const authenticated = await nyxApiKeyAuthenticateValue(keyValue);
+  const sourceMessages = Array.isArray(req.body?.messages) ? req.body.messages : [];
+  const imageContext = String(req.body?.imageContext || "").trim();
+  const messages = sourceMessages.map((item, index) => {
+    if (index !== sourceMessages.length - 1 || item?.role === "assistant" || !imageContext) return item;
+    return { ...item, content: `${String(item?.content || req.body?.message || "").trim()}\n\nAdditional image details from Nyx:\n${imageContext}`.trim() };
+  });
+  const payload = await nyxApiKeyChatPayload({
+    ...req.body,
+    prompt: req.body?.message,
+    messages,
+    max_tokens: config.maxTokens,
+    stream: req.body?.stream !== false
+  }, config);
+  let tokenReservation = await reserveNyxApiKeyTokens(authenticated.firebase, authenticated.ownerUid, payload.max_tokens, config);
+  let settled = false;
+  if (tokenReservation) payload.max_tokens = tokenReservation.tokens;
+  try {
+    await nyxApiKeyConsume(authenticated.firebase, authenticated.key, config);
+    const upstream = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${config.apiKey}` },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(45_000)
+    });
+    if (!upstream.ok) {
+      const data = await upstream.json().catch(() => ({}));
+      const error = new Error(String(data?.error?.message || "The configured AI provider could not complete this request.").slice(0, 240));
+      error.status = upstream.status === 429 ? 429 : 502;
+      throw error;
+    }
+    if (payload.stream && upstream.body) {
+      res.status(200).set({ "content-type": "text/event-stream; charset=utf-8", "cache-control": "no-cache, no-transform", connection: "keep-alive" });
+      const reader = upstream.body.getReader();
+      let streamBody = "";
+      try {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = Buffer.from(value);
+          streamBody += chunk.toString("utf8");
+          res.write(chunk);
+        }
+      } finally {
+        if (tokenReservation) {
+          let reportedTokens = 0;
+          let generatedText = "";
+          for (const match of streamBody.matchAll(/^data:\s*(\{.+\})\s*$/gm)) {
+            try {
+              const event = JSON.parse(match[1]);
+              reportedTokens = Math.max(reportedTokens, nyxAiCompletionTokens(event));
+              generatedText += event?.choices?.[0]?.delta?.content || "";
+            } catch {}
+          }
+          await settleNyxApiKeyTokens(tokenReservation, reportedTokens || nyxAiEstimatedTokens(generatedText)).catch(() => {});
+          settled = true;
+        }
+      }
+      res.end();
+      return;
+    }
+    const data = await upstream.json().catch(() => ({}));
+    if (tokenReservation) {
+      const text = data?.choices?.[0]?.message?.content || "";
+      await settleNyxApiKeyTokens(tokenReservation, nyxAiCompletionTokens(data) || nyxAiEstimatedTokens(text)).catch(() => {});
+      settled = true;
+    }
+    res.json(data);
+  } finally {
+    if (tokenReservation && !settled) await settleNyxApiKeyTokens(tokenReservation, 0).catch(() => {});
+  }
+}
 
 app.use((req, res, next) => {
   const referer = String(req.get("referer") || "");

@@ -2378,6 +2378,7 @@
     'nyxify':localIcon('shortcut-nyxify.svg?v=3'),
     'link-checker':localIcon('link-checker.svg?v=2'),
     'link-generator':localIcon('link-generator.svg'),
+    'api-keys':localIcon('api-keys.svg?v=1'),
     'chess.com':localIcon('chess-logo.png'),
     'games':localIcon('dock-controller.png'),
     'apps':svgIcon(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="10" y="10" width="18" height="18" rx="4" fill="#fff"/><rect x="36" y="10" width="18" height="18" rx="4" fill="#fff"/><rect x="10" y="36" width="18" height="18" rx="4" fill="#fff"/><rect x="36" y="36" width="18" height="18" rx="4" fill="#fff"/></svg>`),
@@ -2442,6 +2443,7 @@
     if(/(?:^|\/)apps\/cloud-gaming(?:\/|$)/i.test(raw)) return appIcon('cloud-gaming');
     if(/(?:^|\/)apps\/link-checker(?:\/|$)/i.test(raw)) return appIcon('link-checker');
     if(/(?:^|\/)apps\/link-generator(?:\/|$)/i.test(raw)) return appIcon('link-generator');
+    if(/(?:^|\/)apps\/api-keys(?:\/|$)/i.test(raw)) return appIcon('api-keys');
     const source=typeof browserShellSourceUrl==='function' ? (browserShellSourceUrl(raw) || raw) : raw;
     if(source.startsWith('assets/games/') || source.startsWith('assets/ugs/') || source.startsWith('/assets/games/') || source.startsWith('/assets/ugs/')) return appIcon('games');
     try{
@@ -2494,6 +2496,7 @@
     if(/(?:^|\/)apps\/chat(?:\/|$)/i.test(raw)) return 'Nyx Chat';
     if(/(?:^|\/)apps\/link-checker(?:\/|$)/i.test(raw)) return 'Link Checker';
     if(/(?:^|\/)apps\/link-generator(?:\/|$)/i.test(raw)) return 'Link Generator';
+    if(/(?:^|\/)apps\/api-keys(?:\/|$)/i.test(raw)) return 'Nyx API Keys';
     if(raw==='nyx://ai') return 'Nyx AI';
     if(raw.startsWith('nyx://')) return raw.replace('nyx://','nyx ');
     if(raw.startsWith('assets/games/') || raw.startsWith('assets/ugs/') || raw.startsWith('/assets/games/') || raw.startsWith('/assets/ugs/')) return 'GAMES';
@@ -9026,10 +9029,18 @@
   //browser-window
   function openBrowser(url='https://duckduckgo.com/',options={}){
     const win=makeWindow({title:'New Tab',className:'browser-window',body:browserBody()});
-    const utilityLinks=win.querySelector('.nyx-home-utility-links');
+    const utilityLinks=win.querySelector('.nyx-home-utility-links,.nyx-minimal-utility-links');
     const linkChecker=win.querySelector('.nyx-home-link-checker');
     if(utilityLinks && linkChecker) utilityLinks.prepend(linkChecker);
     if(utilityLinks){
+      if(!utilityLinks.querySelector('[data-nyx-api-keys-home]')){
+        const apiKeysLink=document.createElement('a');
+        apiKeysLink.dataset.nyxApiKeysHome='';
+        apiKeysLink.dataset.appUrl='/apps/api-keys/';
+        apiKeysLink.href='/apps/api-keys/';
+        apiKeysLink.textContent='API Keys';
+        utilityLinks.prepend(apiKeysLink);
+      }
       const creditsLink=utilityLinks.querySelector('[data-open="about"]');
       if(creditsLink){
         creditsLink.textContent='About Nyx';
@@ -11092,7 +11103,7 @@
       return '';
     };
     const nyxChatSourcePath=path=>['/apps/chat','/apps/chat/','/apps/chat/index.html'].includes(path);
-    const nyxAccountClientSourcePath=path=>nyxChatSourcePath(path)||['/assets/games','/assets/games/','/assets/games/index.html','/apps/link-checker','/apps/link-checker/','/apps/link-checker/index.html','/apps/cloud-gaming','/apps/cloud-gaming/','/apps/cloud-gaming/index.html'].includes(path);
+    const nyxAccountClientSourcePath=path=>nyxChatSourcePath(path)||['/ai.html','/assets/games','/assets/games/','/assets/games/index.html','/apps/link-checker','/apps/link-checker/','/apps/link-checker/index.html','/apps/cloud-gaming','/apps/cloud-gaming/','/apps/cloud-gaming/index.html'].includes(path);
     const messageHandler=e=>{
       if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:account-token-request','nyx:chat-open-profile','nyx:chat-notification','nyx:subscription-refresh','nyx:proxy-direct-fallback','nyx:cloud-game-load','nyx:cloud-game-save','nyx:close-tab','nyx:go-home'].includes(e.data?.type)) return;
       if(['nyx:cloud-game-load','nyx:cloud-game-save'].includes(e.data.type)){

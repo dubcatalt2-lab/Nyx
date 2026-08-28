@@ -1,7 +1,8 @@
-importScripts("/scramjet-v1/scramjet.all.js?v=nyx-sj-v1-controller-first-v4");
+importScripts("/scramjet-v1/scramjet.all.js?v=nyx-sj-v1-ready-before-route-v5");
 
 const { ScramjetServiceWorker } = $scramjetLoadWorker();
 const scramjet = new ScramjetServiceWorker();
+const scramjetReady = scramjet.loadConfig();
 
 self.addEventListener("install", event => {
   event.waitUntil(self.skipWaiting());
@@ -12,5 +13,9 @@ self.addEventListener("activate", event => {
 });
 
 self.addEventListener("fetch", event => {
-  if (scramjet.route(event)) event.respondWith(scramjet.fetch(event));
+  event.respondWith((async () => {
+    await scramjetReady;
+    if (scramjet.route(event)) return scramjet.fetch(event);
+    return fetch(event.request);
+  })());
 });

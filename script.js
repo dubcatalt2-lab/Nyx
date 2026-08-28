@@ -2998,8 +2998,8 @@
   const proxyStateVersion='nyx-proxy-state-20260814-private-tabs-v13';
   const scramjetStateVersion='nyx-scramjet-state-20260814-private-tabs-v2';
   const scramjetServiceWorkerUrl='/scramjet.sw.js?v=nyx-sj-20260814-private-tabs-v3';
-  const scramjetV1RuntimeUrl='/scramjet-v1/scramjet.all.js?v=nyx-sj-v1-controller-first-v4';
-  const scramjetV1ServiceWorkerUrl='/scramjet-v1.sw.js?v=nyx-sj-v1-controller-first-v4';
+  const scramjetV1RuntimeUrl='/scramjet-v1/scramjet.all.js?v=nyx-sj-v1-ready-before-route-v5';
+  const scramjetV1ServiceWorkerUrl='/scramjet-v1.sw.js?v=nyx-sj-v1-ready-before-route-v5';
   function installNyxConsoleDedupe(scope='top'){
     if(console.__nyxDedupeInstalled) return;
     const seen=new Map();

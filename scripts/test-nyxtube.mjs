@@ -97,6 +97,25 @@ try {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   assert(!overflow, "NyxTube has horizontal overflow at 390px");
   assert(pageErrors.length === 0, `Browser errors: ${pageErrors.join(" | ")}`);
+  if (!livePlayer) {
+    const fallbackPage = await browser.newPage({
+      viewport: { width: 1280, height: 900 },
+      userAgent: "Mozilla/5.0 (X11; CrOS x86_64 15917.65.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+    });
+    fallbackPage.setDefaultTimeout(8_000);
+    await fallbackPage.route("**/iframe_api", route => route.abort("blockedbyclient"));
+    await fallbackPage.route("**/api/nyxtube/status", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ configured: true, provider: "youtube" }) }));
+    await fallbackPage.route("**/api/nyxtube/feed?**", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ provider: "youtube", videos: [shorts[1]] }) }));
+    await fallbackPage.goto(`${baseUrl}/apps/nyxtube/`, { waitUntil: "domcontentloaded" });
+    await fallbackPage.locator(".video-cover").first().click();
+    const directFrame = fallbackPage.locator('iframe[data-direct-youtube="true"]');
+    await directFrame.waitFor({ state: "attached" });
+    assert((await directFrame.getAttribute("src"))?.startsWith("https://www.youtube-nocookie.com/embed/"), "Blocked-script fallback did not use a privacy-enhanced direct embed");
+    await fallbackPage.locator(".watch-player.direct-player").waitFor();
+    assert(await fallbackPage.locator("[data-notice]:visible").count() === 0, "Blocked-script fallback displayed a player error");
+    await fallbackPage.close();
+    console.log("NyxTube test: Chromebook blocked-script fallback passed");
+  }
   console.log(`NyxTube browser checks passed: feed, search, ${livePlayer ? "official iframe startup" : "watch controls"}, Shorts navigation, and mobile layout.`);
 } finally {
   await browser.close();

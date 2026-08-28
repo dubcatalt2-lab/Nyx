@@ -96,16 +96,98 @@
     scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  const directPlayerState = Object.freeze({ ENDED: 0, PLAYING: 1, PAUSED: 2 });
+  class DirectYouTubePlayer {
+    constructor(id, config) {
+      this.config = config;
+      this.container = document.getElementById(id);
+      this.stage = this.container?.closest(".watch-player,.short-card") || null;
+      this.state = -1;
+      this.currentTime = 0;
+      this.total = Number(config.expectedDuration) || 0;
+      this.muted = Boolean(config.playerVars?.mute);
+      this.destroyed = false;
+      this.handleMessage = event => this.receive(event);
+      this.iframe = document.createElement("iframe");
+      this.iframe.dataset.directYoutube = "true";
+      this.iframe.title = "YouTube video player";
+      this.iframe.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
+      this.iframe.allowFullscreen = true;
+      this.iframe.referrerPolicy = "strict-origin-when-cross-origin";
+      const parameters = new URLSearchParams({
+        ...Object.fromEntries(Object.entries(config.playerVars || {}).map(([name, value]) => [name, String(value)])),
+        controls: "1",
+        enablejsapi: "1",
+        origin: location.origin,
+        widget_referrer: location.href,
+      });
+      this.iframe.src = `${config.host || "https://www.youtube-nocookie.com"}/embed/${encodeURIComponent(config.videoId)}?${parameters}`;
+      addEventListener("message", this.handleMessage);
+      this.iframe.addEventListener("load", () => {
+        if (this.destroyed) return;
+        this.stage?.classList.add("direct-player");
+        this.post({ event: "listening", id });
+        this.command("addEventListener", ["onStateChange"]);
+        this.command("addEventListener", ["onError"]);
+        config.events?.onReady?.({ target: this });
+      }, { once: true });
+      this.container?.replaceChildren(this.iframe);
+    }
+    post(payload) { this.iframe?.contentWindow?.postMessage(JSON.stringify(payload), "*"); }
+    command(func, args = []) { this.post({ event: "command", func, args }); }
+    emitState(next) {
+      if (!Number.isFinite(next) || this.state === next) return;
+      this.state = next;
+      this.config.events?.onStateChange?.({ target: this, data: next });
+    }
+    receive(event) {
+      if (event.source !== this.iframe?.contentWindow || !/^https:\/\/(?:www\.)?(?:youtube\.com|youtube-nocookie\.com)$/.test(event.origin)) return;
+      let payload = event.data;
+      if (typeof payload === "string") { try { payload = JSON.parse(payload); } catch { return; } }
+      if (!payload || typeof payload !== "object") return;
+      if (payload.event === "onStateChange") this.emitState(Number(payload.info));
+      if (payload.event === "onError") this.config.events?.onError?.({ target: this, data: payload.info });
+      if (payload.event === "infoDelivery" && payload.info && typeof payload.info === "object") {
+        if (Number.isFinite(Number(payload.info.currentTime))) this.currentTime = Number(payload.info.currentTime);
+        if (Number.isFinite(Number(payload.info.duration)) && Number(payload.info.duration) > 0) this.total = Number(payload.info.duration);
+        if (Number.isFinite(Number(payload.info.playerState))) this.emitState(Number(payload.info.playerState));
+        if (typeof payload.info.muted === "boolean") this.muted = payload.info.muted;
+      }
+    }
+    playVideo() { this.command("playVideo"); this.emitState(directPlayerState.PLAYING); }
+    pauseVideo() { this.command("pauseVideo"); this.emitState(directPlayerState.PAUSED); }
+    seekTo(value) { this.currentTime = Math.max(0, Number(value) || 0); this.command("seekTo", [this.currentTime, true]); }
+    mute() { this.muted = true; this.command("mute"); }
+    unMute() { this.muted = false; this.command("unMute"); }
+    isMuted() { return this.muted; }
+    getPlayerState() { return this.state; }
+    getCurrentTime() { return this.currentTime; }
+    getDuration() { return this.total; }
+    loadModule(name) { this.command("loadModule", [name]); }
+    unloadModule(name) { this.command("unloadModule", [name]); }
+    destroy() {
+      this.destroyed = true;
+      removeEventListener("message", this.handleMessage);
+      this.stage?.classList.remove("direct-player");
+      this.iframe?.remove();
+    }
+  }
+  const directYoutubeApi = Object.freeze({ Player: DirectYouTubePlayer, PlayerState: directPlayerState });
+
   let iframeApi;
   function youtubeApi() {
     if (window.YT?.Player) return Promise.resolve(window.YT);
     if (iframeApi) return iframeApi;
-    iframeApi = new Promise((resolve, reject) => {
+    iframeApi = new Promise(resolve => {
       const previous = window.onYouTubeIframeAPIReady;
-      const timer = setTimeout(() => reject(new Error("The YouTube player took too long to start.")), 15000);
-      window.onYouTubeIframeAPIReady = () => { clearTimeout(timer); previous?.(); resolve(window.YT); };
-      const script = document.createElement("script"); script.src = "https://www.youtube.com/iframe_api"; script.async = true;
-      script.addEventListener("error", () => { clearTimeout(timer); reject(new Error("The YouTube player could not be loaded.")); });
+      let settled = false;
+      let script;
+      const finish = api => { if (settled) return; settled = true; clearTimeout(timer); resolve(api); };
+      const useDirectPlayer = () => { script?.remove(); finish(directYoutubeApi); };
+      const timer = setTimeout(useDirectPlayer, 5000);
+      window.onYouTubeIframeAPIReady = () => { previous?.(); finish(window.YT?.Player ? window.YT : directYoutubeApi); };
+      script = document.createElement("script"); script.src = "https://www.youtube.com/iframe_api"; script.async = true;
+      script.addEventListener("error", useDirectPlayer, { once: true });
       document.head.append(script);
     });
     return iframeApi;
@@ -140,7 +222,7 @@
     const YT = await youtubeApi();
     if (state.view !== "watch" || state.watchVideo?.id !== video.id) return;
     state.watchPlayer?.destroy?.();
-    const config = options(video.id);
+    const config = options(video.id); config.expectedDuration = video.durationSeconds;
     config.events = {
       onReady: event => { refs.watchLoading.hidden = true; event.target.playVideo(); startWatchTimer(); },
       onStateChange: event => {
@@ -201,7 +283,7 @@
     refs.shortLoading.hidden = false; refs.shortCenterPlay.hidden = true; refs.shortProgress.style.width = "0";
     const YT = await youtubeApi(); if (state.view !== "shorts") return;
     state.shortPlayer?.destroy?.();
-    const config = options(video.id, true);
+    const config = options(video.id, true); config.expectedDuration = video.durationSeconds;
     config.events = {
       onReady: event => { event.target.mute(); state.shortMuted = true; refs.shortMute.innerHTML = icon("icon-muted"); event.target.playVideo(); refs.shortLoading.hidden = true; startShortTimer(); },
       onStateChange: event => {

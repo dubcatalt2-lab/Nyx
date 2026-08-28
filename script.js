@@ -2998,8 +2998,8 @@
   const proxyStateVersion='nyx-proxy-state-20260814-private-tabs-v13';
   const scramjetStateVersion='nyx-scramjet-state-20260814-private-tabs-v2';
   const scramjetServiceWorkerUrl='/scramjet.sw.js?v=nyx-sj-20260814-private-tabs-v3';
-  const scramjetV1RuntimeUrl='/scramjet-v1/scramjet.all.js?v=nyx-sj-v1-controller-first-v3';
-  const scramjetV1ServiceWorkerUrl='/scramjet-v1.sw.js?v=nyx-sj-v1-controller-first-v3';
+  const scramjetV1RuntimeUrl='/scramjet-v1/scramjet.all.js?v=nyx-sj-v1-controller-first-v4';
+  const scramjetV1ServiceWorkerUrl='/scramjet-v1.sw.js?v=nyx-sj-v1-controller-first-v4';
   function installNyxConsoleDedupe(scope='top'){
     if(console.__nyxDedupeInstalled) return;
     const seen=new Map();
@@ -7668,7 +7668,7 @@
     // v1 has a private database, so its recovery must never remove v2's
     // "$scramjet" database.
     scramjetV1Controller?.db?.close?.();
-    await deleteIndexedDb('$nyx_scramjet_v1_v3');
+    await deleteIndexedDb('$nyx_scramjet_v1_v4');
   }
   async function repairScramjetCaches(){
     if(!window.caches?.keys) return;
@@ -10796,7 +10796,7 @@
           t.actualEngine='scramjet-v1-failed';
           setFrameSandbox(t,true);
           clearFrameDocument(t);
-          t.frame.srcdoc=proxyFailureHtml(scramjetV1InstallError,'Scramjet v1',{allowDirect:true});
+          t.frame.removeAttribute('srcdoc');
           return;
         }
         if(t.scramjetFrame && t.scramjetVersion!=='v1') replaceTabFrame(t);
@@ -10838,7 +10838,7 @@
           markBrowserEngine(t,'scramjet-v1',String(t.frame.getAttribute('src') || url),'scramjet-v1');
         }catch(error){
           t.actualEngine='scramjet-v1-failed';
-          t.frame.srcdoc=proxyFailureHtml(error?.message || 'Scramjet v1 could not open this page.','Scramjet v1',{allowDirect:true});
+          t.frame.removeAttribute('srcdoc');
         }
       }).catch(()=>{
         if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;

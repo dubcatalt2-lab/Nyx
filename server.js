@@ -12354,7 +12354,7 @@ app.use((error, req, res, next) => {
 // schemas are incompatible. Serve v1 with a private name so switching engines
 // cannot corrupt either controller's storage.
 const scramjetV1Bundle = readFileSync(join(scramjetV1Path, "scramjet.all.js"), "utf8")
-  .replaceAll('"$scramjet"', '"$nyx_scramjet_v1_v3"');
+  .replaceAll('"$scramjet"', '"$nyx_scramjet_v1_v4"');
 app.get("/scramjet-v1/scramjet.all.js", (_req, res) => {
   res.type("application/javascript");
   res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");

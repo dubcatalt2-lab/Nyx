@@ -26,7 +26,8 @@ const rootFiles = new Set([
   "styles.css",
   "uv.config.js",
   "uv.sw.js",
-  "scramjet.sw.js"
+  "scramjet.sw.js",
+  "scramjet-v1.sw.js"
 ]);
 const staticPrefixes = ["apps/", "assets/", "css/", "js/"];
 const blockedExtensions = /\.(?:7z|avi|mkv|mov|mp4|rar|webm|zip)$/i;
@@ -264,6 +265,7 @@ async function minifyFirstPartyBrowserRuntimes() {
     { path: "script.js", topLevel: false },
     { path: "uv.sw.js", topLevel: true },
     { path: "scramjet.sw.js", topLevel: true },
+    { path: "scramjet-v1.sw.js", topLevel: true },
     { path: "uv.config.js", topLevel: false },
     { path: "runtime-config.js", topLevel: false },
     { path: "nyx-scramjet-runtime-guard.js", topLevel: false }

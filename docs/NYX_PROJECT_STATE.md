@@ -141,7 +141,7 @@ Nyx is primarily a vanilla HTML, CSS, and JavaScript application, not React or a
 - `wisp-server.js`: standalone Wisp WebSocket service used by Railway
 - `uv/`, `uv.sw.js`, `uv.config.js`: Ultraviolet proxy runtime
 - `scramjet/`, `scramjet.sw.js`: Scramjet v2 proxy runtime
-- `scramjet-v1/`, `scramjet-v1.sw.js`: separately scoped legacy Scramjet v1 runtime, loaded only when the user selects it
+- `scramjet-v1/`, `scramjet-v1.sw.js`: separately scoped legacy Scramjet v1 runtime, loaded only when the user selects it. The root worker file is a required static build artifact because production Caddy serves `dist/` before the Node runtime.
 - `baremux/`, `epoxy/`, `libcurl/`, `assets/transports/`: BareMux, Epoxy, and upstream Libcurl Raw transports with Nyx-owned header-shape adapters for Scramjet and BareMux
 - `assets/games/`: GAMES UI, manifest, LuminSDK headless-catalog adapter, game launcher, and fallback behavior
 - `apps/chat/`: account-only community chat client and responsive Discord-inspired presentation

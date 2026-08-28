@@ -28,7 +28,6 @@
     "@mercuryworkshop/libcurl-transport": "^2.0.5",
     "@mercuryworkshop/scramjet": "2.0.67-alpha.2",
     "@mercuryworkshop/scramjet-controller": "0.0.14",
-    "@mercuryworkshop/scramjet-v1": "npm:@mercuryworkshop/scramjet@1.1.0",
     "@mercuryworkshop/wisp-js": "0.4.1",
     "@titaniumnetwork-dev/ultraviolet": "^3.2.10",
     "eruda": "3.4.3",

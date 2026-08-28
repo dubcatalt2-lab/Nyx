@@ -190,7 +190,7 @@
     const provider=personalKeyProvider();
     apiKeySettings.classList.toggle('has-personal-key',active);
     apiKeySettings.setAttribute('aria-label',active?`Change your personal ${provider} AI API key`:'Set a personal Nyx or Nocturne AI API key');
-    apiKeySettings.title=active?`Using your personal ${provider} AI key`:'Using Scrapmmy AI key';
+    apiKeySettings.title=active?`Using your personal ${provider} AI key`:'Using Nyx AI key';
     apiKeyRemove.disabled=!active;
     apiKeyFeedback.className=`ai-key-feedback${state?` is-${state}`:''}`;
     apiKeyFeedback.textContent=message||(active?`Your personal ${provider} key is active.`:'Nyx will use its shared AI key until you add your own.');
@@ -830,7 +830,7 @@
     message.classList.toggle('is-thinking',thinking);
     if(thinking){
       message._nyxMessageText='';
-      content.innerHTML='<span class="ai-thinking" aria-label="Scrapmmy AI is thinking"><i></i><i></i><i></i></span>';
+      content.innerHTML='<span class="ai-thinking" aria-label="Nyx AI is thinking"><i></i><i></i><i></i></span>';
       return;
     }
     if(message.classList.contains('ai-message-user')||error){
@@ -872,7 +872,7 @@
     message.innerHTML=`
       <div class="ai-message-avatar" ${assistant?'data-nyx-logo aria-hidden="true"':'aria-hidden="true"'}>${assistant?'':'You'}</div>
       <div class="ai-message-body">
-        <div class="ai-message-meta"><strong>${assistant?'Scrapmmy AI':'You'}</strong><div class="ai-message-actions">${messageCopyButton()}</div></div>
+        <div class="ai-message-meta"><strong>${assistant?'Nyx AI':'You'}</strong><div class="ai-message-actions">${messageCopyButton()}</div></div>
         <div class="ai-message-content"></div>
       </div>`;
     if(attachment?.dataUrl&&!assistant){
@@ -1251,7 +1251,7 @@
     imageInput.disabled=busy;
     attachImage.disabled=busy;
     removeAttachment.disabled=busy;
-    send.setAttribute('aria-label',busy?'Waiting for Scrapmmy AI':'Send message');
+    send.setAttribute('aria-label',busy?'Waiting for Nyx AI':'Send message');
   }
 
   function clearChat(){
@@ -1337,7 +1337,7 @@
       });
       if(!response.ok){
         const data=await response.json().catch(()=>({}));
-        throw new Error(data?.error||`Scrapmmy AI failed (${response.status})`);
+        throw new Error(data?.error||`Nyx AI failed (${response.status})`);
       }
       if(!response.body) throw new Error('The selected model did not return a stream.');
       const reader=response.body.getReader();
@@ -1376,7 +1376,7 @@
       recordUsage(userText,finalAnswer);
     }catch(error){
       if(error?.name==='AbortError') return;
-      setMessageContent(pending,error?.message||'Scrapmmy AI could not complete that request.',{error:true});
+      setMessageContent(pending,error?.message||'Nyx AI could not complete that request.',{error:true});
     }finally{
       activeController=null;
       setBusy(false);

@@ -283,8 +283,7 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
             <label for="setupBrowserMode">Browser</label>
             <select id="setupBrowserMode" data-browser-mode-select>
               <option value="auto">Auto (Scrapmmy + Libby)</option>
-              <option value="scramjet" selected>Scrapmmy (Scramjet v2)</option>
-              <option value="scramjet-v1">Scramjet v1</option>
+              <option value="scramjet" selected>Scrapmmy</option>
               <option value="ultraviolet">Violet</option>
               <option value="iframe">Iframe</option>
             </select>
@@ -403,13 +402,13 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
     <button type="submit" title="Search">Go</button>
   </form>
   <!-- //weather-widget -->
-  <aside id="weatherPanel" class="weather-panel minimized" aria-label="Skyglass">
+  <aside id="weatherPanel" class="weather-panel minimized" aria-label="Weather">
     <div class="weather-effects" aria-hidden="true"><span class="fx-sun"></span><span class="fx-cloud"></span><span class="fx-rain"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="fx-wind"></span><span class="fx-snow"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="fx-tumble"><i></i><i></i></span></div>
     <div class="weather-panel-head">
-      <span class="weather-panel-title">Skyglass</span>
+      <span class="weather-panel-title">Weather</span>
       <div class="weather-head-actions">
-        <button class="weather-icon-btn" data-weather-refresh title="Refresh Skyglass" aria-label="Refresh Skyglass"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"/><path d="M20 4v7h-7"/></svg></button>
-        <button class="weather-icon-btn" data-weather-minimize title="Close Skyglass" aria-label="Close Skyglass"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg></button>
+        <button class="weather-icon-btn" data-weather-refresh title="Refresh weather" aria-label="Refresh weather"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"/><path d="M20 4v7h-7"/></svg></button>
+        <button class="weather-icon-btn" data-weather-minimize title="Close weather" aria-label="Close weather"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg></button>
       </div>
     </div>
     <form class="weather-search" data-weather-search>
@@ -442,11 +441,11 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
     </div>
   </aside>
 </main>
-<button id="weatherRestore" class="weather-restore" title="Open Skyglass" aria-label="Open Skyglass" data-weather-summary="Skyglass"><span class="weather-cloud-icon" aria-hidden="true"></span></button>
+<button id="weatherRestore" class="weather-restore" title="Open weather" aria-label="Open weather" data-weather-summary="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button>
 <!-- //dock-app-launcher -->
 <nav class="dock">
   <button title="Home" data-open="home">🪐</button>
-  <button title="Sparkschool" data-open="apps">🎮</button>
+  <button title="GAMES" data-open="apps">🎮</button>
   <button title="Apps" data-open="apps">Apps</button>
   <button title="Links" data-open="links">Links</button>
   <button title="Browser" data-open="browser">Web</button>
@@ -465,6 +464,6 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
 <script src="js/loading-screen.js?v=20260730-studyhub-input-v11"></script>
 <script src="js/pwa-install.js?v=20260820-singlefile-local-url-v9"></script>
 <script src="js/owner-dashboard.js?v=20260822-hide-created-v26"></script>
-<script src="script.js?v=20260827-api-keys-v146"></script>
+<script src="script.js?v=20260827-api-keys-v145"></script>
 </body>
 </html>

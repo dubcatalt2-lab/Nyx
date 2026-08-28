@@ -2998,7 +2998,8 @@
   const proxyStateVersion='nyx-proxy-state-20260814-private-tabs-v13';
   const scramjetStateVersion='nyx-scramjet-state-20260814-private-tabs-v2';
   const scramjetServiceWorkerUrl='/scramjet.sw.js?v=nyx-sj-20260814-private-tabs-v3';
-  const scramjetV1ServiceWorkerUrl='/scramjet-v1.sw.js?v=nyx-sj-v1-isolated-v2';
+  const scramjetV1RuntimeUrl='/scramjet-v1/scramjet.all.js?v=nyx-sj-v1-controller-first-v3';
+  const scramjetV1ServiceWorkerUrl='/scramjet-v1.sw.js?v=nyx-sj-v1-controller-first-v3';
   function installNyxConsoleDedupe(scope='top'){
     if(console.__nyxDedupeInstalled) return;
     const seen=new Map();
@@ -7666,7 +7667,8 @@
     }
     // v1 has a private database, so its recovery must never remove v2's
     // "$scramjet" database.
-    await deleteIndexedDb('$nyx_scramjet_v1');
+    scramjetV1Controller?.db?.close?.();
+    await deleteIndexedDb('$nyx_scramjet_v1_v3');
   }
   async function repairScramjetCaches(){
     if(!window.caches?.keys) return;
@@ -7796,40 +7798,29 @@
     return {
       prefix:'/~/sj-v1/',
       files:{
-        all:'/scramjet-v1/scramjet.all.js?v=nyx-sj-v1-isolated-v2',
+        all:scramjetV1RuntimeUrl,
         wasm:'/scramjet-v1/scramjet.wasm.wasm',
         sync:'/scramjet-v1/scramjet.sync.js'
       }
     };
   }
-  async function initializeScramjetV1Controller(serviceworker){
+  async function initializeScramjetV1Controller(){
     const api=window.$scramjetLoadController?.();
     const Controller=api?.ScramjetController;
     if(!Controller) throw new Error('Scramjet v1 controller API did not load');
     const controller=new Controller(scramjetV1Config());
-    const serviceWorkerContainer=navigator.serviceWorker;
-    const ownController=Object.getOwnPropertyDescriptor(serviceWorkerContainer,'controller');
-    let shadowed=false;
-    let initialized=false;
-    try{
-      Object.defineProperty(serviceWorkerContainer,'controller',{configurable:true,get:()=>serviceworker});
-      shadowed=true;
-      await controller.init();
-      initialized=true;
-    }finally{
-      if(shadowed){
-        if(ownController) Object.defineProperty(serviceWorkerContainer,'controller',ownController);
-        else delete serviceWorkerContainer.controller;
-      }
-    }
-    if(!initialized){
-      await controller.init();
-      const db=await controller.openIDB();
-      const config=await db.get('config','config');
-      if(!config) throw new Error('Scramjet v1 configuration did not initialize');
-      serviceworker.postMessage({scramjet$type:'loadConfig',config});
-    }
+    // v1's worker opens the database without an upgrade callback. Initialize
+    // the controller first so it creates every required object store before
+    // the worker is allowed to touch the fresh database.
+    scramjetV1Controller=controller;
+    await controller.init();
     return controller;
+  }
+  async function sendScramjetV1Config(controller,serviceworker){
+    const db=controller?.db || await controller?.openIDB?.();
+    const config=await db?.get?.('config','config');
+    if(!config) throw new Error('Scramjet v1 configuration did not initialize');
+    serviceworker.postMessage({scramjet$type:'loadConfig',config});
   }
   function installScramjetV1(){
     if(scramjetV1InstallPromise) return scramjetV1InstallPromise;
@@ -7838,28 +7829,27 @@
       if(location.protocol==='file:') throw new Error('Scramjet v1 needs Nyx to be opened from its website, not as a local file.');
       if(!('serviceWorker' in navigator)) throw new Error('This browser does not support the Service Workers Scramjet v1 needs.');
       step='loading Scramjet v1 assets';
-      if(!window.$scramjetLoadController) await loadScript('/scramjet-v1/scramjet.all.js?v=nyx-sj-v1-isolated-v2');
+      if(!window.$scramjetLoadController) await loadScript(scramjetV1RuntimeUrl);
       step='starting relay';
       await installBareMuxTransport();
+      step='initializing controller storage';
+      try{
+        if(!scramjetV1Controller) scramjetV1Controller=await initializeScramjetV1Controller();
+      }catch(initError){
+        if(!isScramjetIdbShapeError(initError)) throw initError;
+        step='repairing incompatible Scramjet v1 storage';
+        await repairScramjetV1Storage();
+        scramjetV1Controller=null;
+        step='initializing controller storage after repair';
+        scramjetV1Controller=await initializeScramjetV1Controller();
+      }
       step='registering service worker';
       const registration=await navigator.serviceWorker.register(scramjetV1ServiceWorkerUrl,{scope:'/~/sj-v1/',updateViaCache:'none'});
       await registration.update().catch(()=>null);
       const serviceworker=await waitForServiceWorkerScript(registration,scramjetV1ServiceWorkerUrl,'/~/sj-v1/');
       if(!serviceworker) throw new Error('Scramjet v1 service worker did not activate');
-      step='initializing controller';
-      try{
-        if(!scramjetV1Controller) scramjetV1Controller=await initializeScramjetV1Controller(serviceworker);
-      }catch(initError){
-        if(!isScramjetIdbShapeError(initError)) throw initError;
-        step='repairing incompatible Scramjet storage';
-        await repairScramjetV1Storage();
-        step='restarting Scramjet v1 service worker';
-        const repairedRegistration=await navigator.serviceWorker.register(scramjetV1ServiceWorkerUrl,{scope:'/~/sj-v1/',updateViaCache:'none'});
-        const repairedServiceworker=await waitForServiceWorkerScript(repairedRegistration,scramjetV1ServiceWorkerUrl,'/~/sj-v1/');
-        if(!repairedServiceworker) throw new Error('Scramjet v1 service worker did not activate after storage repair');
-        step='initializing controller after storage repair';
-        scramjetV1Controller=await initializeScramjetV1Controller(repairedServiceworker);
-      }
+      step='sending configuration to service worker';
+      await sendScramjetV1Config(scramjetV1Controller,serviceworker);
       scramjetV1InstallError='';
       return true;
     })().catch(error=>{

@@ -1,4 +1,4 @@
-importScripts("/scramjet-v1/scramjet.all.js?v=nyx-sj-v1-isolated-v2");
+importScripts("/scramjet-v1/scramjet.all.js?v=nyx-sj-v1-controller-first-v3");
 
 const { ScramjetServiceWorker } = $scramjetLoadWorker();
 const scramjet = new ScramjetServiceWorker();

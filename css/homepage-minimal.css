@@ -15,17 +15,6 @@ html[data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-ho
 }
 html[data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page .nyx-minimal-home::before,
 html[data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page .nyx-minimal-home::after{display:none!important;opacity:0!important;visibility:hidden!important}
-/* The interactive constellation canvas is decorative. Keep it out of layout:
-   if it becomes a normal grid item, its resize observer grows the homepage and
-   pushes every usable control below the viewport. */
-html[data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page .nyx-minimal-home>.nyx-home-dot-field{
-  position:absolute!important;
-  inset:0!important;
-  z-index:0!important;
-  width:100%!important;
-  height:100%!important;
-  pointer-events:none!important;
-}
 html[data-nyx-theme]:not(.perf-lite):not(.perf-min) body.browser-shell.browser-shell .browser-window.browser-home-page .nyx-minimal-home>.nyx-home-dot-field{
   display:block!important;
   z-index:0!important;

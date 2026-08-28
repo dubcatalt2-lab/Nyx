@@ -253,7 +253,8 @@ const nyxCloudGamingGamesMergeMigrationField = "cloudGamingMergedIntoGames";
 const nyxCloudGamingGlobalApp = Object.freeze({ id: "cloud-gaming", icon: "cloud-gaming", name: "Cloud Gaming", url: "/apps/cloud-gaming/" });
 const nyxMediaAppsRetiredField = "nyxMediaAppsRetired";
 const nyxTubeReintroducedField = "nyxTubePlayerReintroduced";
-const nyxTubeGlobalApp = Object.freeze({ id: "youtube", icon: "youtube.com", name: "YouTube", url: "/apps/nyxtube/" });
+const nyxTubeCatalogNameField = "nyxTubeCatalogName";
+const nyxTubeGlobalApp = Object.freeze({ id: "youtube", icon: "youtube.com", name: "NyxTube", url: "/apps/nyxtube/" });
 const nyxifyReintroducedField = "nyxifyMizuPlayerInitialized";
 const nyxifyBuiltInMusicNameField = "nyxifyBuiltInMusicName";
 const nyxifyGlobalApp = Object.freeze({ id: "nyxify", icon: "nyxify", name: "Nyxify/built in music", url: "/apps/nyxify/" });
@@ -3807,7 +3808,7 @@ function nyxGlobalAppsFromSnapshot(snapshot) {
 async function nyxGlobalApps(firebase) {
   const reference = firebase.firestore.collection(nyxGlobalAppsCollection).doc(nyxGlobalAppsDocument);
   const snapshot = await reference.get();
-  if (snapshot.data()?.[nyxCloudGamingAppMigrationField] === true && snapshot.data()?.[nyxCloudGamingGamesMergeMigrationField] === true && snapshot.data()?.[nyxMediaAppsRetiredField] === true && snapshot.data()?.[nyxTubeReintroducedField] === true && snapshot.data()?.[nyxifyReintroducedField] === true && snapshot.data()?.[nyxifyBuiltInMusicNameField] === true && snapshot.data()?.[nyxApiKeysAppMigrationField] === true && snapshot.data()?.[nyxGamesAppMigrationField] === true && snapshot.data()?.[nyxMoviesCinejoyMigrationField] === true) return nyxGlobalAppsFromSnapshot(snapshot);
+  if (snapshot.data()?.[nyxCloudGamingAppMigrationField] === true && snapshot.data()?.[nyxCloudGamingGamesMergeMigrationField] === true && snapshot.data()?.[nyxMediaAppsRetiredField] === true && snapshot.data()?.[nyxTubeReintroducedField] === true && snapshot.data()?.[nyxTubeCatalogNameField] === true && snapshot.data()?.[nyxifyReintroducedField] === true && snapshot.data()?.[nyxifyBuiltInMusicNameField] === true && snapshot.data()?.[nyxApiKeysAppMigrationField] === true && snapshot.data()?.[nyxGamesAppMigrationField] === true && snapshot.data()?.[nyxMoviesCinejoyMigrationField] === true) return nyxGlobalAppsFromSnapshot(snapshot);
   return firebase.firestore.runTransaction(async transaction => {
     const currentSnapshot = await transaction.get(reference);
     const apps = nyxGlobalAppsFromSnapshot(currentSnapshot);
@@ -3836,6 +3837,16 @@ async function nyxGlobalApps(firebase) {
       transaction.set(reference, {
         apps,
         [nyxTubeReintroducedField]: true,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    }
+    if (currentSnapshot.data()?.[nyxTubeCatalogNameField] !== true) {
+      const youtubeIndex = apps.findIndex(item => item.id === nyxTubeGlobalApp.id);
+      if (youtubeIndex >= 0) apps.splice(youtubeIndex, 1, { ...nyxTubeGlobalApp });
+      else if (apps.length < nyxGlobalAppsLimit) apps.splice(Math.min(3, apps.length), 0, { ...nyxTubeGlobalApp });
+      transaction.set(reference, {
+        apps,
+        [nyxTubeCatalogNameField]: true,
         updatedAt: new Date().toISOString()
       }, { merge: true });
     }
@@ -6731,6 +6742,7 @@ function nyxTubePublicVideo(item) {
     id,
     title: String(snippet.title || "Untitled video").trim().slice(0, 180),
     creator: String(snippet.channelTitle || "YouTube").trim().slice(0, 100),
+    description: String(snippet.description || "").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, " ").trim().slice(0, 5000),
     thumbnail: nyxTubeThumbnail(snippet),
     publishedAt: safeDateIso(snippet.publishedAt),
     durationSeconds,

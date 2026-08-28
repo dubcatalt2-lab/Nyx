@@ -6,7 +6,8 @@
   <meta name="color-scheme" content="dark">
   <title>NyxTube</title>
   <link rel="icon" type="image/svg+xml" href="/assets/icons/shortcut-youtube.svg">
-  <link rel="stylesheet" href="./styles.css?v=20260828-nyxtube-v2">
+  <link rel="stylesheet" href="./styles.css?v=20260828-nyxtube-v3">
+  <link rel="stylesheet" href="./responsive.css?v=20260828-nyxtube-v3">
 </head>
 <body>
   <svg class="symbols" aria-hidden="true">
@@ -50,6 +51,8 @@
     </section>
 
     <section class="watch-view" data-view="watch" hidden>
+      <div class="watch-layout">
+      <div class="watch-primary">
       <div class="watch-player" data-watch-stage>
         <div class="player-mount" data-watch-player></div>
         <div class="player-loading" data-watch-loading><span></span><strong>Loading video</strong></div>
@@ -65,9 +68,12 @@
       </div>
       <div class="watch-meta">
         <div class="channel-mark" data-watch-channel-mark></div><div class="watch-copy"><h1 data-watch-title></h1><p data-watch-creator></p></div>
-        <div class="watch-options"><label><span>Quality</span><select disabled title="YouTube automatically selects playback quality"><option>Auto</option></select></label><button data-watch-caption-option type="button">Captions <span>Off</span></button><a data-watch-source target="_blank" rel="noopener noreferrer" aria-label="Open on YouTube"><svg><use href="#icon-external"></use></svg></a></div>
+        <div class="watch-options"><label><span>Quality</span><select disabled title="YouTube selects playback quality automatically"><option value="auto">Auto</option></select></label><button data-watch-caption-option type="button">Captions <span>Off</span></button><a data-watch-source target="_blank" rel="noopener noreferrer" aria-label="Open on YouTube"><svg><use href="#icon-external"></use></svg></a></div>
       </div>
-      <div class="watch-description" data-watch-description></div>
+      <article class="watch-description"><h2>Description</h2><p data-watch-description></p></article>
+      </div>
+      <aside class="watch-related" aria-label="Related videos"><div class="related-heading"><h2>Related</h2><span>Up next</span></div><div class="related-list" data-watch-related></div></aside>
+      </div>
     </section>
 
     <section class="shorts-view" data-view="shorts" hidden>
@@ -84,6 +90,6 @@
       </div>
     </section>
   </main>
-  <script src="./app.js?v=20260828-nyxtube-v2"></script>
+  <script src="./app.js?v=20260828-nyxtube-v3"></script>
 </body>
 </html>

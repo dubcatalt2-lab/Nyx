@@ -3172,6 +3172,7 @@
       dashboard:'<path d="M4 5.5h6.5V12H4zM13.5 5.5H20v4h-6.5zM13.5 12.5H20v6h-6.5zM4 14.5h6.5v4H4z"/>',
       travel:'<path d="M5 18.5h14M7 15l3.2-9.5h3.6L17 15M8.5 11h7"/>',
       media:'<path d="M5 6.5h14v11H5z"/><path d="m10 9.5 5 2.5-5 2.5z"/>',
+      youtube:'<rect x="3" y="6" width="18" height="12" rx="4"/><path d="m10 9 5 3-5 3z"/>',
       ai:'<path d="M12 2a3 3 0 0 0-3 3v1H7a3 3 0 0 0-3 3v2H3a2 2 0 0 0 0 4h1v2a3 3 0 0 0 3 3h2v1a3 3 0 0 0 6 0v-1h2a3 3 0 0 0 3-3v-2h1a2 2 0 0 0 0-4h-1V9a3 3 0 0 0-3-3h-2V5a3 3 0 0 0-3-3z"/><circle cx="9" cy="11" r="1.2"/><circle cx="15" cy="11" r="1.2"/><path d="M9 16h6"/>',
       extensions:'<path d="M8.5 3.5v4h-4v4h4v4h4v4h4v-4h4v-4h-4v-4h-4v-4z"/>',
       performance:'<path d="M4 15a8 8 0 1 1 16 0"/><path d="m12 15 4-5"/><circle cx="12" cy="15" r="1.3"/>',
@@ -3230,11 +3231,18 @@
     if(top){
       const redesignedHome=store.text('nyx.homeDesign','redesigned')!=='original';
       top.innerHTML='<div class="brand-mini"><button class="browser-mode-app-button active" data-browser-shell-home title="Current tab"><span class="browser-home-icon" aria-hidden="true"></span><span class="browser-home-label">Home</span></button><button class="browser-mode-tab" data-browser-shell-new-tab title="New tab"><span>New tab</span></button></div><span class="browser-top-clock" data-browser-shell-clock>--:--:--</span><form class="browser-mode-address" data-browser-shell-search><button class="browser-nav-control" data-browser-shell-back type="button" title="Back" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button><button class="browser-nav-control" data-browser-shell-forward type="button" title="Forward" aria-label="Forward"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button><button class="browser-nav-control" data-browser-shell-reload type="button" title="Reload" aria-label="Reload"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"></path><path d="M20 4v7h-7"></path></svg></button><button class="browser-nav-control" data-browser-shell-home-nav type="button" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8"></path><path d="M5 10v10h14V10"></path><path d="M9 20v-6h6v6"></path></svg></button><input class="browser-mode-url" data-browser-shell-url placeholder="Search or enter a URL" autocomplete="off"><button class="browser-mode-bookmark browser-mode-settings" data-browser-shell-settings data-open="settings" type="button" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button><button class="browser-mode-weather" data-open="weather" type="button" title="Weather" aria-label="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button><button data-browser-shell-menu type="button" title="Menu"><span class="fresh-real-icon" aria-hidden="true">⋮</span></button></form><div class="browser-bookmark-panel" id="browserBookmarkPanel" hidden></div><div class="browser-mode-menu" id="browserModeMenu"><button data-browser-shell-new-tab type="button">New tab</button><button data-browser-bookmarks-toggle type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-browser-hieroglyph-toggle type="button">Hieroglyph Mode</button><button data-app-url="/assets/games/index.html" type="button">GAMES</button><button data-app-url="/apps/chat/" type="button">Chat</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-shell-about-tab type="button">Open Tab in Abt:Blank</button></div>';
+      const shellAddress=top.querySelector('form.browser-mode-address');
+      const shellUrl=top.querySelector('[data-browser-shell-url]');
+      if(shellAddress&&shellUrl&&!shellAddress.querySelector('.browser-mode-url-pointer-border')){
+        const pointerBorder=document.createElement('span');
+        pointerBorder.className='browser-mode-url-pointer-border';
+        pointerBorder.setAttribute('aria-hidden','true');
+        shellAddress.append(pointerBorder);
+      }
       if(redesignedHome){
       const legacyClock=top.querySelector(':scope > .browser-top-clock');
       if(legacyClock) legacyClock.outerHTML=browserLatencyBubbleMarkup();
       top.querySelector('.brand-mini [data-browser-shell-new-tab]')?.remove();
-      const shellAddress=top.querySelector('form.browser-mode-address');
       shellAddress?.insertAdjacentHTML('afterbegin','<button class="browser-nav-control browser-tabs-toggle" data-browser-shell-tabs-toggle type="button" aria-expanded="false" aria-controls="nyxBrowserTabSidebar" title="Tabs" aria-label="Tabs"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"></rect><path d="M8 10h8M8 14h5"></path></svg></button>');
       shellAddress?.querySelector('[data-open="weather"]')?.remove();
       const settingsButton=shellAddress?.querySelector('[data-browser-shell-settings]');
@@ -8149,14 +8157,22 @@
     const presenceText=nyxPresenceCount===null ? 'Connecting\u2026' : `${nyxPresenceCount} online`;
     return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence${nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="button" tabindex="${nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><button class="nyx-home-weather" data-home-weather data-open="weather" type="button" aria-label="Open weather report"><span class="nyx-home-weather-icon" data-home-weather-icon aria-hidden="true"><svg class="nyx-weather-symbol nyx-weather-symbol-partly-cloudy" viewBox="0 0 24 24" focusable="false"><circle class="nyx-weather-sun-fill" cx="8" cy="8" r="3.2"/><path class="nyx-weather-sun-ray" d="M8 2.3v1.4M3.97 3.97l1 1M2.3 8h1.4M12.03 3.97l-1 1M13.7 8h-1.4"/><path class="nyx-weather-cloud-fill" d="M7.2 19h10a4 4 0 0 0 .45-7.98A5.55 5.55 0 0 0 7.08 12.6 3.2 3.2 0 0 0 7.2 19Z"/></svg></span><strong data-home-weather-temp>--°</strong><span data-home-weather-desc>Loading</span></button><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1><form class="browser-blank-search nyx-home-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Find your course or enter a URL" placeholder="Find your Course" autocomplete="off" spellcheck="false"></form><nav class="nyx-home-actions" aria-label="Nyx home"><button data-open="apps" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-apps" aria-hidden="true"></span><span>Resources</span></button><button data-app-url="https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-study" aria-hidden="true"></span><span>Assignments</span></button><button data-open-nyx-profile-entry data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-profile" aria-hidden="true"></span><span>Student Profile</span></button><button data-open="settings" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-settings" aria-hidden="true"></span><span>Preferences</span></button></nav></main><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div><a class="nyx-home-link-checker" data-app-url="/apps/link-checker/" href="/apps/link-checker/">Link Checker</a><nav class="nyx-home-utility-links" aria-label="Nyx information and tools"><a data-app-url="/apps/chat/" href="/apps/chat/">Chat</a><a data-app-url="/apps/link-generator/" href="/apps/link-generator/">Link Generator</a><a data-open="terms" href="nyx://terms">Terms Of Service</a><a data-open="developer" href="nyx://developer">Developer Console</a><a data-open="about" href="nyx://about">About Us</a></nav></div></div>`;
   }
+  const browserBodyWithoutNyxTubeShortcut=browserBody;
+  browserBody=function(){
+    const markup=browserBodyWithoutNyxTubeShortcut();
+    return markup.replace('<button data-nyx-apps-toggle',`<button data-app-url="/apps/nyxtube/" type="button">${nyxDashboardIcon('youtube')}<span>NyxTube</span></button><button data-nyx-apps-toggle`);
+  };
   //apps-grid
   const nyxAiHomeShortcut={domain:'nyx-ai',title:'AI Tutor',url:'nyx://ai',favorite:false};
   const nyxAiHomeShortcutMigrationKey='nyx.homeShortcuts.aiShortcutV1';
+  const nyxTubeHomeShortcut={domain:'youtube.com',title:'NyxTube',url:'/apps/nyxtube/',favorite:false};
+  const nyxTubeHomeShortcutMigrationKey='nyx.homeShortcuts.nyxTubeShortcutV1';
   const moviesHomeShortcut={domain:'cinejoy.to',title:'Movies',url:'https://cinejoy.to/',favorite:false};
   const defaultHomeShortcuts=[
     {domain:'geforcenow',title:'Course Library',url:'https://play.geforcenow.com/',favorite:true},
     {domain:'duck.ai',title:'Research Assistant',url:'https://duck.ai/',favorite:false},
     nyxAiHomeShortcut,
+    nyxTubeHomeShortcut,
     {domain:'games',title:'Practice Lab',url:'/assets/games/',favorite:false},
     {domain:'tiktok.com',title:'Quick Lessons',url:'https://www.tiktok.com/',favorite:false},
     moviesHomeShortcut,
@@ -8197,11 +8213,19 @@
           }
           store.set(nyxAiHomeShortcutMigrationKey,true);
         }
+        if(!store.get(nyxTubeHomeShortcutMigrationKey,false)){
+          if(!cleaned.some(item=>String(item.url || '').trim().replace(/\/+$/,'').toLowerCase()==='/apps/nyxtube')){
+            const aiIndex=cleaned.findIndex(item=>String(item.url || '').trim().toLowerCase()==='nyx://ai');
+            cleaned.splice(aiIndex>=0?aiIndex+1:cleaned.length,0,{...nyxTubeHomeShortcut});
+          }
+          store.set(nyxTubeHomeShortcutMigrationKey,true);
+        }
         if(JSON.stringify(cleaned)!==JSON.stringify(saved)) saveHomeShortcuts(cleaned);
         return cleaned;
       }
     }catch{}
     store.set(nyxAiHomeShortcutMigrationKey,true);
+    store.set(nyxTubeHomeShortcutMigrationKey,true);
     return defaultHomeShortcuts.map(item=>({...item}));
   }
   function saveHomeShortcuts(items){
@@ -8853,7 +8877,7 @@
   }
   const nyxDefaultGlobalApps=[
     ['link-checker','link-checker','Link Checker','/apps/link-checker/'],['link-generator','link-generator','Link Generator','/apps/link-generator/'],['nyx-api-keys','api-keys','Nyx API Keys','/apps/api-keys/'],['youtube','youtube.com','YouTube','/apps/nyxtube/'],['pirate-cove','games','GAMES','/assets/games/'],['nyx-chat','nyx-chat','Nyx Chat','/apps/chat/'],['geforce-now','geforcenow','GeForce Now','https://play.geforcenow.com/'],['roblox','roblox.com','Roblox','https://web.cloudmoonapp.com/game/com.roblox.client/'],['discord','discord.com','Discord','https://discord.com/app'],['spotify','spotify.com','Spotify','https://open.spotify.com/'],['nyxify','nyxify','Nyxify/built in music','/apps/nyxify/'],['google','google.com','Google','https://www.google.com/'],['study','docs.google.com','Study','https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0'],['duck-ai','duck.ai','Duck AI','https://duck.ai/'],['nyx-ai','nyx-ai','Nyx AI','nyx://ai'],['wikipedia','wikipedia.org','Wikipedia','https://www.wikipedia.org/'],['movies','cinejoy.to','Movies','https://cinejoy.to/'],['more-movie-sites','fmhy.net','More Movie Sites','https://fmhy.net/video#p-stream-forks'],['tiktok','tiktok.com','TikTok','https://www.tiktok.com/'],['instagram','instagram.com','Instagram','https://www.instagram.com/'],['snapchat','snapchat.com','Snapchat','https://www.snapchat.com/'],['amazon','amazon.com','Amazon','https://www.amazon.com/'],['reddit','reddit.com','Reddit','https://www.reddit.com/'],['twitter','x.com','Twitter','https://x.com/'],['tcgplayer','tcgplayer.com','TCGPlayer','https://www.tcgplayer.com/'],['cps-test','cpstest.org','CPS Test','https://cpstest.org/'],['chess','chess.com','Chess.com','https://www.chess.com/'],['animex','animex.one','Animex','https://animex.one/'],['chatgpt','chatgpt.com','AI','https://chatgpt.com/'],['steam','store.steampowered.com','Steam','https://store.steampowered.com/'],['crunchyroll','crunchyroll.com','Crunchyroll','https://www.crunchyroll.com/'],['crazygames','crazygames.com','CrazyGames','https://www.crazygames.com/'],['newgrounds','newgrounds.com','Newgrounds','https://www.newgrounds.com/'],['twitch','twitch.tv','Twitch','https://www.twitch.tv/'],['kick','kick.com','Kick','https://kick.com/'],['pluto-tv','pluto.tv','Pluto TV','https://pluto.tv/'],['skribbl','skribbl.io','Skribbl.io','https://skribbl.io/'],['slither','slither.io','Slither.io','https://slither.io/'],['geoguessr','geoguessr.com','GeoGuessr','https://www.geoguessr.com/'],['y8-games','y8.com','Y8 Games','https://www.y8.com/'],['itch','itch.io','itch.io','https://itch.io/']
-  ].map(([id,icon,name,url])=>({id,icon,name,url}));
+  ].map(([id,icon,name,url])=>({id,icon,name,url})).map(app=>app.id==='youtube'?{...app,name:'NyxTube'}:app);
   let nyxGlobalApps=nyxDefaultGlobalApps.map(app=>({...app}));
   function normalizeNyxGlobalApp(app){
     const id=String(app?.id||'').trim().toLowerCase();
@@ -15648,6 +15672,57 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       const bounds=field.getBoundingClientRect();
       field.style.setProperty('--nyx-search-hover-x',`${event.clientX-bounds.left}px`);
       field.style.setProperty('--nyx-search-hover-y',`${event.clientY-bounds.top}px`);
+      return;
+    },{passive:true});
+    const syncAddressBorder=(field,event)=>{
+      const form=field.closest('form.browser-mode-address');
+      if(!form) return;
+      let border=form.querySelector('.browser-mode-url-pointer-border');
+      if(!border){
+        border=document.createElement('span');
+        border.className='browser-mode-url-pointer-border';
+        border.setAttribute('aria-hidden','true');
+        form.append(border);
+      }
+      const fieldBounds=field.getBoundingClientRect();
+      const formBounds=form.getBoundingClientRect();
+      border.style.setProperty('--nyx-address-left',`${fieldBounds.left-formBounds.left}px`);
+      border.style.setProperty('--nyx-address-top',`${fieldBounds.top-formBounds.top}px`);
+      border.style.setProperty('--nyx-address-width',`${fieldBounds.width}px`);
+      border.style.setProperty('--nyx-address-height',`${fieldBounds.height}px`);
+      if(event){
+        border.classList.add('is-pointer-active');
+        border.style.setProperty('--nyx-address-hover-x',`${event.clientX-fieldBounds.left}px`);
+        border.style.setProperty('--nyx-address-hover-y',`${event.clientY-fieldBounds.top}px`);
+      }
+    };
+    document.addEventListener('pointermove',event=>{
+      const field=event.target instanceof Element
+        ? event.target.closest('form.browser-mode-address > input.browser-mode-url')
+        : null;
+      if(field) syncAddressBorder(field,event);
+    },{passive:true});
+    document.addEventListener('focusin',event=>{
+      const field=event.target instanceof Element&&event.target.matches('form.browser-mode-address > input.browser-mode-url')
+        ? event.target
+        : null;
+      if(field){
+        syncAddressBorder(field);
+        field.closest('form.browser-mode-address')?.querySelector('.browser-mode-url-pointer-border')?.classList.add('is-focus-active');
+      }
+    });
+    document.addEventListener('pointerout',event=>{
+      if(event.target instanceof Element&&event.target.matches('form.browser-mode-address > input.browser-mode-url')){
+        event.target.closest('form.browser-mode-address')?.querySelector('.browser-mode-url-pointer-border')?.classList.remove('is-pointer-active');
+      }
+    },{passive:true});
+    document.addEventListener('focusout',event=>{
+      if(event.target instanceof Element&&event.target.matches('form.browser-mode-address > input.browser-mode-url')){
+        event.target.closest('form.browser-mode-address')?.querySelector('.browser-mode-url-pointer-border')?.classList.remove('is-focus-active');
+      }
+    });
+    window.addEventListener('resize',()=>{
+      document.querySelectorAll('form.browser-mode-address > input.browser-mode-url').forEach(field=>syncAddressBorder(field));
     },{passive:true});
   }
   function finishNyxOpenStartup(){

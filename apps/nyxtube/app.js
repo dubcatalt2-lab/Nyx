@@ -5,7 +5,7 @@
   const $$ = selector => [...document.querySelectorAll(selector)];
   const views = Object.fromEntries($$("[data-view]").map(view => [view.dataset.view, view]));
   const state = {
-    view: "home", videos: [], shorts: [], shortIndex: 0,
+    view: "home", videos: [], catalog: [], shorts: [], shortIndex: 0,
     watchPlayer: null, shortPlayer: null, watchTimer: 0, shortTimer: 0,
     watchVideo: null, watchCaptions: false, shortCaptions: false, shortMuted: true,
   };
@@ -13,7 +13,7 @@
     "notice", "search-form", "search-input", "feed-title", "result-count", "video-grid",
     "watch-stage", "watch-player", "watch-loading", "watch-center-play", "watch-toggle", "watch-time",
     "watch-mute", "watch-captions", "watch-caption-option", "watch-fullscreen", "watch-progress",
-    "watch-title", "watch-creator", "watch-channel-mark", "watch-source", "short-stage", "short-player",
+    "watch-title", "watch-creator", "watch-channel-mark", "watch-source", "watch-description", "watch-related", "short-stage", "short-player",
     "short-loading", "short-center-play", "short-mute", "short-captions", "short-fullscreen",
     "short-progress", "short-title", "short-creator",
   ].map(name => [name.replace(/-([a-z])/g, (_match, letter) => letter.toUpperCase()), $(`[data-${name}]`)]));
@@ -44,6 +44,10 @@
     if (count >= 1e3) return `${(count / 1e3).toFixed(count >= 1e4 ? 0 : 1)}K views`;
     return count ? `${count.toLocaleString()} views` : "YouTube";
   }
+  function dateLabel(value) {
+    const date = new Date(value || "");
+    return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  }
   function skeletons() {
     refs.videoGrid.replaceChildren(...Array.from({ length: 8 }, () => {
       const card = document.createElement("article");
@@ -54,6 +58,9 @@
   }
   function renderVideos(videos) {
     state.videos = Array.isArray(videos) ? videos : [];
+    const catalog = new Map(state.catalog.map(video => [video.id, video]));
+    state.videos.forEach(video => { if (video?.id) catalog.set(video.id, video); });
+    state.catalog = [...catalog.values()].slice(-60);
     refs.resultCount.textContent = `${state.videos.length} video${state.videos.length === 1 ? "" : "s"}`;
     if (!state.videos.length) {
       const empty = document.createElement("p");
@@ -211,8 +218,10 @@
     if (!video?.id) return;
     state.watchVideo = video; showView("watch"); notice();
     refs.watchTitle.textContent = video.title || "Untitled video";
-    refs.watchCreator.textContent = `${video.creator || "YouTube"} · ${viewsLabel(video.viewCount)}`;
+    refs.watchCreator.textContent = [video.creator || "YouTube", viewsLabel(video.viewCount), dateLabel(video.publishedAt)].filter(Boolean).join(" · ");
     refs.watchChannelMark.textContent = (video.creator || "Y").trim().slice(0, 1).toUpperCase();
+    refs.watchDescription.textContent = String(video.description || "No description was provided for this video.");
+    renderRelated(video);
     refs.watchSource.href = video.sourceUrl || `https://www.youtube.com/watch?v=${encodeURIComponent(video.id)}`;
     refs.watchLoading.hidden = false; refs.watchCenterPlay.hidden = true; refs.watchProgress.value = "0";
     refs.watchTime.textContent = `0:00 / ${duration(video.durationSeconds)}`;
@@ -233,6 +242,34 @@
       onError: () => { refs.watchLoading.hidden = true; notice("This video is not available for embedded playback."); },
     };
     state.watchPlayer = new YT.Player(mount(refs.watchPlayer, "nyxtube-watch"), config);
+  }
+  function relatedScore(candidate, selected) {
+    const sameCreator = String(candidate.creator || "").toLowerCase() === String(selected.creator || "").toLowerCase() ? 20 : 0;
+    const words = new Set(String(selected.title || "").toLowerCase().match(/[a-z0-9]{4,}/g) || []);
+    const overlap = (String(candidate.title || "").toLowerCase().match(/[a-z0-9]{4,}/g) || []).filter(word => words.has(word)).length;
+    return sameCreator + overlap;
+  }
+  function renderRelated(selected) {
+    const seen = new Set();
+    const videos = [...state.catalog, ...state.shorts]
+      .filter(video => video?.id && video.id !== selected.id && !seen.has(video.id) && seen.add(video.id))
+      .sort((left, right) => relatedScore(right, selected) - relatedScore(left, selected))
+      .slice(0, 10);
+    if (!videos.length) {
+      const empty = document.createElement("p"); empty.className = "related-empty"; empty.textContent = "More videos will appear here as you browse.";
+      refs.watchRelated.replaceChildren(empty); return;
+    }
+    refs.watchRelated.replaceChildren(...videos.map(video => {
+      const button = document.createElement("button"); button.type = "button"; button.className = "related-card";
+      const image = document.createElement("img"); image.alt = ""; image.loading = "lazy"; image.referrerPolicy = "no-referrer"; image.src = video.thumbnail || "";
+      image.addEventListener("error", () => image.remove());
+      const stamp = document.createElement("span"); stamp.className = "related-duration"; stamp.textContent = duration(video.durationSeconds);
+      const thumb = document.createElement("span"); thumb.className = "related-thumb"; thumb.append(image, stamp);
+      const copy = document.createElement("span"); copy.className = "related-copy";
+      const title = document.createElement("strong"); title.textContent = video.title || "Untitled video";
+      const meta = document.createElement("small"); meta.textContent = `${video.creator || "YouTube"} · ${viewsLabel(video.viewCount)}`;
+      copy.append(title, meta); button.append(thumb, copy); button.addEventListener("click", () => openWatch(video)); return button;
+    }));
   }
   function startWatchTimer() {
     clearInterval(state.watchTimer);

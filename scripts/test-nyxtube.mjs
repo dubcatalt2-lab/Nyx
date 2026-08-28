@@ -153,17 +153,23 @@ try {
     await discoveryPage.evaluate(() => {
       document.body.classList.add("browser-content-active");
       document.querySelectorAll("#nyxStudyHubStartup,#setupLaunchScreen,#setupScreen,.nyx-tos-gate").forEach(element => { element.style.pointerEvents = "none"; });
-      const field = document.querySelector('form.browser-mode-address > input.browser-mode-url');
-      const bounds = field?.getBoundingClientRect();
-      field?.focus();
-      if (field && bounds) field.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, clientX: bounds.left + Math.min(120, bounds.width / 2), clientY: bounds.top + bounds.height / 2 }));
     });
     const addressBounds = await discoveryPage.locator('form.browser-mode-address > input.browser-mode-url').boundingBox();
     assert(addressBounds?.width > 100, `Browser address field did not have usable geometry: ${JSON.stringify(addressBounds)}`);
-    await discoveryPage.mouse.move(addressBounds.x + Math.min(120, addressBounds.width / 2), addressBounds.y + addressBounds.height / 2);
     const addressBorder = discoveryPage.locator('form.browser-mode-address > .browser-mode-url-pointer-border');
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      await discoveryPage.evaluate(() => {
+        const field = document.querySelector('form.browser-mode-address > input.browser-mode-url');
+        const bounds = field?.getBoundingClientRect();
+        field?.focus();
+        if (field && bounds) field.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, clientX: bounds.left + Math.min(120, bounds.width / 2), clientY: bounds.top + bounds.height / 2 }));
+      });
+      await discoveryPage.mouse.move(addressBounds.x + Math.min(120, addressBounds.width / 2), addressBounds.y + addressBounds.height / 2);
+      await discoveryPage.waitForTimeout(100);
+      const width = await discoveryPage.evaluate(() => document.querySelector('form.browser-mode-address > .browser-mode-url-pointer-border')?.getBoundingClientRect().width || 0);
+      if (width > 100) break;
+    }
     await addressBorder.waitFor({ state: "attached" });
-    await discoveryPage.waitForTimeout(180);
     const addressInteraction = await discoveryPage.evaluate(() => {
       const field = document.querySelector('form.browser-mode-address > input.browser-mode-url');
       const border = document.querySelector('form.browser-mode-address > .browser-mode-url-pointer-border');

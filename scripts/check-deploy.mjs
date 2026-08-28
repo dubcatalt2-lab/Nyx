@@ -13,7 +13,6 @@ const requiredFiles = [
   "uv.config.js",
   "uv.sw.js",
   "scramjet.sw.js",
-  "scramjet-v1.sw.js",
   "js/loading-screen.js",
   "css/core.css",
   "css/chrome-and-settings.css",

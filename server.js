@@ -12354,6 +12354,16 @@ app.use(express.static(staticRoot));
 app.use("/assets/vendor/katex/", express.static(katexPath));
 app.use("/uv/", express.static(uvPath));
 app.use("/scramjet/", express.static(scramjetPath));
+// Scramjet v1 and v2 both ship with a "$scramjet" IndexedDB name, but their
+// schemas are incompatible. Serve v1 with a private name so switching engines
+// cannot corrupt either controller's storage.
+const scramjetV1Bundle = readFileSync(join(scramjetV1Path, "scramjet.all.js"), "utf8")
+  .replaceAll('"$scramjet"', '"$nyx_scramjet_v1"');
+app.get("/scramjet-v1/scramjet.all.js", (_req, res) => {
+  res.type("application/javascript");
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.send(scramjetV1Bundle);
+});
 app.use("/scramjet-v1/", express.static(scramjetV1Path));
 app.use("/controller/", express.static(scramjetControllerPath));
 app.use("/baremux/", express.static(baremuxPath));
@@ -12371,7 +12381,7 @@ app.use("/~/sj/", (_req, res) => {
   button{margin-top:18px;border:1px solid #445066;border-radius:10px;background:#1b2230;color:#f5f7fb;padding:10px 15px;font:600 14px Raleway,Arial,sans-serif;cursor:pointer}
 </style>
 <main>
-  <h1>Reconnecting Scrapmmy</h1>
+  <h1>Reconnecting Scramjet</h1>
   <p>Nyx is reconnecting this tab to the proxy service worker.</p>
   <button type="button" onclick="location.reload()">Retry now</button>
 </main>

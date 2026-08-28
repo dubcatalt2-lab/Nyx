@@ -1,4 +1,4 @@
-importScripts("/scramjet-v1/scramjet.all.js");
+importScripts("/scramjet-v1/scramjet.all.js?v=nyx-sj-v1-isolated-v2");
 
 const { ScramjetServiceWorker } = $scramjetLoadWorker();
 const scramjet = new ScramjetServiceWorker();

@@ -2998,7 +2998,7 @@
   const proxyStateVersion='nyx-proxy-state-20260814-private-tabs-v13';
   const scramjetStateVersion='nyx-scramjet-state-20260814-private-tabs-v2';
   const scramjetServiceWorkerUrl='/scramjet.sw.js?v=nyx-sj-20260814-private-tabs-v3';
-  const scramjetV1ServiceWorkerUrl='/scramjet-v1.sw.js?v=nyx-sj-v1-20260827-v1';
+  const scramjetV1ServiceWorkerUrl='/scramjet-v1.sw.js?v=nyx-sj-v1-isolated-v2';
   function installNyxConsoleDedupe(scope='top'){
     if(console.__nyxDedupeInstalled) return;
     const seen=new Map();
@@ -4530,6 +4530,18 @@
       const ultravioletOption=browserModeSelect.querySelector('option[value="ultraviolet"]');
       browserModeSelect.insertBefore(option,ultravioletOption || null);
     }
+    if(browserModeSelect){
+      const browserModeLabels={
+        auto:'Auto',
+        scramjet:'Scramjet',
+        'scramjet-v1':'Scramjet v1',
+        ultraviolet:'Ultraviolet',
+        iframe:'Iframe'
+      };
+      [...browserModeSelect.options].forEach(option=>{
+        if(browserModeLabels[option.value]) option.textContent=browserModeLabels[option.value];
+      });
+    }
 
     app.classList.add('nyx-settings-dashboard');
     main.querySelector(':scope > h1')?.remove();
@@ -4668,11 +4680,17 @@
     const legacyLibcurlOption=transportSelect?.querySelector('option[value="libcurl"]');
     if(legacyLibcurlOption){
       legacyLibcurlOption.value='libcurlRaw';
-      legacyLibcurlOption.textContent='Libby over Relay';
+      legacyLibcurlOption.textContent='Libcurl';
     }
     if(transportSelect && !transportSelect.querySelector('option[value="auto"]')){
       transportSelect.prepend(new Option('Auto (recommended)','auto'));
       transportSelect.value=normalizeBrowserTransportName(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT));
+    }
+    if(transportSelect){
+      const transportLabels={epoxy:'Epoxy',wisp:'Wisp',libcurl:'Libcurl',libcurlRaw:'Libcurl',auto:'Auto'};
+      [...transportSelect.options].forEach(option=>{
+        if(transportLabels[option.value]) option.textContent=transportLabels[option.value];
+      });
     }
     const effectBlock=overlay.querySelector('[data-effect-value]')?.closest('.settings-block');
     if(effectBlock){
@@ -4849,7 +4867,6 @@
     const isSearchQuery=raw && !looksLikeUrl && !proxyInternal;
     const normalized=normalize(raw);
     const target=isSearchQuery ? selectedSearchUrl(raw) : (normalized || raw);
-    const navigationValue=isSearchQuery ? raw : target;
     let shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab) || browserShellTabs[0];
     if(browserShellTabPreservesSearch(shellTab)){
       const resultShellId=openBrowserShellTab('',{focusAddress:false});
@@ -4862,8 +4879,8 @@
     if(activeBrowser?.win?.isConnected){
       ensureBrowserShellLinkedTab(shellTab);
       if(shellTab?.browserTabId) activeBrowser.activate?.(shellTab.browserTabId);
-      if(activeBrowser.navigate) activeBrowser.navigate(navigationValue);
-      else openBrowser(navigationValue);
+      if(activeBrowser.navigate) activeBrowser.navigate(target);
+      else openBrowser(target);
       const activeTab=activeBrowser?.tabs?.find(tab=>tab.id===shellTab?.browserTabId || tab.id===activeBrowser.active);
       if(activeTab){
         if(shellTab) shellTab.browserTabId=activeTab.id;
@@ -4875,7 +4892,7 @@
         activeBrowser.renderTabs?.();
       }
     }else{
-      const win=openBrowser(navigationValue);
+      const win=openBrowser(target);
       win?.classList.add('maximized');
       const created=activeBrowser?.tabs?.[activeBrowser.tabs.length-1];
       if(shellTab && created) shellTab.browserTabId=created.id;
@@ -7647,10 +7664,9 @@
       const registration=await navigator.serviceWorker.getRegistration('/~/sj-v1/').catch(()=>null);
       await registration?.unregister?.().catch(()=>null);
     }
-    // v1 and v2 both use the legacy "$scramjet" database name but expect
-    // different object-store layouts. Remove the incompatible layout only
-    // when v1 reports that exact schema error; v2 has its own repair path.
-    await repairScramjetStorage();
+    // v1 has a private database, so its recovery must never remove v2's
+    // "$scramjet" database.
+    await deleteIndexedDb('$nyx_scramjet_v1');
   }
   async function repairScramjetCaches(){
     if(!window.caches?.keys) return;
@@ -7780,7 +7796,7 @@
     return {
       prefix:'/~/sj-v1/',
       files:{
-        all:'/scramjet-v1/scramjet.all.js',
+        all:'/scramjet-v1/scramjet.all.js?v=nyx-sj-v1-isolated-v2',
         wasm:'/scramjet-v1/scramjet.wasm.wasm',
         sync:'/scramjet-v1/scramjet.sync.js'
       }
@@ -7822,7 +7838,7 @@
       if(location.protocol==='file:') throw new Error('Scramjet v1 needs Nyx to be opened from its website, not as a local file.');
       if(!('serviceWorker' in navigator)) throw new Error('This browser does not support the Service Workers Scramjet v1 needs.');
       step='loading Scramjet v1 assets';
-      if(!window.$scramjetLoadController) await loadScript('/scramjet-v1/scramjet.all.js');
+      if(!window.$scramjetLoadController) await loadScript('/scramjet-v1/scramjet.all.js?v=nyx-sj-v1-isolated-v2');
       step='starting relay';
       await installBareMuxTransport();
       step='registering service worker';
@@ -7856,34 +7872,34 @@
   }
   function installScramjet(){
     if(scramjetInstallPromise) return scramjetInstallPromise;
-    let step='starting Scrapmmy';
+    let step='starting Scramjet';
     scramjetInstallPromise=(async()=>{
       step='checking browser support';
       if(location.protocol==='file:'){
-        scramjetInstallError='Scrapmmy needs Nyx to be opened from its website, not as a local file.';
+        scramjetInstallError='Scramjet needs Nyx to be opened from its website, not as a local file.';
         return false;
       }
       if(!('serviceWorker' in navigator)){
-        scramjetInstallError='This browser does not support the Service Workers Scrapmmy needs. Some watch browsers do not provide that feature.';
+        scramjetInstallError='This browser does not support the Service Workers Scramjet needs. Some watch browsers do not provide that feature.';
         return false;
       }
-      step='resetting stale Scrapmmy state';
+      step='resetting stale Scramjet state';
       await ensureFreshProxyState();
       await ensureFreshScramjetState();
-      step='loading Scrapmmy assets';
+      step='loading Scramjet assets';
       if(!window.$scramjet) await loadScript('/scramjet/scramjet.js');
       if(!window.$scramjetController) await loadScript('/controller/controller.api.js');
-      step='loading Scrapmmy runtime guard';
+      step='loading Scramjet runtime guard';
       await loadScramjetRuntimeGuardSource();
-      step='starting Scrapmmy relay';
+      step='starting Scramjet relay';
       const transport=await createScramjetTransport();
-      step='registering Scrapmmy service worker';
+      step='registering Scramjet service worker';
       const registration=await navigator.serviceWorker.register(scramjetServiceWorkerUrl,{scope:'/~/sj/',updateViaCache:'none'});
       await registration.update().catch(()=>null);
-      step='activating Scrapmmy service worker';
+      step='activating Scramjet service worker';
       const serviceworker=await waitForServiceWorkerScript(registration,scramjetServiceWorkerUrl);
-      if(!serviceworker) throw new Error('Scrapmmy service worker did not activate');
-      step='initializing Scrapmmy controller';
+      if(!serviceworker) throw new Error('Scramjet service worker did not activate');
+      step='initializing Scramjet controller';
       try{
         if(!scramjetController) scramjetController=createScramjetController(serviceworker,transport);
         else if(!await reconnectScramjetController(scramjetController,serviceworker,transport)){
@@ -7892,12 +7908,12 @@
         await scramjetController.wait();
       }catch(initError){
         if(!isScramjetIdbShapeError(initError)) throw initError;
-        step='repairing Scrapmmy storage';
+        step='repairing Scramjet storage';
         await repairScramjetStorage();
         const repairedRegistration=await navigator.serviceWorker.register(scramjetServiceWorkerUrl,{scope:'/~/sj/',updateViaCache:'none'});
         const repairedServiceworker=await waitForServiceWorkerScript(repairedRegistration,scramjetServiceWorkerUrl);
-        if(!repairedServiceworker) throw new Error('Scrapmmy service worker did not activate after storage repair');
-        step='initializing Scrapmmy controller after storage repair';
+        if(!repairedServiceworker) throw new Error('Scramjet service worker did not activate after storage repair');
+        step='initializing Scramjet controller after storage repair';
         scramjetController=createScramjetController(repairedServiceworker,transport);
         await scramjetController.wait();
       }
@@ -10468,7 +10484,7 @@
             if(!state.tabs.includes(t)) return;
             const proxied=ok ? proxyModeUrl('ultraviolet',sourceUrl,t.privacySessionId) : '';
             if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',sourceUrl);
-            else loadSelectedSearchFallback(t,sourceUrl,'selected Violet engine unavailable');
+            else loadSelectedSearchFallback(t,sourceUrl,'selected Ultraviolet engine unavailable');
           });
           return true;
         }
@@ -10482,15 +10498,15 @@
         return false;
       }
       if(expectedEngine==='scramjet' && configuredMode==='auto'){
-        return loadSelectedSearchFallback(t,sourceUrl,reason || 'Scrapmmy relays exhausted');
+        return loadSelectedSearchFallback(t,sourceUrl,reason || 'Scramjet relays exhausted');
       }
       if(expectedEngine==='scramjet' && configuredMode==='scramjet'){
-        if(attempts[key]>3) return loadSelectedSearchFallback(t,sourceUrl,reason || 'Scrapmmy retries exhausted');
+        if(attempts[key]>3) return loadSelectedSearchFallback(t,sourceUrl,reason || 'Scramjet retries exhausted');
         loadScramjetTab(t,sourceUrl,false);
         return true;
       }
       if(expectedEngine==='ultraviolet' && configuredMode==='ultraviolet'){
-        return loadSelectedSearchFallback(t,sourceUrl,reason || 'Violet failed while selected');
+        return loadSelectedSearchFallback(t,sourceUrl,reason || 'Ultraviolet failed while selected');
       }
       if(attempts[key]>3) return loadSelectedSearchFallback(t,sourceUrl,reason || 'proxy fallback exhausted');
       if(expectedEngine==='scramjet'){
@@ -10498,7 +10514,7 @@
           if(!state.tabs.includes(t)) return;
           const proxied=ok ? proxyModeUrl('ultraviolet',sourceUrl,t.privacySessionId) : '';
           if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',sourceUrl);
-          else loadSelectedSearchFallback(t,sourceUrl,'Violet unavailable after Scrapmmy failure');
+          else loadSelectedSearchFallback(t,sourceUrl,'Ultraviolet unavailable after Scramjet failure');
         });
         return true;
       }
@@ -10665,7 +10681,7 @@
             handled=true;
           }else if(browserMode==='auto'){
             if(canAutoTransport) setBrowserTransportOverride('epoxy');
-            loadSelectedSearchFallback(t,sourceUrl,'Scrapmmy relays exhausted');
+            loadSelectedSearchFallback(t,sourceUrl,'Scramjet relays exhausted');
             handled=true;
           }
         }
@@ -10859,7 +10875,7 @@
           t.actualEngine='scramjet-failed';
           setFrameSandbox(t,true);
           clearFrameDocument(t);
-          t.frame.srcdoc=proxyFailureHtml(scramjetInstallError,'Scrapmmy',{allowDirect:true});
+          t.frame.srcdoc=proxyFailureHtml(scramjetInstallError,'Scramjet',{allowDirect:true});
           return;
         }
         const existingFrameSrc=String(t.frame.getAttribute('src') || '');
@@ -10976,7 +10992,7 @@
         t.actualEngine='scramjet-failed';
         setFrameSandbox(t,true);
         clearFrameDocument(t);
-        t.frame.srcdoc=proxyFailureHtml('The private tab session could not start. Reload Nyx and try again.','Scrapmmy',{allowDirect:true});
+        t.frame.srcdoc=proxyFailureHtml('The private tab session could not start. Reload Nyx and try again.','Scramjet',{allowDirect:true});
       });
     }
     function waitForTabResultPaint(t,timeout=4200){
@@ -11152,7 +11168,7 @@
             t.actualEngine='ultraviolet-failed';
             setFrameSandbox(t,true);
             clearFrameDocument(t);
-            t.frame.srcdoc=proxyFailureHtml('Refresh once so the updated service worker can register, then try again.','Violet');
+            t.frame.srcdoc=proxyFailureHtml('Refresh once so the updated service worker can register, then try again.','Ultraviolet');
           }
         });
       }else{
@@ -13062,13 +13078,13 @@
         <section class="settings-card">
           <h2>Change Proxy</h2>
           <p>Choose the browser engine Nyx uses for external sites.
-Scrapmmy supports more websites, while Violet can work better for some pages.
-Auto uses Scrapmmy with Libby by default and can recover with another relay if the connection fails.</p>
+Scramjet supports more websites, while Ultraviolet can work better for some pages.
+Auto uses Scramjet with Libcurl by default and can recover with another relay if the connection fails.</p>
           <select id="settingBrowserMode">
-            <option value="auto">Auto (Scrapmmy + Libby)</option>
-            <option value="scramjet">Use Scrapmmy</option>
+            <option value="auto">Auto</option>
+            <option value="scramjet">Use Scramjet</option>
             <option value="scramjet-v1">Use Scramjet v1</option>
-            <option value="ultraviolet">Use Violet</option>
+            <option value="ultraviolet">Use Ultraviolet</option>
             <option value="iframe">Iframe</option>
           </select>
         </section>
@@ -13077,9 +13093,9 @@ Auto uses Scrapmmy with Libby by default and can recover with another relay if t
           <p class="hint">Choose the installed network transport.</p>
           <select id="settingTransport">
             <option value="auto">Auto (recommended)</option>
-            <option value="epoxy">Eppy over Relay</option>
-            <option value="wisp">Relay endpoint</option>
-            <option value="libcurlRaw">Libby over Relay</option>
+            <option value="epoxy">Epoxy</option>
+            <option value="wisp">Wisp</option>
+            <option value="libcurlRaw">Libcurl</option>
           </select>
           <button data-save-browser>Save Browser Settings</button>
         </section>

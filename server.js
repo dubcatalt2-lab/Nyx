@@ -2996,14 +2996,18 @@ async function nyxApiKeyOwnerEntitlement(firebase, uid) {
 
 async function reserveNyxApiKeyTokens(firebase, uid, requestedTokens, config) {
   const entitlement = await nyxApiKeyOwnerEntitlement(firebase, uid);
-  if (entitlement.premium || entitlement.owner) return null;
   const now = new Date();
   const date = now.toISOString().slice(0, 10);
   const reference = firebase.firestore.collection(nyxApiKeyTokenUsageCollection).doc(`${uid}_${date}`);
+  const unlimited = entitlement.premium || entitlement.owner;
   const requested = Math.max(1, Math.min(config.maxTokens, Math.floor(Number(requestedTokens) || 1)));
   const reservation = await firebase.firestore.runTransaction(async transaction => {
     const snapshot = await transaction.get(reference);
     const used = Math.max(0, Math.floor(Number(snapshot.data()?.tokens) || 0));
+    if (unlimited) {
+      transaction.set(reference, { uid, date, tokens: used + requested, updatedAt: now.toISOString(), updatedAtMs: Date.now() }, { merge: true });
+      return { tokens: requested, remaining: null };
+    }
     const remaining = Math.max(0, config.regularDailyTokens - used);
     if (!remaining) {
       const error = new Error(`Your ${config.regularDailyTokens.toLocaleString("en-US")} generated-token allowance resets at 00:00 UTC.`);
@@ -3014,7 +3018,7 @@ async function reserveNyxApiKeyTokens(firebase, uid, requestedTokens, config) {
     transaction.set(reference, { uid, date, tokens: used + tokens, updatedAt: now.toISOString(), updatedAtMs: Date.now() }, { merge: true });
     return { tokens, remaining: remaining - tokens };
   });
-  return { ...reservation, reference };
+  return { ...reservation, reference, unlimited };
 }
 
 async function settleNyxApiKeyTokens(reservation, usedTokens) {
@@ -3113,10 +3117,55 @@ app.get("/api/nyx-api-keys", async (req, res) => {
   try {
     const { firebase, token } = await authenticatedNyxUser(req);
     const snapshot = await firebase.firestore.collection(nyxApiKeyCollection).where("ownerUid", "==", token.uid).limit(40).get();
-    const keys = snapshot.docs.map(nyxApiKeyPublic).sort((left, right) => String(right.createdAt).localeCompare(String(left.createdAt)));
+    const keys = snapshot.docs.filter(document => !document.data()?.revokedAt).map(nyxApiKeyPublic).sort((left, right) => String(right.createdAt).localeCompare(String(left.createdAt)));
     res.json({ keys });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "Nyx API Keys are unavailable." });
+  }
+});
+
+app.get("/api/nyx-api-keys/usage", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const { firebase, token } = await authenticatedNyxUser(req);
+    const config = nyxGroqConfig();
+    const date = new Date().toISOString().slice(0, 10);
+    const resetsAt = new Date(`${date}T00:00:00.000Z`);
+    resetsAt.setUTCDate(resetsAt.getUTCDate() + 1);
+    const [keySnapshot, entitlement, tokenUsageSnapshot] = await Promise.all([
+      firebase.firestore.collection(nyxApiKeyCollection).where("ownerUid", "==", token.uid).limit(40).get(),
+      nyxApiKeyOwnerEntitlement(firebase, token.uid),
+      firebase.firestore.collection(nyxApiKeyTokenUsageCollection).doc(`${token.uid}_${date}`).get()
+    ]);
+    const activeDocuments = keySnapshot.docs.filter(document => !document.data()?.revokedAt);
+    const usageSnapshots = await Promise.all(activeDocuments.map(document => firebase.firestore.collection(nyxApiKeyUsageCollection).doc(`${document.id}_${date}`).get()));
+    const keys = activeDocuments.map((document, index) => {
+      const key = nyxApiKeyPublic(document);
+      const requests = Math.max(0, Math.floor(Number(usageSnapshots[index]?.data()?.requests) || 0));
+      return { ...key, requests, requestLimit: config.dailyRequests, remainingRequests: Math.max(0, config.dailyRequests - requests) };
+    }).sort((left, right) => String(right.createdAt).localeCompare(String(left.createdAt)));
+    const usedTokens = Math.max(0, Math.floor(Number(tokenUsageSnapshot.data()?.tokens) || 0));
+    const unlimitedTokens = entitlement.premium || entitlement.owner;
+    const tokenLimit = unlimitedTokens ? null : config.regularDailyTokens;
+    res.json({
+      date,
+      resetsAt: resetsAt.toISOString(),
+      plan: entitlement.owner ? "Owner" : entitlement.premium ? "Premium" : "Regular",
+      requests: {
+        used: keys.reduce((total, key) => total + key.requests, 0),
+        limitPerKey: config.dailyRequests,
+        activeKeys: keys.length
+      },
+      tokens: {
+        used: usedTokens,
+        limit: tokenLimit,
+        remaining: tokenLimit === null ? null : Math.max(0, tokenLimit - usedTokens),
+        unlimited: unlimitedTokens
+      },
+      keys
+    });
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Nyx API key usage is unavailable." });
   }
 });
 

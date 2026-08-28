@@ -11350,9 +11350,10 @@
       return '';
     };
     const nyxChatSourcePath=path=>['/apps/chat','/apps/chat/','/apps/chat/index.html'].includes(path);
+    const nyxTubeSourcePath=path=>['/apps/nyxtube','/apps/nyxtube/','/apps/nyxtube/index.html'].includes(path);
     const nyxAccountClientSourcePath=path=>nyxChatSourcePath(path)||['/ai.html','/assets/games','/assets/games/','/assets/games/index.html','/apps/link-checker','/apps/link-checker/','/apps/link-checker/index.html','/apps/cloud-gaming','/apps/cloud-gaming/','/apps/cloud-gaming/index.html','/apps/api-keys','/apps/api-keys/','/apps/api-keys/index.html'].includes(path);
     const messageHandler=e=>{
-      if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:account-token-request','nyx:chat-open-profile','nyx:chat-notification','nyx:subscription-refresh','nyx:proxy-direct-fallback','nyx:cloud-game-load','nyx:cloud-game-save','nyx:close-tab','nyx:go-home'].includes(e.data?.type)) return;
+      if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:nyxtube-profile-request','nyx:nyxtube-open-profile','nyx:account-token-request','nyx:chat-open-profile','nyx:chat-notification','nyx:subscription-refresh','nyx:proxy-direct-fallback','nyx:cloud-game-load','nyx:cloud-game-save','nyx:close-tab','nyx:go-home'].includes(e.data?.type)) return;
       if(['nyx:cloud-game-load','nyx:cloud-game-save'].includes(e.data.type)){
         if(e.origin!==location.origin)return;
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
@@ -11404,6 +11405,32 @@
         if(!nyxChatSourcePath(sourcePath))return;
         const uid=String(e.data.uid||'').trim();if(!/^[A-Za-z0-9_-]{8,128}$/.test(uid))return;
         void openNyxProfileDirectory(uid).catch(()=>toast('That profile could not be opened.'));
+        return;
+      }
+      if(['nyx:nyxtube-profile-request','nyx:nyxtube-open-profile'].includes(e.data.type)){
+        if(e.origin!==location.origin)return;
+        const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
+        const sourcePath=browserMessageSourcePath(sourceTab);if(!nyxTubeSourcePath(sourcePath))return;
+        if(e.data.type==='nyx:nyxtube-open-profile'){
+          const uid=String(e.data.uid||'').trim();
+          if(uid&&uid===String(nyxFounderSignedInUser?.uid||'')) void openNyxProfileDirectory(uid).catch(()=>toast('Your profile could not be opened.'));
+          else void openNyxUserProfile();
+          return;
+        }
+        const requestId=String(e.data.requestId||'').slice(0,120);if(!requestId)return;
+        const target=e.source;
+        void (async()=>{
+          await initializeFounderOwnerAccess();
+          if(nyxFounderSignedInUser&&!nyxUserProfile)await loadNyxUserProfile();
+          const signedIn=Boolean(nyxFounderSignedInUser);
+          const profile=signedIn
+            ? normalizeNyxUserProfile(nyxUserProfile||{},nyxFounderSignedInUser)
+            : {displayName:store.text('nyx.userName','Profile')||'Profile',handle:'Sign in to customize',avatarUrl:''};
+          let avatarUrl=String(profile.avatarUrl||'');
+          const mediaPath=nyxProfileMediaPath(avatarUrl);
+          if(mediaPath){const media=await nyxResolveProfileMedia(mediaPath).catch(()=>null);if(media?.url)avatarUrl=media.url}
+          target?.postMessage({type:'nyx:nyxtube-profile',requestId,profile:{uid:signedIn?String(nyxFounderSignedInUser.uid||''):'',signedIn,displayName:profile.displayName,handle:profile.handle,avatarUrl}},location.origin);
+        })();
         return;
       }
       if(e.data.type==='nyx:chat-notification'){

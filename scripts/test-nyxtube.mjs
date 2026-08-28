@@ -4,7 +4,7 @@ const baseUrl = process.env.NYX_TEST_BASE_URL || "http://127.0.0.1:8080";
 const livePlayer = process.env.NYX_TEST_LIVE_PLAYER === "1";
 const videos = [
   { id: "dQw4w9WgXcQ", title: "A test documentary", creator: "Nyx Test", description: "A full documentary description for the NyxTube watch page.", publishedAt: "2026-08-20T12:00:00.000Z", thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg", durationSeconds: 212, viewCount: 1203400, captions: true, isShort: false, sourceUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
-  { id: "aqz-KE-bpKQ", title: "A second video", creator: "Test Studio", description: "This description must be visible below the selected video.", publishedAt: "2026-08-21T12:00:00.000Z", thumbnail: "https://i.ytimg.com/vi/aqz-KE-bpKQ/hqdefault.jpg", durationSeconds: 73, viewCount: 8421, captions: false, isShort: true, sourceUrl: "https://www.youtube.com/watch?v=aqz-KE-bpKQ" },
+  { id: "aqz-KE-bpKQ", title: "A second video", creator: "Test Studio", description: "This description must be visible below the selected video.", publishedAt: "2026-08-21T12:00:00.000Z", thumbnail: "https://i.ytimg.com/vi/aqz-KE-bpKQ/hqdefault.jpg", durationSeconds: 73, viewCount: 8421, captions: true, isShort: true, sourceUrl: "https://www.youtube.com/watch?v=aqz-KE-bpKQ" },
 ];
 const shorts = [videos[1], { ...videos[1], id: "M7lc1UVf-VE", title: "Next test Short", creator: "Next Studio" }];
 
@@ -22,6 +22,13 @@ try {
   const pageErrors = [];
   page.on("pageerror", error => pageErrors.push(error.message));
   if (!livePlayer) await page.addInitScript(() => {
+    window.__nyxTubeOpenedProfiles = [];
+    addEventListener("message", event => {
+      if (event.data?.type === "nyx:nyxtube-profile-request") {
+        postMessage({ type: "nyx:nyxtube-profile", requestId: event.data.requestId, profile: { uid: "nyxtube-test-user", signedIn: true, displayName: "Nyx Tester", handle: "@tester", avatarUrl: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%2386a9e8'/%3E%3C/svg%3E" } }, location.origin);
+      }
+      if (event.data?.type === "nyx:nyxtube-open-profile") window.__nyxTubeOpenedProfiles.push(event.data.uid);
+    });
     class MockPlayer {
       constructor(id, options) {
         this.node = document.getElementById(id);
@@ -45,7 +52,10 @@ try {
       getPlayerState() { return this.state; }
       getCurrentTime() { return this.current; }
       getDuration() { return this.total; }
-      seekTo(value) { this.current = value; }
+      getAvailablePlaybackRates() { return [0.5, 1, 1.5, 2]; }
+      getPlaybackRate() { return this.rate || 1; }
+      setPlaybackRate(value) { this.rate = Number(value) || 1; window.__nyxTubeLastPlaybackRate = this.rate; }
+      seekTo(value) { this.current = value; window.__nyxTubeLastSeek = value; }
       mute() { this.muted = true; }
       unMute() { this.muted = false; }
       isMuted() { return this.muted; }
@@ -65,6 +75,13 @@ try {
   assert(await page.locator(".site-nav").count() === 0, "Removed duplicate top navigation is still rendered");
   await page.locator(".video-card").first().waitFor();
   console.log("NyxTube test: feed rendered");
+  if (!livePlayer) {
+    await page.locator("[data-profile-avatar] img").waitFor();
+    assert(await page.locator("[data-profile-button]").getAttribute("aria-label") === "Open Nyx Tester's profile", "NyxTube did not render the signed-in profile identity");
+    await page.locator("[data-profile-button]").click();
+    await page.waitForFunction(() => window.__nyxTubeOpenedProfiles.includes("nyxtube-test-user"));
+    console.log("NyxTube test: signed-in profile avatar and public-profile action passed");
+  }
   assert(await page.locator(".video-card").count() === 2, "Home feed did not render both videos");
   if (process.env.NYX_TEST_SCREENSHOT_PATH) await page.screenshot({ path: process.env.NYX_TEST_SCREENSHOT_PATH, fullPage: true });
 
@@ -82,11 +99,31 @@ try {
   assert((await page.locator("[data-watch-description]").textContent())?.includes("visible below"), "Watch description was not rendered");
   assert(await page.locator("[data-watch-related] .related-card").count() >= 1, "Related content rail did not render");
   if (!livePlayer) {
+    await page.locator("[data-watch-settings]").click();
+    await page.locator("[data-watch-settings-menu]").waitFor({ state: "visible" });
+    if (process.env.NYX_TEST_SCREENSHOT_PATH) await page.screenshot({ path: process.env.NYX_TEST_SCREENSHOT_PATH.replace(/\.png$/i, "-settings.png"), fullPage: true });
+    assert(await page.locator("[data-watch-speed] option").count() === 4, "Video settings did not expose the available playback speeds");
+    await page.locator("[data-watch-speed]").selectOption("1.5");
+    assert(await page.evaluate(() => window.__nyxTubeLastPlaybackRate) === 1.5, "Video settings did not apply the selected playback speed");
+    assert(!await page.locator("[data-watch-settings-captions]").isDisabled(), "Video settings disabled captions for a captioned video");
+    await page.locator("[data-watch-settings]").click();
+    await page.keyboard.press("ArrowRight");
+    assert(await page.evaluate(() => window.__nyxTubeLastSeek) === 23, "Right Arrow did not seek forward five seconds");
+    await page.setViewportSize({ width: 390, height: 700 });
+    await page.locator("[data-watch-forward]").waitFor({ state: "visible" });
+    if (process.env.NYX_TEST_SCREENSHOT_PATH) await page.screenshot({ path: process.env.NYX_TEST_SCREENSHOT_PATH.replace(/\.png$/i, "-seek-mobile.png"), fullPage: true });
+    await page.locator("[data-watch-forward]").click();
+    assert(await page.evaluate(() => window.__nyxTubeLastSeek) === 28, "Mobile forward control did not seek five seconds");
+    await page.locator("[data-watch-rewind]").click();
+    assert(await page.evaluate(() => window.__nyxTubeLastSeek) === 23, "Mobile rewind control did not seek back five seconds");
+    await page.setViewportSize({ width: 1280, height: 900 });
+    console.log("NyxTube test: keyboard and mobile five-second seeking passed");
     await page.locator("[data-watch-toggle]").click();
     assert(await page.locator("[data-watch-toggle]").getAttribute("aria-label") === "Play", "Pause control did not update player state");
     await page.locator("[data-watch-mute]").click();
     await page.locator("[data-watch-captions]").click();
     assert(await page.locator("[data-watch-captions]").getAttribute("aria-pressed") === "true", "Captions control did not update");
+    console.log("NyxTube test: usable YouTube player settings passed");
     await page.evaluate(() => { window.__nyxTubeMockBlockedIds = ["dQw4w9WgXcQ"]; });
     await page.locator("[data-watch-related] .related-card").filter({ hasText: "A test documentary" }).click();
     await page.waitForFunction(() => document.querySelector("[data-watch-title]")?.textContent === "A second video");

@@ -9,6 +9,7 @@
     watchPlayer: null, shortPlayer: null, watchTimer: 0, shortTimer: 0,
     watchVideo: null, watchCaptions: false, shortCaptions: false, shortMuted: true,
     failedVideoIds: new Set(), failedShortIds: new Set(), watchRecoveryTimer: 0,
+    profile: { uid: "", signedIn: false, displayName: "Profile", avatarUrl: "" }, profileRequestId: "",
   };
   const refs = Object.fromEntries([
     "notice", "search-form", "search-input", "feed-title", "result-count", "video-grid",
@@ -16,7 +17,9 @@
     "watch-mute", "watch-captions", "watch-caption-option", "watch-fullscreen", "watch-progress",
     "watch-title", "watch-creator", "watch-channel-mark", "watch-source", "watch-description", "watch-related", "short-stage", "short-player",
     "short-loading", "short-center-play", "short-mute", "short-captions", "short-fullscreen",
-    "short-progress", "short-title", "short-creator",
+    "short-progress", "short-title", "short-creator", "profile-button", "profile-avatar",
+    "watch-settings", "watch-settings-menu", "watch-speed", "watch-settings-captions",
+    "watch-rewind", "watch-forward",
   ].map(name => [name.replace(/-([a-z])/g, (_match, letter) => letter.toUpperCase()), $(`[data-${name}]`)]));
 
   function applyTheme() {
@@ -48,6 +51,25 @@
   function dateLabel(value) {
     const date = new Date(value || "");
     return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  }
+  function renderProfile(profile = {}) {
+    const displayName = String(profile.displayName || "Profile").trim() || "Profile";
+    state.profile = { uid: String(profile.uid || ""), signedIn: Boolean(profile.signedIn), displayName, avatarUrl: String(profile.avatarUrl || "") };
+    refs.profileButton.title = state.profile.signedIn ? `Open ${displayName}'s profile` : "Sign in or create a profile";
+    refs.profileButton.setAttribute("aria-label", refs.profileButton.title);
+    const fallback = () => {
+      refs.profileAvatar.replaceChildren();
+      if (state.profile.signedIn) {
+        const initial = document.createElement("span"); initial.textContent = displayName.slice(0, 1).toUpperCase() || "N"; refs.profileAvatar.append(initial);
+      } else refs.profileAvatar.innerHTML = icon("icon-user");
+    };
+    if (!state.profile.avatarUrl) { fallback(); return; }
+    const image = document.createElement("img"); image.alt = ""; image.loading = "eager"; image.src = state.profile.avatarUrl;
+    image.addEventListener("error", fallback, { once: true }); refs.profileAvatar.replaceChildren(image);
+  }
+  function requestProfile() {
+    state.profileRequestId = `nyxtube-profile-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    parent.postMessage({ type: "nyx:nyxtube-profile-request", requestId: state.profileRequestId }, location.origin);
   }
   function skeletons() {
     refs.videoGrid.replaceChildren(...Array.from({ length: 8 }, () => {
@@ -215,16 +237,36 @@
     button.innerHTML = icon(playing ? "icon-pause" : "icon-play");
     button.setAttribute("aria-label", playing ? "Pause" : "Play");
   }
+  function closeWatchSettings() {
+    refs.watchSettingsMenu.hidden = true;
+    refs.watchSettings.setAttribute("aria-expanded", "false");
+  }
+  function configureWatchSettings(player, video) {
+    let rates = [];
+    try { rates = player.getAvailablePlaybackRates?.() || []; } catch { rates = []; }
+    rates = [...new Set(rates.map(Number).filter(rate => Number.isFinite(rate) && rate > 0))].sort((left, right) => left - right);
+    if (!rates.length) rates = [1];
+    refs.watchSpeed.replaceChildren(...rates.map(rate => {
+      const option = document.createElement("option"); option.value = String(rate); option.textContent = rate === 1 ? "Normal" : `${rate}x`; return option;
+    }));
+    let currentRate = 1;
+    try { currentRate = Number(player.getPlaybackRate?.()) || 1; } catch { currentRate = 1; }
+    refs.watchSpeed.value = rates.includes(currentRate) ? String(currentRate) : String(rates.includes(1) ? 1 : rates[0]);
+    refs.watchSettingsCaptions.disabled = !video?.captions;
+    refs.watchSettingsCaptions.title = video?.captions ? "" : "Captions are not available for this video";
+    refs.watchSettingsCaptions.value = state.watchCaptions && video?.captions ? "on" : "off";
+  }
   function openWatch(video, { recoveryMessage = "" } = {}) {
     if (!video?.id) return;
     clearTimeout(state.watchRecoveryTimer); state.watchRecoveryTimer = 0;
-    state.watchVideo = video; showView("watch"); notice(recoveryMessage);
+    state.watchVideo = video; showView("watch"); notice(recoveryMessage); closeWatchSettings();
     refs.watchTitle.textContent = video.title || "Untitled video";
     refs.watchCreator.textContent = [video.creator || "YouTube", viewsLabel(video.viewCount), dateLabel(video.publishedAt)].filter(Boolean).join(" · ");
     refs.watchChannelMark.textContent = (video.creator || "Y").trim().slice(0, 1).toUpperCase();
     refs.watchDescription.textContent = String(video.description || "No description was provided for this video.");
     renderRelated(video);
     refs.watchSource.href = video.sourceUrl || `https://www.youtube.com/watch?v=${encodeURIComponent(video.id)}`;
+    state.watchCaptions = false; refs.watchCaptions.setAttribute("aria-pressed", "false"); refs.watchCaptionOption.querySelector("span").textContent = "Off";
     refs.watchLoading.hidden = false; refs.watchCenterPlay.hidden = true; refs.watchProgress.value = "0";
     refs.watchTime.textContent = `0:00 / ${duration(video.durationSeconds)}`;
     createWatch(video).catch(error => { refs.watchLoading.hidden = true; notice(error.message || "The video player could not be started."); });
@@ -235,7 +277,7 @@
     state.watchPlayer?.destroy?.();
     const config = options(video.id); config.expectedDuration = video.durationSeconds;
     config.events = {
-      onReady: event => { refs.watchLoading.hidden = true; event.target.playVideo(); startWatchTimer(); },
+      onReady: event => { refs.watchLoading.hidden = true; configureWatchSettings(event.target, video); event.target.playVideo(); startWatchTimer(); },
       onStateChange: event => {
         const playing = event.data === YT.PlayerState.PLAYING, paused = event.data === YT.PlayerState.PAUSED;
         if (playing) refs.watchLoading.hidden = true;
@@ -307,7 +349,7 @@
   }
   function stopWatch() {
     clearInterval(state.watchTimer); state.watchTimer = 0; clearTimeout(state.watchRecoveryTimer); state.watchRecoveryTimer = 0;
-    state.watchPlayer?.destroy?.(); state.watchPlayer = null; refs.watchPlayer.replaceChildren();
+    closeWatchSettings(); state.watchPlayer?.destroy?.(); state.watchPlayer = null; refs.watchPlayer.replaceChildren();
   }
   function toggleWatch() {
     if (!ready(state.watchPlayer)) return;
@@ -318,12 +360,24 @@
     const muted = Boolean(state.watchPlayer.isMuted?.()); muted ? state.watchPlayer.unMute() : state.watchPlayer.mute();
     refs.watchMute.innerHTML = icon(muted ? "icon-volume" : "icon-muted"); refs.watchMute.setAttribute("aria-label", muted ? "Mute" : "Unmute");
   }
+  function seekWatchBy(seconds) {
+    if (!ready(state.watchPlayer)) return;
+    const current = Number(state.watchPlayer.getCurrentTime?.()) || 0;
+    const total = Number(state.watchPlayer.getDuration?.()) || Number(state.watchVideo?.durationSeconds) || 0;
+    state.watchPlayer.seekTo(Math.max(0, total ? Math.min(total, current + seconds) : current + seconds), true);
+  }
   function setCaptions(player, enabled, button, option) {
     if (!ready(player)) return false;
     try { enabled ? player.loadModule?.("captions") : player.unloadModule?.("captions"); } catch { return false; }
     button.setAttribute("aria-pressed", String(enabled));
     if (option) option.querySelector("span").textContent = enabled ? "On" : "Off";
     return true;
+  }
+  function changeWatchCaptions(enabled) {
+    const previous = state.watchCaptions;
+    state.watchCaptions = Boolean(enabled);
+    if (!setCaptions(state.watchPlayer, state.watchCaptions, refs.watchCaptions, refs.watchCaptionOption)) state.watchCaptions = previous;
+    refs.watchSettingsCaptions.value = state.watchCaptions ? "on" : "off";
   }
   function fullscreen(element) {
     const request = element.requestFullscreen || element.webkitRequestFullscreen; if (request) request.call(element).catch?.(() => {});
@@ -396,26 +450,42 @@
   const editable = target => target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target?.isContentEditable;
 
   function bind() {
+    addEventListener("message", event => {
+      if (event.origin !== location.origin || event.data?.type !== "nyx:nyxtube-profile" || event.data.requestId !== state.profileRequestId) return;
+      renderProfile(event.data.profile);
+    });
+    refs.profileButton.addEventListener("click", () => parent.postMessage({ type: "nyx:nyxtube-open-profile", uid: state.profile.uid }, location.origin));
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) requestProfile(); });
     refs.searchForm.addEventListener("submit", event => { event.preventDefault(); const query = refs.searchInput.value.trim(); if (query) loadFeed(query); });
     $$("[data-topic]").forEach(button => button.addEventListener("click", () => { refs.searchInput.value = button.dataset.topic; loadFeed(button.dataset.topic); }));
     $$("[data-view-button]").forEach(button => button.addEventListener("click", () => { showView(button.dataset.viewButton); if (state.view === "shorts") loadShorts(); }));
     $("[data-back]").addEventListener("click", () => { if (state.view === "watch") showView("home"); else if (history.length > 1) history.back(); else location.href = "/"; });
     refs.watchToggle.addEventListener("click", toggleWatch); refs.watchCenterPlay.addEventListener("click", toggleWatch); refs.watchMute.addEventListener("click", toggleWatchMute);
     refs.watchProgress.addEventListener("input", () => { if (ready(state.watchPlayer)) state.watchPlayer.seekTo((state.watchPlayer.getDuration?.() || 0) * Number(refs.watchProgress.value) / 1000, true); });
-    const watchCaptions = () => { state.watchCaptions = !state.watchCaptions; if (!setCaptions(state.watchPlayer, state.watchCaptions, refs.watchCaptions, refs.watchCaptionOption)) state.watchCaptions = !state.watchCaptions; };
+    const watchCaptions = () => changeWatchCaptions(!state.watchCaptions);
     refs.watchCaptions.addEventListener("click", watchCaptions); refs.watchCaptionOption.addEventListener("click", watchCaptions); refs.watchFullscreen.addEventListener("click", () => fullscreen(refs.watchStage));
+    refs.watchSettings.addEventListener("click", event => {
+      event.stopPropagation(); const opening = refs.watchSettingsMenu.hidden; closeWatchSettings();
+      if (opening) { refs.watchSettingsMenu.hidden = false; refs.watchSettings.setAttribute("aria-expanded", "true"); refs.watchSpeed.focus(); }
+    });
+    refs.watchSettingsMenu.addEventListener("click", event => event.stopPropagation());
+    refs.watchSpeed.addEventListener("change", () => { try { state.watchPlayer?.setPlaybackRate?.(Number(refs.watchSpeed.value) || 1); } catch { /* YouTube rejected this rate. */ } });
+    refs.watchSettingsCaptions.addEventListener("change", () => changeWatchCaptions(refs.watchSettingsCaptions.value === "on"));
+    refs.watchRewind.addEventListener("click", () => seekWatchBy(-5)); refs.watchForward.addEventListener("click", () => seekWatchBy(5));
+    document.addEventListener("click", closeWatchSettings);
     refs.shortCenterPlay.addEventListener("click", toggleShort); refs.shortStage.addEventListener("click", event => { if (!event.target.closest("button")) toggleShort(); });
     refs.shortMute.addEventListener("click", toggleShortMute);
     refs.shortCaptions.addEventListener("click", () => { state.shortCaptions = !state.shortCaptions; if (!setCaptions(state.shortPlayer, state.shortCaptions, refs.shortCaptions)) state.shortCaptions = !state.shortCaptions; });
     refs.shortFullscreen.addEventListener("click", () => fullscreen(refs.shortStage));
     $("[data-short-previous]").addEventListener("click", () => changeShort(-1)); $("[data-short-next]").addEventListener("click", () => changeShort(1));
     document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && !refs.watchSettingsMenu.hidden) { event.preventDefault(); closeWatchSettings(); refs.watchSettings.focus(); return; }
       if (editable(event.target)) return;
       if (state.view === "watch") {
         if (["Space", "ArrowLeft", "ArrowRight", "KeyM", "KeyF"].includes(event.code)) event.preventDefault();
         if (event.code === "Space") toggleWatch();
-        if (event.code === "ArrowLeft" && ready(state.watchPlayer)) state.watchPlayer.seekTo(Math.max(0, state.watchPlayer.getCurrentTime() - 5), true);
-        if (event.code === "ArrowRight" && ready(state.watchPlayer)) state.watchPlayer.seekTo(state.watchPlayer.getCurrentTime() + 5, true);
+        if (event.code === "ArrowLeft") seekWatchBy(-5);
+        if (event.code === "ArrowRight") seekWatchBy(5);
         if (event.code === "KeyM") toggleWatchMute(); if (event.code === "KeyF") fullscreen(refs.watchStage);
       } else if (state.view === "shorts") {
         if (["Space", "ArrowUp", "ArrowDown", "KeyM", "KeyF"].includes(event.code)) event.preventDefault();
@@ -425,7 +495,7 @@
     });
   }
 
-  applyTheme(); bind(); skeletons();
+  applyTheme(); bind(); skeletons(); requestProfile();
   json("/api/nyxtube/status").then(status => {
     if (!status?.configured) throw new Error("NyxTube is not configured yet.");
     return loadFeed();

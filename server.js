@@ -252,6 +252,8 @@ const nyxCloudGamingAppMigrationField = "cloudGamingAppInitialized";
 const nyxCloudGamingGamesMergeMigrationField = "cloudGamingMergedIntoGames";
 const nyxCloudGamingGlobalApp = Object.freeze({ id: "cloud-gaming", icon: "cloud-gaming", name: "Cloud Gaming", url: "/apps/cloud-gaming/" });
 const nyxMediaAppsRetiredField = "nyxMediaAppsRetired";
+const nyxTubeReintroducedField = "nyxTubePlayerReintroduced";
+const nyxTubeGlobalApp = Object.freeze({ id: "youtube", icon: "youtube.com", name: "YouTube", url: "/apps/nyxtube/" });
 const nyxifyReintroducedField = "nyxifyMizuPlayerInitialized";
 const nyxifyBuiltInMusicNameField = "nyxifyBuiltInMusicName";
 const nyxifyGlobalApp = Object.freeze({ id: "nyxify", icon: "nyxify", name: "Nyxify/built in music", url: "/apps/nyxify/" });
@@ -265,7 +267,7 @@ const nyxDefaultGlobalApps = Object.freeze([
   { id: "link-checker", icon: "link-checker", name: "Link Checker", url: "/apps/link-checker/" },
   { id: "link-generator", icon: "link-generator", name: "Link Generator", url: "/apps/link-generator/" },
   nyxApiKeysGlobalApp,
-  { id: "youtube", icon: "youtube.com", name: "YouTube", url: "https://www.youtube.com/" },
+  nyxTubeGlobalApp,
   nyxGamesGlobalApp,
   { id: "nyx-chat", icon: "nyx-chat", name: "Nyx Chat", url: "/apps/chat/" },
   { id: "geforce-now", icon: "geforcenow", name: "GeForce Now", url: "https://play.geforcenow.com/" },
@@ -3774,7 +3776,7 @@ function nyxRetiredMediaApp(value) {
   const id = String(value?.id || "").trim().toLowerCase();
   const url = String(value?.url || "").trim().replace(/\/+$/, "").toLowerCase();
   if (["nyxtube", "nyx-tube"].includes(id)) return true;
-  if (url === "/apps/nyxtube") return true;
+  if (url === "/apps/nyxtube" && id !== nyxTubeGlobalApp.id) return true;
   return id === "music" && url === "https://traxmojo.com";
 }
 
@@ -3797,6 +3799,7 @@ function nyxGlobalAppsFromSnapshot(snapshot) {
     if (normalized?.id === nyxifyGlobalApp.id && normalized.url === nyxifyGlobalApp.url) {
       return { ...normalized, icon: nyxifyGlobalApp.icon, name: nyxifyGlobalApp.name };
     }
+    if (normalized?.id === nyxTubeGlobalApp.id) return { ...nyxTubeGlobalApp };
     return normalized;
   }).filter(app => app && !nyxRetiredMediaApp(app));
 }
@@ -3804,7 +3807,7 @@ function nyxGlobalAppsFromSnapshot(snapshot) {
 async function nyxGlobalApps(firebase) {
   const reference = firebase.firestore.collection(nyxGlobalAppsCollection).doc(nyxGlobalAppsDocument);
   const snapshot = await reference.get();
-  if (snapshot.data()?.[nyxCloudGamingAppMigrationField] === true && snapshot.data()?.[nyxCloudGamingGamesMergeMigrationField] === true && snapshot.data()?.[nyxMediaAppsRetiredField] === true && snapshot.data()?.[nyxifyReintroducedField] === true && snapshot.data()?.[nyxifyBuiltInMusicNameField] === true && snapshot.data()?.[nyxApiKeysAppMigrationField] === true && snapshot.data()?.[nyxGamesAppMigrationField] === true && snapshot.data()?.[nyxMoviesCinejoyMigrationField] === true) return nyxGlobalAppsFromSnapshot(snapshot);
+  if (snapshot.data()?.[nyxCloudGamingAppMigrationField] === true && snapshot.data()?.[nyxCloudGamingGamesMergeMigrationField] === true && snapshot.data()?.[nyxMediaAppsRetiredField] === true && snapshot.data()?.[nyxTubeReintroducedField] === true && snapshot.data()?.[nyxifyReintroducedField] === true && snapshot.data()?.[nyxifyBuiltInMusicNameField] === true && snapshot.data()?.[nyxApiKeysAppMigrationField] === true && snapshot.data()?.[nyxGamesAppMigrationField] === true && snapshot.data()?.[nyxMoviesCinejoyMigrationField] === true) return nyxGlobalAppsFromSnapshot(snapshot);
   return firebase.firestore.runTransaction(async transaction => {
     const currentSnapshot = await transaction.get(reference);
     const apps = nyxGlobalAppsFromSnapshot(currentSnapshot);
@@ -3823,6 +3826,16 @@ async function nyxGlobalApps(firebase) {
       transaction.set(reference, {
         apps,
         [nyxMediaAppsRetiredField]: true,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    }
+    if (currentSnapshot.data()?.[nyxTubeReintroducedField] !== true) {
+      const youtubeIndex = apps.findIndex(item => item.id === nyxTubeGlobalApp.id);
+      if (youtubeIndex >= 0) apps.splice(youtubeIndex, 1, { ...nyxTubeGlobalApp });
+      else if (apps.length < nyxGlobalAppsLimit) apps.splice(Math.min(3, apps.length), 0, { ...nyxTubeGlobalApp });
+      transaction.set(reference, {
+        apps,
+        [nyxTubeReintroducedField]: true,
         updatedAt: new Date().toISOString()
       }, { merge: true });
     }
@@ -6673,16 +6686,172 @@ app.all(["/api/nyxcloud/status", "/api/nyxcloud/search"], (_req, res) => {
   res.set("Cache-Control", "no-store").status(410).json({ error: "NyxCloud has been retired." });
 });
 
-app.all(["/api/nyxtube/status", "/api/nyxtube/search", "/api/nyxtube/feed"], (_req, res) => {
-  res.set("Cache-Control", "no-store").status(410).json({ error: "NyxTube has been retired." });
+const nyxTubeCache = new Map();
+const nyxTubeSearchAttempts = new Map();
+
+function nyxTubeCached(key) {
+  const entry = nyxTubeCache.get(key);
+  if (!entry || entry.expiresAt <= Date.now()) {
+    nyxTubeCache.delete(key);
+    return null;
+  }
+  return entry.value;
+}
+
+function nyxTubeCacheSet(key, value, ttlMs) {
+  nyxTubeCache.delete(key);
+  nyxTubeCache.set(key, { value, expiresAt: Date.now() + ttlMs });
+  while (nyxTubeCache.size > 160) nyxTubeCache.delete(nyxTubeCache.keys().next().value);
+  return value;
+}
+
+function nyxTubeDurationSeconds(value) {
+  const match = String(value || "").match(/^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/i);
+  if (!match) return 0;
+  return (((Number(match[1]) || 0) * 24 + (Number(match[2]) || 0)) * 60 + (Number(match[3]) || 0)) * 60 + (Number(match[4]) || 0);
+}
+
+function nyxTubeThumbnail(snippet) {
+  const value = String(snippet?.thumbnails?.maxres?.url || snippet?.thumbnails?.standard?.url || snippet?.thumbnails?.high?.url || snippet?.thumbnails?.medium?.url || "").trim();
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || !/(?:^|\.)ytimg\.com$/i.test(url.hostname)) return "";
+    return url.href;
+  } catch {
+    return "";
+  }
+}
+
+function nyxTubePublicVideo(item) {
+  const id = String(item?.id || "").trim();
+  if (!/^[A-Za-z0-9_-]{11}$/.test(id) || item?.status?.embeddable === false) return null;
+  const snippet = item?.snippet || {};
+  const durationSeconds = nyxTubeDurationSeconds(item?.contentDetails?.duration);
+  return {
+    id,
+    title: String(snippet.title || "Untitled video").trim().slice(0, 180),
+    creator: String(snippet.channelTitle || "YouTube").trim().slice(0, 100),
+    thumbnail: nyxTubeThumbnail(snippet),
+    publishedAt: safeDateIso(snippet.publishedAt),
+    durationSeconds,
+    viewCount: Math.max(0, Number(item?.statistics?.viewCount) || 0),
+    captions: String(item?.contentDetails?.caption || "false") === "true",
+    isShort: durationSeconds > 0 && durationSeconds <= 180,
+    sourceUrl: `https://www.youtube.com/watch?v=${id}`
+  };
+}
+
+async function nyxTubeApi(resource, parameters = {}) {
+  const key = String(process.env.NYX_YOUTUBE_API_KEY || "").trim();
+  if (!key) {
+    const error = new Error("YouTube has not been configured by the Nyx owner yet.");
+    error.status = 503;
+    throw error;
+  }
+  const endpoint = new URL(`https://www.googleapis.com/youtube/v3/${resource}`);
+  for (const [name, value] of Object.entries(parameters)) endpoint.searchParams.set(name, String(value));
+  endpoint.searchParams.set("key", key);
+  const response = await fetch(endpoint, { headers: { accept: "application/json" }, signal: AbortSignal.timeout(12_000) });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(String(payload?.error?.message || "YouTube could not complete that request.").slice(0, 220));
+    error.status = response.status === 429 ? 429 : 502;
+    throw error;
+  }
+  return payload;
+}
+
+async function nyxTubeVideoDetails(ids) {
+  const cleanIds = [...new Set(ids)].filter(id => /^[A-Za-z0-9_-]{11}$/.test(id)).slice(0, 50);
+  if (!cleanIds.length) return [];
+  const payload = await nyxTubeApi("videos", { part: "snippet,contentDetails,statistics,status", id: cleanIds.join(","), maxResults: cleanIds.length });
+  const byId = new Map((Array.isArray(payload?.items) ? payload.items : []).map(item => [String(item?.id || ""), nyxTubePublicVideo(item)]));
+  return cleanIds.map(id => byId.get(id)).filter(Boolean);
+}
+
+async function nyxTubeFeed(limit) {
+  const cacheKey = `feed:${limit}`;
+  const cached = nyxTubeCached(cacheKey);
+  if (cached) return cached;
+  const payload = await nyxTubeApi("videos", { part: "snippet,contentDetails,statistics,status", chart: "mostPopular", regionCode: "US", maxResults: limit });
+  const videos = (Array.isArray(payload?.items) ? payload.items : []).map(nyxTubePublicVideo).filter(Boolean);
+  return nyxTubeCacheSet(cacheKey, videos, 10 * 60_000);
+}
+
+async function nyxTubeSearch(query, limit) {
+  const cacheKey = `search:${query.toLowerCase()}:${limit}`;
+  const cached = nyxTubeCached(cacheKey);
+  if (cached) return cached;
+  const payload = await nyxTubeApi("search", { part: "snippet", type: "video", videoEmbeddable: "true", safeSearch: "moderate", maxResults: limit, q: query });
+  const ids = (Array.isArray(payload?.items) ? payload.items : []).map(item => String(item?.id?.videoId || ""));
+  return nyxTubeCacheSet(cacheKey, await nyxTubeVideoDetails(ids), 5 * 60_000);
+}
+
+async function nyxTubeShorts(limit) {
+  const cacheKey = `shorts:${limit}`;
+  const cached = nyxTubeCached(cacheKey);
+  if (cached) return cached;
+  const payload = await nyxTubeApi("search", { part: "snippet", type: "video", videoEmbeddable: "true", videoDuration: "short", safeSearch: "moderate", order: "viewCount", regionCode: "US", maxResults: Math.min(50, limit * 2), q: "#shorts" });
+  const ids = (Array.isArray(payload?.items) ? payload.items : []).map(item => String(item?.id?.videoId || ""));
+  const videos = (await nyxTubeVideoDetails(ids)).filter(item => item.isShort).slice(0, limit);
+  return nyxTubeCacheSet(cacheKey, videos, 10 * 60_000);
+}
+
+function nyxTubeAllowSearch(req) {
+  const now = Date.now();
+  const client = nyxClientIp(req) || "unknown";
+  const recent = (nyxTubeSearchAttempts.get(client) || []).filter(time => time > now - 10 * 60_000);
+  if (recent.length >= 30) return false;
+  recent.push(now);
+  nyxTubeSearchAttempts.set(client, recent);
+  if (nyxTubeSearchAttempts.size > 2_000) {
+    for (const [id, attempts] of nyxTubeSearchAttempts) if (!attempts.some(time => time > now - 10 * 60_000)) nyxTubeSearchAttempts.delete(id);
+  }
+  return true;
+}
+
+function nyxTubeRoute(handler, cacheControl = "private, max-age=120") {
+  return async (req, res) => {
+    res.set("Cache-Control", cacheControl);
+    if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-site video requests are not allowed." });
+    try {
+      const results = await handler(req);
+      res.json({ provider: "youtube", videos: results });
+    } catch (error) {
+      res.status(error.status || (error?.name === "TimeoutError" ? 504 : 502)).json({ error: error.message || "YouTube is unavailable right now." });
+    }
+  };
+}
+
+app.get("/api/nyxtube/status", (_req, res) => {
+  res.set("Cache-Control", "no-store").json({ configured: Boolean(String(process.env.NYX_YOUTUBE_API_KEY || "").trim()), provider: "youtube", playback: "official-iframe-api" });
 });
+
+app.get("/api/nyxtube/feed", nyxTubeRoute(req => nyxTubeFeed(Math.max(1, Math.min(32, Number.parseInt(req.query?.limit, 10) || 20)))));
+
+app.get("/api/nyxtube/shorts", nyxTubeRoute(req => nyxTubeShorts(Math.max(1, Math.min(24, Number.parseInt(req.query?.limit, 10) || 12)))));
+
+app.get("/api/nyxtube/search", nyxTubeRoute(req => {
+  if (!nyxTubeAllowSearch(req)) {
+    const error = new Error("Too many video searches. Try again in a few minutes.");
+    error.status = 429;
+    throw error;
+  }
+  const query = String(req.query?.q || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 100);
+  if (query.length < 2) {
+    const error = new Error("Enter at least two characters to search.");
+    error.status = 400;
+    throw error;
+  }
+  return nyxTubeSearch(query, Math.max(1, Math.min(24, Number.parseInt(req.query?.limit, 10) || 16)));
+}, "no-store"));
 
 app.get(["/apps/nyxcloud", "/apps/nyxcloud/"], (_req, res) => {
   res.redirect(302, "/");
 });
 
 app.get(["/apps/nyxtube", "/apps/nyxtube/"], (_req, res) => {
-  res.redirect(302, "/");
+  res.sendFile(join(staticRoot, "apps", "nyxtube", "index.html"));
 });
 
 app.get(["/apps/nyxify", "/apps/nyxify/"], (_req, res) => {

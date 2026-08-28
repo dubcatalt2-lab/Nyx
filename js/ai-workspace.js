@@ -7,6 +7,11 @@
   const MODEL_KEY='nyx.aiModel';
   const PERSONAL_KEY_SESSION='nyx.aiPersonalKey.session';
   const PERSONAL_KEY_DEVICE='nyx.aiPersonalKey.device';
+  const PERSONAL_BASE_SESSION='nyx.aiPersonalBaseUrl.session';
+  const PERSONAL_BASE_DEVICE='nyx.aiPersonalBaseUrl.device';
+  const PERSONAL_PROFILES_SESSION='nyx.aiPersonalProfiles.session';
+  const PERSONAL_PROFILES_DEVICE='nyx.aiPersonalProfiles.device';
+  const PERSONAL_ACTIVE_PROFILE='nyx.aiPersonalProfile.active';
   const PROVIDER_KEY='nyx.aiSharedProvider';
   const RESPONSE_DEPTH_KEY='nyx.aiResponseDepth';
   const USAGE_KEY='nyx.aiUsage.v1';
@@ -65,10 +70,20 @@
   const attachmentName=document.getElementById('attachmentName');
   const attachmentStatus=document.getElementById('attachmentStatus');
   const removeAttachment=document.getElementById('removeAttachment');
+  const screenPreview=document.getElementById('screenPreview');
+  const screenVideo=document.getElementById('screenVideo');
+  const screenStatus=document.getElementById('screenStatus');
+  const shareScreen=document.getElementById('shareScreen');
+  const stopScreenShare=document.getElementById('stopScreenShare');
   const apiKeySettings=document.getElementById('apiKeySettings');
   const apiKeyDialog=document.getElementById('apiKeyDialog');
   const apiKeyForm=document.getElementById('apiKeyForm');
+  const apiKeyProfiles=document.getElementById('apiKeyProfiles');
+  const apiProfileNew=document.getElementById('apiProfileNew');
+  const apiProfileLabel=document.getElementById('apiProfileLabel');
   const apiKeyInput=document.getElementById('apiKeyInput');
+  const apiBaseUrl=document.getElementById('apiBaseUrl');
+  const apiBaseOfox=document.getElementById('apiBaseOfox');
   const apiKeyRemember=document.getElementById('apiKeyRemember');
   const apiKeyReveal=document.getElementById('apiKeyReveal');
   const apiKeyFeedback=document.getElementById('apiKeyFeedback');
@@ -76,7 +91,7 @@
   const apiKeyCancel=document.getElementById('apiKeyCancel');
   const apiKeyClose=document.getElementById('apiKeyClose');
   const apiKeySave=document.getElementById('apiKeySave');
-  if(!app||!feed||!conversation||!form||!input||!send||!model||!providerSelect||!modelPicker||!modelTrigger||!modelSelected||!modelMenu||!modelOptionsHost||!clear||!threadTitle||!sidebar||!sidebarToggle||!sidebarClose||!sidebarScrim||!newChat||!temporaryChat||!threadList||!threadCount||!historyEmpty||!threadSearch||depthButtons.length!==3||!sidebarModelName||!usageWeek||!usageAll||!usageRequests||!profileButton||!profileAvatar||!profileInitial||!profileName||!profileHandle||!imageInput||!attachImage||!attachmentPreview||!attachmentThumbnail||!attachmentName||!attachmentStatus||!removeAttachment||!apiKeySettings||!apiKeyDialog||!apiKeyForm||!apiKeyInput||!apiKeyRemember||!apiKeyReveal||!apiKeyFeedback||!apiKeyRemove||!apiKeyCancel||!apiKeyClose||!apiKeySave) return;
+  if(!app||!feed||!conversation||!form||!input||!send||!model||!providerSelect||!modelPicker||!modelTrigger||!modelSelected||!modelMenu||!modelOptionsHost||!clear||!threadTitle||!sidebar||!sidebarToggle||!sidebarClose||!sidebarScrim||!newChat||!temporaryChat||!threadList||!threadCount||!historyEmpty||!threadSearch||depthButtons.length!==3||!sidebarModelName||!usageWeek||!usageAll||!usageRequests||!profileButton||!profileAvatar||!profileInitial||!profileName||!profileHandle||!imageInput||!attachImage||!attachmentPreview||!attachmentThumbnail||!attachmentName||!attachmentStatus||!removeAttachment||!screenPreview||!screenVideo||!screenStatus||!shareScreen||!stopScreenShare||!apiKeySettings||!apiKeyDialog||!apiKeyForm||!apiKeyProfiles||!apiProfileNew||!apiProfileLabel||!apiKeyInput||!apiBaseUrl||!apiBaseOfox||!apiKeyRemember||!apiKeyReveal||!apiKeyFeedback||!apiKeyRemove||!apiKeyCancel||!apiKeyClose||!apiKeySave) return;
 
   let activeController=null;
   let followStream=true;
@@ -87,13 +102,20 @@
   let temporaryMessages=[];
   let attachedImage=null;
   let attachedText=null;
+  let screenStream=null;
+  let editingProfileId='';
   let nyxAiAccountAuthPromise=null;
   let globalProviders=[];
 
-  function personalKeyProvider(key=personalApiKey()){
+  function personalKeyProvider(key=personalApiKey(),baseUrl=personalApiBaseUrl()){
     const value=String(key||'');
     if(/^nyx_[A-Za-z0-9_-]{16}_[A-Za-z0-9_-]{43}$/.test(value)) return 'Nyx';
-    return /^sk-navy-/i.test(value)?'Navy':'Nocturne';
+    if(/^sk-navy-/i.test(value)) return 'Navy';
+    const customBase=String(baseUrl||'').trim();
+    if(customBase){
+      try{return new URL(customBase).hostname.replace(/^api\./i,'')||'OpenAI-compatible'}catch{return 'OpenAI-compatible'}
+    }
+    return 'Nocturne';
   }
 
   function personalApiKey(){
@@ -102,6 +124,80 @@
 
   function personalKeyRemembered(){
     return Boolean(localStorage.getItem(PERSONAL_KEY_DEVICE));
+  }
+
+  function personalApiBaseUrl(){
+    return String(sessionStorage.getItem(PERSONAL_BASE_SESSION)||localStorage.getItem(PERSONAL_BASE_DEVICE)||'').trim();
+  }
+
+  function normalizedPersonalProfile(value,remember=false){
+    const id=String(value?.id||'').trim();
+    const key=String(value?.key||'').trim();
+    const baseUrl=String(value?.baseUrl||'').trim();
+    const label=String(value?.label||'').replace(/[\x00-\x1f\x7f]/g,' ').replace(/\s+/g,' ').trim().slice(0,50);
+    return /^[a-z0-9_-]{8,80}$/i.test(id)&&key.length>=8&&key.length<=512?[{id,key,baseUrl,label,remember:Boolean(remember)}]:[];
+  }
+
+  function personalProfiles(){
+    const read=(storage,name,remember)=>{
+      try{
+        const values=JSON.parse(storage.getItem(name)||'[]');
+        return Array.isArray(values)?values.flatMap(value=>normalizedPersonalProfile(value,remember)):[];
+      }catch{return[]}
+    };
+    const merged=new Map();
+    [...read(localStorage,PERSONAL_PROFILES_DEVICE,true),...read(sessionStorage,PERSONAL_PROFILES_SESSION,false)].forEach(profile=>merged.set(profile.id,profile));
+    return [...merged.values()].slice(0,8);
+  }
+
+  function writePersonalProfiles(profiles){
+    const clean=profiles.slice(0,8).map(({id,key,baseUrl,label,remember})=>({id,key,baseUrl,label,remember:Boolean(remember)}));
+    const device=clean.filter(profile=>profile.remember);
+    const session=clean.filter(profile=>!profile.remember);
+    if(device.length) localStorage.setItem(PERSONAL_PROFILES_DEVICE,JSON.stringify(device));
+    else localStorage.removeItem(PERSONAL_PROFILES_DEVICE);
+    if(session.length) sessionStorage.setItem(PERSONAL_PROFILES_SESSION,JSON.stringify(session));
+    else sessionStorage.removeItem(PERSONAL_PROFILES_SESSION);
+  }
+
+  function personalProfileName(profile){
+    if(profile?.label) return profile.label;
+    return personalKeyProvider(profile?.key,profile?.baseUrl);
+  }
+
+  function ensureActivePersonalProfile(){
+    const key=personalApiKey();
+    if(!key) return null;
+    const baseUrl=personalApiBaseUrl();
+    let profiles=personalProfiles();
+    let profile=profiles.find(item=>item.id===localStorage.getItem(PERSONAL_ACTIVE_PROFILE))||profiles.find(item=>item.key===key&&item.baseUrl===baseUrl);
+    if(!profile){
+      profile={id:`provider_${crypto.randomUUID?.()||Date.now().toString(36)+Math.random().toString(36).slice(2)}`,key,baseUrl,label:personalKeyProvider(key,baseUrl),remember:personalKeyRemembered()};
+      profiles=[...profiles,profile].slice(-8);
+      writePersonalProfiles(profiles);
+    }
+    localStorage.setItem(PERSONAL_ACTIVE_PROFILE,profile.id);
+    return profile;
+  }
+
+  function fillPersonalProfileForm(profile=null){
+    editingProfileId=String(profile?.id||'');
+    apiProfileLabel.value=profile?.label||'';
+    apiKeyInput.value=profile?.key||'';
+    apiBaseUrl.value=profile?.baseUrl||'';
+    apiKeyRemember.checked=Boolean(profile?.remember);
+    apiKeyInput.type='password';
+    apiKeyReveal.setAttribute('aria-pressed','false');
+    apiKeyReveal.setAttribute('aria-label','Show API key');
+  }
+
+  function renderPersonalProfiles(){
+    const activeId=String(localStorage.getItem(PERSONAL_ACTIVE_PROFILE)||'');
+    const profiles=personalProfiles();
+    apiKeyProfiles.innerHTML=profiles.length?profiles.map(profile=>{
+      const detail=profile.baseUrl?profile.baseUrl:'Automatic provider detection';
+      return `<div class="ai-key-profile${profile.id===activeId?' is-active':''}" data-key-profile="${escapeHtml(profile.id)}"><button class="ai-key-profile-select" type="button" data-key-profile-select="${escapeHtml(profile.id)}"><strong>${escapeHtml(personalProfileName(profile))}${profile.id===activeId?' · Active':''}</strong><small>${escapeHtml(detail)}</small></button><button class="ai-key-profile-remove" type="button" data-key-profile-remove="${escapeHtml(profile.id)}" aria-label="Remove ${escapeHtml(personalProfileName(profile))}">×</button></div>`;
+    }).join(''):'<p class="ai-key-profile-empty">No personal providers saved yet.</p>';
   }
 
   async function nyxAiParentToken(){
@@ -146,7 +242,8 @@
     const key=personalApiKey();
     const token=await nyxAiAccountToken();
     const provider=String(providerSelect.value||'shared');
-    return {...headers,...(key?{'x-nyx-ai-api-key':key}:{'x-nyx-ai-provider':provider}),...(token?{Authorization:`Bearer ${token}`}:{})};
+    const baseUrl=personalApiBaseUrl();
+    return {...headers,...(key?{'x-nyx-ai-api-key':key,...(baseUrl?{'x-nyx-ai-base-url':baseUrl}:{})}:{'x-nyx-ai-provider':provider}),...(token?{Authorization:`Bearer ${token}`}:{})};
   }
 
   function selectedProvider(){
@@ -198,12 +295,9 @@
   }
 
   function openApiKeyDialog(){
-    const key=personalApiKey();
-    apiKeyInput.value=key;
-    apiKeyInput.type='password';
-    apiKeyReveal.setAttribute('aria-pressed','false');
-    apiKeyReveal.setAttribute('aria-label','Show API key');
-    apiKeyRemember.checked=personalKeyRemembered();
+    const profile=ensureActivePersonalProfile();
+    fillPersonalProfileForm(profile);
+    renderPersonalProfiles();
     updateApiKeyControl();
     apiKeyDialog.showModal();
     requestAnimationFrame(()=>apiKeyInput.focus());
@@ -214,15 +308,49 @@
     apiKeySettings.focus();
   }
 
-  function storePersonalApiKey(key,remember){
+  function storePersonalApiKey(key,baseUrl,remember){
     sessionStorage.removeItem(PERSONAL_KEY_SESSION);
     localStorage.removeItem(PERSONAL_KEY_DEVICE);
-    (remember?localStorage:sessionStorage).setItem(remember?PERSONAL_KEY_DEVICE:PERSONAL_KEY_SESSION,key);
+    sessionStorage.removeItem(PERSONAL_BASE_SESSION);
+    localStorage.removeItem(PERSONAL_BASE_DEVICE);
+    const storage=remember?localStorage:sessionStorage;
+    storage.setItem(remember?PERSONAL_KEY_DEVICE:PERSONAL_KEY_SESSION,key);
+    if(baseUrl) storage.setItem(remember?PERSONAL_BASE_DEVICE:PERSONAL_BASE_SESSION,baseUrl);
   }
 
   function removePersonalApiKey(){
     sessionStorage.removeItem(PERSONAL_KEY_SESSION);
     localStorage.removeItem(PERSONAL_KEY_DEVICE);
+    sessionStorage.removeItem(PERSONAL_BASE_SESSION);
+    localStorage.removeItem(PERSONAL_BASE_DEVICE);
+  }
+
+  async function activatePersonalProfile(profile){
+    if(!profile) return;
+    storePersonalApiKey(profile.key,profile.baseUrl,profile.remember);
+    localStorage.setItem(PERSONAL_ACTIVE_PROFILE,profile.id);
+    fillPersonalProfileForm(profile);
+    renderPersonalProfiles();
+    updateApiKeyControl(`Checking ${personalProfileName(profile)}…`);
+    await loadModels();
+  }
+
+  async function deletePersonalProfile(id){
+    const profiles=personalProfiles();
+    const activeId=String(localStorage.getItem(PERSONAL_ACTIVE_PROFILE)||'');
+    const remaining=profiles.filter(profile=>profile.id!==id);
+    writePersonalProfiles(remaining);
+    if(id===activeId){
+      localStorage.removeItem(PERSONAL_ACTIVE_PROFILE);
+      removePersonalApiKey();
+      if(remaining.length) await activatePersonalProfile(remaining[0]);
+      else{
+        fillPersonalProfileForm();
+        updateApiKeyControl('Personal provider removed. Nyx is using its shared AI provider.','success');
+        await loadModels();
+      }
+    }
+    renderPersonalProfiles();
   }
 
   function responseDepth(){
@@ -685,6 +813,7 @@
   }
 
   function setAttachment(image){
+    stopScreenSharing();
     attachedText=null;
     attachedImage=image;
     attachmentPreview.hidden=false;
@@ -702,6 +831,7 @@
   function setTextAttachment(content){
     const text=String(content||'');
     if(!text) return null;
+    stopScreenSharing();
     if(text.length>MAX_TEXT_ATTACHMENT_CHARS){
       showAttachmentError(`Pasted text is limited to ${MAX_TEXT_ATTACHMENT_CHARS.toLocaleString()} characters.`,`Text file not attached`);
       return null;
@@ -783,6 +913,64 @@
       image.onerror=()=>reject(new Error('Nyx could not decode that image.'));
       image.src=source.dataUrl;
     });
+  }
+
+  function stopScreenSharing(){
+    const active=screenStream;
+    screenStream=null;
+    if(active) active.getTracks().forEach(track=>track.stop());
+    screenVideo.srcObject=null;
+    screenPreview.hidden=true;
+    shareScreen.classList.remove('has-attachment');
+    shareScreen.setAttribute('aria-pressed','false');
+    screenStatus.textContent='A fresh frame is attached only when you send.';
+  }
+
+  async function startScreenSharing(){
+    if(!navigator.mediaDevices?.getDisplayMedia){
+      showAttachmentError('Screen sharing is not supported by this browser.','Screen sharing unavailable');
+      return;
+    }
+    stopScreenSharing();
+    clearAttachment();
+    try{
+      const stream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:{ideal:5,max:10}},audio:false});
+      const track=stream.getVideoTracks()[0];
+      if(!track) throw new Error('No screen was selected.');
+      screenStream=stream;
+      track.addEventListener('ended',stopScreenSharing,{once:true});
+      screenVideo.srcObject=stream;
+      screenPreview.hidden=false;
+      shareScreen.classList.add('has-attachment');
+      shareScreen.setAttribute('aria-pressed','true');
+      screenStatus.textContent='A fresh frame is attached only when you send.';
+      await screenVideo.play().catch(()=>{});
+    }catch(error){
+      stopScreenSharing();
+      if(error?.name!=='NotAllowedError') showAttachmentError(error?.message||'Nyx could not start screen sharing.','Screen sharing unavailable');
+    }
+  }
+
+  function captureSharedScreen(){
+    if(!screenStream||screenStream.getVideoTracks()[0]?.readyState==='ended') return Promise.reject(new Error('Screen sharing has ended. Start it again to attach your screen.'));
+    const width=Math.max(1,screenVideo.videoWidth||Number(screenStream.getVideoTracks()[0]?.getSettings?.().width)||0);
+    const height=Math.max(1,screenVideo.videoHeight||Number(screenStream.getVideoTracks()[0]?.getSettings?.().height)||0);
+    if(width<=1||height<=1) return Promise.reject(new Error('The shared screen is not ready yet. Wait a moment and try again.'));
+    const scale=Math.min(1,MAX_PREPARED_IMAGE_EDGE/Math.max(width,height));
+    const canvas=document.createElement('canvas');
+    const context=canvas.getContext('2d');
+    if(!context) return Promise.reject(new Error('Screen capture is unavailable in this browser.'));
+    canvas.width=Math.max(1,Math.round(width*scale));
+    canvas.height=Math.max(1,Math.round(height*scale));
+    context.drawImage(screenVideo,0,0,canvas.width,canvas.height);
+    let quality=.88;
+    let dataUrl=canvas.toDataURL('image/jpeg',quality);
+    while(dataUrl.length>MAX_PREPARED_IMAGE_CHARS&&quality>.5){
+      quality-=.08;
+      dataUrl=canvas.toDataURL('image/jpeg',quality);
+    }
+    if(dataUrl.length>MAX_PREPARED_IMAGE_CHARS) return Promise.reject(new Error('Nyx could not prepare that screen frame within the upload limit.'));
+    return Promise.resolve({name:'Shared screen',size:Math.ceil(dataUrl.length*.75),type:'image/jpeg',dataUrl,screenCapture:true});
   }
 
   function responseParts(value){
@@ -1250,12 +1438,14 @@
     send.disabled=busy;
     imageInput.disabled=busy;
     attachImage.disabled=busy;
+    shareScreen.disabled=busy;
     removeAttachment.disabled=busy;
     send.setAttribute('aria-label',busy?'Waiting for Nyx AI':'Send message');
   }
 
   function clearChat(){
     stopRequest();
+    stopScreenSharing();
     clearAttachment();
     if(temporaryMode){
       temporaryMessages=[];
@@ -1300,12 +1490,22 @@
 
   async function submitPrompt(){
     const prompt=input.value.trim();
-    const imageAttachment=attachedImage;
+    let imageAttachment=attachedImage;
     const textAttachment=attachedText;
-    if((!prompt&&!imageAttachment&&!textAttachment)||send.disabled) return;
+    const sharing=Boolean(screenStream);
+    if((!prompt&&!imageAttachment&&!textAttachment&&!sharing)||send.disabled) return;
+    if(sharing){
+      try{
+        screenStatus.textContent='Capturing the current frame…';
+        imageAttachment=await captureSharedScreen();
+      }catch(error){
+        screenStatus.textContent=error?.message||'Nyx could not capture the shared screen.';
+        return;
+      }
+    }
     const selectedModelId=model.value||DEFAULT_MODEL;
     const requestedModel=selectedModelId||DEFAULT_MODEL;
-    const userText=prompt||(imageAttachment?'Please analyze this image.':'Please review the attached text file.');
+    const userText=prompt||(sharing?'Please analyze what is currently on my screen.':imageAttachment?'Please analyze this image.':'Please review the attached text file.');
     const history=savedMessages();
     if(!history.length) updateThreadTitle([{role:'user',content:userText}]);
     history.push({role:'user',content:userText,...(textAttachment?{textAttachment}: {})});
@@ -1327,7 +1527,8 @@
       const preparedImage=imageAttachment?await prepareImageForModel(imageAttachment):null;
       const imageContext=preparedImage?`Original image dimensions: ${preparedImage.width}x${preparedImage.height}px.`:'';
       if(preparedImage){
-        setAttachmentStatus(`Nyx is reading this image for ${modelLabel(requestedModel)}…`);
+        if(sharing) screenStatus.textContent=`Nyx is reading this screen frame for ${modelLabel(requestedModel)}…`;
+        else setAttachmentStatus(`Nyx is reading this image for ${modelLabel(requestedModel)}…`);
       }
       const response=await fetch('/api/nyx-ai',{
         method:'POST',
@@ -1381,6 +1582,7 @@
       activeController=null;
       setBusy(false);
       clearAttachment();
+      if(screenStream) screenStatus.textContent='A fresh frame is attached only when you send.';
       input.focus();
       scrollToBottom();
     }
@@ -1436,6 +1638,11 @@
   });
   form.addEventListener('submit',event=>{event.preventDefault();void submitPrompt()});
   attachImage.addEventListener('click',()=>imageInput.click());
+  shareScreen.addEventListener('click',()=>{void startScreenSharing()});
+  stopScreenShare.addEventListener('click',()=>{
+    stopScreenSharing();
+    input.focus();
+  });
   imageInput.addEventListener('change',()=>{void readImageFile(imageInput.files?.[0])});
   removeAttachment.addEventListener('click',()=>{
     clearAttachment();
@@ -1552,26 +1759,73 @@
     apiKeyInput.focus();
   });
   apiKeyRemove.addEventListener('click',async()=>{
-    removePersonalApiKey();
-    apiKeyInput.value='';
-    apiKeyRemember.checked=false;
-    updateApiKeyControl(`Personal key removed. Nyx is using ${providerSelect.options[providerSelect.selectedIndex]?.text||'its shared AI key'}.`,'success');
-    await loadModels();
+    const activeId=String(localStorage.getItem(PERSONAL_ACTIVE_PROFILE)||'');
+    if(activeId) await deletePersonalProfile(activeId);
+    else{
+      removePersonalApiKey();
+      fillPersonalProfileForm();
+      updateApiKeyControl(`Personal key removed. Nyx is using ${providerSelect.options[providerSelect.selectedIndex]?.text||'its shared AI key'}.`,'success');
+      await loadModels();
+    }
   });
   apiKeyForm.addEventListener('submit',async event=>{
     event.preventDefault();
     const key=apiKeyInput.value.trim();
+    const baseUrl=apiBaseUrl.value.trim().replace(/\/+$/,'');
     if(key.length<8||key.length>512||/[\s\x00-\x1f\x7f]/.test(key)){
       updateApiKeyControl('Enter a valid API key without spaces.','error');
       apiKeyInput.focus();
       return;
     }
-    storePersonalApiKey(key,apiKeyRemember.checked);
+    if(baseUrl){
+      try{
+        const parsed=new URL(baseUrl);
+        if(parsed.protocol!=='https:'||parsed.username||parsed.password||parsed.search||parsed.hash) throw new Error();
+      }catch{
+        updateApiKeyControl('Enter an HTTPS provider base URL, such as https://api.ofox.ai/v1.','error');
+        apiBaseUrl.focus();
+        return;
+      }
+    }
+    const profiles=personalProfiles();
+    if(!editingProfileId&&profiles.length>=8){
+      updateApiKeyControl('Remove a saved provider before adding another.','error');
+      return;
+    }
+    const id=editingProfileId||`provider_${crypto.randomUUID?.()||Date.now().toString(36)+Math.random().toString(36).slice(2)}`;
+    const profile={id,key,baseUrl,label:apiProfileLabel.value.trim(),remember:apiKeyRemember.checked};
+    writePersonalProfiles([...profiles.filter(item=>item.id!==id),profile]);
+    localStorage.setItem(PERSONAL_ACTIVE_PROFILE,id);
+    editingProfileId=id;
+    storePersonalApiKey(key,baseUrl,profile.remember);
+    renderPersonalProfiles();
     apiKeySave.disabled=true;
-    updateApiKeyControl(`Checking your ${personalKeyProvider(key)} key…`);
+    updateApiKeyControl(`Checking your ${personalKeyProvider(key,baseUrl)} key…`);
     const valid=await loadModels();
     apiKeySave.disabled=false;
     if(valid) setTimeout(closeApiKeyDialog,450);
+  });
+  apiBaseOfox.addEventListener('click',()=>{
+    apiBaseUrl.value='https://api.ofox.ai/v1';
+    if(!apiProfileLabel.value.trim()) apiProfileLabel.value='Ofox';
+    apiBaseUrl.focus();
+  });
+  apiProfileNew.addEventListener('click',()=>{
+    fillPersonalProfileForm();
+    updateApiKeyControl('Paste the new provider key and its OpenAI-compatible base URL.');
+    apiProfileLabel.focus();
+  });
+  apiKeyProfiles.addEventListener('click',event=>{
+    const removeButton=event.target.closest('[data-key-profile-remove]');
+    if(removeButton){
+      void deletePersonalProfile(removeButton.dataset.keyProfileRemove||'');
+      return;
+    }
+    const selectButton=event.target.closest('[data-key-profile-select]');
+    if(selectButton){
+      const profile=personalProfiles().find(item=>item.id===selectButton.dataset.keyProfileSelect);
+      if(profile) void activatePersonalProfile(profile);
+    }
   });
   providerSelect.addEventListener('change',async()=>{
     if(personalApiKey()) return;
@@ -1609,6 +1863,7 @@
       sidebarToggle.focus();
     }
   });
+  addEventListener('pagehide',stopScreenSharing);
 
   initializeThreads();
   renderModelOptions(modelCatalog,model.value||DEFAULT_MODEL);

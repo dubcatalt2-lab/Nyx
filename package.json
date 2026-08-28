@@ -11,6 +11,7 @@
     "prepare:vision": "node scripts/warm-vision-model.mjs",
     "sync:gn-math": "node scripts/sync-gn-math.mjs",
     "test:account-controls": "node scripts/test-account-controls.mjs",
+    "test:ai-workspace": "node scripts/test-ai-workspace.mjs",
     "test:nyxify-covers": "node scripts/test-nyxify-playlist-covers.mjs",
     "test:nyxify-player": "node scripts/test-nyxify-player.mjs",
     "test:nyxtube": "node scripts/test-nyxtube.mjs",

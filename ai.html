@@ -10,10 +10,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/vendor/katex/katex.min.css?v=20260814-ai-math-v1">
-  <link rel="stylesheet" href="/css/ai-workspace.css?v=20260826-provider-switcher-v14">
+  <link rel="stylesheet" href="/css/ai-workspace.css?v=20260828-screen-share-v15">
   <script src="/js/nyx-logo.js?v=20260717-theme-crescent-v1" defer></script>
   <script src="/assets/vendor/katex/katex.min.js?v=20260814-ai-math-v1" defer></script>
-  <script src="/js/ai-workspace.js?v=20260826-api-keys-v21" defer></script>
+  <script src="/js/ai-workspace.js?v=20260828-screen-share-v22" defer></script>
 </head>
 <body>
   <main class="ai-app" data-ai-app>
@@ -89,7 +89,7 @@
         </div>
 
         <div class="ai-header-actions">
-          <button class="ai-key-settings" id="apiKeySettings" type="button" title="Personal AI API key" aria-label="Set a personal Nyx, Navy, or Nocturne AI API key" aria-haspopup="dialog">
+          <button class="ai-key-settings" id="apiKeySettings" type="button" title="Personal AI API key" aria-label="Set a personal or OpenAI-compatible AI API key" aria-haspopup="dialog">
             <span class="ai-key-status" aria-hidden="true"></span>
             <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 8-8m-3 3 3 3m-6 0 2 2"/></svg>
           </button>
@@ -130,6 +130,14 @@
         <div class="ai-composer-wrap">
           <form class="ai-composer" id="form">
           <input class="sr-only" id="imageInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" tabindex="-1">
+          <div class="ai-screen-preview" id="screenPreview" hidden>
+            <video id="screenVideo" autoplay muted playsinline aria-label="Live screen sharing preview"></video>
+            <span class="ai-screen-copy">
+              <strong>Sharing your screen</strong>
+              <small id="screenStatus" aria-live="polite">A fresh frame is attached only when you send.</small>
+            </span>
+            <button class="ai-screen-stop" id="stopScreenShare" type="button">Stop</button>
+          </div>
           <div class="ai-attachment-preview" id="attachmentPreview" hidden>
             <img id="attachmentThumbnail" alt="Attached image preview">
             <span class="ai-attachment-copy">
@@ -145,6 +153,9 @@
           <div class="ai-composer-footer">
             <button class="ai-attach" id="attachImage" type="button" title="Attach an image" aria-label="Attach an image" aria-controls="imageInput">
               <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/><path d="m19 15 2.3-2.3a2.4 2.4 0 0 0-3.4-3.4l-8.2 8.2a4 4 0 0 1-5.7-5.7l8.5-8.5"/></svg>
+            </button>
+            <button class="ai-attach ai-screen-share" id="shareScreen" type="button" title="Share your screen" aria-label="Share your screen">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
             </button>
             <span class="ai-composer-hint"><kbd>Enter</kbd> to send · <kbd>Shift</kbd> + <kbd>Enter</kbd> for a new line</span>
             <span class="ai-character-count" id="characterCount" aria-live="off">0 / 4000</span>
@@ -166,25 +177,41 @@
         <span class="ai-key-mark" aria-hidden="true">
           <svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 8-8m-3 3 3 3m-6 0 2 2"/></svg>
         </span>
-        <span><strong id="apiKeyTitle">Personal AI key</strong><small>Use a Nyx key or your own Navy or Nocturne plan</small></span>
+        <span><strong id="apiKeyTitle">Personal AI key</strong><small>Use Nyx or any OpenAI-compatible provider</small></span>
         <button class="ai-key-close" id="apiKeyClose" type="button" aria-label="Close API key settings">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg>
         </button>
       </header>
       <div class="ai-key-body">
-        <label for="apiKeyInput">Nyx, Navy, or Nocturne AI API key</label>
+        <div class="ai-key-saved-heading">
+          <span>Saved providers</span>
+          <button id="apiProfileNew" type="button">Add provider</button>
+        </div>
+        <div class="ai-key-profiles" id="apiKeyProfiles" aria-label="Saved AI providers"></div>
+        <label for="apiProfileLabel">Provider name <span class="ai-key-optional">Optional</span></label>
+        <div class="ai-key-input-wrap ai-key-base-wrap">
+          <input id="apiProfileLabel" type="text" maxlength="50" autocomplete="off" placeholder="Ofox, TokenMix, or another name">
+        </div>
+        <label for="apiKeyInput">API key</label>
         <div class="ai-key-input-wrap">
           <input id="apiKeyInput" type="password" minlength="8" maxlength="512" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste your API key">
           <button id="apiKeyReveal" type="button" aria-label="Show API key" aria-pressed="false">
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>
           </button>
         </div>
+        <div class="ai-key-base-heading">
+          <label for="apiBaseUrl">OpenAI-compatible base URL <span>Optional</span></label>
+          <button id="apiBaseOfox" type="button">Use Ofox</button>
+        </div>
+        <div class="ai-key-input-wrap ai-key-base-wrap">
+          <input id="apiBaseUrl" type="url" maxlength="300" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://api.example.com/v1">
+        </div>
         <label class="ai-key-remember"><input id="apiKeyRemember" type="checkbox"><span>Remember on this device</span></label>
-        <p class="ai-key-note">Paste a generated <code>nyx_...</code> key, a Navy <code>sk-navy-...</code> key, or a Nocturne key for your own plan. If unchecked, the key lasts only for this browser tab and is never saved to your account.</p>
+        <p class="ai-key-note">Leave the base URL blank for Nyx, Navy, or Nocturne auto-detection. For Ofox or another provider, paste the provider's OpenAI-compatible base URL. If unchecked, both values last only for this browser tab and are never saved to your account.</p>
         <p class="ai-key-feedback" id="apiKeyFeedback" role="status" aria-live="polite"></p>
       </div>
       <footer class="ai-key-actions">
-        <button class="ai-key-remove" id="apiKeyRemove" type="button">Remove key</button>
+        <button class="ai-key-remove" id="apiKeyRemove" type="button">Remove provider</button>
         <span></span>
         <button class="ai-key-cancel" id="apiKeyCancel" type="button">Cancel</button>
         <button class="ai-key-save" id="apiKeySave" type="submit">Use key</button>

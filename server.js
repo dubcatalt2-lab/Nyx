@@ -1115,7 +1115,9 @@ function patchedBareMuxIndex() {
       'const e=(await self.clients.matchAll({type:"window",includeUncontrolled:!0})).filter((e=>{try{const t=new URL(e.url);return t.origin===self.location.origin&&!t.pathname.startsWith("/service/")&&!t.pathname.startsWith("/~/sj/")}catch{return!1}})).map'
     )
     .replace(/setTimeout\(([^,]+),1e3,new TypeError\("timeout"\)\)/g, 'setTimeout($1,5000,new TypeError("timeout"))')
-    .replace(/within 1s/g, "within 5s");
+    .replace(/within 1s/g, "within 5s")
+    .replace(/setTimeout\(([^,]+),1500\)/g, "setTimeout($1,5000)")
+    .replace(/within 1\.5s/g, "within 5s");
 }
 
 function patchedUvBundle() {

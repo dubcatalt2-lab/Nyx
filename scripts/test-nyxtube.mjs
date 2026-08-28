@@ -14,7 +14,10 @@ function assert(condition, message) {
 
 const browser = await chromium.launch({ headless: true });
 try {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const page = await browser.newPage({
+    viewport: { width: 1280, height: 900 },
+    userAgent: "Mozilla/5.0 (X11; CrOS x86_64 15917.65.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+  });
   page.setDefaultTimeout(8_000);
   const pageErrors = [];
   page.on("pageerror", error => pageErrors.push(error.message));
@@ -29,6 +32,10 @@ try {
         this.muted = false;
         this.node.innerHTML = '<div data-mock-youtube-player style="width:100%;height:100%;background:linear-gradient(135deg,#121217,#23232a)"></div>';
         setTimeout(() => {
+          if (Array.isArray(window.__nyxTubeMockBlockedIds) && window.__nyxTubeMockBlockedIds.includes(options.videoId)) {
+            options.events?.onError?.({ target: this, data: 150 });
+            return;
+          }
           options.events?.onReady?.({ target: this });
           options.events?.onStateChange?.({ target: this, data: 1 });
         }, 0);
@@ -80,6 +87,13 @@ try {
     await page.locator("[data-watch-mute]").click();
     await page.locator("[data-watch-captions]").click();
     assert(await page.locator("[data-watch-captions]").getAttribute("aria-pressed") === "true", "Captions control did not update");
+    await page.evaluate(() => { window.__nyxTubeMockBlockedIds = ["dQw4w9WgXcQ"]; });
+    await page.locator("[data-watch-related] .related-card").filter({ hasText: "A test documentary" }).click();
+    await page.waitForFunction(() => document.querySelector("[data-watch-title]")?.textContent === "A second video");
+    assert((await page.locator("[data-notice]").textContent())?.includes("restricted on this Chromebook"), "Restricted-video recovery did not explain the automatic fallback");
+    assert(await page.locator("[data-mock-youtube-player]").count() === 1, "Restricted-video recovery did not start the next playable video");
+    await page.evaluate(() => { window.__nyxTubeMockBlockedIds = []; });
+    console.log("NyxTube test: restricted Chromebook video advanced to a playable recommendation");
   }
 
   await page.locator('[data-view-button="shorts"]').click();

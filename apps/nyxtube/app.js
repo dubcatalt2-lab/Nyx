@@ -8,6 +8,7 @@
     view: "home", videos: [], catalog: [], shorts: [], shortIndex: 0,
     watchPlayer: null, shortPlayer: null, watchTimer: 0, shortTimer: 0,
     watchVideo: null, watchCaptions: false, shortCaptions: false, shortMuted: true,
+    failedVideoIds: new Set(), failedShortIds: new Set(), watchRecoveryTimer: 0,
   };
   const refs = Object.fromEntries([
     "notice", "search-form", "search-input", "feed-title", "result-count", "video-grid",
@@ -214,9 +215,10 @@
     button.innerHTML = icon(playing ? "icon-pause" : "icon-play");
     button.setAttribute("aria-label", playing ? "Pause" : "Play");
   }
-  function openWatch(video) {
+  function openWatch(video, { recoveryMessage = "" } = {}) {
     if (!video?.id) return;
-    state.watchVideo = video; showView("watch"); notice();
+    clearTimeout(state.watchRecoveryTimer); state.watchRecoveryTimer = 0;
+    state.watchVideo = video; showView("watch"); notice(recoveryMessage);
     refs.watchTitle.textContent = video.title || "Untitled video";
     refs.watchCreator.textContent = [video.creator || "YouTube", viewsLabel(video.viewCount), dateLabel(video.publishedAt)].filter(Boolean).join(" · ");
     refs.watchChannelMark.textContent = (video.creator || "Y").trim().slice(0, 1).toUpperCase();
@@ -227,8 +229,8 @@
     refs.watchTime.textContent = `0:00 / ${duration(video.durationSeconds)}`;
     createWatch(video).catch(error => { refs.watchLoading.hidden = true; notice(error.message || "The video player could not be started."); });
   }
-  async function createWatch(video) {
-    const YT = await youtubeApi();
+  async function createWatch(video, forceDirect = false) {
+    const YT = forceDirect ? directYoutubeApi : await youtubeApi();
     if (state.view !== "watch" || state.watchVideo?.id !== video.id) return;
     state.watchPlayer?.destroy?.();
     const config = options(video.id); config.expectedDuration = video.durationSeconds;
@@ -239,9 +241,35 @@
         if (playing) refs.watchLoading.hidden = true;
         updateToggle(refs.watchToggle, playing); refs.watchCenterPlay.hidden = !paused;
       },
-      onError: () => { refs.watchLoading.hidden = true; notice("This video is not available for embedded playback."); },
+      onError: event => recoverWatch(video, Number(event?.data), YT === directYoutubeApi),
     };
     state.watchPlayer = new YT.Player(mount(refs.watchPlayer, "nyxtube-watch"), config);
+  }
+  function relatedVideos(selected, limit = 10) {
+    const seen = new Set();
+    return [...state.catalog, ...state.shorts]
+      .filter(video => video?.id && video.id !== selected.id && !state.failedVideoIds.has(video.id) && !seen.has(video.id) && seen.add(video.id))
+      .sort((left, right) => relatedScore(right, selected) - relatedScore(left, selected))
+      .slice(0, limit);
+  }
+  function recoverWatch(video, code, directPlayer) {
+    if (state.view !== "watch" || state.watchVideo?.id !== video.id) return;
+    refs.watchLoading.hidden = true;
+    if (!directPlayer && (code === 5 || code === 153)) {
+      notice("Retrying this video with the Chromebook-compatible player...");
+      createWatch(video, true).catch(error => notice(error.message || "The video player could not be restarted."));
+      return;
+    }
+    state.failedVideoIds.add(video.id);
+    const next = relatedVideos(video, 1)[0];
+    if (!next) {
+      notice("YouTube says this video is unavailable or restricted on this Chromebook. Choose another video.");
+      return;
+    }
+    const message = "That video is unavailable or restricted on this Chromebook. Loading another playable video...";
+    notice(message);
+    state.watchPlayer?.destroy?.(); state.watchPlayer = null; refs.watchPlayer.replaceChildren();
+    state.watchRecoveryTimer = setTimeout(() => openWatch(next, { recoveryMessage: message }), 500);
   }
   function relatedScore(candidate, selected) {
     const sameCreator = String(candidate.creator || "").toLowerCase() === String(selected.creator || "").toLowerCase() ? 20 : 0;
@@ -250,11 +278,7 @@
     return sameCreator + overlap;
   }
   function renderRelated(selected) {
-    const seen = new Set();
-    const videos = [...state.catalog, ...state.shorts]
-      .filter(video => video?.id && video.id !== selected.id && !seen.has(video.id) && seen.add(video.id))
-      .sort((left, right) => relatedScore(right, selected) - relatedScore(left, selected))
-      .slice(0, 10);
+    const videos = relatedVideos(selected);
     if (!videos.length) {
       const empty = document.createElement("p"); empty.className = "related-empty"; empty.textContent = "More videos will appear here as you browse.";
       refs.watchRelated.replaceChildren(empty); return;
@@ -282,7 +306,8 @@
     }, 250);
   }
   function stopWatch() {
-    clearInterval(state.watchTimer); state.watchTimer = 0; state.watchPlayer?.destroy?.(); state.watchPlayer = null; refs.watchPlayer.replaceChildren();
+    clearInterval(state.watchTimer); state.watchTimer = 0; clearTimeout(state.watchRecoveryTimer); state.watchRecoveryTimer = 0;
+    state.watchPlayer?.destroy?.(); state.watchPlayer = null; refs.watchPlayer.replaceChildren();
   }
   function toggleWatch() {
     if (!ready(state.watchPlayer)) return;
@@ -309,6 +334,7 @@
     try {
       if (!state.shorts.length) state.shorts = (await json("/api/nyxtube/shorts?limit=16"))?.videos || [];
       if (!state.shorts.length) throw new Error("No playable Shorts were found.");
+      state.failedShortIds.clear();
       await showShort(state.shortIndex);
     } catch (error) { refs.shortLoading.hidden = true; notice(error.message || "Shorts could not be loaded."); }
   }
@@ -329,9 +355,22 @@
         refs.shortCenterPlay.hidden = !paused;
         if (event.data === YT.PlayerState.ENDED) showShort(state.shortIndex + 1);
       },
-      onError: () => showShort(state.shortIndex + 1),
+      onError: () => recoverShort(video),
     };
     state.shortPlayer = new YT.Player(mount(refs.shortPlayer, "nyxtube-short"), config);
+  }
+  function recoverShort(video) {
+    if (state.view !== "shorts" || state.shorts[state.shortIndex]?.id !== video.id) return;
+    state.failedShortIds.add(video.id);
+    const nextIndex = state.shorts.findIndex((candidate, index) => index !== state.shortIndex && candidate?.id && !state.failedShortIds.has(candidate.id));
+    if (nextIndex < 0) {
+      refs.shortLoading.hidden = true;
+      state.shortPlayer?.destroy?.(); state.shortPlayer = null; refs.shortPlayer.replaceChildren();
+      notice("YouTube says these Shorts are unavailable or restricted on this Chromebook. Try again later.");
+      return;
+    }
+    notice("Skipping a Short that YouTube restricts on this Chromebook...");
+    showShort(nextIndex);
   }
   function startShortTimer() {
     clearInterval(state.shortTimer);

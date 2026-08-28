@@ -6735,9 +6735,20 @@ function nyxTubeThumbnail(snippet) {
 
 function nyxTubePublicVideo(item) {
   const id = String(item?.id || "").trim();
-  if (!/^[A-Za-z0-9_-]{11}$/.test(id) || item?.status?.embeddable === false) return null;
+  const contentDetails = item?.contentDetails || {};
+  const regionRestriction = contentDetails.regionRestriction || {};
+  const allowedRegions = Array.isArray(regionRestriction.allowed) ? regionRestriction.allowed.map(value => String(value).toUpperCase()) : null;
+  const blockedRegions = Array.isArray(regionRestriction.blocked) ? regionRestriction.blocked.map(value => String(value).toUpperCase()) : [];
+  const unavailableInUs = (allowedRegions && !allowedRegions.includes("US")) || blockedRegions.includes("US");
+  const ageRestricted = contentDetails.contentRating?.ytRating === "ytAgeRestricted";
+  if (!/^[A-Za-z0-9_-]{11}$/.test(id)
+    || item?.status?.embeddable === false
+    || (item?.status?.privacyStatus && item.status.privacyStatus !== "public")
+    || (item?.status?.uploadStatus && item.status.uploadStatus !== "processed")
+    || unavailableInUs
+    || ageRestricted) return null;
   const snippet = item?.snippet || {};
-  const durationSeconds = nyxTubeDurationSeconds(item?.contentDetails?.duration);
+  const durationSeconds = nyxTubeDurationSeconds(contentDetails.duration);
   return {
     id,
     title: String(snippet.title || "Untitled video").trim().slice(0, 180),
@@ -6747,7 +6758,7 @@ function nyxTubePublicVideo(item) {
     publishedAt: safeDateIso(snippet.publishedAt),
     durationSeconds,
     viewCount: Math.max(0, Number(item?.statistics?.viewCount) || 0),
-    captions: String(item?.contentDetails?.caption || "false") === "true",
+    captions: String(contentDetails.caption || "false") === "true",
     isShort: durationSeconds > 0 && durationSeconds <= 180,
     sourceUrl: `https://www.youtube.com/watch?v=${id}`
   };
@@ -6794,7 +6805,7 @@ async function nyxTubeSearch(query, limit) {
   const cacheKey = `search:${query.toLowerCase()}:${limit}`;
   const cached = nyxTubeCached(cacheKey);
   if (cached) return cached;
-  const payload = await nyxTubeApi("search", { part: "snippet", type: "video", videoEmbeddable: "true", safeSearch: "moderate", maxResults: limit, q: query });
+  const payload = await nyxTubeApi("search", { part: "snippet", type: "video", videoEmbeddable: "true", videoSyndicated: "true", safeSearch: "moderate", regionCode: "US", maxResults: limit, q: query });
   const ids = (Array.isArray(payload?.items) ? payload.items : []).map(item => String(item?.id?.videoId || ""));
   return nyxTubeCacheSet(cacheKey, await nyxTubeVideoDetails(ids), 5 * 60_000);
 }
@@ -6803,7 +6814,7 @@ async function nyxTubeShorts(limit) {
   const cacheKey = `shorts:${limit}`;
   const cached = nyxTubeCached(cacheKey);
   if (cached) return cached;
-  const payload = await nyxTubeApi("search", { part: "snippet", type: "video", videoEmbeddable: "true", videoDuration: "short", safeSearch: "moderate", order: "viewCount", regionCode: "US", maxResults: Math.min(50, limit * 2), q: "#shorts" });
+  const payload = await nyxTubeApi("search", { part: "snippet", type: "video", videoEmbeddable: "true", videoSyndicated: "true", videoDuration: "short", safeSearch: "moderate", order: "viewCount", regionCode: "US", maxResults: Math.min(50, limit * 2), q: "#shorts" });
   const ids = (Array.isArray(payload?.items) ? payload.items : []).map(item => String(item?.id?.videoId || ""));
   const videos = (await nyxTubeVideoDetails(ids)).filter(item => item.isShort).slice(0, limit);
   return nyxTubeCacheSet(cacheKey, videos, 10 * 60_000);

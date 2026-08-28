@@ -4535,7 +4535,7 @@
     if(browserModeSelect){
       const browserModeLabels={
         auto:'Auto',
-        scramjet:'Scramjet',
+        scramjet:'Scramjet v2',
         'scramjet-v1':'Scramjet v1',
         ultraviolet:'Ultraviolet',
         iframe:'Iframe'
@@ -13082,7 +13082,7 @@ Scramjet supports more websites, while Ultraviolet can work better for some page
 Auto uses Scramjet with Libcurl by default and can recover with another relay if the connection fails.</p>
           <select id="settingBrowserMode">
             <option value="auto">Auto</option>
-            <option value="scramjet">Use Scramjet</option>
+            <option value="scramjet">Use Scramjet v2</option>
             <option value="scramjet-v1">Use Scramjet v1</option>
             <option value="ultraviolet">Use Ultraviolet</option>
             <option value="iframe">Iframe</option>

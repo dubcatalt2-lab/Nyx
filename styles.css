@@ -4256,6 +4256,22 @@ html[data-nyx-theme] body.browser-shell .browser-shell-page:has(.apps-launch-gri
   -webkit-text-fill-color:var(--nyx-home-muted)!important;
 }
 
+/* App tiles stay neutral until they are the active pointer/keyboard target. */
+html[data-nyx-theme] body.browser-shell .apps-launch-grid>.quick-tile{
+  border-color:transparent!important;
+  background-color:#000!important;
+  box-shadow:none!important;
+}
+html[data-nyx-theme] body.browser-shell .apps-launch-grid>.quick-tile .quick-icon{
+  border-color:transparent!important;
+}
+html[data-nyx-theme] body.browser-shell .apps-launch-grid>.quick-tile:is(:hover,:focus-visible){
+  border-color:var(--nyx-chrome-accent)!important;
+}
+html[data-nyx-theme] body.browser-shell .apps-launch-grid>.quick-tile:is(:hover,:focus-visible) .quick-icon{
+  border-color:var(--nyx-chrome-accent)!important;
+}
+
 .nyx-browser-link-menu{
   position:fixed;
   z-index:2147483646;

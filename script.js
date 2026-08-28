@@ -2537,6 +2537,9 @@
   let uvRegistration = null;
   let scramjetInstallPromise = null;
   let scramjetController = null;
+  let scramjetV1InstallPromise = null;
+  let scramjetV1Controller = null;
+  let scramjetV1InstallError = '';
   let bareMuxConnection = null;
   let scramjetTransport = null;
   let scramjetTransportKey = '';
@@ -2995,6 +2998,7 @@
   const proxyStateVersion='nyx-proxy-state-20260814-private-tabs-v13';
   const scramjetStateVersion='nyx-scramjet-state-20260814-private-tabs-v2';
   const scramjetServiceWorkerUrl='/scramjet.sw.js?v=nyx-sj-20260814-private-tabs-v3';
+  const scramjetV1ServiceWorkerUrl='/scramjet-v1.sw.js?v=nyx-sj-v1-20260827-v1';
   function installNyxConsoleDedupe(scope='top'){
     if(console.__nyxDedupeInstalled) return;
     const seen=new Map();
@@ -6560,21 +6564,26 @@
     if(!target) return {managed:false,engine:'',url:''};
     installGameFrameAdProtection(frame);
     const mode=selectedBrowserMode(target);
-    if(mode==='scramjet' && String(frame?.tagName || '').toLowerCase()==='iframe'){
-      const ready=await installScramjet();
-      if(ready && scramjetController){
+    if((mode==='scramjet' || mode==='scramjet-v1') && String(frame?.tagName || '').toLowerCase()==='iframe'){
+      const useV1=mode==='scramjet-v1';
+      const ready=await (useV1 ? installScramjetV1() : installScramjet());
+      const controller=useV1 ? scramjetV1Controller : scramjetController;
+      if(ready && controller){
         let managed=nyxManagedGameFrames.get(frame);
-        if(!managed){
+        if(!managed || managed.__nyxScramjetVersion!==(useV1 ? 'v1' : 'v2')){
           frame.removeAttribute('src');
-          managed=scramjetController.createFrame(frame,{plugins:[
-            createScramjetCompatibilityPlugin('','proxy-sri'),
-            createScramjetCompatibilityPlugin(browserAdBlockRuntimeSource,'ad-block'),
-            createScramjetCompatibilityPlugin(scramjetMinimalRuntimeGuardSource,'minimal-guard')
-          ]});
+          managed=useV1
+            ? controller.createFrame(frame)
+            : controller.createFrame(frame,{plugins:[
+                createScramjetCompatibilityPlugin('','proxy-sri'),
+                createScramjetCompatibilityPlugin(browserAdBlockRuntimeSource,'ad-block'),
+                createScramjetCompatibilityPlugin(scramjetMinimalRuntimeGuardSource,'minimal-guard')
+              ]});
+          managed.__nyxScramjetVersion=useV1 ? 'v1' : 'v2';
           nyxManagedGameFrames.set(frame,managed);
         }
         managed.go(target);
-        return {managed:true,engine:'scramjet',url:target};
+        return {managed:true,engine:useV1 ? 'scramjet-v1' : 'scramjet',url:target};
       }
     }
     if(mode==='iframe') return {managed:false,engine:'iframe',url:target};
@@ -6592,7 +6601,8 @@
     }
     value=String(value || 'auto').trim().toLowerCase();
     if(value==='uv' || value==='ultra' || value==='ultraviolet') return 'ultraviolet';
-    if(value==='sj' || value==='scram' || value==='scramjet') return 'scramjet';
+    if(value==='sj' || value==='scram' || value==='scramjet' || value==='scramjet-v2' || value==='sjv2') return 'scramjet';
+    if(value==='scramjet-v1' || value==='sjv1' || value==='scram-v1') return 'scramjet-v1';
     if(value==='rh' || value==='rammerhead') return 'rammerhead';
     if(value==='direct' || value==='iframe') return 'iframe';
     return value || 'auto';
@@ -7725,6 +7735,72 @@
     });
     return uvInstallPromise;
   }
+  function scramjetV1Config(){
+    return {
+      prefix:'/~/sj-v1/',
+      files:{
+        all:'/scramjet-v1/scramjet.all.js',
+        wasm:'/scramjet-v1/scramjet.wasm.wasm',
+        sync:'/scramjet-v1/scramjet.sync.js'
+      }
+    };
+  }
+  async function initializeScramjetV1Controller(serviceworker){
+    const api=window.$scramjetLoadController?.();
+    const Controller=api?.ScramjetController;
+    if(!Controller) throw new Error('Scramjet v1 controller API did not load');
+    const controller=new Controller(scramjetV1Config());
+    const serviceWorkerContainer=navigator.serviceWorker;
+    const ownController=Object.getOwnPropertyDescriptor(serviceWorkerContainer,'controller');
+    let shadowed=false;
+    let initialized=false;
+    try{
+      Object.defineProperty(serviceWorkerContainer,'controller',{configurable:true,get:()=>serviceworker});
+      shadowed=true;
+      await controller.init();
+      initialized=true;
+    }finally{
+      if(shadowed){
+        if(ownController) Object.defineProperty(serviceWorkerContainer,'controller',ownController);
+        else delete serviceWorkerContainer.controller;
+      }
+    }
+    if(!initialized){
+      await controller.init();
+      const db=await controller.openIDB();
+      const config=await db.get('config','config');
+      if(!config) throw new Error('Scramjet v1 configuration did not initialize');
+      serviceworker.postMessage({scramjet$type:'loadConfig',config});
+    }
+    return controller;
+  }
+  function installScramjetV1(){
+    if(scramjetV1InstallPromise) return scramjetV1InstallPromise;
+    let step='starting Scramjet v1';
+    scramjetV1InstallPromise=(async()=>{
+      if(location.protocol==='file:') throw new Error('Scramjet v1 needs Nyx to be opened from its website, not as a local file.');
+      if(!('serviceWorker' in navigator)) throw new Error('This browser does not support the Service Workers Scramjet v1 needs.');
+      step='loading Scramjet v1 assets';
+      if(!window.$scramjetLoadController) await loadScript('/scramjet-v1/scramjet.all.js');
+      step='starting relay';
+      await installBareMuxTransport();
+      step='registering service worker';
+      const registration=await navigator.serviceWorker.register(scramjetV1ServiceWorkerUrl,{scope:'/~/sj-v1/',updateViaCache:'none'});
+      await registration.update().catch(()=>null);
+      const serviceworker=await waitForServiceWorkerScript(registration,scramjetV1ServiceWorkerUrl,'/~/sj-v1/');
+      if(!serviceworker) throw new Error('Scramjet v1 service worker did not activate');
+      step='initializing controller';
+      if(!scramjetV1Controller) scramjetV1Controller=await initializeScramjetV1Controller(serviceworker);
+      scramjetV1InstallError='';
+      return true;
+    })().catch(error=>{
+      scramjetV1Controller=null;
+      scramjetV1InstallPromise=null;
+      scramjetV1InstallError=`Failed while ${step}: ${error?.message || error}`;
+      return false;
+    });
+    return scramjetV1InstallPromise;
+  }
   function installScramjet(){
     if(scramjetInstallPromise) return scramjetInstallPromise;
     let step='starting Scrapmmy';
@@ -8821,6 +8897,7 @@
     const mode=preflightBrowserModeForTarget(target);
     if(mode==='iframe') return true;
     if(mode==='ultraviolet') return installUltraviolet();
+    if(mode==='scramjet-v1') return installScramjetV1();
     if(mode==='scramjet') return installScramjet();
     const results=await Promise.allSettled([installScramjet(),installUltraviolet()]);
     return results.some(result=>result.status==='fulfilled' && result.value);
@@ -8829,6 +8906,7 @@
     if(location.protocol==='file:') return false;
     const mode=preflightBrowserModeForTarget(target);
     if(mode==='iframe') return true;
+    if(mode==='scramjet-v1') return !!(await installBareMuxTransport());
     if(mode==='scramjet') return !!(await createScramjetTransport());
     return !!(await installBareMuxTransport());
   }
@@ -10209,6 +10287,7 @@
       t.frame.replaceWith(frame);
       t.frame=frame;
       t.scramjetFrame=null;
+      t.scramjetVersion='';
       t.scramjetRuntimeGuarded=null;
       t.popupBridgeInstalled=false;
       setFrameSandbox(t,true);
@@ -10638,6 +10717,75 @@
       },220);
       return true;
     }
+    function loadScramjetV1Tab(t,url,addHistory=true){
+      t.expectedEngine='scramjet-v1';
+      t.sourceUrl=url;
+      if(addHistory){
+        const currentHistory=browserShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
+        if(currentHistory!==url){
+          t.history=t.history.slice(0,t.index+1);
+          t.history.push(url);
+          t.index=t.history.length-1;
+        }
+      }
+      const navigationIntent=t.navigationIntent || '';
+      installScramjetV1().then(ok=>{
+        if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
+        if(!ok || !scramjetV1Controller){
+          t.url=url;
+          setTabMeta(t,url,false);
+          t.actualEngine='scramjet-v1-failed';
+          setFrameSandbox(t,true);
+          clearFrameDocument(t);
+          t.frame.srcdoc=proxyFailureHtml(scramjetV1InstallError,'Scramjet v1',{allowDirect:true});
+          return;
+        }
+        if(t.scramjetFrame && t.scramjetVersion!=='v1') replaceTabFrame(t);
+        if(!t.scramjetFrame){
+          setFrameSandbox(t,true);
+          t.frame.removeAttribute('src');
+          clearFrameDocument(t);
+          installPopupBridge(t);
+          t.scramjetFrame=scramjetV1Controller.createFrame(t.frame);
+          t.scramjetVersion='v1';
+          t.scramjetFrame.addEventListener?.('urlchange',event=>{
+            const next=browserShellSourceUrl(String(event.url || '')) || String(event.url || '');
+            if(!next) return;
+            const previousSource=browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
+            const currentHistory=browserShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
+            if(t.scramjetHistoryPending){
+              t.scramjetHistoryPending=false;
+              if(t.index>=0) t.history[t.index]=next;
+            }else if(next!==currentHistory && next!==previousSource){
+              t.history=t.history.slice(0,t.index+1);
+              t.history.push(next);
+              t.index=t.history.length-1;
+            }
+            t.url=next;
+            t.sourceUrl=next;
+            t.title=titleForUrl(next);
+            t.icon=iconForUrl(next);
+            renderTabs();
+            if(t.id===state.active) win.querySelector('.urlbar').value=browserShellDisplayValue(next);
+            updateBrowserShellLocation(next,t.id);
+            setTimeout(()=>syncLoadedTabIcon(t),120);
+          });
+        }
+        setTabMeta(t,url,false);
+        t.scramjetHistoryPending=true;
+        clearFrameDocument(t);
+        try{
+          t.scramjetFrame.go(url);
+          markBrowserEngine(t,'scramjet-v1',String(t.frame.getAttribute('src') || url),'scramjet-v1');
+        }catch(error){
+          t.actualEngine='scramjet-v1-failed';
+          t.frame.srcdoc=proxyFailureHtml(error?.message || 'Scramjet v1 could not open this page.','Scramjet v1',{allowDirect:true});
+        }
+      }).catch(()=>{
+        if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
+        t.actualEngine='scramjet-v1-failed';
+      });
+    }
     function loadScramjetTab(t,url,addHistory=true){
       t.expectedEngine='scramjet';
       t.sourceUrl=url;
@@ -10877,6 +11025,8 @@
             if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
             loadTab(t,finalUrl,true,'rammerhead',url);
           });
+        }else if(mode==='scramjet-v1'){
+          loadScramjetV1Tab(t,url,true);
         }else if(mode==='scramjet'){
           loadScramjetTab(t,url,true);
         }else if(mode==='ultraviolet'){
@@ -10929,6 +11079,8 @@
           if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
           loadTab(t,finalUrl,true,'rammerhead');
         });
+      }else if(mode==='scramjet-v1'){
+        loadScramjetV1Tab(t,url,true);
       }else if(mode==='scramjet'){
         loadScramjetTab(t,url,true);
       }else if(mode==='ultraviolet'){
@@ -10984,7 +11136,9 @@
         }
         const source=browserShellSourceUrl(stored) || stored;
         const engine=selectedBrowserMode(source);
-        if(engine==='scramjet'){
+        if(engine==='scramjet-v1'){
+          loadScramjetV1Tab(t,source,false);
+        }else if(engine==='scramjet'){
           loadScramjetTab(t,source,false);
         }else if(engine==='ultraviolet'){
           installUltraviolet().then(ok=>{
@@ -12860,6 +13014,7 @@ Auto uses Scrapmmy with Libby by default and can recover with another relay if t
           <select id="settingBrowserMode">
             <option value="auto">Auto (Scrapmmy + Libby)</option>
             <option value="scramjet">Use Scrapmmy</option>
+            <option value="scramjet-v1">Use Scramjet v1</option>
             <option value="ultraviolet">Use Violet</option>
             <option value="iframe">Iframe</option>
           </select>

@@ -19,6 +19,7 @@ const require = createRequire(join(__dirname, "package.json"));
 const { uvPath } = require("@titaniumnetwork-dev/ultraviolet");
 const { baremuxPath } = require("@mercuryworkshop/bare-mux/node");
 const { scramjetPath } = require("@mercuryworkshop/scramjet/path");
+const { scramjetPath: scramjetV1Path } = require("@mercuryworkshop/scramjet-v1/path");
 const scramjetControllerPath = dirname(require.resolve("@mercuryworkshop/scramjet-controller"));
 const epoxyPath = join(dirname(require.resolve("@mercuryworkshop/epoxy-transport")), "..", "dist");
 const libcurlPath = dirname(require.resolve("@mercuryworkshop/libcurl-transport"));
@@ -671,6 +672,10 @@ app.use((req, res, next) => {
     "/uv/uv.handler.js",
     "/baremux/index.mjs",
     "/scramjet/scramjet.js",
+    "/scramjet-v1/scramjet.all.js",
+    "/scramjet-v1/scramjet.sync.js",
+    "/scramjet-v1/scramjet.wasm.wasm",
+    "/scramjet-v1.sw.js",
     "/nyx-scramjet-runtime-guard.js"
   ]);
   const noStorePrefix = /^\/(?:assets\/(?:gms-games|reds-misc)\/|gms-games-|reds-misc-)/i.test(req.path);
@@ -12349,6 +12354,7 @@ app.use(express.static(staticRoot));
 app.use("/assets/vendor/katex/", express.static(katexPath));
 app.use("/uv/", express.static(uvPath));
 app.use("/scramjet/", express.static(scramjetPath));
+app.use("/scramjet-v1/", express.static(scramjetV1Path));
 app.use("/controller/", express.static(scramjetControllerPath));
 app.use("/baremux/", express.static(baremuxPath));
 app.use("/epoxy/", express.static(epoxyPath));

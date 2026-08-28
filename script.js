@@ -4520,6 +4520,17 @@
     const source=main?.querySelector('.settings-section.active');
     if(!app || !main || !source) return;
 
+    // The browser settings overlay is assembled separately from the setup
+    // screen. Keep its proxy selector in sync with the supported engines.
+    const browserModeSelect=source.querySelector('[data-browser-mode-select]');
+    if(browserModeSelect && !browserModeSelect.querySelector('option[value="scramjet-v1"]')){
+      const option=document.createElement('option');
+      option.value='scramjet-v1';
+      option.textContent='Scramjet v1';
+      const ultravioletOption=browserModeSelect.querySelector('option[value="ultraviolet"]');
+      browserModeSelect.insertBefore(option,ultravioletOption || null);
+    }
+
     app.classList.add('nyx-settings-dashboard');
     main.querySelector(':scope > h1')?.remove();
     const settingsIcons={
@@ -4930,6 +4941,7 @@
     tab.frame.classList.toggle('transparent-internal-page',clearInternal);
     tab.frame.setAttribute('allowtransparency','true');
     tab.frame.style.backgroundColor=clearInternal?'transparent':'';
+    applyJetBlackInternalTheme(tab.frame);
     tab.frame.removeAttribute('src');
     tab.frame.srcdoc=browserShellPageSrcdoc(page);
     tab.frame.classList.add('active');
@@ -5115,6 +5127,7 @@
     tab.frame.classList.toggle('transparent-internal-page',clearInternal);
     tab.frame.setAttribute('allowtransparency','true');
     tab.frame.style.backgroundColor=clearInternal?'transparent':'';
+    applyJetBlackInternalTheme(tab.frame);
     tab.frame.removeAttribute('src');
     tab.frame.srcdoc=browserShellPageSrcdoc(page);
     tab.frame.classList.add('active');
@@ -5125,6 +5138,24 @@
     if(name==='developer') showNyxErudaPanel(state.win);
     else hideNyxErudaPanel();
     return true;
+  }
+  function applyJetBlackInternalTheme(frame){
+    if(!frame || frame.dataset.nyxJetBlackThemePending==='true') return;
+    frame.dataset.nyxJetBlackThemePending='true';
+    frame.addEventListener('load',()=>{
+      delete frame.dataset.nyxJetBlackThemePending;
+      const doc=frame.contentDocument;
+      if(!doc?.head || doc.getElementById('nyxJetBlackTheme')) return;
+      const style=document.createElement('style');
+      style.id='nyxJetBlackTheme';
+      style.textContent=`
+        html,body{background:#000!important;background-image:none!important}
+        html{--nyx-page-canvas:#000!important;--nyx-page-top:#000!important;--nyx-page-field:#000!important;--nyx-page-panel:#000!important;--nyx-page-active:#000!important;--nyx-page-line:var(--nyx-page-accent,#8fb8ff)!important}
+        :is(.shell-page,.browser-shell-page,.settings-app,.settings-main,.settings-side,.settings-section .settings-block,.settings-card,.settings-app :is(input,select,textarea,.settings-input,.settings-select,.panic-key-display,.settings-action,.settings-block button),.quick-tile,.quick-icon,.quick-combo){background-color:#000!important;background-image:none!important}
+        :is(.settings-side,.settings-main,.settings-section .settings-block,.settings-card,.settings-app :is(input,select,textarea,.settings-input,.settings-select,.panic-key-display,.settings-action,.settings-block button),.quick-tile,.quick-icon,.quick-combo){border-color:var(--nyx-page-line)!important}
+      `;
+      doc.head.appendChild(style);
+    },{once:true});
   }
   //desktop-app-drag
   function canDragDesktopAppSource(el){
@@ -7611,6 +7642,16 @@
     }
     await Promise.all(names.map(name=>deleteIndexedDb(name)));
   }
+  async function repairScramjetV1Storage(){
+    if(navigator.serviceWorker){
+      const registration=await navigator.serviceWorker.getRegistration('/~/sj-v1/').catch(()=>null);
+      await registration?.unregister?.().catch(()=>null);
+    }
+    // v1 and v2 both use the legacy "$scramjet" database name but expect
+    // different object-store layouts. Remove the incompatible layout only
+    // when v1 reports that exact schema error; v2 has its own repair path.
+    await repairScramjetStorage();
+  }
   async function repairScramjetCaches(){
     if(!window.caches?.keys) return;
     const names=await caches.keys().catch(()=>[]);
@@ -7790,7 +7831,19 @@
       const serviceworker=await waitForServiceWorkerScript(registration,scramjetV1ServiceWorkerUrl,'/~/sj-v1/');
       if(!serviceworker) throw new Error('Scramjet v1 service worker did not activate');
       step='initializing controller';
-      if(!scramjetV1Controller) scramjetV1Controller=await initializeScramjetV1Controller(serviceworker);
+      try{
+        if(!scramjetV1Controller) scramjetV1Controller=await initializeScramjetV1Controller(serviceworker);
+      }catch(initError){
+        if(!isScramjetIdbShapeError(initError)) throw initError;
+        step='repairing incompatible Scramjet storage';
+        await repairScramjetV1Storage();
+        step='restarting Scramjet v1 service worker';
+        const repairedRegistration=await navigator.serviceWorker.register(scramjetV1ServiceWorkerUrl,{scope:'/~/sj-v1/',updateViaCache:'none'});
+        const repairedServiceworker=await waitForServiceWorkerScript(repairedRegistration,scramjetV1ServiceWorkerUrl,'/~/sj-v1/');
+        if(!repairedServiceworker) throw new Error('Scramjet v1 service worker did not activate after storage repair');
+        step='initializing controller after storage repair';
+        scramjetV1Controller=await initializeScramjetV1Controller(repairedServiceworker);
+      }
       scramjetV1InstallError='';
       return true;
     })().catch(error=>{

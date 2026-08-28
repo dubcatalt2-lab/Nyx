@@ -11,7 +11,7 @@
 @import url("./css/home-utilities.css?v=20260726-copyright-v8");
 @import url("./css/hover-consistency.css?v=20260818-round-home-shortcuts-v19");
 @import url("./css/weather-redesign.css?v=20260730-symbols-v12");
-@import url("./css/theme-tints.css?v=20260822-black-home-v32");
+@import url("./css/theme-tints.css?v=20260827-jet-black-theme-v33");
 @import url("./css/setup-wizard.css?v=20260823-account-step-v9");
 @import url("./css/credits.css?v=20260730-discord-view-v6");
 @import url("./css/interface-scale.css?v=20260727-themed-menu-v9");
@@ -4285,4 +4285,65 @@ html[data-nyx-theme] body.browser-shell .browser-shell-page:has(.apps-launch-gri
 .nyx-browser-link-menu button:is(:hover,:focus-visible){
   outline:0;
   background:color-mix(in srgb,var(--nyx-chrome-accent,#8fb8ff) 18%,#181a20);
+}
+
+/* Theme selection is accent-only: surfaces stay Nyx black, while each theme
+   supplies the border/focus color. Explicit background modes remain intact. */
+html[data-nyx-theme] body.browser-shell:not(.three-d-backgrounds):not(.custom-bg-active){
+  --nyx-unified-canvas:#000!important;
+  --nyx-unified-top:#000!important;
+  --nyx-unified-field:#000!important;
+  --nyx-home-panel:#000!important;
+  --nyx-home-panel-soft:#000!important;
+  --nyx-chrome-base:#000!important;
+  --nyx-chrome-deep:#000!important;
+  --nyx-chrome-active:#000!important;
+  --nyx-chrome-hover:#000!important;
+  --theme-bg:#000!important;
+  --theme-panel:#000!important;
+  --theme-soft:#000!important;
+  --theme-border:rgba(255,255,255,.12)!important;
+  --nyx-home-line:rgba(255,255,255,.12)!important;
+  --nyx-home-wordmark:#f1f3f7!important;
+  --nyx-shell-icon:#f1f3f7!important;
+  --nyx-final-shortcut-icon:#f1f3f7!important;
+  --nyx-dot-color:#202633!important;
+  background-color:#000!important;
+  background-image:none!important;
+}
+html[data-nyx-theme] body.browser-shell:not(.three-d-backgrounds):not(.custom-bg-active)
+  :is(
+    .top-os,.browser-window.browser-home-page,.browser-home,.shell-page,.browser-shell-page,
+    .settings-app,.settings-main,.settings-side,.settings-block,.settings-card,
+    .browser-shell-settings-overlay,.browser-shell-settings-panel,.nyx-settings-side,
+    .nyx-settings-category,.nyx-settings-control,.nyx-settings-filter,.browser-mode-menu,
+    .browser-mode-url,.browser-mode-address input,.browser-mode-address textarea,
+    .settings-input,.settings-select,input,select,textarea,.quick-tile,.quick-icon,
+    .home-shortcut-open,.home-shortcut-menu-btn,.home-shortcut-add,.browser-mode-bookmark,
+    .browser-mode-weather,.game-card,.app-card,.weather-panel
+  ){
+  background-color:#000!important;
+  background-image:none!important;
+}
+html[data-nyx-theme] body.browser-shell:not(.three-d-backgrounds):not(.custom-bg-active)
+  :is(
+    .top-os,.browser-window.browser-home-page,.browser-home,.settings-main,.settings-side,.settings-block,.settings-card,
+    .browser-shell-settings-panel,.nyx-settings-side,.nyx-settings-category,
+    .nyx-settings-filter,.browser-mode-menu,.browser-mode-url,.browser-mode-address input,
+    .browser-mode-address textarea,.settings-input,.settings-select,input,select,textarea,
+    .quick-tile,.home-shortcut-open,.home-shortcut-menu-btn,.home-shortcut-add,
+    .browser-mode-bookmark,.browser-mode-weather,.game-card,.app-card,.weather-panel
+  ){
+  border-color:rgba(255,255,255,.12)!important;
+}
+html[data-nyx-theme] body.browser-shell:not(.three-d-backgrounds):not(.custom-bg-active)
+  :is(
+    .top-os,.browser-window.browser-home-page,.browser-home,.settings-main,.settings-side,.settings-block,.settings-card,
+    .browser-shell-settings-panel,.nyx-settings-side,.nyx-settings-category,
+    .nyx-settings-filter,.browser-mode-menu,.browser-mode-url,.browser-mode-address input,
+    .browser-mode-address textarea,.settings-input,.settings-select,input,select,textarea,
+    .quick-tile,.home-shortcut-open,.home-shortcut-menu-btn,.home-shortcut-add,
+    .browser-mode-bookmark,.browser-mode-weather,.game-card,.app-card,.weather-panel
+  ):is(:hover,:focus-visible,:focus-within){
+  border-color:var(--nyx-chrome-accent)!important;
 }

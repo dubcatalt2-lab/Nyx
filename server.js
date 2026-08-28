@@ -12350,10 +12350,6 @@ app.use((error, req, res, next) => {
   res.status(tooLarge ? 413 : 400).json({ error: tooLarge ? "That upload chunk is too large." : "The API request could not be processed." });
 });
 
-app.use(express.static(staticRoot));
-app.use("/assets/vendor/katex/", express.static(katexPath));
-app.use("/uv/", express.static(uvPath));
-app.use("/scramjet/", express.static(scramjetPath));
 // Scramjet v1 and v2 both ship with a "$scramjet" IndexedDB name, but their
 // schemas are incompatible. Serve v1 with a private name so switching engines
 // cannot corrupt either controller's storage.
@@ -12364,6 +12360,10 @@ app.get("/scramjet-v1/scramjet.all.js", (_req, res) => {
   res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
   res.send(scramjetV1Bundle);
 });
+app.use(express.static(staticRoot));
+app.use("/assets/vendor/katex/", express.static(katexPath));
+app.use("/uv/", express.static(uvPath));
+app.use("/scramjet/", express.static(scramjetPath));
 app.use("/scramjet-v1/", express.static(scramjetV1Path));
 app.use("/controller/", express.static(scramjetControllerPath));
 app.use("/baremux/", express.static(baremuxPath));

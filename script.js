@@ -2997,6 +2997,7 @@
   })();`;
   const proxyStateVersion='nyx-proxy-state-20260814-private-tabs-v13';
   const scramjetStateVersion='nyx-scramjet-state-20260814-private-tabs-v2';
+  const scramjetV1StateVersion='nyx-scramjet-v1-ready-before-route-v5';
   const scramjetServiceWorkerUrl='/scramjet.sw.js?v=nyx-sj-20260814-private-tabs-v3';
   const scramjetV1RuntimeUrl='/scramjet-v1/scramjet.all.js?v=nyx-sj-v1-ready-before-route-v5';
   const scramjetV1ServiceWorkerUrl='/scramjet-v1.sw.js?v=nyx-sj-v1-ready-before-route-v5';
@@ -6922,7 +6923,7 @@
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible') heartbeat()});
   }
   async function installBareMuxTransport(){
-    const { BareMuxConnection } = await import('/baremux/index.mjs');
+    const { BareMuxConnection } = await import('/baremux/index.mjs?v=nyx-baremux-worker-start-v2');
     const connection = bareMuxConnection || (bareMuxConnection = new BareMuxConnection('/baremux/worker.js'));
     const wisp=wispUrl();
     const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -7767,6 +7768,13 @@
     scramjetTransportKey='';
     store.setText('nyx.scramjetStateVersion',scramjetStateVersion);
   }
+  async function ensureFreshScramjetV1State(){
+    if(store.text('nyx.scramjetV1StateVersion','')===scramjetV1StateVersion) return;
+    await repairScramjetV1Storage();
+    scramjetV1Controller=null;
+    bareMuxConnection=null;
+    store.setText('nyx.scramjetV1StateVersion',scramjetV1StateVersion);
+  }
   function installUltraviolet(){
     if(uvInstallPromise) return uvInstallPromise;
     uvInstallPromise=(async()=>{
@@ -7828,6 +7836,8 @@
     scramjetV1InstallPromise=(async()=>{
       if(location.protocol==='file:') throw new Error('Scramjet v1 needs Nyx to be opened from its website, not as a local file.');
       if(!('serviceWorker' in navigator)) throw new Error('This browser does not support the Service Workers Scramjet v1 needs.');
+      step='resetting stale Scramjet v1 state';
+      await ensureFreshScramjetV1State();
       step='loading Scramjet v1 assets';
       if(!window.$scramjetLoadController) await loadScript(scramjetV1RuntimeUrl);
       step='starting relay';

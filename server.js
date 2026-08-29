@@ -6795,17 +6795,20 @@ async function nyxifyFullTrack(trackId) {
     candidates = channelMatches;
   }
   candidates = candidates.filter(video => nyxifyTrustedFullTrackSource(video, artist));
-  if (!candidates.length && String(process.env.NYX_YOUTUBE_API_KEY || "").trim()) {
+  const hasArtistChannelCandidate = candidates.some(video => nyxifyArtistChannelMatches(video, artist));
+  if ((!candidates.length || !hasArtistChannelCandidate) && String(process.env.NYX_YOUTUBE_API_KEY || "").trim()) {
+    const publicCandidates = candidates;
     const officialCatalogResults = await nyxTubeSearch(`${artist} ${title} official music video audio`, 16);
-    candidates = officialCatalogResults.filter(video => /^[A-Za-z0-9_-]{11}$/.test(String(video?.id || ""))
+    const officialCandidates = officialCatalogResults.filter(video => /^[A-Za-z0-9_-]{11}$/.test(String(video?.id || ""))
       && Number(video?.durationSeconds) >= 45
       && nyxifyTrackTitleMatches(video, title)
       && nyxifyOfficialArtistScore(video, artist) >= 80
       && nyxifyDurationMatches(video, expectedDuration));
-    if (!candidates.length) {
-      const top = officialCatalogResults[0];
-      if (nyxifyMultilingualTopMatch(top, artist, expectedDuration)) candidates = [top];
-    }
+    const top = officialCatalogResults[0];
+    if (nyxifyMultilingualTopMatch(top, artist, expectedDuration)
+      && !officialCandidates.some(video => video.id === top.id)) officialCandidates.unshift(top);
+    candidates = [...officialCandidates, ...publicCandidates]
+      .filter((video, index, list) => list.findIndex(candidate => candidate.id === video.id) === index);
   }
   candidates = candidates.filter(video => nyxifyTrustedFullTrackSource(video, artist));
   candidates.sort((left, right) => nyxifyFullTrackScore(right, track) - nyxifyFullTrackScore(left, track));

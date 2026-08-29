@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <title>NyxTube</title>
   <link rel="icon" type="image/svg+xml" href="/assets/icons/shortcut-youtube.svg">
-  <link rel="stylesheet" href="./styles.css?v=20260828-nyxtube-v4">
+  <link rel="stylesheet" href="./styles.css?v=20260828-nyxtube-v5">
   <link rel="stylesheet" href="./responsive.css?v=20260828-nyxtube-v5">
 </head>
 <body>
@@ -77,7 +77,7 @@
         </div>
       </div>
       <div class="watch-meta">
-        <div class="channel-mark" data-watch-channel-mark></div><div class="watch-copy"><h1 data-watch-title></h1><p data-watch-creator></p></div>
+        <button class="channel-mark" data-watch-channel-mark type="button" aria-label="Open creator channel"></button><div class="watch-copy"><h1 data-watch-title></h1><p class="watch-byline"><button class="watch-channel-name" data-watch-creator type="button"></button><span class="watch-video-meta" data-watch-video-meta></span></p></div>
         <div class="watch-options"><label><span>Quality</span><select disabled title="YouTube selects playback quality automatically"><option value="auto">Auto</option></select></label><button data-watch-caption-option type="button">Captions <span>Off</span></button><a data-watch-source target="_blank" rel="noopener noreferrer" aria-label="Open on YouTube"><svg><use href="#icon-external"></use></svg></a></div>
       </div>
       <div class="watch-stats" aria-label="Video statistics"><span><strong data-watch-views>0</strong><small>Views</small></span><span><strong data-watch-likes>0</strong><small>Likes</small></span><span><strong data-watch-comments-count>0</strong><small>Comments</small></span></div>
@@ -106,6 +106,6 @@
       </div>
     </section>
   </main>
-  <script src="./app.js?v=20260828-nyxtube-v7"></script>
+  <script src="./app.js?v=20260828-nyxtube-v8"></script>
 </body>
 </html>

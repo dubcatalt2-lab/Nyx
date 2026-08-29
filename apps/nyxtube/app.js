@@ -18,7 +18,7 @@
     "notice", "search-form", "search-input", "feed-title", "result-count", "video-grid",
     "watch-stage", "watch-player", "watch-loading", "watch-center-play", "watch-toggle", "watch-time",
     "watch-mute", "watch-captions", "watch-caption-option", "watch-fullscreen", "watch-progress",
-    "watch-title", "watch-creator", "watch-channel-mark", "watch-source", "watch-description", "watch-related", "short-stage", "short-player",
+    "watch-title", "watch-creator", "watch-video-meta", "watch-channel-mark", "watch-source", "watch-description", "watch-related", "short-stage", "short-player",
     "short-loading", "short-center-play", "short-mute", "short-captions", "short-fullscreen",
     "short-progress", "short-title", "short-creator", "profile-button", "profile-avatar",
     "watch-settings", "watch-settings-menu", "watch-speed", "watch-settings-captions",
@@ -266,14 +266,48 @@
     refs.watchSettingsCaptions.title = video?.captions ? "" : "Captions are not available for this video";
     refs.watchSettingsCaptions.value = state.watchCaptions && video?.captions ? "on" : "off";
   }
+  function watchChannelUrl(video = state.watchVideo) {
+    const channelId = String(video?.channelId || "").trim();
+    return /^UC[A-Za-z0-9_-]{22}$/.test(channelId) ? `https://www.youtube.com/channel/${channelId}` : "";
+  }
+  function openWatchChannel() {
+    const url = watchChannelUrl();
+    if (!url) return;
+    if (parent !== window) parent.postMessage({ type: "nyx:navigate", url }, location.origin);
+    else window.open(url, "_blank", "noopener,noreferrer");
+  }
+  function renderWatchChannel(video) {
+    const creator = String(video?.creator || "YouTube").trim() || "YouTube";
+    const channelUrl = watchChannelUrl(video);
+    refs.watchCreator.textContent = creator;
+    refs.watchVideoMeta.textContent = [viewsLabel(video?.viewCount), dateLabel(video?.publishedAt)].filter(Boolean).join(" · ");
+    refs.watchCreator.disabled = !channelUrl;
+    refs.watchChannelMark.disabled = !channelUrl;
+    refs.watchCreator.title = channelUrl ? `Open ${creator}'s channel` : "Channel page unavailable";
+    refs.watchChannelMark.title = refs.watchCreator.title;
+    refs.watchCreator.setAttribute("aria-label", refs.watchCreator.title);
+    refs.watchChannelMark.setAttribute("aria-label", refs.watchCreator.title);
+    const fallback = () => {
+      refs.watchChannelMark.replaceChildren();
+      refs.watchChannelMark.textContent = creator.slice(0, 1).toUpperCase() || "Y";
+    };
+    const avatarUrl = String(video?.channelAvatar || "").trim();
+    if (!avatarUrl) { fallback(); return; }
+    const image = document.createElement("img");
+    image.alt = "";
+    image.loading = "eager";
+    image.referrerPolicy = "no-referrer";
+    image.src = avatarUrl;
+    image.addEventListener("error", fallback, { once: true });
+    refs.watchChannelMark.replaceChildren(image);
+  }
   function openWatch(video, { recoveryMessage = "" } = {}) {
     if (!video?.id) return;
     finishWatchSpace({ cancel: true });
     clearTimeout(state.watchRecoveryTimer); state.watchRecoveryTimer = 0;
     state.watchVideo = video; showView("watch"); notice(recoveryMessage); closeWatchSettings();
     refs.watchTitle.textContent = video.title || "Untitled video";
-    refs.watchCreator.textContent = [video.creator || "YouTube", viewsLabel(video.viewCount), dateLabel(video.publishedAt)].filter(Boolean).join(" · ");
-    refs.watchChannelMark.textContent = (video.creator || "Y").trim().slice(0, 1).toUpperCase();
+    renderWatchChannel(video);
     refs.watchDescription.textContent = String(video.description || "No description was provided for this video.");
     refs.watchViews.textContent = exactCount(video.viewCount);
     refs.watchLikes.textContent = exactCount(video.likeCount);
@@ -573,6 +607,7 @@
       renderProfile(event.data.profile);
     });
     refs.profileButton.addEventListener("click", () => parent.postMessage({ type: "nyx:nyxtube-open-profile", uid: state.profile.uid }, location.origin));
+    refs.watchChannelMark.addEventListener("click", openWatchChannel); refs.watchCreator.addEventListener("click", openWatchChannel);
     document.addEventListener("visibilitychange", () => { if (document.hidden) finishWatchSpace({ cancel: true }); else requestProfile(); });
     addEventListener("blur", () => finishWatchSpace({ cancel: true }));
     refs.searchForm.addEventListener("submit", event => { event.preventDefault(); const query = refs.searchInput.value.trim(); if (query) loadFeed(query); });

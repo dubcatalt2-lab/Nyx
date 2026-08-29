@@ -43,10 +43,11 @@ try {
   });
   await page.route("**/api/nyx-ai", async route => {
     chatRequests.push({ headers: await route.request().allHeaders(), body: route.request().postDataJSON() });
+    const formattedAnswer = "Screen frame received. Solve for \\(x\\).\n\n\\[\n-6x = 42 - 6 \\quad\\Rightarrow\\quad -6x = 36\n\\]\n\n\\[\nx = \\frac{36}{-6} = -6\n\\]\n\n\\[\n\\boxed{-6}\n\\]";
     await route.fulfill({
       status: 200,
       headers: { "content-type": "text/event-stream; charset=utf-8" },
-      body: `data: ${JSON.stringify({ choices: [{ delta: { content: "Screen frame received." } }] })}\n\ndata: [DONE]\n\n`
+      body: `data: ${JSON.stringify({ choices: [{ delta: { content: formattedAnswer } }] })}\n\ndata: [DONE]\n\n`
     });
   });
 
@@ -87,7 +88,11 @@ try {
   await page.waitForFunction(() => document.querySelector("#conversation")?.textContent?.includes("Screen frame received."));
   assert(chatRequests.length === 1, "Screen prompt did not make exactly one AI request");
   assert(/^data:image\/jpeg;base64,/.test(chatRequests[0].body?.image?.dataUrl || ""), "Screen prompt did not attach a captured JPEG frame");
+  assert(chatRequests[0].body?.image?.screenCapture === true, "Screen prompt did not identify the image as an active screen-share frame");
   assert(chatRequests[0].headers["x-nyx-ai-base-url"] === "https://api.ofox.ai/v1", "Custom base URL was not sent with the chat request");
+  assert(await page.locator(".ai-answer .katex-display").count() === 3, "Multiline display math was not rendered through KaTeX");
+  assert(await page.locator(".ai-answer .katex").count() >= 4, "Inline and display math were not both rendered through KaTeX");
+  assert(!(await page.locator(".ai-answer").innerText()).includes("\\["), "Raw display-math delimiters remained visible in the AI answer");
   assert(await page.locator("#screenPreview").isVisible(), "Screen sharing stopped after one prompt instead of remaining user-controlled");
   await page.locator("#stopScreenShare").click();
   assert(await page.locator("#screenPreview").isHidden(), "Stop did not end and hide screen sharing");
@@ -96,7 +101,7 @@ try {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   assert(!overflow, "AI workspace has horizontal overflow at mobile width");
   assert(pageErrors.length === 0, `Browser errors: ${pageErrors.join(" | ")}`);
-  console.log("AI workspace test: Ofox/TokenMix profiles, provider switching, screen capture, stop control, and mobile layout passed");
+  console.log("AI workspace test: provider profiles, screen capture, multiline KaTeX formatting, stop control, and mobile layout passed");
 } finally {
   await browser.close();
 }

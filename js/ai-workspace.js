@@ -689,6 +689,18 @@
         continue;
       }
 
+      const displayFence=line.trim();
+      if(displayFence==='\\['||displayFence==='$$'){
+        const closeFence=displayFence==='\\['?'\\]':'$$';
+        let closeIndex=index+1;
+        while(closeIndex<lines.length&&lines[closeIndex].trim()!==closeFence) closeIndex+=1;
+        if(closeIndex<lines.length){
+          blocks.push(`<div class="ai-math-block">${mathMarkup(lines.slice(index+1,closeIndex).join('\n'),true)}</div>`);
+          index=closeIndex+1;
+          continue;
+        }
+      }
+
       const displayMath=line.match(/^\s*(?:\\\[([\s\S]*?)\\\]|\$\$([\s\S]*?)\$\$)\s*$/);
       if(displayMath){
         blocks.push(`<div class="ai-math-block">${mathMarkup(displayMath[1]??displayMath[2],true)}</div>`);
@@ -888,7 +900,7 @@
           const originalWidth=Math.max(1,image.naturalWidth||1);
           const originalHeight=Math.max(1,image.naturalHeight||1);
           if(source.dataUrl.length<=MAX_PREPARED_IMAGE_CHARS){
-            resolve({dataUrl:source.dataUrl,mime:source.type,width:originalWidth,height:originalHeight});
+            resolve({dataUrl:source.dataUrl,mime:source.type,width:originalWidth,height:originalHeight,screenCapture:source.screenCapture===true});
             return;
           }
           const canvas=document.createElement('canvas');
@@ -907,7 +919,7 @@
             scale*=.82;
           }
           if(!prepared||prepared.length>MAX_PREPARED_IMAGE_CHARS) throw new Error('Nyx could not prepare that image within the upload limit.');
-          resolve({dataUrl:prepared,mime:'image/jpeg',width:originalWidth,height:originalHeight});
+          resolve({dataUrl:prepared,mime:'image/jpeg',width:originalWidth,height:originalHeight,screenCapture:source.screenCapture===true});
         }catch(error){reject(error)}
       };
       image.onerror=()=>reject(new Error('Nyx could not decode that image.'));

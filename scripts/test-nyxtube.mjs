@@ -3,8 +3,8 @@ import { chromium } from "playwright";
 const baseUrl = process.env.NYX_TEST_BASE_URL || "http://127.0.0.1:8080";
 const livePlayer = process.env.NYX_TEST_LIVE_PLAYER === "1";
 const videos = [
-  { id: "dQw4w9WgXcQ", title: "A test documentary", creator: "Nyx Test", description: "A full documentary description for the NyxTube watch page.", publishedAt: "2026-08-20T12:00:00.000Z", thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg", durationSeconds: 212, viewCount: 1203400, likeCount: 532, commentCount: 47, captions: true, isShort: false, sourceUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
-  { id: "aqz-KE-bpKQ", title: "A second video", creator: "Test Studio", description: "This description must be visible below the selected video.", publishedAt: "2026-08-21T12:00:00.000Z", thumbnail: "https://i.ytimg.com/vi/aqz-KE-bpKQ/hqdefault.jpg", durationSeconds: 73, viewCount: 8421, likeCount: 42, commentCount: 3, captions: true, isShort: true, sourceUrl: "https://www.youtube.com/watch?v=aqz-KE-bpKQ" },
+  { id: "dQw4w9WgXcQ", title: "A test documentary", creator: "Nyx Test", channelId: "UC1234567890123456789012", channelAvatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Crect width='48' height='48' fill='%2386a9e8'/%3E%3C/svg%3E", description: "A full documentary description for the NyxTube watch page.", publishedAt: "2026-08-20T12:00:00.000Z", thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg", durationSeconds: 212, viewCount: 1203400, likeCount: 532, commentCount: 47, captions: true, isShort: false, sourceUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+  { id: "aqz-KE-bpKQ", title: "A second video", creator: "Test Studio", channelId: "UCabcdefghijklmnopqrstuv", channelAvatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%23d990b3'/%3E%3C/svg%3E", description: "This description must be visible below the selected video.", publishedAt: "2026-08-21T12:00:00.000Z", thumbnail: "https://i.ytimg.com/vi/aqz-KE-bpKQ/hqdefault.jpg", durationSeconds: 73, viewCount: 8421, likeCount: 42, commentCount: 3, captions: true, isShort: true, sourceUrl: "https://www.youtube.com/watch?v=aqz-KE-bpKQ" },
 ];
 const shorts = [videos[1], { ...videos[1], id: "M7lc1UVf-VE", title: "Next test Short", creator: "Next Studio" }];
 
@@ -23,6 +23,8 @@ try {
   page.on("pageerror", error => pageErrors.push(error.message));
   if (!livePlayer) await page.addInitScript(() => {
     window.__nyxTubeOpenedProfiles = [];
+    window.__nyxTubeOpenedChannels = [];
+    window.open = url => { window.__nyxTubeOpenedChannels.push(String(url)); return null; };
     addEventListener("message", event => {
       if (event.data?.type === "nyx:nyxtube-profile-request") {
         postMessage({ type: "nyx:nyxtube-profile", requestId: event.data.requestId, profile: { uid: "nyxtube-test-user", signedIn: true, displayName: "Nyx Tester", handle: "@tester", avatarUrl: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%2386a9e8'/%3E%3C/svg%3E" } }, location.origin);
@@ -101,6 +103,14 @@ try {
   console.log("NyxTube test: watch player ready");
   if (process.env.NYX_TEST_SCREENSHOT_PATH) await page.screenshot({ path: process.env.NYX_TEST_SCREENSHOT_PATH.replace(/\.png$/i, "-watch.png"), fullPage: true });
   assert(await page.locator("[data-watch-title]").textContent() === "A second video", "Watch metadata did not match the selected video");
+  await page.locator("[data-watch-channel-mark] img").waitFor();
+  assert(await page.locator("[data-watch-creator]").textContent() === "Test Studio", "Watch page did not render the creator name as a channel action");
+  if (!livePlayer) {
+    await page.locator("[data-watch-channel-mark]").click();
+    await page.waitForFunction(() => window.__nyxTubeOpenedChannels.includes("https://www.youtube.com/channel/UCabcdefghijklmnopqrstuv"));
+    await page.locator("[data-watch-creator]").click();
+    await page.waitForFunction(() => window.__nyxTubeOpenedChannels.filter(url => url === "https://www.youtube.com/channel/UCabcdefghijklmnopqrstuv").length === 2);
+  }
   assert((await page.locator("[data-watch-description]").textContent())?.includes("visible below"), "Watch description was not rendered");
   assert(await page.locator("[data-watch-views]").textContent() === "8,421", "Watch page did not show the exact view count");
   assert(await page.locator("[data-watch-likes]").textContent() === "42", "Watch page did not show the exact like count");

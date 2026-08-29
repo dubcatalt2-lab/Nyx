@@ -17,6 +17,7 @@
     "test:nyxify-match": "node scripts/test-nyxify-full-track-match.mjs",
     "test:nyxify-player": "node scripts/test-nyxify-player.mjs",
     "test:jsdelivr-publisher": "node scripts/test-jsdelivr-publisher.mjs",
+    "test:link-generator-global-jsdelivr": "node scripts/test-link-generator-global-jsdelivr.mjs",
     "test:nyxtube": "node scripts/test-nyxtube.mjs",
     "test:utility-theme": "node scripts/test-utility-neutral-theme.mjs",
     "build:netlify": "node scripts/build-netlify.mjs",

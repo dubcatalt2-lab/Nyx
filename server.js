@@ -3859,6 +3859,20 @@ app.get("/assets/vendor/eruda.min.js", (_req, res) => {
 function linkGeneratorConfig() {
   const maxZones = Math.max(1, Math.min(10_000, Number.parseInt(process.env.LINK_GENERATOR_MAX_ZONES || "100", 10) || 100));
   const premiumBatchLimit = Math.max(1, Math.min(10, Number.parseInt(process.env.LINK_GENERATOR_PREMIUM_BATCH_LIMIT || "10", 10) || 10));
+  const githubRepository = /^[a-z0-9_.-]+\/[a-z0-9_.-]+$/i.test(String(process.env.NYX_JSDELIVR_GITHUB_REPOSITORY || "").trim())
+    ? String(process.env.NYX_JSDELIVR_GITHUB_REPOSITORY || "").trim()
+    : "";
+  const githubBranch = /^[a-z0-9._/-]{1,200}$/i.test(String(process.env.NYX_JSDELIVR_GITHUB_BRANCH || "").trim())
+    ? String(process.env.NYX_JSDELIVR_GITHUB_BRANCH || "").trim()
+    : "";
+  let githubApiBase = "https://api.github.com";
+  try {
+    const parsed = new URL(String(process.env.NYX_JSDELIVR_GITHUB_API_BASE || githubApiBase).trim());
+    const loopback = parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost" || parsed.hostname === "::1";
+    if (!parsed.username && !parsed.password && !parsed.search && !parsed.hash && (parsed.protocol === "https:" || (parsed.protocol === "http:" && loopback))) {
+      githubApiBase = parsed.href.replace(/\/$/, "");
+    }
+  } catch {}
   let origin = "";
   try {
     const parsed = new URL(process.env.NYX_PUBLIC_ORIGIN || "https://nyxlearning.org");
@@ -3872,6 +3886,10 @@ function linkGeneratorConfig() {
   return {
     apiKey: String(process.env.BUNNY_API_KEY || "").trim(),
     accessCode: String(process.env.LINK_GENERATOR_ACCESS_CODE || ""),
+    githubToken: String(process.env.NYX_JSDELIVR_GITHUB_TOKEN || "").trim(),
+    githubRepository,
+    githubBranch,
+    githubApiBase,
     origin,
     maxZones,
     premiumBatchLimit
@@ -6728,6 +6746,148 @@ function nyxifyOctaveVideo(value, providerType) {
     channelId: nyxifyCleanText(source.authorId || source.uploaderUrl, "", 120),
     durationSeconds
   };
+}
+
+const nyxJsdelivrMaxSvgFiles = 1_000;
+const nyxJsdelivrGithubApiVersion = "2022-11-28";
+let nyxJsdelivrPublishQueue = Promise.resolve();
+
+class NyxJsdelivrGithubError extends Error {
+  constructor(status, detail) {
+    super(`GitHub API ${status}: ${detail || "Request failed"}`);
+    this.name = "NyxJsdelivrGithubError";
+    this.status = status;
+  }
+}
+
+function globalNyxJsdelivrConfigured(config) {
+  return Boolean(config.githubToken && config.githubRepository);
+}
+
+function queueNyxJsdelivrPublish(task) {
+  const run = nyxJsdelivrPublishQueue.then(task, task);
+  nyxJsdelivrPublishQueue = run.catch(() => {});
+  return run;
+}
+
+function githubRepositoryApiPath(repository) {
+  return repository.split("/").map(part => encodeURIComponent(part)).join("/");
+}
+
+async function nyxJsdelivrGithubJson(config, path, options = {}) {
+  let lastError = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const response = await fetch(`${config.githubApiBase}${path}`, {
+        ...options,
+        cache: "no-store",
+        signal: options.signal || AbortSignal.timeout(15_000),
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${config.githubToken}`,
+          "X-GitHub-Api-Version": nyxJsdelivrGithubApiVersion,
+          ...(options.headers || {})
+        }
+      });
+      if (response.ok) return response.status === 204 ? null : response.json();
+      let detail = "";
+      try {
+        const payload = await response.json();
+        detail = String(payload?.message || payload?.error || "").slice(0, 500);
+        if (payload?.documentation_url) detail += ` (${payload.documentation_url})`;
+      } catch {
+        detail = String(await response.text().catch(() => "")).slice(0, 500);
+      }
+      const error = new NyxJsdelivrGithubError(response.status, detail);
+      if (![429, 500, 502, 503, 504].includes(response.status) || attempt === 2) throw error;
+      lastError = error;
+      const retryAfter = Number(response.headers.get("retry-after"));
+      await new Promise(resolve => setTimeout(resolve, Number.isFinite(retryAfter) ? Math.min(5_000, retryAfter * 1_000) : 350 * (2 ** attempt)));
+    } catch (error) {
+      if (error instanceof NyxJsdelivrGithubError && (![429, 500, 502, 503, 504].includes(error.status) || attempt === 2)) throw error;
+      if (!(error instanceof NyxJsdelivrGithubError) && attempt === 2) throw new Error(`Could not reach GitHub: ${String(error?.message || error)}`);
+      lastError = error;
+      await new Promise(resolve => setTimeout(resolve, 350 * (2 ** attempt)));
+    }
+  }
+  throw lastError || new Error("GitHub request failed.");
+}
+
+function generatedJsdelivrFileName(label, existingFiles) {
+  const prefix = String(label || "nyx")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 30) || "nyx";
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const file = `${prefix}-learning-${randomBytes(6).toString("hex")}.svg`;
+    if (!existingFiles.has(file.toLowerCase())) return file;
+  }
+  throw new Error("Could not create a unique JSDelivr filename. Try again.");
+}
+
+async function publishNyxJsdelivrLinks(config, amount, label) {
+  const repositoryPath = githubRepositoryApiPath(config.githubRepository);
+  const repository = await nyxJsdelivrGithubJson(config, `/repos/${repositoryPath}`);
+  if (repository?.private) throw new Error("The configured GitHub repository is private. JSDelivr requires a public repository.");
+  const branch = config.githubBranch || String(repository?.default_branch || "main");
+  if (!branch || branch.length > 200) throw new Error("The configured GitHub branch is invalid.");
+  const encodedBranch = encodeURIComponent(branch);
+  const reference = await nyxJsdelivrGithubJson(config, `/repos/${repositoryPath}/git/ref/heads/${encodedBranch}`);
+  const headSha = String(reference?.object?.sha || "");
+  if (!headSha) throw new Error("GitHub did not return the configured branch head.");
+  const headCommit = await nyxJsdelivrGithubJson(config, `/repos/${repositoryPath}/git/commits/${encodeURIComponent(headSha)}`);
+  const baseTreeSha = String(headCommit?.tree?.sha || "");
+  if (!baseTreeSha) throw new Error("GitHub did not return the configured repository tree.");
+  const currentTree = await nyxJsdelivrGithubJson(config, `/repos/${repositoryPath}/git/trees/${encodeURIComponent(baseTreeSha)}?recursive=1`);
+  if (currentTree?.truncated || !Array.isArray(currentTree?.tree)) throw new Error("The configured GitHub repository is too large to publish safely.");
+  const existingFiles = new Set(currentTree.tree.filter(item => item?.type === "blob").map(item => String(item.path || "").toLowerCase()));
+  const svgCount = [...existingFiles].filter(file => file.endsWith(".svg")).length;
+  if (svgCount + amount > nyxJsdelivrMaxSvgFiles) {
+    throw new Error(`The configured GitHub repository has room for ${Math.max(0, nyxJsdelivrMaxSvgFiles - svgCount)} more SVG links.`);
+  }
+  const svg = readFileSync(join(staticRoot, "apps", "jsdelivr-publisher", "nyx-source.svg"), "utf8");
+  if (!svg.trim().startsWith("<?xml") && !svg.trim().startsWith("<svg")) throw new Error("The maintained Nyx SVG is invalid.");
+  const files = [];
+  while (files.length < amount) {
+    const file = generatedJsdelivrFileName(label, existingFiles);
+    existingFiles.add(file.toLowerCase());
+    files.push(file);
+  }
+  const tree = await nyxJsdelivrGithubJson(config, `/repos/${repositoryPath}/git/trees`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      base_tree: baseTreeSha,
+      tree: files.map(file => ({ path: file, mode: "100644", type: "blob", content: svg }))
+    })
+  });
+  if (!tree?.sha) throw new Error("GitHub did not return the new repository tree.");
+  const commit = await nyxJsdelivrGithubJson(config, `/repos/${repositoryPath}/git/commits`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message: `Add ${files.length} Nyx JSDelivr link${files.length === 1 ? "" : "s"}`,
+      tree: tree.sha,
+      parents: [headSha]
+    })
+  });
+  if (!commit?.sha) throw new Error("GitHub did not return the new commit.");
+  await nyxJsdelivrGithubJson(config, `/repos/${repositoryPath}/git/refs/heads/${encodedBranch}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sha: commit.sha, force: false })
+  });
+  const encodedRepository = config.githubRepository.split("/").map(encodeURIComponent).join("/");
+  const encodedCdnBranch = encodeURIComponent(branch);
+  return files.map(file => ({
+    name: file,
+    url: `https://cdn.jsdelivr.net/gh/${encodedRepository}@${encodedCdnBranch}/${encodeURIComponent(file)}`,
+    repository: config.githubRepository,
+    branch
+  }));
 }
 
 async function nyxifyOctaveProviderSearch(provider, query) {
@@ -13253,6 +13413,7 @@ app.get("/api/link-generator/status", (_req, res) => {
   res.set("Cache-Control", "no-store").json({
     available: Boolean(config.origin && (config.accessCode || firebaseAccountModeConfigured())),
     provider: "jsdelivr",
+    globalPublisherConfigured: globalNyxJsdelivrConfigured(config),
     bunnyAvailable: Boolean(config.apiKey),
     administratorAccess: Boolean(config.accessCode),
     accountAccess: firebaseAccountModeConfigured(),
@@ -13426,10 +13587,16 @@ app.post("/api/link-generator", async (req, res) => {
         const premiumIdentity = premiumAccount ? `account:${publicUser.uid}` : clientId;
         premiumReservation = await reservePremiumGeneration(premiumFirebase, premiumIdentity, amount, now);
       }
-      res.json({
+      const links = globalNyxJsdelivrConfigured(config)
+        ? await queueNyxJsdelivrPublish(() => publishNyxJsdelivrLinks(config, amount, req.body?.label))
+        : [];
+      res.status(links.length ? 201 : 200).json({
         authorized: true,
         provider: "jsdelivr",
+        published: links.length > 0,
+        links,
         requested: amount,
+        created: links.length,
         origin: config.origin,
         access: administrator ? "administrator" : (premiumAccount ? "premium" : "account"),
         subscriptionStatus: publicUser?.subscriptionStatus || (administrator ? "premium" : "free"),

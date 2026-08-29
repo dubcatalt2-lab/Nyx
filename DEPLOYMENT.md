@@ -105,11 +105,16 @@ NYX_LINK_CHECKER_ACCOUNT_USERNAME='...'
 NYX_LINK_CHECKER_ACCOUNT_PASSWORD='...'
 BUNNY_API_KEY='...'
 LINK_GENERATOR_ACCESS_CODE='...'
+NYX_JSDELIVR_GITHUB_TOKEN='...'
+NYX_JSDELIVR_GITHUB_REPOSITORY='owner/public-repository'
+NYX_JSDELIVR_GITHUB_BRANCH='main'
 NYX_SAFE_BROWSING_API_KEY='...'
 NYX_AI_API_KEY='...'
 ```
 
 `NYX_LINK_CHECKER_API_KEY` powers individual row and page checks. Fast Premium FreeDNS full scans require the separate Nocturne account username and password so Nyx can start Nocturne's server-side `/api/scan` job instead of making more than 20,000 rate-limited `/api/check` calls. These credentials stay in `/etc/nyx/nyx.env`; never add them to Git or client code. Authenticated check concurrency ceilings default to 12 requests per account and 48 globally and can be tuned with `NYX_LINK_CHECKER_BULK_CONCURRENCY_PER_USER` and `NYX_LINK_CHECKER_BULK_CONCURRENCY_GLOBAL`.
+
+For one-click JSDelivr links, set the three `NYX_JSDELIVR_GITHUB_*` values above. The repository must be public. Create a fine-grained GitHub personal access token restricted to only that repository with **Contents: Read and write**; no account-wide token is needed. Nyx uses the token only on the server to add the maintained Nyx SVG and returns only public jsDelivr URLs. If these values are omitted, Link Generator retains its personal-token handoff to the JSDelivr Publisher. Keep the token only in `/etc/nyx/nyx.env`, restart Nyx after changing it, and never put it in client code or screenshots.
 
 Only add variables for features you use. Do not paste `curl` commands into this file, and never put the actual values in Git, Discord, screenshots, or chat. Keep the Firebase private key on one line with literal `\n` characters.
 

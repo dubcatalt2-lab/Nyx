@@ -183,7 +183,7 @@
     const amount=selectedAmount();
     refs.reviewAmountRow.hidden=!premiumAccessActive();
     refs.reviewAmount.textContent=`${amount} link${amount===1?'':'s'}`;
-    refs.confirmText.textContent=`I understand this publishes ${amount===1?'one Nyx SVG':`${amount} Nyx SVGs`} through my GitHub repository.`;
+    refs.confirmText.textContent=`I understand this publishes ${amount===1?'one Nyx SVG':`${amount} Nyx SVGs`} through a GitHub repository.`;
     if(!refs.button.disabled) refs.button.querySelector('span').textContent=`Generate ${amount===1?'link':`${amount} links`}`;
   }
   function setWizardStep(nextStep,direction=nextStep>=wizardStep?'forward':'back'){
@@ -419,23 +419,24 @@
         body.amount=selectedAmount();
       }
       const result=await readJson(await fetch('/api/link-generator',{method:'POST',headers,body:JSON.stringify(body)}));
-      if(result.provider==='jsdelivr' && result.authorized===true){
+      const links=(Array.isArray(result.links)?result.links:[]).map(item=>typeof item==='string'?item:item?.url).filter(Boolean);
+      if(result.provider==='jsdelivr' && result.authorized===true && !links.length){
         const params=new URLSearchParams({preset:'nyx',label:refs.label.value.trim(),filter:selectedFilter,count:String(result.requested || selectedAmount())});
         location.href=`../jsdelivr-publisher/?${params.toString()}`;
         return;
       }
-      const links=(Array.isArray(result.links)?result.links:[]).map(item=>typeof item==='string'?item:item?.url).filter(Boolean);
       if(!links.length && result.url) links.push(result.url);
-      if(!links.length) throw new Error('Bunny did not return any generated links.');
-      refs.resultUrl.value=links.join('\n');refs.resultCount.textContent=`${links.length} link${links.length===1?'':'s'}`;refs.resultTitle.textContent=links.length===1?'Your Nyx link is ready':'Your Nyx links are ready';refs.resultSubtitle.textContent=result.partial?`${links.length} of ${result.requested} requested links were created.`:`${links.length===1?'The link was':'All links were'} created successfully.`;refs.open.href=links[0];setOpenReady(false);refs.resultCard.hidden=false;refs.accessCode.value='';setWizardStep(3);requestAnimationFrame(()=>refs.resultCard.scrollIntoView({behavior:'smooth',block:'nearest'}));
-      const [,cdnReady]=await Promise.all([checkGeneratedLinks(links,selectedFilter,selectedFilterName),waitForCdnReadiness(links[0])]);
+      if(!links.length) throw new Error('The link provider did not return any generated links.');
+      const isJsdelivr=result.provider==='jsdelivr';
+      refs.resultUrl.value=links.join('\n');refs.resultCount.textContent=`${links.length} link${links.length===1?'':'s'}`;refs.resultTitle.textContent=links.length===1?'Your Nyx link is ready':'Your Nyx links are ready';refs.resultSubtitle.textContent=result.partial?`${links.length} of ${result.requested} requested links were created.`:`${links.length===1?'The link was':'All links were'} created successfully.`;refs.open.href=links[0];setOpenReady(isJsdelivr);refs.resultCard.hidden=false;refs.accessCode.value='';setWizardStep(3);requestAnimationFrame(()=>refs.resultCard.scrollIntoView({behavior:'smooth',block:'nearest'}));
+      const [,cdnReady]=await Promise.all([checkGeneratedLinks(links,selectedFilter,selectedFilterName),isJsdelivr?Promise.resolve(true):waitForCdnReadiness(links[0])]);
       const cooldown=result.premiumCooldown;
       const premiumResult=result.access==='administrator'||result.access==='premium';
       const premiumMessage=cooldown?.triggered
         ? `${links.length} link${links.length===1?' was':'s were'} created. A ${cooldown.minutes || premiumCooldownMinutes}-minute Premium cooldown is now active.`
         : `${links.length} link${links.length===1?' was':'s were'} created with Premium access. ${cooldown?.accumulated || 0} of ${cooldown?.accumulatedLimit || premiumAccumulatedLimit} links accumulated before cooldown.`;
       if(result.partial) showNotice(result.warning || `${links.length} of ${result.requested} links were created.`,'error');
-      else if(!cdnReady) showNotice(`${premiumResult ? `${premiumMessage} ` : ''}${refs.open.dataset.readinessMessage || 'The link was created, but Bunny is still provisioning it. Try Open first again shortly.'}`,'error');
+      else if(!cdnReady) showNotice(`${premiumResult ? `${premiumMessage} ` : ''}${refs.open.dataset.readinessMessage || 'The link was created, but the CDN is still provisioning it. Try Open first again shortly.'}`,'error');
       else showNotice(premiumResult ? premiumMessage : `The link was created. ${result.remaining} free link${result.remaining===1?'':'s'} remaining today.`);
     }catch(error){showNotice(error.message,'error')}
     finally{setLoading(false)}

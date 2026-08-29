@@ -33,7 +33,7 @@ for (const sample of cases) {
   assert.equal(nyxifyDurationMatches(sample.correct, sample.duration), true, `${sample.label}: correct duration was rejected`);
   assert.equal(nyxifyArtistMatches(sample.wrongArtist, sample.artist), false, `${sample.label}: same-title wrong artist was accepted`);
   assert.equal(nyxifyOfficialArtistScore(sample.wrongArtist, sample.artist), 0, `${sample.label}: verified wrong artist received an official score`);
-  assert.equal(nyxifyArtistMatches(sample.artistOnlyInTitle, sample.artist), false, `${sample.label}: an unrelated channel passed by putting the artist in its title`);
+  assert.equal(nyxifyArtistMatches(sample.artistOnlyInTitle, sample.artist), true, `${sample.label}: explicit artist metadata from a label/reupload channel was rejected`);
   assert.equal(nyxifyArtistMatches(sample.verifiedLabel, sample.artist), true, `${sample.label}: a verified label upload with explicit artist metadata was rejected`);
   assert.equal(nyxifyTrackTitleMatches(sample.wrongTitle, sample.title), false, `${sample.label}: wrong title was accepted`);
 }

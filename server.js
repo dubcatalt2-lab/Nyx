@@ -6643,7 +6643,7 @@ function nyxifyArtistMatches(video, artistName) {
   if (nyxifyArtistChannelMatches(video, artistName)) return true;
   const title = nyxifyMatchText(video?.title);
   const words = nyxifyMatchTokens(artistName);
-  return video?.authorVerified === true && words.length > 0 && words.every(word => title.includes(word));
+  return words.length > 0 && words.every(word => title.includes(word));
 }
 
 function nyxifyDurationMatches(video, expectedSeconds) {

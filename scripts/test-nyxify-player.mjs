@@ -44,20 +44,22 @@ try {
   page.on('pageerror', error => pageErrors.push(error.message));
   await page.addInitScript(() => {
     let currentTime = 0;
+    let paused = true;
     Object.defineProperties(HTMLMediaElement.prototype, {
       duration: { configurable: true, get: () => 7_205 },
       readyState: { configurable: true, get: () => HTMLMediaElement.HAVE_METADATA },
       currentTime: { configurable: true, get: () => currentTime, set: value => { currentTime = Number(value); } },
-      paused: { configurable: true, get: () => false }
+      paused: { configurable: true, get: () => paused }
     });
-    HTMLMediaElement.prototype.play = async function play() { this.dispatchEvent(new Event('play')); };
-    HTMLMediaElement.prototype.pause = function pause() { this.dispatchEvent(new Event('pause')); };
+    HTMLMediaElement.prototype.play = async function play() { paused = false; this.dispatchEvent(new Event('play')); };
+    HTMLMediaElement.prototype.pause = function pause() { paused = true; this.dispatchEvent(new Event('pause')); };
     const states = { UNSTARTED: -1, ENDED: 0, PLAYING: 1, PAUSED: 2, BUFFERING: 3, CUED: 5 };
     class MockOctavePlayer {
       constructor(id, options) {
         this.currentTime = 0;
         this.duration = 7_205;
         this.volume = 80;
+        this.playAttempts = 0;
         this.options = options;
         const target = document.getElementById(id);
         const iframe = document.createElement('iframe');
@@ -70,10 +72,15 @@ try {
           this.playVideo();
         });
       }
-      playVideo() { this.state = states.PLAYING; this.options.events.onStateChange?.({ data: this.state, target: this }); }
+      playVideo() {
+        this.playAttempts += 1;
+        this.state = location.search.includes('block-autoplay=1') && this.playAttempts <= 2 ? states.CUED : states.PLAYING;
+        this.options.events.onStateChange?.({ data: this.state, target: this });
+      }
       pauseVideo() { this.state = states.PAUSED; this.options.events.onStateChange?.({ data: this.state, target: this }); }
       stopVideo() { this.state = states.ENDED; }
       destroy() { document.getElementById('fullTrackFrame')?.remove(); }
+      getPlayerState() { return this.state; }
       getCurrentTime() { return this.currentTime; }
       getDuration() { return this.duration; }
       getPlaybackRate() { return 1; }
@@ -90,6 +97,12 @@ try {
     const json = body => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
     if (path === '/api/nyxify/home') return json({ tracks: [track], artists: [], albums: [] });
     if (path === `/api/nyxify/full-track/${track.id}`) return json({ mode: 'octave', videoId: '5NV6Rdv1a3I', durationSeconds: track.duration, title: track.title });
+    if (path === '/api/nyxtube/status') return json({ configured: true, provider: 'youtube' });
+    if (path === '/api/nyxtube/video') return json({ provider: 'youtube', videos: [{
+      id: '5NV6Rdv1a3I', title: track.title, creator: track.artist, durationSeconds: track.duration,
+      viewCount: 42, likeCount: 4, commentCount: 0, description: 'Matched music video', sourceUrl: 'https://www.youtube.com/watch?v=5NV6Rdv1a3I'
+    }] });
+    if (path === '/api/nyxtube/community') return json({ provider: 'youtube', comments: [], transcript: [] });
     if (path === '/api/founder-profile/auth-config') return json({ enabled: false });
     return route.continue();
   });
@@ -101,13 +114,6 @@ try {
   assert.doesNotMatch(await page.locator('#fullTrackStage').textContent(), /octave/i, 'The internal playback-engine name leaked into the visible UI');
   const octaveFrame = await page.locator('#fullTrackFrame').boundingBox();
   assert.ok(octaveFrame && octaveFrame.width >= 200 && octaveFrame.height >= 200 && octaveFrame.x + octaveFrame.width < 0, 'The Octave iframe was not kept off the visible Nyxify canvas');
-  await page.locator('#fullTrackVideo').click();
-  const shownFrame = await page.locator('#fullTrackFrame').boundingBox();
-  assert.ok(shownFrame && shownFrame.x >= 0 && shownFrame.width >= 200 && shownFrame.height >= 200, 'Show video did not reveal the real matched music video');
-  assert.equal(await page.locator('#fullTrackVideo').getAttribute('aria-pressed'), 'true', 'Show video did not expose its pressed state');
-  await page.locator('#fullTrackVideo').click();
-  const hiddenFrame = await page.locator('#fullTrackFrame').boundingBox();
-  assert.ok(hiddenFrame && hiddenFrame.x + hiddenFrame.width < 0, 'Hide video did not return to audio-only playback');
   assert.equal(await page.locator('#timeTotal').textContent(), '2:00:05', 'Long duration was not formatted with hours');
   assert.equal(await page.locator('#pTitle').getAttribute('title'), track.title, 'Full long title was unavailable from the player');
 
@@ -141,6 +147,27 @@ try {
   assert.ok(mobileLayout.overflow <= 1, `Full-track player caused ${mobileLayout.overflow}px of mobile overflow`);
   assert.ok(mobileLayout.frameWidth >= 200 && mobileLayout.frameHeight >= 200 && mobileLayout.frameRight < 0, 'The mobile Octave iframe leaked onto the visible canvas');
   assert.ok(mobileLayout.stageHeight < 90, `The audio-only status row grew to ${mobileLayout.stageHeight}px`);
+
+  await page.setViewportSize({ width: 1_280, height: 800 });
+  await page.goto(`${origin}/apps/nyxify/?block-autoplay=1`, { waitUntil: 'domcontentloaded' });
+  await page.locator('.row', { hasText: track.title }).click();
+  await page.locator('#fullTrackStage[data-playback-state="ready"]').waitFor({ state: 'visible' });
+  const blockedAutoplay = await page.evaluate(() => ({
+    previewPaused: document.querySelector('#audio').paused,
+    status: document.querySelector('#fullTrackStatus').textContent,
+    videoTitle: document.querySelector('#fullTrackTitle').textContent
+  }));
+  assert.equal(blockedAutoplay.previewPaused, false, 'Blocked iframe autoplay silenced the preview on a Chromebook-style run');
+  assert.match(blockedAutoplay.status, /press play/i, 'Blocked iframe autoplay did not provide a usable play prompt');
+  assert.equal(blockedAutoplay.videoTitle, track.title, 'Blocked iframe autoplay lost the matched video title');
+  await page.locator('#playBtn').click();
+  await page.locator('#fullTrackStage[data-playback-state="playing"]').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#audio').evaluate(audio => audio.paused), true, 'The preview kept playing after the user started the full song');
+
+  await page.locator('#fullTrackVideo').click();
+  await page.waitForURL(/\/apps\/nyxtube\/?\?video=5NV6Rdv1a3I/);
+  await page.locator('[data-view="watch"]:not([hidden])').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('[data-watch-title]').textContent(), track.title, 'NyxTube did not open the matched music video');
   assert.deepEqual(pageErrors, [], `Browser errors: ${pageErrors.join(' | ')}`);
 
   const invalidJsonPage = await browser.newPage({ viewport: { width: 1_280, height: 800 } });

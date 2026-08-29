@@ -123,6 +123,16 @@
     } catch (error) { renderVideos([]); notice(error.message || "Videos could not be loaded."); }
     finally { refs.searchForm.querySelector("button").disabled = false; }
   }
+
+  async function loadInitialView() {
+    const videoId = String(new URLSearchParams(location.search).get("video") || "").trim();
+    if (!/^[A-Za-z0-9_-]{11}$/.test(videoId)) return loadFeed();
+    const payload = await json(`/api/nyxtube/video?id=${encodeURIComponent(videoId)}`);
+    const video = Array.isArray(payload?.videos) ? payload.videos[0] : null;
+    if (!video?.id) throw new Error("That video could not be loaded in NyxTube.");
+    state.catalog = [video];
+    openWatch(video);
+  }
   function showView(name) {
     state.view = name;
     Object.entries(views).forEach(([key, view]) => { view.hidden = key !== name; });
@@ -665,6 +675,6 @@
   applyTheme(); bind(); skeletons(); requestProfile();
   json("/api/nyxtube/status").then(status => {
     if (!status?.configured) throw new Error("NyxTube is not configured yet.");
-    return loadFeed();
+    return loadInitialView();
   }).catch(error => { renderVideos([]); notice(error.message || "NyxTube could not be started."); });
 })();

@@ -1361,18 +1361,6 @@ main { min-width: 0; }
   border: 0;
   background: #000;
 }
-.full-track-stage.show-video .full-track-head { margin-bottom: 9px; }
-.full-track-stage.show-video #fullTrackFrame,
-.full-track-stage.show-video #fullTrackFrame iframe,
-.full-track-stage.show-video iframe {
-  position: static !important;
-  width: 250px;
-  height: 200px;
-  opacity: 1;
-  pointer-events: auto;
-  border-radius: var(--r-md);
-}
-
 .player-inner {
   pointer-events: auto;
   position: relative;
@@ -1710,12 +1698,6 @@ input[type="range"]::-moz-range-thumb {
   #fullTrackFrame iframe,
   .full-track-stage iframe {
     width: 200px;
-    height: 200px;
-  }
-  .full-track-stage.show-video #fullTrackFrame,
-  .full-track-stage.show-video #fullTrackFrame iframe,
-  .full-track-stage.show-video iframe {
-    width: 210px;
     height: 200px;
   }
   .player-inner {

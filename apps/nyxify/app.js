@@ -66,7 +66,8 @@ let octaveplaying = false;
 let octaverequest = 0;
 let octaveprogress = null;
 let octaveapipromise = null;
-let octavevideoshown = localStorage.getItem('nyx_nyxify_show_video') === '1';
+let octavepending = false;
+let octavevideo = null;
 
 let shuffleon = localStorage.getItem('nyx_nyxify_shuffle') === '1';
 let repeatmode = localStorage.getItem('nyx_nyxify_repeat') || 'off';
@@ -1545,6 +1546,7 @@ function destroyoctaveplayer() {
   try { octaveplayer?.destroy?.(); } catch (_) {}
   octaveplayer = null;
   octaveplaying = false;
+  octavepending = false;
   ensureoctaveframe();
   fullTrackStage.hidden = true;
   fullTrackStage.dataset.playbackState = 'idle';
@@ -1554,11 +1556,12 @@ function previewsource() {
   return curtrack ? `/api/nyxify/stream/${curtrack.id}` : '';
 }
 
-function applyoctavevideochoice() {
-  fullTrackStage.classList.toggle('show-video', octavevideoshown);
-  fullTrackVideo.textContent = octavevideoshown ? 'Hide video' : 'Show video';
-  fullTrackVideo.setAttribute('aria-label', octavevideoshown ? 'Hide music video' : 'Show music video');
-  fullTrackVideo.setAttribute('aria-pressed', String(octavevideoshown));
+function setoctavevideo(candidate = null) {
+  octavevideo = candidate && /^[A-Za-z0-9_-]{11}$/.test(String(candidate.videoId || '')) ? candidate : null;
+  fullTrackVideo.disabled = !octavevideo;
+  fullTrackVideo.textContent = 'Show video';
+  fullTrackVideo.setAttribute('aria-label', octavevideo ? 'Show music video in NyxTube' : 'Music video unavailable');
+  fullTrackVideo.setAttribute('aria-pressed', 'false');
 }
 
 function usepreview(autoplay = true, message = '') {
@@ -1583,6 +1586,7 @@ async function startoctavetrack(track, request) {
   delete fullTrackStage.dataset.lastError;
   fullTrackTitle.textContent = track.title || 'Full track';
   fullTrackStatus.textContent = 'Finding the full song...';
+  setoctavevideo();
   try {
     const match = await nyxifyjson(`/api/nyxify/full-track/${encodeURIComponent(track.id)}`);
     if (request !== octaverequest || curtrack?.id !== track.id) return;
@@ -1594,6 +1598,7 @@ async function startoctavetrack(track, request) {
       .slice(0, 8);
     if (!octaveCandidates.length) throw new Error('No playable full song was found.');
     let octaveCandidateIndex = 0;
+    setoctavevideo(octaveCandidates[0]);
     fullTrackTitle.textContent = octaveCandidates[0].title || match.title || track.title;
     const YT = await ensureoctaveapi();
     if (request !== octaverequest || curtrack?.id !== track.id) return;
@@ -1617,32 +1622,37 @@ async function startoctavetrack(track, request) {
       events: {
         onReady(event) {
           if (request !== octaverequest || curtrack?.id !== track.id) return;
-          audio.pause();
-          playbackmode = 'octave';
-          dlBtn.hidden = true;
+          octavepending = true;
           const volume = Math.min(100, Math.max(0, Number(volBar.value) || 0));
           event.target.setVolume?.(volume);
+          fullTrackStatus.textContent = audio.paused ? 'Full song ready - press play' : 'Starting full song...';
           event.target.playVideo?.();
-          fullTrackStatus.textContent = 'Playing full song';
           const duration = Number(event.target.getDuration?.()) || Number(match.durationSeconds) || Number(track.duration) || 0;
           if (duration) document.getElementById('timeTotal').textContent = fmt(duration);
-          startoctaveprogress();
         },
         onStateChange(event) {
-          if (request !== octaverequest || playbackmode !== 'octave') return;
+          if (request !== octaverequest) return;
           const state = event.data;
           octaveplaying = state === YT.PlayerState.PLAYING;
           if (octaveplaying) {
+            playbackmode = 'octave';
+            octavepending = false;
+            audio.pause();
+            dlBtn.hidden = true;
             playIcon.className = 'material-symbols--pause-rounded';
             fullTrackStage.dataset.playbackState = 'playing';
             fullTrackStatus.textContent = 'Playing full song';
             startoctaveprogress();
-          } else if (state === YT.PlayerState.PAUSED) {
+          } else if (state === YT.PlayerState.PAUSED && playbackmode === 'octave') {
             playIcon.className = 'line-md--play-filled';
             fullTrackStage.dataset.playbackState = 'paused';
           } else if (state === YT.PlayerState.BUFFERING) {
             fullTrackStage.dataset.playbackState = 'buffering';
             fullTrackStatus.textContent = 'Buffering the full song...';
+          } else if (state === YT.PlayerState.CUED || state === YT.PlayerState.PAUSED) {
+            octavepending = true;
+            fullTrackStage.dataset.playbackState = 'ready';
+            fullTrackStatus.textContent = 'Full song ready - press play';
           } else if (state === YT.PlayerState.ENDED) {
             octaveplaying = false;
             if (repeatmode === 'one') {
@@ -1659,6 +1669,7 @@ async function startoctavetrack(track, request) {
           octaveCandidateIndex += 1;
           const next = octaveCandidates[octaveCandidateIndex];
           if (next) {
+            setoctavevideo(next);
             fullTrackStage.dataset.playbackState = 'loading';
             fullTrackTitle.textContent = next.title || track.title;
             fullTrackStatus.textContent = 'Trying another full-song source...';
@@ -1679,7 +1690,7 @@ function playbackpaused() {
 }
 
 function playbackplay() {
-  if (playbackmode === 'octave') octaveplayer?.playVideo?.();
+  if (playbackmode === 'octave' || octavepending) octaveplayer?.playVideo?.();
   else audio.play().catch(() => {});
 }
 
@@ -1704,11 +1715,12 @@ function playbackseek(seconds) {
 
 fullTrackPreview.addEventListener('click', () => usepreview(true));
 fullTrackVideo.addEventListener('click', () => {
-  octavevideoshown = !octavevideoshown;
-  localStorage.setItem('nyx_nyxify_show_video', octavevideoshown ? '1' : '0');
-  applyoctavevideochoice();
+  if (!octavevideo) return;
+  const url = `/apps/nyxtube/?video=${encodeURIComponent(octavevideo.videoId)}`;
+  if (parent !== window) parent.postMessage({ type: 'nyx:navigate', url }, location.origin);
+  else location.href = url;
 });
-applyoctavevideochoice();
+setoctavevideo();
 
 function playtrack(t, list, context = '') {
   cancelqueuedseek();
@@ -1788,6 +1800,12 @@ document.getElementById('prevBtn').addEventListener('click', playprev);
 
 audio.addEventListener('ended', () => {
   if (playbackmode !== 'preview') return;
+  if (octavepending && octaveplayer) {
+    playIcon.className = 'line-md--play-filled';
+    fullTrackStage.dataset.playbackState = 'ready';
+    fullTrackStatus.textContent = 'Full song ready - press play';
+    return;
+  }
   if (repeatmode === 'one') { audio.currentTime = 0; audio.play(); return; }
   advance(false);
 });
@@ -1827,7 +1845,7 @@ playBtn.addEventListener('click', () => {
     else if (getlikes().length) playtrack(getlikes()[0]);
     return;
   }
-  if (playbackpaused()) playbackplay(); else playbackpause();
+  if (octavepending || playbackpaused()) playbackplay(); else playbackpause();
 });
 audio.addEventListener('play', () => {
   if (playbackmode === 'preview') playIcon.className = 'material-symbols--pause-rounded';

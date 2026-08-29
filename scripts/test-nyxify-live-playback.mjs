@@ -1,13 +1,19 @@
 import { chromium } from "playwright";
 
 const baseUrl = String(process.env.NYX_TEST_BASE_URL || "http://127.0.0.1:8080").replace(/\/$/, "");
+const chromeOsMode = process.env.NYX_TEST_CHROMEOS === "1";
 const browser = await chromium.launch({
   headless: true,
-  args: ["--autoplay-policy=no-user-gesture-required"]
+  args: chromeOsMode ? [] : ["--autoplay-policy=no-user-gesture-required"]
 });
 
 try {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  const page = await browser.newPage({
+    viewport: chromeOsMode ? { width: 1365, height: 768 } : { width: 1280, height: 800 },
+    userAgent: chromeOsMode
+      ? "Mozilla/5.0 (X11; CrOS x86_64 15917.71.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+      : undefined
+  });
   const forcedVideoId = String(process.env.NYX_TEST_VIDEO_ID || "").trim();
   if (/^[A-Za-z0-9_-]{11}$/.test(forcedVideoId)) {
     await page.route("**/api/nyxify/full-track/*", route => route.fulfill({
@@ -48,8 +54,12 @@ try {
     await page.waitForFunction(() => {
       const stage = document.querySelector("#fullTrackStage");
       const progress = Number(document.querySelector("#seekBar")?.value || 0);
-      return stage?.dataset.playbackState === "playing" && progress > 0;
+      return stage?.dataset.playbackState === "ready" || (stage?.dataset.playbackState === "playing" && progress > 0);
     }, null, { timeout: 30_000 });
+    if (await page.locator('#fullTrackStage').getAttribute('data-playback-state') === 'ready') {
+      await page.locator('#playBtn').click();
+      await page.waitForFunction(() => document.querySelector('#fullTrackStage')?.dataset.playbackState === 'playing' && Number(document.querySelector('#seekBar')?.value || 0) > 0, null, { timeout: 15_000 });
+    }
   } catch (error) {
     const diagnostic = await page.evaluate(() => ({
       stageHidden: document.querySelector("#fullTrackStage")?.hidden,
@@ -104,16 +114,11 @@ try {
     throw new Error(`Nyxify Octave playback did not advance: ${JSON.stringify(state)}`);
   }
   await page.locator("#fullTrackVideo").click();
-  const shownFrame = await page.locator("#fullTrackFrame").boundingBox();
-  if (!shownFrame || shownFrame.x < 0 || shownFrame.width < 200 || shownFrame.height < 200) {
-    throw new Error(`Show video did not reveal the live matched iframe: ${JSON.stringify(shownFrame)}`);
-  }
-  await page.locator("#fullTrackVideo").click();
-  const hiddenFrame = await page.locator("#fullTrackFrame").boundingBox();
-  if (!hiddenFrame || hiddenFrame.x + hiddenFrame.width >= 0) {
-    throw new Error(`Hide video did not restore audio-only playback: ${JSON.stringify(hiddenFrame)}`);
-  }
-  console.log(`Nyxify live Octave playback passed: ${title} advanced to ${state.currentLabel}; video stayed hidden by default, appeared on request, and hid again.`);
+  await page.waitForURL(/\/apps\/nyxtube\/?\?video=[A-Za-z0-9_-]{11}/, { timeout: 15_000 });
+  await page.locator('[data-view="watch"]:not([hidden])').waitFor({ state: 'visible', timeout: 20_000 });
+  const nyxTubeTitle = String(await page.locator('[data-watch-title]').textContent() || '').trim();
+  if (!nyxTubeTitle) throw new Error('NyxTube did not render the matched video title.');
+  console.log(`Nyxify live full-song playback passed: ${title} advanced to ${state.currentLabel}; the matched video opened in NyxTube as ${nyxTubeTitle}.`);
 } finally {
   await browser.close();
 }

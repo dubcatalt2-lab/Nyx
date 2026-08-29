@@ -6600,39 +6600,72 @@ async function nyxifyDetail(type, id) {
 function nyxifyFullTrackScore(video, track) {
   const duration = Math.max(0, Number(video?.durationSeconds) || 0);
   const expected = Math.max(0, Number(track?.duration) || 0);
-  const title = nyxifyCleanText(video?.title, "", 240).toLowerCase();
-  const wantedTitle = nyxifyCleanText(track?.title, "", 180).toLowerCase();
-  const wantedArtist = nyxifyCleanText(track?.artist?.name, "", 120).toLowerCase();
-  const author = nyxifyCleanText(video?.author || video?.creator || video?.channelTitle, "", 120).toLowerCase();
-  const titleWords = wantedTitle.split(/[^a-z0-9]+/).filter(word => word.length >= 3);
-  const artistWords = wantedArtist.split(/[^a-z0-9]+/).filter(word => word.length >= 3);
+  const title = nyxifyMatchText(video?.title);
+  const wantedTitle = nyxifyMatchText(track?.title_short || track?.title);
+  const wantedArtist = nyxifyMatchText(track?.artist?.name);
+  const titleWords = nyxifyMatchTokens(wantedTitle);
+  const artistWords = nyxifyMatchTokens(wantedArtist);
   const wordScore = [...titleWords, ...artistWords].reduce((score, word) => score + (title.includes(word) ? 18 : -8), 0);
   const durationPenalty = expected && duration ? Math.min(120, Math.abs(duration - expected)) : 45;
   const officialBonus = /\b(?:official|audio|topic|provided to youtube)\b/.test(title) ? 30 : 0;
-  const artistBonus = wantedArtist && author.includes(wantedArtist) ? 45 : 0;
+  const artistBonus = nyxifyArtistMatches(video, wantedArtist) ? 75 : 0;
   const musicVideoBonus = /\b(?:official(?:\s+music)?\s+video|official\s+mv|music\s+video)\b/.test(title) ? 55 : 0;
   const variantPenalty = /\b(?:remix|cover|reaction|slowed|sped up|nightcore|karaoke|instrumental)\b/.test(title)
     && !/\b(?:remix|cover|slowed|sped up|nightcore|karaoke|instrumental)\b/.test(wantedTitle) ? 90 : 0;
   return wordScore + officialBonus + musicVideoBonus + artistBonus - variantPenalty - durationPenalty;
 }
 
+function nyxifyMatchText(value) {
+  return nyxifyCleanText(value, "", 240).normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase()
+    .replace(/&/g, " and ").replace(/[^\p{L}\p{N}]+/gu, " ").replace(/\s+/g, " ").trim();
+}
+
+function nyxifyMatchTokens(value) {
+  const ignored = new Set(["and", "feat", "featuring", "from", "official", "the", "video", "with"]);
+  return nyxifyMatchText(value).split(" ").filter(word => [...word].length >= 2 && !ignored.has(word));
+}
+
+function nyxifyArtistChannelMatches(video, artistName) {
+  const wanted = nyxifyMatchText(artistName);
+  const author = nyxifyMatchText(video?.author || video?.creator || video?.channelTitle);
+  if (!wanted || !author) return false;
+  const compact = value => value.replace(/\s+/g, "");
+  const wantedCompact = compact(wanted);
+  const authorCompact = compact(author.replace(/\b(?:official|topic|vevo|music)\b/g, " "));
+  const directAuthorMatch = author.includes(wanted) || wanted.includes(author)
+    || (wantedCompact.length >= 2 && (authorCompact.includes(wantedCompact) || wantedCompact.includes(authorCompact)));
+  if (directAuthorMatch) return true;
+  const words = nyxifyMatchTokens(wanted);
+  return words.length > 0 && words.every(word => author.includes(word));
+}
+
+function nyxifyArtistMatches(video, artistName) {
+  if (nyxifyArtistChannelMatches(video, artistName)) return true;
+  const title = nyxifyMatchText(video?.title);
+  const words = nyxifyMatchTokens(artistName);
+  return video?.authorVerified === true && words.length > 0 && words.every(word => title.includes(word));
+}
+
+function nyxifyDurationMatches(video, expectedSeconds) {
+  const duration = Math.max(0, Number(video?.durationSeconds) || 0);
+  const expected = Math.max(0, Number(expectedSeconds) || 0);
+  if (!duration || !expected) return false;
+  return Math.abs(duration - expected) <= Math.max(45, Math.min(90, expected * 0.25));
+}
+
 function nyxifyOfficialArtistScore(video, artistName) {
-  const wanted = nyxifyCleanText(artistName, "", 120).toLowerCase();
-  const author = nyxifyCleanText(video?.author || video?.creator || video?.channelTitle, "", 120).toLowerCase();
-  if (!wanted || !author) return 0;
-  const words = wanted.split(/[^a-z0-9]+/).filter(word => word.length >= 2);
-  const wordScore = words.reduce((score, word) => score + (author.includes(word) ? 14 : -10), 0);
-  return wordScore + (author.includes(wanted) ? 90 : 0) + (video?.authorVerified === true ? 35 : 0);
+  if (!nyxifyArtistMatches(video, artistName)) return 0;
+  const wanted = nyxifyMatchText(artistName);
+  const author = nyxifyMatchText(video?.author || video?.creator || video?.channelTitle);
+  return 80 + (author.includes(wanted) ? 60 : 0) + (video?.authorVerified === true ? 20 : 0);
 }
 
 function nyxifyTrackTitleMatches(video, trackTitle) {
-  const candidate = nyxifyCleanText(video?.title, "", 240).toLowerCase();
-  const ignored = new Set(["and", "feat", "featuring", "from", "official", "the", "video", "with"]);
-  const words = nyxifyCleanText(trackTitle, "", 180).toLowerCase().split(/[^a-z0-9]+/)
-    .filter(word => word.length >= 3 && !ignored.has(word));
+  const candidate = nyxifyMatchText(video?.title);
+  const words = nyxifyMatchTokens(trackTitle);
   if (!words.length) return true;
   const matches = words.reduce((count, word) => count + (candidate.includes(word) ? 1 : 0), 0);
-  return matches >= Math.max(1, Math.ceil(words.length / 2));
+  return matches >= Math.max(1, words.length <= 3 ? words.length : Math.ceil(words.length * 0.75));
 }
 
 function nyxifyOctaveVideo(value, providerType) {
@@ -6722,8 +6755,9 @@ async function nyxifyFullTrack(trackId) {
   const cached = nyxifyCacheGet(nyxifyCatalogCache, key);
   if (cached) return structuredClone(cached);
   const track = await nyxifyDeezerJson(`/track/${trackId}`);
-  const title = nyxifyCleanText(track.title, "", 180);
+  const title = nyxifyCleanText(track.title_short || track.title, "", 180);
   const artist = nyxifyCleanText(track.artist?.name, "", 120);
+  const expectedDuration = Math.max(0, Number(track.duration) || 0);
   if (!title || !artist) throw new Error("This track is missing the metadata needed for full playback.");
   const musicVideoResults = await nyxifyOctaveSearch(`${artist} ${title} official music video`);
   let candidates = musicVideoResults.filter(video => {
@@ -6732,17 +6766,24 @@ async function nyxifyFullTrack(trackId) {
       && Number(video?.durationSeconds) >= 45
       && /\b(?:official(?:\s+music)?\s+video|official\s+mv|music\s+video)\b/.test(candidateTitle)
       && nyxifyTrackTitleMatches(video, title)
-      && nyxifyOfficialArtistScore(video, artist) >= 30;
+      && nyxifyOfficialArtistScore(video, artist) >= 80
+      && nyxifyDurationMatches(video, expectedDuration);
   });
   if (!candidates.length) {
     const officialChannelResults = await nyxifyOctaveSearch(`${artist} ${title} official audio`);
     const channelMatches = officialChannelResults.filter(video => /^[A-Za-z0-9_-]{11}$/.test(String(video?.id || ""))
       && Number(video?.durationSeconds) >= 45
       && nyxifyTrackTitleMatches(video, title)
-      && nyxifyOfficialArtistScore(video, artist) >= 30);
-    candidates = channelMatches.length ? channelMatches : officialChannelResults;
+      && nyxifyOfficialArtistScore(video, artist) >= 80
+      && nyxifyDurationMatches(video, expectedDuration));
+    candidates = channelMatches;
   }
-  candidates = candidates.filter(video => /^[A-Za-z0-9_-]{11}$/.test(String(video?.id || "")) && Number(video?.durationSeconds) >= 45);
+  candidates = candidates.filter(video => {
+    const candidateTitle = nyxifyMatchText(video?.title);
+    return /^[A-Za-z0-9_-]{11}$/.test(String(video?.id || ""))
+      && Number(video?.durationSeconds) >= 45
+      && (nyxifyArtistChannelMatches(video, artist) || /\b(?:audio|lyrics|music video|mv|official|provided|topic)\b/.test(candidateTitle));
+  });
   candidates.sort((left, right) => nyxifyFullTrackScore(right, track) - nyxifyFullTrackScore(left, track));
   const selected = candidates[0];
   if (!selected) throw new Error("No embeddable full-track match is available right now.");
@@ -7618,6 +7659,22 @@ app.get("/api/nyxtube/status", (_req, res) => {
 app.get("/api/nyxtube/feed", nyxTubeRoute(req => nyxTubeFeed(Math.max(1, Math.min(32, Number.parseInt(req.query?.limit, 10) || 20)))));
 
 app.get("/api/nyxtube/shorts", nyxTubeRoute(req => nyxTubeShorts(Math.max(1, Math.min(24, Number.parseInt(req.query?.limit, 10) || 12)))));
+
+app.get("/api/nyxtube/video", nyxTubeRoute(async req => {
+  const videoId = String(req.query?.id || "").trim();
+  if (!/^[A-Za-z0-9_-]{11}$/.test(videoId)) {
+    const error = new Error("Choose a valid YouTube video.");
+    error.status = 400;
+    throw error;
+  }
+  const [video] = await nyxTubeVideoDetails([videoId]);
+  if (!video) {
+    const error = new Error("That video is unavailable or restricted.");
+    error.status = 404;
+    throw error;
+  }
+  return [video];
+}, "no-store"));
 
 app.get("/api/nyxtube/search", nyxTubeRoute(req => {
   if (!nyxTubeAllowSearch(req)) {
@@ -13462,7 +13519,7 @@ app.use((_req, res) => {
   res.sendFile(join(staticRoot, "index.html"));
 });
 
-export { app, attachNyxChatSocketServer, externalWispUrl, normalizePublicWispUrl, nyxActorCanReviewSearchHistory, nyxChatCanAccessChannel, nyxChatIsSchoolRestrictedChannel, nyxClientIp, nyxRolePresentation, nyxVisibleCustomRoles };
+export { app, attachNyxChatSocketServer, externalWispUrl, normalizePublicWispUrl, nyxActorCanReviewSearchHistory, nyxChatCanAccessChannel, nyxChatIsSchoolRestrictedChannel, nyxClientIp, nyxRolePresentation, nyxVisibleCustomRoles, nyxifyArtistMatches, nyxifyDurationMatches, nyxifyOfficialArtistScore, nyxifyTrackTitleMatches };
 
 const isDirectRun = process.argv[1] && resolve(process.argv[1]) === join(__dirname, "server.js");
 if (isDirectRun) {

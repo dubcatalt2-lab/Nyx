@@ -641,9 +641,9 @@
       return token;
     });
     const math=[];
-    source=source.replace(/\\\[([^\n]*?)\\\]|\\\(([^\n]*?)\\\)/g,(_match,display,inline)=>{
+    source=source.replace(/\\+\[([^\n]*?)\\+\]|\\+\(([^\n]*?)\\+\)/g,(_match,display,inline)=>{
       const token=`@@NYX_MATH_${math.length}@@`;
-      math.push(mathMarkup(display??inline,false));
+      math.push(mathMarkup(display??inline,display!==undefined));
       return token;
     });
     let html=escapeHtml(source);
@@ -666,9 +666,29 @@
     return cells.length>1&&cells.every(cell=>/^:?-{3,}:?$/.test(cell));
   }
 
+  function displayMathFence(line){
+    const trimmed=String(line??'').trim();
+    if(/^\\+\[$/.test(trimmed)) return 'bracket';
+    if(trimmed==='$$') return 'dollar';
+    return '';
+  }
+
+  function isDisplayMathClose(line,type){
+    const trimmed=String(line??'').trim();
+    return type==='bracket'?/^\\+\]$/.test(trimmed):trimmed==='$$';
+  }
+
+  function displayMathLine(line){
+    const trimmed=String(line??'').trim();
+    const bracket=trimmed.match(/^\\+\[([\s\S]*?)\\+\]$/);
+    if(bracket) return bracket[1];
+    const dollar=trimmed.match(/^\$\$([\s\S]*?)\$\$$/);
+    return dollar?dollar[1]:null;
+  }
+
   function isBlockStart(lines,index){
     const line=lines[index]||'';
-    return /^```/.test(line)||/^#{1,3}\s+/.test(line)||/^>\s?/.test(line)||/^\s*[-*+]\s+/.test(line)||/^\s*\d+[.)]\s+/.test(line)||/^\s*(?:---+|___+)\s*$/.test(line)||line.includes('\t')||(line.includes('|')&&isTableDivider(lines[index+1]||''));
+    return Boolean(displayMathFence(line))||displayMathLine(line)!==null||isDisplayMathClose(line,'bracket')||/^```/.test(line)||/^#{1,3}\s+/.test(line)||/^>\s?/.test(line)||/^\s*[-*+]\s+/.test(line)||/^\s*\d+[.)]\s+/.test(line)||/^\s*(?:---+|___+)\s*$/.test(line)||line.includes('\t')||(line.includes('|')&&isTableDivider(lines[index+1]||''));
   }
 
   function markdown(value){
@@ -689,21 +709,31 @@
         continue;
       }
 
-      const displayFence=line.trim();
-      if(displayFence==='\\['||displayFence==='$$'){
-        const closeFence=displayFence==='\\['?'\\]':'$$';
+      const displayFence=displayMathFence(line);
+      if(displayFence){
         let closeIndex=index+1;
-        while(closeIndex<lines.length&&lines[closeIndex].trim()!==closeFence) closeIndex+=1;
+        while(closeIndex<lines.length&&!isDisplayMathClose(lines[closeIndex],displayFence)) closeIndex+=1;
         if(closeIndex<lines.length){
           blocks.push(`<div class="ai-math-block">${mathMarkup(lines.slice(index+1,closeIndex).join('\n'),true)}</div>`);
           index=closeIndex+1;
           continue;
         }
+        let endIndex=index+1;
+        while(endIndex<lines.length&&lines[endIndex].trim()) endIndex+=1;
+        const unfinishedMath=lines.slice(index+1,endIndex).join('\n');
+        if(unfinishedMath.trim()) blocks.push(`<div class="ai-math-block">${mathMarkup(unfinishedMath,true)}</div>`);
+        index=endIndex;
+        continue;
       }
 
-      const displayMath=line.match(/^\s*(?:\\\[([\s\S]*?)\\\]|\$\$([\s\S]*?)\$\$)\s*$/);
-      if(displayMath){
-        blocks.push(`<div class="ai-math-block">${mathMarkup(displayMath[1]??displayMath[2],true)}</div>`);
+      const displayMath=displayMathLine(line);
+      if(displayMath!==null){
+        blocks.push(`<div class="ai-math-block">${mathMarkup(displayMath,true)}</div>`);
+        index+=1;
+        continue;
+      }
+
+      if(isDisplayMathClose(line,'bracket')){
         index+=1;
         continue;
       }

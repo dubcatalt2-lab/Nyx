@@ -206,6 +206,7 @@ Up to eight named personal-provider profiles can coexist and be activated withou
 ## Durable Product Instructions
 
 - AI screen sharing sends one fresh bounded frame per message rather than a continuous video stream. Preserve the server-validated screen-frame marker through client image preparation, server vision analysis, and the selected model prompt so an attached shared frame is never misreported as absent or manually uploaded. Multiline `\[ ... \]` and `$$ ... $$` blocks must be collected before KaTeX rendering so display equations, fractions, arrows, and boxed answers do not expose raw delimiters.
+- The AI Markdown block classifier must treat a display-math opener as a block boundary even when it immediately follows prose without a blank line, accept provider-double-escaped fences, and render a final unfinished fence as math instead of leaking delimiter text.
 - NyxTube video results retain a validated YouTube channel ID and receive cached channel artwork through a bounded `channels.list` lookup. The watch creator avatar and name open the exact `youtube.com/channel/{id}` destination through Nyx's managed browser navigation; an optional artwork failure must retain the initial fallback and must not break the video catalog.
 - Preserve functionality before changing presentation.
 - Diagnose the actual cause of a regression; do not keep stacking speculative CSS, proxy overrides, cache resets, or host-specific fixes.

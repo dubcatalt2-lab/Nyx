@@ -43,7 +43,32 @@ try {
   });
   await page.route("**/api/nyx-ai", async route => {
     chatRequests.push({ headers: await route.request().allHeaders(), body: route.request().postDataJSON() });
-    const formattedAnswer = "Screen frame received. Solve for \\(x\\).\n\n\\[\n-6x = 42 - 6 \\quad\\Rightarrow\\quad -6x = 36\n\\]\n\n\\[\nx = \\frac{36}{-6} = -6\n\\]\n\n\\[\n\\boxed{-6}\n\\]";
+    const formattedAnswer = String.raw`Screen frame received. Solve for \(x\).
+So:
+\[
+(5)^{-3} = \frac{1}{5^3} = \frac{1}{125}
+\]
+
+\[
+-6x = 42 - 6 \quad\Rightarrow\quad -6x = 36
+\]
+
+\[
+x = \frac{36}{-6} = -6
+\]
+
+\[
+\boxed{-6}
+\]
+
+Double-escaped provider form:
+\\[
+y = \frac{10}{2}
+\\]
+
+Unclosed provider fence:
+\[
+z = \frac{9}{3}`;
     await route.fulfill({
       status: 200,
       headers: { "content-type": "text/event-stream; charset=utf-8" },
@@ -90,9 +115,11 @@ try {
   assert(/^data:image\/jpeg;base64,/.test(chatRequests[0].body?.image?.dataUrl || ""), "Screen prompt did not attach a captured JPEG frame");
   assert(chatRequests[0].body?.image?.screenCapture === true, "Screen prompt did not identify the image as an active screen-share frame");
   assert(chatRequests[0].headers["x-nyx-ai-base-url"] === "https://api.ofox.ai/v1", "Custom base URL was not sent with the chat request");
-  assert(await page.locator(".ai-answer .katex-display").count() === 3, "Multiline display math was not rendered through KaTeX");
-  assert(await page.locator(".ai-answer .katex").count() >= 4, "Inline and display math were not both rendered through KaTeX");
+  assert(await page.locator(".ai-answer .katex-display").count() === 6, "Adjacent, escaped, or unclosed display math was not rendered through KaTeX");
+  assert(await page.locator(".ai-answer .katex").count() >= 7, "Inline and display math were not both rendered through KaTeX");
+  assert((await page.locator(".ai-answer .katex-display").first().innerText()).includes("125"), "The reported fractional-exponent example was not rendered as display math");
   assert(!(await page.locator(".ai-answer").innerText()).includes("\\["), "Raw display-math delimiters remained visible in the AI answer");
+  assert(!(await page.locator(".ai-answer").innerText()).includes("\\]"), "Raw display-math closing delimiters remained visible in the AI answer");
   assert(await page.locator("#screenPreview").isVisible(), "Screen sharing stopped after one prompt instead of remaining user-controlled");
   await page.locator("#stopScreenShare").click();
   assert(await page.locator("#screenPreview").isHidden(), "Stop did not end and hide screen sharing");

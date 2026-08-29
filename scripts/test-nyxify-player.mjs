@@ -98,7 +98,7 @@ try {
   await page.locator('.row', { hasText: track.title }).click();
   await page.locator('#fullTrackStage[data-playback-state="playing"]').waitFor({ state: 'visible' });
   const octaveFrame = await page.locator('#fullTrackFrame').boundingBox();
-  assert.ok(octaveFrame && octaveFrame.width >= 200 && octaveFrame.height >= 200, 'The full-track iframe is not visibly usable');
+  assert.ok(octaveFrame && octaveFrame.width >= 200 && octaveFrame.height >= 200 && octaveFrame.x + octaveFrame.width < 0, 'The Octave iframe was not kept off the visible Nyxify canvas');
   assert.equal(await page.locator('#timeTotal').textContent(), '2:00:05', 'Long duration was not formatted with hours');
   assert.equal(await page.locator('#pTitle').getAttribute('title'), track.title, 'Full long title was unavailable from the player');
 
@@ -124,11 +124,14 @@ try {
     return {
       overflow: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth,
       frameWidth: frame?.width || 0,
-      frameHeight: frame?.height || 0
+      frameHeight: frame?.height || 0,
+      frameRight: frame ? frame.right : 0,
+      stageHeight: document.querySelector('#fullTrackStage')?.getBoundingClientRect().height || 0
     };
   });
   assert.ok(mobileLayout.overflow <= 1, `Full-track player caused ${mobileLayout.overflow}px of mobile overflow`);
-  assert.ok(mobileLayout.frameWidth >= 200 && mobileLayout.frameHeight >= 200, 'The mobile full-track iframe became too small to operate');
+  assert.ok(mobileLayout.frameWidth >= 200 && mobileLayout.frameHeight >= 200 && mobileLayout.frameRight < 0, 'The mobile Octave iframe leaked onto the visible canvas');
+  assert.ok(mobileLayout.stageHeight < 90, `The audio-only status row grew to ${mobileLayout.stageHeight}px`);
   assert.deepEqual(pageErrors, [], `Browser errors: ${pageErrors.join(' | ')}`);
 
   const invalidJsonPage = await browser.newPage({ viewport: { width: 1_280, height: 800 } });

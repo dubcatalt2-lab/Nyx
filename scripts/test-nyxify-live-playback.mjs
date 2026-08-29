@@ -89,6 +89,8 @@ try {
       currentLabel: document.querySelector("#timeCur")?.textContent || "",
       frameWidth: rect?.width || 0,
       frameHeight: rect?.height || 0,
+      frameRight: rect?.right || 0,
+      stageHeight: stage?.getBoundingClientRect().height || 0,
       previewPaused: audio?.paused ?? true,
       playerVisible: Boolean(player && getComputedStyle(player).display !== "none")
     };
@@ -96,10 +98,10 @@ try {
 
   if (pageErrors.length) throw new Error(`Nyxify page errors: ${pageErrors.join(" | ")}`);
   if (failedNyxifyRequests.length) throw new Error(`Nyxify request failures: ${failedNyxifyRequests.join(" | ")}`);
-  if (state.playbackState !== "playing" || state.progress <= firstProgress || state.frameWidth < 200 || state.frameHeight < 200 || !state.previewPaused || !state.playerVisible) {
+  if (state.playbackState !== "playing" || state.progress <= firstProgress || state.frameWidth < 200 || state.frameHeight < 200 || state.frameRight >= 0 || state.stageHeight >= 90 || !state.previewPaused || !state.playerVisible) {
     throw new Error(`Nyxify Octave playback did not advance: ${JSON.stringify(state)}`);
   }
-  console.log(`Nyxify live Octave playback passed: ${title} advanced to ${state.currentLabel} in a ${Math.round(state.frameWidth)}x${Math.round(state.frameHeight)} visible player.`);
+  console.log(`Nyxify live audio-only Octave playback passed: ${title} advanced to ${state.currentLabel} with the video kept off the visible canvas.`);
 } finally {
   await browser.close();
 }

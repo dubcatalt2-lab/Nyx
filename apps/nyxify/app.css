@@ -1302,7 +1302,7 @@ main { min-width: 0; }
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 9px;
+  margin-bottom: 0;
 }
 .full-track-head > div {
   min-width: 0;
@@ -1339,11 +1339,15 @@ main { min-width: 0; }
 #fullTrackFrame,
 #fullTrackFrame iframe,
 .full-track-stage iframe {
+  position: fixed !important;
+  left: -10000px !important;
+  top: 0 !important;
   display: block;
-  width: 250px;
+  width: 200px;
   height: 200px;
+  opacity: .01;
+  pointer-events: none;
   border: 0;
-  border-radius: var(--r-md);
   background: #000;
 }
 
@@ -1683,7 +1687,7 @@ input[type="range"]::-moz-range-thumb {
   #fullTrackFrame,
   #fullTrackFrame iframe,
   .full-track-stage iframe {
-    width: 210px;
+    width: 200px;
     height: 200px;
   }
   .player-inner {

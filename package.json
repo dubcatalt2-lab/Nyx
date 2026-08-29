@@ -15,6 +15,7 @@
     "test:nyxify-covers": "node scripts/test-nyxify-playlist-covers.mjs",
     "test:nyxify-player": "node scripts/test-nyxify-player.mjs",
     "test:nyxtube": "node scripts/test-nyxtube.mjs",
+    "test:utility-theme": "node scripts/test-utility-neutral-theme.mjs",
     "build:netlify": "node scripts/build-netlify.mjs",
     "check:branding": "node scripts/check-branding.mjs",
     "check:deploy": "node scripts/check-deploy.mjs && npm run check:branding"

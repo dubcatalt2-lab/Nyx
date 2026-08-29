@@ -90,6 +90,47 @@ body.theme-emerald{--accent:#5bbb94;--accent-rgb:91,187,148}
 body.theme-sakura{--accent:#d990b3;--accent-rgb:217,144,179}
 body.theme-fresh{color-scheme:dark;--accent:#86a77e;--accent-rgb:134,167,126;--accent-soft:rgba(134,167,126,.1);--accent-faint:rgba(134,167,126,.055);--line-strong:rgba(134,167,126,.42);--bg:#162019;--surface:rgba(15,25,17,.84);--surface-strong:rgba(12,20,14,.95);--surface-soft:rgba(29,43,31,.8);--field:rgba(12,21,14,.88);--line:rgba(134,167,126,.22);--text:#d9e5d6;--muted:#91a68d;--muted-deep:#667b68}
 
+html.utility-neutral-root{background:#000}
+body.utility-neutral{
+  color-scheme:dark;
+  --accent:#b8b8b8;
+  --accent-rgb:184,184,184;
+  --accent-soft:rgba(255,255,255,.1);
+  --accent-faint:rgba(255,255,255,.055);
+  --bg:#000;
+  --surface:#080808;
+  --surface-strong:#0b0b0b;
+  --surface-soft:#171717;
+  --field:#0d0d0d;
+  --line:rgba(255,255,255,.14);
+  --line-strong:rgba(255,255,255,.34);
+  --text:#f4f4f4;
+  --muted:#a1a1a1;
+  --muted-deep:#6f6f6f;
+  background-color:#000;
+  background-image:none;
+}
+body.utility-neutral::before{background:none}
+body.utility-neutral .surface{box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+body.utility-neutral .brand-copy span,
+body.utility-neutral .service-status,
+body.utility-neutral .api-status{border:1px solid var(--line);background:#0b0b0b}
+body.utility-neutral input,
+body.utility-neutral select,
+body.utility-neutral .primary-action,
+body.utility-neutral .secondary-action,
+body.utility-neutral .quiet-action,
+body.utility-neutral .link-button{border:1px solid var(--line)}
+body.utility-neutral .utility-nav-item:hover,
+body.utility-neutral .primary-action:hover,
+body.utility-neutral .secondary-action:hover,
+body.utility-neutral .quiet-action:hover,
+body.utility-neutral .link-button:hover{border-color:var(--line-strong);background:#242424;backdrop-filter:none;-webkit-backdrop-filter:none}
+body.utility-neutral input:focus,
+body.utility-neutral select:focus{background:#121212;box-shadow:0 0 0 3px rgba(255,255,255,.055)}
+body.utility-neutral .notice{border:1px solid var(--line);background:#0b0b0b}
+body.utility-neutral .notice.error{border-color:rgba(241,160,173,.2);background:rgba(105,31,47,.16)}
+
 @media(max-width:720px){
   .utility-shell{width:min(100% - 20px,620px);padding-top:13px}
   .utility-header{gap:7px;margin-bottom:42px}

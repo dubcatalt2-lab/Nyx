@@ -6385,13 +6385,69 @@ async function nyxifyProviderJson(pathname, searchParams = {}) {
   return payload && typeof payload === "object" ? payload : {};
 }
 
+async function nyxifyDeezerJson(pathname, searchParams = {}) {
+  if (!/^\/(?:search|artist\/\d{1,20}(?:\/(?:top|albums))?|album\/\d{1,20}|track\/\d{1,20})$/.test(pathname)) {
+    throw new Error("Nyxify rejected an invalid Deezer request.");
+  }
+  const target = new URL(pathname, nyxifyChartOrigin);
+  for (const [name, value] of Object.entries(searchParams)) target.searchParams.set(name, String(value));
+  const response = await fetch(target, {
+    headers: { Accept: "application/json", "User-Agent": "Nyxify/1.0" },
+    redirect: "error",
+    signal: AbortSignal.timeout(15_000)
+  });
+  if (!response.ok) throw new Error(`Deezer returned ${response.status}.`);
+  const contentType = String(response.headers.get("content-type") || "").toLowerCase();
+  const contentLength = Number(response.headers.get("content-length") || 0);
+  if (!contentType.includes("application/json") || (contentLength && contentLength > nyxifyJsonByteLimit)) {
+    await response.body?.cancel().catch(() => {});
+    throw new Error("Deezer returned an invalid response.");
+  }
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (!bytes.length || bytes.length > nyxifyJsonByteLimit) throw new Error("The Deezer response was too large.");
+  const payload = JSON.parse(bytes.toString("utf8"));
+  if (payload?.error) throw new Error(nyxifyCleanText(payload.error.message, "Deezer could not complete the request.", 180));
+  return payload && typeof payload === "object" ? payload : {};
+}
+
+function nyxifyDeezerTrackRecord(value, context = {}) {
+  const source = value && typeof value === "object" ? value : {};
+  const artist = source.artist && typeof source.artist === "object" ? source.artist : {};
+  const album = source.album && typeof source.album === "object" ? source.album : {};
+  const artwork = nyxifyChartArtworkPath("cover", source.md5_image || album.md5_image)
+    || nyxifyChartArtworkFromUrl("cover", album.cover_medium || album.cover_big);
+  return nyxifyTrackRecord({
+    id: source.id,
+    title: source.title,
+    artist: artist.name || context.artist,
+    artistId: artist.id || context.artistId,
+    album: album.title || context.album,
+    albumId: album.id || context.albumId,
+    cover: artwork || context.cover,
+    duration: source.duration
+  });
+}
+
+function nyxifyDeezerAlbumRecord(value) {
+  const source = value && typeof value === "object" ? value : {};
+  const cover = nyxifyChartArtworkPath("cover", source.md5_image)
+    || nyxifyChartArtworkFromUrl("cover", source.cover_medium || source.cover_big);
+  return nyxifyAlbumRecord({ id: source.id, title: source.title, cover });
+}
+
 async function nyxifySearch(query) {
   const cleanQuery = nyxifyCleanText(query, "", 100);
   const key = `search:${cleanQuery.toLowerCase()}`;
   const cached = nyxifyCacheGet(nyxifyCatalogCache, key);
   if (cached) return structuredClone(cached);
-  const payload = await nyxifyProviderJson("/api/music/search", { q: cleanQuery });
-  const data = (Array.isArray(payload.data) ? payload.data : []).slice(0, 50).map(value => nyxifyTrackRecord(value)).filter(Boolean);
+  let data;
+  try {
+    const payload = await nyxifyProviderJson("/api/music/search", { q: cleanQuery });
+    data = (Array.isArray(payload.data) ? payload.data : []).slice(0, 50).map(value => nyxifyTrackRecord(value)).filter(Boolean);
+  } catch {
+    const payload = await nyxifyDeezerJson("/search", { q: cleanQuery, limit: 50 });
+    data = (Array.isArray(payload.data) ? payload.data : []).slice(0, 50).map(nyxifyDeezerTrackRecord).filter(Boolean);
+  }
   const result = { data };
   nyxifyCacheSet(nyxifyCatalogCache, key, result, nyxifyCatalogCacheTtlMs, 100);
   return structuredClone(result);
@@ -6463,7 +6519,47 @@ async function nyxifyDetail(type, id) {
   const key = `${type}:${id}`;
   const cached = nyxifyCacheGet(nyxifyCatalogCache, key);
   if (cached) return structuredClone(cached);
-  const payload = await nyxifyProviderJson(`/api/music/${type}/${id}`);
+  let payload;
+  try {
+    payload = await nyxifyProviderJson(`/api/music/${type}/${id}`);
+  } catch {
+    if (type === "artist") {
+      const [artist, top, albums] = await Promise.all([
+        nyxifyDeezerJson(`/artist/${id}`),
+        nyxifyDeezerJson(`/artist/${id}/top`, { limit: 100 }),
+        nyxifyDeezerJson(`/artist/${id}/albums`, { limit: 100 })
+      ]);
+      const name = nyxifyCleanText(artist.name, "Unknown artist", 120);
+      const tracks = (Array.isArray(top.data) ? top.data : []).slice(0, 100)
+        .map(value => nyxifyDeezerTrackRecord(value, { artist: name, artistId: id })).filter(Boolean);
+      const coverPath = nyxifyChartArtworkFromUrl("artist", artist.picture_medium || artist.picture_big);
+      const result = {
+        name,
+        cover: nyxifyCoverUrl(coverPath) || tracks.find(track => track.cover)?.cover || "",
+        total: Math.max(0, Math.min(100_000, Number.parseInt(top.total, 10) || tracks.length)),
+        albums: (Array.isArray(albums.data) ? albums.data : []).slice(0, 100).map(nyxifyDeezerAlbumRecord).filter(Boolean),
+        tracks
+      };
+      nyxifyCacheSet(nyxifyCatalogCache, key, result, nyxifyCatalogCacheTtlMs, 100);
+      return structuredClone(result);
+    }
+    const album = await nyxifyDeezerJson(`/album/${id}`);
+    const name = nyxifyCleanText(album.title, "Unknown album", 160);
+    const artist = nyxifyCleanText(album.artist?.name, "Unknown artist", 120);
+    const artistId = String(album.artist?.id || "").trim();
+    const cover = nyxifyChartArtworkPath("cover", album.md5_image)
+      || nyxifyChartArtworkFromUrl("cover", album.cover_medium || album.cover_big);
+    const result = {
+      name,
+      cover: nyxifyCoverUrl(cover),
+      artist,
+      artistId: nyxifyTrackIdPattern.test(artistId) ? artistId : "",
+      tracks: (Array.isArray(album.tracks?.data) ? album.tracks.data : []).slice(0, 200)
+        .map(value => nyxifyDeezerTrackRecord(value, { album: name, albumId: id, artist, artistId, cover })).filter(Boolean)
+    };
+    nyxifyCacheSet(nyxifyCatalogCache, key, result, nyxifyCatalogCacheTtlMs, 100);
+    return structuredClone(result);
+  }
   let result;
   if (type === "artist") {
     const name = nyxifyCleanText(payload.name, "Unknown artist", 120);
@@ -6897,6 +6993,24 @@ function nyxTubeCached(key) {
     return null;
   }
   return entry.value;
+}
+
+function nyxifyDeezerPreviewUrl(value) {
+  try {
+    const target = new URL(String(value || ""));
+    if (target.protocol !== "https:" || target.username || target.password || target.hash) return null;
+    if (target.hostname !== "cdnt-preview.dzcdn.net") return null;
+    return target;
+  } catch {
+    return null;
+  }
+}
+
+async function nyxifyDeezerPreview(trackId, headers) {
+  const track = await nyxifyDeezerJson(`/track/${trackId}`);
+  const target = nyxifyDeezerPreviewUrl(track.preview);
+  if (!target) throw new Error("This track does not have a playable preview.");
+  return fetch(target, { headers, redirect: "error", signal: AbortSignal.timeout(15_000) });
 }
 
 function nyxTubeCacheSet(key, value, ttlMs) {
@@ -11668,11 +11782,23 @@ app.get("/api/nyxify/stream/:trackId", async (req, res) => {
   try {
     const target = nyxifyProviderUrl(`/api/music/stream/${encodeURIComponent(trackId)}`);
     if (!target) throw new Error("Invalid Nyxify stream request.");
-    const upstream = await nyxifyFetchAsset(target.href, {
+    const audioHeaders = {
       Accept: "audio/mpeg,audio/mp4,audio/aac,audio/ogg,audio/webm,application/octet-stream",
       ...(range ? { Range: range } : {}),
       "User-Agent": "Nyxify/1.0"
-    });
+    };
+    let upstream;
+    try {
+      upstream = await nyxifyFetchAsset(target.href, audioHeaders);
+      if (![200, 206].includes(upstream.status)) {
+        await upstream.body?.cancel().catch(() => {});
+        upstream = await nyxifyDeezerPreview(trackId, audioHeaders);
+        res.set("X-Nyxify-Playback", "preview-fallback");
+      }
+    } catch {
+      upstream = await nyxifyDeezerPreview(trackId, audioHeaders);
+      res.set("X-Nyxify-Playback", "preview-fallback");
+    }
     if (![200, 206].includes(upstream.status)) {
       upstream.body?.cancel().catch(() => {});
       return res.status(upstream.status === 404 ? 404 : 502).type("text/plain").send("This track is not currently streamable.");

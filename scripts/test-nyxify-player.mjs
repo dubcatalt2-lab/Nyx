@@ -3,20 +3,21 @@ import { spawn } from 'node:child_process';
 import { chromium } from 'playwright';
 
 const port = 8199;
-const origin = `http://127.0.0.1:${port}`;
-const server = spawn(process.execPath, ['server.js'], {
+const externalOrigin = String(process.env.NYX_TEST_BASE_URL || '').replace(/\/$/, '');
+const origin = externalOrigin || `http://127.0.0.1:${port}`;
+const server = externalOrigin ? null : spawn(process.execPath, ['server.js'], {
   cwd: process.cwd(),
   env: { ...process.env, PORT: String(port) },
   stdio: ['ignore', 'pipe', 'pipe']
 });
 let serverOutput = '';
-server.stdout.on('data', chunk => { serverOutput += chunk; });
-server.stderr.on('data', chunk => { serverOutput += chunk; });
+server?.stdout.on('data', chunk => { serverOutput += chunk; });
+server?.stderr.on('data', chunk => { serverOutput += chunk; });
 
 const waitForServer = async () => {
   const deadline = Date.now() + 15_000;
   while (Date.now() < deadline) {
-    if (server.exitCode !== null) throw new Error(`Nyx test server stopped early.\n${serverOutput}`);
+    if (server && server.exitCode !== null) throw new Error(`Nyx test server stopped early.\n${serverOutput}`);
     try { if ((await fetch(`${origin}/healthz`)).ok) return; } catch {}
     await new Promise(resolve => setTimeout(resolve, 150));
   }
@@ -82,8 +83,23 @@ try {
   await page.locator('#seekBar').dispatchEvent('pointercancel');
   assert.equal(await page.locator('#seekBar').evaluate(slider => slider.classList.contains('dragging')), false, 'Cancelled pointer left the seek control stuck');
   assert.deepEqual(pageErrors, [], `Browser errors: ${pageErrors.join(' | ')}`);
-  console.log('Nyxify live seeking and long-duration player regression passed.');
+
+  const invalidJsonPage = await browser.newPage({ viewport: { width: 1_280, height: 800 } });
+  await invalidJsonPage.route('**/api/**', route => {
+    const path = new URL(route.request().url()).pathname;
+    if (path === '/api/nyxify/home') return route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>Gateway fallback</title>' });
+    if (path === '/api/founder-profile/auth-config') return route.fulfill({ status: 200, contentType: 'application/json', body: '{"enabled":false}' });
+    return route.continue();
+  });
+  await invalidJsonPage.goto(`${origin}/apps/nyxify/`, { waitUntil: 'domcontentloaded' });
+  await invalidJsonPage.locator('#emptySub').waitFor({ state: 'visible' });
+  const availabilityMessage = await invalidJsonPage.locator('#emptySub').textContent();
+  assert.match(availabilityMessage || '', /received a web page instead of music data/i, 'Non-JSON music response did not produce a useful availability message');
+  assert.doesNotMatch(availabilityMessage || '', /Unexpected token/i, 'Raw JSON parser failure leaked into the Nyxify UI');
+  await invalidJsonPage.close();
+
+  console.log('Nyxify player, production endpoint handling, and non-JSON fallback regressions passed.');
 } finally {
   await browser?.close().catch(() => {});
-  if (server.exitCode === null) server.kill();
+  if (server?.exitCode === null) server.kill();
 }

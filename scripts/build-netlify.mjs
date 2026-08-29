@@ -213,7 +213,28 @@ async function copyKatex() {
 }
 
 function runtimeMangleOptions(topLevel) {
-  return { toplevel: topLevel };
+  return {
+    toplevel: topLevel,
+    safari10: true
+  };
+}
+
+function runtimeCompressOptions() {
+  return {
+    passes: 2,
+    drop_debugger: true,
+    keep_fargs: true,
+    unsafe: false
+  };
+}
+
+function runtimeFormatOptions() {
+  return {
+    ascii_only: true,
+    beautify: false,
+    comments: false,
+    semicolons: true
+  };
 }
 
 async function minifyEmbeddedScramjetGuards(source, nameCache) {
@@ -233,9 +254,9 @@ async function minifyEmbeddedScramjetGuards(source, nameCache) {
       node.init.expressions.length === 0
     ) {
       const result = await minify(node.init.quasis[0].value.cooked, {
-        compress: false,
+        compress: runtimeCompressOptions(),
         mangle: runtimeMangleOptions(false),
-        format: { comments: false },
+        format: runtimeFormatOptions(),
         nameCache
       });
       if (!result.code) throw new Error(`Could not minify embedded guard ${node.id.name}`);
@@ -262,30 +283,33 @@ async function minifyEmbeddedScramjetGuards(source, nameCache) {
 
 async function minifyFirstPartyBrowserRuntimes() {
   const targets = [
-    { path: "script.js", topLevel: false },
-    { path: "startup.js", topLevel: false },
+    { path: "script.js", topLevel: true },
+    { path: "startup.js", topLevel: true },
     { path: "uv.sw.js", topLevel: true },
     { path: "scramjet.sw.js", topLevel: true },
     { path: "scramjet-v1.sw.js", topLevel: true },
-    { path: "uv.config.js", topLevel: false },
-    { path: "runtime-config.js", topLevel: false },
-    { path: "nyx-scramjet-runtime-guard.js", topLevel: false },
-    { path: "js/ai-workspace.js", topLevel: false },
-    { path: "js/loading-screen.js", topLevel: false },
-    { path: "js/nyx-logo.js", topLevel: false },
-    { path: "js/owner-dashboard.js", topLevel: false },
-    { path: "js/pwa-install.js", topLevel: false },
-    { path: "apps/api-keys/app.js", topLevel: false },
-    { path: "apps/chat/app.js", topLevel: false },
-    { path: "apps/cloud-gaming/app.js", topLevel: false },
-    { path: "apps/connect-domain/app.js", topLevel: false },
-    { path: "apps/link-checker/app.js", topLevel: false },
-    { path: "apps/link-generator/app.js", topLevel: false },
-    { path: "apps/nyxify/app.js", topLevel: false },
-    { path: "apps/nyxtube/app.js", topLevel: false },
-    { path: "assets/games/games.js", topLevel: false }
+    { path: "uv.config.js", topLevel: true },
+    { path: "runtime-config.js", topLevel: true },
+    { path: "nyx-scramjet-runtime-guard.js", topLevel: true },
+    { path: "js/ai-workspace.js", topLevel: true },
+    { path: "js/loading-screen.js", topLevel: true },
+    { path: "js/nyx-logo.js", topLevel: true },
+    { path: "js/owner-dashboard.js", topLevel: true },
+    { path: "js/pwa-install.js", topLevel: true },
+    { path: "apps/api-keys/app.js", topLevel: true },
+    { path: "apps/chat/app.js", topLevel: true },
+    { path: "apps/cloud-gaming/app.js", topLevel: true },
+    { path: "apps/connect-domain/app.js", topLevel: true },
+    { path: "apps/link-checker/app.js", topLevel: true },
+    { path: "apps/link-generator/app.js", topLevel: true },
+    { path: "apps/nyxify/app.js", topLevel: true },
+    { path: "apps/nyxtube/app.js", topLevel: true },
+    { path: "assets/games/games.js", topLevel: true }
   ];
   const nameCache = {};
+  let sourceBytes = 0;
+  let outputBytes = 0;
+  let transformedFiles = 0;
   for (const target of targets) {
     const path = join(output, ...target.path.split("/"));
     let source;
@@ -294,17 +318,22 @@ async function minifyFirstPartyBrowserRuntimes() {
     } catch {
       continue;
     }
+    sourceBytes += Buffer.byteLength(source);
     if (target.path === "script.js") source = await minifyEmbeddedScramjetGuards(source, nameCache);
     const result = await minify(source, {
-      compress: false,
+      compress: runtimeCompressOptions(),
       mangle: runtimeMangleOptions(target.topLevel),
-      format: { comments: false },
+      format: runtimeFormatOptions(),
       nameCache
     });
     if (!result.code) throw new Error(`Could not minify ${target.path}`);
+    if (/sourceMappingURL/i.test(result.code)) throw new Error(`Source map reference survived in ${target.path}`);
     await writeFile(path, `${result.code}\n`);
+    outputBytes += Buffer.byteLength(result.code) + 1;
+    transformedFiles += 1;
   }
-  console.log(`Minified ${targets.length} first-party browser runtime files`);
+  const reduction = sourceBytes ? Math.round((1 - outputBytes / sourceBytes) * 100) : 0;
+  console.log(`Production-obfuscated ${transformedFiles} first-party browser runtime files (${reduction}% smaller; no source maps)`);
 }
 
 async function writeNetlifyFiles() {

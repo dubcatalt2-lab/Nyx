@@ -93,6 +93,23 @@ function esc(str) {
   return d.innerHTML;
 }
 
+async function nyxifyjson(path, options = {}) {
+  const response = await fetch(path, { cache: 'no-store', ...options });
+  const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+  const text = await response.text();
+  let payload = null;
+  if (text && (contentType.includes('application/json') || /^[\s\r\n]*[\[{]/.test(text))) {
+    try { payload = JSON.parse(text); } catch (_) {}
+  }
+  if (!response.ok) {
+    throw new Error(payload?.error || `Nyxify is temporarily unavailable (${response.status}).`);
+  }
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('Nyxify received a web page instead of music data. Reload Nyx and try again.');
+  }
+  return payload;
+}
+
 function playlisttrack(track) {
   return {
     id: String(track?.id || ''),
@@ -160,9 +177,8 @@ async function playlistparenttoken() {
 async function playlistdirectauth() {
   if (playlistAuthPromise) return playlistAuthPromise;
   playlistAuthPromise = (async () => {
-    const configResponse = await fetch('/api/founder-profile/auth-config', { cache: 'no-store' });
-    const config = await configResponse.json();
-    if (!configResponse.ok || !config?.enabled) return null;
+    const config = await nyxifyjson('/api/founder-profile/auth-config');
+    if (!config?.enabled) return null;
     const [{ initializeApp, getApps }, { getAuth, setPersistence, browserLocalPersistence }] = await Promise.all([
       import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),
       import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')
@@ -552,9 +568,7 @@ async function opendetail(type, id, name, autoplay) {
   detail = { type, id, name, data: null };
   showloading(name);
   try {
-    const r = await fetch(`/api/nyxify/${type}/${id}`);
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+    const data = await nyxifyjson(`/api/nyxify/${type}/${id}`);
     if (myreq !== reqid) return;
     detail.data = data;
     renderdetail();
@@ -664,9 +678,7 @@ async function loadhome() {
   homeError = '';
   if (!query && !activePlaylistId && !detail) rendermain();
   try {
-    const response = await fetch('/api/nyxify/home');
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error || `HTTP ${response.status}`);
+    const payload = await nyxifyjson('/api/nyxify/home');
     homeData = {
       tracks: Array.isArray(payload.tracks) ? payload.tracks : [],
       artists: Array.isArray(payload.artists) ? payload.artists : [],
@@ -1247,9 +1259,7 @@ async function createplaylistfromtrack(seed, button) {
   try {
     const searchSeed = String(seed.artist || seed.title || '').trim();
     if (!searchSeed) throw new Error('This song does not have enough catalog information.');
-    const response = await fetch(`/api/nyxify/search?q=${encodeURIComponent(searchSeed)}`);
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error || `HTTP ${response.status}`);
+    const payload = await nyxifyjson(`/api/nyxify/search?q=${encodeURIComponent(searchSeed)}`);
     matches = Array.isArray(payload.data) ? payload.data : [];
   } catch (_) {
     searchFailed = true;
@@ -1363,9 +1373,7 @@ document.getElementById('searchForm').addEventListener('submit', async e => {
   if (!q) return;
   showloading();
   try {
-    const r = await fetch(`/api/nyxify/search?q=${encodeURIComponent(q)}`);
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+    const data = await nyxifyjson(`/api/nyxify/search?q=${encodeURIComponent(q)}`);
     query = q;
     results = data.data || [];
     detail = null;

@@ -4225,6 +4225,7 @@
     const id='shell-'+Date.now()+Math.random().toString(16).slice(2);
     const normalized=url ? normalize(url) : '';
     const isBlank=!normalized;
+    if(isBlank) closeBrowserShellSettings();
     browserShellTabs.push({id,url:normalized,title:isBlank ? 'New Tab' : browserShellLabel(normalized),icon:isBlank ? favicons.nyx : iconForUrl(normalized)});
     browserShellOpeningTabs.add(id);
     browserShellActiveTab=id;
@@ -4491,8 +4492,6 @@
     return `<button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${nyxTabFavicon}"><span>ռʏӼ tab</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
   }
   function saveBrowserShellSettings(root=document){
-    const activeTab=activeBrowser?.tabs?.find(tab=>tab.id===activeBrowser.active);
-    const activeSource=browserShellSourceUrl(activeTab?.sourceUrl || activeTab?.url || '') || activeTab?.sourceUrl || activeTab?.url || '';
     const engine=root.querySelector('[data-browser-engine]');
     const mode=root.querySelector('[data-browser-mode-select]');
     const transport=root.querySelector('[data-browser-transport]');
@@ -4514,15 +4513,7 @@
     }
     store.setText('nyx.transport', nextTransport);
     applyUserSettings();
-    browserTransportOverride='';
-    scramjetInstallPromise=null;
-    scramjetController=null;
-    scramjetTransport=null;
-    scramjetTransportKey='';
-    uvInstallPromise=null;
-    if(/^https?:\/\//i.test(activeSource)){
-      setTimeout(()=>activeBrowser?.navigate?.(activeSource),0);
-    }
+    resetBrowserProxyRuntime();
   }
   function enhanceBrowserShellSettings(overlay){
     const app=overlay.querySelector('.settings-app');
@@ -4567,7 +4558,7 @@
       ['search','Search & Cloak',settingsIcons.privacy,'Control search behavior and tab cloaking.',['tab cloak','preset cloak','cloaking']],
       ['privacy','Privacy',settingsIcons.account,'Keep your browsing surface private and protected.',['private tabs','popup protection']],
       ['proxy','Proxy',settingsIcons.browsing,'Choose how Nyx reaches the web.',['search engine','proxy engine','transport']],
-      ['advanced','Advanced',settingsIcons.advanced,'Configure power-user browser controls.',['panic key','display mode']],
+      ['advanced','Advanced',settingsIcons.advanced,'Configure power-user browser controls.',['panic key','display mode','wisp url']],
       ['account','Account',settingsIcons.account,'Manage your Nyx identity, cloud saves, and staff tools.',['account','cloud saves','owner dashboard','founder profile']],
       ['about','About',settingsIcons.account,'Version details and local Nyx data.',['nyx','clear cache']]
     ];
@@ -4701,6 +4692,14 @@
       [...transportSelect.options].forEach(option=>{
         if(transportLabels[option.value]) option.textContent=transportLabels[option.value];
       });
+    }
+    const transportBlock=transportSelect?.closest('.settings-block');
+    if(transportBlock){
+      const customWisp=storedCustomWispUrl();
+      const wispBlock=document.createElement('section');
+      wispBlock.className='settings-block nyx-wisp-setting';
+      wispBlock.innerHTML=`<h2>Wisp URL</h2><p>Use a custom Wisp relay for Nyx proxy transports. Only use a relay you trust because it carries your proxied traffic.</p><div class="settings-form-row"><input class="settings-input" data-browser-wisp-url type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(customWisp)}" placeholder="${esc(defaultWispUrl())}" aria-label="Custom Wisp URL"></div><p class="settings-hint" data-browser-wisp-status>${customWisp ? `Custom relay: ${esc(customWisp)}` : `Default relay: ${esc(defaultWispUrl())}`}</p><div class="settings-actions"><button class="settings-action" data-browser-wisp-save type="button">Save Wisp URL</button><button class="settings-action" data-browser-wisp-reset type="button">Use default</button></div>`;
+      transportBlock.after(wispBlock);
     }
     const effectBlock=overlay.querySelector('[data-effect-value]')?.closest('.settings-block');
     if(effectBlock){
@@ -6835,12 +6834,60 @@
         await registration.update().catch(()=>null);
         return Boolean(await waitForServiceWorkerScript(registration,scramjetServiceWorkerUrl));
       }
-  function wispUrl(){
+  function normalizeWispUrl(value){
+    const raw=String(value || '').trim();
+    if(!raw) return '';
+    let endpoint;
+    try{endpoint=new URL(raw)}catch{throw new Error('Enter a complete ws:// or wss:// Wisp URL.')}
+    if(endpoint.protocol!=='ws:' && endpoint.protocol!=='wss:') throw new Error('A Wisp URL must start with ws:// or wss://.');
+    if(endpoint.username || endpoint.password) throw new Error('Wisp URLs cannot contain a username or password.');
+    if(endpoint.hash) throw new Error('Wisp URLs cannot contain a # fragment.');
+    if(location.protocol==='https:' && endpoint.protocol!=='wss:') throw new Error('Secure Nyx pages require a wss:// Wisp URL.');
+    return endpoint.href;
+  }
+  function defaultWispUrl(){
     const configured=String(globalThis.__NYX_RUNTIME_CONFIG__?.wispUrl || '').trim();
     if(/^wss?:\/\//i.test(configured)) return configured.endsWith('/') ? configured : configured+'/';
     if(!hasHostedBackend()) return 'wss://wisp.mercurywork.shop/';
     const protocol=location.protocol==='https:' ? 'wss:' : 'ws:';
     return `${protocol}//${location.host}/wisp/`;
+  }
+  function storedCustomWispUrl(){
+    try{return normalizeWispUrl(store.text('nyx.wispUrl',''))}catch{return ''}
+  }
+  function wispUrl(){
+    return storedCustomWispUrl() || defaultWispUrl();
+  }
+  function activeBrowserSourceUrl(){
+    const activeTab=activeBrowser?.tabs?.find(tab=>tab.id===activeBrowser.active);
+    const raw=activeTab?.sourceUrl || activeTab?.url || '';
+    return browserShellSourceUrl(raw) || raw;
+  }
+  function resetBrowserProxyRuntime(reloadActive=true){
+    const activeSource=activeBrowserSourceUrl();
+    browserTransportOverride='';
+    scramjetInstallPromise=null;
+    scramjetController=null;
+    scramjetTransport=null;
+    scramjetTransportKey='';
+    uvInstallPromise=null;
+    if(reloadActive && /^https?:\/\//i.test(activeSource)) setTimeout(()=>activeBrowser?.navigate?.(activeSource),0);
+  }
+  function saveBrowserWispUrl(root,reset=false){
+    const input=root?.querySelector('[data-browser-wisp-url]');
+    const status=root?.querySelector('[data-browser-wisp-status]');
+    let next='';
+    try{next=reset ? '' : normalizeWispUrl(input?.value || '')}catch(error){
+      input?.focus();
+      toast(error?.message || 'Enter a valid Wisp URL.');
+      return false;
+    }
+    store.setText('nyx.wispUrl',next);
+    if(input) input.value=next;
+    if(status) status.textContent=next ? `Custom relay: ${next}` : `Default relay: ${defaultWispUrl()}`;
+    resetBrowserProxyRuntime();
+    toast(next ? 'Custom Wisp URL saved' : 'Default Wisp URL restored');
+    return true;
   }
   function nyxPresenceUrl(){
     if(hasHostedBackend()){
@@ -14425,6 +14472,18 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         toast('Browser settings saved');
         return;
       }
+      const wispSave=e.target.closest?.('[data-browser-wisp-save]');
+      if(wispSave){
+        e.preventDefault();
+        saveBrowserWispUrl(wispSave.closest('.browser-shell-settings-overlay'));
+        return;
+      }
+      const wispReset=e.target.closest?.('[data-browser-wisp-reset]');
+      if(wispReset){
+        e.preventDefault();
+        saveBrowserWispUrl(wispReset.closest('.browser-shell-settings-overlay'),true);
+        return;
+      }
       const browserShellToggle=e.target.closest?.('[data-browser-shell-toggle]');
       if(browserShellToggle && browserShellToggle.closest('.browser-shell-settings-overlay')){
         e.preventDefault();
@@ -15227,6 +15286,11 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }
     });
     document.addEventListener('keydown',e=>{
+      if(e.target?.matches?.('[data-browser-wisp-url]') && e.key==='Enter'){
+        e.preventDefault();
+        saveBrowserWispUrl(e.target.closest('.browser-shell-settings-overlay'));
+        return;
+      }
       if(e.target?.id==='settingName' && e.key==='Enter'){
         e.preventDefault();
         saveProfile(e.target.closest('.window'));

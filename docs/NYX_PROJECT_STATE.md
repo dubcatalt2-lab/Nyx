@@ -34,6 +34,7 @@ Important release warning: production currently contains commits that are not on
 - Production host: OVHcloud VPS `15.204.93.166`, behind Cloudflare
 - Production Wisp: `wss://nyxlearning.org/wisp/` (embedded)
 - Rollback Wisp: `wss://nyx-temporary-production.up.railway.app/wisp/`
+- Users can set a device-local custom Wisp endpoint from Settings > Advanced. Nyx accepts only absolute `ws://` or `wss://` URLs without embedded credentials or fragments, requires `wss://` when Nyx is served over HTTPS, and resets the active proxy transports when the endpoint changes. Clearing the field restores the runtime-configured or same-origin default.
 
 The following working-tree entries were deliberately left untracked and must not be staged, removed, or treated as Nyx release files without explicit instruction:
 

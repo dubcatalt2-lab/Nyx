@@ -241,8 +241,26 @@ try{
   await page.waitForSelector('.browser-shell-settings-overlay');
   await page.waitForTimeout(200);
   assert.equal(await page.locator('.browser-shell-settings-overlay').count(),1,'Toolbar Settings was removed after opening');
-  await page.locator('[data-browser-shell-home]').evaluate(button=>button.click());
+  await page.locator('[data-settings-category-button="advanced"]').click();
+  const wispInput=page.locator('[data-browser-wisp-url]');
+  await wispInput.waitFor();
+  assert.equal(await wispInput.isVisible(),true,'Wisp URL control was not visible in Advanced settings');
+  await wispInput.fill('wss://relay.example.test/custom-wisp');
+  await page.locator('[data-browser-wisp-save]').click();
+  assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.wispUrl')),'wss://relay.example.test/custom-wisp','Custom Wisp URL was not persisted');
+  assert.match(await page.locator('[data-browser-wisp-status]').textContent(),/Custom relay: wss:\/\/relay\.example\.test\/custom-wisp/,'Custom Wisp URL was not selected at runtime');
+  await wispInput.fill('https://relay.example.test/wisp');
+  await page.locator('[data-browser-wisp-save]').click();
+  assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.wispUrl')),'wss://relay.example.test/custom-wisp','Invalid Wisp protocol replaced the saved relay');
+  await page.locator('[data-browser-wisp-reset]').click();
+  assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.wispUrl')),'','Reset did not restore the default Wisp relay');
+  assert.match(await page.locator('[data-browser-wisp-status]').textContent(),/^Default relay: wss?:\/\//,'Default Wisp relay status was not restored');
+  await page.locator('[data-browser-shell-new-tab]').first().evaluate(button=>button.click());
   await page.waitForSelector('.browser-shell-settings-overlay',{state:'detached'});
+  assert.equal(await page.locator('.nyx-browser-tab-row.active strong').textContent(),'New Tab','New tab created from Settings did not become the active blank tab');
+  assert.equal(await page.locator('[data-browser-shell-url]').inputValue(),'','New tab created from Settings inherited its internal URL');
+  assert.equal(await page.locator('.nyx-minimal-home').isVisible(),true,'New tab created from Settings did not show the Nyx homepage');
+  await page.locator('[data-browser-shell-home]').evaluate(button=>button.click());
 
   await page.locator('.nyx-minimal-top-actions [data-app-url="/apps/chat/"]').click();
   const chatFrame=page.frames().find(frame=>new URL(frame.url()).pathname==='/apps/chat/');

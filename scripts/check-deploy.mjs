@@ -38,6 +38,7 @@ const requiredFiles = [
   "apps/nyxify/app.css",
   "apps/nyxify/icons.css",
   "apps/nyxify/app.js",
+  "apps/nyxtube/player-core.js",
   "assets/icons/shortcut-nyxify.svg",
   "assets/games/index.html",
   "assets/ugs/play.html",

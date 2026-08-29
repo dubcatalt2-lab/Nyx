@@ -109,6 +109,8 @@ try {
 
   await page.goto(`${origin}/apps/nyxify/`, { waitUntil: 'domcontentloaded' });
   await page.locator('.row', { hasText: track.title }).click();
+  await page.waitForFunction(() => ['ready', 'playing'].includes(document.querySelector('#fullTrackStage')?.dataset.playbackState));
+  if (await page.locator('#fullTrackStage').getAttribute('data-playback-state') === 'ready') await page.locator('#playBtn').click();
   await page.locator('#fullTrackStage[data-playback-state="playing"]').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#fullTrackTitle').textContent(), track.title, 'The full-song row did not use the matched video title');
   assert.doesNotMatch(await page.locator('#fullTrackStage').textContent(), /octave/i, 'The internal playback-engine name leaked into the visible UI');
@@ -169,6 +171,58 @@ try {
   await page.locator('[data-view="watch"]:not([hidden])').waitFor({ state: 'visible' });
   assert.equal(await page.locator('[data-watch-title]').textContent(), track.title, 'NyxTube did not open the matched music video');
   assert.deepEqual(pageErrors, [], `Browser errors: ${pageErrors.join(' | ')}`);
+
+  const chromeOsContext = await browser.newContext({
+    viewport: { width: 1_280, height: 800 },
+    userAgent: 'Mozilla/5.0 (X11; CrOS x86_64 15917.71.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+  });
+  const chromeOsPage = await chromeOsContext.newPage();
+  const chromeOsErrors = [];
+  chromeOsPage.on('pageerror', error => chromeOsErrors.push(error.message));
+  await chromeOsPage.addInitScript(() => {
+    let currentTime = 0;
+    let paused = true;
+    Object.defineProperties(HTMLMediaElement.prototype, {
+      duration: { configurable: true, get: () => 7_205 },
+      readyState: { configurable: true, get: () => HTMLMediaElement.HAVE_METADATA },
+      currentTime: { configurable: true, get: () => currentTime, set: value => { currentTime = Number(value); } },
+      paused: { configurable: true, get: () => paused }
+    });
+    HTMLMediaElement.prototype.play = async function play() { paused = false; this.dispatchEvent(new Event('play')); };
+    HTMLMediaElement.prototype.pause = function pause() { paused = true; this.dispatchEvent(new Event('pause')); };
+  });
+  await chromeOsPage.route('https://www.youtube-nocookie.com/embed/**', route => route.fulfill({
+    status: 200,
+    contentType: 'text/html',
+    body: `<!doctype html><script>
+      let plays = 0;
+      addEventListener('message', event => {
+        let message = event.data;
+        try { if (typeof message === 'string') message = JSON.parse(message); } catch {}
+        if (message?.func !== 'playVideo') return;
+        plays += 1;
+        if (plays > 1) parent.postMessage(JSON.stringify({ event: 'onStateChange', info: 1 }), '*');
+      });
+    <\/script>`
+  }));
+  await chromeOsPage.route('**/api/**', route => {
+    const path = new URL(route.request().url()).pathname;
+    const json = body => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+    if (path === '/api/nyxify/home') return json({ tracks: [track], artists: [], albums: [] });
+    if (path === `/api/nyxify/full-track/${track.id}`) return json({ mode: 'octave', videoId: '5NV6Rdv1a3I', durationSeconds: track.duration, title: track.title });
+    if (path === '/api/founder-profile/auth-config') return json({ enabled: false });
+    return route.continue();
+  });
+  await chromeOsPage.goto(`${origin}/apps/nyxify/`, { waitUntil: 'domcontentloaded' });
+  await chromeOsPage.locator('.row', { hasText: track.title }).click();
+  await chromeOsPage.locator('#fullTrackFrame iframe[data-direct-youtube="true"]').waitFor({ state: 'attached' });
+  await chromeOsPage.locator('#fullTrackStage[data-playback-state="ready"]').waitFor({ state: 'visible' });
+  assert.equal(await chromeOsPage.locator('#audio').evaluate(audio => audio.paused), false, 'ChromeOS direct-player startup silenced the preview before full audio began');
+  await chromeOsPage.locator('#playBtn').click();
+  await chromeOsPage.locator('#fullTrackStage[data-playback-state="playing"]').waitFor({ state: 'visible' });
+  assert.equal(await chromeOsPage.locator('#audio').evaluate(audio => audio.paused), true, 'ChromeOS direct-player confirmation did not pause the preview');
+  assert.deepEqual(chromeOsErrors, [], `ChromeOS direct-player browser errors: ${chromeOsErrors.join(' | ')}`);
+  await chromeOsContext.close();
 
   const invalidJsonPage = await browser.newPage({ viewport: { width: 1_280, height: 800 } });
   await invalidJsonPage.route('**/api/**', route => {

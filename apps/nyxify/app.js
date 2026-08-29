@@ -68,6 +68,7 @@ let octaveprogress = null;
 let octaveapipromise = null;
 let octavepending = false;
 let octavevideo = null;
+const nyxtubedirectapi = window.NyxTubePlayerCore.createDirectYoutubeApi({ optimisticState: false });
 
 let shuffleon = localStorage.getItem('nyx_nyxify_shuffle') === '1';
 let repeatmode = localStorage.getItem('nyx_nyxify_repeat') || 'off';
@@ -1493,16 +1494,22 @@ function ensureoctaveframe() {
 }
 
 function ensureoctaveapi() {
+  if (/\bCrOS\b/i.test(navigator.userAgent)) return Promise.resolve(nyxtubedirectapi);
   if (window.YT?.Player) return Promise.resolve(window.YT);
   if (octaveapipromise) return octaveapipromise;
-  octaveapipromise = new Promise((resolve, reject) => {
+  octaveapipromise = new Promise(resolve => {
     const previous = window.onYouTubeIframeAPIReady;
-    const timer = setTimeout(() => reject(new Error('The full-song player took too long to load.')), 15_000);
+    let settled = false;
+    const finish = api => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(api);
+    };
+    const timer = setTimeout(() => finish(nyxtubedirectapi), 5_000);
     window.onYouTubeIframeAPIReady = () => {
       try { previous?.(); } catch (_) {}
-      clearTimeout(timer);
-      if (window.YT?.Player) resolve(window.YT);
-      else reject(new Error('The full-song player did not initialize.'));
+      finish(window.YT?.Player ? window.YT : nyxtubedirectapi);
     };
     let script = document.querySelector('script[data-nyx-octave-player]');
     if (!script) {
@@ -1510,15 +1517,9 @@ function ensureoctaveapi() {
       script.src = 'https://www.youtube.com/iframe_api';
       script.async = true;
       script.dataset.nyxOctavePlayer = '1';
-      script.addEventListener('error', () => {
-        clearTimeout(timer);
-        reject(new Error('The full-song player could not be loaded.'));
-      }, { once: true });
+      script.addEventListener('error', () => finish(nyxtubedirectapi), { once: true });
       document.head.appendChild(script);
     }
-  }).catch(error => {
-    octaveapipromise = null;
-    throw error;
   });
   return octaveapipromise;
 }
@@ -1611,6 +1612,8 @@ async function startoctavetrack(track, request) {
       width: '240',
       height: '240',
       videoId: octaveCandidates[0].videoId,
+      host: 'https://www.youtube-nocookie.com',
+      expectedDuration: Number(match.durationSeconds) || Number(track.duration) || 0,
       playerVars: {
         autoplay: 1,
         controls: 1,
@@ -1627,6 +1630,11 @@ async function startoctavetrack(track, request) {
           event.target.setVolume?.(volume);
           fullTrackStatus.textContent = audio.paused ? 'Full song ready - press play' : 'Starting full song...';
           event.target.playVideo?.();
+          setTimeout(() => {
+            if (request !== octaverequest || !octavepending || playbackmode === 'octave') return;
+            fullTrackStage.dataset.playbackState = 'ready';
+            fullTrackStatus.textContent = 'Full song ready - press play';
+          }, 1_500);
           const duration = Number(event.target.getDuration?.()) || Number(match.durationSeconds) || Number(track.duration) || 0;
           if (duration) document.getElementById('timeTotal').textContent = fmt(duration);
         },

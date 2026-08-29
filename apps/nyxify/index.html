@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/apps/nyxify/icons.css?v=20260825-nyx-v2">
-  <link rel="stylesheet" href="/apps/nyxify/app.css?v=20260829-video-title-v12">
+  <link rel="stylesheet" href="/apps/nyxify/app.css?v=20260829-cover-video-v13">
 </head>
 <body>
   <canvas id="stars"></canvas>
@@ -55,7 +55,14 @@
       <section class="module now-playing-module" id="nowPlayingModule" hidden>
         <div class="mod-head"><span>Now playing</span><small id="nowPlayingContext">Nyxify</small></div>
         <div class="now-playing-body">
-          <img class="now-playing-art" id="nowPlayingArt" alt="Current track cover">
+          <div class="now-playing-media" id="nowPlayingMedia">
+            <img class="now-playing-art" id="nowPlayingArt" alt="Current track cover">
+            <div id="fullTrackFrame"></div>
+            <button type="button" class="now-playing-video-toggle" id="fullTrackVideo" aria-label="Music video unavailable" aria-pressed="false" hidden disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m10 9 5 3-5 3V9Z"></path></svg>
+              <span id="fullTrackVideoLabel">Switch to video</span>
+            </button>
+          </div>
           <div class="now-playing-title" id="nowPlayingTitle"></div>
           <button type="button" class="now-playing-link" id="nowPlayingArtist"></button>
           <button type="button" class="now-playing-link now-playing-album" id="nowPlayingAlbum"></button>
@@ -83,11 +90,9 @@
     <div class="full-track-head">
       <div><strong id="fullTrackTitle">Full track</strong><span id="fullTrackStatus">Finding the full song…</span></div>
       <div class="full-track-actions">
-        <button type="button" id="fullTrackVideo" aria-label="Music video unavailable" aria-pressed="false" disabled>Show video</button>
         <button type="button" id="fullTrackPreview" aria-label="Use preview playback">Use preview</button>
       </div>
     </div>
-    <div id="fullTrackFrame"></div>
   </section>
 
   <div class="player" id="player">
@@ -158,6 +163,6 @@
   <audio id="audio" preload="metadata"></audio>
 
   <script src="/apps/nyxtube/player-core.js?v=20260829-chromeos-audio-v1"></script>
-  <script src="/apps/nyxify/app.js?v=20260829-chromeos-direct-v15"></script>
+  <script src="/apps/nyxify/app.js?v=20260829-cover-video-v16"></script>
 </body>
 </html>

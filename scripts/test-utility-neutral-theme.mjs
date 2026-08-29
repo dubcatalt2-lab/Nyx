@@ -25,6 +25,13 @@ const cases = [
     surface: ".generator-card",
     inner: ".form-panel",
     hover: '.access-tabs button[data-access-mode="administrator"]'
+  },
+  {
+    name: "JSDelivr Publisher",
+    path: "/apps/jsdelivr-publisher/",
+    surface: ".publisher-card",
+    inner: ".form-grid label",
+    hover: ".file-display"
   }
 ];
 
@@ -42,6 +49,13 @@ try {
       }));
       await page.goto(`${baseUrl}${testCase.path}`, { waitUntil: "domcontentloaded" });
       await page.locator(testCase.surface).waitFor();
+
+      if (testCase.name === "Link Generator") {
+        const jsdelivrLink = page.locator('.utility-nav-item[aria-label="Jsdelivr Links"]');
+        assert(await jsdelivrLink.getAttribute("href") === "../jsdelivr-publisher/", "Link Generator does not expose the Jsdelivr Links publisher");
+        assert((await jsdelivrLink.textContent())?.trim() === "Jsdelivr Links", "The publisher navigation label is not Jsdelivr Links");
+        assert(await jsdelivrLink.locator("svg").isVisible(), `Jsdelivr Links navigation icon is hidden at ${viewport.width}px`);
+      }
 
       const colors = await page.evaluate(({ surface, inner }) => {
         const style = selector => getComputedStyle(document.querySelector(selector));
@@ -74,7 +88,7 @@ try {
       await page.close();
     }
   }
-  console.log("Utility theme test: API Keys and Link Generator use jet-black canvases with gray surfaces, borders, hover states, and responsive layouts.");
+  console.log("Utility theme test: API Keys, Link Generator, and JSDelivr Publisher use jet-black canvases with gray surfaces, borders, hover states, and responsive layouts.");
 } finally {
   await browser.close();
 }

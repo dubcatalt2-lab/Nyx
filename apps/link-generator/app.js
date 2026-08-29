@@ -183,7 +183,7 @@
     const amount=selectedAmount();
     refs.reviewAmountRow.hidden=!premiumAccessActive();
     refs.reviewAmount.textContent=`${amount} link${amount===1?'':'s'}`;
-    refs.confirmText.textContent=`I understand this creates ${amount===1?'one resource':`${amount} resources`} on the Nyx Bunny account.`;
+    refs.confirmText.textContent=`I understand this publishes ${amount===1?'one Nyx SVG':`${amount} Nyx SVGs`} through my GitHub repository.`;
     if(!refs.button.disabled) refs.button.querySelector('span').textContent=`Generate ${amount===1?'link':`${amount} links`}`;
   }
   function setWizardStep(nextStep,direction=nextStep>=wizardStep?'forward':'back'){
@@ -385,7 +385,7 @@
       const status=await readJson(await fetch('/api/link-generator/status',{headers:{Accept:'application/json'},cache:'no-store'}));
       premiumBatchLimit=Math.max(1,Math.min(10,Number.parseInt(status.premiumBatchLimit,10) || 10));freeDailyLimit=Math.max(1,Number.parseInt(status.freeDailyLimit,10) || 3);premiumImmediateCooldownAt=Math.max(1,Number.parseInt(status.premiumImmediateCooldownAt,10) || 5);premiumAccumulatedLimit=Math.max(premiumImmediateCooldownAt,Number.parseInt(status.premiumAccumulatedLimit,10) || 30);premiumCooldownMinutes=Math.max(1,Number.parseInt(status.premiumCooldownMinutes,10) || 10);refs.amount.max=String(premiumBatchLimit);refs.amountHint.textContent=`Choosing ${premiumImmediateCooldownAt}–${premiumBatchLimit} links starts a ${premiumCooldownMinutes}-minute cooldown. Smaller batches start it after ${premiumAccumulatedLimit} total links.`;renderAccount();
       refs.origin.textContent=status.origin || 'Not configured';setStatus(status.available,status.available ? 'Ready' : 'Setup required');
-      if(!status.available) showNotice('The Nyx administrator still needs to finish the Link Generator environment settings in Netlify.','error');
+      if(!status.available) showNotice('The Nyx administrator still needs to finish the Link Generator server settings.','error');
     }catch(error){refs.origin.textContent='Unavailable';setStatus(false,'Unavailable');showNotice(`Could not check the generator: ${error.message}`,'error')}
   }
 
@@ -408,7 +408,7 @@
     showNotice('');refs.resultCard.hidden=true;setLoading(true);
     try{
       const headers={Accept:'application/json','Content-Type':'application/json'};
-      const body={label:refs.label.value};
+      const body={label:refs.label.value,provider:'jsdelivr'};
       if(accessMode==='account'){
         const session=await currentVerifiedSession();
         headers.Authorization=`Bearer ${session.idToken}`;
@@ -419,6 +419,11 @@
         body.amount=selectedAmount();
       }
       const result=await readJson(await fetch('/api/link-generator',{method:'POST',headers,body:JSON.stringify(body)}));
+      if(result.provider==='jsdelivr' && result.authorized===true){
+        const params=new URLSearchParams({preset:'nyx',label:refs.label.value.trim(),filter:selectedFilter,count:String(result.requested || selectedAmount())});
+        location.href=`../jsdelivr-publisher/?${params.toString()}`;
+        return;
+      }
       const links=(Array.isArray(result.links)?result.links:[]).map(item=>typeof item==='string'?item:item?.url).filter(Boolean);
       if(!links.length && result.url) links.push(result.url);
       if(!links.length) throw new Error('Bunny did not return any generated links.');

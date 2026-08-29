@@ -166,10 +166,51 @@ try {
   await page.locator('#fullTrackStage[data-playback-state="playing"]').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#audio').evaluate(audio => audio.paused), true, 'The preview kept playing after the user started the full song');
 
+  const musicUrl = page.url();
+  await page.evaluate(() => { window.__octavePlayer.currentTime = 123; });
   await page.locator('#fullTrackVideo').click();
-  await page.waitForURL(/\/apps\/nyxtube\/?\?video=5NV6Rdv1a3I/);
-  await page.locator('[data-view="watch"]:not([hidden])').waitFor({ state: 'visible' });
-  assert.equal(await page.locator('[data-watch-title]').textContent(), track.title, 'NyxTube did not open the matched music video');
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('#nowPlayingArt')).visibility === 'hidden');
+  const inlineVideo = await page.evaluate(() => {
+    const frame = document.querySelector('#fullTrackFrame')?.getBoundingClientRect();
+    const media = document.querySelector('#nowPlayingMedia')?.getBoundingClientRect();
+    return {
+      url: location.href,
+      currentTime: window.__octavePlayer.currentTime,
+      pressed: document.querySelector('#fullTrackVideo')?.getAttribute('aria-pressed'),
+      label: document.querySelector('#fullTrackVideoLabel')?.textContent,
+      coverVisibility: getComputedStyle(document.querySelector('#nowPlayingArt')).visibility,
+      frame,
+      media
+    };
+  });
+  assert.equal(inlineVideo.url, musicUrl, 'Switching to video navigated away from Nyxify');
+  assert.equal(inlineVideo.currentTime, 123, 'Switching to video restarted the active song');
+  assert.equal(inlineVideo.pressed, 'true', 'The video switch did not expose its active state');
+  assert.equal(inlineVideo.label, 'Switch to cover', 'The active video switch did not offer the cover view');
+  assert.equal(inlineVideo.coverVisibility, 'hidden', 'The cover remained visible over the inline video');
+  assert.ok(inlineVideo.frame && inlineVideo.media && inlineVideo.frame.width > 0 && inlineVideo.frame.height > 0, 'The inline video was not visible');
+  assert.ok(Math.abs(inlineVideo.frame.left - inlineVideo.media.left) <= 1 && Math.abs(inlineVideo.frame.top - inlineVideo.media.top) <= 1, 'The inline video was not placed in the cover area');
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const compactInlineVideo = await page.evaluate(() => {
+    const frame = document.querySelector('#fullTrackFrame')?.getBoundingClientRect();
+    const media = document.querySelector('#nowPlayingMedia')?.getBoundingClientRect();
+    return {
+      overflow: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth,
+      frameWidth: frame?.width || 0,
+      frameHeight: frame?.height || 0,
+      mediaWidth: media?.width || 0,
+      mediaHeight: media?.height || 0
+    };
+  });
+  assert.ok(compactInlineVideo.overflow <= 1, `Inline video caused ${compactInlineVideo.overflow}px of mobile overflow`);
+  assert.ok(compactInlineVideo.frameWidth > 0 && Math.abs(compactInlineVideo.frameWidth - compactInlineVideo.mediaWidth) <= 2, `Inline video width ${compactInlineVideo.frameWidth}px did not fit the ${compactInlineVideo.mediaWidth}px mobile cover`);
+  assert.ok(compactInlineVideo.frameHeight > 0 && Math.abs(compactInlineVideo.frameHeight - compactInlineVideo.mediaHeight) <= 2, `Inline video height ${compactInlineVideo.frameHeight}px did not fit the ${compactInlineVideo.mediaHeight}px mobile cover`);
+  await page.locator('#fullTrackVideo').click();
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('#nowPlayingArt')).visibility === 'visible');
+  assert.equal(await page.locator('#fullTrackVideo').getAttribute('aria-pressed'), 'false', 'Switching back to the cover did not clear the active state');
+  assert.equal(await page.locator('#nowPlayingArt').evaluate(image => getComputedStyle(image).visibility), 'visible', 'Switching back did not restore the album cover');
+  await page.setViewportSize({ width: 1_280, height: 800 });
   assert.deepEqual(pageErrors, [], `Browser errors: ${pageErrors.join(' | ')}`);
 
   const chromeOsContext = await browser.newContext({
@@ -221,6 +262,18 @@ try {
   await chromeOsPage.locator('#playBtn').click();
   await chromeOsPage.locator('#fullTrackStage[data-playback-state="playing"]').waitFor({ state: 'visible' });
   assert.equal(await chromeOsPage.locator('#audio').evaluate(audio => audio.paused), true, 'ChromeOS direct-player confirmation did not pause the preview');
+  await chromeOsPage.locator('#fullTrackVideo').click();
+  const chromeOsInlineVideo = await chromeOsPage.evaluate(() => {
+    const frame = document.querySelector('#fullTrackFrame')?.getBoundingClientRect();
+    const media = document.querySelector('#nowPlayingMedia')?.getBoundingClientRect();
+    return {
+      frameWidth: frame?.width || 0,
+      mediaWidth: media?.width || 0,
+      pressed: document.querySelector('#fullTrackVideo')?.getAttribute('aria-pressed')
+    };
+  });
+  assert.equal(chromeOsInlineVideo.pressed, 'true', 'ChromeOS direct player did not switch into the cover area');
+  assert.ok(chromeOsInlineVideo.frameWidth > 0 && Math.abs(chromeOsInlineVideo.frameWidth - chromeOsInlineVideo.mediaWidth) <= 2, 'ChromeOS inline video did not fit the cover area');
   assert.deepEqual(chromeOsErrors, [], `ChromeOS direct-player browser errors: ${chromeOsErrors.join(' | ')}`);
   await chromeOsContext.close();
 

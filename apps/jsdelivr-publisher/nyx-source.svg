@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xhtml="http://www.w3.org/1999/xhtml"
+     width="100%"
+     height="100%"
+     style="display:block;margin:0;padding:0;background:#000">
+  <title>Nyx</title>
+  <desc>Loads the official Nyx site inside a full-window frame.</desc>
+  <rect width="100%" height="100%" fill="#000"/>
+  <foreignObject x="0" y="0" width="100%" height="100%">
+    <xhtml:iframe
+      src="https://nyxlearning.org/"
+      title="Nyx"
+      allow="autoplay; camera; clipboard-read; clipboard-write; display-capture; fullscreen; microphone"
+      allowfullscreen="allowfullscreen"
+      referrerpolicy="strict-origin-when-cross-origin"
+      style="position:fixed;inset:0;width:100%;height:100%;border:0;margin:0;padding:0;background:#000;display:block">
+    </xhtml:iframe>
+  </foreignObject>
+</svg>

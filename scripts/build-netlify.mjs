@@ -302,6 +302,7 @@ async function minifyFirstPartyBrowserRuntimes() {
     { path: "apps/connect-domain/app.js", topLevel: true },
     { path: "apps/link-checker/app.js", topLevel: true },
     { path: "apps/link-generator/app.js", topLevel: true },
+    { path: "apps/jsdelivr-publisher/app.js", topLevel: true },
     { path: "apps/nyxify/app.js", topLevel: true },
     { path: "apps/nyxtube/app.js", topLevel: true },
     { path: "assets/games/games.js", topLevel: true }

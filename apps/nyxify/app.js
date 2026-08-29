@@ -21,6 +21,7 @@ const playlistName = document.getElementById('playlistName');
 const playlistMessage = document.getElementById('playlistMessage');
 const pPlaylist = document.getElementById('pPlaylist');
 const nowPlayingModule = document.getElementById('nowPlayingModule');
+const nowPlayingMedia = document.getElementById('nowPlayingMedia');
 const nowPlayingArt = document.getElementById('nowPlayingArt');
 const nowPlayingContext = document.getElementById('nowPlayingContext');
 const nowPlayingTitle = document.getElementById('nowPlayingTitle');
@@ -33,6 +34,7 @@ const fullTrackTitle = document.getElementById('fullTrackTitle');
 const fullTrackStatus = document.getElementById('fullTrackStatus');
 const fullTrackPreview = document.getElementById('fullTrackPreview');
 const fullTrackVideo = document.getElementById('fullTrackVideo');
+const fullTrackVideoLabel = document.getElementById('fullTrackVideoLabel');
 
 let curtrack = null;
 let results = [];
@@ -68,6 +70,7 @@ let octaveprogress = null;
 let octaveapipromise = null;
 let octavepending = false;
 let octavevideo = null;
+let prefernowplayingvideo = localStorage.getItem('nyx_nyxify_video_in_cover') === '1';
 const nyxtubedirectapi = window.NyxTubePlayerCore.createDirectYoutubeApi({ optimisticState: false });
 
 let shuffleon = localStorage.getItem('nyx_nyxify_shuffle') === '1';
@@ -1487,7 +1490,7 @@ function ensureoctaveframe() {
     const replacement = document.createElement('div');
     replacement.id = 'fullTrackFrame';
     if (frame) frame.replaceWith(replacement);
-    else fullTrackStage.appendChild(replacement);
+    else nowPlayingMedia.appendChild(replacement);
     frame = replacement;
   }
   return frame;
@@ -1553,6 +1556,18 @@ function destroyoctaveplayer() {
   fullTrackStage.dataset.playbackState = 'idle';
 }
 
+function setnowplayingvideomode(show, remember = false) {
+  if (remember) {
+    prefernowplayingvideo = Boolean(show);
+    localStorage.setItem('nyx_nyxify_video_in_cover', prefernowplayingvideo ? '1' : '0');
+  }
+  const active = Boolean(show && octavevideo);
+  nowPlayingMedia.classList.toggle('is-video', active);
+  fullTrackVideo.setAttribute('aria-pressed', String(active));
+  fullTrackVideo.setAttribute('aria-label', active ? 'Switch to album cover' : (octavevideo ? 'Switch to music video' : 'Music video unavailable'));
+  fullTrackVideoLabel.textContent = active ? 'Switch to cover' : 'Switch to video';
+}
+
 function previewsource() {
   return curtrack ? `/api/nyxify/stream/${curtrack.id}` : '';
 }
@@ -1560,14 +1575,14 @@ function previewsource() {
 function setoctavevideo(candidate = null) {
   octavevideo = candidate && /^[A-Za-z0-9_-]{11}$/.test(String(candidate.videoId || '')) ? candidate : null;
   fullTrackVideo.disabled = !octavevideo;
-  fullTrackVideo.textContent = 'Show video';
-  fullTrackVideo.setAttribute('aria-label', octavevideo ? 'Show music video in NyxTube' : 'Music video unavailable');
-  fullTrackVideo.setAttribute('aria-pressed', 'false');
+  fullTrackVideo.hidden = !octavevideo;
+  setnowplayingvideomode(Boolean(octavevideo && prefernowplayingvideo));
 }
 
 function usepreview(autoplay = true, message = '') {
   octaverequest += 1;
   destroyoctaveplayer();
+  setoctavevideo();
   playbackmode = 'preview';
   dlBtn.hidden = false;
   const source = previewsource();
@@ -1724,9 +1739,7 @@ function playbackseek(seconds) {
 fullTrackPreview.addEventListener('click', () => usepreview(true));
 fullTrackVideo.addEventListener('click', () => {
   if (!octavevideo) return;
-  const url = `/apps/nyxtube/?video=${encodeURIComponent(octavevideo.videoId)}`;
-  if (parent !== window) parent.postMessage({ type: 'nyx:navigate', url }, location.origin);
-  else location.href = url;
+  setnowplayingvideomode(!nowPlayingMedia.classList.contains('is-video'), true);
 });
 setoctavevideo();
 

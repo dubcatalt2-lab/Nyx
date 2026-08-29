@@ -270,6 +270,8 @@ const nyxifyBuiltInMusicNameField = "nyxifyBuiltInMusicName";
 const nyxifyGlobalApp = Object.freeze({ id: "nyxify", icon: "nyxify", name: "Nyxify/built in music", url: "/apps/nyxify/" });
 const nyxApiKeysAppMigrationField = "nyxApiKeysAppInitialized";
 const nyxApiKeysGlobalApp = Object.freeze({ id: "nyx-api-keys", icon: "api-keys", name: "Nyx API Keys", url: "/apps/api-keys/" });
+const nyxJsdelivrPublisherAppMigrationField = "nyxJsdelivrPublisherInitialized";
+const nyxJsdelivrPublisherGlobalApp = Object.freeze({ id: "jsdelivr-publisher", icon: "jsdelivr-publisher", name: "JSDelivr Publisher", url: "/apps/jsdelivr-publisher/" });
 const nyxGamesAppMigrationField = "gamesAppRenamed";
 const nyxGamesGlobalApp = Object.freeze({ id: "pirate-cove", icon: "games", name: "GAMES", url: "/assets/games/" });
 const nyxMoviesCinejoyMigrationField = "moviesCinejoyTarget";
@@ -277,6 +279,7 @@ const nyxMoviesGlobalApp = Object.freeze({ id: "movies", icon: "cinejoy.to", nam
 const nyxDefaultGlobalApps = Object.freeze([
   { id: "link-checker", icon: "link-checker", name: "Link Checker", url: "/apps/link-checker/" },
   { id: "link-generator", icon: "link-generator", name: "Link Generator", url: "/apps/link-generator/" },
+  nyxJsdelivrPublisherGlobalApp,
   nyxApiKeysGlobalApp,
   nyxTubeGlobalApp,
   nyxGamesGlobalApp,
@@ -3946,6 +3949,7 @@ function nyxGlobalAppIcon(value, url = "") {
   if (/^\/apps\/cloud-gaming(?:\/|$)/i.test(url)) return "cloud-gaming";
   if (/^\/apps\/link-checker(?:\/|$)/i.test(url)) return "link-checker";
   if (/^\/apps\/link-generator(?:\/|$)/i.test(url)) return "link-generator";
+  if (/^\/apps\/jsdelivr-publisher(?:\/|$)/i.test(url)) return "jsdelivr-publisher";
   try {
     return new URL(url).hostname.replace(/^www\./, "").toLowerCase().slice(0, 80) || "apps";
   } catch {
@@ -3995,6 +3999,9 @@ function nyxGlobalAppsFromSnapshot(snapshot) {
     if (normalized?.id === nyxifyGlobalApp.id && normalized.url === nyxifyGlobalApp.url) {
       return { ...normalized, icon: nyxifyGlobalApp.icon, name: nyxifyGlobalApp.name };
     }
+    if (normalized?.id === nyxJsdelivrPublisherGlobalApp.id && normalized.url === nyxJsdelivrPublisherGlobalApp.url) {
+      return { ...nyxJsdelivrPublisherGlobalApp };
+    }
     if (normalized?.id === nyxTubeGlobalApp.id) return { ...nyxTubeGlobalApp };
     return normalized;
   }).filter(app => app && !nyxRetiredMediaApp(app));
@@ -4003,7 +4010,7 @@ function nyxGlobalAppsFromSnapshot(snapshot) {
 async function nyxGlobalApps(firebase) {
   const reference = firebase.firestore.collection(nyxGlobalAppsCollection).doc(nyxGlobalAppsDocument);
   const snapshot = await reference.get();
-  if (snapshot.data()?.[nyxCloudGamingAppMigrationField] === true && snapshot.data()?.[nyxCloudGamingGamesMergeMigrationField] === true && snapshot.data()?.[nyxMediaAppsRetiredField] === true && snapshot.data()?.[nyxTubeReintroducedField] === true && snapshot.data()?.[nyxTubeCatalogNameField] === true && snapshot.data()?.[nyxifyReintroducedField] === true && snapshot.data()?.[nyxifyBuiltInMusicNameField] === true && snapshot.data()?.[nyxApiKeysAppMigrationField] === true && snapshot.data()?.[nyxGamesAppMigrationField] === true && snapshot.data()?.[nyxMoviesCinejoyMigrationField] === true) return nyxGlobalAppsFromSnapshot(snapshot);
+  if (snapshot.data()?.[nyxCloudGamingAppMigrationField] === true && snapshot.data()?.[nyxCloudGamingGamesMergeMigrationField] === true && snapshot.data()?.[nyxMediaAppsRetiredField] === true && snapshot.data()?.[nyxTubeReintroducedField] === true && snapshot.data()?.[nyxTubeCatalogNameField] === true && snapshot.data()?.[nyxifyReintroducedField] === true && snapshot.data()?.[nyxifyBuiltInMusicNameField] === true && snapshot.data()?.[nyxApiKeysAppMigrationField] === true && snapshot.data()?.[nyxJsdelivrPublisherAppMigrationField] === true && snapshot.data()?.[nyxGamesAppMigrationField] === true && snapshot.data()?.[nyxMoviesCinejoyMigrationField] === true) return nyxGlobalAppsFromSnapshot(snapshot);
   return firebase.firestore.runTransaction(async transaction => {
     const currentSnapshot = await transaction.get(reference);
     const apps = nyxGlobalAppsFromSnapshot(currentSnapshot);
@@ -4073,6 +4080,17 @@ async function nyxGlobalApps(firebase) {
       transaction.set(reference, {
         apps,
         [nyxApiKeysAppMigrationField]: true,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    }
+    if (currentSnapshot.data()?.[nyxJsdelivrPublisherAppMigrationField] !== true) {
+      if (apps.length < nyxGlobalAppsLimit && !apps.some(item => item.id === nyxJsdelivrPublisherGlobalApp.id || item.url === nyxJsdelivrPublisherGlobalApp.url)) {
+        const generatorIndex = apps.findIndex(item => item.id === "link-generator");
+        apps.splice(generatorIndex >= 0 ? generatorIndex + 1 : 0, 0, { ...nyxJsdelivrPublisherGlobalApp });
+      }
+      transaction.set(reference, {
+        apps,
+        [nyxJsdelivrPublisherAppMigrationField]: true,
         updatedAt: new Date().toISOString()
       }, { merge: true });
     }
@@ -13233,7 +13251,9 @@ app.put("/api/founder-profile", async (req, res) => {
 app.get("/api/link-generator/status", (_req, res) => {
   const config = linkGeneratorConfig();
   res.set("Cache-Control", "no-store").json({
-    available: Boolean(config.apiKey && config.origin && (config.accessCode || firebaseAccountModeConfigured())),
+    available: Boolean(config.origin && (config.accessCode || firebaseAccountModeConfigured())),
+    provider: "jsdelivr",
+    bunnyAvailable: Boolean(config.apiKey),
     administratorAccess: Boolean(config.accessCode),
     accountAccess: firebaseAccountModeConfigured(),
     origin: config.origin,
@@ -13352,7 +13372,12 @@ app.post("/api/link-generator", async (req, res) => {
   }
 
   const config = linkGeneratorConfig();
-  if (!config.apiKey || !config.origin || (!config.accessCode && !firebaseAccountModeConfigured())) {
+  const provider = String(req.body?.provider || "bunny").trim().toLowerCase();
+  if (!new Set(["bunny", "jsdelivr"]).has(provider)) {
+    res.status(400).json({ error: "Choose a supported link provider." });
+    return;
+  }
+  if (!config.origin || (!config.accessCode && !firebaseAccountModeConfigured()) || (provider === "bunny" && !config.apiKey)) {
     res.status(503).json({ error: "Link Generator has not been configured by the Nyx administrator yet." });
     return;
   }
@@ -13387,6 +13412,43 @@ app.post("/api/link-generator", async (req, res) => {
   const amount = premiumAccess ? rawAmount : 1;
   if (premiumAccess && (!Number.isInteger(rawAmount) || rawAmount < 1 || rawAmount > config.premiumBatchLimit)) {
     res.status(400).json({ error: `Premium batches can contain between 1 and ${config.premiumBatchLimit} links.` });
+    return;
+  }
+
+  if (provider === "jsdelivr") {
+    let reservation = null;
+    let premiumReservation = null;
+    let premiumFirebase = null;
+    try {
+      if (publicUser && !premiumAccount) reservation = await reserveFreeLink(publicUser.firebase, publicUser.uid, clientId);
+      if (premiumAccess) {
+        premiumFirebase = publicUser?.firebase || await linkGeneratorFirebase();
+        const premiumIdentity = premiumAccount ? `account:${publicUser.uid}` : clientId;
+        premiumReservation = await reservePremiumGeneration(premiumFirebase, premiumIdentity, amount, now);
+      }
+      res.json({
+        authorized: true,
+        provider: "jsdelivr",
+        requested: amount,
+        origin: config.origin,
+        access: administrator ? "administrator" : (premiumAccount ? "premium" : "account"),
+        subscriptionStatus: publicUser?.subscriptionStatus || (administrator ? "premium" : "free"),
+        remaining: premiumAccess ? null : reservation?.remaining,
+        premiumCooldown: premiumAccess ? {
+          triggered: Boolean(premiumReservation?.cooldownTriggered),
+          cooldownUntil: premiumReservation?.cooldownUntil || 0,
+          accumulated: premiumReservation?.accumulated || 0,
+          accumulatedLimit: premiumAccumulatedLimit,
+          immediateAt: premiumImmediateCooldownAt,
+          minutes: premiumCooldownMs / 60_000
+        } : null
+      });
+    } catch (error) {
+      if (publicUser && reservation) await releaseFreeLink(publicUser.firebase, reservation);
+      if (premiumAccess && premiumReservation) await adjustPremiumGeneration(premiumFirebase, premiumReservation, 0);
+      if (error.retryAfter) res.set("Retry-After", String(error.retryAfter));
+      res.status(error.status || 503).json({ error: error.message || "JSDelivr link access could not be prepared." });
+    }
     return;
   }
 

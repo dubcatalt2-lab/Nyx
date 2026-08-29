@@ -52,4 +52,4 @@ fi
 
 chgrp -R nyx "${INSTALL_ROOT}"
 chmod -R g+rX "${INSTALL_ROOT}"
-echo "yt-dlp ${INSTALLED_VERSION} is installed server-side; Nyx does not invoke it with media URLs."
+echo "yt-dlp ${INSTALLED_VERSION} is installed server-side for bounded NyxTube public-transcript discovery."

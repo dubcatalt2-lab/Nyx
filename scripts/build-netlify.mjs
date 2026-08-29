@@ -263,12 +263,27 @@ async function minifyEmbeddedScramjetGuards(source, nameCache) {
 async function minifyFirstPartyBrowserRuntimes() {
   const targets = [
     { path: "script.js", topLevel: false },
+    { path: "startup.js", topLevel: false },
     { path: "uv.sw.js", topLevel: true },
     { path: "scramjet.sw.js", topLevel: true },
     { path: "scramjet-v1.sw.js", topLevel: true },
     { path: "uv.config.js", topLevel: false },
     { path: "runtime-config.js", topLevel: false },
-    { path: "nyx-scramjet-runtime-guard.js", topLevel: false }
+    { path: "nyx-scramjet-runtime-guard.js", topLevel: false },
+    { path: "js/ai-workspace.js", topLevel: false },
+    { path: "js/loading-screen.js", topLevel: false },
+    { path: "js/nyx-logo.js", topLevel: false },
+    { path: "js/owner-dashboard.js", topLevel: false },
+    { path: "js/pwa-install.js", topLevel: false },
+    { path: "apps/api-keys/app.js", topLevel: false },
+    { path: "apps/chat/app.js", topLevel: false },
+    { path: "apps/cloud-gaming/app.js", topLevel: false },
+    { path: "apps/connect-domain/app.js", topLevel: false },
+    { path: "apps/link-checker/app.js", topLevel: false },
+    { path: "apps/link-generator/app.js", topLevel: false },
+    { path: "apps/nyxify/app.js", topLevel: false },
+    { path: "apps/nyxtube/app.js", topLevel: false },
+    { path: "assets/games/games.js", topLevel: false }
   ];
   const nameCache = {};
   for (const target of targets) {

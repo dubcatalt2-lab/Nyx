@@ -3,8 +3,8 @@ import { chromium } from "playwright";
 const baseUrl = process.env.NYX_TEST_BASE_URL || "http://127.0.0.1:8080";
 const livePlayer = process.env.NYX_TEST_LIVE_PLAYER === "1";
 const videos = [
-  { id: "dQw4w9WgXcQ", title: "A test documentary", creator: "Nyx Test", description: "A full documentary description for the NyxTube watch page.", publishedAt: "2026-08-20T12:00:00.000Z", thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg", durationSeconds: 212, viewCount: 1203400, captions: true, isShort: false, sourceUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
-  { id: "aqz-KE-bpKQ", title: "A second video", creator: "Test Studio", description: "This description must be visible below the selected video.", publishedAt: "2026-08-21T12:00:00.000Z", thumbnail: "https://i.ytimg.com/vi/aqz-KE-bpKQ/hqdefault.jpg", durationSeconds: 73, viewCount: 8421, captions: true, isShort: true, sourceUrl: "https://www.youtube.com/watch?v=aqz-KE-bpKQ" },
+  { id: "dQw4w9WgXcQ", title: "A test documentary", creator: "Nyx Test", description: "A full documentary description for the NyxTube watch page.", publishedAt: "2026-08-20T12:00:00.000Z", thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg", durationSeconds: 212, viewCount: 1203400, likeCount: 532, commentCount: 47, captions: true, isShort: false, sourceUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+  { id: "aqz-KE-bpKQ", title: "A second video", creator: "Test Studio", description: "This description must be visible below the selected video.", publishedAt: "2026-08-21T12:00:00.000Z", thumbnail: "https://i.ytimg.com/vi/aqz-KE-bpKQ/hqdefault.jpg", durationSeconds: 73, viewCount: 8421, likeCount: 42, commentCount: 3, captions: true, isShort: true, sourceUrl: "https://www.youtube.com/watch?v=aqz-KE-bpKQ" },
 ];
 const shorts = [videos[1], { ...videos[1], id: "M7lc1UVf-VE", title: "Next test Short", creator: "Next Studio" }];
 
@@ -47,8 +47,8 @@ try {
           options.events?.onStateChange?.({ target: this, data: 1 });
         }, 0);
       }
-      playVideo() { this.state = 1; this.options.events?.onStateChange?.({ target: this, data: 1 }); }
-      pauseVideo() { this.state = 2; this.options.events?.onStateChange?.({ target: this, data: 2 }); }
+      playVideo() { this.state = 1; window.__nyxTubePlayerState = this.state; this.options.events?.onStateChange?.({ target: this, data: 1 }); }
+      pauseVideo() { this.state = 2; window.__nyxTubePlayerState = this.state; this.options.events?.onStateChange?.({ target: this, data: 2 }); }
       getPlayerState() { return this.state; }
       getCurrentTime() { return this.current; }
       getDuration() { return this.total; }
@@ -69,6 +69,11 @@ try {
   await page.route("**/api/nyxtube/feed?**", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ provider: "youtube", videos }) }));
   await page.route("**/api/nyxtube/search?**", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ provider: "youtube", videos: [videos[1]] }) }));
   await page.route("**/api/nyxtube/shorts?**", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ provider: "youtube", videos: shorts }) }));
+  await page.route("**/api/nyxtube/community?**", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({
+    provider: "youtube",
+    comments: { available: true, comments: [{ id: "comment-1", author: "Viewer One", avatarUrl: "", text: "This comment came from YouTube.", likeCount: 8, replyCount: 2, publishedAt: "2026-08-22T12:00:00.000Z" }] },
+    transcript: { available: true, language: "English", segments: [{ startSeconds: 4, durationSeconds: 2.5, text: "Welcome to the test transcript." }, { startSeconds: 7, durationSeconds: 3, text: "This is the next caption line." }] }
+  }) }));
 
   await page.goto(`${baseUrl}/apps/nyxtube/`, { waitUntil: "domcontentloaded" });
   console.log("NyxTube test: page loaded");
@@ -97,6 +102,9 @@ try {
   if (process.env.NYX_TEST_SCREENSHOT_PATH) await page.screenshot({ path: process.env.NYX_TEST_SCREENSHOT_PATH.replace(/\.png$/i, "-watch.png"), fullPage: true });
   assert(await page.locator("[data-watch-title]").textContent() === "A second video", "Watch metadata did not match the selected video");
   assert((await page.locator("[data-watch-description]").textContent())?.includes("visible below"), "Watch description was not rendered");
+  assert(await page.locator("[data-watch-views]").textContent() === "8,421", "Watch page did not show the exact view count");
+  assert(await page.locator("[data-watch-likes]").textContent() === "42", "Watch page did not show the exact like count");
+  assert(await page.locator("[data-watch-comments-count]").textContent() === "3", "Watch page did not show the exact comment count");
   assert(await page.locator("[data-watch-related] .related-card").count() >= 1, "Related content rail did not render");
   if (!livePlayer) {
     await page.locator("[data-watch-settings]").click();
@@ -107,8 +115,37 @@ try {
     assert(await page.evaluate(() => window.__nyxTubeLastPlaybackRate) === 1.5, "Video settings did not apply the selected playback speed");
     assert(!await page.locator("[data-watch-settings-captions]").isDisabled(), "Video settings disabled captions for a captioned video");
     await page.locator("[data-watch-settings]").click();
+    await page.evaluate(() => document.activeElement?.blur());
     await page.keyboard.press("ArrowRight");
     assert(await page.evaluate(() => window.__nyxTubeLastSeek) === 23, "Right Arrow did not seek forward five seconds");
+    await page.keyboard.press("KeyJ");
+    assert(await page.evaluate(() => window.__nyxTubeLastSeek) === 13, "J did not seek back ten seconds");
+    await page.keyboard.press("KeyL");
+    assert(await page.evaluate(() => window.__nyxTubeLastSeek) === 23, "L did not seek forward ten seconds");
+    await page.keyboard.down("Space");
+    await page.waitForTimeout(60);
+    await page.keyboard.up("Space");
+    assert(await page.evaluate(() => window.__nyxTubePlayerState) === 2, "A quick Space tap did not pause the video");
+    await page.keyboard.press("KeyK");
+    assert(await page.evaluate(() => window.__nyxTubePlayerState) === 1, "K did not resume the video");
+    await page.keyboard.down("Space");
+    await page.waitForTimeout(425);
+    assert(await page.evaluate(() => window.__nyxTubeLastPlaybackRate) === 2, "Holding Space did not temporarily select 2x speed");
+    assert(await page.locator("[data-watch-speed-indicator]").isVisible(), "Holding Space did not show the 2x indicator");
+    assert(await page.evaluate(() => window.__nyxTubePlayerState) === 1, "Holding Space unexpectedly paused the video");
+    await page.keyboard.up("Space");
+    assert(await page.evaluate(() => window.__nyxTubeLastPlaybackRate) === 1.5, "Releasing Space did not restore the selected playback speed");
+    assert(await page.locator("[data-watch-speed-indicator]").isHidden(), "Releasing Space left the 2x indicator visible");
+    await page.locator("[data-watch-settings]").focus();
+    await page.keyboard.press("Space");
+    assert(await page.evaluate(() => window.__nyxTubePlayerState) === 1, "Space hijacked a focused player control");
+    await page.keyboard.press("Escape");
+    await page.evaluate(() => document.activeElement?.blur());
+    await page.keyboard.press("KeyC");
+    assert(await page.locator("[data-watch-captions]").getAttribute("aria-pressed") === "true", "C did not enable captions");
+    await page.keyboard.press("KeyC");
+    assert(await page.locator("[data-watch-captions]").getAttribute("aria-pressed") === "false", "C did not disable captions");
+    console.log("NyxTube test: tap/hold Space and YouTube-style keyboard shortcuts passed");
     await page.setViewportSize({ width: 390, height: 700 });
     await page.locator("[data-watch-forward]").waitFor({ state: "visible" });
     if (process.env.NYX_TEST_SCREENSHOT_PATH) await page.screenshot({ path: process.env.NYX_TEST_SCREENSHOT_PATH.replace(/\.png$/i, "-seek-mobile.png"), fullPage: true });
@@ -116,8 +153,19 @@ try {
     assert(await page.evaluate(() => window.__nyxTubeLastSeek) === 28, "Mobile forward control did not seek five seconds");
     await page.locator("[data-watch-rewind]").click();
     assert(await page.evaluate(() => window.__nyxTubeLastSeek) === 23, "Mobile rewind control did not seek back five seconds");
+    assert(!await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1), "Watch statistics or information tabs overflow at 390px");
     await page.setViewportSize({ width: 1280, height: 900 });
     console.log("NyxTube test: keyboard and mobile five-second seeking passed");
+    await page.locator('[data-watch-info-tab="comments"]').click();
+    await page.getByText("This comment came from YouTube.").waitFor();
+    assert(await page.locator(".watch-comment").count() === 1, "YouTube comments did not render in the watch page");
+    await page.locator('[data-watch-info-tab="transcript"]').click();
+    await page.getByText("Welcome to the test transcript.").waitFor();
+    await page.locator(".transcript-line").first().click();
+    assert(await page.evaluate(() => window.__nyxTubeLastSeek) === 4, "Clicking a transcript line did not seek to its timestamp");
+    await page.locator('[data-watch-info-tab="description"]').click();
+    assert(await page.locator('[data-watch-info-panel="description"]').isVisible(), "Description tab did not restore the video description");
+    console.log("NyxTube test: exact statistics, comments, and timestamped transcript passed");
     await page.locator("[data-watch-toggle]").click();
     assert(await page.locator("[data-watch-toggle]").getAttribute("aria-label") === "Play", "Pause control did not update player state");
     await page.locator("[data-watch-mute]").click();

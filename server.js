@@ -8,6 +8,7 @@ import { mkdir, open as openFile, stat, statfs, unlink } from "node:fs/promises"
 import { join, dirname, resolve } from "node:path";
 import { createRequire } from "node:module";
 import { Readable } from "node:stream";
+import { spawn } from "node:child_process";
 import { server as wisp } from "@mercuryworkshop/wisp-js/server";
 import { Server as SocketIOServer } from "socket.io";
 
@@ -6878,6 +6879,10 @@ app.all(["/api/nyxcloud/status", "/api/nyxcloud/search"], (_req, res) => {
 
 const nyxTubeCache = new Map();
 const nyxTubeSearchAttempts = new Map();
+const nyxTubeCommunityAttempts = new Map();
+const nyxTubeCommentsInflight = new Map();
+const nyxTubeTranscriptInflight = new Map();
+const nyxTubePublicPageByteLimit = 2_000_000;
 
 function nyxTubeCached(key) {
   const entry = nyxTubeCache.get(key);
@@ -6912,6 +6917,24 @@ function nyxTubeThumbnail(snippet) {
   }
 }
 
+function nyxTubeCleanText(value, limit = 2_000) {
+  return String(value || "")
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, " ")
+    .replace(/\r\n?/g, "\n")
+    .trim()
+    .slice(0, limit);
+}
+
+function nyxTubeAvatar(value) {
+  try {
+    const url = new URL(String(value || "").trim());
+    if (url.protocol !== "https:" || !/(?:^|\.)(?:ggpht\.com|googleusercontent\.com)$/i.test(url.hostname)) return "";
+    return url.href;
+  } catch {
+    return "";
+  }
+}
+
 function nyxTubePublicVideo(item) {
   const id = String(item?.id || "").trim();
   const contentDetails = item?.contentDetails || {};
@@ -6937,6 +6960,8 @@ function nyxTubePublicVideo(item) {
     publishedAt: safeDateIso(snippet.publishedAt),
     durationSeconds,
     viewCount: Math.max(0, Number(item?.statistics?.viewCount) || 0),
+    likeCount: Math.max(0, Number(item?.statistics?.likeCount) || 0),
+    commentCount: Math.max(0, Number(item?.statistics?.commentCount) || 0),
     captions: String(contentDetails.caption || "false") === "true",
     isShort: durationSeconds > 0 && durationSeconds <= 180,
     sourceUrl: `https://www.youtube.com/watch?v=${id}`
@@ -6958,6 +6983,7 @@ async function nyxTubeApi(resource, parameters = {}) {
   if (!response.ok) {
     const error = new Error(String(payload?.error?.message || "YouTube could not complete that request.").slice(0, 220));
     error.status = response.status === 429 ? 429 : 502;
+    error.reason = String(payload?.error?.errors?.[0]?.reason || "").slice(0, 80);
     throw error;
   }
   return payload;
@@ -6997,6 +7023,224 @@ async function nyxTubeShorts(limit) {
   const ids = (Array.isArray(payload?.items) ? payload.items : []).map(item => String(item?.id?.videoId || ""));
   const videos = (await nyxTubeVideoDetails(ids)).filter(item => item.isShort).slice(0, limit);
   return nyxTubeCacheSet(cacheKey, videos, 10 * 60_000);
+}
+
+async function nyxTubeCommentsLoad(videoId, cacheKey) {
+  try {
+    const payload = await nyxTubeApi("commentThreads", {
+      part: "snippet",
+      videoId,
+      maxResults: 20,
+      order: "relevance",
+      textFormat: "plainText"
+    });
+    const comments = (Array.isArray(payload?.items) ? payload.items : []).slice(0, 20).map(item => {
+      const thread = item?.snippet || {};
+      const comment = thread?.topLevelComment?.snippet || {};
+      const text = nyxTubeCleanText(comment.textOriginal || comment.textDisplay, 2_000);
+      if (!text) return null;
+      return {
+        id: String(item?.id || "").slice(0, 120),
+        author: nyxTubeCleanText(comment.authorDisplayName || "YouTube viewer", 100),
+        avatarUrl: nyxTubeAvatar(comment.authorProfileImageUrl),
+        text,
+        likeCount: Math.max(0, Number(comment.likeCount) || 0),
+        replyCount: Math.max(0, Number(thread.totalReplyCount) || 0),
+        publishedAt: safeDateIso(comment.publishedAt),
+        updatedAt: safeDateIso(comment.updatedAt)
+      };
+    }).filter(Boolean);
+    return nyxTubeCacheSet(cacheKey, { available: true, comments }, 5 * 60_000);
+  } catch (error) {
+    if (error?.reason === "commentsDisabled") {
+      return nyxTubeCacheSet(cacheKey, { available: false, comments: [], message: "Comments are disabled for this video." }, 10 * 60_000);
+    }
+    return { available: false, comments: [], message: "Comments could not be loaded right now." };
+  }
+}
+
+async function nyxTubeComments(videoId) {
+  const cacheKey = `comments:${videoId}`;
+  const cached = nyxTubeCached(cacheKey);
+  if (cached) return cached;
+  const active = nyxTubeCommentsInflight.get(videoId);
+  if (active) return active;
+  const request = nyxTubeCommentsLoad(videoId, cacheKey).finally(() => nyxTubeCommentsInflight.delete(videoId));
+  nyxTubeCommentsInflight.set(videoId, request);
+  return request;
+}
+
+async function nyxTubeBoundedText(url, accept) {
+  const response = await fetch(url, {
+    headers: {
+      Accept: accept,
+      "Accept-Language": "en-US,en;q=0.9",
+      "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140.0.0.0 Safari/537.36"
+    },
+    redirect: "error",
+    signal: AbortSignal.timeout(12_000)
+  });
+  const contentLength = Number(response.headers.get("content-length") || 0);
+  if (!response.ok || (contentLength && contentLength > nyxTubePublicPageByteLimit)) {
+    await response.body?.cancel().catch(() => {});
+    throw new Error("YouTube did not return a usable public caption response.");
+  }
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (!bytes.length || bytes.length > nyxTubePublicPageByteLimit) throw new Error("YouTube returned an invalid public caption response.");
+  return bytes.toString("utf8");
+}
+
+function nyxTubeJsonArray(source, property) {
+  const marker = `"${property}":`;
+  const markerIndex = source.indexOf(marker);
+  const start = markerIndex < 0 ? -1 : source.indexOf("[", markerIndex + marker.length);
+  if (start < 0) return null;
+  let depth = 0;
+  let quoted = false;
+  let escaped = false;
+  for (let index = start; index < source.length; index += 1) {
+    const character = source[index];
+    if (quoted) {
+      if (escaped) escaped = false;
+      else if (character === "\\") escaped = true;
+      else if (character === '"') quoted = false;
+      continue;
+    }
+    if (character === '"') quoted = true;
+    else if (character === "[") depth += 1;
+    else if (character === "]" && --depth === 0) return source.slice(start, index + 1);
+  }
+  return null;
+}
+
+function nyxTubeTranscriptTrack(tracks) {
+  const clean = (Array.isArray(tracks) ? tracks : []).map(track => ({ ...track, baseUrl: track?.baseUrl || track?.url || "" })).filter(track => {
+    try {
+      const url = new URL(String(track?.baseUrl || ""));
+      return url.protocol === "https:" && /(?:^|\.)youtube\.com$/i.test(url.hostname);
+    } catch {
+      return false;
+    }
+  });
+  return clean.find(track => /^en(?:-|$)/i.test(String(track?.languageCode || "")) && track?.kind !== "asr")
+    || clean.find(track => /^en(?:-|$)/i.test(String(track?.languageCode || "")))
+    || clean.find(track => track?.kind !== "asr")
+    || clean[0]
+    || null;
+}
+
+function nyxTubeYtDlpTracks(videoId) {
+  const binary = process.platform === "win32" ? "yt-dlp" : "/var/lib/nyx/yt-dlp/venv/bin/yt-dlp";
+  const target = `https://www.youtube.com/watch?v=${videoId}`;
+  const argumentsList = [
+    "--skip-download", "--no-warnings", "--no-playlist",
+    "--print", "%(subtitles.en)j",
+    "--print", "%(automatic_captions.en)j",
+    target
+  ];
+  return new Promise(resolve => {
+    let settled = false;
+    let stdout = "";
+    let stderrBytes = 0;
+    let child;
+    const finish = value => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(value);
+    };
+    try {
+      child = spawn(binary, argumentsList, { windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
+    } catch {
+      return resolve([]);
+    }
+    const timer = setTimeout(() => { child.kill(); finish([]); }, 15_000);
+    child.once("error", () => finish([]));
+    child.stdout.on("data", chunk => {
+      stdout += chunk.toString("utf8");
+      if (stdout.length > 500_000) { child.kill(); finish([]); }
+    });
+    child.stderr.on("data", chunk => {
+      stderrBytes += chunk.length;
+      if (stderrBytes > 64_000) { child.kill(); finish([]); }
+    });
+    child.once("close", code => {
+      if (code !== 0 || settled) return finish([]);
+      const tracks = [];
+      for (const line of stdout.trim().split(/\r?\n/)) {
+        try {
+          const values = JSON.parse(line);
+          if (Array.isArray(values)) tracks.push(...values);
+        } catch { /* A missing caption template prints a non-JSON placeholder. */ }
+      }
+      finish(tracks);
+    });
+  });
+}
+
+async function nyxTubeTranscriptLoad(videoId, cacheKey) {
+  try {
+    let track = nyxTubeTranscriptTrack(await nyxTubeYtDlpTracks(videoId));
+    if (!track) {
+      const watchUrl = new URL("https://www.youtube.com/watch");
+      watchUrl.searchParams.set("v", videoId);
+      watchUrl.searchParams.set("hl", "en");
+      watchUrl.searchParams.set("persist_hl", "1");
+      const page = await nyxTubeBoundedText(watchUrl, "text/html,application/xhtml+xml");
+      const encodedTracks = nyxTubeJsonArray(page, "captionTracks");
+      track = nyxTubeTranscriptTrack(encodedTracks ? JSON.parse(encodedTracks) : []);
+    }
+    if (!track) {
+      return nyxTubeCacheSet(cacheKey, { available: false, segments: [], message: "A public transcript is not available for this video." }, 10 * 60_000);
+    }
+    const captionUrl = new URL(track.baseUrl);
+    captionUrl.searchParams.set("fmt", "json3");
+    const payload = JSON.parse(await nyxTubeBoundedText(captionUrl, "application/json,text/plain"));
+    let characterCount = 0;
+    const segments = [];
+    for (const event of Array.isArray(payload?.events) ? payload.events : []) {
+      const text = nyxTubeCleanText((Array.isArray(event?.segs) ? event.segs : []).map(segment => segment?.utf8 || "").join(""), 500).replace(/\s+/g, " ");
+      if (!text) continue;
+      characterCount += text.length;
+      if (characterCount > 60_000 || segments.length >= 750) break;
+      segments.push({
+        startSeconds: Math.max(0, Math.round((Number(event?.tStartMs) || 0) / 100) / 10),
+        durationSeconds: Math.max(0, Math.round((Number(event?.dDurationMs) || 0) / 100) / 10),
+        text
+      });
+    }
+    if (!segments.length) {
+      return nyxTubeCacheSet(cacheKey, { available: false, segments: [], message: "A public transcript is not available for this video." }, 10 * 60_000);
+    }
+    const name = nyxTubeCleanText((typeof track?.name === "string" ? track.name : track?.name?.simpleText || track?.name?.runs?.map(run => run?.text || "").join("")) || track?.languageCode || "Transcript", 80);
+    return nyxTubeCacheSet(cacheKey, { available: true, language: name, segments }, 30 * 60_000);
+  } catch {
+    return { available: false, segments: [], message: "The public transcript could not be loaded right now." };
+  }
+}
+
+async function nyxTubeTranscript(videoId) {
+  const cacheKey = `transcript:${videoId}`;
+  const cached = nyxTubeCached(cacheKey);
+  if (cached) return cached;
+  const active = nyxTubeTranscriptInflight.get(videoId);
+  if (active) return active;
+  const request = nyxTubeTranscriptLoad(videoId, cacheKey).finally(() => nyxTubeTranscriptInflight.delete(videoId));
+  nyxTubeTranscriptInflight.set(videoId, request);
+  return request;
+}
+
+function nyxTubeAllowCommunity(req) {
+  const now = Date.now();
+  const client = nyxClientIp(req) || "unknown";
+  const recent = (nyxTubeCommunityAttempts.get(client) || []).filter(time => time > now - 10 * 60_000);
+  if (recent.length >= 60) return false;
+  recent.push(now);
+  nyxTubeCommunityAttempts.set(client, recent);
+  if (nyxTubeCommunityAttempts.size > 2_000) {
+    for (const [id, attempts] of nyxTubeCommunityAttempts) if (!attempts.some(time => time > now - 10 * 60_000)) nyxTubeCommunityAttempts.delete(id);
+  }
+  return true;
 }
 
 function nyxTubeAllowSearch(req) {
@@ -7047,6 +7291,16 @@ app.get("/api/nyxtube/search", nyxTubeRoute(req => {
   }
   return nyxTubeSearch(query, Math.max(1, Math.min(24, Number.parseInt(req.query?.limit, 10) || 16)));
 }, "no-store"));
+
+app.get("/api/nyxtube/community", async (req, res) => {
+  res.set("Cache-Control", "private, max-age=120");
+  if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-site video requests are not allowed." });
+  if (!nyxTubeAllowCommunity(req)) return res.status(429).json({ error: "Too many video detail requests. Try again in a few minutes." });
+  const videoId = String(req.query?.id || "").trim();
+  if (!/^[A-Za-z0-9_-]{11}$/.test(videoId)) return res.status(400).json({ error: "Choose a valid YouTube video." });
+  const [comments, transcript] = await Promise.all([nyxTubeComments(videoId), nyxTubeTranscript(videoId)]);
+  res.json({ provider: "youtube", comments, transcript });
+});
 
 app.get(["/apps/nyxcloud", "/apps/nyxcloud/"], (_req, res) => {
   res.redirect(302, "/");

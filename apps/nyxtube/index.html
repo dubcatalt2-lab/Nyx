@@ -7,7 +7,7 @@
   <title>NyxTube</title>
   <link rel="icon" type="image/svg+xml" href="/assets/icons/shortcut-youtube.svg">
   <link rel="stylesheet" href="./styles.css?v=20260828-nyxtube-v4">
-  <link rel="stylesheet" href="./responsive.css?v=20260828-nyxtube-v3">
+  <link rel="stylesheet" href="./responsive.css?v=20260828-nyxtube-v5">
 </head>
 <body>
   <svg class="symbols" aria-hidden="true">
@@ -57,6 +57,7 @@
       <div class="watch-player" data-watch-stage>
         <div class="player-mount" data-watch-player></div>
         <div class="player-loading" data-watch-loading><span></span><strong>Loading video</strong></div>
+        <div class="watch-speed-indicator" data-watch-speed-indicator aria-live="polite" hidden>2&times;</div>
         <button class="center-play" data-watch-center-play type="button" aria-label="Play video" hidden><svg><use href="#icon-play"></use></svg></button>
         <div class="mobile-seek-controls" aria-label="Video seeking"><button data-watch-rewind type="button" aria-label="Back 5 seconds"><span>-5</span></button><button data-watch-forward type="button" aria-label="Forward 5 seconds"><span>+5</span></button></div>
         <section class="watch-settings-menu" data-watch-settings-menu aria-label="Video settings" hidden>
@@ -79,7 +80,13 @@
         <div class="channel-mark" data-watch-channel-mark></div><div class="watch-copy"><h1 data-watch-title></h1><p data-watch-creator></p></div>
         <div class="watch-options"><label><span>Quality</span><select disabled title="YouTube selects playback quality automatically"><option value="auto">Auto</option></select></label><button data-watch-caption-option type="button">Captions <span>Off</span></button><a data-watch-source target="_blank" rel="noopener noreferrer" aria-label="Open on YouTube"><svg><use href="#icon-external"></use></svg></a></div>
       </div>
-      <article class="watch-description"><h2>Description</h2><p data-watch-description></p></article>
+      <div class="watch-stats" aria-label="Video statistics"><span><strong data-watch-views>0</strong><small>Views</small></span><span><strong data-watch-likes>0</strong><small>Likes</small></span><span><strong data-watch-comments-count>0</strong><small>Comments</small></span></div>
+      <section class="watch-info">
+        <nav class="watch-info-tabs" aria-label="Video information"><button class="active" data-watch-info-tab="description" type="button" role="tab" aria-selected="true">Description</button><button data-watch-info-tab="comments" type="button" role="tab" aria-selected="false">Comments <span data-watch-tab-comments-count></span></button><button data-watch-info-tab="transcript" type="button" role="tab" aria-selected="false">Transcript</button></nav>
+        <article class="watch-info-panel watch-info-description" data-watch-info-panel="description"><p data-watch-description></p></article>
+        <section class="watch-info-panel" data-watch-info-panel="comments" hidden><p class="watch-info-status" data-watch-comments-status>Loading comments...</p><div class="watch-comments" data-watch-comments></div></section>
+        <section class="watch-info-panel" data-watch-info-panel="transcript" hidden><p class="watch-info-status" data-watch-transcript-status>Loading transcript...</p><div class="watch-transcript" data-watch-transcript></div></section>
+      </section>
       </div>
       <aside class="watch-related" aria-label="Related videos"><div class="related-heading"><h2>Related</h2><span>Up next</span></div><div class="related-list" data-watch-related></div></aside>
       </div>
@@ -99,6 +106,6 @@
       </div>
     </section>
   </main>
-  <script src="./app.js?v=20260828-nyxtube-v5"></script>
+  <script src="./app.js?v=20260828-nyxtube-v7"></script>
 </body>
 </html>

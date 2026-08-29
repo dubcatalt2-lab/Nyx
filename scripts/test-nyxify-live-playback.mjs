@@ -13,14 +13,15 @@ try {
     await page.route("**/api/nyxify/full-track/*", route => route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ mode: "octave", videoId: forcedVideoId, durationSeconds: 213, title: "Octave playback test" })
+      body: JSON.stringify({ mode: "octave", videoId: forcedVideoId, durationSeconds: 213, title: "Full song playback test" })
     }));
   }
   const pageErrors = [];
   const failedNyxifyRequests = [];
   page.on("pageerror", error => pageErrors.push(error.message));
   page.on("console", message => {
-    if (message.type() === "error") pageErrors.push(`console: ${message.text()}`);
+    const text = message.text();
+    if (message.type() === "error" && !/Permissions policy violation: compute-pressure/i.test(text)) pageErrors.push(`console: ${text}`);
   });
   page.on("requestfailed", request => {
     if (request.url().includes("/api/nyxify/")) {
@@ -85,6 +86,7 @@ try {
     return {
       playbackState: stage?.dataset.playbackState || "",
       status: document.querySelector("#fullTrackStatus")?.textContent || "",
+      videoTitle: document.querySelector("#fullTrackTitle")?.textContent || "",
       progress: Number(document.querySelector("#seekBar")?.value || 0),
       currentLabel: document.querySelector("#timeCur")?.textContent || "",
       frameWidth: rect?.width || 0,
@@ -98,10 +100,20 @@ try {
 
   if (pageErrors.length) throw new Error(`Nyxify page errors: ${pageErrors.join(" | ")}`);
   if (failedNyxifyRequests.length) throw new Error(`Nyxify request failures: ${failedNyxifyRequests.join(" | ")}`);
-  if (state.playbackState !== "playing" || state.progress <= firstProgress || state.frameWidth < 200 || state.frameHeight < 200 || state.frameRight >= 0 || state.stageHeight >= 90 || !state.previewPaused || !state.playerVisible) {
+  if (state.playbackState !== "playing" || state.progress <= firstProgress || !state.videoTitle || /octave/i.test(`${state.videoTitle} ${state.status}`) || state.frameWidth < 200 || state.frameHeight < 200 || state.frameRight >= 0 || state.stageHeight >= 90 || !state.previewPaused || !state.playerVisible) {
     throw new Error(`Nyxify Octave playback did not advance: ${JSON.stringify(state)}`);
   }
-  console.log(`Nyxify live audio-only Octave playback passed: ${title} advanced to ${state.currentLabel} with the video kept off the visible canvas.`);
+  await page.locator("#fullTrackVideo").click();
+  const shownFrame = await page.locator("#fullTrackFrame").boundingBox();
+  if (!shownFrame || shownFrame.x < 0 || shownFrame.width < 200 || shownFrame.height < 200) {
+    throw new Error(`Show video did not reveal the live matched iframe: ${JSON.stringify(shownFrame)}`);
+  }
+  await page.locator("#fullTrackVideo").click();
+  const hiddenFrame = await page.locator("#fullTrackFrame").boundingBox();
+  if (!hiddenFrame || hiddenFrame.x + hiddenFrame.width >= 0) {
+    throw new Error(`Hide video did not restore audio-only playback: ${JSON.stringify(hiddenFrame)}`);
+  }
+  console.log(`Nyxify live Octave playback passed: ${title} advanced to ${state.currentLabel}; video stayed hidden by default, appeared on request, and hid again.`);
 } finally {
   await browser.close();
 }

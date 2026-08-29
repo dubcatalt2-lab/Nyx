@@ -29,6 +29,7 @@ const nowPlayingAlbum = document.getElementById('nowPlayingAlbum');
 const nowPlayingPlaylists = document.getElementById('nowPlayingPlaylists');
 const nowPlayingNext = document.getElementById('nowPlayingNext');
 const fullTrackStage = document.getElementById('fullTrackStage');
+const fullTrackTitle = document.getElementById('fullTrackTitle');
 const fullTrackStatus = document.getElementById('fullTrackStatus');
 const fullTrackPreview = document.getElementById('fullTrackPreview');
 const fullTrackVideo = document.getElementById('fullTrackVideo');
@@ -1495,12 +1496,12 @@ function ensureoctaveapi() {
   if (octaveapipromise) return octaveapipromise;
   octaveapipromise = new Promise((resolve, reject) => {
     const previous = window.onYouTubeIframeAPIReady;
-    const timer = setTimeout(() => reject(new Error('The Octave player took too long to load.')), 15_000);
+    const timer = setTimeout(() => reject(new Error('The full-song player took too long to load.')), 15_000);
     window.onYouTubeIframeAPIReady = () => {
       try { previous?.(); } catch (_) {}
       clearTimeout(timer);
       if (window.YT?.Player) resolve(window.YT);
-      else reject(new Error('The Octave player did not initialize.'));
+      else reject(new Error('The full-song player did not initialize.'));
     };
     let script = document.querySelector('script[data-nyx-octave-player]');
     if (!script) {
@@ -1510,7 +1511,7 @@ function ensureoctaveapi() {
       script.dataset.nyxOctavePlayer = '1';
       script.addEventListener('error', () => {
         clearTimeout(timer);
-        reject(new Error('The Octave player could not be loaded.'));
+        reject(new Error('The full-song player could not be loaded.'));
       }, { once: true });
       document.head.appendChild(script);
     }
@@ -1580,24 +1581,26 @@ async function startoctavetrack(track, request) {
   fullTrackStage.hidden = false;
   fullTrackStage.dataset.playbackState = 'loading';
   delete fullTrackStage.dataset.lastError;
-  fullTrackStatus.textContent = 'Finding the full song with Octave...';
+  fullTrackTitle.textContent = track.title || 'Full track';
+  fullTrackStatus.textContent = 'Finding the full song...';
   try {
     const match = await nyxifyjson(`/api/nyxify/full-track/${encodeURIComponent(track.id)}`);
     if (request !== octaverequest || curtrack?.id !== track.id) return;
     if (match.mode !== 'octave' || !/^[A-Za-z0-9_-]{11}$/.test(String(match.videoId || ''))) {
-      throw new Error('Octave did not return a playable full song.');
+      throw new Error('No playable full song was found.');
     }
     const octaveCandidates = (Array.isArray(match.candidates) ? match.candidates : [match])
       .filter(candidate => /^[A-Za-z0-9_-]{11}$/.test(String(candidate?.videoId || '')))
       .slice(0, 8);
-    if (!octaveCandidates.length) throw new Error('Octave did not return a playable full song.');
+    if (!octaveCandidates.length) throw new Error('No playable full song was found.');
     let octaveCandidateIndex = 0;
+    fullTrackTitle.textContent = octaveCandidates[0].title || match.title || track.title;
     const YT = await ensureoctaveapi();
     if (request !== octaverequest || curtrack?.id !== track.id) return;
     destroyoctaveplayer();
     fullTrackStage.hidden = false;
     fullTrackStage.dataset.playbackState = 'loading';
-    fullTrackStatus.textContent = 'Loading the full song...';
+    fullTrackStatus.textContent = 'Loading full song...';
     ensureoctaveframe();
     octaveplayer = new YT.Player('fullTrackFrame', {
       width: '240',
@@ -1620,7 +1623,7 @@ async function startoctavetrack(track, request) {
           const volume = Math.min(100, Math.max(0, Number(volBar.value) || 0));
           event.target.setVolume?.(volume);
           event.target.playVideo?.();
-          fullTrackStatus.textContent = 'Playing the full song with Octave';
+          fullTrackStatus.textContent = 'Playing full song';
           const duration = Number(event.target.getDuration?.()) || Number(match.durationSeconds) || Number(track.duration) || 0;
           if (duration) document.getElementById('timeTotal').textContent = fmt(duration);
           startoctaveprogress();
@@ -1632,7 +1635,7 @@ async function startoctavetrack(track, request) {
           if (octaveplaying) {
             playIcon.className = 'material-symbols--pause-rounded';
             fullTrackStage.dataset.playbackState = 'playing';
-            fullTrackStatus.textContent = 'Playing the full song with Octave';
+            fullTrackStatus.textContent = 'Playing full song';
             startoctaveprogress();
           } else if (state === YT.PlayerState.PAUSED) {
             playIcon.className = 'line-md--play-filled';
@@ -1657,6 +1660,7 @@ async function startoctavetrack(track, request) {
           const next = octaveCandidates[octaveCandidateIndex];
           if (next) {
             fullTrackStage.dataset.playbackState = 'loading';
+            fullTrackTitle.textContent = next.title || track.title;
             fullTrackStatus.textContent = 'Trying another full-song source...';
             event.target.loadVideoById?.(next.videoId);
             return;

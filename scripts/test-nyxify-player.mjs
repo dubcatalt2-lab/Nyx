@@ -97,6 +97,8 @@ try {
   await page.goto(`${origin}/apps/nyxify/`, { waitUntil: 'domcontentloaded' });
   await page.locator('.row', { hasText: track.title }).click();
   await page.locator('#fullTrackStage[data-playback-state="playing"]').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#fullTrackTitle').textContent(), track.title, 'The full-song row did not use the matched video title');
+  assert.doesNotMatch(await page.locator('#fullTrackStage').textContent(), /octave/i, 'The internal playback-engine name leaked into the visible UI');
   const octaveFrame = await page.locator('#fullTrackFrame').boundingBox();
   assert.ok(octaveFrame && octaveFrame.width >= 200 && octaveFrame.height >= 200 && octaveFrame.x + octaveFrame.width < 0, 'The Octave iframe was not kept off the visible Nyxify canvas');
   await page.locator('#fullTrackVideo').click();

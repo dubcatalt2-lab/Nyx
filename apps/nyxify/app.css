@@ -1304,13 +1304,18 @@ main { min-width: 0; }
   gap: 10px;
   margin-bottom: 0;
 }
-.full-track-head > div {
+.full-track-head > div:first-child {
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
-.full-track-head strong { font-size: .78rem; }
+.full-track-head strong {
+  font-size: .78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .full-track-head span {
   color: var(--dim);
   font-size: .63rem;

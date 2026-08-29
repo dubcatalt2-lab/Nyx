@@ -62,6 +62,17 @@ try {
     throw new Error(`Octave player did not reach playing state: ${JSON.stringify(diagnostic)}; errors: ${pageErrors.join(" | ")}`, { cause: error });
   }
 
+  await page.locator("#seekBar").evaluate(slider => {
+    slider.value = "50";
+    slider.dispatchEvent(new Event("input", { bubbles: true }));
+    slider.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await page.waitForFunction(() => {
+    const label = String(document.querySelector("#timeCur")?.textContent || "0:00");
+    const parts = label.split(":").map(Number);
+    const seconds = parts.reduce((total, value) => total * 60 + (Number(value) || 0), 0);
+    return document.querySelector("#fullTrackStage")?.dataset.playbackState === "playing" && seconds > 30;
+  }, null, { timeout: 15_000 });
   const firstProgress = Number(await page.locator("#seekBar").inputValue());
   await page.waitForTimeout(1_500);
 

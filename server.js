@@ -6653,6 +6653,15 @@ function nyxifyDurationMatches(video, expectedSeconds) {
   return Math.abs(duration - expected) <= Math.max(45, Math.min(90, expected * 0.25));
 }
 
+function nyxifyMultilingualTopMatch(video, artistName, expectedSeconds) {
+  const duration = Math.max(0, Number(video?.durationSeconds) || 0);
+  const expected = Math.max(0, Number(expectedSeconds) || 0);
+  return /^[A-Za-z0-9_-]{11}$/.test(String(video?.id || ""))
+    && nyxifyArtistChannelMatches(video, artistName)
+    && expected > 0
+    && Math.abs(duration - expected) <= Math.max(8, expected * 0.05);
+}
+
 function nyxifyOfficialArtistScore(video, artistName) {
   if (!nyxifyArtistMatches(video, artistName)) return 0;
   const wanted = nyxifyMatchText(artistName);
@@ -6785,6 +6794,10 @@ async function nyxifyFullTrack(trackId) {
       && nyxifyTrackTitleMatches(video, title)
       && nyxifyOfficialArtistScore(video, artist) >= 80
       && nyxifyDurationMatches(video, expectedDuration));
+    if (!candidates.length) {
+      const top = officialCatalogResults[0];
+      if (nyxifyMultilingualTopMatch(top, artist, expectedDuration)) candidates = [top];
+    }
   }
   candidates = candidates.filter(video => {
     const candidateTitle = nyxifyMatchText(video?.title);
@@ -13527,7 +13540,7 @@ app.use((_req, res) => {
   res.sendFile(join(staticRoot, "index.html"));
 });
 
-export { app, attachNyxChatSocketServer, externalWispUrl, normalizePublicWispUrl, nyxActorCanReviewSearchHistory, nyxChatCanAccessChannel, nyxChatIsSchoolRestrictedChannel, nyxClientIp, nyxRolePresentation, nyxVisibleCustomRoles, nyxifyArtistMatches, nyxifyDurationMatches, nyxifyOfficialArtistScore, nyxifyTrackTitleMatches };
+export { app, attachNyxChatSocketServer, externalWispUrl, normalizePublicWispUrl, nyxActorCanReviewSearchHistory, nyxChatCanAccessChannel, nyxChatIsSchoolRestrictedChannel, nyxClientIp, nyxRolePresentation, nyxVisibleCustomRoles, nyxifyArtistMatches, nyxifyDurationMatches, nyxifyMultilingualTopMatch, nyxifyOfficialArtistScore, nyxifyTrackTitleMatches };
 
 const isDirectRun = process.argv[1] && resolve(process.argv[1]) === join(__dirname, "server.js");
 if (isDirectRun) {

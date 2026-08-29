@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { nyxifyArtistMatches, nyxifyDurationMatches, nyxifyOfficialArtistScore, nyxifyTrackTitleMatches } from "../server.js";
+import { nyxifyArtistMatches, nyxifyDurationMatches, nyxifyMultilingualTopMatch, nyxifyOfficialArtistScore, nyxifyTrackTitleMatches } from "../server.js";
 
 const cases = [
   {
@@ -39,4 +39,7 @@ for (const sample of cases) {
 }
 
 assert.equal(nyxifyDurationMatches({ durationSeconds: 814 }, 302), false, "A much longer unrelated video was accepted");
+assert.equal(nyxifyMultilingualTopMatch({ id: "GQ3V50XoLOM", title: "美波「ライラック」MV", author: "美波", durationSeconds: 303 }, "美波", 302), true, "A top multilingual exact-artist match was rejected");
+assert.equal(nyxifyMultilingualTopMatch({ id: "GQ3V50XoLOM", title: "美波「ライラック」MV", author: "Other Artist", durationSeconds: 303 }, "美波", 302), false, "A multilingual wrong-artist result was accepted");
+assert.equal(nyxifyMultilingualTopMatch({ id: "GQ3V50XoLOM", title: "美波「ライラック」MV", author: "美波", durationSeconds: 420 }, "美波", 302), false, "A multilingual wrong-duration result was accepted");
 console.log("Nyxify title, artist, Unicode, and duration matching regressions passed.");

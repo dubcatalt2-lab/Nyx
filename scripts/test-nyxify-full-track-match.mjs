@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { nyxifyArtistMatches, nyxifyDurationMatches, nyxifyMultilingualTopMatch, nyxifyOfficialArtistScore, nyxifyTrackTitleMatches } from "../server.js";
+import { nyxifyArtistMatches, nyxifyDurationMatches, nyxifyFullTrackCompare, nyxifyMultilingualTopMatch, nyxifyOfficialArtistScore, nyxifyTrackTitleMatches } from "../server.js";
 
 const cases = [
   {
@@ -42,4 +42,9 @@ assert.equal(nyxifyDurationMatches({ durationSeconds: 814 }, 302), false, "A muc
 assert.equal(nyxifyMultilingualTopMatch({ id: "GQ3V50XoLOM", title: "美波「ライラック」MV", author: "美波", durationSeconds: 303 }, "美波", 302), true, "A top multilingual exact-artist match was rejected");
 assert.equal(nyxifyMultilingualTopMatch({ id: "GQ3V50XoLOM", title: "美波「ライラック」MV", author: "Other Artist", durationSeconds: 303 }, "美波", 302), false, "A multilingual wrong-artist result was accepted");
 assert.equal(nyxifyMultilingualTopMatch({ id: "GQ3V50XoLOM", title: "美波「ライラック」MV", author: "美波", durationSeconds: 420 }, "美波", 302), false, "A multilingual wrong-duration result was accepted");
+assert.ok(nyxifyFullTrackCompare(
+  { id: "GQ3V50XoLOM", title: "美波「ライラック」MV", author: "美波", durationSeconds: 303 },
+  { id: "IA2mk4nxwRY", title: "Minami (美波) - Lilac | Lyrics", author: "the lonely boy", durationSeconds: 303 },
+  { title: "Lilac", title_short: "Lilac", artist: { name: "美波" }, duration: 302 }
+) < 0, "A lyrics reupload ranked above the exact artist-channel video");
 console.log("Nyxify title, artist, Unicode, and duration matching regressions passed.");

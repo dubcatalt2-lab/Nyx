@@ -6615,6 +6615,12 @@ function nyxifyFullTrackScore(video, track) {
   return wordScore + officialBonus + musicVideoBonus + artistBonus - variantPenalty - durationPenalty;
 }
 
+function nyxifyFullTrackCompare(left, right, track) {
+  const artist = nyxifyCleanText(track?.artist?.name, "", 120);
+  const channelDifference = Number(nyxifyArtistChannelMatches(right, artist)) - Number(nyxifyArtistChannelMatches(left, artist));
+  return channelDifference || nyxifyFullTrackScore(right, track) - nyxifyFullTrackScore(left, track);
+}
+
 function nyxifyMatchText(value) {
   return nyxifyCleanText(value, "", 240).normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase()
     .replace(/&/g, " and ").replace(/[^\p{L}\p{N}]+/gu, " ").replace(/\s+/g, " ").trim();
@@ -6811,7 +6817,7 @@ async function nyxifyFullTrack(trackId) {
       .filter((video, index, list) => list.findIndex(candidate => candidate.id === video.id) === index);
   }
   candidates = candidates.filter(video => nyxifyTrustedFullTrackSource(video, artist));
-  candidates.sort((left, right) => nyxifyFullTrackScore(right, track) - nyxifyFullTrackScore(left, track));
+  candidates.sort((left, right) => nyxifyFullTrackCompare(left, right, track));
   const selected = candidates[0];
   if (!selected) throw new Error("No embeddable full-track match is available right now.");
   const result = {
@@ -13546,7 +13552,7 @@ app.use((_req, res) => {
   res.sendFile(join(staticRoot, "index.html"));
 });
 
-export { app, attachNyxChatSocketServer, externalWispUrl, normalizePublicWispUrl, nyxActorCanReviewSearchHistory, nyxChatCanAccessChannel, nyxChatIsSchoolRestrictedChannel, nyxClientIp, nyxRolePresentation, nyxVisibleCustomRoles, nyxifyArtistMatches, nyxifyDurationMatches, nyxifyMultilingualTopMatch, nyxifyOfficialArtistScore, nyxifyTrackTitleMatches };
+export { app, attachNyxChatSocketServer, externalWispUrl, normalizePublicWispUrl, nyxActorCanReviewSearchHistory, nyxChatCanAccessChannel, nyxChatIsSchoolRestrictedChannel, nyxClientIp, nyxRolePresentation, nyxVisibleCustomRoles, nyxifyArtistMatches, nyxifyDurationMatches, nyxifyFullTrackCompare, nyxifyMultilingualTopMatch, nyxifyOfficialArtistScore, nyxifyTrackTitleMatches };
 
 const isDirectRun = process.argv[1] && resolve(process.argv[1]) === join(__dirname, "server.js");
 if (isDirectRun) {

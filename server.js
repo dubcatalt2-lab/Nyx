@@ -134,6 +134,15 @@ const nyxifyArtworkTypes = new Set(["image/avif", "image/gif", "image/jpeg", "im
 const nyxifyAudioTypes = new Set(["application/octet-stream", "audio/aac", "audio/flac", "audio/mp4", "audio/mpeg", "audio/ogg", "audio/wav", "audio/webm"]);
 const nyxifyArtworkByteLimit = 5 * 1024 * 1024;
 const nyxifyJsonByteLimit = 2 * 1024 * 1024;
+// Octave discovers public YouTube music results through Invidious/Piped and
+// plays the selected video through the official iframe player. Keep this list
+// fixed and server-side so requests cannot be turned into an SSRF primitive.
+const nyxifyOctaveSearchProviders = Object.freeze([
+  Object.freeze({ type: "invidious", origin: "https://invidious.flokinet.to" }),
+  Object.freeze({ type: "invidious", origin: "https://yewtu.be" }),
+  Object.freeze({ type: "invidious", origin: "https://inv.nadeko.net" }),
+  Object.freeze({ type: "piped", origin: "https://pipedapi.adminforge.de" })
+]);
 
 const nyxSchoolChatAllowedIp = "206.15.249.212";
 const nyxSchoolChatChannelId = "school";
@@ -6588,6 +6597,131 @@ async function nyxifyDetail(type, id) {
   return structuredClone(result);
 }
 
+function nyxifyFullTrackScore(video, track) {
+  const duration = Math.max(0, Number(video?.durationSeconds) || 0);
+  const expected = Math.max(0, Number(track?.duration) || 0);
+  const title = nyxifyCleanText(video?.title, "", 240).toLowerCase();
+  const wantedTitle = nyxifyCleanText(track?.title, "", 180).toLowerCase();
+  const wantedArtist = nyxifyCleanText(track?.artist?.name, "", 120).toLowerCase();
+  const author = nyxifyCleanText(video?.author || video?.creator || video?.channelTitle, "", 120).toLowerCase();
+  const titleWords = wantedTitle.split(/[^a-z0-9]+/).filter(word => word.length >= 3);
+  const artistWords = wantedArtist.split(/[^a-z0-9]+/).filter(word => word.length >= 3);
+  const wordScore = [...titleWords, ...artistWords].reduce((score, word) => score + (title.includes(word) ? 18 : -8), 0);
+  const durationPenalty = expected && duration ? Math.min(120, Math.abs(duration - expected)) : 45;
+  const officialBonus = /\b(?:official|audio|topic|provided to youtube)\b/.test(title) ? 30 : 0;
+  const artistBonus = wantedArtist && author.includes(wantedArtist) ? 45 : 0;
+  const variantPenalty = /\b(?:remix|cover|reaction|slowed|sped up|nightcore|karaoke|instrumental)\b/.test(title)
+    && !/\b(?:remix|cover|slowed|sped up|nightcore|karaoke|instrumental)\b/.test(wantedTitle) ? 90 : 0;
+  return wordScore + officialBonus + artistBonus - variantPenalty - durationPenalty;
+}
+
+function nyxifyOctaveVideo(value, providerType) {
+  const source = value && typeof value === "object" ? value : {};
+  let videoId = String(source.videoId || "").trim();
+  if (!videoId && providerType === "piped") {
+    try {
+      const target = new URL(String(source.url || ""), "https://www.youtube.com");
+      videoId = String(target.searchParams.get("v") || target.pathname.split("/").filter(Boolean).pop() || "").trim();
+    } catch {}
+  }
+  if (!/^[A-Za-z0-9_-]{11}$/.test(videoId)) return null;
+  const durationSeconds = Math.max(0, Number(source.lengthSeconds ?? source.duration) || 0);
+  if (durationSeconds < 45 || durationSeconds > 7_200 || source.liveNow === true || source.isUpcoming === true) return null;
+  return {
+    id: videoId,
+    title: nyxifyCleanText(source.title, "", 240),
+    author: nyxifyCleanText(source.author || source.uploaderName, "", 120),
+    durationSeconds
+  };
+}
+
+async function nyxifyOctaveProviderSearch(provider, query) {
+  const target = new URL(provider.type === "piped" ? "/search" : "/api/v1/search", provider.origin);
+  target.searchParams.set("q", query);
+  if (provider.type === "piped") target.searchParams.set("filter", "music_songs");
+  else target.searchParams.set("type", "video");
+  const response = await fetch(target, {
+    headers: { Accept: "application/json", "Accept-Language": "en-US,en;q=0.9", "User-Agent": "Nyxify/1.0" },
+    redirect: "error",
+    signal: AbortSignal.timeout(5_000)
+  });
+  const contentType = String(response.headers.get("content-type") || "").toLowerCase();
+  const contentLength = Number(response.headers.get("content-length") || 0);
+  if (!response.ok || !contentType.includes("application/json") || (contentLength && contentLength > nyxifyJsonByteLimit)) {
+    await response.body?.cancel().catch(() => {});
+    throw new Error("An Octave search provider is unavailable.");
+  }
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (!bytes.length || bytes.length > nyxifyJsonByteLimit) throw new Error("An Octave search response was invalid.");
+  const payload = JSON.parse(bytes.toString("utf8"));
+  const items = provider.type === "piped" && Array.isArray(payload?.items) ? payload.items : payload;
+  return (Array.isArray(items) ? items : []).slice(0, 30).map(value => nyxifyOctaveVideo(value, provider.type)).filter(Boolean);
+}
+
+async function nyxifyOctaveEmbeddable(videos) {
+  if (!String(process.env.NYX_YOUTUBE_API_KEY || "").trim()) return videos;
+  const ids = [...new Set(videos.map(video => video.id))].filter(id => /^[A-Za-z0-9_-]{11}$/.test(id)).slice(0, 50);
+  if (!ids.length) return [];
+  const payload = await nyxTubeApi("videos", {
+    part: "snippet,contentDetails,status",
+    id: ids.join(","),
+    maxResults: ids.length
+  });
+  const verified = new Map((Array.isArray(payload?.items) ? payload.items : [])
+    .map(nyxTubePublicVideo)
+    .filter(Boolean)
+    .map(video => [video.id, video]));
+  return videos.filter(video => verified.has(video.id)).map(video => {
+    const detail = verified.get(video.id);
+    return {
+      ...video,
+      title: detail.title || video.title,
+      author: detail.creator || video.author,
+      durationSeconds: detail.durationSeconds || video.durationSeconds
+    };
+  });
+}
+
+async function nyxifyOctaveSearch(query) {
+  for (const provider of nyxifyOctaveSearchProviders) {
+    try {
+      const videos = await nyxifyOctaveEmbeddable(await nyxifyOctaveProviderSearch(provider, query));
+      if (videos.length) return videos;
+    } catch {}
+  }
+  // Public instances are volatile. The existing official YouTube lookup is a
+  // last-resort discovery path; playback still uses Octave's iframe engine.
+  return nyxTubeSearch(query, 12);
+}
+
+async function nyxifyFullTrack(trackId) {
+  const key = `full-track:${trackId}`;
+  const cached = nyxifyCacheGet(nyxifyCatalogCache, key);
+  if (cached) return structuredClone(cached);
+  const track = await nyxifyDeezerJson(`/track/${trackId}`);
+  const title = nyxifyCleanText(track.title, "", 180);
+  const artist = nyxifyCleanText(track.artist?.name, "", 120);
+  if (!title || !artist) throw new Error("This track is missing the metadata needed for full playback.");
+  const videos = await nyxifyOctaveSearch(`${artist} ${title} official audio`);
+  const candidates = videos.filter(video => /^[A-Za-z0-9_-]{11}$/.test(String(video?.id || "")) && Number(video?.durationSeconds) >= 45);
+  candidates.sort((left, right) => nyxifyFullTrackScore(right, track) - nyxifyFullTrackScore(left, track));
+  const selected = candidates[0];
+  if (!selected) throw new Error("No embeddable full-track match is available right now.");
+  const result = {
+    mode: "octave",
+    videoId: selected.id,
+    title: selected.title,
+    durationSeconds: Math.max(0, Number(selected.durationSeconds) || Number(track.duration) || 0),
+    candidates: candidates.slice(0, 8).map(video => ({
+      videoId: video.id,
+      title: video.title,
+      durationSeconds: Math.max(0, Number(video.durationSeconds) || Number(track.duration) || 0)
+    }))
+  };
+  nyxifyCacheSet(nyxifyCatalogCache, key, result, 12 * 60 * 60_000, 200);
+  return structuredClone(result);
+}
+
 function nyxifyProviderUrl(pathname) {
   const target = new URL(pathname, nyxifyProviderOrigin);
   if (target.origin !== nyxifyProviderOrigin || target.username || target.password || target.hash) return null;
@@ -11759,6 +11893,18 @@ for (const detailType of ["artist", "album"]) {
     }
   });
 }
+
+app.get("/api/nyxify/full-track/:trackId", async (req, res) => {
+  res.set("Cache-Control", "private, max-age=300, stale-while-revalidate=3600");
+  if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
+  const trackId = String(req.params.trackId || "").trim();
+  if (!nyxifyTrackIdPattern.test(trackId)) return res.status(400).json({ error: "Invalid Nyxify track." });
+  try {
+    res.json(await nyxifyFullTrack(trackId));
+  } catch (error) {
+    res.status(error.status || 502).json({ error: error.message || "Full-track playback is unavailable right now." });
+  }
+});
 
 app.get("/api/nyxify/cover", async (req, res) => {
   if (!sameOriginRequest(req)) return res.status(403).type("text/plain").send("Cross-origin requests are not allowed.");

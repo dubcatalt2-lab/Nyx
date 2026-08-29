@@ -8,9 +8,20 @@ const browser = await chromium.launch({
 
 try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  const forcedVideoId = String(process.env.NYX_TEST_VIDEO_ID || "").trim();
+  if (/^[A-Za-z0-9_-]{11}$/.test(forcedVideoId)) {
+    await page.route("**/api/nyxify/full-track/*", route => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ mode: "octave", videoId: forcedVideoId, durationSeconds: 213, title: "Octave playback test" })
+    }));
+  }
   const pageErrors = [];
   const failedNyxifyRequests = [];
   page.on("pageerror", error => pageErrors.push(error.message));
+  page.on("console", message => {
+    if (message.type() === "error") pageErrors.push(`console: ${message.text()}`);
+  });
   page.on("requestfailed", request => {
     if (request.url().includes("/api/nyxify/")) {
       failedNyxifyRequests.push(`${request.url()} :: ${request.failure()?.errorText || "failed"}`);
@@ -18,6 +29,11 @@ try {
   });
 
   await page.goto(`${baseUrl}/apps/nyxify/`, { waitUntil: "domcontentloaded" });
+  const testQuery = String(process.env.NYX_TEST_QUERY || "Daft Punk Get Lucky").trim();
+  if (testQuery) {
+    await page.locator("#searchInput").fill(testQuery);
+    await page.locator("#searchInput").press("Enter");
+  }
   const row = page.locator(".row[data-id]").first();
   try {
     await row.waitFor({ state: "visible", timeout: 30_000 });
@@ -27,30 +43,52 @@ try {
   }
   const title = String(await row.locator(".t-title").textContent() || "Unknown track").trim();
   await row.click();
-  await page.waitForFunction(() => {
-    const audio = document.querySelector("#audio");
-    return Boolean(audio && !audio.paused && audio.currentTime > 0.35 && audio.readyState >= 2);
-  }, null, { timeout: 30_000 });
+  try {
+    await page.waitForFunction(() => {
+      const stage = document.querySelector("#fullTrackStage");
+      const progress = Number(document.querySelector("#seekBar")?.value || 0);
+      return stage?.dataset.playbackState === "playing" && progress > 0;
+    }, null, { timeout: 30_000 });
+  } catch (error) {
+    const diagnostic = await page.evaluate(() => ({
+      stageHidden: document.querySelector("#fullTrackStage")?.hidden,
+      playbackState: document.querySelector("#fullTrackStage")?.dataset.playbackState,
+      lastError: document.querySelector("#fullTrackStage")?.dataset.lastError,
+      status: document.querySelector("#fullTrackStatus")?.textContent,
+      progress: document.querySelector("#seekBar")?.value,
+      frameTag: document.querySelector("#fullTrackFrame")?.tagName,
+      frameSrc: document.querySelector("#fullTrackFrame")?.getAttribute("src")
+    }));
+    throw new Error(`Octave player did not reach playing state: ${JSON.stringify(diagnostic)}; errors: ${pageErrors.join(" | ")}`, { cause: error });
+  }
+
+  const firstProgress = Number(await page.locator("#seekBar").inputValue());
+  await page.waitForTimeout(1_500);
 
   const state = await page.evaluate(() => {
     const audio = document.querySelector("#audio");
     const player = document.querySelector("#player");
+    const stage = document.querySelector("#fullTrackStage");
+    const frame = document.querySelector("#fullTrackFrame");
+    const rect = frame?.getBoundingClientRect();
     return {
-      currentTime: audio?.currentTime || 0,
-      duration: audio?.duration || 0,
-      paused: audio?.paused ?? true,
-      readyState: audio?.readyState || 0,
-      sourcePath: audio ? new URL(audio.currentSrc || audio.src).pathname : "",
+      playbackState: stage?.dataset.playbackState || "",
+      status: document.querySelector("#fullTrackStatus")?.textContent || "",
+      progress: Number(document.querySelector("#seekBar")?.value || 0),
+      currentLabel: document.querySelector("#timeCur")?.textContent || "",
+      frameWidth: rect?.width || 0,
+      frameHeight: rect?.height || 0,
+      previewPaused: audio?.paused ?? true,
       playerVisible: Boolean(player && getComputedStyle(player).display !== "none")
     };
   });
 
   if (pageErrors.length) throw new Error(`Nyxify page errors: ${pageErrors.join(" | ")}`);
   if (failedNyxifyRequests.length) throw new Error(`Nyxify request failures: ${failedNyxifyRequests.join(" | ")}`);
-  if (state.paused || state.currentTime <= 0.35 || state.readyState < 2 || !state.playerVisible) {
-    throw new Error(`Nyxify audio did not advance: ${JSON.stringify(state)}`);
+  if (state.playbackState !== "playing" || state.progress <= firstProgress || state.frameWidth < 200 || state.frameHeight < 200 || !state.previewPaused || !state.playerVisible) {
+    throw new Error(`Nyxify Octave playback did not advance: ${JSON.stringify(state)}`);
   }
-  console.log(`Nyxify live playback passed: ${title} advanced to ${state.currentTime.toFixed(2)}s (${state.sourcePath}).`);
+  console.log(`Nyxify live Octave playback passed: ${title} advanced to ${state.currentLabel} in a ${Math.round(state.frameWidth)}x${Math.round(state.frameHeight)} visible player.`);
 } finally {
   await browser.close();
 }

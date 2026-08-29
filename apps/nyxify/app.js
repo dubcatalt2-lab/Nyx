@@ -28,6 +28,9 @@ const nowPlayingArtist = document.getElementById('nowPlayingArtist');
 const nowPlayingAlbum = document.getElementById('nowPlayingAlbum');
 const nowPlayingPlaylists = document.getElementById('nowPlayingPlaylists');
 const nowPlayingNext = document.getElementById('nowPlayingNext');
+const fullTrackStage = document.getElementById('fullTrackStage');
+const fullTrackStatus = document.getElementById('fullTrackStatus');
+const fullTrackPreview = document.getElementById('fullTrackPreview');
 
 let curtrack = null;
 let results = [];
@@ -55,6 +58,12 @@ const playlistAccentCache = new Map();
 
 let queue = [];
 let qindex = -1;
+let playbackmode = 'preview';
+let octaveplayer = null;
+let octaveplaying = false;
+let octaverequest = 0;
+let octaveprogress = null;
+let octaveapipromise = null;
 
 let shuffleon = localStorage.getItem('nyx_nyxify_shuffle') === '1';
 let repeatmode = localStorage.getItem('nyx_nyxify_repeat') || 'off';
@@ -1467,6 +1476,221 @@ function rendernowplaying() {
   }
 }
 
+function ensureoctaveframe() {
+  let frame = document.getElementById('fullTrackFrame');
+  if (!frame || frame.tagName === 'IFRAME') {
+    const replacement = document.createElement('div');
+    replacement.id = 'fullTrackFrame';
+    if (frame) frame.replaceWith(replacement);
+    else fullTrackStage.appendChild(replacement);
+    frame = replacement;
+  }
+  return frame;
+}
+
+function ensureoctaveapi() {
+  if (window.YT?.Player) return Promise.resolve(window.YT);
+  if (octaveapipromise) return octaveapipromise;
+  octaveapipromise = new Promise((resolve, reject) => {
+    const previous = window.onYouTubeIframeAPIReady;
+    const timer = setTimeout(() => reject(new Error('The Octave player took too long to load.')), 15_000);
+    window.onYouTubeIframeAPIReady = () => {
+      try { previous?.(); } catch (_) {}
+      clearTimeout(timer);
+      if (window.YT?.Player) resolve(window.YT);
+      else reject(new Error('The Octave player did not initialize.'));
+    };
+    let script = document.querySelector('script[data-nyx-octave-player]');
+    if (!script) {
+      script = document.createElement('script');
+      script.src = 'https://www.youtube.com/iframe_api';
+      script.async = true;
+      script.dataset.nyxOctavePlayer = '1';
+      script.addEventListener('error', () => {
+        clearTimeout(timer);
+        reject(new Error('The Octave player could not be loaded.'));
+      }, { once: true });
+      document.head.appendChild(script);
+    }
+  }).catch(error => {
+    octaveapipromise = null;
+    throw error;
+  });
+  return octaveapipromise;
+}
+
+function stopoctaveprogress() {
+  if (octaveprogress != null) clearInterval(octaveprogress);
+  octaveprogress = null;
+}
+
+function startoctaveprogress() {
+  stopoctaveprogress();
+  octaveprogress = setInterval(() => {
+    if (playbackmode !== 'octave' || dragging || !octaveplayer) return;
+    const current = Number(octaveplayer.getCurrentTime?.()) || 0;
+    const duration = Number(octaveplayer.getDuration?.()) || Number(curtrack?.duration) || 0;
+    if (duration) document.getElementById('timeTotal').textContent = fmt(duration);
+    updateseek(current);
+    syncmediapos();
+  }, 500);
+}
+
+function destroyoctaveplayer() {
+  stopoctaveprogress();
+  try { octaveplayer?.stopVideo?.(); } catch (_) {}
+  try { octaveplayer?.destroy?.(); } catch (_) {}
+  octaveplayer = null;
+  octaveplaying = false;
+  ensureoctaveframe();
+  fullTrackStage.hidden = true;
+  fullTrackStage.dataset.playbackState = 'idle';
+}
+
+function previewsource() {
+  return curtrack ? `/api/nyxify/stream/${curtrack.id}` : '';
+}
+
+function usepreview(autoplay = true, message = '') {
+  octaverequest += 1;
+  destroyoctaveplayer();
+  playbackmode = 'preview';
+  dlBtn.hidden = false;
+  const source = previewsource();
+  if (source && new URL(audio.currentSrc || audio.src || source, location.href).pathname !== source) audio.src = source;
+  if (message) console.warn(message);
+  if (autoplay && source) audio.play().catch(() => {});
+}
+
+function octaveerror(message) {
+  if (fullTrackStatus) fullTrackStatus.textContent = message;
+  usepreview(true, message);
+}
+
+async function startoctavetrack(track, request) {
+  fullTrackStage.hidden = false;
+  fullTrackStage.dataset.playbackState = 'loading';
+  delete fullTrackStage.dataset.lastError;
+  fullTrackStatus.textContent = 'Finding the full song with Octave...';
+  try {
+    const match = await nyxifyjson(`/api/nyxify/full-track/${encodeURIComponent(track.id)}`);
+    if (request !== octaverequest || curtrack?.id !== track.id) return;
+    if (match.mode !== 'octave' || !/^[A-Za-z0-9_-]{11}$/.test(String(match.videoId || ''))) {
+      throw new Error('Octave did not return a playable full song.');
+    }
+    const octaveCandidates = (Array.isArray(match.candidates) ? match.candidates : [match])
+      .filter(candidate => /^[A-Za-z0-9_-]{11}$/.test(String(candidate?.videoId || '')))
+      .slice(0, 8);
+    if (!octaveCandidates.length) throw new Error('Octave did not return a playable full song.');
+    let octaveCandidateIndex = 0;
+    const YT = await ensureoctaveapi();
+    if (request !== octaverequest || curtrack?.id !== track.id) return;
+    destroyoctaveplayer();
+    fullTrackStage.hidden = false;
+    fullTrackStage.dataset.playbackState = 'loading';
+    fullTrackStatus.textContent = 'Loading the full song...';
+    ensureoctaveframe();
+    octaveplayer = new YT.Player('fullTrackFrame', {
+      width: '240',
+      height: '240',
+      videoId: octaveCandidates[0].videoId,
+      playerVars: {
+        autoplay: 1,
+        controls: 1,
+        playsinline: 1,
+        enablejsapi: 1,
+        rel: 0,
+        origin: location.origin
+      },
+      events: {
+        onReady(event) {
+          if (request !== octaverequest || curtrack?.id !== track.id) return;
+          audio.pause();
+          playbackmode = 'octave';
+          dlBtn.hidden = true;
+          const volume = Math.min(100, Math.max(0, Number(volBar.value) || 0));
+          event.target.setVolume?.(volume);
+          event.target.playVideo?.();
+          fullTrackStatus.textContent = 'Playing the full song with Octave';
+          const duration = Number(event.target.getDuration?.()) || Number(match.durationSeconds) || Number(track.duration) || 0;
+          if (duration) document.getElementById('timeTotal').textContent = fmt(duration);
+          startoctaveprogress();
+        },
+        onStateChange(event) {
+          if (request !== octaverequest || playbackmode !== 'octave') return;
+          const state = event.data;
+          octaveplaying = state === YT.PlayerState.PLAYING;
+          if (octaveplaying) {
+            playIcon.className = 'material-symbols--pause-rounded';
+            fullTrackStage.dataset.playbackState = 'playing';
+            fullTrackStatus.textContent = 'Playing the full song with Octave';
+            startoctaveprogress();
+          } else if (state === YT.PlayerState.PAUSED) {
+            playIcon.className = 'line-md--play-filled';
+            fullTrackStage.dataset.playbackState = 'paused';
+          } else if (state === YT.PlayerState.BUFFERING) {
+            fullTrackStage.dataset.playbackState = 'buffering';
+            fullTrackStatus.textContent = 'Buffering the full song...';
+          } else if (state === YT.PlayerState.ENDED) {
+            octaveplaying = false;
+            if (repeatmode === 'one') {
+              event.target.seekTo?.(0, true);
+              event.target.playVideo?.();
+            } else {
+              advance(false);
+            }
+          }
+        },
+        onError(event) {
+          if (request !== octaverequest) return;
+          fullTrackStage.dataset.lastError = String(event.data ?? 'unknown');
+          octaveCandidateIndex += 1;
+          const next = octaveCandidates[octaveCandidateIndex];
+          if (next) {
+            fullTrackStage.dataset.playbackState = 'loading';
+            fullTrackStatus.textContent = 'Trying another full-song source...';
+            event.target.loadVideoById?.(next.videoId);
+            return;
+          }
+          octaveerror('No matching full song could be embedded. Playing the preview instead.');
+        }
+      }
+    });
+  } catch (error) {
+    if (request === octaverequest && curtrack?.id === track.id) octaveerror(`${error.message} Playing the preview instead.`);
+  }
+}
+
+function playbackpaused() {
+  return playbackmode === 'octave' ? !octaveplaying : audio.paused;
+}
+
+function playbackplay() {
+  if (playbackmode === 'octave') octaveplayer?.playVideo?.();
+  else audio.play().catch(() => {});
+}
+
+function playbackpause() {
+  if (playbackmode === 'octave') octaveplayer?.pauseVideo?.();
+  else audio.pause();
+}
+
+function playbacktime() {
+  return playbackmode === 'octave' ? Number(octaveplayer?.getCurrentTime?.()) || 0 : Number(audio.currentTime) || 0;
+}
+
+function playbackduration() {
+  if (playbackmode === 'octave') return Number(octaveplayer?.getDuration?.()) || Number(curtrack?.duration) || 0;
+  return isFinite(audio.duration) && audio.duration ? audio.duration : Number(curtrack?.duration) || 0;
+}
+
+function playbackseek(seconds) {
+  if (playbackmode === 'octave') octaveplayer?.seekTo?.(seconds, true);
+  else audio.currentTime = seconds;
+}
+
+fullTrackPreview.addEventListener('click', () => usepreview(true));
+
 function playtrack(t, list, context = '') {
   cancelqueuedseek();
   const nextContext = context || inferplaycontext(list);
@@ -1478,8 +1702,10 @@ function playtrack(t, list, context = '') {
 
   pushhistory(t);
 
-  audio.src = `/api/nyxify/stream/${t.id}`;
-  audio.play();
+  usepreview(false);
+  const fullTrackRequest = octaverequest;
+  audio.play().catch(() => {});
+  void startoctavetrack(t, fullTrackRequest);
 
   setcover(document.getElementById('pArt'), t.cover, `${t.title} cover`);
   document.getElementById('pTitle').textContent = t.title;
@@ -1533,15 +1759,16 @@ function advance(manual) {
 }
 
 function playprev() {
-  if (audio.currentTime > 3) { audio.currentTime = 0; return; }
+  if (playbacktime() > 3) { playbackseek(0); return; }
   if (qindex > 0) playat(qindex - 1);
-  else audio.currentTime = 0;
+  else playbackseek(0);
 }
 
 document.getElementById('nextBtn').addEventListener('click', () => advance(true));
 document.getElementById('prevBtn').addEventListener('click', playprev);
 
 audio.addEventListener('ended', () => {
+  if (playbackmode !== 'preview') return;
   if (repeatmode === 'one') { audio.currentTime = 0; audio.play(); return; }
   advance(false);
 });
@@ -1581,10 +1808,14 @@ playBtn.addEventListener('click', () => {
     else if (getlikes().length) playtrack(getlikes()[0]);
     return;
   }
-  if (audio.paused) audio.play(); else audio.pause();
+  if (playbackpaused()) playbackplay(); else playbackpause();
 });
-audio.addEventListener('play', () => playIcon.className = 'material-symbols--pause-rounded');
-audio.addEventListener('pause', () => playIcon.className = 'line-md--play-filled');
+audio.addEventListener('play', () => {
+  if (playbackmode === 'preview') playIcon.className = 'material-symbols--pause-rounded';
+});
+audio.addEventListener('pause', () => {
+  if (playbackmode === 'preview') playIcon.className = 'line-md--play-filled';
+});
 
 const pLikeBtn = document.getElementById('pLike');
 pLikeBtn.addEventListener('click', e => {
@@ -1654,8 +1885,7 @@ let queuedseek = null;
 let seekapplytimer = null;
 
 function knowndur() {
-  if (isFinite(audio.duration) && audio.duration) return audio.duration;
-  return curtrack && curtrack.duration ? curtrack.duration : 0;
+  return playbackduration();
 }
 
 function updateseek(sec) {
@@ -1688,12 +1918,18 @@ function seekbartarget() {
   const value = Math.min(100, Math.max(0, Number.parseFloat(seekBar.value) || 0));
   let target = (value / 100) * knowndur();
   target = Math.max(target, 0);
-  if (isFinite(audio.duration) && audio.duration) target = Math.min(target, Math.max(audio.duration - 0.25, 0));
+  const duration = playbackduration();
+  if (duration) target = Math.min(target, Math.max(duration - 0.25, 0));
   return target;
 }
 
 function applyseek(target) {
   if (!curtrack) return;
+  if (playbackmode === 'octave') {
+    playbackseek(target);
+    pendingseek = null;
+    return;
+  }
   if (audio.readyState >= HTMLMediaElement.HAVE_METADATA && isFinite(audio.duration) && audio.duration) {
     try {
       audio.currentTime = target;
@@ -1761,9 +1997,9 @@ seekBar.addEventListener('blur', commitseek);
 function skipby(sec) {
   if (!curtrack) return;
   const dur = knowndur();
-  const base = isFinite(audio.currentTime) ? audio.currentTime : 0;
+  const base = playbacktime();
   const t = Math.min(Math.max(base + sec, 0), Math.max(dur - 0.25, 0));
-  try { audio.currentTime = t; } catch (_) {}
+  try { playbackseek(t); } catch (_) {}
   updateseek(t);
 }
 
@@ -1777,6 +2013,10 @@ function setvolume(v) {
   v = Math.min(100, Math.max(0, v));
   audio.volume = v / 100;
   audio.muted = false;
+  if (playbackmode === 'octave') {
+    octaveplayer?.unMute?.();
+    octaveplayer?.setVolume?.(v);
+  }
   volBar.value = v;
   volBar.style.setProperty('--fill', v + '%');
   localStorage.setItem('nyx_nyxify_volume', v);
@@ -1784,8 +2024,9 @@ function setvolume(v) {
 }
 
 function syncvolume() {
-  const muted = audio.muted || audio.volume === 0;
-  volIcon.className = muted ? 'lucide--volume-x' : (audio.volume < 0.5 ? 'lucide--volume-1' : 'lucide--volume-2');
+  const volume = playbackmode === 'octave' ? (Number(octaveplayer?.getVolume?.()) || 0) / 100 : audio.volume;
+  const muted = playbackmode === 'octave' ? Boolean(octaveplayer?.isMuted?.()) || volume === 0 : audio.muted || volume === 0;
+  volIcon.className = muted ? 'lucide--volume-x' : (volume < 0.5 ? 'lucide--volume-1' : 'lucide--volume-2');
 }
 
 function setvolopen(open) {
@@ -1833,8 +2074,8 @@ document.addEventListener('keydown', e => {
   if (typing) return;
   if (e.key === 'ArrowRight' && !e.target.matches('input[type="range"]')) { e.preventDefault(); skipby(10); }
   else if (e.key === 'ArrowLeft' && !e.target.matches('input[type="range"]')) { e.preventDefault(); skipby(-10); }
-  else if (e.key === 'ArrowUp' && !e.target.matches('input[type="range"]')) { e.preventDefault(); setvolume((audio.muted ? 0 : audio.volume * 100) + 5); }
-  else if (e.key === 'ArrowDown' && !e.target.matches('input[type="range"]')) { e.preventDefault(); setvolume((audio.muted ? 0 : audio.volume * 100) - 5); }
+  else if (e.key === 'ArrowUp' && !e.target.matches('input[type="range"]')) { e.preventDefault(); setvolume((playbackmode === 'octave' ? Number(octaveplayer?.getVolume?.()) || 0 : audio.muted ? 0 : audio.volume * 100) + 5); }
+  else if (e.key === 'ArrowDown' && !e.target.matches('input[type="range"]')) { e.preventDefault(); setvolume((playbackmode === 'octave' ? Number(octaveplayer?.getVolume?.()) || 0 : audio.muted ? 0 : audio.volume * 100) - 5); }
   else if (e.code === 'Space' && tag !== 'button' && !e.target.closest('[role="button"]')) { e.preventDefault(); playBtn.click(); }
 });
 
@@ -1976,19 +2217,21 @@ function setmedia(t) {
 
 function syncmediapos() {
   if (!('mediaSession' in navigator) || !navigator.mediaSession.setPositionState) return;
-  if (!isFinite(audio.duration) || !audio.duration) return;
+  const duration = playbackduration();
+  const position = Math.min(playbacktime(), Math.max(duration - 0.01, 0));
+  if (!isFinite(duration) || !duration) return;
   try {
     navigator.mediaSession.setPositionState({
-      duration: audio.duration,
-      position: audio.currentTime,
-      playbackRate: audio.playbackRate
+      duration,
+      position,
+      playbackRate: playbackmode === 'octave' ? Number(octaveplayer?.getPlaybackRate?.()) || 1 : audio.playbackRate
     });
   } catch (_) {}
 }
 
 if ('mediaSession' in navigator) {
-  navigator.mediaSession.setActionHandler('play', () => audio.play());
-  navigator.mediaSession.setActionHandler('pause', () => audio.pause());
+  navigator.mediaSession.setActionHandler('play', playbackplay);
+  navigator.mediaSession.setActionHandler('pause', playbackpause);
   navigator.mediaSession.setActionHandler('previoustrack', playprev);
   navigator.mediaSession.setActionHandler('nexttrack', () => advance(true));
 }

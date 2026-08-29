@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/apps/nyxify/icons.css?v=20260825-nyx-v2">
-  <link rel="stylesheet" href="/apps/nyxify/app.css?v=20260825-player-seek-v8">
+  <link rel="stylesheet" href="/apps/nyxify/app.css?v=20260829-full-track-v9">
 </head>
 <body>
   <canvas id="stars"></canvas>
@@ -79,6 +79,14 @@
     </aside>
   </div>
 
+  <section class="full-track-stage" id="fullTrackStage" aria-label="Full track player" hidden>
+    <div class="full-track-head">
+      <div><strong>Full track</strong><span id="fullTrackStatus">Finding the official player…</span></div>
+      <button type="button" id="fullTrackPreview" aria-label="Use preview playback">Use preview</button>
+    </div>
+    <div id="fullTrackFrame"></div>
+  </section>
+
   <div class="player" id="player">
     <div class="player-inner">
       <div class="p-controls">
@@ -146,6 +154,6 @@
 
   <audio id="audio" preload="metadata"></audio>
 
-  <script src="/apps/nyxify/app.js?v=20260825-player-seek-v8"></script>
+  <script src="/apps/nyxify/app.js?v=20260829-full-track-v10"></script>
 </body>
 </html>

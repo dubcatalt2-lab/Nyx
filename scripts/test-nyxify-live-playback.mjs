@@ -41,7 +41,10 @@ try {
     await page.locator("#searchInput").fill(testQuery);
     await page.locator("#searchInput").press("Enter");
   }
-  const row = page.locator(".row[data-id]").first();
+  const expectedTrack = String(process.env.NYX_TEST_EXPECTED_TRACK || "").trim();
+  const row = expectedTrack
+    ? page.locator(".row[data-id]", { hasText: expectedTrack }).first()
+    : page.locator(".row[data-id]").first();
   try {
     await row.waitFor({ state: "visible", timeout: 30_000 });
   } catch (error) {
@@ -85,7 +88,8 @@ try {
     return document.querySelector("#fullTrackStage")?.dataset.playbackState === "playing" && seconds > 30;
   }, null, { timeout: 15_000 });
   const firstProgress = Number(await page.locator("#seekBar").inputValue());
-  await page.waitForTimeout(1_500);
+  const firstCurrentSeconds = await page.locator("#timeCur").evaluate(element => String(element.textContent || "0:00").split(":").map(Number).reduce((total, value) => total * 60 + (Number(value) || 0), 0));
+  await page.waitForTimeout(2_500);
 
   const state = await page.evaluate(() => {
     const audio = document.querySelector("#audio");
@@ -99,6 +103,7 @@ try {
       videoTitle: document.querySelector("#fullTrackTitle")?.textContent || "",
       progress: Number(document.querySelector("#seekBar")?.value || 0),
       currentLabel: document.querySelector("#timeCur")?.textContent || "",
+      currentSeconds: String(document.querySelector("#timeCur")?.textContent || "0:00").split(":").map(Number).reduce((total, value) => total * 60 + (Number(value) || 0), 0),
       frameWidth: rect?.width || 0,
       frameHeight: rect?.height || 0,
       frameRight: rect?.right || 0,
@@ -110,7 +115,7 @@ try {
 
   if (pageErrors.length) throw new Error(`Nyxify page errors: ${pageErrors.join(" | ")}`);
   if (failedNyxifyRequests.length) throw new Error(`Nyxify request failures: ${failedNyxifyRequests.join(" | ")}`);
-  if (state.playbackState !== "playing" || state.progress <= firstProgress || !state.videoTitle || /octave/i.test(`${state.videoTitle} ${state.status}`) || state.frameWidth < 200 || state.frameHeight < 200 || state.frameRight >= 0 || state.stageHeight >= 90 || !state.previewPaused || !state.playerVisible) {
+  if (state.playbackState !== "playing" || (state.progress <= firstProgress && state.currentSeconds <= firstCurrentSeconds) || !state.videoTitle || /octave/i.test(`${state.videoTitle} ${state.status}`) || state.frameWidth < 200 || state.frameHeight < 200 || state.frameRight >= 0 || state.stageHeight >= 90 || !state.previewPaused || !state.playerVisible) {
     throw new Error(`Nyxify Octave playback did not advance: ${JSON.stringify(state)}`);
   }
   await page.locator("#fullTrackVideo").click();

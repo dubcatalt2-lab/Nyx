@@ -6778,6 +6778,14 @@ async function nyxifyFullTrack(trackId) {
       && nyxifyDurationMatches(video, expectedDuration));
     candidates = channelMatches;
   }
+  if (!candidates.length && String(process.env.NYX_YOUTUBE_API_KEY || "").trim()) {
+    const officialCatalogResults = await nyxTubeSearch(`${artist} ${title} official music video audio`, 16);
+    candidates = officialCatalogResults.filter(video => /^[A-Za-z0-9_-]{11}$/.test(String(video?.id || ""))
+      && Number(video?.durationSeconds) >= 45
+      && nyxifyTrackTitleMatches(video, title)
+      && nyxifyOfficialArtistScore(video, artist) >= 80
+      && nyxifyDurationMatches(video, expectedDuration));
+  }
   candidates = candidates.filter(video => {
     const candidateTitle = nyxifyMatchText(video?.title);
     return /^[A-Za-z0-9_-]{11}$/.test(String(video?.id || ""))

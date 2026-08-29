@@ -31,6 +31,7 @@ const nowPlayingNext = document.getElementById('nowPlayingNext');
 const fullTrackStage = document.getElementById('fullTrackStage');
 const fullTrackStatus = document.getElementById('fullTrackStatus');
 const fullTrackPreview = document.getElementById('fullTrackPreview');
+const fullTrackVideo = document.getElementById('fullTrackVideo');
 
 let curtrack = null;
 let results = [];
@@ -64,6 +65,7 @@ let octaveplaying = false;
 let octaverequest = 0;
 let octaveprogress = null;
 let octaveapipromise = null;
+let octavevideoshown = localStorage.getItem('nyx_nyxify_show_video') === '1';
 
 let shuffleon = localStorage.getItem('nyx_nyxify_shuffle') === '1';
 let repeatmode = localStorage.getItem('nyx_nyxify_repeat') || 'off';
@@ -1551,6 +1553,13 @@ function previewsource() {
   return curtrack ? `/api/nyxify/stream/${curtrack.id}` : '';
 }
 
+function applyoctavevideochoice() {
+  fullTrackStage.classList.toggle('show-video', octavevideoshown);
+  fullTrackVideo.textContent = octavevideoshown ? 'Hide video' : 'Show video';
+  fullTrackVideo.setAttribute('aria-label', octavevideoshown ? 'Hide music video' : 'Show music video');
+  fullTrackVideo.setAttribute('aria-pressed', String(octavevideoshown));
+}
+
 function usepreview(autoplay = true, message = '') {
   octaverequest += 1;
   destroyoctaveplayer();
@@ -1690,6 +1699,12 @@ function playbackseek(seconds) {
 }
 
 fullTrackPreview.addEventListener('click', () => usepreview(true));
+fullTrackVideo.addEventListener('click', () => {
+  octavevideoshown = !octavevideoshown;
+  localStorage.setItem('nyx_nyxify_show_video', octavevideoshown ? '1' : '0');
+  applyoctavevideochoice();
+});
+applyoctavevideochoice();
 
 function playtrack(t, list, context = '') {
   cancelqueuedseek();

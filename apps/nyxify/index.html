@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/apps/nyxify/icons.css?v=20260825-nyx-v2">
-  <link rel="stylesheet" href="/apps/nyxify/app.css?v=20260829-audio-only-v10">
+  <link rel="stylesheet" href="/apps/nyxify/app.css?v=20260829-video-choice-v11">
 </head>
 <body>
   <canvas id="stars"></canvas>
@@ -82,7 +82,10 @@
   <section class="full-track-stage" id="fullTrackStage" aria-label="Full track player" hidden>
     <div class="full-track-head">
       <div><strong>Full track</strong><span id="fullTrackStatus">Finding the official player…</span></div>
-      <button type="button" id="fullTrackPreview" aria-label="Use preview playback">Use preview</button>
+      <div class="full-track-actions">
+        <button type="button" id="fullTrackVideo" aria-label="Show music video" aria-pressed="false">Show video</button>
+        <button type="button" id="fullTrackPreview" aria-label="Use preview playback">Use preview</button>
+      </div>
     </div>
     <div id="fullTrackFrame"></div>
   </section>
@@ -154,6 +157,6 @@
 
   <audio id="audio" preload="metadata"></audio>
 
-  <script src="/apps/nyxify/app.js?v=20260829-full-track-v10"></script>
+  <script src="/apps/nyxify/app.js?v=20260829-video-choice-v11"></script>
 </body>
 </html>

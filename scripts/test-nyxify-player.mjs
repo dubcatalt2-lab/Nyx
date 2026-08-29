@@ -99,6 +99,13 @@ try {
   await page.locator('#fullTrackStage[data-playback-state="playing"]').waitFor({ state: 'visible' });
   const octaveFrame = await page.locator('#fullTrackFrame').boundingBox();
   assert.ok(octaveFrame && octaveFrame.width >= 200 && octaveFrame.height >= 200 && octaveFrame.x + octaveFrame.width < 0, 'The Octave iframe was not kept off the visible Nyxify canvas');
+  await page.locator('#fullTrackVideo').click();
+  const shownFrame = await page.locator('#fullTrackFrame').boundingBox();
+  assert.ok(shownFrame && shownFrame.x >= 0 && shownFrame.width >= 200 && shownFrame.height >= 200, 'Show video did not reveal the real matched music video');
+  assert.equal(await page.locator('#fullTrackVideo').getAttribute('aria-pressed'), 'true', 'Show video did not expose its pressed state');
+  await page.locator('#fullTrackVideo').click();
+  const hiddenFrame = await page.locator('#fullTrackFrame').boundingBox();
+  assert.ok(hiddenFrame && hiddenFrame.x + hiddenFrame.width < 0, 'Hide video did not return to audio-only playback');
   assert.equal(await page.locator('#timeTotal').textContent(), '2:00:05', 'Long duration was not formatted with hours');
   assert.equal(await page.locator('#pTitle').getAttribute('title'), track.title, 'Full long title was unavailable from the player');
 

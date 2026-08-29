@@ -6662,6 +6662,13 @@ function nyxifyMultilingualTopMatch(video, artistName, expectedSeconds) {
     && Math.abs(duration - expected) <= Math.max(8, expected * 0.05);
 }
 
+function nyxifyTrustedFullTrackSource(video, artistName) {
+  const candidateTitle = nyxifyMatchText(video?.title);
+  return /^[A-Za-z0-9_-]{11}$/.test(String(video?.id || ""))
+    && Number(video?.durationSeconds) >= 45
+    && (nyxifyArtistChannelMatches(video, artistName) || /\b(?:audio|lyrics|music video|mv|official|provided|topic)\b/.test(candidateTitle));
+}
+
 function nyxifyOfficialArtistScore(video, artistName) {
   if (!nyxifyArtistMatches(video, artistName)) return 0;
   const wanted = nyxifyMatchText(artistName);
@@ -6787,6 +6794,7 @@ async function nyxifyFullTrack(trackId) {
       && nyxifyDurationMatches(video, expectedDuration));
     candidates = channelMatches;
   }
+  candidates = candidates.filter(video => nyxifyTrustedFullTrackSource(video, artist));
   if (!candidates.length && String(process.env.NYX_YOUTUBE_API_KEY || "").trim()) {
     const officialCatalogResults = await nyxTubeSearch(`${artist} ${title} official music video audio`, 16);
     candidates = officialCatalogResults.filter(video => /^[A-Za-z0-9_-]{11}$/.test(String(video?.id || ""))
@@ -6799,12 +6807,7 @@ async function nyxifyFullTrack(trackId) {
       if (nyxifyMultilingualTopMatch(top, artist, expectedDuration)) candidates = [top];
     }
   }
-  candidates = candidates.filter(video => {
-    const candidateTitle = nyxifyMatchText(video?.title);
-    return /^[A-Za-z0-9_-]{11}$/.test(String(video?.id || ""))
-      && Number(video?.durationSeconds) >= 45
-      && (nyxifyArtistChannelMatches(video, artist) || /\b(?:audio|lyrics|music video|mv|official|provided|topic)\b/.test(candidateTitle));
-  });
+  candidates = candidates.filter(video => nyxifyTrustedFullTrackSource(video, artist));
   candidates.sort((left, right) => nyxifyFullTrackScore(right, track) - nyxifyFullTrackScore(left, track));
   const selected = candidates[0];
   if (!selected) throw new Error("No embeddable full-track match is available right now.");

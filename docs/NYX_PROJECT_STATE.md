@@ -35,6 +35,7 @@ Important release warning: production currently contains commits that are not on
 - Production Wisp: `wss://nyxlearning.org/wisp/` (embedded)
 - Rollback Wisp: `wss://nyx-temporary-production.up.railway.app/wisp/`
 - Users can set a device-local custom Wisp endpoint from Settings > Advanced. Nyx accepts only absolute `ws://` or `wss://` URLs without embedded credentials or fragments, requires `wss://` when Nyx is served over HTTPS, and resets the active proxy transports when the endpoint changes. Clearing the field restores the runtime-configured or same-origin default.
+- Settings > Advanced provides a portable JSON Data Transfer backup for moving supported local game storage, AI conversations, utility history, shortcuts, and safe device preferences between Nyx hostnames. Import merges valid entries and offers a reload; the exporter/importer deliberately excludes Firebase/authentication state, personal AI credentials and profiles, the custom Wisp URL, cloud/account markers, release markers, and key names that indicate tokens, passwords, secrets, or credentials. Account-backed data such as profiles, Chat, moderated search history, API keys, verified-email cloud preferences/game saves, and Nyxify cloud playlists continues to follow the signed-in account through its server APIs rather than being duplicated in the portable file.
 
 The following working-tree entries were deliberately left untracked and must not be staged, removed, or treated as Nyx release files without explicit instruction:
 

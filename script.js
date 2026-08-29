@@ -4558,7 +4558,7 @@
       ['search','Search & Cloak',settingsIcons.privacy,'Control search behavior and tab cloaking.',['tab cloak','preset cloak','cloaking']],
       ['privacy','Privacy',settingsIcons.account,'Keep your browsing surface private and protected.',['private tabs','popup protection']],
       ['proxy','Proxy',settingsIcons.browsing,'Choose how Nyx reaches the web.',['search engine','proxy engine','transport']],
-      ['advanced','Advanced',settingsIcons.advanced,'Configure power-user browser controls.',['panic key','display mode','wisp url']],
+      ['advanced','Advanced',settingsIcons.advanced,'Configure power-user browser controls.',['panic key','display mode','wisp url','data transfer']],
       ['account','Account',settingsIcons.account,'Manage your Nyx identity, cloud saves, and staff tools.',['account','cloud saves','owner dashboard','founder profile']],
       ['about','About',settingsIcons.account,'Version details and local Nyx data.',['nyx','clear cache']]
     ];
@@ -4700,6 +4700,10 @@
       wispBlock.className='settings-block nyx-wisp-setting';
       wispBlock.innerHTML=`<h2>Wisp URL</h2><p>Use a custom Wisp relay for Nyx proxy transports. Only use a relay you trust because it carries your proxied traffic.</p><div class="settings-form-row"><input class="settings-input" data-browser-wisp-url type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(customWisp)}" placeholder="${esc(defaultWispUrl())}" aria-label="Custom Wisp URL"></div><p class="settings-hint" data-browser-wisp-status>${customWisp ? `Custom relay: ${esc(customWisp)}` : `Default relay: ${esc(defaultWispUrl())}`}</p><div class="settings-actions"><button class="settings-action" data-browser-wisp-save type="button">Save Wisp URL</button><button class="settings-action" data-browser-wisp-reset type="button">Use default</button></div>`;
       transportBlock.after(wispBlock);
+      const transferBlock=document.createElement('section');
+      transferBlock.className='settings-block nyx-data-transfer-setting';
+      transferBlock.innerHTML='<h2>Data Transfer</h2><p>Move supported game saves, AI conversations, utility history, shortcuts, and safe device preferences between Nyx links. Authentication sessions, personal API keys, and custom relay credentials are never included.</p><p class="settings-hint" data-nyx-data-transfer-status>Export on this link, then import the downloaded JSON backup on another Nyx link.</p><input data-nyx-data-import-file type="file" accept="application/json,.json" hidden><div class="settings-actions"><button class="settings-action" data-nyx-data-export type="button">Export data</button><button class="settings-action" data-nyx-data-import type="button">Import data</button><button class="settings-action" data-nyx-data-reload type="button" hidden>Reload Nyx</button></div><p class="settings-hint">Backups can contain private browsing, game, and conversation data. Keep the file private.</p>';
+      wispBlock.after(transferBlock);
     }
     const effectBlock=overlay.querySelector('[data-effect-value]')?.closest('.settings-block');
     if(effectBlock){
@@ -6887,6 +6891,103 @@
     if(status) status.textContent=next ? `Custom relay: ${next}` : `Default relay: ${defaultWispUrl()}`;
     resetBrowserProxyRuntime();
     toast(next ? 'Custom Wisp URL saved' : 'Default Wisp URL restored');
+    return true;
+  }
+  const NYX_PORTABLE_BACKUP_FORMAT='nyx-portable-backup';
+  const NYX_PORTABLE_BACKUP_VERSION=1;
+  const NYX_PORTABLE_BACKUP_MAX_BYTES=4_500_000;
+  const NYX_PORTABLE_BACKUP_MAX_ENTRIES=512;
+  const NYX_PORTABLE_BACKUP_DENIED_KEYS=new Set([
+    'nyx.wispurl','nyx.presencesession','nyx.cloud.preferences.user','nyx.setupcomplete','nyx.tosacceptedversion',
+    'nyx.aipersonalkey.device','nyx.aipersonalbaseurl.device','nyx.aipersonalprofiles.device','nyx.aipersonalprofile.active',
+    'nyx.launchpdf','nyx.renderstartuppdf'
+  ]);
+  function nyxPortableBackupKeyAllowed(key){
+    const value=String(key || '');
+    const normalized=value.toLowerCase();
+    if(!value || value.length>160 || /[\u0000-\u001f]/.test(value)) return false;
+    if(['__proto__','prototype','constructor'].includes(normalized)) return false;
+    if(normalized.startsWith('firebase:') || normalized.startsWith('nyx.releasenotes.')) return false;
+    if(NYX_PORTABLE_BACKUP_DENIED_KEYS.has(normalized) || normalized.startsWith('nyx.aipersonal')) return false;
+    if(/(?:^|[._-])(?:api[-_]?key|auth|credential|password|private[-_]?key|secret|token)(?:$|[._-])/.test(normalized)) return false;
+    return true;
+  }
+  function nyxPortableBackupStorage(){
+    const storage={};
+    let totalBytes=0;
+    for(let index=0;index<localStorage.length && Object.keys(storage).length<NYX_PORTABLE_BACKUP_MAX_ENTRIES;index++){
+      const key=localStorage.key(index);
+      if(!nyxPortableBackupKeyAllowed(key)) continue;
+      const value=localStorage.getItem(key);
+      if(typeof value!=='string') continue;
+      const bytes=new TextEncoder().encode(key).length+new TextEncoder().encode(value).length;
+      if(bytes>1_000_000 || totalBytes+bytes>NYX_PORTABLE_BACKUP_MAX_BYTES) continue;
+      totalBytes+=bytes;
+      storage[key]=value;
+    }
+    return storage;
+  }
+  function exportNyxPortableBackup(root=document){
+    const storage=nyxPortableBackupStorage();
+    const payload={
+      format:NYX_PORTABLE_BACKUP_FORMAT,
+      version:NYX_PORTABLE_BACKUP_VERSION,
+      exportedAt:new Date().toISOString(),
+      sourceOrigin:location.origin,
+      storage
+    };
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement('a');
+    const date=new Date().toISOString().slice(0,10);
+    link.href=url;
+    link.download=`nyx-data-${date}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    const count=Object.keys(storage).length;
+    const status=root?.querySelector('[data-nyx-data-transfer-status]');
+    if(status) status.textContent=`Exported ${count} safe data ${count===1?'entry':'entries'} from ${location.hostname}.`;
+    toast(`Exported ${count} Nyx data ${count===1?'entry':'entries'}`);
+    return payload;
+  }
+  async function importNyxPortableBackup(file,root=document){
+    if(!file) return false;
+    if(file.size>NYX_PORTABLE_BACKUP_MAX_BYTES+250_000){toast('That Nyx backup is too large.');return false}
+    let payload;
+    try{payload=JSON.parse(await file.text())}catch{toast('Choose a valid Nyx JSON backup.');return false}
+    if(payload?.format!==NYX_PORTABLE_BACKUP_FORMAT || Number(payload?.version)!==NYX_PORTABLE_BACKUP_VERSION || !payload.storage || typeof payload.storage!=='object' || Array.isArray(payload.storage)){
+      toast('That file is not a supported Nyx backup.');
+      return false;
+    }
+    const entries=[];
+    let totalBytes=0;
+    for(const [rawKey,rawValue] of Object.entries(payload.storage)){
+      const key=String(rawKey || '');
+      if(!nyxPortableBackupKeyAllowed(key) || typeof rawValue!=='string') continue;
+      const bytes=new TextEncoder().encode(key).length+new TextEncoder().encode(rawValue).length;
+      if(bytes>1_000_000 || totalBytes+bytes>NYX_PORTABLE_BACKUP_MAX_BYTES || entries.length>=NYX_PORTABLE_BACKUP_MAX_ENTRIES) continue;
+      totalBytes+=bytes;
+      entries.push([key,rawValue]);
+    }
+    if(!entries.length){toast('That backup has no portable Nyx data.');return false}
+    const source=String(payload.sourceOrigin || 'another Nyx link').replace(/[\u0000-\u001f]/g,' ').slice(0,120);
+    if(!confirm(`Import ${entries.length} data ${entries.length===1?'entry':'entries'} from ${source}? Existing entries with the same names will be replaced.`)) return false;
+    const previous=new Map(entries.map(([key])=>[key,localStorage.getItem(key)]));
+    try{entries.forEach(([key,value])=>localStorage.setItem(key,value))}catch{
+      entries.forEach(([key])=>{try{localStorage.removeItem(key)}catch{}});
+      previous.forEach((value,key)=>{if(value!==null){try{localStorage.setItem(key,value)}catch{}}});
+      toast('Nyx could not import the complete backup. No data was changed.');
+      return false;
+    }
+    applyUserSettings();
+    queueNyxCloudPreferencesSave();
+    const status=root?.querySelector('[data-nyx-data-transfer-status]');
+    if(status) status.textContent=`Imported ${entries.length} data ${entries.length===1?'entry':'entries'}. Reload Nyx to finish applying the backup.`;
+    const reload=root?.querySelector('[data-nyx-data-reload]');
+    if(reload) reload.hidden=false;
+    toast(`Imported ${entries.length} Nyx data ${entries.length===1?'entry':'entries'}`);
     return true;
   }
   function nyxPresenceUrl(){
@@ -14484,6 +14585,23 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         saveBrowserWispUrl(wispReset.closest('.browser-shell-settings-overlay'),true);
         return;
       }
+      const dataExport=e.target.closest?.('[data-nyx-data-export]');
+      if(dataExport){
+        e.preventDefault();
+        exportNyxPortableBackup(dataExport.closest('.browser-shell-settings-overlay'));
+        return;
+      }
+      const dataImport=e.target.closest?.('[data-nyx-data-import]');
+      if(dataImport){
+        e.preventDefault();
+        dataImport.closest('.browser-shell-settings-overlay')?.querySelector('[data-nyx-data-import-file]')?.click();
+        return;
+      }
+      if(e.target.closest?.('[data-nyx-data-reload]')){
+        e.preventDefault();
+        location.reload();
+        return;
+      }
       const browserShellToggle=e.target.closest?.('[data-browser-shell-toggle]');
       if(browserShellToggle && browserShellToggle.closest('.browser-shell-settings-overlay')){
         e.preventDefault();
@@ -15303,6 +15421,11 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     });
     document.addEventListener('change',e=>{
       const browserSettingsRoot=e.target.closest?.('.browser-shell-settings-overlay');
+      if(browserSettingsRoot && e.target.matches?.('[data-nyx-data-import-file]')){
+        const file=e.target.files?.[0] || null;
+        void importNyxPortableBackup(file,browserSettingsRoot).finally(()=>{e.target.value=''});
+        return;
+      }
       if(browserSettingsRoot && e.target.closest?.('[data-browser-engine],[data-browser-mode-select],[data-browser-transport],[data-font-value]')){
         saveBrowserShellSettings(browserSettingsRoot);
         toast('Browser settings saved');

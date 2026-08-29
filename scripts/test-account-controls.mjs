@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
+import {readFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
 
 const port=8197;
@@ -242,6 +243,32 @@ try{
   await page.waitForTimeout(200);
   assert.equal(await page.locator('.browser-shell-settings-overlay').count(),1,'Toolbar Settings was removed after opening');
   await page.locator('[data-settings-category-button="advanced"]').click();
+  await page.evaluate(()=>{
+    localStorage.setItem('portable-game-save','level=7');
+    localStorage.setItem('nyx.aiMessages','[{"role":"user","content":"portable conversation"}]');
+    localStorage.setItem('nyx.aiPersonalKey.device','do-not-export');
+  });
+  const downloadPromise=page.waitForEvent('download');
+  await page.locator('[data-nyx-data-export]').click();
+  const download=await downloadPromise;
+  const backup=JSON.parse(await readFile(await download.path(),'utf8'));
+  assert.equal(backup.format,'nyx-portable-backup','Data export used the wrong backup format');
+  assert.equal(backup.storage['portable-game-save'],'level=7','Data export omitted supported game storage');
+  assert.match(backup.storage['nyx.aiMessages'],/portable conversation/,'Data export omitted AI conversation history');
+  assert.equal(backup.storage['nyx.aiPersonalKey.device'],undefined,'Data export included a personal API key');
+  page.once('dialog',dialog=>dialog.accept());
+  await page.locator('[data-nyx-data-import-file]').setInputFiles({
+    name:'nyx-data-test.json',
+    mimeType:'application/json',
+    buffer:Buffer.from(JSON.stringify({format:'nyx-portable-backup',version:1,sourceOrigin:'https://old-nyx.example',storage:{'portable-game-save':'level=12','nyx.font':'outfit','nyx.aiPersonalKey.device':'must-stay-blocked'}}))
+  });
+  await page.waitForFunction(()=>document.querySelector('[data-nyx-data-transfer-status]')?.textContent?.startsWith('Imported 2 data entries'));
+  assert.equal(await page.evaluate(()=>localStorage.getItem('portable-game-save')),'level=12','Data import did not restore supported game storage');
+  assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.aiPersonalKey.device')),'do-not-export','Data import replaced a personal API key');
+  assert.equal(await page.locator('[data-nyx-data-reload]').isVisible(),true,'Data import did not offer to reload Nyx');
+  await page.setViewportSize({width:390,height:844});
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),true,'Portable Data Transfer settings overflowed a mobile viewport');
+  await page.setViewportSize({width:1280,height:800});
   const wispInput=page.locator('[data-browser-wisp-url]');
   await wispInput.waitFor();
   assert.equal(await wispInput.isVisible(),true,'Wisp URL control was not visible in Advanced settings');

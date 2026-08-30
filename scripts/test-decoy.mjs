@@ -16,15 +16,17 @@ const browserHeaders = {
 };
 
 try {
-  const preview = await fetch(`${origin}/`, {
-    headers: { Accept: "text/html,*/*", "User-Agent": "Discordbot/2.0" }
-  });
-  const previewHtml = await preview.text();
-  assert.equal(preview.status, 200);
-  assert.match(previewHtml, /Student Learning Portal/);
-  assert.doesNotMatch(previewHtml, /<script\b|script\.js|Nyx/i, "The decoy exposed a Nyx browser runtime");
-  assert.match(preview.headers.get("x-robots-tag") || "", /noindex/i);
-  assert.match(preview.headers.get("cache-control") || "", /no-store/i);
+  for (const userAgent of ["Discordbot/2.0", "OAI-SearchBot/1.0; +https://openai.com/searchbot"]) {
+    const preview = await fetch(`${origin}/`, {
+      headers: { Accept: "text/html,*/*", "User-Agent": userAgent }
+    });
+    const previewHtml = await preview.text();
+    assert.equal(preview.status, 200);
+    assert.match(previewHtml, /Student Learning Portal/, `${userAgent} did not receive the decoy`);
+    assert.doesNotMatch(previewHtml, /<script\b|script\.js|Nyx/i, `The decoy exposed a Nyx browser runtime to ${userAgent}`);
+    assert.match(preview.headers.get("x-robots-tag") || "", /noindex/i);
+    assert.match(preview.headers.get("cache-control") || "", /no-store/i);
+  }
 
   const automated = await fetch(`${origin}/apps/nyxify/`, {
     headers: { Accept: "text/html", "User-Agent": "curl/8.15.0" }

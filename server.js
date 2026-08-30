@@ -707,7 +707,7 @@ app.use((req, res, next) => {
   next();
 });
 
-const nyxDecoyUserAgentPattern = /(?:ahrefsbot|applebot|baiduspider|bingbot|bytespider|ccbot|chatgpt-user|claudebot|discordbot|dotbot|duckduckbot|embedly|facebookexternalhit|gptbot|googlebot|google-inspectiontool|ia_archiver|iframely|linkedinbot|mj12bot|petalbot|pinterestbot|perplexitybot|semrushbot|skypeuripreview|slackbot|telegrambot|twitterbot|whatsapp|yandexbot)/i;
+const nyxDecoyUserAgentPattern = /(?:ahrefsbot|applebot|baiduspider|bingbot|bytespider|ccbot|chatgpt-user|claudebot|discordbot|dotbot|duckduckbot|embedly|facebookexternalhit|gptbot|googlebot|google-inspectiontool|ia_archiver|iframely|linkedinbot|mj12bot|oai-searchbot|petalbot|pinterestbot|perplexitybot|semrushbot|skypeuripreview|slackbot|telegrambot|twitterbot|whatsapp|yandexbot)/i;
 const nyxDecoyAutomationUserAgentPattern = /(?:axios|curl\/|go-http-client|java\/|libwww-perl|node-fetch|postmanruntime|powershell|python-requests|undici|wget\/)/i;
 const nyxDecoyExcludedPathPattern = /^\/(?:api(?:\/|$)|healthz$|socket\.io(?:\/|$)|wisp(?:\/|$)|robots\.txt$|sitemap\.xml$|app\.webmanifest$|favicon(?:\.[a-z0-9]+)?$)/i;
 const nyxDecoyNonDocumentExtensionPattern = /\.(?:avif|bmp|css|gif|ico|jpe?g|js|json|mjs|mp3|mp4|ogg|opus|png|svg|wasm|wav|webm|webp|woff2?|xml)$/i;

@@ -44,6 +44,7 @@ try {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
   await page.addInitScript(() => {
+    localStorage.setItem('nyx_nyxify_playlists', JSON.stringify([{ id: 'playlist123', name: 'Long-row test', cover: '', accent: '', tracks: [] }]));
     let currentTime = 0;
     let paused = true;
     Object.defineProperties(HTMLMediaElement.prototype, {
@@ -99,6 +100,7 @@ try {
     const path = requestUrl.pathname;
     const json = body => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
     if (path === '/api/nyxify/home') return json({ tracks: [track], artists: [], albums: [] });
+    if (path === '/api/nyxify/search') return json({ data: [track] });
     if (path === `/api/nyxify/full-track/${track.id}`) {
       fullTrackRequests.push(Object.fromEntries(requestUrl.searchParams));
       return json({ mode: 'octave', videoId: '5NV6Rdv1a3I', durationSeconds: track.duration, title: track.title });
@@ -122,12 +124,11 @@ try {
   });
   assert.ok(fallbackLayout.rowHeight <= 74, `Fallback artwork expanded the track row to ${fallbackLayout.rowHeight}px`);
   assert.ok(fallbackLayout.imageWidth <= 52 && fallbackLayout.imageHeight <= 52, `Fallback artwork expanded to ${fallbackLayout.imageWidth}x${fallbackLayout.imageHeight}px`);
-  await page.evaluate(selectedTrack => {
-    playlists = [{ id: 'playlist123', name: 'Long-row test', cover: '', accent: '', tracks: [] }];
-    startplaylistadd('playlist123');
-    results = [selectedTrack];
-    renderplaylistaddview();
-  }, track);
+  await page.locator('.sidebar-playlist', { hasText: 'Long-row test' }).click();
+  await page.locator('.playlist-add-songs').click();
+  await page.locator('#searchInput').fill(track.title);
+  await page.locator('#searchInput').press('Enter');
+  await page.locator('.playlist-add-results .row').first().waitFor();
   const longRowLayout = await page.locator('.row').first().evaluate(row => {
     const bounds = element => {
       const rect = element?.getBoundingClientRect();

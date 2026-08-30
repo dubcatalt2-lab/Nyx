@@ -115,8 +115,23 @@ try {
   const handoffTreePayload = JSON.parse(handoffTree.body);
   assert.equal(handoffTreePayload.tree.length, 2, 'The handoff did not publish the authorized number of links');
   assert.ok(handoffTreePayload.tree.every(entry => entry.content.includes('src="https://nyxlearning.org/"')), 'The generated JSDelivr files did not contain the bundled Nyx site SVG');
+  assert.ok(handoffTreePayload.tree.every(entry => entry.content.includes('nyx:tab-cloak-sync') && entry.content.includes('id="nyxSiteFrame"')), 'The generated JSDelivr files did not include the outer-tab cloak bridge');
   assert.deepEqual(handoffErrors, [], `Link Generator handoff browser errors: ${handoffErrors.join(' | ')}`);
   await handoffPage.close();
+
+  const cloakBridgePage = await browser.newPage({ viewport: { width: 1_280, height: 900 } });
+  const cloakBridgeErrors = [];
+  cloakBridgePage.on('pageerror', error => cloakBridgeErrors.push(error.message));
+  await cloakBridgePage.route('https://nyxlearning.org/', route => route.fulfill({
+    status: 200,
+    contentType: 'text/html',
+    body: '<!doctype html><script>parent.postMessage({type:"nyx:tab-cloak-sync",title:"Google Classroom",favicon:"https://nyxlearning.org/assets/icons/nyx.svg"},"*")<\/script>'
+  }));
+  await cloakBridgePage.goto(`${origin}/apps/jsdelivr-publisher/nyx-source.svg`, { waitUntil: 'domcontentloaded' });
+  await cloakBridgePage.waitForFunction(() => document.title === 'Google Classroom');
+  assert.equal(await cloakBridgePage.locator('#nyxOuterTabIcon').getAttribute('href'), 'https://nyxlearning.org/assets/icons/nyx.svg', 'The JSDelivr wrapper did not mirror the selected favicon');
+  assert.deepEqual(cloakBridgeErrors, [], `JSDelivr tab-cloak bridge errors: ${cloakBridgeErrors.join(' | ')}`);
+  await cloakBridgePage.close();
 
   const page = await browser.newPage({ viewport: { width: 1_280, height: 900 } });
   const pageErrors = [];
@@ -164,7 +179,7 @@ try {
   assert.deepEqual(errorPageErrors, [], `Permission-error browser errors: ${errorPageErrors.join(' | ')}`);
   await errorPage.close();
 
-  console.log('Link Generator handoff and JSDelivr Publisher catalog, publishing, provider, token-safety, filter, error, and mobile regressions passed.');
+  console.log('Link Generator handoff and JSDelivr Publisher catalog, publishing, outer tab cloak, provider, token-safety, filter, error, and mobile regressions passed.');
 } finally {
   await browser?.close().catch(() => {});
   if (server.exitCode === null) server.kill();

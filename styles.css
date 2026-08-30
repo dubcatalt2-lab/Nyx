@@ -171,13 +171,13 @@ html body.browser-shell:is(.theme-ruby,.theme-emerald,.theme-sakura,.theme-midni
 /* Persistent profile entry point: a signed-in avatar or a neutral default profile. */
 .status-icons .nyx-account-button{flex:0 0 auto}
 .nyx-account-button-default{position:relative;background:#172338!important;border-color:rgba(255,255,255,.3)!important}
-.nyx-account-button-default span{position:relative;width:16px;height:16px;border:2px solid #dbe7fa;border-radius:50%;box-sizing:border-box}
-.nyx-account-button-default span::before{content:"";position:absolute;left:50%;top:3px;width:5px;height:5px;border-radius:50%;background:#dbe7fa;transform:translateX(-50%)}
-.nyx-account-button-default span::after{content:"";position:absolute;left:50%;bottom:1px;width:9px;height:5px;border-radius:8px 8px 3px 3px;background:#dbe7fa;transform:translateX(-50%)}
+.nyx-account-button-default span{position:relative;width:21px;height:21px;border:2px solid #dbe7fa;border-radius:50%;box-sizing:border-box}
+.nyx-account-button-default span::before{content:"";position:absolute;left:50%;top:4px;width:6px;height:6px;border-radius:50%;background:#dbe7fa;transform:translateX(-50%)}
+.nyx-account-button-default span::after{content:"";position:absolute;left:50%;bottom:2px;width:11px;height:6px;border-radius:8px 8px 3px 3px;background:#dbe7fa;transform:translateX(-50%)}
 body.browser-shell .nyx-home-presence .nyx-profile-slot{position:absolute;top:50%;left:calc(100% + 8px);display:grid;place-items:center;transform:translateY(-50%)}
 body.browser-shell .nyx-home-presence .nyx-profile-slot .nyx-account-button{width:30px!important;height:30px!important;min-width:30px!important;border-color:transparent!important;background:#0b1122!important;box-shadow:0 0 14px rgba(49,101,198,.24)}
 body.browser-shell .nyx-profile-slot .nyx-account-button:hover{border-color:var(--theme-accent,#8fb8ff)!important;transform:none!important}
-@media(max-width:720px){body.browser-shell .nyx-home-presence .nyx-profile-slot .nyx-account-button{width:26px!important;height:26px!important;min-width:26px!important}.nyx-account-button-default span{transform:scale(.78)}}
+@media(max-width:720px){body.browser-shell .nyx-home-presence .nyx-profile-slot .nyx-account-button{width:30px!important;height:30px!important;min-width:30px!important}.nyx-account-button-default span{transform:scale(.86)}}
 
 /* The home avatar opens a compact, Discord-style account card. This menu
    deliberately owns its palette so every Nyx theme keeps the controls legible. */

@@ -123,6 +123,64 @@ try {
   const oneLinkTree = githubRequests.slice(oneLinkRequestStart).find(request => request.method === 'POST' && request.url.endsWith('/git/trees'));
   assert.equal(JSON.parse(oneLinkTree?.body || '{}').tree?.length, 1, 'The exact one-link generation request did not publish one SVG');
 
+  const shellContext = await browser.newContext({ viewport: { width: 1_280, height: 900 } });
+  await shellContext.addInitScript(() => {
+    if (window.top !== window) return;
+    localStorage.setItem('nyx.setupComplete', 'true');
+    localStorage.setItem('nyx.homeDesign', 'redesigned');
+    localStorage.setItem('nyx.popupProtection', 'true');
+    localStorage.setItem('nyx.browserShellMode', 'true');
+    localStorage.setItem('nyx.tosAcceptedVersion', '2026-07-30');
+  });
+  await shellContext.route('**/api/link-checker/vendors', route => routeJson(route, { vendors: [{ key: 'goguardian', label: 'GoGuardian' }] }));
+  await shellContext.route('**/api/link-checker/check', route => routeJson(route, { vendors: { goguardian: { blocked: false } } }));
+  await shellContext.route('https://cdn.jsdelivr.net/**', route => route.fulfill({ status: 200, contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg"/>' }));
+  const shellPage = await shellContext.newPage();
+  const shellErrors = [];
+  shellPage.on('pageerror', error => shellErrors.push(error.message));
+  await shellPage.goto(`${origin}/`, { waitUntil: 'domcontentloaded' });
+  await shellPage.evaluate(() => {
+    document.body.classList.add('browser-content-active');
+    document.querySelectorAll('#nyxStudyHubStartup,#setupLaunchScreen,#setupScreen,.nyx-tos-gate,.nyx-release-notes-overlay').forEach(element => { element.style.pointerEvents = 'none'; });
+  });
+  await shellPage.waitForFunction(() => !document.querySelector('#nyxStudyHubStartup') && !document.body.classList.contains('nyx-loading-active'), null, { timeout: 20_000 });
+  await shellPage.locator('.nyx-minimal-utility-links [data-app-url="/apps/link-generator/"]').click();
+  const shellFrameElement = shellPage.locator('iframe.view.active');
+  await shellFrameElement.waitFor({ state: 'attached' });
+  await shellFrameElement.evaluate(frame => frame.closest('.browser-window')?.setAttribute('data-popup-test-host', 'true'));
+  const popupTestHost = shellPage.locator('.browser-window[data-popup-test-host="true"]');
+  const shellFrame = shellPage.frameLocator('iframe.view.active');
+  await shellFrame.locator('[data-filter-select]:not([disabled])').waitFor({ state: 'attached' });
+  await shellFrame.locator('html[data-nyx-popup-bridge="true"]').waitFor({ state: 'attached' });
+  const popupBridgeUrl = 'https://cdn.jsdelivr.net/gh/dubcatalt2-lab/nyx-jsdelivr-links@main/popup-bridge-learning-0123456789abcdef0123456789abcdef.svg';
+  await shellFrame.locator('[data-open]').evaluate((link, url) => {
+    const card = link.closest('[data-result-card]');
+    if (card) {
+      card.hidden = false;
+      card.classList.add('active');
+      card.style.display = 'flex';
+    }
+    link.href = url;
+    link.dataset.ready = 'true';
+    link.classList.remove('disabled');
+    link.setAttribute('aria-disabled', 'false');
+  }, popupBridgeUrl);
+  const hostViewsBeforeOpen = await popupTestHost.locator('iframe.view').count();
+  await shellFrame.locator('[data-open]').click();
+  await shellPage.waitForFunction(({ url, count }) => {
+    const host = document.querySelector('.browser-window[data-popup-test-host="true"]');
+    return host?.querySelectorAll('iframe.view').length === count + 1 && host.querySelector('.urlbar')?.value === url;
+  }, { url: popupBridgeUrl, count: hostViewsBeforeOpen });
+  assert.equal(await popupTestHost.locator('iframe.view').count(), hostViewsBeforeOpen + 1, 'Open first did not create a Nyx browser tab');
+  assert.equal(await popupTestHost.locator('.urlbar').inputValue(), popupBridgeUrl, 'Open first did not navigate the new Nyx tab to the generated JSDelivr link');
+  assert.equal(await shellPage.locator('iframe[src="nyx://blocked67haha"]').count(), 0, 'Open first was routed into the malware popup blocker');
+  const signedOutProfileSymbol = shellPage.locator('#nyxAccountButton.nyx-account-button-default > span');
+  await signedOutProfileSymbol.waitFor({ state: 'attached' });
+  const signedOutProfileSize = await signedOutProfileSymbol.evaluate(symbol => Number.parseFloat(getComputedStyle(symbol).width));
+  assert.ok(signedOutProfileSize >= 18, `The signed-out profile symbol remained too small (${signedOutProfileSize}px)`);
+  assert.deepEqual(shellErrors, [], `Link Generator shell browser errors: ${shellErrors.join(' | ')}`);
+  await shellContext.close();
+
   await page.setViewportSize({ width: 390, height: 844 });
   const overflow = await page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth);
   assert.ok(overflow <= 1, `Global results caused ${overflow}px of mobile overflow`);
@@ -191,7 +249,7 @@ try {
   assert.deepEqual(regularErrors, [], `Regular-account batch browser errors: ${regularErrors.join(' | ')}`);
   await regularPage.close();
 
-  console.log('Global server-side JSDelivr publishing, token isolation, filter checking, results, and mobile regressions passed.');
+  console.log('Global server-side JSDelivr publishing, token isolation, protected tab opening, filter checking, results, and mobile regressions passed.');
 } finally {
   await browser?.close().catch(() => {});
   if (nyx.exitCode === null) nyx.kill();

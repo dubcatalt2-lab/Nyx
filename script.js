@@ -2895,6 +2895,19 @@
         const text = String(value || "").trim();
         return /^(?:blob|data):/i.test(text) || /\.(?:apk|appx|bat|bin|cmd|com|crx|deb|dmg|exe|iso|jar|js|jse|msi|pkg|ps1|scr|sh|vbs|wsf|zip|7z|rar)(?:[?#]|$)/i.test(text);
       };
+      const trustedGeneratedPopup = link => {
+        if (!link?.matches?.("a[data-nyx-generated-popup][href]")) return false;
+        if (!/^[/]apps[/]link-generator(?:[/]|$)/i.test(String(location.pathname || ""))) return false;
+        try {
+          const parsed = new URL(link.href || link.getAttribute("href"), location.href);
+          if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.port || parsed.search || parsed.hash) return false;
+          if (/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?[.]b-cdn[.]net$/i.test(parsed.hostname)) return parsed.pathname === "/";
+          if (!["cdn.jsdelivr.net", "fastly.jsdelivr.net", "gcore.jsdelivr.net"].includes(parsed.hostname.toLowerCase())) return false;
+          return /^[/]gh[/][a-z0-9_.-]+[/][a-z0-9_.-]+@[a-z0-9._%~-]+[/][a-z0-9._%-]+[.]svg$/i.test(parsed.pathname);
+        } catch {
+          return false;
+        }
+      };
       const nativeOpen = window.open?.bind(window);
       const guardedOpen = (...args) => {
         if (!popupProtectionEnabled() && nativeOpen) return nativeOpen(...args);
@@ -2943,6 +2956,7 @@
         if (!popupProtectionEnabled()) return;
         const link = event.target?.closest?.("a[href]");
         if (!link) return;
+        if (event.isTrusted && trustedGeneratedPopup(link)) return;
         if (targetOpensPopup(link.getAttribute("target")) || link.hasAttribute("download") || looksDownloadLike(link.href || link.getAttribute("href"))) {
           event.preventDefault();
           event.stopImmediatePropagation();
@@ -6691,14 +6705,10 @@
   function isNyxGeneratedCdnUrl(url){
     try{
       const parsed=new URL(String(url || ''));
-      return parsed.protocol==='https:'
-        && !parsed.username
-        && !parsed.password
-        && !parsed.port
-        && /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.b-cdn\.net$/i.test(parsed.hostname)
-        && parsed.pathname==='/'
-        && !parsed.search
-        && !parsed.hash;
+      if(parsed.protocol!=='https:' || parsed.username || parsed.password || parsed.port || parsed.search || parsed.hash) return false;
+      if(/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.b-cdn\.net$/i.test(parsed.hostname)) return parsed.pathname==='/';
+      if(!['cdn.jsdelivr.net','fastly.jsdelivr.net','gcore.jsdelivr.net'].includes(parsed.hostname.toLowerCase())) return false;
+      return /^\/gh\/[a-z0-9_.-]+\/[a-z0-9_.-]+@[a-z0-9._%~-]+\/[a-z0-9._%-]+\.svg$/i.test(parsed.pathname);
     }catch{return false}
   }
   function externalHttpUrl(url){
@@ -10139,7 +10149,6 @@
                 if(isDownloadLink(this) && requestFrameDownload(this.href || this.getAttribute('href'),this.getAttribute('download') || '')) return;
                 if(popupProtectionActive() && shouldTrapPopupTarget(this.target)){
                   const href=this.href || this.getAttribute('href') || '';
-                  if(isTrustedGeneratedLink(this)) return nativeAnchorClick.call(this);
                   if(followSearchResult(this)) return;
                   if(followSameOriginPopup(href)) return;
                   openPopupTab(href || 'about:blank');
@@ -10200,7 +10209,7 @@
             if(!popupProtectionActive()) return;
             if(!shouldTrapPopupTarget(link.getAttribute('target'))) return;
             const href=link.href || link.getAttribute('href') || 'about:blank';
-            if(isTrustedGeneratedLink(link)) return;
+            if(isTrustedGeneratedLink(link) && event.isTrusted) return;
             event.preventDefault();
             event.stopImmediatePropagation();
             if(followSearchResult(link)) return;
@@ -11502,7 +11511,17 @@
     const nyxTubeSourcePath=path=>['/apps/nyxtube','/apps/nyxtube/','/apps/nyxtube/index.html'].includes(path);
     const nyxAccountClientSourcePath=path=>nyxChatSourcePath(path)||['/ai.html','/assets/games','/assets/games/','/assets/games/index.html','/apps/link-checker','/apps/link-checker/','/apps/link-checker/index.html','/apps/cloud-gaming','/apps/cloud-gaming/','/apps/cloud-gaming/index.html','/apps/api-keys','/apps/api-keys/','/apps/api-keys/index.html'].includes(path);
     const messageHandler=e=>{
-      if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:nyxtube-profile-request','nyx:nyxtube-open-profile','nyx:account-token-request','nyx:chat-open-profile','nyx:chat-notification','nyx:subscription-refresh','nyx:proxy-direct-fallback','nyx:cloud-game-load','nyx:cloud-game-save','nyx:close-tab','nyx:go-home'].includes(e.data?.type)) return;
+      if(!['nyx:navigate','nyx:popup','nyx:open-generated-link','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:nyxtube-profile-request','nyx:nyxtube-open-profile','nyx:account-token-request','nyx:chat-open-profile','nyx:chat-notification','nyx:subscription-refresh','nyx:proxy-direct-fallback','nyx:cloud-game-load','nyx:cloud-game-save','nyx:close-tab','nyx:go-home'].includes(e.data?.type)) return;
+      if(e.data.type==='nyx:open-generated-link'){
+        if(e.origin!==location.origin)return;
+        const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
+        const sourcePath=browserMessageSourcePath(sourceTab);
+        if(!['/apps/link-generator','/apps/link-generator/','/apps/link-generator/index.html'].includes(sourcePath))return;
+        const generatedUrl=String(e.data.url || '').trim();
+        if(!isNyxGeneratedCdnUrl(generatedUrl))return;
+        addTab(generatedUrl,appCompatibilityMode(generatedUrl));
+        return;
+      }
       if(['nyx:cloud-game-load','nyx:cloud-game-save'].includes(e.data.type)){
         if(e.origin!==location.origin)return;
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
@@ -13852,6 +13871,9 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       setPageTitle(cleanTitle,doc);
       setPageFavicon(cleanFavicon,forceRefresh,doc);
     });
+    try{
+      if(window.parent!==window) window.parent.postMessage({type:'nyx:tab-cloak-sync',title:cleanTitle,favicon:cleanFavicon},'*');
+    }catch{}
     return {title:cleanTitle,favicon:cleanFavicon};
   }
   function setPageTitle(title){

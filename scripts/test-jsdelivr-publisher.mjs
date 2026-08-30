@@ -34,6 +34,7 @@ function json(route, body, status = 200) {
 
 async function installGithubMock(page, { failTree = false } = {}) {
   const requests = [];
+  let automaticRepositoryCreated = false;
   await page.route('https://api.github.com/**', async route => {
     const request = route.request();
     const url = new URL(request.url());
@@ -41,6 +42,13 @@ async function installGithubMock(page, { failTree = false } = {}) {
     const method = request.method();
     requests.push({ path, method, authorization: request.headers().authorization || '', body: request.postData() || '' });
     if (path === '/user' && method === 'GET') return json(route, { login: 'dubcatalt2-lab' });
+    if (path === '/repos/dubcatalt2-lab/study-room-auto-1' && method === 'GET') {
+      return automaticRepositoryCreated ? json(route, { default_branch: 'main', private: false }) : json(route, { message: 'Not Found' }, 404);
+    }
+    if (path === '/user/repos' && method === 'POST') {
+      automaticRepositoryCreated = true;
+      return json(route, { full_name: 'dubcatalt2-lab/study-room-auto-1', default_branch: 'main', private: false }, 201);
+    }
     if (path === '/repos/dubcatalt2-lab/nyx-jsdelivr-links' && method === 'GET') return json(route, { default_branch: 'main', private: false });
     if (path.endsWith('/git/ref/heads/main') && method === 'GET') return json(route, { object: { sha: 'head-sha' } });
     if (path.endsWith('/git/commits/head-sha') && method === 'GET') return json(route, { tree: { sha: 'base-tree-sha' } });
@@ -90,8 +98,10 @@ try {
   await handoffPage.locator('[data-label-input]').fill('study room');
   await handoffPage.locator('[data-filter-select]').selectOption('goguardian');
   await handoffPage.locator('[data-premium-amount]').fill('2');
+  await handoffPage.locator('[data-generation-method]').selectOption('p2p');
   await handoffPage.locator('[data-wizard-step="1"] [data-wizard-next]').click();
   await handoffPage.locator('[data-wizard-step="2"]:not([hidden])').waitFor({ state: 'visible' });
+  await handoffPage.locator('[data-review-method]', { hasText: 'P2P' }).waitFor();
   await handoffPage.locator('[data-confirm]').check();
   await handoffPage.locator('[data-generate-button]').click();
   await handoffPage.waitForURL(/\/apps\/jsdelivr-publisher\/\?preset=nyx/);
@@ -99,14 +109,18 @@ try {
   assert.equal(handoffUrl.searchParams.get('label'), 'study room', 'Link Generator did not hand off the requested label');
   assert.equal(handoffUrl.searchParams.get('filter'), 'goguardian', 'Link Generator did not hand off the selected filter');
   assert.equal(handoffUrl.searchParams.get('count'), '2', 'Link Generator did not hand off the requested amount');
+  assert.equal(handoffUrl.searchParams.get('method'), 'p2p', 'Link Generator did not hand off the P2P method');
+  assert.equal(handoffUrl.searchParams.get('mode'), 'auto', 'Link Generator did not request automatic P2P repositories');
   await handoffPage.locator('#fileDisplay', { hasText: 'Nyx site SVG included' }).waitFor();
+  await handoffPage.locator('#page-title', { hasText: 'P2P Publisher' }).waitFor();
   assert.match(await handoffPage.locator('#mainWords').inputValue(), /study-room/, 'The Nyx preset did not use the requested label');
   assert.equal(await handoffPage.locator('#count').inputValue(), '2', 'The Nyx preset did not retain the authorized amount');
+  assert.equal(await handoffPage.locator('#mode').inputValue(), 'auto', 'The P2P preset did not select automatic repositories');
+  assert.equal(await handoffPage.locator('#repoField').isHidden(), true, 'The P2P preset still required an existing repository');
 
   const handoffGithubRequests = await installGithubMock(handoffPage);
   await handoffPage.route('**/api/link-checker/check', route => json(route, { vendors: { goguardian: { blocked: false } } }));
   await handoffPage.locator('#token').fill('github_pat_test_secret');
-  await handoffPage.locator('#repo').fill('dubcatalt2-lab/nyx-jsdelivr-links');
   await handoffPage.locator('#publishButton').click();
   await handoffPage.locator('#results:not([hidden])').waitFor({ state: 'visible' });
   await handoffPage.locator('#publisherMessage', { hasText: 'allowed by goguardian' }).waitFor();
@@ -114,6 +128,7 @@ try {
   assert.ok(handoffTree, 'The Link Generator handoff did not publish a Git tree');
   const handoffTreePayload = JSON.parse(handoffTree.body);
   assert.equal(handoffTreePayload.tree.length, 2, 'The handoff did not publish the authorized number of links');
+  assert.match(handoffTree.path, /\/repos\/dubcatalt2-lab\/study-room-auto-1\/git\/trees$/, 'P2P did not publish through its bounded automatic repository');
   assert.ok(handoffTreePayload.tree.every(entry => entry.content.includes('src="https://nyxlearning.org/"')), 'The generated JSDelivr files did not contain the bundled Nyx site SVG');
   assert.ok(handoffTreePayload.tree.every(entry => entry.content.includes('nyx:tab-cloak-sync') && entry.content.includes('id="nyxSiteFrame"')), 'The generated JSDelivr files did not include the outer-tab cloak bridge');
   assert.deepEqual(handoffErrors, [], `Link Generator handoff browser errors: ${handoffErrors.join(' | ')}`);

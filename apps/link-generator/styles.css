@@ -54,6 +54,7 @@ fieldset{min-width:0;margin:0;border:0}
 .details-grid.premium{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 130px}
 .details-grid label>small{display:block;margin:7px 2px 0;color:var(--muted-deep);font-size:9px;line-height:1.4}
 .amount-field input{text-align:center}
+.generation-method-field{grid-column:1/-1}
 .review-panel{flex:1}
 .review-list{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0}
 .review-list div{min-width:0;padding:13px 14px;border:1px solid var(--line);border-radius:13px;background:#0b0b0b}

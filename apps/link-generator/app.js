@@ -13,8 +13,8 @@
     signIn:$('[data-account-sign-in]'),createAccount:$('[data-account-create]'),refreshAccount:$('[data-account-refresh]'),signOut:$('[data-account-sign-out]'),
     wizardCard:$('[data-wizard-card]'),wizardSteps:[...document.querySelectorAll('[data-wizard-step]')],wizardIndicators:[...document.querySelectorAll('[data-wizard-indicator]')],
     wizardProgress:$('[data-wizard-progress]'),wizardNext:[...document.querySelectorAll('[data-wizard-next]')],wizardBack:[...document.querySelectorAll('[data-wizard-back]')],wizardRestart:$('[data-wizard-restart]'),
-    reviewAccess:$('[data-review-access]'),reviewLabel:$('[data-review-label]'),reviewFilter:$('[data-review-filter]'),reviewOrigin:$('[data-review-origin]'),reviewAmountRow:$('[data-review-amount-row]'),reviewAmount:$('[data-review-amount]'),confirm:$('[data-confirm]'),confirmText:$('[data-confirm-text]'),
-    amount:$('[data-premium-amount]'),amountField:$('[data-premium-amount-field]'),amountHint:$('[data-premium-amount-hint]'),detailsGrid:$('[data-details-grid]')
+    reviewAccess:$('[data-review-access]'),reviewLabel:$('[data-review-label]'),reviewFilter:$('[data-review-filter]'),reviewOrigin:$('[data-review-origin]'),reviewMethod:$('[data-review-method]'),reviewAmountRow:$('[data-review-amount-row]'),reviewAmount:$('[data-review-amount]'),confirm:$('[data-confirm]'),confirmText:$('[data-confirm-text]'),
+    amount:$('[data-premium-amount]'),amountField:$('[data-premium-amount-field]'),amountHint:$('[data-premium-amount-hint]'),detailsGrid:$('[data-details-grid]'),generationMethod:$('[data-generation-method]'),generationMethodHint:$('[data-generation-method-hint]')
   };
   let accessMode='account';
   let wizardStep=0;
@@ -187,10 +187,20 @@
   }
   function updateAmountCopy(){
     const amount=selectedAmount();
+    const p2p=refs.generationMethod.value==='p2p';
     refs.reviewAmountRow.hidden=false;
     refs.reviewAmount.textContent=`${amount} link${amount===1?'':'s'}`;
-    refs.confirmText.textContent=`I understand this publishes ${amount===1?'one Nyx SVG':`${amount} Nyx SVGs`} through a GitHub repository.`;
+    refs.confirmText.textContent=p2p
+      ? `I understand P2P opens a personal GitHub publisher for ${amount===1?'one Nyx SVG':`${amount} Nyx SVGs`} and never receives Nyx's server token.`
+      : `I understand this publishes ${amount===1?'one Nyx SVG':`${amount} Nyx SVGs`} through a GitHub repository.`;
     if(!refs.button.disabled) refs.button.querySelector('span').textContent=`Generate ${amount===1?'link':`${amount} links`}`;
+  }
+  function updateGenerationMethod(){
+    const p2p=refs.generationMethod.value==='p2p';
+    refs.generationMethodHint.textContent=p2p
+      ? 'P2P uses your own short-lived GitHub token, batches Git Tree writes, and rolls over at 1,000 SVGs per automatic repository.'
+      : 'Nyx managed uses the protected server publisher; its GitHub credential never reaches your browser.';
+    updateAmountCopy();
   }
   function setWizardStep(nextStep,direction=nextStep>=wizardStep?'forward':'back'){
     const index=Math.max(0,Math.min(refs.wizardSteps.length-1,Number(nextStep) || 0));
@@ -217,6 +227,7 @@
     refs.reviewLabel.textContent=refs.label.value.trim() || 'Automatic';
     refs.reviewFilter.textContent=refs.filter.options[refs.filter.selectedIndex]?.textContent || 'Not selected';
     refs.reviewOrigin.textContent=refs.origin.textContent || 'Official Nyx origin';
+    refs.reviewMethod.textContent=refs.generationMethod.value==='p2p' ? 'P2P' : 'Nyx managed';
     updateAmountCopy();
   }
   async function validateAccessStep(){
@@ -396,6 +407,7 @@
 
   refs.modeButtons.forEach(button=>button.addEventListener('click',()=>setAccessMode(button.dataset.accessMode)));
   refs.amount.addEventListener('input',updateAmountCopy);
+  refs.generationMethod.addEventListener('change',updateGenerationMethod);
   refs.wizardNext.forEach(button=>button.addEventListener('click',handleWizardNext));
   refs.wizardBack.forEach(button=>button.addEventListener('click',()=>{showNotice('');setWizardStep(wizardStep-1,'back')}));
   refs.wizardRestart.addEventListener('click',()=>{
@@ -412,6 +424,11 @@
     const selectedFilterName=refs.filter.options[refs.filter.selectedIndex]?.textContent || selectedFilter;
     showNotice('');refs.resultCard.hidden=true;setLoading(true);
     try{
+      if(refs.generationMethod.value==='p2p'){
+        const params=new URLSearchParams({preset:'nyx',method:'p2p',mode:'auto',label:refs.label.value.trim(),filter:selectedFilter,count:String(selectedAmount())});
+        location.href=`../jsdelivr-publisher/?${params.toString()}`;
+        return;
+      }
       const headers={Accept:'application/json','Content-Type':'application/json'};
       const body={label:refs.label.value,provider:'jsdelivr'};
       if(accessMode==='account'){
@@ -456,5 +473,5 @@
   });
   refs.copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(refs.resultUrl.value);refs.copy.textContent='Copied all';setTimeout(()=>{refs.copy.textContent='Copy all'},1400)}catch{refs.resultUrl.select();document.execCommand('copy')}});
 
-  applyTheme();renderAccount();setWizardStep(0);Promise.all([loadStatus(),loadAuthConfig(),loadFilters()]);
+  applyTheme();renderAccount();updateGenerationMethod();setWizardStep(0);Promise.all([loadStatus(),loadAuthConfig(),loadFilters()]);
 })();

@@ -45,6 +45,7 @@ let presetSvg = '';
 const presetParameters = new URLSearchParams(location.search);
 const presetName = presetParameters.get('preset') === 'nyx' ? 'nyx' : '';
 const presetFilter = /^[a-z0-9_-]{1,80}$/i.test(presetParameters.get('filter') || '') ? presetParameters.get('filter') : '';
+const presetMethod = presetParameters.get('method') === 'p2p' ? 'p2p' : '';
 let presetPromise = Promise.resolve();
 
 class GithubRequestError extends Error {
@@ -120,6 +121,11 @@ function initializePreset() {
   fileDisplay.textContent = 'Nyx site SVG included';
   fileHint.textContent = 'The official Nyx site package is ready. Choose a file only if you want to replace it.';
   document.getElementById('publisher-title').textContent = 'Publish Nyx links';
+  if (presetMethod === 'p2p') {
+    modeInput.value = 'auto';
+    document.getElementById('page-title').textContent = 'P2P Publisher';
+    document.getElementById('publisher-title').textContent = 'Publish P2P Nyx links';
+  }
   presetPromise = fetch('./nyx-source.svg', { cache: 'no-store' })
     .then(response => {
       if (!response.ok) throw new Error(`Nyx SVG returned ${response.status}.`);

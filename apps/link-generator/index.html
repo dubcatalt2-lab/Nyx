@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark light">
   <title>Link Generator</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/icons/link-generator.svg">
-  <link rel="stylesheet" href="./styles.css?v=20260829-neutral-10">
+  <link rel="stylesheet" href="./styles.css?v=20260829-p2p-method-11">
 </head>
 <body class="utility-neutral">
   <main class="utility-shell generator-shell">
@@ -110,6 +110,14 @@
                 <input name="amount" data-premium-amount type="number" min="1" max="100" step="1" value="1" inputmode="numeric">
                 <small data-premium-amount-hint>Regular accounts can create up to 100 links during each 60-minute window.</small>
               </label>
+              <label class="generation-method-field">
+                <span>Generation method</span>
+                <select name="method" data-generation-method>
+                  <option value="managed">Nyx managed</option>
+                  <option value="p2p">P2P</option>
+                </select>
+                <small data-generation-method-hint>Nyx managed uses the protected server publisher. P2P opens the bounded personal GitHub publisher.</small>
+              </label>
             </div>
           </div>
           <div class="wizard-actions">
@@ -129,6 +137,7 @@
               <div><dt>Label</dt><dd data-review-label>Automatic</dd></div>
               <div><dt>Filter</dt><dd data-review-filter>Not selected</dd></div>
               <div><dt>Destination</dt><dd data-review-origin>Loading...</dd></div>
+              <div><dt>Method</dt><dd data-review-method>Nyx managed</dd></div>
               <div data-review-amount-row hidden><dt>Amount</dt><dd data-review-amount>1 link</dd></div>
             </dl>
             <label class="confirmation">
@@ -165,6 +174,6 @@
       </section>
     </section>
   </main>
-  <script src="./app.js?v=20260829-hourly-link-batches-1"></script>
+  <script src="./app.js?v=20260829-p2p-method-2"></script>
 </body>
 </html>

@@ -32,7 +32,6 @@ const nowPlayingNext = document.getElementById('nowPlayingNext');
 const fullTrackStage = document.getElementById('fullTrackStage');
 const fullTrackTitle = document.getElementById('fullTrackTitle');
 const fullTrackStatus = document.getElementById('fullTrackStatus');
-const fullTrackPreview = document.getElementById('fullTrackPreview');
 const fullTrackVideo = document.getElementById('fullTrackVideo');
 const fullTrackVideoLabel = document.getElementById('fullTrackVideoLabel');
 
@@ -1653,7 +1652,10 @@ async function startoctavetrack(track, request) {
       expectedDuration: Number(match.durationSeconds) || Number(track.duration) || 0,
       playerVars: {
         autoplay: 1,
-        controls: 1,
+        controls: 0,
+        disablekb: 1,
+        fs: 0,
+        modestbranding: 1,
         playsinline: 1,
         enablejsapi: 1,
         rel: 0,
@@ -1758,7 +1760,6 @@ function playbackseek(seconds) {
   else audio.currentTime = seconds;
 }
 
-fullTrackPreview.addEventListener('click', () => usepreview(true));
 fullTrackVideo.addEventListener('click', () => {
   if (!octavevideo) return;
   setnowplayingvideomode(!nowPlayingMedia.classList.contains('is-video'), true);

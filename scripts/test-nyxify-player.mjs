@@ -125,7 +125,7 @@ try {
   await page.locator('.row', { hasText: track.title }).click();
   await page.waitForFunction(() => ['ready', 'playing'].includes(document.querySelector('#fullTrackStage')?.dataset.playbackState));
   if (await page.locator('#fullTrackStage').getAttribute('data-playback-state') === 'ready') await page.locator('#playBtn').click();
-  await page.locator('#fullTrackStage[data-playback-state="playing"]').waitFor({ state: 'visible' });
+  await page.waitForFunction(() => document.querySelector('#fullTrackStage')?.dataset.playbackState === 'playing');
   assert.deepEqual(fullTrackRequests[0], {
     title: track.title,
     artist: track.artist,
@@ -134,6 +134,8 @@ try {
   }, 'Full-track matching did not receive the selected catalog metadata');
   assert.equal(await page.locator('#fullTrackTitle').textContent(), track.title, 'The full-song row did not use the matched video title');
   assert.doesNotMatch(await page.locator('#fullTrackStage').textContent(), /octave/i, 'The internal playback-engine name leaked into the visible UI');
+  assert.equal(await page.locator('#fullTrackPreview').count(), 0, 'The separate preview bar control was still rendered');
+  assert.equal(await page.evaluate(() => window.__octavePlayer.options.playerVars.controls), 0, 'The embedded music video kept YouTube controls enabled');
   const octaveFrame = await page.locator('#fullTrackFrame').boundingBox();
   assert.ok(octaveFrame && octaveFrame.width >= 200 && octaveFrame.height >= 200 && octaveFrame.x + octaveFrame.width < 0, 'The Octave iframe was not kept off the visible Nyxify canvas');
   assert.equal(await page.locator('#timeTotal').textContent(), '2:00:05', 'Long duration was not formatted with hours');
@@ -173,7 +175,7 @@ try {
   await page.setViewportSize({ width: 1_280, height: 800 });
   await page.goto(`${origin}/apps/nyxify/?block-autoplay=1`, { waitUntil: 'domcontentloaded' });
   await page.locator('.row', { hasText: track.title }).click();
-  await page.locator('#fullTrackStage[data-playback-state="ready"]').waitFor({ state: 'visible' });
+  await page.waitForFunction(() => document.querySelector('#fullTrackStage')?.dataset.playbackState === 'ready');
   const blockedAutoplay = await page.evaluate(() => ({
     previewPaused: document.querySelector('#audio').paused,
     status: document.querySelector('#fullTrackStatus').textContent,
@@ -183,7 +185,7 @@ try {
   assert.match(blockedAutoplay.status, /press play/i, 'Blocked iframe autoplay did not provide a usable play prompt');
   assert.equal(blockedAutoplay.videoTitle, track.title, 'Blocked iframe autoplay lost the matched video title');
   await page.locator('#playBtn').click();
-  await page.locator('#fullTrackStage[data-playback-state="playing"]').waitFor({ state: 'visible' });
+  await page.waitForFunction(() => document.querySelector('#fullTrackStage')?.dataset.playbackState === 'playing');
   assert.equal(await page.locator('#audio').evaluate(audio => audio.paused), true, 'The preview kept playing after the user started the full song');
 
   const musicUrl = page.url();
@@ -199,6 +201,8 @@ try {
       pressed: document.querySelector('#fullTrackVideo')?.getAttribute('aria-pressed'),
       label: document.querySelector('#fullTrackVideoLabel')?.textContent,
       coverVisibility: getComputedStyle(document.querySelector('#nowPlayingArt')).visibility,
+      rail: document.querySelector('.rail')?.getBoundingClientRect(),
+      module: document.querySelector('#nowPlayingModule')?.getBoundingClientRect(),
       frame,
       media
     };
@@ -210,6 +214,8 @@ try {
   assert.equal(inlineVideo.coverVisibility, 'hidden', 'The cover remained visible over the inline video');
   assert.ok(inlineVideo.frame && inlineVideo.media && inlineVideo.frame.width > 0 && inlineVideo.frame.height > 0, 'The inline video was not visible');
   assert.ok(Math.abs(inlineVideo.frame.left - inlineVideo.media.left) <= 1 && Math.abs(inlineVideo.frame.top - inlineVideo.media.top) <= 1, 'The inline video was not placed in the cover area');
+  assert.ok(Math.abs(inlineVideo.media.width - inlineVideo.media.height) <= 2, 'The music video expanded beyond the small square cover box');
+  assert.ok(inlineVideo.rail?.height >= 680 && inlineVideo.module?.height >= 680, 'The now-playing panel did not fill the desktop right sidebar');
 
   await page.setViewportSize({ width: 390, height: 844 });
   const compactInlineVideo = await page.evaluate(() => {
@@ -277,10 +283,11 @@ try {
   await chromeOsPage.goto(`${origin}/apps/nyxify/`, { waitUntil: 'domcontentloaded' });
   await chromeOsPage.locator('.row', { hasText: track.title }).click();
   await chromeOsPage.locator('#fullTrackFrame iframe[data-direct-youtube="true"]').waitFor({ state: 'attached' });
-  await chromeOsPage.locator('#fullTrackStage[data-playback-state="ready"]').waitFor({ state: 'visible' });
+  await chromeOsPage.waitForFunction(() => document.querySelector('#fullTrackStage')?.dataset.playbackState === 'ready');
+  assert.equal(new URL(await chromeOsPage.locator('#fullTrackFrame iframe[data-direct-youtube="true"]').getAttribute('src')).searchParams.get('controls'), '0', 'ChromeOS embedded video kept YouTube controls enabled');
   assert.equal(await chromeOsPage.locator('#audio').evaluate(audio => audio.paused), false, 'ChromeOS direct-player startup silenced the preview before full audio began');
   await chromeOsPage.locator('#playBtn').click();
-  await chromeOsPage.locator('#fullTrackStage[data-playback-state="playing"]').waitFor({ state: 'visible' });
+  await chromeOsPage.waitForFunction(() => document.querySelector('#fullTrackStage')?.dataset.playbackState === 'playing');
   assert.equal(await chromeOsPage.locator('#audio').evaluate(audio => audio.paused), true, 'ChromeOS direct-player confirmation did not pause the preview');
   await chromeOsPage.locator('#fullTrackVideo').click();
   const chromeOsInlineVideo = await chromeOsPage.evaluate(() => {

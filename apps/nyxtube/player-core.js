@@ -25,7 +25,7 @@
         this.iframe.referrerPolicy = "strict-origin-when-cross-origin";
         const parameters = new URLSearchParams({
           ...Object.fromEntries(Object.entries(config.playerVars || {}).map(([name, value]) => [name, String(value)])),
-          controls: "1", enablejsapi: "1", origin: location.origin, widget_referrer: location.href,
+          controls: String(config.playerVars?.controls ?? 1), enablejsapi: "1", origin: location.origin, widget_referrer: location.href,
         });
         this.iframe.src = `${config.host || "https://www.youtube-nocookie.com"}/embed/${encodeURIComponent(config.videoId)}?${parameters}`;
         addEventListener("message", this.handleMessage);

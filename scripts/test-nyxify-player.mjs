@@ -136,6 +136,7 @@ try {
   assert.doesNotMatch(await page.locator('#fullTrackStage').textContent(), /octave/i, 'The internal playback-engine name leaked into the visible UI');
   assert.equal(await page.locator('#fullTrackPreview').count(), 0, 'The separate preview bar control was still rendered');
   assert.equal(await page.evaluate(() => window.__octavePlayer.options.playerVars.controls), 0, 'The embedded music video kept YouTube controls enabled');
+  assert.equal(await page.evaluate(() => window.__octavePlayer.options.playerVars.fs), 1, 'The embedded music video explicitly disabled fullscreen');
   const octaveFrame = await page.locator('#fullTrackFrame').boundingBox();
   assert.ok(octaveFrame && octaveFrame.width >= 200 && octaveFrame.height >= 200 && octaveFrame.x + octaveFrame.width < 0, 'The Octave iframe was not kept off the visible Nyxify canvas');
   assert.equal(await page.locator('#timeTotal').textContent(), '2:00:05', 'Long duration was not formatted with hours');
@@ -204,7 +205,9 @@ try {
       rail: document.querySelector('.rail')?.getBoundingClientRect(),
       module: document.querySelector('#nowPlayingModule')?.getBoundingClientRect(),
       nextModule: document.querySelector('#nowPlayingModule')?.nextElementSibling?.getBoundingClientRect(),
-      railScrollbarWidth: getComputedStyle(document.querySelector('.rail')).scrollbarWidth,
+      railOverflow: getComputedStyle(document.querySelector('.rail')).overflowY,
+      railClientHeight: document.querySelector('.rail')?.clientHeight,
+      railScrollHeight: document.querySelector('.rail')?.scrollHeight,
       frame,
       media
     };
@@ -220,7 +223,50 @@ try {
   assert.ok(inlineVideo.rail?.height >= 680, 'The desktop right sidebar did not fill the available viewport height');
   assert.ok(inlineVideo.module?.height < inlineVideo.rail?.height, 'The now-playing panel still reserved the empty full-rail height');
   assert.ok(inlineVideo.nextModule && inlineVideo.nextModule.top - inlineVideo.module.bottom <= 22, 'The remaining sidebar modules did not follow Now Playing without a large empty gap');
-  assert.equal(inlineVideo.railScrollbarWidth, 'none', 'The desktop sidebar scrollbar remained visible');
+  assert.equal(inlineVideo.railOverflow, 'visible', 'The desktop sidebar still used a nested clipped scroll area');
+  assert.equal(inlineVideo.railClientHeight, inlineVideo.railScrollHeight, 'The desktop sidebar still clipped content outside its fixed height');
+  assert.equal(await page.locator('#fullTrackFullscreen').isVisible(), true, 'The inline video did not expose Nyxify fullscreen');
+  await page.locator('#fullTrackFullscreen').click();
+  await page.waitForFunction(() => document.fullscreenElement?.id === 'nowPlayingMedia');
+  assert.equal(await page.locator('#fullTrackFullscreen').getAttribute('aria-label'), 'Exit fullscreen', 'The fullscreen control did not expose its active state');
+  await page.evaluate(() => document.exitFullscreen());
+  await page.waitForFunction(() => !document.fullscreenElement);
+
+  await page.setViewportSize({ width: 728, height: 1_238 });
+  const tabletRail = await page.evaluate(() => {
+    const rail = document.querySelector('.rail').getBoundingClientRect();
+    const nowPlaying = document.querySelector('#nowPlayingModule').getBoundingClientRect();
+    const nextModule = document.querySelector('#nowPlayingModule').nextElementSibling.getBoundingClientRect();
+    const media = document.querySelector('#nowPlayingMedia').getBoundingClientRect();
+    return {
+      railWidth: rail.width,
+      nowPlayingWidth: nowPlaying.width,
+      nextGap: nextModule.top - nowPlaying.bottom,
+      mediaWidth: media.width,
+      columns: getComputedStyle(document.querySelector('.rail')).gridTemplateColumns,
+      display: getComputedStyle(document.querySelector('.rail')).display
+    };
+  });
+  assert.equal(tabletRail.display, 'flex', 'The tablet sidebar still used the empty two-column grid');
+  assert.equal(tabletRail.columns, 'none', 'The tablet sidebar retained a hidden empty grid column');
+  assert.ok(Math.abs(tabletRail.railWidth - tabletRail.nowPlayingWidth) <= 2, 'Now Playing did not fill the tablet sidebar width');
+  assert.ok(tabletRail.nextGap <= 16, `The tablet sidebar kept a ${tabletRail.nextGap}px empty gap between modules`);
+  assert.ok(tabletRail.mediaWidth <= 322, `The tablet music video grew beyond the small cover box to ${tabletRail.mediaWidth}px`);
+
+  await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+  const bottomClearance = await page.evaluate(() => {
+    const playlist = document.querySelector('.playlist-module').getBoundingClientRect();
+    const player = document.querySelector('.player-inner').getBoundingClientRect();
+    return {
+      playlistBottom: playlist.bottom,
+      playerTop: player.top,
+      playlistClientHeight: document.querySelector('.playlist-module').clientHeight,
+      playlistScrollHeight: document.querySelector('.playlist-module').scrollHeight
+    };
+  });
+  assert.equal(bottomClearance.playlistClientHeight, bottomClearance.playlistScrollHeight, 'The Playlists card content was clipped inside its module');
+  assert.ok(bottomClearance.playlistBottom <= bottomClearance.playerTop - 8, `The Playlists card remained ${bottomClearance.playlistBottom - bottomClearance.playerTop}px underneath the fixed player`);
+  await page.evaluate(() => scrollTo(0, 0));
 
   await page.setViewportSize({ width: 390, height: 844 });
   const compactInlineVideo = await page.evaluate(() => {
@@ -289,7 +335,9 @@ try {
   await chromeOsPage.locator('.row', { hasText: track.title }).click();
   await chromeOsPage.locator('#fullTrackFrame iframe[data-direct-youtube="true"]').waitFor({ state: 'attached' });
   await chromeOsPage.waitForFunction(() => document.querySelector('#fullTrackStage')?.dataset.playbackState === 'ready');
-  assert.equal(new URL(await chromeOsPage.locator('#fullTrackFrame iframe[data-direct-youtube="true"]').getAttribute('src')).searchParams.get('controls'), '0', 'ChromeOS embedded video kept YouTube controls enabled');
+  const chromeOsPlayerUrl = new URL(await chromeOsPage.locator('#fullTrackFrame iframe[data-direct-youtube="true"]').getAttribute('src'));
+  assert.equal(chromeOsPlayerUrl.searchParams.get('controls'), '0', 'ChromeOS embedded video kept YouTube controls enabled');
+  assert.equal(chromeOsPlayerUrl.searchParams.get('fs'), '1', 'ChromeOS embedded video explicitly disabled fullscreen');
   assert.equal(await chromeOsPage.locator('#audio').evaluate(audio => audio.paused), false, 'ChromeOS direct-player startup silenced the preview before full audio began');
   await chromeOsPage.locator('#playBtn').click();
   await chromeOsPage.waitForFunction(() => document.querySelector('#fullTrackStage')?.dataset.playbackState === 'playing');
@@ -306,6 +354,7 @@ try {
   });
   assert.equal(chromeOsInlineVideo.pressed, 'true', 'ChromeOS direct player did not switch into the cover area');
   assert.ok(chromeOsInlineVideo.frameWidth > 0 && Math.abs(chromeOsInlineVideo.frameWidth - chromeOsInlineVideo.mediaWidth) <= 2, 'ChromeOS inline video did not fit the cover area');
+  assert.equal(await chromeOsPage.locator('#fullTrackFullscreen').isVisible(), true, 'ChromeOS inline video did not expose fullscreen');
   assert.deepEqual(chromeOsErrors, [], `ChromeOS direct-player browser errors: ${chromeOsErrors.join(' | ')}`);
   await chromeOsContext.close();
 

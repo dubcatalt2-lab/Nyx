@@ -34,6 +34,7 @@ const fullTrackTitle = document.getElementById('fullTrackTitle');
 const fullTrackStatus = document.getElementById('fullTrackStatus');
 const fullTrackVideo = document.getElementById('fullTrackVideo');
 const fullTrackVideoLabel = document.getElementById('fullTrackVideoLabel');
+const fullTrackFullscreen = document.getElementById('fullTrackFullscreen');
 
 let curtrack = null;
 let results = [];
@@ -1574,6 +1575,35 @@ function setnowplayingvideomode(show, remember = false) {
   fullTrackVideo.setAttribute('aria-pressed', String(active));
   fullTrackVideo.setAttribute('aria-label', active ? 'Switch to album cover' : (octavevideo ? 'Switch to music video' : 'Music video unavailable'));
   fullTrackVideoLabel.textContent = active ? 'Switch to cover' : 'Switch to video';
+  fullTrackFullscreen.hidden = !active;
+  fullTrackFullscreen.disabled = !active;
+  if (!active && (document.fullscreenElement === nowPlayingMedia || document.webkitFullscreenElement === nowPlayingMedia)) {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen;
+    if (exit) Promise.resolve(exit.call(document)).catch(() => {});
+  }
+}
+
+function syncnowplayingfullscreen() {
+  const active = document.fullscreenElement === nowPlayingMedia || document.webkitFullscreenElement === nowPlayingMedia;
+  fullTrackFullscreen.setAttribute('aria-label', active ? 'Exit fullscreen' : 'Enter fullscreen');
+  fullTrackFullscreen.title = active ? 'Exit fullscreen' : 'Enter fullscreen';
+}
+
+async function togglenowplayingfullscreen() {
+  if (!nowPlayingMedia.classList.contains('is-video')) return;
+  const active = document.fullscreenElement === nowPlayingMedia || document.webkitFullscreenElement === nowPlayingMedia;
+  const action = active
+    ? (document.exitFullscreen || document.webkitExitFullscreen)
+    : (nowPlayingMedia.requestFullscreen || nowPlayingMedia.webkitRequestFullscreen);
+  if (!action) return;
+  try {
+    await Promise.resolve(action.call(active ? document : nowPlayingMedia));
+  } catch {
+    const frame = document.querySelector('#fullTrackFrame iframe');
+    const fallback = frame?.requestFullscreen || frame?.webkitRequestFullscreen;
+    if (fallback) await Promise.resolve(fallback.call(frame)).catch(() => {});
+  }
+  syncnowplayingfullscreen();
 }
 
 function previewsource() {
@@ -1654,7 +1684,7 @@ async function startoctavetrack(track, request) {
         autoplay: 1,
         controls: 0,
         disablekb: 1,
-        fs: 0,
+        fs: 1,
         modestbranding: 1,
         playsinline: 1,
         enablejsapi: 1,
@@ -1764,6 +1794,9 @@ fullTrackVideo.addEventListener('click', () => {
   if (!octavevideo) return;
   setnowplayingvideomode(!nowPlayingMedia.classList.contains('is-video'), true);
 });
+fullTrackFullscreen.addEventListener('click', togglenowplayingfullscreen);
+document.addEventListener('fullscreenchange', syncnowplayingfullscreen);
+document.addEventListener('webkitfullscreenchange', syncnowplayingfullscreen);
 setoctavevideo();
 
 function playtrack(t, list, context = '') {

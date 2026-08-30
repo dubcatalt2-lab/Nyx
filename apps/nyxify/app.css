@@ -280,7 +280,7 @@ header {
   width: 100%;
   max-width: var(--grid-max);
   margin: 0 auto;
-  padding: 24px 24px 40px;
+  padding: 24px 24px 140px;
   align-items: start;
 }
 
@@ -764,13 +764,9 @@ main { min-width: 0; }
   display: flex;
   flex-direction: column;
   gap: 20px;
-  height: calc(100vh - 108px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  height: auto;
+  overflow: visible;
 }
-.rail::-webkit-scrollbar { display: none; }
 
 .module {
   background: var(--surface);
@@ -876,6 +872,49 @@ main { min-width: 0; }
 .now-playing-media.is-video .now-playing-video-toggle {
   top: 12px;
   bottom: auto;
+}
+.now-playing-fullscreen {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 4;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 999px;
+  background: rgba(5, 5, 7, .82);
+  color: #fff;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, .28);
+  backdrop-filter: blur(11px);
+  -webkit-backdrop-filter: blur(11px);
+  cursor: pointer;
+  transition: background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+.now-playing-fullscreen[hidden] { display: none; }
+.now-playing-fullscreen svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.now-playing-fullscreen:hover,
+.now-playing-fullscreen:focus-visible {
+  border-color: rgba(255, 255, 255, .34);
+  background: rgba(18, 18, 21, .94);
+  transform: translateY(-1px);
+}
+.now-playing-media:fullscreen,
+.now-playing-media:-webkit-full-screen {
+  width: 100vw;
+  height: 100vh;
+  aspect-ratio: auto;
+  border: 0;
+  border-radius: 0;
 }
 .now-playing-title {
   margin: 13px 2px 2px;
@@ -1726,18 +1765,38 @@ input[type="range"]::-moz-range-thumb {
   .shell { grid-template-columns: minmax(0, 1fr); }
   .rail {
     position: static;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: 14px;
     height: auto;
     overflow: visible;
-    scrollbar-gutter: auto;
   }
-  .now-playing-module { min-height: 0; grid-row: span 2; }
+  .now-playing-module { min-height: 0; }
+}
+@media (min-width: 721px) and (max-width: 820px) {
+  .now-playing-body {
+    display: grid;
+    grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+    grid-template-areas:
+      "media title"
+      "media artist"
+      "media album"
+      "media playlists"
+      "media next"
+      "media spacer";
+    grid-template-rows: auto auto auto auto auto 1fr;
+    gap: 0 14px;
+  }
+  .now-playing-media { grid-area: media; }
+  .now-playing-title { grid-area: title; margin-top: 2px; }
+  .now-playing-link:not(.now-playing-album) { grid-area: artist; }
+  .now-playing-album { grid-area: album; }
+  .now-playing-playlists { grid-area: playlists; }
+  .now-playing-next { grid-area: next; }
 }
 @media (max-width: 720px) {
   .hide-sm { display: none !important; }
-  .shell { padding: 16px 14px 32px; }
+  .shell { padding: 16px 14px 190px; }
   header { height: 62px; padding: 0 12px; }
   .nyxify-brand { left: 12px; }
   .searchbox { width: calc(100vw - 72px); margin-left: 48px; height: 40px; }
@@ -1778,8 +1837,6 @@ input[type="range"]::-moz-range-thumb {
   .playlist-add-songs svg { width: 27px; height: 27px; }
   .home-cards { grid-template-columns: repeat(2, minmax(108px, 1fr)); gap: 10px; }
   .home-section { margin-bottom: 24px; }
-  .rail { grid-template-columns: minmax(0, 1fr); }
-  .now-playing-module { grid-row: auto; }
 }
 
 @media (max-width: 480px) {

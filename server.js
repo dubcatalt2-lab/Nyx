@@ -348,6 +348,7 @@ const freeLinkWindowMs = 60 * 60 * 1000;
 const premiumImmediateCooldownAt = 5;
 const premiumAccumulatedLimit = 30;
 const premiumCooldownMs = 10 * 60 * 1000;
+const p2pPremiumBatchLimit = 1_000;
 const premiumGenerationUsage = new Map();
 const downloadSafetyCache = new Map();
 const downloadSafetyAttempts = new Map();
@@ -6312,9 +6313,33 @@ function nyxifyCoverPath(value) {
   return nyxifyCoverPathPattern.test(path) ? path : "";
 }
 
+function nyxifyTidalArtworkPath(value) {
+  try {
+    const parsed = new URL(String(value || ""), "https://resources.wimpmusic.com");
+    if (parsed.origin !== "https://resources.wimpmusic.com" || parsed.username || parsed.password || parsed.search || parsed.hash) return "";
+    return /^\/images\/[a-f0-9]{8}\/[a-f0-9]{4}\/[a-f0-9]{4}\/[a-f0-9]{4}\/[a-f0-9]{12}\/(?:160|320|640|1280)x(?:160|320|640|1280)\.jpg$/i.test(parsed.pathname)
+      ? parsed.pathname
+      : "";
+  } catch {
+    return "";
+  }
+}
+
 function nyxifyCoverUrl(value) {
   const path = nyxifyCoverPath(value);
-  return path ? `/api/nyxify/cover?path=${encodeURIComponent(path)}` : "";
+  if (path) return `/api/nyxify/cover?path=${encodeURIComponent(path)}`;
+  const tidalPath = nyxifyTidalArtworkPath(value);
+  if (tidalPath) return `/api/nyxify/cover?tidal=${encodeURIComponent(tidalPath)}`;
+  try {
+    const local = new URL(String(value || ""), "https://nyx.invalid");
+    if (local.origin !== "https://nyx.invalid" || local.pathname !== "/api/nyxify/cover") return "";
+    const localPath = nyxifyCoverPath(local.searchParams.get("path"));
+    if (localPath) return `/api/nyxify/cover?path=${encodeURIComponent(localPath)}`;
+    const localTidalPath = nyxifyTidalArtworkPath(local.searchParams.get("tidal"));
+    return localTidalPath ? `/api/nyxify/cover?tidal=${encodeURIComponent(localTidalPath)}` : "";
+  } catch {
+    return "";
+  }
 }
 
 function nyxifyChartArtworkPath(kind, value) {
@@ -6328,18 +6353,6 @@ function nyxifyChartArtworkFromUrl(kind, value) {
     const parsed = new URL(String(value || ""));
     const match = parsed.pathname.match(/^\/images\/(?:artist|cover)\/([a-f0-9]{32})\//i);
     return match ? nyxifyChartArtworkPath(kind, match[1]) : "";
-  } catch {
-    return "";
-  }
-}
-
-function nyxifySourceCoverPath(value) {
-  const direct = nyxifyCoverPath(value);
-  if (direct) return direct;
-  try {
-    const local = new URL(String(value || ""), "https://nyx.invalid");
-    if (local.origin !== "https://nyx.invalid" || local.pathname !== "/api/nyxify/cover") return "";
-    return nyxifyCoverPath(local.searchParams.get("path"));
   } catch {
     return "";
   }
@@ -6359,7 +6372,8 @@ function nyxifyTrackRecord(value, context = {}) {
     artistId: nyxifyTrackIdPattern.test(artistId) ? artistId : "",
     album: nyxifyCleanText(source.album || context.album, "", 160),
     albumId: nyxifyTrackIdPattern.test(albumId) ? albumId : "",
-    cover: nyxifyCoverUrl(nyxifySourceCoverPath(source.cover || context.cover)),
+    cover: nyxifyCoverUrl(source.cover || context.cover),
+    catalog: new Set(["deezer", "tidal"]).has(String(source.catalog || context.catalog || "").toLowerCase()) ? String(source.catalog || context.catalog).toLowerCase() : "",
     duration: Math.max(0, Math.min(14_400, Math.round(Number(source.duration) || 0)))
   };
 }
@@ -6471,7 +6485,8 @@ function nyxifyDeezerTrackRecord(value, context = {}) {
     album: album.title || context.album,
     albumId: album.id || context.albumId,
     cover: artwork || context.cover,
-    duration: source.duration
+    duration: source.duration,
+    catalog: "deezer"
   });
 }
 
@@ -6487,14 +6502,30 @@ async function nyxifySearch(query) {
   const key = `search:${cleanQuery.toLowerCase()}`;
   const cached = nyxifyCacheGet(nyxifyCatalogCache, key);
   if (cached) return structuredClone(cached);
-  let data;
-  try {
-    const payload = await nyxifyProviderJson("/api/music/search", { q: cleanQuery });
-    data = (Array.isArray(payload.data) ? payload.data : []).slice(0, 50).map(value => nyxifyTrackRecord(value)).filter(Boolean);
-  } catch {
-    const payload = await nyxifyDeezerJson("/search", { q: cleanQuery, limit: 50 });
-    data = (Array.isArray(payload.data) ? payload.data : []).slice(0, 50).map(nyxifyDeezerTrackRecord).filter(Boolean);
+  const [tidalResult, deezerResult] = await Promise.allSettled([
+    nyxifyProviderJson("/api/music/search", { q: cleanQuery }),
+    nyxifyDeezerJson("/search", { q: cleanQuery, limit: 50 })
+  ]);
+  const tidalTracks = tidalResult.status === "fulfilled"
+    ? (Array.isArray(tidalResult.value.data) ? tidalResult.value.data : []).slice(0, 50).map(value => nyxifyTrackRecord(value, { catalog: "tidal" })).filter(Boolean)
+    : [];
+  const deezerTracks = deezerResult.status === "fulfilled"
+    ? (Array.isArray(deezerResult.value.data) ? deezerResult.value.data : []).slice(0, 50).map(nyxifyDeezerTrackRecord).filter(Boolean)
+    : [];
+  if (!tidalTracks.length && !deezerTracks.length) {
+    throw new Error(tidalResult.reason?.message || deezerResult.reason?.message || "No music catalog is available right now.");
   }
+  const identity = track => `${nyxifyMatchText(track.title)}|${nyxifyMatchText(track.artist)}`;
+  const playableByIdentity = new Map(deezerTracks.map(track => [identity(track), track]));
+  const seen = new Set();
+  const data = [...tidalTracks.map(track => playableByIdentity.get(identity(track)) || track), ...deezerTracks]
+    .filter(track => {
+      const key = identity(track);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 50);
   const result = { data };
   nyxifyCacheSet(nyxifyCatalogCache, key, result, nyxifyCatalogCacheTtlMs, 100);
   return structuredClone(result);
@@ -6531,7 +6562,8 @@ async function nyxifyHome() {
       album: value?.album?.title,
       albumId: value?.album?.id,
       cover,
-      duration: value?.duration
+      duration: value?.duration,
+      catalog: "deezer"
     });
   }).filter(Boolean);
   const artists = (Array.isArray(payload?.artists?.data) ? payload.artists.data : []).slice(0, 16).map((value, index) => {
@@ -6610,7 +6642,7 @@ async function nyxifyDetail(type, id) {
   let result;
   if (type === "artist") {
     const name = nyxifyCleanText(payload.name, "Unknown artist", 120);
-    const tracks = (Array.isArray(payload.tracks) ? payload.tracks : []).slice(0, 200).map(value => nyxifyTrackRecord(value, { artist: name, artistId: id })).filter(Boolean);
+    const tracks = (Array.isArray(payload.tracks) ? payload.tracks : []).slice(0, 200).map(value => nyxifyTrackRecord(value, { artist: name, artistId: id, catalog: "tidal" })).filter(Boolean);
     result = {
       name,
       cover: tracks.find(track => track.cover)?.cover || nyxifyCoverUrl(payload.cover),
@@ -6622,13 +6654,13 @@ async function nyxifyDetail(type, id) {
     const name = nyxifyCleanText(payload.name, "Unknown album", 160);
     const artist = nyxifyCleanText(payload.artist, "Unknown artist", 120);
     const artistId = String(payload.artistId || "").trim();
-    const cover = nyxifyCoverPath(payload.cover);
+    const cover = nyxifyCoverUrl(payload.cover);
     result = {
       name,
       cover: nyxifyCoverUrl(cover),
       artist,
       artistId: nyxifyTrackIdPattern.test(artistId) ? artistId : "",
-      tracks: (Array.isArray(payload.tracks) ? payload.tracks : []).slice(0, 200).map(value => nyxifyTrackRecord(value, { album: name, albumId: id, artist, artistId, cover })).filter(Boolean)
+      tracks: (Array.isArray(payload.tracks) ? payload.tracks : []).slice(0, 200).map(value => nyxifyTrackRecord(value, { album: name, albumId: id, artist, artistId, cover, catalog: "tidal" })).filter(Boolean)
     };
   }
   nyxifyCacheSet(nyxifyCatalogCache, key, result, nyxifyCatalogCacheTtlMs, 100);
@@ -6945,11 +6977,28 @@ async function nyxifyOctaveSearch(query) {
   return nyxTubeSearch(query, 12);
 }
 
-async function nyxifyFullTrack(trackId) {
-  const key = `full-track:${trackId}`;
+async function nyxifyFullTrack(trackId, hints = {}) {
+  const catalog = String(hints.catalog || "").toLowerCase() === "deezer" ? "deezer" : "metadata";
+  const hintedTitle = nyxifyCleanText(hints.title, "", 180);
+  const hintedArtist = nyxifyCleanText(hints.artist, "", 120);
+  const hintedDuration = Math.max(0, Math.min(14_400, Number(hints.duration) || 0));
+  const key = `full-track:${catalog}:${trackId}:${hintedTitle.toLowerCase()}:${hintedArtist.toLowerCase()}:${hintedDuration}`;
   const cached = nyxifyCacheGet(nyxifyCatalogCache, key);
   if (cached) return structuredClone(cached);
-  const track = await nyxifyDeezerJson(`/track/${trackId}`);
+  let track;
+  if (catalog === "deezer") {
+    try {
+      track = await nyxifyDeezerJson(`/track/${trackId}`);
+    } catch {}
+  }
+  if (!track) {
+    track = {
+      title_short: hintedTitle,
+      title: hintedTitle,
+      artist: { name: hintedArtist },
+      duration: hintedDuration
+    };
+  }
   const title = nyxifyCleanText(track.title_short || track.title, "", 180);
   const artist = nyxifyCleanText(track.artist?.name, "", 120);
   const expectedDuration = Math.max(0, Number(track.duration) || 0);
@@ -7049,19 +7098,30 @@ async function nyxifyFetchFallbackArtwork(target, headers) {
   return fetch(target, { headers, redirect: "error", signal: AbortSignal.timeout(15_000) });
 }
 
-async function nyxifyLoadArtwork(artworkPath) {
+async function nyxifyFetchTidalArtwork(artworkPath, headers) {
+  const path = nyxifyTidalArtworkPath(artworkPath);
+  if (!path) throw new Error("Nyxify rejected an invalid Tidal artwork path.");
+  return fetch(new URL(path, "https://resources.wimpmusic.com"), { headers, redirect: "error", signal: AbortSignal.timeout(15_000) });
+}
+
+async function nyxifyLoadArtwork(artworkPath, tidalArtworkPath = "") {
   const path = nyxifyCoverPath(artworkPath);
-  if (!path) throw new Error("Invalid Nyxify artwork path.");
-  const cached = nyxifyCacheGet(nyxifyArtworkCache, path);
+  const tidalPath = nyxifyTidalArtworkPath(tidalArtworkPath);
+  if (!path && !tidalPath) throw new Error("Invalid Nyxify artwork path.");
+  const cacheKey = path || `tidal:${tidalPath}`;
+  const cached = nyxifyCacheGet(nyxifyArtworkCache, cacheKey);
   if (cached) return cached;
-  if (nyxifyArtworkInflight.has(path)) return nyxifyArtworkInflight.get(path);
+  if (nyxifyArtworkInflight.has(cacheKey)) return nyxifyArtworkInflight.get(cacheKey);
   const pending = (async () => {
     let lastError = null;
     const fallbackTarget = nyxifyArtworkFallbackUrl(path);
-    const sources = [
-      () => nyxifyFetchAsset(nyxifyProviderUrl(path), { Accept: "image/avif,image/webp,image/png,image/jpeg,image/gif", "User-Agent": "Nyxify/1.0" }),
-      ...(fallbackTarget ? [() => nyxifyFetchFallbackArtwork(fallbackTarget, { Accept: "image/avif,image/webp,image/png,image/jpeg,image/gif", "User-Agent": "Nyxify/1.0" })] : [])
-    ];
+    const imageHeaders = { Accept: "image/avif,image/webp,image/png,image/jpeg,image/gif", "User-Agent": "Nyxify/1.0" };
+    const sources = tidalPath
+      ? [() => nyxifyFetchTidalArtwork(tidalPath, imageHeaders)]
+      : [
+          () => nyxifyFetchAsset(nyxifyProviderUrl(path), imageHeaders),
+          ...(fallbackTarget ? [() => nyxifyFetchFallbackArtwork(fallbackTarget, imageHeaders)] : [])
+        ];
     for (let attempt = 0; attempt < sources.length; attempt += 1) {
       try {
         const upstream = await sources[attempt]();
@@ -7093,7 +7153,7 @@ async function nyxifyLoadArtwork(artworkPath) {
         }
         if (!totalBytes) throw new Error("Artwork returned an empty image.");
         const result = { contentType, body: Buffer.concat(chunks, totalBytes) };
-        return nyxifyCacheSet(nyxifyArtworkCache, path, result, nyxifyArtworkCacheTtlMs, 24);
+        return nyxifyCacheSet(nyxifyArtworkCache, cacheKey, result, nyxifyArtworkCacheTtlMs, 24);
       } catch (error) {
         lastError = error;
         if (attempt + 1 < sources.length) await new Promise(resolve => setTimeout(resolve, 80));
@@ -7101,16 +7161,16 @@ async function nyxifyLoadArtwork(artworkPath) {
     }
     throw lastError || new Error("Artwork is unavailable.");
   })();
-  nyxifyArtworkInflight.set(path, pending);
+  nyxifyArtworkInflight.set(cacheKey, pending);
   try {
     return await pending;
   } finally {
-    nyxifyArtworkInflight.delete(path);
+    nyxifyArtworkInflight.delete(cacheKey);
   }
 }
 
-async function nyxifySendArtwork(res, artworkPath) {
-  const artwork = await nyxifyLoadArtwork(artworkPath);
+async function nyxifySendArtwork(res, artworkPath, tidalArtworkPath = "") {
+  const artwork = await nyxifyLoadArtwork(artworkPath, tidalArtworkPath);
   res.set({
     "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
     "Content-Type": artwork.contentType,
@@ -12165,7 +12225,7 @@ app.put("/api/nyxify/playlists", async (req, res) => {
 app.get("/api/nyxify/status", (req, res) => {
   res.set("Cache-Control", "public, max-age=60");
   if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
-  res.json({ configured: true, provider: "deezer-octave", providerLabel: "Deezer search · Octave playback" });
+  res.json({ configured: true, provider: "deezer-tidal-octave", providerLabel: "Deezer + Tidal search · NyxTube playback" });
 });
 
 app.get("/api/nyxify/home", async (req, res) => {
@@ -12210,7 +12270,12 @@ app.get("/api/nyxify/full-track/:trackId", async (req, res) => {
   const trackId = String(req.params.trackId || "").trim();
   if (!nyxifyTrackIdPattern.test(trackId)) return res.status(400).json({ error: "Invalid Nyxify track." });
   try {
-    res.json(await nyxifyFullTrack(trackId));
+    res.json(await nyxifyFullTrack(trackId, {
+      title: req.query.title,
+      artist: req.query.artist,
+      duration: req.query.duration,
+      catalog: req.query.catalog
+    }));
   } catch (error) {
     res.status(error.status || 502).json({ error: error.message || "Full-track playback is unavailable right now." });
   }
@@ -12219,9 +12284,10 @@ app.get("/api/nyxify/full-track/:trackId", async (req, res) => {
 app.get("/api/nyxify/cover", async (req, res) => {
   if (!sameOriginRequest(req)) return res.status(403).type("text/plain").send("Cross-origin requests are not allowed.");
   const path = nyxifyCoverPath(req.query.path);
-  if (!path) return res.status(400).type("text/plain").send("Invalid Nyxify artwork.");
+  const tidalPath = nyxifyTidalArtworkPath(req.query.tidal);
+  if (!path && !tidalPath) return res.status(400).type("text/plain").send("Invalid Nyxify artwork.");
   try {
-    await nyxifySendArtwork(res, path);
+    await nyxifySendArtwork(res, path, tidalPath);
   } catch (error) {
     if (!res.headersSent) res.status(502).type("text/plain").send("Nyxify artwork is currently unavailable.");
     else res.destroy();
@@ -12236,25 +12302,13 @@ app.get("/api/nyxify/stream/:trackId", async (req, res) => {
   const range = String(req.get("range") || "").trim();
   if (range && !/^bytes=\d*-\d*$/i.test(range)) return res.status(416).type("text/plain").send("Invalid audio range.");
   try {
-    const target = nyxifyProviderUrl(`/api/music/stream/${encodeURIComponent(trackId)}`);
-    if (!target) throw new Error("Invalid Nyxify stream request.");
     const audioHeaders = {
       Accept: "audio/mpeg,audio/mp4,audio/aac,audio/ogg,audio/webm,application/octet-stream",
       ...(range ? { Range: range } : {}),
       "User-Agent": "Nyxify/1.0"
     };
-    let upstream;
-    try {
-      upstream = await nyxifyFetchAsset(target.href, audioHeaders);
-      if (![200, 206].includes(upstream.status)) {
-        await upstream.body?.cancel().catch(() => {});
-        upstream = await nyxifyDeezerPreview(trackId, audioHeaders);
-        res.set("X-Nyxify-Playback", "preview-fallback");
-      }
-    } catch {
-      upstream = await nyxifyDeezerPreview(trackId, audioHeaders);
-      res.set("X-Nyxify-Playback", "preview-fallback");
-    }
+    const upstream = await nyxifyDeezerPreview(trackId, audioHeaders);
+    res.set("X-Nyxify-Playback", "deezer-preview");
     if (![200, 206].includes(upstream.status)) {
       upstream.body?.cancel().catch(() => {});
       return res.status(upstream.status === 404 ? 404 : 502).type("text/plain").send("This track is not currently streamable.");
@@ -13424,6 +13478,7 @@ app.get("/api/link-generator/status", (_req, res) => {
     freeHourlyLimit: freeLinkHourlyLimit,
     freeWindowMinutes: freeLinkWindowMs / 60_000,
     premiumBatchLimit: config.premiumBatchLimit,
+    p2pPremiumBatchLimit,
     premiumImmediateCooldownAt,
     premiumAccumulatedLimit,
     premiumCooldownMinutes: premiumCooldownMs / 60_000
@@ -13573,8 +13628,9 @@ app.post("/api/link-generator", async (req, res) => {
 
   const premiumAccount = Boolean(publicUser?.premiumAccess);
   const premiumAccess = administrator || premiumAccount;
+  const method = String(req.body?.method || "managed").trim().toLowerCase() === "p2p" ? "p2p" : "managed";
   const rawAmount = req.body?.amount === undefined ? 1 : Number(req.body.amount);
-  const batchLimit = premiumAccess ? config.premiumBatchLimit : freeLinkHourlyLimit;
+  const batchLimit = premiumAccess ? (method === "p2p" ? p2pPremiumBatchLimit : config.premiumBatchLimit) : freeLinkHourlyLimit;
   const amount = rawAmount;
   if (!Number.isInteger(rawAmount) || rawAmount < 1 || rawAmount > batchLimit) {
     res.status(400).json({ error: `${premiumAccess ? "Premium" : "Regular"} batches can contain between 1 and ${batchLimit} links.` });
@@ -13582,6 +13638,10 @@ app.post("/api/link-generator", async (req, res) => {
   }
 
   if (provider === "jsdelivr") {
+    if (method === "p2p" && !globalNyxJsdelivrConfigured(config)) {
+      res.status(503).json({ error: "P2P publishing is not configured on this Nyx server." });
+      return;
+    }
     let reservation = null;
     let premiumReservation = null;
     let premiumFirebase = null;
@@ -13598,6 +13658,7 @@ app.post("/api/link-generator", async (req, res) => {
       res.status(links.length ? 201 : 200).json({
         authorized: true,
         provider: "jsdelivr",
+        method,
         published: links.length > 0,
         links,
         requested: amount,

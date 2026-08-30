@@ -32,6 +32,7 @@ const track = {
   album: 'Seek Regression',
   albumId: '456789123',
   cover: '',
+  catalog: 'deezer',
   duration: 7_205
 };
 
@@ -92,11 +93,16 @@ try {
     }
     window.YT = { Player: MockOctavePlayer, PlayerState: states };
   });
+  const fullTrackRequests = [];
   await page.route('**/api/**', route => {
-    const path = new URL(route.request().url()).pathname;
+    const requestUrl = new URL(route.request().url());
+    const path = requestUrl.pathname;
     const json = body => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
     if (path === '/api/nyxify/home') return json({ tracks: [track], artists: [], albums: [] });
-    if (path === `/api/nyxify/full-track/${track.id}`) return json({ mode: 'octave', videoId: '5NV6Rdv1a3I', durationSeconds: track.duration, title: track.title });
+    if (path === `/api/nyxify/full-track/${track.id}`) {
+      fullTrackRequests.push(Object.fromEntries(requestUrl.searchParams));
+      return json({ mode: 'octave', videoId: '5NV6Rdv1a3I', durationSeconds: track.duration, title: track.title });
+    }
     if (path === '/api/nyxtube/status') return json({ configured: true, provider: 'youtube' });
     if (path === '/api/nyxtube/video') return json({ provider: 'youtube', videos: [{
       id: '5NV6Rdv1a3I', title: track.title, creator: track.artist, durationSeconds: track.duration,
@@ -108,10 +114,24 @@ try {
   });
 
   await page.goto(`${origin}/apps/nyxify/`, { waitUntil: 'domcontentloaded' });
+  const fallbackLayout = await page.locator('.row', { hasText: track.title }).evaluate(row => {
+    const image = row.querySelector('img');
+    const rowBox = row.getBoundingClientRect();
+    const imageBox = image?.getBoundingClientRect();
+    return { rowHeight: rowBox.height, imageWidth: imageBox?.width || 0, imageHeight: imageBox?.height || 0 };
+  });
+  assert.ok(fallbackLayout.rowHeight <= 74, `Fallback artwork expanded the track row to ${fallbackLayout.rowHeight}px`);
+  assert.ok(fallbackLayout.imageWidth <= 52 && fallbackLayout.imageHeight <= 52, `Fallback artwork expanded to ${fallbackLayout.imageWidth}x${fallbackLayout.imageHeight}px`);
   await page.locator('.row', { hasText: track.title }).click();
   await page.waitForFunction(() => ['ready', 'playing'].includes(document.querySelector('#fullTrackStage')?.dataset.playbackState));
   if (await page.locator('#fullTrackStage').getAttribute('data-playback-state') === 'ready') await page.locator('#playBtn').click();
   await page.locator('#fullTrackStage[data-playback-state="playing"]').waitFor({ state: 'visible' });
+  assert.deepEqual(fullTrackRequests[0], {
+    title: track.title,
+    artist: track.artist,
+    duration: String(track.duration),
+    catalog: track.catalog
+  }, 'Full-track matching did not receive the selected catalog metadata');
   assert.equal(await page.locator('#fullTrackTitle').textContent(), track.title, 'The full-song row did not use the matched video title');
   assert.doesNotMatch(await page.locator('#fullTrackStage').textContent(), /octave/i, 'The internal playback-engine name leaked into the visible UI');
   const octaveFrame = await page.locator('#fullTrackFrame').boundingBox();

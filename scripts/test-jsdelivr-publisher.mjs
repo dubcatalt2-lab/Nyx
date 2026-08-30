@@ -89,8 +89,26 @@ try {
 
   const handoffPage = await browser.newPage({ viewport: { width: 1_280, height: 900 } });
   const handoffErrors = [];
+  let p2pRequest = null;
   handoffPage.on('pageerror', error => handoffErrors.push(error.message));
   await handoffPage.route('**/api/link-checker/vendors', route => json(route, { vendors: [{ key: 'goguardian', label: 'GoGuardian' }] }));
+  await handoffPage.route('**/api/link-checker/check', route => json(route, { vendors: { goguardian: { blocked: false } } }));
+  await handoffPage.route('**/api/link-generator', route => {
+    p2pRequest = JSON.parse(route.request().postData() || '{}');
+    return json(route, {
+      authorized: true,
+      provider: 'jsdelivr',
+      method: 'p2p',
+      published: true,
+      requested: p2pRequest.amount,
+      created: 1,
+      partial: true,
+      warning: 'Mocked partial P2P response.',
+      access: 'administrator',
+      links: [{ url: 'https://cdn.jsdelivr.net/gh/dubcatalt2-lab/nyx-jsdelivr-links@main/p2p-test.svg' }],
+      premiumCooldown: { triggered: true, minutes: 10, accumulated: p2pRequest.amount, accumulatedLimit: 30 }
+    }, 201);
+  });
   await handoffPage.goto(`${origin}/apps/link-generator/`, { waitUntil: 'domcontentloaded' });
   await handoffPage.locator('[data-access-code]').fill('test-premium-code');
   await handoffPage.locator('[data-wizard-step="0"] [data-wizard-next]').click();
@@ -99,39 +117,22 @@ try {
   await handoffPage.locator('[data-filter-select]').selectOption('goguardian');
   await handoffPage.locator('[data-premium-amount]').fill('2');
   await handoffPage.locator('[data-generation-method]').selectOption('p2p');
+  assert.equal(await handoffPage.locator('[data-premium-amount]').getAttribute('max'), '1000', 'Premium P2P did not expose the 1,000-link maximum');
+  assert.match(await handoffPage.locator('[data-premium-amount-hint]').textContent(), /up to 1,000 links per run/i, 'Premium P2P did not explain its higher batch limit');
+  await handoffPage.locator('[data-premium-amount]').fill('1000');
   await handoffPage.locator('[data-wizard-step="1"] [data-wizard-next]').click();
   await handoffPage.locator('[data-wizard-step="2"]:not([hidden])').waitFor({ state: 'visible' });
   await handoffPage.locator('[data-review-method]', { hasText: 'P2P' }).waitFor();
   await handoffPage.locator('[data-confirm]').check();
   await handoffPage.locator('[data-generate-button]').click();
-  await handoffPage.waitForURL(/\/apps\/jsdelivr-publisher\/\?preset=nyx/);
-  const handoffUrl = new URL(handoffPage.url());
-  assert.equal(handoffUrl.searchParams.get('label'), 'study room', 'Link Generator did not hand off the requested label');
-  assert.equal(handoffUrl.searchParams.get('filter'), 'goguardian', 'Link Generator did not hand off the selected filter');
-  assert.equal(handoffUrl.searchParams.get('count'), '2', 'Link Generator did not hand off the requested amount');
-  assert.equal(handoffUrl.searchParams.get('method'), 'p2p', 'Link Generator did not hand off the P2P method');
-  assert.equal(handoffUrl.searchParams.get('mode'), 'auto', 'Link Generator did not request automatic P2P repositories');
-  await handoffPage.locator('#fileDisplay', { hasText: 'Nyx site SVG included' }).waitFor();
-  await handoffPage.locator('#page-title', { hasText: 'P2P Publisher' }).waitFor();
-  assert.match(await handoffPage.locator('#mainWords').inputValue(), /study-room/, 'The Nyx preset did not use the requested label');
-  assert.equal(await handoffPage.locator('#count').inputValue(), '2', 'The Nyx preset did not retain the authorized amount');
-  assert.equal(await handoffPage.locator('#mode').inputValue(), 'auto', 'The P2P preset did not select automatic repositories');
-  assert.equal(await handoffPage.locator('#repoField').isHidden(), true, 'The P2P preset still required an existing repository');
-
-  const handoffGithubRequests = await installGithubMock(handoffPage);
-  await handoffPage.route('**/api/link-checker/check', route => json(route, { vendors: { goguardian: { blocked: false } } }));
-  await handoffPage.locator('#token').fill('github_pat_test_secret');
-  await handoffPage.locator('#publishButton').click();
-  await handoffPage.locator('#results:not([hidden])').waitFor({ state: 'visible' });
-  await handoffPage.locator('#publisherMessage', { hasText: 'allowed by goguardian' }).waitFor();
-  const handoffTree = handoffGithubRequests.find(request => request.path.endsWith('/git/trees') && request.method === 'POST');
-  assert.ok(handoffTree, 'The Link Generator handoff did not publish a Git tree');
-  const handoffTreePayload = JSON.parse(handoffTree.body);
-  assert.equal(handoffTreePayload.tree.length, 2, 'The handoff did not publish the authorized number of links');
-  assert.match(handoffTree.path, /\/repos\/dubcatalt2-lab\/study-room-auto-1\/git\/trees$/, 'P2P did not publish through its bounded automatic repository');
-  assert.ok(handoffTreePayload.tree.every(entry => entry.content.includes('src="https://nyxlearning.org/"')), 'The generated JSDelivr files did not contain the bundled Nyx site SVG');
-  assert.ok(handoffTreePayload.tree.every(entry => entry.content.includes('nyx:tab-cloak-sync') && entry.content.includes('id="nyxSiteFrame"')), 'The generated JSDelivr files did not include the outer-tab cloak bridge');
-  assert.deepEqual(handoffErrors, [], `Link Generator handoff browser errors: ${handoffErrors.join(' | ')}`);
+  await handoffPage.locator('[data-result-card]:not([hidden])').waitFor({ state: 'visible' });
+  assert.equal(new URL(handoffPage.url()).pathname, '/apps/link-generator/', 'P2P redirected to the manual publisher instead of returning Nyx links');
+  assert.equal(p2pRequest?.method, 'p2p', 'Link Generator did not send the P2P method');
+  assert.equal(p2pRequest?.amount, 1000, 'Link Generator did not send the requested P2P maximum');
+  assert.equal(p2pRequest?.label, 'study room', 'Link Generator did not send the requested P2P label');
+  assert.match(await handoffPage.locator('[data-result-url]').inputValue(), /p2p-test\.svg$/, 'P2P did not render the returned Nyx link');
+  assert.equal(await handoffPage.locator('#token').count(), 0, 'P2P exposed the personal-token publisher form');
+  assert.deepEqual(handoffErrors, [], `Direct P2P Link Generator browser errors: ${handoffErrors.join(' | ')}`);
   await handoffPage.close();
 
   const cloakBridgePage = await browser.newPage({ viewport: { width: 1_280, height: 900 } });

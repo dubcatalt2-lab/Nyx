@@ -90,10 +90,16 @@ document.addEventListener('error', event => {
 
 function setcover(image, source, alt = '') {
   if (!image) return;
-  delete image.dataset.coverFallback;
-  image.classList.remove('cover-fallback');
+  const hasSource = Boolean(String(source || '').trim());
+  if (hasSource) {
+    delete image.dataset.coverFallback;
+    image.classList.remove('cover-fallback');
+  } else {
+    image.dataset.coverFallback = '1';
+    image.classList.add('cover-fallback');
+  }
   image.alt = alt;
-  image.src = source || coverFallback;
+  image.src = hasSource ? source : coverFallback;
 }
 
 function fmt(s) {
@@ -136,6 +142,7 @@ function playlisttrack(track) {
     album: String(track?.album || '').slice(0, 160),
     albumId: String(track?.albumId || ''),
     cover: String(track?.cover || '').slice(0, 500),
+    catalog: ['deezer', 'tidal'].includes(String(track?.catalog || '').toLowerCase()) ? String(track.catalog).toLowerCase() : '',
     duration: Math.max(0, Math.min(14400, Math.round(Number(track?.duration) || 0)))
   };
 }
@@ -400,6 +407,7 @@ function buildrow(t, list, options = {}) {
     <button type="button" class="like-btn${liked ? ' liked' : ''}" aria-pressed="${liked}" aria-label="${liked ? 'unlike' : 'like'}">
       <i class="${liked ? 'mingcute--heart-fill' : 'ic-heart'}"></i>
     </button>`;
+  setcover(row.querySelector(':scope > img'), t.cover);
 
   makeclickable(row, `play ${t.title} by ${t.artist}`, () => playtrack(t, list));
 
@@ -455,6 +463,7 @@ function buildcard(g, type) {
     </div>
     <span class="c-name">${esc(g.key)}</span>
     <span class="c-count">${esc(meta)}</span>`;
+  setcover(card.querySelector('.card-art img'), g.cover);
 
   makeclickable(card, `open ${g.key}`, () => opendetail(type, g.id, g.key));
   card.addEventListener('click', e => {
@@ -1569,7 +1578,7 @@ function setnowplayingvideomode(show, remember = false) {
 }
 
 function previewsource() {
-  return curtrack ? `/api/nyxify/stream/${curtrack.id}` : '';
+  return curtrack?.catalog === 'deezer' ? `/api/nyxify/stream/${curtrack.id}` : '';
 }
 
 function setoctavevideo(candidate = null) {
@@ -1584,16 +1593,23 @@ function usepreview(autoplay = true, message = '') {
   destroyoctaveplayer();
   setoctavevideo();
   playbackmode = 'preview';
-  dlBtn.hidden = false;
   const source = previewsource();
-  if (source && new URL(audio.currentSrc || audio.src || source, location.href).pathname !== source) audio.src = source;
+  audio.pause();
+  if (source) {
+    if (new URL(audio.currentSrc || audio.src || source, location.href).pathname !== source) audio.src = source;
+  } else {
+    audio.removeAttribute('src');
+    audio.load();
+  }
+  dlBtn.hidden = !source;
   if (message) console.warn(message);
   if (autoplay && source) audio.play().catch(() => {});
 }
 
 function octaveerror(message) {
-  if (fullTrackStatus) fullTrackStatus.textContent = message;
-  usepreview(true, message);
+  const fallback = previewsource() ? `${message} Playing the preview instead.` : `${message} No preview is available for this catalog result.`;
+  if (fullTrackStatus) fullTrackStatus.textContent = fallback;
+  usepreview(Boolean(previewsource()), fallback);
 }
 
 async function startoctavetrack(track, request) {
@@ -1604,7 +1620,13 @@ async function startoctavetrack(track, request) {
   fullTrackStatus.textContent = 'Finding the full song...';
   setoctavevideo();
   try {
-    const match = await nyxifyjson(`/api/nyxify/full-track/${encodeURIComponent(track.id)}`);
+    const hints = new URLSearchParams({
+      title: String(track.title || ''),
+      artist: String(track.artist || ''),
+      duration: String(Math.max(0, Number(track.duration) || 0)),
+      catalog: String(track.catalog || '')
+    });
+    const match = await nyxifyjson(`/api/nyxify/full-track/${encodeURIComponent(track.id)}?${hints.toString()}`);
     if (request !== octaverequest || curtrack?.id !== track.id) return;
     if (match.mode !== 'octave' || !/^[A-Za-z0-9_-]{11}$/.test(String(match.videoId || ''))) {
       throw new Error('No playable full song was found.');
@@ -1699,12 +1721,12 @@ async function startoctavetrack(track, request) {
             event.target.loadVideoById?.(next.videoId);
             return;
           }
-          octaveerror('No matching full song could be embedded. Playing the preview instead.');
+          octaveerror('No matching full song could be embedded.');
         }
       }
     });
   } catch (error) {
-    if (request === octaverequest && curtrack?.id === track.id) octaveerror(`${error.message} Playing the preview instead.`);
+    if (request === octaverequest && curtrack?.id === track.id) octaveerror(error.message);
   }
 }
 
@@ -1756,7 +1778,7 @@ function playtrack(t, list, context = '') {
 
   usepreview(false);
   const fullTrackRequest = octaverequest;
-  audio.play().catch(() => {});
+  if (previewsource()) audio.play().catch(() => {});
   void startoctavetrack(t, fullTrackRequest);
 
   setcover(document.getElementById('pArt'), t.cover, `${t.title} cover`);
@@ -1766,7 +1788,8 @@ function playtrack(t, list, context = '') {
   document.getElementById('pArtist').title = t.artist;
   document.getElementById('timeTotal').textContent = fmt(t.duration);
 
-  dlBtn.href = `/api/nyxify/stream/${t.id}`;
+  dlBtn.href = previewsource() || '#';
+  dlBtn.hidden = !previewsource();
   dlBtn.setAttribute('download', `${(t.artist || 'unknown')} - ${(t.title || 'song')}.mp3`.replace(/["\\]/g, ''));
   dlBtn.setAttribute('aria-label', `download ${t.title}`);
   pPlaylist.disabled = false;

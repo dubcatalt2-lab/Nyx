@@ -79,7 +79,13 @@ try {
   browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1_280, height: 900 } });
   const pageErrors = [];
+  let p2pBrowserRequest = null;
   page.on('pageerror', error => pageErrors.push(error.message));
+  page.on('request', request => {
+    if (request.method() === 'POST' && new URL(request.url()).pathname === '/api/link-generator') {
+      p2pBrowserRequest = JSON.parse(request.postData() || '{}');
+    }
+  });
   await page.route('**/api/link-checker/vendors', route => routeJson(route, { vendors: [{ key: 'goguardian', label: 'GoGuardian' }] }));
   await page.route('**/api/link-checker/check', route => routeJson(route, { vendors: { goguardian: { blocked: false } } }));
   await page.goto(`${origin}/apps/link-generator/`, { waitUntil: 'domcontentloaded' });
@@ -88,12 +94,16 @@ try {
   await page.locator('[data-label-input]').fill('study room');
   await page.locator('[data-filter-select]').selectOption('goguardian');
   await page.locator('[data-premium-amount]').fill('2');
+  await page.locator('[data-generation-method]').selectOption('p2p');
+  assert.equal(await page.locator('[data-premium-amount]').getAttribute('max'), '1000', 'Premium P2P did not expose the 1,000-link maximum');
   await page.locator('[data-wizard-step="1"] [data-wizard-next]').click();
   await page.locator('[data-confirm]').check();
   await page.locator('[data-generate-button]').click();
   await page.locator('[data-result-card]:not([hidden])').waitFor({ state: 'visible' });
 
-  assert.equal(new URL(page.url()).pathname, '/apps/link-generator/', 'Global publishing redirected to the personal-token publisher');
+  assert.equal(new URL(page.url()).pathname, '/apps/link-generator/', 'P2P redirected to the personal-token publisher');
+  assert.equal(p2pBrowserRequest?.method, 'p2p', 'The browser did not request direct P2P publishing');
+  assert.equal(p2pBrowserRequest?.amount, 2, 'The browser did not send the selected P2P amount');
   const links = (await page.locator('[data-result-url]').inputValue()).trim().split('\n');
   assert.equal(links.length, 2, 'The global publisher did not return the requested number of links');
   links.forEach(link => assert.match(link, /^https:\/\/cdn\.jsdelivr\.net\/gh\/dubcatalt2-lab\/nyx-jsdelivr-links@main\/study-room-learning-[a-f0-9]{32}\.svg$/));
@@ -249,7 +259,20 @@ try {
   assert.deepEqual(regularErrors, [], `Regular-account batch browser errors: ${regularErrors.join(' | ')}`);
   await regularPage.close();
 
-  console.log('Global server-side JSDelivr publishing, token isolation, protected tab opening, filter checking, results, and mobile regressions passed.');
+  const thousandLinkRequestStart = githubRequests.length;
+  const thousandLinkResponse = await fetch(`${origin}/api/link-generator`, {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json', Origin: origin },
+    body: JSON.stringify({ provider: 'jsdelivr', method: 'p2p', accessCode: 'test-premium-code', label: 'bulk p2p test', amount: 1000 })
+  });
+  assert.equal(thousandLinkResponse.status, 201, 'The 1,000-link P2P request failed');
+  const thousandLinkResult = await thousandLinkResponse.json();
+  assert.equal(thousandLinkResult.method, 'p2p', 'The server did not report the P2P method');
+  assert.equal(thousandLinkResult.created, 1000, 'The server did not create the complete 1,000-link P2P batch');
+  const thousandLinkTree = githubRequests.slice(thousandLinkRequestStart).find(request => request.method === 'POST' && request.url.endsWith('/git/trees'));
+  assert.equal(JSON.parse(thousandLinkTree?.body || '{}').tree?.length, 1000, 'The P2P Git tree did not contain 1,000 Nyx SVGs');
+
+  console.log('Direct 1,000-link P2P and managed JSDelivr publishing, token isolation, protected tab opening, filter checking, results, and mobile regressions passed.');
 } finally {
   await browser?.close().catch(() => {});
   if (nyx.exitCode === null) nyx.kill();

@@ -19,6 +19,7 @@
   let accessMode='account';
   let wizardStep=0;
   let premiumBatchLimit=100;
+  let p2pPremiumBatchLimit=1000;
   let regularHourlyLimit=100;
   let freeWindowMinutes=60;
   let premiumImmediateCooldownAt=5;
@@ -111,6 +112,10 @@
   }
   function accountHasPremium(){return Boolean(authSession?.premiumAccess || ['premium','trialing'].includes(String(authSession?.subscriptionStatus || '').toLowerCase()))}
   function premiumAccessActive(){return accessMode==='administrator' || (accessMode==='account' && accountHasPremium())}
+  function amountLimit(){
+    if(refs.generationMethod.value==='p2p' && premiumAccessActive()) return p2pPremiumBatchLimit;
+    return premiumAccessActive() ? premiumBatchLimit : regularHourlyLimit;
+  }
   async function refreshNyxAccess(){
     if(!authSession?.idToken)return authSession;
     const access=await lookupNyxAccess(authSession.idToken);
@@ -159,14 +164,17 @@
   }
   function setPremiumLayout(){
     const premium=premiumAccessActive();
-    const limit=premium ? premiumBatchLimit : regularHourlyLimit;
+    const p2p=refs.generationMethod.value==='p2p';
+    const limit=amountLimit();
     refs.amountField.hidden=false;
     refs.detailsGrid.classList.add('premium');
     refs.amount.max=String(limit);
     if(Number.parseInt(refs.amount.value,10)>limit)refs.amount.value=String(limit);
-    refs.amountHint.textContent=premium
-      ? `Choosing ${premiumImmediateCooldownAt}-${premiumBatchLimit} links starts a ${premiumCooldownMinutes}-minute cooldown. Smaller batches start it after ${premiumAccumulatedLimit} total links.`
-      : `Regular accounts can create up to ${regularHourlyLimit} links during each ${freeWindowMinutes}-minute window.`;
+    refs.amountHint.textContent=premium&&p2p
+      ? `P2P can publish up to ${p2pPremiumBatchLimit.toLocaleString()} links per run through your GitHub token. Automatic repositories roll over at 1,000 SVGs.`
+      : premium
+        ? `Choosing ${premiumImmediateCooldownAt}-${premiumBatchLimit} links starts a ${premiumCooldownMinutes}-minute cooldown. Smaller batches start it after ${premiumAccumulatedLimit} total links.`
+        : `Regular accounts can create up to ${regularHourlyLimit} links during each ${freeWindowMinutes}-minute window.`;
     updateAmountCopy();
   }
   function setAccessMode(mode){
@@ -181,7 +189,7 @@
     });
   }
   function selectedAmount(){
-    const limit=premiumAccessActive() ? premiumBatchLimit : regularHourlyLimit;
+    const limit=amountLimit();
     const value=Number.parseInt(refs.amount.value,10);
     return Number.isInteger(value) ? Math.max(1,Math.min(limit,value)) : 1;
   }
@@ -191,16 +199,16 @@
     refs.reviewAmountRow.hidden=false;
     refs.reviewAmount.textContent=`${amount} link${amount===1?'':'s'}`;
     refs.confirmText.textContent=p2p
-      ? `I understand P2P opens a personal GitHub publisher for ${amount===1?'one Nyx SVG':`${amount} Nyx SVGs`} and never receives Nyx's server token.`
+      ? `I understand P2P bulk-publishes ${amount===1?'one Nyx SVG':`${amount} Nyx SVGs`} through Nyx's protected server publisher.`
       : `I understand this publishes ${amount===1?'one Nyx SVG':`${amount} Nyx SVGs`} through a GitHub repository.`;
     if(!refs.button.disabled) refs.button.querySelector('span').textContent=`Generate ${amount===1?'link':`${amount} links`}`;
   }
   function updateGenerationMethod(){
     const p2p=refs.generationMethod.value==='p2p';
     refs.generationMethodHint.textContent=p2p
-      ? 'P2P uses your own short-lived GitHub token, batches Git Tree writes, and rolls over at 1,000 SVGs per automatic repository.'
+      ? `P2P bulk-publishes up to ${p2pPremiumBatchLimit.toLocaleString()} Nyx links directly and keeps the GitHub credential on the Nyx server.`
       : 'Nyx managed uses the protected server publisher; its GitHub credential never reaches your browser.';
-    updateAmountCopy();
+    setPremiumLayout();
   }
   function setWizardStep(nextStep,direction=nextStep>=wizardStep?'forward':'back'){
     const index=Math.max(0,Math.min(refs.wizardSteps.length-1,Number(nextStep) || 0));
@@ -266,7 +274,7 @@
     if(wizardStep===1){
       if(!refs.filter.value){showNotice('Choose a content filter before continuing.','error');refs.filter.focus();return}
       const rawAmount=Number.parseInt(refs.amount.value,10);
-      const batchLimit=premiumAccessActive() ? premiumBatchLimit : regularHourlyLimit;
+      const batchLimit=amountLimit();
       if(!Number.isInteger(rawAmount) || rawAmount<1 || rawAmount>batchLimit){showNotice(`Choose an amount from 1 to ${batchLimit}.`,'error');refs.amount.focus();return}
       showNotice('');updateReview();setWizardStep(2);
     }
@@ -399,7 +407,7 @@
   async function loadStatus(){
     try{
       const status=await readJson(await fetch('/api/link-generator/status',{headers:{Accept:'application/json'},cache:'no-store'}));
-      regularHourlyLimit=Math.max(1,Math.min(100,Number.parseInt(status.freeHourlyLimit,10) || 100));freeWindowMinutes=Math.max(1,Number.parseInt(status.freeWindowMinutes,10) || 60);premiumBatchLimit=Math.max(regularHourlyLimit,Math.min(10000,Number.parseInt(status.premiumBatchLimit,10) || regularHourlyLimit));premiumImmediateCooldownAt=Math.max(1,Number.parseInt(status.premiumImmediateCooldownAt,10) || 5);premiumAccumulatedLimit=Math.max(premiumImmediateCooldownAt,Number.parseInt(status.premiumAccumulatedLimit,10) || 30);premiumCooldownMinutes=Math.max(1,Number.parseInt(status.premiumCooldownMinutes,10) || 10);renderAccount();setPremiumLayout();
+      regularHourlyLimit=Math.max(1,Math.min(100,Number.parseInt(status.freeHourlyLimit,10) || 100));freeWindowMinutes=Math.max(1,Number.parseInt(status.freeWindowMinutes,10) || 60);premiumBatchLimit=Math.max(regularHourlyLimit,Math.min(10000,Number.parseInt(status.premiumBatchLimit,10) || regularHourlyLimit));p2pPremiumBatchLimit=Math.max(premiumBatchLimit,Math.min(10000,Number.parseInt(status.p2pPremiumBatchLimit,10) || 1000));premiumImmediateCooldownAt=Math.max(1,Number.parseInt(status.premiumImmediateCooldownAt,10) || 5);premiumAccumulatedLimit=Math.max(premiumImmediateCooldownAt,Number.parseInt(status.premiumAccumulatedLimit,10) || 30);premiumCooldownMinutes=Math.max(1,Number.parseInt(status.premiumCooldownMinutes,10) || 10);renderAccount();setPremiumLayout();
       refs.origin.textContent=status.origin || 'Not configured';setStatus(status.available,status.available ? 'Ready' : 'Setup required');
       if(!status.available) showNotice('The Nyx administrator still needs to finish the Link Generator server settings.','error');
     }catch(error){refs.origin.textContent='Unavailable';setStatus(false,'Unavailable');showNotice(`Could not check the generator: ${error.message}`,'error')}
@@ -424,13 +432,9 @@
     const selectedFilterName=refs.filter.options[refs.filter.selectedIndex]?.textContent || selectedFilter;
     showNotice('');refs.resultCard.hidden=true;setLoading(true);
     try{
-      if(refs.generationMethod.value==='p2p'){
-        const params=new URLSearchParams({preset:'nyx',method:'p2p',mode:'auto',label:refs.label.value.trim(),filter:selectedFilter,count:String(selectedAmount())});
-        location.href=`../jsdelivr-publisher/?${params.toString()}`;
-        return;
-      }
       const headers={Accept:'application/json','Content-Type':'application/json'};
-      const body={label:refs.label.value,provider:'jsdelivr'};
+      const method=refs.generationMethod.value==='p2p'?'p2p':'managed';
+      const body={label:refs.label.value,provider:'jsdelivr',method};
       if(accessMode==='account'){
         const session=await currentVerifiedSession();
         headers.Authorization=`Bearer ${session.idToken}`;
@@ -443,6 +447,7 @@
       const result=await readJson(await fetch('/api/link-generator',{method:'POST',headers,body:JSON.stringify(body)}));
       const links=(Array.isArray(result.links)?result.links:[]).map(item=>typeof item==='string'?item:item?.url).filter(Boolean);
       if(result.provider==='jsdelivr' && result.authorized===true && !links.length){
+        if(method==='p2p') throw new Error('P2P publishing did not return any Nyx links. Ask the Nyx administrator to check the protected publisher.');
         const params=new URLSearchParams({preset:'nyx',label:refs.label.value.trim(),filter:selectedFilter,count:String(result.requested || selectedAmount())});
         location.href=`../jsdelivr-publisher/?${params.toString()}`;
         return;

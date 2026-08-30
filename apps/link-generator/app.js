@@ -447,13 +447,7 @@
     finally{setLoading(false)}
   });
   refs.open.addEventListener('click',async event=>{
-    if(refs.open.dataset.ready==='true'){
-      if(event.isTrusted && window.parent!==window){
-        event.preventDefault();
-        window.parent.postMessage({type:'nyx:open-generated-link',url:refs.open.href},location.origin);
-      }
-      return;
-    }
+    if(refs.open.dataset.ready==='true') return;
     event.preventDefault();
     const url=refs.open.href;
     showNotice(refs.open.dataset.readinessMessage || 'Bunny is still provisioning this link. Checking again...','error');

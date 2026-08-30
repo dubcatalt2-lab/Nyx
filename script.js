@@ -2956,7 +2956,7 @@
         if (!popupProtectionEnabled()) return;
         const link = event.target?.closest?.("a[href]");
         if (!link) return;
-        if (event.isTrusted && trustedGeneratedPopup(link)) return;
+        if (trustedGeneratedPopup(link)) return;
         if (targetOpensPopup(link.getAttribute("target")) || link.hasAttribute("download") || looksDownloadLike(link.href || link.getAttribute("href"))) {
           event.preventDefault();
           event.stopImmediatePropagation();
@@ -10209,7 +10209,13 @@
             if(!popupProtectionActive()) return;
             if(!shouldTrapPopupTarget(link.getAttribute('target'))) return;
             const href=link.href || link.getAttribute('href') || 'about:blank';
-            if(isTrustedGeneratedLink(link) && event.isTrusted) return;
+            if(isTrustedGeneratedLink(link)){
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              const generatedTab=addTab(href,appCompatibilityMode(href));
+              if(!generatedTab) toast('Nyx could not open the generated link. Select Open first again.');
+              return;
+            }
             event.preventDefault();
             event.stopImmediatePropagation();
             if(followSearchResult(link)) return;
@@ -11511,17 +11517,7 @@
     const nyxTubeSourcePath=path=>['/apps/nyxtube','/apps/nyxtube/','/apps/nyxtube/index.html'].includes(path);
     const nyxAccountClientSourcePath=path=>nyxChatSourcePath(path)||['/ai.html','/assets/games','/assets/games/','/assets/games/index.html','/apps/link-checker','/apps/link-checker/','/apps/link-checker/index.html','/apps/cloud-gaming','/apps/cloud-gaming/','/apps/cloud-gaming/index.html','/apps/api-keys','/apps/api-keys/','/apps/api-keys/index.html'].includes(path);
     const messageHandler=e=>{
-      if(!['nyx:navigate','nyx:popup','nyx:open-generated-link','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:nyxtube-profile-request','nyx:nyxtube-open-profile','nyx:account-token-request','nyx:chat-open-profile','nyx:chat-notification','nyx:subscription-refresh','nyx:proxy-direct-fallback','nyx:cloud-game-load','nyx:cloud-game-save','nyx:close-tab','nyx:go-home'].includes(e.data?.type)) return;
-      if(e.data.type==='nyx:open-generated-link'){
-        if(e.origin!==location.origin)return;
-        const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
-        const sourcePath=browserMessageSourcePath(sourceTab);
-        if(!['/apps/link-generator','/apps/link-generator/','/apps/link-generator/index.html'].includes(sourcePath))return;
-        const generatedUrl=String(e.data.url || '').trim();
-        if(!isNyxGeneratedCdnUrl(generatedUrl))return;
-        addTab(generatedUrl,appCompatibilityMode(generatedUrl));
-        return;
-      }
+      if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:nyxtube-profile-request','nyx:nyxtube-open-profile','nyx:account-token-request','nyx:chat-open-profile','nyx:chat-notification','nyx:subscription-refresh','nyx:proxy-direct-fallback','nyx:cloud-game-load','nyx:cloud-game-save','nyx:close-tab','nyx:go-home'].includes(e.data?.type)) return;
       if(['nyx:cloud-game-load','nyx:cloud-game-save'].includes(e.data.type)){
         if(e.origin!==location.origin)return;
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;

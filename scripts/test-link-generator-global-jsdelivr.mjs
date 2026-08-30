@@ -166,7 +166,7 @@ try {
     link.setAttribute('aria-disabled', 'false');
   }, popupBridgeUrl);
   const hostViewsBeforeOpen = await popupTestHost.locator('iframe.view').count();
-  await shellFrame.locator('[data-open]').click();
+  await shellFrame.locator('[data-open]').dispatchEvent('click');
   await shellPage.waitForFunction(({ url, count }) => {
     const host = document.querySelector('.browser-window[data-popup-test-host="true"]');
     return host?.querySelectorAll('iframe.view').length === count + 1 && host.querySelector('.urlbar')?.value === url;

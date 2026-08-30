@@ -18,8 +18,9 @@
   };
   let accessMode='account';
   let wizardStep=0;
-  let premiumBatchLimit=10;
-  let freeDailyLimit=3;
+  let premiumBatchLimit=100;
+  let regularHourlyLimit=100;
+  let freeWindowMinutes=60;
   let premiumImmediateCooldownAt=5;
   let premiumAccumulatedLimit=30;
   let premiumCooldownMinutes=10;
@@ -132,7 +133,7 @@
     return authSession;
   }
   async function currentVerifiedSession(){
-    if(!authSession) throw new Error(`Sign in to use your ${freeDailyLimit} free links.`);
+    if(!authSession) throw new Error('Sign in to use the Link Generator.');
     if(authSession.expiresAt-Date.now()<60_000) await refreshSession();
     await refreshNyxAccess();
     if(accountHasPremium()) return authSession;
@@ -150,17 +151,22 @@
     refs.refreshAccount.hidden=!signedIn || premium || Boolean(authSession?.emailVerified);
     refs.accountStatus.className=`account-status${signedIn ? (premium || authSession.emailVerified ? ' good' : '') : ''}`;
     refs.accountStatus.textContent=signedIn
-      ? (premium ? `${authSession.email || 'Account'} has Premium access. No access code is required.` : (authSession.emailVerified ? `${authSession.email || 'Account'} is verified. You can create up to ${freeDailyLimit} links today.` : `Verification sent to ${authSession.email || 'your email'}. Verify it before generating links.`))
-      : `Sign in with a verified email to receive ${freeDailyLimit} free links per day.`;
+      ? (premium ? `${authSession.email || 'Account'} has Premium access. No access code is required.` : (authSession.emailVerified ? `${authSession.email || 'Account'} is verified. You can create up to ${regularHourlyLimit} links per ${freeWindowMinutes}-minute window.` : `Verification sent to ${authSession.email || 'your email'}. Verify it before generating links.`))
+      : `Sign in with a verified email to create up to ${regularHourlyLimit} links per hour.`;
     const accountButton=refs.modeButtons.find(button=>button.dataset.accessMode==='account');
     if(accountButton)accountButton.textContent=premium?'Premium account':'Account';
     if(accessMode==='account')setPremiumLayout();
   }
   function setPremiumLayout(){
     const premium=premiumAccessActive();
-    refs.amountField.hidden=!premium;
-    refs.detailsGrid.classList.toggle('premium',premium);
-    if(!premium)refs.amount.value='1';
+    const limit=premium ? premiumBatchLimit : regularHourlyLimit;
+    refs.amountField.hidden=false;
+    refs.detailsGrid.classList.add('premium');
+    refs.amount.max=String(limit);
+    if(Number.parseInt(refs.amount.value,10)>limit)refs.amount.value=String(limit);
+    refs.amountHint.textContent=premium
+      ? `Choosing ${premiumImmediateCooldownAt}-${premiumBatchLimit} links starts a ${premiumCooldownMinutes}-minute cooldown. Smaller batches start it after ${premiumAccumulatedLimit} total links.`
+      : `Regular accounts can create up to ${regularHourlyLimit} links during each ${freeWindowMinutes}-minute window.`;
     updateAmountCopy();
   }
   function setAccessMode(mode){
@@ -175,13 +181,13 @@
     });
   }
   function selectedAmount(){
-    if(!premiumAccessActive()) return 1;
+    const limit=premiumAccessActive() ? premiumBatchLimit : regularHourlyLimit;
     const value=Number.parseInt(refs.amount.value,10);
-    return Number.isInteger(value) ? Math.max(1,Math.min(premiumBatchLimit,value)) : 1;
+    return Number.isInteger(value) ? Math.max(1,Math.min(limit,value)) : 1;
   }
   function updateAmountCopy(){
     const amount=selectedAmount();
-    refs.reviewAmountRow.hidden=!premiumAccessActive();
+    refs.reviewAmountRow.hidden=false;
     refs.reviewAmount.textContent=`${amount} link${amount===1?'':'s'}`;
     refs.confirmText.textContent=`I understand this publishes ${amount===1?'one Nyx SVG':`${amount} Nyx SVGs`} through a GitHub repository.`;
     if(!refs.button.disabled) refs.button.querySelector('span').textContent=`Generate ${amount===1?'link':`${amount} links`}`;
@@ -248,10 +254,9 @@
     }
     if(wizardStep===1){
       if(!refs.filter.value){showNotice('Choose a content filter before continuing.','error');refs.filter.focus();return}
-      if(premiumAccessActive()){
-        const rawAmount=Number.parseInt(refs.amount.value,10);
-        if(!Number.isInteger(rawAmount) || rawAmount<1 || rawAmount>premiumBatchLimit){showNotice(`Choose an amount from 1 to ${premiumBatchLimit}.`,'error');refs.amount.focus();return}
-      }
+      const rawAmount=Number.parseInt(refs.amount.value,10);
+      const batchLimit=premiumAccessActive() ? premiumBatchLimit : regularHourlyLimit;
+      if(!Number.isInteger(rawAmount) || rawAmount<1 || rawAmount>batchLimit){showNotice(`Choose an amount from 1 to ${batchLimit}.`,'error');refs.amount.focus();return}
       showNotice('');updateReview();setWizardStep(2);
     }
     }finally{
@@ -383,7 +388,7 @@
   async function loadStatus(){
     try{
       const status=await readJson(await fetch('/api/link-generator/status',{headers:{Accept:'application/json'},cache:'no-store'}));
-      premiumBatchLimit=Math.max(1,Math.min(10,Number.parseInt(status.premiumBatchLimit,10) || 10));freeDailyLimit=Math.max(1,Number.parseInt(status.freeDailyLimit,10) || 3);premiumImmediateCooldownAt=Math.max(1,Number.parseInt(status.premiumImmediateCooldownAt,10) || 5);premiumAccumulatedLimit=Math.max(premiumImmediateCooldownAt,Number.parseInt(status.premiumAccumulatedLimit,10) || 30);premiumCooldownMinutes=Math.max(1,Number.parseInt(status.premiumCooldownMinutes,10) || 10);refs.amount.max=String(premiumBatchLimit);refs.amountHint.textContent=`Choosing ${premiumImmediateCooldownAt}–${premiumBatchLimit} links starts a ${premiumCooldownMinutes}-minute cooldown. Smaller batches start it after ${premiumAccumulatedLimit} total links.`;renderAccount();
+      regularHourlyLimit=Math.max(1,Math.min(100,Number.parseInt(status.freeHourlyLimit,10) || 100));freeWindowMinutes=Math.max(1,Number.parseInt(status.freeWindowMinutes,10) || 60);premiumBatchLimit=Math.max(regularHourlyLimit,Math.min(10000,Number.parseInt(status.premiumBatchLimit,10) || regularHourlyLimit));premiumImmediateCooldownAt=Math.max(1,Number.parseInt(status.premiumImmediateCooldownAt,10) || 5);premiumAccumulatedLimit=Math.max(premiumImmediateCooldownAt,Number.parseInt(status.premiumAccumulatedLimit,10) || 30);premiumCooldownMinutes=Math.max(1,Number.parseInt(status.premiumCooldownMinutes,10) || 10);renderAccount();setPremiumLayout();
       refs.origin.textContent=status.origin || 'Not configured';setStatus(status.available,status.available ? 'Ready' : 'Setup required');
       if(!status.available) showNotice('The Nyx administrator still needs to finish the Link Generator server settings.','error');
     }catch(error){refs.origin.textContent='Unavailable';setStatus(false,'Unavailable');showNotice(`Could not check the generator: ${error.message}`,'error')}
@@ -412,7 +417,7 @@
       if(accessMode==='account'){
         const session=await currentVerifiedSession();
         headers.Authorization=`Bearer ${session.idToken}`;
-        if(accountHasPremium())body.amount=selectedAmount();
+        body.amount=selectedAmount();
       }else{
         if(!refs.accessCode.value) throw new Error('Enter your Premium access code.');
         body.accessCode=refs.accessCode.value;
@@ -437,7 +442,7 @@
         : `${links.length} link${links.length===1?' was':'s were'} created with Premium access. ${cooldown?.accumulated || 0} of ${cooldown?.accumulatedLimit || premiumAccumulatedLimit} links accumulated before cooldown.`;
       if(result.partial) showNotice(result.warning || `${links.length} of ${result.requested} links were created.`,'error');
       else if(!cdnReady) showNotice(`${premiumResult ? `${premiumMessage} ` : ''}${refs.open.dataset.readinessMessage || 'The link was created, but the CDN is still provisioning it. Try Open first again shortly.'}`,'error');
-      else showNotice(premiumResult ? premiumMessage : `The link was created. ${result.remaining} free link${result.remaining===1?'':'s'} remaining today.`);
+      else showNotice(premiumResult ? premiumMessage : `${links.length} link${links.length===1?' was':'s were'} created. ${result.remaining} link${result.remaining===1?'':'s'} remaining in your current hourly window.`);
     }catch(error){showNotice(error.message,'error')}
     finally{setLoading(false)}
   });

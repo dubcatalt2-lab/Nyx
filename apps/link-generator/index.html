@@ -71,7 +71,7 @@
                 <button data-account-refresh type="button" hidden>I verified my email</button>
                 <button data-account-sign-out type="button" hidden>Sign out</button>
               </div>
-              <p class="account-status" data-account-status>Sign in with a verified email to receive 3 free links per day.</p>
+              <p class="account-status" data-account-status>Sign in with a verified email to create up to 100 links per hour.</p>
             </div>
             <div class="administrator-access" data-administrator-access hidden>
               <label>
@@ -105,10 +105,10 @@
                 </select>
                 <small>Nyx checks the generated link with this filter once.</small>
               </label>
-              <label class="amount-field" data-premium-amount-field hidden>
+              <label class="amount-field" data-premium-amount-field>
                 <span>Amount</span>
-                <input name="amount" data-premium-amount type="number" min="1" max="10" step="1" value="1" inputmode="numeric">
-                <small data-premium-amount-hint>Choosing 5–10 links starts a 10-minute cooldown. Smaller batches start it after 30 total links.</small>
+                <input name="amount" data-premium-amount type="number" min="1" max="100" step="1" value="1" inputmode="numeric">
+                <small data-premium-amount-hint>Regular accounts can create up to 100 links during each 60-minute window.</small>
               </label>
             </div>
           </div>
@@ -165,6 +165,6 @@
       </section>
     </section>
   </main>
-  <script src="./app.js?v=20260829-global-jsdelivr-1"></script>
+  <script src="./app.js?v=20260829-hourly-link-batches-1"></script>
 </body>
 </html>

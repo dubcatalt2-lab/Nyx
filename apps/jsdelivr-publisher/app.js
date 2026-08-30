@@ -111,7 +111,7 @@ function setPublishing(active) {
 function initializePreset() {
   if (presetName !== 'nyx') return;
   const label = slug(presetParameters.get('label'));
-  const requestedCount = Math.max(1, Math.min(10, Number.parseInt(presetParameters.get('count'), 10) || 1));
+  const requestedCount = Math.max(1, Math.min(maxLinksPerRun, Number.parseInt(presetParameters.get('count'), 10) || 1));
   mainWordsInput.value = [label, 'nyx', 'learning'].filter(Boolean).join(', ');
   sideWordsInput.value = 'study, school, portal, class, hub';
   countInput.value = String(requestedCount);

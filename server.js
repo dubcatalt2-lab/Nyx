@@ -11,6 +11,7 @@ import { Readable } from "node:stream";
 import { spawn } from "node:child_process";
 import { server as wisp } from "@mercuryworkshop/wisp-js/server";
 import { Server as SocketIOServer } from "socket.io";
+import { linkGeneratorHourlyQuota } from "./lib/link-generator-quota.mjs";
 
 // Using the process root keeps this file compatible with Netlify's CommonJS
 // function bundle while preserving normal `node server.js` behavior.
@@ -341,8 +342,9 @@ const nyxCustomHostnameAskInFlight = new Map();
 const linkGeneratorAttempts = new Map();
 const linkGeneratorWindowMs = 15 * 60 * 1000;
 const linkGeneratorMaxAttempts = 5;
-const freeLinkDailyLimit = 3;
-const freeNetworkDailyLimit = 25;
+const freeLinkHourlyLimit = 100;
+const freeNetworkHourlyLimit = 500;
+const freeLinkWindowMs = 60 * 60 * 1000;
 const premiumImmediateCooldownAt = 5;
 const premiumAccumulatedLimit = 30;
 const premiumCooldownMs = 10 * 60 * 1000;
@@ -3858,7 +3860,7 @@ app.get("/assets/vendor/eruda.min.js", (_req, res) => {
 
 function linkGeneratorConfig() {
   const maxZones = Math.max(1, Math.min(10_000, Number.parseInt(process.env.LINK_GENERATOR_MAX_ZONES || "100", 10) || 100));
-  const premiumBatchLimit = Math.max(1, Math.min(10, Number.parseInt(process.env.LINK_GENERATOR_PREMIUM_BATCH_LIMIT || "10", 10) || 10));
+  const premiumBatchLimit = Math.max(freeLinkHourlyLimit, Math.min(10_000, Number.parseInt(process.env.LINK_GENERATOR_PREMIUM_BATCH_LIMIT || "100", 10) || 100));
   const githubRepository = /^[a-z0-9_.-]+\/[a-z0-9_.-]+$/i.test(String(process.env.NYX_JSDELIVR_GITHUB_REPOSITORY || "").trim())
     ? String(process.env.NYX_JSDELIVR_GITHUB_REPOSITORY || "").trim()
     : "";
@@ -6748,7 +6750,6 @@ function nyxifyOctaveVideo(value, providerType) {
   };
 }
 
-const nyxJsdelivrMaxSvgFiles = 1_000;
 const nyxJsdelivrGithubApiVersion = "2022-11-28";
 let nyxJsdelivrPublishQueue = Promise.resolve();
 
@@ -6813,7 +6814,7 @@ async function nyxJsdelivrGithubJson(config, path, options = {}) {
   throw lastError || new Error("GitHub request failed.");
 }
 
-function generatedJsdelivrFileName(label, existingFiles) {
+function generatedJsdelivrFileName(label, generatedFiles) {
   const prefix = String(label || "nyx")
     .toLowerCase()
     .normalize("NFKD")
@@ -6822,8 +6823,8 @@ function generatedJsdelivrFileName(label, existingFiles) {
     .replace(/^-+|-+$/g, "")
     .slice(0, 30) || "nyx";
   for (let attempt = 0; attempt < 20; attempt += 1) {
-    const file = `${prefix}-learning-${randomBytes(6).toString("hex")}.svg`;
-    if (!existingFiles.has(file.toLowerCase())) return file;
+    const file = `${prefix}-learning-${randomBytes(16).toString("hex")}.svg`;
+    if (!generatedFiles.has(file.toLowerCase())) return file;
   }
   throw new Error("Could not create a unique JSDelivr filename. Try again.");
 }
@@ -6841,19 +6842,13 @@ async function publishNyxJsdelivrLinks(config, amount, label) {
   const headCommit = await nyxJsdelivrGithubJson(config, `/repos/${repositoryPath}/git/commits/${encodeURIComponent(headSha)}`);
   const baseTreeSha = String(headCommit?.tree?.sha || "");
   if (!baseTreeSha) throw new Error("GitHub did not return the configured repository tree.");
-  const currentTree = await nyxJsdelivrGithubJson(config, `/repos/${repositoryPath}/git/trees/${encodeURIComponent(baseTreeSha)}?recursive=1`);
-  if (currentTree?.truncated || !Array.isArray(currentTree?.tree)) throw new Error("The configured GitHub repository is too large to publish safely.");
-  const existingFiles = new Set(currentTree.tree.filter(item => item?.type === "blob").map(item => String(item.path || "").toLowerCase()));
-  const svgCount = [...existingFiles].filter(file => file.endsWith(".svg")).length;
-  if (svgCount + amount > nyxJsdelivrMaxSvgFiles) {
-    throw new Error(`The configured GitHub repository has room for ${Math.max(0, nyxJsdelivrMaxSvgFiles - svgCount)} more SVG links.`);
-  }
   const svg = readFileSync(join(staticRoot, "apps", "jsdelivr-publisher", "nyx-source.svg"), "utf8");
   if (!svg.trim().startsWith("<?xml") && !svg.trim().startsWith("<svg")) throw new Error("The maintained Nyx SVG is invalid.");
   const files = [];
+  const generatedFiles = new Set();
   while (files.length < amount) {
-    const file = generatedJsdelivrFileName(label, existingFiles);
-    existingFiles.add(file.toLowerCase());
+    const file = generatedJsdelivrFileName(label, generatedFiles);
+    generatedFiles.add(file.toLowerCase());
     files.push(file);
   }
   const tree = await nyxJsdelivrGithubJson(config, `/repos/${repositoryPath}/git/trees`, {
@@ -8796,53 +8791,61 @@ function nyxAccountPasswordResetRateState(clientId, now = Date.now()) {
   return state;
 }
 
-function utcQuotaDay(now = new Date()) {
-  return now.toISOString().slice(0, 10);
-}
-
 function quotaIpKey(clientId) {
   return createHash("sha256").update(String(clientId || "unknown")).digest("hex").slice(0, 32);
 }
 
-async function reserveFreeLink(firebase, uid, clientId) {
-  const day = utcQuotaDay();
+async function reserveFreeLinks(firebase, uid, clientId, amount, now = Date.now()) {
   const collection = firebase.firestore.collection("nyxLinkGeneratorUsage");
-  const userRef = collection.doc(`${day}_user_${uid}`);
-  const ipRef = collection.doc(`${day}_ip_${quotaIpKey(clientId)}`);
+  const userRef = collection.doc(`hour_user_${uid}`);
+  const ipRef = collection.doc(`hour_ip_${quotaIpKey(clientId)}`);
   return firebase.firestore.runTransaction(async transaction => {
     const [userSnapshot, ipSnapshot] = await transaction.getAll(userRef, ipRef);
-    const userCount = Number(userSnapshot.data()?.count || 0);
-    const ipCount = Number(ipSnapshot.data()?.count || 0);
-    if (userCount >= freeLinkDailyLimit) {
-      const error = new Error(`This account has used all ${freeLinkDailyLimit} free links for today.`);
+    const userQuota = linkGeneratorHourlyQuota(userSnapshot.data(), amount, now, freeLinkHourlyLimit, freeLinkWindowMs);
+    const ipQuota = linkGeneratorHourlyQuota(ipSnapshot.data(), amount, now, freeNetworkHourlyLimit, freeLinkWindowMs);
+    if (!userQuota.allowed) {
+      const error = new Error(`This account can create ${userQuota.remaining} more links in its current hourly window.`);
       error.status = 429;
+      error.retryAfter = userQuota.retryAfter;
       throw error;
     }
-    if (ipCount >= freeNetworkDailyLimit) {
-      const error = new Error("This network has reached the Link Generator safety limit for today.");
+    if (!ipQuota.allowed) {
+      const error = new Error("This network has reached the Link Generator safety limit for its current hourly window.");
       error.status = 429;
+      error.retryAfter = ipQuota.retryAfter;
       throw error;
     }
-    const updatedAt = new Date().toISOString();
-    transaction.set(userRef, { count: userCount + 1, day, uid, updatedAt }, { merge: true });
-    transaction.set(ipRef, { count: ipCount + 1, day, updatedAt }, { merge: true });
-    return { remaining: freeLinkDailyLimit - userCount - 1, userRef, ipRef };
+    const updatedAt = new Date(now).toISOString();
+    transaction.set(userRef, { count: userQuota.nextCount, windowStarted: userQuota.windowStarted, uid, updatedAt }, { merge: true });
+    transaction.set(ipRef, { count: ipQuota.nextCount, windowStarted: ipQuota.windowStarted, updatedAt }, { merge: true });
+    return { amount, remaining: userQuota.remainingAfter, userRef, ipRef, userWindowStarted: userQuota.windowStarted, ipWindowStarted: ipQuota.windowStarted };
   });
 }
 
-async function releaseFreeLink(firebase, reservation) {
-  if (!reservation) return;
+async function adjustFreeLinkReservation(firebase, reservation, created) {
+  if (!reservation || created >= reservation.amount) return reservation;
+  const adjustment = reservation.amount - Math.max(0, Number(created || 0));
   try {
     await firebase.firestore.runTransaction(async transaction => {
-      const snapshots = await transaction.getAll(reservation.userRef, reservation.ipRef);
-      for (let index = 0; index < snapshots.length; index += 1) {
-        const count = Math.max(0, Number(snapshots[index].data()?.count || 0) - 1);
-        transaction.set(index === 0 ? reservation.userRef : reservation.ipRef, { count, updatedAt: new Date().toISOString() }, { merge: true });
+      const [userSnapshot, ipSnapshot] = await transaction.getAll(reservation.userRef, reservation.ipRef);
+      const userData = userSnapshot.data() || {};
+      const ipData = ipSnapshot.data() || {};
+      if (Number(userData.windowStarted) === reservation.userWindowStarted) {
+        transaction.set(reservation.userRef, { count: Math.max(0, Number(userData.count || 0) - adjustment), updatedAt: new Date().toISOString() }, { merge: true });
+      }
+      if (Number(ipData.windowStarted) === reservation.ipWindowStarted) {
+        transaction.set(reservation.ipRef, { count: Math.max(0, Number(ipData.count || 0) - adjustment), updatedAt: new Date().toISOString() }, { merge: true });
       }
     });
+    return { ...reservation, amount: Math.max(0, Number(created || 0)), remaining: reservation.remaining + adjustment };
   } catch (error) {
-    console.error("Nyx Link Generator could not release a failed quota reservation:", error?.message || error);
+    console.error("Nyx Link Generator could not adjust a free quota reservation:", error?.message || error);
+    return reservation;
   }
+}
+
+async function releaseFreeLink(firebase, reservation) {
+  return adjustFreeLinkReservation(firebase, reservation, 0);
 }
 
 function premiumCooldownError(cooldownUntil, now = Date.now()) {
@@ -13418,7 +13421,8 @@ app.get("/api/link-generator/status", (_req, res) => {
     administratorAccess: Boolean(config.accessCode),
     accountAccess: firebaseAccountModeConfigured(),
     origin: config.origin,
-    freeDailyLimit: freeLinkDailyLimit,
+    freeHourlyLimit: freeLinkHourlyLimit,
+    freeWindowMinutes: freeLinkWindowMs / 60_000,
     premiumBatchLimit: config.premiumBatchLimit,
     premiumImmediateCooldownAt,
     premiumAccumulatedLimit,
@@ -13570,9 +13574,10 @@ app.post("/api/link-generator", async (req, res) => {
   const premiumAccount = Boolean(publicUser?.premiumAccess);
   const premiumAccess = administrator || premiumAccount;
   const rawAmount = req.body?.amount === undefined ? 1 : Number(req.body.amount);
-  const amount = premiumAccess ? rawAmount : 1;
-  if (premiumAccess && (!Number.isInteger(rawAmount) || rawAmount < 1 || rawAmount > config.premiumBatchLimit)) {
-    res.status(400).json({ error: `Premium batches can contain between 1 and ${config.premiumBatchLimit} links.` });
+  const batchLimit = premiumAccess ? config.premiumBatchLimit : freeLinkHourlyLimit;
+  const amount = rawAmount;
+  if (!Number.isInteger(rawAmount) || rawAmount < 1 || rawAmount > batchLimit) {
+    res.status(400).json({ error: `${premiumAccess ? "Premium" : "Regular"} batches can contain between 1 and ${batchLimit} links.` });
     return;
   }
 
@@ -13581,7 +13586,7 @@ app.post("/api/link-generator", async (req, res) => {
     let premiumReservation = null;
     let premiumFirebase = null;
     try {
-      if (publicUser && !premiumAccount) reservation = await reserveFreeLink(publicUser.firebase, publicUser.uid, clientId);
+      if (publicUser && !premiumAccount) reservation = await reserveFreeLinks(publicUser.firebase, publicUser.uid, clientId, amount, now);
       if (premiumAccess) {
         premiumFirebase = publicUser?.firebase || await linkGeneratorFirebase();
         const premiumIdentity = premiumAccount ? `account:${publicUser.uid}` : clientId;
@@ -13631,7 +13636,7 @@ app.post("/api/link-generator", async (req, res) => {
       return;
     }
 
-    if (publicUser && !premiumAccount) reservation = await reserveFreeLink(publicUser.firebase, publicUser.uid, clientId);
+    if (publicUser && !premiumAccount) reservation = await reserveFreeLinks(publicUser.firebase, publicUser.uid, clientId, amount, now);
     if (premiumAccess) {
       premiumFirebase = publicUser?.firebase || await linkGeneratorFirebase();
       const premiumIdentity = premiumAccount ? `account:${publicUser.uid}` : clientId;
@@ -13660,6 +13665,9 @@ app.post("/api/link-generator", async (req, res) => {
     if (!links.length && generationError) throw generationError;
     if (premiumAccess && premiumReservation && links.length < amount) {
       premiumReservation = await adjustPremiumGeneration(premiumFirebase, premiumReservation, links.length);
+    }
+    if (publicUser && !premiumAccount && reservation && links.length < amount) {
+      reservation = await adjustFreeLinkReservation(publicUser.firebase, reservation, links.length);
     }
     const first = links[0];
     res.status(generationError ? 207 : 201).json({

@@ -139,9 +139,9 @@
   async function load(){
     try{
       const info=await api('/api/nyx-api-keys/status');configured=info.configured===true;
-      status(configured,configured?'Groq gateway ready':'Gateway setup required');refs.create.disabled=!configured;
+      status(configured,configured?'API access ready':'Setup required');refs.create.disabled=!configured;
       const tokenAllowance=info.unlimitedTokens?'Unlimited generated tokens/day for your Premium or Owner account.':`${number(info.regularDailyTokens)} generated tokens/day for regular accounts.`;
-      refs.limits.textContent=configured?`${number(info.dailyRequests)} requests/day · ${number(info.minuteRequests)} requests/minute · up to ${number(info.maxTokens)} output tokens/request. ${tokenAllowance}`:'The service owner must set the server-only Groq credential before keys can be created.';
+      refs.limits.textContent=configured?`${number(info.dailyRequests)} requests/day · ${number(info.minuteRequests)} requests/minute · up to ${number(info.maxTokens)} output tokens/request. ${tokenAllowance}`:'API key creation is not available until setup is complete.';
       if(!configured)notice('The Nyx API gateway is not configured yet. Your account and existing keys remain private.','error');
       await loadKeys();
     }catch(error){status(false,'Sign-in required');refs.create.disabled=true;renderKeys([]);notice(error.message,'error')}

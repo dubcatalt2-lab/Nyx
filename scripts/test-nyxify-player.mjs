@@ -203,6 +203,8 @@ try {
       coverVisibility: getComputedStyle(document.querySelector('#nowPlayingArt')).visibility,
       rail: document.querySelector('.rail')?.getBoundingClientRect(),
       module: document.querySelector('#nowPlayingModule')?.getBoundingClientRect(),
+      nextModule: document.querySelector('#nowPlayingModule')?.nextElementSibling?.getBoundingClientRect(),
+      railScrollbarWidth: getComputedStyle(document.querySelector('.rail')).scrollbarWidth,
       frame,
       media
     };
@@ -215,7 +217,10 @@ try {
   assert.ok(inlineVideo.frame && inlineVideo.media && inlineVideo.frame.width > 0 && inlineVideo.frame.height > 0, 'The inline video was not visible');
   assert.ok(Math.abs(inlineVideo.frame.left - inlineVideo.media.left) <= 1 && Math.abs(inlineVideo.frame.top - inlineVideo.media.top) <= 1, 'The inline video was not placed in the cover area');
   assert.ok(Math.abs(inlineVideo.media.width - inlineVideo.media.height) <= 2, 'The music video expanded beyond the small square cover box');
-  assert.ok(inlineVideo.rail?.height >= 680 && inlineVideo.module?.height >= 680, 'The now-playing panel did not fill the desktop right sidebar');
+  assert.ok(inlineVideo.rail?.height >= 680, 'The desktop right sidebar did not fill the available viewport height');
+  assert.ok(inlineVideo.module?.height < inlineVideo.rail?.height, 'The now-playing panel still reserved the empty full-rail height');
+  assert.ok(inlineVideo.nextModule && inlineVideo.nextModule.top - inlineVideo.module.bottom <= 22, 'The remaining sidebar modules did not follow Now Playing without a large empty gap');
+  assert.equal(inlineVideo.railScrollbarWidth, 'none', 'The desktop sidebar scrollbar remained visible');
 
   await page.setViewportSize({ width: 390, height: 844 });
   const compactInlineVideo = await page.evaluate(() => {

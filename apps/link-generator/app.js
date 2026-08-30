@@ -359,8 +359,8 @@
     return readJson(await fetch('/api/link-generator/readiness',{method:'POST',headers:{Accept:'application/json','Content-Type':'application/json'},body:JSON.stringify({url})}));
   }
   async function waitForCdnReadiness(url,attempts=12){
-    setOpenReady(false,'Bunny is still provisioning this link.');
-    let lastMessage='Bunny is still provisioning this link.';
+    setOpenReady(false,'This link is still being prepared.');
+    let lastMessage='This link is still being prepared.';
     for(let attempt=0;attempt<attempts;attempt+=1){
       try{
         const result=await checkCdnReadiness(url);
@@ -490,7 +490,7 @@
     if(refs.open.dataset.ready==='true') return;
     event.preventDefault();
     const url=refs.open.href;
-    showNotice(refs.open.dataset.readinessMessage || 'Bunny is still provisioning this link. Checking again...','error');
+    showNotice(refs.open.dataset.readinessMessage || 'This link is still being prepared. Checking again...','error');
     const ready=await waitForCdnReadiness(url,1);
     showNotice(ready ? 'The CDN link is ready. Select Open first again.' : (refs.open.dataset.readinessMessage || 'The CDN link is not ready yet.'),ready ? '' : 'error');
   });

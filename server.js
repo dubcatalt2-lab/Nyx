@@ -707,6 +707,68 @@ app.use((req, res, next) => {
   next();
 });
 
+const nyxDecoyUserAgentPattern = /(?:ahrefsbot|applebot|baiduspider|bingbot|bytespider|ccbot|chatgpt-user|claudebot|discordbot|dotbot|duckduckbot|embedly|facebookexternalhit|gptbot|googlebot|google-inspectiontool|ia_archiver|iframely|linkedinbot|mj12bot|petalbot|pinterestbot|perplexitybot|semrushbot|skypeuripreview|slackbot|telegrambot|twitterbot|whatsapp|yandexbot)/i;
+const nyxDecoyAutomationUserAgentPattern = /(?:axios|curl\/|go-http-client|java\/|libwww-perl|node-fetch|postmanruntime|powershell|python-requests|undici|wget\/)/i;
+const nyxDecoyExcludedPathPattern = /^\/(?:api(?:\/|$)|healthz$|socket\.io(?:\/|$)|wisp(?:\/|$)|robots\.txt$|sitemap\.xml$|app\.webmanifest$|favicon(?:\.[a-z0-9]+)?$)/i;
+const nyxDecoyNonDocumentExtensionPattern = /\.(?:avif|bmp|css|gif|ico|jpe?g|js|json|mjs|mp3|mp4|ogg|opus|png|svg|wasm|wav|webm|webp|woff2?|xml)$/i;
+const nyxDecoyHtml = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+  <title>Student Learning Portal</title>
+  <style>
+    :root{color-scheme:light;--blue:#245d9c;--ink:#243041;--muted:#657184;--line:#dfe5ed;--paper:#fff;--bg:#f5f7fa}
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%;font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg)}
+    header{background:var(--paper);border-bottom:1px solid var(--line)}.wrap{width:min(1040px,calc(100% - 40px));margin:auto}.top{height:64px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+    .brand{display:flex;align-items:center;gap:11px;font-weight:750;color:#173f70}.mark{display:grid;place-items:center;width:35px;height:35px;border-radius:9px;background:linear-gradient(135deg,#3979bd,#194b82);color:white}
+    nav{display:flex;gap:22px;color:var(--muted);font-weight:600;font-size:14px}.hero{padding:58px 0 44px;background:linear-gradient(#fff,var(--bg));border-bottom:1px solid var(--line)}
+    h1{max-width:650px;margin:0 0 12px;font-size:clamp(29px,5vw,42px);line-height:1.13;color:#173f70}p{margin:0;color:var(--muted)}main{padding:38px 0 56px}
+    h2{margin:0 0 18px;font-size:21px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.card{padding:21px;border:1px solid var(--line);border-radius:13px;background:var(--paper);box-shadow:0 5px 18px rgba(24,55,91,.05)}
+    .icon{display:grid;place-items:center;width:39px;height:39px;margin-bottom:13px;border-radius:9px;background:#eaf1f8;color:var(--blue);font-size:20px}.card strong{display:block;margin-bottom:4px}.card span{color:var(--muted);font-size:13px}
+    footer{border-top:1px solid var(--line);background:var(--paper);color:var(--muted);font-size:13px}.foot{padding:20px 0}@media(max-width:650px){nav{display:none}.grid{grid-template-columns:1fr}.hero{padding-top:42px}}
+  </style>
+</head>
+<body>
+  <header><div class="wrap top"><div class="brand"><span class="mark">S</span>Student Learning Portal</div><nav><span>Courses</span><span>Resources</span><span>Calendar</span></nav></div></header>
+  <section class="hero"><div class="wrap"><h1>Learning resources for every school day.</h1><p>Keep coursework, assignments, and study materials organized in one place.</p></div></section>
+  <main class="wrap"><h2>Learning resources</h2><div class="grid">
+    <article class="card"><span class="icon">&#128214;</span><strong>Course materials</strong><span>Review lessons and class resources.</span></article>
+    <article class="card"><span class="icon">&#128197;</span><strong>Assignments</strong><span>Keep track of upcoming coursework.</span></article>
+    <article class="card"><span class="icon">&#128218;</span><strong>Study library</strong><span>Find references for independent learning.</span></article>
+  </div></main>
+  <footer><div class="wrap foot">Student Learning Portal</div></footer>
+</body>
+</html>`;
+
+function nyxShouldServeDecoy(req) {
+  if (req.method !== "GET" && req.method !== "HEAD") return false;
+  const path = String(req.path || "/");
+  if (nyxDecoyExcludedPathPattern.test(path) || nyxDecoyNonDocumentExtensionPattern.test(path)) return false;
+  const userAgent = String(req.get("user-agent") || "").trim();
+  const automated = !userAgent || nyxDecoyUserAgentPattern.test(userAgent) || nyxDecoyAutomationUserAgentPattern.test(userAgent);
+  if (!automated) return false;
+  const accept = String(req.get("accept") || "").toLowerCase();
+  const destination = String(req.get("sec-fetch-dest") || "").toLowerCase();
+  return destination === "document" || !accept || accept.includes("text/html") || accept.includes("*/*");
+}
+
+app.use((req, res, next) => {
+  if (!nyxShouldServeDecoy(req)) {
+    next();
+    return;
+  }
+  res.set({
+    "Cache-Control": "private, no-store, no-cache, must-revalidate",
+    "CDN-Cache-Control": "no-store",
+    "Cloudflare-CDN-Cache-Control": "no-store",
+    "X-Robots-Tag": "noindex, nofollow, noarchive, nosnippet",
+    Vary: "User-Agent, Accept, Sec-Fetch-Dest"
+  });
+  res.status(200).type("html").send(nyxDecoyHtml);
+});
+
 function esc(value) {
   return String(value ?? "").replace(/[&<>"']/g, char => ({
     "&": "&amp;",

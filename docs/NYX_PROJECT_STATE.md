@@ -187,6 +187,7 @@ Client preferences and much local UI state use browser storage. Cross-device acc
 ## Main Product Areas to Preserve
 
 - Browser shell, tabs, navigation, address bar, downloads, popup protection, and developer console
+- Recognized crawler, link-preview, and non-browser automation user agents receive a server-rendered, non-interactive Student Learning Portal decoy for HTML document routes. The decoy contains no Nyx scripts, is marked `noindex`/`nofollow`, and is served with browser/CDN no-store headers. API, health, Wisp, Socket.IO, robots, sitemap, manifest, and static-asset routes bypass it, as do normal browser user agents. This is a casual-discovery deterrent rather than an authorization boundary because user-agent strings can be spoofed; credentials and sensitive logic must remain server-side.
 - Smartwatch layout for short, narrow viewports, including reachable home actions and compact browser controls
 - User-selected proxy engine and transport
 - Themes and custom recoloring

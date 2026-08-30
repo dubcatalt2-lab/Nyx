@@ -122,6 +122,36 @@ try {
   });
   assert.ok(fallbackLayout.rowHeight <= 74, `Fallback artwork expanded the track row to ${fallbackLayout.rowHeight}px`);
   assert.ok(fallbackLayout.imageWidth <= 52 && fallbackLayout.imageHeight <= 52, `Fallback artwork expanded to ${fallbackLayout.imageWidth}x${fallbackLayout.imageHeight}px`);
+  await page.evaluate(selectedTrack => {
+    playlists = [{ id: 'playlist123', name: 'Long-row test', cover: '', accent: '', tracks: [] }];
+    startplaylistadd('playlist123');
+    results = [selectedTrack];
+    renderplaylistaddview();
+  }, track);
+  const longRowLayout = await page.locator('.row').first().evaluate(row => {
+    const bounds = element => {
+      const rect = element?.getBoundingClientRect();
+      return rect ? { left: rect.left, right: rect.right, width: rect.width } : null;
+    };
+    return {
+      viewport: innerWidth,
+      row: bounds(row),
+      parent: bounds(row.parentElement),
+      meta: bounds(row.querySelector('.t-meta')),
+      duration: bounds(row.querySelector('.t-duration')),
+      action: bounds(row.querySelector('.playlist-track-action')),
+      like: bounds(row.querySelector('.like-btn')),
+      rowClientWidth: row.clientWidth,
+      rowScrollWidth: row.scrollWidth,
+      mainClientWidth: document.querySelector('main').clientWidth,
+      mainScrollWidth: document.querySelector('main').scrollWidth
+    };
+  });
+  assert.ok(longRowLayout.row.right <= longRowLayout.parent.right, `The long playlist row extended ${longRowLayout.row.right - longRowLayout.parent.right}px beyond its list`);
+  assert.ok(longRowLayout.like.right <= longRowLayout.row.right, 'The final like button was cut off beyond the long playlist row');
+  assert.ok(longRowLayout.action.right <= longRowLayout.row.right, 'The playlist action was cut off beyond the long playlist row');
+  assert.ok(longRowLayout.rowScrollWidth <= longRowLayout.rowClientWidth, `The long playlist row retained ${longRowLayout.rowScrollWidth - longRowLayout.rowClientWidth}px of hidden overflow`);
+  assert.ok(longRowLayout.mainScrollWidth <= longRowLayout.mainClientWidth, `The long playlist row widened the main content by ${longRowLayout.mainScrollWidth - longRowLayout.mainClientWidth}px`);
   await page.locator('.row', { hasText: track.title }).click();
   await page.waitForFunction(() => ['ready', 'playing'].includes(document.querySelector('#fullTrackStage')?.dataset.playbackState));
   if (await page.locator('#fullTrackStage').getAttribute('data-playback-state') === 'ready') await page.locator('#playBtn').click();

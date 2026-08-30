@@ -564,6 +564,9 @@ main { min-width: 0; }
   display: flex;
   align-items: center;
   gap: 14px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   padding: 10px 12px;
   border-radius: var(--r-md);
   border: 1px solid transparent;
@@ -1195,6 +1198,8 @@ main { min-width: 0; }
 
 .playlist-track-list {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
   gap: 2px;
   padding: 7px;
   border: 1px solid var(--border);

@@ -386,23 +386,41 @@
       return 'info';
     }catch{return 'error'}
   }
+  function generatedFilterGroups(urls){
+    const groups=new Map();
+    urls.forEach(url=>{
+      let key=`url:${url}`;
+      try{
+        const parsed=new URL(url);
+        const jsdelivr=parsed.hostname.toLowerCase()==='cdn.jsdelivr.net'&&parsed.pathname.match(/^\/gh\/([^/]+)\/([^/]+@[^/]+)\/[^/]+\.svg$/i);
+        if(jsdelivr) key=`jsdelivr:${jsdelivr[1].toLowerCase()}/${jsdelivr[2].toLowerCase()}`;
+      }catch{}
+      const group=groups.get(key);
+      if(group) group.count+=1;
+      else groups.set(key,{url,count:1});
+    });
+    return [...groups.values()];
+  }
   async function checkGeneratedLinks(urls,filterKey,filterName){
     const counts={allowed:0,blocked:0,info:0,error:0};
-    showFilterResult('checking',filterName,`Checking 0 of ${urls.length}`,`Nyx is checking ${urls.length===1?'this link':'each generated link'} once.`);
+    const groups=generatedFilterGroups(urls);
+    const representative=groups.length<urls.length;
+    showFilterResult('checking',filterName,`Checking 0 of ${urls.length}`,representative?`Nyx is checking ${groups.length} shared CDN source${groups.length===1?'':'s'} for ${urls.length} identical generated links.`:`Nyx is checking ${urls.length===1?'this link':'each generated link'} once.`);
     let nextIndex=0,completed=0;
     const worker=async()=>{
-      while(nextIndex<urls.length){
+      while(nextIndex<groups.length){
         const index=nextIndex;nextIndex+=1;
-        const result=await checkOneGeneratedLink(urls[index],filterKey);
-        counts[result]+=1;completed+=1;
+        const group=groups[index];
+        const result=await checkOneGeneratedLink(group.url,filterKey);
+        counts[result]+=group.count;completed+=group.count;
         showFilterResult('checking',filterName,`Checking ${completed} of ${urls.length}`,'Completed checks appear here when the batch finishes.');
       }
     };
-    await Promise.all(Array.from({length:Math.min(5,urls.length)},worker));
+    await Promise.all(Array.from({length:Math.min(5,groups.length)},worker));
     if(counts.blocked){showFilterResult('blocked',filterName,`${counts.blocked} blocked`,`Sorry, but ${counts.blocked===urls.length?'all of those links are':`${counts.blocked} of ${urls.length} links are`} currently blocked.`);return}
     if(counts.error){showFilterResult('error',filterName,`${counts.error} unchecked`,`${counts.allowed} allowed; ${counts.error} could not be checked.`);return}
     if(counts.info){showFilterResult('info',filterName,`${counts.info} informational`,`${counts.allowed} allowed; ${counts.info} did not return a blocked or allowed decision.`);return}
-    showFilterResult('allowed',filterName,`${counts.allowed} allowed`,urls.length===1?'The selected filter currently reports this link as allowed.':'The selected filter currently reports every generated link as allowed.');
+    showFilterResult('allowed',filterName,`${counts.allowed} allowed`,urls.length===1?'The selected filter currently reports this link as allowed.':representative?`One representative check covered all ${urls.length} identical Nyx SVG links from the shared CDN source.`:'The selected filter currently reports every generated link as allowed.');
   }
   async function loadStatus(){
     try{

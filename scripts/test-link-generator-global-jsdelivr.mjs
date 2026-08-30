@@ -80,6 +80,7 @@ try {
   const page = await browser.newPage({ viewport: { width: 1_280, height: 900 } });
   const pageErrors = [];
   let p2pBrowserRequest = null;
+  let p2pFilterCheckRequests = 0;
   page.on('pageerror', error => pageErrors.push(error.message));
   page.on('request', request => {
     if (request.method() === 'POST' && new URL(request.url()).pathname === '/api/link-generator') {
@@ -87,7 +88,10 @@ try {
     }
   });
   await page.route('**/api/link-checker/vendors', route => routeJson(route, { vendors: [{ key: 'goguardian', label: 'GoGuardian' }] }));
-  await page.route('**/api/link-checker/check', route => routeJson(route, { vendors: { goguardian: { blocked: false } } }));
+  await page.route('**/api/link-checker/check', route => {
+    p2pFilterCheckRequests += 1;
+    return routeJson(route, { vendors: { goguardian: { blocked: false } } });
+  });
   await page.goto(`${origin}/apps/link-generator/`, { waitUntil: 'domcontentloaded' });
   await page.locator('[data-access-code]').fill('test-premium-code');
   await page.locator('[data-wizard-step="0"] [data-wizard-next]').click();
@@ -108,6 +112,9 @@ try {
   assert.equal(links.length, 2, 'The global publisher did not return the requested number of links');
   links.forEach(link => assert.match(link, /^https:\/\/cdn\.jsdelivr\.net\/gh\/dubcatalt2-lab\/nyx-jsdelivr-links@main\/study-room-learning-[a-f0-9]{32}\.svg$/));
   assert.equal(await page.locator('[data-open]').getAttribute('aria-disabled'), 'false', 'The generated JSDelivr link was not immediately openable');
+  await page.locator('[data-filter-check-state]', { hasText: '2 allowed' }).waitFor();
+  assert.equal(p2pFilterCheckRequests, 1, 'Identical generated JSDelivr links were checked separately');
+  assert.match(await page.locator('[data-filter-check-detail]').textContent(), /one representative check covered all 2 identical Nyx SVG links/i, 'The representative batch-check explanation was not shown');
   assert.deepEqual(pageErrors, [], `Link Generator browser errors: ${pageErrors.join(' | ')}`);
 
   const treeRequest = githubRequests.find(request => request.method === 'POST' && request.url.endsWith('/git/trees'));
@@ -271,6 +278,42 @@ try {
   assert.equal(thousandLinkResult.created, 1000, 'The server did not create the complete 1,000-link P2P batch');
   const thousandLinkTree = githubRequests.slice(thousandLinkRequestStart).find(request => request.method === 'POST' && request.url.endsWith('/git/trees'));
   assert.equal(JSON.parse(thousandLinkTree?.body || '{}').tree?.length, 1000, 'The P2P Git tree did not contain 1,000 Nyx SVGs');
+
+  const thousandLinkPage = await browser.newPage({ viewport: { width: 1_280, height: 900 } });
+  let thousandLinkFilterChecks = 0;
+  await thousandLinkPage.route('**/api/link-checker/vendors', route => routeJson(route, { vendors: [{ key: 'lightspeed', label: 'Lightspeed' }] }));
+  await thousandLinkPage.route('**/api/link-checker/check', route => {
+    thousandLinkFilterChecks += 1;
+    return routeJson(route, { vendors: { lightspeed: { blocked: false } } });
+  });
+  await thousandLinkPage.route('**/api/link-generator', route => {
+    if (route.request().method() !== 'POST') return route.continue();
+    return routeJson(route, {
+      authorized: true,
+      provider: 'jsdelivr',
+      method: 'p2p',
+      published: true,
+      requested: 1000,
+      created: 1000,
+      access: 'administrator',
+      premiumCooldown: { triggered: true, minutes: 10, accumulated: 1000, accumulatedLimit: 30 },
+      links: Array.from({ length: 1000 }, (_, index) => ({ url: `https://cdn.jsdelivr.net/gh/dubcatalt2-lab/nyx-jsdelivr-links@main/bulk-${index + 1}.svg` }))
+    });
+  });
+  await thousandLinkPage.goto(`${origin}/apps/link-generator/`, { waitUntil: 'domcontentloaded' });
+  await thousandLinkPage.locator('[data-access-code]').fill('test-premium-code');
+  await thousandLinkPage.locator('[data-wizard-step="0"] [data-wizard-next]').click();
+  await thousandLinkPage.locator('[data-label-input]').fill('bulk filter check');
+  await thousandLinkPage.locator('[data-filter-select]').selectOption('lightspeed');
+  await thousandLinkPage.locator('[data-generation-method]').selectOption('p2p');
+  await thousandLinkPage.locator('[data-premium-amount]').fill('1000');
+  await thousandLinkPage.locator('[data-wizard-step="1"] [data-wizard-next]').click();
+  await thousandLinkPage.locator('[data-confirm]').check();
+  await thousandLinkPage.locator('[data-generate-button]').click();
+  await thousandLinkPage.locator('[data-filter-check-state]', { hasText: '1000 allowed' }).waitFor();
+  assert.equal(thousandLinkFilterChecks, 1, 'The 1,000-link batch exhausted the per-client Link Checker allowance');
+  assert.match(await thousandLinkPage.locator('[data-filter-check-detail]').textContent(), /one representative check covered all 1000 identical Nyx SVG links/i, 'The 1,000-link representative result was unclear');
+  await thousandLinkPage.close();
 
   console.log('Direct 1,000-link P2P and managed JSDelivr publishing, token isolation, protected tab opening, filter checking, results, and mobile regressions passed.');
 } finally {

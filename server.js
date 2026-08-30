@@ -123,6 +123,7 @@ const nyxifyCoverPathPattern = /^\/img\/images\/(?:cover|artist)\/[a-f0-9]{32}\/
 const nyxifyCatalogCacheTtlMs = 90_000;
 const nyxifyHomeCacheTtlMs = 5 * 60_000;
 const nyxifyCatalogCache = new Map();
+const nyxifyFullTrackInflight = new Map();
 const nyxifyArtworkCacheTtlMs = 30 * 60_000;
 const nyxifyArtworkCache = new Map();
 const nyxifyArtworkInflight = new Map();
@@ -12269,13 +12270,30 @@ app.get("/api/nyxify/full-track/:trackId", async (req, res) => {
   if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
   const trackId = String(req.params.trackId || "").trim();
   if (!nyxifyTrackIdPattern.test(trackId)) return res.status(400).json({ error: "Invalid Nyxify track." });
+  const hints = {
+    title: req.query.title,
+    artist: req.query.artist,
+    duration: req.query.duration,
+    catalog: req.query.catalog
+  };
+  const inflightKey = [
+    trackId,
+    nyxifyCleanText(hints.title, "", 180).toLowerCase(),
+    nyxifyCleanText(hints.artist, "", 120).toLowerCase(),
+    Math.max(0, Math.min(14_400, Number(hints.duration) || 0)),
+    String(hints.catalog || "").toLowerCase() === "deezer" ? "deezer" : "metadata"
+  ].join("\u0000");
   try {
-    res.json(await nyxifyFullTrack(trackId, {
-      title: req.query.title,
-      artist: req.query.artist,
-      duration: req.query.duration,
-      catalog: req.query.catalog
-    }));
+    let request = nyxifyFullTrackInflight.get(inflightKey);
+    if (!request) {
+      request = nyxifyFullTrack(trackId, hints);
+      nyxifyFullTrackInflight.set(inflightKey, request);
+      request.then(
+        () => { if (nyxifyFullTrackInflight.get(inflightKey) === request) nyxifyFullTrackInflight.delete(inflightKey); },
+        () => { if (nyxifyFullTrackInflight.get(inflightKey) === request) nyxifyFullTrackInflight.delete(inflightKey); }
+      );
+    }
+    res.json(await request);
   } catch (error) {
     res.status(error.status || 502).json({ error: error.message || "Full-track playback is unavailable right now." });
   }

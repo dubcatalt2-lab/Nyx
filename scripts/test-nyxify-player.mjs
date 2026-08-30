@@ -35,6 +35,13 @@ const track = {
   catalog: 'deezer',
   duration: 7_205
 };
+const nextTrack = {
+  ...track,
+  id: '123456790',
+  title: 'The next queued song is resolved before it starts',
+  album: 'Prefetch Regression',
+  duration: 245
+};
 
 let browser;
 try {
@@ -95,15 +102,22 @@ try {
     window.YT = { Player: MockOctavePlayer, PlayerState: states };
   });
   const fullTrackRequests = [];
-  await page.route('**/api/**', route => {
+  let resolveNextPrefetch;
+  const nextPrefetched = new Promise(resolve => { resolveNextPrefetch = resolve; });
+  await page.route('**/api/**', async route => {
     const requestUrl = new URL(route.request().url());
     const path = requestUrl.pathname;
     const json = body => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
-    if (path === '/api/nyxify/home') return json({ tracks: [track], artists: [], albums: [] });
-    if (path === '/api/nyxify/search') return json({ data: [track] });
-    if (path === `/api/nyxify/full-track/${track.id}`) {
-      fullTrackRequests.push(Object.fromEntries(requestUrl.searchParams));
-      return json({ mode: 'octave', videoId: '5NV6Rdv1a3I', durationSeconds: track.duration, title: track.title });
+    if (path === '/api/nyxify/home') return json({ tracks: [track, nextTrack], artists: [], albums: [] });
+    if (path === '/api/nyxify/search') return json({ data: [track, nextTrack] });
+    if (path === `/api/nyxify/full-track/${track.id}` || path === `/api/nyxify/full-track/${nextTrack.id}`) {
+      const selectedTrack = path.endsWith(`/${nextTrack.id}`) ? nextTrack : track;
+      fullTrackRequests.push({ id: selectedTrack.id, params: Object.fromEntries(requestUrl.searchParams) });
+      if (selectedTrack.id === nextTrack.id) resolveNextPrefetch();
+      if (selectedTrack.id === track.id && fullTrackRequests.filter(request => request.id === track.id).length === 1) {
+        await new Promise(resolve => setTimeout(resolve, 250));
+      }
+      return json({ mode: 'octave', videoId: selectedTrack.id === track.id ? '5NV6Rdv1a3I' : 'dQw4w9WgXcQ', durationSeconds: selectedTrack.duration, title: selectedTrack.title });
     }
     if (path === '/api/nyxtube/status') return json({ configured: true, provider: 'youtube' });
     if (path === '/api/nyxtube/video') return json({ provider: 'youtube', videos: [{
@@ -154,15 +168,23 @@ try {
   assert.ok(longRowLayout.rowScrollWidth <= longRowLayout.rowClientWidth, `The long playlist row retained ${longRowLayout.rowScrollWidth - longRowLayout.rowClientWidth}px of hidden overflow`);
   assert.ok(longRowLayout.mainScrollWidth <= longRowLayout.mainClientWidth, `The long playlist row widened the main content by ${longRowLayout.mainScrollWidth - longRowLayout.mainClientWidth}px`);
   await page.locator('.row', { hasText: track.title }).click();
+  await page.waitForTimeout(50);
+  assert.equal(await page.locator('#audio').evaluate(audio => audio.paused), false, 'The preview did not start while the full-song match was still loading');
+  assert.equal(await page.locator('#fullTrackStage').getAttribute('data-playback-state'), 'loading', 'The delayed full-song match did not retain its loading state');
   await page.waitForFunction(() => ['ready', 'playing'].includes(document.querySelector('#fullTrackStage')?.dataset.playbackState));
   if (await page.locator('#fullTrackStage').getAttribute('data-playback-state') === 'ready') await page.locator('#playBtn').click();
   await page.waitForFunction(() => document.querySelector('#fullTrackStage')?.dataset.playbackState === 'playing');
-  assert.deepEqual(fullTrackRequests[0], {
+  assert.deepEqual(fullTrackRequests[0].params, {
     title: track.title,
     artist: track.artist,
     duration: String(track.duration),
     catalog: track.catalog
   }, 'Full-track matching did not receive the selected catalog metadata');
+  await Promise.race([
+    nextPrefetched,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('The next queued song was not prefetched')), 2_500))
+  ]);
+  assert.equal(fullTrackRequests.filter(request => request.id === nextTrack.id).length, 1, 'The next queued song was fetched more than once');
   assert.equal(await page.locator('#fullTrackTitle').textContent(), track.title, 'The full-song row did not use the matched video title');
   assert.doesNotMatch(await page.locator('#fullTrackStage').textContent(), /octave/i, 'The internal playback-engine name leaked into the visible UI');
   assert.equal(await page.locator('#fullTrackPreview').count(), 0, 'The separate preview bar control was still rendered');
@@ -218,6 +240,7 @@ try {
   assert.equal(blockedAutoplay.videoTitle, track.title, 'Blocked iframe autoplay lost the matched video title');
   await page.locator('#playBtn').click();
   await page.waitForFunction(() => document.querySelector('#fullTrackStage')?.dataset.playbackState === 'playing');
+  assert.equal(fullTrackRequests.filter(request => request.id === track.id).length, 1, 'The verified full-song match was fetched again after a page reload');
   assert.equal(await page.locator('#audio').evaluate(audio => audio.paused), true, 'The preview kept playing after the user started the full song');
 
   const musicUrl = page.url();

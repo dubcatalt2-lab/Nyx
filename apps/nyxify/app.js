@@ -72,6 +72,12 @@ let octavepending = false;
 let octavevideo = null;
 let prefernowplayingvideo = localStorage.getItem('nyx_nyxify_video_in_cover') === '1';
 const nyxtubedirectapi = window.NyxTubePlayerCore.createDirectYoutubeApi({ optimisticState: false });
+const fullTrackMatchCache = new Map();
+const fullTrackMatchInflight = new Map();
+const fullTrackMatchStorageKey = 'nyx_nyxify_full_track_matches_v1';
+const fullTrackMatchTtlMs = 6 * 60 * 60_000;
+const fullTrackMatchLimit = 24;
+let fullTrackPrefetchRevision = 0;
 
 let shuffleon = localStorage.getItem('nyx_nyxify_shuffle') === '1';
 let repeatmode = localStorage.getItem('nyx_nyxify_repeat') || 'off';
@@ -132,6 +138,101 @@ async function nyxifyjson(path, options = {}) {
   }
   return payload;
 }
+
+function fulltrackcachekey(track) {
+  return JSON.stringify([
+    String(track?.catalog || '').toLowerCase(),
+    String(track?.id || ''),
+    String(track?.title || '').trim().toLowerCase(),
+    String(track?.artist || '').trim().toLowerCase(),
+    Math.max(0, Number(track?.duration) || 0)
+  ]);
+}
+
+function validfulltrackmatch(match) {
+  return match?.mode === 'octave' && /^[A-Za-z0-9_-]{11}$/.test(String(match.videoId || ''));
+}
+
+function persistfulltrackmatches() {
+  try {
+    const now = Date.now();
+    const entries = [...fullTrackMatchCache.entries()]
+      .filter(([, entry]) => entry?.expiresAt > now && validfulltrackmatch(entry.match))
+      .slice(-fullTrackMatchLimit)
+      .map(([key, entry]) => ({ key, expiresAt: entry.expiresAt, match: entry.match }));
+    sessionStorage.setItem(fullTrackMatchStorageKey, JSON.stringify(entries));
+  } catch (_) {}
+}
+
+function restorefulltrackmatches() {
+  try {
+    const now = Date.now();
+    const entries = JSON.parse(sessionStorage.getItem(fullTrackMatchStorageKey) || '[]');
+    if (!Array.isArray(entries)) return;
+    entries.slice(-fullTrackMatchLimit).forEach(entry => {
+      if (typeof entry?.key === 'string' && entry.expiresAt > now && validfulltrackmatch(entry.match)) {
+        fullTrackMatchCache.set(entry.key, { expiresAt: entry.expiresAt, match: entry.match });
+      }
+    });
+  } catch (_) {}
+}
+
+function cachefulltrackmatch(track, match) {
+  if (!validfulltrackmatch(match)) return match;
+  const key = fulltrackcachekey(track);
+  fullTrackMatchCache.delete(key);
+  fullTrackMatchCache.set(key, { expiresAt: Date.now() + fullTrackMatchTtlMs, match });
+  while (fullTrackMatchCache.size > fullTrackMatchLimit) fullTrackMatchCache.delete(fullTrackMatchCache.keys().next().value);
+  persistfulltrackmatches();
+  return match;
+}
+
+function evictfulltrackmatch(track) {
+  if (!track) return;
+  fullTrackMatchCache.delete(fulltrackcachekey(track));
+  persistfulltrackmatches();
+}
+
+function fulltrackurl(track) {
+  const hints = new URLSearchParams({
+    title: String(track?.title || ''),
+    artist: String(track?.artist || ''),
+    duration: String(Math.max(0, Number(track?.duration) || 0)),
+    catalog: String(track?.catalog || '')
+  });
+  return `/api/nyxify/full-track/${encodeURIComponent(track?.id || '')}?${hints.toString()}`;
+}
+
+function getfulltrackmatch(track) {
+  const key = fulltrackcachekey(track);
+  const cached = fullTrackMatchCache.get(key);
+  if (cached?.expiresAt > Date.now() && validfulltrackmatch(cached.match)) {
+    fullTrackMatchCache.delete(key);
+    fullTrackMatchCache.set(key, cached);
+    return Promise.resolve(cached.match);
+  }
+  if (cached) fullTrackMatchCache.delete(key);
+  if (fullTrackMatchInflight.has(key)) return fullTrackMatchInflight.get(key);
+  const request = nyxifyjson(fulltrackurl(track))
+    .then(match => cachefulltrackmatch(track, match))
+    .finally(() => fullTrackMatchInflight.delete(key));
+  fullTrackMatchInflight.set(key, request);
+  return request;
+}
+
+function schedulequeueprefetch() {
+  const revision = ++fullTrackPrefetchRevision;
+  const next = queue[qindex + 1] || (repeatmode === 'all' ? queue[0] : null);
+  if (!next || next.id === curtrack?.id) return;
+  const run = () => {
+    if (revision !== fullTrackPrefetchRevision) return;
+    void getfulltrackmatch(next).catch(() => {});
+  };
+  if ('requestIdleCallback' in window) requestIdleCallback(run, { timeout: 1_000 });
+  else setTimeout(run, 150);
+}
+
+restorefulltrackmatches();
 
 function playlisttrack(track) {
   return {
@@ -1638,6 +1739,7 @@ function usepreview(autoplay = true, message = '') {
 function octaveerror(message) {
   const fallback = previewsource() ? `${message} Playing the preview instead.` : `${message} No preview is available for this catalog result.`;
   if (fullTrackStatus) fullTrackStatus.textContent = fallback;
+  evictfulltrackmatch(curtrack);
   usepreview(Boolean(previewsource()), fallback);
 }
 
@@ -1649,13 +1751,8 @@ async function startoctavetrack(track, request) {
   fullTrackStatus.textContent = 'Finding the full song...';
   setoctavevideo();
   try {
-    const hints = new URLSearchParams({
-      title: String(track.title || ''),
-      artist: String(track.artist || ''),
-      duration: String(Math.max(0, Number(track.duration) || 0)),
-      catalog: String(track.catalog || '')
-    });
-    const match = await nyxifyjson(`/api/nyxify/full-track/${encodeURIComponent(track.id)}?${hints.toString()}`);
+    const playerApi = ensureoctaveapi();
+    const match = await getfulltrackmatch(track);
     if (request !== octaverequest || curtrack?.id !== track.id) return;
     if (match.mode !== 'octave' || !/^[A-Za-z0-9_-]{11}$/.test(String(match.videoId || ''))) {
       throw new Error('No playable full song was found.');
@@ -1667,7 +1764,8 @@ async function startoctavetrack(track, request) {
     let octaveCandidateIndex = 0;
     setoctavevideo(octaveCandidates[0]);
     fullTrackTitle.textContent = octaveCandidates[0].title || match.title || track.title;
-    const YT = await ensureoctaveapi();
+    schedulequeueprefetch();
+    const YT = await playerApi;
     if (request !== octaverequest || curtrack?.id !== track.id) return;
     destroyoctaveplayer();
     fullTrackStage.hidden = false;
@@ -1798,6 +1896,8 @@ fullTrackFullscreen.addEventListener('click', togglenowplayingfullscreen);
 document.addEventListener('fullscreenchange', syncnowplayingfullscreen);
 document.addEventListener('webkitfullscreenchange', syncnowplayingfullscreen);
 setoctavevideo();
+if ('requestIdleCallback' in window) requestIdleCallback(() => { void ensureoctaveapi(); }, { timeout: 2_000 });
+else setTimeout(() => { void ensureoctaveapi(); }, 750);
 
 function playtrack(t, list, context = '') {
   cancelqueuedseek();

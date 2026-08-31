@@ -12,7 +12,10 @@
     rose:{label:'Rose',summary:'Soft rose light',lightColor:'#f5a0c8'},
     ember:{label:'Ember',summary:'Warm amber light',lightColor:'#ffad73'}
   });
-  const defaults=Object.freeze({beamWidth:2.4,beamHeight:80,beamNumber:30,lightColor:'#ffffff',speed:2,noiseIntensity:1.75,scale:.2,rotation:30});
+  // Match the React Bits showcase configuration. Keeping the source geometry
+  // proportions is important: oversized, overlapping planes expose their
+  // independently displaced edges as the stepped bands seen in the regression.
+  const defaults=Object.freeze({beamWidth:3,beamHeight:30,beamNumber:20,lightColor:'#ffffff',speed:2,noiseIntensity:1.75,scale:.2,rotation:30});
 
   const coherentNoise=`
 float random (in vec2 st) {
@@ -216,7 +219,10 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
       this.renderer.toneMappingExposure=1;
       this.scene=new this.THREE.Scene();
       this.scene.background=new this.THREE.Color(0x000000);
-      this.camera=new this.THREE.PerspectiveCamera(30,1,.1,1000);
+      // Match the 30°/20-unit React Bits framing with an orthographic
+      // projection. Its independently flexing strips keep their shared screen
+      // edge instead of drifting apart and exposing animated cracks.
+      this.camera=new this.THREE.OrthographicCamera(-1,1,1,-1,.1,1000);
       this.camera.position.set(0,0,20);
       this.group=new this.THREE.Group();
       this.scene.add(this.group);
@@ -235,7 +241,7 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
         this.mesh.material.dispose();
       }
       const options=this.options;
-      const geometry=createStackedPlanesGeometry(this.THREE,options.beamNumber,options.beamWidth,options.beamHeight,-options.beamWidth*.12,100);
+      const geometry=createStackedPlanesGeometry(this.THREE,options.beamNumber,options.beamWidth,options.beamHeight,0,100);
       const material=createBeamMaterial(this.THREE,options);
       this.mesh=new this.THREE.Mesh(geometry,material);
       this.mesh.frustumCulled=false;
@@ -249,7 +255,13 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
       const height=Math.max(1,Math.round(rect.height || this.canvas.height || 1));
       this.renderer.setPixelRatio(this.preview ? 1 : Math.min(2,window.devicePixelRatio || 1));
       this.renderer.setSize(width,height,false);
-      this.camera.aspect=width/height;
+      const aspect=width/height;
+      const viewHeight=2*20*Math.tan(this.THREE.MathUtils.degToRad(15));
+      const viewWidth=viewHeight*aspect;
+      this.camera.left=-viewWidth/2;
+      this.camera.right=viewWidth/2;
+      this.camera.top=viewHeight/2;
+      this.camera.bottom=-viewHeight/2;
       this.camera.updateProjectionMatrix();
     }
     update(options){

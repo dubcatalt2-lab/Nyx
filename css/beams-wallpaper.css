@@ -433,6 +433,19 @@ html[data-nyx-home-design="redesigned"] body.browser-shell .browser-home.nyx-vis
   html[data-nyx-home-design="redesigned"] body.browser-shell .browser-home.nyx-visual-home .nyx-minimal-search{width:min(620px,100%)!important}
 }
 
+/* Fern's retired Fresh stylesheet assigned blur to every button at rest.
+   In the redesigned shell, glass belongs only to the active or hovered target. */
+html[data-nyx-home-design="redesigned"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
+body.browser-shell.theme-fresh:is(body,#nyx-fern-idle-glass-a):is(body,#nyx-fern-idle-glass-b)
+.nyx-visual-dock :is(button,.nyx-visual-dock-tab):not(.active):not(:hover):not(:focus-visible),
+html[data-nyx-home-design="redesigned"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
+body.browser-shell.theme-fresh:is(body,#nyx-fern-idle-glass-a):is(body,#nyx-fern-idle-glass-b)
+.top-os form.browser-mode-address>button:not(.active):not(:hover):not(:focus-visible){
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+  filter:none!important;
+}
+
 /* These rules intentionally outrank the legacy ID-weighted visual sheet. */
 html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-beams-final-a):is(body,#nyx-beams-final-b):is(body,#nyx-beams-final-c):is(body,#nyx-beams-final-d):is(body,#nyx-beams-final-e) #desktop,
 html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-beams-final-a):is(body,#nyx-beams-final-b):is(body,#nyx-beams-final-c):is(body,#nyx-beams-final-d):is(body,#nyx-beams-final-e) .browser-window.browser-home-page,

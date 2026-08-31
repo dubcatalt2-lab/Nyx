@@ -2304,9 +2304,9 @@
     const value=currentNyxBeamWallpaper();
     document.documentElement.dataset.nyxBeamWallpaper=value;
     window.NyxBeamsWallpaper?.apply(value,{
-      beamWidth:2.4,
-      beamHeight:80,
-      beamNumber:30,
+      beamWidth:3,
+      beamHeight:30,
+      beamNumber:20,
       lightColor:nyxBeamWallpaperPresets()[value]?.lightColor || '#ffffff',
       speed:2,
       noiseIntensity:1.75,
@@ -2315,7 +2315,7 @@
     });
   }
   function nyxThemeBeamWallpaper(theme=store.text('nyx.theme','default')){
-    return ({default:'frost',midnight:'arctic',ruby:'ember',emerald:'mint',sakura:'rose',fresh:'mint',custom:'violet'})[normalizeNyxTheme(theme)] || 'frost';
+    return ({default:'frost',midnight:'arctic',ruby:'rose',emerald:'mint',sakura:'rose',fresh:'mint',custom:'violet'})[normalizeNyxTheme(theme)] || 'frost';
   }
   function applyNyxThemeBeamWallpaper(theme){
     const cleanTheme=normalizeNyxTheme(theme);

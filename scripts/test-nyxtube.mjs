@@ -257,8 +257,8 @@ try {
     });
     await discoveryPage.route("**/api/apps", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ apps: [{ id: "youtube", icon: "youtube.com", name: "NyxTube", url: "/apps/nyxtube/" }] }) }));
     await discoveryPage.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
-    const redesignedNyxTubeShortcut = discoveryPage.locator('.nyx-minimal-shortcuts [data-app-url="/apps/nyxtube/"]');
-    await redesignedNyxTubeShortcut.waitFor({ state: "attached" });
+    const redesignedNyxTubeDestination = discoveryPage.locator('[data-nyx-dock-item="video"][data-app-url="/apps/nyxtube/"]');
+    await redesignedNyxTubeDestination.waitFor({ state: "attached" });
     await discoveryPage.evaluate(() => {
       document.body.classList.add("browser-content-active");
       document.querySelectorAll("#nyxStudyHubStartup,#setupLaunchScreen,#setupScreen,.nyx-tos-gate").forEach(element => { element.style.pointerEvents = "none"; });
@@ -288,8 +288,8 @@ try {
         borderWidth: border?.getBoundingClientRect().width || 0,
       };
     });
-    assert(addressInteraction.fieldShadow === "none", `Browser address field still glows on hover: ${addressInteraction.fieldShadow}`);
-    assert(addressInteraction.borderOpacity > 0 && addressInteraction.borderWidth > 100, `Browser address pointer border did not activate: ${JSON.stringify(addressInteraction)}`);
+    assert(addressInteraction.fieldShadow === "none" || addressInteraction.fieldShadow.includes("inset"), `Browser address field still uses an elevated hover glow: ${addressInteraction.fieldShadow}`);
+    assert(addressInteraction.borderWidth === 0, `Browser address pointer animation was still active: ${JSON.stringify(addressInteraction)}`);
     const catalog = await discoveryPage.evaluate(() => fetch("/api/apps", { cache: "no-store" }).then(response => response.json()));
     assert(catalog.apps?.some(app => app.id === "youtube" && app.name === "NyxTube" && app.url === "/apps/nyxtube/"), "Apps API did not expose the NyxTube entry");
     await discoveryPage.close();

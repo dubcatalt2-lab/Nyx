@@ -88,7 +88,8 @@
   }
 
   async function apply(theme='default',root=document){
-    const url=await themedUrl(theme);
+    const embeddedBuiltIn=window.self!==window.top;
+    const url=await themedUrl(embeddedBuiltIn ? 'default' : theme);
     root.documentElement?.style.setProperty('--nyx-themed-logo-url',`url("${url}")`);
     root.body?.style.setProperty('--nyx-themed-logo-url',`url("${url}")`);
     root.querySelectorAll?.('[data-nyx-logo],img[src$="/assets/icons/nyx-logo.png"],img[src$="firefly-tab-logo-bold.png"]').forEach(element=>{

@@ -773,13 +773,15 @@ html body.browser-shell.browser-shell:not(.browser-content-active):not(.nyx-home
   background-color:var(--nyx-home-canvas,#111)!important;
 }
 html[data-nyx-theme] body.browser-shell.browser-shell:has(.browser-home.nyx-minimal-home) .top-os{
-  background:#000!important;
-  background-color:#000!important;
+  background:rgba(5,8,13,.32)!important;
+  background-color:rgba(5,8,13,.32)!important;
 }
 html[data-nyx-theme] body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:has(.browser-home.nyx-minimal-home) .top-os.top-os{
-  background:#000!important;
+  background:rgba(5,8,13,.32)!important;
   background-image:none!important;
-  background-color:#000!important;
+  background-color:rgba(5,8,13,.32)!important;
+  -webkit-backdrop-filter:blur(10px) saturate(1.05)!important;
+  backdrop-filter:blur(10px) saturate(1.05)!important;
 }
 html[data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page .browser-home.nyx-minimal-home .nyx-minimal-shortcuts>button{
   color:var(--nyx-home-wordmark,#f7f7f8)!important;
@@ -992,7 +994,7 @@ html[data-nyx-theme] body.browser-shell .nyx-home-presence{
   -webkit-text-fill-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 62%,#ececf2)!important;
 }
 
-/* The tab drawer uses the same palette while retaining its jet-black canvas. */
+/* The tab drawer shares the current theme tint over the Beams canvas. */
 html[data-nyx-theme] body.browser-shell .nyx-browser-tab-sidebar{
   border-right-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 30%,#202128)!important;
 }
@@ -1028,29 +1030,29 @@ html[data-nyx-theme] body.browser-shell .nyx-browser-tab-row small{
   -webkit-text-fill-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 42%,#8a8c96)!important;
 }
 
-/* The redesigned home keeps a pure-black canvas. Themes only tint the
-   constellation network and the surrounding interface. */
+/* The redesigned home is transparent over Beams. Themes tint both the moving
+   wallpaper and the surrounding interface. */
 html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home{
   --nyx-dot-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 24%,#718f84);
   --nyx-link-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 14%,#30433c);
   --nyx-constellation-dot-color:var(--nyx-home-constellation-dot,color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 58%,#fff));
   --nyx-constellation-link-color:color-mix(in srgb,var(--nyx-home-wordmark,#9b8cf5) 52%,#40534c);
 }
-html body.browser-shell.theme-default:not(.theme-custom){--nyx-home-canvas:#000!important;--nyx-home-constellation-dot:color-mix(in srgb,#a99bf3 58%,#fff)!important;--nyx-home-wordmark:#a99bf3!important;--nyx-shell-icon:#a99bf3!important;--nyx-final-shortcut-icon:#a99bf3!important}
-html body.browser-shell.theme-ruby{--nyx-home-canvas:#000!important;--nyx-home-constellation-dot:color-mix(in srgb,#fb7185 58%,#fff)!important;--nyx-home-wordmark:#fb7185!important;--nyx-shell-icon:#fb7185!important;--nyx-final-shortcut-icon:#fb7185!important}
-html body.browser-shell.theme-emerald{--nyx-home-canvas:#000!important;--nyx-home-constellation-dot:color-mix(in srgb,#34d399 58%,#fff)!important;--nyx-home-wordmark:#34d399!important;--nyx-shell-icon:#34d399!important;--nyx-final-shortcut-icon:#34d399!important}
-html body.browser-shell.theme-sakura{--nyx-home-canvas:#000!important;--nyx-home-constellation-dot:color-mix(in srgb,#f9a8d4 58%,#fff)!important;--nyx-home-wordmark:#f9a8d4!important;--nyx-shell-icon:#f9a8d4!important;--nyx-final-shortcut-icon:#f9a8d4!important}
-html body.browser-shell.theme-midnight{--nyx-home-canvas:#000!important;--nyx-home-constellation-dot:color-mix(in srgb,#93c5fd 58%,#fff)!important;--nyx-home-wordmark:#93c5fd!important;--nyx-shell-icon:#93c5fd!important;--nyx-final-shortcut-icon:#93c5fd!important}
-html body.browser-shell.theme-fresh{--nyx-home-canvas:#000!important;--nyx-home-constellation-dot:color-mix(in srgb,#a6c99c 58%,#fff)!important;--nyx-home-wordmark:#a6c99c!important;--nyx-shell-icon:#a6c99c!important;--nyx-final-shortcut-icon:#a6c99c!important}
-html body.browser-shell.theme-custom{--nyx-home-canvas:#000!important;--nyx-home-constellation-dot:var(--nyx-custom-constellation-dot,#fff)!important;--nyx-home-wordmark:var(--nyx-custom-accent,#a99bf3)!important;--nyx-shell-icon:var(--nyx-custom-accent,#a99bf3)!important;--nyx-final-shortcut-icon:var(--nyx-custom-accent,#a99bf3)!important}
+html body.browser-shell.theme-default:not(.theme-custom){--nyx-home-canvas:transparent!important;--nyx-home-constellation-dot:color-mix(in srgb,#a99bf3 58%,#fff)!important;--nyx-home-wordmark:#a99bf3!important;--nyx-shell-icon:#a99bf3!important;--nyx-final-shortcut-icon:#a99bf3!important}
+html body.browser-shell.theme-ruby{--nyx-home-canvas:transparent!important;--nyx-home-constellation-dot:color-mix(in srgb,#fb7185 58%,#fff)!important;--nyx-home-wordmark:#fb7185!important;--nyx-shell-icon:#fb7185!important;--nyx-final-shortcut-icon:#fb7185!important}
+html body.browser-shell.theme-emerald{--nyx-home-canvas:transparent!important;--nyx-home-constellation-dot:color-mix(in srgb,#34d399 58%,#fff)!important;--nyx-home-wordmark:#34d399!important;--nyx-shell-icon:#34d399!important;--nyx-final-shortcut-icon:#34d399!important}
+html body.browser-shell.theme-sakura{--nyx-home-canvas:transparent!important;--nyx-home-constellation-dot:color-mix(in srgb,#f9a8d4 58%,#fff)!important;--nyx-home-wordmark:#f9a8d4!important;--nyx-shell-icon:#f9a8d4!important;--nyx-final-shortcut-icon:#f9a8d4!important}
+html body.browser-shell.theme-midnight{--nyx-home-canvas:transparent!important;--nyx-home-constellation-dot:color-mix(in srgb,#93c5fd 58%,#fff)!important;--nyx-home-wordmark:#93c5fd!important;--nyx-shell-icon:#93c5fd!important;--nyx-final-shortcut-icon:#93c5fd!important}
+html body.browser-shell.theme-fresh{--nyx-home-canvas:transparent!important;--nyx-home-constellation-dot:color-mix(in srgb,#a6c99c 58%,#fff)!important;--nyx-home-wordmark:#a6c99c!important;--nyx-shell-icon:#a6c99c!important;--nyx-final-shortcut-icon:#a6c99c!important}
+html body.browser-shell.theme-custom{--nyx-home-canvas:transparent!important;--nyx-home-constellation-dot:var(--nyx-custom-constellation-dot,#fff)!important;--nyx-home-wordmark:var(--nyx-custom-accent,#a99bf3)!important;--nyx-shell-icon:var(--nyx-custom-accent,#a99bf3)!important;--nyx-final-shortcut-icon:var(--nyx-custom-accent,#a99bf3)!important}
 html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page,
 html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell .browser-window.browser-home-page>.browser-body,
 html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell .browser-home.nyx-minimal-home,
 html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell .browser-home.nyx-minimal-home::before,
 html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell .browser-home.nyx-minimal-home::after{
-  background:#000!important;
+  background:transparent!important;
   background-image:none!important;
-  background-color:#000!important;
+  background-color:transparent!important;
 }
 html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home::before,
 html[data-nyx-theme] body.browser-shell .browser-home.nyx-minimal-home::after{
@@ -1958,7 +1960,7 @@ body.browser-shell.browser-shell.browser-shell.browser-shell.browser-content-act
   min-height:44px!important;
   max-height:44px!important;
   border-bottom:1px solid #111218!important;
-  background:#000!important;
+  background:rgba(5,8,13,.32)!important;
 }
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme][data-nyx-theme]
 body.browser-shell.browser-shell.browser-shell.browser-shell.browser-content-active:not(.nyx-tab-design-list):is(body,#nyx-tab-bar):is(body,#nyx-tab-bar-layout):is(body,#nyx-tab-bar-controls)
@@ -1975,7 +1977,7 @@ body.browser-shell.browser-shell.browser-shell.browser-shell.browser-content-act
   max-height:44px!important;
   margin:0!important;
   padding:3px 8px 11px!important;
-  background:#000!important;
+  background:rgba(5,8,13,.32)!important;
 }
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme][data-nyx-theme]
 body.browser-shell.browser-shell.browser-shell.browser-shell.browser-content-active:not(.nyx-tab-design-list):is(body,#nyx-tab-bar):is(body,#nyx-tab-bar-layout):is(body,#nyx-tab-bar-controls)
@@ -1998,7 +2000,7 @@ html[data-nyx-theme][data-nyx-theme][data-nyx-theme][data-nyx-theme][data-nyx-th
 body.browser-shell.browser-shell.browser-shell.browser-shell.browser-shell.browser-content-active:not(.nyx-tab-design-list):is(body,#nyx-tab-bar):is(body,#nyx-tab-bar-layout):is(body,#nyx-tab-bar-controls):is(body,#nyx-tab-bar-deep-chrome)
 .top-os.top-os.top-os{
   border-bottom-color:#111218!important;
-  background:#000!important;
+  background:rgba(5,8,13,.32)!important;
 }
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme][data-nyx-theme][data-nyx-theme]
 body.browser-shell.browser-shell.browser-shell.browser-shell.browser-shell.browser-content-active:not(.nyx-tab-design-list):is(body,#nyx-tab-bar):is(body,#nyx-tab-bar-layout):is(body,#nyx-tab-bar-controls):is(body,#nyx-tab-bar-deep-chrome)

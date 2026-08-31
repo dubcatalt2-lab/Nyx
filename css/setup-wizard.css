@@ -1,12 +1,12 @@
-/* First-run setup follows the redesigned Nyx shell: a pure-black canvas,
-   neutral chrome, and an accent that previews the selected theme. */
+/* First-run setup follows the redesigned Nyx glass shell and previews the
+   selected theme against the shared Beams wallpaper. */
 html body.setup-active{
-  --setup-canvas:#000;
-  --setup-surface:#08080c;
-  --setup-deep:#030305;
-  --setup-control:#101014;
-  --setup-control-hover:#18171e;
-  --setup-selected:color-mix(in srgb,var(--setup-accent) 18%,#111116);
+  --setup-canvas:rgba(2,5,10,.18);
+  --setup-surface:rgba(5,8,14,.48);
+  --setup-deep:rgba(3,6,11,.44);
+  --setup-control:rgba(9,13,20,.46);
+  --setup-control-hover:rgba(255,255,255,.075);
+  --setup-selected:color-mix(in srgb,var(--setup-accent) 16%,rgba(10,14,22,.48));
   --setup-accent:var(--theme-accent,#a78bfa);
   --setup-bright:color-mix(in srgb,var(--setup-accent) 76%,#fff);
   --setup-text:#f7f7fb;
@@ -48,14 +48,10 @@ html body #setupScreen[data-preview-theme="fresh"]{
 
 html body .setup-screen{
   padding:clamp(12px,2.4vw,28px);
-  background-color:#000;
-  background-image:
-    radial-gradient(circle at 9% 16%,color-mix(in srgb,var(--setup-bright) 82%,transparent) 0 1.6px,transparent 2px),
-    radial-gradient(circle at 18% 75%,color-mix(in srgb,var(--setup-accent) 58%,transparent) 0 1.3px,transparent 1.8px),
-    radial-gradient(circle at 83% 19%,color-mix(in srgb,var(--setup-bright) 68%,transparent) 0 1.5px,transparent 2px),
-    radial-gradient(circle at 91% 81%,color-mix(in srgb,var(--setup-accent) 52%,transparent) 0 1.2px,transparent 1.7px);
-  backdrop-filter:none;
-  -webkit-backdrop-filter:none;
+  background-color:var(--setup-canvas);
+  background-image:none;
+  backdrop-filter:blur(5px) saturate(1.03);
+  -webkit-backdrop-filter:blur(5px) saturate(1.03);
 }
 
 html body .setup-panel{
@@ -70,8 +66,8 @@ html body .setup-panel{
   background:var(--setup-surface);
   color:var(--setup-text);
   box-shadow:0 32px 90px rgba(0,0,0,.72),inset 0 1px 0 rgba(255,255,255,.04);
-  backdrop-filter:none;
-  -webkit-backdrop-filter:none;
+  backdrop-filter:blur(14px) saturate(1.05);
+  -webkit-backdrop-filter:blur(14px) saturate(1.05);
 }
 
 html body .setup-header{
@@ -86,7 +82,9 @@ html body .setup-header{
   column-gap:28px;
   padding:25px 28px 23px;
   border-bottom:1px solid var(--setup-line-soft);
-  background:#08080c;
+  background:rgba(5,8,14,.30);
+  backdrop-filter:blur(9px) saturate(1.04);
+  -webkit-backdrop-filter:blur(9px) saturate(1.04);
 }
 
 html body .setup-eyebrow{
@@ -133,7 +131,7 @@ html body .setup-progress{
   padding:10px 12px;
   border:1px solid var(--setup-line-soft);
   border-radius:999px;
-  background:#030305;
+  background:var(--setup-deep);
 }
 
 html body .setup-dot,
@@ -198,7 +196,7 @@ html body .setup-welcome-logo{
   margin-bottom:5px;
   border:1px solid var(--setup-line);
   border-radius:22px;
-  background:#0d0d12;
+  background:var(--setup-control);
   color:var(--setup-bright);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 36px rgba(0,0,0,.35);
 }
@@ -364,8 +362,7 @@ html body .setup-theme-preview::after{
   content:"";
   position:absolute;
   inset:0;
-  background-image:radial-gradient(circle,color-mix(in srgb,var(--preview-accent) 32%,transparent) 1.2px,transparent 1.5px);
-  background-size:15px 15px;
+  background-image:none;
 }
 
 html body .setup-theme-name{
@@ -434,7 +431,9 @@ html body .setup-actions{
   margin:0;
   padding:17px 28px;
   border-top:1px solid var(--setup-line-soft);
-  background:#050508;
+  background:rgba(5,8,14,.30);
+  backdrop-filter:blur(9px) saturate(1.04);
+  -webkit-backdrop-filter:blur(9px) saturate(1.04);
 }
 
 html body .setup-copyright{
@@ -474,10 +473,10 @@ html body .setup-actions button:active{
 
 html body #setupScreen .setup-actions button.primary,
 html body #setupScreen .setup-actions button.primary:hover{
-  border-color:var(--setup-bright)!important;
-  background:var(--setup-bright)!important;
-  color:#09090c!important;
-  -webkit-text-fill-color:#09090c!important;
+  border-color:color-mix(in srgb,var(--setup-bright) 72%,transparent)!important;
+  background:color-mix(in srgb,var(--setup-accent) 28%,rgba(10,14,22,.58))!important;
+  color:var(--setup-text)!important;
+  -webkit-text-fill-color:var(--setup-text)!important;
 }
 
 html body .setup-account-card{
@@ -489,7 +488,7 @@ html body .setup-account-card{
   padding:20px;
   border:1px solid var(--setup-line);
   border-radius:16px;
-  background:linear-gradient(135deg,color-mix(in srgb,var(--setup-accent) 9%,var(--setup-control)),var(--setup-deep));
+  background:color-mix(in srgb,var(--setup-accent) 7%,var(--setup-control));
   box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
 }
 
@@ -560,10 +559,10 @@ html body .setup-account-actions button{
 }
 
 html body #setupScreen .setup-account-actions button.primary{
-  border-color:var(--setup-bright);
-  background:var(--setup-bright);
-  color:#09090c;
-  -webkit-text-fill-color:#09090c;
+  border-color:color-mix(in srgb,var(--setup-bright) 72%,transparent);
+  background:color-mix(in srgb,var(--setup-accent) 28%,rgba(10,14,22,.58));
+  color:var(--setup-text);
+  -webkit-text-fill-color:var(--setup-text);
 }
 
 html body #setupScreen .setup-actions button.primary:focus-visible{

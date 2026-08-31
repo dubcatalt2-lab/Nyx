@@ -11,6 +11,11 @@ function isGray(color) {
   return values.length === 3 && Math.max(...values) - Math.min(...values) <= 1;
 }
 
+function isNeutralCool(color) {
+  const values = String(color).match(/[\d.]+/g)?.slice(0, 3).map(Number) || [];
+  return values.length === 3 && values[2] >= values[1] && values[1] >= values[0] && Math.max(...values) - Math.min(...values) <= 50;
+}
+
 const cases = [
   {
     name: "API Keys",
@@ -71,24 +76,24 @@ try {
         };
       }, { surface: testCase.surface, inner: testCase.inner });
 
-      assert(colors.htmlBackground === "rgb(0, 0, 0)", `${testCase.name} HTML canvas is not jet black`);
-      assert(colors.bodyBackground === "rgb(0, 0, 0)", `${testCase.name} body is not jet black`);
+      assert(colors.htmlBackground === "rgba(0, 0, 0, 0)", `${testCase.name} HTML canvas is not transparent`);
+      assert(colors.bodyBackground === "rgba(0, 0, 0, 0)", `${testCase.name} body is not transparent`);
       assert(colors.bodyImage === "none", `${testCase.name} still renders the tinted dot background`);
-      assert(colors.surfaceBackground === "rgb(8, 8, 8)", `${testCase.name} primary surface is not neutral black`);
-      assert(isGray(colors.surfaceBorder), `${testCase.name} primary border is not neutral gray`);
-      assert(isGray(colors.innerBackground), `${testCase.name} inner surface is color-tinted`);
-      assert(isGray(colors.innerBorder), `${testCase.name} inner border is not neutral gray`);
+      assert(isNeutralCool(colors.surfaceBackground), `${testCase.name} primary surface is not neutral cool glass`);
+      assert(isNeutralCool(colors.surfaceBorder), `${testCase.name} primary border is not neutral cool glass`);
+      assert(isNeutralCool(colors.innerBackground), `${testCase.name} inner surface is color-tinted`);
+      assert(isNeutralCool(colors.innerBorder), `${testCase.name} inner border is not neutral cool glass`);
       assert(!colors.overflow, `${testCase.name} overflows at ${viewport.width}px`);
 
       await page.locator(testCase.hover).hover();
       await page.waitForTimeout(220);
       const hoverBackground = await page.locator(testCase.hover).evaluate(node => getComputedStyle(node).backgroundColor);
-      assert(isGray(hoverBackground), `${testCase.name} hover state is not neutral gray`);
+      assert(isNeutralCool(hoverBackground), `${testCase.name} hover state is not neutral cool glass`);
       assert(pageErrors.length === 0, `${testCase.name} browser errors: ${pageErrors.join(" | ")}`);
       await page.close();
     }
   }
-  console.log("Utility theme test: API Keys, Link Generator, and JSDelivr Publisher use jet-black canvases with gray surfaces, borders, hover states, and responsive layouts.");
+  console.log("Utility theme test: API Keys, Link Generator, and JSDelivr Publisher use transparent canvases with neutral cool glass surfaces, borders, hover states, and responsive layouts.");
 } finally {
   await browser.close();
 }

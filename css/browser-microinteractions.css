@@ -591,21 +591,23 @@ html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:is(body,#n
   }
 }
 
-/* The browser shell keeps its black canvas, while the selected theme owns the
-   chrome accent. Do not replace the palette variables here: this sheet loads
-   after the theme model and used to flatten every theme back to white. */
+/* Keep the browser chrome translucent so the active Beams palette remains
+   visible. Theme variables own the tint; this late sheet must never restore an
+   opaque legacy canvas. */
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
   body.browser-shell.browser-shell.browser-shell:is(body,#nyx-jet-black-chrome):is(body,#nyx-jet-black-controls):is(body,#nyx-jet-black-tabs){
-  --nyx-chrome-base:#000!important;
-  --nyx-chrome-active:color-mix(in srgb,var(--nyx-chrome-accent,#9b8cf5) 15%,#0b0b0d)!important;
-  --nyx-chrome-hover:color-mix(in srgb,var(--nyx-chrome-accent,#9b8cf5) 22%,#0d0d10)!important;
-  background-color:#000!important;
+  --nyx-chrome-base:rgba(5,8,13,.32)!important;
+  --nyx-chrome-active:color-mix(in srgb,var(--nyx-chrome-accent,#9b8cf5) 15%,rgba(11,14,20,.58))!important;
+  --nyx-chrome-hover:color-mix(in srgb,var(--nyx-chrome-accent,#9b8cf5) 22%,rgba(13,16,23,.58))!important;
+  background-color:transparent!important;
 }
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
   body.browser-shell.browser-shell.browser-shell:is(body,#nyx-jet-black-chrome):is(body,#nyx-jet-black-controls):is(body,#nyx-jet-black-tabs)
   :is(.top-os.top-os,.brand-mini,.browser-mode-address){
-  background-color:#000!important;
+  background-color:rgba(5,8,13,.32)!important;
   background-image:none!important;
+  -webkit-backdrop-filter:blur(10px) saturate(1.05)!important;
+  backdrop-filter:blur(10px) saturate(1.05)!important;
 }
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
   body.browser-shell.browser-shell.browser-shell:is(body,#nyx-jet-black-chrome):is(body,#nyx-jet-black-controls):is(body,#nyx-jet-black-tabs)
@@ -618,8 +620,8 @@ html[data-nyx-theme][data-nyx-theme][data-nyx-theme]
   .top-os.top-os .brand-mini > button[data-browser-shell-new-tab]{
   color:var(--nyx-home-wordmark,#fff)!important;
   -webkit-text-fill-color:var(--nyx-home-wordmark,#fff)!important;
-  background-color:#000!important;
-  border-color:color-mix(in srgb,var(--nyx-home-wordmark,#fff) 24%,#202024)!important;
+  background-color:rgba(5,8,13,.24)!important;
+  border-color:rgba(218,233,255,.12)!important;
   box-shadow:none!important;
 }
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme]

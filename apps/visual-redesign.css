@@ -1,0 +1,300 @@
+/* Shared Nyx built-in app surfaces. Transparent glass over the Nyx wallpaper. */
+:root{
+  --nyx-app-canvas:transparent;
+  --nyx-app-shell:rgba(5,7,11,.30);
+  --nyx-app-panel:rgba(7,10,15,.32);
+  --nyx-app-panel-strong:rgba(15,20,28,.44);
+  --nyx-app-field:rgba(9,12,17,.46);
+  --nyx-app-line:rgba(210,229,255,.10);
+  --nyx-app-line-strong:rgba(218,233,255,.20);
+  --nyx-app-text:#eef3fb;
+  --nyx-app-muted:#969696;
+  --accent-rgb:134,169,232!important;
+  --accent:#86a9e8!important;
+  --theme-accent:#86a9e8!important;
+  --theme-border:rgba(210,229,255,.14)!important;
+  --nyx-themed-logo-url:url("/assets/icons/nyx-logo.png")!important;
+  color-scheme:dark;
+}
+
+html,
+body{
+  --nyx-themed-logo-url:url("/assets/icons/nyx-logo.png")!important;
+  background-color:transparent!important;
+  background-image:none!important;
+  color:var(--nyx-app-text);
+}
+body::before{
+  background:transparent!important;
+  background-image:none!important;
+}
+
+/* Utility pages share these variables but neutral mode previously reset them. */
+body.utility-neutral,
+body:not([class]){
+  --bg:var(--nyx-app-canvas);
+  --surface:var(--nyx-app-panel);
+  --surface-strong:var(--nyx-app-panel-strong);
+  --surface-soft:rgba(19,25,34,.48);
+  --field:var(--nyx-app-field);
+  --line:rgba(255,255,255,.14);
+  --line-strong:rgba(255,255,255,.28);
+  --text:var(--nyx-app-text);
+  --muted:var(--nyx-app-muted);
+  --muted-deep:#686868;
+}
+
+.utility-header,
+.topbar,
+.chat-topbar,
+.site-nav,
+.media-nav,
+body>header{
+  background-color:transparent!important;
+  background-image:none!important;
+  border-color:rgba(210,229,255,.07)!important;
+  -webkit-backdrop-filter:blur(6px) saturate(1.03)!important;
+  backdrop-filter:blur(6px) saturate(1.03)!important;
+}
+.utility-header :is(a,button),
+.topbar :is(a,button),
+.chat-topbar :is(a,button),
+.site-nav :is(a,button),
+.media-nav :is(a,button),
+body>header :is(a,button){
+  border-color:transparent!important;
+  background-color:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+.utility-header :is(a,button):is(:hover,:focus-visible,.active,[aria-current="page"]),
+.topbar :is(a,button):is(:hover,:focus-visible,.active,[aria-current="page"]),
+.chat-topbar :is(a,button):is(:hover,:focus-visible,.active,[aria-current="page"]),
+.site-nav :is(a,button):is(:hover,:focus-visible,.active,[aria-current="page"]),
+.media-nav :is(a,button):is(:hover,:focus-visible,.active,[aria-current="page"]),
+body>header :is(a,button):is(:hover,:focus-visible,.active,[aria-current="page"]){
+  background-color:rgba(255,255,255,.065)!important;
+  -webkit-backdrop-filter:blur(8px)!important;
+  backdrop-filter:blur(8px)!important;
+}
+
+.surface,
+.domain-card,
+.generator-card,
+.publisher-card,
+.results-card,
+.keys-card,
+.docs-card,
+.usage-card,
+.playground-card,
+.response-card,
+.metric-card,
+.chat-sidebar,
+.chat-main,
+.members-panel,
+.now-card,
+.side-card,
+.playlist-card,
+.watch-description,
+.watch-settings-menu,
+.game-card,
+.launch-card{
+  background-color:var(--nyx-app-panel)!important;
+  background-image:none!important;
+  border-color:var(--nyx-app-line)!important;
+  -webkit-backdrop-filter:blur(10px) saturate(1.05)!important;
+  backdrop-filter:blur(10px) saturate(1.05)!important;
+}
+
+:is(input,select,textarea),
+.form-panel,
+.form-grid label,
+.publish-summary,
+.security-note,
+.key-row,
+.docs-card pre,
+.response-card pre,
+.record-card,
+.status,
+.search,
+.search-box,
+.topic-row button,
+.watch-options :is(select,button,a),
+.provider-tabs,
+#linksOutput,
+.repository-results .repo-result{
+  background-color:var(--nyx-app-field)!important;
+  background-image:none!important;
+  border-color:var(--nyx-app-line)!important;
+  -webkit-backdrop-filter:blur(8px) saturate(1.04)!important;
+  backdrop-filter:blur(8px) saturate(1.04)!important;
+}
+
+:is(button,a,input,select,textarea):focus-visible{
+  outline-color:#86a9e8!important;
+}
+
+/* Nyxify / Music */
+body:has(.nyxify-shell),
+body:has(.app-shell){
+  --nt-bg:var(--nyx-app-canvas);
+  --surface:var(--nyx-app-panel);
+  --surface-strong:var(--nyx-app-panel-strong);
+  --card:rgba(255,255,255,.025);
+  --hover:rgba(255,255,255,.075);
+  --border:rgba(255,255,255,.14);
+  --border-neutral:rgba(255,255,255,.11);
+  --border-hover:rgba(255,255,255,.26);
+}
+body:has(#stars)::before{
+  background:transparent!important;
+}
+#stars{display:none!important}
+
+/* NyxTube */
+html:has(.tube-shell),
+body:has(.tube-shell){
+  background:transparent!important;
+}
+.starfield{
+  background:transparent!important;
+  background-image:none!important;
+}
+.starfield::before,
+.starfield::after,
+.starfield>i{
+  display:none!important;
+}
+.site-nav,
+.media-nav{
+  box-shadow:none!important;
+  -webkit-backdrop-filter:blur(6px) saturate(1.03)!important;
+  backdrop-filter:blur(6px) saturate(1.03)!important;
+}
+.media-nav button:hover,
+.media-nav button.active{
+  background:rgba(255,255,255,.07)!important;
+  color:var(--nyx-app-text)!important;
+}
+.video-cover,
+.watch-player,
+.short-card,
+.player-loading,
+.short-loading,
+.watch-description,
+.channel-mark{
+  background-color:var(--nyx-app-panel)!important;
+  background-image:none!important;
+  border-color:var(--nyx-app-line)!important;
+}
+
+/* Nyx Chat */
+body:has(.chat-app){
+  --chat-bg:var(--nyx-app-canvas);
+  --chat-panel:var(--nyx-app-shell);
+  --chat-panel-2:var(--nyx-app-panel);
+  --chat-panel-3:var(--nyx-app-panel-strong);
+  --chat-line:var(--nyx-app-line);
+  --chat-line-soft:#1f1f1f;
+}
+.chat-brand-mark,
+.caffeine-button,
+.avatar,
+.member-card-banner,
+.caffeine-heading>span,
+.caffeine-gift-mark{
+  background-color:var(--nyx-app-panel)!important;
+  background-image:none!important;
+}
+.chat-app{background:transparent!important;background-image:none!important}
+
+/* Nyx AI workspace */
+body:has(.ai-app){
+  --ai-bg:var(--nyx-app-canvas);
+  --ai-bg-deep:var(--nyx-app-canvas);
+  --ai-surface:var(--nyx-app-panel);
+  --ai-surface-raised:var(--nyx-app-panel-strong);
+  --ai-surface-hover:rgba(255,255,255,.07);
+  --ai-border:rgba(255,255,255,.14);
+  --ai-border-strong:rgba(255,255,255,.28);
+  --ai-text:var(--nyx-app-text);
+  --ai-muted:var(--nyx-app-muted);
+  --ai-accent:#86a9e8;
+  --ai-accent-bright:#b9d3ff;
+  --ai-accent-soft:rgba(134,169,232,.1);
+  --ai-accent-border:rgba(134,169,232,.34);
+}
+body:has(.ai-app)::before,
+.ai-app,
+.ai-sidebar,
+.ai-workspace,
+.ai-header,
+.ai-composer,
+.ai-composer-form,
+.ai-empty-card,
+.ai-message{
+  background-image:none!important;
+}
+body:has(.ai-app)::before,
+.ai-app,
+.ai-workspace{background-color:transparent!important}
+.ai-sidebar,
+.ai-composer,
+.ai-composer-form,
+.ai-empty-card{
+  background-color:var(--nyx-app-panel)!important;
+  border-color:var(--nyx-app-line)!important;
+  -webkit-backdrop-filter:blur(10px) saturate(1.05)!important;
+  backdrop-filter:blur(10px) saturate(1.05)!important;
+}
+.ai-header{
+  background-color:transparent!important;
+  background-image:none!important;
+  border-color:rgba(210,229,255,.07)!important;
+  -webkit-backdrop-filter:blur(6px) saturate(1.03)!important;
+  backdrop-filter:blur(6px) saturate(1.03)!important;
+}
+
+/* Link Checker */
+body:has(.lc-app){
+  --bg:var(--nyx-app-canvas);
+  --sidebar:var(--nyx-app-shell);
+  --card:var(--nyx-app-panel);
+  --card-soft:var(--nyx-app-field);
+  --border:var(--nyx-app-line);
+  --text:var(--nyx-app-text);
+  --muted:var(--nyx-app-muted);
+  --accent:#86a9e8;
+  --accent-soft:rgba(134,169,232,.12);
+}
+
+/* Connect Domain and Games */
+body:has(.domain-shell),
+body:has(.game-grid){
+  --bg:var(--nyx-app-canvas);
+  --panel:var(--nyx-app-panel);
+  --panel-2:var(--nyx-app-panel-strong);
+  --line:var(--nyx-app-line);
+  --text:var(--nyx-app-text);
+  --muted:var(--nyx-app-muted);
+}
+.hero-orbit span,
+.game-art,
+.game-art::after,
+.play{
+  background-color:rgba(19,25,34,.48)!important;
+  background-image:none!important;
+}
+
+/* Long catalog titles wrap inside their cards instead of widening the page. */
+html body #grid .card,
+html body #grid .name{
+  min-width:0!important;
+  max-width:100%!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+}
+
+@media(max-width:700px){
+  .utility-shell{width:min(100% - 20px,1080px)!important}
+}

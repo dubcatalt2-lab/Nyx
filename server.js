@@ -206,6 +206,9 @@ const nyxChatMuteCache = new Map();
 const nyxSearchHistoryCollection = "nyxSearchHistory";
 const nyxSearchHistoryRetentionMs = 30 * 24 * 60 * 60_000;
 const nyxSearchHistoryAttempts = new Map();
+const nyxSearchSuggestionCache = new Map();
+const nyxSearchSuggestionAttempts = new Map();
+const nyxSearchSuggestionCacheTtlMs = 10 * 60_000;
 let nyxSearchHistoryLastCleanupAt = 0;
 const nyxSearchHistoryPatterns = Object.freeze([
   Object.freeze({ category: "Sexually explicit", pattern: /\b(?:porn(?:ography)?|xxx|hentai|rule\s*34|nudes?|sex\s+videos?)\b/i }),
@@ -753,6 +756,50 @@ function nyxShouldServeDecoy(req) {
   const destination = String(req.get("sec-fetch-dest") || "").toLowerCase();
   return destination === "document" || !accept || accept.includes("text/html") || accept.includes("*/*");
 }
+
+function nyxSearchSuggestionAllowed(req, now = Date.now()) {
+  const client = nyxClientIp(req) || "unknown";
+  const recent = (nyxSearchSuggestionAttempts.get(client) || []).filter(time => time > now - 60_000);
+  recent.push(now);
+  nyxSearchSuggestionAttempts.set(client, recent);
+  if (nyxSearchSuggestionAttempts.size > 2_000) {
+    for (const [key, attempts] of nyxSearchSuggestionAttempts) {
+      if (!attempts.some(time => time > now - 60_000)) nyxSearchSuggestionAttempts.delete(key);
+    }
+  }
+  return recent.length <= 120;
+}
+
+app.get("/api/search-suggestions", async (req, res) => {
+  const query = String(req.query?.q || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 120);
+  if (query.length < 2) return res.json({ suggestions: [] });
+  if (!nyxSearchSuggestionAllowed(req)) return res.status(429).json({ suggestions: [] });
+  const cacheKey = query.toLowerCase();
+  const cached = nyxSearchSuggestionCache.get(cacheKey);
+  if (cached && Date.now() - cached.time < nyxSearchSuggestionCacheTtlMs) {
+    res.setHeader("Cache-Control", "public, max-age=120, stale-while-revalidate=600");
+    return res.json({ suggestions: cached.suggestions });
+  }
+  try {
+    const upstream = await fetch(`https://duckduckgo.com/ac/?q=${encodeURIComponent(query)}&type=list`, {
+      headers: { accept: "application/json, application/javascript", "user-agent": "Nyx browser search assistance/1.0" },
+      signal: AbortSignal.timeout(2_500)
+    });
+    if (!upstream.ok) throw new Error(`Suggestion service returned ${upstream.status}`);
+    const payload = await upstream.json();
+    const suggestions = (Array.isArray(payload?.[1]) ? payload[1] : [])
+      .map(value => String(value || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 160))
+      .filter(Boolean)
+      .slice(0, 8);
+    nyxSearchSuggestionCache.set(cacheKey, { time: Date.now(), suggestions });
+    if (nyxSearchSuggestionCache.size > 1_000) nyxSearchSuggestionCache.delete(nyxSearchSuggestionCache.keys().next().value);
+    res.setHeader("Cache-Control", "public, max-age=120, stale-while-revalidate=600");
+    res.json({ suggestions });
+  } catch {
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ suggestions: cached?.suggestions || [] });
+  }
+});
 
 app.use((req, res, next) => {
   if (!nyxShouldServeDecoy(req)) {

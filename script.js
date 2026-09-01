@@ -3761,7 +3761,9 @@
       document.body.appendChild(box);
     }
     if(input){
-      const rect=input.getBoundingClientRect();
+      const anchor=input.closest?.('[data-browser-blank-search]') || input;
+      const rect=anchor.getBoundingClientRect();
+      box.nyxSourceInput=input;
       box.style.left=Math.max(8,rect.left)+'px';
       box.style.top=Math.min(window.innerHeight-12,rect.bottom+8)+'px';
       box.style.width=Math.min(rect.width,window.innerWidth-16)+'px';
@@ -3840,6 +3842,23 @@
     if(q.length<2) return [];
     const key=q.toLowerCase();
     if(browserSuggestionCache.has(key)) return browserSuggestionCache.get(key);
+    try{
+      const response=await fetch(`/api/search-suggestions?q=${encodeURIComponent(q)}`,{
+        headers:{accept:'application/json'},
+        signal
+      });
+      if(response.ok){
+        const payload=await response.json();
+        const clean=(Array.isArray(payload?.suggestions) ? payload.suggestions : [])
+          .map(item=>String(item || '').trim()).filter(Boolean).slice(0,8);
+        if(clean.length){
+          browserSuggestionCache.set(key,clean);
+          return clean;
+        }
+      }
+    }catch(error){
+      if(signal?.aborted) return [];
+    }
     const callback='nyxSuggest_'+Math.random().toString(36).slice(2);
     try{
       const items=await new Promise(resolve=>{
@@ -3885,10 +3904,9 @@
     browserSuggestionTimer=setTimeout(async()=>{
       const remote=await fetchBrowserAutocomplete(value,signal);
       if(signal.aborted) return;
-      const active=document.querySelector('[data-browser-shell-url]');
-      if(active!==input || String(input.value || '').trim()!==value) return;
+      if(!input.isConnected || String(input.value || '').trim()!==value) return;
       renderBrowserSuggestions(input,browserSuggestionItems(value,remote));
-    },320);
+    },180);
   }
   function hideBrowserSuggestions(){
     clearTimeout(browserSuggestionTimer);
@@ -3897,10 +3915,10 @@
     if(box) box.classList.remove('show');
   }
   function browserSuggestionPointerInside(target){
-    return !!target?.closest?.('[data-browser-shell-url],#browserSearchSuggestions,.browser-search-suggestions');
+    return !!target?.closest?.('[data-browser-shell-url],[data-browser-blank-input],#browserSearchSuggestions,.browser-search-suggestions');
   }
-  function acceptBrowserSuggestion(value){
-    const input=document.querySelector('[data-browser-shell-url]');
+  function acceptBrowserSuggestion(value,sourceInput=$('browserSearchSuggestions')?.nyxSourceInput){
+    const input=sourceInput?.isConnected ? sourceInput : document.querySelector('[data-browser-shell-url]');
     if(input) input.value=value || '';
     hideBrowserSuggestions();
     navigateBrowserShell(value);
@@ -14209,7 +14227,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         <li><strong>A fresh new look</strong><span>See-through glass surfaces and animated wallpapers give every part of Nyx a calmer, more polished feel.</span></li>
         <li><strong>Faster everywhere</strong><span>Pages, menus, themes, and motion have been tuned to respond quickly—even on larger screens and everyday school devices.</span></li>
         <li><strong>Tabs that fit your space</strong><span>Tabs now live in the sidebar. Keep it compact, expand it for titles and close controls, or move it to either side.</span></li>
-        <li><strong>Smoother browsing</strong><span>Search starts sooner, loading is clearer, and the address bar now gives you a more useful connection status.</span></li>
+        <li><strong>Smoother browsing</strong><span>Helpful suggestions get you searching sooner, loading is clearer, and the address bar gives you a more useful connection status.</span></li>
       </ul>
       <footer><button type="button" data-nyx-release-notes-close>Got it</button></footer>
     </section>`;
@@ -15233,13 +15251,13 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       e.stopPropagation();
     },true);
     document.addEventListener('input',e=>{
-      const input=e.target.closest?.('[data-browser-shell-url]');
+      const input=e.target.closest?.('[data-browser-shell-url],[data-browser-blank-input]');
       if(input) showBrowserSuggestions(input);
     });
     document.addEventListener('focusin',e=>{
-      const input=e.target.closest?.('[data-browser-shell-url]');
+      const input=e.target.closest?.('[data-browser-shell-url],[data-browser-blank-input]');
       if(!input) return;
-      selectBrowserShellUrl(input,true);
+      if(input.matches('[data-browser-shell-url]')) selectBrowserShellUrl(input,true);
       showBrowserSuggestions(input);
     });
     document.addEventListener('focusout',e=>{
@@ -15272,9 +15290,9 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }
     },true);
     document.addEventListener('pointerup',e=>{
-      const input=e.target.closest?.('[data-browser-shell-url]');
+      const input=e.target.closest?.('[data-browser-shell-url],[data-browser-blank-input]');
       if(!input) return;
-      if(browserShellUrlFirstPointer===input){
+      if(input.matches('[data-browser-shell-url]') && browserShellUrlFirstPointer===input){
         e.preventDefault();
         browserShellUrlFirstPointer=null;
         selectBrowserShellUrl(input,true);
@@ -15282,7 +15300,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       showBrowserSuggestions(input);
     });
     document.addEventListener('keydown',e=>{
-      const input=e.target.closest?.('[data-browser-shell-url]');
+      const input=e.target.closest?.('[data-browser-shell-url],[data-browser-blank-input]');
       if(!input) return;
       const box=$('browserSearchSuggestions');
       const items=[...box?.querySelectorAll('.browser-search-suggestion') || []];
@@ -15580,10 +15598,10 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       const browserSuggestion=e.target.closest('[data-browser-suggestion]');
       if(browserSuggestion){
         e.preventDefault();
-        acceptBrowserSuggestion(browserSuggestion.dataset.browserSuggestion || browserSuggestion.textContent);
+        acceptBrowserSuggestion(browserSuggestion.dataset.browserSuggestion || browserSuggestion.textContent,$('browserSearchSuggestions')?.nyxSourceInput);
         return;
       }
-      if(!e.target.closest('[data-browser-shell-url]') && !e.target.closest('#browserSearchSuggestions')){
+      if(!e.target.closest('[data-browser-shell-url],[data-browser-blank-input]') && !e.target.closest('#browserSearchSuggestions')){
         hideBrowserSuggestions();
       }
       const shellTab=e.target.closest('[data-browser-shell-tab]');

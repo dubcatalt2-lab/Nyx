@@ -63,7 +63,7 @@ runuser -u "${APP_OWNER}" -- npm ci
 runuser -u "${APP_OWNER}" -- npm ci --prefix services/stratus --omit=dev --ignore-scripts
 runuser -u "${APP_OWNER}" -- env -u WISP_URL NYX_BUILD_TARGET=vps NYX_PUBLIC_ORIGIN="https://${DOMAIN}" npm run build:netlify
 runuser -u "${APP_OWNER}" -- npm run check:deploy
-runuser -u "${APP_OWNER}" -- npm prune --omit=dev
+runuser -u "${APP_OWNER}" -- npm prune --omit=dev --package-lock=false
 chgrp -R nyx "${APP_DIR}"
 chmod -R g+rX "${APP_DIR}"
 runuser -u nyx -- env NYX_AI_VISION_CACHE_DIR=/var/lib/nyx/vision-models npm run prepare:vision

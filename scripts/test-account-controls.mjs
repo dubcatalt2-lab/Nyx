@@ -47,6 +47,7 @@ const firebaseAuthModule=`
 `;
 
 let browser;
+let postedChatMessage=null;
 try{
   await waitForServer();
   browser=await chromium.launch({headless:true});
@@ -94,7 +95,11 @@ try{
       channels:[{id:'general',name:'general',description:'Test channel'}],conversations:[],latestActivity:{},revision:1,
       voice:{channels:[],participants:[]}
     });
-    if(path==='/api/chat/messages'&&method==='POST')return json({message:{id:'test-message-2',text:'Smooth send',attachments:[],reactions:[],createdAt:'2026-08-20T20:01:00.000Z',createdAtMs:1787256060000,author:{uid:'test-user-1234',displayName:'Account Test',handle:'@account-test',role:'owner'}}});
+    if(path==='/api/chat/messages'&&method==='POST'){
+      postedChatMessage=route.request().postDataJSON();
+      const replyTo=postedChatMessage.replyToMessageId?{id:'test-message-1',text:'Existing message',attachmentName:'',author:{uid:'test-member-5678',displayName:'Chat Member',handle:'@chat-member'}}:null;
+      return json({message:{id:'test-message-2',text:'Smooth send',replyTo,attachments:[],reactions:[],createdAt:'2026-08-20T20:01:00.000Z',createdAtMs:1787256060000,author:{uid:'test-user-1234',displayName:'Account Test',handle:'@account-test',role:'owner'}}});
+    }
     if(path==='/api/chat/messages')return json({messages:[{id:'test-message-1',text:'Existing message',attachments:[],reactions:[],createdAt:'2026-08-20T20:00:00.000Z',createdAtMs:1787256000000,author:{uid:'test-member-5678',displayName:'Chat Member',handle:'@chat-member',role:'member'}}],hasMore:false});
     if(path==='/api/chat/conversations')return json({conversations:[],channelActivity:{}});
     if(path==='/api/chat/caffeine')return json({caffeine:null});
@@ -105,6 +110,11 @@ try{
 
   await page.goto(origin,{waitUntil:'domcontentloaded'});
   await page.waitForSelector('#nyxBeamsBg[data-preset]');
+  const frameLoader=page.locator('.nyx-frame-loader svg').first();
+  await frameLoader.waitFor({state:'attached'});
+  assert.equal(await frameLoader.getAttribute('viewBox'),'0 0 210 110','External page loader was not laid out horizontally');
+  assert.match(await frameLoader.locator('.nyx-loader-rocket').evaluate(node=>node.parentElement?.getAttribute('transform')||''),/rotate\(90\b/,'Loading rocket was not oriented horizontally');
+  assert.equal(await frameLoader.locator('.nyx-loader-flame').count(),3,'Loading rocket did not keep all three flame trails');
   assert.equal(await page.locator('.nyx-home-dot-field').count(),0,'Retired constellation field was still present');
   assert.equal(await page.locator('#nyxBeamsBg').getAttribute('data-preset'),'frost','Desktop home did not render the default Beams wallpaper');
   await page.setViewportSize({width:2560,height:800});
@@ -324,9 +334,22 @@ try{
   await chatInput.press('Enter');
   assert.equal(await chatInput.inputValue(),'\u{1F480} ','Emoji suggestion did not insert the selected emoji');
   await chatInput.fill('');
+  const replyActionFound=await existingMessage.evaluate(node=>{
+    node.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:180,clientY:180}));
+    const action=[...document.querySelectorAll('[data-message-context-menu] .message-context-action')].find(button=>button.textContent.includes('Reply'));
+    action?.click();
+    return Boolean(action);
+  });
+  assert.equal(replyActionFound,true,'Message context menu did not offer Reply');
+  const replyPreview=activeChatFrame.locator('[data-reply-preview]:not([hidden])');
+  await replyPreview.waitFor();
+  assert.match(await replyPreview.textContent(),/Replying to Chat Member.*Existing message/s,'Replying did not show the referenced message in the composer');
   await chatInput.fill('Smooth send');
   await chatInput.press('Enter');
   await activeChatFrame.locator('[data-message-id="test-message-2"]').waitFor();
+  assert.equal(postedChatMessage?.replyToMessageId,'test-message-1','Chat did not send the referenced message ID');
+  assert.match(await activeChatFrame.locator('[data-message-id="test-message-2"] .message-reply-reference').textContent(),/Chat Member.*Existing message/s,'Sent reply did not render its referenced message');
+  assert.equal(await activeChatFrame.locator('[data-reply-preview]:not([hidden])').count(),0,'Reply preview remained after sending');
   assert.equal(await existingMessage.getAttribute('data-render-identity'),'retained','An unchanged message was rebuilt during a realtime-style send');
   await activeChatFrame.waitForSelector('.member-button');
   await activeChatFrame.locator('.member-button').filter({hasText:'Chat Member'}).click();

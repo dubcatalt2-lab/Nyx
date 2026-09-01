@@ -219,6 +219,7 @@ const nyxSearchHistoryPatterns = Object.freeze([
   Object.freeze({ category: "Targeted cyber abuse", pattern: /\b(?:doxx?(?:ing)?|swat(?:ting)?\s+someone|ddos(?:ing)?|steal\s+(?:a\s+)?password|hack\s+(?:an?\s+)?account|grab\s+(?:someone(?:'s)?|a\s+person(?:'s)?)\s+ip)\b/i })
 ]);
 const nyxChatConversationIdPattern = /^[a-f0-9]{40}$/;
+const nyxChatMessageIdPattern = /^[a-f0-9]{40}$/;
 const nyxChatAttachmentIdPattern = /^[a-f0-9]{40}$/;
 const nyxCaffeineGiftIdPattern = /^[a-f0-9]{40}$/;
 const nyxCaffeineGiftCollection = "nyxCaffeineGifts";
@@ -5600,6 +5601,23 @@ function nyxChatCustomRole(value) {
   return nyxPublicCustomRole(role);
 }
 
+function nyxChatReplyPayload(value) {
+  const source = value && typeof value === "object" ? value : {};
+  const id = String(source.id || "").trim();
+  if (!nyxChatMessageIdPattern.test(id)) return null;
+  const author = source.author && typeof source.author === "object" ? source.author : {};
+  return {
+    id,
+    text: nyxChatText(source.text).slice(0, 240),
+    attachmentName: founderProfileText(source.attachmentName, "", 100),
+    author: {
+      uid: String(author.uid || source.authorUid || "").trim(),
+      displayName: founderProfileText(author.displayName, "Nyx member", 48),
+      handle: `@${nyxProfileUsername(author.handle, "nyx-user")}`
+    }
+  };
+}
+
 function nyxChatMessagePayload(document, viewerUid = "") {
   const value = document?.data?.() || {};
   const author = value.author && typeof value.author === "object" ? value.author : {};
@@ -5613,6 +5631,7 @@ function nyxChatMessagePayload(document, viewerUid = "") {
     channel: conversationId ? "" : (nyxChatChannel(value.channel) || "general"),
     conversationId,
     text: nyxChatText(value.text).slice(0, nyxChatMessageLimit),
+    replyTo: nyxChatReplyPayload(value.replyTo),
     attachments: (Array.isArray(value.attachments) ? value.attachments : []).map(nyxChatAttachmentMetadata).filter(Boolean).slice(0, nyxChatAttachmentCountLimit),
     reactions: nyxChatReactionPayload(value.reactions, viewerUid),
     createdAt: safeDateIso(value.createdAt, createdAtMs ? new Date(createdAtMs).toISOString() : ""),
@@ -5750,6 +5769,7 @@ function recordNyxChatRealtimeEvent(event = {}) {
     createdAtMs: Math.max(0, Number(event.createdAtMs || Date.now())),
     lastMessageText: founderProfileText(event.lastMessageText, "", nyxChatMessageLimit),
     lastMessageAuthorUid: String(event.lastMessageAuthorUid || ""),
+    replyToAuthorUid: String(event.replyToAuthorUid || ""),
     messageIds: [...new Set((Array.isArray(event.messageIds) ? event.messageIds : []).map(value => String(value || "")).filter(value => /^[a-f0-9]{40}$/.test(value)))].slice(0, 100)
   });
   if (nyxChatRealtimeEvents.length > nyxChatRealtimeEventLimit) {
@@ -5810,7 +5830,7 @@ function nyxChatSocketEventForViewer(event = {}, socket) {
   };
   if (event.kind === "message" && event.messageDocument) {
     payload.message = nyxChatMessagePayload(event.messageDocument, uid);
-    payload.mentionsViewer = nyxChatEventMentionsIdentity(event.messageText, identity);
+    payload.mentionsViewer = nyxChatEventMentionsIdentity(event.messageText, identity) || (Boolean(uid) && uid === String(event.replyToAuthorUid || ""));
     payload.lastMessageAuthorUid = String(event.lastMessageAuthorUid || payload.message?.author?.uid || "");
   } else if (event.kind === "delete") {
     payload.messageId = String(event.messageId || "");
@@ -10904,7 +10924,7 @@ app.get("/api/chat/updates", async (req, res) => {
         scopeType: event.scopeType,
         scopeId: event.scopeId,
         createdAtMs: event.createdAtMs,
-        mentionsViewer: event.kind === "message" && nyxChatEventMentionsIdentity(event.lastMessageText, identity),
+        mentionsViewer: event.kind === "message" && (nyxChatEventMentionsIdentity(event.lastMessageText, identity) || token.uid === event.replyToAuthorUid),
         lastMessageAuthorUid: event.lastMessageAuthorUid
       }];
     });
@@ -11896,6 +11916,7 @@ app.post("/api/chat/messages", async (req, res) => {
     const scope = await nyxChatScope(firebase, token.uid, { channel: req.body?.channel, conversationId: req.body?.conversationId }, identity.role, nyxClientIp(req));
     const text = nyxChatText(req.body?.text);
     const requestId = String(req.body?.requestId || "").trim();
+    const replyToMessageId = String(req.body?.replyToMessageId || "").trim();
     const attachmentIds = [...new Set((Array.isArray(req.body?.attachmentIds) ? req.body.attachmentIds : []).map(value => String(value || "").trim()))];
     if (!text && !attachmentIds.length) {
       res.status(400).json({ error: "Write a message or add an attachment before sending it." });
@@ -11907,6 +11928,10 @@ app.post("/api/chat/messages", async (req, res) => {
     }
     if (!/^[A-Za-z0-9_-]{12,80}$/.test(requestId)) {
       res.status(400).json({ error: "The chat request could not be verified. Refresh and try again." });
+      return;
+    }
+    if (replyToMessageId && !nyxChatMessageIdPattern.test(replyToMessageId)) {
+      res.status(400).json({ error: "The message you are replying to is not valid." });
       return;
     }
     if (attachmentIds.length > nyxChatAttachmentCountLimit || attachmentIds.some(id => !nyxChatAttachmentIdPattern.test(id))) {
@@ -11925,6 +11950,22 @@ app.post("/api/chat/messages", async (req, res) => {
       res.json({ message: nyxChatMessagePayload(existing, token.uid), duplicate: true });
       return;
     }
+    let replyTo = null;
+    if (replyToMessageId) {
+      const replySnapshot = await scope.messages.doc(replyToMessageId).get();
+      if (!replySnapshot.exists) {
+        res.status(404).json({ error: "The message you are replying to is no longer available." });
+        return;
+      }
+      const replyValue = replySnapshot.data() || {};
+      replyTo = nyxChatReplyPayload({
+        id: replySnapshot.id,
+        text: replyValue.text,
+        attachmentName: Array.isArray(replyValue.attachments) ? replyValue.attachments[0]?.name : "",
+        authorUid: replyValue.authorUid,
+        author: replyValue.author
+      });
+    }
     const attachmentRefs = attachmentIds.map(id => firebase.firestore.collection("nyxChatAttachments").doc(id));
     const attachmentSnapshots = await Promise.all(attachmentRefs.map(ref => ref.get()));
     const attachments = attachmentSnapshots.map((snapshot, index) => {
@@ -11942,6 +11983,7 @@ app.post("/api/chat/messages", async (req, res) => {
       channel: scope.type === "channel" ? scope.id : "",
       conversationId: scope.private ? scope.id : "",
       text,
+      replyTo,
       attachments,
       reactions: [],
       authorUid: token.uid,
@@ -11999,7 +12041,8 @@ app.post("/api/chat/messages", async (req, res) => {
       participants: scope.participants || [],
       createdAtMs,
       lastMessageText: text,
-      lastMessageAuthorUid: token.uid
+      lastMessageAuthorUid: token.uid,
+      replyToAuthorUid: replyTo?.author?.uid || ""
     });
     emitNyxChatSocketEvent({
       kind: "message",
@@ -12009,6 +12052,7 @@ app.post("/api/chat/messages", async (req, res) => {
       createdAtMs,
       lastMessageText: text,
       lastMessageAuthorUid: token.uid,
+      replyToAuthorUid: replyTo?.author?.uid || "",
       messageDocument: saved,
       revision
     });

@@ -726,7 +726,7 @@ html[data-nyx-home-design="redesigned"] body.browser-shell .browser-window.nyx-f
   pointer-events:none;
 }
 .browser-window.nyx-frame-loading .nyx-frame-loader{opacity:1;visibility:visible}
-.nyx-frame-loader svg{display:block;width:180px;height:150px;overflow:visible}
+.nyx-frame-loader svg{display:block;width:210px;height:110px;overflow:visible}
 .nyx-loader-rocket{
   transform-box:view-box;
   transform-origin:90px 86px;
@@ -740,8 +740,8 @@ html[data-nyx-home-design="redesigned"] body.browser-shell .browser-window.nyx-f
 .nyx-loader-flame-b{animation-delay:-180ms;opacity:.55}
 .nyx-loader-flame-c{animation-delay:-90ms;opacity:.72}
 @keyframes nyxRocketIdle{
-  0%,100%{transform:translateX(-.7px)}
-  50%{transform:translateX(.7px)}
+  0%,100%{transform:translateY(-.7px)}
+  50%{transform:translateY(.7px)}
 }
 @keyframes nyxRocketFlame{
   0%,100%{opacity:.34;transform:scaleY(.68)}

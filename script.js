@@ -11036,17 +11036,19 @@
       loader=document.createElement('div');
       loader.className='nyx-frame-loader';
       loader.setAttribute('aria-hidden','true');
-      loader.innerHTML=`<svg viewBox="0 0 180 150" role="img" aria-label="Page loading">
+      loader.innerHTML=`<svg viewBox="0 0 210 110" role="img" aria-label="Page loading">
         <g class="nyx-loader-moon" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M88 8a18 18 0 1 0 12 31A20 20 0 0 1 88 8Z"/>
+          <path d="M163 37a18 18 0 1 0 12 31A20 20 0 0 1 163 37Z"/>
         </g>
-        <g class="nyx-loader-rocket" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M90 54C77 66 76 84 79 102h22c3-18 2-36-11-48Z"/>
-          <circle cx="90" cy="77" r="5.5"/>
-          <path d="m79 87-10 17 11-4m21-13 10 17-11-4M82 102v6h16v-6"/>
-          <path class="nyx-loader-flame nyx-loader-flame-a" d="M84 108c-3 7-2 13 0 19"/>
-          <path class="nyx-loader-flame nyx-loader-flame-b" d="M90 108c-3 10 0 18 0 27"/>
-          <path class="nyx-loader-flame nyx-loader-flame-c" d="M96 108c3 7 2 13 0 19"/>
+        <g transform="translate(-10 -31) rotate(90 90 86)">
+          <g class="nyx-loader-rocket" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M90 54C77 66 76 84 79 102h22c3-18 2-36-11-48Z"/>
+            <circle cx="90" cy="77" r="5.5"/>
+            <path d="m79 87-10 17 11-4m21-13 10 17-11-4M82 102v6h16v-6"/>
+            <path class="nyx-loader-flame nyx-loader-flame-a" d="M84 108c-3 7-2 13 0 19"/>
+            <path class="nyx-loader-flame nyx-loader-flame-b" d="M90 108c-3 10 0 18 0 27"/>
+            <path class="nyx-loader-flame nyx-loader-flame-c" d="M96 108c3 7 2 13 0 19"/>
+          </g>
         </g>
       </svg>`;
       body.append(loader);

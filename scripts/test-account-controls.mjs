@@ -301,6 +301,13 @@ try{
   assert.equal(await page.locator('[data-browser-shell-url]').inputValue(),'','New tab created from Settings inherited its internal URL');
   assert.equal(await page.locator('.browser-window.browser-home-page .nyx-minimal-home:visible').count(),1,'New tab created from Settings did not show the Nyx homepage');
   await page.locator('[data-nyx-dock-item="home"]').click();
+  const tabLifecycleHomeSearch=page.locator('.browser-window.browser-home-page [data-browser-blank-input]');
+  await tabLifecycleHomeSearch.fill('stale tab search');
+  await page.locator('[data-nyx-visual-new-tab]').click();
+  assert.equal(await page.locator('.browser-window.browser-home-page [data-browser-blank-input]').inputValue(),'','A new blank tab inherited the previous tab search text');
+  await page.locator('.nyx-browser-tab-row.active [data-browser-shell-close-tab]').evaluate(button=>button.click());
+  assert.equal(await page.locator('.browser-window.browser-home-page [data-browser-blank-input]').inputValue(),'','Closing a blank tab restored stale homepage search text');
+  assert.equal(await page.locator('[data-browser-shell-url]').inputValue(),'','Closing a blank tab restored stale address text');
 
   await page.locator('[data-nyx-dock-item="chat"]').click();
   const chatFrame=page.frames().find(frame=>new URL(frame.url()).pathname==='/apps/chat/');

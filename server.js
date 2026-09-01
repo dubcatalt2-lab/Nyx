@@ -4121,7 +4121,7 @@ function nyxGlobalAppsFromSnapshot(snapshot) {
   if (!Array.isArray(stored)) return nyxDefaultGlobalAppsPayload();
   return stored.slice(0, nyxGlobalAppsLimit).map(app => {
     const normalized = nyxNormalizeGlobalApp(app);
-    if (normalized?.id === nyxMoviesGlobalApp.id && ["http://icefy.top/", "https://aether.cx/"].includes(normalized.url)) {
+    if (normalized?.id === nyxMoviesGlobalApp.id && ["http://icefy.top/", "https://aether.cx/", "/apps/movies/"].includes(normalized.url)) {
       return { ...nyxMoviesGlobalApp };
     }
     if (normalized?.id === nyxGamesGlobalApp.id && normalized.url === nyxGamesGlobalApp.url) {
@@ -8087,6 +8087,10 @@ app.get(["/apps/nyxtube", "/apps/nyxtube/"], (_req, res) => {
 
 app.get(["/apps/nyxify", "/apps/nyxify/"], (_req, res) => {
   res.sendFile(join(staticRoot, "apps", "nyxify", "index.html"));
+});
+
+app.get(["/apps/movies", "/apps/movies/"], (_req, res) => {
+  res.redirect(302, "/");
 });
 
 function linkGeneratorRateState(clientId, now = Date.now()) {

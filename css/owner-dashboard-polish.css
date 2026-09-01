@@ -163,6 +163,10 @@
 .nyx-owner-dashboard-overlay ::-webkit-scrollbar{width:8px;height:8px}.nyx-owner-dashboard-overlay ::-webkit-scrollbar-thumb{border:2px solid transparent;border-radius:8px;background:#353640;background-clip:padding-box}
 
 /* The browser shell has intentionally strong global button rules. */
+body.browser-shell .nyx-owner-dashboard-overlay :is(button,input,select,textarea){
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
 body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-header-actions button,body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-quick-actions button,body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-pagination button{background-color:#08090d!important}
 body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-header-actions [data-owner-refresh]{border-color:#efeff1!important;background-color:#f3f3f5!important;color:#08080a!important;-webkit-text-fill-color:#08080a!important}
 body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-header-actions .nyx-owner-close{border-color:var(--owner-line)!important;background-color:#050609!important;color:var(--owner-muted)!important}

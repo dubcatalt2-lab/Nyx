@@ -3322,7 +3322,7 @@
   }
   let nyxVisualDockTimer=0;
   let nyxSidebarPreferenceSaveTimer=0;
-  let nyxSidebarAnimationFrame=0;
+  let nyxSidebarToggleLockTimer=0;
   function syncNyxVisualDockState(){
     const dock=document.querySelector('[data-nyx-visual-dock]');
     if(!dock) return;
@@ -3413,15 +3413,17 @@
     }
     const expandButton=dock.querySelector('[data-nyx-dock-expand]');
     if(expandButton) expandButton.onclick=()=>{
-      const expanded=document.documentElement.dataset.nyxSidebarWidth==='expanded';
-      void dock.offsetWidth;
+      if(dock.dataset.nyxSidebarToggleLocked==='true') return;
+      dock.dataset.nyxSidebarToggleLocked='true';
+      const expanded=store.get('nyx.sidebarExpanded',false)===true;
       try{localStorage.setItem('nyx.sidebarExpanded',JSON.stringify(!expanded))}catch{}
-      cancelAnimationFrame(nyxSidebarAnimationFrame);
-      nyxSidebarAnimationFrame=requestAnimationFrame(()=>{
-        applyNyxSidebarExpansion();
-        clearTimeout(nyxSidebarPreferenceSaveTimer);
-        nyxSidebarPreferenceSaveTimer=setTimeout(queueNyxCloudPreferencesSave,380);
-      });
+      applyNyxSidebarExpansion();
+      clearTimeout(nyxSidebarToggleLockTimer);
+      nyxSidebarToggleLockTimer=setTimeout(()=>{
+        if(dock.isConnected) delete dock.dataset.nyxSidebarToggleLocked;
+      },220);
+      clearTimeout(nyxSidebarPreferenceSaveTimer);
+      nyxSidebarPreferenceSaveTimer=setTimeout(queueNyxCloudPreferencesSave,380);
     };
     const headAddButton=dock.querySelector('[data-nyx-dock-new-tab]');
     if(headAddButton) headAddButton.onclick=()=>openBrowserShellTab('');
@@ -3675,6 +3677,18 @@
       if(!previous) return false;
       const previousUrl=new URL(previous,location.href);
       return /^https?:$/.test(previousUrl.protocol) && previousUrl.origin!==location.origin;
+    }catch{
+      return false;
+    }
+  }
+  function browserShellInvalidHistoryEntry(value){
+    const raw=String(value || '').trim();
+    if(!raw || isBrowserShellBlankUrl(raw)) return false;
+    if(/^\/?unidentified(?:[/?#]|$)/i.test(raw)) return true;
+    const source=browserShellSourceUrl(raw) || raw;
+    try{
+      const parsed=new URL(source,location.href);
+      return parsed.origin===location.origin && /^\/unidentified\/?$/i.test(parsed.pathname);
     }catch{
       return false;
     }
@@ -4260,7 +4274,7 @@
     }
     win.querySelectorAll('.view').forEach(frame=>frame.classList.remove('active'));
     const input=win.querySelector('[data-browser-blank-input]');
-    if(input && !input.value) input.value='';
+    if(input) input.value='';
     ensureNyxAccountButton();
     scheduleBrowserProxyPrewarmFromHome();
   }
@@ -5194,6 +5208,7 @@
   function closeBrowserShellTab(id){
     const index=browserShellTabs.findIndex(tab=>tab.id===id);
     if(index<0) return;
+    const closingWasActive=browserShellActiveTab===id;
     const closing=browserShellTabs[index];
       if(closing.url==='nyx://settings') closeBrowserShellSettings();
       const nextIndex=browserShellTabs.findIndex(tab=>tab.id===id);
@@ -5212,6 +5227,11 @@
         }
       }
       const activeShell=browserShellTabs.find(tab=>tab.id===browserShellActiveTab) || browserShellTabs[0];
+      if(closingWasActive){
+        hideBrowserSuggestions();
+        const address=document.querySelector('[data-browser-shell-url]');
+        if(address) address.value=browserShellDisplayValue(activeShell?.url || '');
+      }
       if(activeShell?.title==='Home' && !activeShell.url){
         if(activeBrowser?.win?.isConnected){
           activeBrowser.tabs?.forEach(tab=>tab.frame?.classList.remove('active'));
@@ -7195,11 +7215,11 @@
     const encode=typeof config.codec?.encode==='function' ? config.codec.encode : encodeURIComponent;
     return config.prefix + encode(target);
   }
-  function proxyFailureHtml(message,engine='Nyx',{allowDirect=false}={}){
+  function proxyFailureHtml(message,engine='Nyx',{allowDirect=false,heading=''}={}){
     const safe=String(message || 'Refresh this page once so the updated service worker can take over, then search again.').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const safeEngine=String(engine || 'Nyx').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const safeHeading=String(heading || `${engine || 'Nyx'} did not start`).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const directAction=allowDirect?'<button type="button" onclick="parent.postMessage({type:\'nyx:proxy-direct-fallback\'},\'*\')">Try direct mode</button><small>Direct mode works only when the site allows embedding.</small>':'';
-    return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font-family:Outfit,Arial,sans-serif;background:#101318;color:#f5f7fb;display:grid;place-items:center;min-height:100vh}main{box-sizing:border-box;width:min(560px,100%);padding:28px;text-align:center}h1{font-size:20px;margin:0 0 10px}p{margin:0;color:#c8ced8;line-height:1.45}button{min-height:42px;margin:18px 0 0;padding:0 18px;border:1px solid #6379a0;border-radius:12px;background:#1a2841;color:#f5f7fb;font:700 14px Outfit,Arial,sans-serif;cursor:pointer}small{display:block;margin-top:9px;color:#98a6bb;line-height:1.4}@media(max-width:480px) and (max-height:520px){main{padding:18px}h1{font-size:18px}p{font-size:13px}button{width:100%}}</style><main><h1>${safeEngine} did not start</h1><p>${safe}</p>${directAction}</main>`;
+    return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font-family:Outfit,Arial,sans-serif;background:#101318;color:#f5f7fb;display:grid;place-items:center;min-height:100vh}main{box-sizing:border-box;width:min(560px,100%);padding:28px;text-align:center}h1{font-size:20px;margin:0 0 10px}p{margin:0;color:#c8ced8;line-height:1.45}button{min-height:42px;margin:18px 0 0;padding:0 18px;border:1px solid #6379a0;border-radius:12px;background:#1a2841;color:#f5f7fb;font:700 14px Outfit,Arial,sans-serif;cursor:pointer}small{display:block;margin-top:9px;color:#98a6bb;line-height:1.4}@media(max-width:480px) and (max-height:520px){main{padding:18px}h1{font-size:18px}p{font-size:13px}button{width:100%}}</style><main><h1>${safeHeading}</h1><p>${safe}</p>${directAction}</main>`;
   }
   function loadScript(src){
     return new Promise((resolve,reject)=>{
@@ -8793,7 +8813,7 @@
   }
   function normalizeHomeShortcut(item){
     const next={...item,url:normalizeInternalAppUrl(item?.url)};
-    if(['http://icefy.top','https://aether.cx'].includes(String(next.url || '').trim().replace(/\/+$/,'').toLowerCase())){
+    if(['http://icefy.top','https://aether.cx','/apps/movies'].includes(String(next.url || '').trim().replace(/\/+$/,'').toLowerCase())){
       next.url='https://cinejoy.to/';
       next.domain='cinejoy.to';
     }
@@ -11195,14 +11215,18 @@
       if(!t || !sourceUrl) return false;
       const key=String(sourceUrl);
       if(t.selectedSearchFallbackKey===key) return false;
-      const failedSecurityState=t.securityState==='insecure' || tlsCertificateErrorText(reason) ? 'insecure' : 'unknown';
+      const certificateFailure=tlsCertificateErrorText(reason);
+      const failedSecurityState=certificateFailure ? 'insecure' : 'unknown';
+      const failureMessage=certificateFailure
+        ? `Nyx blocked ${browserShellLabel(key)} because its HTTPS certificate could not be verified. Check the address, or try again after the site fixes its certificate.`
+        : `Nyx could not connect to ${browserShellLabel(key)}. Check that the address exists and is spelled correctly, then try again.`;
       t.selectedSearchFallbackKey=key;
       t.url=key;
       t.sourceUrl=key;
       t.title=browserShellLabel(key);
       t.icon=iconForUrl(key);
       t.frame.removeAttribute('src');
-      t.frame.srcdoc=proxyFailureHtml(`Nyx could not connect to ${browserShellLabel(key)}. Check that the address exists and is spelled correctly, then try again.`,'Page');
+      t.frame.srcdoc=proxyFailureHtml(failureMessage,'Page',certificateFailure ? {heading:'Connection not private'} : {});
       t.frame.classList.add('active');
       renderTabs();
       updateBrowserShellLocation(key,t.id,true);
@@ -11267,7 +11291,7 @@
     }
     function watchFrameTransportErrors(t,sourceUrl,expectedEngine){
       if(!t?.frame || !sourceUrl || !expectedEngine) return;
-      if(normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE))!=='auto') return;
+      const automaticMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE))==='auto';
       const token='transport-'+Date.now()+Math.random().toString(16).slice(2);
       t.transportWatchToken=token;
       const check=()=>{
@@ -11275,7 +11299,16 @@
         let text='';
         try{text=String(t.frame.contentDocument?.body?.textContent || '').slice(0,5000)}catch{return}
         if(!serviceWorkerTransportErrorText(text)) return;
-        setBrowserTabSecurityState(t,tlsCertificateErrorText(text) ? 'insecure' : 'unknown');
+        const certificateFailure=tlsCertificateErrorText(text);
+        setBrowserTabSecurityState(t,certificateFailure ? 'insecure' : 'unknown');
+        if(certificateFailure){
+          loadSelectedSearchFallback(t,sourceUrl,text);
+          return;
+        }
+        if(!automaticMode){
+          loadSelectedSearchFallback(t,sourceUrl,text);
+          return;
+        }
         const key=`${expectedEngine}:${sourceUrl}`;
         const attempts=t.transportRetries || (t.transportRetries={});
         attempts[key]=(attempts[key] || 0) + 1;
@@ -11829,6 +11862,7 @@
       const t=current(); if(!t)return;
       const navigationIntent='navigate-'+Date.now()+Math.random().toString(16).slice(2);
       t.navigationIntent=navigationIntent;
+      t.selectedSearchFallbackKey='';
       t.loadWatchToken='superseded-'+navigationIntent;
       t.transportWatchToken='superseded-'+navigationIntent;
       if(shouldTriggerSixtySevenJumpscare(raw)){
@@ -11940,11 +11974,15 @@
     function goFrameHistory(direction){
       const t=current();
       if(!t) return;
-      const nextIndex=t.index+direction;
+      let nextIndex=t.index+direction;
+      while(nextIndex>=0 && nextIndex<t.history.length && browserShellInvalidHistoryEntry(t.history[nextIndex])){
+        nextIndex+=direction;
+      }
       if(nextIndex>=0 && nextIndex<t.history.length){
         t.navigationIntent='history-'+Date.now()+Math.random().toString(16).slice(2);
         t.loadWatchToken='superseded-'+t.navigationIntent;
         t.transportWatchToken='superseded-'+t.navigationIntent;
+        t.selectedSearchFallbackKey='';
         t.index=nextIndex;
         const stored=t.history[nextIndex];
         if(isBrowserShellBlankUrl(stored)){
@@ -11983,11 +12021,10 @@
         return;
       }
       if(t.scramjetFrame){
-        try{
-          if(direction<0) t.scramjetFrame.back();
-          else t.scramjetFrame.forward();
-          return;
-        }catch{}
+        // Scramjet's private frame may retain transport bootstrap entries that
+        // resolve to /unidentified. Nyx's canonical tab history is the source
+        // of truth, so an exhausted Back/Forward action is a no-op.
+        return;
       }
       try{
         if(t.frame.contentWindow?.history?.length > 1){

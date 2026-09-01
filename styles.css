@@ -4365,3 +4365,29 @@ html[data-nyx-theme] body.browser-shell:not(.three-d-backgrounds):not(.custom-bg
   ):is(:hover,:focus-visible,:focus-within){
   border-color:var(--nyx-chrome-accent)!important;
 }
+
+/* Composite fields use one rounded glass surface. Keep their raw text fields
+   transparent so the broad theme rules cannot paint a square blur inside. */
+html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell :is(
+  .lion-ai-form .lion-ai-input,
+  .nyx-home-search input,
+  .nyx-minimal-search input,
+  .nyx-dashboard-appbar input,
+  .nyx-profile-directory-search input,
+  .nyx-owner-search input
+){
+  border:0!important;
+  border-radius:0!important;
+  background-color:transparent!important;
+  background-image:none!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+  box-shadow:none!important;
+}
+html[data-nyx-theme] body.browser-shell .lion-ai-form{
+  overflow:hidden;
+  border-radius:22px!important;
+  background:rgba(4,7,12,.74)!important;
+  -webkit-backdrop-filter:blur(10px) saturate(1.06)!important;
+  backdrop-filter:blur(10px) saturate(1.06)!important;
+}

@@ -51,6 +51,8 @@
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@playwright/test": "^1.61.1",
     "acorn": "^8.18.0",
+    "clean-css": "^5.3.3",
+    "html-minifier-terser": "^7.2.0",
     "socket.io-client": "^4.8.3",
     "terser": "^5.49.2"
   }

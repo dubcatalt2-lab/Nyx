@@ -4,6 +4,8 @@ import { cp, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "acorn";
+import CleanCSS from "clean-css";
+import { minify as minifyHtml } from "html-minifier-terser";
 import { minify } from "terser";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -23,6 +25,7 @@ const rootFiles = new Set([
   "script.js",
   "startup.js",
   "startup-studyhub.html",
+  "student-resources.html",
   "styles.css",
   "uv.config.js",
   "uv.sw.js",
@@ -282,31 +285,16 @@ async function minifyEmbeddedScramjetGuards(source, nameCache) {
 }
 
 async function minifyFirstPartyBrowserRuntimes() {
-  const targets = [
-    { path: "script.js", topLevel: true },
-    { path: "startup.js", topLevel: true },
-    { path: "uv.sw.js", topLevel: true },
-    { path: "scramjet.sw.js", topLevel: true },
-    { path: "scramjet-v1.sw.js", topLevel: true },
-    { path: "uv.config.js", topLevel: true },
-    { path: "runtime-config.js", topLevel: true },
-    { path: "nyx-scramjet-runtime-guard.js", topLevel: true },
-    { path: "js/ai-workspace.js", topLevel: true },
-    { path: "js/loading-screen.js", topLevel: true },
-    { path: "js/nyx-logo.js", topLevel: true },
-    { path: "js/owner-dashboard.js", topLevel: true },
-    { path: "js/pwa-install.js", topLevel: true },
-    { path: "apps/api-keys/app.js", topLevel: true },
-    { path: "apps/chat/app.js", topLevel: true },
-    { path: "apps/cloud-gaming/app.js", topLevel: true },
-    { path: "apps/connect-domain/app.js", topLevel: true },
-    { path: "apps/link-checker/app.js", topLevel: true },
-    { path: "apps/link-generator/app.js", topLevel: true },
-    { path: "apps/jsdelivr-publisher/app.js", topLevel: true },
-    { path: "apps/nyxify/app.js", topLevel: true },
-    { path: "apps/nyxtube/app.js", topLevel: true },
-    { path: "assets/games/games.js", topLevel: true }
-  ];
+  const generatedRuntimes = ["runtime-config.js", "nyx-scramjet-runtime-guard.js"];
+  const trackedRuntimes = repositoryFiles().filter(relative => (
+    relative.endsWith(".js") &&
+    isStaticSource(relative) &&
+    !relative.startsWith("assets/ugs/") &&
+    !relative.startsWith("assets/vendor/")
+  ));
+  const targets = [...new Set([...trackedRuntimes, ...generatedRuntimes])]
+    .sort()
+    .map(path => ({ path, topLevel: true }));
   const nameCache = {};
   let sourceBytes = 0;
   let outputBytes = 0;
@@ -334,7 +322,57 @@ async function minifyFirstPartyBrowserRuntimes() {
     transformedFiles += 1;
   }
   const reduction = sourceBytes ? Math.round((1 - outputBytes / sourceBytes) * 100) : 0;
-  console.log(`Production-obfuscated ${transformedFiles} first-party browser runtime files (${reduction}% smaller; no source maps)`);
+  if (transformedFiles !== targets.length) throw new Error(`Obfuscation coverage failed: ${transformedFiles}/${targets.length} runtimes transformed`);
+  console.log(`Production-obfuscated all ${transformedFiles} first-party browser runtime files (${reduction}% smaller; no source maps)`);
+}
+
+function isFirstPartyMarkupOrStyle(relative) {
+  if (!isStaticSource(relative) || relative.startsWith("assets/ugs/") || relative.startsWith("assets/vendor/")) return false;
+  return /\.(?:html|css)$/i.test(relative);
+}
+
+async function minifyFirstPartyMarkupAndStyles() {
+  const files = repositoryFiles().filter(isFirstPartyMarkupOrStyle);
+  let sourceBytes = 0;
+  let outputBytes = 0;
+  let transformedFiles = 0;
+  for (const relative of files) {
+    const path = join(output, ...relative.split("/"));
+    let source;
+    try {
+      source = await readFile(path, "utf8");
+    } catch {
+      throw new Error(`First-party HTML/CSS asset is missing from the production build: ${relative}`);
+    }
+    sourceBytes += Buffer.byteLength(source);
+    let transformed;
+    if (relative.endsWith(".css")) {
+      const result = new CleanCSS({ inline: ["none"], level: 2, rebase: false }).minify(source);
+      if (result.errors.length) throw new Error(`Could not minify ${relative}: ${result.errors.join("; ")}`);
+      transformed = result.styles;
+    } else {
+      transformed = await minifyHtml(source, {
+        collapseWhitespace: true,
+        conservativeCollapse: true,
+        minifyCSS: { level: 2 },
+        minifyJS: {
+          compress: runtimeCompressOptions(),
+          mangle: false,
+          format: runtimeFormatOptions()
+        },
+        removeComments: true,
+        removeRedundantAttributes: true,
+        removeScriptTypeAttributes: true,
+        removeStyleLinkTypeAttributes: true,
+        useShortDoctype: true
+      });
+    }
+    await writeFile(path, `${transformed}\n`);
+    outputBytes += Buffer.byteLength(transformed) + 1;
+    transformedFiles += 1;
+  }
+  const reduction = sourceBytes ? Math.round((1 - outputBytes / sourceBytes) * 100) : 0;
+  console.log(`Production-minified ${transformedFiles} first-party HTML/CSS files (${reduction}% smaller; comments removed)`);
 }
 
 async function writeNetlifyFiles() {
@@ -353,6 +391,7 @@ async function main() {
   await configureUv(wispUrl);
   await removeUnavailableUgsEntries();
   await minifyFirstPartyBrowserRuntimes();
+  await minifyFirstPartyMarkupAndStyles();
   await writeNetlifyFiles();
   console.log(`${vpsBuild ? "VPS" : "Netlify"} build ready in ${output}`);
   console.log(`Wisp endpoint: ${wispUrl}`);

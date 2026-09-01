@@ -136,6 +136,60 @@ body>header :is(a,button):is(:hover,:focus-visible,.active,[aria-current="page"]
   backdrop-filter:blur(8px) saturate(1.04)!important;
 }
 
+/* Composite controls paint their glass once on the rounded outer surface.
+   A second backdrop layer on the raw field creates the square patches that
+   show through search bars and composers. */
+:is(input,select,textarea){
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+.form-grid label{
+  background-color:transparent!important;
+  background-image:none!important;
+  border-color:transparent!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+:is(
+  .ai-history-search,
+  .ai-key-input-wrap,
+  .message-composer,
+  .search,
+  .searchbox,
+  .search-box,
+  .search-field,
+  .select-field,
+  .dashboard-search,
+  .scraper-search
+){
+  background-color:rgba(4,7,12,.68)!important;
+  border-color:var(--nyx-app-line)!important;
+  -webkit-backdrop-filter:blur(8px) saturate(1.05)!important;
+  backdrop-filter:blur(8px) saturate(1.05)!important;
+}
+:is(
+  .ai-history-search input,
+  .ai-key-input-wrap input,
+  .ai-composer textarea,
+  .message-composer textarea,
+  .search input,
+  .searchbox input,
+  .search-box input,
+  .search-field input,
+  .select-field select,
+  .dashboard-search input,
+  .simple-check-form input,
+  .scraper-search input
+){
+  border:0!important;
+  border-radius:0!important;
+  background-color:transparent!important;
+  background-image:none!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+  box-shadow:none!important;
+}
+
 :is(button,a,input,select,textarea):focus-visible{
   outline-color:#86a9e8!important;
 }
@@ -300,6 +354,22 @@ body:has(.ai-app)::before,
   border-color:var(--nyx-app-line)!important;
   -webkit-backdrop-filter:blur(6px) saturate(1.04)!important;
   backdrop-filter:blur(6px) saturate(1.04)!important;
+}
+.ai-composer{
+  overflow:hidden;
+  border-radius:22px!important;
+  background-color:rgba(4,7,12,.74)!important;
+  -webkit-backdrop-filter:blur(10px) saturate(1.06)!important;
+  backdrop-filter:blur(10px) saturate(1.06)!important;
+}
+.ai-composer textarea{
+  border-color:transparent!important;
+  border-radius:0!important;
+  background-color:transparent!important;
+  background-image:none!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+  box-shadow:none!important;
 }
 .ai-header{
   background-color:transparent!important;

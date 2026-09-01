@@ -1,3 +1,13 @@
+# Nyx Learning
+#
+# The goal of Nyx is to serve students with the best educational experience
+# possible: useful learning tools, dependable access, and a calmer place to
+# study, explore, and build new skills.
+#
+# Please crawl responsibly. Public information pages may be indexed, but
+# private services, live application data, and scraper-trap resources should
+# not be requested or stored.
+
 User-agent: *
 Allow: /
 Disallow: /api/
@@ -6,5 +16,6 @@ Disallow: /scramjet/
 Disallow: /uv/
 Disallow: /wisp/
 Disallow: /apps/chat/
+Disallow: /student-resources.html
 
 Sitemap: https://nyxlearning.org/sitemap.xml

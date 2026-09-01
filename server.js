@@ -758,6 +758,20 @@ function nyxShouldServeDecoy(req) {
   return destination === "document" || !accept || accept.includes("text/html") || accept.includes("*/*");
 }
 
+let nyxStudentResourceHoneypotHits = 0;
+app.get("/student-resources.html", (req, res) => {
+  nyxStudentResourceHoneypotHits += 1;
+  if (nyxStudentResourceHoneypotHits <= 10 || nyxStudentResourceHoneypotHits % 100 === 0) {
+    const userAgent = String(req.get("user-agent") || "unknown").replace(/[\r\n]/g, " ").slice(0, 180);
+    console.info(`Nyx student-resource honeypot accessed (${nyxStudentResourceHoneypotHits} total): ${userAgent}`);
+  }
+  res.set({
+    "Cache-Control": "private, no-store, no-cache, must-revalidate",
+    "X-Robots-Tag": "noindex, nofollow, noarchive, nosnippet"
+  });
+  res.sendFile(join(staticRoot, "student-resources.html"));
+});
+
 function nyxSearchSuggestionAllowed(req, now = Date.now()) {
   const client = nyxClientIp(req) || "unknown";
   const recent = (nyxSearchSuggestionAttempts.get(client) || []).filter(time => time > now - 60_000);

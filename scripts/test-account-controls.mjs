@@ -295,7 +295,7 @@ try{
   await page.locator('[data-browser-wisp-reset]').click();
   assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.wispUrl')),'','Reset did not restore the default Wisp relay');
   assert.match(await page.locator('[data-browser-wisp-status]').textContent(),/^Default relay: wss?:\/\//,'Default Wisp relay status was not restored');
-  await page.locator('[data-nyx-visual-new-tab]').click();
+  await page.locator('.brand-mini [data-browser-shell-new-tab]').evaluate(button=>button.click());
   await page.waitForSelector('.browser-shell-settings-overlay',{state:'detached'});
   assert.equal(await page.locator('.nyx-browser-tab-row.active strong').textContent(),'New Tab','New tab created from Settings did not become the active blank tab');
   assert.equal(await page.locator('[data-browser-shell-url]').inputValue(),'','New tab created from Settings inherited its internal URL');
@@ -303,7 +303,7 @@ try{
   await page.locator('[data-nyx-dock-item="home"]').click();
   const tabLifecycleHomeSearch=page.locator('.browser-window.browser-home-page [data-browser-blank-input]');
   await tabLifecycleHomeSearch.fill('stale tab search');
-  await page.locator('[data-nyx-visual-new-tab]').click();
+  await page.locator('.brand-mini [data-browser-shell-new-tab]').evaluate(button=>button.click());
   assert.equal(await page.locator('.browser-window.browser-home-page [data-browser-blank-input]').inputValue(),'','A new blank tab inherited the previous tab search text');
   await page.locator('.nyx-browser-tab-row.active [data-browser-shell-close-tab]').evaluate(button=>button.click());
   assert.equal(await page.locator('.browser-window.browser-home-page [data-browser-blank-input]').inputValue(),'','Closing a blank tab restored stale homepage search text');

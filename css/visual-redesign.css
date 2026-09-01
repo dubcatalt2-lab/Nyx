@@ -1663,15 +1663,20 @@ html[data-nyx-home-design="redesigned"][data-nyx-home-design="redesigned"]
 body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):is(body,#nyx-visual-c):is(body,#nyx-visual-d) .browser-window.browser-home-page>.browser-body,
 html[data-nyx-home-design="redesigned"][data-nyx-home-design="redesigned"]
 body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):is(body,#nyx-visual-c):is(body,#nyx-visual-d) .browser-home.nyx-visual-home{
-  background:#080d18!important;
+  background:transparent!important;
+  background-image:none!important;
 }
 html[data-nyx-home-design="redesigned"][data-nyx-home-design="redesigned"]
 body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):is(body,#nyx-visual-c):is(body,#nyx-visual-d) .top-os.top-os{
-  background:#0d1320!important;
+  background:rgba(5,8,13,.24)!important;
+  background-image:none!important;
+  -webkit-backdrop-filter:blur(5px) saturate(1.03)!important;
+  backdrop-filter:blur(5px) saturate(1.03)!important;
 }
 html[data-nyx-home-design="redesigned"][data-nyx-home-design="redesigned"]
 body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):is(body,#nyx-visual-c):is(body,#nyx-visual-d) .browser-shell-settings-overlay{
-  background:#080d17!important;
+  background:rgba(5,8,13,.12)!important;
+  background-image:none!important;
 }
 
 @media (min-width:901px){
@@ -1685,13 +1690,17 @@ body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):i
   }
   html[data-nyx-home-design="redesigned"][data-nyx-home-design="redesigned"]
   body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):is(body,#nyx-visual-c):is(body,#nyx-visual-d) .browser-shell-settings-panel :is(.nyx-settings-side,.nyx-settings-category.active){
-    background:#0d1523!important;
-    border-color:#283247!important;
+    background:rgba(7,11,17,.30)!important;
+    border-color:rgba(210,229,255,.10)!important;
+    -webkit-backdrop-filter:blur(6px) saturate(1.04)!important;
+    backdrop-filter:blur(6px) saturate(1.04)!important;
   }
   html[data-nyx-home-design="redesigned"][data-nyx-home-design="redesigned"]
   body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):is(body,#nyx-visual-c):is(body,#nyx-visual-d) .browser-shell-settings-panel .nyx-settings-group>.settings-block{
-    background:#0f1724!important;
-    border-color:#283247!important;
+    background:rgba(11,16,24,.32)!important;
+    border-color:rgba(210,229,255,.10)!important;
+    -webkit-backdrop-filter:blur(5px) saturate(1.03)!important;
+    backdrop-filter:blur(5px) saturate(1.03)!important;
   }
   html[data-nyx-home-design="redesigned"][data-nyx-home-design="redesigned"]
   body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):is(body,#nyx-visual-c):is(body,#nyx-visual-d) .browser-shell-settings-panel .nyx-settings-control{
@@ -1704,14 +1713,16 @@ body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):i
   body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):is(body,#nyx-visual-c):is(body,#nyx-visual-d) .browser-shell-settings-panel .nyx-color-theme-card{
     min-height:82px!important;
     padding:13px 16px!important;
-    border:1px solid #2a3549!important;
+    border:1px solid rgba(210,229,255,.10)!important;
     border-radius:12px!important;
-    background:#131d2b!important;
+    background:rgba(11,16,24,.38)!important;
+    -webkit-backdrop-filter:blur(5px) saturate(1.03)!important;
+    backdrop-filter:blur(5px) saturate(1.03)!important;
   }
   html[data-nyx-home-design="redesigned"][data-nyx-home-design="redesigned"]
   body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):is(body,#nyx-visual-c):is(body,#nyx-visual-d) .browser-shell-settings-panel .nyx-color-theme-card.selected{
     border-color:color-mix(in srgb,var(--nyx-visual-accent) 66%,#71809a)!important;
-    background:#182233!important;
+    background:rgba(255,255,255,.075)!important;
   }
   html[data-nyx-home-design="redesigned"][data-nyx-home-design="redesigned"]
   body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):is(body,#nyx-visual-c):is(body,#nyx-visual-d) .browser-shell-settings-panel .nyx-color-theme-card:last-child:nth-child(odd){
@@ -1762,6 +1773,30 @@ body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):i
   body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):is(body,#nyx-visual-c):is(body,#nyx-visual-d) .browser-shell-settings-panel .settings-row>.settings-action[data-switch].on::after{
     transform:translateX(16px)!important;
   }
+}
+
+/* Fern must not pre-paint every Settings action. Only the hovered or selected
+   row receives glass; idle rows remain transparent in both dock positions. */
+html[data-nyx-theme="fresh"][data-nyx-home-design="redesigned"]
+body.browser-shell.browser-shell.theme-fresh:is(body,#nyx-fern-idle-a):is(body,#nyx-fern-idle-b)
+.browser-shell-settings-panel .nyx-settings-nav button:not(:hover):not(.active){
+  background:transparent!important;
+  background-color:transparent!important;
+  background-image:none!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+html[data-nyx-theme="fresh"][data-nyx-home-design="redesigned"]
+body.browser-shell.browser-shell.theme-fresh:is(body,#nyx-fern-idle-a):is(body,#nyx-fern-idle-b)
+.browser-shell-settings-panel .nyx-settings-nav button:is(:hover,.active){
+  background:rgba(255,255,255,.075)!important;
+  background-image:none!important;
+  border-color:rgba(210,229,255,.10)!important;
+  box-shadow:none!important;
+  -webkit-backdrop-filter:blur(4px) saturate(1.03)!important;
+  backdrop-filter:blur(4px) saturate(1.03)!important;
 }
 
 @media (max-width:900px){

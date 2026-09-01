@@ -1,6 +1,7 @@
 /* Shared Nyx built-in app surfaces. Transparent glass over the Nyx wallpaper. */
 :root{
   --nyx-app-canvas:transparent;
+  --nyx-app-base:transparent;
   --nyx-app-shell:rgba(5,7,11,.30);
   --nyx-app-panel:rgba(7,10,15,.32);
   --nyx-app-panel-strong:rgba(15,20,28,.44);
@@ -20,9 +21,14 @@
 html,
 body{
   --nyx-themed-logo-url:url("/assets/icons/nyx-logo.png")!important;
-  background-color:transparent!important;
   background-image:none!important;
   color:var(--nyx-app-text);
+}
+html{background-color:transparent!important}
+body{
+  background-color:var(--nyx-app-base)!important;
+  -webkit-backdrop-filter:none;
+  backdrop-filter:none;
 }
 body::before{
   background:transparent!important;
@@ -102,8 +108,8 @@ body>header :is(a,button):is(:hover,:focus-visible,.active,[aria-current="page"]
   background-color:var(--nyx-app-panel)!important;
   background-image:none!important;
   border-color:var(--nyx-app-line)!important;
-  -webkit-backdrop-filter:blur(10px) saturate(1.05)!important;
-  backdrop-filter:blur(10px) saturate(1.05)!important;
+  -webkit-backdrop-filter:blur(6px) saturate(1.04)!important;
+  backdrop-filter:blur(6px) saturate(1.04)!important;
 }
 
 :is(input,select,textarea),
@@ -150,11 +156,22 @@ body:has(#stars)::before{
   background:transparent!important;
 }
 #stars{display:none!important}
+.home-track-list,
+.player-inner,
+.queue-panel,
+.playlist-dialog{
+  background-color:var(--nyx-app-panel)!important;
+  background-image:none!important;
+  border-color:var(--nyx-app-line)!important;
+  -webkit-backdrop-filter:blur(6px) saturate(1.04)!important;
+  backdrop-filter:blur(6px) saturate(1.04)!important;
+}
 
 /* NyxTube */
-html:has(.tube-shell),
+html:has(.tube-shell){background:transparent!important}
 body:has(.tube-shell){
-  background:transparent!important;
+  background-color:var(--nyx-app-base)!important;
+  background-image:none!important;
 }
 .starfield{
   background:transparent!important;
@@ -207,6 +224,43 @@ body:has(.chat-app){
   background-image:none!important;
 }
 .chat-app{background:transparent!important;background-image:none!important}
+.chat-app::before{display:none!important}
+.conversation{
+  background-color:rgba(9,16,23,.08)!important;
+  background-image:none!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+.channel-sidebar,
+.member-sidebar,
+.signin-gate,
+.loading-chat{
+  background-color:rgba(12,20,28,.18)!important;
+  background-image:none!important;
+  border-color:var(--nyx-app-line)!important;
+  -webkit-backdrop-filter:blur(5px) saturate(1.04)!important;
+  backdrop-filter:blur(5px) saturate(1.04)!important;
+}
+.channel-sidebar,
+.member-sidebar{
+  background-color:rgba(12,20,28,.18)!important;
+}
+.signin-gate{
+  background-color:rgba(12,20,28,.20)!important;
+}
+.conversation-header{
+  background-color:transparent!important;
+  background-image:none!important;
+  -webkit-backdrop-filter:blur(6px) saturate(1.03)!important;
+  backdrop-filter:blur(6px) saturate(1.03)!important;
+}
+.message-composer{
+  background-color:var(--nyx-app-field)!important;
+  background-image:none!important;
+  border-color:var(--nyx-app-line)!important;
+  -webkit-backdrop-filter:blur(8px) saturate(1.04)!important;
+  backdrop-filter:blur(8px) saturate(1.04)!important;
+}
 
 /* Nyx AI workspace */
 body:has(.ai-app){
@@ -244,8 +298,8 @@ body:has(.ai-app)::before,
 .ai-empty-card{
   background-color:var(--nyx-app-panel)!important;
   border-color:var(--nyx-app-line)!important;
-  -webkit-backdrop-filter:blur(10px) saturate(1.05)!important;
-  backdrop-filter:blur(10px) saturate(1.05)!important;
+  -webkit-backdrop-filter:blur(6px) saturate(1.04)!important;
+  backdrop-filter:blur(6px) saturate(1.04)!important;
 }
 .ai-header{
   background-color:transparent!important;
@@ -253,6 +307,31 @@ body:has(.ai-app)::before,
   border-color:rgba(210,229,255,.07)!important;
   -webkit-backdrop-filter:blur(6px) saturate(1.03)!important;
   backdrop-filter:blur(6px) saturate(1.03)!important;
+}
+.ai-composer-shell{
+  background:transparent!important;
+  background-image:none!important;
+}
+
+/* Remaining built-in structural surfaces use the same glass system. */
+.administrator-access,
+.account-access,
+.notice,
+.hero-copy,
+.identity,
+.feature{
+  background-color:var(--nyx-app-panel)!important;
+  background-image:none!important;
+  border-color:var(--nyx-app-line)!important;
+  -webkit-backdrop-filter:blur(6px) saturate(1.04)!important;
+  backdrop-filter:blur(6px) saturate(1.04)!important;
+}
+body:has(.hero-copy) :is(.back,.secondary){
+  background-color:var(--nyx-app-field)!important;
+  background-image:none!important;
+}
+body:has(.hero-copy) .primary{
+  background:var(--accent)!important;
 }
 
 /* Link Checker */

@@ -181,7 +181,7 @@
 
 @media (min-width:901px){
   html[data-nyx-home-design="redesigned"] body.browser-shell{
-    --nyx-rail-motion:320ms cubic-bezier(.22,1,.36,1);
+    --nyx-rail-motion:180ms cubic-bezier(.2,.8,.2,1);
   }
   html[data-nyx-home-design="redesigned"] body.browser-shell .nyx-visual-dock{
     align-items:stretch!important;
@@ -189,8 +189,8 @@
     border-color:rgba(255,255,255,.1)!important;
     background:rgba(4,4,5,.68)!important;
     box-shadow:inset 1px 0 rgba(255,255,255,.035),-14px 0 34px rgba(0,0,0,.18)!important;
-    -webkit-backdrop-filter:blur(24px) saturate(1.08)!important;
-    backdrop-filter:blur(24px) saturate(1.08)!important;
+    -webkit-backdrop-filter:blur(10px) saturate(1.04)!important;
+    backdrop-filter:blur(10px) saturate(1.04)!important;
     transition:width var(--nyx-rail-motion),background-color var(--nyx-rail-motion),border-color var(--nyx-rail-motion)!important;
   }
   html[data-nyx-home-design="redesigned"][data-nyx-sidebar-side="left"] body.browser-shell .nyx-visual-dock{
@@ -520,16 +520,16 @@
     border:0!important;
     background:rgba(255,255,255,.065)!important;
     box-shadow:none!important;
-    -webkit-backdrop-filter:blur(12px)!important;
-    backdrop-filter:blur(12px)!important;
+    -webkit-backdrop-filter:blur(3px)!important;
+    backdrop-filter:blur(3px)!important;
   }
   html[data-nyx-home-design="redesigned"] body.browser-shell .nyx-visual-dock :is(.nyx-visual-dock-tab,nav button).active{
     border:0!important;
     border-radius:0!important;
     background:rgba(255,255,255,.09)!important;
     box-shadow:none!important;
-    -webkit-backdrop-filter:blur(12px)!important;
-    backdrop-filter:blur(12px)!important;
+    -webkit-backdrop-filter:blur(3px)!important;
+    backdrop-filter:blur(3px)!important;
   }
   html[data-nyx-home-design="redesigned"][data-nyx-home-design="redesigned"]
   body.browser-shell.browser-shell:is(body,#nyx-hover-a):is(body,#nyx-hover-b):not(#nyx-hover-c):not(#nyx-hover-d):not(#nyx-hover-e)
@@ -546,8 +546,8 @@
     border-radius:8px!important;
     background:rgba(255,255,255,.065)!important;
     box-shadow:none!important;
-    -webkit-backdrop-filter:blur(12px)!important;
-    backdrop-filter:blur(12px)!important;
+    -webkit-backdrop-filter:none!important;
+    backdrop-filter:none!important;
   }
   html[data-nyx-home-design="redesigned"][data-nyx-home-design="redesigned"]
   body.browser-shell.browser-shell:is(body,#nyx-hover-a):is(body,#nyx-hover-b):not(#nyx-hover-c):not(#nyx-hover-d):not(#nyx-hover-e)
@@ -556,8 +556,15 @@
     border-radius:8px!important;
     background:rgba(255,255,255,.09)!important;
     box-shadow:none!important;
-    -webkit-backdrop-filter:blur(12px)!important;
-    backdrop-filter:blur(12px)!important;
+    -webkit-backdrop-filter:none!important;
+    backdrop-filter:none!important;
+  }
+
+  html[data-nyx-home-design="redesigned"] body.browser-shell .nyx-visual-dock :is(
+    .nyx-visual-dock-expand,.nyx-visual-dock-head-add,.nyx-visual-dock-tab,
+    .nyx-visual-dock-tab-add,nav button,.nyx-visual-dock-tab-close
+  ){
+    transition:background-color 90ms ease,color 90ms ease,opacity 90ms linear!important;
   }
 
   @media (prefers-reduced-motion:reduce){

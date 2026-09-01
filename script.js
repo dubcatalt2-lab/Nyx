@@ -2647,6 +2647,7 @@
   let uvRegistration = null;
   let scramjetInstallPromise = null;
   let scramjetController = null;
+  let browserProxyPrewarmScheduled = false;
   let scramjetV1InstallPromise = null;
   let scramjetV1Controller = null;
   let scramjetV1InstallError = '';
@@ -4224,6 +4225,8 @@
   function renderBrowserShellHomeMode(win){
     if(!win) return;
     hideNyxErudaPanel();
+    win.classList.remove('nyx-frame-loading');
+    win.querySelector('.nyx-frame-loader')?.setAttribute('aria-hidden','true');
     win.classList.remove('browser-blank-page');
     win.classList.add('browser-home-page');
     win.classList.add('browser-blank');
@@ -4241,6 +4244,7 @@
     const input=win.querySelector('[data-browser-blank-input]');
     if(input && !input.value) input.value='';
     ensureNyxAccountButton();
+    scheduleBrowserProxyPrewarmFromHome();
   }
   function ensureBrowserShellHome(){
     if(!browserShellTabs.length){
@@ -4249,6 +4253,7 @@
       browserShellActiveTab=id;
     }
     if(!browserShellActiveTab) browserShellActiveTab=browserShellTabs[0].id;
+    armBrowserProxyPrewarmOnIntent();
   }
   function moveBrowserShellTab(draggedId,targetId,placeAfter=false){
     if(!draggedId || !targetId || draggedId===targetId) return false;
@@ -6880,7 +6885,9 @@
 
       await runStep(83,'Loading shortcuts',()=>{
         installHomeShortcutAnimationObserver();
-        startRuntimeLagWatch();
+        // Do not restyle the entire interface in response to a few slow
+        // frames. The user-controlled Lag Reducer remains available, while
+        // normal mode keeps stable, predictable motion.
         initDesktopSplash();
       },400);
 
@@ -8478,6 +8485,41 @@
     });
     return scramjetInstallPromise;
   }
+  function scheduleBrowserProxyPrewarm(){
+    if(browserProxyPrewarmScheduled) return;
+    const mode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
+    if(mode!=='auto' && mode!=='scramjet') return;
+    browserProxyPrewarmScheduled=true;
+    const warm=()=>{
+      if(document.visibilityState==='hidden'){
+        browserProxyPrewarmScheduled=false;
+        return;
+      }
+      void installScramjet();
+    };
+    if(typeof requestIdleCallback==='function') requestIdleCallback(warm,{timeout:700});
+    else setTimeout(warm,0);
+  }
+  let browserProxyPrewarmIntentArmed=false;
+  let browserProxyHomeWarmTimer=0;
+  function scheduleBrowserProxyPrewarmFromHome(){
+    if(browserProxyHomeWarmTimer || browserProxyPrewarmScheduled) return;
+    browserProxyHomeWarmTimer=setTimeout(()=>{
+      browserProxyHomeWarmTimer=0;
+      if(!document.querySelector('.browser-window.browser-home-page [data-browser-blank-input]')) return;
+      scheduleBrowserProxyPrewarm();
+    },800);
+  }
+  function armBrowserProxyPrewarmOnIntent(){
+    if(browserProxyPrewarmIntentArmed) return;
+    browserProxyPrewarmIntentArmed=true;
+    const warmFromSearchIntent=event=>{
+      if(!event.target?.closest?.('[data-browser-blank-input],[data-browser-shell-url]')) return;
+      scheduleBrowserProxyPrewarm();
+    };
+    document.addEventListener('pointerdown',warmFromSearchIntent,{capture:true,passive:true});
+    document.addEventListener('focusin',warmFromSearchIntent,{capture:true,passive:true});
+  }
   function rammerhead(url){
     if(/^data:text\/html/i.test(url)) return url;
     const base=getRhBase();
@@ -9190,8 +9232,10 @@
       const canvasPadding=90;
       const pointerRadius=55;
       const repelStrength=2.2;
-      const spring=.05;
-      const friction=.82;
+      // Keep the particle wordmark playful without making it trail the
+      // pointer. A firmer spring and lower inertia return dots promptly.
+      const spring=.14;
+      const friction=.7;
       const fadeDistance=42;
       let dotRadius=3;
       let width=0;
@@ -9357,8 +9401,14 @@
         pointerInside=inside;
         if(inside) requestFrame();
       };
-      addEventListener('pointermove',movePointer,{passive:true});
-      addEventListener('pointerdown',movePointer,{passive:true});
+      // Keep pointer work local to the title canvas. A window-level listener
+      // forced a layout read on every pointer event anywhere in Nyx.
+      title.addEventListener('pointermove',movePointer,{passive:true});
+      title.addEventListener('pointerdown',movePointer,{passive:true});
+      title.addEventListener('pointerleave',()=>{
+        pointerInside=false;
+        requestFrame();
+      },{passive:true});
       addEventListener('pointerup',event=>{
         if(event.pointerType==='touch'){
           pointerInside=false;
@@ -9942,6 +9992,7 @@
         close(){
           const index=state.tabs.findIndex(tab=>tab.id===t.id);
           if(index<0) return;
+          if(t.id===state.active) setTabLoading(t,false);
           destroyProxyPrivacySession(t);
           t.frame.remove();
           state.tabs.splice(index,1);
@@ -10939,6 +10990,36 @@
       setFrameSandbox(t,true);
       installPopupBridge(t);
     }
+    function ensureTabLoadingScene(){
+      const body=win.querySelector('.browser-body');
+      if(!body) return null;
+      let loader=body.querySelector('.nyx-frame-loader');
+      if(loader) return loader;
+      loader=document.createElement('div');
+      loader.className='nyx-frame-loader';
+      loader.setAttribute('aria-hidden','true');
+      loader.innerHTML=`<svg viewBox="0 0 180 150" role="img" aria-label="Page loading">
+        <g class="nyx-loader-moon" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M88 8a18 18 0 1 0 12 31A20 20 0 0 1 88 8Z"/>
+        </g>
+        <g class="nyx-loader-rocket" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M90 54C77 66 76 84 79 102h22c3-18 2-36-11-48Z"/>
+          <circle cx="90" cy="77" r="5.5"/>
+          <path d="m79 87-10 17 11-4m21-13 10 17-11-4M82 102v6h16v-6"/>
+          <path class="nyx-loader-flame nyx-loader-flame-a" d="M84 108c-3 7-2 13 0 19"/>
+          <path class="nyx-loader-flame nyx-loader-flame-b" d="M90 108c-3 10 0 18 0 27"/>
+          <path class="nyx-loader-flame nyx-loader-flame-c" d="M96 108c3 7 2 13 0 19"/>
+        </g>
+      </svg>`;
+      body.append(loader);
+      return loader;
+    }
+    function setTabLoading(t,loading){
+      if(!t) return;
+      t.loading=!!loading;
+      ensureTabLoadingScene()?.setAttribute('aria-hidden',t.loading?'false':'true');
+      if(t.id===state.active) win.classList.toggle('nyx-frame-loading',t.loading);
+    }
     function activate(id){
       cleanupBrowserInjectedAds();
       state.active=id; const t=current();
@@ -10952,6 +11033,8 @@
       const activeLocation=browserShellSourceUrl(t?.sourceUrl || activeUrl) || t?.sourceUrl || activeUrl;
       const activeTitle=t?.title || mappedShellTab?.title || 'New Tab';
       const activeIsBlank=isBrowserShellBlankUrl(activeUrl);
+      win.classList.toggle('nyx-frame-loading',!!t?.loading);
+      ensureTabLoadingScene()?.setAttribute('aria-hidden',t?.loading?'false':'true');
       win.classList.toggle('internal-clear',!!t?.frame?.classList.contains('transparent-internal-page'));
       win.querySelectorAll('.view').forEach(f=>f.classList.remove('active'));
       win.classList.toggle('browser-blank',activeIsBlank);
@@ -11031,6 +11114,64 @@
     }
     function tlsCertificateErrorText(text){
       return /request failed with error code\s*(?:35|60)|ssl connect error|tls handshake eof|ssl peer certificate|certificate.*not ok|certificate (?:error|invalid|expired|revoked|untrusted)|cert_(?:authority_invalid|common_name_invalid|date_invalid)/i.test(String(text || ''));
+    }
+    function monitorBrowserTabSecurity(t,sourceUrl,navigationIntent=t?.navigationIntent || ''){
+      if(!t?.frame) return;
+      const source=browserShellSourceUrl(sourceUrl) || String(sourceUrl || '');
+      const initialState=browserShellSecurityStateForUrl(source);
+      setBrowserTabSecurityState(t,initialState);
+      if(initialState!=='unknown') return;
+      const token='security-'+Date.now()+Math.random().toString(16).slice(2);
+      t.securityCheckToken=token;
+      const current=()=>state.tabs.includes(t)
+        && t.securityCheckToken===token
+        && (!navigationIntent || t.navigationIntent===navigationIntent);
+      const check=()=>{
+        if(!current()) return;
+        const health=inspectFrameHealth(t);
+        const errorText=String(health.text || health.error || '');
+        if(tlsCertificateErrorText(errorText)){
+          setBrowserTabSecurityState(t,'insecure');
+          return;
+        }
+        if(health.reachable && health.hasErrorText){
+          setBrowserTabSecurityState(t,'unknown');
+          return;
+        }
+        if(health.reachable && health.readyState==='complete') setBrowserTabSecurityState(t,'secure');
+      };
+      const onLoad=()=>setTimeout(check,220);
+      t.frame.addEventListener('load',onLoad,{once:true});
+      t.frame.addEventListener('error',()=>{
+        if(current()) setBrowserTabSecurityState(t,'insecure');
+      },{once:true});
+      // A no-cors HEAD probe resolves after a valid HTTPS handshake without
+      // exposing response data. Certificate failures reject before HTTP, so
+      // the indicator can leave its yellow pending state even in a proxied
+      // frame whose document is not directly inspectable.
+      const controller=typeof AbortController==='function' ? new AbortController() : null;
+      let probeTimedOut=false;
+      const probeTimer=setTimeout(()=>{
+        probeTimedOut=true;
+        controller?.abort();
+      },4500);
+      fetch(source,{
+        method:'HEAD',
+        mode:'no-cors',
+        cache:'no-store',
+        credentials:'omit',
+        referrerPolicy:'no-referrer',
+        signal:controller?.signal
+      }).then(()=>{
+        clearTimeout(probeTimer);
+        if(current()) setBrowserTabSecurityState(t,'secure');
+      }).catch(()=>{
+        clearTimeout(probeTimer);
+        if(current() && !probeTimedOut) setBrowserTabSecurityState(t,'insecure');
+      });
+      setTimeout(check,850);
+      setTimeout(check,2200);
+      setTimeout(check,4800);
     }
     function loadSelectedSearchFallback(t,sourceUrl,reason=''){
       if(!t || !sourceUrl) return false;
@@ -11332,18 +11473,7 @@
         watchUvPresentation(t,sourceUrl || requestedSource);
       }else t.retryUvPresentation=null;
       t.frameHistoryPending={index:t.index};
-      if(/^https:/i.test(securitySource)){
-        const finishSecurityCheck=()=>setTimeout(()=>{
-          if(!state.tabs.includes(t) || (securityIntent && t.navigationIntent!==securityIntent)) return;
-          const health=inspectFrameHealth(t);
-          const errorText=String(health.text || health.error || '');
-          if(tlsCertificateErrorText(errorText)) setBrowserTabSecurityState(t,'insecure');
-          else if(health.reachable && health.hasErrorText) setBrowserTabSecurityState(t,'unknown');
-          else setBrowserTabSecurityState(t,'secure');
-        },220);
-        t.frame.addEventListener('load',finishSecurityCheck,{once:true});
-        t.frame.addEventListener('error',()=>setBrowserTabSecurityState(t,'insecure'),{once:true});
-      }
+      monitorBrowserTabSecurity(t,securitySource,securityIntent);
       t.frame.src=url;
       markBrowserEngine(t,expectedEngine,url,'iframe-src');
       renderTabs();
@@ -11456,6 +11586,7 @@
     function loadScramjetTab(t,url,addHistory=true){
       t.expectedEngine='scramjet';
       t.sourceUrl=url;
+      setTabLoading(t,true);
       if(addHistory){
         const currentHistory=browserShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
         if(currentHistory!==url){
@@ -11468,6 +11599,7 @@
       installScramjet().then(async ok=>{
         if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
         if(!ok || !scramjetController){
+          setTabLoading(t,false);
           t.url=url;
           setTabMeta(t,url,false);
           t.actualEngine='scramjet-failed';
@@ -11545,11 +11677,13 @@
             renderTabs();
             if(t.id===state.active) win.querySelector('.urlbar').value=browserShellDisplayValue(next);
             updateBrowserShellLocation(next,t.id);
+            monitorBrowserTabSecurity(t,next,t.navigationIntent || '');
             watchScramjetHealth(t,next);
             setTimeout(()=>syncLoadedTabIcon(t),120);
           });
         }
         setTabMeta(t,url,false);
+        monitorBrowserTabSecurity(t,url,navigationIntent);
         t.scramjetHistoryPending=true;
         t.scramjetHealthRetries=0;
         t.scramjetRetries=0;
@@ -11563,6 +11697,17 @@
         }catch{
           retryScramjetTab(t,url);
         }
+        const isSearchNavigation=Object.values(engines).some(prefix=>String(url).startsWith(prefix));
+        const revealLoadedFrame=()=>{
+          if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
+          setTimeout(()=>setTabLoading(t,false),40);
+        };
+        t.frame.addEventListener('load',revealLoadedFrame,{once:true});
+        setTimeout(revealLoadedFrame,2500);
+        void waitForTabResultPaint(t,isSearchNavigation ? 12000 : 8000).then(painted=>{
+          if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
+          if(isSearchNavigation && !painted) loadSelectedSearchFallback(t,url,'search results did not finish loading');
+        });
         if(spotifyChromeOsCompatibility) startSpotifyChromeOsFrameCompatibility(t);
         else stopSpotifyChromeOsFrameCompatibility(t);
         setTimeout(()=>{
@@ -11586,6 +11731,7 @@
         },1800);
       }).catch(()=>{
         if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
+        setTabLoading(t,false);
         destroyProxyPrivacySession(t);
         t.actualEngine='scramjet-failed';
         setFrameSandbox(t,true);
@@ -11840,6 +11986,7 @@
         if(nextIndex<0) return;
         const closingTab=state.tabs[nextIndex];
         if(closingTab.frame?.dataset?.nyxBrowserContained==='true') browserOverlayQuarantineUntil=Date.now()+30000;
+        if(closingTab.id===state.active) setTabLoading(closingTab,false);
         destroyProxyPrivacySession(closingTab);
         closingTab.frame.remove();
         state.tabs.splice(nextIndex,1);
@@ -14025,7 +14172,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }
     },delay);
   }
-  const NYX_RELEASE_NOTES_VERSION='2026-08-30-visual-redesign';
+  const NYX_RELEASE_NOTES_VERSION='2026-08-31-new-nyx';
   let nyxReleaseNotesTimer=0;
   function nyxReleaseNotesStorageKey(){
     return `nyx.releaseNotes.${NYX_RELEASE_NOTES_VERSION}.seen`;
@@ -14056,13 +14203,13 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     const overlay=document.createElement('div');
     overlay.className='nyx-release-notes-overlay';
     overlay.innerHTML=`<section class="nyx-release-notes" role="dialog" aria-modal="true" aria-labelledby="nyxReleaseNotesTitle" aria-describedby="nyxReleaseNotesIntro">
-      <header><div><span>What's new</span><h1 id="nyxReleaseNotesTitle" tabindex="-1">Meet the new Nyx.</h1></div><button type="button" data-nyx-release-notes-close aria-label="Close update log">&times;</button></header>
-      <p id="nyxReleaseNotesIntro">A cleaner browser, smoother navigation, and a more consistent experience across everything you use.</p>
+      <header><div><span>What's new</span><h1 id="nyxReleaseNotesTitle" tabindex="-1">Nyx feels brand new.</h1></div><button type="button" data-nyx-release-notes-close aria-label="Close update log">&times;</button></header>
+      <p id="nyxReleaseNotesIntro">A faster, cleaner browser with a fresh look and a smoother experience from the moment you open it.</p>
       <ul>
-        <li><strong>A fresh new look</strong><span>Glass surfaces and animated wallpapers give Nyx a calmer, more polished feel. Choose your favorite look in Appearance.</span></li>
-        <li><strong>Tabs that stay out of the way</strong><span>Your tabs now live in the sidebar. Expand it when you want titles and close controls, or keep it compact for more room.</span></li>
-        <li><strong>Made to fit you</strong><span>Move the sidebar to either side, pick your search engine, and choose a theme and wallpaper that feel right.</span></li>
-        <li><strong>One experience everywhere</strong><span>Apps, AI, Music, NyxTube, Games, Settings, and Nyx tools now share the same design and work better across screen sizes.</span></li>
+        <li><strong>A fresh new look</strong><span>See-through glass surfaces and animated wallpapers give every part of Nyx a calmer, more polished feel.</span></li>
+        <li><strong>Faster everywhere</strong><span>Pages, menus, themes, and motion have been tuned to respond quickly—even on larger screens and everyday school devices.</span></li>
+        <li><strong>Tabs that fit your space</strong><span>Tabs now live in the sidebar. Keep it compact, expand it for titles and close controls, or move it to either side.</span></li>
+        <li><strong>Smoother browsing</strong><span>Search starts sooner, loading is clearer, and the address bar now gives you a more useful connection status.</span></li>
       </ul>
       <footer><button type="button" data-nyx-release-notes-close>Got it</button></footer>
     </section>`;

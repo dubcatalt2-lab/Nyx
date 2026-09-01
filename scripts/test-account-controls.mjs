@@ -59,8 +59,8 @@ try{
     localStorage.setItem('nyx.homeDesign','redesigned');
     localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');
     if(sessionStorage.getItem('nyx.test.releaseNotesFresh')!=='true'){
-      localStorage.setItem('nyx.releaseNotes.2026-08-30-visual-redesign.device','2026-08-30-visual-redesign');
-      localStorage.setItem('nyx.releaseNotes.2026-08-30-visual-redesign.test-user-1234','2026-08-30-visual-redesign');
+      localStorage.setItem('nyx.releaseNotes.2026-08-31-new-nyx.device','2026-08-31-new-nyx');
+      localStorage.setItem('nyx.releaseNotes.2026-08-31-new-nyx.test-user-1234','2026-08-31-new-nyx');
     }
     globalThis.__nyxMockSignOuts=0;
     const removeStartup=()=>{
@@ -331,12 +331,12 @@ try{
 
   await page.evaluate(()=>{
     sessionStorage.setItem('nyx.test.releaseNotesFresh','true');
-  Object.keys(localStorage).filter(key=>key.startsWith('nyx.releaseNotes.2026-08-30-visual-redesign.')).forEach(key=>localStorage.removeItem(key));
+  Object.keys(localStorage).filter(key=>key.startsWith('nyx.releaseNotes.2026-08-31-new-nyx.')).forEach(key=>localStorage.removeItem(key));
   });
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForSelector('.nyx-release-notes-overlay.show',{timeout:10_000});
   assert.equal(await page.locator('.nyx-release-notes footer span').count(),0,'Release notes still showed the one-time explanatory text');
-  assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.releaseNotes.2026-08-30-visual-redesign.seen')),'2026-08-30-visual-redesign','Release notes were not acknowledged when shown');
+  assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.releaseNotes.2026-08-31-new-nyx.seen')),'2026-08-31-new-nyx','Release notes were not acknowledged when shown');
   await page.locator('.nyx-release-notes [data-nyx-release-notes-close]').last().click();
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForTimeout(1400);

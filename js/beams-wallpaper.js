@@ -212,7 +212,9 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
       this.lastFrame=0;
       this.frame=0;
       this.running=false;
-      this.renderer=new this.THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance',preserveDrawingBuffer:preview});
+      // The full-screen shader already adds soft noise, so multisample
+      // antialiasing only increases GPU work without a visible benefit.
+      this.renderer=new this.THREE.WebGLRenderer({canvas,antialias:preview,alpha:false,powerPreference:'high-performance',preserveDrawingBuffer:preview});
       this.renderer.setClearColor(0x000000,1);
       this.renderer.outputEncoding=this.THREE.sRGBEncoding;
       this.renderer.toneMapping=this.THREE.ACESFilmicToneMapping;
@@ -253,7 +255,15 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
       const rect=this.canvas.getBoundingClientRect();
       const width=Math.max(1,Math.round(rect.width || this.canvas.width || 1));
       const height=Math.max(1,Math.round(rect.height || this.canvas.height || 1));
-      this.renderer.setPixelRatio(this.preview ? 1 : Math.min(2,window.devicePixelRatio || 1));
+      // A full-screen physically lit shader becomes fill-rate bound on wide
+      // and high-resolution displays. Keep a fixed pixel budget and upscale
+      // the deliberately noisy image; motion stays at full speed while the
+      // GPU shades far fewer pixels on 1440p-class screens.
+      const pixelBudget=1400000;
+      const renderScale=Math.max(.58,Math.min(1,Math.sqrt(pixelBudget/(width*height))));
+      this.renderScale=renderScale;
+      this.canvas.dataset.renderScale=renderScale.toFixed(3);
+      this.renderer.setPixelRatio(renderScale);
       this.renderer.setSize(width,height,false);
       const aspect=width/height;
       const viewHeight=2*20*Math.tan(this.THREE.MathUtils.degToRad(15));

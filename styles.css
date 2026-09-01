@@ -1,7 +1,7 @@
 @import url("./css/core.css?v=20260810-chat-unread-v3");
 @import url("./css/chrome-and-settings.css");
 @import url("./css/fresh-theme.css");
-@import url("./css/interface-polish.css?v=20260715-shared-theme-bg-v1");
+@import url("./css/interface-polish.css?v=20260831-fast-motion-v2");
 @import url("./css/midnight-theme.css?v=20260716-stronger-card-blur-v10");
 @import url("./css/homepage.css?v=20260717-slim-loader-v35");
 @import url("./css/theme-consistency.css?v=20260717-unified-hover-v11");
@@ -4303,28 +4303,28 @@ html[data-nyx-theme] body.browser-shell .apps-launch-grid>.quick-tile:is(:hover,
   background:color-mix(in srgb,var(--nyx-chrome-accent,#8fb8ff) 18%,#181a20);
 }
 
-/* Theme selection is accent-only: surfaces stay Nyx black, while each theme
-   supplies the border/focus color. Explicit background modes remain intact. */
+/* Theme selection is accent-only. Structural surfaces stay on the shared
+   translucent glass contract while each theme supplies focus and accent. */
 html[data-nyx-theme] body.browser-shell:not(.three-d-backgrounds):not(.custom-bg-active){
-  --nyx-unified-canvas:#000!important;
-  --nyx-unified-top:#000!important;
-  --nyx-unified-field:#000!important;
-  --nyx-home-panel:#000!important;
-  --nyx-home-panel-soft:#000!important;
-  --nyx-chrome-base:#000!important;
-  --nyx-chrome-deep:#000!important;
-  --nyx-chrome-active:#000!important;
-  --nyx-chrome-hover:#000!important;
-  --theme-bg:#000!important;
-  --theme-panel:#000!important;
-  --theme-soft:#000!important;
+  --nyx-unified-canvas:transparent!important;
+  --nyx-unified-top:rgba(5,8,13,.24)!important;
+  --nyx-unified-field:rgba(11,16,24,.38)!important;
+  --nyx-home-panel:rgba(7,11,17,.30)!important;
+  --nyx-home-panel-soft:rgba(13,19,28,.34)!important;
+  --nyx-chrome-base:rgba(5,8,13,.24)!important;
+  --nyx-chrome-deep:rgba(5,8,13,.30)!important;
+  --nyx-chrome-active:rgba(255,255,255,.075)!important;
+  --nyx-chrome-hover:rgba(255,255,255,.095)!important;
+  --theme-bg:transparent!important;
+  --theme-panel:rgba(7,11,17,.30)!important;
+  --theme-soft:rgba(13,19,28,.34)!important;
   --theme-border:rgba(255,255,255,.12)!important;
   --nyx-home-line:rgba(255,255,255,.12)!important;
   --nyx-home-wordmark:#f1f3f7!important;
   --nyx-shell-icon:#f1f3f7!important;
   --nyx-final-shortcut-icon:#f1f3f7!important;
   --nyx-dot-color:#202633!important;
-  background-color:#000!important;
+  background-color:transparent!important;
   background-image:none!important;
 }
 html[data-nyx-theme] body.browser-shell:not(.three-d-backgrounds):not(.custom-bg-active)
@@ -4338,8 +4338,10 @@ html[data-nyx-theme] body.browser-shell:not(.three-d-backgrounds):not(.custom-bg
     .home-shortcut-open,.home-shortcut-menu-btn,.home-shortcut-add,.browser-mode-bookmark,
     .browser-mode-weather,.game-card,.app-card,.weather-panel
   ){
-  background-color:#000!important;
+  background-color:var(--nyx-home-panel)!important;
   background-image:none!important;
+  -webkit-backdrop-filter:blur(5px) saturate(1.03)!important;
+  backdrop-filter:blur(5px) saturate(1.03)!important;
 }
 html[data-nyx-theme] body.browser-shell:not(.three-d-backgrounds):not(.custom-bg-active)
   :is(

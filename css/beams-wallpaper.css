@@ -41,14 +41,14 @@ html[data-nyx-home-design="redesigned"] body.browser-shell .top-os.top-os{
   border-bottom-color:rgba(210,229,255,.1)!important;
   background:rgba(5,7,11,.3)!important;
   box-shadow:0 8px 22px rgba(0,0,0,.12)!important;
-  -webkit-backdrop-filter:blur(10px) saturate(1.06)!important;
-  backdrop-filter:blur(10px) saturate(1.06)!important;
+  -webkit-backdrop-filter:blur(3px) saturate(1.03)!important;
+  backdrop-filter:blur(3px) saturate(1.03)!important;
 }
 html[data-nyx-home-design="redesigned"] body.browser-shell .top-os form.browser-mode-address{
   border-color:rgba(218,233,255,.12)!important;
   background:rgba(9,12,17,.46)!important;
-  -webkit-backdrop-filter:blur(8px) saturate(1.05)!important;
-  backdrop-filter:blur(8px) saturate(1.05)!important;
+  -webkit-backdrop-filter:blur(3px) saturate(1.03)!important;
+  backdrop-filter:blur(3px) saturate(1.03)!important;
 }
 
 @media (min-width:901px){
@@ -56,8 +56,8 @@ html[data-nyx-home-design="redesigned"] body.browser-shell .top-os form.browser-
     border:0!important;
     background:rgba(4,6,10,.28)!important;
     box-shadow:-10px 0 24px rgba(0,0,0,.1)!important;
-    -webkit-backdrop-filter:blur(10px) saturate(1.06)!important;
-    backdrop-filter:blur(10px) saturate(1.06)!important;
+    -webkit-backdrop-filter:blur(4px) saturate(1.03)!important;
+    backdrop-filter:blur(4px) saturate(1.03)!important;
   }
   html[data-nyx-home-design="redesigned"][data-nyx-sidebar-side="left"] body.browser-shell .nyx-visual-dock{
     box-shadow:14px 0 34px rgba(0,0,0,.14)!important;
@@ -66,15 +66,15 @@ html[data-nyx-home-design="redesigned"] body.browser-shell .top-os form.browser-
 
 html[data-nyx-home-design="redesigned"] body.browser-shell .browser-shell-settings-overlay{
   background:rgba(2,4,7,.16)!important;
-  -webkit-backdrop-filter:blur(6px) saturate(1.04)!important;
-  backdrop-filter:blur(6px) saturate(1.04)!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
 }
 html[data-nyx-home-design="redesigned"] body.browser-shell .browser-shell-settings-panel :is(.nyx-settings-side,.nyx-settings-category.active),
 html[data-nyx-home-design="redesigned"] body.browser-shell .browser-shell-settings-panel .nyx-settings-group>.settings-block{
   border-color:rgba(210,229,255,.1)!important;
   background:rgba(7,10,15,.32)!important;
-  -webkit-backdrop-filter:blur(10px) saturate(1.05)!important;
-  backdrop-filter:blur(10px) saturate(1.05)!important;
+  -webkit-backdrop-filter:blur(5px) saturate(1.03)!important;
+  backdrop-filter:blur(5px) saturate(1.03)!important;
 }
 
 /* First-run, legal, and release surfaces share the same transparent glass. */
@@ -90,15 +90,15 @@ html body .nyx-release-notes{
   background:rgba(5,8,14,.48)!important;
   background-image:none!important;
   box-shadow:0 24px 70px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.035)!important;
-  -webkit-backdrop-filter:blur(14px) saturate(1.05)!important;
-  backdrop-filter:blur(14px) saturate(1.05)!important;
+  -webkit-backdrop-filter:blur(8px) saturate(1.04)!important;
+  backdrop-filter:blur(8px) saturate(1.04)!important;
 }
 html body :is(.nyx-tos-gate-header,.nyx-tos-actions,.nyx-release-notes header,.nyx-release-notes footer){
   border-color:rgba(210,229,255,.09)!important;
   background:rgba(5,8,14,.24)!important;
   background-image:none!important;
-  -webkit-backdrop-filter:blur(9px) saturate(1.04)!important;
-  backdrop-filter:blur(9px) saturate(1.04)!important;
+  -webkit-backdrop-filter:blur(5px) saturate(1.03)!important;
+  backdrop-filter:blur(5px) saturate(1.03)!important;
 }
 html body .nyx-release-notes li,
 html body .nyx-tos-document section,
@@ -107,8 +107,8 @@ html body .nyx-info-page.nyx-terms-page section{
   border-radius:14px!important;
   background:rgba(7,10,15,.28)!important;
   background-image:none!important;
-  -webkit-backdrop-filter:blur(9px) saturate(1.04)!important;
-  backdrop-filter:blur(9px) saturate(1.04)!important;
+  -webkit-backdrop-filter:blur(5px) saturate(1.03)!important;
+  backdrop-filter:blur(5px) saturate(1.03)!important;
 }
 html body .nyx-tos-document section,
 html body .nyx-info-page.nyx-terms-page section{
@@ -236,6 +236,27 @@ html[data-nyx-home-design="redesigned"] body.browser-shell.nyx-built-in-content-
   background:transparent!important;
   background-color:transparent!important;
 }
+html[data-nyx-home-design="redesigned"] body.browser-shell.browser-content-active:not(.nyx-built-in-content-active) iframe.view.active{
+  background:#050a12!important;
+  background-color:#050a12!important;
+}
+html[data-nyx-home-design="redesigned"] body.browser-shell .browser-window.nyx-frame-loading .browser-body::after{
+  content:"Opening page…";
+  position:absolute;
+  z-index:6;
+  inset:0;
+  display:grid;
+  place-items:center;
+  background:rgba(5,10,18,.96);
+  color:#aeb9c9;
+  font:600 13px/1.3 Outfit,Inter,sans-serif;
+  letter-spacing:.02em;
+  pointer-events:none;
+}
+html[data-nyx-home-design="redesigned"] body.browser-shell .browser-window.nyx-frame-loading iframe.view.active{
+  opacity:0!important;
+  pointer-events:none!important;
+}
 html[data-nyx-home-design="redesigned"] body.browser-shell .top-os.top-os :is(
   .brand-mini,
   .browser-mode-app-button,
@@ -265,7 +286,7 @@ html[data-nyx-home-design="redesigned"] body.browser-shell .nyx-visual-dock :is(
 html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-neutral-rail-a):is(body,#nyx-neutral-rail-b):is(body,#nyx-neutral-rail-c):is(body,#nyx-neutral-rail-d):is(body,#nyx-neutral-rail-e):is(body,#nyx-neutral-rail-f):is(body,#nyx-neutral-rail-g):is(body,#nyx-neutral-rail-h) .nyx-visual-dock nav button{
   color:#919aaa!important;
   -webkit-text-fill-color:currentColor!important;
-  transition-property:width,background-color,opacity,backdrop-filter!important;
+  transition-property:width,background-color,opacity!important;
 }
 html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-neutral-rail-a):is(body,#nyx-neutral-rail-b):is(body,#nyx-neutral-rail-c):is(body,#nyx-neutral-rail-d):is(body,#nyx-neutral-rail-e):is(body,#nyx-neutral-rail-f):is(body,#nyx-neutral-rail-g):is(body,#nyx-neutral-rail-h) .nyx-visual-dock nav button:is(:hover,:focus-visible,.active,[aria-current="page"]){
   color:#eef3fb!important;
@@ -290,8 +311,8 @@ html[data-nyx-home-design="redesigned"] body.browser-shell .browser-shell-settin
   background-color:var(--nyx-glass-panel)!important;
   background-image:none!important;
   box-shadow:none!important;
-  -webkit-backdrop-filter:blur(10px) saturate(1.05)!important;
-  backdrop-filter:blur(10px) saturate(1.05)!important;
+  -webkit-backdrop-filter:blur(5px) saturate(1.03)!important;
+  backdrop-filter:blur(5px) saturate(1.03)!important;
 }
 html[data-nyx-home-design="redesigned"] body.browser-shell .browser-shell-settings-overlay{
   pointer-events:auto!important;
@@ -413,8 +434,8 @@ html[data-nyx-home-design="redesigned"] body.browser-shell .browser-home.nyx-vis
   border-radius:18px!important;
   background:rgba(7,10,15,.34)!important;
   box-shadow:0 10px 28px rgba(0,0,0,.12)!important;
-  -webkit-backdrop-filter:blur(10px) saturate(1.05)!important;
-  backdrop-filter:blur(10px) saturate(1.05)!important;
+  -webkit-backdrop-filter:blur(4px) saturate(1.03)!important;
+  backdrop-filter:blur(4px) saturate(1.03)!important;
 }
 html[data-nyx-home-design="redesigned"] body.browser-shell .browser-home.nyx-visual-home .nyx-minimal-search::after{display:none!important;content:none!important}
 html[data-nyx-home-design="redesigned"] body.browser-shell .browser-home.nyx-visual-home .nyx-home-search-engine-icon{
@@ -431,6 +452,31 @@ html[data-nyx-home-design="redesigned"] body.browser-shell .browser-home.nyx-vis
   html[data-nyx-home-design="redesigned"] body.browser-shell .browser-home.nyx-visual-home .nyx-minimal-brand{width:230px!important;height:76px!important}
   html[data-nyx-home-design="redesigned"] body.browser-shell .browser-home.nyx-visual-home .nyx-minimal-brand h1{font-size:60px!important}
   html[data-nyx-home-design="redesigned"] body.browser-shell .browser-home.nyx-visual-home .nyx-minimal-search{width:min(620px,100%)!important}
+}
+
+/* GPU-safe glass composition. A moving WebGL wallpaper must not sit beneath
+   several full-viewport backdrop filters or a blur on every descendant. */
+html[data-nyx-home-design="redesigned"][data-nyx-home-design="redesigned"]
+body.browser-shell.browser-shell:is(body,#nyx-gpu-a):is(body,#nyx-gpu-b):is(body,#nyx-gpu-c):is(body,#nyx-gpu-d):is(body,#nyx-gpu-e)
+:is(.browser-window.maximized,.browser-home.nyx-visual-home,.browser-shell-settings-panel,.settings-app.nyx-settings-dashboard,.settings-main){
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+html[data-nyx-home-design="redesigned"][data-nyx-home-design="redesigned"]
+body.browser-shell.browser-shell:is(body,#nyx-gpu-a):is(body,#nyx-gpu-b):is(body,#nyx-gpu-c):is(body,#nyx-gpu-d):is(body,#nyx-gpu-e)
+.browser-shell-settings-panel *{
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+html[data-nyx-home-design="redesigned"][data-nyx-home-design="redesigned"]
+body.browser-shell.browser-shell:is(body,#nyx-gpu-a):is(body,#nyx-gpu-b):is(body,#nyx-gpu-c):is(body,#nyx-gpu-d):is(body,#nyx-gpu-e)
+.browser-shell-settings-panel :is(.nyx-settings-side,.nyx-settings-category.active){
+  -webkit-backdrop-filter:blur(2px) saturate(1.02)!important;
+  backdrop-filter:blur(2px) saturate(1.02)!important;
+}
+html[data-nyx-home-design="redesigned"] body.browser-shell .toast{
+  -webkit-backdrop-filter:blur(4px) saturate(1.02)!important;
+  backdrop-filter:blur(4px) saturate(1.02)!important;
 }
 
 /* Fern's retired Fresh stylesheet assigned blur to every button at rest.
@@ -459,8 +505,8 @@ html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-glass-fi
   background:rgba(5,7,11,.18)!important;
   background-image:none!important;
   box-shadow:0 8px 22px rgba(0,0,0,.12)!important;
-  -webkit-backdrop-filter:blur(10px) saturate(1.06)!important;
-  backdrop-filter:blur(10px) saturate(1.06)!important;
+  -webkit-backdrop-filter:blur(5px) saturate(1.04)!important;
+  backdrop-filter:blur(5px) saturate(1.04)!important;
 }
 html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-glass-final-a):is(body,#nyx-glass-final-b):is(body,#nyx-glass-final-c):is(body,#nyx-glass-final-d):is(body,#nyx-glass-final-e) .top-os form.browser-mode-address{
   border-color:transparent!important;
@@ -474,14 +520,14 @@ html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-glass-fi
   background:rgba(9,12,17,.34)!important;
   background-image:none!important;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.025)!important;
-  -webkit-backdrop-filter:blur(10px) saturate(1.05)!important;
-  backdrop-filter:blur(10px) saturate(1.05)!important;
+  -webkit-backdrop-filter:blur(4px) saturate(1.03)!important;
+  backdrop-filter:blur(4px) saturate(1.03)!important;
 }
 html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-glass-final-a):is(body,#nyx-glass-final-b):is(body,#nyx-glass-final-c):is(body,#nyx-glass-final-d):is(body,#nyx-glass-final-e) .browser-shell-settings-overlay{
   background:rgba(2,4,7,.16)!important;
   background-image:none!important;
-  -webkit-backdrop-filter:blur(6px) saturate(1.04)!important;
-  backdrop-filter:blur(6px) saturate(1.04)!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
 }
 @media (min-width:901px){
   html[data-nyx-home-design="redesigned"][data-nyx-sidebar-side="right"] body.browser-shell:is(body,#nyx-glass-final-a):is(body,#nyx-glass-final-b):is(body,#nyx-glass-final-c):is(body,#nyx-glass-final-d):is(body,#nyx-glass-final-e) .browser-shell-settings-overlay{
@@ -498,8 +544,8 @@ html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-glass-fi
   background:rgba(7,10,15,.32)!important;
   background-image:none!important;
   box-shadow:none!important;
-  -webkit-backdrop-filter:blur(10px) saturate(1.05)!important;
-  backdrop-filter:blur(10px) saturate(1.05)!important;
+  -webkit-backdrop-filter:blur(5px) saturate(1.03)!important;
+  backdrop-filter:blur(5px) saturate(1.03)!important;
 }
 html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-glass-final-a):is(body,#nyx-glass-final-b):is(body,#nyx-glass-final-c):is(body,#nyx-glass-final-d):is(body,#nyx-glass-final-e) .browser-shell-settings-panel :is(.nyx-settings-category.active,.nyx-color-theme-card.selected,.nyx-wallpaper-card.selected,.settings-action.on){
   border-color:rgba(218,233,255,.2)!important;
@@ -531,8 +577,8 @@ html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-home-fin
   border-radius:16px!important;
   background:rgba(12,14,18,.72)!important;
   box-shadow:0 2px 0 rgba(218,233,255,.08)!important;
-  -webkit-backdrop-filter:blur(10px) saturate(1.05)!important;
-  backdrop-filter:blur(10px) saturate(1.05)!important;
+  -webkit-backdrop-filter:blur(4px) saturate(1.03)!important;
+  backdrop-filter:blur(4px) saturate(1.03)!important;
   transition:none!important;
 }
 html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-home-final-a):is(body,#nyx-home-final-b):is(body,#nyx-home-final-c):is(body,#nyx-home-final-d):is(body,#nyx-home-final-e) .browser-home.nyx-visual-home .nyx-minimal-search::after{display:none!important;content:none!important}
@@ -541,6 +587,81 @@ html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-home-fin
   background:rgba(12,14,18,.72)!important;
   box-shadow:0 2px 0 rgba(218,233,255,.08)!important;
   transform:none!important;
+}
+html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-home-final-a):is(body,#nyx-home-final-b):is(body,#nyx-home-final-c):is(body,#nyx-home-final-d):is(body,#nyx-home-final-e)
+.browser-home.nyx-visual-home .nyx-minimal-search .nyx-home-search-submit,
+html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-home-final-a):is(body,#nyx-home-final-b):is(body,#nyx-home-final-c):is(body,#nyx-home-final-d):is(body,#nyx-home-final-e)
+.browser-home.nyx-visual-home .nyx-minimal-search .nyx-home-search-submit:is(:hover,:focus-visible,:active){
+  border:0!important;
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+  transform:none!important;
+  transition:none!important;
+}
+
+/* Midnight used to repaint the shell after wallpaper selection. Keep its blue
+   accent while allowing the shared Beams canvas and glass base to remain live. */
+html[data-nyx-home-design="redesigned"][data-nyx-theme="midnight"][data-nyx-theme="midnight"]
+body.browser-shell.browser-shell.theme-midnight:is(body,#nyx-midnight-glass-a):is(body,#nyx-midnight-glass-b):is(body,#nyx-midnight-glass-c):is(body,#nyx-midnight-glass-d):is(body,#nyx-midnight-glass-e){
+  background-color:transparent!important;
+  background-image:none!important;
+}
+html[data-nyx-home-design="redesigned"][data-nyx-theme="midnight"][data-nyx-theme="midnight"]
+body.browser-shell.browser-shell.theme-midnight:is(body,#nyx-midnight-glass-a):is(body,#nyx-midnight-glass-b):is(body,#nyx-midnight-glass-c):is(body,#nyx-midnight-glass-d):is(body,#nyx-midnight-glass-e)
+:is(#desktop,.browser-window.maximized:not(.browser-home-page)){
+  background-color:transparent!important;
+  background-image:none!important;
+}
+html[data-nyx-home-design="redesigned"][data-nyx-theme="midnight"][data-nyx-theme="midnight"]
+body.browser-shell.browser-shell.theme-midnight:is(body,#nyx-midnight-glass-a):is(body,#nyx-midnight-glass-b):is(body,#nyx-midnight-glass-c):is(body,#nyx-midnight-glass-d):is(body,#nyx-midnight-glass-e)
+.browser-shell-settings-overlay{
+  background-color:rgba(2,4,7,.16)!important;
+  background-image:none!important;
+}
+
+/* Theme styles may color buttons globally. Settings rows always keep the same
+   cheap state model: transparent at rest, one compact glass layer on intent. */
+html[data-nyx-home-design="redesigned"][data-nyx-theme]
+body.browser-shell.browser-shell:is(body,#nyx-settings-state-a):is(body,#nyx-settings-state-b):is(body,#nyx-settings-state-c):is(body,#nyx-settings-state-d):is(body,#nyx-settings-state-e)
+.browser-shell-settings-panel .nyx-settings-nav button:not(:hover):not(.active){
+  background:transparent!important;
+  background-color:transparent!important;
+  background-image:none!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+  transition:background-color 140ms ease,color 140ms ease,border-color 140ms ease!important;
+}
+html[data-nyx-home-design="redesigned"][data-nyx-theme]
+body.browser-shell.browser-shell:is(body,#nyx-settings-state-a):is(body,#nyx-settings-state-b):is(body,#nyx-settings-state-c):is(body,#nyx-settings-state-d):is(body,#nyx-settings-state-e)
+.browser-shell-settings-panel .nyx-settings-nav button:is(:hover,.active){
+  background:rgba(255,255,255,.075)!important;
+  background-image:none!important;
+  border-color:rgba(210,229,255,.10)!important;
+  box-shadow:none!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+  transition:background-color 90ms ease,color 90ms ease,border-color 90ms ease!important;
+}
+
+/* Performance pass: retain two structural glass layers, never one blur layer
+   per card/button. This avoids repainting a stack of backdrop filters while
+   the Beams canvas moves underneath it. */
+html[data-nyx-home-design="redesigned"] body.browser-shell .browser-shell-settings-panel :is(
+  .settings-block,.settings-card,.nyx-color-theme-card,.nyx-wallpaper-card
+){
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+html[data-nyx-home-design="redesigned"] body.browser-shell .browser-shell-settings-panel :is(
+  .nyx-settings-side,.nyx-settings-category.active
+){
+  -webkit-backdrop-filter:blur(3px) saturate(1.02)!important;
+  backdrop-filter:blur(3px) saturate(1.02)!important;
 }
 html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-home-final-a):is(body,#nyx-home-final-b):is(body,#nyx-home-final-c):is(body,#nyx-home-final-d):is(body,#nyx-home-final-e) .browser-home.nyx-visual-home .nyx-minimal-search input{
   order:2!important;
@@ -562,4 +683,99 @@ html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-home-fin
   html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-home-final-a):is(body,#nyx-home-final-b):is(body,#nyx-home-final-c):is(body,#nyx-home-final-d):is(body,#nyx-home-final-e) .browser-home.nyx-visual-home .nyx-minimal-brand{width:210px!important;height:68px!important}
   html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-home-final-a):is(body,#nyx-home-final-b):is(body,#nyx-home-final-c):is(body,#nyx-home-final-d):is(body,#nyx-home-final-e) .browser-home.nyx-visual-home .nyx-minimal-brand h1{font-size:52px!important}
   html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-home-final-a):is(body,#nyx-home-final-b):is(body,#nyx-home-final-c):is(body,#nyx-home-final-d):is(body,#nyx-home-final-e) .browser-home.nyx-visual-home .nyx-minimal-search{width:100%!important}
+}
+
+/* This must remain the last glass rule: theme sheets contain legacy selectors
+   with ID-level specificity. Translucent paint provides the glass look while
+   the moving wallpaper is composited only once. */
+html[data-nyx-home-design="redesigned"][data-nyx-home-design="redesigned"]
+body.browser-shell.browser-shell:is(body,#nyx-perf-a):is(body,#nyx-perf-b):is(body,#nyx-perf-c):is(body,#nyx-perf-d):is(body,#nyx-perf-e):is(body,#nyx-perf-f):is(body,#nyx-perf-g)
+:is(.browser-window.maximized,.browser-home.nyx-visual-home,.browser-shell-settings-panel,.settings-app.nyx-settings-dashboard,.settings-main),
+html[data-nyx-home-design="redesigned"][data-nyx-home-design="redesigned"]
+body.browser-shell.browser-shell:is(body,#nyx-perf-a):is(body,#nyx-perf-b):is(body,#nyx-perf-c):is(body,#nyx-perf-d):is(body,#nyx-perf-e):is(body,#nyx-perf-f):is(body,#nyx-perf-g)
+.browser-shell-settings-panel *{
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-perf-chrome-a):is(body,#nyx-perf-chrome-b):is(body,#nyx-perf-chrome-c):is(body,#nyx-perf-chrome-d):is(body,#nyx-perf-chrome-e)
+.top-os.top-os{
+  -webkit-backdrop-filter:blur(3px) saturate(1.02)!important;
+  backdrop-filter:blur(3px) saturate(1.02)!important;
+}
+html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-perf-chrome-a):is(body,#nyx-perf-chrome-b):is(body,#nyx-perf-chrome-c):is(body,#nyx-perf-chrome-d):is(body,#nyx-perf-chrome-e)
+.nyx-visual-dock{
+  -webkit-backdrop-filter:blur(3px) saturate(1.02)!important;
+  backdrop-filter:blur(3px) saturate(1.02)!important;
+}
+
+html[data-nyx-home-design="redesigned"] body.browser-shell .browser-window.nyx-frame-loading .browser-body::after{
+  content:none!important;
+  display:none!important;
+}
+.nyx-frame-loader{
+  position:absolute;
+  z-index:6;
+  inset:0;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  background:rgba(5,10,18,.97);
+  color:#c6d0df;
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+}
+.browser-window.nyx-frame-loading .nyx-frame-loader{opacity:1;visibility:visible}
+.nyx-frame-loader svg{display:block;width:180px;height:150px;overflow:visible}
+.nyx-loader-rocket{
+  transform-box:view-box;
+  transform-origin:90px 86px;
+  animation:nyxRocketIdle 180ms steps(2,end) infinite;
+}
+.nyx-loader-flame{
+  transform-box:fill-box;
+  transform-origin:center top;
+  animation:nyxRocketFlame 360ms linear infinite;
+}
+.nyx-loader-flame-b{animation-delay:-180ms;opacity:.55}
+.nyx-loader-flame-c{animation-delay:-90ms;opacity:.72}
+@keyframes nyxRocketIdle{
+  0%,100%{transform:translateX(-.7px)}
+  50%{transform:translateX(.7px)}
+}
+@keyframes nyxRocketFlame{
+  0%,100%{opacity:.34;transform:scaleY(.68)}
+  50%{opacity:1;transform:scaleY(1.08)}
+}
+@media (prefers-reduced-motion:reduce){
+  .nyx-loader-rocket,.nyx-loader-flame{animation:none!important}
+}
+
+html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-security-size-a):is(body,#nyx-security-size-b):is(body,#nyx-security-size-c):is(body,#nyx-security-size-d):is(body,#nyx-security-size-e)
+.top-os form.browser-mode-address .browser-mode-secure-indicator{
+  position:relative!important;
+  z-index:2!important;
+  display:block!important;
+  width:0!important;
+  min-width:0!important;
+  max-width:0!important;
+  height:34px!important;
+  min-height:34px!important;
+  max-height:34px!important;
+  flex:0 0 0!important;
+  padding:0!important;
+  margin:0!important;
+}
+html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-security-size-a):is(body,#nyx-security-size-b):is(body,#nyx-security-size-c):is(body,#nyx-security-size-d):is(body,#nyx-security-size-e)
+.top-os form.browser-mode-address .browser-mode-secure-indicator svg{
+  position:absolute!important;
+  top:8px!important;
+  left:12px!important;
+  display:block!important;
+  width:18px!important;
+  min-width:18px!important;
+  max-width:18px!important;
+  height:18px!important;
+  min-height:18px!important;
+  max-height:18px!important;
 }

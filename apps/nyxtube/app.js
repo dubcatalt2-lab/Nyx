@@ -8,11 +8,12 @@
     view: "home", videos: [], catalog: [], shorts: [], shortIndex: 0,
     watchPlayer: null, shortPlayer: null, watchTimer: 0, shortTimer: 0,
     watchVideo: null, watchCaptions: false, shortCaptions: false, shortMuted: true,
+    channel: null,
     failedVideoIds: new Set(), failedShortIds: new Set(), watchRecoveryTimer: 0,
     watchSpaceTimer: 0, watchSpacePressed: false, watchSpaceHeld: false,
     watchSpaceWasPlaying: false, watchSpacePreviousRate: 1, watchSpaceRateChanged: false,
     watchCommunityRequestId: 0,
-    profile: { uid: "", signedIn: false, displayName: "Profile", avatarUrl: "" }, profileRequestId: "",
+    profile: { uid: "", signedIn: false, displayName: "Profile", avatarUrl: "" }, profileRequestId: "", profileRetryTimer: 0, profileRetryCount: 0, profileResolved: false,
   };
   const refs = Object.fromEntries([
     "notice", "search-form", "search-input", "feed-title", "result-count", "video-grid",
@@ -21,10 +22,11 @@
     "watch-title", "watch-creator", "watch-video-meta", "watch-channel-mark", "watch-source", "watch-description", "watch-related", "short-stage", "short-player",
     "short-loading", "short-center-play", "short-mute", "short-captions", "short-fullscreen",
     "short-progress", "short-title", "short-creator", "profile-button", "profile-avatar",
-    "watch-settings", "watch-settings-menu", "watch-speed", "watch-settings-captions",
+    "watch-settings", "watch-settings-menu", "watch-speed", "watch-volume", "watch-settings-captions",
     "watch-rewind", "watch-forward", "watch-speed-indicator",
     "watch-views", "watch-likes", "watch-comments-count", "watch-tab-comments-count",
     "watch-comments-status", "watch-comments", "watch-transcript-status", "watch-transcript",
+    "channel-back", "channel-profile", "channel-avatar", "channel-title", "channel-handle", "channel-description", "channel-subscribers", "channel-videos", "channel-status",
   ].map(name => [name.replace(/-([a-z])/g, (_match, letter) => letter.toUpperCase()), $(`[data-${name}]`)]));
 
   function applyTheme() {
@@ -59,6 +61,8 @@
   }
   const exactCount = value => Math.max(0, Number(value) || 0).toLocaleString();
   function renderProfile(profile = {}) {
+    clearTimeout(state.profileRetryTimer); state.profileRetryTimer = 0;
+    state.profileResolved = true;
     const displayName = String(profile.displayName || "Profile").trim() || "Profile";
     state.profile = { uid: String(profile.uid || ""), signedIn: Boolean(profile.signedIn), displayName, avatarUrl: String(profile.avatarUrl || "") };
     refs.profileButton.title = state.profile.signedIn ? `Open ${displayName}'s profile` : "Sign in or create a profile";
@@ -74,8 +78,16 @@
     image.addEventListener("error", fallback, { once: true }); refs.profileAvatar.replaceChildren(image);
   }
   function requestProfile() {
+    clearTimeout(state.profileRetryTimer);
+    state.profileResolved = false;
     state.profileRequestId = `nyxtube-profile-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     parent.postMessage({ type: "nyx:nyxtube-profile-request", requestId: state.profileRequestId }, location.origin);
+    // The player can load before its parent shell has attached its message
+    // listener. Retry once so the profile control cannot be left permanently
+    // in its generic state after a fast tab switch.
+    state.profileRetryTimer = setTimeout(() => {
+      if (!state.profileResolved && state.profileRetryCount++ === 0) requestProfile();
+    }, 700);
   }
   function skeletons() {
     refs.videoGrid.replaceChildren(...Array.from({ length: 8 }, () => {
@@ -192,6 +204,7 @@
     let currentRate = 1;
     try { currentRate = Number(player.getPlaybackRate?.()) || 1; } catch { currentRate = 1; }
     refs.watchSpeed.value = rates.includes(currentRate) ? String(currentRate) : String(rates.includes(1) ? 1 : rates[0]);
+    try { refs.watchVolume.value = String(Math.max(0, Math.min(100, Number(player.getVolume?.()) || 100))); } catch { refs.watchVolume.value = "100"; }
     refs.watchSettingsCaptions.disabled = !video?.captions;
     refs.watchSettingsCaptions.title = video?.captions ? "" : "Captions are not available for this video";
     refs.watchSettingsCaptions.value = state.watchCaptions && video?.captions ? "on" : "off";
@@ -200,11 +213,46 @@
     const channelId = String(video?.channelId || "").trim();
     return /^UC[A-Za-z0-9_-]{22}$/.test(channelId) ? `https://www.youtube.com/channel/${channelId}` : "";
   }
-  function openWatchChannel() {
-    const url = watchChannelUrl();
-    if (!url) return;
-    if (parent !== window) parent.postMessage({ type: "nyx:navigate", url }, location.origin);
-    else window.open(url, "_blank", "noopener,noreferrer");
+  function renderChannelVideoCards(videos) {
+    refs.channelVideos.replaceChildren(...videos.map(video => {
+      const card = document.createElement("article"); card.className = "video-card";
+      const cover = document.createElement("button"); cover.className = "video-cover"; cover.type = "button";
+      cover.setAttribute("aria-label", `Play ${video.title || "video"}`);
+      const image = document.createElement("img"); image.alt = ""; image.loading = "lazy"; image.referrerPolicy = "no-referrer"; image.src = video.thumbnail || "";
+      image.addEventListener("error", () => image.remove());
+      const fallback = document.createElement("span"); fallback.className = "fallback"; fallback.innerHTML = icon("icon-play");
+      const stamp = document.createElement("span"); stamp.className = "duration"; stamp.textContent = duration(video.durationSeconds);
+      cover.append(image, fallback, stamp); cover.addEventListener("click", () => openWatch(video));
+      const copy = document.createElement("div"); copy.className = "card-copy";
+      const title = document.createElement("strong"); title.textContent = video.title || "Untitled video";
+      const meta = document.createElement("span"); meta.textContent = `${video.creator || "YouTube"} · ${viewsLabel(video.viewCount)}`;
+      copy.append(title, meta); card.append(cover, copy); return card;
+    }));
+  }
+  async function openWatchChannel() {
+    const channelId = String(state.watchVideo?.channelId || "").trim();
+    if (!/^UC[A-Za-z0-9_-]{22}$/.test(channelId)) return;
+    showView("channel");
+    refs.channelStatus.textContent = "Loading profile..."; refs.channelVideos.replaceChildren();
+    try {
+      const payload = await json(`/api/nyxtube/channel?id=${encodeURIComponent(channelId)}`);
+      if (state.view !== "channel" || String(state.watchVideo?.channelId || "") !== channelId) return;
+      const channel = payload?.channel || {};
+      refs.channelTitle.textContent = channel.title || state.watchVideo?.creator || "YouTube channel";
+      refs.channelHandle.textContent = channel.handle || "YouTube";
+      refs.channelDescription.textContent = channel.description || "This creator has not shared a channel description.";
+      refs.channelSubscribers.textContent = exactCount(channel.subscriberCount);
+      refs.channelVideos.textContent = exactCount(channel.videoCount);
+      const avatar = String(channel.avatarUrl || state.watchVideo?.channelAvatar || "").trim();
+      refs.channelAvatar.replaceChildren();
+      if (avatar) { const image = document.createElement("img"); image.alt = ""; image.src = avatar; image.referrerPolicy = "no-referrer"; image.addEventListener("error", () => { refs.channelAvatar.textContent = refs.channelTitle.textContent.slice(0, 1).toUpperCase(); }, { once: true }); refs.channelAvatar.append(image); }
+      else refs.channelAvatar.textContent = refs.channelTitle.textContent.slice(0, 1).toUpperCase();
+      const videos = Array.isArray(payload?.videos) ? payload.videos : [];
+      refs.channelStatus.textContent = videos.length ? `${videos.length} recent videos` : "No public videos available";
+      renderChannelVideoCards(videos);
+    } catch (error) {
+      refs.channelStatus.textContent = error.message || "This channel could not be loaded right now.";
+    }
   }
   function renderWatchChannel(video) {
     const creator = String(video?.creator || "YouTube").trim() || "YouTube";
@@ -538,6 +586,7 @@
     });
     refs.profileButton.addEventListener("click", () => parent.postMessage({ type: "nyx:nyxtube-open-profile", uid: state.profile.uid }, location.origin));
     refs.watchChannelMark.addEventListener("click", openWatchChannel); refs.watchCreator.addEventListener("click", openWatchChannel);
+    refs.channelBack.addEventListener("click", () => state.watchVideo && openWatch(state.watchVideo));
     document.addEventListener("visibilitychange", () => { if (document.hidden) finishWatchSpace({ cancel: true }); else requestProfile(); });
     addEventListener("blur", () => finishWatchSpace({ cancel: true }));
     refs.searchForm.addEventListener("submit", event => { event.preventDefault(); const query = refs.searchInput.value.trim(); if (query) loadFeed(query); });
@@ -554,6 +603,7 @@
     });
     refs.watchSettingsMenu.addEventListener("click", event => event.stopPropagation());
     refs.watchSpeed.addEventListener("change", () => { try { state.watchPlayer?.setPlaybackRate?.(Number(refs.watchSpeed.value) || 1); } catch { /* YouTube rejected this rate. */ } });
+    refs.watchVolume.addEventListener("input", () => { try { state.watchPlayer?.setVolume?.(Number(refs.watchVolume.value) || 0); } catch { /* The player closed while the volume changed. */ } });
     refs.watchSettingsCaptions.addEventListener("change", () => changeWatchCaptions(refs.watchSettingsCaptions.value === "on"));
     refs.watchRewind.addEventListener("click", () => seekWatchBy(-5)); refs.watchForward.addEventListener("click", () => seekWatchBy(5));
     $$('[data-watch-info-tab]').forEach(button => button.addEventListener("click", () => showWatchInfo(button.dataset.watchInfoTab)));

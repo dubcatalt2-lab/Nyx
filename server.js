@@ -8086,6 +8086,41 @@ app.get("/api/nyxtube/video", nyxTubeRoute(async req => {
   return [video];
 }, "no-store"));
 
+app.get("/api/nyxtube/channel", nyxTubeRoute(async req => {
+  const channelId = nyxTubeChannelId(req.query?.id);
+  if (!channelId) {
+    const error = new Error("Choose a valid YouTube channel.");
+    error.status = 400;
+    throw error;
+  }
+  const cacheKey = `channel-page:${channelId}`;
+  const cached = nyxTubeCached(cacheKey);
+  if (cached) return cached;
+  const [channelPayload, searchPayload] = await Promise.all([
+    nyxTubeApi("channels", { part: "snippet,statistics", id: channelId, maxResults: 1 }),
+    nyxTubeApi("search", { part: "snippet", channelId, type: "video", order: "date", videoEmbeddable: "true", videoSyndicated: "true", maxResults: 12 })
+  ]);
+  const source = Array.isArray(channelPayload?.items) ? channelPayload.items[0] : null;
+  if (!source) {
+    const error = new Error("That channel is unavailable.");
+    error.status = 404;
+    throw error;
+  }
+  const snippet = source.snippet || {}, statistics = source.statistics || {};
+  const ids = (Array.isArray(searchPayload?.items) ? searchPayload.items : []).map(item => String(item?.id?.videoId || ""));
+  const videos = await nyxTubeVideoDetails(ids);
+  const channel = {
+    id: channelId,
+    title: nyxTubeCleanText(snippet.title || "YouTube channel", 120),
+    handle: nyxTubeCleanText(snippet.customUrl || "YouTube", 120),
+    description: nyxTubeCleanText(snippet.description || "", 3_000),
+    avatarUrl: nyxTubeAvatar(snippet.thumbnails?.high?.url || snippet.thumbnails?.medium?.url || snippet.thumbnails?.default?.url),
+    subscriberCount: Math.max(0, Number(statistics.subscriberCount) || 0),
+    videoCount: Math.max(0, Number(statistics.videoCount) || 0)
+  };
+  return nyxTubeCacheSet(cacheKey, { channel, videos }, 10 * 60_000);
+}, "no-store"));
+
 app.get("/api/nyxtube/search", nyxTubeRoute(req => {
   if (!nyxTubeAllowSearch(req)) {
     const error = new Error("Too many video searches. Try again in a few minutes.");

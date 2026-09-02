@@ -3392,6 +3392,43 @@
   let nyxVisualDockRecoveryFrame=0;
   let nyxVisualDockRecoveryTimer=0;
   let nyxVisualDockRecoveryFollowupTimer=0;
+  let nyxVisualDockViewportRepairTimer=0;
+  function enforceNyxVisualDockViewport(){
+    const redesigned=store.text('nyx.homeDesign','redesigned')!=='original';
+    const dock=document.querySelector('[data-nyx-visual-dock]');
+    if(!dock) return;
+    if(!document.body.classList.contains('browser-shell') || !redesigned || window.innerWidth<=720){
+      ['position','top','bottom','left','right','width','max-width','box-sizing','z-index'].forEach(property=>dock.style.removeProperty(property));
+      document.querySelectorAll('#desktop>.window.maximized').forEach(win=>{
+        ['left','right','width','max-width','box-sizing'].forEach(property=>win.style.removeProperty(property));
+      });
+      return;
+    }
+    const side=store.get('nyx.sidebarLeft',false) ? 'left' : 'right';
+    const expanded=document.documentElement.dataset.nyxSidebarWidth==='expanded';
+    const dockWidth=expanded ? 240 : 50;
+    dock.style.setProperty('position','fixed','important');
+    dock.style.setProperty('top','48px','important');
+    dock.style.setProperty('bottom','0','important');
+    dock.style.setProperty('left',side==='left' ? '0' : 'auto','important');
+    dock.style.setProperty('right',side==='right' ? '0' : 'auto','important');
+    dock.style.setProperty('width',`${dockWidth}px`,'important');
+    dock.style.setProperty('max-width','100vw','important');
+    dock.style.setProperty('box-sizing','border-box','important');
+    dock.style.setProperty('z-index','2147482500','important');
+    document.querySelectorAll('#desktop>.window.maximized').forEach(win=>{
+      win.style.setProperty('box-sizing','border-box','important');
+      win.style.setProperty('max-width',`calc(100vw - ${dockWidth}px)`,'important');
+      win.style.setProperty('left',side==='left' ? `${dockWidth}px` : '0','important');
+      win.style.setProperty('right',side==='right' ? `${dockWidth}px` : '0','important');
+      win.style.setProperty('width',`calc(100vw - ${dockWidth}px)`,'important');
+    });
+  }
+  function scheduleNyxVisualDockViewportRepair(){
+    clearTimeout(nyxVisualDockViewportRepairTimer);
+    requestAnimationFrame(enforceNyxVisualDockViewport);
+    nyxVisualDockViewportRepairTimer=setTimeout(enforceNyxVisualDockViewport,260);
+  }
   function restoreNyxVisualDock(){
     const shouldRestore=document.body.classList.contains('browser-shell') && store.text('nyx.homeDesign','redesigned')!=='original';
     const dock=document.querySelector('[data-nyx-visual-dock]');
@@ -3406,6 +3443,7 @@
     dock.hidden=false;
     dock.inert=false;
     dock.removeAttribute('aria-hidden');
+    scheduleNyxVisualDockViewportRepair();
   }
   function scheduleNyxVisualDockRecovery(){
     if(nyxVisualDockRecoveryFrame) return;
@@ -3431,6 +3469,8 @@
     });
     nyxVisualDockRecoveryObserver.observe(document.body,{childList:true,attributes:true,attributeFilter:['class']});
     addEventListener('pageshow',deferNyxVisualDockRecovery);
+    addEventListener('resize',scheduleNyxVisualDockViewportRepair,{passive:true});
+    window.visualViewport?.addEventListener?.('resize',scheduleNyxVisualDockViewportRepair,{passive:true});
     document.addEventListener('visibilitychange',()=>{
       if(document.visibilityState==='visible') deferNyxVisualDockRecovery();
     });
@@ -3461,9 +3501,13 @@
     const side=store.get('nyx.sidebarLeft',false) ? 'left' : 'right';
     document.documentElement.dataset.nyxSidebarSide=side;
     document.body.dataset.nyxSidebarSide=side;
+    scheduleNyxVisualDockViewportRepair();
   }
   function applyNyxSidebarExpansion(){
-    const expanded=window.innerWidth>900 && store.get('nyx.sidebarExpanded',false);
+    // Keep the side rail usable in a narrow desktop window at normal browser
+    // zoom. The earlier 900px cutoff made the expanded rail vanish whenever
+    // Chrome's zoom changed the available layout width.
+    const expanded=window.innerWidth>720 && store.get('nyx.sidebarExpanded',false);
     const state=expanded ? 'expanded' : 'collapsed';
     document.documentElement.dataset.nyxSidebarWidth=state;
     document.body.dataset.nyxSidebarWidth=state;
@@ -3472,6 +3516,7 @@
       button.setAttribute('aria-expanded',String(expanded));
       button.setAttribute('aria-label',expanded ? 'Collapse tab sidebar' : 'Expand tab sidebar');
     }
+    scheduleNyxVisualDockViewportRepair();
   }
   function syncNyxVisualDockClock(){
     const dock=document.querySelector('[data-nyx-visual-dock]');
@@ -3548,6 +3593,7 @@
     const headAddButton=dock.querySelector('[data-nyx-dock-new-tab]');
     if(headAddButton) headAddButton.onclick=()=>openBrowserShellTab('');
     applyNyxSidebarExpansion();
+    scheduleNyxVisualDockViewportRepair();
     renderNyxVisualTabStrip();
     syncNyxVisualDockClock();
     if(!nyxVisualDockTimer) nyxVisualDockTimer=setInterval(syncNyxVisualDockClock,30000);
@@ -3785,9 +3831,26 @@
       return raw;
     }
   }
+  function browserShellIsBrokenProxyLocation(candidate,expected=''){
+    const next=String(candidate || '').trim();
+    if(!next) return true;
+    try{
+      const parsed=new URL(next,location.href);
+      // Scramjet can briefly emit this synthetic route after it has already
+      // rendered a valid search page.  It is not a page the user navigated
+      // to, so keep the trusted URL that initiated the load instead.
+      if(!/^\/undefined\/?$/i.test(parsed.pathname)) return false;
+      const prior=new URL(browserShellSourceUrl(expected) || expected,location.href);
+      return /^https?:$/i.test(prior.protocol)
+        && parsed.hostname===prior.hostname;
+    }catch{
+      return false;
+    }
+  }
   function browserShellRejectFrameLocation(source,expected=''){
     const raw=String(source || '').trim();
     if(!raw || /^\/?unidentified(?:[/?#]|$)/i.test(raw)) return true;
+    if(browserShellIsBrokenProxyLocation(raw,expected)) return true;
     try{
       const parsed=new URL(raw,location.href);
       const previous=browserShellSourceUrl(expected) || String(expected || '').trim();
@@ -5476,6 +5539,10 @@
       return;
     }
     ensureBrowserShellHome();
+    // Navigation may replace the maximized window after the rail state was
+    // calculated. Queue a second, viewport-based pass once that DOM work
+    // settles (including browser zoom changes in Chromium).
+    scheduleNyxVisualDockViewportRepair();
     const proxyInternal=/^(?:\/service\/|\/~\/sj\/|\/scramjet\/service\/|nyx:\/\/)/i.test(raw);
     const looksLikeUrl=/^(?:[a-z][a-z0-9+.-]*:|[\w.-]+\.[a-z]{2,}(?:\/|$)|\/|\.\/|\.\.\/|assets\/)/i.test(raw);
     const isSearchQuery=raw && !looksLikeUrl && !proxyInternal;
@@ -11795,6 +11862,7 @@
             const next=browserShellSourceUrl(String(event.url || '')) || String(event.url || '');
             if(!next) return;
             const previousSource=browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
+            if(browserShellRejectFrameLocation(next,previousSource)) return;
             const currentHistory=browserShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
             if(t.scramjetHistoryPending){
               t.scramjetHistoryPending=false;

@@ -1361,16 +1361,6 @@ html[data-nyx-home-design="redesigned"] body.browser-shell .browser-shell-settin
     display:none!important;
     content:none!important;
   }
-  html[data-nyx-sidebar-side="right"] body.browser-shell #desktop>.window.maximized{
-    left:0!important;
-    right:50px!important;
-    width:calc(100vw - 50px)!important;
-  }
-  html[data-nyx-sidebar-side="left"] body.browser-shell #desktop>.window.maximized{
-    left:50px!important;
-    right:0!important;
-    width:calc(100vw - 50px)!important;
-  }
   html[data-nyx-sidebar-side="left"] body.browser-shell .nyx-visual-dock{
     right:auto!important;
     left:0!important;

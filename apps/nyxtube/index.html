@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <title>NyxTube</title>
   <link rel="icon" type="image/svg+xml" href="/assets/icons/shortcut-youtube.svg">
-  <link rel="stylesheet" href="./styles.css?v=20260828-nyxtube-v5">
+  <link rel="stylesheet" href="./styles.css?v=20260902-player-controls-v6">
   <link rel="stylesheet" href="./responsive.css?v=20260828-nyxtube-v5">
 <link rel="stylesheet" href="/apps/visual-redesign.css?v=20260831-rounded-glass-v10">
 </head>
@@ -64,6 +64,7 @@
         <section class="watch-settings-menu" data-watch-settings-menu aria-label="Video settings" hidden>
           <strong>Settings</strong>
           <label><span>Playback speed</span><select data-watch-speed aria-label="Playback speed"><option value="1">Normal</option></select></label>
+          <label><span>Volume</span><input data-watch-volume type="range" min="0" max="100" value="100" aria-label="Volume"></label>
           <label><span>Captions</span><select data-watch-settings-captions aria-label="Captions"><option value="off">Off</option><option value="on">On</option></select></label>
           <div><span>Quality</span><b>Auto</b></div>
         </section>
@@ -93,6 +94,17 @@
       </div>
     </section>
 
+    <section class="channel-view" data-view="channel" hidden>
+      <button class="channel-back" data-channel-back type="button">← Back to video</button>
+      <header class="channel-profile" data-channel-profile>
+        <span class="channel-profile-avatar" data-channel-avatar></span>
+        <div><h1 data-channel-title>Channel</h1><p data-channel-handle></p><p data-channel-description></p></div>
+        <div class="channel-profile-stats"><span><strong data-channel-subscribers>—</strong> subscribers</span><span><strong data-channel-videos>—</strong> videos</span></div>
+      </header>
+      <div class="catalog-status"><h2>Latest videos</h2><span data-channel-status>Loading...</span></div>
+      <section class="video-grid" data-channel-videos aria-live="polite"></section>
+    </section>
+
     <section class="shorts-view" data-view="shorts" hidden>
       <div class="shorts-layout">
         <article class="short-card" data-short-stage>
@@ -108,6 +120,6 @@
     </section>
   </main>
   <script src="./player-core.js?v=20260829-clean-embed-v2"></script>
-  <script src="./app.js?v=20260829-shared-player-v10"></script>
+  <script src="./app.js?v=20260902-player-settings-v12"></script>
 </body>
 </html>

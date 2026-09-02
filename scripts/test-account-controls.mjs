@@ -110,11 +110,53 @@ try{
 
   await page.goto(origin,{waitUntil:'domcontentloaded'});
   await page.waitForSelector('#nyxBeamsBg[data-preset]');
+  const setupScreen=page.locator('#setupScreen');
+  assert.equal(await setupScreen.getAttribute('aria-hidden'),'true','Completed setup did not mark its screen hidden');
+  assert.deepEqual(await setupScreen.evaluate(screen=>({
+    hidden:screen.hidden,
+    inert:screen.inert,
+    display:getComputedStyle(screen).display,
+    pointerEvents:getComputedStyle(screen).pointerEvents,
+    atCenter:document.elementFromPoint(innerWidth/2,innerHeight/2)===screen
+  })),{
+    hidden:true,
+    inert:true,
+    display:'none',
+    pointerEvents:'none',
+    atCenter:false
+  },'Completed setup left an invisible click-blocking layer');
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await setupScreen.evaluate(screen=>{
+    screen.hidden=false;
+    screen.inert=false;
+    screen.setAttribute('aria-hidden','false');
+    screen.classList.add('show');
+  });
+  assert.deepEqual(await setupScreen.evaluate(screen=>({
+    display:getComputedStyle(screen).display,
+    opacity:getComputedStyle(screen).opacity,
+    visibility:getComputedStyle(screen).visibility,
+    pointerEvents:getComputedStyle(screen).pointerEvents
+  })),{
+    display:'grid',
+    opacity:'1',
+    visibility:'visible',
+    pointerEvents:'auto'
+  },'Setup wizard was invisible or non-interactive with reduced motion enabled');
+  await setupScreen.evaluate(screen=>{
+    screen.classList.remove('show');
+    screen.setAttribute('aria-hidden','true');
+    screen.hidden=true;
+    screen.inert=true;
+  });
+  await page.emulateMedia({reducedMotion:'no-preference'});
   const frameLoader=page.locator('.nyx-frame-loader svg').first();
   await frameLoader.waitFor({state:'attached'});
   assert.equal(await frameLoader.getAttribute('viewBox'),'0 0 210 110','External page loader was not laid out horizontally');
   assert.match(await frameLoader.locator('.nyx-loader-rocket').evaluate(node=>node.parentElement?.getAttribute('transform')||''),/rotate\(90\b/,'Loading rocket was not oriented horizontally');
   assert.equal(await frameLoader.locator('.nyx-loader-flame').count(),3,'Loading rocket did not keep all three flame trails');
+  assert.equal(await frameLoader.locator('.nyx-loader-moon').count(),0,'Retired loading moon was still present');
+  assert.equal(await frameLoader.locator('.nyx-loader-star').count(),5,'Loading rocket did not include its star stream');
   assert.equal(await page.locator('.nyx-home-dot-field').count(),0,'Retired constellation field was still present');
   assert.equal(await page.locator('#nyxBeamsBg').getAttribute('data-preset'),'frost','Desktop home did not render the default Beams wallpaper');
   await page.setViewportSize({width:2560,height:800});
@@ -250,8 +292,11 @@ try{
   await page.waitForSelector('.browser-shell-settings-overlay');
   await page.waitForTimeout(200);
   assert.equal(await page.locator('.browser-shell-settings-overlay').count(),1,'Homepage Settings was removed after opening');
-  await page.locator('[data-nyx-dock-item="home"]').click();
+  await page.locator('[data-nyx-dock-item="links"]').click();
   await page.waitForSelector('.browser-shell-settings-overlay',{state:'detached'});
+  await page.waitForFunction(()=>document.querySelector('.nyx-browser-tab-row.active strong')?.textContent?.trim()==='Link Generator');
+  assert.equal(await page.locator('.browser-shell-settings-overlay').count(),0,'Settings remained stacked over a newly opened app tab');
+  await page.locator('[data-nyx-dock-item="home"]').click();
   await page.locator('[data-browser-shell-settings]').evaluate(button=>button.click());
   await page.waitForSelector('.browser-shell-settings-overlay');
   await page.waitForTimeout(200);
@@ -318,6 +363,43 @@ try{
   await page.locator('.nyx-browser-tab-row.active [data-browser-shell-close-tab]').evaluate(button=>button.click());
   assert.equal(await page.locator('.browser-window.browser-home-page [data-browser-blank-input]').inputValue(),'','Closing a blank tab restored stale homepage search text');
   assert.equal(await page.locator('[data-browser-shell-url]').inputValue(),'','Closing a blank tab restored stale address text');
+  if(await page.evaluate(()=>document.documentElement.dataset.nyxSidebarWidth!=='expanded')){
+    await page.locator('[data-nyx-dock-expand]').click();
+  }
+  assert.equal(await page.evaluate(()=>document.documentElement.dataset.nyxSidebarWidth),'expanded','Visual tab rail did not expand for close-button regression');
+  const dockDate=page.locator('[data-nyx-dock-date]');
+  await page.waitForFunction(()=>Boolean(document.querySelector('[data-nyx-visual-dock]')),{timeout:1_500});
+  assert.match(await dockDate.textContent(),/\b20\d{2}\b/,'Expanded rail date did not include the year');
+  assert.equal(await dockDate.evaluate(date=>date.scrollWidth<=date.clientWidth),true,'Expanded rail date was clipped');
+  if(!await page.evaluate(()=>document.body.classList.contains('nyx-tab-sidebar-open'))){
+    await page.locator('[data-browser-shell-tabs-toggle]').first().evaluate(button=>button.click());
+  }
+  assert.equal(await page.evaluate(()=>document.body.classList.contains('nyx-tab-sidebar-open')),true,'Tab sidebar did not open for close-button regression');
+  for(let closeCycle=0;closeCycle<5;closeCycle+=1){
+    await page.locator('#nyxBrowserTabSidebar [data-browser-shell-new-tab]').evaluate(button=>button.click());
+    const activeClose=page.locator('#nyxBrowserTabSidebar .nyx-browser-tab-row.active [data-browser-shell-close-tab]');
+    await activeClose.waitFor();
+    assert.equal(await activeClose.evaluate(button=>button.tagName),'BUTTON','Tab close control was not a native button');
+    await activeClose.evaluate(button=>button.click());
+    await page.waitForFunction(()=>Boolean(document.querySelector('[data-nyx-visual-dock]')),{timeout:1_500});
+    const railState=await page.evaluate(()=>{
+      const dock=document.querySelector('[data-nyx-visual-dock]');
+      if(!dock) return {
+        connected:false,
+        bodyClass:document.body.className,
+        shellPreference:localStorage.getItem('nyx.browserShellMode'),
+        homeDesign:localStorage.getItem('nyx.homeDesign'),
+        chrome:document.querySelector('.top-os')?.textContent?.slice(0,80) || ''
+      };
+      const box=dock.getBoundingClientRect();
+      const style=getComputedStyle(dock);
+      return {connected:dock.isConnected,width:box.width,height:box.height,display:style.display,visibility:style.visibility};
+    });
+    assert.equal(railState.connected,true,`Visual tab rail detached after close cycle ${closeCycle+1}: ${JSON.stringify(railState)}`);
+    assert.ok(railState.width>200&&railState.height>200&&railState.display!=='none'&&railState.visibility!=='hidden',`Visual tab rail disappeared after close cycle ${closeCycle+1}`);
+    assert.equal(await page.evaluate(()=>document.documentElement.dataset.nyxSidebarWidth),'expanded',`Closing a tab collapsed the visual rail on cycle ${closeCycle+1}`);
+    assert.equal(await page.evaluate(()=>document.body.classList.contains('nyx-tab-sidebar-open')),true,`Closing a tab dismissed the tab sidebar on cycle ${closeCycle+1}`);
+  }
 
   await page.locator('[data-nyx-dock-item="chat"]').click();
   const chatFrame=page.frames().find(frame=>new URL(frame.url()).pathname==='/apps/chat/');

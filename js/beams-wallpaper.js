@@ -10,7 +10,8 @@
     violet:{label:'Violet',summary:'Muted violet light',lightColor:'#a98cff'},
     mint:{label:'Mint',summary:'Quiet green light',lightColor:'#75e7be'},
     rose:{label:'Rose',summary:'Soft rose light',lightColor:'#f5a0c8'},
-    ember:{label:'Ember',summary:'Warm amber light',lightColor:'#ffad73'}
+    ember:{label:'Ember',summary:'Warm amber light',lightColor:'#ffad73'},
+    lineWaves:{label:'Waves',summary:'Flowing contour lines',lightColor:'#9ec8ff'}
   });
   // Match the React Bits showcase configuration. Keeping the source geometry
   // proportions is important: oversized, overlapping planes expose their
@@ -337,7 +338,8 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
     if(!canvas) return;
     const body=document.body;
     const externalContent=body?.classList.contains('browser-content-active') && !body.classList.contains('nyx-built-in-content-active');
-    const hidden=!body || body.classList.contains('custom-bg-active') || body.classList.contains('three-d-backgrounds') || externalContent;
+    const lineWaves=document.documentElement?.dataset.nyxBeamWallpaper==='lineWaves';
+    const hidden=!body || lineWaves || body.classList.contains('custom-bg-active') || body.classList.contains('three-d-backgrounds') || externalContent;
     canvas.hidden=hidden;
     if(hidden){instance?.stop(); return}
     const renderer=ensureInstance();

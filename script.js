@@ -342,7 +342,7 @@
     try{return await request}
     finally{if(nyxFirebaseTokenPromise===request)nyxFirebaseTokenPromise=null}
   }
-  const NYX_CLOUD_PREFERENCE_KEYS=Object.freeze(['nyx.theme','nyx.customThemeColor','nyx.font','nyx.engine','nyx.browserMode','nyx.transport','nyx.visualEffect','nyx.visualEffectSpeed','nyx.visualEffectAmount','nyx.beamWallpaper','nyx.beamTheme','nyx.threeDBackgrounds','nyx.performanceTier','nyx.gamePerformanceMode','nyx.homeDesign','nyx.tabDesign','nyx.homeShortcuts']);
+  const NYX_CLOUD_PREFERENCE_KEYS=Object.freeze(['nyx.theme','nyx.customThemeColor','nyx.font','nyx.engine','nyx.browserMode','nyx.transport','nyx.visualEffect','nyx.visualEffectSpeed','nyx.visualEffectAmount','nyx.beamWallpaper','nyx.beamTheme','nyx.lineWaves.speed','nyx.lineWaves.density','nyx.lineWaves.mouse','nyx.lineWaves.colorVariant','nyx.threeDBackgrounds','nyx.performanceTier','nyx.gamePerformanceMode','nyx.homeDesign','nyx.tabDesign','nyx.homeShortcuts']);
   let nyxCloudPreferencesTimer=0;
   let nyxCloudPreferencesInterval=0;
   let nyxCloudPreferencesFingerprint='';
@@ -2286,7 +2286,8 @@
       violet:{label:'Violet',summary:'Muted violet light'},
       mint:{label:'Mint',summary:'Quiet green light'},
       rose:{label:'Rose',summary:'Soft rose light'},
-      ember:{label:'Ember',summary:'Warm amber light'}
+      ember:{label:'Ember',summary:'Warm amber light'},
+      lineWaves:{label:'Waves',summary:'Flowing contour lines'}
     };
   }
   function currentNyxBeamWallpaper(){
@@ -2299,6 +2300,15 @@
       store.setText('nyx.beamTheme',theme);
     }
     return presets[value] ? value : 'frost';
+  }
+  function currentNyxLineWavesOptions(){
+    const number=(key,fallback,min,max)=>{
+      const value=Number(store.text(key,String(fallback)));
+      return Number.isFinite(value) ? Math.min(max,Math.max(min,value)) : fallback;
+    };
+    const colorVariant=store.text('nyx.lineWaves.colorVariant','frost');
+    const validVariant=Object.hasOwn(window.NyxLineWavesWallpaper?.palettes || {},colorVariant) ? colorVariant : 'frost';
+    return {speed:number('nyx.lineWaves.speed',.3,.04,.55),innerLineCount:number('nyx.lineWaves.density',32,16,48),outerLineCount:number('nyx.lineWaves.density',32,16,48),warpIntensity:1,rotation:-45,edgeFadeWidth:.6,colorCycleSpeed:1,brightness:.12,enableMouseInteraction:store.get('nyx.lineWaves.mouse',true),mouseInfluence:2,colorVariant:validVariant};
   }
   function applyNyxBeamWallpaper(){
     const value=currentNyxBeamWallpaper();
@@ -2313,32 +2323,44 @@
       scale:.2,
       rotation:30
     });
+    window.NyxLineWavesWallpaper?.apply(value,currentNyxLineWavesOptions());
   }
   function nyxThemeBeamWallpaper(theme=store.text('nyx.theme','default')){
     return ({default:'frost',midnight:'arctic',ruby:'rose',emerald:'mint',sakura:'rose',fresh:'mint',custom:'violet'})[normalizeNyxTheme(theme)] || 'frost';
   }
+  function nyxThemeWavesColor(theme=store.text('nyx.theme','default')){
+    return ({default:'frost',midnight:'arctic',ruby:'rose',emerald:'mint',sakura:'rose',fresh:'mint',custom:'violet'})[normalizeNyxTheme(theme)] || 'frost';
+  }
   function applyNyxThemeBeamWallpaper(theme){
     const cleanTheme=normalizeNyxTheme(theme);
-    const value=nyxThemeBeamWallpaper(cleanTheme);
+    const wavesActive=currentNyxBeamWallpaper()==='lineWaves';
+    const value=wavesActive ? 'lineWaves' : nyxThemeBeamWallpaper(cleanTheme);
     store.setText('nyx.beamWallpaper',value);
     store.setText('nyx.beamTheme',cleanTheme);
+    if(wavesActive) store.setText('nyx.lineWaves.colorVariant',nyxThemeWavesColor(cleanTheme));
     store.set('nyx.threeDBackgrounds',false);
     document.body.classList.remove('three-d-backgrounds');
     applyNyxBeamWallpaper();
     qsa('[data-nyx-beam-wallpaper]').forEach(card=>{
-      const selected=card.dataset.nyxBeamWallpaper===value;
+      const selected=card.dataset.nyxBeamWallpaper===(wavesActive ? nyxThemeWavesColor(cleanTheme) : value);
       card.classList.toggle('selected',selected);
       card.setAttribute('aria-pressed',String(selected));
     });
   }
   function nyxBeamWallpaperCardsMarkup(){
-    const selected=currentNyxBeamWallpaper();
-    return Object.entries(nyxBeamWallpaperPresets()).map(([value,preset])=>`<button class="nyx-wallpaper-card${selected===value?' selected':''}" data-nyx-beam-wallpaper="${esc(value)}" type="button" aria-pressed="${selected===value}"><canvas width="240" height="135" data-nyx-beam-preview="${esc(value)}" aria-hidden="true"></canvas><span><strong>${esc(preset.label || value)}</strong><small>${esc(preset.summary || 'Animated beams')}</small></span><i class="nyx-wallpaper-check" aria-hidden="true">✓</i></button>`).join('');
+    const wavesActive=currentNyxBeamWallpaper()==='lineWaves';
+    const selected=wavesActive ? currentNyxLineWavesOptions().colorVariant : currentNyxBeamWallpaper();
+    return Object.entries(nyxBeamWallpaperPresets()).filter(([value])=>!wavesActive || value!=='lineWaves').map(([value,preset])=>`<button class="nyx-wallpaper-card${selected===value?' selected':''}" data-nyx-beam-wallpaper="${esc(value)}" type="button" aria-pressed="${selected===value}"><canvas width="240" height="135" data-nyx-beam-preview="${esc(value)}" aria-hidden="true"></canvas><span><strong>${esc(preset.label || value)}</strong><small>${esc(wavesActive ? `${preset.label || value} Waves` : (preset.summary || 'Animated beams'))}</small></span><i class="nyx-wallpaper-check" aria-hidden="true">✓</i></button>`).join('');
+  }
+  function nyxLineWavesSettingsMarkup(){
+    const options=currentNyxLineWavesOptions();
+    return `<h2>Wallpapers</h2><p>Waves is active. It follows your color theme; pick a color below to override it until you change themes again.</p><div class="settings-actions"><button class="settings-action" data-nyx-line-waves-use-beams type="button">Switch to Beams</button></div><div class="nyx-wallpaper-grid">${nyxBeamWallpaperCardsMarkup()}</div><label class="nyx-line-waves-control"><span>Motion speed <output data-nyx-line-waves-speed-output>${options.speed.toFixed(2)}</output></span><input type="range" min="0.04" max="0.55" step="0.01" value="${options.speed}" data-nyx-line-waves-speed aria-label="Waves motion speed"></label><label class="nyx-line-waves-control"><span>Line density <output data-nyx-line-waves-density-output>${options.innerLineCount}</output></span><input type="range" min="16" max="48" step="1" value="${options.innerLineCount}" data-nyx-line-waves-density aria-label="Waves line density"></label><div class="settings-row"><span>Cursor response</span><button class="settings-action ${options.enableMouseInteraction?'on':''}" data-nyx-line-waves-mouse type="button">${options.enableMouseInteraction?'On':'Off'}</button></div>`;
   }
   function wireNyxBeamWallpaperSettings(root){
     if(!root) return;
+    const wavesActive=currentNyxBeamWallpaper()==='lineWaves';
     const syncCards=()=>{
-      const current=currentNyxBeamWallpaper();
+      const current=wavesActive ? currentNyxLineWavesOptions().colorVariant : currentNyxBeamWallpaper();
       root.querySelectorAll('[data-nyx-beam-wallpaper]').forEach(card=>{
         const selected=card.dataset.nyxBeamWallpaper===current;
         card.classList.toggle('selected',selected);
@@ -2348,8 +2370,17 @@
     root.querySelectorAll('[data-nyx-beam-wallpaper]').forEach(card=>card.addEventListener('click',()=>{
       const value=card.dataset.nyxBeamWallpaper || 'frost';
       if(!nyxBeamWallpaperPresets()[value]) return;
+      if(wavesActive){
+        store.setText('nyx.lineWaves.colorVariant',value);
+        applyNyxBeamWallpaper();
+        syncCards();
+        requestAnimationFrame(()=>root.querySelectorAll('[data-nyx-beam-preview]').forEach(canvas=>window.NyxLineWavesWallpaper?.renderPreview(canvas,canvas.dataset.nyxBeamPreview)));
+        toast(`${nyxBeamWallpaperPresets()[value].label || 'Wave'} Waves color applied`);
+        return;
+      }
       store.setText('nyx.beamWallpaper',value);
       store.setText('nyx.beamTheme','custom-wallpaper');
+      if(value==='lineWaves') store.setText('nyx.lineWaves.colorVariant',nyxThemeWavesColor());
       store.set('nyx.threeDBackgrounds',false);
       qsa('[data-switch="nyx.threeDBackgrounds"]').forEach(button=>{
         button.classList.remove('on');
@@ -2357,10 +2388,44 @@
         if(button.classList.contains('settings-action')) button.textContent='Off';
       });
       applyUserSettings();
+      // Changing to or from Line Waves changes the available controls, so rebuild
+      // this settings pane immediately instead of leaving a stale picker on screen.
+      renderBrowserShellSettingsTab();
       syncCards();
       toast(`${nyxBeamWallpaperPresets()[value].label || 'Beam'} wallpaper applied`);
     }));
-    requestAnimationFrame(()=>root.querySelectorAll('[data-nyx-beam-preview]').forEach(canvas=>window.NyxBeamsWallpaper?.renderPreview(canvas,canvas.dataset.nyxBeamPreview)));
+    const redrawWavesPreview=()=>requestAnimationFrame(()=>root.querySelectorAll('[data-nyx-line-waves-preview]').forEach(canvas=>window.NyxLineWavesWallpaper?.renderPreview(canvas)));
+    root.querySelector('[data-nyx-line-waves-speed]')?.addEventListener('input',event=>{
+      const value=Number(event.currentTarget.value).toFixed(2);
+      store.setText('nyx.lineWaves.speed',value);
+      root.querySelector('[data-nyx-line-waves-speed-output]')?.replaceChildren(value);
+      applyNyxBeamWallpaper();
+      redrawWavesPreview();
+    });
+    root.querySelector('[data-nyx-line-waves-density]')?.addEventListener('input',event=>{
+      const value=String(Math.round(Number(event.currentTarget.value)));
+      store.setText('nyx.lineWaves.density',value);
+      root.querySelector('[data-nyx-line-waves-density-output]')?.replaceChildren(value);
+      applyNyxBeamWallpaper();
+      redrawWavesPreview();
+    });
+    root.querySelector('[data-nyx-line-waves-mouse]')?.addEventListener('click',event=>{
+      const next=!store.get('nyx.lineWaves.mouse',true);
+      store.set('nyx.lineWaves.mouse',next);
+      event.currentTarget.classList.toggle('on',next);
+      event.currentTarget.textContent=next?'On':'Off';
+      applyNyxBeamWallpaper();
+    });
+    root.querySelector('[data-nyx-line-waves-use-beams]')?.addEventListener('click',()=>{
+      store.setText('nyx.beamWallpaper','frost');
+      store.setText('nyx.beamTheme','custom-wallpaper');
+      applyUserSettings();
+      renderBrowserShellSettingsTab();
+    });
+    requestAnimationFrame(()=>root.querySelectorAll('[data-nyx-beam-preview]').forEach(canvas=>{
+      const value=canvas.dataset.nyxBeamPreview;
+      (wavesActive ? window.NyxLineWavesWallpaper : (value==='lineWaves' ? window.NyxLineWavesWallpaper : window.NyxBeamsWallpaper))?.renderPreview(canvas,value);
+    }));
     syncCards();
   }
   //favicons
@@ -3323,6 +3388,53 @@
   let nyxVisualDockTimer=0;
   let nyxSidebarPreferenceSaveTimer=0;
   let nyxSidebarToggleLockTimer=0;
+  let nyxVisualDockRecoveryObserver=null;
+  let nyxVisualDockRecoveryFrame=0;
+  let nyxVisualDockRecoveryTimer=0;
+  let nyxVisualDockRecoveryFollowupTimer=0;
+  function restoreNyxVisualDock(){
+    const shouldRestore=document.body.classList.contains('browser-shell') && store.text('nyx.homeDesign','redesigned')!=='original';
+    const dock=document.querySelector('[data-nyx-visual-dock]');
+    if(!shouldRestore) return;
+    if(!dock || !dock.isConnected){
+      ensureNyxVisualDock();
+      return;
+    }
+    // The rail is a body-owned shell surface. Embedded pages must not be able
+    // to leave it hidden or stranded in a frame teardown container.
+    if(dock.parentElement!==document.body) document.body.appendChild(dock);
+    dock.hidden=false;
+    dock.inert=false;
+    dock.removeAttribute('aria-hidden');
+  }
+  function scheduleNyxVisualDockRecovery(){
+    if(nyxVisualDockRecoveryFrame) return;
+    nyxVisualDockRecoveryFrame=requestAnimationFrame(()=>{
+      nyxVisualDockRecoveryFrame=0;
+      restoreNyxVisualDock();
+    });
+  }
+  function deferNyxVisualDockRecovery(){
+    clearTimeout(nyxVisualDockRecoveryTimer);
+    clearTimeout(nyxVisualDockRecoveryFollowupTimer);
+    nyxVisualDockRecoveryTimer=setTimeout(restoreNyxVisualDock,0);
+    // A paired browser frame can finish its own close animation after the
+    // shell close returns. Re-check after that bounded teardown has settled;
+    // this is deliberately not a permanent polling loop.
+    nyxVisualDockRecoveryFollowupTimer=setTimeout(restoreNyxVisualDock,420);
+  }
+  function watchNyxVisualDock(){
+    if(nyxVisualDockRecoveryObserver || !document.body) return;
+    nyxVisualDockRecoveryObserver=new MutationObserver(()=>{
+      const dock=document.querySelector('[data-nyx-visual-dock]');
+      if(!dock || (document.body.classList.contains('browser-shell') && dock.parentElement!==document.body)) scheduleNyxVisualDockRecovery();
+    });
+    nyxVisualDockRecoveryObserver.observe(document.body,{childList:true,attributes:true,attributeFilter:['class']});
+    addEventListener('pageshow',deferNyxVisualDockRecovery);
+    document.addEventListener('visibilitychange',()=>{
+      if(document.visibilityState==='visible') deferNyxVisualDockRecovery();
+    });
+  }
   function syncNyxVisualDockState(){
     const dock=document.querySelector('[data-nyx-visual-dock]');
     if(!dock) return;
@@ -3368,7 +3480,10 @@
     const time=dock.querySelector('[data-nyx-dock-time]');
     const date=dock.querySelector('[data-nyx-dock-date]');
     if(time) time.textContent=now.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
-    if(date) date.textContent=now.toLocaleDateString([],{month:'short',day:'numeric'}).toUpperCase();
+    if(date){
+      date.textContent=now.toLocaleDateString([],{month:'long',day:'numeric',year:'numeric'}).toUpperCase();
+      date.dataset.shortDate=now.toLocaleDateString([],{month:'short',day:'numeric'}).toUpperCase();
+    }
   }
   function ensureNyxVisualDock(){
     const enabled=document.body.classList.contains('browser-shell') && store.text('nyx.homeDesign','redesigned')!=='original';
@@ -3403,6 +3518,7 @@
         </div>
         <div class="nyx-visual-dock-profile" data-nyx-profile-slot></div>`;
       document.body.appendChild(dock);
+      watchNyxVisualDock();
       if(navigator.getBattery){
         navigator.getBattery().then(battery=>{
           const update=()=>{const value=dock?.querySelector('[data-nyx-dock-battery]');if(value)value.textContent=`${Math.round(battery.level*100)}%`};
@@ -3411,6 +3527,10 @@
         }).catch(()=>{});
       }
     }
+    if(dock.parentElement!==document.body) document.body.appendChild(dock);
+    dock.hidden=false;
+    dock.inert=false;
+    dock.removeAttribute('aria-hidden');
     const expandButton=dock.querySelector('[data-nyx-dock-expand]');
     if(expandButton) expandButton.onclick=()=>{
       if(dock.dataset.nyxSidebarToggleLocked==='true') return;
@@ -3586,6 +3706,10 @@
   function browserShellNeedsStartupHome(){
     const homeTab=browserShellTabs.find(tab=>tab.title==='Home' && !tab.url);
     if(!activeBrowser || !activeBrowser.win || !activeBrowser.win.isConnected) return true;
+    const activeShellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
+    if(String(activeShellTab?.url || '').trim()) return false;
+    const activeBrowserTab=activeBrowser.tabs?.find(tab=>tab.id===activeBrowser.active);
+    if(String(activeBrowserTab?.sourceUrl || activeBrowserTab?.url || '').trim()) return false;
     if(browserShellActiveTab && homeTab && browserShellActiveTab!==homeTab.id) return false;
     const homeEl=activeBrowser.win.querySelector('.browser-home');
     return !homeEl || homeEl.classList.contains('hidden');
@@ -4374,6 +4498,12 @@
     sidebar.className='nyx-browser-tab-sidebar';
     sidebar.setAttribute('aria-label','Browser tabs');
     sidebar.innerHTML='<header><strong>Tabs</strong><div><button type="button" data-browser-bookmarks-toggle title="Bookmarks" aria-label="Bookmarks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h5l1.5 2H19v11H5z"></path></svg></button><button type="button" data-browser-shell-new-tab title="New tab" aria-label="New tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></header><div class="nyx-browser-tab-list" data-browser-shell-tab-list role="tablist" aria-label="Open tabs"></div>';
+    sidebar.querySelector('[data-browser-shell-new-tab]')?.addEventListener('click',event=>{
+      event.preventDefault();
+      event.stopPropagation();
+      openBrowserShellTab();
+      document.querySelector('[data-browser-shell-url]')?.focus();
+    });
     document.body.appendChild(sidebar);
     return sidebar;
   }
@@ -4420,18 +4550,28 @@
     if(!strip) return;
     const fragment=document.createDocumentFragment();
     browserShellTabs.forEach(tab=>{
-      const button=document.createElement('button');
+      const button=document.createElement('div');
       const active=tab.id===browserShellActiveTab;
-      button.type='button';
       button.className='nyx-visual-dock-tab'+(active?' active':'');
       button.dataset.browserShellTab=tab.id;
       button.setAttribute('role','tab');
+      button.tabIndex=active ? 0 : -1;
       button.setAttribute('aria-selected',String(active));
       button.setAttribute('aria-label',browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url));
       const title=tab.title==='Home' && !tab.url ? 'Nyx' : browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url);
-      const close=browserShellTabs.length>1?`<span class="nyx-visual-dock-tab-close" data-browser-shell-close-tab="${esc(tab.id)}" role="button" aria-label="Close ${esc(title)}">&times;</span>`:'';
+      const close=browserShellTabs.length>1?`<button class="nyx-visual-dock-tab-close" data-browser-shell-close-tab="${esc(tab.id)}" type="button" aria-label="Close ${esc(title)}">&times;</button>`:'';
       button.innerHTML=`<img alt="" src="${esc(browserChromeIcon(tab.icon,tab.url))}"><strong>${esc(title)}</strong>${close}`;
       bindTabIconFallback(button.querySelector('img'));
+      button.querySelector('[data-browser-shell-close-tab]')?.addEventListener('click',event=>{
+        event.preventDefault();
+        event.stopPropagation();
+        closeBrowserShellTab(tab.id);
+      });
+      button.addEventListener('keydown',event=>{
+        if(event.target.closest?.('[data-browser-shell-close-tab]')) return;
+        if(event.key==='Enter' || event.key===' '){event.preventDefault();setBrowserShellActive(tab.id)}
+        if((event.key==='Delete' || event.key==='Backspace') && browserShellTabs.length>1){event.preventDefault();closeBrowserShellTab(tab.id)}
+      });
       fragment.appendChild(button);
     });
     const add=document.createElement('button');
@@ -4549,6 +4689,16 @@
       const close=browserShellTabs.length>1?`<button class="nyx-browser-tab-close" type="button" data-browser-shell-close-tab="${esc(tab.id)}" aria-label="Close ${esc(browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url))}">&times;</button>`:'';
       item.innerHTML=`<img class="nyx-browser-tab-icon" alt="" src="${esc(browserChromeIcon(tab.icon,tab.url))}"><span><strong>${esc(browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url))}</strong><small>${esc(browserShellTabDomain(tab))}</small></span>${close}`;
       bindTabIconFallback(item.querySelector('.nyx-browser-tab-icon'));
+      item.addEventListener('click',event=>{
+        if(event.target.closest?.('[data-browser-shell-close-tab]')) return;
+        event.preventDefault();
+        setBrowserShellActive(tab.id);
+      });
+      item.querySelector('[data-browser-shell-close-tab]')?.addEventListener('click',event=>{
+        event.preventDefault();
+        event.stopPropagation();
+        closeBrowserShellTab(tab.id);
+      });
       item.addEventListener('keydown',event=>{
         if(event.target.closest?.('button')) return;
         if(event.key==='Enter' || event.key===' '){event.preventDefault();setBrowserShellActive(tab.id)}
@@ -4592,10 +4742,13 @@
   }
   function openBrowserShellTab(url='',options={}){
     closeWeatherForWindowOpen();
+    // Settings is rendered as a full-shell surface rather than inside a browser
+    // frame. Tear it down before every new tab transition so it cannot remain
+    // stacked over the newly active app/page.
+    closeBrowserShellSettings();
     const id='shell-'+Date.now()+Math.random().toString(16).slice(2);
     const normalized=url ? normalize(url) : '';
     const isBlank=!normalized;
-    if(isBlank) closeBrowserShellSettings();
     browserShellTabs.push({id,url:normalized,title:isBlank ? 'New Tab' : browserShellLabel(normalized),icon:isBlank ? favicons.nyx : iconForUrl(normalized)});
     browserShellOpeningTabs.add(id);
     browserShellActiveTab=id;
@@ -4925,7 +5078,7 @@
     };
     const definitions=[
       ['general','General',settingsIcons.advanced,'Choose Nyx defaults and everyday behavior.',['nyx','home design','search engine']],
-      ['appearance','Appearance',settingsIcons.customize,'Make Nyx feel like yours.',['theme','homepage','sidebar','custom theme','effects','wallpapers','performance']],
+      ['appearance','Appearance',settingsIcons.customize,'Make Nyx feel like yours.',['theme','homepage','sidebar','custom theme','effects','wallpapers','line waves','performance']],
       ['browser','Browser',settingsIcons.browsing,'Manage tabs, search, and browsing controls.',['tab cloak','preset cloak','cloaking','tab design']],
       ['privacy','Privacy',settingsIcons.privacy,'Keep your browsing surface private and protected.',['private tabs','popup protection']],
       ['proxy','Proxy',settingsIcons.browsing,'Choose how Nyx reaches the web.',['proxy engine','transport','wisp url']],
@@ -5152,7 +5305,10 @@
       const backgroundsBlock=document.createElement('section');
       backgroundsBlock.className='settings-block nyx-wallpaper-block';
       const threeDOn=store.get('nyx.threeDBackgrounds',false);
-      backgroundsBlock.innerHTML=`<h2>Wallpapers</h2><p>Choose the animated light behind Nyx. Each wallpaper keeps the interface readable through blurred glass.</p><div class="nyx-wallpaper-grid">${nyxBeamWallpaperCardsMarkup()}</div><div class="settings-row nyx-wallpaper-legacy"><span>Legacy 3D scene</span><button class="settings-action ${threeDOn?'on':''}" data-switch="nyx.threeDBackgrounds" type="button" aria-checked="${threeDOn}">${threeDOn?'On':'Off'}</button></div>`;
+      const lineWavesActive=currentNyxBeamWallpaper()==='lineWaves';
+      backgroundsBlock.innerHTML=lineWavesActive
+        ? nyxLineWavesSettingsMarkup()
+        : `<h2>Wallpapers</h2><p>Choose the animated light behind Nyx. Each wallpaper keeps the interface readable through blurred glass.</p><div class="nyx-wallpaper-grid">${nyxBeamWallpaperCardsMarkup()}</div><div class="settings-row nyx-wallpaper-legacy"><span>Legacy 3D scene</span><button class="settings-action ${threeDOn?'on':''}" data-switch="nyx.threeDBackgrounds" type="button" aria-checked="${threeDOn}">${threeDOn?'On':'Off'}</button></div>`;
       wireNyxBeamWallpaperSettings(backgroundsBlock);
       const customThemeBlock=document.createElement('section');
       customThemeBlock.className='settings-block nyx-custom-theme-maker';
@@ -5210,11 +5366,17 @@
     if(index<0) return;
     const closingWasActive=browserShellActiveTab===id;
     const closing=browserShellTabs[index];
+    try{
       if(closing.url==='nyx://settings') closeBrowserShellSettings();
       const nextIndex=browserShellTabs.findIndex(tab=>tab.id===id);
       if(nextIndex<0) return;
       const shellTab=browserShellTabs[nextIndex];
-      if(shellTab?.browserTabId && activeBrowser?.closeTab) activeBrowser.closeTab(shellTab.browserTabId);
+      // Browser-frame cleanup is best-effort. It must not be able to abort the
+      // shell close, otherwise the browser and persistent sidebar fall out of
+      // sync after a problematic embedded page.
+      if(shellTab?.browserTabId && activeBrowser?.closeTab){
+        try{activeBrowser.closeTab(shellTab.browserTabId)}catch(error){console.warn('Nyx: embedded tab cleanup failed during shell close',error)}
+      }
       browserShellTabs.splice(nextIndex,1);
       if(browserShellActiveTab===id) browserShellActiveTab=browserShellTabs[Math.max(0,nextIndex-1)]?.id || browserShellTabs[0]?.id || null;
       if(!browserShellTabs.length){
@@ -5248,6 +5410,17 @@
         activeBrowser.activate(activeShell.browserTabId);
       }
       renderBrowserShellTabs();
+    }finally{
+      // Closing a shell tab must never be allowed to tear down the persistent
+      // navigation rail. A nested frame can close its paired browser tab while
+      // the shell is reconciling, so restore the shell host from its saved
+      // preference before refreshing the rail.
+      if(store.get('nyx.browserShellMode',true) && !document.body.classList.contains('browser-shell')){
+        document.body.classList.add('browser-shell');
+      }
+      ensureNyxVisualDock();
+      deferNyxVisualDockRecovery();
+    }
   }
   function updateBrowserShellLocation(url,browserTabId='',forceInput=false){
     ensureBrowserShellHome();
@@ -7578,7 +7751,7 @@
       try{
         await Promise.race([
           scramjetTransport.init(),
-          new Promise((_,reject)=>setTimeout(()=>reject(new Error(`Scramjet ${transport} transport timed out while connecting to ${wisp}`)),7000))
+          new Promise((_,reject)=>setTimeout(()=>reject(new Error(`Scramjet ${transport} transport timed out while connecting to ${wisp}`)),4500))
         ]);
       }catch(error){
         throw error;
@@ -7649,7 +7822,10 @@
     const base=scramjetController;
     if(!base?.serviceWorkerController || !base?.transport) throw new Error('Scramjet private session is unavailable');
     const controller=createScramjetController(base.serviceWorkerController,base.transport);
-    await controller.wait();
+    await Promise.race([
+      controller.wait(),
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error('Scramjet private session timed out')),5000))
+    ]);
     controller.loadSavedCookies=async()=>{};
     controller.persistCookies=async()=>{};
     controller.cookieSyncDirty=false;
@@ -7666,10 +7842,12 @@
       try{controller.frames?.splice?.(0,controller.frames.length)}catch{}
       try{controller.cookieSyncChannel?.close?.()}catch{}
       try{controller.port?.close?.()}catch{}
-      tab.privateScramjetController=null;
-      tab.privateScramjetControllerPromise=null;
-      tab.scramjetFrame=null;
     }
+    // A controller can reject before assigning an instance. Always clear the
+    // tracked startup promise so the next search can recover without reloading.
+    tab.privateScramjetController=null;
+    tab.privateScramjetControllerPromise=null;
+    tab.scramjetFrame=null;
     const sessionId=String(tab.privacySessionId || '');
     if(/^nyx_[a-z0-9_-]{12,80}$/i.test(sessionId) && navigator.serviceWorker){
       const message={type:'nyx:destroy-proxy-session',sessionId};
@@ -8501,7 +8679,10 @@
         else if(!await reconnectScramjetController(scramjetController,serviceworker,transport)){
           scramjetController=createScramjetController(serviceworker,transport);
         }
-        await scramjetController.wait();
+        await Promise.race([
+          scramjetController.wait(),
+          new Promise((_,reject)=>setTimeout(()=>reject(new Error('Scramjet controller timed out')),5000))
+        ]);
       }catch(initError){
         if(!isScramjetIdbShapeError(initError)) throw initError;
         step='repairing Scramjet storage';
@@ -8511,7 +8692,10 @@
         if(!repairedServiceworker) throw new Error('Scramjet service worker did not activate after storage repair');
         step='initializing Scramjet controller after storage repair';
         scramjetController=createScramjetController(repairedServiceworker,transport);
-        await scramjetController.wait();
+        await Promise.race([
+          scramjetController.wait(),
+          new Promise((_,reject)=>setTimeout(()=>reject(new Error('Scramjet controller timed out after storage repair')),5000))
+        ]);
       }
       scramjetInstallError='';
       return true;
@@ -8647,9 +8831,14 @@
     document.querySelectorAll('.window').forEach(clampWindowToScreen);
   }
   let responsiveFitTimer=0;
+  let nyxVisualDockViewportTimer=0;
   function scheduleResponsiveFit(){
     clearTimeout(responsiveFitTimer);
     responsiveFitTimer=setTimeout(updateResponsiveFit,60);
+    clearTimeout(nyxVisualDockViewportTimer);
+    nyxVisualDockViewportTimer=setTimeout(()=>{
+      if(document.body.classList.contains('browser-shell') && store.text('nyx.homeDesign','redesigned')!=='original') ensureNyxVisualDock();
+    },80);
   }
   window.addEventListener('resize',scheduleResponsiveFit);
   window.addEventListener('orientationchange',scheduleResponsiveFit);
@@ -11037,8 +11226,12 @@
       loader.className='nyx-frame-loader';
       loader.setAttribute('aria-hidden','true');
       loader.innerHTML=`<svg viewBox="0 0 210 110" role="img" aria-label="Page loading">
-        <g class="nyx-loader-moon" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M163 37a18 18 0 1 0 12 31A20 20 0 0 1 163 37Z"/>
+        <g class="nyx-loader-stars" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+          <path class="nyx-loader-star nyx-loader-star-a" d="M177 25h8"/>
+          <path class="nyx-loader-star nyx-loader-star-b" d="M151 44h13"/>
+          <path class="nyx-loader-star nyx-loader-star-c" d="M183 61h6"/>
+          <path class="nyx-loader-star nyx-loader-star-d" d="M158 78h10"/>
+          <path class="nyx-loader-star nyx-loader-star-e" d="M191 89h5"/>
         </g>
         <g transform="translate(-10 -31) rotate(90 90 86)">
           <g class="nyx-loader-rocket" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
@@ -11652,6 +11845,16 @@
       installScramjet().then(async ok=>{
         if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
         if(!ok || !scramjetController){
+          if(transportAutoEnabled()){
+            const retryCount=Number(t.scramjetStartupRetries || 0);
+            const nextTransport=transportRetryOrder(proxyTransportName())[0] || '';
+            if(retryCount<2 && nextTransport){
+              t.scramjetStartupRetries=retryCount+1;
+              setBrowserTransportOverride(nextTransport);
+              loadScramjetTab(t,url,false);
+              return;
+            }
+          }
           setTabLoading(t,false);
           t.url=url;
           setTabMeta(t,url,false);
@@ -11672,10 +11875,20 @@
         }
         if(!t.scramjetFrame){
           if(!t.privateScramjetControllerPromise){
-            t.privateScramjetControllerPromise=createPrivateScramjetController().then(controller=>{
+            const startup=createPrivateScramjetController();
+            const tracked=startup.then(controller=>{
+              if(t.privateScramjetControllerPromise!==tracked){
+                try{controller.cookieSyncChannel?.close?.()}catch{}
+                try{controller.port?.close?.()}catch{}
+                throw new Error('Scramjet private session was superseded');
+              }
               t.privateScramjetController=controller;
               return controller;
+            }).catch(error=>{
+              if(t.privateScramjetControllerPromise===tracked) t.privateScramjetControllerPromise=null;
+              throw error;
             });
+            t.privateScramjetControllerPromise=tracked;
           }
           const privateController=await t.privateScramjetControllerPromise;
           if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent){
@@ -11864,6 +12077,7 @@
       const t=current(); if(!t)return;
       const navigationIntent='navigate-'+Date.now()+Math.random().toString(16).slice(2);
       t.navigationIntent=navigationIntent;
+      t.scramjetStartupRetries=0;
       t.selectedSearchFallbackKey='';
       t.loadWatchToken='superseded-'+navigationIntent;
       t.transportWatchToken='superseded-'+navigationIntent;
@@ -14158,6 +14372,8 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     syncSetupThemeCards();
     updateSetupPreview();
     syncSetupAccountStep();
+    setup.hidden=false;
+    setup.inert=false;
     document.body.classList.add('setup-active');
     setup.classList.add('show');
     setup.setAttribute('aria-hidden','false');
@@ -14295,6 +14511,8 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     if(!setup) return;
     setup.classList.remove('show');
     setup.setAttribute('aria-hidden','true');
+    setup.hidden=true;
+    setup.inert=true;
     document.body.classList.remove('setup-active');
     if(store.get('nyx.setupComplete',false)) scheduleNyxTermsAcceptanceGate(180);
   }
@@ -15643,21 +15861,24 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       if(!e.target.closest('[data-browser-shell-url],[data-browser-blank-input]') && !e.target.closest('#browserSearchSuggestions')){
         hideBrowserSuggestions();
       }
+      const shellClose=e.target.closest('[data-browser-shell-close-tab]');
+      if(shellClose){
+        e.preventDefault();
+        e.stopPropagation();
+        const id=shellClose.dataset.browserShellCloseTab || shellClose.closest('[data-browser-shell-tab]')?.dataset.browserShellTab;
+        if(id) closeBrowserShellTab(id);
+        return;
+      }
       const shellTab=e.target.closest('[data-browser-shell-tab]');
       if(shellTab){
         e.preventDefault();
         const id=shellTab.dataset.browserShellTab;
-        if(e.target.closest('[data-browser-shell-close-tab]')) closeBrowserShellTab(id);
-        else setBrowserShellActive(id);
+        setBrowserShellActive(id);
         return;
       }
       const shellHome=e.target.closest('[data-browser-shell-home]');
       if(shellHome){
         e.preventDefault();
-        if(e.target.closest('[data-browser-shell-close-tab]')){
-          closeBrowserShellTab(shellHome.dataset.browserShellTab);
-          return;
-        }
         if(shellHome.dataset.browserShellTab) setBrowserShellActive(shellHome.dataset.browserShellTab);
         else setBrowserShellHomeActive();
         return;

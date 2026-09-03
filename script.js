@@ -1820,7 +1820,12 @@
   const browserAdResourceSignature=/(?:^|[./_-])(?:adinplay|adpushup|adservice|adserver|adnxs|adsrvr|adsterra|advertising|amazon-adsystem|clickadu|criteo|doubleclick|exoclick|googleadservices|googlesyndication|hilltopads|intergi|mgid|monetag|onclickads|openx|outbrain|pagead|playwire|popads|popcash|propellerads|pubmatic|r9x|revcontent|rubiconproject|taboola|trafficjunky|venatus)(?:[./?&=_-]|$)/i;
   const browserAdElementSelector='iframe[src*="adinplay"],iframe[src*="doubleclick"],iframe[src*="googlesyndication"],iframe[src*="googleadservices"],iframe[src*="adservice"],iframe[src*="adnxs"],iframe[src*="playwire"],iframe[src*="r9x.in"],iframe[src*="taboola"],iframe[src*="outbrain"],script[src*="adinplay"],script[src*="doubleclick"],script[src*="googlesyndication"],script[src*="googleadservices"],script[src*="adservice"],script[src*="playwire"],script[src*="r9x.in"],.adsbygoogle,[data-ad-client],[data-ad-slot],[id^="google_ads"],[id*="google_ads"],[id^="ad-container"],[class~="ad-container"],[class~="ad-banner"],[class~="ad-wrapper"],[class~="advertisement"]';
   const browserInjectedAdSignature=/(?:reminder\s*\(\s*\d+\s*\)[\s\S]{0,180}download\s+pending)|(?:download\s+pending[\s\S]{0,180}finish\s+it\s+now)|(?:finish\s+it\s+now[\s\S]{0,180}(?:close|continue))|(?:\[\s*\d+\s*\]\s*update\s*:\s*opera\s+browser[\s\S]{0,180}install)|(?:install\s+(?:opera\s+browser|browser\s+update|extension)[\s\S]{0,180}(?:install\s+for\s+free|continue|download))|(?:sponsored\s+(?:download|update)[\s\S]{0,120}(?:install|continue))/i;
-  const knownNyxOverlaySelector='.nyx-prompt-shade,.nyx-modal-shade,.nyx-download-safety-shade,.nyx-tos-gate,.nyx-release-notes-overlay,.setup-screen,.setup-panel,.lock-screen,.nyx-browser-tab-sidebar,.browser-shell-settings-overlay,.nyx-dashboard-menu,.nyx-account-menu,.nyx-account-overlay,.nyx-user-profile-overlay,.nyx-profile-directory-overlay,.nyx-founder-editor-overlay,.nyx-owner-dashboard-overlay,.context-menu,[data-nyx-owned-overlay]';
+  // Shell-owned surfaces can meet the same size/z-index heuristics as an
+  // escaped ad. In particular, the expanded 240px dock crosses the 12% area
+  // threshold around common 100% desktop viewport sizes. Keep owned chrome
+  // out of the quarantine so a child mutation cannot cause its parent rail to
+  // be deleted and immediately recreated in a loop.
+  const knownNyxOverlaySelector='.nyx-prompt-shade,.nyx-modal-shade,.nyx-download-safety-shade,.nyx-tos-gate,.nyx-release-notes-overlay,.setup-screen,.setup-panel,.lock-screen,.nyx-browser-tab-sidebar,.nyx-visual-dock,.browser-shell-settings-overlay,.nyx-dashboard-menu,.nyx-account-menu,.nyx-account-overlay,.nyx-user-profile-overlay,.nyx-profile-directory-overlay,.nyx-founder-editor-overlay,.nyx-owner-dashboard-overlay,.context-menu,[data-nyx-owned-overlay]';
   function isBrowserInjectedOverlay(node){
     if(!(node instanceof Element) || node===document.body || node===document.documentElement) return false;
     if(node.matches('#desktop,.top-os,.window,.browser-window,.browser-body,.browser-home,#nyxStudyHubStartup,#nyxWaveBg,#setupLaunchScreen,.nyx-prompt-shade,.nyx-modal-shade')) return false;
@@ -3393,12 +3398,24 @@
   let nyxVisualDockRecoveryTimer=0;
   let nyxVisualDockRecoveryFollowupTimer=0;
   let nyxVisualDockViewportRepairTimer=0;
+  let nyxVisualDockElementObserver=null;
+  let nyxVisualDockObservedElement=null;
+  function nyxVisualDockUsesSideLayout(){
+    // Browser zoom changes innerWidth even though the device and available
+    // input method have not changed. Keep the desktop rail on desktop-class
+    // pointers so zooming the page cannot silently swap it for the mobile dock.
+    return window.innerWidth>720 || Boolean(window.matchMedia?.('(hover:hover) and (pointer:fine)')?.matches);
+  }
   function enforceNyxVisualDockViewport(){
     const redesigned=store.text('nyx.homeDesign','redesigned')!=='original';
     const dock=document.querySelector('[data-nyx-visual-dock]');
     if(!dock) return;
-    if(!document.body.classList.contains('browser-shell') || !redesigned || window.innerWidth<=720){
-      ['position','top','bottom','left','right','width','max-width','box-sizing','z-index'].forEach(property=>dock.style.removeProperty(property));
+    if(!document.body.classList.contains('browser-shell') || !redesigned || !nyxVisualDockUsesSideLayout()){
+      [
+        'position','top','bottom','left','right','width','max-width','height','min-height',
+        'display','flex-direction','transform','translate','scale','rotate','visibility',
+        'opacity','clip-path','pointer-events','box-sizing','z-index'
+      ].forEach(property=>dock.style.removeProperty(property));
       document.querySelectorAll('#desktop>.window.maximized').forEach(win=>{
         ['left','right','width','max-width','box-sizing'].forEach(property=>win.style.removeProperty(property));
       });
@@ -3407,6 +3424,9 @@
     const side=store.get('nyx.sidebarLeft',false) ? 'left' : 'right';
     const expanded=document.documentElement.dataset.nyxSidebarWidth==='expanded';
     const dockWidth=expanded ? 240 : 50;
+    dock.hidden=false;
+    dock.inert=false;
+    dock.removeAttribute('aria-hidden');
     dock.style.setProperty('position','fixed','important');
     dock.style.setProperty('top','48px','important');
     dock.style.setProperty('bottom','0','important');
@@ -3414,8 +3434,20 @@
     dock.style.setProperty('right',side==='right' ? '0' : 'auto','important');
     dock.style.setProperty('width',`${dockWidth}px`,'important');
     dock.style.setProperty('max-width','100vw','important');
+    dock.style.setProperty('height','auto','important');
+    dock.style.setProperty('min-height','0','important');
+    dock.style.setProperty('display','flex','important');
+    dock.style.setProperty('flex-direction','column','important');
+    dock.style.setProperty('transform','none','important');
+    dock.style.setProperty('translate','none','important');
+    dock.style.setProperty('scale','none','important');
+    dock.style.setProperty('rotate','none','important');
+    dock.style.setProperty('visibility','visible','important');
+    dock.style.setProperty('opacity','1','important');
+    dock.style.setProperty('clip-path','none','important');
+    dock.style.setProperty('pointer-events','auto','important');
     dock.style.setProperty('box-sizing','border-box','important');
-    dock.style.setProperty('z-index','2147482500','important');
+    dock.style.setProperty('z-index','2147483500','important');
     document.querySelectorAll('#desktop>.window.maximized').forEach(win=>{
       win.style.setProperty('box-sizing','border-box','important');
       win.style.setProperty('max-width',`calc(100vw - ${dockWidth}px)`,'important');
@@ -3423,6 +3455,21 @@
       win.style.setProperty('right',side==='right' ? `${dockWidth}px` : '0','important');
       win.style.setProperty('width',`calc(100vw - ${dockWidth}px)`,'important');
     });
+    // The old tab renderer stopped at 900 CSS pixels. If a previous render or
+    // zoom transition left the reserved rail empty, repair its contents too.
+    const tabStrip=dock.querySelector('[data-nyx-dock-tabs]');
+    const expectedTabStripChildren=browserShellTabs.length+1;
+    if(tabStrip && tabStrip.childElementCount!==expectedTabStripChildren) renderNyxVisualTabStrip();
+    // A browser-zoom transition can leave a fixed element using a stale visual
+    // viewport in Chromium. Re-anchor from its measured rectangle immediately;
+    // the inline edge declarations above make the following frame deterministic.
+    const rect=dock.getBoundingClientRect();
+    const viewportWidth=document.documentElement.clientWidth || window.innerWidth;
+    const expectedLeft=side==='left' ? 0 : Math.max(0,viewportWidth-dockWidth);
+    if(Math.abs(rect.left-expectedLeft)>1 || Math.abs(rect.width-dockWidth)>1){
+      dock.style.setProperty('left',`${expectedLeft}px`,'important');
+      dock.style.setProperty('right','auto','important');
+    }
   }
   function scheduleNyxVisualDockViewportRepair(){
     clearTimeout(nyxVisualDockViewportRepairTimer);
@@ -3443,7 +3490,26 @@
     dock.hidden=false;
     dock.inert=false;
     dock.removeAttribute('aria-hidden');
+    watchNyxVisualDockElement(dock);
     scheduleNyxVisualDockViewportRepair();
+  }
+  function watchNyxVisualDockElement(dock){
+    if(!dock || nyxVisualDockObservedElement===dock) return;
+    nyxVisualDockElementObserver?.disconnect();
+    nyxVisualDockObservedElement=dock;
+    nyxVisualDockElementObserver=new MutationObserver(()=>{
+      if(!dock.isConnected || dock.hidden || dock.inert || dock.getAttribute('aria-hidden')==='true'){
+        scheduleNyxVisualDockRecovery();
+        return;
+      }
+      const style=getComputedStyle(dock);
+      const rect=dock.getBoundingClientRect();
+      const viewportWidth=document.documentElement.clientWidth || window.innerWidth;
+      if(style.display==='none' || style.visibility==='hidden' || Number(style.opacity)<.5 || rect.right<1 || rect.left>viewportWidth-1){
+        scheduleNyxVisualDockViewportRepair();
+      }
+    });
+    nyxVisualDockElementObserver.observe(dock,{attributes:true,attributeFilter:['class','style','hidden','inert','aria-hidden']});
   }
   function scheduleNyxVisualDockRecovery(){
     if(nyxVisualDockRecoveryFrame) return;
@@ -3504,10 +3570,8 @@
     scheduleNyxVisualDockViewportRepair();
   }
   function applyNyxSidebarExpansion(){
-    // Keep the side rail usable in a narrow desktop window at normal browser
-    // zoom. The earlier 900px cutoff made the expanded rail vanish whenever
-    // Chrome's zoom changed the available layout width.
-    const expanded=window.innerWidth>720 && store.get('nyx.sidebarExpanded',false);
+    // Keep the saved side-rail state tied to the device layout, not page zoom.
+    const expanded=nyxVisualDockUsesSideLayout() && store.get('nyx.sidebarExpanded',false);
     const state=expanded ? 'expanded' : 'collapsed';
     document.documentElement.dataset.nyxSidebarWidth=state;
     document.body.dataset.nyxSidebarWidth=state;
@@ -3576,6 +3640,7 @@
     dock.hidden=false;
     dock.inert=false;
     dock.removeAttribute('aria-hidden');
+    watchNyxVisualDockElement(dock);
     const expandButton=dock.querySelector('[data-nyx-dock-expand]');
     if(expandButton) expandButton.onclick=()=>{
       if(dock.dataset.nyxSidebarToggleLocked==='true') return;
@@ -4607,7 +4672,7 @@
     try{return new URL(url,location.href).hostname || 'nyxlearning.org'}catch{return browserShellLabel(url) || 'nyxlearning.org'}
   }
   function renderNyxVisualTabStrip(){
-    if(store.text('nyx.homeDesign','redesigned')==='original' || window.innerWidth<=900) return;
+    if(store.text('nyx.homeDesign','redesigned')==='original' || !nyxVisualDockUsesSideLayout()) return;
     const dock=document.querySelector('[data-nyx-visual-dock]') || ensureNyxVisualDock();
     const strip=dock?.querySelector('[data-nyx-dock-tabs]');
     if(!strip) return;

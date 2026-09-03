@@ -1,5 +1,5 @@
 /* Final desktop rail-tab layout. Loaded last so legacy compact-shell rules cannot restore the old top tab row. */
-@media (min-width:721px){
+@media (min-width:721px), (hover:hover) and (pointer:fine){
   html[data-nyx-home-design="redesigned"] body.browser-shell{
     --nyx-visual-chrome:48px!important;
     /* This is the single source of truth for the space reserved by the
@@ -116,6 +116,17 @@
   html[data-nyx-home-design="redesigned"][data-nyx-sidebar-side="left"] body.browser-shell .browser-shell-settings-overlay{
     padding-left:calc(var(--nyx-visual-dock-current-width) + 16px)!important;
   }
+  /* Search diagnostics are a content loading state. They must never cover or
+     intercept the persistent desktop rail while a tab is opening. */
+  html[data-nyx-home-design="redesigned"] body.browser-shell .nyx-preflight{
+    top:48px!important;
+  }
+  html[data-nyx-home-design="redesigned"][data-nyx-sidebar-side="right"] body.browser-shell .nyx-preflight{
+    right:var(--nyx-visual-dock-current-width)!important;
+  }
+  html[data-nyx-home-design="redesigned"][data-nyx-sidebar-side="left"] body.browser-shell .nyx-preflight{
+    left:var(--nyx-visual-dock-current-width)!important;
+  }
 
   /* Frosted-style tab rail: compact icons when collapsed, complete tabs when expanded. */
   html[data-nyx-home-design="redesigned"] body.browser-shell .nyx-visual-dock-head{
@@ -223,7 +234,7 @@
   }
 }
 
-@media (min-width:721px){
+@media (min-width:721px), (hover:hover) and (pointer:fine){
   html[data-nyx-home-design="redesigned"] body.browser-shell{
     --nyx-rail-motion:180ms cubic-bezier(.2,.8,.2,1);
   }

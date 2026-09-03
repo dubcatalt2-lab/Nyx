@@ -276,6 +276,11 @@ const nyxifyBuiltInMusicNameField = "nyxifyBuiltInMusicName";
 const nyxifyGlobalApp = Object.freeze({ id: "nyxify", icon: "nyxify", name: "Nyxify/built in music", url: "/apps/nyxify/" });
 const nyxApiKeysAppMigrationField = "nyxApiKeysAppInitialized";
 const nyxApiKeysGlobalApp = Object.freeze({ id: "nyx-api-keys", icon: "api-keys", name: "Nyx API Keys", url: "/apps/api-keys/" });
+const nyxCodeStudioAppMigrationField = "nyxCodeStudioAppInitialized";
+const nyxCodeStudioGlobalApp = Object.freeze({ id: "code-studio", icon: "code-studio", name: "Code Sandbox", url: "/apps/code-studio/" });
+const nyxCodeTutorialsGlobalApp = Object.freeze({ id: "code-tutorials", icon: "code-tutorials", name: "Nyx Code Tutorials", url: "/apps/code-tutorials/" });
+const nyxCodeToolsCatalogV2MigrationField = "nyxCodeToolsCatalogV2";
+const nyxCodeTutorialsHiddenMigrationField = "nyxCodeTutorialsHidden";
 const nyxJsdelivrPublisherAppMigrationField = "nyxJsdelivrPublisherInitialized";
 const nyxJsdelivrPublisherGlobalApp = Object.freeze({ id: "jsdelivr-publisher", icon: "jsdelivr-publisher", name: "JSDelivr Publisher", url: "/apps/jsdelivr-publisher/" });
 const nyxGamesAppMigrationField = "gamesAppRenamed";
@@ -287,6 +292,7 @@ const nyxDefaultGlobalApps = Object.freeze([
   { id: "link-generator", icon: "link-generator", name: "Link Generator", url: "/apps/link-generator/" },
   nyxJsdelivrPublisherGlobalApp,
   nyxApiKeysGlobalApp,
+  nyxCodeStudioGlobalApp,
   nyxTubeGlobalApp,
   nyxGamesGlobalApp,
   { id: "nyx-chat", icon: "nyx-chat", name: "Nyx Chat", url: "/apps/chat/" },
@@ -4096,6 +4102,8 @@ function nyxGlobalAppIcon(value, url = "") {
   if (/^\/apps\/link-checker(?:\/|$)/i.test(url)) return "link-checker";
   if (/^\/apps\/link-generator(?:\/|$)/i.test(url)) return "link-generator";
   if (/^\/apps\/jsdelivr-publisher(?:\/|$)/i.test(url)) return "jsdelivr-publisher";
+  if (/^\/apps\/code-studio(?:\/|$)/i.test(url)) return "code-studio";
+  if (/^\/apps\/code-tutorials(?:\/|$)/i.test(url)) return "code-tutorials";
   try {
     return new URL(url).hostname.replace(/^www\./, "").toLowerCase().slice(0, 80) || "apps";
   } catch {
@@ -4148,15 +4156,21 @@ function nyxGlobalAppsFromSnapshot(snapshot) {
     if (normalized?.id === nyxJsdelivrPublisherGlobalApp.id && normalized.url === nyxJsdelivrPublisherGlobalApp.url) {
       return { ...nyxJsdelivrPublisherGlobalApp };
     }
+    if (normalized?.id === nyxCodeStudioGlobalApp.id && normalized.url === nyxCodeStudioGlobalApp.url) {
+      return { ...nyxCodeStudioGlobalApp };
+    }
+    if (normalized?.id === nyxCodeTutorialsGlobalApp.id && normalized.url === nyxCodeTutorialsGlobalApp.url) {
+      return { ...nyxCodeTutorialsGlobalApp };
+    }
     if (normalized?.id === nyxTubeGlobalApp.id) return { ...nyxTubeGlobalApp };
     return normalized;
-  }).filter(app => app && !nyxRetiredMediaApp(app));
+  }).filter(app => app && !nyxRetiredMediaApp(app) && app.id !== nyxCodeTutorialsGlobalApp.id && app.url !== nyxCodeTutorialsGlobalApp.url);
 }
 
 async function nyxGlobalApps(firebase) {
   const reference = firebase.firestore.collection(nyxGlobalAppsCollection).doc(nyxGlobalAppsDocument);
   const snapshot = await reference.get();
-  if (snapshot.data()?.[nyxCloudGamingAppMigrationField] === true && snapshot.data()?.[nyxCloudGamingGamesMergeMigrationField] === true && snapshot.data()?.[nyxMediaAppsRetiredField] === true && snapshot.data()?.[nyxTubeReintroducedField] === true && snapshot.data()?.[nyxTubeCatalogNameField] === true && snapshot.data()?.[nyxifyReintroducedField] === true && snapshot.data()?.[nyxifyBuiltInMusicNameField] === true && snapshot.data()?.[nyxApiKeysAppMigrationField] === true && snapshot.data()?.[nyxJsdelivrPublisherAppMigrationField] === true && snapshot.data()?.[nyxGamesAppMigrationField] === true && snapshot.data()?.[nyxMoviesCinejoyMigrationField] === true) return nyxGlobalAppsFromSnapshot(snapshot);
+  if (snapshot.data()?.[nyxCloudGamingAppMigrationField] === true && snapshot.data()?.[nyxCloudGamingGamesMergeMigrationField] === true && snapshot.data()?.[nyxMediaAppsRetiredField] === true && snapshot.data()?.[nyxTubeReintroducedField] === true && snapshot.data()?.[nyxTubeCatalogNameField] === true && snapshot.data()?.[nyxifyReintroducedField] === true && snapshot.data()?.[nyxifyBuiltInMusicNameField] === true && snapshot.data()?.[nyxApiKeysAppMigrationField] === true && snapshot.data()?.[nyxCodeStudioAppMigrationField] === true && snapshot.data()?.[nyxCodeToolsCatalogV2MigrationField] === true && snapshot.data()?.[nyxCodeTutorialsHiddenMigrationField] === true && snapshot.data()?.[nyxJsdelivrPublisherAppMigrationField] === true && snapshot.data()?.[nyxGamesAppMigrationField] === true && snapshot.data()?.[nyxMoviesCinejoyMigrationField] === true) return nyxGlobalAppsFromSnapshot(snapshot);
   return firebase.firestore.runTransaction(async transaction => {
     const currentSnapshot = await transaction.get(reference);
     const apps = nyxGlobalAppsFromSnapshot(currentSnapshot);
@@ -4226,6 +4240,37 @@ async function nyxGlobalApps(firebase) {
       transaction.set(reference, {
         apps,
         [nyxApiKeysAppMigrationField]: true,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    }
+    if (currentSnapshot.data()?.[nyxCodeStudioAppMigrationField] !== true) {
+      if (apps.length < nyxGlobalAppsLimit && !apps.some(item => item.id === nyxCodeStudioGlobalApp.id || item.url === nyxCodeStudioGlobalApp.url)) {
+        const apiKeysIndex = apps.findIndex(item => item.id === nyxApiKeysGlobalApp.id);
+        apps.splice(apiKeysIndex >= 0 ? apiKeysIndex + 1 : 0, 0, { ...nyxCodeStudioGlobalApp });
+      }
+      transaction.set(reference, {
+        apps,
+        [nyxCodeStudioAppMigrationField]: true,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    }
+    if (currentSnapshot.data()?.[nyxCodeToolsCatalogV2MigrationField] !== true) {
+      const sandboxIndex = apps.findIndex(item => item.id === nyxCodeStudioGlobalApp.id || item.url === nyxCodeStudioGlobalApp.url);
+      if (sandboxIndex >= 0) apps.splice(sandboxIndex, 1, { ...nyxCodeStudioGlobalApp });
+      else if (apps.length < nyxGlobalAppsLimit) apps.splice(Math.min(4, apps.length), 0, { ...nyxCodeStudioGlobalApp });
+      transaction.set(reference, {
+        apps,
+        [nyxCodeToolsCatalogV2MigrationField]: true,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    }
+    if (currentSnapshot.data()?.[nyxCodeTutorialsHiddenMigrationField] !== true) {
+      for (let index = apps.length - 1; index >= 0; index -= 1) {
+        if (apps[index]?.id === nyxCodeTutorialsGlobalApp.id || apps[index]?.url === nyxCodeTutorialsGlobalApp.url) apps.splice(index, 1);
+      }
+      transaction.set(reference, {
+        apps,
+        [nyxCodeTutorialsHiddenMigrationField]: true,
         updatedAt: new Date().toISOString()
       }, { merge: true });
     }

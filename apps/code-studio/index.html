@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Write, preview, and improve code with Nyx AI.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://www.gstatic.com; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com; frame-src 'self'; base-uri 'none'; form-action 'none'">
+  <title>Code Sandbox - Nyx</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/icons/code-studio.svg?v=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css?v=20260902-code-sandbox-v9">
+  <script src="./app.js?v=20260902-code-sandbox-v9" defer></script>
+</head>
+<body>
+  <main class="studio-shell" data-code-studio>
+    <aside class="assistant-panel" aria-labelledby="assistant-title">
+      <header class="assistant-brand">
+        <a class="brand-mark" href="/" target="_top" aria-label="Back to Nyx">
+          <img src="/assets/icons/code-studio.svg?v=1" alt="">
+        </a>
+        <span>
+          <strong>Code Sandbox</strong>
+          <small>Nyx workspace</small>
+        </span>
+      </header>
+
+      <section class="assistant-welcome">
+        <span class="spark-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="m12 3 1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7L12 3Z"></path><path d="m18 15 .8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8L18 15Z"></path></svg>
+        </span>
+        <div>
+          <span class="eyebrow">Nyx AI</span>
+          <h1 id="assistant-title">Code helper</h1>
+        </div>
+        <span class="ai-status" data-ai-status>Ready</span>
+      </section>
+
+      <p class="assistant-intro">Ask about the code you are working on. Nyx can explain it, find problems, or suggest a cleaner next step.</p>
+
+      <div class="quick-prompts" data-quick-prompts>
+        <button type="button" data-ai-prompt="Find bugs or edge cases in this code.">Find issues</button>
+        <button type="button" data-ai-prompt="Suggest a cleaner, more readable version of this code.">Improve it</button>
+        <button type="button" data-ai-prompt="Explain this code in plain language.">Explain it</button>
+      </div>
+
+      <div class="assistant-answer" data-ai-answer aria-live="polite">
+        <p>Choose a suggestion or ask your own question.</p>
+      </div>
+
+      <form class="assistant-form" data-ai-form>
+        <label class="sr-only" for="assistantPrompt">Ask the code helper</label>
+        <textarea id="assistantPrompt" data-ai-prompt-input rows="3" maxlength="1200" placeholder="Ask Nyx AI about this code..."></textarea>
+        <button class="button button-ai" type="submit" data-ai-send>
+          <span>Ask Nyx AI</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 3-8.5 18-3.2-7.3L2 10.5 21 3Z"></path><path d="m9.3 13.7 4.2-4.2"></path></svg>
+        </button>
+      </form>
+    </aside>
+
+    <section class="workspace" aria-label="Code editor and result">
+      <header class="workspace-header">
+        <div class="workspace-heading">
+          <span class="eyebrow">Playground</span>
+          <h2>Build something</h2>
+        </div>
+        <div class="workspace-actions">
+          <span class="save-state" data-save-state aria-live="polite">Saved on this device</span>
+          <button class="icon-button" type="button" data-reset title="Start over" aria-label="Start over">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"></path><path d="M20 4v7h-7"></path></svg>
+          </button>
+          <button class="button button-run" type="button" data-run>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"></path></svg>
+            <span>Run code</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="workspace-content">
+        <section class="project-controls" aria-label="Sandbox options">
+          <label class="language-field" for="language">
+            <span>Language</span>
+            <select id="language" data-language>
+              <option value="html">HTML</option>
+              <option value="css">CSS</option>
+              <option value="javascript">JavaScript</option>
+              <option value="typescript">TypeScript</option>
+              <option value="python">Python</option>
+              <option value="java">Java</option>
+              <option value="c">C</option>
+              <option value="cpp">C++</option>
+              <option value="csharp">C#</option>
+              <option value="go">Go</option>
+              <option value="rust">Rust</option>
+              <option value="php">PHP</option>
+              <option value="ruby">Ruby</option>
+              <option value="sql">SQL</option>
+              <option value="json">JSON</option>
+              <option value="markdown">Markdown</option>
+            </select>
+          </label>
+          <div class="starter-field">
+            <span>Starter</span>
+            <div class="starter-list" data-starters></div>
+          </div>
+          <button class="starter-reset" type="button" data-load-starter>Restore starter</button>
+          <p class="language-help" data-language-help>Build a small page and see it safely in the preview.</p>
+        </section>
+
+        <section class="editor-card" aria-label="Code editor">
+          <header class="card-header">
+            <div class="file-name">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6V3Z"></path><path d="M14 3v5h5"></path></svg>
+              <strong data-file-name>index.html</strong>
+            </div>
+            <span data-cursor-position>Ln 1, Col 1</span>
+          </header>
+          <div class="editor-wrap">
+            <pre class="line-numbers" aria-hidden="true" data-line-numbers>1</pre>
+            <pre class="code-highlight" aria-hidden="true" data-highlight><code></code></pre>
+            <textarea class="code-input" data-code-input aria-label="Code editor" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off"></textarea>
+          </div>
+        </section>
+
+        <section class="result-card" aria-labelledby="preview-title">
+          <header class="result-header">
+            <nav class="result-tabs" aria-label="Result views">
+              <button class="result-tab is-active" type="button" data-result-mode="output" id="preview-title">Result</button>
+              <button class="result-tab" type="button" data-result-mode="problems">Problems</button>
+              <button class="result-tab" type="button" data-result-mode="terminal">Run log</button>
+            </nav>
+            <span class="preview-state" data-preview-state>Not run</span>
+          </header>
+          <div class="preview-frame-wrap">
+            <iframe data-preview title="Your sandboxed code preview" sandbox="allow-scripts"></iframe>
+            <pre data-output hidden></pre>
+          </div>
+        </section>
+      </div>
+
+      <span class="sr-only" data-language-status>HTML</span>
+    </section>
+  </main>
+</body>
+</html>

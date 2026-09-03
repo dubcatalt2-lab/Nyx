@@ -2559,6 +2559,8 @@
     'link-generator':localIcon('link-generator.svg'),
     'jsdelivr-publisher':localIcon('jsdelivr-publisher.svg?v=1'),
     'api-keys':localIcon('api-keys.svg?v=2'),
+    'code-studio':localIcon('code-studio.svg?v=2'),
+    'code-tutorials':localIcon('code-tutorials.svg?v=1'),
     'chess.com':localIcon('chess-logo.png'),
     'games':localIcon('dock-controller.png'),
     'apps':svgIcon(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="10" y="10" width="18" height="18" rx="4" fill="#fff"/><rect x="36" y="10" width="18" height="18" rx="4" fill="#fff"/><rect x="10" y="36" width="18" height="18" rx="4" fill="#fff"/><rect x="36" y="36" width="18" height="18" rx="4" fill="#fff"/></svg>`),
@@ -2624,6 +2626,8 @@
     if(/(?:^|\/)apps\/link-checker(?:\/|$)/i.test(raw)) return appIcon('link-checker');
     if(/(?:^|\/)apps\/link-generator(?:\/|$)/i.test(raw)) return appIcon('link-generator');
     if(/(?:^|\/)apps\/api-keys(?:\/|$)/i.test(raw)) return appIcon('api-keys');
+    if(/(?:^|\/)apps\/code-studio(?:\/|$)/i.test(raw)) return appIcon('code-studio');
+    if(/(?:^|\/)apps\/code-tutorials(?:\/|$)/i.test(raw)) return appIcon('code-tutorials');
     const source=typeof browserShellSourceUrl==='function' ? (browserShellSourceUrl(raw) || raw) : raw;
     if(source.startsWith('assets/games/') || source.startsWith('assets/ugs/') || source.startsWith('/assets/games/') || source.startsWith('/assets/ugs/')) return appIcon('games');
     try{
@@ -2677,6 +2681,8 @@
     if(/(?:^|\/)apps\/link-checker(?:\/|$)/i.test(raw)) return 'Link Checker';
     if(/(?:^|\/)apps\/link-generator(?:\/|$)/i.test(raw)) return 'Link Generator';
     if(/(?:^|\/)apps\/api-keys(?:\/|$)/i.test(raw)) return 'Nyx API Keys';
+    if(/(?:^|\/)apps\/code-studio(?:\/|$)/i.test(raw)) return 'Code Sandbox';
+    if(/(?:^|\/)apps\/code-tutorials(?:\/|$)/i.test(raw)) return 'Nyx Code Tutorials';
     if(raw==='nyx://ai') return 'Nyx AI';
     if(raw.startsWith('nyx://')) return raw.replace('nyx://','nyx ');
     if(raw.startsWith('assets/games/') || raw.startsWith('assets/ugs/') || raw.startsWith('/assets/games/') || raw.startsWith('/assets/ugs/')) return 'GAMES';
@@ -3373,6 +3379,7 @@
       extensions:'<path d="M8.5 3.5v4h-4v4h4v4h4v4h4v-4h4v-4h-4v-4h-4v-4z"/>',
       performance:'<path d="M4 15a8 8 0 1 1 16 0"/><path d="m12 15 4-5"/><circle cx="12" cy="15" r="1.3"/>',
       apps:'<path d="M5 5h5v5H5zM14 5h5v5h-5zM5 14h5v5H5zM14 14h5v5h-5z"/>',
+      code:'<path d="m9 7-5 5 5 5M15 7l5 5-5 5M14 4l-4 16"/>',
       settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
       chat:'<path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/><path d="M9 10v4M12 9v6M15 11v2"/>',
       games:'<path d="M8 9h8a5 5 0 0 1 4.6 6.9l-.8 2a2 2 0 0 1-3.2.8L14.8 17H9.2l-1.8 1.7a2 2 0 0 1-3.2-.8l-.8-2A5 5 0 0 1 8 9z"/><path d="M8 12v4M6 14h4M16.5 13.2h.1M18.2 15h.1"/>',
@@ -3547,10 +3554,11 @@
     const active=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
     const url=String(active?.url || '').toLowerCase();
     const settingsOpen=url==='nyx://settings' || Boolean(document.querySelector('.browser-shell-settings-overlay'));
-    let activeKey='browse';
+    let activeKey='';
     if(settingsOpen) activeKey='settings';
     else if(!url) activeKey='home';
     else if(url==='nyx://ai') activeKey='ai';
+    else if(url.includes('/apps/code-studio/')) activeKey='code-sandbox';
     else if(url.includes('/apps/nyxify/')) activeKey='music';
     else if(url.includes('/apps/nyxtube/')) activeKey='video';
     else if(url.includes('/apps/chat/')) activeKey='chat';
@@ -3610,7 +3618,7 @@
       dock.innerHTML=`<div class="nyx-visual-dock-head"><div class="nyx-visual-dock-status" aria-label="Nyx online"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a8.5 8.5 0 1 0 8.2 10.8A7 7 0 0 1 12 3Z"></path></svg><i aria-hidden="true"></i><strong>Nyx</strong></div><div class="nyx-visual-dock-head-actions"><button class="nyx-visual-dock-expand" data-nyx-dock-expand type="button" aria-expanded="false" aria-label="Expand tab sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button><button class="nyx-visual-dock-head-add" data-nyx-dock-new-tab type="button" aria-label="New tab"><span aria-hidden="true">+</span></button></div></div>
         <nav aria-label="Nyx destinations">
           <button type="button" data-nyx-dock-item="home" data-browser-shell-home-nav aria-label="Home">${nyxDashboardIcon('home')}<span>Home</span></button>
-          <button type="button" data-nyx-dock-item="browse" data-nyx-focus-search aria-label="Browse">${nyxDashboardIcon('browse')}<span>Browse</span></button>
+          <button type="button" data-nyx-dock-item="code-sandbox" data-app-url="/apps/code-studio/" aria-label="Code Sandbox">${nyxDashboardIcon('code')}<span>Code Sandbox</span></button>
           <button type="button" data-nyx-dock-item="apps" data-app-url="nyx://apps" aria-label="Apps">${nyxDashboardIcon('apps')}<span>Apps</span></button>
           <button type="button" data-nyx-dock-item="games" data-app-url="/assets/games/" aria-label="Games">${nyxDashboardIcon('games')}<span>Games</span></button>
           <button type="button" data-nyx-dock-item="video" data-app-url="/apps/nyxtube/" aria-label="NyxTube">${nyxDashboardIcon('youtube')}<span>NyxTube</span></button>
@@ -3657,6 +3665,18 @@
     };
     const headAddButton=dock.querySelector('[data-nyx-dock-new-tab]');
     if(headAddButton) headAddButton.onclick=()=>openBrowserShellTab('');
+    const codeSandboxButton=dock.querySelector('[data-nyx-dock-item="code-sandbox"]');
+    if(codeSandboxButton){
+      const openCodeSandbox=event=>{
+        event?.preventDefault?.();
+        event?.stopPropagation?.();
+        openBrowserShellAppTab('/apps/code-studio/');
+      };
+      codeSandboxButton.onclick=openCodeSandbox;
+      codeSandboxButton.onkeydown=event=>{
+        if(event.key==='Enter' || event.key===' ') openCodeSandbox(event);
+      };
+    }
     applyNyxSidebarExpansion();
     scheduleNyxVisualDockViewportRepair();
     renderNyxVisualTabStrip();
@@ -3896,6 +3916,9 @@
       return raw;
     }
   }
+  function browserShellIsTransientProxyPath(pathname){
+    return /^\/(?:unidentified|undefined)(?:[/?#]|$)/i.test(String(pathname || ''));
+  }
   function browserShellIsBrokenProxyLocation(candidate,expected=''){
     const next=String(candidate || '').trim();
     if(!next) return true;
@@ -3904,7 +3927,7 @@
       // Scramjet can briefly emit this synthetic route after it has already
       // rendered a valid search page.  It is not a page the user navigated
       // to, so keep the trusted URL that initiated the load instead.
-      if(!/^\/undefined\/?$/i.test(parsed.pathname)) return false;
+      if(!browserShellIsTransientProxyPath(parsed.pathname)) return false;
       const prior=new URL(browserShellSourceUrl(expected) || expected,location.href);
       return /^https?:$/i.test(prior.protocol)
         && parsed.hostname===prior.hostname;
@@ -3914,18 +3937,19 @@
   }
   function browserShellRejectFrameLocation(source,expected=''){
     const raw=String(source || '').trim();
-    if(!raw || /^\/?unidentified(?:[/?#]|$)/i.test(raw)) return true;
+    if(!raw || /^\/?(?:unidentified|undefined)(?:[/?#]|$)/i.test(raw)) return true;
     if(browserShellIsBrokenProxyLocation(raw,expected)) return true;
     try{
       const parsed=new URL(raw,location.href);
       const previous=browserShellSourceUrl(expected) || String(expected || '').trim();
-      if(/^\/unidentified\/?$/i.test(parsed.pathname) && previous){
+      if(browserShellIsTransientProxyPath(parsed.pathname) && previous){
         const previousUrl=new URL(previous,location.href);
         const sameSite=browserHost(parsed.href)===browserHost(previousUrl.href);
-        if(sameSite && !/^\/unidentified\/?$/i.test(previousUrl.pathname)) return true;
+        if(sameSite && !browserShellIsTransientProxyPath(previousUrl.pathname)) return true;
       }
+      if(browserShellIsTransientProxyPath(parsed.pathname)) return true;
       if(parsed.origin!==location.origin) return false;
-      if(parsed.pathname==='/unidentified' || parsed.pathname.startsWith('/service/') || parsed.pathname.startsWith('/~/sj/') || parsed.pathname.startsWith('/scramjet/service/')) return true;
+      if(parsed.pathname.startsWith('/service/') || parsed.pathname.startsWith('/~/sj/') || parsed.pathname.startsWith('/scramjet/service/')) return true;
       if(!previous) return false;
       const previousUrl=new URL(previous,location.href);
       return /^https?:$/.test(previousUrl.protocol) && previousUrl.origin!==location.origin;
@@ -3936,11 +3960,11 @@
   function browserShellInvalidHistoryEntry(value){
     const raw=String(value || '').trim();
     if(!raw || isBrowserShellBlankUrl(raw)) return false;
-    if(/^\/?unidentified(?:[/?#]|$)/i.test(raw)) return true;
+    if(/^\/?(?:unidentified|undefined)(?:[/?#]|$)/i.test(raw)) return true;
     const source=browserShellSourceUrl(raw) || raw;
     try{
       const parsed=new URL(source,location.href);
-      return parsed.origin===location.origin && /^\/unidentified\/?$/i.test(parsed.pathname);
+      return browserShellIsTransientProxyPath(parsed.pathname);
     }catch{
       return false;
     }
@@ -9832,8 +9856,10 @@
     renderHomeShortcuts();
   }
   const nyxDefaultGlobalApps=[
+    ['code-studio','code-studio','Code Sandbox','/apps/code-studio/'],
     ['link-checker','link-checker','Link Checker','/apps/link-checker/'],['link-generator','link-generator','Link Generator','/apps/link-generator/'],['jsdelivr-publisher','jsdelivr-publisher','JSDelivr Publisher','/apps/jsdelivr-publisher/'],['nyx-api-keys','api-keys','Nyx API Keys','/apps/api-keys/'],['youtube','youtube.com','YouTube','/apps/nyxtube/'],['pirate-cove','games','GAMES','/assets/games/'],['nyx-chat','nyx-chat','Nyx Chat','/apps/chat/'],['geforce-now','geforcenow','GeForce Now','https://play.geforcenow.com/'],['roblox','roblox.com','Roblox','https://web.cloudmoonapp.com/game/com.roblox.client/'],['discord','discord.com','Discord','https://discord.com/app'],['spotify','spotify.com','Spotify','https://open.spotify.com/'],['nyxify','nyxify','Nyxify/built in music','/apps/nyxify/'],['google','google.com','Google','https://www.google.com/'],['study','docs.google.com','Study','https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0'],['duck-ai','duck.ai','Duck AI','https://duck.ai/'],['nyx-ai','nyx-ai','Nyx AI','nyx://ai'],['wikipedia','wikipedia.org','Wikipedia','https://www.wikipedia.org/'],['movies','cinejoy.to','Movies','https://cinejoy.to/'],['more-movie-sites','fmhy.net','More Movie Sites','https://fmhy.net/video#p-stream-forks'],['tiktok','tiktok.com','TikTok','https://www.tiktok.com/'],['instagram','instagram.com','Instagram','https://www.instagram.com/'],['snapchat','snapchat.com','Snapchat','https://www.snapchat.com/'],['amazon','amazon.com','Amazon','https://www.amazon.com/'],['reddit','reddit.com','Reddit','https://www.reddit.com/'],['twitter','x.com','Twitter','https://x.com/'],['tcgplayer','tcgplayer.com','TCGPlayer','https://www.tcgplayer.com/'],['cps-test','cpstest.org','CPS Test','https://cpstest.org/'],['chess','chess.com','Chess.com','https://www.chess.com/'],['animex','animex.one','Animex','https://animex.one/'],['chatgpt','chatgpt.com','AI','https://chatgpt.com/'],['steam','store.steampowered.com','Steam','https://store.steampowered.com/'],['crunchyroll','crunchyroll.com','Crunchyroll','https://www.crunchyroll.com/'],['crazygames','crazygames.com','CrazyGames','https://www.crazygames.com/'],['newgrounds','newgrounds.com','Newgrounds','https://www.newgrounds.com/'],['twitch','twitch.tv','Twitch','https://www.twitch.tv/'],['kick','kick.com','Kick','https://kick.com/'],['pluto-tv','pluto.tv','Pluto TV','https://pluto.tv/'],['skribbl','skribbl.io','Skribbl.io','https://skribbl.io/'],['slither','slither.io','Slither.io','https://slither.io/'],['geoguessr','geoguessr.com','GeoGuessr','https://www.geoguessr.com/'],['y8-games','y8.com','Y8 Games','https://www.y8.com/'],['itch','itch.io','itch.io','https://itch.io/']
   ].map(([id,icon,name,url])=>({id,icon,name,url})).map(app=>app.id==='youtube'?{...app,name:'NyxTube'}:app);
+  const nyxHiddenGlobalAppIds=new Set(['code-tutorials']);
   let nyxGlobalApps=nyxDefaultGlobalApps.map(app=>({...app}));
   function normalizeNyxGlobalApp(app){
     const id=String(app?.id||'').trim().toLowerCase();
@@ -9857,7 +9883,7 @@
       const response=await fetch('/api/apps',{headers:{Accept:'application/json'},cache:'no-store'});
       const payload=await response.json();
       if(!response.ok || !Array.isArray(payload?.apps)) throw new Error(payload?.error||'App catalog unavailable');
-      nyxGlobalApps=payload.apps.map(normalizeNyxGlobalApp).filter(app=>app&&!['nyxtube','nyx-tube'].includes(app.id));
+      nyxGlobalApps=payload.apps.map(normalizeNyxGlobalApp).filter(app=>app&&!['nyxtube','nyx-tube'].includes(app.id)&&!nyxHiddenGlobalAppIds.has(app.id));
       renderNyxGlobalApps();
     }catch(error){console.warn('Nyx app catalog is using built-in defaults:',error?.message||error)}
     return nyxGlobalApps;
@@ -9869,7 +9895,7 @@
     addEventListener('nyx:global-apps-changed',event=>{
       const apps=event.detail?.apps;
       if(Array.isArray(apps)){
-        nyxGlobalApps=apps.map(normalizeNyxGlobalApp).filter(Boolean);
+        nyxGlobalApps=apps.map(normalizeNyxGlobalApp).filter(app=>app&&!nyxHiddenGlobalAppIds.has(app.id));
         renderNyxGlobalApps();
       }else void loadNyxGlobalApps();
     });
@@ -12369,19 +12395,12 @@
         }
         return;
       }
-      if(t.scramjetFrame){
-        // Scramjet's private frame may retain transport bootstrap entries that
-        // resolve to /unidentified. Nyx's canonical tab history is the source
-        // of truth, so an exhausted Back/Forward action is a no-op.
-        return;
-      }
-      try{
-        if(t.frame.contentWindow?.history?.length > 1){
-          if(direction<0) t.frame.contentWindow.history.back();
-          else t.frame.contentWindow.history.forward();
-          return;
-        }
-      }catch{}
+      // Proxy frames keep internal bootstrap entries that are not pages the
+      // user visited and can resolve to /unidentified or /undefined. Nyx's
+      // canonical tab history is authoritative for every engine; once it is
+      // exhausted, Back/Forward must be a no-op instead of entering the
+      // iframe's private transport history.
+      return;
     }
     function closeTabById(tabId,keepBlank=true){
       const index=state.tabs.findIndex(t=>t.id===tabId);
@@ -12476,7 +12495,7 @@
     };
     const nyxChatSourcePath=path=>['/apps/chat','/apps/chat/','/apps/chat/index.html'].includes(path);
     const nyxTubeSourcePath=path=>['/apps/nyxtube','/apps/nyxtube/','/apps/nyxtube/index.html'].includes(path);
-    const nyxAccountClientSourcePath=path=>nyxChatSourcePath(path)||['/ai.html','/assets/games','/assets/games/','/assets/games/index.html','/apps/link-checker','/apps/link-checker/','/apps/link-checker/index.html','/apps/cloud-gaming','/apps/cloud-gaming/','/apps/cloud-gaming/index.html','/apps/api-keys','/apps/api-keys/','/apps/api-keys/index.html'].includes(path);
+    const nyxAccountClientSourcePath=path=>nyxChatSourcePath(path)||['/ai.html','/assets/games','/assets/games/','/assets/games/index.html','/apps/link-checker','/apps/link-checker/','/apps/link-checker/index.html','/apps/cloud-gaming','/apps/cloud-gaming/','/apps/cloud-gaming/index.html','/apps/api-keys','/apps/api-keys/','/apps/api-keys/index.html','/apps/code-studio','/apps/code-studio/','/apps/code-studio/index.html','/apps/code-tutorials','/apps/code-tutorials/','/apps/code-tutorials/index.html'].includes(path);
     const messageHandler=e=>{
       if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:nyxtube-profile-request','nyx:nyxtube-open-profile','nyx:account-token-request','nyx:chat-open-profile','nyx:chat-notification','nyx:subscription-refresh','nyx:proxy-direct-fallback','nyx:cloud-game-load','nyx:cloud-game-save','nyx:close-tab','nyx:go-home'].includes(e.data?.type)) return;
       if(['nyx:cloud-game-load','nyx:cloud-game-save'].includes(e.data.type)){
@@ -15528,6 +15547,15 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }
       const link=e.target.closest?.('a[href]');
       if(!link) return;
+      const trustedExternal=String(link.dataset.nyxTrustedExternal || '').trim().toLowerCase();
+      if(trustedExternal==='discord'){
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation?.();
+        const nativeOpen=window.__nyxNativeOpen || window.open?.bind(window);
+        nativeOpen?.(link.href || 'https://discord.gg/cAdjYAJs3u','_blank','noopener,noreferrer');
+        return;
+      }
       const target=String(link.getAttribute('target') || '').toLowerCase();
       if(!['_blank','_new'].includes(target)) return;
       if(!popupProtectionEnabled()) return;

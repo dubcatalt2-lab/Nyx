@@ -28,7 +28,8 @@
   const UI_STORAGE_KEY='nyx.codeStudio.layout.v1';
   let state=loadState();
   let authPromise=null;
-  let modelId='chatgpt-5.4-mini';
+  let aiOptions=[];
+  let aiOptionsPromise=null;
   let lastTerminal='Run a file to see activity here.';
   let lastOutput='';
   let hasRun=false;
@@ -270,13 +271,77 @@
     setPreviewNote('Editor mode','note');
     setResultMode('output');
   }
+  const CUSTOM_THEME_FALLBACK='#6f9ee8';
+  const customThemeProperties=['--studio-theme-hover-accent','--studio-theme-hover-soft','--studio-theme-hover-line'];
+  function themeHex(value,fallback=CUSTOM_THEME_FALLBACK){const raw=String(value||'').trim();return /^#[0-9a-f]{6}$/i.test(raw)?raw.toLowerCase():fallback}
+  function shadeHex(hex,percent=0){const clean=themeHex(hex);const amount=Math.max(-100,Math.min(100,Number(percent)||0))/100;const channel=index=>{const value=parseInt(clean.slice(index,index+2),16);return Math.round(amount>=0?value+(255-value)*amount:value*(1+amount))};return '#'+[1,3,5].map(index=>channel(index).toString(16).padStart(2,'0')).join('')}
+  function themeRgba(hex,alpha){const clean=themeHex(hex);const channels=[1,3,5].map(index=>parseInt(clean.slice(index,index+2),16));return `rgba(${channels.join(',')},${alpha})`}
   function inheritedTheme(){try{return String(localStorage.getItem('nyx.theme')||'default')}catch{return 'default'}}
-  function applyTheme(){document.body.classList.remove('theme-ruby','theme-emerald','theme-sakura','theme-fresh');const theme=inheritedTheme();if(['ruby','emerald','sakura','fresh'].includes(theme))document.body.classList.add(`theme-${theme}`)}
+  function inheritedCustomThemeColor(){try{return themeHex(localStorage.getItem('nyx.customThemeColor'))}catch{return CUSTOM_THEME_FALLBACK}}
+  function clearCustomThemePalette(){customThemeProperties.forEach(property=>document.documentElement.style.removeProperty(property))}
+  function applyCustomThemePalette(){
+    const base=inheritedCustomThemeColor();
+    const accent=shadeHex(base,38);
+    const styles={
+      '--studio-theme-hover-accent':accent,
+      '--studio-theme-hover-soft':themeRgba(accent,.1),
+      '--studio-theme-hover-line':themeRgba(accent,.3)
+    };
+    Object.entries(styles).forEach(([property,value])=>document.documentElement.style.setProperty(property,value));
+  }
+  function applyTheme(){
+    document.body.classList.remove('theme-ruby','theme-emerald','theme-sakura','theme-fresh','theme-custom');
+    clearCustomThemePalette();
+    const theme=inheritedTheme();
+    if(theme==='custom'){
+      document.body.classList.add('theme-custom');
+      applyCustomThemePalette();
+      return;
+    }
+    if(['ruby','emerald','sakura','fresh'].includes(theme))document.body.classList.add(`theme-${theme}`);
+  }
   function focusLanguage(){refs.language.focus()}
   function handleCommand(command){if(command==='reset'){delete state.codes[state.language];syncLanguage();return}if(command==='edit'){refs.input.focus();return}if(command==='select'){refs.input.focus();refs.input.select();return}if(command==='preview'){setResultMode('output');return}if(command==='language'){focusLanguage();return}if(command==='run'){run();return}if(command==='terminal'){setResultMode('terminal')}}
   async function accountToken(){if(parent!==window){const requestId=`code-${Date.now()}-${Math.random().toString(36).slice(2)}`;const parentToken=await new Promise(resolve=>{let done=false;const finish=value=>{if(done)return;done=true;clearTimeout(timer);removeEventListener('message',receive);resolve(String(value||''))};const receive=event=>{if(event.source===parent&&event.origin===location.origin&&event.data?.type==='nyx:account-token-response'&&event.data.requestId===requestId)finish(event.data.token)};const timer=setTimeout(()=>finish(''),2200);addEventListener('message',receive);parent.postMessage({type:'nyx:account-token-request',requestId},location.origin)});if(parentToken)return parentToken}if(!authPromise)authPromise=(async()=>{try{const response=await fetch('/api/founder-profile/auth-config',{cache:'no-store'});const config=await response.json();if(!config?.enabled||!config?.apiKey||!config?.projectId)return null;const [{initializeApp,getApps},{getAuth,setPersistence,browserLocalPersistence}]=await Promise.all([import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')]);const app=getApps().find(item=>item.name==='nyx-code-studio')||initializeApp({apiKey:config.apiKey,authDomain:`${config.projectId}.firebaseapp.com`,projectId:config.projectId},'nyx-code-studio');const auth=getAuth(app);try{await setPersistence(auth,browserLocalPersistence)}catch{}if(typeof auth.authStateReady==='function')await auth.authStateReady();return auth}catch{return null}})();try{const auth=await authPromise;return auth?.currentUser?await auth.currentUser.getIdToken():''}catch{return ''}}
-  async function aiHeaders(){const token=await accountToken();return {'content-type':'application/json','x-nyx-ai-provider':'shared',...(token?{Authorization:`Bearer ${token}`}:{})}}
-  async function loadModel(){try{const response=await fetch('/api/nyx-ai/models',{headers:await aiHeaders()});const data=await response.json();if(response.ok&&Array.isArray(data.models)&&data.models[0]?.id)modelId=data.models.find(item=>item.id==='chatgpt-5.4-mini')?.id||data.models[0].id}catch{}}
+  async function aiHeaders(provider='shared',token=null){const account=token===null?await accountToken():token;return {'content-type':'application/json','x-nyx-ai-provider':provider,...(account?{Authorization:`Bearer ${account}`}:{})}}
+  async function loadAiOptions(){
+    try{
+      const providerResponse=await fetch('/api/nyx-ai/providers',{headers:{accept:'application/json'}});
+      const providerData=await providerResponse.json();
+      const availableProviders=providerResponse.ok&&Array.isArray(providerData?.providers)?providerData.providers.map(item=>String(item?.id||'')):[];
+      const providerIds=['shared','groq'].filter(provider=>availableProviders.includes(provider));
+      const token=await accountToken();
+      const options=(await Promise.all(providerIds.map(async provider=>{
+        try{
+          const response=await fetch('/api/nyx-ai/models',{headers:await aiHeaders(provider,token)});
+          const data=await response.json();
+          const models=response.ok&&Array.isArray(data?.models)?data.models:[];
+          const preferred=models.find(item=>item?.id==='chatgpt-5.4-mini')||models.find(item=>item?.id==='openai/gpt-oss-20b')||models[0];
+          return preferred?.id?{provider,model:String(preferred.id)}:null;
+        }catch{return null}
+      }))).filter(Boolean);
+      aiOptions=options;
+    }catch{aiOptions=[]}
+    return aiOptions;
+  }
+  function ensureAiOptions(refresh=false){
+    if(!refresh&&aiOptions.length)return Promise.resolve(aiOptions);
+    if(refresh||!aiOptionsPromise)aiOptionsPromise=loadAiOptions();
+    return aiOptionsPromise;
+  }
+  function aiReplyText(data){return String(data?.text||data?.response||data?.choices?.[0]?.message?.content||data?.choices?.[0]?.text||'').trim()}
+  async function requestAiSuggestion(option,payload,token){
+    const response=await fetch('/api/nyx-ai',{method:'POST',headers:await aiHeaders(option.provider,token),body:JSON.stringify({...payload,model:option.model})});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok){
+      const error=new Error(data?.error||(response.status>=500?'Nyx AI is temporarily unavailable. Please try again.':`Nyx AI could not help (${response.status}).`));
+      error.status=response.status;
+      throw error;
+    }
+    const text=aiReplyText(data);
+    if(!text)throw new Error('Nyx AI did not return a suggestion.');
+    return text;
+  }
   function setAiStatus(label,working=false){
     refs.aiStatusLabel.textContent=label;
     refs.aiStatus.classList.toggle('is-working',working);
@@ -304,10 +369,31 @@
     const reply=appendMessage('assistant','Looking through your code…');
     reply.classList.add('is-loading');
     try{
-      const response=await fetch('/api/nyx-ai',{method:'POST',headers:await aiHeaders(),body:JSON.stringify({model:modelId,message:`You are helping in Nyx Code Studio. Give a practical, friendly answer for a ${languages[state.language].file} file. Focus on the request, point out the most important issue first, and include a small corrected snippet only when it helps.\n\nUser request: ${question}\n\nCurrent code:\n\n${code()}`,messages:[],responseDepth:'normal',stream:false})});
-      const data=await response.json().catch(()=>({}));
-      if(!response.ok)throw new Error(data?.error||`Nyx AI could not help (${response.status}).`);
-      reply.querySelector('p').textContent=String(data?.text||'Nyx AI did not return a suggestion.');
+      let options=await ensureAiOptions();
+      if(!options.length)options=await ensureAiOptions(true);
+      if(!options.length)throw new Error('Nyx AI is not available right now. Please try again in a moment.');
+      const file=languages[state.language].file;
+      const currentCode=code();
+      const codeLimit=18000;
+      const visibleCode=currentCode.slice(0,codeLimit);
+      const context=`You are helping in Nyx Code Studio. Give a practical, friendly answer for a ${file} file. Focus on the request, point out the most important issue first, and include a small corrected snippet only when it helps.\n\nUser request: ${question}\n\nCurrent code${currentCode.length>codeLimit?' (first 18,000 characters)':''}:\n\n${visibleCode}`;
+      const payload={message:question,messages:[{role:'user',content:context}],responseDepth:'normal',stream:false};
+      const token=await accountToken();
+      let suggestion='';
+      let lastError=null;
+      for(let index=0;index<options.length;index+=1){
+        const option=options[index];
+        try{
+          suggestion=await requestAiSuggestion(option,payload,token);
+          if(index>0)aiOptions=[option,...options.filter(item=>item!==option)];
+          break;
+        }catch(error){
+          lastError=error;
+          if(!(error?.status>=500)||index===options.length-1)throw error;
+        }
+      }
+      if(!suggestion)throw lastError||new Error('Nyx AI did not return a suggestion.');
+      reply.querySelector('p').textContent=suggestion;
       refs.prompt.value='';
     }catch(error){
       reply.classList.add('is-error');
@@ -436,10 +522,10 @@
     if(activeMode==='terminal')renderTerminal();
     if(activeMode==='problems')renderProblems();
   });
-  addEventListener('storage',event=>{if(event.key==='nyx.theme')applyTheme()});
+  addEventListener('storage',event=>{if(event.key==='nyx.theme'||event.key==='nyx.customThemeColor')applyTheme()});
   initializeLayout();
   applyTheme();
   syncLanguage();
   setMobileView('editor');
-  void loadModel();
+  void ensureAiOptions();
 })();

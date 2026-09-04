@@ -350,9 +350,9 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
   }
   function apply(name='frost',nextOptions={}){
     selected=presets[name] ? name : 'frost';
-    options={...defaults,...options,...nextOptions,lightColor:presets[selected].lightColor};
+    options={...defaults,...options,lightColor:presets[selected].lightColor,...nextOptions};
     canvas=document.getElementById('nyxBeamsBg') || canvas;
-    if(canvas) canvas.dataset.preset=selected;
+    if(canvas){canvas.dataset.preset=selected;canvas.dataset.lightColor=options.lightColor;}
     if(instance) instance.update(options);
     syncVisibility();
   }

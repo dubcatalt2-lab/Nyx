@@ -2317,12 +2317,14 @@
   }
   function applyNyxBeamWallpaper(){
     const value=currentNyxBeamWallpaper();
+    const theme=normalizeNyxTheme(store.text('nyx.theme','default'));
+    const customLightColor=theme==='custom' ? nyxCustomThemePalette().bright : '';
     document.documentElement.dataset.nyxBeamWallpaper=value;
     window.NyxBeamsWallpaper?.apply(value,{
       beamWidth:3,
       beamHeight:30,
       beamNumber:20,
-      lightColor:nyxBeamWallpaperPresets()[value]?.lightColor || '#ffffff',
+      lightColor:customLightColor || nyxBeamWallpaperPresets()[value]?.lightColor || '#ffffff',
       speed:2,
       noiseIntensity:1.75,
       scale:.2,
@@ -11261,6 +11263,8 @@
       try{doc.defaultView?.addEventListener?.('keydown',handler,true)}catch{}
       const releaseForPageInput=event=>{
         try{
+          hideBrowserSuggestions();
+          clearBrowserShellUrlSelection();
           const target=event?.target;
           if(!target?.closest?.('canvas,input,textarea,select,[contenteditable="true"],[role="application"]')) return;
           releaseNyxKeyboardLock();
@@ -11326,6 +11330,8 @@
       const handoffFrameInput=()=>{
         // The embedded page needs unmodified WASD, arrows, Tab, and number keys.
         releaseNyxKeyboardLock();
+        hideBrowserSuggestions();
+        clearBrowserShellUrlSelection();
       };
       frame.addEventListener('focus',handoffFrameInput);
       frame.addEventListener('pointerdown',handoffFrameInput,{capture:true});

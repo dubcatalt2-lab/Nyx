@@ -769,12 +769,12 @@ html[data-nyx-home-design="redesigned"] body.browser-shell .browser-home.nyx-vis
   padding:0!important;
 }
 html[data-nyx-home-design="redesigned"] body.browser-shell .browser-home.nyx-visual-home .nyx-minimal-utility-links a{
-  color:#626978!important;
+  color:#fff!important;
   font-size:10px!important;
   text-decoration:none!important;
 }
 html[data-nyx-home-design="redesigned"] body.browser-shell .browser-home.nyx-visual-home .nyx-minimal-utility-links a:hover{
-  color:#c8ccd5!important;
+  color:#fff!important;
 }
 html[data-nyx-home-design="redesigned"] body.browser-shell .nyx-visual-customize{
   position:absolute!important;

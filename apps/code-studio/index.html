@@ -11,8 +11,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=20260902-code-sandbox-v9">
-  <script src="./app.js?v=20260902-code-sandbox-v9" defer></script>
+  <link rel="stylesheet" href="./styles.css?v=20260903-code-sandbox-workbench-v10">
+  <script src="./app.js?v=20260903-code-sandbox-workbench-v10" defer></script>
 </head>
 <body>
   <main class="studio-shell" data-code-studio>
@@ -25,6 +25,9 @@
           <strong>Code Sandbox</strong>
           <small>Nyx workspace</small>
         </span>
+        <button class="panel-close mobile-only" type="button" data-mobile-view="editor" aria-label="Close Nyx AI">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg>
+        </button>
       </header>
 
       <section class="assistant-welcome">
@@ -35,45 +38,68 @@
           <span class="eyebrow">Nyx AI</span>
           <h1 id="assistant-title">Code helper</h1>
         </div>
-        <span class="ai-status" data-ai-status>Ready</span>
+        <span class="ai-status" data-ai-status><i aria-hidden="true"></i><span data-ai-status-label>Ready</span></span>
       </section>
 
       <p class="assistant-intro">Ask about the code you are working on. Nyx can explain it, find problems, or suggest a cleaner next step.</p>
 
       <div class="quick-prompts" data-quick-prompts>
-        <button type="button" data-ai-prompt="Find bugs or edge cases in this code.">Find issues</button>
-        <button type="button" data-ai-prompt="Suggest a cleaner, more readable version of this code.">Improve it</button>
-        <button type="button" data-ai-prompt="Explain this code in plain language.">Explain it</button>
+        <button type="button" data-ai-prompt="Find bugs or edge cases in this code."><span aria-hidden="true">◇</span>Find issues</button>
+        <button type="button" data-ai-prompt="Suggest a cleaner, more readable version of this code."><span aria-hidden="true">↗</span>Improve</button>
+        <button type="button" data-ai-prompt="Explain this code in plain language."><span aria-hidden="true">?</span>Explain</button>
       </div>
 
       <div class="assistant-answer" data-ai-answer aria-live="polite">
-        <p>Choose a suggestion or ask your own question.</p>
+        <div class="assistant-empty" data-ai-empty>
+          <span class="empty-symbol" aria-hidden="true">✦</span>
+          <strong>What are you building?</strong>
+          <p>Ask Nyx to review the current file, explain a tricky part, or help with your next step.</p>
+          <div class="example-prompts" aria-label="Example questions">
+            <button type="button" data-ai-prompt="How can I make this code easier to understand?">Make this easier to read</button>
+            <button type="button" data-ai-prompt="What should I build next with this code?">Suggest the next step</button>
+          </div>
+        </div>
       </div>
 
       <form class="assistant-form" data-ai-form>
         <label class="sr-only" for="assistantPrompt">Ask the code helper</label>
-        <textarea id="assistantPrompt" data-ai-prompt-input rows="3" maxlength="1200" placeholder="Ask Nyx AI about this code..."></textarea>
+        <textarea id="assistantPrompt" data-ai-prompt-input rows="2" maxlength="1200" placeholder="Ask about this file..."></textarea>
         <button class="button button-ai" type="submit" data-ai-send>
-          <span>Ask Nyx AI</span>
+          <span class="sr-only">Ask Nyx AI</span>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 3-8.5 18-3.2-7.3L2 10.5 21 3Z"></path><path d="m9.3 13.7 4.2-4.2"></path></svg>
         </button>
+        <small>Enter to send · Shift+Enter for a new line</small>
       </form>
     </aside>
+
+    <div class="panel-resizer assistant-resizer" data-resize-panel="assistant" role="separator" aria-orientation="vertical" aria-label="Resize Nyx AI panel" tabindex="0"></div>
 
     <section class="workspace" aria-label="Code editor and result">
       <header class="workspace-header">
         <div class="workspace-heading">
-          <span class="eyebrow">Playground</span>
+          <span class="eyebrow">Code Sandbox <i aria-hidden="true"></i> Nyx workspace</span>
           <h2>Build something</h2>
         </div>
+        <nav class="mobile-view-switcher mobile-only" aria-label="Workspace view">
+          <button type="button" data-mobile-view="ai">AI</button>
+          <button class="is-active" type="button" data-mobile-view="editor">Editor</button>
+          <button type="button" data-mobile-view="preview">Preview</button>
+        </nav>
         <div class="workspace-actions">
-          <span class="save-state" data-save-state aria-live="polite">Saved on this device</span>
-          <button class="icon-button" type="button" data-reset title="Start over" aria-label="Start over">
+          <button class="icon-button desktop-panel-toggle" type="button" data-toggle-panel="assistant" title="Toggle Nyx AI" aria-label="Toggle Nyx AI panel" aria-pressed="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM9 5v14"></path></svg>
+          </button>
+          <button class="icon-button desktop-panel-toggle" type="button" data-toggle-panel="preview" title="Toggle preview" aria-label="Toggle preview panel" aria-pressed="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM15 5v14"></path></svg>
+          </button>
+          <span class="save-state" data-save-state aria-live="polite"><i aria-hidden="true"></i><span data-save-label>Saved locally</span></span>
+          <button class="icon-button" type="button" data-reset title="Restore the default starter" aria-label="Restore the default starter">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"></path><path d="M20 4v7h-7"></path></svg>
           </button>
           <button class="button button-run" type="button" data-run>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"></path></svg>
             <span>Run code</span>
+            <kbd>Ctrl ↵</kbd>
           </button>
         </div>
       </header>
@@ -81,7 +107,7 @@
       <div class="workspace-content">
         <section class="project-controls" aria-label="Sandbox options">
           <label class="language-field" for="language">
-            <span>Language</span>
+            <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 9-3 3 3 3M16 9l3 3-3 3M14 5l-4 14"></path></svg>Language</span>
             <select id="language" data-language>
               <option value="html">HTML</option>
               <option value="css">CSS</option>
@@ -102,42 +128,82 @@
             </select>
           </label>
           <div class="starter-field">
-            <span>Starter</span>
+            <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5zM8 8h8M8 12h6"></path></svg>Starter</span>
             <div class="starter-list" data-starters></div>
           </div>
-          <button class="starter-reset" type="button" data-load-starter>Restore starter</button>
+          <div class="toolbar-actions" aria-label="File actions">
+            <button class="tool-button" type="button" data-load-starter title="Restore starter">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65M20 4v7h-7"></path></svg><span>Restore</span>
+            </button>
+            <button class="tool-button" type="button" data-clear-code title="Clear editor">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M9 7V4h6v3M8 7l1 13h6l1-13"></path></svg><span>Clear</span>
+            </button>
+            <button class="tool-button" type="button" data-download-code title="Download current file">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-4-4 4 4 4-4M5 20h14"></path></svg><span>Download</span>
+            </button>
+          </div>
           <p class="language-help" data-language-help>Build a small page and see it safely in the preview.</p>
         </section>
 
-        <section class="editor-card" aria-label="Code editor">
-          <header class="card-header">
-            <div class="file-name">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6V3Z"></path><path d="M14 3v5h5"></path></svg>
-              <strong data-file-name>index.html</strong>
+        <div class="workbench" data-workbench>
+          <section class="editor-card" aria-label="Code editor">
+            <header class="card-header">
+              <div class="editor-tab" aria-current="page">
+                <span class="file-dot" aria-hidden="true"></span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6V3Z"></path><path d="M14 3v5h5"></path></svg>
+                <strong data-file-name>index.html</strong>
+                <span class="unsaved-dot" aria-hidden="true"></span>
+              </div>
+              <div class="editor-meta">
+                <span class="language-badge" data-language-badge>HTML</span>
+                <span data-cursor-position>Ln 1, Col 1</span>
+              </div>
+            </header>
+            <div class="editor-wrap" data-editor-wrap>
+              <div class="current-line" aria-hidden="true"></div>
+              <pre class="line-numbers" aria-hidden="true" data-line-numbers>1</pre>
+              <pre class="code-highlight" aria-hidden="true" data-highlight><code></code></pre>
+              <textarea class="code-input" data-code-input aria-label="Code editor" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off"></textarea>
             </div>
-            <span data-cursor-position>Ln 1, Col 1</span>
-          </header>
-          <div class="editor-wrap">
-            <pre class="line-numbers" aria-hidden="true" data-line-numbers>1</pre>
-            <pre class="code-highlight" aria-hidden="true" data-highlight><code></code></pre>
-            <textarea class="code-input" data-code-input aria-label="Code editor" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off"></textarea>
-          </div>
-        </section>
+            <footer class="editor-status">
+              <span data-file-name>index.html</span>
+              <span>UTF-8</span>
+              <span>Spaces: 2</span>
+              <span data-cursor-status>Ln 1, Col 1</span>
+            </footer>
+          </section>
 
-        <section class="result-card" aria-labelledby="preview-title">
-          <header class="result-header">
-            <nav class="result-tabs" aria-label="Result views">
-              <button class="result-tab is-active" type="button" data-result-mode="output" id="preview-title">Result</button>
-              <button class="result-tab" type="button" data-result-mode="problems">Problems</button>
-              <button class="result-tab" type="button" data-result-mode="terminal">Run log</button>
-            </nav>
-            <span class="preview-state" data-preview-state>Not run</span>
-          </header>
-          <div class="preview-frame-wrap">
-            <iframe data-preview title="Your sandboxed code preview" sandbox="allow-scripts"></iframe>
-            <pre data-output hidden></pre>
-          </div>
-        </section>
+          <div class="panel-resizer preview-resizer" data-resize-panel="preview" role="separator" aria-orientation="vertical" aria-label="Resize preview panel" tabindex="0"></div>
+
+          <section class="result-card" aria-labelledby="preview-title" data-result-card>
+            <header class="result-header">
+              <nav class="result-tabs" aria-label="Result views">
+                <button class="result-tab is-active" type="button" data-result-mode="output" id="preview-title">Result</button>
+                <button class="result-tab" type="button" data-result-mode="problems">Problems <span data-problem-count>0</span></button>
+                <button class="result-tab" type="button" data-result-mode="terminal">Run log</button>
+              </nav>
+              <div class="preview-tools">
+                <span class="preview-state" data-preview-state><i aria-hidden="true"></i><span data-preview-state-label>Not run</span></span>
+                <button class="mini-icon-button" type="button" data-refresh-preview title="Refresh preview" aria-label="Refresh preview" disabled>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65M20 4v7h-7"></path></svg>
+                </button>
+                <button class="mini-icon-button" type="button" data-fullscreen-preview title="Open preview fullscreen" aria-label="Open preview fullscreen">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"></path></svg>
+                </button>
+              </div>
+            </header>
+            <div class="preview-frame-wrap">
+              <div class="preview-empty" data-preview-empty>
+                <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 8-4 4 4 4M15 8l4 4-4 4M14 5l-4 14"></path></svg></span>
+                <strong>Your preview will appear here</strong>
+                <p>Run the current file with <kbd>Ctrl</kbd> <b>+</b> <kbd>Enter</kbd>.</p>
+                <button type="button" data-run-empty>Run code</button>
+              </div>
+              <iframe data-preview title="Your sandboxed code preview" sandbox="allow-scripts" hidden></iframe>
+              <div class="output-view" data-output hidden></div>
+            </div>
+          </section>
+        </div>
       </div>
 
       <span class="sr-only" data-language-status>HTML</span>

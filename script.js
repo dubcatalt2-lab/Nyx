@@ -2436,7 +2436,7 @@
   //favicons
   const favicons = {
     nyx:'./assets/icons/nyx-logo.png',
-    studyhub:'./assets/icons/studyhub.svg',
+    studyhub:'./assets/icons/studyhub.svg?v=20260903-cap-v3',
     classroom:`data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%23fbbc04'/%3E%3Crect x='8' y='10' width='48' height='40' rx='3' fill='%2334a853'/%3E%3Ccircle cx='32' cy='25' r='6' fill='white'/%3E%3Cpath d='M18 42c4-9 20-9 24 0' fill='white'/%3E%3C/svg%3E`,
     drive:'./assets/icons/googledrive-logo.webp',
     google:'./assets/icons/google-logo.png',
@@ -2444,17 +2444,22 @@
   };
   const nyxTabTitle = '\u057c\u028f\u04fc';
   const studyHubTabTitle = 'StudyHub — Where Education Is Achievable';
-  const studyHubTabFavicon = './assets/icons/studyhub.svg';
+  const studyHubTabFavicon = './assets/icons/studyhub.svg?v=20260903-cap-v3';
   let nyxTabFavicon = './assets/icons/nyx-logo.png';
   const nyxFaviconHref = () => $('appFavicon')?.href || nyxTabFavicon;
   function migrateStudyHubTabIdentity(){
-    if(store.text('nyx.tabIdentityVersion','')==='studyhub-v1') return;
+    if(store.text('nyx.tabIdentityVersion','')==='studyhub-cap-v3') return;
     const savedPreset=store.text('nyx.logo','').trim();
-    if(!savedPreset || savedPreset==='nyx'){
+    const savedTitle=store.text('nyx.tabTitle','').trim();
+    const savedFavicon=store.text('nyx.tabFavicon','').trim();
+    const usesStudyHubIdentity=(!savedPreset || savedPreset==='nyx')
+      && (!savedTitle || savedTitle===studyHubTabTitle)
+      && (!savedFavicon || /(?:^|\/)assets\/icons\/studyhub\.svg(?:[?#].*)?$/i.test(savedFavicon));
+    if(usesStudyHubIdentity){
       store.setText('nyx.tabTitle',studyHubTabTitle);
       store.setText('nyx.tabFavicon',studyHubTabFavicon);
     }
-    store.setText('nyx.tabIdentityVersion','studyhub-v1');
+    store.setText('nyx.tabIdentityVersion','studyhub-cap-v3');
   }
   migrateStudyHubTabIdentity();
   async function applyNyxLogoTheme(theme=store.text('nyx.theme','default')){

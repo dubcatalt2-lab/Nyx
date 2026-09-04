@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
   <title>GAMES | Nyx</title>
-  <link rel="stylesheet" href="/assets/games/games.css?v=20260824-games-cloud-v2">
+  <link rel="stylesheet" href="/assets/games/games.css?v=20260903-neutral-libraries-v4">
 <link rel="stylesheet" href="/apps/visual-redesign.css?v=20260831-rounded-glass-v10">
-  <script type="module" src="/assets/games/games.js?v=20260826-lumin-v2"></script>
+  <script type="module" src="/assets/games/games.js?v=20260903-game-libraries-v3"></script>
 </head>
 <body>
   <main class="library">
@@ -37,14 +37,6 @@
         <input id="gameSearch" type="search" autocomplete="off" placeholder="Search games...">
       </label>
 
-      <label class="select-field library-field">
-        <span class="sr-only">Game collection</span>
-        <select id="gameLibrary">
-          <option value="games">All games</option>
-          <option value="misc">More games</option>
-        </select>
-      </label>
-
       <label class="select-field sort-field">
         <span class="sr-only">Sort games</span>
         <select id="gameSort">
@@ -52,6 +44,17 @@
           <option value="za">Z&ndash;A</option>
         </select>
       </label>
+    </section>
+
+    <section class="library-picker" aria-labelledby="libraryPickerTitle">
+      <div class="library-picker-heading">
+        <div>
+          <p class="library-kicker">Game libraries</p>
+          <h2 id="libraryPickerTitle">Choose a collection</h2>
+        </div>
+        <p>Switch sources without leaving the arcade.</p>
+      </div>
+      <div id="gameLibraryTabs" class="library-tabs" role="group" aria-label="Game libraries"></div>
     </section>
 
     <div class="library-meta">

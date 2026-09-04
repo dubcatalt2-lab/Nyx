@@ -219,9 +219,9 @@ h1 {
 }
 
 .catalog-tools {
-  width: min(760px, 100%);
+  width: min(720px, 100%);
   display: grid;
-  grid-template-columns: minmax(230px, 1fr) auto auto;
+  grid-template-columns: minmax(230px, 1fr) auto;
   gap: 10px;
   margin: 28px auto 0;
 }
@@ -291,16 +291,117 @@ h1 {
   cursor: pointer;
 }
 
-.library-field select {
-  min-width: 160px;
-  font-weight: 650;
-}
-
 .sort-field select { min-width: 92px; }
 
 .select-field option {
   background: #111521;
   color: var(--text);
+}
+
+.library-picker {
+  width: min(980px, 100%);
+  margin: 22px auto 0;
+  padding: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 16px;
+  background: rgba(20, 20, 23, 0.72);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.04), 0 12px 34px rgba(0, 0, 0, 0.18);
+  -webkit-backdrop-filter: blur(16px) saturate(0.2);
+  backdrop-filter: blur(16px) saturate(0.2);
+}
+
+.library-picker-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 0 2px 12px;
+}
+
+.library-picker-heading h2,
+.library-picker-heading p { margin: 0; }
+
+.library-picker-heading h2 {
+  margin-top: 3px;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.library-picker-heading > p {
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 12px;
+}
+
+.library-kicker {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.library-tabs {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding: 1px 1px 3px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.library-tab {
+  min-width: max-content;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.025);
+  color: rgba(255, 255, 255, 0.88);
+  padding: 0 11px 0 13px;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    color var(--motion) ease,
+    border-color var(--motion) ease,
+    background-color var(--motion) ease,
+    transform var(--motion) ease;
+}
+
+.library-tab:hover,
+.library-tab:focus-visible {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.085);
+  color: #fff;
+}
+
+.library-tab:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.78);
+  outline-offset: 2px;
+}
+
+.library-tab:active { transform: scale(0.98); }
+
+.library-tab.active {
+  border-color: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.07);
+}
+
+.library-tab-count {
+  min-width: 24px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09);
+  color: currentColor;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
 }
 
 .library-meta {
@@ -452,6 +553,32 @@ h1 {
   transform: translateY(4px);
   transition: opacity var(--motion) ease, transform var(--motion) ease;
 }
+
+.game-source-badge {
+  position: absolute;
+  top: 9px;
+  left: 9px;
+  z-index: 3;
+  max-width: calc(100% - 18px);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(4, 6, 12, 0.76);
+  color: rgba(255, 255, 255, 0.82);
+  padding: 4px 8px;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+  backdrop-filter: blur(7px);
+  transition: opacity var(--motion) ease;
+}
+
+.game-card:hover .game-source-badge,
+.game-card:focus-visible .game-source-badge { opacity: 0.72; }
 
 .game-card:hover .game-name,
 .game-card:focus-visible .game-name {
@@ -724,11 +851,10 @@ body.game-performance-active .player iframe {
 }
 
 @media (max-width: 660px) {
-  .catalog-tools { grid-template-columns: 1fr 1fr; }
-  .search-field { grid-column: 1 / -1; }
+  .catalog-tools { grid-template-columns: minmax(0, 1fr) auto; }
   .select-field select { width: 100%; }
-  .library-field select,
   .sort-field select { min-width: 0; }
+  .library-picker-heading > p { display: none; }
   .player-toolbar { grid-template-columns: auto minmax(0, 1fr) auto; }
   .back-button span:last-child { display: none; }
 }
@@ -738,6 +864,9 @@ body.game-performance-active .player iframe {
   .cove-mark { width: 44px; height: 44px; border-radius: 13px; }
   .subtitle { font-size: 14px; }
   .catalog-tools { margin-top: 23px; }
+  .library-picker { margin-top: 16px; padding: 13px; }
+  .library-picker-heading { padding-bottom: 10px; }
+  .library-tab { height: 36px; }
   .game-view-switch { width: 100%; }
   .game-view-button { min-width: 0; padding-inline: 10px; }
   .cloud-games-view { margin-inline: -8px; border-radius: 14px; }

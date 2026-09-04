@@ -1,7 +1,7 @@
 const elements = {
   grid: document.getElementById('gameGrid'),
   search: document.getElementById('gameSearch'),
-  library: document.getElementById('gameLibrary'),
+  libraryTabs: document.getElementById('gameLibraryTabs'),
   sort: document.getElementById('gameSort'),
   count: document.getElementById('gameCount'),
   progress: document.getElementById('catalogProgress'),
@@ -44,8 +44,20 @@ const state = {
   performanceAutoTriggered: false,
   performanceFrame: 0,
   page: 1,
-  pageSize: 30
+  pageSize: 30,
+  activeLibrary: 'all'
 };
+
+const GAME_LIBRARIES = Object.freeze([
+  { id: 'all', label: 'All games', shortLabel: 'All', description: 'Every available game' },
+  { id: 'lumin', label: 'LuminSDK', shortLabel: 'Lumin', description: 'Games delivered through LuminSDK' },
+  { id: 'gn', label: 'GN Math', shortLabel: 'GN', description: 'The GN Math collection' },
+  { id: 'gms', label: 'GMS', shortLabel: 'GMS', description: 'The GMS collection' },
+  { id: 'local', label: 'Nyx Archive', shortLabel: 'Nyx', description: 'Games stored with Nyx' },
+  { id: 'catclass', label: 'CatClass', shortLabel: 'CatClass', description: 'Community game sources' },
+  { id: 'duckmath', label: 'DuckMath', shortLabel: 'DuckMath', description: 'Extra fallback sources' },
+  { id: 'misc', label: 'Miscellaneous', shortLabel: 'Misc', description: 'Games without cover art' }
+]);
 
 const cloudGameRequests = new Map();
 let cloudGameRequestId = 0;
@@ -646,8 +658,15 @@ function makeCard(game) {
   card.type = 'button';
   card.dataset.gameKey = game.key;
   card.dataset.gameSource = game.source;
+  card.dataset.preferredSource = ['all', 'misc'].includes(state.activeLibrary) ? '' : state.activeLibrary;
   card.setAttribute('aria-label', `Play ${game.title}`);
   card.append(makeCover(game));
+
+  const source = document.createElement('span');
+  source.className = 'game-source-badge';
+  const activeSource = ['all', 'misc'].includes(state.activeLibrary) ? game.source : state.activeLibrary;
+  source.textContent = GAME_LIBRARIES.find(library => library.id === activeSource)?.shortLabel || 'Game';
+  card.append(source);
 
   const name = document.createElement('span');
   name.className = 'game-name';
@@ -658,9 +677,11 @@ function makeCard(game) {
 
 function visibleGames() {
   const query = elements.search.value.trim().toLowerCase();
-  const showMisc = elements.library.value === 'misc';
   const games = state.games.filter(game =>
-    game.hasIcon !== showMisc && (!query || game.title.toLowerCase().includes(query))
+    (state.activeLibrary === 'misc'
+      ? !game.hasIcon
+      : game.hasIcon && (state.activeLibrary === 'all' || gameSources(game).some(source => source.source === state.activeLibrary)))
+      && (!query || game.title.toLowerCase().includes(query))
   );
   return games.sort((a, b) => elements.sort.value === 'za'
     ? b.title.localeCompare(a.title, undefined, { numeric: true })
@@ -682,6 +703,36 @@ function render() {
   elements.previousPage.disabled = state.page <= 1;
   elements.nextPage.disabled = state.page >= totalPages;
   elements.pageInfo.textContent = `Page ${state.page} of ${totalPages}`;
+}
+
+function libraryGameCount(libraryId) {
+  if (libraryId === 'all') return state.games.filter(game => game.hasIcon).length;
+  if (libraryId === 'misc') return state.games.filter(game => !game.hasIcon).length;
+  return state.games.filter(game => game.hasIcon && gameSources(game).some(source => source.source === libraryId)).length;
+}
+
+function renderLibraryTabs() {
+  const fragment = document.createDocumentFragment();
+  for (const library of GAME_LIBRARIES) {
+    const count = libraryGameCount(library.id);
+    if (library.id !== 'all' && count === 0) continue;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'library-tab';
+    button.dataset.library = library.id;
+    button.title = library.description;
+    button.setAttribute('aria-pressed', String(state.activeLibrary === library.id));
+    button.classList.toggle('active', state.activeLibrary === library.id);
+
+    const label = document.createElement('span');
+    label.textContent = library.label;
+    const total = document.createElement('span');
+    total.className = 'library-tab-count';
+    total.textContent = count.toLocaleString();
+    button.append(label, total);
+    fragment.append(button);
+  }
+  elements.libraryTabs.replaceChildren(fragment);
 }
 
 function resetResults() {
@@ -791,7 +842,7 @@ function gameProviderLabel(source, index) {
     local: 'Nyx Archive',
     gn: 'GN Math',
     gms: 'GMS',
-    lumin: 'Lumin',
+    lumin: 'LuminSDK',
     catclass: 'CatClass',
     duckmath: 'DuckMath'
   };
@@ -900,12 +951,18 @@ function tryNextGameSource(reason = '') {
   else showGameFailure();
 }
 
-async function openGame(game, updateHistory = true) {
+async function openGame(game, updateHistory = true, preferredSource = '') {
   if (!game) return;
   state.lastFocused = document.activeElement;
   state.activeGame = game;
   state.performanceAutoTriggered = false;
-  const firstAvailable = gameSources(game).findIndex(source => !state.failedSources.has(source.url));
+  const sources = gameSources(game);
+  const preferredAvailable = preferredSource
+    ? sources.findIndex(source => source.source === preferredSource && !state.failedSources.has(source.url))
+    : -1;
+  const firstAvailable = preferredAvailable >= 0
+    ? preferredAvailable
+    : sources.findIndex(source => !state.failedSources.has(source.url));
   state.activeSourceIndex = firstAvailable >= 0 ? firstAvailable : 0;
   syncGameProvider();
   elements.playerTitle.textContent = game.title;
@@ -947,10 +1004,7 @@ async function loadLibrary() {
   const failed = results.length - loaded.length;
   state.games = mergeCatalogs(loaded);
   state.gamesByKey = new Map(state.games.map(game => [game.key, game]));
-  const iconCount = state.games.filter(game => game.hasIcon).length;
-  const miscCount = state.games.length - iconCount;
-  elements.library.options[0].textContent = `All games (${iconCount.toLocaleString()})`;
-  elements.library.options[1].textContent = `More games (${miscCount.toLocaleString()})`;
+  renderLibraryTabs();
   elements.progress.classList.add('done');
   render();
 
@@ -964,10 +1018,16 @@ async function loadLibrary() {
 
 elements.grid.addEventListener('click', event => {
   const card = event.target.closest('[data-game-key]');
-  if (card) openGame(state.gamesByKey.get(card.dataset.gameKey));
+  if (card) openGame(state.gamesByKey.get(card.dataset.gameKey), true, card.dataset.preferredSource);
 });
 elements.search.addEventListener('input', resetResults);
-elements.library.addEventListener('change', resetResults);
+elements.libraryTabs.addEventListener('click', event => {
+  const button = event.target.closest('[data-library]');
+  if (!button || button.dataset.library === state.activeLibrary) return;
+  state.activeLibrary = button.dataset.library;
+  renderLibraryTabs();
+  resetResults();
+});
 elements.sort.addEventListener('change', resetResults);
 elements.previousPage.addEventListener('click', () => changePage(state.page - 1));
 elements.nextPage.addEventListener('click', () => changePage(state.page + 1));

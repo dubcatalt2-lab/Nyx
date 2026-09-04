@@ -1817,8 +1817,8 @@
   function popupProtectionForUrl(url){
     return popupProtectionEnabled() || requiresContainedPopupNavigation(url);
   }
-  const browserAdResourceSignature=/(?:^|[./_-])(?:adinplay|adpushup|adservice|adserver|adnxs|adsrvr|adsterra|advertising|amazon-adsystem|clickadu|criteo|doubleclick|exoclick|googleadservices|googlesyndication|hilltopads|intergi|mgid|monetag|onclickads|openx|outbrain|pagead|playwire|popads|popcash|propellerads|pubmatic|r9x|revcontent|rubiconproject|taboola|trafficjunky|venatus)(?:[./?&=_-]|$)/i;
-  const browserAdElementSelector='iframe[src*="adinplay"],iframe[src*="doubleclick"],iframe[src*="googlesyndication"],iframe[src*="googleadservices"],iframe[src*="adservice"],iframe[src*="adnxs"],iframe[src*="playwire"],iframe[src*="r9x.in"],iframe[src*="taboola"],iframe[src*="outbrain"],script[src*="adinplay"],script[src*="doubleclick"],script[src*="googlesyndication"],script[src*="googleadservices"],script[src*="adservice"],script[src*="playwire"],script[src*="r9x.in"],.adsbygoogle,[data-ad-client],[data-ad-slot],[id^="google_ads"],[id*="google_ads"],[id^="ad-container"],[class~="ad-container"],[class~="ad-banner"],[class~="ad-wrapper"],[class~="advertisement"]';
+  const browserAdResourceSignature=/(?:^|[./_-])(?:adinplay|adpushup|adservice|adserver|adnxs|adsrvr|adsterra|adtrafficquality|advertising|amazon-adsystem|clickadu|criteo|doubleclick|exoclick|gamedistribution|gamemonetize|googleadservices|googlesyndication|hilltopads|imasdk|intergi|mgid|monetag|onclickads|openx|outbrain|pagead|playwire|poki-master-loader|poki-sdk|popads|popcash|propellerads|pubmatic|r9x|revcontent|rubiconproject|taboola|trafficjunky|venatus)(?:[./?&=_-]|$)/i;
+  const browserAdElementSelector='iframe[src*="adinplay"],iframe[src*="adtrafficquality"],iframe[src*="doubleclick"],iframe[src*="googlesyndication"],iframe[src*="googleadservices"],iframe[src*="adservice"],iframe[src*="adnxs"],iframe[src*="playwire"],iframe[src*="r9x.in"],iframe[src*="taboola"],iframe[src*="outbrain"],iframe[src*="ads.emulatorjs.org"],iframe[src*="/ad-campaigns/"],script[src*="adinplay"],script[src*="doubleclick"],script[src*="googlesyndication"],script[src*="googleadservices"],script[src*="adservice"],script[src*="adtrafficquality"],script[src*="gamedistribution"],script[src*="gamemonetize"],script[src*="imasdk"],script[src*="playwire"],script[src*="poki-master-loader"],script[src*="poki-sdk"],script[src*="r9x.in"],script[src*="/ads.js"],.adsbygoogle,[data-ad-client],[data-ad-slot],[id^="google_ads"],[id*="google_ads"],[id^="ad-container"],[class~="ad-container"],[class~="ad-banner"],[class~="ad-wrapper"],[class~="ad-overlay"],[class~="advertisement"],[aria-label="Advertisement"]';
   const browserInjectedAdSignature=/(?:reminder\s*\(\s*\d+\s*\)[\s\S]{0,180}download\s+pending)|(?:download\s+pending[\s\S]{0,180}finish\s+it\s+now)|(?:finish\s+it\s+now[\s\S]{0,180}(?:close|continue))|(?:\[\s*\d+\s*\]\s*update\s*:\s*opera\s+browser[\s\S]{0,180}install)|(?:install\s+(?:opera\s+browser|browser\s+update|extension)[\s\S]{0,180}(?:install\s+for\s+free|continue|download))|(?:sponsored\s+(?:download|update)[\s\S]{0,120}(?:install|continue))/i;
   // Shell-owned surfaces can meet the same size/z-index heuristics as an
   // escaped ad. In particular, the expanded 240px dock crosses the 12% area
@@ -2929,12 +2929,33 @@
         return nativeSetAttribute.call(this,name,value);
       };
     } catch {}
+    if(protectionEnabled()){
+      const resolved=value=>Promise.resolve(value);
+      if(!window.PokiSDK){
+        window.PokiSDK={
+          init:()=>resolved(),initWithVideoHB:()=>resolved(),commercialBreak:()=>resolved(),rewardedBreak:()=>resolved(true),
+          displayAd:()=>{},gameplayStart:()=>{},gameplayStop:()=>{},gameLoadingStart:()=>{},gameLoadingFinished:()=>{},
+          happyTime:()=>{},setDebug:()=>{},getURLParam:()=>null,getLanguage:()=>navigator.language || "en"
+        };
+      }
+      if(!window.gdsdk){
+        window.gdsdk={showAd:()=>resolved(),preloadAd:()=>resolved(),openConsole:()=>{},isAdblockEnabled:true};
+      }
+    }
+    const notifyGameDistributionReady=()=>{
+      if(!protectionEnabled()) return;
+      try{
+        const callback=window.GD_OPTIONS?.onEvent;
+        if(typeof callback==="function") callback({name:"SDK_READY"});
+      }catch{}
+    };
     try {
       new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(clean)))
         .observe(document.documentElement,{childList:true,subtree:true,attributes:false});
     } catch {}
-    document.addEventListener("DOMContentLoaded",()=>clean(document),{once:true});
+    document.addEventListener("DOMContentLoaded",()=>{clean(document);notifyGameDistributionReady()},{once:true});
     addEventListener("load",()=>clean(document),{once:true});
+    queueMicrotask(notifyGameDistributionReady);
     clean(document);
   })();`;
   const scramjetMinimalRuntimeGuardSource=`(() => {
@@ -3206,7 +3227,7 @@
   const proxyStateVersion='nyx-proxy-state-20260814-private-tabs-v13';
   const scramjetStateVersion='nyx-scramjet-state-20260814-private-tabs-v2';
   const scramjetV1StateVersion='nyx-scramjet-v1-ready-before-route-v5';
-  const scramjetServiceWorkerUrl='/scramjet.sw.js?v=nyx-sj-20260814-private-tabs-v3';
+  const scramjetServiceWorkerUrl='/scramjet.sw.js?v=nyx-sj-20260903-game-ads-v4';
   const scramjetV1RuntimeUrl='/scramjet-v1/scramjet.all.js?v=nyx-sj-v1-ready-before-route-v5';
   const scramjetV1ServiceWorkerUrl='/scramjet-v1.sw.js?v=nyx-sj-v1-ready-before-route-v5';
   function installNyxConsoleDedupe(scope='top'){

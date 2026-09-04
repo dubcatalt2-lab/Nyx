@@ -14,6 +14,7 @@
     "test:ai-workspace": "node scripts/test-ai-workspace.mjs",
     "test:code-studio": "node scripts/test-code-studio.mjs",
     "test:code-tutorials": "node scripts/test-code-tutorials.mjs",
+    "test:games": "node scripts/test-games.mjs",
     "test:nyxify-covers": "node scripts/test-nyxify-playlist-covers.mjs",
     "test:nyxify-live": "node scripts/test-nyxify-live-playback.mjs",
     "test:nyxify-match": "node scripts/test-nyxify-full-track-match.mjs",

@@ -119,6 +119,67 @@ function proxiedSourceUrl(requestUrl) {
   }
 }
 
+const nyxBlockedAdHosts = [
+  "adnxs.com",
+  "ads.emulatorjs.org",
+  "adsrvr.org",
+  "adsterra.com",
+  "adtrafficquality.google",
+  "amazon-adsystem.com",
+  "cdn.r9x.in",
+  "criteo.com",
+  "doubleclick.net",
+  "exoclick.com",
+  "gamemonetize.com",
+  "googleadservices.com",
+  "googlesyndication.com",
+  "imasdk.googleapis.com",
+  "mgid.com",
+  "monetag.com",
+  "openx.net",
+  "outbrain.com",
+  "playwire.com",
+  "popads.net",
+  "popcash.net",
+  "propellerads.com",
+  "pubmatic.com",
+  "rubiconproject.com",
+  "taboola.com",
+  "trafficjunky.com"
+];
+
+function nyxUvAdHostBlocked(hostname) {
+  const host = String(hostname || "").toLowerCase();
+  return nyxBlockedAdHosts.some(blocked => host === blocked || host.endsWith(`.${blocked}`));
+}
+
+function nyxShouldBlockUvAd(event) {
+  const source = proxiedSourceUrl(event.request.url);
+  if (!source) return false;
+  try {
+    const url = new URL(source);
+    return nyxUvAdHostBlocked(url.hostname)
+      || /(?:^|\/)(?:ads?|ad[-_.]?(?:loader|manager|script)|jump[_-]gamemonetize|poki-(?:master-loader|sdk))\.(?:js|mjs)(?:$|\/)/i.test(url.pathname)
+      || (url.hostname === "serve.app.playsaurus.com" && /\/ad-campaigns\//i.test(url.pathname));
+  } catch {
+    return false;
+  }
+}
+
+function nyxBlockedUvAdResponse(event) {
+  const accept = event.request.headers.get("accept") || "";
+  if (["script", "worker", "sharedworker"].includes(event.request.destination) || /javascript|ecmascript/i.test(accept)) {
+    return new Response("", { status: 200, headers: { "Content-Type": "application/javascript; charset=utf-8" } });
+  }
+  if (event.request.destination === "style" || /text\/css/i.test(accept)) {
+    return new Response("", { status: 200, headers: { "Content-Type": "text/css; charset=utf-8" } });
+  }
+  if (event.request.destination === "document" || event.request.destination === "iframe") {
+    return new Response("<!doctype html><meta charset=\"utf-8\">", { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } });
+  }
+  return new Response(null, { status: 204 });
+}
+
 function shouldNeutralizeUvScript(event) {
   if (!["script", "worker", "sharedworker"].includes(event.request.destination)) return false;
   try {
@@ -244,6 +305,7 @@ function badAssetBody(text) {
 }
 
 async function nyxUvFetch(event) {
+  if (nyxShouldBlockUvAd(event)) return nyxBlockedUvAdResponse(event);
   const { engine } = uvForRequest(event.request.url);
   if (shouldNeutralizeUvScript(event)) {
     return emptyNeutralizedScriptResponse(event);

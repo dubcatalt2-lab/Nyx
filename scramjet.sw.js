@@ -74,6 +74,7 @@ const nyxBlockedRequestHosts = [
   "google-analytics.com",
   "analytics.google.com",
   "adservice.google.com",
+  "adtrafficquality.google",
   "stats.g.doubleclick.net",
   "static.cloudflareinsights.com",
   "cloudflareinsights.com",
@@ -85,7 +86,13 @@ const nyxBlockedRequestHosts = [
   "vntsm.com",
   "hb.vntsm.com",
   "facebook.net",
-  "connect.facebook.net"
+  "connect.facebook.net",
+  "ads.emulatorjs.org",
+  "cdn.r9x.in",
+  "gamemonetize.com",
+  "html5.api.gamedistribution.com",
+  "imasdk.googleapis.com",
+  "sdk.poki.com"
 ];
 
 function nyxHostBlocked(hostname) {
@@ -97,7 +104,10 @@ function nyxShouldBlockScramjetRequest(event) {
   const source = nyxScramjetSourceUrl(event.request.url);
   if (!source) return false;
   try {
-    return nyxHostBlocked(new URL(source).hostname);
+    const url = new URL(source);
+    return nyxHostBlocked(url.hostname)
+      || /(?:^|\/)(?:ads?|ad[-_.]?(?:loader|manager|script)|jump[_-]gamemonetize|poki-(?:master-loader|sdk))\.(?:js|mjs)(?:$|\/)/i.test(url.pathname)
+      || (url.hostname === "serve.app.playsaurus.com" && /\/ad-campaigns\//i.test(url.pathname));
   } catch {
     return false;
   }
@@ -117,7 +127,7 @@ function nyxBlockedScramjetResponse(event) {
   if (event.request.destination === "document" || event.request.destination === "iframe") {
     return new Response("<!doctype html><meta charset=\"utf-8\">", { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } });
   }
-  return new Response("", { status: 204 });
+  return new Response(null, { status: 204 });
 }
 
 function nyxRequestExpectsAsset(event) {

@@ -7,22 +7,22 @@
       "format": "ugs",
       "url": "/assets/ugs/games.json",
       "coversUrl": "/assets/ugs/thumbs.json",
-      "player": "/assets/ugs/play.html?v=20260804-not-found-fallback-v3&game={path}",
+      "player": "/assets/ugs/play.html?v=20260903-game-ad-guard-v1&game={path}",
       "priority": 50
     },
     {
       "id": "gn",
       "format": "gn",
       "url": "/assets/gn-math/games.json",
-      "player": "/assets/gn-math/play.html?v=20260803-resource-fix&game={path}",
+      "player": "/assets/gn-math/play.html?v=20260903-game-ad-guard-v1&game={path}",
       "priority": 40
     },
     {
       "id": "gms",
       "format": "gms",
       "url": "/assets/gms-games/games.json",
-      "player": "/assets/gms-games/play.html?v=20260803-resource-fix&game={path}",
-      "gbaPlayer": "/assets/gms-games/play.html?v=20260803-resource-fix&gba={romId}",
+      "player": "/assets/gms-games/play.html?v=20260903-game-ad-guard-v1&game={path}",
+      "gbaPlayer": "/assets/gms-games/play.html?v=20260903-game-ad-guard-v1&gba={romId}",
       "priority": 30
     },
     {

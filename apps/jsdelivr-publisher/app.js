@@ -126,7 +126,14 @@ function initializePreset() {
     document.getElementById('page-title').textContent = 'P2P Publisher';
     document.getElementById('publisher-title').textContent = 'Publish P2P Nyx links';
   }
-  presetPromise = fetch('./nyx-source.svg', { cache: 'no-store' })
+  const source = presetParameters.get('source') === 'jsdelivr'
+    ? 'https://cdn.jsdelivr.net/gh/dubcatalt2-lab/nyx-jsdelivr-links@main/1-learning-005847b5039fb2c8f4515165e0d79a17.svg'
+    : './nyx-source.svg';
+  if (presetParameters.get('source') === 'jsdelivr') {
+    fileDisplay.textContent = 'Selected jsDelivr SVG';
+    fileHint.textContent = 'Copies of the selected jsDelivr SVG will be published as new files in your repository.';
+  }
+  presetPromise = fetch(source, { cache: 'no-store', credentials: 'omit' })
     .then(response => {
       if (!response.ok) throw new Error(`Nyx SVG returned ${response.status}.`);
       return response.text();

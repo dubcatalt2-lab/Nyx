@@ -175,33 +175,14 @@
       </section>
     </section>
 
-    <section class="bulk-variants-card surface" aria-labelledby="bulk-variants-title" data-bulk-variants>
-      <div class="section-bar bulk-variants-heading">
-        <div class="section-id">
-          <span class="bulk-variants-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 5h10M7 12h10M7 19h10M4 5h.01M4 12h.01M4 19h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-          <div><p class="eyebrow">Local generator</p><h2 id="bulk-variants-title">Bulk Nyx links</h2></div>
-        </div>
-        <span class="local-badge">Up to 5 million</span>
-      </div>
-      <p class="bulk-variants-intro">Create millions of working Nyx addresses with a different path on every line. The list is generated entirely on your device.</p>
-      <form class="bulk-variants-form" data-bulk-variants-form>
-        <div class="bulk-variants-grid">
-          <label><span>Number of links</span><input data-bulk-count type="number" min="1" max="5000000" step="1" value="1000" inputmode="numeric" required></label>
-          <label><span>Path code</span><select data-bulk-mode><option value="sequential">Unique batch + number</option><option value="uuid">Unique batch + UUID</option><option value="random">Unique batch + random code</option></select></label>
-        </div>
-        <div class="bulk-alias-destination"><span>Link format</span><code data-bulk-alias-example></code></div>
-        <div class="bulk-variants-summary"><span data-bulk-estimate>Estimated download: calculating…</span><span>Nothing is uploaded to Nyx.</span></div>
-        <div class="bulk-variants-actions">
-          <button class="primary-action" data-bulk-generate type="submit"><span>Generate download</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 20h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-          <button class="secondary-action" data-bulk-cancel type="button" hidden>Cancel</button>
-        </div>
-      </form>
-      <div class="bulk-variants-progress" data-bulk-progress hidden role="status" aria-live="polite"><span><i data-bulk-progress-bar></i></span><p data-bulk-progress-text>Preparing download…</p></div>
-      <div class="bulk-variants-preview" data-bulk-preview hidden><div><span>Preview</span><strong data-bulk-preview-count></strong></div><pre data-bulk-preview-lines></pre></div>
-      <p class="bulk-variants-note"><strong>How it works:</strong> every link has a real, different <code>/l/</code> path and serves Nyx's verified wrapper without storing a database record. The links all open the same Nyx experience; they are not separate jsDelivr files. Very large lists stream directly to disk in supported Chromium browsers.</p>
+    <section class="bulk-variants-card surface" aria-labelledby="bulk-variants-title">
+      <div class="section-bar bulk-variants-heading"><div><p class="eyebrow">Publish real files</p><h2 id="bulk-variants-title">Bulk jsDelivr links</h2></div></div>
+      <p class="bulk-variants-intro">Publish copies of the source SVG with distinct filenames, then download their jsDelivr URLs. No Nyx /l/ addresses or query-string variants.</p>
+      <div class="bulk-alias-destination"><span>Source SVG</span><a href="https://cdn.jsdelivr.net/gh/dubcatalt2-lab/nyx-jsdelivr-links@main/1-learning-005847b5039fb2c8f4515165e0d79a17.svg" target="_blank" rel="noopener noreferrer">View the jsDelivr source file</a></div>
+      <div class="bulk-variants-actions"><a class="primary-action" data-jsdelivr-publish href="../jsdelivr-publisher/?preset=nyx&amp;source=jsdelivr&amp;count=10">Open jsDelivr publisher</a></div>
+      <p class="bulk-variants-note">Requires your GitHub token and a public repository you can write to. Links are available after publishing succeeds. The publisher supports up to 1,000 files per repository and 10,000 per run; five-million-file publishing is not available.</p>
     </section>
   </main>
   <script src="./app.js?v=20260829-function-copy-6"></script>
-  <script type="module" src="./bulk-variants.js?v=20260904-stateless-path-links-v3"></script>
 </body>
 </html>

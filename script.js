@@ -569,12 +569,20 @@
     const anchor=button.getBoundingClientRect();
     const shortLaptop=matchMedia('(min-width:481px) and (max-width:1100px) and (max-height:650px)').matches;
     const viewport=window.visualViewport;
-    const viewportLeft=viewport?.offsetLeft||0;
+    let viewportLeft=viewport?.offsetLeft||0;
     const viewportTop=viewport?.offsetTop||0;
-    const viewportWidth=viewport?.width||innerWidth;
-    const viewportHeight=viewport?.height||innerHeight;
+    let viewportWidth=viewport?.width||innerWidth;
+    let viewportHeight=viewport?.height||innerHeight;
+    const rail=button.closest('.nyx-visual-dock');
+    if(rail){
+      const bounds=rail.getBoundingClientRect();
+      if(bounds.height>bounds.width){
+        if(bounds.left>viewportLeft+viewportWidth/2) viewportWidth=Math.max(0,bounds.left-viewportLeft);
+        else {const right=viewportLeft+viewportWidth;viewportLeft=Math.max(viewportLeft,bounds.right);viewportWidth=Math.max(0,right-viewportLeft)}
+      }else if(bounds.top>viewportTop+viewportHeight/2) viewportHeight=Math.max(0,bounds.top-viewportTop);
+    }
     const edge=12,gap=shortLaptop?5:8;
-    const width=Math.min(shortLaptop?244:280,Math.max(0,viewportWidth-edge*2));
+    const width=Math.min(220,Math.max(0,viewportWidth-edge*2));
     const left=Math.max(viewportLeft+edge,Math.min(anchor.left,viewportLeft+viewportWidth-width-edge));
     menu.style.width=`${width}px`;
     menu.style.maxHeight=`${Math.max(0,viewportHeight-edge*2)}px`;
@@ -600,7 +608,7 @@
     const avatar=profile.avatarUrl?`<img src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="">`:`<span>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</span>`;
     const banner=profile.bannerUrl?`<img src="${esc(nyxProfileStillSource(profile.bannerUrl))}" alt="" aria-hidden="true">`:'';
     const menu=document.createElement('aside');
-    menu.className=`nyx-account-menu ${nyxProfileEffectClass(profile)}`;
+    menu.className=`nyx-account-menu nyx-account-menu-compact ${nyxProfileEffectClass(profile)}`;
     menu.setAttribute('role','menu');
     menu.setAttribute('aria-label','Account options');
     menu.style.setProperty('--nyx-account-primary',profile.accentPrimary);
@@ -623,7 +631,11 @@
     window.addEventListener('resize',reposition);
     window.visualViewport?.addEventListener('resize',reposition);
     window.visualViewport?.addEventListener('scroll',reposition);
+    const menuRail=button?.closest('.nyx-visual-dock');
+    const railResize=menuRail&&typeof ResizeObserver==='function'?new ResizeObserver(reposition):null;
+    if(railResize)railResize.observe(menuRail);
     nyxAccountMenuCleanup=()=>{
+      railResize?.disconnect();
       window.removeEventListener('resize',reposition);
       window.visualViewport?.removeEventListener('resize',reposition);
       window.visualViewport?.removeEventListener('scroll',reposition);

@@ -203,6 +203,17 @@ body.browser-shell .nyx-profile-slot .nyx-account-button:hover{border-color:var(
 }
 .nyx-account-menu::-webkit-scrollbar{display:none}
 .nyx-account-menu.show{opacity:1;transform:none}
+/* Compact navigation menu only; full profile/editor cards keep their layout. */
+html body .nyx-account-menu-compact .nyx-account-menu-banner{height:48px!important}
+html body .nyx-account-menu-compact .nyx-account-menu-profile{min-height:0!important;padding:29px 12px 10px!important}
+html body .nyx-account-menu-compact .nyx-account-menu-avatar{width:44px!important;height:44px!important;top:-22px!important;left:12px!important;border-width:3px!important}
+html body .nyx-account-menu-compact .nyx-account-menu-avatar>.nyx-user-status{width:9px!important;height:9px!important;border-width:2px!important}
+html body .nyx-account-menu-compact .nyx-account-menu-status{left:65px!important;top:-17px!important;max-width:calc(100% - 77px)!important;padding:5px 7px!important;font-size:10px!important}
+html body .nyx-account-menu-compact .nyx-account-menu-profile h2{font-size:14px!important}
+html body .nyx-account-menu-compact .nyx-account-menu-handle{font-size:11px!important}
+html body .nyx-account-menu-compact .nyx-account-menu-bio{display:none!important}
+html body .nyx-account-menu-compact .nyx-account-menu-group{margin-top:4px!important;padding:2px!important}
+html body .nyx-account-menu-compact .nyx-account-menu-group button{min-height:29px!important;padding:3px 6px!important;font-size:11px!important}
 .nyx-account-menu-banner{
   height:116px;
   margin:0 -8px;

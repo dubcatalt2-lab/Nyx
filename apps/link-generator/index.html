@@ -185,15 +185,20 @@
       <form class="bulk-variants-form" data-bulk-setup>
         <div class="bulk-variants-grid">
           <label><span>Filename label</span><input data-bulk-label value="34" maxlength="30" pattern="[a-zA-Z0-9-]+" required></label>
-          <label><span>Number of links</span><input data-bulk-amount type="number" min="1" max="100" value="10" required></label>
+          <label><span>Number of links</span><input data-bulk-amount type="number" min="1" max="100000" value="10" required></label>
           <label><span>CDN hostname</span><select data-bulk-host><option value="cdn.jsdelivr.net">cdn.jsdelivr.net (default)</option><option value="gcore.jsdelivr.net">gcore.jsdelivr.net</option><option value="fastly.jsdelivr.net">fastly.jsdelivr.net</option></select></label>
         </div>
         <div class="bulk-alias-destination"><span>Filename format</span><code data-bulk-filename>34-learning-[random 32-character code].svg</code></div>
         <div class="bulk-variants-actions"><button class="primary-action" type="submit">Continue to generate</button></div>
       </form>
-      <p class="bulk-variants-note">Continue through account access and the filter check above. Nyx publishes each new filename before returning the links. Your existing account limits apply; five-million-file publishing is not available.</p>
+      <section data-bulk-job hidden aria-label="Saved publishing job">
+        <progress max="1" value="0" style="width:100%" aria-label="Published links"></progress>
+        <p data-job-status role="status" aria-live="polite"></p>
+        <div class="bulk-variants-actions"><button type="button" data-job-resume disabled>Resume</button><button type="button" data-job-pause disabled>Pause</button><button type="button" data-job-download disabled>Download completed links</button><button type="button" data-job-clear disabled>Clear saved job</button></div>
+      </section>
+      <p class="bulk-variants-note">Up to 100,000 links per saved job. Sign in above first. Larger requests publish in small batches and wait through account cooldowns; keep this tab open to continue. Closing it saves progress for Resume on this device. Repository capacity may stop a job before its target; completed links stay downloadable. Large jobs do not run an automatic filter scan.</p>
     </section>
   </main>
-  <script src="./app.js?v=20260905-cdn-link-options-v7"></script>
+  <script src="./app.js?v=20260905-resumable-jobs-v8"></script>
 </body>
 </html>

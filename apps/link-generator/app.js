@@ -35,6 +35,16 @@
     if(url.protocol==='https:'&&cdnHosts.has(url.hostname)&&url.pathname.startsWith('/gh/')) url.hostname=host;
     return url.href;
   }
+  const bulkJobs=import('./bulk-jobs.js?v=20260905-resumable-v1').then(module=>module.attachBulkJobs({
+    access:async()=>{
+      if(!authSession?.idToken)throw new Error('Sign in to your account above before starting or resuming a large job.');
+      const session=await currentVerifiedSession();
+      const profile=await lookupAccount(session.idToken);
+      return {uid:profile.uid,token:session.idToken,limit:accountHasPremium()?p2pPremiumBatchLimit:regularHourlyLimit,method:accountHasPremium()?'p2p':'managed'};
+    }
+  }));
+  // Unsupported storage is reported when a user requests a large job.
+  bulkJobs.catch(()=>{});
 
   function applyTheme(){
     let theme='default';
@@ -111,7 +121,7 @@
   async function lookupAccount(idToken){
     const result=await firebaseRequest('identity','accounts:lookup',{idToken});
     const user=result.users?.[0];
-    return {email:user?.email || '',emailVerified:Boolean(user?.emailVerified)};
+    return {uid:user?.localId || '',email:user?.email || '',emailVerified:Boolean(user?.emailVerified)};
   }
   async function lookupNyxAccess(idToken){
     const account=await readJson(await fetch('/api/account/me',{headers:{Accept:'application/json',Authorization:`Bearer ${idToken}`},cache:'no-store'}));
@@ -179,7 +189,6 @@
     refs.amountField.hidden=false;
     refs.detailsGrid.classList.add('premium');
     refs.amount.max=String(limit);
-    $('[data-bulk-amount]').max=String(limit);
     if(Number.parseInt(refs.amount.value,10)>limit)refs.amount.value=String(limit);
     refs.amountHint.textContent=premium&&p2p
       ? `P2P can publish up to ${p2pPremiumBatchLimit.toLocaleString()} links per run through your GitHub token. Automatic repositories roll over at 1,000 SVGs.`
@@ -447,9 +456,19 @@
   $('[data-bulk-label]').addEventListener('input',()=>{
     $('[data-bulk-filename]').textContent=`${$('[data-bulk-label]').value.toLowerCase()||'nyx'}-learning-[random 32-character code].svg`;
   });
-  $('[data-bulk-setup]').addEventListener('submit',event=>{
+  $('[data-bulk-setup]').addEventListener('submit',async event=>{
     event.preventDefault();
     if(refs.button.disabled)return;
+    const requested=Number($('[data-bulk-amount]').value);
+    if(!Number.isSafeInteger(requested)||requested<1||requested>100000)return;
+    if(requested>amountLimit()){
+      try {
+        const jobs=await bulkJobs;
+        void jobs.start({total:requested,label:$('[data-bulk-label]').value,host:$('[data-bulk-host]').value});
+        $('[data-bulk-job]').hidden=false;
+      }catch(error){showNotice(error.message,'error')}
+      return;
+    }
     refs.label.value=$('[data-bulk-label]').value;
     refs.generationMethod.value='managed';
     updateGenerationMethod();

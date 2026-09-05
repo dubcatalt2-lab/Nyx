@@ -12,6 +12,7 @@ import { spawn } from "node:child_process";
 import { server as wisp } from "@mercuryworkshop/wisp-js/server";
 import { Server as SocketIOServer } from "socket.io";
 import { linkGeneratorHourlyQuota } from "./lib/link-generator-quota.mjs";
+import { batchFiles, inspectBatchTree } from "./lib/link-generator-batch.mjs";
 
 // Using the process root keeps this file compatible with Netlify's CommonJS
 // function bundle while preserving normal `node server.js` behavior.
@@ -7181,6 +7182,7 @@ function nyxifyOctaveVideo(value, providerType) {
 
 const nyxJsdelivrGithubApiVersion = "2022-11-28";
 let nyxJsdelivrPublishQueue = Promise.resolve();
+let nyxBulkPublishNextAt = 0;
 
 class NyxJsdelivrGithubError extends Error {
   constructor(status, detail) {
@@ -7229,11 +7231,21 @@ async function nyxJsdelivrGithubJson(config, path, options = {}) {
         detail = String(await response.text().catch(() => "")).slice(0, 500);
       }
       const error = new NyxJsdelivrGithubError(response.status, detail);
+      if (config.bulkJob) {
+        if (response.status === 429 || (response.status === 403 && /rate limit|secondary|abuse/i.test(detail))) {
+          const reset = Number(response.headers.get('x-ratelimit-reset')) * 1000;
+          error.status = 429;
+          error.retryAfter = Math.max(60, Number(response.headers.get('retry-after')) || 0, Math.ceil((reset - Date.now()) / 1000) || 0);
+          nyxBulkPublishNextAt = Math.max(nyxBulkPublishNextAt, Date.now() + error.retryAfter * 1000);
+        }
+        throw error;
+      }
       if (![429, 500, 502, 503, 504].includes(response.status) || attempt === 2) throw error;
       lastError = error;
       const retryAfter = Number(response.headers.get("retry-after"));
       await new Promise(resolve => setTimeout(resolve, Number.isFinite(retryAfter) ? Math.min(5_000, retryAfter * 1_000) : 350 * (2 ** attempt)));
     } catch (error) {
+      if (config.bulkJob) throw error;
       if (error instanceof NyxJsdelivrGithubError && (![429, 500, 502, 503, 504].includes(error.status) || attempt === 2)) throw error;
       if (!(error instanceof NyxJsdelivrGithubError) && attempt === 2) throw new Error(`Could not reach GitHub: ${String(error?.message || error)}`);
       lastError = error;
@@ -7258,7 +7270,12 @@ function generatedJsdelivrFileName(label, generatedFiles) {
   throw new Error("Could not create a unique JSDelivr filename. Try again.");
 }
 
-async function publishNyxJsdelivrLinks(config, amount, label) {
+async function publishNyxJsdelivrLinks(config, amount, label, batch = null) {
+  if (batch) {
+    if (Date.now() < nyxBulkPublishNextAt) throw Object.assign(new Error('Waiting before the next batch.'), { status: 429, retryAfter: Math.ceil((nyxBulkPublishNextAt - Date.now()) / 1000) });
+    nyxBulkPublishNextAt = Date.now() + 30_000;
+    config = { ...config, bulkJob: true };
+  }
   const repositoryPath = githubRepositoryApiPath(config.githubRepository);
   const repository = await nyxJsdelivrGithubJson(config, `/repos/${repositoryPath}`);
   if (repository?.private) throw new Error("The configured GitHub repository is private. JSDelivr requires a public repository.");
@@ -7273,12 +7290,21 @@ async function publishNyxJsdelivrLinks(config, amount, label) {
   if (!baseTreeSha) throw new Error("GitHub did not return the configured repository tree.");
   const svg = readFileSync(join(staticRoot, "apps", "jsdelivr-publisher", "nyx-source.svg"), "utf8");
   if (!svg.trim().startsWith("<?xml") && !svg.trim().startsWith("<svg")) throw new Error("The maintained Nyx SVG is invalid.");
-  const files = [];
+  const files = batch ? batchFiles(batch.uid, batch.requestId, label, amount) : [];
   const generatedFiles = new Set();
   while (files.length < amount) {
     const file = generatedJsdelivrFileName(label, generatedFiles);
     generatedFiles.add(file.toLowerCase());
     files.push(file);
+  }
+  const makeLinks = () => files.map(file => ({
+    name: file,
+    url: 'https://cdn.jsdelivr.net/gh/' + config.githubRepository.split('/').map(encodeURIComponent).join('/') + '@' + encodeURIComponent(branch) + '/' + encodeURIComponent(file),
+    repository: config.githubRepository, branch
+  }));
+  if (batch) {
+    const existingTree = await nyxJsdelivrGithubJson(config, '/repos/' + repositoryPath + '/git/trees/' + encodeURIComponent(baseTreeSha) + '?recursive=1');
+    if (inspectBatchTree(existingTree, files, svg)) return Object.assign(makeLinks(), { replayed: true });
   }
   const tree = await nyxJsdelivrGithubJson(config, `/repos/${repositoryPath}/git/trees`, {
     method: "POST",
@@ -14104,6 +14130,11 @@ app.post("/api/link-generator", async (req, res) => {
   }
 
   const premiumAccount = Boolean(publicUser?.premiumAccess);
+  const batchRequestId = req.body?.batchRequestId;
+  if (batchRequestId !== undefined && (!publicUser?.uid || !/^[a-f0-9-]{36}$/.test(String(batchRequestId)) || !globalNyxJsdelivrConfigured(config))) {
+    res.status(400).json({ error: "Resumable batches require a signed-in account and the managed publisher." });
+    return;
+  }
   const premiumAccess = administrator || premiumAccount;
   const method = String(req.body?.method || "managed").trim().toLowerCase() === "p2p" ? "p2p" : "managed";
   const rawAmount = req.body?.amount === undefined ? 1 : Number(req.body.amount);
@@ -14130,8 +14161,12 @@ app.post("/api/link-generator", async (req, res) => {
         premiumReservation = await reservePremiumGeneration(premiumFirebase, premiumIdentity, amount, now);
       }
       const links = globalNyxJsdelivrConfigured(config)
-        ? await queueNyxJsdelivrPublish(() => publishNyxJsdelivrLinks(config, amount, req.body?.label))
+        ? await queueNyxJsdelivrPublish(() => publishNyxJsdelivrLinks(config, amount, req.body?.label, batchRequestId ? { uid: publicUser.uid, requestId: batchRequestId } : null))
         : [];
+      if (links.replayed) {
+        if (publicUser && reservation) { await releaseFreeLink(publicUser.firebase, reservation); reservation = null; }
+        if (premiumAccess && premiumReservation) { await adjustPremiumGeneration(premiumFirebase, premiumReservation, 0); premiumReservation = null; }
+      }
       res.status(links.length ? 201 : 200).json({
         authorized: true,
         provider: "jsdelivr",

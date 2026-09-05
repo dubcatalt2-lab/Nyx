@@ -17,7 +17,7 @@ try {
   });
   await page.setContent(`<html data-nyx-theme="default"><head><link rel="stylesheet" href="http://nyx.test/styles.css"></head><body>
     <button id="anchor" style="position:fixed;bottom:8px;right:8px;width:48px;height:48px">Avatar</button>
-    <aside class="nyx-account-menu show" role="menu">
+    <aside class="nyx-account-menu nyx-account-menu-compact show" role="menu">
       <div class="nyx-account-menu-banner"></div>
       <div class="nyx-account-menu-profile"><h2>Test profile</h2><p class="nyx-account-menu-handle">@test</p><p class="nyx-account-menu-bio">Profile menu layout check.</p></div>
       <div class="nyx-account-menu-group"><button>Edit Profile</button><button>Browse Profiles</button><button>Online</button><button>Switch Accounts</button><button>Copy User ID</button></div>
@@ -49,6 +49,21 @@ try {
     anchor.style.top = 'auto'; anchor.style.bottom = '8px';
     positionNyxAccountMenu(document.querySelector('.nyx-account-menu'), anchor);
   });
+  for (const side of ['left', 'right']) {
+    const geometry = await page.evaluate(side => {
+      let rail = document.querySelector('.nyx-visual-dock');
+      if (!rail) { rail = document.createElement('nav'); rail.className = 'nyx-visual-dock'; document.body.appendChild(rail); rail.appendChild(document.getElementById('anchor')); }
+      rail.style.cssText = 'position:fixed;top:0;bottom:0;width:50px;' + side + ':0';
+      const anchor = document.getElementById('anchor');
+      anchor.style.left = side === 'left' ? '1px' : 'auto'; anchor.style.right = side === 'right' ? '1px' : 'auto';
+      const menu = document.querySelector('.nyx-account-menu');
+      positionNyxAccountMenu(menu, anchor);
+      const a = menu.getBoundingClientRect(), b = rail.getBoundingClientRect();
+      return { width: a.width, height: a.height, clear: side === 'left' ? a.left >= b.right : a.right <= b.left };
+    }, side);
+    assert.ok(geometry.width <= 220 && geometry.height <= 400);
+    assert.equal(geometry.clear, true, 'Menu must not cover sidebar');
+  }
   await page.screenshot({ path: '.codex-artifacts/account-menu-placement.png' });
   console.log('Account menu fits above/below anchors at four desktop/mobile sizes; all actions remain reachable.');
 } finally { await browser.close(); }

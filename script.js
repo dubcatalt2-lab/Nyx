@@ -556,7 +556,10 @@
     };
     return `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths[name]||''}</svg>`;
   }
+  let nyxAccountMenuCleanup=null;
   function closeNyxAccountMenu(){
+    nyxAccountMenuCleanup?.();
+    nyxAccountMenuCleanup=null;
     document.querySelector('.nyx-account-menu')?.remove();
     const button=document.getElementById('nyxAccountButton');
     button?.setAttribute('aria-expanded','false');
@@ -565,13 +568,29 @@
     if(!menu||!button) return;
     const anchor=button.getBoundingClientRect();
     const shortLaptop=matchMedia('(min-width:481px) and (max-width:1100px) and (max-height:650px)').matches;
-    const width=Math.min(shortLaptop?244:280,Math.max(0,innerWidth-24));
-    const left=Math.max(12,Math.min(anchor.left,innerWidth-width-12));
-    const top=Math.max(12,anchor.bottom+(shortLaptop?5:8));
+    const viewport=window.visualViewport;
+    const viewportLeft=viewport?.offsetLeft||0;
+    const viewportTop=viewport?.offsetTop||0;
+    const viewportWidth=viewport?.width||innerWidth;
+    const viewportHeight=viewport?.height||innerHeight;
+    const edge=12,gap=shortLaptop?5:8;
+    const width=Math.min(shortLaptop?244:280,Math.max(0,viewportWidth-edge*2));
+    const left=Math.max(viewportLeft+edge,Math.min(anchor.left,viewportLeft+viewportWidth-width-edge));
     menu.style.width=`${width}px`;
+    menu.style.maxHeight=`${Math.max(0,viewportHeight-edge*2)}px`;
+    const height=menu.offsetHeight;
+    const below=Math.max(0,viewportTop+viewportHeight-edge-anchor.bottom-gap);
+    const above=Math.max(0,anchor.top-gap-viewportTop-edge);
+    const opensAbove=height>below&&above>below;
+    const available=Math.min(viewportHeight-edge*2,opensAbove?above:below);
+    menu.style.maxHeight=`${Math.max(0,available)}px`;
+    const top=Math.max(viewportTop+edge,Math.min(
+      opensAbove?anchor.top-gap-menu.offsetHeight:anchor.bottom+gap,
+      viewportTop+viewportHeight-edge-menu.offsetHeight
+    ));
     menu.style.left=`${Math.round(left)}px`;
     menu.style.top=`${Math.round(top)}px`;
-    menu.style.maxHeight=`${Math.max(80,Math.floor(innerHeight-top-12))}px`;
+    menu.style.transformOrigin=opensAbove?'bottom left':'top left';
   }
   function openNyxAccountMenu(button=document.getElementById('nyxAccountButton')){
     closeNyxAccountMenu();
@@ -600,6 +619,15 @@
     if(bannerHost&&bannerImage)nyxManageCompactGif(bannerHost,bannerImage,profile.bannerUrl,420);
     button?.setAttribute('aria-expanded','true');
     positionNyxAccountMenu(menu,button);
+    const reposition=()=>positionNyxAccountMenu(menu,button);
+    window.addEventListener('resize',reposition);
+    window.visualViewport?.addEventListener('resize',reposition);
+    window.visualViewport?.addEventListener('scroll',reposition);
+    nyxAccountMenuCleanup=()=>{
+      window.removeEventListener('resize',reposition);
+      window.visualViewport?.removeEventListener('resize',reposition);
+      window.visualViewport?.removeEventListener('scroll',reposition);
+    };
     requestAnimationFrame(()=>menu.classList.add('show'));
     return menu;
   }

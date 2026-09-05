@@ -31,11 +31,50 @@ try {
     await page.setViewportSize({ width, height: 900 });
     assert.equal(await page.locator('.bulk-variants-card').evaluate(el => el.scrollWidth <= el.clientWidth + 1), true);
   }
-  await page.locator('[data-jsdelivr-publish]').click();
+  await page.locator('[data-bulk-label]').fill('34');
+  await page.locator('.bulk-variants-card').screenshot({ path: '.codex-artifacts/jsdelivr-bulk-setup.png' });
+  await page.locator('[data-bulk-host]').selectOption('gcore.jsdelivr.net');
+  await page.locator('[data-bulk-setup] button').click();
+  assert.equal(await page.locator('[data-label-input]').inputValue(), '34');
+  assert.equal(await page.locator('[data-cdn-host]').inputValue(), 'gcore.jsdelivr.net');
+  assert.equal(await page.locator('[data-premium-amount]').inputValue(), '10');
+  assert.equal(new URL(page.url()).pathname, '/apps/link-generator/');
+  const filenames = ['34-learning-05fd049f1fe4cc7137a52fd41697f8f2.svg', '34-learning-29c2e1b79a4705f1a6dc9a9e1fc8f9c8.svg'];
+  await page.route('**/api/link-generator', async route => {
+    const payload = route.request().postDataJSON();
+    assert.equal(payload.label, '34');
+    assert.equal(payload.amount, 2);
+    assert.equal(payload.provider, 'jsdelivr');
+    await route.fulfill({ contentType: 'application/json', body: JSON.stringify({
+      provider: 'jsdelivr', links: filenames.map(file => 'https://cdn.jsdelivr.net/gh/dubcatalt2-lab/nyx-jsdelivr-links@main/' + file), remaining: 98
+    }) });
+  });
+  for (const host of ['cdn.jsdelivr.net', 'gcore.jsdelivr.net', 'fastly.jsdelivr.net']) {
+    await page.evaluate(host => {
+      document.querySelector('[data-access-mode="administrator"]').click();
+      document.querySelector('[data-access-code]').value = 'fixture';
+      document.querySelector('[data-premium-amount]').value = '2';
+      document.querySelector('[data-cdn-host]').value = host;
+      const filter = document.querySelector('[data-filter-select]');
+      filter.innerHTML = '<option value="test">Test filter</option>';
+      document.querySelector('[data-generator-form]').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    }, host);
+    await page.waitForFunction(() => !document.querySelector('[data-generate-button]').disabled);
+    const links = (await page.locator('[data-result-url]').inputValue()).split('\n');
+    assert.deepEqual(links, filenames.map(file => 'https://' + host + '/gh/dubcatalt2-lab/nyx-jsdelivr-links@main/' + file));
+    assert.equal(await page.locator('[data-open]').getAttribute('href'), links[0]);
+  }
+  const downloaded = page.waitForEvent('download');
+  await page.locator('[data-download-links]').click();
+  const download = await downloaded;
+  assert.equal(download.suggestedFilename(), 'nyx-jsdelivr-links.txt');
+  assert.match(await readFile(await download.path(), 'utf8'), /https:\/\/fastly\.jsdelivr\.net\/gh\//);
+  await page.goto('http://nyx.test/apps/jsdelivr-publisher/?preset=nyx&source=jsdelivr&count=10&cdn=gcore.jsdelivr.net');
   await page.waitForFunction(() => typeof presetSvg !== 'undefined' && presetSvg.includes('Source fixture'));
   assert.equal(sourceRequests, 1);
   assert.equal(await page.locator('#count').inputValue(), '10');
   assert.equal(await page.locator('#fileDisplay').textContent(), 'Selected jsDelivr SVG');
+  assert.equal(await page.evaluate(() => selectedProvider), 'gcore');
   const result = await page.evaluate(async () => {
     const calls = [];
     getGitHead = async () => ({ treeSha: 'old-tree', commitSha: 'old-commit' });

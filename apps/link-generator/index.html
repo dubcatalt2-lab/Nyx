@@ -119,6 +119,7 @@
                 </select>
                 <small data-generation-method-hint>Nyx managed uses the standard server limit. P2P uses the protected server publisher for larger Premium batches.</small>
               </label>
+              <label><span>CDN hostname</span><select data-cdn-host><option value="cdn.jsdelivr.net">cdn.jsdelivr.net (default)</option><option value="gcore.jsdelivr.net">gcore.jsdelivr.net</option><option value="fastly.jsdelivr.net">fastly.jsdelivr.net</option></select><small>Changes the hostname, not the published file.</small></label>
             </div>
           </div>
           <div class="wizard-actions">
@@ -139,6 +140,7 @@
               <div><dt>Filter</dt><dd data-review-filter>Not selected</dd></div>
               <div><dt>Destination</dt><dd data-review-origin>Loading...</dd></div>
               <div><dt>Method</dt><dd data-review-method>Nyx managed</dd></div>
+              <div><dt>CDN</dt><dd data-review-cdn>cdn.jsdelivr.net</dd></div>
               <div data-review-amount-row hidden><dt>Amount</dt><dd data-review-amount>1 link</dd></div>
             </dl>
             <label class="confirmation">
@@ -162,6 +164,7 @@
           <textarea data-result-url readonly rows="7" spellcheck="false" aria-label="Generated Nyx URLs"></textarea>
           <div class="bulk-link-actions">
             <button data-copy type="button">Copy all</button>
+            <button data-download-links type="button">Download .txt</button>
             <a data-open data-nyx-generated-popup class="disabled" href="#" target="_blank" rel="noopener noreferrer" aria-disabled="true">Starting CDN...</a>
           </div>
         </div>
@@ -176,13 +179,21 @@
     </section>
 
     <section class="bulk-variants-card surface" aria-labelledby="bulk-variants-title">
-      <div class="section-bar bulk-variants-heading"><div><p class="eyebrow">Publish real files</p><h2 id="bulk-variants-title">Bulk jsDelivr links</h2></div></div>
-      <p class="bulk-variants-intro">Publish copies of the source SVG with distinct filenames, then download their jsDelivr URLs. No Nyx /l/ addresses or query-string variants.</p>
+      <div class="section-bar bulk-variants-heading"><div><p class="eyebrow">Nyx links</p><h2 id="bulk-variants-title">Bulk jsDelivr links</h2></div></div>
+      <p class="bulk-variants-intro">Create Nyx links with a different random filename ending for each link. Choose your label, amount, and CDN below.</p>
       <div class="bulk-alias-destination"><span>Source SVG</span><a href="https://cdn.jsdelivr.net/gh/dubcatalt2-lab/nyx-jsdelivr-links@main/1-learning-005847b5039fb2c8f4515165e0d79a17.svg" target="_blank" rel="noopener noreferrer">View the jsDelivr source file</a></div>
-      <div class="bulk-variants-actions"><a class="primary-action" data-jsdelivr-publish href="../jsdelivr-publisher/?preset=nyx&amp;source=jsdelivr&amp;count=10">Open jsDelivr publisher</a></div>
-      <p class="bulk-variants-note">Requires your GitHub token and a public repository you can write to. Links are available after publishing succeeds. The publisher supports up to 1,000 files per repository and 10,000 per run; five-million-file publishing is not available.</p>
+      <form class="bulk-variants-form" data-bulk-setup>
+        <div class="bulk-variants-grid">
+          <label><span>Filename label</span><input data-bulk-label value="34" maxlength="30" pattern="[a-zA-Z0-9-]+" required></label>
+          <label><span>Number of links</span><input data-bulk-amount type="number" min="1" max="100" value="10" required></label>
+          <label><span>CDN hostname</span><select data-bulk-host><option value="cdn.jsdelivr.net">cdn.jsdelivr.net (default)</option><option value="gcore.jsdelivr.net">gcore.jsdelivr.net</option><option value="fastly.jsdelivr.net">fastly.jsdelivr.net</option></select></label>
+        </div>
+        <div class="bulk-alias-destination"><span>Filename format</span><code data-bulk-filename>34-learning-[random 32-character code].svg</code></div>
+        <div class="bulk-variants-actions"><button class="primary-action" type="submit">Continue to generate</button></div>
+      </form>
+      <p class="bulk-variants-note">Continue through account access and the filter check above. Nyx publishes each new filename before returning the links. Your existing account limits apply; five-million-file publishing is not available.</p>
     </section>
   </main>
-  <script src="./app.js?v=20260829-function-copy-6"></script>
+  <script src="./app.js?v=20260905-cdn-link-options-v7"></script>
 </body>
 </html>

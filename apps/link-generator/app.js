@@ -27,6 +27,14 @@
   let premiumCooldownMinutes=10;
   let authConfig={enabled:false,apiKey:''};
   let authSession=readStoredSession();
+  const cdnHosts=new Set(['cdn.jsdelivr.net','gcore.jsdelivr.net','fastly.jsdelivr.net']);
+  const cdnSelect=$('[data-cdn-host]');
+  function selectedCdn(){return cdnHosts.has(cdnSelect.value)?cdnSelect.value:'cdn.jsdelivr.net'}
+  function withCdnHost(value,host){
+    const url=new URL(value);
+    if(url.protocol==='https:'&&cdnHosts.has(url.hostname)&&url.pathname.startsWith('/gh/')) url.hostname=host;
+    return url.href;
+  }
 
   function applyTheme(){
     let theme='default';
@@ -44,6 +52,8 @@
     refs.status.querySelector('span').textContent=label;
   }
   function setLoading(loading,label=''){
+    cdnSelect.disabled=loading;
+    $('[data-bulk-setup] button').disabled=loading;
     refs.button.disabled=loading;
     const amount=selectedAmount();
     refs.button.querySelector('span').textContent=loading ? (label || `Creating ${amount} link${amount===1?'':'s'}...`) : `Generate ${amount===1?'link':`${amount} links`}`;
@@ -169,6 +179,7 @@
     refs.amountField.hidden=false;
     refs.detailsGrid.classList.add('premium');
     refs.amount.max=String(limit);
+    $('[data-bulk-amount]').max=String(limit);
     if(Number.parseInt(refs.amount.value,10)>limit)refs.amount.value=String(limit);
     refs.amountHint.textContent=premium&&p2p
       ? `P2P can publish up to ${p2pPremiumBatchLimit.toLocaleString()} links per run through your GitHub token. Automatic repositories roll over at 1,000 SVGs.`
@@ -231,6 +242,7 @@
     refs.wizardProgress.style.width=`${(index/(refs.wizardSteps.length-1))*100}%`;
   }
   function updateReview(){
+    $('[data-review-cdn]').textContent=selectedCdn();
     refs.reviewAccess.textContent=accessMode==='account' ? (accountHasPremium() ? `${authSession?.email || 'Account'} · Premium` : (authSession?.email || 'Free account')) : 'Premium access code';
     refs.reviewLabel.textContent=refs.label.value.trim() || 'Automatic';
     refs.reviewFilter.textContent=refs.filter.options[refs.filter.selectedIndex]?.textContent || 'Not selected';
@@ -432,6 +444,31 @@
   }
 
   refs.modeButtons.forEach(button=>button.addEventListener('click',()=>setAccessMode(button.dataset.accessMode)));
+  $('[data-bulk-label]').addEventListener('input',()=>{
+    $('[data-bulk-filename]').textContent=`${$('[data-bulk-label]').value.toLowerCase()||'nyx'}-learning-[random 32-character code].svg`;
+  });
+  $('[data-bulk-setup]').addEventListener('submit',event=>{
+    event.preventDefault();
+    if(refs.button.disabled)return;
+    refs.label.value=$('[data-bulk-label]').value;
+    refs.generationMethod.value='managed';
+    updateGenerationMethod();
+    refs.amount.value=String(Math.min(amountLimit(),Number($('[data-bulk-amount]').value)));
+    cdnSelect.value=$('[data-bulk-host]').value;
+    refs.confirm.checked=false;
+    updateAmountCopy();
+    setWizardStep(0);
+    showNotice('Your link options are ready. Continue through access, details, and review to publish.');
+    refs.wizardCard.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+  $('[data-download-links]').addEventListener('click',()=>{
+    if(!refs.resultUrl.value)return;
+    const url=URL.createObjectURL(new Blob([refs.resultUrl.value+'\n'],{type:'text/plain;charset=utf-8'}));
+    const link=document.createElement('a');
+    link.href=url;link.download='nyx-jsdelivr-links.txt';
+    document.body.appendChild(link);link.click();link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  });
   refs.amount.addEventListener('input',updateAmountCopy);
   refs.generationMethod.addEventListener('change',updateGenerationMethod);
   refs.wizardNext.forEach(button=>button.addEventListener('click',handleWizardNext));
@@ -463,14 +500,14 @@
         body.amount=selectedAmount();
       }
       const result=await readJson(await fetch('/api/link-generator',{method:'POST',headers,body:JSON.stringify(body)}));
-      const links=(Array.isArray(result.links)?result.links:[]).map(item=>typeof item==='string'?item:item?.url).filter(Boolean);
+      const links=(Array.isArray(result.links)?result.links:[]).map(item=>typeof item==='string'?item:item?.url).filter(Boolean).map(url=>withCdnHost(url,selectedCdn()));
       if(result.provider==='jsdelivr' && result.authorized===true && !links.length){
         if(method==='p2p') throw new Error('P2P publishing did not return any Nyx links. Ask the Nyx administrator to check the protected publisher.');
-        const params=new URLSearchParams({preset:'nyx',label:refs.label.value.trim(),filter:selectedFilter,count:String(result.requested || selectedAmount())});
+        const params=new URLSearchParams({preset:'nyx',label:refs.label.value.trim(),filter:selectedFilter,count:String(result.requested || selectedAmount()),cdn:selectedCdn()});
         location.href=`../jsdelivr-publisher/?${params.toString()}`;
         return;
       }
-      if(!links.length && result.url) links.push(result.url);
+      if(!links.length && result.url) links.push(withCdnHost(result.url,selectedCdn()));
       if(!links.length) throw new Error('The link provider did not return any generated links.');
       const isJsdelivr=result.provider==='jsdelivr';
       refs.resultUrl.value=links.join('\n');refs.resultCount.textContent=`${links.length} link${links.length===1?'':'s'}`;refs.resultTitle.textContent=links.length===1?'Your Nyx link is ready':'Your Nyx links are ready';refs.resultSubtitle.textContent=result.partial?`${links.length} of ${result.requested} requested links were created.`:`${links.length===1?'The link was':'All links were'} created successfully.`;refs.open.href=links[0];setOpenReady(isJsdelivr);refs.resultCard.hidden=false;refs.accessCode.value='';setWizardStep(3);requestAnimationFrame(()=>refs.resultCard.scrollIntoView({behavior:'smooth',block:'nearest'}));

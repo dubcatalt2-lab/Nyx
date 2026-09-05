@@ -43,6 +43,8 @@ let publishedResult = null;
 let publishing = false;
 let presetSvg = '';
 const presetParameters = new URLSearchParams(location.search);
+const presetCdn = { 'cdn.jsdelivr.net': 'jsdelivr', 'gcore.jsdelivr.net': 'gcore', 'fastly.jsdelivr.net': 'fastly' }[presetParameters.get('cdn')];
+if (presetCdn) selectedProvider = presetCdn;
 const presetName = presetParameters.get('preset') === 'nyx' ? 'nyx' : '';
 const presetFilter = /^[a-z0-9_-]{1,80}$/i.test(presetParameters.get('filter') || '') ? presetParameters.get('filter') : '';
 const presetMethod = presetParameters.get('method') === 'p2p' ? 'p2p' : '';

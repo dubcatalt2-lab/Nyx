@@ -90,6 +90,8 @@ For shared Hugging Face AI, add `NYX_HUGGINGFACE_API_KEY='your-token'` to the pr
 
 The installer creates `/etc/nyx/nyx.env`. Open it on the VPS:
 
+Up to three authorized Hugging Face accounts can be configured using `NYX_HUGGINGFACE_API_KEY`, `NYX_HUGGINGFACE_API_KEY_2`, and `NYX_HUGGINGFACE_API_KEY_3`. Keep each value on its own line in the same protected environment file. Nyx distributes new requests across accounts that list the selected model, caches catalogs separately, and exposes one combined Hugging Face picker. Duplicate tokens are ignored; the original single-key configuration still works. Authentication/billing failures pause the affected key for five minutes, and throttling pauses it for at least 60 seconds or the provider's longer Retry-After. A failed or partially streamed request is not automatically replayed against another account. Restart Nyx after changing keys. Each account retains its own billing and provider limits.
+
 ```bash
 sudo nano /etc/nyx/nyx.env
 ```

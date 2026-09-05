@@ -2234,14 +2234,58 @@ async function nyxAiProviderFetch(provider, url, options = {}) {
       throw error;
     }
   }
-  return fetch(url, { ...options, redirect: provider?.custom || provider?.id === "huggingface" ? "manual" : options.redirect });
+  const response = await fetch(url, { ...options, redirect: provider?.custom || provider?.id === "huggingface" ? "manual" : options.redirect });
+  if (provider?.id === "huggingface" && [401, 402, 403, 429, 503].includes(response.status)) {
+    const retry = response.headers.get("retry-after");
+    const seconds = retry && /^\d+$/.test(retry) ? Number(retry) : retry ? (Date.parse(retry) - Date.now()) / 1000 : 0;
+    const delay = Math.max(response.status === 429 ? 60 : 300, Number.isFinite(seconds) ? seconds : 0);
+    nyxHuggingFaceCooldowns.set(nyxAiCredentialCacheKey(provider.key, false, "huggingface"), Date.now() + delay * 1000);
+  }
+  return response;
+}
+
+const nyxHuggingFaceCooldowns = new Map();
+let nyxHuggingFaceCursor = 0;
+
+function nyxHuggingFaceKeys() {
+  const keys = [...new Set(["NYX_HUGGINGFACE_API_KEY", "NYX_HUGGINGFACE_API_KEY_2", "NYX_HUGGINGFACE_API_KEY_3"]
+    .map(name => String(process.env[name] || "").trim()).filter(Boolean))];
+  const scopes = new Set(keys.map(key => nyxAiCredentialCacheKey(key, false, "huggingface")));
+  for (const scope of nyxHuggingFaceCooldowns.keys()) if (!scopes.has(scope)) nyxHuggingFaceCooldowns.delete(scope);
+  return keys;
+}
+
+function nyxHuggingFaceReadyKeys() {
+  return nyxHuggingFaceKeys().filter(key => (nyxHuggingFaceCooldowns.get(nyxAiCredentialCacheKey(key, false, "huggingface")) || 0) <= Date.now());
+}
+
+async function nyxHuggingFaceCatalogs() {
+  const keys = nyxHuggingFaceReadyKeys();
+  return Promise.all(keys.map(async key => {
+    const provider = { ...nyxAiGlobalProvider("huggingface"), key };
+    const models = await nyxAiAvailableModels(key, false, provider);
+    const ready = (nyxHuggingFaceCooldowns.get(nyxAiCredentialCacheKey(key, false, "huggingface")) || 0) <= Date.now();
+    return { key, provider, models: ready ? models : [] };
+  }));
+}
+
+async function nyxHuggingFaceSelectCredential(credential, requestedModel) {
+  const catalogs = await nyxHuggingFaceCatalogs();
+  const model = nyxAiModels[requestedModel] || requestedModel;
+  const eligible = catalogs.filter(item => item.models.some(entry => entry.id === model));
+  if (!eligible.length) return false;
+  const selected = eligible[nyxHuggingFaceCursor % eligible.length];
+  nyxHuggingFaceCursor = (nyxHuggingFaceCursor + 1) % 1_000_000;
+  credential.key = selected.key;
+  credential.provider = selected.provider;
+  return true;
 }
 
 function nyxAiGlobalProvider(value) {
   const id = String(value || "shared").trim().toLowerCase();
   if (id === "huggingface") return {
     id: "huggingface", label: "Hugging Face",
-    key: String(process.env.NYX_HUGGINGFACE_API_KEY || "").trim(),
+    key: nyxHuggingFaceKeys()[0] || "",
     endpoint: "https://router.huggingface.co/v1/chat/completions",
     catalogEndpoint: "https://router.huggingface.co/v1/models"
   };
@@ -2847,7 +2891,10 @@ app.get("/api/nyx-ai/models", async (req, res) => {
     return;
   }
   const entitlement = await nyxAiPremiumEntitlement(req);
-  const models = (await nyxAiAvailableModels(credential.key, credential.personal, credential.provider))
+  const catalog = credential.globalProvider === "huggingface"
+    ? nyxAiMergeCatalogs(...(await nyxHuggingFaceCatalogs()).map(item => item.models))
+    : await nyxAiAvailableModels(credential.key, credential.personal, credential.provider);
+  const models = catalog
     .filter(item => entitlement.premium || entitlement.owner || item.id !== nyxAiPremiumOpusModel);
   if (!models.length) {
     res.status(503).json({ error: credential.personal ? "Nyx could not verify any models for your personal API key." : "Nyx could not verify the models available to the configured AI key." });
@@ -2900,6 +2947,11 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     }
     return;
   }
+  const requestedModel = String(req.body?.model || "chatgpt-5.4-mini");
+  if (credential.globalProvider === "huggingface" && credential.key && !(await nyxHuggingFaceSelectCredential(credential, requestedModel))) {
+    res.status(503).json({ error: "That AI model is temporarily unavailable. Try another model or try again later." });
+    return;
+  }
   const key = credential.key;
   if (!key) {
     res.status(503).json({
@@ -2907,7 +2959,6 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     });
     return;
   }
-  const requestedModel = String(req.body?.model || "chatgpt-5.4-mini");
   const modelInfo = await nyxAiResolveModel(requestedModel, key, credential.personal, credential.provider);
   if (!modelInfo) {
     res.status(400).json({ error: "Unknown Nyx AI model." });

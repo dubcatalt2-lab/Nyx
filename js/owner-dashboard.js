@@ -631,11 +631,15 @@
       if (guest) {
         state.selectedUser = guest;
         state.selectedCapabilities = {};
+        const canViewNetwork = Boolean(state.access?.permissions?.includes("network:bans"));
+        const networkDetails = canViewNetwork
+          ? `${detailValue("Last seen IP", guest.lastSeenIp || "Not recorded yet")}${guest.lastSeenIp ? detailValue("IP last seen", dateLabel(guest.lastSeenIpAt)) : ""}`
+          : "";
         const avatar = ownerProfileImageMarkup("", "", (guest.displayName || "G").slice(0, 1).toUpperCase());
         drawer.innerHTML = `<header><div class="nyx-owner-detail-avatar">${avatar}<i class="online"></i></div><div><span>${roleIcon("guest")}Guest session</span><h2>${esc(guest.displayName)}</h2><p class="nyx-owner-drawer-identity">@${esc(guest.username)} <span class="nyx-owner-presence-state online"><i></i>Online</span></p></div><button type="button" data-owner-drawer-close aria-label="Close guest details">${dashboardIcon("close")}</button></header>
           <div class="nyx-owner-drawer-scroll">
-            <section class="nyx-owner-detail-grid">${detailValue("Identity", guest.displayName)}${detailValue("Guest ID", `@${guest.username}`)}${detailValue("Account", "No account created")}${detailValue("Presence", "Online now")}${detailValue("First seen", dateLabel(guest.createdAt))}${detailValue("Last active", dateLabel(guest.lastActiveAt))}</section>
-            <section class="nyx-owner-detail-section"><h3>Guest visitor</h3><p class="nyx-owner-action-note">Nyx uses the username saved by this browser's startup wizard. If the visitor skipped it, Nyx assigns a stable random guest name instead. Account, role, subscription, profile, and account-management controls become available only after the visitor signs in or creates an account.</p></section>
+            <section class="nyx-owner-detail-grid">${detailValue("Identity", guest.displayName)}${detailValue("Guest ID", `@${guest.username}`)}${detailValue("Account", "No account created")}${detailValue("Presence", "Online now")}${detailValue("First seen", dateLabel(guest.createdAt))}${detailValue("Last active", dateLabel(guest.lastActiveAt))}${networkDetails}</section>
+            <section class="nyx-owner-detail-section"><h3>Guest visitor</h3><p class="nyx-owner-action-note">Nyx uses the username saved by this browser's startup wizard. If the visitor skipped it, Nyx assigns a stable random guest name instead.${canViewNetwork ? " The last-seen IP is available only to staff who can manage network bans; shared or changing IPs may represent more than one person." : ""} Account, role, subscription, profile, and account-management controls become available only after the visitor signs in or creates an account.</p></section>
           </div>`;
         requestAnimationFrame(() => drawer.classList.add("show"));
         return;

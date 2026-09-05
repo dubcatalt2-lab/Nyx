@@ -3880,19 +3880,22 @@ async function nyxPresenceAccountUid(req) {
   }
 }
 
-function recordLocalPresence(sessionId, accountUid = "", startupName = "", now = Date.now()) {
+function recordLocalPresence(sessionId, accountUid = "", startupName = "", now = Date.now(), clientIp = "") {
   presenceSessions.set(sessionId, now);
   const firstSeen = presenceSessionFirstSeen.get(sessionId) || now;
   presenceSessionFirstSeen.set(sessionId, firstSeen);
   const guest = nyxGuestIdentity(sessionId);
   const guestName = nyxStartupGuestName(startupName) || guest.displayName;
   const guestUsername = nyxStartupGuestUsername(guestName, guest.username);
+  const lastSeenIp = accountUid ? "" : normalizeNyxIp(clientIp);
   presenceSessionDetails.set(sessionId, {
     lastSeen: now,
     firstSeen,
     accountUid,
     guestName,
-    guestUsername
+    guestUsername,
+    lastSeenIp,
+    lastSeenIpAt: lastSeenIp ? now : 0
   });
   return pruneLocalPresence(now);
 }
@@ -3929,7 +3932,7 @@ app.post(["/presence", "/api/presence"], express.text({ type: "text/plain", limi
     const now = Date.now();
     const accountUid = await nyxPresenceAccountUid(req);
     const startupName = nyxStartupGuestName(payload.userName);
-    const count = recordLocalPresence(sessionId, accountUid, startupName, now);
+    const count = recordLocalPresence(sessionId, accountUid, startupName, now, nyxClientIp(req));
     const randomGuestIdentity = nyxGuestIdentity(sessionId);
     const guestName = startupName || randomGuestIdentity.displayName;
     const guestIdentity = accountUid ? null : {
@@ -6357,7 +6360,7 @@ function relayNyxChatVoiceSignal(uid, value, allowedChannelIds = null) {
   return delivered;
 }
 
-function nyxOwnerGuestRecord(document, now = Date.now()) {
+function nyxOwnerGuestRecord(document, now = Date.now(), includeNetworkDetails = false) {
   const sessionId = String(document?.id || "");
   if (!/^[a-zA-Z0-9_-]{16,128}$/.test(sessionId)) return null;
   const data = document.data() || {};
@@ -6385,8 +6388,10 @@ function nyxOwnerGuestRecord(document, now = Date.now()) {
     createdAt: new Date(firstSeenMs).toISOString(),
     lastSignInAt: "",
     lastActiveAt: new Date(lastSeenMs).toISOString(),
-    lastSeenIp: "",
-    lastSeenIpAt: "",
+    lastSeenIp: includeNetworkDetails ? normalizeNyxIp(data.lastSeenIp) : "",
+    lastSeenIpAt: includeNetworkDetails && normalizeNyxIp(data.lastSeenIp)
+      ? new Date(Number(data.lastSeenIpAt || lastSeenMs)).toISOString()
+      : "",
     online: true,
     emailVerified: false,
     disabled: false,
@@ -6395,12 +6400,12 @@ function nyxOwnerGuestRecord(document, now = Date.now()) {
   };
 }
 
-async function nyxActiveGuestUsers(_firebase, now = Date.now()) {
+async function nyxActiveGuestUsers(_firebase, now = Date.now(), includeNetworkDetails = false) {
   pruneLocalPresence(now);
   return [...presenceSessionDetails.entries()].map(([id, data]) => nyxOwnerGuestRecord({
     id,
     data: () => data
-  }, now)).filter(Boolean);
+  }, now, includeNetworkDetails)).filter(Boolean);
 }
 
 function nyxOwnerSortUsers(users, sort, direction) {
@@ -13049,7 +13054,7 @@ app.get("/api/owner-dashboard", async (req, res) => {
       nyxActorHasPermission(actor, "audit:view")
         ? firebase.firestore.collection("nyxAuditLog").orderBy("createdAtMs", "desc").limit(30).get()
         : Promise.resolve(null),
-      nyxActiveGuestUsers(firebase),
+      nyxActiveGuestUsers(firebase, Date.now(), nyxActorHasPermission(actor, "network:bans")),
       nyxCustomRoles(firebase)
     ]);
     const ownerUid = founderProfileConfig().administratorUid;
@@ -13079,7 +13084,7 @@ app.get("/api/owner-dashboard", async (req, res) => {
     const status = String(req.query.status || "all").trim().toLowerCase();
     const segment = String(req.query.segment || "all").trim().toLowerCase();
     let filtered = allUsers.filter(user => {
-      if (search && ![user.displayName, user.username, user.email, user.uid].some(value => String(value || "").toLowerCase().includes(search))) return false;
+      if (search && ![user.displayName, user.username, user.email, user.uid, user.lastSeenIp].some(value => String(value || "").toLowerCase().includes(search))) return false;
       if (role !== "all" && user.role !== role && user.customRole?.id !== role) return false;
       if (subscription !== "all" && user.subscriptionStatus !== subscription) return false;
       if (status === "enabled" && (user.guest || user.disabled)) return false;
@@ -14247,7 +14252,7 @@ app.use((_req, res) => {
   res.sendFile(join(staticRoot, "index.html"));
 });
 
-export { app, attachNyxChatSocketServer, externalWispUrl, normalizePublicWispUrl, nyxActorCanReviewSearchHistory, nyxChatCanAccessChannel, nyxChatIsSchoolRestrictedChannel, nyxClientIp, nyxRolePresentation, nyxVisibleCustomRoles, nyxifyArtistMatches, nyxifyDurationMatches, nyxifyFullTrackCompare, nyxifyMultilingualTopMatch, nyxifyOfficialArtistScore, nyxifyTrackTitleMatches };
+export { app, attachNyxChatSocketServer, externalWispUrl, normalizePublicWispUrl, nyxActiveGuestUsers, nyxActorCanReviewSearchHistory, nyxChatCanAccessChannel, nyxChatIsSchoolRestrictedChannel, nyxClientIp, nyxRolePresentation, nyxVisibleCustomRoles, nyxifyArtistMatches, nyxifyDurationMatches, nyxifyFullTrackCompare, nyxifyMultilingualTopMatch, nyxifyOfficialArtistScore, nyxifyTrackTitleMatches, recordLocalPresence };
 
 const isDirectRun = process.argv[1] && resolve(process.argv[1]) === join(__dirname, "server.js");
 if (isDirectRun) {

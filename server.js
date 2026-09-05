@@ -858,6 +858,22 @@ app.use((req, res, next) => {
   res.status(200).type("html").send(nyxDecoyHtml);
 });
 
+const nyxBulkLinkTokenPattern = /^[A-Za-z0-9_-]{10,80}$/;
+const nyxBulkLinkSourcePath = join(staticRoot, "apps", "jsdelivr-publisher", "nyx-source.svg");
+app.get("/l/:token", (req, res) => {
+  if (!nyxBulkLinkTokenPattern.test(String(req.params.token || ""))) {
+    res.status(404).type("text").send("Link not found.");
+    return;
+  }
+  res.set({
+    "Cache-Control": "private, no-store",
+    "Content-Disposition": "inline",
+    "X-Content-Type-Options": "nosniff",
+    "X-Robots-Tag": "noindex, nofollow, noarchive, nosnippet"
+  });
+  res.type("image/svg+xml").sendFile(nyxBulkLinkSourcePath);
+});
+
 function esc(value) {
   return String(value ?? "").replace(/[&<>"']/g, char => ({
     "&": "&amp;",
@@ -2218,11 +2234,17 @@ async function nyxAiProviderFetch(provider, url, options = {}) {
       throw error;
     }
   }
-  return fetch(url, { ...options, redirect: provider?.custom ? "manual" : options.redirect });
+  return fetch(url, { ...options, redirect: provider?.custom || provider?.id === "huggingface" ? "manual" : options.redirect });
 }
 
 function nyxAiGlobalProvider(value) {
   const id = String(value || "shared").trim().toLowerCase();
+  if (id === "huggingface") return {
+    id: "huggingface", label: "Hugging Face",
+    key: String(process.env.NYX_HUGGINGFACE_API_KEY || "").trim(),
+    endpoint: "https://router.huggingface.co/v1/chat/completions",
+    catalogEndpoint: "https://router.huggingface.co/v1/models"
+  };
   if (id === "navy") return nyxAiNavyProvider();
   if (id === "ofox") return nyxAiOpenAiProvider(
     process.env.NYX_OFOX_BASE_URL || "https://api.ofox.ai/v1",
@@ -2772,13 +2794,15 @@ app.get("/api/nyx-ai/providers", (_req, res) => {
   const groq = nyxAiGlobalProvider("groq");
   const ofox = nyxAiGlobalProvider("ofox");
   const tokenmix = nyxAiGlobalProvider("tokenmix");
+  const huggingface = nyxAiGlobalProvider("huggingface");
   res.setHeader("cache-control", "private, no-store");
   res.json({ providers: [
     ...(shared.key ? [{ id: "shared", label: shared.label }] : []),
     ...(groq.key ? [{ id: "groq", label: groq.label }] : []),
     ...(navy.key ? [{ id: "navy", label: navy.label }] : []),
     ...(ofox?.key ? [{ id: "ofox", label: ofox.label }] : []),
-    ...(tokenmix?.key ? [{ id: "tokenmix", label: tokenmix.label }] : [])
+    ...(tokenmix?.key ? [{ id: "tokenmix", label: tokenmix.label }] : []),
+    ...(huggingface?.key ? [{ id: "huggingface", label: huggingface.label }] : [])
   ] });
 });
 
@@ -3000,7 +3024,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   const timeout = setTimeout(() => controller.abort(), nyxAiLimits.timeoutMs);
   res.once("close", () => controller.abort());
   const system = `You are Nyx AI inside the Nyx browser. Be helpful, direct, and accurate. If you do not know something, say so plainly. Never output corrupted symbols or token fragments; every answer must be readable natural language or valid code requested by the user. Format responses with clean Markdown. Use Markdown table syntax for tables, and use standard LaTeX delimiters for mathematical notation. If the latest user message includes a [NYX VERIFIED IMAGE ATTACHMENT] block, an actual image upload was received and locally inspected. Treat that block as visual evidence from the attachment, not as a user-written description. Answer the image request directly from the evidence; never claim that no image was attached, characterize the visual evidence as a vague user description, or ask the user to upload the same image again. If the latest user message includes a [NYX VERIFIED SCREEN FRAME] block, a fresh frame from the user's active screen share was captured at Send time and locally inspected. Answer from that frame and never claim that you cannot see the shared screen or that it was merely a manual upload. Be precise that you receive a fresh frame with each message rather than continuous live video. ${responseGuidance}`;
-  const providerPayload = credential.provider?.id === "navy" || credential.provider?.custom ? {
+  const providerPayload = ["navy", "huggingface"].includes(credential.provider?.id) || credential.provider?.custom ? {
     model,
     messages: [{ role: "system", content: system }, ...messages],
     temperature: Number(process.env.NYX_AI_TEMPERATURE || 0.45),

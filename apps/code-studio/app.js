@@ -364,14 +364,14 @@
       const providerResponse=await fetch('/api/nyx-ai/providers',{headers:{accept:'application/json'}});
       const providerData=await providerResponse.json();
       const availableProviders=providerResponse.ok&&Array.isArray(providerData?.providers)?providerData.providers.map(item=>String(item?.id||'')):[];
-      const providerIds=['shared','groq'].filter(provider=>availableProviders.includes(provider));
+      const providerIds=['huggingface','shared','groq'].filter(provider=>availableProviders.includes(provider));
       const token=await accountToken();
       const options=(await Promise.all(providerIds.map(async provider=>{
         try{
           const response=await fetch('/api/nyx-ai/models',{headers:await aiHeaders(provider,token)});
           const data=await response.json();
           const models=response.ok&&Array.isArray(data?.models)?data.models:[];
-          const preferred=models.find(item=>item?.id==='chatgpt-5.4-mini')||models.find(item=>item?.id==='openai/gpt-oss-20b')||models[0];
+          const preferred=(provider==='huggingface'&&models.find(item=>/coder/i.test(item?.id||'')))||models.find(item=>item?.id==='chatgpt-5.4-mini')||models.find(item=>item?.id==='openai/gpt-oss-20b')||models[0];
           return preferred?.id?{provider,model:String(preferred.id)}:null;
         }catch{return null}
       }))).filter(Boolean);

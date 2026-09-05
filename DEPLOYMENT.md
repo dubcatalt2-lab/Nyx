@@ -86,6 +86,8 @@ The installer:
 
 ## 4. Add the environment variables
 
+For shared Hugging Face AI, add `NYX_HUGGINGFACE_API_KEY='your-token'` to the protected `/etc/nyx/nyx.env` file. Create the token with **Inference Providers** permission at https://huggingface.co/settings/tokens. Nyx uses the official `https://router.huggingface.co/v1` API and loads its current chat-model catalog. After deploying support and restarting Nyx, select **Hugging Face** in Nyx AI; Code Sandbox automatically prefers it for suggestions, including the current editor code. Inference uses the token owner's Hugging Face credits/billing. Never paste the real token into chat, source, or a shell command saved in history.
+
 The installer creates `/etc/nyx/nyx.env`. Open it on the VPS:
 
 ```bash

@@ -1,21 +1,20 @@
-const MAX_VARIANTS = 5_000_000;
+const MAX_LINKS = 5_000_000;
 const MEMORY_DOWNLOAD_LIMIT = 100_000;
 const CHUNK_SIZE = 10_000;
 
-export function prepareVariantBase(value, key = "id") {
-  const parameter = String(key || "").trim();
-  if (!/^[A-Za-z0-9_-]{1,32}$/.test(parameter)) throw new Error("Use a short query name with letters, numbers, dashes, or underscores.");
+export function prepareAliasBase(origin, namespace) {
   let url;
-  try { url = new URL(String(value || "").trim()); } catch { throw new Error("Enter a complete http:// or https:// base URL."); }
-  if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) throw new Error("Enter a public http:// or https:// URL without embedded credentials.");
-  const hash = url.hash;
+  try { url = new URL(String(origin || "").trim()); } catch { throw new Error("Nyx could not determine the address for these links."); }
+  if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) throw new Error("Nyx links require a public http:// or https:// address.");
+  const group = String(namespace || "").trim();
+  if (!/^[A-Za-z0-9_-]{8,24}$/.test(group)) throw new Error("Nyx could not create a safe link group.");
+  url.pathname = "/l/";
+  url.search = "";
   url.hash = "";
-  url.searchParams.delete(parameter);
-  const separator = url.search ? "&" : "?";
-  return Object.freeze({ prefix: `${url.href}${separator}${encodeURIComponent(parameter)}=`, suffix: hash });
+  return Object.freeze({ prefix: `${url.href}${group}-`, suffix: "" });
 }
 
-export function buildVariantUrl(plan, value) {
+export function buildAliasUrl(plan, value) {
   return `${plan.prefix}${encodeURIComponent(String(value))}${plan.suffix}`;
 }
 
@@ -28,25 +27,25 @@ function sequentialDigitTotal(count) {
   return total;
 }
 
-export function estimatedVariantBytes(plan, count, mode = "sequential") {
+export function estimatedLinkBytes(plan, count, mode = "sequential") {
   const amount = Number(count);
-  if (!Number.isSafeInteger(amount) || amount < 1 || amount > MAX_VARIANTS) throw new Error(`Choose between 1 and ${MAX_VARIANTS.toLocaleString()} variants.`);
+  if (!Number.isSafeInteger(amount) || amount < 1 || amount > MAX_LINKS) throw new Error(`Choose between 1 and ${MAX_LINKS.toLocaleString()} links.`);
   const fixed = new TextEncoder().encode(`${plan.prefix}${plan.suffix}\n`).length;
   const valueBytes = mode === "uuid" ? 36 * amount : mode === "random" ? 16 * amount : sequentialDigitTotal(amount);
   return fixed * amount + valueBytes;
 }
 
-function randomCode() {
+function randomCode(length = 16) {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789abcdefghijkmnopqrstuvwxyz";
-  const bytes = new Uint8Array(16);
+  const bytes = new Uint8Array(length);
   crypto.getRandomValues(bytes);
   let value = "";
   for (const byte of bytes) value += alphabet[byte % alphabet.length];
   return value;
 }
 
-function variantValue(mode, index) {
-  if (mode === "uuid") return typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `${randomCode()}-${randomCode()}`;
+function linkValue(mode, index) {
+  if (mode === "uuid") return typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `${randomCode(16)}-${randomCode(16)}`;
   if (mode === "random") return randomCode();
   return String(index);
 }
@@ -71,14 +70,13 @@ function downloadBlob(parts, name) {
   setTimeout(() => { URL.revokeObjectURL(url); link.remove(); }, 60_000);
 }
 
-function initBulkVariants() {
+function initBulkLinks() {
   const root = document.querySelector("[data-bulk-variants]");
   if (!root) return;
   const form = root.querySelector("[data-bulk-variants-form]");
-  const base = root.querySelector("[data-bulk-base]");
   const count = root.querySelector("[data-bulk-count]");
-  const key = root.querySelector("[data-bulk-key]");
   const mode = root.querySelector("[data-bulk-mode]");
+  const aliasExample = root.querySelector("[data-bulk-alias-example]");
   const generate = root.querySelector("[data-bulk-generate]");
   const cancel = root.querySelector("[data-bulk-cancel]");
   const estimate = root.querySelector("[data-bulk-estimate]");
@@ -96,13 +94,13 @@ function initBulkVariants() {
     progressBar.style.width = `${Math.max(0, Math.min(100, ratio * 100))}%`;
     progressText.textContent = message;
   };
+  const estimatePlan = () => prepareAliasBase(location.origin, "NyxLinkGroup");
   const updateEstimate = () => {
-    try {
-      const plan = prepareVariantBase(base.value || "https://example.com/page.html", key.value);
-      estimate.textContent = `Estimated download: ${formatBytes(estimatedVariantBytes(plan, Number.parseInt(count.value, 10), mode.value))}`;
-    } catch (error) { estimate.textContent = error.message; }
+    aliasExample.textContent = `${location.origin}/l/NyxLinkGroup-...`;
+    try { estimate.textContent = `Estimated download: ${formatBytes(estimatedLinkBytes(estimatePlan(), Number(count.value), mode.value))}`; }
+    catch (error) { estimate.textContent = error.message; }
   };
-  [base, count, key, mode].forEach(control => control.addEventListener("input", updateEstimate));
+  [count, mode].forEach(control => control.addEventListener("input", updateEstimate));
   mode.addEventListener("change", updateEstimate);
   cancel.addEventListener("click", () => { if (activeJob) activeJob.cancelled = true; });
 
@@ -112,11 +110,11 @@ function initBulkVariants() {
     let plan;
     let amount;
     try {
-      plan = prepareVariantBase(base.value, key.value);
+      plan = prepareAliasBase(location.origin, randomCode(12));
       amount = Number(count.value);
-      estimatedVariantBytes(plan, amount, mode.value);
+      estimatedLinkBytes(plan, amount, mode.value);
       if (amount > MEMORY_DOWNLOAD_LIMIT && typeof window.showSaveFilePicker !== "function") {
-        throw new Error(`This browser can safely download up to ${MEMORY_DOWNLOAD_LIMIT.toLocaleString()} variants at once. Use Chrome or Edge for larger streamed files.`);
+        throw new Error(`This browser can safely download up to ${MEMORY_DOWNLOAD_LIMIT.toLocaleString()} links at once. Use Chrome or Edge for larger streamed files.`);
       }
     } catch (error) {
       showProgress(error.message, 0, "error");
@@ -135,7 +133,7 @@ function initBulkVariants() {
     const last = [];
     let completed = 0;
     const started = performance.now();
-    const name = `nyx-url-variants-${amount}.txt`;
+    const name = `nyx-path-links-${amount}.txt`;
     try {
       if (amount > MEMORY_DOWNLOAD_LIMIT) {
         const handle = await window.showSaveFilePicker({ suggestedName: name, types: [{ description: "Text file", accept: { "text/plain": [".txt"] } }] });
@@ -145,7 +143,7 @@ function initBulkVariants() {
         const end = Math.min(amount, start + CHUNK_SIZE - 1);
         const lines = [];
         for (let index = start; index <= end; index += 1) {
-          const url = buildVariantUrl(plan, variantValue(mode.value, index));
+          const url = buildAliasUrl(plan, linkValue(mode.value, index));
           lines.push(url);
           if (first.length < 5) first.push(url);
           last.push(url);
@@ -168,12 +166,12 @@ function initBulkVariants() {
       else downloadBlob(memoryParts, name);
       const previewValues = completed > 10 ? [...first, "…", ...last] : [...first, ...last.slice(Math.max(0, first.length - 5))];
       previewLines.textContent = [...new Set(previewValues)].join("\n");
-      previewCount.textContent = `${completed.toLocaleString()} variants`;
+      previewCount.textContent = `${completed.toLocaleString()} links`;
       preview.hidden = false;
-      showProgress(`${completed.toLocaleString()} URL variants saved to ${name}.`, 1, "complete");
+      showProgress(`${completed.toLocaleString()} different Nyx links saved to ${name}.`, 1, "complete");
     } catch (error) {
       if (writable) await writable.abort().catch(() => {});
-      showProgress(error?.name === "AbortError" ? "Save cancelled." : (error?.message || "The variant list could not be created."), completed / amount, "error");
+      showProgress(error?.name === "AbortError" ? "Save cancelled." : (error?.message || "The link list could not be created."), completed / amount, "error");
     } finally {
       activeJob = null;
       generate.disabled = false;
@@ -184,6 +182,6 @@ function initBulkVariants() {
   updateEstimate();
 }
 
-if (typeof document !== "undefined") initBulkVariants();
+if (typeof document !== "undefined") initBulkLinks();
 
-export { MAX_VARIANTS };
+export { MAX_LINKS };

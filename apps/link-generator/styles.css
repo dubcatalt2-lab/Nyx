@@ -112,7 +112,9 @@ fieldset{min-width:0;margin:0;border:0}
 .bulk-variants-form{padding:16px;border:1px solid var(--line);border-radius:16px;background:#080808}
 .bulk-variants-form label{display:block}
 .bulk-variants-form label>span{display:block;margin-bottom:7px;color:var(--muted);font-size:9px;letter-spacing:.035em}
-.bulk-variants-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(110px,.55fr) minmax(160px,.8fr);gap:10px;margin-top:11px}
+.bulk-variants-grid{display:grid;grid-template-columns:minmax(0,.7fr) minmax(220px,1fr);gap:10px}
+.bulk-alias-destination{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:11px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#050505;color:var(--muted);font-size:9px}
+.bulk-alias-destination code{min-width:0;overflow:hidden;color:var(--text);font:400 9px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;text-overflow:ellipsis;white-space:nowrap}
 .bulk-variants-summary{display:flex;justify-content:space-between;gap:12px;margin-top:10px;color:var(--muted-deep);font-size:9px}
 .bulk-variants-actions{display:flex;align-items:center;gap:8px;margin-top:14px}
 .bulk-variants-actions button{min-height:38px}
@@ -131,6 +133,7 @@ fieldset{min-width:0;margin:0;border:0}
 .bulk-variants-preview pre{max-height:170px;overflow:auto;margin:0;padding:12px;color:var(--text);font:400 10px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre;scrollbar-color:#343434 #090909}
 .bulk-variants-note{margin:12px 2px 0;color:var(--muted-deep);font-size:9px;line-height:1.55}
 .bulk-variants-note strong{color:var(--muted)}
+.bulk-variants-note code{color:var(--muted);font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
 @media(max-width:680px){
   .generator-card{padding:18px}
   .section-bar{display:block}
@@ -145,6 +148,8 @@ fieldset{min-width:0;margin:0;border:0}
   .bulk-variants-card{padding:18px}
   .bulk-variants-heading{display:flex}
   .bulk-variants-grid{grid-template-columns:1fr}
+  .bulk-alias-destination{align-items:flex-start;flex-direction:column}
+  .bulk-alias-destination code{width:100%}
   .bulk-variants-summary{display:grid;gap:4px}
   .bulk-variants-actions{align-items:stretch;flex-direction:column}
   .bulk-variants-actions button{width:100%}

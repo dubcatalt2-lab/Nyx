@@ -23,6 +23,7 @@
     "test:nyxify-player": "node scripts/test-nyxify-player.mjs",
     "test:jsdelivr-publisher": "node scripts/test-jsdelivr-publisher.mjs",
     "test:link-generator-global-jsdelivr": "node scripts/test-link-generator-global-jsdelivr.mjs",
+    "test:link-generator-variants": "node scripts/test-link-generator-variants.mjs",
     "test:nyxtube": "node scripts/test-nyxtube.mjs",
     "test:utility-theme": "node scripts/test-utility-neutral-theme.mjs",
     "build:netlify": "node scripts/build-netlify.mjs",

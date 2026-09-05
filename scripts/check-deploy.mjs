@@ -30,6 +30,7 @@ const requiredFiles = [
   "apps/link-generator/index.html",
   "apps/link-generator/styles.css",
   "apps/link-generator/app.js",
+  "apps/link-generator/bulk-variants.js",
   "apps/code-studio/index.html",
   "apps/code-studio/styles.css",
   "apps/code-studio/app.js",

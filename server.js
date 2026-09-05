@@ -1336,6 +1336,13 @@ function patchedUvBundle() {
 function patchedScramjetControllerAsset(name) {
   let source = readFileSync(join(scramjetControllerPath, name), "utf8");
   if (name === "controller.sw.js") {
+    const clientsOriginal = 'sendSetCookie:async({cookies:e,options:r})=>{let o=await self.clients.matchAll()';
+    const clientsPatched = 'sendSetCookie:async({cookies:e,options:r})=>{let o=await self.clients.matchAll({type:"window",includeUncontrolled:!0})';
+    // The owner lives outside the proxy SW scope. Include the shell so it can
+    // acknowledge cookies before the destination frame finishes initializing.
+    // Existing controller-id checks keep private cookie jars separate.
+    if (!source.includes(clientsOriginal)) throw new Error('Scramjet cookie client discovery signature changed');
+    source = source.replace(clientsOriginal, clientsPatched);
     const original = '$controller$setCookie:{cookies:e,options:r,id:o}';
     const patched = '$controller$setCookie:{cookies:e,options:r,id:o,controllerId:this.id}';
     if (!source.includes(original)) throw new Error("Scramjet service-worker cookie sync signature changed");
@@ -1358,7 +1365,13 @@ function patchedScramjetRuntime() {
   const source = readFileSync(scramjetRuntimePath, "utf8");
   const original = 'if(u.origin===new i.xP(e.rawUrl).origin)throw new i.$D("attempted to fetch from same origin - this means the site has obtained a reference to the real origin, aborting");';
   const patched = 'if(u.origin===new i.xP(e.rawUrl).origin&&u.pathname.startsWith(t.context.prefix.pathname))u=new i.xP((0,n.v2)(u,t.context));else if(u.origin===new i.xP(e.rawUrl).origin)throw new i.$D("attempted to fetch from same origin - this means the site has obtained a reference to the real origin, aborting");';
-  return source.includes(original) ? source.replace(original, patched) : source;
+  const historyOriginal = 'apply(t){let r=e.box.histories.get(t.this),s=(0,n.Qf)(t.args[2]);';
+  // The URL is optional and nullable. Stringifying it first turns ordinary
+  // state-only updates into /undefined or /null and corrupts frame history.
+  const historyPatched = 'apply(t){if(t.args.length<3||null==t.args[2])return t.call();let r=e.box.histories.get(t.this),s=(0,n.Qf)(t.args[2]);';
+  if (!source.includes(historyOriginal)) throw new Error('Scramjet history signature changed');
+  return (source.includes(original) ? source.replace(original, patched) : source)
+    .replace(historyOriginal, historyPatched);
 }
 
 function scramjetRuntimeGuard() {

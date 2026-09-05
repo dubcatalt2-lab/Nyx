@@ -1,4 +1,4 @@
-﻿importScripts("/controller/controller.sw.js");
+﻿importScripts("/controller/controller.sw.js?v=20260905-cookie-owner-v1");
 
 let nyxScramjetRevivePromise = null;
 

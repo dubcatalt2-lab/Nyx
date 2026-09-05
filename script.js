@@ -2902,10 +2902,12 @@
     const neutralValue=node=>String(node?.tagName || "").toUpperCase()==="IMG"
       ? "data:image/gif;base64,R0lGODlhAQABAAAAACw="
       : "about:blank";
-    const resourceValue=node=>node?.src || node?.href || node?.getAttribute?.("src") || node?.getAttribute?.("href") || node?.getAttribute?.("data-src") || "";
+    // Reflected src/href getters run through the proxy URL decoder. Attributes
+    // retain the source value, including harmless non-network metadata URLs.
+    const resourceValue=node=>node?.getAttribute?.("src") || node?.getAttribute?.("href") || node?.getAttribute?.("data-src") || "";
     const removeAd=node=>{
       try {
-        if (!protectionEnabled() || !node || node.nodeType!==1) return false;
+        if (!protectionEnabled() || !node || node.nodeType!==1 || node.hasAttribute?.("scramjet-injected")) return false;
         if (node.matches?.(adSelector) || blocked(resourceValue(node))) {
           node.remove?.();
           return true;
@@ -2918,7 +2920,7 @@
         if (!protectionEnabled()) return;
         if (root?.nodeType===1) removeAd(root);
         root?.querySelectorAll?.(adSelector)?.forEach(removeAd);
-        root?.querySelectorAll?.("script[src],iframe[src],img[src],link[href]")?.forEach(node=>{if(blocked(resourceValue(node)))removeAd(node)});
+        root?.querySelectorAll?.("script[src],iframe[src],img[src],link[href]")?.forEach(removeAd);
       } catch {}
     };
     try {
@@ -3267,7 +3269,7 @@
   const proxyStateVersion='nyx-proxy-state-20260814-private-tabs-v13';
   const scramjetStateVersion='nyx-scramjet-state-20260814-private-tabs-v2';
   const scramjetV1StateVersion='nyx-scramjet-v1-ready-before-route-v5';
-  const scramjetServiceWorkerUrl='/scramjet.sw.js?v=nyx-sj-20260903-game-ads-v4';
+  const scramjetServiceWorkerUrl='/scramjet.sw.js?v=nyx-sj-20260905-cookie-owner-v5';
   const scramjetV1RuntimeUrl='/scramjet-v1/scramjet.all.js?v=nyx-sj-v1-ready-before-route-v5';
   const scramjetV1ServiceWorkerUrl='/scramjet-v1.sw.js?v=nyx-sj-v1-ready-before-route-v5';
   function installNyxConsoleDedupe(scope='top'){
@@ -7987,7 +7989,7 @@
   function scramjetConfig(){
     return {
       prefix:'/~/sj/',
-      scramjetPath:'/scramjet/scramjet.js',
+      scramjetPath:'/scramjet/scramjet.js?v=20260905-optional-history-url-v1',
       injectPath:'/controller/controller.inject.js',
       wasmPath:'/scramjet/scramjet.wasm',
       virtualWasmPath:'scramjet.wasm.js',
@@ -8353,6 +8355,16 @@
       return {reachable:false,blank:false,unstyled:false,readyState:'',error:String(error?.message || error)};
     }
   }
+  function browserFrameStillAtSource(t,sourceUrl){
+    const source=browserShellSourceUrl(sourceUrl) || String(sourceUrl || '');
+    const current=browserShellSourceUrl(t?.sourceUrl || t?.url || '') || String(t?.sourceUrl || t?.url || '');
+    if(current!==source) return false;
+    try{
+      const actual=browserShellSourceUrl(t.frame.contentWindow.location.href);
+      if(/^https?:/i.test(actual) && !browserShellRejectFrameLocation(actual,source)) return actual===source;
+    }catch{}
+    return true;
+  }
   function watchScramjetHealth(t,sourceUrl){
     if(!t?.frame || !sourceUrl) return;
     const source=browserShellSourceUrl(sourceUrl) || String(sourceUrl);
@@ -8374,7 +8386,8 @@
     const current=()=>t.frame?.isConnected
       && t.scramjetHealthWatchToken===token
       && (t.navigationIntent || '')===navigationIntent
-      && t.scramjetPresentationSource===source;
+      && t.scramjetPresentationSource===source
+      && browserFrameStillAtSource(t,source);
     const recover=async reason=>{
       if(recoveryStarted || !current()) return;
       const retries=Number(t.scramjetPresentationRetries || 0);
@@ -8389,7 +8402,7 @@
       }else{
         await new Promise(resolve=>setTimeout(resolve,240));
       }
-      if(!t.frame?.isConnected || (t.navigationIntent || '')!==navigationIntent || t.scramjetPresentationSource!==source) return;
+      if(!t.frame?.isConnected || (t.navigationIntent || '')!==navigationIntent || t.scramjetPresentationSource!==source || !browserFrameStillAtSource(t,source)) return;
       try{
         t.scramjetFrame?.go(source);
       }catch{
@@ -8447,7 +8460,8 @@
     const current=()=>t.frame?.isConnected
       && t.uvPresentationWatchToken===token
       && (t.navigationIntent || '')===navigationIntent
-      && t.uvPresentationSource===source;
+      && t.uvPresentationSource===source
+      && browserFrameStillAtSource(t,source);
     const recover=async reason=>{
       if(recoveryStarted || !current() || Number(t.uvPresentationRetries || 0)>=1) return;
       recoveryStarted=true;
@@ -8461,7 +8475,7 @@
       if(registration) await registration.update().catch(()=>null);
       uvInstallPromise=null;
       const ok=await installUltraviolet();
-      if(!ok || !t.frame?.isConnected || (t.navigationIntent || '')!==navigationIntent || t.uvPresentationSource!==source) return;
+      if(!ok || !t.frame?.isConnected || (t.navigationIntent || '')!==navigationIntent || t.uvPresentationSource!==source || !browserFrameStillAtSource(t,source)) return;
       if(typeof t.retryUvPresentation==='function') t.retryUvPresentation(source);
     };
     const youtubePresentationIncomplete=presentation=>{
@@ -8885,7 +8899,7 @@
       await ensureFreshProxyState();
       await ensureFreshScramjetState();
       step='loading Scramjet assets';
-      if(!window.$scramjet) await loadScript('/scramjet/scramjet.js');
+      if(!window.$scramjet) await loadScript('/scramjet/scramjet.js?v=20260905-optional-history-url-v1');
       if(!window.$scramjetController) await loadScript('/controller/controller.api.js');
       step='loading Scramjet runtime guard';
       await loadScramjetRuntimeGuardSource();
@@ -10819,8 +10833,17 @@
       const recoveryKey=`${recoverySource}\n${rejectedSource}`;
       if(t.scramjetRejectedLocationKey===recoveryKey) return;
       t.scramjetRejectedLocationKey=recoveryKey;
+      const frame=t.frame;
+      const navigationIntent=t.navigationIntent;
       setTimeout(()=>{
         if(!state.tabs.includes(t) || t.scramjetRejectedLocationKey!==recoveryKey) return;
+        if(t.frame!==frame || t.navigationIntent!==navigationIntent || t.sourceUrl!==recoverySource) return;
+        // A rejected history notification can arrive while a real navigation
+        // succeeds. Never replace that new document with the previous page.
+        try{
+          const actual=browserShellSourceUrl(frame.contentWindow.location.href);
+          if(!browserShellRejectFrameLocation(actual,recoverySource)) return;
+        }catch{return}
         try{t.scramjetFrame.go(recoverySource)}catch{}
       },160);
     }
@@ -11720,7 +11743,7 @@
       const token='transport-'+Date.now()+Math.random().toString(16).slice(2);
       t.transportWatchToken=token;
       const check=()=>{
-        if(t.transportWatchToken!==token || !state.tabs.includes(t)) return;
+        if(t.transportWatchToken!==token || !state.tabs.includes(t) || !browserFrameStillAtSource(t,sourceUrl)) return;
         let text='';
         try{text=String(t.frame.contentDocument?.body?.textContent || '').slice(0,5000)}catch{return}
         if(!serviceWorkerTransportErrorText(text)) return;
@@ -11754,6 +11777,7 @@
         if(expectedEngine==='scramjet') loadScramjetTab(t,sourceUrl,false);
         else if(expectedEngine==='ultraviolet'){
           installUltraviolet().then(ok=>{
+            if(t.transportWatchToken!==token || !state.tabs.includes(t) || !browserFrameStillAtSource(t,sourceUrl)) return;
             const proxied=ok ? proxyModeUrl('ultraviolet',sourceUrl,t.privacySessionId) : '';
             if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',sourceUrl);
           });
@@ -12202,8 +12226,10 @@
         t.frame.addEventListener('load',revealLoadedFrame,{once:true});
         setTimeout(revealLoadedFrame,2500);
         void waitForTabResultPaint(t,isSearchNavigation ? 12000 : 8000).then(painted=>{
-          if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-          if(isSearchNavigation && !painted) loadSelectedSearchFallback(t,url,'search results did not finish loading');
+          if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent || !browserFrameStillAtSource(t,url)) return;
+          // Result selectors are a readiness hint, not proof of a failed load.
+          // Preserve slow results, challenges and real documents already shown.
+          if(isSearchNavigation && !painted && inspectFrameHealth(t).blank) loadSelectedSearchFallback(t,url,'search results did not finish loading');
         });
         if(spotifyChromeOsCompatibility) startSpotifyChromeOsFrameCompatibility(t);
         else stopSpotifyChromeOsFrameCompatibility(t);

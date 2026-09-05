@@ -16,8 +16,8 @@
   --studio-accent-soft: rgba(174, 191, 232, .09);
   --studio-accent-line: rgba(174, 191, 232, .27);
   --studio-theme-hover-accent: var(--studio-accent);
-  --studio-theme-hover-soft: var(--studio-accent-soft);
-  --studio-theme-hover-line: var(--studio-accent-line);
+  --studio-theme-hover-soft: rgba(174, 191, 232, .055);
+  --studio-theme-hover-line: rgba(174, 191, 232, .18);
   --studio-button-text: #10131a;
   --studio-danger: #f19aaa;
   --studio-warning: #e7c47d;
@@ -34,26 +34,26 @@
 
 body.theme-ruby {
   --studio-theme-hover-accent: #e8a3b4;
-  --studio-theme-hover-soft: rgba(232, 163, 180, .09);
-  --studio-theme-hover-line: rgba(232, 163, 180, .27);
+  --studio-theme-hover-soft: rgba(232, 163, 180, .055);
+  --studio-theme-hover-line: rgba(232, 163, 180, .18);
 }
 
 body.theme-emerald {
   --studio-theme-hover-accent: #8ed2b4;
-  --studio-theme-hover-soft: rgba(142, 210, 180, .09);
-  --studio-theme-hover-line: rgba(142, 210, 180, .27);
+  --studio-theme-hover-soft: rgba(142, 210, 180, .055);
+  --studio-theme-hover-line: rgba(142, 210, 180, .18);
 }
 
 body.theme-sakura {
   --studio-theme-hover-accent: #e5acce;
-  --studio-theme-hover-soft: rgba(229, 172, 206, .09);
-  --studio-theme-hover-line: rgba(229, 172, 206, .27);
+  --studio-theme-hover-soft: rgba(229, 172, 206, .055);
+  --studio-theme-hover-line: rgba(229, 172, 206, .18);
 }
 
 body.theme-fresh {
   --studio-theme-hover-accent: #abc7a5;
-  --studio-theme-hover-soft: rgba(171, 199, 165, .09);
-  --studio-theme-hover-line: rgba(171, 199, 165, .27);
+  --studio-theme-hover-soft: rgba(171, 199, 165, .055);
+  --studio-theme-hover-line: rgba(171, 199, 165, .18);
 }
 
 * { box-sizing: border-box; }
@@ -496,10 +496,21 @@ button:disabled {
   font-weight: 700;
 }
 
-.button:hover:not(:disabled) { background: var(--studio-theme-hover-accent); filter: brightness(1.07); transform: translateY(-1px); }
+.button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--studio-theme-hover-accent) 18%, var(--studio-accent));
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+}
 .button:active:not(:disabled) { transform: translateY(0) scale(.98); }
 .button svg { width: 14px; height: 14px; }
 .button-run svg { fill: currentColor; stroke: none; }
+.button-run.is-running { cursor: progress; }
+.button-run.is-running svg { animation: studio-run-pulse 850ms ease-in-out infinite alternate; }
+
+@keyframes studio-run-pulse {
+  from { opacity: .35; transform: scale(.82); }
+  to { opacity: 1; transform: scale(1); }
+}
 
 .button-run kbd {
   padding: 3px 5px;

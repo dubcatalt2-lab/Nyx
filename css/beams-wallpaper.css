@@ -865,7 +865,7 @@ html body.browser-shell:is(body,#nyx-neutral-suggestions) .browser-search-sugges
   color:#e8ebf2!important;
   transition:background-color 110ms ease!important;
 }
-html body.browser-shell:is(body,#nyx-neutral-suggestions) :is(.browser-mode-url,.browser-search-suggestion)::selection{
+html body.browser-shell:is(body,#nyx-neutral-suggestions) ::selection{
   background:rgba(145,172,210,.34)!important;
   color:#f8fafc!important;
   -webkit-text-fill-color:#f8fafc!important;

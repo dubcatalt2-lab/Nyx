@@ -804,10 +804,20 @@ h1 {
 body.game-performance-active .player-stage { overflow: hidden; }
 
 body.game-performance-active .player iframe {
-  width: 80%;
-  height: 80%;
-  transform: scale(1.25);
   transform-origin: left top;
+  will-change: transform;
+}
+
+body.game-performance-active[data-game-performance-level="1"] .player iframe {
+  width: 86%;
+  height: 86%;
+  transform: scale(1.1628);
+}
+
+body.game-performance-active[data-game-performance-level="2"] .player iframe {
+  width: 72%;
+  height: 72%;
+  transform: scale(1.3889);
 }
 
 .player-loading {

@@ -13,6 +13,7 @@
     "test:account-controls": "node scripts/test-account-controls.mjs",
     "test:ai-workspace": "node scripts/test-ai-workspace.mjs",
     "test:code-studio": "node scripts/test-code-studio.mjs",
+    "test:code-runner": "node scripts/test-code-runner.mjs",
     "test:code-tutorials": "node scripts/test-code-tutorials.mjs",
     "test:games": "node scripts/test-games.mjs",
     "test:nyxify-covers": "node scripts/test-nyxify-playlist-covers.mjs",

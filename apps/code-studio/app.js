@@ -6,17 +6,17 @@
     html:{file:'index.html',help:'Build a small page and see it safely in the preview.',starter:'<!doctype html>\n<html>\n  <head>\n    <style>\n      body { font-family: system-ui; padding: 2rem; color: #172033; }\n      button { padding: .7rem 1rem; border: 0; border-radius: .6rem; background: #4f6ee8; color: white; }\n    </style>\n  </head>\n  <body>\n    <h1>Hello, Nyx</h1>\n    <p>Make this page your own.</p>\n    <button onclick="this.textContent = \'Nice work!\'">Try it</button>\n  </body>\n</html>',run:true},
     css:{file:'styles.css',help:'Write styles and preview them on a small sample card.',starter:'body {\n  margin: 0;\n  min-height: 100vh;\n  display: grid;\n  place-items: center;\n  background: #e8eefc;\n  font-family: system-ui;\n}\n\n.card {\n  max-width: 20rem;\n  padding: 2rem;\n  border-radius: 1.25rem;\n  background: white;\n  box-shadow: 0 18px 45px rgba(46, 67, 122, .18);\n}',run:true},
     javascript:{file:'app.js',help:'Run JavaScript in an isolated browser preview.',starter:'const message = document.querySelector("#message");\nconst button = document.querySelector("button");\n\nbutton.addEventListener("click", () => {\n  message.textContent = "You changed the page with JavaScript.";\n});',run:true},
-    typescript:{file:'app.ts',help:'TypeScript editor support with AI suggestions. Browser preview needs compiled JavaScript.',starter:'type Student = {\n  name: string;\n  projects: number;\n};\n\nconst student: Student = { name: "Nyx learner", projects: 1 };\nconsole.log(`${student.name} has ${student.projects} project.`);'},
-    python:{file:'main.py',help:'Python editor support with AI suggestions. Run it in your usual Python environment.',starter:'def greet(name: str) -> str:\n    return f"Hello, {name}!"\n\nprint(greet("Nyx learner"))'},
-    java:{file:'Main.java',help:'Java editor support with AI suggestions. Run it in a Java environment.',starter:'public class Main {\n  public static void main(String[] args) {\n    System.out.println("Hello, Nyx learner!");\n  }\n}'},
-    c:{file:'main.c',help:'C editor support with AI suggestions. Run it in a C compiler.',starter:'#include <stdio.h>\n\nint main(void) {\n  puts("Hello, Nyx learner!");\n  return 0;\n}'},
-    cpp:{file:'main.cpp',help:'C++ editor support with AI suggestions. Run it in a C++ compiler.',starter:'#include <iostream>\n\nint main() {\n  std::cout << "Hello, Nyx learner!\\n";\n  return 0;\n}'},
-    csharp:{file:'Program.cs',help:'C# editor support with AI suggestions. Run it in a .NET project.',starter:'Console.WriteLine("Hello, Nyx learner!");'},
-    go:{file:'main.go',help:'Go editor support with AI suggestions. Run it with the Go toolchain.',starter:'package main\n\nimport "fmt"\n\nfunc main() {\n  fmt.Println("Hello, Nyx learner!")\n}'},
-    rust:{file:'main.rs',help:'Rust editor support with AI suggestions. Run it with Cargo or rustc.',starter:'fn main() {\n    println!("Hello, Nyx learner!");\n}'},
-    php:{file:'index.php',help:'PHP editor support with AI suggestions. Run it with a PHP server.',starter:'<?php\n$name = "Nyx learner";\necho "Hello, {$name}!";'},
-    ruby:{file:'main.rb',help:'Ruby editor support with AI suggestions. Run it with Ruby.',starter:'def greet(name)\n  "Hello, #{name}!"\nend\n\nputs greet("Nyx learner")'},
-    sql:{file:'query.sql',help:'SQL editor support with AI suggestions. Connect it to the database you use.',starter:'SELECT student_name, completed_projects\nFROM learners\nWHERE completed_projects >= 1\nORDER BY completed_projects DESC;'},
+    typescript:{file:'app.ts',help:'Compile and run TypeScript in an isolated environment. Do not include secrets.',starter:'type Student = {\n  name: string;\n  projects: number;\n};\n\nconst student: Student = { name: "Nyx learner", projects: 1 };\nconsole.log(`${student.name} has ${student.projects} project.`);',runner:true},
+    python:{file:'main.py',help:'Run Python in an isolated environment. Do not include secrets.',starter:'def greet(name: str) -> str:\n    return f"Hello, {name}!"\n\nprint(greet("Nyx learner"))',runner:true},
+    java:{file:'Main.java',help:'Compile and run Java in an isolated environment. Do not include secrets.',starter:'public class Main {\n  public static void main(String[] args) {\n    System.out.println("Hello, Nyx learner!");\n  }\n}',runner:true},
+    c:{file:'main.c',help:'Compile and run C in an isolated environment. Do not include secrets.',starter:'#include <stdio.h>\n\nint main(void) {\n  puts("Hello, Nyx learner!");\n  return 0;\n}',runner:true},
+    cpp:{file:'main.cpp',help:'Compile and run C++ in an isolated environment. Do not include secrets.',starter:'#include <iostream>\n\nint main() {\n  std::cout << "Hello, Nyx learner!\\n";\n  return 0;\n}',runner:true},
+    csharp:{file:'Program.cs',help:'Compile and run C# in an isolated environment. Do not include secrets.',starter:'using System;\n\npublic class Program {\n  public static void Main() {\n    Console.WriteLine("Hello, Nyx learner!");\n  }\n}',runner:true},
+    go:{file:'main.go',help:'Compile and run Go in an isolated environment. Do not include secrets.',starter:'package main\n\nimport "fmt"\n\nfunc main() {\n  fmt.Println("Hello, Nyx learner!")\n}',runner:true},
+    rust:{file:'main.rs',help:'Compile and run Rust in an isolated environment. Do not include secrets.',starter:'fn main() {\n    println!("Hello, Nyx learner!");\n}',runner:true},
+    php:{file:'index.php',help:'Run PHP in an isolated environment. Do not include secrets.',starter:'<?php\n$name = "Nyx learner";\necho "Hello, {$name}!\\n";',runner:true},
+    ruby:{file:'main.rb',help:'Run Ruby in an isolated environment. Do not include secrets.',starter:'def greet(name)\n  "Hello, #{name}!"\nend\n\nputs greet("Nyx learner")',runner:true},
+    sql:{file:'query.sql',help:'Run SQLite statements in an isolated temporary database. Do not include secrets.',starter:'CREATE TABLE learners (\n  student_name TEXT,\n  completed_projects INTEGER\n);\n\nINSERT INTO learners VALUES ("Nyx learner", 2);\n\nSELECT student_name, completed_projects\nFROM learners\nORDER BY completed_projects DESC;',runner:true},
     json:{file:'data.json',help:'Validate JSON and inspect its formatted result.',starter:'{\n  "project": "Nyx Code Studio",\n  "languages": ["JavaScript", "Python", "Rust"],\n  "ready": true\n}',run:true},
     markdown:{file:'README.md',help:'Write Markdown and see a safe rendered preview.',starter:'# My project\n\nBuild something useful, then write down what it does.\n\n- Clear goal\n- Small next step\n- Test your work',run:true}
   };
@@ -36,6 +36,8 @@
   let previewRunId='';
   let runLogLines=[];
   let runtimeProblems=[];
+  let runSequence=0;
+  let running=false;
 
   function loadState(){
     try{
@@ -143,6 +145,8 @@
   }
   function languageLabel(){return state.language==='cpp'?'C++':state.language==='csharp'?'C#':state.language[0].toUpperCase()+state.language.slice(1)}
   function resetPreview(){
+    runSequence+=1;
+    setRunning(false);
     hasRun=false;
     lastOutput='';
     previewRunId='';
@@ -172,6 +176,17 @@
   function setPreviewNote(label,kind){
     refs.previewStateLabel.textContent=label;
     refs.previewState.className=`preview-state${kind?` is-${kind}`:''}`;
+  }
+  function setRunning(value){
+    running=Boolean(value);
+    refs.runButtons.forEach(button=>{
+      button.disabled=running;
+      button.classList.toggle('is-running',running);
+      const label=button.querySelector('[data-run-label]');
+      if(label)label.textContent=running?'Running...':'Run code';
+      else if(button.matches('[data-run-empty]'))button.textContent=running?'Running...':'Run code';
+    });
+    refs.refreshPreview.disabled=running||!hasRun;
   }
   function problemMessages(){
     const messages=runtimeProblems.map(problem=>({...problem}));
@@ -236,8 +251,11 @@
     if(hasRun){refs.output.hidden=false;refs.output.textContent=lastOutput;return}
     refs.previewEmpty.hidden=false;
   }
-  function run(){
+  async function run(){
+    if(running)return;
     const source=code();
+    const language=state.language;
+    const runId=++runSequence;
     hasRun=true;
     refs.refreshPreview.disabled=false;
     lastTerminal=`Run ${languages[state.language].file}\nCompleted ${new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}`;
@@ -267,9 +285,46 @@
       setResultMode('output');
       return;
     }
-    lastOutput=`${languages[state.language].file} is ready for AI review.\n\nBrowser preview is intentionally limited to HTML, CSS, JavaScript, JSON, and Markdown so Code Sandbox never runs server-side code on your behalf.`;
-    setPreviewNote('Editor mode','note');
-    setResultMode('output');
+    if(languages[state.language].runner){
+      lastOutput='Running your code...';
+      setPreviewNote('Running...','note');
+      setRunning(true);
+      setResultMode('output');
+      const controller=new AbortController();
+      const timeout=setTimeout(()=>controller.abort(),18_000);
+      try{
+        const response=await fetch('/api/code-studio/run',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({language,code:source}),signal:controller.signal});
+        const contentType=response.headers.get('content-type')||'';
+        const result=contentType.includes('application/json')?await response.json():{};
+        if(runId!==runSequence)return;
+        if(!response.ok)throw new Error(result.error||'The isolated code runner could not complete this request.');
+        const stdout=String(result.stdout||'').trimEnd();
+        const diagnostics=String(result.diagnostics||'').trimEnd();
+        lastOutput=[stdout,diagnostics].filter(Boolean).join('\n\n')||'Program finished with no output.';
+        const duration=Number.isFinite(Number(result.time))?` in ${Number(result.time).toFixed(3)}s`:'';
+        runLogLines.push({text:`${result.status||'Finished'}${duration}`,tone:result.ok?'prompt':'muted'});
+        if(result.ok){
+          setPreviewNote('Completed','live');
+        }else{
+          runtimeProblems=[{title:result.status||'Run failed',detail:diagnostics||stdout||'The program did not finish successfully.'}];
+          setPreviewNote('Needs a fix','note');
+        }
+      }catch(error){
+        if(runId!==runSequence)return;
+        const message=error?.name==='AbortError'?'The code run took too long. Try a smaller program.':String(error?.message||'The isolated code runner is temporarily unavailable.');
+        lastOutput=message;
+        runtimeProblems=[{title:'Could not run code',detail:message}];
+        runLogLines.push({text:message,tone:'muted'});
+        setPreviewNote('Run failed','note');
+      }finally{
+        clearTimeout(timeout);
+        if(runId===runSequence){
+          refs.problemCount.textContent=String(runtimeProblems.length);
+          setRunning(false);
+          setResultMode(document.querySelector('.result-tab.is-active')?.dataset.resultMode||'output');
+        }
+      }
+    }
   }
   const CUSTOM_THEME_FALLBACK='#6f9ee8';
   const customThemeProperties=['--studio-theme-hover-accent','--studio-theme-hover-soft','--studio-theme-hover-line'];
@@ -284,8 +339,8 @@
     const accent=shadeHex(base,38);
     const styles={
       '--studio-theme-hover-accent':accent,
-      '--studio-theme-hover-soft':themeRgba(accent,.1),
-      '--studio-theme-hover-line':themeRgba(accent,.3)
+      '--studio-theme-hover-soft':themeRgba(accent,.06),
+      '--studio-theme-hover-line':themeRgba(accent,.19)
     };
     Object.entries(styles).forEach(([property,value])=>document.documentElement.style.setProperty(property,value));
   }

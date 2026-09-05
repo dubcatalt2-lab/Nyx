@@ -28,6 +28,11 @@ const elements = {
   cloudFrame: document.getElementById('cloudGamingFrame')
 };
 
+const savedPerformancePreference = localStorage.getItem('nyx.gamePerformanceMode');
+const performancePreference = savedPerformancePreference === 'on'
+  ? 'balanced'
+  : (['auto', 'balanced', 'boost', 'off'].includes(savedPerformancePreference) ? savedPerformancePreference : 'auto');
+
 const state = {
   games: [],
   gamesByKey: new Map(),
@@ -38,11 +43,15 @@ const state = {
   sourceAttempt: 0,
   sourceTimer: 0,
   failedSources: new Set(),
-  performancePreference: ['auto', 'on', 'off'].includes(localStorage.getItem('nyx.gamePerformanceMode'))
-    ? localStorage.getItem('nyx.gamePerformanceMode')
-    : 'auto',
-  performanceAutoTriggered: false,
+  performancePreference,
+  performanceLevel: 0,
+  performanceReason: 'ready',
   performanceFrame: 0,
+  performanceObserver: null,
+  performanceLongTasks: 0,
+  performanceSamples: [],
+  performanceStableWindows: 0,
+  performanceLastTune: 0,
   page: 1,
   pageSize: 30,
   activeLibrary: 'all'
@@ -67,11 +76,58 @@ const luminCoverUrls = new Map();
 let luminSdkPromise = null;
 let luminReadyPromise = null;
 
+const CATALOG_FETCH_TIMEOUT = 8_000;
+const CATALOG_FETCH_ATTEMPTS = 2;
+const LUMIN_OPERATION_TIMEOUT = 9_000;
+
+function wait(milliseconds) {
+  return new Promise(resolve => setTimeout(resolve, milliseconds));
+}
+
+function withTimeout(promise, milliseconds, label) {
+  let timer = 0;
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`${label} timed out`)), milliseconds);
+    })
+  ]).finally(() => clearTimeout(timer));
+}
+
+async function fetchCatalogJson(url, label, options = {}) {
+  const attempts = Math.max(1, Number(options.attempts) || CATALOG_FETCH_ATTEMPTS);
+  const timeout = Math.max(1_000, Number(options.timeout) || CATALOG_FETCH_TIMEOUT);
+  let lastError = null;
+
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+    try {
+      const response = await fetch(url, {
+        cache: attempt === 0 ? 'no-store' : 'default',
+        signal: controller.signal
+      });
+      if (!response.ok) throw new Error(`${label} returned ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      lastError = error?.name === 'AbortError'
+        ? new Error(`${label} timed out`)
+        : error;
+    } finally {
+      clearTimeout(timer);
+    }
+    if (attempt + 1 < attempts) await wait(250 * (attempt + 1));
+  }
+
+  throw lastError || new Error(`${label} is unavailable`);
+}
+
 function loadLuminSdk(sdkUrl, sdkIntegrity = '') {
   if (window.Lumin?.init) return Promise.resolve(window.Lumin);
   if (luminSdkPromise) return luminSdkPromise;
   luminSdkPromise = new Promise((resolve, reject) => {
     const script = document.createElement('script');
+    let settled = false;
     script.src = sdkUrl;
     script.async = true;
     script.referrerPolicy = 'no-referrer';
@@ -79,10 +135,18 @@ function loadLuminSdk(sdkUrl, sdkIntegrity = '') {
       script.integrity = sdkIntegrity;
       script.crossOrigin = 'anonymous';
     }
+    const finish = (error, value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (error) reject(error);
+      else resolve(value);
+    };
+    const timer = setTimeout(() => finish(new Error('LuminSDK timed out')), LUMIN_OPERATION_TIMEOUT);
     script.addEventListener('load', () => window.Lumin?.init
-      ? resolve(window.Lumin)
-      : reject(new Error('LuminSDK loaded without exposing its API')), { once: true });
-    script.addEventListener('error', () => reject(new Error('LuminSDK could not be loaded')), { once: true });
+      ? finish(null, window.Lumin)
+      : finish(new Error('LuminSDK loaded without exposing its API')), { once: true });
+    script.addEventListener('error', () => finish(new Error('LuminSDK could not be loaded')), { once: true });
     document.head.append(script);
   }).catch(error => {
     luminSdkPromise = null;
@@ -98,7 +162,7 @@ async function ensureLuminReady(
   if (luminReadyPromise) return luminReadyPromise;
   luminReadyPromise = (async () => {
     const lumin = await loadLuminSdk(sdkUrl, sdkIntegrity);
-    await lumin.init({ headless: true });
+    await withTimeout(lumin.init({ headless: true }), LUMIN_OPERATION_TIMEOUT, 'LuminSDK setup');
     return lumin;
   })().catch(error => {
     luminReadyPromise = null;
@@ -442,7 +506,11 @@ async function adaptCatalog(catalog) {
     let page = 1;
     let pages = 1;
     do {
-      const result = await lumin.getGames({ page, limit });
+      const result = await withTimeout(
+        lumin.getGames({ page, limit }),
+        LUMIN_OPERATION_TIMEOUT,
+        `LuminSDK catalog page ${page}`
+      );
       const items = Array.isArray(result?.games) ? result.games : [];
       games.push(...items);
       pages = Math.max(1, Number(result?.pages) || 1);
@@ -474,15 +542,12 @@ async function adaptCatalog(catalog) {
     });
   }
 
-  const response = await fetch(catalog.url, { cache: 'no-store' });
-  if (!response.ok) throw new Error(`${catalog.id} returned ${response.status}`);
-  const items = rawItems(await response.json());
+  const items = rawItems(await fetchCatalogJson(catalog.url, catalog.id));
   let knownCovers = new Set();
 
   if (catalog.coversUrl) {
     try {
-      const coverResponse = await fetch(catalog.coversUrl, { cache: 'no-store' });
-      if (coverResponse.ok) knownCovers = new Set(await coverResponse.json());
+      knownCovers = new Set(await fetchCatalogJson(catalog.coversUrl, `${catalog.id} covers`, { attempts: 1 }));
     } catch {
       knownCovers = new Set();
     }
@@ -766,57 +831,114 @@ function clearSourceTimer() {
   state.sourceTimer = 0;
 }
 
-function lowPowerGameDevice() {
+function devicePerformanceLevel() {
   const cores = Number(navigator.hardwareConcurrency || 8);
   const memory = Number(navigator.deviceMemory || 8);
   const watchViewport = matchMedia('(max-width: 480px) and (max-height: 520px)').matches;
-  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  return watchViewport || cores <= 4 || memory <= 4 || reducedMotion;
+  if (watchViewport || cores <= 4 || memory <= 4) return 2;
+  if (cores <= 6 || memory <= 6) return 1;
+  return 0;
 }
 
-function gamePerformanceEnabled() {
-  if (!state.activeGame || state.performancePreference === 'off') return false;
-  return state.performancePreference === 'on' || lowPowerGameDevice() || state.performanceAutoTriggered;
+function selectedPerformanceLevel() {
+  if (!state.activeGame || state.performancePreference === 'off') return 0;
+  if (state.performancePreference === 'balanced') return 1;
+  if (state.performancePreference === 'boost') return 2;
+  return state.performanceLevel;
+}
+
+function setPerformanceLevel(level, reason = '') {
+  const nextLevel = Math.max(0, Math.min(2, Math.round(Number(level) || 0)));
+  if (nextLevel === state.performanceLevel && (!reason || reason === state.performanceReason)) return;
+  state.performanceLevel = nextLevel;
+  if (reason) state.performanceReason = reason;
+  syncGamePerformanceMode();
 }
 
 function syncGamePerformanceMode() {
-  const active = gamePerformanceEnabled();
+  const level = selectedPerformanceLevel();
+  const active = level > 0;
   document.body.classList.toggle('game-active', Boolean(state.activeGame));
   document.body.classList.toggle('game-performance-active', active);
+  document.body.dataset.gamePerformanceLevel = String(level);
   const label = state.performancePreference === 'auto'
-    ? (active ? 'Auto · On' : 'Auto')
-    : (state.performancePreference === 'on' ? 'On' : 'Off');
+    ? (level === 2 ? 'Auto · Boost' : level === 1 ? 'Auto · Balanced' : 'Auto')
+    : (state.performancePreference === 'balanced' ? 'Balanced' : state.performancePreference === 'boost' ? 'Boost' : 'Off');
   if (elements.performanceLabel) elements.performanceLabel.textContent = label;
   if (elements.performance) {
     elements.performance.dataset.mode = state.performancePreference;
+    elements.performance.dataset.level = String(level);
     elements.performance.classList.toggle('active', active);
     elements.performance.setAttribute('aria-pressed', String(active));
-    elements.performance.setAttribute('aria-label', `Game performance mode: ${label}`);
-    elements.performance.title = `Game performance mode: ${label}. Select to change Auto, On, or Off.`;
+    elements.performance.setAttribute('aria-label', `Game optimizer: ${label}`);
+    elements.performance.title = `Game optimizer: ${label}. Select to change Auto, Balanced, Boost, or Off.`;
   }
 }
 
 function stopGamePerformanceMonitor() {
   if (state.performanceFrame) cancelAnimationFrame(state.performanceFrame);
   state.performanceFrame = 0;
+  state.performanceObserver?.disconnect?.();
+  state.performanceObserver = null;
+  state.performanceSamples = [];
+  state.performanceLongTasks = 0;
+  state.performanceStableWindows = 0;
+  state.performanceLastTune = 0;
 }
 
 function startGamePerformanceMonitor() {
   stopGamePerformanceMonitor();
+  if (!state.activeGame) return;
+  if (state.performancePreference === 'auto') {
+    state.performanceLevel = devicePerformanceLevel();
+    state.performanceReason = state.performanceLevel ? 'device' : 'ready';
+    syncGamePerformanceMode();
+  }
+  try {
+    state.performanceObserver = new PerformanceObserver(entries => {
+      state.performanceLongTasks += entries.getEntries().filter(entry => entry.duration >= 50).length;
+    });
+    state.performanceObserver.observe({ type: 'longtask' });
+  } catch {
+    state.performanceObserver = null;
+  }
   let last = performance.now();
-  let slowScore = 0;
+  state.performanceLastTune = last;
   const monitor = now => {
     state.performanceFrame = 0;
     if (!state.activeGame) return;
     const delta = now - last;
     last = now;
-    if (state.performancePreference === 'auto' && !state.performanceAutoTriggered && !lowPowerGameDevice() && document.visibilityState === 'visible') {
-      if (delta > 72) slowScore += Math.min(3, delta / 72);
-      else slowScore = Math.max(0, slowScore - 0.3);
-      if (slowScore >= 7) {
-        state.performanceAutoTriggered = true;
-        syncGamePerformanceMode();
+    if (document.visibilityState === 'visible' && delta > 0 && delta < 250) {
+      state.performanceSamples.push(delta);
+      if (state.performanceSamples.length > 180) state.performanceSamples.shift();
+    }
+    if (state.performancePreference === 'auto' && document.visibilityState === 'visible' && now - state.performanceLastTune >= 2_000) {
+      const samples = state.performanceSamples.splice(0);
+      const average = samples.length ? samples.reduce((sum, sample) => sum + sample, 0) / samples.length : 0;
+      const slowFrames = samples.filter(sample => sample >= 38).length;
+      const deviceFloor = devicePerformanceLevel();
+      const overloaded = samples.length >= 12 && (average >= 25 || slowFrames >= 5 || state.performanceLongTasks >= 2);
+      const healthy = samples.length >= 40 && average > 0 && average < 19.5 && slowFrames === 0 && state.performanceLongTasks === 0;
+      if (elements.performance) {
+        elements.performance.dataset.averageFrame = average.toFixed(1);
+        elements.performance.dataset.slowFrames = String(slowFrames);
+        elements.performance.dataset.longTasks = String(state.performanceLongTasks);
       }
+      if (overloaded) {
+        state.performanceStableWindows = 0;
+        setPerformanceLevel(Math.max(deviceFloor, state.performanceLevel + 1), 'slowdown');
+      } else if (healthy && state.performanceLevel > deviceFloor) {
+        state.performanceStableWindows += 1;
+        if (state.performanceStableWindows >= 4) {
+          state.performanceStableWindows = 0;
+          setPerformanceLevel(state.performanceLevel - 1, 'recovered');
+        }
+      } else {
+        state.performanceStableWindows = 0;
+      }
+      state.performanceLongTasks = 0;
+      state.performanceLastTune = now;
     }
     state.performanceFrame = requestAnimationFrame(monitor);
   };
@@ -955,7 +1077,10 @@ async function openGame(game, updateHistory = true, preferredSource = '') {
   if (!game) return;
   state.lastFocused = document.activeElement;
   state.activeGame = game;
-  state.performanceAutoTriggered = false;
+  state.performanceLevel = state.performancePreference === 'auto'
+    ? devicePerformanceLevel()
+    : (state.performancePreference === 'balanced' ? 1 : state.performancePreference === 'boost' ? 2 : 0);
+  state.performanceReason = state.performancePreference === 'auto' && state.performanceLevel ? 'device' : 'ready';
   const sources = gameSources(game);
   const preferredAvailable = preferredSource
     ? sources.findIndex(source => source.source === preferredSource && !state.failedSources.has(source.url))
@@ -984,7 +1109,8 @@ function closeGame() {
   clearSourceTimer();
   state.sourceAttempt += 1;
   state.activeGame = null;
-  state.performanceAutoTriggered = false;
+  state.performanceLevel = 0;
+  state.performanceReason = 'ready';
   stopGamePerformanceMonitor();
   elements.frame.src = 'about:blank';
   elements.player.hidden = true;
@@ -995,25 +1121,48 @@ function closeGame() {
 }
 
 async function loadLibrary() {
-  const manifestResponse = await fetch('/assets/games/games.json', { cache: 'no-store' });
-  if (!manifestResponse.ok) throw new Error(`Catalog manifest returned ${manifestResponse.status}`);
-  state.manifest = await manifestResponse.json();
-
-  const results = await Promise.allSettled(state.manifest.catalogs.map(adaptCatalog));
-  const loaded = results.filter(result => result.status === 'fulfilled').map(result => result.value);
-  const failed = results.length - loaded.length;
-  state.games = mergeCatalogs(loaded);
-  state.gamesByKey = new Map(state.games.map(game => [game.key, game]));
-  renderLibraryTabs();
-  elements.progress.classList.add('done');
-  render();
-
-  if (failed) {
-    elements.count.textContent += ` · ${failed} catalog${failed === 1 ? '' : 's'} unavailable`;
-  }
-
+  state.manifest = await fetchCatalogJson('/assets/games/games.json', 'Catalog manifest', { attempts: 3 });
+  const catalogs = Array.isArray(state.manifest.catalogs) ? state.manifest.catalogs : [];
+  const loaded = new Map();
+  const failed = [];
+  let completed = 0;
+  let requestedOpened = false;
   const requested = new URLSearchParams(location.search).get('game');
-  if (requested && state.gamesByKey.has(requested)) openGame(state.gamesByKey.get(requested), false);
+
+  const publish = () => {
+    state.games = mergeCatalogs([...loaded.values()]);
+    state.gamesByKey = new Map(state.games.map(game => [game.key, game]));
+    if (state.activeLibrary !== 'all' && !libraryGameCount(state.activeLibrary)) state.activeLibrary = 'all';
+    renderLibraryTabs();
+    render();
+
+    const pending = catalogs.length - completed;
+    if (pending > 0) elements.count.textContent += ` · ${pending} ${pending === 1 ? 'library' : 'libraries'} loading`;
+    if (completed === catalogs.length && failed.length) elements.count.textContent += ` · ${failed.length} unavailable`;
+    elements.progress.classList.toggle('done', state.games.length > 0 || completed === catalogs.length);
+    elements.empty.hidden = state.games.length === 0 && completed < catalogs.length;
+
+    if (!requestedOpened && requested && state.gamesByKey.has(requested)) {
+      requestedOpened = true;
+      openGame(state.gamesByKey.get(requested), false);
+    }
+  };
+
+  if (!catalogs.length) throw new Error('Catalog manifest did not contain any libraries');
+
+  await Promise.all(catalogs.map(async catalog => {
+    try {
+      loaded.set(catalog.id, await adaptCatalog(catalog));
+    } catch (error) {
+      failed.push({ id: catalog.id, error });
+      console.warn(`Game library ${catalog.id} is unavailable`, error);
+    } finally {
+      completed += 1;
+      publish();
+    }
+  }));
+
+  if (!state.games.length) throw new Error('No game library was available');
 }
 
 elements.grid.addEventListener('click', event => {
@@ -1040,9 +1189,15 @@ elements.provider?.addEventListener('change', () => {
   launchGameSource(index, 'Switching provider...');
 });
 elements.performance?.addEventListener('click', () => {
-  const modes = ['auto', 'on', 'off'];
+  const modes = ['auto', 'balanced', 'boost', 'off'];
   state.performancePreference = modes[(modes.indexOf(state.performancePreference) + 1) % modes.length];
-  state.performanceAutoTriggered = false;
+  state.performanceLevel = state.performancePreference === 'auto'
+    ? devicePerformanceLevel()
+    : (state.performancePreference === 'balanced' ? 1 : state.performancePreference === 'boost' ? 2 : 0);
+  state.performanceReason = state.performancePreference === 'auto' && state.performanceLevel ? 'device' : 'manual';
+  state.performanceSamples = [];
+  state.performanceLongTasks = 0;
+  state.performanceStableWindows = 0;
   localStorage.setItem('nyx.gamePerformanceMode', state.performancePreference);
   syncGamePerformanceMode();
 });

@@ -12,6 +12,7 @@ try {
   page.setDefaultTimeout(10_000);
   const errors = [];
   const requests = [];
+  const codeRuns = [];
   page.on("pageerror", error => errors.push(error.message));
   await page.addInitScript(() => { try { localStorage.setItem("nyx.theme", "ruby"); } catch {} });
   await page.route("**/api/founder-profile/auth-config", route => route.fulfill({ contentType: "application/json", body: "{}" }));
@@ -32,15 +33,28 @@ try {
     }
     await route.fulfill({ contentType: "application/json", body: JSON.stringify({ choices: [{ message: { content: "Start by giving the button an accessible label and checking the click handler." } }] }) });
   });
+  await page.route("**/api/code-studio/run", async route => {
+    const payload = route.request().postDataJSON();
+    codeRuns.push(payload);
+    const failed = String(payload.code || "").includes("BROKEN_RUN_TEST");
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(failed
+        ? { ok: false, status: "Compilation Error", stdout: "", diagnostics: "Test compiler error", time: 0.01 }
+        : { ok: true, status: "Accepted", stdout: `${payload.language} starter ran\n`, diagnostics: "", time: 0.01 })
+    });
+  });
 
   await page.goto(`${baseUrl}/apps/code-studio/`, { waitUntil: "domcontentloaded" });
   await page.locator("[data-code-input]").waitFor();
   assert(await page.locator("body").evaluate(body => body.classList.contains("theme-ruby")), "Code Sandbox did not inherit the selected Nyx theme");
   const rubyTheme = await page.locator("body").evaluate(body => ({
     background: getComputedStyle(body).backgroundColor,
-    hoverAccent: getComputedStyle(body).getPropertyValue("--studio-theme-hover-accent").trim()
+    hoverAccent: getComputedStyle(body).getPropertyValue("--studio-theme-hover-accent").trim(),
+    hoverSoft: getComputedStyle(body).getPropertyValue("--studio-theme-hover-soft").trim(),
+    hoverLine: getComputedStyle(body).getPropertyValue("--studio-theme-hover-line").trim()
   }));
-  assert(rubyTheme.background === "rgb(7, 9, 13)" && rubyTheme.hoverAccent === "#e8a3b4", `Ruby should change only the neutral workspace hover color (${JSON.stringify(rubyTheme)})`);
+  assert(rubyTheme.background === "rgb(7, 9, 13)" && rubyTheme.hoverAccent === "#e8a3b4" && rubyTheme.hoverSoft === "rgba(232, 163, 180, .055)" && rubyTheme.hoverLine === "rgba(232, 163, 180, .18)", `Ruby should use only a faint hover tint over the neutral workspace (${JSON.stringify(rubyTheme)})`);
   await page.evaluate(() => {
     localStorage.setItem("nyx.customThemeColor", "#ff8800");
     localStorage.setItem("nyx.theme", "custom");
@@ -67,7 +81,7 @@ try {
   await quickPrompt.hover();
   await page.waitForTimeout(200);
   const quickPromptHovered = await quickPrompt.evaluate(button => getComputedStyle(button).backgroundColor);
-  assert(quickPromptAtRest !== quickPromptHovered && quickPromptHovered === "rgba(118, 223, 181, 0.1)", `Custom hover feedback did not use the chosen color (${quickPromptAtRest} -> ${quickPromptHovered})`);
+  assert(quickPromptAtRest !== quickPromptHovered && quickPromptHovered === "rgba(118, 223, 181, 0.06)", `Custom hover feedback did not use a faint tone of the chosen color (${quickPromptAtRest} -> ${quickPromptHovered})`);
   await page.evaluate(() => {
     localStorage.setItem("nyx.theme", "ruby");
     dispatchEvent(new StorageEvent("storage", { key: "nyx.theme" }));
@@ -128,9 +142,36 @@ try {
   await page.locator("[data-run]").click();
   await page.locator('[data-result-mode="terminal"]').click();
   await page.getByText("log: Nyx console ready").waitFor();
-  await page.locator("[data-language]").selectOption("python");
+
+  await page.locator("[data-language]").selectOption("css");
   await page.locator("[data-run]").click();
-  assert((await page.locator("[data-output]").innerText()).includes("intentionally limited"), "Non-web language did not stay in editor-only mode");
+  await page.frameLocator("[data-preview]").getByText("Styled card").waitFor();
+  await page.locator("[data-language]").selectOption("json");
+  await page.locator("[data-run]").click();
+  assert((await page.locator("[data-output]").innerText()).includes('"ready": true'), "JSON did not render its validated output");
+  await page.locator("[data-language]").selectOption("markdown");
+  await page.locator("[data-run]").click();
+  await page.frameLocator("[data-preview]").getByText("My project").waitFor();
+
+  const runnerLanguages = ["typescript", "python", "java", "c", "cpp", "csharp", "go", "rust", "php", "ruby", "sql"];
+  assert(await page.locator("[data-language] option").count() === 16, "Code Sandbox does not expose all 16 supported languages");
+  for (const language of runnerLanguages) {
+    await page.locator("[data-language]").selectOption(language);
+    await page.locator("[data-run]").click();
+    await page.getByText(`${language} starter ran`, { exact: true }).waitFor();
+    assert(await page.locator("[data-run]").isEnabled(), `${language} left Run code disabled`);
+  }
+  assert(JSON.stringify(codeRuns.map(item => item.language)) === JSON.stringify(runnerLanguages), `Not every compiled language reached the runner (${JSON.stringify(codeRuns.map(item => item.language))})`);
+
+  await page.locator("[data-language]").selectOption("python");
+  await page.locator("[data-code-input]").fill("BROKEN_RUN_TEST");
+  await page.locator("[data-run]").click();
+  await page.getByText("Test compiler error", { exact: true }).waitFor();
+  await page.locator('[data-result-mode="problems"]').click();
+  assert((await page.locator("[data-output]").innerText()).includes("Compilation Error"), "Compiler failures did not reach Problems");
+  await page.locator("[data-load-starter]").click();
+  await page.locator("[data-run]").click();
+  await page.getByText("python starter ran", { exact: true }).waitFor();
   await page.locator('[data-result-mode="terminal"]').click();
   assert((await page.locator("[data-output]").innerText()).includes("main.py"), "Terminal panel did not report the last run");
   await page.locator('[data-result-mode="problems"]').click();
@@ -192,6 +233,36 @@ try {
     dispatchEvent(new StorageEvent("storage", { key: "nyx.theme" }));
     document.querySelector("#browserSearchSuggestions")?.remove();
   });
+  const shellSelections = await shellPage.evaluate(async () => {
+    const themes = ["default", "midnight", "ruby", "emerald", "sakura", "fresh", "custom"];
+    const selectors = [
+      "[data-browser-shell-url]",
+      ".browser-window.browser-home-page [data-browser-blank-input]",
+      ".nyx-minimal-utility-links a",
+      "[data-nyx-visual-dock] button"
+    ];
+    const results = {};
+    for (const theme of themes) {
+      localStorage.setItem("nyx.theme", theme);
+      if (theme === "custom") localStorage.setItem("nyx.customThemeColor", "#ff0000");
+      dispatchEvent(new StorageEvent("storage", { key: "nyx.theme" }));
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      results[theme] = selectors.map(selector => {
+        const element = document.querySelector(selector);
+        if (!element) return { selector, missing: true };
+        const style = getComputedStyle(element, "::selection");
+        return { selector, background: style.backgroundColor, color: style.color, fill: style.webkitTextFillColor };
+      });
+    }
+    localStorage.setItem("nyx.theme", "ruby");
+    dispatchEvent(new StorageEvent("storage", { key: "nyx.theme" }));
+    return results;
+  });
+  for (const [theme, selections] of Object.entries(shellSelections)) {
+    for (const selection of selections) {
+      assert(!selection.missing && selection.background === "rgba(145, 172, 210, 0.34)" && selection.color === "rgb(248, 250, 252)" && selection.fill === "rgb(248, 250, 252)", `${theme} recolored Ctrl+A selection for ${selection.selector} (${JSON.stringify(selection)})`);
+    }
+  }
   const discordLink = shellPage.locator(".nyx-discord-link");
   await discordLink.waitFor();
   assert((await discordLink.getAttribute("href")) === "https://discord.gg/cAdjYAJs3u", "Homepage Discord link has the wrong invite");
@@ -222,6 +293,14 @@ try {
   await customHomePage.locator("#nyxStudyHubStartup").waitFor({ state: "hidden" });
   await customHomePage.locator('#nyxBeamsBg[data-light-color="#76dfb5"]').waitFor();
   assert((await customHomePage.locator("#nyxBeamsBg").getAttribute("data-light-color")) !== "#a98cff", "Custom theme remained locked to the Violet Beams color");
+  const homeSelection = await customHomePage.locator(".browser-window.browser-home-page [data-browser-blank-input]").evaluate(input => {
+    const style = getComputedStyle(input, "::selection");
+    input.focus();
+    input.value = "Search DuckDuckGo or type a URL";
+    input.select();
+    return { background: style.backgroundColor, color: style.color, fill: style.webkitTextFillColor };
+  });
+  assert(homeSelection.background === "rgba(145, 172, 210, 0.34)" && homeSelection.color === "rgb(248, 250, 252)" && homeSelection.fill === "rgb(248, 250, 252)", `Custom theme recolored the homepage Ctrl+A selection (${JSON.stringify(homeSelection)})`);
   await customHomePage.close();
   if (process.env.NYX_TEST_SCREENSHOT) {
     await shellPage.waitForTimeout(4000);
@@ -279,7 +358,7 @@ try {
   hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   assert(!hasOverflow, "Code Studio has horizontal overflow on mobile");
   assert(errors.length === 0, `Browser errors: ${errors.join(" | ")}`);
-  console.log("Code Sandbox test: sandbox preview, AI suggestion request, editor mode, and mobile layout passed");
+  console.log("Code Sandbox test: all 16 language paths, AI suggestions, preview, and mobile layout passed");
 } finally {
   await browser.close();
 }

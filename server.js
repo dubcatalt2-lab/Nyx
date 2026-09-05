@@ -278,6 +278,27 @@ const nyxApiKeysAppMigrationField = "nyxApiKeysAppInitialized";
 const nyxApiKeysGlobalApp = Object.freeze({ id: "nyx-api-keys", icon: "api-keys", name: "Nyx API Keys", url: "/apps/api-keys/" });
 const nyxCodeStudioAppMigrationField = "nyxCodeStudioAppInitialized";
 const nyxCodeStudioGlobalApp = Object.freeze({ id: "code-studio", icon: "code-studio", name: "Code Sandbox", url: "/apps/code-studio/" });
+const nyxCodeRunnerUrl = String(process.env.NYX_CODE_RUNNER_URL || "https://ce.judge0.com/submissions?base64_encoded=false&wait=true").trim();
+const nyxCodeRunnerLanguages = Object.freeze({
+  typescript: 101,
+  python: 109,
+  java: 91,
+  c: 103,
+  cpp: 105,
+  csharp: 51,
+  go: 106,
+  rust: 108,
+  php: 98,
+  ruby: 72,
+  sql: 82
+});
+const nyxCodeRunnerSourceLimit = 24_000;
+const nyxCodeRunnerOutputLimit = 32_000;
+const nyxCodeRunnerWindowMs = 60_000;
+const nyxCodeRunnerMaxAttempts = 30;
+const nyxCodeRunnerAttempts = new Map();
+let nyxCodeRunnerActiveRequests = 0;
+const nyxCodeRunnerMaxActiveRequests = 3;
 const nyxCodeTutorialsGlobalApp = Object.freeze({ id: "code-tutorials", icon: "code-tutorials", name: "Nyx Code Tutorials", url: "/apps/code-tutorials/" });
 const nyxCodeToolsCatalogV2MigrationField = "nyxCodeToolsCatalogV2";
 const nyxCodeTutorialsHiddenMigrationField = "nyxCodeTutorialsHidden";
@@ -6472,6 +6493,113 @@ function sameOriginRequest(req) {
     return false;
   }
 }
+
+function nyxCodeRunnerText(value) {
+  return String(value || "").replace(/\u0000/g, "").slice(0, nyxCodeRunnerOutputLimit);
+}
+
+function nyxCodeRunnerRateAllowed(req) {
+  const now = Date.now();
+  const cutoff = now - nyxCodeRunnerWindowMs;
+  const client = nyxClientIp(req) || "unknown";
+  const attempts = (nyxCodeRunnerAttempts.get(client) || []).filter(timestamp => timestamp > cutoff);
+  attempts.push(now);
+  nyxCodeRunnerAttempts.set(client, attempts);
+  if (nyxCodeRunnerAttempts.size > 2_000) {
+    for (const [key, timestamps] of nyxCodeRunnerAttempts) {
+      if (!timestamps.some(timestamp => timestamp > cutoff)) nyxCodeRunnerAttempts.delete(key);
+    }
+  }
+  return attempts.length <= nyxCodeRunnerMaxAttempts;
+}
+
+app.post("/api/code-studio/run", async (req, res) => {
+  res.setHeader("cache-control", "private, no-store");
+  if (!sameOriginRequest(req)) {
+    res.status(403).json({ error: "Cross-origin code runs are not allowed." });
+    return;
+  }
+  const language = String(req.body?.language || "").trim().toLowerCase();
+  const source = typeof req.body?.code === "string" ? req.body.code : "";
+  const languageId = nyxCodeRunnerLanguages[language];
+  if (!languageId) {
+    res.status(400).json({ error: "That language is not available in the isolated runner." });
+    return;
+  }
+  if (!source.trim()) {
+    res.status(400).json({ error: "Add some code before running this file." });
+    return;
+  }
+  if (source.length > nyxCodeRunnerSourceLimit) {
+    res.status(413).json({ error: `Code runs are limited to ${nyxCodeRunnerSourceLimit.toLocaleString()} characters.` });
+    return;
+  }
+  if (!nyxCodeRunnerRateAllowed(req)) {
+    res.status(429).json({ error: "Too many code runs. Wait a moment and try again." });
+    return;
+  }
+  if (nyxCodeRunnerActiveRequests >= nyxCodeRunnerMaxActiveRequests) {
+    res.status(503).json({ error: "The code runner is busy. Try again in a moment." });
+    return;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15_000);
+  nyxCodeRunnerActiveRequests += 1;
+  try {
+    const response = await fetch(nyxCodeRunnerUrl, {
+      method: "POST",
+      headers: { accept: "application/json", "content-type": "application/json" },
+      body: JSON.stringify({
+        source_code: source,
+        language_id: languageId,
+        cpu_time_limit: 3,
+        wall_time_limit: 6,
+        memory_limit: 128_000
+      }),
+      signal: controller.signal
+    });
+    const raw = await response.text();
+    let result;
+    try {
+      result = JSON.parse(raw);
+    } catch {
+      result = null;
+    }
+    if (!response.ok || !result || typeof result !== "object") {
+      res.status(response.status === 429 ? 429 : 502).json({
+        error: response.status === 429
+          ? "The code runner is receiving too many requests. Try again shortly."
+          : "The isolated code runner could not complete this request."
+      });
+      return;
+    }
+    const statusId = Number(result.status?.id || 0);
+    const status = nyxCodeRunnerText(result.status?.description || "Finished").slice(0, 120);
+    const diagnostics = [result.compile_output, result.stderr, result.message]
+      .map(nyxCodeRunnerText)
+      .filter(Boolean)
+      .join("\n")
+      .slice(0, nyxCodeRunnerOutputLimit);
+    res.json({
+      ok: statusId === 3,
+      status,
+      stdout: nyxCodeRunnerText(result.stdout),
+      diagnostics,
+      time: Number.isFinite(Number(result.time)) ? Number(result.time) : null,
+      memory: Number.isFinite(Number(result.memory)) ? Number(result.memory) : null
+    });
+  } catch (error) {
+    res.status(error?.name === "AbortError" ? 504 : 502).json({
+      error: error?.name === "AbortError"
+        ? "The code run took too long. Try a smaller program."
+        : "The isolated code runner is temporarily unavailable."
+    });
+  } finally {
+    clearTimeout(timeout);
+    nyxCodeRunnerActiveRequests = Math.max(0, nyxCodeRunnerActiveRequests - 1);
+  }
+});
 
 function nyxifyCacheSet(cache, key, value, ttlMs, limit = 200) {
   cache.delete(key);

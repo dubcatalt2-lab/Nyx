@@ -94,10 +94,18 @@
           </div>
           <div class="details-panel form-panel">
             <div class="details-grid" data-details-grid>
+              <label class="generation-method-field">
+                <span>Link provider</span>
+                <select name="provider" data-provider>
+                  <option value="jsdelivr">jsDelivr files</option>
+                  <option value="bunny" disabled>Bunny.net pull zones (checking setup…)</option>
+                </select>
+                <small data-provider-hint>Publish SVG files through GitHub and serve them on jsDelivr.</small>
+              </label>
               <label>
                 <span>Link label</span>
                 <input name="label" data-label-input maxlength="40" autocomplete="off" placeholder="Example: study-room">
-                <small>Up to 40 characters are used to personalize the generated JSDelivr filenames.</small>
+                <small>Up to 40 characters personalize your filenames or pull zone names.</small>
               </label>
               <label>
                 <span>Content filter report</span>
@@ -199,6 +207,6 @@
       <p class="bulk-variants-note">Up to 100,000 links per saved job. Sign in above first. Larger requests publish in small batches and wait through account cooldowns; keep this tab open to continue. Closing it saves progress for Resume on this device. Repository capacity may stop a job before its target; completed links stay downloadable. Large jobs do not run an automatic filter scan.</p>
     </section>
   </main>
-  <script src="./app.js?v=20260905-resumable-jobs-v8"></script>
+  <script src="./app.js?v=20260905-bunny-provider-v9"></script>
 </body>
 </html>

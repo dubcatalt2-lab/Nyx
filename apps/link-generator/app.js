@@ -29,6 +29,20 @@
   let authSession=readStoredSession();
   const cdnHosts=new Set(['cdn.jsdelivr.net','gcore.jsdelivr.net','fastly.jsdelivr.net']);
   const cdnSelect=$('[data-cdn-host]');
+  const providerSelect=$('[data-provider]');
+  let resultProvider='jsdelivr';
+  function selectedProvider(){return providerSelect.value==='bunny'?'bunny':'jsdelivr'}
+  function updateProvider(){
+    const bunny=selectedProvider()==='bunny';
+    if(bunny)refs.generationMethod.value='managed';
+    refs.generationMethod.closest('label').hidden=bunny;
+    cdnSelect.closest('label').hidden=bunny;
+    $('[data-provider-hint]').textContent=bunny
+      ? 'Create separate b-cdn.net hostnames pointing to Nyx. Bunny bandwidth charges and account limits apply; these still share the Nyx backend.'
+      : 'Publish SVG files through GitHub and serve them on jsDelivr.';
+    refs.confirm.checked=false;
+    updateGenerationMethod();
+  }
   function selectedCdn(){return cdnHosts.has(cdnSelect.value)?cdnSelect.value:'cdn.jsdelivr.net'}
   function withCdnHost(value,host){
     const url=new URL(value);
@@ -218,7 +232,9 @@
     const p2p=refs.generationMethod.value==='p2p';
     refs.reviewAmountRow.hidden=false;
     refs.reviewAmount.textContent=`${amount} link${amount===1?'':'s'}`;
-    refs.confirmText.textContent=p2p
+    refs.confirmText.textContent=selectedProvider()==='bunny'
+      ? `I understand this creates ${amount} Bunny pull zone${amount===1?'':'s'} on the configured Bunny account, with its bandwidth charges and limits.`
+      : p2p
       ? `I understand P2P bulk-publishes ${amount===1?'one Nyx SVG':`${amount} Nyx SVGs`} through Nyx's protected server publisher.`
       : `I understand this publishes ${amount===1?'one Nyx SVG':`${amount} Nyx SVGs`} through a GitHub repository.`;
     if(!refs.button.disabled) refs.button.querySelector('span').textContent=`Generate ${amount===1?'link':`${amount} links`}`;
@@ -251,7 +267,7 @@
     refs.wizardProgress.style.width=`${(index/(refs.wizardSteps.length-1))*100}%`;
   }
   function updateReview(){
-    $('[data-review-cdn]').textContent=selectedCdn();
+    $('[data-review-cdn]').textContent=selectedProvider()==='bunny'?'Bunny.net · b-cdn.net':selectedCdn();
     refs.reviewAccess.textContent=accessMode==='account' ? (accountHasPremium() ? `${authSession?.email || 'Account'} · Premium` : (authSession?.email || 'Free account')) : 'Premium access code';
     refs.reviewLabel.textContent=refs.label.value.trim() || 'Automatic';
     refs.reviewFilter.textContent=refs.filter.options[refs.filter.selectedIndex]?.textContent || 'Not selected';
@@ -446,6 +462,9 @@
   async function loadStatus(){
     try{
       const status=await readJson(await fetch('/api/link-generator/status',{headers:{Accept:'application/json'},cache:'no-store'}));
+      const bunnyOption=providerSelect.querySelector('[value="bunny"]');
+      bunnyOption.disabled=!status.bunnyAvailable;
+      bunnyOption.textContent=status.bunnyAvailable?'Bunny.net pull zones':'Bunny.net pull zones (server key not configured)';
       regularHourlyLimit=Math.max(1,Math.min(100,Number.parseInt(status.freeHourlyLimit,10) || 100));freeWindowMinutes=Math.max(1,Number.parseInt(status.freeWindowMinutes,10) || 60);premiumBatchLimit=Math.max(regularHourlyLimit,Math.min(10000,Number.parseInt(status.premiumBatchLimit,10) || regularHourlyLimit));p2pPremiumBatchLimit=Math.max(premiumBatchLimit,Math.min(10000,Number.parseInt(status.p2pPremiumBatchLimit,10) || 1000));premiumImmediateCooldownAt=Math.max(1,Number.parseInt(status.premiumImmediateCooldownAt,10) || 5);premiumAccumulatedLimit=Math.max(premiumImmediateCooldownAt,Number.parseInt(status.premiumAccumulatedLimit,10) || 30);premiumCooldownMinutes=Math.max(1,Number.parseInt(status.premiumCooldownMinutes,10) || 10);renderAccount();setPremiumLayout();
       refs.origin.textContent=status.origin || 'Not configured';setStatus(status.available,status.available ? 'Ready' : 'Setup required');
       if(!status.available) showNotice('The Nyx administrator still needs to finish the Link Generator server settings.','error');
@@ -470,6 +489,8 @@
       return;
     }
     refs.label.value=$('[data-bulk-label]').value;
+    providerSelect.value='jsdelivr';
+    updateProvider();
     refs.generationMethod.value='managed';
     updateGenerationMethod();
     refs.amount.value=String(Math.min(amountLimit(),Number($('[data-bulk-amount]').value)));
@@ -484,12 +505,13 @@
     if(!refs.resultUrl.value)return;
     const url=URL.createObjectURL(new Blob([refs.resultUrl.value+'\n'],{type:'text/plain;charset=utf-8'}));
     const link=document.createElement('a');
-    link.href=url;link.download='nyx-jsdelivr-links.txt';
+    link.href=url;link.download=`nyx-${resultProvider}-links.txt`;
     document.body.appendChild(link);link.click();link.remove();
     setTimeout(()=>URL.revokeObjectURL(url),1000);
   });
   refs.amount.addEventListener('input',updateAmountCopy);
   refs.generationMethod.addEventListener('change',updateGenerationMethod);
+  providerSelect.addEventListener('change',updateProvider);
   refs.wizardNext.forEach(button=>button.addEventListener('click',handleWizardNext));
   refs.wizardBack.forEach(button=>button.addEventListener('click',()=>{showNotice('');setWizardStep(wizardStep-1,'back')}));
   refs.wizardRestart.addEventListener('click',()=>{
@@ -508,7 +530,8 @@
     try{
       const headers={Accept:'application/json','Content-Type':'application/json'};
       const method=refs.generationMethod.value==='p2p'?'p2p':'managed';
-      const body={label:refs.label.value,provider:'jsdelivr',method};
+      const provider=selectedProvider();
+      const body={label:refs.label.value,provider,method:provider==='bunny'?'managed':method};
       if(accessMode==='account'){
         const session=await currentVerifiedSession();
         headers.Authorization=`Bearer ${session.idToken}`;
@@ -528,7 +551,8 @@
       }
       if(!links.length && result.url) links.push(withCdnHost(result.url,selectedCdn()));
       if(!links.length) throw new Error('The link provider did not return any generated links.');
-      const isJsdelivr=result.provider==='jsdelivr';
+      resultProvider=provider;
+      const isJsdelivr=provider==='jsdelivr';
       refs.resultUrl.value=links.join('\n');refs.resultCount.textContent=`${links.length} link${links.length===1?'':'s'}`;refs.resultTitle.textContent=links.length===1?'Your Nyx link is ready':'Your Nyx links are ready';refs.resultSubtitle.textContent=result.partial?`${links.length} of ${result.requested} requested links were created.`:`${links.length===1?'The link was':'All links were'} created successfully.`;refs.open.href=links[0];setOpenReady(isJsdelivr);refs.resultCard.hidden=false;refs.accessCode.value='';setWizardStep(3);requestAnimationFrame(()=>refs.resultCard.scrollIntoView({behavior:'smooth',block:'nearest'}));
       const [,cdnReady]=await Promise.all([checkGeneratedLinks(links,selectedFilter,selectedFilterName),isJsdelivr?Promise.resolve(true):waitForCdnReadiness(links[0])]);
       const cooldown=result.premiumCooldown;

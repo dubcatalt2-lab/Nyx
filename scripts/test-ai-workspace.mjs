@@ -124,11 +124,36 @@ z = \frac{9}{3}`;
   await page.locator("#stopScreenShare").click();
   assert(await page.locator("#screenPreview").isHidden(), "Stop did not end and hide screen sharing");
 
+  const imageFile = { name: "attachment-test.png", mimeType: "image/png", buffer: Buffer.from(await page.evaluate(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 32; canvas.height = 32;
+    canvas.getContext("2d").fillRect(0, 0, 32, 32);
+    return canvas.toDataURL("image/png").split(",")[1];
+  }), "base64") };
+  for (const keyboard of [false, true]) {
+    const picker = page.waitForEvent("filechooser");
+    if (keyboard) { await page.locator("#attachImage").focus(); await page.keyboard.press("Enter"); }
+    else await page.locator("#attachImage").click();
+    await (await picker).setFiles(imageFile);
+    await page.locator("#attachmentPreview").waitFor({ state: "visible" });
+    assert(await page.locator("#attachmentThumbnail").evaluate(img => img.complete && img.naturalWidth === 32), "Selected image preview failed");
+    if (!keyboard) {
+      await page.locator("#removeAttachment").click();
+      assert(await page.locator("#attachmentPreview").isHidden(), "Remove image did not clear the attachment");
+    }
+  }
+  await page.locator("#input").fill("Describe this image.");
+  await page.locator("#send").click();
+  await page.waitForFunction(() => !document.querySelector("#send").disabled);
+  assert(chatRequests.length === 2 && chatRequests[1].body.image?.dataUrl.startsWith("data:image/png;base64,"), "Image bytes were not sent to AI");
+  assert(chatRequests[1].body.image.width === 32 && chatRequests[1].body.image.screenCapture === false, "Image metadata was not preserved");
+  assert(await page.locator("#attachmentPreview").isHidden(), "Sent attachment was not cleared");
+
   await page.setViewportSize({ width: 390, height: 700 });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   assert(!overflow, "AI workspace has horizontal overflow at mobile width");
   assert(pageErrors.length === 0, `Browser errors: ${pageErrors.join(" | ")}`);
-  console.log("AI workspace test: provider profiles, screen capture, multiline KaTeX formatting, stop control, and mobile layout passed");
+  console.log("AI workspace test: provider profiles, image picker/preview/removal/send, keyboard activation, screen capture, multiline KaTeX formatting, stop control, and mobile layout passed");
 } finally {
   await browser.close();
 }

@@ -2,6 +2,15 @@
 
 Last repository review: 2026-09-05
 
+## Release preparation: Link provider and AI attachment controls
+
+- AI attachment icon follow-up: replaced the overlapping plus/paperclip inline SVG in `ai.html` with a hollow image-plus mark. Existing file-picker/upload logic was verified working, not changed. Chromium regression now covers pointer/keyboard picker activation, preview, removal, reselection, and image payload submission; mobile picker and existing screen-share checks passed. Only inline HTML artwork changed, so no referenced JS/CSS asset cache version changed. Not deployed.
+
+- Link Generator details now offers jsDelivr files or Bunny.net pull zones. Bunny is enabled only when `/api/link-generator/status` reports `bunnyAvailable`; the account key stays server-side.
+- Bunny uses the existing managed `/api/link-generator` backend, quota/auth checks, and CDN readiness polling. GitHub method/hostname controls are hidden for Bunny. Confirmation notes Bunny bandwidth charges and shared Nyx backend.
+- Saved bulk publishing remains jsDelivr-only. Small bulk requests explicitly reset the wizard to jsDelivr. Downloads use the selected result provider in their filename.
+- Generator app cache: `20260905-bunny-provider-v9`. No real pull zones created during verification. User authorized push/deploy of these changes; source browser regressions, production build, deployment manifest, branding, and diff checks passed before release.
+
 Workspace: repository root (`<repo-root>`)
 
 This file is the durable handoff for future Nyx chats. Read it with the repository and Git state. Never put API keys, passwords, private keys, access codes, tokens, or other secrets here.

@@ -537,10 +537,10 @@
   html[data-nyx-home-design="redesigned"] body.browser-shell .nyx-visual-dock-system time{margin-top:4px!important}
   html[data-nyx-home-design="redesigned"][data-nyx-sidebar-width="expanded"] body.browser-shell .nyx-visual-dock-system{
     display:grid!important;
-    height:42px!important;
-    min-height:42px!important;
-    flex:0 0 42px!important;
-    grid-template-columns:1fr auto 1fr!important;
+    height:58px!important;
+    min-height:58px!important;
+    flex:0 0 58px!important;
+    grid-template-columns:1fr auto!important;
     align-items:center!important;
     gap:10px!important;
     width:calc(100% - 16px)!important;
@@ -557,15 +557,12 @@
     justify-self:start;
   }
   html[data-nyx-home-design="redesigned"][data-nyx-sidebar-width="expanded"] body.browser-shell .nyx-visual-dock-system>[data-nyx-dock-date]{
-    justify-self:end;
+    grid-column:1/-1;
+    justify-self:center;
     letter-spacing:.04em!important;
   }
   html[data-nyx-home-design="redesigned"]:not([data-nyx-sidebar-width="expanded"]) body.browser-shell .nyx-visual-dock-system>[data-nyx-dock-date]{
-    font-size:0!important;
-  }
-  html[data-nyx-home-design="redesigned"]:not([data-nyx-sidebar-width="expanded"]) body.browser-shell .nyx-visual-dock-system>[data-nyx-dock-date]::after{
-    content:attr(data-short-date);
-    font-size:7px;
+    font-size:7px!important;
     letter-spacing:.02em;
   }
   html[data-nyx-home-design="redesigned"] body.browser-shell .nyx-visual-dock-profile{

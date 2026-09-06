@@ -57,7 +57,10 @@ try{
   await page.addInitScript(()=>{
     localStorage.setItem('nyx.setupComplete','true');
     localStorage.setItem('nyx.browserShellMode','true');
-    localStorage.setItem('nyx.homeDesign','redesigned');
+    if(!sessionStorage.getItem('nyx.test.originalMigration')){
+      localStorage.setItem('nyx.homeDesign','original');
+      sessionStorage.setItem('nyx.test.originalMigration','true');
+    }
     localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');
     if(sessionStorage.getItem('nyx.test.releaseNotesFresh')!=='true'){
       localStorage.setItem('nyx.releaseNotes.2026-08-31-new-nyx.device','2026-08-31-new-nyx');
@@ -109,6 +112,7 @@ try{
   });
 
   await page.goto(origin,{waitUntil:'domcontentloaded'});
+  assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.homeDesign')),'redesigned','Original home preference was not migrated');
   await page.waitForSelector('#nyxBeamsBg[data-preset]');
   const setupScreen=page.locator('#setupScreen');
   assert.equal(await setupScreen.getAttribute('aria-hidden'),'true','Completed setup did not mark its screen hidden');
@@ -290,6 +294,8 @@ try{
 
   await page.locator('[data-nyx-dock-item="settings"]').click();
   await page.waitForSelector('.browser-shell-settings-overlay');
+  assert.equal(await page.locator('[data-home-design-value],.nyx-home-design-setting,.nyx-tab-design-setting').count(),0,'Retired layout controls remain in Settings');
+  assert.equal(await page.locator('.nyx-minimal-top-actions,.nyx-home-tabs-toggle,.nyx-latency-bubble').count(),0,'Retired toolbar is still created');
   await page.waitForTimeout(200);
   assert.equal(await page.locator('.browser-shell-settings-overlay').count(),1,'Homepage Settings was removed after opening');
   await page.locator('[data-nyx-dock-item="links"]').click();

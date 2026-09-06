@@ -14,6 +14,14 @@ html[data-nyx-home-design="redesigned"][data-nyx-theme="default"] body.browser-s
   --nyx-shell-icon:#a99bf3!important;
 }
 
+/* Retired home controls stay retired at mobile widths and desktop zoom. */
+html[data-nyx-home-design="redesigned"] body.browser-shell .top-os .browser-mode-url-pointer-border,
+html[data-nyx-home-design="redesigned"] body.browser-shell .top-os>.nyx-latency-bubble,
+html[data-nyx-home-design="redesigned"] body.browser-shell .top-os>.nyx-home-tabs-toggle,
+html[data-nyx-home-design="redesigned"] body.browser-shell .top-os>.nyx-minimal-top-actions{
+  display:none!important;
+}
+
 @media (min-width:901px){
   html[data-nyx-home-design="redesigned"] body.browser-shell .top-os.top-os{
     z-index:2147482501!important;
@@ -274,12 +282,6 @@ html[data-nyx-home-design="redesigned"][data-nyx-theme="default"] body.browser-s
   html[data-nyx-home-design="redesigned"] body.browser-shell .top-os .browser-mode-url:focus{
     border-color:color-mix(in srgb,var(--nyx-visual-accent) 56%,#394255)!important;
     box-shadow:0 0 0 2px color-mix(in srgb,var(--nyx-visual-accent) 10%,transparent)!important;
-  }
-  html[data-nyx-home-design="redesigned"] body.browser-shell .top-os .browser-mode-url-pointer-border,
-  html[data-nyx-home-design="redesigned"] body.browser-shell .top-os>.nyx-latency-bubble,
-  html[data-nyx-home-design="redesigned"] body.browser-shell .top-os>.nyx-home-tabs-toggle,
-  html[data-nyx-home-design="redesigned"] body.browser-shell .top-os>.nyx-minimal-top-actions{
-    display:none!important;
   }
   html[data-nyx-home-design="redesigned"] body.browser-shell .top-os .browser-tabs-toggle{display:none!important}
   html[data-nyx-home-design="redesigned"] body.browser-shell .top-os [data-browser-shell-home-nav]{order:1!important}

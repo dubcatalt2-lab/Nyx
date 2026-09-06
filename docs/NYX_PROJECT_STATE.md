@@ -2,6 +2,16 @@
 
 Last repository review: 2026-09-05
 
+## Pending: Sidebar date formatting
+
+- Original home layout retired at user request. Startup migrates `nyx.homeDesign` to `redesigned`; preference application also normalizes stale restored values. Removed the Original page template, Home Design/legacy Tab Design selectors and change handlers, obsolete top action/tab/latency markup and icon helpers, and exclusive toolbar CSS. Shared navigation, account controls, themes and health monitoring remain intact. Current root cache is `20260905-retire-original-v231`; homepage CSS is `20260905-retire-original-v130`. Not deployed.
+- Verification: targeted startup migration, absent legacy markup/Settings controls and current Settings opening passed without page errors; build/deployment checks passed. The broader account-controls run stopped at its Owner Dashboard close-button click because the visual rail intercepted it (test line 271), so that full suite is not reported as passing.
+
+- High-zoom legacy-toolbar correction: moved the redesigned layout's existing legacy-control hiding rule outside its 901px desktop media query. Latency badge, old tabs toggle and old action strip no longer reappear at narrow/high-zoom widths; Original home mode remains unaffected. Visual redesign CSS cache is `20260905-no-legacy-zoom-controls-v9`. Not deployed.
+
+- Compact rail renders a numeric month/day date (for example `9/30`); expanded rail renders the full localized month/day/year on its own row. Clock text updates immediately on sidebar state changes and retains the full date as its accessible label/tooltip. Removed the CSS-generated short date that conflicted with later typography rules.
+- Root script cache is `20260905-compact-date-v230`; rail CSS is `20260905-compact-date-v21`. Not deployed.
+
 ## Released: Link provider and AI attachment controls
 
 - Application commit `444392c` pushed and deployed to OVH on 2026-09-05. Public health returned HTTP 200 with embedded Wisp and Socket.IO Chat. Generator JS `20260905-bunny-provider-v9` and the new inline AI icon are live. Production reports Bunny configured; Chromium verified the Bunny option enabled and AI file picker opening without page errors. Nyx, Caddy, and coturn are active; the five-minute warning/error Nyx journal was empty. No pull zones were created in verification. Existing runtime dependency audit findings (8 moderate, 4 high) and Caddy configuration warnings remain outside this release.

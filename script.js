@@ -2507,7 +2507,7 @@
   async function applyNyxLogoTheme(theme=store.text('nyx.theme','default')){
     if(!window.NyxLogo) return;
     try{
-      const logoTheme=store.text('nyx.homeDesign','redesigned')==='redesigned' ? 'default' : theme;
+      const logoTheme='default';
       const [themedUrl,compactUrl]=await Promise.all([
         window.NyxLogo.apply(logoTheme,document),
         window.NyxLogo.croppedUrl?.(logoTheme) || window.NyxLogo.themedUrl(logoTheme)
@@ -3460,13 +3460,6 @@
     };
     return `<svg viewBox="0 0 24 24" aria-hidden="true">${icons[name]||icons.apps}</svg>`;
   }
-  function nyxHeaderIcon(name){
-    const icons={
-      chat:'<path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/><path d="M9 10v4M12 9v6M15 11v2"/>',
-      settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
-    };
-    return `<svg class="nyx-header-icon" viewBox="0 0 24 24" aria-hidden="true">${icons[name]||icons.chat}</svg>`;
-  }
   let nyxVisualDockTimer=0;
   let nyxSidebarPreferenceSaveTimer=0;
   let nyxSidebarToggleLockTimer=0;
@@ -3484,10 +3477,9 @@
     return window.innerWidth>720 || Boolean(window.matchMedia?.('(hover:hover) and (pointer:fine)')?.matches);
   }
   function enforceNyxVisualDockViewport(){
-    const redesigned=store.text('nyx.homeDesign','redesigned')!=='original';
     const dock=document.querySelector('[data-nyx-visual-dock]');
     if(!dock) return;
-    if(!document.body.classList.contains('browser-shell') || !redesigned || !nyxVisualDockUsesSideLayout()){
+    if(!document.body.classList.contains('browser-shell') || !nyxVisualDockUsesSideLayout()){
       [
         'position','top','bottom','left','right','width','max-width','height','min-height',
         'display','flex-direction','transform','translate','scale','rotate','visibility',
@@ -3554,7 +3546,7 @@
     nyxVisualDockViewportRepairTimer=setTimeout(enforceNyxVisualDockViewport,260);
   }
   function restoreNyxVisualDock(){
-    const shouldRestore=document.body.classList.contains('browser-shell') && store.text('nyx.homeDesign','redesigned')!=='original';
+    const shouldRestore=document.body.classList.contains('browser-shell');
     const dock=document.querySelector('[data-nyx-visual-dock]');
     if(!shouldRestore) return;
     if(!dock || !dock.isConnected){
@@ -3653,6 +3645,7 @@
     const state=expanded ? 'expanded' : 'collapsed';
     document.documentElement.dataset.nyxSidebarWidth=state;
     document.body.dataset.nyxSidebarWidth=state;
+    syncNyxVisualDockClock();
     const button=document.querySelector('[data-nyx-dock-expand]');
     if(button){
       button.setAttribute('aria-expanded',String(expanded));
@@ -3668,12 +3661,15 @@
     const date=dock.querySelector('[data-nyx-dock-date]');
     if(time) time.textContent=now.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
     if(date){
-      date.textContent=now.toLocaleDateString([],{month:'long',day:'numeric',year:'numeric'}).toUpperCase();
-      date.dataset.shortDate=now.toLocaleDateString([],{month:'short',day:'numeric'}).toUpperCase();
+      const fullDate=now.toLocaleDateString([],{month:'long',day:'numeric',year:'numeric'});
+      const expanded=document.documentElement.dataset.nyxSidebarWidth==='expanded';
+      date.textContent=expanded?fullDate:`${now.getMonth()+1}/${now.getDate()}`;
+      date.title=fullDate;
+      date.setAttribute('aria-label',fullDate);
     }
   }
   function ensureNyxVisualDock(){
-    const enabled=document.body.classList.contains('browser-shell') && store.text('nyx.homeDesign','redesigned')!=='original';
+    const enabled=document.body.classList.contains('browser-shell');
     let dock=document.querySelector('[data-nyx-visual-dock]');
     if(!enabled){
       dock?.remove();
@@ -3756,42 +3752,9 @@
     ensureNyxAccountButton();
     return dock;
   }
-  function browserLatencyBubbleMarkup(){
-    return `<div class="nyx-latency-bubble is-sampling" data-nyx-latency-bubble tabindex="0" role="group" aria-label="Measuring Nyx latency" aria-describedby="nyxLatencyDetails">
-      <i aria-hidden="true"></i><span data-nyx-latency-value role="status" aria-live="polite">-- ms</span>
-      <section class="nyx-latency-details" id="nyxLatencyDetails" data-nyx-latency-details aria-label="Live Nyx connection details">
-        <header><span>Nyx connection</span><strong data-nyx-latency-quality>Measuring</strong></header>
-        <div class="nyx-latency-chart" data-nyx-latency-chart>
-          <svg viewBox="0 0 280 96" preserveAspectRatio="none" role="img" aria-label="Waiting for latency samples">
-            <defs><linearGradient id="nyxLatencyArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".24"></stop><stop offset="1" stop-color="currentColor" stop-opacity="0"></stop></linearGradient></defs>
-            <path class="nyx-latency-grid" d="M0 16H280M0 48H280M0 80H280"></path>
-            <path class="nyx-latency-area" data-nyx-latency-area></path>
-            <path class="nyx-latency-line" data-nyx-latency-line></path>
-            <circle class="nyx-latency-point" data-nyx-latency-point r="3" cx="0" cy="0" hidden></circle>
-          </svg>
-          <span class="nyx-latency-axis nyx-latency-axis-high" data-nyx-latency-axis-high>400 ms</span>
-          <span class="nyx-latency-axis nyx-latency-axis-low">0 ms</span>
-          <span class="nyx-latency-chart-empty" data-nyx-latency-chart-empty>Collecting samples…</span>
-        </div>
-        <div class="nyx-latency-stats">
-          <span><small>Current</small><strong data-nyx-latency-current>-- ms</strong></span>
-          <span><small>Stable</small><strong data-nyx-latency-stable>-- ms</strong></span>
-          <span><small>Range</small><strong data-nyx-latency-range>-- ms</strong></span>
-        </div>
-        <div class="nyx-latency-health">
-          <span>Health<strong data-nyx-health-overall>Checking</strong></span>
-          <span>Browser<strong data-nyx-health-browser>Online</strong></span>
-          <span>Relay<strong data-nyx-health-wisp>Checking</strong></span>
-          <span>Chat<strong data-nyx-health-chat>Checking</strong></span>
-        </div>
-        <footer data-nyx-latency-updated>Waiting for the first health check</footer>
-      </section>
-    </div>`;
-  }
   function renderChromeFixed(){
     const top=document.querySelector('.top-os');
     if(top){
-      const redesignedHome=store.text('nyx.homeDesign','redesigned')!=='original';
       top.innerHTML='<div class="brand-mini"><button class="browser-mode-app-button active" data-browser-shell-home title="Current tab"><span class="browser-home-icon" aria-hidden="true"></span><span class="browser-home-label">Home</span></button><button class="browser-mode-tab" data-browser-shell-new-tab title="New tab"><span>New tab</span></button></div><span class="browser-top-clock" data-browser-shell-clock>--:--:--</span><form class="browser-mode-address" data-browser-shell-search><button class="browser-nav-control" data-browser-shell-back type="button" title="Back" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button><button class="browser-nav-control" data-browser-shell-forward type="button" title="Forward" aria-label="Forward"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button><button class="browser-nav-control" data-browser-shell-reload type="button" title="Reload" aria-label="Reload"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"></path><path d="M20 4v7h-7"></path></svg></button><button class="browser-nav-control" data-browser-shell-home-nav type="button" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8"></path><path d="M5 10v10h14V10"></path><path d="M9 20v-6h6v6"></path></svg></button><input class="browser-mode-url" data-browser-shell-url placeholder="Search or enter a URL" autocomplete="off"><button class="browser-mode-bookmark browser-mode-settings" data-browser-shell-settings data-open="settings" type="button" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button><button class="browser-mode-weather" data-open="weather" type="button" title="Weather" aria-label="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button><button data-browser-shell-menu type="button" title="Menu"><span class="fresh-real-icon" aria-hidden="true">⋮</span></button></form><div class="browser-bookmark-panel" id="browserBookmarkPanel" hidden></div><div class="browser-mode-menu" id="browserModeMenu"><button data-browser-shell-new-tab type="button">New tab</button><button data-browser-bookmarks-toggle type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-browser-hieroglyph-toggle type="button">Hieroglyph Mode</button><button data-app-url="/assets/games/index.html" type="button">GAMES</button><button data-app-url="/apps/chat/" type="button">Chat</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-shell-about-tab type="button">Open Tab in Abt:Blank</button></div>';
       const homeNav=top.querySelector('[data-browser-shell-home-nav]');
       if(homeNav) homeNav.innerHTML=nyxDashboardIcon('home');
@@ -3803,9 +3766,9 @@
         pointerBorder.setAttribute('aria-hidden','true');
         shellAddress.append(pointerBorder);
       }
-      if(redesignedHome){
+      {
       const legacyClock=top.querySelector(':scope > .browser-top-clock');
-      if(legacyClock) legacyClock.outerHTML=browserLatencyBubbleMarkup();
+      legacyClock?.remove();
       shellAddress?.insertAdjacentHTML('afterbegin','<button class="browser-nav-control browser-tabs-toggle" data-browser-shell-tabs-toggle type="button" aria-expanded="false" aria-controls="nyxBrowserTabSidebar" title="Tabs" aria-label="Tabs"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"></rect><path d="M8 10h8M8 14h5"></path></svg></button>');
       shellAddress?.querySelector('[data-open="weather"]')?.remove();
       const settingsButton=shellAddress?.querySelector('[data-browser-shell-settings]');
@@ -3846,20 +3809,6 @@
         secureIndicator.innerHTML='<svg viewBox="0 0 24 24"><rect x="6" y="10" width="12" height="9" rx="2"></rect><path d="M9 10V7a3 3 0 0 1 6 0v3"></path></svg>';
         shellAddress.replaceChildren(tabsButton,homeButton,backButton,forwardButton,reloadButton,secureIndicator,urlField,menuButton,bookmarkButton,settingsButton,fullscreenButton);
       }
-      const homeTabsToggle=document.createElement('button');
-      homeTabsToggle.type='button';
-      homeTabsToggle.className='nyx-home-tabs-toggle';
-      homeTabsToggle.dataset.browserShellTabsToggle='';
-      homeTabsToggle.setAttribute('aria-label','Tabs');
-      homeTabsToggle.setAttribute('aria-controls','nyxBrowserTabSidebar');
-      homeTabsToggle.setAttribute('aria-expanded','false');
-      homeTabsToggle.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"></rect><path d="M8 10h8M8 14h5"></path></svg>';
-      top.appendChild(homeTabsToggle);
-      const homeActions=document.createElement('nav');
-      homeActions.className='nyx-minimal-top-actions';
-      homeActions.setAttribute('aria-label','Nyx shortcuts');
-      homeActions.innerHTML=`<button data-app-url="/apps/chat/" type="button" aria-label="Chat">${nyxHeaderIcon('chat')}</button><button data-open="settings" type="button" aria-label="Settings">${nyxHeaderIcon('settings')}</button><span data-nyx-profile-slot></span>`;
-      top.appendChild(homeActions);
       renderNyxPresence();
       syncHomeWeatherWidgets();
       syncNyxLatencyBubble();
@@ -4766,7 +4715,7 @@
     try{return new URL(url,location.href).hostname || 'nyxlearning.org'}catch{return browserShellLabel(url) || 'nyxlearning.org'}
   }
   function renderNyxVisualTabStrip(){
-    if(store.text('nyx.homeDesign','redesigned')==='original' || !nyxVisualDockUsesSideLayout()) return;
+    if(!nyxVisualDockUsesSideLayout()) return;
     const dock=document.querySelector('[data-nyx-visual-dock]') || ensureNyxVisualDock();
     const strip=dock?.querySelector('[data-nyx-dock-tabs]');
     if(!strip) return;
@@ -5241,12 +5190,10 @@
     const mode=root.querySelector('[data-browser-mode-select]');
     const transport=root.querySelector('[data-browser-transport]');
     const font=root.querySelector('[data-font-value]');
-    const homeDesign=root.querySelector('[data-home-design-value]');
     const tabDesign=root.querySelector('[data-tab-design-value]');
     store.setText('nyx.engine', engine?.value || 'duckduckgo');
     store.setText('nyx.browserMode', normalizeBrowserModeName(mode?.value || DEFAULT_BROWSER_MODE));
     if(font) store.setText('nyx.font',nyxFontChoice(font.value)[0]);
-    if(homeDesign) store.setText('nyx.homeDesign',homeDesign.value==='original' ? 'original' : 'redesigned');
     if(tabDesign) store.setText('nyx.tabDesign',normalizeBrowserTabDesign(tabDesign.value));
     const nextTransport=normalizeBrowserTransportName(transport?.value);
     if(normalizeBrowserTransportName(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT))!==nextTransport){
@@ -5491,16 +5438,6 @@
     }
     const effectBlock=overlay.querySelector('[data-effect-value]')?.closest('.settings-block');
     if(effectBlock){
-      const homeDesignBlock=document.createElement('section');
-      homeDesignBlock.className='settings-block nyx-home-design-setting';
-      homeDesignBlock.hidden=true;
-      const homeDesign=store.text('nyx.homeDesign','redesigned')==='original' ? 'original' : 'redesigned';
-      homeDesignBlock.innerHTML=`<h2>Home Design</h2><p>Use the current streamlined home, or switch back to the original Nyx layout.</p><select class="settings-select" data-home-design-value><option value="redesigned" ${homeDesign==='redesigned'?'selected':''}>Redesigned</option><option value="original" ${homeDesign==='original'?'selected':''}>Original</option></select>`;
-      const tabDesignBlock=document.createElement('section');
-      tabDesignBlock.className='settings-block nyx-tab-design-setting';
-      tabDesignBlock.hidden=store.text('nyx.homeDesign','redesigned')!=='original';
-      const tabDesign=normalizeBrowserTabDesign(store.text('nyx.tabDesign','bar'));
-      tabDesignBlock.innerHTML=`<h2>Tab Design</h2><p>Tab bar keeps the compact tabs button and drawer. Tab list keeps every open tab visible in a horizontal strip.</p><select class="settings-select" data-tab-design-value><option value="bar" ${tabDesign==='bar'?'selected':''}>Tab bar</option><option value="list" ${tabDesign==='list'?'selected':''}>Tab list</option></select>`;
       const privacyBlock=document.createElement('section');
       privacyBlock.className='settings-block';
       const hideDetails=websiteDetailsHidden();
@@ -5560,8 +5497,6 @@
       effectBlock.before(privacyBlock);
       effectBlock.before(homepageBlock);
       effectBlock.before(sidebarBlock);
-      effectBlock.before(homeDesignBlock);
-      effectBlock.before(tabDesignBlock);
       effectBlock.before(lagBlock);
       effectBlock.before(liteBlock);
       effectBlock.before(backgroundsBlock);
@@ -6626,15 +6561,14 @@
     window.dispatchEvent(new CustomEvent('nyx:themechange',{detail:{theme}}));
   }
   function applyHomeDesignSetting(){
-    const homeDesign=store.text('nyx.homeDesign','redesigned')==='original' ? 'original' : 'redesigned';
+    const homeDesign='redesigned';
     if(store.text('nyx.homeDesign','redesigned')!==homeDesign) store.setText('nyx.homeDesign',homeDesign);
     document.documentElement.dataset.nyxHomeDesign=homeDesign;
     document.body.dataset.nyxHomeDesign=homeDesign;
     ['nyxHomepageMinimalStyles','nyxBrowserMicrointeractionsStyles'].forEach(id=>{
       const stylesheet=document.getElementById(id);
-      if(stylesheet) stylesheet.disabled=homeDesign==='original';
+      if(stylesheet) stylesheet.disabled=false;
     });
-    qsa('[data-home-design-value]').forEach(select=>{select.value=homeDesign});
     window.dispatchEvent(new CustomEvent('nyx:homedesignchange',{detail:{homeDesign}}));
   }
   function syncInternalThemeFrames(theme=store.text('nyx.theme','default')){
@@ -9075,7 +9009,7 @@
     responsiveFitTimer=setTimeout(updateResponsiveFit,60);
     clearTimeout(nyxVisualDockViewportTimer);
     nyxVisualDockViewportTimer=setTimeout(()=>{
-      if(document.body.classList.contains('browser-shell') && store.text('nyx.homeDesign','redesigned')!=='original') ensureNyxVisualDock();
+      if(document.body.classList.contains('browser-shell')) ensureNyxVisualDock();
     },80);
   }
   window.addEventListener('resize',scheduleResponsiveFit);
@@ -9203,19 +9137,12 @@
   }
   function browserBody(){
     const minimalPresenceText=nyxPresenceCount===null ? 'Connecting\u2026' : `${nyxPresenceCount} online`;
-    if(store.text('nyx.homeDesign','redesigned')!=='original'){
+    {
       const searchEngine=selectedSearchEngineMeta();
       const searchLabel=`Search ${searchEngine.label} or type a URL`;
       return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home nyx-minimal-home nyx-visual-home"><main class="browser-shell-start nyx-minimal-hero"><div class="nyx-minimal-brand"><span class="nyx-minimal-moon" aria-hidden="true"></span><h1>NYX</h1></div><form class="browser-blank-search nyx-minimal-search" data-browser-blank-search><img class="nyx-home-search-engine-icon" data-home-search-engine-icon src="${searchEngine.icon}" alt=""><input data-browser-blank-input data-search-engine="${searchEngine.id}" aria-label="${searchLabel}" placeholder="${searchLabel}" autocomplete="off" spellcheck="false"><button class="nyx-home-search-submit" type="submit" aria-label="Search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m16.2 16.2 4.3 4.3"></path></svg></button></form></main><nav class="nyx-minimal-utility-links" aria-label="Nyx tools and terms"><a data-app-url="/apps/link-checker/" href="/apps/link-checker/">Link Checker</a><a data-app-url="/apps/link-generator/" href="/apps/link-generator/">Link Generator</a><a data-open="terms" href="nyx://terms">Terms of Service</a></nav><button class="nyx-visual-customize" data-open="settings" type="button">${nyxDashboardIcon('settings')}<span>Customize</span></button><div class="nyx-home-presence${nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="button" tabindex="${nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${minimalPresenceText}</span></div></div></div>`;
     }
-    const presenceText=nyxPresenceCount===null ? 'Connecting\u2026' : `${nyxPresenceCount} online`;
-    return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home"><div class="nyx-home-presence${nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="button" tabindex="${nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${presenceText}</span></div><button class="nyx-home-weather" data-home-weather data-open="weather" type="button" aria-label="Open weather report"><span class="nyx-home-weather-icon" data-home-weather-icon aria-hidden="true"><svg class="nyx-weather-symbol nyx-weather-symbol-partly-cloudy" viewBox="0 0 24 24" focusable="false"><circle class="nyx-weather-sun-fill" cx="8" cy="8" r="3.2"/><path class="nyx-weather-sun-ray" d="M8 2.3v1.4M3.97 3.97l1 1M2.3 8h1.4M12.03 3.97l-1 1M13.7 8h-1.4"/><path class="nyx-weather-cloud-fill" d="M7.2 19h10a4 4 0 0 0 .45-7.98A5.55 5.55 0 0 0 7.08 12.6 3.2 3.2 0 0 0 7.2 19Z"/></svg></span><strong data-home-weather-temp>--°</strong><span data-home-weather-desc>Loading</span></button><main class="browser-shell-start nyx-home-hero"><h1 class="nyx-home-title">Nyx</h1><form class="browser-blank-search nyx-home-search" data-browser-blank-search><span class="nyx-home-search-icon" aria-hidden="true"></span><input data-browser-blank-input aria-label="Find your course or enter a URL" placeholder="Find your Course" autocomplete="off" spellcheck="false"></form><nav class="nyx-home-actions" aria-label="Nyx home"><button data-open="apps" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-apps" aria-hidden="true"></span><span>Resources</span></button><button data-app-url="https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-study" aria-hidden="true"></span><span>Assignments</span></button><button data-open-nyx-profile-entry data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-profile" aria-hidden="true"></span><span>Student Profile</span></button><button data-open="settings" data-no-button-motion type="button"><span class="nyx-home-action-icon nyx-home-action-settings" aria-hidden="true"></span><span>Preferences</span></button></nav></main><div class="quick-grid home-shortcut-grid browser-home-normal" data-home-shortcuts>${browserHomeShortcutTiles()}</div><a class="nyx-home-link-checker" data-app-url="/apps/link-checker/" href="/apps/link-checker/">Link Checker</a><nav class="nyx-home-utility-links" aria-label="Nyx information and tools"><a data-app-url="/apps/chat/" href="/apps/chat/">Chat</a><a data-app-url="/apps/link-generator/" href="/apps/link-generator/">Link Generator</a><a data-open="terms" href="nyx://terms">Terms Of Service</a><a data-open="developer" href="nyx://developer">Developer Console</a><a data-open="about" href="nyx://about">About Us</a></nav></div></div>`;
   }
-  const browserBodyWithoutNyxTubeShortcut=browserBody;
-  browserBody=function(){
-    const markup=browserBodyWithoutNyxTubeShortcut();
-    return markup.replace('<button data-nyx-apps-toggle',`<button data-app-url="/apps/nyxtube/" type="button">${nyxDashboardIcon('youtube')}<span>NyxTube</span></button><button data-nyx-apps-toggle`);
-  };
   //apps-grid
   const nyxAiHomeShortcut={domain:'nyx-ai',title:'AI Tutor',url:'nyx://ai',favorite:false};
   const nyxAiHomeShortcutMigrationKey='nyx.homeShortcuts.aiShortcutV1';
@@ -16565,22 +16492,6 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         store.setText('nyx.font',nyxFontChoice(fontSelect.value)[0]);
         applyFontSetting();
         toast('Font updated');
-        return;
-      }
-      if(browserSettingsRoot && e.target.closest?.('[data-home-design-value]')){
-        const homeDesign=e.target.value==='original' ? 'original' : 'redesigned';
-        store.setText('nyx.homeDesign',homeDesign);
-        applyHomeDesignSetting();
-        toast(homeDesign==='original' ? 'Original home restored' : 'Redesigned home enabled');
-        setTimeout(()=>location.reload(),240);
-        return;
-      }
-      if(browserSettingsRoot && e.target.closest?.('[data-tab-design-value]')){
-        const design=normalizeBrowserTabDesign(e.target.value);
-        store.setText('nyx.tabDesign',design);
-        applyBrowserTabDesignSetting();
-        queueNyxCloudPreferencesSave();
-        toast(design==='list' ? 'Horizontal tab list enabled' : 'Tab bar enabled');
         return;
       }
       if(browserSettingsRoot && e.target.closest?.('[data-theme-value]')){

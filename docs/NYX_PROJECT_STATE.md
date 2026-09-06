@@ -2,7 +2,9 @@
 
 Last repository review: 2026-09-05
 
-## Pending: Sidebar date formatting
+## Released: Sidebar dates and Original layout retirement
+
+- Deployed application commit `a25fd60` to OVH on 2026-09-05. Public health returned HTTP 200; all four updated asset references below are live. Chromium verified migration from saved Original to redesigned, absent legacy toolbar/layout settings, and unclipped compact `9/5` / expanded `September 5, 2026` dates with no page errors. Nyx, Caddy, and coturn are active; five-minute Nyx warning/error logs were empty. The following implementation notes are now released despite their earlier pending labels. The broader account regression's Owner Dashboard close/rail overlap remains unresolved and was disclosed before deployment. Runtime audit findings (8 moderate, 4 high) and Caddy configuration warnings remain outside scope.
 
 - Original home layout retired at user request. Startup migrates `nyx.homeDesign` to `redesigned`; preference application also normalizes stale restored values. Removed the Original page template, Home Design/legacy Tab Design selectors and change handlers, obsolete top action/tab/latency markup and icon helpers, and exclusive toolbar CSS. Shared navigation, account controls, themes and health monitoring remain intact. Current root cache is `20260905-retire-original-v231`; homepage CSS is `20260905-retire-original-v130`. Not deployed.
 - Verification: targeted startup migration, absent legacy markup/Settings controls and current Settings opening passed without page errors; build/deployment checks passed. The broader account-controls run stopped at its Owner Dashboard close-button click because the visual rail intercepted it (test line 271), so that full suite is not reported as passing.

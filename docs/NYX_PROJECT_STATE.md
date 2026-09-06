@@ -2,9 +2,11 @@
 
 Last repository review: 2026-09-05
 
-## Release preparation: Link provider and AI attachment controls
+## Released: Link provider and AI attachment controls
 
-- AI attachment icon follow-up: replaced the overlapping plus/paperclip inline SVG in `ai.html` with a hollow image-plus mark. Existing file-picker/upload logic was verified working, not changed. Chromium regression now covers pointer/keyboard picker activation, preview, removal, reselection, and image payload submission; mobile picker and existing screen-share checks passed. Only inline HTML artwork changed, so no referenced JS/CSS asset cache version changed. Not deployed.
+- Application commit `444392c` pushed and deployed to OVH on 2026-09-05. Public health returned HTTP 200 with embedded Wisp and Socket.IO Chat. Generator JS `20260905-bunny-provider-v9` and the new inline AI icon are live. Production reports Bunny configured; Chromium verified the Bunny option enabled and AI file picker opening without page errors. Nyx, Caddy, and coturn are active; the five-minute warning/error Nyx journal was empty. No pull zones were created in verification. Existing runtime dependency audit findings (8 moderate, 4 high) and Caddy configuration warnings remain outside this release.
+
+- AI attachment icon follow-up: replaced the overlapping plus/paperclip inline SVG in `ai.html` with a hollow image-plus mark. Existing file-picker/upload logic was verified working, not changed. Chromium regression now covers pointer/keyboard picker activation, preview, removal, reselection, and image payload submission; mobile picker and existing screen-share checks passed. Only inline HTML artwork changed, so no referenced JS/CSS asset cache version changed.
 
 - Link Generator details now offers jsDelivr files or Bunny.net pull zones. Bunny is enabled only when `/api/link-generator/status` reports `bunnyAvailable`; the account key stays server-side.
 - Bunny uses the existing managed `/api/link-generator` backend, quota/auth checks, and CDN readiness polling. GitHub method/hostname controls are hidden for Bunny. Confirmation notes Bunny bandwidth charges and shared Nyx backend.

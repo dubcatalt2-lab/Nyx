@@ -161,6 +161,11 @@
 .nyx-owner-table td{height:52px;padding:7px 11px;border-bottom:1px solid rgba(39,50,70,.7);color:#cfd7e6;white-space:nowrap}
 .nyx-owner-table tbody tr:hover{background:rgba(120,156,255,.045)}
 .nyx-owner-dashboard-overlay .nyx-owner-user-cell{display:flex!important;align-items:center!important;width:auto!important;min-width:220px!important;min-height:0!important;gap:9px!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;color:inherit!important;box-shadow:none!important;text-align:left!important;transform:none!important;cursor:pointer}
+.nyx-owner-user-entry{display:flex;align-items:center;gap:7px;min-width:0}
+.nyx-owner-search-shield{display:grid;flex:0 0 28px;width:28px;height:28px;place-items:center;padding:0;border:1px solid var(--owner-line);border-radius:8px;background:rgba(120,156,255,.06);color:var(--owner-accent);cursor:pointer;transition:border-color .16s ease,background .16s ease,color .16s ease,transform .16s ease}
+.nyx-owner-search-shield:hover{border-color:var(--owner-accent);background:rgba(120,156,255,.14);color:#c9d6ff;transform:translateY(-1px)}
+.nyx-owner-search-shield:focus-visible{outline:2px solid var(--owner-accent);outline-offset:2px}
+.nyx-owner-search-shield svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2}
 .nyx-owner-user-cell>span:last-child{display:grid;min-width:0;gap:2px}
 .nyx-owner-user-name-row{display:flex;align-items:center;min-width:0;gap:7px}
 .nyx-owner-user-cell strong{overflow:hidden;max-width:230px;color:var(--owner-text);font-size:11px;text-overflow:ellipsis}
@@ -193,13 +198,16 @@
 .nyx-owner-badge.role-support{border-color:#67c8b2;background:rgba(103,200,178,.1);color:#aee8da}
 .nyx-owner-badge.role-tester{border-color:#cb83dc;background:rgba(203,131,220,.1);color:#e9b8f3}
 .nyx-owner-badge.role-contributor{border-color:#8994aa;background:rgba(137,148,170,.1);color:#c8cfdd}
+.nyx-owner-badge.role-guest{border-color:#6ca7c9;background:rgba(108,167,201,.1);color:#b9def2}
 .nyx-owner-role-icon{display:inline-block;width:14px;height:14px;object-fit:contain}
 .nyx-owner-user-drawer>header>div:nth-child(2)>span{display:flex;align-items:center;gap:6px}
 .nyx-owner-badge.subscription-premium,.nyx-owner-badge.subscription-trialing{border-color:#e8bd64;background:rgba(232,189,100,.11);color:#f3d79b}
 .nyx-owner-badge.subscription-past_due{border-color:#f28b58;color:#ffbd9b}
+.nyx-owner-badge.subscription-none{border-color:#617089;background:rgba(97,112,137,.09);color:#aeb9ca}
 .nyx-owner-account-state{gap:5px;border:0;background:transparent}
 .nyx-owner-account-state i{width:6px;height:6px;border-radius:50%;background:#4fd18b}
 .nyx-owner-account-state.disabled{color:#ff9c9f}.nyx-owner-account-state.disabled i{background:#f05d63}
+.nyx-owner-account-state.guest{color:#9fcce4}.nyx-owner-account-state.guest i{background:#6ca7c9}
 .nyx-owner-verified{color:#db9c78;font-size:9px;font-weight:700}.nyx-owner-verified.verified{color:#65d99b}
 .nyx-owner-row-action{display:grid;width:26px;height:26px;place-items:center;padding:0;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--owner-muted);cursor:pointer}
 .nyx-owner-row-action:hover{border-color:var(--owner-line);background:var(--owner-panel-2);color:var(--owner-text)}
@@ -250,6 +258,7 @@
 .nyx-owner-detail-avatar{width:54px;height:54px;border-radius:13px}
 .nyx-owner-detail-avatar i{width:10px;height:10px;border-color:#0e141e}
 .nyx-owner-user-drawer>header>div:nth-child(2){display:grid;min-width:0;gap:2px}
+.nyx-owner-user-drawer>header>div:nth-child(2)>span svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2}
 .nyx-owner-user-drawer>header span{color:var(--owner-accent);font-size:8px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
 .nyx-owner-user-drawer>header h2{overflow:hidden;margin:0;color:var(--owner-text);font-size:18px;text-overflow:ellipsis;white-space:nowrap}
 .nyx-owner-user-drawer>header p{margin:0;color:var(--owner-muted);font-size:10px}
@@ -265,6 +274,8 @@
 .nyx-owner-detail-value strong{overflow:hidden;color:var(--owner-text);font-size:10px;text-overflow:ellipsis}
 .nyx-owner-detail-value.uid{grid-column:1/-1}
 .nyx-owner-detail-value.uid strong{font-family:"Cascadia Mono",Consolas,monospace;font-size:9px}
+.nyx-owner-detail-value.ip-address{grid-column:1/-1}
+.nyx-owner-detail-value.ip-address strong{overflow:visible;overflow-wrap:anywhere;white-space:normal;text-overflow:clip;font-family:"Cascadia Mono",Consolas,monospace;line-height:1.5;user-select:text}
 .nyx-owner-detail-section{display:grid;gap:9px;margin-top:13px;padding:13px;border:1px solid var(--owner-line);border-radius:10px;background:var(--owner-panel)}
 .nyx-owner-detail-section h3{margin:0;color:var(--owner-text);font-size:11px}
 .nyx-owner-profile-summary{display:grid;gap:3px;padding:10px;border-radius:8px;background:#0b111b}
@@ -287,6 +298,9 @@
 .nyx-owner-decoration-starfall>em{display:block;background:radial-gradient(circle at 15% 18%,#fff 0 2px,transparent 3px),radial-gradient(circle at 84% 28%,var(--profile-secondary) 0 2px,transparent 3px),radial-gradient(circle at 20% 82%,var(--profile-name-primary) 0 1.7px,transparent 3px),radial-gradient(circle at 90% 76%,#fff 0 1.5px,transparent 3px);filter:drop-shadow(0 0 4px var(--profile-secondary));animation:nyx-owner-twinkle 2.8s ease-in-out infinite}
 .nyx-owner-decoration-laurel>em{display:block;border:3px double color-mix(in srgb,#f5d36f 80%,var(--profile-secondary));box-shadow:0 0 12px rgba(245,211,111,.36)}
 .nyx-owner-decoration-neon-wings>em{display:block;inset:-10px -22px;border-left:6px solid var(--profile-primary);border-right:6px solid var(--profile-secondary);border-radius:48% 52% 45% 55%;filter:drop-shadow(0 0 7px var(--profile-secondary));animation:nyx-owner-twinkle 2.2s ease-in-out infinite}
+.nyx-owner-decoration-crystal-crown>em{display:block;inset:-18px;background:linear-gradient(135deg,var(--profile-primary),#fff,var(--profile-secondary));clip-path:polygon(15% 22%,31% 34%,50% 0,69% 34%,85% 22%,92% 50%,100% 74%,72% 91%,50% 100%,28% 91%,0 74%,8% 50%);opacity:.8;animation:nyx-owner-twinkle 3s ease-in-out infinite}
+.nyx-owner-decoration-lunar-halo>em{display:block;inset:-17px;border:2px solid color-mix(in srgb,var(--profile-secondary) 72%,white);box-shadow:0 0 12px var(--profile-secondary);animation:nyx-owner-orbit 8s linear infinite}
+.nyx-owner-decoration-rose-vines>em{display:block;inset:-15px;border:6px double color-mix(in srgb,var(--profile-primary) 52%,#ff86bc);border-top-color:transparent;border-bottom-color:transparent;filter:drop-shadow(0 0 5px #ff6eae)}
 .nyx-owner-public-body{position:relative;z-index:3;display:grid;gap:3px;margin:9px 12px 12px;padding:11px;border:1px solid color-mix(in srgb,var(--profile-secondary) 34%,transparent);border-radius:10px;background:color-mix(in srgb,var(--profile-primary) 18%,rgba(13,14,18,.78));color:#f4f5f7}
 .nyx-owner-public-body>strong{font-size:17px;line-height:1.1}
 .nyx-owner-public-body>span{color:#c7c9ce;font-size:10px}
@@ -303,6 +317,7 @@
 .nyx-owner-effect-fireflies .nyx-owner-public-effect{filter:sepia(.5) drop-shadow(0 0 6px #fff2a8)}.nyx-owner-effect-cosmic-dust .nyx-owner-public-effect{background-color:color-mix(in srgb,var(--profile-primary) 12%,transparent)}.nyx-owner-effect-meteor-shower .nyx-owner-public-effect{transform:skewX(-15deg)}.nyx-owner-effect-embers .nyx-owner-public-effect{filter:sepia(1) saturate(3) drop-shadow(0 0 5px #ff793f)}.nyx-owner-effect-bubbles .nyx-owner-public-effect{background-image:radial-gradient(circle,transparent 0 5px,rgba(255,255,255,.62) 6px 7px,transparent 8px),radial-gradient(circle,transparent 0 9px,var(--profile-secondary) 10px 11px,transparent 12px);background-size:91px 123px,149px 181px}
 .nyx-owner-effect-aurora .nyx-owner-public-effect,.nyx-owner-effect-holographic .nyx-owner-public-effect,.nyx-owner-effect-plasma .nyx-owner-public-effect{display:block;opacity:var(--profile-effect-opacity,.62);background:linear-gradient(118deg,transparent 10%,var(--profile-primary) 32%,transparent 48%,var(--profile-secondary) 68%,transparent 88%);background-size:240% 100%;mix-blend-mode:screen;animation:nyx-owner-aurora var(--profile-effect-speed,8s) ease-in-out infinite}.nyx-owner-effect-holographic .nyx-owner-public-effect{background:linear-gradient(112deg,transparent,#ff7bd8,#77dcff,#efff91,#b892ff,transparent);background-size:260% 100%}.nyx-owner-effect-plasma .nyx-owner-public-effect{inset:-30%;background:conic-gradient(transparent,var(--profile-primary),transparent,var(--profile-secondary),transparent);filter:blur(20px);animation:nyx-owner-orbit var(--profile-effect-speed,8s) linear infinite}
 .nyx-owner-effect-electric-storm .nyx-owner-public-effect{display:block;opacity:.72;background:linear-gradient(120deg,transparent 42%,#fff 43%,var(--profile-secondary) 44%,transparent 46%);filter:drop-shadow(0 0 7px #b9d9ff);animation:nyx-owner-lightning 3.6s steps(1,end) infinite}.nyx-owner-effect-cyber-grid .nyx-owner-public-effect{display:block;opacity:var(--profile-effect-opacity,.52);background-image:linear-gradient(color-mix(in srgb,var(--profile-secondary) 75%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--profile-primary) 75%,transparent) 1px,transparent 1px);background-size:26px 26px;animation:nyx-owner-grid 4s linear infinite}
+.nyx-owner-effect-starlight-ribbon .nyx-owner-public-effect,.nyx-owner-effect-ocean-caustics .nyx-owner-public-effect{display:block;inset:-24%;opacity:.58;background:conic-gradient(transparent,var(--profile-primary),transparent,var(--profile-secondary),transparent);filter:blur(14px);mix-blend-mode:screen;animation:nyx-owner-orbit 11s linear infinite}.nyx-owner-effect-cherry-bloom .nyx-owner-public-effect{display:block;background-image:radial-gradient(ellipse,#fff 0 8%,#ff94c5 10% 35%,transparent 38%),radial-gradient(ellipse,#ffe8f2 0 8%,#e968a6 10% 34%,transparent 38%);background-size:48px 63px,79px 97px;animation:nyx-owner-particles 10s linear infinite}.nyx-owner-effect-ocean-caustics .nyx-owner-public-effect{background:repeating-radial-gradient(ellipse,transparent 0 17px,rgba(143,235,255,.5) 19px 21px,transparent 24px 33px);filter:blur(4px)}
 .nyx-owner-profile-management details{border-top:1px solid var(--owner-line)}
 .nyx-owner-profile-management summary{padding:10px 0 2px;color:var(--owner-accent);font-size:10px;font-weight:800;cursor:pointer}
 .nyx-owner-profile-editor{display:grid;gap:10px;padding-top:10px}
@@ -358,13 +373,34 @@
 }
 .nyx-owner-detail-actions button:hover,.nyx-owner-action-grid button:hover{background:#3d68c3}
 .nyx-owner-action-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-.nyx-owner-action-note{margin:0;color:#d8b26e;font-size:9px;line-height:1.4}
+.nyx-owner-action-note{margin:0;color:#d8b26e;font-size:9px;line-height:1.4;overflow-wrap:anywhere}
 .nyx-owner-action-grid button{border-color:var(--owner-line);background:#182335;color:var(--owner-text)}
 .nyx-owner-action-grid button.danger{border-color:#7d333c;background:#3a1d24;color:#ffb5b8}
 .nyx-owner-action-grid button:disabled{opacity:.38;cursor:not-allowed}
 .nyx-owner-user-activity{display:grid;gap:6px}
 .nyx-owner-user-activity>p{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0;padding:7px 8px;border-radius:7px;background:#0b111b}
 .nyx-owner-user-activity strong{font-size:9px}.nyx-owner-user-activity span{color:var(--owner-muted);font-size:8px}
+.nyx-owner-flagged-searches>p{margin:0}
+.nyx-owner-search-history-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.nyx-owner-search-history-heading h3{margin:0}
+.nyx-owner-search-history-heading button{display:inline-flex;align-items:center;gap:5px;min-height:29px;padding:4px 8px;border:1px solid #7d333c;border-radius:7px;background:#3a1d24;color:#ffb5b8;font-size:8px;font-weight:700;cursor:pointer}
+.nyx-owner-search-history-heading button[hidden]{display:none}.nyx-owner-search-history-heading button:hover{border-color:#a84652;background:#4a222b}.nyx-owner-search-history-heading button:disabled{opacity:.45;cursor:wait}.nyx-owner-search-history-heading button svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2}
+.nyx-owner-flagged-search-list{display:grid;gap:8px}
+.nyx-owner-flagged-search-list article{display:grid;gap:7px;padding:10px;border:1px solid var(--owner-line);border-radius:9px;background:#0b111b}
+.nyx-owner-flagged-search-list article header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.nyx-owner-flagged-search-list article strong{color:var(--owner-accent);font-size:9px;letter-spacing:.04em;text-transform:uppercase}
+.nyx-owner-flagged-search-list article.policy strong{color:#ffb0bf}
+.nyx-owner-flagged-search-list article time{color:var(--owner-muted);font-size:8px;white-space:nowrap}
+.nyx-owner-flagged-search-list article p{overflow-wrap:anywhere;margin:0;color:var(--owner-text);font-size:11px;line-height:1.45;white-space:normal}
+.nyx-owner-ip-ban-drawer{display:grid;align-content:start;gap:12px;padding:14px;overflow:auto}
+.nyx-owner-ip-ban-form{display:grid;gap:9px;margin-top:10px}
+.nyx-owner-ip-ban-form label{display:grid;gap:5px;color:var(--owner-muted);font-size:9px}
+.nyx-owner-ip-ban-form input{min-height:35px;padding:0 9px;border:1px solid var(--owner-line);border-radius:8px;outline:0;background:#0b111b;color:var(--owner-text);font-size:11px}
+.nyx-owner-ip-ban-form input:focus{border-color:var(--owner-accent)}
+.nyx-owner-ip-ban-list{display:grid;gap:7px;margin-top:10px}
+.nyx-owner-ip-ban-list article{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px;border:1px solid var(--owner-line);border-radius:8px;background:#0b111b}
+.nyx-owner-ip-ban-list article>div{display:grid;min-width:0;gap:3px}.nyx-owner-ip-ban-list strong{overflow-wrap:anywhere;white-space:normal;color:var(--owner-text);font:700 10px/1.5 Consolas,"Cascadia Mono",monospace;user-select:text}.nyx-owner-ip-ban-list span,.nyx-owner-ip-ban-list small{overflow:hidden;color:var(--owner-muted);font-size:8px;text-overflow:ellipsis;white-space:nowrap}
+.nyx-owner-ip-ban-list button{flex:0 0 auto;min-height:28px;padding:4px 8px;border:1px solid #7d333c;border-radius:7px;background:#3a1d24;color:#ffb5b8;font-size:8px;font-weight:700;cursor:pointer}
 .nyx-owner-confirm{
   position:fixed;
   z-index:6;
@@ -380,7 +416,10 @@
 .nyx-owner-confirm p{margin:0;color:var(--owner-muted);font-size:11px;line-height:1.5}
 .nyx-owner-confirm label{display:grid;gap:6px;color:var(--owner-muted);font-size:10px}
 .nyx-owner-confirm label strong{color:var(--owner-text);font-family:Consolas,monospace}
-.nyx-owner-confirm input{height:36px;padding:0 10px;border:1px solid var(--owner-line);border-radius:8px;outline:0;background:#090e16;color:var(--owner-text)}
+.nyx-owner-confirm :is(input,textarea){width:100%;box-sizing:border-box;border:1px solid var(--owner-line);border-radius:8px;outline:0;background:#090e16;color:var(--owner-text);font:inherit}
+.nyx-owner-confirm input{height:36px;padding:0 10px}
+.nyx-owner-confirm textarea{min-height:92px;padding:10px;line-height:1.45;resize:vertical}
+.nyx-owner-confirm label small{color:var(--owner-muted);font-size:9px;line-height:1.4}
 .nyx-owner-confirm form>div{display:flex;justify-content:flex-end;gap:8px}
 .nyx-owner-confirm button{min-height:34px;padding:6px 12px;border:1px solid var(--owner-line);border-radius:8px;background:var(--owner-panel-2);color:var(--owner-text);font-size:10px;cursor:pointer}
 .nyx-owner-confirm button[type=submit]{border-color:#496fc5;background:#3159ad}
@@ -436,3 +475,14 @@
   .nyx-owner-table-loading i,.nyx-owner-activity-loading i,.nyx-owner-drawer-loading i{animation:none}
   .nyx-owner-public-effect,.nyx-owner-public-avatar>em,.nyx-owner-public-body>strong{animation:none!important}
 }
+.nyx-owner-badge.custom-role{border-color:color-mix(in srgb,var(--owner-custom-role) 52%,var(--owner-line));background:color-mix(in srgb,var(--owner-custom-role) 14%,var(--owner-surface));color:color-mix(in srgb,var(--owner-custom-role) 72%,white)}
+.nyx-owner-user-drawer>header.nyx-owner-custom-role-header{grid-template-columns:minmax(0,1fr) 30px}.nyx-owner-custom-role-header>div{display:flex!important;align-items:center;gap:10px}.nyx-owner-custom-role-header>div>span{display:grid;flex:0 0 36px;width:36px;height:36px;place-items:center;border:1px solid var(--owner-line);border-radius:10px;background:var(--owner-panel)}.nyx-owner-custom-role-header>div>span svg{width:18px!important;height:18px!important}.nyx-owner-custom-role-header>div>div{display:grid;min-width:0;gap:2px}.nyx-owner-custom-role-header h2,.nyx-owner-custom-role-header p{min-width:0}
+.nyx-owner-custom-role-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px}.nyx-owner-custom-role-toolbar h3,.nyx-owner-custom-role-toolbar p{margin:0}.nyx-owner-custom-role-toolbar button{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}.nyx-owner-custom-role-toolbar button svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8}
+.nyx-owner-custom-role-form,.nyx-owner-custom-role-editor{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(120px,.8fr) minmax(0,1fr);gap:10px;align-items:end}
+.nyx-owner-custom-role-form label:first-child{grid-column:span 2}
+.nyx-owner-custom-role-list{display:grid;gap:10px;container-type:inline-size}
+.nyx-owner-custom-role-item{overflow:hidden;border:1px solid var(--owner-line);border-radius:11px;background:color-mix(in srgb,var(--owner-surface) 88%,transparent)}.nyx-owner-custom-role-item.editing{border-color:color-mix(in srgb,var(--owner-accent) 48%,var(--owner-line))}.nyx-owner-custom-role-row{display:grid;min-width:0;grid-template-columns:12px minmax(0,1fr) minmax(70px,.55fr) max-content max-content 34px;gap:8px;align-items:center;padding:10px}.nyx-owner-custom-role-dot{width:10px;height:10px;border-radius:50%;background:var(--owner-custom-role);box-shadow:0 0 0 3px color-mix(in srgb,var(--owner-custom-role) 15%,transparent)}.nyx-owner-custom-role-copy{display:grid;min-width:0}.nyx-owner-custom-role-copy strong,.nyx-owner-custom-role-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.nyx-owner-custom-role-copy strong{font-size:10px}.nyx-owner-custom-role-copy small,.nyx-owner-custom-role-placement,.nyx-owner-custom-role-permission-count{overflow:hidden;color:var(--owner-muted);font-size:8px;text-overflow:ellipsis;white-space:nowrap}.nyx-owner-custom-role-row>button{width:auto!important;min-width:0!important;max-width:100%;min-height:31px;padding:7px 9px}.nyx-owner-custom-role-row>button[data-owner-custom-role-delete]{width:31px!important;padding:7px!important}.nyx-owner-custom-role-row>button svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.8}.nyx-owner-custom-role-editor{padding:12px;border-top:1px solid var(--owner-line);background:var(--owner-panel)}
+.nyx-owner-custom-role-swatch{position:absolute;inset:0 auto 0 0;width:4px;border-radius:13px 0 0 13px;background:var(--owner-custom-role)}
+.nyx-owner-custom-role-color-control{position:relative;display:grid;grid-template-columns:32px minmax(0,1fr);gap:7px;align-items:center}.nyx-owner-custom-role-color-control .nyx-owner-custom-role-swatch{position:static;width:30px;height:30px;border-radius:8px}.nyx-owner-custom-role-color-control input{min-width:0}.nyx-owner-custom-role-form label>small,.nyx-owner-custom-role-editor label>small{margin-top:3px;color:var(--owner-muted);font-size:8px}.nyx-owner-custom-role-permission-editor{grid-column:1/-1;border:1px solid var(--owner-line);border-radius:9px;background:var(--owner-panel-2)}.nyx-owner-custom-role-permission-editor>summary{padding:9px 11px;color:var(--owner-muted);font-size:9px;font-weight:750;cursor:pointer}.nyx-owner-custom-role-permissions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:0;padding:10px;border:0;border-top:1px solid var(--owner-line)}.nyx-owner-custom-role-permissions legend{display:none}.nyx-owner-custom-role-permissions label{display:grid!important;grid-template-columns:17px minmax(0,1fr)!important;gap:2px 7px!important;align-items:center;padding:7px;border:1px solid color-mix(in srgb,var(--owner-line) 80%,transparent);border-radius:7px;background:var(--owner-panel)}.nyx-owner-custom-role-permissions input{grid-row:1/3;width:14px!important;height:14px!important;min-height:0!important}.nyx-owner-custom-role-permissions span{color:var(--owner-text);font-size:9px;font-weight:750}.nyx-owner-custom-role-permissions small{overflow:hidden;color:var(--owner-muted);font:7px/1.2 "Cascadia Mono",Consolas,monospace;text-overflow:ellipsis}.nyx-owner-custom-role-editor-actions{display:flex;gap:8px;grid-column:1/-1}
+@container (max-width:520px){.nyx-owner-custom-role-row{grid-template-columns:12px minmax(0,1fr) max-content 34px}.nyx-owner-custom-role-placement,.nyx-owner-custom-role-permission-count{display:none}}
+@media (max-width:700px){.nyx-owner-custom-role-form,.nyx-owner-custom-role-editor{grid-template-columns:1fr}.nyx-owner-custom-role-form label:first-child{grid-column:auto}.nyx-owner-custom-role-permissions{grid-template-columns:1fr}.nyx-owner-custom-role-toolbar{align-items:flex-start}.nyx-owner-custom-role-row{grid-template-columns:12px minmax(0,1fr) max-content 34px}.nyx-owner-custom-role-placement,.nyx-owner-custom-role-permission-count{display:none}}

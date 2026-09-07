@@ -8,6 +8,24 @@
     "start:wisp": "node wisp-server.js",
     "dev": "node server.js",
     "dev:accounts": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-local-accounts.ps1",
+    "prepare:vision": "node scripts/warm-vision-model.mjs",
+    "sync:gn-math": "node scripts/sync-gn-math.mjs",
+    "test:account-controls": "node scripts/test-account-controls.mjs",
+    "test:ai-workspace": "node scripts/test-ai-workspace.mjs",
+    "test:code-studio": "node scripts/test-code-studio.mjs",
+    "test:code-runner": "node scripts/test-code-runner.mjs",
+    "test:code-tutorials": "node scripts/test-code-tutorials.mjs",
+    "test:games": "node scripts/test-games.mjs",
+    "test:guest-ip-tracking": "node scripts/test-guest-ip-tracking.mjs",
+    "test:nyxify-covers": "node scripts/test-nyxify-playlist-covers.mjs",
+    "test:nyxify-live": "node scripts/test-nyxify-live-playback.mjs",
+    "test:nyxify-match": "node scripts/test-nyxify-full-track-match.mjs",
+    "test:nyxify-player": "node scripts/test-nyxify-player.mjs",
+    "test:jsdelivr-publisher": "node scripts/test-jsdelivr-publisher.mjs",
+    "test:link-generator-global-jsdelivr": "node scripts/test-link-generator-global-jsdelivr.mjs",
+    "test:link-generator-variants": "node scripts/test-link-generator-variants.mjs",
+    "test:nyxtube": "node scripts/test-nyxtube.mjs",
+    "test:utility-theme": "node scripts/test-utility-neutral-theme.mjs",
     "build:netlify": "node scripts/build-netlify.mjs",
     "check:branding": "node scripts/check-branding.mjs",
     "check:deploy": "node scripts/check-deploy.mjs && npm run check:branding"
@@ -16,22 +34,32 @@
     "node": ">=20 <25"
   },
   "dependencies": {
+    "@emoji-mart/data": "^1.2.1",
+    "@huggingface/transformers": "^4.2.0",
     "@mercuryworkshop/bare-mux": "2.1.9",
     "@mercuryworkshop/epoxy-transport": "^2.1.28",
     "@mercuryworkshop/libcurl-transport": "^2.0.5",
     "@mercuryworkshop/scramjet": "2.0.67-alpha.2",
     "@mercuryworkshop/scramjet-controller": "0.0.14",
+    "@mercuryworkshop/scramjet-v1": "npm:@mercuryworkshop/scramjet@1.1.0",
     "@mercuryworkshop/wisp-js": "0.4.1",
     "@titaniumnetwork-dev/ultraviolet": "^3.2.10",
     "eruda": "3.4.3",
     "express": "5.2.1",
     "firebase-admin": "13.10.0",
+    "katex": "0.18.4",
     "serverless-http": "^4.0.0",
+    "socket.io": "^4.8.3",
     "three": "^0.134.0",
     "vanta": "^0.5.24"
   },
   "devDependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
-    "@playwright/test": "^1.61.1"
+    "@playwright/test": "^1.61.1",
+    "acorn": "^8.18.0",
+    "clean-css": "^5.3.3",
+    "html-minifier-terser": "^7.2.0",
+    "socket.io-client": "^4.8.3",
+    "terser": "^5.49.2"
   }
 }

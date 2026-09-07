@@ -1,0 +1,58 @@
+{
+	on_demand_tls {
+		ask http://127.0.0.1:8080/api/custom-hostnames/allow
+	}
+
+	servers {
+		trusted_proxies static 173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32
+		trusted_proxies_strict
+		client_ip_headers CF-Connecting-IP X-Forwarded-For
+	}
+}
+
+(nyx_proxy) {
+	request_body {
+		max_size 2MB
+	}
+
+	reverse_proxy 127.0.0.1:8080 {
+		header_up CF-Connecting-IP {client_ip}
+		header_up X-NF-Client-Connection-IP {client_ip}
+		header_up X-Real-IP {client_ip}
+	}
+}
+
+(nyx_site) {
+	@stratus_public path /cloud/v1/embed /cloud/v1/embed-data /cloud/v1/signal/* /cloud/v1/healthz /cloud/v1/source
+	handle @stratus_public {
+		reverse_proxy 127.0.0.1:3001 {
+			header_up X-Caddy-Real-IP-Is-Here1357908642 {client_ip}
+			header_up X-Forwarded-Proto {scheme}
+			header_up X-Forwarded-Host {host}
+		}
+	}
+
+	@stratus_private path /cloud/v1/*
+	handle @stratus_private {
+		respond 404
+	}
+
+	handle {
+		import nyx_proxy
+	}
+}
+
+__NYX_DOMAIN__ {
+	import nyx_site
+}
+
+https:// {
+	tls {
+		on_demand
+	}
+	import nyx_site
+}
+
+http:// {
+	redir https://{host}{uri} permanent
+}

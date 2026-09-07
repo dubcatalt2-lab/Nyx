@@ -1,229 +1,793 @@
 (()=>{
   'use strict';
-  const API='https://getuwu.christmas/api/v1';
+  const CHECK_API='/api/link-checker';
+  const HISTORY_KEY='nyx.linkChecker.history.v1';
+  const SETTINGS_KEY='nyx.linkChecker.settings.v1';
+  const FREEDNS_KEY='nyx.linkChecker.freedns.v1';
+  const FREEDNS_VERDICTS_KEY='nyx.linkChecker.freednsVerdicts.v1';
+  const HISTORY_LIMIT=500;
+  const FREEDNS_PAGE_SIZE=25;
+  const FREEDNS_FULL_SAVE_BATCH=100;
+  // Full-scan results are served by the shared Nocturne account. Two parallel
+  // pages keep imports responsive without repeatedly tripping its quota.
+  const FREEDNS_FULL_IMPORT_CONCURRENCY=2;
+  const FREEDNS_BULK_ACCESS_TTL_MS=5*60_000;
+  const FREEDNS_CACHE_TTL_MS=8*60*60_000;
+  const FREEDNS_CACHE_EXPIRY_POLL_MS=5*60_000;
+  const THEME_CLASSES=['theme-default','theme-ruby','theme-emerald','theme-sakura','theme-fresh'];
   const $=selector=>document.querySelector(selector);
+  const $$=selector=>[...document.querySelectorAll(selector)];
   const refs={
-    form:$('[data-check-form]'),
-    input:$('[data-url-input]'),
-    filter:$('[data-filter-select]'),
-    button:$('[data-check-button]'),
-    apiStatus:$('[data-api-status]'),
-    notice:$('[data-notice]'),
-    resultsSection:$('[data-results-section]'),
-    resultsTitle:$('[data-results-title]'),
+    form:$('[data-check-form]'),input:$('[data-url-input]'),filter:$('[data-filter-select]'),button:$('[data-check-button]'),
+    apiStatus:$('[data-api-status]'),notice:$('[data-notice]'),resultsSection:$('[data-results-section]'),resultsTitle:$('[data-results-title]'),
     resultList:$('[data-result-list]'),
-    previewSection:$('[data-preview-section]'),
-    screenshotButton:$('[data-screenshot-button]'),
-    screenshotWrap:$('[data-screenshot-wrap]'),
-    screenshotLoading:$('[data-screenshot-loading]'),
-    screenshotImage:$('[data-screenshot-image]')
+    domainSection:$('[data-domain-section]'),domainTitle:$('[data-domain-title]'),domainSource:$('[data-domain-source]'),domainDetails:$('[data-domain-details]'),
+    dashboardList:$('[data-dashboard-list]'),dashboardEmpty:$('[data-dashboard-empty]'),dashboardPager:$('[data-dashboard-pager]'),
+    historyList:$('[data-history-list]'),historyEmpty:$('[data-history-empty]'),
+    freednsStart:$('[data-freedns-start]'),freednsCheckAll:$('[data-freedns-check-all]'),freednsCheckPage:$('[data-freedns-check-page]'),freednsGodDomains:$('[data-freedns-god-domains]'),freednsDoubleCheck:$('[data-freedns-double-check]'),freednsStop:$('[data-freedns-stop]'),freednsList:$('[data-freedns-list]'),freednsEmpty:$('[data-freedns-empty]'),freednsPager:$('[data-freedns-pager]'),
+    freednsSearch:$('[data-freedns-search]'),freednsStatus:$('[data-freedns-status]'),freednsVendor:$('[data-freedns-vendor]'),freednsProgress:$('[data-freedns-progress]'),
+    freednsDetail:$('[data-freedns-detail]'),freednsDetailTitle:$('[data-freedns-detail-title]'),freednsDetailLink:$('[data-freedns-detail-link]'),freednsDetailSummary:$('[data-freedns-detail-summary]'),
+    freednsDetailMessage:$('[data-freedns-detail-message]'),freednsDetailVendors:$('[data-freedns-detail-vendors]'),freednsRegistration:$('[data-freedns-registration]'),freednsRegistrationSource:$('[data-freedns-registration-source]')
   };
+  const defaultSettings={pageSize:25,notifications:true,theme:'inherit'};
+  let settings=readJsonStorage(SETTINGS_KEY,defaultSettings);
+  let history=readJsonStorage(HISTORY_KEY,[]);
+  if(!Array.isArray(history)) history=[];
+  let vendors=[];
   let activeController=null;
   let lastReport=null;
   let currentTarget='';
+  let dashboardPage=1;
+  let dashboardVerdict='';
+  let freednsCache=readJsonStorage(FREEDNS_KEY,{domains:[],totalPages:0,totalDomains:0,lastScrapedAt:'',complete:false});
+  if(!freednsCache||!Array.isArray(freednsCache.domains))freednsCache={domains:[],totalPages:0,totalDomains:0,lastScrapedAt:'',complete:false};
+  let freednsPage=1;
+  let freednsController=null;
+  let freednsScraping=false;
+  let freednsScanController=null;
+  let freednsPageScanning=false;
+  let freednsFullScanning=false;
+  let freednsGodMode=false;
+  let freednsDoubleCheckRemaining=0;
+  let freednsAutoScanStarted=false;
+  let freednsBulkAuthPromise=null;
+  let freednsBulkAccess={resolved:false,premium:false,expiresAt:0,error:'',promise:null};
+  let freednsVisibleDomains=new Set();
+  let freednsDetailController=null;
+  const storedFreednsVerdicts=readJsonStorage(FREEDNS_VERDICTS_KEY,{vendors:[],verdicts:{},updatedAt:''});
+  let freednsVerdictsNeedsMigration=Boolean(storedFreednsVerdicts?.verdicts&&!Array.isArray(storedFreednsVerdicts?.values)&&(storedFreednsVerdicts.updatedAt||Object.keys(storedFreednsVerdicts.verdicts).length));
+  let freednsVerdicts=expandFreednsVerdicts(storedFreednsVerdicts);
+  const freednsChecking=new Set();
+  const freednsCacheExpiredOnLoad=expireFreednsCacheIfNeeded();
 
+  function readJsonStorage(key,fallback){
+    try{const value=JSON.parse(localStorage.getItem(key)||'null');return value===null ? fallback : value}catch{return fallback}
+  }
+  function writeJsonStorage(key,value){
+    try{localStorage.setItem(key,JSON.stringify(value));return true}catch{return false}
+  }
+  function emptyFreednsCache(){return {domains:[],totalPages:0,totalDomains:0,lastScrapedAt:'',complete:false}}
+  function emptyFreednsVerdicts(){return {vendors:[],verdicts:{},updatedAt:''}}
+  function expandFreednsVerdicts(value){
+    if(!value||!Array.isArray(value.vendors))return emptyFreednsVerdicts();
+    if(Array.isArray(value.values)){
+      const verdicts={};value.values.forEach((compact,index)=>{const domain=freednsCache.domains[index]?.domain;if(domain&&typeof compact==='string'&&compact)verdicts[domain]=compact;});
+      return {vendors:value.vendors.map(String),verdicts,updatedAt:String(value.updatedAt||'')};
+    }
+    if(value.verdicts&&typeof value.verdicts==='object')return {vendors:value.vendors.map(String),verdicts:value.verdicts,updatedAt:String(value.updatedAt||'')};
+    return emptyFreednsVerdicts();
+  }
+  function compactFreednsVerdicts(){
+    return {version:2,vendors:[...freednsVerdicts.vendors],values:freednsCache.domains.map(entry=>String(freednsVerdicts.verdicts[entry.domain]||'')),updatedAt:freednsVerdicts.updatedAt};
+  }
+  function freednsCacheActivityTime(){
+    return Math.max(Date.parse(freednsCache.lastScrapedAt||'')||0,Date.parse(freednsVerdicts.updatedAt||'')||0);
+  }
+  function expireFreednsCacheIfNeeded({render=false,notify=false}={}){
+    if(freednsScraping||freednsPageScanning||freednsFullScanning)return false;
+    const updatedAt=freednsCacheActivityTime();
+    if(!updatedAt||Date.now()-updatedAt<FREEDNS_CACHE_TTL_MS)return false;
+    freednsCache=emptyFreednsCache();freednsVerdicts=emptyFreednsVerdicts();freednsVerdictsNeedsMigration=false;freednsPage=1;freednsGodMode=false;freednsDoubleCheckRemaining=0;
+    try{localStorage.removeItem(FREEDNS_KEY);localStorage.removeItem(FREEDNS_VERDICTS_KEY)}catch{}
+    if(render)renderWorkspace();
+    if(notify)showNotice('Cached FreeDNS domains and verdicts expired after eight hours and were removed from this device.');
+    return true;
+  }
+  function inheritedTheme(){
+    try{return localStorage.getItem('nyx.theme') || 'default'}catch{return 'default'}
+  }
   function applyTheme(){
-    let theme='default';
-    try{theme=localStorage.getItem('nyx.theme') || 'default'}catch{}
-    if(theme && theme!=='default') document.body.classList.add(`theme-${theme}`);
+    document.body.classList.remove(...THEME_CLASSES);
+    const selected=settings.theme==='inherit' ? inheritedTheme() : settings.theme;
+    if(selected && selected!=='default') document.body.classList.add(`theme-${selected}`);
   }
   function normalizeTarget(value){
-    const raw=String(value || '').trim();
+    const raw=String(value||'').trim();
     if(!raw) throw new Error('Enter a website to check.');
     const candidate=/^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : `https://${raw}`;
     let parsed;
     try{parsed=new URL(candidate)}catch{throw new Error('Enter a valid website or URL.');}
     if(!['http:','https:'].includes(parsed.protocol)) throw new Error('Only HTTP and HTTPS links can be checked.');
+    parsed.hash='';
     return parsed.href;
   }
-  function endpoint(path,params={}){
-    const url=new URL(API+path);
-    Object.entries(params).forEach(([key,value])=>url.searchParams.set(key,value));
-    return url.href;
-  }
-  function showNotice(message,type=''){
+  function showNotice(message,type='',force=false){
+    if(!message){refs.notice.textContent='';refs.notice.hidden=true;return;}
+    if(!force && type!=='error' && !settings.notifications) return;
     refs.notice.textContent=message;
-    refs.notice.className=`notice${type ? ` ${type}` : ''}`;
+    refs.notice.className=`notice global-notice${type ? ` ${type}` : ''}`;
     refs.notice.hidden=!message;
+  }
+  function makeIcon(name){
+    const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    const use=document.createElementNS('http://www.w3.org/2000/svg','use');
+    icon.setAttribute('class','lc-icon');icon.setAttribute('aria-hidden','true');use.setAttribute('href',`#icon-${name}`);icon.append(use);return icon;
   }
   function setLoading(loading){
     document.body.classList.toggle('loading',loading);
     refs.button.disabled=loading;
-    refs.button.querySelector('span').textContent=loading ? 'Checking…' : 'Run check';
+    refs.button.querySelector('span').textContent=loading ? 'Checking...' : 'Check';
   }
   function setApiStatus(online,label=online?'API online':'API unavailable'){
     refs.apiStatus.classList.toggle('online',online);
     refs.apiStatus.classList.toggle('offline',!online);
     refs.apiStatus.querySelector('span').textContent=label;
   }
-  function filterDisplayLabel(filter){
-    const key=String(filter?.filter || filter?.key || '').trim().toLowerCase();
-    const label=String(filter?.label || filter?.filter || filter?.key || 'Filter');
-    return key==='cisco' || /^cisco talos$/i.test(label) ? 'Cisco Umbrella' : label;
+  function vendorLabel(value){
+    const key=String(typeof value==='string' ? value : (value?.filter||value?.key||'')).trim().toLowerCase();
+    const supplied=String(typeof value==='string' ? value : (value?.label||value?.filter||value?.key||'Filter'));
+    const labels={blocksi_ai:'Blocksi AI',cisco:'Cisco Umbrella',dnsfilter:'DNSFilter',fortiguard:'FortiGuard',goguardian:'GoGuardian',iboss:'iBoss',lanschool:'LanSchool',paloalto:'Palo Alto'};
+    if(labels[key]) return labels[key];
+    if(/^cisco talos$/i.test(supplied)) return 'Cisco Umbrella';
+    return supplied===key ? key.replace(/_/g,' ').replace(/\b\w/g,letter=>letter.toUpperCase()) : supplied;
   }
   async function fetchJson(url,options={}){
-    const response=await fetch(url,{...options,headers:{Accept:'application/json',...(options.headers || {})}});
+    const response=await fetch(url,{...options,headers:{Accept:'application/json',...(options.headers||{})}});
+    const text=await response.text();let body=null;
+    try{body=text?JSON.parse(text):null}catch{
+      const path=(()=>{try{return new URL(url,location.href).pathname}catch{return String(url)}})();
+      throw new Error(`Nyx received a web page instead of API data from ${path}. Refresh Nyx and try again.`);
+    }
     if(!response.ok){
       let message=`Request failed (${response.status})`;
-      try{const body=await response.json();message=body.error || body.message || message}catch{}
-      throw new Error(message);
+      message=body?.error||body?.message||message;
+      const retryAfter=String(response.headers.get('retry-after')||'').trim();
+      const retryAfterMs=/^\d+$/.test(retryAfter)?Number(retryAfter)*1000:Math.max(0,(Date.parse(retryAfter)||0)-Date.now());
+      const error=new Error(message);error.status=response.status;error.retryAfterMs=retryAfterMs;throw error;
     }
-    return response.json();
+    if(body===null)throw new Error('Nyx received an empty API response.');
+    return body;
   }
-  async function loadFilters(){
+  async function loadVendors(){
     try{
-      const filters=await fetchJson(endpoint('/filters'));
-      const rows=Array.isArray(filters) ? filters : filters.filters;
-      if(!Array.isArray(rows)) throw new Error('Unexpected filter response.');
-      const fragment=document.createDocumentFragment();
-      rows.forEach(item=>{
-        if(!item?.key) return;
-        const option=document.createElement('option');
-        option.value=String(item.key);
-        option.textContent=filterDisplayLabel(item);
-        fragment.append(option);
+      const payload=await fetchJson(`${CHECK_API}/vendors`);
+      vendors=(Array.isArray(payload)?payload:payload.vendors||[]).map(String).filter(Boolean);
+      $$('[data-vendor-select]').forEach(select=>{
+        const current=select.value;
+        const first=select.options[0];
+        select.replaceChildren(first);
+        vendors.forEach(key=>{
+          const option=document.createElement('option');option.value=key;option.textContent=vendorLabel(key);select.append(option);
+        });
+        if([...select.options].some(option=>option.value===current)) select.value=current;
       });
-      refs.filter.append(fragment);
-      setApiStatus(true,`${rows.length} filters ready`);
-    }catch(error){
-      setApiStatus(false);
-      showNotice(`Could not load the filter list: ${error.message}`,'error');
-    }
+      $('[data-stat-vendors]').textContent=String(vendors.length);
+      setApiStatus(true,`${vendors.length} vendors ready`);
+      renderFreedns();
+      void maybeAutoScanFreednsPage();
+    }catch(error){setApiStatus(false);showNotice(`Could not load vendor filters: ${error.message}`,'error',true);}
+  }
+  function normalizeCheckReport(payload,target){
+    const values=payload?.vendors&&typeof payload.vendors==='object'?payload.vendors:{};
+    const results=Object.entries(values).map(([key,value])=>({
+      filter:key,label:vendorLabel(key),blocked:value?.blocked===true?true:(value?.blocked===false?false:null),
+      category:String(value?.category||''),error:String(value?.error||''),ms:Number.isFinite(Number(value?.ms))?Number(value.ms):null
+    }));
+    if(!results.length) throw new Error('The Link Checker returned no vendor results.');
+    return {
+      target:String(payload?.host||new URL(target).hostname),url:target,blocked:payload?.blocked===true,
+      blockedBy:Array.isArray(payload?.blockedBy)?payload.blockedBy.map(String):results.filter(result=>result.blocked===true).map(result=>result.filter),
+      cached:payload?.cached===true,plan:String(payload?.plan||''),usage:payload?.usage||null,results
+    };
+  }
+  async function freednsParentAuth(){
+    if(window.parent===window)return null;
+    const requestId=`lc-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    return new Promise(resolve=>{
+      let settled=false;
+      const finish=value=>{if(settled)return;settled=true;clearTimeout(timer);window.removeEventListener('message',receive);resolve(value)};
+      const receive=event=>{if(event.source!==window.parent||event.origin!==location.origin||event.data?.type!=='nyx:account-token-response'||event.data?.requestId!==requestId)return;finish({available:true,token:String(event.data.token||'')})};
+      const timer=setTimeout(()=>finish(null),2500);window.addEventListener('message',receive);window.parent.postMessage({type:'nyx:account-token-request',requestId},location.origin);
+    });
+  }
+  async function freednsBulkAuth(){
+    const parentAuth=await freednsParentAuth();
+    if(parentAuth?.available)return {currentUser:parentAuth.token?{getIdToken:async()=>String((await freednsParentAuth())?.token||'')}:null};
+    if(!freednsBulkAuthPromise)freednsBulkAuthPromise=(async()=>{
+      const config=await fetchJson('/api/founder-profile/auth-config',{cache:'no-store'});
+      if(!config?.enabled)throw new Error('Nyx account sign-in is not configured.');
+      const [{initializeApp,getApps},{getAuth,setPersistence,browserLocalPersistence}]=await Promise.all([
+        import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),
+        import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')
+      ]);
+      const app=getApps().find(item=>item.name==='nyx-founder-owner')||initializeApp({apiKey:config.apiKey,authDomain:`${config.projectId}.firebaseapp.com`,projectId:config.projectId},'nyx-founder-owner');
+      const auth=getAuth(app);try{await setPersistence(auth,browserLocalPersistence)}catch{}
+      if(typeof auth.authStateReady==='function')await auth.authStateReady();
+      return auth;
+    })();
+    try{return await freednsBulkAuthPromise}catch(error){freednsBulkAuthPromise=null;throw error}
+  }
+  async function refreshFreednsBulkAccess(force=false){
+    if(!force&&freednsBulkAccess.resolved&&freednsBulkAccess.expiresAt>Date.now())return freednsBulkAccess;
+    if(freednsBulkAccess.promise)return freednsBulkAccess.promise;
+    const operation=(async()=>{
+      const auth=await freednsBulkAuth();
+      if(!auth.currentUser)return {resolved:true,premium:false,expiresAt:Date.now()+FREEDNS_BULK_ACCESS_TTL_MS,error:'Sign in to Nyx to use Premium full scans.',auth};
+      const token=await auth.currentUser.getIdToken();
+      const account=await fetchJson('/api/account/me',{cache:'no-store',headers:{Authorization:`Bearer ${token}`}});
+      const staffAccess=['owner','co_owner','admin','manager','developer','moderator'].includes(String(account?.role||''));
+      const premium=account?.premiumAccess===true||staffAccess;
+      return {resolved:true,premium,staffAccess,expiresAt:Date.now()+FREEDNS_BULK_ACCESS_TTL_MS,error:premium?'':'Premium, Trial, or Moderator access is required to check all domains.',auth};
+    })();
+    freednsBulkAccess={...freednsBulkAccess,promise:operation};
+    try{return freednsBulkAccess={...(await operation),promise:null};}
+    catch(error){freednsBulkAccess={resolved:true,premium:false,expiresAt:Date.now()+30_000,error:error.message||'Premium access could not be checked.',promise:null};throw error;}
+    finally{updateFreednsActions();}
+  }
+  async function freednsBulkToken({force=false}={}){
+    const access=await refreshFreednsBulkAccess(force);
+    if(!access.auth?.currentUser)throw new Error(access.error||'Sign in to Nyx on the homepage before starting a full registry scan.');
+    if(!access.premium)throw new Error(access.error||'Premium, Trial, or Moderator access is required to check all domains.');
+    return access.auth.currentUser.getIdToken();
+  }
+  async function checkTarget(target,vendor='',signal,{bulk=false}={}){
+    const headers={'Content-Type':'application/json'};
+    if(bulk)headers.Authorization=`Bearer ${await freednsBulkToken()}`;
+    const payload=await fetchJson(`${CHECK_API}/check`,{
+      method:'POST',signal,headers,body:JSON.stringify({url:target,...(vendor?{vendor}:{}),...(bulk?{bulk:true}:{})})
+    });
+    return normalizeCheckReport(payload,target);
   }
   function resultState(result){
-    if(result?.error || result?.ok===false) return {key:'error',label:'Error'};
+    if(result?.error) return {key:'error',label:'Error'};
     if(result?.blocked===true) return {key:'blocked',label:'Blocked'};
     if(result?.blocked===false) return {key:'allowed',label:'Allowed'};
-    return {key:'info',label:'Info only'};
+    return {key:'info',label:'Unknown'};
+  }
+  function reportCounts(report){
+    const counts={blocked:0,allowed:0,info:0,error:0};
+    (report?.results||[]).forEach(result=>{counts[resultState(result).key]+=1;});
+    return counts;
   }
   function renderResults(report){
-    const results=Array.isArray(report?.results) ? report.results : [];
-    const counts={blocked:0,allowed:0,info:0,error:0};
+    const counts=reportCounts(report);
     refs.resultList.replaceChildren();
-    results.forEach(result=>{
+    report.results.forEach(result=>{
       const state=resultState(result);
-      counts[state.key]+=1;
-      const row=document.createElement('article');
-      row.className=`result-row ${state.key}`;
-      const dot=document.createElement('span');
-      dot.className='result-dot';
-      dot.setAttribute('aria-hidden','true');
-      const copy=document.createElement('div');
-      copy.className='result-copy';
-      const label=document.createElement('strong');
-      label.textContent=filterDisplayLabel(result);
-      const category=document.createElement('span');
-      category.textContent=result.error || result.category || 'No category returned';
-      copy.append(label,category);
-      const meta=document.createElement('div');
-      meta.className='result-meta';
-      const status=document.createElement('span');
-      status.className='result-state';
-      status.textContent=state.label;
-      const timing=document.createElement('span');
-      timing.className='result-time';
-      timing.textContent=Number.isFinite(Number(result.ms)) ? `${Math.round(Number(result.ms))} ms` : '—';
-      meta.append(status,timing);
-      row.append(dot,copy,meta);
-      refs.resultList.append(row);
+      const row=document.createElement('article');row.className=`result-row ${state.key}`;
+      const dot=document.createElement('span');dot.className='result-dot';dot.setAttribute('aria-hidden','true');
+      const copy=document.createElement('div');copy.className='result-copy';
+      const label=document.createElement('strong');label.textContent=result.label||vendorLabel(result.filter);
+      const category=document.createElement('span');category.textContent=result.error||result.category||'No category returned';copy.append(label,category);
+      const meta=document.createElement('div');meta.className='result-meta';
+      const status=document.createElement('span');status.className='result-state';status.textContent=state.label;
+      const timing=document.createElement('span');timing.className='result-time';timing.textContent=Number.isFinite(result.ms)?`${Math.round(result.ms)} ms`:'—';meta.append(status,timing);
+      row.append(dot,copy,meta);refs.resultList.append(row);
     });
-    Object.entries(counts).forEach(([key,value])=>{
-      const node=$(`[data-count-${key}]`);
-      if(node) node.textContent=String(value);
-    });
-    refs.resultsTitle.textContent=report?.target ? `Results for ${report.target}` : 'Results';
+    Object.entries(counts).forEach(([key,value])=>{const node=$(`[data-count-${key}]`);if(node)node.textContent=String(value);});
+    refs.resultsTitle.textContent=`Results for ${report.target}`;
+    const summary=$('[data-results-summary]');
+    if(summary) summary.textContent=report.blocked
+      ? `Blocked by ${report.blockedBy.length} vendor${report.blockedBy.length===1?'':'s'}${report.cached?' · cached result':''}`
+      : `Not blocked by any reporting vendor${report.cached?' · cached result':''}`;
     refs.resultsSection.hidden=false;
-    lastReport={...report,results};
+    lastReport=report;
   }
-  function safeImageUrl(value){
-    try{const parsed=new URL(String(value || ''));return ['http:','https:','data:'].includes(parsed.protocol) ? parsed.href : ''}catch{return ''}
+  function domainDate(events,action){return events.find(event=>event.action===action)?.date||''}
+  function formatDate(value){if(!value)return 'Not reported';const date=new Date(value);return Number.isNaN(date.getTime())?String(value):date.toLocaleString()}
+  function addDomainDetail(label,value){
+    const item=document.createElement('article');const name=document.createElement('span');const copy=document.createElement('strong');
+    name.textContent=label;copy.textContent=Array.isArray(value)?(value.join(', ')||'Not reported'):(value||'Not reported');item.append(name,copy);refs.domainDetails.append(item);
   }
-  function renderPreview(preview,target){
-    const resolved=preview?.url || target;
-    $('[data-preview-title]').textContent=preview?.title || 'Untitled website';
-    $('[data-preview-host]').textContent=preview?.host || new URL(resolved).hostname;
-    $('[data-preview-description]').textContent=preview?.description || 'No description available.';
-    const favicon=safeImageUrl(preview?.favicon);
-    const faviconNode=$('[data-preview-favicon]');
-    faviconNode.src=favicon || `https://www.google.com/s2/favicons?domain=${encodeURIComponent(new URL(resolved).hostname)}&sz=64`;
-    $('[data-preview-link]').href=resolved;
-    refs.previewSection.hidden=false;
+  function renderDomainInfo(info){
+    refs.domainDetails.replaceChildren();refs.domainTitle.textContent=info.domain||'Domain details';refs.domainSource.textContent=info.source||'RDAP';
+    addDomainDetail('Registrar',info.registrar);addDomainDetail('Created',formatDate(domainDate(info.events||[],'registration')));
+    addDomainDetail('Updated',formatDate(domainDate(info.events||[],'last changed')));addDomainDetail('Expires',formatDate(domainDate(info.events||[],'expiration')));
+    addDomainDetail('Status',info.status);addDomainDetail('DNSSEC',info.dnssec?'Signed':'Not reported as signed');addDomainDetail('Nameservers',info.nameservers);
+    refs.domainSection.hidden=false;
   }
-  async function loadPreview(target,signal){
+  async function loadDomainInfo(target,signal){
+    refs.domainSection.hidden=true;
     try{
-      const preview=await fetchJson(endpoint('/preview',{url:target}),{signal});
-      renderPreview(preview,target);
-    }catch(error){
-      if(error.name!=='AbortError') showNotice(`Checks finished, but the page preview failed: ${error.message}`);
-    }
+      const info=await fetchJson(`${CHECK_API}/domain-info`,{method:'POST',signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({url:target})});
+      renderDomainInfo(info);
+    }catch(error){if(error.name==='AbortError')return;}
+  }
+  function recordReport(report,source='single',render=true){
+    const entry={...report,id:globalThis.crypto?.randomUUID?.()||`scan-${Date.now()}-${Math.random().toString(16).slice(2)}`,checkedAt:new Date().toISOString(),source};
+    history.unshift(entry);history=history.slice(0,HISTORY_LIMIT);writeJsonStorage(HISTORY_KEY,history);if(render)renderWorkspace();return entry;
   }
   async function runCheck(event){
-    event?.preventDefault();
-    let target;
-    try{target=normalizeTarget(refs.input.value)}catch(error){showNotice(error.message,'error');refs.input.focus();return;}
-    activeController?.abort();
-    activeController=new AbortController();
-    currentTarget=target;
-    refs.screenshotWrap.hidden=true;
-    refs.screenshotImage.hidden=true;
-    refs.previewSection.hidden=true;
-    refs.resultsSection.hidden=true;
-    showNotice('');
-    setLoading(true);
+    event?.preventDefault();let target;
+    try{target=normalizeTarget(refs.input.value)}catch(error){showNotice(error.message,'error',true);refs.input.focus();return;}
+    activeController?.abort();activeController=new AbortController();currentTarget=target;
+    refs.resultsSection.hidden=true;refs.domainSection.hidden=true;showNotice('');setLoading(true);
     try{
-      const filter=refs.filter.value || 'all';
-      const [report]=await Promise.all([
-        fetchJson(endpoint('/check',{url:target,filter}),{signal:activeController.signal}),
-        loadPreview(target,activeController.signal)
-      ]);
-      renderResults(report);
-      setApiStatus(true);
+      const report=await checkTarget(target,refs.filter.value,activeController.signal);
+      renderResults(report);recordReport(report,'single');setApiStatus(true,report.plan?`${vendors.length} vendors · ${report.plan}`:`${vendors.length} vendors ready`);
+      void loadDomainInfo(target,activeController.signal);
       refs.resultsSection.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
-    }catch(error){
-      if(error.name!=='AbortError'){
-        showNotice(`Check failed: ${error.message}`,'error');
-        setApiStatus(false,'Request failed');
+    }catch(error){if(error.name!=='AbortError'){showNotice(`Check failed: ${error.message}`,'error',true);setApiStatus(false,'Request failed');}}
+    finally{setLoading(false);}
+  }
+  function latestByHost(){
+    const map=new Map();history.forEach(entry=>{const key=String(entry.target||'').toLowerCase();if(key&&!map.has(key))map.set(key,entry);});return [...map.values()];
+  }
+  function verdictFor(entry,vendor=''){
+    if(vendor){const result=(entry.results||[]).find(item=>item.filter===vendor);return resultState(result).key;}
+    const counts=reportCounts(entry);return counts.blocked?'blocked':(counts.allowed?'allowed':'unknown');
+  }
+  function filteredDashboardRows(){
+    const search=String($('[data-dashboard-search]')?.value||'').trim().toLowerCase();const vendor=$('[data-dashboard-vendor]')?.value||'';const verdict=dashboardVerdict;
+    return latestByHost().filter(entry=>{
+      if(search&&!`${entry.target} ${entry.url}`.toLowerCase().includes(search))return false;
+      if(vendor&&!(entry.results||[]).some(result=>result.filter===vendor))return false;
+      return !verdict||verdictFor(entry,vendor)===verdict;
+    });
+  }
+  function makeVerdictPill(entry){
+    const verdict=verdictFor(entry);const pill=document.createElement('span');pill.className=`verdict-pill ${verdict}`;pill.textContent=verdict==='blocked'?'Blocked':verdict==='allowed'?'Allowed':'Unknown';return pill;
+  }
+  function renderDashboard(){
+    const unique=latestByHost();$('[data-stat-domains]').textContent=String(unique.length);$('[data-stat-checks]').textContent=String(history.length);
+    const blockedCount=unique.filter(entry=>verdictFor(entry)==='blocked').length;
+    $('[data-stat-blocked]').textContent=String(blockedCount);$('[data-stat-vendors]').textContent=String(vendors.length);
+    const usageBar=$('[data-usage-bar]');if(usageBar)usageBar.style.width=`${unique.length?Math.max(5,Math.round(blockedCount/unique.length*100)):0}%`;
+    const rows=filteredDashboardRows();const pageSize=Number(settings.pageSize)||25;const pageCount=Math.max(1,Math.ceil(rows.length/pageSize));dashboardPage=Math.min(Math.max(1,dashboardPage),pageCount);
+    const pageRows=rows.slice((dashboardPage-1)*pageSize,dashboardPage*pageSize);refs.dashboardList.replaceChildren();
+    pageRows.forEach(entry=>{
+      const row=document.createElement('article');row.className='domain-row';
+      const identity=document.createElement('div');identity.className='domain-identity';const title=document.createElement('strong');title.textContent=entry.target;const url=document.createElement('span');url.textContent=entry.url||entry.target;identity.append(title,url);
+      const time=document.createElement('time');time.dateTime=entry.checkedAt||'';time.textContent=formatDate(entry.checkedAt);
+      const pill=makeVerdictPill(entry);const vendorsNode=document.createElement('span');vendorsNode.className='domain-vendor-count';vendorsNode.textContent=String(entry.results?.length||0);
+      const open=document.createElement('button');open.className='btn-secondary';open.type='button';open.append(makeIcon('eye'),'Open');open.addEventListener('click',()=>openSavedReport(entry));
+      row.append(identity,time,pill,vendorsNode,open);refs.dashboardList.append(row);
+    });
+    refs.dashboardEmpty.hidden=rows.length>0;refs.dashboardPager.hidden=rows.length<=pageSize;
+    $('[data-dashboard-page-label]').textContent=`Page ${dashboardPage} of ${pageCount} · ${rows.length} domains`;
+    $('[data-dashboard-prev]').disabled=dashboardPage<=1;$('[data-dashboard-next]').disabled=dashboardPage>=pageCount;
+  }
+  function renderHistory(){
+    refs.historyList.replaceChildren();history.forEach(entry=>{
+      const row=document.createElement('article');row.className='history-row';const time=document.createElement('time');time.dateTime=entry.checkedAt||'';time.textContent=formatDate(entry.checkedAt);
+      const action=document.createElement('span');action.className='history-action';action.textContent='check';
+      const copy=document.createElement('div');const title=document.createElement('strong');title.textContent=entry.target;const detail=document.createElement('span');detail.textContent=entry.url||entry.target;copy.append(title,detail);
+      const result=document.createElement('div');result.className='history-result';result.append(makeVerdictPill(entry));const count=document.createElement('span');count.textContent=String(entry.results?.length||0);result.append(count);
+      const open=document.createElement('button');open.className='btn-secondary';open.type='button';open.append(makeIcon('eye'),'View');open.addEventListener('click',()=>openSavedReport(entry));row.append(time,action,copy,result,open);refs.historyList.append(row);
+    });refs.historyEmpty.hidden=history.length>0;
+  }
+  function normalizedFreednsDomain(value){
+    const domain=String(value?.domain||'').trim().toLowerCase();
+    if(!domain||!/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i.test(domain))return null;
+    return {id:String(value?.id||domain),domain,status:value?.status==='public'?'public':'private',hosts:Math.max(0,Number(value?.hosts)||0),owner:String(value?.owner||'').trim().slice(0,100),added:String(value?.added||'').trim().slice(0,40)};
+  }
+  function filteredFreednsDomains(){
+    const search=String(refs.freednsSearch?.value||'').trim().toLowerCase();const status=refs.freednsStatus?.value||'all';
+    const filtered=freednsCache.domains.filter(entry=>(!search||entry.domain.includes(search))&&(status==='all'||entry.status===status));
+    if(!freednsGodMode)return filtered;
+    const historyDomains=new Set(history.map(entry=>String(entry?.target||'').trim().toLowerCase()).filter(Boolean));
+    return filtered.map(entry=>({entry,score:freednsGodScore(entry.domain,historyDomains)})).filter(item=>item.score.checked>0).sort((left,right)=>
+      right.score.allowed-left.score.allowed
+      ||left.score.blocked-right.score.blocked
+      ||left.score.unknown-right.score.unknown
+      ||right.score.checked-left.score.checked
+      ||Number(right.entry.status==='public')-Number(left.entry.status==='public')
+      ||right.entry.hosts-left.entry.hosts
+      ||left.entry.domain.localeCompare(right.entry.domain)
+    ).map(item=>item.entry);
+  }
+  function freednsResultsFor(domain){
+    const results=new Map();let checkedAt='';
+    history.forEach(entry=>{
+      if(String(entry?.target||'').trim().toLowerCase()!==domain)return;
+      if(!checkedAt)checkedAt=entry.checkedAt||'';
+      (entry.results||[]).forEach(result=>{const key=String(result?.filter||'');if(key&&!results.has(key))results.set(key,result);});
+    });
+    const compact=String(freednsVerdicts.verdicts[domain]||'');
+    if(compact&&!checkedAt)checkedAt=freednsVerdicts.updatedAt||'';
+    freednsVerdicts.vendors.forEach((vendor,index)=>{
+      if(results.has(vendor))return;
+      const state=compact[index];
+      if(state==='a')results.set(vendor,{filter:vendor,blocked:false});
+      else if(state==='b')results.set(vendor,{filter:vendor,blocked:true});
+      else if(state==='e')results.set(vendor,{filter:vendor,blocked:null,error:'Stored vendor error'});
+      else if(state==='u')results.set(vendor,{filter:vendor,blocked:null});
+    });
+    return {results,checkedAt};
+  }
+  function freednsVendorSignature(values=vendors){return values.map(String).join('\u001f')}
+  function freednsGodScore(domain,historyDomains=null){
+    const compact=String(freednsVerdicts.verdicts[domain]||'');
+    if(compact){const allowed=(compact.match(/a/g)||[]).length;const blocked=(compact.match(/b/g)||[]).length;return {allowed,blocked,unknown:compact.length-allowed-blocked,checked:compact.length};}
+    if(historyDomains&&!historyDomains.has(domain))return {allowed:0,blocked:0,unknown:0,checked:0};
+    const results=[...freednsResultsFor(domain).results.values()];const allowed=results.filter(result=>result?.blocked===false&&!result?.error).length;const blocked=results.filter(result=>result?.blocked===true).length;
+    return {allowed,blocked,unknown:results.length-allowed-blocked,checked:results.length};
+  }
+  function storeFreednsVerdict(report,domain=report?.target){
+    if(freednsVendorSignature(freednsVerdicts.vendors)!==freednsVendorSignature())freednsVerdicts={vendors:[...vendors],verdicts:{},updatedAt:''};
+    const byVendor=new Map((report?.results||[]).map(result=>[String(result?.filter||''),result]));
+    freednsVerdicts.verdicts[String(domain||'').toLowerCase()]=vendors.map(vendor=>{
+      const result=byVendor.get(vendor);if(!result)return 'u';if(result.error)return 'e';return result.blocked===true?'b':(result.blocked===false?'a':'u');
+    }).join('');
+    freednsVerdicts.updatedAt=new Date().toISOString();
+  }
+  function saveFreednsVerdicts(){
+    const saved=writeJsonStorage(FREEDNS_VERDICTS_KEY,compactFreednsVerdicts());
+    if(saved)freednsVerdictsNeedsMigration=false;
+    return saved;
+  }
+  function hasStoredFreednsVerdict(domain){
+    return freednsVendorSignature(freednsVerdicts.vendors)===freednsVendorSignature()&&String(freednsVerdicts.verdicts[domain]||'').length===vendors.length;
+  }
+  function makeFreednsVendorStatus(vendor,result){
+    const state=result ? resultState(result) : {key:'unchecked',label:'Not checked'};
+    const status=document.createElement('span');status.className=`freedns-vendor-icon ${state.key}`;
+    status.title=`${vendorLabel(vendor)}: ${state.label}`;status.setAttribute('aria-label',status.title);
+    status.append(makeIcon(state.key==='blocked'?'shield-x':state.key==='allowed'?'shield-check':'shield-question'));
+    return status;
+  }
+  function addFreednsDetailSummary(label,value){
+    const item=document.createElement('article');const name=document.createElement('span');const copy=document.createElement('strong');
+    name.textContent=label;copy.textContent=String(value||'Not reported');item.append(name,copy);refs.freednsDetailSummary.append(item);
+  }
+  function renderFreednsDetailVendors(report){
+    const results=report?.results instanceof Map?report.results:new Map((report?.results||[]).map(result=>[String(result?.filter||''),result]));
+    refs.freednsDetailVendors.replaceChildren();
+    vendors.forEach(vendor=>{
+      const result=results.get(vendor);const state=result?resultState(result):{key:'unchecked',label:'Not checked'};
+      const card=document.createElement('article');card.className=`freedns-detail-vendor ${state.key}`;
+      const icon=document.createElement('span');icon.className='freedns-detail-vendor-icon';icon.append(makeIcon(state.key==='blocked'?'shield-x':state.key==='allowed'?'shield-check':'shield-question'));
+      const label=document.createElement('strong');label.textContent=vendorLabel(vendor);
+      const status=document.createElement('span');status.className='freedns-detail-vendor-state';status.textContent=state.key==='allowed'?'Unblocked':state.key==='error'?'Unknown':state.label;
+      const category=document.createElement('small');category.textContent=result?.error||result?.category||(result?'Category not stored':'Not checked');
+      card.append(icon,label,status,category);refs.freednsDetailVendors.append(card);
+    });
+  }
+  function registrationRecord(info){
+    const lines=[];const append=(label,value)=>{const values=Array.isArray(value)?value:[value];values.filter(Boolean).forEach(item=>lines.push(`${label}: ${item}`));};
+    append('Domain Name',info?.domain);append('Registry Domain ID',info?.handle);append('Registrar',info?.registrar);
+    append('Created',domainDate(info?.events||[],'registration'));append('Updated',domainDate(info?.events||[],'last changed'));append('Expires',domainDate(info?.events||[],'expiration'));
+    append('Domain Status',info?.status);append('Name Server',info?.nameservers);append('DNSSEC',info?.dnssec?'signedDelegation':'unsigned');
+    return lines.join('\n')||'No public registration details were reported for this domain.';
+  }
+  function closeFreednsDetails(){
+    freednsDetailController?.abort();freednsDetailController=null;
+    if(refs.freednsDetail?.open)refs.freednsDetail.close();
+  }
+  async function openFreednsDetails(entry){
+    const saved=freednsResultsFor(entry.domain);if(!saved.results.size)return;
+    freednsDetailController?.abort();const controller=new AbortController();freednsDetailController=controller;const {signal}=controller;
+    refs.freednsDetailTitle.textContent=entry.domain;refs.freednsDetailLink.href=`https://${entry.domain}/`;
+    refs.freednsDetailSummary.replaceChildren();addFreednsDetailSummary('Subdomains',entry.hosts.toLocaleString());addFreednsDetailSummary('Owner',entry.owner);addFreednsDetailSummary('Added',entry.added);addFreednsDetailSummary('Status',entry.status);
+    renderFreednsDetailVendors(saved);refs.freednsDetailMessage.textContent=saved.checkedAt?`Saved results from ${formatDate(saved.checkedAt)}. Loading categories...`:'Saved compact results. Loading categories...';
+    refs.freednsRegistrationSource.textContent='RDAP';refs.freednsRegistration.textContent='Loading public registration details...';
+    if(!refs.freednsDetail.open){if(typeof refs.freednsDetail.showModal==='function')refs.freednsDetail.showModal();else refs.freednsDetail.setAttribute('open','');}
+    const target=`https://${entry.domain}/`;
+    const vendorRequest=checkTarget(target,'',signal,{bulk:freednsBulkAccess.premium===true}).then(report=>{
+      if(signal.aborted||freednsDetailController!==controller)return;
+      renderFreednsDetailVendors(report);refs.freednsDetailMessage.textContent=`All ${report.results.length} vendor details loaded${report.cached?' from the provider cache':''}.`;
+    }).catch(error=>{
+      if(error.name==='AbortError'||signal.aborted||freednsDetailController!==controller)return;
+      refs.freednsDetailMessage.textContent=`Showing saved compact states. Categories could not be refreshed: ${error.message}`;
+    });
+    const registrationRequest=fetchJson(`${CHECK_API}/domain-info`,{method:'POST',signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({url:target})}).then(info=>{
+      if(signal.aborted||freednsDetailController!==controller)return;
+      refs.freednsRegistrationSource.textContent=info.source||'RDAP';refs.freednsRegistration.textContent=registrationRecord(info);
+    }).catch(error=>{
+      if(error.name==='AbortError'||signal.aborted||freednsDetailController!==controller)return;
+      refs.freednsRegistration.textContent=`Registration details unavailable: ${error.message}`;
+    });
+    await Promise.allSettled([vendorRequest,registrationRequest]);
+  }
+  function freednsPageState(){
+    const domains=filteredFreednsDomains();const pages=Math.max(1,Math.ceil(domains.length/FREEDNS_PAGE_SIZE));freednsPage=Math.min(Math.max(1,freednsPage),pages);
+    return {domains,pages,visible:domains.slice((freednsPage-1)*FREEDNS_PAGE_SIZE,freednsPage*FREEDNS_PAGE_SIZE)};
+  }
+  function updateFreednsActions(){
+    const busy=freednsScraping||freednsPageScanning||freednsFullScanning;
+    const interactionBusy=freednsScraping||freednsPageScanning;
+    refs.freednsStart.disabled=busy;
+    refs.freednsStart.querySelector('span').textContent=freednsScraping?'Scraping…':'Scrape registry';
+    refs.freednsCheckAll.disabled=busy||!vendors.length||!freednsCache.complete||!freednsBulkAccess.premium;
+    refs.freednsCheckAll.querySelector('span').textContent=freednsFullScanning?'Checking all…':(!freednsBulkAccess.resolved?'Checking access…':(freednsBulkAccess.premium?'Check all domains':'Premium or Moderator'));
+    refs.freednsCheckAll.title=freednsBulkAccess.premium?'Check every cached domain with all vendors':(freednsBulkAccess.error||'Premium access is being checked.');
+    refs.freednsCheckPage.disabled=busy||!vendors.length||!freednsPageState().visible.length;
+    refs.freednsCheckPage.querySelector('span').textContent=freednsPageScanning?'Checking…':'Check this page';
+    refs.freednsGodDomains.disabled=!freednsCache.domains.length;
+    refs.freednsGodDomains.classList.toggle('active',freednsGodMode);refs.freednsGodDomains.setAttribute('aria-pressed',String(freednsGodMode));
+    refs.freednsDoubleCheck.hidden=busy||freednsDoubleCheckRemaining<=0;
+    refs.freednsDoubleCheck.disabled=busy||!freednsBulkAccess.premium;
+    refs.freednsDoubleCheck.querySelector('span').textContent=`Double check (${freednsDoubleCheckRemaining.toLocaleString()})`;
+    refs.freednsDoubleCheck.title=freednsBulkAccess.premium?'Retry only the domains still missing results':(freednsBulkAccess.error||'Premium, Trial, or Moderator access is required.');
+    refs.freednsStop.hidden=!busy;
+    refs.freednsSearch.disabled=interactionBusy;refs.freednsStatus.disabled=interactionBusy;refs.freednsVendor.disabled=interactionBusy;
+    $('[data-freedns-clear]').disabled=busy;
+    $('[data-freedns-prev]').disabled=interactionBusy||freednsPage<=1;
+    $('[data-freedns-next]').disabled=interactionBusy||freednsPage>=freednsPageState().pages;
+  }
+  function renderFreedns(){
+    const {domains,pages,visible}=freednsPageState();
+    freednsVisibleDomains=new Set(visible.map(entry=>entry.domain));
+    $('[data-freedns-count]').textContent=freednsCache.domains.length.toLocaleString();
+    $('[data-freedns-pages]').textContent=freednsCache.totalPages?String(freednsCache.totalPages):'—';
+    $('[data-freedns-public]').textContent=freednsCache.domains.filter(entry=>entry.status==='public').length.toLocaleString();
+    $('[data-freedns-private]').textContent=freednsCache.domains.filter(entry=>entry.status==='private').length.toLocaleString();
+    $('[data-freedns-updated]').textContent=freednsCache.lastScrapedAt?`${freednsCache.complete?'Updated':'Partial scrape'} ${formatDate(freednsCache.lastScrapedAt)} · clears after 8 hours`:'Not scraped on this device';
+    refs.freednsList.replaceChildren();
+    visible.forEach(entry=>{
+      const row=document.createElement('article');row.className='freedns-row';
+      const identity=document.createElement('div');identity.className='freedns-identity';const name=document.createElement('strong');name.textContent=entry.domain;const id=document.createElement('span');const godScore=freednsGodMode?freednsGodScore(entry.domain):null;id.textContent=godScore?`${godScore.allowed}/${godScore.checked} blockers unblocked · FreeDNS #${entry.id}`:`FreeDNS #${entry.id}`;identity.append(name,id);
+      const hosts=document.createElement('span');hosts.className='freedns-hosts';hosts.textContent=entry.hosts.toLocaleString();
+      const status=document.createElement('span');status.className=`freedns-status ${entry.status}`;status.textContent=entry.status;
+      const report=freednsResultsFor(entry.domain);const selectedVendor=refs.freednsVendor?.value||'';const shownVendors=selectedVendor?[selectedVendor]:vendors;
+      const vendorStates=document.createElement('div');vendorStates.className='freedns-vendor-states';
+      if(!shownVendors.length){const waiting=document.createElement('span');waiting.className='freedns-not-checked';waiting.textContent='vendors loading';vendorStates.append(waiting);}
+      else if(!shownVendors.some(vendor=>report.results.has(vendor))){const unchecked=document.createElement('span');unchecked.className='freedns-not-checked';unchecked.textContent='not checked';vendorStates.append(unchecked);}
+      else shownVendors.forEach(vendor=>vendorStates.append(makeFreednsVendorStatus(vendor,report.results.get(vendor))));
+      const detailsReady=report.results.size>0;
+      if(detailsReady){vendorStates.classList.add('has-details');vendorStates.tabIndex=0;vendorStates.setAttribute('role','button');vendorStates.setAttribute('aria-label',`Open detailed blocker results for ${entry.domain}`);vendorStates.title=`Open detailed results${report.checkedAt?` · checked ${formatDate(report.checkedAt)}`:''}`;vendorStates.addEventListener('click',()=>void openFreednsDetails(entry));vendorStates.addEventListener('keydown',event=>{if(event.key!=='Enter'&&event.key!==' ')return;event.preventDefault();void openFreednsDetails(entry);});}
+      else if(report.checkedAt)vendorStates.title=`Last checked ${formatDate(report.checkedAt)}`;
+      const checking=freednsChecking.has(entry.domain);const check=document.createElement('button');check.className=`btn-secondary freedns-check-button${checking?' checking':''}`;check.type='button';check.disabled=checking||freednsFullScanning||freednsPageScanning||freednsScraping||!vendors.length;check.title=selectedVendor?`Check ${entry.domain} with ${vendorLabel(selectedVendor)}`:`Check ${entry.domain} with all vendors`;check.setAttribute('aria-label',check.title);check.append(makeIcon('refresh'));check.addEventListener('click',()=>void checkFreednsDomain(entry.domain));
+      row.append(identity,hosts,status,vendorStates,check);refs.freednsList.append(row);
+    });
+    refs.freednsEmpty.querySelector('strong').textContent=freednsGodMode?'No God Domains yet':'No registry cache yet';refs.freednsEmpty.querySelector('span').textContent=freednsGodMode?'Run a domain check or full scan to rank domains by unblocked vendors.':'Scrape FreeDNS to build a searchable local list.';
+    refs.freednsEmpty.hidden=domains.length>0;refs.freednsPager.hidden=domains.length<=FREEDNS_PAGE_SIZE;
+    $('[data-freedns-page-label]').textContent=`Page ${freednsPage} of ${pages} · ${domains.length.toLocaleString()} domains`;
+    $('[data-freedns-prev]').disabled=freednsPage<=1;$('[data-freedns-next]').disabled=freednsPage>=pages;
+    updateFreednsActions();
+  }
+  function setFreednsScraping(active){
+    freednsScraping=active;updateFreednsActions();
+  }
+  function setFreednsProgress(page,total,count){
+    const percent=total?Math.min(100,Math.round(page/total*100)):0;refs.freednsProgress.hidden=false;
+    $('[data-freedns-progress-label]').textContent=`Scraping page ${page.toLocaleString()} of ${total.toLocaleString()}`;
+    $('[data-freedns-progress-count]').textContent=`${percent}% · ${count.toLocaleString()} domains`;
+    $('[data-freedns-progress-bar]').style.width=`${percent}%`;
+    $('[data-freedns-progress-detail]').textContent='The scrape runs one bounded page at a time so FreeDNS is not overloaded.';
+  }
+  function setFreednsScanProgress(completed,total,failed=0){
+    const percent=total?Math.min(100,Math.round(completed/total*100)):0;refs.freednsProgress.hidden=false;
+    $('[data-freedns-progress-label]').textContent=completed>=total?`Checked ${total.toLocaleString()} domains`:`Checking domain ${(completed+1).toLocaleString()} of ${total.toLocaleString()}`;
+    $('[data-freedns-progress-count]').textContent=`${percent}%${failed?` · ${failed.toLocaleString()} failed`:''}`;
+    $('[data-freedns-progress-bar]').style.width=`${percent}%`;
+    $('[data-freedns-progress-detail]').textContent='Results are saved on this device as each domain finishes. You can stop without losing completed checks.';
+  }
+  function setFreednsFullProgress(completed,total,failed=0){
+    const percent=total?Math.min(100,Math.round(completed/total*100)):0;refs.freednsProgress.hidden=false;
+    $('[data-freedns-progress-label]').textContent=completed>=total?`Checked all ${total.toLocaleString()} domains`:`Full scan: ${completed.toLocaleString()} of ${total.toLocaleString()} domains`;
+    $('[data-freedns-progress-count]').textContent=`${percent}%${failed?` · ${failed.toLocaleString()} failed`:''}`;
+    $('[data-freedns-progress-bar]').style.width=`${percent}%`;
+    $('[data-freedns-progress-detail]').textContent='Keep this tab open. Saved verdicts let a stopped full scan resume without repeating completed domains.';
+  }
+  function freednsDelay(milliseconds,signal){
+    if(signal.aborted)return Promise.reject(new DOMException('Stopped','AbortError'));
+    return new Promise((resolve,reject)=>{const timer=setTimeout(resolve,milliseconds);signal.addEventListener('abort',()=>{clearTimeout(timer);reject(new DOMException('Stopped','AbortError'));},{once:true});});
+  }
+  function saveFreednsCache(){
+    const saved=writeJsonStorage(FREEDNS_KEY,freednsCache);
+    if(saved&&freednsVerdicts.vendors.length)saveFreednsVerdicts();
+    return saved;
+  }
+  async function startFreednsScrape(){
+    if(freednsScraping)return;
+    freednsAutoScanStarted=false;freednsDoubleCheckRemaining=0;freednsController?.abort();freednsController=new AbortController();const signal=freednsController.signal;setFreednsScraping(true);showNotice('');
+    const collected=new Map();let totalPages=1;let totalDomains=0;let completedPages=0;
+    try{
+      for(let page=1;page<=totalPages;page+=1){
+        const payload=await fetchJson(`${CHECK_API}/freedns-registry?page=${page}`,{signal});
+        if(page===1){totalPages=Math.max(1,Math.min(500,Number(payload.totalPages)||1));totalDomains=Math.max(0,Number(payload.totalDomains)||0);}
+        (Array.isArray(payload.domains)?payload.domains:[]).forEach(value=>{const entry=normalizedFreednsDomain(value);if(entry)collected.set(entry.id,entry);});
+        completedPages=page;setFreednsProgress(page,totalPages,collected.size);
+        if(page===1||page%10===0||page===totalPages){freednsCache={domains:[...collected.values()],totalPages,totalDomains,lastScrapedAt:new Date().toISOString(),complete:page===totalPages};renderFreedns();}
+        if(page<totalPages)await freednsDelay(175,signal);
       }
-    }finally{
-      setLoading(false);
+      freednsCache={domains:[...collected.values()],totalPages,totalDomains,lastScrapedAt:new Date().toISOString(),complete:true};
+      const saved=saveFreednsCache();renderFreedns();showNotice(saved?`FreeDNS scrape complete: ${freednsCache.domains.length.toLocaleString()} domains cached on this device.`:'The scrape completed, but this browser could not save the registry cache.',saved?'':'error',!saved);
+    }catch(error){
+      if(collected.size){freednsCache={domains:[...collected.values()],totalPages,totalDomains,lastScrapedAt:new Date().toISOString(),complete:false};saveFreednsCache();renderFreedns();}
+      if(error.name==='AbortError')showNotice(`FreeDNS scrape stopped after ${completedPages.toLocaleString()} pages. The partial cache was saved.`);
+      else showNotice(`FreeDNS scrape failed on page ${(completedPages+1).toLocaleString()}: ${error.message}`,'error',true);
+    }finally{setFreednsScraping(false);if(freednsCache.complete)void maybeAutoScanFreednsPage();}
+  }
+  function stopFreednsWork(){freednsController?.abort();freednsScanController?.abort()}
+  function clearFreednsCache(){
+    if(freednsScraping||freednsPageScanning||freednsFullScanning){showNotice('Stop the active work before clearing the cache.','error',true);return;}
+    if(!freednsCache.domains.length)return;if(!confirm('Clear the FreeDNS registry cache stored on this device?'))return;
+    freednsCache=emptyFreednsCache();freednsVerdicts=emptyFreednsVerdicts();freednsVerdictsNeedsMigration=false;freednsPage=1;freednsGodMode=false;freednsDoubleCheckRemaining=0;try{localStorage.removeItem(FREEDNS_KEY);localStorage.removeItem(FREEDNS_VERDICTS_KEY)}catch{}renderFreedns();showNotice('Local FreeDNS registry cache and saved verdicts cleared.');
+  }
+  function exportFreedns(){
+    if(!freednsCache.domains.length){showNotice('Scrape the FreeDNS registry before exporting it.','error',true);return;}
+    const content=[['id','domain','status','hostsInUse','owner','added'],...freednsCache.domains.map(entry=>[entry.id,entry.domain,entry.status,entry.hosts,entry.owner,entry.added])].map(row=>row.map(csvCell).join(',')).join('\n');
+    const blob=new Blob([content],{type:'text/csv'});const url=URL.createObjectURL(blob);const anchor=document.createElement('a');anchor.href=url;anchor.download=`nyx-freedns-registry-${new Date().toISOString().slice(0,10)}.csv`;anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000);showNotice('FreeDNS registry CSV created.');
+  }
+  async function checkFreednsDomain(domain){
+    if(freednsChecking.has(domain)||freednsFullScanning||freednsPageScanning||freednsScraping)return;
+    const vendor=refs.freednsVendor?.value||'';const controller=new AbortController();freednsChecking.add(domain);renderFreedns();showNotice('');
+    try{
+      const report=await checkTarget(`https://${domain}/`,vendor,controller.signal);recordReport(report,'freedns');
+      showNotice(vendor?`${domain} checked with ${vendorLabel(vendor)}.`:`${domain} checked across ${report.results.length} vendors.`);
+    }catch(error){if(error.name!=='AbortError')showNotice(`Could not check ${domain}: ${error.message}`,'error',true);}
+    finally{freednsChecking.delete(domain);renderFreedns();}
+  }
+  function freednsNeedsCheck(domain,vendor=''){
+    const report=freednsResultsFor(domain);
+    return vendor?!report.results.has(vendor):!vendors.every(key=>report.results.has(key));
+  }
+  async function scanFreednsPage({automatic=false}={}){
+    if(freednsScraping||freednsPageScanning||freednsFullScanning||!vendors.length)return;
+    const vendor=refs.freednsVendor?.value||'';
+    const candidates=freednsPageState().visible.filter(entry=>freednsNeedsCheck(entry.domain,vendor));
+    if(!candidates.length){if(!automatic)showNotice('Every domain on this page already has results for the selected vendors.');return;}
+    freednsScanController?.abort();freednsScanController=new AbortController();const {signal}=freednsScanController;
+    freednsPageScanning=true;candidates.forEach(entry=>freednsChecking.add(entry.domain));updateFreednsActions();renderFreedns();showNotice('');setFreednsScanProgress(0,candidates.length);
+    $('[data-freedns-progress-detail]').textContent='Nyx is checking this page through the paid server session. The page will not pause between domains.';
+    let completed=0;let failed=0;let requestError=null;
+    try{
+      const payload=await fetchJson(`${CHECK_API}/page-scan`,{method:'POST',signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({urls:candidates.map(entry=>`https://${entry.domain}/`),...(vendor?{vendor}:{})})});
+      for(const item of Array.isArray(payload.results)?payload.results:[]){
+        if(signal.aborted)throw new DOMException('Stopped','AbortError');
+        const domain=new URL(item.url).hostname.toLowerCase();
+        if(item.report)recordReport(normalizeCheckReport(item.report,item.url),'freedns',false);else failed+=1;
+        freednsChecking.delete(domain);completed+=1;setFreednsScanProgress(completed,candidates.length,failed);renderFreedns();
+      }
+      if(completed<candidates.length)failed+=candidates.length-completed;
+    }catch(error){
+      if(error.name==='AbortError')requestError=error;else{requestError=error;failed=candidates.length;completed=candidates.length;setFreednsScanProgress(completed,candidates.length,failed);}
+    }
+    finally{
+      freednsPageScanning=false;freednsChecking.clear();renderWorkspace();
+      if(signal.aborted||requestError?.name==='AbortError')showNotice(`Page scan stopped after ${completed.toLocaleString()} of ${candidates.length.toLocaleString()} domains. Completed results were saved.`);
+      else if(requestError)showNotice(`The page scan could not finish: ${requestError.message}`,'error',true);
+      else showNotice(`Page scan complete: ${completed.toLocaleString()} domains checked${failed?`, ${failed.toLocaleString()} failed`:''}.`,failed?'error':'',failed>0);
     }
   }
-  function showScreenshot(){
-    if(!currentTarget) return;
-    const currentlyOpen=!refs.screenshotWrap.hidden;
-    if(currentlyOpen){
-      refs.screenshotWrap.hidden=true;
-      refs.screenshotButton.textContent='View screenshot';
-      return;
+  async function scanAllFreedns(){
+    if(freednsScraping||freednsPageScanning||freednsFullScanning||!vendors.length)return;
+    if(!freednsCache.complete){showNotice('Finish scraping the FreeDNS registry before checking every domain.','error',true);return;}
+    try{await freednsBulkToken({force:true});}catch(error){showNotice(error.message,'error',true);return;}
+    const total=freednsCache.domains.length;
+    const candidates=freednsCache.domains.filter(entry=>!hasStoredFreednsVerdict(entry.domain));
+    if(!candidates.length){freednsDoubleCheckRemaining=0;updateFreednsActions();showNotice(`All ${total.toLocaleString()} cached FreeDNS domains already have saved vendor results.`);setFreednsFullProgress(total,total);return;}
+    freednsScanController?.abort();freednsScanController=new AbortController();const {signal}=freednsScanController;
+    freednsFullScanning=true;freednsDoubleCheckRemaining=0;updateFreednsActions();showNotice('');
+    const already=total-candidates.length;const wanted=new Set(candidates.map(entry=>entry.domain));let imported=0;let unsaved=0;let persistedTotal=Object.keys(freednsVerdicts.verdicts).length;let storageFailed=false;
+    setFreednsFullProgress(already,total);
+    const flush=()=>{
+      if(!unsaved)return true;
+      const saved=saveFreednsVerdicts();if(saved){unsaved=0;persistedTotal=Object.keys(freednsVerdicts.verdicts).length;}return saved;
+    };
+    const bulkFetch=async(path,options={})=>{
+      let failures=0;
+      while(!signal.aborted){
+        try{return await fetchJson(`${CHECK_API}${path}`,{...options,signal,headers:{Authorization:`Bearer ${await freednsBulkToken()}`,...(options.headers||{})}});}
+        catch(error){
+          if(signal.aborted||error.name==='AbortError')throw error;
+          const status=Number(error.status);const transient=[429,502,504].includes(status)||(status===503&&Number(error.retryAfterMs)>0)||error instanceof TypeError;
+          if(!transient)throw error;
+          failures+=1;
+          const waitMs=Math.max(3000,Math.min(60000,Number(error.retryAfterMs)||3000+failures*1000));
+          $('[data-freedns-progress-detail]').textContent='Nocturne is busy. Nyx is retrying automatically without stopping the full scan.';
+          await freednsDelay(waitMs,signal);
+        }
+      }
+      throw new DOMException('Stopped','AbortError');
+    };
+    const updateRemoteProgress=status=>{
+      const checked=Math.max(0,Number(status?.checked)||0);const locallyReady=already+imported;setFreednsFullProgress(Math.max(locallyReady,Math.min(total,checked)),total);
+      $('[data-freedns-progress-detail]').textContent=`${locallyReady.toLocaleString()} saved verdicts loaded. Nocturne's server has checked ${checked.toLocaleString()} in the current refresh.`;
+    };
+    const reportFromProvider=entry=>({target:entry.domain,url:`https://${entry.domain}/`,results:Object.entries(entry.vendors||{}).map(([filter,value])=>({filter,blocked:value?.blocked===true?true:(value?.blocked===false?false:null),category:String(value?.category||''),error:String(value?.error||'')}))});
+    const importProviderResults=async(label='Loading saved Nocturne verdicts')=>{
+      const importPayload=(payload,page,totalPages)=>{
+        for(const entry of Array.isArray(payload.domains)?payload.domains:[]){
+          if(!wanted.has(entry.domain)||!entry.vendors||!Object.keys(entry.vendors).length)continue;
+          storeFreednsVerdict(reportFromProvider(entry),entry.domain);wanted.delete(entry.domain);imported+=1;unsaved+=1;
+          if(unsaved>=FREEDNS_FULL_SAVE_BATCH&&!flush()){storageFailed=true;throw new Error('This browser could not save more verdicts.');}
+        }
+        setFreednsFullProgress(already+imported,total);$('[data-freedns-progress-detail]').textContent=`${label}: page ${page.toLocaleString()} of ${totalPages.toLocaleString()} · ${(already+imported).toLocaleString()} ready.`;
+      };
+      const first=await bulkFetch('/full-scan/results?page=1');const totalPages=Math.max(1,Number(first.totalPages)||1);importPayload(first,1,totalPages);
+      for(let page=2;page<=totalPages&&!signal.aborted&&wanted.size;page+=FREEDNS_FULL_IMPORT_CONCURRENCY){
+        const pages=Array.from({length:Math.min(FREEDNS_FULL_IMPORT_CONCURRENCY,totalPages-page+1)},(_,index)=>page+index);
+        const payloads=await Promise.all(pages.map(current=>bulkFetch(`/full-scan/results?page=${current}`)));
+        payloads.forEach((payload,index)=>importPayload(payload,pages[index],totalPages));
+      }
+    };
+    let error=null;
+    try{
+      await importProviderResults();
+      if(!flush())throw new Error('This browser could not save more verdicts.');
+      if(wanted.size){
+        let status=await bulkFetch('/full-scan/start',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});let observedRunning=status.running===true;let idlePolls=0;updateRemoteProgress(status);
+        while(!signal.aborted){
+          if(status.running===true){observedRunning=true;idlePolls=0;}
+          else if(idlePolls>=2&&(observedRunning||status.started===false))break;
+          await freednsDelay(2500,signal);status=await bulkFetch('/full-scan/status');updateRemoteProgress(status);if(!status.running)idlePolls+=1;
+        }
+        if(!signal.aborted)await importProviderResults('Importing refreshed Nocturne verdicts');
+      }
+    }catch(scanError){if(scanError.name!=='AbortError')error=scanError;}
+    finally{
+      if(!flush())storageFailed=true;
+      freednsDoubleCheckRemaining=!storageFailed&&!error&&!signal.aborted?wanted.size:0;
+      freednsFullScanning=false;freednsChecking.clear();renderWorkspace();
+      if(storageFailed)showNotice(`The full scan stopped because this browser could not save more verdicts. ${persistedTotal.toLocaleString()} domain results remain saved.`,'error',true);
+      else if(error)showNotice(`The full scan could not finish: ${error.message}`,'error',true);
+      else if(signal.aborted)showNotice('Nyx stopped watching the full scan. The Nocturne server job may continue; click Check all domains to reconnect and import its results.');
+      else if(wanted.size)showNotice(`The server scan finished and imported ${imported.toLocaleString()} new domains. ${wanted.size.toLocaleString()} ${wanted.size===1?'domain still needs':'domains still need'} results; use Double check to retry only ${wanted.size===1?'that domain':'those domains'}.`,'error',true);
+      else showNotice(`Full scan complete: all ${total.toLocaleString()} cached domains have saved vendor results.`);
     }
-    refs.screenshotWrap.hidden=false;
-    refs.screenshotLoading.hidden=false;
-    refs.screenshotImage.hidden=true;
-    refs.screenshotButton.textContent='Hide screenshot';
-    refs.screenshotImage.onload=()=>{
-      refs.screenshotLoading.hidden=true;
-      refs.screenshotImage.hidden=false;
-    };
-    refs.screenshotImage.onerror=()=>{
-      refs.screenshotLoading.textContent='Screenshot unavailable for this website.';
-    };
-    refs.screenshotImage.src=endpoint('/screenshot',{url:currentTarget});
+  }
+  async function maybeAutoScanFreednsPage(){
+    if($('[data-view="scraper"]')?.hidden||freednsAutoScanStarted||freednsScraping||freednsPageScanning||freednsFullScanning||!vendors.length)return;
+    const visible=freednsPageState().visible;
+    if(!visible.length||visible.some(entry=>!freednsNeedsCheck(entry.domain,'')))return;
+    freednsAutoScanStarted=true;
+    await scanFreednsPage({automatic:true});
+  }
+  function renderWorkspace(){renderDashboard();renderHistory();renderFreedns();}
+  function switchView(name){
+    $$('[data-view]').forEach(view=>{const active=view.dataset.view===name;view.hidden=!active;view.classList.toggle('active',active);});
+    $$('[data-view-button]').forEach(button=>button.classList.toggle('active',button.dataset.viewButton===name));
+    $('[data-sidebar]')?.classList.remove('open');const shade=$('[data-sidebar-shade]');if(shade)shade.hidden=true;
+    window.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+    if(name==='scraper'){void refreshFreednsBulkAccess(true).catch(()=>{});void maybeAutoScanFreednsPage();}
+  }
+  function openSavedReport(entry){
+    currentTarget=entry.url||entry.target;refs.input.value=currentTarget;renderResults(entry);refs.domainSection.hidden=true;switchView('checker');
+    const controller=new AbortController();void loadDomainInfo(currentTarget,controller.signal);
   }
   async function copyReport(){
-    if(!lastReport) return;
-    const lines=[`Link Checker report for ${lastReport.target || currentTarget}`];
-    lastReport.results.forEach(result=>{
-      const state=resultState(result);
-      lines.push(`${filterDisplayLabel(result)}: ${state.label}${result.category ? ` — ${result.category}` : ''}`);
-    });
-    try{
-      await navigator.clipboard.writeText(lines.join('\n'));
-      showNotice('Report copied to the clipboard.');
-    }catch{showNotice('Clipboard access was unavailable.','error');}
+    if(!lastReport)return;const lines=[`Link Checker report for ${lastReport.target}`];lastReport.results.forEach(result=>{const state=resultState(result);lines.push(`${result.label||vendorLabel(result.filter)}: ${state.label}${result.category?` — ${result.category}`:''}`);});
+    try{await navigator.clipboard.writeText(lines.join('\n'));showNotice('Report copied to the clipboard.');}catch{showNotice('Clipboard access was unavailable.','error',true);}
   }
-  applyTheme();
-  refs.form.addEventListener('submit',runCheck);
-  refs.screenshotButton.addEventListener('click',showScreenshot);
-  $('[data-copy-results]').addEventListener('click',copyReport);
-  loadFilters();
+  function csvCell(value){const text=String(value??'');return /[",\n]/.test(text)?`"${text.replace(/"/g,'""')}"`:text}
+  function exportRecords(format){
+    if(!history.length){showNotice('There is no scan data to export.','error',true);return;}
+    const rows=history.map(entry=>({checkedAt:entry.checkedAt,source:entry.source,url:entry.url,target:entry.target,verdict:verdictFor(entry),blockedBy:(entry.blockedBy||[]).join('|'),vendors:entry.results||[]}));
+    const content=format==='csv'?[['checkedAt','source','url','target','verdict','blockedBy','vendorResults'],...rows.map(row=>[row.checkedAt,row.source,row.url,row.target,row.verdict,row.blockedBy,JSON.stringify(row.vendors)])].map(row=>row.map(csvCell).join(',')).join('\n'):JSON.stringify(rows,null,2);
+    const blob=new Blob([content],{type:format==='csv'?'text/csv':'application/json'});const url=URL.createObjectURL(blob);const anchor=document.createElement('a');anchor.href=url;anchor.download=`nyx-link-checker-${new Date().toISOString().slice(0,10)}.${format}`;anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000);showNotice(`${format.toUpperCase()} export created.`);
+  }
+  function clearHistory(){
+    if(!history.length)return;if(!confirm('Clear all Link Checker history stored on this device?'))return;history=[];writeJsonStorage(HISTORY_KEY,history);renderWorkspace();showNotice('Local scan history cleared.');
+  }
+  function saveSettings(){writeJsonStorage(SETTINGS_KEY,settings);applyTheme();renderDashboard();}
+  function wireEvents(){
+    $('[data-back-to-nyx]').addEventListener('click',event=>{if(window.parent===window)return;event.preventDefault();window.parent.postMessage({type:'nyx:close-tab'},location.origin);});
+    refs.form.addEventListener('submit',runCheck);$('[data-copy-results]').addEventListener('click',copyReport);
+    $('[data-recheck]').addEventListener('click',()=>{if(currentTarget){refs.input.value=currentTarget;void runCheck();}});
+    $$('[data-view-button]').forEach(button=>button.addEventListener('click',()=>switchView(button.dataset.viewButton)));
+    $('[data-dashboard-search-form]').addEventListener('submit',event=>{event.preventDefault();dashboardPage=1;renderDashboard();});
+    $('[data-dashboard-search]').addEventListener('input',()=>{dashboardPage=1;renderDashboard();});
+    $('[data-dashboard-vendor]').addEventListener('change',()=>{dashboardPage=1;renderDashboard();});
+    $$('[data-dashboard-verdict]').forEach(button=>button.addEventListener('click',()=>{dashboardVerdict=button.dataset.dashboardVerdict||'';$$('[data-dashboard-verdict]').forEach(item=>item.classList.toggle('active',item===button));dashboardPage=1;renderDashboard();}));
+    $('[data-dashboard-prev]').addEventListener('click',()=>{dashboardPage-=1;renderDashboard();});$('[data-dashboard-next]').addEventListener('click',()=>{dashboardPage+=1;renderDashboard();});
+    refs.freednsStart.addEventListener('click',()=>void startFreednsScrape());refs.freednsCheckAll.addEventListener('click',()=>void scanAllFreedns());refs.freednsCheckPage.addEventListener('click',()=>void scanFreednsPage());refs.freednsGodDomains.addEventListener('click',()=>{freednsGodMode=!freednsGodMode;freednsPage=1;renderFreedns();});refs.freednsDoubleCheck.addEventListener('click',()=>void scanAllFreedns());refs.freednsStop.addEventListener('click',stopFreednsWork);
+    refs.freednsSearch.addEventListener('input',()=>{freednsPage=1;renderFreedns();});refs.freednsStatus.addEventListener('change',()=>{freednsPage=1;renderFreedns();});refs.freednsVendor.addEventListener('change',renderFreedns);
+    $('[data-freedns-export]').addEventListener('click',exportFreedns);$('[data-freedns-clear]').addEventListener('click',clearFreednsCache);
+    $('[data-freedns-prev]').addEventListener('click',()=>{freednsPage-=1;renderFreedns();});$('[data-freedns-next]').addEventListener('click',()=>{freednsPage+=1;renderFreedns();});
+    $('[data-freedns-detail-close]').addEventListener('click',closeFreednsDetails);refs.freednsDetail.addEventListener('click',event=>{if(event.target===refs.freednsDetail)closeFreednsDetails();});refs.freednsDetail.addEventListener('close',()=>{freednsDetailController?.abort();freednsDetailController=null;});
+    $$('[data-export]').forEach(button=>button.addEventListener('click',()=>exportRecords(button.dataset.export)));$$('[data-clear-history]').forEach(button=>button.addEventListener('click',clearHistory));
+    const pageSize=$('[data-setting-page-size]');pageSize.value=String(settings.pageSize||25);pageSize.addEventListener('change',()=>{settings.pageSize=Number(pageSize.value)||25;dashboardPage=1;saveSettings();});
+    const notifications=$('[data-setting-notifications]');const renderNotifications=()=>{notifications.textContent=settings.notifications?'On':'Off';notifications.setAttribute('aria-pressed',String(settings.notifications));};renderNotifications();notifications.addEventListener('click',()=>{settings.notifications=!settings.notifications;renderNotifications();saveSettings();});
+    const theme=$('[data-setting-theme]');theme.value=settings.theme||'inherit';theme.addEventListener('change',()=>{settings.theme=theme.value;saveSettings();});
+    const sidebar=$('[data-sidebar]');const shade=$('[data-sidebar-shade]');$('[data-sidebar-toggle]').addEventListener('click',()=>{sidebar.classList.add('open');shade.hidden=false;});shade.addEventListener('click',()=>{sidebar.classList.remove('open');shade.hidden=true;});
+  }
+  settings={...defaultSettings,...settings};
+  const verdictMigrationFailed=freednsVerdictsNeedsMigration&&!saveFreednsVerdicts();
+  applyTheme();wireEvents();renderWorkspace();loadVendors();void refreshFreednsBulkAccess().catch(()=>{});
+  if(freednsCacheExpiredOnLoad)showNotice('Cached FreeDNS domains and verdicts expired after eight hours and were removed from this device.');
+  else if(verdictMigrationFailed)showNotice('Nyx could not compact the existing verdict cache. Clear the FreeDNS cache before starting another full scan.','error',true);
+  setInterval(()=>expireFreednsCacheIfNeeded({render:true,notify:true}),FREEDNS_CACHE_EXPIRY_POLL_MS);
 })();

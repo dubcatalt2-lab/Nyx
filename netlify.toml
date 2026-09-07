@@ -18,14 +18,14 @@
   force = true
 
 [[redirects]]
-  from = "/game-cover"
-  to = "/.netlify/functions/api/game-cover"
+  from = "/catclass-games"
+  to = "/.netlify/functions/api/catclass-games"
   status = 200
   force = true
 
 [[redirects]]
-  from = "/seraph-*"
-  to = "/.netlify/functions/api/seraph-:splat"
+  from = "/game-cover"
+  to = "/.netlify/functions/api/game-cover"
   status = 200
   force = true
 

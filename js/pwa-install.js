@@ -3,7 +3,7 @@
 
   let installPrompt = null;
   let lastMessage = "";
-  const SINGLE_FILE_RELEASE = "2026.08.03.10";
+  const SINGLE_FILE_RELEASE = "2026.08.20.2";
 
   function isInstalled() {
     return window.matchMedia?.("(display-mode: standalone)")?.matches
@@ -84,6 +84,14 @@
           : "Installs Nyx as an app with its own window and desktop icon.");
       if (status.textContent !== text) status.textContent = text;
     });
+    document.querySelectorAll("[data-download-nyx-singlefile]").forEach((button) => {
+      if (button.dataset.nyxSingleFileBound === "true") return;
+      button.dataset.nyxSingleFileBound = "true";
+      button.onclick = (event) => {
+        event.preventDefault();
+        void downloadSingleFile(button);
+      };
+    });
   }
 
   async function requestInstall() {
@@ -108,7 +116,7 @@
     }
   }
 
-  function downloadSingleFile(button) {
+  async function downloadSingleFile(button) {
     const source = new URL("/nyx-singlefile.html", window.location.href);
     source.searchParams.set("release", SINGLE_FILE_RELEASE);
     source.searchParams.set("fresh", Date.now().toString(36));
@@ -117,21 +125,29 @@
       button.disabled = true;
       button.textContent = "Downloading…";
     }
-    const link = document.createElement("a");
-    link.href = source.href;
-    link.download = "Nyx-Single-File.html";
-    link.hidden = true;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
     const status = button?.closest("[data-nyx-install-card]")?.querySelector("[data-install-nyx-status]");
-    if (status) status.textContent = "The latest Chrome-compatible Nyx file is downloading.";
-    window.setTimeout(() => {
+    try {
+      const response = await fetch(source, { cache: "no-store", credentials: "same-origin" });
+      if (!response.ok) throw new Error("The Nyx file is unavailable.");
+      const markup = await response.text();
+      if (!markup.trim().toLowerCase().startsWith("<!doctype html")) throw new Error("The Nyx file was incomplete.");
+      const objectUrl = URL.createObjectURL(new Blob([markup], { type: "text/html;charset=utf-8" }));
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = "Nyx-Download.html";
+      link.hidden = true;
+      document.body.appendChild(link);
+      link.click();
+      window.setTimeout(() => { link.remove(); URL.revokeObjectURL(objectUrl); }, 60_000);
+      if (status) status.textContent = "Nyx-Download.html was saved. Open it from your Downloads folder.";
+    } catch {
+      if (status) status.textContent = "Nyx could not create the download. Check your connection and try again.";
+    } finally {
       if (button) {
         button.disabled = false;
         button.textContent = previousLabel;
       }
-    }, 500);
+    }
   }
 
   window.addEventListener("beforeinstallprompt", (event) => {
@@ -146,12 +162,6 @@
   });
 
   document.addEventListener("click", (event) => {
-    const downloadButton = event.target.closest?.("[data-download-nyx-singlefile]");
-    if (downloadButton) {
-      event.preventDefault();
-      downloadSingleFile(downloadButton);
-      return;
-    }
     const button = event.target.closest?.("[data-install-nyx]");
     if (!button) return;
     event.preventDefault();

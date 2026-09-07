@@ -3,24 +3,34 @@ import { createRequire } from "node:module";
 import { cp, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parse } from "acorn";
+import CleanCSS from "clean-css";
+import { minify as minifyHtml } from "html-minifier-terser";
+import { minify } from "terser";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
 const output = join(root, "dist");
 const require = createRequire(import.meta.url);
-const maxStaticFileBytes = 10_000_000;
+const vpsBuild = process.env.NYX_BUILD_TARGET === "vps";
+const maxStaticFileBytes = vpsBuild ? Number.POSITIVE_INFINITY : 10_000_000;
 const rootFiles = new Set([
   "index.html",
+  "about-nyx.html",
   "ai.html",
   "nyx-singlefile.html",
   "app.webmanifest",
+  "robots.txt",
+  "sitemap.xml",
   "script.js",
   "startup.js",
   "startup-studyhub.html",
+  "student-resources.html",
   "styles.css",
   "uv.config.js",
   "uv.sw.js",
-  "scramjet.sw.js"
+  "scramjet.sw.js",
+  "scramjet-v1.sw.js"
 ]);
 const staticPrefixes = ["apps/", "assets/", "css/", "js/"];
 const blockedExtensions = /\.(?:7z|avi|mkv|mov|mp4|rar|webm|zip)$/i;
@@ -35,6 +45,7 @@ const remotelyHostedUgsGames = new Set([
 
 function normalizeWispUrl(value) {
   const raw = String(value || "").trim();
+  if (vpsBuild && !raw) return "";
   const url = new URL(raw || "wss://nyx-temporary-production.up.railway.app/wisp/");
   if (url.protocol === "https:") url.protocol = "wss:";
   if (url.protocol === "http:") url.protocol = "ws:";
@@ -111,13 +122,13 @@ async function waitForLocalServer(child) {
   return new Promise((resolveReady, reject) => {
     let log = "";
     const timer = setTimeout(() => reject(new Error(`Timed out starting the build server.\n${log}`)), 20_000);
+    child.on("message", message => {
+      if (message?.type !== "nyx:listening" || !Number.isInteger(message.port)) return;
+      clearTimeout(timer);
+      resolveReady(message.port);
+    });
     child.stdout.on("data", chunk => {
       log += chunk.toString();
-      const match = log.match(/http:\/\/localhost:(\d+)/);
-      if (match) {
-        clearTimeout(timer);
-        resolveReady(Number(match[1]));
-      }
     });
     child.stderr.on("data", chunk => { log += chunk.toString(); });
     child.once("exit", code => {
@@ -131,7 +142,7 @@ async function writePatchedRuntimes(wispUrl) {
   const child = spawn(process.execPath, [join(root, "server.js")], {
     cwd: root,
     env: { ...process.env, PORT: "0", WISP_URL: wispUrl },
-    stdio: ["ignore", "pipe", "pipe"]
+    stdio: ["ignore", "pipe", "pipe", "ipc"]
   });
   try {
     const port = await waitForLocalServer(child);
@@ -141,6 +152,9 @@ async function writePatchedRuntimes(wispUrl) {
       ["/uv/uv.bundle.js", "uv/uv.bundle.js"],
       ["/baremux/index.mjs", "baremux/index.mjs"],
       ["/scramjet/scramjet.js", "scramjet/scramjet.js"],
+      ["/controller/controller.api.js", "controller/controller.api.js"],
+      ["/controller/controller.inject.js", "controller/controller.inject.js"],
+      ["/controller/controller.sw.js", "controller/controller.sw.js"],
       ["/nyx-scramjet-runtime-guard.js", "nyx-scramjet-runtime-guard.js"]
     ]);
     for (const [route, destination] of routes) {
@@ -158,9 +172,12 @@ async function writePatchedRuntimes(wispUrl) {
 async function configureUv(wispUrl) {
   const path = join(output, "uv.config.js");
   const source = await readFile(path, "utf8");
+  const bareValue = wispUrl
+    ? JSON.stringify(wispUrl)
+    : '`${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/wisp/`';
   const configured = source.replace(
     /bare:\s*[\s\S]*?,\s*encodeUrl:/,
-    `bare: ${JSON.stringify(wispUrl)},\n  encodeUrl:`
+    `bare: ${bareValue},\n  encodeUrl:`
   );
   if (configured === source) throw new Error("Could not set the Netlify Wisp URL in uv.config.js");
   await writeFile(path, configured);
@@ -191,6 +208,173 @@ async function removeUnavailableUgsEntries() {
   console.log(`UGS catalog: ${available.length}/${games.length} deployable games`);
 }
 
+async function copyKatex() {
+  const source = join(dirname(require.resolve("katex/package.json")), "dist");
+  const destination = join(output, "assets", "vendor", "katex");
+  await mkdir(dirname(destination), { recursive: true });
+  await cp(source, destination, { recursive: true, force: true });
+}
+
+function runtimeMangleOptions(topLevel) {
+  return {
+    toplevel: topLevel,
+    safari10: true
+  };
+}
+
+function runtimeCompressOptions() {
+  return {
+    passes: 2,
+    drop_debugger: true,
+    keep_fargs: true,
+    unsafe: false
+  };
+}
+
+function runtimeFormatOptions() {
+  return {
+    ascii_only: true,
+    beautify: false,
+    comments: false,
+    semicolons: true
+  };
+}
+
+async function minifyEmbeddedScramjetGuards(source, nameCache) {
+  const names = new Set([
+    "scramjetSpotifyChromeOsGuardSource",
+    "scramjetMinimalRuntimeGuardSource",
+    "scramjetHelperRuntimeGuardSource"
+  ]);
+  const program = parse(source, { ecmaVersion: "latest", sourceType: "script" });
+  const replacements = [];
+  const visit = async node => {
+    if (!node || typeof node !== "object") return;
+    if (
+      node.type === "VariableDeclarator" &&
+      names.has(node.id?.name) &&
+      node.init?.type === "TemplateLiteral" &&
+      node.init.expressions.length === 0
+    ) {
+      const result = await minify(node.init.quasis[0].value.cooked, {
+        compress: runtimeCompressOptions(),
+        mangle: runtimeMangleOptions(false),
+        format: runtimeFormatOptions(),
+        nameCache
+      });
+      if (!result.code) throw new Error(`Could not minify embedded guard ${node.id.name}`);
+      replacements.push({ start: node.init.start, end: node.init.end, code: JSON.stringify(result.code) });
+      names.delete(node.id.name);
+      return;
+    }
+    for (const value of Object.values(node)) {
+      if (Array.isArray(value)) {
+        for (const child of value) await visit(child);
+      } else if (value && typeof value === "object" && typeof value.type === "string") {
+        await visit(value);
+      }
+    }
+  };
+  await visit(program);
+  if (names.size) throw new Error(`Could not locate embedded Scramjet guards: ${[...names].join(", ")}`);
+  let transformed = source;
+  replacements.sort((a, b) => b.start - a.start).forEach(replacement => {
+    transformed = `${transformed.slice(0, replacement.start)}${replacement.code}${transformed.slice(replacement.end)}`;
+  });
+  return transformed;
+}
+
+async function minifyFirstPartyBrowserRuntimes() {
+  const generatedRuntimes = ["runtime-config.js", "nyx-scramjet-runtime-guard.js"];
+  const trackedRuntimes = repositoryFiles().filter(relative => (
+    relative.endsWith(".js") &&
+    isStaticSource(relative) &&
+    !relative.startsWith("assets/ugs/") &&
+    !relative.startsWith("assets/vendor/")
+  ));
+  const targets = [...new Set([...trackedRuntimes, ...generatedRuntimes])]
+    .sort()
+    .map(path => ({ path, topLevel: true }));
+  const nameCache = {};
+  let sourceBytes = 0;
+  let outputBytes = 0;
+  let transformedFiles = 0;
+  for (const target of targets) {
+    const path = join(output, ...target.path.split("/"));
+    let source;
+    try {
+      source = await readFile(path, "utf8");
+    } catch {
+      continue;
+    }
+    sourceBytes += Buffer.byteLength(source);
+    if (target.path === "script.js") source = await minifyEmbeddedScramjetGuards(source, nameCache);
+    const result = await minify(source, {
+      compress: runtimeCompressOptions(),
+      mangle: runtimeMangleOptions(target.topLevel),
+      format: runtimeFormatOptions(),
+      nameCache
+    });
+    if (!result.code) throw new Error(`Could not minify ${target.path}`);
+    if (/sourceMappingURL/i.test(result.code)) throw new Error(`Source map reference survived in ${target.path}`);
+    await writeFile(path, `${result.code}\n`);
+    outputBytes += Buffer.byteLength(result.code) + 1;
+    transformedFiles += 1;
+  }
+  const reduction = sourceBytes ? Math.round((1 - outputBytes / sourceBytes) * 100) : 0;
+  if (transformedFiles !== targets.length) throw new Error(`Obfuscation coverage failed: ${transformedFiles}/${targets.length} runtimes transformed`);
+  console.log(`Production-obfuscated all ${transformedFiles} first-party browser runtime files (${reduction}% smaller; no source maps)`);
+}
+
+function isFirstPartyMarkupOrStyle(relative) {
+  if (!isStaticSource(relative) || relative.startsWith("assets/ugs/") || relative.startsWith("assets/vendor/")) return false;
+  return /\.(?:html|css)$/i.test(relative);
+}
+
+async function minifyFirstPartyMarkupAndStyles() {
+  const files = repositoryFiles().filter(isFirstPartyMarkupOrStyle);
+  let sourceBytes = 0;
+  let outputBytes = 0;
+  let transformedFiles = 0;
+  for (const relative of files) {
+    const path = join(output, ...relative.split("/"));
+    let source;
+    try {
+      source = await readFile(path, "utf8");
+    } catch {
+      throw new Error(`First-party HTML/CSS asset is missing from the production build: ${relative}`);
+    }
+    sourceBytes += Buffer.byteLength(source);
+    let transformed;
+    if (relative.endsWith(".css")) {
+      const result = new CleanCSS({ inline: ["none"], level: 2, rebase: false }).minify(source);
+      if (result.errors.length) throw new Error(`Could not minify ${relative}: ${result.errors.join("; ")}`);
+      transformed = result.styles;
+    } else {
+      transformed = await minifyHtml(source, {
+        collapseWhitespace: true,
+        conservativeCollapse: true,
+        minifyCSS: { level: 2 },
+        minifyJS: {
+          compress: runtimeCompressOptions(),
+          mangle: false,
+          format: runtimeFormatOptions()
+        },
+        removeComments: true,
+        removeRedundantAttributes: true,
+        removeScriptTypeAttributes: true,
+        removeStyleLinkTypeAttributes: true,
+        useShortDoctype: true
+      });
+    }
+    await writeFile(path, `${transformed}\n`);
+    outputBytes += Buffer.byteLength(transformed) + 1;
+    transformedFiles += 1;
+  }
+  const reduction = sourceBytes ? Math.round((1 - outputBytes / sourceBytes) * 100) : 0;
+  console.log(`Production-minified ${transformedFiles} first-party HTML/CSS files (${reduction}% smaller; comments removed)`);
+}
+
 async function writeNetlifyFiles() {
   await writeFile(join(output, "404.html"), "<!doctype html><meta charset=\"utf-8\"><title>Not found</title><p>Not found</p>\n");
 }
@@ -201,12 +385,15 @@ async function main() {
   await mkdir(output, { recursive: true });
   await copyRepositoryStaticFiles();
   await copyEruda();
+  await copyKatex();
   await copyProxyRuntimes();
   await writePatchedRuntimes(wispUrl);
   await configureUv(wispUrl);
   await removeUnavailableUgsEntries();
+  await minifyFirstPartyBrowserRuntimes();
+  await minifyFirstPartyMarkupAndStyles();
   await writeNetlifyFiles();
-  console.log(`Netlify build ready in ${output}`);
+  console.log(`${vpsBuild ? "VPS" : "Netlify"} build ready in ${output}`);
   console.log(`Wisp endpoint: ${wispUrl}`);
   if (skippedLargeFiles.length) {
     console.warn(`Skipped ${skippedLargeFiles.length} static files over Netlify's 10 MB recommendation:`);

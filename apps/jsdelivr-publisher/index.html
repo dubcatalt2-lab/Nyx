@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en" class="utility-neutral-root">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>JSDelivr Publisher</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/icons/jsdelivr-publisher.svg">
+  <link rel="stylesheet" href="./styles.css?v=20260829-v1">
+<link rel="stylesheet" href="/apps/visual-redesign.css?v=20260906-monogram-v1">
+</head>
+<body class="utility-neutral">
+  <main class="utility-shell publisher-shell">
+    <header class="utility-header">
+      <a class="brand-lockup" href="/" aria-label="Return to Nyx">
+        <span class="brand-mark" aria-hidden="true"><img src="../../assets/icons/nyx-app-192.png" alt=""></span>
+        <span class="brand-copy"><strong>nyx</strong><span>utilities</span></span>
+      </a>
+      <nav class="utility-nav" aria-label="Nyx utility pages">
+        <a class="utility-nav-item" href="../link-generator/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 14.5l-2 2a3.5 3.5 0 01-5-5l3-3a3.5 3.5 0 015 0M14.5 9.5l2-2a3.5 3.5 0 015 5l-3 3a3.5 3.5 0 01-5 0M8.5 15.5l7-7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>Link Generator</span></a>
+        <a class="utility-nav-item" href="./" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14M5 12h14M5 18.5h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="m16 17 1.8 1.8L21 15.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span>JSDelivr</span></a>
+      </nav>
+      <span class="service-status online"><i aria-hidden="true"></i><span>GitHub direct</span></span>
+    </header>
+
+    <section class="utility-intro" aria-labelledby="page-title">
+      <span class="intro-mark" aria-hidden="true"><img src="../../assets/icons/jsdelivr-publisher.svg" alt=""></span>
+      <div><h1 id="page-title">JSDelivr Publisher</h1><p>SVG batch publishing</p></div>
+    </section>
+
+    <section class="surface publisher-card" aria-labelledby="publisher-title">
+      <div class="section-bar">
+        <div class="section-id">
+          <span class="step-number" aria-hidden="true">01</span>
+          <div><h2 id="publisher-title">Publish SVG links</h2><p>Upload one SVG and publish randomized copies through a public GitHub repository.</p></div>
+        </div>
+      </div>
+
+      <div class="security-note">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.6 2.8 8.2 7 10 4.2-1.8 7-5.4 7-10V6l-7-3Z"></path><path d="M9.5 12 11 13.5l3.5-4"></path></svg>
+        <p><strong>Your GitHub token stays in this tab.</strong> Nyx sends it directly to <code>api.github.com</code>, never to the Nyx server, local storage, analytics, or logs.</p>
+      </div>
+
+      <form id="publisherForm" novalidate>
+        <div class="form-grid">
+          <label class="span-two"><span>Fine-grained GitHub token</span><input id="token" type="password" autocomplete="new-password" spellcheck="false" placeholder="github_pat_..." required><small>Use a short-lived token with Contents: Read and write. Automatic repository mode also needs permission to create repositories.</small></label>
+
+          <label><span>Repository mode</span><select id="mode"><option value="existing">Use an existing repository</option><option value="auto">Create automatic repositories</option></select></label>
+          <label id="repoField"><span>Repository</span><input id="repo" autocomplete="off" spellcheck="false" placeholder="owner/repository"><small>Example: dubcatalt2-lab/nyx-jsdelivr-links</small></label>
+
+          <label class="file-field span-two" id="fileField"><span>SVG file</span><input id="svgFile" type="file" accept=".svg,image/svg+xml" required><span class="file-display" id="fileDisplay">Choose a self-contained SVG file</span><small id="fileHint">Maximum 2 MB. The same SVG is published under every generated filename.</small></label>
+
+          <label><span>Main words</span><textarea id="mainWords" rows="3" placeholder="nyx, learning, study" required></textarea><small>Comma or line separated.</small></label>
+          <label><span>Side words</span><textarea id="sideWords" rows="3" placeholder="portal, cloud, school, page, hub" required></textarea><small>Used to randomize filenames.</small></label>
+
+          <label><span>Number of links</span><input id="count" type="number" min="1" max="10000" step="1" value="10" inputmode="numeric" required><small>Up to 1,000 SVG files per repository and 10,000 per run.</small></label>
+          <div class="publish-summary"><span>Output</span><strong>jsDelivr, Gcore, and Fastly links</strong><small>Only public repositories selected or created by you are modified.</small></div>
+        </div>
+
+        <div class="publish-actions">
+          <p class="publisher-message" id="publisherMessage" role="status" aria-live="polite"></p>
+          <button class="primary-action" id="publishButton" type="submit"><span>Publish SVGs</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4M5 14v5h14v-5"></path></svg></button>
+        </div>
+        <div class="progress" id="progress" hidden><span id="progressBar"></span></div>
+      </form>
+    </section>
+
+    <section class="surface results-card" id="results" aria-labelledby="results-title" hidden>
+      <div class="results-heading">
+        <div><p class="eyebrow">Published</p><h2 id="results-title">Your CDN links</h2><p id="resultsSummary"></p></div>
+        <div class="provider-tabs" id="providerTabs" aria-label="CDN provider"></div>
+      </div>
+      <textarea id="linksOutput" readonly spellcheck="false" aria-label="Generated CDN links"></textarea>
+      <div class="result-actions">
+        <button type="button" id="copyLinks">Copy all</button>
+        <button type="button" id="downloadLinks">Download links</button>
+        <button type="button" id="openRandom">Open random</button>
+      </div>
+      <div class="repository-results" id="repositoryResults"></div>
+    </section>
+  </main>
+  <script src="./app.js?v=20260905-cdn-choice-v5"></script>
+</body>
+</html>

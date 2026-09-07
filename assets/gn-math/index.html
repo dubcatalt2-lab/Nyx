@@ -96,6 +96,7 @@
       .grid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:12px}
     }
   </style>
+<link rel="stylesheet" href="/apps/visual-redesign.css?v=20260906-monogram-v1">
 </head>
 <body>
   <header>
@@ -124,7 +125,7 @@
     }
 
     function gameUrl(path){
-      return new URL(`/assets/gn-math/play.html?v=20260803-resource-fix&game=${encodeURIComponent(path)}`,location.origin).href;
+      return new URL(`/assets/gn-math/play.html?v=20260903-game-ad-guard-v1&game=${encodeURIComponent(path)}`,location.origin).href;
     }
 
     function render(){

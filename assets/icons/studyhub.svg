@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">StudyHub</title>
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="#080a0d"/>
+  <path d="M9 24.8 32 13.5l23 11.3L32 36.3z" fill="#f7fafc"/>
+  <path d="M18.4 31.3v12.5c8.2 6.6 19 6.6 27.2 0V31.3L32 38z" fill="#f7fafc"/>
+  <path d="M53.2 26.2v14.2" fill="none" stroke="#f7fafc" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="53.2" cy="44.4" r="3.4" fill="#f7fafc"/>
+</svg>

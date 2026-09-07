@@ -25,6 +25,7 @@
     .empty{display:none;color:var(--muted);padding:26px 0}
     @media (max-width:640px){header{align-items:stretch;flex-direction:column}.search{width:100%}main{padding:14px}.grid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:12px}}
   </style>
+<link rel="stylesheet" href="/apps/visual-redesign.css?v=20260906-monogram-v1">
 </head>
 <body>
   <header>
@@ -45,8 +46,8 @@
     const source=document.getElementById('source');
     let games=[];
     function gameUrl(game){
-      if(game.type==='gba' && game.romId) return new URL(`/assets/gms-games/play.html?v=20260803-resource-fix&gba=${encodeURIComponent(game.romId)}`,location.origin).href;
-      return new URL(`/assets/gms-games/play.html?v=20260803-resource-fix&game=${encodeURIComponent(game.path)}`,location.origin).href;
+      if(game.type==='gba' && game.romId) return new URL(`/assets/gms-games/play.html?v=20260903-game-ad-guard-v1&gba=${encodeURIComponent(game.romId)}`,location.origin).href;
+      return new URL(`/assets/gms-games/play.html?v=20260903-game-ad-guard-v1&game=${encodeURIComponent(game.path)}`,location.origin).href;
     }
     function coverUrl(url){
       if(!url) return '';

@@ -27,7 +27,7 @@ function writeFallback() {
 </defs>
 <rect width="420" height="236" fill="url(#g)"/>
 <path d="M34 178 C92 102 130 122 165 88 C211 43 284 61 336 26 L386 26 L386 210 L34 210 Z" fill="#67e8f9" opacity=".16"/>
-<text x="210" y="107" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="900" fill="#f8fafc">Pirate Cove</text>
+<text x="210" y="107" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="900" fill="#f8fafc">GAMES</text>
 <text x="210" y="139" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#cbd5e1">Game preview</text>
 </svg>`;
   fs.writeFileSync(path.join(thumbsDir, 'fallback.svg'), svg);

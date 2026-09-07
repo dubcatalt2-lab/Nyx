@@ -907,9 +907,9 @@ html body.browser-shell.theme-default .browser-window.browser-home-page .browser
   border:0!important;
   border-radius:0!important;
   background-color:transparent!important;
-  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-logo.png"))!important;
+  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-monogram.png"))!important;
   background-position:center!important;
-  background-size:195%!important;
+  background-size:100%!important;
   background-repeat:no-repeat!important;
   box-shadow:none!important;
   clip-path:none!important;
@@ -1107,7 +1107,7 @@ html body.browser-shell.theme-default .top-os > .browser-top-clock{
 
 /* Tint both the dark fill and light linework of the supplied Nyx mark by theme. */
 html body.browser-shell{
-  --nyx-themed-logo-url:url("/assets/icons/nyx-logo.png");
+  --nyx-themed-logo-url:url("/assets/icons/nyx-monogram.png");
   --nyx-title-theme-color:#92b7ed;
 }
 html body.browser-shell.theme-ruby{
@@ -1261,10 +1261,10 @@ html body.browser-shell.theme-default .browser-window.browser-home-page .browser
   border:0!important;
   border-radius:0!important;
   background-color:transparent!important;
-  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-logo.png"))!important;
+  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-monogram.png"))!important;
   background-position:center!important;
   background-repeat:no-repeat!important;
-  background-size:205%!important;
+  background-size:100%!important;
   box-shadow:none!important;
   color:transparent!important;
   filter:none!important;

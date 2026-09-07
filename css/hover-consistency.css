@@ -6,7 +6,7 @@ html body{
 
 /* The ID option inside :is() intentionally wins over legacy theme !important rules. */
 html body:is(body,#nyx-hover-specificity) :is(
-  button:not(.home-shortcut-open):not(.home-shortcut-add):not(.home-shortcut-menu-btn),
+  button:not(.home-shortcut-open):not(.home-shortcut-add):not(.home-shortcut-menu-btn):not(:where(.nyx-minimal-shortcuts>button)),
   .quick-tile:not(.home-shortcut):not(.home-shortcut-add),
   .settings-action,
   .settings-preset,
@@ -26,7 +26,7 @@ html body:is(body,#nyx-hover-specificity) :is(
 }
 
 html body:is(body,#nyx-hover-specificity) :is(
-  button:not(.home-shortcut-open):not(.home-shortcut-add):not(.home-shortcut-menu-btn),
+  button:not(.home-shortcut-open):not(.home-shortcut-add):not(.home-shortcut-menu-btn):not(:where(.nyx-minimal-shortcuts>button)),
   .quick-tile:not(.home-shortcut):not(.home-shortcut-add),
   .settings-action,
   .settings-preset,
@@ -108,7 +108,7 @@ html body.browser-shell:is(body,#nyx-hover-specificity) .top-os .brand-mini > .b
 }
 
 html body:is(body,#nyx-hover-specificity) .quick-tile:not(.home-shortcut):hover :is(.quick-icon,.home-shortcut-glyph,.dock-icon,img,svg),
-html body:is(body,#nyx-hover-specificity) :is(.settings-action,.settings-preset,button:not(.home-shortcut-open)):hover > :is(.quick-icon,.nyx-home-action-icon,svg,img){
+html body:is(body,#nyx-hover-specificity) :is(.settings-action,.settings-preset,button:not(.home-shortcut-open):not(:where(.nyx-minimal-shortcuts>button))):hover > :is(.quick-icon,.nyx-home-action-icon,svg,img){
   transform:none!important;
   translate:none!important;
   rotate:none!important;

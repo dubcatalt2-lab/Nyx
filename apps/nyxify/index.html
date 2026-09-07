@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#000000">
+  <title>Nyxify/built in music</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/apps/nyxify/icons.css?v=20260825-nyx-v2">
+  <link rel="stylesheet" href="/apps/nyxify/app.css?v=20260830-long-row-v18">
+<link rel="stylesheet" href="/apps/visual-redesign.css?v=20260906-monogram-v1">
+</head>
+<body>
+  <canvas id="stars"></canvas>
+
+  <header>
+    <div class="nyxify-brand" aria-label="Nyxify/built in music">
+      <img src="/assets/icons/shortcut-nyxify.svg?v=3" alt="">
+      <span><strong>Nyxify/built in music</strong><small>Music in Nyx</small></span>
+    </div>
+    <form class="searchbox" id="searchForm">
+      <i class="material-symbols--search-rounded"></i>
+      <input type="text" id="searchInput" placeholder="Search songs, artists, or albums" autocomplete="off" aria-label="search songs">
+      <kbd class="search-kbd">/</kbd>
+    </form>
+    <span class="nyxify-mode">Music</span>
+  </header>
+
+  <div class="shell" id="shell">
+    <aside class="sidebar">
+      <button type="button" class="filter active" data-filter="home">Home</button>
+      <button type="button" class="filter" data-filter="tracks">Tracks</button>
+      <button type="button" class="filter" data-filter="artists">Artists</button>
+      <button type="button" class="filter" data-filter="albums">Albums</button>
+      <div class="sidebar-library">
+        <div class="sidebar-library-head"><span>Your playlists</span><button type="button" id="sidebarNewPlaylist" aria-label="Create playlist">+</button></div>
+        <div class="sidebar-playlists" id="sidebarPlaylistList"></div>
+      </div>
+    </aside>
+
+    <main>
+      <div class="empty" id="emptyState">
+        <div class="empty-icon"><i class="mingcute--music-line"></i></div>
+        <div class="empty-title" id="emptyTitle">Find something to play</div>
+        <div class="empty-sub" id="emptySub">Search for a song, artist, or album.</div>
+      </div>
+      <button type="button" class="crumb" id="crumb" style="display:none" aria-label="clear selection"><i class="material-symbols--close-rounded"></i><span id="crumbText"></span></button>
+      <div id="detailView" style="display:none"></div>
+      <div id="trackList" style="display:none"></div>
+      <div id="cardGrid" class="cards" style="display:none"></div>
+    </main>
+
+    <aside class="rail">
+      <section class="module now-playing-module" id="nowPlayingModule" hidden>
+        <div class="mod-head"><span>Now playing</span><small id="nowPlayingContext">Nyxify</small></div>
+        <div class="now-playing-body">
+          <div class="now-playing-media" id="nowPlayingMedia">
+            <img class="now-playing-art" id="nowPlayingArt" alt="Current track cover">
+            <div id="fullTrackFrame"></div>
+            <button type="button" class="now-playing-video-toggle" id="fullTrackVideo" aria-label="Music video unavailable" aria-pressed="false" hidden disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m10 9 5 3-5 3V9Z"></path></svg>
+              <span id="fullTrackVideoLabel">Switch to video</span>
+            </button>
+            <button type="button" class="now-playing-fullscreen" id="fullTrackFullscreen" aria-label="Enter fullscreen" title="Enter fullscreen" hidden disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"></path></svg>
+            </button>
+          </div>
+          <div class="now-playing-title" id="nowPlayingTitle"></div>
+          <button type="button" class="now-playing-link" id="nowPlayingArtist"></button>
+          <button type="button" class="now-playing-link now-playing-album" id="nowPlayingAlbum"></button>
+          <div class="now-playing-playlists" id="nowPlayingPlaylists"></div>
+          <div class="now-playing-next" id="nowPlayingNext"></div>
+        </div>
+      </section>
+      <section class="module">
+        <div class="mod-head"><span>Liked</span><b id="likedCount">0</b></div>
+        <div class="mod-list" id="likedList"></div>
+      </section>
+      <section class="module">
+        <div class="mod-head"><span>History</span></div>
+        <div class="mod-list" id="historyList"></div>
+      </section>
+      <section class="module playlist-module">
+        <div class="mod-head"><span>Playlists</span><button type="button" class="module-add" id="newPlaylistBtn" aria-label="Create playlist"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v8M8 12h8"></path></svg></button></div>
+        <div class="playlist-sync" id="playlistSync">Saved on this device</div>
+        <div class="mod-list" id="playlistList"></div>
+      </section>
+    </aside>
+  </div>
+
+  <section class="full-track-stage" id="fullTrackStage" aria-label="Full track player" hidden>
+    <div class="full-track-head">
+      <div><strong id="fullTrackTitle">Full track</strong><span id="fullTrackStatus">Finding the full song…</span></div>
+    </div>
+  </section>
+
+  <div class="player" id="player">
+    <div class="player-inner">
+      <div class="p-controls">
+        <button type="button" class="ibtn round sm hide-sm" id="shuffleBtn" title="shuffle: off" aria-label="shuffle" aria-pressed="false"><i class="ic-shuffle"></i></button>
+        <button type="button" class="ibtn round lg" id="prevBtn" title="previous" aria-label="previous track"><i class="material-symbols--skip-previous-rounded"></i></button>
+        <button type="button" class="play-btn" id="playBtn" title="play/pause" aria-label="play or pause"><i class="line-md--play-filled" id="playIcon"></i></button>
+        <button type="button" class="ibtn round lg" id="nextBtn" title="next" aria-label="next track"><i class="material-symbols--skip-next-rounded"></i></button>
+        <button type="button" class="ibtn round sm hide-sm" id="repeatBtn" title="repeat: off" aria-label="repeat" aria-pressed="false"><i class="ic-repeat" id="repeatIcon"></i></button>
+      </div>
+
+      <div class="seek-wrap">
+        <span class="time cur" id="timeCur">0:00</span>
+        <input type="range" id="seekBar" min="0" max="100" value="0" step="0.05" aria-label="seek">
+        <span class="time total" id="timeTotal">0:00</span>
+      </div>
+
+      <div class="vol-wrap hide-sm" id="volWrap">
+        <div class="vol-popup" id="volPopup" role="group" aria-label="volume">
+          <input type="range" id="volBar" min="0" max="100" value="80" aria-label="volume">
+        </div>
+        <button type="button" class="ibtn round" id="volBtn" title="volume" aria-label="volume" aria-expanded="false" aria-controls="volPopup"><i class="lucide--volume-2" id="volIcon"></i></button>
+      </div>
+
+      <div class="p-badge">
+        <img id="pArt" alt="">
+        <div class="p-meta">
+          <span class="p-artist" id="pArtist">&nbsp;</span>
+          <span class="p-title" id="pTitle">&nbsp;</span>
+        </div>
+        <div class="p-actions">
+          <button type="button" class="ibtn" id="pPlaylist" title="add to playlist" aria-label="add to playlist"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v8M8 12h8"></path></svg></button>
+          <button type="button" class="like-btn" id="pLike" title="like" aria-label="like" aria-pressed="false"><i class="ic-heart"></i></button>
+          <a class="ibtn hide-sm" id="dlBtn" title="download song" aria-label="download song"><i class="material-symbols--download-rounded"></i></a>
+        </div>
+      </div>
+
+      <button type="button" class="ibtn queue-toggle" id="queueToggle" title="next up" aria-label="next up" aria-expanded="false" aria-controls="queuePanel">
+        <i class="ic-queue"></i>
+        <span class="q-badge" id="qBadge" hidden></span>
+      </button>
+
+      <div class="queue-panel" id="queuePanel" role="region" aria-label="next up" aria-hidden="true">
+        <div class="q-head">
+          <span>Next up</span>
+          <button type="button" class="q-clear" id="qClear">Clear</button>
+          <button type="button" class="ibtn xs" id="qHide" aria-label="close queue"><i class="material-symbols--close-rounded"></i></button>
+        </div>
+        <div class="q-list" id="qList"></div>
+      </div>
+    </div>
+  </div>
+
+  <dialog class="playlist-dialog" id="playlistDialog" aria-labelledby="playlistDialogTitle">
+    <div class="playlist-dialog-head">
+      <div><strong id="playlistDialogTitle">Playlists</strong><span id="playlistDialogHint">Create a playlist or choose one below.</span></div>
+      <button type="button" class="ibtn" id="playlistDialogClose" aria-label="Close playlists"><i class="material-symbols--close-rounded"></i></button>
+    </div>
+    <div class="playlist-choices" id="playlistChoices"></div>
+    <form class="playlist-create" id="playlistCreateForm">
+      <input id="playlistName" maxlength="48" placeholder="Playlist name" autocomplete="off" aria-label="Playlist name">
+      <button type="submit">Create</button>
+    </form>
+    <p class="playlist-message" id="playlistMessage" role="status"></p>
+  </dialog>
+
+  <audio id="audio" preload="metadata"></audio>
+
+  <script src="/apps/nyxtube/player-core.js?v=20260829-clean-embed-v2"></script>
+  <script src="/apps/nyxify/app.js?v=20260830-fast-playback-v20"></script>
+</body>
+</html>

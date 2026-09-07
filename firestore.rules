@@ -38,12 +38,69 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /nyxIpBans/{banId} {
+      allow read, write: if false;
+    }
+
+    match /nyxAccountNotices/{noticeId} {
+      allow read, write: if false;
+    }
+
+    match /nyxCustomRoles/{roleId} {
+      allow read, write: if false;
+    }
+
+    match /nyxCustomHostnames/{hostnameId} {
+      allow read, write: if false;
+    }
+
     match /nyxUsernames/{username} {
       allow read: if isOwner();
       allow write: if false;
     }
 
     match /nyxPresenceSessions/{sessionId} {
+      allow read, write: if false;
+    }
+
+    match /nyxChatChannels/{channelId} {
+      allow read, write: if false;
+      match /messages/{messageId} {
+        allow read, write: if false;
+      }
+    }
+
+    match /nyxChatConversations/{conversationId} {
+      allow read, write: if false;
+      match /messages/{messageId} {
+        allow read, write: if false;
+      }
+    }
+
+    match /nyxChatAttachments/{attachmentId} {
+      allow read, write: if false;
+      match /chunks/{chunkId} {
+        allow read, write: if false;
+      }
+    }
+
+    match /nyxCaffeineGifts/{giftId} {
+      allow read, write: if false;
+    }
+
+    match /nyxChatConfiguration/{documentId} {
+      allow read, write: if false;
+    }
+
+    match /nyxChatMutes/{uid} {
+      allow read, write: if false;
+    }
+
+    match /nyxFlaggedSearches/{searchId} {
+      allow read, write: if false;
+    }
+
+    match /nyxSearchHistory/{searchId} {
       allow read, write: if false;
     }
 

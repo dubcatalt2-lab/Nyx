@@ -1,0 +1,2 @@
+# Server-side tool only. Nyx passes only validated 11-character YouTube video IDs for bounded public-transcript discovery; it does not download media or accept arbitrary URLs.
+yt-dlp[default]==2026.08.19

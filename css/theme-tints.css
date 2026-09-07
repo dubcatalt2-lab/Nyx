@@ -151,7 +151,7 @@ html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-eme
 }
 html body.browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh):not(.custom-bg-active)
   :is(.browser-window.browser-home-page,.browser-window.maximized.browser-blank,.browser-window.maximized:has(.browser-home:not(.hidden)),.browser-home){
-  background:var(--nyx-unified-canvas)!important;
+  background:#000!important;
   background-image:none!important;
   border-color:var(--nyx-home-line)!important;
 }
@@ -372,9 +372,9 @@ html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser
   border:0!important;
   border-radius:0!important;
   background-color:transparent!important;
-  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-logo.png"))!important;
+  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-monogram.png"))!important;
   background-position:center!important;
-  background-size:195%!important;
+  background-size:100%!important;
   background-repeat:no-repeat!important;
   box-shadow:none!important;
   clip-path:none!important;
@@ -563,15 +563,15 @@ html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser
 html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
   .browser-home .nyx-home-dot-field{
   display:block!important;
-  opacity:.3!important;
+  opacity:.58!important;
   --nyx-dot-color:inherit;
 }
-html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-default .browser-home .nyx-home-dot-field{--nyx-dot-color:#202b3d}
-html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-midnight:not(.theme-default) .browser-home .nyx-home-dot-field{--nyx-dot-color:#223047}
-html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-ruby .browser-home .nyx-home-dot-field{--nyx-dot-color:#332733}
-html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-emerald .browser-home .nyx-home-dot-field{--nyx-dot-color:#24343a}
-html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-sakura .browser-home .nyx-home-dot-field{--nyx-dot-color:#332936}
-html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-fresh .browser-home .nyx-home-dot-field{--nyx-dot-color:#24343d}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-default .browser-home .nyx-home-dot-field{--nyx-dot-color:#314766}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-midnight:not(.theme-default) .browser-home .nyx-home-dot-field{--nyx-dot-color:#344d72}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-ruby .browser-home .nyx-home-dot-field{--nyx-dot-color:#68405d}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-emerald .browser-home .nyx-home-dot-field{--nyx-dot-color:#386258}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-sakura .browser-home .nyx-home-dot-field{--nyx-dot-color:#6e4c70}
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell.theme-fresh .browser-home .nyx-home-dot-field{--nyx-dot-color:#49655f}
 
 html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
   .browser-home .home-shortcut-grid .home-shortcut-open{
@@ -1218,13 +1218,13 @@ html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-
 /* Retire the original purple theme aliases. A few legacy pseudo-elements still
    read these names, so point them at the active palette as well. */
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell{
-  --theme-strong:var(--nyx-home-wordmark)!important;
+  --theme-strong:var(--nyx-home-text)!important;
   --theme-border:var(--nyx-home-line)!important;
   --theme-a:var(--nyx-chrome-accent)!important;
   --theme-b:var(--nyx-chrome-bright)!important;
   --accent:var(--nyx-chrome-accent)!important;
-  --nyx-shell-icon:var(--nyx-home-wordmark)!important;
-  --nyx-final-shortcut-icon:var(--nyx-home-wordmark)!important;
+  --nyx-shell-icon:var(--nyx-home-text)!important;
+  --nyx-final-shortcut-icon:var(--nyx-home-text)!important;
   --nyx-purple-edge:var(--nyx-home-line)!important;
   --nyx-purple-soft:color-mix(in srgb,var(--nyx-chrome-accent) 10%,transparent)!important;
   --glass2:color-mix(in srgb,var(--nyx-chrome-accent) 8%,transparent)!important;
@@ -1234,7 +1234,7 @@ html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .top-os.top-os .top-fullscreen{
   border-color:transparent!important;
   background:color-mix(in srgb,var(--nyx-chrome-accent) 10%,transparent)!important;
-  color:var(--nyx-home-wordmark)!important;
+  color:var(--nyx-home-text)!important;
   box-shadow:none!important;
 }
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .top-os.top-os .top-fullscreen:hover{
@@ -1503,7 +1503,7 @@ html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
     h1,h2,h3,h4,h5,h6,p,span,label,strong,b,a,button,
     input,select,textarea,option,legend,figcaption,dt,dd,li,th,td,caption,
     .tool-btn,.go-btn,.menu-btn,.user-chip,.browser-mode-url,.urlbar
-  ):not(.nyx-styled-display-name):not(.nyx-user-profile-effect):not(.nyx-avatar-decoration){
+  ):not(.nyx-styled-display-name):not(.nyx-user-profile-effect):not(.nyx-avatar-decoration):not(.nyx-minimal-home):not(.nyx-minimal-home *){
   color:var(--nyx-fern-text)!important;
   -webkit-text-fill-color:var(--nyx-fern-text)!important;
   text-shadow:none!important;
@@ -1588,7 +1588,7 @@ html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
 html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
   body.theme-fresh:is(body,#nyx-fern-global-specificity) :is(
     *,*::before,*::after
-  ):not(.nyx-styled-display-name):not(.nyx-user-profile-effect):not(.nyx-avatar-decoration){
+  ):not(.nyx-styled-display-name):not(.nyx-user-profile-effect):not(.nyx-avatar-decoration):not(.nyx-minimal-home):not(.nyx-minimal-home *){
   color:var(--nyx-fern-text)!important;
   -webkit-text-fill-color:var(--nyx-fern-text)!important;
   border-color:var(--nyx-fern-line)!important;

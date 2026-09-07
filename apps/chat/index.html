@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>Nyx Chat</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/icons/chat.svg">
+  <link rel="stylesheet" href="./styles.css?v=20260831-message-replies-v34">
+  <link rel="stylesheet" href="./polish.css?v=20260826-unified-navigation-v2">
+<link rel="stylesheet" href="/apps/visual-redesign.css?v=20260906-monogram-v1">
+</head>
+<body>
+  <svg class="chat-icon-sprite" aria-hidden="true">
+    <symbol id="icon-chat" viewBox="0 0 24 24"><path d="M5.5 4.5h13A2.5 2.5 0 0 1 21 7v8a2.5 2.5 0 0 1-2.5 2.5H11L6 21v-3.5h-.5A2.5 2.5 0 0 1 3 15V7a2.5 2.5 0 0 1 2.5-2.5Z"/><path d="M9.4 8.2 8.6 14M15.4 8.2l-.8 5.8M7.1 10.2h9.7M6.7 12.8h9.7"/></symbol>
+    <symbol id="icon-hash" viewBox="0 0 24 24"><path d="M10 3 8 21M16 3l-2 18M4 9h17M3 15h17"/></symbol>
+    <symbol id="icon-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+    <symbol id="icon-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="icon-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></symbol>
+    <symbol id="icon-close" viewBox="0 0 24 24"><path d="m18 6-12 12M6 6l12 12"/></symbol>
+    <symbol id="icon-arrow-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="icon-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6M10 11v6M14 11v6"/></symbol>
+    <symbol id="icon-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></symbol>
+    <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="icon-paperclip" viewBox="0 0 24 24"><path d="m21.4 11.6-8.9 8.9a6 6 0 0 1-8.5-8.5l9.6-9.6a4 4 0 0 1 5.7 5.7l-9.6 9.6a2 2 0 0 1-2.8-2.8l8.9-8.9"/></symbol>
+    <symbol id="icon-download" viewBox="0 0 24 24"><path d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14"/></symbol>
+    <symbol id="icon-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 10h.01M15.5 10h.01M8 14.5c1 1.3 2.3 2 4 2s3-.7 4-2"/></symbol>
+    <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="icon-volume" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></symbol>
+    <symbol id="icon-mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8"/></symbol>
+    <symbol id="icon-mic-off" viewBox="0 0 24 24"><path d="m3 3 18 18M9 9v2a3 3 0 0 0 5.1 2.1M15 8V5a3 3 0 0 0-5.8-1M5 11a7 7 0 0 0 11.7 5.2M19 11a7 7 0 0 1-.7 3M12 18v4M8 22h8"/></symbol>
+    <symbol id="icon-headphones" viewBox="0 0 24 24"><path d="M4 14v-2a8 8 0 0 1 16 0v2M4 14h3v7H5a2 2 0 0 1-2-2v-3a2 2 0 0 1 1-2ZM20 14h-3v7h2a2 2 0 0 0 2-2v-3a2 2 0 0 0-1-2Z"/></symbol>
+    <symbol id="icon-phone-off" viewBox="0 0 24 24"><path d="m3 3 18 18M8.5 8.5 6.8 6.8a2 2 0 0 0-2.8 0L2.8 8c-.7.7-.8 1.7-.3 2.5A23 23 0 0 0 13.5 21.5c.8.5 1.8.4 2.5-.3l1.2-1.2a2 2 0 0 0 0-2.8l-2.1-2.1a2 2 0 0 0-2.6-.2l-1.1.8M15.5 5.2c1.6.7 2.9 2 3.6 3.6M15 1c3.8.8 6.2 3.2 7 7"/></symbol>
+    <symbol id="icon-screen-share" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4M8.5 11.5 12 8l3.5 3.5M12 8v6"/></symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></symbol>
+    <symbol id="icon-edit" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></symbol>
+    <symbol id="icon-coffee" viewBox="0 0 24 24"><path d="M4 8h13v6a6 6 0 0 1-6 6H10a6 6 0 0 1-6-6Z"/><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17M7 4c0 1 1 1 1 2M11 3c0 1 1 1 1 2M15 4c0 1 1 1 1 2"/></symbol>
+    <symbol id="icon-reply" viewBox="0 0 24 24"><path d="m9 17-6-5 6-5v3h4a7 7 0 0 1 7 7v2a8 8 0 0 0-7-4H9Z"/></symbol>
+    <symbol id="icon-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  </svg>
+
+  <div class="chat-app" data-chat-app>
+    <header class="chat-topbar">
+      <a class="chat-brand" href="/" data-back-to-nyx>
+        <span class="chat-brand-mark"><svg><use href="#icon-chat"/></svg></span>
+        <strong>Nyx</strong><span>Chat</span>
+      </a>
+      <div class="chat-topbar-actions">
+        <span class="chat-online-count" data-online-count><i></i><b>0</b> online</span>
+        <button class="caffeine-button" type="button" data-caffeine-button aria-label="Open Caffeine"><svg><use href="#icon-coffee"/></svg><span>Caffeine</span></button>
+        <button class="icon-button mobile-only" type="button" data-members-toggle aria-label="Show members"><svg><use href="#icon-users"/></svg></button>
+        <button class="back-button" type="button" data-back-to-nyx><svg><use href="#icon-arrow-left"/></svg><span>Back to home</span></button>
+      </div>
+    </header>
+
+    <div class="chat-layout">
+      <aside class="channel-sidebar" data-channel-sidebar>
+        <div class="chat-navigation-scroll" data-chat-navigation-scroll>
+          <div class="sidebar-heading">
+            <span>Channels</span>
+            <span class="sidebar-heading-actions"><button class="sidebar-add" type="button" data-manage-channels aria-label="Manage channels" title="Manage channels" hidden><svg><use href="#icon-settings"/></svg></button><button class="icon-button mobile-only" type="button" data-sidebar-close aria-label="Close channels"><svg><use href="#icon-close"/></svg></button></span>
+          </div>
+          <nav class="channel-list" data-channel-list aria-label="Chat channels"></nav>
+          <div class="sidebar-heading voice-heading"><span>Voice Channels</span></div>
+          <nav class="voice-channel-list" data-voice-channel-list aria-label="Voice channels"></nav>
+          <section class="voice-panel" data-voice-panel hidden>
+            <div class="voice-panel-copy"><strong data-voice-status>Voice connected</strong><span data-voice-room></span></div>
+            <div class="voice-controls">
+              <button type="button" data-voice-mute aria-label="Mute microphone" title="Mute microphone"><svg><use href="#icon-mic"/></svg></button>
+              <button type="button" data-voice-deafen aria-label="Deafen" title="Deafen"><svg><use href="#icon-headphones"/></svg></button>
+              <button type="button" data-voice-screen aria-label="Share screen" title="Share screen"><svg><use href="#icon-screen-share"/></svg></button>
+              <button type="button" class="disconnect" data-voice-disconnect aria-label="Disconnect voice" title="Disconnect voice"><svg><use href="#icon-phone-off"/></svg></button>
+            </div>
+          </section>
+          <div class="sidebar-heading direct-heading">
+            <span>Direct Messages</span>
+            <button class="sidebar-add" type="button" data-new-dm aria-label="Start a direct message"><svg><use href="#icon-plus"/></svg></button>
+          </div>
+          <nav class="direct-list" data-direct-list aria-label="Direct messages"></nav>
+          <div class="chat-guidelines" data-chat-guidelines>
+            <svg><use href="#icon-shield"/></svg>
+            <p><strong>Keep Nyx welcoming.</strong><span>Do not share passwords, private details, or harmful content.</span></p>
+            <button class="chat-guidelines-dismiss" type="button" data-chat-guidelines-dismiss aria-label="Dismiss safety reminder" title="Dismiss"><svg><use href="#icon-close"/></svg></button>
+          </div>
+        </div>
+        <div class="current-user" data-current-user hidden></div>
+      </aside>
+
+      <main class="conversation">
+        <header class="conversation-header">
+          <button class="icon-button mobile-only" type="button" data-channels-toggle aria-label="Show channels"><svg><use href="#icon-menu"/></svg></button>
+          <span class="channel-symbol" data-conversation-symbol><svg><use href="#icon-hash"/></svg></span>
+          <div><h1 data-channel-title>General</h1><p data-channel-description>The main Nyx community chat.</p></div>
+          <span class="connection-state" data-connection-state><i></i><span>Connecting</span></span>
+        </header>
+
+        <section class="conversation-body" data-conversation-body>
+          <section class="voice-screen-stage" data-voice-screen-stage aria-label="Voice channel screen shares" hidden></section>
+          <div class="signin-gate" data-signin-gate hidden>
+            <span><svg><use href="#icon-chat"/></svg></span>
+            <h2>Sign in to join Nyx Chat</h2>
+            <p>Community chat is available to Nyx members with an account. Sign in from the Nyx homepage, then come back here.</p>
+            <button type="button" class="primary-button" data-back-to-nyx>Return to Nyx</button>
+            <button type="button" class="text-button" data-retry-auth>I've signed in — reload</button>
+          </div>
+
+          <div class="loading-chat" data-loading-chat>
+            <span class="loading-orbit"></span>
+            <strong>Opening Nyx Chat</strong>
+          </div>
+
+          <div class="message-scroller" data-message-scroller hidden>
+            <button class="load-older" type="button" data-load-older hidden>Load older messages</button>
+            <div class="channel-welcome" data-channel-welcome>
+              <span><svg><use href="#icon-hash"/></svg></span>
+              <h2 data-welcome-title>Welcome to #general</h2>
+              <p data-welcome-description>This is the start of the General channel.</p>
+            </div>
+            <div class="message-list" data-message-list aria-live="polite"></div>
+          </div>
+        </section>
+
+        <form class="message-composer" data-message-form hidden>
+          <div class="mention-menu" data-mention-menu role="listbox" aria-label="Message suggestions" hidden></div>
+          <div class="composer-reply-preview" data-reply-preview hidden></div>
+          <div class="attachment-preview-list" data-attachment-previews hidden></div>
+          <button class="composer-tool" type="button" data-attachment-button aria-label="Attach files" title="Attach files"><svg><use href="#icon-paperclip"/></svg></button>
+          <input type="file" data-attachment-input accept="image/png,image/jpeg,image/gif,image/webp,audio/mpeg,audio/mp4,audio/ogg,audio/wav,audio/webm,video/mp4,video/ogg,video/quicktime,video/webm,application/pdf,text/plain,.docx,.xlsx,.pptx,.mp3,.m4a,.wav,.mp4,.m4v,.mov,.webm" multiple hidden>
+          <label>
+            <span class="sr-only">Message</span>
+            <textarea data-message-input rows="1" maxlength="1000" placeholder="Message #general"></textarea>
+          </label>
+          <span class="message-count" data-message-count>0 / 1000</span>
+          <button class="send-button" data-send-button type="submit" aria-label="Send message"><svg><use href="#icon-send"/></svg></button>
+        </form>
+        <div class="chat-notice" data-chat-notice role="status" aria-live="polite" hidden></div>
+        <div class="message-context-menu" data-message-context-menu role="menu" hidden></div>
+      </main>
+
+      <aside class="member-sidebar" data-member-sidebar>
+        <div class="sidebar-heading">
+          <span>Members</span>
+          <span class="sidebar-heading-actions"><button class="sidebar-add" type="button" data-flagged-searches aria-label="Review search history" title="Review search history" hidden><svg><use href="#icon-shield"/></svg></button><button class="icon-button mobile-only" type="button" data-members-close aria-label="Close members"><svg><use href="#icon-close"/></svg></button></span>
+        </div>
+        <div class="member-groups" data-member-groups></div>
+      </aside>
+      <button class="drawer-shade" data-drawer-shade type="button" aria-label="Close navigation" hidden></button>
+    </div>
+  </div>
+
+  <dialog class="chat-image-lightbox" data-image-lightbox aria-label="Image preview">
+    <button class="icon-button chat-image-lightbox-close" type="button" data-image-lightbox-close aria-label="Close image preview"><svg><use href="#icon-close"/></svg></button>
+    <figure>
+      <img data-image-lightbox-image alt="">
+      <figcaption data-image-lightbox-caption></figcaption>
+    </figure>
+  </dialog>
+
+  <dialog class="member-dialog" data-member-dialog>
+    <button class="icon-button dialog-close" type="button" data-member-dialog-close aria-label="Close profile"><svg><use href="#icon-close"/></svg></button>
+    <div data-member-dialog-content></div>
+  </dialog>
+  <dialog class="dm-dialog" data-dm-dialog>
+    <header><div><h2>New direct message</h2><p>Choose a Nyx member.</p></div><button class="icon-button" type="button" data-dm-dialog-close aria-label="Close"><svg><use href="#icon-close"/></svg></button></header>
+    <input type="search" data-dm-search placeholder="Search members" autocomplete="off">
+    <div class="dm-picker-list" data-dm-picker-list></div>
+  </dialog>
+  <dialog class="channel-manager-dialog" data-channel-manager-dialog>
+    <header><div><h2>Manage channels</h2><p>Create, rename, or remove Nyx text and voice channels.</p></div><button class="icon-button" type="button" data-channel-manager-close aria-label="Close"><svg><use href="#icon-close"/></svg></button></header>
+    <div class="channel-kind-tabs"><button type="button" data-channel-kind="text" class="active">Text</button><button type="button" data-channel-kind="voice">Voice</button></div>
+    <div class="channel-manager-list" data-channel-manager-list></div>
+    <form class="channel-manager-form" data-channel-manager-form>
+      <input type="hidden" data-channel-edit-id>
+      <label><span>Channel name</span><input type="text" data-channel-name maxlength="32" required placeholder="New channel"></label>
+      <label><span>Description</span><textarea data-channel-description-input maxlength="140" rows="2" placeholder="What is this channel for?"></textarea></label>
+      <label><span>Who can access it</span><select data-channel-minimum-role><option value="member">Everyone</option><option value="contributor">Contributor and above</option><option value="tester">Tester and above</option><option value="support">Support and above</option><option value="moderator">Moderator and above</option><option value="developer">Developer and above</option><option value="manager">Manager and above</option><option value="admin">Admin and above</option><option value="co_owner">Co-owner and Owner</option><option value="owner">Owner only</option></select></label>
+      <div><button type="button" class="btn-subtle" data-channel-edit-cancel hidden>Cancel edit</button><button type="submit" class="primary-button" data-channel-save>Add channel</button></div>
+    </form>
+  </dialog>
+  <dialog class="caffeine-dialog" data-caffeine-dialog>
+    <header><div class="caffeine-heading"><span><svg><use href="#icon-coffee"/></svg></span><div><h2>Caffeine</h2><p>Nyx Premium, served as a cup of coffee.</p></div></div><button class="icon-button" type="button" data-caffeine-close aria-label="Close"><svg><use href="#icon-close"/></svg></button></header>
+    <p class="caffeine-status" data-caffeine-status></p>
+    <div class="caffeine-gift-list" data-caffeine-gift-list></div>
+  </dialog>
+  <dialog class="caffeine-gift-dialog" data-caffeine-gift-dialog>
+    <div class="caffeine-gift-mark"><svg><use href="#icon-coffee"/></svg></div>
+    <h2>A cup of Caffeine</h2>
+    <p data-caffeine-gift-message></p>
+    <div><button class="btn-subtle" type="button" data-caffeine-gift-later>Not now</button><button class="primary-button" type="button" data-caffeine-accept>Accept gift</button></div>
+  </dialog>
+  <dialog class="command-dialog" data-command-dialog>
+    <header><div><h2>Nyx Chat commands</h2><p>Commands available in this chat. Staff actions are always checked by the server.</p></div><button class="icon-button" type="button" data-command-close aria-label="Close"><svg><use href="#icon-close"/></svg></button></header>
+    <label class="command-prefix-control">Command prefix<input data-command-prefix maxlength="2" inputmode="text" autocomplete="off" aria-label="Command prefix"><small>Use one or two symbols, such as <code>!</code> or <code>?</code>. Saved on this device.</small></label>
+    <section class="custom-command-manager" data-custom-command-manager hidden>
+      <header><div><h3>Custom commands</h3><p>Create shared response commands for everyone. Templates: <code>{user}</code>, <code>{handle}</code>, <code>{channel}</code>, <code>{args}</code>, and <code>{1}</code>.</p></div></header>
+      <div class="custom-command-list" data-custom-command-list></div>
+      <form class="custom-command-form" data-custom-command-form>
+        <input type="hidden" data-custom-command-previous>
+        <label>Name<input data-custom-command-name maxlength="32" pattern="[a-z][a-z0-9-]{0,31}" placeholder="rules" autocomplete="off" required></label>
+        <label>Aliases <input data-custom-command-aliases maxlength="180" placeholder="rule, info" autocomplete="off"><small>Optional, separated by commas.</small></label>
+        <label>Description<input data-custom-command-description maxlength="120" placeholder="Show the server rules" autocomplete="off"></label>
+        <label>Response<textarea data-custom-command-response maxlength="1000" rows="3" placeholder="Hi {user}, read the rules here…" required></textarea></label>
+        <div><button class="btn-subtle" type="button" data-custom-command-cancel hidden>Cancel edit</button><button class="primary-button" type="submit" data-custom-command-save>Save command</button></div>
+      </form>
+    </section>
+    <div class="command-list" data-command-list></div>
+  </dialog>
+  <dialog class="flagged-search-dialog" data-flagged-search-dialog>
+    <header><div><h2>Search history</h2><p>Searches made through Nyx while signed in are retained for 30 days. Policy-classified searches are highlighted for review.</p></div><button class="icon-button" type="button" data-flagged-search-close aria-label="Close"><svg><use href="#icon-close"/></svg></button></header>
+    <div class="flagged-search-list" data-flagged-search-list></div>
+  </dialog>
+  <script src="./emoji-catalog.js?v=20260821-unicode-emoji-catalog-v36"></script>
+  <script src="./app.js?v=20260831-message-replies-v42"></script>
+</body>
+</html>

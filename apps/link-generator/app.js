@@ -1,6 +1,6 @@
 (()=>{
   'use strict';
-  const LINK_CHECKER_API='https://getuwu.christmas/api/v1';
+  const LINK_CHECKER_API='/api/link-checker';
   const SESSION_KEY='nyx.linkGenerator.firebaseSession';
   const $=selector=>document.querySelector(selector);
   const refs={
@@ -13,18 +13,52 @@
     signIn:$('[data-account-sign-in]'),createAccount:$('[data-account-create]'),refreshAccount:$('[data-account-refresh]'),signOut:$('[data-account-sign-out]'),
     wizardCard:$('[data-wizard-card]'),wizardSteps:[...document.querySelectorAll('[data-wizard-step]')],wizardIndicators:[...document.querySelectorAll('[data-wizard-indicator]')],
     wizardProgress:$('[data-wizard-progress]'),wizardNext:[...document.querySelectorAll('[data-wizard-next]')],wizardBack:[...document.querySelectorAll('[data-wizard-back]')],wizardRestart:$('[data-wizard-restart]'),
-    reviewAccess:$('[data-review-access]'),reviewLabel:$('[data-review-label]'),reviewFilter:$('[data-review-filter]'),reviewOrigin:$('[data-review-origin]'),reviewAmountRow:$('[data-review-amount-row]'),reviewAmount:$('[data-review-amount]'),confirm:$('[data-confirm]'),confirmText:$('[data-confirm-text]'),
-    amount:$('[data-premium-amount]'),amountField:$('[data-premium-amount-field]'),amountHint:$('[data-premium-amount-hint]'),detailsGrid:$('[data-details-grid]')
+    reviewAccess:$('[data-review-access]'),reviewLabel:$('[data-review-label]'),reviewFilter:$('[data-review-filter]'),reviewOrigin:$('[data-review-origin]'),reviewMethod:$('[data-review-method]'),reviewAmountRow:$('[data-review-amount-row]'),reviewAmount:$('[data-review-amount]'),confirm:$('[data-confirm]'),confirmText:$('[data-confirm-text]'),
+    amount:$('[data-premium-amount]'),amountField:$('[data-premium-amount-field]'),amountHint:$('[data-premium-amount-hint]'),detailsGrid:$('[data-details-grid]'),generationMethod:$('[data-generation-method]'),generationMethodHint:$('[data-generation-method-hint]')
   };
   let accessMode='account';
   let wizardStep=0;
-  let premiumBatchLimit=10;
-  let freeDailyLimit=3;
+  let premiumBatchLimit=100;
+  let p2pPremiumBatchLimit=1000;
+  let regularHourlyLimit=100;
+  let freeWindowMinutes=60;
   let premiumImmediateCooldownAt=5;
   let premiumAccumulatedLimit=30;
   let premiumCooldownMinutes=10;
   let authConfig={enabled:false,apiKey:''};
   let authSession=readStoredSession();
+  const cdnHosts=new Set(['cdn.jsdelivr.net','gcore.jsdelivr.net','fastly.jsdelivr.net']);
+  const cdnSelect=$('[data-cdn-host]');
+  const providerSelect=$('[data-provider]');
+  let resultProvider='jsdelivr';
+  function selectedProvider(){return providerSelect.value==='bunny'?'bunny':'jsdelivr'}
+  function updateProvider(){
+    const bunny=selectedProvider()==='bunny';
+    if(bunny)refs.generationMethod.value='managed';
+    refs.generationMethod.closest('label').hidden=bunny;
+    cdnSelect.closest('label').hidden=bunny;
+    $('[data-provider-hint]').textContent=bunny
+      ? 'Create separate b-cdn.net hostnames pointing to Nyx. Bunny bandwidth charges and account limits apply; these still share the Nyx backend.'
+      : 'Publish SVG files through GitHub and serve them on jsDelivr.';
+    refs.confirm.checked=false;
+    updateGenerationMethod();
+  }
+  function selectedCdn(){return cdnHosts.has(cdnSelect.value)?cdnSelect.value:'cdn.jsdelivr.net'}
+  function withCdnHost(value,host){
+    const url=new URL(value);
+    if(url.protocol==='https:'&&cdnHosts.has(url.hostname)&&url.pathname.startsWith('/gh/')) url.hostname=host;
+    return url.href;
+  }
+  const bulkJobs=import('./bulk-jobs.js?v=20260905-resumable-v1').then(module=>module.attachBulkJobs({
+    access:async()=>{
+      if(!authSession?.idToken)throw new Error('Sign in to your account above before starting or resuming a large job.');
+      const session=await currentVerifiedSession();
+      const profile=await lookupAccount(session.idToken);
+      return {uid:profile.uid,token:session.idToken,limit:accountHasPremium()?p2pPremiumBatchLimit:regularHourlyLimit,method:accountHasPremium()?'p2p':'managed'};
+    }
+  }));
+  // Unsupported storage is reported when a user requests a large job.
+  bulkJobs.catch(()=>{});
 
   function applyTheme(){
     let theme='default';
@@ -42,6 +76,8 @@
     refs.status.querySelector('span').textContent=label;
   }
   function setLoading(loading,label=''){
+    cdnSelect.disabled=loading;
+    $('[data-bulk-setup] button').disabled=loading;
     refs.button.disabled=loading;
     const amount=selectedAmount();
     refs.button.querySelector('span').textContent=loading ? (label || `Creating ${amount} link${amount===1?'':'s'}...`) : `Generate ${amount===1?'link':`${amount} links`}`;
@@ -99,7 +135,7 @@
   async function lookupAccount(idToken){
     const result=await firebaseRequest('identity','accounts:lookup',{idToken});
     const user=result.users?.[0];
-    return {email:user?.email || '',emailVerified:Boolean(user?.emailVerified)};
+    return {uid:user?.localId || '',email:user?.email || '',emailVerified:Boolean(user?.emailVerified)};
   }
   async function lookupNyxAccess(idToken){
     const account=await readJson(await fetch('/api/account/me',{headers:{Accept:'application/json',Authorization:`Bearer ${idToken}`},cache:'no-store'}));
@@ -110,6 +146,10 @@
   }
   function accountHasPremium(){return Boolean(authSession?.premiumAccess || ['premium','trialing'].includes(String(authSession?.subscriptionStatus || '').toLowerCase()))}
   function premiumAccessActive(){return accessMode==='administrator' || (accessMode==='account' && accountHasPremium())}
+  function amountLimit(){
+    if(refs.generationMethod.value==='p2p' && premiumAccessActive()) return p2pPremiumBatchLimit;
+    return premiumAccessActive() ? premiumBatchLimit : regularHourlyLimit;
+  }
   async function refreshNyxAccess(){
     if(!authSession?.idToken)return authSession;
     const access=await lookupNyxAccess(authSession.idToken);
@@ -132,7 +172,7 @@
     return authSession;
   }
   async function currentVerifiedSession(){
-    if(!authSession) throw new Error(`Sign in to use your ${freeDailyLimit} free links.`);
+    if(!authSession) throw new Error('Sign in to use the Link Generator.');
     if(authSession.expiresAt-Date.now()<60_000) await refreshSession();
     await refreshNyxAccess();
     if(accountHasPremium()) return authSession;
@@ -150,17 +190,25 @@
     refs.refreshAccount.hidden=!signedIn || premium || Boolean(authSession?.emailVerified);
     refs.accountStatus.className=`account-status${signedIn ? (premium || authSession.emailVerified ? ' good' : '') : ''}`;
     refs.accountStatus.textContent=signedIn
-      ? (premium ? `${authSession.email || 'Account'} has Premium access. No access code is required.` : (authSession.emailVerified ? `${authSession.email || 'Account'} is verified. You can create up to ${freeDailyLimit} links today.` : `Verification sent to ${authSession.email || 'your email'}. Verify it before generating links.`))
-      : `Sign in with a verified email to receive ${freeDailyLimit} free links per day.`;
+      ? (premium ? `${authSession.email || 'Account'} has Premium access. No access code is required.` : (authSession.emailVerified ? `${authSession.email || 'Account'} is verified. You can create up to ${regularHourlyLimit} links per ${freeWindowMinutes}-minute window.` : `Verification sent to ${authSession.email || 'your email'}. Verify it before generating links.`))
+      : `Sign in with a verified email to create up to ${regularHourlyLimit} links per hour.`;
     const accountButton=refs.modeButtons.find(button=>button.dataset.accessMode==='account');
     if(accountButton)accountButton.textContent=premium?'Premium account':'Account';
     if(accessMode==='account')setPremiumLayout();
   }
   function setPremiumLayout(){
     const premium=premiumAccessActive();
-    refs.amountField.hidden=!premium;
-    refs.detailsGrid.classList.toggle('premium',premium);
-    if(!premium)refs.amount.value='1';
+    const p2p=refs.generationMethod.value==='p2p';
+    const limit=amountLimit();
+    refs.amountField.hidden=false;
+    refs.detailsGrid.classList.add('premium');
+    refs.amount.max=String(limit);
+    if(Number.parseInt(refs.amount.value,10)>limit)refs.amount.value=String(limit);
+    refs.amountHint.textContent=premium&&p2p
+      ? `P2P can publish up to ${p2pPremiumBatchLimit.toLocaleString()} links per run through your GitHub token. Automatic repositories roll over at 1,000 SVGs.`
+      : premium
+        ? `Choosing ${premiumImmediateCooldownAt}-${premiumBatchLimit} links starts a ${premiumCooldownMinutes}-minute cooldown. Smaller batches start it after ${premiumAccumulatedLimit} total links.`
+        : `Regular accounts can create up to ${regularHourlyLimit} links during each ${freeWindowMinutes}-minute window.`;
     updateAmountCopy();
   }
   function setAccessMode(mode){
@@ -175,16 +223,28 @@
     });
   }
   function selectedAmount(){
-    if(!premiumAccessActive()) return 1;
+    const limit=amountLimit();
     const value=Number.parseInt(refs.amount.value,10);
-    return Number.isInteger(value) ? Math.max(1,Math.min(premiumBatchLimit,value)) : 1;
+    return Number.isInteger(value) ? Math.max(1,Math.min(limit,value)) : 1;
   }
   function updateAmountCopy(){
     const amount=selectedAmount();
-    refs.reviewAmountRow.hidden=!premiumAccessActive();
+    const p2p=refs.generationMethod.value==='p2p';
+    refs.reviewAmountRow.hidden=false;
     refs.reviewAmount.textContent=`${amount} link${amount===1?'':'s'}`;
-    refs.confirmText.textContent=`I understand this creates ${amount===1?'one resource':`${amount} resources`} on the Nyx Bunny account.`;
+    refs.confirmText.textContent=selectedProvider()==='bunny'
+      ? `I understand this creates ${amount} Bunny pull zone${amount===1?'':'s'} on the configured Bunny account, with its bandwidth charges and limits.`
+      : p2p
+      ? `I understand P2P bulk-publishes ${amount===1?'one Nyx SVG':`${amount} Nyx SVGs`} through Nyx's protected server publisher.`
+      : `I understand this publishes ${amount===1?'one Nyx SVG':`${amount} Nyx SVGs`} through a GitHub repository.`;
     if(!refs.button.disabled) refs.button.querySelector('span').textContent=`Generate ${amount===1?'link':`${amount} links`}`;
+  }
+  function updateGenerationMethod(){
+    const p2p=refs.generationMethod.value==='p2p';
+    refs.generationMethodHint.textContent=p2p
+      ? `P2P bulk-publishes up to ${p2pPremiumBatchLimit.toLocaleString()} Nyx links directly and keeps the GitHub credential on the Nyx server.`
+      : 'Nyx managed uses the protected server publisher; its GitHub credential never reaches your browser.';
+    setPremiumLayout();
   }
   function setWizardStep(nextStep,direction=nextStep>=wizardStep?'forward':'back'){
     const index=Math.max(0,Math.min(refs.wizardSteps.length-1,Number(nextStep) || 0));
@@ -207,10 +267,12 @@
     refs.wizardProgress.style.width=`${(index/(refs.wizardSteps.length-1))*100}%`;
   }
   function updateReview(){
+    $('[data-review-cdn]').textContent=selectedProvider()==='bunny'?'Bunny.net · b-cdn.net':selectedCdn();
     refs.reviewAccess.textContent=accessMode==='account' ? (accountHasPremium() ? `${authSession?.email || 'Account'} · Premium` : (authSession?.email || 'Free account')) : 'Premium access code';
     refs.reviewLabel.textContent=refs.label.value.trim() || 'Automatic';
     refs.reviewFilter.textContent=refs.filter.options[refs.filter.selectedIndex]?.textContent || 'Not selected';
     refs.reviewOrigin.textContent=refs.origin.textContent || 'Official Nyx origin';
+    refs.reviewMethod.textContent=refs.generationMethod.value==='p2p' ? 'P2P' : 'Nyx managed';
     updateAmountCopy();
   }
   async function validateAccessStep(){
@@ -248,10 +310,9 @@
     }
     if(wizardStep===1){
       if(!refs.filter.value){showNotice('Choose a content filter before continuing.','error');refs.filter.focus();return}
-      if(premiumAccessActive()){
-        const rawAmount=Number.parseInt(refs.amount.value,10);
-        if(!Number.isInteger(rawAmount) || rawAmount<1 || rawAmount>premiumBatchLimit){showNotice(`Choose an amount from 1 to ${premiumBatchLimit}.`,'error');refs.amount.focus();return}
-      }
+      const rawAmount=Number.parseInt(refs.amount.value,10);
+      const batchLimit=amountLimit();
+      if(!Number.isInteger(rawAmount) || rawAmount<1 || rawAmount>batchLimit){showNotice(`Choose an amount from 1 to ${batchLimit}.`,'error');refs.amount.focus();return}
       showNotice('');updateReview();setWizardStep(2);
     }
     }finally{
@@ -301,19 +362,25 @@
     finally{setAuthBusy(false)}
   }
 
+  function filterKey(item){
+    return String(typeof item==='string' ? item : (item?.key || item?.filter || '')).trim().toLowerCase();
+  }
   function filterLabel(item){
-    const key=String(item?.key || item?.filter || '').toLowerCase();
-    const label=String(item?.label || item?.filter || item?.key || 'Content filter');
-    return key==='cisco' || /^cisco talos$/i.test(label) ? 'Cisco Umbrella' : label;
+    const key=filterKey(item);
+    const supplied=String(typeof item==='string' ? item : (item?.label || item?.filter || item?.key || 'Content filter'));
+    const labels={blocksi_ai:'Blocksi AI',cisco:'Cisco Umbrella',dnsfilter:'DNSFilter',fortiguard:'FortiGuard',goguardian:'GoGuardian',iboss:'iBoss',lanschool:'LanSchool',paloalto:'Palo Alto'};
+    if(labels[key]) return labels[key];
+    if(/^cisco talos$/i.test(supplied)) return 'Cisco Umbrella';
+    return supplied===key ? key.replace(/_/g,' ').replace(/\b\w/g,letter=>letter.toUpperCase()) : supplied;
   }
   async function loadFilters(){
     try{
-      const response=await readJson(await fetch(`${LINK_CHECKER_API}/filters`,{headers:{Accept:'application/json'},cache:'no-store'}));
-      const filters=Array.isArray(response) ? response : response.filters;
+      const response=await readJson(await fetch(`${LINK_CHECKER_API}/vendors`,{headers:{Accept:'application/json'},cache:'no-store'}));
+      const filters=Array.isArray(response) ? response : response.vendors;
       if(!Array.isArray(filters) || !filters.length) throw new Error('No filters are currently available.');
       refs.filter.textContent='';
       const prompt=document.createElement('option');prompt.value='';prompt.textContent='Choose a content filter';refs.filter.append(prompt);
-      filters.forEach(item=>{if(!item?.key)return;const option=document.createElement('option');option.value=String(item.key);option.textContent=filterLabel(item);refs.filter.append(option)});
+      filters.forEach(item=>{const key=filterKey(item);if(!key)return;const option=document.createElement('option');option.value=key;option.textContent=filterLabel(item);refs.filter.append(option)});
       refs.filter.disabled=false;
     }catch(error){refs.filter.innerHTML='<option value="">Filter list unavailable</option>';refs.filter.disabled=true;showNotice(`Could not load the content filters: ${error.message}`,'error')}
   }
@@ -329,8 +396,8 @@
     return readJson(await fetch('/api/link-generator/readiness',{method:'POST',headers:{Accept:'application/json','Content-Type':'application/json'},body:JSON.stringify({url})}));
   }
   async function waitForCdnReadiness(url,attempts=12){
-    setOpenReady(false,'Bunny is still provisioning this link.');
-    let lastMessage='Bunny is still provisioning this link.';
+    setOpenReady(false,'This link is still being prepared.');
+    let lastMessage='This link is still being prepared.';
     for(let attempt=0;attempt<attempts;attempt+=1){
       try{
         const result=await checkCdnReadiness(url);
@@ -345,44 +412,106 @@
   }
   async function checkOneGeneratedLink(url,filterKey){
     try{
-      const endpoint=new URL(`${LINK_CHECKER_API}/check`);endpoint.searchParams.set('url',url);endpoint.searchParams.set('filter',filterKey);
-      const report=await readJson(await fetch(endpoint,{headers:{Accept:'application/json'},cache:'no-store'}));
-      const result=Array.isArray(report?.results) ? report.results[0] : report?.result || report;
+      const report=await readJson(await fetch(`${LINK_CHECKER_API}/check`,{
+        method:'POST',headers:{Accept:'application/json','Content-Type':'application/json'},body:JSON.stringify({url,vendor:filterKey}),cache:'no-store'
+      }));
+      const vendorResults=report?.vendors&&typeof report.vendors==='object' ? report.vendors : {};
+      const result=vendorResults[filterKey] || Object.values(vendorResults)[0] || (Array.isArray(report?.results) ? report.results[0] : report?.result || report);
       if(result?.error || result?.ok===false) return 'error';
       if(result?.blocked===true) return 'blocked';
       if(result?.blocked===false) return 'allowed';
       return 'info';
     }catch{return 'error'}
   }
+  function generatedFilterGroups(urls){
+    const groups=new Map();
+    urls.forEach(url=>{
+      let key=`url:${url}`;
+      try{
+        const parsed=new URL(url);
+        const jsdelivr=parsed.hostname.toLowerCase()==='cdn.jsdelivr.net'&&parsed.pathname.match(/^\/gh\/([^/]+)\/([^/]+@[^/]+)\/[^/]+\.svg$/i);
+        if(jsdelivr) key=`jsdelivr:${jsdelivr[1].toLowerCase()}/${jsdelivr[2].toLowerCase()}`;
+      }catch{}
+      const group=groups.get(key);
+      if(group) group.count+=1;
+      else groups.set(key,{url,count:1});
+    });
+    return [...groups.values()];
+  }
   async function checkGeneratedLinks(urls,filterKey,filterName){
     const counts={allowed:0,blocked:0,info:0,error:0};
-    showFilterResult('checking',filterName,`Checking 0 of ${urls.length}`,`Nyx is checking ${urls.length===1?'this link':'each generated link'} once.`);
+    const groups=generatedFilterGroups(urls);
+    const representative=groups.length<urls.length;
+    showFilterResult('checking',filterName,`Checking 0 of ${urls.length}`,representative?`Nyx is checking ${groups.length} shared CDN source${groups.length===1?'':'s'} for ${urls.length} identical generated links.`:`Nyx is checking ${urls.length===1?'this link':'each generated link'} once.`);
     let nextIndex=0,completed=0;
     const worker=async()=>{
-      while(nextIndex<urls.length){
+      while(nextIndex<groups.length){
         const index=nextIndex;nextIndex+=1;
-        const result=await checkOneGeneratedLink(urls[index],filterKey);
-        counts[result]+=1;completed+=1;
+        const group=groups[index];
+        const result=await checkOneGeneratedLink(group.url,filterKey);
+        counts[result]+=group.count;completed+=group.count;
         showFilterResult('checking',filterName,`Checking ${completed} of ${urls.length}`,'Completed checks appear here when the batch finishes.');
       }
     };
-    await Promise.all(Array.from({length:Math.min(5,urls.length)},worker));
+    await Promise.all(Array.from({length:Math.min(5,groups.length)},worker));
     if(counts.blocked){showFilterResult('blocked',filterName,`${counts.blocked} blocked`,`Sorry, but ${counts.blocked===urls.length?'all of those links are':`${counts.blocked} of ${urls.length} links are`} currently blocked.`);return}
     if(counts.error){showFilterResult('error',filterName,`${counts.error} unchecked`,`${counts.allowed} allowed; ${counts.error} could not be checked.`);return}
     if(counts.info){showFilterResult('info',filterName,`${counts.info} informational`,`${counts.allowed} allowed; ${counts.info} did not return a blocked or allowed decision.`);return}
-    showFilterResult('allowed',filterName,`${counts.allowed} allowed`,urls.length===1?'The selected filter currently reports this link as allowed.':'The selected filter currently reports every generated link as allowed.');
+    showFilterResult('allowed',filterName,`${counts.allowed} allowed`,urls.length===1?'The selected filter currently reports this link as allowed.':representative?`One representative check covered all ${urls.length} identical Nyx SVG links from the shared CDN source.`:'The selected filter currently reports every generated link as allowed.');
   }
   async function loadStatus(){
     try{
       const status=await readJson(await fetch('/api/link-generator/status',{headers:{Accept:'application/json'},cache:'no-store'}));
-      premiumBatchLimit=Math.max(1,Math.min(10,Number.parseInt(status.premiumBatchLimit,10) || 10));freeDailyLimit=Math.max(1,Number.parseInt(status.freeDailyLimit,10) || 3);premiumImmediateCooldownAt=Math.max(1,Number.parseInt(status.premiumImmediateCooldownAt,10) || 5);premiumAccumulatedLimit=Math.max(premiumImmediateCooldownAt,Number.parseInt(status.premiumAccumulatedLimit,10) || 30);premiumCooldownMinutes=Math.max(1,Number.parseInt(status.premiumCooldownMinutes,10) || 10);refs.amount.max=String(premiumBatchLimit);refs.amountHint.textContent=`Choosing ${premiumImmediateCooldownAt}–${premiumBatchLimit} links starts a ${premiumCooldownMinutes}-minute cooldown. Smaller batches start it after ${premiumAccumulatedLimit} total links.`;renderAccount();
+      const bunnyOption=providerSelect.querySelector('[value="bunny"]');
+      bunnyOption.disabled=!status.bunnyAvailable;
+      bunnyOption.textContent=status.bunnyAvailable?'Bunny.net pull zones':'Bunny.net pull zones (server key not configured)';
+      regularHourlyLimit=Math.max(1,Math.min(100,Number.parseInt(status.freeHourlyLimit,10) || 100));freeWindowMinutes=Math.max(1,Number.parseInt(status.freeWindowMinutes,10) || 60);premiumBatchLimit=Math.max(regularHourlyLimit,Math.min(10000,Number.parseInt(status.premiumBatchLimit,10) || regularHourlyLimit));p2pPremiumBatchLimit=Math.max(premiumBatchLimit,Math.min(10000,Number.parseInt(status.p2pPremiumBatchLimit,10) || 1000));premiumImmediateCooldownAt=Math.max(1,Number.parseInt(status.premiumImmediateCooldownAt,10) || 5);premiumAccumulatedLimit=Math.max(premiumImmediateCooldownAt,Number.parseInt(status.premiumAccumulatedLimit,10) || 30);premiumCooldownMinutes=Math.max(1,Number.parseInt(status.premiumCooldownMinutes,10) || 10);renderAccount();setPremiumLayout();
       refs.origin.textContent=status.origin || 'Not configured';setStatus(status.available,status.available ? 'Ready' : 'Setup required');
-      if(!status.available) showNotice('The Nyx administrator still needs to finish the Link Generator environment settings in Netlify.','error');
+      if(!status.available) showNotice('The Nyx administrator still needs to finish the Link Generator server settings.','error');
     }catch(error){refs.origin.textContent='Unavailable';setStatus(false,'Unavailable');showNotice(`Could not check the generator: ${error.message}`,'error')}
   }
 
   refs.modeButtons.forEach(button=>button.addEventListener('click',()=>setAccessMode(button.dataset.accessMode)));
+  $('[data-bulk-label]').addEventListener('input',()=>{
+    $('[data-bulk-filename]').textContent=`${$('[data-bulk-label]').value.toLowerCase()||'nyx'}-learning-[random 32-character code].svg`;
+  });
+  $('[data-bulk-setup]').addEventListener('submit',async event=>{
+    event.preventDefault();
+    if(refs.button.disabled)return;
+    const requested=Number($('[data-bulk-amount]').value);
+    if(!Number.isSafeInteger(requested)||requested<1||requested>100000)return;
+    if(requested>amountLimit()){
+      try {
+        const jobs=await bulkJobs;
+        void jobs.start({total:requested,label:$('[data-bulk-label]').value,host:$('[data-bulk-host]').value});
+        $('[data-bulk-job]').hidden=false;
+      }catch(error){showNotice(error.message,'error')}
+      return;
+    }
+    refs.label.value=$('[data-bulk-label]').value;
+    providerSelect.value='jsdelivr';
+    updateProvider();
+    refs.generationMethod.value='managed';
+    updateGenerationMethod();
+    refs.amount.value=String(Math.min(amountLimit(),Number($('[data-bulk-amount]').value)));
+    cdnSelect.value=$('[data-bulk-host]').value;
+    refs.confirm.checked=false;
+    updateAmountCopy();
+    setWizardStep(0);
+    showNotice('Your link options are ready. Continue through access, details, and review to publish.');
+    refs.wizardCard.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+  $('[data-download-links]').addEventListener('click',()=>{
+    if(!refs.resultUrl.value)return;
+    const url=URL.createObjectURL(new Blob([refs.resultUrl.value+'\n'],{type:'text/plain;charset=utf-8'}));
+    const link=document.createElement('a');
+    link.href=url;link.download=`nyx-${resultProvider}-links.txt`;
+    document.body.appendChild(link);link.click();link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  });
   refs.amount.addEventListener('input',updateAmountCopy);
+  refs.generationMethod.addEventListener('change',updateGenerationMethod);
+  providerSelect.addEventListener('change',updateProvider);
   refs.wizardNext.forEach(button=>button.addEventListener('click',handleWizardNext));
   refs.wizardBack.forEach(button=>button.addEventListener('click',()=>{showNotice('');setWizardStep(wizardStep-1,'back')}));
   refs.wizardRestart.addEventListener('click',()=>{
@@ -400,30 +529,40 @@
     showNotice('');refs.resultCard.hidden=true;setLoading(true);
     try{
       const headers={Accept:'application/json','Content-Type':'application/json'};
-      const body={label:refs.label.value};
+      const method=refs.generationMethod.value==='p2p'?'p2p':'managed';
+      const provider=selectedProvider();
+      const body={label:refs.label.value,provider,method:provider==='bunny'?'managed':method};
       if(accessMode==='account'){
         const session=await currentVerifiedSession();
         headers.Authorization=`Bearer ${session.idToken}`;
-        if(accountHasPremium())body.amount=selectedAmount();
+        body.amount=selectedAmount();
       }else{
         if(!refs.accessCode.value) throw new Error('Enter your Premium access code.');
         body.accessCode=refs.accessCode.value;
         body.amount=selectedAmount();
       }
       const result=await readJson(await fetch('/api/link-generator',{method:'POST',headers,body:JSON.stringify(body)}));
-      const links=(Array.isArray(result.links)?result.links:[]).map(item=>typeof item==='string'?item:item?.url).filter(Boolean);
-      if(!links.length && result.url) links.push(result.url);
-      if(!links.length) throw new Error('Bunny did not return any generated links.');
-      refs.resultUrl.value=links.join('\n');refs.resultCount.textContent=`${links.length} link${links.length===1?'':'s'}`;refs.resultTitle.textContent=links.length===1?'Your Nyx link is ready':'Your Nyx links are ready';refs.resultSubtitle.textContent=result.partial?`${links.length} of ${result.requested} requested links were created.`:`${links.length===1?'The link was':'All links were'} created successfully.`;refs.open.href=links[0];setOpenReady(false);refs.resultCard.hidden=false;refs.accessCode.value='';setWizardStep(3);requestAnimationFrame(()=>refs.resultCard.scrollIntoView({behavior:'smooth',block:'nearest'}));
-      const [,cdnReady]=await Promise.all([checkGeneratedLinks(links,selectedFilter,selectedFilterName),waitForCdnReadiness(links[0])]);
+      const links=(Array.isArray(result.links)?result.links:[]).map(item=>typeof item==='string'?item:item?.url).filter(Boolean).map(url=>withCdnHost(url,selectedCdn()));
+      if(result.provider==='jsdelivr' && result.authorized===true && !links.length){
+        if(method==='p2p') throw new Error('P2P publishing did not return any Nyx links. Ask the Nyx administrator to check the protected publisher.');
+        const params=new URLSearchParams({preset:'nyx',label:refs.label.value.trim(),filter:selectedFilter,count:String(result.requested || selectedAmount()),cdn:selectedCdn()});
+        location.href=`../jsdelivr-publisher/?${params.toString()}`;
+        return;
+      }
+      if(!links.length && result.url) links.push(withCdnHost(result.url,selectedCdn()));
+      if(!links.length) throw new Error('The link provider did not return any generated links.');
+      resultProvider=provider;
+      const isJsdelivr=provider==='jsdelivr';
+      refs.resultUrl.value=links.join('\n');refs.resultCount.textContent=`${links.length} link${links.length===1?'':'s'}`;refs.resultTitle.textContent=links.length===1?'Your Nyx link is ready':'Your Nyx links are ready';refs.resultSubtitle.textContent=result.partial?`${links.length} of ${result.requested} requested links were created.`:`${links.length===1?'The link was':'All links were'} created successfully.`;refs.open.href=links[0];setOpenReady(isJsdelivr);refs.resultCard.hidden=false;refs.accessCode.value='';setWizardStep(3);requestAnimationFrame(()=>refs.resultCard.scrollIntoView({behavior:'smooth',block:'nearest'}));
+      const [,cdnReady]=await Promise.all([checkGeneratedLinks(links,selectedFilter,selectedFilterName),isJsdelivr?Promise.resolve(true):waitForCdnReadiness(links[0])]);
       const cooldown=result.premiumCooldown;
       const premiumResult=result.access==='administrator'||result.access==='premium';
       const premiumMessage=cooldown?.triggered
         ? `${links.length} link${links.length===1?' was':'s were'} created. A ${cooldown.minutes || premiumCooldownMinutes}-minute Premium cooldown is now active.`
         : `${links.length} link${links.length===1?' was':'s were'} created with Premium access. ${cooldown?.accumulated || 0} of ${cooldown?.accumulatedLimit || premiumAccumulatedLimit} links accumulated before cooldown.`;
       if(result.partial) showNotice(result.warning || `${links.length} of ${result.requested} links were created.`,'error');
-      else if(!cdnReady) showNotice(`${premiumResult ? `${premiumMessage} ` : ''}${refs.open.dataset.readinessMessage || 'The link was created, but Bunny is still provisioning it. Try Open first again shortly.'}`,'error');
-      else showNotice(premiumResult ? premiumMessage : `The link was created. ${result.remaining} free link${result.remaining===1?'':'s'} remaining today.`);
+      else if(!cdnReady) showNotice(`${premiumResult ? `${premiumMessage} ` : ''}${refs.open.dataset.readinessMessage || 'The link was created, but the CDN is still provisioning it. Try Open first again shortly.'}`,'error');
+      else showNotice(premiumResult ? premiumMessage : `${links.length} link${links.length===1?' was':'s were'} created. ${result.remaining} link${result.remaining===1?'':'s'} remaining in your current hourly window.`);
     }catch(error){showNotice(error.message,'error')}
     finally{setLoading(false)}
   });
@@ -431,11 +570,11 @@
     if(refs.open.dataset.ready==='true') return;
     event.preventDefault();
     const url=refs.open.href;
-    showNotice(refs.open.dataset.readinessMessage || 'Bunny is still provisioning this link. Checking again...','error');
+    showNotice(refs.open.dataset.readinessMessage || 'This link is still being prepared. Checking again...','error');
     const ready=await waitForCdnReadiness(url,1);
     showNotice(ready ? 'The CDN link is ready. Select Open first again.' : (refs.open.dataset.readinessMessage || 'The CDN link is not ready yet.'),ready ? '' : 'error');
   });
   refs.copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(refs.resultUrl.value);refs.copy.textContent='Copied all';setTimeout(()=>{refs.copy.textContent='Copy all'},1400)}catch{refs.resultUrl.select();document.execCommand('copy')}});
 
-  applyTheme();renderAccount();setWizardStep(0);Promise.all([loadStatus(),loadAuthConfig(),loadFilters()]);
+  applyTheme();renderAccount();updateGenerationMethod();setWizardStep(0);Promise.all([loadStatus(),loadAuthConfig(),loadFilters()]);
 })();

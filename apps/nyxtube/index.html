@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>NyxTube</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/icons/shortcut-youtube.svg">
+  <link rel="stylesheet" href="./styles.css?v=20260902-player-controls-v6">
+  <link rel="stylesheet" href="./responsive.css?v=20260828-nyxtube-v5">
+<link rel="stylesheet" href="/apps/visual-redesign.css?v=20260906-monogram-v1">
+</head>
+<body>
+  <svg class="symbols" aria-hidden="true">
+    <symbol id="icon-home" viewBox="0 0 24 24"><path d="m3.5 11 8.5-7 8.5 7v9H15v-6H9v6H3.5v-9Z"/></symbol>
+    <symbol id="icon-short" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="3"/><path d="m10 8 5 4-5 4V8Z"/></symbol>
+    <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="10.7" cy="10.7" r="6.2"/><path d="m15.4 15.4 4.4 4.4"/></symbol>
+    <symbol id="icon-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20c.6-4 2.7-6 6.5-6s5.9 2 6.5 6"/></symbol>
+    <symbol id="icon-back" viewBox="0 0 24 24"><path d="m14.5 5-7 7 7 7"/></symbol>
+    <symbol id="icon-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="icon-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+    <symbol id="icon-volume" viewBox="0 0 24 24"><path d="M5 10h4l5-4v12l-5-4H5v-4Z"/><path d="M17 9c1.4 1.5 1.4 4.5 0 6"/></symbol>
+    <symbol id="icon-muted" viewBox="0 0 24 24"><path d="M5 10h4l5-4v12l-5-4H5v-4Z"/><path d="m17 10 4 4m0-4-4 4"/></symbol>
+    <symbol id="icon-cc" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 10c-.5-.7-1.1-1-2-1-1.5 0-2.5 1.1-2.5 3S6.5 15 8 15c.9 0 1.5-.3 2-1m8-4c-.5-.7-1.1-1-2-1-1.5 0-2.5 1.1-2.5 3s1 3 2.5 3c.9 0 1.5-.3 2-1"/></symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 13.5v-3l-2-.7-.6-1.4.9-1.9-2.1-2.1-1.9.9-1.4-.6-.7-2h-3l-.7 2-1.4.6-1.9-.9-2.1 2.1.9 1.9-.6 1.4-2 .7v3l2 .7.6 1.4-.9 1.9 2.1 2.1 1.9-.9 1.4.6.7 2h3l.7-2 1.4-.6 1.9.9 2.1-2.1-.9-1.9.6-1.4 2-.7Z"/></symbol>
+    <symbol id="icon-full" viewBox="0 0 24 24"><path d="M8 4H4v4m12-4h4v4M8 20H4v-4m12 4h4v-4"/></symbol>
+    <symbol id="icon-up" viewBox="0 0 24 24"><path d="m6 14 6-6 6 6"/></symbol>
+    <symbol id="icon-down" viewBox="0 0 24 24"><path d="m6 10 6 6 6-6"/></symbol>
+    <symbol id="icon-external" viewBox="0 0 24 24"><path d="M14 5h5v5m0-5-8 8m6 0v5H6V7h5"/></symbol>
+  </svg>
+
+  <div class="starfield" aria-hidden="true"><i></i><i></i><i></i></div>
+  <main class="tube-shell">
+    <nav class="media-nav" aria-label="Video navigation">
+      <button class="back-button" type="button" data-back aria-label="Back"><svg><use href="#icon-back"></use></svg></button>
+      <button class="active" type="button" data-view-button="home"><svg><use href="#icon-home"></use></svg>Home</button>
+      <button type="button" data-view-button="shorts"><svg><use href="#icon-short"></use></svg>Shorts</button>
+      <button class="profile-button" data-profile-button type="button" aria-label="Open your profile"><span class="nyxtube-profile-avatar" data-profile-avatar><svg><use href="#icon-user"></use></svg></span></button>
+    </nav>
+
+    <p class="notice" data-notice role="status" aria-live="polite" hidden></p>
+
+    <section class="home-view" data-view="home">
+      <div class="catalog-head">
+        <div><h1>NyxTube</h1><p>Watch without the noise</p></div>
+        <form class="search-box" data-search-form><svg><use href="#icon-search"></use></svg><input data-search-input type="search" maxlength="100" autocomplete="off" spellcheck="false" placeholder="Search videos" aria-label="Search videos"><button type="submit">Search</button></form>
+      </div>
+      <nav class="topic-row" aria-label="Video topics">
+        <button data-topic="documentary">Documentary</button><button data-topic="music">Music</button><button data-topic="coding">Coding</button><button data-topic="science">Science</button><button data-topic="travel">Travel</button><button data-topic="cooking">Cooking</button><button data-topic="gaming">Gaming</button><button data-topic="history">History</button>
+      </nav>
+      <div class="catalog-status"><h2 data-feed-title>Popular videos</h2><span data-result-count>Loading...</span></div>
+      <section class="video-grid" data-video-grid aria-live="polite"></section>
+    </section>
+
+    <section class="watch-view" data-view="watch" hidden>
+      <div class="watch-layout">
+      <div class="watch-primary">
+      <div class="watch-player" data-watch-stage>
+        <div class="player-mount" data-watch-player></div>
+        <div class="player-loading" data-watch-loading><span></span><strong>Loading video</strong></div>
+        <div class="watch-speed-indicator" data-watch-speed-indicator aria-live="polite" hidden>2&times;</div>
+        <button class="center-play" data-watch-center-play type="button" aria-label="Play video" hidden><svg><use href="#icon-play"></use></svg></button>
+        <div class="mobile-seek-controls" aria-label="Video seeking"><button data-watch-rewind type="button" aria-label="Back 5 seconds"><span>-5</span></button><button data-watch-forward type="button" aria-label="Forward 5 seconds"><span>+5</span></button></div>
+        <section class="watch-settings-menu" data-watch-settings-menu aria-label="Video settings" hidden>
+          <strong>Settings</strong>
+          <label><span>Playback speed</span><select data-watch-speed aria-label="Playback speed"><option value="1">Normal</option></select></label>
+          <label><span>Volume</span><input data-watch-volume type="range" min="0" max="100" value="100" aria-label="Volume"></label>
+          <label><span>Captions</span><select data-watch-settings-captions aria-label="Captions"><option value="off">Off</option><option value="on">On</option></select></label>
+          <div><span>Quality</span><b>Auto</b></div>
+        </section>
+        <div class="watch-controls">
+          <button data-watch-toggle type="button" aria-label="Play"><svg><use href="#icon-play"></use></svg></button>
+          <time data-watch-time>0:00 / 0:00</time>
+          <button data-watch-mute type="button" aria-label="Mute"><svg><use href="#icon-volume"></use></svg></button>
+          <button data-watch-captions type="button" aria-pressed="false" aria-label="Toggle captions"><svg><use href="#icon-cc"></use></svg></button>
+          <button data-watch-settings type="button" aria-expanded="false" aria-label="Video settings"><svg><use href="#icon-settings"></use></svg></button>
+          <button data-watch-fullscreen type="button" aria-label="Fullscreen"><svg><use href="#icon-full"></use></svg></button>
+          <input data-watch-progress type="range" min="0" max="1000" value="0" aria-label="Video progress">
+        </div>
+      </div>
+      <div class="watch-meta">
+        <button class="channel-mark" data-watch-channel-mark type="button" aria-label="Open creator channel"></button><div class="watch-copy"><h1 data-watch-title></h1><p class="watch-byline"><button class="watch-channel-name" data-watch-creator type="button"></button><span class="watch-video-meta" data-watch-video-meta></span></p></div>
+        <div class="watch-options"><label><span>Quality</span><select disabled title="YouTube selects playback quality automatically"><option value="auto">Auto</option></select></label><button data-watch-caption-option type="button">Captions <span>Off</span></button><a data-watch-source target="_blank" rel="noopener noreferrer" aria-label="Open on YouTube"><svg><use href="#icon-external"></use></svg></a></div>
+      </div>
+      <div class="watch-stats" aria-label="Video statistics"><span><strong data-watch-views>0</strong><small>Views</small></span><span><strong data-watch-likes>0</strong><small>Likes</small></span><span><strong data-watch-comments-count>0</strong><small>Comments</small></span></div>
+      <section class="watch-info">
+        <nav class="watch-info-tabs" aria-label="Video information"><button class="active" data-watch-info-tab="description" type="button" role="tab" aria-selected="true">Description</button><button data-watch-info-tab="comments" type="button" role="tab" aria-selected="false">Comments <span data-watch-tab-comments-count></span></button><button data-watch-info-tab="transcript" type="button" role="tab" aria-selected="false">Transcript</button></nav>
+        <article class="watch-info-panel watch-info-description" data-watch-info-panel="description"><p data-watch-description></p></article>
+        <section class="watch-info-panel" data-watch-info-panel="comments" hidden><p class="watch-info-status" data-watch-comments-status>Loading comments...</p><div class="watch-comments" data-watch-comments></div></section>
+        <section class="watch-info-panel" data-watch-info-panel="transcript" hidden><p class="watch-info-status" data-watch-transcript-status>Loading transcript...</p><div class="watch-transcript" data-watch-transcript></div></section>
+      </section>
+      </div>
+      <aside class="watch-related" aria-label="Related videos"><div class="related-heading"><h2>Related</h2><span>Up next</span></div><div class="related-list" data-watch-related></div></aside>
+      </div>
+    </section>
+
+    <section class="channel-view" data-view="channel" hidden>
+      <button class="channel-back" data-channel-back type="button">← Back to video</button>
+      <header class="channel-profile" data-channel-profile>
+        <span class="channel-profile-avatar" data-channel-avatar></span>
+        <div><h1 data-channel-title>Channel</h1><p data-channel-handle></p><p data-channel-description></p></div>
+        <div class="channel-profile-stats"><span><strong data-channel-subscribers>—</strong> subscribers</span><span><strong data-channel-videos>—</strong> videos</span></div>
+      </header>
+      <div class="catalog-status"><h2>Latest videos</h2><span data-channel-status>Loading...</span></div>
+      <section class="video-grid" data-channel-videos aria-live="polite"></section>
+    </section>
+
+    <section class="shorts-view" data-view="shorts" hidden>
+      <div class="shorts-layout">
+        <article class="short-card" data-short-stage>
+          <div class="short-mount" data-short-player></div>
+          <div class="short-loading" data-short-loading><span></span></div>
+          <button class="short-center-play" data-short-center-play type="button" aria-label="Play Short" hidden><svg><use href="#icon-play"></use></svg></button>
+          <div class="short-actions"><button data-short-mute type="button" aria-label="Mute Short"><svg><use href="#icon-muted"></use></svg></button><button data-short-captions type="button" aria-pressed="false" aria-label="Toggle captions"><svg><use href="#icon-cc"></use></svg></button><button data-short-fullscreen type="button" aria-label="Fullscreen"><svg><use href="#icon-full"></use></svg></button></div>
+          <div class="short-copy"><strong data-short-title></strong><span data-short-creator></span></div>
+          <i class="short-progress" data-short-progress></i>
+        </article>
+        <nav class="short-nav" aria-label="Short navigation"><button data-short-previous type="button" aria-label="Previous Short"><svg><use href="#icon-up"></use></svg></button><button data-short-next type="button" aria-label="Next Short"><svg><use href="#icon-down"></use></svg></button></nav>
+      </div>
+    </section>
+  </main>
+  <script src="./player-core.js?v=20260829-clean-embed-v2"></script>
+  <script src="./app.js?v=20260902-player-settings-v12"></script>
+</body>
+</html>

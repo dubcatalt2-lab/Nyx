@@ -1,0 +1,323 @@
+import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
+import { spawn } from 'node:child_process';
+import { chromium } from 'playwright';
+import { linkGeneratorHourlyQuota } from '../lib/link-generator-quota.mjs';
+
+const githubPort = 8214;
+const nyxPort = 8215;
+const origin = `http://127.0.0.1:${nyxPort}`;
+const githubRequests = [];
+
+const quotaStart = Date.UTC(2026, 7, 29, 12, 0, 0);
+assert.deepEqual(
+  linkGeneratorHourlyQuota({ count: 73, windowStarted: quotaStart }, 27, quotaStart + 30_000, 100, 3_600_000),
+  { allowed: true, count: 73, nextCount: 100, remaining: 27, remainingAfter: 0, retryAfter: 3570, windowStarted: quotaStart },
+  'The regular hourly quota did not allow the exact remaining amount'
+);
+assert.equal(linkGeneratorHourlyQuota({ count: 73, windowStarted: quotaStart }, 28, quotaStart + 30_000, 100, 3_600_000).allowed, false, 'The regular hourly quota allowed more than 100 links');
+assert.equal(linkGeneratorHourlyQuota({ count: 100, windowStarted: quotaStart }, 100, quotaStart + 3_600_000, 100, 3_600_000).allowed, true, 'The regular hourly quota did not reset after 60 minutes');
+
+function sendJson(response, status, value) {
+  response.writeHead(status, { 'Content-Type': 'application/json' });
+  response.end(JSON.stringify(value));
+}
+
+const github = createServer(async (request, response) => {
+  let body = '';
+  for await (const chunk of request) body += chunk;
+  githubRequests.push({ method: request.method, url: request.url, authorization: request.headers.authorization || '', body });
+  if (request.method === 'GET' && request.url === '/repos/dubcatalt2-lab/nyx-jsdelivr-links') return sendJson(response, 200, { default_branch: 'main', private: false });
+  if (request.method === 'GET' && request.url === '/repos/dubcatalt2-lab/nyx-jsdelivr-links/git/ref/heads/main') return sendJson(response, 200, { object: { sha: 'head-sha' } });
+  if (request.method === 'GET' && request.url === '/repos/dubcatalt2-lab/nyx-jsdelivr-links/git/commits/head-sha') return sendJson(response, 200, { tree: { sha: 'base-tree-sha' } });
+  if (request.method === 'GET' && request.url === '/repos/dubcatalt2-lab/nyx-jsdelivr-links/git/trees/base-tree-sha?recursive=1') return sendJson(response, 200, { truncated: false, tree: [{ path: 'existing.svg', type: 'blob' }] });
+  if (request.method === 'POST' && request.url === '/repos/dubcatalt2-lab/nyx-jsdelivr-links/git/trees') return sendJson(response, 201, { sha: 'new-tree-sha' });
+  if (request.method === 'POST' && request.url === '/repos/dubcatalt2-lab/nyx-jsdelivr-links/git/commits') return sendJson(response, 201, { sha: 'new-commit-sha' });
+  if (request.method === 'PATCH' && request.url === '/repos/dubcatalt2-lab/nyx-jsdelivr-links/git/refs/heads/main') return sendJson(response, 200, { object: { sha: 'new-commit-sha' } });
+  return sendJson(response, 500, { message: `Unexpected mock request: ${request.method} ${request.url}` });
+});
+
+await new Promise((resolve, reject) => github.once('error', reject).listen(githubPort, '127.0.0.1', resolve));
+
+const nyx = spawn(process.execPath, ['server.js'], {
+  cwd: process.cwd(),
+  env: {
+    ...process.env,
+    PORT: String(nyxPort),
+    LINK_GENERATOR_ACCESS_CODE: 'test-premium-code',
+    NYX_PUBLIC_ORIGIN: 'https://nyxlearning.org',
+    NYX_JSDELIVR_GITHUB_TOKEN: 'github_pat_server_only_test',
+    NYX_JSDELIVR_GITHUB_REPOSITORY: 'dubcatalt2-lab/nyx-jsdelivr-links',
+    NYX_JSDELIVR_GITHUB_API_BASE: `http://127.0.0.1:${githubPort}`
+  },
+  stdio: ['ignore', 'pipe', 'pipe']
+});
+let output = '';
+nyx.stdout.on('data', chunk => { output += chunk; });
+nyx.stderr.on('data', chunk => { output += chunk; });
+
+async function waitForNyx() {
+  const deadline = Date.now() + 15_000;
+  while (Date.now() < deadline) {
+    if (nyx.exitCode !== null) throw new Error(`Nyx stopped early.\n${output}`);
+    try { if ((await fetch(`${origin}/healthz`)).ok) return; } catch {}
+    await new Promise(resolve => setTimeout(resolve, 150));
+  }
+  throw new Error(`Nyx did not start.\n${output}`);
+}
+
+function routeJson(route, value) {
+  return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(value) });
+}
+
+let browser;
+try {
+  await waitForNyx();
+  const status = await (await fetch(`${origin}/api/link-generator/status`)).json();
+  assert.equal(status.globalPublisherConfigured, true, 'The global publisher was not reported as configured');
+
+  browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage({ viewport: { width: 1_280, height: 900 } });
+  const pageErrors = [];
+  let p2pBrowserRequest = null;
+  let p2pFilterCheckRequests = 0;
+  page.on('pageerror', error => pageErrors.push(error.message));
+  page.on('request', request => {
+    if (request.method() === 'POST' && new URL(request.url()).pathname === '/api/link-generator') {
+      p2pBrowserRequest = JSON.parse(request.postData() || '{}');
+    }
+  });
+  await page.route('**/api/link-checker/vendors', route => routeJson(route, { vendors: [{ key: 'goguardian', label: 'GoGuardian' }] }));
+  await page.route('**/api/link-checker/check', route => {
+    p2pFilterCheckRequests += 1;
+    return routeJson(route, { vendors: { goguardian: { blocked: false } } });
+  });
+  await page.goto(`${origin}/apps/link-generator/`, { waitUntil: 'domcontentloaded' });
+  await page.locator('[data-access-code]').fill('test-premium-code');
+  await page.locator('[data-wizard-step="0"] [data-wizard-next]').click();
+  await page.locator('[data-label-input]').fill('study room');
+  await page.locator('[data-filter-select]').selectOption('goguardian');
+  await page.locator('[data-premium-amount]').fill('2');
+  await page.locator('[data-generation-method]').selectOption('p2p');
+  assert.equal(await page.locator('[data-premium-amount]').getAttribute('max'), '1000', 'Premium P2P did not expose the 1,000-link maximum');
+  await page.locator('[data-wizard-step="1"] [data-wizard-next]').click();
+  await page.locator('[data-confirm]').check();
+  await page.locator('[data-generate-button]').click();
+  await page.locator('[data-result-card]:not([hidden])').waitFor({ state: 'visible' });
+
+  assert.equal(new URL(page.url()).pathname, '/apps/link-generator/', 'P2P redirected to the personal-token publisher');
+  assert.equal(p2pBrowserRequest?.method, 'p2p', 'The browser did not request direct P2P publishing');
+  assert.equal(p2pBrowserRequest?.amount, 2, 'The browser did not send the selected P2P amount');
+  const links = (await page.locator('[data-result-url]').inputValue()).trim().split('\n');
+  assert.equal(links.length, 2, 'The global publisher did not return the requested number of links');
+  links.forEach(link => assert.match(link, /^https:\/\/cdn\.jsdelivr\.net\/gh\/dubcatalt2-lab\/nyx-jsdelivr-links@main\/study-room-learning-[a-f0-9]{32}\.svg$/));
+  assert.equal(await page.locator('[data-open]').getAttribute('aria-disabled'), 'false', 'The generated JSDelivr link was not immediately openable');
+  await page.locator('[data-filter-check-state]', { hasText: '2 allowed' }).waitFor();
+  assert.equal(p2pFilterCheckRequests, 1, 'Identical generated JSDelivr links were checked separately');
+  assert.match(await page.locator('[data-filter-check-detail]').textContent(), /one representative check covered all 2 identical Nyx SVG links/i, 'The representative batch-check explanation was not shown');
+  assert.deepEqual(pageErrors, [], `Link Generator browser errors: ${pageErrors.join(' | ')}`);
+
+  const treeRequest = githubRequests.find(request => request.method === 'POST' && request.url.endsWith('/git/trees'));
+  assert.ok(treeRequest, 'The server did not create a Git tree');
+  assert.equal(githubRequests.some(request => request.method === 'GET' && request.url.includes('/git/trees/')), false, 'The global publisher scanned the existing repository tree');
+  const tree = JSON.parse(treeRequest.body);
+  assert.equal(tree.tree.length, 2, 'The Git tree did not contain every requested Nyx SVG');
+  assert.ok(tree.tree.every(entry => entry.content.includes('src="https://nyxlearning.org/"')), 'The server did not publish the maintained Nyx SVG');
+  assert.ok(githubRequests.every(request => request.authorization === 'Bearer github_pat_server_only_test'), 'A server-side GitHub request omitted the configured token');
+  const browserState = await page.evaluate(() => `${document.documentElement.innerHTML}\n${JSON.stringify({ ...localStorage, ...sessionStorage })}`);
+  assert.doesNotMatch(browserState, /github_pat_server_only_test/, 'The global GitHub token reached the browser');
+
+  const oneLinkRequestStart = githubRequests.length;
+  const oneLinkResponse = await fetch(`${origin}/api/link-generator`, {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json', Origin: origin },
+    body: JSON.stringify({ provider: 'jsdelivr', accessCode: 'test-premium-code', label: 'one link test', amount: 1 })
+  });
+  assert.equal(oneLinkResponse.status, 201, 'The exact one-link generation request failed');
+  const oneLinkResult = await oneLinkResponse.json();
+  assert.equal(oneLinkResult.created, 1, 'The exact one-link generation request did not create one result');
+  assert.match(oneLinkResult.links?.[0]?.url || '', /one-link-test-learning-[a-f0-9]{32}\.svg$/, 'The exact one-link generation request returned an invalid URL');
+  const oneLinkTree = githubRequests.slice(oneLinkRequestStart).find(request => request.method === 'POST' && request.url.endsWith('/git/trees'));
+  assert.equal(JSON.parse(oneLinkTree?.body || '{}').tree?.length, 1, 'The exact one-link generation request did not publish one SVG');
+
+  const shellContext = await browser.newContext({ viewport: { width: 1_280, height: 900 } });
+  await shellContext.addInitScript(() => {
+    if (window.top !== window) return;
+    localStorage.setItem('nyx.setupComplete', 'true');
+    localStorage.setItem('nyx.homeDesign', 'redesigned');
+    localStorage.setItem('nyx.popupProtection', 'true');
+    localStorage.setItem('nyx.browserShellMode', 'true');
+    localStorage.setItem('nyx.tosAcceptedVersion', '2026-07-30');
+  });
+  await shellContext.route('**/api/link-checker/vendors', route => routeJson(route, { vendors: [{ key: 'goguardian', label: 'GoGuardian' }] }));
+  await shellContext.route('**/api/link-checker/check', route => routeJson(route, { vendors: { goguardian: { blocked: false } } }));
+  await shellContext.route('https://cdn.jsdelivr.net/**', route => route.fulfill({ status: 200, contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg"/>' }));
+  const shellPage = await shellContext.newPage();
+  const shellErrors = [];
+  shellPage.on('pageerror', error => shellErrors.push(error.message));
+  await shellPage.goto(`${origin}/`, { waitUntil: 'domcontentloaded' });
+  await shellPage.evaluate(() => {
+    document.body.classList.add('browser-content-active');
+    document.querySelectorAll('#nyxStudyHubStartup,#setupLaunchScreen,#setupScreen,.nyx-tos-gate,.nyx-release-notes-overlay').forEach(element => { element.style.pointerEvents = 'none'; });
+  });
+  await shellPage.waitForFunction(() => !document.querySelector('#nyxStudyHubStartup') && !document.body.classList.contains('nyx-loading-active'), null, { timeout: 20_000 });
+  await shellPage.locator('.nyx-minimal-utility-links [data-app-url="/apps/link-generator/"]').click();
+  const shellFrameElement = shellPage.locator('iframe.view.active');
+  await shellFrameElement.waitFor({ state: 'attached' });
+  await shellFrameElement.evaluate(frame => frame.closest('.browser-window')?.setAttribute('data-popup-test-host', 'true'));
+  const popupTestHost = shellPage.locator('.browser-window[data-popup-test-host="true"]');
+  const shellFrame = shellPage.frameLocator('iframe.view.active');
+  await shellFrame.locator('[data-filter-select]:not([disabled])').waitFor({ state: 'attached' });
+  await shellFrame.locator('html[data-nyx-popup-bridge="true"]').waitFor({ state: 'attached' });
+  const popupBridgeUrl = 'https://cdn.jsdelivr.net/gh/dubcatalt2-lab/nyx-jsdelivr-links@main/popup-bridge-learning-0123456789abcdef0123456789abcdef.svg';
+  await shellFrame.locator('[data-open]').evaluate((link, url) => {
+    const card = link.closest('[data-result-card]');
+    if (card) {
+      card.hidden = false;
+      card.classList.add('active');
+      card.style.display = 'flex';
+    }
+    link.href = url;
+    link.dataset.ready = 'true';
+    link.classList.remove('disabled');
+    link.setAttribute('aria-disabled', 'false');
+  }, popupBridgeUrl);
+  const hostViewsBeforeOpen = await popupTestHost.locator('iframe.view').count();
+  await shellFrame.locator('[data-open]').dispatchEvent('click');
+  await shellPage.waitForFunction(({ url, count }) => {
+    const host = document.querySelector('.browser-window[data-popup-test-host="true"]');
+    return host?.querySelectorAll('iframe.view').length === count + 1 && host.querySelector('.urlbar')?.value === url;
+  }, { url: popupBridgeUrl, count: hostViewsBeforeOpen });
+  assert.equal(await popupTestHost.locator('iframe.view').count(), hostViewsBeforeOpen + 1, 'Open first did not create a Nyx browser tab');
+  assert.equal(await popupTestHost.locator('.urlbar').inputValue(), popupBridgeUrl, 'Open first did not navigate the new Nyx tab to the generated JSDelivr link');
+  assert.equal(await shellPage.locator('iframe[src="nyx://blocked67haha"]').count(), 0, 'Open first was routed into the malware popup blocker');
+  const signedOutProfileSymbol = shellPage.locator('#nyxAccountButton.nyx-account-button-default > span');
+  await signedOutProfileSymbol.waitFor({ state: 'attached' });
+  const signedOutProfileSize = await signedOutProfileSymbol.evaluate(symbol => Number.parseFloat(getComputedStyle(symbol).width));
+  assert.ok(signedOutProfileSize >= 18, `The signed-out profile symbol remained too small (${signedOutProfileSize}px)`);
+  assert.deepEqual(shellErrors, [], `Link Generator shell browser errors: ${shellErrors.join(' | ')}`);
+  await shellContext.close();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const overflow = await page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth);
+  assert.ok(overflow <= 1, `Global results caused ${overflow}px of mobile overflow`);
+
+  const regularPage = await browser.newPage({ viewport: { width: 1_280, height: 900 } });
+  const regularErrors = [];
+  let regularRequest = null;
+  regularPage.on('pageerror', error => regularErrors.push(error.message));
+  await regularPage.addInitScript(session => {
+    sessionStorage.setItem('nyx.linkGenerator.firebaseSession', JSON.stringify(session));
+  }, {
+    idToken: 'regular-test-token',
+    refreshToken: 'regular-test-refresh',
+    expiresAt: Date.now() + 3_600_000,
+    email: 'regular@example.com',
+    emailVerified: true,
+    subscriptionStatus: 'free',
+    premiumAccess: false
+  });
+  await regularPage.route('**/api/link-generator/status', route => routeJson(route, {
+    available: true,
+    provider: 'jsdelivr',
+    globalPublisherConfigured: true,
+    accountAccess: true,
+    origin: 'https://nyxlearning.org',
+    freeHourlyLimit: 100,
+    freeWindowMinutes: 60,
+    premiumBatchLimit: 100,
+    premiumImmediateCooldownAt: 5,
+    premiumAccumulatedLimit: 30,
+    premiumCooldownMinutes: 10
+  }));
+  await regularPage.route('**/api/link-generator/auth-config', route => routeJson(route, { enabled: true, apiKey: 'test-web-key' }));
+  await regularPage.route('**/api/account/me', route => routeJson(route, { subscriptionStatus: 'free', premiumAccess: false }));
+  await regularPage.route('**/api/link-checker/vendors', route => routeJson(route, { vendors: [{ key: 'goguardian', label: 'GoGuardian' }] }));
+  await regularPage.route('**/api/link-checker/check', route => routeJson(route, { vendors: { goguardian: { blocked: false } } }));
+  await regularPage.route('**/api/link-generator', route => {
+    regularRequest = JSON.parse(route.request().postData() || '{}');
+    return routeJson(route, {
+      authorized: true,
+      provider: 'jsdelivr',
+      published: true,
+      requested: regularRequest.amount,
+      created: regularRequest.amount,
+      access: 'account',
+      remaining: 100 - regularRequest.amount,
+      links: Array.from({ length: regularRequest.amount }, (_, index) => ({ url: `https://cdn.jsdelivr.net/gh/dubcatalt2-lab/nyx-jsdelivr-links@main/regular-${index + 1}.svg` }))
+    });
+  });
+  await regularPage.goto(`${origin}/apps/link-generator/`, { waitUntil: 'domcontentloaded' });
+  await regularPage.locator('[data-account-status]', { hasText: '100 links per 60-minute window' }).waitFor();
+  await regularPage.locator('[data-wizard-step="0"] [data-wizard-next]').click();
+  await regularPage.locator('[data-premium-amount-field]').waitFor({ state: 'visible' });
+  assert.equal(await regularPage.locator('[data-premium-amount]').getAttribute('max'), '100', 'Regular account batch input did not expose the 100-link maximum');
+  await regularPage.locator('[data-label-input]').fill('regular batch');
+  await regularPage.locator('[data-filter-select]').selectOption('goguardian');
+  await regularPage.locator('[data-premium-amount]').fill('73');
+  await regularPage.locator('[data-wizard-step="1"] [data-wizard-next]').click();
+  await regularPage.locator('[data-review-amount]', { hasText: '73 links' }).waitFor();
+  await regularPage.locator('[data-confirm]').check();
+  await regularPage.locator('[data-generate-button]').click();
+  await regularPage.locator('[data-result-card]:not([hidden])').waitFor({ state: 'visible' });
+  assert.equal(regularRequest?.amount, 73, 'The regular-account batch amount was not sent to the server');
+  await regularPage.locator('[data-notice]', { hasText: '27 links remaining' }).waitFor();
+  assert.match(await regularPage.locator('[data-notice]').textContent(), /27 links remaining in your current hourly window/i, 'The regular-account hourly remainder was not shown');
+  assert.deepEqual(regularErrors, [], `Regular-account batch browser errors: ${regularErrors.join(' | ')}`);
+  await regularPage.close();
+
+  const thousandLinkRequestStart = githubRequests.length;
+  const thousandLinkResponse = await fetch(`${origin}/api/link-generator`, {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json', Origin: origin },
+    body: JSON.stringify({ provider: 'jsdelivr', method: 'p2p', accessCode: 'test-premium-code', label: 'bulk p2p test', amount: 1000 })
+  });
+  assert.equal(thousandLinkResponse.status, 201, 'The 1,000-link P2P request failed');
+  const thousandLinkResult = await thousandLinkResponse.json();
+  assert.equal(thousandLinkResult.method, 'p2p', 'The server did not report the P2P method');
+  assert.equal(thousandLinkResult.created, 1000, 'The server did not create the complete 1,000-link P2P batch');
+  const thousandLinkTree = githubRequests.slice(thousandLinkRequestStart).find(request => request.method === 'POST' && request.url.endsWith('/git/trees'));
+  assert.equal(JSON.parse(thousandLinkTree?.body || '{}').tree?.length, 1000, 'The P2P Git tree did not contain 1,000 Nyx SVGs');
+
+  const thousandLinkPage = await browser.newPage({ viewport: { width: 1_280, height: 900 } });
+  let thousandLinkFilterChecks = 0;
+  await thousandLinkPage.route('**/api/link-checker/vendors', route => routeJson(route, { vendors: [{ key: 'lightspeed', label: 'Lightspeed' }] }));
+  await thousandLinkPage.route('**/api/link-checker/check', route => {
+    thousandLinkFilterChecks += 1;
+    return routeJson(route, { vendors: { lightspeed: { blocked: false } } });
+  });
+  await thousandLinkPage.route('**/api/link-generator', route => {
+    if (route.request().method() !== 'POST') return route.continue();
+    return routeJson(route, {
+      authorized: true,
+      provider: 'jsdelivr',
+      method: 'p2p',
+      published: true,
+      requested: 1000,
+      created: 1000,
+      access: 'administrator',
+      premiumCooldown: { triggered: true, minutes: 10, accumulated: 1000, accumulatedLimit: 30 },
+      links: Array.from({ length: 1000 }, (_, index) => ({ url: `https://cdn.jsdelivr.net/gh/dubcatalt2-lab/nyx-jsdelivr-links@main/bulk-${index + 1}.svg` }))
+    });
+  });
+  await thousandLinkPage.goto(`${origin}/apps/link-generator/`, { waitUntil: 'domcontentloaded' });
+  await thousandLinkPage.locator('[data-access-code]').fill('test-premium-code');
+  await thousandLinkPage.locator('[data-wizard-step="0"] [data-wizard-next]').click();
+  await thousandLinkPage.locator('[data-label-input]').fill('bulk filter check');
+  await thousandLinkPage.locator('[data-filter-select]').selectOption('lightspeed');
+  await thousandLinkPage.locator('[data-generation-method]').selectOption('p2p');
+  await thousandLinkPage.locator('[data-premium-amount]').fill('1000');
+  await thousandLinkPage.locator('[data-wizard-step="1"] [data-wizard-next]').click();
+  await thousandLinkPage.locator('[data-confirm]').check();
+  await thousandLinkPage.locator('[data-generate-button]').click();
+  await thousandLinkPage.locator('[data-filter-check-state]', { hasText: '1000 allowed' }).waitFor();
+  assert.equal(thousandLinkFilterChecks, 1, 'The 1,000-link batch exhausted the per-client Link Checker allowance');
+  assert.match(await thousandLinkPage.locator('[data-filter-check-detail]').textContent(), /one representative check covered all 1000 identical Nyx SVG links/i, 'The 1,000-link representative result was unclear');
+  await thousandLinkPage.close();
+
+  console.log('Direct 1,000-link P2P and managed JSDelivr publishing, token isolation, protected tab opening, filter checking, results, and mobile regressions passed.');
+} finally {
+  await browser?.close().catch(() => {});
+  if (nyx.exitCode === null) nyx.kill();
+  await new Promise(resolve => github.close(resolve));
+}

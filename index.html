@@ -3,11 +3,59 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ռʏӼ</title>
+<title>StudyHub — Where Education Is Achievable</title>
+<meta name="description" content="StudyHub is a browser-based learning workspace where education is achievable. Build lasting mastery through rigorous foundations and hands-on mentorship.">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<meta name="application-name" content="StudyHub">
+<link rel="canonical" href="https://nyxlearning.org/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nyxlearning.org/">
+<meta property="og:site_name" content="StudyHub">
+<meta property="og:title" content="StudyHub — Where Education Is Achievable">
+<meta property="og:description" content="StudyHub is a browser-based learning workspace where education is achievable.">
+<meta property="og:image" content="https://nyxlearning.org/assets/icons/studyhub-512.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:image:alt" content="StudyHub logo">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="StudyHub — Where Education Is Achievable">
+<meta name="twitter:description" content="StudyHub is a browser-based learning workspace where education is achievable.">
+<meta name="twitter:image" content="https://nyxlearning.org/assets/icons/studyhub-512.png">
+<meta name="twitter:image:alt" content="StudyHub logo">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://nyxlearning.org/#website",
+      "url": "https://nyxlearning.org/",
+      "name": "StudyHub",
+      "alternateName": ["nyxlearning.org"],
+      "description": "StudyHub is a browser-based learning workspace at nyxlearning.org.",
+      "inLanguage": "en"
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://nyxlearning.org/#organization",
+      "url": "https://nyxlearning.org/",
+      "name": "StudyHub Learning Collective",
+      "alternateName": ["StudyHub"],
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://nyxlearning.org/assets/icons/studyhub-512.png",
+        "width": 512,
+        "height": 512
+      }
+    }
+  ]
+}
+</script>
 <!-- //startup-cloak -->
-<link id="appFavicon" rel="icon" type="image/png" sizes="256x256" href="./assets/icons/nyx-logo.png">
+<link id="appFavicon" rel="icon" type="image/svg+xml" href="./assets/icons/studyhub.svg?v=20260903-cap-v3">
 <link rel="manifest" href="/app.webmanifest">
-<link rel="apple-touch-icon" href="/assets/icons/nyx-app-192.png">
+<link rel="apple-touch-icon" href="/assets/icons/studyhub-192.png">
 <meta name="theme-color" content="#0b1628">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-VN6FKYM8D3"></script>
@@ -18,32 +66,54 @@
 
   gtag('config', 'G-VN6FKYM8D3');
 </script>
-<script src="js/nyx-logo.js?v=20260728-fern-v4"></script>
+<script src="js/nyx-logo.js?v=20260906-small-monogram-v7"></script>
 <script>
 (() => {
   const favicon=document.getElementById('appFavicon');
   let savedIcon='';
-  let theme='default';
+  let savedPreset='';
   try{
     savedIcon=localStorage.getItem('nyx.tabFavicon') || '';
-    theme=localStorage.getItem('nyx.theme') || 'default';
+    savedPreset=localStorage.getItem('nyx.logo') || '';
   }catch{}
-  const isNyxSource=!savedIcon || /nyx-logo\.png/i.test(savedIcon);
-  if(savedIcon && !isNyxSource){
+  if(savedIcon && savedPreset && savedPreset!=='nyx'){
     favicon.href=savedIcon;
-    return;
   }
-  window.NyxLogo?.croppedUrl(theme).then(url=>{
-    favicon.href=url;
-  }).catch(()=>{});
 })();
 </script>
 <script src="startup.js?v=20260726-chromebook-layout-1"></script>
-  <link rel="stylesheet" href="styles.css?v=20260803-download-safety-v85">
+  <link rel="stylesheet" href="styles.css?v=20260906-monogram-v131">
 <link rel="stylesheet" href="css/public-profile-polish.css?v=20260731-v1">
-<link rel="stylesheet" href="css/owner-dashboard-polish.css?v=20260731-v1">
-<link rel="stylesheet" href="css/browser-microinteractions.css?v=20260803-tab-reorder-v22">
+<link rel="stylesheet" href="css/owner-dashboard-polish.css?v=20260831-theme-isolation-v9">
+<link id="nyxBrowserMicrointeractionsStyles" rel="stylesheet" href="css/browser-microinteractions.css?v=20260822-black-home-v27">
+<link rel="stylesheet" href="css/watch.css?v=20260806-watch-layout-v1">
+<link rel="stylesheet" href="css/compact-laptop.css?v=20260808-short-viewport-v1">
+<link id="nyxHomepageMinimalStyles" rel="stylesheet" href="css/homepage-minimal.css?v=20260906-monogram-v1">
+<link rel="stylesheet" href="css/visual-redesign.css?v=20260905-no-legacy-zoom-controls-v9">
+<link rel="stylesheet" href="css/nyxtube-discovery.css?v=20260828-v1">
+<link rel="stylesheet" href="css/address-bar-pointer.css?v=20260828-v1">
+<link rel="stylesheet" href="css/visual-rail-tabs.css?v=20260905-compact-date-v21">
+<link rel="stylesheet" href="css/beams-wallpaper.css?v=20260904-neutral-shell-selection-v40">
+<link rel="stylesheet" href="css/discord-link.css?v=20260902-home-discord-v2">
+<script>
+(() => {
+  let browserShell=true;
+  let tabDesign='bar';
+  try{localStorage.setItem('nyx.homeDesign','redesigned')}catch{}
+  try{tabDesign=localStorage.getItem('nyx.tabDesign')==='list' ? 'list' : 'bar'}catch{}
+  try{
+    const saved=localStorage.getItem('nyx.browserShellMode');
+    browserShell=saved===null ? true : JSON.parse(saved)!==false;
+  }catch{}
+  document.documentElement.dataset.nyxHomeDesign='redesigned';
+  document.documentElement.dataset.nyxTabDesign=tabDesign;
+  document.documentElement.classList.toggle('nyx-browser-shell-expected',browserShell);
+})();
+</script>
 <style>
+/* Do not paint the legacy Windows desktop while Browser mode is restoring.
+   The startup cover remains visible until the browser shell is mounted. */
+html.nyx-browser-shell-expected body:not(.browser-shell)>:is(#customBgImage,#nyxWaveBg,#defaultVantaBg,#rubyVantaBg,#whiteVantaBg,#emeraldVantaBg,#sakuraVantaBg,#visualEffects,.top-os,#desktop,#weatherRestore,.dock){visibility:hidden!important}
 html.nyx-studyhub-starting,html.nyx-studyhub-starting body{overflow:hidden!important}
 #nyxStudyHubStartup{position:fixed;z-index:2147483647;inset:0;display:block;width:100vw;height:100dvh;border:0;background:#f2eee4;opacity:1;pointer-events:auto!important;transition:opacity .35s ease;isolation:isolate}
 #nyxStudyHubStartup.is-leaving{opacity:0;pointer-events:none}
@@ -59,7 +129,9 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
 (() => {
   const splash=document.getElementById('nyxStudyHubStartup');
   const root=document.documentElement;
+  const shownAt=performance.now();
   let removeTimer=0;
+  let autoDismissTimer=0;
   let finished=false;
   const removeSplash=()=>{
     splash?.remove();
@@ -68,6 +140,7 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
   const finishSplash=(duration=350)=>{
     if(finished)return;
     finished=true;
+    clearTimeout(autoDismissTimer);
     clearTimeout(removeTimer);
     splash?.classList.add('is-leaving');
     removeTimer=setTimeout(removeSplash,duration);
@@ -75,10 +148,12 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
   const onMessage=event=>{
     if(event.source!==splash?.contentWindow||event.data?.type!=='nyx-studyhub')return;
     if(event.data.action==='interactive-ready')return;
-    if(event.data.action==='math-passed')finishSplash(350);
+    if(event.data.action==='math-passed'&&performance.now()-shownAt>=3500)finishSplash(350);
   };
+  autoDismissTimer=setTimeout(()=>finishSplash(350),3500);
   addEventListener('message',onMessage);
   addEventListener('pagehide',()=>{
+    clearTimeout(autoDismissTimer);
     clearTimeout(removeTimer);
     removeEventListener('message',onMessage);
   },{once:true});
@@ -86,6 +161,8 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
 </script>
 <!-- //background-image -->
 <img id="customBgImage" class="custom-bg-image" alt="" referrerpolicy="no-referrer">
+<canvas id="nyxBeamsBg" aria-hidden="true"></canvas>
+<canvas id="nyxLineWavesBg" aria-hidden="true"></canvas>
 <iframe id="nyxWaveBg" class="nyx-wave-bg" src="assets/backgrounds/animated-blue-wave.html" title="" tabindex="-1" aria-hidden="true"></iframe>
 <div id="defaultVantaBg" aria-hidden="true" inert></div>
 <div id="rubyVantaBg" aria-hidden="true" inert></div>
@@ -93,14 +170,15 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
 <div id="emeraldVantaBg" aria-hidden="true" inert></div>
 <div id="sakuraVantaBg" aria-hidden="true" inert></div>
 <!-- //setup-screen -->
-<div id="setupScreen" class="setup-screen" aria-hidden="true">
+<div id="setupScreen" class="setup-screen" aria-hidden="true" hidden inert>
   <div class="setup-panel">
     <div class="setup-header">
       <span class="setup-eyebrow">NYX / FIRST RUN</span>
-      <h1>Customize Nyx</h1>
-      <p data-setup-subtitle>Pick the basics before nyx opens.</p>
+      <h1>Make Nyx yours</h1>
+      <p data-setup-subtitle>Choose the essentials before Nyx opens.</p>
       <div class="setup-progress" aria-hidden="true">
         <span class="setup-dot active"></span>
+        <span class="setup-dot"></span>
         <span class="setup-dot"></span>
         <span class="setup-dot"></span>
         <span class="setup-dot"></span>
@@ -121,13 +199,29 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
       </section>
       <section class="setup-step" data-setup-step="1">
         <h2>Profile</h2>
-        <p>Choose the name Nyx uses for your home screen.</p>
+        <p>Choose a username. Nyx will offer to turn it into an account on the next step.</p>
         <div class="setup-name">
           <label for="setupName">Username</label>
           <input id="setupName" placeholder="Set username" autocomplete="nickname">
         </div>
       </section>
       <section class="setup-step" data-setup-step="2">
+        <h2>Create your Nyx account</h2>
+        <p>Secure the username you just chose so your profile and supported settings can follow you across devices.</p>
+        <div class="setup-account-card" data-setup-account-card>
+          <span class="setup-account-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path></svg></span>
+          <div class="setup-account-copy">
+            <strong data-setup-account-title>Create a free account</strong>
+            <span data-setup-account-status>Your username will be filled in automatically. Add a password to finish creating the account.</span>
+          </div>
+          <div class="setup-account-actions">
+            <button class="primary" data-setup-create-account type="button">Create account</button>
+            <button data-setup-sign-in type="button">I already have one</button>
+          </div>
+        </div>
+        <p class="setup-account-note">Already signed in? Nyx skips this step. You can also continue as a guest and create an account later.</p>
+      </section>
+      <section class="setup-step" data-setup-step="3">
         <h2>Look</h2>
         <p>Pick a theme by previewing how Nyx will look.</p>
         <div class="setup-field setup-hidden-select">
@@ -168,7 +262,7 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
           </button>
         </div>
       </section>
-      <section class="setup-step" data-setup-step="3">
+      <section class="setup-step" data-setup-step="4">
         <h2>Effects</h2>
         <p>Choose the particles Nyx shows in browser mode.</p>
         <div class="setup-field">
@@ -184,15 +278,16 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
           </select>
         </div>
       </section>
-      <section class="setup-step" data-setup-step="4">
+      <section class="setup-step" data-setup-step="5">
         <h2>Browser</h2>
         <p>Pick how browsing and search should open.</p>
         <div class="setup-custom-grid">
           <div class="setup-field">
             <label for="setupBrowserMode">Browser</label>
             <select id="setupBrowserMode" data-browser-mode-select>
-              <option value="auto">Auto (Scramjet + Libcurl)</option>
-              <option value="scramjet" selected>Scramjet</option>
+              <option value="auto">Auto</option>
+              <option value="scramjet" selected>Scramjet v2</option>
+              <option value="scramjet-v1">Scramjet v1</option>
               <option value="ultraviolet">Ultraviolet</option>
               <option value="iframe">Iframe</option>
             </select>
@@ -207,7 +302,7 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
           </div>
         </div>
       </section>
-      <section class="setup-step" data-setup-step="5">
+      <section class="setup-step" data-setup-step="6">
         <h2>Font</h2>
         <p>Choose the text style used across Nyx.</p>
         <div class="setup-field">
@@ -215,7 +310,7 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
           <select id="setupFont" data-font-value></select>
         </div>
       </section>
-      <section class="setup-step" data-setup-step="6">
+      <section class="setup-step" data-setup-step="7">
         <h2>Preview</h2>
         <p>Quick check before Nyx launches.</p>
         <div class="setup-final-preview">
@@ -227,13 +322,13 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
           <div class="setup-final-list">
             <div class="setup-final-row"><span>Theme</span><strong data-setup-preview-theme>Default</strong></div>
             <div class="setup-final-row"><span>Effect</span><strong data-setup-preview-effect>None</strong></div>
-            <div class="setup-final-row"><span>Browser</span><strong data-setup-preview-browser>Scramjet</strong></div>
+            <div class="setup-final-row"><span>Browser</span><strong data-setup-preview-browser>Scramjet v2</strong></div>
             <div class="setup-final-row"><span>Search</span><strong data-setup-preview-engine>DuckDuckGo</strong></div>
             <div class="setup-final-row"><span>Font</span><strong data-setup-preview-font>Outfit</strong></div>
           </div>
         </div>
       </section>
-      <section class="setup-step" data-setup-step="7">
+      <section class="setup-step" data-setup-step="8">
         <div class="setup-shortcut-page">
           <h2>Shortcuts</h2>
           <p class="setup-shortcut-intro">Nyx uses Left Alt for browser controls so the shortcuts still feel familiar while staying inside Nyx.</p>
@@ -351,10 +446,14 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
   </aside>
 </main>
 <button id="weatherRestore" class="weather-restore" title="Open weather" aria-label="Open weather" data-weather-summary="Weather"><span class="weather-cloud-icon" aria-hidden="true"></span></button>
+<a class="nyx-discord-link" href="https://discord.gg/cAdjYAJs3u" target="_blank" rel="noopener noreferrer" data-nyx-trusted-external="discord" aria-label="Join the Nyx Discord">
+  <svg viewBox="0 0 640 512" aria-hidden="true"><path d="M524.531 69.836a1.5 1.5 0 0 0-.764-.7A485.065 485.065 0 0 0 404.081 32.03a1.816 1.816 0 0 0-1.923.91 337.461 337.461 0 0 0-14.9 30.6 447.848 447.848 0 0 0-134.426 0 309.541 309.541 0 0 0-15.135-30.6 1.89 1.89 0 0 0-1.924-.91A483.689 483.689 0 0 0 116.085 69.137a1.712 1.712 0 0 0-.788.676C39.068 183.651 18.186 294.69 28.43 404.354a2.016 2.016 0 0 0 .765 1.375A487.666 487.666 0 0 0 176.02 479.918a1.9 1.9 0 0 0 2.063-.676A348.2 348.2 0 0 0 208.12 430.4a1.86 1.86 0 0 0-1.019-2.588 321.173 321.173 0 0 1-45.868-21.853 1.885 1.885 0 0 1-.185-3.126c3.082-2.309 6.166-4.711 9.109-7.137a1.819 1.819 0 0 1 1.9-.256c96.229 43.917 200.41 43.917 295.5 0a1.812 1.812 0 0 1 1.924.233c2.944 2.426 6.027 4.851 9.132 7.16a1.884 1.884 0 0 1-.162 3.126 301.407 301.407 0 0 1-45.89 21.83 1.875 1.875 0 0 0-1 2.611 391.055 391.055 0 0 0 30.014 48.815 1.864 1.864 0 0 0 2.063.7A486.048 486.048 0 0 0 610.7 405.729a1.882 1.882 0 0 0 .765-1.352C623.729 277.594 590.933 167.465 524.531 69.836ZM222.491 337.58c-28.972 0-52.844-26.587-52.844-59.239s23.409-59.241 52.844-59.241c29.665 0 53.306 26.82 52.843 59.239 0 32.654-23.41 59.241-52.843 59.241Zm195.38 0c-28.971 0-52.843-26.587-52.843-59.239s23.409-59.241 52.843-59.241c29.667 0 53.307 26.82 52.844 59.239 0 32.654-23.177 59.241-52.844 59.241Z"/></svg>
+  <span>Discord</span>
+</a>
 <!-- //dock-app-launcher -->
 <nav class="dock">
   <button title="Home" data-open="home">🪐</button>
-  <button title="Study" data-open="apps">🎮</button>
+  <button title="GAMES" data-open="apps">🎮</button>
   <button title="Apps" data-open="apps">Apps</button>
   <button title="Links" data-open="links">Links</button>
   <button title="Browser" data-open="browser">Web</button>
@@ -371,8 +470,11 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
 <script src="./assets/vendor/vanta.clouds.min.js"></script>
 <script src="/runtime-config.js"></script>
 <script src="js/loading-screen.js?v=20260730-studyhub-input-v11"></script>
-<script src="js/pwa-install.js?v=20260803-singlefile-current-v5"></script>
-<script src="js/owner-dashboard.js?v=20260804-role-permissions-v8"></script>
-<script src="script.js?v=20260804-role-permissions-v9"></script>
+<script src="js/pwa-install.js?v=20260820-singlefile-local-url-v9"></script>
+<script src="js/owner-dashboard.js?v=20260905-ipv6-details-v28"></script>
+<script src="js/beams-wallpaper.js?v=20260903-custom-theme-light-v13"></script>
+<script src="js/line-waves-wallpaper.js?v=20260901-waves-live-color-v11"></script>
+<script src="js/availability.js?v=20260906-outage-v1"></script>
+<script src="script.js?v=20260906-small-monogram-v235"></script>
 </body>
 </html>

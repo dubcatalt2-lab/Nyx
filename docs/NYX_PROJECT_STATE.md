@@ -1,6 +1,34 @@
 # Nyx Project State
 
-Last repository review: 2026-09-05
+Last repository review: 2026-09-06
+
+## Release preparation (2026-09-06)
+
+- User authorized push/deploy of the pending Partners page, availability warning, original/small monogram artwork, and identified-AI crawler restrictions. Application build and deployment/branding checks pass. New feature assets are included; unrelated local diagnostic scripts and protected untracked directories remain excluded. No Google-login integration was added. The crawler restrictions remain best effort, and the warning cannot render on a first visit while the whole host is unavailable.
+
+## Pending: Identified AI crawler restrictions (2026-09-06)
+
+- Added an early HTTP policy for identified Claude retrieval/search/training agents and other named AI crawlers. Documents receive the existing static portal; non-document assets/APIs return 403 with no-store and User-Agent variance. Robots policy explicitly opts out identified AI crawlers, including Google-Extended's robots-only product token. Health and robots discovery remain available. Browser users and API clients without those crawler identities retain existing behavior.
+- This is best-effort crawler handling, not proof that an AI cannot inspect Nyx. Spoofed/ordinary browser identities, public repository content, past indexing, screenshots, and WebSocket upgrade paths are not secured by it. No authentication requirement, edge configuration or external service was changed. Expanded `scripts/test-decoy.mjs` covers named agents, nested pages, direct assets/APIs, normal browsers and policy availability. Server restart/deployment required; not deployed.
+
+## Pending: Nyx monogram logo (2026-09-06)
+
+- Small-icon follow-up: built-in imagegen produced `assets/icons/nyx-monogram-small.png`, a bold, flat white crescent/N variant for sidebar tab icons and Nyx favicons only. Original detailed artwork remains on larger surfaces. Logo helper `20260906-small-monogram-v7`, root JS `20260906-small-monogram-v235`; StudyHub/custom cloaks unchanged. Prompt: preserve crescent/N identity, thicken and simplify into solid white shapes on near-black, remove bevels/shadows/double outlines, minimize padding for 16–24px readability. Not deployed.
+
+- The supplied crescent/N PNG is bundled unchanged as `assets/icons/nyx-monogram.png`. Maintained shell, setup, AI, credits, public page and installed-app manifest references use it. Shared logo API keeps its async apply/themedUrl/croppedUrl interface but no longer tints or crops the artwork; old 190–195% CSS enlargement is removed for logo rules. StudyHub and user-selected cloak identities remain unchanged. Historical unused assets/backups are retained.
+- Root JS/CSS caches `20260906-monogram-v234` / `20260906-monogram-v131`, logo helper `20260906-monogram-v6`; affected stylesheet references also bumped. Manifest declares the actual 1254px image without claiming maskable safe-area support. Not pushed/deployed.
+
+## Pending: Availability warning (2026-09-06)
+
+- Existing health samples drive a red hazard banner after at least three failed samples spanning ten seconds; success clears it. A bounded WebSocket handshake checks the selected Wisp relay every 30 seconds while visible, requiring two failures; this checks reachability, not end-to-end proxy functionality. Offline/custom-relay wording avoids claiming an OVH crash. Default-server warnings ask users to report to vdrtes on Discord. No automatic messages are sent.
+- Warning colors are isolated from themes in a shadow root. This works in an already-loaded shell; total VPS failure before loading still requires an independently hosted edge/error page, not provisioned here. New `js/availability.js` cache `20260906-outage-v1`, root script `20260906-outage-v233`. Not pushed/deployed.
+
+## Pending: Partners page (2026-09-06)
+
+- Added `/apps/partners/`; the Partners rail shortcut replaces NyxTube and sits immediately after AI. NyxTube itself and its Apps entry remain available.
+- Verified Discord invite metadata and server icons match the supplied screenshots: T9 Network = `uqPH78ZV7X`, Flux = `3fbJG2emb6`, frosted v2 = `w7J5auDhNm`, S.V = `FHmEqPgMVe`, Ghost Proxy = `https://dsc.gg/ghostub` (redirects to `wXENbb7a8Y`). Icons are bundled locally from the matching public Discord CDN originals and clipped to rounded squares in CSS; no runtime Discord API dependency.
+- Partners are icon-only rounded-square external anchors, without background cards, visible names, arrows, or the invite-rules footer. Accessible invite labels remain. The shell's popup bridge permits user-triggered clicks only for these five exact invites on the same-origin `/apps/partners/` document; unrelated popup protection stays intact. No Discord membership actions are automated.
+- Root script cache `20260906-partners-v232`; partner JS `20260906-partners-v1`, CSS `20260906-icon-only-v2`. `scripts/test-partners.mjs` verifies rail order, five icon/invite mappings and mocked external opens, image decoding/rounding and narrow layout. New page/assets are included in deployment-manifest checks. Not pushed/deployed.
 
 ## Released: Sidebar dates and Original layout retirement
 

@@ -14,13 +14,13 @@
   --accent:#86a9e8!important;
   --theme-accent:#86a9e8!important;
   --theme-border:rgba(210,229,255,.14)!important;
-  --nyx-themed-logo-url:url("/assets/icons/nyx-logo.png")!important;
+  --nyx-themed-logo-url:url("/assets/icons/nyx-monogram.png")!important;
   color-scheme:dark;
 }
 
 html,
 body{
-  --nyx-themed-logo-url:url("/assets/icons/nyx-logo.png")!important;
+  --nyx-themed-logo-url:url("/assets/icons/nyx-monogram.png")!important;
   background-image:none!important;
   color:var(--nyx-app-text);
 }

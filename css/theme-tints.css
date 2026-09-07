@@ -372,9 +372,9 @@ html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser
   border:0!important;
   border-radius:0!important;
   background-color:transparent!important;
-  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-logo.png"))!important;
+  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-monogram.png"))!important;
   background-position:center!important;
-  background-size:195%!important;
+  background-size:100%!important;
   background-repeat:no-repeat!important;
   box-shadow:none!important;
   clip-path:none!important;

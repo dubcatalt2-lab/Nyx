@@ -1776,7 +1776,7 @@
           <li><time datetime="2026-07-31">Jul 31, 2026</time><div><strong>About Nyx refresh</strong><p>Reframed Credits as About Nyx with a new founder spotlight, contributor acknowledgements, and a clearer story of the project.</p></div></li>
         </ol>
       </section>
-      <footer class="nyx-credits-footer"><img src="/assets/icons/nyx-logo.png" alt="" aria-hidden="true"><div><strong>Nyx</strong><span>Thank you for making this space yours.</span><a href="/about-nyx.html" target="_top">Public Nyx Learning page</a></div><small>&copy; 2026 Nyx</small></footer>
+      <footer class="nyx-credits-footer"><img src="/assets/icons/nyx-monogram.png" alt="" aria-hidden="true"><div><strong>Nyx</strong><span>Thank you for making this space yours.</span><a href="/about-nyx.html" target="_top">Public Nyx Learning page</a></div><small>&copy; 2026 Nyx</small></footer>
     </article>`;
   }
   function nyxCreditsFounderCardMarkup(){
@@ -2477,7 +2477,7 @@
   }
   //favicons
   const favicons = {
-    nyx:'./assets/icons/nyx-logo.png',
+    nyx:'./assets/icons/nyx-monogram-small.png',
     studyhub:'./assets/icons/studyhub.svg?v=20260903-cap-v3',
     classroom:`data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%23fbbc04'/%3E%3Crect x='8' y='10' width='48' height='40' rx='3' fill='%2334a853'/%3E%3Ccircle cx='32' cy='25' r='6' fill='white'/%3E%3Cpath d='M18 42c4-9 20-9 24 0' fill='white'/%3E%3C/svg%3E`,
     drive:'./assets/icons/googledrive-logo.webp',
@@ -2487,7 +2487,7 @@
   const nyxTabTitle = '\u057c\u028f\u04fc';
   const studyHubTabTitle = 'StudyHub — Where Education Is Achievable';
   const studyHubTabFavicon = './assets/icons/studyhub.svg?v=20260903-cap-v3';
-  let nyxTabFavicon = './assets/icons/nyx-logo.png';
+  let nyxTabFavicon = './assets/icons/nyx-monogram-small.png';
   const nyxFaviconHref = () => $('appFavicon')?.href || nyxTabFavicon;
   function migrateStudyHubTabIdentity(){
     if(store.text('nyx.tabIdentityVersion','')==='studyhub-cap-v3') return;
@@ -3622,7 +3622,7 @@
     else if(url==='nyx://ai') activeKey='ai';
     else if(url.includes('/apps/code-studio/')) activeKey='code-sandbox';
     else if(url.includes('/apps/nyxify/')) activeKey='music';
-    else if(url.includes('/apps/nyxtube/')) activeKey='video';
+    else if(url.includes('/apps/partners/')) activeKey='partners';
     else if(url.includes('/apps/chat/')) activeKey='chat';
     else if(url.includes('/apps/link-generator/')) activeKey='links';
     else if(url.includes('/assets/games/')) activeKey='games';
@@ -3687,11 +3687,11 @@
           <button type="button" data-nyx-dock-item="code-sandbox" data-app-url="/apps/code-studio/" aria-label="Code Sandbox">${nyxDashboardIcon('code')}<span>Code Sandbox</span></button>
           <button type="button" data-nyx-dock-item="apps" data-app-url="nyx://apps" aria-label="Apps">${nyxDashboardIcon('apps')}<span>Apps</span></button>
           <button type="button" data-nyx-dock-item="games" data-app-url="/assets/games/" aria-label="Games">${nyxDashboardIcon('games')}<span>Games</span></button>
-          <button type="button" data-nyx-dock-item="video" data-app-url="/apps/nyxtube/" aria-label="NyxTube">${nyxDashboardIcon('youtube')}<span>NyxTube</span></button>
           <button type="button" data-nyx-dock-item="music" data-app-url="/apps/nyxify/" aria-label="Music">${nyxDashboardIcon('music')}<span>Music</span></button>
           <button type="button" data-nyx-dock-item="chat" data-app-url="/apps/chat/" aria-label="Chat">${nyxDashboardIcon('chat')}<span>Chat</span></button>
           <button type="button" data-nyx-dock-item="links" data-app-url="/apps/link-generator/" aria-label="Link Generator">${nyxDashboardIcon('link')}<span>Link Generator</span></button>
           <button type="button" data-nyx-dock-item="ai" data-app-url="nyx://ai" aria-label="AI">${nyxDashboardIcon('sparkle')}<span>AI</span></button>
+          <button type="button" data-nyx-dock-item="partners" data-app-url="/apps/partners/" aria-label="Partners"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 7 4-2 4 2 3-2 7 3v8l-4 2-3 2-7-4-4-1V7Z"/><path d="m11 7-3 4 2 1 3-2 5 5-4 5M3 7v8M21 8v8M7 5v11"/></svg><span>Partners</span></button>
           <button type="button" data-nyx-dock-item="settings" data-open="settings" aria-label="Settings">${nyxDashboardIcon('settings')}<span>Settings</span></button>
         </nav>
         <section class="nyx-visual-dock-tabs" aria-label="Open tabs"><header><span>Tabs</span><b data-nyx-dock-tab-count>0</b></header><div data-nyx-dock-tabs role="tablist"></div></section>
@@ -7155,7 +7155,7 @@
     };
     const checks=[
       ['Checking core files',async()=>doubleCheck(async()=>(
-        await fetchOk('/assets/icons/nyx-logo.png',850)
+        await fetchOk('/assets/icons/nyx-monogram.png',850)
         && await fetchOk('/assets/vendor/three.r134.min.js',850)
       ))],
       ['Checking servers',async()=>doubleCheck(async()=>(
@@ -11042,6 +11042,17 @@
           const trapLink=event=>{
             const link=event.target?.closest?.('a[href]');
             if(!link) return;
+            // Only curated invites on the actual first-party Partners page may bypass popup protection.
+            const partnerInvites=['https://dsc.gg/ghostub','https://discord.gg/FHmEqPgMVe','https://discord.gg/w7J5auDhNm','https://discord.gg/3fbJG2emb6','https://discord.gg/uqPH78ZV7X'];
+            if(link.hasAttribute('data-nyx-partner-invite') && partnerInvites.includes(link.href)
+              && doc.location.origin===location.origin && /^\/apps\/partners\/(?:index\.html)?$/.test(doc.location.pathname)
+              && event.isTrusted && (event.type==='click' || event.button===1)){
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              const nativeOpen=window.__nyxNativeOpen || window.open.bind(window);
+              nativeOpen(link.href,'_blank','noopener,noreferrer');
+              return;
+            }
             if(isDownloadLink(link)){
               event.preventDefault();
               event.stopImmediatePropagation();
@@ -16832,7 +16843,9 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         const payload=await response.json();
         if(!response.ok || payload?.ok!==true) throw new Error('health check failed');
         recordNyxLatencySample(Math.max(1,Math.round(performance.now()-started)),payload);
+        window.NyxAvailability?.recordHealth(true);
       }catch{
+        window.NyxAvailability?.recordHealth(false);
         nyxLatencyMs=null;
         nyxLatencyLatestMs=null;
         nyxLatencyQuality='offline';
@@ -16868,6 +16881,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
   function startNyxLatencyMonitor(){
     if(startNyxLatencyMonitor.started) return;
     startNyxLatencyMonitor.started=true;
+    window.NyxAvailability?.start(()=>({url:storedCustomWispUrl() || defaultWispUrl(),custom:!!storedCustomWispUrl()}));
     syncNyxLatencyBubble();
     void calibrateNyxLatency();
     const refresh=()=>{if(!document.hidden) void sampleNyxLatency(true)};

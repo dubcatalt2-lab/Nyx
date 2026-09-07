@@ -786,6 +786,22 @@ function nyxShouldServeDecoy(req) {
   return destination === "document" || !accept || accept.includes("text/html") || accept.includes("*/*");
 }
 
+// Identified AI crawlers are not an authorization boundary: user agents can be spoofed.
+const nyxAiCrawlerPattern = /(?:claudebot|claude-user|claude-searchbot|anthropic-ai|gptbot|chatgpt-user|oai-searchbot|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|applebot-extended|cohere-ai|cohere-training-data-crawler)/i;
+app.use((req, res, next) => {
+  if (!nyxAiCrawlerPattern.test(String(req.get("user-agent") || ""))) return next();
+  // Keep policy discovery and operational health available, not application data.
+  if (/^\/(?:robots\.txt|healthz)\/?$/i.test(req.path)) return next();
+  res.vary("User-Agent");
+  res.set({ "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow, noarchive, nosnippet" });
+  const documentRequest = (req.method === "GET" || req.method === "HEAD")
+    && !nyxDecoyNonDocumentExtensionPattern.test(req.path)
+    && !/^\/(?:api|wisp|socket\.io)(?:\/|$)/i.test(req.path)
+    && (!req.get("accept") || /text\/html|\*\/\*/i.test(req.get("accept")));
+  if (documentRequest) return res.type("html").send(nyxDecoyHtml);
+  return res.status(403).type("text/plain").send("Automated access is not permitted.");
+});
+
 let nyxStudentResourceHoneypotHits = 0;
 app.get("/student-resources.html", (req, res) => {
   nyxStudentResourceHoneypotHits += 1;

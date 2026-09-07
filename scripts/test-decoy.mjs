@@ -33,6 +33,20 @@ try {
   });
   assert.match(await automated.text(), /Student Learning Portal/);
 
+  for (const agent of ["ClaudeBot/1.0", "Claude-User/1.0", "Claude-SearchBot/1.0", "GPTBot/1.0", "ChatGPT-User/1.0", "Perplexity-User/1.0", "Amazonbot/1.0"]) {
+    for (const path of ["/", "/apps/partners/", "/apps/code-studio/"]) {
+      const response = await fetch(origin + path, { headers: { "User-Agent": agent, Accept: "text/html" } });
+      assert.match(await response.text(), /Student Learning Portal/);
+      assert.match(response.headers.get("vary"), /User-Agent/i);
+    }
+    for (const path of ["/script.js", "/js/nyx-logo.js", "/api/apps", "/runtime-config.js", "/app.webmanifest"]) {
+      const response = await fetch(origin + path, { headers: { "User-Agent": agent, Accept: "application/json" } });
+      assert.equal(response.status, 403, `${agent} accessed ${path}`);
+      assert.match(response.headers.get("cache-control"), /no-store/);
+    }
+    assert.equal((await fetch(origin + "/robots.txt", { headers: { "User-Agent": agent } })).status, 200);
+  }
+
   const normalHome = await fetch(`${origin}/`, { headers: browserHeaders });
   const normalHomeHtml = await normalHome.text();
   assert.equal(normalHome.status, 200);

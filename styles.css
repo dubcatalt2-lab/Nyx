@@ -3,15 +3,15 @@
 @import url("./css/fresh-theme.css?v=20260831-theme-controls-v1");
 @import url("./css/interface-polish.css?v=20260831-fast-motion-v2");
 @import url("./css/midnight-theme.css?v=20260716-stronger-card-blur-v10");
-@import url("./css/homepage.css?v=20260717-slim-loader-v35");
+@import url("./css/homepage.css?v=20260906-monogram-v1");
 @import url("./css/theme-consistency.css?v=20260717-unified-hover-v11");
 @import url("./css/default-theme-polish.css?v=20260717-v2");
 @import url("./css/settings-dashboard.css?v=20260817-settings-categories-v5");
 @import url("./css/owner-dashboard.css?v=20260905-ipv6-wrap-v18");
-@import url("./css/home-utilities.css?v=20260726-copyright-v8");
+@import url("./css/home-utilities.css?v=20260906-monogram-v1");
 @import url("./css/hover-consistency.css?v=20260818-round-home-shortcuts-v19");
 @import url("./css/weather-redesign.css?v=20260730-symbols-v12");
-@import url("./css/theme-tints.css?v=20260827-jet-black-theme-v33");
+@import url("./css/theme-tints.css?v=20260906-monogram-v1");
 @import url("./css/setup-wizard.css?v=20260901-preview-refresh-v11");
 @import url("./css/credits.css?v=20260730-discord-view-v6");
 @import url("./css/interface-scale.css?v=20260727-themed-menu-v9");
@@ -3070,10 +3070,10 @@ html body .lion-ai-mark{
   border:0!important;
   border-radius:8px!important;
   background-color:transparent!important;
-  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-logo.png"))!important;
+  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-monogram.png"))!important;
   background-position:center!important;
   background-repeat:no-repeat!important;
-  background-size:190%!important;
+  background-size:100%!important;
   box-shadow:none!important;
   color:transparent!important;
 }
@@ -3266,10 +3266,10 @@ html body .lion-ai-orb{
   border:1px solid color-mix(in srgb,var(--ai-accent) 44%,transparent);
   border-radius:19px;
   background-color:color-mix(in srgb,var(--ai-accent) 12%,rgba(8,10,20,.86));
-  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-logo.png"));
+  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-monogram.png"));
   background-position:center;
   background-repeat:no-repeat;
-  background-size:178%;
+  background-size:100%;
   box-shadow:0 18px 52px color-mix(in srgb,var(--ai-accent) 18%,transparent);
 }
 html body .lion-ai-eyebrow{
@@ -3838,7 +3838,7 @@ html[data-nyx-theme="custom"][data-nyx-theme="custom"] body.browser-shell.browse
 html[data-nyx-theme="custom"][data-nyx-theme="custom"] body.browser-shell.browser-shell.theme-custom.theme-default:is(body,#nyx-custom-home-text):is(body,#nyx-custom-home-labels)
   .browser-window.browser-home-page .browser-home h1.nyx-home-title::before{
   background-color:transparent!important;
-  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-logo.png"))!important;
+  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-monogram.png"))!important;
   -webkit-mask:none!important;
   mask:none!important;
   filter:var(--nyx-custom-logo-filter,none)!important;

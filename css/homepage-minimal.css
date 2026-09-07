@@ -619,10 +619,10 @@ html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:not(.brows
 .nyx-minimal-brand .nyx-minimal-moon{
   border-radius:0!important;
   background-color:transparent!important;
-  background-image:url('/assets/icons/nyx-logo.png')!important;
+  background-image:url('/assets/icons/nyx-monogram.png')!important;
   background-position:center!important;
   background-repeat:no-repeat!important;
-  background-size:205%!important;
+  background-size:100%!important;
   box-shadow:none!important;
 }
 .nyx-minimal-brand .nyx-minimal-moon::after{display:none!important;content:none!important}

@@ -4,6 +4,8 @@ Last repository review: 2026-09-06
 
 ## Release preparation (2026-09-06)
 
+- Released application commit `01747db` to OVH on 2026-09-06. Public health is HTTP 200 with embedded Wisp and Socket.IO; root version `20260906-small-monogram-v235` and new Partners, original/small icons, logo helper and availability assets are live. Production Chromium passed Partners sidebar order, icon-only presentation, all five mocked external invite opens, narrow layout and no page errors. Live Claude-User, Claude-SearchBot, GPTBot and Perplexity-User document requests received the static portal and direct app-script requests returned 403. Nyx, Caddy and coturn are active; recent warning/error journal empty. Local outage/recovery/offline/custom-relay regression passed; no actual outage induced. Existing runtime audit findings (8 moderate, 4 high) and Caddy header/internal-HTTP warnings remain outside scope. The pending implementation notes below are now released.
+
 - User authorized push/deploy of the pending Partners page, availability warning, original/small monogram artwork, and identified-AI crawler restrictions. Application build and deployment/branding checks pass. New feature assets are included; unrelated local diagnostic scripts and protected untracked directories remain excluded. No Google-login integration was added. The crawler restrictions remain best effort, and the warning cannot render on a first visit while the whole host is unavailable.
 
 ## Pending: Identified AI crawler restrictions (2026-09-06)

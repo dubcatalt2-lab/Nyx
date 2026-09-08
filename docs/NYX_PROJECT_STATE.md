@@ -2,7 +2,11 @@
 
 Last repository review: 2026-09-08
 
-## Release preparation (2026-09-08)
+## Released: Credits, partners and interface updates (2026-09-08)
+
+- Application commit `d9201af` pushed and deployed using the OVH updater. The pending implementation notes below are now released. Production build and manifest/branding checks passed. Live Chromium verified Settings Credits navigation/content, six game libraries, P2P image and phone layout under a red custom theme, plus all eleven partner icons with no page errors. Apex, www and networkforteachers.netw.ar health endpoints returned HTTP 200. Nyx, Caddy and coturn are active; recent Nyx warning journal empty. Local Wisp recovery, signup/profile wizard and seven-theme shell checks passed. Existing runtime audit findings (8 moderate, 4 high) and Caddy configuration warnings remain outside this release.
+
+### Release preparation
 
 - User authorized push and OVH deployment of the pending link hosts, credits/Settings, partners, Wisp retry, onboarding profile step, status-dot and stable-highlight changes. Release review restored internal-page CSS selector boundaries while retaining fixed highlight tokens. Existing local diagnostics and protected untracked directories are excluded.
 

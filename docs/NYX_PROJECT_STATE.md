@@ -2,6 +2,11 @@
 
 Last repository review: 2026-09-08
 
+## Pending: Retire Windows mode (2026-09-08)
+
+- Removed the Windows mode Settings section, legacy mode switch/message handlers, Windows chrome renderer, desktop shortcuts/search/clock markup and desktop app drag/drop implementation. Browser chrome is now unconditional; saved `nyx.browserShellMode` is discarded on startup and settings application. Shared browser window, wallpaper, account, app, keyboard and navigation code remains in use. Root script cache `20260908-browser-only-v248`. User authorized push/deployment.
+- Local Chromium regression covers saved false migration, absent desktop/mode controls, Settings/Credits/Proxy, Escape dismissal, Partners navigation and responsive widths; profile onboarding regression also required before release.
+
 ## Released: Credits, partners and interface updates (2026-09-08)
 
 - Application commit `d9201af` pushed and deployed using the OVH updater. The pending implementation notes below are now released. Production build and manifest/branding checks passed. Live Chromium verified Settings Credits navigation/content, six game libraries, P2P image and phone layout under a red custom theme, plus all eleven partner icons with no page errors. Apex, www and networkforteachers.netw.ar health endpoints returned HTTP 200. Nyx, Caddy and coturn are active; recent Nyx warning journal empty. Local Wisp recovery, signup/profile wizard and seven-theme shell checks passed. Existing runtime audit findings (8 moderate, 4 high) and Caddy configuration warnings remain outside this release.

@@ -3371,24 +3371,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     hieroglyphObserver.observe(document.body,{childList:true,subtree:true});
   }
   //browser-mode-chrome
-  function renderChrome(){
-    const top=document.querySelector('.top-os');
-    if(top){
-      top.innerHTML='<div class="brand-mini"><span id="brandName">ռʏӼ</span><span>|</span><button id="userGreeting" class="user-chip needs-name" data-open="settings">Set username</button></div><div class="status-icons"><button class="top-fullscreen" data-page-fullscreen title="Fullscreen" aria-label="Fullscreen"></button><span id="clock">--:--</span></div>';
-    }
-    const shortcuts=document.querySelector('.desktop-shortcuts');
-    if(shortcuts){
-      shortcuts.innerHTML='<button class="desktop-shortcut" data-open="browser"><span class="icon">GL</span>Browser</button><button class="desktop-shortcut" data-open="updates"><span class="icon">Fix</span>Updates</button>';
-    }
-    const dock=document.querySelector('.dock');
-    if(dock){
-      dock.innerHTML=`<button title="GAMES" data-app-url="/assets/games/index.html"><img class="dock-icon" alt="" src="${appIcon('games')}"><span>GAMES</span></button><button title="Apps" data-open="apps"><img class="dock-icon" alt="" src="${appIcon('apps')}"><span>Apps</span></button><button title="GeForce Now" data-app-url="https://play.geforcenow.com/"><img class="dock-icon" alt="" src="${appIcon('geforcenow')}"><span>GeForce</span></button><button title="Roblox" data-app-url="https://web.cloudmoonapp.com/game/com.roblox.client/"><img class="dock-icon" alt="" src="${appIcon('roblox.com')}"><span>Roblox</span></button><button title="Discord" data-app-url="https://discord.com/app"><img class="dock-icon" alt="" src="${appIcon('discord-dock')}"><span>Discord</span></button><button title="Settings" data-open="settings" aria-label="Settings"><img class="dock-icon" alt="" src="${appIcon('settings')}"><span>Settings</span></button><span class="dock-separator"></span><span class="minimized-tray" id="minimizedTray"></span>`;
-      hydrateDockDrag(dock);
-    }
-    const corner=document.querySelector('.corner-gear');
-    if(corner) corner.remove();
-    ensureNyxAccountButton();
-  }
+
   function normalizeBrowserChromeButtons(root=document){
     const scope=root || document;
     const keepOne=selector=>{
@@ -3842,15 +3825,6 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       renderBrowserShellTabs();
       renderBrowserBookmarks();
     }
-    const shortcuts=document.querySelector('.desktop-shortcuts');
-    if(shortcuts){
-      shortcuts.innerHTML='';
-    }
-    const dock=document.querySelector('.dock');
-    if(dock){
-      dock.innerHTML=`<button title="GAMES" data-app-url="/assets/games/index.html"><img class="dock-icon" alt="" src="${appIcon('games')}"><span>GAMES</span></button><button title="Apps" data-open="apps"><img class="dock-icon" alt="" src="${appIcon('apps')}"><span>Apps</span></button><button title="GeForce Now" data-app-url="https://play.geforcenow.com/"><img class="dock-icon" alt="" src="${appIcon('geforcenow')}"><span>GeForce</span></button><button title="Roblox" data-app-url="https://web.cloudmoonapp.com/game/com.roblox.client/"><img class="dock-icon" alt="" src="${appIcon('roblox.com')}"><span>Roblox</span></button><button title="Discord" data-app-url="https://discord.com/app"><img class="dock-icon" alt="" src="${appIcon('discord-dock')}"><span>Discord</span></button><button title="Settings" data-open="settings" aria-label="Settings"><img class="dock-icon" alt="" src="${appIcon('settings')}"><span>Settings</span></button><span class="dock-separator"></span><span class="minimized-tray" id="minimizedTray"></span>`;
-      hydrateDockDrag(dock);
-    }
     const corner=document.querySelector('.corner-gear');
     if(corner) corner.remove();
     ensureNyxAccountButton();
@@ -3866,24 +3840,16 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const homeEl=activeBrowser.win.querySelector('.browser-home');
     return !homeEl || homeEl.classList.contains('hidden');
   }
-  function syncChromeMode(enabled){
-    const mode=enabled ? 'browser-shell' : 'windows';
-    const hasBrowserControls=!!document.querySelector('.top-os [data-browser-shell-search]');
-    if(renderedChromeMode===mode && hasBrowserControls===enabled){
-      if(enabled && browserShellNeedsStartupHome()) setBrowserShellHomeActive();
+  function syncChromeMode(){
+    if(renderedChromeMode==='browser-shell' && document.querySelector('.top-os [data-browser-shell-search]')){
+      if(browserShellNeedsStartupHome()) setBrowserShellHomeActive();
       return;
     }
     document.body.classList.remove('menu-open');
-    if(enabled){
-      renderChromeFixed();
-      if(nyxStartupOpened && browserShellNeedsStartupHome()) setBrowserShellHomeActive();
-      else renderBrowserShellTabs();
-    }else{
-      document.body.classList.remove('nyx-tab-sidebar-open');
-      document.getElementById('nyxBrowserTabSidebar')?.remove();
-      renderChrome();
-    }
-    renderedChromeMode=mode;
+    renderChromeFixed();
+    if(nyxStartupOpened && browserShellNeedsStartupHome()) setBrowserShellHomeActive();
+    else renderBrowserShellTabs();
+    renderedChromeMode='browser-shell';
     document.documentElement.classList.remove('nyx-browser-shell-expected');
     tick();
   }
@@ -5182,7 +5148,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const effect=esc(store.text('nyx.visualEffect','none'));
     const effectSpeed=esc(store.text('nyx.visualEffectSpeed','1.1'));
     const effectAmount=esc(store.text('nyx.visualEffectAmount','16'));
-    return `<section class="settings-app settings-single-pane browser-only-settings"><main class="settings-main"><h1>Browser Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="nyx" type="button">Reset</button></div></section><section class="settings-block"><h2>Preset Cloak</h2><select class="settings-select" data-preset-select><option value="nyx" ${currentPreset==='nyx'?'selected':''}>ռʏӼ</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Cloaking</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original tab redirect URL"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Auto Cloak</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Redirect original after launch</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save Cloak Settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Panic Key</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Display Mode</h2><p>Switch back to the Windows-style desktop layout.</p><p>Windows mode is no longer maintained. If you run into any issues, thats not my problem&#x1F494;</p><div class="settings-actions"><button class="settings-action" data-browser-shell-toggle data-enabled="false" type="button">Switch to Windows Mode</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>Search Engine</h2><select class="settings-select" data-browser-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>DuckDuckGo</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Proxy Engine</h2><select class="settings-select" data-browser-mode-select><option value="auto" ${browserMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${browserMode==='scramjet'?'selected':''}>Scrapmmy</option><option value="ultraviolet" ${browserMode==='ultraviolet'?'selected':''}>Violet</option><option value="iframe" ${browserMode==='iframe'?'selected':''}>Iframe</option></select></section><section class="settings-block"><h2>Transport</h2><select class="settings-select" data-browser-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Eppy over Relay</option><option value="wisp" ${transport==='wisp'?'selected':''}>Relay endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Libby over Relay</option></select><div class="settings-actions"><button class="settings-action" data-browser-settings-save type="button">Save Browser Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
+    return `<section class="settings-app settings-single-pane browser-only-settings"><main class="settings-main"><h1>Browser Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="nyx" type="button">Reset</button></div></section><section class="settings-block"><h2>Preset Cloak</h2><select class="settings-select" data-preset-select><option value="nyx" ${currentPreset==='nyx'?'selected':''}>ռʏӼ</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Cloaking</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original tab redirect URL"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Auto Cloak</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Redirect original after launch</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save Cloak Settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Panic Key</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>Search Engine</h2><select class="settings-select" data-browser-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>DuckDuckGo</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Proxy Engine</h2><select class="settings-select" data-browser-mode-select><option value="auto" ${browserMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${browserMode==='scramjet'?'selected':''}>Scrapmmy</option><option value="ultraviolet" ${browserMode==='ultraviolet'?'selected':''}>Violet</option><option value="iframe" ${browserMode==='iframe'?'selected':''}>Iframe</option></select></section><section class="settings-block"><h2>Transport</h2><select class="settings-select" data-browser-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Eppy over Relay</option><option value="wisp" ${transport==='wisp'?'selected':''}>Relay endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Libby over Relay</option></select><div class="settings-actions"><button class="settings-action" data-browser-settings-save type="button">Save Browser Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
   }
   function browserShellPresetTiles(){
     return `<button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${nyxTabFavicon}"><span>ռʏӼ tab</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
@@ -5255,7 +5221,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       ['proxy','Proxy',settingsIcons.browsing,'Choose how Nyx reaches the web.',['proxy engine','transport','wisp url']],
       ['accounts','Accounts',settingsIcons.account,'Manage your identity, cloud saves, and staff tools.',['account','cloud saves','owner dashboard','founder profile']],
       ['data','Data',settingsIcons.advanced,'Move, download, or reset local Nyx data.',['data transfer','clear cache']],
-      ['advanced','Advanced',settingsIcons.advanced,'Configure power-user browser controls.',['panic key','display mode','font']],
+      ['advanced','Advanced',settingsIcons.advanced,'Configure power-user browser controls.',['panic key','font']],
       ['credits','Credits',settingsIcons.account,'Thanks to the people who help make Nyx.',[]]
     ];
     const categoryFor=title=>definitions.find(([, , , ,titles])=>titles.includes(title))?.[0] || 'advanced';
@@ -5581,7 +5547,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       // navigation rail. A nested frame can close its paired browser tab while
       // the shell is reconciling, so restore the shell host from its saved
       // preference before refreshing the rail.
-      if(store.get('nyx.browserShellMode',true) && !document.body.classList.contains('browser-shell')){
+      if(!document.body.classList.contains('browser-shell')){
         document.body.classList.add('browser-shell');
       }
       ensureNyxVisualDock();
@@ -5965,83 +5931,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       doc.head.appendChild(style);
     },{once:true});
   }
-  //desktop-app-drag
-  function canDragDesktopAppSource(el){
-    if(!el || document.body.classList.contains('browser-shell')) return false;
-    if(el.closest?.('.home-shortcut,.home-shortcut-add,[data-home-shortcuts]')) return false;
-    return !!(el.dataset.dragApp==='1' || el.closest?.('.dock,.apps-launch-grid'));
-  }
-  function hydrateDockDrag(root){
-    root.querySelectorAll('[data-app-url]').forEach(btn=>{
-      const allow=!document.body.classList.contains('browser-shell');
-      btn.draggable=allow;
-      if(allow) btn.dataset.dragApp='1';
-      else delete btn.dataset.dragApp;
-    });
-  }
-  function readAppPayload(el){
-    const img=el.querySelector('img');
-    const label=el.querySelector('span')?.textContent || el.getAttribute('title') || 'App';
-    return {
-      url:el.dataset.appUrl || '',
-      title:label.trim() || 'App',
-      icon:img?.getAttribute('src') || appIcon('apps')
-    };
-  }
-  function createDesktopApp(payload,x,y){
-    if(!payload?.url) return null;
-    if(document.body.classList.contains('browser-shell')) return null;
-    const desktop=$('desktop');
-    if(!desktop) return null;
-    const existing=[...desktop.querySelectorAll('.desktop-app')].find(app=>app.dataset.appUrl===payload.url);
-    const rect=desktop.getBoundingClientRect();
-    const left=Math.max(6,Math.min(rect.width-92,x-rect.left-43))+'px';
-    const top=Math.max(6,Math.min(rect.height-126,y-rect.top-43))+'px';
-    if(existing){
-      existing.style.left=left;
-      existing.style.top=top;
-      existing.animate?.([{transform:'scale(1.14)'},{transform:'scale(1)'}],{duration:180,easing:'ease-out'});
-      return existing;
-    }
-    const app=document.createElement('button');
-    app.className='desktop-app';
-    app.dataset.appUrl=payload.url;
-    app.draggable=true;
-    app.innerHTML=`<img alt="" src="${esc(payload.icon || appIcon('apps'))}"><span>${esc(payload.title || 'App')}</span>`;
-    app.style.left=left;
-    app.style.top=top;
-    desktop.appendChild(app);
-    wireDesktopApp(app);
-    return app;
-  }
-  function wireDesktopApp(app){
-    let move=null;
-    app.addEventListener('click',e=>{
-      if(app.dataset.moved==='1'){
-        e.preventDefault();
-        e.stopPropagation();
-        app.dataset.moved='0';
-      }
-    },true);
-    app.addEventListener('pointerdown',e=>{
-      if(e.button!==0) return;
-      move={x:e.clientX,y:e.clientY,left:app.offsetLeft,top:app.offsetTop,moved:false};
-      app.setPointerCapture?.(e.pointerId);
-    });
-    app.addEventListener('pointermove',e=>{
-      if(!move) return;
-      const dx=e.clientX-move.x, dy=e.clientY-move.y;
-      if(Math.abs(dx)+Math.abs(dy)>5) move.moved=true;
-      if(!move.moved) return;
-      const desktop=$('desktop');
-      const maxX=(desktop?.clientWidth || window.innerWidth)-92;
-      const maxY=(desktop?.clientHeight || window.innerHeight)-126;
-      app.style.left=Math.max(6,Math.min(maxX,move.left+dx))+'px';
-      app.style.top=Math.max(6,Math.min(maxY,move.top+dy))+'px';
-      app.dataset.moved='1';
-    });
-    app.addEventListener('pointerup',()=>{move=null});
-  }
+
   //background-picker
   function bgButton(key, compact=false){
     return `<button class="bg-choice" data-bg-choice="${esc(key)}" title="${esc(bgNames[key]||'Background')}" aria-label="${esc(bgNames[key]||'Background')}"><span>${esc(bgNames[key]||'Background')}</span></button>`;
@@ -6178,20 +6068,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     requestAnimationFrame(loop);
   }
   function applyBrowserShellMode(){
-    const enabled=store.get('nyx.browserShellMode',true);
-    if(enabled && store.text('nyx.glassLevel','80')!=='-40') store.setText('nyx.glassLevel','-40');
-    if(enabled) store.set('nyx.backgroundEnhancer',false);
-    document.body.classList.toggle('browser-shell',enabled);
-    if(enabled){
-      qsa('[data-app-url]').forEach(el=>{
-        if(el.closest?.('.browser-window iframe')) return;
-        el.draggable=false;
-        delete el.dataset.dragApp;
-      });
-    }
-    syncChromeMode(enabled);
-    if(!enabled) document.body.classList.remove('menu-open');
-    qsa('[data-switch="nyx.browserShellMode"]').forEach(el=>el.classList.toggle('on',enabled));
+    try{localStorage.removeItem('nyx.browserShellMode')}catch{}
+    if(store.text('nyx.glassLevel','80')!=='-40') store.setText('nyx.glassLevel','-40');
+    store.set('nyx.backgroundEnhancer',false);
+    document.body.classList.add('browser-shell');
+    syncChromeMode();
     applyGlassSetting();
     updateResponsiveFit();
     updateDockFullscreenState();
@@ -7236,9 +7117,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
 
       await runStep(12,'Preparing interface',()=>{
         applyLagReducerSetting();
-        const browserShellMode=store.get('nyx.browserShellMode',true);
-        document.body.classList.toggle('browser-shell',browserShellMode);
-        syncChromeMode(browserShellMode);
+        document.body.classList.add('browser-shell');
+        syncChromeMode();
       },380);
 
       await runStep(31,'Restoring settings',()=>{
@@ -12542,7 +12422,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const nyxTubeSourcePath=path=>['/apps/nyxtube','/apps/nyxtube/','/apps/nyxtube/index.html'].includes(path);
     const nyxAccountClientSourcePath=path=>nyxChatSourcePath(path)||['/ai.html','/assets/games','/assets/games/','/assets/games/index.html','/apps/link-checker','/apps/link-checker/','/apps/link-checker/index.html','/apps/cloud-gaming','/apps/cloud-gaming/','/apps/cloud-gaming/index.html','/apps/api-keys','/apps/api-keys/','/apps/api-keys/index.html','/apps/code-studio','/apps/code-studio/','/apps/code-studio/index.html','/apps/code-tutorials','/apps/code-tutorials/','/apps/code-tutorials/index.html'].includes(path);
     const messageHandler=e=>{
-      if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-shell-toggle','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:nyxtube-profile-request','nyx:nyxtube-open-profile','nyx:account-token-request','nyx:chat-open-profile','nyx:chat-notification','nyx:subscription-refresh','nyx:proxy-direct-fallback','nyx:cloud-game-load','nyx:cloud-game-save','nyx:close-tab','nyx:go-home'].includes(e.data?.type)) return;
+      if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:nyxtube-profile-request','nyx:nyxtube-open-profile','nyx:account-token-request','nyx:chat-open-profile','nyx:chat-notification','nyx:subscription-refresh','nyx:proxy-direct-fallback','nyx:cloud-game-load','nyx:cloud-game-save','nyx:close-tab','nyx:go-home'].includes(e.data?.type)) return;
       if(['nyx:cloud-game-load','nyx:cloud-game-save'].includes(e.data.type)){
         if(e.origin!==location.origin)return;
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
@@ -12720,28 +12600,6 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       if(e.data.type==='nyx:tab-cloak'){
         applyCustomTabCloak(e.data.title || '???', e.data.favicon || favicons.nyx);
-        return;
-      }
-      if(e.data.type==='nyx:browser-shell-toggle'){
-        const sourceTab=state.tabs.find(t=>t.frame.contentWindow===e.source);
-        const sourceShellTab=browserShellTabs.find(tab=>tab.browserTabId===sourceTab?.id);
-        if(sourceShellTab && (!sourceShellTab.url || sourceShellTab.url.startsWith('nyx://'))){
-          browserShellTabs.splice(0,browserShellTabs.length,...browserShellTabs.filter(tab=>tab.id!==sourceShellTab.id));
-          if(browserShellActiveTab===sourceShellTab.id) browserShellActiveTab=browserShellTabs[0]?.id || null;
-          if(sourceTab?.id && activeBrowser?.closeTab) activeBrowser.closeTab(sourceTab.id);
-          if(!browserShellTabs.length){
-            const freshId='shell-'+Date.now()+Math.random().toString(16).slice(2);
-            browserShellTabs.push({id:freshId,url:'',title:'Home'});
-            browserShellActiveTab=freshId;
-          }
-        }
-        store.set('nyx.browserShellMode',!!e.data.enabled);
-        if(!e.data.enabled){
-          store.setText('nyx.theme','default');
-          store.setText('nyx.visualEffect','none');
-          store.set('nyx.visualEffectUserChoice',false);
-        }
-        applyUserSettings();
         return;
       }
       if(e.data.type==='nyx:browser-settings'){
@@ -14282,7 +14140,6 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         <section class="settings-card">
           <h2>Browser Mode</h2>
           <p>Makes nyx look like a Chrome page with tabs on top, an address bar, and an Apps button instead of the bottom app bar.</p>
-          <div class="settings-row"><span>Browser Mode</span><button class="switch ${store.get('nyx.browserShellMode',true)?'on':''}" data-switch="nyx.browserShellMode" aria-label="Browser mode"></button></div>
         </section>
         <section class="settings-card">
           <h2>Hide Website Details</h2>
@@ -14745,8 +14602,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
           ? popupProtectionEnabled()
         : btn.dataset.switch==='nyx.hieroglyphText'
           ? hieroglyphTextEnabled()
-        : btn.dataset.switch==='nyx.browserShellMode'
-          ? store.get('nyx.browserShellMode',true)
+
         : store.get(btn.dataset.switch,false);
       btn.classList.toggle('on',initial);
       btn.setAttribute('role','switch');
@@ -14765,8 +14621,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         }
         const v=key==='nyx.popupProtection'
           ? !popupProtectionEnabled()
-          : key==='nyx.browserShellMode'
-            ? !store.get('nyx.browserShellMode',true)
+
             : !store.get(key,false);
         store.set(key,v);
         qsa(`[data-switch="${key}"]`).forEach(el=>{el.classList.toggle('on',v);el.setAttribute('aria-checked',String(!!v))});
@@ -14789,11 +14644,6 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         }else if(key==='nyx.threeDBackgrounds'){
           applyUserSettings();
           toast('3D Backgrounds '+(v?'on':'off'));
-        }else if(key==='nyx.browserShellMode'){
-          const hostWin=btn.closest('.window');
-          applyUserSettings();
-          if(hostWin) setTimeout(()=>closeWindowAnimated(hostWin),80);
-          toast('Browser Mode '+(v?'on':'off'));
         }else if(key==='nyx.popupProtection'){
           activeBrowser?.refreshSandbox?.();
           toast('Popup Protection '+(v?'on':'off'));
@@ -15675,14 +15525,6 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         location.reload();
         return;
       }
-      const browserShellToggle=e.target.closest?.('[data-browser-shell-toggle]');
-      if(browserShellToggle && browserShellToggle.closest('.browser-shell-settings-overlay')){
-        e.preventDefault();
-        store.set('nyx.browserShellMode',browserShellToggle.dataset.enabled==='true');
-        document.querySelector('.browser-shell-settings-overlay')?.remove();
-        applyUserSettings();
-        return;
-      }
       const popupButton=e.target.closest?.('[data-popup-protection]');
       if(popupButton && popupButton.closest('.browser-shell-settings-overlay')){
         e.preventDefault();
@@ -15704,15 +15546,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         clearPanicKey();
       }
     });
-    document.querySelector('[data-desktop-search]')?.addEventListener('submit',e=>{
-      e.preventDefault();
-      const input=e.currentTarget.querySelector('input');
-      const value=(input?.value || '').trim();
-      if(!value) return;
-      if(input) input.value='';
-      if(document.body.classList.contains('browser-shell')) navigateBrowserShell(value);
-      else openBrowser(value);
-    });
+
     document.addEventListener('keydown',rememberChromeOsAltKey,true);
     document.addEventListener('keydown',e=>{handleLeftAltChromeShortcut(e)},true);
     document.addEventListener('dragstart',e=>{
@@ -15911,39 +15745,10 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       if(label) label.textContent=nyxAiModelLabel(model.value);
     });
     document.addEventListener('dragstart',e=>{
-      if((document.body.classList.contains('browser-shell') && !e.target.closest?.('.browser-mode-shell-tab')) || e.target.closest?.('.home-shortcut,.home-shortcut-add,[data-home-shortcuts]')){
+      if(!e.target.closest?.('.browser-mode-shell-tab')){
         e.preventDefault();
         e.stopPropagation();
-        return;
       }
-      const app=e.target.closest('[data-app-url]');
-      if(!app) return;
-      if(!canDragDesktopAppSource(app)){
-        e.preventDefault();
-        e.stopPropagation();
-        return;
-      }
-      const payload=readAppPayload(app);
-      if(!payload.url) return;
-      e.dataTransfer?.setData('application/nyx-app',JSON.stringify(payload));
-      e.dataTransfer?.setData('text/plain',payload.url);
-      if(e.dataTransfer) e.dataTransfer.effectAllowed='copyMove';
-    });
-    $('desktop')?.addEventListener('dragover',e=>{
-      if(document.body.classList.contains('browser-shell')) return;
-      if(Array.from(e.dataTransfer?.types || []).includes('application/nyx-app')){
-        e.preventDefault();
-        e.dataTransfer.dropEffect='copy';
-      }
-    });
-    $('desktop')?.addEventListener('drop',e=>{
-      if(document.body.classList.contains('browser-shell')) return;
-      const raw=e.dataTransfer?.getData('application/nyx-app');
-      if(!raw) return;
-      e.preventDefault();
-      try{
-        createDesktopApp(JSON.parse(raw),e.clientX,e.clientY);
-      }catch{}
     });
     document.addEventListener('click',async e=>{
       if(e.target.closest?.('[data-nyx-ai-settings]')){

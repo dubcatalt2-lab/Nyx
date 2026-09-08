@@ -97,17 +97,16 @@
 <link rel="stylesheet" href="css/discord-link.css?v=20260902-home-discord-v2">
 <script>
 (() => {
-  let browserShell=true;
+
   let tabDesign='bar';
   try{localStorage.setItem('nyx.homeDesign','redesigned')}catch{}
   try{tabDesign=localStorage.getItem('nyx.tabDesign')==='list' ? 'list' : 'bar'}catch{}
   try{
-    const saved=localStorage.getItem('nyx.browserShellMode');
-    browserShell=saved===null ? true : JSON.parse(saved)!==false;
+    localStorage.removeItem('nyx.browserShellMode');
   }catch{}
   document.documentElement.dataset.nyxHomeDesign='redesigned';
   document.documentElement.dataset.nyxTabDesign=tabDesign;
-  document.documentElement.classList.toggle('nyx-browser-shell-expected',browserShell);
+  document.documentElement.classList.add('nyx-browser-shell-expected');
 })();
 </script>
 <style>
@@ -402,16 +401,6 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
 </div>
 <!-- //desktop-home -->
 <main id="desktop">
-  <div class="desktop-shortcuts">
-    <button class="desktop-shortcut" data-open="browser"><span class="icon">🌐</span>Browser</button>
-    <button class="desktop-shortcut" data-open="updates"><span class="icon">*</span>Updates</button>
-    <button class="desktop-shortcut" data-open="settings"><span class="icon">Set</span>Settings</button>
-  </div>
-  <div class="desktop-center-clock" id="centerClock">--:--:--</div>
-  <form class="desktop-search" data-desktop-search>
-    <input name="q" placeholder="Find your Course" autocomplete="off">
-    <button type="submit" title="Search">Go</button>
-  </form>
   <!-- //weather-widget -->
   <aside id="weatherPanel" class="weather-panel minimized" aria-label="Weather">
     <div class="weather-effects" aria-hidden="true"><span class="fx-sun"></span><span class="fx-cloud"></span><span class="fx-rain"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="fx-wind"></span><span class="fx-snow"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="fx-tumble"><i></i><i></i></span></div>
@@ -458,15 +447,7 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
   <span>Discord</span>
 </a>
 <!-- //dock-app-launcher -->
-<nav class="dock">
-  <button title="Home" data-open="home">🪐</button>
-  <button title="GAMES" data-open="apps">🎮</button>
-  <button title="Apps" data-open="apps">Apps</button>
-  <button title="Links" data-open="links">Links</button>
-  <button title="Browser" data-open="browser">Web</button>
-  <button title="Discord" data-url="https://discord.com/app">DC</button>
-  <button title="Settings" data-open="settings">Set</button>
-</nav>
+
 <div class="toast" id="toast"></div>
 <!-- //main-app-script -->
 <script src="./assets/vendor/three.r134.min.js"></script>
@@ -482,6 +463,6 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
 <script src="js/beams-wallpaper.js?v=20260903-custom-theme-light-v13"></script>
 <script src="js/line-waves-wallpaper.js?v=20260901-waves-live-color-v11"></script>
 <script src="js/availability.js?v=20260907-wisp-retry-v2"></script>
-<script src="script.js?v=20260907-settings-credits-v247"></script>
+<script src="script.js?v=20260908-browser-only-v248"></script>
 </body>
 </html>

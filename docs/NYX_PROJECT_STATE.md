@@ -2,10 +2,10 @@
 
 Last repository review: 2026-09-08
 
-## Pending: Retire Windows mode (2026-09-08)
+## Released: Retire Windows mode (2026-09-08)
 
 - Removed the Windows mode Settings section, legacy mode switch/message handlers, Windows chrome renderer, desktop shortcuts/search/clock markup and desktop app drag/drop implementation. Browser chrome is now unconditional; saved `nyx.browserShellMode` is discarded on startup and settings application. Shared browser window, wallpaper, account, app, keyboard and navigation code remains in use. Root script cache `20260908-browser-only-v248`. User authorized push/deployment.
-- Local Chromium regression covers saved false migration, absent desktop/mode controls, Settings/Credits/Proxy, Escape dismissal, Partners navigation and responsive widths; profile onboarding regression also required before release.
+- Local Chromium regression covers saved false migration, absent desktop/mode controls, Settings/Credits/Proxy, Escape dismissal, Partners navigation and responsive widths; profile onboarding regression passed. Application commit `435bb4a` pushed and deployed to OVH. Live Chromium passed old-mode migration, absent mode/desktop controls, Settings Credits, mobile layout and eleven partner icons without page errors. Apex, www and custom-domain health checks returned HTTP 200; Nyx, Caddy and coturn active, recent Nyx warning journal empty. Production build/deployment checks passed. Existing dependency/Caddy warnings remain unchanged.
 
 ## Released: Credits, partners and interface updates (2026-09-08)
 

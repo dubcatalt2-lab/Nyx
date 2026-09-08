@@ -32,30 +32,6 @@
   color-scheme: dark;
 }
 
-body.theme-ruby {
-  --studio-theme-hover-accent: #e8a3b4;
-  --studio-theme-hover-soft: rgba(232, 163, 180, .055);
-  --studio-theme-hover-line: rgba(232, 163, 180, .18);
-}
-
-body.theme-emerald {
-  --studio-theme-hover-accent: #8ed2b4;
-  --studio-theme-hover-soft: rgba(142, 210, 180, .055);
-  --studio-theme-hover-line: rgba(142, 210, 180, .18);
-}
-
-body.theme-sakura {
-  --studio-theme-hover-accent: #e5acce;
-  --studio-theme-hover-soft: rgba(229, 172, 206, .055);
-  --studio-theme-hover-line: rgba(229, 172, 206, .18);
-}
-
-body.theme-fresh {
-  --studio-theme-hover-accent: #abc7a5;
-  --studio-theme-hover-soft: rgba(171, 199, 165, .055);
-  --studio-theme-hover-line: rgba(171, 199, 165, .18);
-}
-
 * { box-sizing: border-box; }
 
 html,

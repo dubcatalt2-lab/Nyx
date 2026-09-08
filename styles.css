@@ -11,9 +11,9 @@
 @import url("./css/home-utilities.css?v=20260906-monogram-v1");
 @import url("./css/hover-consistency.css?v=20260818-round-home-shortcuts-v19");
 @import url("./css/weather-redesign.css?v=20260730-symbols-v12");
-@import url("./css/theme-tints.css?v=20260906-monogram-v1");
-@import url("./css/setup-wizard.css?v=20260901-preview-refresh-v11");
-@import url("./css/credits.css?v=20260730-discord-view-v6");
+@import url("./css/theme-tints.css?v=20260907-stable-highlights-v1");
+@import url("./css/setup-wizard.css?v=20260907-stable-highlights-v12");
+@import url("./css/credits.css?v=20260907-settings-credits-v11");
 @import url("./css/interface-scale.css?v=20260727-themed-menu-v9");
 
 /* Keep the close mark geometrically centered instead of relying on a font baseline. */
@@ -2079,6 +2079,11 @@ html[data-nyx-theme] body.browser-shell .nyx-account-button-rich .nyx-account-bu
   height:8px!important;
   box-sizing:content-box!important;
   border:2px solid color-mix(in srgb,var(--theme-panel,#172338) 90%,#07090d)!important;
+}
+/* Keep the entire status badge inside the circular sidebar account button. */
+html[data-nyx-theme] body.browser-shell .nyx-visual-dock-profile .nyx-account-button-avatar>.nyx-user-status{
+  right:3px!important;
+  bottom:3px!important;
 }
 html[data-nyx-theme] body.browser-shell .nyx-account-button-rich .nyx-account-button-copy{
   display:grid!important;

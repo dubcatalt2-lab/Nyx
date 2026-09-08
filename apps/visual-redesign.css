@@ -20,6 +20,9 @@
 
 html,
 body{
+  --accent:#86a9e8!important;
+  --accent-rgb:134,169,232!important;
+  --accent-soft:rgba(134,169,232,.12)!important;
   --nyx-themed-logo-url:url("/assets/icons/nyx-monogram.png")!important;
   background-image:none!important;
   color:var(--nyx-app-text);

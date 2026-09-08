@@ -174,7 +174,7 @@ try {
   const storage = await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }));
   assert.doesNotMatch(storage, /github_pat_test_secret/, 'The GitHub token was written to browser storage');
 
-  await page.locator('#providerTabs button', { hasText: 'Fastly' }).click();
+  await page.locator('#providerTabs [data-provider="fastly"]').click();
   assert.match(await page.locator('#linksOutput').inputValue(), /^https:\/\/fastly\.jsdelivr\.net\/gh\//, 'Provider switching did not update the generated links');
   await page.setViewportSize({ width: 390, height: 844 });
   const mobileOverflow = await page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth);

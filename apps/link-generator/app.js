@@ -27,7 +27,7 @@
   let premiumCooldownMinutes=10;
   let authConfig={enabled:false,apiKey:''};
   let authSession=readStoredSession();
-  const cdnHosts=new Set(['cdn.jsdelivr.net','gcore.jsdelivr.net','fastly.jsdelivr.net']);
+  const cdnHosts=new Set(['cdn.jsdelivr.net','gcore.jsdelivr.net','fastly.jsdelivr.net','quantil.jsdelivr.net','originfastly.jsdelivr.net','testingcf.jsdelivr.net','jsdelivr.b-cdn.net','esm.sh','raw.esm.sh']);
   const cdnSelect=$('[data-cdn-host]');
   const providerSelect=$('[data-provider]');
   let resultProvider='jsdelivr';
@@ -39,7 +39,7 @@
     cdnSelect.closest('label').hidden=bunny;
     $('[data-provider-hint]').textContent=bunny
       ? 'Create separate b-cdn.net hostnames pointing to Nyx. Bunny bandwidth charges and account limits apply; these still share the Nyx backend.'
-      : 'Publish SVG files through GitHub and serve them on jsDelivr.';
+      : 'Publish SVG files and choose a delivery hostname.';
     refs.confirm.checked=false;
     updateGenerationMethod();
   }
@@ -49,7 +49,7 @@
     if(url.protocol==='https:'&&cdnHosts.has(url.hostname)&&url.pathname.startsWith('/gh/')) url.hostname=host;
     return url.href;
   }
-  const bulkJobs=import('./bulk-jobs.js?v=20260905-resumable-v1').then(module=>module.attachBulkJobs({
+  const bulkJobs=import('./bulk-jobs.js?v=20260907-cdn-options-v2').then(module=>module.attachBulkJobs({
     access:async()=>{
       if(!authSession?.idToken)throw new Error('Sign in to your account above before starting or resuming a large job.');
       const session=await currentVerifiedSession();
@@ -429,8 +429,8 @@
       let key=`url:${url}`;
       try{
         const parsed=new URL(url);
-        const jsdelivr=parsed.hostname.toLowerCase()==='cdn.jsdelivr.net'&&parsed.pathname.match(/^\/gh\/([^/]+)\/([^/]+@[^/]+)\/[^/]+\.svg$/i);
-        if(jsdelivr) key=`jsdelivr:${jsdelivr[1].toLowerCase()}/${jsdelivr[2].toLowerCase()}`;
+        const jsdelivr=cdnHosts.has(parsed.hostname.toLowerCase())&&parsed.pathname.match(/^\/gh\/([^/]+)\/([^/]+@[^/]+)\/[^/]+\.svg$/i);
+        if(jsdelivr) key=`cdn:${parsed.hostname}:${jsdelivr[1].toLowerCase()}/${jsdelivr[2].toLowerCase()}`;
       }catch{}
       const group=groups.get(key);
       if(group) group.count+=1;

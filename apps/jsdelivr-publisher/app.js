@@ -10,7 +10,13 @@ const retryCount = 3;
 const providers = Object.freeze({
   jsdelivr: (repo, branch, file) => `https://cdn.jsdelivr.net/gh/${repo}@${branch}/${file}`,
   gcore: (repo, branch, file) => `https://gcore.jsdelivr.net/gh/${repo}@${branch}/${file}`,
-  fastly: (repo, branch, file) => `https://fastly.jsdelivr.net/gh/${repo}@${branch}/${file}`
+  fastly: (repo, branch, file) => `https://fastly.jsdelivr.net/gh/${repo}@${branch}/${file}`,
+  quantil: (repo, branch, file) => `https://quantil.jsdelivr.net/gh/${repo}@${branch}/${file}`,
+  originfastly: (repo, branch, file) => `https://originfastly.jsdelivr.net/gh/${repo}@${branch}/${file}`,
+  testingcf: (repo, branch, file) => `https://testingcf.jsdelivr.net/gh/${repo}@${branch}/${file}`,
+  bunnycdn: (repo, branch, file) => `https://jsdelivr.b-cdn.net/gh/${repo}@${branch}/${file}`,
+  esm: (repo, branch, file) => `https://esm.sh/gh/${repo}@${branch}/${file}`,
+  rawesm: (repo, branch, file) => `https://raw.esm.sh/gh/${repo}@${branch}/${file}`
 });
 
 const form = document.getElementById('publisherForm');
@@ -43,7 +49,7 @@ let publishedResult = null;
 let publishing = false;
 let presetSvg = '';
 const presetParameters = new URLSearchParams(location.search);
-const presetCdn = { 'cdn.jsdelivr.net': 'jsdelivr', 'gcore.jsdelivr.net': 'gcore', 'fastly.jsdelivr.net': 'fastly' }[presetParameters.get('cdn')];
+const presetCdn = { 'cdn.jsdelivr.net': 'jsdelivr', 'gcore.jsdelivr.net': 'gcore', 'fastly.jsdelivr.net': 'fastly', 'quantil.jsdelivr.net': 'quantil', 'originfastly.jsdelivr.net': 'originfastly', 'testingcf.jsdelivr.net': 'testingcf', 'jsdelivr.b-cdn.net': 'bunnycdn', 'esm.sh': 'esm', 'raw.esm.sh': 'rawesm' }[presetParameters.get('cdn')];
 if (presetCdn) selectedProvider = presetCdn;
 const presetName = presetParameters.get('preset') === 'nyx' ? 'nyx' : '';
 const presetFilter = /^[a-z0-9_-]{1,80}$/i.test(presetParameters.get('filter') || '') ? presetParameters.get('filter') : '';
@@ -370,7 +376,8 @@ function currentLinks() {
 function renderResults() {
   if (!publishedResult) return;
   results.hidden = false;
-  resultsSummary.textContent = `${publishedResult.publishedCount.toLocaleString()} links across ${publishedResult.repos.length.toLocaleString()} ${publishedResult.repos.length === 1 ? 'repository' : 'repositories'}.`;
+  resultsSummary.textContent = `${publishedResult.publishedCount.toLocaleString()} SVG files across ${publishedResult.repos.length.toLocaleString()} ${publishedResult.repos.length === 1 ? 'repository' : 'repositories'}.`;
+  resultsSummary.textContent += ` ${publishedResult.publishedCount.toLocaleString()} link variants shown for the selected host; switching hosts reuses these files.`;
   linksOutput.value = currentLinks().join('\n');
   providerTabs.querySelectorAll('button').forEach(button => button.classList.toggle('active', button.dataset.provider === selectedProvider));
   repositoryResults.replaceChildren();
@@ -424,7 +431,7 @@ function initializeProviderTabs() {
     const button = document.createElement('button');
     button.type = 'button';
     button.dataset.provider = provider;
-    button.textContent = provider === 'jsdelivr' ? 'jsDelivr' : provider === 'gcore' ? 'Gcore' : 'Fastly';
+    button.textContent = ({ jsdelivr: 'jsDelivr', gcore: 'Gcore', fastly: 'Fastly', quantil: 'Quantil', originfastly: 'Origin Fastly', testingcf: 'TestingCF', bunnycdn: 'Bunny CDN', esm: 'esm.sh', rawesm: 'Raw ESM' })[provider];
     button.addEventListener('click', () => {
       selectedProvider = provider;
       renderResults();

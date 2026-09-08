@@ -1,6 +1,51 @@
 # Nyx Project State
 
-Last repository review: 2026-09-06
+Last repository review: 2026-09-08
+
+## Release preparation (2026-09-08)
+
+- User authorized push and OVH deployment of the pending link hosts, credits/Settings, partners, Wisp retry, onboarding profile step, status-dot and stable-highlight changes. Release review restored internal-page CSS selector boundaries while retaining fixed highlight tokens. Existing local diagnostics and protected untracked directories are excluded.
+
+## Pending: Settings Credits (2026-09-07)
+
+- Added a Credits category inside Settings, reusing the shared credits markup and existing trusted link handling. Content spans the Settings row on desktop and phone widths. Chromium verified category navigation, all six libraries, image loading and no section overflow at 1280/390px; mocked loading lock cleared for interaction checks. Build and deployment/branding checks passed. Root JS/CSS caches `20260907-settings-credits-v247` / `20260907-settings-credits-v138`; credits CSS `20260907-settings-credits-v11`. Not deployed.
+
+## Pending: Stable interaction colors (2026-09-07)
+
+- Wallpaper themes no longer replace the Default shell accent/hover palette or internal-page selection colors. Internal text selection uses the existing soft blue highlight with light text. Custom borders use the neutral control lines. Shared app body accents remain the original app blue, including when a body theme previously shadowed root tokens. AI, Code Studio, Code Tutorials and Partners keep their own original interaction colors. Removed the legacy Midnight control-color override rather than adding another competing selector. Profile colors, theme previews, backgrounds and semantic warning/success colors are preserved.
+- Startup navigation keeps its original purple highlight while theme swatches still preview wallpaper colors. Removed the Fresh Link Checker navigation text override so active/inactive colors match the original app palette.
+- Validation: Chromium compared sampled normal/hover/focus controls on 14 native app pages across all seven themes; the final Fresh-only Link Checker fixes passed a Default/Fresh rerun. Login, Settings, startup highlight backgrounds/borders and internal Credits selection passed all seven themes. Custom-red login also checked at phone width. Utility neutral-theme regression, production build and deployment/branding checks passed. Checks use mocked services; no real accounts or external services were changed.
+- Root JS/CSS caches `20260907-stable-highlights-v246` / `20260907-stable-highlights-v137`; affected shared and app assets use `20260907-stable-highlights-v1`; browser microinteractions CSS `20260907-stable-highlights-v28`. Not pushed or deployed.
+
+## Pending: Sidebar profile status (2026-09-07)
+
+- Moved the sidebar account status dot inward so its full circle fits inside the circular account button. Existing negative offsets placed it outside the 30px clipping boundary. Chromium verified that all four status circles fit on desktop and the account menu still opens. At phone width the existing layout hides this sidebar profile control. Build and deployment/branding checks passed. Root CSS cache `20260907-profile-status-v136`. Not pushed or deployed.
+
+## Pending: Wisp retry and onboarding (2026-09-07)
+
+- Wisp availability warnings now describe connection trouble and automatic retries, rather than claiming a server outage. Probes allow ten seconds, require three failures to warn, retry after five seconds on failure and thirty seconds on success, cancel when offline/hidden and recheck on resume. Successful probes clear the warning without reloading. This checks handshake reachability, not full proxy traffic. Host/offline handling remains separate. Availability cache `20260907-wisp-retry-v2`.
+- Startup wizard adds an optional Customize profile step after account sign-in/creation, using the existing profile editor/save flow. Guests skip it in both directions. Enter in account/profile dialogs no longer advances the underlying wizard. Root script cache `20260907-setup-profile-v245`.
+- Validation: deterministic Chromium Wisp checks cover slow handshakes, repeated timeout warnings, automatic recovery, hidden-tab cancellation, resume, custom/offline/host states and socket cleanup. Mocked signup/profile-save browser checks cover keyboard behavior, return to setup, mobile and guest forward/back skipping. Partner layout checks pass at 1920/1280/390px. No real accounts created or server outage induced.
+- Partners now use a wider 1600px layout and responsive columns with more horizontal spacing; CSS `20260907-wide-partners-v4`. Not pushed or deployed.
+
+## Pending: Additional partners (2026-09-07)
+
+- Added six partners to the existing five: uncensor, Nocturne, Photon (65Bgrbewc7), The Black Hat (fRe5F3RBQQ), zaka (CTX942hxX), and MilkBox (wC9DrfXvr). Discord invite metadata and original icons verified the four new screenshot mappings. Icons are bundled locally, with matching originals replacing the uncensor/Nocturne screenshots to remove margins. Every partner is clipped to a rounded square, with accessible labels and the existing exact-invite trusted popup bridge.
+- Validation passed: all eleven invite opens, image decoding and rounding, desktop/mobile layout, no page errors, production build, and deployment/branding checks (96 required files).
+- Root script cache `20260907-eleven-partners-v244`; partners CSS `20260907-rounded-partners-v3`. Not pushed or deployed.
+
+## Pending: Simplified credits (2026-09-07)
+
+- Replaced the About / Credits spotlight, images, cards, changelog and footer with a centered "thanks!" heading and a fixed "made by vdrtes" line and a short thank-you line for midnight. Nocturne remains a separate text link. Existing background and trusted native popup behavior are preserved. The midnight credit now says "thanks to midnight for linkchecker api". GN-math is thanked for games, with all six configured libraries listed (GN-math, Ultimate Game Stash, GMS, Lumin, CatClass, DuckMath). P2P Games is thanked for Creating Link generator with the user-supplied local image at `assets/credits/p2p-games.png`. Older credit images remain bundled but are not shown.
+- Desktop/mobile runtime checks passed for the simplified content, no horizontal overflow, and pointer/keyboard link activation. Production build and deployment/branding checks pass. Both credits surfaces share the simplified styling. Root JS/CSS caches are `20260907-credit-libraries-v241` / `20260907-credit-libraries-v135`, credits CSS `20260907-credit-libraries-v10`. Not pushed or deployed.
+
+## Pending: Additional link delivery hosts (2026-09-07)
+
+- Link Generator, its saved bulk jobs, and the personal SVG publisher now offer nine delivery hostnames: the existing cdn.jsdelivr.net, gcore.jsdelivr.net, and fastly.jsdelivr.net plus quantil.jsdelivr.net, originfastly.jsdelivr.net, testingcf.jsdelivr.net, jsdelivr.b-cdn.net, esm.sh, and raw.esm.sh. All retain the explicit `/gh/owner/repo@ref/file.svg` input shape. jsDelivr remains the default. The separate managed Bunny pull-zone provider and publishing/account limits are unchanged.
+- Read-only live probes returned the existing public Nyx wrapper as HTTP 200 SVG from all six additions. Chromium loaded each real outer SVG and reached a mocked inner Nyx page; this verifies wrapper rendering, not a complete Nyx session or filtering on every network. ESM endpoints redirect branch references to a cached commit; upstream refresh delays remain possible. The redundant cdn.esm.sh redirect and hosts requiring different path formats were not added in this change.
+- Provider switching reuses uploaded files; publisher results distinguish SVG file count from the selected host's link variants. Buttons wrap on narrow screens. Representative filter checks stay separated by hostname and repository/ref, and both generated-popup validators retain exact-host, HTTPS, SVG-path and user-action restrictions, including the jsdelivr.b-cdn.net distinction from ordinary Bunny root URLs.
+- Validation passed: expanded nine-host variant/copy/download/preset/bulk-job and popup-validation checks, personal publisher regression, managed/global 1,000-link regression (including actual protected-tab opening for jsdelivr.b-cdn.net), JavaScript syntax, production build, deployment/branding checks, and diff whitespace checks. Publishing tests use mocks. Existing unrelated failing suites listed in the user handoff were not rerun or claimed fixed.
+- Cache versions: root script `20260907-cdn-options-v236`, Link Generator `20260907-cdn-options-v10`, bulk jobs `20260907-cdn-options-v2`, publisher `20260907-cdn-options-v6`, publisher CSS `20260907-cdn-options-v4`. Not pushed or deployed. No external repositories, files, services, or credentials were changed.
 
 ## Release preparation (2026-09-06)
 

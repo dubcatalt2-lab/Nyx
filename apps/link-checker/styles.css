@@ -125,7 +125,7 @@ body.theme-fresh .freedns-detail-dialog{background:#fff}body.theme-fresh .freedn
 .loading [data-check-button]{position:relative;color:transparent}.loading [data-check-button]::after{position:absolute;inset:0;display:grid;place-items:center;color:#04111b;content:"Checking..."}
 body.theme-ruby{--accent:#fb7185;--accent-soft:rgba(251,113,133,.12)}body.theme-emerald{--accent:#34d399;--accent-soft:rgba(52,211,153,.12)}body.theme-sakura{--accent:#f9a8d4;--accent-soft:rgba(249,168,212,.12)}
 body.theme-fresh{color-scheme:light;--bg:#f6f8fb;--sidebar:#fff;--card:#fff;--card-soft:#f4f7fa;--border:#dce3ec;--text:#172033;--muted:#637085;--accent:#2563eb;--accent-soft:rgba(37,99,235,.1);--shadow:0 12px 34px rgba(40,55,78,.08)}
-body.theme-fresh .btn-secondary{background:#fff;color:#334155}body.theme-fresh .lc-nav button{color:#536176}body.theme-fresh .usage-track{background:#e5eaf1}
+body.theme-fresh .usage-track{background:#e5eaf1}
 .lc-sidebar-shade{display:none}
 /* ChromeOS commonly exposes about 1024-1093 CSS pixels after display scaling.
    Collapse the navigation before it competes with filters and scan tables. */

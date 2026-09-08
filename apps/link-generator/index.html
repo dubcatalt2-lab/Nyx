@@ -7,7 +7,7 @@
   <title>Link Generator</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/icons/link-generator.svg">
   <link rel="stylesheet" href="./styles.css?v=20260905-job-controls-v14">
-<link rel="stylesheet" href="/apps/visual-redesign.css?v=20260906-monogram-v1">
+<link rel="stylesheet" href="/apps/visual-redesign.css?v=20260907-stable-highlights-v1">
 </head>
 <body class="utility-neutral">
   <main class="utility-shell generator-shell">
@@ -127,7 +127,7 @@
                 </select>
                 <small data-generation-method-hint>Nyx managed uses the standard server limit. P2P uses the protected server publisher for larger Premium batches.</small>
               </label>
-              <label><span>CDN hostname</span><select data-cdn-host><option value="cdn.jsdelivr.net">cdn.jsdelivr.net (default)</option><option value="gcore.jsdelivr.net">gcore.jsdelivr.net</option><option value="fastly.jsdelivr.net">fastly.jsdelivr.net</option></select><small>Changes the hostname, not the published file.</small></label>
+              <label><span>CDN hostname</span><select data-cdn-host><option value="cdn.jsdelivr.net">cdn.jsdelivr.net (default)</option><option value="gcore.jsdelivr.net">gcore.jsdelivr.net</option><option value="fastly.jsdelivr.net">fastly.jsdelivr.net</option><option value="quantil.jsdelivr.net">quantil.jsdelivr.net</option><option value="originfastly.jsdelivr.net">originfastly.jsdelivr.net</option><option value="testingcf.jsdelivr.net">testingcf.jsdelivr.net</option><option value="jsdelivr.b-cdn.net">jsdelivr.b-cdn.net</option><option value="esm.sh">esm.sh</option><option value="raw.esm.sh">raw.esm.sh</option></select><small>Alternate addresses for the same published file. Availability varies by network.</small></label>
             </div>
           </div>
           <div class="wizard-actions">
@@ -194,7 +194,7 @@
         <div class="bulk-variants-grid">
           <label><span>Filename label</span><input data-bulk-label value="34" maxlength="30" pattern="[a-zA-Z0-9-]+" required></label>
           <label><span>Number of links</span><input data-bulk-amount type="number" min="1" max="100000" value="10" required></label>
-          <label><span>CDN hostname</span><select data-bulk-host><option value="cdn.jsdelivr.net">cdn.jsdelivr.net (default)</option><option value="gcore.jsdelivr.net">gcore.jsdelivr.net</option><option value="fastly.jsdelivr.net">fastly.jsdelivr.net</option></select></label>
+          <label><span>CDN hostname</span><select data-bulk-host><option value="cdn.jsdelivr.net">cdn.jsdelivr.net (default)</option><option value="gcore.jsdelivr.net">gcore.jsdelivr.net</option><option value="fastly.jsdelivr.net">fastly.jsdelivr.net</option><option value="quantil.jsdelivr.net">quantil.jsdelivr.net</option><option value="originfastly.jsdelivr.net">originfastly.jsdelivr.net</option><option value="testingcf.jsdelivr.net">testingcf.jsdelivr.net</option><option value="jsdelivr.b-cdn.net">jsdelivr.b-cdn.net</option><option value="esm.sh">esm.sh</option><option value="raw.esm.sh">raw.esm.sh</option></select></label>
         </div>
         <div class="bulk-alias-destination"><span>Filename format</span><code data-bulk-filename>34-learning-[random 32-character code].svg</code></div>
         <div class="bulk-variants-actions"><button class="primary-action" type="submit">Continue to generate</button></div>
@@ -207,6 +207,6 @@
       <p class="bulk-variants-note">Up to 100,000 links per saved job. Sign in above first. Larger requests publish in small batches and wait through account cooldowns; keep this tab open to continue. Closing it saves progress for Resume on this device. Repository capacity may stop a job before its target; completed links stay downloadable. Large jobs do not run an automatic filter scan.</p>
     </section>
   </main>
-  <script src="./app.js?v=20260905-bunny-provider-v9"></script>
+  <script src="./app.js?v=20260907-cdn-options-v10"></script>
 </body>
 </html>

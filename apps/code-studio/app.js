@@ -326,31 +326,16 @@
       }
     }
   }
-  const CUSTOM_THEME_FALLBACK='#6f9ee8';
   const customThemeProperties=['--studio-theme-hover-accent','--studio-theme-hover-soft','--studio-theme-hover-line'];
-  function themeHex(value,fallback=CUSTOM_THEME_FALLBACK){const raw=String(value||'').trim();return /^#[0-9a-f]{6}$/i.test(raw)?raw.toLowerCase():fallback}
-  function shadeHex(hex,percent=0){const clean=themeHex(hex);const amount=Math.max(-100,Math.min(100,Number(percent)||0))/100;const channel=index=>{const value=parseInt(clean.slice(index,index+2),16);return Math.round(amount>=0?value+(255-value)*amount:value*(1+amount))};return '#'+[1,3,5].map(index=>channel(index).toString(16).padStart(2,'0')).join('')}
-  function themeRgba(hex,alpha){const clean=themeHex(hex);const channels=[1,3,5].map(index=>parseInt(clean.slice(index,index+2),16));return `rgba(${channels.join(',')},${alpha})`}
   function inheritedTheme(){try{return String(localStorage.getItem('nyx.theme')||'default')}catch{return 'default'}}
-  function inheritedCustomThemeColor(){try{return themeHex(localStorage.getItem('nyx.customThemeColor'))}catch{return CUSTOM_THEME_FALLBACK}}
   function clearCustomThemePalette(){customThemeProperties.forEach(property=>document.documentElement.style.removeProperty(property))}
-  function applyCustomThemePalette(){
-    const base=inheritedCustomThemeColor();
-    const accent=shadeHex(base,38);
-    const styles={
-      '--studio-theme-hover-accent':accent,
-      '--studio-theme-hover-soft':themeRgba(accent,.06),
-      '--studio-theme-hover-line':themeRgba(accent,.19)
-    };
-    Object.entries(styles).forEach(([property,value])=>document.documentElement.style.setProperty(property,value));
-  }
   function applyTheme(){
     document.body.classList.remove('theme-ruby','theme-emerald','theme-sakura','theme-fresh','theme-custom');
     clearCustomThemePalette();
     const theme=inheritedTheme();
     if(theme==='custom'){
       document.body.classList.add('theme-custom');
-      applyCustomThemePalette();
+      // UI accents stay with the studio palette.
       return;
     }
     if(['ruby','emerald','sakura','fresh'].includes(theme))document.body.classList.add(`theme-${theme}`);

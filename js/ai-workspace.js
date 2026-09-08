@@ -390,65 +390,8 @@
     renderUsage();
   }
 
-  function themeHex(value,fallback='#6687b2'){
-    const raw=String(value||'').trim();
-    return /^#[0-9a-f]{6}$/i.test(raw)?raw.toLowerCase():fallback;
-  }
-
-  function shadeThemeHex(value,percent=0){
-    const color=themeHex(value);
-    const amount=Math.max(-100,Math.min(100,Number(percent)||0))/100;
-    const channel=index=>{
-      const current=parseInt(color.slice(index,index+2),16);
-      return Math.round(amount>=0?current+(255-current)*amount:current*(1+amount));
-    };
-    return '#'+[1,3,5].map(index=>channel(index).toString(16).padStart(2,'0')).join('');
-  }
-
-  function parentThemePalette(){
-    try{
-      if(parent===window||parent.location.origin!==location.origin) return null;
-      const parentDocument=parent.document;
-      const bodyStyle=parent.getComputedStyle(parentDocument.body);
-      const rootStyle=parent.getComputedStyle(parentDocument.documentElement);
-      const read=(name,fallback='')=>bodyStyle.getPropertyValue(name).trim()||rootStyle.getPropertyValue(name).trim()||fallback;
-      const accent=read('--nyx-chrome-accent',read('--theme-a','#6687b2'));
-      const bright=read('--nyx-final-shortcut-icon',read('--nyx-chrome-bright',accent));
-      return {
-        canvas:read('--nyx-unified-canvas',read('--nyx-chrome-deep','#080e18')),
-        deep:read('--nyx-unified-top',read('--nyx-chrome-deep','#050912')),
-        surface:read('--nyx-home-panel',read('--nyx-chrome-base','#101827')),
-        raised:read('--nyx-home-panel-soft',read('--nyx-chrome-active','#141f31')),
-        hover:read('--nyx-chrome-hover',read('--nyx-home-panel-soft','#1a293e')),
-        line:read('--nyx-home-line','#2a3b54'),
-        text:read('--nyx-home-text',read('--theme-strong','#d4deec')),
-        muted:read('--nyx-home-muted','#899bb5'),
-        accent,
-        bright
-      };
-    }catch{return null}
-  }
-
-  function fallbackThemePalette(theme){
-    const stored=theme==='custom'?localStorage.getItem('nyx.customThemeColor'):'';
-    const accent=themeHex(stored||window.NyxLogo?.colors?.[theme]||window.NyxLogo?.colors?.default||'#6687b2');
-    return {
-      canvas:shadeThemeHex(accent,-84),
-      deep:shadeThemeHex(accent,-91),
-      surface:shadeThemeHex(accent,-74),
-      raised:shadeThemeHex(accent,-68),
-      hover:shadeThemeHex(accent,-58),
-      line:shadeThemeHex(accent,-30),
-      text:'#f4f7ff',
-      muted:shadeThemeHex(accent,48),
-      accent:shadeThemeHex(accent,8),
-      bright:shadeThemeHex(accent,38)
-    };
-  }
-
   function applyWorkspaceTheme(theme=localStorage.getItem('nyx.theme')||'default'){
     const clean=String(theme||'default').trim().toLowerCase()||'default';
-    const palette=parentThemePalette()||fallbackThemePalette(clean);
     const root=document.documentElement;
     const values={
       '--ai-bg':'#000000',
@@ -468,7 +411,7 @@
       '--ai-accent-border':'rgba(255,255,255,.18)',
       '--ai-accent-foreground':'#050505',
       '--ai-accent-glow':'rgba(255,255,255,.08)',
-      '--ai-theme-hover-border':`color-mix(in srgb,${palette.bright} 82%,#ffffff 8%)`
+      '--ai-theme-hover-border':'#8aaee2'
     };
     Object.entries(values).forEach(([name,value])=>root.style.setProperty(name,value));
     root.dataset.nyxTheme=clean;

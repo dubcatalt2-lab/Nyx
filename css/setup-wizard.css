@@ -7,43 +7,12 @@ html body.setup-active{
   --setup-control:rgba(9,13,20,.46);
   --setup-control-hover:rgba(255,255,255,.075);
   --setup-selected:color-mix(in srgb,var(--setup-accent) 16%,rgba(10,14,22,.48));
-  --setup-accent:var(--theme-accent,#a78bfa);
-  --setup-bright:color-mix(in srgb,var(--setup-accent) 76%,#fff);
+  --setup-accent:#a78bfa;
+  --setup-bright:#c4b5fd;
   --setup-text:#f7f7fb;
   --setup-muted:#9896a2;
   --setup-line:color-mix(in srgb,var(--setup-accent) 46%,transparent);
   --setup-line-soft:rgba(255,255,255,.1);
-}
-
-html body #setupScreen[data-preview-theme="default"]{
-  --setup-accent:#a78bfa;
-  --setup-bright:#c4b5fd;
-}
-
-html body #setupScreen[data-preview-theme="midnight"]{
-  --setup-accent:#6f8fb9;
-  --setup-bright:#9ab5d8;
-}
-
-html body #setupScreen[data-preview-theme="ruby"]{
-  --setup-accent:#9f5f6d;
-  --setup-bright:#c18491;
-}
-
-html body #setupScreen[data-preview-theme="emerald"]{
-  --setup-accent:#568879;
-  --setup-bright:#7fb19f;
-}
-
-html body #setupScreen[data-preview-theme="sakura"]{
-  --setup-accent:#956781;
-  --setup-bright:#b98ba8;
-}
-
-html body #setupScreen[data-preview-theme="fresh"]{
-  --setup-accent:#728f6b;
-  --setup-bright:#a2bd9a;
-  --setup-line:rgba(114,143,107,.42);
 }
 
 html body .setup-screen{
@@ -722,10 +691,7 @@ html body .setup-actions [data-skip-setup]:hover{
 /* Keep Fern's first-run experience inside the same earthy palette. The old
    Fresh theme applied teal text and white controls with broad !important
    selectors, so these scoped rules intentionally win only for this preview. */
-html body #setupScreen[data-preview-theme="fresh"]{
-  color:var(--setup-text)!important;
-  -webkit-text-fill-color:var(--setup-text)!important;
-}
+
 html body #setupScreen[data-preview-theme="fresh"] .setup-panel{
   border-color:var(--setup-line)!important;
   background:color-mix(in srgb,var(--setup-surface) 94%,transparent)!important;

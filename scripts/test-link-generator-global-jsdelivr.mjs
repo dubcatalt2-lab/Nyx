@@ -144,6 +144,7 @@ try {
   await shellContext.addInitScript(() => {
     if (window.top !== window) return;
     localStorage.setItem('nyx.setupComplete', 'true');
+    localStorage.setItem('nyx.releaseNotes.2026-08-31-new-nyx.seen', 'true');
     localStorage.setItem('nyx.homeDesign', 'redesigned');
     localStorage.setItem('nyx.popupProtection', 'true');
     localStorage.setItem('nyx.browserShellMode', 'true');
@@ -151,7 +152,7 @@ try {
   });
   await shellContext.route('**/api/link-checker/vendors', route => routeJson(route, { vendors: [{ key: 'goguardian', label: 'GoGuardian' }] }));
   await shellContext.route('**/api/link-checker/check', route => routeJson(route, { vendors: { goguardian: { blocked: false } } }));
-  await shellContext.route('https://cdn.jsdelivr.net/**', route => route.fulfill({ status: 200, contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg"/>' }));
+  await shellContext.route('https://jsdelivr.b-cdn.net/**', route => route.fulfill({ status: 200, contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg"/>' }));
   const shellPage = await shellContext.newPage();
   const shellErrors = [];
   shellPage.on('pageerror', error => shellErrors.push(error.message));
@@ -169,7 +170,7 @@ try {
   const shellFrame = shellPage.frameLocator('iframe.view.active');
   await shellFrame.locator('[data-filter-select]:not([disabled])').waitFor({ state: 'attached' });
   await shellFrame.locator('html[data-nyx-popup-bridge="true"]').waitFor({ state: 'attached' });
-  const popupBridgeUrl = 'https://cdn.jsdelivr.net/gh/dubcatalt2-lab/nyx-jsdelivr-links@main/popup-bridge-learning-0123456789abcdef0123456789abcdef.svg';
+  const popupBridgeUrl = 'https://jsdelivr.b-cdn.net/gh/dubcatalt2-lab/nyx-jsdelivr-links@main/popup-bridge-learning-0123456789abcdef0123456789abcdef.svg';
   await shellFrame.locator('[data-open]').evaluate((link, url) => {
     const card = link.closest('[data-result-card]');
     if (card) {

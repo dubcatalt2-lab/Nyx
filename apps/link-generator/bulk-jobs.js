@@ -1,4 +1,4 @@
-const HOSTS = new Set(['cdn.jsdelivr.net', 'gcore.jsdelivr.net', 'fastly.jsdelivr.net']);
+const HOSTS = new Set(['cdn.jsdelivr.net', 'gcore.jsdelivr.net', 'fastly.jsdelivr.net', 'quantil.jsdelivr.net', 'originfastly.jsdelivr.net', 'testingcf.jsdelivr.net', 'jsdelivr.b-cdn.net', 'esm.sh', 'raw.esm.sh']);
 export const MAX_JOB_LINKS = 100_000;
 
 export function openJobStore() {

@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
 import { chromium } from 'playwright';
+import { BulkJob } from '../apps/link-generator/bulk-jobs.js';
+const hosts = ['cdn.jsdelivr.net', 'gcore.jsdelivr.net', 'fastly.jsdelivr.net', 'quantil.jsdelivr.net', 'originfastly.jsdelivr.net', 'testingcf.jsdelivr.net', 'jsdelivr.b-cdn.net', 'esm.sh', 'raw.esm.sh'];
 
 // Intercept every request; tests never publish to GitHub.
 const browser = await chromium.launch({ headless: true });
@@ -32,7 +34,6 @@ try {
     assert.equal(await page.locator('.bulk-variants-card').evaluate(el => el.scrollWidth <= el.clientWidth + 1), true);
   }
   await page.locator('[data-bulk-label]').fill('34');
-  await page.locator('.bulk-variants-card').screenshot({ path: '.codex-artifacts/jsdelivr-bulk-setup.png' });
   await page.locator('[data-bulk-host]').selectOption('gcore.jsdelivr.net');
   await page.locator('[data-bulk-setup] button').click();
   assert.equal(await page.locator('[data-label-input]').inputValue(), '34');
@@ -49,7 +50,7 @@ try {
       provider: 'jsdelivr', links: filenames.map(file => 'https://cdn.jsdelivr.net/gh/dubcatalt2-lab/nyx-jsdelivr-links@main/' + file), remaining: 98
     }) });
   });
-  for (const host of ['cdn.jsdelivr.net', 'gcore.jsdelivr.net', 'fastly.jsdelivr.net']) {
+  for (const host of hosts) {
     await page.evaluate(host => {
       document.querySelector('[data-access-mode="administrator"]').click();
       document.querySelector('[data-access-code]').value = 'fixture';
@@ -68,7 +69,7 @@ try {
   await page.locator('[data-download-links]').click();
   const download = await downloaded;
   assert.equal(download.suggestedFilename(), 'nyx-jsdelivr-links.txt');
-  assert.match(await readFile(await download.path(), 'utf8'), /https:\/\/fastly\.jsdelivr\.net\/gh\//);
+  assert.match(await readFile(await download.path(), 'utf8'), /https:\/\/raw\.esm\.sh\/gh\//);
   await page.goto('http://nyx.test/apps/jsdelivr-publisher/?preset=nyx&source=jsdelivr&count=10&cdn=gcore.jsdelivr.net');
   await page.waitForFunction(() => typeof presetSvg !== 'undefined' && presetSvg.includes('Source fixture'));
   assert.equal(sourceRequests, 1);
@@ -93,5 +94,57 @@ try {
   assert.equal(result.calls[2].body.force, false);
   assert.equal(result.failed, true);
   assert.equal(result.url, 'https://cdn.jsdelivr.net/gh/test/repo@main/one.svg');
+  // Every provider keeps the same published files and supports mobile selection.
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.evaluate(() => {
+      publishedResult = { publishedCount: 2, repos: [{repo: 'test/repo', branch: 'main', files: ['one.svg','two.svg']}], links: ['one.svg','two.svg'].map(file => ({repo:'test/repo',branch:'main',file})) };
+      renderResults();
+      window.copiedLinks = '';
+      Object.defineProperty(navigator, 'clipboard', { configurable: true, value: {writeText: async value => { window.copiedLinks = value; }} });
+    });
+    for (const host of hosts) {
+      const key = await page.evaluate(host => Object.keys(providers).find(key => new URL(providers[key]('test/repo','main','one.svg')).hostname === host), host);
+      await page.locator(`[data-provider="${key}"]`).click();
+      const expected = ['one.svg','two.svg'].map(file => `https://${host}/gh/test/repo@main/${file}`).join('\n');
+      assert.equal(await page.locator('#linksOutput').inputValue(), expected);
+      await page.locator('#copyLinks').click();
+      assert.equal(await page.evaluate(() => window.copiedLinks), expected);
+      const pendingDownload = page.waitForEvent('download');
+      await page.locator('#downloadLinks').click();
+      assert.equal(await readFile(await (await pendingDownload).path(), 'utf8'), expected + '\n');
+    }
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+    assert.match(await page.locator('#resultsSummary').textContent(), /2 SVG files/);
+  }
+  for (const host of hosts) {
+    await page.goto(`http://nyx.test/apps/jsdelivr-publisher/?preset=nyx&count=2&cdn=${host}`);
+    assert.equal(await page.evaluate(() => new URL(providers[selectedProvider]('test/repo','main','one.svg')).hostname), host);
+    let saved;
+    let batch;
+    const store = { read: async () => saved, save: async (job, value) => { saved = structuredClone(job); if(value) batch = value; } };
+    const job = new BulkJob({store, access: async () => ({uid:'test',token:'fixture',limit:2,method:'managed'}), request: async () => new Response(JSON.stringify({links:['https://cdn.jsdelivr.net/gh/test/repo@main/one.svg']}),{headers:{'Content-Type':'application/json'}})});
+    await job.create({total:1,label:'test',host});
+    await job.run();
+    assert.equal(saved.completed,1);
+    assert.deepEqual(batch.links,[`https://${host}/gh/test/repo@main/one.svg`]);
+  }
+  // Exercise both actual popup validators without relaxing URL/source checks.
+  const shell = await readFile('script.js','utf8');
+  const outerSource = shell.slice(shell.indexOf('function isNyxGeneratedCdnUrl('),shell.indexOf('  function externalHttpUrl(',shell.indexOf('function isNyxGeneratedCdnUrl(')));
+  const innerStart = shell.indexOf('const trustedGeneratedPopup = link => {');
+  const innerSource = shell.slice(innerStart,shell.indexOf('      const nativeOpen',innerStart));
+  const outer = new Function(outerSource + '; return isNyxGeneratedCdnUrl;')();
+  const inner = new Function('location',innerSource + '; return trustedGeneratedPopup;')({pathname:'/apps/link-generator/',href:'https://nyx.test/apps/link-generator/'});
+  for (const host of hosts) {
+    const url = `https://${host}/gh/test/repo@main/one.svg`;
+    assert.equal(outer(url),true);
+    assert.equal(inner({matches:()=>true,href:url}),true);
+    assert.equal(inner({matches:()=>false,href:url}),false);
+    for (const bad of [url+'?x=1',url+'#x',url.replace('https:','http:'),url.replace(host,'user:pass@'+host),url.replace('one.svg','one.html'),url.replace(host,host+'.example.com')]) {
+      assert.equal(outer(bad),false,bad);
+      assert.equal(inner({matches:()=>true,href:bad}),false,bad);
+    }
+  }
   console.log('jsDelivr handoff, source, responsive card, publish sequence and failure checks passed (mocked publishing).');
 } finally { await browser.close(); }

@@ -66,6 +66,7 @@ chmod -R g+rX "${APP_DIR}"
 
 install -d -m 0750 -o nyx -g nyx /var/lib/nyx/chat-attachments
 install -d -m 0750 -o nyx -g nyx /var/lib/nyx/vision-models
+install -d -m 0700 -o nyx -g nyx /var/lib/nyx/youtube-cache
 install -d -m 0750 -o nyx -g nyx /var/lib/nyx-stratus
 sync_stratus_turn_environment
 runuser -u nyx -- env NYX_AI_VISION_CACHE_DIR=/var/lib/nyx/vision-models npm run prepare:vision

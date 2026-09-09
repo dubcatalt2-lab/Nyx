@@ -566,7 +566,7 @@ html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-glass-fi
   -webkit-backdrop-filter:blur(5px) saturate(1.03)!important;
   backdrop-filter:blur(5px) saturate(1.03)!important;
 }
-html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-glass-final-a):is(body,#nyx-glass-final-b):is(body,#nyx-glass-final-c):is(body,#nyx-glass-final-d):is(body,#nyx-glass-final-e) .browser-shell-settings-panel :is(.nyx-settings-category.active,.nyx-color-theme-card.selected,.nyx-wallpaper-card.selected,.settings-action.on){
+html[data-nyx-home-design="redesigned"] body.browser-shell:is(body,#nyx-glass-final-a):is(body,#nyx-glass-final-b):is(body,#nyx-glass-final-c):is(body,#nyx-glass-final-d):is(body,#nyx-glass-final-e) .browser-shell-settings-panel :is(.nyx-settings-category.active,.nyx-color-theme-card.selected,.nyx-wallpaper-card.selected,.settings-action.on:not([data-switch="nyx.sidebarLeft"])){
   border-color:rgba(218,233,255,.2)!important;
   background:rgba(22,27,36,.46)!important;
   background-image:none!important;

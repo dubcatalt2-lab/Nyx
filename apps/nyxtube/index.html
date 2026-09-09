@@ -66,7 +66,7 @@
           <label><span>Playback speed</span><select data-watch-speed aria-label="Playback speed"><option value="1">Normal</option></select></label>
           <label><span>Volume</span><input data-watch-volume type="range" min="0" max="100" value="100" aria-label="Volume"></label>
           <label><span>Captions</span><select data-watch-settings-captions aria-label="Captions"><option value="off">Off</option><option value="on">On</option></select></label>
-          <div><span>Quality</span><b>Auto</b></div>
+          <div><span>Quality</span><b data-watch-settings-quality>Auto</b></div>
         </section>
         <div class="watch-controls">
           <button data-watch-toggle type="button" aria-label="Play"><svg><use href="#icon-play"></use></svg></button>
@@ -80,7 +80,7 @@
       </div>
       <div class="watch-meta">
         <button class="channel-mark" data-watch-channel-mark type="button" aria-label="Open creator channel"></button><div class="watch-copy"><h1 data-watch-title></h1><p class="watch-byline"><button class="watch-channel-name" data-watch-creator type="button"></button><span class="watch-video-meta" data-watch-video-meta></span></p></div>
-        <div class="watch-options"><label><span>Quality</span><select disabled title="YouTube selects playback quality automatically"><option value="auto">Auto</option></select></label><button data-watch-caption-option type="button">Captions <span>Off</span></button><a data-watch-source target="_blank" rel="noopener noreferrer" aria-label="Open on YouTube"><svg><use href="#icon-external"></use></svg></a></div>
+        <div class="watch-options"><button data-watch-engine type="button" value="native" hidden>Switch to embedded</button><label><span>Quality</span><select data-watch-quality disabled title="YouTube selects playback quality automatically"><option value="auto">Auto</option></select></label><button data-watch-caption-option type="button">Captions <span>Off</span></button><a data-watch-source target="_blank" rel="noopener noreferrer" aria-label="Open on YouTube"><svg><use href="#icon-external"></use></svg></a></div>
       </div>
       <div class="watch-stats" aria-label="Video statistics"><span><strong data-watch-views>0</strong><small>Views</small></span><span><strong data-watch-likes>0</strong><small>Likes</small></span><span><strong data-watch-comments-count>0</strong><small>Comments</small></span></div>
       <section class="watch-info">
@@ -120,6 +120,7 @@
     </section>
   </main>
   <script src="./player-core.js?v=20260829-clean-embed-v2"></script>
-  <script src="./app.js?v=20260902-player-settings-v12"></script>
+  <script src="./native-player.js?v=20260908-native-v1"></script>
+  <script src="./app.js?v=20260908-native-default-v14"></script>
 </body>
 </html>

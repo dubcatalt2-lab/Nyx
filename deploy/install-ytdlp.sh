@@ -6,6 +6,11 @@ if [[ ${EUID} -ne 0 ]]; then
   exit 1
 fi
 
+if ! command -v ffmpeg >/dev/null 2>&1; then
+  apt-get update
+  DEBIAN_FRONTEND=noninteractive apt-get install -y ffmpeg
+fi
+
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 REQUIREMENTS_FILE="${SCRIPT_DIR}/requirements-yt-dlp.txt"
 INSTALL_ROOT=/var/lib/nyx/yt-dlp
@@ -52,4 +57,4 @@ fi
 
 chgrp -R nyx "${INSTALL_ROOT}"
 chmod -R g+rX "${INSTALL_ROOT}"
-echo "yt-dlp ${INSTALLED_VERSION} is installed server-side for bounded NyxTube public-transcript discovery."
+echo "yt-dlp ${INSTALLED_VERSION} is installed server-side for bounded NyxTube extraction."

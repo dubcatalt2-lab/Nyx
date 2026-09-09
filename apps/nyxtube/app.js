@@ -5,6 +5,7 @@
   const $$ = selector => [...document.querySelectorAll(selector)];
   const views = Object.fromEntries($$("[data-view]").map(view => [view.dataset.view, view]));
   const state = {
+    nativeAvailable: false, watchGeneration: 0, preferredPlayer: "native",
     view: "home", videos: [], catalog: [], shorts: [], shortIndex: 0,
     watchPlayer: null, shortPlayer: null, watchTimer: 0, shortTimer: 0,
     watchVideo: null, watchCaptions: false, shortCaptions: false, shortMuted: true,
@@ -22,7 +23,7 @@
     "watch-title", "watch-creator", "watch-video-meta", "watch-channel-mark", "watch-source", "watch-description", "watch-related", "short-stage", "short-player",
     "short-loading", "short-center-play", "short-mute", "short-captions", "short-fullscreen",
     "short-progress", "short-title", "short-creator", "profile-button", "profile-avatar",
-    "watch-settings", "watch-settings-menu", "watch-speed", "watch-volume", "watch-settings-captions",
+    "watch-quality", "watch-engine", "watch-settings", "watch-settings-menu", "watch-speed", "watch-volume", "watch-settings-captions",
     "watch-rewind", "watch-forward", "watch-speed-indicator",
     "watch-views", "watch-likes", "watch-comments-count", "watch-tab-comments-count",
     "watch-comments-status", "watch-comments", "watch-transcript-status", "watch-transcript",
@@ -204,8 +205,14 @@
     let currentRate = 1;
     try { currentRate = Number(player.getPlaybackRate?.()) || 1; } catch { currentRate = 1; }
     refs.watchSpeed.value = rates.includes(currentRate) ? String(currentRate) : String(rates.includes(1) ? 1 : rates[0]);
-    try { refs.watchVolume.value = String(Math.max(0, Math.min(100, Number(player.getVolume?.()) || 100))); } catch { refs.watchVolume.value = "100"; }
-    refs.watchSettingsCaptions.disabled = !video?.captions;
+    try { refs.watchVolume.value = String(Math.max(0, Math.min(100, Number(player.getVolume?.() ?? 100)))); } catch { refs.watchVolume.value = "100"; }
+    refs.watchSettingsCaptions.disabled = !video?.captions || player.isNative;
+    refs.watchCaptions.disabled = Boolean(player.isNative); refs.watchCaptionOption.disabled = Boolean(player.isNative);
+    refs.watchQuality.replaceChildren(...(player.isNative ? player.qualities : ["auto"]).map(height => { const item=document.createElement("option"); item.value=height; item.textContent=height === "auto" ? "Auto" : `${height}p`; return item; }));
+    refs.watchQuality.disabled = !player.isNative; refs.watchQuality.value = player.isNative ? String(player.quality) : "auto";
+    refs.watchQuality.title = player.isNative ? "Playback quality" : "YouTube selects playback quality automatically";
+    updatePlayerSwitch(player.isNative);
+    $("[data-watch-settings-quality]").textContent = player.isNative ? `${player.quality}p` : "Auto";
     refs.watchSettingsCaptions.title = video?.captions ? "" : "Captions are not available for this video";
     refs.watchSettingsCaptions.value = state.watchCaptions && video?.captions ? "on" : "off";
   }
@@ -302,19 +309,35 @@
     refs.watchTime.textContent = `0:00 / ${duration(video.durationSeconds)}`;
     createWatch(video).catch(error => { refs.watchLoading.hidden = true; notice(error.message || "The video player could not be started."); });
   }
-  async function createWatch(video, forceDirect = false) {
-    const YT = forceDirect ? directYoutubeApi : await youtubeApi();
+  function updatePlayerSwitch(native) {
+    refs.watchEngine.value = native ? "native" : "youtube";
+    refs.watchEngine.textContent = native ? "Switch to embedded" : "Switch to NyxTube";
+  }
+  async function createWatch(video, forceDirect = false, fallback = false, restore = null) {
+    const generation = ++state.watchGeneration;
+    const native = state.nativeAvailable && state.preferredPlayer === "native" && !forceDirect && !fallback;
+    updatePlayerSwitch(native);
+    state.watchPlayer?.destroy?.(); state.watchPlayer = null;
+    refs.watchLoading.hidden = false; refs.watchLoading.querySelector("strong").textContent = native ? "Preparing video - first play may take a moment" : "Loading video";
+    refs.watchQuality.disabled = true;
+    const YT = native ? window.NyxNativePlayer : forceDirect ? directYoutubeApi : await youtubeApi();
+    if (generation !== state.watchGeneration) return;
     if (state.view !== "watch" || state.watchVideo?.id !== video.id) return;
     state.watchPlayer?.destroy?.();
-    const config = options(video.id); config.expectedDuration = video.durationSeconds;
+    const config = options(video.id); config.expectedDuration = video.durationSeconds; config.quality = restore?.quality;
     config.events = {
-      onReady: event => { refs.watchLoading.hidden = true; configureWatchSettings(event.target, video); event.target.playVideo(); startWatchTimer(); },
+      onReady: event => { if (generation !== state.watchGeneration) return; refs.watchLoading.hidden = true; if (restore) { event.target.seekTo(restore.time); event.target.setVolume?.(restore.volume); event.target.setPlaybackRate?.(restore.rate); if(restore.muted)event.target.mute(); } configureWatchSettings(event.target, video); if (!restore?.paused) event.target.playVideo(); else { event.target.pauseVideo(); refs.watchCenterPlay.hidden=false; } startWatchTimer(); },
       onStateChange: event => {
+        if (generation !== state.watchGeneration) return;
         const playing = event.data === YT.PlayerState.PLAYING, paused = event.data === YT.PlayerState.PAUSED;
         if (playing) refs.watchLoading.hidden = true;
         updateToggle(refs.watchToggle, playing); refs.watchCenterPlay.hidden = !paused;
       },
-      onError: event => recoverWatch(video, Number(event?.data), YT === directYoutubeApi),
+      onError: event => {
+        if(generation !== state.watchGeneration || state.view !== "watch") return;
+        if(native) { notice("Native playback is unavailable for this video. Opening the YouTube player."); createWatch(video, false, true, restore).catch(()=>notice("The video player could not start.")); }
+        else recoverWatch(video, Number(event?.data), YT === directYoutubeApi);
+      },
     };
     state.watchPlayer = new YT.Player(mount(refs.watchPlayer, "nyxtube-watch"), config);
   }
@@ -440,6 +463,7 @@
     }, 250);
   }
   function stopWatch() {
+    ++state.watchGeneration;
     clearInterval(state.watchTimer); state.watchTimer = 0; clearTimeout(state.watchRecoveryTimer); state.watchRecoveryTimer = 0;
     state.watchCommunityRequestId += 1;
     finishWatchSpace({ cancel: true });
@@ -447,7 +471,7 @@
   }
   function toggleWatch() {
     if (!ready(state.watchPlayer)) return;
-    state.watchPlayer.getPlayerState() === window.YT.PlayerState.PLAYING ? state.watchPlayer.pauseVideo() : state.watchPlayer.playVideo();
+    state.watchPlayer.getPlayerState() === 1 ? state.watchPlayer.pauseVideo() : state.watchPlayer.playVideo();
   }
   function toggleWatchMute() {
     if (!ready(state.watchPlayer)) return;
@@ -497,7 +521,7 @@
     state.watchSpaceRateChanged = false;
   }
   function setCaptions(player, enabled, button, option) {
-    if (!ready(player)) return false;
+    if (!ready(player) || player.isNative) return false;
     try { enabled ? player.loadModule?.("captions") : player.unloadModule?.("captions"); } catch { return false; }
     button.setAttribute("aria-pressed", String(enabled));
     if (option) option.querySelector("span").textContent = enabled ? "On" : "Off";
@@ -569,7 +593,7 @@
   }
   function toggleShort() {
     if (!ready(state.shortPlayer)) return;
-    state.shortPlayer.getPlayerState() === window.YT.PlayerState.PLAYING ? state.shortPlayer.pauseVideo() : state.shortPlayer.playVideo();
+    state.shortPlayer.getPlayerState() === 1 ? state.shortPlayer.pauseVideo() : state.shortPlayer.playVideo();
   }
   function toggleShortMute() {
     if (!ready(state.shortPlayer)) return;
@@ -594,6 +618,14 @@
     $$("[data-view-button]").forEach(button => button.addEventListener("click", () => { showView(button.dataset.viewButton); if (state.view === "shorts") loadShorts(); }));
     $("[data-back]").addEventListener("click", () => { if (state.view === "watch") showView("home"); else if (history.length > 1) history.back(); else location.href = "/"; });
     refs.watchToggle.addEventListener("click", toggleWatch); refs.watchCenterPlay.addEventListener("click", toggleWatch); refs.watchMute.addEventListener("click", toggleWatchMute);
+    const switchPlayback = quality => {
+      if (!state.watchVideo) return;
+      const player=state.watchPlayer;
+      const restore={quality, time:player?.getCurrentTime?.()||0,paused:player?.getPlayerState?.()===2,volume:player?.getVolume?.()??100,rate:player?.getPlaybackRate?.()||1,muted:player?.isMuted?.()||false};
+      createWatch(state.watchVideo,false,false,restore).catch(()=>notice("The video player could not start."));
+    };
+    refs.watchQuality.addEventListener("change",()=>switchPlayback(Number(refs.watchQuality.value)));
+    refs.watchEngine.addEventListener("click",()=>{state.preferredPlayer=refs.watchEngine.value === "native" ? "youtube" : "native";switchPlayback();});
     refs.watchProgress.addEventListener("input", () => { if (ready(state.watchPlayer)) state.watchPlayer.seekTo((state.watchPlayer.getDuration?.() || 0) * Number(refs.watchProgress.value) / 1000, true); });
     const watchCaptions = () => changeWatchCaptions(!state.watchCaptions);
     refs.watchCaptions.addEventListener("click", watchCaptions); refs.watchCaptionOption.addEventListener("click", watchCaptions); refs.watchFullscreen.addEventListener("click", () => fullscreen(refs.watchStage));
@@ -645,6 +677,7 @@
   applyTheme(); bind(); skeletons(); requestProfile();
   json("/api/nyxtube/status").then(status => {
     if (!status?.configured) throw new Error("NyxTube is not configured yet.");
+    state.nativeAvailable = status.nativeAvailable === true; refs.watchEngine.hidden = !state.nativeAvailable;
     return loadInitialView();
   }).catch(error => { renderVideos([]); notice(error.message || "NyxTube could not be started."); });
 })();

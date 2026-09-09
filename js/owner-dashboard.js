@@ -265,6 +265,7 @@
             <button class="nyx-owner-close" type="button" data-owner-close aria-label="Close owner dashboard">${dashboardIcon("close")}</button>
           </div>
         </header>
+        <section class="nyx-owner-tube-status" data-owner-tube-status hidden aria-live="polite"></section>
         <section class="nyx-owner-metrics" data-owner-metrics aria-label="Account metrics"></section>
         <section class="nyx-owner-workspace">
           <div class="nyx-owner-users-panel">
@@ -337,6 +338,31 @@
       }
       return payload;
     }
+
+    let tubeBusy = false;
+    let tubeLastStatus = null;
+    const tubeHost = overlay.querySelector("[data-owner-tube-status]");
+    function renderTubeStatus(data) {
+      tubeLastStatus = data;
+      const labels = {working:"Working",login_required:"Login needs refreshing",trouble:"Service trouble",setup_required:"Setup required",unchecked:"Not checked yet"};
+      const label = data.enabled ? labels[data.state] || "Service trouble" : "Not enabled";
+      const instructions = !data.enabled ? "Native playback is waiting for server setup. YouTube playback remains available." : data.state === "login_required" ? "Export fresh cookies from the dedicated YouTube account, replace the private server login file, then check again." : data.state === "trouble" ? "A recent request failed. This does not necessarily mean the login expired." : data.state === "setup_required" ? "Check the private login file and required video tools on the server." : "Status comes from real stream checks and video preparations. A single unavailable video does not mark the login expired.";
+      tubeHost.innerHTML = `<div><strong>NyxTube <span data-owner-tube-state="${esc(data.state)}">${esc(label)}</span></strong><p>${esc(instructions)}</p><small>Last success: ${esc(dateLabel(data.lastSuccess))} &middot; Last check: ${esc(dateLabel(data.lastChecked))}</small><small>Cache: ${(Number(data.cacheBytes || 0)/1073741824).toFixed(2)} / ${(Number(data.cacheLimitBytes || 0)/1073741824).toFixed(0)} GB &middot; Preparing: ${Number(data.activeJobs || 0)} / 1 &middot; Up to 720p</small></div><button type="button" data-owner-tube-check ${!data.enabled || tubeBusy ? "disabled" : ""}>${tubeBusy ? "Checking..." : "Check now"}</button>`;
+    }
+    async function loadTubeStatus(check = false) {
+      if (!overlay.isConnected || state.access?.role !== "owner" || tubeBusy) return;
+      tubeHost.hidden = false;
+      if(check) {tubeBusy=true; if(tubeLastStatus)renderTubeStatus(tubeLastStatus);}
+      try {
+        const data = await api(`/api/owner-dashboard/nyxtube${check ? "/check" : ""}`, {method:check ? "POST" : "GET"});
+        if(!overlay.isConnected || state.access?.role !== "owner")return;
+        tubeBusy=false; renderTubeStatus(data);
+      } catch(error) {
+        if(check)notify(error.message || "The video check failed.","error");
+        else tubeHost.innerHTML='<p>NyxTube status could not be loaded. Refresh the dashboard to retry.</p>';
+      } finally {tubeBusy=false;const button=tubeHost.querySelector("[data-owner-tube-check]");if(button){button.disabled=!tubeLastStatus?.enabled;button.textContent="Check now";}}
+    }
+    const tubeTimer = setInterval(()=>{if(!document.hidden)void loadTubeStatus();},60000);
 
     async function uploadProfileMedia(uid, kind, dataUrl, onProgress = () => {}) {
       const match = String(dataUrl || "").match(/^data:(image\/(?:gif|png|jpeg|webp));base64,([a-z0-9+/=]+)$/i);
@@ -507,6 +533,8 @@
         const data = await api(`/api/owner-dashboard?${parameters}`, { signal: state.controller.signal });
         state.data = data;
         state.access = data.access || state.access;
+        tubeHost.hidden = state.access?.role !== "owner";
+        if (!tubeHost.hidden) void loadTubeStatus();
         state.customRoles = Array.isArray(data.customRoles) ? data.customRoles : state.customRoles;
         const ipBansButton = overlay.querySelector("[data-owner-ip-bans]");
         if (ipBansButton) ipBansButton.hidden = !state.access?.permissions?.includes("network:bans");
@@ -983,6 +1011,7 @@
     }
 
     function onClick(event) {
+      if(event.target.closest("[data-owner-tube-check]")) return void loadTubeStatus(true);
       if (event.target === overlay || event.target.closest("[data-owner-close]")) return destroy();
       if (event.target.closest("[data-owner-refresh]")) return void load();
       if (event.target.closest("[data-owner-export]")) return exportCurrentPage();
@@ -1316,6 +1345,7 @@
     }
 
     function destroy() {
+      clearInterval(tubeTimer);
       state.controller?.abort();
       clearTimeout(state.searchTimer);
       overlay.classList.remove("show");

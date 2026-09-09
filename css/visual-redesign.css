@@ -1740,7 +1740,7 @@ body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):i
     overflow:hidden!important;
     border:1px solid #334056!important;
     border-radius:999px!important;
-    background:#1a2433!important;
+    background:var(--nyx-switch-background,#1a2433)!important;
     color:transparent!important;
     font-size:0!important;
   }
@@ -1754,16 +1754,17 @@ body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):i
     height:14px!important;
     border-radius:50%!important;
     background:#eef3fa!important;
+    transform:var(--nyx-switch-thumb,translateX(0))!important;
     transition:transform .18s ease!important;
   }
   html[data-nyx-home-design="redesigned"][data-nyx-home-design="redesigned"]
   body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):is(body,#nyx-visual-c):is(body,#nyx-visual-d) .browser-shell-settings-panel .settings-row>.settings-action[data-switch].on{
     border-color:color-mix(in srgb,var(--nyx-visual-accent) 65%,#63728d)!important;
-    background:color-mix(in srgb,var(--nyx-visual-accent) 72%,#25334b)!important;
+    background:var(--nyx-switch-background,color-mix(in srgb,var(--nyx-visual-accent) 72%,#25334b))!important;
   }
   html[data-nyx-home-design="redesigned"][data-nyx-home-design="redesigned"]
   body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):is(body,#nyx-visual-c):is(body,#nyx-visual-d) .browser-shell-settings-panel .settings-row>.settings-action[data-switch].on::after{
-    transform:translateX(16px)!important;
+    transform:var(--nyx-switch-thumb,translateX(16px))!important;
   }
 }
 
@@ -1801,4 +1802,20 @@ body.browser-shell.browser-shell.theme-fresh:is(body,#nyx-fern-idle-a):is(body,#
   body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):is(body,#nyx-visual-c):is(body,#nyx-visual-d) .browser-home.nyx-visual-home .nyx-minimal-brand h1{
     font-size:66px!important;
   }
+}
+
+/* Sidebar position is a direction choice; its thumb and fill follow the chosen edge. */
+[data-switch="nyx.sidebarLeft"]{
+  --nyx-switch-background:linear-gradient(to right,#1a2433 50%,#9b8cf5 50%);
+  --nyx-switch-thumb:translateX(16px);
+}
+[data-switch="nyx.sidebarLeft"].on{
+  --nyx-switch-background:linear-gradient(to right,#9b8cf5 50%,#1a2433 50%);
+  --nyx-switch-thumb:translateX(0);
+}
+
+@media(max-width:900px){
+  html[data-nyx-home-design="redesigned"][data-nyx-home-design="redesigned"] body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):is(body,#nyx-visual-c):is(body,#nyx-visual-d) .browser-shell-settings-panel .settings-row>.settings-action[data-switch="nyx.sidebarLeft"]{background:var(--nyx-switch-background)!important;--nyx-switch-thumb:translateX(28px)}
+  html[data-nyx-home-design="redesigned"][data-nyx-home-design="redesigned"] body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):is(body,#nyx-visual-c):is(body,#nyx-visual-d) .browser-shell-settings-panel .settings-row>.settings-action[data-switch="nyx.sidebarLeft"].on{--nyx-switch-thumb:translateX(0)}
+  html[data-nyx-home-design="redesigned"][data-nyx-home-design="redesigned"] body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):is(body,#nyx-visual-c):is(body,#nyx-visual-d) .browser-shell-settings-panel .settings-row>.settings-action[data-switch="nyx.sidebarLeft"]::after{transform:var(--nyx-switch-thumb)!important}
 }

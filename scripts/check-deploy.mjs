@@ -76,6 +76,7 @@ const requiredFiles = [
   "apps/nyxify/icons.css",
   "apps/nyxify/app.js",
   "apps/nyxtube/player-core.js",
+  "apps/nyxtube/native-player.js",
   "assets/icons/shortcut-nyxify.svg",
   "assets/games/index.html",
   "assets/ugs/play.html",

@@ -3622,6 +3622,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const side=store.get('nyx.sidebarLeft',false) ? 'left' : 'right';
     document.documentElement.dataset.nyxSidebarSide=side;
     document.body.dataset.nyxSidebarSide=side;
+    qsa('[data-sidebar-position-label]').forEach(label=>{label.textContent='Sidebar on '+side});
+    qsa('[data-switch="nyx.sidebarLeft"]').forEach(button=>{
+      button.classList.toggle('on',side==='left');
+      button.setAttribute('aria-checked',String(side==='left'));
+    });
     scheduleNyxVisualDockViewportRepair();
   }
   function applyNyxSidebarExpansion(){
@@ -5427,7 +5432,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const sidebarBlock=document.createElement('section');
       sidebarBlock.className='settings-block nyx-sidebar-location-setting';
       const sidebarLeft=store.get('nyx.sidebarLeft',false);
-      sidebarBlock.innerHTML=`<h2>Sidebar</h2><p>Choose which edge holds the Nyx navigation sidebar.</p><div class="settings-row"><span>Place sidebar on left</span><button class="settings-action ${sidebarLeft?'on':''}" data-switch="nyx.sidebarLeft" type="button">${sidebarLeft?'On':'Off'}</button></div>`;
+      sidebarBlock.innerHTML=`<h2>Sidebar</h2><p>Choose which edge holds the Nyx navigation sidebar.</p><div class="settings-row"><span data-sidebar-position-label>Sidebar on ${sidebarLeft?'left':'right'}</span><button aria-label="Place sidebar on left" class="settings-action ${sidebarLeft?'on':''}" data-switch="nyx.sidebarLeft" type="button">${sidebarLeft?'On':'Off'}</button></div>`;
       const lagBlock=document.createElement('section');
       lagBlock.className='settings-block';
       const lagOn=store.get('nyx.lagReducer',false);

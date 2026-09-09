@@ -13,6 +13,8 @@ import { server as wisp } from "@mercuryworkshop/wisp-js/server";
 import { Server as SocketIOServer } from "socket.io";
 import { linkGeneratorHourlyQuota } from "./lib/link-generator-quota.mjs";
 import { batchFiles, inspectBatchTree } from "./lib/link-generator-batch.mjs";
+import { createTubeBackend } from "./lib/nyxtube-streaming.mjs";
+import { tubeStreamingRoutes } from "./lib/nyxtube-routes.mjs";
 
 // Using the process root keeps this file compatible with Netlify's CommonJS
 // function bundle while preserving normal `node server.js` behavior.
@@ -8370,8 +8372,21 @@ function nyxTubeRoute(handler, cacheControl = "private, max-age=120") {
   };
 }
 
+const nyxTubeBackend = createTubeBackend();
+app.use(tubeStreamingRoutes({
+  backend: nyxTubeBackend, sameOrigin: sameOriginRequest, clientIp: nyxClientIp,
+  owner: async req => {
+    const context = await ownerDashboardActor(req);
+    if (context.actor.role !== "owner") { const error = new Error("Only an Owner can view video service status."); error.status = 403; throw error; }
+    return context;
+  },
+  publicVideo: async id => {
+    const [video] = await nyxTubeVideoDetails([id]);
+    if (!video) { const error = new Error("This video is unavailable."); error.status = 404; throw error; }
+  }
+}));
 app.get("/api/nyxtube/status", (_req, res) => {
-  res.set("Cache-Control", "no-store").json({ configured: Boolean(String(process.env.NYX_YOUTUBE_API_KEY || "").trim()), provider: "youtube", playback: "official-iframe-api" });
+  res.set("Cache-Control", "no-store").json({ configured: Boolean(String(process.env.NYX_YOUTUBE_API_KEY || "").trim()), provider: "youtube", playback: "official-iframe-api", nativeAvailable: nyxTubeBackend.enabled });
 });
 
 app.get("/api/nyxtube/feed", nyxTubeRoute(req => nyxTubeFeed(Math.max(1, Math.min(32, Number.parseInt(req.query?.limit, 10) || 20)))));
@@ -14440,6 +14455,7 @@ if (isDirectRun) {
 
   let shuttingDown = false;
   function shutdown(signal) {
+    void nyxTubeBackend.close();
     if (shuttingDown) return;
     shuttingDown = true;
     chatSocketServer.disconnectSockets(true);

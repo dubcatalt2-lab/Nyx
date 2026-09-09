@@ -1,0 +1,65 @@
+import assert from 'node:assert/strict';
+import { chromium } from 'playwright';
+import express from 'express';
+import { mkdtemp,rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { promisify } from 'node:util';
+import { execFile } from 'node:child_process';
+const root=await mkdtemp(join(tmpdir(),'nyx-native-ui-'));
+let server,browser;
+try {
+  const file=join(root,'fixture.mp4');
+  await promisify(execFile)(process.env.NYX_FFMPEG_BIN||'ffmpeg',['-nostdin','-v','error','-f','lavfi','-i','color=c=blue:s=640x360:r=24','-f','lavfi','-i','sine=frequency=440:sample_rate=44100','-t','30','-c:v','libx264','-pix_fmt','yuv420p','-c:a','aac','-movflags','+faststart',file]);
+  const video={id:'YE7VzlLtp-4',title:'Native player test',creator:'Test creator',description:'A test video.',durationSeconds:30,captions:true};
+  let failed=false,hold=false,checks=0,ownerState='working',ownerRole='owner';
+  const app=express();
+  app.use('/api/nyxtube',(req,res)=>{
+    if(req.path==='/status')return res.json({configured:true,nativeAvailable:true});
+    if(req.path.startsWith('/native/media/'))return res.sendFile(file);
+    if(req.path.startsWith('/native/formats/'))return failed?res.status(503).json({error:'Unavailable'}):res.json({formats:[{height:360},{height:720}]});
+    if(req.path.startsWith('/native/prepare/'))return res.json(hold?{state:'preparing'}:{state:'ready',url:`/api/nyxtube/native/media/${video.id}-${req.path.split('/').pop()}.mp4`});
+    if(req.path.startsWith('/native/jobs/'))return res.json({state:'preparing'});
+    if(req.path==='/community')return res.json({comments:{available:true,comments:[]},transcript:{available:true,segments:[{startSeconds:5,text:'Five seconds'}]}});
+    return res.json({videos:[video]});
+  });
+  app.get('/owner-test',(_req,res)=>res.send('<link rel="stylesheet" href="/css/owner-dashboard.css"><script src="/js/owner-dashboard.js"></script>'));
+  app.use('/api/owner-dashboard',(req,res)=>{
+    if(req.path==='/nyxtube/check'){checks++;ownerState='working';}
+    if(req.path.startsWith('/nyxtube'))return res.json({enabled:true,state:ownerState,lastSuccess:'2026-09-08T12:00:00Z',cacheLimitBytes:5*1024**3,cacheBytes:1024,activeJobs:0});
+    return res.json({access:{role:ownerRole,permissions:[]},users:[],metrics:{},pagination:{total:0,page:1,pages:1},recentActivity:[]});
+  });
+  app.use(express.static(process.cwd()));server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base=`http://127.0.0.1:${server.address().port}`;
+  browser=await chromium.launch({headless:true,args:['--autoplay-policy=no-user-gesture-required']});
+  const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];page.on('pageerror',e=>{errors.push(e.message);console.log('Page error:',e.message);});
+  await page.addInitScript(()=>{window.YT={PlayerState:{PLAYING:1,PAUSED:2},Player:class{
+    constructor(id,o){this.options=o;this.node=document.getElementById(id);this.node.innerHTML='<div data-test-embed style="height:100%">YouTube fallback</div>';setTimeout(()=>o.events.onReady({target:this}),0);}
+    seekTo(){}setVolume(){}setPlaybackRate(){}mute(){}playVideo(){}pauseVideo(){}getPlayerState(){return 2;}getCurrentTime(){return 0;}getDuration(){return 30;}getAvailablePlaybackRates(){return [1];}getPlaybackRate(){return 1;}destroy(){this.node.replaceChildren();}
+  }};});
+  await page.goto(base+'/apps/nyxtube/');await page.locator('.video-cover').first().click();
+  const player=page.locator('[data-watch-player] video');await page.waitForFunction(()=>document.querySelector('[data-watch-player] video')?.currentTime>0.1);
+  assert.ok(await player.evaluate(v=>v.videoWidth>0 && v.getBoundingClientRect().height>100),'Native picture is missing or collapsed');
+  await page.locator('[data-watch-toggle]').click();assert.ok(await player.evaluate(v=>v.paused));
+  await player.evaluate(v=>{v.currentTime=5;v.volume=0;v.playbackRate=1.5;v.muted=true;});
+  await page.locator('[data-watch-quality]').selectOption('360');
+  await page.waitForFunction(()=>{const v=document.querySelector('[data-watch-player] video');return v?.src.endsWith('-360.mp4')&&v.readyState>=2;});
+  const saved=await player.evaluate(v=>({time:v.currentTime,volume:v.volume,rate:v.playbackRate,muted:v.muted,paused:v.paused}));
+  assert.ok(Math.abs(saved.time-5)<.5);assert.equal(saved.volume,0);assert.equal(saved.rate,1.5);assert.ok(saved.paused&&saved.muted);
+  await page.locator('[data-watch-info-tab="transcript"]').click();await page.locator('.transcript-line').click();
+  await page.locator('[data-watch-fullscreen]').click();await page.waitForFunction(()=>Boolean(document.fullscreenElement));await page.evaluate(()=>document.exitFullscreen());
+  for(const width of [390,320]){await page.setViewportSize({width,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`Overflow at ${width}`);}
+  await page.setViewportSize({width:1280,height:900});failed=true;
+  await page.locator('[data-watch-quality]').selectOption('720');await page.locator('[data-test-embed]').waitFor();await page.waitForFunction(()=>document.querySelector('[data-watch-engine]').value==='youtube');
+  assert.ok(await page.locator('[data-watch-quality]').isDisabled());
+  failed=false;
+  await page.getByRole('button',{name:'Switch to NyxTube',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-watch-player] video')?.readyState>=1);
+  await page.getByRole('button',{name:'Switch to embedded',exact:true}).click();await page.locator('[data-test-embed]').waitFor();
+  hold=true;await page.getByRole('button',{name:'Switch to NyxTube',exact:true}).click();await page.locator('[data-back]').click();await page.waitForTimeout(1700);assert.equal(await page.locator('[data-watch-player] video').count(),0);
+  await page.goto(base+'/owner-test');await page.evaluate(()=>NyxOwnerDashboard.open({getToken:async()=> 'mock'}));
+  await page.locator('[data-owner-tube-state="working"]').waitFor();
+  ownerState='login_required';await page.locator('[data-owner-refresh]').first().click();await page.locator('[data-owner-tube-state="login_required"]').waitFor();
+  await page.locator('[data-owner-tube-check]').click();await page.locator('[data-owner-tube-state="working"]').waitFor();assert.equal(checks,1);
+  await page.setViewportSize({width:390,height:844});assert.ok(await page.locator('[data-owner-tube-status]').evaluate(el=>el.scrollWidth<=el.clientWidth+1));
+  ownerRole='admin';await page.locator('[data-owner-refresh]').first().click();await page.locator('[data-owner-tube-status]').waitFor({state:'hidden'});
+  assert.deepEqual(errors,[]);console.log('Native UI: real video playback, seek, fullscreen, quality state restoration, fallback, cancellation, 320/390px layout and Owner status passed.');
+}finally{await browser?.close();await new Promise(r=>server?server.close(r):r());await rm(root,{recursive:true,force:true});}

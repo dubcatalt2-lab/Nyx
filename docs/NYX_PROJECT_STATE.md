@@ -2,6 +2,22 @@
 
 Last repository review: 2026-09-08
 
+## Release preparation: Native NyxTube (2026-09-08)
+
+- User authorized push/deployment and native playback as the default, with an explicit Switch to embedded / Switch to NyxTube button. Server configuration enables the optional backend; unconfigured hosts retain embedded playback. Added yt-dlp/FFmpeg playback preparation, same-origin MP4 range serving, a private 5 GiB / six-hour cache, one preparation at a time, 720p maximum, one-hour public-video limit, 512 MiB input cap and disk headroom checks. Downloads use bounded byte ranges after a real full-file request stalled; a real public 360p video successfully prepared with audio in an isolated local cache that was removed afterward.
+- Existing YouTube Data API feeds/details stay in place. Native playback uses existing watch controls and falls back to the YouTube player; quality/player changes preserve position, pause, volume and speed. Shorts/Nyxify keep their existing player. Native captions are not implemented; transcripts and the YouTube fallback remain available.
+- Owner Dashboard shows last check/success, cache usage and service/login status with a manual check. Repeated authentication failures prompt a login refresh; isolated unavailable videos do not. No credentials or signed media URLs are exposed by the new routes. Cookie refresh remains manual, with no guaranteed session lifetime.
+- Added deployment prerequisites (FFmpeg, private writable cache directory) and setup instructions in `docs/NYXTUBE_BACKEND.md`. The user subsequently authorized native-default production deployment. The dedicated session export was installed privately outside the repository on the VPS, with restricted root/nyx permissions, and the server-only native settings were enabled for restart. No session contents are logged or committed. Existing YouTube API configuration is still required.
+- Validation: real FFmpeg fixture merge/decode, byte ranges, cache restart/reuse, size limits, owner access, private cookie isolation, authentication cooldown/recovery and cleanup; browser playback, seeking, fullscreen, quality state restoration, fallback/cancellation, phone layout and Owner status. Production build, deployment/branding validation and diff checks passed. The older NyxTube suite passed its app/player/Shorts checks but its later shell-discovery check still expects the retired dock; that assertion timed out. Production capacity has not been load tested.
+
+## Pending: Avatar badge spacing (2026-09-08)
+
+- Sidebar status badge moved to the avatar outer corner and reduced to a 6px center with its existing 2px border. The sidebar account button permits overflow while avatar/image corners remain circular. Four status geometries fit inside the rail; menu opening and profile onboarding regression passed. Root CSS cache `20260908-avatar-badge-v139`. Not deployed.
+
+## Pending: Sidebar direction switch (2026-09-08)
+
+- Sidebar position label reads Sidebar on left/right and updates with the current setting. The switch thumb and original lavender half-fill follow that direction on desktop and mobile. Excluded this direction control from the generic selected glass background; other switches retain their defaults. Repeated direction/runtime checks passed at 1280/390px, along with existing browser-only navigation checks. Root JS `20260908-sidebar-direction-v249`, visual CSS `20260908-sidebar-direction-v10`, beams CSS `20260908-sidebar-direction-v41`. Not deployed.
+
 ## Released: Retire Windows mode (2026-09-08)
 
 - Removed the Windows mode Settings section, legacy mode switch/message handlers, Windows chrome renderer, desktop shortcuts/search/clock markup and desktop app drag/drop implementation. Browser chrome is now unconditional; saved `nyx.browserShellMode` is discarded on startup and settings application. Shared browser window, wallpaper, account, app, keyboard and navigation code remains in use. Root script cache `20260908-browser-only-v248`. User authorized push/deployment.

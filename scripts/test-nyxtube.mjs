@@ -71,6 +71,7 @@ try {
   await page.route("**/api/nyxtube/feed?**", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ provider: "youtube", videos }) }));
   await page.route("**/api/nyxtube/search?**", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ provider: "youtube", videos: [videos[1]] }) }));
   await page.route("**/api/nyxtube/shorts?**", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ provider: "youtube", videos: shorts }) }));
+  await page.route("**/api/nyxtube/channel?**", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ channel: { title: "Test Studio", description: "Test channel" }, videos: [videos[1]] }) }));
   await page.route("**/api/nyxtube/community?**", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({
     provider: "youtube",
     comments: { available: true, comments: [{ id: "comment-1", author: "Viewer One", avatarUrl: "", text: "This comment came from YouTube.", likeCount: 8, replyCount: 2, publishedAt: "2026-08-22T12:00:00.000Z" }] },
@@ -106,10 +107,13 @@ try {
   await page.locator("[data-watch-channel-mark] img").waitFor();
   assert(await page.locator("[data-watch-creator]").textContent() === "Test Studio", "Watch page did not render the creator name as a channel action");
   if (!livePlayer) {
-    await page.locator("[data-watch-channel-mark]").click();
-    await page.waitForFunction(() => window.__nyxTubeOpenedChannels.includes("https://www.youtube.com/channel/UCabcdefghijklmnopqrstuv"));
-    await page.locator("[data-watch-creator]").click();
-    await page.waitForFunction(() => window.__nyxTubeOpenedChannels.filter(url => url === "https://www.youtube.com/channel/UCabcdefghijklmnopqrstuv").length === 2);
+    for (const selector of ["[data-watch-channel-mark]", "[data-watch-creator]"]) {
+      await page.locator(selector).click();
+      await page.locator('[data-view="channel"]').waitFor({ state: "visible" });
+      await page.getByText("Test channel", { exact: true }).waitFor();
+      await page.locator("[data-channel-back]").click();
+      await page.locator("[data-mock-youtube-player]").waitFor({ state: "attached" });
+    }
   }
   assert((await page.locator("[data-watch-description]").textContent())?.includes("visible below"), "Watch description was not rendered");
   assert(await page.locator("[data-watch-views]").textContent() === "8,421", "Watch page did not show the exact view count");

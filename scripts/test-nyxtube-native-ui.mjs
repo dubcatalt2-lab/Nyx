@@ -12,11 +12,12 @@ try {
   const file=join(root,'fixture.mp4');
   await promisify(execFile)(process.env.NYX_FFMPEG_BIN||'ffmpeg',['-nostdin','-v','error','-f','lavfi','-i','color=c=blue:s=640x360:r=24','-f','lavfi','-i','sine=frequency=440:sample_rate=44100','-t','30','-c:v','libx264','-pix_fmt','yuv420p','-c:a','aac','-movflags','+faststart',file]);
   const video={id:'YE7VzlLtp-4',title:'Native player test',creator:'Test creator',description:'A test video.',durationSeconds:30,captions:true};
-  let failed=false,hold=false,checks=0,ownerState='working',ownerRole='owner';
+  let busyReplies=2,failed=false,hold=false,checks=0,ownerState='working',ownerRole='owner';
   const app=express();
   app.use('/api/nyxtube',(req,res)=>{
     if(req.path==='/status')return res.json({configured:true,nativeAvailable:true});
     if(req.path.startsWith('/native/media/'))return res.sendFile(file);
+    if(req.path.startsWith('/native/formats/') && busyReplies-->0)return res.status(429).json({code:'busy',error:'Another video is being prepared.'});
     if(req.path.startsWith('/native/formats/'))return failed?res.status(503).json({error:'Unavailable'}):res.json({formats:[{height:360},{height:720}]});
     if(req.path.startsWith('/native/prepare/'))return res.json(hold?{state:'preparing'}:{state:'ready',url:`/api/nyxtube/native/media/${video.id}-${req.path.split('/').pop()}.mp4`});
     if(req.path.startsWith('/native/jobs/'))return res.json({state:'preparing'});

@@ -2,6 +2,13 @@
 
 Last repository review: 2026-09-09
 
+## Pending: Native playback recovery (2026-09-09)
+
+- Native format lookup now serves cached metadata or ready video qualities before checking global download contention/cooldown. The client waits and retries temporary busy responses for up to one minute per request instead of immediately falling back; cancellation still stops waiting. Actual request-quota responses have a separate code and are not blindly retried. Rejected requests no longer consume the request allowance.
+- Downloads retry a failed byte range twice within the existing total deadline, truncating partial data back to the last completed range first. Video restrictions and upstream rate limits are not retried. Fallback notices include the sanitized server reason instead of implying cache fullness.
+- Backend tests cover cached access during cooldown/concurrent preparation and both connection-reset and partial-body retries followed by real audio/video decode. Browser tests cover busy recovery, cancellation and existing player/settings/dashboard behavior. Not deployed.
+- Code Sandbox typing report remains under investigation: typing and focus passed both standalone and inside the fully loaded live Nyx shell. Asked the user for browser/device and exact typing symptoms; no speculative editor changes made.
+
 ## Released: Owner Dashboard overlap (2026-09-09)
 
 - The native status section added a fourth dashboard child to a three-row grid, squeezing metric cards into the Users toolbar. Reserve four rows when the status section is visible, with scrolling at short heights. Prevent mobile dashboard sections from shrinking over their contents.

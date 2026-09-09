@@ -335,7 +335,7 @@
       },
       onError: event => {
         if(generation !== state.watchGeneration || state.view !== "watch") return;
-        if(native) { notice("Native playback is unavailable for this video. Opening the YouTube player."); createWatch(video, false, true, restore).catch(()=>notice("The video player could not start.")); }
+        if(native) { notice(event.target?.failure ? `Native playback could not start: ${event.target.failure} Opening the YouTube player.` : "Native playback is unavailable for this video. Opening the YouTube player."); createWatch(video, false, true, restore).catch(()=>notice("The video player could not start.")); }
         else recoverWatch(video, Number(event?.data), YT === directYoutubeApi);
       },
     };

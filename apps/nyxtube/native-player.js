@@ -14,9 +14,22 @@
       this.video.addEventListener('loadedmetadata',()=>emit('onReady'),{once:true});
       this.prepare().catch(error=>{if(!this.controller.signal.aborted){this.failure=error.message;emit('onError',900);}});
     }
+    wait(ms) {
+      return new Promise((resolve,reject)=>{
+        const signal=this.controller.signal;
+        const abort=()=>{clearTimeout(timer);reject(new DOMException('Aborted','AbortError'));};
+        const timer=setTimeout(()=>{signal.removeEventListener('abort',abort);resolve();},ms);
+        signal.addEventListener('abort',abort,{once:true});if(signal.aborted)abort();
+      });
+    }
     async json(path, options={}) {
-      const res=await fetch(path,{...options,credentials:'same-origin',signal:this.controller.signal});
-      const data=await res.json();if(!res.ok)throw new Error(data.error||'Native playback unavailable.');return data;
+      for(let attempt=0;;attempt++) {
+        const res=await fetch(path,{...options,credentials:'same-origin',signal:this.controller.signal});
+        const data=await res.json();
+        if(res.ok)return data;
+        if(res.status===429 && data.code==='busy' && attempt<20) {await this.wait(3000);continue;}
+        throw new Error(data.error||'Native playback unavailable.');
+      }
     }
     async prepare() {
       const id=encodeURIComponent(this.options.videoId);
@@ -27,12 +40,7 @@
       let result=await this.json(`/api/nyxtube/native/prepare/${id}/${this.quality}`,{method:'POST'});
       const deadline=Date.now()+5*60000;
       while(result.state==='preparing'&&Date.now()<deadline) {
-        await new Promise((resolve,reject)=>{
-          const signal=this.controller.signal;
-          const abort=()=>{clearTimeout(timer);reject(new DOMException('Aborted','AbortError'));};
-          const timer=setTimeout(()=>{signal.removeEventListener('abort',abort);resolve();},1500);
-          signal.addEventListener('abort',abort,{once:true});if(signal.aborted)abort();
-        });
+        await this.wait(1500);
         result=await this.json(`/api/nyxtube/native/jobs/${id}/${this.quality}`);
       }
       if(result.state!=='ready'||!new RegExp(`^/api/nyxtube/native/media/${this.options.videoId}-(360|480|720)\\.mp4$`).test(result.url||''))throw new Error('The video could not be prepared.');

@@ -38,6 +38,7 @@
     var(--owner-bg);
   box-shadow:0 30px 90px rgba(0,0,0,.6);
 }
+.nyx-owner-dashboard:has(> [data-owner-tube-status]:not([hidden])){grid-template-rows:auto auto auto minmax(240px,1fr);overflow-y:auto}
 .nyx-owner-header{display:flex;align-items:flex-start;justify-content:space-between;gap:24px}
 .nyx-owner-header>div:first-child{display:grid;gap:3px}
 .nyx-owner-eyebrow{color:var(--owner-accent);font-size:10px;font-weight:800;letter-spacing:.16em}

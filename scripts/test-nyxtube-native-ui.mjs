@@ -23,7 +23,7 @@ try {
     if(req.path==='/community')return res.json({comments:{available:true,comments:[]},transcript:{available:true,segments:[{startSeconds:5,text:'Five seconds'}]}});
     return res.json({videos:[video]});
   });
-  app.get('/owner-test',(_req,res)=>res.send('<link rel="stylesheet" href="/css/owner-dashboard.css"><script src="/js/owner-dashboard.js"></script>'));
+  app.get('/owner-test',(_req,res)=>res.send('<link rel="stylesheet" href="/css/owner-dashboard.css"><link rel="stylesheet" href="/css/owner-dashboard-polish.css"><script src="/js/owner-dashboard.js"></script>'));
   app.use('/api/owner-dashboard',(req,res)=>{
     if(req.path==='/nyxtube/check'){checks++;ownerState='working';}
     if(req.path.startsWith('/nyxtube'))return res.json({enabled:true,state:ownerState,lastSuccess:'2026-09-08T12:00:00Z',cacheLimitBytes:5*1024**3,cacheBytes:1024,activeJobs:0});
@@ -67,6 +67,11 @@ try {
   hold=true;await page.getByRole('button',{name:'Switch to NyxTube',exact:true}).click();await page.locator('[data-back]').click();await page.waitForTimeout(1700);assert.equal(await page.locator('[data-watch-player] video').count(),0);
   await page.goto(base+'/owner-test');await page.evaluate(()=>NyxOwnerDashboard.open({getToken:async()=> 'mock'}));
   await page.locator('[data-owner-tube-state="working"]').waitFor();
+  for (const [width,height] of [[1920,1080],[1280,720],[1024,600],[390,844]]) {
+    await page.setViewportSize({width,height});
+    const boxes=await page.evaluate(()=>{const rect=s=>document.querySelector(s).getBoundingClientRect();return {status:rect('[data-owner-tube-status]').bottom,metricsTop:rect('[data-owner-metrics]').top,metricsBottom:Math.max(rect('[data-owner-metrics]').bottom,...[...document.querySelectorAll('.nyx-owner-metric')].map(el=>el.getBoundingClientRect().bottom)),workspace:rect('.nyx-owner-workspace').top,toolbar:rect('.nyx-owner-panel-head').top};});
+    assert.ok(boxes.status<=boxes.metricsTop && boxes.metricsBottom<=boxes.workspace && boxes.metricsBottom<=boxes.toolbar,`Dashboard overlap at ${width}x${height}: ${JSON.stringify(boxes)}`);
+  }
   ownerState='login_required';await page.locator('[data-owner-refresh]').first().click();await page.locator('[data-owner-tube-state="login_required"]').waitFor();
   await page.locator('[data-owner-tube-check]').click();await page.locator('[data-owner-tube-state="working"]').waitFor();assert.equal(checks,1);
   await page.setViewportSize({width:390,height:844});assert.ok(await page.locator('[data-owner-tube-status]').evaluate(el=>el.scrollWidth<=el.clientWidth+1));

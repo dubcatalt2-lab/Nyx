@@ -2,6 +2,11 @@
 
 Last repository review: 2026-09-08
 
+## Pending: Owner Dashboard overlap (2026-09-09)
+
+- The native status section added a fourth dashboard child to a three-row grid, squeezing metric cards into the Users toolbar. Reserve four rows when the status section is visible, with scrolling at short heights. Prevent mobile dashboard sections from shrinking over their contents.
+- Browser regression reproduced the overlap before the change, then verified status/card/toolbar separation at 1920x1080, 1280x720, 1024x600 and 390x844 using both dashboard stylesheets. Native-player and Owner status/role checks also passed. Deployment remains blocked by SSH authentication.
+
 ## Pending: NyxTube settings menu (2026-09-09)
 
 - Reproduced the gear menu extending above the video frame on phone widths, where the player clips its upper controls. The menu now fits within the frame with internal scrolling, and opening it focuses playback speed without scrolling the document. Cache versions updated.

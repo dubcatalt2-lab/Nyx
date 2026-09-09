@@ -2,11 +2,11 @@
 
 Last repository review: 2026-09-09
 
-## Pending: Native playback recovery (2026-09-09)
+## Released: Native playback recovery (2026-09-09)
 
 - Native format lookup now serves cached metadata or ready video qualities before checking global download contention/cooldown. The client waits and retries temporary busy responses for up to one minute per request instead of immediately falling back; cancellation still stops waiting. Actual request-quota responses have a separate code and are not blindly retried. Rejected requests no longer consume the request allowance.
 - Downloads retry a failed byte range twice within the existing total deadline, truncating partial data back to the last completed range first. Video restrictions and upstream rate limits are not retried. Fallback notices include the sanitized server reason instead of implying cache fullness.
-- Backend tests cover cached access during cooldown/concurrent preparation and both connection-reset and partial-body retries followed by real audio/video decode. Browser tests cover busy recovery, cancellation and existing player/settings/dashboard behavior. Not deployed.
+- Backend tests cover cached access during cooldown/concurrent preparation and both connection-reset and partial-body retries followed by real audio/video decode. Browser tests cover busy recovery, cancellation and existing player/settings/dashboard behavior. Released application `9191b53` to OVH; production build/deploy/branding checks passed. Live Chromium played the public 596.5-second test video at 720p, with 12.47 seconds from uncached navigation to playback, 1.13 seconds from ready response to playback, and 0.84 seconds on cached navigation. These are single-run measurements, not capacity guarantees. Seeking passed with no page errors. Apex/www/custom-domain health returned 200; Nyx/Caddy/coturn active. Existing dependency/Caddy warnings unchanged.
 - Code Sandbox typing report remains under investigation: typing and focus passed both standalone and inside the fully loaded live Nyx shell. Asked the user for browser/device and exact typing symptoms; no speculative editor changes made.
 
 ## Released: Owner Dashboard overlap (2026-09-09)

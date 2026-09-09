@@ -1,16 +1,16 @@
 # Nyx Project State
 
-Last repository review: 2026-09-08
+Last repository review: 2026-09-09
 
-## Pending: Owner Dashboard overlap (2026-09-09)
+## Released: Owner Dashboard overlap (2026-09-09)
 
 - The native status section added a fourth dashboard child to a three-row grid, squeezing metric cards into the Users toolbar. Reserve four rows when the status section is visible, with scrolling at short heights. Prevent mobile dashboard sections from shrinking over their contents.
-- Browser regression reproduced the overlap before the change, then verified status/card/toolbar separation at 1920x1080, 1280x720, 1024x600 and 390x844 using both dashboard stylesheets. Native-player and Owner status/role checks also passed. Deployment remains blocked by SSH authentication.
+- Browser regression reproduced the overlap before the change, then verified status/card/toolbar separation at 1920x1080, 1280x720, 1024x600 and 390x844 using both dashboard stylesheets. Native-player and Owner status/role checks also passed. Released as `db097ba` after SSH was unlocked. The OVH updater completed, and live deployed dashboard styles passed all four viewport checks with mock account data. Apex, www and custom-domain health returned HTTP 200; Nyx/Caddy/coturn are active. Existing dependency and Caddy warnings remain unchanged.
 
-## Pending: NyxTube settings menu (2026-09-09)
+## Released: NyxTube settings menu (2026-09-09)
 
 - Reproduced the gear menu extending above the video frame on phone widths, where the player clips its upper controls. The menu now fits within the frame with internal scrolling, and opening it focuses playback speed without scrolling the document. Cache versions updated.
-- Chromium verified menu bounds, speed/volume changes, Escape dismissal and expanded state at 1280/390/320px alongside native playback regressions. Not deployed; the current local SSH key is accepted by the VPS but cannot authenticate without its unlocked signing state.
+- Chromium verified menu bounds, speed/volume changes, Escape dismissal and expanded state at 1280/390/320px alongside native playback regressions. Released with `16c7bbc` / `db097ba`. Live NyxTube menu bounds and Escape dismissal passed at 1280/390/320px with no page errors. Production build and deployment/branding checks passed.
 
 ## Released: Native NyxTube (2026-09-08)
 

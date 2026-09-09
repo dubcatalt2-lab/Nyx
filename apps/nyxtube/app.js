@@ -631,7 +631,7 @@
     refs.watchCaptions.addEventListener("click", watchCaptions); refs.watchCaptionOption.addEventListener("click", watchCaptions); refs.watchFullscreen.addEventListener("click", () => fullscreen(refs.watchStage));
     refs.watchSettings.addEventListener("click", event => {
       event.stopPropagation(); const opening = refs.watchSettingsMenu.hidden; closeWatchSettings();
-      if (opening) { refs.watchSettingsMenu.hidden = false; refs.watchSettings.setAttribute("aria-expanded", "true"); refs.watchSpeed.focus(); }
+      if (opening) { refs.watchSettingsMenu.hidden = false; refs.watchSettings.setAttribute("aria-expanded", "true"); refs.watchSpeed.focus({ preventScroll: true }); }
     });
     refs.watchSettingsMenu.addEventListener("click", event => event.stopPropagation());
     refs.watchSpeed.addEventListener("change", () => { try { state.watchPlayer?.setPlaybackRate?.(Number(refs.watchSpeed.value) || 1); } catch { /* YouTube rejected this rate. */ } });

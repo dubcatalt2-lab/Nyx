@@ -48,6 +48,16 @@ try {
   await page.locator('[data-watch-info-tab="transcript"]').click();await page.locator('.transcript-line').click();
   await page.locator('[data-watch-fullscreen]').click();await page.waitForFunction(()=>Boolean(document.fullscreenElement));await page.evaluate(()=>document.exitFullscreen());
   for(const width of [390,320]){await page.setViewportSize({width,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`Overflow at ${width}`);}
+  for(const width of [1280,390,320]) {
+    await page.setViewportSize({width,height:900});
+    await page.locator('[data-watch-settings]').click();
+    const menu=page.locator('[data-watch-settings-menu]');assert.ok(await menu.isVisible());
+    assert.ok(await menu.evaluate(el=>{const a=el.getBoundingClientRect(),b=el.closest('.watch-player').getBoundingClientRect();return a.top>=b.top && a.bottom<=b.bottom;}),'Settings clipped by player');
+    await page.locator('[data-watch-speed]').selectOption('1.25');assert.equal(await player.evaluate(v=>v.playbackRate),1.25);
+    await page.locator('[data-watch-volume]').fill('35');assert.ok(Math.abs(await player.evaluate(v=>v.volume)-.35)<.01);
+    await page.keyboard.press('Escape');assert.ok(await menu.isHidden());
+    assert.equal(await page.locator('[data-watch-settings]').getAttribute('aria-expanded'),'false');
+  }
   await page.setViewportSize({width:1280,height:900});failed=true;
   await page.locator('[data-watch-quality]').selectOption('720');await page.locator('[data-test-embed]').waitFor();await page.waitForFunction(()=>document.querySelector('[data-watch-engine]').value==='youtube');
   assert.ok(await page.locator('[data-watch-quality]').isDisabled());

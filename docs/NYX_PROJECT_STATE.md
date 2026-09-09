@@ -2,6 +2,11 @@
 
 Last repository review: 2026-09-08
 
+## Pending: NyxTube settings menu (2026-09-09)
+
+- Reproduced the gear menu extending above the video frame on phone widths, where the player clips its upper controls. The menu now fits within the frame with internal scrolling, and opening it focuses playback speed without scrolling the document. Cache versions updated.
+- Chromium verified menu bounds, speed/volume changes, Escape dismissal and expanded state at 1280/390/320px alongside native playback regressions. Not deployed; the current local SSH key is accepted by the VPS but cannot authenticate without its unlocked signing state.
+
 ## Released: Native NyxTube (2026-09-08)
 
 - Application release `68c3439` and backend redirect fix `3119436` pushed and deployed to OVH. Native playback is enabled and starts by default for watch videos; Switch to embedded / Switch to NyxTube is beside Quality. Live Chromium verified real 1280x720 playback, seeking, embedded switching, cached native return and 390px layout with no page errors. FFprobe verified H.264 video and AAC audio; backend health is working, temporary jobs cleaned up, cookie file mode is 0640. Apex, www and custom-domain health returned 200; Nyx/Caddy/coturn active. Existing runtime dependency findings (8 moderate, 4 high) and Caddy warnings remain unchanged.

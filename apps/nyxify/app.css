@@ -1866,3 +1866,10 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* whoever did this css is so cool and talented, i love them so much. i want to be them when i grow up. (why did my vscode put that last part!?) */
+
+#musicPlaybackStatus { font-size: .82rem; color: var(--text-muted, #a4a4b8); margin: 8px 0; overflow-wrap: anywhere; }
+.play-btn.is-loading i { visibility: hidden; }
+.play-btn.is-loading { position: relative; }
+.play-btn.is-loading::after { content: ''; position: absolute; inset: 10px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: music-loading .8s linear infinite; }
+@keyframes music-loading { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .play-btn.is-loading::after { animation: none; } }

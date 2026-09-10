@@ -16,6 +16,7 @@ import { batchFiles, inspectBatchTree } from "./lib/link-generator-batch.mjs";
 import { createTubeBackend } from "./lib/nyxtube-streaming.mjs";
 import { createTubeCatalog } from "./lib/nyxtube-catalog.mjs";
 import { tubeStreamingRoutes } from "./lib/nyxtube-routes.mjs";
+import { createMetingBackend } from "./lib/nyxify-meting.mjs";
 
 // Using the process root keeps this file compatible with Netlify's CommonJS
 // function bundle while preserving normal `node server.js` behavior.
@@ -51,6 +52,7 @@ let catClassGamesCache = { games: [], expires: 0, promise: null };
 let catClassCoverUrls = new Set();
 const nyxCustomRoleLabelLimit = 64;
 const app = express();
+const nyxifyMeting = createMetingBackend();
 
 function normalizePublicWispUrl(value) {
   try {
@@ -12617,7 +12619,7 @@ app.put("/api/nyxify/playlists", async (req, res) => {
 app.get("/api/nyxify/status", (req, res) => {
   res.set("Cache-Control", "public, max-age=60");
   if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
-  res.json({ configured: true, provider: "deezer-tidal-octave", providerLabel: "Deezer + Tidal search · NyxTube playback" });
+  res.json({ configured: true, provider: "deezer-tidal-meting", providerLabel: "Deezer + Tidal search · Native audio playback" });
 });
 
 app.get("/api/nyxify/home", async (req, res) => {
@@ -12655,6 +12657,28 @@ for (const detailType of ["artist", "album"]) {
     }
   });
 }
+
+app.get("/api/nyxify/playback/:trackId", async (req, res) => {
+  res.set("Cache-Control", "private, no-store");
+  if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
+  if (!nyxifyTrackIdPattern.test(String(req.params.trackId))) return res.status(400).json({ error: "Invalid Nyxify track." });
+  try {
+    res.json(await nyxifyMeting.resolve({ title: req.query.title, artist: req.query.artist, duration: req.query.duration }));
+  } catch (error) {
+    if (error.status === 503) res.set("Retry-After", "5");
+    res.status(error.status || 502).json({ error: error.status ? error.message : "Music lookup is temporarily unavailable." });
+  }
+});
+
+app.get("/api/nyxify/audio/:id", async (req, res) => {
+  if (!sameOriginRequest(req)) return res.status(403).send("Cross-origin requests are not allowed.");
+  try { await nyxifyMeting.stream(req, res); }
+  catch (error) {
+    if (res.headersSent || res.destroyed) { if (!res.destroyed) res.destroy(); return; }
+    if (error.status === 503) res.set("Retry-After", "5");
+    res.status(error.status || 502).type("text/plain").send(error.status ? error.message : "Full audio is temporarily unavailable.");
+  }
+});
 
 app.get("/api/nyxify/full-track/:trackId", async (req, res) => {
   res.set("Cache-Control", "private, max-age=300, stale-while-revalidate=3600");

@@ -75,7 +75,7 @@ const nyxtubedirectapi = window.NyxTubePlayerCore.createDirectYoutubeApi({ optim
 const fullTrackMatchCache = new Map();
 const fullTrackMatchInflight = new Map();
 const fullTrackMatchStorageKey = 'nyx_nyxify_full_track_matches_v1';
-const fullTrackMatchTtlMs = 6 * 60 * 60_000;
+const fullTrackMatchTtlMs = 5 * 60_000;
 const fullTrackMatchLimit = 24;
 let fullTrackPrefetchRevision = 0;
 
@@ -150,7 +150,7 @@ function fulltrackcachekey(track) {
 }
 
 function validfulltrackmatch(match) {
-  return match?.mode === 'octave' && /^[A-Za-z0-9_-]{11}$/.test(String(match.videoId || ''));
+  return match?.mode === 'meting' && /^\/api\/nyxify\/audio\/\d{1,16}$/.test(String(match.streamUrl || ''));
 }
 
 function persistfulltrackmatches() {
@@ -200,7 +200,7 @@ function fulltrackurl(track) {
     duration: String(Math.max(0, Number(track?.duration) || 0)),
     catalog: String(track?.catalog || '')
   });
-  return `/api/nyxify/full-track/${encodeURIComponent(track?.id || '')}?${hints.toString()}`;
+  return `/api/nyxify/playback/${encodeURIComponent(track?.id || '')}?${hints.toString()}`;
 }
 
 function getfulltrackmatch(track) {
@@ -1723,10 +1723,12 @@ function usepreview(autoplay = true, message = '') {
   destroyoctaveplayer();
   setoctavevideo();
   playbackmode = 'preview';
+  nativePending = false;
+  document.getElementById('playBtn').classList.remove('is-loading');
   const source = previewsource();
   audio.pause();
   if (source) {
-    if (new URL(audio.currentSrc || audio.src || source, location.href).pathname !== source) audio.src = source;
+    if (!audio.getAttribute('src') || new URL(audio.getAttribute('src'), location.href).pathname !== source) audio.src = source;
   } else {
     audio.removeAttribute('src');
     audio.load();
@@ -1743,133 +1745,88 @@ function octaveerror(message) {
   usepreview(Boolean(previewsource()), fallback);
 }
 
-async function startoctavetrack(track, request) {
-  fullTrackStage.hidden = false;
-  fullTrackStage.dataset.playbackState = 'loading';
-  delete fullTrackStage.dataset.lastError;
-  fullTrackTitle.textContent = track.title || 'Full track';
-  fullTrackStatus.textContent = 'Finding the full song...';
+let nativePending = false;
+let nativeWantPlay = true;
+let nativeRetries = 0;
+const musicPlaybackStatus = document.getElementById('musicPlaybackStatus');
+function musicstatus(message, loading = false) {
+  musicPlaybackStatus.textContent = message;
+  fullTrackStatus.textContent = message;
+  document.getElementById('playBtn').classList.toggle('is-loading', loading);
+}
+async function startmetingtrack(track, request, resumeAt = 0) {
+  nativePending = true;
+  playbackmode = 'meting';
   setoctavevideo();
+  audio.pause();
+  audio.removeAttribute('src');
+  audio.load();
+  fullTrackTitle.textContent = track.title || 'Full track';
+  musicstatus('Finding the full song?', true);
   try {
-    const playerApi = ensureoctaveapi();
     const match = await getfulltrackmatch(track);
-    if (request !== octaverequest || curtrack?.id !== track.id) return;
-    if (match.mode !== 'octave' || !/^[A-Za-z0-9_-]{11}$/.test(String(match.videoId || ''))) {
-      throw new Error('No playable full song was found.');
-    }
-    const octaveCandidates = (Array.isArray(match.candidates) ? match.candidates : [match])
-      .filter(candidate => /^[A-Za-z0-9_-]{11}$/.test(String(candidate?.videoId || '')))
-      .slice(0, 8);
-    if (!octaveCandidates.length) throw new Error('No playable full song was found.');
-    let octaveCandidateIndex = 0;
-    setoctavevideo(octaveCandidates[0]);
-    fullTrackTitle.textContent = octaveCandidates[0].title || match.title || track.title;
+    if (request !== octaverequest || curtrack !== track) return;
+    if (!validfulltrackmatch(match)) throw new Error('No matching full recording is available.');
+    nativePending = false;
+    audio.src = match.streamUrl;
+    pendingseek = resumeAt > 0 ? resumeAt : null;
+    musicstatus('Loading full song?', true);
+    dlBtn.hidden = true;
     schedulequeueprefetch();
-    const YT = await playerApi;
-    if (request !== octaverequest || curtrack?.id !== track.id) return;
-    destroyoctaveplayer();
-    fullTrackStage.hidden = false;
-    fullTrackStage.dataset.playbackState = 'loading';
-    fullTrackStatus.textContent = 'Loading full song...';
-    ensureoctaveframe();
-    octaveplayer = new YT.Player('fullTrackFrame', {
-      width: '240',
-      height: '240',
-      videoId: octaveCandidates[0].videoId,
-      host: 'https://www.youtube-nocookie.com',
-      expectedDuration: Number(match.durationSeconds) || Number(track.duration) || 0,
-      playerVars: {
-        autoplay: 1,
-        controls: 0,
-        disablekb: 1,
-        fs: 1,
-        modestbranding: 1,
-        playsinline: 1,
-        enablejsapi: 1,
-        rel: 0,
-        origin: location.origin
-      },
-      events: {
-        onReady(event) {
-          if (request !== octaverequest || curtrack?.id !== track.id) return;
-          octavepending = true;
-          const volume = Math.min(100, Math.max(0, Number(volBar.value) || 0));
-          event.target.setVolume?.(volume);
-          fullTrackStatus.textContent = audio.paused ? 'Full song ready - press play' : 'Starting full song...';
-          event.target.playVideo?.();
-          setTimeout(() => {
-            if (request !== octaverequest || !octavepending || playbackmode === 'octave') return;
-            fullTrackStage.dataset.playbackState = 'ready';
-            fullTrackStatus.textContent = 'Full song ready - press play';
-          }, 1_500);
-          const duration = Number(event.target.getDuration?.()) || Number(match.durationSeconds) || Number(track.duration) || 0;
-          if (duration) document.getElementById('timeTotal').textContent = fmt(duration);
-        },
-        onStateChange(event) {
-          if (request !== octaverequest) return;
-          const state = event.data;
-          octaveplaying = state === YT.PlayerState.PLAYING;
-          if (octaveplaying) {
-            playbackmode = 'octave';
-            octavepending = false;
-            audio.pause();
-            dlBtn.hidden = true;
-            playIcon.className = 'material-symbols--pause-rounded';
-            fullTrackStage.dataset.playbackState = 'playing';
-            fullTrackStatus.textContent = 'Playing full song';
-            startoctaveprogress();
-          } else if (state === YT.PlayerState.PAUSED && playbackmode === 'octave') {
-            playIcon.className = 'line-md--play-filled';
-            fullTrackStage.dataset.playbackState = 'paused';
-          } else if (state === YT.PlayerState.BUFFERING) {
-            fullTrackStage.dataset.playbackState = 'buffering';
-            fullTrackStatus.textContent = 'Buffering the full song...';
-          } else if (state === YT.PlayerState.CUED || state === YT.PlayerState.PAUSED) {
-            octavepending = true;
-            fullTrackStage.dataset.playbackState = 'ready';
-            fullTrackStatus.textContent = 'Full song ready - press play';
-          } else if (state === YT.PlayerState.ENDED) {
-            octaveplaying = false;
-            if (repeatmode === 'one') {
-              event.target.seekTo?.(0, true);
-              event.target.playVideo?.();
-            } else {
-              advance(false);
-            }
-          }
-        },
-        onError(event) {
-          if (request !== octaverequest) return;
-          fullTrackStage.dataset.lastError = String(event.data ?? 'unknown');
-          octaveCandidateIndex += 1;
-          const next = octaveCandidates[octaveCandidateIndex];
-          if (next) {
-            setoctavevideo(next);
-            fullTrackStage.dataset.playbackState = 'loading';
-            fullTrackTitle.textContent = next.title || track.title;
-            fullTrackStatus.textContent = 'Trying another full-song source...';
-            event.target.loadVideoById?.(next.videoId);
-            return;
-          }
-          octaveerror('No matching full song could be embedded.');
-        }
+    if (nativeWantPlay) {
+      try { await audio.play(); }
+      catch (error) {
+        if (request !== octaverequest || curtrack !== track) return;
+        if (error.name === 'NotAllowedError') musicstatus('Full song ready ? press play.');
+        // Media errors are handled by the audio error event, not by two competing retries.
+        else if (error.name !== 'AbortError' && !audio.error) musicstatus('Unable to start audio. Press play to retry.');
       }
-    });
+    } else musicstatus('Full song ready ? press play.');
   } catch (error) {
-    if (request === octaverequest && curtrack?.id === track.id) octaveerror(error.message);
+    if (request !== octaverequest || curtrack !== track) return;
+    metingfallback(error.message);
   }
 }
+function metingfallback(reason) {
+  const preview = Boolean(previewsource());
+  const message = reason + (preview ? (nativeWantPlay ? ' Playing a short preview instead.' : ' A short preview is available — press play.') : ' No preview is available.');
+  evictfulltrackmatch(curtrack);
+  usepreview(preview && nativeWantPlay);
+  musicstatus(message);
+}
+audio.addEventListener('playing', () => {
+  if (playbackmode === 'meting') musicstatus('Playing full song');
+});
+audio.addEventListener('waiting', () => {
+  if (playbackmode === 'meting') musicstatus('Buffering full song?', true);
+});
+audio.addEventListener('canplay', () => {
+  if (playbackmode === 'meting' && audio.paused) musicstatus('Full song ready ? press play.');
+});
+audio.addEventListener('error', () => {
+  if (playbackmode === 'preview' && audio.error) { musicstatus('The preview is unavailable. Try another song.'); return; }
+  if (playbackmode !== 'meting' || nativePending || !curtrack || !audio.error) return;
+  if (nativeRetries++ === 0) {
+    const resumeAt = audio.currentTime || 0;
+    evictfulltrackmatch(curtrack);
+    void startmetingtrack(curtrack, octaverequest, resumeAt);
+  } else metingfallback('Full audio is unavailable right now.');
+});
 
 function playbackpaused() {
+  if (nativePending) return !nativeWantPlay;
   return playbackmode === 'octave' ? !octaveplaying : audio.paused;
 }
 
 function playbackplay() {
+  nativeWantPlay = true;
+  if (nativePending) return;
   if (playbackmode === 'octave' || octavepending) octaveplayer?.playVideo?.();
   else audio.play().catch(() => {});
 }
 
 function playbackpause() {
+  nativeWantPlay = false;
   if (playbackmode === 'octave') octaveplayer?.pauseVideo?.();
   else audio.pause();
 }
@@ -1896,8 +1853,7 @@ fullTrackFullscreen.addEventListener('click', togglenowplayingfullscreen);
 document.addEventListener('fullscreenchange', syncnowplayingfullscreen);
 document.addEventListener('webkitfullscreenchange', syncnowplayingfullscreen);
 setoctavevideo();
-if ('requestIdleCallback' in window) requestIdleCallback(() => { void ensureoctaveapi(); }, { timeout: 2_000 });
-else setTimeout(() => { void ensureoctaveapi(); }, 750);
+
 
 function playtrack(t, list, context = '') {
   cancelqueuedseek();
@@ -1912,8 +1868,9 @@ function playtrack(t, list, context = '') {
 
   usepreview(false);
   const fullTrackRequest = octaverequest;
-  if (previewsource()) audio.play().catch(() => {});
-  void startoctavetrack(t, fullTrackRequest);
+  nativeRetries = 0;
+  nativeWantPlay = true;
+  void startmetingtrack(t, fullTrackRequest);
 
   setcover(document.getElementById('pArt'), t.cover, `${t.title} cover`);
   document.getElementById('pTitle').textContent = t.title;
@@ -1977,7 +1934,7 @@ document.getElementById('nextBtn').addEventListener('click', () => advance(true)
 document.getElementById('prevBtn').addEventListener('click', playprev);
 
 audio.addEventListener('ended', () => {
-  if (playbackmode !== 'preview') return;
+  if (playbackmode === 'octave') return;
   if (octavepending && octaveplayer) {
     playIcon.className = 'line-md--play-filled';
     fullTrackStage.dataset.playbackState = 'ready';
@@ -2026,10 +1983,10 @@ playBtn.addEventListener('click', () => {
   if (octavepending || playbackpaused()) playbackplay(); else playbackpause();
 });
 audio.addEventListener('play', () => {
-  if (playbackmode === 'preview') playIcon.className = 'material-symbols--pause-rounded';
+  if (playbackmode !== 'octave') playIcon.className = 'material-symbols--pause-rounded';
 });
 audio.addEventListener('pause', () => {
-  if (playbackmode === 'preview') playIcon.className = 'line-md--play-filled';
+  if (playbackmode !== 'octave') playIcon.className = 'line-md--play-filled';
 });
 
 const pLikeBtn = document.getElementById('pLike');
@@ -2113,6 +2070,11 @@ function updateseek(sec) {
 }
 
 audio.addEventListener('loadedmetadata', () => {
+  if (playbackmode === 'meting' && Number(curtrack?.duration) > 0 && Number.isFinite(audio.duration)
+      && Math.abs(audio.duration - Number(curtrack.duration)) > Math.max(4, Number(curtrack.duration) * .03)) {
+    metingfallback('The provider returned a different or incomplete recording.');
+    return;
+  }
   document.getElementById('timeTotal').textContent = fmt(audio.duration);
   if (pendingseek != null) {
     try { audio.currentTime = pendingseek; } catch (_) {}

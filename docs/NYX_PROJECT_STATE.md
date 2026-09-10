@@ -2,6 +2,11 @@
 
 Last repository review: 2026-09-09
 
+## Local: Video size and collaboration matching fixes (2026-09-09)
+
+- NyxTube's independent 512 MiB input cap caused long-video rejection despite free cache space. Raised the combined input cap to 1.5 GiB, retained the 5 GiB cache, one preparation and two GiB disk headroom, and reserved both input/output space. Approximate extractor sizes no longer reject recordings; exact combined sizes, response sizes and actual bytes remain bounded. Preparation now allows twelve minutes with thirteen-minute client polling. Larger recordings can still require lower quality. Tests exercise long-duration/large-size metadata using small real media fixtures, not full multi-hour downloads.
+- Confirmed Sunflower's catalog artist is Post Malone while playback metadata credits Post Malone and Swae Lee. Matching now accepts an exact credited artist in collaborations while retaining title and duration checks; substring artist matches, changed titles and incompatible durations remain rejected. Moved bottom-player status out of the narrow title column into a full-width row. Real local Sunflower playback decoded 157.56 seconds and sought past 90 seconds with no page errors or direct external-music browser requests. Backend regressions, native video playback/control checks, source and production-built desktop/phone music failure/layout tests, production build, 100-file deployment/branding and whitespace checks passed. These fixes are local and not yet deployed.
+
 ## Active: Caddy HTTP access logging (2026-09-09)
 
 - User authorized enabling access logging. Live Caddy now writes restricted JSON logs at /var/log/caddy/nyx-access.json, rotating at 20 MiB/daily with up to seven compressed archives and seven-day archive retention. Headers, query strings, encoded proxy destinations and tab IDs are omitted; origin/referrer values are reduced to hostnames. Status, response bytes, duration, hostname/path and connection information remain available.

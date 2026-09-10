@@ -38,7 +38,7 @@
       if(!this.qualities.length)throw new Error('No supported native stream.');
       this.quality=this.qualities.includes(this.options.quality)?this.options.quality:Math.max(...this.qualities);
       let result=await this.json(`/api/nyxtube/native/prepare/${id}/${this.quality}`,{method:'POST'});
-      const deadline=Date.now()+5*60000;
+      const deadline=Date.now()+13*60000;
       while(result.state==='preparing'&&Date.now()<deadline) {
         await this.wait(1500);
         result=await this.json(`/api/nyxtube/native/jobs/${id}/${this.quality}`);

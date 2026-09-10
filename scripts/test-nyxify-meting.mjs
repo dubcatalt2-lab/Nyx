@@ -31,6 +31,13 @@ const fakeFetch = async (url, options = {}) => {
   if (range) return new Response(bytes.subarray(3, 13), { status: 206, headers: { 'content-type': 'audio/mpeg', 'content-range': `bytes 3-12/${bytes.length}`, 'content-length': '10', 'accept-ranges': 'bytes' } });
   return new Response(bytes, { headers: { 'content-type': 'audio/mpeg', 'content-length': String(bytes.length), 'accept-ranges': 'bytes' } });
 };
+const collaboration = { ...song, artists: [{ name: 'Coldplay' }, { name: 'Guest Artist' }] };
+assert.ok(matchMetingRecording(collaboration, hints));
+assert.equal(matchMetingRecording({ ...collaboration, artists: [{ name: 'Coldplay Tribute' }] }, hints), false);
+const collaborationBackend = createMetingBackend({ fetchImpl: async url => new URL(url).hostname === 'music.163.com'
+  ? Response.json({ songs: [collaboration] })
+  : Response.json([{ name: 'Yellow', artist: 'Coldplay/Guest Artist', url: 'https://api.qijieya.cn/meting/?server=netease&type=url&id=17177324' }]) });
+assert.equal((await collaborationBackend.resolve(hints)).id, '17177324', 'Primary catalog artist matches a provider collaboration through both filters');
 const backend = createMetingBackend({ fetchImpl: fakeFetch });
 const results = await Promise.all(Array.from({ length: 30 }, () => backend.resolve(hints)));
 assert.equal(searches, 1); assert.equal(new Set(results.map(r => r.streamUrl)).size, 1);

@@ -93,12 +93,13 @@ there is no guaranteed refresh interval.
 - H.264/AAC MP4 at available 360p, 480p, or 720p; FFmpeg combines streams without
   re-encoding. Files without both audio and video fail preparation.
 - Five GiB total media cache; six-hour idle expiration and least-recently-used eviction.
-  Up to 512 MiB of input per job, with a reserved output allowance before downloading.
+  Up to 1.5 GiB of combined audio/video input per job, with a reserved output allowance before downloading.
+  Approximate extractor sizes do not reject videos; exact sizes and actual downloaded bytes remain bounded.
   At least two GiB disk headroom is required in addition to job reservations.
 - Downloads use bounded byte ranges with a 30-second timeout per attempt and up
   to two retries. Partial bytes are discarded before retrying the same range; the
-  four-minute total preparation deadline still applies.
-- Extractor deadline 35 seconds; entire preparation four minutes; merge 90 seconds.
+  twelve-minute total preparation deadline still applies.
+- Extractor deadline 35 seconds; entire preparation twelve minutes; merge 90 seconds.
   Temporary work is removed on failure and on the next startup after a crash.
 - Completed files are published atomically and served with HTTP Range support.
   Active readers pin their cache file until their response closes.

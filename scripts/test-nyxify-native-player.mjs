@@ -192,6 +192,10 @@ try {
     await failed.goto(origin + '/apps/nyxify/');
     await failed.locator('.row', { hasText: tracks[0].title }).first().dblclick();
     await failed.waitForFunction(() => document.querySelector('#musicPlaybackStatus').textContent.includes('short preview'));
+    const statusBounds = await failed.locator('#playerPlaybackStatus').boundingBox();
+    const playerBounds = await failed.locator('.player-inner').boundingBox();
+    assert.ok(statusBounds.width > playerBounds.width * .8, 'Playback status uses the player width');
+    assert.ok(statusBounds.y >= playerBounds.y && statusBounds.y + statusBounds.height <= playerBounds.y + playerBounds.height, 'Long preview message stays inside player');
     assert.match(await failed.locator('audio').getAttribute('src'), /\/stream\/1$/);
     truncated = true;
     await failed.reload();

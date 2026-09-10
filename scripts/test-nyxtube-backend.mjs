@@ -72,7 +72,20 @@ try {
   clock+=6*60000;mode='large';await backend.prepare(id,480);
   assert.deepEqual(await backend.formats(id),[{height:720}], 'Cached formats should remain available while another quality prepares');
   while((await backend.status()).activeJobs)await new Promise(r=>setTimeout(r,30));
-  assert.throws(()=>backend.jobStatus(id,480),/too large/);
+  assert.equal(backend.jobStatus(id,480).state,'ready', 'Inputs above the old 512 MiB metadata cap are eligible');
+  for (const [label, sizes, accepted] of [
+    ['estimate', { filesize_approx: 3*1024**3 }, true],
+    ['combined-limit', { filesize: 800*1024**2 }, false]
+  ]) {
+    const bounded=createTubeBackend({...options,env:{...options.env,NYX_YOUTUBE_CACHE_DIR:join(root,label)},videoInfo:async()=>({...info,formats:info.formats.map(f=>({...f,...sizes}))})});
+    try {
+      await bounded.prepare(id,720);
+      const until=Date.now()+15000;
+      while((await bounded.status()).activeJobs&&Date.now()<until)await new Promise(r=>setTimeout(r,30));
+      if(accepted) assert.equal(bounded.jobStatus(id,720).state,'ready', 'Approximate sizes must not reject valid actual media');
+      else assert.throws(()=>bounded.jobStatus(id,720),/1.5 GiB per-video limit/);
+    } finally {await bounded.close();}
+  }
   assert.ok(!(await readdir(join(root,'cache'))).some(n=>n.startsWith('work-')));
   const extractionCalls=calls;
   const shared=createTubeBackend({...options,env:{...options.env,NYX_YOUTUBE_CACHE_DIR:join(root,'shared-catalog-cache')},videoInfo:async()=>info});

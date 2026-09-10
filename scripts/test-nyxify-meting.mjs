@@ -9,6 +9,7 @@ for (const altered of [{ ...song, name: 'Yellow (Live)' }, { ...song, artists: [
 for (const url of ['http://m701.music.126.net/a', 'https://m701.music.126.net.evil.test/a', 'https://127.0.0.1/a', 'https://music.126.net:8443/a', 'https://user:pass@music.126.net/a']) assert.equal(allowedMetingAudioUrl(url), false);
 assert.ok(allowedMetingAudioUrl('https://m701.music.126.net/song.mp3'));
 let searches = 0, resolutions = 0, malicious = false, expire = false, mediaCalls = 0;
+let badRange = false, hold = false, cancelled = 0, wrongType = false;
 const bytes = Buffer.from('ID3' + 'test audio bytes '.repeat(20));
 const fakeFetch = async (url, options = {}) => {
   const u = new URL(url);
@@ -23,7 +24,10 @@ const fakeFetch = async (url, options = {}) => {
   }
   assert.equal(u.hostname, 'm701.music.126.net'); mediaCalls++;
   if (expire) { expire = false; return new Response(null, { status: 403 }); }
+  if (wrongType) return new Response('<html>provider error</html>', { headers: { 'content-type': 'text/html' } });
+  if (hold) return new Response(new ReadableStream({ start(c) { c.enqueue(bytes); }, cancel() { cancelled++; } }), { headers: { 'content-type': 'audio/mpeg' } });
   const range = options.headers.Range;
+  if (badRange) return new Response(bytes, { status: 206, headers: { 'content-type': 'audio/mpeg', 'content-range': 'bytes 999-1000/1' } });
   if (range) return new Response(bytes.subarray(3, 13), { status: 206, headers: { 'content-type': 'audio/mpeg', 'content-range': `bytes 3-12/${bytes.length}`, 'content-length': '10', 'accept-ranges': 'bytes' } });
   return new Response(bytes, { headers: { 'content-type': 'audio/mpeg', 'content-length': String(bytes.length), 'accept-ranges': 'bytes' } });
 };
@@ -39,6 +43,9 @@ const base = `http://127.0.0.1:${server.address().port}`;
 try {
   assert.equal((await fetch(base + '/audio/999')).status, 404);
   assert.equal((await fetch(base + '/audio/17177324', { headers: { Range: 'bytes=1-2,4-5' } })).status, 416);
+  for (const range of ['bytes=5-2', 'bytes=-0', 'bytes=999999999999999999999-']) {
+    assert.equal((await fetch(base + '/audio/17177324', { headers: { Range: range } })).status, 416);
+  }
   let r = await fetch(base + '/audio/17177324'); assert.equal(r.status, 200); assert.deepEqual(Buffer.from(await r.arrayBuffer()), bytes);
   expire = true;
   r = await fetch(base + '/audio/17177324', { headers: { Range: 'bytes=3-12' } });
@@ -48,5 +55,20 @@ try {
   const before = mediaCalls;
   assert.equal((await fetch(base + '/audio/17177324')).status, 502);
   assert.equal(mediaCalls, before + 1, 'No request follows an unapproved redirect');
+  malicious = false; badRange = true;
+  assert.equal((await fetch(base + '/audio/17177324', { headers: { Range: 'bytes=0-10' } })).status, 502);
+  badRange = false; wrongType = true;
+  assert.equal((await fetch(base + '/audio/17177324')).status, 502);
+  wrongType = false; hold = true;
+  const listeners = await Promise.all(Array.from({ length: 40 }, () => fetch(base + '/audio/17177324')));
+  assert.ok(listeners.every(r => r.status === 200));
+  assert.equal((await fetch(base + '/audio/17177324')).status, 503, '40 active transfers reject extra work cleanly');
+  await Promise.all(listeners.map(r => r.body.cancel()));
+  for (let i = 0; i < 100 && cancelled < 40; i++) await new Promise(r => setTimeout(r, 10));
+  assert.equal(cancelled, 40, 'disconnects cancel every upstream body and free capacity');
+  hold = false;
+  const recovered = await fetch(base + '/audio/17177324');
+  assert.equal(recovered.status, 200); await recovered.arrayBuffer();
   console.log('PASS: recording matching, 30-user coalescing, audio bytes, ranges, expiry refresh, and redirect isolation.');
+  console.log('PASS: malformed ranges, HTML upstream errors, 40 active listeners, overload response, disconnect cancellation and capacity recovery.');
 } finally { await new Promise(r => server.close(r)); }

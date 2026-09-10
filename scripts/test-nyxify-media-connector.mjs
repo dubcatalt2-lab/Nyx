@@ -24,5 +24,9 @@ let lateSocket = false;
 const late = createMediaConnector({ lookupImpl: () => new Promise(r => setTimeout(() => r([{ address: '192.0.2.1' }]), 40)), connectImpl: () => { lateSocket = true; }, deadlineMs: 15 });
 await assert.rejects(connect(late), { code: 'ETIMEDOUT' });
 await new Promise(r => setTimeout(r, 50)); assert.equal(lateSocket, false);
+const throws = createMediaConnector({ lookupImpl: async () => [{ address: '192.0.2.1', family: 4 }], connectImpl: () => { throw new Error('socket allocation failed'); } });
+await assert.rejects(connect(throws), /socket allocation failed/);
+const dnsFailure = createMediaConnector({ lookupImpl: async () => { throw new Error('DNS unavailable'); } });
+await assert.rejects(connect(dnsFailure), /DNS unavailable/);
 console.log('PASS: TLS-stalled address failover, losing socket cleanup, working-address preference, certificate options and DNS deadline.');
 } finally { clearInterval(keepAlive); }

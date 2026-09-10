@@ -98,6 +98,7 @@ sed "s|__NYX_ROOT__|${APP_DIR}|g" deploy/systemd/nyx.service.template > /etc/sys
 sed "s|__NYX_ROOT__|${APP_DIR}|g" deploy/systemd/nyx-stratus.service.template > /etc/systemd/system/nyx-stratus.service
 
 CADDY_TMP=$(mktemp)
+install -d -m 0750 -o caddy -g caddy /var/log/caddy
 sed "s|__NYX_DOMAIN__|${DOMAIN}|g" deploy/caddy/nyx.Caddyfile.template > "${CADDY_TMP}"
 caddy validate --config "${CADDY_TMP}" --adapter caddyfile
 install -m 0644 -o root -g root "${CADDY_TMP}" "${CADDY_FILE}"

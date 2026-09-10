@@ -84,6 +84,7 @@ if [[ -x deploy/setup-turn.sh || -f deploy/setup-turn.sh ]]; then
   bash deploy/setup-turn.sh
 fi
 CADDY_TMP=$(mktemp)
+install -d -m 0750 -o caddy -g caddy /var/log/caddy
 sed "s|__NYX_DOMAIN__|${DOMAIN}|g" deploy/caddy/nyx.Caddyfile.template > "${CADDY_TMP}"
 caddy validate --config "${CADDY_TMP}" --adapter caddyfile
 install -m 0644 -o root -g root "${CADDY_TMP}" /etc/caddy/Caddyfile

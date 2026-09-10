@@ -2,6 +2,16 @@
 
 Last repository review: 2026-09-09
 
+## Active: Caddy HTTP access logging (2026-09-09)
+
+- User authorized enabling access logging. Live Caddy now writes restricted JSON logs at /var/log/caddy/nyx-access.json, rotating at 20 MiB/daily with up to seven compressed archives and seven-day archive retention. Headers, query strings, encoded proxy destinations and tab IDs are omitted; origin/referrer values are reduced to hostnames. Status, response bytes, duration, hostname/path and connection information remain available.
+- Isolated synthetic-secret/redaction checks and public apex/www/custom-domain checks passed. Caddy reloaded successfully and Nyx retained its process ID. Matching deployment template/setup/update files were updated locally and on OVH so reruns retain logging; the user has now authorized pushing these source changes together with the Nyxify listener audit. Release verification is pending. See docs/HTTP_ACCESS_LOGS.md for operation, retention and limitations.
+
+## Pending: Nyxify listener reliability audit (2026-09-09)
+
+- Reviewed native playback failure paths and added bounded lookup retries/deadlines, obsolete lookup cancellation, pending pause state, autoplay feedback, offline recovery, a 45-second progress watchdog and bottom-player status. Storage failures no longer block playback; failed writes stay in page memory, and malformed lists/volume/repeat settings are handled. Existing search/artwork/account data flows are preserved.
+- Aligned the media HTTPS pool with the existing 40-transfer cap; validated partial responses/ranges and guarded synchronous socket setup failures. Failure-injection regressions cover busy lookup, expired/broken audio recovery, stuck lookup/progress, offline/autoplay conditions, storage faults, malformed responses and 40-stream cancellation/capacity recovery. See docs/NYXIFY_RELIABILITY.md for scope and remaining limits. Source and production-obfuscated desktop/phone regressions, backend/connector tests, production build, 100-file deployment/branding and whitespace checks passed. User authorized push and OVH deployment; release verification pending.
+
 ## Released: Nyxify connection recovery (2026-09-09)
 
 - Traced intermittent native audio failures to TLS handshakes: four of eight returned IPv4 media addresses completed TLS in about 0.5 seconds from OVH, four stalled, and IPv6 was unreachable. TCP-level address selection did not reliably recover from a stalled TLS handshake. This was not a music cache/storage issue.

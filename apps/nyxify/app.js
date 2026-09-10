@@ -1,3 +1,16 @@
+// Full/blocked browser storage must not prevent playback. Failed writes remain
+// available for this page session; existing persisted data is never cleared.
+const volatileMusicSettings = new Map();
+const musicStorage = {
+  getItem(key) {
+    if (volatileMusicSettings.has(key)) return volatileMusicSettings.get(key);
+    try { return localStorage.getItem(key); } catch { return null; }
+  },
+  setItem(key, value) {
+    try { localStorage.setItem(key, value); volatileMusicSettings.delete(key); }
+    catch { volatileMusicSettings.set(key, String(value)); }
+  }
+};
 const audio = document.getElementById('audio');
 const playerEl = document.getElementById('player');
 const trackList = document.getElementById('trackList');
@@ -70,7 +83,7 @@ let octaveprogress = null;
 let octaveapipromise = null;
 let octavepending = false;
 let octavevideo = null;
-let prefernowplayingvideo = localStorage.getItem('nyx_nyxify_video_in_cover') === '1';
+let prefernowplayingvideo = musicStorage.getItem('nyx_nyxify_video_in_cover') === '1';
 const nyxtubedirectapi = window.NyxTubePlayerCore.createDirectYoutubeApi({ optimisticState: false });
 const fullTrackMatchCache = new Map();
 const fullTrackMatchInflight = new Map();
@@ -79,8 +92,9 @@ const fullTrackMatchTtlMs = 5 * 60_000;
 const fullTrackMatchLimit = 24;
 let fullTrackPrefetchRevision = 0;
 
-let shuffleon = localStorage.getItem('nyx_nyxify_shuffle') === '1';
-let repeatmode = localStorage.getItem('nyx_nyxify_repeat') || 'off';
+let shuffleon = musicStorage.getItem('nyx_nyxify_shuffle') === '1';
+let repeatmode = musicStorage.getItem('nyx_nyxify_repeat') || 'off';
+if (!['off', 'one', 'all'].includes(repeatmode)) repeatmode = 'off';
 let playershown = false;
 let queueopen = false;
 
@@ -123,20 +137,26 @@ function esc(str) {
 }
 
 async function nyxifyjson(path, options = {}) {
-  const response = await fetch(path, { cache: 'no-store', ...options });
-  const contentType = String(response.headers.get('content-type') || '').toLowerCase();
-  const text = await response.text();
-  let payload = null;
-  if (text && (contentType.includes('application/json') || /^[\s\r\n]*[\[{]/.test(text))) {
-    try { payload = JSON.parse(text); } catch (_) {}
-  }
-  if (!response.ok) {
-    throw new Error(payload?.error || `Nyxify is temporarily unavailable (${response.status}).`);
-  }
-  if (!payload || typeof payload !== 'object') {
-    throw new Error('Nyxify received a web page instead of music data. Reload Nyx and try again.');
-  }
-  return payload;
+  const controller = new AbortController();
+  const deadline = options.signal ? null : setTimeout(() => controller.abort(), 25_000);
+  try {
+    const response = await fetch(path, { cache: 'no-store', ...options, signal: options.signal || controller.signal });
+    const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+    const text = await response.text();
+    let payload = null;
+    if (text && (contentType.includes('application/json') || /^[\s\r\n]*[\[{]/.test(text))) {
+      try { payload = JSON.parse(text); } catch (_) {}
+    }
+    if (!response.ok) {
+      throw Object.assign(new Error(payload?.error || `Nyxify is temporarily unavailable (${response.status}).`), {
+        status: response.status, retryAfter: Math.min(5, Math.max(1, Number(response.headers.get('retry-after')) || 1))
+      });
+    }
+    if (!payload || typeof payload !== 'object') {
+      throw new Error('Nyxify received a web page instead of music data. Reload Nyx and try again.');
+    }
+    return payload;
+  } finally { clearTimeout(deadline); }
 }
 
 function fulltrackcachekey(track) {
@@ -212,11 +232,24 @@ function getfulltrackmatch(track) {
     return Promise.resolve(cached.match);
   }
   if (cached) fullTrackMatchCache.delete(key);
-  if (fullTrackMatchInflight.has(key)) return fullTrackMatchInflight.get(key);
-  const request = nyxifyjson(fulltrackurl(track))
+  if (fullTrackMatchInflight.get(key)?.controller.signal.aborted) fullTrackMatchInflight.delete(key);
+  if (fullTrackMatchInflight.has(key)) return fullTrackMatchInflight.get(key).promise;
+  const controller = new AbortController();
+  const request = (async () => {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const deadline = setTimeout(() => controller.abort(), 25_000);
+      try { return await nyxifyjson(fulltrackurl(track), { signal: controller.signal }); }
+      catch (error) {
+        if (controller.signal.aborted) throw new Error('Music lookup took too long or was cancelled. Select the song to try again.');
+        if (attempt || !navigator.onLine || !([429, 502, 503, 504].includes(error.status) || error.name === 'TypeError')) throw error;
+        await new Promise(resolve => setTimeout(resolve, (error.retryAfter || 1) * 1000));
+        if (controller.signal.aborted) throw error;
+      } finally { clearTimeout(deadline); }
+    }
+  })()
     .then(match => cachefulltrackmatch(track, match))
-    .finally(() => fullTrackMatchInflight.delete(key));
-  fullTrackMatchInflight.set(key, request);
+    .finally(() => { if (fullTrackMatchInflight.get(key)?.controller === controller) fullTrackMatchInflight.delete(key); });
+  fullTrackMatchInflight.set(key, { promise: request, controller });
   return request;
 }
 
@@ -260,7 +293,7 @@ function normalizedplaylistaccent(value) {
 
 function localplaylists() {
   try {
-    const stored = JSON.parse(localStorage.getItem('nyx_nyxify_playlists') || '[]');
+    const stored = JSON.parse(musicStorage.getItem('nyx_nyxify_playlists') || '[]');
     return Array.isArray(stored) ? stored.slice(0, 16).map(item => ({
       id: /^[A-Za-z0-9_-]{8,64}$/.test(String(item?.id || '')) ? String(item.id) : `playlist_${crypto.randomUUID().replace(/-/g, '')}`,
       name: String(item?.name || 'Playlist').trim().slice(0, 48) || 'Playlist',
@@ -274,7 +307,7 @@ function localplaylists() {
 }
 
 function saveplaylistlocal() {
-  localStorage.setItem('nyx_nyxify_playlists', JSON.stringify(playlists));
+  musicStorage.setItem('nyx_nyxify_playlists', JSON.stringify(playlists));
 }
 
 async function playlistparenttoken() {
@@ -357,7 +390,7 @@ function playlistid() {
 }
 
 function getlikes() {
-  try { return JSON.parse(localStorage.getItem('nyx_nyxify_likes')) || []; }
+  try { const rows = JSON.parse(musicStorage.getItem('nyx_nyxify_likes')); return Array.isArray(rows) ? rows.filter(t => t && typeof t.id === 'string') : []; }
   catch (_) { return []; }
 }
 function isliked(id) { return getlikes().some(t => t.id === id); }
@@ -365,18 +398,18 @@ function togglelike(track) {
   let list = getlikes();
   if (list.some(t => t.id === track.id)) list = list.filter(t => t.id !== track.id);
   else list.push(track);
-  localStorage.setItem('nyx_nyxify_likes', JSON.stringify(list));
+  musicStorage.setItem('nyx_nyxify_likes', JSON.stringify(list));
   return isliked(track.id);
 }
 
 function gethistory() {
-  try { return JSON.parse(localStorage.getItem('nyx_nyxify_history')) || []; }
+  try { const rows = JSON.parse(musicStorage.getItem('nyx_nyxify_history')); return Array.isArray(rows) ? rows.filter(t => t && typeof t.id === 'string') : []; }
   catch (_) { return []; }
 }
 function pushhistory(track) {
   let list = gethistory().filter(t => t.id !== track.id);
   list.unshift({ ...track });
-  localStorage.setItem('nyx_nyxify_history', JSON.stringify(list.slice(0, 25)));
+  musicStorage.setItem('nyx_nyxify_history', JSON.stringify(list.slice(0, 25)));
 }
 
 function makeclickable(el, label, fn) {
@@ -1669,7 +1702,7 @@ function destroyoctaveplayer() {
 function setnowplayingvideomode(show, remember = false) {
   if (remember) {
     prefernowplayingvideo = Boolean(show);
-    localStorage.setItem('nyx_nyxify_video_in_cover', prefernowplayingvideo ? '1' : '0');
+    musicStorage.setItem('nyx_nyxify_video_in_cover', prefernowplayingvideo ? '1' : '0');
   }
   const active = Boolean(show && octavevideo);
   nowPlayingMedia.classList.toggle('is-video', active);
@@ -1748,21 +1781,28 @@ function octaveerror(message) {
 let nativePending = false;
 let nativeWantPlay = true;
 let nativeRetries = 0;
+let nativeProgressAt = performance.now();
+let nativeLastTime = 0;
 const musicPlaybackStatus = document.getElementById('musicPlaybackStatus');
 function musicstatus(message, loading = false) {
   musicPlaybackStatus.textContent = message;
+  document.getElementById('playerPlaybackStatus').textContent = message;
   fullTrackStatus.textContent = message;
   document.getElementById('playBtn').classList.toggle('is-loading', loading);
+  requestAnimationFrame(updatebodypad);
 }
 async function startmetingtrack(track, request, resumeAt = 0) {
   nativePending = true;
+  nativeProgressAt = performance.now();
+  nativeLastTime = resumeAt;
   playbackmode = 'meting';
   setoctavevideo();
   audio.pause();
   audio.removeAttribute('src');
   audio.load();
   fullTrackTitle.textContent = track.title || 'Full track';
-  musicstatus('Finding the full song?', true);
+  musicstatus('Finding the full song…', true);
+  playIcon.className = nativeWantPlay ? 'material-symbols--pause-rounded' : 'line-md--play-filled';
   try {
     const match = await getfulltrackmatch(track);
     if (request !== octaverequest || curtrack !== track) return;
@@ -1770,20 +1810,22 @@ async function startmetingtrack(track, request, resumeAt = 0) {
     nativePending = false;
     audio.src = match.streamUrl;
     pendingseek = resumeAt > 0 ? resumeAt : null;
-    musicstatus('Loading full song?', true);
+    nativeProgressAt = performance.now();
+    musicstatus('Loading full song…', true);
     dlBtn.hidden = true;
     schedulequeueprefetch();
     if (nativeWantPlay) {
       try { await audio.play(); }
       catch (error) {
         if (request !== octaverequest || curtrack !== track) return;
-        if (error.name === 'NotAllowedError') musicstatus('Full song ready ? press play.');
+        if (error.name === 'NotAllowedError') { nativeWantPlay = false; musicstatus('Full song ready — press play.'); }
         // Media errors are handled by the audio error event, not by two competing retries.
         else if (error.name !== 'AbortError' && !audio.error) musicstatus('Unable to start audio. Press play to retry.');
       }
-    } else musicstatus('Full song ready ? press play.');
+    } else musicstatus('Full song ready — press play.');
   } catch (error) {
     if (request !== octaverequest || curtrack !== track) return;
+    if (!navigator.onLine) { nativePending = false; musicstatus('You’re offline. Playback will retry when connected.'); return; }
     metingfallback(error.message);
   }
 }
@@ -1798,19 +1840,37 @@ audio.addEventListener('playing', () => {
   if (playbackmode === 'meting') musicstatus('Playing full song');
 });
 audio.addEventListener('waiting', () => {
-  if (playbackmode === 'meting') musicstatus('Buffering full song?', true);
+  if (playbackmode === 'meting' && nativeWantPlay) musicstatus('Buffering full song…', true);
 });
 audio.addEventListener('canplay', () => {
-  if (playbackmode === 'meting' && audio.paused) musicstatus('Full song ready ? press play.');
+  if (playbackmode === 'meting' && audio.paused) musicstatus('Full song ready — press play.');
 });
-audio.addEventListener('error', () => {
-  if (playbackmode === 'preview' && audio.error) { musicstatus('The preview is unavailable. Try another song.'); return; }
-  if (playbackmode !== 'meting' || nativePending || !curtrack || !audio.error) return;
+function recovernative(reason) {
+  if (playbackmode !== 'meting' || nativePending || !curtrack) return;
   if (nativeRetries++ === 0) {
     const resumeAt = audio.currentTime || 0;
     evictfulltrackmatch(curtrack);
     void startmetingtrack(curtrack, octaverequest, resumeAt);
-  } else metingfallback('Full audio is unavailable right now.');
+  } else metingfallback(reason);
+}
+audio.addEventListener('error', () => {
+  if (playbackmode === 'preview' && audio.error) { musicstatus('The preview is unavailable. Try another song.'); return; }
+  if (playbackmode !== 'meting' || nativePending || !curtrack || !audio.error) return;
+  if (!navigator.onLine) { musicstatus('You’re offline. Playback will retry when connected.'); return; }
+  recovernative('Full audio is unavailable right now.');
+});
+audio.addEventListener('timeupdate', () => {
+  if (audio.currentTime !== nativeLastTime) { nativeLastTime = audio.currentTime; nativeProgressAt = performance.now(); }
+});
+setInterval(() => {
+  if (playbackmode !== 'meting' || nativePending || !nativeWantPlay || audio.ended || !navigator.onLine) return;
+  if (performance.now() - nativeProgressAt > 45_000) recovernative('Full audio stopped responding.');
+}, 5000);
+window.addEventListener('offline', () => {
+  if (playbackmode === 'meting') musicstatus('You’re offline. Buffered audio may continue playing.');
+});
+window.addEventListener('online', () => {
+  if (playbackmode === 'meting' && nativeWantPlay && (audio.error || audio.readyState < 3)) recovernative('Full audio could not reconnect.');
 });
 
 function playbackpaused() {
@@ -1820,13 +1880,16 @@ function playbackpaused() {
 
 function playbackplay() {
   nativeWantPlay = true;
-  if (nativePending) return;
+  nativeProgressAt = performance.now();
+  if (nativePending) { playIcon.className = 'material-symbols--pause-rounded'; return; }
   if (playbackmode === 'octave' || octavepending) octaveplayer?.playVideo?.();
-  else audio.play().catch(() => {});
+  else audio.play().catch(() => musicstatus('Unable to play. Select the song again to retry.'));
 }
 
 function playbackpause() {
   nativeWantPlay = false;
+  if (nativePending) { playIcon.className = 'line-md--play-filled'; musicstatus('Song is loading — playback paused.'); }
+  else if (playbackmode === 'meting') musicstatus('Full song paused');
   if (playbackmode === 'octave') octaveplayer?.pauseVideo?.();
   else audio.pause();
 }
@@ -1856,6 +1919,10 @@ setoctavevideo();
 
 
 function playtrack(t, list, context = '') {
+  ++fullTrackPrefetchRevision;
+  for (const [key, entry] of fullTrackMatchInflight) {
+    if (key !== fulltrackcachekey(t)) entry.controller.abort();
+  }
   cancelqueuedseek();
   const nextContext = context || inferplaycontext(list);
   curtrack = t;
@@ -1941,7 +2008,7 @@ audio.addEventListener('ended', () => {
     fullTrackStatus.textContent = 'Full song ready - press play';
     return;
   }
-  if (repeatmode === 'one') { audio.currentTime = 0; audio.play(); return; }
+  if (repeatmode === 'one') { audio.currentTime = 0; playbackplay(); return; }
   advance(false);
 });
 
@@ -1951,7 +2018,7 @@ shuffleBtn.setAttribute('aria-pressed', String(shuffleon));
 shuffleBtn.title = `shuffle: ${shuffleon ? 'on' : 'off'}`;
 shuffleBtn.addEventListener('click', () => {
   shuffleon = !shuffleon;
-  localStorage.setItem('nyx_nyxify_shuffle', shuffleon ? '1' : '0');
+  musicStorage.setItem('nyx_nyxify_shuffle', shuffleon ? '1' : '0');
   shuffleBtn.classList.toggle('on', shuffleon);
   shuffleBtn.setAttribute('aria-pressed', String(shuffleon));
   shuffleBtn.title = `shuffle: ${shuffleon ? 'on' : 'off'}`;
@@ -1966,7 +2033,7 @@ repeatBtn.setAttribute('aria-pressed', String(repeatmode !== 'off'));
 repeatBtn.title = `repeat: ${repeatmode === 'all' ? 'all' : repeatmode === 'one' ? 'this song' : 'off'}`;
 repeatBtn.addEventListener('click', () => {
   repeatmode = repeatNext[repeatmode];
-  localStorage.setItem('nyx_nyxify_repeat', repeatmode);
+  musicStorage.setItem('nyx_nyxify_repeat', repeatmode);
   repeatIcon.className = repeatmode === 'one' ? 'ic-repeat-one' : 'ic-repeat';
   repeatBtn.classList.toggle('on', repeatmode !== 'off');
   repeatBtn.setAttribute('aria-pressed', String(repeatmode !== 'off'));
@@ -2196,7 +2263,7 @@ function setvolume(v) {
   }
   volBar.value = v;
   volBar.style.setProperty('--fill', v + '%');
-  localStorage.setItem('nyx_nyxify_volume', v);
+  musicStorage.setItem('nyx_nyxify_volume', v);
   syncvolume();
 }
 
@@ -2225,8 +2292,8 @@ volBar.addEventListener('input', () => {
   setvolume(parseFloat(volBar.value));
 });
 
-const savedvol = localStorage.getItem('nyx_nyxify_volume');
-const initvol = savedvol !== null && savedvol !== '' ? Math.min(100, Math.max(0, Number(savedvol))) : 80;
+const savedvol = musicStorage.getItem('nyx_nyxify_volume');
+const initvol = savedvol !== null && savedvol !== '' && Number.isFinite(Number(savedvol)) ? Math.min(100, Math.max(0, Number(savedvol))) : 80;
 volBar.value = initvol;
 audio.volume = initvol / 100;
 volBar.style.setProperty('--fill', initvol + '%');
@@ -2278,8 +2345,8 @@ function hexrgb(value) {
 
 let nyxifyConstellationScene = null;
 function applynyxifytheme() {
-  const theme = localStorage.getItem('nyx.theme') || 'default';
-  let accent = theme === 'custom' ? localStorage.getItem('nyx.customThemeColor') : nyxifyThemeAccents[theme];
+  const theme = musicStorage.getItem('nyx.theme') || 'default';
+  let accent = theme === 'custom' ? musicStorage.getItem('nyx.customThemeColor') : nyxifyThemeAccents[theme];
   if (!validhex(accent)) accent = nyxifyThemeAccents.default;
   const channels = hexrgb(accent);
   if (Math.max(...channels) < 72) accent = '#f1f3f7';

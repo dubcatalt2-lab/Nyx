@@ -10,6 +10,31 @@
 	}
 }
 
+(nyx_access_log) {
+	log {
+		output file /var/log/caddy/nyx-access.json {
+			mode 0640
+			roll_size 20MiB
+			roll_interval 24h
+			roll_keep 7
+			roll_keep_for 168h
+		}
+		format filter {
+			wrap json
+			fields {
+				request>headers delete
+				resp_headers delete
+				# Keep proxy route names, not encoded destinations or tab IDs.
+				request>uri regexp "^(/(?:service|~/sj|~/sj-v1)/).*$|^([^?]*)(?:[?].*)?$" "$1$2"
+				origin_host regexp "^https?://(?:[^/?#@]*@)?([^/?#:]+)(?::[0-9]+)?(?:[/?#].*)?$|^.*$" "$1"
+				referer_host regexp "^https?://(?:[^/?#@]*@)?([^/?#:]+)(?::[0-9]+)?(?:[/?#].*)?$|^.*$" "$1"
+			}
+		}
+	}
+	log_append origin_host {http.request.header.Origin}
+	log_append referer_host {http.request.header.Referer}
+}
+
 (nyx_proxy) {
 	request_body {
 		max_size 2MB
@@ -23,6 +48,7 @@
 }
 
 (nyx_site) {
+	import nyx_access_log
 	@stratus_public path /cloud/v1/embed /cloud/v1/embed-data /cloud/v1/signal/* /cloud/v1/healthz /cloud/v1/source
 	handle @stratus_public {
 		reverse_proxy 127.0.0.1:3001 {
@@ -54,5 +80,6 @@ https:// {
 }
 
 http:// {
+	import nyx_access_log
 	redir https://{host}{uri} permanent
 }

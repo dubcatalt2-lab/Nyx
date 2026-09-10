@@ -2,6 +2,12 @@
 
 Last repository review: 2026-09-09
 
+## Pending: Nyxify connection recovery (2026-09-09)
+
+- Traced intermittent native audio failures to TLS handshakes: four of eight returned IPv4 media addresses completed TLS in about 0.5 seconds from OVH, four stalled, and IPv6 was unreachable. TCP-level address selection did not reliably recover from a stalled TLS handshake. This was not a music cache/storage issue.
+- Added a music-media-only HTTPS connection pool that tries DNS-returned addresses through TLS completion, staggered by 250 ms with three attempts in flight, 1.8-second per-attempt and eight-second overall deadlines. Working addresses are preferred for two minutes only while still returned by DNS. Certificate/hostname verification stays enabled, losing sockets are destroyed, connections are reused, and existing redirect validation/range/backpressure/cancellation limits remain. Metadata and unrelated services keep their existing networking.
+- Regression covers stalled TLS failover, losing-socket cleanup, working-address preference, certificate options and DNS deadline; existing audio matching/range/expiry/redirect tests pass. An isolated new-module test on OVH played Yellow and DAISIES, starting in 6.9 and 5.6 seconds respectively including lookup, and passed seeking to 90, 30 and 120 seconds for each. These are individual observations, not capacity guarantees. Applying as recovery for the user-authorized music release; production verification pending.
+
 ## Released: Native Nyxify audio (2026-09-09)
 
 - User requested retaining existing Deezer/MizuMath-Tidal search, artwork and library data while replacing full-song playback with Meting audio through Nyx. New `/api/nyxify/playback/:trackId` matches normalized title, full artist string and duration against NetEase recording metadata; covers/remixes/live versions with different titles, artists or durations are rejected. Metadata matching is not an authenticity guarantee. `/api/nyxify/audio/:id` relays actual audio bytes and range responses; browsers receive no upstream stream URLs. The old full-track endpoint remains for compatibility, but the updated client no longer starts or warms YouTube playback.

@@ -79,6 +79,7 @@ const requiredFiles = [
   "apps/nyxtube/native-player.js",
   "lib/nyxtube-catalog.mjs",
   "lib/nyxify-meting.mjs",
+  "lib/nyxify-media-fetch.mjs",
   "assets/icons/shortcut-nyxify.svg",
   "assets/games/index.html",
   "assets/ugs/play.html",

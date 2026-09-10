@@ -14,6 +14,7 @@ import { Server as SocketIOServer } from "socket.io";
 import { linkGeneratorHourlyQuota } from "./lib/link-generator-quota.mjs";
 import { batchFiles, inspectBatchTree } from "./lib/link-generator-batch.mjs";
 import { createTubeBackend } from "./lib/nyxtube-streaming.mjs";
+import { createTubeCatalog } from "./lib/nyxtube-catalog.mjs";
 import { tubeStreamingRoutes } from "./lib/nyxtube-routes.mjs";
 
 // Using the process root keeps this file compatible with Netlify's CommonJS
@@ -7428,7 +7429,7 @@ async function nyxifyOctaveSearch(query) {
   }
   // Public instances are volatile. The existing official YouTube lookup is a
   // last-resort discovery path; playback still uses Octave's iframe engine.
-  return nyxTubeSearch(query, 12);
+  return nyxifyYouTubeSearch(query, 12);
 }
 
 async function nyxifyFullTrack(trackId, hints = {}) {
@@ -7480,7 +7481,7 @@ async function nyxifyFullTrack(trackId, hints = {}) {
   const hasArtistChannelCandidate = candidates.some(video => nyxifyArtistChannelMatches(video, artist));
   if ((!candidates.length || !hasArtistChannelCandidate) && String(process.env.NYX_YOUTUBE_API_KEY || "").trim()) {
     const publicCandidates = candidates;
-    const officialCatalogResults = await nyxTubeSearch(`${artist} ${title} official music video audio`, 16);
+    const officialCatalogResults = await nyxifyYouTubeSearch(`${artist} ${title} official music video audio`, 16);
     const officialCandidates = officialCatalogResults.filter(video => /^[A-Za-z0-9_-]{11}$/.test(String(video?.id || ""))
       && Number(video?.durationSeconds) >= 45
       && nyxifyTrackTitleMatches(video, title)
@@ -7979,30 +7980,9 @@ function nyxTubeCleanText(value, limit = 2_000) {
     .slice(0, limit);
 }
 
-function nyxTubeAvatar(value) {
-  try {
-    const url = new URL(String(value || "").trim());
-    if (url.protocol !== "https:" || !/(?:^|\.)(?:ggpht\.com|googleusercontent\.com)$/i.test(url.hostname)) return "";
-    return url.href;
-  } catch {
-    return "";
-  }
-}
-
 function nyxTubeChannelId(value) {
   const id = String(value || "").trim();
   return /^UC[A-Za-z0-9_-]{22}$/.test(id) ? id : "";
-}
-
-function nyxTubeChannelProfile(item) {
-  const channelId = nyxTubeChannelId(item?.id);
-  if (!channelId) return null;
-  const snippet = item?.snippet || {};
-  const thumbnails = snippet.thumbnails || {};
-  return {
-    channelId,
-    channelAvatar: nyxTubeAvatar(thumbnails.high?.url || thumbnails.medium?.url || thumbnails.default?.url)
-  };
 }
 
 function nyxTubePublicVideo(item) {
@@ -8040,6 +8020,8 @@ function nyxTubePublicVideo(item) {
   };
 }
 
+// Retained only for Nyxify's existing official embed verification.
+// NyxTube catalog, community and playback validation do not use this API.
 async function nyxTubeApi(resource, parameters = {}) {
   const key = String(process.env.NYX_YOUTUBE_API_KEY || "").trim();
   if (!key) {
@@ -8061,105 +8043,47 @@ async function nyxTubeApi(resource, parameters = {}) {
   return payload;
 }
 
-async function nyxTubeAttachChannels(videos) {
-  const channelIds = [...new Set(videos.map(video => nyxTubeChannelId(video?.channelId)).filter(Boolean))];
-  if (!channelIds.length) return videos;
-  const profiles = new Map();
-  const missing = [];
-  for (const channelId of channelIds) {
-    const cached = nyxTubeCached(`channel:${channelId}`);
-    if (cached) profiles.set(channelId, cached);
-    else missing.push(channelId);
-  }
-  if (missing.length) {
-    try {
-      const payload = await nyxTubeApi("channels", { part: "snippet", id: missing.join(","), maxResults: missing.length });
-      for (const item of Array.isArray(payload?.items) ? payload.items : []) {
-        const profile = nyxTubeChannelProfile(item);
-        if (profile) profiles.set(profile.channelId, nyxTubeCacheSet(`channel:${profile.channelId}`, profile, 30 * 60_000));
-      }
-      for (const channelId of missing) {
-        if (!profiles.has(channelId)) profiles.set(channelId, nyxTubeCacheSet(`channel:${channelId}`, { channelId, channelAvatar: "" }, 5 * 60_000));
-      }
-    } catch {
-      // Channel artwork is optional; keep the video catalog usable if this metadata request fails.
-    }
-  }
-  return videos.map(video => {
-    const channelId = nyxTubeChannelId(video?.channelId);
-    const profile = profiles.get(channelId);
-    return profile ? { ...video, channelId, channelAvatar: profile.channelAvatar } : video;
-  });
+// Keep the separate music matcher's existing official-catalog fallback unchanged.
+async function nyxifyYouTubeSearch(query, limit) {
+  const cacheKey = `music-search:${query.toLowerCase()}:${limit}`;
+  const cached = nyxTubeCached(cacheKey);
+  if (cached) return cached;
+  const results = await nyxTubeApi("search", { part: "snippet", type: "video", videoEmbeddable: "true", videoSyndicated: "true", safeSearch: "moderate", regionCode: "US", maxResults: limit, q: query });
+  const ids = (results.items || []).map(item => item.id?.videoId).filter(id => /^[A-Za-z0-9_-]{11}$/.test(id || ""));
+  if (!ids.length) return [];
+  const details = await nyxTubeApi("videos", { part: "snippet,contentDetails,statistics,status", id: ids.join(","), maxResults: ids.length });
+  const videos = new Map((details.items || []).map(nyxTubePublicVideo).filter(Boolean).map(video => [video.id, video]));
+  return nyxTubeCacheSet(cacheKey, ids.map(id => videos.get(id)).filter(Boolean), 5 * 60000);
 }
+
+const nyxTubeCatalog = createTubeCatalog();
 
 async function nyxTubeVideoDetails(ids) {
   const cleanIds = [...new Set(ids)].filter(id => /^[A-Za-z0-9_-]{11}$/.test(id)).slice(0, 50);
-  if (!cleanIds.length) return [];
-  const payload = await nyxTubeApi("videos", { part: "snippet,contentDetails,statistics,status", id: cleanIds.join(","), maxResults: cleanIds.length });
-  const byId = new Map((Array.isArray(payload?.items) ? payload.items : []).map(item => [String(item?.id || ""), nyxTubePublicVideo(item)]));
-  return nyxTubeAttachChannels(cleanIds.map(id => byId.get(id)).filter(Boolean));
+  const videos = [];
+  for (const id of cleanIds) {
+    try { videos.push(await nyxTubeCatalog.video(id)); }
+    catch (error) { if (error.code !== 'video') throw error; }
+  }
+  return videos;
 }
 
 async function nyxTubeFeed(limit) {
-  const cacheKey = `feed:${limit}`;
-  const cached = nyxTubeCached(cacheKey);
-  if (cached) return cached;
-  const payload = await nyxTubeApi("videos", { part: "snippet,contentDetails,statistics,status", chart: "mostPopular", regionCode: "US", maxResults: limit });
-  const videos = (Array.isArray(payload?.items) ? payload.items : []).map(nyxTubePublicVideo).filter(Boolean);
-  return nyxTubeCacheSet(cacheKey, await nyxTubeAttachChannels(videos), 10 * 60_000);
+  // A shared discovery feed, not Google's ranked mostPopular chart.
+  return nyxTubeCatalog.search('science music gaming', limit);
 }
 
 async function nyxTubeSearch(query, limit) {
-  const cacheKey = `search:${query.toLowerCase()}:${limit}`;
-  const cached = nyxTubeCached(cacheKey);
-  if (cached) return cached;
-  const payload = await nyxTubeApi("search", { part: "snippet", type: "video", videoEmbeddable: "true", videoSyndicated: "true", safeSearch: "moderate", regionCode: "US", maxResults: limit, q: query });
-  const ids = (Array.isArray(payload?.items) ? payload.items : []).map(item => String(item?.id?.videoId || ""));
-  return nyxTubeCacheSet(cacheKey, await nyxTubeVideoDetails(ids), 5 * 60_000);
+  return nyxTubeCatalog.search(query, limit);
 }
 
 async function nyxTubeShorts(limit) {
-  const cacheKey = `shorts:${limit}`;
-  const cached = nyxTubeCached(cacheKey);
-  if (cached) return cached;
-  const payload = await nyxTubeApi("search", { part: "snippet", type: "video", videoEmbeddable: "true", videoSyndicated: "true", videoDuration: "short", safeSearch: "moderate", order: "viewCount", regionCode: "US", maxResults: Math.min(50, limit * 2), q: "#shorts" });
-  const ids = (Array.isArray(payload?.items) ? payload.items : []).map(item => String(item?.id?.videoId || ""));
-  const videos = (await nyxTubeVideoDetails(ids)).filter(item => item.isShort).slice(0, limit);
-  return nyxTubeCacheSet(cacheKey, videos, 10 * 60_000);
+  return (await nyxTubeCatalog.search('#shorts', Math.min(50, limit * 2))).filter(video => video.isShort).slice(0, limit);
 }
 
 async function nyxTubeCommentsLoad(videoId, cacheKey) {
-  try {
-    const payload = await nyxTubeApi("commentThreads", {
-      part: "snippet",
-      videoId,
-      maxResults: 20,
-      order: "relevance",
-      textFormat: "plainText"
-    });
-    const comments = (Array.isArray(payload?.items) ? payload.items : []).slice(0, 20).map(item => {
-      const thread = item?.snippet || {};
-      const comment = thread?.topLevelComment?.snippet || {};
-      const text = nyxTubeCleanText(comment.textOriginal || comment.textDisplay, 2_000);
-      if (!text) return null;
-      return {
-        id: String(item?.id || "").slice(0, 120),
-        author: nyxTubeCleanText(comment.authorDisplayName || "YouTube viewer", 100),
-        avatarUrl: nyxTubeAvatar(comment.authorProfileImageUrl),
-        text,
-        likeCount: Math.max(0, Number(comment.likeCount) || 0),
-        replyCount: Math.max(0, Number(thread.totalReplyCount) || 0),
-        publishedAt: safeDateIso(comment.publishedAt),
-        updatedAt: safeDateIso(comment.updatedAt)
-      };
-    }).filter(Boolean);
-    return nyxTubeCacheSet(cacheKey, { available: true, comments }, 5 * 60_000);
-  } catch (error) {
-    if (error?.reason === "commentsDisabled") {
-      return nyxTubeCacheSet(cacheKey, { available: false, comments: [], message: "Comments are disabled for this video." }, 10 * 60_000);
-    }
-    return { available: false, comments: [], message: "Comments could not be loaded right now." };
-  }
+  try { return nyxTubeCacheSet(cacheKey, await nyxTubeCatalog.comments(videoId), 5 * 60_000); }
+  catch { return nyxTubeCacheSet(cacheKey, { available: false, comments: [], message: 'Comments could not be loaded right now.' }, 30_000); }
 }
 
 async function nyxTubeComments(videoId) {
@@ -8232,53 +8156,16 @@ function nyxTubeTranscriptTrack(tracks) {
     || null;
 }
 
-function nyxTubeYtDlpTracks(videoId) {
-  const binary = process.platform === "win32" ? "yt-dlp" : "/var/lib/nyx/yt-dlp/venv/bin/yt-dlp";
-  const target = `https://www.youtube.com/watch?v=${videoId}`;
-  const argumentsList = [
-    "--skip-download", "--no-warnings", "--no-playlist",
-    "--print", "%(subtitles.en)j",
-    "--print", "%(automatic_captions.en)j",
-    target
-  ];
-  return new Promise(resolve => {
-    let settled = false;
-    let stdout = "";
-    let stderrBytes = 0;
-    let child;
-    const finish = value => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      resolve(value);
-    };
-    try {
-      child = spawn(binary, argumentsList, { windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
-    } catch {
-      return resolve([]);
+async function nyxTubeYtDlpTracks(videoId) {
+  const info = await nyxTubeCatalog.info(videoId);
+  const tracks = [];
+  for (const [kind, groups] of [['manual', info.subtitles], ['asr', info.automatic_captions]]) {
+    for (const [languageCode, formats] of Object.entries(groups || {})) {
+      const format = formats.find(item => item.ext === 'json3');
+      if (format) tracks.push({ ...format, languageCode, kind });
     }
-    const timer = setTimeout(() => { child.kill(); finish([]); }, 15_000);
-    child.once("error", () => finish([]));
-    child.stdout.on("data", chunk => {
-      stdout += chunk.toString("utf8");
-      if (stdout.length > 500_000) { child.kill(); finish([]); }
-    });
-    child.stderr.on("data", chunk => {
-      stderrBytes += chunk.length;
-      if (stderrBytes > 64_000) { child.kill(); finish([]); }
-    });
-    child.once("close", code => {
-      if (code !== 0 || settled) return finish([]);
-      const tracks = [];
-      for (const line of stdout.trim().split(/\r?\n/)) {
-        try {
-          const values = JSON.parse(line);
-          if (Array.isArray(values)) tracks.push(...values);
-        } catch { /* A missing caption template prints a non-JSON placeholder. */ }
-      }
-      finish(tracks);
-    });
-  });
+  }
+  return tracks;
 }
 
 async function nyxTubeTranscriptLoad(videoId, cacheKey) {
@@ -8365,14 +8252,14 @@ function nyxTubeRoute(handler, cacheControl = "private, max-age=120") {
     if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-site video requests are not allowed." });
     try {
       const results = await handler(req);
-      res.json({ provider: "youtube", videos: results });
+      res.json({ provider: "youtube", ...(Array.isArray(results) ? { videos: results } : results) });
     } catch (error) {
       res.status(error.status || (error?.name === "TimeoutError" ? 504 : 502)).json({ error: error.message || "YouTube is unavailable right now." });
     }
   };
 }
 
-const nyxTubeBackend = createTubeBackend();
+const nyxTubeBackend = createTubeBackend({ videoInfo: id => nyxTubeCatalog.info(id) });
 app.use(tubeStreamingRoutes({
   backend: nyxTubeBackend, sameOrigin: sameOriginRequest, clientIp: nyxClientIp,
   owner: async req => {
@@ -8386,7 +8273,7 @@ app.use(tubeStreamingRoutes({
   }
 }));
 app.get("/api/nyxtube/status", (_req, res) => {
-  res.set("Cache-Control", "no-store").json({ configured: Boolean(String(process.env.NYX_YOUTUBE_API_KEY || "").trim()), provider: "youtube", playback: "official-iframe-api", nativeAvailable: nyxTubeBackend.enabled });
+  res.set("Cache-Control", "no-store").json({ configured: true, provider: "youtube", playback: nyxTubeBackend.enabled ? "native" : "official-iframe-api", nativeAvailable: nyxTubeBackend.enabled });
 });
 
 app.get("/api/nyxtube/feed", nyxTubeRoute(req => nyxTubeFeed(Math.max(1, Math.min(32, Number.parseInt(req.query?.limit, 10) || 20)))));
@@ -8416,32 +8303,7 @@ app.get("/api/nyxtube/channel", nyxTubeRoute(async req => {
     error.status = 400;
     throw error;
   }
-  const cacheKey = `channel-page:${channelId}`;
-  const cached = nyxTubeCached(cacheKey);
-  if (cached) return cached;
-  const [channelPayload, searchPayload] = await Promise.all([
-    nyxTubeApi("channels", { part: "snippet,statistics", id: channelId, maxResults: 1 }),
-    nyxTubeApi("search", { part: "snippet", channelId, type: "video", order: "date", videoEmbeddable: "true", videoSyndicated: "true", maxResults: 12 })
-  ]);
-  const source = Array.isArray(channelPayload?.items) ? channelPayload.items[0] : null;
-  if (!source) {
-    const error = new Error("That channel is unavailable.");
-    error.status = 404;
-    throw error;
-  }
-  const snippet = source.snippet || {}, statistics = source.statistics || {};
-  const ids = (Array.isArray(searchPayload?.items) ? searchPayload.items : []).map(item => String(item?.id?.videoId || ""));
-  const videos = await nyxTubeVideoDetails(ids);
-  const channel = {
-    id: channelId,
-    title: nyxTubeCleanText(snippet.title || "YouTube channel", 120),
-    handle: nyxTubeCleanText(snippet.customUrl || "YouTube", 120),
-    description: nyxTubeCleanText(snippet.description || "", 3_000),
-    avatarUrl: nyxTubeAvatar(snippet.thumbnails?.high?.url || snippet.thumbnails?.medium?.url || snippet.thumbnails?.default?.url),
-    subscriberCount: Math.max(0, Number(statistics.subscriberCount) || 0),
-    videoCount: Math.max(0, Number(statistics.videoCount) || 0)
-  };
-  return nyxTubeCacheSet(cacheKey, { channel, videos }, 10 * 60_000);
+  return nyxTubeCatalog.channel(channelId);
 }, "no-store"));
 
 app.get("/api/nyxtube/search", nyxTubeRoute(req => {
@@ -14456,6 +14318,7 @@ if (isDirectRun) {
   let shuttingDown = false;
   function shutdown(signal) {
     void nyxTubeBackend.close();
+    void nyxTubeCatalog.close();
     if (shuttingDown) return;
     shuttingDown = true;
     chatSocketServer.disconnectSockets(true);

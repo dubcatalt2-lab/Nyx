@@ -2,6 +2,27 @@
 
 Last repository review: 2026-09-09
 
+## Release preparation (2026-09-09)
+
+- User authorized push and OVH deployment of the extractor-backed catalog, long-video eligibility and rotating download indicator. Targeted backend/catalog/native-browser regressions, keyless local HTTP/browser checks, production build and deployment/branding checks passed. Unrelated local diagnostics and work directories are excluded.
+
+## Pending: Extractor-backed NyxTube catalog (2026-09-09)
+
+- NyxTube search, discovery feed, Shorts discovery, selected-video details, channel pages, comments and playback validation now use the server-only yt-dlp catalog instead of the Google Data API. Transcripts reuse the catalog's caption metadata. Search results remain lightweight discovery entries; watch/Shorts fetch and validate full public, non-live metadata before playback. The native backend reuses that metadata. Channel route now returns its channel/videos object at the shape expected by the client. Missing statistics display as unavailable; home is labeled Discover videos because it is no longer Google's ranked chart.
+- Two concurrent catalog processes, eight queued jobs, 15-second queue wait, 35-second process deadline, bounded output, 160-entry / 32 MiB shared cache, in-flight coalescing and short failure caching bound work. Private cookie copies and raw signed URLs remain server-only. Public/age/live/region/embed restrictions are checked when known, with full validation on selection; flat search cannot guarantee every result is playable. The distinct Nyxify music matcher's existing optional Google verification/fallback is preserved. No Google key was removed from production.
+- Live local keyless checks returned search results in roughly two seconds, full metadata, a 12-video channel page, 20 comments, a transcript, discovery feed and Shorts. Chromium exercised real search/detail/channel routes without page errors using a mocked embedded player; real native-player fixture tests cover playback. The catalog regression verifies 30 identical concurrent searches share one extraction, bounded unique-query concurrency, restrictions, failure caching, sanitized responses and session cleanup. Not pushed/deployed; earlier pending duration-limit removal and download spinner are included in the working tree.
+- Read-only VPS sample: 2 vCPU, 3814 MiB RAM (2577 MiB available), 38 GiB root disk (31 GiB free), load averages 0.11/0.13/0.14 and almost idle CPU during five seconds. Nyx service memory was about 315 MiB, with a recorded peak around 647 MiB. This was not a 30-user peak/load test. Wisp shares the VPS; a 4-vCPU/8-GB tier would add headroom, but peak CPU/memory/network measurements are needed to establish necessity. The single native preparation job remains a software limit regardless of host size. No service settings, hosting plan or Wisp version changed.
+
+## Pending: Long-video eligibility (2026-09-09)
+
+- Removed the native backend's one-hour duration ceiling. Public, non-live videos with a finite positive duration are eligible regardless of length; existing 512 MiB input, 5 GiB cache, disk headroom and preparation deadlines remain. Backend regression accepts durations across the old boundary and runs two-hour metadata through preparation with a small real audio/video fixture; this is not a full two-hour download test. Not deployed.
+- Inspected MizuMath's public `/watch.html`: search uses `/api/youtube/search`; playback assigns `/api/youtube/stream/:id?itag=18` directly to a native video element while fetching `/api/youtube/info/:id`, then selects combined audio/video formats at up to 720p. A public search returned HTTP 200, but the test video's info request returned HTTP 502 / video unavailable and its bounded stream probe timed out after 25 seconds without response bytes. The public client does not establish which server search library is used or whether streams are relayed live or prepared first. Nyx search still uses the Google Data API; no dependency on MizuMath was added.
+- Validation passed: backend regression, native-player Chromium playback/control/fallback/mobile tests, production build, deployment/branding checks and whitespace checks.
+
+## Pending: NyxTube download indicator (2026-09-09)
+
+- Replaced the watch loading ring with a larger blue rotating circle and a Downloading and preparing video message for native preparation. The loading status is announced accessibly, hides when ready, and respects reduced-motion preferences. Browser checks verify actual rotation while waiting and removal when playback is ready. Not deployed.
+
 ## Released: Native playback recovery (2026-09-09)
 
 - Native format lookup now serves cached metadata or ready video qualities before checking global download contention/cooldown. The client waits and retries temporary busy responses for up to one minute per request instead of immediately falling back; cancellation still stops waiting. Actual request-quota responses have a separate code and are not blindly retried. Rejected requests no longer consume the request allowance.

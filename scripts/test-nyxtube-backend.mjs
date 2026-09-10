@@ -32,7 +32,10 @@ try {
   assert.throws(()=>publicMediaUrl('https://user:pass@r1.googlevideo.com/media'));
   assert.throws(()=>mediaChoices({...info,availability:'private'}));
   assert.throws(()=>mediaChoices({...info,is_live:true}));
-  assert.throws(()=>mediaChoices({...info,duration:3601}));
+  for (const duration of [0, -1, NaN, Infinity, undefined]) assert.throws(()=>mediaChoices({...info,duration}));
+  for (const duration of [3600, 3601, 7200, 86400]) assert.equal(mediaChoices({...info,duration}).length,1);
+  // Long metadata exercises the full preparation path using the small real media fixture.
+  info.duration=7200;
   assert.deepEqual(await backend.formats(id),[{height:720}]);
   const preparing=await backend.prepare(id,720);assert.equal(preparing.state,'preparing');
   assert.equal((await backend.prepare(id,720)).state,'preparing');
@@ -71,5 +74,15 @@ try {
   while((await backend.status()).activeJobs)await new Promise(r=>setTimeout(r,30));
   assert.throws(()=>backend.jobStatus(id,480),/too large/);
   assert.ok(!(await readdir(join(root,'cache'))).some(n=>n.startsWith('work-')));
+  const extractionCalls=calls;
+  const shared=createTubeBackend({...options,env:{...options.env,NYX_YOUTUBE_CACHE_DIR:join(root,'shared-catalog-cache')},videoInfo:async()=>info});
+  try {
+    assert.deepEqual(await shared.formats(id),[{height:720}]);
+    await shared.prepare(id,720);
+    const sharedDeadline=Date.now()+15000;
+    while((await shared.status()).activeJobs&&Date.now()<sharedDeadline)await new Promise(r=>setTimeout(r,30));
+    assert.equal(shared.jobStatus(id,720).state,'ready');
+    assert.equal(calls,extractionCalls,'Native playback must reuse catalog metadata without another extraction');
+  } finally {await shared.close();}
   console.log('NyxTube backend: real MP4 audio/video merge, cache reuse, ranges, auth isolation, cooldown/recovery, owner access and cleanup passed.');
 } finally {await backend?.close();await new Promise(r=>server?server.close(r):r());await rm(root,{recursive:true,force:true});}

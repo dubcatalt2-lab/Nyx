@@ -1,11 +1,36 @@
 # NyxTube native playback
 
 Native playback is optional and disabled until explicitly configured. The existing
-YouTube metadata/search/community APIs and iframe player remain available. This is
+Extractor-backed search, metadata, community features and the iframe player remain available. This is
 a first version: the selected video must finish preparing before native playback
 starts. Shorts and Nyxify retain their existing players. Native captions are not yet
 rendered over the video; the transcript remains readable and seekable, and the
 YouTube player remains selectable for captions.
+
+## Search and video information
+
+NyxTube no longer requires `NYX_YOUTUBE_API_KEY`. The installed yt-dlp tool handles
+bounded flat searches, full selected-video metadata, channel listings, and up to
+20 top-level comments. Transcripts reuse the selected video's extracted caption
+tracks. Search never downloads its result videos or fully extracts every result;
+opening a result validates the selected public, non-live video before playback.
+Unknown statistics display as unavailable. The home page uses a shared discovery
+search instead of Google's most-popular chart. Search ordering, field availability,
+and regional visibility can differ from the old Data API results.
+
+The catalog shares identical in-flight requests, caches successful lookups for five
+minutes (channels ten), and briefly caches failures. Its cache is bounded to 160
+entries / 32 MiB. At most two extractor jobs run concurrently, with eight waiting
+jobs, a 15-second queue deadline and 35-second extractor deadline. Each process
+has bounded output and a private temporary cookie copy removed on completion.
+Native preparation reuses full catalog metadata; signed media URLs stay server-only.
+This replaces Google developer quotas, not YouTube's own throttling or login checks.
+
+`NYX_YTDLP_BIN` and the existing optional cookie-file setting also apply to the
+catalog. The OVH installer already provides the tool. Native playback can remain
+disabled while catalog search and the embedded player work. The separate Nyxify
+music matcher retains its existing optional Google API verification; do not delete
+that server setting merely because NyxTube no longer needs it.
 
 ## Server setup
 
@@ -55,8 +80,10 @@ there is no guaranteed refresh interval.
 
 ## Limits and behavior
 
-- Public YouTube videos only; official public catalog validation precedes preparation,
-  and extraction rejects non-public, age-restricted, live, or over-one-hour videos.
+- Public YouTube videos only; full extractor metadata validation precedes preparation,
+  and extraction rejects non-public, age-restricted, live, or invalid-duration videos.
+  There is no duration ceiling; long videos remain subject to the input-size,
+  free-space and preparation-deadline checks below.
 - Only HTTPS Google video media URLs from the extractor are requested. No client URL,
   cookie, signed media URL, or extractor stderr is returned to the browser.
 - One preparation job at a time, with duplicate jobs sharing work. No unbounded queue.

@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <title>NyxTube</title>
   <link rel="icon" type="image/svg+xml" href="/assets/icons/shortcut-youtube.svg">
-  <link rel="stylesheet" href="./styles.css?v=20260909-settings-v7">
+  <link rel="stylesheet" href="./styles.css?v=20260909-download-spinner-v8">
   <link rel="stylesheet" href="./responsive.css?v=20260828-nyxtube-v5">
 <link rel="stylesheet" href="/apps/visual-redesign.css?v=20260907-stable-highlights-v1">
 </head>
@@ -48,7 +48,7 @@
       <nav class="topic-row" aria-label="Video topics">
         <button data-topic="documentary">Documentary</button><button data-topic="music">Music</button><button data-topic="coding">Coding</button><button data-topic="science">Science</button><button data-topic="travel">Travel</button><button data-topic="cooking">Cooking</button><button data-topic="gaming">Gaming</button><button data-topic="history">History</button>
       </nav>
-      <div class="catalog-status"><h2 data-feed-title>Popular videos</h2><span data-result-count>Loading...</span></div>
+      <div class="catalog-status"><h2 data-feed-title>Discover videos</h2><span data-result-count>Loading...</span></div>
       <section class="video-grid" data-video-grid aria-live="polite"></section>
     </section>
 
@@ -57,7 +57,7 @@
       <div class="watch-primary">
       <div class="watch-player" data-watch-stage>
         <div class="player-mount" data-watch-player></div>
-        <div class="player-loading" data-watch-loading><span></span><strong>Loading video</strong></div>
+        <div class="player-loading" data-watch-loading role="status" aria-live="polite"><svg class="watch-loading-spinner" viewBox="0 0 52 52" aria-hidden="true"><circle class="spinner-track" cx="26" cy="26" r="22"/><circle class="spinner-arc" cx="26" cy="26" r="22"/></svg><strong>Loading video</strong></div>
         <div class="watch-speed-indicator" data-watch-speed-indicator aria-live="polite" hidden>2&times;</div>
         <button class="center-play" data-watch-center-play type="button" aria-label="Play video" hidden><svg><use href="#icon-play"></use></svg></button>
         <div class="mobile-seek-controls" aria-label="Video seeking"><button data-watch-rewind type="button" aria-label="Back 5 seconds"><span>-5</span></button><button data-watch-forward type="button" aria-label="Forward 5 seconds"><span>+5</span></button></div>
@@ -121,6 +121,6 @@
   </main>
   <script src="./player-core.js?v=20260829-clean-embed-v2"></script>
   <script src="./native-player.js?v=20260909-native-retry-v2"></script>
-  <script src="./app.js?v=20260909-native-retry-v16"></script>
+  <script src="./app.js?v=20260909-extractor-catalog-v18"></script>
 </body>
 </html>

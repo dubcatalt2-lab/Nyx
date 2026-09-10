@@ -12,17 +12,19 @@ try {
   const file=join(root,'fixture.mp4');
   await promisify(execFile)(process.env.NYX_FFMPEG_BIN||'ffmpeg',['-nostdin','-v','error','-f','lavfi','-i','color=c=blue:s=640x360:r=24','-f','lavfi','-i','sine=frequency=440:sample_rate=44100','-t','30','-c:v','libx264','-pix_fmt','yuv420p','-c:a','aac','-movflags','+faststart',file]);
   const video={id:'YE7VzlLtp-4',title:'Native player test',creator:'Test creator',description:'A test video.',durationSeconds:30,captions:true};
-  let busyReplies=2,failed=false,hold=false,checks=0,ownerState='working',ownerRole='owner';
+  let busyReplies=2,failed=false,hold=false,checks=0,detailCalls=0,ownerState='working',ownerRole='owner';
   const app=express();
   app.use('/api/nyxtube',(req,res)=>{
     if(req.path==='/status')return res.json({configured:true,nativeAvailable:true});
+    if(req.path==='/video'){detailCalls++;return res.json({videos:[{...video,description:'Loaded full details',likeCount:null}]});}
+    if(req.path==='/channel')return res.json({channel:{title:'Creator profile',subscriberCount:null},videos:[{...video,detailsPending:true}]});
     if(req.path.startsWith('/native/media/'))return res.sendFile(file);
     if(req.path.startsWith('/native/formats/') && busyReplies-->0)return res.status(429).json({code:'busy',error:'Another video is being prepared.'});
     if(req.path.startsWith('/native/formats/'))return failed?res.status(503).json({error:'Unavailable'}):res.json({formats:[{height:360},{height:720}]});
     if(req.path.startsWith('/native/prepare/'))return res.json(hold?{state:'preparing'}:{state:'ready',url:`/api/nyxtube/native/media/${video.id}-${req.path.split('/').pop()}.mp4`});
     if(req.path.startsWith('/native/jobs/'))return res.json({state:'preparing'});
     if(req.path==='/community')return res.json({comments:{available:true,comments:[]},transcript:{available:true,segments:[{startSeconds:5,text:'Five seconds'}]}});
-    return res.json({videos:[video]});
+    return res.json({videos:[{...video,detailsPending:true}]});
   });
   app.get('/owner-test',(_req,res)=>res.send('<link rel="stylesheet" href="/css/owner-dashboard.css"><link rel="stylesheet" href="/css/owner-dashboard-polish.css"><script src="/js/owner-dashboard.js"></script>'));
   app.use('/api/owner-dashboard',(req,res)=>{
@@ -38,7 +40,15 @@ try {
     seekTo(){}setVolume(){}setPlaybackRate(){}mute(){}playVideo(){}pauseVideo(){}getPlayerState(){return 2;}getCurrentTime(){return 0;}getDuration(){return 30;}getAvailablePlaybackRates(){return [1];}getPlaybackRate(){return 1;}destroy(){this.node.replaceChildren();}
   }};});
   await page.goto(base+'/apps/nyxtube/');await page.locator('.video-cover').first().click();
+  const spinner=page.locator('.watch-loading-spinner');assert.ok(await spinner.isVisible());
+  await page.waitForFunction(()=>document.querySelector('[data-watch-loading]').textContent.includes('Downloading and preparing'));
+  assert.match(await page.locator('[data-watch-loading]').innerText(),/Downloading and preparing/);
+  const rotation=await spinner.evaluate(el=>getComputedStyle(el).transform);await page.waitForTimeout(150);
+  assert.notEqual(await spinner.evaluate(el=>getComputedStyle(el).transform),rotation,'Download circle must rotate');
   const player=page.locator('[data-watch-player] video');await page.waitForFunction(()=>document.querySelector('[data-watch-player] video')?.currentTime>0.1);
+  assert.equal(detailCalls,1);assert.equal(await page.locator('[data-watch-description]').innerText(),'Loaded full details');
+  assert.equal(await page.locator('[data-watch-likes]').innerText(),'Unavailable');
+  assert.ok(await page.locator('[data-watch-loading]').isHidden(),'Loading indicator should hide when ready');
   assert.ok(await player.evaluate(v=>v.videoWidth>0 && v.getBoundingClientRect().height>100),'Native picture is missing or collapsed');
   await page.locator('[data-watch-toggle]').click();assert.ok(await player.evaluate(v=>v.paused));
   await player.evaluate(v=>{v.currentTime=5;v.volume=0;v.playbackRate=1.5;v.muted=true;});

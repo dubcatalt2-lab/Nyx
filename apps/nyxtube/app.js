@@ -60,7 +60,7 @@
     const date = new Date(value || "");
     return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
   }
-  const exactCount = value => Math.max(0, Number(value) || 0).toLocaleString();
+  const exactCount = value => value == null ? "Unavailable" : Math.max(0, Number(value) || 0).toLocaleString();
   function renderProfile(profile = {}) {
     clearTimeout(state.profileRetryTimer); state.profileRetryTimer = 0;
     state.profileResolved = true;
@@ -128,7 +128,7 @@
   }
   async function loadFeed(query = "") {
     notice(); skeletons(); refs.resultCount.textContent = "Loading...";
-    refs.feedTitle.textContent = query ? `Results for “${query}”` : "Popular videos";
+    refs.feedTitle.textContent = query ? `Results for “${query}”` : "Discover videos";
     refs.searchForm.querySelector("button").disabled = true;
     try {
       const endpoint = query ? `/api/nyxtube/search?q=${encodeURIComponent(query)}&limit=20` : "/api/nyxtube/feed?limit=20";
@@ -286,8 +286,31 @@
     image.addEventListener("error", fallback, { once: true });
     refs.watchChannelMark.replaceChildren(image);
   }
-  function openWatch(video, { recoveryMessage = "" } = {}) {
+  async function openWatch(video, { recoveryMessage = "" } = {}) {
     if (!video?.id) return;
+    stopWatch();
+    const requestGeneration = state.watchGeneration;
+    state.watchVideo = video; showView("watch"); notice(recoveryMessage);
+    if (video.detailsPending) {
+      refs.watchTitle.textContent = video.title || "Loading video";
+      refs.watchDescription.textContent = "Loading video details...";
+      refs.watchLoading.hidden = false;
+      refs.watchLoading.querySelector("strong").textContent = "Loading video details...";
+      refs.watchViews.textContent = refs.watchLikes.textContent = refs.watchCommentsCount.textContent = "Loading...";
+      refs.watchComments.replaceChildren(); refs.watchTranscript.replaceChildren(); refs.watchRelated.replaceChildren();
+      try {
+        const payload = await json(`/api/nyxtube/video?id=${encodeURIComponent(video.id)}`);
+        if (state.view !== "watch" || state.watchGeneration !== requestGeneration) return;
+        const detail = payload?.videos?.[0];
+        if (!detail || detail.id !== video.id) throw new Error("That video is unavailable or restricted.");
+        video = detail;
+        state.catalog = state.catalog.map(item => item.id === detail.id ? detail : item);
+      } catch (error) {
+        if (state.view !== "watch" || state.watchGeneration !== requestGeneration) return;
+        refs.watchLoading.hidden = true; notice(error.message || "Video details could not be loaded.");
+        return;
+      }
+    }
     finishWatchSpace({ cancel: true });
     clearTimeout(state.watchRecoveryTimer); state.watchRecoveryTimer = 0;
     state.watchVideo = video; showView("watch"); notice(recoveryMessage); closeWatchSettings();
@@ -318,7 +341,7 @@
     const native = state.nativeAvailable && state.preferredPlayer === "native" && !forceDirect && !fallback;
     updatePlayerSwitch(native);
     state.watchPlayer?.destroy?.(); state.watchPlayer = null;
-    refs.watchLoading.hidden = false; refs.watchLoading.querySelector("strong").textContent = native ? "Preparing video - first play may take a moment" : "Loading video";
+    refs.watchLoading.hidden = false; refs.watchLoading.querySelector("strong").textContent = native ? "Downloading and preparing video..." : "Loading video";
     refs.watchQuality.disabled = true;
     const YT = native ? window.NyxNativePlayer : forceDirect ? directYoutubeApi : await youtubeApi();
     if (generation !== state.watchGeneration) return;
@@ -549,11 +572,23 @@
   async function showShort(index) {
     if (!state.shorts.length) return;
     state.shortIndex = (index + state.shorts.length) % state.shorts.length;
-    const video = state.shorts[state.shortIndex];
+    let video = state.shorts[state.shortIndex];
     refs.shortTitle.textContent = video.title || "Untitled Short"; refs.shortCreator.textContent = video.creator || "YouTube";
     refs.shortLoading.hidden = false; refs.shortCenterPlay.hidden = true; refs.shortProgress.style.width = "0";
-    const YT = await youtubeApi(); if (state.view !== "shorts") return;
     state.shortPlayer?.destroy?.();
+    if (video.detailsPending) {
+      try {
+        const payload = await json(`/api/nyxtube/video?id=${encodeURIComponent(video.id)}`);
+        if (state.view !== "shorts" || state.shorts[state.shortIndex]?.id !== video.id) return;
+        const detail = payload?.videos?.[0];
+        if (!detail || detail.id !== video.id || !detail.isShort) return recoverShort(video);
+        video = detail; state.shorts[state.shortIndex] = detail;
+      } catch {
+        if (state.view === "shorts" && state.shorts[state.shortIndex]?.id === video.id) recoverShort(video);
+        return;
+      }
+    }
+    const YT = await youtubeApi(); if (state.view !== "shorts" || state.shorts[state.shortIndex]?.id !== video.id) return;
     const config = options(video.id, true); config.expectedDuration = video.durationSeconds;
     config.events = {
       onReady: event => { event.target.mute(); state.shortMuted = true; refs.shortMute.innerHTML = icon("icon-muted"); event.target.playVideo(); refs.shortLoading.hidden = true; startShortTimer(); },

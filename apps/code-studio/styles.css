@@ -853,7 +853,7 @@ body.is-resizing iframe { pointer-events: none; }
   color: var(--studio-text-soft);
 }
 
-.code-highlight code { display: block; min-width: max-content; min-height: 100%; }
+.code-highlight code { font: inherit; display: block; min-width: max-content; min-height: 100%; }
 
 .code-input {
   z-index: 3;

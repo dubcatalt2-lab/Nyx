@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { createRequire } from 'node:module';
 import { spawnSync, spawn } from 'node:child_process';
 import { chromium } from 'playwright';
+import sharp from 'sharp';
 const require = createRequire(import.meta.url);
 const folder = await mkdtemp(join(tmpdir(), 'nyx-music-ui-'));
 const fixture = join(folder, 'audio.mp3');
@@ -28,7 +29,7 @@ try {
     });
     const errors = [], audioRequests = [];
     let failLookup = false, delayLookup = false, busyLookup = 0, failAudio = 0;
-    let lookups = 0;
+    let lookups = 0, firstTrackLookups = 0;
     page.on('pageerror', e => errors.push(e.message));
     await page.route('**/api/**', async route => {
       const u = new URL(route.request().url()), path = u.pathname;
@@ -37,6 +38,7 @@ try {
       if (path === '/api/founder-profile/auth-config') return route.fulfill({ json: { enabled: false } });
       if (path.startsWith('/api/nyxify/playback/')) {
         lookups++;
+        if (path.endsWith("/1")) firstTrackLookups++;
         if (busyLookup > 0) { busyLookup--; return route.fulfill({ status: 503, json: { error: 'Music lookup is busy.' }, headers: { 'Retry-After': '1' } }); }
         if (delayLookup) await new Promise(r => setTimeout(r, 300));
         if (failLookup) return route.fulfill({ status: 404, json: { error: 'No matching full recording is available.' } });
@@ -53,14 +55,28 @@ try {
       return route.fulfill({ json: {} });
     });
     await page.goto(origin + '/apps/nyxify/');
+    const firstRow = page.locator('.row', { hasText: tracks[0].title }).first();
+    await firstRow.focus();
+    await page.waitForResponse(r => r.url().includes('/playback/1') && r.url().includes('prefetch=1'));
+    assert.equal(firstTrackLookups, 1);
+    assert.equal(audioRequests.length, 0, 'Intent preload only resolves metadata, without downloading or playing music');
     await page.locator('.row', { hasText: tracks[0].title }).first().dblclick();
     await page.waitForFunction(() => document.querySelector('audio').currentTime > .2);
     assert.match(await page.locator('audio').getAttribute('src'), /\/audio\/1$/);
+    assert.equal(firstTrackLookups, 1, 'Clicking reuses the prepared match');
+    await page.screenshot({ path: `.codex-artifacts/music-loading-${width}.png` });
+
     await page.locator('#playBtn').click();
     assert.ok(await page.locator('audio').evaluate(a => a.paused));
     await page.locator('#playBtn').click();
     await page.locator('#seekBar').evaluate(el => { el.value = '72'; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); });
     await page.waitForFunction(() => document.querySelector('audio').currentTime > 89);
+    const barImage = await sharp(await page.locator('#seekBar').screenshot()).raw().toBuffer({ resolveWithObject: true });
+    for (const fraction of [.25, .85]) {
+      const offset = (Math.floor(barImage.info.height / 2) * barImage.info.width + Math.floor(barImage.info.width * fraction)) * barImage.info.channels;
+      assert.ok(barImage.data[offset + 2] > barImage.data[offset] + 20, 'Played and buffered track pixels stay visibly blue under the shared theme');
+    }
+
     await page.locator('#nextBtn').click();
     await page.waitForFunction(() => document.querySelector('audio').src.endsWith('/audio/2') && document.querySelector('audio').currentTime > .2);
     assert.equal(await page.locator('#fullTrackVideo').isVisible(), false);

@@ -79,3 +79,18 @@ try {
   console.log('PASS: recording matching, 30-user coalescing, audio bytes, ranges, expiry refresh, and redirect isolation.');
   console.log('PASS: malformed ranges, HTML upstream errors, 40 active listeners, overload response, disconnect cancellation and capacity recovery.');
 } finally { await new Promise(r => server.close(r)); }
+
+let releaseLookups;
+const lookupGate = new Promise(resolve => { releaseLookups = resolve; });
+let startedLookups = 0;
+const priorityBackend = createMetingBackend({ fetchImpl: async () => { startedLookups++; await lookupGate; return Response.json([]); } });
+const background = priorityBackend.resolve(hints, { prefetch: true }).catch(e => e.status);
+try {
+  await assert.rejects(priorityBackend.resolve({ ...hints, title: 'Speculative second' }, { prefetch: true }), e => e.status === 503);
+  const foreground = [1, 2, 3].map(n => priorityBackend.resolve({ ...hints, title: 'Selected ' + n }).catch(e => e.status));
+  assert.equal(startedLookups, 4, 'One background request leaves three lookup slots for listeners');
+  await assert.rejects(priorityBackend.resolve({ ...hints, title: 'Over capacity' }), e => e.status === 503);
+  releaseLookups();
+  assert.deepEqual(await Promise.all([background, ...foreground]), [404, 404, 404, 404]);
+} finally { releaseLookups(); }
+console.log('PASS: speculative lookup cap reserves foreground capacity.');

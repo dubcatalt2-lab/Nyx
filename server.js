@@ -12663,7 +12663,7 @@ app.get("/api/nyxify/playback/:trackId", async (req, res) => {
   if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
   if (!nyxifyTrackIdPattern.test(String(req.params.trackId))) return res.status(400).json({ error: "Invalid Nyxify track." });
   try {
-    res.json(await nyxifyMeting.resolve({ title: req.query.title, artist: req.query.artist, duration: req.query.duration }));
+    res.json(await nyxifyMeting.resolve({ title: req.query.title, artist: req.query.artist, duration: req.query.duration }, { prefetch: req.query.prefetch === '1' }));
   } catch (error) {
     if (error.status === 503) res.set("Retry-After", "5");
     res.status(error.status || 502).json({ error: error.status ? error.message : "Music lookup is temporarily unavailable." });

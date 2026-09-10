@@ -223,7 +223,7 @@ function fulltrackurl(track) {
   return `/api/nyxify/playback/${encodeURIComponent(track?.id || '')}?${hints.toString()}`;
 }
 
-function getfulltrackmatch(track) {
+function getfulltrackmatch(track, background = false) {
   const key = fulltrackcachekey(track);
   const cached = fullTrackMatchCache.get(key);
   if (cached?.expiresAt > Date.now() && validfulltrackmatch(cached.match)) {
@@ -233,15 +233,21 @@ function getfulltrackmatch(track) {
   }
   if (cached) fullTrackMatchCache.delete(key);
   if (fullTrackMatchInflight.get(key)?.controller.signal.aborted) fullTrackMatchInflight.delete(key);
-  if (fullTrackMatchInflight.has(key)) return fullTrackMatchInflight.get(key).promise;
+  const existing = fullTrackMatchInflight.get(key);
+  if (existing) return !background && existing.background
+    ? existing.promise.catch(error => {
+      if (curtrack && fulltrackcachekey(curtrack) !== key) throw error;
+      return getfulltrackmatch(track);
+    }) : existing.promise;
+  if (background && ([...fullTrackMatchInflight.values()].some(entry => entry.background) || !navigator.onLine || navigator.connection?.saveData)) return Promise.resolve(null);
   const controller = new AbortController();
   const request = (async () => {
-    for (let attempt = 0; attempt < 2; attempt++) {
-      const deadline = setTimeout(() => controller.abort(), 25_000);
-      try { return await nyxifyjson(fulltrackurl(track), { signal: controller.signal }); }
+    for (let attempt = 0; attempt < (background ? 1 : 2); attempt++) {
+      const deadline = setTimeout(() => controller.abort(), background ? 8_000 : 25_000);
+      try { return await nyxifyjson(fulltrackurl(track) + (background ? '&prefetch=1' : ''), { signal: controller.signal }); }
       catch (error) {
         if (controller.signal.aborted) throw new Error('Music lookup took too long or was cancelled. Select the song to try again.');
-        if (attempt || !navigator.onLine || !([429, 502, 503, 504].includes(error.status) || error.name === 'TypeError')) throw error;
+        if (background || attempt || !navigator.onLine || !([429, 502, 503, 504].includes(error.status) || error.name === 'TypeError')) throw error;
         await new Promise(resolve => setTimeout(resolve, (error.retryAfter || 1) * 1000));
         if (controller.signal.aborted) throw error;
       } finally { clearTimeout(deadline); }
@@ -249,7 +255,7 @@ function getfulltrackmatch(track) {
   })()
     .then(match => cachefulltrackmatch(track, match))
     .finally(() => { if (fullTrackMatchInflight.get(key)?.controller === controller) fullTrackMatchInflight.delete(key); });
-  fullTrackMatchInflight.set(key, { promise: request, controller });
+  fullTrackMatchInflight.set(key, { promise: request, controller, background });
   return request;
 }
 
@@ -259,10 +265,28 @@ function schedulequeueprefetch() {
   if (!next || next.id === curtrack?.id) return;
   const run = () => {
     if (revision !== fullTrackPrefetchRevision) return;
-    void getfulltrackmatch(next).catch(() => {});
+    void getfulltrackmatch(next, true).catch(() => {});
   };
   if ('requestIdleCallback' in window) requestIdleCallback(run, { timeout: 1_000 });
   else setTimeout(run, 150);
+}
+
+let intentPrefetchAt = 0;
+function bindtrackprefetch(element, track) {
+  let timer;
+  const cancel = () => clearTimeout(timer);
+  const schedule = () => {
+    cancel();
+    timer = setTimeout(() => {
+      if (!element.isConnected || document.hidden || Date.now() < intentPrefetchAt) return;
+      intentPrefetchAt = Date.now() + 10_000;
+      void getfulltrackmatch(track, true).catch(() => {});
+    }, 300);
+  };
+  element.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse') schedule(); });
+  element.addEventListener('pointerleave', cancel);
+  element.addEventListener('focus', schedule);
+  element.addEventListener('blur', cancel);
 }
 
 restorefulltrackmatches();
@@ -543,6 +567,7 @@ function buildrow(t, list, options = {}) {
     </button>`;
   setcover(row.querySelector(':scope > img'), t.cover);
 
+  bindtrackprefetch(row, t);
   makeclickable(row, `play ${t.title} by ${t.artist}`, () => playtrack(t, list));
 
   row.addEventListener('click', e => {
@@ -873,6 +898,7 @@ function rendermini(container, list, emptymsg) {
         <div class="mini-a">${esc(t.artist)}</div>
       </div>
       <button type="button" class="like-btn${liked ? ' liked' : ''}" aria-pressed="${liked}" aria-label="${liked ? 'unlike' : 'like'}"><i class="${liked ? 'mingcute--heart-fill' : 'ic-heart'}"></i></button>`;
+    bindtrackprefetch(item, t);
     makeclickable(item, `play ${t.title} by ${t.artist}`, () => playtrack(t, list));
     item.addEventListener('click', e => {
       if (e.target.closest('.like-btn')) return;
@@ -2127,7 +2153,21 @@ function knowndur() {
   return playbackduration();
 }
 
+function updatebuffered() {
+  let end = 0;
+  const duration = Number(audio.duration);
+  if (Number.isFinite(duration) && duration > 0) {
+    for (let i = 0; i < audio.buffered.length; i++) {
+      if (audio.buffered.start(i) <= audio.currentTime && audio.buffered.end(i) >= audio.currentTime) end = audio.buffered.end(i);
+    }
+  }
+  seekBar.style.setProperty('--buffered', duration > 0 ? Math.min(100, end / duration * 100) + '%' : '0%');
+}
+audio.addEventListener('progress', updatebuffered);
+audio.addEventListener('emptied', updatebuffered);
+
 function updateseek(sec) {
+  updatebuffered();
   const dur = knowndur();
   if (!dur) return;
   const pct = Math.min(100, Math.max(0, (sec / dur) * 100));

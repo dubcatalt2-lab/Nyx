@@ -1,6 +1,6 @@
 # Nyxify playback reliability review — 2026-09-09
 
-Scope: the ordinary listener's music playback path, including browser state, native matching/streaming, player controls and backend resource limits. This is a failure-injection review, not proof that every device, recording or network will work. The user authorized deployment of these audit changes alongside the active HTTP logging configuration. Live release verification is recorded in NYX_PROJECT_STATE.md.
+Scope: the ordinary listener's music playback path, including browser state, native matching/streaming, player controls and backend resource limits. This is a failure-injection review, not proof that every device, recording or network will work. Released to OVH in bc6c51e alongside the active HTTP logging configuration. Live desktop/phone fault tests and real three-song playback/seeking passed; release verification is recorded in NYX_PROJECT_STATE.md.
 
 ## Findings and fixes
 

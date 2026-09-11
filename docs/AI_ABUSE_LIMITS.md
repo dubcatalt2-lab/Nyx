@@ -1,4 +1,4 @@
-## Current policy (2026-09-11; local)
+## Current policy (2026-09-11; deployed in 7f0ce4f)
 
 Premium: 50,000 tokens/month across all models and chat/API calls, reset at the start of each UTC calendar month. Luna stops when the next conservative reservation cannot fit; Gemini remains subject to site money limits. Owner can set each user's ceiling in either owner dashboard. Changes preserve usage. Configured founder owner has no personal message/token quota; site spending, burst and concurrency guards still apply. Regular users retain the existing join-date and 5?10 message policy. AI/key allowances are per user, not IP/device; signup abuse checks remain. Only the configured owner can grant Premium/Caffeine and view service billing/cache notices.
 

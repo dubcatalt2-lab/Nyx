@@ -1,5 +1,6 @@
-## 2026-09-11 - API sign-in bridge correction (local)
+## LIVE 2026-09-11 - API sign-in bridge correction (fb94e88)
 
+- Pushed and deployed `fb94e88` to OVH. VPS build, 115-file deployment/branding checks and HTTPS origin asset checks passed; health returned 200. Static-only release; no service configuration or credentials changed.
 - API sign-in now opens the host account dialog for trusted embedded pages. Standalone sign-in visits the same-host Nyx dialog and returns to `/api` after authentication. Added `/api` and `/api/` to the existing trusted account-token bridge.
 - Host auth changes refresh API access automatically; signed-in users no longer see the sign-in link. Signed-out embedded pages no longer fall back to a potentially different local Firebase account, and clear key reveal/owner controls. Verified-email and owner authorization rules remain unchanged.
 - Desktop/mobile UI fixtures cover sign-in, session refresh and sign-out; actual host bridge checks cover trusted paths and rejection of foreign origins/unknown frames.

@@ -1,3 +1,9 @@
+## LIVE follow-up - owner password loaded (2026-09-10)
+
+- User reported setting `NYX_API_OWNER_PASSWORD_HASH`, but the nonempty value was not a supported hash. After the user asked to fix the remaining issue, the value they entered was treated as their chosen password, checked against the minimum length requirement, converted in-place to a salted scrypt hash, and verified using the actual Node password checker. No secret values were printed or committed. Existing env settings/permissions were preserved; Nyx restarted and loaded a valid hash. Owner can use the original value they entered to unlock `/api#owner` after signing in as the configured founder owner.
+- User briefly reported a Gemini chat error and then confirmed it was working and asked to stop that investigation. No AI code was changed. A direct bounded streamed Gemini diagnostic succeeded (19 tokens, $0.0000046). A subsequent authenticated founder chat-route diagnostic was denied by the existing signup-date/Premium eligibility rule before inference; no entitlement or quota bypass was made.
+- Current service health is good. OpenRouter credentials remain configured. Public API workspace, `n_api_` keys, playground and usage are deployed; the prior owner-password setup blocker is resolved.
+
 ## LIVE - 2026-09-10 OpenRouter developer workspace (bcfb9c8)
 
 - Pushed `bcfb9c8` to `origin/agent/pirate-cove` and deployed it to `/var/www/nyx` on OVH. Production dependencies installed/pruned with CUDA payload skipped, VPS assets rebuilt, 115-file deployment and branding checks passed, and only the `nyx` service restarted. Environment files, Caddy/Wisp configuration, persistent data and other services were preserved.

@@ -5,13 +5,14 @@ const root=process.env.NYX_TEST_ASSET_ROOT||'.';
 const browser=await chromium.launch({headless:true});
 try {
   for(const width of [1280,390]) {
-    const page=await browser.newPage({viewport:{width,height:950}}),errors=[];
+    const page=await browser.newPage({viewport:{width,height:950},reducedMotion:'reduce'}),errors=[];
     page.on('pageerror',e=>errors.push(e.message));
     let owner=false,verified=false,unlocked=false,key=null,balance=1000;
     await page.route('http://nyx.test/**',async route=>{
       const path=new URL(route.request().url()).pathname;
-      if(path==='/')return route.fulfill({contentType:'text/html',body:`<meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0}iframe{border:0;width:100%;height:950px}</style><iframe src="/api"></iframe><script>addEventListener('message',e=>{if(e.origin===location.origin&&e.data.type==='nyx:account-token-request')e.source.postMessage({type:'nyx:account-token-response',requestId:e.data.requestId,token:'fixture'},location.origin);});</script>`});
-      if(path==='/api'||path.startsWith('/apps/api-keys/'))return route.fulfill({contentType:path.endsWith('.js')?'text/javascript':path.endsWith('.css')?'text/css':'text/html',body:await readFile(root+(path==='/api'?'/apps/api-keys/index.html':path),'utf8')});
+      if(path==='/')return route.fulfill({contentType:'text/html',body:`<meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font-family:Outfit,Arial,sans-serif;background:#141414}iframe{border:0;width:100%;height:950px}</style><iframe src="/api"></iframe><script>addEventListener('message',e=>{if(e.origin===location.origin&&e.data.type==='nyx:account-token-request')e.source.postMessage({type:'nyx:account-token-response',requestId:e.data.requestId,token:'fixture'},location.origin);});</script>`});
+      if(path==='/assets/icons/nyx-monogram.png')return route.fulfill({contentType:'image/png',body:await readFile(root+path)});
+      if(path==='/api'||path.startsWith('/apps/api-keys/')||['/apps/utility-shell.css','/apps/visual-redesign.css','/assets/vendor/three.r134.min.js','/js/beams-wallpaper.js','/js/line-waves-wallpaper.js'].includes(path))return route.fulfill({contentType:path.endsWith('.js')?'text/javascript':path.endsWith('.css')?'text/css':'text/html',body:await readFile(root+(path==='/api'?'/apps/api-keys/index.html':path),'utf8')});
       if(path==='/api/v1/ai'){balance-=12;return route.fulfill({json:{choices:[{message:{content:'Rainbows form when sunlight refracts and reflects in water droplets.'}}],usage:{prompt_tokens:7,completion_tokens:5}}});}
       if(path==='/api/developer/unlock')unlocked=true;
       if(path==='/api/developer/lock')unlocked=false;
@@ -24,6 +25,9 @@ try {
     });
     await page.goto('http://nyx.test/');const frame=page.frameLocator('iframe');
     await frame.locator('#account').filter({hasText:'1,000'}).waitFor();
+    assert.equal(await frame.locator('body').evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0)');
+    assert.equal(await frame.locator('body').evaluate(el=>getComputedStyle(el).backgroundImage),'none');
+    assert.equal(await frame.locator('#nyxBeamsBg').count(),0,'Embedded page must not duplicate wallpaper rendering');
     assert.equal(await frame.locator('#create-button').isDisabled(),true);
     assert.equal(await frame.locator('#verify').isVisible(),true);
     verified=true;await frame.locator('#refresh').click();
@@ -46,7 +50,14 @@ try {
     const overflow=await frame.locator('body').evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);assert.equal(overflow,false,`No horizontal overflow at ${width}px`);
     await page.screenshot({path:`.codex-artifacts/developer-api-${width}.png`,fullPage:true});
     await frame.locator('#lock').click();await frame.locator('#unlock').waitFor();
-    assert.deepEqual(errors,[]);await page.close();
+    assert.deepEqual(errors,[]);
+    await page.addInitScript(()=>localStorage.setItem('nyx.beamWallpaper','rose'));
+    await page.goto('http://nyx.test/api');await page.locator('#nyxBeamsBg[data-preset=rose]').waitFor();
+    assert.equal(await page.locator('html').getAttribute('data-nyx-beam-wallpaper'),'rose');
+    assert.match(await page.locator('body').evaluate(el=>getComputedStyle(el).fontFamily),/Outfit/);
+    assert.equal(await page.locator('body').evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
+    await page.locator('.brand-logo').evaluate(el=>el.decode());assert.ok(await page.locator('.brand-logo').evaluate(el=>el.naturalWidth>0));
+    await page.screenshot({path:`.codex-artifacts/developer-nyx-theme-${width}.png`});await page.close();
   }
   console.log('PASS: API verified-user gating, one-time reveal, playground completion, usage metrics, owner unlock/limits/relock, desktop and mobile layout');
 }finally{await browser.close();}

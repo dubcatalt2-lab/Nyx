@@ -1,3 +1,9 @@
+## 2026-09-11 - API page follows Nyx styling
+
+- Removed the independent blue canvas, panels, typography and oversized marketing header from the developer workspace. API Keys, Playground, Usage and Owner Dashboard now use shared `utility-shell.css` / `visual-redesign.css`, neutral glass variables, Outfit/saved font, Nyx monogram and the existing white primary button style.
+- Embedded pages remain transparent over the host wallpaper and inherit its font. Direct `/api` uses the existing Nyx Beams/Line Waves renderers with saved wallpaper/color preferences, and listens for preference changes. Wallpaper renderers are loaded only for standalone pages, avoiding duplicate GPU work inside Nyx.
+- Retains all API auth, balances, key format, limits and playground behavior. Desktop/mobile fixtures now check host transparency, saved standalone wallpaper, font, logo and overflow alongside the existing functional flow.
+
 ## LIVE follow-up - owner password loaded (2026-09-10)
 
 - User reported setting `NYX_API_OWNER_PASSWORD_HASH`, but the nonempty value was not a supported hash. After the user asked to fix the remaining issue, the value they entered was treated as their chosen password, checked against the minimum length requirement, converted in-place to a salted scrypt hash, and verified using the actual Node password checker. No secret values were printed or committed. Existing env settings/permissions were preserved; Nyx restarted and loaded a valid hash. Owner can use the original value they entered to unlock `/api#owner` after signing in as the configured founder owner.

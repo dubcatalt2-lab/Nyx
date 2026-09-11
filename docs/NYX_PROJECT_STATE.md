@@ -1,3 +1,13 @@
+## LIVE - 2026-09-10 OpenRouter developer workspace (bcfb9c8)
+
+- Pushed `bcfb9c8` to `origin/agent/pirate-cove` and deployed it to `/var/www/nyx` on OVH. Production dependencies installed/pruned with CUDA payload skipped, VPS assets rebuilt, 115-file deployment and branding checks passed, and only the `nyx` service restarted. Environment files, Caddy/Wisp configuration, persistent data and other services were preserved.
+- `/api` now serves the public API Keys / Playground / Usage workspace. Generated key format is `n_api_` plus 43 random base64url characters, matching the user's final prefix choice. Verified-email accounts get Gemini 2.5 Flash Lite, a one-time 1,000 total-token grant, and one active key per account/IP. Owner controls require the configured founder UID and a separate password.
+- Live health and HTTPS origin checks passed for `/api`, JS and CSS. Unauthenticated account/owner endpoints and invalid API keys return 401. Live shared provider is OpenRouter; model catalog contains only GPT-5.6 Luna and Gemini 2.5 Flash Lite. No paid inference or real user key issuance was needed for deployment checks.
+- External automated public requests receive Cloudflare 403; origin HTTPS was verified with hostname/certificate validation. No Cloudflare bypass rules or firewall changes were made.
+- **Owner action still needed:** `NYX_API_OWNER_PASSWORD_HASH` is not configured. Run `cd /var/www/nyx`, `sudo python3 scripts/set-api-owner-password.py`, then `sudo systemctl restart nyx` in SSH. The public API remains available; privileged management fails closed until this setup is done.
+- A separate prepared build worktree remains at `/var/www/nyx-release-bcfb9c8`. An automated approval check rejected a manual runtime-directory swap before it ran; the successful deployment used the normal in-place build/restart path instead. The prepared worktree is not the live service root.
+- Source/production desktop-mobile API fixtures, transactional key/budget tests, AI regressions, native-video and segmented HLS tests passed. The older broad NyxTube discovery test retains an obsolete removed-video-dock assertion documented below; video playback/cache checks passed.
+
 ## 2026-09-10 - API workspace release preparation
 
 - User authorized push/deploy after confirming copied keys, playground, usage and presentation. Final requested key prefix is `n_api_`; the earlier `nyx_api_` example was explicitly rejected.

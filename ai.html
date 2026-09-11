@@ -10,11 +10,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/vendor/katex/katex.min.css?v=20260814-ai-math-v1">
-  <link rel="stylesheet" href="/css/ai-workspace.css?v=20260906-monogram-v1">
+  <link rel="stylesheet" href="/css/ai-workspace.css?v=20260911-custom-keys-v1">
 <link rel="stylesheet" href="/apps/visual-redesign.css?v=20260910-direct-vision-v3">
   <script src="/js/nyx-logo.js?v=20260906-small-monogram-v7" defer></script>
   <script src="/assets/vendor/katex/katex.min.js?v=20260814-ai-math-v1" defer></script>
-  <script src="/js/ai-workspace.js?v=20260907-stable-highlights-v1" defer></script>
+  <script src="/js/ai-workspace.js?v=20260911-custom-keys-v1" defer></script>
 </head>
 <body>
   <main class="ai-app" data-ai-app>
@@ -93,6 +93,7 @@
           <select class="ai-provider-select" id="providerSelect" aria-label="Shared AI provider" title="Shared AI provider">
             <option value="shared">OpenRouter</option>
           </select>
+          <button type="button" class="ai-model-trigger" id="customKeyButton">Custom key</button>
           <span class="ai-provider-state" id="providerState" hidden></span>
           <div class="ai-model-picker" id="modelPicker">
             <button class="ai-model-trigger" id="modelTrigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="modelMenu">
@@ -168,5 +169,5 @@
     </section>
   </main>
 
-</body>
+<dialog id="customKeyDialog" class="ai-custom-key-dialog"><form id="customKeyForm"><h2>Custom API key</h2><p>Use a Nyx key or your own OpenRouter key. It stays in memory until you reload this page.</p><label>API key<input id="customKeyInput" type="password" autocomplete="off" spellcheck="false" required placeholder="n_api_... or sk-or-..."></label><p id="customKeyError" role="status"></p><button type="submit">Use key</button><button type="button" id="customKeyRemove">Use Nyx shared</button><button type="button" id="customKeyClose">Cancel</button></form></dialog></body>
 </html>

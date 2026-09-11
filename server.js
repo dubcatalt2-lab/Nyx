@@ -2580,8 +2580,8 @@ async function nyxSharedAiSession(scope) {
     const allowance=nyxSharedAiAllowance(firebase);
     if(allowance.configurationError)throw Object.assign(new Error('Shared AI budget settings need to be checked by the owner.'),{status:503});
     const actor={uid,createdAt:Date.parse(account.metadata?.creationTime||''),
-      owner:nyxRoleForUser(uid,admin)==='owner',premium:hasPremiumSubscription(normalizeSubscriptionStatus(admin.subscriptionStatus||admin.subscription?.status)),
-      trusted:admin.aiAccess==='trusted',blocked:admin.aiAccess==='restricted',
+      owner:uid===founderProfileConfig().administratorUid,premium:hasPremiumSubscription(normalizeSubscriptionStatus(admin.subscriptionStatus||admin.subscription?.status)),
+      monthlyTokenLimit:admin.aiMonthlyTokenLimit,trusted:admin.aiAccess==='trusted',blocked:admin.aiAccess==='restricted',
       apiVerified:Boolean(req.nyxAiBilling?.apiVerified),apiDailyRequests:req.nyxAiBilling?.dailyRequests,apiMinuteRequests:req.nyxAiBilling?.minuteRequests,apiMaxOutput:req.nyxAiBilling?.maxOutput,
       device:req.path==='/api/v1/ai'?`key-owner:${uid}`:await allowance.device(req,res),network:nyxClientIp(req)};
     const session=await allowance.begin(actor);
@@ -4520,10 +4520,11 @@ function nyxOwnerUserCapabilities(actor, targetRole, targetUid, ownerUid = found
     canViewAudit: nyxActorHasPermission(actor, "audit:view"),
     canEditProfile: (canManageTarget || ownerManagingSelf) && nyxActorHasPermission(actor, "profiles:write"),
     canSetRole: canManageTarget && nyxActorHasPermission(actor, "roles:write"),
-    canSetSubscription: (canManageTarget || ownerManagingSelf) && nyxActorHasPermission(actor, "subscriptions:write"),
+    canSetSubscription: actor.uid === ownerUid && (canManageTarget || ownerManagingSelf),
     canResetPassword: (canManageTarget || ownerManagingSelf) && nyxActorHasPermission(actor, "accounts:reset"),
     canVerifyEmail: (canManageTarget || ownerManagingSelf) && nyxActorHasPermission(actor, "accounts:verify"),
     canManageAiAccess: actor.role === "owner" && canManageTarget,
+    canSetAiLimit: actor.uid === ownerUid && (canManageTarget || ownerManagingSelf),
     canDisableAccount: canManageTarget && nyxActorHasPermission(actor, "accounts:disable"),
     canManageNetworkBans: canManageTarget && nyxActorHasPermission(actor, "network:bans"),
     canDeleteAccount: canManageTarget && nyxActorHasPermission(actor, "accounts:delete"),
@@ -4621,7 +4622,7 @@ async function nyxCaffeineState(firebase, uid) {
     active: subscription.active,
     giftDerived: subscription.giftDerived,
     unlimited: subscription.unlimited,
-    canGift: subscription.unlimited || (subscription.directlyAssigned && !outgoingGift),
+    canGift: uid === founderProfileConfig().administratorUid,
     outgoingGift,
     pendingGift
   };
@@ -4799,6 +4800,7 @@ function nyxOwnerUserRecord(user, administration = {}, profileData = {}, activit
     username: String(profileUsername || administration.username || emailUsername).slice(0, 80),
     email,
     deliverableEmail: nyxDeliverableEmail(email),
+    aiMonthlyTokenLimit: Number.isSafeInteger(administration.aiMonthlyTokenLimit) ? administration.aiMonthlyTokenLimit : 50000,
     aiAccess: ["trusted","restricted"].includes(administration.aiAccess) ? administration.aiAccess : "automatic",
     role,
     customRole: nyxPublicCustomRole(customRole),
@@ -7731,7 +7733,7 @@ app.use(tubeStreamingRoutes({
   backend: nyxTubeBackend, sameOrigin: sameOriginRequest, clientIp: nyxClientIp,
   owner: async req => {
     const context = await ownerDashboardActor(req);
-    if (context.actor.role !== "owner") { const error = new Error("Only an Owner can view video service status."); error.status = 403; throw error; }
+    if (context.actor.uid !== founderProfileConfig().administratorUid) { const error = new Error("Only the owner can view video service status."); error.status = 403; throw error; }
     return context;
   },
   publicVideo: async id => {
@@ -10649,6 +10651,7 @@ app.post("/api/chat/caffeine/gifts", async (req, res) => {
   }
   try {
     const { firebase, token } = await authenticatedNyxChatUser(req);
+    if(token.uid!==founderProfileConfig().administratorUid){res.status(403).json({error:'Only the owner can grant Caffeine.'});return;}
     const recipientUid = String(req.body?.recipientUid || "").trim();
     if (!/^[A-Za-z0-9_-]{8,128}$/.test(recipientUid) || recipientUid === token.uid) {
       res.status(400).json({ error: "Choose another Nyx member for this Caffeine gift." });
@@ -10784,6 +10787,7 @@ app.post("/api/chat/caffeine/gifts/:giftId/accept", async (req, res) => {
       ]);
       const gift = giftSnapshot.data() || {};
       giverUid = String(gift.giverUid || "").trim();
+      if(giverUid!==founderProfileConfig().administratorUid)throw Object.assign(new Error("Only owner-issued Caffeine gifts can be accepted."),{status:403});
       if (!giftSnapshot.exists || gift.recipientUid !== token.uid || String(gift.status || "") !== "pending") {
         const error = new Error("That Caffeine gift is no longer available.");
         error.status = 404;
@@ -12542,7 +12546,7 @@ app.get('/api/owner-dashboard/ai-status', async (req,res)=>{
   res.set('Cache-Control','no-store');
   try {
     const {actor}=await ownerDashboardActor(req);
-    if(actor.role!=='owner')return res.status(403).json({error:'Only an Owner can view AI balance.'});
+    if(actor.uid!==founderProfileConfig().administratorUid)return res.status(403).json({error:'Only the owner can view AI balance.'});
     const status=await nyxOpenRouterOwnerStatus();
     res.json({...status,dailyCapUsd:Number(process.env.NYX_AI_DAILY_BUDGET_USD)||0});
   } catch(error) {res.status(error.status||503).json({error:'AI balance could not be checked.'});}
@@ -12984,6 +12988,7 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
     const capabilityByAction = {
       set_role: "canSetRole",
       set_subscription: "canSetSubscription",
+      set_ai_limit: "canSetAiLimit",
       set_profile: "canEditProfile",
       disable: "canDisableAccount",
       ban: "canDisableAccount",
@@ -13019,7 +13024,12 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
     }
     let auditAction = action;
     let auditDetails = {};
-    if (["ai_trust","ai_restrict","ai_reset"].includes(action)) {
+    if (action === "set_ai_limit") {
+      const limit=req.body?.monthlyTokenLimit;
+      if(!Number.isSafeInteger(limit)||limit<0||limit>10000000){res.status(400).json({error:'Enter a monthly token limit from 0 to 10,000,000.'});return;}
+      await firebase.firestore.collection('nyxUserAdministration').doc(uid).set({aiMonthlyTokenLimit:limit,updatedAt:new Date().toISOString()},{merge:true});
+      auditAction='ai_monthly_limit_changed';auditDetails={monthlyTokenLimit:limit};
+    } else if (["ai_trust","ai_restrict","ai_reset"].includes(action)) {
       const aiAccess=action==='ai_trust'?'trusted':action==='ai_restrict'?'restricted':'automatic';
       await firebase.firestore.collection('nyxUserAdministration').doc(uid).set({aiAccess,updatedAt:new Date().toISOString()},{merge:true});
       auditAction='ai_access_changed';auditDetails={aiAccess};

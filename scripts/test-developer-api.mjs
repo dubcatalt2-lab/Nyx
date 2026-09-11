@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import express from 'express';
 import {createKeyStore,installDeveloperApi,passwordDigest,checkPassword,GEMINI,LUNA} from '../lib/developer-api.mjs';
 import {memoryFirestore} from './test-ai-allowance.mjs';
@@ -6,7 +7,7 @@ import {createAiAllowance,aiAllowanceConfig} from '../lib/ai-allowance.mjs';
 
 const db=memoryFirestore();let time=Date.now();const store=createKeyStore(db,()=>time);
 const racing=await Promise.allSettled([store.issue('a','same-ip','A'),store.issue('b','same-ip','B')]);
-assert.equal(racing.filter(r=>r.status==='fulfilled').length,1,'IP slot must be atomic');
+assert.equal(racing.filter(r=>r.status==='fulfilled').length,2,'Different users on the same IP must have separate keys');
 const first=racing[0].value.key,k=await store.authenticate(first);
 assert.ok(!JSON.stringify([...db.records]).includes(first),'Do not persist the raw key');
 assert.equal((await store.details('a')).balance,1000);
@@ -23,14 +24,16 @@ assert.equal((await store.details('a')).requestsToday,1);
 await store.revoke('a');await assert.rejects(store.authenticate(first),/revoked/);
 time+=61000;const replacement=await store.issue('a','same-ip','replacement');
 assert.equal((await store.details('a')).balance,970,'Rotation must not refill');
-await store.revoke('a');await store.issue('b','same-ip','new person');
-assert.equal((await store.details('b')).balance,0,'IP starter grant must not refill across accounts');
+await store.revoke('a');await store.revoke('b');time+=61000;await store.issue('b','same-ip','new person');
+assert.equal((await store.details('b')).balance,1000,'Each account has its own starter grant');
 await assert.rejects(store.authenticate(replacement.key),/revoked/);
 
 const password='test-only-owner-password',digest=await passwordDigest(password);
 assert.equal(await checkPassword(password,digest),true);assert.equal(await checkPassword('wrong',digest),false);
 assert.equal(await checkPassword(password,'malformed'),false);
 const routeDb=memoryFirestore(),users=new Map([['member',{email:'member@example.test',emailVerified:true}],['owner',{email:'owner@example.test',emailVerified:true}],['unverified',{email:'u@example.test',emailVerified:false}],['disabled',{disabled:true}]]);
+const collection=routeDb.collection;
+routeDb.collection=name=>{const base=collection(name);return {...base,doc(id){const r=base.doc(id);return {...r,async set(value,options){routeDb.records.set(r.path,options?.merge?{...routeDb.records.get(r.path),...value}:value)}};},orderBy(){let lower='',upper='~',after='',limit=100;const q={endAt(v){upper=v;return q},startAt(v){lower=v;return q},startAfter(v){after=v;return q},limit(v){limit=v;return q},async get(){return {docs:[...routeDb.records].filter(([k])=>k.startsWith(name+'/')).map(([k,v])=>({id:k.slice(name.length+1),data:()=>v})).filter(d=>d.id>=lower&&d.id<=upper&&d.id>after).sort((a,b)=>a.id.localeCompare(b.id)).slice(0,limit)}}};return q;}};};
 const firebase={firestore:routeDb,auth:{getUser:async uid=>{if(!users.has(uid))throw Error('Missing user');return users.get(uid);}}};
 const app=express();app.use(express.json());let calls=0,mode='ok';
 installDeveloperApi(app,{firebase:async()=>firebase,authenticate:async req=>{const uid=req.get('authorization')?.replace('Bearer ','');if(!users.has(uid))throw Object.assign(Error('Sign in'),{status:401});return {firebase,token:{uid}};},ownerUid:()=> 'owner',passwordHash:()=>digest,sameOrigin:req=>req.get('origin')!=='https://evil.test',clientIp:req=>req.get('x-test-ip')||'school',configured:()=>true,page:(_req,res)=>res.send('public API page'),send:async(req,payload)=>{
@@ -44,20 +47,25 @@ const origin=`http://127.0.0.1:${server.address().port}`;
 const request=(path,uid,body,method,headers={})=>fetch(origin+path,{method:method||(body?'POST':'GET'),headers:{...(uid?{Authorization:'Bearer '+uid}:{}),'Content-Type':'application/json',...headers},...(body?{body:JSON.stringify(body)}:{})});
 try {
   assert.equal((await request('/api')).status,200);
-  assert.equal((await request('/api/developer/me')).status,401);
+  assert.equal((await request('/api/developer/me')).status,401);assert.equal((await request('/api/developer/owner/accounts','member')).status,403);assert.equal((await request('/api/developer/owner/accounts','owner')).status,403);
   assert.equal((await request('/api/developer/keys','unverified',{})).status,403);
   assert.equal((await request('/api/developer/keys','disabled',{})).status,403);
   assert.equal((await request('/api/developer/keys','member',{},null,{origin:'https://evil.test'})).status,403);
   const issued=await (await request('/api/developer/keys','member',{})).json();assert.ok(issued.key);
-  assert.equal((await request('/api/developer/keys','owner',{})).status,409,'Other accounts share IP key limit');
+  assert.equal((await request('/api/developer/keys','owner',{})).status,200,'Other accounts have independent keys');
   assert.equal((await request('/api/developer/unlock','member',{password})).status,403);
   assert.equal((await request('/api/developer/owner/account/member','owner')).status,403);
   assert.equal((await request('/api/developer/unlock','owner',{password:'wrong'})).status,403);
   const unlock=await request('/api/developer/unlock','owner',{password});assert.equal(unlock.status,200);
   const cookie=unlock.headers.get('set-cookie').split(';')[0];assert.match(unlock.headers.get('set-cookie'),/HttpOnly; Secure; SameSite=Strict/);
   assert.equal((await request('/api/developer/owner/account/member','member',null,null,{cookie})).status,403,'Cookie is bound to owner UID');
-  const settings={addTokens:100,dailyRequests:30,minuteRequests:5,maxOutput:600,models:[GEMINI]};
-  assert.equal((await request('/api/developer/owner/account/member','owner',settings,null,{cookie})).status,200);
+  const listed=await (await request('/api/developer/owner/accounts','owner',null,null,{cookie})).json();assert.equal(listed.members.length,2);assert.ok(listed.members.every(m=>m.key.prefix.startsWith('n_api_')));assert.ok(!JSON.stringify(listed).includes(issued.key));
+  assert.equal((await request('/api/developer/owner/accounts?cursor=bad','owner',null,null,{cookie})).status,400);
+  for(let i=0;i<52;i++){const uid='listed'+i,id=createHash('sha256').update(uid).digest('hex');users.set(uid,{displayName:'Listed '+i,email:'test@example.test',emailVerified:true});routeDb.records.set('nyxDeveloperApi/account-'+id,{uid,activeKey:id,balance:1000,models:[GEMINI],dailyRequests:20,minuteRequests:4,maxOutput:512});routeDb.records.set('nyxDeveloperApi/key-'+id,{uid,prefix:'n_api_fixture',label:'Key'});}
+  const firstPage=await (await request('/api/developer/owner/accounts','owner',null,null,{cookie})).json();assert.equal(firstPage.members.length,50);assert.ok(firstPage.nextCursor);
+  const secondPage=await (await request('/api/developer/owner/accounts?cursor='+firstPage.nextCursor,'owner',null,null,{cookie})).json();assert.equal(secondPage.members.length,4);assert.equal(secondPage.nextCursor,null);assert.equal(new Set([...firstPage.members,...secondPage.members].map(m=>m.uid)).size,54);
+  const settings={monthlyTokenLimit:60000,addTokens:100,dailyRequests:30,minuteRequests:5,maxOutput:600,models:[GEMINI]};
+  assert.equal((await request('/api/developer/owner/account/member','owner',settings,null,{cookie})).status,200);assert.equal(routeDb.records.get('nyxUserAdministration/member').aiMonthlyTokenLimit,60000);
   assert.equal((await request('/api/developer/owner/account/member','owner',{...settings,addTokens:-1},null,{cookie})).status,400);
   const prompt={messages:[{role:'user',content:'Hi'}]};
   const ok=await request('/api/v1/ai',issued.key,prompt);assert.equal(ok.status,200);assert.equal(calls,1);
@@ -82,4 +90,4 @@ const session=await allowance.begin({...actor,apiVerified:true,apiDailyRequests:
 const reservation=await allowance.reserve(session,'shared',{model:GEMINI,messages:[{role:'user',content:'Hi'}],max_tokens:128});
 assert.ok(reservation.reserved>0);assert.equal(session.tier,'newcomer');
 await allowance.settle(reservation,null,true);await allowance.finish(session);
-console.log('PASS: verified API access, atomic IP limit, non-renewing grants, owner password, model/usage limits, reservations and shared budget integration');
+console.log('PASS: verified API access, per-user key limits, non-renewing grants, owner password, model/usage limits, reservations and shared budget integration');

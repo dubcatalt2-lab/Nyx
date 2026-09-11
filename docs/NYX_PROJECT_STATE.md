@@ -1,3 +1,14 @@
+## 2026-09-11 - Per-user AI and owner controls (local)
+
+- Removed per-IP developer key slots/starter grants and shared AI network/device usage ceilings. Each user retains one active key and their own regular one-time grant. Signup abuse checks and per-account burst/concurrency/site spending protections remain.
+- Premium has 50,000 input+output tokens per UTC calendar month across shared chat and Nyx API calls. Atomic monthly reservations are shared by UID across both paths; actual confirmed usage settles reservations, uncertain usage retains them, and old-month settlements cannot change the new month. Luna rejects requests that exceed the remaining allowance; Gemini can continue under the site budget. Owner can change a user's monthly ceiling without clearing usage in either dashboard. Premium chat no longer uses the old 5?10 message rule.
+- Configured founder owner has no personal token/daily-message ceiling or join-date gate. Burst/concurrency, site money caps and the OpenRouter reserve floor still apply. Paid site cap remains $1/day. Regular account eligibility/message limits remain unchanged.
+- Only the configured owner can assign Premium/Caffeine, send/accept owner-issued gifts, view AI balance/NyxTube cache status, or access the API management endpoints. Existing non-owner pending gifts cannot newly grant Premium. Existing subscriptions are preserved.
+- `/api#owner` lists accounts with active API keys using bounded pagination, names, token usage and Manage controls; owner authentication plus password unlock are required. No full API secrets returned. Public API workspace/personal Usage remain accessible to ordinary users.
+- Custom AI key dialog accepts `n_api_` and OpenRouter keys, keeps them only in page memory, routes Nyx calls to its guarded API and OpenRouter calls directly to the fixed provider URL. No shared-key fallback on failure. Nyx custom keys remain text-only; OpenRouter custom keys support images. Prior retired provider keys stay disabled.
+- Dashboard now uses content-height status/metric rows plus a flexible scrollable user workspace, fixing the statistics row stretch introduced by adding both AI and video cards.
+- Validation: monthly rollover/late settlement/cross-chat-API race and refund tests, key identity/grant/owner list pagination and monthly settings, actual host capability/gift authorization, budget middleware, retired-provider checks and source/production desktop/mobile UI fixtures passed. Custom-key responses use fixtures, not paid provider calls. No push/deploy yet.
+
 ## LIVE 2026-09-11 - API sign-in bridge correction (fb94e88)
 
 - Pushed and deployed `fb94e88` to OVH. VPS build, 115-file deployment/branding checks and HTTPS origin asset checks passed; health returned 200. Static-only release; no service configuration or credentials changed.

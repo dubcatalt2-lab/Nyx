@@ -16,7 +16,7 @@ const denied=p=>assert.rejects(p,e=>e.code==='ai_allowance');
 {
   const f=fixture(),a=f.create();
   for(const createdAt of [AI_JOIN_CUTOFF,AI_JOIN_CUTOFF+1,NaN]) {
-    for(const extras of [{},{trusted:true},{owner:true}]) {
+    for(const extras of [{},{trusted:true}]) {
       await assert.rejects(a.begin({...f.actor,createdAt,...extras}),e=>e.status===403);
     }
   }

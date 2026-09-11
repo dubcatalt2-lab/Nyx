@@ -24,7 +24,7 @@ const context=vm.createContext({app,AsyncLocalStorage,aiAllowanceConfig,createAi
   createOpenRouterBalanceGuard:options=>createOpenRouterBalanceGuard({...options,fetchImpl:async url=>new Response(JSON.stringify({data:url.endsWith('/credits')?{total_credits:balance,total_usage:0}:{limit_remaining:null}}))}),
   authenticatedNyxUser:async req=>{const uid=req.get('authorization')?.replace('Bearer ','');if(!uid)throw Object.assign(new Error('Auth required'),{status:401});return {firebase,token:{uid,email_verified:false}};},
 
-  nyxClientIp:()=> 'school-network',
+  founderProfileConfig:()=>({administratorUid:'owner'}),nyxClientIp:()=> 'school-network',
   sameOriginRequest:req=>req.get('sec-fetch-site')!=='cross-site',
   nyxRoleForUser:uid=>uid==='owner'?'owner':'member',hasPremiumSubscription:value=>value==='premium',normalizeSubscriptionStatus:value=>value,
   fetch:async(_url,options)=>{calls++;lastPayload=JSON.parse(options.body);

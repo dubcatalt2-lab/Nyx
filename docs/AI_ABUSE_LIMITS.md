@@ -1,3 +1,11 @@
+## Current policy (2026-09-11; local)
+
+Premium: 50,000 tokens/month across all models and chat/API calls, reset at the start of each UTC calendar month. Luna stops when the next conservative reservation cannot fit; Gemini remains subject to site money limits. Owner can set each user's ceiling in either owner dashboard. Changes preserve usage. Configured founder owner has no personal message/token quota; site spending, burst and concurrency guards still apply. Regular users retain the existing join-date and 5?10 message policy. AI/key allowances are per user, not IP/device; signup abuse checks remain. Only the configured owner can grant Premium/Caffeine and view service billing/cache notices.
+
+Custom Nyx and OpenRouter keys are supported in Nyx AI in page memory. OpenRouter personal-key calls use their own provider balance directly; they do not consume the shared Nyx budget. Nyx keys use the shared backend's budgets and per-user eligibility. The prior personal-provider retirement applies to the old providers and saved keys, not this new explicit key entry.
+
+The following historical setup notes are superseded by this policy where they differ.
+
 # Shared AI allowances
 
 Local implementation, not deployed. Shared AI now requires a signed-in account. Email is optional and signup no longer sends a verification message or opens the email-verification gate. Cloud preferences and game saves still require authenticated ownership, but no longer require `emailVerified`. Password reset and the actual email-verification status remain unchanged.
@@ -12,11 +20,11 @@ Firestore transactions in the server-only `nyxAiAllowance` collection enforce al
 | New-account / established / owner pools | 20% / 70% / 10% |
 | Requests per account per day | 5 standard; up to 10 with token headroom |
 | Requests per account per minute | 4 |
-| Requests per shared network per minute | 120 |
+| AI shared-network quota | None |
 | Simultaneous requests | 1/account, 3/site |
 | New-account simultaneous requests | 1 at the default site capacity |
 | Capacity reserved for owner | 1 of the default 3 slots |
-| New-account requests per browser per day | 30 across accounts |
+| AI browser quota | None |
 | Account creation through Nyx | 3 attempts/browser/day; 100/network/hour |
 | Maximum output | 700 tokens new; 2,200 otherwise |
 

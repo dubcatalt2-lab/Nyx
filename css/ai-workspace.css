@@ -948,3 +948,5 @@ button:disabled{cursor:not-allowed}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+.ai-custom-key-dialog{width:min(460px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;border:1px solid rgba(255,255,255,.2);border-radius:20px;background:#111218;color:#f2f2f5;padding:28px;font:inherit}.ai-custom-key-dialog::backdrop{background:#000a;backdrop-filter:blur(8px)}.ai-custom-key-dialog input{display:block;width:100%;box-sizing:border-box;margin:12px 0;padding:12px;background:#1c1d24;border:1px solid #555;border-radius:10px;color:inherit}.ai-custom-key-dialog button{padding:10px 14px;margin:5px;border-radius:10px;border:1px solid #555;background:#f0f1f5;color:#111;font:inherit}

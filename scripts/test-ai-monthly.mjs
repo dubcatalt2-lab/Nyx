@@ -1,0 +1,38 @@
+﻿import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {createAiAllowance,aiAllowanceConfig} from '../lib/ai-allowance.mjs';
+import {memoryFirestore} from './test-ai-allowance.mjs';
+const db=memoryFirestore();let time=Date.parse('2026-09-11T12:00:00Z');
+const a=createAiAllowance({db,config:aiAllowanceConfig({}),now:()=>time});
+const actor={uid:'premium',premium:true,createdAt:time,network:'school',device:'same',monthlyTokenLimit:50000};
+const record='nyxAiAllowance/premium-'+createHash('sha256').update(actor.uid).digest('hex');
+const payload=model=>({model,messages:[{role:'user',content:'Hello'}],max_tokens:100});
+const luna='openai/gpt-5.6-luna',gemini='google/gemini-2.5-flash-lite';
+async function call(user,model,usage){const session=await a.begin(user);try{const r=await a.reserve(session,'shared',payload(model));await a.settle(r,usage);return r;}finally{await a.finish(session);time+=61000;}}
+await call(actor,luna,{input:200,output:300});assert.equal(db.records.get(record).tokens,500);
+await call({...actor,apiVerified:true},gemini,{input:400,output:100});assert.equal(db.records.get(record).tokens,1000,'API and chat share monthly usage');
+db.records.set(record,{month:'2026-09',tokens:50000});
+await assert.rejects(call(actor,luna),/Luna is unavailable/);
+await call(actor,gemini,{input:10,output:10});assert.equal(db.records.get(record).tokens,50020);
+await call({...actor,monthlyTokenLimit:60000},luna,{input:10,output:10});assert.equal(db.records.get(record).tokens,50040,'Raising limit preserves usage');
+await assert.rejects(call({...actor,monthlyTokenLimit:0},luna),/Luna is unavailable/);
+await call({...actor,owner:true},luna,{input:10,output:10});
+for(let i=0;i<12;i++)await call({...actor,uid:'founder',owner:true,premium:false},luna,{input:10000,output:10000});
+time=Date.parse('2026-10-01T00:01:00Z');await call(actor,luna,{input:10,output:20});assert.equal(db.records.get(record).tokens,30,'New UTC month resets tokens');
+const session=await a.begin(actor),r=await a.reserve(session,'shared',payload(luna));await a.settle(r,null,true);await a.settle(r,null,true);await a.finish(session);assert.equal(db.records.get(record).tokens,30,'Pre-send refund is idempotent');
+// Separate chat/API sessions must serialize against the same monthly ledger.
+time=Date.parse('2026-10-03T12:00:00Z');db.records.set(record,{month:'2026-10',tokens:48000});
+const first=await a.begin(actor),second=await a.begin({...actor,apiVerified:true});
+const race=await Promise.allSettled([a.reserve(first,'shared',payload(luna)),a.reserve(second,'shared',payload(luna))]);
+assert.equal(race.filter(r=>r.status==='fulfilled').length,1,'Concurrent API/chat cannot double-spend remaining tokens');
+for(const entry of race)if(entry.status==='fulfilled')await a.settle(entry.value,null,true);
+await a.finish(first);await a.finish(second);
+time=Date.parse('2026-10-31T23:59:59Z');const lateSession=await a.begin(actor),late=await a.reserve(lateSession,'shared',payload(gemini));await a.finish(lateSession);
+time=Date.parse('2026-11-01T00:00:01Z');await call(actor,luna,{input:20,output:20});
+await a.settle(late,null,true);assert.equal(db.records.get(record).tokens,40,'Late October refunds must not reduce November usage');
+const budgetDb=memoryFirestore(),budget=createAiAllowance({db:budgetDb,now:()=>time,config:aiAllowanceConfig({NYX_AI_DAILY_BUDGET_USD:'1',NYX_AI_MODEL_PRICES_JSON:JSON.stringify({['shared:'+luna]:{inputPerMillion:1,outputPerMillion:1}})})});
+budgetDb.records.set('nyxAiAllowance/global',{day:'2026-11-01',month:'2026-11',reserveRequests:150,reserveMoney:200000,monthMoney:200000});
+const ownerSession=await budget.begin({uid:'founder',owner:true});const paid=await budget.reserve(ownerSession,'shared',payload(luna));await budget.settle(paid,null,true);await budget.finish(ownerSession);
+budgetDb.records.set('nyxAiAllowance/global',{day:'2026-11-01',month:'2026-11',establishedMoney:999999,monthMoney:999999});
+const cappedOwner=await budget.begin({uid:'founder',owner:true});await assert.rejects(budget.reserve(cappedOwner,'shared',payload(luna)),/spending allowance/);await budget.finish(cappedOwner);
+console.log('PASS: monthly shared model/API usage, Luna cutoff, Gemini continuation, owner exemption, custom limits, rollover and refunds');

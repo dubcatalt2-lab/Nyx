@@ -25,6 +25,7 @@ try {
       if(path==='/assets/icons/nyx-monogram.png')return route.fulfill({contentType:'image/png',body:await readFile(root+path)});
       if(path==='/api'||path.startsWith('/apps/api-keys/')||['/apps/utility-shell.css','/apps/visual-redesign.css','/assets/vendor/three.r134.min.js','/js/beams-wallpaper.js','/js/line-waves-wallpaper.js'].includes(path))return route.fulfill({contentType:path.endsWith('.js')?'text/javascript':path.endsWith('.css')?'text/css':'text/html',body:await readFile(root+(path==='/api'?'/apps/api-keys/index.html':path),'utf8')});
       if(path==='/api/v1/ai'){balance-=12;return route.fulfill({json:{choices:[{message:{content:'Rainbows form when sunlight refracts and reflects in water droplets.'}}],usage:{prompt_tokens:7,completion_tokens:5}}});}
+      if(path==='/api/developer/owner/accounts')return route.fulfill({json:{members:[{uid:'member',name:'Test Member',balance,usedTokens:12,key:{prefix:'n_api_fixture'}}],nextCursor:null}});
       if(path==='/api/developer/unlock')unlocked=true;
       if(path==='/api/developer/lock')unlocked=false;
       if(path==='/api/developer/keys') {
@@ -57,7 +58,7 @@ try {
     assert.equal(await frame.locator('#usage-rows tr').count(),1);
     await frame.locator('[data-tab=keys]').click();await frame.locator('#revoke').click();
     owner=true;await frame.locator('#refresh').click();await frame.locator('[data-tab=owner]').click();await frame.locator('#owner').waitFor();
-    await frame.locator('#unlock input').fill('fixture password');await frame.locator('#unlock button').click();await frame.locator('#management').waitFor();
+    await frame.locator('#unlock input').fill('fixture password');await frame.locator('#unlock button').click();await frame.locator('#management').waitFor();await frame.locator('#members-rows').filter({hasText:'Test Member'}).waitFor();
     assert.equal(await frame.locator('#unlock input').inputValue(),'');
     await frame.locator('#lookup button').click();await frame.locator('#target').filter({hasText:'988 tokens'}).waitFor();
     await frame.locator('[name=addTokens]').fill('50');await frame.locator('#limits button').click();await frame.locator('#target').filter({hasText:'1038 tokens'}).waitFor();

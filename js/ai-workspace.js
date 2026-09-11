@@ -126,8 +126,16 @@
     const token=await nyxAiAccountToken();
     return {...headers,'x-nyx-ai-provider':'shared',...(token?{Authorization:`Bearer ${token}`}:{})};
   }
+  let customKey='';
+  const customKind=()=>customKey.startsWith('n_api_')?'nyx':'openrouter';
+  const keyDialog=document.getElementById('customKeyDialog');
+  keyDialog?.addEventListener('close',()=>{document.getElementById('customKeyInput').value='';});
+  document.getElementById('customKeyButton')?.addEventListener('click',()=>keyDialog.showModal());
+  document.getElementById('customKeyClose')?.addEventListener('click',()=>keyDialog.close());
+  document.getElementById('customKeyRemove')?.addEventListener('click',()=>{customKey='';document.getElementById('customKeyInput').value='';keyDialog.close();renderProviders();void loadModels();});
+  document.getElementById('customKeyForm')?.addEventListener('submit',event=>{event.preventDefault();const field=document.getElementById('customKeyInput'),value=field.value.trim();if(!/^n_api_[A-Za-z0-9_-]{43}$/.test(value)&&!/^sk-or-[A-Za-z0-9_-]{20,}$/.test(value)){document.getElementById('customKeyError').textContent='Enter a valid Nyx or OpenRouter API key.';return;}customKey=value;field.value='';document.getElementById('customKeyError').textContent='';keyDialog.close();renderProviders();void loadModels();});
   function selectedProvider(){return 'shared'}
-  function syncProviderControl(){providerSelect.disabled=true;providerSelect.title='OpenRouter';if(providerState)providerState.hidden=true;}
+  function syncProviderControl(){providerSelect.disabled=true;providerSelect.title=customKey?(customKind()==='nyx'?'Nyx custom key':'OpenRouter custom key'):'Nyx shared';if(customKey)providerSelect.options[0].textContent=providerSelect.title;if(providerState)providerState.hidden=true;}
 
   function renderProviders(){
     const selected=selectedProvider();
@@ -1162,14 +1170,14 @@
     modelTrigger.disabled=true;
     modelTrigger.setAttribute('aria-busy','true');
     try{
-      const response=await fetch('/api/nyx-ai/models',{headers:await aiHeaders({accept:'application/json'})});
+      const response=customKey?Response.json({models:[{id:'google/gemini-2.5-flash-lite',label:'Gemini 2.5 Flash Lite',vision:customKind()==='openrouter'},{id:'openai/gpt-5.6-luna',label:'GPT-5.6 Luna',vision:customKind()==='openrouter'}]}):await fetch('/api/nyx-ai/models',{headers:await aiHeaders({accept:'application/json'})});
       const data=await response.json();
       if(!response.ok) throw new Error(data?.error||`Model catalog failed (${response.status})`);
       const next=Array.isArray(data?.models)?data.models.flatMap(item=>{
         const id=String(item?.id||'').trim();
         const label=String(item?.label||id).trim();
         const company=String(item?.company||'').trim();
-        return id&&label?[{id,label,company,vision:Boolean(item?.vision)||KNOWN_VISION_MODELS.has(id),reasoning:Boolean(item?.reasoning)}]:[];
+        return id&&label?[{id,label,company,vision:customKey&&customKind()==='nyx'?false:Boolean(item?.vision)||KNOWN_VISION_MODELS.has(id),reasoning:Boolean(item?.reasoning)}]:[];
       }):[];
       if(!next.length) throw new Error('No models are currently available.');
       const saved=activeThread()?.model||localStorage.getItem(MODEL_KEY)||DEFAULT_MODEL;
@@ -1311,15 +1319,25 @@
         if(sharing) screenStatus.textContent=`Nyx is reading this screen frame for ${modelLabel(requestedModel)}…`;
         else setAttachmentStatus(`Nyx is reading this image for ${modelLabel(requestedModel)}…`);
       }
-      const response=await fetch('/api/nyx-ai',{
+      let response;
+      if(customKey){
+        const kind=customKind();
+        if(preparedImage&&kind==='nyx')throw new Error('Nyx API keys currently support text only. Use Nyx shared or an OpenRouter key for images.');
+        const messages=history.map(item=>({role:item.role,content:item.content+(item.textAttachment?'\n\n'+item.textAttachment.content:'')}));
+        if(preparedImage)messages[messages.length-1].content=[{type:'text',text:messages[messages.length-1].content},{type:'image_url',image_url:{url:preparedImage.dataUrl}}];
+        response=await fetch(kind==='nyx'?'/api/v1/ai':'https://openrouter.ai/api/v1/chat/completions',{method:'POST',signal:activeController.signal,headers:{'Content-Type':'application/json',Authorization:'Bearer '+customKey},body:JSON.stringify({model:requestedModel,messages,max_tokens:512,stream:kind!=='nyx'})});
+        if(kind==='nyx'&&response.ok){const result=await response.json();const content=result.choices?.[0]?.message?.content||'';response=new Response('data: '+JSON.stringify({choices:[{delta:{content}}]})+'\n\ndata: [DONE]\n\n',{headers:{'Content-Type':'text/event-stream'}});}
+      }else{
+      response=await fetch('/api/nyx-ai',{
         method:'POST',
         signal:activeController.signal,
         headers:await aiHeaders({'content-type':'application/json'}),
         body:JSON.stringify({model:requestedModel,message:userText,messages:history,textAttachment,imageContext,image:preparedImage,responseDepth:responseDepth(),stream:true})
       });
+      }
       if(!response.ok){
         const data=await response.json().catch(()=>({}));
-        throw new Error(data?.error||`Nyx AI failed (${response.status})`);
+        throw new Error(data?.error?.message||data?.error||`Nyx AI failed (${response.status})`);
       }
       if(!response.body) throw new Error('The selected model did not return a stream.');
       const reader=response.body.getReader();

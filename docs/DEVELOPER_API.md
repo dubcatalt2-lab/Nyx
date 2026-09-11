@@ -2,7 +2,7 @@
 
 The public `/api` page and existing Apps → Nyx API Keys entry use OpenRouter through the Nyx server. The owner's actual OpenRouter key never leaves the VPS. Old Groq-era keys cannot authenticate to the new gateway.
 
-Verified Nyx email accounts receive a one-time 1,000-token Gemini 2.5 Flash Lite grant. It includes input and output tokens, not 1,000 tokens per request or per day. One active key per account and normalized IP, across accounts. A school sharing one public IP gets one slot. Revocation frees the slot but preserves account balances and the IP's consumed starter grant. A different account claiming that IP later gets zero starter tokens. IP changes/VPNs and separate verified accounts can still evade IP-based identity limits; this is not proof of a unique person.
+Verified Nyx email accounts receive a one-time 1,000-token Gemini 2.5 Flash Lite grant. One active key per account; users on the same network have independent keys and grants. Rotation does not refill the balance. Premium instead shares a 50,000-token UTC calendar-month allowance with shared Nyx chat, across Gemini and Luna; Gemini can continue after the allowance is spent, while Luna stops. The configured owner has no personal token/daily-message ceiling. All requests still obey site spending and burst/concurrency protections.
 
 The public workspace has API Keys, Playground, Usage and owner-only dashboard tabs. Playground uses a pasted/generated Nyx key with the same backend limits, shows response token counts, and supports cancellation. Keys remain in page memory only. Usage shows lifetime token totals, requests today, the remaining balance meter and the latest 20 request outcomes. No paid background warmups run.
 
@@ -14,7 +14,7 @@ The gateway uses the same $1 daily spending partitions, concurrency limits, mode
 
 Owner Dashboard → Manage AI API keys and token balances opens `/api#owner`. Only the configured founder administrator UID can unlock, not an arbitrary account with an Owner role. The extra password cannot grant ownership. The session lasts 15 minutes, uses an HttpOnly/Secure/SameSite cookie, and still requires the Firebase owner token on every operation. Five password attempts per 15 minutes are enforced in Firestore. Password changes invalidate existing sessions after the service reloads.
 
-Load a Nyx user ID, add tokens, choose Gemini and/or Luna, set output/daily/minute limits, or revoke their key. No automatic verification override: regular users must verify their own email. Signup stays email-optional; verification is required only for the developer API. On the public page, Send verification email uses Firebase and does not change normal signup.
+Use the paginated active-key member list or load a Nyx user ID. Change the Premium monthly ceiling (without resetting usage), add regular-account tokens, choose Gemini and/or Luna, set output/daily/minute limits, or revoke their key. No automatic verification override: regular users must verify their own email. Signup stays email-optional; verification is required only for the developer API. On the public page, Send verification email uses Firebase and does not change normal signup.
 
 ## Set the separate password after deploying these files
 
@@ -39,6 +39,6 @@ curl https://nyxlearning.org/api/v1/ai \
   -d '{"model":"google/gemini-2.5-flash-lite","messages":[{"role":"user","content":"Hello"}],"max_tokens":128}'
 ```
 
-POST accepts OpenAI-style messages; response contains choices and usage. Put issued keys on your application's server. Streaming, images, tools and arbitrary provider parameters are currently rejected. All developer-account, key, IP and password-attempt records live in the server-only `nyxDeveloperApi` Firestore collection.
+POST accepts OpenAI-style messages; response contains choices and usage. Put issued keys on your application's server. Streaming, images, tools and arbitrary provider parameters are currently rejected. All developer-account, key and password-attempt records live in the server-only `nyxDeveloperApi` Firestore collection.
 
-IP enforcement uses Nyx's existing trusted-proxy client IP normalization. Production must keep direct backend ingress restricted to its trusted reverse proxy and overwrite forwarded IP headers there; accepting caller-supplied forwarding headers would weaken the limit.
+Nyx AI also accepts Nyx and OpenRouter keys through Custom key. Keys stay in page memory, never in saved preferences or exports. OpenRouter calls go directly to its fixed API endpoint; Nyx keys use the same guarded gateway.

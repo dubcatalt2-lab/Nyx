@@ -68,7 +68,7 @@ async function run() {
   {
     const f=fixture({NYX_AI_NEW_DAILY_REQUESTS:'1'}),a=f.allowance;
     for(let n=0;n<3;n++)await a.finish(await a.begin(f.actor(`device${n}`,{device:'same-browser'})));
-    await rejected(a.begin(f.actor('device4',{device:'same-browser'})),/browser/);
+    await a.finish(await a.begin(f.actor('device4',{device:'same-browser'})));
     await rejected(a.begin(f.actor('device0')),/resets/);
     f.advance(DAY);
     await a.finish(await a.begin(f.actor('device0',{device:'same-browser'})));

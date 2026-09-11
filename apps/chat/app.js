@@ -706,16 +706,17 @@
     if(!refs.caffeineStatus||!refs.caffeineGiftList)return;
     refs.caffeineGiftList.replaceChildren();
     if(!caffeine.active){
-      refs.caffeineStatus.textContent='Caffeine is Nyx Premium. An eligible member can share one cup from a directly assigned Premium subscription.';
+      refs.caffeineStatus.textContent='Caffeine is Nyx Premium. Only the Nyx owner can grant it.';
       const empty=document.createElement('p');empty.className='caffeine-empty';empty.textContent='You do not have Caffeine yet.';refs.caffeineGiftList.append(empty);return;
     }
-    if(caffeine.unlimited)refs.caffeineStatus.textContent='Your role includes unlimited Caffeine. You can keep sharing cups without using them up.';
+    if(!caffeine.canGift)refs.caffeineStatus.textContent='You have Caffeine. Only the Nyx owner can grant Caffeine to other members.';
+    else if(caffeine.unlimited)refs.caffeineStatus.textContent='Your role includes unlimited Caffeine. You can keep sharing cups without using them up.';
     else if(caffeine.giftDerived)refs.caffeineStatus.textContent='Your Caffeine was shared with you. Gifted Caffeine includes Premium access but cannot be gifted again.';
     else if(caffeine.outgoingGift?.status==='accepted')refs.caffeineStatus.textContent=`You shared your cup with ${caffeine.outgoingGift.recipientDisplayName}.`;
     else if(caffeine.outgoingGift?.status==='pending')refs.caffeineStatus.textContent=`Your cup is waiting for ${caffeine.outgoingGift.recipientDisplayName} to accept it.`;
     else refs.caffeineStatus.textContent='You have Caffeine and can share one cup from this Premium subscription.';
     if(!caffeine.canGift){
-      const empty=document.createElement('p');empty.className='caffeine-empty';empty.textContent=caffeine.giftDerived?'Gifted cups cannot be shared again.':'No Caffeine gift is currently available.';refs.caffeineGiftList.append(empty);return;
+      const empty=document.createElement('p');empty.className='caffeine-empty';empty.textContent='Caffeine grants are managed by the owner.';refs.caffeineGiftList.append(empty);return;
     }
     const eligible=state.members.filter(member=>!member.self&&!member.caffeine);
     if(!eligible.length){const empty=document.createElement('p');empty.className='caffeine-empty';empty.textContent='Every visible member already has Caffeine.';refs.caffeineGiftList.append(empty);return}

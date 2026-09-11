@@ -30,8 +30,9 @@ const note=m=>{$('#notice').textContent=m;};
     });
   }
   async function firebaseToken(local=false){
-    const token=await parentToken();
+    const token=local?'':await parentToken();
     if(token&&!local)return token;
+    if(embedded&&!local)return token;
     const configResponse=await fetch('/api/founder-profile/auth-config',{cache:'no-store'});
     const config=await configResponse.json();
     if(!config?.enabled||!config?.apiKey||!config?.projectId)return '';
@@ -44,10 +45,14 @@ const note=m=>{$('#notice').textContent=m;};
     return auth.currentUser?auth.currentUser.getIdToken():'';
   }
 
-async function api(path,body,method){const token=await firebaseToken();if(!token)throw Error('Sign in to Nyx first, then refresh this page.');const response=await fetch('/api/developer'+path,{method:method||(body?'POST':'GET'),cache:'no-store',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});const data=await response.json();if(!response.ok)throw Error(data.error||'Request failed.');return data;}
+async function api(path,body,method){const token=await firebaseToken();if(!token){$('#sign-in').hidden=false;$('#create-button').disabled=true;$('#account').textContent='Sign in to Nyx to view your API access.';$('#owner-tab').hidden=true;accountOwner=false;showTab('keys');$('#management').hidden=true;$('#verify').hidden=true;$('#secret').value='';$('#playground-key').value='';$('#reveal').hidden=true;throw Error('Sign in to Nyx to continue.');}const response=await fetch('/api/developer'+path,{method:method||(body?'POST':'GET'),cache:'no-store',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});const data=await response.json();if(!response.ok)throw Error(data.error||'Request failed.');return data;}
 const task=fn=>async event=>{event?.preventDefault();const button=event?.submitter||event?.currentTarget;if(button?.tagName==='BUTTON')button.disabled=true;try{await fn(event);}catch(e){note(e.message);}finally{if(button?.tagName==='BUTTON'&&button.id!=='create-button')button.disabled=false;else if(button?.id==='create-button')await refresh().catch(()=>{});}};
-async function refresh(){const d=await api('/me');$('#account').textContent=`${d.balance.toLocaleString()} tokens remaining | ${d.usedTokens||0} used | ${d.dailyRequests} requests/day | ${d.minuteRequests}/minute. User ID: ${d.uid}`;$('#verify').hidden=d.verified||d.owner;$('#create-button').disabled=Boolean(d.key)||(!d.verified&&!d.owner)||!d.configured;$('#revoke').hidden=!d.key;$('#key').textContent=d.key?`${d.key.label}: ${d.key.prefix}...`:'No active key.';accountOwner=d.owner;$('#owner-tab').hidden=!d.owner;showTab(location.hash.slice(1));renderUsage(d);syncModels(d);$('#management').hidden=!d.unlocked;$('#unlock').hidden=Boolean(d.unlocked);if(!$('#uid').value)$('#uid').value=d.uid;}
-$('#refresh').onclick=task(refresh);
+async function refresh(){const d=await api('/me');$('#sign-in').hidden=true;$('#account').textContent=`${d.balance.toLocaleString()} tokens remaining | ${d.usedTokens||0} used | ${d.dailyRequests} requests/day | ${d.minuteRequests}/minute. User ID: ${d.uid}`;$('#verify').hidden=d.verified||d.owner;$('#create-button').disabled=Boolean(d.key)||(!d.verified&&!d.owner)||!d.configured;$('#revoke').hidden=!d.key;$('#key').textContent=d.key?`${d.key.label}: ${d.key.prefix}...`:'No active key.';accountOwner=d.owner;$('#owner-tab').hidden=!d.owner;showTab(location.hash.slice(1));renderUsage(d);syncModels(d);$('#management').hidden=!d.unlocked;$('#unlock').hidden=Boolean(d.unlocked);if(!$('#uid').value)$('#uid').value=d.uid;}
+$('#refresh').onclick=task(async()=>{await refresh();note('Access refreshed.');});
+$('#sign-in').onclick=event=>{if(!embedded)return;event.preventDefault();parent.postMessage({type:'nyx:account-open-signin'},location.origin);};
+addEventListener('message',event=>{if(embedded&&event.source===parent&&event.origin===location.origin&&event.data?.type==='nyx:account-changed')refresh().then(()=>note('Access refreshed.')).catch(e=>note(e.message));});
+addEventListener('focus',()=>refresh().catch(e=>note(e.message)));
+
 $('#create').onsubmit=task(async e=>{const d=await api('/keys',{label:e.target.elements.label.value});$('#secret').value=d.key;$('#playground-key').value=d.key;$('#reveal').hidden=false;note('Key created. Copy it now.');await refresh();});
 $('#revoke').onclick=task(async()=>{await api('/keys',null,'DELETE');$('#playground-key').value='';$('#secret').value='';$('#reveal').hidden=true;note('Key revoked. Your balance is preserved.');await refresh();});
 $('#copy').onclick=task(async()=>{await navigator.clipboard.writeText($('#secret').value);note('Key copied.');});

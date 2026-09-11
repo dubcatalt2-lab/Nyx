@@ -1,3 +1,9 @@
+## 2026-09-11 - API sign-in bridge correction (local)
+
+- API sign-in now opens the host account dialog for trusted embedded pages. Standalone sign-in visits the same-host Nyx dialog and returns to `/api` after authentication. Added `/api` and `/api/` to the existing trusted account-token bridge.
+- Host auth changes refresh API access automatically; signed-in users no longer see the sign-in link. Signed-out embedded pages no longer fall back to a potentially different local Firebase account, and clear key reveal/owner controls. Verified-email and owner authorization rules remain unchanged.
+- Desktop/mobile UI fixtures cover sign-in, session refresh and sign-out; actual host bridge checks cover trusted paths and rejection of foreign origins/unknown frames.
+
 ## 2026-09-11 - API page follows Nyx styling
 
 - Removed the independent blue canvas, panels, typography and oversized marketing header from the developer workspace. API Keys, Playground, Usage and Owner Dashboard now use shared `utility-shell.css` / `visual-redesign.css`, neutral glass variables, Outfit/saved font, Nyx monogram and the existing white primary button style.

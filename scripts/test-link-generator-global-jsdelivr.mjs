@@ -214,7 +214,7 @@ try {
     refreshToken: 'regular-test-refresh',
     expiresAt: Date.now() + 3_600_000,
     email: 'regular@example.com',
-    emailVerified: true,
+    emailVerified: false,
     subscriptionStatus: 'free',
     premiumAccess: false
   });

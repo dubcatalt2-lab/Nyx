@@ -341,14 +341,15 @@
     const native = state.nativeAvailable && state.preferredPlayer === "native" && !forceDirect && !fallback;
     updatePlayerSwitch(native);
     state.watchPlayer?.destroy?.(); state.watchPlayer = null;
-    refs.watchLoading.hidden = false; refs.watchLoading.querySelector("strong").textContent = native ? "Downloading and preparing video..." : "Loading video";
+    refs.watchLoading.hidden = false; refs.watchLoading.querySelector("strong").textContent = native ? "Preparing video..." : "Loading video";
     refs.watchQuality.disabled = true;
     const YT = native ? window.NyxNativePlayer : forceDirect ? directYoutubeApi : await youtubeApi();
     if (generation !== state.watchGeneration) return;
     if (state.view !== "watch" || state.watchVideo?.id !== video.id) return;
     state.watchPlayer?.destroy?.();
-    const config = options(video.id); config.expectedDuration = video.durationSeconds; config.quality = restore?.quality;
+    const config = options(video.id); config.expectedDuration = video.durationSeconds; config.quality = restore?.quality; config.startTime = restore?.time;
     config.events = {
+      onBuffering: event => { if (generation !== state.watchGeneration) return; refs.watchLoading.hidden = !event.data; if(event.data)refs.watchLoading.querySelector("strong").textContent = "Buffering video..."; },
       onReady: event => { if (generation !== state.watchGeneration) return; refs.watchLoading.hidden = true; if (restore) { event.target.seekTo(restore.time); event.target.setVolume?.(restore.volume); event.target.setPlaybackRate?.(restore.rate); if(restore.muted)event.target.mute(); } configureWatchSettings(event.target, video); if (!restore?.paused) event.target.playVideo(); else { event.target.pauseVideo(); refs.watchCenterPlay.hidden=false; } startWatchTimer(); },
       onStateChange: event => {
         if (generation !== state.watchGeneration) return;

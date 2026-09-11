@@ -52,7 +52,7 @@
   const bulkJobs=import('./bulk-jobs.js?v=20260907-cdn-options-v2').then(module=>module.attachBulkJobs({
     access:async()=>{
       if(!authSession?.idToken)throw new Error('Sign in to your account above before starting or resuming a large job.');
-      const session=await currentVerifiedSession();
+      const session=await currentAccountSession();
       const profile=await lookupAccount(session.idToken);
       return {uid:profile.uid,token:session.idToken,limit:accountHasPremium()?p2pPremiumBatchLimit:regularHourlyLimit,method:accountHasPremium()?'p2p':'managed'};
     }
@@ -160,24 +160,10 @@
     const result=await firebaseRequest('token','token',{grant_type:'refresh_token',refresh_token:authSession.refreshToken},true);
     return storeSession(sessionFromResponse(result,authSession));
   }
-  async function refreshVerification(){
-    await refreshSession();
-    const [profile,access]=await Promise.all([lookupAccount(authSession.idToken),lookupNyxAccess(authSession.idToken)]);
-    authSession={...authSession,...profile,...access};
-    if(profile.emailVerified){
-      await refreshSession();
-      authSession.emailVerified=true;
-    }
-    storeSession(authSession);
-    return authSession;
-  }
-  async function currentVerifiedSession(){
+  async function currentAccountSession(){
     if(!authSession) throw new Error('Sign in to use the Link Generator.');
     if(authSession.expiresAt-Date.now()<60_000) await refreshSession();
     await refreshNyxAccess();
-    if(accountHasPremium()) return authSession;
-    if(!authSession.emailVerified) await refreshVerification();
-    if(!authSession.emailVerified) throw new Error('Verify your email address, then select “I verified my email.”');
     return authSession;
   }
   function renderAccount(){
@@ -187,11 +173,11 @@
     refs.signIn.hidden=signedIn;
     refs.createAccount.hidden=signedIn;
     refs.signOut.hidden=!signedIn;
-    refs.refreshAccount.hidden=!signedIn || premium || Boolean(authSession?.emailVerified);
-    refs.accountStatus.className=`account-status${signedIn ? (premium || authSession.emailVerified ? ' good' : '') : ''}`;
+    refs.refreshAccount.hidden=true;
+    refs.accountStatus.className=`account-status${signedIn ? ' good' : ''}`;
     refs.accountStatus.textContent=signedIn
-      ? (premium ? `${authSession.email || 'Account'} has Premium access. No access code is required.` : (authSession.emailVerified ? `${authSession.email || 'Account'} is verified. You can create up to ${regularHourlyLimit} links per ${freeWindowMinutes}-minute window.` : `Verification sent to ${authSession.email || 'your email'}. Verify it before generating links.`))
-      : `Sign in with a verified email to create up to ${regularHourlyLimit} links per hour.`;
+      ? (premium ? `${authSession.email || 'Account'} has Premium access. No access code is required.` : `Signed in. You can create up to ${regularHourlyLimit} links per ${freeWindowMinutes}-minute window.`)
+      : `Sign in to create up to ${regularHourlyLimit} links per hour.`;
     const accountButton=refs.modeButtons.find(button=>button.dataset.accessMode==='account');
     if(accountButton)accountButton.textContent=premium?'Premium account':'Account';
     if(accessMode==='account')setPremiumLayout();
@@ -296,8 +282,8 @@
       }
     }
     if(!authConfig.enabled){showNotice('Free account access is not configured yet. Choose Premium users to continue.','error');return false}
-    if(!authSession?.idToken){showNotice('Sign in or create a verified free account before continuing.','error');refs.email.focus();return false}
-    try{await currentVerifiedSession();renderAccount();return true}
+    if(!authSession?.idToken){showNotice('Sign in or create a free account before continuing.','error');refs.email.focus();return false}
+    try{await currentAccountSession();renderAccount();return true}
     catch(error){showNotice(friendlyFirebaseError(error),'error');return false}
   }
   async function handleWizardNext(event){
@@ -354,7 +340,6 @@
     try{
       const result=await firebaseRequest('identity','accounts:signUp',{email,password,returnSecureToken:true});
       storeSession(sessionFromResponse(result,{email,emailVerified:false}));
-      await firebaseRequest('identity','accounts:sendOobCode',{requestType:'VERIFY_EMAIL',idToken:authSession.idToken});
       await refreshNyxAccess();
       refs.password.value='';
       renderAccount();
@@ -519,7 +504,7 @@
   });
   refs.signIn.addEventListener('click',handleSignIn);
   refs.createAccount.addEventListener('click',handleCreateAccount);
-  refs.refreshAccount.addEventListener('click',async()=>{setAuthBusy(true);try{await refreshVerification();if(!authSession.emailVerified)throw new Error('Email is not verified yet.')}catch(error){refs.accountStatus.textContent=friendlyFirebaseError(error);refs.accountStatus.className='account-status error'}finally{setAuthBusy(false)}});
+
   refs.signOut.addEventListener('click',clearSession);
   refs.form.addEventListener('submit',async event=>{
     event.preventDefault();
@@ -533,7 +518,7 @@
       const provider=selectedProvider();
       const body={label:refs.label.value,provider,method:provider==='bunny'?'managed':method};
       if(accessMode==='account'){
-        const session=await currentVerifiedSession();
+        const session=await currentAccountSession();
         headers.Authorization=`Bearer ${session.idToken}`;
         body.amount=selectedAmount();
       }else{

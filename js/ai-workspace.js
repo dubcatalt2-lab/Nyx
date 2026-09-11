@@ -5,17 +5,10 @@
   const THREADS_KEY='nyx.aiThreads.v1';
   const ACTIVE_THREAD_KEY='nyx.aiActiveThread';
   const MODEL_KEY='nyx.aiModel';
-  const PERSONAL_KEY_SESSION='nyx.aiPersonalKey.session';
-  const PERSONAL_KEY_DEVICE='nyx.aiPersonalKey.device';
-  const PERSONAL_BASE_SESSION='nyx.aiPersonalBaseUrl.session';
-  const PERSONAL_BASE_DEVICE='nyx.aiPersonalBaseUrl.device';
-  const PERSONAL_PROFILES_SESSION='nyx.aiPersonalProfiles.session';
-  const PERSONAL_PROFILES_DEVICE='nyx.aiPersonalProfiles.device';
-  const PERSONAL_ACTIVE_PROFILE='nyx.aiPersonalProfile.active';
   const PROVIDER_KEY='nyx.aiSharedProvider';
   const RESPONSE_DEPTH_KEY='nyx.aiResponseDepth';
   const USAGE_KEY='nyx.aiUsage.v1';
-  const DEFAULT_MODEL='chatgpt-5.4-mini';
+  const DEFAULT_MODEL='' ;
   const MAX_MESSAGES=40;
   const MAX_THREADS=40;
   const MAX_INPUT_HEIGHT=190;
@@ -24,7 +17,7 @@
   const MAX_PREPARED_IMAGE_EDGE=1600;
   const MAX_TEXT_ATTACHMENT_CHARS=18000;
   const SUPPORTED_IMAGE_TYPES=new Set(['image/png','image/jpeg','image/webp','image/gif']);
-  const KNOWN_VISION_MODELS=new Set(['nocturne:flash']);
+  const KNOWN_VISION_MODELS=new Set();
 
   const app=document.querySelector('[data-ai-app]');
   const feed=document.getElementById('feed');
@@ -75,27 +68,11 @@
   const screenStatus=document.getElementById('screenStatus');
   const shareScreen=document.getElementById('shareScreen');
   const stopScreenShare=document.getElementById('stopScreenShare');
-  const apiKeySettings=document.getElementById('apiKeySettings');
-  const apiKeyDialog=document.getElementById('apiKeyDialog');
-  const apiKeyForm=document.getElementById('apiKeyForm');
-  const apiKeyProfiles=document.getElementById('apiKeyProfiles');
-  const apiProfileNew=document.getElementById('apiProfileNew');
-  const apiProfileLabel=document.getElementById('apiProfileLabel');
-  const apiKeyInput=document.getElementById('apiKeyInput');
-  const apiBaseUrl=document.getElementById('apiBaseUrl');
-  const apiBaseOfox=document.getElementById('apiBaseOfox');
-  const apiKeyRemember=document.getElementById('apiKeyRemember');
-  const apiKeyReveal=document.getElementById('apiKeyReveal');
-  const apiKeyFeedback=document.getElementById('apiKeyFeedback');
-  const apiKeyRemove=document.getElementById('apiKeyRemove');
-  const apiKeyCancel=document.getElementById('apiKeyCancel');
-  const apiKeyClose=document.getElementById('apiKeyClose');
-  const apiKeySave=document.getElementById('apiKeySave');
-  if(!app||!feed||!conversation||!form||!input||!send||!model||!providerSelect||!modelPicker||!modelTrigger||!modelSelected||!modelMenu||!modelOptionsHost||!clear||!threadTitle||!sidebar||!sidebarToggle||!sidebarClose||!sidebarScrim||!newChat||!temporaryChat||!threadList||!threadCount||!historyEmpty||!threadSearch||depthButtons.length!==3||!sidebarModelName||!usageWeek||!usageAll||!usageRequests||!profileButton||!profileAvatar||!profileInitial||!profileName||!profileHandle||!imageInput||!attachImage||!attachmentPreview||!attachmentThumbnail||!attachmentName||!attachmentStatus||!removeAttachment||!screenPreview||!screenVideo||!screenStatus||!shareScreen||!stopScreenShare||!apiKeySettings||!apiKeyDialog||!apiKeyForm||!apiKeyProfiles||!apiProfileNew||!apiProfileLabel||!apiKeyInput||!apiBaseUrl||!apiBaseOfox||!apiKeyRemember||!apiKeyReveal||!apiKeyFeedback||!apiKeyRemove||!apiKeyCancel||!apiKeyClose||!apiKeySave) return;
+  if(!app||!feed||!conversation||!form||!input||!send||!model||!providerSelect||!modelPicker||!modelTrigger||!modelSelected||!modelMenu||!modelOptionsHost||!clear||!threadTitle||!sidebar||!sidebarToggle||!sidebarClose||!sidebarScrim||!newChat||!temporaryChat||!threadList||!threadCount||!historyEmpty||!threadSearch||depthButtons.length!==3||!sidebarModelName||!usageWeek||!usageAll||!usageRequests||!profileButton||!profileAvatar||!profileInitial||!profileName||!profileHandle||!imageInput||!attachImage||!attachmentPreview||!attachmentThumbnail||!attachmentName||!attachmentStatus||!removeAttachment||!screenPreview||!screenVideo||!screenStatus||!shareScreen||!stopScreenShare) return;
 
   let activeController=null;
   let followStream=true;
-  let modelCatalog=[{id:DEFAULT_MODEL,label:'GPT-5.4 Mini',company:'ChatGPT',vision:true}];
+  let modelCatalog=[];
   let threads=[];
   let activeThreadId='';
   let temporaryMode=false;
@@ -103,102 +80,9 @@
   let attachedImage=null;
   let attachedText=null;
   let screenStream=null;
-  let editingProfileId='';
+
   let nyxAiAccountAuthPromise=null;
   let globalProviders=[];
-
-  function personalKeyProvider(key=personalApiKey(),baseUrl=personalApiBaseUrl()){
-    const value=String(key||'');
-    if(/^nyx_[A-Za-z0-9_-]{16}_[A-Za-z0-9_-]{43}$/.test(value)) return 'Nyx';
-    if(/^sk-navy-/i.test(value)) return 'Navy';
-    const customBase=String(baseUrl||'').trim();
-    if(customBase){
-      try{return new URL(customBase).hostname.replace(/^api\./i,'')||'OpenAI-compatible'}catch{return 'OpenAI-compatible'}
-    }
-    return 'Nocturne';
-  }
-
-  function personalApiKey(){
-    return String(sessionStorage.getItem(PERSONAL_KEY_SESSION)||localStorage.getItem(PERSONAL_KEY_DEVICE)||'').trim();
-  }
-
-  function personalKeyRemembered(){
-    return Boolean(localStorage.getItem(PERSONAL_KEY_DEVICE));
-  }
-
-  function personalApiBaseUrl(){
-    return String(sessionStorage.getItem(PERSONAL_BASE_SESSION)||localStorage.getItem(PERSONAL_BASE_DEVICE)||'').trim();
-  }
-
-  function normalizedPersonalProfile(value,remember=false){
-    const id=String(value?.id||'').trim();
-    const key=String(value?.key||'').trim();
-    const baseUrl=String(value?.baseUrl||'').trim();
-    const label=String(value?.label||'').replace(/[\x00-\x1f\x7f]/g,' ').replace(/\s+/g,' ').trim().slice(0,50);
-    return /^[a-z0-9_-]{8,80}$/i.test(id)&&key.length>=8&&key.length<=512?[{id,key,baseUrl,label,remember:Boolean(remember)}]:[];
-  }
-
-  function personalProfiles(){
-    const read=(storage,name,remember)=>{
-      try{
-        const values=JSON.parse(storage.getItem(name)||'[]');
-        return Array.isArray(values)?values.flatMap(value=>normalizedPersonalProfile(value,remember)):[];
-      }catch{return[]}
-    };
-    const merged=new Map();
-    [...read(localStorage,PERSONAL_PROFILES_DEVICE,true),...read(sessionStorage,PERSONAL_PROFILES_SESSION,false)].forEach(profile=>merged.set(profile.id,profile));
-    return [...merged.values()].slice(0,8);
-  }
-
-  function writePersonalProfiles(profiles){
-    const clean=profiles.slice(0,8).map(({id,key,baseUrl,label,remember})=>({id,key,baseUrl,label,remember:Boolean(remember)}));
-    const device=clean.filter(profile=>profile.remember);
-    const session=clean.filter(profile=>!profile.remember);
-    if(device.length) localStorage.setItem(PERSONAL_PROFILES_DEVICE,JSON.stringify(device));
-    else localStorage.removeItem(PERSONAL_PROFILES_DEVICE);
-    if(session.length) sessionStorage.setItem(PERSONAL_PROFILES_SESSION,JSON.stringify(session));
-    else sessionStorage.removeItem(PERSONAL_PROFILES_SESSION);
-  }
-
-  function personalProfileName(profile){
-    if(profile?.label) return profile.label;
-    return personalKeyProvider(profile?.key,profile?.baseUrl);
-  }
-
-  function ensureActivePersonalProfile(){
-    const key=personalApiKey();
-    if(!key) return null;
-    const baseUrl=personalApiBaseUrl();
-    let profiles=personalProfiles();
-    let profile=profiles.find(item=>item.id===localStorage.getItem(PERSONAL_ACTIVE_PROFILE))||profiles.find(item=>item.key===key&&item.baseUrl===baseUrl);
-    if(!profile){
-      profile={id:`provider_${crypto.randomUUID?.()||Date.now().toString(36)+Math.random().toString(36).slice(2)}`,key,baseUrl,label:personalKeyProvider(key,baseUrl),remember:personalKeyRemembered()};
-      profiles=[...profiles,profile].slice(-8);
-      writePersonalProfiles(profiles);
-    }
-    localStorage.setItem(PERSONAL_ACTIVE_PROFILE,profile.id);
-    return profile;
-  }
-
-  function fillPersonalProfileForm(profile=null){
-    editingProfileId=String(profile?.id||'');
-    apiProfileLabel.value=profile?.label||'';
-    apiKeyInput.value=profile?.key||'';
-    apiBaseUrl.value=profile?.baseUrl||'';
-    apiKeyRemember.checked=Boolean(profile?.remember);
-    apiKeyInput.type='password';
-    apiKeyReveal.setAttribute('aria-pressed','false');
-    apiKeyReveal.setAttribute('aria-label','Show API key');
-  }
-
-  function renderPersonalProfiles(){
-    const activeId=String(localStorage.getItem(PERSONAL_ACTIVE_PROFILE)||'');
-    const profiles=personalProfiles();
-    apiKeyProfiles.innerHTML=profiles.length?profiles.map(profile=>{
-      const detail=profile.baseUrl?profile.baseUrl:'Automatic provider detection';
-      return `<div class="ai-key-profile${profile.id===activeId?' is-active':''}" data-key-profile="${escapeHtml(profile.id)}"><button class="ai-key-profile-select" type="button" data-key-profile-select="${escapeHtml(profile.id)}"><strong>${escapeHtml(personalProfileName(profile))}${profile.id===activeId?' · Active':''}</strong><small>${escapeHtml(detail)}</small></button><button class="ai-key-profile-remove" type="button" data-key-profile-remove="${escapeHtml(profile.id)}" aria-label="Remove ${escapeHtml(personalProfileName(profile))}">×</button></div>`;
-    }).join(''):'<p class="ai-key-profile-empty">No personal providers saved yet.</p>';
-  }
 
   async function nyxAiParentToken(){
     if(parent===window) return '';
@@ -239,31 +123,15 @@
   }
 
   async function aiHeaders(headers={}){
-    const key=personalApiKey();
     const token=await nyxAiAccountToken();
-    const provider=String(providerSelect.value||'shared');
-    const baseUrl=personalApiBaseUrl();
-    return {...headers,...(key?{'x-nyx-ai-api-key':key,...(baseUrl?{'x-nyx-ai-base-url':baseUrl}:{})}:{'x-nyx-ai-provider':provider}),...(token?{Authorization:`Bearer ${token}`}:{})};
+    return {...headers,'x-nyx-ai-provider':'shared',...(token?{Authorization:`Bearer ${token}`}:{})};
   }
-
-  function selectedProvider(){
-    const saved=String(localStorage.getItem(PROVIDER_KEY)||'shared');
-    return globalProviders.some(provider=>provider.id===saved)?saved:(globalProviders[0]?.id||'shared');
-  }
-
-  function syncProviderControl(){
-    const personal=Boolean(personalApiKey());
-    providerSelect.disabled=personal||globalProviders.length<2;
-    providerSelect.title=personal?'Your personal key chooses the provider. Remove it to switch shared providers.':globalProviders.length<2?'Only one shared provider is configured.':'Shared AI provider';
-    if(providerState){
-      providerState.hidden=!personal;
-      providerState.textContent=personal?`Personal ${personalKeyProvider()} key active`:'';
-    }
-  }
+  function selectedProvider(){return 'shared'}
+  function syncProviderControl(){providerSelect.disabled=true;providerSelect.title='OpenRouter';if(providerState)providerState.hidden=true;}
 
   function renderProviders(){
     const selected=selectedProvider();
-    providerSelect.innerHTML=globalProviders.map(provider=>`<option value="${escapeHtml(provider.id)}">${escapeHtml(provider.label)}</option>`).join('')||'<option value="shared">Nyx Shared</option>';
+    providerSelect.innerHTML=globalProviders.map(provider=>`<option value="${escapeHtml(provider.id)}">${escapeHtml(provider.label)}</option>`).join('')||'<option value="shared">OpenRouter</option>';
     providerSelect.value=selected;
     syncProviderControl();
   }
@@ -276,81 +144,10 @@
       globalProviders=Array.isArray(data?.providers)?data.providers.flatMap(item=>{
         const id=String(item?.id||'').trim();
         const label=String(item?.label||id).trim();
-        return /^[a-z][a-z0-9-]{0,30}$/i.test(id)&&label?[{id,label}]:[];
+        return id==='shared'?[{id,label:'OpenRouter'}]:[];
       }):[];
     }catch{globalProviders=[]}
     renderProviders();
-  }
-
-  function updateApiKeyControl(message='',state=''){
-    const active=Boolean(personalApiKey());
-    const provider=personalKeyProvider();
-    apiKeySettings.classList.toggle('has-personal-key',active);
-    apiKeySettings.setAttribute('aria-label',active?`Change your personal ${provider} AI API key`:'Set a personal Nyx or Nocturne AI API key');
-    apiKeySettings.title=active?`Using your personal ${provider} AI key`:'Using Nyx AI key';
-    apiKeyRemove.disabled=!active;
-    apiKeyFeedback.className=`ai-key-feedback${state?` is-${state}`:''}`;
-    apiKeyFeedback.textContent=message||(active?`Your personal ${provider} key is active.`:'Nyx will use its shared AI key until you add your own.');
-    syncProviderControl();
-  }
-
-  function openApiKeyDialog(){
-    const profile=ensureActivePersonalProfile();
-    fillPersonalProfileForm(profile);
-    renderPersonalProfiles();
-    updateApiKeyControl();
-    apiKeyDialog.showModal();
-    requestAnimationFrame(()=>apiKeyInput.focus());
-  }
-
-  function closeApiKeyDialog(){
-    if(apiKeyDialog.open) apiKeyDialog.close();
-    apiKeySettings.focus();
-  }
-
-  function storePersonalApiKey(key,baseUrl,remember){
-    sessionStorage.removeItem(PERSONAL_KEY_SESSION);
-    localStorage.removeItem(PERSONAL_KEY_DEVICE);
-    sessionStorage.removeItem(PERSONAL_BASE_SESSION);
-    localStorage.removeItem(PERSONAL_BASE_DEVICE);
-    const storage=remember?localStorage:sessionStorage;
-    storage.setItem(remember?PERSONAL_KEY_DEVICE:PERSONAL_KEY_SESSION,key);
-    if(baseUrl) storage.setItem(remember?PERSONAL_BASE_DEVICE:PERSONAL_BASE_SESSION,baseUrl);
-  }
-
-  function removePersonalApiKey(){
-    sessionStorage.removeItem(PERSONAL_KEY_SESSION);
-    localStorage.removeItem(PERSONAL_KEY_DEVICE);
-    sessionStorage.removeItem(PERSONAL_BASE_SESSION);
-    localStorage.removeItem(PERSONAL_BASE_DEVICE);
-  }
-
-  async function activatePersonalProfile(profile){
-    if(!profile) return;
-    storePersonalApiKey(profile.key,profile.baseUrl,profile.remember);
-    localStorage.setItem(PERSONAL_ACTIVE_PROFILE,profile.id);
-    fillPersonalProfileForm(profile);
-    renderPersonalProfiles();
-    updateApiKeyControl(`Checking ${personalProfileName(profile)}…`);
-    await loadModels();
-  }
-
-  async function deletePersonalProfile(id){
-    const profiles=personalProfiles();
-    const activeId=String(localStorage.getItem(PERSONAL_ACTIVE_PROFILE)||'');
-    const remaining=profiles.filter(profile=>profile.id!==id);
-    writePersonalProfiles(remaining);
-    if(id===activeId){
-      localStorage.removeItem(PERSONAL_ACTIVE_PROFILE);
-      removePersonalApiKey();
-      if(remaining.length) await activatePersonalProfile(remaining[0]);
-      else{
-        fillPersonalProfileForm();
-        updateApiKeyControl('Personal provider removed. Nyx is using its shared AI provider.','success');
-        await loadModels();
-      }
-    }
-    renderPersonalProfiles();
   }
 
   function responseDepth(){
@@ -872,7 +669,7 @@
         try{
           const originalWidth=Math.max(1,image.naturalWidth||1);
           const originalHeight=Math.max(1,image.naturalHeight||1);
-          if(source.dataUrl.length<=MAX_PREPARED_IMAGE_CHARS){
+          if(source.dataUrl.length<=MAX_PREPARED_IMAGE_CHARS&&Math.max(originalWidth,originalHeight)<=MAX_PREPARED_IMAGE_EDGE){
             resolve({dataUrl:source.dataUrl,mime:source.type,width:originalWidth,height:originalHeight,screenCapture:source.screenCapture===true});
             return;
           }
@@ -1387,7 +1184,6 @@
         status.classList.add('is-warning');
         status.title=`${savedLabel} is temporarily unavailable. Nyx will restore it when it returns.`;
       }
-      if(personalApiKey()) updateApiKeyControl(`Your personal key is active with ${next.length} available model${next.length===1?'':'s'}.`,'success');
       return true;
     }catch(error){
       console.warn('Nyx AI model catalog could not be loaded:',error);
@@ -1395,7 +1191,6 @@
       renderModelOptions([],"");
       modelSelected.textContent='Models unavailable';
       if(status){status.classList.add('is-warning');status.title='The model list could not be verified'}
-      if(personalApiKey()) updateApiKeyControl(error?.message||'Nyx could not verify this API key.','error');
       return false;
     }finally{
       const available=modelCatalog.length>0;
@@ -1502,6 +1297,7 @@
     activeController=new AbortController();
     setBusy(true);
     let answer='';
+    let requestSucceeded=false;
     let renderFrame=0;
     const renderAnswer=()=>{
       renderFrame=0;
@@ -1560,13 +1356,14 @@
       history.push({role:'assistant',content:finalAnswer});
       saveMessages(history);
       recordUsage(userText,finalAnswer);
+      requestSucceeded=true;
     }catch(error){
       if(error?.name==='AbortError') return;
       setMessageContent(pending,error?.message||'Nyx AI could not complete that request.',{error:true});
     }finally{
       activeController=null;
       setBusy(false);
-      clearAttachment();
+      if(requestSucceeded)clearAttachment();
       if(screenStream) screenStatus.textContent='A fresh frame is attached only when you send.';
       input.focus();
       scrollToBottom();
@@ -1578,7 +1375,6 @@
     if(event.origin!==location.origin) return;
     if(event.data?.type==='nyx:theme-sync') applyWorkspaceTheme(event.data.theme);
     if(event.data?.type==='nyx:ai-profile') updateProfile(event.data.profile||{});
-    if(event.data?.type==='nyx:ai-open-key-settings') openApiKeyDialog();
   });
   addEventListener('focus',requestProfile);
   addEventListener('storage',event=>{
@@ -1730,93 +1526,6 @@
     }
     syncModelControl();
   });
-  apiKeySettings.addEventListener('click',openApiKeyDialog);
-  apiKeyClose.addEventListener('click',closeApiKeyDialog);
-  apiKeyCancel.addEventListener('click',closeApiKeyDialog);
-  apiKeyDialog.addEventListener('click',event=>{
-    if(event.target===apiKeyDialog) closeApiKeyDialog();
-  });
-  apiKeyReveal.addEventListener('click',()=>{
-    const reveal=apiKeyInput.type==='password';
-    apiKeyInput.type=reveal?'text':'password';
-    apiKeyReveal.setAttribute('aria-pressed',String(reveal));
-    apiKeyReveal.setAttribute('aria-label',reveal?'Hide API key':'Show API key');
-    apiKeyInput.focus();
-  });
-  apiKeyRemove.addEventListener('click',async()=>{
-    const activeId=String(localStorage.getItem(PERSONAL_ACTIVE_PROFILE)||'');
-    if(activeId) await deletePersonalProfile(activeId);
-    else{
-      removePersonalApiKey();
-      fillPersonalProfileForm();
-      updateApiKeyControl(`Personal key removed. Nyx is using ${providerSelect.options[providerSelect.selectedIndex]?.text||'its shared AI key'}.`,'success');
-      await loadModels();
-    }
-  });
-  apiKeyForm.addEventListener('submit',async event=>{
-    event.preventDefault();
-    const key=apiKeyInput.value.trim();
-    const baseUrl=apiBaseUrl.value.trim().replace(/\/+$/,'');
-    if(key.length<8||key.length>512||/[\s\x00-\x1f\x7f]/.test(key)){
-      updateApiKeyControl('Enter a valid API key without spaces.','error');
-      apiKeyInput.focus();
-      return;
-    }
-    if(baseUrl){
-      try{
-        const parsed=new URL(baseUrl);
-        if(parsed.protocol!=='https:'||parsed.username||parsed.password||parsed.search||parsed.hash) throw new Error();
-      }catch{
-        updateApiKeyControl('Enter an HTTPS provider base URL, such as https://api.ofox.ai/v1.','error');
-        apiBaseUrl.focus();
-        return;
-      }
-    }
-    const profiles=personalProfiles();
-    if(!editingProfileId&&profiles.length>=8){
-      updateApiKeyControl('Remove a saved provider before adding another.','error');
-      return;
-    }
-    const id=editingProfileId||`provider_${crypto.randomUUID?.()||Date.now().toString(36)+Math.random().toString(36).slice(2)}`;
-    const profile={id,key,baseUrl,label:apiProfileLabel.value.trim(),remember:apiKeyRemember.checked};
-    writePersonalProfiles([...profiles.filter(item=>item.id!==id),profile]);
-    localStorage.setItem(PERSONAL_ACTIVE_PROFILE,id);
-    editingProfileId=id;
-    storePersonalApiKey(key,baseUrl,profile.remember);
-    renderPersonalProfiles();
-    apiKeySave.disabled=true;
-    updateApiKeyControl(`Checking your ${personalKeyProvider(key,baseUrl)} key…`);
-    const valid=await loadModels();
-    apiKeySave.disabled=false;
-    if(valid) setTimeout(closeApiKeyDialog,450);
-  });
-  apiBaseOfox.addEventListener('click',()=>{
-    apiBaseUrl.value='https://api.ofox.ai/v1';
-    if(!apiProfileLabel.value.trim()) apiProfileLabel.value='Ofox';
-    apiBaseUrl.focus();
-  });
-  apiProfileNew.addEventListener('click',()=>{
-    fillPersonalProfileForm();
-    updateApiKeyControl('Paste the new provider key and its OpenAI-compatible base URL.');
-    apiProfileLabel.focus();
-  });
-  apiKeyProfiles.addEventListener('click',event=>{
-    const removeButton=event.target.closest('[data-key-profile-remove]');
-    if(removeButton){
-      void deletePersonalProfile(removeButton.dataset.keyProfileRemove||'');
-      return;
-    }
-    const selectButton=event.target.closest('[data-key-profile-select]');
-    if(selectButton){
-      const profile=personalProfiles().find(item=>item.id===selectButton.dataset.keyProfileSelect);
-      if(profile) void activatePersonalProfile(profile);
-    }
-  });
-  providerSelect.addEventListener('change',async()=>{
-    if(personalApiKey()) return;
-    localStorage.setItem(PROVIDER_KEY,providerSelect.value||'shared');
-    await loadModels();
-  });
   clear.addEventListener('click',clearChat);
   newChat.addEventListener('click',()=>startNewChat());
   temporaryChat.addEventListener('click',()=>startNewChat({temporary:true}));
@@ -1858,7 +1567,7 @@
   syncResponseDepth();
   renderUsage();
   requestProfile();
-  updateApiKeyControl();
+
   void (async()=>{await loadProviders();await loadModels()})();
   input.focus();
 })();

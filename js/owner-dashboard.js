@@ -265,6 +265,7 @@
             <button class="nyx-owner-close" type="button" data-owner-close aria-label="Close owner dashboard">${dashboardIcon("close")}</button>
           </div>
         </header>
+        <section class="nyx-owner-tube-status" data-owner-ai-status hidden aria-live="polite"></section>
         <section class="nyx-owner-tube-status" data-owner-tube-status hidden aria-live="polite"></section>
         <section class="nyx-owner-metrics" data-owner-metrics aria-label="Account metrics"></section>
         <section class="nyx-owner-workspace">
@@ -339,6 +340,31 @@
       return payload;
     }
 
+    const aiStatusHost=overlay.querySelector('[data-owner-ai-status]');
+    let aiStatusBusy=false;
+    async function loadAiStatus() {
+      if(!overlay.isConnected||state.access?.role!=='owner'||aiStatusBusy)return;
+      aiStatusBusy=true;
+      try {
+        const data=await api('/api/owner-dashboard/ai-status');
+        if(!overlay.isConnected||state.access?.role!=='owner')return;
+        aiStatusHost.hidden=false;
+        const money=value=>Number(value).toFixed(2);
+        const titles={ok:'OpenRouter balance',low:'Low OpenRouter allowance',paused:'Shared AI balance cutoff reached',unknown:'OpenRouter balance could not be checked'};
+        const warning=data.state==='low'||data.state==='paused';
+        aiStatusHost.dataset.aiState=data.state;
+        aiStatusHost.style.borderColor=warning?'#d9ad55':'';
+        aiStatusHost.innerHTML=`<div><strong>${esc(titles[data.state]||titles.unknown)}</strong><p>${data.state==='unknown'?'Balance is unavailable. Shared AI pauses if its balance check fails.':`Account balance: $${money(data.balanceUsd)} &middot; Nyx key allowance: ${data.keyRemainingUsd===null?'No key limit':`$${money(data.keyRemainingUsd)}`} &middot; Daily site cap: $${money(data.dailyCapUsd)}`}</p>${warning?`<p>${data.state==='paused'?'The account balance or key allowance has reached the $0.10 cutoff.':'The account balance or Nyx key allowance is below $0.50.'} Add credits or review the key limit in OpenRouter. Daily usage limits still apply.</p>`:''}<small>Checked ${esc(dateLabel(data.checkedAt))}</small><p><a href="/api#owner" target="_blank" rel="noopener">Manage AI API keys and token balances</a></p></div>`;
+      } catch {
+        if(overlay.isConnected&&state.access?.role==='owner'){
+          aiStatusHost.hidden=false;
+          aiStatusHost.dataset.aiState='unknown';
+          aiStatusHost.textContent='OpenRouter balance could not be checked. Refresh to try again.';
+        }
+      } finally {aiStatusBusy=false;}
+    }
+    const aiStatusTimer=setInterval(()=>{if(!document.hidden)void loadAiStatus();},60000);
+
     let tubeBusy = false;
     let tubeLastStatus = null;
     const tubeHost = overlay.querySelector("[data-owner-tube-status]");
@@ -347,7 +373,7 @@
       const labels = {working:"Working",login_required:"Login needs refreshing",trouble:"Service trouble",setup_required:"Setup required",unchecked:"Not checked yet"};
       const label = data.enabled ? labels[data.state] || "Service trouble" : "Not enabled";
       const instructions = !data.enabled ? "Native playback is waiting for server setup. YouTube playback remains available." : data.state === "login_required" ? "Export fresh cookies from the dedicated YouTube account, replace the private server login file, then check again." : data.state === "trouble" ? "A recent request failed. This does not necessarily mean the login expired." : data.state === "setup_required" ? "Check the private login file and required video tools on the server." : "Status comes from real stream checks and video preparations. A single unavailable video does not mark the login expired.";
-      tubeHost.innerHTML = `<div><strong>NyxTube <span data-owner-tube-state="${esc(data.state)}">${esc(label)}</span></strong><p>${esc(instructions)}</p><small>Last success: ${esc(dateLabel(data.lastSuccess))} &middot; Last check: ${esc(dateLabel(data.lastChecked))}</small><small>Cache: ${(Number(data.cacheBytes || 0)/1073741824).toFixed(2)} / ${(Number(data.cacheLimitBytes || 0)/1073741824).toFixed(0)} GB &middot; Preparing: ${Number(data.activeJobs || 0)} / 1 &middot; Up to 720p</small></div><button type="button" data-owner-tube-check ${!data.enabled || tubeBusy ? "disabled" : ""}>${tubeBusy ? "Checking..." : "Check now"}</button>`;
+      tubeHost.innerHTML = `<div><strong>NyxTube <span data-owner-tube-state="${esc(data.state)}">${esc(label)}</span></strong><p>${esc(instructions)}</p><small>Last success: ${esc(dateLabel(data.lastSuccess))} &middot; Last check: ${esc(dateLabel(data.lastChecked))}</small><small>Cache: ${(Number(data.cacheBytes || 0)/1073741824).toFixed(2)} / ${(Number(data.cacheLimitBytes || 0)/1073741824).toFixed(0)} GB &middot; Preparing: ${Number(data.activeJobs || 0)} / ${Number(data.maxJobs || 1)} &middot; Up to 720p</small></div><button type="button" data-owner-tube-check ${!data.enabled || tubeBusy ? "disabled" : ""}>${tubeBusy ? "Checking..." : "Check now"}</button>`;
     }
     async function loadTubeStatus(check = false) {
       if (!overlay.isConnected || state.access?.role !== "owner" || tubeBusy) return;
@@ -535,6 +561,8 @@
         state.access = data.access || state.access;
         tubeHost.hidden = state.access?.role !== "owner";
         if (!tubeHost.hidden) void loadTubeStatus();
+        aiStatusHost.hidden=state.access?.role!=="owner";
+        if(!aiStatusHost.hidden)void loadAiStatus();
         state.customRoles = Array.isArray(data.customRoles) ? data.customRoles : state.customRoles;
         const ipBansButton = overlay.querySelector("[data-owner-ip-bans]");
         if (ipBansButton) ipBansButton.hidden = !state.access?.permissions?.includes("network:bans");
@@ -693,6 +721,7 @@
           capabilities.canResetPassword ? `<button type="button" data-owner-user-action="create_password_reset_link">${dashboardIcon("key")}Create reset link</button>` : "",
           capabilities.canResetPassword ? `<button type="button" data-owner-user-action="send_password_reset" ${!user.deliverableEmail ? "disabled" : ""}>${dashboardIcon("mail")}Email reset link</button>` : "",
           capabilities.canVerifyEmail ? `<button type="button" data-owner-user-action="verify_email" ${user.emailVerified || !user.deliverableEmail ? "disabled" : ""}>${dashboardIcon("check")}Verify email</button>` : "",
+          capabilities.canManageAiAccess ? `<button type="button" data-owner-user-action="ai_trust" ${user.aiAccess==='trusted'?'disabled':''}>${dashboardIcon("check")}Approve AI allowance</button><button type="button" data-owner-user-action="ai_restrict" ${user.aiAccess==='restricted'?'disabled':''}>${dashboardIcon("userOff")}Restrict shared AI</button><button type="button" data-owner-user-action="ai_reset" ${user.aiAccess==='automatic'?'disabled':''}>${dashboardIcon("refresh")}Automatic AI access</button>` : "",
           capabilities.canDisableAccount ? `<button type="button" data-owner-user-action="${user.disabled ? "enable" : "disable"}">${dashboardIcon(user.disabled ? "userCheck" : "userOff")}${user.disabled ? "Re-enable account" : "Disable account"}</button>` : "",
           capabilities.canDisableAccount && !user.disabled ? `<button class="danger" type="button" data-owner-user-action="ban">${dashboardIcon("ban")}Ban account</button>` : "",
           capabilities.canDisableAccount && capabilities.canManageNetworkBans && !user.disabled && user.lastSeenIp ? `<button class="danger" type="button" data-owner-user-action="disable_with_ip_ban">${dashboardIcon("ban")}Disable + block IP</button>` : "",
@@ -950,6 +979,9 @@
       const confirmations = {
         enable: ["Re-enable account?", `${user.email || user.displayName} will be able to sign in again.`, "Re-enable", false],
         verify_email: ["Verify this email?", `Mark ${user.email} as verified in Firebase Authentication.`, "Verify", false],
+        ai_trust: ["Approve AI allowance?", "This account will use the established-user allowance. Daily limits still apply.", "Approve", false],
+        ai_restrict: ["Restrict shared AI?", "This account will lose shared AI access. Other Nyx features remain available.", "Restrict", false],
+        ai_reset: ["Use automatic AI access?", "This account's shared AI access will follow its account history and subscription again.", "Reset", false],
         create_password_reset_link: ["Create a password reset link?", "The current password will remain private. Give the generated one-time link only to the account owner.", "Create link", false],
         send_password_reset: ["Send password reset?", `Firebase will email a password-reset link to ${user.email}.`, "Send email", false]
       };
@@ -1346,6 +1378,7 @@
 
     function destroy() {
       clearInterval(tubeTimer);
+      clearInterval(aiStatusTimer);
       state.controller?.abort();
       clearTimeout(state.searchTimer);
       overlay.classList.remove("show");

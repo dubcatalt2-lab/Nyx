@@ -431,60 +431,6 @@
     if(code.includes('invalid-custom-token')||code.includes('custom-token-mismatch'))return 'Nyx could not start the Firebase session. Try logging in again.';
     return message&&!/^firebase:/i.test(message)?message:fallback;
   }
-  function nyxNeedsEmailVerification(user=nyxFounderSignedInUser){
-    const email=String(user?.email||'').trim();
-    return Boolean(email&& !/@account\.nyx\.local$/i.test(email) && !user?.emailVerified);
-  }
-  async function sendNyxEmailVerification(user=nyxFounderSignedInUser){
-    if(!nyxNeedsEmailVerification(user)) return false;
-    const {sendEmailVerification}=await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js');
-    const configuredOrigin=String(globalThis.__NYX_RUNTIME_CONFIG__?.publicOrigin||'').trim();
-    const returnUrl=new URL('/',configuredOrigin||location.origin).href;
-    await sendEmailVerification(user,{url:returnUrl,handleCodeInApp:false});
-    return true;
-  }
-  function closeNyxEmailVerificationGate(){document.querySelector('.nyx-email-verification-overlay')?.remove()}
-  function openNyxEmailVerificationGate(options={}){
-    const user=nyxFounderSignedInUser;
-    if(!nyxNeedsEmailVerification(user)){closeNyxEmailVerificationGate();return}
-    let overlay=document.querySelector('.nyx-email-verification-overlay');
-    if(!overlay){
-      overlay=document.createElement('div');
-      overlay.className='nyx-account-overlay nyx-email-verification-overlay';
-      overlay.innerHTML='<section class="nyx-account-dialog" role="dialog" aria-modal="true" aria-labelledby="nyxEmailVerificationTitle"><div class="nyx-account-mark" aria-hidden="true"><span>✉</span></div><p id="nyxEmailVerificationTitle" class="nyx-account-title">Verify your email to finish setting up Nyx</p><p class="nyx-account-copy" data-nyx-email-verification-copy></p><div class="nyx-email-verification-actions"><button class="nyx-account-submit" data-nyx-email-resend type="button">Resend verification email</button><button class="nyx-account-secondary" data-nyx-email-refresh type="button">I verified my email</button><button class="nyx-account-secondary" data-nyx-email-signout type="button">Sign out</button></div><p class="nyx-account-footer" data-nyx-email-verification-status></p></section>';
-      document.body.appendChild(overlay);
-      const status=overlay.querySelector('[data-nyx-email-verification-status]');
-      const setBusy=(button,busy)=>{button.disabled=busy;button.textContent=busy?'Checking…':button.dataset.nyxEmailResend!==undefined?'Resend verification email':'I verified my email'};
-      overlay.addEventListener('click',async event=>{
-        const resend=event.target.closest('[data-nyx-email-resend]');
-        const refresh=event.target.closest('[data-nyx-email-refresh]');
-        if(event.target.closest('[data-nyx-email-signout]')){await signOutFounderOwner();return}
-        if(resend){
-          resend.disabled=true;
-          try{await sendNyxEmailVerification();status.textContent='Verification email sent. Check your inbox and spam folder.'}
-          catch(error){status.textContent=nyxFriendlyFirebaseError(error,'Nyx could not send the verification email. Check Firebase’s email template and try again.')}
-          finally{resend.disabled=false}
-        }
-        if(refresh){
-          setBusy(refresh,true);
-          try{
-            await nyxFounderSignedInUser?.reload();
-            nyxFounderSignedInUser=nyxFounderFirebaseAuth?.currentUser||nyxFounderSignedInUser;
-            if(!nyxNeedsEmailVerification()){
-              await nyxGetFirebaseToken(true);
-              closeNyxEmailVerificationGate();
-              syncFounderOwnerControls();
-              void startNyxCloudPreferenceSync();
-              toast('Email verified — cloud saves are now enabled.');
-            }else status.textContent='Nyx still cannot confirm this email. Open the link in your inbox, then try again.';
-          }catch(error){status.textContent=nyxFriendlyFirebaseError(error,'Nyx could not check your verification yet.')}
-          finally{if(document.body.contains(refresh))setBusy(refresh,false)}
-        }
-      });
-    }
-    overlay.querySelector('[data-nyx-email-verification-copy]').textContent=`We sent a verification link to ${String(user.email)}. Open it, then return here to continue.`;
-    overlay.querySelector('[data-nyx-email-verification-status]').textContent=options.sent?'Verification email sent. Check your inbox and spam folder.':'Your account is signed in, but verified-only features remain locked until you confirm your email.';
-  }
   async function loadNyxUserProfile(){
     if(!nyxFounderSignedInUser) return null;
     try{
@@ -868,8 +814,8 @@
     });
     document.querySelectorAll('[data-nyx-cloud-save-status]').forEach(status=>{
       if(!configured){status.textContent='Cloud saves become available when Nyx accounts are configured.';return}
-      if(!signedIn){status.textContent='Sign in with an email account to sync supported game progress and Nyx preferences.';return}
-      status.textContent=signedIn.emailVerified&&signedIn.email?'Cloud saves are enabled for this verified email account.':'Verify the email on this account to enable cloud saves.';
+      if(!signedIn){status.textContent='Sign in to sync supported game progress and Nyx preferences.';return}
+      status.textContent='Cloud saves are enabled for this account.';
     });
     document.querySelectorAll('[data-open-nyx-account]').forEach(button=>{button.hidden=!configured||Boolean(signedIn);});
     document.querySelectorAll('[data-nyx-account-sign-out]').forEach(button=>{button.hidden=!signedIn;});
@@ -912,7 +858,7 @@
         try{await setPersistence(nyxFounderFirebaseAuth,browserLocalPersistence)}
         catch(error){console.warn('Nyx could not enable persistent sign-in:',error)}
         if(typeof nyxFounderFirebaseAuth.authStateReady==='function')await nyxFounderFirebaseAuth.authStateReady();
-        onAuthStateChanged(nyxFounderFirebaseAuth,async user=>{nyxFounderSignedInUser=user||null;syncSetupAccountStep();if(!user){closeNyxEmailVerificationGate();stopNyxUserActivity();stopNyxCloudPreferenceSync();nyxUserProfile=null;nyxUserProfileCreatedAt='';nyxFounderIsOwner=false;nyxOwnerDashboardAccess=false;nyxUserPermissions=[];nyxUserAccountRole='member';nyxUserSubscriptionStatus='free';syncNyxAccountEntitlements();nyxUserAccountEmail='';await refreshFounderOwnerAccess();return}startNyxUserActivity(user);if(nyxNeedsEmailVerification(user)){stopNyxCloudPreferenceSync();openNyxEmailVerificationGate()}else closeNyxEmailVerificationGate();await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile(),nyxNeedsEmailVerification(user)?Promise.resolve():startNyxCloudPreferenceSync()]);syncSetupAccountStep()});
+        onAuthStateChanged(nyxFounderFirebaseAuth,async user=>{nyxFounderSignedInUser=user||null;syncSetupAccountStep();if(!user){stopNyxUserActivity();stopNyxCloudPreferenceSync();nyxUserProfile=null;nyxUserProfileCreatedAt='';nyxFounderIsOwner=false;nyxOwnerDashboardAccess=false;nyxUserPermissions=[];nyxUserAccountRole='member';nyxUserSubscriptionStatus='free';syncNyxAccountEntitlements();nyxUserAccountEmail='';await refreshFounderOwnerAccess();return}startNyxUserActivity(user);await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile(),startNyxCloudPreferenceSync()]);syncSetupAccountStep()});
       }catch(error){console.warn('Nyx owner sign-in could not initialize:',error);nyxFounderAuthConfig={enabled:false,ownerConfigured:false}}
       finally{syncFounderOwnerControls()}
     })();
@@ -958,7 +904,7 @@
       emailField.hidden=!registering;
       emailInput.disabled=!registering;
       forgotButton.hidden=registering;
-      footer.textContent=registering?'Add a real email and Nyx will send a verification message. You can also leave it blank for a username-only account.':switching?'Your current account stays signed in until another login succeeds.':'Log in with your username or recovery email.';
+      footer.textContent=registering?'Email is optional. Add one for password recovery, or create an account with just a username and password.':switching?'Your current account stays signed in until another login succeeds.':'Log in with your username or recovery email.';
       error.textContent='';
       error.classList.remove('success');
       clearAccountStatusNotice();
@@ -1008,21 +954,10 @@
         const credential=await signInWithCustomToken(nyxFounderFirebaseAuth,data.customToken);
         nyxFounderSignedInUser=credential.user;
         await credential.user.getIdToken(true);
-        let verificationSent=false;
-        let verificationFailed=false;
-        if(mode==='register'&&data.verificationRequired&&credential.user.email){
-          try{
-            await sendNyxEmailVerification(credential.user);
-            verificationSent=true;
-          }catch{
-            verificationFailed=true;
-          }
-        }
         await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile()]);
         syncSetupAccountStep();
         close();
-        if(nyxNeedsEmailVerification(credential.user)) openNyxEmailVerificationGate({sent:verificationSent});
-        toast(mode==='register'?(verificationSent?'Account created — verify your email to continue.':(verificationFailed?'Account created, but Nyx could not send the verification email. Use Resend verification email to try again.':'Nyx profile created')):switching?(String(credential.user.uid||'')===previousUid?'Already signed in to this account':'Account switched'):'Signed in');
+        toast(mode==='register'?'Nyx profile created':switching?(String(credential.user.uid||'')===previousUid?'Already signed in to this account':'Account switched'):'Signed in');
       }catch(authError){
         error.textContent=authError?.accountStatus?'':nyxFriendlyFirebaseError(authError,'Account could not be completed. Try again.');
         submit.disabled=false;
@@ -5048,17 +4983,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return id;
   }
   function openNyxAiSettings(){
-    const id=openBrowserShellInternalTab('ai');
-    const shellTab=browserShellTabs.find(tab=>tab.id===id);
-    const browserTab=activeBrowser?.tabs?.find(tab=>tab.id===shellTab?.browserTabId);
-    const frame=browserTab?.frame;
-    if(!frame) return id;
-    const openSettings=()=>{
-      try{frame.contentWindow?.postMessage({type:'nyx:ai-open-key-settings'},location.origin)}catch{}
-    };
-    frame.addEventListener('load',openSettings,{once:true});
-    setTimeout(openSettings,0);
-    return id;
+    return openBrowserShellInternalTab('ai');
   }
   function ensureBrowserShellLinkedTab(shellTab){
     if(!shellTab || !activeBrowser?.win?.isConnected) return null;
@@ -5470,7 +5395,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       accountBlock.innerHTML='<h2><button class="nyx-account-settings-link" data-open-nyx-account-settings type="button">Account</button></h2><p data-founder-account-status>Sign in to manage your Nyx account.</p><div class="settings-actions"><button class="settings-action" data-open-nyx-account type="button">Create or sign in</button><button class="settings-action" data-open-nyx-profile type="button" hidden>Edit account</button><button class="settings-action" data-nyx-account-sign-out type="button" hidden>Sign out</button></div>';
       const cloudSaveBlock=document.createElement('section');
       cloudSaveBlock.className='settings-block';
-      cloudSaveBlock.innerHTML='<h2>Cloud Saves</h2><p data-nyx-cloud-save-status>Sign in with an email account to sync supported game progress and Nyx preferences.</p>';
+      cloudSaveBlock.innerHTML='<h2>Cloud Saves</h2><p data-nyx-cloud-save-status>Sign in to sync supported game progress and Nyx preferences.</p>';
       const resetBlock=document.createElement('section');
       resetBlock.className='settings-block';
       resetBlock.innerHTML=`<h2>Clear Cache</h2><p>Removes cookies, cache files, saved settings, proxy storage, and service workers, then reloads nyx like a fresh install.</p><div class="settings-actions"><button class="settings-action danger-action" data-clear-nyx-cache type="button">Clear Cache and Reset</button></div>`;
@@ -13149,15 +13074,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     restoreWeatherPanel(next,trigger);
   }
   //lion-ai-ui
-  let nyxAiModels=[
-    ['chatgpt-5.4-mini','GPT-5.4 Mini']
-  ];
+  let nyxAiModels=[];
   function nyxAiSelectedModel(){
     const saved=store.text('nyx.aiModel','chatgpt-5.4-mini');
-    return nyxAiModels.some(([id])=>id===saved) ? saved : 'chatgpt-5.4-mini';
+    return nyxAiModels.some(([id])=>id===saved) ? saved : (nyxAiModels[0]?.[0]||'');
   }
   function nyxAiModelLabel(id=nyxAiSelectedModel()){
-    return nyxAiModels.find(([modelId])=>modelId===id)?.[1] || 'GPT-5.4 Mini';
+    return nyxAiModels.find(([modelId])=>modelId===id)?.[1] || 'Models unavailable';
   }
   function nyxAiModelOptions(selected=nyxAiSelectedModel()){
     return nyxAiModels.map(([id,label])=>`<option value="${esc(id)}" ${id===selected?'selected':''}>${esc(label)}</option>`).join('');

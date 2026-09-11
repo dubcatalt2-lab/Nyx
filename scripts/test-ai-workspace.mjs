@@ -15,6 +15,9 @@ try {
   const chatRequests = [];
   page.on("pageerror", error => pageErrors.push(error.message));
   await page.addInitScript(() => {
+    localStorage.setItem("nyx.aiPersonalKey.device","retired-fixture-key");
+    localStorage.setItem("nyx.aiPersonalBaseUrl.device","https://api.ofox.ai/v1");
+    localStorage.setItem("nyx.aiSharedProvider","huggingface");
     Object.defineProperty(navigator, "mediaDevices", {
       configurable: true,
       value: {
@@ -78,33 +81,8 @@ z = \frac{9}{3}`;
 
   await page.goto(`${baseUrl}/ai.html`, { waitUntil: "domcontentloaded" });
   await page.locator("#modelTrigger").waitFor();
-  await page.locator("#apiKeySettings").click();
-  await page.locator("#apiBaseOfox").click();
-  assert(await page.locator("#apiBaseUrl").inputValue() === "https://api.ofox.ai/v1", "Ofox preset did not fill its OpenAI-compatible base URL");
-  await page.locator("#apiKeyInput").fill("sk-ofox-browser-test-key");
-  await page.locator("#apiKeyForm").evaluate(form => form.requestSubmit());
-  await page.waitForFunction(() => sessionStorage.getItem("nyx.aiPersonalKey.session") === "sk-ofox-browser-test-key");
-  await page.waitForFunction(() => sessionStorage.getItem("nyx.aiPersonalBaseUrl.session") === "https://api.ofox.ai/v1");
-  await page.waitForFunction(() => document.querySelector("#apiKeyDialog")?.open === false);
-  assert(modelHeaders.some(headers => headers["x-nyx-ai-base-url"] === "https://api.ofox.ai/v1"), "Ofox base URL was not sent with the personal-key model request");
-
-  await page.locator("#apiKeySettings").click();
-  await page.locator("#apiProfileNew").click();
-  await page.locator("#apiProfileLabel").fill("TokenMix");
-  await page.locator("#apiKeyInput").fill("sk-tokenmix-browser-test-key");
-  await page.locator("#apiBaseUrl").fill("https://api.tokenmix.ai/v1");
-  await page.locator("#apiKeyForm").evaluate(form => form.requestSubmit());
-  await page.waitForFunction(() => document.querySelector("#apiKeyDialog")?.open === false);
-  const savedProviderCount = await page.evaluate(() => {
-    const read = (storage, key) => { try { return JSON.parse(storage.getItem(key) || "[]").length; } catch { return 0; } };
-    return read(sessionStorage, "nyx.aiPersonalProfiles.session") + read(localStorage, "nyx.aiPersonalProfiles.device");
-  });
-  assert(savedProviderCount === 2, "Adding TokenMix replaced Ofox instead of preserving both providers");
-  await page.locator("#apiKeySettings").click();
-  await page.locator(".ai-key-profile-select").filter({ hasText: "Ofox" }).click();
-  await page.waitForFunction(() => sessionStorage.getItem("nyx.aiPersonalBaseUrl.session") === "https://api.ofox.ai/v1");
-  await page.locator("#apiKeyClose").click();
-
+  assert(await page.locator('#apiKeySettings,#apiKeyDialog').count()===0,'Retired personal provider options remain');
+  assert(await page.locator('#providerSelect option').allTextContents().then(items=>items.join(','))==='OpenRouter','Only OpenRouter should be offered');
   await page.locator("#shareScreen").click();
   await page.locator("#screenPreview").waitFor({ state: "visible" });
   await page.waitForFunction(() => document.querySelector("#screenVideo")?.videoWidth > 1);
@@ -114,7 +92,7 @@ z = \frac{9}{3}`;
   assert(chatRequests.length === 1, "Screen prompt did not make exactly one AI request");
   assert(/^data:image\/jpeg;base64,/.test(chatRequests[0].body?.image?.dataUrl || ""), "Screen prompt did not attach a captured JPEG frame");
   assert(chatRequests[0].body?.image?.screenCapture === true, "Screen prompt did not identify the image as an active screen-share frame");
-  assert(chatRequests[0].headers["x-nyx-ai-base-url"] === "https://api.ofox.ai/v1", "Custom base URL was not sent with the chat request");
+  assert(!chatRequests[0].headers["x-nyx-ai-base-url"]&&!chatRequests[0].headers["x-nyx-ai-api-key"], "Retired personal credentials must never be sent");
   assert(await page.locator(".ai-answer .katex-display").count() === 6, "Adjacent, escaped, or unclosed display math was not rendered through KaTeX");
   assert(await page.locator(".ai-answer .katex").count() >= 7, "Inline and display math were not both rendered through KaTeX");
   assert((await page.locator(".ai-answer .katex-display").first().innerText()).includes("125"), "The reported fractional-exponent example was not rendered as display math");
@@ -149,11 +127,19 @@ z = \frac{9}{3}`;
   assert(chatRequests[1].body.image.width === 32 && chatRequests[1].body.image.screenCapture === false, "Image metadata was not preserved");
   assert(await page.locator("#attachmentPreview").isHidden(), "Sent attachment was not cleared");
 
+  await page.evaluate(()=>window.postMessage({type:'nyx:ai-open-key-settings'},location.origin));
+  await page.locator('#imageInput').setInputFiles(imageFile);
+  await page.route('**/api/nyx-ai',route=>route.fulfill({status:503,json:{error:'Image test: provider unavailable'}}));
+  await page.locator('#input').fill('Retry image test');
+  await page.locator('#send').click();
+  await page.getByText('Image test: provider unavailable',{exact:true}).waitFor();
+  assert(await page.locator('#attachmentPreview').isVisible(),'Failed request discarded the image needed for retry');
+
   await page.setViewportSize({ width: 390, height: 700 });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   assert(!overflow, "AI workspace has horizontal overflow at mobile width");
   assert(pageErrors.length === 0, `Browser errors: ${pageErrors.join(" | ")}`);
-  console.log("AI workspace test: provider profiles, image picker/preview/removal/send, keyboard activation, screen capture, multiline KaTeX formatting, stop control, and mobile layout passed");
+  console.log("AI workspace test: OpenRouter-only selection, image picker/preview/removal/send, keyboard activation, screen capture, multiline KaTeX formatting, stop control, and mobile layout passed");
 } finally {
   await browser.close();
 }

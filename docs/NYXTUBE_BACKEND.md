@@ -1,9 +1,10 @@
 # NyxTube native playback
 
 Native playback is optional and disabled until explicitly configured. The existing
-Extractor-backed search, metadata, community features and the iframe player remain available. This is
-a first version: the selected video must finish preparing before native playback
-starts. Shorts and Nyxify retain their existing players. Native captions are not yet
+Extractor-backed search, metadata, community features and the iframe player remain available.
+Native playback uses HLS: the server reads the source index and fetches only the
+requested audio/video sections. Playback can start before the entire video downloads,
+and seeking requests the sections near the new position. Shorts and Nyxify retain their existing players. Native captions are not yet
 rendered over the video; the transcript remains readable and seekable, and the
 YouTube player remains selectable for captions.
 
@@ -82,29 +83,48 @@ there is no guaranteed refresh interval.
 
 - Public YouTube videos only; full extractor metadata validation precedes preparation,
   and extraction rejects non-public, age-restricted, live, or invalid-duration videos.
-  There is no duration ceiling; long videos remain subject to the input-size,
-  free-space and preparation-deadline checks below.
+  HLS has no one-hour or whole-video 1.5 GiB limit. Individual fragments, metadata,
+  free disk space, provider availability and request deadlines remain bounded.
 - Only HTTPS Google video media URLs from the extractor are requested. No client URL,
   cookie, signed media URL, or extractor stderr is returned to the browser.
-- One preparation job at a time, with duplicate jobs sharing work. No unbounded queue.
-  Cached format lookup remains available during other jobs or service cooldowns.
-  The player retries temporary busy responses for up to one minute per request;
-  rejected requests do not consume its request allowance.
-- H.264/AAC MP4 at available 360p, 480p, or 720p; FFmpeg combines streams without
-  re-encoding. Files without both audio and video fail preparation.
-- Five GiB total media cache; six-hour idle expiration and least-recently-used eviction.
-  Up to 1.5 GiB of combined audio/video input per job, with a reserved output allowance before downloading.
-  Approximate extractor sizes do not reject videos; exact sizes and actual downloaded bytes remain bounded.
-  At least two GiB disk headroom is required in addition to job reservations.
-- Downloads use bounded byte ranges with a 30-second timeout per attempt and up
-  to two retries. Partial bytes are discarded before retrying the same range; the
-  twelve-minute total preparation deadline still applies.
-- Extractor deadline 35 seconds; entire preparation twelve minutes; merge 90 seconds.
-  Temporary work is removed on failure and on the next startup after a crash.
-- Completed files are published atomically and served with HTTP Range support.
-  Active readers pin their cache file until their response closes.
-- Per-network preparation/format requests are limited to ten per ten minutes.
-- Native failures fall back to the existing YouTube player. Switching quality retains
+- H.264/AAC at available 360p, 480p, or 720p. Adaptive MP4 sources with a flat `sidx`
+  reuse existing independently playable fragments directly. Ordinary MP4s use their
+  sample tables to create roughly six-second fMP4 fragments without re-encoding.
+  Unsupported indexes/codecs, nested indexes and files missing audio/video fall back
+  to the selectable YouTube player. Captions still use the transcript/embedded player.
+- One index preparation and two fragment jobs may run concurrently. Eight fragment
+  jobs may wait; duplicate requests share work. The last waiting viewer disconnecting
+  cancels that fragment's work. Fragment responses have a global 40-request admission
+  limit. Existing catalog extractor admission limits still apply.
+- MP4Box parses bounded initialization/index data: at most 12 MiB for `moov`,
+  one million samples per ordinary track, or 20,000 direct `sidx` references.
+  Retained indexes are bounded to 64 MiB per video, 128 MiB total, and 64 entries.
+  Old unpinned indexes expire after two idle hours or under memory pressure.
+- Five GiB total disk cache shared with older complete MP4 downloads. Two-hour idle
+  expiration and LRU capacity eviction apply to individual fragments/files. Fragments
+  in active HTTP transfers are pinned until their responses close. Completed fragments
+  publish atomically; concurrent writers reserve 64 MiB within the cache, and each
+  source span/output is bounded to 16 MiB. Two GiB additional disk headroom is required.
+  Cleanup runs every minute and before new writes. Recent indexed fragments can be
+  reused after restart once source metadata has been validated again.
+- Metadata preparation has a 45-second deadline. Source ranges are at most four MiB,
+  with a 15-second attempt timeout and at most two retries; a fragment job has 45
+  seconds total, and each viewer waits at most 60 seconds including the queue.
+  Expiring source URLs are refreshed through the existing extractor. Temporary files
+  are removed on cancellation/failure and on startup after a crash.
+- The locally bundled hls.js player targets a 12-second forward buffer, capped at 24
+  seconds plus the necessary complete fragment, and retains about 12 seconds behind.
+  Seeking skips intervening downloads. Native HLS browsers manage their own buffers.
+  Startup/seek buffering shows the moving circle. Busy/connection retries are bounded;
+  an expired HLS session can be renewed while preserving the selected position.
+- Same-origin routes serve the HLS master, track playlists, initialization and fragments.
+  Public-video checks precede preparation. No source URL can be supplied by a client.
+  Per-network preparation/format requests remain limited to ten per ten minutes.
+- The older complete MP4 preparation route remains compatible for older clients: one
+  job, a 1.5 GiB combined input limit, reserved merge output, 12-minute download deadline,
+  90-second FFmpeg stream-copy merge, and HTTP Range playback. It cannot write alongside
+  HLS preparation. New clients explicitly request `?mode=hls`.
+- Native failures retain the existing YouTube fallback. Switching quality retains
   playback position, pause state, volume, mute, and speed after preparation.
 
 The cache directory must be exclusive to a single Nyx process and must never be

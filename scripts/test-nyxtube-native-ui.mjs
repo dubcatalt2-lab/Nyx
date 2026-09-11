@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { execFile } from 'node:child_process';
+import { createRequire } from 'node:module';
 const root=await mkdtemp(join(tmpdir(),'nyx-native-ui-'));
 let server,browser;
 try {
@@ -14,6 +15,7 @@ try {
   const video={id:'YE7VzlLtp-4',title:'Native player test',creator:'Test creator',description:'A test video.',durationSeconds:30,captions:true};
   let busyReplies=2,failed=false,hold=false,checks=0,detailCalls=0,ownerState='working',ownerRole='owner';
   const app=express();
+  app.get('/assets/vendor/hls.min.js',(_req,res)=>res.sendFile(createRequire(import.meta.url).resolve('hls.js/dist/hls.min.js')));
   app.use('/api/nyxtube',(req,res)=>{
     if(req.path==='/status')return res.json({configured:true,nativeAvailable:true});
     if(req.path==='/video'){detailCalls++;return res.json({videos:[{...video,description:'Loaded full details',likeCount:null}]});}
@@ -32,7 +34,7 @@ try {
     if(req.path.startsWith('/nyxtube'))return res.json({enabled:true,state:ownerState,lastSuccess:'2026-09-08T12:00:00Z',cacheLimitBytes:5*1024**3,cacheBytes:1024,activeJobs:0});
     return res.json({access:{role:ownerRole,permissions:[]},users:[],metrics:{},pagination:{total:0,page:1,pages:1},recentActivity:[]});
   });
-  app.use(express.static(process.cwd()));server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base=`http://127.0.0.1:${server.address().port}`;
+  app.use(express.static(process.env.NYX_TEST_STATIC_ROOT||process.cwd()));server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base=`http://127.0.0.1:${server.address().port}`;
   browser=await chromium.launch({headless:true,args:['--autoplay-policy=no-user-gesture-required']});
   const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];page.on('pageerror',e=>{errors.push(e.message);console.log('Page error:',e.message);});
   await page.addInitScript(()=>{window.YT={PlayerState:{PLAYING:1,PAUSED:2},Player:class{
@@ -41,8 +43,8 @@ try {
   }};});
   await page.goto(base+'/apps/nyxtube/');await page.locator('.video-cover').first().click();
   const spinner=page.locator('.watch-loading-spinner');assert.ok(await spinner.isVisible());
-  await page.waitForFunction(()=>document.querySelector('[data-watch-loading]').textContent.includes('Downloading and preparing'));
-  assert.match(await page.locator('[data-watch-loading]').innerText(),/Downloading and preparing/);
+  await page.waitForFunction(()=>document.querySelector('[data-watch-loading]').textContent.includes('Preparing video'));
+  assert.match(await page.locator('[data-watch-loading]').innerText(),/Preparing video/);
   const rotation=await spinner.evaluate(el=>getComputedStyle(el).transform);await page.waitForTimeout(150);
   assert.notEqual(await spinner.evaluate(el=>getComputedStyle(el).transform),rotation,'Download circle must rotate');
   const player=page.locator('[data-watch-player] video');await page.waitForFunction(()=>document.querySelector('[data-watch-player] video')?.currentTime>0.1);

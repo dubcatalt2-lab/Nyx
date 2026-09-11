@@ -12,6 +12,11 @@
   external_node_modules = ["express", "serverless-http", "eruda", "firebase-admin", "@mercuryworkshop/wisp-js", "@titaniumnetwork-dev/ultraviolet", "@mercuryworkshop/bare-mux", "@mercuryworkshop/scramjet", "@mercuryworkshop/scramjet-controller", "@mercuryworkshop/epoxy-transport", "@mercuryworkshop/libcurl-transport"]
 
 [[redirects]]
+  from = "/api"
+  to = "/apps/api-keys/index.html"
+  status = 200
+
+[[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/api/:splat"
   status = 200

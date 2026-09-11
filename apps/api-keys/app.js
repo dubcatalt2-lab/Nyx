@@ -1,23 +1,9 @@
-(()=>{
-  'use strict';
-  const $=selector=>document.querySelector(selector);
-  const $$=selector=>[...document.querySelectorAll(selector)];
-  const refs={
-    status:$('[data-status]'),notice:$('[data-notice]'),list:$('[data-key-list]'),create:$('[data-create]'),dialog:$('[data-dialog]'),form:$('[data-key-form]'),label:$('[data-label]'),confirm:$('[data-create-confirm]'),revealDialog:$('[data-reveal-dialog]'),reveal:$('[data-reveal]'),toggleReveal:$('[data-toggle-reveal]'),copy:$('[data-copy]'),limits:$('[data-limits]'),unavailableDialog:$('[data-unavailable-dialog]'),createReplacement:$('[data-create-replacement]'),
-    title:$('#page-title'),subtitle:$('[data-page-subtitle]'),tabs:$$('[data-tab]'),panels:$$('[data-panel]'),tokenUsage:$('[data-token-usage]'),tokenLimit:$('[data-token-limit]'),tokenMeter:$('[data-token-meter]'),requestUsage:$('[data-request-usage]'),requestLimit:$('[data-request-limit]'),requestMeter:$('[data-request-meter]'),plan:$('[data-plan]'),reset:$('[data-reset]'),usageRows:$('[data-usage-rows]'),refreshUsage:$('[data-refresh-usage]'),
-    playgroundForm:$('[data-playground-form]'),playgroundKey:$('[data-playground-key]'),togglePlaygroundKey:$('[data-toggle-playground-key]'),keyHint:$('[data-key-hint]'),model:$('[data-playground-model]'),prompt:$('[data-playground-prompt]'),tokens:$('[data-playground-tokens]'),temperature:$('[data-playground-temperature]'),send:$('[data-playground-send]'),responseCard:$('[data-response-card]'),response:$('[data-playground-response]'),responseMeta:$('[data-response-meta]'),copyResponse:$('[data-copy-response]')
-  };
-  const tabCopy={keys:['API Keys','Nyx developer access'],usage:['Usage','Daily gateway activity'],playground:['Playground','Test the Nyx API']};
-  const revealStoragePrefix='nyx.api-key-reveal.';
-  let accountToken='';
-  let configured=false;
-  let allKeys=[];
-  let usageLoaded=false;
-  let modelsLoaded=false;
-
-  function applyTheme(){try{const theme=localStorage.getItem('nyx.theme')||'default';if(theme!=='default')document.body.classList.add(`theme-${theme}`)}catch{}}
-  function notice(message,type=''){refs.notice.textContent=message;refs.notice.className=`notice page-notice${type?` ${type}`:''}`;refs.notice.hidden=!message}
-  function status(online,label){refs.status.classList.toggle('online',online);refs.status.classList.toggle('offline',!online);refs.status.querySelector('span').textContent=label}
+(()=>{'use strict';
+const $=s=>document.querySelector(s),GEMINI='google/gemini-2.5-flash-lite',LUNA='openai/gpt-5.6-luna';
+let localAuth=null,loadedUid='',accountOwner=false,playController=null;
+function showTab(name){if(!['keys','usage','playground','owner'].includes(name))name='keys';if(name==='owner'&&!accountOwner)name='keys';document.querySelectorAll('[data-page]').forEach(el=>el.hidden=el.dataset.page!==name);document.querySelectorAll('[data-tab]').forEach(el=>{if(el.dataset.tab===name)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');});}
+document.querySelectorAll('[data-tab]').forEach(button=>button.onclick=()=>{location.hash=button.dataset.tab;showTab(button.dataset.tab);});addEventListener('hashchange',()=>showTab(location.hash.slice(1)));showTab(location.hash.slice(1));
+const note=m=>{$('#notice').textContent=m;};
   async function parentToken(){
     if(window.parent===window)return '';
     const requestId=`keys-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -28,9 +14,9 @@
       const timer=setTimeout(()=>finish(''),2500);addEventListener('message',receive);parent.postMessage({type:'nyx:account-token-request',requestId},location.origin);
     });
   }
-  async function firebaseToken(){
+  async function firebaseToken(local=false){
     const token=await parentToken();
-    if(token)return token;
+    if(token&&!local)return token;
     const configResponse=await fetch('/api/founder-profile/auth-config',{cache:'no-store'});
     const config=await configResponse.json();
     if(!config?.enabled||!config?.apiKey||!config?.projectId)return '';
@@ -38,140 +24,35 @@
       import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')
     ]);
     const app=getApps().find(item=>item.name==='nyx-founder-owner')||initializeApp({apiKey:config.apiKey,authDomain:`${config.projectId}.firebaseapp.com`,projectId:config.projectId},'nyx-founder-owner');
-    const auth=getAuth(app);try{await setPersistence(auth,browserLocalPersistence)}catch{}
+    const auth=getAuth(app); localAuth=auth;try{await setPersistence(auth,browserLocalPersistence)}catch{}
     if(typeof auth.authStateReady==='function')await auth.authStateReady();
     return auth.currentUser?auth.currentUser.getIdToken():'';
   }
-  async function api(path,options={}){
-    accountToken=await firebaseToken();
-    if(!accountToken)throw new Error('Sign in to Nyx to manage API keys.');
-    const response=await fetch(path,{...options,headers:{Accept:'application/json',Authorization:`Bearer ${accountToken}`,...(options.body?{'Content-Type':'application/json'}:{}),...(options.headers||{})},cache:'no-store'});
-    const body=await response.json().catch(()=>({}));
-    if(!response.ok)throw new Error(body.error||`Request failed (${response.status})`);
-    return body;
-  }
-  function storedReveal(id){try{return sessionStorage.getItem(`${revealStoragePrefix}${id}`)||''}catch{return ''}}
-  function rememberReveal(id,key){try{if(id&&key)sessionStorage.setItem(`${revealStoragePrefix}${id}`,key)}catch{}}
-  function forgetReveal(id){try{sessionStorage.removeItem(`${revealStoragePrefix}${id}`)}catch{}}
-  function openReveal(key){refs.reveal.value=key;refs.reveal.type='password';refs.toggleReveal.setAttribute('aria-pressed','false');refs.toggleReveal.textContent='Show key';refs.revealDialog.showModal();refs.reveal.focus()}
-  function openCreate(label=''){if(!configured)return;refs.label.value=label;refs.dialog.showModal();refs.label.focus()}
-  function openUnavailable(label){refs.createReplacement.dataset.keyLabel=label;refs.unavailableDialog.showModal()}
-  async function copyText(value){try{await navigator.clipboard.writeText(value);return true}catch{const area=document.createElement('textarea');area.value=value;area.style.position='fixed';area.style.opacity='0';document.body.append(area);area.select();const copied=document.execCommand('copy');area.remove();return copied}}
-  function formatTime(value){if(!value)return 'Never used';const time=Date.parse(value);return Number.isFinite(time)?new Date(time).toLocaleString():'Never used'}
-  function number(value){return Math.max(0,Number(value)||0).toLocaleString()}
-  function knownPlaygroundKey(){for(const key of allKeys){const full=storedReveal(key.id);if(full)return {key:full,label:key.label}}return null}
-  function syncPlaygroundKey(){if(refs.playgroundKey.value)return;const saved=knownPlaygroundKey();if(saved){refs.playgroundKey.value=saved.key;refs.keyHint.textContent=`Using ${saved.label}, available in this browser tab.`}}
-  async function revokeKey(key){
-    if(!confirm(`Revoke ${key.label}? Apps using it will stop immediately.`))return false;
-    await api(`/api/nyx-api-keys/${encodeURIComponent(key.id)}`,{method:'DELETE'});forgetReveal(key.id);allKeys=allKeys.filter(item=>item.id!==key.id);renderKeys(allKeys);usageLoaded=false;notice('Key revoked and removed from your active keys.');return true;
-  }
-  function renderKeys(keys=[]){
-    allKeys=keys;
-    refs.list.replaceChildren();
-    if(!keys.length){const empty=document.createElement('p');empty.className='empty';empty.textContent='No API keys yet. Create one for your app or environment.';refs.list.append(empty);return}
-    keys.forEach(key=>{
-      const row=document.createElement('article');row.className='key-row';
-      const details=document.createElement('div');
-      const label=document.createElement('strong');label.textContent=key.label;
-      const prefix=document.createElement('code');prefix.textContent=`${key.prefix}••••••••`;
-      const used=document.createElement('small');used.textContent=`Last used: ${formatTime(key.lastUsedAt)}`;
-      details.append(label,prefix,used);
-      const actions=document.createElement('div');actions.className='key-actions';
-      const savedKey=storedReveal(key.id);
-      const view=document.createElement('button');view.type='button';view.className='secondary-action';view.textContent='View / copy';view.addEventListener('click',()=>savedKey?openReveal(savedKey):openUnavailable(key.label));actions.append(view);
-      const copy=document.createElement('button');copy.type='button';copy.className='secondary-action';copy.textContent=savedKey?'Copy key':'Copy prefix';copy.addEventListener('click',async()=>{const copied=await copyText(savedKey||key.prefix);if(copied){copy.textContent='Copied';notice(savedKey?'Full key copied to your clipboard.':'Only the non-secret key prefix was copied. Create a replacement to get a full key.');setTimeout(()=>copy.textContent=savedKey?'Copy key':'Copy prefix',1200)}});actions.append(copy);
-      const revoke=document.createElement('button');revoke.type='button';revoke.className='danger-action';revoke.textContent='Revoke';revoke.addEventListener('click',async()=>{revoke.disabled=true;try{if(!await revokeKey(key))revoke.disabled=false}catch(error){notice(error.message,'error');revoke.disabled=false}});actions.append(revoke);
-      row.append(details,actions);refs.list.append(row);
-    });
-    syncPlaygroundKey();
-  }
-  async function loadKeys(){try{const result=await api('/api/nyx-api-keys');renderKeys(result.keys||[])}catch(error){renderKeys([]);notice(error.message,'error')}}
-  function renderUsage(data){
-    const tokenLimit=data.tokens?.unlimited?'Unlimited':number(data.tokens?.limit);
-    refs.tokenUsage.textContent=data.tokens?.unlimited?number(data.tokens?.used):`${number(data.tokens?.used)} / ${tokenLimit}`;
-    refs.tokenLimit.textContent=data.tokens?.unlimited?'No daily generated-token limit':`${number(data.tokens?.remaining)} tokens remaining today`;
-    refs.tokenMeter.style.width=data.tokens?.unlimited?'0%':`${Math.min(100,(Number(data.tokens?.used)||0)/Math.max(1,Number(data.tokens?.limit)||1)*100)}%`;
-    const requestCapacity=(Number(data.requests?.limitPerKey)||0)*(Number(data.requests?.activeKeys)||0);
-    refs.requestUsage.textContent=requestCapacity?`${number(data.requests?.used)} / ${number(requestCapacity)}`:number(data.requests?.used);
-    refs.requestLimit.textContent=`${number(data.requests?.limitPerKey)} requests per active key per day`;
-    refs.requestMeter.style.width=requestCapacity?`${Math.min(100,(Number(data.requests?.used)||0)/requestCapacity*100)}%`:'0%';
-    refs.plan.textContent=data.plan||'Regular';
-    const resetTime=Date.parse(data.resetsAt);refs.reset.textContent=Number.isFinite(resetTime)?`Resets ${new Date(resetTime).toLocaleString()}`:'Resets daily at 00:00 UTC';
-    refs.usageRows.replaceChildren();
-    if(!data.keys?.length){const row=document.createElement('tr');const cell=document.createElement('td');cell.colSpan=5;cell.className='empty';cell.textContent='No active keys yet. Create one on the API Keys page.';row.append(cell);refs.usageRows.append(row);return}
-    data.keys.forEach(key=>{
-      const row=document.createElement('tr');
-      const name=document.createElement('td');const strong=document.createElement('strong');strong.textContent=key.label;const code=document.createElement('code');code.textContent=`${key.prefix}••••`;name.append(strong,code);
-      const requests=document.createElement('td');requests.textContent=`${number(key.requests)} / ${number(key.requestLimit)}`;
-      const remaining=document.createElement('td');remaining.textContent=number(key.remainingRequests);
-      const lastUsed=document.createElement('td');lastUsed.textContent=formatTime(key.lastUsedAt);
-      const action=document.createElement('td');const revoke=document.createElement('button');revoke.type='button';revoke.className='danger-action';revoke.textContent='Revoke';revoke.addEventListener('click',async()=>{revoke.disabled=true;try{if(await revokeKey(key))await loadUsage()}catch(error){notice(error.message,'error');revoke.disabled=false}});action.append(revoke);
-      row.append(name,requests,remaining,lastUsed,action);refs.usageRows.append(row);
-    });
-  }
-  async function loadUsage(){
-    refs.refreshUsage.disabled=true;refs.refreshUsage.textContent='Refreshing...';
-    try{const data=await api('/api/nyx-api-keys/usage');renderUsage(data);usageLoaded=true;notice('')}
-    catch(error){notice(error.message,'error')}
-    finally{refs.refreshUsage.disabled=false;refs.refreshUsage.textContent='Refresh'}
-  }
-  async function loadModels(){
-    if(modelsLoaded)return;
-    refs.model.disabled=true;
-    try{
-      const response=await fetch('/api/v1/ai',{headers:{Accept:'application/json'},cache:'no-store'});const data=await response.json().catch(()=>({}));
-      if(!response.ok)throw new Error(data.error||`Models could not be loaded (${response.status}).`);
-      const models=Array.isArray(data.models)?data.models:[];refs.model.replaceChildren();
-      if(!models.length){const option=document.createElement('option');option.value='';option.textContent='No chat models available';refs.model.append(option);throw new Error('The Nyx API gateway has no available chat models.');}
-      models.forEach((model,index)=>{const option=document.createElement('option');option.value=model;option.textContent=model;option.selected=index===0;refs.model.append(option)});modelsLoaded=true;
-    }catch(error){notice(error.message,'error')}
-    finally{refs.model.disabled=false}
-  }
-  async function showTab(name,{updateHash=true}={}){
-    if(!tabCopy[name])name='keys';
-    refs.tabs.forEach(button=>button.setAttribute('aria-selected',String(button.dataset.tab===name)));
-    refs.panels.forEach(panel=>panel.hidden=panel.dataset.panel!==name);
-    refs.title.textContent=tabCopy[name][0];refs.subtitle.textContent=tabCopy[name][1];notice('');
-    if(updateHash&&location.hash!==`#${name}`)history.replaceState(null,'',`#${name}`);
-    if(name==='usage'&&!usageLoaded)await loadUsage();
-    if(name==='playground'){syncPlaygroundKey();await loadModels()}
-  }
-  async function load(){
-    try{
-      const info=await api('/api/nyx-api-keys/status');configured=info.configured===true;
-      status(configured,configured?'API access ready':'Setup required');refs.create.disabled=!configured;
-      const tokenAllowance=info.unlimitedTokens?'Unlimited generated tokens/day for your Premium or Owner account.':`${number(info.regularDailyTokens)} generated tokens/day for regular accounts.`;
-      refs.limits.textContent=configured?`${number(info.dailyRequests)} requests/day · ${number(info.minuteRequests)} requests/minute · up to ${number(info.maxTokens)} output tokens/request. ${tokenAllowance}`:'API key creation is not available until setup is complete.';
-      if(!configured)notice('The Nyx API gateway is not configured yet. Your account and existing keys remain private.','error');
-      await loadKeys();
-    }catch(error){status(false,'Sign-in required');refs.create.disabled=true;renderKeys([]);notice(error.message,'error')}
-  }
-  refs.tabs.forEach(button=>button.addEventListener('click',()=>void showTab(button.dataset.tab)));
-  refs.create.addEventListener('click',()=>openCreate());
-  refs.createReplacement.addEventListener('click',()=>{const label=String(refs.createReplacement.dataset.keyLabel||'').trim();refs.unavailableDialog.close();openCreate(label?`${label} replacement`:'Replacement key')});
-  refs.form.addEventListener('submit',async event=>{
-    if(event.submitter?.value==='cancel')return;
-    event.preventDefault();const label=refs.label.value.trim();if(label.length<2){refs.label.focus();return}
-    refs.confirm.disabled=true;refs.confirm.textContent='Creating...';
-    try{const result=await api('/api/nyx-api-keys',{method:'POST',body:JSON.stringify({label})});if(!result.key)throw new Error('Nyx could not reveal the new key. Create a new key and copy it immediately.');rememberReveal(result.apiKey?.id,result.key);refs.dialog.close();openReveal(result.key);usageLoaded=false;await loadKeys()}catch(error){notice(error.message,'error')}finally{refs.confirm.disabled=false;refs.confirm.textContent='Create key'}
-  });
-  refs.toggleReveal.addEventListener('click',()=>{const show=refs.reveal.type==='password';refs.reveal.type=show?'text':'password';refs.toggleReveal.setAttribute('aria-pressed',String(show));refs.toggleReveal.textContent=show?'Hide key':'Show key';refs.reveal.focus()});
-  refs.copy.addEventListener('click',async()=>{if(await copyText(refs.reveal.value)){refs.copy.textContent='Copied';setTimeout(()=>refs.copy.textContent='Copy key',1200)}});
-  refs.revealDialog.addEventListener('close',()=>{refs.reveal.value='';refs.reveal.type='password';refs.toggleReveal.setAttribute('aria-pressed','false');refs.toggleReveal.textContent='Show key'});
-  refs.refreshUsage.addEventListener('click',()=>void loadUsage());
-  refs.togglePlaygroundKey.addEventListener('click',()=>{const show=refs.playgroundKey.type==='password';refs.playgroundKey.type=show?'text':'password';refs.togglePlaygroundKey.setAttribute('aria-pressed',String(show));refs.togglePlaygroundKey.textContent=show?'Hide':'Show';refs.playgroundKey.focus()});
-  refs.playgroundForm.addEventListener('submit',async event=>{
-    event.preventDefault();const key=refs.playgroundKey.value.trim();const prompt=refs.prompt.value.trim();if(!key||!prompt||!refs.model.value)return;
-    refs.send.disabled=true;refs.send.textContent='Sending...';refs.responseCard.hidden=false;refs.response.textContent='Waiting for the model...';refs.responseMeta.textContent='';const started=performance.now();
-    try{
-      const response=await fetch('/api/v1/ai',{method:'POST',headers:{Accept:'application/json','Content-Type':'application/json',Authorization:`Bearer ${key}`},body:JSON.stringify({model:refs.model.value,messages:[{role:'user',content:prompt}],max_tokens:Number(refs.tokens.value)||400,temperature:Number(refs.temperature.value)||0})});
-      const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error?.message||data.error||`Request failed (${response.status})`);
-      const content=data.choices?.[0]?.message?.content;refs.response.textContent=typeof content==='string'&&content.trim()?content:'The model returned no visible text.';
-      const elapsed=Math.round(performance.now()-started);const completionTokens=Number(data.usage?.completion_tokens)||0;refs.responseMeta.textContent=`${elapsed.toLocaleString()} ms${completionTokens?` · ${completionTokens.toLocaleString()} output tokens`:''}`;usageLoaded=false;notice('');
-    }catch(error){refs.response.textContent=error.message;refs.responseMeta.textContent='Request failed';notice(error.message,'error')}
-    finally{refs.send.disabled=false;refs.send.textContent='Send request'}
-  });
-  refs.copyResponse.addEventListener('click',async()=>{if(await copyText(refs.response.textContent)){refs.copyResponse.textContent='Copied';setTimeout(()=>refs.copyResponse.textContent='Copy',1200)}});
-  addEventListener('hashchange',()=>void showTab(location.hash.slice(1),{updateHash:false}));
-  applyTheme();void showTab(location.hash.slice(1)||'keys',{updateHash:false});void load();
+
+async function api(path,body,method){const token=await firebaseToken();if(!token)throw Error('Sign in to Nyx first, then refresh this page.');const response=await fetch('/api/developer'+path,{method:method||(body?'POST':'GET'),cache:'no-store',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});const data=await response.json();if(!response.ok)throw Error(data.error||'Request failed.');return data;}
+const task=fn=>async event=>{event?.preventDefault();const button=event?.submitter||event?.currentTarget;if(button?.tagName==='BUTTON')button.disabled=true;try{await fn(event);}catch(e){note(e.message);}finally{if(button?.tagName==='BUTTON'&&button.id!=='create-button')button.disabled=false;else if(button?.id==='create-button')await refresh().catch(()=>{});}};
+async function refresh(){const d=await api('/me');$('#account').textContent=`${d.balance.toLocaleString()} tokens remaining ? ${d.usedTokens||0} used ? ${d.dailyRequests} requests/day ? ${d.minuteRequests}/minute. User ID: ${d.uid}`;$('#verify').hidden=d.verified||d.owner;$('#create-button').disabled=Boolean(d.key)||(!d.verified&&!d.owner)||!d.configured;$('#revoke').hidden=!d.key;$('#key').textContent=d.key?`${d.key.label}: ${d.key.prefix}?`:'No active key.';accountOwner=d.owner;$('#owner-tab').hidden=!d.owner;showTab(location.hash.slice(1));renderUsage(d);syncModels(d);$('#management').hidden=!d.unlocked;$('#unlock').hidden=Boolean(d.unlocked);if(!$('#uid').value)$('#uid').value=d.uid;}
+$('#refresh').onclick=task(refresh);
+$('#create').onsubmit=task(async e=>{const d=await api('/keys',{label:e.target.elements.label.value});$('#secret').value=d.key;$('#playground-key').value=d.key;$('#reveal').hidden=false;note('Key created. Copy it now.');await refresh();});
+$('#revoke').onclick=task(async()=>{await api('/keys',null,'DELETE');$('#playground-key').value='';$('#secret').value='';$('#reveal').hidden=true;note('Key revoked. Your balance is preserved.');await refresh();});
+$('#copy').onclick=task(async()=>{await navigator.clipboard.writeText($('#secret').value);note('Key copied.');});
+$('#dismiss').onclick=()=>{$('#secret').value='';$('#reveal').hidden=true;};
+$('#verify').onclick=task(async()=>{await firebaseToken(true);if(!localAuth?.currentUser)throw Error('Open /api directly after signing in to Nyx.');if(!localAuth.currentUser.email)throw Error('Add an email address in your Nyx profile first, then return here to verify it.');const {sendEmailVerification}=await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js');await sendEmailVerification(localAuth.currentUser);note('Verification email sent. Open its link, then click Refresh access. If you have no email, add one in your Nyx profile first.');});
+$('#unlock').onsubmit=task(async e=>{try{await api('/unlock',{password:e.target.elements.password.value});await refresh();note('Owner management unlocked for 15 minutes.');}finally{e.target.elements.password.value='';}});
+$('#lock').onclick=task(async()=>{await api('/lock',{});await refresh();note('Owner management locked.');});
+function renderTarget(d){loadedUid=d.uid;$('#target').textContent=`${d.uid}: ${d.balance} tokens remaining; ${d.usedTokens||0} tokens used. ${d.key?'Active key: '+d.key.prefix+'?':'No key.'}`;const f=$('#limits').elements;for(const n of ['dailyRequests','minuteRequests','maxOutput'])f[n].value=d[n];f.addTokens.value=0;f.gemini.checked=d.models.includes(GEMINI);f.luna.checked=d.models.includes(LUNA);}
+$('#uid').oninput=()=>{loadedUid='';};
+$('#lookup').onsubmit=task(async()=>renderTarget(await api('/owner/account/'+encodeURIComponent($('#uid').value.trim()))));
+$('#limits').onsubmit=task(async e=>{if(!loadedUid)throw Error('Load an account first.');const f=e.target.elements;const body={models:[...(f.gemini.checked?[GEMINI]:[]),...(f.luna.checked?[LUNA]:[])]};for(const n of ['addTokens','dailyRequests','minuteRequests','maxOutput'])body[n]=Number(f[n].value);renderTarget(await api('/owner/account/'+encodeURIComponent(loadedUid),body));note('Token balance and limits saved.');await refresh();});
+$('#owner-revoke').onclick=task(async()=>{if(!loadedUid)throw Error('Load an account first.');await api('/owner/account/'+encodeURIComponent(loadedUid)+'/key',null,'DELETE');renderTarget(await api('/owner/account/'+encodeURIComponent(loadedUid)));note('User key revoked.');});
+function syncModels(d){const select=$('#playground-model'),chosen=select.value;select.replaceChildren();for(const id of d.models||[GEMINI]){const option=document.createElement('option');option.value=id;option.textContent=id===LUNA?'GPT-5.6 Luna':'Gemini 2.5 Flash Lite';select.append(option);}if([...select.options].some(o=>o.value===chosen))select.value=chosen;}
+function renderUsage(d){$('#usage-remaining').textContent=Math.max(0,d.balance).toLocaleString();$('#usage-used').textContent=(d.usedTokens||0).toLocaleString();$('#usage-requests').textContent=`${d.requestsToday||0} / ${d.dailyRequests}`;$('#usage-meter').max=Math.max(1,d.grantedTokens||d.balance+(d.usedTokens||0));$('#usage-meter').value=Math.max(0,d.balance);$('#usage-limits').textContent=`${d.minuteRequests} requests/minute. Maximum ${d.maxOutput} output tokens/request. Daily requests reset at 00:00 UTC; token balances do not refill automatically.${d.pending?' A request is in progress; its tokens are reserved.':''}`;const rows=$('#usage-rows');rows.replaceChildren();for(const item of d.recent||[]){const tr=document.createElement('tr');for(const value of [new Date(item.at).toLocaleString(),item.model===LUNA?'GPT-5.6 Luna':'Gemini 2.5 Flash Lite',item.tokens.toLocaleString(),({completed:'Completed',not_sent:'Not sent',unconfirmed:'Unconfirmed'})[item.status]||'Unconfirmed']){const td=document.createElement('td');td.textContent=value;tr.append(td);}rows.append(tr);}if(!rows.children.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=4;td.textContent='No requests yet. Try your first prompt in the playground.';tr.append(td);rows.append(tr);}}
+$('#usage-refresh').onclick=task(refresh);
+$('#playground').onsubmit=async event=>{event.preventDefault();if(playController)return;playController=new AbortController();const controller=playController,started=performance.now();const timer=setTimeout(()=>controller.abort(),125000);$('#playground-send').disabled=true;$('#playground-cancel').hidden=false;$('#playground-send .spinner').hidden=false;$('#send-label').textContent='Generating';$('#playground-result').hidden=false;$('#playground-meta').textContent='Waiting for a response...';$('#playground-response').textContent='';try{const response=await fetch('/api/v1/ai',{method:'POST',signal:controller.signal,headers:{Authorization:'Bearer '+$('#playground-key').value.trim(),'Content-Type':'application/json'},body:JSON.stringify({model:$('#playground-model').value,messages:[{role:'user',content:$('#playground-prompt').value}],max_tokens:Number($('#playground-tokens').value)})});const result=await response.json();if(!response.ok)throw Error(result.error||'The request failed.');$('#playground-response').textContent=result.choices?.[0]?.message?.content||'The model returned no text.';$('#playground-meta').textContent=`${((performance.now()-started)/1000).toFixed(1)} seconds | ${result.usage?.prompt_tokens||0} input + ${result.usage?.completion_tokens||0} output tokens`;}catch(error){$('#playground-meta').textContent=controller.signal.aborted?'Request stopped':'Request failed';$('#playground-response').textContent=controller.signal.aborted?'The request was stopped. Check Usage for any reserved tokens.':error.message;}finally{clearTimeout(timer);playController=null;$('#playground-send').disabled=false;$('#playground-cancel').hidden=true;$('#playground-send .spinner').hidden=true;$('#send-label').textContent='Run prompt';await refresh().catch(()=>{});}};
+$('#playground-cancel').onclick=()=>playController?.abort();
+$('#example').textContent=String.raw`curl ${location.origin}/api/v1/ai \
+  -H "Authorization: Bearer YOUR_NYX_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"${GEMINI}","messages":[{"role":"user","content":"Hello"}],"max_tokens":128}'`;
+refresh().catch(e=>note(e.message));
 })();

@@ -116,6 +116,8 @@ async function copyEruda() {
   const destination = join(output, "assets", "vendor", "eruda.min.js");
   await mkdir(dirname(destination), { recursive: true });
   await cp(source, destination, { force: true });
+  await cp(require.resolve("hls.js/dist/hls.min.js"), join(output, "assets", "vendor", "hls.min.js"));
+  await cp(join(dirname(require.resolve("hls.js/package.json")), "LICENSE"), join(output, "assets", "vendor", "hls.LICENSE.txt"));
 }
 
 async function waitForLocalServer(child) {

@@ -1,0 +1,85 @@
+import assert from 'node:assert/strict';
+import express from 'express';
+import {createKeyStore,installDeveloperApi,passwordDigest,checkPassword,GEMINI,LUNA} from '../lib/developer-api.mjs';
+import {memoryFirestore} from './test-ai-allowance.mjs';
+import {createAiAllowance,aiAllowanceConfig} from '../lib/ai-allowance.mjs';
+
+const db=memoryFirestore();let time=Date.now();const store=createKeyStore(db,()=>time);
+const racing=await Promise.allSettled([store.issue('a','same-ip','A'),store.issue('b','same-ip','B')]);
+assert.equal(racing.filter(r=>r.status==='fulfilled').length,1,'IP slot must be atomic');
+const first=racing[0].value.key,k=await store.authenticate(first);
+assert.ok(!JSON.stringify([...db.records]).includes(first),'Do not persist the raw key');
+assert.equal((await store.details('a')).balance,1000);
+await assert.rejects(store.issue('a','other-ip','A'),/existing key/);
+await assert.rejects(store.reserve(k,{model:LUNA,messages:[{role:'user',content:'Hi'}],max_tokens:100}),/not enabled/);
+const p={model:GEMINI,messages:[{role:'user',content:'Hi'}],max_tokens:2000};
+const r=await store.reserve(k,p);assert.equal(p.max_tokens,512);
+await assert.rejects(store.reserve(k,p),/current request/);
+await store.settle(r,{prompt_tokens:10,completion_tokens:20});
+await store.settle(r,{prompt_tokens:10,completion_tokens:20});
+assert.equal((await store.details('a')).balance,970,'Settlement is idempotent');
+assert.equal((await store.details('a')).recent.length,1);assert.equal((await store.details('a')).recent[0].tokens,30);assert.equal((await store.details('a')).grantedTokens,1000);
+assert.equal((await store.details('a')).requestsToday,1);
+await store.revoke('a');await assert.rejects(store.authenticate(first),/revoked/);
+time+=61000;const replacement=await store.issue('a','same-ip','replacement');
+assert.equal((await store.details('a')).balance,970,'Rotation must not refill');
+await store.revoke('a');await store.issue('b','same-ip','new person');
+assert.equal((await store.details('b')).balance,0,'IP starter grant must not refill across accounts');
+await assert.rejects(store.authenticate(replacement.key),/revoked/);
+
+const password='test-only-owner-password',digest=await passwordDigest(password);
+assert.equal(await checkPassword(password,digest),true);assert.equal(await checkPassword('wrong',digest),false);
+assert.equal(await checkPassword(password,'malformed'),false);
+const routeDb=memoryFirestore(),users=new Map([['member',{email:'member@example.test',emailVerified:true}],['owner',{email:'owner@example.test',emailVerified:true}],['unverified',{email:'u@example.test',emailVerified:false}],['disabled',{disabled:true}]]);
+const firebase={firestore:routeDb,auth:{getUser:async uid=>{if(!users.has(uid))throw Error('Missing user');return users.get(uid);}}};
+const app=express();app.use(express.json());let calls=0,mode='ok';
+installDeveloperApi(app,{firebase:async()=>firebase,authenticate:async req=>{const uid=req.get('authorization')?.replace('Bearer ','');if(!users.has(uid))throw Object.assign(Error('Sign in'),{status:401});return {firebase,token:{uid}};},ownerUid:()=> 'owner',passwordHash:()=>digest,sameOrigin:req=>req.get('origin')!=='https://evil.test',clientIp:req=>req.get('x-test-ip')||'school',configured:()=>true,page:(_req,res)=>res.send('public API page'),send:async(req,payload)=>{
+  if(mode==='presend')throw Object.assign(Error('budget reached'),{status:429});
+  req.nyxApiSent=true;calls++;assert.equal(payload.model,GEMINI);
+  if(mode==='timeout')throw Error('timeout');
+  return Response.json({choices:[{message:{role:'assistant',content:'Hello'}}],usage:{prompt_tokens:5,completion_tokens:5}});
+}});
+const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
+const origin=`http://127.0.0.1:${server.address().port}`;
+const request=(path,uid,body,method,headers={})=>fetch(origin+path,{method:method||(body?'POST':'GET'),headers:{...(uid?{Authorization:'Bearer '+uid}:{}),'Content-Type':'application/json',...headers},...(body?{body:JSON.stringify(body)}:{})});
+try {
+  assert.equal((await request('/api')).status,200);
+  assert.equal((await request('/api/developer/me')).status,401);
+  assert.equal((await request('/api/developer/keys','unverified',{})).status,403);
+  assert.equal((await request('/api/developer/keys','disabled',{})).status,403);
+  assert.equal((await request('/api/developer/keys','member',{},null,{origin:'https://evil.test'})).status,403);
+  const issued=await (await request('/api/developer/keys','member',{})).json();assert.ok(issued.key);
+  assert.equal((await request('/api/developer/keys','owner',{})).status,409,'Other accounts share IP key limit');
+  assert.equal((await request('/api/developer/unlock','member',{password})).status,403);
+  assert.equal((await request('/api/developer/owner/account/member','owner')).status,403);
+  assert.equal((await request('/api/developer/unlock','owner',{password:'wrong'})).status,403);
+  const unlock=await request('/api/developer/unlock','owner',{password});assert.equal(unlock.status,200);
+  const cookie=unlock.headers.get('set-cookie').split(';')[0];assert.match(unlock.headers.get('set-cookie'),/HttpOnly; Secure; SameSite=Strict/);
+  assert.equal((await request('/api/developer/owner/account/member','member',null,null,{cookie})).status,403,'Cookie is bound to owner UID');
+  const settings={addTokens:100,dailyRequests:30,minuteRequests:5,maxOutput:600,models:[GEMINI]};
+  assert.equal((await request('/api/developer/owner/account/member','owner',settings,null,{cookie})).status,200);
+  assert.equal((await request('/api/developer/owner/account/member','owner',{...settings,addTokens:-1},null,{cookie})).status,400);
+  const prompt={messages:[{role:'user',content:'Hi'}]};
+  const ok=await request('/api/v1/ai',issued.key,prompt);assert.equal(ok.status,200);assert.equal(calls,1);
+  assert.equal((await (await request('/api/developer/me','member')).json()).balance,1090);
+  assert.equal((await request('/api/v1/ai',issued.key,{...prompt,model:LUNA})).status,403);assert.equal(calls,1);
+  users.get('member').emailVerified=false;
+  assert.equal((await request('/api/v1/ai',issued.key,prompt)).status,403);assert.equal(calls,1);
+  users.get('member').emailVerified=true;
+  mode='presend';assert.equal((await request('/api/v1/ai',issued.key,prompt)).status,429);
+  assert.equal((await (await request('/api/developer/me','member')).json()).balance,1090,'Pre-send failure refunds tokens');
+  mode='timeout';assert.equal((await request('/api/v1/ai',issued.key,prompt)).status,503);
+  assert.ok((await (await request('/api/developer/me','member')).json()).balance<1090,'Unknown provider usage retains reservation');
+  assert.equal((await request('/api/developer/keys','member',null,'DELETE')).status,200);
+  assert.equal((await request('/api/v1/ai',issued.key,prompt)).status,401);
+}finally{server.closeAllConnections();await new Promise(r=>server.close(r));}
+
+// API-only eligibility exception must never unlock normal chat for a new account.
+const allowance=createAiAllowance({db:memoryFirestore(),config:aiAllowanceConfig({NYX_AI_DAILY_BUDGET_USD:'1',NYX_AI_MODEL_PRICES_JSON:JSON.stringify({['shared:'+GEMINI]:{inputPerMillion:.1,outputPerMillion:.4}})})});
+const actor={uid:'new',createdAt:Date.now(),device:'device',network:'school'};
+await assert.rejects(allowance.begin(actor),/before August/);
+const session=await allowance.begin({...actor,apiVerified:true,apiDailyRequests:20});
+const reservation=await allowance.reserve(session,'shared',{model:GEMINI,messages:[{role:'user',content:'Hi'}],max_tokens:128});
+assert.ok(reservation.reserved>0);assert.equal(session.tier,'newcomer');
+await allowance.settle(reservation,null,true);await allowance.finish(session);
+console.log('PASS: verified API access, atomic IP limit, non-renewing grants, owner password, model/usage limits, reservations and shared budget integration');

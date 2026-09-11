@@ -7,6 +7,19 @@ const requiredFiles = [
   "robots.txt",
   "sitemap.xml",
   "server.js",
+  "lib/ai-allowance.mjs",
+  "lib/ai-budget-response.mjs",
+  "lib/openrouter-balance.mjs",
+  "lib/ai-image.mjs",
+  "lib/developer-api.mjs",
+  "apps/api-keys/developer.css",
+  "scripts/set-api-owner-password.py",
+  "scripts/test-developer-api.mjs",
+  "scripts/test-openrouter-balance.mjs",
+  "scripts/test-ai-allowance.mjs",
+  "scripts/test-ai-budget-integration.mjs",
+  "scripts/test-ai-access-policy.mjs",
+  "scripts/test-account-signup.mjs",
   "script.js",
   "startup.js",
   "styles.css",
@@ -77,6 +90,8 @@ const requiredFiles = [
   "apps/nyxify/app.js",
   "apps/nyxtube/player-core.js",
   "apps/nyxtube/native-player.js",
+  "lib/nyxtube-mp4.mjs",
+  "lib/nyxtube-segments.mjs",
   "lib/nyxtube-catalog.mjs",
   "lib/nyxify-meting.mjs",
   "lib/nyxify-media-fetch.mjs",
@@ -121,7 +136,7 @@ if (missing.length) {
 }
 
 const packageJson = JSON.parse(await readFile("package.json", "utf8"));
-for (const dependency of ["express", "firebase-admin", "@mercuryworkshop/wisp-js"]) {
+for (const dependency of ["express", "firebase-admin", "@mercuryworkshop/wisp-js", "mp4box", "hls.js"]) {
   if (!packageJson.dependencies?.[dependency]) {
     console.error(`Deployment dependency is missing: ${dependency}`);
     process.exit(1);

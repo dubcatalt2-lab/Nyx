@@ -12,6 +12,7 @@ const requiredFiles = [
   "lib/openrouter-balance.mjs",
   "lib/ai-image.mjs",
   "lib/developer-api.mjs",
+  "lib/api-key-vault.mjs",
   "apps/api-keys/developer.css",
   "scripts/set-api-owner-password.py",
   "scripts/test-developer-api.mjs",

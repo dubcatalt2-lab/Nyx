@@ -1,3 +1,23 @@
+## Release preparation 2026-09-11 - AI controls
+
+- User authorized push and OVH deployment of the compact dashboard, separate Premium monthly model limits and owner key reveal changes below. Backend quota, authorization, encrypted storage and production build/deployment checks passed. The release requires the private vault directory and systemd write allowance before restart.
+
+## LOCAL 2026-09-11 - Owner API key reveal
+
+- Owner account management adds Show full key / Copy / Hide for newly issued keys. Reveals require the owner Firebase identity, same-origin POST, and existing password-unlock cookie. Responses are no-store; UI clears full values after 60 seconds, lock, tab departure, account changes and page hiding. List and ordinary account responses contain only prefixes/availability metadata.
+- New keys retain their authentication hash and add AES-256-GCM ciphertext bound to UID and key hash. Revocation removes ciphertext. Key records audit only reveal time/owner UID, never plaintext. Existing hash-only keys cannot be recovered; their users can revoke/recreate without refilling or losing balances.
+- `lib/api-key-vault.mjs` lazily creates a persistent 32-byte secret file with mode 0600 outside the site/database. Linux default `/var/lib/nyx/api-keys/vault.key`; Windows defaults to `.nyx/api-key-vault.key` in the user's home. Override with server-only `NYX_API_KEY_VAULT_FILE`. The service needs write access to its parent directory. Back up this file separately and preserve it across deploys/password changes; losing it prevents revealing encrypted keys but authentication still works from hashes. Opening encrypted keys never generates a replacement vault key.
+- DEPLOY REQUIREMENT: live systemd uses ProtectSystem=strict and does not yet allow the new vault directory. Updated setup/update scripts create `/var/lib/nyx/api-keys` owned by nyx, mode 0700, and the service template adds it to ReadWritePaths. A manual incremental deployment must apply that directory and service whitelist change (or equivalent drop-in), daemon-reload and restart before enabling new-key creation. No live service configuration was changed in this task.
+- Storage/auth fixtures cover encrypted-at-rest content, restart/tamper handling, owner-only/cross-origin/no-store responses, legacy-key errors, revocation and replacement. Browser fixtures cover explicit reveal/hide and clearing on tab departure. No production keys were revealed or replaced.
+
+## LOCAL 2026-09-11 - Compact status cards and separate Premium model allowances
+
+- OpenRouter/NyxTube dashboard cards are smaller and collapsible using accessible details/summary headers. Balance/status remains visible when collapsed. Preferences persist per browser and survive refreshes; low-balance titles still appear. Desktop/mobile source and production collapse/keyboard/layout checks passed.
+- Premium defaults are now Luna 25,000 and Gemini 50,000 input+output tokens per UTC calendar month, tracked separately across chat and custom Nyx API requests. Both models reject requests exceeding their own remaining allowance. Owner retains unlimited personal usage; site dollar/reserve controls still apply.
+- Server-only `aiMonthlyModelLimits: {luna,gemini}` supports owner overrides in both dashboards. Retired `aiMonthlyTokenLimit` no longer sets entitlements; old API mutation payloads prompt a refresh. Free users retain ordinary non-renewing key balances.
+- The monthly ledger keeps `modelTokens` plus `legacyTokens`. Unattributed pre-change combined usage is carried against both model limits until the next UTC month, avoiding a silent quota reset. New requests/settlements affect only their model; old in-flight receipts settle against legacy usage. Owner activity does not consume Premium balances. Atomic reservations remain shared across API/chat and late settlements cannot alter a new month's usage.
+- API Usage and owner account views show remaining/limit for each model. Tests cover both cutoffs, model independence, custom limits, owner exemption, migration carryover, concurrent API/chat, rollover and refunds.
+
 ## 2026-09-11 - NyxTube chunk buffering indicator
 
 - Native playback now signals loading during stream-session renewal before detaching HLS, and handles stalled playback/unbuffered seeks. Can-play/playing clears loading; pause/end clears ordinary buffering. Renewing sessions keep the spinner through media detach. The watch UI hides the center Play overlay while buffering and avoids clearing the native loading indicator at metadata-only readiness.

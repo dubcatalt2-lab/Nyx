@@ -6,7 +6,7 @@ import {AsyncLocalStorage} from 'node:async_hooks';
 import express from 'express';
 import {parse} from 'acorn';
 import {memoryFirestore} from './test-ai-allowance.mjs';
-import {aiAllowanceConfig,createAiAllowance} from '../lib/ai-allowance.mjs';
+import {aiAllowanceConfig,createAiAllowance,premiumModelLimits} from '../lib/ai-allowance.mjs';
 import {aiBudgetResponse} from '../lib/ai-budget-response.mjs';
 import {createOpenRouterBalanceGuard,AI_UNAVAILABLE} from '../lib/openrouter-balance.mjs';
 
@@ -19,7 +19,7 @@ const db=memoryFirestore(),app=express();app.use(express.json());
 const firebase={firestore:db,auth:{async getUser(uid){return {uid,email:'optional@example.com',emailVerified:uid==='late-api',disabled:uid==='disabled',metadata:{creationTime:uid.startsWith('late-')?'2026-08-25T07:00:00Z':'2026-01-01T00:00:00Z'}};}}};
 let calls=0,lastPayload,hold,balance=1;
 const environment={NYX_OPENROUTER_API_KEY:'fixture-inference',NYX_OPENROUTER_MANAGEMENT_KEY:'fixture-management',NYX_AI_DAILY_BUDGET_USD:'1',NYX_AI_MODEL_PRICES_JSON:JSON.stringify({'shared:test':{inputPerMillion:1,outputPerMillion:2},['shared:'+GEMINI]:{inputPerMillion:.1,outputPerMillion:.4},'groq:test':{inputPerMillion:1,outputPerMillion:2}})};
-const context=vm.createContext({app,AsyncLocalStorage,aiAllowanceConfig,createAiAllowance,aiBudgetResponse,
+const context=vm.createContext({app,AsyncLocalStorage,aiAllowanceConfig,createAiAllowance,premiumModelLimits,aiBudgetResponse,
   process:{env:environment},AbortController,AbortSignal,URL,Headers,setTimeout,clearTimeout,
   createOpenRouterBalanceGuard:options=>createOpenRouterBalanceGuard({...options,fetchImpl:async url=>new Response(JSON.stringify({data:url.endsWith('/credits')?{total_credits:balance,total_usage:0}:{limit_remaining:null}}))}),
   authenticatedNyxUser:async req=>{const uid=req.get('authorization')?.replace('Bearer ','');if(!uid)throw Object.assign(new Error('Auth required'),{status:401});return {firebase,token:{uid,email_verified:false}};},

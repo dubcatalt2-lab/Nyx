@@ -490,8 +490,21 @@
 @container (max-width:520px){.nyx-owner-custom-role-row{grid-template-columns:12px minmax(0,1fr) max-content 34px}.nyx-owner-custom-role-placement,.nyx-owner-custom-role-permission-count{display:none}}
 @media (max-width:700px){.nyx-owner-custom-role-form,.nyx-owner-custom-role-editor{grid-template-columns:1fr}.nyx-owner-custom-role-form label:first-child{grid-column:auto}.nyx-owner-custom-role-permissions{grid-template-columns:1fr}.nyx-owner-custom-role-toolbar{align-items:flex-start}.nyx-owner-custom-role-row{grid-template-columns:12px minmax(0,1fr) max-content 34px}.nyx-owner-custom-role-placement,.nyx-owner-custom-role-permission-count{display:none}}
 
-.nyx-owner-tube-status{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:0 0 18px;padding:18px;border:1px solid rgba(255,255,255,.14);border-radius:16px;background:rgba(15,17,23,.7);color:#e8eaf2}
+.nyx-owner-tube-status{display:block;margin:0 0 10px;padding:10px 14px;border:1px solid rgba(255,255,255,.14);border-radius:16px;background:rgba(15,17,23,.7);color:#e8eaf2}
 .nyx-owner-tube-status[hidden]{display:none!important}
 .nyx-owner-tube-status>div{min-width:0}.nyx-owner-tube-status p{margin:8px 0;font-size:13px;line-height:1.5;overflow-wrap:anywhere}.nyx-owner-tube-status small{display:block;margin-top:5px;color:#aeb4c6;font-size:12px}
 .nyx-owner-tube-status strong span{margin-left:12px;color:#b5bacb}.nyx-owner-tube-status [data-owner-tube-state="working"]{color:#77d6a2}.nyx-owner-tube-status [data-owner-tube-state="login_required"],.nyx-owner-tube-status [data-owner-tube-state="trouble"]{color:#ffc78a}
 .nyx-owner-tube-status button{flex-shrink:0;padding:10px 16px;border:1px solid #454959;border-radius:10px;background:#20232e;color:#eef0ff;cursor:pointer}.nyx-owner-tube-status button:disabled{opacity:.6;cursor:default}@media(max-width:600px){.nyx-owner-tube-status{align-items:flex-start;flex-direction:column}.nyx-owner-tube-status strong span{display:block;margin:5px 0 0}}
+
+.nyx-owner-tube-status details{width:100%;min-width:0}
+.nyx-owner-tube-status summary{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;list-style:none;font-size:14px;min-height:28px}
+.nyx-owner-tube-status summary::-webkit-details-marker{display:none}
+.nyx-owner-tube-status summary::after{content:'';width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);flex:none;margin-right:4px}
+.nyx-owner-tube-status details[open]>summary::after{transform:rotate(225deg)}
+.nyx-owner-tube-status summary:focus-visible{outline:2px solid currentColor;outline-offset:3px;border-radius:4px}
+.nyx-owner-status-body{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:4px}
+.nyx-owner-status-body>div{min-width:0}
+.nyx-owner-tube-status .nyx-owner-status-body p{margin:5px 0;font-size:12px}
+.nyx-owner-tube-status .nyx-owner-status-body small{font-size:11px;margin-top:3px}
+.nyx-owner-tube-status .nyx-owner-status-body button{font-size:12px;padding:8px 12px}
+@media(max-width:600px){.nyx-owner-status-body{align-items:flex-start;flex-direction:column;gap:8px}.nyx-owner-tube-status summary strong span{display:inline;margin:0 0 0 8px}}

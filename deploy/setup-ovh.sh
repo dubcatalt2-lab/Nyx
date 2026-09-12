@@ -53,6 +53,7 @@ fi
 if ! id nyx >/dev/null 2>&1; then
   useradd --system --create-home --home-dir /var/lib/nyx --shell /usr/sbin/nologin nyx
 fi
+install -d -m 0700 -o nyx -g nyx /var/lib/nyx/api-keys
 install -d -m 0750 -o nyx -g nyx /var/lib/nyx/chat-attachments
 install -d -m 0750 -o nyx -g nyx /var/lib/nyx/vision-models
 install -d -m 0700 -o nyx -g nyx /var/lib/nyx/youtube-cache

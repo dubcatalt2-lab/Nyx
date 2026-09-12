@@ -1,8 +1,9 @@
+import { createApiKeyVault } from './lib/api-key-vault.mjs';
 import { installDeveloperApi } from './lib/developer-api.mjs';
 import { aiImageContent } from './lib/ai-image.mjs';
 ﻿import express from "express";
 import { AsyncLocalStorage } from "node:async_hooks";
-import { createAiAllowance, aiAllowanceConfig } from "./lib/ai-allowance.mjs";
+import { createAiAllowance, aiAllowanceConfig, premiumModelLimits } from "./lib/ai-allowance.mjs";
 import { createOpenRouterBalanceGuard, createOpenRouterOwnerStatus } from "./lib/openrouter-balance.mjs";
 import { aiBudgetResponse } from "./lib/ai-budget-response.mjs";
 import { createServer } from "node:http";
@@ -2581,7 +2582,7 @@ async function nyxSharedAiSession(scope) {
     if(allowance.configurationError)throw Object.assign(new Error('Shared AI budget settings need to be checked by the owner.'),{status:503});
     const actor={uid,createdAt:Date.parse(account.metadata?.creationTime||''),
       owner:uid===founderProfileConfig().administratorUid,premium:hasPremiumSubscription(normalizeSubscriptionStatus(admin.subscriptionStatus||admin.subscription?.status)),
-      monthlyTokenLimit:admin.aiMonthlyTokenLimit,trusted:admin.aiAccess==='trusted',blocked:admin.aiAccess==='restricted',
+      monthlyModelLimits:premiumModelLimits(admin.aiMonthlyModelLimits),trusted:admin.aiAccess==='trusted',blocked:admin.aiAccess==='restricted',
       apiVerified:Boolean(req.nyxAiBilling?.apiVerified),apiDailyRequests:req.nyxAiBilling?.dailyRequests,apiMinuteRequests:req.nyxAiBilling?.minuteRequests,apiMaxOutput:req.nyxAiBilling?.maxOutput,
       device:req.path==='/api/v1/ai'?`key-owner:${uid}`:await allowance.device(req,res),network:nyxClientIp(req)};
     const session=await allowance.begin(actor);
@@ -3315,6 +3316,7 @@ app.delete("/api/nyx-api-keys/:id", async (req, res) => {
 });
 
 installDeveloperApi(app, {
+  keyVault: createApiKeyVault(),
   firebase: linkGeneratorFirebase,
   authenticate: authenticatedNyxUser,
   ownerUid: () => founderProfileConfig().administratorUid,
@@ -4800,7 +4802,7 @@ function nyxOwnerUserRecord(user, administration = {}, profileData = {}, activit
     username: String(profileUsername || administration.username || emailUsername).slice(0, 80),
     email,
     deliverableEmail: nyxDeliverableEmail(email),
-    aiMonthlyTokenLimit: hasPremiumSubscription(subscriptionStatus) ? (Number.isSafeInteger(administration.aiMonthlyTokenLimit) ? administration.aiMonthlyTokenLimit : 50000) : 0,
+    aiMonthlyModelLimits: hasPremiumSubscription(subscriptionStatus) ? premiumModelLimits(administration.aiMonthlyModelLimits) : {luna:0,gemini:0},
     aiAccess: ["trusted","restricted"].includes(administration.aiAccess) ? administration.aiAccess : "automatic",
     role,
     customRole: nyxPublicCustomRole(customRole),
@@ -13026,10 +13028,11 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
     let auditDetails = {};
     if (action === "set_ai_limit") {
       if(!hasPremiumSubscription(targetAdministration?.data()?.subscriptionStatus||targetAdministration?.data()?.subscription?.status)){res.status(403).json({error:"Monthly AI allowances are only available to Premium members."});return;}
-      const limit=req.body?.monthlyTokenLimit;
-      if(!Number.isSafeInteger(limit)||limit<0||limit>10000000){res.status(400).json({error:'Enter a monthly token limit from 0 to 10,000,000.'});return;}
-      await firebase.firestore.collection('nyxUserAdministration').doc(uid).set({aiMonthlyTokenLimit:limit,updatedAt:new Date().toISOString()},{merge:true});
-      auditAction='ai_monthly_limit_changed';auditDetails={monthlyTokenLimit:limit};
+      const limits=req.body?.monthlyModelLimits;
+      if(!Number.isSafeInteger(limits?.luna)||limits.luna<0||limits.luna>10000000||!Number.isSafeInteger(limits?.gemini)||limits.gemini<0||limits.gemini>10000000){res.status(400).json({error:'Enter valid monthly limits for Luna and Gemini.'});return;}
+      const monthlyModelLimits={luna:limits.luna,gemini:limits.gemini};
+      await firebase.firestore.collection('nyxUserAdministration').doc(uid).set({aiMonthlyModelLimits:monthlyModelLimits,updatedAt:new Date().toISOString()},{merge:true});
+      auditAction='ai_monthly_limit_changed';auditDetails={monthlyModelLimits};
     } else if (["ai_trust","ai_restrict","ai_reset"].includes(action)) {
       const aiAccess=action==='ai_trust'?'trusted':action==='ai_restrict'?'restricted':'automatic';
       await firebase.firestore.collection('nyxUserAdministration').doc(uid).set({aiAccess,updatedAt:new Date().toISOString()},{merge:true});

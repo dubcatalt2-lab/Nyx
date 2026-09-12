@@ -341,6 +341,17 @@
     }
 
     const aiStatusHost=overlay.querySelector('[data-owner-ai-status]');
+    function compactStatus(host,key,label) {
+      const details=document.createElement('details'),summary=document.createElement('summary'),body=document.createElement('div');
+      const title=host.querySelector('strong');
+      if(title)summary.append(title);else summary.textContent=label;
+      body.className='nyx-owner-status-body';
+      while(host.firstChild)body.append(host.firstChild);
+      details.append(summary,body);
+      try{details.open=localStorage.getItem('nyx.owner.status.'+key)!=='collapsed';}catch{details.open=true;}
+      details.addEventListener('toggle',()=>{try{localStorage.setItem('nyx.owner.status.'+key,details.open?'expanded':'collapsed');}catch{}});
+      host.replaceChildren(details);
+    }
     let aiStatusBusy=false;
     async function loadAiStatus() {
       if(!overlay.isConnected||!state.access?.founder||aiStatusBusy)return;
@@ -354,14 +365,14 @@
         const warning=data.state==='low'||data.state==='paused';
         aiStatusHost.dataset.aiState=data.state;
         aiStatusHost.style.borderColor=warning?'#d9ad55':'';
-        aiStatusHost.innerHTML=`<div><strong>${esc(titles[data.state]||titles.unknown)}</strong><p>${data.state==='unknown'?'Balance is unavailable. Shared AI pauses if its balance check fails.':`Account balance: $${money(data.balanceUsd)} &middot; Nyx key allowance: ${data.keyRemainingUsd===null?'No key limit':`$${money(data.keyRemainingUsd)}`} &middot; Daily site cap: $${money(data.dailyCapUsd)}`}</p>${warning?`<p>${data.state==='paused'?'The account balance or key allowance has reached the $0.10 cutoff.':'The account balance or Nyx key allowance is below $0.50.'} Add credits or review the key limit in OpenRouter. Daily usage limits still apply.</p>`:''}<small>Checked ${esc(dateLabel(data.checkedAt))}</small><p><a href="/api#owner" target="_blank" rel="noopener">Manage AI API keys and token balances</a></p></div>`;
+        aiStatusHost.innerHTML=`<div><strong>${esc(titles[data.state]||titles.unknown)}${data.state!=='unknown'?` <span>$${money(data.balanceUsd)}</span>`:''}</strong><p>${data.state==='unknown'?'Balance is unavailable. Shared AI pauses if its balance check fails.':`Account balance: $${money(data.balanceUsd)} &middot; Nyx key allowance: ${data.keyRemainingUsd===null?'No key limit':`$${money(data.keyRemainingUsd)}`} &middot; Daily site cap: $${money(data.dailyCapUsd)}`}</p>${warning?`<p>${data.state==='paused'?'The account balance or key allowance has reached the $0.10 cutoff.':'The account balance or Nyx key allowance is below $0.50.'} Add credits or review the key limit in OpenRouter. Daily usage limits still apply.</p>`:''}<small>Checked ${esc(dateLabel(data.checkedAt))}</small><p><a href="/api#owner" target="_blank" rel="noopener">Manage AI API keys and token balances</a></p></div>`;
       } catch {
         if(overlay.isConnected&&state.access?.founder){
           aiStatusHost.hidden=false;
           aiStatusHost.dataset.aiState='unknown';
           aiStatusHost.textContent='OpenRouter balance could not be checked. Refresh to try again.';
         }
-      } finally {aiStatusBusy=false;}
+      } finally {if(!aiStatusHost.hidden)compactStatus(aiStatusHost,'ai','OpenRouter balance');aiStatusBusy=false;}
     }
     const aiStatusTimer=setInterval(()=>{if(!document.hidden)void loadAiStatus();},60000);
 
@@ -374,6 +385,7 @@
       const label = data.enabled ? labels[data.state] || "Service trouble" : "Not enabled";
       const instructions = !data.enabled ? "Native playback is waiting for server setup. YouTube playback remains available." : data.state === "login_required" ? "Export fresh cookies from the dedicated YouTube account, replace the private server login file, then check again." : data.state === "trouble" ? "A recent request failed. This does not necessarily mean the login expired." : data.state === "setup_required" ? "Check the private login file and required video tools on the server." : "Status comes from real stream checks and video preparations. A single unavailable video does not mark the login expired.";
       tubeHost.innerHTML = `<div><strong>NyxTube <span data-owner-tube-state="${esc(data.state)}">${esc(label)}</span></strong><p>${esc(instructions)}</p><small>Last success: ${esc(dateLabel(data.lastSuccess))} &middot; Last check: ${esc(dateLabel(data.lastChecked))}</small><small>Cache: ${(Number(data.cacheBytes || 0)/1073741824).toFixed(2)} / ${(Number(data.cacheLimitBytes || 0)/1073741824).toFixed(0)} GB &middot; Preparing: ${Number(data.activeJobs || 0)} / ${Number(data.maxJobs || 1)} &middot; Up to 720p</small></div><button type="button" data-owner-tube-check ${!data.enabled || tubeBusy ? "disabled" : ""}>${tubeBusy ? "Checking..." : "Check now"}</button>`;
+      compactStatus(tubeHost,'tube','NyxTube');
     }
     async function loadTubeStatus(check = false) {
       if (!overlay.isConnected || !state.access?.founder || tubeBusy) return;
@@ -385,7 +397,7 @@
         tubeBusy=false; renderTubeStatus(data);
       } catch(error) {
         if(check)notify(error.message || "The video check failed.","error");
-        else tubeHost.innerHTML='<p>NyxTube status could not be loaded. Refresh the dashboard to retry.</p>';
+        else {tubeHost.innerHTML='<p>NyxTube status could not be loaded. Refresh the dashboard to retry.</p>';compactStatus(tubeHost,'tube','NyxTube');}
       } finally {tubeBusy=false;const button=tubeHost.querySelector("[data-owner-tube-check]");if(button){button.disabled=!tubeLastStatus?.enabled;button.textContent="Check now";}}
     }
     const tubeTimer = setInterval(()=>{if(!document.hidden)void loadTubeStatus();},60000);
@@ -735,7 +747,7 @@
             <section class="nyx-owner-detail-grid">${detailValue("Email", user.deliverableEmail ? user.email : "No email added")}${detailValue("Firebase UID", user.uid, "uid")}${detailValue("Presence", user.online ? "Online now" : "Offline")}${detailValue("Last sign-in", dateLabel(user.lastSignInAt))}${detailValue("Last active", dateLabel(user.lastActiveAt))}${capabilities.canManageNetworkBans ? detailValue("Last seen IP", user.lastSeenIp || "Not recorded yet", "ip-address") : ""}${capabilities.canManageNetworkBans && user.lastSeenIp ? detailValue("IP last seen", dateLabel(user.lastSeenIpAt)) : ""}${detailValue("Email verified", user.deliverableEmail ? (user.emailVerified ? "Verified" : "Not verified") : "Not applicable · username-only")}</section>
             <section class="nyx-owner-detail-section nyx-owner-profile-management"><h3>Public profile</h3>${ownerProfilePreview(user)}${capabilities.canEditProfile ? `<details><summary>Edit this profile</summary>${ownerProfileEditor(user)}</details>` : ""}</section>
             ${accessSection}
-            ${capabilities.canSetAiLimit && ["premium","trialing"].includes(user.subscriptionStatus) ? `<section class="nyx-owner-detail-section"><h3>Premium AI allowance</h3><p>Input and output tokens across all models. Resets monthly (UTC). Luna stops at the limit; Gemini remains subject to the site budget. Changing the limit preserves usage.</p><label>Monthly tokens<input data-owner-ai-limit type="number" min="0" max="10000000" step="1" value="${user.aiMonthlyTokenLimit??50000}"></label><button type="button" data-owner-save-ai-limit>Save token limit</button></section>` : ""}
+            ${capabilities.canSetAiLimit && ["premium","trialing"].includes(user.subscriptionStatus) ? `<section class="nyx-owner-detail-section"><h3>Premium AI allowance</h3><p>Separate input and output token allowances for each model. Resets monthly (UTC); each model stops at its own limit. Changing limits preserves usage.</p><label>Luna monthly tokens<input data-owner-ai-limit="luna" type="number" min="0" max="10000000" step="1" value="${user.aiMonthlyModelLimits?.luna??25000}"></label><label>Gemini monthly tokens<input data-owner-ai-limit="gemini" type="number" min="0" max="10000000" step="1" value="${user.aiMonthlyModelLimits?.gemini??50000}"></label><button type="button" data-owner-save-ai-limit>Save token limit</button></section>` : ""}
             ${accountActionsSection}
             ${recentActivitySection}
           </div>`;
@@ -1124,9 +1136,9 @@
         return;
       }
       if(event.target.closest('[data-owner-save-ai-limit]')){
-        const monthlyTokenLimit=Number(drawer.querySelector('[data-owner-ai-limit]').value);
-        if(!Number.isSafeInteger(monthlyTokenLimit)||monthlyTokenLimit<0||monthlyTokenLimit>10000000)return notify('Enter a valid token limit.','error');
-        return void mutateUser('set_ai_limit',{monthlyTokenLimit});
+        const monthlyModelLimits=Object.fromEntries(['luna','gemini'].map(model=>[model,Number(drawer.querySelector(`[data-owner-ai-limit="${model}"]`).value)]));
+        if(Object.values(monthlyModelLimits).some(value=>!Number.isSafeInteger(value)||value<0||value>10000000))return notify('Enter valid token limits.','error');
+        return void mutateUser('set_ai_limit',{monthlyModelLimits});
       }
       const userAction = event.target.closest("[data-owner-user-action]")?.dataset.ownerUserAction;
       if (userAction) return void mutateUser(userAction);

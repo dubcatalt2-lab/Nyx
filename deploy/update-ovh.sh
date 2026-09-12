@@ -64,6 +64,7 @@ runuser -u "${APP_OWNER}" -- npm prune --omit=dev --package-lock=false
 chgrp -R nyx "${APP_DIR}"
 chmod -R g+rX "${APP_DIR}"
 
+install -d -m 0700 -o nyx -g nyx /var/lib/nyx/api-keys
 install -d -m 0750 -o nyx -g nyx /var/lib/nyx/chat-attachments
 install -d -m 0750 -o nyx -g nyx /var/lib/nyx/vision-models
 install -d -m 0700 -o nyx -g nyx /var/lib/nyx/youtube-cache

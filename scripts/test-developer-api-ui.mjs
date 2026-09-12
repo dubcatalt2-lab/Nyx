@@ -18,7 +18,7 @@ try {
   for(const width of [1280,390]) {
     const page=await browser.newPage({viewport:{width,height:950},reducedMotion:'reduce'}),errors=[];
     page.on('pageerror',e=>errors.push(e.message));
-    let owner=false,verified=false,unlocked=false,key=null,balance=1000;
+    let owner=false,verified=false,unlocked=false,key=null,balance=1000,premium=false;
     const answer='Rainbows form **in water droplets**.\n\n1. First step\n2. Second step\n\n$34 \\times 3 = 102$\n\n```js\n'+ 'x'.repeat(400)+'\n```\n\n<img src=x onerror=alert(1)>\n\n'+('Long response paragraph. '.repeat(15)+'\n\n').repeat(30)+'Last paragraph.';
     await page.route('http://nyx.test/**',async route=>{
       const path=new URL(route.request().url()).pathname;
@@ -27,6 +27,7 @@ try {
       if(path==='/assets/icons/nyx-monogram.png')return route.fulfill({contentType:'image/png',body:await readFile(root+path)});
       if(path==='/api'||path.startsWith('/apps/api-keys/')||['/js/ai-markdown.js','/apps/utility-shell.css','/apps/visual-redesign.css','/assets/vendor/three.r134.min.js','/js/beams-wallpaper.js','/js/line-waves-wallpaper.js'].includes(path))return route.fulfill({contentType:path.endsWith('.js')?'text/javascript':path.endsWith('.css')?'text/css':'text/html',body:await readFile(root+(path==='/api'?'/apps/api-keys/index.html':path),'utf8')});
       if(path==='/api/v1/ai'){balance-=12;return route.fulfill({json:{choices:[{message:{content:answer},finish_reason:'length'}],usage:{prompt_tokens:7,completion_tokens:5}}});}
+      if(path==='/api/developer/owner/account/member/reveal-key')return route.fulfill({json:{key:'n_api_owner-reveal-fixture'}});
       if(path==='/api/developer/owner/accounts')return route.fulfill({json:{members:[{uid:'member',name:'Test Member',balance,usedTokens:12,key:{prefix:'n_api_fixture'}}],nextCursor:null}});
       if(path==='/api/developer/unlock')unlocked=true;
       if(path==='/api/developer/lock')unlocked=false;
@@ -35,7 +36,7 @@ try {
         else {key={prefix:'n_api_fixture',label:'Test key'};return route.fulfill({json:{key:'n_api_fixture-only-secret'}});}
       }
       if(path==='/api/developer/owner/account/member'&&route.request().method()==='POST')balance+=route.request().postDataJSON().addTokens;
-      return route.fulfill({json:{uid:'member',balance,usedTokens:0,models:['google/gemini-2.5-flash-lite'],dailyRequests:20,minuteRequests:4,maxOutput:512,owner,verified,unlocked,key,configured:true,grantedTokens:1000,requestsToday:1,recent:[{at:Date.now(),model:'google/gemini-2.5-flash-lite',tokens:12,status:'completed'}]}});
+      return route.fulfill({json:{uid:'member',premium,monthlyModelLimits:premium?{luna:25000,gemini:50000}:{luna:0,gemini:0},modelAllowances:premium?{'openai/gpt-5.6-luna':{limit:25000,used:0,remaining:25000},'google/gemini-2.5-flash-lite':{limit:50000,used:0,remaining:50000}}:undefined,balance,usedTokens:0,models:['google/gemini-2.5-flash-lite'],dailyRequests:20,minuteRequests:4,maxOutput:512,owner,verified,unlocked,key,configured:true,grantedTokens:1000,requestsToday:1,recent:[{at:Date.now(),model:'google/gemini-2.5-flash-lite',tokens:12,status:'completed'}]}});
     });
     await page.goto('http://nyx.test/');const frame=page.frameLocator('iframe');
     await frame.locator('#notice').filter({hasText:'Sign in to Nyx to continue.'}).waitFor();
@@ -73,8 +74,18 @@ try {
     owner=true;await frame.locator('#refresh').click();await frame.locator('[data-tab=owner]').click();await frame.locator('#owner').waitFor();
     await frame.locator('#unlock input').fill('fixture password');await frame.locator('#unlock button').click();await frame.locator('#management').waitFor();await frame.locator('#members-rows').filter({hasText:'Test Member'}).waitFor();
     assert.equal(await frame.locator('#unlock input').inputValue(),'');
-    await frame.locator('#lookup button').click();await frame.locator('#target').filter({hasText:'988 tokens'}).waitFor();assert.equal(await frame.locator('[name=monthlyTokenLimit]').isVisible(),false,'Non-Premium accounts must not show a monthly allowance');
+    await frame.locator('#lookup button').click();await frame.locator('#target').filter({hasText:'988 tokens'}).waitFor();assert.equal(await frame.locator('[name=lunaMonthlyLimit]').isVisible(),false,'Non-Premium accounts must not show a monthly allowance');
     await frame.locator('[name=addTokens]').fill('50');await frame.locator('#limits button[type=submit]').click();await frame.locator('#target').filter({hasText:'1038 tokens'}).waitFor();
+    premium=true;key={prefix:'n_api_fixture',label:'Test key',revealAvailable:true};await frame.locator('#lookup button').click();await frame.locator('[name=lunaMonthlyLimit]').waitFor();
+    assert.equal(await frame.locator('[name=lunaMonthlyLimit]').inputValue(),'25000');assert.equal(await frame.locator('[name=geminiMonthlyLimit]').inputValue(),'50000');
+    assert.match(await frame.locator('#target').textContent(),/Luna: 25,000 \/ 25,000/);
+    await frame.locator('#owner-show-key').click();await frame.locator('#owner-key-reveal').waitFor();
+    assert.equal(await frame.locator('#owner-key-value').inputValue(),'n_api_owner-reveal-fixture');
+    assert.equal(await frame.locator('body').evaluate(()=>JSON.stringify(localStorage).includes('n_api_owner-reveal-fixture')),false);
+    await frame.locator('#owner-key-hide').click();assert.equal(await frame.locator('#owner-key-value').inputValue(),'');
+    await frame.locator('#owner-show-key').click();await frame.locator('#owner-key-reveal').waitFor();
+    await frame.locator('[data-tab=usage]').click();assert.equal(await frame.locator('#owner-key-value').inputValue(),'');
+    await frame.locator('[data-tab=owner]').click();
     const overflow=await frame.locator('body').evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);assert.equal(overflow,false,`No horizontal overflow at ${width}px`);
     await page.screenshot({path:`.codex-artifacts/developer-api-${width}.png`,fullPage:true});
     await frame.locator('#lock').click();await frame.locator('#unlock').waitFor();

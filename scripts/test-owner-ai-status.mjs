@@ -29,15 +29,15 @@ try {
   for(const width of [1280,390]) {
     const page=await browser.newPage({viewport:{width,height:900}});
     const errors=[];page.on('pageerror',e=>errors.push(e.message));
-    let state='low',dashboardRole='owner',statusRequests=0,monthlyTokenLimit=50000;const member={uid:'member123',displayName:'Test Member',username:'member',email:'member@example.test',role:'member',subscriptionStatus:'premium',profile:{}};
+    let state='low',dashboardRole='owner',statusRequests=0,monthlyModelLimits={luna:25000,gemini:50000};const member={uid:'member123',displayName:'Test Member',username:'member',email:'member@example.test',role:'member',subscriptionStatus:'premium',profile:{}};
     await page.route('http://nyx.test/**',async route=>{
       const path=new URL(route.request().url()).pathname;
       if(path==='/')return route.fulfill({contentType:'text/html',body:'<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body></body></html>'});
       let body={};
       if(path==='/api/owner-dashboard')body={access:{role:dashboardRole,founder:dashboardRole==='owner',permissions:[]},users:[member],metrics:{},pagination:{},audit:[]};
       if(path==='/api/owner-dashboard/users/member123'){
-        if(route.request().method()==='PATCH'){assert.equal(route.request().postDataJSON().action,'set_ai_limit');monthlyTokenLimit=route.request().postDataJSON().monthlyTokenLimit;}
-        body={user:{...member,aiMonthlyTokenLimit:monthlyTokenLimit},access:{role:dashboardRole,founder:dashboardRole==='owner',permissions:[]},capabilities:{canSetAiLimit:dashboardRole==='owner',canSetSubscription:dashboardRole==='owner'}};
+        if(route.request().method()==='PATCH'){assert.equal(route.request().postDataJSON().action,'set_ai_limit');monthlyModelLimits=route.request().postDataJSON().monthlyModelLimits;}
+        body={user:{...member,aiMonthlyModelLimits:monthlyModelLimits},access:{role:dashboardRole,founder:dashboardRole==='owner',permissions:[]},capabilities:{canSetAiLimit:dashboardRole==='owner',canSetSubscription:dashboardRole==='owner'}};
       }
       if(path==='/api/owner-dashboard/ai-status'){
         statusRequests++;
@@ -63,11 +63,22 @@ try {
       state=next;await page.evaluate(()=>window.dashboard.refresh());
       await page.waitForFunction(value=>document.querySelector('[data-owner-ai-status]')?.dataset.aiState===value,next);
     }
+    for(const selector of ['[data-owner-ai-status]','[data-owner-tube-status]']){
+      const card=page.locator(selector);const expanded=(await card.boundingBox()).height;
+      await card.locator('summary').click();await page.waitForFunction(selector=>!document.querySelector(selector+' details').open,selector);
+      assert.ok((await card.boundingBox()).height<expanded,'Collapsed card is smaller');
+      assert.ok(await card.locator('.nyx-owner-status-body').isHidden());
+      await page.evaluate(()=>window.dashboard.refresh());
+      await page.waitForTimeout(100);
+      assert.equal(await card.locator('details').getAttribute('open'),null,'Refresh preserves collapse preference');
+    }
+    await page.screenshot({path:`.codex-artifacts/owner-status-collapsed-${width}.png`});
+    await host.locator('summary').focus();await page.keyboard.press('Enter');assert.ok(await host.locator('.nyx-owner-status-body').isVisible());
     await page.screenshot({path:`.codex-artifacts/owner-layout-${width}.png`});
     assert.doesNotMatch(await host.innerText(),/below \$0\.50/,'Refill clears the warning');
     await page.locator('[data-owner-view-user=member123]').first().click();
-    await page.locator('[data-owner-ai-limit]').fill('65000');await page.locator('[data-owner-save-ai-limit]').click();
-    await page.waitForFunction(()=>document.querySelector('[data-owner-ai-limit]')?.value==='65000');assert.equal(monthlyTokenLimit,65000);
+    await page.locator('[data-owner-ai-limit=luna]').fill('65000');await page.locator('[data-owner-save-ai-limit]').click();
+    await page.waitForFunction(()=>document.querySelector('[data-owner-ai-limit=luna]')?.value==='65000');assert.deepEqual(monthlyModelLimits,{luna:65000,gemini:50000});
     await page.locator('[data-owner-drawer-close]').click();
     dashboardRole='admin';const before=statusRequests;
     await page.evaluate(()=>window.dashboard.refresh());

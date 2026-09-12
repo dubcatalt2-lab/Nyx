@@ -68,15 +68,18 @@ try {
   for(let i=0;i<52;i++){const uid='listed'+i,id=createHash('sha256').update(uid).digest('hex');users.set(uid,{displayName:'Listed '+i,email:'test@example.test',emailVerified:true});routeDb.records.set('nyxDeveloperApi/account-'+id,{uid,activeKey:id,balance:1000,models:[GEMINI],dailyRequests:20,minuteRequests:4,maxOutput:512});routeDb.records.set('nyxDeveloperApi/key-'+id,{uid,prefix:'n_api_fixture',label:'Key'});}
   const firstPage=await (await request('/api/developer/owner/accounts','owner',null,null,{cookie})).json();assert.equal(firstPage.members.length,49);assert.ok(firstPage.nextCursor);
   const secondPage=await (await request('/api/developer/owner/accounts?cursor='+firstPage.nextCursor,'owner',null,null,{cookie})).json();assert.equal(secondPage.members.length,5);assert.equal(secondPage.nextCursor,null);assert.equal(new Set([...firstPage.members,...secondPage.members].map(m=>m.uid)).size,54);
-  const settings={monthlyTokenLimit:60000,addTokens:100,dailyRequests:30,minuteRequests:5,maxOutput:600,models:[GEMINI]};
+  const settings={monthlyModelLimits:{luna:30000,gemini:60000},addTokens:100,dailyRequests:30,minuteRequests:5,maxOutput:600,models:[GEMINI]};
   assert.equal((await request('/api/developer/owner/account/member','owner',settings,null,{cookie})).status,403,'Free members cannot receive monthly Premium limits');
-  const free=await (await request('/api/developer/me','member')).json();assert.equal(free.monthlyTokenLimit,0);assert.equal(free.balance,1000);assert.equal(free.premium,false);
+  const free=await (await request('/api/developer/me','member')).json();assert.deepEqual(free.monthlyModelLimits,{luna:0,gemini:0});assert.equal(free.balance,1000);assert.equal(free.premium,false);
   routeDb.records.set('nyxUserAdministration/member',{subscriptionStatus:'premium'});
-  const premium=await (await request('/api/developer/me','member')).json();assert.equal(premium.balance,50000);assert.equal(premium.monthlyTokenLimit,50000);
-  assert.equal((await request('/api/developer/owner/account/member','owner',settings,null,{cookie})).status,200);assert.equal(routeDb.records.get('nyxUserAdministration/member').aiMonthlyTokenLimit,60000);
+  const premium=await (await request('/api/developer/me','member')).json();assert.equal(premium.balance,75000);assert.deepEqual(premium.monthlyModelLimits,{luna:25000,gemini:50000});assert.equal(premium.modelAllowances[LUNA].remaining,25000);assert.equal(premium.modelAllowances[GEMINI].remaining,50000);
+  const usageId='nyxAiAllowance/premium-'+createHash('sha256').update('member').digest('hex');
+  routeDb.records.set(usageId,{month:new Date().toISOString().slice(0,7),legacyTokens:0,modelTokens:{luna:25000,gemini:1000},tokens:26000});
+  const exhausted=await (await request('/api/developer/me','member')).json();assert.equal(exhausted.modelAllowances[LUNA].remaining,0);assert.equal(exhausted.modelAllowances[GEMINI].remaining,49000);assert.deepEqual(exhausted.models,[GEMINI]);
+  assert.equal((await request('/api/developer/owner/account/member','owner',settings,null,{cookie})).status,200);assert.deepEqual(routeDb.records.get('nyxUserAdministration/member').aiMonthlyModelLimits,{luna:30000,gemini:60000});
   assert.equal((await request('/api/developer/owner/account/member','owner',{...settings,addTokens:-1},null,{cookie})).status,400);
   routeDb.records.set('nyxUserAdministration/member',{subscriptionStatus:'free',aiMonthlyTokenLimit:60000});
-  const downgraded=await (await request('/api/developer/me','member')).json();assert.equal(downgraded.balance,1100);assert.equal(downgraded.monthlyTokenLimit,0);
+  const downgraded=await (await request('/api/developer/me','member')).json();assert.equal(downgraded.balance,1100);assert.deepEqual(downgraded.monthlyModelLimits,{luna:0,gemini:0});
   const prompt={messages:[{role:'user',content:'Hi'}]};
   const ok=await request('/api/v1/ai',issued.key,prompt);assert.equal(ok.status,200);assert.equal(calls,1);
   assert.equal((await (await request('/api/developer/me','member')).json()).balance,1090);

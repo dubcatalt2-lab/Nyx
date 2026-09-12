@@ -2537,7 +2537,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     'nyx-ai':localIcon('shortcut-nyx-ai.svg?v=6'),
     'aether.cx':localIcon('theatre-masks.svg?v=1'),
     'icefy.top':localIcon('theatre-masks.svg?v=1'),
-    'cinejoy.to':localIcon('theatre-masks.svg?v=1'),
+    'cinejoy.to':localIcon('nyx-movies.svg?v=1'),
+    'nyx-movies':localIcon('nyx-movies.svg?v=1'),
     'fmhy.net':localIcon('theatre-masks.svg?v=1'),
     'nyx-chat':localIcon('chat.svg?v=2'),
     'cloud-gaming':localIcon('cloud-gaming.svg?v=2'),
@@ -2613,6 +2614,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(/(?:^|\/)apps\/link-checker(?:\/|$)/i.test(raw)) return appIcon('link-checker');
     if(/(?:^|\/)apps\/link-generator(?:\/|$)/i.test(raw)) return appIcon('link-generator');
     if(/(?:^|\/)apps\/api-keys(?:\/|$)/i.test(raw)) return appIcon('api-keys');
+    if(/(?:^|\/)apps\/movies(?:\/|$)/i.test(raw)) return appIcon('nyx-movies');
     if(/(?:^|\/)apps\/code-studio(?:\/|$)/i.test(raw)) return appIcon('code-studio');
     if(/(?:^|\/)apps\/code-tutorials(?:\/|$)/i.test(raw)) return appIcon('code-tutorials');
     const source=typeof browserShellSourceUrl==='function' ? (browserShellSourceUrl(raw) || raw) : raw;
@@ -9025,7 +9027,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   const nyxAiHomeShortcutMigrationKey='nyx.homeShortcuts.aiShortcutV1';
   const nyxTubeHomeShortcut={domain:'youtube.com',title:'NyxTube',url:'/apps/nyxtube/',favorite:false};
   const nyxTubeHomeShortcutMigrationKey='nyx.homeShortcuts.nyxTubeShortcutV1';
-  const moviesHomeShortcut={domain:'cinejoy.to',title:'Movies',url:'https://cinejoy.to/',favorite:false};
+  const moviesHomeShortcut={domain:'nyx-movies',title:'Movies',url:'/apps/movies/',favorite:false};
   const defaultHomeShortcuts=[
     {domain:'geforcenow',title:'Course Library',url:'https://play.geforcenow.com/',favorite:true},
     {domain:'duck.ai',title:'Research Assistant',url:'https://duck.ai/',favorite:false},
@@ -9044,9 +9046,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   function normalizeHomeShortcut(item){
     const next={...item,url:normalizeInternalAppUrl(item?.url)};
-    if(['http://icefy.top','https://aether.cx','/apps/movies'].includes(String(next.url || '').trim().replace(/\/+$/,'').toLowerCase())){
-      next.url='https://cinejoy.to/';
-      next.domain='cinejoy.to';
+    if(['http://icefy.top','https://aether.cx','https://cinejoy.to','/apps/movies'].includes(String(next.url || '').trim().replace(/\/+$/,'').toLowerCase())){
+      next.url='/apps/movies/';
+      next.domain='nyx-movies';
     }
     if(next.url==='/assets/games/index.html') next.url='/assets/games/';
     if(next.url==='/assets/games/'){
@@ -9753,7 +9755,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     ['nyxify','nyxify','Nyxify/built in music','/apps/nyxify/'],
     ['duck-ai','duck.ai','Duck AI','https://duck.ai/'],
     ['nyx-ai','nyx-ai','Nyx AI','nyx://ai'],
-    ['movies','cinejoy.to','Movies','https://cinejoy.to/'],
+    ['movies','nyx-movies','Movies','/apps/movies/'],
     ['more-movie-sites','fmhy.net','More Movie Sites','https://fmhy.net/video#p-stream-forks'],
     ['tiktok','tiktok.com','TikTok','https://www.tiktok.com/'],
     ['animex','animex.one','Animex','https://animex.one/']

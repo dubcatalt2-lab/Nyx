@@ -32,6 +32,11 @@ foreach ($entry in $requiredValues.GetEnumerator()) {
   Set-Item -LiteralPath "Env:$($entry.Key)" -Value $entry.Value
 }
 
+# Optional local movie catalog credential; never sent to browser code.
+if (-not [string]::IsNullOrWhiteSpace([string]$config.tmdbToken)) {
+  $env:TMDB_TOKEN = [string]$config.tmdbToken
+}
+
 Set-Location -LiteralPath $projectRoot
 Write-Host "Firebase accounts loaded for local Nyx." -ForegroundColor Green
 & npm run dev

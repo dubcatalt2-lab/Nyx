@@ -1,3 +1,5 @@
+import { createMovieCatalog, installMovieApi } from './lib/movies.mjs';
+import { installMoviePlayback } from './lib/movie-playback.mjs';
 import { createApiKeyVault } from './lib/api-key-vault.mjs';
 import { installDeveloperApi } from './lib/developer-api.mjs';
 import { aiImageContent } from './lib/ai-image.mjs';
@@ -321,8 +323,9 @@ const nyxJsdelivrPublisherAppMigrationField = "nyxJsdelivrPublisherInitialized";
 const nyxJsdelivrPublisherGlobalApp = Object.freeze({ id: "jsdelivr-publisher", icon: "jsdelivr-publisher", name: "JSDelivr Publisher", url: "/apps/jsdelivr-publisher/" });
 const nyxGamesAppMigrationField = "gamesAppRenamed";
 const nyxGamesGlobalApp = Object.freeze({ id: "pirate-cove", icon: "games", name: "GAMES", url: "/assets/games/" });
+const nyxMoviesBuiltinMigrationField = "nyxMoviesBuiltin20260911";
 const nyxMoviesCinejoyMigrationField = "moviesCinejoyTarget";
-const nyxMoviesGlobalApp = Object.freeze({ id: "movies", icon: "cinejoy.to", name: "Movies", url: "https://cinejoy.to/" });
+const nyxMoviesGlobalApp = Object.freeze({ id: "movies", icon: "nyx-movies", name: "Movies", url: "/apps/movies/" });
 const nyxDefaultGlobalApps = Object.freeze([
   { id: "link-checker", icon: "link-checker", name: "Link Checker", url: "/apps/link-checker/" },
   { id: "link-generator", icon: "link-generator", name: "Link Generator", url: "/apps/link-generator/" },
@@ -3719,7 +3722,7 @@ function nyxGlobalAppsFromSnapshot(snapshot) {
   if (!Array.isArray(stored)) return nyxDefaultGlobalAppsPayload();
   return stored.slice(0, nyxGlobalAppsLimit).map(app => {
     const normalized = nyxNormalizeGlobalApp(app);
-    if (normalized?.id === nyxMoviesGlobalApp.id && ["http://icefy.top/", "https://aether.cx/", "/apps/movies/"].includes(normalized.url)) {
+    if (normalized?.id === nyxMoviesGlobalApp.id && ["http://icefy.top/", "https://aether.cx/", "https://cinejoy.to/", "/apps/movies/"].includes(normalized.url)) {
       return { ...nyxMoviesGlobalApp };
     }
     if (normalized?.id === nyxGamesGlobalApp.id && normalized.url === nyxGamesGlobalApp.url) {
@@ -3745,7 +3748,7 @@ function nyxGlobalAppsFromSnapshot(snapshot) {
 async function nyxGlobalApps(firebase) {
   const reference = firebase.firestore.collection(nyxGlobalAppsCollection).doc(nyxGlobalAppsDocument);
   const snapshot = await reference.get();
-  if (snapshot.data()?.[nyxAppsCleanupField] === true && snapshot.data()?.[nyxCloudGamingAppMigrationField] === true && snapshot.data()?.[nyxCloudGamingGamesMergeMigrationField] === true && snapshot.data()?.[nyxMediaAppsRetiredField] === true && snapshot.data()?.[nyxTubeReintroducedField] === true && snapshot.data()?.[nyxTubeCatalogNameField] === true && snapshot.data()?.[nyxifyReintroducedField] === true && snapshot.data()?.[nyxifyBuiltInMusicNameField] === true && snapshot.data()?.[nyxApiKeysAppMigrationField] === true && snapshot.data()?.[nyxCodeStudioAppMigrationField] === true && snapshot.data()?.[nyxCodeToolsCatalogV2MigrationField] === true && snapshot.data()?.[nyxCodeTutorialsHiddenMigrationField] === true && snapshot.data()?.[nyxJsdelivrPublisherAppMigrationField] === true && snapshot.data()?.[nyxGamesAppMigrationField] === true && snapshot.data()?.[nyxMoviesCinejoyMigrationField] === true) return nyxGlobalAppsFromSnapshot(snapshot);
+  if (snapshot.data()?.[nyxMoviesBuiltinMigrationField] === true && snapshot.data()?.[nyxAppsCleanupField] === true && snapshot.data()?.[nyxCloudGamingAppMigrationField] === true && snapshot.data()?.[nyxCloudGamingGamesMergeMigrationField] === true && snapshot.data()?.[nyxMediaAppsRetiredField] === true && snapshot.data()?.[nyxTubeReintroducedField] === true && snapshot.data()?.[nyxTubeCatalogNameField] === true && snapshot.data()?.[nyxifyReintroducedField] === true && snapshot.data()?.[nyxifyBuiltInMusicNameField] === true && snapshot.data()?.[nyxApiKeysAppMigrationField] === true && snapshot.data()?.[nyxCodeStudioAppMigrationField] === true && snapshot.data()?.[nyxCodeToolsCatalogV2MigrationField] === true && snapshot.data()?.[nyxCodeTutorialsHiddenMigrationField] === true && snapshot.data()?.[nyxJsdelivrPublisherAppMigrationField] === true && snapshot.data()?.[nyxGamesAppMigrationField] === true && snapshot.data()?.[nyxMoviesCinejoyMigrationField] === true) return nyxGlobalAppsFromSnapshot(snapshot);
   return firebase.firestore.runTransaction(async transaction => {
     const currentSnapshot = await transaction.get(reference);
     const apps = nyxGlobalAppsFromSnapshot(currentSnapshot);
@@ -3886,6 +3889,11 @@ async function nyxGlobalApps(firebase) {
         [nyxCloudGamingGamesMergeMigrationField]: true,
         updatedAt: new Date().toISOString()
       }, { merge: true });
+    }
+    if (currentSnapshot.data()?.[nyxMoviesBuiltinMigrationField] !== true) {
+      const index = apps.findIndex(item => item.id === nyxMoviesGlobalApp.id);
+      if (index >= 0) apps.splice(index, 1, { ...nyxMoviesGlobalApp });
+      transaction.set(reference, { apps, [nyxMoviesBuiltinMigrationField]: true, updatedAt: new Date().toISOString() }, { merge: true });
     }
     if (currentSnapshot.data()?.[nyxAppsCleanupField] !== true) {
       const retainedExternal = new Set(['tiktok','animex','duck-ai','movies','more-movie-sites']);
@@ -7794,9 +7802,11 @@ app.get(["/apps/nyxify", "/apps/nyxify/"], (_req, res) => {
   res.sendFile(join(staticRoot, "apps", "nyxify", "index.html"));
 });
 
-app.get(["/apps/movies", "/apps/movies/"], (_req, res) => {
-  res.redirect(302, "/");
-});
+const movieCatalog = createMovieCatalog();
+installMovieApi(app, { catalog: movieCatalog, clientId: nyxClientIp });
+installMoviePlayback(app, { clientId: nyxClientIp, validateMovie: id => movieCatalog.details(id) });
+app.get(/^\/apps\/movies$/, (_req, res) => res.redirect(302, "/apps/movies/"));
+app.get("/apps/movies/", (_req, res) => res.sendFile(join(staticRoot, "apps", "movies", "index.html")));
 
 function linkGeneratorRateState(clientId, now = Date.now()) {
   for (const [key, state] of linkGeneratorAttempts) {

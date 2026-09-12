@@ -2,6 +2,17 @@ import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
+  "assets/icons/nyx-movies.svg",
+  "lib/movies.mjs",
+  "lib/movie-mappings.mjs",
+  "lib/movie-episodes.mjs",
+  "scripts/match-movie.mjs",
+  "lib/movie-playback.mjs",
+  "apps/movies/index.html",
+  "apps/movies/app.js",
+  "apps/movies/styles.css",
+  "apps/movies/tmdb.svg",
+  "apps/movies/REACT_BITS_LICENSE.txt",
   "index.html",
   "about-nyx.html",
   "robots.txt",

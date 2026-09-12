@@ -5,7 +5,7 @@ const app=express();
 app.get('/api/auth-config',(q,r)=>r.json({enabled:false}));
 app.get('/healthz',(q,r)=>r.json({ok:true}));
 app.use('/api',(q,r)=>r.json({}));
-app.use(express.static(process.env.NYX_TEST_ASSET_ROOT||'.')); 
+app.use(express.static(process.env.NYX_TEST_ASSET_ROOT||'.'));
 const server=app.listen(8310);
 const browser=await chromium.launch();
 try{

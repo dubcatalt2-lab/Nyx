@@ -1,3 +1,9 @@
+## 2026-09-11 - Playground response formatting
+
+- API Playground and main AI chat share `js/ai-markdown.js`, extracted from the existing escaped Markdown/KaTeX renderer. Inline dollar math is now supported alongside bracket/display math; model HTML remains escaped and KaTeX trust stays disabled.
+- Playground responses use a growing rich-text container with wrapping prose and horizontally scrollable code/math/tables. Default requested output is 512 instead of 128 tokens; provider `finish_reason: length` shows an explicit token-limit notice. Existing key/server/balance caps still apply; no automatic continuation or extra paid request.
+- Desktop/mobile source and production fixtures check bold/lists/equations, escaped HTML, long response expansion and final paragraph access. Main AI image/math and personal Nyx/OpenRouter-key regression fixtures pass. Deployment requires the new shared renderer asset.
+
 ## LIVE 2026-09-11 - Per-user AI and owner controls (7f0ce4f)
 
 - Pushed `7f0ce4f` and deployed to `/var/www/nyx`. VPS build, 115-file deployment/branding checks, monthly-budget and developer API fixtures passed. Nyx restarted successfully; health 200, browser-user-agent HTTPS origin checks confirmed the new assets, and anonymous owner-list/billing/video-status requests returned 401. Existing crawler decoy behavior remains intact. Environment, credentials, Caddy and Wisp configuration were preserved.

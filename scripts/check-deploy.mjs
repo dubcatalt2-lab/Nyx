@@ -30,6 +30,7 @@ const requiredFiles = [
   "js/loading-screen.js",
   "js/availability.js",
   "js/nyx-logo.js",
+  "js/ai-markdown.js",
   "assets/icons/nyx-monogram.png",
   "assets/credits/midnight.png",
   "assets/credits/p2p-games.png",

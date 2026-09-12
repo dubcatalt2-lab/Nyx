@@ -19,12 +19,14 @@ try {
     const page=await browser.newPage({viewport:{width,height:950},reducedMotion:'reduce'}),errors=[];
     page.on('pageerror',e=>errors.push(e.message));
     let owner=false,verified=false,unlocked=false,key=null,balance=1000;
+    const answer='Rainbows form **in water droplets**.\n\n1. First step\n2. Second step\n\n$34 \\times 3 = 102$\n\n```js\n'+ 'x'.repeat(400)+'\n```\n\n<img src=x onerror=alert(1)>\n\n'+('Long response paragraph. '.repeat(15)+'\n\n').repeat(30)+'Last paragraph.';
     await page.route('http://nyx.test/**',async route=>{
       const path=new URL(route.request().url()).pathname;
       if(path==='/')return route.fulfill({contentType:'text/html',body:`<meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font-family:Outfit,Arial,sans-serif;background:#141414}iframe{border:0;width:100%;height:950px}</style><iframe src="/api"></iframe><script>window.signedIn=false;addEventListener('message',e=>{if(e.origin===location.origin&&e.data.type==='nyx:account-token-request')e.source.postMessage({type:'nyx:account-token-response',requestId:e.data.requestId,token:window.signedIn?'fixture':''},location.origin);if(e.origin===location.origin&&e.data.type==='nyx:account-open-signin'){window.signedIn=true;e.source.postMessage({type:'nyx:account-changed'},location.origin);}});</script>`});
+      if(path.startsWith('/assets/vendor/katex/'))return route.fulfill({contentType:path.endsWith('.js')?'text/javascript':path.endsWith('.css')?'text/css':'font/woff2',body:await readFile(root==='.'?'node_modules/katex/dist/'+path.split('/katex/')[1]:root+path)});
       if(path==='/assets/icons/nyx-monogram.png')return route.fulfill({contentType:'image/png',body:await readFile(root+path)});
-      if(path==='/api'||path.startsWith('/apps/api-keys/')||['/apps/utility-shell.css','/apps/visual-redesign.css','/assets/vendor/three.r134.min.js','/js/beams-wallpaper.js','/js/line-waves-wallpaper.js'].includes(path))return route.fulfill({contentType:path.endsWith('.js')?'text/javascript':path.endsWith('.css')?'text/css':'text/html',body:await readFile(root+(path==='/api'?'/apps/api-keys/index.html':path),'utf8')});
-      if(path==='/api/v1/ai'){balance-=12;return route.fulfill({json:{choices:[{message:{content:'Rainbows form when sunlight refracts and reflects in water droplets.'}}],usage:{prompt_tokens:7,completion_tokens:5}}});}
+      if(path==='/api'||path.startsWith('/apps/api-keys/')||['/js/ai-markdown.js','/apps/utility-shell.css','/apps/visual-redesign.css','/assets/vendor/three.r134.min.js','/js/beams-wallpaper.js','/js/line-waves-wallpaper.js'].includes(path))return route.fulfill({contentType:path.endsWith('.js')?'text/javascript':path.endsWith('.css')?'text/css':'text/html',body:await readFile(root+(path==='/api'?'/apps/api-keys/index.html':path),'utf8')});
+      if(path==='/api/v1/ai'){balance-=12;return route.fulfill({json:{choices:[{message:{content:answer},finish_reason:'length'}],usage:{prompt_tokens:7,completion_tokens:5}}});}
       if(path==='/api/developer/owner/accounts')return route.fulfill({json:{members:[{uid:'member',name:'Test Member',balance,usedTokens:12,key:{prefix:'n_api_fixture'}}],nextCursor:null}});
       if(path==='/api/developer/unlock')unlocked=true;
       if(path==='/api/developer/lock')unlocked=false;
@@ -52,7 +54,18 @@ try {
     await frame.locator('[data-tab=playground]').click();
     assert.equal(await frame.locator('#playground-key').inputValue(),'n_api_fixture-only-secret');
     await frame.locator('#playground-prompt').fill('Explain rainbows.');await frame.locator('#playground-send').click();
-    await frame.locator('#playground-response').filter({hasText:'Rainbows form'}).waitFor();
+    await frame.locator('#playground-response strong').filter({hasText:'in water droplets'}).waitFor();
+    assert.equal(await frame.locator('#playground-response li').count(),2);
+    assert.equal(await frame.locator('#playground-response .katex').count(),1);
+    assert.equal(await frame.locator('#playground-response img').count(),0);
+    assert.equal(await frame.locator('#playground-limit').isVisible(),true);
+    assert.equal(await frame.locator('#playground-tokens').inputValue(),'512');
+    const geometry=await frame.locator('#playground-response').evaluate(el=>({height:el.clientHeight,scroll:el.scrollHeight,overflow:document.documentElement.scrollWidth>innerWidth+1}));
+    assert.ok(geometry.height>950,'Long answers expand beyond the viewport');
+    assert.ok(geometry.scroll<=geometry.height+1,'Response is not clipped');
+    assert.equal(geometry.overflow,false,'Wide code stays inside the response');
+    await frame.locator('#playground-response p').last().scrollIntoViewIfNeeded();
+    assert.equal(await frame.locator('#playground-response p').last().textContent(),'Last paragraph.');
     await frame.locator('body').evaluate(()=>scrollTo(0,0));await page.screenshot({path:`.codex-artifacts/developer-playground-${width}.png`});
     await frame.locator('[data-tab=usage]').click();await frame.locator('#usage-remaining').filter({hasText:'988'}).waitFor();
     assert.equal(await frame.locator('#usage-rows tr').count(),1);

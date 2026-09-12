@@ -10,11 +10,22 @@
       this.video.addEventListener('playing',()=>emit('onStateChange',1));
       this.video.addEventListener('pause',()=>emit('onStateChange',2));
       this.video.addEventListener('ended',()=>emit('onStateChange',0));
-      this.video.addEventListener('waiting',()=>emit('onBuffering',true));
-      this.video.addEventListener('playing',()=>emit('onBuffering',false));
+      this.video.addEventListener('waiting',()=>this.setBuffering(true));
+      this.video.addEventListener('playing',()=>{this.renewing=false;this.setBuffering(false);});
+      this.video.addEventListener('canplay',()=>{this.renewing=false;this.setBuffering(false);});
+      this.video.addEventListener('seeking',()=>{if(this.video.readyState<3)this.setBuffering(true);});
+      this.video.addEventListener('stalled',()=>{if(!this.video.paused&&this.video.readyState<3)this.setBuffering(true);});
+      this.video.addEventListener('emptied',()=>{if(this.renewing)this.setBuffering(true);});
+      this.video.addEventListener('pause',()=>{if(!this.renewing)this.setBuffering(false);});
+      this.video.addEventListener('ended',()=>this.setBuffering(false));
       this.video.addEventListener('error',()=>emit('onError',900));
       this.video.addEventListener('loadedmetadata',()=>emit('onReady'),{once:true});
       this.prepare().catch(error=>{if(!this.controller.signal.aborted){this.failure=error.message;emit('onError',900);}});
+    }
+    setBuffering(value) {
+      if(this.controller.signal.aborted||this.buffering===value)return;
+      this.buffering=value;
+      this.options.events?.onBuffering?.({target:this,data:value});
     }
     wait(ms) {
       return new Promise((resolve,reject)=>{
@@ -63,10 +74,15 @@
         const hls=this.hls=new Hls({startPosition:position,maxBufferLength:12,maxMaxBufferLength:24,maxBufferSize:8*1024*1024,
           backBufferLength:12,fragLoadPolicy:policy,manifestLoadPolicy:policy,playlistLoadPolicy:policy});
         hls.on(Hls.Events.ERROR,(_event,data)=>{
-          if(!data.fatal||this.controller.signal.aborted)return;
+          if(this.controller.signal.aborted)return;
+          if(!data.fatal){
+            if(data.details===Hls.ErrorDetails?.BUFFER_STALLED_ERROR&&!this.video.paused)this.setBuffering(true);
+            return;
+          }
           if(data.response?.code===410&&(!this.renewedAt||Date.now()-this.renewedAt>60000)) {
             this.renewedAt=Date.now();
             const time=this.video.currentTime,paused=this.video.paused;
+            this.renewing=true;this.setBuffering(true);
             hls.destroy();this.hls=null;
             this.json(`/api/nyxtube/native/prepare/${encodeURIComponent(this.options.videoId)}/${this.quality}?mode=hls`,{method:'POST'}).then(result=>{
               if(!/^\/api\/nyxtube\/native\/hls\/[a-f0-9]{32}\/master\.m3u8$/.test(result.url||''))throw new Error('The video session could not be renewed.');

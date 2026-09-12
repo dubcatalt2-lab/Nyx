@@ -52,6 +52,13 @@ try {
   assert.equal(await page.locator('[data-watch-likes]').innerText(),'Unavailable');
   assert.ok(await page.locator('[data-watch-loading]').isHidden(),'Loading indicator should hide when ready');
   assert.ok(await player.evaluate(v=>v.videoWidth>0 && v.getBoundingClientRect().height>100),'Native picture is missing or collapsed');
+  await player.evaluate(v=>v.dispatchEvent(new Event('waiting')));
+  assert.ok(await spinner.isVisible(),'Buffering after playback must show a spinner');
+  assert.match(await page.locator('[data-watch-loading]').innerText(),/Loading video chunks/);
+  const bufferedRotation=await spinner.evaluate(el=>getComputedStyle(el).transform);await page.waitForTimeout(150);
+  assert.notEqual(await spinner.evaluate(el=>getComputedStyle(el).transform),bufferedRotation);
+  await page.locator('[data-watch-stage]').screenshot({path:'.codex-artifacts/nyxtube-chunk-buffering.png'});
+  await player.evaluate(v=>v.dispatchEvent(new Event('playing')));assert.ok(await spinner.isHidden());
   await page.locator('[data-watch-toggle]').click();assert.ok(await player.evaluate(v=>v.paused));
   await player.evaluate(v=>{v.currentTime=5;v.volume=0;v.playbackRate=1.5;v.muted=true;});
   await page.locator('[data-watch-quality]').selectOption('360');

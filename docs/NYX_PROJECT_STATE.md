@@ -1,3 +1,9 @@
+## 2026-09-11 - NyxTube chunk buffering indicator
+
+- Native playback now signals loading during stream-session renewal before detaching HLS, and handles stalled playback/unbuffered seeks. Can-play/playing clears loading; pause/end clears ordinary buffering. Renewing sessions keep the spinner through media detach. The watch UI hides the center Play overlay while buffering and avoids clearing the native loading indicator at metadata-only readiness.
+- Reuses the animated loading circle with ?Loading video chunks...? text. HLS targets six-second segments; its session idle expiry is two hours, not a fixed 20-minute download boundary.
+- Native playback/UI fixtures check an animated spinner after playback has started and recovery. Segmented playback fixtures check explicit renewal buffering and clearing after actual resumed playback.
+
 ## 2026-09-11 - Premium-only monthly limits, API layout and email-free access
 
 - Fixed misleading 50,000 monthly allowance metadata/controls on free accounts. Only Premium accounts expose monthly tokens; free API accounts retain their existing one-time balance and owner-added tokens. Both owner mutation routes reject positive monthly limits for non-Premium accounts. Downgrading ignores saved Premium ceilings. Owner personal usage remains unlimited.

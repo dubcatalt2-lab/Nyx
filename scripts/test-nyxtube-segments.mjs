@@ -156,7 +156,7 @@ try {
   server=adaptive.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
   await page.goto(`http://127.0.0.1:${server.address().port}/test`);rangeCalls=[];
   await page.evaluate(id=>{
-    window.events=[];window.player=new NyxNativePlayer.Player('player',{videoId:id,events:{onReady:e=>e.target.playVideo(),onError:e=>window.events.push(e.target.failure)}});
+    window.events=[];window.bufferEvents=[];window.player=new NyxNativePlayer.Player('player',{videoId:id,events:{onBuffering:e=>window.bufferEvents.push({loading:e.data,renewing:Boolean(e.target.renewing)}),onReady:e=>e.target.playVideo(),onError:e=>window.events.push(e.target.failure)}});
   },id);
   await page.waitForFunction(()=>window.player.video.currentTime>1,{},{timeout:30000});
   assert.deepEqual(await page.evaluate(()=>window.events),[]);
@@ -170,9 +170,10 @@ try {
   assert.deepEqual(await readFile(fragment.path),bytes.video.subarray(s.offset,s.offset+s.length),'Existing source fragment is copied without conversion');fragment.release();
   // An idle session can expire while the player remains open. Seeking renews it once
   // and keeps playback at the selected position instead of falling back to YouTube.
-  await page.evaluate(()=>window.player.pauseVideo());clock+=121*60000;
+  await page.evaluate(()=>{window.player.pauseVideo();const hls=window.player.hls,destroy=hls.destroy.bind(hls);hls.destroy=()=>{window.loadingAtRenewal=Boolean(window.player.buffering);return destroy();};});clock+=121*60000;
   await page.evaluate(()=>{window.player.seekTo(48);window.player.playVideo();});
   await page.waitForFunction(()=>window.player.renewedAt&&window.player.video.currentTime>49&&window.player.video.readyState>=2,{},{timeout:30000});
+  const bufferEvents=await page.evaluate(()=>window.bufferEvents);assert.equal(await page.evaluate(()=>window.loadingAtRenewal),true,'Loading indicator is active before session detach');assert.equal(bufferEvents.at(-1).loading,false,'Recovered playback clears the indicator');
   assert.deepEqual(await page.evaluate(()=>window.events),[]);
   await page.evaluate(id=>{
     window.player.destroy();

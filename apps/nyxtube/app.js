@@ -350,13 +350,13 @@
     state.watchPlayer?.destroy?.();
     const config = options(video.id); config.expectedDuration = video.durationSeconds; config.quality = restore?.quality; config.startTime = restore?.time;
     config.events = {
-      onBuffering: event => { if (generation !== state.watchGeneration) return; refs.watchLoading.hidden = !event.data; if(event.data)refs.watchLoading.querySelector("strong").textContent = "Buffering video..."; },
-      onReady: event => { if (generation !== state.watchGeneration) return; refs.watchLoading.hidden = true; if (restore) { event.target.seekTo(restore.time); event.target.setVolume?.(restore.volume); event.target.setPlaybackRate?.(restore.rate); if(restore.muted)event.target.mute(); } configureWatchSettings(event.target, video); if (!restore?.paused) event.target.playVideo(); else { event.target.pauseVideo(); refs.watchCenterPlay.hidden=false; } startWatchTimer(); },
+      onBuffering: event => { if (generation !== state.watchGeneration) return; refs.watchLoading.hidden = !event.data; if(event.data){refs.watchLoading.querySelector("strong").textContent = "Loading video chunks...";refs.watchCenterPlay.hidden=true;}else refs.watchCenterPlay.hidden=event.target.getPlayerState()!==2; },
+      onReady: event => { if (generation !== state.watchGeneration) return; refs.watchLoading.hidden = event.target.isNative?event.target.video.readyState>=3:true; if (restore) { event.target.seekTo(restore.time); event.target.setVolume?.(restore.volume); event.target.setPlaybackRate?.(restore.rate); if(restore.muted)event.target.mute(); } configureWatchSettings(event.target, video); if (!restore?.paused) event.target.playVideo(); else { event.target.pauseVideo(); refs.watchCenterPlay.hidden=false; } startWatchTimer(); },
       onStateChange: event => {
         if (generation !== state.watchGeneration) return;
         const playing = event.data === YT.PlayerState.PLAYING, paused = event.data === YT.PlayerState.PAUSED;
         if (playing) refs.watchLoading.hidden = true;
-        updateToggle(refs.watchToggle, playing); refs.watchCenterPlay.hidden = !paused;
+        updateToggle(refs.watchToggle, playing); refs.watchCenterPlay.hidden = !paused || Boolean(event.target.buffering);
       },
       onError: event => {
         if(generation !== state.watchGeneration || state.view !== "watch") return;

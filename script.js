@@ -3383,6 +3383,47 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     };
     return `<svg viewBox="0 0 24 24" aria-hidden="true">${icons[name]||icons.apps}</svg>`;
   }
+  let nyxSidebarHidden=false;
+  let nyxSidebarNoticeTimer=0;
+  function setNyxSidebarHidden(hidden){
+    nyxSidebarHidden=Boolean(hidden);
+    document.documentElement.dataset.nyxSidebarHidden=String(nyxSidebarHidden);
+    document.body.style.setProperty('--nyx-visual-dock-current-width',nyxSidebarHidden?'0px':(store.get('nyx.sidebarExpanded',false)?'240px':'50px'),'important');
+    if(nyxSidebarHidden) closeNyxAccountMenu();
+    const dock=document.querySelector('[data-nyx-visual-dock]');
+    if(nyxSidebarHidden && dock?.contains(document.activeElement)) document.activeElement.blur();
+    enforceNyxVisualDockViewport();
+    let notice=document.querySelector('[data-nyx-sidebar-notice]');
+    clearTimeout(nyxSidebarNoticeTimer);
+    notice?.remove();
+    if(nyxSidebarHidden){
+      notice=document.createElement('div');
+      notice.className='nyx-sidebar-notice';
+      notice.dataset.nyxSidebarNotice='';
+      notice.dataset.nyxOwnedOverlay='';
+      notice.setAttribute('role','status');
+      notice.innerHTML='Sidebar hidden. Press <kbd>/</kbd> to bring it back. <button type="button">Show sidebar</button>';
+      notice.querySelector('button').onclick=()=>setNyxSidebarHidden(false);
+      document.body.appendChild(notice);
+      nyxSidebarNoticeTimer=setTimeout(()=>notice.remove(),4500);
+    }
+    document.querySelector('[data-nyx-sidebar-restore]')?.remove();
+    if(nyxSidebarHidden){
+      const restore=document.createElement('button');
+      restore.type='button';restore.className='nyx-sidebar-restore';restore.dataset.nyxSidebarRestore='';restore.dataset.nyxOwnedOverlay='';
+      restore.textContent='Show sidebar';restore.onclick=()=>setNyxSidebarHidden(false);
+      document.body.appendChild(restore);
+    }
+  }
+  function handleNyxSidebarShortcut(event){
+    if(event.defaultPrevented||event.repeat||event.isComposing||event.key!=='/'||event.ctrlKey||event.metaKey||event.altKey||event.shiftKey||!document.body.classList.contains('browser-shell'))return false;
+    const target=event.composedPath?.()[0]||event.target;
+    if(target?.isContentEditable||target?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"]),[role="textbox"],[role="application"],canvas'))return false;
+    event.preventDefault();event.stopImmediatePropagation();
+    setNyxSidebarHidden(!nyxSidebarHidden);
+    return true;
+  }
+  document.addEventListener('keydown',handleNyxSidebarShortcut,true);
   let nyxVisualDockTimer=0;
   let nyxSidebarPreferenceSaveTimer=0;
   let nyxSidebarToggleLockTimer=0;
@@ -3402,6 +3443,16 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function enforceNyxVisualDockViewport(){
     const dock=document.querySelector('[data-nyx-visual-dock]');
     if(!dock) return;
+    if(nyxSidebarHidden){
+      dock.hidden=true;dock.inert=true;dock.setAttribute('aria-hidden','true');
+      dock.style.setProperty('display','none','important');
+      document.querySelectorAll('#desktop>.window.maximized').forEach(win=>{
+        for(const edge of ['left','right'])win.style.setProperty(edge,'0','important');
+        for(const width of ['width','max-width'])win.style.setProperty(width,'100%','important');
+      });
+      return;
+    }
+    dock.hidden=false;dock.inert=false;dock.removeAttribute('aria-hidden');
     if(!document.body.classList.contains('browser-shell') || !nyxVisualDockUsesSideLayout()){
       [
         'position','top','bottom','left','right','width','max-width','height','min-height',
@@ -3472,6 +3523,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const shouldRestore=document.body.classList.contains('browser-shell');
     const dock=document.querySelector('[data-nyx-visual-dock]');
     if(!shouldRestore) return;
+    if(nyxSidebarHidden){enforceNyxVisualDockViewport();return;}
     if(!dock || !dock.isConnected){
       ensureNyxVisualDock();
       return;
@@ -3490,6 +3542,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     nyxVisualDockElementObserver?.disconnect();
     nyxVisualDockObservedElement=dock;
     nyxVisualDockElementObserver=new MutationObserver(()=>{
+      if(nyxSidebarHidden)return;
       if(!dock.isConnected || dock.hidden || dock.inert || dock.getAttribute('aria-hidden')==='true'){
         scheduleNyxVisualDockRecovery();
         return;
@@ -3573,6 +3626,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const state=expanded ? 'expanded' : 'collapsed';
     document.documentElement.dataset.nyxSidebarWidth=state;
     document.body.dataset.nyxSidebarWidth=state;
+    document.body.style.setProperty('--nyx-visual-dock-current-width',nyxSidebarHidden?'0px':(expanded?'240px':'50px'),'important');
     syncNyxVisualDockClock();
     const button=document.querySelector('[data-nyx-dock-expand]');
     if(button){
@@ -3609,7 +3663,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       dock.className='nyx-visual-dock';
       dock.dataset.nyxVisualDock='';
       dock.setAttribute('aria-label','Nyx navigation');
-      dock.innerHTML=`<div class="nyx-visual-dock-head"><div class="nyx-visual-dock-status" aria-label="Nyx online"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a8.5 8.5 0 1 0 8.2 10.8A7 7 0 0 1 12 3Z"></path></svg><i aria-hidden="true"></i><strong>Nyx</strong></div><div class="nyx-visual-dock-head-actions"><button class="nyx-visual-dock-expand" data-nyx-dock-expand type="button" aria-expanded="false" aria-label="Expand tab sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button><button class="nyx-visual-dock-head-add" data-nyx-dock-new-tab type="button" aria-label="New tab"><span aria-hidden="true">+</span></button></div></div>
+      dock.innerHTML=`<div class="nyx-visual-dock-head"><div class="nyx-visual-dock-status" aria-label="Nyx online"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a8.5 8.5 0 1 0 8.2 10.8A7 7 0 0 1 12 3Z"></path></svg><i aria-hidden="true"></i><strong>Nyx</strong></div><div class="nyx-visual-dock-head-actions"><button class="nyx-visual-dock-expand" data-nyx-dock-expand type="button" aria-expanded="false" aria-label="Expand tab sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button><button class="nyx-visual-dock-hide" data-nyx-dock-hide type="button" aria-label="Hide sidebar (/)" title="Hide sidebar (/)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button><button class="nyx-visual-dock-head-add" data-nyx-dock-new-tab type="button" aria-label="New tab"><span aria-hidden="true">+</span></button></div></div>
         <nav aria-label="Nyx destinations">
           <button type="button" data-nyx-dock-item="home" data-browser-shell-home-nav aria-label="Home">${nyxDashboardIcon('home')}<span>Home</span></button>
           <button type="button" data-nyx-dock-item="code-sandbox" data-app-url="/apps/code-studio/" aria-label="Code Sandbox">${nyxDashboardIcon('code')}<span>Code Sandbox</span></button>
@@ -3639,9 +3693,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
     }
     if(dock.parentElement!==document.body) document.body.appendChild(dock);
-    dock.hidden=false;
-    dock.inert=false;
-    dock.removeAttribute('aria-hidden');
+    dock.hidden=nyxSidebarHidden;
+    dock.inert=nyxSidebarHidden;
+    if(nyxSidebarHidden)dock.setAttribute('aria-hidden','true');else dock.removeAttribute('aria-hidden');
     watchNyxVisualDockElement(dock);
     const expandButton=dock.querySelector('[data-nyx-dock-expand]');
     if(expandButton) expandButton.onclick=()=>{
@@ -3657,6 +3711,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       clearTimeout(nyxSidebarPreferenceSaveTimer);
       nyxSidebarPreferenceSaveTimer=setTimeout(queueNyxCloudPreferencesSave,380);
     };
+    dock.querySelector('[data-nyx-dock-hide]').onclick=()=>setNyxSidebarHidden(true);
     const headAddButton=dock.querySelector('[data-nyx-dock-new-tab]');
     if(headAddButton) headAddButton.onclick=()=>openBrowserShellTab('');
     const codeSandboxButton=dock.querySelector('[data-nyx-dock-item="code-sandbox"]');
@@ -5696,7 +5751,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const internalFreshGeometryStyle='html[data-nyx-theme="fresh"] body.theme-fresh .quick-tile{background:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important}html[data-nyx-theme="fresh"] body.theme-fresh .quick-tile:hover{background:color-mix(in srgb,var(--nyx-page-active) 72%,transparent)!important;border-color:var(--nyx-page-line)!important}'+internalSignatureMotionStyle+internalSimpleProfileStyle+internalBloomStageStyle+internalRoseVisibilityStyle;
     const internalAppsMotionFinalStyle=/^(apps)$/i.test(String(page.title || '')) ? '.apps-shell-page .apps-launch-grid>.quick-tile{border-color:rgba(210,229,255,.09)!important;background:rgba(7,10,15,.28)!important;box-shadow:none!important;-webkit-backdrop-filter:blur(8px) saturate(1.04)!important;backdrop-filter:blur(8px) saturate(1.04)!important}.apps-shell-page .apps-launch-grid>.quick-tile .quick-icon{border-color:transparent!important}.apps-shell-page .apps-launch-grid>.quick-tile:is(:hover,:focus-visible){transform:translateY(-2px)!important;border-color:rgba(210,229,255,.16)!important;background:rgba(255,255,255,.07)!important;box-shadow:none!important}.apps-shell-page .apps-launch-grid>.quick-tile:is(:hover,:focus-visible) .quick-icon{transform:scale(1.025)!important;border-color:rgba(210,229,255,.14)!important;filter:brightness(1.04)!important}@media(prefers-reduced-motion:reduce){.apps-shell-page .apps-launch-grid>.quick-tile:is(:hover,:focus-visible),.apps-shell-page .apps-launch-grid>.quick-tile:is(:hover,:focus-visible) .quick-icon{transform:none!important}}' : '';
     const internalCoolVisualStyle='html{--nyx-page-canvas:transparent!important;--nyx-page-top:rgba(5,7,11,.30)!important;--nyx-page-field:rgba(9,12,17,.46)!important;--nyx-page-panel:rgba(7,10,15,.32)!important;--nyx-page-active:rgba(255,255,255,.07)!important;--nyx-page-line:rgba(210,229,255,.10)!important;--nyx-page-text:#d8e1ed!important;--nyx-page-muted:#8e9bad!important;--nyx-page-accent:#7898c5!important;--nyx-page-bright:#a8bfdf!important;background:transparent!important;background-image:none!important}html body,.shell-page,.browser-shell-page,.apps-shell-page{background-color:transparent!important;background-image:none!important}.apps-shell-page .apps-launch-grid>.quick-tile{background:rgba(7,10,15,.28)!important;background-image:none!important;border-color:rgba(210,229,255,.09)!important;box-shadow:none!important;-webkit-backdrop-filter:blur(8px) saturate(1.04)!important;backdrop-filter:blur(8px) saturate(1.04)!important}.apps-shell-page .apps-launch-grid>.quick-tile:is(:hover,:focus-visible){background:rgba(255,255,255,.07)!important;background-image:none!important;border-color:rgba(210,229,255,.16)!important;box-shadow:none!important}.apps-shell-page .apps-launch-grid>.quick-tile .quick-icon{background-image:none!important}';
-    const internalDenseAppsStyle=/^(apps)$/i.test(String(page.title || '')) ? '.apps-shell-page{padding:22px 24px 56px!important}.apps-shell-page .apps-launch-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:16px!important}.apps-shell-page .apps-launch-grid>.quick-tile{width:100%!important;height:auto!important;min-height:0!important;aspect-ratio:16/10!important;padding:13px!important;border-radius:18px!important;transition:background-color .15s ease,border-color .15s ease,transform .15s ease!important}.apps-shell-page .apps-launch-grid>.quick-tile:is(:hover,:focus-visible){transform:translateY(-2px)!important}.apps-shell-page .apps-launch-grid>.quick-tile .quick-icon{width:62px!important;height:62px!important;border-radius:14px!important}.apps-shell-page .apps-launch-grid>.quick-tile[data-domain="traxmojo.com"] .quick-icon{width:100px!important;height:100px!important}.apps-shell-page .apps-launch-grid>.quick-tile span{font-size:13px!important}@media(max-width:1240px){.apps-shell-page .apps-launch-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important}}@media(max-width:1020px){.apps-shell-page .apps-launch-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}}@media(max-width:760px){.apps-shell-page .apps-launch-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}@media(max-width:500px){.apps-shell-page{padding:18px 14px 48px!important}.apps-shell-page .apps-launch-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}.apps-shell-page .apps-launch-grid>.quick-tile{border-radius:14px!important}.apps-shell-page .apps-launch-grid>.quick-tile .quick-icon{width:50px!important;height:50px!important}.apps-shell-page .apps-launch-grid>.quick-tile span{font-size:12px!important}}' : '';
+    const internalDenseAppsStyle=/^(apps)$/i.test(String(page.title || '')) ? '.apps-shell-page{padding:22px 24px 56px!important}.apps-shell-page .apps-launch-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:16px!important}.apps-shell-page .apps-launch-grid>.quick-tile{width:100%!important;height:auto!important;min-height:0!important;aspect-ratio:16/10!important;padding:13px!important;border-radius:18px!important;transition:background-color .15s ease,border-color .15s ease,transform .15s ease!important}.apps-shell-page .apps-launch-grid>.quick-tile:is(:hover,:focus-visible){transform:translateY(-2px)!important}.apps-shell-page .apps-launch-grid>.quick-tile .quick-icon{width:62px!important;height:62px!important;border-radius:14px!important}.apps-shell-page .apps-launch-grid>.quick-tile[data-domain="traxmojo.com"] .quick-icon{width:100px!important;height:100px!important}.apps-shell-page .apps-launch-grid>.quick-tile span{font-size:13px!important}@media(max-width:760px){.apps-shell-page .apps-launch-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}@media(max-width:500px){.apps-shell-page{padding:18px 14px 48px!important}.apps-shell-page .apps-launch-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}.apps-shell-page .apps-launch-grid>.quick-tile{border-radius:14px!important}.apps-shell-page .apps-launch-grid>.quick-tile .quick-icon{width:50px!important;height:50px!important}.apps-shell-page .apps-launch-grid>.quick-tile span{font-size:12px!important}}' : '';
     const panicFrameScript='let NYX_PANIC_CAPTURE=false;function nyxPanicCombo(e){const key=String(e.key||"").trim();if(!key||["Control","Shift","Alt","Meta"].includes(key))return "";const parts=[];if(e.ctrlKey)parts.push("Ctrl");if(e.altKey)parts.push("Alt");if(e.shiftKey)parts.push("Shift");if(e.metaKey)parts.push("Meta");parts.push(key.length===1?key.toUpperCase():key.replace(/^Arrow/,""));return parts.join("+")}document.addEventListener("click",e=>{if(e.target.closest("[data-panic-capture]"))NYX_PANIC_CAPTURE=true;if(e.target.closest("[data-panic-clear]"))NYX_PANIC_CAPTURE=false},true);document.addEventListener("keydown",e=>{if(!NYX_PANIC_CAPTURE)return;const combo=nyxPanicCombo(e);if(!combo)return;e.preventDefault();e.stopPropagation();NYX_PANIC_CAPTURE=false;document.querySelectorAll("[data-panic-key-display]").forEach(el=>el.textContent=combo);parent.postMessage({type:"nyx:panic-key-set",combo},"*")},true);';
     const internalPaintScript='';
     const finalInternalPaintScript='document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=Number(NYX_EFFECT_SPEED).toFixed(1)+"x"});';
@@ -9688,7 +9743,20 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   const nyxDefaultGlobalApps=[
     ['code-studio','code-studio','Code Sandbox','/apps/code-studio/'],
-    ['link-checker','link-checker','Link Checker','/apps/link-checker/'],['link-generator','link-generator','Link Generator','/apps/link-generator/'],['jsdelivr-publisher','jsdelivr-publisher','JSDelivr Publisher','/apps/jsdelivr-publisher/'],['nyx-api-keys','api-keys','Nyx API Keys','/apps/api-keys/'],['youtube','youtube.com','YouTube','/apps/nyxtube/'],['pirate-cove','games','GAMES','/assets/games/'],['nyx-chat','nyx-chat','Nyx Chat','/apps/chat/'],['geforce-now','geforcenow','GeForce Now','https://play.geforcenow.com/'],['roblox','roblox.com','Roblox','https://web.cloudmoonapp.com/game/com.roblox.client/'],['discord','discord.com','Discord','https://discord.com/app'],['spotify','spotify.com','Spotify','https://open.spotify.com/'],['nyxify','nyxify','Nyxify/built in music','/apps/nyxify/'],['google','google.com','Google','https://www.google.com/'],['study','docs.google.com','Study','https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0'],['duck-ai','duck.ai','Duck AI','https://duck.ai/'],['nyx-ai','nyx-ai','Nyx AI','nyx://ai'],['wikipedia','wikipedia.org','Wikipedia','https://www.wikipedia.org/'],['movies','cinejoy.to','Movies','https://cinejoy.to/'],['more-movie-sites','fmhy.net','More Movie Sites','https://fmhy.net/video#p-stream-forks'],['tiktok','tiktok.com','TikTok','https://www.tiktok.com/'],['instagram','instagram.com','Instagram','https://www.instagram.com/'],['snapchat','snapchat.com','Snapchat','https://www.snapchat.com/'],['amazon','amazon.com','Amazon','https://www.amazon.com/'],['reddit','reddit.com','Reddit','https://www.reddit.com/'],['twitter','x.com','Twitter','https://x.com/'],['tcgplayer','tcgplayer.com','TCGPlayer','https://www.tcgplayer.com/'],['cps-test','cpstest.org','CPS Test','https://cpstest.org/'],['chess','chess.com','Chess.com','https://www.chess.com/'],['animex','animex.one','Animex','https://animex.one/'],['chatgpt','chatgpt.com','AI','https://chatgpt.com/'],['steam','store.steampowered.com','Steam','https://store.steampowered.com/'],['crunchyroll','crunchyroll.com','Crunchyroll','https://www.crunchyroll.com/'],['crazygames','crazygames.com','CrazyGames','https://www.crazygames.com/'],['newgrounds','newgrounds.com','Newgrounds','https://www.newgrounds.com/'],['twitch','twitch.tv','Twitch','https://www.twitch.tv/'],['kick','kick.com','Kick','https://kick.com/'],['pluto-tv','pluto.tv','Pluto TV','https://pluto.tv/'],['skribbl','skribbl.io','Skribbl.io','https://skribbl.io/'],['slither','slither.io','Slither.io','https://slither.io/'],['geoguessr','geoguessr.com','GeoGuessr','https://www.geoguessr.com/'],['y8-games','y8.com','Y8 Games','https://www.y8.com/'],['itch','itch.io','itch.io','https://itch.io/']
+    ['link-checker','link-checker','Link Checker','/apps/link-checker/'],
+    ['link-generator','link-generator','Link Generator','/apps/link-generator/'],
+    ['jsdelivr-publisher','jsdelivr-publisher','JSDelivr Publisher','/apps/jsdelivr-publisher/'],
+    ['nyx-api-keys','api-keys','Nyx API Keys','/apps/api-keys/'],
+    ['youtube','youtube.com','YouTube','/apps/nyxtube/'],
+    ['pirate-cove','games','GAMES','/assets/games/'],
+    ['nyx-chat','nyx-chat','Nyx Chat','/apps/chat/'],
+    ['nyxify','nyxify','Nyxify/built in music','/apps/nyxify/'],
+    ['duck-ai','duck.ai','Duck AI','https://duck.ai/'],
+    ['nyx-ai','nyx-ai','Nyx AI','nyx://ai'],
+    ['movies','cinejoy.to','Movies','https://cinejoy.to/'],
+    ['more-movie-sites','fmhy.net','More Movie Sites','https://fmhy.net/video#p-stream-forks'],
+    ['tiktok','tiktok.com','TikTok','https://www.tiktok.com/'],
+    ['animex','animex.one','Animex','https://animex.one/']
   ].map(([id,icon,name,url])=>({id,icon,name,url})).map(app=>app.id==='youtube'?{...app,name:'NyxTube'}:app);
   const nyxHiddenGlobalAppIds=new Set(['code-tutorials']);
   let nyxGlobalApps=nyxDefaultGlobalApps.map(app=>({...app}));
@@ -11092,6 +11160,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       try{doc.__nyxBrowserAltBridge=true}catch{}
       const handler=event=>{
         try{
+          if(handleNyxSidebarShortcut(event))return;
           if(!event?.altKey || event.ctrlKey || event.metaKey || event.location===2) return;
           const key=String(event.key || '').toLowerCase();
           if(key==='alt'){

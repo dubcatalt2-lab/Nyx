@@ -658,3 +658,7 @@
     }
   }
 }
+
+html[data-nyx-home-design="redesigned"]:not([data-nyx-sidebar-width="expanded"]) body.browser-shell .nyx-visual-dock-head-actions{gap:0!important}
+html[data-nyx-home-design="redesigned"]:not([data-nyx-sidebar-width="expanded"]) body.browser-shell .nyx-visual-dock-expand,
+html[data-nyx-home-design="redesigned"] body.browser-shell .nyx-visual-dock-hide{width:22px!important;min-width:22px!important;max-width:22px!important}

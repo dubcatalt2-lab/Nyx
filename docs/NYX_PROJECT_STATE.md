@@ -1,3 +1,9 @@
+## LOCAL 2026-09-11 - Sidebar visibility and Apps cleanup
+
+- Sidebar can be hidden with its X control or unmodified /, with a neutral temporary restore hint. The shortcut ignores editable controls, composition/repeat/modifier keys, and works in accessible browser-frame documents through the existing keyboard bridge. Touch devices retain a small restore button. Visibility is session-only; reload restores navigation. Explicit hiding releases the sidebar lane and is respected by automatic repair/recovery, preserving saved expansion and side preferences.
+- Apps defaults now retain Nyx built-ins plus TikTok, Animex, Duck AI, Movies and More Movie Sites. A one-time transactional catalog migration removes other external entries from the stored catalog on the next deployment; later owner-managed additions remain supported. Existing hidden/retired built-ins stay hidden. No live catalog was changed this turn.
+- The generated Apps page had a late six/five-column override; it now uses four desktop columns with three/two responsive columns. Source and production desktop/mobile browser checks cover app membership, duplicate prevention, frame shortcuts, typing, rail recovery, touch restoration after notice expiry and layout. The stored-catalog migration check preserves later owner additions. Production build, 117-file deployment/branding checks and diff checks passed. Not pushed or deployed.
+
 ## LIVE 2026-09-11 - AI controls (d8d3e1b)
 
 - Pushed and deployed d8d3e1b to OVH. Separate Premium monthly limits (Luna 25,000 / Gemini 50,000), compact collapsible status cards and owner key reveal are live. Backend quota/auth/storage checks and production desktop/mobile fixtures passed; VPS build and 117-file deployment/branding checks passed.

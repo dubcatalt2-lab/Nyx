@@ -1,0 +1,63 @@
+import {chromium} from 'playwright';
+import express from 'express';
+import assert from 'node:assert/strict';
+const app=express();
+app.get('/api/auth-config',(q,r)=>r.json({enabled:false}));
+app.get('/healthz',(q,r)=>r.json({ok:true}));
+app.use('/api',(q,r)=>r.json({}));
+app.use(express.static(process.env.NYX_TEST_ASSET_ROOT||'.')); 
+const server=app.listen(8310);
+const browser=await chromium.launch();
+try{
+ const page=await browser.newPage({viewport:{width:1280,height:900}});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.addInitScript(()=>{
+  if(window!==window.top)return;
+  for(const [key,value] of Object.entries({'nyx.browserShellMode':'false','nyx.setupComplete':'true','nyx.tosAcceptedVersion':'2026-07-30','nyx.releaseNotes.2026-08-31-new-nyx.device':'2026-08-31-new-nyx'})) localStorage.setItem(key,value);
+ });
+ await page.route('**/*',r=>new URL(r.request().url()).origin==='http://localhost:8310'?r.continue():r.abort());
+ await page.goto('http://localhost:8310');
+ await page.waitForSelector('[data-nyx-dock-item="settings"]');
+ // External services are blocked in this local UI test; release the loading input lock.
+ await page.evaluate(()=>{document.body.classList.remove('nyx-loading-active');document.querySelectorAll('[inert]').forEach(e=>e.removeAttribute('inert'));document.querySelector('#nyxStudyHubStartup')?.remove()});
+
+ const dock=page.locator('[data-nyx-visual-dock]');
+ await page.locator('[data-nyx-dock-hide]').click();
+ await dock.waitFor({state:'hidden'});
+ assert.equal(await page.locator('[data-nyx-sidebar-notice]').count(),1);
+ await page.screenshot({path:'.codex-artifacts/sidebar-hidden.png'});
+ await page.setViewportSize({width:1000,height:700});
+ await page.waitForTimeout(550);
+ assert(!await dock.isVisible());
+ assert.equal(await page.evaluate(()=>getComputedStyle(document.body).getPropertyValue('--nyx-visual-dock-current-width').trim()),'0px');
+ await page.keyboard.press('/');await dock.waitFor({state:'visible'});
+ await page.evaluate(()=>{const e=document.createElement('textarea');e.id='shortcut-typing-test';document.body.appendChild(e);e.focus()});
+ await page.keyboard.type('/');assert.equal(await page.locator('#shortcut-typing-test').inputValue(),'/');assert(await dock.isVisible());
+ await page.evaluate(()=>document.querySelector('#shortcut-typing-test').remove());
+ await page.setViewportSize({width:1280,height:900});
+ await page.locator('[data-nyx-dock-item="apps"]').click();
+ await page.waitForFunction(()=>[...document.querySelectorAll('iframe')].some(f=>{try{return !!f.contentDocument?.querySelector('[data-nyx-global-app-grid]')}catch{return false}}));
+ const appsFrame=await (async()=>{for(const f of page.frames())if(await f.locator('[data-nyx-global-app-grid]').count())return f;throw Error('No Apps frame')})();
+ const ids=await appsFrame.locator('[data-global-app-id]').evaluateAll(nodes=>nodes.map(n=>n.dataset.globalAppId));
+ assert.equal(new Set(ids).size,ids.length,'Apps must not contain duplicates');
+ for(const id of ['tiktok','animex','duck-ai','movies','more-movie-sites','code-studio','youtube','nyx-api-keys','nyxify'])assert(ids.includes(id),id);
+ for(const id of ['spotify','roblox','geforce-now','discord','google','instagram'])assert(!ids.includes(id),id);
+ assert.equal(await appsFrame.locator('[data-nyx-global-app-grid]').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),4);
+ await page.screenshot({path:'.codex-artifacts/apps-cleanup-desktop.png'});
+ await appsFrame.locator('h1').click();await appsFrame.press('body','/');await dock.waitFor({state:'hidden'});
+ await appsFrame.press('body','/');await dock.waitFor({state:'visible'});
+ await page.setViewportSize({width:390,height:844});await page.waitForTimeout(350);
+ assert(await appsFrame.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ await page.screenshot({path:'.codex-artifacts/apps-cleanup-mobile.png'});
+ const touch=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
+ await touch.addInitScript(()=>{for(const [k,v] of Object.entries({'nyx.setupComplete':'true','nyx.tosAcceptedVersion':'2026-07-30','nyx.releaseNotes.2026-08-31-new-nyx.device':'2026-08-31-new-nyx'}))localStorage.setItem(k,v)});
+ await touch.route('**/*',r=>new URL(r.request().url()).origin==='http://localhost:8310'?r.continue():r.abort());
+ await touch.goto('http://localhost:8310');await touch.waitForSelector('[data-nyx-dock-item="settings"]');
+ await touch.evaluate(()=>{document.body.classList.remove('nyx-loading-active');document.querySelectorAll('[inert]').forEach(e=>e.removeAttribute('inert'));document.querySelector('#nyxStudyHubStartup')?.remove();document.activeElement?.blur()});
+ await touch.keyboard.press('/');await touch.locator('[data-nyx-visual-dock]').waitFor({state:'hidden'});
+ await touch.locator('[data-nyx-sidebar-notice]').waitFor({state:'detached'});
+ await touch.locator('[data-nyx-sidebar-restore]').click();await touch.locator('[data-nyx-visual-dock]').waitFor({state:'visible'});
+ await touch.close();
+ assert.deepEqual(errors,[]);
+ console.log('PASS: sidebar hide/restore, resize recovery, editable slash, framed shortcut, curated Apps, four desktop columns and mobile overflow');
+}finally{await browser.close();server.close()}

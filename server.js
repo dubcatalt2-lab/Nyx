@@ -278,6 +278,7 @@ const nyxCustomRoleCollection = "nyxCustomRoles";
 const nyxGlobalAppsCollection = "nyxConfiguration";
 const nyxGlobalAppsDocument = "globalApps";
 const nyxGlobalAppsLimit = 100;
+const nyxAppsCleanupField = "nyxAppsCleanup20260911";
 const nyxCloudGamingAppMigrationField = "cloudGamingAppInitialized";
 const nyxCloudGamingGamesMergeMigrationField = "cloudGamingMergedIntoGames";
 const nyxCloudGamingGlobalApp = Object.freeze({ id: "cloud-gaming", icon: "cloud-gaming", name: "Cloud Gaming", url: "/apps/cloud-gaming/" });
@@ -331,41 +332,13 @@ const nyxDefaultGlobalApps = Object.freeze([
   nyxTubeGlobalApp,
   nyxGamesGlobalApp,
   { id: "nyx-chat", icon: "nyx-chat", name: "Nyx Chat", url: "/apps/chat/" },
-  { id: "geforce-now", icon: "geforcenow", name: "GeForce Now", url: "https://play.geforcenow.com/" },
-  { id: "roblox", icon: "roblox.com", name: "Roblox", url: "https://web.cloudmoonapp.com/game/com.roblox.client/" },
-  { id: "discord", icon: "discord.com", name: "Discord", url: "https://discord.com/app" },
-  { id: "spotify", icon: "spotify.com", name: "Spotify", url: "https://open.spotify.com/" },
   nyxifyGlobalApp,
-  { id: "google", icon: "google.com", name: "Google", url: "https://www.google.com/" },
-  { id: "study", icon: "docs.google.com", name: "Study", url: "https://docs.google.com/document/d/180tBipQWefvmr0Mt61vnWqR0z4ill1hKVlOjNHeaGuI/edit?tab=t.0" },
   { id: "duck-ai", icon: "duck.ai", name: "Duck AI", url: "https://duck.ai/" },
   { id: "nyx-ai", icon: "nyx-ai", name: "Nyx AI", url: "nyx://ai" },
-  { id: "wikipedia", icon: "wikipedia.org", name: "Wikipedia", url: "https://www.wikipedia.org/" },
   nyxMoviesGlobalApp,
   { id: "more-movie-sites", icon: "fmhy.net", name: "More Movie Sites", url: "https://fmhy.net/video#p-stream-forks" },
   { id: "tiktok", icon: "tiktok.com", name: "TikTok", url: "https://www.tiktok.com/" },
-  { id: "instagram", icon: "instagram.com", name: "Instagram", url: "https://www.instagram.com/" },
-  { id: "snapchat", icon: "snapchat.com", name: "Snapchat", url: "https://www.snapchat.com/" },
-  { id: "amazon", icon: "amazon.com", name: "Amazon", url: "https://www.amazon.com/" },
-  { id: "reddit", icon: "reddit.com", name: "Reddit", url: "https://www.reddit.com/" },
-  { id: "twitter", icon: "x.com", name: "Twitter", url: "https://x.com/" },
-  { id: "tcgplayer", icon: "tcgplayer.com", name: "TCGPlayer", url: "https://www.tcgplayer.com/" },
-  { id: "cps-test", icon: "cpstest.org", name: "CPS Test", url: "https://cpstest.org/" },
-  { id: "chess", icon: "chess.com", name: "Chess.com", url: "https://www.chess.com/" },
   { id: "animex", icon: "animex.one", name: "Animex", url: "https://animex.one/" },
-  { id: "chatgpt", icon: "chatgpt.com", name: "AI", url: "https://chatgpt.com/" },
-  { id: "steam", icon: "store.steampowered.com", name: "Steam", url: "https://store.steampowered.com/" },
-  { id: "crunchyroll", icon: "crunchyroll.com", name: "Crunchyroll", url: "https://www.crunchyroll.com/" },
-  { id: "crazygames", icon: "crazygames.com", name: "CrazyGames", url: "https://www.crazygames.com/" },
-  { id: "newgrounds", icon: "newgrounds.com", name: "Newgrounds", url: "https://www.newgrounds.com/" },
-  { id: "twitch", icon: "twitch.tv", name: "Twitch", url: "https://www.twitch.tv/" },
-  { id: "kick", icon: "kick.com", name: "Kick", url: "https://kick.com/" },
-  { id: "pluto-tv", icon: "pluto.tv", name: "Pluto TV", url: "https://pluto.tv/" },
-  { id: "skribbl", icon: "skribbl.io", name: "Skribbl.io", url: "https://skribbl.io/" },
-  { id: "slither", icon: "slither.io", name: "Slither.io", url: "https://slither.io/" },
-  { id: "geoguessr", icon: "geoguessr.com", name: "GeoGuessr", url: "https://www.geoguessr.com/" },
-  { id: "y8-games", icon: "y8.com", name: "Y8 Games", url: "https://www.y8.com/" },
-  { id: "itch", icon: "itch.io", name: "itch.io", url: "https://itch.io/" }
 ]);
 const nyxCustomRoleIdPattern = /^[a-z0-9][a-z0-9-]{1,31}$/;
 const nyxCustomRoleCacheTtlMs = 60_000;
@@ -3772,7 +3745,7 @@ function nyxGlobalAppsFromSnapshot(snapshot) {
 async function nyxGlobalApps(firebase) {
   const reference = firebase.firestore.collection(nyxGlobalAppsCollection).doc(nyxGlobalAppsDocument);
   const snapshot = await reference.get();
-  if (snapshot.data()?.[nyxCloudGamingAppMigrationField] === true && snapshot.data()?.[nyxCloudGamingGamesMergeMigrationField] === true && snapshot.data()?.[nyxMediaAppsRetiredField] === true && snapshot.data()?.[nyxTubeReintroducedField] === true && snapshot.data()?.[nyxTubeCatalogNameField] === true && snapshot.data()?.[nyxifyReintroducedField] === true && snapshot.data()?.[nyxifyBuiltInMusicNameField] === true && snapshot.data()?.[nyxApiKeysAppMigrationField] === true && snapshot.data()?.[nyxCodeStudioAppMigrationField] === true && snapshot.data()?.[nyxCodeToolsCatalogV2MigrationField] === true && snapshot.data()?.[nyxCodeTutorialsHiddenMigrationField] === true && snapshot.data()?.[nyxJsdelivrPublisherAppMigrationField] === true && snapshot.data()?.[nyxGamesAppMigrationField] === true && snapshot.data()?.[nyxMoviesCinejoyMigrationField] === true) return nyxGlobalAppsFromSnapshot(snapshot);
+  if (snapshot.data()?.[nyxAppsCleanupField] === true && snapshot.data()?.[nyxCloudGamingAppMigrationField] === true && snapshot.data()?.[nyxCloudGamingGamesMergeMigrationField] === true && snapshot.data()?.[nyxMediaAppsRetiredField] === true && snapshot.data()?.[nyxTubeReintroducedField] === true && snapshot.data()?.[nyxTubeCatalogNameField] === true && snapshot.data()?.[nyxifyReintroducedField] === true && snapshot.data()?.[nyxifyBuiltInMusicNameField] === true && snapshot.data()?.[nyxApiKeysAppMigrationField] === true && snapshot.data()?.[nyxCodeStudioAppMigrationField] === true && snapshot.data()?.[nyxCodeToolsCatalogV2MigrationField] === true && snapshot.data()?.[nyxCodeTutorialsHiddenMigrationField] === true && snapshot.data()?.[nyxJsdelivrPublisherAppMigrationField] === true && snapshot.data()?.[nyxGamesAppMigrationField] === true && snapshot.data()?.[nyxMoviesCinejoyMigrationField] === true) return nyxGlobalAppsFromSnapshot(snapshot);
   return firebase.firestore.runTransaction(async transaction => {
     const currentSnapshot = await transaction.get(reference);
     const apps = nyxGlobalAppsFromSnapshot(currentSnapshot);
@@ -3914,6 +3887,13 @@ async function nyxGlobalApps(firebase) {
         updatedAt: new Date().toISOString()
       }, { merge: true });
     }
+    if (currentSnapshot.data()?.[nyxAppsCleanupField] !== true) {
+      const retainedExternal = new Set(['tiktok','animex','duck-ai','movies','more-movie-sites']);
+      const retained = apps.filter(app => /^\/(?!\/)/.test(app.url) || app.url.startsWith('nyx://') || retainedExternal.has(app.id));
+      apps.splice(0, apps.length, ...retained);
+      transaction.set(reference, {apps, [nyxAppsCleanupField]:true, updatedAt:new Date().toISOString()}, {merge:true});
+    }
+
     return apps;
   });
 }

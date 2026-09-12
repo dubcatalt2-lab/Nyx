@@ -35,7 +35,7 @@ const context=vm.createContext({app,AsyncLocalStorage,aiAllowanceConfig,createAi
 vm.runInContext(source.slice(source.indexOf('const nyxAiBudgetContext ='),source.indexOf('async function nyxAiRateLimit')),context);
 vm.runInContext(['nyxAiKey','nyxAiEndpoint','nyxAiCatalogEndpoint','nyxAiSharedProvider','nyxAiGlobalProvider','nyxAiRequestCredential'].map(declaration).join('\n'),context);
 vm.runInContext(declaration('nyxAiProviderFetch')+'\n'+declaration('authenticatedNyxCloudUser'),context);
-installDeveloperApi(app,{firebase:async()=>firebase,authenticate:context.authenticatedNyxUser,ownerUid:()=> 'owner',passwordHash:()=>'',sameOrigin:()=>true,clientIp:()=> 'school',configured:()=>true,page:(_req,res)=>res.send('API'),send:async(req,payload)=>context.nyxBudgetedAiFetch('shared','https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{authorization:'Bearer fixture-inference'},body:JSON.stringify(payload)})});
+installDeveloperApi(app,{firebase:async()=>firebase,authenticate:context.authenticatedNyxUser,ownerUid:()=> 'owner',passwordHash:()=>'',sameOrigin:()=>true,device:async()=> 'browser',configured:()=>true,page:(_req,res)=>res.send('API'),send:async(req,payload)=>context.nyxBudgetedAiFetch('shared','https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{authorization:'Bearer fixture-inference'},body:JSON.stringify(payload)})});
 for(const path of ['/api/nyx-ai'])app.post(path,async(req,res)=>{
   try {
     if(path==='/api/v1/ai')return res.status(410).json({error:'Retired'});

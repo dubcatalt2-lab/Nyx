@@ -36,7 +36,7 @@ const collection=routeDb.collection;
 routeDb.collection=name=>{const base=collection(name);return {...base,doc(id){const r=base.doc(id);return {...r,async set(value,options){routeDb.records.set(r.path,options?.merge?{...routeDb.records.get(r.path),...value}:value)}};},orderBy(){let lower='',upper='~',after='',limit=100;const q={endAt(v){upper=v;return q},startAt(v){lower=v;return q},startAfter(v){after=v;return q},limit(v){limit=v;return q},async get(){return {docs:[...routeDb.records].filter(([k])=>k.startsWith(name+'/')).map(([k,v])=>({id:k.slice(name.length+1),data:()=>v})).filter(d=>d.id>=lower&&d.id<=upper&&d.id>after).sort((a,b)=>a.id.localeCompare(b.id)).slice(0,limit)}}};return q;}};};
 const firebase={firestore:routeDb,auth:{getUser:async uid=>{if(!users.has(uid))throw Error('Missing user');return users.get(uid);}}};
 const app=express();app.use(express.json());let calls=0,mode='ok';
-installDeveloperApi(app,{firebase:async()=>firebase,authenticate:async req=>{const uid=req.get('authorization')?.replace('Bearer ','');if(!users.has(uid))throw Object.assign(Error('Sign in'),{status:401});return {firebase,token:{uid}};},ownerUid:()=> 'owner',passwordHash:()=>digest,sameOrigin:req=>req.get('origin')!=='https://evil.test',clientIp:req=>req.get('x-test-ip')||'school',configured:()=>true,page:(_req,res)=>res.send('public API page'),send:async(req,payload)=>{
+installDeveloperApi(app,{firebase:async()=>firebase,authenticate:async req=>{const uid=req.get('authorization')?.replace('Bearer ','');if(!users.has(uid))throw Object.assign(Error('Sign in'),{status:401});return {firebase,token:{uid,firebase:{sign_in_provider:req.get('x-test-anonymous')?'anonymous':'password'}}};},ownerUid:()=> 'owner',passwordHash:()=>digest,sameOrigin:req=>req.get('origin')!=='https://evil.test',device:async req=>req.get('x-test-device')||'browser',configured:()=>true,page:(_req,res)=>res.send('public API page'),send:async(req,payload)=>{
   if(mode==='presend')throw Object.assign(Error('budget reached'),{status:429});
   req.nyxApiSent=true;calls++;assert.equal(payload.model,GEMINI);
   if(mode==='timeout')throw Error('timeout');
@@ -48,8 +48,12 @@ const request=(path,uid,body,method,headers={})=>fetch(origin+path,{method:metho
 try {
   assert.equal((await request('/api')).status,200);
   assert.equal((await request('/api/developer/me')).status,401);assert.equal((await request('/api/developer/owner/accounts','member')).status,403);assert.equal((await request('/api/developer/owner/accounts','owner')).status,403);
-  assert.equal((await request('/api/developer/keys','unverified',{})).status,403);
+  const emailFree=await (await request('/api/developer/keys','unverified',{})).json();assert.ok(emailFree.key);
+  delete users.get('unverified').email;
+  assert.equal((await request('/api/v1/ai',emailFree.key,{messages:[{role:'user',content:'Hi'}]})).status,200,'No email required for playback');
+  calls=0;await request('/api/developer/keys','unverified',null,'DELETE');
   assert.equal((await request('/api/developer/keys','disabled',{})).status,403);
+  assert.equal((await request('/api/developer/keys','member',{},null,{'x-test-anonymous':'1'})).status,403,'Guest sessions cannot claim a key');
   assert.equal((await request('/api/developer/keys','member',{},null,{origin:'https://evil.test'})).status,403);
   const issued=await (await request('/api/developer/keys','member',{})).json();assert.ok(issued.key);
   assert.equal((await request('/api/developer/keys','owner',{})).status,200,'Other accounts have independent keys');
@@ -62,22 +66,28 @@ try {
   const listed=await (await request('/api/developer/owner/accounts','owner',null,null,{cookie})).json();assert.equal(listed.members.length,2);assert.ok(listed.members.every(m=>m.key.prefix.startsWith('n_api_')));assert.ok(!JSON.stringify(listed).includes(issued.key));
   assert.equal((await request('/api/developer/owner/accounts?cursor=bad','owner',null,null,{cookie})).status,400);
   for(let i=0;i<52;i++){const uid='listed'+i,id=createHash('sha256').update(uid).digest('hex');users.set(uid,{displayName:'Listed '+i,email:'test@example.test',emailVerified:true});routeDb.records.set('nyxDeveloperApi/account-'+id,{uid,activeKey:id,balance:1000,models:[GEMINI],dailyRequests:20,minuteRequests:4,maxOutput:512});routeDb.records.set('nyxDeveloperApi/key-'+id,{uid,prefix:'n_api_fixture',label:'Key'});}
-  const firstPage=await (await request('/api/developer/owner/accounts','owner',null,null,{cookie})).json();assert.equal(firstPage.members.length,50);assert.ok(firstPage.nextCursor);
-  const secondPage=await (await request('/api/developer/owner/accounts?cursor='+firstPage.nextCursor,'owner',null,null,{cookie})).json();assert.equal(secondPage.members.length,4);assert.equal(secondPage.nextCursor,null);assert.equal(new Set([...firstPage.members,...secondPage.members].map(m=>m.uid)).size,54);
+  const firstPage=await (await request('/api/developer/owner/accounts','owner',null,null,{cookie})).json();assert.equal(firstPage.members.length,49);assert.ok(firstPage.nextCursor);
+  const secondPage=await (await request('/api/developer/owner/accounts?cursor='+firstPage.nextCursor,'owner',null,null,{cookie})).json();assert.equal(secondPage.members.length,5);assert.equal(secondPage.nextCursor,null);assert.equal(new Set([...firstPage.members,...secondPage.members].map(m=>m.uid)).size,54);
   const settings={monthlyTokenLimit:60000,addTokens:100,dailyRequests:30,minuteRequests:5,maxOutput:600,models:[GEMINI]};
+  assert.equal((await request('/api/developer/owner/account/member','owner',settings,null,{cookie})).status,403,'Free members cannot receive monthly Premium limits');
+  const free=await (await request('/api/developer/me','member')).json();assert.equal(free.monthlyTokenLimit,0);assert.equal(free.balance,1000);assert.equal(free.premium,false);
+  routeDb.records.set('nyxUserAdministration/member',{subscriptionStatus:'premium'});
+  const premium=await (await request('/api/developer/me','member')).json();assert.equal(premium.balance,50000);assert.equal(premium.monthlyTokenLimit,50000);
   assert.equal((await request('/api/developer/owner/account/member','owner',settings,null,{cookie})).status,200);assert.equal(routeDb.records.get('nyxUserAdministration/member').aiMonthlyTokenLimit,60000);
   assert.equal((await request('/api/developer/owner/account/member','owner',{...settings,addTokens:-1},null,{cookie})).status,400);
+  routeDb.records.set('nyxUserAdministration/member',{subscriptionStatus:'free',aiMonthlyTokenLimit:60000});
+  const downgraded=await (await request('/api/developer/me','member')).json();assert.equal(downgraded.balance,1100);assert.equal(downgraded.monthlyTokenLimit,0);
   const prompt={messages:[{role:'user',content:'Hi'}]};
   const ok=await request('/api/v1/ai',issued.key,prompt);assert.equal(ok.status,200);assert.equal(calls,1);
   assert.equal((await (await request('/api/developer/me','member')).json()).balance,1090);
   assert.equal((await request('/api/v1/ai',issued.key,{...prompt,model:LUNA})).status,403);assert.equal(calls,1);
   users.get('member').emailVerified=false;
-  assert.equal((await request('/api/v1/ai',issued.key,prompt)).status,403);assert.equal(calls,1);
+  assert.equal((await request('/api/v1/ai',issued.key,prompt)).status,200);assert.equal(calls,2);
   users.get('member').emailVerified=true;
   mode='presend';assert.equal((await request('/api/v1/ai',issued.key,prompt)).status,429);
-  assert.equal((await (await request('/api/developer/me','member')).json()).balance,1090,'Pre-send failure refunds tokens');
+  assert.equal((await (await request('/api/developer/me','member')).json()).balance,1080,'Pre-send failure refunds tokens');
   mode='timeout';assert.equal((await request('/api/v1/ai',issued.key,prompt)).status,503);
-  assert.ok((await (await request('/api/developer/me','member')).json()).balance<1090,'Unknown provider usage retains reservation');
+  assert.ok((await (await request('/api/developer/me','member')).json()).balance<1080,'Unknown provider usage retains reservation');
   assert.equal((await request('/api/developer/keys','member',null,'DELETE')).status,200);
   assert.equal((await request('/api/v1/ai',issued.key,prompt)).status,401);
 }finally{server.closeAllConnections();await new Promise(r=>server.close(r));}
@@ -90,4 +100,20 @@ const session=await allowance.begin({...actor,apiVerified:true,apiDailyRequests:
 const reservation=await allowance.reserve(session,'shared',{model:GEMINI,messages:[{role:'user',content:'Hi'}],max_tokens:128});
 assert.ok(reservation.reserved>0);assert.equal(session.tier,'newcomer');
 await allowance.settle(reservation,null,true);await allowance.finish(session);
-console.log('PASS: verified API access, per-user key limits, non-renewing grants, owner password, model/usage limits, reservations and shared budget integration');
+console.log('PASS: email-free API access, per-user key limits, non-renewing grants, owner password, model/usage limits, reservations and shared budget integration');
+
+// Free grants are bounded atomically across new accounts, not by school IP.
+const abuseDb=memoryFirestore();let grantTime=Date.now();const grants=createKeyStore(abuseDb,()=>grantTime);
+const burst=await Promise.allSettled(Array.from({length:8},(_,i)=>grants.issue('burst'+i,'same-browser','Test')));
+assert.equal(burst.filter(r=>r.status==='fulfilled').length,3);
+assert.equal((await grants.details('burst0')).balance,1000);
+await grants.revoke('burst0');grantTime+=61000;
+await grants.issue('burst0','same-browser','Replacement');
+assert.equal((await grants.details('burst0')).balance,1000,'Replacement does not refill or consume another grant');
+for(let i=0;i<27;i++)await grants.issue('global'+i,'browser'+i,'Test');
+await assert.rejects(grants.issue('over','new-browser','Test'),/signups have reached/);
+await grants.issue('paid','same-browser','Premium',true);
+grantTime+=86400000;
+await grants.issue('tomorrow','same-browser','Test');
+assert.equal((await grants.details('tomorrow')).balance,1000);
+console.log('PASS: concurrent browser grant cap, global grant cap, rotation, paid exemptions and UTC reset');

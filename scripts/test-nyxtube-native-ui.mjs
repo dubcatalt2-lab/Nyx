@@ -32,7 +32,7 @@ try {
   app.use('/api/owner-dashboard',(req,res)=>{
     if(req.path==='/nyxtube/check'){checks++;ownerState='working';}
     if(req.path.startsWith('/nyxtube'))return res.json({enabled:true,state:ownerState,lastSuccess:'2026-09-08T12:00:00Z',cacheLimitBytes:5*1024**3,cacheBytes:1024,activeJobs:0});
-    return res.json({access:{role:ownerRole,permissions:[]},users:[],metrics:{},pagination:{total:0,page:1,pages:1},recentActivity:[]});
+    return res.json({access:{role:ownerRole,founder:ownerRole==='owner',permissions:[]},users:[],metrics:{},pagination:{total:0,page:1,pages:1},recentActivity:[]});
   });
   app.use(express.static(process.env.NYX_TEST_STATIC_ROOT||process.cwd()));server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base=`http://127.0.0.1:${server.address().port}`;
   browser=await chromium.launch({headless:true,args:['--autoplay-policy=no-user-gesture-required']});
@@ -63,6 +63,10 @@ try {
   for(const width of [390,320]){await page.setViewportSize({width,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`Overflow at ${width}`);}
   for(const width of [1280,390,320]) {
     await page.setViewportSize({width,height:900});
+    const centered=await page.locator('#icon-settings').evaluate(el=>{const p=el.querySelector('path').getBBox(),c=el.querySelector('circle');return Math.abs(p.x+p.width/2-c.cx.baseVal.value)<.01&&Math.abs(p.y+p.height/2-c.cy.baseVal.value)<.01;});
+    assert.ok(centered,'Gear outline and center circle share a center');
+    await page.locator('[data-watch-stage]').screenshot({path:`.codex-artifacts/nyxtube-controls-${width}.png`});
+    await page.locator('[data-watch-settings]').screenshot({path:`.codex-artifacts/nyxtube-gear-${width}.png`,scale:'css'});
     await page.locator('[data-watch-settings]').click();
     const menu=page.locator('[data-watch-settings-menu]');assert.ok(await menu.isVisible());
     assert.ok(await menu.evaluate(el=>{const a=el.getBoundingClientRect(),b=el.closest('.watch-player').getBoundingClientRect();return a.top>=b.top && a.bottom<=b.bottom;}),'Settings clipped by player');
@@ -71,7 +75,21 @@ try {
     await page.keyboard.press('Escape');assert.ok(await menu.isHidden());
     assert.equal(await page.locator('[data-watch-settings]').getAttribute('aria-expanded'),'false');
   }
-  await page.setViewportSize({width:1280,height:900});failed=true;
+  await page.setViewportSize({width:1280,height:900});
+  await page.locator('[data-watch-stage]').focus();
+  await player.evaluate(v=>{v.pause();v.currentTime=5;v.playbackRate=1.25;});
+  await page.keyboard.press('ArrowRight');assert.ok(Math.abs(await player.evaluate(v=>v.currentTime)-15)<.3);
+  await page.keyboard.press('ArrowLeft');assert.ok(Math.abs(await player.evaluate(v=>v.currentTime)-5)<.3);
+  await page.keyboard.press('Space');await page.waitForFunction(()=>!document.querySelector('[data-watch-player] video').paused);
+  await page.keyboard.press('Space');assert.ok(await player.evaluate(v=>v.paused));
+  await page.keyboard.down('Space');await page.waitForTimeout(450);assert.equal(await player.evaluate(v=>v.playbackRate),2);
+  await page.keyboard.up('Space');assert.equal(await player.evaluate(v=>v.playbackRate),1.25);assert.ok(await player.evaluate(v=>v.paused));
+  const picture=await player.boundingBox();await page.mouse.move(picture.x+picture.width*.25,picture.y+picture.height*.25);
+  await page.mouse.down();await page.waitForTimeout(450);assert.equal(await player.evaluate(v=>v.playbackRate),2);
+  await page.mouse.up();assert.equal(await player.evaluate(v=>v.playbackRate),1.25);assert.ok(await player.evaluate(v=>v.paused));
+  await page.mouse.down();await page.waitForTimeout(450);await page.evaluate(()=>dispatchEvent(new Event('blur')));assert.equal(await player.evaluate(v=>v.playbackRate),1.25);await page.mouse.up();
+  await player.evaluate(v=>v.pause());await page.locator('[data-watch-settings]').click();await page.locator('[data-watch-speed]').focus();await page.keyboard.press('Space');assert.ok(await player.evaluate(v=>v.paused),'Form controls must not control video');await page.keyboard.press('Escape');
+  failed=true;
   await page.locator('[data-watch-quality]').selectOption('720');await page.locator('[data-test-embed]').waitFor();await page.waitForFunction(()=>document.querySelector('[data-watch-engine]').value==='youtube');
   assert.ok(await page.locator('[data-watch-quality]').isDisabled());
   failed=false;

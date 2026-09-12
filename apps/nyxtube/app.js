@@ -337,6 +337,7 @@
     refs.watchEngine.textContent = native ? "Switch to embedded" : "Switch to NyxTube";
   }
   async function createWatch(video, forceDirect = false, fallback = false, restore = null) {
+    finishWatchSpace({ cancel: true });
     const generation = ++state.watchGeneration;
     const native = state.nativeAvailable && state.preferredPlayer === "native" && !forceDirect && !fallback;
     updatePlayerSwitch(native);
@@ -508,8 +509,9 @@
     const total = Number(state.watchPlayer.getDuration?.()) || Number(state.watchVideo?.durationSeconds) || 0;
     state.watchPlayer.seekTo(Math.max(0, total ? Math.min(total, current + seconds) : current + seconds), true);
   }
-  function beginWatchSpace() {
+  function beginWatchSpace(source = "keyboard") {
     if (state.watchSpacePressed || !ready(state.watchPlayer)) return;
+    state.watchHoldSource = source;
     state.watchSpacePressed = true;
     state.watchSpaceHeld = false;
     state.watchSpaceWasPlaying = state.watchPlayer.getPlayerState() === 1;
@@ -656,10 +658,28 @@
     refs.watchToggle.addEventListener("click", toggleWatch); refs.watchCenterPlay.addEventListener("click", toggleWatch); refs.watchMute.addEventListener("click", toggleWatchMute);
     const switchPlayback = quality => {
       if (!state.watchVideo) return;
+      finishWatchSpace({ cancel: true });
       const player=state.watchPlayer;
       const restore={quality, time:player?.getCurrentTime?.()||0,paused:player?.getPlayerState?.()===2,volume:player?.getVolume?.()??100,rate:player?.getPlaybackRate?.()||1,muted:player?.isMuted?.()||false};
       createWatch(state.watchVideo,false,false,restore).catch(()=>notice("The video player could not start."));
     };
+    refs.watchStage.addEventListener("pointerdown", event => {
+      if(event.button!==0 || !event.isPrimary || state.view!=="watch" || !state.watchPlayer?.isNative || shortcutBlocked(event.target) || !event.target.closest('[data-watch-player]')) return;
+      if(state.watchSpacePressed)return;
+      refs.watchStage.focus({preventScroll:true});
+      state.watchPointerId=event.pointerId;
+      refs.watchStage.setPointerCapture(event.pointerId);
+      beginWatchSpace("pointer");
+    });
+    const releasePointer=(event,cancel=false)=>{
+      if(event.pointerId!==state.watchPointerId)return;
+      state.watchPointerId=null;
+      if(state.watchHoldSource==="pointer")finishWatchSpace({cancel});
+      if(refs.watchStage.hasPointerCapture(event.pointerId))refs.watchStage.releasePointerCapture(event.pointerId);
+    };
+    refs.watchStage.addEventListener("pointerup",event=>releasePointer(event));
+    refs.watchStage.addEventListener("pointercancel",event=>releasePointer(event,true));
+    refs.watchStage.addEventListener("lostpointercapture",event=>releasePointer(event,true));
     refs.watchQuality.addEventListener("change",()=>switchPlayback(Number(refs.watchQuality.value)));
     refs.watchEngine.addEventListener("click",()=>{state.preferredPlayer=refs.watchEngine.value === "native" ? "youtube" : "native";switchPlayback();});
     refs.watchProgress.addEventListener("input", () => { if (ready(state.watchPlayer)) state.watchPlayer.seekTo((state.watchPlayer.getDuration?.() || 0) * Number(refs.watchProgress.value) / 1000, true); });
@@ -673,7 +693,7 @@
     refs.watchSpeed.addEventListener("change", () => { try { state.watchPlayer?.setPlaybackRate?.(Number(refs.watchSpeed.value) || 1); } catch { /* YouTube rejected this rate. */ } });
     refs.watchVolume.addEventListener("input", () => { try { state.watchPlayer?.setVolume?.(Number(refs.watchVolume.value) || 0); } catch { /* The player closed while the volume changed. */ } });
     refs.watchSettingsCaptions.addEventListener("change", () => changeWatchCaptions(refs.watchSettingsCaptions.value === "on"));
-    refs.watchRewind.addEventListener("click", () => seekWatchBy(-5)); refs.watchForward.addEventListener("click", () => seekWatchBy(5));
+    refs.watchRewind.addEventListener("click", () => seekWatchBy(-10)); refs.watchForward.addEventListener("click", () => seekWatchBy(10));
     $$('[data-watch-info-tab]').forEach(button => button.addEventListener("click", () => showWatchInfo(button.dataset.watchInfoTab)));
     document.addEventListener("click", closeWatchSettings);
     refs.shortCenterPlay.addEventListener("click", toggleShort); refs.shortStage.addEventListener("click", event => { if (!event.target.closest("button")) toggleShort(); });
@@ -691,8 +711,8 @@
         if (event.code === "KeyK") toggleWatch();
         if (event.code === "KeyJ") seekWatchBy(-10);
         if (event.code === "KeyL") seekWatchBy(10);
-        if (event.code === "ArrowLeft") seekWatchBy(-5);
-        if (event.code === "ArrowRight") seekWatchBy(5);
+        if (event.code === "ArrowLeft") seekWatchBy(-10);
+        if (event.code === "ArrowRight") seekWatchBy(10);
         if (event.code === "KeyM") toggleWatchMute();
         if (event.code === "KeyC" && !refs.watchSettingsCaptions.disabled) changeWatchCaptions(!state.watchCaptions);
         if (event.code === "KeyF") fullscreen(refs.watchStage);
@@ -704,7 +724,7 @@
       }
     });
     document.addEventListener("keyup", event => {
-      if (event.code !== "Space" || !state.watchSpacePressed) return;
+      if (event.code !== "Space" || !state.watchSpacePressed || state.watchHoldSource !== "keyboard") return;
       event.preventDefault();
       finishWatchSpace();
     });

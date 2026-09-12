@@ -3318,7 +3318,7 @@ installDeveloperApi(app, {
   firebase: linkGeneratorFirebase,
   authenticate: authenticatedNyxUser,
   ownerUid: () => founderProfileConfig().administratorUid,
-  clientIp: nyxClientIp,
+  device: (req,res,firebase) => nyxSharedAiAllowance(firebase).device(req,res),
   passwordHash: () => process.env.NYX_API_OWNER_PASSWORD_HASH || '',
   sameOrigin: sameOriginRequest,
   send: async (req, payload) => nyxBudgetedAiFetch('shared', 'https://openrouter.ai/api/v1/chat/completions', {
@@ -4800,7 +4800,7 @@ function nyxOwnerUserRecord(user, administration = {}, profileData = {}, activit
     username: String(profileUsername || administration.username || emailUsername).slice(0, 80),
     email,
     deliverableEmail: nyxDeliverableEmail(email),
-    aiMonthlyTokenLimit: Number.isSafeInteger(administration.aiMonthlyTokenLimit) ? administration.aiMonthlyTokenLimit : 50000,
+    aiMonthlyTokenLimit: hasPremiumSubscription(subscriptionStatus) ? (Number.isSafeInteger(administration.aiMonthlyTokenLimit) ? administration.aiMonthlyTokenLimit : 50000) : 0,
     aiAccess: ["trusted","restricted"].includes(administration.aiAccess) ? administration.aiAccess : "automatic",
     role,
     customRole: nyxPublicCustomRole(customRole),
@@ -13025,6 +13025,7 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
     let auditAction = action;
     let auditDetails = {};
     if (action === "set_ai_limit") {
+      if(!hasPremiumSubscription(targetAdministration?.data()?.subscriptionStatus||targetAdministration?.data()?.subscription?.status)){res.status(403).json({error:"Monthly AI allowances are only available to Premium members."});return;}
       const limit=req.body?.monthlyTokenLimit;
       if(!Number.isSafeInteger(limit)||limit<0||limit>10000000){res.status(400).json({error:'Enter a monthly token limit from 0 to 10,000,000.'});return;}
       await firebase.firestore.collection('nyxUserAdministration').doc(uid).set({aiMonthlyTokenLimit:limit,updatedAt:new Date().toISOString()},{merge:true});

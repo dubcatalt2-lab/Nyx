@@ -45,8 +45,8 @@ try {
     assert.equal(await frame.locator('body').evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0)');
     assert.equal(await frame.locator('body').evaluate(el=>getComputedStyle(el).backgroundImage),'none');
     assert.equal(await frame.locator('#nyxBeamsBg').count(),0,'Embedded page must not duplicate wallpaper rendering');
-    assert.equal(await frame.locator('#create-button').isDisabled(),true);
-    assert.equal(await frame.locator('#verify').isVisible(),true);
+    assert.equal(await frame.locator('#create-button').isDisabled(),false,'Email verification is not required');
+    assert.equal(await frame.locator('#verify').count(),0);
     verified=true;await frame.locator('#refresh').click();
     await frame.locator('#create-button').click();await frame.locator('#reveal').waitFor();
     assert.equal(await frame.locator('#secret').inputValue(),'n_api_fixture-only-secret');
@@ -73,8 +73,8 @@ try {
     owner=true;await frame.locator('#refresh').click();await frame.locator('[data-tab=owner]').click();await frame.locator('#owner').waitFor();
     await frame.locator('#unlock input').fill('fixture password');await frame.locator('#unlock button').click();await frame.locator('#management').waitFor();await frame.locator('#members-rows').filter({hasText:'Test Member'}).waitFor();
     assert.equal(await frame.locator('#unlock input').inputValue(),'');
-    await frame.locator('#lookup button').click();await frame.locator('#target').filter({hasText:'988 tokens'}).waitFor();
-    await frame.locator('[name=addTokens]').fill('50');await frame.locator('#limits button').click();await frame.locator('#target').filter({hasText:'1038 tokens'}).waitFor();
+    await frame.locator('#lookup button').click();await frame.locator('#target').filter({hasText:'988 tokens'}).waitFor();assert.equal(await frame.locator('[name=monthlyTokenLimit]').isVisible(),false,'Non-Premium accounts must not show a monthly allowance');
+    await frame.locator('[name=addTokens]').fill('50');await frame.locator('#limits button[type=submit]').click();await frame.locator('#target').filter({hasText:'1038 tokens'}).waitFor();
     const overflow=await frame.locator('body').evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);assert.equal(overflow,false,`No horizontal overflow at ${width}px`);
     await page.screenshot({path:`.codex-artifacts/developer-api-${width}.png`,fullPage:true});
     await frame.locator('#lock').click();await frame.locator('#unlock').waitFor();
@@ -90,5 +90,5 @@ try {
     await page.locator('.brand-logo').evaluate(el=>el.decode());assert.ok(await page.locator('.brand-logo').evaluate(el=>el.naturalWidth>0));
     await page.screenshot({path:`.codex-artifacts/developer-nyx-theme-${width}.png`});await page.close();
   }
-  console.log('PASS: API verified-user gating, one-time reveal, playground completion, usage metrics, owner unlock/limits/relock, desktop and mobile layout');
+  console.log('PASS: API account-only access, one-time reveal, playground completion, usage metrics, owner unlock/limits/relock, desktop and mobile layout');
 }finally{await browser.close();}

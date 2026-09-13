@@ -165,11 +165,6 @@ async function search(){
 let providers=[{id:'vixsrc',name:'VixSrc'}],episodeCatalog=[];
 function externalUrl(value){
  try{const url=new URL(value);if(url.protocol!=='https:'||url.port||url.username||url.password||url.hash)return null;
- if(url.hostname==='vidcore.org'&&/^\/embed\/(movie\/\d{1,10}|tv\/\d{1,10}\/\d{1,3}\/\d{1,4})$/.test(url.pathname)&&url.search==='?theme=eeeeee')return url.href;
- if(url.hostname==='screenscape.me'&&url.pathname==='/embed'){
- const params=url.searchParams;if([...params.keys()].some(k=>!['tmdb','type','s','e','lan'].includes(k))||!/^\d{1,10}$/.test(params.get('tmdb')||'')||!['movie','tv'].includes(params.get('type'))||params.get('lan')!=='eng')return null;
- if(params.get('type')==='tv'&&(!/^\d{1,3}$/.test(params.get('s')||'')||!/^\d{1,4}$/.test(params.get('e')||'')))return null;return url.href;
- }
  if(url.search)return null;
  if(url.hostname==='nhdapi.com'&&/^\/(movie\/\d{1,10}|tv\/\d{1,10}\/\d{1,3}\/\d{1,4}|anime\/\d{1,10}\/\d{1,4})$/.test(url.pathname))return url.href;
  if(url.hostname==='supaplay.fun'&&(/^\/mw\/([a-zA-Z0-9]+-)+[a-zA-Z0-9]{5,30}(\/\d{1,3}\/\d{1,4})?$/.test(url.pathname)||/^\/stream\/ani\/\d{1,8}\/\d{1,4}\/(sub|dub)$/.test(url.pathname)))return url.href;
@@ -181,7 +176,7 @@ function sourcesFor(movie){
  if(movie.sources)return movie.sources.map(s=>({...s,url:externalUrl(s.url)})).filter(s=>s.url);
  if(movie.kind==='episode'){const url=externalUrl(movie.embedUrl);return url?[{id:movie.provider,name:movie.providerName,url}]:[];}
  const mapped=(movie.providerMappings||[]).filter(x=>x.provider==='supaplay').map(x=>externalUrl('https://supaplay.fun/mw/'+x.detailPath)).filter(Boolean);
- return [{id:'vixsrc',name:'VixSrc'},...(mapped.length?[{id:'supaplay',name:'SupaPlay · MovieBox',url:mapped[0]}]:[]),{id:'nhd',name:'NHD',url:'https://nhdapi.com/movie/'+movie.id},{id:'screenscape',name:'ScreenScape',url:'https://screenscape.me/embed?tmdb='+movie.id+'&type=movie&lan=eng'},{id:'vidcore',name:'VidCore',url:'https://vidcore.org/embed/movie/'+movie.id+'?theme=eeeeee'}];
+ return [{id:'vixsrc',name:'VixSrc'},...(mapped.length?[{id:'supaplay',name:'SupaPlay · MovieBox',url:mapped[0]}]:[]),{id:'nhd',name:'NHD',url:'https://nhdapi.com/movie/'+movie.id}];
 }
 let providerStates={},currentProvider='',watchGeneration=0;
 // Measurements stay in this tab and apply only to this exact movie/episode.

@@ -7806,7 +7806,7 @@ const movieCatalog = createMovieCatalog();
 installMovieApi(app, { catalog: movieCatalog, clientId: nyxClientIp });
 installMoviePlayback(app, { clientId: nyxClientIp, validateMovie: id => movieCatalog.details(id) });
 app.get(/^\/apps\/movies$/, (_req, res) => res.redirect(302, "/apps/movies/"));
-app.get("/apps/movies/", (_req, res) => res.sendFile(join(staticRoot, "apps", "movies", "index.html")));
+app.get("/apps/movies/", (_req, res) => { res.set("Content-Security-Policy", "frame-src https://nhdapi.com https://supaplay.fun https://ani.megaplay.su; object-src 'none'"); res.sendFile(join(staticRoot, "apps", "movies", "index.html")); });
 
 function linkGeneratorRateState(clientId, now = Date.now()) {
   for (const [key, state] of linkGeneratorAttempts) {

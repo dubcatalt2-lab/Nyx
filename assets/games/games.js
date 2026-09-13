@@ -1211,7 +1211,7 @@ elements.playerRetry.addEventListener('click', () => {
 elements.fullscreen.addEventListener('click', async () => {
   try {
     if (document.fullscreenElement) await document.exitFullscreen();
-    else await elements.player.requestFullscreen();
+    else await elements.frame.parentElement.requestFullscreen();
   } catch {}
 });
 elements.frame.addEventListener('load', () => {

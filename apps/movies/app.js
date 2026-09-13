@@ -165,7 +165,15 @@ async function search(){
 let providers=[{id:'vixsrc',name:'VixSrc'}],episodeCatalog=[];
 function externalUrl(value){
  try{const url=new URL(value);if(url.protocol!=='https:'||url.port||url.username||url.password||url.hash)return null;
+ if(url.hostname==='watch.rivestream.app'&&url.pathname==='/embed'){
+  const q=url.searchParams,type=q.get('type'),id=q.get('id'),keys=[...q.keys()];
+  if(!/^[1-9]\d{0,9}$/.test(id||'')||new Set(keys).size!==keys.length)return null;
+  if(type==='movie'&&keys.length===2&&keys.every(k=>['type','id'].includes(k)))return url.href;
+  if(type==='tv'&&keys.length===4&&keys.every(k=>['type','id','season','episode'].includes(k))&&/^\d{1,3}$/.test(q.get('season')||'')&&/^[1-9]\d{0,3}$/.test(q.get('episode')||''))return url.href;
+  return null;
+ }
  if(url.search)return null;
+ if(url.hostname==='framextv.tech'&&/^\/embed\/[1-9]\d{0,9}(\/\d{1,3}\/[1-9]\d{0,3})?$/.test(url.pathname))return url.href;
  if(url.hostname==='nhdapi.com'&&/^\/(movie\/\d{1,10}|tv\/\d{1,10}\/\d{1,3}\/\d{1,4}|anime\/\d{1,10}\/\d{1,4})$/.test(url.pathname))return url.href;
  if(url.hostname==='supaplay.fun'&&(/^\/mw\/([a-zA-Z0-9]+-)+[a-zA-Z0-9]{5,30}(\/\d{1,3}\/\d{1,4})?$/.test(url.pathname)||/^\/stream\/ani\/\d{1,8}\/\d{1,4}\/(sub|dub)$/.test(url.pathname)))return url.href;
  if(url.hostname==='ani.megaplay.su'&&/^\/kisskh\/\d{1,10}$/.test(url.pathname))return url.href;
@@ -176,7 +184,7 @@ function sourcesFor(movie){
  if(movie.sources)return movie.sources.map(s=>({...s,url:externalUrl(s.url)})).filter(s=>s.url);
  if(movie.kind==='episode'){const url=externalUrl(movie.embedUrl);return url?[{id:movie.provider,name:movie.providerName,url}]:[];}
  const mapped=(movie.providerMappings||[]).filter(x=>x.provider==='supaplay').map(x=>externalUrl('https://supaplay.fun/mw/'+x.detailPath)).filter(Boolean);
- return [{id:'vixsrc',name:'VixSrc'},...(mapped.length?[{id:'supaplay',name:'SupaPlay · MovieBox',url:mapped[0]}]:[]),{id:'nhd',name:'NHD',url:'https://nhdapi.com/movie/'+movie.id}];
+ return [{id:'vixsrc',name:'VixSrc'},...(mapped.length?[{id:'supaplay',name:'SupaPlay · MovieBox',url:mapped[0]}]:[]),{id:'nhd',name:'NHD',url:'https://nhdapi.com/movie/'+movie.id},{id:'rive',name:'Rive',url:'https://watch.rivestream.app/embed?type=movie&id='+movie.id},{id:'framextv',name:'FrameXTV',url:'https://framextv.tech/embed/'+movie.id}];
 }
 let providerStates={},currentProvider='',watchGeneration=0;
 // Measurements stay in this tab and apply only to this exact movie/episode.
@@ -264,6 +272,7 @@ async function watch(preferred){
     let data=event.data;if(typeof data==='string'){if(data.length>10000)return;try{data=JSON.parse(data);}catch{return;}}
     if(!data||typeof data!=='object')return;
     if(data.type==='timeUpdate'||data.type==='watching-log')progress(data.currentTime);
+    if(source.id==='framextv'&&data.event==='frameXTV:timeupdate')progress(data.currentTime);
     if(['kisskh','megacloud'].includes(data.channel)&&data.event==='time')progress(data.currentTime??data.time);
     if(data.type==='pause'&&started){providerStates[source.id]='Paused';renderSources();}
     if(data.type==='error'||['kisskh','megacloud'].includes(data.channel)&&data.event==='error')unavailable();

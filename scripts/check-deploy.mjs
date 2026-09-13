@@ -1,15 +1,52 @@
 import { access, readFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
+  "assets/icons/nyx-movies.svg",
+  "lib/movies.mjs",
+  "lib/movie-mappings.mjs",
+  "lib/movie-episodes.mjs",
+  "scripts/match-movie.mjs",
+  "lib/movie-playback.mjs",
+  "apps/movies/index.html",
+  "apps/movies/app.js",
+  "apps/movies/styles.css",
+  "apps/movies/tmdb.svg",
+  "apps/movies/REACT_BITS_LICENSE.txt",
   "index.html",
+  "about-nyx.html",
+  "robots.txt",
+  "sitemap.xml",
   "server.js",
+  "lib/ai-allowance.mjs",
+  "lib/ai-budget-response.mjs",
+  "lib/openrouter-balance.mjs",
+  "lib/ai-image.mjs",
+  "lib/developer-api.mjs",
+  "lib/api-key-vault.mjs",
+  "apps/api-keys/developer.css",
+  "scripts/set-api-owner-password.py",
+  "scripts/test-developer-api.mjs",
+  "scripts/test-openrouter-balance.mjs",
+  "scripts/test-ai-allowance.mjs",
+  "scripts/test-ai-budget-integration.mjs",
+  "scripts/test-ai-access-policy.mjs",
+  "scripts/test-account-signup.mjs",
   "script.js",
   "startup.js",
   "styles.css",
   "uv.config.js",
   "uv.sw.js",
   "scramjet.sw.js",
+  "scramjet-v1.sw.js",
   "js/loading-screen.js",
+  "js/availability.js",
+  "js/nyx-logo.js",
+  "js/ai-markdown.js",
+  "assets/icons/nyx-monogram.png",
+  "assets/credits/midnight.png",
+  "assets/credits/p2p-games.png",
+  "assets/icons/nyx-monogram-small.png",
   "css/core.css",
   "css/chrome-and-settings.css",
   "css/fresh-theme.css",
@@ -18,16 +55,81 @@ const requiredFiles = [
   "apps/link-checker/index.html",
   "apps/link-checker/styles.css",
   "apps/link-checker/app.js",
+  "apps/chat/index.html",
+  "apps/chat/styles.css",
+  "apps/chat/app.js",
   "apps/utility-shell.css",
   "apps/link-generator/index.html",
   "apps/link-generator/styles.css",
   "apps/link-generator/app.js",
+  "apps/link-generator/bulk-variants.js",
+  "apps/code-studio/index.html",
+  "apps/code-studio/styles.css",
+  "apps/code-studio/app.js",
+  "assets/icons/code-studio.svg",
+  "assets/icons/code-tutorials.svg",
+  "scripts/test-code-studio.mjs",
+  "apps/code-tutorials/index.html",
+  "apps/code-tutorials/styles.css",
+  "apps/code-tutorials/app.js",
+  "apps/partners/index.html",
+  "apps/partners/styles.css",
+  "apps/partners/app.js",
+  "assets/icons/partners.svg",
+  "assets/partners/t9.png",
+  "assets/partners/flux.png",
+  "assets/partners/frosted.png",
+  "assets/partners/sv.png",
+  "assets/partners/ghost.png",
+  "assets/partners/uncensor.png",
+  "assets/partners/nocturne.png",
+  "assets/partners/photon.png",
+  "assets/partners/black-hat.png",
+  "assets/partners/zaka.png",
+  "assets/partners/milkbox.png",
+  "scripts/test-code-tutorials.mjs",
+  "apps/jsdelivr-publisher/index.html",
+  "apps/jsdelivr-publisher/styles.css",
+  "apps/jsdelivr-publisher/app.js",
+  "apps/jsdelivr-publisher/nyx-source.svg",
+  "assets/icons/jsdelivr-publisher.svg",
+  "apps/cloud-gaming/index.html",
+  "apps/cloud-gaming/styles.css",
+  "apps/cloud-gaming/app.js",
+  "assets/icons/cloud-gaming.svg",
+  "apps/nyxify/index.html",
+  "apps/nyxify/app.css",
+  "apps/nyxify/icons.css",
+  "apps/nyxify/app.js",
+  "apps/nyxtube/player-core.js",
+  "apps/nyxtube/native-player.js",
+  "lib/nyxtube-mp4.mjs",
+  "lib/nyxtube-segments.mjs",
+  "lib/nyxtube-catalog.mjs",
+  "lib/nyxify-meting.mjs",
+  "lib/nyxify-media-fetch.mjs",
+  "assets/icons/shortcut-nyxify.svg",
   "assets/games/index.html",
   "assets/ugs/play.html",
   "deploy/nginx/nyx.conf.template",
+  "deploy/caddy/nyx.Caddyfile.template",
   "deploy/systemd/nyx.service.template",
+  "deploy/systemd/nyx-stratus.service.template",
   "deploy/nyx.env.example",
-  "deploy/setup-ovh.sh"
+  "deploy/stratus.env.example",
+  "services/stratus/package.json",
+  "services/stratus/package-lock.json",
+  "services/stratus/README.md",
+  "services/stratus/launcher.mjs",
+  "services/stratus/check.mjs",
+  "services/stratus/smoke.mjs",
+  "services/stratus/upstream/api.js",
+  "services/stratus/upstream/public/e.html",
+  "services/stratus/UPSTREAM-LICENSE",
+  "deploy/setup-ovh.sh",
+  "deploy/update-ovh.sh",
+  "deploy/install-ytdlp.sh",
+  "deploy/requirements-yt-dlp.txt"
 ];
 
 const missing = [];
@@ -47,11 +149,18 @@ if (missing.length) {
 }
 
 const packageJson = JSON.parse(await readFile("package.json", "utf8"));
-for (const dependency of ["express", "firebase-admin", "@mercuryworkshop/wisp-js"]) {
+for (const dependency of ["express", "firebase-admin", "@mercuryworkshop/wisp-js", "mp4box", "hls.js"]) {
   if (!packageJson.dependencies?.[dependency]) {
     console.error(`Deployment dependency is missing: ${dependency}`);
     process.exit(1);
   }
+}
+
+const stratusCheck = spawnSync(process.execPath, ["services/stratus/check.mjs"], { encoding: "utf8" });
+if (stratusCheck.status !== 0) {
+  console.error("The pinned Stratus service check failed:");
+  console.error(String(stratusCheck.stderr || stratusCheck.stdout || "Unknown Stratus check failure.").trim());
+  process.exit(1);
 }
 
 console.log(`Deployment check passed (${requiredFiles.length} required files found).`);

@@ -5,11 +5,19 @@
   const THREADS_KEY='nyx.aiThreads.v1';
   const ACTIVE_THREAD_KEY='nyx.aiActiveThread';
   const MODEL_KEY='nyx.aiModel';
-  const DEFAULT_MODEL='chatgpt-5.4-mini';
+  const PROVIDER_KEY='nyx.aiSharedProvider';
+  const RESPONSE_DEPTH_KEY='nyx.aiResponseDepth';
+  const USAGE_KEY='nyx.aiUsage.v1';
+  const DEFAULT_MODEL='' ;
   const MAX_MESSAGES=40;
   const MAX_THREADS=40;
   const MAX_INPUT_HEIGHT=190;
   const MAX_IMAGE_BYTES=8*1024*1024;
+  const MAX_PREPARED_IMAGE_CHARS=1200000;
+  const MAX_PREPARED_IMAGE_EDGE=1600;
+  const MAX_TEXT_ATTACHMENT_CHARS=18000;
+  const SUPPORTED_IMAGE_TYPES=new Set(['image/png','image/jpeg','image/webp','image/gif']);
+  const KNOWN_VISION_MODELS=new Set();
 
   const app=document.querySelector('[data-ai-app]');
   const feed=document.getElementById('feed');
@@ -18,6 +26,8 @@
   const input=document.getElementById('input');
   const send=document.getElementById('send');
   const model=document.getElementById('model');
+  const providerSelect=document.getElementById('providerSelect');
+  const providerState=document.getElementById('providerState');
   const modelPicker=document.getElementById('modelPicker');
   const modelTrigger=document.getElementById('modelTrigger');
   const modelSelected=document.getElementById('modelSelected');
@@ -35,6 +45,12 @@
   const threadList=document.getElementById('threadList');
   const threadCount=document.getElementById('threadCount');
   const historyEmpty=document.getElementById('historyEmpty');
+  const threadSearch=document.getElementById('threadSearch');
+  const depthButtons=[...document.querySelectorAll('[data-response-depth]')];
+  const sidebarModelName=document.getElementById('sidebarModelName');
+  const usageWeek=document.getElementById('usageWeek');
+  const usageAll=document.getElementById('usageAll');
+  const usageRequests=document.getElementById('usageRequests');
   const profileButton=document.getElementById('aiProfile');
   const profileAvatar=document.getElementById('profileAvatar');
   const profileInitial=document.getElementById('profileInitial');
@@ -47,102 +63,160 @@
   const attachmentName=document.getElementById('attachmentName');
   const attachmentStatus=document.getElementById('attachmentStatus');
   const removeAttachment=document.getElementById('removeAttachment');
-  if(!app||!feed||!conversation||!form||!input||!send||!model||!modelPicker||!modelTrigger||!modelSelected||!modelMenu||!modelOptionsHost||!clear||!threadTitle||!sidebar||!sidebarToggle||!sidebarClose||!sidebarScrim||!newChat||!temporaryChat||!threadList||!threadCount||!historyEmpty||!profileButton||!profileAvatar||!profileInitial||!profileName||!profileHandle||!imageInput||!attachImage||!attachmentPreview||!attachmentThumbnail||!attachmentName||!attachmentStatus||!removeAttachment) return;
+  const screenPreview=document.getElementById('screenPreview');
+  const screenVideo=document.getElementById('screenVideo');
+  const screenStatus=document.getElementById('screenStatus');
+  const shareScreen=document.getElementById('shareScreen');
+  const stopScreenShare=document.getElementById('stopScreenShare');
+  if(!app||!feed||!conversation||!form||!input||!send||!model||!providerSelect||!modelPicker||!modelTrigger||!modelSelected||!modelMenu||!modelOptionsHost||!clear||!threadTitle||!sidebar||!sidebarToggle||!sidebarClose||!sidebarScrim||!newChat||!temporaryChat||!threadList||!threadCount||!historyEmpty||!threadSearch||depthButtons.length!==3||!sidebarModelName||!usageWeek||!usageAll||!usageRequests||!profileButton||!profileAvatar||!profileInitial||!profileName||!profileHandle||!imageInput||!attachImage||!attachmentPreview||!attachmentThumbnail||!attachmentName||!attachmentStatus||!removeAttachment||!screenPreview||!screenVideo||!screenStatus||!shareScreen||!stopScreenShare) return;
 
   let activeController=null;
   let followStream=true;
-  let modelCatalog=[{id:DEFAULT_MODEL,label:'GPT-5.4 Mini',company:'ChatGPT'}];
+  let modelCatalog=[];
   let threads=[];
   let activeThreadId='';
   let temporaryMode=false;
   let temporaryMessages=[];
   let attachedImage=null;
-  let imageOcrLoader=null;
+  let attachedText=null;
+  let screenStream=null;
 
-  function themeHex(value,fallback='#6687b2'){
-    const raw=String(value||'').trim();
-    return /^#[0-9a-f]{6}$/i.test(raw)?raw.toLowerCase():fallback;
+  let nyxAiAccountAuthPromise=null;
+  let globalProviders=[];
+
+  async function nyxAiParentToken(){
+    if(parent===window) return '';
+    const requestId=`ai-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    return new Promise(resolve=>{
+      let settled=false;
+      const finish=value=>{if(settled)return;settled=true;clearTimeout(timeout);removeEventListener('message',receive);resolve(String(value||''));};
+      const receive=event=>{if(event.source===parent&&event.origin===location.origin&&event.data?.type==='nyx:account-token-response'&&event.data.requestId===requestId)finish(event.data.token);};
+      const timeout=setTimeout(()=>finish(''),2500);
+      addEventListener('message',receive);
+      parent.postMessage({type:'nyx:account-token-request',requestId},location.origin);
+    });
   }
 
-  function shadeThemeHex(value,percent=0){
-    const color=themeHex(value);
-    const amount=Math.max(-100,Math.min(100,Number(percent)||0))/100;
-    const channel=index=>{
-      const current=parseInt(color.slice(index,index+2),16);
-      return Math.round(amount>=0?current+(255-current)*amount:current*(1+amount));
-    };
-    return '#'+[1,3,5].map(index=>channel(index).toString(16).padStart(2,'0')).join('');
+  async function nyxAiAccountToken(){
+    const parentToken=await nyxAiParentToken();
+    if(parentToken) return parentToken;
+    if(!nyxAiAccountAuthPromise){
+      nyxAiAccountAuthPromise=(async()=>{
+        try{
+          const configResponse=await fetch('/api/founder-profile/auth-config',{cache:'no-store'});
+          const config=await configResponse.json();
+          if(!config?.enabled||!config?.apiKey||!config?.projectId)return null;
+          const [{initializeApp,getApps},{getAuth,setPersistence,browserLocalPersistence}]=await Promise.all([
+            import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),
+            import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')
+          ]);
+          const firebaseApp=getApps().find(item=>item.name==='nyx-founder-owner')||initializeApp({apiKey:config.apiKey,authDomain:`${config.projectId}.firebaseapp.com`,projectId:config.projectId},'nyx-founder-owner');
+          const auth=getAuth(firebaseApp);
+          try{await setPersistence(auth,browserLocalPersistence)}catch{}
+          if(typeof auth.authStateReady==='function')await auth.authStateReady();
+          return auth;
+        }catch{return null}
+      })();
+    }
+    const auth=await nyxAiAccountAuthPromise;
+    try{return auth?.currentUser?await auth.currentUser.getIdToken():''}catch{return ''}
   }
 
-  function themeForeground(value){
-    const color=themeHex(value);
-    const channels=[1,3,5].map(index=>parseInt(color.slice(index,index+2),16)/255).map(channel=>channel<=.04045?channel/12.92:Math.pow((channel+.055)/1.055,2.4));
-    return channels[0]*.2126+channels[1]*.7152+channels[2]*.0722>.48?'#071018':'#f7f9ff';
+  async function aiHeaders(headers={}){
+    const token=await nyxAiAccountToken();
+    return {...headers,'x-nyx-ai-provider':'shared',...(token?{Authorization:`Bearer ${token}`}:{})};
+  }
+  let customKey='';
+  const customKind=()=>customKey.startsWith('n_api_')?'nyx':'openrouter';
+  const keyDialog=document.getElementById('customKeyDialog');
+  keyDialog?.addEventListener('close',()=>{document.getElementById('customKeyInput').value='';});
+  document.getElementById('customKeyButton')?.addEventListener('click',()=>keyDialog.showModal());
+  document.getElementById('customKeyClose')?.addEventListener('click',()=>keyDialog.close());
+  document.getElementById('customKeyRemove')?.addEventListener('click',()=>{customKey='';document.getElementById('customKeyInput').value='';keyDialog.close();renderProviders();void loadModels();});
+  document.getElementById('customKeyForm')?.addEventListener('submit',event=>{event.preventDefault();const field=document.getElementById('customKeyInput'),value=field.value.trim();if(!/^n_api_[A-Za-z0-9_-]{43}$/.test(value)&&!/^sk-or-[A-Za-z0-9_-]{20,}$/.test(value)){document.getElementById('customKeyError').textContent='Enter a valid Nyx or OpenRouter API key.';return;}customKey=value;field.value='';document.getElementById('customKeyError').textContent='';keyDialog.close();renderProviders();void loadModels();});
+  function selectedProvider(){return 'shared'}
+  function syncProviderControl(){providerSelect.disabled=true;providerSelect.title=customKey?(customKind()==='nyx'?'Nyx custom key':'OpenRouter custom key'):'Nyx shared';if(customKey)providerSelect.options[0].textContent=providerSelect.title;if(providerState)providerState.hidden=true;}
+
+  function renderProviders(){
+    const selected=selectedProvider();
+    providerSelect.innerHTML=globalProviders.map(provider=>`<option value="${escapeHtml(provider.id)}">${escapeHtml(provider.label)}</option>`).join('')||'<option value="shared">OpenRouter</option>';
+    providerSelect.value=selected;
+    syncProviderControl();
   }
 
-  function parentThemePalette(){
+  async function loadProviders(){
     try{
-      if(parent===window||parent.location.origin!==location.origin) return null;
-      const parentDocument=parent.document;
-      const bodyStyle=parent.getComputedStyle(parentDocument.body);
-      const rootStyle=parent.getComputedStyle(parentDocument.documentElement);
-      const read=(name,fallback='')=>bodyStyle.getPropertyValue(name).trim()||rootStyle.getPropertyValue(name).trim()||fallback;
-      const accent=read('--nyx-chrome-accent',read('--theme-a','#6687b2'));
-      const bright=read('--nyx-final-shortcut-icon',read('--nyx-chrome-bright',accent));
-      return {
-        canvas:read('--nyx-unified-canvas',read('--nyx-chrome-deep','#080e18')),
-        deep:read('--nyx-unified-top',read('--nyx-chrome-deep','#050912')),
-        surface:read('--nyx-home-panel',read('--nyx-chrome-base','#101827')),
-        raised:read('--nyx-home-panel-soft',read('--nyx-chrome-active','#141f31')),
-        hover:read('--nyx-chrome-hover',read('--nyx-home-panel-soft','#1a293e')),
-        line:read('--nyx-home-line','#2a3b54'),
-        text:read('--nyx-home-text',read('--theme-strong','#d4deec')),
-        muted:read('--nyx-home-muted','#899bb5'),
-        accent,
-        bright
-      };
-    }catch{return null}
+      const response=await fetch('/api/nyx-ai/providers',{headers:await aiHeaders({accept:'application/json'})});
+      const data=await response.json();
+      if(!response.ok) throw new Error(data?.error||'Shared providers are unavailable.');
+      globalProviders=Array.isArray(data?.providers)?data.providers.flatMap(item=>{
+        const id=String(item?.id||'').trim();
+        const label=String(item?.label||id).trim();
+        return id==='shared'?[{id,label:'OpenRouter'}]:[];
+      }):[];
+    }catch{globalProviders=[]}
+    renderProviders();
   }
 
-  function fallbackThemePalette(theme){
-    const stored=theme==='custom'?localStorage.getItem('nyx.customThemeColor'):'';
-    const accent=themeHex(stored||window.NyxLogo?.colors?.[theme]||window.NyxLogo?.colors?.default||'#6687b2');
-    return {
-      canvas:shadeThemeHex(accent,-84),
-      deep:shadeThemeHex(accent,-91),
-      surface:shadeThemeHex(accent,-74),
-      raised:shadeThemeHex(accent,-68),
-      hover:shadeThemeHex(accent,-58),
-      line:shadeThemeHex(accent,-30),
-      text:'#f4f7ff',
-      muted:shadeThemeHex(accent,48),
-      accent:shadeThemeHex(accent,8),
-      bright:shadeThemeHex(accent,38)
-    };
+  function responseDepth(){
+    const value=localStorage.getItem(RESPONSE_DEPTH_KEY)||'normal';
+    return ['off','normal','extended'].includes(value)?value:'normal';
+  }
+
+  function syncResponseDepth(){
+    const current=responseDepth();
+    depthButtons.forEach(button=>{
+      const selected=button.dataset.responseDepth===current;
+      button.classList.toggle('is-active',selected);
+      button.setAttribute('aria-pressed',String(selected));
+    });
+  }
+
+  function storedUsage(){
+    try{
+      const items=JSON.parse(localStorage.getItem(USAGE_KEY)||'[]');
+      return Array.isArray(items)?items.filter(item=>Number.isFinite(item?.at)&&Number.isFinite(item?.tokens)&&item.tokens>0).slice(-1000):[];
+    }catch{return[]}
+  }
+
+  function renderUsage(){
+    const items=storedUsage();
+    const cutoff=Date.now()-7*86_400_000;
+    const format=value=>new Intl.NumberFormat(undefined,{notation:value>=10_000?'compact':'standard',maximumFractionDigits:1}).format(value);
+    usageWeek.textContent=format(items.filter(item=>item.at>=cutoff).reduce((sum,item)=>sum+item.tokens,0));
+    usageAll.textContent=format(items.reduce((sum,item)=>sum+item.tokens,0));
+    usageRequests.textContent=format(items.length);
+  }
+
+  function recordUsage(prompt,answer){
+    const items=storedUsage();
+    items.push({at:Date.now(),tokens:Math.max(1,Math.ceil((String(prompt||'').length+String(answer||'').length)/4))});
+    try{localStorage.setItem(USAGE_KEY,JSON.stringify(items.slice(-1000)))}catch{}
+    renderUsage();
   }
 
   function applyWorkspaceTheme(theme=localStorage.getItem('nyx.theme')||'default'){
     const clean=String(theme||'default').trim().toLowerCase()||'default';
-    const palette=parentThemePalette()||fallbackThemePalette(clean);
     const root=document.documentElement;
     const values={
-      '--ai-bg':palette.canvas,
-      '--ai-bg-deep':palette.deep,
-      '--ai-surface':palette.surface,
-      '--ai-surface-raised':palette.raised,
-      '--ai-surface-hover':palette.hover,
-      '--ai-border':`color-mix(in srgb,${palette.line} 62%,transparent)`,
-      '--ai-border-strong':`color-mix(in srgb,${palette.bright} 34%,${palette.line})`,
-      '--ai-text':palette.text,
-      '--ai-text-soft':`color-mix(in srgb,${palette.text} 84%,${palette.muted})`,
-      '--ai-muted':palette.muted,
-      '--ai-muted-dark':`color-mix(in srgb,${palette.muted} 72%,${palette.canvas})`,
-      '--ai-accent':palette.accent,
-      '--ai-accent-bright':palette.bright,
-      '--ai-accent-soft':`color-mix(in srgb,${palette.accent} 14%,transparent)`,
-      '--ai-accent-border':`color-mix(in srgb,${palette.bright} 42%,transparent)`,
-      '--ai-accent-foreground':themeForeground(palette.accent),
-      '--ai-accent-glow':`color-mix(in srgb,${palette.accent} 28%,transparent)`
+      '--ai-bg':'#000000',
+      '--ai-bg-deep':'#000000',
+      '--ai-surface':'#080808',
+      '--ai-surface-raised':'#0e0e0e',
+      '--ai-surface-hover':'#141414',
+      '--ai-border':'rgba(255,255,255,.10)',
+      '--ai-border-strong':'rgba(255,255,255,.18)',
+      '--ai-text':'#f7f7f8',
+      '--ai-text-soft':'#d7d7db',
+      '--ai-muted':'#929299',
+      '--ai-muted-dark':'#68686f',
+      '--ai-accent':'#d7d7dc',
+      '--ai-accent-bright':'#f7f7f8',
+      '--ai-accent-soft':'rgba(255,255,255,.07)',
+      '--ai-accent-border':'rgba(255,255,255,.18)',
+      '--ai-accent-foreground':'#050505',
+      '--ai-accent-glow':'rgba(255,255,255,.08)',
+      '--ai-theme-hover-border':'#8aaee2'
     };
     Object.entries(values).forEach(([name,value])=>root.style.setProperty(name,value));
     root.dataset.nyxTheme=clean;
@@ -158,9 +232,24 @@
     })[character]);
   }
 
+  function normalizedTextAttachment(value){
+    const content=String(value?.content||'');
+    if(!content||content.length>MAX_TEXT_ATTACHMENT_CHARS) return null;
+    const name=String(value?.name||'pasted-text.txt').replace(/[\\/:*?"<>|\x00-\x1f]/g,'-').slice(0,100)||'pasted-text.txt';
+    return {name:name.toLowerCase().endsWith('.txt')?name:`${name}.txt`,content,size:Number(value?.size)||new Blob([content],{type:'text/plain'}).size};
+  }
+
   function normalizedMessages(value){
     return Array.isArray(value)
-      ? value.filter(item=>item&&['user','assistant'].includes(item.role)&&String(item.content||'').trim()).map(item=>({role:item.role,content:String(item.content)})).slice(-MAX_MESSAGES)
+      ? value.map(item=>{
+          if(!item||!['user','assistant'].includes(item.role)) return null;
+          const content=item.role==='assistant'?responseParts(item.content).answer.trim():String(item.content||'').trim();
+          if(!content) return null;
+          const message={role:item.role,content};
+          const textAttachment=item.role==='user'?normalizedTextAttachment(item.textAttachment):null;
+          if(textAttachment) message.textAttachment=textAttachment;
+          return message;
+        }).filter(Boolean).slice(-MAX_MESSAGES)
       : [];
   }
 
@@ -263,109 +352,7 @@
     return window.NyxLogo?.apply(theme||localStorage.getItem('nyx.theme')||'default',document).catch?.(()=>{});
   }
 
-  function inlineMarkdown(value){
-    const code=[];
-    let source=String(value??'').replace(/`([^`\n]+)`/g,(_match,text)=>{
-      const token=`@@NYX_INLINE_${code.length}@@`;
-      code.push(`<code>${escapeHtml(text)}</code>`);
-      return token;
-    });
-    let html=escapeHtml(source);
-    html=html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/gi,'<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-    html=html.replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>');
-    html=html.replace(/__([^_\n]+)__/g,'<strong>$1</strong>');
-    html=html.replace(/~~([^~\n]+)~~/g,'<s>$1</s>');
-    html=html.replace(/(^|[^*])\*([^*\n]+)\*/g,'$1<em>$2</em>');
-    code.forEach((token,index)=>{html=html.replace(`@@NYX_INLINE_${index}@@`,token)});
-    return html;
-  }
-
-  function tableCells(line){
-    return String(line).trim().replace(/^\||\|$/g,'').split('|').map(cell=>cell.trim());
-  }
-
-  function isTableDivider(line){
-    const cells=tableCells(line);
-    return cells.length>1&&cells.every(cell=>/^:?-{3,}:?$/.test(cell));
-  }
-
-  function isBlockStart(lines,index){
-    const line=lines[index]||'';
-    return /^```/.test(line)||/^#{1,3}\s+/.test(line)||/^>\s?/.test(line)||/^\s*[-*+]\s+/.test(line)||/^\s*\d+[.)]\s+/.test(line)||/^\s*(?:---+|___+)\s*$/.test(line)||(line.includes('|')&&isTableDivider(lines[index+1]||''));
-  }
-
-  function markdown(value){
-    const lines=String(value??'').replace(/\r\n?/g,'\n').split('\n');
-    const blocks=[];
-    for(let index=0;index<lines.length;){
-      const line=lines[index];
-      if(!line.trim()){index+=1;continue}
-
-      const fence=line.match(/^```([^\s`]*)\s*$/);
-      if(fence){
-        const language=(fence[1]||'code').slice(0,24);
-        const code=[];
-        index+=1;
-        while(index<lines.length&&!/^```\s*$/.test(lines[index])){code.push(lines[index]);index+=1}
-        if(index<lines.length) index+=1;
-        blocks.push(`<div class="ai-code-block"><div class="ai-code-head"><span>${escapeHtml(language)}</span><button class="ai-code-copy" type="button" data-copy-code aria-label="Copy code"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"/></svg><span>Copy</span></button></div><pre><code>${escapeHtml(code.join('\n'))}</code></pre></div>`);
-        continue;
-      }
-
-      if(line.includes('|')&&isTableDivider(lines[index+1]||'')){
-        const headers=tableCells(line);
-        index+=2;
-        const rows=[];
-        while(index<lines.length&&lines[index].includes('|')&&lines[index].trim()){
-          rows.push(tableCells(lines[index]));
-          index+=1;
-        }
-        blocks.push(`<div class="ai-table-wrap"><table><thead><tr>${headers.map(cell=>`<th>${inlineMarkdown(cell)}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${headers.map((_header,cellIndex)=>`<td>${inlineMarkdown(row[cellIndex]||'')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`);
-        continue;
-      }
-
-      const heading=line.match(/^(#{1,3})\s+(.+)$/);
-      if(heading){
-        const level=heading[1].length;
-        blocks.push(`<h${level}>${inlineMarkdown(heading[2])}</h${level}>`);
-        index+=1;
-        continue;
-      }
-
-      if(/^>\s?/.test(line)){
-        const quote=[];
-        while(index<lines.length&&/^>\s?/.test(lines[index])){quote.push(lines[index].replace(/^>\s?/,''));index+=1}
-        blocks.push(`<blockquote>${quote.map(inlineMarkdown).join('<br>')}</blockquote>`);
-        continue;
-      }
-
-      const unordered=/^\s*[-*+]\s+/.test(line);
-      const ordered=/^\s*\d+[.)]\s+/.test(line);
-      if(unordered||ordered){
-        const items=[];
-        const pattern=ordered?/^\s*\d+[.)]\s+/:/^\s*[-*+]\s+/;
-        while(index<lines.length&&pattern.test(lines[index])){items.push(lines[index].replace(pattern,''));index+=1}
-        const tag=ordered?'ol':'ul';
-        blocks.push(`<${tag}>${items.map(item=>`<li>${inlineMarkdown(item)}</li>`).join('')}</${tag}>`);
-        continue;
-      }
-
-      if(/^\s*(?:---+|___+)\s*$/.test(line)){
-        blocks.push('<hr>');
-        index+=1;
-        continue;
-      }
-
-      const paragraph=[line];
-      index+=1;
-      while(index<lines.length&&lines[index].trim()&&!isBlockStart(lines,index)){
-        paragraph.push(lines[index]);
-        index+=1;
-      }
-      blocks.push(`<p>${paragraph.map(inlineMarkdown).join('<br>')}</p>`);
-    }
-    return blocks.join('');
-  }
+  function markdown(value){return window.NyxMarkdown.render(value)}
 
   function messageCopyButton(){
     return `<button class="ai-message-copy" type="button" data-copy-message title="Copy message" aria-label="Copy message"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"/></svg></button>`;
@@ -375,42 +362,88 @@
     attachmentStatus.textContent=String(text||'');
   }
 
+  function formatAttachmentSize(size){
+    const bytes=Math.max(0,Number(size)||0);
+    if(bytes<1024) return `${bytes} B`;
+    return `${(bytes/1024).toFixed(bytes<10240?1:0)} KB`;
+  }
+
+  function pastedTextFileName(){
+    const now=new Date();
+    const pad=value=>String(value).padStart(2,'0');
+    return `pasted-text-${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.txt`;
+  }
+
   function clearAttachment(){
     attachedImage=null;
+    attachedText=null;
     imageInput.value='';
     attachmentPreview.hidden=true;
-    attachmentPreview.classList.remove('is-error');
+    attachmentPreview.classList.remove('is-error','is-file-error','is-text-file');
     attachmentThumbnail.hidden=false;
     attachmentThumbnail.removeAttribute('src');
     attachmentName.textContent='';
     setAttachmentStatus('Ready to send');
     attachImage.classList.remove('has-attachment');
     attachImage.setAttribute('aria-label','Attach an image');
+    removeAttachment.title='Remove attachment';
+    removeAttachment.setAttribute('aria-label','Remove attachment');
   }
 
-  function showAttachmentError(message){
+  function showAttachmentError(message,label='Image not attached'){
     clearAttachment();
     attachmentPreview.hidden=false;
-    attachmentPreview.classList.add('is-error');
+    attachmentPreview.classList.add('is-error','is-file-error');
     attachmentThumbnail.hidden=true;
-    attachmentName.textContent='Image not attached';
+    attachmentName.textContent=label;
     setAttachmentStatus(message);
   }
 
   function setAttachment(image){
+    stopScreenSharing();
+    attachedText=null;
     attachedImage=image;
     attachmentPreview.hidden=false;
-    attachmentPreview.classList.remove('is-error');
+    attachmentPreview.classList.remove('is-error','is-file-error','is-text-file');
     attachmentThumbnail.hidden=false;
     attachmentThumbnail.src=image.dataUrl;
     attachmentName.textContent=image.name;
     setAttachmentStatus('Ready to send');
     attachImage.classList.add('has-attachment');
     attachImage.setAttribute('aria-label',`Replace attached image: ${image.name}`);
+    removeAttachment.title='Remove image';
+    removeAttachment.setAttribute('aria-label','Remove attached image');
+  }
+
+  function setTextAttachment(content){
+    const text=String(content||'');
+    if(!text) return null;
+    stopScreenSharing();
+    if(text.length>MAX_TEXT_ATTACHMENT_CHARS){
+      showAttachmentError(`Pasted text is limited to ${MAX_TEXT_ATTACHMENT_CHARS.toLocaleString()} characters.`,`Text file not attached`);
+      return null;
+    }
+    const attachment=normalizedTextAttachment({name:pastedTextFileName(),content:text});
+    if(!attachment) return null;
+    attachedImage=null;
+    attachedText=attachment;
+    imageInput.value='';
+    attachmentPreview.hidden=false;
+    attachmentPreview.classList.remove('is-error','is-file-error');
+    attachmentPreview.classList.add('is-text-file');
+    attachmentThumbnail.hidden=true;
+    attachmentThumbnail.removeAttribute('src');
+    attachmentName.textContent=attachment.name;
+    setAttachmentStatus(`${formatAttachmentSize(attachment.size)} · Ready to send`);
+    attachImage.classList.remove('has-attachment');
+    attachImage.setAttribute('aria-label','Attach an image (replaces the text file)');
+    removeAttachment.title='Remove text file';
+    removeAttachment.setAttribute('aria-label','Remove attached text file');
+    return attachment;
   }
 
   function readImageFile(file){
-    if(!file||!String(file.type||'').startsWith('image/')){
+    if(!file||!SUPPORTED_IMAGE_TYPES.has(String(file.type||'').toLowerCase())){
       showAttachmentError('Choose a PNG, JPG, WebP, or GIF image.');
       return Promise.resolve(null);
     }
@@ -433,90 +466,176 @@
     });
   }
 
-  function loadImageOcr(){
-    if(window.Tesseract) return Promise.resolve(window.Tesseract);
-    if(imageOcrLoader) return imageOcrLoader;
-    imageOcrLoader=new Promise((resolve,reject)=>{
-      const script=document.createElement('script');
-      script.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-      script.onload=()=>window.Tesseract?resolve(window.Tesseract):reject(new Error('OCR library did not start.'));
-      script.onerror=()=>reject(new Error('OCR library could not load.'));
-      document.head.appendChild(script);
-    });
-    return imageOcrLoader;
-  }
-
-  function analyzeImage(dataUrl){
-    return new Promise(resolve=>{
+  function prepareImageForModel(source){
+    if(!source?.dataUrl) return Promise.reject(new Error('The attached image is unavailable.'));
+    return new Promise((resolve,reject)=>{
       const image=new Image();
       image.onload=()=>{
         try{
-          const canvas=document.createElement('canvas');
-          const max=96;
-          const scale=Math.min(1,max/Math.max(image.naturalWidth,image.naturalHeight));
-          canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));
-          canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));
-          const context=canvas.getContext('2d',{willReadFrequently:true});
-          if(!context) throw new Error('Canvas is unavailable.');
-          context.drawImage(image,0,0,canvas.width,canvas.height);
-          const pixels=context.getImageData(0,0,canvas.width,canvas.height).data;
-          let red=0,green=0,blue=0,light=0,dark=0,count=0;
-          for(let index=0;index<pixels.length;index+=16){
-            const r=pixels[index],g=pixels[index+1],b=pixels[index+2];
-            const luminance=(r+g+b)/3;
-            red+=r;green+=g;blue+=b;count+=1;
-            if(luminance>200) light+=1;
-            if(luminance<55) dark+=1;
+          const originalWidth=Math.max(1,image.naturalWidth||1);
+          const originalHeight=Math.max(1,image.naturalHeight||1);
+          if(source.dataUrl.length<=MAX_PREPARED_IMAGE_CHARS&&Math.max(originalWidth,originalHeight)<=MAX_PREPARED_IMAGE_EDGE){
+            resolve({dataUrl:source.dataUrl,mime:source.type,width:originalWidth,height:originalHeight,screenCapture:source.screenCapture===true});
+            return;
           }
-          red=Math.round(red/count);green=Math.round(green/count);blue=Math.round(blue/count);
-          const brightness=Math.round((red+green+blue)/3);
-          resolve(`Image details: ${image.naturalWidth}x${image.naturalHeight}px. Average color rgb(${red}, ${green}, ${blue}). Overall brightness is about ${brightness}/255. Bright areas: ${Math.round(light/count*100)}%. Dark areas: ${Math.round(dark/count*100)}%.`);
-        }catch{
-          resolve(`Image details: ${image.naturalWidth}x${image.naturalHeight}px.`);
-        }
+          const canvas=document.createElement('canvas');
+          const context=canvas.getContext('2d');
+          if(!context) throw new Error('Image preparation is unavailable.');
+          let scale=Math.min(1,MAX_PREPARED_IMAGE_EDGE/Math.max(originalWidth,originalHeight));
+          let prepared='';
+          for(let attempt=0;attempt<7;attempt+=1){
+            canvas.width=Math.max(1,Math.round(originalWidth*scale));
+            canvas.height=Math.max(1,Math.round(originalHeight*scale));
+            context.fillStyle='#ffffff';
+            context.fillRect(0,0,canvas.width,canvas.height);
+            context.drawImage(image,0,0,canvas.width,canvas.height);
+            prepared=canvas.toDataURL('image/jpeg',Math.max(.52,.9-attempt*.07));
+            if(prepared.length<=MAX_PREPARED_IMAGE_CHARS) break;
+            scale*=.82;
+          }
+          if(!prepared||prepared.length>MAX_PREPARED_IMAGE_CHARS) throw new Error('Nyx could not prepare that image within the upload limit.');
+          resolve({dataUrl:prepared,mime:'image/jpeg',width:originalWidth,height:originalHeight,screenCapture:source.screenCapture===true});
+        }catch(error){reject(error)}
       };
-      image.onerror=()=>resolve('Nyx could not inspect the image pixels.');
-      image.src=dataUrl;
+      image.onerror=()=>reject(new Error('Nyx could not decode that image.'));
+      image.src=source.dataUrl;
     });
   }
 
-  async function readImageContext(image){
-    if(!image?.dataUrl) return '';
-    setAttachmentStatus('Reading image details…');
-    const visual=await analyzeImage(image.dataUrl);
-    try{
-      const Tesseract=await loadImageOcr();
-      const result=await Tesseract.recognize(image.dataUrl,'eng',{
-        logger:event=>{
-          if(!event?.status) return;
-          const progress=Number.isFinite(event.progress)?` ${Math.round(event.progress*100)}%`:'';
-          setAttachmentStatus(`Reading text: ${event.status}${progress}`);
-        }
-      });
-      const text=String(result?.data?.text||'').trim().slice(0,12000);
-      setAttachmentStatus(text?'Image text read':'No clear text found');
-      return text?`${visual}\n\nText read from the image:\n${text}`:`${visual}\n\nNo clear readable text was found in the image.`;
-    }catch(error){
-      setAttachmentStatus('Using basic image details');
-      return `${visual}\n\nOCR was unavailable (${error?.message||'unknown error'}).`;
+  function stopScreenSharing(){
+    const active=screenStream;
+    screenStream=null;
+    if(active) active.getTracks().forEach(track=>track.stop());
+    screenVideo.srcObject=null;
+    screenPreview.hidden=true;
+    shareScreen.classList.remove('has-attachment');
+    shareScreen.setAttribute('aria-pressed','false');
+    screenStatus.textContent='A fresh frame is attached only when you send.';
+  }
+
+  async function startScreenSharing(){
+    if(!navigator.mediaDevices?.getDisplayMedia){
+      showAttachmentError('Screen sharing is not supported by this browser.','Screen sharing unavailable');
+      return;
     }
+    stopScreenSharing();
+    clearAttachment();
+    try{
+      const stream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:{ideal:5,max:10}},audio:false});
+      const track=stream.getVideoTracks()[0];
+      if(!track) throw new Error('No screen was selected.');
+      screenStream=stream;
+      track.addEventListener('ended',stopScreenSharing,{once:true});
+      screenVideo.srcObject=stream;
+      screenPreview.hidden=false;
+      shareScreen.classList.add('has-attachment');
+      shareScreen.setAttribute('aria-pressed','true');
+      screenStatus.textContent='A fresh frame is attached only when you send.';
+      await screenVideo.play().catch(()=>{});
+    }catch(error){
+      stopScreenSharing();
+      if(error?.name!=='NotAllowedError') showAttachmentError(error?.message||'Nyx could not start screen sharing.','Screen sharing unavailable');
+    }
+  }
+
+  function captureSharedScreen(){
+    if(!screenStream||screenStream.getVideoTracks()[0]?.readyState==='ended') return Promise.reject(new Error('Screen sharing has ended. Start it again to attach your screen.'));
+    const width=Math.max(1,screenVideo.videoWidth||Number(screenStream.getVideoTracks()[0]?.getSettings?.().width)||0);
+    const height=Math.max(1,screenVideo.videoHeight||Number(screenStream.getVideoTracks()[0]?.getSettings?.().height)||0);
+    if(width<=1||height<=1) return Promise.reject(new Error('The shared screen is not ready yet. Wait a moment and try again.'));
+    const scale=Math.min(1,MAX_PREPARED_IMAGE_EDGE/Math.max(width,height));
+    const canvas=document.createElement('canvas');
+    const context=canvas.getContext('2d');
+    if(!context) return Promise.reject(new Error('Screen capture is unavailable in this browser.'));
+    canvas.width=Math.max(1,Math.round(width*scale));
+    canvas.height=Math.max(1,Math.round(height*scale));
+    context.drawImage(screenVideo,0,0,canvas.width,canvas.height);
+    let quality=.88;
+    let dataUrl=canvas.toDataURL('image/jpeg',quality);
+    while(dataUrl.length>MAX_PREPARED_IMAGE_CHARS&&quality>.5){
+      quality-=.08;
+      dataUrl=canvas.toDataURL('image/jpeg',quality);
+    }
+    if(dataUrl.length>MAX_PREPARED_IMAGE_CHARS) return Promise.reject(new Error('Nyx could not prepare that screen frame within the upload limit.'));
+    return Promise.resolve({name:'Shared screen',size:Math.ceil(dataUrl.length*.75),type:'image/jpeg',dataUrl,screenCapture:true});
+  }
+
+  function responseParts(value){
+    const source=String(value||'');
+    const tag=/<\/?think\b[^>]*>/gi;
+    let answer='';
+    let reasoning='';
+    let cursor=0;
+    let inThinking=false;
+    let match;
+    while((match=tag.exec(source))){
+      const chunk=source.slice(cursor,match.index);
+      if(inThinking) reasoning+=chunk;
+      else answer+=chunk;
+      if(/^<\//.test(match[0])) inThinking=false;
+      else inThinking=true;
+      cursor=match.index+match[0].length;
+    }
+    const tail=source.slice(cursor);
+    if(inThinking) reasoning+=tail;
+    else answer+=tail;
+    if(!inThinking){
+      const unfinished=answer.match(/<\/?t(?:h(?:i(?:n(?:k)?)?)?)?$/i);
+      if(unfinished) answer=answer.slice(0,-unfinished[0].length);
+    }
+    return {answer,reasoning};
+  }
+
+  function appendReasoning(content,text){
+    const details=document.createElement('details');
+    details.className='ai-reasoning';
+    const summary=document.createElement('summary');
+    summary.textContent='Thinking';
+    const body=document.createElement('div');
+    body.className='ai-reasoning-body';
+    body.innerHTML=markdown(text);
+    details.append(summary,body);
+    content.appendChild(details);
   }
 
   function setMessageContent(message,text,{error=false,thinking=false}={}){
     const content=message.querySelector('.ai-message-content');
     if(!content) return;
-    message._nyxMessageText=String(text||'');
     message.classList.toggle('ai-message-error',error);
     message.classList.toggle('is-thinking',thinking);
     if(thinking){
+      message._nyxMessageText='';
       content.innerHTML='<span class="ai-thinking" aria-label="Nyx AI is thinking"><i></i><i></i><i></i></span>';
       return;
     }
     if(message.classList.contains('ai-message-user')||error){
+      message._nyxMessageText=String(text||'');
       content.textContent=String(text||'');
       return;
     }
-    content.innerHTML=markdown(text);
+    const parts=responseParts(text);
+    message._nyxMessageText=parts.answer.trim();
+    content.replaceChildren();
+    if(parts.reasoning.trim()) appendReasoning(content,parts.reasoning.trim());
+    if(parts.answer.trim()){
+      const answer=document.createElement('div');
+      answer.className='ai-answer';
+      answer.innerHTML=markdown(parts.answer.trim());
+      content.appendChild(answer);
+    }
+  }
+
+  function downloadTextAttachment(attachment){
+    const normalized=normalizedTextAttachment(attachment);
+    if(!normalized) return;
+    const url=URL.createObjectURL(new Blob([normalized.content],{type:'text/plain;charset=utf-8'}));
+    const link=document.createElement('a');
+    link.href=url;
+    link.download=normalized.name;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
 
   function addMessage(role,text,{error=false,thinking=false,attachment=null}={}){
@@ -541,6 +660,18 @@
       caption.textContent=attachment.name||'Attached image';
       figure.append(image,caption);
       message.querySelector('.ai-message-content')?.before(figure);
+    }else if(attachment?.content&&!assistant){
+      const textAttachment=normalizedTextAttachment(attachment);
+      if(textAttachment){
+        const file=document.createElement('button');
+        file.className='ai-message-attachment ai-message-text-attachment';
+        file.type='button';
+        file.dataset.downloadTextAttachment='';
+        file.title=`Download ${textAttachment.name}`;
+        file.innerHTML=`<span class="ai-text-file-icon" aria-hidden="true">TXT</span><span class="ai-text-file-copy"><strong>${escapeHtml(textAttachment.name)}</strong><small>${escapeHtml(formatAttachmentSize(textAttachment.size))} · Download</small></span>`;
+        file._nyxTextAttachment=textAttachment;
+        message.querySelector('.ai-message-content')?.before(file);
+      }
     }
     setMessageContent(message,text,{error,thinking});
     conversation.appendChild(message);
@@ -594,9 +725,12 @@
 
   function renderThreadList(){
     const items=[...threads].sort((left,right)=>right.updatedAt-left.updatedAt);
-    threadCount.textContent=String(items.length);
-    historyEmpty.hidden=items.length>0;
-    threadList.innerHTML=items.map(thread=>`<div role="listitem"><button class="ai-thread-button" type="button" data-thread-id="${escapeHtml(thread.id)}" aria-current="${!temporaryMode&&thread.id===activeThreadId?'true':'false'}"><span class="ai-thread-icon">${threadIcon()}</span><span class="ai-thread-copy"><strong>${escapeHtml(thread.title)}</strong><small>${escapeHtml(threadDate(thread.updatedAt))}</small></span></button></div>`).join('');
+    const query=threadSearch.value.trim().toLowerCase();
+    const visible=query?items.filter(thread=>`${thread.title}\n${thread.messages.map(item=>item.content).join('\n')}`.toLowerCase().includes(query)):items;
+    threadCount.textContent=query?`${visible.length}/${items.length}`:String(items.length);
+    historyEmpty.hidden=visible.length>0;
+    historyEmpty.textContent=items.length?(query?'No matching chats.':'Your conversations will appear here.'):'Your conversations will appear here.';
+    threadList.innerHTML=visible.map(thread=>`<div role="listitem"><button class="ai-thread-button" type="button" data-thread-id="${escapeHtml(thread.id)}" aria-current="${!temporaryMode&&thread.id===activeThreadId?'true':'false'}"><span class="ai-thread-icon">${threadIcon()}</span><span class="ai-thread-copy"><strong>${escapeHtml(thread.title)}</strong><small>${escapeHtml(threadDate(thread.updatedAt))}</small></span></button></div>`).join('');
     temporaryChat.setAttribute('aria-pressed',String(temporaryMode));
   }
 
@@ -650,14 +784,63 @@
     input.focus();
   }
 
+  const PROFILE_MINECRAFT_COLORS=Object.freeze({
+    '0':'#000000','1':'#0000aa','2':'#00aa00','3':'#00aaaa',
+    '4':'#aa0000','5':'#aa00aa','6':'#ffaa00','7':'#aaaaaa',
+    '8':'#555555','9':'#5555ff',a:'#55ff55',b:'#55ffff',
+    c:'#ff5555',d:'#ff55ff',e:'#ffff55',f:'#ffffff'
+  });
+
+  function visibleProfileName(value){
+    return String(value||'').replace(/&[0-9a-fklmnor]/gi,'').trim();
+  }
+
+  function renderProfileName(element,value){
+    const source=String(value||'');
+    const pattern=/&([0-9a-fklmnor])/gi;
+    const fragment=document.createDocumentFragment();
+    let cursor=0;
+    let match;
+    let style={};
+    const append=text=>{
+      if(!text) return;
+      const span=document.createElement('span');
+      span.textContent=text;
+      if(style.color) span.style.color=style.color;
+      if(style.bold) span.style.fontWeight='900';
+      if(style.italic) span.style.fontStyle='italic';
+      const decorations=[];
+      if(style.underline) decorations.push('underline');
+      if(style.strike) decorations.push('line-through');
+      if(decorations.length) span.style.textDecoration=decorations.join(' ');
+      if(style.magic) span.classList.add('ai-minecraft-magic');
+      fragment.append(span);
+    };
+    while((match=pattern.exec(source))){
+      append(source.slice(cursor,match.index));
+      cursor=pattern.lastIndex;
+      const code=match[1].toLowerCase();
+      if(PROFILE_MINECRAFT_COLORS[code]) style={color:PROFILE_MINECRAFT_COLORS[code]};
+      else if(code==='l') style.bold=true;
+      else if(code==='o') style.italic=true;
+      else if(code==='n') style.underline=true;
+      else if(code==='m') style.strike=true;
+      else if(code==='k') style.magic=true;
+      else if(code==='r') style={};
+    }
+    append(source.slice(cursor));
+    element.replaceChildren(fragment);
+    element.title=visibleProfileName(source)||'Profile';
+  }
+
   function updateProfile(profile={}){
     const fallbackName=String(localStorage.getItem('nyx.userName')||'Profile').trim()||'Profile';
     const name=String(profile.displayName||fallbackName).trim()||'Profile';
     const handle=String(profile.handle||'Open your Nyx profile').trim();
     const avatar=String(profile.avatarUrl||'').trim();
-    profileName.textContent=name;
+    renderProfileName(profileName,name);
     profileHandle.textContent=handle;
-    profileInitial.textContent=(name[0]||'N').toUpperCase();
+    profileInitial.textContent=(Array.from(visibleProfileName(name))[0]||'N').toUpperCase();
     if(/^(?:https?:|blob:|data:image\/|\/)/i.test(avatar)){
       profileAvatar.src=avatar;
       profileAvatar.hidden=false;
@@ -687,7 +870,7 @@
       conversation.innerHTML=welcome();
     }else{
       conversation.classList.remove('is-empty');
-      items.forEach(item=>addMessage(item.role,item.content));
+      items.forEach(item=>addMessage(item.role,item.content,{attachment:item.textAttachment||null}));
     }
     updateThreadTitle(items);
     applyLogoTheme();
@@ -708,7 +891,7 @@
   }
 
   function modelOptions(models){
-    return groupedModels(models).map(([company,items])=>`<optgroup label="${escapeHtml(company)}">${items.map(item=>`<option value="${escapeHtml(item.id)}">${escapeHtml(item.label)}</option>`).join('')}</optgroup>`).join('');
+    return groupedModels(models).map(([company,items])=>`<optgroup label="${escapeHtml(company)}">${items.map(item=>`<option value="${escapeHtml(item.id)}">${escapeHtml(item.label)}${item.vision?' · Vision':''}</option>`).join('')}</optgroup>`).join('');
   }
 
   function modelMenuOptions(models,selected){
@@ -717,7 +900,7 @@
       return `<section class="ai-model-group" role="group" aria-labelledby="${groupId}">
         <p class="ai-model-group-label" id="${groupId}">${escapeHtml(company)}</p>
         ${items.map(item=>`<button class="ai-model-option" type="button" role="option" data-model-id="${escapeHtml(item.id)}" aria-selected="${item.id===selected?'true':'false'}">
-          <span class="ai-model-option-label">${escapeHtml(item.label)}</span>
+          <span class="ai-model-option-label">${escapeHtml(item.label)}${item.vision?' · Vision':''}</span>
           <span class="ai-model-option-check" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="m5 10 3 3 7-7"/></svg></span>
         </button>`).join('')}
       </section>`;
@@ -730,6 +913,7 @@
     modelSelected.textContent=label;
     modelTrigger.title=`Model: ${label}`;
     modelTrigger.setAttribute('aria-label',`AI model: ${label}`);
+    sidebarModelName.textContent=label;
     modelOptionsHost.querySelectorAll('[data-model-id]').forEach(option=>{
       option.setAttribute('aria-selected',String(option.dataset.modelId===selected));
     });
@@ -783,28 +967,40 @@
     modelTrigger.disabled=true;
     modelTrigger.setAttribute('aria-busy','true');
     try{
-      const response=await fetch('/api/nyx-ai/models',{headers:{accept:'application/json'}});
+      const response=customKey?Response.json({models:[{id:'google/gemini-2.5-flash-lite',label:'Gemini 2.5 Flash Lite',vision:customKind()==='openrouter'},{id:'openai/gpt-5.6-luna',label:'GPT-5.6 Luna',vision:customKind()==='openrouter'}]}):await fetch('/api/nyx-ai/models',{headers:await aiHeaders({accept:'application/json'})});
       const data=await response.json();
       if(!response.ok) throw new Error(data?.error||`Model catalog failed (${response.status})`);
       const next=Array.isArray(data?.models)?data.models.flatMap(item=>{
         const id=String(item?.id||'').trim();
         const label=String(item?.label||id).trim();
         const company=String(item?.company||'').trim();
-        return id&&label?[{id,label,company}]:[];
+        return id&&label?[{id,label,company,vision:customKey&&customKind()==='nyx'?false:Boolean(item?.vision)||KNOWN_VISION_MODELS.has(id),reasoning:Boolean(item?.reasoning)}]:[];
       }):[];
       if(!next.length) throw new Error('No models are currently available.');
-      modelCatalog=next;
       const saved=activeThread()?.model||localStorage.getItem(MODEL_KEY)||DEFAULT_MODEL;
+      const savedLabel=modelCatalog.find(item=>item.id===saved)?.label||saved;
+      modelCatalog=next;
       const selected=next.some(item=>item.id===saved)?saved:(next.some(item=>item.id===DEFAULT_MODEL)?DEFAULT_MODEL:next[0].id);
       renderModelOptions(next,selected);
-      localStorage.setItem(MODEL_KEY,selected);
-      if(status) status.title=`${next.length} models available`;
+      if(selected===saved){
+        localStorage.setItem(MODEL_KEY,selected);
+        if(status){status.classList.remove('is-warning');status.title=`${next.length} models available`}
+      }else if(status){
+        status.classList.add('is-warning');
+        status.title=`${savedLabel} is temporarily unavailable. Nyx will restore it when it returns.`;
+      }
+      return true;
     }catch(error){
       console.warn('Nyx AI model catalog could not be loaded:',error);
-      if(status){status.classList.add('is-warning');status.title='Using the default model'}
+      modelCatalog=[];
+      renderModelOptions([],"");
+      modelSelected.textContent='Models unavailable';
+      if(status){status.classList.add('is-warning');status.title='The model list could not be verified'}
+      return false;
     }finally{
-      model.disabled=false;
-      modelTrigger.disabled=false;
+      const available=modelCatalog.length>0;
+      model.disabled=!available;
+      modelTrigger.disabled=!available;
       modelTrigger.removeAttribute('aria-busy');
     }
   }
@@ -827,12 +1023,14 @@
     send.disabled=busy;
     imageInput.disabled=busy;
     attachImage.disabled=busy;
+    shareScreen.disabled=busy;
     removeAttachment.disabled=busy;
     send.setAttribute('aria-label',busy?'Waiting for Nyx AI':'Send message');
   }
 
   function clearChat(){
     stopRequest();
+    stopScreenSharing();
     clearAttachment();
     if(temporaryMode){
       temporaryMessages=[];
@@ -877,21 +1075,34 @@
 
   async function submitPrompt(){
     const prompt=input.value.trim();
-    const attachment=attachedImage;
-    if((!prompt&&!attachment)||send.disabled) return;
-    const userText=prompt||'Please analyze this image.';
+    let imageAttachment=attachedImage;
+    const textAttachment=attachedText;
+    const sharing=Boolean(screenStream);
+    if((!prompt&&!imageAttachment&&!textAttachment&&!sharing)||send.disabled) return;
+    if(sharing){
+      try{
+        screenStatus.textContent='Capturing the current frame…';
+        imageAttachment=await captureSharedScreen();
+      }catch(error){
+        screenStatus.textContent=error?.message||'Nyx could not capture the shared screen.';
+        return;
+      }
+    }
+    const selectedModelId=model.value||DEFAULT_MODEL;
+    const requestedModel=selectedModelId||DEFAULT_MODEL;
+    const userText=prompt||(sharing?'Please analyze what is currently on my screen.':imageAttachment?'Please analyze this image.':'Please review the attached text file.');
     const history=savedMessages();
     if(!history.length) updateThreadTitle([{role:'user',content:userText}]);
-    history.push({role:'user',content:userText});
+    history.push({role:'user',content:userText,...(textAttachment?{textAttachment}: {})});
     saveMessages(history);
-    addMessage('user',userText,{attachment});
+    addMessage('user',userText,{attachment:imageAttachment||textAttachment});
     input.value='';
     autoGrow();
     const pending=addMessage('assistant','',{thinking:true});
-    const requestedModel=model.value||DEFAULT_MODEL;
     activeController=new AbortController();
     setBusy(true);
     let answer='';
+    let requestSucceeded=false;
     let renderFrame=0;
     const renderAnswer=()=>{
       renderFrame=0;
@@ -899,54 +1110,76 @@
       scrollToBottom();
     };
     try{
-      const imageContext=attachment?await readImageContext(attachment):'';
-      const response=await fetch('/api/nyx-ai',{
+      const preparedImage=imageAttachment?await prepareImageForModel(imageAttachment):null;
+      const imageContext=preparedImage?`Original image dimensions: ${preparedImage.width}x${preparedImage.height}px.`:'';
+      if(preparedImage){
+        if(sharing) screenStatus.textContent=`Nyx is reading this screen frame for ${modelLabel(requestedModel)}…`;
+        else setAttachmentStatus(`Nyx is reading this image for ${modelLabel(requestedModel)}…`);
+      }
+      let response;
+      if(customKey){
+        const kind=customKind();
+        if(preparedImage&&kind==='nyx')throw new Error('Nyx API keys currently support text only. Use Nyx shared or an OpenRouter key for images.');
+        const messages=history.map(item=>({role:item.role,content:item.content+(item.textAttachment?'\n\n'+item.textAttachment.content:'')}));
+        if(preparedImage)messages[messages.length-1].content=[{type:'text',text:messages[messages.length-1].content},{type:'image_url',image_url:{url:preparedImage.dataUrl}}];
+        response=await fetch(kind==='nyx'?'/api/v1/ai':'https://openrouter.ai/api/v1/chat/completions',{method:'POST',signal:activeController.signal,headers:{'Content-Type':'application/json',Authorization:'Bearer '+customKey},body:JSON.stringify({model:requestedModel,messages,max_tokens:512,stream:kind!=='nyx'})});
+        if(kind==='nyx'&&response.ok){const result=await response.json();const content=result.choices?.[0]?.message?.content||'';response=new Response('data: '+JSON.stringify({choices:[{delta:{content}}]})+'\n\ndata: [DONE]\n\n',{headers:{'Content-Type':'text/event-stream'}});}
+      }else{
+      response=await fetch('/api/nyx-ai',{
         method:'POST',
         signal:activeController.signal,
-        headers:{'content-type':'application/json'},
-        body:JSON.stringify({model:requestedModel,message:userText,messages:history,imageContext,stream:true})
+        headers:await aiHeaders({'content-type':'application/json'}),
+        body:JSON.stringify({model:requestedModel,message:userText,messages:history,textAttachment,imageContext,image:preparedImage,responseDepth:responseDepth(),stream:true})
       });
+      }
       if(!response.ok){
         const data=await response.json().catch(()=>({}));
-        throw new Error(data?.error||`Nyx AI failed (${response.status})`);
+        throw new Error(data?.error?.message||data?.error||`Nyx AI failed (${response.status})`);
       }
       if(!response.body) throw new Error('The selected model did not return a stream.');
       const reader=response.body.getReader();
       const decoder=new TextDecoder();
       let buffer='';
+      const consumeLine=line=>{
+        if(!line.startsWith('data:')) return;
+        const raw=line.slice(5).trim();
+        if(!raw||raw==='[DONE]') return;
+        try{
+          const data=JSON.parse(raw);
+          const token=data?.choices?.[0]?.delta?.content||data?.choices?.[0]?.text||'';
+          if(token){
+            answer=data?.nyx_replace===true?String(token):answer+token;
+            if(!renderFrame) renderFrame=requestAnimationFrame(renderAnswer);
+          }
+        }catch{}
+      };
       for(;;){
         const part=await reader.read();
         if(part.done) break;
         buffer+=decoder.decode(part.value,{stream:true});
         const lines=buffer.split(/\r?\n/);
         buffer=lines.pop()||'';
-        for(const line of lines){
-          if(!line.startsWith('data:')) continue;
-          const raw=line.slice(5).trim();
-          if(!raw||raw==='[DONE]') continue;
-          try{
-            const data=JSON.parse(raw);
-            const token=data?.choices?.[0]?.delta?.content||data?.choices?.[0]?.text||'';
-            if(token){
-              answer+=token;
-              if(!renderFrame) renderFrame=requestAnimationFrame(renderAnswer);
-            }
-          }catch{}
-        }
+        lines.forEach(consumeLine);
       }
+      buffer+=decoder.decode();
+      buffer.split(/\r?\n/).forEach(consumeLine);
       if(renderFrame){cancelAnimationFrame(renderFrame);renderAnswer()}
       const clean=answer.trim();
-      if(!clean) throw new Error('The selected model returned an empty response.');
+      const finalAnswer=responseParts(clean).answer.trim();
+      if(!finalAnswer) throw new Error('This model did not produce a final answer. Try again or choose another available model.');
       setMessageContent(pending,clean);
-      history.push({role:'assistant',content:clean});
+      history.push({role:'assistant',content:finalAnswer});
       saveMessages(history);
+      recordUsage(userText,finalAnswer);
+      requestSucceeded=true;
     }catch(error){
       if(error?.name==='AbortError') return;
       setMessageContent(pending,error?.message||'Nyx AI could not complete that request.',{error:true});
     }finally{
       activeController=null;
       setBusy(false);
-      clearAttachment();
+      if(requestSucceeded)clearAttachment();
+      if(screenStream) screenStatus.textContent='A fresh frame is attached only when you send.';
       input.focus();
       scrollToBottom();
     }
@@ -981,6 +1214,11 @@
       form.requestSubmit();
       return;
     }
+    const textDownload=event.target.closest('[data-download-text-attachment]');
+    if(textDownload){
+      downloadTextAttachment(textDownload._nyxTextAttachment);
+      return;
+    }
     const copyCode=event.target.closest('[data-copy-code]');
     if(copyCode){
       await copyText(copyCode.closest('.ai-code-block')?.querySelector('pre code')?.textContent||'');
@@ -996,6 +1234,11 @@
   });
   form.addEventListener('submit',event=>{event.preventDefault();void submitPrompt()});
   attachImage.addEventListener('click',()=>imageInput.click());
+  shareScreen.addEventListener('click',()=>{void startScreenSharing()});
+  stopScreenShare.addEventListener('click',()=>{
+    stopScreenSharing();
+    input.focus();
+  });
   imageInput.addEventListener('change',()=>{void readImageFile(imageInput.files?.[0])});
   removeAttachment.addEventListener('click',()=>{
     clearAttachment();
@@ -1003,7 +1246,18 @@
   });
   input.addEventListener('paste',event=>{
     const image=[...(event.clipboardData?.files||[])].find(file=>String(file.type||'').startsWith('image/'));
-    if(image) void readImageFile(image);
+    if(image){
+      void readImageFile(image);
+      return;
+    }
+    const pastedText=String(event.clipboardData?.getData('text/plain')||'');
+    const selectedLength=Math.max(0,(input.selectionEnd||0)-(input.selectionStart||0));
+    const nextLength=input.value.length-selectedLength+pastedText.length;
+    if(pastedText&&nextLength>Number(input.maxLength||4000)){
+      event.preventDefault();
+      setTextAttachment(pastedText);
+      autoGrow();
+    }
   });
   form.addEventListener('dragenter',event=>{
     if([...(event.dataTransfer?.items||[])].some(item=>item.kind==='file')) form.classList.add('is-dragging');
@@ -1094,6 +1348,11 @@
     const button=event.target.closest('[data-thread-id]');
     if(button) selectThread(button.dataset.threadId||'');
   });
+  threadSearch.addEventListener('input',renderThreadList);
+  depthButtons.forEach(button=>button.addEventListener('click',()=>{
+    localStorage.setItem(RESPONSE_DEPTH_KEY,button.dataset.responseDepth||'normal');
+    syncResponseDepth();
+  }));
   sidebarToggle.addEventListener('click',()=>setSidebarOpen(!app.classList.contains('is-sidebar-open')));
   sidebarClose.addEventListener('click',()=>setSidebarOpen(false));
   sidebarScrim.addEventListener('click',()=>setSidebarOpen(false));
@@ -1113,13 +1372,17 @@
       sidebarToggle.focus();
     }
   });
+  addEventListener('pagehide',stopScreenSharing);
 
   initializeThreads();
   renderModelOptions(modelCatalog,model.value||DEFAULT_MODEL);
   renderThreadList();
   render();
   autoGrow();
+  syncResponseDepth();
+  renderUsage();
   requestProfile();
-  void loadModels();
+
+  void (async()=>{await loadProviders();await loadModels()})();
   input.focus();
 })();

@@ -139,17 +139,12 @@ server.on("upgrade", (req, socket, head) => {
   wisp.routeRequest(req, socket, head);
 });
 
-server.listen(port, "0.0.0.0", () => {
-  console.log(`Nyx Wisp listening on 0.0.0.0:${port}`);
-  console.log(`Outbound DNS result order: ${wisp.options.dns_result_order}`);
-  console.log(allowedOrigins.length ? `Allowed origins: ${allowedOrigins.join(", ")}` : "Warning: NYX_ALLOWED_ORIGINS is empty; all browser origins are currently allowed.");
-});
+server.listen(port, "0.0.0.0");
 
 let shuttingDown = false;
 function shutdown(signal) {
   if (shuttingDown) return;
   shuttingDown = true;
-  console.log(`${signal} received; closing Wisp server.`);
   server.close(() => process.exit(0));
   setTimeout(() => process.exit(1), 10_000).unref();
 }

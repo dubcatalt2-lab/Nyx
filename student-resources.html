@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+  <title>Nyx Student Resources</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #182334;
+      --muted: #647187;
+      --line: #d9e2ed;
+      --paper: #ffffff;
+      --page: #f3f7fb;
+      --accent: #285f9d;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { min-height: 100vh; margin: 0; color: var(--ink); background: var(--page); }
+    header, footer { border-bottom: 1px solid var(--line); background: var(--paper); }
+    footer { border-top: 1px solid var(--line); border-bottom: 0; }
+    .wrap { width: min(980px, calc(100% - 36px)); margin: auto; }
+    .top { display: flex; align-items: center; min-height: 66px; gap: 12px; font-weight: 750; }
+    .mark { display: grid; place-items: center; width: 37px; height: 37px; border-radius: 11px; color: white; background: var(--accent); }
+    .hero { padding: 62px 0 46px; background: linear-gradient(180deg, #fff, var(--page)); }
+    h1 { max-width: 720px; margin: 0 0 14px; color: #153f70; font-size: clamp(32px, 6vw, 48px); line-height: 1.08; }
+    .hero p { max-width: 700px; margin: 0; color: var(--muted); font-size: 17px; line-height: 1.65; }
+    main { padding: 40px 0 58px; }
+    h2 { margin: 0 0 8px; font-size: 22px; }
+    .intro { margin: 0 0 22px; color: var(--muted); }
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .problem { padding: 20px; border: 1px solid var(--line); border-radius: 15px; background: var(--paper); box-shadow: 0 8px 24px rgba(30, 66, 105, .06); }
+    .subject { display: block; margin-bottom: 12px; color: var(--accent); font-size: 12px; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
+    .problem strong { display: block; min-height: 52px; font-size: 17px; line-height: 1.5; }
+    button { width: 100%; min-height: 42px; margin-top: 18px; border: 1px solid #bed0e3; border-radius: 11px; color: #173f70; background: #edf4fb; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+    button:hover { background: #e3eef9; }
+    button:focus-visible { outline: 3px solid rgba(40, 95, 157, .28); outline-offset: 2px; }
+    .answer { min-height: 24px; margin: 13px 0 0; color: var(--muted); font-size: 14px; }
+    .foot { padding: 22px 0; color: var(--muted); font-size: 13px; }
+    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } .hero { padding-top: 44px; } }
+  </style>
+</head>
+<body>
+  <header><div class="wrap top"><span class="mark" aria-hidden="true">N</span><span>Nyx Student Resources</span></div></header>
+  <section class="hero">
+    <div class="wrap">
+      <h1>Learning should feel open, useful, and possible.</h1>
+      <p>The goal of Nyx is to serve students with the best educational experience possible—helpful tools, dependable access, and room to explore ideas at your own pace.</p>
+    </div>
+  </section>
+  <main class="wrap">
+    <h2>Quick math practice</h2>
+    <p class="intro">Try a short problem, then check your answer.</p>
+    <div class="grid">
+      <article class="problem">
+        <span class="subject">Algebra</span>
+        <strong>If 3x + 5 = 26, what is x?</strong>
+        <button type="button" data-answer="x = 7">Check answer</button>
+        <p class="answer" aria-live="polite"></p>
+      </article>
+      <article class="problem">
+        <span class="subject">Geometry</span>
+        <strong>What is the area of a triangle with base 12 and height 5?</strong>
+        <button type="button" data-answer="30 square units">Check answer</button>
+        <p class="answer" aria-live="polite"></p>
+      </article>
+      <article class="problem">
+        <span class="subject">Percentages</span>
+        <strong>What is 15% of 240?</strong>
+        <button type="button" data-answer="36">Check answer</button>
+        <p class="answer" aria-live="polite"></p>
+      </article>
+    </div>
+  </main>
+  <footer><div class="wrap foot">Nyx Student Resources · Built to support curious students.</div></footer>
+  <script>
+    document.addEventListener("click", event => {
+      const button = event.target.closest("button[data-answer]");
+      if (!button) return;
+      const answer = button.parentElement.querySelector(".answer");
+      answer.textContent = `Answer: ${button.dataset.answer}`;
+      button.textContent = "Answer shown";
+      button.disabled = true;
+    });
+  </script>
+</body>
+</html>

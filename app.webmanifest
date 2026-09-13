@@ -11,16 +11,16 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "/assets/icons/nyx-app-192.png",
-      "sizes": "192x192",
+      "src": "/assets/icons/nyx-monogram.png",
+      "sizes": "1254x1254",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/assets/icons/nyx-app-512.png",
-      "sizes": "512x512",
+      "src": "/assets/icons/nyx-monogram.png",
+      "sizes": "1254x1254",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ],
   "shortcuts": [
@@ -30,8 +30,8 @@
       "url": "/?source=installed-app",
       "icons": [
         {
-          "src": "/assets/icons/nyx-app-192.png",
-          "sizes": "192x192",
+          "src": "/assets/icons/nyx-monogram.png",
+          "sizes": "1254x1254",
           "type": "image/png"
         }
       ]

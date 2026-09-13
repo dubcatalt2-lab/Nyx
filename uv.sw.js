@@ -2,8 +2,103 @@
 importScripts("/uv.config.js");
 importScripts("/uv/uv.sw.js");
 
-const uv = new UVServiceWorker();
+const uvSessions = new Map();
 const UV_ASSET_RETRY_DELAYS = [0, 180, 520];
+
+const NYX_PROXY_PRIVACY_GUARD = `<script data-nyx-proxy-privacy>(${function () {
+  if (globalThis.__nyxProxyPrivacyInstalled) return;
+  globalThis.__nyxProxyPrivacyInstalled = true;
+  const denied = Object.freeze({ code: 1, message: "Location access is disabled in Nyx private tabs." });
+  const fail = callback => {
+    if (typeof callback === "function") queueMicrotask(() => callback(denied));
+  };
+  const geolocation = Object.freeze({
+    getCurrentPosition(_success, error) { fail(error); },
+    watchPosition(_success, error) { fail(error); return 0; },
+    clearWatch() {}
+  });
+  try { Object.defineProperty(Navigator.prototype, "geolocation", { configurable: true, get: () => geolocation }); } catch {}
+  try { Object.defineProperty(navigator, "geolocation", { configurable: true, get: () => geolocation }); } catch {}
+  const nativeQuery = navigator.permissions?.query?.bind(navigator.permissions);
+  if (nativeQuery) {
+    try {
+      navigator.permissions.query = descriptor => {
+        if (String(descriptor?.name || "").toLowerCase() === "geolocation") {
+          const status = new EventTarget();
+          Object.defineProperties(status, {
+            state: { enumerable: true, value: "denied" },
+            onchange: { configurable: true, writable: true, value: null }
+          });
+          return Promise.resolve(status);
+        }
+        return nativeQuery(descriptor);
+      };
+    } catch {}
+  }
+}.toString()})();<\/script>`;
+
+function uvSessionDetails(requestUrl) {
+  try {
+    const url = new URL(requestUrl);
+    const match = url.pathname.match(/^\/service\/(nyx_[a-z0-9_-]{12,80})\//i);
+    if (!match) return { id: "", prefix: self.__uv$config?.prefix || "/service/", dbName: "__op" };
+    return {
+      id: match[1],
+      prefix: `/service/${match[1]}/`,
+      dbName: `__nyx_uv_tab_${match[1]}`
+    };
+  } catch {
+    return { id: "", prefix: self.__uv$config?.prefix || "/service/", dbName: "__op" };
+  }
+}
+
+function uvForRequest(requestUrl) {
+  const session = uvSessionDetails(requestUrl);
+  const key = session.id || "legacy";
+  let engine = uvSessions.get(key);
+  if (!engine) {
+    const inject = Array.isArray(self.__uv$config?.inject) ? [...self.__uv$config.inject] : [];
+    inject.push({ host: ".*", injectTo: "head", html: NYX_PROXY_PRIVACY_GUARD });
+    engine = new UVServiceWorker({
+      ...self.__uv$config,
+      prefix: session.prefix,
+      cookieDbName: session.dbName,
+      inject
+    });
+    uvSessions.set(key, engine);
+  }
+  return { engine, session };
+}
+
+function clearCookieDatabase(name) {
+  return new Promise(resolve => {
+    let request;
+    try { request = indexedDB.open(name); } catch { resolve(false); return; }
+    request.onerror = () => resolve(false);
+    request.onupgradeneeded = () => {};
+    request.onsuccess = () => {
+      const database = request.result;
+      if (!database.objectStoreNames.contains("cookies")) {
+        database.close();
+        resolve(true);
+        return;
+      }
+      const transaction = database.transaction("cookies", "readwrite");
+      transaction.objectStore("cookies").clear();
+      transaction.oncomplete = () => { database.close(); resolve(true); };
+      transaction.onerror = () => { database.close(); resolve(false); };
+      transaction.onabort = () => { database.close(); resolve(false); };
+    };
+  });
+}
+
+self.addEventListener("message", event => {
+  const data = event.data;
+  if (data?.type !== "nyx:destroy-proxy-session" || !/^nyx_[a-z0-9_-]{12,80}$/i.test(String(data.sessionId || ""))) return;
+  const id = String(data.sessionId);
+  uvSessions.delete(id);
+  event.waitUntil?.(clearCookieDatabase(`__nyx_uv_tab_${id}`));
+});
 
 self.addEventListener("install", event => {
   event.waitUntil(self.skipWaiting());
@@ -16,12 +111,73 @@ self.addEventListener("activate", event => {
 function proxiedSourceUrl(requestUrl) {
   try {
     const url = new URL(requestUrl);
-    const prefix = self.__uv$config?.prefix || "/service/";
+    const prefix = uvSessionDetails(requestUrl).prefix;
     if (!url.pathname.startsWith(prefix)) return "";
     return self.__uv$config.decodeUrl(url.pathname.slice(prefix.length));
   } catch {
     return "";
   }
+}
+
+const nyxBlockedAdHosts = [
+  "adnxs.com",
+  "ads.emulatorjs.org",
+  "adsrvr.org",
+  "adsterra.com",
+  "adtrafficquality.google",
+  "amazon-adsystem.com",
+  "cdn.r9x.in",
+  "criteo.com",
+  "doubleclick.net",
+  "exoclick.com",
+  "gamemonetize.com",
+  "googleadservices.com",
+  "googlesyndication.com",
+  "imasdk.googleapis.com",
+  "mgid.com",
+  "monetag.com",
+  "openx.net",
+  "outbrain.com",
+  "playwire.com",
+  "popads.net",
+  "popcash.net",
+  "propellerads.com",
+  "pubmatic.com",
+  "rubiconproject.com",
+  "taboola.com",
+  "trafficjunky.com"
+];
+
+function nyxUvAdHostBlocked(hostname) {
+  const host = String(hostname || "").toLowerCase();
+  return nyxBlockedAdHosts.some(blocked => host === blocked || host.endsWith(`.${blocked}`));
+}
+
+function nyxShouldBlockUvAd(event) {
+  const source = proxiedSourceUrl(event.request.url);
+  if (!source) return false;
+  try {
+    const url = new URL(source);
+    return nyxUvAdHostBlocked(url.hostname)
+      || /(?:^|\/)(?:ads?|ad[-_.]?(?:loader|manager|script)|jump[_-]gamemonetize|poki-(?:master-loader|sdk))\.(?:js|mjs)(?:$|\/)/i.test(url.pathname)
+      || (url.hostname === "serve.app.playsaurus.com" && /\/ad-campaigns\//i.test(url.pathname));
+  } catch {
+    return false;
+  }
+}
+
+function nyxBlockedUvAdResponse(event) {
+  const accept = event.request.headers.get("accept") || "";
+  if (["script", "worker", "sharedworker"].includes(event.request.destination) || /javascript|ecmascript/i.test(accept)) {
+    return new Response("", { status: 200, headers: { "Content-Type": "application/javascript; charset=utf-8" } });
+  }
+  if (event.request.destination === "style" || /text\/css/i.test(accept)) {
+    return new Response("", { status: 200, headers: { "Content-Type": "text/css; charset=utf-8" } });
+  }
+  if (event.request.destination === "document" || event.request.destination === "iframe") {
+    return new Response("<!doctype html><meta charset=\"utf-8\">", { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } });
+  }
+  return new Response(null, { status: 204 });
 }
 
 function shouldNeutralizeUvScript(event) {
@@ -82,15 +238,15 @@ function uvResponseHasAssetMimeError(response) {
   return /text\/html|application\/json|text\/json/i.test(contentType);
 }
 
-async function uvFetchWithAssetRetry(event) {
-  if (!uvRequestIsRetryableAsset(event)) return uv.fetch(event);
+async function uvFetchWithAssetRetry(event, engine) {
+  if (!uvRequestIsRetryableAsset(event)) return engine.fetch(event);
   let lastResponse = null;
   let lastError = null;
   for (let attempt = 0; attempt < UV_ASSET_RETRY_DELAYS.length; attempt += 1) {
     const delay = UV_ASSET_RETRY_DELAYS[attempt];
     if (delay) await new Promise(resolve => setTimeout(resolve, delay));
     try {
-      lastResponse = await uv.fetch(event);
+      lastResponse = await engine.fetch(event);
       lastError = null;
       if (lastResponse.status < 400 && !uvResponseHasAssetMimeError(lastResponse)) {
         return lastResponse;
@@ -101,6 +257,34 @@ async function uvFetchWithAssetRetry(event) {
   }
   if (lastResponse) return lastResponse;
   throw lastError || new Error("UV asset request failed");
+}
+
+async function patchUvUnityWorkerCallbacks(event, response) {
+  if (!uvRequestIsScript(event) || response.status >= 400) return response;
+  let source;
+  try {
+    source = new URL(proxiedSourceUrl(event.request.url));
+  } catch {
+    return response;
+  }
+  if (!/unityloader\.js$/i.test(source.pathname)) return response;
+  const text = await response.clone().text().catch(() => "");
+  const brokenLookup = "this.callbacks[__uv.$wrap((e.data.id))]";
+  if (!text.includes(brokenLookup)) return response;
+  const headers = new Headers(response.headers);
+  headers.delete("content-length");
+  headers.delete("content-encoding");
+  headers.set("cache-control", "no-store");
+  const brokenCall = `${brokenLookup}(e.data.decompressed)`;
+  const guardedCall = '(typeof this.callbacks[e.data.id]==="function"&&this.callbacks[e.data.id](e.data.decompressed))';
+  const patched = text
+    .replaceAll(brokenCall, guardedCall)
+    .replaceAll(brokenLookup, "this.callbacks[e.data.id]");
+  return new Response(patched, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
 }
 
 function uvRequestExpectsAsset(event) {
@@ -121,15 +305,12 @@ function badAssetBody(text) {
 }
 
 async function nyxUvFetch(event) {
+  if (nyxShouldBlockUvAd(event)) return nyxBlockedUvAdResponse(event);
+  const { engine } = uvForRequest(event.request.url);
   if (shouldNeutralizeUvScript(event)) {
     return emptyNeutralizedScriptResponse(event);
   }
-  const response = await uvFetchWithAssetRetry(event);
-  if (response.status >= 400) {
-    try {
-      console.warn("[nyx UV upstream error]", response.status, event.request.method, proxiedSourceUrl(event.request.url) || event.request.url);
-    } catch {}
-  }
+  const response = await patchUvUnityWorkerCallbacks(event, await uvFetchWithAssetRetry(event, engine));
   const contentType = response.headers.get("content-type") || "";
   const expectsAsset = uvRequestExpectsAsset(event);
   const badAssetMime = expectsAsset

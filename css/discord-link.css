@@ -1,0 +1,75 @@
+.nyx-discord-link {
+  position: fixed;
+  z-index: 118;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  display: none;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid color-mix(in srgb, var(--nyx-home-wordmark, #dedee8) 24%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--nyx-control-surface, #101117) 82%, transparent);
+  color: var(--nyx-home-wordmark, #e9e9ef);
+  font: 550 12px/1 Outfit, Inter, sans-serif;
+  letter-spacing: .01em;
+  text-decoration: none;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .22);
+  backdrop-filter: blur(16px) saturate(1.08);
+  -webkit-backdrop-filter: blur(16px) saturate(1.08);
+  transition: transform 150ms ease, border-color 150ms ease, background-color 150ms ease;
+}
+
+body.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .nyx-discord-link {
+  display: inline-flex;
+}
+
+html[data-nyx-sidebar-side="right"] body.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .nyx-discord-link {
+  right: calc(var(--nyx-visual-dock-current-width, 50px) + 14px);
+}
+
+.nyx-discord-link svg {
+  width: 19px;
+  height: 19px;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 20;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.nyx-discord-link:hover,
+.nyx-discord-link:focus-visible {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--nyx-home-wordmark, #dedee8) 62%, transparent);
+  background: color-mix(in srgb, var(--nyx-chrome-accent, #9b8cf5) 12%, var(--nyx-control-surface, #101117));
+  color: var(--nyx-chrome-bright, #fff);
+}
+
+.nyx-discord-link:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--nyx-home-wordmark, #dedee8) 64%, transparent);
+  outline-offset: 3px;
+}
+
+@media (max-width: 620px) {
+  .nyx-discord-link {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    width: 40px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 11px;
+  }
+
+  .nyx-discord-link span { display: none; }
+
+  html[data-nyx-sidebar-side="right"] body.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .nyx-discord-link {
+    right: calc(var(--nyx-visual-dock-current-width, 50px) + 10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nyx-discord-link { transition: none; }
+}

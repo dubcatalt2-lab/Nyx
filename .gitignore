@@ -48,6 +48,7 @@ build/Release
 
 # Dependency directories
 node_modules/
+services/stratus/.runtime/
 
 # Optional npm cache directory
 .npm
@@ -88,6 +89,7 @@ assets/docs/
 assets/backgrounds/*
 !assets/backgrounds/nyx-blue-light-trails.jpg
 !assets/backgrounds/animated-blue-wave.html
+!assets/backgrounds/pirate-cove.gif
 *.mp4
 *.webm
 *.mov

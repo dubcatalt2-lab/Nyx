@@ -1,0 +1,364 @@
+/* Smartwatch layout
+ *
+ * Keep phone and desktop density unchanged. Short, narrow viewports get a
+ * readable browser bar and a vertically scrollable homepage so every action
+ * remains reachable on square and round watch displays.
+ */
+@media (max-width:480px) and (max-height:520px){
+  :root{
+    --nyx-interface-scale:1;
+    --nyx-interface-bar:84px;
+  }
+
+  html,
+  body{
+    width:100%;
+    height:100%;
+    min-width:0!important;
+    overflow:hidden!important;
+  }
+
+  html body.browser-shell .top-os.top-os{
+    box-sizing:border-box!important;
+    width:100%!important;
+    height:84px!important;
+    min-height:84px!important;
+    padding:4px max(8px,env(safe-area-inset-right)) 4px max(8px,env(safe-area-inset-left))!important;
+    grid-template-rows:32px 40px!important;
+    gap:4px!important;
+    zoom:1!important;
+  }
+
+  html body.browser-shell .top-os.top-os .brand-mini{
+    width:100%!important;
+    height:32px!important;
+    min-height:32px!important;
+    max-height:32px!important;
+    padding-right:58px!important;
+    gap:4px!important;
+    scrollbar-width:none;
+  }
+  html body.browser-shell .top-os.top-os .brand-mini::-webkit-scrollbar{display:none}
+  html body.browser-shell .top-os.top-os .brand-mini > :is(.browser-mode-app-button,.browser-mode-shell-tab,.browser-mode-tab){
+    width:108px!important;
+    min-width:88px!important;
+    max-width:108px!important;
+    height:32px!important;
+    min-height:32px!important;
+    max-height:32px!important;
+    flex-basis:108px!important;
+    font-size:12px!important;
+  }
+  html body.browser-shell .top-os.top-os > .browser-top-clock{
+    right:max(9px,env(safe-area-inset-right))!important;
+    height:32px!important;
+    font-size:11px!important;
+  }
+
+  html body.browser-shell .top-os.top-os form.browser-mode-address{
+    box-sizing:border-box!important;
+    width:100%!important;
+    height:40px!important;
+    min-height:40px!important;
+    max-height:40px!important;
+    padding:0!important;
+    grid-template-columns:36px 36px 36px minmax(0,1fr) 36px!important;
+    gap:4px!important;
+  }
+  html body.browser-shell .top-os.top-os form.browser-mode-address > :is(
+    [data-browser-shell-forward],
+    [data-browser-shell-bookmark],
+    .browser-mode-weather
+  ){
+    display:none!important;
+  }
+  html body.browser-shell .top-os.top-os form.browser-mode-address > button{
+    box-sizing:border-box!important;
+    width:36px!important;
+    min-width:36px!important;
+    max-width:36px!important;
+    height:36px!important;
+    min-height:36px!important;
+    max-height:36px!important;
+    border-radius:10px!important;
+  }
+  html body.browser-shell .top-os.top-os form.browser-mode-address > .browser-mode-url{
+    box-sizing:border-box!important;
+    width:100%!important;
+    min-width:0!important;
+    height:36px!important;
+    min-height:36px!important;
+    max-height:36px!important;
+    margin:0!important;
+    padding:0 9px 0 34px!important;
+    border-radius:11px!important;
+    background-position:10px center!important;
+    background-size:16px 16px!important;
+    font-size:13px!important;
+  }
+
+  html body.browser-shell #desktop,
+  html body.browser-shell #desktop > .window.maximized,
+  html body.browser-shell .browser-window,
+  html body.browser-shell .window.maximized{
+    top:84px!important;
+    height:calc(100dvh - 84px)!important;
+    max-height:calc(100dvh - 84px)!important;
+  }
+  html body.browser-shell .browser-mode-menu,
+  html body.browser-shell .browser-bookmark-panel{
+    top:84px!important;
+  }
+
+  html body.browser-shell .browser-window.browser-home-page .browser-home{
+    box-sizing:border-box!important;
+    width:100%!important;
+    height:100%!important;
+    min-height:0!important;
+    justify-content:flex-start!important;
+    gap:14px!important;
+    padding:48px 12px 18px!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain;
+    scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
+  }
+  html body.browser-shell .browser-window.browser-home-page .browser-home::-webkit-scrollbar{display:none}
+  html body.browser-shell .browser-window.browser-home-page .nyx-home-presence{
+    left:max(10px,env(safe-area-inset-left))!important;
+    top:9px!important;
+    min-height:30px!important;
+    padding:0 9px!important;
+    font-size:11px!important;
+  }
+  html body.browser-shell .browser-window.browser-home-page .nyx-home-weather{display:none!important}
+  html body.browser-shell .browser-home .nyx-home-hero{
+    width:100%!important;
+    max-width:none!important;
+    gap:12px!important;
+    transform:none!important;
+    zoom:1!important;
+  }
+  html body.browser-shell .browser-home .nyx-home-hero::before{
+    margin-bottom:-3px!important;
+    font-size:9px!important;
+    letter-spacing:.2em!important;
+  }
+  html body.browser-shell .browser-window.browser-home-page .browser-home h1.nyx-home-title{
+    gap:9px!important;
+    font-size:36px!important;
+    line-height:1!important;
+  }
+  html body.browser-shell .browser-window.browser-home-page .browser-home h1.nyx-home-title::before{
+    width:34px!important;
+    height:34px!important;
+    flex-basis:34px!important;
+  }
+  html body.browser-shell .browser-window.browser-home-page .nyx-home-search{
+    width:100%!important;
+    height:46px!important;
+    min-height:46px!important;
+    border-radius:15px!important;
+  }
+  html body.browser-shell .browser-window.browser-home-page .nyx-home-search-icon{
+    width:18px!important;
+    height:18px!important;
+    flex-basis:18px!important;
+    margin-left:15px!important;
+  }
+  html body.browser-shell .browser-window.browser-home-page .nyx-home-search input{
+    min-width:0!important;
+    padding:0 12px!important;
+    font-size:14px!important;
+  }
+  html body.browser-shell .browser-window.browser-home-page .nyx-home-actions{
+    width:100%!important;
+    height:auto!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:4px!important;
+    padding:4px!important;
+  }
+  html body.browser-shell .browser-window.browser-home-page .nyx-home-actions > button{
+    width:100%!important;
+    min-width:0!important;
+    height:40px!important;
+    padding:0 7px!important;
+    gap:6px!important;
+    font-size:11px!important;
+  }
+  html body.browser-shell .browser-window.browser-home-page .nyx-home-action-icon{
+    width:15px!important;
+    height:15px!important;
+    flex-basis:15px!important;
+  }
+  html body.browser-shell .browser-window.browser-home-page .browser-home .home-shortcut-grid{
+    position:relative!important;
+    inset:auto!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    height:84px!important;
+    min-height:84px!important;
+    margin:0!important;
+    padding:5px 2px!important;
+    justify-content:flex-start!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    scroll-snap-type:x proximity;
+    zoom:1!important;
+  }
+  html body.browser-shell .browser-window.browser-home-page .browser-home .home-shortcut-grid > *{
+    scroll-snap-align:start;
+  }
+  html body.browser-shell .browser-window.browser-home-page .nyx-home-link-checker,
+  html body.browser-shell .browser-window.browser-home-page .nyx-home-utility-links{
+    position:relative!important;
+    inset:auto!important;
+    flex:0 0 auto!important;
+    zoom:1!important;
+  }
+  html body.browser-shell .browser-window.browser-home-page .nyx-home-utility-links{
+    width:100%!important;
+    padding-bottom:max(2px,env(safe-area-inset-bottom))!important;
+    flex-wrap:wrap!important;
+    justify-content:center!important;
+    row-gap:8px!important;
+    font-size:10px!important;
+  }
+
+  html body.browser-shell .browser-shell-settings-overlay{
+    top:84px!important;
+    height:calc(100dvh - 84px)!important;
+  }
+  html body.browser-shell .browser-shell-settings-panel{
+    box-sizing:border-box!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    padding:12px!important;
+    border-radius:0!important;
+    zoom:1!important;
+  }
+
+  /* The browser chrome's reference-layout selectors intentionally carry high
+     specificity. Match them here so watch dimensions win only in this query. */
+  html[data-nyx-theme][data-nyx-theme]
+    body.browser-shell.browser-shell:is(body,#nyx-reference-chrome):is(body,#nyx-reference-layout):is(body,#nyx-reference-controls)
+    .top-os.top-os{
+    height:84px!important;
+    min-height:84px!important;
+    max-height:84px!important;
+    padding:4px max(8px,env(safe-area-inset-right)) 4px max(8px,env(safe-area-inset-left))!important;
+    grid-template-rows:32px 40px!important;
+    gap:4px!important;
+  }
+  html[data-nyx-theme][data-nyx-theme]
+    body.browser-shell.browser-shell:is(body,#nyx-reference-chrome):is(body,#nyx-reference-layout):is(body,#nyx-reference-controls)
+    .top-os.top-os .brand-mini{
+    height:32px!important;
+    min-height:32px!important;
+    max-height:32px!important;
+    padding:0 58px 0 0!important;
+  }
+  html[data-nyx-theme][data-nyx-theme]
+    body.browser-shell.browser-shell:is(body,#nyx-reference-chrome):is(body,#nyx-reference-layout):is(body,#nyx-reference-controls)
+    .top-os.top-os .brand-mini > :is(.browser-mode-app-button,.browser-mode-shell-tab,.browser-mode-tab){
+    width:108px!important;
+    min-width:88px!important;
+    max-width:108px!important;
+    height:32px!important;
+    min-height:32px!important;
+    max-height:32px!important;
+    flex-basis:108px!important;
+  }
+  html[data-nyx-theme][data-nyx-theme]
+    body.browser-shell.browser-shell:is(body,#nyx-reference-chrome):is(body,#nyx-reference-layout):is(body,#nyx-reference-controls)
+    .top-os.top-os > .browser-top-clock{
+    right:max(9px,env(safe-area-inset-right))!important;
+    height:32px!important;
+    font-size:11px!important;
+  }
+  html[data-nyx-theme][data-nyx-theme]
+    body.browser-shell.browser-shell:is(body,#nyx-reference-chrome):is(body,#nyx-reference-layout):is(body,#nyx-reference-controls)
+    .top-os.top-os form.browser-mode-address{
+    height:40px!important;
+    min-height:40px!important;
+    max-height:40px!important;
+    padding:0!important;
+    grid-template-columns:36px 36px 36px minmax(0,1fr) 36px!important;
+    gap:4px!important;
+  }
+  html[data-nyx-theme][data-nyx-theme]
+    body.browser-shell.browser-shell:is(body,#nyx-reference-chrome):is(body,#nyx-reference-layout):is(body,#nyx-reference-controls)
+    .top-os.top-os form.browser-mode-address > :is(button,.browser-mode-url){
+    height:36px!important;
+    min-height:36px!important;
+    max-height:36px!important;
+  }
+  html[data-nyx-theme][data-nyx-theme]
+    body.browser-shell.browser-shell:is(body,#nyx-reference-chrome):is(body,#nyx-reference-layout):is(body,#nyx-reference-controls)
+    .top-os.top-os form.browser-mode-address > button{
+    width:36px!important;
+    min-width:36px!important;
+    max-width:36px!important;
+  }
+  html[data-nyx-theme][data-nyx-theme]
+    body.browser-shell.browser-shell:is(body,#nyx-reference-chrome):is(body,#nyx-reference-layout):is(body,#nyx-reference-controls)
+    .top-os.top-os form.browser-mode-address > :is(
+      [data-browser-shell-forward],
+      [data-browser-shell-bookmark],
+      .browser-mode-weather
+    ){
+    display:none!important;
+  }
+  html[data-nyx-theme][data-nyx-theme]
+    body.browser-shell.browser-shell:is(body,#nyx-reference-chrome):is(body,#nyx-reference-layout):is(body,#nyx-reference-controls)
+    #desktop > .window.maximized{
+    top:84px!important;
+    height:calc(100dvh - 84px)!important;
+    max-height:calc(100dvh - 84px)!important;
+  }
+
+  html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:is(body,#nyx-watch-layout):is(body,#nyx-watch-home):is(body,#nyx-watch-controls)
+    .browser-window.browser-home-page .browser-home{
+    gap:14px!important;
+    padding:48px 12px 18px!important;
+    overflow-y:auto!important;
+  }
+  html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:is(body,#nyx-watch-layout):is(body,#nyx-watch-home):is(body,#nyx-watch-controls)
+    .browser-window.browser-home-page .browser-home .nyx-home-hero{
+    width:100%!important;
+    max-width:none!important;
+    height:auto!important;
+    min-height:0!important;
+    flex:0 0 auto!important;
+    gap:12px!important;
+  }
+  html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:is(body,#nyx-watch-layout):is(body,#nyx-watch-home):is(body,#nyx-watch-controls)
+    .browser-window.browser-home-page .browser-home h1.nyx-home-title{
+    gap:9px!important;
+    font-size:36px!important;
+  }
+  html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:is(body,#nyx-watch-layout):is(body,#nyx-watch-home):is(body,#nyx-watch-controls)
+    .browser-window.browser-home-page .browser-home h1.nyx-home-title::before{
+    width:34px!important;
+    height:34px!important;
+    flex-basis:34px!important;
+  }
+  html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:is(body,#nyx-watch-layout):is(body,#nyx-watch-home):is(body,#nyx-watch-controls)
+    .browser-window.browser-home-page .nyx-home-search{
+    height:46px!important;
+    min-height:46px!important;
+  }
+  html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:is(body,#nyx-watch-layout):is(body,#nyx-watch-home):is(body,#nyx-watch-controls)
+    .browser-window.browser-home-page .nyx-home-actions{
+    height:auto!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  html[data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell:is(body,#nyx-watch-layout):is(body,#nyx-watch-home):is(body,#nyx-watch-controls)
+    .browser-window.browser-home-page .nyx-home-actions > button{
+    height:40px!important;
+    font-size:11px!important;
+  }
+}

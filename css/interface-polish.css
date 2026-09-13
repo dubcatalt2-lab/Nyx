@@ -2306,14 +2306,15 @@ html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-
   display:block!important;
   pointer-events:none!important;
 }
-/* //runtime-guard-slow-shortcut-hover-final */
+/* Keep shortcut feedback quick. Blur/filter changes are intentionally not
+   interpolated because they trigger an expensive repaint on every frame. */
 html body.browser-shell.runtime-lag-guard .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > .quick-tile.home-shortcut,
 html body.browser-shell.runtime-lag-guard .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > .quick-tile.home-shortcut-add,
 html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > .quick-tile.home-shortcut,
 html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > .quick-tile.home-shortcut-add{
-  transition-property:transform,background-color,border-color,box-shadow,filter,opacity!important;
-  transition-duration:1.15s,1.15s,1.15s,1.15s,1.15s,1.15s!important;
-  transition-timing-function:cubic-bezier(.22,.61,.36,1),ease,ease,ease,ease,ease!important;
+  transition-property:transform,opacity,background-color,border-color!important;
+  transition-duration:140ms,120ms,120ms,120ms!important;
+  transition-timing-function:cubic-bezier(.2,.8,.2,1),linear,ease,ease!important;
 }
 html body.browser-shell.runtime-lag-guard .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > .quick-tile.home-shortcut:hover,
 html body.browser-shell.runtime-lag-guard .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > .quick-tile.home-shortcut-add:hover,
@@ -2327,9 +2328,21 @@ html body.browser-shell.runtime-lag-guard .browser-home div.quick-grid.home-shor
 html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] .home-shortcut .home-shortcut-glyph,
 html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] .home-shortcut .quick-icon,
 html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] .home-shortcut .home-shortcut-open::after{
-  transition-property:transform,opacity,filter,background-color!important;
-  transition-duration:1.15s,1.15s,1.15s,1.15s!important;
-  transition-timing-function:cubic-bezier(.22,.61,.36,1),ease,ease,ease!important;
+  transition-property:transform,opacity!important;
+  transition-duration:130ms,110ms!important;
+  transition-timing-function:cubic-bezier(.2,.8,.2,1),linear!important;
+}
+
+/* Final motion cap. Several legacy shortcut experiments used 2.35–6 second
+   hover transitions; keep their visual states but make their feedback direct. */
+html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] :is(
+  .quick-tile,.home-shortcut-open,.home-shortcut-glyph,.quick-icon
+),
+html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] .home-shortcut-open::after{
+  transition-property:transform,opacity,background-color,border-color!important;
+  transition-duration:120ms!important;
+  transition-delay:0ms!important;
+  transition-timing-function:cubic-bezier(.2,.8,.2,1)!important;
 }
 html body.browser-shell.runtime-lag-guard .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > .quick-tile.home-shortcut:has(> button.home-shortcut-menu-btn:hover),
 html body.browser-shell .browser-home div.quick-grid.home-shortcut-grid.browser-home-normal[data-home-shortcuts] > .quick-tile.home-shortcut:has(> button.home-shortcut-menu-btn:hover){

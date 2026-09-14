@@ -64,7 +64,7 @@ let featuredMovies=[],featuredIndex=0,rotationTimer,rotationPaused=reducedMotion
 function scheduleRotation(){
  clearTimeout(rotationTimer);
  if(featuredMovies.length<2||rotationPaused||reducedMotion.matches||heroFocused||!heroVisible||document.hidden||$('featured').hidden||$('detail').open||!$('watch-area').hidden)return;
- rotationTimer=setTimeout(()=>showSlide(featuredIndex+1),8000);
+ rotationTimer=setTimeout(()=>showSlide(featuredIndex+1),4000);
 }
 function showSlide(index,{recenter=true}={}){
  if(!featuredMovies.length)return;

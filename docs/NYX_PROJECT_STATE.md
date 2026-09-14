@@ -1,3 +1,6 @@
+## Movies gallery four-second release (2026-09-13)
+- Automatic Movies gallery rotation changed from eight to four seconds. Existing animations, focus/reduced-motion/visibility pauses and manual navigation are preserved. Asset version is 20260913-gallery-4s-v18.
+
 ## Provider/fullscreen release LIVE (2026-09-13; application a38bbc1)
 - Pushed a38bbc1 on agent/pirate-cove / PR #34 and deployed with the OVH updater. VPS build/deployment checks passed; Nyx, Caddy and coturn are active. Rive and FrameXTV movie/canonical-episode embeds and game-only fullscreen are live; no third provider is being represented as verified.
 - Apex and www health, Movies CSP/version and Games asset-version checks passed. Real production Nyx Inception playback and seek passed on Rive and FrameXTV with the existing strict sandbox, zero popups observed, no overflow and frame cleanup. FrameXTV passed after waiting for the initial fallback to settle before selecting it; its first test never reached playback because the picker closed during startup. Rive retains upstream syncProgress/cross-origin errors despite working playback. Deployed nested-game fullscreen passed Off/Balanced/Boost full-screen bounds and exit without closing the game. Full-length playback and future absence of provider ads are not guaranteed by these samples.

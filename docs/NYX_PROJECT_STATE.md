@@ -1,3 +1,7 @@
+## Four-second gallery LIVE; AnimeX source research (2026-09-13)
+- Application bf97869 pushed and deployed with OVH updater; production build, 128-file check:deploy and branding passed. Both public domains serve gallery asset v18. Live visible gallery transitions measured 4006.5 ms apart. Built-page two-cycle timing and reduced-motion pause passed. The first live timing sample stayed on slide one during startup; a settled visible-gallery observation verified successive transitions.
+- AnimeX watch page exposes plyr.animex.one/e/{provider-slug}/{episode} embeds. Strict sandbox test of The Summer Hikaru Died episode 1 passed playback, seek and continued playback at 1280-wide; no popups or in-frame ads observed during the sample. Existing provider watermark remains in the video. This is a researched candidate, not an integrated or catalog-wide-verified Nyx provider. Artifacts: anime-round32.json and sandbox-animex-anmx-177689-seek.png. ZEN selection test stopped at AnimeX's announcement modal, not a provider playback failure.
+
 ## Movies gallery four-second release (2026-09-13)
 - Automatic Movies gallery rotation changed from eight to four seconds. Existing animations, focus/reduced-motion/visibility pauses and manual navigation are preserved. Asset version is 20260913-gallery-4s-v18.
 

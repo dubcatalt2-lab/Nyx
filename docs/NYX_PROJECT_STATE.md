@@ -1,6 +1,8 @@
-## Built-in background rollback (2026-09-14)
+## Built-in background rollback LIVE (2026-09-14; application 0a24bf2)
 
 User requested undoing the added darker blur/backgrounds on other built-in pages. Shared apps/visual-redesign.css is restored exactly to c67d5e0 (AI and Chat included); Code Sandbox retains its separately requested translucent dark-glass correction. Toasts, mention notifications, AI access/concurrency, translation/models/versions and Shorts prewarming are retained. Application e608626 deployed successfully before this follow-up; release checks and live Code Sandbox translation/alignment fixtures passed.
+
+Deployment of 0a24bf2 completed successfully; production assets confirm the restored AI/Chat styles and Code Sandbox glass version. Nyx, Caddy and coturn are active. Build/deployment checks pass.
 
 ## Code Sandbox glass correction and AI visual rollback (2026-09-14)
 

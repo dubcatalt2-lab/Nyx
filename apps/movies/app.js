@@ -250,6 +250,7 @@ async function watch(preferred){
  $('detail').close();$('watch-area').hidden=false;document.body.classList.add('movie-playing');document.querySelectorAll('main>header,main>#browse,main>footer').forEach(e=>e.inert=true);$('watch-title').textContent=movie.title;$('watch-area').focus();scheduleRotation();
  preferred=preferred||setting('nyx.movies.preferredSource','');
  const order=providers.some(p=>p.id===preferred)?providers.filter(p=>p.id===preferred).concat(providers.filter(p=>p.id!==preferred)):providers;
+ let recovered=false,recoverNext=false;
  async function attempt(index){
   if(generation!==watchGeneration)return;
   releaseProxyControls();clearTimeout(playerTimer);playbackRequest?.abort();movieHls?.destroy();movieHls=null;
@@ -257,20 +258,21 @@ async function watch(preferred){
   if(playbackSession){fetch('/api/movies/playback/'+encodeURIComponent(playbackSession),{method:'DELETE',keepalive:true}).catch(()=>{});playbackSession='';}
   $('player').replaceChildren();
   playbackVideo=null;$('watch-area').classList.remove('external-playback');$('watch-area').insertBefore(document.querySelector('.playback-controls'),$('episode-picker'));
+  if(index>=order.length&&!recovered&&order.some(source=>source.proxy)){recovered=true;recoverNext=true;providerStates={};renderSources();sourcePanel(true);$('player-status').textContent='Reconnecting to Nyx?';return attempt(0);}
   if(index>=order.length){playbackVideo=null;currentProvider='';renderSources();sourcePanel(true);$('player-status').textContent='No source could start this movie. Try again shortly.';$('retry-player').hidden=false;return;}
-  const source=order[index];currentProvider=source.id;providerStates[source.id]='Checking';renderSources();
+  const source=order[index];currentProvider=source.id;providerStates[source.id]='Checking';renderSources();sourcePanel(true);
   const controller=playbackRequest=new AbortController();let failed=false,started=false;
   const active=()=>generation===watchGeneration&&playbackRequest===controller&&!controller.signal.aborted;
   if(source.url){
    const frame=document.createElement('iframe');frame.title=movie.title+' — '+source.name;frame.sandbox='allow-scripts allow-same-origin allow-forms allow-presentation';frame.allow='autoplay; fullscreen; picture-in-picture';frame.referrerPolicy='strict-origin-when-cross-origin';frame.allowFullscreen=true;
    if(source.proxy){
     $('watch-area').classList.add('proxy-playback');controlsReady(false);$('seek').disabled=true;$('seek').value=0;$('seek').style.setProperty('--played','0%');$('seek').style.setProperty('--buffered','0%');$('playback-time').textContent='0:00 / 0:00';icon($('toggle-play'),'play');$('toggle-play').setAttribute('aria-label','Play');$('picture-in-picture').hidden=true;$('start-proxy').hidden=true;$('proxy-loading').hidden=false;
-    proxyStarter=async()=>{if(!active())return;try{$('start-proxy').hidden=true;$('proxy-loading').hidden=false;await startMovieProxy(frame);}catch{if(active())$('player-status').textContent='';}};
+    proxyStarter=async()=>{if(!active())return;try{$('start-proxy').hidden=true;$('proxy-loading').hidden=false;sourcePanel(true);await startMovieProxy(frame);}catch{if(active())$('player-status').textContent='';}};
    }else{$('watch-area').classList.add('external-playback');document.querySelector('.watch-header').insertBefore(document.querySelector('.playback-controls'),document.querySelector('.watch-brand'));}
-   $('player').append(frame);$('player-status').textContent='Loading player…';$('retry-player').hidden=true;sourcePanel(false);
+   $('player').append(frame);$('player-status').textContent='Loading player…';$('retry-player').hidden=true;
    let lastTime=null;
    const unavailable=()=>{if(!active()||failed)return;failed=true;recordSource(movie,source.id,{failed:true});providerStates[source.id]='Unavailable';renderSources();void attempt(index+1);};
-   const progress=time=>{if(!Number.isFinite(time)||time<0)return;if(lastTime!==null&&time>lastTime+.1){const changed=providerStates[source.id]!=='Playing';started=true;recordSource(movie,source.id,{played:true,failed:false});clearTimeout(playerTimer);providerStates[source.id]='Playing';$('player-status').textContent='';if(changed)renderSources();}lastTime=time;};
+   const progress=time=>{if(!Number.isFinite(time)||time<0)return;if(lastTime!==null&&time>lastTime+.1){const changed=providerStates[source.id]!=='Playing';if(!started)sourcePanel(false);started=true;recordSource(movie,source.id,{played:true,failed:false});clearTimeout(playerTimer);providerStates[source.id]='Playing';$('player-status').textContent='';if(changed)renderSources();}lastTime=time;};
    const receive=event=>{
     if(!active()||event.source!==frame.contentWindow||event.origin!==new URL(source.url).origin)return;
     let data=event.data;if(typeof data==='string'){if(data.length>10000)return;try{data=JSON.parse(data);}catch{return;}}
@@ -283,16 +285,16 @@ async function watch(preferred){
     if(data.type==='error'||['kisskh','megacloud'].includes(data.channel)&&data.event==='error')unavailable();
    };
    addEventListener('message',receive);controller.signal.addEventListener('abort',()=>removeEventListener('message',receive),{once:true});
-   frame.addEventListener('load',()=>{if(!active()||started)return;providerStates[source.id]='Player loaded';renderSources();$('player-status').textContent='';});
+   frame.addEventListener('load',()=>{if(!active()||started)return;providerStates[source.id]=source.proxy?'Loading video':'Player loaded';renderSources();$('player-status').textContent='';});
    frame.addEventListener('error',unavailable);
    if(source.proxy){
-    try{await launchMovieProxy(frame,source.url,controller.signal);if(!active()){frame.remove();return;}}
+    try{const recover=recoverNext;recoverNext=false;await launchMovieProxy(frame,source.url,controller.signal,{recover});if(!active()){frame.remove();return;}}
     catch{if(active())unavailable();return;}
     // Inspect only the active proxied frame. Loading is not playback evidence.
     const poll=setInterval(()=>{
      if(!active())return;
      const sample=inspectMovieProxy(frame);
-     if(!sample.video){const ready=canStartMovieProxy(frame);$('start-proxy').hidden=!ready;$('proxy-loading').hidden=ready;}
+     if(!sample.video){const ready=canStartMovieProxy(frame),becameReady=ready&&$('start-proxy').hidden;$('start-proxy').hidden=!ready;$('proxy-loading').hidden=ready;if(becameReady)sourcePanel(false);}
      if(sample.video&&sample.video!==playbackVideo){
       try{
        proxyCleanup?.();controlCleanup?.();proxyCleanup=styleMovieVideo(sample.video,sample.frames);playbackVideo=sample.video;controlCleanup=bindControls(playbackVideo);

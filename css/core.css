@@ -3546,3 +3546,5 @@ iframe[src*="/apps/code-studio/"] {
   -webkit-backdrop-filter: blur(48px) saturate(.65);
   backdrop-filter: blur(48px) saturate(.65);
 }
+
+@media(min-width:901px){body.browser-shell .toast{right:calc(var(--nyx-visual-dock-current-width,50px) + 18px);max-width:min(440px,calc(100vw - var(--nyx-visual-dock-current-width,50px) - 36px))}}

@@ -1,3 +1,9 @@
+## Movies loading list and proxy recovery (2026-09-14)
+
+Movies keeps its provider list visible during loading/fallback and closes it on measured playback or when a real Play action becomes available. Loading video rows animate; scrollbar is hidden while wheel/touch scrolling remains. A fully failed source pass triggers at most one fresh proxy initialization/transport setup and one further pass. This addresses stale shared setup without claiming every upstream failure is repairable. User reported Chromebook playback resumed after reloading; the original failure was not captured. All external providers remain proxied and sandboxed.
+
+Source fixtures cover list visibility, measured playback dismissal, manual chooser remaining open, scrollbar-free scrolling, one bounded recovery and two source passes. Toast tests cover visible shell rendering, icons, two-second animated countdown, replacement timer, safe mention text and mobile bounds; desktop toast was moved clear of the right sidebar after visual inspection. Mention forwarding/deduplication passes. Live existing deployed Vidy playback at 1080p passed seek past 120 seconds and Nyx controls; Chromebook-specific verification remains with the user.
+
 ## Built-in background rollback LIVE (2026-09-14; application 0a24bf2)
 
 User requested undoing the added darker blur/backgrounds on other built-in pages. Shared apps/visual-redesign.css is restored exactly to c67d5e0 (AI and Chat included); Code Sandbox retains its separately requested translucent dark-glass correction. Toasts, mention notifications, AI access/concurrency, translation/models/versions and Shorts prewarming are retained. Application e608626 deployed successfully before this follow-up; release checks and live Code Sandbox translation/alignment fixtures passed.

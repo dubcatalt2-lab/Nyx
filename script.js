@@ -7319,12 +7319,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     };
   };
   // Movies explicitly requests a proxy. Never fall back to a direct provider URL.
-  window.nyxLaunchMovieFrame=async(frame,url,{signal}={})=>{
+  window.nyxLaunchMovieFrame=async(frame,url,{signal,recover=false}={})=>{
     const {movieSourceUrl}=await import('/apps/movies/providers.mjs');
     if(!movieSourceUrl(url))throw new Error('Unsupported movie provider.');
     if(frame?.tagName!=='IFRAME'||frame.ownerDocument.location.origin!==location.origin||frame.ownerDocument.location.pathname!=='/apps/movies/')throw new Error('Invalid movie frame.');
     const sandbox='allow-scripts allow-same-origin allow-forms allow-presentation';
     if(frame.getAttribute('sandbox')!==sandbox)throw new Error('Movie sandbox is required.');
+    if(signal?.aborted||!frame.isConnected)return;
+    if(recover)uvInstallPromise=null;
     const ready=await installUltraviolet();
     if(signal?.aborted||!frame.isConnected)return;
     if(!ready)throw new Error('Nyx movie proxy is unavailable.');

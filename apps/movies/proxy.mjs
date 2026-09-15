@@ -38,13 +38,14 @@ async function standaloneProxy() {
   return initialization;
 }
 
-export async function launchMovieProxy(frame, url, signal) {
+export async function launchMovieProxy(frame, url, signal, {recover=false}={}) {
   abort(signal);
   if(!movieSourceUrl(url)||frame.getAttribute('sandbox')!=='allow-scripts allow-same-origin allow-forms allow-presentation')throw Error('Invalid movie proxy request.');
   if (window.parent !== window && typeof parent.nyxLaunchMovieFrame === 'function') {
-    await parent.nyxLaunchMovieFrame(frame, url, {signal});
+    await parent.nyxLaunchMovieFrame(frame, url, {signal, recover});
     return;
   }
+  if(recover) initialization=null;
   const config = await standaloneProxy();
   abort(signal);
   if (!frame.isConnected) return;

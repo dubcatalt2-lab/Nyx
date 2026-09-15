@@ -28,6 +28,9 @@ try{
  assert.match(await art.evaluate(e=>getComputedStyle(e).backgroundImage),/arcane-circle.png/);
  assert.equal(await art.evaluate(e=>getComputedStyle(e.parentElement).overflow),'visible');
  assert.equal(await art.evaluate(e=>getComputedStyle(e).pointerEvents),'none');
+ assert.equal(await page.evaluate(()=>getComputedStyle(document.body).getPropertyValue('--chat-accent').trim()),'#cba6f7');
+ assert.equal(await page.locator('.send-button').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(203, 166, 247)');
+ await page.screenshot({path:'.codex-artifacts/chat-mocha.png'});
  await page.locator('.member-button').first().click();await page.locator('.member-dialog[open] .nyx-user-profile-effect').waitFor({state:'visible'});
  await page.screenshot({path:'.codex-artifacts/chat-decorations.png'});
  await page.emulateMedia({reducedMotion:'reduce'});assert.match(await art.evaluate(e=>getComputedStyle(e).backgroundImage),/arcane-circle-still.png/);

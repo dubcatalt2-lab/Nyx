@@ -328,23 +328,11 @@
     }
   }
   const customThemeProperties=['--studio-accent','--studio-accent-strong','--studio-accent-soft','--studio-accent-line','--studio-theme-hover-accent','--studio-theme-hover-soft','--studio-theme-hover-line'];
-  function inheritedTheme(){try{return String(localStorage.getItem('nyx.theme')||'default')}catch{return 'default'}}
   function clearCustomThemePalette(){customThemeProperties.forEach(property=>document.documentElement.style.removeProperty(property))}
   function applyTheme(){
     document.body.classList.remove('theme-ruby','theme-emerald','theme-sakura','theme-fresh','theme-custom');
     clearCustomThemePalette();
-    const theme=inheritedTheme();
-    const colors={default:'#aebfe8',ruby:'#e69ba8',emerald:'#82d5b4',sakura:'#e4acce',fresh:'#9bcbdc'};
-    let accent=colors[theme]||colors.default;
-    if(theme==='custom'){try{const saved=localStorage.getItem('nyx.customThemeColor');if(/^#[0-9a-f]{6}$/i.test(saved||''))accent=saved;}catch{}}
-    document.documentElement.style.setProperty('--studio-theme-hover-accent',`color-mix(in srgb,${accent} 25%,#d8dce5)`);
-    for(const [name,percent] of [['--studio-theme-hover-soft',5],['--studio-theme-hover-line',16]])document.documentElement.style.setProperty(name,`color-mix(in srgb,${accent} ${percent}%,transparent)`);
-    if(theme==='custom'){
-      document.body.classList.add('theme-custom');
-      // Use the same saved custom accent as the Nyx shell.
-      return;
-    }
-    if(['ruby','emerald','sakura','fresh'].includes(theme))document.body.classList.add(`theme-${theme}`);
+    // This workspace has its own Catppuccin palette; never change the host theme.
   }
   function keepVersion(language,value){
     state.versions=state.versions||[];
@@ -415,9 +403,9 @@
     if(refresh||!aiOptionsPromise)aiOptionsPromise=loadAiOptions();
     return aiOptionsPromise.then(()=>selectedAiOptions());
   }
-  function aiReplyText(data){return String(data?.text||data?.response||data?.choices?.[0]?.message?.content||data?.choices?.[0]?.text||'').trim()}
+  function aiReplyText(data){const value=data?.text||data?.response||data?.choices?.[0]?.message?.content||data?.choices?.[0]?.text||'';return (Array.isArray(value)?value.filter(part=>part?.type==='text').map(part=>part.text||'').join(''):typeof value==='string'?value:'').trim()}
   async function requestAiSuggestion(option,payload,token){
-    const response=await fetch('/api/nyx-ai',{method:'POST',headers:await aiHeaders(option.provider,token),body:JSON.stringify({...payload,model:option.model})});
+    const response=await fetch('/api/nyx-ai',{method:'POST',signal:AbortSignal.timeout(125000),headers:await aiHeaders(option.provider,token),body:JSON.stringify({...payload,model:option.model})});
     const data=await response.json().catch(()=>({}));
     if(!response.ok){
       const error=new Error(data?.error||(response.status>=500?'Nyx AI is temporarily unavailable. Please try again.':`Nyx AI could not help (${response.status}).`));
@@ -449,21 +437,24 @@
   let agentBusy=false;
   const agentMode=document.createElement('select');agentMode.className='studio-model-picker';agentMode.setAttribute('aria-label','Assistant mode');
   for(const [value,label] of [['agent','Agent - edit code'],['ask','Ask - explain code']]){const option=document.createElement('option');option.value=value;option.textContent=label;agentMode.append(option);}
-  modelPicker.after(agentMode);
+  const assistantSettings=document.createElement('div');assistantSettings.className='assistant-settings';modelPicker.before(assistantSettings);
+  for(const [title,control] of [['Model',modelPicker],['Mode',agentMode]]){const label=document.createElement('label');label.textContent=title;label.append(control);assistantSettings.append(label);}
+  agentMode.onchange=()=>{refs.prompt.placeholder=agentMode.value==='agent'?'Describe the change to make…':'Ask a question about your code…';document.querySelector('#assistant-title').textContent=agentMode.value==='agent'?'Code agent':'Ask Nyx';};
   const workspaceFiles=document.createElement('select');workspaceFiles.className='studio-model-picker';workspaceFiles.setAttribute('aria-label','Workspace files');
-  versionsButton.before(workspaceFiles);
+  const fileField=document.createElement('label');fileField.className='workspace-file-field';fileField.textContent='Open file';fileField.append(workspaceFiles);document.querySelector('.project-controls').prepend(fileField);
   function renderWorkspaceFiles(){workspaceFiles.replaceChildren();for(const language of Object.keys(languages)){if(language!==state.language&&typeof state.codes[language]!=='string')continue;const option=document.createElement('option');option.value=language;option.textContent=languages[language].file;workspaceFiles.append(option);}workspaceFiles.value=state.language;}
   workspaceFiles.onchange=()=>{state.language=workspaceFiles.value;syncLanguage();};
   function applyAgentReply(raw,snapshot,reply){
     let result;try{
-      const fenced=raw.match(/```(?:json)?\s*\n([\s\S]*?)\n```/i);
-      result=JSON.parse(fenced?fenced[1]:raw.trim());
+      const start=raw.indexOf('{'),end=raw.lastIndexOf('}');
+      result=JSON.parse(raw.slice(start,end+1));
     }catch{throw Error('The model did not return a complete edit. Your files are unchanged. Ask for one smaller change or choose another model.');}
     if(!result||typeof result.summary!=='string'||!Array.isArray(result.files)||result.files.length>8)throw Error('Invalid edit response. Your files are unchanged.');
     const originalFiles={...JSON.parse(snapshot.codes),[snapshot.language]:snapshot.current};
     const seen=new Set();
     for(const file of result.files){
       if(!file||!Object.hasOwn(languages,file.language)||seen.has(file.language))throw Error('Invalid edit response. Your files are unchanged.');
+      if(!snapshot.provided.includes(file.language)&&typeof originalFiles[file.language]==='string')throw Error('Select the other saved file before asking Nyx to edit it. Your files are unchanged.');
       seen.add(file.language);
       if(Array.isArray(file.edits)){
         if(file.code!==undefined||!file.edits.length||file.edits.length>16||typeof originalFiles[file.language]!=='string')throw Error('Invalid edit response. Your files are unchanged.');
@@ -480,7 +471,8 @@
       if(typeof file.code!=='string'||file.code.length>MAX_CODE_CHARS)throw Error('Invalid or oversized file. Your files are unchanged.');
     }
     if(JSON.stringify(state.codes)!==snapshot.codes||state.language!==snapshot.language||code()!==snapshot.current)throw Error('Your code changed while Nyx was working. Keeping your edits; ask again to use the latest version.');
-    if(!result.files.length){reply.querySelector('p').textContent=result.summary;return;}
+    result.files=result.files.filter(file=>file.code!==originalFiles[file.language]);
+    if(!result.files.length){reply.querySelector('p').textContent='No files changed. '+result.summary;return false;}
     const before=JSON.parse(JSON.stringify(state));
     keepVersion(state.language,code());
     for(const file of result.files){if(typeof state.codes[file.language]==='string')keepVersion(file.language,state.codes[file.language]);state.codes[file.language]=file.code;}
@@ -491,6 +483,7 @@
     const undo=document.createElement('button');undo.type='button';undo.className='tool-button';undo.textContent='Undo changes';
     undo.onclick=()=>{if(JSON.stringify(state.codes)!==applied){appendMessage('assistant','You have edited these files since this change. Use Versions to restore an earlier file without losing your work.',true);return;}const current=state;state=before;if(!save()){state=current;return;}syncLanguage();undo.disabled=true;undo.textContent='Changes undone';};
     reply.append(undo);
+    return true;
   }
   async function ask(prompt){
     const question=String(prompt||'').trim();
@@ -512,8 +505,12 @@
       const visibleCode=currentCode.slice(0,codeLimit);
       let context=`You are helping in Nyx Code Studio. Give a practical, friendly answer for a ${file} file. Focus on the request, point out the most important issue first, and include a small corrected snippet only when it helps.\n\nUser request: ${question}\n\nCurrent code${currentCode.length>codeLimit?' (first 18,000 characters)':''}:\n\n${visibleCode}`;
       if(editing){
-        const files={...JSON.parse(snapshot.codes),[snapshot.language]:snapshot.current};
-        context='You are the code editing agent in Nyx Code Sandbox. Return ONLY a JSON object with summary (short explanation) and files (array). For existing files prefer compact exact replacements: {"summary":"Updated heading","files":[{"language":"html","edits":[{"search":"<h1>Old</h1>","replace":"<h1>New</h1>"}]}]}. Each search must match exactly once, including whitespace; edits apply in order. Never use placeholders or ellipses. For a NEW file or a short complete rewrite use {"language":"python","code":"complete contents"} instead of edits. Do not include both code and edits. Keep the entire response within 2000 tokens; favor one focused change over rewriting large files. For explanation-only requests use files: []. Each language has one file; allowed language and filename mapping: '+JSON.stringify(Object.fromEntries(Object.entries(languages).map(([key,value])=>[key,value.file])))+'. Return only changed files, at most 8, each resulting file at most 24000 characters. Preserve unrelated code. No shell commands or automatic execution. HTML previews should use self-contained HTML/CSS/JS. Current files (data): '+JSON.stringify(files)+'\nUser request: '+question;
+        let files={...JSON.parse(snapshot.codes),[snapshot.language]:snapshot.current};
+        // Keep small multi-file workspaces available, but unrelated saved files
+        // must not prevent an edit to the open file when the workspace grows.
+        if(JSON.stringify(files).length>20000)files={[snapshot.language]:snapshot.current};
+        snapshot.provided=Object.keys(files);
+        context='You are the code editing agent in Nyx Code Sandbox. Return ONLY a JSON object with summary (short explanation) and files (array). For existing files prefer compact exact replacements: {"summary":"Updated heading","files":[{"language":"html","edits":[{"search":"<h1>Old</h1>","replace":"<h1>New</h1>"}]}]}. Each search must match exactly once, including whitespace; edits apply in order. Never use placeholders or ellipses. For a NEW file or a short complete rewrite use {"language":"python","code":"complete contents"} instead of edits. Do not include both code and edits. Keep the entire response within 600 tokens; favor one focused change over rewriting large files. For explanation-only requests use files: []. Each language has one file; allowed language and filename mapping: '+JSON.stringify(Object.fromEntries(Object.entries(languages).map(([key,value])=>[key,value.file])))+'. Return only changed files, at most 8, each resulting file at most 24000 characters. Preserve unrelated code. No shell commands or automatic execution. HTML previews should use self-contained HTML/CSS/JS. Focus on the open ' + languages[snapshot.language].file + ' file unless the request names another supplied file. Edit only supplied files or create new languages. Supplied files (data): '+JSON.stringify(files)+'\nUser request: '+question;
         if(context.length>24000)throw Error('This workspace exceeds the AI context limit. Keep a smaller workspace for this edit; your files are unchanged.');
       }
       const payload={message:question,messages:[{role:'user',content:context}],responseDepth:'normal',stream:false,...(editing?{task:'code-edit'}:{})};
@@ -532,11 +529,11 @@
         }
       }
       if(!suggestion)throw lastError||new Error('Nyx AI did not return a suggestion.');
-      if(editing)applyAgentReply(suggestion,snapshot,reply);else reply.querySelector('p').textContent=suggestion;
-      refs.prompt.value='';
+      const changed=editing?applyAgentReply(suggestion,snapshot,reply):(reply.querySelector('p').textContent=suggestion,true);
+      if(changed)refs.prompt.value='';
     }catch(error){
       reply.classList.add('is-error');
-      reply.querySelector('p').textContent=error?.message||'Nyx AI could not complete that suggestion.';
+      reply.querySelector('p').textContent=error?.name==='TimeoutError'?'Nyx AI timed out. Your files are unchanged. Try again.':error?.message||'Nyx AI could not complete that suggestion.';
     }finally{
       reply.classList.remove('is-loading');
       agentBusy=false;refs.send.disabled=false;
@@ -648,7 +645,7 @@
   document.querySelectorAll('[data-command]').forEach(button=>button.addEventListener('click',()=>handleCommand(button.dataset.command)));
   refs.form.addEventListener('submit',event=>{event.preventDefault();void ask(refs.prompt.value)});
   refs.prompt.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();refs.form.requestSubmit()}});
-  document.querySelectorAll('[data-ai-prompt]').forEach(button=>button.addEventListener('click',()=>void ask(button.dataset.aiPrompt)));
+  document.querySelectorAll('[data-ai-prompt]').forEach(button=>button.addEventListener('click',()=>{agentMode.value=button.dataset.aiMode||'agent';agentMode.onchange();void ask(button.dataset.aiPrompt)}));
   addEventListener('message',event=>{
     const message=event.data;
     if(event.source!==refs.preview.contentWindow||message?.type!=='nyx-code-preview'||message.runId!==previewRunId)return;

@@ -1,27 +1,27 @@
 :root {
-  --studio-bg: rgba(7,10,16,.32);
-  --studio-sidebar: rgba(15,19,27,.40);
-  --studio-surface: rgba(17,21,29,.30);
-  --studio-surface-raised: rgba(43,49,62,.32);
-  --studio-field: rgba(6,10,17,.24);
-  --studio-editor: rgba(8,12,19,.28);
+  --studio-bg: rgba(17,17,27,.50);
+  --studio-sidebar: rgba(24,24,37,.66);
+  --studio-surface: rgba(30,30,46,.58);
+  --studio-surface-raised: rgba(49,50,68,.64);
+  --studio-field: rgba(17,17,27,.40);
+  --studio-editor: rgba(24,24,37,.50);
   --studio-line: rgba(255, 255, 255, .12);
   --studio-line-strong: rgba(255, 255, 255, .13);
-  --studio-text: #f2f4f8;
-  --studio-text-soft: #cdd2dc;
-  --studio-muted: #8a92a0;
-  --studio-faint: #5f6673;
-  --studio-accent: #aebfe8;
-  --studio-accent-strong: #c6d3f2;
-  --studio-accent-soft: rgba(174, 191, 232, .09);
-  --studio-accent-line: rgba(174, 191, 232, .27);
+  --studio-text: #cdd6f4;
+  --studio-text-soft: #bac2de;
+  --studio-muted: #a6adc8;
+  --studio-faint: #7f849c;
+  --studio-accent: #cba6f7;
+  --studio-accent-strong: #b4befe;
+  --studio-accent-soft: rgba(203, 166, 247, .09);
+  --studio-accent-line: rgba(203, 166, 247, .27);
   --studio-theme-hover-accent: var(--studio-accent);
-  --studio-theme-hover-soft: rgba(174, 191, 232, .055);
-  --studio-theme-hover-line: rgba(174, 191, 232, .18);
-  --studio-button-text: #10131a;
-  --studio-danger: #f19aaa;
-  --studio-warning: #e7c47d;
-  --studio-success: #85d0aa;
+  --studio-theme-hover-soft: rgba(203, 166, 247, .055);
+  --studio-theme-hover-line: rgba(203, 166, 247, .18);
+  --studio-button-text: #1e1e2e;
+  --studio-danger: #f38ba8;
+  --studio-warning: #f9e2af;
+  --studio-success: #a6e3a1;
   --studio-shadow: 0 18px 48px rgba(0, 0, 0, .23);
   --studio-radius: 13px;
   --assistant-width: 318px;
@@ -614,7 +614,7 @@ body.is-resizing iframe { pointer-events: none; }
 .project-controls {
   min-width: 0;
   display: grid;
-  grid-template-columns: minmax(145px, 185px) minmax(135px, 190px) auto minmax(170px, 1fr);
+  grid-template-columns: minmax(130px, 1fr) minmax(130px, 1fr) minmax(130px, 1fr);
   align-items: end;
   gap: 9px;
   padding: 9px 10px;
@@ -673,6 +673,8 @@ body.is-resizing iframe { pointer-events: none; }
 }
 
 .toolbar-actions {
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
   display: flex;
   align-items: center;
   gap: 5px;
@@ -898,12 +900,12 @@ body.is-resizing iframe { pointer-events: none; }
   background-clip: padding-box;
 }
 
-.syntax-comment { color: #687184; font-style: italic; }
+.syntax-comment { color: #7f849c; font-style: italic; }
 .syntax-string { color: color-mix(in srgb, var(--studio-success) 88%, var(--studio-text)); }
-.syntax-number { color: color-mix(in srgb, var(--studio-accent) 88%, white); }
-.syntax-keyword { color: #c5a7e8; }
-.syntax-tag { color: #8bbbe5; }
-.syntax-property { color: #9fc7e8; }
+.syntax-number { color: #fab387; }
+.syntax-keyword { color: #cba6f7; }
+.syntax-tag { color: #89b4fa; }
+.syntax-property { color: #89dceb; }
 .syntax-operator { color: var(--studio-muted); }
 .matching-bracket {
   border: 1px solid var(--studio-accent-line);
@@ -1137,9 +1139,9 @@ a:focus-visible,
 
 @media (max-width: 1180px) {
   :root { --assistant-width: 278px; --preview-width: 36%; }
-  .project-controls { grid-template-columns: 145px 145px auto minmax(0, 1fr); }
+  .project-controls { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .tool-button span { display: none; }
-  .tool-button { width: 32px; justify-content: center; padding: 0; }
+  .tool-button { min-width: 32px; justify-content: center; padding: 0 8px; }
   .save-state { display: none; }
 }
 
@@ -1263,6 +1265,18 @@ a:focus-visible,
 
 body{backdrop-filter:blur(56px) saturate(.45);-webkit-backdrop-filter:blur(56px) saturate(.45)}.assistant-panel,.workspace-header,.project-controls,.editor-card,.result-card{backdrop-filter:blur(36px) saturate(.55);-webkit-backdrop-filter:blur(36px) saturate(.55)}
 
-.studio-versions{width:min(720px,calc(100vw - 32px));max-height:85vh;padding:24px;border:1px solid var(--studio-line-strong);border-radius:18px;background:rgba(24,26,31,.96);color:var(--studio-text);backdrop-filter:blur(40px)}.studio-versions::backdrop{background:#0008;backdrop-filter:blur(8px)}.studio-versions select,.studio-versions textarea{display:block;width:100%;margin:12px 0;padding:12px;border:1px solid var(--studio-line);border-radius:9px;background:var(--studio-editor);color:var(--studio-text)}.studio-versions textarea{height:40vh;resize:vertical;font-family:monospace}.studio-versions button{margin-right:8px}
+.studio-versions{width:min(720px,calc(100vw - 32px));max-height:85vh;padding:24px;border:1px solid var(--studio-line-strong);border-radius:18px;background:rgba(30,30,46,.96);color:var(--studio-text);backdrop-filter:blur(40px)}.studio-versions::backdrop{background:#0008;backdrop-filter:blur(8px)}.studio-versions select,.studio-versions textarea{display:block;width:100%;margin:12px 0;padding:12px;border:1px solid var(--studio-line);border-radius:9px;background:var(--studio-editor);color:var(--studio-text)}.studio-versions textarea{height:40vh;resize:vertical;font-family:monospace}.studio-versions button{margin-right:8px}
 
 .studio-model-picker{margin:12px 16px 0;width:calc(100% - 32px);min-height:36px;padding:8px 10px;border:1px solid var(--studio-line);border-radius:10px;background:var(--studio-surface-raised);color:var(--studio-text);font:inherit;font-size:11px}
+
+/* Catppuccin Mocha, scoped to this standalone workspace. */
+.assistant-settings { display: grid; gap: 10px; padding: 14px 0 4px; }
+.assistant-settings label, .workspace-file-field { display: grid; gap: 5px; min-width: 0; color: var(--studio-muted); font-size: 10px; font-weight: 600; }
+.assistant-settings .studio-model-picker, .workspace-file-field .studio-model-picker { width: 100%; min-width: 0; margin: 0; font-size: 12px; }
+.workspace-file-field .studio-model-picker { min-height: 32px; height: 32px; padding: 4px 8px; }
+.studio-model-picker option { background: #1e1e2e; color: #cdd6f4; }
+.language-help { grid-column: 1 / -1; margin: 0; }
+.assistant-welcome { padding-top: 14px; }
+.assistant-intro { font-size: 12px; line-height: 1.6; }
+.studio-model-picker:focus-visible { outline: 2px solid var(--studio-accent); outline-offset: 2px; }
+@media (max-width: 640px) { .workspace-file-field { grid-column: 1 / -1; } }

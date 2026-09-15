@@ -11,8 +11,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=20260914-code-agent-v4">
-  <script src="./app.js?v=20260915-code-edits-v5" defer></script>
+  <link rel="stylesheet" href="./styles.css?v=20260915-code-mocha-v6">
+  <script src="./app.js?v=20260915-code-agent-v6" defer></script>
 </head>
 <body>
   <main class="studio-shell" data-code-studio>
@@ -41,12 +41,12 @@
         <span class="ai-status" data-ai-status><i aria-hidden="true"></i><span data-ai-status-label>Ready</span></span>
       </section>
 
-      <p class="assistant-intro">Ask Nyx to create or edit code. Changes are saved locally, with versions you can restore.</p>
+      <p class="assistant-intro">Agent edits the open file. Choose Ask for explanations. Changes save locally and can be undone.</p>
 
       <div class="quick-prompts" data-quick-prompts>
-        <button type="button" data-ai-prompt="Find bugs or edge cases in this code."><span aria-hidden="true">◇</span>Find issues</button>
-        <button type="button" data-ai-prompt="Suggest a cleaner, more readable version of this code."><span aria-hidden="true">↗</span>Improve</button>
-        <button type="button" data-ai-prompt="Explain this code in plain language."><span aria-hidden="true">?</span>Explain</button>
+        <button type="button" data-ai-prompt="Fix bugs or edge cases in the current file. Apply the corrections."><span aria-hidden="true">◇</span>Fix issues</button>
+        <button type="button" data-ai-prompt="Refactor the current file for readability while preserving its behavior. Apply the edits."><span aria-hidden="true">↗</span>Improve</button>
+        <button type="button" data-ai-mode="ask" data-ai-prompt="Explain this code in plain language."><span aria-hidden="true">?</span>Explain</button>
       </div>
 
       <div class="assistant-answer" data-ai-answer aria-live="polite">
@@ -55,15 +55,15 @@
           <strong>What are you building?</strong>
           <p>Ask Nyx to review the current file, explain a tricky part, or help with your next step.</p>
           <div class="example-prompts" aria-label="Example questions">
-            <button type="button" data-ai-prompt="How can I make this code easier to understand?">Make this easier to read</button>
-            <button type="button" data-ai-prompt="What should I build next with this code?">Suggest the next step</button>
+            <button type="button" data-ai-prompt="Edit this file to make it easier to understand while preserving its behavior.">Make this easier to read</button>
+            <button type="button" data-ai-mode="ask" data-ai-prompt="What should I build next with this code?">Suggest the next step</button>
           </div>
         </div>
       </div>
 
       <form class="assistant-form" data-ai-form>
         <label class="sr-only" for="assistantPrompt">Ask the code helper</label>
-        <textarea id="assistantPrompt" data-ai-prompt-input rows="2" maxlength="1200" placeholder="Ask about this file..."></textarea>
+        <textarea id="assistantPrompt" data-ai-prompt-input rows="2" maxlength="1200" placeholder="Describe the change to make?"></textarea>
         <button class="button button-ai" type="submit" data-ai-send>
           <span class="sr-only">Ask Nyx AI</span>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 3-8.5 18-3.2-7.3L2 10.5 21 3Z"></path><path d="m9.3 13.7 4.2-4.2"></path></svg>
@@ -78,7 +78,7 @@
       <header class="workspace-header">
         <div class="workspace-heading">
           <span class="eyebrow">Code Sandbox <i aria-hidden="true"></i> Nyx workspace</span>
-          <h2>Build something</h2>
+          <h2>Your workspace</h2>
         </div>
         <nav class="mobile-view-switcher mobile-only" aria-label="Workspace view">
           <button type="button" data-mobile-view="ai">AI</button>

@@ -42,7 +42,8 @@ for(const path of ['/api/nyx-ai'])app.post(path,async(req,res)=>{
     const credential=context.nyxAiRequestCredential(req);
     if(credential.invalid||credential.invalidProvider)return res.status(410).json({error:'Removed'});
     const options={method:'POST',headers:{authorization:'Bearer fixture-inference'},body:JSON.stringify({model:req.body.model||'test',max_tokens:1000,messages:[{role:'user',content:'Hi'}]})};
-    const response=await context.nyxAiProviderFetch({id:'shared'},'https://openrouter.ai/api/v1/chat/completions',options);
+    let response=await context.nyxAiProviderFetch({id:'shared'},'https://openrouter.ai/api/v1/chat/completions',options);
+    if(req.body.repair){await response.json();response=await context.nyxAiProviderFetch({id:'shared'},'https://openrouter.ai/api/v1/chat/completions',options);}
     res.type('json').send(await response.text());
   }catch(error){res.status(error.status||503).json({error:error.message});}
 });
@@ -107,5 +108,10 @@ try {
   assert.equal((await send(issued.key,{messages:[{role:'user',content:'Hi'}]}, {},'/api/v1/ai')).status,503);
   assert.equal(calls,beforeApiPause,'API must share the OpenRouter cutoff');
   assert.equal((await keyStore.details('late-api')).balance,988,'Balance cutoff before inference refunds API tokens');
+  balance=1;await new Promise(resolve=>setTimeout(resolve,30));
+  const repairCalls=calls,chargedBefore=[...db.records.values()].reduce((sum,row)=>sum+(row.tokens&&typeof row.tokens==='number'?row.tokens:0),0);
+  const repaired=await send('repair-member',{repair:true});assert.equal(repaired.status,200);await repaired.text();
+  await new Promise(resolve=>setTimeout(resolve,30));assert.equal(calls,repairCalls+2);assert.equal(lastPayload.max_tokens,700);
+  const chargedAfter=[...db.records.values()].reduce((sum,row)=>sum+(row.tokens&&typeof row.tokens==='number'?row.tokens:0),0);assert.equal(chargedAfter-chargedBefore,24,'Both provider calls must be charged');assert.equal(db.records.get('nyxAiAllowance/global').slots.length,0);
   console.log('PASS: real AI middleware auth/origin, retired option rejection, OpenRouter routing, parallel capacity, slot release and unverified cloud authentication');
 }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

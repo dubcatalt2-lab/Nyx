@@ -2842,7 +2842,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   };
   nyxAiApplySupportedParameters(providerPayload,modelInfo);
   if(codeEdit){
-    providerPayload.messages[0].content='You are the Nyx Code Sandbox editing assistant. Follow the requested JSON edit format exactly. Return only the complete JSON object, without Markdown or commentary. Prefer small exact search/replace edits for existing code. Never output partial files or placeholders.';
+    providerPayload.messages[0].content='You are the Nyx Code Sandbox editing assistant. Return ONLY {"summary":"short explanation","files":[{"language":"language id","edits":[{"search":"unique exact text","replace":"replacement"}]}]}. For a new file use code (complete contents) instead of edits. Make the requested change, not suggestions about changing it. Use compact patches for existing files. Complete the entire JSON within 600 output tokens, including escaped code. For a large request implement one small useful step and describe its scope. Never output partial files or placeholders. Only edit supplied files or create new files. For a question or an already satisfied request, return files: [] and explain why.';
     const supported=modelInfo.supportedParameters||[];
     if(supported.includes('response_format'))providerPayload.response_format={type:'json_object'};
     if(supported.includes('reasoning'))providerPayload.reasoning={enabled:false};
@@ -2920,7 +2920,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       res.end();
       return;
     }
-    const data = await upstream.json().catch(() => ({}));
+    let data = await upstream.json().catch(() => ({}));
     if (!upstream.ok) {
       res.status(upstream.status).json({
         error: nyxAiErrorMessage(data, upstream.status, key)
@@ -2928,7 +2928,20 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       return;
     }
     let text = nyxAiCompletionText(data);
-    if (nyxAiLooksCorrupted(text)) {
+    if(codeEdit){
+      const valid=value=>{try{const parsed=JSON.parse(value.slice(value.indexOf('{'),value.lastIndexOf('}')+1));return typeof parsed.summary==='string'&&Array.isArray(parsed.files)&&parsed.files.length<=8;}catch{return false;}};
+      if(data?.choices?.[0]?.finish_reason==='length'||!valid(text)){
+        // One budgeted repair in this accepted request. The same model, slot,
+        // allowance, spending reservation and overall timeout still apply.
+        const repairPayload={...providerPayload,messages:[...providerPayload.messages,{role:'user',content:'Your previous response was empty, truncated or not the required JSON object. Retry the original task as ONE tiny complete edit. Return summary and files as JSON only, under 400 tokens. Use a short exact search/replace, never reproduce an existing whole file.'}]};
+        const repaired=await nyxAiProviderFetch(credential.provider,endpoint,{method:'POST',signal:controller.signal,headers:{'content-type':'application/json',authorization:`Bearer ${key}`},body:JSON.stringify(repairPayload)});
+        const repairedData=await repaired.json().catch(()=>({}));
+        if(!repaired.ok){res.status(repaired.status).json({error:nyxAiErrorMessage(repairedData,repaired.status,key)});return;}
+        data=repairedData;text=nyxAiCompletionText(data);
+        if(data?.choices?.[0]?.finish_reason==='length'||!valid(text)){res.status(502).json({error:'The model could not produce a complete edit after one repair attempt. Your files are unchanged. Try a smaller change or another model.'});return;}
+      }
+    }
+    if (!codeEdit && nyxAiLooksCorrupted(text)) {
       const retry = await nyxAiRetryCorruptedCompletion(endpoint, key, providerPayload, controller.signal, credential.provider).catch(error => { if(error?.code==='ai_allowance')throw error; return {text:'',tokens:0}; });
       text = retry.text || "That model returned a corrupted reply twice. Please try again or choose another model.";
     }

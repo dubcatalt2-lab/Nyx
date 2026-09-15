@@ -264,16 +264,6 @@ body:has(.tube-shell){
 
 /* Nyx Chat */
 body:has(.chat-app){
-  --nyx-app-base:#17181b;
-  --nyx-app-canvas:#17181b;
-  --nyx-app-shell:#1c1d21;
-  --nyx-app-panel:#232429;
-  --nyx-app-panel-strong:#2c2e34;
-  --nyx-app-field:#25272d;
-  --nyx-app-line:#393c44;
-  --nyx-app-muted:#b6bac5;
-  --chat-muted:#b6bac5;
-  --chat-faint:#989eab;
   --chat-bg:var(--nyx-app-canvas);
   --chat-panel:var(--nyx-app-shell);
   --chat-panel-2:var(--nyx-app-panel);
@@ -290,10 +280,10 @@ body:has(.chat-app){
   background-color:var(--nyx-app-panel)!important;
   background-image:none!important;
 }
-.chat-app{background:var(--chat-bg)!important;background-image:none!important}
+.chat-app{background:transparent!important;background-image:none!important}
 .chat-app::before{display:none!important}
 .conversation{
-  background-color:var(--chat-bg)!important;
+  background-color:rgba(9,16,23,.08)!important;
   background-image:none!important;
   -webkit-backdrop-filter:none!important;
   backdrop-filter:none!important;
@@ -302,7 +292,7 @@ body:has(.chat-app){
 .member-sidebar,
 .signin-gate,
 .loading-chat{
-  background-color:var(--chat-panel)!important;
+  background-color:rgba(12,20,28,.18)!important;
   background-image:none!important;
   border-color:var(--nyx-app-line)!important;
   -webkit-backdrop-filter:blur(5px) saturate(1.04)!important;
@@ -310,13 +300,13 @@ body:has(.chat-app){
 }
 .channel-sidebar,
 .member-sidebar{
-  background-color:var(--chat-panel)!important;
+  background-color:rgba(12,20,28,.18)!important;
 }
 .signin-gate{
-  background-color:var(--chat-panel)!important;
+  background-color:rgba(12,20,28,.20)!important;
 }
 .conversation-header{
-  background-color:var(--chat-panel)!important;
+  background-color:transparent!important;
   background-image:none!important;
   -webkit-backdrop-filter:blur(6px) saturate(1.03)!important;
   backdrop-filter:blur(6px) saturate(1.03)!important;
@@ -328,11 +318,6 @@ body:has(.chat-app){
   -webkit-backdrop-filter:blur(8px) saturate(1.04)!important;
   backdrop-filter:blur(8px) saturate(1.04)!important;
 }
-
-.chat-app .chat-topbar{background-color:var(--chat-panel)!important}
-.chat-app :is(.icon-button,.composer-tool,.back-button){background-color:var(--chat-panel-2);border-color:var(--chat-line);color:var(--chat-text)}
-.chat-app :is(.icon-button,.composer-tool,.back-button):hover{background-color:var(--chat-panel-3);border-color:#606572}
-.chat-app button:focus-visible{outline:2px solid #b9a9ff;outline-offset:2px}
 
 /* Nyx AI workspace */
 body:has(.ai-app){

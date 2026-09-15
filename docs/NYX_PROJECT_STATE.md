@@ -1,3 +1,7 @@
+## Built-in background rollback (2026-09-14)
+
+User requested undoing the added darker blur/backgrounds on other built-in pages. Shared apps/visual-redesign.css is restored exactly to c67d5e0 (AI and Chat included); Code Sandbox retains its separately requested translucent dark-glass correction. Toasts, mention notifications, AI access/concurrency, translation/models/versions and Shorts prewarming are retained. Application e608626 deployed successfully before this follow-up; release checks and live Code Sandbox translation/alignment fixtures passed.
+
 ## Code Sandbox glass correction and AI visual rollback (2026-09-14)
 
 User rejected the AI dark-surface change: restored its exact pre-8726f70 visual-redesign CSS section while retaining AI functionality and access controls. Code Sandbox now uses translucent editor/field/panel backgrounds, removes the redundant editor-wrap fill, and blurs the wallpaper on its host iframe (48px); blur inside a child document cannot sample the parent wallpaper. Existing translation/model/version controls remain. Desktop glass visual fixture inspected; desktop/mobile editor alignment, translation/version/model checks, AI workspace regression, build and deployment checks passed. This follows the successful deployment of 8726f70; correction release is being deployed.

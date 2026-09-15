@@ -1,0 +1,191 @@
+/* Authorized reference catalog: assets/profile/decorations/catalog.json. Originals retain APNG animation. */
+.nyx-avatar-decoration-astral-ring-alpha { --nyx-decoration-image: url("/assets/profile/decorations/astral-ring-alpha.png"); --nyx-decoration-still: url("/assets/profile/decorations/astral-ring-alpha-still.png"); }
+.nyx-avatar-decoration-celestial-crown { --nyx-decoration-image: url("/assets/profile/decorations/celestial-crown.png"); --nyx-decoration-still: url("/assets/profile/decorations/celestial-crown-still.png"); }
+.nyx-avatar-decoration-neon-vortex { --nyx-decoration-image: url("/assets/profile/decorations/neon-vortex.png"); --nyx-decoration-still: url("/assets/profile/decorations/neon-vortex-still.png"); }
+.nyx-avatar-decoration-solar-flare-ring { --nyx-decoration-image: url("/assets/profile/decorations/solar-flare-ring.png"); --nyx-decoration-still: url("/assets/profile/decorations/solar-flare-ring-still.png"); }
+.nyx-avatar-decoration-void-ring { --nyx-decoration-image: url("/assets/profile/decorations/void-ring.png"); --nyx-decoration-still: url("/assets/profile/decorations/void-ring-still.png"); }
+.nyx-avatar-decoration-cybernetic-halo { --nyx-decoration-image: url("/assets/profile/decorations/cybernetic-halo.png"); --nyx-decoration-still: url("/assets/profile/decorations/cybernetic-halo-still.png"); }
+.nyx-avatar-decoration-crimson-shield { --nyx-decoration-image: url("/assets/profile/decorations/crimson-shield.png"); --nyx-decoration-still: url("/assets/profile/decorations/crimson-shield-still.png"); }
+.nyx-avatar-decoration-quantum-ring { --nyx-decoration-image: url("/assets/profile/decorations/quantum-ring.png"); --nyx-decoration-still: url("/assets/profile/decorations/quantum-ring-still.png"); }
+.nyx-avatar-decoration-ethereal-aura { --nyx-decoration-image: url("/assets/profile/decorations/ethereal-aura.png"); --nyx-decoration-still: url("/assets/profile/decorations/ethereal-aura-still.png"); }
+.nyx-avatar-decoration-static-frost { --nyx-decoration-image: url("/assets/profile/decorations/static-frost.png"); --nyx-decoration-still: url("/assets/profile/decorations/static-frost-still.png"); }
+.nyx-avatar-decoration-prismatic-glow { --nyx-decoration-image: url("/assets/profile/decorations/prismatic-glow.png"); --nyx-decoration-still: url("/assets/profile/decorations/prismatic-glow-still.png"); }
+.nyx-avatar-decoration-supernova-ring { --nyx-decoration-image: url("/assets/profile/decorations/supernova-ring.png"); --nyx-decoration-still: url("/assets/profile/decorations/supernova-ring-still.png"); }
+.nyx-avatar-decoration-neon-pulse { --nyx-decoration-image: url("/assets/profile/decorations/neon-pulse.png"); --nyx-decoration-still: url("/assets/profile/decorations/neon-pulse-still.png"); }
+.nyx-avatar-decoration-arcane-circle { --nyx-decoration-image: url("/assets/profile/decorations/arcane-circle.png"); --nyx-decoration-still: url("/assets/profile/decorations/arcane-circle-still.png"); }
+.nyx-avatar-decoration-cosmic-dust { --nyx-decoration-image: url("/assets/profile/decorations/cosmic-dust.png"); --nyx-decoration-still: url("/assets/profile/decorations/cosmic-dust-still.png"); }
+.nyx-avatar-decoration-stellar-ring { --nyx-decoration-image: url("/assets/profile/decorations/stellar-ring.png"); --nyx-decoration-still: url("/assets/profile/decorations/stellar-ring-still.png"); }
+.nyx-avatar-decoration-gilded-halo { --nyx-decoration-image: url("/assets/profile/decorations/gilded-halo.png"); --nyx-decoration-still: url("/assets/profile/decorations/gilded-halo-still.png"); }
+.nyx-avatar-decoration-plasma-ring { --nyx-decoration-image: url("/assets/profile/decorations/plasma-ring.png"); --nyx-decoration-still: url("/assets/profile/decorations/plasma-ring-still.png"); }
+.nyx-avatar-decoration-hyperdrive { --nyx-decoration-image: url("/assets/profile/decorations/hyperdrive.png"); --nyx-decoration-still: url("/assets/profile/decorations/hyperdrive-still.png"); }
+.nyx-avatar-decoration-infernal-ring { --nyx-decoration-image: url("/assets/profile/decorations/infernal-ring.png"); --nyx-decoration-still: url("/assets/profile/decorations/infernal-ring-still.png"); }
+.nyx-avatar-decoration-solar-ring { --nyx-decoration-image: url("/assets/profile/decorations/solar-ring.png"); --nyx-decoration-still: url("/assets/profile/decorations/solar-ring-still.png"); }
+.nyx-avatar-decoration-nebula-ring { --nyx-decoration-image: url("/assets/profile/decorations/nebula-ring.png"); --nyx-decoration-still: url("/assets/profile/decorations/nebula-ring-still.png"); }
+.nyx-avatar-decoration-prism-crown { --nyx-decoration-image: url("/assets/profile/decorations/prism-crown.png"); --nyx-decoration-still: url("/assets/profile/decorations/prism-crown-still.png"); }
+.nyx-avatar-decoration-ember-ring { --nyx-decoration-image: url("/assets/profile/decorations/ember-ring.png"); --nyx-decoration-still: url("/assets/profile/decorations/ember-ring-still.png"); }
+.nyx-avatar-decoration-vortex-crown { --nyx-decoration-image: url("/assets/profile/decorations/vortex-crown.png"); --nyx-decoration-still: url("/assets/profile/decorations/vortex-crown-still.png"); }
+.nyx-avatar-decoration-astral-ring-alpha>.nyx-avatar-decoration,
+.nyx-avatar-decoration-celestial-crown>.nyx-avatar-decoration,
+.nyx-avatar-decoration-neon-vortex>.nyx-avatar-decoration,
+.nyx-avatar-decoration-solar-flare-ring>.nyx-avatar-decoration,
+.nyx-avatar-decoration-void-ring>.nyx-avatar-decoration,
+.nyx-avatar-decoration-cybernetic-halo>.nyx-avatar-decoration,
+.nyx-avatar-decoration-crimson-shield>.nyx-avatar-decoration,
+.nyx-avatar-decoration-quantum-ring>.nyx-avatar-decoration,
+.nyx-avatar-decoration-ethereal-aura>.nyx-avatar-decoration,
+.nyx-avatar-decoration-static-frost>.nyx-avatar-decoration,
+.nyx-avatar-decoration-prismatic-glow>.nyx-avatar-decoration,
+.nyx-avatar-decoration-supernova-ring>.nyx-avatar-decoration,
+.nyx-avatar-decoration-neon-pulse>.nyx-avatar-decoration,
+.nyx-avatar-decoration-arcane-circle>.nyx-avatar-decoration,
+.nyx-avatar-decoration-cosmic-dust>.nyx-avatar-decoration,
+.nyx-avatar-decoration-stellar-ring>.nyx-avatar-decoration,
+.nyx-avatar-decoration-gilded-halo>.nyx-avatar-decoration,
+.nyx-avatar-decoration-plasma-ring>.nyx-avatar-decoration,
+.nyx-avatar-decoration-hyperdrive>.nyx-avatar-decoration,
+.nyx-avatar-decoration-infernal-ring>.nyx-avatar-decoration,
+.nyx-avatar-decoration-solar-ring>.nyx-avatar-decoration,
+.nyx-avatar-decoration-nebula-ring>.nyx-avatar-decoration,
+.nyx-avatar-decoration-prism-crown>.nyx-avatar-decoration,
+.nyx-avatar-decoration-ember-ring>.nyx-avatar-decoration,
+.nyx-avatar-decoration-vortex-crown>.nyx-avatar-decoration {
+  display: block !important;
+  position: absolute !important;
+  inset: -15% !important;
+  width: 130% !important;
+  height: 130% !important;
+  z-index: 3 !important;
+  background: var(--nyx-decoration-image) center / contain no-repeat !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  filter: none !important;
+  transform: none !important;
+  pointer-events: none !important;
+}
+.nyx-avatar-decoration-astral-ring-alpha>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-astral-ring-alpha>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-astral-ring-alpha>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-celestial-crown>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-celestial-crown>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-celestial-crown>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-neon-vortex>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-neon-vortex>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-neon-vortex>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-solar-flare-ring>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-solar-flare-ring>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-solar-flare-ring>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-void-ring>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-void-ring>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-void-ring>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-cybernetic-halo>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-cybernetic-halo>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-cybernetic-halo>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-crimson-shield>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-crimson-shield>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-crimson-shield>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-quantum-ring>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-quantum-ring>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-quantum-ring>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-ethereal-aura>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-ethereal-aura>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-ethereal-aura>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-static-frost>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-static-frost>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-static-frost>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-prismatic-glow>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-prismatic-glow>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-prismatic-glow>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-supernova-ring>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-supernova-ring>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-supernova-ring>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-neon-pulse>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-neon-pulse>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-neon-pulse>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-arcane-circle>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-arcane-circle>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-arcane-circle>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-cosmic-dust>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-cosmic-dust>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-cosmic-dust>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-stellar-ring>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-stellar-ring>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-stellar-ring>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-gilded-halo>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-gilded-halo>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-gilded-halo>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-plasma-ring>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-plasma-ring>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-plasma-ring>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-hyperdrive>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-hyperdrive>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-hyperdrive>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-infernal-ring>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-infernal-ring>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-infernal-ring>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-solar-ring>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-solar-ring>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-solar-ring>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-nebula-ring>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-nebula-ring>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-nebula-ring>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-prism-crown>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-prism-crown>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-prism-crown>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-ember-ring>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-ember-ring>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-ember-ring>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-vortex-crown>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-vortex-crown>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-vortex-crown>.nyx-avatar-decoration>span { display: none !important; }
+@media (prefers-reduced-motion: reduce) {
+.nyx-avatar-decoration-astral-ring-alpha>.nyx-avatar-decoration,
+.nyx-avatar-decoration-celestial-crown>.nyx-avatar-decoration,
+.nyx-avatar-decoration-neon-vortex>.nyx-avatar-decoration,
+.nyx-avatar-decoration-solar-flare-ring>.nyx-avatar-decoration,
+.nyx-avatar-decoration-void-ring>.nyx-avatar-decoration,
+.nyx-avatar-decoration-cybernetic-halo>.nyx-avatar-decoration,
+.nyx-avatar-decoration-crimson-shield>.nyx-avatar-decoration,
+.nyx-avatar-decoration-quantum-ring>.nyx-avatar-decoration,
+.nyx-avatar-decoration-ethereal-aura>.nyx-avatar-decoration,
+.nyx-avatar-decoration-static-frost>.nyx-avatar-decoration,
+.nyx-avatar-decoration-prismatic-glow>.nyx-avatar-decoration,
+.nyx-avatar-decoration-supernova-ring>.nyx-avatar-decoration,
+.nyx-avatar-decoration-neon-pulse>.nyx-avatar-decoration,
+.nyx-avatar-decoration-arcane-circle>.nyx-avatar-decoration,
+.nyx-avatar-decoration-cosmic-dust>.nyx-avatar-decoration,
+.nyx-avatar-decoration-stellar-ring>.nyx-avatar-decoration,
+.nyx-avatar-decoration-gilded-halo>.nyx-avatar-decoration,
+.nyx-avatar-decoration-plasma-ring>.nyx-avatar-decoration,
+.nyx-avatar-decoration-hyperdrive>.nyx-avatar-decoration,
+.nyx-avatar-decoration-infernal-ring>.nyx-avatar-decoration,
+.nyx-avatar-decoration-solar-ring>.nyx-avatar-decoration,
+.nyx-avatar-decoration-nebula-ring>.nyx-avatar-decoration,
+.nyx-avatar-decoration-prism-crown>.nyx-avatar-decoration,
+.nyx-avatar-decoration-ember-ring>.nyx-avatar-decoration,
+.nyx-avatar-decoration-vortex-crown>.nyx-avatar-decoration { background-image: var(--nyx-decoration-still) !important; }
+}
+body.lag-reducer .nyx-avatar-decoration-astral-ring-alpha>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-celestial-crown>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-neon-vortex>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-solar-flare-ring>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-void-ring>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-cybernetic-halo>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-crimson-shield>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-quantum-ring>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-ethereal-aura>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-static-frost>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-prismatic-glow>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-supernova-ring>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-neon-pulse>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-arcane-circle>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-cosmic-dust>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-stellar-ring>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-gilded-halo>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-plasma-ring>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-hyperdrive>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-infernal-ring>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-solar-ring>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-nebula-ring>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-prism-crown>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-ember-ring>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-vortex-crown>.nyx-avatar-decoration { background-image: var(--nyx-decoration-still) !important; }

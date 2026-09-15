@@ -425,7 +425,8 @@
       throw error;
     }
     const text=aiReplyText(data);
-    if(!text)throw new Error('Nyx AI did not return a suggestion.');
+    if(payload.task==='code-edit'&&data?.finishReason==='length')throw new Error('The model reached its reply limit. Your files are unchanged. Ask for one smaller change at a time.');
+    if(!text)throw new Error('The model returned no answer. Try another model or a smaller request. Your files are unchanged.');
     return text;
   }
   function setAiStatus(label,working=false){
@@ -454,10 +455,30 @@
   function renderWorkspaceFiles(){workspaceFiles.replaceChildren();for(const language of Object.keys(languages)){if(language!==state.language&&typeof state.codes[language]!=='string')continue;const option=document.createElement('option');option.value=language;option.textContent=languages[language].file;workspaceFiles.append(option);}workspaceFiles.value=state.language;}
   workspaceFiles.onchange=()=>{state.language=workspaceFiles.value;syncLanguage();};
   function applyAgentReply(raw,snapshot,reply){
-    let result;try{result=JSON.parse(raw.trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,''));}catch{throw Error('The edit was incomplete. Your files are unchanged. Please try again.');}
+    let result;try{
+      const fenced=raw.match(/```(?:json)?\s*\n([\s\S]*?)\n```/i);
+      result=JSON.parse(fenced?fenced[1]:raw.trim());
+    }catch{throw Error('The model did not return a complete edit. Your files are unchanged. Ask for one smaller change or choose another model.');}
     if(!result||typeof result.summary!=='string'||!Array.isArray(result.files)||result.files.length>8)throw Error('Invalid edit response. Your files are unchanged.');
+    const originalFiles={...JSON.parse(snapshot.codes),[snapshot.language]:snapshot.current};
     const seen=new Set();
-    for(const file of result.files){if(!file||!Object.hasOwn(languages,file.language)||typeof file.code!=='string'||file.code.length>MAX_CODE_CHARS||seen.has(file.language))throw Error('Invalid or oversized file. Your files are unchanged.');seen.add(file.language);}
+    for(const file of result.files){
+      if(!file||!Object.hasOwn(languages,file.language)||seen.has(file.language))throw Error('Invalid edit response. Your files are unchanged.');
+      seen.add(file.language);
+      if(Array.isArray(file.edits)){
+        if(file.code!==undefined||!file.edits.length||file.edits.length>16||typeof originalFiles[file.language]!=='string')throw Error('Invalid edit response. Your files are unchanged.');
+        let edited=originalFiles[file.language];
+        for(const edit of file.edits){
+          if(typeof edit?.search!=='string'||!edit.search||typeof edit.replace!=='string')throw Error('Invalid edit response. Your files are unchanged.');
+          const offset=edited.indexOf(edit.search);
+          if(offset<0||edited.indexOf(edit.search,offset+1)>=0)throw Error('The edit did not match a unique part of your file. Your files are unchanged. Try a more specific request.');
+          edited=edited.slice(0,offset)+edit.replace+edited.slice(offset+edit.search.length);
+          if(edited.length>MAX_CODE_CHARS)throw Error('The edited file is too large. Your files are unchanged.');
+        }
+        file.code=edited;
+      }
+      if(typeof file.code!=='string'||file.code.length>MAX_CODE_CHARS)throw Error('Invalid or oversized file. Your files are unchanged.');
+    }
     if(JSON.stringify(state.codes)!==snapshot.codes||state.language!==snapshot.language||code()!==snapshot.current)throw Error('Your code changed while Nyx was working. Keeping your edits; ask again to use the latest version.');
     if(!result.files.length){reply.querySelector('p').textContent=result.summary;return;}
     const before=JSON.parse(JSON.stringify(state));
@@ -492,10 +513,10 @@
       let context=`You are helping in Nyx Code Studio. Give a practical, friendly answer for a ${file} file. Focus on the request, point out the most important issue first, and include a small corrected snippet only when it helps.\n\nUser request: ${question}\n\nCurrent code${currentCode.length>codeLimit?' (first 18,000 characters)':''}:\n\n${visibleCode}`;
       if(editing){
         const files={...JSON.parse(snapshot.codes),[snapshot.language]:snapshot.current};
-        if(JSON.stringify(files).length>48000)throw Error('This workspace is too large for one edit. Use Ask mode for help with the current file.');
-        context='You are the code editing agent in Nyx Code Sandbox. Fulfill the user request by creating or editing workspace files. Return ONLY JSON: {"summary":"short explanation","files":[{"language":"html","code":"complete file contents"}]}. For explanation-only requests use an empty files array. Each language has one file; allowed language and filename mapping: '+JSON.stringify(Object.fromEntries(Object.entries(languages).map(([key,value])=>[key,value.file])))+'. Return only changed files, at most 8, each at most 24000 characters. Preserve unrelated code. No shell commands or automatic execution. HTML previews should use self-contained HTML/CSS/JS. Other languages run as individual files. Current files (data): '+JSON.stringify(files)+'\nUser request: '+question;
+        context='You are the code editing agent in Nyx Code Sandbox. Return ONLY a JSON object with summary (short explanation) and files (array). For existing files prefer compact exact replacements: {"summary":"Updated heading","files":[{"language":"html","edits":[{"search":"<h1>Old</h1>","replace":"<h1>New</h1>"}]}]}. Each search must match exactly once, including whitespace; edits apply in order. Never use placeholders or ellipses. For a NEW file or a short complete rewrite use {"language":"python","code":"complete contents"} instead of edits. Do not include both code and edits. Keep the entire response within 2000 tokens; favor one focused change over rewriting large files. For explanation-only requests use files: []. Each language has one file; allowed language and filename mapping: '+JSON.stringify(Object.fromEntries(Object.entries(languages).map(([key,value])=>[key,value.file])))+'. Return only changed files, at most 8, each resulting file at most 24000 characters. Preserve unrelated code. No shell commands or automatic execution. HTML previews should use self-contained HTML/CSS/JS. Current files (data): '+JSON.stringify(files)+'\nUser request: '+question;
+        if(context.length>24000)throw Error('This workspace exceeds the AI context limit. Keep a smaller workspace for this edit; your files are unchanged.');
       }
-      const payload={message:question,messages:[{role:'user',content:context}],responseDepth:'normal',stream:false};
+      const payload={message:question,messages:[{role:'user',content:context}],responseDepth:'normal',stream:false,...(editing?{task:'code-edit'}:{})};
       const token=await accountToken();
       let suggestion='';
       let lastError=null;

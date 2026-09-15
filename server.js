@@ -2744,6 +2744,10 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     return;
   }
   const sourceHistory = Array.isArray(req.body?.messages) ? req.body.messages.slice(-20) : [];
+  const codeEdit = req.body?.task === 'code-edit';
+  if(codeEdit && (req.body?.stream !== false || sourceHistory.some(item=>typeof item?.content!=='string'||item.content.length>nyxAiLimits.contextChars))) {
+    return res.status(413).json({error:'This workspace exceeds the AI context limit. Use a smaller workspace for this edit; your files are unchanged.'});
+  }
   const history = sourceHistory
     .map((item, index) => {
       const role = item?.role === "assistant" ? "assistant" : "user";
@@ -2791,6 +2795,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     : responseDepth === "extended"
       ? Math.max(configuredMaxTokens, 2200)
       : configuredMaxTokens;
+  if(codeEdit)maxTokens=2200; // Existing shared allowance still caps/reserves this output.
   let opusReservation = null;
   let opusReservationSettled = false;
   let navyReservation = null;
@@ -2836,6 +2841,12 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     stream: wantsStream
   };
   nyxAiApplySupportedParameters(providerPayload,modelInfo);
+  if(codeEdit){
+    providerPayload.messages[0].content='You are the Nyx Code Sandbox editing assistant. Follow the requested JSON edit format exactly. Return only the complete JSON object, without Markdown or commentary. Prefer small exact search/replace edits for existing code. Never output partial files or placeholders.';
+    const supported=modelInfo.supportedParameters||[];
+    if(supported.includes('response_format'))providerPayload.response_format={type:'json_object'};
+    if(supported.includes('reasoning'))providerPayload.reasoning={enabled:false};
+  }
   try {
     const upstream = await nyxAiProviderFetch(credential.provider, endpoint, {
       method: "POST",
@@ -2929,7 +2940,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       await settleNyxAiNavyTokens(navyReservation, nyxAiCompletionTokens(data) || nyxAiEstimatedTokens(text));
       navyReservationSettled = true;
     }
-    res.json({ text: String(text || "").trim(), model });
+    res.json({ text: String(text || "").trim(), model, finishReason:data?.choices?.[0]?.finish_reason||null });
   } catch (error) {
     if (!res.headersSent) {
       const timedOut = error?.name === "AbortError";
@@ -3951,14 +3962,8 @@ app.get(/^\/controller\/(controller\.(?:api|inject|sw)\.js)$/, (req, res) => {
   res.type("application/javascript").send(patchedScramjetControllerAsset(req.params[0]));
 });
 
-const nyxProfileEffectValues = Object.freeze([
-  "none",
-  "blooming-roses"
-]);
-const nyxAvatarDecorationValues = Object.freeze([
-  "none",
-  "candlelight"
-]);
+const nyxProfileEffectValues = Object.freeze(["none","blooming-roses","fx-cosmic-vortex","fx-nebula-storm","fx-stellar-burst","fx-ethereal-flame","fx-quantum-rift","fx-astral-cascade","fx-plasma-wave","fx-supernova-flash","fx-void-shards","fx-prismatic-spark","fx-arcane-pulse","fx-solar-surge","fx-neon-eclipse","fx-celestial-drift","fx-shadow-aura","fx-hyper-aura","fx-starlight-bloom","fx-galaxy-shimmer","fx-cyber-lattice","fx-abyssal-ring","fx-dimension-rift","fx-chrono-spark","fx-zenith-glow","fx-infrared-pulse","fx-glitch-storm","fx-phantom-flame","fx-vortex-surge","fx-nebula-spark","fx-starlight-echo","fx-spectral-surge","fx-cyber-matrix","fx-dark-void","fx-nebula-rift","fx-solar-flare","fx-sakura-blossom","fx-arcane-prism","fx-abyssal-pulse","fx-neon-stardust","fx-retro-wave","fx-glitch-mirage","fx-celestial-shine","fx-phantom-mist","fx-hyperdrive","fx-quantum-bloom","fx-prismatic-aura","fx-astral-spark","fx-thunderstorm","fx-crimson-eclipse","fx-electric-dream","fx-frozen-shards","fx-vortex-horizon","fx-nova-beam","fx-cybernetic-pulse","fx-radiant-orbit"]);
+const nyxAvatarDecorationValues = Object.freeze(["none","candlelight","astral-ring-alpha","celestial-crown","neon-vortex","solar-flare-ring","void-ring","cybernetic-halo","crimson-shield","quantum-ring","ethereal-aura","static-frost","prismatic-glow","supernova-ring","neon-pulse","arcane-circle","cosmic-dust","stellar-ring","gilded-halo","plasma-ring","hyperdrive","infernal-ring","solar-ring","nebula-ring","prism-crown","ember-ring","vortex-crown"]);
 const nyxLegacyProfileEffectMap = Object.freeze({
   glow: "blooming-roses",
   sparkle: "blooming-roses",

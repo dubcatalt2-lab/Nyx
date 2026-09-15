@@ -1,0 +1,542 @@
+[
+  {
+    "id": "fx-cosmic-vortex",
+    "label": "Butterfly Sparkles",
+    "path": "/assets/profile/effects/fx-cosmic-vortex.png",
+    "staticPath": "/assets/profile/effects/fx-cosmic-vortex-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/13e64b0456243ed81ae809a507d980cadf31d1b44848bd2c89d3c511604b25ff",
+    "bytes": 4309262,
+    "sourceLabel": "Cosmic Vortex"
+  },
+  {
+    "id": "fx-nebula-storm",
+    "label": "Drifting Butterflies",
+    "path": "/assets/profile/effects/fx-nebula-storm.png",
+    "staticPath": "/assets/profile/effects/fx-nebula-storm-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/66349ad1617c21762b446035e03f536391351001a0261f3fc695292a0c00230b",
+    "bytes": 1649483,
+    "sourceLabel": "Nebula Storm"
+  },
+  {
+    "id": "fx-stellar-burst",
+    "label": "Starlit Petals",
+    "path": "/assets/profile/effects/fx-stellar-burst.png",
+    "staticPath": "/assets/profile/effects/fx-stellar-burst-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/f6798f7dce84fed42daa90be43d3e5852e96baf9de60022065116d3ca137b096",
+    "bytes": 3460437,
+    "sourceLabel": "Stellar Burst"
+  },
+  {
+    "id": "fx-ethereal-flame",
+    "label": "Floating Petals",
+    "path": "/assets/profile/effects/fx-ethereal-flame.png",
+    "staticPath": "/assets/profile/effects/fx-ethereal-flame-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/c9bafb1182c45452f70b58073d63d139ab6435cd261a63c10c1b6b048b6d9369",
+    "bytes": 1873930,
+    "sourceLabel": "Ethereal Flame"
+  },
+  {
+    "id": "fx-quantum-rift",
+    "label": "Moonlit Wolf",
+    "path": "/assets/profile/effects/fx-quantum-rift.png",
+    "staticPath": "/assets/profile/effects/fx-quantum-rift-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/c8eda0d8533d69a251d780152bbfe6bac4fbbaab48be155a7c7dbebe8d74ed05",
+    "bytes": 3204223,
+    "sourceLabel": "Quantum Rift"
+  },
+  {
+    "id": "fx-astral-cascade",
+    "label": "Night Clouds",
+    "path": "/assets/profile/effects/fx-astral-cascade.png",
+    "staticPath": "/assets/profile/effects/fx-astral-cascade-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/8996b4926f52d07d4e791b6db6e132be07d0a34b2e63dadf32919542b9da004d",
+    "bytes": 2666203,
+    "sourceLabel": "Astral Cascade"
+  },
+  {
+    "id": "fx-plasma-wave",
+    "label": "Shadow Grins",
+    "path": "/assets/profile/effects/fx-plasma-wave.png",
+    "staticPath": "/assets/profile/effects/fx-plasma-wave-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/4394a572d2d2b1eddbc253c6c77e3725ea55a379ace4a998267afe37b2fe352b",
+    "bytes": 5980596,
+    "sourceLabel": "Plasma Wave"
+  },
+  {
+    "id": "fx-supernova-flash",
+    "label": "Peeking Shadows",
+    "path": "/assets/profile/effects/fx-supernova-flash.png",
+    "staticPath": "/assets/profile/effects/fx-supernova-flash-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/41bdd75fdbffcb851d65825cd0f6a13d2876d29c145b888074c0af55b7dfba9c",
+    "bytes": 4017850,
+    "sourceLabel": "Supernova Flash"
+  },
+  {
+    "id": "fx-void-shards",
+    "label": "Owl in the Mist",
+    "path": "/assets/profile/effects/fx-void-shards.png",
+    "staticPath": "/assets/profile/effects/fx-void-shards-still.png",
+    "animated": false,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/88278b3768b7a4e2dc71af8f77c136b07169c7eafb0cc752969bb07ada33e112",
+    "bytes": 962246,
+    "sourceLabel": "Void Shards"
+  },
+  {
+    "id": "fx-prismatic-spark",
+    "label": "Neon Beast Spiral",
+    "path": "/assets/profile/effects/fx-prismatic-spark.png",
+    "staticPath": "/assets/profile/effects/fx-prismatic-spark-still.png",
+    "animated": false,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/ee63dbed7337a57ac139ae5bb16f4c35fe2092e5471193bff974d3a14672a664",
+    "bytes": 113184,
+    "sourceLabel": "Prismatic Spark"
+  },
+  {
+    "id": "fx-arcane-pulse",
+    "label": "Monochrome Demon",
+    "path": "/assets/profile/effects/fx-arcane-pulse.png",
+    "staticPath": "/assets/profile/effects/fx-arcane-pulse-still.png",
+    "animated": false,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/120627a78de773d458668ba9dc5db233e94df7f70f321e3e2f752b63e4797a3a",
+    "bytes": 166848,
+    "sourceLabel": "Arcane Pulse"
+  },
+  {
+    "id": "fx-solar-surge",
+    "label": "Demon Reveal",
+    "path": "/assets/profile/effects/fx-solar-surge.png",
+    "staticPath": "/assets/profile/effects/fx-solar-surge-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/84168a5adc7db3805121683b85f398b21ebfd9e0396bc9a2bbf70591acb482fb",
+    "bytes": 5482699,
+    "sourceLabel": "Solar Surge"
+  },
+  {
+    "id": "fx-neon-eclipse",
+    "label": "Hanging Shadow Grin",
+    "path": "/assets/profile/effects/fx-neon-eclipse.png",
+    "staticPath": "/assets/profile/effects/fx-neon-eclipse-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/be67d92063f863236b59b19e84ab4a82c43d9cf99b1640636c69cfecad3dbcb2",
+    "bytes": 1584287,
+    "sourceLabel": "Neon Eclipse"
+  },
+  {
+    "id": "fx-celestial-drift",
+    "label": "Neon Beast Portrait",
+    "path": "/assets/profile/effects/fx-celestial-drift.png",
+    "staticPath": "/assets/profile/effects/fx-celestial-drift-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/db5a61d9fb5b447c626cd59cf00c45cc61e211b042c8d5397be5f17b4151c698",
+    "bytes": 3775861,
+    "sourceLabel": "Celestial Drift"
+  },
+  {
+    "id": "fx-shadow-aura",
+    "label": "Pink Lightning",
+    "path": "/assets/profile/effects/fx-shadow-aura.png",
+    "staticPath": "/assets/profile/effects/fx-shadow-aura-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/36651b3517f1d214876474a0df786edf56a8efd545925c304a8e3155b47aa68b",
+    "bytes": 1662387,
+    "sourceLabel": "Shadow Aura"
+  },
+  {
+    "id": "fx-hyper-aura",
+    "label": "Owl on a Branch",
+    "path": "/assets/profile/effects/fx-hyper-aura.png",
+    "staticPath": "/assets/profile/effects/fx-hyper-aura-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1f2b91c50cc613ac683138f81c4fd6636445246275d0a43be220105b7426dc37",
+    "bytes": 2565811,
+    "sourceLabel": "Hyper Aura"
+  },
+  {
+    "id": "fx-starlight-bloom",
+    "label": "Clouds & Full Moon",
+    "path": "/assets/profile/effects/fx-starlight-bloom.png",
+    "staticPath": "/assets/profile/effects/fx-starlight-bloom-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/6141bed8d0353c9104a069af0c42dc80967c72a4061c018f7ace53c1f4a359ad",
+    "bytes": 707164,
+    "sourceLabel": "Starlight Bloom"
+  },
+  {
+    "id": "fx-galaxy-shimmer",
+    "label": "Hello Kitty Blossoms",
+    "path": "/assets/profile/effects/fx-galaxy-shimmer.png",
+    "staticPath": "/assets/profile/effects/fx-galaxy-shimmer-still.png",
+    "animated": false,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/80ee7cc461db7f7493816a03af3b03a620c8edc248f188f8b2913ffbf7266371",
+    "bytes": 252746,
+    "sourceLabel": "Galaxy Shimmer"
+  },
+  {
+    "id": "fx-cyber-lattice",
+    "label": "Moonlit Vine Border",
+    "path": "/assets/profile/effects/fx-cyber-lattice.png",
+    "staticPath": "/assets/profile/effects/fx-cyber-lattice-still.png",
+    "animated": false,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/5c86da4e65bd9a5a5c0f37ad559ec6637fde50a6782dc6800cb7ee88293676d0",
+    "bytes": 534648,
+    "sourceLabel": "Cyber Lattice"
+  },
+  {
+    "id": "fx-abyssal-ring",
+    "label": "Spider-Man Swing",
+    "path": "/assets/profile/effects/fx-abyssal-ring.png",
+    "staticPath": "/assets/profile/effects/fx-abyssal-ring-still.png",
+    "animated": false,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/ba0e0454f6c23edf081067357f72a1cf3629e4d59ffe14e1f33de40b96371d49",
+    "bytes": 572818,
+    "sourceLabel": "Abyssal Ring"
+  },
+  {
+    "id": "fx-dimension-rift",
+    "label": "Shark Whirlpool",
+    "path": "/assets/profile/effects/fx-dimension-rift.png",
+    "staticPath": "/assets/profile/effects/fx-dimension-rift-still.png",
+    "animated": false,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/b6f265ce5b8663ac063871c792f2f087a67d4670bc2010214f9ca65114b88f48",
+    "bytes": 109315,
+    "sourceLabel": "Dimension Rift"
+  },
+  {
+    "id": "fx-chrono-spark",
+    "label": "Circling Sharks",
+    "path": "/assets/profile/effects/fx-chrono-spark.png",
+    "staticPath": "/assets/profile/effects/fx-chrono-spark-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/8274a57f4d55d382e3ab04ea178d274456bc397a7f2846f07962de8e01593b68",
+    "bytes": 4974354,
+    "sourceLabel": "Chrono Spark"
+  },
+  {
+    "id": "fx-zenith-glow",
+    "label": "Deep Sea Silhouettes",
+    "path": "/assets/profile/effects/fx-zenith-glow.png",
+    "staticPath": "/assets/profile/effects/fx-zenith-glow-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/52385aff9666affe84b73f56e8ebccba906df0978ee93ed56301c7fb1c890af0",
+    "bytes": 1305461,
+    "sourceLabel": "Zenith Glow"
+  },
+  {
+    "id": "fx-infrared-pulse",
+    "label": "Deep Sea Drift",
+    "path": "/assets/profile/effects/fx-infrared-pulse.png",
+    "staticPath": "/assets/profile/effects/fx-infrared-pulse-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/ff91e837fc27b6147481ab8bfef2769c45e13bfffaf60bf8931f10def33c10db",
+    "bytes": 1332022,
+    "sourceLabel": "Infrared Pulse"
+  },
+  {
+    "id": "fx-glitch-storm",
+    "label": "Ocean Shadows",
+    "path": "/assets/profile/effects/fx-glitch-storm.png",
+    "staticPath": "/assets/profile/effects/fx-glitch-storm-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/2884b01ea871d48b778e75b202fdb6d2f766b3adba3ae695915c4e4b3be9c322",
+    "bytes": 1402412,
+    "sourceLabel": "Glitch Storm"
+  },
+  {
+    "id": "fx-phantom-flame",
+    "label": "Spider-Man Peek",
+    "path": "/assets/profile/effects/fx-phantom-flame.png",
+    "staticPath": "/assets/profile/effects/fx-phantom-flame-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/05d9543720cb0294728155de219d9bb440d72331e88de3dbc1dced6bd270e6fb",
+    "bytes": 1609390,
+    "sourceLabel": "Phantom Flame"
+  },
+  {
+    "id": "fx-vortex-surge",
+    "label": "Spiderweb Border",
+    "path": "/assets/profile/effects/fx-vortex-surge.png",
+    "staticPath": "/assets/profile/effects/fx-vortex-surge-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/3d65e7f6c15aab66f854209ebb66b2a9f25d48f481abd6b450fe99a1e955683f",
+    "bytes": 33458,
+    "sourceLabel": "Vortex Surge"
+  },
+  {
+    "id": "fx-nebula-spark",
+    "label": "Moonlit Vine Canopy",
+    "path": "/assets/profile/effects/fx-nebula-spark.png",
+    "staticPath": "/assets/profile/effects/fx-nebula-spark-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/bbd175b29de9b89e9bb88f5e1f690033a7112be874c57e7d7aed06c9db80a606",
+    "bytes": 1502041,
+    "sourceLabel": "Nebula Spark"
+  },
+  {
+    "id": "fx-starlight-echo",
+    "label": "Moonlit Vine Sparkles",
+    "path": "/assets/profile/effects/fx-starlight-echo.png",
+    "staticPath": "/assets/profile/effects/fx-starlight-echo-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/684d47f73e67c1393c54cd605ee9ddda072df1ae68672eb1d41bf90f933bd480",
+    "bytes": 1870137,
+    "sourceLabel": "Starlight Echo"
+  },
+  {
+    "id": "fx-spectral-surge",
+    "label": "Glowing Butterflies",
+    "path": "/assets/profile/effects/fx-spectral-surge.png",
+    "staticPath": "/assets/profile/effects/fx-spectral-surge-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1538991362601656420/animated",
+    "bytes": 972375,
+    "sourceLabel": "Spectral Surge"
+  },
+  {
+    "id": "fx-cyber-matrix",
+    "label": "Glowing Rose Wreath",
+    "path": "/assets/profile/effects/fx-cyber-matrix.png",
+    "staticPath": "/assets/profile/effects/fx-cyber-matrix-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1538990902306152558/animated",
+    "bytes": 1880700,
+    "sourceLabel": "Cyber Matrix"
+  },
+  {
+    "id": "fx-dark-void",
+    "label": "Cloud Halo",
+    "path": "/assets/profile/effects/fx-dark-void.png",
+    "staticPath": "/assets/profile/effects/fx-dark-void-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1538991167511994549/animated",
+    "bytes": 1336053,
+    "sourceLabel": "Dark Void"
+  },
+  {
+    "id": "fx-nebula-rift",
+    "label": "Black Thorn Ring",
+    "path": "/assets/profile/effects/fx-nebula-rift.png",
+    "staticPath": "/assets/profile/effects/fx-nebula-rift-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1481388474673139855/animated",
+    "bytes": 1262028,
+    "sourceLabel": "Nebula Rift"
+  },
+  {
+    "id": "fx-solar-flare",
+    "label": "Skeletal Embrace",
+    "path": "/assets/profile/effects/fx-solar-flare.png",
+    "staticPath": "/assets/profile/effects/fx-solar-flare-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1516559294819074088/animated",
+    "bytes": 707577,
+    "sourceLabel": "Solar Flare"
+  },
+  {
+    "id": "fx-sakura-blossom",
+    "label": "Blushing Cat Ears",
+    "path": "/assets/profile/effects/fx-sakura-blossom.png",
+    "staticPath": "/assets/profile/effects/fx-sakura-blossom-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1212569433839636530/animated",
+    "bytes": 356762,
+    "sourceLabel": "Sakura Blossom"
+  },
+  {
+    "id": "fx-arcane-prism",
+    "label": "Phoenix Swirl",
+    "path": "/assets/profile/effects/fx-arcane-prism.png",
+    "staticPath": "/assets/profile/effects/fx-arcane-prism-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1533914517329678408/animated",
+    "bytes": 1029544,
+    "sourceLabel": "Arcane Prism"
+  },
+  {
+    "id": "fx-abyssal-pulse",
+    "label": "Black Roses & Butterfly",
+    "path": "/assets/profile/effects/fx-abyssal-pulse.png",
+    "staticPath": "/assets/profile/effects/fx-abyssal-pulse-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1462116613645144185/animated",
+    "bytes": 1677664,
+    "sourceLabel": "Abyssal Pulse"
+  },
+  {
+    "id": "fx-neon-stardust",
+    "label": "Dark Angel Wings",
+    "path": "/assets/profile/effects/fx-neon-stardust.png",
+    "staticPath": "/assets/profile/effects/fx-neon-stardust-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1462116613682757888/animated",
+    "bytes": 1239357,
+    "sourceLabel": "Neon Stardust"
+  },
+  {
+    "id": "fx-retro-wave",
+    "label": "Comic Anger",
+    "path": "/assets/profile/effects/fx-retro-wave.png",
+    "staticPath": "/assets/profile/effects/fx-retro-wave-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1144308439720394944/animated",
+    "bytes": 468914,
+    "sourceLabel": "Retro Wave"
+  },
+  {
+    "id": "fx-glitch-mirage",
+    "label": "Prismatic Eclipse",
+    "path": "/assets/profile/effects/fx-glitch-mirage.png",
+    "staticPath": "/assets/profile/effects/fx-glitch-mirage-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1531403489727746310/animated",
+    "bytes": 1696777,
+    "sourceLabel": "Glitch Mirage"
+  },
+  {
+    "id": "fx-celestial-shine",
+    "label": "Luminous Moth",
+    "path": "/assets/profile/effects/fx-celestial-shine.png",
+    "staticPath": "/assets/profile/effects/fx-celestial-shine-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1541454059670605845/animated",
+    "bytes": 1576231,
+    "sourceLabel": "Celestial Shine"
+  },
+  {
+    "id": "fx-phantom-mist",
+    "label": "Crimson Butterfly",
+    "path": "/assets/profile/effects/fx-phantom-mist.png",
+    "staticPath": "/assets/profile/effects/fx-phantom-mist-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1436367668897775757/animated",
+    "bytes": 930497,
+    "sourceLabel": "Phantom Mist"
+  },
+  {
+    "id": "fx-hyperdrive",
+    "label": "Moonlit Vines",
+    "path": "/assets/profile/effects/fx-hyperdrive.png",
+    "staticPath": "/assets/profile/effects/fx-hyperdrive-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1541453953760239616/animated",
+    "bytes": 1656844,
+    "sourceLabel": "Hyperdrive"
+  },
+  {
+    "id": "fx-quantum-bloom",
+    "label": "Silver Orbits",
+    "path": "/assets/profile/effects/fx-quantum-bloom.png",
+    "staticPath": "/assets/profile/effects/fx-quantum-bloom-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1531406020851793950/animated",
+    "bytes": 1920395,
+    "sourceLabel": "Quantum Bloom"
+  },
+  {
+    "id": "fx-prismatic-aura",
+    "label": "Moonlit Clouds",
+    "path": "/assets/profile/effects/fx-prismatic-aura.png",
+    "staticPath": "/assets/profile/effects/fx-prismatic-aura-still.png",
+    "animated": false,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1495805817792761976/static",
+    "bytes": 19824,
+    "sourceLabel": "Prismatic Aura"
+  },
+  {
+    "id": "fx-astral-spark",
+    "label": "Flaming Skulls",
+    "path": "/assets/profile/effects/fx-astral-spark.png",
+    "staticPath": "/assets/profile/effects/fx-astral-spark-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1533913535149506670/animated",
+    "bytes": 1114765,
+    "sourceLabel": "Astral Spark"
+  },
+  {
+    "id": "fx-thunderstorm",
+    "label": "Golden Moon",
+    "path": "/assets/profile/effects/fx-thunderstorm.png",
+    "staticPath": "/assets/profile/effects/fx-thunderstorm-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1432550258126229565/animated",
+    "bytes": 913643,
+    "sourceLabel": "Thunderstorm"
+  },
+  {
+    "id": "fx-crimson-eclipse",
+    "label": "Golden Star Crown",
+    "path": "/assets/profile/effects/fx-crimson-eclipse.png",
+    "staticPath": "/assets/profile/effects/fx-crimson-eclipse-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1531405732174626986/animated",
+    "bytes": 1415320,
+    "sourceLabel": "Crimson Eclipse"
+  },
+  {
+    "id": "fx-electric-dream",
+    "label": "Ocean Glow",
+    "path": "/assets/profile/effects/fx-electric-dream.png",
+    "staticPath": "/assets/profile/effects/fx-electric-dream-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1533919242892607610/animated",
+    "bytes": 775188,
+    "sourceLabel": "Electric Dream"
+  },
+  {
+    "id": "fx-frozen-shards",
+    "label": "White Angel Wings",
+    "path": "/assets/profile/effects/fx-frozen-shards.png",
+    "staticPath": "/assets/profile/effects/fx-frozen-shards-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1462116613691281560/animated",
+    "bytes": 1268132,
+    "sourceLabel": "Frozen Shards"
+  },
+  {
+    "id": "fx-vortex-horizon",
+    "label": "Ember Moon",
+    "path": "/assets/profile/effects/fx-vortex-horizon.png",
+    "staticPath": "/assets/profile/effects/fx-vortex-horizon-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1432550258147328050/animated",
+    "bytes": 1061732,
+    "sourceLabel": "Vortex Horizon"
+  },
+  {
+    "id": "fx-nova-beam",
+    "label": "Aurora Wisps",
+    "path": "/assets/profile/effects/fx-nova-beam.png",
+    "staticPath": "/assets/profile/effects/fx-nova-beam-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1541454236456456232/animated",
+    "bytes": 269328,
+    "sourceLabel": "Nova Beam"
+  },
+  {
+    "id": "fx-cybernetic-pulse",
+    "label": "White Roses & Butterfly",
+    "path": "/assets/profile/effects/fx-cybernetic-pulse.png",
+    "staticPath": "/assets/profile/effects/fx-cybernetic-pulse-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1462116613653401775/animated",
+    "bytes": 1699142,
+    "sourceLabel": "Cybernetic Pulse"
+  },
+  {
+    "id": "fx-radiant-orbit",
+    "label": "Starlight Mist",
+    "path": "/assets/profile/effects/fx-radiant-orbit.png",
+    "staticPath": "/assets/profile/effects/fx-radiant-orbit-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1432550258247995533/animated",
+    "bytes": 1880407,
+    "sourceLabel": "Radiant Orbit"
+  }
+]

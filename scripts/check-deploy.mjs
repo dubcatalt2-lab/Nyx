@@ -2,6 +2,11 @@ import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
+  "css/avatar-decorations.css",
+  "css/profile-effects.css",
+  "css/profile-editor-layout.css",
+  "assets/profile/effects/catalog.json",
+  "assets/profile/decorations/catalog.json",
   "scripts/build-proxy-assets.mjs",
   "scripts/proxy-asset-names.json",
   "assets/icons/nyx-movies.svg",

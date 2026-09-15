@@ -2676,7 +2676,7 @@ app.get('/api/nyx-ai/providers',(_req,res)=>{res.set('Cache-Control','private, n
 app.get('/api/nyx-ai/models',async(req,res)=>{
   res.set('Cache-Control','private, no-store');
   const entitlement=await nyxAiPremiumEntitlement(req);
-  if(req.query.custom==='1')return res.json({models:[{id:'google/gemini-2.5-flash-lite',label:'Gemini 2.5 Flash Lite',vision:true},{id:'openai/gpt-5.6-luna',label:'GPT-5.6 Luna',vision:true}].filter(model=>aiModelAllowed(model.id,entitlement))});
+  if(req.query.custom==='1')return res.json({models:[{id:'google/gemini-2.5-flash-lite',label:'Gemini 2.5 Flash Lite',vision:true},{id:'openai/gpt-5.6-luna',label:'GPT-5.6 Luna',vision:true},{id:'inception/mercury-2.5',label:'Mercury 2.5',vision:false},{id:'qwen/qwen3.7-flash',label:'Qwen3.7 Flash',vision:true},{id:'deepseek/deepseek-v4.1-flash',label:'DeepSeek V4.1 Flash',vision:true},{id:'openai/gpt-5.6-sol-pro',label:'GPT-5.6 Sol Pro',vision:true}].filter(model=>aiModelAllowed(model.id,entitlement))});
   const credential=nyxAiRequestCredential(req);
   if(credential.invalid||credential.invalidProvider)return res.status(410).json({error:'This AI option has been removed. Use OpenRouter.'});
   if(!credential.key)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
@@ -2716,7 +2716,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     return;
   }
   const model = modelInfo.id;
-  if(model==='openai/gpt-5.6-luna'&&!aiModelAllowed(model,await nyxAiPremiumEntitlement(req)))return res.status(403).json({error:'GPT-5.6 Luna is available to Premium members and the owner only.'});
+  if(!aiModelAllowed(model,await nyxAiPremiumEntitlement(req)))return res.status(403).json({error:model==='openai/gpt-5.6-sol-pro'?'GPT-5.6 Sol Pro is available to the owner only.':'GPT-5.6 Luna is available to Premium members and the owner only.'});
   const isPremiumOpus = false;
   const isSharedNavy = false;
   const premiumEntitlement = isPremiumOpus || isSharedNavy ? await nyxAiPremiumEntitlement(req) : null;

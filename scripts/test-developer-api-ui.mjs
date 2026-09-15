@@ -36,7 +36,7 @@ try {
         else {key={prefix:'n_api_fixture',label:'Test key'};return route.fulfill({json:{key:'n_api_fixture-only-secret'}});}
       }
       if(path==='/api/developer/owner/account/member'&&route.request().method()==='POST')balance+=route.request().postDataJSON().addTokens;
-      return route.fulfill({json:{uid:'member',premium,monthlyModelLimits:premium?{luna:25000,gemini:50000}:{luna:0,gemini:0},modelAllowances:premium?{'openai/gpt-5.6-luna':{limit:25000,used:0,remaining:25000},'google/gemini-2.5-flash-lite':{limit:50000,used:0,remaining:50000}}:undefined,balance,usedTokens:0,models:['google/gemini-2.5-flash-lite'],dailyRequests:20,minuteRequests:4,maxOutput:512,owner,verified,unlocked,key,configured:true,grantedTokens:1000,requestsToday:1,recent:[{at:Date.now(),model:'google/gemini-2.5-flash-lite',tokens:12,status:'completed'}]}});
+      return route.fulfill({json:{uid:'member',premium,monthlyModelLimits:premium?{luna:25000,gemini:50000}:{luna:0,gemini:0},tokenPool:{limit:premium?50000:10000,used:0,remaining:premium?50000:10000,period:'fortnight',resetAt:Date.now()+14*86400000},balance,usedTokens:0,models:['google/gemini-2.5-flash-lite'],dailyRequests:20,minuteRequests:4,maxOutput:512,owner,verified,unlocked,key,configured:true,grantedTokens:1000,requestsToday:1,recent:[{at:Date.now(),model:'google/gemini-2.5-flash-lite',tokens:12,status:'completed'}]}});
     });
     await page.goto('http://nyx.test/');const frame=page.frameLocator('iframe');
     await frame.locator('#notice').filter({hasText:'Sign in to Nyx to continue.'}).waitFor();
@@ -76,9 +76,10 @@ try {
     assert.equal(await frame.locator('#unlock input').inputValue(),'');
     await frame.locator('#lookup button').click();await frame.locator('#target').filter({hasText:'988 tokens'}).waitFor();assert.equal(await frame.locator('[name=lunaMonthlyLimit]').isVisible(),false,'Non-Premium accounts must not show a monthly allowance');
     await frame.locator('[name=addTokens]').fill('50');await frame.locator('#limits button[type=submit]').click();await frame.locator('#target').filter({hasText:'1038 tokens'}).waitFor();
-    premium=true;key={prefix:'n_api_fixture',label:'Test key',revealAvailable:true};await frame.locator('#lookup button').click();await frame.locator('[name=lunaMonthlyLimit]').waitFor();
-    assert.equal(await frame.locator('[name=lunaMonthlyLimit]').inputValue(),'25000');assert.equal(await frame.locator('[name=geminiMonthlyLimit]').inputValue(),'50000');
-    assert.match(await frame.locator('#target').textContent(),/Luna: 25,000 \/ 25,000/);
+    premium=true;key={prefix:'n_api_fixture',label:'Test key',revealAvailable:true};await frame.locator('#lookup button').click();assert.equal(await frame.locator('[name=lunaMonthlyLimit]').isVisible(),false);
+    await frame.locator('#target').filter({hasText:'50,000 / 50,000 pooled tokens'}).waitFor();
+    assert.equal(await frame.locator('[name=geminiMonthlyLimit]').isVisible(),false);
+    assert.match(await frame.locator('#target').textContent(),/50,000 \/ 50,000 pooled tokens/);
     await frame.locator('#owner-show-key').click();await frame.locator('#owner-key-reveal').waitFor();
     assert.equal(await frame.locator('#owner-key-value').inputValue(),'n_api_owner-reveal-fixture');
     assert.equal(await frame.locator('body').evaluate(()=>JSON.stringify(localStorage).includes('n_api_owner-reveal-fixture')),false);

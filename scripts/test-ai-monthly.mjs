@@ -1,46 +1,45 @@
 ﻿import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {createAiAllowance,aiAllowanceConfig} from '../lib/ai-allowance.mjs';
+import {createAiAllowance,aiAllowanceConfig,aiTokenPoolUsage} from '../lib/ai-allowance.mjs';
 import {memoryFirestore} from './test-ai-allowance.mjs';
-const db=memoryFirestore();let time=Date.parse('2026-09-11T12:00:00Z');
+const db=memoryFirestore();let time=Date.parse('2026-09-25T12:00:00Z');
 const a=createAiAllowance({db,config:aiAllowanceConfig({}),now:()=>time});
-const actor={uid:'premium',premium:true,createdAt:time,network:'school',device:'same',monthlyModelLimits:{luna:25000,gemini:50000}};
-const record='nyxAiAllowance/premium-'+createHash('sha256').update(actor.uid).digest('hex');
+const member={uid:'member',createdAt:Date.parse('2026-08-01T00:00:00Z')},premium={...member,uid:'premium',premium:true},owner={...member,uid:'owner',owner:true};
+const path=(actor,prefix='models')=>'nyxAiAllowance/'+prefix+'-'+createHash('sha256').update(actor.uid).digest('hex');
+const gemini='google/gemini-2.5-flash-lite',deepseek='deepseek/deepseek-v4.1-flash',qwen='qwen/qwen3.7-flash',luna='openai/gpt-5.6-luna';
 const payload=model=>({model,messages:[{role:'user',content:'Hello'}],max_tokens:100});
-const luna='openai/gpt-5.6-luna',gemini='google/gemini-2.5-flash-lite';
-async function call(user,model,usage){const session=await a.begin(user);try{const r=await a.reserve(session,'shared',payload(model));await a.settle(r,usage);return r;}finally{await a.finish(session);time+=61000;}}
-await call(actor,luna,{input:200,output:300});assert.equal(db.records.get(record).tokens,500);
-await call({...actor,apiVerified:true},gemini,{input:400,output:100});assert.equal(db.records.get(record).tokens,1000,'API and chat share monthly usage');
-assert.deepEqual(db.records.get(record).modelTokens,{luna:500,gemini:500},'Models use independent counters');
-db.records.set(record,{month:'2026-09',tokens:25000,legacyTokens:0,modelTokens:{luna:25000,gemini:0}});
-await assert.rejects(call(actor,luna),/Luna is unavailable/);
-await call(actor,gemini,{input:10,output:10});assert.equal(db.records.get(record).modelTokens.gemini,20);
-await call({...actor,monthlyModelLimits:{luna:30000,gemini:50000}},luna,{input:10,output:10});assert.equal(db.records.get(record).modelTokens.luna,25020,'Raising one model limit preserves usage');
-await assert.rejects(call({...actor,monthlyModelLimits:{luna:0,gemini:50000}},luna),/Luna is unavailable/);
-db.records.set(record,{month:'2026-09',tokens:50000,legacyTokens:0,modelTokens:{luna:0,gemini:50000}});
-await assert.rejects(call(actor,gemini),/Gemini is unavailable/);
-await call(actor,luna,{input:10,output:10});assert.equal(db.records.get(record).modelTokens.gemini,50000,'Luna usage leaves Gemini unchanged');
-const beforeOwner=structuredClone(db.records.get(record));await call({...actor,owner:true},gemini,{input:10,output:10});assert.deepEqual(db.records.get(record),beforeOwner,'Owner is unlimited without consuming Premium tokens');
-// Combined pre-migration usage is carried forward, never silently reset.
-db.records.set(record,{month:'2026-09',tokens:23000});
-await call(actor,gemini,{input:10,output:10});assert.equal(db.records.get(record).legacyTokens,23000);
-assert.equal(db.records.get(record).modelTokens.gemini,20);
-for(let i=0;i<12;i++)await call({...actor,uid:'founder',owner:true,premium:false},luna,{input:10000,output:10000});
-time=Date.parse('2026-10-01T00:01:00Z');await call(actor,luna,{input:10,output:20});assert.equal(db.records.get(record).tokens,30,'New UTC month resets tokens');
-const session=await a.begin(actor),r=await a.reserve(session,'shared',payload(luna));await a.settle(r,null,true);await a.settle(r,null,true);await a.finish(session);assert.equal(db.records.get(record).tokens,30,'Pre-send refund is idempotent');
-// Separate chat/API sessions must serialize against the same monthly ledger.
-time=Date.parse('2026-10-03T12:00:00Z');db.records.set(record,{month:'2026-10',tokens:23000,legacyTokens:0,modelTokens:{luna:23000,gemini:0}});
-const first=await a.begin(actor),second=await a.begin({...actor,apiVerified:true});
-const race=await Promise.allSettled([a.reserve(first,'shared',payload(luna)),a.reserve(second,'shared',payload(luna))]);
-assert.equal(race.filter(r=>r.status==='fulfilled').length,1,'Concurrent API/chat cannot double-spend remaining tokens');
-for(const entry of race)if(entry.status==='fulfilled')await a.settle(entry.value,null,true);
-await a.finish(first);await a.finish(second);
-time=Date.parse('2026-10-31T23:59:59Z');const lateSession=await a.begin(actor),late=await a.reserve(lateSession,'shared',payload(gemini));await a.finish(lateSession);
-time=Date.parse('2026-11-01T00:00:01Z');await call(actor,luna,{input:20,output:20});
-await a.settle(late,null,true);assert.equal(db.records.get(record).tokens,40,'Late October refunds must not reduce November usage');
-const budgetDb=memoryFirestore(),budget=createAiAllowance({db:budgetDb,now:()=>time,config:aiAllowanceConfig({NYX_AI_DAILY_BUDGET_USD:'1',NYX_AI_MODEL_PRICES_JSON:JSON.stringify({['shared:'+luna]:{inputPerMillion:1,outputPerMillion:1}})})});
-budgetDb.records.set('nyxAiAllowance/global',{day:'2026-11-01',month:'2026-11',reserveRequests:150,reserveMoney:200000,monthMoney:200000});
-const ownerSession=await budget.begin({uid:'founder',owner:true});const paid=await budget.reserve(ownerSession,'shared',payload(luna));await budget.settle(paid,null,true);await budget.finish(ownerSession);
-budgetDb.records.set('nyxAiAllowance/global',{day:'2026-11-01',month:'2026-11',establishedMoney:999999,monthMoney:999999});
-const cappedOwner=await budget.begin({uid:'founder',owner:true});await assert.rejects(budget.reserve(cappedOwner,'shared',payload(luna)),/spending allowance/);await budget.finish(cappedOwner);
-console.log('PASS: separate monthly model/API usage, both model cutoffs, legacy carryover, owner exemption, custom limits, rollover and refunds');
+async function call(actor,model,usage={input:50,output:50}){const s=await a.begin(actor);try{const r=await a.reserve(s,'shared',payload(model));await a.settle(r,usage);return r;}finally{await a.finish(s);time+=61000;}}
+for(const actor of [member,premium]){
+ for(const model of [gemini,deepseek,qwen,'inception/mercury-2.5',...(actor.premium?[luna]:[])])await call(actor,model);
+ const ledger=db.records.get(path(actor));assert.equal(ledger.pool.used,actor.premium?500:400,'Different models debit one pool');
+ ledger.pool.used=actor.premium?50000:10000;
+ for(const model of [gemini,deepseek,qwen,'inception/mercury-2.5',...(actor.premium?[luna]:[])])await assert.rejects(call(actor,model),/shared (10,000|50,000)-token pool/);
+}
+const firstReset=db.records.get(path(member)).pool.resetAt;
+assert.equal(firstReset,Date.parse('2026-10-09T12:00:00Z'),'Regular period is 14 days from first request');
+assert.equal(db.records.get(path(premium)).pool.resetAt-db.records.get(path(premium)).pool.start,14*86400000);
+time=Date.parse('2026-10-01T00:01:00Z');
+await assert.rejects(call(member,qwen),/shared (10,000|50,000)-token pool/);
+await assert.rejects(call(premium,luna),/shared 50,000-token pool/);
+const premiumReset=db.records.get(path(premium)).pool.resetAt;
+await call({...member,premium:true},luna);assert.equal(db.records.get(path(member)).pool.used,10100,'Upgrade increases cap while preserving usage');
+await assert.rejects(call(member,qwen),/shared 10,000-token pool/);
+assert.equal(db.records.get(path(member)).pool.resetAt,firstReset,'Changing tier does not refill or move running pool');
+time=firstReset-1;const s=await a.begin(member);await assert.rejects(a.reserve(s,'shared',payload(qwen)),/shared (10,000|50,000)-token pool/);await a.finish(s);
+time=firstReset;await call(member,qwen);assert.equal(db.records.get(path(member)).pool.used,100);assert.equal(db.records.get(path(member)).pool.resetAt,firstReset+14*86400000);
+time=premiumReset;await call(premium,luna);assert.equal(db.records.get(path(premium)).pool.used,100,'Premium resets after 14 days');
+// Reservations and settlement remain correct across calendar boundaries within a fortnight.
+const crossing={...member,uid:'crossing'};time=Date.parse('2026-10-31T23:59:59Z');const pending=await a.begin(crossing),r=await a.reserve(pending,'shared',payload(deepseek));await a.finish(pending);
+time=Date.parse('2026-11-01T00:00:01Z');await call(crossing,gemini);await a.settle(r,null,true);await a.settle(r,null,true);assert.equal(db.records.get(path(crossing)).pool.used,100,'Cross-month refunds apply once to same fortnight');
+// An old response cannot debit the next fortnight.
+time=db.records.get(path(crossing)).pool.resetAt-1000;const old=await a.begin(crossing),oldR=await a.reserve(old,'shared',payload(qwen));await a.finish(old);
+time+=2000;await call(crossing,qwen);await a.settle(oldR,null,true);assert.equal(db.records.get(path(crossing)).pool.used,100);
+const migration={...premium,uid:'migration'};db.records.set(path(migration,'premium'),{month:'2026-11',tokens:4000,legacyTokens:0,modelTokens:{luna:2000,gemini:2000}});db.records.set(path(migration),{month:'2026-11',tokens:{[deepseek]:1000}});
+await call(migration,qwen);assert.equal(db.records.get(path(migration)).pool.used,5100);await call(migration,gemini);assert.equal(db.records.get(path(migration)).pool.used,5200,'Legacy usage migrates once, without double counting');
+for(const model of [gemini,luna,deepseek,qwen])await call(owner,model,{input:10000,output:10000});assert.equal(db.records.has(path(owner)),false,'Owner exempt from pooled cap');
+const race={...premium,uid:'race'};await call(race,qwen);db.records.get(path(race)).pool.used=48500;
+const one=await a.begin(race),two=await a.begin({...race,apiVerified:true});
+const results=await Promise.allSettled([a.reserve(one,'shared',payload(gemini)),a.reserve(two,'shared',payload(qwen))]);assert.equal(results.filter(r=>r.status==='fulfilled').length,1,'Different models/API sessions cannot double-spend pool');
+for(const result of results)if(result.status==='fulfilled')await a.settle(result.value,null,true);await a.finish(one);await a.finish(two);
+assert.equal(aiTokenPoolUsage(db.records.get(path(race)),{},race,time).remaining,1500);
+console.log('PASS: shared cross-model pools, 14-day regular reset, 14-day Premium reset, tier changes, cross-month settlement, refunds, legacy migration, owner exemption and concurrent API/chat reservations');

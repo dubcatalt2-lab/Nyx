@@ -44,7 +44,7 @@ const denied=p=>assert.rejects(p,e=>e.code==='ai_allowance');
   const f=fixture();
   for(let i=0;i<5;i++) {
     const a=f.create(),s=await a.begin(f.actor),r=await a.reserve(s,'shared',payload());
-    await a.settle(r,{input:2300,output:700});await a.finish(s);f.advance();
+    await a.settle(r,{input:1300,output:700});await a.finish(s);f.advance();
   }
   assert.equal(f.db.records.get(key('member')).requests,5);
   await denied(f.create().begin(f.actor));
@@ -57,7 +57,7 @@ const denied=p=>assert.rejects(p,e=>e.code==='ai_allowance');
   }
   const tokens=f.db.records.get(key('member')).tokens;
   const s=await a.begin(f.actor);
-  await assert.rejects(a.reserve(s,'shared',payload()),/extra message would exceed/);
+  await assert.rejects(a.reserve(s,'shared',payload()),/exceeds your shared|extra message would exceed/);
   assert.equal(f.db.records.get(key('member')).tokens,tokens,'Rejected bonus must not reserve more tokens');
   await a.finish(s);
 }

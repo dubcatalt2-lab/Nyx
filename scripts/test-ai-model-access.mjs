@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import express from 'express';
 import {aiModelAllowed} from '../lib/ai-allowance.mjs';
 const app=express(),source=readFileSync('server.js','utf8');
-const models=[{id:'google/gemini-2.5-flash-lite'},{id:'openai/gpt-5.6-luna'}];
+const models=[{id:'google/gemini-2.5-flash-lite'},{id:'openai/gpt-5.6-luna'},{id:'deepseek/deepseek-v4.1-flash'},{id:'qwen/qwen3.7-flash'},{id:'inception/mercury-2.5'},{id:'openai/gpt-5.6-sol-pro'}];
 const start=source.indexOf("app.get('/api/nyx-ai/models',");
 const end=source.indexOf('\napp.post("/api/nyx-ai"',start);
 vm.runInNewContext(source.slice(start,end),{app,aiModelAllowed,
@@ -18,6 +18,10 @@ try {
   const data=await response.json();
   assert.equal(data.models.some(m=>m.id==='openai/gpt-5.6-luna'),['premium','owner'].includes(role),role+query);
   assert(data.models.some(m=>m.id==='google/gemini-2.5-flash-lite'));
+  assert(data.models.some(m=>m.id==='deepseek/deepseek-v4.1-flash'));
+  assert(data.models.some(m=>m.id==='qwen/qwen3.7-flash'));
+  assert(data.models.some(m=>m.id==='inception/mercury-2.5'));
+  assert.equal(data.models.some(m=>m.id==='openai/gpt-5.6-sol-pro'),role==='owner',role+query);
  }
  console.log('PASS: actual model route hides Luna for guest/member/expired accounts in shared and custom-key pickers; Premium/owner retain it');
 } finally {server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

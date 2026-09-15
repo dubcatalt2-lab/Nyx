@@ -1264,3 +1264,12 @@ User authorized push and VPS deployment of the AI model/14-day pool update. This
 
 - Integration testing identified the main mention-toast regression: `nyxChatAudioContext` was referenced but never declared, causing the shell handler to throw before showing the toast. Restored the declaration and show the toast before sound playback. Real browser shell/Chat iframe and standalone Chat fixture checks now pass, with no startup errors.
 - Movie player header/title and playback bar fade after one second of pointer inactivity during playback. Mouse/touch/keyboard interaction restores them. Paused/ended playback, keyboard-focused controls and open settings/source/episode panels remain visible. Targeted browser check passes for hiding, restoration, pause and open menus.
+
+
+## 2026-09-14 Release 935c34e deployed and verified
+
+- Pushed `0c45fb6` (AI models/shared pools) and `935c34e` (Code Sandbox agent, mention toasts, movie idle controls) to `origin/agent/pirate-cove` with explicit user authorization. VPS update completed successfully using `deploy/update-ovh.sh`; deployed app revision is `935c34e`.
+- Exact release worktree build and `check:deploy` passed. AI pool/access/routing regressions passed. Built-asset browser tests passed for agent edits, language translation and movie idle controls.
+- Production health reports Nyx active, embedded Wisp and Socket.IO. Public shared model catalog returns DeepSeek V4.1 Flash, Mercury 2.5, Qwen 3.7 Flash and Gemini 2.5 Flash Lite; premium/owner models are absent for unauthenticated viewers as expected.
+- Live browser fixture tests on nyxlearning.org passed: agent edits/create/undo/stale protection and mobile bounds, real shell receiving mentions from its Chat iframe, standalone mention toast without audio permission, one-second movie control hiding and restoration. AI replies were mocked, no paid generation or real chat messages sent. New asset versions and compact CSS verified over public HTTPS.
+- Existing dependency audit reports 12 production vulnerabilities (8 moderate, 4 high); not introduced or addressed by this UI/AI release. Caddy existing redundant-header warnings remain non-blocking. Unrelated local proxy build modifications remain outside these commits.

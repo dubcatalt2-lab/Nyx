@@ -8,3 +8,6 @@ assert.equal(sent.length,1);assert.equal(sent[0].origin,'https://nyx.test');asse
 context.playChatPing('chat-2','chat',{preview:'not mentioned'});assert.equal(sent[1].data.preview,'');
 context.playChatPing('mention-3','mention',{preview:'x'.repeat(1000)});assert.equal(sent[2].data.preview.length,240);
 console.log('PASS mention forwarding, bounded text, same-origin target and duplicate suppression');
+
+context.playChatPing('race','chat');context.playChatPing('race','mention',{preview:'@you hello'});context.playChatPing('race','mention');assert.equal(sent.filter(item=>item.data.notificationId.startsWith('race')).length,2);assert.equal(sent.at(-1).data.kind,'mention');
+console.log('PASS ordinary ping can upgrade to one mention toast');

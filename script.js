@@ -38,6 +38,7 @@
       if(activeShortcuts.length!==savedShortcuts.length)localStorage.setItem('nyx.homeShortcuts',JSON.stringify(activeShortcuts));
     }
   }catch{}
+  let nyxChatAudioContext=null;
   let nyxChatAudioUnlocked=false;
   function unlockNyxChatNotificationSound(){if(nyxChatAudioUnlocked)return;try{const Context=window.AudioContext||window.webkitAudioContext;if(!Context)return;nyxChatAudioContext=nyxChatAudioContext||new Context();void nyxChatAudioContext.resume();nyxChatAudioUnlocked=true}catch{}}
   function nyxChatNotificationTones(kind){return kind==='mention'?[[0,780,.4,.18],[.09,980,.45,.18],[.18,1180,.5,.2]]:kind==='dm'?[[0,660,.34,.17],[.11,880,.38,.18]]:[[0,620,.3,.16],[.11,760,.34,.17]]}
@@ -12560,8 +12561,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         sourceTab.chatUnread=true;
         renderTabs();
         const notificationKind=e.data.kind==='mention'?'mention':e.data.kind==='dm'?'dm':'chat';
-        playNyxChatNotificationSound(notificationKind);
         if(notificationKind==='mention'){const sender=String(e.data.sender||'Someone').slice(0,80),preview=String(e.data.preview||'').slice(0,240);toast(sender+' mentioned you'+(preview?': '+preview:''),'mention');}
+        playNyxChatNotificationSound(notificationKind);
         return;
       }
       if(e.data.type==='nyx:subscription-refresh'){

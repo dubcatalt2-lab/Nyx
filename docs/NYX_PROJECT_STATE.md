@@ -1251,3 +1251,16 @@ This supersedes the per-model DeepSeek and Premium quota policy in the preceding
 ## AI pool release deployment - September 14, 2026
 
 User authorized push and VPS deployment of the AI model/14-day pool update. This release includes the AI source, account display and quota tests only. Earlier local proxy filename/variable build changes remain unstaged and are not part of this release. Exact release build and live health/catalog verification follow.
+
+
+## 2026-09-14 Code Sandbox agent and compact mention toasts
+
+- Code Sandbox defaults to Agent mode, which accepts validated structured AI edits and creates/updates the supported per-language files. Ask mode retains explanations. Uses the existing selected model, account authorization and shared token pool. Does not execute generated code automatically; users run it with existing sandbox controls.
+- Workspace files selector opens saved files without translating them. Language selector continues translating with version preservation. Agent changes save prior versions, support Undo, reject malformed/oversized output, and refuse to overwrite code edited while the request was pending. Current workspace model remains one file per supported language; arbitrary directory projects and terminal agents are not implemented.
+- Toasts reduced to 48px minimum height, 30px icon badge, 12px text, narrower width and 2px countdown line. Two-second dismissal preserved.
+- Chat notification deduplication now includes notification kind, so an ordinary ping cannot suppress a later mention for the same message. Poll fallback accepts confirmed mentions even when another update has already advanced channel activity. Socket messages also check current viewer mention text. Standalone Chat displays a compact mention toast without requiring audio permission; embedded Chat continues forwarding to the authenticated same-origin shell.
+- Verification: code agent browser checks cover creation/editing, selected model, backup/undo, malformed output, stale-edit protection and mobile bounds. Translation regression passes. Toast browser checks cover icon, safe text, two-second replacement timer and screen bounds. No real chat messages sent and no paid generation used for fixtures.
+- User explicitly requested push and deployment, including prior AI model/pool changes. Unrelated uncommitted proxy asset scrambling work remains excluded.
+
+- Integration testing identified the main mention-toast regression: `nyxChatAudioContext` was referenced but never declared, causing the shell handler to throw before showing the toast. Restored the declaration and show the toast before sound playback. Real browser shell/Chat iframe and standalone Chat fixture checks now pass, with no startup errors.
+- Movie player header/title and playback bar fade after one second of pointer inactivity during playback. Mouse/touch/keyboard interaction restores them. Paused/ended playback, keyboard-focused controls and open settings/source/episode panels remain visible. Targeted browser check passes for hiding, restoration, pause and open menus.

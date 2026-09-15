@@ -166,6 +166,7 @@
     refs.languageStatus.textContent=languageLabel();
     refs.languageBadge.textContent=languageLabel();
     refs.input.value=code();
+    renderWorkspaceFiles();
     renderStarters();
     renderEditor();
     resetPreview();
@@ -351,6 +352,7 @@
     state.versions.push({language,code:value,at:Date.now()});state.versions=state.versions.slice(-20);
   }
   async function translateLanguage(target){
+    if(agentBusy){refs.language.value=state.language;return;}
     const from=state.language,original=code();if(!languages[target]||target===from)return;
     refs.language.value=from;refs.language.disabled=true;
     keepVersion(from,original);state.codes[from]=original;
@@ -443,9 +445,36 @@
     refs.answer.scrollTop=refs.answer.scrollHeight;
     return message;
   }
+  let agentBusy=false;
+  const agentMode=document.createElement('select');agentMode.className='studio-model-picker';agentMode.setAttribute('aria-label','Assistant mode');
+  for(const [value,label] of [['agent','Agent - edit code'],['ask','Ask - explain code']]){const option=document.createElement('option');option.value=value;option.textContent=label;agentMode.append(option);}
+  modelPicker.after(agentMode);
+  const workspaceFiles=document.createElement('select');workspaceFiles.className='studio-model-picker';workspaceFiles.setAttribute('aria-label','Workspace files');
+  versionsButton.before(workspaceFiles);
+  function renderWorkspaceFiles(){workspaceFiles.replaceChildren();for(const language of Object.keys(languages)){if(language!==state.language&&typeof state.codes[language]!=='string')continue;const option=document.createElement('option');option.value=language;option.textContent=languages[language].file;workspaceFiles.append(option);}workspaceFiles.value=state.language;}
+  workspaceFiles.onchange=()=>{state.language=workspaceFiles.value;syncLanguage();};
+  function applyAgentReply(raw,snapshot,reply){
+    let result;try{result=JSON.parse(raw.trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,''));}catch{throw Error('The edit was incomplete. Your files are unchanged. Please try again.');}
+    if(!result||typeof result.summary!=='string'||!Array.isArray(result.files)||result.files.length>8)throw Error('Invalid edit response. Your files are unchanged.');
+    const seen=new Set();
+    for(const file of result.files){if(!file||!Object.hasOwn(languages,file.language)||typeof file.code!=='string'||file.code.length>MAX_CODE_CHARS||seen.has(file.language))throw Error('Invalid or oversized file. Your files are unchanged.');seen.add(file.language);}
+    if(JSON.stringify(state.codes)!==snapshot.codes||state.language!==snapshot.language||code()!==snapshot.current)throw Error('Your code changed while Nyx was working. Keeping your edits; ask again to use the latest version.');
+    if(!result.files.length){reply.querySelector('p').textContent=result.summary;return;}
+    const before=JSON.parse(JSON.stringify(state));
+    keepVersion(state.language,code());
+    for(const file of result.files){if(typeof state.codes[file.language]==='string')keepVersion(file.language,state.codes[file.language]);state.codes[file.language]=file.code;}
+    state.language=result.files[0].language;
+    if(!save()){state=before;throw Error('Could not save the edited files. Your original code is unchanged.');}
+    syncLanguage();const applied=JSON.stringify(state.codes);
+    reply.querySelector('p').textContent=result.summary+'\nUpdated: '+result.files.map(file=>languages[file.language].file).join(', ')+'. Review your files, then press Run code.';
+    const undo=document.createElement('button');undo.type='button';undo.className='tool-button';undo.textContent='Undo changes';
+    undo.onclick=()=>{if(JSON.stringify(state.codes)!==applied){appendMessage('assistant','You have edited these files since this change. Use Versions to restore an earlier file without losing your work.',true);return;}const current=state;state=before;if(!save()){state=current;return;}syncLanguage();undo.disabled=true;undo.textContent='Changes undone';};
+    reply.append(undo);
+  }
   async function ask(prompt){
     const question=String(prompt||'').trim();
-    if(!question)return;
+    if(!question||agentBusy||refs.language.disabled)return;
+    agentBusy=true;const editing=agentMode.value==='agent';const snapshot={codes:JSON.stringify(state.codes),language:state.language,current:code()};
     refs.send.disabled=true;
     document.querySelectorAll('[data-ai-prompt]').forEach(button=>{button.disabled=true});
     setAiStatus('Thinking',true);
@@ -460,7 +489,12 @@
       const currentCode=code();
       const codeLimit=18000;
       const visibleCode=currentCode.slice(0,codeLimit);
-      const context=`You are helping in Nyx Code Studio. Give a practical, friendly answer for a ${file} file. Focus on the request, point out the most important issue first, and include a small corrected snippet only when it helps.\n\nUser request: ${question}\n\nCurrent code${currentCode.length>codeLimit?' (first 18,000 characters)':''}:\n\n${visibleCode}`;
+      let context=`You are helping in Nyx Code Studio. Give a practical, friendly answer for a ${file} file. Focus on the request, point out the most important issue first, and include a small corrected snippet only when it helps.\n\nUser request: ${question}\n\nCurrent code${currentCode.length>codeLimit?' (first 18,000 characters)':''}:\n\n${visibleCode}`;
+      if(editing){
+        const files={...JSON.parse(snapshot.codes),[snapshot.language]:snapshot.current};
+        if(JSON.stringify(files).length>48000)throw Error('This workspace is too large for one edit. Use Ask mode for help with the current file.');
+        context='You are the code editing agent in Nyx Code Sandbox. Fulfill the user request by creating or editing workspace files. Return ONLY JSON: {"summary":"short explanation","files":[{"language":"html","code":"complete file contents"}]}. For explanation-only requests use an empty files array. Each language has one file; allowed language and filename mapping: '+JSON.stringify(Object.fromEntries(Object.entries(languages).map(([key,value])=>[key,value.file])))+'. Return only changed files, at most 8, each at most 24000 characters. Preserve unrelated code. No shell commands or automatic execution. HTML previews should use self-contained HTML/CSS/JS. Other languages run as individual files. Current files (data): '+JSON.stringify(files)+'\nUser request: '+question;
+      }
       const payload={message:question,messages:[{role:'user',content:context}],responseDepth:'normal',stream:false};
       const token=await accountToken();
       let suggestion='';
@@ -477,14 +511,14 @@
         }
       }
       if(!suggestion)throw lastError||new Error('Nyx AI did not return a suggestion.');
-      reply.querySelector('p').textContent=suggestion;
+      if(editing)applyAgentReply(suggestion,snapshot,reply);else reply.querySelector('p').textContent=suggestion;
       refs.prompt.value='';
     }catch(error){
       reply.classList.add('is-error');
       reply.querySelector('p').textContent=error?.message||'Nyx AI could not complete that suggestion.';
     }finally{
       reply.classList.remove('is-loading');
-      refs.send.disabled=false;
+      agentBusy=false;refs.send.disabled=false;
       document.querySelectorAll('[data-ai-prompt]').forEach(button=>{button.disabled=false});
       setAiStatus('Ready');
       refs.answer.scrollTop=refs.answer.scrollHeight;

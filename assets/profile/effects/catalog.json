@@ -7,7 +7,8 @@
     "animated": true,
     "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/13e64b0456243ed81ae809a507d980cadf31d1b44848bd2c89d3c511604b25ff",
     "bytes": 4309262,
-    "sourceLabel": "Cosmic Vortex"
+    "sourceLabel": "Cosmic Vortex",
+    "loopPath": "/assets/profile/effects/fx-cosmic-vortex-loop.png"
   },
   {
     "id": "fx-nebula-storm",
@@ -27,7 +28,8 @@
     "animated": true,
     "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/f6798f7dce84fed42daa90be43d3e5852e96baf9de60022065116d3ca137b096",
     "bytes": 3460437,
-    "sourceLabel": "Stellar Burst"
+    "sourceLabel": "Stellar Burst",
+    "loopPath": "/assets/profile/effects/fx-stellar-burst-loop.png"
   },
   {
     "id": "fx-ethereal-flame",
@@ -47,7 +49,8 @@
     "animated": true,
     "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/c8eda0d8533d69a251d780152bbfe6bac4fbbaab48be155a7c7dbebe8d74ed05",
     "bytes": 3204223,
-    "sourceLabel": "Quantum Rift"
+    "sourceLabel": "Quantum Rift",
+    "loopPath": "/assets/profile/effects/fx-quantum-rift-loop.png"
   },
   {
     "id": "fx-astral-cascade",
@@ -67,7 +70,8 @@
     "animated": true,
     "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/4394a572d2d2b1eddbc253c6c77e3725ea55a379ace4a998267afe37b2fe352b",
     "bytes": 5980596,
-    "sourceLabel": "Plasma Wave"
+    "sourceLabel": "Plasma Wave",
+    "loopPath": "/assets/profile/effects/fx-plasma-wave-loop.png"
   },
   {
     "id": "fx-supernova-flash",
@@ -137,7 +141,8 @@
     "animated": true,
     "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/db5a61d9fb5b447c626cd59cf00c45cc61e211b042c8d5397be5f17b4151c698",
     "bytes": 3775861,
-    "sourceLabel": "Celestial Drift"
+    "sourceLabel": "Celestial Drift",
+    "loopPath": "/assets/profile/effects/fx-celestial-drift-loop.png"
   },
   {
     "id": "fx-shadow-aura",
@@ -157,7 +162,8 @@
     "animated": true,
     "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1f2b91c50cc613ac683138f81c4fd6636445246275d0a43be220105b7426dc37",
     "bytes": 2565811,
-    "sourceLabel": "Hyper Aura"
+    "sourceLabel": "Hyper Aura",
+    "loopPath": "/assets/profile/effects/fx-hyper-aura-loop.png"
   },
   {
     "id": "fx-starlight-bloom",
@@ -217,7 +223,8 @@
     "animated": true,
     "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/8274a57f4d55d382e3ab04ea178d274456bc397a7f2846f07962de8e01593b68",
     "bytes": 4974354,
-    "sourceLabel": "Chrono Spark"
+    "sourceLabel": "Chrono Spark",
+    "loopPath": "/assets/profile/effects/fx-chrono-spark-loop.png"
   },
   {
     "id": "fx-zenith-glow",
@@ -227,7 +234,8 @@
     "animated": true,
     "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/52385aff9666affe84b73f56e8ebccba906df0978ee93ed56301c7fb1c890af0",
     "bytes": 1305461,
-    "sourceLabel": "Zenith Glow"
+    "sourceLabel": "Zenith Glow",
+    "loopPath": "/assets/profile/effects/fx-zenith-glow-loop.png"
   },
   {
     "id": "fx-infrared-pulse",
@@ -237,7 +245,8 @@
     "animated": true,
     "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/ff91e837fc27b6147481ab8bfef2769c45e13bfffaf60bf8931f10def33c10db",
     "bytes": 1332022,
-    "sourceLabel": "Infrared Pulse"
+    "sourceLabel": "Infrared Pulse",
+    "loopPath": "/assets/profile/effects/fx-infrared-pulse-loop.png"
   },
   {
     "id": "fx-glitch-storm",
@@ -247,7 +256,8 @@
     "animated": true,
     "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/2884b01ea871d48b778e75b202fdb6d2f766b3adba3ae695915c4e4b3be9c322",
     "bytes": 1402412,
-    "sourceLabel": "Glitch Storm"
+    "sourceLabel": "Glitch Storm",
+    "loopPath": "/assets/profile/effects/fx-glitch-storm-loop.png"
   },
   {
     "id": "fx-phantom-flame",
@@ -257,7 +267,8 @@
     "animated": true,
     "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/05d9543720cb0294728155de219d9bb440d72331e88de3dbc1dced6bd270e6fb",
     "bytes": 1609390,
-    "sourceLabel": "Phantom Flame"
+    "sourceLabel": "Phantom Flame",
+    "loopPath": "/assets/profile/effects/fx-phantom-flame-loop.png"
   },
   {
     "id": "fx-vortex-surge",
@@ -267,7 +278,8 @@
     "animated": true,
     "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/3d65e7f6c15aab66f854209ebb66b2a9f25d48f481abd6b450fe99a1e955683f",
     "bytes": 33458,
-    "sourceLabel": "Vortex Surge"
+    "sourceLabel": "Vortex Surge",
+    "loopPath": "/assets/profile/effects/fx-vortex-surge-loop.png"
   },
   {
     "id": "fx-nebula-spark",
@@ -277,7 +289,8 @@
     "animated": true,
     "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/bbd175b29de9b89e9bb88f5e1f690033a7112be874c57e7d7aed06c9db80a606",
     "bytes": 1502041,
-    "sourceLabel": "Nebula Spark"
+    "sourceLabel": "Nebula Spark",
+    "loopPath": "/assets/profile/effects/fx-nebula-spark-loop.png"
   },
   {
     "id": "fx-starlight-echo",

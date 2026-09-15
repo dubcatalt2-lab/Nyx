@@ -1,16 +1,22 @@
-## Glass profile editor and shared decoration visibility (2026-09-15; local, not deployed)
+## Profile effects disappearing after save (2026-09-15; fix in preparation)
+
+The public owner profile confirmed fx-hyper-aura was stored while the user reported its disappearance. Thirteen imported APNG profile effects have num_plays=1 and finish transparent, so reusing the cached image after Save or in Chat can appear blank. Added looping runtime copies with only acTL play-count/CRC changed; all original frame data, timing and source assets remain unchanged. CSS uses those copies; reduced-motion stills remain. Save now verifies avatarDecoration and profileEffect against both PUT and subsequent GET responses, keeping the editor open with an error if either selection is dropped. User explicitly authorized pushing/deploying this correction.
+
+Reproduced the original owl going transparent after its five-second duration while the loop copy remains visible past seven seconds. All 13 copies pass frame/timing-chunk identity checks. Source and built browser fixtures cover decoration save/reload and deliberately dropped PUT/GET selections; VPS build and deployment/branding checks pass. Live correction verification follows deployment.
+
+## Glass profile editor and shared decoration visibility LIVE (2026-09-15; application daf3bc9)
 
 Edit Profile now uses translucent, blurred glass with existing theme accents for panels, borders, focus and Save. Opaque ancestor backgrounds are cleared within this editor only; normal profile artwork/colors remain intact. Lag Reducer and browsers without backdrop blur use a readable dark fallback. Prior compact-card changes remain included locally.
 
 Removed the old account-menu rule hiding avatar/profile artwork; actions remain above the pointer-transparent profile effect. Chat now carries validated avatarDecoration/profileEffect through member directory, identity, message author, DM and voice payloads. Shared avatar artwork renders in messages/member lists/current user/DM and voice avatars, with separately clipped face images so frames remain visible. Older message authors use current member cosmetics when present in the bounded directory. Member refresh rebuilds message avatars; unknown IDs stay undecorated. Standalone Chat profile popups show the saved full-card effect; embedded profile opening still uses the shell bridge. No real messages or profile writes were used for browser fixtures.
 
-Source and production-build fixtures pass for Chat decoration serialization/rendering, old-message lookup, popup artwork, reduced motion and mobile bounds. Account-menu visibility, all 25 avatar/54 profile selections, save/reload and Ruby/Emerald/Sakura glass screenshots pass. Mention forwarding/deduplication, VPS build, deployment/branding and whitespace checks pass. These changes remain local/uncommitted alongside the compact-card adjustment; production remains c73352f.
+Source and production-build fixtures pass for Chat decoration serialization/rendering, old-message lookup, popup artwork, reduced motion and mobile bounds. Account-menu visibility, all 25 avatar/54 profile selections, save/reload and Ruby/Emerald/Sakura glass screenshots pass. Mention forwarding/deduplication, VPS build, deployment/branding and whitespace checks pass. Pushed and deployed daf3bc9. Direct verification confirms a clean checkout, all four services active and apex/www healthy. Live standalone and embedded Chat profile-effect fixtures, editor preview and glass-theme fixtures passed with mocked account data.
 
-## Compact profile cards (2026-09-15; local, not deployed)
+## Compact profile cards LIVE (2026-09-15; application daf3bc9)
 
 User clarified that the card should shrink to fit the decoration. Profile cards now cap at 360 CSS pixels wide, with portrait effects supplying their original image aspect ratio to the card. Artwork retains contain sizing and its original proportions; content can grow rather than being clipped. Editor preview uses the same compact width. Existing avatar frames and original animated media are unchanged.
 
-Desktop/mobile owl screenshots and card-to-image aspect-ratio checks pass; existing 25-avatar/54-profile selection, save/reload and reduced-motion browser fixtures pass. VPS-target build and deployment/branding checks pass. This follow-up remains local and uncommitted; production is still c73352f.
+Desktop/mobile owl screenshots and card-to-image aspect-ratio checks pass; existing 25-avatar/54-profile selection, save/reload and reduced-motion browser fixtures pass. VPS-target build and deployment/branding checks pass. Included in deployed daf3bc9.
 
 ## Profile artwork, organized editor and Code Sandbox edit repair LIVE (2026-09-14; application c73352f)
 

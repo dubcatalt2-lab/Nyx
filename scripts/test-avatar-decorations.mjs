@@ -19,6 +19,7 @@ const fixture=readFileSync('scripts/test-account-controls.mjs','utf8');
 const mockModule=name=>fixture.match(new RegExp('const '+name+'=`([\\s\\S]*?)`;'))[1];
 const base=process.env.NYX_TEST_BASE_URL||'http://127.0.0.1:8199';
 let profile={displayName:'Decoration Test',handle:'@account-test',avatarUrl:'',avatarDecoration:'none',profileEffect:'none',status:'online'},saved;
+let dropEffectOnSave=false,dropEffectOnReload=false;
 const browser=await chromium.launch({channel:'msedge',headless:true});
 try{
  const page=await browser.newPage({viewport:{width:1440,height:960}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -28,7 +29,7 @@ try{
   const path=new URL(r.request().url()).pathname,json=body=>r.fulfill({json:body});
   if(path==='/api/founder-profile/auth-config')return json({enabled:true,projectId:'nyx-test',apiKey:'test',ownerConfigured:true});
   if(path==='/api/founder-profile/owner')return json({founder:false,dashboard:false,role:'member',permissions:[]});
-  if(path==='/api/profiles/me'){if(r.request().method()==='PUT'){saved=r.request().postDataJSON();profile={...profile,...saved.profile,...saved};}return json({uid:'test-user-1234',profile,createdAt:'2026-01-01T00:00:00.000Z'});}
+  if(path==='/api/profiles/me'){const saving=r.request().method()==='PUT';if(saving){saved=r.request().postDataJSON();profile={...profile,...saved.profile,...saved};}return json({uid:'test-user-1234',profile:(saving?dropEffectOnSave:dropEffectOnReload)?{...profile,profileEffect:'none'}:profile,createdAt:'2026-01-01T00:00:00.000Z'});}
   if(path==='/api/account/me')return json({email:'account-test@example.com',role:'member',subscriptionStatus:'none'});
   if(path.startsWith('/api/activity/'))return json({ok:true});
   return r.continue();
@@ -46,7 +47,7 @@ try{
  for(const item of effects){
   assert.equal(await effectPicker.locator(`option[value="${item.id}"]`).textContent(),item.label);
   await effectPicker.selectOption(item.id);
-  await page.waitForFunction(id=>{const e=document.querySelector('.nyx-user-profile-view .nyx-user-profile-effect');return e&&getComputedStyle(e).backgroundImage.includes(id+'.png')&&getComputedStyle(e).pointerEvents==='none';},item.id);
+  await page.waitForFunction(path=>{const e=document.querySelector('.nyx-user-profile-view .nyx-user-profile-effect');return e&&getComputedStyle(e).backgroundImage.includes(path)&&getComputedStyle(e).pointerEvents==='none';},item.loopPath||item.path);
  }
  await effectPicker.selectOption('fx-cosmic-vortex');
  await picker.selectOption('vortex-crown');await page.waitForTimeout(400);
@@ -60,6 +61,15 @@ try{
  await page.getByRole('button',{name:'Save Changes',exact:true}).click();await page.waitForTimeout(500);assert.equal(saved?.avatarDecoration||saved?.profile?.avatarDecoration,'neon-vortex');
  await page.reload();await page.waitForFunction(()=>!document.body.classList.contains('nyx-loading-active')&&!document.body.classList.contains('nyx-startup-prep'));await page.setViewportSize({width:1440,height:960});await page.locator('#nyxAccountButton[title="Account menu"]').click();await page.locator('[data-nyx-account-menu-action="edit"]').click();assert.equal(await picker.inputValue(),'neon-vortex');
  assert.equal(await effectPicker.inputValue(),'fx-cosmic-vortex');
+ await effectPicker.selectOption('fx-hyper-aura');dropEffectOnSave=true;
+ await page.getByRole('button',{name:'Save Changes',exact:true}).click();
+ await page.waitForFunction(()=>document.querySelector('.nyx-founder-editor-error')?.textContent.includes('decoration selection was not stored'));
+ assert(await effectPicker.isVisible());dropEffectOnSave=false;dropEffectOnReload=true;
+ await page.getByRole('button',{name:'Save Changes',exact:true}).click();
+ await page.waitForFunction(()=>document.querySelector('.nyx-founder-editor-error')?.textContent.includes('decoration selection could not be verified'));
+ assert(await effectPicker.isVisible());dropEffectOnReload=false;
+ await page.getByRole('button',{name:'Save Changes',exact:true}).click();await page.locator('.nyx-profile-drawer').waitFor({state:'detached'});
+ await page.locator('#nyxAccountButton[title="Account menu"]').click();await page.locator('[data-nyx-account-menu-action="edit"]').click();assert.equal(await effectPicker.inputValue(),'fx-hyper-aura');
  await page.getByRole('navigation',{name:'Profile sections'}).getByRole('button',{name:'Decorations',exact:true}).click();await page.waitForTimeout(400);await page.screenshot({path:'.codex-artifacts/profile-editor-decorations.png'});
  assert.deepEqual(errors,[]);
  console.log('PASS 25 avatar decorations and 54 profile effects: animation/stills, server allowlists, labels, previews, save/reload, reduced motion and mobile layout');

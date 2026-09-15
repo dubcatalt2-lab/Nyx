@@ -2,6 +2,8 @@ import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
+  "scripts/build-proxy-assets.mjs",
+  "scripts/proxy-asset-names.json",
   "assets/icons/nyx-movies.svg",
   "lib/movies.mjs",
   "lib/movie-images.mjs",

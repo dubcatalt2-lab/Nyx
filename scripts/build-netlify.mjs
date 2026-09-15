@@ -7,6 +7,7 @@ import { parse } from "acorn";
 import CleanCSS from "clean-css";
 import { minify as minifyHtml } from "html-minifier-terser";
 import { minify } from "terser";
+import { buildProxyAssets } from "./build-proxy-assets.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
@@ -96,6 +97,7 @@ async function copyProxyRuntimes() {
   const { uvPath } = require("@titaniumnetwork-dev/ultraviolet");
   const { baremuxPath } = require("@mercuryworkshop/bare-mux/node");
   const { scramjetPath } = require("@mercuryworkshop/scramjet/path");
+  const { scramjetPath: scramjetV1Path } = require("@mercuryworkshop/scramjet-v1/path");
   const controller = dirname(require.resolve("@mercuryworkshop/scramjet-controller"));
   const epoxy = join(dirname(require.resolve("@mercuryworkshop/epoxy-transport")), "..", "dist");
   const libcurl = dirname(require.resolve("@mercuryworkshop/libcurl-transport"));
@@ -103,6 +105,7 @@ async function copyProxyRuntimes() {
     [uvPath, "uv"],
     [baremuxPath, "baremux"],
     [scramjetPath, "scramjet"],
+    [scramjetV1Path, "scramjet-v1"],
     [controller, "controller"],
     [epoxy, "epoxy"],
     [libcurl, "libcurl"]
@@ -394,6 +397,7 @@ async function main() {
   await removeUnavailableUgsEntries();
   await minifyFirstPartyBrowserRuntimes();
   await minifyFirstPartyMarkupAndStyles();
+  await buildProxyAssets(output);
   await writeNetlifyFiles();
   console.log(`${vpsBuild ? "VPS" : "Netlify"} build ready in ${output}`);
   console.log(`Wisp endpoint: ${wispUrl}`);

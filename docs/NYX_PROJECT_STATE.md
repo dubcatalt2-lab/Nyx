@@ -1,3 +1,17 @@
+## Glass profile editor and shared decoration visibility (2026-09-15; local, not deployed)
+
+Edit Profile now uses translucent, blurred glass with existing theme accents for panels, borders, focus and Save. Opaque ancestor backgrounds are cleared within this editor only; normal profile artwork/colors remain intact. Lag Reducer and browsers without backdrop blur use a readable dark fallback. Prior compact-card changes remain included locally.
+
+Removed the old account-menu rule hiding avatar/profile artwork; actions remain above the pointer-transparent profile effect. Chat now carries validated avatarDecoration/profileEffect through member directory, identity, message author, DM and voice payloads. Shared avatar artwork renders in messages/member lists/current user/DM and voice avatars, with separately clipped face images so frames remain visible. Older message authors use current member cosmetics when present in the bounded directory. Member refresh rebuilds message avatars; unknown IDs stay undecorated. Standalone Chat profile popups show the saved full-card effect; embedded profile opening still uses the shell bridge. No real messages or profile writes were used for browser fixtures.
+
+Source and production-build fixtures pass for Chat decoration serialization/rendering, old-message lookup, popup artwork, reduced motion and mobile bounds. Account-menu visibility, all 25 avatar/54 profile selections, save/reload and Ruby/Emerald/Sakura glass screenshots pass. Mention forwarding/deduplication, VPS build, deployment/branding and whitespace checks pass. These changes remain local/uncommitted alongside the compact-card adjustment; production remains c73352f.
+
+## Compact profile cards (2026-09-15; local, not deployed)
+
+User clarified that the card should shrink to fit the decoration. Profile cards now cap at 360 CSS pixels wide, with portrait effects supplying their original image aspect ratio to the card. Artwork retains contain sizing and its original proportions; content can grow rather than being clipped. Editor preview uses the same compact width. Existing avatar frames and original animated media are unchanged.
+
+Desktop/mobile owl screenshots and card-to-image aspect-ratio checks pass; existing 25-avatar/54-profile selection, save/reload and reduced-motion browser fixtures pass. VPS-target build and deployment/branding checks pass. This follow-up remains local and uncommitted; production is still c73352f.
+
 ## Profile artwork, organized editor and Code Sandbox edit repair LIVE (2026-09-14; application c73352f)
 
 User requested both Avatar Decorations and full-card Profile Decorations from the owner-authorized chillz0ne.dev reference. Added 25 avatar assets and 54 profile effect entries, locally served with original APNG animation and separate representative stills for reduced motion/Lag Reducer. Labels now describe visually inspected artwork (for example Glowing Butterflies, White Angel Wings and Moonlit Wolf); stable stored IDs remain unchanged and catalogs preserve source labels/provenance. Existing Candlelight/Blooming Roses and legacy migration remain. Profile effects have a separate picker and full-card overlay with pointer events disabled. No reference shop/currency is copied.

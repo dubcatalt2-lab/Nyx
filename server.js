@@ -5302,6 +5302,8 @@ function nyxChatMessagePayload(document, viewerUid = "") {
       displayName: founderProfileText(author.displayName, "Nyx member", 48),
       handle: `@${nyxProfileUsername(author.handle, "nyx-user")}`,
       avatarUrl: nyxChatAvatar(author.avatarUrl, authorUid),
+      avatarDecoration: nyxAvatarDecorationValue(author.avatarDecoration),
+      profileEffect: nyxProfileEffectValue(author.profileEffect),
       role: authorPresentation.role,
       customRole: authorPresentation.customRole,
       caffeine: author.caffeine === true
@@ -5324,6 +5326,8 @@ function nyxChatConversationMember(value, fallbackUid = "", viewerUid = "") {
     displayName: founderProfileText(source.displayName, "Nyx member", 48),
     handle: `@${nyxProfileUsername(source.handle, "nyx-user")}`,
     avatarUrl: nyxChatAvatar(source.avatarUrl, uid),
+    avatarDecoration: nyxAvatarDecorationValue(source.avatarDecoration),
+    profileEffect: nyxProfileEffectValue(source.profileEffect),
     role: presentation.role,
     customRole: presentation.customRole,
     roleLabel: presentation.roleLabel,
@@ -5654,6 +5658,8 @@ async function nyxChatMemberDirectory(firebase) {
         displayName: profile.displayName,
         handle: profile.handle,
         avatarUrl: nyxChatAvatar(profile.avatarUrl, document.id),
+        avatarDecoration: nyxAvatarDecorationValue(profile.avatarDecoration),
+        profileEffect: nyxProfileEffectValue(profile.profileEffect),
         role,
         customRole: nyxPublicCustomRole(customRole),
         roleLabel: customRole?.label || nyxRoleLabels[role] || nyxRoleLabels.member,
@@ -5726,6 +5732,8 @@ async function nyxChatIdentity(firebase, token) {
       displayName: profile.displayName,
       handle: profile.handle,
       avatarUrl: nyxChatAvatar(profile.avatarUrl, uid),
+      avatarDecoration: nyxAvatarDecorationValue(profile.avatarDecoration),
+      profileEffect: nyxProfileEffectValue(profile.profileEffect),
       role,
       customRole: nyxPublicCustomRole(customRole),
       roleLabel: customRole?.label || nyxRoleLabels[role] || nyxRoleLabels.member,
@@ -5846,6 +5854,8 @@ function nyxChatVoiceParticipant(session, viewerUid = "") {
     displayName: founderProfileText(identity.displayName, "Nyx member", 48),
     handle: `@${nyxProfileUsername(identity.handle, "nyx-user")}`,
     avatarUrl: nyxChatAvatar(identity.avatarUrl, uid),
+    avatarDecoration: nyxAvatarDecorationValue(identity.avatarDecoration),
+    profileEffect: nyxProfileEffectValue(identity.profileEffect),
     role: presentation.role,
     roleLabel: presentation.roleLabel
   };
@@ -11698,6 +11708,8 @@ app.post("/api/chat/messages", async (req, res) => {
         displayName: identity.displayName,
         handle: identity.handle,
         avatarUrl: identity.avatarUrl,
+        avatarDecoration: identity.avatarDecoration,
+        profileEffect: identity.profileEffect,
         role: identity.role,
         customRole: identity.customRole,
         caffeine: identity.caffeine

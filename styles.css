@@ -4191,14 +4191,6 @@ html[data-nyx-theme] body .nyx-profile-directory-card-host .nyx-user-profile-abo
   }
 }
 
-/* Compact homepage account menus are functional navigation surfaces, not
-   profile canvases. Keep experimental cosmetics out of this narrow layout. */
-.nyx-account-menu:not(.nyx-editor-menu-preview)>.nyx-account-menu-profile-effect,
-.nyx-account-menu:not(.nyx-editor-menu-preview) .nyx-account-menu-avatar>.nyx-avatar-decoration{
-  display:none!important;
-  animation:none!important;
-}
-
 /* Balanced theme accents. Theme colors identify interactive controls while
    the canvas, panels, labels, and full-color brand marks stay neutral. The
    high-specificity selectors intentionally replace older fixed lavender and
@@ -4414,3 +4406,7 @@ html[data-nyx-theme] body.browser-shell .lion-ai-form{
   -webkit-backdrop-filter:blur(10px) saturate(1.06)!important;
   backdrop-filter:blur(10px) saturate(1.06)!important;
 }
+
+/* Keep account actions readable above the saved profile artwork. */
+html[data-nyx-theme] body .nyx-account-menu>.nyx-account-menu-group{z-index:4}
+html[data-nyx-theme] body .nyx-account-menu>.nyx-account-menu-profile-effect{background-size:100% auto!important;background-position:center top!important}

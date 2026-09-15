@@ -608,3 +608,35 @@ body.lag-reducer .nyx-user-profile-effect-fx-cybernetic-pulse>.nyx-user-profile-
 body.lag-reducer .nyx-founder-effect-fx-cybernetic-pulse>.nyx-founder-profile-effect,
 body.lag-reducer .nyx-user-profile-effect-fx-radiant-orbit>.nyx-user-profile-effect,
 body.lag-reducer .nyx-founder-effect-fx-radiant-orbit>.nyx-founder-profile-effect { background-image: var(--nyx-profile-still) !important; }
+
+/* Compact cards match portrait decorations without stretching the artwork. */
+.nyx-user-profile-effect-fx-cosmic-vortex { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-nebula-storm { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-stellar-burst { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-ethereal-flame { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-quantum-rift { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-astral-cascade { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-plasma-wave { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-supernova-flash { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-void-shards { --nyx-profile-card-ratio: 900 / 1760; }
+.nyx-user-profile-effect-fx-prismatic-spark { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-arcane-pulse { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-solar-surge { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-neon-eclipse { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-celestial-drift { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-shadow-aura { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-hyper-aura { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-starlight-bloom { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-galaxy-shimmer { --nyx-profile-card-ratio: 900 / 1760; }
+.nyx-user-profile-effect-fx-cyber-lattice { --nyx-profile-card-ratio: 900 / 1760; }
+.nyx-user-profile-effect-fx-abyssal-ring { --nyx-profile-card-ratio: 900 / 1760; }
+.nyx-user-profile-effect-fx-dimension-rift { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-chrono-spark { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-zenith-glow { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-infrared-pulse { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-glitch-storm { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-phantom-flame { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-vortex-surge { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-nebula-spark { --nyx-profile-card-ratio: 450 / 880; }
+.nyx-user-profile-effect-fx-starlight-echo { --nyx-profile-card-ratio: 450 / 880; }
+html[data-nyx-theme] body .nyx-user-profile-card.nyx-user-profile-card.nyx-user-profile-card { width: min(360px, 100%) !important; max-width: 360px !important; height: auto !important; min-height: 0 !important; aspect-ratio: var(--nyx-profile-card-ratio, auto); margin-inline: auto; }

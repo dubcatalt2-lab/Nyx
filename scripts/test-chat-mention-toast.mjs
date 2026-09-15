@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';
+const s=readFileSync('apps/chat/app.js','utf8'),a=s.indexOf('  function playChatPing('),b=s.indexOf('\n',a),sent=[];
+const context=vm.createContext({state:{notifiedDm:new Set()},window:{parent:{postMessage:(data,origin)=>sent.push({data,origin})}},location:{origin:'https://nyx.test'}});
+vm.runInContext(s.slice(a,b),context);
+context.playChatPing('mention-1','mention',{sender:'Alex',preview:'@you hello <script>'});
+context.playChatPing('mention-1','mention',{sender:'Alex',preview:'duplicate'});
+assert.equal(sent.length,1);assert.equal(sent[0].origin,'https://nyx.test');assert.equal(sent[0].data.preview,'@you hello <script>');
+context.playChatPing('chat-2','chat',{preview:'not mentioned'});assert.equal(sent[1].data.preview,'');
+context.playChatPing('mention-3','mention',{preview:'x'.repeat(1000)});assert.equal(sent[2].data.preview.length,240);
+console.log('PASS mention forwarding, bounded text, same-origin target and duplicate suppression');

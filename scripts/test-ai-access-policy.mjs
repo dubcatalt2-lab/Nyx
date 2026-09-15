@@ -68,3 +68,27 @@ const denied=p=>assert.rejects(p,e=>e.code==='ai_allowance');
   await a.finish(s);
 }
 console.log('PASS: exact Pacific signup cutoff, Premium eligibility, no role/trust bypass, 5 standard/10 maximum, bonus token reservations, unknown usage, refunds and rollover');
+
+{
+  const db=memoryFirestore(),config=aiAllowanceConfig({});
+  assert.equal(config.globalConcurrent,10);
+  const a=createAiAllowance({db,config});
+  const actor=i=>({uid:'concurrency-'+i,premium:true,device:'device-'+i,network:'same-school'});
+  const sessions=[];
+  for(let i=0;i<9;i++)sessions.push(await a.begin(actor(i)));
+  await assert.rejects(a.begin(actor(9)),e=>e.status===429);
+  sessions.push(await a.begin({...actor(10),owner:true}));
+  await assert.rejects(a.begin({...actor(11),owner:true}),e=>e.status===429);
+  await a.finish(sessions.pop());
+  await a.finish(await a.begin({...actor(12),owner:true}));
+  for(const session of sessions)await a.finish(session);
+}
+{
+  const f=fixture(),a=f.create();
+  for(const extra of [{},{trusted:true},{apiVerified:true}]) {
+    const session=await a.begin({...f.actor,...extra});
+    await assert.rejects(a.reserve(session,'shared',{...payload(),model:'openai/gpt-5.6-luna'}),e=>e.status===403);
+    await a.finish(session);
+  }
+}
+console.log('PASS: ten total slots with owner reserve, release/reuse and Luna denial for non-Premium/trusted/API members');

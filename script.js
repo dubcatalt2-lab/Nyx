@@ -6975,7 +6975,20 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   };
     img.src=maskCandidates[maskIndex] || src;
   }
-  function toast(msg){const t=$('toast'); if(!t)return; t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200)}
+  function toast(msg,kind){
+    const t=$('toast');if(!t)return;
+    clearTimeout(t.nyxDismissTimer);
+    const message=String(msg??'');
+    const warning=/denied|failed|error|unable|unavailable|blocked|invalid/i.test(message);
+    const success=/saved|copied|enabled|updated|added|success|connected/i.test(message);
+    const symbol=kind==='mention'?'<path d="M21 11.5a8.5 8.5 0 1 1-3-6.5M16 8v6c0 3 5 3 5-1v-2"/><circle cx="12" cy="12" r="4"/>':warning?'<path d="m12 3 10 18H2L12 3Z"/><path d="M12 9v4m0 4h.01"/>':success?'<path d="m5 12 4 4L19 6"/>':'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>';
+    const badge=document.createElement('span');badge.className='toast-icon';badge.setAttribute('aria-hidden','true');
+    badge.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+symbol+'</svg>';
+    const label=document.createElement('span');label.className='toast-message';label.textContent=message;
+    const progress=document.createElement('span');progress.className='toast-progress';progress.setAttribute('aria-hidden','true');
+    t.replaceChildren(badge,label,progress);t.classList.add('show');
+    t.nyxDismissTimer=setTimeout(()=>t.classList.remove('show'),2000);
+  }
   window.__nyxStartupErrors=window.__nyxStartupErrors || [];
   if(!window.__nyxStartupErrorCapture){
     window.__nyxStartupErrorCapture=true;
@@ -12546,6 +12559,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         renderTabs();
         const notificationKind=e.data.kind==='mention'?'mention':e.data.kind==='dm'?'dm':'chat';
         playNyxChatNotificationSound(notificationKind);
+        if(notificationKind==='mention'){const sender=String(e.data.sender||'Someone').slice(0,80),preview=String(e.data.preview||'').slice(0,240);toast(sender+' mentioned you'+(preview?': '+preview:''),'mention');}
         return;
       }
       if(e.data.type==='nyx:subscription-refresh'){

@@ -6,7 +6,7 @@ import { installDeveloperApi } from './lib/developer-api.mjs';
 import { aiImageContent } from './lib/ai-image.mjs';
 ﻿import express from "express";
 import { AsyncLocalStorage } from "node:async_hooks";
-import { createAiAllowance, aiAllowanceConfig, premiumModelLimits } from "./lib/ai-allowance.mjs";
+import { createAiAllowance, aiAllowanceConfig, premiumModelLimits, aiModelAllowed } from "./lib/ai-allowance.mjs";
 import { createOpenRouterBalanceGuard, createOpenRouterOwnerStatus } from "./lib/openrouter-balance.mjs";
 import { aiBudgetResponse } from "./lib/ai-budget-response.mjs";
 import { createServer } from "node:http";
@@ -2496,7 +2496,7 @@ const nyxAiLimits = {
   minute: nyxAiLimit("NYX_AI_REQUESTS_PER_MINUTE", 6),
   daily: nyxAiLimit("NYX_AI_REQUESTS_PER_DAY", 60),
   perIpConcurrent: nyxAiLimit("NYX_AI_CONCURRENT_PER_IP", 2),
-  globalConcurrent: nyxAiLimit("NYX_AI_CONCURRENT_GLOBAL", 3),
+  globalConcurrent: nyxAiLimit("NYX_AI_CONCURRENT_GLOBAL", 10),
   promptChars: nyxAiLimit("NYX_AI_MAX_PROMPT_CHARS", 4000),
   textAttachmentChars: nyxAiLimit("NYX_AI_MAX_TEXT_ATTACHMENT_CHARS", 18000),
   contextChars: nyxAiLimit("NYX_AI_MAX_CONTEXT_CHARS", 24000),
@@ -2675,12 +2675,14 @@ app.get('/api/nyx-ai/providers',(_req,res)=>{res.set('Cache-Control','private, n
 
 app.get('/api/nyx-ai/models',async(req,res)=>{
   res.set('Cache-Control','private, no-store');
+  const entitlement=await nyxAiPremiumEntitlement(req);
+  if(req.query.custom==='1')return res.json({models:[{id:'google/gemini-2.5-flash-lite',label:'Gemini 2.5 Flash Lite',vision:true},{id:'openai/gpt-5.6-luna',label:'GPT-5.6 Luna',vision:true}].filter(model=>aiModelAllowed(model.id,entitlement))});
   const credential=nyxAiRequestCredential(req);
   if(credential.invalid||credential.invalidProvider)return res.status(410).json({error:'This AI option has been removed. Use OpenRouter.'});
   if(!credential.key)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
   const models=await nyxAiAvailableModels(credential.key,false,credential.provider);
   if(!models.length)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
-  res.json({models,credential:'shared'});
+  res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement)),credential:'shared'});
 });
 
 app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
@@ -2714,6 +2716,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     return;
   }
   const model = modelInfo.id;
+  if(model==='openai/gpt-5.6-luna'&&!aiModelAllowed(model,await nyxAiPremiumEntitlement(req)))return res.status(403).json({error:'GPT-5.6 Luna is available to Premium members and the owner only.'});
   const isPremiumOpus = false;
   const isSharedNavy = false;
   const premiumEntitlement = isPremiumOpus || isSharedNavy ? await nyxAiPremiumEntitlement(req) : null;
@@ -10619,6 +10622,7 @@ app.get("/api/chat/updates", async (req, res) => {
         scopeId: event.scopeId,
         createdAtMs: event.createdAtMs,
         mentionsViewer: event.kind === "message" && (nyxChatEventMentionsIdentity(event.lastMessageText, identity) || token.uid === event.replyToAuthorUid),
+        lastMessageText: event.kind === 'message' ? String(event.lastMessageText || '').slice(0,240) : '',
         lastMessageAuthorUid: event.lastMessageAuthorUid
       }];
     });

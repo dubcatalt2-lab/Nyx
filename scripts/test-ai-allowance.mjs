@@ -20,7 +20,7 @@ export function memoryFirestore() {
 }
 const DAY=86400000;
 const key=uid=>`nyxAiAllowance/account-${createHash('sha256').update(uid).digest('hex')}`;
-function fixture(env={}) {
+function fixture(env={NYX_AI_CONCURRENT_GLOBAL:3}) {
   const db=memoryFirestore(),config=aiAllowanceConfig(env);
   let time=Date.parse('2026-09-10T12:00:00Z');
   const create=()=>createAiAllowance({db,config,now:()=>time});

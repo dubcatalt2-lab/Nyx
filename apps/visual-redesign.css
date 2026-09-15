@@ -264,6 +264,16 @@ body:has(.tube-shell){
 
 /* Nyx Chat */
 body:has(.chat-app){
+  --nyx-app-base:#17181b;
+  --nyx-app-canvas:#17181b;
+  --nyx-app-shell:#1c1d21;
+  --nyx-app-panel:#232429;
+  --nyx-app-panel-strong:#2c2e34;
+  --nyx-app-field:#25272d;
+  --nyx-app-line:#393c44;
+  --nyx-app-muted:#b6bac5;
+  --chat-muted:#b6bac5;
+  --chat-faint:#989eab;
   --chat-bg:var(--nyx-app-canvas);
   --chat-panel:var(--nyx-app-shell);
   --chat-panel-2:var(--nyx-app-panel);
@@ -280,10 +290,10 @@ body:has(.chat-app){
   background-color:var(--nyx-app-panel)!important;
   background-image:none!important;
 }
-.chat-app{background:transparent!important;background-image:none!important}
+.chat-app{background:var(--chat-bg)!important;background-image:none!important}
 .chat-app::before{display:none!important}
 .conversation{
-  background-color:rgba(9,16,23,.08)!important;
+  background-color:var(--chat-bg)!important;
   background-image:none!important;
   -webkit-backdrop-filter:none!important;
   backdrop-filter:none!important;
@@ -292,7 +302,7 @@ body:has(.chat-app){
 .member-sidebar,
 .signin-gate,
 .loading-chat{
-  background-color:rgba(12,20,28,.18)!important;
+  background-color:var(--chat-panel)!important;
   background-image:none!important;
   border-color:var(--nyx-app-line)!important;
   -webkit-backdrop-filter:blur(5px) saturate(1.04)!important;
@@ -300,13 +310,13 @@ body:has(.chat-app){
 }
 .channel-sidebar,
 .member-sidebar{
-  background-color:rgba(12,20,28,.18)!important;
+  background-color:var(--chat-panel)!important;
 }
 .signin-gate{
-  background-color:rgba(12,20,28,.20)!important;
+  background-color:var(--chat-panel)!important;
 }
 .conversation-header{
-  background-color:transparent!important;
+  background-color:var(--chat-panel)!important;
   background-image:none!important;
   -webkit-backdrop-filter:blur(6px) saturate(1.03)!important;
   backdrop-filter:blur(6px) saturate(1.03)!important;
@@ -319,8 +329,20 @@ body:has(.chat-app){
   backdrop-filter:blur(8px) saturate(1.04)!important;
 }
 
+.chat-app .chat-topbar{background-color:var(--chat-panel)!important}
+.chat-app :is(.icon-button,.composer-tool,.back-button){background-color:var(--chat-panel-2);border-color:var(--chat-line);color:var(--chat-text)}
+.chat-app :is(.icon-button,.composer-tool,.back-button):hover{background-color:var(--chat-panel-3);border-color:#606572}
+.chat-app button:focus-visible{outline:2px solid #b9a9ff;outline-offset:2px}
+
 /* Nyx AI workspace */
 body:has(.ai-app){
+  --nyx-app-base:rgba(12,14,18,.9);
+  --nyx-app-canvas:rgba(12,14,18,.9);
+  --nyx-app-panel:rgba(24,27,33,.84);
+  --nyx-app-panel-strong:rgba(34,38,46,.9);
+  --nyx-app-line:rgba(224,230,242,.14);
+  --nyx-app-muted:#b0b7c4;
+  --ai-muted-dark:#929baa;
   --ai-bg:var(--nyx-app-canvas);
   --ai-bg-deep:var(--nyx-app-canvas);
   --ai-surface:var(--nyx-app-panel);
@@ -355,15 +377,15 @@ body:has(.ai-app)::before,
 .ai-empty-card{
   background-color:var(--nyx-app-panel)!important;
   border-color:var(--nyx-app-line)!important;
-  -webkit-backdrop-filter:blur(6px) saturate(1.04)!important;
-  backdrop-filter:blur(6px) saturate(1.04)!important;
+  -webkit-backdrop-filter:blur(40px) saturate(.55)!important;
+  backdrop-filter:blur(40px) saturate(.55)!important;
 }
 .ai-composer{
   overflow:hidden;
   border-radius:22px!important;
-  background-color:rgba(4,7,12,.74)!important;
-  -webkit-backdrop-filter:blur(10px) saturate(1.06)!important;
-  backdrop-filter:blur(10px) saturate(1.06)!important;
+  background-color:rgba(20,23,29,.94)!important;
+  -webkit-backdrop-filter:blur(44px) saturate(.5)!important;
+  backdrop-filter:blur(44px) saturate(.5)!important;
 }
 .ai-composer textarea{
   border-color:transparent!important;
@@ -375,16 +397,18 @@ body:has(.ai-app)::before,
   box-shadow:none!important;
 }
 .ai-header{
-  background-color:transparent!important;
+  background-color:rgba(18,21,27,.88)!important;
   background-image:none!important;
   border-color:rgba(210,229,255,.07)!important;
-  -webkit-backdrop-filter:blur(6px) saturate(1.03)!important;
-  backdrop-filter:blur(6px) saturate(1.03)!important;
+  -webkit-backdrop-filter:blur(40px) saturate(.55)!important;
+  backdrop-filter:blur(40px) saturate(.55)!important;
 }
 .ai-composer-shell{
   background:transparent!important;
   background-image:none!important;
 }
+
+body:has(.ai-app){backdrop-filter:blur(56px) saturate(.45);-webkit-backdrop-filter:blur(56px) saturate(.45)}
 
 /* Remaining built-in structural surfaces use the same glass system. */
 .administrator-access,

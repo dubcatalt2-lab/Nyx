@@ -49,6 +49,7 @@ try {
           options.events?.onStateChange?.({ target: this, data: 1 });
         }, 0);
       }
+      loadVideoById(id){this.options.videoId=id;window.__shortReuse=(window.__shortReuse||0)+1;this.current=0;this.playVideo();}
       playVideo() { this.state = 1; window.__nyxTubePlayerState = this.state; this.options.events?.onStateChange?.({ target: this, data: 1 }); }
       pauseVideo() { this.state = 2; window.__nyxTubePlayerState = this.state; this.options.events?.onStateChange?.({ target: this, data: 2 }); }
       getPlayerState() { return this.state; }
@@ -196,12 +197,13 @@ try {
   }
 
   await page.locator('[data-view-button="shorts"]').click();
-  await page.locator(livePlayer ? "[data-short-player] iframe" : "[data-mock-youtube-player]").waitFor({ state: "attached" });
+  await page.locator(livePlayer ? "[data-short-player] iframe" : "[data-mock-youtube-player]").first().waitFor({ state: "attached" });
   console.log("NyxTube test: Shorts player ready");
   if (process.env.NYX_TEST_SCREENSHOT_PATH) await page.screenshot({ path: process.env.NYX_TEST_SCREENSHOT_PATH.replace(/\.png$/i, "-shorts.png"), fullPage: true });
   assert(await page.locator("[data-short-title]").textContent() === "A second video", "Initial Short did not render");
   await page.locator("[data-short-next]").click();
   await page.getByText("Next test Short").waitFor();
+  if(!livePlayer)assert(await page.locator('[data-short-player] [id^=nyxtube-prepared-short-]').count()<=4,'Shorts warm pool must stay bounded');
   console.log("NyxTube test: Shorts navigation passed");
   assert(await page.locator("[data-short-title]").textContent() === "Next test Short", "Next Short navigation failed");
 

@@ -4,7 +4,7 @@ const browser = await chromium.launch();
 try {
   for (const width of [1600, 390]) {
     const page = await browser.newPage({ viewport: { width, height: 950 } });
-    await page.goto((process.env.NYX_TEST_BASE_URL || 'http://127.0.0.1:8197') + '/apps/code-studio/');
+    await page.goto((process.env.NYX_TEST_BASE_URL || 'http://127.0.0.1:8080') + '/apps/code-studio/');
     await page.evaluate(() => document.fonts.ready);
     const line = '    document.getElementById("siteFrame").src =    ';
     const prefix = Array.from({ length: 75 }, (_, i) => '// line ' + (i + 1)).join('\n') + '\n';

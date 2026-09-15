@@ -572,38 +572,65 @@
       await showShort(state.shortIndex);
     } catch (error) { refs.shortLoading.hidden = true; notice(error.message || "Shorts could not be loaded."); }
   }
-  async function showShort(index) {
-    if (!state.shorts.length) return;
-    state.shortIndex = (index + state.shorts.length) % state.shorts.length;
-    let video = state.shorts[state.shortIndex];
-    refs.shortTitle.textContent = video.title || "Untitled Short"; refs.shortCreator.textContent = video.creator || "YouTube";
-    refs.shortLoading.hidden = false; refs.shortCenterPlay.hidden = true; refs.shortProgress.style.width = "0";
-    state.shortPlayer?.destroy?.();
-    if (video.detailsPending) {
-      try {
-        const payload = await json(`/api/nyxtube/video?id=${encodeURIComponent(video.id)}`);
-        if (state.view !== "shorts" || state.shorts[state.shortIndex]?.id !== video.id) return;
-        const detail = payload?.videos?.[0];
-        if (!detail || detail.id !== video.id || !detail.isShort) return recoverShort(video);
-        video = detail; state.shorts[state.shortIndex] = detail;
-      } catch {
-        if (state.view === "shorts" && state.shorts[state.shortIndex]?.id === video.id) recoverShort(video);
-        return;
-      }
+  let shortGeneration=0;
+  const shortDetails=new Map();
+  function shortDetail(video){
+    if(!video.detailsPending)return Promise.resolve(video);
+    if(!shortDetails.has(video.id)){
+      if(shortDetails.size>=32)shortDetails.delete(shortDetails.keys().next().value);
+      const request=json(`/api/nyxtube/video?id=${encodeURIComponent(video.id)}`).then(payload=>{
+        const detail=payload?.videos?.[0];if(!detail||detail.id!==video.id||!detail.isShort)throw Error('Short unavailable');return detail;
+      }).catch(error=>{shortDetails.delete(video.id);throw error;});
+      shortDetails.set(video.id,request);
     }
-    const YT = await youtubeApi(); if (state.view !== "shorts" || state.shorts[state.shortIndex]?.id !== video.id) return;
-    const config = options(video.id, true); config.expectedDuration = video.durationSeconds;
-    config.events = {
-      onReady: event => { event.target.mute(); state.shortMuted = true; refs.shortMute.innerHTML = icon("icon-muted"); event.target.playVideo(); refs.shortLoading.hidden = true; startShortTimer(); },
-      onStateChange: event => {
-        const playing = event.data === YT.PlayerState.PLAYING, paused = event.data === YT.PlayerState.PAUSED;
-        if (playing) refs.shortLoading.hidden = true;
-        refs.shortCenterPlay.hidden = !paused;
-        if (event.data === YT.PlayerState.ENDED) showShort(state.shortIndex + 1);
-      },
-      onError: () => recoverShort(video),
-    };
-    state.shortPlayer = new YT.Player(mount(refs.shortPlayer, "nyxtube-short"), config);
+    return shortDetails.get(video.id);
+  }
+  const preparedShorts=new Map();
+  let shortMountNumber=0;
+  function prepareShort(video){
+    if(preparedShorts.has(video.id))return preparedShorts.get(video.id);
+    const entry={id:video.id,player:null,node:null,ready:false,removed:false,failed:false};
+    preparedShorts.set(video.id,entry);
+    entry.promise=(async()=>{
+      const detail=await shortDetail(video),YT=await youtubeApi();
+      if(entry.removed||state.view!=='shorts')return;
+      entry.detail=detail;
+      const node=entry.node=document.createElement('div');node.id='nyxtube-prepared-short-'+(++shortMountNumber);const mountNode=document.createElement('div');mountNode.id=node.id+'-player';mountNode.style.cssText='width:100%;height:100%';node.append(mountNode);
+      node.style.cssText='position:absolute;inset:0;visibility:hidden;pointer-events:none';node.setAttribute('aria-hidden','true');refs.shortPlayer.append(node);
+      const config=options(video.id,true);config.playerVars.autoplay=0;config.expectedDuration=detail.durationSeconds;
+      config.events={
+        onReady:event=>{if(entry.removed)return;entry.ready=true;event.target.mute();if(state.shortPlayer===event.target){event.target.playVideo();startShortTimer();}},
+        onStateChange:event=>{if(entry.removed||state.shortPlayer!==event.target)return;
+          if(event.data===YT.PlayerState.PLAYING)refs.shortLoading.hidden=true;
+          refs.shortCenterPlay.hidden=event.data!==YT.PlayerState.PAUSED;
+          if(event.data===YT.PlayerState.ENDED)void showShort(state.shortIndex+1);
+        },
+        onError:()=>{entry.failed=true;if(state.shortPlayer===entry.player)recoverShort(detail);}
+      };
+      entry.player=new YT.Player(mountNode.id,config);
+      return entry;
+    })().catch(()=>{entry.failed=true;if(state.shorts[state.shortIndex]?.id===entry.id&&state.view==='shorts')recoverShort(video);});
+    return entry;
+  }
+  async function showShort(index) {
+    if(!state.shorts.length)return;
+    const generation=++shortGeneration;
+    state.shortIndex=(index+state.shorts.length)%state.shorts.length;
+    const video=state.shorts[state.shortIndex];
+    state.shortPlayer?.pauseVideo?.();state.shortPlayer=null;
+    refs.shortTitle.textContent=video.title||'Untitled Short';refs.shortCreator.textContent=video.creator||'YouTube';
+    refs.shortLoading.hidden=false;refs.shortCenterPlay.hidden=true;refs.shortProgress.style.width='0';
+    for(const entry of preparedShorts.values())if(entry.node){entry.node.style.visibility='hidden';entry.node.style.pointerEvents='none';entry.node.setAttribute('aria-hidden','true');}
+    const keep=new Set(Array.from({length:Math.min(4,state.shorts.length)},(_,offset)=>state.shorts[(state.shortIndex+offset)%state.shorts.length].id));
+    for(const [id,entry] of preparedShorts)if(!keep.has(id)){entry.removed=true;entry.player?.destroy?.();entry.node?.remove();preparedShorts.delete(id);}
+    const entry=prepareShort(video);await entry.promise;
+    if(generation!==shortGeneration||state.view!=='shorts')return;
+    if(entry.failed||!entry.player)return recoverShort(video);
+    state.shortPlayer=entry.player;entry.node.style.visibility='visible';entry.node.style.pointerEvents='auto';entry.node.setAttribute('aria-hidden','false');
+    state.shortMuted=true;refs.shortMute.innerHTML=icon('icon-muted');entry.player.mute();
+    if(entry.ready){entry.player.playVideo();startShortTimer();}
+    // Warm only the next three. They remain muted and do not autoplay.
+    for(let offset=1;offset<=Math.min(3,state.shorts.length-1);offset++)prepareShort(state.shorts[(state.shortIndex+offset)%state.shorts.length]);
   }
   function recoverShort(video) {
     if (state.view !== "shorts" || state.shorts[state.shortIndex]?.id !== video.id) return;
@@ -627,7 +654,9 @@
     }, 250);
   }
   function stopShorts() {
-    clearInterval(state.shortTimer); state.shortTimer = 0; state.shortPlayer?.destroy?.(); state.shortPlayer = null; refs.shortPlayer.replaceChildren();
+    shortGeneration++;clearInterval(state.shortTimer);state.shortTimer=0;
+    for(const entry of preparedShorts.values()){entry.removed=true;entry.player?.destroy?.();entry.node?.remove();}
+    preparedShorts.clear();state.shortPlayer=null;refs.shortPlayer.replaceChildren();
   }
   function toggleShort() {
     if (!ready(state.shortPlayer)) return;

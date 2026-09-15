@@ -967,7 +967,7 @@
     modelTrigger.disabled=true;
     modelTrigger.setAttribute('aria-busy','true');
     try{
-      const response=customKey?Response.json({models:[{id:'google/gemini-2.5-flash-lite',label:'Gemini 2.5 Flash Lite',vision:customKind()==='openrouter'},{id:'openai/gpt-5.6-luna',label:'GPT-5.6 Luna',vision:customKind()==='openrouter'}]}):await fetch('/api/nyx-ai/models',{headers:await aiHeaders({accept:'application/json'})});
+      const response=await fetch('/api/nyx-ai/models'+(customKey?'?custom=1':''),{headers:await aiHeaders({accept:'application/json'})});
       const data=await response.json();
       if(!response.ok) throw new Error(data?.error||`Model catalog failed (${response.status})`);
       const next=Array.isArray(data?.models)?data.models.flatMap(item=>{

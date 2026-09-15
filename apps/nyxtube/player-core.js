@@ -65,7 +65,7 @@
       playVideo() { this.command("playVideo"); if (optimisticState) this.emitState(PlayerState.PLAYING); }
       pauseVideo() { this.command("pauseVideo"); if (optimisticState) this.emitState(PlayerState.PAUSED); }
       stopVideo() { this.command("stopVideo"); if (optimisticState) this.emitState(PlayerState.PAUSED); }
-      loadVideoById(value) { this.command("loadVideoById", [String(value || "")]); }
+      loadVideoById(value) { this.currentTime=0;this.total=0;this.state=PlayerState.UNSTARTED;this.command("loadVideoById", [String(value || "")]); }
       seekTo(value) { this.currentTime = Math.max(0, Number(value) || 0); this.command("seekTo", [this.currentTime, true]); }
       mute() { this.muted = true; this.command("mute"); }
       unMute() { this.muted = false; this.command("unMute"); }

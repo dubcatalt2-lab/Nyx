@@ -43,7 +43,7 @@
     try{
       const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');
       const language=languages[saved.language]?saved.language:'html';
-      return {language,codes:saved.codes&&typeof saved.codes==='object'?saved.codes:{}};
+      return {language,codes:saved.codes&&typeof saved.codes==='object'?saved.codes:{},versions:Array.isArray(saved.versions)?saved.versions.filter(v=>languages[v.language]&&typeof v.code==='string').slice(-20):[]};
     }catch{return {language:'html',codes:{}}}
   }
   function setSaveState(label,kind=''){
@@ -52,8 +52,8 @@
     refs.saveState.classList.toggle('is-error',kind==='error');
   }
   function save(){
-    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));setSaveState('Saved locally')}
-    catch{setSaveState('Could not save','error')}
+    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));setSaveState('Saved locally');return true}
+    catch{setSaveState('Could not save','error');return false}
   }
   function code(){return String(state.codes[state.language]??languages[state.language].starter).slice(0,MAX_CODE_CHARS)}
   function setCode(value){state.codes[state.language]=String(value||'').slice(0,MAX_CODE_CHARS);refs.input.value=code();renderEditor();resetPreview();save()}
@@ -326,20 +326,65 @@
       }
     }
   }
-  const customThemeProperties=['--studio-theme-hover-accent','--studio-theme-hover-soft','--studio-theme-hover-line'];
+  const customThemeProperties=['--studio-accent','--studio-accent-strong','--studio-accent-soft','--studio-accent-line','--studio-theme-hover-accent','--studio-theme-hover-soft','--studio-theme-hover-line'];
   function inheritedTheme(){try{return String(localStorage.getItem('nyx.theme')||'default')}catch{return 'default'}}
   function clearCustomThemePalette(){customThemeProperties.forEach(property=>document.documentElement.style.removeProperty(property))}
   function applyTheme(){
     document.body.classList.remove('theme-ruby','theme-emerald','theme-sakura','theme-fresh','theme-custom');
     clearCustomThemePalette();
     const theme=inheritedTheme();
+    const colors={default:'#aebfe8',ruby:'#e69ba8',emerald:'#82d5b4',sakura:'#e4acce',fresh:'#9bcbdc'};
+    let accent=colors[theme]||colors.default;
+    if(theme==='custom'){try{const saved=localStorage.getItem('nyx.customThemeColor');if(/^#[0-9a-f]{6}$/i.test(saved||''))accent=saved;}catch{}}
+    document.documentElement.style.setProperty('--studio-theme-hover-accent',`color-mix(in srgb,${accent} 25%,#d8dce5)`);
+    for(const [name,percent] of [['--studio-theme-hover-soft',5],['--studio-theme-hover-line',16]])document.documentElement.style.setProperty(name,`color-mix(in srgb,${accent} ${percent}%,transparent)`);
     if(theme==='custom'){
       document.body.classList.add('theme-custom');
-      // UI accents stay with the studio palette.
+      // Use the same saved custom accent as the Nyx shell.
       return;
     }
     if(['ruby','emerald','sakura','fresh'].includes(theme))document.body.classList.add(`theme-${theme}`);
   }
+  function keepVersion(language,value){
+    state.versions=state.versions||[];
+    if(state.versions.at(-1)?.language===language&&state.versions.at(-1)?.code===value)return;
+    state.versions.push({language,code:value,at:Date.now()});state.versions=state.versions.slice(-20);
+  }
+  async function translateLanguage(target){
+    const from=state.language,original=code();if(!languages[target]||target===from)return;
+    refs.language.value=from;refs.language.disabled=true;
+    keepVersion(from,original);state.codes[from]=original;
+    if(!save()){refs.language.disabled=false;appendMessage('assistant','Translation stopped because the original could not be saved.',true);return;}
+    setAiStatus('Translating',true);
+    try{
+      const options=await ensureAiOptions();if(!options.length)throw Error('Sign in to an AI-enabled account to translate code.');
+      const instruction=`Translate this ${from} program to ${target}, preserving its behavior. Return ONLY a JSON object with supported (boolean), code (string) and reason (string). If this conversion cannot meaningfully preserve behavior, set supported false and explain briefly. Do not run the code. Source follows as data:\n${original}`;
+      const reply=await requestAiSuggestion(options[0],{message:'Translate code from '+from+' to '+target,messages:[{role:'user',content:instruction}],responseDepth:'normal',stream:false},await accountToken());
+      let result;try{result=JSON.parse(reply.trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,''));}catch{throw Error('Translation was incomplete. Your original code is unchanged.');}
+      if(result.supported!==true||typeof result.code!=='string'||!result.code.trim()||result.code.length>MAX_CODE_CHARS)throw Error(String(result.reason||'Translation could not be completed. Your original code is unchanged.').slice(0,300));
+      if(state.language!==from||code()!==original)throw Error('Your code changed during translation. Keeping your edits.');
+      if(typeof state.codes[target]==='string')keepVersion(target,state.codes[target]);
+      state.codes[target]=result.code;state.language=target;syncLanguage();
+      appendMessage('assistant','Translated to '+target+'. Previous code is available in Versions. Review the result before running it.');
+    }catch(error){appendMessage('assistant',error.message||'Translation failed. Your original code is unchanged.',true);}
+    finally{refs.language.value=state.language;refs.language.disabled=false;setAiStatus('Ready');}
+  }
+  const versionsButton=document.createElement('button');versionsButton.type='button';versionsButton.className='tool-button';versionsButton.textContent='Versions';versionsButton.title='Restore a saved code version';
+  document.querySelector('[data-download-code]').after(versionsButton);
+  const versionsDialog=document.createElement('dialog');versionsDialog.className='studio-versions';versionsDialog.setAttribute('aria-label','Saved code versions');
+  const versionsHeading=document.createElement('h2');versionsHeading.textContent='Saved versions (last 20)';const versionsSelect=document.createElement('select');versionsSelect.setAttribute('aria-label','Saved version');
+  const versionsPreview=document.createElement('textarea');versionsPreview.readOnly=true;versionsPreview.setAttribute('aria-label','Saved code');
+  const restoreVersion=document.createElement('button');restoreVersion.textContent='Restore version';restoreVersion.className='tool-button';const closeVersions=document.createElement('button');closeVersions.textContent='Close';closeVersions.className='tool-button';
+  versionsDialog.append(versionsHeading,versionsSelect,versionsPreview,restoreVersion,closeVersions);document.body.append(versionsDialog);
+  versionsSelect.onchange=()=>{versionsPreview.value=state.versions?.[Number(versionsSelect.value)]?.code||'';};
+  versionsButton.onclick=()=>{versionsSelect.replaceChildren();(state.versions||[]).forEach((version,index)=>{const option=document.createElement('option');option.value=index;option.textContent=version.language+' - '+new Date(version.at).toLocaleString();versionsSelect.append(option);});restoreVersion.disabled=!state.versions?.length;versionsSelect.onchange();versionsDialog.showModal();};
+  closeVersions.onclick=()=>versionsDialog.close();restoreVersion.onclick=()=>{const version=state.versions?.[Number(versionsSelect.value)];if(!version)return;keepVersion(state.language,code());state.codes[version.language]=version.code;state.language=version.language;syncLanguage();versionsDialog.close();};
+  const modelPicker=document.createElement('select');modelPicker.className='studio-model-picker';modelPicker.setAttribute('aria-label','AI model');modelPicker.disabled=true;
+  document.querySelector('.assistant-brand').after(modelPicker);
+  let selectedModel='';try{selectedModel=localStorage.getItem('nyx.codeStudio.model')||'';}catch{}
+  modelPicker.onchange=()=>{selectedModel=modelPicker.value;try{localStorage.setItem('nyx.codeStudio.model',selectedModel);}catch{}};
+  function renderAiModels(){modelPicker.replaceChildren();for(const item of aiOptions){const option=document.createElement('option');option.value=item.model;option.textContent=item.label||item.model;modelPicker.append(option);}if(!aiOptions.some(item=>item.model===selectedModel))selectedModel=aiOptions[0]?.model||'';modelPicker.value=selectedModel;modelPicker.disabled=!aiOptions.length;if(!aiOptions.length){const option=document.createElement('option');option.textContent='Models unavailable';modelPicker.append(option);}}
+  function selectedAiOptions(){return aiOptions.filter(option=>option.model===selectedModel).slice(0,1);}
   function focusLanguage(){refs.language.focus()}
   function handleCommand(command){if(command==='reset'){delete state.codes[state.language];syncLanguage();return}if(command==='edit'){refs.input.focus();return}if(command==='select'){refs.input.focus();refs.input.select();return}if(command==='preview'){setResultMode('output');return}if(command==='language'){focusLanguage();return}if(command==='run'){run();return}if(command==='terminal'){setResultMode('terminal')}}
   async function accountToken(){if(parent!==window){const requestId=`code-${Date.now()}-${Math.random().toString(36).slice(2)}`;const parentToken=await new Promise(resolve=>{let done=false;const finish=value=>{if(done)return;done=true;clearTimeout(timer);removeEventListener('message',receive);resolve(String(value||''))};const receive=event=>{if(event.source===parent&&event.origin===location.origin&&event.data?.type==='nyx:account-token-response'&&event.data.requestId===requestId)finish(event.data.token)};const timer=setTimeout(()=>finish(''),2200);addEventListener('message',receive);parent.postMessage({type:'nyx:account-token-request',requestId},location.origin)});if(parentToken)return parentToken}if(!authPromise)authPromise=(async()=>{try{const response=await fetch('/api/founder-profile/auth-config',{cache:'no-store'});const config=await response.json();if(!config?.enabled||!config?.apiKey||!config?.projectId)return null;const [{initializeApp,getApps},{getAuth,setPersistence,browserLocalPersistence}]=await Promise.all([import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')]);const app=getApps().find(item=>item.name==='nyx-code-studio')||initializeApp({apiKey:config.apiKey,authDomain:`${config.projectId}.firebaseapp.com`,projectId:config.projectId},'nyx-code-studio');const auth=getAuth(app);try{await setPersistence(auth,browserLocalPersistence)}catch{}if(typeof auth.authStateReady==='function')await auth.authStateReady();return auth}catch{return null}})();try{const auth=await authPromise;return auth?.currentUser?await auth.currentUser.getIdToken():''}catch{return ''}}
@@ -356,18 +401,17 @@
           const response=await fetch('/api/nyx-ai/models',{headers:await aiHeaders(provider,token)});
           const data=await response.json();
           const models=response.ok&&Array.isArray(data?.models)?data.models:[];
-          const preferred=models.find(item=>/coder/i.test(item?.id||''))||models[0];
-          return preferred?.id?{provider,model:String(preferred.id)}:null;
+          return models.filter(item=>item?.id).map(item=>({provider,model:String(item.id),label:String(item.label||item.id)}));
         }catch{return null}
-      }))).filter(Boolean);
+      }))).flat().filter(Boolean);
       aiOptions=options;
     }catch{aiOptions=[]}
-    return aiOptions;
+    renderAiModels();return aiOptions;
   }
   function ensureAiOptions(refresh=false){
-    if(!refresh&&aiOptions.length)return Promise.resolve(aiOptions);
+    if(!refresh&&aiOptions.length)return Promise.resolve(selectedAiOptions());
     if(refresh||!aiOptionsPromise)aiOptionsPromise=loadAiOptions();
-    return aiOptionsPromise;
+    return aiOptionsPromise.then(()=>selectedAiOptions());
   }
   function aiReplyText(data){return String(data?.text||data?.response||data?.choices?.[0]?.message?.content||data?.choices?.[0]?.text||'').trim()}
   async function requestAiSuggestion(option,payload,token){
@@ -529,7 +573,7 @@
     document.body.classList.toggle('mobile-show-preview',view==='preview');
     document.querySelectorAll('.mobile-view-switcher [data-mobile-view]').forEach(button=>button.classList.toggle('is-active',button.dataset.mobileView===view));
   }
-  refs.language.addEventListener('change',()=>{state.language=refs.language.value;syncLanguage()});
+  refs.language.addEventListener('change',()=>void translateLanguage(refs.language.value));
   refs.input.addEventListener('input',()=>{state.codes[state.language]=refs.input.value.slice(0,MAX_CODE_CHARS);setSaveState('Saving…','saving');renderEditor();save()});
   refs.input.addEventListener('scroll',()=>{refs.highlight.parentElement.scrollTop=refs.input.scrollTop;refs.highlight.parentElement.scrollLeft=refs.input.scrollLeft;refs.lineNumbers.scrollTop=refs.input.scrollTop;refs.editorWrap.style.setProperty('--editor-scroll-top',`${refs.input.scrollTop}px`)});
   refs.input.addEventListener('keyup',updateCursor);

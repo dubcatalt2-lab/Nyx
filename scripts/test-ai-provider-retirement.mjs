@@ -23,7 +23,7 @@ try {
   process.env.NYX_AI_DAILY_BUDGET_USD='1';
   process.env.NYX_AI_MODEL_PRICES_JSON=JSON.stringify({'shared:google/gemini-2.5-flash-lite':{inputPerMillion:.1,outputPerMillion:.4},'shared:openai/gpt-5.6-luna':{inputPerMillion:.25,outputPerMillion:1.2}});
   assert.deepEqual(await (await fetch(origin+'/api/nyx-ai/providers')).json(),{providers:[{id:'shared',label:'OpenRouter'}]});
-  const catalog=await (await fetch(origin+'/api/nyx-ai/models')).json();assert.deepEqual(catalog.models.map(m=>m.id),['google/gemini-2.5-flash-lite','openai/gpt-5.6-luna']);assert.ok(catalog.models.every(m=>m.vision));
+  const catalog=await (await fetch(origin+'/api/nyx-ai/models')).json();assert.deepEqual(catalog.models.map(m=>m.id),['google/gemini-2.5-flash-lite']);assert.ok(catalog.models.every(m=>m.vision));
   assert.deepEqual(upstream,['https://openrouter.ai/api/v1/models']);
   console.log('PASS: retired server credentials ignored, old provider/personal options rejected, legacy gateway keys retired, only OpenRouter exposed');
 }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));globalThis.fetch=originalFetch;}

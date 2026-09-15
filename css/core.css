@@ -2985,8 +2985,6 @@ body.theme-fresh .browser-search-suggestion{
 .setup-final-list{display:grid;gap:10px;align-content:center}
 .setup-final-row{display:flex;justify-content:space-between;gap:16px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(255,255,255,.06);padding:10px 12px;color:#e5e7eb}
 .setup-final-row strong{color:#f8fafc;font-weight:400}
-.chromeos-alt-dim{position:fixed;inset:0;z-index:99999;display:none;background:#000;opacity:0;pointer-events:auto;transition:opacity .18s ease}
-.chromeos-alt-dim.show{display:block;opacity:1}
 @media(max-width:680px){.setup-shortcut-grid{grid-template-columns:1fr;max-height:42vh}.setup-shortcut-card{align-items:flex-start;flex-direction:column}.setup-shortcut-card kbd{min-width:0}}
 .setup-panel .bg-choices{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px;max-height:min(330px,42vh);overflow:auto;padding:2px 4px 6px 2px}
 .bg-choices{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}

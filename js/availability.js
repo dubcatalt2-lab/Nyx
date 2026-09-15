@@ -1,6 +1,6 @@
 /* Availability is evidence of reachability, not proof that a machine crashed. */
 (()=>{
-  let failures=0, firstFailure=0, relayFailures=0, relayUrl='', getRelay=null, busy=false, relayTimer=null, cancelProbe=null, relayGeneration=0;
+  let failures=0, firstFailure=0, relayFailures=0, relayUrl='', getRelay=null, onRelayFailure=null, busy=false, relayTimer=null, cancelProbe=null, relayGeneration=0;
   let hostDown=false, relayDown=false, banner=null;
   function render(){
     const offline=navigator.onLine===false;
@@ -67,13 +67,15 @@
       if(getRelay().url!==selected.url){relayFailures=0;relayDown=false;render();scheduleRelay(0);return}
       relayFailures=ok?0:relayFailures+1;
       relayDown=ok?false:(relayDown || relayFailures>=3);
+      if(!ok && relayFailures>=3)await onRelayFailure?.(selected.url);
       render();
       scheduleRelay(ok?30000:5000);
     }finally{busy=false}
   }
-  window.NyxAvailability={recordHealth,start(resolveRelay){
+  window.NyxAvailability={recordHealth,start(resolveRelay,recoverRelay){
     if(getRelay)return;
     getRelay=resolveRelay;
+    onRelayFailure=recoverRelay;
     void checkRelay();
     addEventListener('offline',()=>{reset();resumeRelay();render()});
     addEventListener('online',()=>{reset();resumeRelay();render()});

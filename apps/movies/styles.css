@@ -42,3 +42,8 @@ button.icon-control,a.icon-control,#watch.icon-control,#featured-open.icon-contr
 #watch-area.external-playback .player{bottom:0}.external-playback #fullscreen{display:none!important}#watch-area.external-playback .playback-controls{margin-left:auto;margin-top:0;padding:0;background:none;flex:none}.external-playback .watch-brand{margin-left:0}.external-playback #watch-title{flex:1}.external-playback #episode-picker{top:76px;bottom:auto;max-height:calc(100dvh - 92px);overflow:auto}
 
 #movie-backdrop{position:fixed;inset:0;z-index:0;pointer-events:none;background:#07090b}#movie-backdrop img{position:absolute;width:100%;height:100%;object-fit:cover;object-position:center top}#movie-backdrop:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#02040799,transparent 80%),linear-gradient(0deg,#050709f5 2%,#05070980 35%,#05070920 85%)}body.movie-backdrop-active main{background:transparent}body.movie-backdrop-active #nyxBeamsBg,body.movie-backdrop-active #nyxLineWavesBg{visibility:hidden}
+
+/* Provider documents stay hidden until their video is attached to Nyx controls. */
+#watch-area.proxy-playback .player iframe{visibility:hidden;pointer-events:none}#watch-area.proxy-ready .player iframe{visibility:visible}#start-proxy{width:64px;height:64px;display:inline-grid;place-items:center;border-radius:50%;background:#edf0f6;color:#101217}#start-proxy[hidden]{display:none}.playback-row button:disabled{opacity:.4;cursor:default}
+
+#proxy-loading{width:40px;height:40px;margin:12px auto}#proxy-loading[hidden]{display:none}

@@ -1,3 +1,4 @@
+import {installMovieImages} from './lib/movie-images.mjs';
 import { createMovieCatalog, installMovieApi } from './lib/movies.mjs';
 import { installMoviePlayback } from './lib/movie-playback.mjs';
 import { createApiKeyVault } from './lib/api-key-vault.mjs';
@@ -3503,6 +3504,7 @@ app.get("/runtime-config.js", (_req, res) => {
   res.type("application/javascript").send(
     `globalThis.__NYX_RUNTIME_CONFIG__=Object.freeze(${JSON.stringify({
       wispUrl: externalWispUrl,
+      wispUrls: [...new Set(String(process.env.NYX_WISP_RELAYS || "").split(",").map(normalizePublicWispUrl).filter(Boolean))],
       presenceUrl: publicOrigin ? `${publicOrigin}/api/presence` : "",
       publicOrigin
     })});`
@@ -7803,10 +7805,11 @@ app.get(["/apps/nyxify", "/apps/nyxify/"], (_req, res) => {
 });
 
 const movieCatalog = createMovieCatalog();
+installMovieImages(app);
 installMovieApi(app, { catalog: movieCatalog, clientId: nyxClientIp });
 installMoviePlayback(app, { clientId: nyxClientIp, validateMovie: id => movieCatalog.details(id) });
 app.get(/^\/apps\/movies$/, (_req, res) => res.redirect(302, "/apps/movies/"));
-app.get("/apps/movies/", (_req, res) => { res.set("Content-Security-Policy", "frame-src https://nhdapi.com https://supaplay.fun https://ani.megaplay.su https://watch.rivestream.app https://framextv.tech; object-src 'none'"); res.sendFile(join(staticRoot, "apps", "movies", "index.html")); });
+app.get("/apps/movies/", (_req, res) => { res.set("Content-Security-Policy", "frame-src 'self' https://nhdapi.com https://supaplay.fun https://ani.megaplay.su https://watch.rivestream.app https://framextv.tech https://plyr.animex.one; object-src 'none'"); res.sendFile(join(staticRoot, "apps", "movies", "index.html")); });
 
 function linkGeneratorRateState(clientId, now = Date.now()) {
   for (const [key, state] of linkGeneratorAttempts) {

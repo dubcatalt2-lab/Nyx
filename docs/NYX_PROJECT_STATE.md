@@ -1,9 +1,42 @@
+## Movies/proxy release prepared (2026-09-14; deployment awaiting SSH unlock)
+
+Prepared the Movies provider proxy, Nyx video controls, loading circle and centered skip icons, TMDB artwork relay, AnimeX catalog/API integration, remembered relay failover and requested ChromeOS Alt+Tab blackout removal for release on agent/pirate-cove. Source/built Movies fixtures, live Edge 1080p controls, provider/image, anime, public API, season mapping, relay selection and availability checks passed; production build and deployment/branding checks passed. Availability test wording now matches the existing retry message. Local experiments, exports, credentials and load-test artifacts are excluded. The VPS accepts the configured public key, but the encrypted private key needs unlocking locally. Production has not been changed.
+
+## AnimeX connected locally (2026-09-13; not deployed)
+- lib/movie-anime-sources.mjs adds exact TMDB 278196 / season 1 / episodes 1 and 2 mappings to AnimeX's verified provider slug. Catalog source order remains Rive, NHD, AnimeX, FrameXTV. No general title-to-slug guessing or untested episode coverage.
+- Movies frontend accepts only the mapped AnimeX paths and exact bounded query schema; server and document frame CSP allow plyr.animex.one. Existing strict sandbox is preserved. aniembed progress events are used only from the active frame/exact origin with the expected message envelope. Asset v19.
+- Local server restarted on 8080. Actual Nyx source selection, 720p playback, seeking past 120 seconds, no popups and frame cleanup passed. Exact-ID/URL rejection checks, public API/season regression checks, production build and 130-file deploy/branding checks passed. Initial local metadata request returned a transient 503; retry succeeded. Screenshots: .codex-artifacts/animex-nyx-local-play.png.
+- Test at http://localhost:8080/apps/movies/#watch=278196/1/1 then select AnimeX in Sources. Production remains on the previous gallery-only release. Standalone API builder includes the new module dependency for future rebuilds; existing friend ZIP is unchanged.
+
 ## Four-second gallery LIVE; AnimeX source research (2026-09-13)
 - Application bf97869 pushed and deployed with OVH updater; production build, 128-file check:deploy and branding passed. Both public domains serve gallery asset v18. Live visible gallery transitions measured 4006.5 ms apart. Built-page two-cycle timing and reduced-motion pause passed. The first live timing sample stayed on slide one during startup; a settled visible-gallery observation verified successive transitions.
 - AnimeX watch page exposes plyr.animex.one/e/{provider-slug}/{episode} embeds. Strict sandbox test of The Summer Hikaru Died episode 1 passed playback, seek and continued playback at 1280-wide; no popups or in-frame ads observed during the sample. Existing provider watermark remains in the video. This is a researched candidate, not an integrated or catalog-wide-verified Nyx provider. Artifacts: anime-round32.json and sandbox-animex-anmx-177689-seek.png. ZEN selection test stopped at AnimeX's announcement modal, not a provider playback failure.
 
 ## Movies gallery four-second release (2026-09-13)
 - Automatic Movies gallery rotation changed from eight to four seconds. Existing animations, focus/reduced-motion/visibility pauses and manual navigation are preserved. Asset version is 20260913-gallery-4s-v18.
+
+## Games export hosting-neutral update (2026-09-13)
+- User does not know the friend's hosting platform. Games ZIP now omits worker.mjs/wrangler.jsonc and Cloudflare/R2-specific README instructions. Includes brief generic web-host instructions instead. Builder uses a separate portable output directory and atomically replaces Downloads/Nyx-Games-Only.zip only after CRC and excluded-file checks. Game payload is unchanged.
+
+## Games-only export (2026-09-13; local download)
+- scripts/build-games-export.py creates Downloads/Nyx-Games-Only.zip with all 1,578 local UGS catalog entries, unchanged local game files, thumbnails/runner/ad protection, a standalone searchable games index, original remote-library catalogs/loaders in a clearly labeled reference directory, and Cloudflare R2 Worker/config/README. No full Nyx shell, accounts, Movies or secrets are exported. Archive: 1,703 files, 82.43 MB compressed, 170.87 MB uncompressed; ZIP CRC verified and per-file SHA256 inventory included.
+- Remote libraries are references, not complete downloaded games. Some local game HTML still loads external scripts/media. Do not represent this as all Nyx providers downloaded/offline or all titles tested. Local catalog/search/2048 loading checked in Edge; Worker full/HEAD/range/ETag/invalid-path tests passed. No Cloudflare upload/deployment performed.
+- R2 chosen because EaglercraftZ_1.11.2.html is 28.6 MB and exceeds Cloudflare's 25 MiB static asset limit. Included Worker streams objects using an R2 binding and supports byte ranges. Source deploy/branding and whitespace checks pass.
+
+## Standalone friend Movies API package (2026-09-13; local artifact)
+- scripts/build-movies-standalone.mjs packages the shared catalog/provider modules with a separate authenticated server. scripts/movies-standalone contains server, secret-generating setup and short README. Output: .codex-artifacts/nyx-movies-api.zip. ZIP explicitly includes nine code/document files and no credentials, private mappings, environment file or dependencies.
+- Friend runs npm install, npm run setup, adds their own TMDB_TOKEN to .env, and starts with npm start. Setup creates one random 256-bit MOVIES_API_KEY locally; backend-to-backend Bearer authentication is required. No Nyx account/server dependency or per-client request quota; existing bounded upstream concurrency and TMDB/provider limits remain. Actual videos stay hosted by external providers.
+- Standalone auth/startup checks and 130 authenticated requests passed; check:deploy/branding passed. Existing Nyx public API and deployment are unchanged by the standalone wrapper. No push or deployment.
+
+## Episode source priority (2026-09-13; local)
+- Anime/TV automatic checks and combined API responses put Rive first, preserve the other sources in between, and put FrameXTV last. Episode playback history does not override this priority; explicit user source selection still does. Legacy episode links resolve canonical providers before playback when metadata is available. Movie ranking remains unchanged.
+- Combined API remains public, rate-limited and keyless; it is not deployed yet. Do not give users the private TMDB token as an API key.
+
+## Combined Movies API and anime checks (2026-09-13; local, not deployed)
+- Added read-only `/api/movies/v1` search, movie/series metadata, season lists and combined `/sources?type=movie|tv&id=...` endpoints. TV/anime require season and episode; existing catalog validation and canonical grouped-season mappings are preserved. Confirmed individual SupaPlay/Anime Player mappings are included only for exact matching identities, alongside NHD, Rive and FrameXTV.
+- Public GET CORS uses no credentials. Routes share existing 120 requests/minute/client and bounded TMDB caching/coalescing; server credentials, legacy VidSrc URLs and cookie-bound VixSrc relay sessions are not exposed. Sources honestly report unchecked availability and unknown quality. This is an embedded-provider API, not a universal direct-stream endpoint. Friend integration examples and limitations: docs/MOVIES_API.md.
+- Edge strict-sandbox anime samples: Rive Jujutsu Kaisen S1E1 (1280-wide) and FrameXTV Frieren S1E1 (1920-wide) passed playback, seeking and continued playback. Screenshots inspected; no ads/popups observed in these brief samples. These are existing providers with newly checked anime coverage, not two newly discovered providers. Yenime Jujutsu Kaisen/Frieren emitted play events but remained 0:00/0:00 without video; not added. MiruroAPI docs describe known streaming failures and previously rejected embed providers; not added.
+- Combined API HTTP tests and existing Movies/season-group regressions passed. Real local Inception, Interstellar and Frieren source responses and Frieren search passed; the initial Inception request returned a transient upstream 503 and succeeded on retry. Production build and 129-file deploy/branding checks passed. Local account-configured server is running on 8080. No push/deployment for this change.
 
 ## Provider/fullscreen release LIVE (2026-09-13; application a38bbc1)
 - Pushed a38bbc1 on agent/pirate-cove / PR #34 and deployed with the OVH updater. VPS build/deployment checks passed; Nyx, Caddy and coturn are active. Rive and FrameXTV movie/canonical-episode embeds and game-only fullscreen are live; no third provider is being represented as verified.
@@ -1091,3 +1124,52 @@ When materially updating this file:
 
 - Follow-up source survey: VidNest, VidRock, VidZee and VidLove each briefly played/seeked at least one real movie in Edge outside Nyx (five sampled players including existing VixSrc). Only VidZee passed a sandboxed Interstellar play/seek test; its Inception attempt failed. VidNest/ VidLove showed redirects/promotional overlays and sandbox problems, VidRock rejected sandboxing. These are research candidates, not four integrated or dependable fallbacks. No additional provider added. See .codex-artifacts/movie-source-report.md and survey JSON/screenshots; provider-page success must not be reported as native Nyx integration.
 - Final source/build Movies and gallery regressions, live custom controls, native relay tests, production build, 123-file deploy/branding and whitespace checks passed. No push or deployment.
+
+
+## Local relay selection ? September 13, 2026
+
+Added sequential relay selection for proxy transports. `js/relay-selection.js` remembers `nyx.lastWorkingRelay`, accepts remembered URLs only from the current configured list, and checks for the WISP stream-zero CONTINUE handshake (not merely WebSocket upgrade). Scramjet and BareMux await selection before initializing their transports. The availability monitor attempts failover after three failed relay probes and rebuilds the active proxy runtime when the endpoint changes. Custom user relay settings stay pinned.
+
+Server owners can set `NYX_WISP_RELAYS` to a comma-separated ordered list of additional trusted Nyx relay URLs. Runtime configuration exposes these alongside the existing primary `WISP_URL` / same-origin embedded relay. No Opium relay or code was imported; no extra production relays have been provisioned or configured. One configured relay provides no redundancy. First passing means protocol handshake success, not a guarantee that every destination works or that the relay is fastest.
+
+Local only; no push/deploy requested. Targeted selection and availability recovery tests pass.
+
+
+## Local Chromebook Alt+Tab blackout removal ? September 13, 2026
+
+Removed the automatic Alt+Tab dim handler, Alt-key/visibility arming, overlay markup, and overlay styles. ChromeOS platform detection remains for unrelated layout behavior; explicit panic shortcuts and other browser shortcuts are preserved. Local only, not deployed.
+
+
+## Local AnimeX catalog lookup ? September 13, 2026
+
+Replaced the two-episode Hikaru allowlist with `createAnimeSources`: exact TMDB IDs, mapped seasons and episode offsets from Fribb/anime-lists, then constrained literal metadata from AnimeX public watch pages to obtain its current embed slug and episode count. No remote JavaScript is executed and no API tokens are used. The direct AnimeX REST endpoint returned 403 during diagnosis; integration uses public server-rendered watch-page metadata instead.
+
+Mapping data is cached for 24 hours, metadata for one hour, negative lookups for one minute, with request deduplication, four concurrent metadata requests maximum, response-size caps and eight-second request timeouts. Ambiguous/unmapped seasons, mismatched IDs, malformed slugs, unavailable metadata and out-of-range episodes omit AnimeX while leaving other providers available. For validated production episode groups, a canonical mapping that yields no source can fall back to the displayed season/episode mapping. This is dynamic mapped-catalog support, not a claim that all anime or every upstream stream works.
+
+Frontend now accepts constrained AnimeX embed slugs and positive episode numbers instead of one fixed title, retaining strict sandboxing, exact host/query checks, and message-origin checks. Movie asset version is `20260913-animex-catalog-v20`. Local server restarted; Frieren S1E1 and Hikaru S1E3 played at 720p through Nyx in Edge. New identity/offset/cache/failure tests and existing season/public-API tests pass. Not pushed or deployed.
+
+
+## Local Movies proxy/provider expansion ? September 14, 2026 (not deployed)
+
+Added the ten public provider endpoints observed in wowing.meridiano.com.br's client: Vidy, Videasy, VidFast, VidLink, SpencerDevs, VidKing, VidSrc.su, VidRock, VidSrc.cc and Embed.su. Nyx uses the actual service names, its existing UI, and independently written URL/selection code. No reference-site bundle or relay was imported. The reference transport is Epoxy; Nyx already supplies Epoxy over its configured WISP relay.
+
+`apps/movies/providers.mjs` builds strict movie/canonical-TV embed URLs; episode metadata now includes validated sourceSeason/sourceEpisode, avoiding guessed production-season coordinates. The additional lineup is merged into the frontend list; existing provider/API behavior remains available. `proxy.mjs` launches these ten through Ultraviolet/BareMux/WISP, using the shell bridge when embedded and the same Nyx runtime/relay settings when standalone. It fails closed instead of changing a new provider to direct loading. Movies CSP permits same-origin proxy frames and the existing direct-provider origins. Existing iframe sandbox restrictions remain; source preference is remembered, explicit errors/no-play timeouts advance to another source, and bounded nested-frame inspection measures playback rather than treating load as play. External player controls and in-frame promotional material are not universally removable by this design.
+
+`lib/movie-images.mjs` relays only fixed TMDB artwork paths/sizes, with no redirects, credentials or arbitrary destination URLs; four active fetches, bounded queue/cache/response bytes and timeouts. The frontend rewrites artwork URLs to this endpoint; API metadata contracts remain unchanged. Live localhost loaded 20/20 covers with zero direct TMDB image requests.
+
+Browser checks sampled all ten in the actual Movies UI through the proxy. Vidy played Inception at 1920-wide and resumed at 123 seconds after seeking; an earlier short repeat stalled, so this is not a reliability guarantee. The other nine did not pass the short playback sample (some require interaction, stalled or failed; VidKing displayed promotional content). Do not call the lineup ad-free or all providers working. No popup windows were observed during the samples. Existing AnimeX had separately passed a Scramjet/Epoxy trial with two Frieren episodes and seeking, but that trial did not change its normal route.
+
+Source fixture checks cover provider URL validation, canonical episode mapping, source switching, sandbox retention, remembered preference, cleanup, mobile bounds, API errors and credentials. Image tests cover queue/concurrency/cache/fixed-host behavior. Source/build checks run before completion. Normal local server is on 8080; no push, deployment or Chromebook verification was performed.
+
+Final validation: source and built Movies fixtures passed, including failed-proxy fallback, one active frame, remembered selection, and source cleanup. Production build, 133-file deployment check, branding and whitespace checks passed. Standalone UV initialization loaded the proxied page, but its separate short live sample did not reach playback; only the embedded Vidy seek sample is confirmed.
+
+
+## Local Nyx controls for proxied movie players (2026-09-14; not deployed)
+
+All validated external movie sources now enter the proxy path. The old provider interfaces and raw proxy error pages remain hidden while loading. A bounded inspector finds an accessible video, then `styleMovieVideo` exposes only that video (and its containing frame chain) while the provider playback engine continues running. Existing Nyx controls bind to that exact element: play/pause, timeline, skips, volume/mute, speed, native text tracks, fullscreen and supported PiP. Quality is reported as measured resolution/source default when no quality-switching API exists; no fake provider quality control is added. An icon-only Start video action invokes the underlying accessible player start action. Uncontrollable/failed players time out or advance to another provider; the sandbox is not relaxed to make them work. Burned-in branding or advertising inside the video itself is not removed.
+
+Frame/style/control listeners clean up on source changes and close. The inspector now recognizes the reported Ultraviolet Error processing your request / SSL connect error page and skips it. This handles failure presentation and fallback, not the upstream provider's TLS configuration. Automatic source selection clears the remembered manual source rather than immediately selecting it again.
+
+Live Vidy/Inception through Nyx passed 1920x1080 play/pause, seek beyond 120 seconds, volume/mute, fullscreen, zero visible provider buttons and frame cleanup. Screenshot: .codex-artifacts/nyx-proxy-controls-live.png. Source fixtures exercise the raw TLS error case and hidden failed frame/fallback. Reference-site code only confirmed a common outer watch layout and provider iframes; a universal replacement of its provider controls was not verified. Normal local server remains on 8080; no push or deployment.
+
+Local player polish (2026-09-14): Added an animated loading circle for proxied player initialization; Play appears only when an actual provider start action is available, and loading clears when Nyx binds the video. Centered both 10-second skip labels with matching mirrored arcs. Source fixture verifies loading-to-Play transition; live Edge test again passed actual 1080p play/pause, seek, volume, mute, fullscreen and cleanup. Not deployed.

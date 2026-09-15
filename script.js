@@ -4353,13 +4353,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     key=String(key || '').toLowerCase();
     if(!key) return false;
     const consume=()=>{try{eventLike?.preventDefault?.()}catch{}; try{eventLike?.stopPropagation?.()}catch{}};
-    if(key==='tab'){
-      if(eventLike && triggerChromeOsAltTabRedirect(eventLike)){
-        consume();
-        return true;
-      }
-      return false;
-    }
+    if(key==='tab') return false;
     if(/^[1-9]$/.test(key)){
       if(switchBrowserShellTabByIndex(Number(key)-1)){
         consume();
@@ -7311,6 +7305,21 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       url:ready ? (proxyModeUrl('ultraviolet',target) || target) : target
     };
   };
+  // Movies explicitly requests a proxy. Never fall back to a direct provider URL.
+  window.nyxLaunchMovieFrame=async(frame,url,{signal}={})=>{
+    const {movieSourceUrl}=await import('/apps/movies/providers.mjs');
+    if(!movieSourceUrl(url))throw new Error('Unsupported movie provider.');
+    if(frame?.tagName!=='IFRAME'||frame.ownerDocument.location.origin!==location.origin||frame.ownerDocument.location.pathname!=='/apps/movies/')throw new Error('Invalid movie frame.');
+    const sandbox='allow-scripts allow-same-origin allow-forms allow-presentation';
+    if(frame.getAttribute('sandbox')!==sandbox)throw new Error('Movie sandbox is required.');
+    const ready=await installUltraviolet();
+    if(signal?.aborted||!frame.isConnected)return;
+    if(!ready)throw new Error('Nyx movie proxy is unavailable.');
+    installGameFrameAdProtection(frame);
+    const target=nativeUvUrl(url);
+    if(!target?.startsWith('/service/'))throw new Error('Movie proxy URL is unavailable.');
+    frame.src=target;
+  };
   function normalizeBrowserModeName(mode){
     let value=String(mode || 'auto').trim();
     if((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))){
@@ -7512,7 +7521,18 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     try{return normalizeWispUrl(store.text('nyx.wispUrl',''))}catch{return ''}
   }
   function wispUrl(){
-    return storedCustomWispUrl() || defaultWispUrl();
+    return storedCustomWispUrl() || window.NyxRelaySelection?.current(configuredWispUrls()) || defaultWispUrl();
+  }
+  function configuredWispUrls(){
+    const extras=globalThis.__NYX_RUNTIME_CONFIG__?.wispUrls;
+    return [...new Set([defaultWispUrl(),...(Array.isArray(extras)?extras:[])].map(value=>{
+      try{return normalizeWispUrl(value)}catch{return ''}
+    }).filter(Boolean))];
+  }
+  async function selectWispRelay(failed=''){
+    const custom=storedCustomWispUrl();
+    if(custom)return custom;
+    return await window.NyxRelaySelection?.choose(configuredWispUrls(),failed) || defaultWispUrl();
   }
   function activeBrowserSourceUrl(){
     const activeTab=activeBrowser?.tabs?.find(tab=>tab.id===activeBrowser.active);
@@ -7731,6 +7751,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible') heartbeat()});
   }
   async function installBareMuxTransport(){
+    await selectWispRelay();
     const { BareMuxConnection } = await import('/baremux/index.mjs?v=nyx-baremux-worker-start-v2');
     const connection = bareMuxConnection || (bareMuxConnection = new BareMuxConnection('/baremux/worker.js'));
     const wisp=wispUrl();
@@ -7773,6 +7794,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }
   }
   async function createScramjetTransport(){
+    await selectWispRelay();
     const transport=normalizeBrowserTransportName(browserTransportOverride || store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT));
     const key=`${transport}:${wispUrl()}`;
     if(scramjetTransport && scramjetTransportKey===key) return scramjetTransport;
@@ -15336,47 +15358,11 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     updatePanicKeyLabels();
     toast('Panic key cleared');
   }
-  let chromeOsAltTabArmedUntil=0;
-  let chromeOsAltDimTimer=null;
   function isChromeOsUser(){
     const ua=String(navigator.userAgent || '');
     const platform=String(navigator.userAgentData?.platform || navigator.platform || '');
     return /\bCrOS\b/i.test(ua) || /Chrome\s*OS/i.test(platform);
   }
-  function triggerChromeOsAltTabRedirect(event){
-    if(!isChromeOsUser()) return false;
-    if(event){
-      event.preventDefault();
-      event.stopPropagation();
-    }
-    const dim=$('chromeOsAltDim');
-    if(!dim) return true;
-    clearTimeout(chromeOsAltDimTimer);
-    dim.classList.add('show');
-    dim.setAttribute('aria-hidden','false');
-    chromeOsAltDimTimer=setTimeout(()=>hideChromeOsAltDim(),5200);
-    return true;
-  }
-  function hideChromeOsAltDim(){
-    const dim=$('chromeOsAltDim');
-    if(!dim) return;
-    clearTimeout(chromeOsAltDimTimer);
-    dim.classList.remove('show');
-    dim.setAttribute('aria-hidden','true');
-  }
-  function rememberChromeOsAltKey(event){
-    if(!isChromeOsUser() || panicCaptureArmed || event.ctrlKey || event.metaKey) return;
-    if(event.key==='Alt' || event.code==='AltLeft' || event.code==='AltRight') chromeOsAltTabArmedUntil=Date.now()+1800;
-  }
-  document.addEventListener('visibilitychange',()=>{
-    if(document.visibilityState==='hidden' && Date.now()<chromeOsAltTabArmedUntil) triggerChromeOsAltTabRedirect();
-  },true);
-  document.addEventListener('pointerdown',event=>{
-    if(event.target?.id==='chromeOsAltDim') hideChromeOsAltDim();
-  },true);
-  document.addEventListener('keydown',event=>{
-    if(event.key==='Escape' || event.key==='Enter' || event.key===' ') hideChromeOsAltDim();
-  },true);
   let shortcutMenuPointerHandled=false;
   function shortcutMenuButtonAtPoint(x,y){
     return [...document.querySelectorAll('[data-home-shortcut-menu]')].find(btn=>{
@@ -15556,7 +15542,6 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }
     });
 
-    document.addEventListener('keydown',rememberChromeOsAltKey,true);
     document.addEventListener('keydown',e=>{handleLeftAltChromeShortcut(e)},true);
     document.addEventListener('dragstart',e=>{
       if(!e.target.closest?.('.home-shortcut,.home-shortcut-add,[data-home-shortcuts]')) return;
@@ -16711,7 +16696,11 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
   function startNyxLatencyMonitor(){
     if(startNyxLatencyMonitor.started) return;
     startNyxLatencyMonitor.started=true;
-    window.NyxAvailability?.start(()=>({url:storedCustomWispUrl() || defaultWispUrl(),custom:!!storedCustomWispUrl()}));
+    window.NyxAvailability?.start(()=>({url:wispUrl(),custom:!!storedCustomWispUrl()}),async failed=>{
+      if(storedCustomWispUrl())return;
+      const next=await selectWispRelay(failed);
+      if(!storedCustomWispUrl() && next!==failed)resetBrowserProxyRuntime();
+    });
     syncNyxLatencyBubble();
     void calibrateNyxLatency();
     const refresh=()=>{if(!document.hidden) void sampleNyxLatency(true)};

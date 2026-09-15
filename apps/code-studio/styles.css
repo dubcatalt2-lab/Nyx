@@ -1,10 +1,10 @@
 :root {
-  --studio-bg: rgba(18,20,24,.82);
-  --studio-sidebar: rgba(29,31,36,.76);
-  --studio-surface: rgba(32,34,40,.72);
-  --studio-surface-raised: rgba(42,44,51,.75);
-  --studio-field: #090c12;
-  --studio-editor: #181a1f;
+  --studio-bg: rgba(7,10,16,.32);
+  --studio-sidebar: rgba(15,19,27,.40);
+  --studio-surface: rgba(17,21,29,.30);
+  --studio-surface-raised: rgba(43,49,62,.32);
+  --studio-field: rgba(6,10,17,.24);
+  --studio-editor: rgba(8,12,19,.28);
   --studio-line: rgba(255, 255, 255, .12);
   --studio-line-strong: rgba(255, 255, 255, .13);
   --studio-text: #f2f4f8;
@@ -34,6 +34,8 @@
 
 * { box-sizing: border-box; }
 
+html { background: transparent; }
+
 html,
 body {
   width: 100%;
@@ -55,7 +57,7 @@ body::before {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(900px 420px at 70% -260px, color-mix(in srgb, var(--studio-accent) 7%, transparent), transparent 72%);
+  background: transparent;
 }
 
 button,
@@ -791,7 +793,7 @@ body.is-resizing iframe { pointer-events: none; }
   position: relative;
   min-height: 0;
   overflow: hidden;
-  background: var(--studio-editor);
+  background: transparent;
   --active-line: 0;
   --editor-scroll-top: 0px;
 }
@@ -1259,7 +1261,7 @@ a:focus-visible,
 
 .studio-shell button{border-radius:9px}.studio-shell button::before,.studio-shell button::after{border-radius:inherit}.editor-card,.result-card{overflow:hidden}
 
-body{backdrop-filter:blur(56px) saturate(.45);-webkit-backdrop-filter:blur(56px) saturate(.45)}.assistant-panel,.workspace-header,.workspace-toolbar,.editor-card,.result-card{backdrop-filter:blur(36px) saturate(.55);-webkit-backdrop-filter:blur(36px) saturate(.55)}
+body{backdrop-filter:blur(56px) saturate(.45);-webkit-backdrop-filter:blur(56px) saturate(.45)}.assistant-panel,.workspace-header,.project-controls,.editor-card,.result-card{backdrop-filter:blur(36px) saturate(.55);-webkit-backdrop-filter:blur(36px) saturate(.55)}
 
 .studio-versions{width:min(720px,calc(100vw - 32px));max-height:85vh;padding:24px;border:1px solid var(--studio-line-strong);border-radius:18px;background:rgba(24,26,31,.96);color:var(--studio-text);backdrop-filter:blur(40px)}.studio-versions::backdrop{background:#0008;backdrop-filter:blur(8px)}.studio-versions select,.studio-versions textarea{display:block;width:100%;margin:12px 0;padding:12px;border:1px solid var(--studio-line);border-radius:9px;background:var(--studio-editor);color:var(--studio-text)}.studio-versions textarea{height:40vh;resize:vertical;font-family:monospace}.studio-versions button{margin-right:8px}
 

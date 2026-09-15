@@ -3540,3 +3540,9 @@ body.lag-reducer .setup-launch-screen.show .nyx-loading-spinner{
 @media(prefers-reduced-motion:reduce){
   body.lag-reducer .setup-launch-screen.show .nyx-loading-spinner{animation:none!important}
 }
+
+/* Blur the wallpaper in the host document; child frames cannot sample it. */
+iframe[src*="/apps/code-studio/"] {
+  -webkit-backdrop-filter: blur(48px) saturate(.65);
+  backdrop-filter: blur(48px) saturate(.65);
+}

@@ -1,3 +1,7 @@
+## Code Sandbox glass correction and AI visual rollback (2026-09-14)
+
+User rejected the AI dark-surface change: restored its exact pre-8726f70 visual-redesign CSS section while retaining AI functionality and access controls. Code Sandbox now uses translucent editor/field/panel backgrounds, removes the redundant editor-wrap fill, and blurs the wallpaper on its host iframe (48px); blur inside a child document cannot sample the parent wallpaper. Existing translation/model/version controls remain. Desktop glass visual fixture inspected; desktop/mobile editor alignment, translation/version/model checks, AI workspace regression, build and deployment checks passed. This follows the successful deployment of 8726f70; correction release is being deployed.
+
 ## AI, toast, chat, Code Sandbox and Shorts release prepared (2026-09-14)
 
 Final user clarification: redesign is focused on Code Sandbox. AI page retains its existing layout/shapes and only gains darker, heavier blurred surfaces for text readability. Code editor tab and active-line highlight are rounded; editor alignment remains verified at desktop/mobile widths. Code translation/model/version and Shorts prewarming passed source and built-page fixtures.

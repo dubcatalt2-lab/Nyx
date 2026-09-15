@@ -336,13 +336,6 @@ body:has(.chat-app){
 
 /* Nyx AI workspace */
 body:has(.ai-app){
-  --nyx-app-base:rgba(12,14,18,.9);
-  --nyx-app-canvas:rgba(12,14,18,.9);
-  --nyx-app-panel:rgba(24,27,33,.84);
-  --nyx-app-panel-strong:rgba(34,38,46,.9);
-  --nyx-app-line:rgba(224,230,242,.14);
-  --nyx-app-muted:#b0b7c4;
-  --ai-muted-dark:#929baa;
   --ai-bg:var(--nyx-app-canvas);
   --ai-bg-deep:var(--nyx-app-canvas);
   --ai-surface:var(--nyx-app-panel);
@@ -377,15 +370,15 @@ body:has(.ai-app)::before,
 .ai-empty-card{
   background-color:var(--nyx-app-panel)!important;
   border-color:var(--nyx-app-line)!important;
-  -webkit-backdrop-filter:blur(40px) saturate(.55)!important;
-  backdrop-filter:blur(40px) saturate(.55)!important;
+  -webkit-backdrop-filter:blur(6px) saturate(1.04)!important;
+  backdrop-filter:blur(6px) saturate(1.04)!important;
 }
 .ai-composer{
   overflow:hidden;
   border-radius:22px!important;
-  background-color:rgba(20,23,29,.94)!important;
-  -webkit-backdrop-filter:blur(44px) saturate(.5)!important;
-  backdrop-filter:blur(44px) saturate(.5)!important;
+  background-color:rgba(4,7,12,.74)!important;
+  -webkit-backdrop-filter:blur(10px) saturate(1.06)!important;
+  backdrop-filter:blur(10px) saturate(1.06)!important;
 }
 .ai-composer textarea{
   border-color:transparent!important;
@@ -397,18 +390,16 @@ body:has(.ai-app)::before,
   box-shadow:none!important;
 }
 .ai-header{
-  background-color:rgba(18,21,27,.88)!important;
+  background-color:transparent!important;
   background-image:none!important;
   border-color:rgba(210,229,255,.07)!important;
-  -webkit-backdrop-filter:blur(40px) saturate(.55)!important;
-  backdrop-filter:blur(40px) saturate(.55)!important;
+  -webkit-backdrop-filter:blur(6px) saturate(1.03)!important;
+  backdrop-filter:blur(6px) saturate(1.03)!important;
 }
 .ai-composer-shell{
   background:transparent!important;
   background-image:none!important;
 }
-
-body:has(.ai-app){backdrop-filter:blur(56px) saturate(.45);-webkit-backdrop-filter:blur(56px) saturate(.45)}
 
 /* Remaining built-in structural surfaces use the same glass system. */
 .administrator-access,

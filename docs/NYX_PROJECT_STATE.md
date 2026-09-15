@@ -1,6 +1,6 @@
-## Nyx v1.0.3 update popup (2026-09-14; local)
+## Nyx v1.0.3 update popup LIVE (2026-09-14; application 72123d1)
 
-Updated the existing one-time release popup with title "Nyx v1.0.3 is here!" and the user's exact body text, using "Nyx v1.0.3" in the bold/italic greeting. Centered change lines match the supplied reference within existing Nyx glass styling. New release identity 2026-09-14-nyx-1.0.3 allows people who dismissed the previous release to see it; setup/terms deferral and dismissal behavior remain. Desktop/mobile exact-text, old-release/new-release and dismissal checks passed; build and deployment checks passed. Not pushed or deployed.
+Updated the existing one-time release popup with title "Nyx v1.0.3 is here!" and the user's exact body text, using "Nyx v1.0.3" in the bold/italic greeting. Centered change lines match the supplied reference within existing Nyx glass styling. New release identity 2026-09-14-nyx-1.0.3 allows people who dismissed the previous release to see it; setup/terms deferral and dismissal behavior remain. Desktop/mobile exact-text, old-release/new-release and dismissal checks passed; build and deployment checks passed. Pushed and deployed with the OVH updater. Production desktop/mobile exact wording and remembered dismissal passed; apex/www health returned 200.
 
 ## Movies loading list and proxy recovery LIVE (2026-09-14; application 73dbb6d)
 

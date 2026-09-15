@@ -14551,7 +14551,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }
     },delay);
   }
-  const NYX_RELEASE_NOTES_VERSION='2026-08-31-new-nyx';
+  const NYX_RELEASE_NOTES_VERSION='2026-09-14-nyx-1.0.3';
   let nyxReleaseNotesTimer=0;
   function nyxReleaseNotesStorageKey(){
     return `nyx.releaseNotes.${NYX_RELEASE_NOTES_VERSION}.seen`;
@@ -14582,14 +14582,11 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     const overlay=document.createElement('div');
     overlay.className='nyx-release-notes-overlay';
     overlay.innerHTML=`<section class="nyx-release-notes" role="dialog" aria-modal="true" aria-labelledby="nyxReleaseNotesTitle" aria-describedby="nyxReleaseNotesIntro">
-      <header><div><span>What's new</span><h1 id="nyxReleaseNotesTitle" tabindex="-1">Nyx feels brand new.</h1></div><button type="button" data-nyx-release-notes-close aria-label="Close update log">&times;</button></header>
-      <p id="nyxReleaseNotesIntro">A faster, cleaner browser with a fresh look and a smoother experience from the moment you open it.</p>
-      <ul>
-        <li><strong>A fresh new look</strong><span>See-through glass surfaces and animated wallpapers give every part of Nyx a calmer, more polished feel.</span></li>
-        <li><strong>Faster everywhere</strong><span>Pages, menus, themes, and motion have been tuned to respond quickly—even on larger screens and everyday school devices.</span></li>
-        <li><strong>Tabs that fit your space</strong><span>Tabs now live in the sidebar. Keep it compact, expand it for titles and close controls, or move it to either side.</span></li>
-        <li><strong>Smoother browsing</strong><span>Helpful suggestions get you searching sooner, loading is clearer, and the address bar gives you a more useful connection status.</span></li>
-      </ul>
+      <header><div><span>What's new</span><h1 id="nyxReleaseNotesTitle" tabindex="-1">Nyx v1.0.3 is here!</h1></div><button type="button" data-nyx-release-notes-close aria-label="Close update log">&times;</button></header>
+      <div class="nyx-release-message" id="nyxReleaseNotesIntro">
+        <p class="nyx-release-greeting"><strong><em>Hi guys new update!<br>Nyx v1.0.3</em></strong></p>
+        <p class="nyx-release-changes"><strong>What changed:</strong> Fixed movies<br>Fixed AI<br>Redesigned some stuff<br>Added message toasts!</p>
+      </div>
       <footer><button type="button" data-nyx-release-notes-close>Got it</button></footer>
     </section>`;
     const close=()=>{

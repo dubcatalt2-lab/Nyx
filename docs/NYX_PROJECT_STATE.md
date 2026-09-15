@@ -1,3 +1,7 @@
+## Nyx v1.0.3 update popup (2026-09-14; local)
+
+Updated the existing one-time release popup with title "Nyx v1.0.3 is here!" and the user's exact body text, using "Nyx v1.0.3" in the bold/italic greeting. Centered change lines match the supplied reference within existing Nyx glass styling. New release identity 2026-09-14-nyx-1.0.3 allows people who dismissed the previous release to see it; setup/terms deferral and dismissal behavior remain. Desktop/mobile exact-text, old-release/new-release and dismissal checks passed; build and deployment checks passed. Not pushed or deployed.
+
 ## Movies loading list and proxy recovery LIVE (2026-09-14; application 73dbb6d)
 
 Movies keeps its provider list visible during loading/fallback and closes it on measured playback or when a real Play action becomes available. Loading video rows animate; scrollbar is hidden while wheel/touch scrolling remains. A fully failed source pass triggers at most one fresh proxy initialization/transport setup and one further pass. This addresses stale shared setup without claiming every upstream failure is repairable. User reported Chromebook playback resumed after reloading; the original failure was not captured. All external providers remain proxied and sandboxed.

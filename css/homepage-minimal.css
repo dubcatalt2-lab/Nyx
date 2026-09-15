@@ -1941,3 +1941,7 @@ body.browser-shell.browser-shell.browser-shell.browser-shell.browser-content-act
   body.browser-shell.browser-shell.browser-shell.browser-shell.browser-content-active:not(.nyx-tab-design-list):is(body,#nyx-tab-bar):is(body,#nyx-tab-bar-layout):is(body,#nyx-tab-bar-controls)
   .top-os.top-os form.browser-mode-address>:is([data-open="developer"],[data-browser-shell-bookmark]){display:none!important}
 }
+
+.nyx-release-message{padding:14px 27px 4px;text-align:center;color:#f7f7fa}.nyx-release-greeting{margin:8px 0 25px;font-size:clamp(24px,5vw,34px);line-height:1.35;letter-spacing:-.025em}.nyx-release-changes{margin:0;font-size:clamp(17px,3.8vw,22px);line-height:1.8}
+
+.nyx-release-greeting strong,.nyx-release-greeting em{font-weight:800!important;font-style:italic!important}.nyx-release-changes strong{font-weight:700!important}

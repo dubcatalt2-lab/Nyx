@@ -1,8 +1,10 @@
-## Movies loading list and proxy recovery (2026-09-14)
+## Movies loading list and proxy recovery LIVE (2026-09-14; application 73dbb6d)
 
 Movies keeps its provider list visible during loading/fallback and closes it on measured playback or when a real Play action becomes available. Loading video rows animate; scrollbar is hidden while wheel/touch scrolling remains. A fully failed source pass triggers at most one fresh proxy initialization/transport setup and one further pass. This addresses stale shared setup without claiming every upstream failure is repairable. User reported Chromebook playback resumed after reloading; the original failure was not captured. All external providers remain proxied and sandboxed.
 
 Source fixtures cover list visibility, measured playback dismissal, manual chooser remaining open, scrollbar-free scrolling, one bounded recovery and two source passes. Toast tests cover visible shell rendering, icons, two-second animated countdown, replacement timer, safe mention text and mobile bounds; desktop toast was moved clear of the right sidebar after visual inspection. Mention forwarding/deduplication passes. Live existing deployed Vidy playback at 1080p passed seek past 120 seconds and Nyx controls; Chromebook-specific verification remains with the user.
+
+Deployed 73dbb6d successfully. Source and production-build Movies fixtures, toast/mention tests, build and deploy checks passed. Apex/www health and versioned assets pass. Post-deploy Vidy playback again passed 1920x1080, seek beyond 120 seconds, Nyx pause/volume/mute/fullscreen and cleanup. Original Chromebook failure remains unreproduced.
 
 ## Built-in background rollback LIVE (2026-09-14; application 0a24bf2)
 

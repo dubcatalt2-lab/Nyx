@@ -18,8 +18,9 @@ service cloud.firestore {
     // Nyx writes through authenticated server routes using Firebase Admin.
     // Client writes stay disabled so role, subscription, audit, and ban data
     // cannot be forged from a browser.
+    // Network details and audit records are available only through owner-checked server routes.
     match /nyxUserAdministration/{uid} {
-      allow read: if isOwner() || ownsDocument(uid);
+      allow read: if false;
       allow write: if false;
     }
 
@@ -34,7 +35,7 @@ service cloud.firestore {
     }
 
     match /nyxAuditLog/{eventId} {
-      allow read: if isOwner();
+      allow read: if false;
       allow write: if false;
     }
 

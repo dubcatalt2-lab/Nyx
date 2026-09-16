@@ -267,7 +267,7 @@
     const previousStatus=nyxUserSubscriptionStatus;
     if(account.role)nyxUserAccountRole=String(account.role||'member');
     if(typeof account.founder==='boolean')nyxFounderIsOwner=account.founder;
-    if(typeof account.dashboard==='boolean')nyxOwnerDashboardAccess=account.dashboard;
+    if(typeof account.dashboard==='boolean')nyxOwnerDashboardAccess=account.dashboard&&nyxFounderIsOwner;
     if(Array.isArray(account.permissions))nyxUserPermissions=account.permissions.map(String);
     if(account.subscriptionStatus)nyxUserSubscriptionStatus=String(account.subscriptionStatus||'free').toLowerCase();
     document.body.dataset.nyxSubscription=nyxUserSubscriptionStatus;
@@ -613,8 +613,8 @@
   }
   function openNyxOwnerDashboard(){
     closeNyxAccountMenu();
-    if(!nyxFounderSignedInUser||!nyxOwnerDashboardAccess){
-      toast('Staff dashboard access is required');
+    if(!nyxFounderSignedInUser||!nyxFounderIsOwner||!nyxOwnerDashboardAccess){
+      toast('Only the Nyx owner can open this dashboard');
       return;
     }
     if(!globalThis.NyxOwnerDashboard?.open){
@@ -839,7 +839,7 @@
       if(!token)throw new Error('Your owner session has expired.');
       const access=await nyxProfileMediaFetch('/api/founder-profile/owner',{headers:{Authorization:`Bearer ${token}`},cache:'no-store'},'Owner access is unavailable.');
       nyxFounderIsOwner=Boolean(access?.founder);
-      nyxOwnerDashboardAccess=Boolean(access?.dashboard);
+      nyxOwnerDashboardAccess=Boolean(access?.dashboard&&access?.founder);
       nyxUserPermissions=Array.isArray(access?.permissions)?access.permissions.map(String):[];
       if(access?.role)nyxUserAccountRole=String(access.role);
     }catch{nyxFounderIsOwner=false;nyxOwnerDashboardAccess=false;nyxUserPermissions=[]}

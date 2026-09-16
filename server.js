@@ -4363,10 +4363,10 @@ const nyxRoleLabels = Object.freeze({
   member: "Member"
 });
 const nyxCustomRolePermissionCatalog = Object.freeze([
-  ["dashboard:view", "Open Owner Dashboard"], ["users:view", "View accounts"], ["audit:view", "View audit logs"],
+  ["users:view", "View accounts"], ["audit:view", "View audit logs"],
   ["profiles:write", "Edit user profiles"], ["roles:write", "Assign built-in roles"], ["subscriptions:write", "Manage subscriptions"],
   ["accounts:reset", "Create password resets"], ["accounts:verify", "Verify emails"], ["accounts:disable", "Disable accounts"],
-  ["accounts:delete", "Delete accounts"], ["network:bans", "Manage IP bans"], ["developer-console", "Open Developer Console"],
+  ["accounts:delete", "Delete accounts"], ["developer-console", "Open Developer Console"],
   ["chat:moderate", "Moderate Nyx Chat"], ["chat:manage_channels", "Manage Chat channels"], ["link-scanner:bulk", "Run full Link Checker scans"]
 ]);
 const nyxCustomRolePermissionSet = new Set(nyxCustomRolePermissionCatalog.map(([permission]) => permission));
@@ -4503,6 +4503,7 @@ function nyxRoleForUser(uid, administration = {}, ownerUid = founderProfileConfi
 }
 
 function nyxActorHasPermission(actor, permission) {
+  if (["dashboard:view", "network:bans"].includes(permission) && (!actor?.uid || actor.uid !== founderProfileConfig().administratorUid || actor.role !== "owner")) return false;
   return Boolean(actor?.permissions?.includes(permission));
 }
 
@@ -4529,9 +4530,9 @@ function nyxOwnerAccessPayload(actor, ownerUid = founderProfileConfig().administ
     customRole: presentation.customRole,
     owner: actor.role === "owner",
     founder,
-    dashboard: nyxActorHasPermission(actor, "dashboard:view"),
+    dashboard: founder,
     canReviewSearchHistory: nyxActorCanReviewSearchHistory(actor),
-    permissions: [...actor.permissions],
+    permissions: actor.permissions.filter(permission => founder || !["dashboard:view", "network:bans"].includes(permission)),
     assignableRoles: nyxAssignableRolesForActor(actor, ownerUid)
   };
 }
@@ -4677,6 +4678,11 @@ async function ownerDashboardActor(req, requiredPermission = "dashboard:view") {
   if (!ownerUid) {
     const error = new Error("Owner access has not been configured.");
     error.status = 503;
+    throw error;
+  }
+  if (token.uid !== ownerUid) {
+    const error = new Error("Only the configured Nyx Owner can access the Owner Dashboard.");
+    error.status = 403;
     throw error;
   }
   let administration = {};

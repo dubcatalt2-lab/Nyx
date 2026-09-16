@@ -1,4 +1,8 @@
-## NyxTube seek recovery, native captions and idle controls (2026-09-15; LOCAL, NOT DEPLOYED)
+## NyxTube release verified (2026-09-15; LIVE in 88b31ca)
+
+User authorized push and deployment. Application 88b31ca3ce2cfec77db9d556d839847284625fbd was pushed and deployed through the OVH updater after checking the intended origin revision and clean VPS checkout. Final VPS HEAD matches that revision, and the committed server.js blob matches the tested source. VPS build, deployment and branding checks pass; nyx, caddy, coturn and nyx-stratus are active. Loopback, apex and www health checks pass. Live player cache versions match the release. Browser tests loading the deployed player with controlled API/video fixtures pass native playback, captions, three-second fade/menu visibility, seeking, quality restoration, fallback and mobile layout. The real public captions endpoint returned HTTP 200 with 21 cues around 10,800 seconds for the long-video sample. These checks do not establish full-film reliability on every device. Production dependency audit remains 12 vulnerabilities (8 moderate, 4 high), with Stratus 3 moderate and existing Caddy warnings. No credentials were replaced.
+
+## NyxTube seek recovery, native captions and idle controls (2026-09-15; implementation notes, subsequently deployed above)
 
 Long-video/fast-forward reports were traced to cancelled fragment jobs being reused, forced stream refresh retaining a separate catalog cache, and excessive loading retries without a stalled-progress deadline. Fragment requests now wait out an aborted job before reacquiring it. Expired upstream URLs (403/410) trigger one metadata refresh that also bypasses the catalog cache, then one retry. Preparation is bounded to 60 seconds; playback has a 90-second stalled-progress watchdog with one recovery attempt before embedded fallback. Fallback preserves the current playback position, volume, rate and pause state. Existing bounded queues, range reads, 720p ceiling, cache and resource limits remain.
 
@@ -8,7 +12,7 @@ Nyx playback controls, progress bar and mobile seek controls fade after three se
 
 VPS-target build, check:deploy and branding checks pass. Catalog, backend, segments, native UI and new captions tests pass, including actual browser HLS playback, rapid repeated seeks, expired-URL refresh, aborted-job reacquisition, finite stalled-player recovery, caption windows after three hours, native cue rendering and idle/menu visibility. Final built-artifact native UI and segment browser checks pass. An isolated VPS diagnostic retrieved 720p video/audio chunks near 10,794 seconds and 21 caption cues around 10,800 seconds from a 16,012-second public video. Its temporary cache was removed; no application deployment, service restart or cookie replacement occurred. An initial diagnostic on the small /tmp tmpfs hit the existing free-space reserve; repeating on the production filesystem succeeded. This was a diagnostic setup issue, not an established production cause.
 
-The original device-specific crash was not captured, and chunk/caption retrieval is not full-film playback verification. The observed production process had zero restarts. These changes remain local; production is still the owner-only release below.
+The original device-specific crash was not captured, and chunk/caption retrieval is not full-film playback verification. The observed production process had zero restarts. These changes were initially verified locally and subsequently released as recorded above.
 
 ## Owner-only access release verified (2026-09-15; LIVE in cee20e4)
 

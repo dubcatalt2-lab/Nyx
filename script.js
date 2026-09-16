@@ -3626,7 +3626,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(settingsOpen) activeKey='settings';
     else if(!url) activeKey='home';
     else if(url==='nyx://ai') activeKey='ai';
-    else if(url.includes('/apps/code-studio/')) activeKey='code-sandbox';
+    else if(url.includes('/apps/movies/')) activeKey='movies';
     else if(url.includes('/apps/nyxify/')) activeKey='music';
     else if(url.includes('/apps/partners/')) activeKey='partners';
     else if(url.includes('/apps/chat/')) activeKey='chat';
@@ -3696,7 +3696,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       dock.innerHTML=`<div class="nyx-visual-dock-head"><div class="nyx-visual-dock-status" aria-label="Nyx online"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a8.5 8.5 0 1 0 8.2 10.8A7 7 0 0 1 12 3Z"></path></svg><i aria-hidden="true"></i><strong>Nyx</strong></div><div class="nyx-visual-dock-head-actions"><button class="nyx-visual-dock-expand" data-nyx-dock-expand type="button" aria-expanded="false" aria-label="Expand tab sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button><button class="nyx-visual-dock-hide" data-nyx-dock-hide type="button" aria-label="Hide sidebar (/)" title="Hide sidebar (/)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button><button class="nyx-visual-dock-head-add" data-nyx-dock-new-tab type="button" aria-label="New tab"><span aria-hidden="true">+</span></button></div></div>
         <nav aria-label="Nyx destinations">
           <button type="button" data-nyx-dock-item="home" data-browser-shell-home-nav aria-label="Home">${nyxDashboardIcon('home')}<span>Home</span></button>
-          <button type="button" data-nyx-dock-item="code-sandbox" data-app-url="/apps/code-studio/" aria-label="Code Sandbox">${nyxDashboardIcon('code')}<span>Code Sandbox</span></button>
+          <button type="button" data-nyx-dock-item="movies" data-app-url="/apps/movies/" aria-label="Movies">${nyxDashboardIcon('media')}<span>Movies</span></button>
           <button type="button" data-nyx-dock-item="apps" data-app-url="nyx://apps" aria-label="Apps">${nyxDashboardIcon('apps')}<span>Apps</span></button>
           <button type="button" data-nyx-dock-item="games" data-app-url="/assets/games/" aria-label="Games">${nyxDashboardIcon('games')}<span>Games</span></button>
           <button type="button" data-nyx-dock-item="music" data-app-url="/apps/nyxify/" aria-label="Music">${nyxDashboardIcon('music')}<span>Music</span></button>
@@ -3744,16 +3744,16 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     dock.querySelector('[data-nyx-dock-hide]').onclick=()=>setNyxSidebarHidden(true);
     const headAddButton=dock.querySelector('[data-nyx-dock-new-tab]');
     if(headAddButton) headAddButton.onclick=()=>openBrowserShellTab('');
-    const codeSandboxButton=dock.querySelector('[data-nyx-dock-item="code-sandbox"]');
-    if(codeSandboxButton){
-      const openCodeSandbox=event=>{
+    const moviesButton=dock.querySelector('[data-nyx-dock-item="movies"]');
+    if(moviesButton){
+      const openMovies=event=>{
         event?.preventDefault?.();
         event?.stopPropagation?.();
-        openBrowserShellAppTab('/apps/code-studio/');
+        openBrowserShellAppTab('/apps/movies/');
       };
-      codeSandboxButton.onclick=openCodeSandbox;
-      codeSandboxButton.onkeydown=event=>{
-        if(event.key==='Enter' || event.key===' ') openCodeSandbox(event);
+      moviesButton.onclick=openMovies;
+      moviesButton.onkeydown=event=>{
+        if(event.key==='Enter' || event.key===' ') openMovies(event);
       };
     }
     applyNyxSidebarExpansion();

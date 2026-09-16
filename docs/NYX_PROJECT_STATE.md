@@ -1,3 +1,7 @@
+## Movies sidebar shortcut (2026-09-16; release preparation)
+
+Replaced the fixed Code Sandbox sidebar shortcut with Movies, using the existing media icon, Movies label, /apps/movies/ navigation and active-page highlight. Click and keyboard handlers target Movies; Code Sandbox remains in the Apps catalog. Shell asset version v270. Built-page browser checks at 1365px and 390px verify the replacement, SVG icon, Movies iframe navigation and active highlight after shell startup settles. Build, check:deploy and branding pass. User explicitly authorized push and deployment.
+
 ## AniEmbed proxy-only correction (2026-09-15; LIVE in 8324514)
 
 User rejected the direct-embed exception because it exposed a provider connection and did not use Nyx's player layout. AniEmbed now follows the same mandatory proxy path as every other external Movies provider. Its direct frame origin is removed from both document and server CSP. Source choice, exact anime mapping and the no-play/error fallback remain. Accessible proxied video uses existing Nyx controls; a provider refusing the relay advances to another proxied source rather than becoming a direct embed. The earlier direct 720p sample below does not establish proxied AniEmbed playback, which remains blocked by its security challenge in the observed VPS sample.

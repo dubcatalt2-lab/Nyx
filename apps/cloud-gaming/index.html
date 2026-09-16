@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <title>Cloud Gaming · Nyx</title>
   <script>if(new URLSearchParams(location.search).get('embedded')==='games')document.documentElement.classList.add('games-embedded')</script>
-  <link rel="stylesheet" href="/apps/cloud-gaming/styles.css?v=4">
+  <link rel="stylesheet" href="/apps/cloud-gaming/styles.css?v=5">
 <link rel="stylesheet" href="/apps/visual-redesign.css?v=20260907-stable-highlights-v1">
 </head>
 <body>
@@ -36,6 +36,7 @@
           <label class="tag-filter"><span class="sr-only">Filter by category</span><select data-tag><option value="">All categories</option></select></label>
         </div>
       </div>
+      <label class="network-mode">Connection <select data-network-mode aria-describedby="network-help"><option value="auto">Automatic</option><option value="restricted">Restricted network</option></select><small id="network-help">Try Restricted network if this Wi-Fi cannot connect. It may add delay.</small></label>
       <div class="notice" data-notice role="status">Connecting to Nyx…</div>
       <div class="game-grid" data-grid aria-live="polite"></div>
       <p class="empty" data-empty hidden>No games match that search.</p>
@@ -64,6 +65,6 @@
     <iframe data-player title="Cloud game stream" allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write" referrerpolicy="strict-origin-when-cross-origin"></iframe>
   </section>
 
-  <script src="/apps/cloud-gaming/app.js?v=7"></script>
+  <script src="/apps/cloud-gaming/app.js?v=8"></script>
 </body>
 </html>

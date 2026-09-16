@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { cloudIceConfig } from "./ice-config.mjs";
 
 const serviceDir = path.dirname(fileURLToPath(import.meta.url));
 const upstreamDir = path.join(serviceDir, "upstream");
@@ -399,6 +400,22 @@ function buildRuntimeEmbed(source) {
     "/cloud/v1/embed-data?id=",
     "embed-data route"
   );
+  output = replaceOnce(output,
+    '        async function setupWebRTC(iceServers, signaling_ws) {',
+    `        const cloudIceConfig = ${cloudIceConfig.toString()};
+        async function setupWebRTC(iceServers, signaling_ws) {
+            let iceConfig;
+            try {
+                iceConfig = cloudIceConfig(iceServers, new URLSearchParams(location.search).get('network') === 'restricted');
+            } catch (error) {
+                showEnded(error.message);
+                return;
+            }`,
+    'restricted network relay configuration');
+  output = replaceOnce(output,
+    'new RTCPeerConnection({ iceServers })',
+    'new RTCPeerConnection(iceConfig)',
+    'restricted network peer connection');
   output = replaceOnce(
     output,
     `        let pc   = null;

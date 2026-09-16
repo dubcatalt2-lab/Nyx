@@ -100,7 +100,7 @@ sed "s|__NYX_ROOT__|${APP_DIR}|g" deploy/systemd/nyx-stratus.service.template > 
 
 CADDY_TMP=$(mktemp)
 install -d -m 0750 -o caddy -g caddy /var/log/caddy
-sed "s|__NYX_DOMAIN__|${DOMAIN}|g" deploy/caddy/nyx.Caddyfile.template > "${CADDY_TMP}"
+node deploy/render-caddy.mjs "${DOMAIN}" "${CADDY_TMP}"
 caddy validate --config "${CADDY_TMP}" --adapter caddyfile
 install -m 0644 -o root -g root "${CADDY_TMP}" "${CADDY_FILE}"
 rm -f "${CADDY_TMP}"
@@ -114,6 +114,7 @@ else
 fi
 systemctl restart nyx
 systemctl reload caddy
+bash deploy/refresh-turn-router.sh
 
 ufw allow OpenSSH
 ufw allow 80/tcp

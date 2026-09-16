@@ -86,11 +86,12 @@ if [[ -x deploy/setup-turn.sh || -f deploy/setup-turn.sh ]]; then
 fi
 CADDY_TMP=$(mktemp)
 install -d -m 0750 -o caddy -g caddy /var/log/caddy
-sed "s|__NYX_DOMAIN__|${DOMAIN}|g" deploy/caddy/nyx.Caddyfile.template > "${CADDY_TMP}"
+node deploy/render-caddy.mjs "${DOMAIN}" "${CADDY_TMP}"
 caddy validate --config "${CADDY_TMP}" --adapter caddyfile
 install -m 0644 -o root -g root "${CADDY_TMP}" /etc/caddy/Caddyfile
 rm -f "${CADDY_TMP}"
 systemctl reload caddy
+bash deploy/refresh-turn-router.sh
 sleep 1
 curl --fail --show-error http://127.0.0.1:8080/healthz >/dev/null
 if stratus_is_configured; then

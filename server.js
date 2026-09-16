@@ -2593,9 +2593,9 @@ async function nyxBudgetedAiFetch(provider,url,options) {
   try {
     scope.req.nyxApiSent=true;
     const response=await fetch(url,{...options,body:JSON.stringify(payload),signal});
-    return aiBudgetResponse(response,async(usage,success)=>{
+    return aiBudgetResponse(response,async(usage,success,imageCount)=>{
       scope.success ||= success;
-      await scope.allowance.settle(reservation,usage);
+      await scope.allowance.settle(reservation,usage,false,imageCount);
     },payload.modalities?.includes("image")?8*1024*1024:undefined);
   } catch(error) {await scope.allowance.settle(reservation,null).catch(()=>{});throw error;}
 }

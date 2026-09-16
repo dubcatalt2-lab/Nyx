@@ -28,3 +28,5 @@ html.games-embedded .topbar,html.games-embedded .hero{display:none}
 html.games-embedded main{width:100%;padding:18px 20px 42px}
 html.games-embedded .catalog-shell{border-top:0;padding-top:0}
 @media(max-width:760px){html.games-embedded main{padding:14px 12px 34px}}
+
+.network-mode{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:16px 0;color:var(--text);font-size:13px}.network-mode select{padding:8px 12px;border:1px solid var(--line);border-radius:9px;background:var(--panel-2);color:var(--text)}.network-mode small{color:var(--muted)}

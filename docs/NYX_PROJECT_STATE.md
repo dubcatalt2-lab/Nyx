@@ -1,6 +1,6 @@
-## NyxTube captions button active fill (2026-09-15; release preparation)
+## NyxTube captions button active fill (2026-09-15; LIVE in 03450f2)
 
-The watch-player and Shorts captions buttons now use a solid accent background with a dark icon when aria-pressed is true, preserving the existing captions toggle and disabled behavior. The stylesheet cache version is updated. User requested push and deployment after verification.
+The watch-player and Shorts captions buttons now use a solid accent background with a dark icon when aria-pressed is true, preserving the existing captions toggle and disabled behavior. The stylesheet cache version is updated. User requested push and deployment after verification. Pushed and deployed 03450f28162f5d3e3da964f530150566089d3c0e through the OVH updater; clean VPS revision verified. Local and VPS build/deployment/branding checks pass. Built and live-page browser fixtures verify the enabled fill and native playback/caption toggling; all four services are active and apex/www health checks pass. Existing dependency audit and Caddy warnings remain unchanged.
 
 ## NyxTube release verified (2026-09-15; LIVE in 88b31ca)
 

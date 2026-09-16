@@ -165,7 +165,7 @@
   position: absolute !important;
   inset: 0 !important;
   z-index: 3 !important;
-  background: var(--nyx-profile-art) center / contain no-repeat !important;
+  background: var(--nyx-profile-current, var(--nyx-profile-still)) center / contain no-repeat !important;
   opacity: 1 !important;
   border: 0 !important;
   border-radius: inherit !important;
@@ -640,3 +640,10 @@ body.lag-reducer .nyx-founder-effect-fx-radiant-orbit>.nyx-founder-profile-effec
 .nyx-user-profile-effect-fx-nebula-spark { --nyx-profile-card-ratio: 450 / 880; }
 .nyx-user-profile-effect-fx-starlight-echo { --nyx-profile-card-ratio: 450 / 880; }
 html[data-nyx-theme] body .nyx-user-profile-card.nyx-user-profile-card.nyx-user-profile-card { width: min(360px, 100%) !important; max-width: 360px !important; height: auto !important; min-height: 0 !important; aspect-ratio: var(--nyx-profile-card-ratio, auto); margin-inline: auto; }
+
+/* Profile effects animate only while the containing card is hovered. */
+:is(.nyx-user-profile-effect,.nyx-founder-profile-effect),:is(.nyx-user-profile-effect,.nyx-founder-profile-effect)::before,:is(.nyx-user-profile-effect,.nyx-founder-profile-effect)::after,:is(.nyx-user-profile-effect,.nyx-founder-profile-effect) *{animation-play-state:paused!important}
+@media(hover:hover) and (prefers-reduced-motion:no-preference){
+:is([class*="nyx-user-profile-effect-"],[class*="nyx-founder-effect-"]):hover{--nyx-profile-current:var(--nyx-profile-art)}
+:is([class*="nyx-user-profile-effect-"],[class*="nyx-founder-effect-"]):hover>:is(.nyx-user-profile-effect,.nyx-founder-profile-effect),:is([class*="nyx-user-profile-effect-"],[class*="nyx-founder-effect-"]):hover>:is(.nyx-user-profile-effect,.nyx-founder-profile-effect)::before,:is([class*="nyx-user-profile-effect-"],[class*="nyx-founder-effect-"]):hover>:is(.nyx-user-profile-effect,.nyx-founder-profile-effect)::after,:is([class*="nyx-user-profile-effect-"],[class*="nyx-founder-effect-"]):hover>:is(.nyx-user-profile-effect,.nyx-founder-profile-effect) *{animation-play-state:running!important}
+}

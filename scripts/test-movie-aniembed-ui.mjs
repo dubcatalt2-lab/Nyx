@@ -36,6 +36,17 @@ try{
  assert.equal((await p.evaluate(()=>window.proxyTargets)).at(-1),sources[1].url,'Failed provider advances through the proxy');
  await load();await p.clock.fastForward(46000);await p.waitForFunction(()=>window.proxyTargets.length>1);
  assert.equal((await p.evaluate(()=>window.proxyTargets)).at(-1),sources[1].url,'No-play timeout advances to another proxied source');
+ // A valid player may appear before its delayed playback starts. The startup
+ // timeout offers Reload; real playback must remove that stale overlay.
+ await load();await p.locator('[data-provider=rive]').click();
+ await p.waitForFunction(()=>window.proxyTargets.at(-1).includes('rivestream'));
+ const lateFrame=await (await p.locator('#player iframe').elementHandle()).contentFrame();
+ await lateFrame.waitForLoadState('domcontentloaded');
+ await lateFrame.evaluate(()=>{window.fixturePlaying=false;const v=document.createElement('video');for(const [key,value] of Object.entries({videoWidth:1280,videoHeight:720,readyState:4,duration:120}))Object.defineProperty(v,key,{get:()=>value});Object.defineProperty(v,'paused',{get:()=>!window.fixturePlaying});Object.defineProperty(v,'currentTime',{get:()=>window.fixturePlaying?performance.now()/1000:0});document.body.append(v);});
+ await p.clock.runFor(1200);await p.clock.fastForward(46000);
+ assert.equal(await p.locator('#retry-player').isVisible(),true,'Delayed player offers Reload');
+ await lateFrame.evaluate(()=>{window.fixturePlaying=true;});await p.clock.runFor(2200);
+ assert.equal(await p.locator('#retry-player').isVisible(),false,'Recovered playback clears Reload');
  await p.evaluate(()=>{window.blocked=false;addEventListener('securitypolicyviolation',e=>{if(e.effectiveDirective==='frame-src')window.blocked=true;});const f=document.createElement('iframe');f.src='https://aniembed.se/e/154587/1?lang=sub&autoplay=1&t=0';document.body.append(f);});
  await p.waitForFunction(()=>window.blocked);assert.equal(external,0,'Direct AniEmbed frames never reach the network');
  await p.locator('#close-player').click({force:true});assert.equal(await p.locator('#player iframe').count(),0);

@@ -55,7 +55,7 @@
   width: 130% !important;
   height: 130% !important;
   z-index: 3 !important;
-  background: var(--nyx-decoration-image) center / contain no-repeat !important;
+  background: var(--nyx-decoration-current, var(--nyx-decoration-still)) center / contain no-repeat !important;
   border: 0 !important;
   border-radius: 0 !important;
   filter: none !important;
@@ -189,3 +189,10 @@ body.lag-reducer .nyx-avatar-decoration-nebula-ring>.nyx-avatar-decoration,
 body.lag-reducer .nyx-avatar-decoration-prism-crown>.nyx-avatar-decoration,
 body.lag-reducer .nyx-avatar-decoration-ember-ring>.nyx-avatar-decoration,
 body.lag-reducer .nyx-avatar-decoration-vortex-crown>.nyx-avatar-decoration { background-image: var(--nyx-decoration-still) !important; }
+
+/* Decorations remain still unless their avatar is hovered. */
+.nyx-avatar-decoration,.nyx-avatar-decoration::before,.nyx-avatar-decoration::after,.nyx-avatar-decoration *{animation-play-state:paused!important}
+@media(hover:hover) and (prefers-reduced-motion:no-preference){
+[class*="nyx-avatar-decoration-"]:hover{--nyx-decoration-current:var(--nyx-decoration-image)}
+[class*="nyx-avatar-decoration-"]:hover>.nyx-avatar-decoration,[class*="nyx-avatar-decoration-"]:hover>.nyx-avatar-decoration::before,[class*="nyx-avatar-decoration-"]:hover>.nyx-avatar-decoration::after,[class*="nyx-avatar-decoration-"]:hover>.nyx-avatar-decoration *{animation-play-state:running!important}
+}

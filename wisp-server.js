@@ -127,7 +127,9 @@ const server = createServer((req, res) => {
 });
 
 server.on("upgrade", (req, socket, head) => {
-  const url = new URL(req.url || "/", "http://localhost");
+  let url;
+  try { url = new URL(req.url || "/", "http://localhost"); }
+  catch { rejectUpgrade(socket, "400 Bad Request"); return; }
   if (url.pathname !== "/wisp/") {
     rejectUpgrade(socket, "404 Not Found");
     return;

@@ -10,6 +10,11 @@ await frame.locator('body').evaluate((_,code)=>{window.testPing=new Function('st
 await frame.locator('body').evaluate(()=>{testPing('race','chat');testPing('race','mention',{sender:'Alex',preview:'@you hello'});});
 await page.locator('#toast.show').waitFor();assert.deepEqual(await page.evaluate(()=>window.__nyxStartupErrors||[]),[]);assert.match(await page.locator('#toast').innerText(),/Alex mentioned you: @you hello/);assert((await page.locator('#toast').boundingBox()).height<=60);
 await page.screenshot({path:'.codex-artifacts/mention-shell.png'});
+assert.equal(await page.locator('#toast').evaluate(e=>getComputedStyle(e).zIndex),'2147483647','Toast stays above app windows');
+await page.locator('[data-nyx-dock-item="home"]').click();
+await frame.locator('body').evaluate(()=>testPing('other-page','mention',{sender:'Alex',preview:'@you on another page'}));
+await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('on another page'));
+assert(await page.locator('#toast').isVisible());
 const standalone=await browser.newPage();await standalone.goto((process.env.NYX_TEST_BASE_URL||'http://localhost:8080')+'/apps/chat/');await standalone.evaluate(code=>{window.testPing=new Function('state',code+';return playChatPing')({notifiedDm:new Set()});},pingCode);await standalone.evaluate(()=>testPing('standalone','mention',{sender:'Alex',preview:'@you hello'}));assert(await standalone.locator('.chat-mention-toast').isVisible());
 console.log('PASS real shell accepts mention from Chat iframe; standalone chat shows toast without audio permission; toast is compact');
 }finally{await browser.close()}

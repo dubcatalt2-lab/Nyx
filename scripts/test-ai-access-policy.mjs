@@ -73,11 +73,11 @@ console.log('PASS: exact Pacific signup cutoff, Premium eligibility, no role/tru
   const db=memoryFirestore(),config=aiAllowanceConfig({});
   assert.equal(config.globalConcurrent,10);
   const a=createAiAllowance({db,config});
-  const actor=i=>({uid:'concurrency-'+i,premium:true,device:'device-'+i,network:'same-school'});
+  const actor=i=>({uid:'concurrency-'+i,trusted:true,createdAt:AI_JOIN_CUTOFF-1,device:'device-'+i,network:'same-school'});
   const sessions=[];
   for(let i=0;i<9;i++)sessions.push(await a.begin(actor(i)));
   await assert.rejects(a.begin(actor(9)),e=>e.status===429);
-  sessions.push(await a.begin({...actor(10),owner:true}));
+  sessions.push(await a.begin({...actor(10),premium:true}));
   await assert.rejects(a.begin({...actor(11),owner:true}),e=>e.status===429);
   await a.finish(sessions.pop());
   await a.finish(await a.begin({...actor(12),owner:true}));
@@ -91,4 +91,4 @@ console.log('PASS: exact Pacific signup cutoff, Premium eligibility, no role/tru
     await a.finish(session);
   }
 }
-console.log('PASS: ten total slots with owner reserve, release/reuse and Luna denial for non-Premium/trusted/API members');
+console.log('PASS: ten total slots with priority reserve, release/reuse and Luna denial for non-Premium/trusted/API members');

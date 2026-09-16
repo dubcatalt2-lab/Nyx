@@ -179,7 +179,7 @@ async function configureUv(wispUrl) {
   const source = await readFile(path, "utf8");
   const bareValue = wispUrl
     ? JSON.stringify(wispUrl)
-    : '`${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/wisp/`';
+    : '`${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/resources/live/`';
   const configured = source.replace(
     /bare:\s*[\s\S]*?,\s*encodeUrl:/,
     `bare: ${bareValue},\n  encodeUrl:`

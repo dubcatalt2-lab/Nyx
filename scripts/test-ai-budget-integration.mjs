@@ -26,7 +26,7 @@ const context=vm.createContext({app,AsyncLocalStorage,aiAllowanceConfig,createAi
 
   founderProfileConfig:()=>({administratorUid:'owner'}),nyxClientIp:()=> 'school-network',
   sameOriginRequest:req=>req.get('sec-fetch-site')!=='cross-site',
-  nyxRoleForUser:uid=>uid==='owner'?'owner':'member',hasPremiumSubscription:value=>value==='premium',normalizeSubscriptionStatus:value=>value,
+  nyxRoleForUser:(uid,admin={})=>uid==='owner'?'owner':admin.role||'member',hasPremiumSubscription:value=>value==='premium',normalizeSubscriptionStatus:value=>value,
   fetch:async(_url,options)=>{calls++;lastPayload=JSON.parse(options.body);
     if(hold)await Promise.race([hold,new Promise((_,reject)=>options.signal.addEventListener('abort',()=>reject(new Error('aborted')),{once:true}))]);
     return new Response(JSON.stringify({choices:[{message:{content:'hello'}}],usage:{prompt_tokens:10,completion_tokens:2,cost:0.000014}}),{headers:{'content-type':'application/json'}});
@@ -90,6 +90,9 @@ try {
   assert.equal(calls,beforeEligibility,'Ineligible requests must not contact inference');
   db.records.set('nyxUserAdministration/late-premium',{subscriptionStatus:'premium'});
   assert.equal((await send('late-premium')).status,200,'Server-authorized Premium qualifies after cutoff');
+  db.records.set('nyxUserAdministration/late-coowner',{role:'co_owner'});
+  assert.equal((await send('late-coowner')).status,200,'Server-verified co-owner has priority access');
+  assert.equal((await send('late-spoof',{}, {'x-nyx-role':'co_owner'})).status,403,'Browser headers cannot grant co-owner priority');
   const cloud=await context.authenticatedNyxCloudUser({get:()=> 'Bearer member'});assert.equal(cloud.token.uid,'member');assert.equal(cloud.account.emailVerified,false);
   await assert.rejects(context.authenticatedNyxCloudUser({get:()=> ''}),e=>e.status===401);
   Object.assign(context,{nyxRolePolicy:role=>({rank:{owner:100,admin:80,member:0}[role]}),nyxActorHasPermission:()=>true,nyxAssignableRolesForActor:()=>[]});

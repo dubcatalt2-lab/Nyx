@@ -1,5 +1,5 @@
 import {additionalSources, movieSourceUrl} from './providers.mjs?v=20260915-aniembed-v1';
-import {launchMovieProxy, inspectMovieProxy, styleMovieVideo, startMovieProxy, canStartMovieProxy} from './proxy.mjs?v=20260915-aniembed-v1';
+import {launchMovieProxy, inspectMovieProxy, styleMovieVideo, startMovieProxy, canStartMovieProxy} from './proxy.mjs?v=20260916-relay-v2';
 (()=>{'use strict';
 
 const $=id=>document.getElementById(id);
@@ -272,7 +272,7 @@ async function watch(preferred){
    $('player').append(frame);$('player-status').textContent='Loading player…';$('retry-player').hidden=true;
    let lastTime=null;
    const unavailable=()=>{if(!active()||failed)return;failed=true;recordSource(movie,source.id,{failed:true});providerStates[source.id]='Unavailable';renderSources();void attempt(index+1);};
-   const progress=time=>{if(!Number.isFinite(time)||time<0)return;if(lastTime!==null&&time>lastTime+.1){const changed=providerStates[source.id]!=='Playing';if(!started)sourcePanel(false);started=true;recordSource(movie,source.id,{played:true,failed:false});clearTimeout(playerTimer);providerStates[source.id]='Playing';$('player-status').textContent='';if(changed)renderSources();}lastTime=time;};
+   const progress=time=>{if(!Number.isFinite(time)||time<0)return;if(lastTime!==null&&time>lastTime+.1){const changed=providerStates[source.id]!=='Playing';if(!started)sourcePanel(false);started=true;$('retry-player').hidden=true;recordSource(movie,source.id,{played:true,failed:false});clearTimeout(playerTimer);providerStates[source.id]='Playing';$('player-status').textContent='';if(changed)renderSources();}lastTime=time;};
    const receive=event=>{
     if(!active()||event.source!==frame.contentWindow||event.origin!==new URL(source.url).origin)return;
     let data=event.data;if(typeof data==='string'){if(data.length>10000)return;try{data=JSON.parse(data);}catch{return;}}
@@ -318,7 +318,7 @@ async function watch(preferred){
   let bufferingSince=0;
   const buffering=()=>{if(active()&&!video.paused){if(started&&!video.seeking&&!bufferingSince)bufferingSince=performance.now();loading.hidden=false;$('player-status').textContent='Buffering...';}};
   video.addEventListener('waiting',buffering);video.addEventListener('stalled',buffering);
-  video.addEventListener('playing',()=>{if(active()){if(bufferingSince&&performance.now()-bufferingSince>1500)recordSource(movie,source.id,{stalls:(sourceEvidence(movie,source.id).stalls||0)+1});bufferingSince=0;clearTimeout(playerTimer);loading.hidden=true;$('player-status').textContent='';}});
+  video.addEventListener('playing',()=>{if(active()){if(bufferingSince&&performance.now()-bufferingSince>1500)recordSource(movie,source.id,{stalls:(sourceEvidence(movie,source.id).stalls||0)+1});bufferingSince=0;clearTimeout(playerTimer);$('retry-player').hidden=true;loading.hidden=true;$('player-status').textContent='';}});
   let previousTime=resume?.time||0;
   video.addEventListener('timeupdate',()=>{if(active()&&!video.paused&&!video.seeking&&video.videoWidth>0&&video.currentTime>previousTime+.2){const old=sourceEvidence(movie,source.id);recordSource(movie,source.id,{played:true,failed:false,width:video.videoWidth,height:video.videoHeight});const changed=old.width!==video.videoWidth||old.height!==video.videoHeight;if(!started){started=true;providerStates[source.id]='Playing';renderSources();sourcePanel(false);}else if(changed)renderSources();previousTime=video.currentTime;}});
   video.addEventListener('pause',()=>{if(active()){loading.hidden=true;if(started){providerStates[source.id]='Paused';renderSources();}}});

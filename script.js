@@ -3397,6 +3397,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       dashboard:'<path d="M4 5.5h6.5V12H4zM13.5 5.5H20v4h-6.5zM13.5 12.5H20v6h-6.5zM4 14.5h6.5v4H4z"/>',
       travel:'<path d="M5 18.5h14M7 15l3.2-9.5h3.6L17 15M8.5 11h7"/>',
       media:'<path d="M5 6.5h14v11H5z"/><path d="m10 9.5 5 2.5-5 2.5z"/>',
+      movies:'<path d="M3 10h18v10H3zM3 10l-1-5 18-3 1 5zM7 4l4 4M14 3l4 4"/>',
       youtube:'<rect x="3" y="6" width="18" height="12" rx="4"/><path d="m10 9 5 3-5 3z"/>',
       ai:'<path d="M12 2a3 3 0 0 0-3 3v1H7a3 3 0 0 0-3 3v2H3a2 2 0 0 0 0 4h1v2a3 3 0 0 0 3 3h2v1a3 3 0 0 0 6 0v-1h2a3 3 0 0 0 3-3v-2h1a2 2 0 0 0 0-4h-1V9a3 3 0 0 0-3-3h-2V5a3 3 0 0 0-3-3z"/><circle cx="9" cy="11" r="1.2"/><circle cx="15" cy="11" r="1.2"/><path d="M9 16h6"/>',
       extensions:'<path d="M8.5 3.5v4h-4v4h4v4h4v4h4v-4h4v-4h-4v-4h-4v-4z"/>',
@@ -3696,7 +3697,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       dock.innerHTML=`<div class="nyx-visual-dock-head"><div class="nyx-visual-dock-status" aria-label="Nyx online"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a8.5 8.5 0 1 0 8.2 10.8A7 7 0 0 1 12 3Z"></path></svg><i aria-hidden="true"></i><strong>Nyx</strong></div><div class="nyx-visual-dock-head-actions"><button class="nyx-visual-dock-expand" data-nyx-dock-expand type="button" aria-expanded="false" aria-label="Expand tab sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button><button class="nyx-visual-dock-hide" data-nyx-dock-hide type="button" aria-label="Hide sidebar (/)" title="Hide sidebar (/)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button><button class="nyx-visual-dock-head-add" data-nyx-dock-new-tab type="button" aria-label="New tab"><span aria-hidden="true">+</span></button></div></div>
         <nav aria-label="Nyx destinations">
           <button type="button" data-nyx-dock-item="home" data-browser-shell-home-nav aria-label="Home">${nyxDashboardIcon('home')}<span>Home</span></button>
-          <button type="button" data-nyx-dock-item="movies" data-app-url="/apps/movies/" aria-label="Movies">${nyxDashboardIcon('media')}<span>Movies</span></button>
+          <button type="button" data-nyx-dock-item="movies" data-app-url="/apps/movies/" aria-label="Movies">${nyxDashboardIcon('movies')}<span>Movies</span></button>
           <button type="button" data-nyx-dock-item="apps" data-app-url="nyx://apps" aria-label="Apps">${nyxDashboardIcon('apps')}<span>Apps</span></button>
           <button type="button" data-nyx-dock-item="games" data-app-url="/assets/games/" aria-label="Games">${nyxDashboardIcon('games')}<span>Games</span></button>
           <button type="button" data-nyx-dock-item="music" data-app-url="/apps/nyxify/" aria-label="Music">${nyxDashboardIcon('music')}<span>Music</span></button>
@@ -7003,6 +7004,40 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   };
     img.src=maskCandidates[maskIndex] || src;
   }
+  const nyxMentionIds=new Set();
+  let nyxMentionPollBusy=false,nyxMentionPollUid='',nyxMentionRevision=null;
+  function showNyxMention(notificationId,details={}){
+    if(!notificationId||nyxMentionIds.has(notificationId))return;
+    nyxMentionIds.add(notificationId);
+    if(nyxMentionIds.size>200)nyxMentionIds.delete(nyxMentionIds.values().next().value);
+    const sender=String(details.sender||'Someone').slice(0,80),preview=String(details.preview||'').slice(0,240);
+    toast(sender+' mentioned you'+(preview?': '+preview:''),'mention');
+  }
+  async function pollNyxMentions(){
+    if(nyxMentionPollBusy||document.hidden)return;
+    const user=nyxFounderSignedInUser;
+    if(!user){nyxMentionPollUid='';nyxMentionRevision=null;nyxMentionIds.clear();return;}
+    if(nyxMentionPollUid!==user.uid){nyxMentionPollUid=user.uid;nyxMentionRevision=null;nyxMentionIds.clear();}
+    nyxMentionPollBusy=true;
+    try{
+      const token=await user.getIdToken();
+      const response=await fetch('/api/chat/updates?since='+encodeURIComponent(nyxMentionRevision||0),{headers:{Authorization:'Bearer '+token},cache:'no-store',signal:AbortSignal.timeout(8000)});
+      if(!response.ok)return;
+      const payload=await response.json();
+      if(nyxFounderSignedInUser?.uid!==user.uid)return;
+      const initialized=nyxMentionRevision!==null;
+      nyxMentionRevision=Math.max(nyxMentionRevision||0,Number(payload.revision)||0);
+      if(!initialized||payload.reset)return;
+      for(const event of payload.events||[]){
+        if(event.kind!=='message'||event.mentionsViewer!==true||event.lastMessageAuthorUid===user.uid)continue;
+        const prefix=event.scopeType==='conversation'?'dm':'message';
+        showNyxMention(`${prefix}:${event.scopeId}:${event.createdAtMs}:mention`,{preview:event.lastMessageText});
+      }
+    }catch{/* The next poll retries; never interrupt navigation for notifications. */}
+    finally{nyxMentionPollBusy=false;}
+  }
+  setInterval(()=>void pollNyxMentions(),5000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)void pollNyxMentions();});
   function toast(msg,kind){
     const t=$('toast');if(!t)return;
     clearTimeout(t.nyxDismissTimer);
@@ -7558,7 +7593,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(/^wss?:\/\//i.test(configured)) return configured.endsWith('/') ? configured : configured+'/';
     if(!hasHostedBackend()) return 'wss://wisp.mercurywork.shop/';
     const protocol=location.protocol==='https:' ? 'wss:' : 'ws:';
-    return `${protocol}//${location.host}/wisp/`;
+    return `${protocol}//${location.host}/resources/live/`;
   }
   function storedCustomWispUrl(){
     try{return normalizeWispUrl(store.text('nyx.wispUrl',''))}catch{return ''}
@@ -12588,7 +12623,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         sourceTab.chatUnread=true;
         renderTabs();
         const notificationKind=e.data.kind==='mention'?'mention':e.data.kind==='dm'?'dm':'chat';
-        if(notificationKind==='mention'){const sender=String(e.data.sender||'Someone').slice(0,80),preview=String(e.data.preview||'').slice(0,240);toast(sender+' mentioned you'+(preview?': '+preview:''),'mention');}
+        if(notificationKind==='mention')showNyxMention(notificationId,e.data);
         playNyxChatNotificationSound(notificationKind);
         return;
       }

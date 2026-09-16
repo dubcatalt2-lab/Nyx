@@ -2565,6 +2565,7 @@ async function nyxSharedAiSession(scope) {
     if(allowance.configurationError)throw Object.assign(new Error('Shared AI budget settings need to be checked by the owner.'),{status:503});
     const actor={uid,createdAt:Date.parse(account.metadata?.creationTime||''),
       owner:uid===founderProfileConfig().administratorUid,premium:hasPremiumSubscription(normalizeSubscriptionStatus(admin.subscriptionStatus||admin.subscription?.status)),
+      coOwner:nyxRoleForUser(uid,admin)==='co_owner',
       monthlyModelLimits:premiumModelLimits(admin.aiMonthlyModelLimits),trusted:admin.aiAccess==='trusted',blocked:admin.aiAccess==='restricted',
       apiVerified:Boolean(req.nyxAiBilling?.apiVerified),apiDailyRequests:req.nyxAiBilling?.dailyRequests,apiMinuteRequests:req.nyxAiBilling?.minuteRequests,apiMaxOutput:req.nyxAiBilling?.maxOutput,
       device:req.path==='/api/v1/ai'?`key-owner:${uid}`:await allowance.device(req,res),network:nyxClientIp(req)};
@@ -13927,11 +13928,17 @@ if (isDirectRun) {
   });
 
   server.on("upgrade", async (req, socket, head) => {
-    const upgradePath = new URL(req.url || "/", "http://localhost").pathname;
+    let upgradePath;
+    try {
+      upgradePath = new URL(req.url || "/", "http://localhost").pathname;
+    } catch {
+      rejectWispUpgrade(socket, "400 Bad Request");
+      return;
+    }
     if (upgradePath === "/socket.io/" || upgradePath.startsWith("/socket.io/")) {
       return;
     }
-    if (!externalWispUrl && (upgradePath === "/wisp/" || upgradePath === "/wisp")) {
+    if (!externalWispUrl && ["/resources/live/", "/resources/live", "/wisp/", "/wisp"].includes(upgradePath)) {
       if (!embeddedWispOriginAllowed(req.headers.origin, req.headers.host)) {
         rejectWispUpgrade(socket);
         return;

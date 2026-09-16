@@ -4,7 +4,7 @@ self.__uv$config = {
   prefix: nyxUvSessionId ? `/service/${nyxUvSessionId}/` : "/service/",
   cookieDbName: nyxUvSessionId ? `__nyx_uv_tab_${nyxUvSessionId}` : "__op",
   bare: (location.hostname === "localhost" || location.hostname === "127.0.0.1")
-    ? "/wisp/"
+    ? "/resources/live/"
     : "wss://wisp.mercurywork.shop/",
   encodeUrl: Ultraviolet.codec.xor.encode,
   decodeUrl: Ultraviolet.codec.xor.decode,

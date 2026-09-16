@@ -122,7 +122,7 @@ For one-click JSDelivr links, set the three `NYX_JSDELIVR_GITHUB_*` values above
 
 Only add variables for features you use. Do not paste `curl` commands into this file, and never put the actual values in Git, Discord, screenshots, or chat. Keep the Firebase private key on one line with literal `\n` characters.
 
-For the one-server setup, leave `WISP_URL` commented out. Nyx then uses the current page hostname's `/wisp/` endpoint. Set `NYX_CUSTOM_HOST_IPS` to the VPS public address users will enter in FreeDNS:
+For the one-server setup, leave `WISP_URL` commented out. Nyx then uses the current page hostname's `/resources/live/` endpoint (`/wisp/` remains a compatibility alias). Set `NYX_CUSTOM_HOST_IPS` to the VPS public address users will enter in FreeDNS:
 
 ```dotenv
 NYX_CUSTOM_HOST_IPS=YOUR_VPS_IP

@@ -22,7 +22,7 @@ async function standaloneProxy() {
     while (!registration.active && Date.now() < until) await new Promise(resolve => setTimeout(resolve, 100));
     if (!registration.active) throw Error('Movie proxy did not start.');
     const runtime = globalThis.__NYX_RUNTIME_CONFIG__ || {};
-    const own = `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/wisp/`;
+    const own = `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/resources/live/`;
     const endpoints = [...new Set([runtime.wispUrl || own, ...(runtime.wispUrls || [])])];
     const custom = read('nyx.wispUrl');
     const wisp = custom || await globalThis.NyxRelaySelection.choose(endpoints);

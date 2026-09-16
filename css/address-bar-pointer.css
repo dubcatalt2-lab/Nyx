@@ -1,0 +1,52 @@
+/* Match the browser address field to the homepage search field: the surface
+   stays still while a short theme-colored border segment follows the pointer. */
+html body.browser-shell .top-os.top-os form.browser-mode-address{
+  position:relative!important;
+}
+
+html body.browser-shell .top-os.top-os form.browser-mode-address > input.browser-mode-url,
+html body.browser-shell .top-os.top-os form.browser-mode-address > input.browser-mode-url:hover,
+html body.browser-shell .top-os.top-os form.browser-mode-address > input.browser-mode-url:focus{
+  border-color:color-mix(in srgb,var(--nyx-home-wordmark,var(--theme-strong,#a9bddf)) 22%,transparent)!important;
+  box-shadow:none!important;
+  filter:none!important;
+  outline:none!important;
+}
+
+html body.browser-shell .top-os.top-os form.browser-mode-address > .browser-mode-url-pointer-border{
+  position:absolute!important;
+  z-index:8!important;
+  left:var(--nyx-address-left,0)!important;
+  top:var(--nyx-address-top,0)!important;
+  width:var(--nyx-address-width,0)!important;
+  height:var(--nyx-address-height,0)!important;
+  box-sizing:border-box!important;
+  padding:1px!important;
+  border-radius:999px!important;
+  pointer-events:none!important;
+  opacity:0!important;
+  background:radial-gradient(
+    72px circle at var(--nyx-address-hover-x,50%) var(--nyx-address-hover-y,50%),
+    color-mix(in srgb,var(--nyx-chrome-accent,#9b8cf5) 92%,#fff) 0,
+    color-mix(in srgb,var(--nyx-chrome-accent,#9b8cf5) 58%,transparent) 42%,
+    transparent 76%
+  )!important;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0)!important;
+  -webkit-mask-composite:xor!important;
+  mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0)!important;
+  mask-composite:exclude!important;
+  transition:opacity .14s ease!important;
+}
+
+html body.browser-shell .top-os.top-os form.browser-mode-address:has(> input.browser-mode-url:hover) > .browser-mode-url-pointer-border,
+html body.browser-shell .top-os.top-os form.browser-mode-address:has(> input.browser-mode-url:focus-visible) > .browser-mode-url-pointer-border,
+html body.browser-shell .top-os.top-os form.browser-mode-address > .browser-mode-url-pointer-border.is-pointer-active,
+html body.browser-shell .top-os.top-os form.browser-mode-address > .browser-mode-url-pointer-border.is-focus-active{
+  opacity:1!important;
+}
+
+@media (prefers-reduced-motion:reduce){
+  html body.browser-shell .top-os.top-os form.browser-mode-address > .browser-mode-url-pointer-border{
+    transition:none!important;
+  }
+}

@@ -1,0 +1,15 @@
+﻿import assert from 'node:assert/strict';import {chromium} from 'playwright';import {readFileSync} from 'node:fs';
+const source=readFileSync('apps/chat/app.js','utf8');const a=source.indexOf('  function playChatPing('),b=source.indexOf('  function chatMentionHandles',a);const pingCode=source.slice(a,b);
+const browser=await chromium.launch({channel:'msedge',headless:true});
+try{const page=await browser.newPage({viewport:{width:1280,height:800}});
+await page.addInitScript(()=>{localStorage.setItem('nyx.releaseNotes.2026-09-14-nyx-1.0.3.seen','2026-09-14-nyx-1.0.3');localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.browserShellMode','true');localStorage.setItem('nyx.homeDesign','redesigned');});
+await page.goto((process.env.NYX_TEST_BASE_URL||'http://localhost:8080')+'/');await page.locator('#nyxStudyHubStartup').waitFor({state:'hidden'});await page.waitForFunction(()=>!document.body.classList.contains('nyx-loading-active'));
+await page.locator('[data-nyx-dock-item="chat"]').click();
+const frame=page.frameLocator('iframe.view[src*="/apps/chat/"]');await frame.locator('[data-chat-app]').waitFor();
+await frame.locator('body').evaluate((_,code)=>{window.testPing=new Function('state',code+';return playChatPing')({notifiedDm:new Set()});},pingCode);
+await frame.locator('body').evaluate(()=>{testPing('race','chat');testPing('race','mention',{sender:'Alex',preview:'@you hello'});});
+await page.locator('#toast.show').waitFor();assert.deepEqual(await page.evaluate(()=>window.__nyxStartupErrors||[]),[]);assert.match(await page.locator('#toast').innerText(),/Alex mentioned you: @you hello/);assert((await page.locator('#toast').boundingBox()).height<=60);
+await page.screenshot({path:'.codex-artifacts/mention-shell.png'});
+const standalone=await browser.newPage();await standalone.goto((process.env.NYX_TEST_BASE_URL||'http://localhost:8080')+'/apps/chat/');await standalone.evaluate(code=>{window.testPing=new Function('state',code+';return playChatPing')({notifiedDm:new Set()});},pingCode);await standalone.evaluate(()=>testPing('standalone','mention',{sender:'Alex',preview:'@you hello'}));assert(await standalone.locator('.chat-mention-toast').isVisible());
+console.log('PASS real shell accepts mention from Chat iframe; standalone chat shows toast without audio permission; toast is compact');
+}finally{await browser.close()}

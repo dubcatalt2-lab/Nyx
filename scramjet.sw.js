@@ -1,6 +1,6 @@
-﻿importScripts("/controller/controller.sw.js");
+﻿importScripts("/controller/controller.sw.js?v=20260905-cookie-owner-v1");
 
-self.__nyxScramjetRevivePromise = null;
+let nyxScramjetRevivePromise = null;
 
 self.addEventListener("install", event => {
   event.waitUntil(self.skipWaiting());
@@ -14,11 +14,25 @@ function nyxScramjetRouteMissHtml() {
   main{max-width:560px;padding:28px;text-align:center}
   h1{font-size:20px;margin:0 0 10px}
   p{margin:0;color:#c8ced8}
+  button{margin-top:18px;border:1px solid #445066;border-radius:10px;background:#1b2230;color:#f5f7fb;padding:10px 15px;font:600 14px system-ui,sans-serif;cursor:pointer}
 </style>
 <main>
-  <h1>Scramjet route missed</h1>
-  <p>The Scramjet service worker did not reconnect to nyx in time. Reload nyx and try again.</p>
-</main>`;
+  <h1>Reconnecting Scramjet</h1>
+  <p>Nyx is reconnecting this tab to the proxy service worker.</p>
+  <button type="button" onclick="location.reload()">Retry now</button>
+</main>
+<script>
+  (() => {
+    const key='nyx.scramjet-route-retry:'+location.pathname;
+    const attempts=Number(sessionStorage.getItem(key)||0);
+    if(attempts<2){
+      sessionStorage.setItem(key,String(attempts+1));
+      setTimeout(()=>location.reload(),900);
+    }else{
+      sessionStorage.removeItem(key);
+    }
+  })();
+<\/script>`;
 }
 
 function nyxIsScramjetRequest(event) {
@@ -60,6 +74,7 @@ const nyxBlockedRequestHosts = [
   "google-analytics.com",
   "analytics.google.com",
   "adservice.google.com",
+  "adtrafficquality.google",
   "stats.g.doubleclick.net",
   "static.cloudflareinsights.com",
   "cloudflareinsights.com",
@@ -71,7 +86,13 @@ const nyxBlockedRequestHosts = [
   "vntsm.com",
   "hb.vntsm.com",
   "facebook.net",
-  "connect.facebook.net"
+  "connect.facebook.net",
+  "ads.emulatorjs.org",
+  "cdn.r9x.in",
+  "gamemonetize.com",
+  "html5.api.gamedistribution.com",
+  "imasdk.googleapis.com",
+  "sdk.poki.com"
 ];
 
 function nyxHostBlocked(hostname) {
@@ -83,7 +104,10 @@ function nyxShouldBlockScramjetRequest(event) {
   const source = nyxScramjetSourceUrl(event.request.url);
   if (!source) return false;
   try {
-    return nyxHostBlocked(new URL(source).hostname);
+    const url = new URL(source);
+    return nyxHostBlocked(url.hostname)
+      || /(?:^|\/)(?:ads?|ad[-_.]?(?:loader|manager|script)|jump[_-]gamemonetize|poki-(?:master-loader|sdk))\.(?:js|mjs)(?:$|\/)/i.test(url.pathname)
+      || (url.hostname === "serve.app.playsaurus.com" && /\/ad-campaigns\//i.test(url.pathname));
   } catch {
     return false;
   }
@@ -103,7 +127,7 @@ function nyxBlockedScramjetResponse(event) {
   if (event.request.destination === "document" || event.request.destination === "iframe") {
     return new Response("<!doctype html><meta charset=\"utf-8\">", { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } });
   }
-  return new Response("", { status: 204 });
+  return new Response(null, { status: 204 });
 }
 
 function nyxRequestExpectsAsset(event) {
@@ -166,8 +190,8 @@ function nyxDelay(ms) {
 }
 
 async function nyxNotifyScramjetControllers() {
-  if (self.__nyxScramjetRevivePromise) return self.__nyxScramjetRevivePromise;
-  self.__nyxScramjetRevivePromise = (async () => {
+  if (nyxScramjetRevivePromise) return nyxScramjetRevivePromise;
+  nyxScramjetRevivePromise = (async () => {
     const clients = await self.clients.matchAll({
       includeUncontrolled: true,
       type: "window"
@@ -179,18 +203,24 @@ async function nyxNotifyScramjetControllers() {
     }
     await nyxDelay(60);
   })().finally(() => {
-    self.__nyxScramjetRevivePromise = null;
+    nyxScramjetRevivePromise = null;
   });
-  return self.__nyxScramjetRevivePromise;
+  return nyxScramjetRevivePromise;
 }
 
 async function nyxRouteAfterRevive(event) {
-  await nyxNotifyScramjetControllers();
-  for (let attempt = 0; attempt < 20; attempt += 1) {
+  const deadline = Date.now() + 7000;
+  let nextNotifyAt = 0;
+  while (Date.now() < deadline) {
+    const now = Date.now();
+    if (now >= nextNotifyAt) {
+      await nyxNotifyScramjetControllers();
+      nextNotifyAt = now + 500;
+    }
     if ($scramjetController.shouldRoute(event)) {
       return nyxRouteScramjet(event);
     }
-    await nyxDelay(50);
+    await nyxDelay(100);
   }
   return new Response(nyxScramjetRouteMissHtml(), {
     status: 502,

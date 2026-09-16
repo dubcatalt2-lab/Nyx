@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#070910">
-  <meta name="nyx-release" content="2026.08.03.10">
+  <meta name="nyx-release" content="2026.08.20.2">
   <title>Nyx</title>
   <style>
     :root {
@@ -175,7 +175,7 @@
       <p class="nyx-status" id="nyxStatus">Loading the latest Nyx release&hellip;</p>
       <div class="nyx-actions">
         <button class="nyx-action" id="nyxRetry" type="button">Try again</button>
-        <a class="nyx-action" href="https://nyxlearning.netlify.app/?source=single-file" target="_blank" rel="noopener noreferrer">Open directly</a>
+        <a class="nyx-action" href="https://nyxlearning.org/?source=single-file" target="_blank" rel="noopener noreferrer">Open directly</a>
       </div>
     </section>
 
@@ -192,9 +192,8 @@
     (() => {
       "use strict";
 
-      const NYX_URL = "https://nyxlearning.netlify.app/";
-      const NYX_RELEASE = "2026.08.03.10";
-      const IS_LOCAL_FILE = window.location.protocol === "file:";
+      const NYX_URL = "https://nyxlearning.org/";
+      const NYX_RELEASE = "2026.08.20.2";
       const frame = document.getElementById("nyxApp");
       const boot = document.getElementById("nyxBoot");
       const status = document.getElementById("nyxStatus");
@@ -224,11 +223,6 @@
         showWaitingState();
         if (!navigator.onLine) {
           frame.removeAttribute("src");
-          return;
-        }
-        if (IS_LOCAL_FILE) {
-          status.textContent = "Opening Nyx securely in Chrome…";
-          window.setTimeout(() => window.location.replace(latestNyxUrl()), 80);
           return;
         }
         frame.src = latestNyxUrl();

@@ -342,7 +342,7 @@ html body .nyx-tos-gate-logo{
   border:1px solid color-mix(in srgb,var(--theme-border,#6f9ee8) 58%,transparent);
   border-radius:13px;
   background-color:color-mix(in srgb,var(--panel2,#111a29) 76%,transparent);
-  background-image:var(--nyx-themed-logo-url,url("../assets/icons/nyx-logo.png"));
+  background-image:var(--nyx-themed-logo-url,url("../assets/icons/nyx-monogram.png"));
   background-repeat:no-repeat;
   background-position:center;
   background-size:35px 35px;

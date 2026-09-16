@@ -239,6 +239,63 @@
     return {name:name.toLowerCase().endsWith('.txt')?name:`${name}.txt`,content,size:Number(value?.size)||new Blob([content],{type:'text/plain'}).size};
   }
 
+  const generatedImageMemory=new Map();
+  function generatedImageDatabase(){
+    return new Promise((resolve,reject)=>{
+      const request=indexedDB.open('nyx-ai-images',1);
+      request.onupgradeneeded=()=>request.result.createObjectStore('images',{keyPath:'id'});
+      request.onsuccess=()=>resolve(request.result);
+      request.onerror=()=>reject(request.error);
+    });
+  }
+  async function saveGeneratedImage(dataUrl){
+    if(typeof dataUrl!=='string'||dataUrl.length>6*1024*1024||!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(dataUrl))throw new Error('The model returned an unsupported or oversized image.');
+    // Decode before accepting it, including responses obtained directly with a personal key.
+    const probe=new Image();probe.src=dataUrl;
+    await probe.decode().catch(()=>{throw new Error('The model returned invalid image data.');});
+    if(probe.naturalWidth*probe.naturalHeight>20000000)throw new Error('The generated image dimensions are too large.');
+    const record={id:crypto.randomUUID(),dataUrl,createdAt:Date.now(),saved:false};
+    generatedImageMemory.set(record.id,record);
+    while(generatedImageMemory.size>20)generatedImageMemory.delete(generatedImageMemory.keys().next().value);
+    if(!temporaryMode){
+      let db;
+      try{
+        db=await generatedImageDatabase();
+        await new Promise((resolve,reject)=>{
+          const tx=db.transaction('images','readwrite'),store=tx.objectStore('images');
+          const request=store.getAll();
+          request.onsuccess=()=>{
+            const old=request.result.sort((a,b)=>a.createdAt-b.createdAt);
+            while(old.length>=20)store.delete(old.shift().id);
+            store.put({...record,saved:true});
+          };
+          tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
+        });
+        record.saved=true;
+      }catch{}finally{db?.close();}
+    }
+    return record.id;
+  }
+  async function showGeneratedImage(message,id){
+    let record=generatedImageMemory.get(id),db;
+    if(!record){
+      try{
+        db=await generatedImageDatabase();
+        record=await new Promise((resolve,reject)=>{const request=db.transaction('images').objectStore('images').get(id);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
+      }catch{}finally{db?.close();}
+    }
+    const figure=document.createElement('figure');figure.className='ai-message-attachment ai-generated-image';
+    if(record&&/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(record.dataUrl)&&record.dataUrl.length<=6*1024*1024){
+      const image=document.createElement('img');image.src=record.dataUrl;image.alt='AI-generated image';image.loading='lazy';
+      const caption=document.createElement('figcaption'),download=document.createElement('a');
+      download.href=record.dataUrl;download.download=`nyx-image.${record.dataUrl.startsWith('data:image/jpeg')?'jpg':record.dataUrl.startsWith('data:image/webp')?'webp':'png'}`;download.textContent='Download image';
+      caption.append(download,document.createTextNode(record.saved?' ? Last 20 images saved on this device.':' ? Download to keep this image; it is only available in this session.'));
+      figure.append(image,caption);
+    }else figure.textContent='This image is no longer stored on this device.';
+    message.querySelector('.ai-message-content')?.after(figure);
+    scrollToBottom();
+  }
+
   function normalizedMessages(value){
     return Array.isArray(value)
       ? value.map(item=>{
@@ -246,6 +303,7 @@
           const content=item.role==='assistant'?responseParts(item.content).answer.trim():String(item.content||'').trim();
           if(!content) return null;
           const message={role:item.role,content};
+          if(item.role==='assistant'&&/^[a-f0-9-]{36}$/.test(item.imageId||''))message.imageId=item.imageId;
           const textAttachment=item.role==='user'?normalizedTextAttachment(item.textAttachment):null;
           if(textAttachment) message.textAttachment=textAttachment;
           return message;
@@ -638,7 +696,7 @@
     setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
 
-  function addMessage(role,text,{error=false,thinking=false,attachment=null}={}){
+  function addMessage(role,text,{error=false,thinking=false,attachment=null,imageId=null}={}){
     conversation.querySelector('[data-ai-welcome]')?.remove();
     conversation.classList.remove('is-empty');
     const assistant=role!=='user';
@@ -675,6 +733,7 @@
     }
     setMessageContent(message,text,{error,thinking});
     conversation.appendChild(message);
+    if(imageId)void showGeneratedImage(message,imageId);
     applyLogoTheme();
     scrollToBottom(true);
     return message;
@@ -870,7 +929,7 @@
       conversation.innerHTML=welcome();
     }else{
       conversation.classList.remove('is-empty');
-      items.forEach(item=>addMessage(item.role,item.content,{attachment:item.textAttachment||null}));
+      items.forEach(item=>addMessage(item.role,item.content,{attachment:item.textAttachment||null,imageId:item.imageId}));
     }
     updateThreadTitle(items);
     applyLogoTheme();
@@ -971,10 +1030,11 @@
       const data=await response.json();
       if(!response.ok) throw new Error(data?.error||`Model catalog failed (${response.status})`);
       const next=Array.isArray(data?.models)?data.models.flatMap(item=>{
+        if(customKey&&customKind()==='nyx'&&item?.imageGeneration)return [];
         const id=String(item?.id||'').trim();
         const label=String(item?.label||id).trim();
         const company=String(item?.company||'').trim();
-        return id&&label?[{id,label,company,vision:customKey&&customKind()==='nyx'?false:Boolean(item?.vision)||KNOWN_VISION_MODELS.has(id),reasoning:Boolean(item?.reasoning)}]:[];
+        return id&&label?[{id,label,company,imageGeneration:!(customKey&&customKind()==='nyx')&&Boolean(item?.imageGeneration),vision:customKey&&customKind()==='nyx'?false:Boolean(item?.vision)||KNOWN_VISION_MODELS.has(id),reasoning:Boolean(item?.reasoning)}]:[];
       }):[];
       if(!next.length) throw new Error('No models are currently available.');
       const saved=activeThread()?.model||localStorage.getItem(MODEL_KEY)||DEFAULT_MODEL;
@@ -1029,6 +1089,9 @@
   }
 
   function clearChat(){
+    const discardedImages=savedMessages().map(item=>item.imageId).filter(Boolean);
+    for(const id of discardedImages)generatedImageMemory.delete(id);
+    if(discardedImages.length)void generatedImageDatabase().then(db=>{const tx=db.transaction('images','readwrite');for(const id of discardedImages)tx.objectStore('images').delete(id);tx.oncomplete=()=>db.close();tx.onerror=()=>db.close();}).catch(()=>{});
     stopRequest();
     stopScreenSharing();
     clearAttachment();
@@ -1090,6 +1153,7 @@
     }
     const selectedModelId=model.value||DEFAULT_MODEL;
     const requestedModel=selectedModelId||DEFAULT_MODEL;
+    const generateImage=Boolean(modelCatalog.find(item=>item.id===requestedModel)?.imageGeneration);
     const userText=prompt||(sharing?'Please analyze what is currently on my screen.':imageAttachment?'Please analyze this image.':'Please review the attached text file.');
     const history=savedMessages();
     if(!history.length) updateThreadTitle([{role:'user',content:userText}]);
@@ -1102,6 +1166,7 @@
     activeController=new AbortController();
     setBusy(true);
     let answer='';
+    let generatedImageId=null;
     let requestSucceeded=false;
     let renderFrame=0;
     const renderAnswer=()=>{
@@ -1119,23 +1184,39 @@
       let response;
       if(customKey){
         const kind=customKind();
-        if(preparedImage&&kind==='nyx')throw new Error('Nyx API keys currently support text only. Use Nyx shared or an OpenRouter key for images.');
+        if((preparedImage||generateImage)&&kind==='nyx')throw new Error('Nyx API keys currently support text only. Use Nyx shared or an OpenRouter key for images.');
         const messages=history.map(item=>({role:item.role,content:item.content+(item.textAttachment?'\n\n'+item.textAttachment.content:'')}));
         if(preparedImage)messages[messages.length-1].content=[{type:'text',text:messages[messages.length-1].content},{type:'image_url',image_url:{url:preparedImage.dataUrl}}];
-        response=await fetch(kind==='nyx'?'/api/v1/ai':'https://openrouter.ai/api/v1/chat/completions',{method:'POST',signal:activeController.signal,headers:{'Content-Type':'application/json',Authorization:'Bearer '+customKey},body:JSON.stringify({model:requestedModel,messages,max_tokens:512,stream:kind!=='nyx'})});
+        response=await fetch(kind==='nyx'?'/api/v1/ai':'https://openrouter.ai/api/v1/chat/completions',{method:'POST',signal:activeController.signal,headers:{'Content-Type':'application/json',Authorization:'Bearer '+customKey},body:JSON.stringify({model:requestedModel,messages,max_tokens:generateImage?2200:512,stream:!generateImage&&kind!=='nyx',...(generateImage?{modalities:['text','image']}:{})})});
         if(kind==='nyx'&&response.ok){const result=await response.json();const content=result.choices?.[0]?.message?.content||'';response=new Response('data: '+JSON.stringify({choices:[{delta:{content}}]})+'\n\ndata: [DONE]\n\n',{headers:{'Content-Type':'text/event-stream'}});}
       }else{
       response=await fetch('/api/nyx-ai',{
         method:'POST',
         signal:activeController.signal,
         headers:await aiHeaders({'content-type':'application/json'}),
-        body:JSON.stringify({model:requestedModel,message:userText,messages:history,textAttachment,imageContext,image:preparedImage,responseDepth:responseDepth(),stream:true})
+        body:JSON.stringify({model:requestedModel,message:userText,messages:history,textAttachment,imageContext,image:preparedImage,responseDepth:responseDepth(),generateImage,stream:!generateImage})
       });
       }
       if(!response.ok){
         const data=await response.json().catch(()=>({}));
         throw new Error(data?.error?.message||data?.error||`Nyx AI failed (${response.status})`);
       }
+      if(generateImage){
+        const imageReader=response.body.getReader(),imageDecoder=new TextDecoder();let raw='',imageBytes=0;
+        for(;;){const part=await imageReader.read();if(part.done)break;imageBytes+=part.value.byteLength;if(imageBytes>8*1024*1024){await imageReader.cancel();throw new Error('The generated image response is too large.');}raw+=imageDecoder.decode(part.value,{stream:true});}
+        raw+=imageDecoder.decode();
+        const data=JSON.parse(raw);
+        if(data.error)throw new Error(data.error.message||data.error);
+        const reply=data.choices?.[0]?.message;
+        answer=typeof data.text==='string'?data.text:typeof reply?.content==='string'?reply.content:'';
+        const images=data.images||reply?.images||(Array.isArray(reply?.content)?reply.content.filter(part=>part.type==='image_url'):[]);
+        if(images.length>1)throw new Error('Ask for one image at a time.');
+        if(images.length){
+          generatedImageId=await saveGeneratedImage(images[0].dataUrl||images[0].image_url?.url);
+          if(!answer.trim())answer='Generated image.';
+          await showGeneratedImage(pending,generatedImageId);
+        }
+      }else{
       if(!response.body) throw new Error('The selected model did not return a stream.');
       const reader=response.body.getReader();
       const decoder=new TextDecoder();
@@ -1164,11 +1245,12 @@
       buffer+=decoder.decode();
       buffer.split(/\r?\n/).forEach(consumeLine);
       if(renderFrame){cancelAnimationFrame(renderFrame);renderAnswer()}
+      }
       const clean=answer.trim();
       const finalAnswer=responseParts(clean).answer.trim();
       if(!finalAnswer) throw new Error('This model did not produce a final answer. Try again or choose another available model.');
       setMessageContent(pending,clean);
-      history.push({role:'assistant',content:finalAnswer});
+      history.push({role:'assistant',content:finalAnswer,...(generatedImageId?{imageId:generatedImageId}:{})});
       saveMessages(history);
       recordUsage(userText,finalAnswer);
       requestSucceeded=true;

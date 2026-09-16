@@ -730,6 +730,7 @@
           ${capabilities.canSetSubscription ? `<label>Subscription<select data-owner-detail-subscription><option value="free">Free</option><option value="premium">Premium</option><option value="trialing">Trial</option><option value="past_due">Past due</option><option value="canceled">Canceled</option></select></label><p class="nyx-owner-premium-note">Premium and Trial accounts receive Premium benefits automatically when they sign in. They do not need a Premium access code.</p><label>Monthly revenue <input data-owner-detail-revenue type="number" min="0" step="0.01" value="${((user.monthlyRevenueCents || 0) / 100).toFixed(2)}"></label>` : `<p class="nyx-owner-action-note">Subscription: ${esc(subscriptionLabel(user.subscriptionStatus))}</p>`}
           <div class="nyx-owner-detail-actions"><button type="button" data-owner-save-access>${dashboardIcon("save")}Save access</button></div></section>` : "";
         const accountActions = [
+          capabilities.canSetPassword ? `<button type="button" data-owner-user-action="set_password">${dashboardIcon("key")}Set custom password</button>` : "",
           capabilities.canResetPassword ? `<button type="button" data-owner-user-action="create_password_reset_link">${dashboardIcon("key")}Create reset link</button>` : "",
           capabilities.canResetPassword ? `<button type="button" data-owner-user-action="send_password_reset" ${!user.deliverableEmail ? "disabled" : ""}>${dashboardIcon("mail")}Email reset link</button>` : "",
           capabilities.canVerifyEmail ? `<button type="button" data-owner-user-action="verify_email" ${user.emailVerified || !user.deliverableEmail ? "disabled" : ""}>${dashboardIcon("check")}Verify email</button>` : "",
@@ -967,6 +968,23 @@
       });
     }
 
+    function requestCustomPassword(user){
+      return new Promise(resolve=>{
+        confirmHost.hidden=false;
+        confirmHost.innerHTML=`<form><h2>Set custom password</h2><p>Set a new password for ${esc(user.displayName||user.handle||user.uid)}. Their old password will stop working. Give the new password to them privately; no email is required.</p><label>New password<input name="newPassword" type="password" autocomplete="new-password" minlength="8" maxlength="256" required></label><label>Confirm password<input name="confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="256" required></label><small data-password-error role="alert"></small><div><button type="button" data-owner-confirm-cancel>Cancel</button><button type="submit">Set password</button></div></form>`;
+        const form=confirmHost.querySelector('form'),first=form.elements.newPassword,second=form.elements.confirmPassword;
+        const finish=value=>{first.value='';second.value='';confirmHost.hidden=true;confirmHost.innerHTML='';resolve(value);};
+        form.addEventListener('submit',event=>{
+          event.preventDefault();
+          if(!form.reportValidity())return;
+          if(first.value!==second.value){form.querySelector('[data-password-error]').textContent='Passwords must match.';return;}
+          finish(first.value);
+        });
+        form.querySelector('[data-owner-confirm-cancel]').addEventListener('click',()=>finish(null));
+        first.focus();
+      });
+    }
+
     function showResetLink(resetLink) {
       confirmHost.hidden = false;
       confirmHost.innerHTML = `<form><h2>Password reset link</h2><p>Give this one-time Firebase link directly to the account owner. Nyx never reveals or stores their password.</p><label>Reset link<input name="resetLink" value="${esc(resetLink)}" readonly></label><div><button type="button" data-owner-reset-close>Close</button><button type="button" data-owner-reset-copy>Copy link</button></div></form>`;
@@ -998,7 +1016,11 @@
         create_password_reset_link: ["Create a password reset link?", "The current password will remain private. Give the generated one-time link only to the account owner.", "Create link", false],
         send_password_reset: ["Send password reset?", `Firebase will email a password-reset link to ${user.email}.`, "Send email", false]
       };
-      if (action === "delete") {
+      if(action === "set_password"){
+        const password=await requestCustomPassword(user);
+        if(password===null)return;
+        body={password};
+      } else if (action === "delete") {
         const phrase = user.email || user.uid;
         const memberMessage = await confirmAccountStatusAction({ title: "Permanently delete account?", message: "This removes the Firebase Authentication account and its Nyx profile data. Audit history is retained, and the member will see your message if they try to use this account again.", confirmLabel: "Delete permanently", requireText: phrase });
         if (memberMessage === null) return;
@@ -1031,13 +1053,13 @@
           state.selectedUser = result.user;
           state.selectedCapabilities = result.capabilities || state.selectedCapabilities;
           state.access = result.access || state.access;
-          notify(action === "send_password_reset" ? "Password reset email sent." : "Account updated.");
+          notify(action === "set_password" ? "Password updated. Share it privately with the account owner." : action === "send_password_reset" ? "Password reset email sent." : "Account updated.");
           await openUser(user.uid);
         }
         await load({ preserveLoading: true });
       } catch (error) {
         notify(error.message || "The account action failed.", "error");
-      }
+      }finally{delete body.password;}
     }
 
     function exportCurrentPage() {

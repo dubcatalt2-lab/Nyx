@@ -1,6 +1,8 @@
-## Movies sidebar shortcut (2026-09-16; release preparation)
+## Movies sidebar shortcut (2026-09-16; LIVE in 8d243ae)
 
 Replaced the fixed Code Sandbox sidebar shortcut with Movies, using the existing media icon, Movies label, /apps/movies/ navigation and active-page highlight. Click and keyboard handlers target Movies; Code Sandbox remains in the Apps catalog. Shell asset version v270. Built-page browser checks at 1365px and 390px verify the replacement, SVG icon, Movies iframe navigation and active highlight after shell startup settles. Build, check:deploy and branding pass. User explicitly authorized push and deployment.
+
+Pushed and deployed 8d243aee0bec513205a52313709bb3ca21e544ea through the OVH updater. Verified clean exact VPS revision, five active services, apex/www health and successful production build/deployment/branding checks. Fresh live desktop/mobile browser checks passed Movies navigation and active highlighting. Existing production audit reports 9 vulnerabilities (8 moderate, 1 high), Stratus 3 moderate, with unchanged Caddy warnings.
 
 ## AniEmbed proxy-only correction (2026-09-15; LIVE in 8324514)
 

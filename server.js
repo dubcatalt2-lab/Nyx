@@ -7865,7 +7865,7 @@ installMovieImages(app);
 installMovieApi(app, { catalog: movieCatalog, clientId: nyxClientIp });
 installMoviePlayback(app, { clientId: nyxClientIp, validateMovie: id => movieCatalog.details(id) });
 app.get(/^\/apps\/movies$/, (_req, res) => res.redirect(302, "/apps/movies/"));
-app.get("/apps/movies/", (_req, res) => { res.set("Content-Security-Policy", "frame-src 'self' https://nhdapi.com https://supaplay.fun https://ani.megaplay.su https://watch.rivestream.app https://framextv.tech https://plyr.animex.one; object-src 'none'"); res.sendFile(join(staticRoot, "apps", "movies", "index.html")); });
+app.get("/apps/movies/", (_req, res) => { res.set("Content-Security-Policy", "frame-src 'self' https://nhdapi.com https://supaplay.fun https://ani.megaplay.su https://watch.rivestream.app https://framextv.tech https://plyr.animex.one https://aniembed.se; object-src 'none'"); res.sendFile(join(staticRoot, "apps", "movies", "index.html")); });
 
 function linkGeneratorRateState(clientId, now = Date.now()) {
   for (const [key, state] of linkGeneratorAttempts) {

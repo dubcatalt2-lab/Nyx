@@ -42,6 +42,10 @@ export function movieSourceUrl(value){
   if(type==='tv'&&keys.length===4&&keys.every(k=>['type','id','season','episode'].includes(k))&&/^\d{1,3}$/.test(q.get('season')||'')&&/^[1-9]\d{0,3}$/.test(q.get('episode')||''))return url.href;
   return null;
  }
+ if(url.hostname==='aniembed.se'){
+  const q=url.searchParams,keys=[...q.keys()];
+  return /^\/e\/[1-9]\d{0,9}\/[1-9]\d{0,3}$/.test(url.pathname)&&keys.length===3&&new Set(keys).size===3&&keys.every(k=>['lang','autoplay','t'].includes(k))&&q.get('lang')==='sub'&&q.get('autoplay')==='1'&&q.get('t')==='0'?url.href:null;
+ }
  if(url.hostname==='plyr.animex.one'){
   const q=url.searchParams,keys=[...q.keys()];
   if(!/^\/e\/[a-z0-9]+(?:-[a-z0-9]+)*\/[1-9]\d{0,3}$/.test(url.pathname)||keys.length!==5||new Set(keys).size!==5||!keys.every(k=>['lang','autoplay','t','hasPrev','hasNext'].includes(k)))return null;

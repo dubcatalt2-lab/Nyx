@@ -1,5 +1,5 @@
-import {additionalSources, movieSourceUrl} from './providers.mjs';
-import {launchMovieProxy, inspectMovieProxy, styleMovieVideo, startMovieProxy, canStartMovieProxy} from './proxy.mjs';
+import {additionalSources, movieSourceUrl} from './providers.mjs?v=20260915-aniembed-v1';
+import {launchMovieProxy, inspectMovieProxy, styleMovieVideo, startMovieProxy, canStartMovieProxy} from './proxy.mjs?v=20260915-aniembed-v1';
 (()=>{'use strict';
 
 const $=id=>document.getElementById(id);
@@ -180,7 +180,9 @@ function sourcesFor(movie){
  const extra=movie.kind==='tv'?[]:movie.kind==='episode'
   ?additionalSources(type,movie.tmdbSeriesId,movie.sourceSeason,movie.sourceEpisode)
   :additionalSources(type,movie.id);
- return [...extra,...existing].map(source=>source.url?{...source,proxy:true}:source);
+ // AniEmbed's supported iframe works directly; its security challenge blocks
+ // the VPS proxy. Keep the existing proxy route for all other providers.
+ return [...extra,...existing].map(source=>source.url?{...source,proxy:source.id!=='aniembed'}:source);
 }
 let providerStates={},currentProvider='',watchGeneration=0;
 // Measurements stay in this tab and apply only to this exact movie/episode.
@@ -279,7 +281,8 @@ async function watch(preferred){
     if(!data||typeof data!=='object')return;
     if(data.type==='timeUpdate'||data.type==='watching-log')progress(data.currentTime);
     if(source.id==='framextv'&&data.event==='frameXTV:timeupdate')progress(data.currentTime);
-    if(source.id==='animex'&&data.source==='aniembed'&&data.version===1&&data.type==='event'&&data.name==='progress')progress(data.data?.currentTime);
+    if(['animex','aniembed'].includes(source.id)&&data.source==='aniembed'&&data.version===1&&data.type==='event'&&data.name==='progress')progress(data.data?.currentTime);
+    if(source.id==='aniembed'&&data.source==='aniembed'&&data.version===1&&data.type==='event'&&data.name==='error')unavailable();
     if(['kisskh','megacloud'].includes(data.channel)&&data.event==='time')progress(data.currentTime??data.time);
     if(data.type==='pause'&&started){providerStates[source.id]='Paused';renderSources();}
     if(data.type==='error'||['kisskh','megacloud'].includes(data.channel)&&data.event==='error')unavailable();
@@ -307,7 +310,7 @@ async function watch(preferred){
     },1000);
     controller.signal.addEventListener('abort',()=>clearInterval(poll),{once:true});
    }else frame.src=source.url;
-   playerTimer=setTimeout(()=>{if(active()&&!started){if(source.proxy&&!playbackVideo){unavailable();return;}$('player-status').textContent='Use the player’s Play button. If it cannot start, choose another source or reload.';$('retry-player').hidden=false;}},45000);
+   playerTimer=setTimeout(()=>{if(active()&&!started){if(source.id==='aniembed'||source.proxy&&!playbackVideo){unavailable();return;}$('player-status').textContent='Use the player’s Play button. If it cannot start, choose another source or reload.';$('retry-player').hidden=false;}},45000);
    return;
   }
   const video=playbackVideo=document.createElement('video');video.controls=false;video.playsInline=true;video.preload='metadata';video.setAttribute('aria-label',movie.title+' video player');

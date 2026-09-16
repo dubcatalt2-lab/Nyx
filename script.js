@@ -7348,7 +7348,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   };
   // Movies explicitly requests a proxy. Never fall back to a direct provider URL.
   window.nyxLaunchMovieFrame=async(frame,url,{signal,recover=false}={})=>{
-    const {movieSourceUrl}=await import('/apps/movies/providers.mjs');
+    const {movieSourceUrl}=await import('/apps/movies/providers.mjs?v=20260915-aniembed-v1');
     if(!movieSourceUrl(url))throw new Error('Unsupported movie provider.');
     if(frame?.tagName!=='IFRAME'||frame.ownerDocument.location.origin!==location.origin||frame.ownerDocument.location.pathname!=='/apps/movies/')throw new Error('Invalid movie frame.');
     const sandbox='allow-scripts allow-same-origin allow-forms allow-presentation';

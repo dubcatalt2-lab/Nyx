@@ -1,4 +1,4 @@
-import {movieSourceUrl} from './providers.mjs';
+import {movieSourceUrl} from './providers.mjs?v=20260915-aniembed-v1';
 let initialization;
 const load = src => new Promise((resolve, reject) => {
   const script = document.createElement('script');

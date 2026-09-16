@@ -2,7 +2,7 @@
 const source=readFileSync('apps/chat/app.js','utf8');const a=source.indexOf('  function playChatPing('),b=source.indexOf('  function chatMentionHandles',a);const pingCode=source.slice(a,b);
 const browser=await chromium.launch({channel:'msedge',headless:true});
 try{const page=await browser.newPage({viewport:{width:1280,height:800}});
-await page.addInitScript(()=>{localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.browserShellMode','true');localStorage.setItem('nyx.homeDesign','redesigned');});
+await page.addInitScript(()=>{localStorage.setItem('nyx.releaseNotes.2026-09-14-nyx-1.0.3.seen','2026-09-14-nyx-1.0.3');localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.browserShellMode','true');localStorage.setItem('nyx.homeDesign','redesigned');});
 await page.goto((process.env.NYX_TEST_BASE_URL||'http://localhost:8080')+'/');await page.locator('#nyxStudyHubStartup').waitFor({state:'hidden'});await page.waitForFunction(()=>!document.body.classList.contains('nyx-loading-active'));
 await page.locator('[data-nyx-dock-item="chat"]').click();
 const frame=page.frameLocator('iframe.view[src*="/apps/chat/"]');await frame.locator('[data-chat-app]').waitFor();

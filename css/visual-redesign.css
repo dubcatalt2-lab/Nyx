@@ -295,6 +295,23 @@ html[data-nyx-home-design="redesigned"] body.browser-shell .top-os>.nyx-minimal-
 }
 
 @media (max-width:900px){
+  .nyx-visual-dock-tab-add{
+    display:flex!important;
+    width:32px!important;
+    min-width:32px!important;
+    height:32px!important;
+    min-height:32px!important;
+    align-items:center!important;
+    justify-content:center!important;
+    padding:0!important;
+    overflow:hidden!important;
+    border:1px solid transparent!important;
+    border-radius:8px!important;
+    background:transparent!important;
+    color:inherit!important;
+  }
+  .nyx-visual-dock-tab-add>strong{display:none!important}
+  .nyx-visual-dock-tab-add>span{font-size:21px;font-weight:400;line-height:1}
   html[data-nyx-home-design="redesigned"][data-nyx-home-design="redesigned"]
   body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):is(body,#nyx-visual-c):is(body,#nyx-visual-d) .browser-home.nyx-visual-home .nyx-minimal-brand{
     width:250px!important;

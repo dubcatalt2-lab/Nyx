@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <title>Nyx Chat</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/icons/chat.svg">
-  <link rel="stylesheet" href="./styles.css?v=20260915-chat-lock-links-v38">
+  <link rel="stylesheet" href="./styles.css?v=20260915-chat-reaction-grid-v40">
   <link rel="stylesheet" href="./polish.css?v=20260826-unified-navigation-v2">
 <link rel="stylesheet" href="/apps/visual-redesign.css?v=20260914-glass-restored-v3">
 <link rel="stylesheet" href="/css/avatar-decorations.css?v=20260915-chat-decor-v2">
@@ -94,6 +94,7 @@
           <button class="icon-button mobile-only" type="button" data-channels-toggle aria-label="Show channels"><svg><use href="#icon-menu"/></svg></button>
           <span class="channel-symbol" data-conversation-symbol><svg><use href="#icon-hash"/></svg></span>
           <div><h1 data-channel-title>General</h1><p data-channel-description>The main Nyx community chat.</p></div>
+          <button class="icon-button" type="button" data-deleted-messages aria-label="Deleted messages" title="Deleted messages" hidden><svg><use href="#icon-trash"/></svg></button>
           <span class="connection-state" data-connection-state><i></i><span>Connecting</span></span>
         </header>
 
@@ -212,7 +213,11 @@
     <header><div><h2>Search history</h2><p>Searches made through Nyx while signed in are retained for 30 days. Policy-classified searches are highlighted for review.</p></div><button class="icon-button" type="button" data-flagged-search-close aria-label="Close"><svg><use href="#icon-close"/></svg></button></header>
     <div class="flagged-search-list" data-flagged-search-list></div>
   </dialog>
-  <script src="./emoji-catalog.js?v=20260821-unicode-emoji-catalog-v36"></script>
-  <script src="./app.js?v=20260915-chat-lock-links-v38"></script>
+  <dialog class="dm-dialog" data-deleted-dialog>
+    <header><div><h2>Deleted messages</h2><p>Owner history for this conversation. Older deletions cannot be recovered. Attachment files are not retained.</p></div><button class="icon-button" type="button" data-deleted-close aria-label="Close deleted messages">Close</button></header>
+    <div class="deleted-message-list" data-deleted-list></div><button class="btn-subtle" type="button" data-deleted-older hidden>Load older</button>
+  </dialog>
+  <script src="./emoji-catalog.js?v=20260915-full-reaction-catalog-v37"></script>
+  <script src="./app.js?v=20260915-chat-reaction-grid-v40"></script>
 </body>
 </html>

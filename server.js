@@ -57,7 +57,8 @@ for (const [alias, canonical] of Object.entries(nyxEmojiMartData.aliases || {}))
   const native = nyxChatEmojiShortcodes[String(canonical || "").toLowerCase()];
   if (/^[a-z0-9_+-]{1,64}$/.test(name) && native) nyxChatEmojiShortcodes[name] = native;
 }
-const nyxChatEmojiCatalogScript = `globalThis.NYX_EMOJI_SHORTCODES=Object.freeze(${JSON.stringify(nyxChatEmojiShortcodes)});\n`;
+const nyxChatReactionCatalog=Object.values(nyxEmojiMartData.emojis||{}).flatMap(emoji=>(emoji.skins||[]).filter(skin=>skin.native).map((skin,index)=>({emoji:skin.native,name:emoji.id+(index?' skin tone '+index:'')})));
+const nyxChatEmojiCatalogScript = `globalThis.NYX_EMOJI_SHORTCODES=Object.freeze(${JSON.stringify(nyxChatEmojiShortcodes)});globalThis.NYX_REACTION_EMOJIS=${JSON.stringify(nyxChatReactionCatalog)};\n`;
 let cinebyAppCache = { source: "", expires: 0 };
 const gameCoverLookupCache = new Map();
 let duckMathGamesCache = { games: [], expires: 0, promise: null };
@@ -269,7 +270,7 @@ const nyxChatAttachmentTickets = new Map();
 const nyxChatAttachmentUploads = new Set();
 const nyxChatAttachmentTicketTtlMs = 10 * 60_000;
 let nyxChatAttachmentLastCleanupAt = 0;
-const nyxChatReactionEmoji = new Set(["👍", "❤️", "😂", "😮", "😢", "🔥", "🎉", "👀"]);
+const nyxChatReactionEmoji = new Set(nyxChatReactionCatalog.map(item=>item.emoji));
 const nyxAccountSignInAttempts = new Map();
 const nyxAccountRegisterAttempts = new Map();
 const nyxAccountPasswordResetAttempts = new Map();
@@ -5521,7 +5522,7 @@ function nyxChatSocketEventForViewer(event = {}, socket) {
   };
   if (event.kind === "message" && event.messageDocument) {
     payload.message = nyxChatMessagePayload(event.messageDocument, uid);
-    payload.mentionsViewer = nyxChatEventMentionsIdentity(event.messageText, identity) || (Boolean(uid) && uid === String(event.replyToAuthorUid || ""));
+    payload.mentionsViewer = nyxChatEventMentionsIdentity(event.lastMessageText || payload.message?.text, identity) || (Boolean(uid) && uid === String(event.replyToAuthorUid || ""));
     payload.lastMessageAuthorUid = String(event.lastMessageAuthorUid || payload.message?.author?.uid || "");
   } else if (event.kind === "delete") {
     payload.messageId = String(event.messageId || "");
@@ -11712,7 +11713,8 @@ app.post("/api/chat/messages", async (req, res) => {
       res.json({ message: nyxChatMessagePayload(existing, token.uid), duplicate: true });
       return;
     }
-    nyxChatConsumeSendAttempt(token.uid);
+    const senderAdministration=await firebase.firestore.collection('nyxUserAdministration').doc(token.uid).get();
+    if(!nyxChatCanModerate(nyxRoleForUser(token.uid,senderAdministration.data()||{})))nyxChatConsumeSendAttempt(token.uid);
     if(!identity.canModerate&&new Set(nyxChatMentionHandles(text)).size>5)return res.status(400).json({error:'Mention no more than five people in one message.'});
     let replyTo = null;
     if (replyToMessageId) {
@@ -11771,12 +11773,13 @@ app.post("/api/chat/messages", async (req, res) => {
       outcome=await firebase.firestore.runTransaction(async transaction => {
         const currentMessage = await transaction.get(messageRef);
         if (currentMessage.exists) return {duplicate:true};
+        const administration=await transaction.get(firebase.firestore.collection('nyxUserAdministration').doc(token.uid));
+        const spamExempt=nyxChatCanModerate(nyxRoleForUser(token.uid,administration.data()||{}));
         if(!scope.private){
           const channelState=await transaction.get(scope.ref);
-          const administration=await transaction.get(firebase.firestore.collection('nyxUserAdministration').doc(token.uid));
-          if(channelState.data()?.locked===true&&!nyxChatCanModerate(nyxRoleForUser(token.uid,administration.data()||{})))throw Object.assign(new Error('This channel is locked. Only moderators and higher roles can send messages.'),{status:403});
+          if(channelState.data()?.locked===true&&!spamExempt)throw Object.assign(new Error('This channel is locked. Only moderators and higher roles can send messages.'),{status:403});
         }
-        const sendState=await transaction.get(sendStateRef);
+        const sendState=spamExempt?null:await transaction.get(sendStateRef);
         const currentAttachments = [];
         for (const ref of attachmentRefs) currentAttachments.push(await transaction.get(ref));
         currentAttachments.forEach((snapshot, index) => {
@@ -11787,9 +11790,11 @@ app.post("/api/chat/messages", async (req, res) => {
             throw error;
           }
         });
-        const decision=chatSendDecision(sendState.data()||{},text,Date.now());
-        transaction.set(sendStateRef,decision.state);
-        if(decision.error)return {blocked:decision};
+        if(!spamExempt){
+          const decision=chatSendDecision(sendState.data()||{},text,Date.now());
+          transaction.set(sendStateRef,decision.state);
+          if(decision.error)return {blocked:decision};
+        }
         transaction.create(messageRef, value);
         attachmentRefs.forEach(ref => transaction.set(ref, { bound: true, messageId, scopeType: scope.type, scopeId: scope.id, boundAt: new Date(createdAtMs).toISOString(), expiresAtMs: 0 }, { merge: true }));
         if (scope.private) transaction.set(scope.ref, {
@@ -11848,7 +11853,7 @@ app.post("/api/chat/messages", async (req, res) => {
   }
 });
 
-async function deleteNyxChatMessageDocuments(firebase, documents = []) {
+async function deleteNyxChatMessageDocuments(firebase, documents = [], {scope,actorUid} = {}) {
   const messages = [...new Map(documents.filter(document => document?.exists).map(document => [String(document.id || ""), document])).values()];
   const attachmentIds = [...new Set(messages.flatMap(document => (Array.isArray(document.data()?.attachments) ? document.data().attachments : []).map(value => String(value?.id || "")).filter(id => nyxChatAttachmentIdPattern.test(id))))];
   const attachmentRefs = attachmentIds.map(id => firebase.firestore.collection("nyxChatAttachments").doc(id));
@@ -11858,14 +11863,35 @@ async function deleteNyxChatMessageDocuments(firebase, documents = []) {
   ]);
   const diskPaths = attachmentSnapshots.map((snapshot, index) => snapshot.data()?.storage === "disk" ? nyxChatAttachmentDiskPath(attachmentIds[index]) : "").filter(Boolean);
   const deleteRefs = [...messages.map(document => document.ref), ...attachmentRefs, ...chunkSnapshots.flatMap(snapshot => snapshot.docs.map(document => document.ref))];
-  for (let offset = 0; offset < deleteRefs.length; offset += 400) {
+  const originals=new Map(messages.map(document=>[document.ref.path,document]));
+  for (let offset = 0; offset < deleteRefs.length; offset += 200) {
     const batch = firebase.firestore.batch();
-    deleteRefs.slice(offset, offset + 400).forEach(ref => batch.delete(ref));
+    deleteRefs.slice(offset, offset + 200).forEach(ref => {
+      const original=originals.get(ref.path);
+      if(original&&scope){
+        const value=original.data()||{},author=value.author||{};
+        batch.create(scope.ref.collection('deletedMessages').doc(original.id),{id:original.id,text:String(value.text||'').slice(0,1000),author:{uid:String(value.authorUid||author.uid||''),displayName:String(author.displayName||'Nyx member').slice(0,100),handle:String(author.handle||'').slice(0,100)},createdAtMs:Number(value.createdAtMs)||0,deletedAtMs:Date.now(),deletedBy:String(actorUid||''),attachmentNames:(value.attachments||[]).map(item=>String(item.name||'Attachment').slice(0,200)).slice(0,8)});
+      }
+      batch.delete(ref);
+    });
     await batch.commit();
   }
   await Promise.allSettled(diskPaths.map(path => unlink(path)));
   return messages.map(document => String(document.id || "")).filter(id => /^[a-f0-9]{40}$/.test(id));
 }
+
+app.get('/api/chat/deleted-messages',async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  try{
+    const {firebase,token}=await authenticatedNyxChatUser(req);
+    if(token.uid!==founderProfileConfig().administratorUid)return res.status(403).json({error:'Only the configured owner can view deleted messages.'});
+    const scope=await nyxChatScope(firebase,token.uid,{scope:req.query.scope},'owner',nyxClientIp(req));
+    const collection=scope.ref.collection('deletedMessages');let query=collection.orderBy('deletedAtMs','desc').limit(50);
+    if(req.query.before){const id=String(req.query.before);if(!/^[a-f0-9]{40}$/.test(id))return res.status(400).json({error:'Invalid history cursor.'});const cursor=await collection.doc(id).get();if(!cursor.exists)return res.status(400).json({error:'History cursor not found.'});query=query.startAfter(cursor);}
+    const snapshot=await query.get();
+    res.json({messages:snapshot.docs.map(doc=>doc.data()),nextCursor:snapshot.docs.length===50?snapshot.docs.at(-1).id:null});
+  }catch(error){res.status(error.status||503).json({error:error.message||'Deleted messages could not be loaded.'});}
+});
 
 app.post("/api/chat/messages/purge", async (req, res) => {
   res.set("Cache-Control", "no-store");
@@ -11891,7 +11917,7 @@ app.post("/api/chat/messages/purge", async (req, res) => {
       return;
     }
     const snapshot = await scope.messages.orderBy("createdAtMs", "desc").limit(count).get();
-    const deletedIds = await deleteNyxChatMessageDocuments(firebase, snapshot.docs);
+    const deletedIds = await deleteNyxChatMessageDocuments(firebase, snapshot.docs,{scope,actorUid:token.uid});
     const latestSnapshot = await scope.messages.orderBy("createdAtMs", "desc").limit(1).get();
     const latest = latestSnapshot.docs[0]?.data() || {};
     const latestAttachments = Array.isArray(latest.attachments) ? latest.attachments : [];
@@ -11957,7 +11983,7 @@ app.delete("/api/chat/messages/:scope/:messageId", async (req, res) => {
       res.status(403).json({ error: "You can only delete your own messages." });
       return;
     }
-    await deleteNyxChatMessageDocuments(firebase, [messageSnapshot]);
+    await deleteNyxChatMessageDocuments(firebase, [messageSnapshot],{scope,actorUid:token.uid});
     const revision = recordNyxChatRealtimeEvent({
       kind: "delete",
       scopeType: scope.private ? "conversation" : "channel",
@@ -12008,6 +12034,7 @@ app.post("/api/chat/messages/:scope/:messageId/reactions", async (req, res) => {
       })).filter(entry => nyxChatReactionEmoji.has(entry.emoji));
       let entry = current.find(item => item.emoji === emoji);
       if (!entry) {
+        if(current.length>=20)throw Object.assign(new Error('This message already has 20 different reactions. Choose an existing one.'),{status:409});
         entry = { emoji, uids: [] };
         current.push(entry);
       }

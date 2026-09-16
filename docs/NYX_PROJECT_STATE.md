@@ -1,3 +1,7 @@
+## NyxTube captions button active fill (2026-09-15; release preparation)
+
+The watch-player and Shorts captions buttons now use a solid accent background with a dark icon when aria-pressed is true, preserving the existing captions toggle and disabled behavior. The stylesheet cache version is updated. User requested push and deployment after verification.
+
 ## NyxTube release verified (2026-09-15; LIVE in 88b31ca)
 
 User authorized push and deployment. Application 88b31ca3ce2cfec77db9d556d839847284625fbd was pushed and deployed through the OVH updater after checking the intended origin revision and clean VPS checkout. Final VPS HEAD matches that revision, and the committed server.js blob matches the tested source. VPS build, deployment and branding checks pass; nyx, caddy, coturn and nyx-stratus are active. Loopback, apex and www health checks pass. Live player cache versions match the release. Browser tests loading the deployed player with controlled API/video fixtures pass native playback, captions, three-second fade/menu visibility, seeking, quality restoration, fallback and mobile layout. The real public captions endpoint returned HTTP 200 with 21 cues around 10,800 seconds for the long-video sample. These checks do not establish full-film reliability on every device. Production dependency audit remains 12 vulnerabilities (8 moderate, 4 high), with Stratus 3 moderate and existing Caddy warnings. No credentials were replaced.

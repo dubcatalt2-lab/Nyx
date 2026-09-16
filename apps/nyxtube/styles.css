@@ -20,3 +20,5 @@
 .watch-player.controls-idle .watch-controls,.watch-player.controls-idle .mobile-seek-controls{opacity:0;pointer-events:none}
 .watch-player.controls-idle{cursor:none}
 @media(prefers-reduced-motion:reduce){.watch-controls,.mobile-seek-controls{transition:none}}
+
+.watch-controls button[data-watch-captions][aria-pressed="true"],.short-actions button[data-short-captions][aria-pressed="true"]{background:var(--accent);color:#111114;border-color:var(--accent)}

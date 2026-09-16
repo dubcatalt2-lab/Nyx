@@ -1,4 +1,4 @@
-## Chat staff bypass, emoji grid and refresh/layout fixes (2026-09-15; release prepared)
+## Chat and sidebar fixes (2026-09-15; LIVE in de86db4)
 
 User authorized push/deploy. Moderator and higher built-in roles now bypass both message spam limiters, repeated-text blocking, existing cooldown ledgers and the client queued-message cap. Authorization reads the current server administration role, including inside the message transaction for public channels and DMs; stale cached identity or supplied permissions do not grant exemption. Lower roles retain rate/repeat protection with a 10-second violation cooldown (previously 30). Other authorization, mutes and attachment checks remain unchanged.
 
@@ -17,6 +17,8 @@ Consecutive messages from the same sender no longer reserve the hidden avatar he
 The narrow sidebar New tab button now receives its icon-only layout at widths of 900px and below; previously its styling existed only in the desktop media query, exposing a wrapped label. Expanded desktop labels are retained. The visual stylesheet cache version was updated.
 
 Final VPS-target build, check:deploy and branding check pass. Focused fixtures also pass for owner-only archived-message pagination and failed-batch retention, safe owner history rendering, the socket mention field and recovered mention previews. Source and production-built browser checks pass for Chat interactions, owner history, grouped message height, mention shell/standalone toasts, and narrow New tab at 680/390px and expanded desktop labels. No real chat messages were sent or deleted by these checks.
+
+Pushed and deployed application revision de86db46c659941eed39da6e63b2450c1cf6b7a6 through the OVH updater. Verified exact VPS HEAD, clean checkout and matching server.js Git blob against tested local source. Nyx, Caddy, coturn and nyx-stratus are active; loopback/apex/www health checks pass. Live browser fixtures pass for roles/cooldown, emoji grid, owner history UI, grouped message spacing, composer resize, mention shell/standalone toasts, and narrow/expanded New tab styling. The live server exposes 3,395 reaction catalog entries; unauthenticated deleted-history requests return 401. Browser APIs were mocked; no real messages were sent/deleted. Original device-specific symptoms still need confirmation on those devices. Production audit remains 12 vulnerabilities (8 moderate, 4 high), Stratus 3 moderate, and existing Caddy warnings.
 
 ## Combined Chat, AI images and password controls release validation (2026-09-15)
 

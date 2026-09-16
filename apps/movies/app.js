@@ -180,9 +180,7 @@ function sourcesFor(movie){
  const extra=movie.kind==='tv'?[]:movie.kind==='episode'
   ?additionalSources(type,movie.tmdbSeriesId,movie.sourceSeason,movie.sourceEpisode)
   :additionalSources(type,movie.id);
- // AniEmbed's supported iframe works directly; its security challenge blocks
- // the VPS proxy. Keep the existing proxy route for all other providers.
- return [...extra,...existing].map(source=>source.url?{...source,proxy:source.id!=='aniembed'}:source);
+ return [...extra,...existing].map(source=>source.url?{...source,proxy:true}:source);
 }
 let providerStates={},currentProvider='',watchGeneration=0;
 // Measurements stay in this tab and apply only to this exact movie/episode.

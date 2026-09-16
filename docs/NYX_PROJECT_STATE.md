@@ -1,4 +1,10 @@
-## AniEmbed anime fallback (2026-09-15; LIVE in 1ed7dce)
+## AniEmbed proxy-only correction (2026-09-15; release preparation)
+
+User rejected the direct-embed exception because it exposed a provider connection and did not use Nyx's player layout. AniEmbed now follows the same mandatory proxy path as every other external Movies provider. Its direct frame origin is removed from both document and server CSP. Source choice, exact anime mapping and the no-play/error fallback remain. Accessible proxied video uses existing Nyx controls; a provider refusing the relay advances to another proxied source rather than becoming a direct embed. The earlier direct 720p sample below does not establish proxied AniEmbed playback, which remains blocked by its security challenge in the observed VPS sample.
+
+Source and production-build fixtures pass selectable proxy-only routing, Nyx video layout/control binding, sandbox retention, failed/no-play fallback, blocked direct-frame CSP and cleanup. Actual built-source browser test observed AniEmbed entering the proxy, then automatic fallback to Vidy at 1920x1080, Nyx pause and seeking beyond 125 seconds, zero popups and zero direct AniEmbed requests. This is fallback playback evidence, not AniEmbed playback. Build/deploy/branding and source mapping checks pass.
+
+## AniEmbed anime fallback (2026-09-15; deployed in 1ed7dce, direct route superseded above)
 
 Added AniEmbed to mapped anime episode sources using the existing exact TMDB season/episode to AniList mapping and offsets. It is offered independently of AnimeX metadata errors, concurrency saturation or a shorter AnimeX episode catalog. Unknown or ambiguous anime mappings still omit anime-specific sources. The public Movies API also exposes the new source. Strict host/path/query validation remains; source and shell module versions are refreshed.
 

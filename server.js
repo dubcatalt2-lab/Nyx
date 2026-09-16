@@ -1,3 +1,4 @@
+import { createTubeCaptions } from './lib/nyxtube-captions.mjs';
 import {installMovieImages} from './lib/movie-images.mjs';
 import {chatSendDecision} from './lib/chat-send-policy.mjs';
 import { createMovieCatalog, installMovieApi } from './lib/movies.mjs';
@@ -7772,7 +7773,7 @@ function nyxTubeRoute(handler, cacheControl = "private, max-age=120") {
   };
 }
 
-const nyxTubeBackend = createTubeBackend({ videoInfo: id => nyxTubeCatalog.info(id) });
+const nyxTubeBackend = createTubeBackend({ videoInfo: (id, options) => nyxTubeCatalog.info(id, options) });
 app.use(tubeStreamingRoutes({
   backend: nyxTubeBackend, sameOrigin: sameOriginRequest, clientIp: nyxClientIp,
   owner: async req => {
@@ -7833,6 +7834,9 @@ app.get("/api/nyxtube/search", nyxTubeRoute(req => {
   }
   return nyxTubeSearch(query, Math.max(1, Math.min(24, Number.parseInt(req.query?.limit, 10) || 16)));
 }, "no-store"));
+
+const nyxTubeCaptions = createTubeCaptions({tracks:nyxTubeYtDlpTracks});
+app.get('/api/nyxtube/captions/:id', nyxTubeRoute(req => nyxTubeCaptions(String(req.params.id),Number(req.query.at||0)), 'private, max-age=30'));
 
 app.get("/api/nyxtube/community", async (req, res) => {
   res.set("Cache-Control", "private, max-age=120");

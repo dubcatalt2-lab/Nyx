@@ -118,6 +118,7 @@ const requiredFiles = [
   "lib/nyxtube-mp4.mjs",
   "lib/nyxtube-segments.mjs",
   "lib/nyxtube-catalog.mjs",
+  "lib/nyxtube-captions.mjs",
   "lib/nyxify-meting.mjs",
   "lib/nyxify-media-fetch.mjs",
   "assets/icons/shortcut-nyxify.svg",

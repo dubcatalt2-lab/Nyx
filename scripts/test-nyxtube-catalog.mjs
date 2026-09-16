@@ -43,6 +43,7 @@ try {
   const detail = await catalog.video(id); assert.equal(detail.durationSeconds,7200); assert.equal(detail.detailsPending,false); assert.equal(detail.likeCount,null);
   assert.ok(!JSON.stringify(detail).includes('private-signed-url'));
   const before = calls; await catalog.info(id); assert.equal(calls,before,'Playback shares cached full metadata');
+  await catalog.info(id,{refresh:true});assert.equal(calls,before+1,'Expired stream refresh bypasses catalog metadata cache');
   const channel = await catalog.channel(channelId); assert.equal(channel.channel.title,'Creator'); assert.equal(channel.videos[0].id,id);
   const comments = await catalog.comments(id); assert.equal(comments.comments[0].text,'Hello');
   for (const bad of [{ availability: 'unlisted' }, { age_limit: 18 }, { is_live: true }, { playable_in_embed: false }, { geo_countries: ['CA'] }]) assert.equal(catalogVideo({ ...info, ...bad },true),null);

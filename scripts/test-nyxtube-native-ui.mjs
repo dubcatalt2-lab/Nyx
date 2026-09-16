@@ -25,6 +25,7 @@ try {
     if(req.path.startsWith('/native/formats/'))return failed?res.status(503).json({error:'Unavailable'}):res.json({formats:[{height:360},{height:720}]});
     if(req.path.startsWith('/native/prepare/'))return res.json(hold?{state:'preparing'}:{state:'ready',url:`/api/nyxtube/native/media/${video.id}-${req.path.split('/').pop()}.mp4`});
     if(req.path.startsWith('/native/jobs/'))return res.json({state:'preparing'});
+    if(req.path.startsWith('/captions/'))return res.json({available:true,language:'English',start:0,until:60,segments:[{startSeconds:0,durationSeconds:30,text:'Native captions fixture'}]});
     if(req.path==='/community')return res.json({comments:{available:true,comments:[]},transcript:{available:true,segments:[{startSeconds:5,text:'Five seconds'}]}});
     return res.json({videos:[{...video,detailsPending:true}]});
   });
@@ -59,6 +60,10 @@ try {
   assert.notEqual(await spinner.evaluate(el=>getComputedStyle(el).transform),bufferedRotation);
   await page.locator('[data-watch-stage]').screenshot({path:'.codex-artifacts/nyxtube-chunk-buffering.png'});
   await player.evaluate(v=>v.dispatchEvent(new Event('playing')));assert.ok(await spinner.isHidden());
+  await page.locator('[data-watch-stage]').evaluate(el=>el.dispatchEvent(new Event('pointermove')));await page.waitForTimeout(3400);assert.ok(await page.locator('[data-watch-stage]').evaluate(el=>el.classList.contains('controls-idle')));await page.locator('[data-watch-stage]').evaluate(el=>el.dispatchEvent(new Event('pointermove')));assert.ok(await page.locator('[data-watch-stage]').evaluate(el=>!el.classList.contains('controls-idle')));
+  await page.locator('[data-watch-settings]').click();await page.waitForTimeout(3300);assert.ok(await page.locator('[data-watch-stage]').evaluate(el=>!el.classList.contains('controls-idle')),'Open menu keeps controls visible');await page.keyboard.press('Escape');
+  await page.locator('[data-watch-captions]').click();await page.waitForFunction(()=>document.querySelector('[data-watch-player] video').textTracks[0]?.mode==='showing');assert.equal(await player.evaluate(v=>v.textTracks[0].cues[0].text),'Native captions fixture');
+  await page.locator('[data-watch-captions]').click();assert.equal(await player.evaluate(v=>v.textTracks[0].mode),'disabled');
   await page.locator('[data-watch-toggle]').click();assert.ok(await player.evaluate(v=>v.paused));
   await player.evaluate(v=>{v.currentTime=5;v.volume=0;v.playbackRate=1.5;v.muted=true;});
   await page.locator('[data-watch-quality]').selectOption('360');

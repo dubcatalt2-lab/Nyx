@@ -36,15 +36,16 @@ try {
   assert.equal(large.count,audioIndex.count);assert.ok(indexBytes<100000,'Large file should require only its index');
   await assert.rejects(readMp4Index(async()=>({data:Buffer.alloc(16),total:16}),'video'));
 
-  let rangeCalls=[],failNext=0,hold=false,cancelled=0,active=0,maxActive=0;
+  let refreshes=0,expiredOnce=false,rangeCalls=[],failNext=0,hold=false,cancelled=0,active=0,maxActive=0;
   const info={id,availability:'public',duration:120,formats:[
     {format_id:'136',url:'https://r1.googlevideo.com/video',protocol:'https',ext:'mp4',vcodec:'avc1.64000c',acodec:'none',height:720,filesize:3*1024**3},
     {format_id:'135',url:'https://r1.googlevideo.com/video',protocol:'https',ext:'mp4',vcodec:'avc1.64000c',acodec:'none',height:480},
     {format_id:'140',url:'https://r1.googlevideo.com/audio',protocol:'https',ext:'m4a',vcodec:'none',acodec:'mp4a.40.2'}]};
-  const options={env:{NYX_YOUTUBE_NATIVE_ENABLED:'1',NYX_YOUTUBE_CACHE_DIR:join(root,'cache')},now:()=>clock,videoInfo:async()=>info,
+  const options={env:{NYX_YOUTUBE_NATIVE_ENABLED:'1',NYX_YOUTUBE_CACHE_DIR:join(root,'cache')},now:()=>clock,videoInfo:async(_id,options)=>{if(options.refresh)refreshes++;return info;},
     fetch:async(url,{headers,signal})=>{
       const kind=url.endsWith('/audio')?'audio':'video',data=bytes[kind];
       const [,a,b]=/^bytes=(\d+)-(\d+)$/.exec(headers.Range),start=Number(a),end=Math.min(Number(b),data.length-1);
+      if(expiredOnce){expiredOnce=false;return new Response('',{status:403});}
       if(failNext-->0)throw new TypeError('Transient reset');
       rangeCalls.push({kind,start,end});active++;maxActive=Math.max(maxActive,active);
       try {
@@ -69,12 +70,14 @@ try {
   assert.ok(rangeCalls.every(r=>r.start>=videoIndex.offset[parts[15].start]),'Seek should skip earlier video bytes');
   assert.ok((await backend.status()).cacheBytes<bytes.video.length/4);
 
+  expiredOnce=true;const beforeRefresh=refreshes;const refreshed=await backend.segment(token,'video',14,new AbortController().signal);refreshed.release();assert.equal(refreshes,beforeRefresh+1,'Expired media URL forces one metadata refresh');
+
   // All consumers leaving aborts a shared job; one leaving does not cancel another.
   hold=true;
   const a=new AbortController(),b=new AbortController();
   const first=backend.segment(token,'audio',1,a.signal).catch(e=>e),second=backend.segment(token,'audio',1,b.signal).catch(e=>e);
   await new Promise(r=>setTimeout(r,50));a.abort();await first;assert.equal(cancelled,0);
-  b.abort();await second;await new Promise(r=>setTimeout(r,50));assert.equal(cancelled,1);hold=false;
+  b.abort();await second;hold=false;const reacquired=await backend.segment(token,'audio',1,new AbortController().signal);reacquired.release();assert.equal(cancelled,1);
   assert.ok(!(await readdir(join(root,'cache'))).some(n=>n.startsWith('work-')));
   hold=true;
   const controllers=Array.from({length:12},()=>new AbortController());
@@ -111,6 +114,8 @@ try {
   await page.waitForFunction(()=>window.player.video.currentTime>97&&window.player.video.readyState>=2,{},{timeout:30000});
   assert.deepEqual(await page.evaluate(()=>window.events),[]);
   assert.ok(await page.evaluate(()=>window.player.video.buffered.start(0)>60),'Seeking should discard old distant media');
+  for(const time of [12,84,30,102,48,96]){await page.evaluate(t=>window.player.seekTo(t),time);await page.waitForTimeout(70);}
+  await page.waitForFunction(()=>window.player.video.currentTime>97&&window.player.video.readyState>=2,{},{timeout:30000});assert.deepEqual(await page.evaluate(()=>window.events),[]);
   await page.evaluate(()=>window.player.pauseVideo());
   assert.equal(await page.evaluate(()=>window.player.getVolume()),35);assert.equal(await page.evaluate(()=>window.player.getPlaybackRate()),1.5);
   await page.evaluate(()=>window.player.destroy());

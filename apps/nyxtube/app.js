@@ -206,8 +206,8 @@
     try { currentRate = Number(player.getPlaybackRate?.()) || 1; } catch { currentRate = 1; }
     refs.watchSpeed.value = rates.includes(currentRate) ? String(currentRate) : String(rates.includes(1) ? 1 : rates[0]);
     try { refs.watchVolume.value = String(Math.max(0, Math.min(100, Number(player.getVolume?.() ?? 100)))); } catch { refs.watchVolume.value = "100"; }
-    refs.watchSettingsCaptions.disabled = !video?.captions || player.isNative;
-    refs.watchCaptions.disabled = Boolean(player.isNative); refs.watchCaptionOption.disabled = Boolean(player.isNative);
+    refs.watchSettingsCaptions.disabled = !video?.captions;
+    refs.watchCaptions.disabled = !video?.captions; refs.watchCaptionOption.disabled = !video?.captions;
     refs.watchQuality.replaceChildren(...(player.isNative ? player.qualities : ["auto"]).map(height => { const item=document.createElement("option"); item.value=height; item.textContent=height === "auto" ? "Auto" : `${height}p`; return item; }));
     refs.watchQuality.disabled = !player.isNative; refs.watchQuality.value = player.isNative ? String(player.quality) : "auto";
     refs.watchQuality.title = player.isNative ? "Playback quality" : "YouTube selects playback quality automatically";
@@ -350,8 +350,9 @@
     state.watchPlayer?.destroy?.();
     const config = options(video.id); config.expectedDuration = video.durationSeconds; config.quality = restore?.quality; config.startTime = restore?.time;
     config.events = {
+      onCaptionError: event => {if(generation!==state.watchGeneration)return;state.watchCaptions=false;setCaptions(event.target,false,refs.watchCaptions,refs.watchCaptionOption);refs.watchSettingsCaptions.value="off";notice(event.message);},
       onBuffering: event => { if (generation !== state.watchGeneration) return; refs.watchLoading.hidden = !event.data; if(event.data){refs.watchLoading.querySelector("strong").textContent = "Loading video chunks...";refs.watchCenterPlay.hidden=true;}else refs.watchCenterPlay.hidden=event.target.getPlayerState()!==2; },
-      onReady: event => { if (generation !== state.watchGeneration) return; refs.watchLoading.hidden = event.target.isNative?event.target.video.readyState>=3:true; if (restore) { event.target.seekTo(restore.time); event.target.setVolume?.(restore.volume); event.target.setPlaybackRate?.(restore.rate); if(restore.muted)event.target.mute(); } configureWatchSettings(event.target, video); if (!restore?.paused) event.target.playVideo(); else { event.target.pauseVideo(); refs.watchCenterPlay.hidden=false; } startWatchTimer(); },
+      onReady: event => { if (generation !== state.watchGeneration) return; refs.watchLoading.hidden = event.target.isNative?event.target.video.readyState>=3:true; if (restore) { event.target.seekTo(restore.time); event.target.setVolume?.(restore.volume); event.target.setPlaybackRate?.(restore.rate); if(restore.muted)event.target.mute(); } configureWatchSettings(event.target, video); if(state.watchCaptions&&video.captions)setCaptions(event.target,true,refs.watchCaptions,refs.watchCaptionOption); if (!restore?.paused) event.target.playVideo(); else { event.target.pauseVideo(); refs.watchCenterPlay.hidden=false; } startWatchTimer(); },
       onStateChange: event => {
         if (generation !== state.watchGeneration) return;
         const playing = event.data === YT.PlayerState.PLAYING, paused = event.data === YT.PlayerState.PAUSED;
@@ -360,7 +361,7 @@
       },
       onError: event => {
         if(generation !== state.watchGeneration || state.view !== "watch") return;
-        if(native) { notice(event.target?.failure ? `Native playback could not start: ${event.target.failure} Opening the YouTube player.` : "Native playback is unavailable for this video. Opening the YouTube player."); createWatch(video, false, true, restore).catch(()=>notice("The video player could not start.")); }
+        if(native) { notice(event.target?.failure ? `Native playback stopped: ${event.target.failure} Opening the YouTube player.` : "Native playback is unavailable for this video. Opening the YouTube player."); createWatch(video, false, true, {time:event.target.getCurrentTime()||restore?.time||0,volume:event.target.getVolume(),rate:event.target.getPlaybackRate(),muted:event.target.isMuted(),paused:event.target.getCurrentTime()>0?event.target.video.paused:(restore?.paused??false)}).catch(()=>notice("The video player could not start.")); }
         else recoverWatch(video, Number(event?.data), YT === directYoutubeApi);
       },
     };
@@ -477,10 +478,17 @@
       copy.append(title, meta); button.append(thumb, copy); button.addEventListener("click", () => openWatch(video)); return button;
     }));
   }
+  let watchLastInteraction=Date.now();
+  function showWatchControls(){watchLastInteraction=Date.now();refs.watchStage.classList.remove('controls-idle');}
+  for(const event of ['pointermove','pointerdown','keydown','focusin'])refs.watchStage.addEventListener(event,showWatchControls);
   function startWatchTimer() {
+    showWatchControls();
     clearInterval(state.watchTimer);
     state.watchTimer = setInterval(() => {
       if (!ready(state.watchPlayer)) return;
+      const focused=refs.watchStage.contains(document.activeElement)&&document.activeElement!==refs.watchStage&&document.activeElement?.matches(':focus-visible');
+      const keep=state.watchPlayer.getPlayerState()!==1||state.watchPlayer.buffering||!refs.watchLoading.hidden||!refs.watchSettingsMenu.hidden||focused||refs.watchStage.querySelector('.watch-controls :active')||state.watchSpacePressed;
+      if(keep)showWatchControls();else refs.watchStage.classList.toggle('controls-idle',Date.now()-watchLastInteraction>=3000);
       const current = Number(state.watchPlayer.getCurrentTime?.()) || 0;
       const total = Number(state.watchPlayer.getDuration?.()) || Number(state.watchVideo?.durationSeconds) || 0;
       refs.watchTime.textContent = `${duration(current)} / ${duration(total)}`;
@@ -488,6 +496,7 @@
     }, 250);
   }
   function stopWatch() {
+    showWatchControls();
     ++state.watchGeneration;
     clearInterval(state.watchTimer); state.watchTimer = 0; clearTimeout(state.watchRecoveryTimer); state.watchRecoveryTimer = 0;
     state.watchCommunityRequestId += 1;
@@ -547,7 +556,8 @@
     state.watchSpaceRateChanged = false;
   }
   function setCaptions(player, enabled, button, option) {
-    if (!ready(player) || player.isNative) return false;
+    if (!ready(player)) return false;
+    if(player.isNative){void player.setCaptions(enabled);button.setAttribute("aria-pressed",String(enabled));if(option)option.querySelector("span").textContent=enabled?"On":"Off";return true;}
     try { enabled ? player.loadModule?.("captions") : player.unloadModule?.("captions"); } catch { return false; }
     button.setAttribute("aria-pressed", String(enabled));
     if (option) option.querySelector("span").textContent = enabled ? "On" : "Off";

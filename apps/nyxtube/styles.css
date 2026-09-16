@@ -15,3 +15,8 @@
 .player-loading strong{max-width:calc(100% - 32px);text-align:center}
 @keyframes nyxtube-loading-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.watch-loading-spinner{animation:none}}
+
+.watch-controls,.mobile-seek-controls{transition:opacity .2s ease}
+.watch-player.controls-idle .watch-controls,.watch-player.controls-idle .mobile-seek-controls{opacity:0;pointer-events:none}
+.watch-player.controls-idle{cursor:none}
+@media(prefers-reduced-motion:reduce){.watch-controls,.mobile-seek-controls{transition:none}}

@@ -1594,6 +1594,7 @@
         if(nyxFounderIsOwner)await loadFounderProfile({force:true});
         syncFounderOwnerControls();
         close();
+        if(location.pathname==='/apps/tutsi/profiles.html'&&parent!==window)parent.postMessage({type:'tutsi:profile-saved',displayName:nyxUserProfile.displayName},location.origin);
         toast(nyxFounderIsOwner?'Profile and About Nyx updated':'Profile saved');
       }catch(saveError){
         error.textContent=nyxFriendlyFirebaseError(saveError,'Profile could not be saved.');
@@ -10537,193 +10538,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       scan();
     }
     function installDuckDuckGoImageViewportFix(t){
-      if(!t?.frame) return;
-      let doc;
-      try{doc=t.frame.contentDocument}catch{return}
-      if(!doc?.documentElement || doc.documentElement.dataset.nyxDuckImageViewport==='true') return;
-      const currentSource=()=>{
-        try{
-          const href=String(t.frame.contentWindow?.location?.href || '');
-          return browserShellSourceUrl(href) || browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
-        }catch{
-          return browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
-        }
-      };
-      let initial;
-      try{initial=new URL(currentSource(),location.href)}catch{return}
-      if(initial.hostname.replace(/^www\./i,'').toLowerCase()!=='duckduckgo.com') return;
-      doc.documentElement.dataset.nyxDuckImageViewport='true';
-      const decodeBrokenImageUrl=value=>{
-        const raw=String(value || '').trim();
-        const match=raw.match(/https?%3a%2f%2f/i);
-        if(!match) return '';
-        const isEncodedUrl=match.index===0;
-        const isScramjetPath=raw.includes('/~/sj/');
-        if(!isEncodedUrl && !isScramjetPath) return '';
-        let encoded=raw.slice(match.index);
-        const metadataAt=encoded.search(/[?&]%24(?:rfp|io|tf|pf|iframe)=/i);
-        if(metadataAt>0) encoded=encoded.slice(0,metadataAt);
-        let decoded=encoded;
-        for(let pass=0;pass<2 && /%[0-9a-f]{2}/i.test(decoded);pass++){
-          try{decoded=decodeURIComponent(decoded)}catch{break}
-        }
-        return /^https?:\/\//i.test(decoded) ? decoded : '';
-      };
-      const repairImages=()=>{
-        doc.querySelectorAll('img,source').forEach(image=>{
-          const current=image.getAttribute('src') || '';
-          const repaired=decodeBrokenImageUrl(current);
-          if(repaired && repaired!==current) image.setAttribute('src',repaired);
-          ['data-src','data-original','data-lazy-src','data-image-url'].forEach(attribute=>{
-            const lazy=image.getAttribute(attribute) || '';
-            const repairedLazy=decodeBrokenImageUrl(lazy);
-            if(!repairedLazy || repairedLazy===lazy) return;
-            image.setAttribute(attribute,repairedLazy);
-            if(image.tagName==='IMG' && (!current || decodeBrokenImageUrl(current))) image.setAttribute('src',repairedLazy);
-          });
-          const srcset=image.getAttribute('srcset') || '';
-          const firstSrcsetUrl=srcset.split(',')[0]?.trim().split(/\s+/)[0] || '';
-          const repairedSrcset=decodeBrokenImageUrl(firstSrcsetUrl);
-          if(repairedSrcset){
-            image.removeAttribute('srcset');
-            image.setAttribute('src',repairedSrcset);
-          }
-        });
-      };
-      const repairImageFilterViewport=()=>{
-        const labels=['AI images','All sizes','All colors','All types','All layouts','Licenses'];
-        doc.querySelectorAll('nav').forEach(nav=>{
-          const text=String(nav.innerText || nav.textContent || '').replace(/\s+/g,' ').trim();
-          if(labels.filter(label=>text.includes(label)).length<3) return;
-          const list=[...nav.querySelectorAll('ul')].find(candidate=>{
-            const box=candidate.getBoundingClientRect?.();
-            return box && box.width>=300 && box.height>=20 && box.height<=96;
-          });
-          if(!list) return;
-          const navBox=nav.getBoundingClientRect?.();
-          const listBox=list.getBoundingClientRect?.();
-          if(!navBox || !listBox || navBox.height<=listBox.height+120) return;
-          const targetHeight=Math.ceil(Math.max(40,listBox.height+16));
-          nav.style.setProperty('height',`${targetHeight}px`,'important');
-          nav.style.setProperty('min-height','0','important');
-          nav.style.setProperty('max-height',`${targetHeight}px`,'important');
-          nav.style.setProperty('overflow','visible','important');
-          const wrapper=list.parentElement;
-          if(wrapper && wrapper!==nav){
-            const wrapperHeight=Math.ceil(Math.max(32,listBox.height));
-            wrapper.style.setProperty('height',`${wrapperHeight}px`,'important');
-            wrapper.style.setProperty('min-height','0','important');
-            wrapper.style.setProperty('max-height',`${wrapperHeight}px`,'important');
-            wrapper.style.setProperty('overflow','visible','important');
-            wrapper.dataset.nyxDuckImageFilterWrapperFixed='true';
-          }
-          nav.dataset.nyxDuckImageFilterFixed='true';
-          doc.documentElement.dataset.nyxDuckImageFilterFixed='true';
-        });
-      };
-      const restoreDuckDuckGoSearchLayout=()=>{
-        // DuckDuckGo changes between Images and All without reloading the document.
-        // Every image-only layout override must therefore be undone explicitly.
-        doc.querySelectorAll('[data-nyx-duck-mainline-hidden="true"]').forEach(mainline=>{
-          ['display','min-height','height','margin','padding'].forEach(property=>mainline.style.removeProperty(property));
-          delete mainline.dataset.nyxDuckMainlineHidden;
-        });
-        doc.querySelectorAll('[data-nyx-duck-image-gap-fixed="true"]').forEach(container=>{
-          container.style.removeProperty('margin-top');
-          delete container.dataset.nyxDuckImageGapFixed;
-        });
-        doc.querySelectorAll('[data-nyx-duck-image-filter-fixed="true"]').forEach(nav=>{
-          ['height','min-height','max-height','overflow'].forEach(property=>nav.style.removeProperty(property));
-          delete nav.dataset.nyxDuckImageFilterFixed;
-        });
-        doc.querySelectorAll('[data-nyx-duck-image-filter-wrapper-fixed="true"]').forEach(wrapper=>{
-          ['height','min-height','max-height','overflow'].forEach(property=>wrapper.style.removeProperty(property));
-          delete wrapper.dataset.nyxDuckImageFilterWrapperFixed;
-        });
-      };
-      const collapseEmptyImageGap=()=>{
-        const view=t.frame.contentWindow;
-        if(!view || !doc.body) return;
-        const pageText=String(doc.body.innerText || '');
-        if(!/AI images/i.test(pageText) || !/All sizes/i.test(pageText) || !/All layouts/i.test(pageText)){
-          restoreDuckDuckGoSearchLayout();
-          return;
-        }
-        const scrollTop=view.scrollY || doc.scrollingElement?.scrollTop || 0;
-        const resultImages=[...doc.images].filter(image=>{
-          if(image.closest?.('header,nav,aside,[role="dialog"],[class*="modal" i],[class*="anomaly" i]')) return false;
-          const box=image.getBoundingClientRect?.();
-          return box && box.width>=100 && box.height>=70;
-        }).sort((a,b)=>{
-          const first=a.getBoundingClientRect();
-          const second=b.getBoundingClientRect();
-          return first.top-second.top || first.left-second.left;
-        });
-        if(resultImages.length<4) return;
-        const sample=resultImages.slice(0,Math.min(12,resultImages.length));
-        doc.querySelectorAll('[data-testid="mainline"],.results--main').forEach(mainline=>{
-          if(sample.some(image=>mainline.contains(image))) return;
-          mainline.style.setProperty('display','none','important');
-          mainline.style.setProperty('min-height','0','important');
-          mainline.style.setProperty('height','0','important');
-          mainline.style.setProperty('margin','0','important');
-          mainline.style.setProperty('padding','0','important');
-          mainline.dataset.nyxDuckMainlineHidden='true';
-        });
-        let filterBottom=0;
-        doc.querySelectorAll('div,nav,section').forEach(element=>{
-          const text=String(element.innerText || '').replace(/\s+/g,' ').trim();
-          const matches=['AI images','All sizes','All colors','All types','All layouts','Licenses']
-            .filter(label=>text.includes(label)).length;
-          if(matches<3) return;
-          const box=element.getBoundingClientRect?.();
-          if(!box || box.width<300 || box.height<=0 || box.height>120) return;
-          filterBottom=Math.max(filterBottom,box.bottom+scrollTop);
-        });
-        const targetTop=Math.max(110,filterBottom ? filterBottom+12 : 0);
-        let container=sample[0].parentElement;
-        while(container && !sample.every(image=>container.contains(image))) container=container.parentElement;
-        if(!container || container===doc.body || container===doc.documentElement) return;
-        while(container.parentElement && container.parentElement!==doc.body && container.parentElement!==doc.documentElement){
-          const parent=container.parentElement;
-          if(parent.querySelector('[data-testid="header"],form[data-testid="search-form"]')) break;
-          const parentBox=parent.getBoundingClientRect?.();
-          const parentTop=(parentBox?.top || 0)+scrollTop;
-          if(!parentBox || parentTop<targetTop+180) break;
-          container=parent;
-        }
-        if(container.dataset.nyxDuckImageGapFixed==='true') return;
-        const containerBox=container.getBoundingClientRect?.();
-        if(!containerBox) return;
-        const gap=Math.round(containerBox.top+scrollTop-targetTop);
-        if(gap<220) return;
-        const currentMargin=Number.parseFloat(view.getComputedStyle(container).marginTop) || 0;
-        container.style.setProperty('margin-top',`${currentMargin-gap}px`,'important');
-        container.dataset.nyxDuckImageGapFixed='true';
-        doc.documentElement.dataset.nyxDuckImageGapFixed='true';
-      };
-      let queued=false;
-      const queueRepair=()=>{
-        if(queued) return;
-        queued=true;
-        requestAnimationFrame(()=>{
-          queued=false;
-          repairImageFilterViewport();
-          repairImages();
-          collapseEmptyImageGap();
-        });
-      };
-      try{
-        new MutationObserver(queueRepair).observe(doc.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['src','srcset','data-src','data-original','data-lazy-src','data-image-url']});
-      }catch{}
-      repairImageFilterViewport();
-      repairImages();
-      collapseEmptyImageGap();
-      [250,700,1400,2600,4200].forEach(delay=>setTimeout(()=>{
-        repairImageFilterViewport();
-        repairImages();
-        collapseEmptyImageGap();
-      },delay));
+      globalThis.NyxDuckImageViewport?.(t,browserShellSourceUrl);
     }
     function installBrowserAdProtection(t){
       if(!t?.frame) return false;
@@ -16940,7 +16755,55 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     migrateGlassDefault();
     applyAutoHieroglyphPreference();
   }
+  async function bootTutsiProfiles(){
+    // Reuse the existing editor without starting the Nyx shell, presence or cloud preferences.
+    const status=document.getElementById('profile-status');
+    let busy=false;
+    let opened=false;
+    const send=data=>{if(parent!==window)parent.postMessage(data,location.origin)};
+    const open=async data=>{
+      if(busy)return;
+      busy=true;
+      try{
+        nyxFounderSignedInUser=nyxFounderFirebaseAuth?.currentUser||null;
+        if(!nyxFounderSignedInUser){status.textContent='Sign in to view profiles.';send({type:'tutsi:profile-signin'});return}
+        await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile()]);
+        if(!nyxUserProfile)throw new Error('Your profile could not be loaded. Try again.');
+        document.querySelectorAll('.nyx-user-profile-overlay,.nyx-profile-directory-overlay').forEach(el=>el.remove());
+        if(data.mode==='edit')await openNyxUserProfile();
+        else await openNyxProfileDirectory(data.uid||nyxFounderSignedInUser.uid);
+        status.textContent='';
+        opened=true;
+        const header=document.querySelector('.nyx-discord-profile-header p');
+        if(header)header.textContent='Your profile is shared between Tutsi and Nyx.';
+      }catch(error){status.textContent=error.message||'Profile unavailable.'}
+      finally{busy=false}
+    };
+    addEventListener('message',event=>{
+      if(event.source!==parent||event.origin!==location.origin||event.data?.type!=='tutsi:profile-open')return;
+      void open({mode:event.data.mode==='edit'?'edit':'view',uid:/^[A-Za-z0-9_-]{8,128}$/.test(String(event.data.uid||''))?event.data.uid:''});
+    });
+    try{
+      const response=await fetch('/api/founder-profile/auth-config',{cache:'no-store'});
+      const config=await response.json();
+      if(!response.ok||!config.enabled)throw new Error('Accounts are unavailable.');
+      const [{initializeApp,getApps},{getAuth,setPersistence,browserLocalPersistence}]=await Promise.all([import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')]);
+      const app=getApps().find(item=>item.name==='nyx-founder-owner')||initializeApp({apiKey:config.apiKey,authDomain:`${config.projectId}.firebaseapp.com`,projectId:config.projectId},'nyx-founder-owner');
+      nyxFounderFirebaseAuth=getAuth(app);
+      await setPersistence(nyxFounderFirebaseAuth,browserLocalPersistence);
+      await nyxFounderFirebaseAuth.authStateReady?.();
+      nyxFounderAuthReadyPromise=Promise.resolve();
+      send({type:'tutsi:profile-ready'});
+      if(parent===window)void open({mode:'view'});
+      new MutationObserver(()=>{
+        if(opened&&!busy&&!document.querySelector('.nyx-user-profile-overlay,.nyx-profile-directory-overlay')){
+          opened=false;send({type:'tutsi:profile-close'});
+        }
+      }).observe(document.body,{childList:true});
+    }catch(error){status.textContent=error.message||'Accounts are unavailable.'}
+  }
   async function boot(){
+    if(location.pathname==='/apps/tutsi/profiles.html'){void bootTutsiProfiles();return}
     const hostedCloakEntry=shouldAutoLaunchHostedCloak();
     if(hostedCloakEntry) document.body.classList.add('hosted-cloak-entry');
     document.documentElement.classList.toggle('nyx-chromeos',isChromeOsUser());

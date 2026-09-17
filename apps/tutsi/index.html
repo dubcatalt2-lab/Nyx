@@ -1,0 +1,474 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex,nofollow,noarchive" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#1e1e2e" />
+    <meta
+      name="description"
+      content="Browse, watch, listen and play with Tutsi."
+    />
+    <title>Tutsi Math</title>
+    <link rel="icon" href="/apps/tutsi/icon.png?v=2" type="image/png" />
+    <link rel="stylesheet" href="/apps/tutsi/font.css?v=1" />
+    <link rel="stylesheet" href="/apps/tutsi/style.css?v=2" />
+    <script src="/runtime-config.js"></script>
+    <script type="module" src="/apps/tutsi/app.mjs?v=2"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="topbar">
+      <a class="brand" href="#home"
+        ><img
+          src="/apps/tutsi/icon.png?v=2"
+          alt=""
+          width="30"
+          height="30"
+        />tutsi math<span class="brand-dot">.</span></a
+      >
+      <div class="header-actions">
+        <a
+          class="icon-button"
+          href="#chat"
+          aria-label="Chat"
+          data-icon="chat"
+        ></a
+        ><button
+          class="account-button"
+          id="account-button"
+          type="button"
+          aria-label="Sign in"
+          title="Sign in"
+        >
+          <span data-icon="profile"></span>
+        </button>
+      </div>
+    </header>
+    <main id="main">
+      <section id="home" class="view home-view">
+        <div class="hero">
+          <div class="home-meta">
+            <time id="clock"></time><span id="calendar"></span>
+          </div>
+          <div class="home-wordmark">
+            <img src="/apps/tutsi/icon.png?v=2" alt="" width="90" height="90" />
+            <h1>tutsi <span>math</span></h1>
+          </div>
+          <form id="search" class="search">
+            <span data-icon="search"></span
+            ><input
+              id="query"
+              aria-label="Search or enter a website"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="Search the web or enter a URL"
+            /><button type="submit" aria-label="Go">
+              <span data-icon="arrow"></span>
+            </button>
+          </form>
+          <div class="search-foot">
+            <button id="connection-shortcut" type="button">
+              Epoxy &middot; Wisp <span data-icon="chevron"></span></button
+            ><kbd>/</kbd><span class="key-hint">to search</span>
+          </div>
+          <div class="home-shortcuts">
+            <a href="#games"><span data-icon="games"></span>Games</a
+            ><a href="#movies"><span data-icon="movies"></span>Movies</a
+            ><a href="#apps"><span data-icon="apps"></span>All apps</a>
+          </div>
+        </div>
+      </section>
+      <section id="apps" class="view apps-view" hidden>
+        <div class="page-heading"><h1>Apps</h1></div>
+        <div id="all-apps" class="all-apps"></div>
+      </section>
+      <section id="browser" class="view browser-view" hidden>
+        <div class="browser-bar">
+          <button id="browser-home" class="icon-button" aria-label="Return to Tutsi home" data-icon="home"></button>
+          <button
+            id="back"
+            class="icon-button"
+            aria-label="Back"
+            data-icon="back"
+          ></button
+          ><button
+            id="forward"
+            class="icon-button"
+            aria-label="Forward"
+            data-icon="arrow"
+          ></button
+          ><button
+            id="reload"
+            class="icon-button"
+            aria-label="Reload website"
+            data-icon="reload"
+          ></button>
+          <form id="address-form">
+            <input
+              id="address"
+              aria-label="Website address"
+              spellcheck="false"
+              autocomplete="off"
+            />
+          </form>
+          <button
+            id="close-browser"
+            class="icon-button"
+            aria-label="Close website"
+            data-icon="close"
+          ></button>
+        </div>
+        <div id="browser-tabs" role="tablist" aria-label="Website tabs"></div>
+        <div id="browser-stage"></div>
+      </section>
+      <section id="app-view" class="view app-view" hidden>
+        <div id="app-host"></div>
+      </section>
+      <section id="settings" class="view settings-view" hidden>
+        <div class="page-heading">
+          <p class="eyebrow">PREFERENCES</p>
+          <h1>Settings</h1>
+          <p>Appearance, browsing, and your tab.</p>
+        </div>
+        <div class="settings-layout">
+          <aside class="settings-nav" aria-label="Settings sections">
+            <a href="#appearance">Appearance</a
+            ><a href="#connection">Connection</a><a href="#protections">Protection</a><a href="#shortcuts">Shortcuts</a><a href="#privacy">Your data</a
+            ><a href="#terms">Terms of service ↗</a>
+            <div class="settings-note">
+              <img
+                src="/apps/tutsi/icon.png?v=2"
+                width="28"
+                height="28"
+                alt=""
+              /><strong>tutsi.</strong
+              ><span>F students are the inventors. Use tutsi.</span>
+            </div>
+          </aside>
+          <div class="settings-content">
+            <section class="settings-card" id="appearance">
+              <div class="card-heading">
+                <span class="setting-symbol" data-icon="palette"></span>
+                <div>
+                  <h2>Appearance</h2>
+                  <p>Choose your colors.</p>
+                </div>
+              </div>
+              <fieldset>
+                <legend>Catppuccin flavor</legend>
+                <div class="theme-options">
+                  <label class="theme-choice"
+                    ><input name="theme" type="radio" value="mocha" /><span
+                      class="theme-preview mocha-preview"
+                      ><i></i><i></i><i></i></span
+                    ><strong>Mocha</strong><small>Dark</small></label
+                  ><label class="theme-choice"
+                    ><input name="theme" type="radio" value="macchiato" /><span
+                      class="theme-preview macchiato-preview"
+                      ><i></i><i></i><i></i></span
+                    ><strong>Macchiato</strong><small>Dark</small></label
+                  ><label class="theme-choice"
+                    ><input name="theme" type="radio" value="frappe" /><span
+                      class="theme-preview frappe-preview"
+                      ><i></i><i></i><i></i></span
+                    ><strong>Frapp&#233;</strong><small>Dim</small></label
+                  ><label class="theme-choice"
+                    ><input name="theme" type="radio" value="latte" /><span
+                      class="theme-preview latte-preview"
+                      ><i></i><i></i><i></i></span
+                    ><strong>Latte</strong><small>Light</small></label
+                  >
+                </div>
+              </fieldset>
+              <div class="setting-row">
+                <div>
+                  <label for="accent">Theme color</label>
+                  <p>Colors the background, panels, buttons, and highlights.</p>
+                </div>
+                <select id="accent">
+                  <option value="mauve">Lavender</option>
+                  <option value="blue">Blue</option>
+                  <option value="green">Green</option>
+                  <option value="peach">Peach</option>
+                  <option value="pink">Pink</option>
+                  <option value="teal">Teal</option>
+                  <option value="red">Red</option>
+                  <option value="yellow">Yellow</option>
+                </select>
+              </div>
+              <div class="setting-row">
+                <div>
+                  <label for="wallpaper">Background</label>
+                  <p>Change your start page.</p>
+                </div>
+                <select id="wallpaper">
+                  <option value="waves">Theme colors</option>
+                  <option value="plain">Solid color</option>
+                </select>
+              </div>
+              <div class="setting-row">
+                <div>
+                  <label for="motion">Reduce motion</label>
+                  <p>Keep transitions still and simple.</p>
+                </div>
+                <input class="switch" id="motion" type="checkbox" />
+              </div>
+            </section>
+            <section class="settings-card" id="protections">
+              <div class="card-heading"><span class="setting-symbol" data-icon="settings"></span><div><h2>Browsing protection</h2><p>Applies to websites opened in Search. Changes reload the open website.</p></div></div>
+              <div class="setting-row"><div><label for="ad-block">Ad blocker</label><p>Blocks common ad networks and hides marked ad spaces. Some ads may remain.</p></div><input id="ad-block" class="switch" type="checkbox" /></div>
+              <div class="setting-row"><div><label for="popup-block">Popup blocker</label><p>Stops websites opening extra windows. Turn off for sites that need a popup to sign in.</p></div><input id="popup-block" class="switch" type="checkbox" /></div>
+              <div class="setting-row"><div><label for="download-block">Download protection</label><p>Blocks risky installers and scripts, plus known harmful download links when reputation checking is available. Files are not virus-scanned.</p></div><input id="download-block" class="switch" type="checkbox" /></div>
+            </section>
+            <section class="settings-card" id="shortcuts">
+              <div class="card-heading"><span class="setting-symbol" data-icon="settings"></span><div><h2>Keyboard shortcuts</h2><p>Use the left Alt key. These control Tutsi website tabs.</p></div></div>
+              <dl class="shortcut-list"><dt>Alt + H</dt><dd>Return to Tutsi home</dd><dt>Alt + L / D</dt><dd>Focus address or search</dd><dt>Alt + T</dt><dd>New website tab</dd><dt>Alt + W</dt><dd>Close current website tab</dd><dt>Alt + Shift + T</dt><dd>Reopen the last closed website</dd><dt>Alt + 1?8</dt><dd>Switch website tab</dd><dt>Alt + R</dt><dd>Reload website</dd><dt>Alt + ? / ?</dt><dd>Back / forward</dd><dt>Alt + A / C / X / V</dt><dd>Select all / copy / cut / paste in text fields</dd><dt>Alt + Z / Y</dt><dd>Undo / redo in text fields</dd></dl>
+              <p>Clipboard access depends on browser permission. Closed website history is kept only until you reload Tutsi.</p>
+            </section>
+            <section class="settings-card" id="connection">
+              <div class="card-heading">
+                <span class="setting-symbol" data-icon="globe"></span>
+                <div>
+                  <h2>Search & connection</h2>
+                  <p>Search engine and proxy transport.</p>
+                </div>
+              </div>
+              <div class="setting-row">
+                <div>
+                  <label for="search-engine">Search engine</label>
+                  <p>Used when you enter a search, instead of a link.</p>
+                </div>
+                <select id="search-engine">
+                  <option value="duckduckgo">DuckDuckGo</option>
+                  <option value="google">Google</option>
+                  <option value="bing">Bing</option>
+                </select>
+              </div>
+              <div class="setting-row">
+                <div>
+                  <strong>Proxy engine</strong>
+                  <p>Rewrites sites for browsing in Tutsi.</p>
+                </div>
+                <span class="pill">Scramjet v2</span>
+              </div>
+              <div class="setting-row">
+                <div>
+                  <label for="transport">Connection transport</label>
+                  <p>Try another if a website has trouble loading.</p>
+                </div>
+                <select id="transport">
+                  <option value="epoxy">Epoxy</option>
+                  <option value="libcurl">Libcurl</option>
+                  <option value="wisp">Wisp compatibility</option>
+                </select>
+              </div>
+              <div class="setting-row"><div><label for="auto-relay">Automatic relay switching</label><p>Try a configured backup when a relay cannot connect from this device.</p></div><input id="auto-relay" class="switch" type="checkbox" /></div>
+              <div class="setting-row"><div><label for="blocker">Network filter (optional)</label><p>Filter reports help choose a relay. Connection checks still decide whether it works.</p></div><select id="blocker"><option value="auto">Auto-detect (best effort)</option><option value="">Unknown / connection checks only</option><option value="lightspeed">Lightspeed</option><option value="goguardian">GoGuardian</option><option value="securly">Securly</option><option value="linewize">Linewize</option><option value="blocksi">Blocksi</option></select></div><div class="setting-row"><div><label for="detect-filter">Detect filter</label><p>Checks known extension files for 17 filtering and management families locally. Hidden extensions and network filters may show Unknown.</p></div><button id="detect-filter" type="button">Check again</button></div><p id="filter-detection-result" class="body-copy" role="status"></p><p id="blocker-result" class="body-copy" role="status"></p>
+              <div class="relay-setting">
+                <label for="relay">Wisp relay</label>
+                <p>Leave blank to use the relay on this server. If WebSockets cannot connect, browsing falls back to HTTPS through this server.</p>
+                <div class="relay-input">
+                  <input
+                    id="relay"
+                    type="url"
+                    placeholder="wss://your-relay.example/wisp/"
+                    autocomplete="off"
+                  /><button
+                    class="secondary"
+                    id="test-connection"
+                    type="button"
+                  >
+                    Test connection
+                  </button>
+                </div>
+                <p id="connection-result" role="status"></p>
+              </div>
+            </section>
+            <section class="settings-card" id="tab-appearance">
+              <div class="card-heading">
+                <div>
+                  <h2>Tab appearance</h2>
+                  <p>Choose the name and icon shown on your browser tab.</p>
+                </div>
+              </div>
+              <div class="setting-row">
+                <label for="tab-preset">Tab preset</label
+                ><select id="tab-preset">
+                  <option value="tutsi">Tutsi Math</option>
+                  <option value="classroom">Google Classroom</option>
+                  <option value="classlink">ClassLink</option>
+                  <option value="drive">Google Drive</option>
+                  <option value="google">Google</option>
+                  <option value="custom">Custom title</option>
+                </select>
+              </div>
+              <div class="setting-row">
+                <label for="tab-title">Custom title</label
+                ><input
+                  id="tab-title"
+                  maxlength="100"
+                  placeholder="Your tab title"
+                />
+              </div>
+            </section>
+            <section class="settings-card">
+              <div class="setting-row">
+                <div>
+                  <label for="close-prevention">Confirm before closing</label>
+                  <p>
+                    Ask before closing or reloading this tab. Click anywhere
+                    first to enable the browser prompt.
+                  </p>
+                </div>
+                <input id="close-prevention" class="switch" type="checkbox" />
+              </div>
+            </section>
+            <section class="settings-card" id="privacy">
+              <div class="card-heading">
+                <span class="setting-symbol" data-icon="shield"></span>
+                <div>
+                  <h2>Your data</h2>
+                  <p>Storage and account settings.</p>
+                </div>
+              </div>
+              <p class="body-copy">
+                Your appearance and connection preferences stay in this browser.
+                AI conversations and game saves use their existing app storage.
+                Signing in uses your Nyx account; AI access and allowances are
+                shared.
+              </p>
+              <div class="setting-row">
+                <div>
+                  <strong>Reset appearance & connection</strong>
+                  <p>
+                    Restore Tutsi Math defaults. Your chats and game saves stay
+                    saved.
+                  </p>
+                </div>
+                <button class="secondary" id="reset-settings" type="button">
+                  Reset settings
+                </button>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+      <section id="terms" class="view terms-view" hidden>
+        <div class="page-heading">
+          <p class="eyebrow">TUTSI</p>
+          <h1>Terms of service.</h1>
+          <p>Last updated September 17, 2026</p>
+        </div>
+        <article class="terms-card">
+          <h2>Welcome to Tutsi Math</h2>
+          <p>
+            By using Tutsi Math, you agree to these rules. If you do not agree,
+            please stop using the service.
+          </p>
+          <h2>Use it responsibly</h2>
+          <p>
+            Use Tutsi only where you have permission. Follow applicable laws and
+            the rules of the networks and services you use. Do not use it for
+            attacks, fraud, harassment, unauthorized access, spam, or
+            distributing unlawful material. Do not interfere with other users or
+            try to evade service usage limits.
+          </p>
+          <h2>Accounts and AI</h2>
+          <p>
+            Keep your account credentials private. Tutsi uses Nyx account access
+            and AI allowances. Prompts and attachments sent to AI are processed
+            by OpenRouter and the selected model provider. Avoid sending
+            sensitive information. AI replies can be inaccurate; check important
+            information yourself. The service operator's provider key stays on
+            the server.
+          </p>
+          <h2>Websites, music, movies and games</h2>
+          <p>
+            Third-party content and services remain the responsibility of their
+            respective owners. Availability, playback, advertising, and
+            compatibility can change. You are responsible for having the rights
+            or permission to access content. Tutsi does not grant rights to
+            third-party content or promise that every source will work.
+          </p>
+          <h2>Privacy and local storage</h2>
+          <p>
+            Settings and some app data are stored in your browser. Account
+            features may also store data on Nyx's services. Requests pass
+            through the server and service providers; operational records can
+            include IP addresses and request information. Tutsi is not an
+            anonymity service. Clearing browser storage can remove locally saved
+            data. Other websites and providers have their own privacy policies.
+          </p>
+          <h2>Availability and changes</h2>
+          <p>
+            Features may be changed, limited, or suspended for maintenance,
+            costs, security, or misuse. No guarantee is made of uninterrupted
+            availability or fitness for a particular purpose. Updated terms will
+            be posted here. These rules do not remove rights you have under
+            applicable law.
+          </p>
+          <a href="#home" class="text-link"
+            >Back to Tutsi <span data-icon="arrow"></span
+          ></a>
+        </article>
+      </section>
+    </main>
+    <nav id="app-dock" aria-label="Shortcuts"><div id="dock-apps"></div></nav>
+    <footer id="footer">
+      <a class="brand footer-brand" href="#home">tutsi.</a><span></span
+      ><a href="#terms">Terms of service</a>
+    </footer>
+    <div id="toast" role="status" hidden></div>
+    <aside id="mention-toast" role="status" hidden>
+      <strong></strong>
+      <p></p>
+      <button id="mention-open">Open Chat</button
+      ><button id="mention-dismiss" aria-label="Dismiss mention">
+        Dismiss
+      </button>
+    </aside>
+    <dialog id="account-dialog">
+      <button
+        class="dialog-close icon-button"
+        id="account-close"
+        aria-label="Close"
+        data-icon="close"
+      ></button
+      ><img src="/apps/tutsi/icon.png?v=2" width="40" height="40" alt="" />
+      <p class="eyebrow">NYX ACCOUNT</p>
+      <h2 id="account-heading">Sign in</h2>
+      <p>Sign in with your Nyx account to use AI and your account features.</p>
+      <form id="sign-in">
+        <label id="identifier-label" for="identifier">Username or email</label
+        ><input id="identifier" autocomplete="username" required />
+        <div id="register-fields" hidden>
+          <label for="register-email">Email (optional)</label
+          ><input id="register-email" type="email" autocomplete="email" />
+          <p>You can use this account on both Tutsi and Nyx.</p>
+        </div>
+        <label for="password">Password</label
+        ><input
+          id="password"
+          type="password"
+          autocomplete="current-password"
+          required
+          minlength="6"
+        /><button id="auth-submit" class="primary" type="submit">
+          Sign in <span data-icon="arrow"></span>
+        </button>
+      </form>
+      <div id="signed-in" hidden>
+        <p id="account-name"></p>
+        <button id="view-profile" class="secondary">View profile</button>
+        <button id="edit-profile" class="secondary">Edit profile</button>
+        <button id="sign-out" class="secondary">Sign out</button>
+      </div>
+      <p id="auth-error" role="status"></p>
+      <button id="auth-mode" class="text-link" type="button">
+        Create an account
+      </button>
+    </dialog>
+    <a href="/tutsi/resource-index" hidden aria-hidden="true" tabindex="-1">Resource index</a>
+  </body>
+</html>

@@ -90,7 +90,7 @@ try {
   await page.setViewportSize({width:1280,height:900});
   await page.locator('[data-watch-stage]').focus();
   await player.evaluate(v=>{v.pause();v.currentTime=5;v.playbackRate=1.25;});
-  await page.keyboard.press('ArrowRight');assert.ok(Math.abs(await player.evaluate(v=>v.currentTime)-15)<.3);
+  await page.keyboard.press('ArrowRight');assert.ok(Math.abs(await player.evaluate(v=>v.currentTime)-10)<.3);
   await page.keyboard.press('ArrowLeft');assert.ok(Math.abs(await player.evaluate(v=>v.currentTime)-5)<.3);
   await page.keyboard.press('Space');await page.waitForFunction(()=>!document.querySelector('[data-watch-player] video').paused);
   await page.keyboard.press('Space');assert.ok(await player.evaluate(v=>v.paused));

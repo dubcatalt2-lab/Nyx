@@ -34,5 +34,17 @@
   "/uv/uv.client.js": "/uv/r42c774ffdcafe25ba4bc311a.js",
   "/uv/uv.config.js": "/uv/rb4fdba5c33885214f3106021.js",
   "/uv/uv.handler.js": "/uv/r5f6f8134851c0afa523f3418.js",
-  "/uv/uv.sw.js": "/uv/ra04990f3bc4b289e7b6d1871.js"
+  "/uv/uv.sw.js": "/uv/ra04990f3bc4b289e7b6d1871.js",
+  "/apps/tutsi/app.mjs": "/apps/tutsi/rea6fc0830e47f28a15fa2943.mjs",
+  "/apps/tutsi/clock.mjs": "/apps/tutsi/r8e2024ab6cd03a3603ee1803.mjs",
+  "/apps/tutsi/embedded.mjs": "/apps/tutsi/r199cd38fb68b9e7ab4e79a3b.mjs",
+  "/apps/tutsi/filter-detection.mjs": "/apps/tutsi/r269c6af59f24ebe42c2eb96a.mjs",
+  "/apps/tutsi/http-relay.mjs": "/apps/tutsi/ra342962d8a3fccbe4a43c2df.mjs",
+  "/apps/tutsi/icons.mjs": "/apps/tutsi/rcab9aa099372c0cf8107c308.mjs",
+  "/apps/tutsi/protections.mjs": "/apps/tutsi/rd30ef730648ab735624bd202.mjs",
+  "/apps/tutsi/proxy-compat.mjs": "/apps/tutsi/rf42a52bf4eec30fc34537117.mjs",
+  "/apps/tutsi/proxy.mjs": "/apps/tutsi/rd27c79b62a597029f65620d6.mjs",
+  "/apps/tutsi/relay.mjs": "/apps/tutsi/r361db614e2e4a8c3d4534ef0.mjs",
+  "/tutsi-runtime.sw.js": "/r0db2211bda86f75468bd0647.js",
+  "/apps/tutsi/shortcuts.mjs": "/apps/tutsi/rea5cc74330ca293000b5bb69.mjs"
 }

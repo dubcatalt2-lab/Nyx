@@ -671,7 +671,7 @@ h1 {
 
 .player-toolbar {
   display: grid;
-  grid-template-columns: minmax(130px, 1fr) minmax(0, 2fr) minmax(130px, 1fr);
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   padding: 7px 12px;
@@ -729,7 +729,11 @@ h1 {
   opacity: 0.72;
 }
 
+.performance-button {flex-shrink:0;white-space:nowrap;font-size:13px;line-height:1.2;}
+.performance-button span {white-space:nowrap;line-height:1.2;}
+
 .performance-button svg {
+  flex: 0 0 17px;
   width: 17px;
   height: 17px;
 }
@@ -909,6 +913,7 @@ body.game-performance-active[data-game-performance-level="2"] .player iframe {
   .pagination { gap: 8px; }
   .page-button { padding: 0 11px; font-size: 13px; }
   .page-info { min-width: 72px; font-size: 12px; }
+  .player-toolbar {gap:6px;padding-inline:6px;}
   .performance-button { width: 40px; padding: 0; }
   .performance-button span { display: none; }
   .provider-field select { width: 96px; }

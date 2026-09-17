@@ -37,7 +37,7 @@ function nyxScramjetRouteMissHtml() {
 
 function nyxIsScramjetRequest(event) {
   try {
-    return new URL(event.request.url).pathname.startsWith("/~/sj/");
+    return new URL(event.request.url).pathname.startsWith(self.NYX_TUTSI_WORKER ? "/~/tm/" : "/~/sj/");
   } catch {
     return false;
   }
@@ -46,7 +46,7 @@ function nyxIsScramjetRequest(event) {
 function nyxScramjetSourcePath(requestUrl) {
   try {
     const url = new URL(requestUrl);
-    const match = url.pathname.match(/^\/~\/sj\/[^/]+\/[^/]+\/([^?#]*)/);
+    const match = url.pathname.match(/^\/~\/(?:sj|tm)\/[^/]+\/[^/]+\/([^?#]*)/);
     if (!match) return "";
     return new URL(decodeURIComponent(match[1])).pathname;
   } catch {
@@ -57,7 +57,7 @@ function nyxScramjetSourcePath(requestUrl) {
 function nyxScramjetSourceUrl(requestUrl) {
   try {
     const url = new URL(requestUrl);
-    const match = url.pathname.match(/^\/~\/sj\/[^/]+\/[^/]+\/([^?#]*)/);
+    const match = url.pathname.match(/^\/~\/(?:sj|tm)\/[^/]+\/[^/]+\/([^?#]*)/);
     if (!match) return "";
     return new URL(decodeURIComponent(match[1])).href;
   } catch {
@@ -234,7 +234,7 @@ async function nyxRouteScramjet(event) {
 }
 
 self.addEventListener("fetch", event => {
-  if (nyxShouldBlockScramjetRequest(event)) {
+  if (!self.NYX_TUTSI_WORKER && nyxShouldBlockScramjetRequest(event)) {
     event.respondWith(nyxBlockedScramjetResponse(event));
     return;
   }

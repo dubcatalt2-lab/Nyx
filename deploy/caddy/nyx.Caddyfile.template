@@ -25,7 +25,7 @@
 				request>headers delete
 				resp_headers delete
 				# Keep proxy route names, not encoded destinations or tab IDs.
-				request>uri regexp "^(/(?:service|~/sj|~/sj-v1)/).*$|^([^?]*)(?:[?].*)?$" "$1$2"
+				request>uri regexp "^(/(?:service|~/sj|~/sj-v1|~/tm)/).*$|^([^?]*)(?:[?].*)?$" "$1$2"
 				origin_host regexp "^https?://(?:[^/?#@]*@)?([^/?#:]+)(?::[0-9]+)?(?:[/?#].*)?$|^.*$" "$1"
 				referer_host regexp "^https?://(?:[^/?#@]*@)?([^/?#:]+)(?::[0-9]+)?(?:[/?#].*)?$|^.*$" "$1"
 			}

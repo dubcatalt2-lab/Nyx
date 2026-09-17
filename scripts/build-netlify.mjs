@@ -22,6 +22,7 @@ const rootFiles = new Set([
   "nyx-singlefile.html",
   "app.webmanifest",
   "robots.txt",
+  "tutsi-runtime.sw.js",
   "sitemap.xml",
   "script.js",
   "startup.js",

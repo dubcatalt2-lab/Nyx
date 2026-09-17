@@ -1,3 +1,4 @@
+import {installTutsiCrawlerControls} from "./lib/tutsi-crawler-controls.mjs";
 import { createTubeCaptions } from './lib/nyxtube-captions.mjs';
 import {installMovieImages} from './lib/movie-images.mjs';
 import {chatSendDecision} from './lib/chat-send-policy.mjs';
@@ -13,6 +14,7 @@ import { createOpenRouterBalanceGuard, createOpenRouterOwnerStatus } from "./lib
 import { aiOutputImages } from "./lib/ai-output-images.mjs";
 import { aiBudgetResponse } from "./lib/ai-budget-response.mjs";
 import { aiConfigureChatWeb, aiResponseMetadata, aiWantsWeb } from './lib/ai-web.mjs';
+import { installHttpWisp } from "./server-http-wisp.mjs";
 import { createServer } from "node:http";
 import { BlockList, isIP } from "node:net";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
@@ -68,6 +70,8 @@ let catClassGamesCache = { games: [], expires: 0, promise: null };
 let catClassCoverUrls = new Set();
 const nyxCustomRoleLabelLimit = 64;
 const app = express();
+installTutsiCrawlerControls(app);
+app.get("/proxy-assets.json", (_req,res)=>res.status(404).end());
 const nyxifyMeting = createMetingBackend();
 
 function normalizePublicWispUrl(value) {
@@ -549,7 +553,7 @@ function cacheNyxCustomHostnameDecision(hostname, allowed) {
 async function nyxCustomHostnameAllowed(hostname) {
   const normalized = normalizeNyxCustomHostname(hostname);
   if (!normalized) return false;
-  const configuredHostnames = [...embeddedWispAllowedOrigins, process.env.NYX_PUBLIC_ORIGIN]
+  const configuredHostnames = [...embeddedWispAllowedOrigins, process.env.NYX_PUBLIC_ORIGIN, "https://tutsi.nyxlearning.org"]
     .map(value => normalizeNyxCustomHostname(value))
     .filter(Boolean);
   if (configuredHostnames.includes(normalized)) return true;
@@ -726,7 +730,7 @@ app.use((req, res, next) => {
     "/nyx-scramjet-runtime-guard.js"
   ]);
   const noStorePrefix = /^\/(?:assets\/(?:gms-games|reds-misc)\/|gms-games-|reds-misc-)/i.test(req.path);
-  const opaqueProxyAsset = /^\/(?:scramjet(?:-v1)?\/|controller\/|epoxy\/|libcurl\/|baremux\/|uv\/|assets\/transports\/)?r[0-9a-f]{24}\.(?:js|mjs|wasm)$/.test(req.path);
+  const opaqueProxyAsset = /^\/(?:scramjet(?:-v1)?\/|controller\/|epoxy\/|libcurl\/|baremux\/|uv\/|assets\/transports\/|apps\/tutsi\/)?r[0-9a-f]{24}\.(?:js|mjs|wasm)$/.test(req.path);
   if (noStorePaths.has(req.path) || noStorePrefix || opaqueProxyAsset) {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma", "no-cache");
@@ -13835,6 +13839,19 @@ app.get("/download/nyx-singlefile.html", (_req, res) => {
   res.download(join(staticRoot, "nyx-singlefile.html"), "Nyx-Download.html");
 });
 
+let httpRelayPort = 0;
+const closeHttpRelay = installHttpWisp(app, {
+  upstream: () => httpRelayPort ? {url: externalWispUrl || `ws://127.0.0.1:${httpRelayPort}/resources/live/`, origin: `http://127.0.0.1:${httpRelayPort}`} : null,
+  clientIp: nyxClientIp, banned: nyxRequestIpIsBanned,
+  allowed: req => {
+    if (req.headers['sec-fetch-site'] && req.headers['sec-fetch-site'] !== 'same-origin') return false;
+    if (req.headers.origin) {
+      try { return new URL(req.headers.origin).host === req.headers.host; } catch { return false; }
+    }
+    return req.headers['sec-fetch-site'] === 'same-origin';
+  }
+});
+
 app.use("/api", (_req, res) => {
   res.status(404).json({ error: "API route not found." });
 });
@@ -13857,6 +13874,16 @@ app.get("/scramjet-v1/scramjet.all.js", (_req, res) => {
   res.type("application/javascript");
   res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
   res.send(scramjetV1Bundle);
+});
+app.get(["/tutsi", "/tutsi/"], (_req, res) => {
+  res.set("Cache-Control", "no-cache");
+  res.sendFile(join(staticRoot, "apps", "tutsi", "index.html"));
+});
+// The sibling site shares services, while keeping its own shell and origin storage.
+app.get("/", (req, res, next) => {
+  if (req.hostname.toLowerCase() !== "tutsi.nyxlearning.org") return next();
+  res.set("Cache-Control", "no-cache");
+  res.sendFile(join(staticRoot, "apps", "tutsi", "index.html"));
 });
 app.use(express.static(staticRoot));
 app.use("/assets/vendor/katex/", express.static(katexPath));
@@ -13966,6 +13993,7 @@ if (isDirectRun) {
 
   server.listen(port, "0.0.0.0", () => {
     const address = server.address();
+    httpRelayPort = address && typeof address === "object" ? address.port : 0;
     if (typeof process.send === "function" && address && typeof address === "object") {
       process.send({ type: "nyx:listening", port: address.port });
     }
@@ -13973,6 +14001,7 @@ if (isDirectRun) {
 
   let shuttingDown = false;
   function shutdown(signal) {
+    closeHttpRelay();
     void nyxTubeBackend.close();
     void nyxTubeCatalog.close();
     if (shuttingDown) return;

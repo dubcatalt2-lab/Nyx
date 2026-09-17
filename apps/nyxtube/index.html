@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <title>NyxTube</title>
   <link rel="icon" type="image/svg+xml" href="/assets/icons/shortcut-youtube.svg">
-  <link rel="stylesheet" href="./styles.css?v=20260917-shorts-loading-v3">
+  <link rel="stylesheet" href="./styles.css?v=20260916-tutsi-shortcuts-v1">
   <link rel="stylesheet" href="./responsive.css?v=20260828-nyxtube-v5">
 <link rel="stylesheet" href="/apps/visual-redesign.css?v=20260907-stable-highlights-v1">
 </head>
@@ -56,7 +56,7 @@
       <div class="watch-layout">
       <div class="watch-primary">
       <div class="watch-player" data-watch-stage tabindex="-1" aria-label="Video player. Space to play or pause; hold Space or the video for double speed; arrow keys to seek.">
-        <div class="player-mount" data-watch-player></div>
+        <div class="player-mount" data-watch-player></div><div class="watch-gesture" data-watch-gesture title="Click to play/pause. Hold for 2x speed. Double-click for fullscreen." aria-hidden="true"></div>
         <div class="player-loading" data-watch-loading role="status" aria-live="polite"><svg class="watch-loading-spinner" viewBox="0 0 52 52" aria-hidden="true"><circle class="spinner-track" cx="26" cy="26" r="22"/><circle class="spinner-arc" cx="26" cy="26" r="22"/></svg><strong>Loading video</strong></div>
         <div class="watch-speed-indicator" data-watch-speed-indicator aria-live="polite" hidden>2&times;</div>
         <button class="center-play" data-watch-center-play type="button" aria-label="Play video" hidden><svg><use href="#icon-play"></use></svg></button>
@@ -80,7 +80,7 @@
       </div>
       <div class="watch-meta">
         <button class="channel-mark" data-watch-channel-mark type="button" aria-label="Open creator channel"></button><div class="watch-copy"><h1 data-watch-title></h1><p class="watch-byline"><button class="watch-channel-name" data-watch-creator type="button"></button><span class="watch-video-meta" data-watch-video-meta></span></p></div>
-        <div class="watch-options"><button data-watch-engine type="button" value="native" hidden>Switch to embedded</button><label><span>Quality</span><select data-watch-quality disabled title="YouTube selects playback quality automatically"><option value="auto">Auto</option></select></label><button data-watch-caption-option type="button">Captions <span>Off</span></button><a data-watch-source target="_blank" rel="noopener noreferrer" aria-label="Open on YouTube"><svg><use href="#icon-external"></use></svg></a></div>
+        <div class="watch-options"><button data-shortcut-help-open type="button" title="Keyboard shortcuts (?)">Shortcuts</button><button data-watch-engine type="button" value="native" hidden>Switch to embedded</button><label><span>Quality</span><select data-watch-quality disabled title="YouTube selects playback quality automatically"><option value="auto">Auto</option></select></label><button data-watch-caption-option type="button">Captions <span>Off</span></button><a data-watch-source target="_blank" rel="noopener noreferrer" aria-label="Open on YouTube"><svg><use href="#icon-external"></use></svg></a></div>
       </div>
       <div class="watch-stats" aria-label="Video statistics"><span><strong data-watch-views>0</strong><small>Views</small></span><span><strong data-watch-likes>0</strong><small>Likes</small></span><span><strong data-watch-comments-count>0</strong><small>Comments</small></span></div>
       <section class="watch-info">
@@ -119,9 +119,12 @@
       </div>
     </section>
   </main>
+<dialog data-shortcut-help class="shortcut-help"><h2>Video shortcuts</h2><dl>
+<dt>Space / K</dt><dd>Play or pause</dd><dt>Hold Space / left-click</dt><dd>2x speed until released</dd><dt>Left / Right</dt><dd>Back / forward 5 seconds</dd><dt>J / L</dt><dd>Back / forward 10 seconds</dd><dt>Up / Down</dt><dd>Volume up / down 5%</dd><dt>M / C / F</dt><dd>Mute / captions / fullscreen</dd><dt>0-9</dt><dd>Jump to 0%-90%</dd><dt>Home / End</dt><dd>Beginning / end</dd><dt>&lt; / &gt;</dt><dd>Playback speed down / up</dd><dt>, / .</dt><dd>Step backward / forward while paused (30 fps fallback)</dd><dt>Ctrl+Left/Right (Option on Mac)</dt><dd>Previous / next chapter when timestamps are in the description</dd><dt>Shift+N / Shift+P</dt><dd>Next related video / previous watched video</dd><dt>I / Escape</dt><dd>Toggle / close floating player</dd><dt>T</dt><dd>Theater layout</dd><dt>/</dt><dd>Search</dd><dt>?</dt><dd>This shortcut list</dd><dt>Media keys</dt><dd>Play/pause, stop, next/previous</dd></dl><p>Typing fields and focused buttons keep their normal keys. Shorts: Space/K, arrows, M, C and F. Playback capabilities depend on the video.</p><button data-shortcut-help-close type="button">Close</button></dialog>
   <script src="./player-core.js?v=20260914-workspace-shorts-v2"></script>
   <script src="/assets/vendor/hls.min.js?v=1.7.2"></script>
   <script src="./native-player.js?v=20260917-shorts-loading-v3"></script>
-  <script src="./app.js?v=20260917-shorts-loading-v3"></script>
+  <script src="./app.js?v=20260916-tutsi-shortcuts-v1"></script>
+
 </body>
 </html>

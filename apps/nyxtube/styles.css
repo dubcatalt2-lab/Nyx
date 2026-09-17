@@ -26,3 +26,7 @@
 /* Keep Shorts wheel/swipe gestures on the Nyx stage across embedded players. */
 .short-card{touch-action:pan-x}
 .short-mount iframe{pointer-events:none}
+
+.watch-gesture{position:absolute;inset:0 0 67px;z-index:3;touch-action:pan-y;user-select:none}.watch-player:has(iframe) .watch-gesture{top:50px}.watch-speed-indicator{pointer-events:none}.watch-player.mini-player{position:fixed;right:16px;bottom:16px;width:min(420px,calc(100vw - 32px));z-index:100}.theater-mode .watch-layout{display:block}.theater-mode .watch-related{margin-top:24px}.shortcut-help{width:min(600px,calc(100vw - 32px));max-height:80vh;overflow:auto;border:1px solid var(--border,#555);border-radius:16px;background:var(--surface,#202026);color:var(--text,#fff);padding:24px}.shortcut-help::backdrop{background:#0009}.shortcut-help dl{display:grid;grid-template-columns:minmax(100px,1fr) 2fr;gap:12px}.shortcut-help dd{margin:0}.shortcut-help button{padding:8px 18px}.shortcut-help p{font-size:14px}
+
+.watch-player>.center-play{pointer-events:none}.short-card[data-speed-hold="true"]::after{content:"2x";position:absolute;top:20px;left:50%;transform:translateX(-50%);z-index:9;padding:8px 16px;border-radius:20px;background:#000b;color:white;pointer-events:none}

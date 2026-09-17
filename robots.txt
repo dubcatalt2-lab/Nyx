@@ -36,5 +36,8 @@ Disallow: /uv/
 Disallow: /wisp/
 Disallow: /apps/chat/
 Disallow: /student-resources.html
+Disallow: /tutsi
+Disallow: /apps/tutsi/
+Disallow: /api/tutsi-relay/
 
 Sitemap: https://nyxlearning.org/sitemap.xml

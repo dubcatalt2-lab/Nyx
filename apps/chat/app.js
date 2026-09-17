@@ -920,5 +920,9 @@
   document.addEventListener('pointerdown',event=>{if(!refs.messageContextMenu.hidden&&!refs.messageContextMenu.contains(event.target))closeMessageContextMenu()});document.addEventListener('keydown',event=>{if(event.key==='Escape')closeMessageContextMenu()});refs.scroller.addEventListener('scroll',closeMessageContextMenu,{passive:true});window.addEventListener('resize',closeMessageContextMenu);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.me){if(state.socketConnected)void refreshUpdates({force:true}).catch(()=>{});else{void loadMessages({poll:true}).catch(()=>{});void refreshConversations().catch(()=>{});void refreshBootstrap().catch(()=>{})}void refreshCaffeine();void pollVoice()}});window.addEventListener('beforeunload',()=>{clearInterval(state.pollTimer);clearInterval(state.dmPollTimer);clearInterval(state.bootstrapTimer);clearInterval(state.caffeineTimer);disconnectChatSocket();clearTimeout(state.voicePollTimer);if(state.voiceSessionId&&state.token)void fetch(`${API}/voice/leave`,{method:'POST',headers:{Authorization:`Bearer ${state.token}`,'Content-Type':'application/json'},body:JSON.stringify({sessionId:state.voiceSessionId}),keepalive:true});closeAllVoicePeers();state.voiceScreenStream?.getTracks().forEach(track=>track.stop());state.voiceStream?.getTracks().forEach(track=>track.stop());state.blobUrls.forEach(url=>{if(String(url).startsWith('blob:'))URL.revokeObjectURL(url)})});
   window.addEventListener('beforeunload',()=>{clearInterval(voiceBoostTimer);clearInterval(minecraftMagicTimer)});
+  window.addEventListener('message',event=>{
+    if(event.source!==window.parent||event.origin!==location.origin||event.data?.type!=='nyx:profile-updated')return;
+    if(state.me)void refreshBootstrap().catch(()=>{});
+  });
   void boot();
 })();

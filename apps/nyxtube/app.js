@@ -9,7 +9,7 @@
     view: "home", videos: [], catalog: [], shorts: [], shortIndex: 0,
     watchPlayer: null, shortPlayer: null, watchTimer: 0, shortTimer: 0,
     watchVideo: null, watchCaptions: false, shortCaptions: false, shortMuted: true,
-    channel: null,
+    channel: null, watchTrail: [],
     failedVideoIds: new Set(), failedShortIds: new Set(), watchRecoveryTimer: 0,
     watchSpaceTimer: 0, watchSpacePressed: false, watchSpaceHeld: false,
     watchSpaceWasPlaying: false, watchSpacePreviousRate: 1, watchSpaceRateChanged: false,
@@ -288,6 +288,8 @@
   }
   async function openWatch(video, { recoveryMessage = "" } = {}) {
     if (!video?.id) return;
+    if(state.watchVideo && state.watchVideo.id!==video.id)state.watchTrail.push(state.watchVideo);
+    if(state.watchTrail.length>50)state.watchTrail.shift();
     stopWatch();
     const requestGeneration = state.watchGeneration;
     state.watchVideo = video; showView("watch"); notice(recoveryMessage);
@@ -496,6 +498,7 @@
     }, 250);
   }
   function stopWatch() {
+    refs.watchStage.classList.remove("mini-player");
     showWatchControls();
     ++state.watchGeneration;
     clearInterval(state.watchTimer); state.watchTimer = 0; clearTimeout(state.watchRecoveryTimer); state.watchRecoveryTimer = 0;
@@ -683,6 +686,7 @@
     }, 250);
   }
   function stopShorts() {
+    finishShortHold(true);
     shortGeneration++;clearShortLoadTimer();clearInterval(state.shortTimer);state.shortTimer=0;
     for(const entry of preparedShorts.values()){entry.removed=true;entry.player?.destroy?.();entry.node?.remove();}
     preparedShorts.clear();state.shortPlayer=null;refs.shortPlayer.replaceChildren();
@@ -696,7 +700,48 @@
     state.shortMuted = !state.shortMuted; state.shortMuted ? state.shortPlayer.mute() : state.shortPlayer.unMute();
     refs.shortMute.innerHTML = icon(state.shortMuted ? "icon-muted" : "icon-volume");
   }
-  const changeShort = delta => state.shorts.length && showShort(state.shortIndex + delta);
+  const changeShort = delta => {finishShortHold(true);return state.shorts.length && showShort(state.shortIndex + delta)};
+  let shortHold=null, shortHoldClickUntil=0;
+  function beginShortHold(source){
+    if(shortHold||!ready(state.shortPlayer))return;
+    const player=state.shortPlayer;
+    shortHold={source,player,rate:player.getPlaybackRate?.()||1,paused:player.getPlayerState()!==1,held:false};
+    const hold=shortHold;
+    hold.timer=setTimeout(()=>{if(shortHold!==hold)return;hold.held=true;player.setPlaybackRate?.(2);player.playVideo?.();refs.shortStage.dataset.speedHold='true'},350);
+  }
+  function finishShortHold(cancel=false){
+    const hold=shortHold;if(!hold)return;shortHold=null;clearTimeout(hold.timer);delete refs.shortStage.dataset.speedHold;
+    if(hold.held){hold.player.setPlaybackRate?.(hold.rate);if(hold.paused)hold.player.pauseVideo?.();shortHoldClickUntil=performance.now()+500}
+    else if(!cancel&&hold.source==='keyboard')toggleShort();
+  }
+  function seekWatchTo(seconds) {
+    if(!ready(state.watchPlayer))return;
+    const total=Number(state.watchPlayer.getDuration?.())||0;
+    state.watchPlayer.seekTo(Math.max(0,Math.min(total,seconds)),true);
+  }
+  function chapterStep(direction){
+    const times=[...String(state.watchVideo?.description||'').matchAll(/(?:^|\n)\s*((?:\d+:)?\d{1,2}:\d{2})\s+/g)].map(m=>m[1].split(':').reduce((n,v)=>n*60+Number(v),0)).sort((a,b)=>a-b);
+    const now=state.watchPlayer?.getCurrentTime?.()||0;
+    const target=direction>0?times.find(t=>t>now+1):times.filter(t=>t<now-2).at(-1);
+    if(target!==undefined)seekWatchTo(target);
+  }
+  function watchNext(previous=false){
+    if(previous){const video=state.watchTrail.pop();if(video){state.watchVideo=null;void openWatch(video)}}
+    else {const video=relatedVideos(state.watchVideo||{},1)[0];if(video)void openWatch(video)}
+  }
+  function rateStep(direction){
+    const player=state.watchPlayer;if(!ready(player))return;
+    finishWatchSpace({cancel:true});
+    const rates=(player.getAvailablePlaybackRates?.()||[.25,.5,.75,1,1.25,1.5,1.75,2]).map(Number).sort((a,b)=>a-b);
+    const current=Number(player.getPlaybackRate?.())||1;
+    const next=direction>0?rates.find(r=>r>current+.01):rates.filter(r=>r<current-.01).at(-1);
+    if(next){player.setPlaybackRate?.(next);refs.watchSpeed.value=String(next)}
+  }
+  function showShortcutHelp(){
+    finishShortHold(true);
+    finishWatchSpace({cancel:true});
+    const dialog=$('[data-shortcut-help]');if(!dialog.open)dialog.showModal();
+  }
   const shortcutBlocked = target => target instanceof Element && Boolean(target.closest("input,textarea,select,button,a,[contenteditable]"));
 
   function bind() {
@@ -707,8 +752,8 @@
     refs.profileButton.addEventListener("click", () => parent.postMessage({ type: "nyx:nyxtube-open-profile", uid: state.profile.uid }, location.origin));
     refs.watchChannelMark.addEventListener("click", openWatchChannel); refs.watchCreator.addEventListener("click", openWatchChannel);
     refs.channelBack.addEventListener("click", () => state.watchVideo && openWatch(state.watchVideo));
-    document.addEventListener("visibilitychange", () => { if (document.hidden) finishWatchSpace({ cancel: true }); else requestProfile(); });
-    addEventListener("blur", () => finishWatchSpace({ cancel: true }));
+    document.addEventListener("visibilitychange", () => { if (document.hidden) {finishWatchSpace({ cancel: true });finishShortHold(true)} else requestProfile(); });
+    addEventListener("blur", () => {finishWatchSpace({ cancel: true });finishShortHold(true)});
     refs.searchForm.addEventListener("submit", event => { event.preventDefault(); const query = refs.searchInput.value.trim(); if (query) loadFeed(query); });
     $$("[data-topic]").forEach(button => button.addEventListener("click", () => { refs.searchInput.value = button.dataset.topic; loadFeed(button.dataset.topic); }));
     $$("[data-view-button]").forEach(button => button.addEventListener("click", () => { showView(button.dataset.viewButton); if (state.view === "shorts") loadShorts(); }));
@@ -722,8 +767,9 @@
       createWatch(state.watchVideo,false,false,restore).catch(()=>notice("The video player could not start."));
     };
     refs.watchStage.addEventListener("pointerdown", event => {
-      if(event.button!==0 || !event.isPrimary || state.view!=="watch" || !state.watchPlayer?.isNative || shortcutBlocked(event.target) || !event.target.closest('[data-watch-player]')) return;
+      if(event.button!==0 || !event.isPrimary || state.view!=="watch" || shortcutBlocked(event.target) || !event.target.closest('[data-watch-player],[data-watch-gesture]')) return;
       if(state.watchSpacePressed)return;
+      event.preventDefault();
       refs.watchStage.focus({preventScroll:true});
       state.watchPointerId=event.pointerId;
       refs.watchStage.setPointerCapture(event.pointerId);
@@ -755,7 +801,7 @@
     $$('[data-watch-info-tab]').forEach(button => button.addEventListener("click", () => showWatchInfo(button.dataset.watchInfoTab)));
     document.addEventListener("click", closeWatchSettings);
     let shortWheelTotal=0,shortWheelAt=0,shortNavigateAt=-Infinity,shortTouch=null,shortIgnoreClickUntil=0;
-    const gestureShort=delta=>{const now=performance.now();if(now-shortNavigateAt<450)return;shortNavigateAt=now;void changeShort(delta);};
+    const gestureShort=delta=>{finishShortHold(true);const now=performance.now();if(now-shortNavigateAt<450)return;shortNavigateAt=now;void changeShort(delta);};
     document.addEventListener('wheel',event=>{
       if(state.view!=='shorts'||event.ctrlKey||event.target.closest?.('input,textarea,select,[contenteditable]')||Math.abs(event.deltaX)>Math.abs(event.deltaY))return;
       event.preventDefault();
@@ -764,43 +810,74 @@
       if(Math.abs(shortWheelTotal)>=40){gestureShort(Math.sign(shortWheelTotal));shortWheelTotal=0;}
     },{passive:false});
     refs.shortStage.addEventListener('pointerdown',event=>{
+      if(event.isPrimary&&event.button===0&&!event.target.closest('button,a,input')){beginShortHold('pointer');refs.shortStage.setPointerCapture(event.pointerId)}
       if(event.pointerType!=='touch'||event.target.closest('button,a,input'))return;
       shortTouch={id:event.pointerId,x:event.clientX,y:event.clientY};refs.shortStage.setPointerCapture(event.pointerId);
     });
     refs.shortStage.addEventListener('pointerup',event=>{
+      finishShortHold();
       if(!shortTouch||shortTouch.id!==event.pointerId)return;
       const dx=event.clientX-shortTouch.x,dy=event.clientY-shortTouch.y;shortTouch=null;
       if(Math.abs(dy)>=50&&Math.abs(dy)>Math.abs(dx)){shortIgnoreClickUntil=performance.now()+350;gestureShort(dy<0?1:-1);}
     });
-    refs.shortStage.addEventListener('pointercancel',()=>{shortTouch=null;});
-    refs.shortCenterPlay.addEventListener("click", toggleShort); refs.shortStage.addEventListener("click", event => { if (performance.now()>=shortIgnoreClickUntil&&!event.target.closest("button,a")) toggleShort(); });
+    refs.shortStage.addEventListener('pointercancel',()=>{shortTouch=null;finishShortHold(true)});
+    refs.shortStage.addEventListener('lostpointercapture',()=>finishShortHold(true));
+    refs.shortStage.addEventListener('pointermove',event=>{if(shortTouch&&Math.abs(event.clientY-shortTouch.y)>15)finishShortHold(true)});
+    refs.shortCenterPlay.addEventListener("click", toggleShort); refs.shortStage.addEventListener("click", event => { if (performance.now()>=Math.max(shortIgnoreClickUntil,shortHoldClickUntil)&&!event.target.closest("button,a")) toggleShort(); });
     refs.shortMute.addEventListener("click", toggleShortMute);
     refs.shortCaptions.addEventListener("click", () => { state.shortCaptions = !state.shortCaptions; if (!setCaptions(state.shortPlayer, state.shortCaptions, refs.shortCaptions)) state.shortCaptions = !state.shortCaptions; });
     refs.shortFullscreen.addEventListener("click", () => fullscreen(refs.shortStage));
     $("[data-short-previous]").addEventListener("click", () => changeShort(-1)); $("[data-short-next]").addEventListener("click", () => changeShort(1));
+    $('[data-shortcut-help-close]').addEventListener('click',()=>{$('[data-shortcut-help]').close();refs.watchStage.focus()});
+    $('[data-shortcut-help-open]').addEventListener('click',showShortcutHelp);
+    refs.watchStage.addEventListener('dblclick',event=>{if(event.target.closest('[data-watch-gesture]')){finishWatchSpace({cancel:true});fullscreen(refs.watchStage)}});
     document.addEventListener("keydown", event => {
+      if($('[data-shortcut-help]').open)return;
+      if(event.key==='?'&&!event.target.closest?.('input,textarea,select,[contenteditable]')){event.preventDefault();showShortcutHelp();return}
+      if(event.key==='/'&&!shortcutBlocked(event.target)){event.preventDefault();if(state.view!=='home')showView('home');refs.searchInput.focus();return}
+      if(event.key==='Escape'&&refs.watchStage.classList.contains('mini-player')){refs.watchStage.classList.remove('mini-player');return}
+      if(state.view==='watch'&&!shortcutBlocked(event.target)&&(event.ctrlKey||event.altKey)&&['ArrowLeft','ArrowRight'].includes(event.code)){event.preventDefault();chapterStep(event.code==='ArrowRight'?1:-1);return}
       if (event.key === "Escape" && !refs.watchSettingsMenu.hidden) { event.preventDefault(); closeWatchSettings(); refs.watchSettings.focus(); return; }
       if (shortcutBlocked(event.target) || event.ctrlKey || event.metaKey || event.altKey) return;
       if (state.view === "watch") {
-        if (["Space", "KeyK", "KeyJ", "KeyL", "ArrowLeft", "ArrowRight", "KeyM", "KeyC", "KeyF"].includes(event.code)) event.preventDefault();
+        if (["Space", "KeyK", "KeyJ", "KeyL", "ArrowLeft", "ArrowRight", "KeyM", "KeyC", "KeyF", "ArrowUp", "ArrowDown", "Home", "End", "Comma", "Period", "KeyI", "KeyT", "MediaPlayPause", "MediaStop", "MediaTrackNext", "MediaTrackPrevious", ...Array.from({length:10},(_,i)=>"Digit"+i)].includes(event.code)) event.preventDefault();
         if (event.code === "Space") { beginWatchSpace(); return; }
-        if (event.repeat) return;
+        if (event.repeat && !["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","KeyJ","KeyL"].includes(event.code)) return;
+        if(event.shiftKey&&['KeyN','KeyP'].includes(event.code)){event.preventDefault();watchNext(event.code==='KeyP');return}
+        if(event.code==='MediaTrackNext')watchNext();
+        if(event.code==='MediaTrackPrevious')watchNext(true);
+        if(event.code==='MediaStop')state.watchPlayer?.pauseVideo?.();
+        if(event.code==='MediaPlayPause')toggleWatch();
+        if(event.code==='KeyI')refs.watchStage.classList.toggle('mini-player');
+        if(event.code==='KeyT')views.watch.classList.toggle('theater-mode');
+        if(event.code==='Home'||event.code==='Digit0')seekWatchTo(0);
+        if(event.code==='End')seekWatchTo((state.watchPlayer?.getDuration?.()||0)-.1);
+        if(/^Digit[1-9]$/.test(event.code))seekWatchTo((state.watchPlayer?.getDuration?.()||0)*Number(event.code.slice(-1))/10);
+        if(['ArrowUp','ArrowDown'].includes(event.code)&&ready(state.watchPlayer)){
+          const volume=Math.max(0,Math.min(100,(state.watchPlayer.getVolume?.()??100)+(event.code==='ArrowUp'?5:-5)));
+          state.watchPlayer.setVolume?.(volume);refs.watchVolume.value=String(volume);
+        }
+        if(event.key==='>'||event.key==='<')rateStep(event.key==='>'?1:-1);
+        else if(['Period','Comma'].includes(event.code)&&state.watchPlayer?.getPlayerState?.()===2)seekWatchBy((event.code==='Period'?1:-1)/(Number(state.watchVideo?.fps)||30));
         if (event.code === "KeyK") toggleWatch();
         if (event.code === "KeyJ") seekWatchBy(-10);
         if (event.code === "KeyL") seekWatchBy(10);
-        if (event.code === "ArrowLeft") seekWatchBy(-10);
-        if (event.code === "ArrowRight") seekWatchBy(10);
+        if (event.code === "ArrowLeft") seekWatchBy(-5);
+        if (event.code === "ArrowRight") seekWatchBy(5);
         if (event.code === "KeyM") toggleWatchMute();
         if (event.code === "KeyC" && !refs.watchSettingsCaptions.disabled) changeWatchCaptions(!state.watchCaptions);
         if (event.code === "KeyF") fullscreen(refs.watchStage);
       } else if (state.view === "shorts") {
-        if (["Space", "ArrowUp", "ArrowDown", "KeyM", "KeyF"].includes(event.code)) event.preventDefault();
+        if (["Space", "KeyK", "KeyC", "ArrowUp", "ArrowDown", "KeyM", "KeyF"].includes(event.code)) event.preventDefault();
+        if(event.code==="Space"){beginShortHold("keyboard");return}
         if (event.repeat) return;
-        if (event.code === "Space") toggleShort(); if (event.code === "ArrowUp") changeShort(-1); if (event.code === "ArrowDown") changeShort(1);
+        if(event.code==="KeyC")refs.shortCaptions.click();
+        if (event.code === "KeyK") toggleShort(); if (event.code === "ArrowUp") changeShort(-1); if (event.code === "ArrowDown") changeShort(1);
         if (event.code === "KeyM") toggleShortMute(); if (event.code === "KeyF") fullscreen(refs.shortStage);
       }
     });
     document.addEventListener("keyup", event => {
+      if(event.code==="Space"&&shortHold?.source==="keyboard"){event.preventDefault();finishShortHold();return}
       if (event.code !== "Space" || !state.watchSpacePressed || state.watchHoldSource !== "keyboard") return;
       event.preventDefault();
       finishWatchSpace();

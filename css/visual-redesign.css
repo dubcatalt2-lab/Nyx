@@ -1162,7 +1162,7 @@ html[data-nyx-home-design="redesigned"] body.browser-shell .nyx-settings-group{
 }
 html[data-nyx-home-design="redesigned"] body.browser-shell .browser-shell-settings-panel .nyx-settings-group>.settings-block{
   display:grid!important;
-  grid-template-columns:minmax(220px,.72fr) minmax(280px,1fr)!important;
+  grid-template-columns:var(--nyx-settings-columns,minmax(220px,.72fr) minmax(280px,1fr))!important;
   gap:24px!important;
   align-items:center!important;
   min-height:92px!important;
@@ -1647,7 +1647,7 @@ body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):i
   }
   html[data-nyx-home-design="redesigned"][data-nyx-home-design="redesigned"]
   body.browser-shell.browser-shell:is(body,#nyx-visual-a):is(body,#nyx-visual-b):is(body,#nyx-visual-c):is(body,#nyx-visual-d) .browser-shell-settings-panel .nyx-settings-group>.settings-block{
-    grid-template-columns:minmax(220px,.72fr) minmax(280px,1fr)!important;
+    grid-template-columns:var(--nyx-settings-columns,minmax(220px,.72fr) minmax(280px,1fr))!important;
     gap:24px!important;
     min-height:92px!important;
     padding:18px 20px!important;

@@ -303,6 +303,7 @@
           const content=item.role==='assistant'?responseParts(item.content).answer.trim():String(item.content||'').trim();
           if(!content) return null;
           const message={role:item.role,content};
+          if(item.role==='assistant'&&item.metadata)message.metadata=normalizeMetadata(item.metadata);
           if(item.role==='assistant'&&/^[a-f0-9-]{36}$/.test(item.imageId||''))message.imageId=item.imageId;
           const textAttachment=item.role==='user'?normalizedTextAttachment(item.textAttachment):null;
           if(textAttachment) message.textAttachment=textAttachment;
@@ -648,12 +649,43 @@
     const details=document.createElement('details');
     details.className='ai-reasoning';
     const summary=document.createElement('summary');
-    summary.textContent='Thinking';
+    summary.textContent='Reasoning summary';
     const body=document.createElement('div');
     body.className='ai-reasoning-body';
     body.innerHTML=markdown(text);
     details.append(summary,body);
     content.appendChild(details);
+  }
+
+  function normalizeMetadata(value){
+    const sources=[];
+    for(const source of (Array.isArray(value?.sources)?value.sources:[]).slice(0,12)){
+      try{
+        const url=new URL(String(source.url||''));
+        if(!['https:','http:'].includes(url.protocol)||url.username||url.password||url.href.length>2048)continue;
+        if(!sources.some(item=>item.url===url.href))sources.push({url:url.href,title:String(source.title||url.hostname).slice(0,160)});
+      }catch{}
+    }
+    return {sources,summary:String(value?.summary||'').slice(0,2400)};
+  }
+
+  function appendSources(content,sources){
+    if(!sources.length)return;
+    const section=document.createElement('section');
+    section.className='ai-sources';
+    section.setAttribute('aria-label','Web sources');
+    const heading=document.createElement('h3');heading.textContent='Sources';
+    const links=document.createElement('div');links.className='ai-source-links';
+    sources.forEach((source,index)=>{
+      const link=document.createElement('a');link.className='ai-source';
+      link.href=source.url;link.target='_blank';link.rel='noopener noreferrer';
+      const number=document.createElement('span');number.className='ai-source-number';number.textContent=String(index+1);
+      const copy=document.createElement('span');
+      const title=document.createElement('strong');title.textContent=source.title;
+      const host=document.createElement('small');host.textContent=new URL(source.url).hostname.replace(/^www\./,'');
+      copy.append(title,host);link.append(number,copy);links.appendChild(link);
+    });
+    section.append(heading,links);content.appendChild(section);
   }
 
   function setMessageContent(message,text,{error=false,thinking=false}={}){
@@ -672,15 +704,21 @@
       return;
     }
     const parts=responseParts(text);
+    const metadata=normalizeMetadata(message._nyxMetadata);
+    const summaryOpen=content.querySelector('.ai-reasoning')?.open;
     message._nyxMessageText=parts.answer.trim();
     content.replaceChildren();
-    if(parts.reasoning.trim()) appendReasoning(content,parts.reasoning.trim());
+    if(metadata.summary||parts.reasoning.trim()){
+      appendReasoning(content,metadata.summary||parts.reasoning.trim());
+      if(summaryOpen)content.querySelector('.ai-reasoning').open=true;
+    }
     if(parts.answer.trim()){
       const answer=document.createElement('div');
       answer.className='ai-answer';
       answer.innerHTML=markdown(parts.answer.trim());
       content.appendChild(answer);
     }
+    appendSources(content,metadata.sources);
   }
 
   function downloadTextAttachment(attachment){
@@ -696,11 +734,12 @@
     setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
 
-  function addMessage(role,text,{error=false,thinking=false,attachment=null,imageId=null}={}){
+  function addMessage(role,text,{error=false,thinking=false,attachment=null,imageId=null,metadata=null}={}){
     conversation.querySelector('[data-ai-welcome]')?.remove();
     conversation.classList.remove('is-empty');
     const assistant=role!=='user';
     const message=document.createElement('article');
+    message._nyxMetadata=normalizeMetadata(metadata);
     message.className=`ai-message ai-message-${assistant?'assistant':'user'}`;
     message.innerHTML=`
       <div class="ai-message-avatar" ${assistant?'data-nyx-logo aria-hidden="true"':'aria-hidden="true"'}>${assistant?'':'You'}</div>
@@ -929,7 +968,7 @@
       conversation.innerHTML=welcome();
     }else{
       conversation.classList.remove('is-empty');
-      items.forEach(item=>addMessage(item.role,item.content,{attachment:item.textAttachment||null,imageId:item.imageId}));
+      items.forEach(item=>addMessage(item.role,item.content,{attachment:item.textAttachment||null,imageId:item.imageId,metadata:item.metadata}));
     }
     updateThreadTitle(items);
     applyLogoTheme();
@@ -1221,12 +1260,19 @@
       const reader=response.body.getReader();
       const decoder=new TextDecoder();
       let buffer='';
+      let streamError='';
       const consumeLine=line=>{
         if(!line.startsWith('data:')) return;
         const raw=line.slice(5).trim();
         if(!raw||raw==='[DONE]') return;
         try{
           const data=JSON.parse(raw);
+          if(data.error){streamError=String(data.error.message||data.error);return;}
+          if(data.nyx_metadata){
+            const previous=pending._nyxMetadata||{sources:[],summary:''};
+            pending._nyxMetadata=normalizeMetadata({sources:[...previous.sources,...(data.nyx_metadata.sources||[])],summary:previous.summary+(data.nyx_metadata.summary||'')});
+            if(!renderFrame)renderFrame=requestAnimationFrame(renderAnswer);
+          }
           const token=data?.choices?.[0]?.delta?.content||data?.choices?.[0]?.text||'';
           if(token){
             answer=data?.nyx_replace===true?String(token):answer+token;
@@ -1244,13 +1290,14 @@
       }
       buffer+=decoder.decode();
       buffer.split(/\r?\n/).forEach(consumeLine);
+      if(streamError)throw new Error(streamError);
       if(renderFrame){cancelAnimationFrame(renderFrame);renderAnswer()}
       }
       const clean=answer.trim();
       const finalAnswer=responseParts(clean).answer.trim();
       if(!finalAnswer) throw new Error('This model did not produce a final answer. Try again or choose another available model.');
       setMessageContent(pending,clean);
-      history.push({role:'assistant',content:finalAnswer,...(generatedImageId?{imageId:generatedImageId}:{})});
+      history.push({role:'assistant',content:finalAnswer,metadata:pending._nyxMetadata,...(generatedImageId?{imageId:generatedImageId}:{})});
       saveMessages(history);
       recordUsage(userText,finalAnswer);
       requestSucceeded=true;
@@ -1258,6 +1305,7 @@
       if(error?.name==='AbortError') return;
       setMessageContent(pending,error?.message||'Nyx AI could not complete that request.',{error:true});
     }finally{
+      if(renderFrame)cancelAnimationFrame(renderFrame);
       activeController=null;
       setBusy(false);
       if(requestSucceeded)clearAttachment();

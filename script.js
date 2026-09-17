@@ -2885,13 +2885,33 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       } catch {}
       return false;
     };
+    const pendingRoots=new Set();
+    let cleanTimer=0,cleanStack=[],cleanSeen=new WeakSet();
+    const flushClean=()=>{
+      cleanTimer=0;
+      if(!protectionEnabled()){pendingRoots.clear();cleanStack=[];cleanSeen=new WeakSet();return;}
+      const started=performance.now();let checked=0;
+      while(checked<128&&performance.now()-started<6){
+        if(!cleanStack.length){
+          const root=pendingRoots.values().next().value;
+          if(!root)break;
+          pendingRoots.delete(root);cleanStack.push(root);
+        }
+        const node=cleanStack.pop();checked++;
+        if(!node?.isConnected||cleanSeen.has(node))continue;
+        cleanSeen.add(node);
+        if(node.nextElementSibling)cleanStack.push(node.nextElementSibling);
+        if(node.nodeType===1&&removeAd(node))continue;
+        if(node.firstElementChild)cleanStack.push(node.firstElementChild);
+      }
+      if(cleanStack.length||pendingRoots.size)cleanTimer=setTimeout(flushClean,0);
+      else cleanSeen=new WeakSet();
+    };
     const clean=root=>{
-      try {
-        if (!protectionEnabled()) return;
-        if (root?.nodeType===1) removeAd(root);
-        root?.querySelectorAll?.(adSelector)?.forEach(removeAd);
-        root?.querySelectorAll?.("script[src],iframe[src],img[src],link[href]")?.forEach(removeAd);
-      } catch {}
+      if(!root||![1,9,11].includes(root.nodeType))return;
+      if(pendingRoots.size>=256){pendingRoots.clear();pendingRoots.add(document);}
+      else pendingRoots.add(root);
+      if(!cleanTimer)cleanTimer=setTimeout(flushClean,0);
     };
     try {
       const style=document.createElement("style");
@@ -5307,6 +5327,25 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         }else controls.replaceChildren(grid);
         block.classList.add('nyx-color-theme-block');
       }
+      if(categoryFor(title)==='browser'){
+        block.classList.add('nyx-browser-settings-card');
+        const labels=[['[data-tab-title]','Tab title'],['[data-tab-favicon-file]','Tab icon'],['[data-cloak-type]','Open Nyx in'],['[data-cloak-redirect-url]','Redirect address']];
+        labels.forEach(([selector,text])=>{
+          const field=controls.querySelector(selector);
+          if(!field)return;
+          const label=document.createElement('label');label.className='nyx-browser-setting-field';
+          const caption=document.createElement('span');caption.textContent=text;
+          field.replaceWith(label);label.append(caption,field);
+        });
+        if(title==='tab cloak')heading.textContent='Tab appearance';
+        if(title==='preset cloak')heading.textContent='Quick presets';
+        if(title==='cloaking'){
+          heading.textContent='Launch options';
+          const toggles=document.createElement('div');toggles.className='nyx-browser-setting-toggles';
+          const rows=[...controls.querySelectorAll(':scope > .settings-row')];
+          if(rows.length){rows[0].before(toggles);rows.forEach(row=>toggles.appendChild(row));}
+        }
+      }
       block.replaceChildren(copy,controls);
       block.dataset.settingsSearch=(block.textContent || '').toLowerCase();
       categories.get(categoryFor(title)).querySelector('.nyx-settings-group').appendChild(block);
@@ -7329,7 +7368,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(!nyxAdProtectedGameDocuments.has(frameDocument)){
         nyxAdProtectedGameDocuments.add(frameDocument);
         try{
-          new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(protectDescendants)))
+          let scanTimer=0;
+          new MutationObserver(records=>{
+            if(scanTimer||!records.some(record=>record.addedNodes.length))return;
+            scanTimer=setTimeout(()=>{scanTimer=0;protectDescendants(frameDocument);},50);
+          })
             .observe(frameDocument.documentElement,{childList:true,subtree:true});
         }catch{}
       }

@@ -1,3 +1,9 @@
+## Tutsi Customize placement correction (2026-09-17)
+
+- User requested removing the Home Customize button. The wizard remains accessible through Settings > Customize Tutsi, with automatic first-visit behavior unchanged.
+- `956c726` deployed successfully; this placement correction is being tested and deployed as a follow-up before final live verification.
+- FreeDNS A record now resolves to the VPS. `https://childsupport.donateyourboat.us/` loads Tutsi with valid TLS; its health check passed.
+
 ## Tutsi UI release preparation (2026-09-17)
 
 - User explicitly requested pushing/deploying the accumulated wizard, Settings, presets, Cloud Gaming and app-close changes.

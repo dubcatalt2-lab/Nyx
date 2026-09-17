@@ -1215,7 +1215,6 @@ function openCustomize(){
 }
 function dismissCustomize(){customizeTransition++;customizeBusy=false;try{localStorage.setItem('tutsi.customize.seen','1')}catch{}customize.close();tabAppearance();}
 $('open-customize').onclick=openCustomize;
-$('home-customize').onclick=openCustomize;
 $('customize-dismiss').onclick=dismissCustomize;
 customize.addEventListener('cancel',event=>{event.preventDefault();dismissCustomize();});
 $('customize-back').onclick=()=>{void changeCustomizeStep(-1);};

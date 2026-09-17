@@ -14,7 +14,7 @@ try{
  await page.locator('#customize-back').click();assert.equal(await page.locator('#customize-tabTitle').inputValue(),'My notebook');await page.locator('#customize-next').click();
  await page.locator('#customize-next').click();await wizard.waitFor({state:'hidden'});assert.equal(await page.title(),'My notebook');
  await page.reload();assert(!(await wizard.isVisible()));assert.equal(await page.title(),'My notebook');
- await page.locator('#home-customize').click();await page.locator('#customize-dismiss').click();
+ assert.equal(await page.locator('#home-customize').count(),0);
  await page.goto('http://localhost:9091/tutsi#settings');await page.selectOption('#tab-preset','custom');await page.fill('#tab-title','Typing preview');assert.equal(await page.title(),'Typing preview');await page.selectOption('#tab-preset','drive');await page.locator('#apply-tab-preset').click();assert.equal(await page.title(),'My Drive - Google Drive');await page.locator('#open-customize').click();
  await page.selectOption('#customize-theme','mocha');await page.keyboard.press('Escape');assert.equal(await page.locator('html').getAttribute('data-theme'),'latte');
  await page.setViewportSize({width:390,height:844});await page.locator('#open-customize').click();await page.evaluate(()=>document.fonts.ready);

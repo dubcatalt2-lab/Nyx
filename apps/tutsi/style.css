@@ -1248,5 +1248,4 @@ body[data-view="app-view"] #app-host{height:auto;flex:1;min-height:0}
 @media(prefers-reduced-motion:reduce){#customize-dialog *, .settings-nav::before{animation:none!important;transition:none!important}}
 html[data-motion="reduce"] #customize-dialog *,html[data-motion="reduce"] .settings-nav::before{animation:none!important;transition:none!important}
 
-#home-customize{margin-top:14px;color:var(--muted);font-size:14px}
 .tab-preset-feedback{display:flex;align-items:center;gap:12px;padding-top:12px;min-width:0}.tab-preset-feedback img{object-fit:contain;flex:none}.tab-preset-feedback span{flex:1;min-width:0;overflow-wrap:anywhere}.tab-preset-feedback button{flex:none}

@@ -9,8 +9,9 @@
   const RESPONSE_DEPTH_KEY='nyx.aiResponseDepth';
   const USAGE_KEY='nyx.aiUsage.v1';
   const DEFAULT_MODEL='' ;
-  const MAX_MESSAGES=40;
-  const MAX_THREADS=40;
+  const MESSAGE_PAGE_SIZE=40;
+  const MODEL_CONTEXT_MESSAGES=20;
+  let loadingEarlier=false;
   const MAX_INPUT_HEIGHT=190;
   const MAX_IMAGE_BYTES=8*1024*1024;
   const MAX_PREPARED_IMAGE_CHARS=1200000;
@@ -308,7 +309,7 @@
           const textAttachment=item.role==='user'?normalizedTextAttachment(item.textAttachment):null;
           if(textAttachment) message.textAttachment=textAttachment;
           return message;
-        }).filter(Boolean).slice(-MAX_MESSAGES)
+        }).filter(Boolean)
       : [];
   }
 
@@ -334,7 +335,7 @@
     try{
       const value=JSON.parse(localStorage.getItem(THREADS_KEY)||'[]');
       return Array.isArray(value)
-        ? value.map(normalizedThread).filter(thread=>thread.id&&thread.messages.length).sort((left,right)=>right.updatedAt-left.updatedAt).slice(0,MAX_THREADS)
+        ? value.map(normalizedThread).filter(thread=>thread.id&&thread.messages.length).sort((left,right)=>right.updatedAt-left.updatedAt)
         : [];
     }catch{return[]}
   }
@@ -344,13 +345,28 @@
   }
 
   function persistThreads(){
-    threads=threads.filter(thread=>thread.id&&thread.messages.length).sort((left,right)=>right.updatedAt-left.updatedAt).slice(0,MAX_THREADS);
-    try{localStorage.setItem(THREADS_KEY,JSON.stringify(threads))}catch{}
+    threads=threads.filter(thread=>thread.id&&thread.messages.length).sort((left,right)=>right.updatedAt-left.updatedAt);
+    try{
+      localStorage.setItem(THREADS_KEY,JSON.stringify(threads));
+      document.getElementById('ai-save-warning')?.remove();
+    }catch{
+      if(document.getElementById('ai-save-warning'))return;
+      const warning=document.createElement('div');
+      warning.id='ai-save-warning';warning.className='ai-save-warning';warning.setAttribute('role','alert');
+      warning.append('Nyx could not save your chat on this device. Download your chats before reloading. ');
+      const button=document.createElement('button');button.type='button';button.textContent='Download chats';
+      button.addEventListener('click',()=>{
+        const url=URL.createObjectURL(new Blob([JSON.stringify({version:1,threads},null,2)],{type:'application/json'}));
+        const link=document.createElement('a');link.href=url;link.download='nyx-ai-chats.json';document.body.append(link);link.click();link.remove();
+        setTimeout(()=>URL.revokeObjectURL(url),1000);
+      });
+      warning.append(button);form.before(warning);
+    }
   }
 
   function syncLegacyMessages(messages){
     try{
-      if(messages.length) localStorage.setItem(MESSAGE_KEY,JSON.stringify(messages));
+      if(messages.length) localStorage.setItem(MESSAGE_KEY,JSON.stringify(messages.slice(-MESSAGE_PAGE_SIZE)));
       else localStorage.removeItem(MESSAGE_KEY);
     }catch{}
   }
@@ -374,7 +390,7 @@
       activeThreadId=threads.some(thread=>thread.id===stored)?stored:(threads[0]?.id||'');
     }
     if(activeThreadId){
-      localStorage.setItem(ACTIVE_THREAD_KEY,activeThreadId);
+      try{localStorage.setItem(ACTIVE_THREAD_KEY,activeThreadId)}catch{}
       syncLegacyMessages(activeThread()?.messages||[]);
     }
   }
@@ -395,15 +411,15 @@
       thread=normalizedThread({id:`chat-${now.toString(36)}-${Math.random().toString(36).slice(2,7)}`,messages,model:model.value||DEFAULT_MODEL,createdAt:now,updatedAt:now});
       threads.unshift(thread);
       activeThreadId=thread.id;
-      localStorage.setItem(ACTIVE_THREAD_KEY,activeThreadId);
+      try{localStorage.setItem(ACTIVE_THREAD_KEY,activeThreadId)}catch{}
     }else if(thread){
       thread.messages=messages;
       thread.title=chatTitle(messages);
       thread.model=model.value||thread.model||DEFAULT_MODEL;
       thread.updatedAt=now;
     }
-    syncLegacyMessages(messages);
     persistThreads();
+    syncLegacyMessages(messages);
     renderThreadList();
   }
 
@@ -869,7 +885,7 @@
     temporaryMode=false;
     temporaryMessages=[];
     activeThreadId=thread.id;
-    localStorage.setItem(ACTIVE_THREAD_KEY,activeThreadId);
+    try{localStorage.setItem(ACTIVE_THREAD_KEY,activeThreadId)}catch{}
     syncLegacyMessages(thread.messages);
     if(modelCatalog.some(item=>item.id===thread.model)){
       model.value=thread.model;
@@ -968,7 +984,20 @@
       conversation.innerHTML=welcome();
     }else{
       conversation.classList.remove('is-empty');
-      items.forEach(item=>addMessage(item.role,item.content,{attachment:item.textAttachment||null,imageId:item.imageId,metadata:item.metadata}));
+      let start=Math.max(0,items.length-MESSAGE_PAGE_SIZE);
+      const append=item=>addMessage(item.role,item.content,{attachment:item.textAttachment||null,imageId:item.imageId,metadata:item.metadata});
+      items.slice(start).forEach(append);
+      if(start){
+        const earlier=document.createElement('button');earlier.type='button';earlier.className='ai-history-earlier';earlier.textContent='Load earlier messages';
+        earlier.addEventListener('click',()=>{
+          const height=feed.scrollHeight,top=feed.scrollTop,next=Math.max(0,start-MESSAGE_PAGE_SIZE);
+          const fragment=document.createDocumentFragment();loadingEarlier=true;
+          try{items.slice(next,start).forEach(item=>fragment.append(append(item)))}finally{loadingEarlier=false}
+          earlier.after(fragment);start=next;if(!start)earlier.remove();
+          feed.scrollTop=top+feed.scrollHeight-height;
+        });
+        conversation.prepend(earlier);
+      }
     }
     updateThreadTitle(items);
     applyLogoTheme();
@@ -1111,7 +1140,7 @@
   }
 
   function scrollToBottom(force=false){
-    if(!force&&!followStream) return;
+    if(loadingEarlier||(!force&&!followStream)) return;
     requestAnimationFrame(()=>{feed.scrollTop=feed.scrollHeight});
   }
 
@@ -1139,7 +1168,7 @@
     }else if(activeThreadId){
       threads=threads.filter(thread=>thread.id!==activeThreadId);
       activeThreadId='';
-      localStorage.removeItem(ACTIVE_THREAD_KEY);
+      try{localStorage.removeItem(ACTIVE_THREAD_KEY)}catch{}
       persistThreads();
     }
     syncLegacyMessages([]);
@@ -1224,7 +1253,7 @@
       if(customKey){
         const kind=customKind();
         if((preparedImage||generateImage)&&kind==='nyx')throw new Error('Nyx API keys currently support text only. Use Nyx shared or an OpenRouter key for images.');
-        const messages=history.map(item=>({role:item.role,content:item.content+(item.textAttachment?'\n\n'+item.textAttachment.content:'')}));
+        const messages=history.slice(-MODEL_CONTEXT_MESSAGES).map(item=>({role:item.role,content:item.content+(item.textAttachment?'\n\n'+item.textAttachment.content:'')}));
         if(preparedImage)messages[messages.length-1].content=[{type:'text',text:messages[messages.length-1].content},{type:'image_url',image_url:{url:preparedImage.dataUrl}}];
         response=await fetch(kind==='nyx'?'/api/v1/ai':'https://openrouter.ai/api/v1/chat/completions',{method:'POST',signal:activeController.signal,headers:{'Content-Type':'application/json',Authorization:'Bearer '+customKey},body:JSON.stringify({model:requestedModel,messages,max_tokens:generateImage?2200:512,stream:!generateImage&&kind!=='nyx',...(generateImage?{modalities:['text','image']}:{})})});
         if(kind==='nyx'&&response.ok){const result=await response.json();const content=result.choices?.[0]?.message?.content||'';response=new Response('data: '+JSON.stringify({choices:[{delta:{content}}]})+'\n\ndata: [DONE]\n\n',{headers:{'Content-Type':'text/event-stream'}});}
@@ -1233,7 +1262,7 @@
         method:'POST',
         signal:activeController.signal,
         headers:await aiHeaders({'content-type':'application/json'}),
-        body:JSON.stringify({model:requestedModel,message:userText,messages:history,textAttachment,imageContext,image:preparedImage,responseDepth:responseDepth(),generateImage,stream:!generateImage})
+        body:JSON.stringify({model:requestedModel,message:userText,messages:history.slice(-MODEL_CONTEXT_MESSAGES),textAttachment,imageContext,image:preparedImage,responseDepth:responseDepth(),generateImage,stream:!generateImage})
       });
       }
       if(!response.ok){

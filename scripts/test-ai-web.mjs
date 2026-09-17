@@ -54,3 +54,11 @@ for(const mutation of [p=>p.max_tool_calls=30,p=>p.tools[0].parameters.max_uses=
 await allowance.finish(owner);
 assert.equal(aiWebTools()[0].parameters.engine,'parallel');
 console.log('PASS AI web: actual streaming/nonstreaming route, automatic request detection, source/summary forwarding, unsafe URL/raw reasoning exclusion, regular pool fit, search billing and tool-budget tampering rejection');
+
+assert.equal(aiWantsWeb('What is on nyxlearning.org'),true);
+assert.equal(aiWantsWeb('Read example.com/recipes'),true);
+assert.equal(aiWantsWeb('Calculate 3.14 times 2'),false);
+await request('What is on nyxlearning.org');
+assert.equal(payload.tools.length,2);
+
+assert.equal(aiWantsWeb('Please read nyxlearning.org.'),true);

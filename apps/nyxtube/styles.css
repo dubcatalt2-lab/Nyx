@@ -22,3 +22,7 @@
 @media(prefers-reduced-motion:reduce){.watch-controls,.mobile-seek-controls{transition:none}}
 
 .watch-controls button[data-watch-captions][aria-pressed="true"],.short-actions button[data-short-captions][aria-pressed="true"]{background:var(--accent);color:#111114;border-color:var(--accent)}
+
+/* Keep Shorts wheel/swipe gestures on the Nyx stage across embedded players. */
+.short-card{touch-action:pan-x}
+.short-mount iframe{pointer-events:none}

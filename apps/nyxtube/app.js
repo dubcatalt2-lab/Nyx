@@ -578,11 +578,28 @@
     try {
       if (!state.shorts.length) state.shorts = (await json("/api/nyxtube/shorts?limit=16"))?.videos || [];
       if (!state.shorts.length) throw new Error("No playable Shorts were found.");
-      state.failedShortIds.clear();
+      state.failedShortIds.clear();shortRetries.clear();
       await showShort(state.shortIndex);
     } catch (error) { refs.shortLoading.hidden = true; notice(error.message || "Shorts could not be loaded."); }
   }
   let shortGeneration=0;
+  let shortLoadTimer=0;
+  const shortRetries=new Set();
+  function clearShortLoadTimer(){clearTimeout(shortLoadTimer);shortLoadTimer=0;}
+  function watchShortLoad(video,generation){
+    clearShortLoadTimer();
+    shortLoadTimer=setTimeout(()=>{
+      if(generation!==shortGeneration||state.view!=='shorts')return;
+      const entry=preparedShorts.get(video.id);
+      if(!shortRetries.has(video.id)){
+        shortRetries.add(video.id);
+        if(entry){entry.removed=true;entry.player?.destroy?.();entry.node?.remove();preparedShorts.delete(video.id);}
+        state.shortPlayer=null;
+        notice('This Short is taking longer to load. Retrying...');
+        void showShort(state.shortIndex);
+      }else recoverShort(video);
+    },12000);
+  }
   const shortDetails=new Map();
   function shortDetail(video){
     if(!video.detailsPending)return Promise.resolve(video);
@@ -611,10 +628,11 @@
       config.events={
         onReady:event=>{if(entry.removed)return;entry.ready=true;event.target.mute();if(state.shortPlayer===event.target){event.target.playVideo();startShortTimer();}},
         onStateChange:event=>{if(entry.removed||state.shortPlayer!==event.target)return;
-          if(event.data===YT.PlayerState.PLAYING)refs.shortLoading.hidden=true;
+          if(event.data===YT.PlayerState.PLAYING||event.data===YT.PlayerState.PAUSED){clearShortLoadTimer();refs.shortLoading.hidden=true;if(event.data===YT.PlayerState.PLAYING)notice();}
           refs.shortCenterPlay.hidden=event.data!==YT.PlayerState.PAUSED;
           if(event.data===YT.PlayerState.ENDED)void showShort(state.shortIndex+1);
         },
+        onAutoplayBlocked:()=>{if(entry.removed||state.shortPlayer!==entry.player)return;clearShortLoadTimer();refs.shortLoading.hidden=true;refs.shortCenterPlay.hidden=false;},
         onError:()=>{entry.failed=true;if(state.shortPlayer===entry.player)recoverShort(detail);}
       };
       entry.player=new YT.Player(mountNode.id,config);
@@ -628,6 +646,7 @@
     state.shortIndex=(index+state.shorts.length)%state.shorts.length;
     const video=state.shorts[state.shortIndex];
     state.shortPlayer?.pauseVideo?.();state.shortPlayer=null;
+    watchShortLoad(video,generation);
     refs.shortTitle.textContent=video.title||'Untitled Short';refs.shortCreator.textContent=video.creator||'YouTube';
     refs.shortLoading.hidden=false;refs.shortCenterPlay.hidden=true;refs.shortProgress.style.width='0';
     for(const entry of preparedShorts.values())if(entry.node){entry.node.style.visibility='hidden';entry.node.style.pointerEvents='none';entry.node.setAttribute('aria-hidden','true');}
@@ -637,22 +656,22 @@
     if(generation!==shortGeneration||state.view!=='shorts')return;
     if(entry.failed||!entry.player)return recoverShort(video);
     state.shortPlayer=entry.player;entry.node.style.visibility='visible';entry.node.style.pointerEvents='auto';entry.node.setAttribute('aria-hidden','false');
-    state.shortMuted=true;refs.shortMute.innerHTML=icon('icon-muted');entry.player.mute();
-    if(entry.ready){entry.player.playVideo();startShortTimer();}
+    state.shortMuted=true;refs.shortMute.innerHTML=icon('icon-muted');
+    if(entry.ready){entry.player.mute();entry.player.playVideo();startShortTimer();}
     // Warm only the next three. They remain muted and do not autoplay.
     for(let offset=1;offset<=Math.min(3,state.shorts.length-1);offset++)prepareShort(state.shorts[(state.shortIndex+offset)%state.shorts.length]);
   }
   function recoverShort(video) {
     if (state.view !== "shorts" || state.shorts[state.shortIndex]?.id !== video.id) return;
-    state.failedShortIds.add(video.id);
+    clearShortLoadTimer();state.failedShortIds.add(video.id);
     const nextIndex = state.shorts.findIndex((candidate, index) => index !== state.shortIndex && candidate?.id && !state.failedShortIds.has(candidate.id));
     if (nextIndex < 0) {
       refs.shortLoading.hidden = true;
-      state.shortPlayer?.destroy?.(); state.shortPlayer = null; refs.shortPlayer.replaceChildren();
-      notice("YouTube says these Shorts are unavailable or restricted on this Chromebook. Try again later.");
+      stopShorts();
+      notice("These Shorts could not start. Try again later or check your connection.");
       return;
     }
-    notice("Skipping a Short that YouTube restricts on this Chromebook...");
+    notice("This Short could not start. Trying another...");
     showShort(nextIndex);
   }
   function startShortTimer() {
@@ -664,7 +683,7 @@
     }, 250);
   }
   function stopShorts() {
-    shortGeneration++;clearInterval(state.shortTimer);state.shortTimer=0;
+    shortGeneration++;clearShortLoadTimer();clearInterval(state.shortTimer);state.shortTimer=0;
     for(const entry of preparedShorts.values()){entry.removed=true;entry.player?.destroy?.();entry.node?.remove();}
     preparedShorts.clear();state.shortPlayer=null;refs.shortPlayer.replaceChildren();
   }
@@ -735,7 +754,26 @@
     refs.watchRewind.addEventListener("click", () => seekWatchBy(-10)); refs.watchForward.addEventListener("click", () => seekWatchBy(10));
     $$('[data-watch-info-tab]').forEach(button => button.addEventListener("click", () => showWatchInfo(button.dataset.watchInfoTab)));
     document.addEventListener("click", closeWatchSettings);
-    refs.shortCenterPlay.addEventListener("click", toggleShort); refs.shortStage.addEventListener("click", event => { if (!event.target.closest("button")) toggleShort(); });
+    let shortWheelTotal=0,shortWheelAt=0,shortNavigateAt=-Infinity,shortTouch=null,shortIgnoreClickUntil=0;
+    const gestureShort=delta=>{const now=performance.now();if(now-shortNavigateAt<450)return;shortNavigateAt=now;void changeShort(delta);};
+    document.addEventListener('wheel',event=>{
+      if(state.view!=='shorts'||event.ctrlKey||event.target.closest?.('input,textarea,select,[contenteditable]')||Math.abs(event.deltaX)>Math.abs(event.deltaY))return;
+      event.preventDefault();
+      const now=performance.now();if(now-shortWheelAt>180||Math.sign(shortWheelTotal)!==Math.sign(event.deltaY))shortWheelTotal=0;
+      shortWheelAt=now;shortWheelTotal+=event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?innerHeight:1);
+      if(Math.abs(shortWheelTotal)>=40){gestureShort(Math.sign(shortWheelTotal));shortWheelTotal=0;}
+    },{passive:false});
+    refs.shortStage.addEventListener('pointerdown',event=>{
+      if(event.pointerType!=='touch'||event.target.closest('button,a,input'))return;
+      shortTouch={id:event.pointerId,x:event.clientX,y:event.clientY};refs.shortStage.setPointerCapture(event.pointerId);
+    });
+    refs.shortStage.addEventListener('pointerup',event=>{
+      if(!shortTouch||shortTouch.id!==event.pointerId)return;
+      const dx=event.clientX-shortTouch.x,dy=event.clientY-shortTouch.y;shortTouch=null;
+      if(Math.abs(dy)>=50&&Math.abs(dy)>Math.abs(dx)){shortIgnoreClickUntil=performance.now()+350;gestureShort(dy<0?1:-1);}
+    });
+    refs.shortStage.addEventListener('pointercancel',()=>{shortTouch=null;});
+    refs.shortCenterPlay.addEventListener("click", toggleShort); refs.shortStage.addEventListener("click", event => { if (performance.now()>=shortIgnoreClickUntil&&!event.target.closest("button,a")) toggleShort(); });
     refs.shortMute.addEventListener("click", toggleShortMute);
     refs.shortCaptions.addEventListener("click", () => { state.shortCaptions = !state.shortCaptions; if (!setCaptions(state.shortPlayer, state.shortCaptions, refs.shortCaptions)) state.shortCaptions = !state.shortCaptions; });
     refs.shortFullscreen.addEventListener("click", () => fullscreen(refs.shortStage));

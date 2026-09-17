@@ -16,6 +16,7 @@ const browser = await chromium.launch({ headless: true });
 try {
   const page = await browser.newPage({
     viewport: { width: 1280, height: 900 },
+    hasTouch: true,
     userAgent: "Mozilla/5.0 (X11; CrOS x86_64 15917.65.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
   });
   page.setDefaultTimeout(8_000);
@@ -35,22 +36,24 @@ try {
       constructor(id, options) {
         this.node = document.getElementById(id);
         this.options = options;
-        this.state = 1;
+        this.state = 5;
         this.current = 18;
         this.total = 212;
         this.muted = false;
+        this.mute=undefined; // YouTube adds API methods only when ready.
         this.node.innerHTML = '<div data-mock-youtube-player style="width:100%;height:100%;background:linear-gradient(135deg,#121217,#23232a)"></div>';
         setTimeout(() => {
           if (Array.isArray(window.__nyxTubeMockBlockedIds) && window.__nyxTubeMockBlockedIds.includes(options.videoId)) {
             options.events?.onError?.({ target: this, data: 150 });
             return;
           }
+          delete this.mute;
           options.events?.onReady?.({ target: this });
-          options.events?.onStateChange?.({ target: this, data: 1 });
-        }, 0);
+          options.events?.onStateChange?.({ target: this, data: this.state });
+        }, 150);
       }
       loadVideoById(id){this.options.videoId=id;window.__shortReuse=(window.__shortReuse||0)+1;this.current=0;this.playVideo();}
-      playVideo() { this.state = 1; window.__nyxTubePlayerState = this.state; this.options.events?.onStateChange?.({ target: this, data: 1 }); }
+      playVideo() { if(window.__blockShort===this.options.videoId){window.__blockShort='';this.options.events?.onAutoplayBlocked?.({target:this});return;}if(window.__stallShorts?.includes(this.options.videoId))return;this.state = 1; window.__nyxTubePlayerState = this.state; this.options.events?.onStateChange?.({ target: this, data: this.state }); }
       pauseVideo() { this.state = 2; window.__nyxTubePlayerState = this.state; this.options.events?.onStateChange?.({ target: this, data: 2 }); }
       getPlayerState() { return this.state; }
       getCurrentTime() { return this.current; }
@@ -90,17 +93,59 @@ try {
   assert(await page.locator("[data-short-title]").textContent() === "A second video", "Initial Short did not render");
   await page.waitForFunction(()=>document.querySelector('[data-short-player]').children.length===4);
   const prepared=await page.locator('[data-short-player]').evaluate(el=>Array.from(el.children).map(n=>n.id));
-  await page.locator("[data-short-next]").click();
+  assert(!(await page.locator('body').innerText()).includes('mute is not a function'),'Short activation must wait for player methods');
+  await page.locator('[data-short-stage]').hover();await page.mouse.wheel(0,120);
+
   await page.getByText("Next test Short").waitFor();
   if(!livePlayer)assert(await page.locator('[data-short-player] > [id^=nyxtube-prepared-short-]').count()<=4,'Shorts warm pool must stay bounded');
   await page.waitForFunction(()=>document.querySelector('[data-short-player]').children.length===4);
   const nextPrepared=await page.locator('[data-short-player]').evaluate(el=>Array.from(el.children).map(n=>n.id));
   assert(nextPrepared.filter(id=>prepared.includes(id)).length===3,'Navigation must retain three prepared players');
   console.log("NyxTube test: Shorts navigation passed");
-  assert(await page.locator("[data-short-title]").textContent() === "Next test Short", "Next Short navigation failed");
+  assert(await page.locator("[data-short-title]").textContent() === "Next test Short", "Wheel navigation failed");
+  await page.waitForTimeout(500);await page.mouse.wheel(0,-120);
+  await page.waitForFunction(()=>document.querySelector('[data-short-title]').textContent==='A second video');
+  await page.locator('[data-short-next]').click();
+  await page.waitForFunction(()=>document.querySelector('[data-short-title]').textContent==='Next test Short');
+  await page.locator('[data-short-previous]').click();
+  await page.waitForFunction(()=>document.querySelector('[data-short-title]').textContent==='A second video');
+  await page.waitForTimeout(500);
+  const touch=await page.context().newCDPSession(page),box=await page.locator('[data-short-stage]').boundingBox();
+  const swipe=async(up)=>{
+    const x=box.x+box.width/2,start=box.y+(up?220:80),end=box.y+(up?80:220);
+    await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y:start}]});
+    await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x,y:end}]});
+    await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  };
+  await swipe(true);
+  await page.waitForFunction(()=>document.querySelector('[data-short-title]').textContent==='Next test Short');
 
 
+  await page.waitForTimeout(500);await swipe(false);
+  await page.waitForFunction(()=>document.querySelector('[data-short-title]').textContent==='A second video');
+  await page.locator('body').click({position:{x:5,y:5}});await page.keyboard.press('ArrowDown');
+  await page.waitForFunction(()=>document.querySelector('[data-short-title]').textContent==='Next test Short');
+  await page.keyboard.press('ArrowUp');
+  await page.waitForFunction(()=>document.querySelector('[data-short-title]').textContent==='A second video');
+  if(!livePlayer){
+    await page.clock.install();
+    await page.evaluate(()=>{window.__stallShorts=['M7lc1UVf-VE'];});
+    await page.locator('[data-short-next]').click();
+    await page.waitForFunction(()=>document.querySelector('[data-short-title]').textContent==='Next test Short');
+    await page.clock.runFor(12100);
+    assert((await page.locator('body').innerText()).includes('Retrying...'),'Stalled activation should retry once');
+    await page.clock.runFor(12500);
+    await page.waitForFunction(()=>document.querySelector('[data-short-title]').textContent==='A second video');
+    await page.waitForFunction(()=>document.querySelector('[data-short-loading]').hidden);
+    await page.clock.resume();
+    await page.evaluate(()=>{window.__stallShorts=[];window.__blockShort='M7lc1UVf-VE';});
+    await page.locator('[data-short-next]').click();
+    await page.locator('[data-short-center-play]').waitFor({state:'visible'});
+    await page.locator('[data-short-center-play]').click();
+    await page.locator('[data-short-center-play]').waitFor({state:'hidden'});
+  }
   await page.locator('[data-view-button=home]').click();
   assert(await page.locator('[data-short-player]').evaluate(el=>el.children.length)===0,'Short players must clean up on exit');
-  console.log('PASS Shorts warm player lifecycle');
+  assert(!pageErrors.length,'Shorts errors: '+pageErrors.join('; '));
+  console.log('PASS Shorts warm player lifecycle and delayed readiness');
 } finally { await browser.close(); }

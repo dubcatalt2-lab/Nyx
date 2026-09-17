@@ -24,7 +24,11 @@ try{
   await page.goto('http://localhost:9091/tutsi#'+app);const frame=page.locator('#app-host iframe:not([hidden])');await frame.waitFor();await frame.contentFrame().locator('html[data-tutsi-app]').waitFor();
   const box=await frame.boundingBox();assert(box.y>0&&box.y<90,app);assert.equal(box.height+box.y,900,app);assert.equal(await page.locator("#address").inputValue(),"tutsi://"+app);
   assert(!(await page.locator('.topbar').isVisible()));assert(!(await page.locator('#app-dock').isVisible()));
-  await frame.contentFrame().locator('body').click({position:{x:5,y:5}});await key('Alt+h');await page.waitForURL('**#home');
+  await frame.contentFrame().locator('body').click({position:{x:5,y:5}});await key('Alt+w');await page.waitForURL('**#home');
+  assert.equal(await page.locator('#browser-tabs [role=tab]').count(),2,'Closing an app preserves website tabs');
+ }
+ for(const route of ['settings','appearance','connection','tab-appearance','privacy','apps','terms']){
+  await page.goto('http://localhost:9091/tutsi#'+route);await page.keyboard.press('Alt+w');await page.waitForURL('**#home');assert.equal(await page.locator('#browser-tabs [role=tab]').count(),2);
  }
  await page.setViewportSize({width:390,height:844});await page.goto('http://localhost:9091/tutsi#games');
  const box=await page.locator('#app-host iframe:not([hidden])').boundingBox();assert.equal(box.height+box.y,844);assert(box.y>0&&box.y<90);

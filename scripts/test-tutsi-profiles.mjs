@@ -102,6 +102,7 @@ try {
     }),
   );
   await page.goto("http://localhost:9091/tutsi");
+  if(await page.locator("#customize-dialog").isVisible())await page.locator("#customize-dismiss").click();
   assert.deepEqual(
     await page
       .locator("#dock-apps button")

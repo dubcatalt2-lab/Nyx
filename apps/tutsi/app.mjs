@@ -93,10 +93,10 @@ palettes.frappe = {
   red: "#e78284",
   yellow: "#e5c890",
 };
-function themePalette() {
-  const palette = { ...(palettes[settings.theme] || palettes.mocha) };
-  if (settings.accent === "mauve") return palette;
-  const color = palette[settings.accent] || palette.mauve;
+function themePalette(preferences = settings) {
+  const palette = { ...(palettes[preferences.theme] || palettes.mocha) };
+  if (preferences.accent === "mauve") return palette;
+  const color = palette[preferences.accent] || palette.mauve;
   const [r, g, b] = color
     .slice(1)
     .match(/../g)
@@ -171,7 +171,7 @@ function toast(message) {
   toastTimer = setTimeout(() => ($("toast").hidden = true), 4000);
 }
 const frames = new Map();
-function tabAppearance() {
+function tabAppearance(preferences = settings) {
   const presets = {
     tutsi: ["Tutsi Math", "/apps/tutsi/icon.png?v=2"],
     classroom: ["Google Classroom", 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"%3E%3Crect width="64" height="64" rx="8" fill="%23fbbc04"/%3E%3Crect x="8" y="10" width="48" height="40" rx="3" fill="%2334a853"/%3E%3Ccircle cx="32" cy="25" r="6" fill="white"/%3E%3Cpath d="M18 42c4-9 20-9 24 0" fill="white"/%3E%3C/svg%3E'],
@@ -179,13 +179,15 @@ function tabAppearance() {
     drive: ["My Drive - Google Drive", "/assets/icons/googledrive-logo.png"],
     google: ["Google", "/assets/icons/google-logo.png"],
     custom: [
-      settings.tabTitle.trim() || "Tutsi Math",
+      preferences.tabTitle.trim() || "Tutsi Math",
       "/apps/tutsi/icon.png?v=2",
     ],
   };
-  const [title, icon] = presets[settings.tabPreset] || presets.tutsi;
+  const [title, icon] = presets[preferences.tabPreset] || presets.tutsi;
   document.title = title;
   document.querySelector("link[rel=icon]").href = icon;
+  $("tab-preset-icon").src=icon;
+  $("tab-preset-preview").textContent=title;
   $("tab-title").disabled = settings.tabPreset !== "custom";
 }
 function styleApp(frame) {
@@ -288,7 +290,7 @@ function applySettings() {
   $("tab-preset").value = settings.tabPreset;
   $("tab-title").value = settings.tabTitle;
   $("connection-shortcut").firstChild.textContent =
-    "Connection settings ";
+    "Browser settings ";
   tabAppearance();
   frames.forEach(styleApp);
   try {
@@ -329,6 +331,15 @@ document.querySelectorAll("[name=theme]").forEach((el) =>
     applySettings();
   }),
 );
+function applyTabFields(){
+ settings.tabPreset=$('tab-preset').value;
+ settings.tabTitle=$('tab-title').value;
+ applySettings();
+ $('tab-preset-status').textContent='Applied to this browser tab.';
+}
+$('tab-title').addEventListener('input',applyTabFields);
+$('tab-preset').addEventListener('input',applyTabFields);
+$('apply-tab-preset').onclick=applyTabFields;
 $("relay").addEventListener("change", () => {
   const value = $("relay").value.trim();
   try {
@@ -351,6 +362,7 @@ $("relay").addEventListener("change", () => {
   }
 });
 $("reset-settings").onclick = () => {
+  if(!confirm("Reset Tutsi settings? Your account, chats and game saves will stay."))return;
   settings = { ...defaults };
   applySettings();
   for(const tab of browserTabs)if(tab.element){tab.element.setAttribute("sandbox",protectionSandbox(settings));control("reload",tab.element);}
@@ -373,6 +385,7 @@ const appPaths = {
   movies: "/apps/movies/",
   music: "/apps/nyxify/",
   games: "/assets/games/",
+  cloud: "/apps/cloud-gaming/",
   youtube: "/apps/nyxtube/",
   chat: "/apps/chat/",
   profiles: "/apps/tutsi/profiles.html",
@@ -391,6 +404,7 @@ function appFrame(name) {
     movies: "Movies",
     music: "Music",
     games: "Games",
+    cloud: "Cloud Gaming",
     youtube: "NyxTube",
     chat: "Chat",
     profiles: "Profiles",
@@ -456,6 +470,7 @@ function route() {
     requestAnimationFrame(() => $(name).scrollIntoView());
   else window.scrollTo(0, 0);
   tabAppearance();
+  requestAnimationFrame(updateSettingsSection);
 }
 addEventListener("hashchange", route);
 let navigation = 0,
@@ -483,6 +498,11 @@ function newBrowserTab(url=''){
   return true;
 }
 function closeBrowserTab(){
+  if(document.body.dataset.view!=='browser'){
+    if($('customize-dialog')?.open)dismissCustomize();
+    document.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());
+    location.hash='home';return;
+  }
   if(!activeTab)return;
   const index=browserTabs.indexOf(activeTab),url=currentWebsiteUrl(activeTab.element)||activeTab.url;
   if(/^https?:\/\//i.test(url)){closedWebsites.push(url);if(closedWebsites.length>10)closedWebsites.shift();}
@@ -858,11 +878,11 @@ addEventListener("message", async (event) => {
     mentionNotification(data);
   } else if (name === "chat" && data.type === "nyx:account-open-signin") {
     openAccount();
-  } else if (name === "chat" && data.type === "nyx:go-home") {
+  } else if (["chat","cloud"].includes(name) && data.type === "nyx:go-home") {
     location.hash = "home";
   } else if (
     data.type === "nyx:account-token-request" &&
-    ["ai", "music", "games", "code", "api", "youtube", "chat"].includes(name)
+    ["ai", "music", "games", "cloud", "code", "api", "youtube", "chat"].includes(name)
   ) {
     reply({
       type: "nyx:account-token-response",
@@ -972,6 +992,7 @@ const fallbackApps = [
   ["movies", "nyx-movies", "Movies", appPaths.movies],
   ["nyxify", "nyxify", "Music", appPaths.music],
   ["pirate-cove", "games", "Games", appPaths.games],
+  ["cloud-gaming", "cloud-gaming", "Cloud Gaming", appPaths.cloud],
   ["youtube", "youtube.com", "NyxTube", appPaths.youtube],
   ["nyx-chat", "nyx-chat", "Chat", appPaths.chat],
   ["code-studio", "code-studio", "Code Sandbox", appPaths.code],
@@ -995,6 +1016,7 @@ const fallbackApps = [
   ["animex", "animex.one", "Animex", "https://animex.one/"],
 ].map(([id, icon, name, url]) => ({ id, icon, name, url }));
 function renderApps(apps) {
+  if(!apps.some(app=>app.url===appPaths.cloud))apps=[...apps,{id:"cloud-gaming",icon:"cloud-gaming",name:"Cloud Gaming",url:appPaths.cloud}];
   $("all-apps").replaceChildren();
 
   for (const app of apps) {
@@ -1034,7 +1056,7 @@ function renderApps(apps) {
       host.append(button);
     }
   }
-  route();
+  if(!document.body.dataset.view)route();
 }
 function renderDock() {
   for (const [key, label, icon] of [
@@ -1084,8 +1106,8 @@ fetch("/api/apps")
 
 addEventListener('tutsi:relay-status',({detail})=>{
   const labels={checking:'Checking relay',connected:'Connected',switched:'Switched to backup',available:'Available',unavailable:'No reachable relay'};
-  $('connection-result').textContent=(labels[detail.state]||'Relay')+(detail.url?' - '+(detail.url.endsWith('/api/tutsi-relay/socket/')?'HTTPS fallback':detail.url):'');
-  if(detail.state==='switched')toast('Connected through a backup relay.');
+  $('connection-result').textContent=(labels[detail.state]||'Relay');
+  if(detail.state==='switched')toast('Connection restored.');
 });
 
 fetch('/api/link-checker/vendors').then(r=>r.ok?r.json():Promise.reject()).then(data=>{
@@ -1143,3 +1165,98 @@ addEventListener('tutsi:protection',event=>protectionNotice(event.detail?.kind))
 addEventListener('message',event=>{
   if(event.origin===location.origin&&proxyElement&&event.source===proxyElement.contentWindow&&event.data?.type==='tutsi:protection')protectionNotice(event.data.kind);
 });
+
+// Customization stays a draft until Save; no account or relay changes are made.
+const customize=$('customize-dialog');
+let customizeStep=0, customizeDraft, customizeTransition=0, customizeBusy=false;
+const customizeKeys={theme:'theme',accent:'accent',wallpaper:'wallpaper',tabPreset:'tab-preset',tabTitle:'tab-title',engine:'search-engine',motion:'motion',closePrevention:'close-prevention'};
+for(const [key,id] of Object.entries(customizeKeys)){
+ const control=$('customize-'+key),original=$(id);
+ if(control.tagName==='SELECT'&&original)control.replaceChildren(...[...original.options].map(option=>option.cloneNode(true)));
+ control.addEventListener('input',()=>{customizeDraft[key]=control.type==='checkbox'?control.checked:control.value;customizePreview();});
+}
+function customizePreview(){
+ tabAppearance(customizeDraft);
+ const p=themePalette(customizeDraft),preview=$('customize-preview');
+ for(const [key,value] of Object.entries(p))preview.style.setProperty('--'+key,value);
+ preview.style.setProperty('--accent',p[customizeDraft.accent]||p.mauve);
+ preview.dataset.wallpaper=customizeDraft.wallpaper;
+ $('customize-tab-label').textContent=customizeDraft.tabPreset==='custom'?(customizeDraft.tabTitle.trim()||'Tutsi Math'):$('customize-tabPreset').selectedOptions[0].textContent;
+ $('customize-tabTitle').disabled=customizeDraft.tabPreset!=='custom';
+ $('customize-summary').textContent=`${customizeDraft.theme[0].toUpperCase()+customizeDraft.theme.slice(1)} / ${$('customize-accent').selectedOptions[0].textContent} / ${$('customize-engine').selectedOptions[0].textContent}`;
+}
+function showCustomizeStep(animate=false){
+ customize.querySelectorAll('[data-customize-step]').forEach(el=>el.hidden=Number(el.dataset.customizeStep)!==customizeStep);
+ customize.querySelectorAll('[data-step-marker]').forEach((el,i)=>{if(i===customizeStep)el.setAttribute('aria-current','step');else el.removeAttribute('aria-current');});
+ $('customize-progress').textContent=`Step ${customizeStep+1} of 3`;
+ $('customize-back').hidden=customizeStep===0;
+ $('customize-next').textContent=customizeStep===2?'Save changes':'Next';
+ const heading=customize.querySelector('[data-customize-step]:not([hidden]) h3');heading.focus({preventScroll:true});
+ if(animate&&!settings.motion&&!matchMedia('(prefers-reduced-motion: reduce)').matches)heading.parentElement.animate([{opacity:0},{opacity:1}],{duration:240,easing:'ease-out'});
+}
+async function changeCustomizeStep(delta){
+ if(customizeBusy)return;customizeBusy=true;
+ const token=++customizeTransition;
+ $('customize-back').disabled=true;$('customize-next').disabled=true;
+ const panel=customize.querySelector('[data-customize-step]:not([hidden])');
+ if(!settings.motion&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+   try{await panel.animate([{opacity:1},{opacity:0}],{duration:120,easing:'ease-in'}).finished;}catch{}
+ }
+ if(token!==customizeTransition||!customize.open)return;
+ customizeStep+=delta;showCustomizeStep(true);
+ customizeBusy=false;$('customize-back').disabled=false;$('customize-next').disabled=false;
+}
+function openCustomize(){
+ customizeTransition++;customizeBusy=false;
+ $('customize-back').disabled=false;$('customize-next').disabled=false;
+ customizeDraft={...settings};customizeStep=0;
+ for(const key of Object.keys(customizeKeys)){const el=$('customize-'+key);if(el.type==='checkbox')el.checked=customizeDraft[key];else el.value=customizeDraft[key];}
+ customizePreview();customize.showModal();showCustomizeStep();
+}
+function dismissCustomize(){customizeTransition++;customizeBusy=false;try{localStorage.setItem('tutsi.customize.seen','1')}catch{}customize.close();tabAppearance();}
+$('open-customize').onclick=openCustomize;
+$('home-customize').onclick=openCustomize;
+$('customize-dismiss').onclick=dismissCustomize;
+customize.addEventListener('cancel',event=>{event.preventDefault();dismissCustomize();});
+$('customize-back').onclick=()=>{void changeCustomizeStep(-1);};
+$('customize-next').onclick=()=>{
+ if(customizeStep<2){void changeCustomizeStep(1);return;}
+ for(const key of Object.keys(customizeKeys))settings[key]=customizeDraft[key];
+ applySettings();syncClosePrevention();dismissCustomize();toast('Your changes are saved.');
+};
+try{if((!saved||Object.keys(saved).length===0)&&!localStorage.getItem('tutsi.customize.seen')&&(!location.hash||location.hash==='#home'))openCustomize();}catch{}
+
+// Scroll highlighting never changes the hash or adds browser-history entries.
+function updateSettingsSection(){
+ if(document.body.dataset.view!=='settings')return;
+ const links=[...document.querySelectorAll('.settings-nav > a')].filter(link=>document.querySelector('.settings-content '+link.getAttribute('href')));
+ const sections=links.map(link=>({link,rect:document.querySelector('.settings-content '+link.getAttribute('href')).getBoundingClientRect()})).sort((a,b)=>a.rect.top-b.rect.top);
+ if(!sections.length)return;
+ const threshold=Math.min(180,innerHeight*.25);
+ let active=sections[0];
+ for(const section of sections)if(section.rect.top<=threshold)active=section;
+ if(scrollY+innerHeight>=document.documentElement.scrollHeight-4)active=sections.at(-1);
+ const nav=active.link.parentElement;
+ nav.style.setProperty('--section-x',active.link.offsetLeft+'px');nav.style.setProperty('--section-y',active.link.offsetTop+'px');nav.style.setProperty('--section-width',active.link.offsetWidth+'px');nav.style.setProperty('--section-height',active.link.offsetHeight+'px');
+ for(const section of sections){if(section===active)section.link.setAttribute('aria-current','location');else section.link.removeAttribute('aria-current');}
+}
+let settingsScrollFrame=0;
+function scheduleSettingsHighlight(){if(settingsScrollFrame)return;settingsScrollFrame=requestAnimationFrame(()=>{settingsScrollFrame=0;updateSettingsSection();});}
+addEventListener('scroll',scheduleSettingsHighlight,{passive:true});
+addEventListener('resize',scheduleSettingsHighlight,{passive:true});
+scheduleSettingsHighlight();
+
+$('clear-cache').onclick=async()=>{
+ const button=$('clear-cache');button.disabled=true;$('storage-status').textContent='Clearing cache...';
+ try{
+   if('caches' in window){for(const name of await caches.keys()){
+     const cache=await caches.open(name);
+     for(const request of await cache.keys()){
+       const url=new URL(request.url);
+       if(url.origin===location.origin&&/^\/(?:apps\/tutsi(?:\/|$)|tutsi(?:\/|$)|~\/tm\/)/.test(url.pathname))await cache.delete(request);
+     }
+   }}
+   $('storage-status').textContent='Tutsi cache cleared. Your account and saved data are unchanged.';
+ }catch{$('storage-status').textContent='Cache could not be cleared. Try your browser settings.';}
+ finally{button.disabled=false;}
+};

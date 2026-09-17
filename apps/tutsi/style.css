@@ -840,7 +840,8 @@ html[data-motion="reduce"] *::before {
     gap: 20px;
   }
   .settings-nav {
-    position: static;
+    position: relative;
+    top: auto;
     flex-direction: row;
     flex-wrap: wrap;
   }
@@ -1220,3 +1221,32 @@ body[data-view="app-view"] .app-view{display:flex;flex-direction:column}
 body[data-view="app-view"] #app-host{height:auto;flex:1;min-height:0}
 .browser-bar{flex:none;align-items:center}
 @media(max-width:500px){.browser-bar{padding:6px;gap:2px}.browser-bar .icon-button{width:32px;height:34px;flex:none}#address-form{min-width:0}#address{padding:7px;font-size:14px}}
+
+/* Tutsi customization: a live postcard preview beside three short steps. */
+#open-customize{display:inline-flex;align-items:center;gap:10px;margin-top:16px}#open-customize svg{width:18px;height:18px}
+#customize-dialog{width:min(860px,calc(100vw - 28px));max-width:860px;max-height:calc(100dvh - 28px);padding:28px;border:1px solid var(--line);border-radius:24px;background:var(--mantle);color:var(--text);overflow:auto}
+#customize-dialog::backdrop{background:#0009;backdrop-filter:blur(8px)}
+.customize-heading{display:flex;justify-content:space-between;align-items:start;gap:12px;margin-bottom:24px}.customize-heading h2{font-size:28px;margin:0}.customize-heading .eyebrow{margin:0 0 4px}.customize-heading button{white-space:nowrap}
+.customize-layout{display:grid;grid-template-columns:1fr 1.2fr;gap:28px}.customize-fields{min-width:0}.customize-steps{list-style:none;display:flex;gap:14px;padding:0;margin:0 0 24px;color:var(--muted);font-size:14px}.customize-steps li{padding-bottom:8px;border-bottom:2px solid transparent}.customize-steps [aria-current]{color:var(--accent);border-color:var(--accent)}
+.customize-fields section{min-height:360px}.customize-fields h3{font-size:24px;margin:0 0 8px;outline:none}.customize-fields p{color:var(--muted);margin:0 0 18px;line-height:1.5}.customize-fields label{display:block;margin:14px 0 6px;font-size:16px}.customize-fields select,.customize-fields input:not([type=checkbox]){width:100%;min-width:0;padding:10px 12px}.customize-fields input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}.customize-fields .customize-check{display:flex;align-items:center;gap:10px;margin-block:20px}.customize-fields small{color:var(--muted)}
+.customize-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:24px 0 0;padding:18px 0 0;border-top:1px solid var(--line)}.customize-actions>span{font-size:13px;color:var(--muted)}.customize-actions>div{display:flex;gap:8px}.customize-actions button{margin:0;padding:9px 20px}
+#customize-preview{background:var(--base);color:var(--text);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;min-width:0}#customize-preview[data-wallpaper=waves]{background:radial-gradient(ellipse at bottom right,var(--surface),var(--base) 70%)}.customize-mini-tab{padding:14px;background:var(--mantle);font-size:13px;display:flex;align-items:center;gap:8px}.customize-mini-tab>span:first-child{width:8px;height:8px;background:var(--accent);border-radius:50%;flex:none}#customize-tab-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.customize-mini-home{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:32px 20px;gap:18px}.customize-mini-home img{object-fit:contain}.customize-mini-home strong{font-family:'Homemade Apple',cursive;font-size:23px;font-weight:400}.customize-mini-search{padding:12px;border-radius:10px;background:var(--mantle);width:100%;font-size:13px;color:var(--muted);display:flex;justify-content:space-between}.customize-mini-search span{color:var(--accent)}.customize-mini-links{color:var(--muted);font-size:12px}#customize-preview>p{text-align:center;font-size:12px;color:var(--muted);margin:0 0 14px}
+@media(max-width:650px){#customize-dialog{padding:20px;border-radius:18px}.customize-layout{grid-template-columns:1fr;gap:20px}.customize-mini-home{padding:20px;gap:10px;min-height:140px}.customize-mini-home img,.customize-mini-links,#customize-preview>p{display:none}.customize-mini-home strong{font-size:21px}.customize-mini-search{max-width:280px}.customize-fields section{min-height:360px}.customize-steps{justify-content:space-between;gap:8px;margin-bottom:18px}.customize-heading h2{font-size:23px}.customize-heading .eyebrow{font-size:10px}}
+
+.settings-nav > a{position:relative;z-index:1;transition:color 220ms ease,background-color 220ms ease}
+.settings-nav > a[aria-current="location"]{color:var(--accent);background:transparent}
+.settings-nav::before{content:"";position:absolute;left:0;top:0;width:var(--section-width,0);height:var(--section-height,0);transform:translate(var(--section-x,0),var(--section-y,0));border-radius:10px;background:var(--surface);border-left:3px solid var(--accent);pointer-events:none;transition:transform 240ms ease,width 240ms ease,height 240ms ease}
+.settings-content .settings-card[id]{scroll-margin-top:24px}
+
+#customize-dialog{border-color:color-mix(in srgb,var(--line) 60%,transparent);box-shadow:0 24px 80px #0003}
+#customize-dialog .customize-heading .eyebrow{letter-spacing:0;text-transform:none;font-size:14px}
+#customize-dialog .customize-steps li{border:0;padding:7px 0}
+#customize-dialog .customize-steps [aria-current]{color:var(--text)}
+#customize-dialog .customize-fields select,#customize-dialog .customize-fields input:not([type=checkbox]){border-color:color-mix(in srgb,var(--line) 65%,transparent);border-radius:12px;min-height:44px}
+#customize-dialog .primary{background:var(--surface);color:var(--text);border:1px solid var(--line)}
+#customize-preview,.customize-mini-tab,.customize-mini-search{transition:background-color 300ms ease,color 300ms ease,border-color 300ms ease}
+@media(prefers-reduced-motion:reduce){#customize-dialog *, .settings-nav::before{animation:none!important;transition:none!important}}
+html[data-motion="reduce"] #customize-dialog *,html[data-motion="reduce"] .settings-nav::before{animation:none!important;transition:none!important}
+
+#home-customize{margin-top:14px;color:var(--muted);font-size:14px}
+.tab-preset-feedback{display:flex;align-items:center;gap:12px;padding-top:12px;min-width:0}.tab-preset-feedback img{object-fit:contain;flex:none}.tab-preset-feedback span{flex:1;min-width:0;overflow-wrap:anywhere}.tab-preset-feedback button{flex:none}

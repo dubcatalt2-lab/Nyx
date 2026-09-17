@@ -50,6 +50,7 @@ try {
     });
   });
   await page.goto(base);
+  if(await page.locator("#customize-dialog").isVisible())await page.locator("#customize-dismiss").click();
   if(await page.locator("#browser-home").isVisible()) await page.locator("#browser-home").click();
   await page.locator("#account-button").click();
   await page.fill("#identifier", "test-user");

@@ -72,6 +72,7 @@
               Epoxy &middot; Wisp <span data-icon="chevron"></span></button
             ><kbd>/</kbd><span class="key-hint">to search</span>
           </div>
+          <button id="home-customize" class="text-link" type="button">Customize</button>
           <div class="home-shortcuts">
             <a href="#games"><span data-icon="games"></span>Games</a
             ><a href="#movies"><span data-icon="movies"></span>Movies</a
@@ -129,12 +130,13 @@
         <div class="page-heading">
           <p class="eyebrow">PREFERENCES</p>
           <h1>Settings</h1>
-          <p>Appearance, browsing, and your tab.</p>
+          <p>Change how Tutsi looks and works.</p>
+          <button id="open-customize" class="secondary" type="button">Customize Tutsi <span data-icon="palette"></span></button>
         </div>
         <div class="settings-layout">
           <aside class="settings-nav" aria-label="Settings sections">
             <a href="#appearance">Appearance</a
-            ><a href="#connection">Connection</a><a href="#protections">Protection</a><a href="#shortcuts">Shortcuts</a><a href="#privacy">Your data</a
+            ><a href="#connection">Browser</a><a href="#protections">Protection</a><a href="#shortcuts">Shortcuts</a><a href="#tab-appearance">Tab appearance</a><a href="#privacy">Storage</a
             ><a href="#terms">Terms of service ↗</a>
             <div class="settings-note">
               <img
@@ -152,11 +154,11 @@
                 <span class="setting-symbol" data-icon="palette"></span>
                 <div>
                   <h2>Appearance</h2>
-                  <p>Choose your colors.</p>
+                  <p>Theme and background.</p>
                 </div>
               </div>
               <fieldset>
-                <legend>Catppuccin flavor</legend>
+                <legend>Theme</legend>
                 <div class="theme-options">
                   <label class="theme-choice"
                     ><input name="theme" type="radio" value="mocha" /><span
@@ -184,7 +186,7 @@
               <div class="setting-row">
                 <div>
                   <label for="accent">Theme color</label>
-                  <p>Colors the background, panels, buttons, and highlights.</p>
+                  <p>Background and accent color.</p>
                 </div>
                 <select id="accent">
                   <option value="mauve">Lavender</option>
@@ -200,7 +202,7 @@
               <div class="setting-row">
                 <div>
                   <label for="wallpaper">Background</label>
-                  <p>Change your start page.</p>
+                  <p>Home background.</p>
                 </div>
                 <select id="wallpaper">
                   <option value="waves">Theme colors</option>
@@ -210,7 +212,7 @@
               <div class="setting-row">
                 <div>
                   <label for="motion">Reduce motion</label>
-                  <p>Keep transitions still and simple.</p>
+                  <p>Turn off most animations.</p>
                 </div>
                 <input class="switch" id="motion" type="checkbox" />
               </div>
@@ -223,21 +225,21 @@
             </section>
             <section class="settings-card" id="shortcuts">
               <div class="card-heading"><span class="setting-symbol" data-icon="settings"></span><div><h2>Keyboard shortcuts</h2><p>Use the left Alt key. These control Tutsi website tabs.</p></div></div>
-              <dl class="shortcut-list"><dt>Alt + H</dt><dd>Return to Tutsi home</dd><dt>Alt + L / D</dt><dd>Focus address or search</dd><dt>Alt + T</dt><dd>New website tab</dd><dt>Alt + W</dt><dd>Close current website tab</dd><dt>Alt + Shift + T</dt><dd>Reopen the last closed website</dd><dt>Alt + 1?8</dt><dd>Switch website tab</dd><dt>Alt + R</dt><dd>Reload website</dd><dt>Alt + ? / ?</dt><dd>Back / forward</dd><dt>Alt + A / C / X / V</dt><dd>Select all / copy / cut / paste in text fields</dd><dt>Alt + Z / Y</dt><dd>Undo / redo in text fields</dd></dl>
+              <dl class="shortcut-list"><dt>Alt + H</dt><dd>Return to Tutsi home</dd><dt>Alt + L / D</dt><dd>Focus address or search</dd><dt>Alt + T</dt><dd>New website tab</dd><dt>Alt + W</dt><dd>Close website tab or return Home from an app</dd><dt>Alt + Shift + T</dt><dd>Reopen the last closed website</dd><dt>Alt + 1&#8211;8</dt><dd>Switch website tab</dd><dt>Alt + R</dt><dd>Reload website</dd><dt>Alt + &#8592; / &#8594;</dt><dd>Back / forward</dd><dt>Alt + A / C / X / V</dt><dd>Select all / copy / cut / paste in text fields</dd><dt>Alt + Z / Y</dt><dd>Undo / redo in text fields</dd></dl>
               <p>Clipboard access depends on browser permission. Closed website history is kept only until you reload Tutsi.</p>
             </section>
             <section class="settings-card" id="connection">
               <div class="card-heading">
                 <span class="setting-symbol" data-icon="globe"></span>
                 <div>
-                  <h2>Search & connection</h2>
-                  <p>Search engine and proxy transport.</p>
+                  <h2>Browser</h2>
+                  <p>Search and connection settings.</p>
                 </div>
               </div>
               <div class="setting-row">
                 <div>
                   <label for="search-engine">Search engine</label>
-                  <p>Used when you enter a search, instead of a link.</p>
+                  <p>Used for searches from the address bar.</p>
                 </div>
                 <select id="search-engine">
                   <option value="duckduckgo">DuckDuckGo</option>
@@ -248,13 +250,13 @@
               <div class="setting-row">
                 <div>
                   <strong>Proxy engine</strong>
-                  <p>Rewrites sites for browsing in Tutsi.</p>
+                  <p>Website compatibility.</p>
                 </div>
                 <span class="pill">Scramjet v2</span>
               </div>
               <div class="setting-row">
                 <div>
-                  <label for="transport">Connection transport</label>
+                  <label for="transport">Connection method</label>
                   <p>Try another if a website has trouble loading.</p>
                 </div>
                 <select id="transport">
@@ -263,11 +265,11 @@
                   <option value="wisp">Wisp compatibility</option>
                 </select>
               </div>
-              <div class="setting-row"><div><label for="auto-relay">Automatic relay switching</label><p>Try a configured backup when a relay cannot connect from this device.</p></div><input id="auto-relay" class="switch" type="checkbox" /></div>
-              <div class="setting-row"><div><label for="blocker">Network filter (optional)</label><p>Filter reports help choose a relay. Connection checks still decide whether it works.</p></div><select id="blocker"><option value="auto">Auto-detect (best effort)</option><option value="">Unknown / connection checks only</option><option value="lightspeed">Lightspeed</option><option value="goguardian">GoGuardian</option><option value="securly">Securly</option><option value="linewize">Linewize</option><option value="blocksi">Blocksi</option></select></div><div class="setting-row"><div><label for="detect-filter">Detect filter</label><p>Checks known extension files for 17 filtering and management families locally. Hidden extensions and network filters may show Unknown.</p></div><button id="detect-filter" type="button">Check again</button></div><p id="filter-detection-result" class="body-copy" role="status"></p><p id="blocker-result" class="body-copy" role="status"></p>
+              <div class="setting-row"><div><label for="auto-relay">Auto-reconnect</label><p>Try another server when the connection fails.</p></div><input id="auto-relay" class="switch" type="checkbox" /></div>
+              <div class="setting-row"><div><label for="blocker">Network filter (optional)</label><p>Optional. Select your filter or leave detection on.</p></div><select id="blocker"><option value="auto">Auto-detect</option><option value="">Not sure</option><option value="lightspeed">Lightspeed</option><option value="goguardian">GoGuardian</option><option value="securly">Securly</option><option value="linewize">Linewize</option><option value="blocksi">Blocksi</option></select></div><div class="setting-row"><div><label for="detect-filter">Detect filter</label><p>Checks known extension files for 17 filtering and management families locally. Hidden extensions and network filters may show Unknown.</p></div><button id="detect-filter" type="button">Check again</button></div><p id="filter-detection-result" class="body-copy" role="status"></p><p id="blocker-result" class="body-copy" role="status"></p>
               <div class="relay-setting">
                 <label for="relay">Wisp relay</label>
-                <p>Leave blank to use the relay on this server. If WebSockets cannot connect, browsing falls back to HTTPS through this server.</p>
+                <p>Leave blank to use the default server.</p>
                 <div class="relay-input">
                   <input
                     id="relay"
@@ -289,7 +291,7 @@
               <div class="card-heading">
                 <div>
                   <h2>Tab appearance</h2>
-                  <p>Choose the name and icon shown on your browser tab.</p>
+                  <p>Browser tab title and icon.</p>
                 </div>
               </div>
               <div class="setting-row">
@@ -311,6 +313,8 @@
                   placeholder="Your tab title"
                 />
               </div>
+              <div class="tab-preset-feedback"><img id="tab-preset-icon" alt="" width="20" height="20"><span id="tab-preset-preview"></span><button id="apply-tab-preset" class="secondary" type="button">Apply</button></div>
+              <p id="tab-preset-status" role="status"></p>
             </section>
             <section class="settings-card">
               <div class="setting-row">
@@ -328,8 +332,8 @@
               <div class="card-heading">
                 <span class="setting-symbol" data-icon="shield"></span>
                 <div>
-                  <h2>Your data</h2>
-                  <p>Storage and account settings.</p>
+                  <h2>Storage</h2>
+                  <p>Cache and saved settings.</p>
                 </div>
               </div>
               <p class="body-copy">
@@ -338,9 +342,10 @@
                 Signing in uses your Nyx account; AI access and allowances are
                 shared.
               </p>
+              <div class="setting-row"><div><strong>Clear cache</strong><p>Remove saved Tutsi page files. Keeps your account and chats.</p></div><button id="clear-cache" class="secondary" type="button">Clear cache</button></div><p id="storage-status" role="status"></p>
               <div class="setting-row">
                 <div>
-                  <strong>Reset appearance & connection</strong>
+                  <strong>Reset settings</strong>
                   <p>
                     Restore Tutsi Math defaults. Your chats and game saves stay
                     saved.
@@ -468,6 +473,19 @@
       <button id="auth-mode" class="text-link" type="button">
         Create an account
       </button>
+    </dialog>
+    <dialog id="customize-dialog" aria-labelledby="customize-title">
+      <header class="customize-heading"><div><p class="eyebrow">Customize</p><h2 id="customize-title">Customize Tutsi</h2></div><button id="customize-dismiss" class="text-link" type="button">Skip for now</button></header>
+      <div class="customize-layout">
+        <aside id="customize-preview" aria-label="Appearance preview"><div class="customize-mini-tab"><span aria-hidden="true"></span><span id="customize-tab-label">Tutsi Math</span></div><div class="customize-mini-home"><img src="/apps/tutsi/icon.png?v=2" width="64" height="64" alt=""><strong>tutsi math.</strong><div class="customize-mini-search">Search the web <span aria-hidden="true">&#8594;</span></div><div class="customize-mini-links">AI &nbsp; Music &nbsp; YouTube</div></div><p>Preview</p></aside>
+        <div class="customize-fields">
+          <ol class="customize-steps" aria-label="Customization steps"><li data-step-marker>1 <span>Colors</span></li><li data-step-marker>2 <span>Your tab</span></li><li data-step-marker>3 <span>Preferences</span></li></ol>
+          <section data-customize-step="0"><h3 tabindex="-1">Colors</h3><p>Choose a theme and color.</p><label for="customize-theme">Theme</label><select id="customize-theme"><option value="mocha">Mocha</option><option value="macchiato">Macchiato</option><option value="frappe">Frappe</option><option value="latte">Latte</option></select><label for="customize-accent">Theme color</label><select id="customize-accent"></select><label for="customize-wallpaper">Background</label><select id="customize-wallpaper"></select></section>
+          <section data-customize-step="1" hidden><h3 tabindex="-1">Your tab</h3><p>Choose the title and icon shown by your browser.</p><label for="customize-tabPreset">Tab preset</label><select id="customize-tabPreset"></select><label for="customize-tabTitle">Custom title</label><input id="customize-tabTitle" maxlength="100" placeholder="Your tab title"></section>
+          <section data-customize-step="2" hidden><h3 tabindex="-1">Preferences</h3><p>These can be changed in Settings.</p><label for="customize-engine">Search engine</label><select id="customize-engine"></select><label class="customize-check"><input id="customize-closePrevention" type="checkbox">Confirm before closing</label><label class="customize-check"><input id="customize-motion" type="checkbox">Reduce motion</label><p id="customize-summary"></p><small>Saved in this browser. Your account stays the same.</small></section>
+          <div class="customize-actions"><span id="customize-progress" role="status"></span><div><button id="customize-back" class="secondary" type="button" hidden>Back</button><button id="customize-next" class="primary" type="button">Next</button></div></div>
+        </div>
+      </div>
     </dialog>
     <a href="/tutsi/resource-index" hidden aria-hidden="true" tabindex="-1">Resource index</a>
   </body>

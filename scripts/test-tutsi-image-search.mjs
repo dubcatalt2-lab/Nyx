@@ -45,6 +45,7 @@ const b = await chromium.launch();
 try {
   const p = await b.newPage({ viewport: { width: 1280, height: 900 } });
   await p.goto("http://localhost:9091/tutsi");
+  if(await p.locator("#customize-dialog").isVisible())await p.locator("#customize-dismiss").click();
   await p.addScriptTag({ url: "/js/duck-image-viewport.js" });
   await p.evaluate(async () => {
     const frame = document.createElement("iframe");

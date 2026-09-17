@@ -79,6 +79,11 @@ export function decorateEmbedded(doc, app) {
       }
     }
   }
+  if(app === "cloud"){
+    text(doc,'.hero h1','Cloud Gaming');text(doc,'.hero .intro','Choose a game to start a session.');
+    text(doc,'.brand small','Tutsi Math');
+    if(!doc.getElementById('tutsi-local-games')){const link=doc.createElement('a');link.id='tutsi-local-games';link.href='/tutsi#games';link.textContent='Browser games';link.addEventListener('click',event=>{event.preventDefault();location.hash='games';});doc.querySelector('.catalog-heading')?.append(link);}
+  }
   if (app === "movies") {
     text(doc, ".movie-brand span", "Movies");
     const watch = doc.querySelector(".watch-brand");

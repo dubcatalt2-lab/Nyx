@@ -1,3 +1,28 @@
+## Tutsi UI release preparation (2026-09-17)
+
+- User explicitly requested pushing/deploying the accumulated wizard, Settings, presets, Cloud Gaming and app-close changes.
+- Alt+W now returns Home from all non-browser views, including Settings/subsections, Apps, Terms and embedded apps; open website tabs remain intact. Open local dialogs close when returning Home.
+- Wizard steps fade out then in with a stable minimum content height; rapid double-clicks are guarded, cancellation invalidates pending transitions, and reduced-motion skips animations.
+- Build, focused validation and exact deployed revision will be recorded after release.
+
+## Tutsi wizard/preset follow-up (2026-09-17, local)
+
+- Verified live host still has no wizard at deployed `5b978d9`; local preview contains the unreleased UI work. Classroom preset changed title and favicon successfully on both live and local in Chromium.
+- Added Home Customize entry for browsers with prior settings; first-visit-only automatic wizard behavior remains. Settings still reopens it.
+- Custom tab titles now update on input instead of waiting for blur; presets support input/change plus explicit Apply. A title/icon preview shows the applied appearance.
+
+## Tutsi customization wizard and app close shortcut (2026-09-17, local)
+
+- Three-step customization wizard: colors/background, tab preset/title, search engine/close protection/reduced motion. Uses Tutsi artwork and typography; Kyro onboarding was inspected for general flow inspiration only, with no copied code or icons.
+- Appears on a fresh home visit without existing settings; skip/Escape dismisses it, Settings can reopen it. Draft preview is isolated until Save and does not change accounts, relay settings or existing preferences on cancellation.
+- Alt+W inside built-in apps returns to Home and preserves open website tabs. Website close/restore behavior is retained.
+- UI changes remain local at localhost:9091/tutsi. The separate requested FreeDNS routing change is committed as `5b978d9` and the VPS is verified at that revision with a clean tree and all five services active; `childsupport.donateyourboat.us` still returns authoritative NXDOMAIN until its owner adds the A record. Certificate authorization returns 204; public HTTPS cannot be validated yet.
+- Wizard colors and transitions are calmer; preset title/favicon preview immediately and cancellation restores saved appearance. Settings section marker follows scrolling with a reduced-motion alternative. Late Apps responses no longer reset the current view/scroll.
+- Clear cache removes Tutsi-scoped Cache Storage entries without clearing accounts, game saves, or other app entries; this is not a browser-wide HTTP cache wipe. Reset settings requires confirmation and preserves user content. Settings/status copy is shorter and omits HTTP fallback wording; browser developer tools can still inspect transport behavior.
+- Tutsi Apps includes Cloud Gaming using the same registered-frame auth bridge and Nyx/Stratus service, themed for Tutsi. Existing Restricted network mode uses TCP/TLS TURN only. Missing or disabled RTCPeerConnection stops before session creation, with Browser games navigation available. This is not a WebRTC-free Stratus transport.
+- Investigated Apache Guacamole (official introduction and reverse-proxy documentation): remote desktop over HTTP is a possible separate non-WebRTC architecture, but requires a remote game host/new streaming integration; none was provisioned on this small shared VPS.
+- Tests passed: build/deploy checks; wizard draft/save/cancel/skip/presets/mobile; settings scroll marker; cache isolation/reset; Cloud Gaming unsupported-device guards; app close shortcuts; actual three-transport proxy browsing; generated Stratus ICE configuration/service smoke checks. No live cloud session, paid generation, or real profile/chat mutation was made.
+
 ## Tutsi production release verified (2026-09-16)
 
 - User-authorized release `1db8611` (`created new proxy yay!`) was pushed fast-forward to `origin/agent/pirate-cove` and deployed with `sudo bash deploy/update-ovh.sh`. Direct VPS inspection confirmed that exact hash and a clean checkout.

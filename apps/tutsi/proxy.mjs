@@ -227,7 +227,7 @@ export async function testRelay(settings) {
   installHttpRelaySocket();
   for(const url of [...relayCandidates(settings),httpRelayUrl()]) {
     relayStatus({state:'checking',url});
-    if(await probeWisp(url)) {relayStatus({state:'available',url});return url===httpRelayUrl()?'HTTPS fallback connected.':'Wisp handshake confirmed: '+url;}
+    if(await probeWisp(url)) {relayStatus({state:'available',url});return 'Connected.';}
   }
   throw new Error('No configured relay responded from this device.');
 }

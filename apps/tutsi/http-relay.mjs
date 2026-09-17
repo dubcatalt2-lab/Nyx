@@ -12,7 +12,7 @@ export class HttpRelaySocket extends EventTarget {
   async request(path, options={}) {
     const response=await fetch('/api/tutsi-relay/'+path,{...options,cache:'no-store',credentials:'same-origin',signal:AbortSignal.any([this.abort.signal,AbortSignal.timeout(30000)]),
       headers:{...options.headers,...(this.token?{Authorization:'Bearer '+this.token}:{})}});
-    if (!response.ok) throw new Error('HTTP relay unavailable');
+    if (!response.ok) throw new Error('Connection unavailable');
     return response;
   }
   async start() {

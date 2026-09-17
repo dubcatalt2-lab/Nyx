@@ -11,7 +11,8 @@ try {
   await page.goto(base);
   await page.waitForTimeout(800);
   await page.evaluate(() => document.fonts.ready);
-  assert.equal(await page.locator("#all-apps button").count(), 15);
+  if(await page.locator("#customize-dialog").isVisible())await page.locator("#customize-dismiss").click();
+  assert.equal(await page.locator("#all-apps button").count(), 16);
   assert.equal(await page.locator("#dock-apps button").count(), 4);
   assert.equal(await page.locator("#dock-apps img").count(), 0);
   assert.equal(await page.title(), "Tutsi Math");
@@ -94,7 +95,7 @@ try {
     await page.goto(base + "#" + app);
     const frame = page.locator("#app-host iframe:not([hidden])");
     await frame.waitFor();
-    await page.waitForTimeout(700);
+    await page.waitForFunction(()=>document.querySelector('#app-host iframe:not([hidden])')?.contentDocument?.body?.innerText?.length>30,null,{timeout:15000});
     assert(
       (await frame.contentFrame().locator("body").innerText()).length > 30,
       `${app} empty`,
@@ -102,7 +103,7 @@ try {
   }
   assert.deepEqual(errors, []);
   console.log(
-    "Tutsi UI: 15 apps, mobile, themes, tab presets, native close dialog, three proxy transports and shared app shells passed.",
+    "Tutsi UI: 16 apps, mobile, themes, tab presets, native close dialog, three proxy transports and shared app shells passed.",
   );
 } finally {
   await browser.close();

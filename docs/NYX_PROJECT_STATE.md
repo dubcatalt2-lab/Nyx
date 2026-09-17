@@ -1,3 +1,13 @@
+## Tutsi production release verified (2026-09-16)
+
+- User-authorized release `1db8611` (`created new proxy yay!`) was pushed fast-forward to `origin/agent/pirate-cove` and deployed with `sudo bash deploy/update-ovh.sh`. Direct VPS inspection confirmed that exact hash and a clean checkout.
+- `https://tutsi.nyxlearning.org/` now serves Tutsi Math. Local built preview remains `http://localhost:9091/tutsi`. Root Nyx working-tree edits and local artifacts were excluded from this release.
+- VPS build and 172-file deploy check passed. Caddy configuration validation passed with its existing warnings. Nyx, Caddy, Stratus, coturn and HAProxy are active; primary, www and Tutsi health checks all returned OK.
+- Live Chromium checks passed: 15 apps, responsive layouts, themes, persisted presets, native close confirmation, built-in `tutsi://` navigation and Home controls, all embedded app fonts/backgrounds, Games catalog, and three real example.com proxy transports. Each transport also loaded example.com with browser WebSockets disabled through the bounded HTTP fallback.
+- Local account/profile/registration/AI/Chat tests used fixtures; no paid generation, real chat messages or real profile changes were made. These checks do not establish every movie provider, long-video reliability, or operation on a specific managed Chromebook/network.
+- Updater production dependency audit reported 9 vulnerabilities (8 moderate, 1 high). Stratus install reported 3 moderate vulnerabilities. No forced dependency upgrades were applied.
+- This verification entry is documentation only; deployed application revision remains `1db8611`.
+
 ## Tutsi final release additions (2026-09-16)
 
 - Built-in apps retain a compact shared address bar with `tutsi://` app routes and Home. This supersedes the earlier entirely hidden shell and floating in-app Home control. Search from the same bar opens websites; native browser fullscreen still fills the screen.

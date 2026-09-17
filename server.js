@@ -1,3 +1,4 @@
+import { tutsiHostnames, isTutsiHostname } from "./lib/tutsi-hostnames.mjs";
 import {installTutsiCrawlerControls} from "./lib/tutsi-crawler-controls.mjs";
 import { createTubeCaptions } from './lib/nyxtube-captions.mjs';
 import {installMovieImages} from './lib/movie-images.mjs';
@@ -553,7 +554,7 @@ function cacheNyxCustomHostnameDecision(hostname, allowed) {
 async function nyxCustomHostnameAllowed(hostname) {
   const normalized = normalizeNyxCustomHostname(hostname);
   if (!normalized) return false;
-  const configuredHostnames = [...embeddedWispAllowedOrigins, process.env.NYX_PUBLIC_ORIGIN, "https://tutsi.nyxlearning.org"]
+  const configuredHostnames = [...embeddedWispAllowedOrigins, process.env.NYX_PUBLIC_ORIGIN, ...tutsiHostnames]
     .map(value => normalizeNyxCustomHostname(value))
     .filter(Boolean);
   if (configuredHostnames.includes(normalized)) return true;
@@ -13881,7 +13882,7 @@ app.get(["/tutsi", "/tutsi/"], (_req, res) => {
 });
 // The sibling site shares services, while keeping its own shell and origin storage.
 app.get("/", (req, res, next) => {
-  if (req.hostname.toLowerCase() !== "tutsi.nyxlearning.org") return next();
+  if (!isTutsiHostname(req.hostname)) return next();
   res.set("Cache-Control", "no-cache");
   res.sendFile(join(staticRoot, "apps", "tutsi", "index.html"));
 });

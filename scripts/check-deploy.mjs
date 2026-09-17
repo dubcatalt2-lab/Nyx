@@ -9,6 +9,7 @@ const requiredFiles = [
   "tutsi-runtime.sw.js",
   "apps/tutsi/http-relay.mjs",
   "lib/tutsi-crawler-controls.mjs",
+  "lib/tutsi-hostnames.mjs",
   "server-http-wisp.mjs",
   "apps/tutsi/style.css",
   "apps/tutsi/proxy.mjs",

@@ -1,3 +1,10 @@
+## Tutsi follow-up production verification (2026-09-17)
+
+- Application release `2aea535` was pushed fast-forward and deployed through the authorized VPS updater. Direct SSH verification confirmed that exact revision, clean checkout and active Nyx, Caddy, Stratus, coturn and HAProxy services.
+- Live fixture checks passed against tutsi.nyxlearning.org for shared profile edits/uploads/permissions, account menu avatar/name, AI and YouTube profile payloads, Chat mention bridging, mobile profile layout, filter Settings and wizard behavior. No real profiles/messages were changed.
+- Both tutsi.nyxlearning.org and childsupport.donateyourboat.us passed live wizard/preset/Settings placement checks with valid HTTPS. The mention popup was visually reviewed after deployment.
+- Actual managed Chromebook detection remains unverified; the release improves public-resource coverage and cache freshness, not access to hidden extension resources. Unknown results are honest and manual choice remains available.
+
 ## Tutsi shared profiles, branding and notification follow-up (2026-09-17)
 
 - Customize placement correction `850ad7e` deployed successfully. The wizard is accessible from Settings and on a fresh first visit; Home no longer has a Customize button.

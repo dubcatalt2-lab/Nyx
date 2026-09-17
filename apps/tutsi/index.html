@@ -338,7 +338,7 @@
               <p class="body-copy">
                 Your appearance and connection preferences stay in this browser.
                 AI conversations and game saves use their existing app storage.
-                Signing in uses your Nyx account; AI access and allowances are
+                AI access and allowances are
                 shared.
               </p>
               <div class="setting-row"><div><strong>Clear cache</strong><p>Remove saved Tutsi page files. Keeps your account and chats.</p></div><button id="clear-cache" class="secondary" type="button">Clear cache</button></div><p id="storage-status" role="status"></p>
@@ -380,7 +380,7 @@
           </p>
           <h2>Accounts and AI</h2>
           <p>
-            Keep your account credentials private. Tutsi uses Nyx account access
+            Keep your account credentials private. Tutsi uses account access
             and AI allowances. Prompts and attachments sent to AI are processed
             by OpenRouter and the selected model provider. Avoid sending
             sensitive information. AI replies can be inaccurate; check important
@@ -398,7 +398,7 @@
           <h2>Privacy and local storage</h2>
           <p>
             Settings and some app data are stored in your browser. Account
-            features may also store data on Nyx's services. Requests pass
+            features may also store data on our services. Requests pass
             through the server and service providers; operational records can
             include IP addresses and request information. Tutsi is not an
             anonymity service. Clearing browser storage can remove locally saved
@@ -424,13 +424,9 @@
       ><a href="#terms">Terms of service</a>
     </footer>
     <div id="toast" role="status" hidden></div>
-    <aside id="mention-toast" role="status" hidden>
-      <strong></strong>
-      <p></p>
-      <button id="mention-open">Open Chat</button
-      ><button id="mention-dismiss" aria-label="Dismiss mention">
-        Dismiss
-      </button>
+    <aside id="mention-toast" role="status" aria-live="polite" hidden>
+      <div class="mention-heading"><span id="mention-avatar" aria-hidden="true"></span><div><span class="mention-label">Mention <span aria-hidden="true">&middot;</span> Just now</span><strong></strong></div><button id="mention-dismiss" aria-label="Dismiss mention" data-icon="close"></button></div>
+      <p></p><button id="mention-open">Open Chat <span data-icon="arrow" aria-hidden="true"></span></button>
     </aside>
     <dialog id="account-dialog">
       <button
@@ -440,16 +436,16 @@
         data-icon="close"
       ></button
       ><img src="/apps/tutsi/icon.png?v=2" width="40" height="40" alt="" />
-      <p class="eyebrow">NYX ACCOUNT</p>
+      <p class="eyebrow">ACCOUNT</p>
       <h2 id="account-heading">Sign in</h2>
-      <p>Sign in with your Nyx account to use AI and your account features.</p>
+      <p id="account-intro">Sign in to use your account.</p>
       <form id="sign-in">
         <label id="identifier-label" for="identifier">Username or email</label
         ><input id="identifier" autocomplete="username" required />
         <div id="register-fields" hidden>
           <label for="register-email">Email (optional)</label
           ><input id="register-email" type="email" autocomplete="email" />
-          <p>You can use this account on both Tutsi and Nyx.</p>
+          <p>Your profile and chats stay with your account.</p>
         </div>
         <label for="password">Password</label
         ><input
@@ -463,7 +459,7 @@
         </button>
       </form>
       <div id="signed-in" hidden>
-        <p id="account-name"></p>
+        <div id="account-avatar" aria-hidden="true"></div><p id="account-name"></p><p id="account-handle"></p>
         <button id="view-profile" class="secondary">View profile</button>
         <button id="edit-profile" class="secondary">Edit profile</button>
         <button id="sign-out" class="secondary">Sign out</button>

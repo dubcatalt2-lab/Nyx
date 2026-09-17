@@ -123,7 +123,27 @@ export const filterSignatures = [
     "path": "block.html"
   }
 ];
-export async function detectFilters({signatures=filterSignatures, fetcher=globalThis.fetch, timeoutMs=1500}={}) {
+// Current Securly ID has no assumed public path. Only probe paths actually
+// exposed by the installed extension in this page, never guessed private files.
+const additionalIdentities = [{vendor:'securly',label:'Securly',id:'ckecmkbnoanpgplccmnoikfmpcdladkc'}];
+export function exposedSignatures(doc=globalThis.document, signatures=filterSignatures) {
+  if (!doc?.querySelectorAll) return [];
+  const identities = [...signatures,...additionalIdentities];
+  const found = [];
+  for (const node of doc.querySelectorAll('script[src],link[href],img[src],iframe[src]')) {
+    const source=node.getAttribute(node.tagName==='LINK'?'href':'src');
+    try {
+      const url=new URL(source);
+      if(url.protocol!=='chrome-extension:')continue;
+      const identity=identities.find(item=>item.id===url.hostname);
+      if(identity)found.push({...identity,path:url.pathname.slice(1)});
+    } catch {}
+  }
+  return found;
+}
+export async function detectFilters({signatures=filterSignatures, fetcher=globalThis.fetch, timeoutMs=3000, doc=globalThis.document}={}) {
+  signatures=[...signatures,...exposedSignatures(doc,signatures)];
+  signatures=signatures.filter((item,index,all)=>all.findIndex(other=>other.id===item.id&&other.path===item.path)===index);
   const matches = await Promise.all(signatures.map(async signature => {
     if (!/^[a-p]{32}$/.test(signature.id) || !/^[a-z0-9_-]+$/.test(signature.vendor) || !signature.path || signature.path.includes('..')) return null;
     const abort = new AbortController();
@@ -140,13 +160,16 @@ export async function detectFilters({signatures=filterSignatures, fetcher=global
   }));
   return [...new Set(matches.filter(Boolean))];
 }
-let pending;
+let pending, scanVersion=0, lastScan=0;
 export function scanFilters({refresh=false}={}) {
-  if(refresh)pending=null;
-  return pending ||= detectFilters().then(vendors=>{
-    globalThis.dispatchEvent?.(new CustomEvent('tutsi:filter-detected',{detail:{vendors}}));
+  if(refresh || Date.now()-lastScan>30000)pending=null;
+  if(pending)return pending;
+  const version=++scanVersion;lastScan=Date.now();
+  pending=detectFilters().then(vendors=>{
+    if(version===scanVersion)globalThis.dispatchEvent?.(new CustomEvent('tutsi:filter-detected',{detail:{vendors}}));
     return vendors;
   });
+  return pending;
 }
 export async function effectiveFilter(selection) {
   if(selection!=='auto')return selection;

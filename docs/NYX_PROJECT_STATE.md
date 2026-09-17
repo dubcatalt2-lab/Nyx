@@ -1,3 +1,12 @@
+## Tutsi shared profiles, branding and notification follow-up (2026-09-17)
+
+- Customize placement correction `850ad7e` deployed successfully. The wizard is accessible from Settings and on a fresh first visit; Home no longer has a Customize button.
+- Tutsi continues to use the existing shared profile editor/APIs, uploads and access checks. Its shell now loads the saved profile instead of Firebase's stale name/photo; saving refreshes the account menu and registered AI/YouTube frames, while Chat reloads its profile data. Uploaded avatars resolve through the existing manifest/chunk protocol. Account changes invalidate pending profile reads.
+- Signed-in accounts open a compact profile menu. Account, settings, terms and embedded application chrome use Tutsi wording; account/API identifiers remain unchanged and user messages/profile content are not rewritten.
+- Mention notifications use Tutsi colors, sender initials, a three-line message preview, timestamp label and Open Chat/dismiss actions. Hover/focus keeps the message readable.
+- Filter detection now probes exposed current paths for known extension IDs, allows slower responses and expires stale scan results. Hidden extension resources/network-only filters remain Unknown; manual selection and independent connection failover remain available. No managed Chromebook was available for device verification.
+- Build/deployment checks, profile editing/uploads/permissions/mobile, AI/YouTube identity responses, mention handling, filter Settings and first-visit wizard tests passed. Tests use fixtures without real account mutations or messages. This follow-up is explicitly authorized for push/deployment.
+
 ## Tutsi Customize placement correction (2026-09-17)
 
 - User requested removing the Home Customize button. The wizard remains accessible through Settings > Customize Tutsi, with automatic first-visit behavior unchanged.

@@ -43,3 +43,9 @@ The browser UI preserves Unknown/multiple results and offers manual selection. N
 - Mobile Guardian
 
 These are 17 product families, including classroom management products; a match does not prove network filtering is enabled. Runtime checks read no file contents and never execute the vendor code. Current managed-device coverage remains unverified.
+
+## Chromebook follow-up (2026-09-17)
+
+- The original probe depended only on historical filenames and cached its first result for the entire page lifetime. The detector now also checks known extension IDs with resource paths actually exposed in the page, allows three seconds for slow managed devices, and expires cached scans after 30 seconds. A superseded scan cannot overwrite a newer result.
+- The current Securly ID is recognized only when it exposes a resource path in the DOM; no private paths are guessed or executed. Hidden and dynamic extension resources still cannot be enumerated by websites. No managed Chromebook is available here, so this improves known failure cases without claiming universal detection.
+- Chrome documents these restrictions at https://developer.chrome.com/docs/extensions/reference/manifest/web-accessible-resources . Manual selection remains available, and connection failover does not depend on identifying the filter.

@@ -18,6 +18,26 @@ function aiLabels(scope) {
 }
 export function decorateEmbedded(doc, app) {
   doc.documentElement.dataset.tutsiApp = app;
+  // Rebrand application chrome only, never conversations, profile fields or media titles.
+  const brandSelectors = 'header,.brand,.brand-copy,.ai-brand-copy,.ai-sidebar-brand,.ai-disclaimer,.chat-brand,.catalog-head,.hero,.utility-intro,.nyx-user-profile-tabs,.nyx-profile-rail-title,.nyx-user-profile-section-title,.nyx-founder-about strong,.nyx-user-profile-meta-label,.nyx-profile-directory-empty,.nyx-founder-editor-error,.nyx-profile-member-since,.nyx-user-profile-section strong,#profile-status';
+  const rebrand = () => {
+    for (const root of doc.querySelectorAll(brandSelectors)) {
+      const walker = doc.createTreeWalker(root, 4);
+      while (walker.nextNode()) {
+        const node = walker.currentNode;
+        if (node.parentElement.closest('input,textarea,script,style,[contenteditable],.ai-message,.chat-message,.nyx-founder-bio,.nyx-user-profile-heading')) continue;
+        const value = node.nodeValue.replace(/\bNyxTube\b/gi,'YouTube').replace(/\bNyxify\b/gi,'Music').replace(/\bNyx\b/gi,'Tutsi');
+        if (value !== node.nodeValue) node.nodeValue = value;
+      }
+      for (const node of [root,...root.querySelectorAll('[aria-label],[title],[alt]')]) for(const attr of ['aria-label','title','alt']) {
+        const value=node.getAttribute(attr);
+        if(value && /\bnyx\b/i.test(value)) node.setAttribute(attr,value.replace(/\bnyx\b/gi,'Tutsi'));
+      }
+    }
+  };
+  rebrand();
+  if(!observed.has(doc)) { observed.add(doc); new MutationObserver(rebrand).observe(doc.body,{childList:true,subtree:true}); }
+
   if (!doc.getElementById("tutsi-embedded-style")) {
     const link = doc.createElement("link");
     link.id = "tutsi-embedded-style";

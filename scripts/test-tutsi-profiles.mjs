@@ -45,6 +45,7 @@ try {
         status: 403,
         json: { error: "Profile changes are not allowed." },
       });
+    if (path.startsWith("/api/profile-media/") && path.includes("/chunks/")) return r.fulfill({body:"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="});
     if (path.startsWith("/api/profile-media/")) {
       if (r.request().method() === "PUT") uploadChunks++;
       if (path.endsWith("/complete"))
@@ -53,7 +54,7 @@ try {
         };
       else if (r.request().method() === "GET")
         data = {
-          mime: "image/png",
+          mime: "image/png", totalChunks:1,
           dataUrl:
             "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
         };
@@ -173,6 +174,26 @@ try {
   );
   if(await page.locator("#browser-home").isVisible()) await page.locator("#browser-home").click();
   await page.locator("#account-button").click();
+  await page.waitForFunction(()=>document.querySelector('#account-name').textContent==='Tutsi friend' && document.querySelector('#account-button img')?.naturalWidth > 0);
+  assert.equal(await page.locator('#account-handle').textContent(), '@testuser');
+  assert.equal(await page.locator('#account-dialog').evaluate(e=>e.classList.contains('account-dropdown')),true);
+  assert(!/nyx/i.test(await page.locator('#account-dialog').innerText()));
+  await page.locator('#account-close').click();
+  for (const [route, requestType, responseType] of [['ai','nyx:ai-profile-request','nyx:ai-profile'],['youtube','nyx:nyxtube-profile-request','nyx:nyxtube-profile']]) {
+    await page.evaluate(route=>location.hash=route,route);
+    // Locate the registered frame by its source, without making a real AI request.
+    await page.waitForFunction(route=>[...document.querySelectorAll('iframe')].some(f=>!f.hidden && f.src.includes(route==='ai'?'/ai':'/nyxtube')),route);
+    const handle=await page.locator('iframe').first().evaluateHandle((_,route)=>[...document.querySelectorAll('iframe')].find(f=>!f.hidden && f.src.includes(route==='ai'?'/ai':'/nyxtube')),route);
+    const target=await handle.asElement().contentFrame();
+    await target.waitForLoadState('domcontentloaded');
+    const payload=await target.evaluate(({requestType,responseType})=>new Promise(resolve=>{
+      const listener=e=>{if(e.source===parent && e.data?.type===responseType){removeEventListener('message',listener);resolve(e.data.profile)}};
+      addEventListener('message',listener);parent.postMessage({type:requestType,requestId:'profile-fixture'},location.origin);
+    }),{requestType,responseType});
+    assert.equal(payload.displayName,'Tutsi friend');assert.equal(payload.handle,'@testuser');assert(payload.avatarUrl.startsWith('blob:'));
+  }
+  await page.evaluate(()=>location.hash='home');
+  await page.locator('#account-button').click();
   await page.locator("#view-profile").click();
   await f
     .locator(".nyx-user-profile-heading h2")

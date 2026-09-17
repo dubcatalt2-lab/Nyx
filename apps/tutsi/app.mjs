@@ -405,7 +405,7 @@ function appFrame(name) {
     music: "Music",
     games: "Games",
     cloud: "Cloud Gaming",
-    youtube: "NyxTube",
+    youtube: "YouTube",
     chat: "Chat",
     profiles: "Profiles",
     code: "Code Sandbox",
@@ -622,6 +622,72 @@ addEventListener("keydown", (e) => {
     $("query").focus();
   }
 });
+let accountUser = null, accountProfile = {}, profileRevision = 0;
+const profileRequestIds = new WeakMap();
+const defaultAccountIcon = $("account-button").innerHTML;
+function profilePayload() {
+  return { ...accountProfile, uid: accountUser?.uid || "", signedIn: !!accountUser,
+    displayName: accountProfile.displayName || accountUser?.displayName || "Guest",
+    handle: accountProfile.handle || (accountUser ? "Your profile" : "Sign in to use AI") };
+}
+function renderAccountProfile() {
+  const profile = profilePayload();
+  $("account-name").textContent = profile.displayName;
+  $("account-handle").textContent = profile.handle;
+  $("account-heading").textContent = accountUser ? "Your account" : "Sign in";
+  $("account-dialog").classList.toggle("account-dropdown", !!accountUser);
+  $("account-intro").hidden = !!accountUser;
+  $("account-button").title = accountUser ? profile.displayName : "Sign in";
+  for (const host of [$("account-button"), $("account-avatar")]) {
+    host.innerHTML = defaultAccountIcon;
+    if (profile.avatarUrl) {
+      const image = document.createElement("img"); image.alt = ""; image.src = profile.avatarUrl;
+      image.onerror = () => { host.innerHTML = defaultAccountIcon; };
+      host.replaceChildren(image);
+    }
+  }
+  for (const [name, frame] of frames) {
+    if (name === "ai" || name === "youtube") frame.contentWindow?.postMessage({
+      type: name === "ai" ? "nyx:ai-profile" : "nyx:nyxtube-profile", requestId:profileRequestIds.get(frame), profile
+    }, location.origin);
+  }
+}
+async function resolveAccountAvatar(value) {
+  const source = String(value || "");
+  if (/^\/api\/profile-media\/[A-Za-z0-9_-]{8,128}\/avatar\/[A-Za-z0-9_-]{12,80}$/.test(source)) {
+    const response = await fetch(source + "/manifest", {cache:"force-cache"});
+    const manifest = await response.json();
+    if (!response.ok || !/^image\/(png|jpeg|webp|gif)$/.test(manifest.mime) || !Number.isInteger(manifest.totalChunks) || manifest.totalChunks < 1 || manifest.totalChunks > 32) return "";
+    const parts = [];
+    for (let i=0;i<manifest.totalChunks;i++) {
+      const chunk = await fetch(source + "/chunks/" + i, {cache:"force-cache"});
+      if (!chunk.ok) return "";
+      parts.push(Uint8Array.from(atob((await chunk.text()).trim()), c=>c.charCodeAt(0)));
+    }
+    const blob = new Blob(parts,{type:manifest.mime});
+    if (manifest.byteLength && blob.size !== manifest.byteLength) return "";
+    return URL.createObjectURL(blob);
+  }
+  return /^(https:\/\/|data:image\/(png|jpeg|webp|gif);base64,)/i.test(source) ? source : "";
+}
+async function refreshAccountProfile() {
+  const user = accountUser, revision = ++profileRevision;
+  if (!user) return;
+  try {
+    const response = await fetch("/api/profiles/me", {headers:{Authorization:"Bearer " + await user.getIdToken()},cache:"no-store"});
+    if (!response.ok) return;
+    const data = await response.json();
+    const profile = {...data.profile};
+    profile.avatarUrl = await resolveAccountAvatar(profile.avatarUrl).catch(()=>"");
+    if (revision !== profileRevision || accountUser !== user) {
+      if (profile.avatarUrl.startsWith("blob:")) URL.revokeObjectURL(profile.avatarUrl);
+      return;
+    }
+    if (accountProfile.avatarUrl?.startsWith("blob:")) URL.revokeObjectURL(accountProfile.avatarUrl);
+    accountProfile = profile;
+    renderAccountProfile();
+  } catch { /* Keep the last loaded profile when offline. */ }
+}
 let authPromise;
 async function account() {
   if (authPromise) return authPromise;
@@ -666,18 +732,12 @@ async function account() {
         mentionIds.clear();
         $("mention-toast").hidden = true;
       }
-      frames.forEach((frame) =>
-        frame.contentWindow?.postMessage(
-          {
-            type: "nyx:ai-profile",
-            profile: {
-              displayName: user ? name : "Guest",
-              handle: user ? "Nyx account" : "Sign in to use AI",
-            },
-          },
-          location.origin,
-        ),
-      );
+      accountUser = user;
+      profileRevision++;
+      if (accountProfile.avatarUrl?.startsWith("blob:")) URL.revokeObjectURL(accountProfile.avatarUrl);
+      accountProfile = {};
+      renderAccountProfile();
+      void refreshAccountProfile();
     });
     return { auth, sdk };
   })().catch((error) => {
@@ -729,8 +789,9 @@ function mentionNotification(data) {
   if (mentionIds.size > 200)
     mentionIds.delete(mentionIds.values().next().value);
   const host = $("mention-toast");
-  host.querySelector("strong").textContent =
-    String(data.sender || "Someone").slice(0, 80) + " mentioned you";
+  const sender = String(data.sender || "Someone").slice(0, 80);
+  host.querySelector("strong").textContent = sender;
+  $("mention-avatar").textContent = Array.from(sender.trim())[0]?.toUpperCase() || "@";
   host.querySelector("p").textContent = String(data.preview || "").slice(
     0,
     240,
@@ -745,6 +806,11 @@ $("mention-open").onclick = () => {
   location.hash = "chat";
   $("mention-toast").hidden = true;
 };
+$("mention-toast").addEventListener("pointerenter",()=>clearTimeout($("mention-toast").dismissTimer));
+$("mention-toast").addEventListener("focusin",()=>clearTimeout($("mention-toast").dismissTimer));
+$("mention-toast").addEventListener("pointerleave",()=>{
+  const host=$("mention-toast");if(!host.contains(document.activeElement))host.dismissTimer=setTimeout(()=>host.hidden=true,5000);
+});
 $("mention-dismiss").onclick = () => {
   $("mention-toast").hidden = true;
 };
@@ -855,8 +921,7 @@ addEventListener("message", async (event) => {
   } else if (name === "profiles" && data.type === "tutsi:profile-close") {
     location.hash = profileReturn;
   } else if (name === "profiles" && data.type === "tutsi:profile-saved") {
-    $("account-name").textContent =
-      "Signed in as " + String(data.displayName || "Your account").slice(0, 48);
+    await refreshAccountProfile();
     for (const [key, other] of frames) {
       if (key !== "profiles")
         other.contentWindow?.postMessage(
@@ -890,14 +955,8 @@ addEventListener("message", async (event) => {
       token: await token(),
     });
   } else if (data.type === "nyx:ai-profile-request" && name === "ai") {
-    const { auth } = await account().catch(() => ({ auth: {} }));
-    reply({
-      type: "nyx:ai-profile",
-      profile: {
-        displayName: auth.currentUser?.displayName || "Your account",
-        handle: auth.currentUser ? "Nyx account" : "Sign in to use AI",
-      },
-    });
+    await account().catch(()=>{});
+    reply({type:"nyx:ai-profile", profile:profilePayload()});
   } else if (data.type === "nyx:ai-open-profile" && name === "ai") {
     void openProfile();
   } else if (data.type === "nyx:nyxtube-open-profile" && name === "youtube") {
@@ -906,18 +965,9 @@ addEventListener("message", async (event) => {
     data.type === "nyx:nyxtube-profile-request" &&
     name === "youtube"
   ) {
-    const { auth } = await account().catch(() => ({ auth: {} }));
-    const user = auth.currentUser;
-    reply({
-      type: "nyx:nyxtube-profile",
-      requestId: data.requestId,
-      profile: {
-        uid: user?.uid || "",
-        signedIn: !!user,
-        displayName: user?.displayName || "Your account",
-        avatarUrl: user?.photoURL || "",
-      },
-    });
+    await account().catch(()=>{});
+    profileRequestIds.set(frame,data.requestId);
+    reply({type:"nyx:nyxtube-profile",requestId:data.requestId,profile:profilePayload()});
   } else if (data.type === "nyx:close-tab") {
     location.hash = "home";
   } else if (
@@ -993,7 +1043,7 @@ const fallbackApps = [
   ["nyxify", "nyxify", "Music", appPaths.music],
   ["pirate-cove", "games", "Games", appPaths.games],
   ["cloud-gaming", "cloud-gaming", "Cloud Gaming", appPaths.cloud],
-  ["youtube", "youtube.com", "NyxTube", appPaths.youtube],
+  ["youtube", "youtube.com", "YouTube", appPaths.youtube],
   ["nyx-chat", "nyx-chat", "Chat", appPaths.chat],
   ["code-studio", "code-studio", "Code Sandbox", appPaths.code],
   ["link-checker", "link-checker", "Link Checker", appPaths.checker],
@@ -1034,7 +1084,7 @@ function renderApps(apps) {
         "nyx-chat": "Chat",
         "pirate-cove": "Games",
         "nyx-api-keys": "API Keys",
-      }[app.id] || app.name;
+      }[app.id] || app.name.replace(/NyxTube/gi,"YouTube").replace(/Nyx/gi,"Tutsi");
     for (const host of [$("all-apps")]) {
       const button = document.createElement("button");
       button.type = "button";
@@ -1133,7 +1183,7 @@ const filterLabel=vendor=>filterSignatures.find(item=>item.vendor===vendor)?.lab
 addEventListener('tutsi:filter-detected',({detail:{vendors}})=>{
   $('filter-detection-result').textContent=vendors.length
     ? `Extension detected: ${vendors.map(filterLabel).join(', ')}. This does not prove it blocked a connection.${vendors.length>1?' Choose a filter below, or keep using connection checks.':''}`
-    : 'Unknown: no supported extension resource responded. A network filter may still be present.';
+    : 'Unknown: this browser did not expose a recognizable filter. Choose your filter below if you know it. Connection switching still works automatically.';
 });
 $('detect-filter').addEventListener('click',async()=>{
   const button=$('detect-filter');button.disabled=true;

@@ -1170,25 +1170,17 @@ html[data-motion="reduce"] .clock-digit.flipping .digit-flip-bottom {
   gap: 10px;
 }
 #mention-toast {
-  position: fixed;
-  right: 20px;
-  top: 80px;
-  z-index: 30;
-  width: min(340px, calc(100vw - 40px));
-  padding: 18px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--mantle);
-  color: var(--text);
-  overflow-wrap: anywhere;
+  position:fixed;right:20px;top:80px;z-index:100;width:min(370px,calc(100vw - 40px));padding:18px;
+  border:1px solid var(--line);border-radius:20px;background:var(--mantle);color:var(--text);overflow-wrap:anywhere;
+  box-shadow:0 12px 36px #0003;animation:mention-arrive 180ms ease-out;
 }
-#mention-toast p {
-  margin: 8px 0 16px;
-}
-#mention-toast button {
-  font-size: 13px;
-  padding: 6px 10px;
-}
+.mention-heading{display:flex;align-items:center;gap:12px}.mention-heading>div{flex:1;min-width:0}
+#mention-avatar{display:grid;place-items:center;width:42px;height:42px;flex-shrink:0;border-radius:14px;background:var(--surface);color:var(--accent);font-size:22px}
+.mention-label{display:block;font-size:12px;color:var(--muted)}.mention-heading strong{display:block;font-size:17px}
+#mention-toast p{margin:14px 0;line-height:1.5;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+#mention-toast button{font-size:14px;padding:7px 10px}#mention-dismiss{align-self:flex-start;background:transparent;border:0;color:var(--muted)}
+#mention-open{display:flex;align-items:center;gap:8px;margin-left:auto;color:var(--accent)}#mention-toast svg{width:17px;height:17px}
+@keyframes mention-arrive{from{opacity:0}to{opacity:1}}@media(prefers-reduced-motion:reduce){#mention-toast{animation:none}}
 
 body[data-view="browser"] > .topbar,
 body[data-view="browser"] > #app-dock {
@@ -1249,3 +1241,12 @@ body[data-view="app-view"] #app-host{height:auto;flex:1;min-height:0}
 html[data-motion="reduce"] #customize-dialog *,html[data-motion="reduce"] .settings-nav::before{animation:none!important;transition:none!important}
 
 .tab-preset-feedback{display:flex;align-items:center;gap:12px;padding-top:12px;min-width:0}.tab-preset-feedback img{object-fit:contain;flex:none}.tab-preset-feedback span{flex:1;min-width:0;overflow-wrap:anywhere}.tab-preset-feedback button{flex:none}
+
+/* Signed-in account menu shares the profile editor and saved identity. */
+#account-button img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+#account-avatar{width:64px;height:64px;margin:0 auto 12px}#account-avatar img,#account-avatar svg{width:100%;height:100%;object-fit:cover;border-radius:50%}
+#account-dialog.account-dropdown{position:fixed;inset:76px 20px auto auto;margin:0;width:min(310px,calc(100vw - 40px));padding:24px;text-align:center}
+#account-dialog.account-dropdown::backdrop{background:transparent;backdrop-filter:none}
+.account-dropdown>img,.account-dropdown>.eyebrow,.account-dropdown>h2{display:none}
+#account-handle{color:var(--muted);margin:0 0 18px}#account-name{font-size:1.25rem;margin:4px 0}
+#signed-in button{width:100%;margin-top:8px}

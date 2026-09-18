@@ -1,3 +1,10 @@
+## Tutsi search and browser bar (2026-09-17, local)
+
+- Home submissions clear on valid navigation and open a new website tab (reuse an empty tab); address submissions stay in the selected tab. Navigation targets its own frame, activates the browser view synchronously, awaits controller dispatch and ignores stale/closed-tab completion. SPA URL changes refresh without overwriting a focused address field.
+- Shared URL parsing follows Nyx source-envelope/host normalization, preserves encoded query values and fragments, accepts host:port, and rejects non-HTTP schemes. Address text uses a readable system font without stripping Spotify flow parameters. Real Spotify shell loaded in a local browser check; authentication/playback were not exercised.
+- Outside the browser view, a shared Browser bar opens on hover/click/keyboard with existing tabs and controls. Built-in apps use the full viewport. Escape closes the panel, closed content is inert, mobile width and reduced motion are respected.
+- Navigation regression and updated shortcut/fullscreen-app fixtures pass with real proxied pages. VPS build, check:deploy and both navigation/shortcut suites also passed against the built localhost:9091/tutsi preview. No push or deployment requested for this change.
+
 ## Live verification (2026-09-17, 5ef0b79)
 
 - Pushed and deployed. Verified the real Nyx shell at the primary root, StudyReady at /studyready, Tutsi loading Example Domain through its proxy, new symbol and prior compatibility assets returning 200 with no-store, and all five VPS services active. PDF remains installed and verified at 150 pages. No default StudyReady hostnames; user will supply a new test domain later. No DNS changes.

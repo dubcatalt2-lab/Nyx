@@ -1279,3 +1279,16 @@ html[data-motion="reduce"] #customize-dialog *,html[data-motion="reduce"] .setti
 #customize-dialog select[hidden]{display:none}
 #customize-skip-blocker{margin-top:20px}
 @media(max-width:650px){.customize-layout{grid-template-columns:1fr;gap:20px}#customize-preview{display:none}.customize-fields section{min-height:330px}.customize-choices button{padding:10px;min-height:56px}.customize-steps{justify-content:space-between}}
+
+/* A shared browser bar remains reachable without covering built-in apps. */
+#browser-bar-drawer{position:fixed;right:18px;bottom:40px;z-index:40;max-width:calc(100vw - 24px)}
+#browser-bar-toggle{display:block;margin-left:auto;padding:9px 16px;background:var(--mantle);color:var(--text);border:1px solid var(--line);border-radius:12px}
+#browser-bar-panel{width:min(880px,calc(100vw - 24px));position:absolute;right:0;bottom:100%;padding-bottom:8px;opacity:0;visibility:hidden;transform:translateY(6px);transition:opacity .18s ease,transform .18s ease,visibility .18s}
+#browser-bar-drawer.open #browser-bar-panel{opacity:1;visibility:visible;transform:none}
+#browser-bar-panel .browser-bar{border:1px solid var(--line);border-radius:14px 14px 0 0}
+#browser-bar-panel #browser-tabs{border:1px solid var(--line);border-top:0;border-radius:0 0 14px 14px}
+#address{font-family:system-ui,sans-serif!important;font-size:13px;letter-spacing:normal;line-height:1.5;direction:ltr;text-overflow:ellipsis}
+#address:focus{text-overflow:clip}
+body[data-view="app-view"] #app-host{height:100dvh}
+@media(prefers-reduced-motion:reduce){#browser-bar-panel{transition:none}}
+@media(max-width:500px){#browser-bar-drawer{right:12px;bottom:76px}}

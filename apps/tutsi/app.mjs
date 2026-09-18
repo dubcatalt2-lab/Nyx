@@ -1,3 +1,4 @@
+import {websiteAddress} from "./navigation.mjs";
 import {installShortcuts} from "./shortcuts.mjs";
 import {protectionSandbox} from "./protections.mjs";
 import { scanFilters, filterSignatures, identifyFilterAddress } from "./filter-detection.mjs";
@@ -460,6 +461,18 @@ function appFrame(name) {
   });
   return frame;
 }
+function setBrowserBarOpen(open){
+  $('browser-bar-toggle').setAttribute('aria-expanded',String(open));
+  $('browser-bar-panel').inert=!open;
+  $('browser-bar-drawer').classList.toggle('open',open);
+}
+const browserDrawer=$('browser-bar-drawer');
+$('browser-bar-toggle').onclick=()=>setBrowserBarOpen(!$('browser-bar-drawer').classList.contains('open'));
+browserDrawer.addEventListener('pointerenter',event=>{if(event.pointerType!=='touch')setBrowserBarOpen(true);});
+browserDrawer.addEventListener('pointerleave',()=>{if(!browserDrawer.contains(document.activeElement))setBrowserBarOpen(false);});
+browserDrawer.addEventListener('focusout',()=>setTimeout(()=>{if(!browserDrawer.contains(document.activeElement)&&!browserDrawer.matches(':hover'))setBrowserBarOpen(false);},0));
+browserDrawer.addEventListener('keydown',event=>{if(event.key==='Escape'){setBrowserBarOpen(false);$('browser-bar-toggle').focus();}});
+$('address').addEventListener('blur',()=>{$('address').scrollLeft=0;});
 function route() {
   const name = location.hash.slice(1) || "home";
   const section = appPaths[name]
@@ -475,9 +488,14 @@ function route() {
   $("footer").hidden = ["browser", "app-view"].includes(section);
   document.body.dataset.view = section;
   const bar=document.querySelector(".browser-bar");
-  $(section==="app-view"?"app-view":"browser").prepend(bar);
+  const browser=section==="browser", host=browser?$("browser"):$("browser-bar-panel");
+  $("browser-bar-drawer").hidden=browser;
+  if(bar.parentElement!==host)host.prepend(bar);
+  const tabs=$("browser-tabs");
+  if(tabs.parentElement!==host)host.insertBefore(tabs,browser?$("browser-stage"):null);
+  setBrowserBarOpen(false);
   if(appPaths[name]) $("address").value="tutsi://"+name;
-  else if(section==="browser") $("address").value=activeTab?.url||"";
+  else $("address").value=activeTab?.url||"";
   document
     .querySelectorAll("[data-route]")
     .forEach((el) => el.classList.toggle("active", el.dataset.route === name));
@@ -520,6 +538,14 @@ function selectBrowserTab(tab){
   browserTabs.forEach(item=>{if(item.element)item.element.hidden=item!==tab;});
   $('address').value=tab.url;location.hash='browser';route();renderBrowserTabs();syncBrowserTabView();
 }
+// SPA history changes do not fire iframe load events (for example Spotify).
+setInterval(()=>{
+  if(document.hidden||!activeTab?.element||activeTab.loading)return;
+  const url=currentWebsiteUrl(activeTab.element);
+  if(!url||url===activeTab.url)return;
+  activeTab.url=url;renderBrowserTabs();
+  if(document.activeElement!==$('address') && !appPaths[location.hash.slice(1)])$('address').value=url;
+},750);
 function newBrowserTab(url=''){
   if(browserTabs.length>=8){toast('You can open up to 8 website tabs. Close one first.');return false;}
   const tab={url:'',element:null,status:null,navigation:0};browserTabs.push(tab);selectBrowserTab(tab);
@@ -565,42 +591,25 @@ const shortcutActions={
 };
 installShortcuts(document,shortcutActions);
 
-function website(value) {
-  const text = value.trim();
-  if (!text) throw new Error("Enter a website or something to search.");
-  if (/^[a-z][a-z\d+.-]*:/i.test(text) && !/^https?:\/\//i.test(text))
-    throw new Error("Use an http or https website address.");
-  if (/^https?:\/\//i.test(text)) return new URL(text).href;
-  if (
-    /^(localhost|(?:[a-z\d-]+\.)+[a-z\d-]+)(?::\d+)?(?:[/?#]\S*)?$/i.test(text)
-  )
-    return new URL(`https://${text}`).href;
-  const prefix = {
-    duckduckgo: "https://duckduckgo.com/?q=",
-    google: "https://www.google.com/search?q=",
-    bing: "https://www.bing.com/search?q=",
-  };
-  return (
-    (prefix[settings.engine] || prefix.duckduckgo) + encodeURIComponent(text)
-  );
-}
-async function navigate(value) {
+async function navigate(value, {newTab=false, input=null} = {}) {
   if(/^tutsi:\/\//i.test(value.trim())){
     const name=value.trim().slice(8).replace(/\/$/, "").toLowerCase();
-    if(appPaths[name]||["home","apps","settings"].includes(name)){location.hash=name;return;}
+    if(appPaths[name]||["home","apps","settings"].includes(name)){if(input)input.value="";location.hash=name;return;}
     toast("That Tutsi page does not exist.");return;
   }
   let url;
   try {
-    url = website(value);
+    url = websiteAddress(value, settings.engine);
   } catch (e) {
     toast(e.message);
     return;
   }
-  if(!activeTab&&!newBrowserTab())return;
+  if((!activeTab || (newTab && activeTab.url))&&!newBrowserTab())return;
+  if(input)input.value="";
   const targetTab=activeTab;targetTab.url=url;renderBrowserTabs();
   const request = ++targetTab.navigation;
   location.hash = "browser";
+  route();
   $("address").value = url;
   let status = targetTab.status;
   if (!status) {
@@ -612,11 +621,11 @@ async function navigate(value) {
   status.textContent = "Loading...";
   targetTab.loading = true;
   syncBrowserTabView();
-  if (!proxyElement) {
+  if (!targetTab.element) {
     proxyElement = document.createElement("iframe");
     proxyElement.title = "Website";
-    activeTab.element=proxyElement;
-    proxyElement.addEventListener("load",()=>{try{installShortcuts(targetTab.element.contentDocument,shortcutActions)}catch{};const latest=currentWebsiteUrl(targetTab.element);if(latest){targetTab.url=latest;if(activeTab===targetTab && document.body.dataset.view==="browser")$("address").value=latest;renderBrowserTabs();}});
+    targetTab.element=proxyElement;
+    proxyElement.addEventListener("load",()=>{try{installShortcuts(targetTab.element.contentDocument,shortcutActions)}catch{};const latest=currentWebsiteUrl(targetTab.element);if(latest && !targetTab.loading && browserTabs.includes(targetTab)){targetTab.url=latest;if(activeTab===targetTab && document.body.dataset.view==="browser" && document.activeElement!==$("address"))$("address").value=latest;renderBrowserTabs();}});
     proxyElement.setAttribute(
       "sandbox",
       protectionSandbox(settings),
@@ -625,6 +634,8 @@ async function navigate(value) {
       "fullscreen; autoplay; encrypted-media; picture-in-picture";
     $("browser-stage").prepend(proxyElement);
   }
+  proxyElement=targetTab.element;
+  syncBrowserTabView();
   try {
     await browse(url, { ...settings }, targetTab.element);
     if (request !== targetTab.navigation || !browserTabs.includes(targetTab)) return;
@@ -641,13 +652,13 @@ async function navigate(value) {
 }
 $("search").onsubmit = (e) => {
   e.preventDefault();
-  navigate($("query").value);
+  void navigate($("query").value, {newTab:true, input:$("query")});
 };
 $("address-form").onsubmit = (e) => {
   e.preventDefault();
   navigate($("address").value);
 };
-$('new-tab-search').onsubmit = event => {event.preventDefault();void navigate($('new-tab-query').value);};
+$('new-tab-search').onsubmit = event => {event.preventDefault();void navigate($('new-tab-query').value, {input:$('new-tab-query')});};
 function browserControl(action){
   if(document.body.dataset.view==="app-view"){
     if(action==="reload") frames.get(location.hash.slice(1))?.contentWindow.location.reload();
@@ -655,7 +666,10 @@ function browserControl(action){
   }else control(action,proxyElement);
 }
 for (const action of ["back", "forward", "reload"]) $(action).onclick=()=>browserControl(action);
-$("close-browser").onclick = closeBrowserTab;
+$("close-browser").onclick = () => {
+  if(appPaths[location.hash.slice(1)] || document.body.dataset.view==='browser')closeBrowserTab();
+  else removeWebsiteTab(activeTab);
+};
 $("browser-home").onclick=()=>{location.hash="home";};
 addEventListener("keydown", (e) => {
   if (e.defaultPrevented) return;

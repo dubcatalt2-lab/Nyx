@@ -1,3 +1,4 @@
+import {sourceWebsiteUrl} from "./navigation.mjs";
 import {protectTransport, policyFrom} from "./protections.mjs";
 import {httpRelayUrl, installHttpRelaySocket, createHttpRelayEndpoint} from "./http-relay.mjs";
 import { effectiveFilter } from "./filter-detection.mjs";
@@ -155,21 +156,7 @@ async function engine(settings) {
   });
   return initializing;
 }
-function sourceUrl(raw) {
-  try {
-    const parsed = new URL(raw, location.origin);
-    if (parsed.pathname.startsWith("/~/tm/")) {
-      const encoded = parsed.pathname.match(/https?%3a%2f%2f.+/i)?.[0];
-      return encoded ? decodeURIComponent(encoded) : "";
-    }
-    return /^https?:$/.test(parsed.protocol) &&
-      parsed.origin !== location.origin
-      ? parsed.href
-      : "";
-  } catch {
-    return "";
-  }
-}
+function sourceUrl(raw) { return sourceWebsiteUrl(raw, location.origin); }
 function installImageRepair(element, url) {
   element.tutsiSourceUrl = url;
   if (!element.dataset.tutsiImageRepair) {
@@ -205,7 +192,7 @@ export function browse(url, settings, element) {
       browserFrames.set(element,frame);
     }
     installImageRepair(element, url);
-    frame.go(url);
+    await frame.go(url);
   };
   const result = navigationQueue.then(navigate, navigate);
   navigationQueue = result.catch(() => {});

@@ -1707,3 +1707,9 @@ User authorized push and VPS deployment of the AI model/14-day pool update. This
 - User explicitly requested push/deploy of the pending changes and the message "Cloud gaming is currently down" on both Nyx and Tutsi.
 - Shared cloud status now exposes maintenance, enabled by default unless NYX_CLOUD_GAMING_MAINTENANCE=0. Both clients display the outage before authentication/WebRTC checks and disable launch controls; server POST launch rejects with HTTP 503 while maintenance is enabled. Do not re-enable until provider access and real playback have been verified.
 - Release includes the local VPS preview, nested Cloud Gaming layout and viewport fixes, account-provider replacement, tab lifecycle/close controls, themed app icons, and the previously committed launch-limit/filter fixes. Temporary diagnostic artifacts and unrelated files remain untracked.
+
+### Deployment verified
+
+- Application release `06a707f` was pushed to `agent/pirate-cove` and deployed successfully with `deploy/update-ovh.sh`.
+- Live browser checks passed on nyxlearning.org, tutsi.nyxlearning.org and childsupport.donateyourboat.us: maintenance=true, configured=false, visible outage notice and disabled cloud controls. Tutsi aliases also passed new-tab/close and cloud/link icon checks.
+- VPS checkout was clean at the release hash; nyx, nyx-stratus, caddy, coturn and haproxy were active. No live game session was launched. Cloud gaming remains intentionally unavailable until an authorized provider account/integration and real playback are verified.

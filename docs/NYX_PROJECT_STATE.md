@@ -1,6 +1,6 @@
 ## Remove expandable Browser bar (2026-09-17)
 
-- User requested removal instead of redesign and explicitly authorized push/deployment. Removed the floating handle, panel, associated styles and hover/focus handlers. Existing browser toolbar/tab strip stay inside the browser view; built-in apps retain their full viewport. Search fixes, readable address text and Alt shortcuts remain. Updated navigation/shortcut fixtures for the removed control.
+- User requested removal instead of redesign and explicitly authorized push/deployment. Removed the floating handle, panel, associated styles and hover/focus handlers. Existing browser toolbar/tab strip stay inside the browser view; built-in apps retain their full viewport. Search fixes, readable address text and Alt shortcuts remain. Updated navigation/shortcut fixtures for the removed control. Pushed and deployed as dacfbf4; local build/shortcut checks and live navigation/mobile checks passed, and all five VPS services are active.
 
 ## Provider account diagnostic (2026-09-17)
 

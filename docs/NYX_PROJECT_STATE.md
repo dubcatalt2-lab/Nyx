@@ -1,3 +1,7 @@
+## StudyReady root rollback requested (2026-09-17)
+
+- User asked to restore Nyx at nyxlearning.org and will provide a new test domain later. Removed automatic primary-domain entries; no production registry was saved. StudyReady remains at /studyready and in Owner Dashboard, with textbook routes preserved. No DNS changes.
+
 ## StudyReady primary-domain and owner integration (2026-09-17 release)
 
 - User explicitly selected the announcement-style setup after being told it replaces the main homepage. nyxlearning.org (and www) now default to StudyReady; /nyx serves the existing Nyx shell, with /nyx/ redirected to avoid relative-asset failures. Tutsi and TURN domains are reserved and retain their routes. Everyone, including crawlers, receives the same learning content.

@@ -14,7 +14,7 @@ const server=await new Promise(resolve=>{const s=app.listen(0,'127.0.0.1',()=>re
 const raw=(path,host,ua)=>new Promise((resolve,reject)=>{const req=httpRequest(origin+path,{headers:{host,'user-agent':ua||'Test browser'}},res=>{const parts=[];res.on('data',part=>parts.push(part));res.on('end',()=>resolve({status:res.statusCode,body:Buffer.concat(parts).toString()}));});req.on('error',reject);req.end();});
 let browser;
 try{
- const home=await raw('/','nyxlearning.org');assert.equal(home.status,200);assert.match(home.body,/Grade 12 Math/);assert.equal((await raw('/','nyxlearning.org','Googlebot')).body,home.body);
+ const home=await raw('/','nyxlearning.org');assert.equal(home.status,200);assert.equal(home.body,'Existing site');assert.match((await raw('/studyready','nyxlearning.org')).body,/Grade 12 Math/);assert.equal((await raw('/','nyxlearning.org','Googlebot')).body,home.body);
  assert.equal((await raw('/','tutsi.nyxlearning.org')).body,'Existing site');assert.equal((await raw('/','other.example.org')).body,'Existing site');
  assert.equal((await raw('/nyx','nyxlearning.org')).status,200);assert.match((await raw('/nyx','nyxlearning.org')).body,/script\.js|startup/);
  const api=origin+'/api/owner-dashboard/studyready';assert.equal((await fetch(api)).status,403);
@@ -26,7 +26,7 @@ try{
  assert.equal((await save({hostname:'learn.example.org',title:'School <script>bad</script>'})).status,200);assert.match((await raw('/','learn.example.org')).body,/School &lt;script&gt;/);
  assert.equal((await (await fetch(api+'/learn.example.org/check',{method:'POST',headers})).json()).matches,true);
  await fetch(api+'/learn.example.org',{method:'DELETE',headers});assert.equal((await raw('/','learn.example.org')).body,'Existing site');
- assert.equal(store.records.get('nyxSiteSettings/studyready').domains.length,2);
+ assert.equal(store.records.get('nyxSiteSettings/studyready').domains.length,0);
  browser=await chromium.launch();const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];page.on('pageerror',error=>errors.push(error.message));await page.goto(origin);
  await page.addStyleTag({path:'css/owner-dashboard.css'});await page.addStyleTag({path:'css/owner-dashboard-polish.css'});await page.addScriptTag({path:'js/owner-dashboard.js'});
  await page.evaluate(()=>NyxOwnerDashboard.open({getToken:async()=>'owner'}));await page.locator('[data-owner-studyready]').click();await page.locator('[data-owner-studyready-form]').waitFor();

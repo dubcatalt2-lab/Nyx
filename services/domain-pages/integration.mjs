@@ -4,7 +4,7 @@ import {learningPage} from './pages.mjs';
 import {textbookHtml} from './textbook.mjs';
 import {normalizeDomain} from './server.mjs';
 
-const defaults=[{hostname:'nyxlearning.org',title:'StudyReady'},{hostname:'www.nyxlearning.org',title:'StudyReady'}];
+const defaults=[];
 const assets=new Set(['learning.css','learning.mjs','curriculum.mjs','secondary.mjs','textbook.css']);
 const problem=(message,status=400)=>Object.assign(new Error(message),{status});
 export function installStudyReady(app,{owner,db,sameOrigin,verifyDns,targetIps,audit=async()=>{},staticRoot,pdfPath=process.env.STUDYREADY_PDF_PATH||'/var/lib/nyx/studyready/textbook.pdf'}){

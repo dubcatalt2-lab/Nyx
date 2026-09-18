@@ -1,3 +1,8 @@
+## Proxy symbol filenames and Unicode locals (2026-09-17)
+
+- User requested special characters in filenames and code identifiers. Build now emits 48 stable @r<hash>! assets and Unicode-prefixed randomized locals where compatible. Source package names, directory paths, exported/global APIs, protocol fields and WASM contracts remain intact. Existing opaque and original filenames are retained for old tabs. This is naming only, not a filter-bypass guarantee.
+- Browser testing caught Terser quoting Unicode private-method declarations; runtimes containing private names retain ASCII randomized identifiers. Added a private-method execution regression fixture. All five Nyx engine/transport browser paths and build alias/WASM/compatibility tests pass. Root rollback is live; StudyReady remains preview-only until a domain is explicitly registered.
+
 ## StudyReady root rollback requested (2026-09-17)
 
 - User asked to restore Nyx at nyxlearning.org and will provide a new test domain later. Removed automatic primary-domain entries; no production registry was saved. StudyReady remains at /studyready and in Owner Dashboard, with textbook routes preserved. No DNS changes.

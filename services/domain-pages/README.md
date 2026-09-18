@@ -37,7 +37,7 @@ Grade groupings are navigation guides, not a claim of full standards alignment. 
 
 ## Integrated owner dashboard and primary domain
 
-The main server installs `integration.mjs`. On first use, `nyxlearning.org` and `www.nyxlearning.org` serve StudyReady at `/`; Nyx stays at `/nyx`, while existing Tutsi hostnames keep their own shell. `/studyready` is an explicit preview route. No user-agent/content switching is used.
+The main server installs `integration.mjs`. The domain registry starts empty. Existing Nyx and Tutsi homepages stay in place until the owner explicitly assigns a hostname to StudyReady. Nyx is also available at `/nyx`. `/studyready` is an explicit preview route. No user-agent/content switching is used.
 
 Owner Dashboard ? StudyReady uses the existing founder-only authentication and API helper. Domains/titles are stored transactionally in Firestore `nyxSiteSettings/studyready`, with a 30-second public-routing cache and immediate invalidation on save. GET/POST/DELETE `/api/owner-dashboard/studyready` and POST `/:hostname/check` manage the registry and test DNS. Only the configured founder can use them. Co-owners and staff are denied.
 

@@ -1,3 +1,9 @@
+## Tutsi startup and classification reliability (2026-09-18)
+
+- Startup interaction listeners attach while the lesson document is loading, rather than waiting for all frame assets. Polling/listeners stop on retention or dismissal. Live pre-fix tests passed on rerun; the earlier interaction failure was intermittent.
+- Relay selection waits at most 300 ms for advisory filter ranking and falls back to the existing configured order on delay/error. Actual connection handshake validation, configured endpoints and safe request replay policy are unchanged. This removes a known startup delay, not a guarantee that an unavailable network can connect.
+- Local startup/mobile/wizard fixtures, slow/failing ranking fixtures, build and deployment checks passed. User authorized push and deployment. Previous startup release 21b75b8 is live; this follow-up addresses timing reliability.
+
 ## Tutsi StudyReady startup cover (2026-09-18)
 
 - StudyReady appears on each document startup and disappears automatically four seconds after its frame loads. Internal navigation does not restart it. Trusted pointer, keyboard, wheel or touch input inside StudyReady cancels both timers and keeps the lesson page open for the current load. An eight-second fail-open bound handles stalled loading only when no interaction has occurred. No user-agent or crawler-specific behavior.

@@ -40,7 +40,13 @@ export class RelayTransport {
     let remembered='';try{remembered=this.storage?.getItem('tutsi.workingRelay:'+this.urls.join('|'))||''}catch{}
     const order=[...new Set([this.url,remembered,...this.urls])].filter(url=>this.urls.includes(url)&&url!==failed);
     this.switching=(async()=>{
-      for(const url of await this.rank(order)){
+      // Classification is advisory. A slow checker must not hold up connection startup.
+      let rankTimer;
+      const ranked=await Promise.race([
+        Promise.resolve().then(()=>this.rank(order)).catch(()=>order),
+        new Promise(resolve=>{rankTimer=setTimeout(()=>resolve(order),300);})
+      ]).finally(()=>clearTimeout(rankTimer));
+      for(const url of ranked){
         if(this.closed)throw new Error('Relay connection closed.');
         this.onStatus({state:'checking',url});
         if(!await this.probe(url))continue;

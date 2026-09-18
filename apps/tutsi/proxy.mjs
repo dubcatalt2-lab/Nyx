@@ -212,11 +212,13 @@ export function browse(url, settings, element) {
   return result;
 }
 export function control(action, element) {
-  const target=element?browserFrames.get(element):frame;
+  if(!element)return;
+  const target=browserFrames.get(element);
   if(target&&typeof target[action]==='function')target[action]();
 }
 export function closeBrowser(element) {
-  const target=element?browserFrames.get(element):frame;
+  if(!element)return;
+  const target=browserFrames.get(element);
   if(element)navigationRequests.delete(element);
   if(target){target.element.src='about:blank';const i=controller?.frames?.indexOf(target);if(i>=0)controller.frames.splice(i,1);browserFrames.delete(target.element);if(frame===target)frame=null;}
 }

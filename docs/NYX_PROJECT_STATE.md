@@ -1673,3 +1673,37 @@ User authorized push and VPS deployment of the AI model/14-day pool update. This
 - Production health reports Nyx active, embedded Wisp and Socket.IO. Public shared model catalog returns DeepSeek V4.1 Flash, Mercury 2.5, Qwen 3.7 Flash and Gemini 2.5 Flash Lite; premium/owner models are absent for unauthenticated viewers as expected.
 - Live browser fixture tests on nyxlearning.org passed: agent edits/create/undo/stale protection and mobile bounds, real shell receiving mentions from its Chat iframe, standalone mention toast without audio permission, one-second movie control hiding and restoration. AI replies were mocked, no paid generation or real chat messages sent. New asset versions and compact CSS verified over public HTTPS.
 - Existing dependency audit reports 12 production vulnerabilities (8 moderate, 4 high); not introduced or addressed by this UI/AI release. Caddy existing redundant-header warnings remain non-blocking. Unrelated local proxy build modifications remain outside these commits.
+
+## 2026-09-17 — Local VPS preview and nested Cloud Gaming styling (not deployed)
+
+- `scripts/preview-vps.mjs` serves the local `dist` build on loopback port 9091 and forwards service requests/WebSockets through SSH to the deployed VPS app. VPS secrets remain remote. See `docs/LOCAL_VPS_PREVIEW.md`. Live account data/allowances apply; this does not run local backend edits.
+- Tutsi decorates the registered Games frame's same-origin Cloud Gaming child with its current palette and Indie Flower typography. Catalog height follows content, leaving scrolling to Games; the duplicate library heading is hidden. Other game/player frames are not themed or granted credentials by this change. Nyx styling remains unchanged.
+- Fixture checks cover nested Cloud Gaming typography, matching backgrounds, desktop/mobile widths and single scrolling. Read-only localhost checks confirm account configuration and configured cloud-service responses; foreign-origin requests are rejected. No real game session or profile mutation was made.
+- Preview is running at http://localhost:9091/tutsi. Provider verification/session preparation failures remain unresolved; UI checks and connectivity do not prove successful cloud playback. Local backend fixes in `07cdc98` remain undeployed.
+- Follow-up: launch preparation now enters the same viewport mode as playback immediately, hides the cloud catalog, and locks document scrolling. Tutsi's library padding no longer shrinks the active cloud player. Exiting restores the catalog; fixture tests cover preparation, active playback and exit at desktop/mobile sizes. VPS logs still show provider verification-code timeouts before streaming.
+
+### Verification timeout investigation
+
+- Read-only VPS logs confirm the failure occurs during provider-account preparation, before WebRTC. The currently deployed adapter discards the sendEmail response and suppresses mailbox HTTP/parse errors, so historical logs cannot distinguish provider rejection, mailbox failure or missing delivery.
+- Local adapter now validates provider email/registration responses and uses a bounded mailbox poller: permanent authorization errors stop immediately, transient failures have bounded retries, and missing delivery differs from unreadable messages. Numeric HTML entities and HTML arrays are handled. No new provider/mailbox accounts or verification emails were created during investigation.
+- `scripts/test-cloud-verification-mailbox.mjs`, provider-response fixtures, pinned runtime checks and Stratus smoke tests pass. These establish error-handling behavior, not the actual upstream delivery root cause or successful live gameplay. Production remains unchanged.
+
+## 2026-09-17 — Stratus provider rejection confirmed and account flow replaced (local)
+
+- A single controlled sendEmail request reproduced provider status 400: "Temporary email addresses are not supported." The temporary diagnostic mailbox was deleted (HTTP 204). No provider account or game was created. This establishes the preparation failure's root cause, superseding the earlier unknown-delivery diagnosis.
+- Generated Stratus runtime now removes the disposable mailbox/account registration implementation entirely. It signs into an existing verified provider account using server-only STRATUS_PROVIDER_EMAIL/STRATUS_PROVIDER_PASSWORD. Missing settings fail before quota charging or streaming progress. Stable device identity and one concurrent game protect a single account from concurrent login/game collisions; provider access/credit restrictions remain in effect.
+- Local server status includes a setup message and reports unconfigured until provider credentials exist for self-hosting. The external issued-key integration remains available. Deployment environment example and Stratus README document the account requirement. No production changes were made.
+- Provider login fixtures, preflight smoke test, pinned runtime integrity and launch-limit fixtures pass. Full live playback still requires a valid operator-provided provider account; do not claim successful streaming without that test.
+
+## 2026-09-17 — Tutsi tab lifecycle fixes (local only)
+
+- Compared Nyx's blank-tab activation and per-frame controls with Tutsi. Blank tabs now stay inside the browser with a dedicated search surface and visible tab strip; the + button no longer routes Home and hides the browser. New-tab search receives focus immediately.
+- Browser controls and disposal require the explicit target frame. A blank tab no longer reloads or closes the last existing website through the proxy module's global fallback. Loading state and navigation generations now belong to each tab, preventing background requests from changing another tab's status. Late website loads cannot overwrite a built-in app's tutsi:// address.
+- Keyboard reload/back/forward and toolbar actions share routing for built-in apps. Tested +, Alt+T from website/app, blank close/reload preserving the previous document, switching, closing during load, restore, eight-tab capacity, final-tab disposal and mobile layout. Build/deployment checks passed. Changes are on localhost:9091/tutsi, not production.
+- Follow-up: each website tab now has its own accessible close button. Closing a background tab preserves the active page; closing the final tab returns Home. Tutsi Apps now uses local line SVGs in the selected theme accent, including cloud and chain-link symbols instead of the previous Nyx logo/infinity art. Browser checks verified live color changes, icon mappings and current/background/final-tab closing; build/deployment checks pass. Local only.
+
+## 2026-09-17 — Tutsi tab/icon release and announced Cloud Gaming outage
+
+- User explicitly requested push/deploy of the pending changes and the message "Cloud gaming is currently down" on both Nyx and Tutsi.
+- Shared cloud status now exposes maintenance, enabled by default unless NYX_CLOUD_GAMING_MAINTENANCE=0. Both clients display the outage before authentication/WebRTC checks and disable launch controls; server POST launch rejects with HTTP 503 while maintenance is enabled. Do not re-enable until provider access and real playback have been verified.
+- Release includes the local VPS preview, nested Cloud Gaming layout and viewport fixes, account-provider replacement, tab lifecycle/close controls, themed app icons, and the previously committed launch-limit/filter fixes. Temporary diagnostic artifacts and unrelated files remain untracked.

@@ -30,3 +30,10 @@ html.games-embedded .catalog-shell{border-top:0;padding-top:0}
 @media(max-width:760px){html.games-embedded main{padding:14px 12px 34px}}
 
 .network-mode{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:16px 0;color:var(--text);font-size:13px}.network-mode select{padding:8px 12px;border:1px solid var(--line);border-radius:9px;background:var(--panel-2);color:var(--text)}.network-mode small{color:var(--muted)}
+
+/* Preparation and playback both own the viewport, including standalone launches. */
+html.cloud-session-active,html.cloud-session-active body{height:100%;min-height:0;overflow:hidden}
+html.cloud-session-active main,html.cloud-session-active .topbar{display:none}
+.player-layer{grid-template-rows:58px minmax(0,1fr)}
+.player-layer iframe{min-height:0;min-width:0}
+@media(max-width:760px){.player-layer{grid-template-rows:94px minmax(0,1fr)}}

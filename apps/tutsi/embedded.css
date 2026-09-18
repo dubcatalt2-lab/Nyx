@@ -702,3 +702,22 @@ html[data-tutsi-app="cloud"] :is(.hero .intro,.brand small){color:var(--muted)}
 html[data-tutsi-app="cloud"] :is(button,input,select){background:var(--field)!important;color:var(--text)!important;border-color:var(--border)!important}
 html[data-tutsi-app="cloud"] #tutsi-local-games{color:var(--accent);white-space:nowrap;font-size:16px}
 html[data-tutsi-app="cloud"] .catalog-heading{flex-wrap:wrap}
+
+/* The Games library owns scrolling for its embedded cloud catalog. */
+html[data-tutsi-app="games"] .cloud-games-view{background:var(--bg);border:0;border-radius:0;overflow:visible}
+html[data-tutsi-app="games"] .cloud-games-view iframe{background:var(--bg);min-height:0}
+html[data-tutsi-app="cloud"].games-embedded,html[data-tutsi-app="cloud"].games-embedded body{min-height:0!important;overflow:hidden}
+html[data-tutsi-app="cloud"].games-embedded main{padding:0 0 24px;width:100%}
+html[data-tutsi-app="cloud"].games-embedded .catalog-heading>div:first-child,html[data-tutsi-app="cloud"].games-embedded #tutsi-local-games{display:none}
+html[data-tutsi-app="cloud"] .catalog-shell{background:transparent!important}
+html[data-tutsi-app="cloud"] .game-info h3{font-size:19px;line-height:1.5}
+html[data-tutsi-app="cloud"] :is(.tag,.game-tags span){background:var(--field);color:var(--muted)}
+html[data-tutsi-app="games"] body.cloud-session-active .cloud-games-view iframe{height:100%!important}
+
+html[data-tutsi-app="cloud"] .search{min-height:44px;background:var(--field);border-color:var(--border);padding:0 12px;gap:10px}
+html[data-tutsi-app="cloud"] .search input{background:transparent!important;min-width:0;width:100%;height:42px;padding:0;border:0!important;outline-offset:-2px}
+html[data-tutsi-app="cloud"] .catalog-tools{width:100%;max-width:680px}
+html[data-tutsi-app="cloud"] .catalog-heading{justify-content:flex-end}
+
+html[data-tutsi-app="games"] body.cloud-session-active .library{padding:0;max-width:none;height:100vh}
+html[data-tutsi-app="games"] body.cloud-session-active .cloud-games-view{margin:0;overflow:hidden}

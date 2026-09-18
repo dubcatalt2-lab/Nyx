@@ -1253,3 +1253,19 @@ html[data-motion="reduce"] #customize-dialog *,html[data-motion="reduce"] .setti
 
 .filter-address-help{margin:16px 0;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--mantle)}
 .filter-address-help summary{cursor:pointer;color:var(--text)}.filter-address-help p{color:var(--muted);line-height:1.5}.filter-address-help label{display:block;margin-bottom:8px}.filter-address-help input{min-width:0}
+
+#browser-new-tab{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;padding:24px;background:var(--base)}
+#browser-new-tab[hidden]{display:none}
+#browser-new-tab h1{font-family:'Homemade Apple',cursive;font-size:clamp(28px,5vw,48px);font-weight:400;margin:0 0 16px}
+#new-tab-search{display:flex;width:min(650px,100%);gap:12px;padding:10px;background:var(--mantle);border:1px solid var(--line);border-radius:18px}
+#new-tab-query{flex:1;min-width:0;background:transparent;border:0;padding:10px;color:var(--text)}
+#new-tab-search button{width:44px;border:0;border-radius:12px;background:var(--surface);color:var(--text)}
+
+#browser-tabs .browser-tab{display:flex;align-items:center;flex:none;min-width:0;border-radius:8px}
+#browser-tabs .browser-tab[data-active=true]{background:var(--surface)}
+#browser-tabs .browser-tab [role=tab]{max-width:160px;background:transparent}
+#browser-tabs .browser-tab-close{width:32px;height:32px;padding:0;font-family:system-ui,sans-serif;font-size:20px;line-height:1;color:var(--muted)}
+#browser-tabs .browser-tab-close:hover{background:var(--mantle);color:var(--text)}
+@media(pointer:coarse){#browser-tabs .browser-tab-close{width:44px;height:44px}}
+
+.all-apps .app-symbol{width:48px;height:48px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;color:var(--accent)}

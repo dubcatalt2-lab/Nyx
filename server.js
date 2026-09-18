@@ -7197,8 +7197,10 @@ function nyxCloudGamingConfig() {
     publicBaseUrl,
     catalogUrl,
     selfHosted,
-    configured: Boolean(apiKey && baseUrl && publicBaseUrl),
-    maxActiveSessions: nyxCloudGamingBoundedInteger(process.env.NYX_STRATUS_MAX_ACTIVE_SESSIONS || process.env.STRATUS_MAX_CONCURRENT_SESSIONS, 4, 1, 20),
+    maintenance: process.env.NYX_CLOUD_GAMING_MAINTENANCE !== "0",
+    configured: Boolean(apiKey && baseUrl && publicBaseUrl && (!selfHosted || (process.env.STRATUS_PROVIDER_EMAIL?.trim() && process.env.STRATUS_PROVIDER_PASSWORD))),
+    setupMessage: selfHosted ? "Cloud Gaming needs a configured provider account. Ask the owner to finish setup." : "Cloud Gaming needs a configured service API key.",
+    maxActiveSessions: selfHosted ? 1 : nyxCloudGamingBoundedInteger(process.env.NYX_STRATUS_MAX_ACTIVE_SESSIONS || process.env.STRATUS_MAX_CONCURRENT_SESSIONS, 4, 1, 20),
     createTimeoutMs: nyxCloudGamingBoundedInteger(process.env.NYX_STRATUS_CREATE_TIMEOUT_MS, selfHosted ? 210_000 : 120_000, 60_000, 330_000)
   };
 }
@@ -7309,7 +7311,7 @@ function nyxCloudGamingSessionPayload(session) {
 
 async function nyxCloudGamingUpstream(path, { method = "GET", body, signal } = {}) {
   const config = nyxCloudGamingConfig();
-  if (!config.configured) throw nyxCloudGamingError("Cloud Gaming needs a Stratus API key in the OVH environment.", 503);
+  if (!config.configured) throw nyxCloudGamingError(config.setupMessage, 503);
   const target = new URL(path, `${config.baseUrl}/`);
   if (target.origin !== new URL(config.baseUrl).origin) throw nyxCloudGamingError("The Cloud Gaming provider URL was rejected.", 500);
   return fetch(target, {
@@ -12354,7 +12356,7 @@ app.get("/api/cloud-gaming/status", (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
   const config = nyxCloudGamingConfig();
-  res.json({ configured: config.configured, provider: "Stratus", selfHosted: config.selfHosted, signInRequired: true, maxActiveSessions: config.maxActiveSessions });
+  res.json({ configured: !config.maintenance && config.configured, maintenance: config.maintenance, setupMessage: config.maintenance ? "Cloud gaming is currently down." : config.configured ? "" : config.setupMessage, provider: "Stratus", selfHosted: config.selfHosted, signInRequired: true, maxActiveSessions: config.maxActiveSessions });
 });
 
 app.get("/api/cloud-gaming/catalog", async (req, res) => {
@@ -12410,7 +12412,8 @@ app.post("/api/cloud-gaming/sessions", async (req, res) => {
   let closed = null;
   try {
     const config = nyxCloudGamingConfig();
-    if (!config.configured) throw nyxCloudGamingError("Cloud Gaming needs a Stratus API key in the OVH environment.", 503);
+    if (config.maintenance) throw nyxCloudGamingError("Cloud gaming is currently down.", 503);
+    if (!config.configured) throw nyxCloudGamingError(config.setupMessage, 503);
     const authenticated = await nyxCloudGamingUser(req);
     uid = authenticated.token.uid;
     if (nyxCloudGamingProvisioningUsers.has(uid)) throw nyxCloudGamingError("Your Cloud Gaming session is already being prepared.", 409);

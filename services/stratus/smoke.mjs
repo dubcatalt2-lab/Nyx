@@ -14,6 +14,8 @@ const child = spawn(process.execPath, [path.join(serviceDir, "launcher.mjs")], {
   env: {
     ...process.env,
     STRATUS_API_KEY: apiKey,
+    STRATUS_PROVIDER_EMAIL: "",
+    STRATUS_PROVIDER_PASSWORD: "",
     STRATUS_PUBLIC_ORIGIN: `http://127.0.0.1:${port}`,
     STRATUS_PORT: String(port),
     STRATUS_RUNTIME_DIR: runtimeDir,
@@ -92,6 +94,12 @@ try {
     body: JSON.stringify({})
   });
   if (authenticated.response.status !== 400) throw new Error(`Valid-key malformed request returned ${authenticated.response.status}.`);
+
+  const missingProvider = await request("/cloud/v1/createSession", {
+    method: "POST", headers: { "Content-Type": "application/json", "x-api-key": apiKey },
+    body: JSON.stringify({game_key:"fixture"})
+  });
+  if(missingProvider.response.status !== 503 || !missingProvider.payload?.error?.includes("configured provider account")) throw new Error("Missing provider account did not fail before preparation.");
 
   console.log("Stratus smoke test passed: health, embed route, source disclosure, and API-key boundary verified.");
 } finally {

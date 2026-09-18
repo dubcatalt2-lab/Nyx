@@ -945,3 +945,6 @@ body.game-performance-active[data-game-performance-level="2"] .player iframe {
     transition-duration: 0.01ms !important;
   }
 }
+
+html:has(body.cloud-session-active),html:has(body.game-active){height:100%;overflow:hidden}
+body.game-active{height:100vh;overflow:hidden}

@@ -1,5 +1,10 @@
 // Nyx line icons adapted for the Tutsi dock.
 export const icons = {
+  cloud: '<path d="M7 19h11a4 4 0 0 0 .7-7.94A7 7 0 0 0 5.1 9.2 5 5 0 0 0 7 19Z"/>',
+  checker: '<circle cx="10" cy="10" r="7"/><path d="m15 15 6 6M7 10l2 2 4-4"/>',
+  publisher: '<path d="M12 15V3m-4 4 4-4 4 4M4 14v6h16v-6"/>',
+  key: '<circle cx="8" cy="8" r="5"/><path d="m12 12 9 9m-6-6 3-3m0 6 3-3"/>',
+
   profile:
     '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="9" r="3"/><path d="M5.5 18c.8-3 3-4.5 6.5-4.5s5.7 1.5 6.5 4.5"/>',
   home: '<path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M9 21V12h6v9"/>',

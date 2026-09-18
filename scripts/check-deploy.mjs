@@ -12,6 +12,8 @@ const requiredFiles = [
   "lib/tutsi-hostnames.mjs",
   "lib/cloud-launch-limit.mjs",
   "services/stratus/provider-step.mjs",
+  "services/stratus/verification-mailbox.mjs",
+  "services/stratus/provider-account.mjs",
   "server-http-wisp.mjs",
   "apps/tutsi/style.css",
   "apps/tutsi/proxy.mjs",

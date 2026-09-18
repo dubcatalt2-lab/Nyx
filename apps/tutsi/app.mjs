@@ -190,7 +190,8 @@ function tabAppearance(preferences = settings) {
   $("tab-preset-preview").textContent=title;
   $("tab-title").disabled = settings.tabPreset !== "custom";
 }
-function styleApp(frame) {
+const themedCloudFrames = new WeakSet();
+function styleApp(frame, gamesFrame = null) {
   try {
     const doc = frame.contentDocument;
     if (
@@ -198,7 +199,8 @@ function styleApp(frame) {
       new URL(frame.contentWindow.location.href).origin !== location.origin
     )
       return;
-    const appKey = [...frames].find(([, item]) => item === frame)?.[0];
+    const nestedCloud = gamesFrame === frames.get("games") && gamesFrame?.contentDocument?.getElementById("cloudGamingFrame") === frame;
+    const appKey = nestedCloud ? "cloud" : [...frames].find(([, item]) => item === frame)?.[0];
     if (
       !appKey ||
       new URL(frame.contentWindow.location.href).pathname !== appPaths[appKey]
@@ -220,8 +222,25 @@ function styleApp(frame) {
     style.textContent = `:root,body{--accent-rgb:${accentRgb}!important;--ai-theme-hover-border:${accent}!important;color-scheme:${settings.theme === "latte" ? "light" : "dark"};--tutsi-base:${p.base};--tutsi-mantle:${p.mantle};--bg:${p.base}!important;--background:${p.base}!important;--surface:${p.mantle}!important;--panel:${p.mantle}!important;--text:${p.text}!important;--muted:${p.muted}!important;--accent:${accent}!important;--border:${p.line}!important;--line:${p.line}!important;--field:${p.surface}!important;--surface-strong:${p.mantle}!important;--surface-soft:${p.surface}!important;--surface-raised:${p.surface}!important;--surface-hover:${p.surface}!important;--page:${p.base}!important;--page-deep:${p.mantle}!important;--nt-bg:${p.base}!important;--dim:${p.muted}!important;--ai-bg:${p.base}!important;--ai-bg-deep:${p.mantle}!important;--ai-surface:${p.mantle}!important;--ai-surface-raised:${p.surface}!important;--ai-surface-hover:${p.surface}!important;--ai-border:${p.line}!important;--ai-text:${p.text}!important;--ai-text-soft:${p.text}!important;--ai-muted:${p.muted}!important;--ai-accent:${accent}!important;--ai-accent-bright:${accent}!important;--ai-accent-foreground:${p.base}!important}html,body{background:${p.base}!important;color:${p.text}!important}body::before,body::after{background-image:none!important}.ai-workspace,.ai-main,.ai-sidebar{background:${p.base}!important}.ai-topbar,.ai-composer,.ai-sidebar{border-color:${p.line}!important}.ai-brand img{content:url('/apps/tutsi/icon.png?v=2')}.ai-brand-mark{background-image:url('/apps/tutsi/icon.png?v=2')!important}#stars{display:none!important} ${settings.motion ? "*,*::before,*::after{animation:none!important;transition:none!important}" : ""}`;
     doc.documentElement.dataset.motion = settings.motion ? "reduce" : "normal";
     decorateApp(doc);
-    const appName = [...frames].find(([, item]) => item === frame)?.[0];
+    const appName = appKey;
     decorateEmbedded(doc, appName || "app");
+    if (appKey === "games") {
+      const cloud = doc.getElementById("cloudGamingFrame");
+      if (cloud && !themedCloudFrames.has(cloud)) {
+        themedCloudFrames.add(cloud);
+        cloud.addEventListener("load", () => styleApp(cloud, frame));
+      }
+      if (cloud) styleApp(cloud, frame);
+    }
+    if (nestedCloud && !doc.documentElement.dataset.tutsiCloudSized) {
+      doc.documentElement.dataset.tutsiCloudSized = "true";
+      const resize = () => {
+        if (!frame.isConnected || doc !== frame.contentDocument || doc.documentElement.classList.contains("cloud-session-active")) return;
+        frame.style.height = Math.ceil(doc.querySelector("main").getBoundingClientRect().height) + "px";
+      };
+      new ResizeObserver(resize).observe(doc.querySelector("main"));
+      resize();
+    }
     installShortcuts(doc,shortcutActions);
     frame.contentWindow.postMessage(
       {
@@ -473,8 +492,7 @@ function route() {
   requestAnimationFrame(updateSettingsSection);
 }
 addEventListener("hashchange", route);
-let navigation = 0,
-  proxyElement;
+let proxyElement;
 const browserTabs=[],closedWebsites=[];
 let activeTab=null;
 function renderBrowserTabs(){
@@ -482,19 +500,30 @@ function renderBrowserTabs(){
   browserTabs.forEach((tab,index)=>{
     const button=document.createElement('button');button.type='button';button.setAttribute('role','tab');button.setAttribute('aria-selected',String(tab===activeTab));
     let label='New tab';try{label=new URL(tab.url).hostname}catch{}
-    button.textContent=label;button.title=`Alt+${index+1}: ${label}`;button.onclick=()=>selectBrowserTab(tab);strip.append(button);
+    button.textContent=label;button.title=`Alt+${index+1}: ${label}`;button.onclick=()=>selectBrowserTab(tab);
+    const item=document.createElement('div');item.className='browser-tab';item.setAttribute('role','presentation');item.dataset.active=String(tab===activeTab);
+    const close=document.createElement('button');close.type='button';close.className='browser-tab-close';close.textContent=String.fromCharCode(215);close.setAttribute('aria-label',`Close ${label}`);close.title='Close tab';
+    close.onclick=()=>{removeWebsiteTab(tab);$('browser-tabs').querySelector('[aria-selected="true"]')?.focus();};
+    item.append(button,close);strip.append(item);
   });
   const add=document.createElement('button');add.textContent='+';add.type='button';add.setAttribute('aria-label','New tab (Alt+T)');add.onclick=()=>newBrowserTab();strip.append(add);
 }
+function syncBrowserTabView(){
+  $('browser-new-tab').hidden=!!activeTab?.url;
+  for(const tab of browserTabs){
+    if(tab.element)tab.element.hidden=tab!==activeTab;
+    if(tab.status)tab.status.hidden=tab!==activeTab||!tab.loading;
+  }
+}
 function selectBrowserTab(tab){
-  if(!tab)return;activeTab=tab;proxyElement=tab.element;
+  if(!browserTabs.includes(tab))return;activeTab=tab;proxyElement=tab.element;
   browserTabs.forEach(item=>{if(item.element)item.element.hidden=item!==tab;});
-  $('address').value=tab.url;location.hash=tab.url?'browser':'home';renderBrowserTabs();
+  $('address').value=tab.url;location.hash='browser';route();renderBrowserTabs();syncBrowserTabView();
 }
 function newBrowserTab(url=''){
   if(browserTabs.length>=8){toast('You can open up to 8 website tabs. Close one first.');return false;}
-  const tab={url:'',element:null};browserTabs.push(tab);selectBrowserTab(tab);
-  if(url)void navigate(url);else {$('query').value='';$('query').focus();}
+  const tab={url:'',element:null,status:null,navigation:0};browserTabs.push(tab);selectBrowserTab(tab);
+  if(url)void navigate(url);else {$('new-tab-query').value='';$('new-tab-query').focus();}
   return true;
 }
 function closeBrowserTab(){
@@ -514,18 +543,24 @@ function closeBrowserTab(){
     document.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());
     location.hash='home';return;
   }
-  if(!activeTab)return;
-  const index=browserTabs.indexOf(activeTab),url=currentWebsiteUrl(activeTab.element)||activeTab.url;
+  removeWebsiteTab(activeTab);
+}
+function removeWebsiteTab(tab){
+  const index=browserTabs.indexOf(tab);if(index<0)return;
+  const wasActive=tab===activeTab,url=currentWebsiteUrl(tab.element)||tab.url;
   if(/^https?:\/\//i.test(url)){closedWebsites.push(url);if(closedWebsites.length>10)closedWebsites.shift();}
-  closeBrowser(activeTab.element);activeTab.element?.remove();browserTabs.splice(index,1);activeTab=null;proxyElement=null;navigation++;
+  tab.navigation++;tab.status?.remove();closeBrowser(tab.element);tab.element?.remove();browserTabs.splice(index,1);
+  if(!wasActive){renderBrowserTabs();syncBrowserTabView();return;}
+  activeTab=null;proxyElement=null;
   if(browserTabs.length)selectBrowserTab(browserTabs[Math.max(0,index-1)]);else {location.hash='home';renderBrowserTabs();}
 }
+
 function restoreBrowserTab(){const url=closedWebsites.at(-1);if(url&&newBrowserTab(url))closedWebsites.pop();else if(!url)toast('No closed website to reopen.');}
 const shortcutActions={
   home(){location.hash="home";},
   address(){const input=['browser','app-view'].includes(document.body.dataset.view)?$('address'):$('query');if(input.id==='query'){location.hash='home';route();}input.focus();input.select();},
   newTab:newBrowserTab,close:closeBrowserTab,restore:restoreBrowserTab,
-  reload(){control('reload',proxyElement)},back(){control('back',proxyElement)},forward(){control('forward',proxyElement)},
+  reload(){browserControl('reload')},back(){browserControl('back')},forward(){browserControl('forward')},
   select(index){selectBrowserTab(browserTabs[index])},notice:toast
 };
 installShortcuts(document,shortcutActions);
@@ -564,22 +599,24 @@ async function navigate(value) {
   }
   if(!activeTab&&!newBrowserTab())return;
   const targetTab=activeTab;targetTab.url=url;renderBrowserTabs();
-  const request = ++navigation;
+  const request = ++targetTab.navigation;
   location.hash = "browser";
   $("address").value = url;
-  let status = $("browser-stage").querySelector(".browser-status");
+  let status = targetTab.status;
   if (!status) {
     status = document.createElement("div");
     status.className = "browser-status";
+    targetTab.status = status;
     $("browser-stage").append(status);
   }
   status.textContent = "Loading...";
-  status.hidden = false;
+  targetTab.loading = true;
+  syncBrowserTabView();
   if (!proxyElement) {
     proxyElement = document.createElement("iframe");
     proxyElement.title = "Website";
     activeTab.element=proxyElement;
-    proxyElement.addEventListener("load",()=>{try{installShortcuts(targetTab.element.contentDocument,shortcutActions)}catch{};const latest=currentWebsiteUrl(targetTab.element);if(latest){targetTab.url=latest;if(activeTab===targetTab)$("address").value=latest;renderBrowserTabs();}});
+    proxyElement.addEventListener("load",()=>{try{installShortcuts(targetTab.element.contentDocument,shortcutActions)}catch{};const latest=currentWebsiteUrl(targetTab.element);if(latest){targetTab.url=latest;if(activeTab===targetTab && document.body.dataset.view==="browser")$("address").value=latest;renderBrowserTabs();}});
     proxyElement.setAttribute(
       "sandbox",
       protectionSandbox(settings),
@@ -590,14 +627,14 @@ async function navigate(value) {
   }
   try {
     await browse(url, { ...settings }, targetTab.element);
-    if (request !== navigation) return;
-    status.hidden = true;
+    if (request !== targetTab.navigation || !browserTabs.includes(targetTab)) return;
+    targetTab.loading=false;syncBrowserTabView();
   } catch (e) {
-    if (request === navigation) {
+    if (request === targetTab.navigation && browserTabs.includes(targetTab)) {
       status.replaceChildren(document.createTextNode(e.message));
       const retry = document.createElement("button");
       retry.textContent = "Try again";
-      retry.onclick = () => navigate(url);
+      retry.onclick = () => {selectBrowserTab(targetTab);void navigate(url);};
       status.append(retry);
     }
   }
@@ -610,13 +647,14 @@ $("address-form").onsubmit = (e) => {
   e.preventDefault();
   navigate($("address").value);
 };
-for (const action of ["back", "forward", "reload"])
-  $(action).onclick = () => {
-    if(document.body.dataset.view==="app-view"){
-      if(action==="reload") frames.get(location.hash.slice(1))?.contentWindow.location.reload();
-      else history[action]();
-    }else control(action,proxyElement);
-  };
+$('new-tab-search').onsubmit = event => {event.preventDefault();void navigate($('new-tab-query').value);};
+function browserControl(action){
+  if(document.body.dataset.view==="app-view"){
+    if(action==="reload") frames.get(location.hash.slice(1))?.contentWindow.location.reload();
+    else history[action]();
+  }else control(action,proxyElement);
+}
+for (const action of ["back", "forward", "reload"]) $(action).onclick=()=>browserControl(action);
 $("close-browser").onclick = closeBrowserTab;
 $("browser-home").onclick=()=>{location.hash="home";};
 addEventListener("keydown", (e) => {
@@ -1033,21 +1071,11 @@ addEventListener("message", async (event) => {
 });
 
 const appIcons = {
-  "link-checker": "link-checker.svg",
-  "link-generator": "link-generator.svg",
-  "jsdelivr-publisher": "jsdelivr-publisher.svg",
-  "api-keys": "api-keys.svg",
-  "code-studio": "code-studio.svg",
-  "youtube.com": "shortcut-youtube.svg",
-  games: "dock-controller.png",
-  "nyx-chat": "chat.svg",
-  nyxify: "shortcut-nyxify.svg",
-  "duck.ai": "duck-ai-logo.png",
-  "nyx-ai": "shortcut-nyx-ai.svg",
-  "nyx-movies": "nyx-movies.svg",
-  "fmhy.net": "theatre-masks.svg",
-  "tiktok.com": "tiktok-logo.png",
-  "animex.one": "theatre-masks.svg",
+  'link-checker':'checker','link-generator':'link','jsdelivr-publisher':'publisher',
+  'api-keys':'key','code-studio':'code','youtube.com':'youtube',games:'games',
+  'nyx-chat':'chat',nyxify:'music','duck.ai':'sparkle','nyx-ai':'ai',
+  'nyx-movies':'movies','fmhy.net':'movies','tiktok.com':'music','animex.one':'media',
+  'cloud-gaming':'cloud'
 };
 const fallbackApps = [
   ["nyx-ai", "nyx-ai", "AI", "nyx://ai"],
@@ -1103,11 +1131,11 @@ function renderApps(apps) {
       button.title = name;
       button.setAttribute("aria-label", name);
       if (internal) button.dataset.route = internal;
-      const image = document.createElement("img");
-      image.src =
-        "/assets/icons/" + (appIcons[app.icon] || "nyx-monogram-small.png");
-      image.alt = "";
-      image.loading = "lazy";
+      const image = document.createElementNS('http://www.w3.org/2000/svg','svg');
+      const icon = appIcons[app.icon] || ({cloud:'cloud',links:'link',api:'key'}[internal]) || internal || 'apps';
+      image.setAttribute('viewBox','0 0 24 24');image.setAttribute('aria-hidden','true');
+      image.classList.add('app-symbol');image.dataset.icon=icon;
+      image.innerHTML=nyxIcons[icon] || nyxIcons.apps;
       const label = document.createElement("span");
       label.textContent = name;
       button.append(image, label);

@@ -1,4 +1,4 @@
-import {requireProviderStep} from "./provider-step.mjs";
+import {loginProviderAccount} from "./provider-account.mjs";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { spawn } from "node:child_process";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
@@ -87,7 +87,7 @@ function replaceOnce(source, find, replacement, label) {
 
 function buildRuntimeSource(source, config) {
   let output = source;
-  output = replaceOnce(output, `const { randomUUID, createDecipheriv } = require("crypto");`, `const { randomUUID, createDecipheriv, createHmac } = require("crypto");`, "TURN credential crypto");
+  output = replaceOnce(output, `const { randomUUID, createDecipheriv } = require("crypto");`, `const { randomUUID, createDecipheriv, createHmac, createHash } = require("crypto");`, "TURN credential crypto");
   output = replaceOnce(output, "const PORT = 3001;", `const PORT = ${config.port};
 
 function nyxTurnIceServer(sessionId) {
@@ -111,212 +111,25 @@ function nyxTurnIceServer(sessionId) {
   output = replaceOnce(output, "const MAX_SESSION_SECONDS = 19 * 60;", `const MAX_SESSION_SECONDS = ${config.maxSessionSeconds};`, "session cap");
   output = replaceOnce(output, "const POOL_TARGET = 5;", `const POOL_TARGET = ${config.poolTarget};`, "idle account pool");
 
-  output = replaceOnce(
-    output,
-    `async function getVerificationCode(mailJwt, maxRetries = 30) {
-  const headers = {
-    Authorization: \`Bearer \${mailJwt}\`,
-    "Content-Type": "application/json",
-  };
-  for (let i = 0; i < maxRetries; i++) {
-    await new Promise((r) => setTimeout(r, 3000));
-    try {
-      const res = await fetchWithTimeout("https://api.mail.tm/messages?page=1", {
-        headers,
-      });
-      const data = await res.json();
-      if (data["hydra:member"]?.length > 0) {
-        const msgId = data["hydra:member"][0].id;
-        const full = await (
-          await fetchWithTimeout(\`https://api.mail.tm/messages/\${msgId}\`, {
-            headers,
-          })
-        ).json();
-        const match = (full.text || full.html || "")
-          .replace(/<[^>]*>/g, "")
-          .match(/\\b\\d{6}\\b/);
-        if (match) return match[0];
-      }
-    } catch {}
-  }
-  throw new Error("Timeout getting verification code");
-}`,
-    `async function getVerificationCode(mailJwt, maxRetries = 60) {
-  const headers = {
-    Authorization: \`Bearer \${mailJwt}\`,
-    "Content-Type": "application/json",
-  };
-  for (let i = 0; i < maxRetries; i++) {
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    try {
-      const res = await fetchWithTimeout("https://api.mail.tm/messages?page=1", { headers });
-      if (!res.ok) continue;
-      const data = await res.json();
-      const messages = Array.isArray(data["hydra:member"]) ? data["hydra:member"].slice(0, 6) : [];
-      for (const message of messages) {
-        const msgId = String(message?.id || "");
-        if (!msgId) continue;
-        const fullResponse = await fetchWithTimeout(\`https://api.mail.tm/messages/\${msgId}\`, { headers });
-        if (!fullResponse.ok) continue;
-        const full = await fullResponse.json();
-        const text = [full.subject, full.intro, full.text, ...(Array.isArray(full.html) ? full.html : [full.html])]
-          .filter(Boolean)
-          .join(" ")
-          .replace(/<[^>]*>/g, " ")
-          .replace(/&nbsp;|&#160;/gi, " ")
-          .replace(/\\s+/g, " ");
-        const match = text.match(/(?:^|\\D)(\\d{6})(?:\\D|$)/);
-        if (match) return match[1];
-      }
-    } catch {}
-  }
-  throw new Error("Timeout getting verification code");
-}`,
-    "reliable mailbox verification parsing"
-  );
-
-  output = replaceOnce(
-    output,
-    `  const domainData = await (
-    await fetchWithTimeout("https://api.mail.tm/domains")
-  ).json();
-  if (!domainData["hydra:member"]?.length)
-    throw new Error("No Mail.tm domains available");
-  const domain = domainData["hydra:member"][0].domain;
-
-  const mailUser = \`rcn_\${Math.random().toString(36).substring(2, 11)}\`;
-  const email = \`\${mailUser}@\${domain}\`;
-  const mailPassword = generatePassword();
-  const raccoonPassword = generatePassword();
-  const sn = generateSN();
-
-  const regRes = await fetchWithTimeout("https://api.mail.tm/accounts", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ address: email, password: mailPassword }),
-  });
-  if (!regRes.ok) throw new Error("Failed to register Mail.tm mailbox");
-
-  const tokenRes = await fetchWithTimeout("https://api.mail.tm/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ address: email, password: mailPassword }),
-  });
-  if (!tokenRes.ok) throw new Error("Failed to get Mail.tm token");
-  const { token: mailJwt } = await tokenRes.json();`,
-    `  const domainResponse = await fetchWithTimeout("https://api.mail.tm/domains?page=1");
-  if (!domainResponse.ok) throw new Error("Mail.tm domains are unavailable");
-  const domainData = await domainResponse.json();
-  const domains = (Array.isArray(domainData["hydra:member"]) ? domainData["hydra:member"] : [])
-    .map(entry => String(entry?.domain || "").trim().toLowerCase())
-    .filter(domain => /^[a-z0-9.-]+$/.test(domain));
-  if (!domains.length) throw new Error("No Mail.tm domains available");
-
-  let email = "";
-  let mailJwt = "";
-  const raccoonPassword = generatePassword();
-  const sn = generateSN();
-  const mailboxAttempts = Math.min(12, Math.max(4, domains.length * 3));
-  for (let attempt = 0; attempt < mailboxAttempts && !mailJwt; attempt++) {
-    const domain = domains[attempt % domains.length];
-    const mailUser = \`rcn_\${Math.random().toString(36).substring(2, 12)}\`;
-    const candidateEmail = \`\${mailUser}@\${domain}\`;
-    const mailPassword = generatePassword();
-    try {
-      const regRes = await fetchWithTimeout("https://api.mail.tm/accounts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address: candidateEmail, password: mailPassword }),
-      });
-      if (!regRes.ok) {
-        if (regRes.status === 429) await new Promise(resolve => setTimeout(resolve, 1250 + attempt * 250));
-        continue;
-      }
-      const tokenRes = await fetchWithTimeout("https://api.mail.tm/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address: candidateEmail, password: mailPassword }),
-      });
-      if (!tokenRes.ok) continue;
-      const tokenPayload = await tokenRes.json();
-      if (!tokenPayload?.token) continue;
-      email = candidateEmail;
-      mailJwt = tokenPayload.token;
-    } catch {
-      await new Promise(resolve => setTimeout(resolve, 500 + attempt * 150));
-    }
-  }
-  if (!email || !mailJwt) throw new Error("Failed to prepare a Mail.tm mailbox");`,
-    "resilient mailbox domain rotation"
-  );
+  // Remove the rejected disposable-mailbox flow from the generated runtime.
+  const accountStart = output.indexOf("async function getVerificationCode(");
+  const accountEnd = output.indexOf("function gameHeaders(token)", accountStart);
+  if (accountStart < 0 || accountEnd < 0) throw new Error("Pinned provider account section not found.");
+  output = output.slice(0, accountStart) + `
+const POOL_TARGET = 0;
+async function fillPool() {}
+async function createAccount() {
+  const email = String(process.env.STRATUS_PROVIDER_EMAIL || "").trim();
+  const password = String(process.env.STRATUS_PROVIDER_PASSWORD || "");
+  const sn = createHash("sha256").update(email.toLowerCase()).digest("hex").slice(0,32);
+  return loginProviderAccount({email,password,sn}, raccoonFetch);
+}
+` + output.slice(accountEnd);
 
   output = replaceOnce(output,
-    '  await raccoonFetch("/users/sendEmail", {',
-    '  const verificationResponse = await raccoonFetch("/users/sendEmail", {',
-    "verification response capture");
-  output = replaceOnce(output,
-    '  const code = await getVerificationCode(mailJwt);',
-    '  await requireProviderStep(verificationResponse, "the verification email request");\n  const code = await getVerificationCode(mailJwt);',
-    "verification acceptance before mailbox polling");
-  output = replaceOnce(output,
-    '  await raccoonFetch("/users/emailRegister", {',
-    '  const registrationResponse = await raccoonFetch("/users/emailRegister", {',
-    "registration response capture");
-  output = replaceOnce(output,
-    '  const loginRes = await raccoonFetch("/users/emailLogin", {',
-    '  await requireProviderStep(registrationResponse, "account registration");\n  const loginRes = await raccoonFetch("/users/emailLogin", {',
-    "registration acceptance before login");
-
-  output = replaceOnce(
-    output,
-    `let poolFilling = false;`,
-    `let poolFilling = false;\nlet poolFillPromise = null;\nlet poolRetryTimer = null;\nlet poolRetryDelayMs = 5000;`,
-    "shared account-pool preparation"
-  );
-  output = replaceOnce(
-    output,
-    `async function fillPool() {`,
-    `async function fillPoolWork() {`,
-    "account-pool worker"
-  );
-  output = replaceOnce(
-    output,
-    `        pool.push(acc);
-        logSys(chalk.gray(\`pool: ready (\${pool.length}/\${POOL_TARGET})\`));
-      } catch (e) {
-        logSys(chalk.red(\`pool: fill error — \${e.message}\`));
-        break;`,
-    `        pool.push(acc);
-        poolRetryDelayMs = 5000;
-        logSys(chalk.gray(\`pool: ready (\${pool.length}/\${POOL_TARGET})\`));
-      } catch (e) {
-        logSys(chalk.red(\`pool: fill error - \${e.message}\`));
-        if (!poolRetryTimer && pool.length < POOL_TARGET) {
-          const delay = poolRetryDelayMs;
-          poolRetryDelayMs = Math.min(120000, Math.round(poolRetryDelayMs * 1.8));
-          poolRetryTimer = setTimeout(() => {
-            poolRetryTimer = null;
-            fillPool().catch(() => {});
-          }, delay);
-          poolRetryTimer.unref?.();
-        }
-        break;`,
-    "prepared-account refill backoff"
-  );
-  output = replaceOnce(
-    output,
-    `async function createAccount() {\n  if (pool.length > 0) {\n    const acc = pool.shift();\n    logSys(chalk.gray(\`pool: served account (\${pool.length} remaining)\`));\n    fillPool().catch(() => {});\n    return acc;\n  }\n  logSys(chalk.gray("pool: miss — creating account on demand"));\n  const acc = await createAccountRaw();\n  fillPool().catch(() => {});\n  return acc;\n}`,
-    `function fillPool() {\n  if (poolFillPromise) return poolFillPromise;\n  poolFillPromise = fillPoolWork().finally(() => {\n    poolFillPromise = null;\n  });\n  return poolFillPromise;\n}\n\nasync function createAccount() {\n  if (pool.length > 0) {\n    const acc = pool.shift();\n    logSys(chalk.gray(\`pool: served account (\${pool.length} remaining)\`));\n    fillPool().catch(() => {});\n    return acc;\n  }\n  if (poolFillPromise) {\n    logSys(chalk.gray("pool: waiting for prepared account"));\n    await poolFillPromise;\n    if (pool.length > 0) {\n      const acc = pool.shift();\n      logSys(chalk.gray(\`pool: served account (\${pool.length} remaining)\`));\n      fillPool().catch(() => {});\n      return acc;\n    }\n  }\n  logSys(chalk.gray("pool: miss — creating account on demand"));\n  const acc = await createAccountRaw();\n  fillPool().catch(() => {});\n  return acc;\n}`,
-    "account-pool launch coordination"
-  );
-
-  output = replaceOnce(
-    output,
-    `  const loginRes = await raccoonFetch("/users/emailLogin", {\n    method: "POST",\n    headers: h,\n    body: new URLSearchParams({ email, password: raccoonPassword, ...base }),\n  });\n  const loginData = await loginRes.json();`,
-    `  const loginOptions = {\n    method: "POST",\n    headers: h,\n    body: new URLSearchParams({ email, password: raccoonPassword, ...base }),\n  };\n  let loginRes;\n  let loginData;\n  for (let attempt = 0; attempt < 2; attempt++) {\n    try {\n      loginRes = await raccoonFetch("/users/emailLogin", loginOptions);\n      loginData = await loginRes.json();\n      break;\n    } catch (error) {\n      if (attempt === 1) throw error;\n      logSys(chalk.gray("account login response interrupted - retrying"));\n      await new Promise(resolve => setTimeout(resolve, 750));\n    }\n  }`,
-    "provider login response retry"
-  );
-
+    '  const { site, apiKey } = req;',
+    '  if (!process.env.STRATUS_PROVIDER_EMAIL?.trim() || !process.env.STRATUS_PROVIDER_PASSWORD) return res.status(503).json({ error: "Cloud Gaming needs a configured provider account. Ask the owner to finish setup." });\n  const { site, apiKey } = req;',
+    "provider account preflight");
   output = replaceOnce(
     output,
     `  } catch (e) {\n    releaseAccountSlot(apiKey);\n    push({ status: "error", error: e.message });\n    killSession(uuid, "creation_error");\n  }`,
@@ -408,7 +221,7 @@ function nyxTurnIceServer(sessionId) {
     `let shuttingDown = false;\nfunction shutdown(signal) {\n  if (shuttingDown) return;\n  shuttingDown = true;\n  logSys(chalk.gray(\`shutdown: \${signal}\`));\n  const stops = [...sessions.keys()].map(uuid => killSession(uuid, "service_shutdown"));\n  Promise.allSettled(stops).finally(() => httpServer.close(() => process.exit(0)));\n  setTimeout(() => process.exit(1), 10_000).unref();\n}\nprocess.once("SIGTERM", () => shutdown("SIGTERM"));\nprocess.once("SIGINT", () => shutdown("SIGINT"));\n\nhttpServer.listen(PORT, "127.0.0.1", () => {`,
     "loopback binding and graceful shutdown"
   );
-  return requireProviderStep.toString() + "\n" + output;
+  return loginProviderAccount.toString() + "\n" + output;
 }
 
 function buildRuntimeEmbed(source) {
@@ -801,10 +614,10 @@ async function prepareRuntime() {
     publicOrigin: origin,
     sourceUrl: httpsSourceUrl(),
     port: boundedInteger("STRATUS_PORT", 3001, 1024, 65_535),
-    maxConcurrentSessions: boundedInteger("STRATUS_MAX_CONCURRENT_SESSIONS", 4, 1, 12),
+    maxConcurrentSessions: 1, // One configured provider account cannot run concurrent games.
     maxSessionSeconds: boundedInteger("STRATUS_MAX_SESSION_SECONDS", 1_140, 60, 1_140),
     createTimeoutMs: boundedInteger("STRATUS_CREATE_TIMEOUT_MS", 180_000, 60_000, 300_000),
-    poolTarget: boundedInteger("STRATUS_ACCOUNT_POOL_TARGET", 1, 0, 2),
+    poolTarget: 0,
     perMinute: boundedInteger("STRATUS_LIMIT_PER_MINUTE", 4, 1, 30),
     perHour: boundedInteger("STRATUS_LIMIT_PER_HOUR", 20, 1, 300),
     perDay: boundedInteger("STRATUS_LIMIT_PER_DAY", 80, 1, 2_000),

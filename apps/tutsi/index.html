@@ -120,7 +120,12 @@
           ></button>
         </div>
         <div id="browser-tabs" role="tablist" aria-label="Website tabs"></div>
-        <div id="browser-stage"></div>
+        <div id="browser-stage">
+          <section id="browser-new-tab" hidden aria-label="New tab">
+            <img src="/apps/tutsi/icon.png?v=2" alt="" width="64" height="64">
+            <h1>tutsi math.</h1>
+            <form id="new-tab-search"><input id="new-tab-query" type="text" aria-label="Search the web or enter a URL" placeholder="Search the web or enter a URL" autocomplete="off"><button type="submit" aria-label="Search">&#8594;</button></form>
+          </section></div>
       </section>
       <section id="app-view" class="view app-view" hidden>
         <div id="app-host"></div>

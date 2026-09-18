@@ -1,3 +1,10 @@
+## Tutsi wizard and shared AI verification (2026-09-17)
+
+- Wizard now has six steps: theme, color, background, tab, preferences, and blocker. Theme/color/background/search/filter controls use visual buttons; only the tab preset keeps its dropdown. Wider desktop layout and a compact mobile layout preserve draft previews, keyboard focus, reduced motion, first-visit behavior, and saved preferences.
+- Final step requires a filter choice or explicit skip. Skipping saves an unset filter labeled "Choose your blocker" in Settings; dismissing the whole wizard preserves an existing manual filter. No filter is guessed from a skipped choice.
+- Tutsi embeds the same AI application and uses the same authenticated UID allowance ledger as Nyx. No duplicate allowance was added. Verified the two-image Nano Banana limit per shared 14-day period, owner exemption, token pool resets, access policy, priority, and backend accounting using fixtures.
+- Local wizard desktop/mobile persistence/skip tests, AI suites, VPS build and deployment checks passed. User authorized push and deployment; production verification follows the release.
+
 ## Cloud Gaming provider failure diagnosed (2026-09-17, local follow-up)
 
 - Read-only VPS inspection confirmed Nyx, Stratus, coturn, HAProxy and Caddy active. Stratus health passes, but its recent journal repeatedly reports `Timeout getting verification code` for account-pool preparation and actual createSession requests. Failure occurs before queue/player/WebRTC, including home-network launches.

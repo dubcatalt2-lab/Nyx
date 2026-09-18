@@ -1280,13 +1280,29 @@ addEventListener('message',event=>{
 // Customization stays a draft until Save; no account or relay changes are made.
 const customize=$('customize-dialog');
 let customizeStep=0, customizeDraft, customizeTransition=0, customizeBusy=false;
-const customizeKeys={theme:'theme',accent:'accent',wallpaper:'wallpaper',tabPreset:'tab-preset',tabTitle:'tab-title',engine:'search-engine',motion:'motion',closePrevention:'close-prevention'};
+const customizeKeys={theme:'theme',accent:'accent',wallpaper:'wallpaper',tabPreset:'tab-preset',tabTitle:'tab-title',engine:'search-engine',motion:'motion',closePrevention:'close-prevention',blocker:'blocker'};
 for(const [key,id] of Object.entries(customizeKeys)){
  const control=$('customize-'+key),original=$(id);
  if(control.tagName==='SELECT'&&original)control.replaceChildren(...[...original.options].map(option=>option.cloneNode(true)));
  control.addEventListener('input',()=>{customizeDraft[key]=control.type==='checkbox'?control.checked:control.value;customizePreview();});
 }
+const customizeStepCount=customize.querySelectorAll('[data-customize-step]').length;
+const customizeChoices=['theme','accent','wallpaper','engine','blocker'];
+function renderCustomizeChoices(){
+ for(const key of customizeChoices){
+  const select=$('customize-'+key);
+  let group=select.nextElementSibling;
+  if(!group?.classList.contains('customize-choices')){group=document.createElement('div');group.className='customize-choices';group.setAttribute('role','group');group.setAttribute('aria-label',select.closest('section').querySelector('h3').textContent);select.after(group);select.hidden=true;}
+  group.replaceChildren(...[...select.options].filter(option=>key!=='blocker'||option.value&&option.value!=='auto').map(option=>{
+   const button=document.createElement('button');button.type='button';button.dataset.value=option.value;button.textContent=option.textContent;button.setAttribute('aria-pressed',String(select.value===option.value));
+   if(key==='accent'||key==='theme'){const swatch=document.createElement('span');swatch.className='customize-swatch';swatch.style.background=key==='accent'?themePalette(customizeDraft)[option.value]:themePalette({...customizeDraft,theme:option.value}).base;swatch.setAttribute('aria-hidden','true');button.prepend(swatch);}
+   button.onclick=()=>{select.value=option.value;select.dispatchEvent(new Event('input'));[...group.children].find(item=>item.dataset.value===option.value)?.focus({preventScroll:true});};return button;
+  }));
+ }
+}
 function customizePreview(){
+ renderCustomizeChoices();
+ $('customize-next').disabled=customizeStep===customizeStepCount-1&&(!customizeDraft.blocker||customizeDraft.blocker==='auto');
  tabAppearance(customizeDraft);
  const p=themePalette(customizeDraft),preview=$('customize-preview');
  for(const [key,value] of Object.entries(p))preview.style.setProperty('--'+key,value);
@@ -1299,9 +1315,10 @@ function customizePreview(){
 function showCustomizeStep(animate=false){
  customize.querySelectorAll('[data-customize-step]').forEach(el=>el.hidden=Number(el.dataset.customizeStep)!==customizeStep);
  customize.querySelectorAll('[data-step-marker]').forEach((el,i)=>{if(i===customizeStep)el.setAttribute('aria-current','step');else el.removeAttribute('aria-current');});
- $('customize-progress').textContent=`Step ${customizeStep+1} of 3`;
+ $('customize-progress').textContent=`Step ${customizeStep+1} of ${customizeStepCount}`;
  $('customize-back').hidden=customizeStep===0;
- $('customize-next').textContent=customizeStep===2?'Save changes':'Next';
+ $('customize-next').textContent=customizeStep===customizeStepCount-1?'Save changes':'Next';
+ $('customize-next').disabled=customizeStep===customizeStepCount-1&&(!customizeDraft.blocker||customizeDraft.blocker==='auto');
  const heading=customize.querySelector('[data-customize-step]:not([hidden]) h3');heading.focus({preventScroll:true});
  if(animate&&!settings.motion&&!matchMedia('(prefers-reduced-motion: reduce)').matches)heading.parentElement.animate([{opacity:0},{opacity:1}],{duration:240,easing:'ease-out'});
 }
@@ -1315,7 +1332,7 @@ async function changeCustomizeStep(delta){
  }
  if(token!==customizeTransition||!customize.open)return;
  customizeStep+=delta;showCustomizeStep(true);
- customizeBusy=false;$('customize-back').disabled=false;$('customize-next').disabled=false;
+ customizeBusy=false;$('customize-back').disabled=false;$('customize-next').disabled=customizeStep===customizeStepCount-1&&(!customizeDraft.blocker||customizeDraft.blocker==='auto');
 }
 function openCustomize(){
  customizeTransition++;customizeBusy=false;
@@ -1326,13 +1343,18 @@ function openCustomize(){
 }
 function dismissCustomize(){customizeTransition++;customizeBusy=false;try{localStorage.setItem('tutsi.customize.seen','1')}catch{}customize.close();tabAppearance();}
 $('open-customize').onclick=openCustomize;
-$('customize-dismiss').onclick=dismissCustomize;
-customize.addEventListener('cancel',event=>{event.preventDefault();dismissCustomize();});
+function skipCustomize(){if(!settings.blocker||settings.blocker==='auto'){settings.blocker='';applySettings();}dismissCustomize();}
+$('customize-dismiss').onclick=skipCustomize;
+customize.addEventListener('cancel',event=>{event.preventDefault();skipCustomize();});
 $('customize-back').onclick=()=>{void changeCustomizeStep(-1);};
-$('customize-next').onclick=()=>{
- if(customizeStep<2){void changeCustomizeStep(1);return;}
+function saveCustomize(){
  for(const key of Object.keys(customizeKeys))settings[key]=customizeDraft[key];
  applySettings();syncClosePrevention();dismissCustomize();toast('Your changes are saved.');
+}
+$('customize-skip-blocker').onclick=()=>{customizeDraft.blocker='';saveCustomize();};
+$('customize-next').onclick=()=>{
+ if(customizeStep<customizeStepCount-1){void changeCustomizeStep(1);return;}
+ saveCustomize();
 };
 try{if((!saved||Object.keys(saved).length===0)&&!localStorage.getItem('tutsi.customize.seen')&&(!location.hash||location.hash==='#home'))openCustomize();}catch{}
 

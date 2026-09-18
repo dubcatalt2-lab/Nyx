@@ -3,7 +3,7 @@
 - Wizard now has six steps: theme, color, background, tab, preferences, and blocker. Theme/color/background/search/filter controls use visual buttons; only the tab preset keeps its dropdown. Wider desktop layout and a compact mobile layout preserve draft previews, keyboard focus, reduced motion, first-visit behavior, and saved preferences.
 - Final step requires a filter choice or explicit skip. Skipping saves an unset filter labeled "Choose your blocker" in Settings; dismissing the whole wizard preserves an existing manual filter. No filter is guessed from a skipped choice.
 - Tutsi embeds the same AI application and uses the same authenticated UID allowance ledger as Nyx. No duplicate allowance was added. Verified the two-image Nano Banana limit per shared 14-day period, owner exemption, token pool resets, access policy, priority, and backend accounting using fixtures.
-- Local wizard desktop/mobile persistence/skip tests, AI suites, VPS build and deployment checks passed. User authorized push and deployment; production verification follows the release.
+- Release c883d31 pushed and deployed through the authorized VPS updater. Local and live wizard desktop/mobile persistence/skip tests passed on tutsi.nyxlearning.org and childsupport.donateyourboat.us. AI fixture suites, VPS build and deployment checks passed; Nyx, Stratus, Caddy, coturn and HAProxy are active. No real AI requests, profiles or messages were created.
 
 ## Cloud Gaming provider failure diagnosed (2026-09-17, local follow-up)
 

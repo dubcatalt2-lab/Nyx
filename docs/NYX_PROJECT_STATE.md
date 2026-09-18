@@ -1,3 +1,7 @@
+## Live verification (2026-09-17, 5ef0b79)
+
+- Pushed and deployed. Verified the real Nyx shell at the primary root, StudyReady at /studyready, Tutsi loading Example Domain through its proxy, new symbol and prior compatibility assets returning 200 with no-store, and all five VPS services active. PDF remains installed and verified at 150 pages. No default StudyReady hostnames; user will supply a new test domain later. No DNS changes.
+
 ## Proxy symbol filenames and Unicode locals (2026-09-17)
 
 - User requested special characters in filenames and code identifiers. Build now emits 48 stable @r<hash>! assets and Unicode-prefixed randomized locals where compatible. Source package names, directory paths, exported/global APIs, protocol fields and WASM contracts remain intact. Existing opaque and original filenames are retained for old tabs. This is naming only, not a filter-bypass guarantee.

@@ -1796,3 +1796,10 @@ User authorized push and VPS deployment of the AI model/14-day pool update. This
 - Application release `06a707f` was pushed to `agent/pirate-cove` and deployed successfully with `deploy/update-ovh.sh`.
 - Live browser checks passed on nyxlearning.org, tutsi.nyxlearning.org and childsupport.donateyourboat.us: maintenance=true, configured=false, visible outage notice and disabled cloud controls. Tutsi aliases also passed new-tab/close and cloud/link icon checks.
 - VPS checkout was clean at the release hash; nyx, nyx-stratus, caddy, coturn and haproxy were active. No live game session was launched. Cloud gaming remains intentionally unavailable until an authorized provider account/integration and real playback are verified.
+
+
+## Tutsi game ad protections ? September 17, 2026
+
+Tutsi now registers the Nyx game-frame protection hook, restricted to descendants of its Games app. Same-origin nested game frames receive the Nyx game resource guard and Tutsi popup/download protections. Browser rewritten pages receive the same game guard before page scripts; transport rules include the missing Nyx ad SDK hosts and paths. Protection changes reload the Games app as well as browser tabs. Third-party cross-origin direct frames remain inaccessible to host DOM injection. Existing game wrappers retain their own built-in protections.
+
+`apps/tutsi/game-ad-runtime.mjs` mirrors the standalone Nyx game guard; `scripts/test-tutsi-game-ads.mjs` enforces source parity and tests domain boundaries, nested frames, blocked fetch/scripts, SDK compatibility, popup blocking and disabled policy using fixtures. VPS build and deployment checks passed locally.

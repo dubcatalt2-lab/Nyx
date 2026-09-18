@@ -1,10 +1,11 @@
+import {gameAdSource} from "./game-ad-runtime.mjs";
 ﻿// Small, explicit host list. Match domain boundaries, never words in a query string.
-export const adHosts = ['doubleclick.net','googlesyndication.com','googleadservices.com','adnxs.com','adsrvr.org','adinplay.com','adsterra.com','popads.net','popcash.net','propellerads.com','monetag.com','exoclick.com','trafficjunky.net','taboola.com','outbrain.com','criteo.com','pubmatic.com','rubiconproject.com','amazon-adsystem.com','ads.emulatorjs.org'];
+export const adHosts = ['adtrafficquality.google','r9x.in','clickadu.com','hilltopads.net','html5.api.gamedistribution.com','gamemonetize.com','imasdk.googleapis.com','mgid.com','onclickads.net','openx.net','playwire.com','sdk.poki.com','trafficjunky.com','venatusmedia.com','doubleclick.net','googlesyndication.com','googleadservices.com','adnxs.com','adsrvr.org','adinplay.com','adsterra.com','popads.net','popcash.net','propellerads.com','monetag.com','exoclick.com','trafficjunky.net','taboola.com','outbrain.com','criteo.com','pubmatic.com','rubiconproject.com','amazon-adsystem.com','ads.emulatorjs.org'];
 export const riskyExtension = /\.(?:exe|msi|msp|scr|com|bat|cmd|ps1|vbs|vbe|wsf|wsh|jse|hta|jar|apk|appx|msix|dmg|pkg|deb|rpm|sh|crx|iso)(?:$|[?#])/i;
 export const protectionDefaults={adBlock:true,popupBlock:true,downloadBlock:true};
 export const policyFrom = settings => Object.fromEntries(Object.keys(protectionDefaults).map(key=>[key,settings[key]!==false]));
 export function isAdUrl(value) {
-  try {const host=new URL(value).hostname.toLowerCase();return adHosts.some(domain=>host===domain||host.endsWith('.'+domain));}catch{return false;}
+  try {const host=new URL(value).hostname.toLowerCase();return adHosts.some(domain=>host===domain||host.endsWith('.'+domain)) || /(?:^|\/)(?:ads?|ad[-_.]?(?:loader|manager|script)|jump[_-]gamemonetize|poki-(?:master-loader|sdk))\.(?:js|mjs)(?:$|\/)/i.test(new URL(value).pathname) || (host==='serve.app.playsaurus.com' && new URL(value).pathname.includes('/ad-campaigns/'));}catch{return false;}
 }
 export function riskyFile(value) {try{return riskyExtension.test(decodeURIComponent(String(value)))}catch{return riskyExtension.test(String(value))}}
 const notify=kind=>globalThis.dispatchEvent?.(new CustomEvent('tutsi:protection',{detail:{kind}}));
@@ -71,7 +72,46 @@ export function pageProtection(policy, riskySource) {
     (document.head||document.documentElement).append(style);
   }
 }
-export function protectionSource(policy){return `(${pageProtection.toString()})(${JSON.stringify(policyFrom(policy))},${JSON.stringify(riskyExtension.source)});`;}
+export function protectionSource(policy){return `${policy.adBlock!==false?gameAdSource:""}\n(${pageProtection.toString()})(${JSON.stringify(policyFrom(policy))},${JSON.stringify(riskyExtension.source)});`;}
 export function protectionSandbox(settings){
   return 'allow-scripts allow-same-origin allow-forms allow-downloads allow-modals allow-pointer-lock allow-presentation'+(settings.popupBlock===false?' allow-popups':'');
+}
+
+// Games call the same host hook as Nyx. Restrict it to descendants of the game app.
+export function installGameProtectionHost(getSettings, getGameFrame) {
+  window.__tutsiGameHost = true;
+  const watched = new WeakSet(), documents = new WeakSet();
+  function install(frame) {
+    if (frame?.tagName !== 'IFRAME') return false;
+    try {
+      let owner = frame.ownerDocument.defaultView;
+      const host = getGameFrame()?.contentWindow;
+      while (owner && owner !== host && owner !== window) owner = owner.parent;
+      if (!host || owner !== host) return false;
+    } catch { return false; }
+    const protect = () => {
+      try {
+        const doc = frame.contentDocument;
+        if (!doc?.documentElement) return;
+        if (getSettings().adBlock !== false) frame.contentWindow.eval(gameAdSource);
+        frame.contentWindow.eval(protectionSource({...getSettings(),adBlock:false}));
+        const scan = () => doc.querySelectorAll('iframe').forEach(install);
+        scan();
+        if (!documents.has(doc)) {
+          documents.add(doc);
+          let timer;
+          new MutationObserver(() => {
+            if (!timer) timer = setTimeout(() => {timer=0;scan()}, 50);
+          }).observe(doc.documentElement,{childList:true,subtree:true});
+        }
+      } catch {} // Cross-origin providers cannot be modified by the host.
+    };
+    if (!watched.has(frame)) {
+      watched.add(frame);
+      frame.addEventListener('load',protect);
+    }
+    protect();
+    return true;
+  }
+  window.nyxInstallGameAdProtection = install;
 }

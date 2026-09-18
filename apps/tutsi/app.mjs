@@ -1,6 +1,6 @@
 import {websiteAddress} from "./navigation.mjs";
 import {installShortcuts} from "./shortcuts.mjs";
-import {protectionSandbox} from "./protections.mjs";
+import {protectionSandbox, installGameProtectionHost} from "./protections.mjs";
 import { scanFilters, filterSignatures, identifyFilterAddress } from "./filter-detection.mjs";
 import { decorateEmbedded } from "./embedded.mjs";
 import { startClock } from "./clock.mjs";
@@ -342,6 +342,7 @@ for (const [id, key] of Object.entries({
     settings[key] = $(id).type === "checkbox" ? $(id).checked : $(id).value;
     applySettings();
     if(['adBlock','popupBlock','downloadBlock'].includes(key)){
+      const game=frames.get('games');if(game)game.src=game.src;
       for(const tab of browserTabs)if(tab.element){tab.element.setAttribute('sandbox',protectionSandbox(settings));control('reload',tab.element);}
     }
   });
@@ -415,6 +416,7 @@ const appPaths = {
   publisher: "/apps/jsdelivr-publisher/",
   api: "/apps/api-keys/",
 };
+installGameProtectionHost(()=>settings,()=>frames.get('games'));
 function appFrame(name) {
   if (frames.has(name)) return frames.get(name);
   const frame = document.createElement("iframe");

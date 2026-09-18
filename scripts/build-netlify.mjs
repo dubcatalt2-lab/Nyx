@@ -7,6 +7,7 @@ import { parse } from "acorn";
 import CleanCSS from "clean-css";
 import { minify as minifyHtml } from "html-minifier-terser";
 import { minify } from "terser";
+import {learningPage} from '../services/domain-pages/pages.mjs';
 import { buildProxyAssets } from "./build-proxy-assets.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -390,6 +391,12 @@ async function main() {
   await rm(output, { recursive: true, force: true });
   await mkdir(output, { recursive: true });
   await copyRepositoryStaticFiles();
+  // Reuse StudyReady's real lessons for the four-second startup cover.
+  const studyDir=join(output,'apps/tutsi/studyready');
+  await mkdir(studyDir,{recursive:true});
+  await writeFile(join(studyDir,'index.html'),learningPage().replaceAll('/learning/','/apps/tutsi/studyready/'));
+  for(const name of ['learning.css','learning.mjs','curriculum.mjs','secondary.mjs'])
+    await cp(join(root,'services/domain-pages',name),join(studyDir,name));
   await copyEruda();
   await copyKatex();
   await copyProxyRuntimes();

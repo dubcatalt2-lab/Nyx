@@ -1,3 +1,9 @@
+## Tutsi StudyReady startup cover (2026-09-18)
+
+- StudyReady appears on each document startup and disappears automatically four seconds after its frame loads. Internal navigation does not restart it. Trusted pointer, keyboard, wheel or touch input inside StudyReady cancels both timers and keeps the lesson page open for the current load. An eight-second fail-open bound handles stalled loading only when no interaction has occurred. No user-agent or crawler-specific behavior.
+- The production build generates the cover from the existing StudyReady lesson template and copies its four learning assets beside it. No separate curriculum, DNS, domain registry or server routing changes. Existing requested routes, saved settings and accounts stay intact.
+- First-visit customization waits for the cover to finish. Desktop/mobile fixtures verify real lesson content, timing, reload, preserved Settings route and wizard sequencing. VPS build and deployment checks passed; preview is running at localhost:9091/tutsi. Interaction fixtures additionally verify click, typing, scrolling and touch retention beyond both deadlines. User authorized push and deployment of this startup change.
+
 ## Remove expandable Browser bar (2026-09-17)
 
 - User requested removal instead of redesign and explicitly authorized push/deployment. Removed the floating handle, panel, associated styles and hover/focus handlers. Existing browser toolbar/tab strip stay inside the browser view; built-in apps retain their full viewport. Search fixes, readable address text and Alt shortcuts remain. Updated navigation/shortcut fixtures for the removed control. Pushed and deployed as dacfbf4; local build/shortcut checks and live navigation/mobile checks passed, and all five VPS services are active.

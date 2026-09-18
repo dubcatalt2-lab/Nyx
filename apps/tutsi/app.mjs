@@ -1354,6 +1354,7 @@ $('customize-next').onclick=()=>{
  if(customizeStep<customizeStepCount-1){void changeCustomizeStep(1);return;}
  saveCustomize();
 };
+await window.tutsiStartupReady;
 try{if((!saved||Object.keys(saved).length===0)&&!localStorage.getItem('tutsi.customize.seen')&&(!location.hash||location.hash==='#home'))openCustomize();}catch{}
 
 // Scroll highlighting never changes the hash or adds browser-history entries.

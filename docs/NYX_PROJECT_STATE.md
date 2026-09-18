@@ -1,3 +1,46 @@
+## StudyReady primary-domain and owner integration (2026-09-17 release)
+
+- User explicitly selected the announcement-style setup after being told it replaces the main homepage. nyxlearning.org (and www) now default to StudyReady; /nyx serves the existing Nyx shell, with /nyx/ redirected to avoid relative-asset failures. Tutsi and TURN domains are reserved and retain their routes. Everyone, including crawlers, receives the same learning content.
+- Added Owner Dashboard > StudyReady with founder-only list/add/update/remove and DNS-check endpoints. Domain/title configuration uses Firestore nyxSiteSettings/studyready transactions, defaults to the primary hostnames until first save, caches for 30 seconds, and invalidates immediately on mutation. Existing founder gate, token helper, origin checks and audit logging are reused. Staff/co-owners cannot access it.
+- Existing VPS Caddy on-demand HTTPS and hostname validation cover additional domains pointing to 15.204.93.166. No nameserver change or separate public admin port. localhost:9092 remains an isolated preview panel; production configuration is managed through the authenticated owner dashboard.
+- Bundled all StudyReady sources/tests and the previously requested four-day shared AI reset. The generated 150-page PDF is installed separately at /var/lib/nyx/studyready/textbook.pdf; scripts/build-learning-textbook.mjs regenerates it. Lessons/learning assets/textbook HTML are served by the main app from source, not an additional service.
+- Local checks passed: VPS build, 186 required-file deployment check, founder-only API/browser access, integrated domain routing and dashboard fixtures, all 24 skills/mobile/persistence, 150-page PDF, and shared AI/token/image reset suites. No real messages, profiles, or AI requests were created. User authorized production setup; live verification follows deployment.
+
+## StudyReady grades 7-12 (2026-09-17, local)
+
+- Expanded the online catalog from nine skills to 24, grouped into six suggested grade 7-12 courses with four skills each. Added signed integers, coordinate distance, slope, linear functions, systems, quadratics, distance formula, exponents, logarithms, right-triangle trig, arithmetic/geometric sequences, polynomial remainders, function composition and an explicitly labeled introductory derivative lesson.
+- Every added skill includes its objective, rule, steps, two worked examples, a common error, generated practice, hints, worked solutions and numeric/fraction checking. Existing lesson IDs and per-device progress stay intact; old course hashes map to grade sections. Counts are derived from the catalog.
+- Tested all 24 generators with randomized samples, exact known answers for the new topics, all 15 new skills in the browser, and four-skill navigation for each grade. Existing learning and domain-service fixtures passed. Rebuilt/validated the existing foundations book at exactly 150 pages; it remains available alongside the expanded online catalog. No push, deployment, or DNS changes.
+
+## Learning site redesign and 150-page textbook (2026-09-17, local)
+
+- Replaced the small lesson preview with a light classroom-style course interface: sidebar, searchable skill rows, progress bars, lesson pages and worked examples. Nine interactive skills cover number foundations, algebra and geometry. Practice supports numeric/fraction answers, feedback, hints, solutions, next questions, and per-title/device progress. Original branding/content; no simulated teacher accounts or grades.
+- Added a 150-page textbook at /textbook and /textbook.pdf. Fifteen units each include a two-session teaching plan, vocabulary/methods, examples, vector visual models, guided/independent practice, applications, reasoning, review and answer key. 360 questions total. Fraction strips, base-ten blocks, algebra tiles, number lines, grids and geometry models are code-drawn rather than generated illustrations.
+- PDF builder validates all 150 page layouts and exact PDF page count; generated file lives outside Git at ~/.nyx/domain-pages/textbook.pdf (or DOMAIN_PAGES_DATA_DIR). Copy the built file to that data directory when deploying the standalone service. No production changes were made.
+- Domain routing/security/UI fixtures and learning-site fixtures passed, including equivalent fractions, invalid inputs, retries, solution handling, completion/reload persistence, search, mobile and textbook coverage. Local server restarted on 9092/9093. Four-day AI allowance changes remain local and preserved.
+
+## Domain preview empty-state fix (2026-09-17, local)
+
+- Added an always-visible Preview lessons button beside Add domain. It opens the lesson template with the draft title without registration or DNS, including when the requested hostname is reserved. The reserved-host error now explains how to preview and why a separate hostname is needed.
+- Local service restarted on 9092/9093; preview popup/title and existing domain-service fixtures passed. No DNS or deployment changes.
+
+## Domain review instructions corrected (2026-09-17, local)
+
+- Confirmed archive.lightspeedsystems.com is retired; its current notice directs customers to Access Checker/AccessScan through the Filter Admin Portal with administrator access. Replaced the stale public lookup button with the linked Access Checker documentation and explicit access requirements.
+- Dashboard now explains the three math lessons and that hosting content does not automatically submit it for categorization. HTML is read per request, so refreshing localhost:9092 loads this correction without a restart. No deployment or DNS changes.
+
+## Manual educational domain service (2026-09-17, local)
+
+- Added an isolated dependency-free service in services/domain-pages. Local admin on localhost:9092 manages up to 100 exact hostnames, titles, previews and Caddy exports; public pages listen only on loopback:9093. Existing Nyx/Tutsi/TURN hostnames are reserved. This is local-computer/SSH-tunnel administration, not shared-account owner authentication; never expose the admin port through a public reverse proxy.
+- Domains persist atomically under ~/.nyx/domain-pages (or DOMAIN_PAGES_DATA_DIR). Same math lessons served to users and crawlers; unknown domains and application/API paths return 404. No external DNS, certificates, categorization requests, or production services are mutated automatically. Recategorization is external and not guaranteed.
+- Fixture tests passed for hostname validation, host/Origin/CSRF boundaries, persistence/restart, public/admin isolation, escaping, identical crawler content, Caddy export, UI add/remove/preview and mobile layout. Local preview started; not pushed or deployed. Pending four-day AI reset changes remain preserved separately.
+
+## Shared AI four-day reset (2026-09-17, local)
+
+- Changed the shared regular/Premium AI token and two-image allowance period from fourteen days to four days. Nyx and Tutsi continue to share the same UID ledger; owner exemption, amounts, daily protections and the separate monthly Sol Pro cap are unchanged.
+- Existing pools shorten to original start plus four days, preserving spent tokens/images until expiration. Already-expired windows reset on next access; no bulk production data mutation. Public usage descriptions now say four days.
+- Token/image rollover, previous-period migration, concurrent reservations, refunds, tier changes, owner exemption, API UI and shared AI fixture suites passed. This follow-up is local and is not deployed.
+
 ## Tutsi wizard and shared AI verification (2026-09-17)
 
 - Wizard now has six steps: theme, color, background, tab, preferences, and blocker. Theme/color/background/search/filter controls use visual buttons; only the tab preset keeps its dropdown. Wider desktop layout and a compact mobile layout preserve draft previews, keyboard focus, reduced motion, first-visit behavior, and saved preferences.

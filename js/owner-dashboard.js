@@ -275,7 +275,7 @@
               <div class="nyx-owner-quick-actions">
                 <button type="button" data-owner-online-only>${dashboardIcon("online")}Online users</button>
                 <button type="button" data-owner-export>${dashboardIcon("download")}Export page</button>
-                <button type="button" data-owner-global-apps hidden>${dashboardIcon("apps")}Manage apps</button>
+                <button type="button" data-owner-global-apps hidden>${dashboardIcon("apps")}Manage apps</button><button type="button" data-owner-studyready hidden>${dashboardIcon("apps")}StudyReady</button>
                 <button type="button" data-owner-custom-roles hidden>${dashboardIcon("users")}Custom roles</button>
                 <button type="button" data-owner-ip-bans hidden>${dashboardIcon("shield")}IP bans</button>
               </div>
@@ -582,6 +582,7 @@
         if (customRolesButton) customRolesButton.hidden = !state.access?.founder;
         const globalAppsButton = overlay.querySelector("[data-owner-global-apps]");
         if (globalAppsButton) globalAppsButton.hidden = !state.access?.founder;
+        overlay.querySelector("[data-owner-studyready]").hidden=!state.access?.founder;
         const roleFilter = overlay.querySelector('[name="role"]');
         if (roleFilter) {
           roleFilter.querySelectorAll("option[data-custom-role]").forEach(option => option.remove());
@@ -748,7 +749,7 @@
             <section class="nyx-owner-detail-grid">${detailValue("Email", user.deliverableEmail ? user.email : "No email added")}${detailValue("Firebase UID", user.uid, "uid")}${detailValue("Presence", user.online ? "Online now" : "Offline")}${detailValue("Last sign-in", dateLabel(user.lastSignInAt))}${detailValue("Last active", dateLabel(user.lastActiveAt))}${capabilities.canManageNetworkBans ? detailValue("Last seen IP", user.lastSeenIp || "Not recorded yet", "ip-address") : ""}${capabilities.canManageNetworkBans && user.lastSeenIp ? detailValue("IP last seen", dateLabel(user.lastSeenIpAt)) : ""}${detailValue("Email verified", user.deliverableEmail ? (user.emailVerified ? "Verified" : "Not verified") : "Not applicable · username-only")}</section>
             <section class="nyx-owner-detail-section nyx-owner-profile-management"><h3>Public profile</h3>${ownerProfilePreview(user)}${capabilities.canEditProfile ? `<details><summary>Edit this profile</summary>${ownerProfileEditor(user)}</details>` : ""}</section>
             ${accessSection}
-            ${capabilities.canSetAiLimit ? `<section class="nyx-owner-detail-section"><h3>AI allowance</h3><p>One shared pool across accessible models: 10,000 tokens for regular users or 50,000 for Premium, resetting every 14 days from first use. Owner access is exempt, except for the separate 100,000-token monthly Sol Pro cap.</p></section>` : ""}
+            ${capabilities.canSetAiLimit ? `<section class="nyx-owner-detail-section"><h3>AI allowance</h3><p>One shared pool across accessible models: 10,000 tokens for regular users or 50,000 for Premium, resetting every 4 days from first use. Owner access is exempt, except for the separate 100,000-token monthly Sol Pro cap.</p></section>` : ""}
             ${accountActionsSection}
             ${recentActivitySection}
           </div>`;
@@ -767,6 +768,25 @@
       } catch (error) {
         drawer.innerHTML = `<div class="nyx-owner-error"><strong>User details could not load</strong><span>${esc(error.message)}</span><button type="button" data-owner-drawer-close>Close</button></div>`;
       }
+    }
+
+    let studyReadyData={domains:[],targetIps:[]};
+    function renderStudyReady(){
+      drawer.innerHTML=`<header class="nyx-owner-global-app-header"><div><span>${dashboardIcon("apps")}</span><div><h2>StudyReady domains</h2><p>Manage the learning site on your domains.</p></div></div><button type="button" data-owner-drawer-close aria-label="Close StudyReady">${dashboardIcon("close")}</button></header><div class="nyx-owner-drawer-scroll nyx-owner-global-app-drawer"><section class="nyx-owner-detail-section"><p><a href="/studyready" target="_blank" rel="noopener">Preview StudyReady</a> &middot; <a href="/textbook.pdf" target="_blank" rel="noopener">Textbook PDF</a></p><p>Nyx stays available at <a href="/nyx" target="_blank" rel="noopener">/nyx</a>. These domains show the same learning pages to every visitor.</p><h3>Add or update a domain</h3><form class="nyx-owner-global-app-form" data-owner-studyready-form><label>Domain<input name="hostname" required maxlength="253" placeholder="learn.example.com"></label><label>Page title<input name="title" required maxlength="80" value="StudyReady"></label><button type="submit">Save domain</button></form><p class="nyx-owner-action-note">Point the domain's A record to ${esc(studyReadyData.targetIps.join(' or ')||'your VPS address')}. New domains need working DNS before HTTPS can be issued. Existing sites at the same hostname will use StudyReady as their homepage.</p></section><section class="nyx-owner-detail-section"><h3>Configured domains</h3>${studyReadyData.domains.map(row=>`<article class="nyx-owner-detail-section"><strong>${esc(row.hostname)}</strong><p>${esc(row.title)}</p><div class="nyx-owner-detail-actions"><a href="https://${esc(row.hostname)}/" target="_blank" rel="noopener">Open site</a><button type="button" data-studyready-edit="${esc(row.hostname)}">Edit title</button><button type="button" data-studyready-check="${esc(row.hostname)}">Check DNS</button><button class="danger" type="button" data-studyready-remove="${esc(row.hostname)}">Remove</button></div></article>`).join('')||'<p>No domains configured.</p>'}<p data-studyready-status role="status"></p></section><section class="nyx-owner-detail-section"><h3>Category reviews</h3><p>Publishing lessons does not automatically change a filter category. Lightspeed review tools require administrator access.</p><a href="https://help.lightspeedsystems.com/s/article/kb-4019650636-lightspeed-filter---policies---verifying-access-and-troubleshooting" target="_blank" rel="noopener">Access Checker instructions</a></section></div>`;
+    }
+    async function openStudyReady(){
+      drawer.hidden=false;drawer.classList.add('show');state.selectedUser=null;state.selectedCapabilities=null;
+      drawer.innerHTML='<div class="nyx-owner-drawer-loading">Loading StudyReady...</div>';
+      try{studyReadyData=await api('/api/owner-dashboard/studyready');renderStudyReady();}catch(error){drawer.innerHTML=`<div class="nyx-owner-error"><strong>StudyReady could not load</strong><span>${esc(error.message)}</span><button type="button" data-owner-drawer-close>Close</button></div>`;}
+    }
+    async function studyReadyAction(button,action,hostname){
+      if(action==='remove'&&!confirm(`Remove StudyReady from ${hostname}? Its homepage will return to the site's existing routing.`))return;
+      button.disabled=true;
+      try{
+        const result=await api(`/api/owner-dashboard/studyready/${encodeURIComponent(hostname)}${action==='check'?'/check':''}`,{method:action==='check'?'POST':'DELETE'});
+        if(action==='check'){drawer.querySelector('[data-studyready-status]').textContent=result.matches?`${hostname} resolves to this VPS. HTTPS is prepared on its first visit.`:`${hostname} currently resolves to ${result.resolvedIps.join(', ')||'no addresses'}. Set its A record to ${result.targetIps.join(' or ')}. A CDN-proxied record may hide the origin IP.`;}
+        else{studyReadyData=result;renderStudyReady();notify('StudyReady domain removed.');}
+      }catch(error){notify(error.message,'error');}finally{if(button.isConnected)button.disabled=false;}
     }
 
     function publishGlobalApps() {
@@ -1078,6 +1098,11 @@
     }
 
     function onClick(event) {
+      if(event.target.closest('[data-owner-studyready]'))return void openStudyReady();
+      const studyEdit=event.target.closest('[data-studyready-edit]');
+      if(studyEdit){const row=studyReadyData.domains.find(item=>item.hostname===studyEdit.dataset.studyreadyEdit);const form=drawer.querySelector('[data-owner-studyready-form]');form.elements.hostname.value=row.hostname;form.elements.title.value=row.title;form.elements.title.focus();return;}
+      const studyCheck=event.target.closest('[data-studyready-check]');if(studyCheck)return void studyReadyAction(studyCheck,'check',studyCheck.dataset.studyreadyCheck);
+      const studyRemove=event.target.closest('[data-studyready-remove]');if(studyRemove)return void studyReadyAction(studyRemove,'remove',studyRemove.dataset.studyreadyRemove);
       if(event.target.closest("[data-owner-tube-check]")) return void loadTubeStatus(true);
       if (event.target === overlay || event.target.closest("[data-owner-close]")) return destroy();
       if (event.target.closest("[data-owner-refresh]")) return void load();
@@ -1245,6 +1270,8 @@
     }
 
     function onSubmit(event) {
+      const studyForm=event.target.closest('[data-owner-studyready-form]');
+      if(studyForm){event.preventDefault();if(!studyForm.reportValidity())return;const button=studyForm.querySelector('[type=submit]');button.disabled=true;const values=new FormData(studyForm);void api('/api/owner-dashboard/studyready',{method:'POST',body:JSON.stringify({hostname:values.get('hostname'),title:values.get('title')})}).then(result=>{studyReadyData=result;renderStudyReady();notify('StudyReady domain saved.');}).catch(error=>notify(error.message,'error')).finally(()=>{if(button.isConnected)button.disabled=false;});return;}
       const globalAppForm = event.target.closest("[data-owner-global-app-form]");
       if (globalAppForm) {
         event.preventDefault();

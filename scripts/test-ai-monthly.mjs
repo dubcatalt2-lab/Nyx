@@ -2,7 +2,7 @@
 import {createHash} from 'node:crypto';
 import {createAiAllowance,aiAllowanceConfig,aiTokenPoolUsage} from '../lib/ai-allowance.mjs';
 import {memoryFirestore} from './test-ai-allowance.mjs';
-const db=memoryFirestore();let time=Date.parse('2026-09-25T12:00:00Z');
+const db=memoryFirestore();let time=Date.parse('2026-09-29T12:00:00Z');
 const a=createAiAllowance({db,config:aiAllowanceConfig({}),now:()=>time});
 const member={uid:'member',createdAt:Date.parse('2026-08-01T00:00:00Z')},premium={...member,uid:'premium',premium:true},owner={...member,uid:'owner',owner:true};
 const path=(actor,prefix='models')=>'nyxAiAllowance/'+prefix+'-'+createHash('sha256').update(actor.uid).digest('hex');
@@ -16,8 +16,8 @@ for(const actor of [member,premium]){
  for(const model of [gemini,deepseek,qwen,'inception/mercury-2.5',...(actor.premium?[luna]:[])])await assert.rejects(call(actor,model),/shared (10,000|50,000)-token pool/);
 }
 const firstReset=db.records.get(path(member)).pool.resetAt;
-assert.equal(firstReset,Date.parse('2026-10-09T12:00:00Z'),'Regular period is 14 days from first request');
-assert.equal(db.records.get(path(premium)).pool.resetAt-db.records.get(path(premium)).pool.start,14*86400000);
+assert.equal(firstReset,Date.parse('2026-10-03T12:00:00Z'),'Regular period is 4 days from first request');
+assert.equal(db.records.get(path(premium)).pool.resetAt-db.records.get(path(premium)).pool.start,4*86400000);
 time=Date.parse('2026-10-01T00:01:00Z');
 await assert.rejects(call(member,qwen),/shared (10,000|50,000)-token pool/);
 await assert.rejects(call(premium,luna),/shared 50,000-token pool/);
@@ -26,12 +26,12 @@ await call({...member,premium:true},luna);assert.equal(db.records.get(path(membe
 await assert.rejects(call(member,qwen),/shared 10,000-token pool/);
 assert.equal(db.records.get(path(member)).pool.resetAt,firstReset,'Changing tier does not refill or move running pool');
 time=firstReset-1;const s=await a.begin(member);await assert.rejects(a.reserve(s,'shared',payload(qwen)),/shared (10,000|50,000)-token pool/);await a.finish(s);
-time=firstReset;await call(member,qwen);assert.equal(db.records.get(path(member)).pool.used,100);assert.equal(db.records.get(path(member)).pool.resetAt,firstReset+14*86400000);
-time=premiumReset;await call(premium,luna);assert.equal(db.records.get(path(premium)).pool.used,100,'Premium resets after 14 days');
-// Reservations and settlement remain correct across calendar boundaries within a fortnight.
+time=firstReset;await call(member,qwen);assert.equal(db.records.get(path(member)).pool.used,100);assert.equal(db.records.get(path(member)).pool.resetAt,firstReset+4*86400000);
+time=premiumReset;await call(premium,luna);assert.equal(db.records.get(path(premium)).pool.used,100,'Premium resets after 4 days');
+// Reservations and settlement remain correct across calendar boundaries within a four-days.
 const crossing={...member,uid:'crossing'};time=Date.parse('2026-10-31T23:59:59Z');const pending=await a.begin(crossing),r=await a.reserve(pending,'shared',payload(deepseek));await a.finish(pending);
-time=Date.parse('2026-11-01T00:00:01Z');await call(crossing,gemini);await a.settle(r,null,true);await a.settle(r,null,true);assert.equal(db.records.get(path(crossing)).pool.used,100,'Cross-month refunds apply once to same fortnight');
-// An old response cannot debit the next fortnight.
+time=Date.parse('2026-11-01T00:00:01Z');await call(crossing,gemini);await a.settle(r,null,true);await a.settle(r,null,true);assert.equal(db.records.get(path(crossing)).pool.used,100,'Cross-month refunds apply once to same four-days');
+// An old response cannot debit the next four-days.
 time=db.records.get(path(crossing)).pool.resetAt-1000;const old=await a.begin(crossing),oldR=await a.reserve(old,'shared',payload(qwen));await a.finish(old);
 time+=2000;await call(crossing,qwen);await a.settle(oldR,null,true);assert.equal(db.records.get(path(crossing)).pool.used,100);
 const migration={...premium,uid:'migration'};db.records.set(path(migration,'premium'),{month:'2026-11',tokens:4000,legacyTokens:0,modelTokens:{luna:2000,gemini:2000}});db.records.set(path(migration),{month:'2026-11',tokens:{[deepseek]:1000}});
@@ -42,4 +42,12 @@ const one=await a.begin(race),two=await a.begin({...race,apiVerified:true});
 const results=await Promise.allSettled([a.reserve(one,'shared',payload(gemini)),a.reserve(two,'shared',payload(qwen))]);assert.equal(results.filter(r=>r.status==='fulfilled').length,1,'Different models/API sessions cannot double-spend pool');
 for(const result of results)if(result.status==='fulfilled')await a.settle(result.value,null,true);await a.finish(one);await a.finish(two);
 assert.equal(aiTokenPoolUsage(db.records.get(path(race)),{},race,time).remaining,1500);
-console.log('PASS: shared cross-model pools, 14-day regular reset, 14-day Premium reset, tier changes, cross-month settlement, refunds, legacy migration, owner exemption and concurrent API/chat reservations');
+console.log('PASS: shared cross-model pools, 4-day regular reset, 4-day Premium reset, tier changes, cross-month settlement, refunds, legacy migration, owner exemption and concurrent API/chat reservations');
+
+const start=Date.parse('2026-09-01T00:00:00Z'),day=86400000;
+const oldPool={pool:{start,resetAt:start+14*day,period:'fortnight',used:3000,images:2}};
+const migrated=aiTokenPoolUsage(oldPool,{},member,start+2*day);
+assert.equal(migrated.resetAt,start+4*day);assert.equal(migrated.used,3000);assert.equal(migrated.images,2);
+assert.equal(aiTokenPoolUsage(oldPool,{},member,start+4*day).used,0);
+assert.equal(aiTokenPoolUsage(oldPool,{},member,start+4*day).images,0);
+console.log('PASS: existing 14-day windows shorten from original start, preserve usage, and reset after four days.');

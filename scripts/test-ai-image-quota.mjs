@@ -10,7 +10,7 @@ const actor={uid:'image-member',createdAt:Date.parse('2026-08-01'),trusted:true}
 const payload=()=>({model:'google/gemini-2.5-flash-image',messages:[{role:'user',content:'A beach'}],max_tokens:100,modalities:['text','image']});
 const record=()=>db.records.get('nyxAiAllowance/models-'+createHash('sha256').update(actor.uid).digest('hex'));
 let session=await a.begin(actor);const first=await a.reserve(session,'shared',payload());await a.settle(first,{input:10,output:20},false,1);await a.finish(session,true);
-const reset=record().pool.resetAt;assert.equal(record().pool.images,1);
+const reset=record().pool.resetAt;assert.equal(reset-time,4*86400000);assert.equal(record().pool.images,1);
 a=create();session=await a.begin({...actor,premium:true});const results=await Promise.allSettled([a.reserve(session,'shared',payload()),a.reserve(session,'shared',payload())]);assert.equal(results.filter(x=>x.status==='fulfilled').length,1);assert.match(results.find(x=>x.status==='rejected').reason.message,/2-image/);assert.equal(record().pool.resetAt,reset);
 const second=results.find(x=>x.status==='fulfilled').value;await a.settle(second,{input:10,output:20},false,0);await a.settle(second,null,true);assert.equal(record().pool.images,1,'No-image refund is idempotent');await a.finish(session);
 session=await a.begin(actor);const retried=await a.reserve(session,'shared',payload());await a.settle(retried,{input:10,output:20},false,1);await a.finish(session);assert.equal(record().pool.images,2);

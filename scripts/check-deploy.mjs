@@ -2,6 +2,15 @@ import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
+  "services/domain-pages/integration.mjs",
+  "services/domain-pages/server.mjs",
+  "services/domain-pages/pages.mjs",
+  "services/domain-pages/curriculum.mjs",
+  "services/domain-pages/secondary.mjs",
+  "services/domain-pages/learning.mjs",
+  "services/domain-pages/learning.css",
+  "services/domain-pages/textbook.mjs",
+  "services/domain-pages/textbook.css",
   "apps/tutsi/index.html",
   "apps/tutsi/app.mjs",
   "apps/tutsi/protections.mjs",

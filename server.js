@@ -1,3 +1,4 @@
+import {installStudyReady} from './services/domain-pages/integration.mjs';
 import {createCloudLaunchLimit} from "./lib/cloud-launch-limit.mjs";
 import { tutsiHostnames, isTutsiHostname } from "./lib/tutsi-hostnames.mjs";
 import {installTutsiCrawlerControls} from "./lib/tutsi-crawler-controls.mjs";
@@ -407,6 +408,7 @@ const freednsRegistryCache = new Map();
 const freednsRegistryCacheTtlMs = 30 * 60_000;
 let linkGeneratorFirebasePromise;
 app.use(express.json({ limit: "2mb" }));
+
 app.use((error, _req, res, next) => {
   if (error instanceof SyntaxError && "body" in error) {
     res.status(400).json({ error: "Invalid JSON request body." });
@@ -12592,6 +12594,16 @@ app.get("/api/apps", async (_req, res) => {
     console.warn("Global app catalog is using built-in defaults:", error?.message || error);
     res.json({ apps: nyxDefaultGlobalAppsPayload() });
   }
+});
+
+installStudyReady(app,{
+  owner:nyxFounderOwnerActor,
+  db:async()=>(await linkGeneratorFirebase()).firestore,
+  sameOrigin:sameOriginRequest,
+  verifyDns:nyxCustomHostnameResolvedIps,
+  targetIps:nyxCustomHostnameTargetIps,
+  staticRoot,
+  audit:async(context,event)=>recordNyxAuditSafe(context.firebase,{actorUid:context.token.uid,actorEmail:context.token.email,...event})
 });
 
 app.get("/api/owner-dashboard/apps", async (req, res) => {

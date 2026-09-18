@@ -36,7 +36,7 @@ try {
         else {key={prefix:'n_api_fixture',label:'Test key'};return route.fulfill({json:{key:'n_api_fixture-only-secret'}});}
       }
       if(path==='/api/developer/owner/account/member'&&route.request().method()==='POST')balance+=route.request().postDataJSON().addTokens;
-      return route.fulfill({json:{uid:'member',premium,monthlyModelLimits:premium?{luna:25000,gemini:50000}:{luna:0,gemini:0},tokenPool:{limit:premium?50000:10000,used:0,remaining:premium?50000:10000,period:'fortnight',resetAt:Date.now()+14*86400000},balance,usedTokens:0,models:['google/gemini-2.5-flash-lite'],dailyRequests:20,minuteRequests:4,maxOutput:512,owner,verified,unlocked,key,configured:true,grantedTokens:1000,requestsToday:1,recent:[{at:Date.now(),model:'google/gemini-2.5-flash-lite',tokens:12,status:'completed'}]}});
+      return route.fulfill({json:{uid:'member',premium,monthlyModelLimits:premium?{luna:25000,gemini:50000}:{luna:0,gemini:0},tokenPool:{limit:premium?50000:10000,used:0,remaining:premium?50000:10000,period:'four-days',resetAt:Date.now()+4*86400000},balance,usedTokens:0,models:['google/gemini-2.5-flash-lite'],dailyRequests:20,minuteRequests:4,maxOutput:512,owner,verified,unlocked,key,configured:true,grantedTokens:1000,requestsToday:1,recent:[{at:Date.now(),model:'google/gemini-2.5-flash-lite',tokens:12,status:'completed'}]}});
     });
     await page.goto('http://nyx.test/');const frame=page.frameLocator('iframe');
     await frame.locator('#notice').filter({hasText:'Sign in to Nyx to continue.'}).waitFor();

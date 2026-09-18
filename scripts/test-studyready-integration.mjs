@@ -1,0 +1,38 @@
+import assert from 'node:assert/strict';
+import express from 'express';
+import {request as httpRequest} from 'node:http';
+import {resolve} from 'node:path';
+import {chromium} from 'playwright';
+import {readFile} from 'node:fs/promises';
+import {installStudyReady} from '../services/domain-pages/integration.mjs';
+import {memoryFirestore} from './test-ai-allowance.mjs';
+const store=memoryFirestore(),app=express();app.use(express.json());
+const owner=async req=>{if(req.get('authorization')!=='Bearer owner')throw Object.assign(new Error('Owner only'),{status:403});return {firebase:{firestore:store},token:{uid:'owner'}};};
+installStudyReady(app,{owner,db:async()=>store,sameOrigin:req=>req.get('origin')===`http://${req.get('host')}`,verifyDns:async()=>['15.204.93.166'],targetIps:()=>['15.204.93.166'],staticRoot:resolve('dist')});
+app.get('/',(_req,res)=>res.send('Existing site'));app.get('/api/owner-dashboard',(_req,res)=>res.json({access:{role:'owner',founder:true,permissions:[]},users:[],metrics:{},pagination:{}}));app.get('/api/owner-dashboard/ai-status',(_req,res)=>res.json({state:'unknown'}));app.use('/api',(_req,res)=>res.json({}));
+const server=await new Promise(resolve=>{const s=app.listen(0,'127.0.0.1',()=>resolve(s));}),origin=`http://127.0.0.1:${server.address().port}`;
+const raw=(path,host,ua)=>new Promise((resolve,reject)=>{const req=httpRequest(origin+path,{headers:{host,'user-agent':ua||'Test browser'}},res=>{const parts=[];res.on('data',part=>parts.push(part));res.on('end',()=>resolve({status:res.statusCode,body:Buffer.concat(parts).toString()}));});req.on('error',reject);req.end();});
+let browser;
+try{
+ const home=await raw('/','nyxlearning.org');assert.equal(home.status,200);assert.match(home.body,/Grade 12 Math/);assert.equal((await raw('/','nyxlearning.org','Googlebot')).body,home.body);
+ assert.equal((await raw('/','tutsi.nyxlearning.org')).body,'Existing site');assert.equal((await raw('/','other.example.org')).body,'Existing site');
+ assert.equal((await raw('/nyx','nyxlearning.org')).status,200);assert.match((await raw('/nyx','nyxlearning.org')).body,/script\.js|startup/);
+ const api=origin+'/api/owner-dashboard/studyready';assert.equal((await fetch(api)).status,403);
+ for(const role of ['co_owner','admin','member'])assert.equal((await fetch(api,{headers:{authorization:'Bearer '+role}})).status,403);
+ const headers={authorization:'Bearer owner','content-type':'application/json',origin};
+ assert.equal((await fetch(api,{method:'POST',headers:{...headers,origin:'https://evil.example'},body:'{}'})).status,403);
+ const save=body=>fetch(api,{method:'POST',headers,body:JSON.stringify(body)});
+ assert.equal((await save({hostname:'tutsi.nyxlearning.org'})).status,400);assert.equal((await save({hostname:'turn.nyxlearning.org'})).status,400);assert.equal((await save({hostname:'example.org/evil'})).status,400);
+ assert.equal((await save({hostname:'learn.example.org',title:'School <script>bad</script>'})).status,200);assert.match((await raw('/','learn.example.org')).body,/School &lt;script&gt;/);
+ assert.equal((await (await fetch(api+'/learn.example.org/check',{method:'POST',headers})).json()).matches,true);
+ await fetch(api+'/learn.example.org',{method:'DELETE',headers});assert.equal((await raw('/','learn.example.org')).body,'Existing site');
+ assert.equal(store.records.get('nyxSiteSettings/studyready').domains.length,2);
+ browser=await chromium.launch();const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];page.on('pageerror',error=>errors.push(error.message));await page.goto(origin);
+ await page.addStyleTag({path:'css/owner-dashboard.css'});await page.addStyleTag({path:'css/owner-dashboard-polish.css'});await page.addScriptTag({path:'js/owner-dashboard.js'});
+ await page.evaluate(()=>NyxOwnerDashboard.open({getToken:async()=>'owner'}));await page.locator('[data-owner-studyready]').click();await page.locator('[data-owner-studyready-form]').waitFor();
+ const form=page.locator('[data-owner-studyready-form]');await form.locator('[name=hostname]').fill('class.example.org');await form.locator('[name=title]').fill('Class Math');await form.locator('[type=submit]').click();await page.locator('[data-studyready-check="class.example.org"]').waitFor();await page.locator('[data-studyready-check="class.example.org"]').click();await page.waitForFunction(()=>document.querySelector('[data-studyready-status]')?.textContent.includes('resolves to this VPS'));
+ await page.locator('[data-studyready-edit="class.example.org"]').click();assert.equal(await form.locator('[name=title]').inputValue(),'Class Math');
+ await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+ page.on('dialog',dialog=>dialog.accept());await page.locator('[data-studyready-remove="class.example.org"]').click();await page.locator('[data-studyready-remove="class.example.org"]').waitFor({state:'detached'});assert.deepEqual(errors,[]);
+ console.log('PASS StudyReady integration: root/crawler equivalence, Nyx/Tutsi preservation, owner-only access, origin checks, reserved hosts, persistence, DNS and dashboard add/edit/remove/mobile.');
+}finally{await browser?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

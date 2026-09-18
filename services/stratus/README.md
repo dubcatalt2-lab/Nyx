@@ -29,3 +29,7 @@ To start it locally, set a throwaway development key and local public origin in 
 - `/var/lib/nyx-stratus/runtime` contains the generated API and secret-bearing `sites.json` with restricted permissions.
 
 See `deploy/stratus.env.example` for the supported environment variables.
+
+## Verification failures
+
+A healthy Stratus process does not establish that provider account preparation works. The launcher validates provider email-request and registration responses before proceeding, so rejected requests report a sanitized provider reason instead of always waiting for an email. Repeated verification-code timeouts still require checking the provider/mail delivery; longer retries do not establish a working session.

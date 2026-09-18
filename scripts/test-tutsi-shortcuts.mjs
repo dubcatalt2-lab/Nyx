@@ -14,18 +14,28 @@ try{
  // Focus inside the website: the iframe bridge must still receive shortcuts.
  await site().getByRole('heading',{name:'Example Domain'}).click();await key('Alt+t');await page.waitForURL('**#home');
  assert.equal(await page.locator('#browser-tabs [role=tab]').count(),2);
+ await key('Alt+w');await page.waitForURL('**#browser');assert.equal(await page.locator('#browser-tabs [role=tab]').count(),1,'Blank tab is removed');
+ await key('Alt+t');await page.waitForURL('**#home');
  await page.fill('#query','https://example.com/?second=1');await page.locator('#search button').click();await site().getByRole('heading',{name:'Example Domain'}).waitFor({timeout:30000});
  await site().getByRole('heading',{name:'Example Domain'}).click();await key('Alt+w');assert.equal(await page.locator('#browser-tabs [role=tab]').count(),1);
  await key('Alt+Shift+t');await site().getByRole('heading',{name:'Example Domain'}).waitFor({timeout:30000});
  assert.equal(await page.locator('#browser-tabs [role=tab]').count(),2);assert.match(await page.locator('#address').inputValue(),/second=1/);
  await key('Alt+1');assert.equal(await page.locator('#browser-tabs [role=tab][aria-selected=true]').count(),1);assert(!/second=1/.test(await page.locator('#address').inputValue()));
  await key('Alt+l');await key('Alt+a');assert.equal(await page.locator('#address').evaluate(e=>e.selectionEnd-e.selectionStart),(await page.locator('#address').inputValue()).length);
+ await key('Alt+t');await page.waitForURL('**#home');
+ await page.fill('#query','https://example.com/?closing=1');await page.locator('#search button').click();
+ await page.locator('#close-browser').click();
+ assert.equal(await page.locator('#browser-tabs [role=tab]').count(),2);
+ assert.equal(await page.locator('#browser-stage iframe').count(),2,'Closing while loading removes its frame');
  for(const app of ['movies','games','music','youtube','ai','chat']){
   await page.goto('http://localhost:9091/tutsi#'+app);const frame=page.locator('#app-host iframe:not([hidden])');await frame.waitFor();await frame.contentFrame().locator('html[data-tutsi-app]').waitFor();
   const box=await frame.boundingBox();assert(box.y>0&&box.y<90,app);assert.equal(box.height+box.y,900,app);assert.equal(await page.locator("#address").inputValue(),"tutsi://"+app);
   assert(!(await page.locator('.topbar').isVisible()));assert(!(await page.locator('#app-dock').isVisible()));
-  await frame.contentFrame().locator('body').click({position:{x:5,y:5}});await key('Alt+w');await page.waitForURL('**#home');
+  await frame.contentFrame().locator('body').click({position:{x:5,y:5}});if(app==='games')await page.locator('#close-browser').click();else await key('Alt+w');await page.waitForURL('**#home');
   assert.equal(await page.locator('#browser-tabs [role=tab]').count(),2,'Closing an app preserves website tabs');
+  assert.equal(await page.locator('#app-host iframe:not([hidden])').count(),0,'Closed app frame is disposed');
+  if(app!=='chat')assert.equal(await frame.count(),0);
+
  }
  for(const route of ['settings','appearance','connection','tab-appearance','privacy','apps','terms']){
   await page.goto('http://localhost:9091/tutsi#'+route);await page.keyboard.press('Alt+w');await page.waitForURL('**#home');assert.equal(await page.locator('#browser-tabs [role=tab]').count(),2);

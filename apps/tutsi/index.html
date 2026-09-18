@@ -265,7 +265,13 @@
                 </select>
               </div>
               <div class="setting-row"><div><label for="auto-relay">Auto-reconnect</label><p>Try another server when the connection fails.</p></div><input id="auto-relay" class="switch" type="checkbox" /></div>
-              <div class="setting-row"><div><label for="blocker">Network filter (optional)</label><p>Optional. Select your filter or leave detection on.</p></div><select id="blocker"><option value="auto">Auto-detect</option><option value="">Not sure</option><option value="lightspeed">Lightspeed</option><option value="goguardian">GoGuardian</option><option value="securly">Securly</option><option value="linewize">Linewize</option><option value="blocksi">Blocksi</option></select></div><div class="setting-row"><div><label for="detect-filter">Detect filter</label><p>Checks known extension files for 17 filtering and management families locally. Hidden extensions and network filters may show Unknown.</p></div><button id="detect-filter" type="button">Check again</button></div><p id="filter-detection-result" class="body-copy" role="status"></p><p id="blocker-result" class="body-copy" role="status"></p>
+              <div class="setting-row"><div><label for="blocker">Network filter (optional)</label><p>Optional. Select your filter or leave detection on.</p></div><select id="blocker"><option value="auto">Auto-detect</option><option value="">Not sure</option><option value="lightspeed">Lightspeed</option><option value="goguardian">GoGuardian</option><option value="securly">Securly</option><option value="linewize">Linewize</option><option value="blocksi">Blocksi</option></select></div><div class="setting-row"><div><label for="detect-filter">Detect filter</label><p>Checks for visible filtering extensions. If nothing is found, use a block-page address below.</p></div><button id="detect-filter" type="button">Check again</button></div><p id="filter-detection-result" class="body-copy" role="status"></p><p id="blocker-result" class="body-copy" role="status"></p>
+              <details id="filter-address-help" class="filter-address-help"><summary>Identify from a block-page address</summary>
+                <p>Copy the address shown when your school blocks a page, then paste it here. Checked only in this browser.</p>
+                <label for="filter-address">Block-page address</label>
+                <div class="relay-input"><input id="filter-address" type="text" inputmode="url" maxlength="8192" autocomplete="off" spellcheck="false" placeholder="https://... or chrome-extension://..." /><button id="identify-filter-address" type="button">Identify</button></div>
+                <p id="filter-address-result" role="status"></p><button id="use-address-filter" type="button" hidden>Use this filter</button>
+              </details>
               <div class="relay-setting">
                 <label for="relay">Wisp relay</label>
                 <p>Leave blank to use the default server.</p>

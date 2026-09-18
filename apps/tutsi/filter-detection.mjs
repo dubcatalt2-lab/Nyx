@@ -176,3 +176,24 @@ export async function effectiveFilter(selection) {
   const vendors=await scanFilters();
   return vendors.length===1?vendors[0]:'';
 }
+
+// Read only the supplied address. Never request it, retain its query, or treat
+// names in the blocked destination/query as evidence of the filtering vendor.
+export function identifyFilterAddress(value) {
+  const input=String(value||'').trim();
+  if(!input || input.length>8192)return null;
+  let url;
+  try{url=new URL(input)}catch{return null}
+  if(url.username || url.password)return null;
+  const host=url.hostname.toLowerCase().replace(/\.$/,'');
+  if(url.protocol==='chrome-extension:'){
+    const match=[...filterSignatures,...additionalIdentities].find(item=>item.id===host);
+    return match?{vendor:match.vendor,label:match.label,source:'extension address'}:null;
+  }
+  if(!['https:','http:'].includes(url.protocol))return null;
+  // Vendor domains identify the owner of the pasted address, not whether an
+  // extension is installed. Using this evidence remains an explicit choice.
+  const domains=[['goguardian.com','goguardian','GoGuardian'],['securly.com','securly','Securly'],['block.opendns.com','cisco','Cisco Umbrella']];
+  const match=domains.find(([domain])=>host===domain || host.endsWith('.'+domain));
+  return match?{vendor:match[1],label:match[2],source:'vendor address'}:null;
+}

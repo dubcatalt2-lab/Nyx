@@ -1,3 +1,4 @@
+import {createCloudLaunchLimit} from "./lib/cloud-launch-limit.mjs";
 import { tutsiHostnames, isTutsiHostname } from "./lib/tutsi-hostnames.mjs";
 import {installTutsiCrawlerControls} from "./lib/tutsi-crawler-controls.mjs";
 import { createTubeCaptions } from './lib/nyxtube-captions.mjs';
@@ -137,9 +138,7 @@ const userActivityEventTimes = new Map();
 const nyxCloudGamingSessionIdPattern = /^[a-f0-9-]{16,80}$/i;
 const nyxCloudGamingSessions = new Map();
 const nyxCloudGamingProvisioningUsers = new Set();
-const nyxCloudGamingCreateAttempts = new Map();
-const nyxCloudGamingCreateWindowMs = 10 * 60_000;
-const nyxCloudGamingCreateMaxAttempts = 3;
+const nyxCloudGamingLaunchLimit = createCloudLaunchLimit();
 const nyxCloudGamingCatalogTtlMs = 30 * 60_000;
 let nyxCloudGamingCatalogCache = { expiresAt: 0, games: [], promise: null };
 const nyxifyProviderOrigin = "https://mizumath.com";
@@ -7279,13 +7278,6 @@ async function nyxCloudGamingUser(req) {
   }
 }
 
-function nyxCloudGamingCreateRate(uid, now = Date.now()) {
-  const attempts = (nyxCloudGamingCreateAttempts.get(uid) || []).filter(timestamp => timestamp > now - nyxCloudGamingCreateWindowMs);
-  attempts.push(now);
-  nyxCloudGamingCreateAttempts.set(uid, attempts);
-  return attempts.length <= nyxCloudGamingCreateMaxAttempts;
-}
-
 function nyxCloudGamingSessionFor(uid, value) {
   const sessionId = String(value || "").trim();
   if (!nyxCloudGamingSessionIdPattern.test(sessionId)) throw nyxCloudGamingError("That Cloud Gaming session is invalid.", 400);
@@ -7426,11 +7418,7 @@ const nyxCloudGamingCleanupTimer = setInterval(() => {
     nyxCloudGamingSessions.delete(id);
     void nyxCloudGamingUpstreamJson("/cloud/v1/quitSession", { method: "POST", body: { uuid: id } }).catch(() => {});
   }
-  for (const [uid, attempts] of nyxCloudGamingCreateAttempts) {
-    const recent = attempts.filter(timestamp => timestamp > now - nyxCloudGamingCreateWindowMs);
-    if (recent.length) nyxCloudGamingCreateAttempts.set(uid, recent);
-    else nyxCloudGamingCreateAttempts.delete(uid);
-  }
+  nyxCloudGamingLaunchLimit.cleanup();
 }, 30_000);
 nyxCloudGamingCleanupTimer.unref?.();
 
@@ -12414,6 +12402,9 @@ app.post("/api/cloud-gaming/sessions", async (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
   let uid = "";
+  let ownsProvisioning = false;
+  let launchReservation = null;
+  let usableSession = false;
   let controller = null;
   let timeout = null;
   let closed = null;
@@ -12428,16 +12419,19 @@ app.post("/api/cloud-gaming/sessions", async (req, res) => {
     if (nyxCloudGamingProvisioningUsers.size + nyxCloudGamingSessions.size >= config.maxActiveSessions) {
       throw nyxCloudGamingError("Cloud Gaming is at capacity. Try again after another session ends.", 429);
     }
-    if (!nyxCloudGamingCreateRate(uid)) {
-      res.set("Retry-After", String(Math.ceil(nyxCloudGamingCreateWindowMs / 1000)));
-      throw nyxCloudGamingError("Too many Cloud Gaming launch attempts. Try again later.", 429);
-    }
+    nyxCloudGamingProvisioningUsers.add(uid);
+    ownsProvisioning = true;
     const gameKey = String(req.body?.gameKey || "").trim();
     const games = await nyxCloudGamingCatalog();
     const game = games.find(item => item.key === gameKey);
     if (!game) throw nyxCloudGamingError("Choose a game from the current Cloud Gaming catalog.", 400);
 
-    nyxCloudGamingProvisioningUsers.add(uid);
+    launchReservation = nyxCloudGamingLaunchLimit.reserve(uid);
+    if (!launchReservation.allowed) {
+      const seconds = launchReservation.retryAfter;
+      res.set("Retry-After", String(seconds));
+      throw nyxCloudGamingError(`Please wait ${seconds} seconds before starting another Cloud Gaming session.`, 429);
+    }
     controller = new AbortController();
     timeout = setTimeout(() => controller.abort(), config.createTimeoutMs);
     closed = () => { if (!res.writableEnded) controller.abort(); };
@@ -12471,6 +12465,7 @@ app.post("/api/cloud-gaming/sessions", async (req, res) => {
         try { source = JSON.parse(line); } catch { continue; }
         const event = nyxCloudGamingSafeEvent(source);
         if (event.id) {
+          if (["queue", "finished_queue"].includes(event.status)) usableSession = true;
           const state = event.status === "queue" ? "queued" : event.status === "finished_queue" ? "ready" : "preparing";
           const current = nyxCloudGamingSessions.get(event.id) || {
             id: event.id,
@@ -12503,7 +12498,8 @@ app.post("/api/cloud-gaming/sessions", async (req, res) => {
       res.status(error.status || 502).json({ error: String(message).slice(0, 240) });
     }
   } finally {
-    if (uid) nyxCloudGamingProvisioningUsers.delete(uid);
+    launchReservation?.finish?.(usableSession);
+    if (ownsProvisioning) nyxCloudGamingProvisioningUsers.delete(uid);
     if (timeout) clearTimeout(timeout);
     if (closed) res.off("close", closed);
   }

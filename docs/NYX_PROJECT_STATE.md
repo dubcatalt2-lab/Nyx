@@ -1,3 +1,25 @@
+## Cloud Gaming provider failure diagnosed (2026-09-17, local follow-up)
+
+- Read-only VPS inspection confirmed Nyx, Stratus, coturn, HAProxy and Caddy active. Stratus health passes, but its recent journal repeatedly reports `Timeout getting verification code` for account-pool preparation and actual createSession requests. Failure occurs before queue/player/WebRTC, including home-network launches.
+- Provider homepage and a no-account GET validation response are reachable from the VPS. Latest x8rr/stratus-api api.js SHA256 matches the pinned upstream; no upstream fix was available.
+- The adapter ignored sendEmail and emailRegister responses. Added checked provider response stages before mailbox polling/login, with sanitized error reasons. No new provider accounts, emails or game sessions were created during diagnosis/testing. Working end-to-end streaming is NOT verified; external email delivery/account acceptance remains unresolved.
+- Local checks passed: generated Stratus runtime, service/auth/embed smoke tests, launch limiter concurrency/account isolation, Retry-After countdown, block-page lookup/privacy/mobile. Prior local tab-disposal fix remains preserved. Deployment requires explicit authorization for this follow-up.
+
+## Filter fallback and Cloud Gaming launch limit fixes (2026-09-17, local)
+
+- Chromebook user confirmed automatic filter detection finishes with Unknown. Added a local-only block-page address lookup with explicit vendor application; no address is fetched, uploaded or stored. Existing automatic signals remain best-effort; no reliable replacement for hidden extension detection was found online.
+- Cloud Gaming launch limits are per Firebase UID, shared only by the same account across the two sites. Fixed rejected attempts extending the ten-minute limit. Valid launches that reach a queued/ready provider session retain the existing three-per-ten-minute allowance; preparation failures use a ten-second cooldown. Invalid game selections do not consume a launch.
+- Retry-After now reports the remaining wait. Both app variants display a countdown and disable Play during it, without automatic retries. Server capacity protection remains separate.
+- Provisioning ownership is reserved before the asynchronous catalog lookup. A duplicate/rejected request no longer deletes another request's reservation, preventing duplicate provider launches and capacity races.
+- This work and the preceding tab-disposal correction remain local, not pushed/deployed. Build/deployment checks and targeted fixture tests passed.
+
+## Tutsi tab disposal fix (2026-09-17, local)
+
+- Closing a blank website tab from Home now removes it from the tab list instead of only navigating Home. Existing website tabs are preserved and the adjacent tab is selected.
+- Closing a built-in app through Alt+W, the toolbar close button or its trusted close message removes its iframe and registry entry. Reopening starts a fresh app. Signed-in Chat keeps a fresh hidden receiver for mention notifications; the closed Chat frame is disposed. Home navigation remains distinct from closing.
+- Hidden apps cannot close the user's current tab. Pending website navigation is invalidated through the existing close path.
+- Build/deployment checks and browser tests passed for blank tabs, closing during loading, app disposal, toolbar/iframe keyboard close, restore and Settings navigation. This follow-up is local and has not been pushed/deployed.
+
 ## Tutsi follow-up production verification (2026-09-17)
 
 - Application release `2aea535` was pushed fast-forward and deployed through the authorized VPS updater. Direct SSH verification confirmed that exact revision, clean checkout and active Nyx, Caddy, Stratus, coturn and HAProxy services.

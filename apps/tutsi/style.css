@@ -1250,3 +1250,6 @@ html[data-motion="reduce"] #customize-dialog *,html[data-motion="reduce"] .setti
 .account-dropdown>img,.account-dropdown>.eyebrow,.account-dropdown>h2{display:none}
 #account-handle{color:var(--muted);margin:0 0 18px}#account-name{font-size:1.25rem;margin:4px 0}
 #signed-in button{width:100%;margin-top:8px}
+
+.filter-address-help{margin:16px 0;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--mantle)}
+.filter-address-help summary{cursor:pointer;color:var(--text)}.filter-address-help p{color:var(--muted);line-height:1.5}.filter-address-help label{display:block;margin-bottom:8px}.filter-address-help input{min-width:0}

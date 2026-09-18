@@ -10,6 +10,8 @@ const requiredFiles = [
   "apps/tutsi/http-relay.mjs",
   "lib/tutsi-crawler-controls.mjs",
   "lib/tutsi-hostnames.mjs",
+  "lib/cloud-launch-limit.mjs",
+  "services/stratus/provider-step.mjs",
   "server-http-wisp.mjs",
   "apps/tutsi/style.css",
   "apps/tutsi/proxy.mjs",

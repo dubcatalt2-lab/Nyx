@@ -1,3 +1,4 @@
+import {requireProviderStep} from "./provider-step.mjs";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { spawn } from "node:child_process";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
@@ -249,6 +250,23 @@ function nyxTurnIceServer(sessionId) {
     "resilient mailbox domain rotation"
   );
 
+  output = replaceOnce(output,
+    '  await raccoonFetch("/users/sendEmail", {',
+    '  const verificationResponse = await raccoonFetch("/users/sendEmail", {',
+    "verification response capture");
+  output = replaceOnce(output,
+    '  const code = await getVerificationCode(mailJwt);',
+    '  await requireProviderStep(verificationResponse, "the verification email request");\n  const code = await getVerificationCode(mailJwt);',
+    "verification acceptance before mailbox polling");
+  output = replaceOnce(output,
+    '  await raccoonFetch("/users/emailRegister", {',
+    '  const registrationResponse = await raccoonFetch("/users/emailRegister", {',
+    "registration response capture");
+  output = replaceOnce(output,
+    '  const loginRes = await raccoonFetch("/users/emailLogin", {',
+    '  await requireProviderStep(registrationResponse, "account registration");\n  const loginRes = await raccoonFetch("/users/emailLogin", {',
+    "registration acceptance before login");
+
   output = replaceOnce(
     output,
     `let poolFilling = false;`,
@@ -390,7 +408,7 @@ function nyxTurnIceServer(sessionId) {
     `let shuttingDown = false;\nfunction shutdown(signal) {\n  if (shuttingDown) return;\n  shuttingDown = true;\n  logSys(chalk.gray(\`shutdown: \${signal}\`));\n  const stops = [...sessions.keys()].map(uuid => killSession(uuid, "service_shutdown"));\n  Promise.allSettled(stops).finally(() => httpServer.close(() => process.exit(0)));\n  setTimeout(() => process.exit(1), 10_000).unref();\n}\nprocess.once("SIGTERM", () => shutdown("SIGTERM"));\nprocess.once("SIGINT", () => shutdown("SIGINT"));\n\nhttpServer.listen(PORT, "127.0.0.1", () => {`,
     "loopback binding and graceful shutdown"
   );
-  return output;
+  return requireProviderStep.toString() + "\n" + output;
 }
 
 function buildRuntimeEmbed(source) {

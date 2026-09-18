@@ -1,6 +1,6 @@
 import {installShortcuts} from "./shortcuts.mjs";
 import {protectionSandbox} from "./protections.mjs";
-import { scanFilters, filterSignatures } from "./filter-detection.mjs";
+import { scanFilters, filterSignatures, identifyFilterAddress } from "./filter-detection.mjs";
 import { decorateEmbedded } from "./embedded.mjs";
 import { startClock } from "./clock.mjs";
 import { icons as nyxIcons } from "./icons.mjs";
@@ -498,7 +498,18 @@ function newBrowserTab(url=''){
   return true;
 }
 function closeBrowserTab(){
-  if(document.body.dataset.view!=='browser'){
+  const routeName=location.hash.slice(1)||'home';
+  if(appPaths[routeName]){
+    const app=frames.get(routeName);
+    frames.delete(routeName);
+    app?.remove();
+    // Chat also supplies background mentions. Replace its closed UI with a
+    // fresh hidden receiver so any old media/voice session is disposed.
+    if(routeName==='chat' && accountUser)appFrame('chat').hidden=true;
+    location.hash='home';return;
+  }
+  const blankTab=routeName==='home' && activeTab && !activeTab.url;
+  if(routeName!=='browser' && !blankTab){
     if($('customize-dialog')?.open)dismissCustomize();
     document.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());
     location.hash='home';return;
@@ -606,7 +617,7 @@ for (const action of ["back", "forward", "reload"])
       else history[action]();
     }else control(action,proxyElement);
   };
-$("close-browser").onclick = () => document.body.dataset.view==="app-view" ? location.hash="home" : closeBrowserTab();
+$("close-browser").onclick = closeBrowserTab;
 $("browser-home").onclick=()=>{location.hash="home";};
 addEventListener("keydown", (e) => {
   if (e.defaultPrevented) return;
@@ -969,7 +980,8 @@ addEventListener("message", async (event) => {
     profileRequestIds.set(frame,data.requestId);
     reply({type:"nyx:nyxtube-profile",requestId:data.requestId,profile:profilePayload()});
   } else if (data.type === "nyx:close-tab") {
-    location.hash = "home";
+    // A hidden app cannot close the user's current tab.
+    if(location.hash.slice(1)===name)closeBrowserTab();
   } else if (
     name === "games" &&
     ["nyx:cloud-game-load", "nyx:cloud-game-save"].includes(data.type)
@@ -1183,15 +1195,36 @@ const filterLabel=vendor=>filterSignatures.find(item=>item.vendor===vendor)?.lab
 addEventListener('tutsi:filter-detected',({detail:{vendors}})=>{
   $('filter-detection-result').textContent=vendors.length
     ? `Extension detected: ${vendors.map(filterLabel).join(', ')}. This does not prove it blocked a connection.${vendors.length>1?' Choose a filter below, or keep using connection checks.':''}`
-    : 'Unknown: this browser did not expose a recognizable filter. Choose your filter below if you know it. Connection switching still works automatically.';
+    : 'Unknown: no recognizable extension was visible. Try a block-page address below, or select your filter above.';
+  if(!vendors.length)$('filter-address-help').open=true;
 });
 $('detect-filter').addEventListener('click',async()=>{
   const button=$('detect-filter');button.disabled=true;
   $('filter-detection-result').textContent='Checking this browser...';
-  try{await scanFilters({refresh:true})}finally{button.disabled=false}
+  try{await scanFilters({refresh:true})}catch{$('filter-detection-result').textContent='The check could not finish. Try again or use a block-page address.'}finally{button.disabled=false}
 });
 $('blocker').addEventListener('change',()=>{if(settings.blocker==='auto')void scanFilters()});
 if(settings.blocker==='auto')void scanFilters();
+let addressFilter=null;
+function inspectFilterAddress(){
+  addressFilter=identifyFilterAddress($('filter-address').value);
+  $('use-address-filter').hidden=!addressFilter;
+  $('filter-address-result').textContent=addressFilter
+    ? `${addressFilter.label}: recognized ${addressFilter.source}. Select Use this filter to save it.`
+    : 'No recognizable vendor in this address. If it is still the original website address, select the filter named on the block page above.';
+}
+$('identify-filter-address').onclick=inspectFilterAddress;
+$('filter-address').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();inspectFilterAddress();}});
+$('filter-address').addEventListener('input',()=>{addressFilter=null;$('use-address-filter').hidden=true;$('filter-address-result').textContent='';});
+$('use-address-filter').onclick=()=>{
+  if(!addressFilter)return;
+  const {vendor,label}=addressFilter;
+  if(![...$('blocker').options].some(option=>option.value===vendor))$('blocker').add(new Option(label,vendor));
+  $('blocker').value=vendor;$('blocker').dispatchEvent(new Event('change'));
+  $('filter-address').value='';addressFilter=null;$('use-address-filter').hidden=true;
+  $('filter-address-result').textContent=`${label} saved. Used when the next browser connection starts.`;
+};
+
 
 // Keep player shortcuts working when focus remains in the enclosing Tutsi page.
 for(const type of ['keydown','keyup'])addEventListener(type,event=>{

@@ -461,17 +461,6 @@ function appFrame(name) {
   });
   return frame;
 }
-function setBrowserBarOpen(open){
-  $('browser-bar-toggle').setAttribute('aria-expanded',String(open));
-  $('browser-bar-panel').inert=!open;
-  $('browser-bar-drawer').classList.toggle('open',open);
-}
-const browserDrawer=$('browser-bar-drawer');
-$('browser-bar-toggle').onclick=()=>setBrowserBarOpen(!$('browser-bar-drawer').classList.contains('open'));
-browserDrawer.addEventListener('pointerenter',event=>{if(event.pointerType!=='touch')setBrowserBarOpen(true);});
-browserDrawer.addEventListener('pointerleave',()=>{if(!browserDrawer.contains(document.activeElement))setBrowserBarOpen(false);});
-browserDrawer.addEventListener('focusout',()=>setTimeout(()=>{if(!browserDrawer.contains(document.activeElement)&&!browserDrawer.matches(':hover'))setBrowserBarOpen(false);},0));
-browserDrawer.addEventListener('keydown',event=>{if(event.key==='Escape'){setBrowserBarOpen(false);$('browser-bar-toggle').focus();}});
 $('address').addEventListener('blur',()=>{$('address').scrollLeft=0;});
 function route() {
   const name = location.hash.slice(1) || "home";
@@ -487,13 +476,6 @@ function route() {
     .forEach((el) => (el.hidden = el.id !== section));
   $("footer").hidden = ["browser", "app-view"].includes(section);
   document.body.dataset.view = section;
-  const bar=document.querySelector(".browser-bar");
-  const browser=section==="browser", host=browser?$("browser"):$("browser-bar-panel");
-  $("browser-bar-drawer").hidden=browser;
-  if(bar.parentElement!==host)host.prepend(bar);
-  const tabs=$("browser-tabs");
-  if(tabs.parentElement!==host)host.insertBefore(tabs,browser?$("browser-stage"):null);
-  setBrowserBarOpen(false);
   if(appPaths[name]) $("address").value="tutsi://"+name;
   else $("address").value=activeTab?.url||"";
   document

@@ -29,21 +29,19 @@ try{
  await page.fill('#address','https://example.com/?third=3');await page.locator('#address').press('Enter');
  await page.waitForFunction(()=>document.querySelector('#browser-stage iframe:not([hidden])')?.contentWindow.location.href.includes('third%3D3'));
  assert.equal(await page.locator('#browser-tabs [role=tab]').count(),2);
- await page.locator('#browser-home').click();await page.locator('#browser-bar-toggle').hover();
- assert.equal(await page.locator('#browser-bar-toggle').getAttribute('aria-expanded'),'true');
- await page.locator('#browser-tabs [role=tab]').first().click();assert.equal(await site().locator('body').getAttribute('data-preserved'),'yes');
+ await page.locator('#browser-home').click();assert.equal(await page.locator('#browser-bar-drawer').count(),0);await page.locator('.browser-bar').waitFor({state:'hidden'});
+ await page.keyboard.press('Alt+1');assert.equal(await site().locator('body').getAttribute('data-preserved'),'yes');
  // While a navigation is starting, switching tabs must not navigate the other one.
  await page.fill('#address','https://example.com/?pending=1');await page.locator('#address').press('Enter');
  await page.locator('#browser-tabs [role=tab]').nth(1).click();assert.match(await page.locator('#address').inputValue(),/third=3/);
  await page.locator('#browser-home').click();await search('javascript:alert(1)');assert.equal(await page.locator('#query').inputValue(),'javascript:alert(1)');
  assert.equal(await page.locator('#browser-tabs [role=tab]').count(),2);
- // Settings and apps expose the same bar by keyboard/touch without duplicate controls.
+ // No floating controls on home/settings; browser controls remain available in tabs.
  await page.evaluate(()=>location.hash='settings');await page.waitForURL('**#settings');
- await page.locator('#browser-bar-toggle').focus();await page.keyboard.press('Enter');
- await page.locator('#browser-bar-panel #address').waitFor({state:'visible'});
- await page.keyboard.press('Escape');assert.equal(await page.locator('#browser-bar-toggle').getAttribute('aria-expanded'),'false');
- await page.setViewportSize({width:390,height:844});await page.locator('#browser-bar-toggle').click();
- const box=await page.locator('#browser-bar-panel').boundingBox();assert(box.x>=0&&box.x+box.width<=391);
+ assert.equal(await page.locator('.browser-bar').isVisible(),false);
+ await page.setViewportSize({width:390,height:844});await page.keyboard.press('Alt+1');
+ assert.equal(await page.locator('.browser-bar').isVisible(),true);
+ const box=await page.locator('.browser-bar').boundingBox();assert(box.x>=0&&box.x+box.width<=391);
  assert.equal(await page.locator('#address').count(),1);assert.deepEqual(errors,[]);
- console.log('PASS Tutsi navigation: URL fidelity, ports, input clearing, actual loads, tab isolation, hover/keyboard/touch bar and mobile layout.');
+ console.log('PASS Tutsi navigation: URL fidelity, ports, input clearing, actual loads, tab isolation, browser-only controls and mobile layout.');
 }finally{await browser.close();}

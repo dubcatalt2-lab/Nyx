@@ -1,3 +1,12 @@
+## Remove expandable Browser bar (2026-09-17)
+
+- User requested removal instead of redesign and explicitly authorized push/deployment. Removed the floating handle, panel, associated styles and hover/focus handlers. Existing browser toolbar/tab strip stay inside the browser view; built-in apps retain their full viewport. Search fixes, readable address text and Alt shortcuts remain. Updated navigation/shortcut fixtures for the removed control.
+
+## Provider account diagnostic (2026-09-17)
+
+- User configured provider credentials on the VPS. Initial status 430 was caused by outer whitespace in both saved credential values. A single whitespace-corrected login succeeded; corrected only those verified env entries and restarted nyx-stratus. No credentials or tokens were printed or stored in the repository.
+- Real loopback session creation reached account_ready and requesting_game for DRAGON BALL: Sparking! ZERO, then provider status 3004: insufficient diamonds. No playable session was created and no purchase was made. Public maintenance remains enabled. A funded/eligible provider account is still required; queue allocation/signaling/video remain unverified with this account.
+
 ## Tutsi navigation release verified (2026-09-17, de26fcc)
 
 - User authorized push and deployment. Pushed to agent/pirate-cove and deployed with deploy/update-ovh.sh. VPS build and deployment checks passed. Both navigation and shortcut/full-window-app browser suites passed against https://tutsi.nyxlearning.org/, including actual proxy loads, home-input clearing, independent tabs, URL fragments, hover/keyboard/touch Browser bar and mobile layout. All five VPS services active.

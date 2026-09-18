@@ -1,3 +1,7 @@
+## Tutsi navigation release verified (2026-09-17, de26fcc)
+
+- User authorized push and deployment. Pushed to agent/pirate-cove and deployed with deploy/update-ovh.sh. VPS build and deployment checks passed. Both navigation and shortcut/full-window-app browser suites passed against https://tutsi.nyxlearning.org/, including actual proxy loads, home-input clearing, independent tabs, URL fragments, hover/keyboard/touch Browser bar and mobile layout. All five VPS services active.
+
 ## Tutsi search and browser bar (2026-09-17, local)
 
 - Home submissions clear on valid navigation and open a new website tab (reuse an empty tab); address submissions stay in the selected tab. Navigation targets its own frame, activates the browser view synchronously, awaits controller dispatch and ignores stale/closed-tab completion. SPA URL changes refresh without overwriting a focused address field.

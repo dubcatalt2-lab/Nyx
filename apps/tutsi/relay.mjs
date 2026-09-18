@@ -82,7 +82,10 @@ export class RelayTransport {
       if(args[4]?.aborted||error?.name==='AbortError')throw error;
       let changed=false;try{changed=await this.recover(client)}catch{}
       // Never replay form submissions or other writes after an ambiguous failure.
-      if(changed&&/^(GET|HEAD)$/i.test(String(args[1]||'GET'))&&!args[4]?.aborted)return this.client.request(...args);
+      // A cold connection may time out its first read despite a healthy handshake.
+      // Retry once, directly on the client, so repeated failures cannot loop.
+      const timedOut=error?.name==='TimeoutError'||/\b(?:timed?\s*out|timeout|ETIMEDOUT)\b/i.test(String(error?.message||''));
+      if((changed||timedOut)&&/^(GET|HEAD)$/i.test(String(args[1]||'GET'))&&!args[4]?.aborted&&!this.closed&&this.online())return this.client.request(...args);
       throw error;
     }
   }

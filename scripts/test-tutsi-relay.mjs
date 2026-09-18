@@ -30,3 +30,19 @@ for(const rank of [()=>new Promise(()=>{}),async()=>{throw Error('checker unavai
  guarded.close();
 }
 console.log('Slow and unavailable classification fallback passed');
+
+for(const method of ['GET','HEAD','POST']) {
+ let attempts=0;
+ const cold=new RelayTransport({...options,probe:async()=>true,createClient:()=>({request:async()=>{if(++attempts===1)throw new Error('request timed out');return 'loaded';}})});
+ await cold.init();
+ if(method==='POST'){await assert.rejects(cold.request('https://fixture.test/',method));assert.equal(attempts,1);}
+ else {assert.equal(await cold.request('https://fixture.test/',method),'loaded');assert.equal(attempts,2);}
+ cold.close();
+}
+let attempts=0;
+const failed=new RelayTransport({...options,probe:async()=>true,createClient:()=>({request:async()=>{attempts++;throw new Error('ETIMEDOUT');}})});
+await failed.init();await assert.rejects(failed.request('https://fixture.test/','GET'));assert.equal(attempts,2);failed.close();
+const abort=new AbortController();attempts=0;
+const cancelled=new RelayTransport({...options,probe:async()=>true,createClient:()=>({request:async()=>{attempts++;abort.abort();throw new Error('request timed out');}})});
+await cancelled.init();await assert.rejects(cancelled.request('https://fixture.test/','GET',null,[],abort.signal));assert.equal(attempts,1);cancelled.close();
+console.log('First-read timeout recovery, retry bound, POST and cancellation safety passed');

@@ -1,3 +1,8 @@
+## Tutsi first-search timeout recovery (2026-09-18)
+
+- Found that a timed-out request on a relay whose handshake still succeeds was returned directly as an error. Added one direct-client retry for GET/HEAD timeout errors even when the current connection remains healthy. Existing relay failover remains; non-timeout upstream failures, POST requests, aborts, offline and closed transports do not gain retries. No recursive retry loop.
+- Regression fixtures cover cold-read recovery, persistent timeout bound, POST and cancellation safety. An actual built Tutsi first navigation with a mocked transport timeout reaches the requested document without refresh or a duplicate tab. Build and deployment checks pass. User authorized push/deploy; device-specific upstream timeout causes are not independently reproduced.
+
 ## Tutsi startup and classification reliability (2026-09-18)
 
 - Startup interaction listeners attach while the lesson document is loading, rather than waiting for all frame assets. Polling/listeners stop on retention or dismissal. Live pre-fix tests passed on rerun; the earlier interaction failure was intermittent.

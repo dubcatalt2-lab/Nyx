@@ -1,3 +1,4 @@
+import {rewriteStorageNames} from './build-storage.mjs';
 import {readFile, writeFile, readdir, rm} from 'node:fs/promises';
 import {join, posix} from 'node:path';
 import {randomBytes} from 'node:crypto';
@@ -13,6 +14,7 @@ for(const [original,alias] of entries){
   destinations.add(alias);
 }
 export function rewriteProxyReferences(source,path){
+  source=rewriteStorageNames(source);
   for(const [original,alias] of [...entries].sort((a,b)=>b[0].length-a[0].length)) source=source.split(original).join(alias);
   // Relative imports/default URLs stay in the same directory after renaming.
   const directory=posix.dirname(path);

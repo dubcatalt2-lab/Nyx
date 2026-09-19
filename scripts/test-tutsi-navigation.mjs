@@ -16,6 +16,7 @@ try{
  const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  const base=process.env.TUTSI_TEST_URL||'http://127.0.0.1:8198/apps/tutsi/index.html';
+ await page.addInitScript(()=>{localStorage.setItem('tutsi.customize.seen','1');localStorage.setItem('tutsi.settings.v1',JSON.stringify({closePrevention:false}));});
  await page.goto(base);await page.waitForTimeout(700);
  if(await page.locator('#customize-dialog').isVisible())await page.locator('#customize-dismiss').click();
  const site=()=>page.frameLocator('#browser-stage iframe:not([hidden])');

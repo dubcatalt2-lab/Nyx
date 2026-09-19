@@ -693,6 +693,22 @@
       </form>`;
     }
 
+    function aiModelEditor(user) {
+      return `<section class="nyx-owner-detail-section"><h3>AI models and limits</h3><p>Allow grants this model to this account. Block removes access. Default follows the account plan. Blank limits add no extra message cap; shared token, spending and rate limits still apply.</p><div class="nyx-owner-ai-rules">${(user.aiAssignableModels||[]).map(model=>{
+        const rule=(user.aiModelRules||[]).find(r=>r.model===model)||{access:'default',messages:null,periodDays:4};
+        return `<details data-ai-model="${esc(model)}"><summary>${esc(model)} <small>${esc(rule.access)}${rule.messages!==null?' / '+rule.messages+' messages':''}</small></summary><div class="nyx-owner-ai-rule-fields"><label>Access<select data-ai-rule-access>${['default','allow','deny'].map(v=>`<option value="${v}"${selected(rule.access,v)}>${v==='deny'?'Block':v==='allow'?'Allow':'Default'}</option>`).join('')}</select></label><label>Messages per period<input data-ai-rule-messages type="number" min="0" max="100000" step="1" placeholder="No extra cap" value="${rule.messages??''}"></label><label>Reset every (days)<input data-ai-rule-days type="number" min="1" max="30" step="1" value="${rule.periodDays}"></label></div></details>`;
+      }).join('')}</div><div class="nyx-owner-detail-actions"><button type="button" data-owner-save-ai-models>Save AI access</button><button type="button" data-owner-ai-activity>View usage and chat history</button></div><div data-owner-ai-activity-result aria-live="polite"></div></section>`;
+    }
+    async function loadAiActivity(button) {
+      const uid=state.selectedUser?.uid,host=drawer.querySelector('[data-owner-ai-activity-result]');if(!uid||!host)return;
+      button.disabled=true;host.textContent='Loading AI activity...';
+      try {
+        const data=await api(`/api/owner-dashboard/users/${encodeURIComponent(uid)}/ai`);
+        if(state.selectedUser?.uid!==uid||!host.isConnected)return;
+        host.innerHTML=`<h3>Usage</h3><p>Shared allowance today: ${Number(data.today?.requests)||0} requests, ${Number(data.today?.tokens)||0} tokens charged or reserved.</p><p>Completed provider calls recorded since this feature was enabled. Missing token reports are listed separately.</p>${Object.entries(data.models||{}).map(([model,v])=>`<p><strong>${esc(model)}</strong><br>${Number(v.requests)||0} calls &middot; ${Number(v.input)||0} input tokens &middot; ${Number(v.output)||0} output tokens${v.unknownUsage?' &middot; '+Number(v.unknownUsage)+' calls without token reports':''}</p>`).join('')||'<p>No recorded usage yet.</p>'}${data.pool?`<p>Shared pool: ${Number(data.pool.used)||0} tokens used &middot; resets ${esc(dateLabel(data.pool.resetAt))}</p>`:''}${(data.limits||[]).map(r=>`<p>${esc(r.model)}: ${r.used} / ${r.messages??'no extra cap'} messages &middot; ${r.resetAt?'resets '+esc(dateLabel(r.resetAt)):'period starts on first use'}</p>`).join('')}<h3>Recent chat history</h3><p>Up to 50 recent text exchanges. Older device-only chats, temporary chats, images and attachments are not available here. Long messages may be shortened.</p>${(data.entries||[]).map(entry=>`<details class="nyx-owner-ai-exchange"><summary>${esc(dateLabel(entry.at))} &middot; ${esc(entry.model)}</summary><h4>User</h4><pre>${esc(entry.prompt)}</pre><h4>Assistant</h4><pre>${esc(entry.answer||'(No text reply)')}</pre>${entry.truncated?'<p>Long text shortened.</p>':''}</details>`).join('')||'<p>No saved exchanges yet.</p>'}`;
+      }catch(error){host.textContent=error.message;}finally{if(button.isConnected)button.disabled=false;}
+    }
+
     async function openUser(uid) {
       drawer.hidden = false;
       drawer.classList.remove("show");
@@ -749,7 +765,7 @@
             <section class="nyx-owner-detail-grid">${detailValue("Email", user.deliverableEmail ? user.email : "No email added")}${detailValue("Firebase UID", user.uid, "uid")}${detailValue("Presence", user.online ? "Online now" : "Offline")}${detailValue("Last sign-in", dateLabel(user.lastSignInAt))}${detailValue("Last active", dateLabel(user.lastActiveAt))}${capabilities.canManageNetworkBans ? detailValue("Last seen IP", user.lastSeenIp || "Not recorded yet", "ip-address") : ""}${capabilities.canManageNetworkBans && user.lastSeenIp ? detailValue("IP last seen", dateLabel(user.lastSeenIpAt)) : ""}${detailValue("Email verified", user.deliverableEmail ? (user.emailVerified ? "Verified" : "Not verified") : "Not applicable · username-only")}</section>
             <section class="nyx-owner-detail-section nyx-owner-profile-management"><h3>Public profile</h3>${ownerProfilePreview(user)}${capabilities.canEditProfile ? `<details><summary>Edit this profile</summary>${ownerProfileEditor(user)}</details>` : ""}</section>
             ${accessSection}
-            ${capabilities.canSetAiLimit ? `<section class="nyx-owner-detail-section"><h3>AI allowance</h3><p>One shared pool across accessible models: 10,000 tokens for regular users or 50,000 for Premium, resetting every 4 days from first use. Owner access is exempt, except for the separate 100,000-token monthly Sol Pro cap.</p></section>` : ""}
+            ${capabilities.canSetAiLimit ? aiModelEditor(user) : ""}
             ${accountActionsSection}
             ${recentActivitySection}
           </div>`;
@@ -1181,6 +1197,13 @@
         select.value = selectedRole;
         syncRoleOptions(drawer, selectedRole);
         return;
+      }
+      const activityButton=event.target.closest('[data-owner-ai-activity]');
+      if(activityButton)return void loadAiActivity(activityButton);
+      if(event.target.closest('[data-owner-save-ai-models]')) {
+        const modelRules=[...drawer.querySelectorAll('[data-ai-model]')].map(row=>({model:row.dataset.aiModel,access:row.querySelector('[data-ai-rule-access]').value,messages:row.querySelector('[data-ai-rule-messages]').value.trim()===''?null:Number(row.querySelector('[data-ai-rule-messages]').value),periodDays:Number(row.querySelector('[data-ai-rule-days]').value)})).filter(r=>r.access!=='default'||r.messages!==null);
+        if(modelRules.some(r=>r.messages!==null&&(!Number.isSafeInteger(r.messages)||r.messages<0||r.messages>100000)||!Number.isInteger(r.periodDays)||r.periodDays<1||r.periodDays>30))return notify('Use whole numbers: 0-100000 messages and 1-30 reset days.','error');
+        return void mutateUser('set_ai_models',{modelRules});
       }
       if(event.target.closest('[data-owner-save-ai-limit]')){
         const monthlyModelLimits=Object.fromEntries(['luna','gemini'].map(model=>[model,Number(drawer.querySelector(`[data-owner-ai-limit="${model}"]`).value)]));

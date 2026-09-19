@@ -1,3 +1,5 @@
+import {recordAiExchange,readAiActivity} from './lib/ai-history.mjs';
+import {assignableAiModels,validateAiModelRules} from './lib/ai-model-policy.mjs';
 import {createFreeModelHealth} from './lib/ai-free-health.mjs';
 import {isFreeAiModel,configureFreeAiReasoning} from './lib/ai-free-models.mjs';
 import {installStudyReady} from './services/domain-pages/integration.mjs';
@@ -77,7 +79,7 @@ let catClassCoverUrls = new Set();
 const nyxCustomRoleLabelLimit = 64;
 const app = express();
 installTutsiCrawlerControls(app);
-app.get("/proxy-assets.json", (_req,res)=>res.status(404).end());
+app.get(["/proxy-assets.json", "/frontend-assets.json"], (_req,res)=>res.status(404).end());
 const nyxifyMeting = createMetingBackend();
 
 function normalizePublicWispUrl(value) {
@@ -2458,7 +2460,7 @@ async function nyxAiPremiumEntitlement(req) {
     const administration = await firebase.firestore.collection("nyxUserAdministration").doc(token.uid).get();
     const administrationData = administration.data() || {};
     const subscriptionStatus = normalizeSubscriptionStatus(administrationData.subscriptionStatus || administrationData.subscription?.status);
-    return { premium: hasPremiumSubscription(subscriptionStatus), owner: nyxRoleForUser(token.uid, administrationData) === "owner", firebase, uid: token.uid };
+    return { modelRules:administrationData.aiModelRules||[], premium: hasPremiumSubscription(subscriptionStatus), owner: nyxRoleForUser(token.uid, administrationData) === "owner", firebase, uid: token.uid };
   } catch {
     return { premium: false, owner: false, firebase: null, uid: "" };
   }
@@ -2574,14 +2576,14 @@ async function nyxSharedAiSession(scope) {
     if(account.disabled||admin.disabled)throw Object.assign(new Error('This account is disabled.'),{status:403});
     const allowance=nyxSharedAiAllowance(firebase);
     if(allowance.configurationError)throw Object.assign(new Error('Shared AI budget settings need to be checked by the owner.'),{status:503});
-    const actor={uid,freeModel:isFreeAiModel(req.body?.model)?req.body.model:null,createdAt:Date.parse(account.metadata?.creationTime||''),
+    const actor={uid,requestedModel:String(req.body?.model||(req.path==='/api/v1/ai'?'google/gemini-2.5-flash-lite':'')),modelRules:admin.aiModelRules||[],freeModel:isFreeAiModel(req.body?.model)?req.body.model:null,createdAt:Date.parse(account.metadata?.creationTime||''),
       owner:uid===founderProfileConfig().administratorUid,premium:hasPremiumSubscription(normalizeSubscriptionStatus(admin.subscriptionStatus||admin.subscription?.status)),
       coOwner:nyxRoleForUser(uid,admin)==='co_owner',
       monthlyModelLimits:premiumModelLimits(admin.aiMonthlyModelLimits),trusted:admin.aiAccess==='trusted',blocked:admin.aiAccess==='restricted',
       apiVerified:Boolean(req.nyxAiBilling?.apiVerified),apiDailyRequests:req.nyxAiBilling?.dailyRequests,apiMinuteRequests:req.nyxAiBilling?.minuteRequests,apiMaxOutput:req.nyxAiBilling?.maxOutput,
       device:req.path==='/api/v1/ai'?`key-owner:${uid}`:await allowance.device(req,res),network:nyxClientIp(req)};
     const session=await allowance.begin(actor);
-    scope.allowance=allowance;scope.session=session;
+    scope.allowance=allowance;scope.session=session;scope.firestore=firebase.firestore;
     if(scope.controller.signal.aborted){await allowance.finish(session);throw Object.assign(new Error('AI request cancelled.'),{status:499});}
     return session;
   })();
@@ -2605,9 +2607,14 @@ async function nyxBudgetedAiFetch(provider,url,options) {
   try {
     scope.req.nyxApiSent=true;
     const response=await fetch(url,{...options,body:JSON.stringify(payload),signal});
-    return aiBudgetResponse(response,async(usage,success,imageCount)=>{
+    return aiBudgetResponse(response,async(usage,success,imageCount,answer)=>{
       scope.success ||= success;
       await scope.allowance.settle(reservation,usage,false,imageCount);
+      if(success){
+        const lastUser=Array.isArray(scope.req.body?.messages)?scope.req.body.messages.filter(m=>m?.role==='user').at(-1)?.content:'';
+        const prompt=typeof scope.req.body?.message==='string'?scope.req.body.message:typeof lastUser==='string'?lastUser:'';
+        await recordAiExchange(scope.firestore,session.actor.uid,{model:payload.model,prompt,answer,usage,temporary:scope.req.body?.temporaryChat===true||scope.req.body?.historyNoticeVersion!==1}).catch(()=>console.warn('AI activity could not be saved.'));
+      }
     },payload.modalities?.includes("image")?8*1024*1024:undefined);
   } catch(error) {await scope.allowance.settle(reservation,null).catch(()=>{});throw error;}
 }
@@ -2734,7 +2741,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     return;
   }
   const model = modelInfo.id;
-  if(!aiModelAllowed(model,await nyxAiPremiumEntitlement(req)))return res.status(403).json({error:model==='openai/gpt-5.6-sol-pro'?'GPT-5.6 Sol Pro is available to the owner only.':'GPT-5.6 Luna is available to Premium members and the owner only.'});
+  if(!aiModelAllowed(model,await nyxAiPremiumEntitlement(req)))return res.status(403).json({error:'This AI model is not enabled for your account.'});
   const isPremiumOpus = false;
   const isSharedNavy = false;
   const premiumEntitlement = isPremiumOpus || isSharedNavy ? await nyxAiPremiumEntitlement(req) : null;
@@ -3164,7 +3171,7 @@ async function nyxApiKeyOwnerEntitlement(firebase, uid) {
     const administration = await firebase.firestore.collection("nyxUserAdministration").doc(uid).get();
     const data = administration.data() || {};
     const subscriptionStatus = normalizeSubscriptionStatus(data.subscriptionStatus || data.subscription?.status);
-    return { premium: hasPremiumSubscription(subscriptionStatus), owner: nyxRoleForUser(uid, data) === "owner" };
+    return { modelRules:administrationData.aiModelRules||[], premium: hasPremiumSubscription(subscriptionStatus), owner: nyxRoleForUser(uid, data) === "owner" };
   } catch {
     // Fail closed: an entitlement lookup failure must not grant unlimited use.
     return { premium: false, owner: false };
@@ -4856,6 +4863,8 @@ function nyxOwnerUserRecord(user, administration = {}, profileData = {}, activit
     username: String(profileUsername || administration.username || emailUsername).slice(0, 80),
     email,
     deliverableEmail: nyxDeliverableEmail(email),
+    aiModelRules: administration.aiModelRules || [],
+    aiAssignableModels: assignableAiModels,
     aiMonthlyModelLimits: hasPremiumSubscription(subscriptionStatus) ? premiumModelLimits(administration.aiMonthlyModelLimits) : {luna:0,gemini:0},
     aiAccess: ["trusted","restricted"].includes(administration.aiAccess) ? administration.aiAccess : "automatic",
     role,
@@ -13132,6 +13141,21 @@ app.delete("/api/owner-dashboard/ip-bans/:id", async (req, res) => {
   }
 });
 
+app.get('/api/owner-dashboard/users/:uid/ai',async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  try {
+    const {firebase,actor,ownerUid,token}=await ownerDashboardActor(req,'dashboard:view');
+    if(actor.uid!==ownerUid) return res.status(403).json({error:'Only the owner can view AI history.'});
+    const uid=String(req.params.uid||'');
+    if(!/^[A-Za-z0-9_-]{8,128}$/.test(uid))return res.status(400).json({error:'Invalid account.'});
+    await firebase.auth.getUser(uid);
+    const admin=(await firebase.firestore.collection('nyxUserAdministration').doc(uid).get()).data()||{};
+    const activity=await readAiActivity(firebase.firestore,uid,admin.aiModelRules||[]);
+    await recordNyxAuditSafe(firebase,{actorUid:token.uid,action:'ai_history_viewed',targetUid:uid,details:{}});
+    res.json(activity);
+  }catch(error){res.status(error.status||503).json({error:error.message||'AI activity could not load.'});}
+});
+
 app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) {
@@ -13157,6 +13181,7 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
     const capabilityByAction = {
       set_role: "canSetRole",
       set_subscription: "canSetSubscription",
+      set_ai_models: "canSetAiLimit",
       set_ai_limit: "canSetAiLimit",
       set_profile: "canEditProfile",
       disable: "canDisableAccount",
@@ -13194,7 +13219,11 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
     }
     let auditAction = action;
     let auditDetails = {};
-    if (action === "set_ai_limit") {
+    if (action === "set_ai_models") {
+      const aiModelRules=validateAiModelRules(req.body?.modelRules);
+      await firebase.firestore.collection('nyxUserAdministration').doc(uid).set({aiModelRules,updatedAt:new Date().toISOString()},{merge:true});
+      auditAction='ai_model_access_changed';auditDetails={aiModelRules};
+    } else if (action === "set_ai_limit") {
       if(!hasPremiumSubscription(targetAdministration?.data()?.subscriptionStatus||targetAdministration?.data()?.subscription?.status)){res.status(403).json({error:"Monthly AI allowances are only available to Premium members."});return;}
       const limits=req.body?.monthlyModelLimits;
       if(!Number.isSafeInteger(limits?.luna)||limits.luna<0||limits.luna>10000000||!Number.isSafeInteger(limits?.gemini)||limits.gemini<0||limits.gemini>10000000){res.status(400).json({error:'Enter valid monthly limits for Luna and Gemini.'});return;}
@@ -13411,6 +13440,7 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
         throw error;
       }
       const batch = firebase.firestore.batch();
+      batch.delete(firebase.firestore.collection("nyxAiHistory").doc(createHash("sha256").update(uid).digest("hex")));
       ["nyxUserProfiles", "nyxUserAdministration", "nyxUserActivity"].forEach(collectionName => {
         batch.delete(firebase.firestore.collection(collectionName).doc(uid));
       });

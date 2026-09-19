@@ -508,3 +508,8 @@
 .nyx-owner-tube-status .nyx-owner-status-body small{font-size:11px;margin-top:3px}
 .nyx-owner-tube-status .nyx-owner-status-body button{font-size:12px;padding:8px 12px}
 @media(max-width:600px){.nyx-owner-status-body{align-items:flex-start;flex-direction:column;gap:8px}.nyx-owner-tube-status summary strong span{display:inline;margin:0 0 0 8px}}
+
+.nyx-owner-ai-rules details{padding:12px 0;border-bottom:1px solid var(--border,#ffffff20)}
+.nyx-owner-ai-rules summary{cursor:pointer;overflow-wrap:anywhere}.nyx-owner-ai-rules summary small{opacity:.7}
+.nyx-owner-ai-rule-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:12px}
+.nyx-owner-ai-exchange{margin:12px 0}.nyx-owner-ai-exchange pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;max-height:350px;overflow:auto;padding:12px;background:#8881;border-radius:12px}

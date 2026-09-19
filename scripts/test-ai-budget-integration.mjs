@@ -1,3 +1,4 @@
+import {recordAiExchange,readAiActivity} from '../lib/ai-history.mjs';
 import {isFreeAiModel} from '../lib/ai-free-models.mjs';
 import {installDeveloperApi,createKeyStore,GEMINI} from '../lib/developer-api.mjs';
 import assert from 'node:assert/strict';
@@ -20,7 +21,7 @@ const db=memoryFirestore(),app=express();app.use(express.json());
 const firebase={firestore:db,auth:{async getUser(uid){return {uid,email:'optional@example.com',emailVerified:uid==='late-api',disabled:uid==='disabled',metadata:{creationTime:uid.startsWith('late-')?'2026-08-25T07:00:00Z':'2026-01-01T00:00:00Z'}};}}};
 let calls=0,lastPayload,hold,balance=1;
 const environment={NYX_AI_CONCURRENT_GLOBAL:3,NYX_OPENROUTER_API_KEY:'fixture-inference',NYX_OPENROUTER_MANAGEMENT_KEY:'fixture-management',NYX_AI_DAILY_BUDGET_USD:'1',NYX_AI_MODEL_PRICES_JSON:JSON.stringify({'shared:test':{inputPerMillion:1,outputPerMillion:2},['shared:'+GEMINI]:{inputPerMillion:.1,outputPerMillion:.4},'groq:test':{inputPerMillion:1,outputPerMillion:2}})};
-const context=vm.createContext({isFreeAiModel,app,AsyncLocalStorage,aiAllowanceConfig,createAiAllowance,premiumModelLimits,aiBudgetResponse,
+const context=vm.createContext({recordAiExchange,isFreeAiModel,app,AsyncLocalStorage,aiAllowanceConfig,createAiAllowance,premiumModelLimits,aiBudgetResponse,
   process:{env:environment},AbortController,AbortSignal,URL,Headers,setTimeout,clearTimeout,
   createOpenRouterBalanceGuard:options=>createOpenRouterBalanceGuard({...options,fetchImpl:async url=>new Response(JSON.stringify({data:url.endsWith('/credits')?{total_credits:balance,total_usage:0}:{limit_remaining:null}}))}),
   authenticatedNyxUser:async req=>{const uid=req.get('authorization')?.replace('Bearer ','');if(!uid)throw Object.assign(new Error('Auth required'),{status:401});return {firebase,token:{uid,email_verified:false}};},
@@ -121,5 +122,15 @@ try {
   assert.equal(freeResponse.status,200);await freeResponse.text();
   assert.equal(lastPayload.provider.sort,'latency');
   assert.deepEqual(lastPayload.provider.max_price,{prompt:0,completion:0,request:0});
+  for(const [uid,body,saved] of [
+    ['history-member',{historyNoticeVersion:1,message:'Visible fixture question'},true],
+    ['temporary-member',{historyNoticeVersion:1,temporaryChat:true,message:'Temporary secret'},false],
+    ['old-client',{message:'Old client secret'},false]
+  ]) {
+    const reply=await send(uid,{model:'openrouter/free',...body});assert.equal(reply.status,200);await reply.text();
+    const activity=await readAiActivity(db,uid);assert.equal(activity.entries.length,saved?1:0);assert.equal(activity.models['openrouter/free'].requests,1);
+    if(saved){assert.equal(activity.entries[0].prompt,body.message);assert.equal(activity.entries[0].answer,'hello');}
+    await new Promise(resolve=>setTimeout(resolve,30));
+  }
   console.log('PASS: real AI middleware auth/origin, retired option rejection, OpenRouter routing, parallel capacity, slot release and unverified cloud authentication');
 }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

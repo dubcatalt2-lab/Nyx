@@ -1291,7 +1291,7 @@
         method:'POST',
         signal:activeController.signal,
         headers:await aiHeaders({'content-type':'application/json'}),
-        body:JSON.stringify({model:requestedModel,message:userText,messages:history.slice(-MODEL_CONTEXT_MESSAGES),textAttachment,imageContext,image:preparedImage,responseDepth:responseDepth(),generateImage,stream:!generateImage})
+        body:JSON.stringify({historyNoticeVersion:1,temporaryChat:temporaryMode,model:requestedModel,message:userText,messages:history.slice(-MODEL_CONTEXT_MESSAGES),textAttachment,imageContext,image:preparedImage,responseDepth:responseDepth(),generateImage,stream:!generateImage})
       });
       }
       if(!response.ok){

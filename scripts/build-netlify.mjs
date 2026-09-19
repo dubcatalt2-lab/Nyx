@@ -1,3 +1,4 @@
+import {buildFrontendAssets} from './build-frontend-assets.mjs';
 import { spawn, spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { cp, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
@@ -294,7 +295,7 @@ async function minifyEmbeddedScramjetGuards(source, nameCache) {
 async function minifyFirstPartyBrowserRuntimes() {
   const generatedRuntimes = ["runtime-config.js", "nyx-scramjet-runtime-guard.js"];
   const trackedRuntimes = repositoryFiles().filter(relative => (
-    relative.endsWith(".js") &&
+    /\.(js|mjs)$/.test(relative) &&
     isStaticSource(relative) &&
     !relative.startsWith("assets/ugs/") &&
     !relative.startsWith("assets/vendor/")
@@ -317,6 +318,7 @@ async function minifyFirstPartyBrowserRuntimes() {
     sourceBytes += Buffer.byteLength(source);
     if (target.path === "script.js") source = await minifyEmbeddedScramjetGuards(source, nameCache);
     const result = await minify(source, {
+      module: target.path.endsWith(".mjs"),
       compress: runtimeCompressOptions(),
       mangle: runtimeMangleOptions(target.topLevel),
       format: runtimeFormatOptions(),
@@ -406,6 +408,7 @@ async function main() {
   await minifyFirstPartyBrowserRuntimes();
   await minifyFirstPartyMarkupAndStyles();
   await buildProxyAssets(output);
+  await buildFrontendAssets(output,repositoryFiles().filter(isStaticSource),learningPage());
   await writeNetlifyFiles();
   console.log(`${vpsBuild ? "VPS" : "Netlify"} build ready in ${output}`);
   console.log(`Wisp endpoint: ${wispUrl}`);

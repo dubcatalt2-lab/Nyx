@@ -29,16 +29,17 @@ try {
   for(const width of [1280,390]) {
     const page=await browser.newPage({viewport:{width,height:900}});
     const errors=[];page.on('pageerror',e=>errors.push(e.message));
-    let state='low',dashboardRole='owner',statusRequests=0,monthlyModelLimits={luna:25000,gemini:50000};const member={uid:'member123',displayName:'Test Member',username:'member',email:'member@example.test',role:'member',subscriptionStatus:'premium',profile:{}};
+    let state='low',dashboardRole='owner',statusRequests=0,modelRules=[];const member={uid:'member123',displayName:'Test Member',username:'member',email:'member@example.test',role:'member',subscriptionStatus:'premium',profile:{}};
     await page.route('http://nyx.test/**',async route=>{
       const path=new URL(route.request().url()).pathname;
       if(path==='/')return route.fulfill({contentType:'text/html',body:'<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body></body></html>'});
       let body={};
       if(path==='/api/owner-dashboard')body={access:{role:dashboardRole,founder:dashboardRole==='owner',permissions:[]},users:[member],metrics:{},pagination:{},audit:[]};
       if(path==='/api/owner-dashboard/users/member123'){
-        if(route.request().method()==='PATCH'){assert.equal(route.request().postDataJSON().action,'set_ai_limit');monthlyModelLimits=route.request().postDataJSON().monthlyModelLimits;}
-        body={user:{...member,aiMonthlyModelLimits:monthlyModelLimits},access:{role:dashboardRole,founder:dashboardRole==='owner',permissions:[]},capabilities:{canSetAiLimit:dashboardRole==='owner',canSetSubscription:dashboardRole==='owner'}};
+        if(route.request().method()==='PATCH'){assert.equal(route.request().postDataJSON().action,'set_ai_models');modelRules=route.request().postDataJSON().modelRules;}
+        body={user:{...member,aiModelRules:modelRules,aiAssignableModels:['openai/gpt-5.6-luna']},access:{role:dashboardRole,founder:dashboardRole==='owner',permissions:[]},capabilities:{canSetAiLimit:dashboardRole==='owner',canSetSubscription:dashboardRole==='owner'}};
       }
+      if(path==='/api/owner-dashboard/users/member123/ai')body={models:{'openai/gpt-5.6-luna':{requests:2,input:123,output:456}},entries:[{model:'openai/gpt-5.6-luna',at:Date.now(),prompt:'<img src=x onerror=alert(1)>',answer:'Fixture reply'}],limits:[]};
       if(path==='/api/owner-dashboard/ai-status'){
         statusRequests++;
         body={state,balanceUsd:state==='ok'?10:state==='paused'?.1:.49,keyRemainingUsd:4.9,dailyCapUsd:1,checkedAt:Date.now()};
@@ -77,8 +78,18 @@ try {
     await page.screenshot({path:`.codex-artifacts/owner-layout-${width}.png`});
     assert.doesNotMatch(await host.innerText(),/below \$0\.50/,'Refill clears the warning');
     await page.locator('[data-owner-view-user=member123]').first().click();
-    await page.locator('[data-owner-ai-limit=luna]').fill('65000');await page.locator('[data-owner-save-ai-limit]').click();
-    await page.waitForFunction(()=>document.querySelector('[data-owner-ai-limit=luna]')?.value==='65000');assert.deepEqual(monthlyModelLimits,{luna:65000,gemini:50000});
+    await page.locator('[data-ai-model] summary').click();
+    await page.locator('[data-ai-rule-access]').selectOption('allow');
+    await page.locator('[data-ai-rule-messages]').fill('25');
+    await page.locator('[data-owner-save-ai-models]').click();
+    await page.waitForFunction(()=>document.querySelector('[data-ai-rule-messages]')?.value==='25');
+    assert.deepEqual(modelRules,[{model:'openai/gpt-5.6-luna',access:'allow',messages:25,periodDays:4}]);
+    await page.locator('[data-owner-ai-activity]').click();
+    await page.locator('.nyx-owner-ai-exchange').waitFor();
+    assert.match(await page.locator('[data-owner-ai-activity-result]').innerText(),/123 input tokens/);
+    assert.equal(await page.locator('.nyx-owner-ai-exchange img').count(),0,'History is escaped, never executed');
+    await page.locator('.nyx-owner-ai-exchange summary').click();
+    assert.match(await page.locator('.nyx-owner-ai-exchange').innerText(),/Fixture reply/);
     await page.locator('[data-owner-drawer-close]').click();
     dashboardRole='admin';const before=statusRequests;
     await page.evaluate(()=>window.dashboard.refresh());

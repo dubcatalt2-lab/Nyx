@@ -42,7 +42,7 @@ export function decorateEmbedded(doc, app) {
     const link = doc.createElement("link");
     link.id = "tutsi-embedded-style";
     link.rel = "stylesheet";
-    link.href = "/apps/tutsi/embedded.css?v=1";
+    link.href = "/apps/tutsi/embedded.css?v=20260919-movie-hover";
     doc.head.append(link);
   }
   doc.title =

@@ -612,8 +612,20 @@ html[data-tutsi-app="movies"] :is(.movie-header, .catalog-toolbar) {
 html[data-tutsi-app="movies"] .movie-brand {
   font-size: 24px;
 }
-html[data-tutsi-app="movies"] .movie-card:hover img {
-  transform: none !important;
+/* Poster-only motion keeps the card and its title steady. */
+html[data-tutsi-app="movies"] .movie-card .poster img {
+  transition: transform 360ms cubic-bezier(.22,.61,.36,1), filter 360ms ease;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  html[data-tutsi-app="movies"] .movie-card:is(:hover, :focus-visible) .poster img {
+    transform: scale(1.035) !important;
+    filter: brightness(1.08);
+  }
+}
+@media (prefers-reduced-motion: reduce), (hover: none) {
+  html[data-tutsi-app="movies"] .movie-card:is(:hover, :focus-visible) .poster img {
+    transform: none !important;
+  }
 }
 html[data-tutsi-app="api"] .hero {
   border-radius: 16px;

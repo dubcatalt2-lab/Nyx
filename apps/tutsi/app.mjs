@@ -1227,10 +1227,20 @@ for(const {vendor,label} of filterSignatures){
 }
 $('blocker').value=settings.blocker;
 const filterLabel=vendor=>filterSignatures.find(item=>item.vendor===vendor)?.label||vendor;
-addEventListener('tutsi:filter-detected',({detail:{vendors}})=>{
+addEventListener('tutsi:filter-detected',({detail:{vendors,observed=[],checks=[],loaded=[]}})=>{
   $('filter-detection-result').textContent=vendors.length
     ? `Extension detected: ${vendors.map(filterLabel).join(', ')}. This does not prove it blocked a connection.${vendors.length>1?' Choose a filter below, or keep using connection checks.':''}`
-    : 'Unknown: no recognizable extension was visible. Try a block-page address below, or select your filter above.';
+    : observed.length
+      ? `Possible filter: ${observed.map(filterLabel).join(', ')}. Its address appears in this page, but the resource could not be verified. Select it above if it matches your device.`
+      : 'Unknown: this page cannot identify your filter. Hidden extensions and filters on the Wi-Fi may not be visible to websites. Select your filter above, or identify a block-page address below.';
+  const list=$('filter-check-details');list.replaceChildren();
+  const families=[...new Set([...checks.map(item=>item.vendor),...loaded,...observed])];
+  for(const vendor of families){
+    const row=document.createElement('li');
+    const attempts=checks.filter(item=>item.vendor===vendor);
+    const status=loaded.includes(vendor)?'Loaded extension resource':attempts.some(item=>item.status==='detected')?'Public resource responded':observed.includes(vendor)?'Address visible; not verified':attempts.some(item=>item.status==='timeout')?'Check timed out':'Not visible (absent or inaccessible)';
+    row.textContent=`${filterLabel(vendor)}: ${status}`;list.append(row);
+  }
   if(!vendors.length)$('filter-address-help').open=true;
 });
 $('detect-filter').addEventListener('click',async()=>{

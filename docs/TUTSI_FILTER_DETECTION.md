@@ -1,5 +1,11 @@
 # Tutsi filter detection comparison
 
+## Loaded-resource detection and diagnostics (2026-09-19)
+
+The scanner now combines public-resource probes with already-loaded extension images and stylesheets. A known extension image must have decoded dimensions; a stylesheet must have a loaded sheet. This recovers evidence when a fresh fetch fails. Merely finding a known extension URL in a DOM node is reported as an unverified hint, never used for automatic relay ranking. Hidden resources, errors and timeouts do not establish that an extension is absent. No script is executed, and no extension contents or browsing history are read.
+
+Settings includes per-vendor Detection details for all 17 supported historical product families. Manual choices still take precedence. Response-body cancellation no longer blocks scan completion. `test-tutsi-filter-report.mjs` verifies a real unpacked extension stylesheet with a denied re-fetch, failed resources, unverified addresses, timeouts and stalled cancellation. Managed Chromebook coverage remains unverified; Chrome deliberately restricts website access to extension resources (https://developer.chrome.com/docs/extensions/reference/manifest/web-accessible-resources).
+
 Local evaluation on 2026-09-16. No managed Chromebook was available.
 
 ## Compared implementations

@@ -53,6 +53,31 @@ globalThis.NyxDuckImageViewport = function(t, browserShellSourceUrl){
           }
         });
       };
+      const warmVisibleImages=()=>{
+        const view=t.frame.contentWindow;
+        if(!view || !t.frame.getClientRects().length) return;
+        let source;
+        try{source=new URL(currentSource())}catch{return}
+        if(source.searchParams.get('ia')!=='images' && source.searchParams.get('iax')!=='images') return;
+        const height=view.innerHeight, width=view.innerWidth;
+        // Layout repair can move a lazy image into view after the site's scroll
+        // handler has run. Start nearby thumbnails without moving the viewport.
+        for(const image of doc.images){
+          if(image.closest('header,nav,aside,[role="dialog"],[class*="modal" i],[class*="anomaly" i]'))continue;
+          const box=image.getBoundingClientRect();
+          if(box.width<50 || box.height<50 || box.bottom < -height || box.top > height*3 || box.right<0 || box.left>width)continue;
+          if(image.getAttribute('loading')==='lazy')image.setAttribute('loading','eager');
+          const current=image.getAttribute('src') || '';
+          const placeholder=!current || current==='about:blank' || (/^data:image\//i.test(current) && image.complete && image.naturalWidth<=1);
+          if(!placeholder || image.getAttribute('srcset'))continue;
+          const lazy=image.getAttribute('data-src') || image.getAttribute('data-original') || image.getAttribute('data-lazy-src');
+          if(!lazy)continue;
+          try{
+            const url=new URL(lazy,source);
+            if(['http:','https:'].includes(url.protocol))image.setAttribute('src',lazy);
+          }catch{}
+        }
+      };
       const repairImageFilterViewport=()=>{
         const labels=['AI images','All sizes','All colors','All types','All layouts','Licenses'];
         doc.querySelectorAll('nav').forEach(nav=>{
@@ -174,17 +199,30 @@ globalThis.NyxDuckImageViewport = function(t, browserShellSourceUrl){
           repairImageFilterViewport();
           repairImages();
           collapseEmptyImageGap();
+          warmVisibleImages();
         });
       };
       try{
-        new MutationObserver(queueRepair).observe(doc.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['src','srcset','data-src','data-original','data-lazy-src','data-image-url']});
+        new MutationObserver(queueRepair).observe(doc.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['src','srcset','loading','data-src','data-original','data-lazy-src','data-image-url']});
       }catch{}
+      let warmQueued=false;
+      const queueWarm=()=>{
+        if(warmQueued)return;
+        warmQueued=true;
+        requestAnimationFrame(()=>{warmQueued=false;warmVisibleImages()});
+      };
+      // Image completion and viewport changes must work without continuous scroll.
+      doc.addEventListener('load',queueWarm,true);
+      doc.addEventListener('scroll',queueWarm,{capture:true,passive:true});
+      doc.defaultView?.addEventListener('resize',queueWarm,{passive:true});
       repairImageFilterViewport();
       repairImages();
       collapseEmptyImageGap();
+      warmVisibleImages();
       [250,700,1400,2600,4200].forEach(delay=>setTimeout(()=>{
         repairImageFilterViewport();
         repairImages();
         collapseEmptyImageGap();
+        warmVisibleImages();
       },delay));
     };

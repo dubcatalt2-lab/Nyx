@@ -141,33 +141,57 @@ export function exposedSignatures(doc=globalThis.document, signatures=filterSign
   }
   return found;
 }
-export async function detectFilters({signatures=filterSignatures, fetcher=globalThis.fetch, timeoutMs=3000, doc=globalThis.document}={}) {
+// A loaded image/stylesheet remains evidence even when a later fetch is denied.
+// A URL in markup alone is only a hint: failed resources can also leave nodes.
+export function loadedFilterResources(doc=globalThis.document, signatures=filterSignatures) {
+  const vendors=new Set();
+  for(const node of doc?.querySelectorAll?.('img[src],link[href]') || []) {
+    const loaded=node.tagName==='IMG' ? node.complete && node.naturalWidth>0 : !!node.sheet;
+    if(!loaded)continue;
+    const source=node.tagName==='IMG' ? node.currentSrc || node.getAttribute('src') : node.getAttribute('href');
+    try {
+      const url=new URL(source);
+      if(url.protocol!=='chrome-extension:')continue;
+      const identity=[...signatures,...additionalIdentities].find(item=>item.id===url.hostname);
+      if(identity)vendors.add(identity.vendor);
+    }catch{}
+  }
+  return [...vendors];
+}
+export async function inspectFilters({signatures=filterSignatures, fetcher=globalThis.fetch, timeoutMs=3000, doc=globalThis.document}={}) {
+  const observed=exposedSignatures(doc,signatures);
   signatures=[...signatures,...exposedSignatures(doc,signatures)];
   signatures=signatures.filter((item,index,all)=>all.findIndex(other=>other.id===item.id&&other.path===item.path)===index);
-  const matches = await Promise.all(signatures.map(async signature => {
-    if (!/^[a-p]{32}$/.test(signature.id) || !/^[a-z0-9_-]+$/.test(signature.vendor) || !signature.path || signature.path.includes('..')) return null;
+  const checks = await Promise.all(signatures.map(async signature => {
+    const result={vendor:signature.vendor,label:signature.label || signature.vendor,status:'unavailable'};
+    if (!/^[a-p]{32}$/.test(signature.id) || !/^[a-z0-9_-]+$/.test(signature.vendor) || !signature.path || signature.path.includes('..')) return {...result,status:'invalid'};
     const abort = new AbortController();
     let timer;
     try {
       const response = await Promise.race([
         fetcher(`chrome-extension://${signature.id}/${signature.path}`, {cache:'no-store', signal:abort.signal}),
-        new Promise(resolve => {timer=setTimeout(()=>{abort.abort();resolve(null)},timeoutMs)}),
+        new Promise(resolve => {timer=setTimeout(()=>{result.status='timeout';abort.abort();resolve(null)},timeoutMs)}),
       ]);
       // Do not execute scripts or read contents. Failed/hidden resources mean unknown.
-      if (response?.ok) { try {await response.body?.cancel()} catch {} return signature.vendor; }
+      if (response?.ok) { try {void response.body?.cancel()?.catch(()=>{})} catch {} result.status='detected'; }
     } catch {} finally {clearTimeout(timer);abort.abort()}
-    return null;
+    return result;
   }));
-  return [...new Set(matches.filter(Boolean))];
+  const loaded=loadedFilterResources(doc,signatures);
+  const vendors=[...new Set([...checks.filter(item=>item.status==='detected').map(item=>item.vendor),...loaded])];
+  return {vendors,loaded,observed:[...new Set(observed.map(item=>item.vendor))].filter(vendor=>!vendors.includes(vendor)),checks};
+}
+export async function detectFilters(options) {
+  return (await inspectFilters(options)).vendors;
 }
 let pending, scanVersion=0, lastScan=0;
 export function scanFilters({refresh=false}={}) {
   if(refresh || Date.now()-lastScan>30000)pending=null;
   if(pending)return pending;
   const version=++scanVersion;lastScan=Date.now();
-  pending=detectFilters().then(vendors=>{
-    if(version===scanVersion)globalThis.dispatchEvent?.(new CustomEvent('tutsi:filter-detected',{detail:{vendors}}));
-    return vendors;
+  pending=inspectFilters().then(report=>{
+    if(version===scanVersion)globalThis.dispatchEvent?.(new CustomEvent('tutsi:filter-detected',{detail:report}));
+    return report.vendors;
   });
   return pending;
 }

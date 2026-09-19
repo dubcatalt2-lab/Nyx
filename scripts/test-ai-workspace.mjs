@@ -15,6 +15,7 @@ try {
   const chatRequests = [];
   page.on("pageerror", error => pageErrors.push(error.message));
   await page.addInitScript(() => {
+    Object.defineProperty(window,"documentPictureInPicture",{configurable:true,value:undefined});
     localStorage.setItem("nyx.aiPersonalKey.device","retired-fixture-key");
     localStorage.setItem("nyx.aiPersonalBaseUrl.device","https://api.ofox.ai/v1");
     localStorage.setItem("nyx.aiSharedProvider","huggingface");
@@ -81,13 +82,14 @@ z = \frac{9}{3}`;
 
   await page.goto(`${baseUrl}/ai.html`, { waitUntil: "domcontentloaded" });
   await page.locator("#modelTrigger").waitFor();
+  if(process.env.NYX_TEST_TUTSI==='1')await page.evaluate(async()=>{const {decorateEmbedded}=await import('/apps/tutsi/embedded.mjs');decorateEmbedded(document,'ai')});
   assert(await page.locator('#apiKeySettings,#apiKeyDialog').count()===0,'Retired personal provider options remain');
   assert(await page.locator('#providerSelect option').allTextContents().then(items=>items.join(','))==='OpenRouter','Only OpenRouter should be offered');
   await page.locator("#shareScreen").click();
   await page.locator("#screenPreview").waitFor({ state: "visible" });
   await page.waitForFunction(() => document.querySelector("#screenVideo")?.videoWidth > 1);
-  await page.locator("#input").fill("Read the visible screen text.");
-  await page.locator("#form").evaluate(form => form.requestSubmit());
+  await page.locator('.ai-screen-chat textarea').fill('Read the visible screen text.');
+  await page.locator('.ai-screen-chat form').evaluate(form=>form.requestSubmit());
   await page.waitForFunction(() => document.querySelector("#conversation")?.textContent?.includes("Screen frame received."));
   await page.waitForFunction(()=>document.querySelector('.ai-response-stats')?.textContent.includes('total'));
   const stats=await page.locator('.ai-response-stats').first().innerText();
@@ -96,13 +98,23 @@ z = \frac{9}{3}`;
   assert(/^data:image\/jpeg;base64,/.test(chatRequests[0].body?.image?.dataUrl || ""), "Screen prompt did not attach a captured JPEG frame");
   assert(chatRequests[0].body?.image?.screenCapture === true, "Screen prompt did not identify the image as an active screen-share frame");
   assert(!chatRequests[0].headers["x-nyx-ai-base-url"]&&!chatRequests[0].headers["x-nyx-ai-api-key"], "Retired personal credentials must never be sent");
-  assert(await page.locator(".ai-answer .katex-display").count() === 6, "Adjacent, escaped, or unclosed display math was not rendered through KaTeX");
-  assert(await page.locator(".ai-answer .katex").count() >= 7, "Inline and display math were not both rendered through KaTeX");
-  assert((await page.locator(".ai-answer .katex-display").first().innerText()).includes("125"), "The reported fractional-exponent example was not rendered as display math");
-  assert(!(await page.locator(".ai-answer").innerText()).includes("\\["), "Raw display-math delimiters remained visible in the AI answer");
-  assert(!(await page.locator(".ai-answer").innerText()).includes("\\]"), "Raw display-math closing delimiters remained visible in the AI answer");
+  assert(await page.locator("#conversation .ai-answer .katex-display").count() === 6, "Adjacent, escaped, or unclosed display math was not rendered through KaTeX");
+  assert(await page.locator("#conversation .ai-answer .katex").count() >= 7, "Inline and display math were not both rendered through KaTeX");
+  assert((await page.locator("#conversation .ai-answer .katex-display").first().innerText()).includes("125"), "The reported fractional-exponent example was not rendered as display math");
+  assert(!(await page.locator("#conversation .ai-answer").innerText()).includes("\\["), "Raw display-math delimiters remained visible in the AI answer");
+  assert(!(await page.locator("#conversation .ai-answer").innerText()).includes("\\]"), "Raw display-math closing delimiters remained visible in the AI answer");
   assert(await page.locator("#screenPreview").isVisible(), "Screen sharing stopped after one prompt instead of remaining user-controlled");
-  await page.locator("#stopScreenShare").click();
+  await page.locator('.ai-screen-chat-messages').getByText('Screen frame received.',{exact:false}).first().waitFor();
+  await page.setViewportSize({width:390,height:844});
+  assert(await page.locator('.ai-screen-chat').evaluate(el=>el.getBoundingClientRect().right<=innerWidth),'Floating screen chat overflows mobile');
+  await page.setViewportSize({width:1280,height:900});
+  const popped=page.waitForEvent('popup');await page.locator('[data-screen-chat-popout]').click();const chatWindow=await popped;
+  await chatWindow.locator('.ai-screen-chat textarea').waitFor();
+  assert((await chatWindow.title()).startsWith(process.env.NYX_TEST_TUTSI==='1'?'Tutsi AI':'Nyx AI'),'Screen window brand is incorrect');
+  assert(await chatWindow.locator('.ai-message-assistant .ai-message-body').first().evaluate(el=>el.getBoundingClientRect().width>200),'Screen reply is squeezed into the avatar column');
+  await chatWindow.close();
+  await page.waitForFunction(()=>document.querySelector('#screenPreview').hidden);
+  assert(await page.evaluate(()=>window.__nyxScreenTestStream.getTracks().every(track=>track.readyState==='ended')),'Closing screen chat must stop capture');
   assert(await page.locator("#screenPreview").isHidden(), "Stop did not end and hide screen sharing");
 
   const imageFile = { name: "attachment-test.png", mimeType: "image/png", buffer: Buffer.from(await page.evaluate(() => {

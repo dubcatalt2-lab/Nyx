@@ -13,7 +13,7 @@ const defaults = {
   accent: "mauve",
   motion: false,
   engine: "duckduckgo",
-  transport: "epoxy",
+  transport: "libcurl",
   relay: "",
   autoRelay: true,
   adBlock: true, popupBlock: true, downloadBlock: true,

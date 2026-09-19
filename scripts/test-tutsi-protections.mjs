@@ -19,7 +19,7 @@ const browser=await chromium.launch({headless:true});
 try {
  const page=await browser.newPage();page.on('pageerror',e=>console.log('Page error:',e.message));
  await page.goto(base+'/tutsi#settings');
- await page.locator('#close-prevention').uncheck();await page.selectOption('#blocker','');
+ await page.locator('#close-prevention').uncheck();await page.selectOption('#blocker','');await page.selectOption('#transport','epoxy');
  for(const id of ['ad-block','popup-block','download-block'])assert(await page.locator('#'+id).isChecked());
  await page.locator('#ad-block').uncheck();await page.reload();assert(!(await page.locator('#ad-block').isChecked()));await page.locator('#ad-block').check();
  // Actual controller/rewriter with harmless upstream responses; no live ads or files.

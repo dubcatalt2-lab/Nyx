@@ -2,6 +2,7 @@ import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
+  "js/ai-screen-chat.js",
   "apps/tutsi/app.webmanifest",
   "apps/tutsi/install.js",
   "apps/tutsi/tutsi-singlefile.html",

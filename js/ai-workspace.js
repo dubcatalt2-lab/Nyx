@@ -578,7 +578,10 @@
     });
   }
 
+  const screenChat=window.createNyxScreenChat({conversation,input,form,stop:stopScreenSharing,status:screenStatus,brand:()=>aiBrand()});
+
   function stopScreenSharing(){
+    screenChat.destroy();
     const active=screenStream;
     screenStream=null;
     if(active) active.getTracks().forEach(track=>track.stop());
@@ -608,6 +611,7 @@
       shareScreen.setAttribute('aria-pressed','true');
       screenStatus.textContent='A fresh frame is attached only when you send.';
       await screenVideo.play().catch(()=>{});
+      if(screenStream===stream)screenChat.start();
     }catch(error){
       stopScreenSharing();
       if(error?.name!=='NotAllowedError') showAttachmentError(error?.message||'Nyx could not start screen sharing.','Screen sharing unavailable');
@@ -705,6 +709,9 @@
     section.append(heading,links);content.appendChild(section);
   }
 
+  const aiBrand=()=>document.documentElement.dataset.tutsiApp==='ai'?'Tutsi AI':'Nyx AI';
+  const aiStatusText=value=>String(value||'').replace(/\bNyx AI\b/g,aiBrand());
+
   function setMessageContent(message,text,{error=false,thinking=false}={}){
     const content=message.querySelector('.ai-message-content');
     if(!content) return;
@@ -712,12 +719,13 @@
     message.classList.toggle('is-thinking',thinking);
     if(thinking){
       message._nyxMessageText='';
-      content.innerHTML='<span class="ai-thinking" aria-label="Nyx AI is thinking"><i></i><i></i><i></i></span>';
+      content.innerHTML=`<span class="ai-thinking" aria-label="${aiBrand()} is thinking"><i></i><i></i><i></i></span>`;
       return;
     }
     if(message.classList.contains('ai-message-user')||error){
-      message._nyxMessageText=String(text||'');
-      content.textContent=String(text||'');
+      const displayText=error?aiStatusText(text):String(text||'');
+      message._nyxMessageText=displayText;
+      content.textContent=displayText;
       return;
     }
     const parts=responseParts(text);
@@ -776,7 +784,7 @@
     message.innerHTML=`
       <div class="ai-message-avatar" ${assistant?'data-nyx-logo aria-hidden="true"':'aria-hidden="true"'}>${assistant?'':'You'}</div>
       <div class="ai-message-body">
-        <div class="ai-message-meta"><strong>${assistant?'Nyx AI':'You'}</strong><div class="ai-message-actions">${messageCopyButton()}</div></div>
+        <div class="ai-message-meta"><strong>${assistant?aiBrand():'You'}</strong><div class="ai-message-actions">${messageCopyButton()}</div></div>
         <div class="ai-message-content"></div>
       </div>`;
     if(assistant&&timing)showTiming(message,timing);
@@ -1170,7 +1178,7 @@
     attachImage.disabled=busy;
     shareScreen.disabled=busy;
     removeAttachment.disabled=busy;
-    send.setAttribute('aria-label',busy?'Waiting for Nyx AI':'Send message');
+    send.setAttribute('aria-label',busy?`Waiting for ${aiBrand()}`:'Send message');
   }
 
   function clearChat(){

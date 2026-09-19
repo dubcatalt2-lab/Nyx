@@ -2,7 +2,7 @@ import {sourceWebsiteUrl} from "./navigation.mjs";
 import {protectTransport, policyFrom, installPageProtection} from "./protections.mjs";
 import {httpRelayUrl, installHttpRelaySocket, createHttpRelayEndpoint} from "./http-relay.mjs";
 import { effectiveFilter } from "./filter-detection.mjs";
-import {relayCandidates, probeWisp, RelayTransport, rankForBlocker} from "./relay.mjs";
+import {relayCandidates, transportCandidates, probeWisp, RelayTransport, rankForBlocker} from "./relay.mjs";
 import "/js/duck-image-viewport.js";
 import { compatibilityPlugin } from "./proxy-compat.mjs";
 const bounded = (promise, ms, label) => {
@@ -70,10 +70,10 @@ function relayStatus(detail) {dispatchEvent(new CustomEvent('tutsi:relay-status'
 async function transport(settings) {
   installHttpRelaySocket();
   const fallback=httpRelayUrl();
-  const urls=[...relayCandidates(settings),fallback];
+  const urls=transportCandidates(settings);
   const path=settings.transport==='libcurl'?'/assets/transports/libcurl-scramjet.mjs':'/assets/transports/epoxy-scramjet.mjs';
   const {default:Client}=await import(path);
-  const connection=new RelayTransport({urls,visible:()=>!document.hidden&&document.body.dataset.view==="browser",rank:async urls=>[...await rankForBlocker(urls.filter(url=>url!==fallback),await effectiveFilter(settings.blocker),{onHint:detail=>dispatchEvent(new CustomEvent('tutsi:filter-hint',{detail}))}),...urls.filter(url=>url===fallback)],onStatus:relayStatus,createClient:async wisp=>{
+  const connection=new RelayTransport({urls,visible:()=>!document.hidden&&document.body.dataset.view==="browser",rank:async candidates=>{const remote=await rankForBlocker(candidates.filter(url=>url!==fallback),await effectiveFilter(settings.blocker),{onHint:detail=>dispatchEvent(new CustomEvent('tutsi:filter-hint',{detail}))});const bridge=candidates.filter(url=>url===fallback);return !settings.relay||settings.relay===fallback?[...bridge,...remote]:[...remote,...bridge]},onStatus:relayStatus,createClient:async wisp=>{
     const endpoint=wisp===fallback?createHttpRelayEndpoint():null;
     const url=endpoint?.url||wisp;
     const client=new Client({wisp:url,websocket:url,wisp_v2:settings.transport!=='wisp'});

@@ -1,5 +1,5 @@
 ﻿import assert from 'node:assert/strict';
-import {RelayTransport,probeWisp,relayCandidates,rankForBlocker} from '../apps/tutsi/relay.mjs';
+import {RelayTransport,probeWisp,relayCandidates,rankForBlocker,transportCandidates} from '../apps/tutsi/relay.mjs';
 const urls=['wss://one.example/wisp/','wss://two.example/wisp/'];
 const options={urls,storage:null,monitorMs:0,online:()=>true,visible:()=>true};
 let healthy=new Set(urls),calls=[];
@@ -46,3 +46,8 @@ const abort=new AbortController();attempts=0;
 const cancelled=new RelayTransport({...options,probe:async()=>true,createClient:()=>({request:async()=>{attempts++;abort.abort();throw new Error('request timed out');}})});
 await cancelled.init();await assert.rejects(cancelled.request('https://fixture.test/','GET',null,[],abort.signal));assert.equal(attempts,1);cancelled.close();
 console.log('First-read timeout recovery, retry bound, POST and cancellation safety passed');
+
+const localPage={protocol:'https:',host:'tutsi.test'};
+assert.equal(transportCandidates({}, {},localPage)[0],'wss://tutsi.test/api/tutsi-relay/socket/');
+assert.deepEqual(transportCandidates({autoRelay:false}, {},localPage),['wss://tutsi.test/api/tutsi-relay/socket/']);
+assert.deepEqual(transportCandidates({relay:urls[0],autoRelay:false}, {},localPage),[urls[0]]);

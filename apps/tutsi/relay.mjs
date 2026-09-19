@@ -1,3 +1,4 @@
+import {httpRelayUrl} from "./http-relay.mjs";
 ﻿export function normalizeRelay(value, protocol = globalThis.location?.protocol || 'https:') {
   try {
     const url=new URL(value);
@@ -10,6 +11,11 @@ export function relayCandidates(settings, config = globalThis.__NYX_RUNTIME_CONF
   const primary=normalizeRelay(settings.relay,page.protocol)||normalizeRelay(config.wispUrl,page.protocol)||own;
   if(settings.autoRelay===false)return [primary];
   return [...new Set([primary,own,...(Array.isArray(config.wispUrls)?config.wispUrls:[]),'wss://copium-wisp-9529463.onrender.com/wisp/'].map(url=>normalizeRelay(url,page.protocol)).filter(Boolean))].slice(0,6);
+}
+export function transportCandidates(settings,config=globalThis.__NYX_RUNTIME_CONFIG__||{},page=location){
+  const bridge=httpRelayUrl(page),relays=relayCandidates(settings,config,page);
+  if(!settings.relay||settings.relay===bridge)return [...new Set([bridge,...(settings.autoRelay===false?[]:relays)])];
+  return [...new Set([...relays,...(settings.autoRelay===false?[]:[bridge])])];
 }
 export function probeWisp(url, {timeout=7000, Socket=WebSocket}={}) {
   return new Promise(resolve=>{

@@ -1,5 +1,5 @@
 ﻿// Only the reserved relay URL uses HTTP. All other WebSockets retain native behavior.
-export const httpRelayUrl = () => `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/api/tutsi-relay/socket/`;
+export const httpRelayUrl = (page=location) => `${page.protocol === 'https:' ? 'wss:' : 'ws:'}//${page.host}/api/tutsi-relay/socket/`;
 export class HttpRelaySocket extends EventTarget {
   static CONNECTING=0; static OPEN=1; static CLOSING=2; static CLOSED=3;
   CONNECTING=0; OPEN=1; CLOSING=2; CLOSED=3;

@@ -1872,3 +1872,5 @@ Reproduced HTTP relay disconnection with a 4 MB binary image-sized burst before 
 Release validation: VPS build and deployment checks passed locally, including the 192 required build files. AI workspace fixtures passed for both Nyx and Tutsi, covering screen chat, popup closure, capture cleanup and mobile sizing. Branding, HTTP burst/cleanup, relay selection and rewritten-page protection tests passed. User authorized push and VPS deployment of this release.
 
 Tutsi Movies follow-up: movie posters gently zoom and brighten on hover or keyboard focus over 360 ms, clipped within their existing rounded poster. Cards and titles stay still and have no glow. Touch and reduced-motion users keep static posters. Embedded stylesheet version was updated.
+
+HTTP relay capacity follow-up: user requested a 20 MB receive buffer, replacing the 8 MB setting above. The upstream pause/drain/resume flow is retained; the fixture now sends 24 MB (384 frames) and checks frame order and bytes across multiple polls. This is a per-session receive buffer, not a total image file size cap.

@@ -6,7 +6,7 @@ import WebSocket from 'ws';
 export function installHttpWisp(app, {upstream, allowed, clientIp, banned = async () => false}) {
   const sessions = new Map();
   const attempts = new Map();
-  const maxQueue = 8 * 1024 * 1024;
+  const maxQueue = 20 * 1024 * 1024;
   const maxSendQueue = 2 * 1024 * 1024;
   function dispose(s) {
     if (!sessions.delete(s.token)) return;

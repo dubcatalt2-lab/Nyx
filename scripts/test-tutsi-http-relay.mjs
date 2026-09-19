@@ -5,7 +5,7 @@ import {WebSocketServer} from 'ws';
 import {installHttpWisp} from '../server-http-wisp.mjs';
 const app=express(), server=createServer(app), ws=new WebSocketServer({server});
 let peers=0;
-ws.on('connection', socket=>{peers++;socket.on('close',()=>peers--);socket.on('message',data=>{if(data.toString()==='burst'){for(let i=0;i<192;i++)socket.send(Buffer.alloc(65536,i));}else socket.send(data)});socket.send(Buffer.from([3,0,0,0,0,10,0,0,0]));});
+ws.on('connection', socket=>{peers++;socket.on('close',()=>peers--);socket.on('message',data=>{if(data.toString()==='burst'){for(let i=0;i<384;i++)socket.send(Buffer.alloc(65536,i));}else socket.send(data)});socket.send(Buffer.from([3,0,0,0,0,10,0,0,0]));});
 let port;
 app.use((req,res,next)=>next());
 const close=installHttpWisp(app,{upstream:()=>({url:`ws://127.0.0.1:${port}`}),allowed:req=>req.headers.origin==='https://tutsi.test',banned:async req=>req.headers['x-test-ip']==='banned',clientIp:req=>req.headers['x-test-ip']||'one'});
@@ -27,10 +27,10 @@ try {
  assert.equal((await call('send',{method:'POST',headers:{...auth,'Content-Type':'application/octet-stream','X-Tutsi-Sequence':'3'},body:Buffer.from('burst')})).status,204);
  await new Promise(r=>setTimeout(r,200));
  let frames=0;
- while(frames<192){
+ while(frames<384){
   const response=await call('receive',{headers:auth});assert.equal(response.status,200,'An image burst must not close the relay');
   const bytes=Buffer.from(await response.arrayBuffer());
-  for(let offset=0;offset<bytes.length;){const length=bytes.readUInt32LE(offset);offset+=4;assert.equal(length,65536);assert(bytes.subarray(offset,offset+length).every(value=>value===frames));offset+=length;frames++;}
+  for(let offset=0;offset<bytes.length;){const length=bytes.readUInt32LE(offset);offset+=4;assert.equal(length,65536);assert(bytes.subarray(offset,offset+length).every(value=>value===(frames%256)));offset+=length;frames++;}
  }
  assert.equal((await call('send',{method:'POST',headers:{...auth,'Content-Type':'application/octet-stream','X-Tutsi-Sequence':'0'},body:Buffer.from([9])})).status,409);
  assert.equal((await call('send',{method:'POST',headers:{...auth,'Content-Type':'application/octet-stream','X-Tutsi-Sequence':'3'},body:Buffer.alloc(262145)})).status,413);

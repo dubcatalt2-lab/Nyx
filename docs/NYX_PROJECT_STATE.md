@@ -1,3 +1,7 @@
+## Shared AI capacity (2026-09-18)
+
+- Increased both server request limiter and durable shared-account allowance defaults from 10 to 30 concurrent requests across Nyx and Tutsi. Preserves one priority-reserved slot, per-account concurrency, minute limits and budgets. Environment overrides still apply. Updated capacity fixtures exercise 29 regular requests plus a priority request, rejection at capacity and slot release/reuse. User requested the capacity increase now.
+
 ## App/download release (2026-09-18)
 
 - Updated Nyx HTML launcher and download release to 2026.09.18.1. Added Tutsi Settings install/download controls, a branded standalone HTML launcher, a no-store attachment endpoint, and a separate install manifest with its own identity and /tutsi start URL. Both manifests use actual 192/512 PNG icons. Launchers require the live website and internet; they are not offline copies or native desktop executables.

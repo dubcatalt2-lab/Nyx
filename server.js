@@ -2511,7 +2511,7 @@ const nyxAiLimits = {
   minute: nyxAiLimit("NYX_AI_REQUESTS_PER_MINUTE", 6),
   daily: nyxAiLimit("NYX_AI_REQUESTS_PER_DAY", 60),
   perIpConcurrent: nyxAiLimit("NYX_AI_CONCURRENT_PER_IP", 2),
-  globalConcurrent: nyxAiLimit("NYX_AI_CONCURRENT_GLOBAL", 10),
+  globalConcurrent: nyxAiLimit("NYX_AI_CONCURRENT_GLOBAL", 30),
   promptChars: nyxAiLimit("NYX_AI_MAX_PROMPT_CHARS", 4000),
   textAttachmentChars: nyxAiLimit("NYX_AI_MAX_TEXT_ATTACHMENT_CHARS", 18000),
   contextChars: nyxAiLimit("NYX_AI_MAX_CONTEXT_CHARS", 24000),

@@ -453,7 +453,28 @@
   }
   function commandCatalog(){return [...SLASH_COMMANDS,...customCommandCatalog()]}
   function findSlashCommand(name){const value=String(name||'').toLowerCase();return commandCatalog().find(command=>command.name===value||(command.aliases||[]).includes(value))}
-  function resolveCommandMember(value){const query=String(value||'').trim().split(/\s+/)[0].toLowerCase();if(!query)return null;return state.members.find(member=>String(member.handle||'').toLowerCase()===query||String(member.handle||'').slice(1).toLowerCase()===query.replace(/^@/,'')||String(member.displayName||'').toLowerCase()===query.replace(/^@/,''))||null}
+  const searchedMembers=new Map(),memberSearchCache=new Map();
+  let memberSearchTimer,memberSearchKey='';
+  const availableMembers=()=>[...new Map([...state.members,...searchedMembers.values()].map(member=>[member.uid,member])).values()];
+  async function searchMembers(query){
+    query=String(query||'').replace(/^@/,'').toLowerCase();
+    if(!/^[a-z0-9_.-]{1,32}$/.test(query))return;
+    if(Date.now()-(memberSearchCache.get(query)||0)<30000)return;
+    const payload=await fetchJson(`${API}/members?search=${encodeURIComponent(query)}`,{cache:'no-store'});
+    for(const member of payload.members||[])searchedMembers.set(member.uid,member);
+    memberSearchCache.set(query,Date.now());
+    if(memberSearchCache.size>100)memberSearchCache.delete(memberSearchCache.keys().next().value);
+    if(searchedMembers.size>200)searchedMembers.delete(searchedMembers.keys().next().value);
+  }
+  function scheduleMemberSearch(query){
+    if(memberSearchKey===query)return;
+    memberSearchKey=query;clearTimeout(memberSearchTimer);
+    if(!query)return;
+    memberSearchTimer=setTimeout(()=>{void searchMembers(query).then(()=>{
+      if(memberSearchKey===query)updateMentionMenu();
+    }).catch(()=>{});},180);
+  }
+  function resolveCommandMember(value){const query=String(value||'').trim().split(/\s+/)[0].toLowerCase();if(!query)return null;return availableMembers().find(member=>String(member.handle||'').toLowerCase()===query||String(member.handle||'').slice(1).toLowerCase()===query.replace(/^@/,'')||String(member.displayName||'').toLowerCase()===query.replace(/^@/,''))||null}
   function requireCommandArgs(command,args,hint='message'){if(args)return args;throw new Error(`Add ${hint} after /${command}.`)}
   function commandUtf8Bytes(value){return new TextEncoder().encode(String(value||''))}
   function commandBase64Encode(value){const bytes=commandUtf8Bytes(value);let binary='';bytes.forEach(byte=>{binary+=String.fromCharCode(byte)});return btoa(binary)}
@@ -702,7 +723,7 @@
   async function deleteMessage(message){if(!confirm('Delete this message?'))return;try{await fetchJson(`${API}/messages/${encodeURIComponent(state.active.id)}/${encodeURIComponent(message.id)}`,{method:'DELETE'});const key=scopeKey();state.messages.set(key,(state.messages.get(key)||[]).filter(item=>item.id!==message.id));(message.attachments||[]).forEach(attachment=>{const url=state.blobUrls.get(attachment.id);if(url&&String(url).startsWith('blob:'))URL.revokeObjectURL(url);state.blobUrls.delete(attachment.id);state.blobExpires.delete(attachment.id)});renderMessages();showNotice('Message deleted.','success')}catch(error){showNotice(error.message)}}
   async function purgeChannelMessages(args){if(state.active.type!=='channel')throw new Error('Use /purge inside a text channel.');if(!isModerator())throw new Error('Only moderators and staff can purge channel messages.');const value=String(args||'').trim();if(value&&!/^\d+$/.test(value))throw new Error('Use /purge followed by a number from 1 to 100.');const count=value?Number(value):10;if(!Number.isInteger(count)||count<1||count>100)throw new Error('Choose between 1 and 100 messages.');const channel=activeChannel();if(!confirm(`Delete the newest ${count} message${count===1?'':'s'} from #${channel?.name||state.active.id}? This cannot be undone.`))return;const payload=await fetchJson(`${API}/messages/purge`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({channel:state.active.id,count})});const deletedIds=new Set((Array.isArray(payload.deletedIds)?payload.deletedIds:[]).map(String));const key=scopeKey();const removed=(state.messages.get(key)||[]).filter(message=>deletedIds.has(message.id));removed.flatMap(message=>message.attachments||[]).forEach(attachment=>{const url=state.blobUrls.get(attachment.id);if(url&&String(url).startsWith('blob:'))URL.revokeObjectURL(url);state.blobUrls.delete(attachment.id);state.blobExpires.delete(attachment.id)});state.messages.set(key,(state.messages.get(key)||[]).filter(message=>!deletedIds.has(message.id)));renderMessages();renderChannels();const deletedCount=Math.max(0,Number(payload.deletedCount||deletedIds.size));showNotice(deletedCount?`${deletedCount} message${deletedCount===1?'':'s'} deleted.`:'There were no messages to delete.','success')}
   const executeSlashCommandBase=executeSlashCommand;
-  executeSlashCommand=async function(raw){const match=String(raw||'').match(/^\/([A-Za-z]+)(?:\s+([\s\S]*))?$/);const commandName=String(match?.[1]||'').toLowerCase();const args=String(match?.[2]||'').trim();const additional=executeAdditionalSlashCommand(commandName,args);if(additional)return await additional;if(commandName==='roles'){const roles=state.customRoles.length?state.customRoles.map(role=>`${role.label} (${role.id}) · ${roleLabel(role.baseRole)} placement`).join(' | '):'No custom roles have been created.';showNotice(roles,'success');return {handled:true}}if(commandName==='roleadd'||commandName==='roleremove'){await commandCustomRole(commandName,args);return {handled:true}}if(commandName==='userinfo'){const member=resolveCommandMember(args)||state.me;if(!member)throw new Error('Choose a member, for example /userinfo @person.');showNotice(`${member.displayName} · ${member.handle} · ${roleLabel(member.role,member)} · ${member.online?'Online':'Offline'}`,'success');return {handled:true}}if(commandName==='avatar'){const member=resolveCommandMember(args)||state.me;if(!member)throw new Error('Choose a member, for example /avatar @person.');viewMemberProfile(member);return {handled:true}}if(commandName==='channelinfo'){const channel=activeChannel();if(!channel)throw new Error('Use this command inside a text channel.');showNotice(`#${channel.name} · ${channel.description||'No description'} · ${channel.minimumRole&&channel.minimumRole!=='member'?`${roleLabel(channel.minimumRole)} and above`:'Everyone'}`,'success');return {handled:true}}if(commandName==='timestamp')return {text:new Date().toLocaleString()};if(commandName==='poll'){const parts=args.split('|').map(value=>value.trim()).filter(Boolean);if(parts.length<3)throw new Error('Use /poll question | option | option.');return {text:`📊 ${parts[0]}\n${parts.slice(1,11).map((option,index)=>`${index+1}. ${option}`).join('\n')}`}}return executeSlashCommandBase(raw)};
+  executeSlashCommand=async function(raw){const match=String(raw||'').match(/^\/([A-Za-z]+)(?:\s+([\s\S]*))?$/);const commandName=String(match?.[1]||'').toLowerCase();const args=String(match?.[2]||'').trim();if(/^(ban|ipban|unban|tempban|untempban|duration|warn|demote|mute|unmute)$/.test(commandName)&&!resolveCommandMember(args))await searchMembers(args.split(/\s+/)[0]);const additional=executeAdditionalSlashCommand(commandName,args);if(additional)return await additional;if(commandName==='roles'){const roles=state.customRoles.length?state.customRoles.map(role=>`${role.label} (${role.id}) · ${roleLabel(role.baseRole)} placement`).join(' | '):'No custom roles have been created.';showNotice(roles,'success');return {handled:true}}if(commandName==='roleadd'||commandName==='roleremove'){await commandCustomRole(commandName,args);return {handled:true}}if(commandName==='userinfo'){const member=resolveCommandMember(args)||state.me;if(!member)throw new Error('Choose a member, for example /userinfo @person.');showNotice(`${member.displayName} · ${member.handle} · ${roleLabel(member.role,member)} · ${member.online?'Online':'Offline'}`,'success');return {handled:true}}if(commandName==='avatar'){const member=resolveCommandMember(args)||state.me;if(!member)throw new Error('Choose a member, for example /avatar @person.');viewMemberProfile(member);return {handled:true}}if(commandName==='channelinfo'){const channel=activeChannel();if(!channel)throw new Error('Use this command inside a text channel.');showNotice(`#${channel.name} · ${channel.description||'No description'} · ${channel.minimumRole&&channel.minimumRole!=='member'?`${roleLabel(channel.minimumRole)} and above`:'Everyone'}`,'success');return {handled:true}}if(commandName==='timestamp')return {text:new Date().toLocaleString()};if(commandName==='poll'){const parts=args.split('|').map(value=>value.trim()).filter(Boolean);if(parts.length<3)throw new Error('Use /poll question | option | option.');return {text:`📊 ${parts[0]}\n${parts.slice(1,11).map((option,index)=>`${index+1}. ${option}`).join('\n')}`}}return executeSlashCommandBase(raw)};
   const executeSlashCommandEmojiBase=executeSlashCommand;
   executeSlashCommand=async function(raw){const result=await executeSlashCommandEmojiBase(raw);if(result?.text){result.text=expandEmojiShortcodes(result.text);if(result.text.length>1000)throw new Error('That command result is longer than the 1,000-character message limit. Shorten the input and try again.')}return result};
   const executeSlashCommandCustomBase=executeSlashCommand;
@@ -760,12 +781,14 @@
         .map(([name,emoji])=>({type:'emoji',value:emoji,name,emoji}));
       state.mentionRange={start:cursor-emojiMatch[2].length-emojiMatch[3].length-1,end:cursor};
     }else{
-      const match=before.match(/(^|\s)@([A-Za-z0-9_.-]*)$/);
+      const targetMatch=before.match(new RegExp(`^${escapeRegExp(commandPrefix)}(?:ban|ipban|unban|tempban|untempban|mute|unmute|warn|demote)\\s+(@?[A-Za-z0-9_.-]*)$`));
+      const match=before.match(/(^|\s)@([A-Za-z0-9_.-]*)$/)|| (targetMatch ? [targetMatch[1],'',targetMatch[1].replace(/^@/,'')] : null);
       if(!match){closeMentionMenu();return}
       const query=String(match[2]||'').toLowerCase();
       queryKey=`mention:${query}`;
-      items=state.members.filter(member=>!query||String(member.handle||'').slice(1).toLowerCase().includes(query)||String(member.displayName||'').toLowerCase().includes(query)).slice(0,7).map(member=>({type:'member',value:member.handle,member}));
-      if(isModerator()&&'everyone'.includes(query))items.unshift({type:'everyone',value:'@everyone'});
+      scheduleMemberSearch(query);
+      items=availableMembers().filter(member=>!query||String(member.handle||'').slice(1).toLowerCase().includes(query)||String(member.displayName||'').toLowerCase().includes(query)).slice(0,7).map(member=>({type:'member',value:member.handle,member}));
+      if(!targetMatch&&isModerator()&&'everyone'.includes(query))items.unshift({type:'everyone',value:'@everyone'});
       state.mentionRange={start:cursor-match[0].length+(match[1]?.length||0),end:cursor};
     }
     if(!items.length){closeMentionMenu();return}

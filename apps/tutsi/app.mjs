@@ -1,6 +1,6 @@
 import {websiteAddress} from "./navigation.mjs";
 import {installShortcuts} from "./shortcuts.mjs";
-import {protectionSandbox, installGameProtectionHost} from "./protections.mjs";
+import {protectionSandbox, installGameProtectionHost, installShellPopupProtection} from "./protections.mjs";
 import { scanFilters, filterSignatures, identifyFilterAddress } from "./filter-detection.mjs";
 import { decorateEmbedded } from "./embedded.mjs";
 import { startClock } from "./clock.mjs";
@@ -342,7 +342,7 @@ for (const [id, key] of Object.entries({
     settings[key] = $(id).type === "checkbox" ? $(id).checked : $(id).value;
     applySettings();
     if(['adBlock','popupBlock','downloadBlock'].includes(key)){
-      const game=frames.get('games');if(game)game.src=game.src;
+      for(const [name,frame] of frames){if(['games','movies'].includes(name))frame.src=frame.src;else protectAppContents(frame);}
       for(const tab of browserTabs)if(tab.element){tab.element.setAttribute('sandbox',protectionSandbox(settings));control('reload',tab.element);}
     }
   });
@@ -416,7 +416,16 @@ const appPaths = {
   publisher: "/apps/jsdelivr-publisher/",
   api: "/apps/api-keys/",
 };
-installGameProtectionHost(()=>settings,()=>frames.get('games'));
+installShellPopupProtection(()=>settings,()=>document.body.dataset.view==='browser'||['#games','#movies'].includes(location.hash));
+const protectEmbeddedFrame=installGameProtectionHost(()=>settings,()=>[...frames.values()]);
+const protectedAppDocs=new WeakSet();
+function protectAppContents(frame){
+  try{
+    const doc=frame.contentDocument;if(!doc?.documentElement)return;
+    const scan=()=>doc.querySelectorAll('iframe').forEach(protectEmbeddedFrame);scan();
+    if(!protectedAppDocs.has(doc)){protectedAppDocs.add(doc);let timer;new MutationObserver(()=>{if(!timer)timer=setTimeout(()=>{timer=0;scan()},50)}).observe(doc.documentElement,{childList:true,subtree:true});}
+  }catch{}
+}
 function appFrame(name) {
   if (frames.has(name)) return frames.get(name);
   const frame = document.createElement("iframe");
@@ -439,7 +448,7 @@ function appFrame(name) {
   frame.allow =
     "fullscreen; autoplay; encrypted-media; picture-in-picture; clipboard-write; microphone; display-capture";
   frame.src = appPaths[name];
-  frame.addEventListener("load", () => {styleApp(frame);try{installShortcuts(frame.contentDocument,shortcutActions)}catch{}});
+  frame.addEventListener("load", () => {styleApp(frame);protectAppContents(frame);try{installShortcuts(frame.contentDocument,shortcutActions)}catch{}});
   frames.set(name, frame);
   $("app-host").append(frame);
   // Apply the sibling theme once its DOM is ready, without waiting for every

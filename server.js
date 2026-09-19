@@ -10608,6 +10608,28 @@ app.post("/api/chat/moderation/warnings", async (req, res) => {
   }
 });
 
+// Search the indexed username field, independently of the bootstrap member cap.
+app.get("/api/chat/members", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const { firebase, token } = await authenticatedNyxChatUser(req);
+    const query = String(req.query.search || "").trim().toLowerCase().replace(/^@/, "");
+    if (!/^[a-z0-9_.-]{1,32}$/.test(query)) return res.status(400).json({error:"Enter a username."});
+    const prefix = `@${query}`;
+    const snapshot = await firebase.firestore.collection("nyxUserProfiles")
+      .where("profile.handle", ">=", prefix).where("profile.handle", "<=", prefix + "\uf8ff")
+      .orderBy("profile.handle").limit(20).get();
+    const members = await Promise.all(snapshot.docs.map(async document => ({
+      ...nyxChatMemberForViewer(await nyxChatIdentity(firebase, {uid:document.id}), token.uid),
+      self:document.id === token.uid,
+      online:Date.now() - Number(signedInPresence.get(document.id) || 0) <= signedInOnlineWindowMs
+    })));
+    res.json({members});
+  } catch (error) {
+    res.status(error.status || 503).json({error:error.message || "Member search is unavailable."});
+  }
+});
+
 app.get("/api/chat/bootstrap", async (req, res) => {
   res.set("Cache-Control", "no-store");
   try {

@@ -1,3 +1,5 @@
+import {sourceWebsiteUrl} from "./navigation.mjs";
+import {browserAdSource} from "./browser-ad-runtime.mjs";
 import {gameAdSource} from "./game-ad-runtime.mjs";
 ﻿// Small, explicit host list. Match domain boundaries, never words in a query string.
 export const adHosts = ['adtrafficquality.google','r9x.in','clickadu.com','hilltopads.net','html5.api.gamedistribution.com','gamemonetize.com','imasdk.googleapis.com','mgid.com','onclickads.net','openx.net','playwire.com','sdk.poki.com','trafficjunky.com','venatusmedia.com','doubleclick.net','googlesyndication.com','googleadservices.com','adnxs.com','adsrvr.org','adinplay.com','adsterra.com','popads.net','popcash.net','propellerads.com','monetag.com','exoclick.com','trafficjunky.net','taboola.com','outbrain.com','criteo.com','pubmatic.com','rubiconproject.com','amazon-adsystem.com','ads.emulatorjs.org'];
@@ -24,7 +26,8 @@ export function protectTransport(transport,getPolicy,{checkDownload=async url=>{
     const risky=riskyFile(url)||riskyFile(/filename\*?=(?:UTF-8''|["'])?([^"';]+)/i.exec(disposition)?.[1]||'')||/application\/(?:x-msdownload|x-msdos-program|vnd\.android\.package-archive|x-apple-diskimage)/i.test(type);
     let verdict='unverified';
     if(attachment&&!risky){try{verdict=await checkDownload(url)}catch{}}
-    if(risky||verdict==='blocked'){
+    const unverifiedRejected=attachment&&!risky&&verdict!=='clear'&&verdict!=='blocked'&&!globalThis.confirm?.('This download source could not be verified. Download anyway?');
+    if(risky||verdict==='blocked'||unverifiedRejected){
       try{await response.body?.cancel?.()}catch{}
       notify('download');
       return {status:403,statusText:'Blocked',headers:[['content-type','text/plain; charset=utf-8']],body:new Response('Download blocked by Tutsi. You can change download protection in Settings.').body};
@@ -41,18 +44,46 @@ export function protectTransport(transport,getPolicy,{checkDownload=async url=>{
 
 // Injected before page scripts. All configuration is serialized, not interpolated code.
 export function pageProtection(policy, riskySource) {
-  if(window.__tutsiProtection)return;
-  window.__tutsiProtection=true;
+  if(window.__tutsiProtection){Object.assign(window.__tutsiProtection,policy);window.__tutsiRefreshPopup?.();return;}
+  window.__tutsiProtection=policy;
   const risky=new RegExp(riskySource,'i');
   const tell=kind=>{try{parent.postMessage({type:'tutsi:protection',kind},'*')}catch{}};
   const downloadRisk=link=>{
     return [link.getAttribute('download')||'',link.getAttribute('href')||''].some(value=>{try{value=decodeURIComponent(value)}catch{}return risky.test(value)});
   };
   const popupTarget=target=>!!target&&!['_self','_parent','_top'].includes(target.toLowerCase());
-  const nativeOpen=window.open;
-  window.open=function(...args){if(policy.popupBlock){tell('popup');return null;}return Reflect.apply(nativeOpen,this,args)};
+  let guardedOpen;
+  window.__tutsiRefreshPopup=()=>{
+    if(window.open===guardedOpen)return;
+    const nativeOpen=window.open;
+    guardedOpen=function(...args){
+      if(policy.popupBlock&&String(args[1]||'').toLowerCase()!=='_self'){tell('popup');return null;}
+      return Reflect.apply(nativeOpen,this,args);
+    };
+    window.open=guardedOpen;
+  };
+  window.__tutsiRefreshPopup();
+  const checking=new WeakSet();
+  const safeDownload=async link=>{
+    if(checking.has(link))return;
+    checking.add(link);
+    try{
+      const href=link.href,filename=link.getAttribute('download')||'';
+      let result={verdict:'unverified'};
+      const checkUrl=/^(blob|data):/i.test(href)?location.href:href;
+      try{
+        const host=window.__tutsiCheckDownload;
+        if(host)result=await host(checkUrl,filename);
+      }catch{}
+      if(result.verdict==='blocked'){tell('download');return;}
+      if(result.verdict!=='clear'&&!window.confirm('This download source could not be verified. Download anyway?'))return;
+      const copy=document.createElement('a');copy.href=href;copy.download=filename;copy.rel='noopener';
+      Reflect.apply(click,copy,[]);
+    }finally{checking.delete(link);}
+  };
   const denyLink=link=>{
     if(policy.downloadBlock&&downloadRisk(link)){tell('download');return true;}
+    if(policy.downloadBlock&&(link.hasAttribute('download')||/\.(zip|7z|rar|bin)(?:$|[?#])/i.test(link.href))){void safeDownload(link);return true;}
     if(policy.popupBlock&&popupTarget(link.target||document.querySelector('base[target]')?.target)){tell('popup');return true;}
     return false;
   };
@@ -72,29 +103,30 @@ export function pageProtection(policy, riskySource) {
     (document.head||document.documentElement).append(style);
   }
 }
-export function protectionSource(policy){return `${policy.adBlock!==false?gameAdSource:""}\n(${pageProtection.toString()})(${JSON.stringify(policyFrom(policy))},${JSON.stringify(riskyExtension.source)});`;}
+export function protectionSource(policy){return `(${pageProtection.toString()})(${JSON.stringify(policyFrom(policy))},${JSON.stringify(riskyExtension.source)});\n${policy.adBlock!==false?browserAdSource+'\n'+gameAdSource:""}`;}
 export function protectionSandbox(settings){
   return 'allow-scripts allow-same-origin allow-forms allow-downloads allow-modals allow-pointer-lock allow-presentation'+(settings.popupBlock===false?' allow-popups':'');
 }
 
-// Games call the same host hook as Nyx. Restrict it to descendants of the game app.
-export function installGameProtectionHost(getSettings, getGameFrame) {
+// Share Nyx's game hook and protect descendants of registered built-in app frames.
+export function installGameProtectionHost(getSettings, getAppFrames) {
   window.__tutsiGameHost = true;
   const watched = new WeakSet(), documents = new WeakSet();
   function install(frame) {
     if (frame?.tagName !== 'IFRAME') return false;
     try {
       let owner = frame.ownerDocument.defaultView;
-      const host = getGameFrame()?.contentWindow;
-      while (owner && owner !== host && owner !== window) owner = owner.parent;
-      if (!host || owner !== host) return false;
+      const hosts = getAppFrames().map(frame=>frame.contentWindow);
+      while (owner && !hosts.includes(owner) && owner !== window) owner = owner.parent;
+      if (!hosts.includes(owner)) return false;
     } catch { return false; }
+    frame.setAttribute('sandbox',protectionSandbox(getSettings()));
     const protect = () => {
       try {
         const doc = frame.contentDocument;
         if (!doc?.documentElement) return;
-        if (getSettings().adBlock !== false) frame.contentWindow.eval(gameAdSource);
-        frame.contentWindow.eval(protectionSource({...getSettings(),adBlock:false}));
+        frame.setAttribute('sandbox',protectionSandbox(getSettings()));
+        installPageProtection(frame,getSettings());
         const scan = () => doc.querySelectorAll('iframe').forEach(install);
         scan();
         if (!documents.has(doc)) {
@@ -108,10 +140,34 @@ export function installGameProtectionHost(getSettings, getGameFrame) {
     };
     if (!watched.has(frame)) {
       watched.add(frame);
-      frame.addEventListener('load',protect);
+      frame.addEventListener('load',()=>{protect();setTimeout(protect,80);setTimeout(protect,500)});
     }
     protect();
     return true;
   }
   window.nyxInstallGameAdProtection = install;
+  return install;
+}
+
+// Install after the engine has attached too: its window hooks can replace early guards.
+export function installPageProtection(frame,settings){
+  try{
+    const win=frame.contentWindow;
+    win.__tutsiCheckDownload=async(url,filename)=>{
+      const response=await fetch('/api/download-safety/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:sourceWebsiteUrl(url,location.origin)||url,filename}),signal:AbortSignal.timeout(6000)});
+      if(!response.ok)return {verdict:'unverified'};
+      return response.json();
+    };
+    win.eval(protectionSource(settings));
+  }catch{} // Cross-origin content is constrained by the frame sandbox instead.
+}
+
+export function installShellPopupProtection(getSettings,isBrowsing){
+  const nativeOpen=window.open;
+  window.open=function(...args){
+    if(getSettings().popupBlock!==false&&isBrowsing()&&String(args[1]||'').toLowerCase()!=='_self'){
+      notify('popup');return null;
+    }
+    return Reflect.apply(nativeOpen,this,args);
+  };
 }

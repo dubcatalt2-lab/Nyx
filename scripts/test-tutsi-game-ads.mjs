@@ -18,7 +18,7 @@ try {
    const {installGameProtectionHost}=await import('/apps/tutsi/protections.mjs');
    const policy={adBlock:true,popupBlock:true,downloadBlock:true};
    const app=document.createElement('iframe');document.body.append(app);
-   installGameProtectionHost(()=>policy,()=>app);
+   installGameProtectionHost(()=>policy,()=>[app]);
    const game=app.contentDocument.createElement('iframe');app.contentDocument.body.append(game);
    window.nyxInstallGameAdProtection(game);
    const win=game.contentWindow,doc=game.contentDocument;

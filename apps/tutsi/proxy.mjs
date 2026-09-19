@@ -1,5 +1,5 @@
 import {sourceWebsiteUrl} from "./navigation.mjs";
-import {protectTransport, policyFrom} from "./protections.mjs";
+import {protectTransport, policyFrom, installPageProtection} from "./protections.mjs";
 import {httpRelayUrl, installHttpRelaySocket, createHttpRelayEndpoint} from "./http-relay.mjs";
 import { effectiveFilter } from "./filter-detection.mjs";
 import {relayCandidates, probeWisp, RelayTransport, rankForBlocker} from "./relay.mjs";
@@ -190,6 +190,14 @@ export function browse(url, settings, element) {
         plugins: [compatibilityPlugin(()=>protectionPolicy)],
       });
       browserFrames.set(element,frame);
+    }
+    if(!element.dataset.tutsiProtectionWatch){
+      element.dataset.tutsiProtectionWatch='true';
+      element.addEventListener('load',()=>{
+        installPageProtection(element,protectionPolicy);
+        setTimeout(()=>installPageProtection(element,protectionPolicy),80);
+        setTimeout(()=>installPageProtection(element,protectionPolicy),500);
+      });
     }
     installImageRepair(element, url);
     await frame.go(url);

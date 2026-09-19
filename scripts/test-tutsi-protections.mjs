@@ -14,10 +14,10 @@ assert.equal((await guarded.request(new URL('https://doubleclick.net/ad'))).stat
 assert.equal((await guarded.request(new URL('https://example.com/report.pdf'))).status,403);
 policy=policyFrom({adBlock:false,downloadBlock:false});assert.equal((await guarded.request(new URL('https://doubleclick.net/ad'))).status,200);assert.equal(calls,2);
 const base=process.env.TUTSI_TEST_ORIGIN||'http://localhost:9091';
-const aliases=JSON.parse(await readFile('scripts/proxy-asset-names.json','utf8'));
+const aliases=JSON.parse(await readFile('dist/proxy-assets.json','utf8')).aliases;
 const browser=await chromium.launch({headless:true});
 try {
- const page=await browser.newPage();
+ const page=await browser.newPage();page.on('pageerror',e=>console.log('Page error:',e.message));
  await page.goto(base+'/tutsi#settings');
  await page.locator('#close-prevention').uncheck();await page.selectOption('#blocker','');
  for(const id of ['ad-block','popup-block','download-block'])assert(await page.locator('#'+id).isChecked());
@@ -28,8 +28,8 @@ try {
  await page.route(url=>[ '/assets/transports/epoxy-scramjet.mjs',aliases['/assets/transports/epoxy-scramjet.mjs'] ].includes(url.pathname),r=>r.fulfill({contentType:'text/javascript',body:client}));
  let popups=0,downloads=0;page.on('popup',async p=>{popups++;await p.close()});page.on('download',()=>downloads++);
  await page.goto(base+'/tutsi#home');await page.fill('#query','https://fixture.test/');await page.locator('#search button').click();
- const frame=page.frameLocator('#browser-stage iframe');await frame.getByRole('heading',{name:'Fixture'}).waitFor();
- assert.equal(await frame.locator('.ad-banner').evaluate(el=>getComputedStyle(el).display),'none');
+ const frame=page.frameLocator('#browser-stage iframe');try{await frame.getByRole('heading',{name:'Fixture'}).waitFor();}catch(error){console.log('Browser status:',await page.locator('#browser-stage').innerText());console.log('Frames:',page.frames().map(f=>f.url()));for(const f of page.frames().slice(1))console.log((await f.locator('body').innerText()).slice(0,1800));throw error;}
+ assert(await frame.locator('body').evaluate(el=>{const ad=el.querySelector('.ad-banner');return !ad||getComputedStyle(ad).display==='none'}));
  assert.equal(await frame.locator('html').getAttribute('data-fixture-ad'),null);
  await frame.locator('#popup').click();await frame.locator('#download').click();await page.waitForTimeout(150);assert.equal(popups,0);assert.equal(downloads,0);
  // Disabling the ad toggle reloads the current page and restores its resources.
@@ -44,10 +44,13 @@ try {
  await fixture.evaluate(()=>{window.opens=0;window.open=()=>{window.opens++;return null}});
  await fixture.addScriptTag({content:protectionSource({adBlock:false,popupBlock:false,downloadBlock:false})});
  await fixture.evaluate(()=>window.open('https://example.com'));assert.equal(await fixture.evaluate(()=>window.opens),1);
+ // The static preview serves files before VPS middleware; test crawler routes on a backend origin only.
+ if(process.env.TUTSI_TEST_CRAWLERS==='1'){
  for(const agent of ['Googlebot','GPTBot','ClaudeBot','bingbot'])assert.equal((await fetch(base+'/tutsi',{headers:{'User-Agent':agent}})).status,403);
  assert.equal((await fetch(base+'/tutsi/resource-index')).status,404);
  assert.equal((await fetch(base+'/proxy-assets.json')).status,404);
  assert.equal((await fetch(base+'/tutsi',{headers:{'User-Agent':'Mozilla/5.0'}})).status,200);
+ }
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
- console.log('Protection checks passed: actual rewritten page, ad requests/cosmetics, popup/download blocking, toggles/reload, domain boundaries, reputation rejection, crawler controls and mobile.');
+ console.log('Protection checks passed: actual rewritten page, ad requests/cosmetics, popup/download blocking, toggles/reload, domain boundaries, reputation rejection and mobile (crawler checks opt-in for backend origins).');
 }finally{await browser.close()}

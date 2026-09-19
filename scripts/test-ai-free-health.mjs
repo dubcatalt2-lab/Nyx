@@ -1,0 +1,11 @@
+﻿import assert from 'node:assert/strict';
+import {createFreeModelHealth} from '../lib/ai-free-health.mjs';
+import {freeAiModels} from '../lib/ai-free-models.mjs';
+let time=0;const models=freeAiModels.slice(0,5).map(id=>({id}));
+const health=createFreeModelHealth({now:()=>time,fetchImpl:async url=>{const i=models.findIndex(m=>url.includes(m.id));if(i===3)throw Error('network');return new Response(JSON.stringify({data:{endpoints:i===1?[]:[{status:i===2?-2:0,pricing:{prompt:'0',completion:'0'}}]}}));}});
+assert.deepEqual((await health.filter(models)).map(m=>m.id),[models[0].id,models[3].id,models[4].id]);
+health.failure(models[0].id,429);assert.equal(health.available(models[0].id),true);
+health.failure(models[0].id,503);assert.equal(health.available(models[0].id),false);
+time=300001;assert.equal(health.available(models[0].id),true);
+assert.equal(health.available('openrouter/free'),true);
+console.log('PASS free endpoint health: unavailable excluded, unknown retained, 429 retained, provider failure cooldown and expiry');

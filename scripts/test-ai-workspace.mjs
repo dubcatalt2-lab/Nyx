@@ -75,7 +75,7 @@ z = \frac{9}{3}`;
     await route.fulfill({
       status: 200,
       headers: { "content-type": "text/event-stream; charset=utf-8" },
-      body: `data: ${JSON.stringify({ choices: [{ delta: { content: formattedAnswer } }] })}\n\ndata: [DONE]\n\n`
+      body: `data: ${JSON.stringify({ choices: [{ delta: { content: formattedAnswer } }] })}\n\ndata: ${JSON.stringify(chatRequests.length===1?{nyx_usage:{completion_tokens:80}}:{})}\n\ndata: [DONE]\n\n`
     });
   });
 
@@ -89,6 +89,9 @@ z = \frac{9}{3}`;
   await page.locator("#input").fill("Read the visible screen text.");
   await page.locator("#form").evaluate(form => form.requestSubmit());
   await page.waitForFunction(() => document.querySelector("#conversation")?.textContent?.includes("Screen frame received."));
+  await page.waitForFunction(()=>document.querySelector('.ai-response-stats')?.textContent.includes('total'));
+  const stats=await page.locator('.ai-response-stats').first().innerText();
+  assert(stats.includes('First text')&&stats.includes('tok/s')&&!stats.includes('estimated'),'Response timing and reported TPS are missing');
   assert(chatRequests.length === 1, "Screen prompt did not make exactly one AI request");
   assert(/^data:image\/jpeg;base64,/.test(chatRequests[0].body?.image?.dataUrl || ""), "Screen prompt did not attach a captured JPEG frame");
   assert(chatRequests[0].body?.image?.screenCapture === true, "Screen prompt did not identify the image as an active screen-share frame");
@@ -138,6 +141,9 @@ z = \frac{9}{3}`;
   await page.setViewportSize({ width: 390, height: 700 });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   assert(!overflow, "AI workspace has horizontal overflow at mobile width");
+  assert((await page.locator('.ai-response-stats').nth(1).innerText()).includes('estimated'),'Missing usage must be labeled estimated');
+  await page.reload();await page.locator('.ai-response-stats').first().waitFor();
+  assert(await page.locator('.ai-response-stats').count()===2,'Response metrics did not survive reload');
   assert(pageErrors.length === 0, `Browser errors: ${pageErrors.join(" | ")}`);
   console.log("AI workspace test: OpenRouter-only selection, image picker/preview/removal/send, keyboard activation, screen capture, multiline KaTeX formatting, stop control, and mobile layout passed");
 } finally {

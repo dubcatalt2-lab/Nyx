@@ -2,7 +2,7 @@
 import {createHash} from 'node:crypto';
 import {memoryFirestore} from './test-ai-allowance.mjs';
 import {createAiAllowance,aiAllowanceConfig} from '../lib/ai-allowance.mjs';
-import {freeAiModels} from '../lib/ai-free-models.mjs';
+import {freeAiModels,configureFreeAiReasoning,isFreeAiModel} from '../lib/ai-free-models.mjs';
 const db=memoryFirestore();let now=Date.now();
 const config=aiAllowanceConfig({NYX_AI_DAILY_BUDGET_USD:1});
 const allowance=createAiAllowance({db,config,now:()=>now});
@@ -25,3 +25,18 @@ await allowance.finish(session);
 await assert.rejects(allowance.begin({...actor,blocked:true}),/restricted/);
 await assert.rejects(allowance.begin({...actor,uid:'new-paid',freeModel:null}),/Premium/);
 console.log('Free models: new-account access, no daily/token debit, zero prices, paid escape blocked, restrictions retained');
+
+assert.equal(new Set(freeAiModels).size,freeAiModels.length);
+assert.ok(freeAiModels.includes('openrouter/free'));
+for(const model of freeAiModels){
+ const session=await allowance.begin({uid:'catalog-'+model,createdAt:now,freeModel:model});
+ const reserved=await allowance.reserve(session,'shared',{model,max_tokens:100,messages:[{role:'user',content:'Hello'}]});
+ assert.equal(reserved.free,true);assert.equal(reserved.reserved,0);await allowance.finish(session);
+ const payload=configureFreeAiReasoning({model},{supportedParameters:['reasoning']},'normal');assert.deepEqual(payload.reasoning,{effort:'low',exclude:true});
+ assert.deepEqual(configureFreeAiReasoning({model},{supportedParameters:['reasoning']},'off').reasoning,{enabled:false});
+ assert.equal(configureFreeAiReasoning({model},{supportedParameters:['reasoning']},'extended').reasoning.effort,'high');
+ assert.equal(configureFreeAiReasoning({model},{supportedParameters:[]},'normal').reasoning,undefined);
+}
+assert.equal(isFreeAiModel('made-up/model:free'),false);
+assert.equal(configureFreeAiReasoning({model:'paid/model'},{supportedParameters:['reasoning']},'normal').reasoning,undefined);
+console.log('PASS: all '+freeAiModels.length+' catalog options have free reservations; reasoning respects depth and supported parameters');

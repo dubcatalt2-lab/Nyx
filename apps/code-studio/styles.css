@@ -429,6 +429,8 @@ button:disabled {
   box-shadow: 0 0 0 3px var(--studio-accent-soft);
 }
 
+.assistant-form textarea:focus-visible { outline: none; box-shadow: none; }
+
 .assistant-form textarea {
   width: 100%;
   min-height: 39px;

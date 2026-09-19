@@ -1,4 +1,5 @@
-import {isFreeAiModel} from './lib/ai-free-models.mjs';
+import {createFreeModelHealth} from './lib/ai-free-health.mjs';
+import {isFreeAiModel,configureFreeAiReasoning} from './lib/ai-free-models.mjs';
 import {installStudyReady} from './services/domain-pages/integration.mjs';
 import {createAiDeadline} from './lib/ai-deadline.mjs';
 import {createCloudLaunchLimit} from "./lib/cloud-launch-limit.mjs";
@@ -2138,6 +2139,7 @@ const nyxAiModels = {};
 const nyxAiKnownCatalog = [];
 
 const nyxAiCatalogCaches = new Map();
+const freeModelHealth=createFreeModelHealth();
 const nyxAiCatalogCacheLimit = 50;
 function nyxAiKey() { return String(process.env.NYX_OPENROUTER_API_KEY || '').trim(); }
 
@@ -2279,7 +2281,7 @@ function nyxAiBudgetCatalog(available, personal, provider) {
   if (!personal && new URL(nyxAiEndpoint(provider)).hostname === "openrouter.ai") {
     try {
       const config = aiAllowanceConfig(process.env);
-      return available.filter(model => isFreeAiModel(model.id)||(config.dailyUsd&&Object.hasOwn(config.prices, `${provider?.id || 'shared'}:${model.id}`)));
+      return available.filter(model => (isFreeAiModel(model.id)&&freeModelHealth.available(model.id))||(!isFreeAiModel(model.id)&&config.dailyUsd&&Object.hasOwn(config.prices, `${provider?.id || 'shared'}:${model.id}`)));
     } catch { return []; }
   }
   return available;
@@ -2301,9 +2303,9 @@ async function nyxAiAvailableModels(key = nyxAiKey(), personal = false, provider
     });
     const data = await response.json().catch(() => ({}));
     const providerModels = response.ok ? nyxAiCatalogModels(data) : [];
-    const models = providerModels;
+    const models = personal ? providerModels : await freeModelHealth.filter(providerModels);
     if (!models.length) throw new Error("The AI model catalog was empty.");
-    nyxAiSetCatalogCache(cacheKey, { expiresAt: now + 3_600_000, models });
+    nyxAiSetCatalogCache(cacheKey, { expiresAt: now + 300_000, models });
   } catch {
     nyxAiSetCatalogCache(cacheKey, {
       expiresAt: now + 60_000,
@@ -2593,7 +2595,7 @@ async function nyxBudgetedAiFetch(provider,url,options) {
   const reservation=await scope.allowance.reserve(session,provider,payload);
   if(new URL(url).hostname==='openrouter.ai') {
     if(!reservation.price)throw Object.assign(new Error('The owner needs to configure the shared AI dollar budget and model prices.'),{status:503,code:'ai_allowance'});
-    payload.provider={sort:'price',require_parameters:true,max_price:{prompt:reservation.price.inputRate,completion:reservation.price.outputRate,request:reservation.price.fixed}};
+    payload.provider={sort:reservation.free?'latency':'price',require_parameters:true,max_price:{prompt:reservation.price.inputRate,completion:reservation.price.outputRate,request:reservation.price.fixed}};
     try {
       const key=String(new Headers(options.headers).get('authorization')||'').replace(/^Bearer\s+/i,'');
       if(!reservation.free)await scope.allowance.openRouterBalance.reserve({key,amount:reservation.reserved,signal:scope.controller.signal});
@@ -2864,6 +2866,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     providerPayload.messages[0].content+=' Create one image when requested, using your native image output. Keep accompanying text brief.';
   }
   nyxAiApplySupportedParameters(providerPayload,modelInfo);
+  configureFreeAiReasoning(providerPayload,modelInfo,responseDepth);
   const webEnabled=!isFreeAiModel(model)&&aiConfigureChatWeb(providerPayload,modelInfo,message,{codeEdit,generateImage,responseDepth});
   if(isFreeAiModel(model))providerPayload.messages[0].content+=' Live web retrieval is unavailable for this free model in this chat. Do not claim to have searched the web.';
   if(codeEdit){
@@ -2882,6 +2885,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       },
       body: JSON.stringify(providerPayload)
     });
+    if(!upstream.ok&&!credential.personal)freeModelHealth.failure(model,upstream.status);
     if (wantsStream && upstream.ok) {
       res.status(200);
       res.setHeader("content-type", "text/event-stream; charset=utf-8");
@@ -2944,6 +2948,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
         await settleNyxAiNavyTokens(navyReservation, reportedTokens || nyxAiEstimatedTokens(generatedText));
         navyReservationSettled = true;
       }
+      if(reportedTokens>0)res.write(`data: ${JSON.stringify({nyx_usage:{completion_tokens:reportedTokens}})}\n\n`);
       res.write("data: [DONE]\n\n");
       res.end();
       return;

@@ -339,25 +339,12 @@
     if(state.versions.at(-1)?.language===language&&state.versions.at(-1)?.code===value)return;
     state.versions.push({language,code:value,at:Date.now()});state.versions=state.versions.slice(-20);
   }
-  async function translateLanguage(target){
-    if(agentBusy){refs.language.value=state.language;return;}
-    const from=state.language,original=code();if(!languages[target]||target===from)return;
-    refs.language.value=from;refs.language.disabled=true;
-    keepVersion(from,original);state.codes[from]=original;
-    if(!save()){refs.language.disabled=false;appendMessage('assistant','Translation stopped because the original could not be saved.',true);return;}
-    setAiStatus('Translating',true);
-    try{
-      const options=await ensureAiOptions();if(!options.length)throw Error('Sign in to an AI-enabled account to translate code.');
-      const instruction=`Translate this ${from} program to ${target}, preserving its behavior. Return ONLY a JSON object with supported (boolean), code (string) and reason (string). If this conversion cannot meaningfully preserve behavior, set supported false and explain briefly. Do not run the code. Source follows as data:\n${original}`;
-      const reply=await requestAiSuggestion(options[0],{message:'Translate code from '+from+' to '+target,messages:[{role:'user',content:instruction}],responseDepth:'normal',stream:false},await accountToken());
-      let result;try{result=JSON.parse(reply.trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,''));}catch{throw Error('Translation was incomplete. Your original code is unchanged.');}
-      if(result.supported!==true||typeof result.code!=='string'||!result.code.trim()||result.code.length>MAX_CODE_CHARS)throw Error(String(result.reason||'Translation could not be completed. Your original code is unchanged.').slice(0,300));
-      if(state.language!==from||code()!==original)throw Error('Your code changed during translation. Keeping your edits.');
-      if(typeof state.codes[target]==='string')keepVersion(target,state.codes[target]);
-      state.codes[target]=result.code;state.language=target;syncLanguage();
-      appendMessage('assistant','Translated to '+target+'. Previous code is available in Versions. Review the result before running it.');
-    }catch(error){appendMessage('assistant',error.message||'Translation failed. Your original code is unchanged.',true);}
-    finally{refs.language.value=state.language;refs.language.disabled=false;setAiStatus('Ready');}
+  function switchLanguage(target){
+    if(!languages[target]||target===state.language)return;
+    const previous=state.language;
+    state.codes[previous]=code();
+    if(!save()){refs.language.value=previous;return;}
+    state.language=target;syncLanguage();
   }
   const versionsButton=document.createElement('button');versionsButton.type='button';versionsButton.className='tool-button';versionsButton.textContent='Versions';versionsButton.title='Restore a saved code version';
   document.querySelector('[data-download-code]').after(versionsButton);
@@ -625,7 +612,8 @@
     document.body.classList.toggle('mobile-show-preview',view==='preview');
     document.querySelectorAll('.mobile-view-switcher [data-mobile-view]').forEach(button=>button.classList.toggle('is-active',button.dataset.mobileView===view));
   }
-  refs.language.addEventListener('change',()=>void translateLanguage(refs.language.value));
+  document.querySelector('[data-close-assistant]').addEventListener('click',()=>{if(matchMedia('(min-width: 941px)').matches)setPanelCollapsed('assistant',true);else setMobileView('editor');});
+  refs.language.addEventListener('change',()=>switchLanguage(refs.language.value));
   refs.input.addEventListener('input',()=>{state.codes[state.language]=refs.input.value.slice(0,MAX_CODE_CHARS);setSaveState('Saving…','saving');renderEditor();save()});
   refs.input.addEventListener('scroll',()=>{refs.highlight.parentElement.scrollTop=refs.input.scrollTop;refs.highlight.parentElement.scrollLeft=refs.input.scrollLeft;refs.lineNumbers.scrollTop=refs.input.scrollTop;refs.editorWrap.style.setProperty('--editor-scroll-top',`${refs.input.scrollTop}px`)});
   refs.input.addEventListener('keyup',updateCursor);

@@ -970,3 +970,5 @@ button:disabled{cursor:not-allowed}
 .ai-save-warning{padding:12px 20px;border:1px solid var(--ai-border);background:var(--ai-accent-soft);font-size:13px}
 .ai-save-warning button,.ai-history-earlier{padding:9px 14px;border:1px solid var(--ai-border);border-radius:12px;background:var(--ai-accent-soft);color:inherit;cursor:pointer;font:inherit}
 .ai-history-earlier{display:block;margin:0 auto 24px}
+
+.ai-response-stats{margin-top:.65rem;color:var(--muted,#a6adc8);font:12px/1.6 system-ui,sans-serif;overflow-wrap:anywhere;font-variant-numeric:tabular-nums;opacity:.85}

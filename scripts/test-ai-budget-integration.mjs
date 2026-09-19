@@ -117,5 +117,9 @@ try {
   const repaired=await send('repair-member',{repair:true});assert.equal(repaired.status,200);await repaired.text();
   await new Promise(resolve=>setTimeout(resolve,30));assert.equal(calls,repairCalls+2);assert.equal(lastPayload.max_tokens,700);
   const chargedAfter=[...db.records.values()].reduce((sum,row)=>sum+(row.tokens&&typeof row.tokens==='number'?row.tokens:0),0);assert.equal(chargedAfter-chargedBefore,24,'Both provider calls must be charged');assert.equal(db.records.get('nyxAiAllowance/global').slots.length,0);
+  const freeResponse=await send('late-free-catalog',{model:'nvidia/nemotron-3-ultra-550b-a55b:free'});
+  assert.equal(freeResponse.status,200);await freeResponse.text();
+  assert.equal(lastPayload.provider.sort,'latency');
+  assert.deepEqual(lastPayload.provider.max_price,{prompt:0,completion:0,request:0});
   console.log('PASS: real AI middleware auth/origin, retired option rejection, OpenRouter routing, parallel capacity, slot release and unverified cloud authentication');
 }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

@@ -305,6 +305,7 @@
           if(!content) return null;
           const message={role:item.role,content};
           if(item.role==='assistant'&&item.metadata)message.metadata=normalizeMetadata(item.metadata);
+          if(item.role==='assistant'&&item.timing)message.timing=normalizeTiming(item.timing);
           if(item.role==='assistant'&&/^[a-f0-9-]{36}$/.test(item.imageId||''))message.imageId=item.imageId;
           const textAttachment=item.role==='user'?normalizedTextAttachment(item.textAttachment):null;
           if(textAttachment) message.textAttachment=textAttachment;
@@ -750,7 +751,22 @@
     setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
 
-  function addMessage(role,text,{error=false,thinking=false,attachment=null,imageId=null,metadata=null}={}){
+  function normalizeTiming(value){
+    if(!value||!Number.isFinite(value.elapsedMs)||value.elapsedMs<0)return null;
+    return {elapsedMs:Math.min(value.elapsedMs,3600000),firstTextMs:Number.isFinite(value.firstTextMs)?Math.max(0,Math.min(value.firstTextMs,value.elapsedMs)):null,tokens:Number.isFinite(value.tokens)?Math.max(0,Math.min(value.tokens,1000000)):0,estimated:value.estimated!==false};
+  }
+  function showTiming(message,value,waiting=false){
+    const timing=normalizeTiming(value);if(!timing)return;
+    let stats=message.querySelector('.ai-response-stats');
+    if(!stats){stats=document.createElement('div');stats.className='ai-response-stats';message.querySelector('.ai-message-body').append(stats);}
+    const seconds=(timing.elapsedMs/1000).toFixed(1);
+    const first=timing.firstTextMs===null?(waiting?'Waiting '+seconds+'s':'No answer text'):'First text '+(timing.firstTextMs/1000).toFixed(1)+'s';
+    const speed=timing.tokens>0&&timing.elapsedMs>0?' | '+(timing.estimated?'~':'')+(timing.tokens/(timing.elapsedMs/1000)).toFixed(1)+' tok/s'+(timing.estimated?' (estimated)':''):'';
+    stats.textContent=first+speed+(waiting?'':' | '+seconds+'s total');
+    stats.title='Measured on this device. Tokens per second averages the entire request, including waiting. Estimates use roughly four characters per token; reported usage may include reasoning tokens.';
+  }
+
+  function addMessage(role,text,{error=false,thinking=false,attachment=null,imageId=null,metadata=null,timing=null}={}){
     conversation.querySelector('[data-ai-welcome]')?.remove();
     conversation.classList.remove('is-empty');
     const assistant=role!=='user';
@@ -763,6 +779,7 @@
         <div class="ai-message-meta"><strong>${assistant?'Nyx AI':'You'}</strong><div class="ai-message-actions">${messageCopyButton()}</div></div>
         <div class="ai-message-content"></div>
       </div>`;
+    if(assistant&&timing)showTiming(message,timing);
     if(attachment?.dataUrl&&!assistant){
       const figure=document.createElement('figure');
       figure.className='ai-message-attachment';
@@ -985,7 +1002,7 @@
     }else{
       conversation.classList.remove('is-empty');
       let start=Math.max(0,items.length-MESSAGE_PAGE_SIZE);
-      const append=item=>addMessage(item.role,item.content,{attachment:item.textAttachment||null,imageId:item.imageId,metadata:item.metadata});
+      const append=item=>addMessage(item.role,item.content,{attachment:item.textAttachment||null,imageId:item.imageId,metadata:item.metadata,timing:item.timing});
       items.slice(start).forEach(append);
       if(start){
         const earlier=document.createElement('button');earlier.type='button';earlier.className='ai-history-earlier';earlier.textContent='Load earlier messages';
@@ -1038,7 +1055,7 @@
     const selected=model.value||DEFAULT_MODEL;
     const label=modelLabel(selected);
     modelSelected.textContent=label;
-    modelTrigger.title=`Model: ${label}${selected.endsWith(":free")?". No Nyx daily or token quota. OpenRouter rate limits apply.":""}`;
+    modelTrigger.title=`Model: ${label}${(selected.endsWith(":free")||selected==="openrouter/free")?". No Nyx daily or token quota. OpenRouter rate limits apply.":""}`;
     modelTrigger.setAttribute('aria-label',`AI model: ${label}`);
     sidebarModelName.textContent=label;
     modelOptionsHost.querySelectorAll('[data-model-id]').forEach(option=>{
@@ -1234,6 +1251,10 @@
     activeController=new AbortController();
     setBusy(true);
     let answer='';
+    const timingStart=performance.now();let firstTextMs=null,reportedTokens=0;
+    const getTiming=()=>({elapsedMs:performance.now()-timingStart,firstTextMs,tokens:reportedTokens||Math.ceil(answer.length/4),estimated:!reportedTokens});
+    const timingTimer=setInterval(()=>showTiming(pending,getTiming(),true),500);
+    showTiming(pending,getTiming(),true);
     let generatedImageId=null;
     let requestSucceeded=false;
     let renderFrame=0;
@@ -1297,6 +1318,8 @@
         try{
           const data=JSON.parse(raw);
           if(data.error){streamError=String(data.error.message||data.error);return;}
+          const usageTokens=Number(data.nyx_usage?.completion_tokens??data.usage?.completion_tokens);
+          if(Number.isFinite(usageTokens)&&usageTokens>0)reportedTokens=usageTokens;
           if(data.nyx_metadata){
             const previous=pending._nyxMetadata||{sources:[],summary:''};
             pending._nyxMetadata=normalizeMetadata({sources:[...previous.sources,...(data.nyx_metadata.sources||[])],summary:previous.summary+(data.nyx_metadata.summary||'')});
@@ -1304,6 +1327,7 @@
           }
           const token=data?.choices?.[0]?.delta?.content||data?.choices?.[0]?.text||'';
           if(token){
+            if(firstTextMs===null)firstTextMs=performance.now()-timingStart;
             answer=data?.nyx_replace===true?String(token):answer+token;
             if(!renderFrame) renderFrame=requestAnimationFrame(renderAnswer);
           }
@@ -1322,18 +1346,21 @@
       if(streamError)throw new Error(streamError);
       if(renderFrame){cancelAnimationFrame(renderFrame);renderAnswer()}
       }
+      if(answer&&firstTextMs===null)firstTextMs=performance.now()-timingStart;
       const clean=answer.trim();
       const finalAnswer=responseParts(clean).answer.trim();
       if(!finalAnswer) throw new Error('This model did not produce a final answer. Try again or choose another available model.');
       setMessageContent(pending,clean);
-      history.push({role:'assistant',content:finalAnswer,metadata:pending._nyxMetadata,...(generatedImageId?{imageId:generatedImageId}:{})});
+      history.push({role:'assistant',content:finalAnswer,metadata:pending._nyxMetadata,timing:getTiming(),...(generatedImageId?{imageId:generatedImageId}:{})});
       saveMessages(history);
       recordUsage(userText,finalAnswer);
       requestSucceeded=true;
     }catch(error){
       if(error?.name==='AbortError') return;
       setMessageContent(pending,error?.message||'Nyx AI could not complete that request.',{error:true});
+      if(!customKey)void loadModels();
     }finally{
+      clearInterval(timingTimer);showTiming(pending,getTiming());
       if(renderFrame)cancelAnimationFrame(renderFrame);
       activeController=null;
       setBusy(false);

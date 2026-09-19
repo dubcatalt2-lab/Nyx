@@ -1,3 +1,17 @@
+## Free provider availability and Code Sandbox controls (2026-09-18)
+
+- Shared free-model picker checks public endpoint metadata with a two-second bounded lookup per model and a five-minute catalog cache. Models without a zero-price endpoint in normal status are hidden; unknown lookup failures do not remove a model. OpenRouter's free router is exempt from empty endpoint checks. HTTP 404/502/503/504 inference failures suppress that free model for five minutes; 429/auth/input errors do not. Provider outages cannot be repaired locally. Current public checks marked Lightning and Nano Omni endpoints non-normal; no permanent deletion or paid fallback.
+- Code Sandbox now changes languages by saving and opening the language's local file/starter immediately, without AI conversion or credentials. Each language retains its edits. Added a desktop/mobile close control inside the assistant; existing toolbar/mobile controls reopen it. Removed the square textarea focus outline while retaining the rounded form focus ring.
+- Shared app sources apply these changes to Nyx and Tutsi. No duplicate Tutsi fork. Targeted fixture checks cover controls, language preservation, no AI requests on switching, endpoint cooldowns, and response stats persistence.
+
+## Expanded free AI catalog and latency settings (2026-09-18)
+
+- Expanded the verified zero-price allowlist to all 23 current OpenRouter text-output options, including openrouter/free and additional Nemotron variants. Audio-output Lyria previews are not chat-compatible and are excluded. Exact IDs still require current catalog availability; zero-price routing caps prevent paid fallback. Provider limits remain. Snapshot is not an automatic future-model enrollment mechanism.
+- Fixed free chat skipping the supported reasoning settings when paid web tools are disabled. Off disables optional reasoning; Normal requests low effort; Extended requests high effort. Raw reasoning is excluded from responses. Free routing now prefers latency while retaining zero-price caps; paid routing remains unchanged.
+- Three bounded direct VPS calls to Nemotron Lightning: old/default settings and low reasoning each reached 25 seconds without answer text; reasoning off returned first text around 19.6 seconds and finished in 20.2 seconds. These sequential samples do not establish causality or Playground equivalence. Provider latency remains unresolved; no claim of instant responses. No paid inference was requested.
+- Added per-response first-text latency, elapsed time and end-to-end tokens/sec, with a waiting timer. Uses reported completion usage when available, otherwise explicitly marked character-based estimates. Stats persist with local message history and use readable numerals in both themes. TPS includes request waiting time and may include reasoning tokens, as described in the tooltip.
+- All 23 free models pass allowance/zero-cost and reasoning-capability fixtures. Real middleware test verifies latency routing and zero-price caps. Prior 30-slot release 41c42c9 is deployed with active services.
+
 ## Shared AI capacity (2026-09-18)
 
 - Increased both server request limiter and durable shared-account allowance defaults from 10 to 30 concurrent requests across Nyx and Tutsi. Preserves one priority-reserved slot, per-account concurrency, minute limits and budgets. Environment overrides still apply. Updated capacity fixtures exercise 29 regular requests plus a priority request, rejection at capacity and slot release/reuse. User requested the capacity increase now.

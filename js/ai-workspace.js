@@ -1038,7 +1038,7 @@
     const selected=model.value||DEFAULT_MODEL;
     const label=modelLabel(selected);
     modelSelected.textContent=label;
-    modelTrigger.title=`Model: ${label}`;
+    modelTrigger.title=`Model: ${label}${selected.endsWith(":free")?". No Nyx daily or token quota. OpenRouter rate limits apply.":""}`;
     modelTrigger.setAttribute('aria-label',`AI model: ${label}`);
     sidebarModelName.textContent=label;
     modelOptionsHost.querySelectorAll('[data-model-id]').forEach(option=>{

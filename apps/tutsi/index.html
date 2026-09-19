@@ -10,6 +10,8 @@
       content="Browse, watch, listen and play with Tutsi."
     />
     <title>Tutsi Math</title>
+    <link rel="manifest" href="/apps/tutsi/app.webmanifest" />
+    <script defer src="/apps/tutsi/install.js?v=20260918"></script>
     <link rel="icon" href="/apps/tutsi/icon.png?v=2" type="image/png" />
     <link rel="stylesheet" href="/apps/tutsi/font.css?v=1" />
     <link rel="stylesheet" href="/apps/tutsi/style.css?v=2" />
@@ -346,6 +348,15 @@
                 <input id="close-prevention" class="switch" type="checkbox" />
               </div>
             </section>
+            <section class="settings-card" data-tutsi-install-card>
+              <h2>App and downloads</h2>
+              <p>Install Tutsi in its own window, or save an HTML launcher. Both need an internet connection.</p>
+              <div class="setting-row">
+                <button class="secondary" data-install-tutsi type="button">Install Tutsi</button>
+                <button class="secondary" data-download-tutsi-singlefile type="button">Download HTML</button>
+              </div>
+              <p data-install-tutsi-status role="status"></p>
+            </section>
             <section class="settings-card" id="privacy">
               <div class="card-heading">
                 <span class="setting-symbol" data-icon="shield"></span>
@@ -489,7 +500,7 @@
       </button>
     </dialog>
     <dialog id="customize-dialog" aria-labelledby="customize-title">
-      <header class="customize-heading"><div><p class="eyebrow">Customize</p><h2 id="customize-title">Customize Tutsi</h2></div><button id="customize-dismiss" class="text-link" type="button">Skip for now</button></header>
+      <header class="customize-heading"><div><p class="eyebrow">Customize</p><h2 id="customize-title">Customize Tutsi</h2></div><button id="customize-dismiss" class="text-link" type="button" hidden>Cancel</button></header>
       <div class="customize-layout">
         <aside id="customize-preview" aria-label="Appearance preview"><div class="customize-mini-tab"><span aria-hidden="true"></span><span id="customize-tab-label">Tutsi Math</span></div><div class="customize-mini-home"><img src="/apps/tutsi/icon.png?v=2" width="64" height="64" alt=""><strong>tutsi math.</strong><div class="customize-mini-search">Search the web <span aria-hidden="true">&#8594;</span></div><div class="customize-mini-links">AI &nbsp; Music &nbsp; YouTube</div></div><p>Preview</p></aside>
         <div class="customize-fields">
@@ -499,7 +510,7 @@
           <section data-customize-step="2" hidden><h3 tabindex="-1">Background</h3><p>Keep it plain or add a background.</p><select id="customize-wallpaper"></select></section>
           <section data-customize-step="3" hidden><h3 tabindex="-1">Your tab</h3><p>Choose the title and icon shown by your browser.</p><label for="customize-tabPreset">Tab preset</label><select id="customize-tabPreset"></select><label for="customize-tabTitle">Custom title</label><input id="customize-tabTitle" maxlength="100" placeholder="Your tab title"></section>
           <section data-customize-step="4" hidden><h3 tabindex="-1">Preferences</h3><p>You can change these later in Settings.</p><select id="customize-engine"></select><label class="customize-check"><input id="customize-closePrevention" type="checkbox">Confirm before closing</label><label class="customize-check"><input id="customize-motion" type="checkbox">Reduce motion</label><p id="customize-summary"></p></section>
-          <section data-customize-step="5" hidden><h3 tabindex="-1">Your blocker</h3><p>Choose the filter your school uses, or skip if you are not sure.</p><select id="customize-blocker"></select><button id="customize-skip-blocker" class="text-link" type="button">Skip this step</button></section>
+          <section data-customize-step="5" hidden><h3 tabindex="-1">Your blocker</h3><p>Choose your filter to finish setup.</p><select id="customize-blocker" required></select></section>
           <div class="customize-actions"><span id="customize-progress" role="status"></span><div><button id="customize-back" class="secondary" type="button" hidden>Back</button><button id="customize-next" class="primary" type="button">Next</button></div></div>
         </div>
       </div>

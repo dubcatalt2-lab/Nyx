@@ -2,6 +2,11 @@ import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
+  "apps/tutsi/app.webmanifest",
+  "apps/tutsi/install.js",
+  "apps/tutsi/tutsi-singlefile.html",
+  "apps/tutsi/tutsi-app-192.png",
+  "apps/tutsi/tutsi-app-512.png",
   "services/domain-pages/integration.mjs",
   "services/domain-pages/server.mjs",
   "services/domain-pages/pages.mjs",

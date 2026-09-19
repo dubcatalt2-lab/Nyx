@@ -20,9 +20,24 @@ try{
  await page.setViewportSize({width:390,height:844});await page.locator('#open-customize').click();await page.evaluate(()=>document.fonts.ready);
  assert(!(await wizard.evaluate(el=>el.scrollWidth>el.clientWidth)));
  await page.screenshot({path:process.env.TEMP+'/tutsi-customize-mobile.png'});
- for(let i=0;i<5;i++)await page.locator('#customize-next').click();await page.locator('#customize-skip-blocker').click();assert.equal(await page.locator('#blocker').inputValue(),'');assert.equal(await page.locator('#blocker option:checked').textContent(),'Choose your blocker');await page.reload();assert.equal(await page.locator('#blocker').inputValue(),'');
+ for(let i=0;i<5;i++)await page.locator('#customize-next').click();
+ assert.equal(await page.locator('#customize-skip-blocker').count(),0);
+ await page.locator('#customize-next').click();await wizard.waitFor({state:'hidden'});
+ assert.equal(await page.locator('#blocker').inputValue(),'goguardian');
  assert.deepEqual(errors,[]);
  const old=await browser.newPage();await old.addInitScript(()=>localStorage.setItem('tutsi.settings.v1',JSON.stringify({theme:'frappe',closePrevention:false,transport:'libcurl'})));await old.goto('http://localhost:9091/tutsi');assert(!(await old.locator('#customize-dialog').isVisible()));assert.equal(await old.locator('html').getAttribute('data-theme'),'frappe');
- const fresh=await browser.newPage();await fresh.goto('http://localhost:9091/tutsi');await fresh.locator('#customize-dismiss').click();await fresh.goto('http://localhost:9091/tutsi#settings');await fresh.locator('#close-prevention').uncheck();await fresh.reload();assert(!(await fresh.locator('#customize-dialog').isVisible()));
- console.log('Customization: first visit, draft isolation, back/save, persisted preferences, cancel, skip, existing users and mobile passed.');
+ const fresh=await browser.newPage();await fresh.goto('http://localhost:9091/tutsi');
+ await fresh.locator('#customize-dialog').waitFor();
+ assert(!(await fresh.locator('#customize-dismiss').isVisible()));
+ await fresh.keyboard.press('Escape');
+ assert(await fresh.locator('#customize-dialog').isVisible());
+ assert(await fresh.locator('#customize-next').isDisabled());
+ assert.equal(await fresh.evaluate(()=>localStorage.getItem('tutsi.customize.seen')),null);
+ await fresh.reload();await fresh.locator('#customize-dialog').waitFor();await fresh.keyboard.press('Escape');
+ await fresh.locator('[data-customize-step="5"] button[data-value=lightspeed]').click();
+ await fresh.locator('#customize-next').click();await fresh.locator('#customize-dialog').waitFor({state:'hidden'});
+ assert.equal(await fresh.evaluate(()=>JSON.parse(localStorage.getItem('tutsi.settings.v1')).blocker),'lightspeed');
+ await fresh.reload();await fresh.locator('#studyready-startup').waitFor({state:'detached',timeout:10000});
+ assert(!(await fresh.locator('#customize-dialog').isVisible()));
+ console.log('Customization: first visit, draft isolation, back/save, persisted preferences, cancel, required filter, existing users and mobile passed.');
 }finally{await browser.close()}

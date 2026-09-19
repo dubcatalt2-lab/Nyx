@@ -1336,26 +1336,30 @@ function openCustomize(){
  customizeTransition++;customizeBusy=false;
  $('customize-back').disabled=false;$('customize-next').disabled=false;
  customizeDraft={...settings};customizeStep=0;
+ $('customize-dismiss').hidden=!hasChosenBlocker(settings.blocker);
+ if(!hasChosenBlocker(settings.blocker))try{localStorage.setItem('tutsi.customize.pending','1')}catch{}
  for(const key of Object.keys(customizeKeys)){const el=$('customize-'+key);if(el.type==='checkbox')el.checked=customizeDraft[key];else el.value=customizeDraft[key];}
  customizePreview();customize.showModal();showCustomizeStep();
 }
-function dismissCustomize(){customizeTransition++;customizeBusy=false;try{localStorage.setItem('tutsi.customize.seen','1')}catch{}customize.close();tabAppearance();}
+function dismissCustomize(){customizeTransition++;customizeBusy=false;try{localStorage.setItem('tutsi.customize.seen','1');localStorage.removeItem('tutsi.customize.pending')}catch{}customize.close();tabAppearance();}
 $('open-customize').onclick=openCustomize;
-function skipCustomize(){if(!settings.blocker||settings.blocker==='auto'){settings.blocker='';applySettings();}dismissCustomize();}
+function hasChosenBlocker(value){return !!value&&value!=='auto'&&[...$('customize-blocker').options].some(option=>option.value===value);}
+function requireCustomizeBlocker(){customizeTransition++;customizeBusy=false;customizeStep=customizeStepCount-1;showCustomizeStep();}
+function skipCustomize(){if(!hasChosenBlocker(settings.blocker)){requireCustomizeBlocker();return;}dismissCustomize();}
 $('customize-dismiss').onclick=skipCustomize;
 customize.addEventListener('cancel',event=>{event.preventDefault();skipCustomize();});
 $('customize-back').onclick=()=>{void changeCustomizeStep(-1);};
 function saveCustomize(){
+ if(!hasChosenBlocker(customizeDraft.blocker)){requireCustomizeBlocker();return;}
  for(const key of Object.keys(customizeKeys))settings[key]=customizeDraft[key];
  applySettings();syncClosePrevention();dismissCustomize();toast('Your changes are saved.');
 }
-$('customize-skip-blocker').onclick=()=>{customizeDraft.blocker='';saveCustomize();};
 $('customize-next').onclick=()=>{
  if(customizeStep<customizeStepCount-1){void changeCustomizeStep(1);return;}
  saveCustomize();
 };
 await window.tutsiStartupReady;
-try{if((!saved||Object.keys(saved).length===0)&&!localStorage.getItem('tutsi.customize.seen')&&(!location.hash||location.hash==='#home'))openCustomize();}catch{}
+try{if(localStorage.getItem('tutsi.customize.pending')||((!saved||Object.keys(saved).length===0)&&!localStorage.getItem('tutsi.customize.seen')&&(!location.hash||location.hash==='#home')))openCustomize();}catch{}
 
 // Scroll highlighting never changes the hash or adds browser-history entries.
 function updateSettingsSection(){

@@ -16,77 +16,54 @@
       return "In Safari, tap Share, then Add to Home Screen.";
     }
     if (/Firefox/i.test(agent)) {
-      return "Firefox desktop does not offer PWA installation. Open Nyx in Chrome or Edge to install it.";
+      return "Firefox desktop does not offer PWA installation. Open Tutsi in Chrome or Edge to install it.";
     }
     if (/Safari/i.test(agent) && !/Chrome|Chromium|Edg/i.test(agent)) {
       return "In Safari, choose File, then Add to Dock.";
     }
-    return "Use the install icon in the browser address bar, or open the browser menu and choose Install Nyx.";
+    return "Use the install icon in the browser address bar, or open the browser menu and choose Install Tutsi.";
   }
 
   function installCard(kind) {
     const card = document.createElement("section");
-    card.dataset.nyxInstallCard = "true";
+    card.dataset.tutsiInstallCard = "true";
     card.className = kind === "legacy" ? "settings-card" : "settings-block";
     const copy = `
-      <h2>Install Nyx</h2>
-      <p data-install-nyx-status>Installs Nyx as an app with its own window and desktop icon.</p>`;
-    const control = `<div class="settings-actions nyx-install-actions">
-      <button class="${kind === "legacy" ? "" : "settings-action"}" data-install-nyx type="button">Install Nyx</button>
-      <button class="${kind === "legacy" ? "" : "settings-action"}" data-download-nyx-singlefile type="button">Download Single File</button>
+      <h2>Install Tutsi</h2>
+      <p data-install-tutsi-status>Installs Tutsi as an app with its own window and desktop icon.</p>`;
+    const control = `<div class="settings-actions tutsi-install-actions">
+      <button class="${kind === "legacy" ? "" : "settings-action"}" data-install-tutsi type="button">Install Tutsi</button>
+      <button class="${kind === "legacy" ? "" : "settings-action"}" data-download-tutsi-singlefile type="button">Download Single File</button>
     </div>`;
     card.innerHTML = kind === "dashboard"
-      ? `<div class="nyx-settings-copy">${copy}</div><div class="nyx-settings-control">${control}</div>`
+      ? `<div class="tutsi-settings-copy">${copy}</div><div class="tutsi-settings-control">${control}</div>`
       : `${copy}${control}`;
     return card;
   }
 
-  function ensureInstallCards() {
-    document.querySelectorAll(".browser-only-settings.nyx-settings-dashboard").forEach((app) => {
-      if (app.querySelector("[data-nyx-install-card]")) return;
-      const group = app.querySelector('[data-settings-category="advanced"] .nyx-settings-group');
-      if (group) group.prepend(installCard("dashboard"));
-    });
-
-    document.querySelectorAll(".browser-only-settings .settings-section.active").forEach((section) => {
-      if (section.querySelector("[data-nyx-install-card]")) return;
-      const card = installCard("browser");
-      const displayHeading = [...section.querySelectorAll("h2")]
-        .find((heading) => heading.textContent.trim() === "Display Mode");
-      const displayCard = displayHeading?.closest(".settings-block");
-      if (displayCard) displayCard.after(card);
-      else section.append(card);
-    });
-
-    document.querySelectorAll(".settings-panel").forEach((panel) => {
-      if (panel.querySelector("[data-nyx-install-card]")) return;
-      const grids = panel.querySelectorAll(":scope > .settings-grid");
-      const target = grids[1] || grids[0];
-      if (target) target.prepend(installCard("legacy"));
-    });
-  }
+  function ensureInstallCards() {}
 
   function updateControls(message = lastMessage) {
     lastMessage = message;
     ensureInstallCards();
     const installed = isInstalled();
-    document.querySelectorAll("[data-install-nyx]").forEach((button) => {
+    document.querySelectorAll("[data-install-tutsi]").forEach((button) => {
       button.disabled = installed;
       button.setAttribute("aria-disabled", String(installed));
-      const label = installed ? "Nyx is Installed" : "Install Nyx";
+      const label = installed ? "Tutsi is Installed" : "Install Tutsi";
       if (button.textContent !== label) button.textContent = label;
     });
-    document.querySelectorAll("[data-install-nyx-status]").forEach((status) => {
+    document.querySelectorAll("[data-install-tutsi-status]").forEach((status) => {
       const text = installed
-        ? "Nyx is installed on this device and opens in its own app window."
+        ? "Tutsi is installed on this device and opens in its own app window."
         : message || (installPrompt
           ? "Ready to install on this device."
-          : "Installs Nyx as an app with its own window and desktop icon.");
+          : "Installs Tutsi as an app with its own window and desktop icon.");
       if (status.textContent !== text) status.textContent = text;
     });
-    document.querySelectorAll("[data-download-nyx-singlefile]").forEach((button) => {
-      if (button.dataset.nyxSingleFileBound === "true") return;
-      button.dataset.nyxSingleFileBound = "true";
+    document.querySelectorAll("[data-download-tutsi-singlefile]").forEach((button) => {
+      if (button.dataset.tutsiSingleFileBound === "true") return;
+      button.dataset.tutsiSingleFileBound = "true";
       button.onclick = (event) => {
         event.preventDefault();
         void downloadSingleFile(button);
@@ -109,7 +86,7 @@
     try {
       const result = await prompt.prompt();
       updateControls(result?.outcome === "accepted"
-        ? "Finishing the Nyx installation..."
+        ? "Finishing the Tutsi installation..."
         : "Installation was cancelled. You can try again anytime.");
     } catch {
       updateControls(platformHelp());
@@ -117,7 +94,7 @@
   }
 
   async function downloadSingleFile(button) {
-    const source = new URL("/nyx-singlefile.html", window.location.href);
+    const source = new URL("/apps/tutsi/tutsi-singlefile.html", window.location.href);
     source.searchParams.set("release", SINGLE_FILE_RELEASE);
     source.searchParams.set("fresh", Date.now().toString(36));
     const previousLabel = button?.textContent || "Download Single File";
@@ -125,23 +102,23 @@
       button.disabled = true;
       button.textContent = "Downloading…";
     }
-    const status = button?.closest("[data-nyx-install-card]")?.querySelector("[data-install-nyx-status]");
+    const status = button?.closest("[data-tutsi-install-card]")?.querySelector("[data-install-tutsi-status]");
     try {
       const response = await fetch(source, { cache: "no-store", credentials: "same-origin" });
-      if (!response.ok) throw new Error("The Nyx file is unavailable.");
+      if (!response.ok) throw new Error("The Tutsi file is unavailable.");
       const markup = await response.text();
-      if (!markup.trim().toLowerCase().startsWith("<!doctype html")) throw new Error("The Nyx file was incomplete.");
+      if (!markup.trim().toLowerCase().startsWith("<!doctype html")) throw new Error("The Tutsi file was incomplete.");
       const objectUrl = URL.createObjectURL(new Blob([markup], { type: "text/html;charset=utf-8" }));
       const link = document.createElement("a");
       link.href = objectUrl;
-      link.download = "Nyx-Download.html";
+      link.download = "Tutsi-Download.html";
       link.hidden = true;
       document.body.appendChild(link);
       link.click();
       window.setTimeout(() => { link.remove(); URL.revokeObjectURL(objectUrl); }, 60_000);
-      if (status) status.textContent = "Nyx-Download.html was saved. Open it from your Downloads folder.";
+      if (status) status.textContent = "Tutsi-Download.html was saved. Open it from your Downloads folder.";
     } catch {
-      if (status) status.textContent = "Nyx could not create the download. Check your connection and try again.";
+      if (status) status.textContent = "Tutsi could not create the download. Check your connection and try again.";
     } finally {
       if (button) {
         button.disabled = false;
@@ -162,7 +139,7 @@
   });
 
   document.addEventListener("click", (event) => {
-    const button = event.target.closest?.("[data-install-nyx]");
+    const button = event.target.closest?.("[data-install-tutsi]");
     if (!button) return;
     event.preventDefault();
     requestInstall();
@@ -179,7 +156,7 @@
     start();
   }
 
-  window.NyxInstall = {
+  window.TutsiInstall = {
     request: requestInstall,
     downloadSingleFile,
     refresh: updateControls,

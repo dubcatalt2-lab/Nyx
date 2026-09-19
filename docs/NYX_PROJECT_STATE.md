@@ -1,3 +1,17 @@
+## App/download release (2026-09-18)
+
+- Updated Nyx HTML launcher and download release to 2026.09.18.1. Added Tutsi Settings install/download controls, a branded standalone HTML launcher, a no-store attachment endpoint, and a separate install manifest with its own identity and /tutsi start URL. Both manifests use actual 192/512 PNG icons. Launchers require the live website and internet; they are not offline copies or native desktop executables.
+- Browser fixtures verify real download filenames/content, opening saved .html files from file://, correct destination per brand, and manifest/icon availability. Build, deployment checks, complete AI allowance suite, free model/deadline fixtures and chat send/lock route fixtures pass.
+- User requested commit, push and VPS deployment of this release including the pending required-filter wizard, free AI models and streaming deadline fixes below. Cloud gaming maintenance remains enabled. No live chats/profiles changed by tests.
+
+## Required Tutsi filter, free AI and stream reliability (2026-09-18, local)
+
+- Wizard filter step has no skip option. Unconfigured users cannot dismiss it with Escape or save an invalid/automatic selection. Pending setup persists through reload; previously completed users retain Settings cancel behavior. Required-choice, reload, mobile and existing customization fixtures pass.
+- AI streaming uses a progress-reset idle deadline and a fixed 120-second total cap instead of cutting healthy output off at 45 seconds. Images/non-stream responses keep existing limits; request cancellation and budget reservations remain. Timer fixtures pass; no claim of improved provider generation speed or verified resolution of every Mercury/DeepSeek failure.
+- Verified current OpenRouter catalog zero-price variants: qwen/qwen3.8-27b:free, nvidia/nemotron-3.5-lightning:free and deepseek/deepseek-v4-flash-0731:free. Listed through the shared catalog, available to all enabled signed-in accounts including new accounts, without Nyx daily-message or token-pool debits. Minute/concurrency throttles remain. Free sessions cannot use paid models, paid web tools or image generation; all OpenRouter routing prices are capped at zero. Provider daily/rate limits still apply and are shared by the configured provider account. No provider inference was purchased or generated during testing.
+- Free-account quota/price/isolation fixtures, paid model caps/access regressions, AI timers and deployment/build checks pass. Existing /lock implementation already preserves channel visibility and restricts sending to moderators and higher roles; real route and browser fixtures confirmed read-only members, moderator commands, unlock, attachment restrictions and concurrent sends. Private channel visibility restrictions remain independent.
+- Included in the app/download release above. Frontend preview is localhost:9091/tutsi; backend changes require running the modified server or deployment because the preview forwards APIs to production.
+
 ## Tutsi first-search timeout recovery (2026-09-18)
 
 - Found that a timed-out request on a relay whose handshake still succeeds was returned directly as an error. Added one direct-client retry for GET/HEAD timeout errors even when the current connection remains healthy. Existing relay failover remains; non-timeout upstream failures, POST requests, aborts, offline and closed transports do not gain retries. No recursive retry loop.

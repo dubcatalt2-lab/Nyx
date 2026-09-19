@@ -1,0 +1,118 @@
+/* Quiet Nyx home-screen visual system for Chat. Chat behavior stays in app.js. */
+:root{
+  --chat-bg:#000;
+  --chat-panel:#07080b;
+  --chat-panel-2:#0b0c10;
+  --chat-panel-3:#111218;
+  --chat-line:#292a32;
+  --chat-line-soft:#1d1e25;
+  --chat-text:#f5f5f7;
+  --chat-muted:#8b8c97;
+  --chat-faint:#62636d;
+  --chat-accent:#f1f1f3;
+  --chat-accent-2:#c7bff0;
+  --chat-green:#62dca8;
+  --chat-danger:#ff7d91;
+}
+html,body{background:#000}
+.chat-app{isolation:isolate;background:#000}
+.chat-app::before{
+  content:"";
+  position:fixed;
+  z-index:-1;
+  inset:0;
+  background-image:radial-gradient(circle,rgba(151,145,187,.18) 1px,transparent 1.35px);
+  background-position:10px 8px;
+  background-size:30px 30px;
+  opacity:.18;
+  pointer-events:none;
+  -webkit-mask-image:radial-gradient(ellipse 70% 72% at 55% 48%,#000,transparent 100%);
+  mask-image:radial-gradient(ellipse 70% 72% at 55% 48%,#000,transparent 100%);
+}
+
+/* Slim top bar, using the same neutral controls as the Nyx home screen. */
+.chat-topbar{height:54px;padding:0 12px 0 15px;border-bottom-color:var(--chat-line-soft);background:rgba(5,6,9,.97)}
+.chat-brand{gap:8px}
+.chat-brand-mark{width:30px;height:30px;border-color:#30313a;border-radius:50%;background:#090a0e;color:#ecebf2}
+.chat-brand-mark svg{width:17px;height:17px;stroke-width:1.7}
+.chat-brand strong{font:650 15px/1 Outfit,Inter,sans-serif}
+.chat-brand>span:last-child{padding:0;border:0;background:transparent;color:#8f909b;font-size:8px;font-weight:750;letter-spacing:.12em}
+.chat-topbar-actions{gap:7px}
+.chat-online-count,.back-button,.icon-button,.caffeine-button{border-color:var(--chat-line);border-radius:9px;background:#08090d;color:#bfc0c7;box-shadow:none}
+.chat-online-count{height:32px;padding:0 10px;font-size:10px}.chat-online-count i{width:6px;height:6px;box-shadow:none}
+.back-button{height:32px;padding:0 10px;font-size:10px}.back-button:hover,.icon-button:hover{border-color:#464750;background:#111218;color:#fff}
+.icon-button{width:33px;height:33px}.icon-button svg{width:16px;height:16px;stroke-width:1.7}
+.caffeine-button{min-height:32px;padding:0 10px;color:#d5c8bd;font-size:9px}.caffeine-button:hover,.caffeine-button.active{border-color:#67584c;background:#12100e;color:#fff}
+.caffeine-badge{border-color:#51463d;background:#14100d;color:#d6c3b4}
+
+/* Shell */
+.chat-layout{grid-template-columns:218px minmax(0,1fr) 230px;height:calc(100dvh - 54px)}
+.channel-sidebar,.member-sidebar{background:rgba(5,6,9,.96)}
+.channel-sidebar{border-right-color:var(--chat-line-soft)}.member-sidebar{border-left-color:var(--chat-line-soft)}
+.chat-navigation-scroll{scrollbar-color:#2d2e36 transparent}
+.sidebar-heading{height:49px;padding:0 14px;color:#747680;font-size:8px;letter-spacing:.14em}
+.sidebar-add{border:1px solid transparent;border-radius:50%;color:#777983}.sidebar-add:hover{border-color:var(--chat-line);background:#0e0f14;color:#fff}
+.channel-list,.direct-list,.voice-channel-list{padding-right:8px;padding-left:8px;scrollbar-color:#2d2e36 transparent}
+.channel-button,.direct-button,.voice-channel-button,.voice-member,.member-button{border:1px solid transparent;border-radius:8px;background:transparent;color:#9899a3}
+.channel-button:hover,.direct-button:hover,.voice-channel-button:hover,.voice-member:hover,.member-button:hover{border-color:#202129;background:#0b0c10;color:#f1f1f3}
+.channel-button.active,.direct-button.active{border-color:#2c2d35;background:#111218;color:#fff}
+.channel-button i{background:#d5d2e5;box-shadow:none}
+.voice-channel-button.connected{border-color:rgba(98,220,168,.2);background:rgba(98,220,168,.07);color:#9de5c7}
+.voice-panel{border-color:rgba(98,220,168,.24);border-radius:9px;background:#08100d}
+.voice-controls button{border-color:#26302d;border-radius:7px;background:#0b110f}.voice-controls button:hover{background:#111b17}
+.chat-guidelines{border-color:var(--chat-line-soft);border-radius:9px;background:#08090d}.chat-guidelines>svg{stroke:#b7b2ca}.chat-guidelines strong{color:#d8d8dd}
+.current-user{border-top-color:var(--chat-line-soft);background:#08090d}
+
+/* Conversation */
+.conversation{grid-template-rows:49px minmax(0,1fr) auto;background:rgba(0,0,0,.84)}
+.conversation-header{padding:0 15px;border-bottom-color:var(--chat-line-soft);background:rgba(5,6,9,.92)}
+.channel-symbol{color:#a0a1aa}.conversation-header h1{font:650 13px/1 Outfit,Inter,sans-serif}
+.connection-state i{box-shadow:none}
+.loading-chat,.signin-gate{background:#000}
+.loading-orbit{border-color:#24252d;border-top-color:#ddd9ee}
+.signin-gate>span,.channel-welcome>span{border:1px solid #2a2b33;border-radius:50%;background:#090a0e;color:#ddd9ed}
+.primary-button{border:1px solid #efeff1;border-radius:9px;background:#f3f3f5;color:#08080a}.primary-button:hover{background:#fff;filter:none}
+.load-older{border-color:var(--chat-line);background:#08090d}.load-older:hover{border-color:#474851;background:#111218}
+.message-scroller{scrollbar-color:#30313a transparent}
+.message:hover{background:rgba(255,255,255,.018)}
+.message-author{color:#f3f3f5}.message-text{color:#d7d7dc}
+.message-role{border-color:#30313a;background:#0d0e13;color:#aaa6bd}
+.message-delete,.reaction-add{border-color:var(--chat-line);background:#08090d}.reaction-add:hover{border-color:#5d586c;color:#e1ddef}
+.message-attachment{border-color:var(--chat-line);background:#090a0e}.message-attachment img,.message-attachment.media video{background:#030304}
+.message-composer{margin:0 14px 13px;padding:7px;border-color:var(--chat-line);border-radius:11px;background:#0b0c10;box-shadow:none}
+.message-composer:focus-within{border-color:#777080;box-shadow:0 0 0 2px rgba(195,184,242,.07)}
+.composer-tool:hover{background:#15161c}.send-button{border:1px solid #efeff1;border-radius:8px;background:#f3f3f5;color:#08080a}.send-button:hover{background:#fff}
+.attachment-preview{border-color:var(--chat-line);background:#07080b}
+.mention-menu,.message-context-menu{border-color:#33343d;background:#090a0e;box-shadow:0 18px 48px rgba(0,0,0,.68)}
+.mention-option:hover,.mention-option.active,.message-context-reactions button:hover,.message-context-reactions button:focus-visible{background:#15161c}
+.message-context-action:hover,.message-context-action:focus-visible{background:#f1f1f3;color:#08080a}
+.chat-notice{border-color:rgba(255,125,145,.35);background:#291318}.chat-notice.success{border-color:rgba(98,220,168,.3);background:#0d2019}
+
+/* Member rail and profile */
+.member-group h2{color:#747680}.member-button.offline{opacity:.62}
+.avatar.online::after{border-color:#07080b;box-shadow:none}
+.member-dialog,.dm-dialog,.channel-manager-dialog,.caffeine-dialog,.caffeine-gift-dialog,.command-dialog,.flagged-search-dialog{
+  border-color:#30313a;border-radius:13px;background:#08090d;color:var(--chat-text);box-shadow:0 24px 70px rgba(0,0,0,.72)
+}
+.member-dialog::backdrop,.dm-dialog::backdrop,.channel-manager-dialog::backdrop,.caffeine-dialog::backdrop,.caffeine-gift-dialog::backdrop,.command-dialog::backdrop,.flagged-search-dialog::backdrop{background:rgba(0,0,0,.78);backdrop-filter:blur(5px)}
+.member-card-banner{background:radial-gradient(circle at 20% 10%,rgba(195,184,242,.16),transparent 45%),linear-gradient(135deg,#15151d,#08090d)}
+.member-card-body>.avatar{border-color:#08090d}.member-card-facts span{border-color:var(--chat-line);background:#050609}
+.member-dm-button{border:1px solid #efeff1;background:#f3f3f5;color:#08080a}.member-dm-button:hover{background:#fff}
+.dm-dialog input,.channel-manager-form input,.channel-manager-form textarea,.channel-manager-form select{border-color:var(--chat-line);background:#030304}
+.dm-dialog input:focus,.channel-manager-form input:focus,.channel-manager-form textarea:focus,.channel-manager-form select:focus{border-color:#817993;box-shadow:0 0 0 2px rgba(195,184,242,.08)}
+.channel-kind-tabs button,.btn-subtle{border-color:var(--chat-line);background:#050609}.channel-kind-tabs button.active{border-color:#666071;background:#111017;color:#fff}
+.channel-manager-item,.command-list-item,.flagged-search-item,.caffeine-status,.caffeine-gift-member{border-color:var(--chat-line-soft);background:#050609}
+.channel-manager-item button:hover{background:#14151b}.caffeine-heading>span,.caffeine-gift-mark{border-color:#4b4139;background:#120f0d;color:#d6c2b3}
+.caffeine-gift-member:hover{border-color:#5c5046;background:#0e0c0b}
+.command-list-item code{color:#c7c1de}.flagged-search-author:is(button):hover{color:#ded9f3}
+.voice-screen-stage{border-color:#34323d;background:rgba(3,3,4,.96)}.voice-screen-card{border-color:#2f3038;background:#000}.voice-screen-card video{background:#000}
+
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{border:2px solid transparent;border-radius:8px;background:#353640;background-clip:padding-box}
+
+@media(max-width:1040px){.chat-layout{grid-template-columns:218px minmax(0,1fr)}.member-sidebar{background:#050609}}
+@media(max-width:720px){
+  .chat-topbar{height:50px;background:rgba(5,6,9,.98)}.chat-layout{grid-template-columns:minmax(0,1fr);height:calc(100dvh - 50px)}
+  .channel-sidebar,.member-sidebar{background:#050609}.conversation{grid-template-rows:47px minmax(0,1fr) auto}
+  .message-composer{margin-right:7px;margin-left:7px}
+}
+@media(prefers-reduced-motion:reduce){.chat-app::before{display:none}}

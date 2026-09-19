@@ -1,4 +1,14 @@
-/* DogeUB-style settings workspace: exact geometry and restrained navy palette. */
+/* Settings workspace with grouped controls and the shared theme palette. */
+html body.browser-shell .browser-shell-settings-panel [data-settings-category="browser"] .nyx-settings-group{display:grid!important;gap:16px!important;background:transparent!important;overflow:visible!important}
+html body.browser-shell .browser-shell-settings-panel .nyx-settings-group > .nyx-browser-settings-card{--nyx-settings-columns:minmax(0,1fr);min-width:0!important;grid-template-columns:var(--nyx-settings-columns)!important;align-items:start!important;gap:16px!important;padding:22px!important;border:1px solid var(--theme-border,rgba(255,255,255,.1))!important;border-radius:16px!important}
+html body.browser-shell .browser-shell-settings-panel .nyx-browser-settings-card .nyx-settings-control{display:grid!important;width:100%!important;min-width:0!important;gap:14px!important;justify-self:stretch!important}
+html body.browser-shell .browser-shell-settings-panel .nyx-browser-settings-card .settings-form-row{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important;margin:0!important}
+html body.browser-shell .browser-shell-settings-panel .nyx-browser-settings-card .nyx-browser-setting-field{display:grid!important;min-width:0!important;gap:7px!important;font-size:12px!important}
+html body.browser-shell .browser-shell-settings-panel .nyx-browser-settings-card .nyx-browser-setting-field input{width:100%!important;min-width:0!important;box-sizing:border-box!important}
+html body.browser-shell .browser-shell-settings-panel .nyx-browser-settings-card .nyx-browser-setting-toggles{display:grid!important;gap:0!important;padding:0 14px!important;border:1px solid rgba(255,255,255,.08)!important;border-radius:12px!important}
+html body.browser-shell .browser-shell-settings-panel .nyx-browser-settings-card .settings-row{min-width:0!important;gap:16px!important;padding:12px 0!important;margin:0!important}
+html body.browser-shell .browser-shell-settings-panel .nyx-browser-settings-card .settings-actions{display:flex!important;flex-wrap:wrap!important;gap:8px!important;margin:0!important}
+@media(max-width:620px){html body.browser-shell .browser-shell-settings-panel .nyx-browser-settings-card .settings-form-row{grid-template-columns:minmax(0,1fr)!important}html body.browser-shell .browser-shell-settings-panel .nyx-settings-group > .nyx-browser-settings-card{padding:16px!important}}
 html body.browser-shell .browser-shell-settings-overlay{
   position:fixed!important;
   inset:var(--nyx-interface-bar) 0 0!important;
@@ -24,8 +34,8 @@ html body.browser-shell .browser-shell-settings-overlay *{
 }
 
 html body.browser-shell.browser-shell .browser-shell-settings-panel.browser-shell-settings-panel{
-  position:absolute!important;
-  inset:0!important;
+  position:relative!important;
+  inset:auto!important;
   width:100%!important;
   max-width:none!important;
   height:100%!important;
@@ -201,18 +211,27 @@ html body.browser-shell .nyx-settings-category{
 }
 
 html body.browser-shell .nyx-settings-header{
-  height:28px!important;
-  margin:0 0 12px!important;
+  height:auto!important;
+  margin:0 0 18px!important;
+  padding:0 4px!important;
 }
 
 html body.browser-shell .nyx-settings-header h1{
   margin:0!important;
-  padding:0 4px!important;
+  padding:0!important;
   color:#a0b0c8!important;
   -webkit-text-fill-color:#a0b0c8!important;
   font:500 20px/28px Inter,ui-sans-serif,system-ui,sans-serif!important;
   letter-spacing:0!important;
   text-transform:none!important;
+}
+
+html body.browser-shell .nyx-settings-header p{
+  display:block!important;
+  margin:3px 0 0!important;
+  color:#8294ac!important;
+  -webkit-text-fill-color:#8294ac!important;
+  font:500 13px/19px Inter,ui-sans-serif,system-ui,sans-serif!important;
 }
 
 html body.browser-shell .nyx-settings-category-title{display:none!important}

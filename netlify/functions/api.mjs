@@ -5,6 +5,7 @@ let wrappedApp;
 export async function handler(event, context) {
   if (!wrappedApp) {
     process.env.WISP_URL ||= "wss://nyx-temporary-production.up.railway.app/wisp/";
+    process.env.NYX_TRUST_PROXY ||= "true";
     const [{ default: serverless }, { app }] = await Promise.all([
       import("serverless-http"),
       import("../../server.js")

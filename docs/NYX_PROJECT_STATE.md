@@ -1,5 +1,7 @@
 ## Shared arcade catalog URL repair (2026-09-21)
 
+- Public JavaScript responses permit four hours of caching, so the arcade entry also advances its script query version to `20260921-catalog-url-v7`; reopening the arcade requests the corrected script rather than reusing a cached broken runtime.
+
 - Reproduced the empty arcade on both public sites: built `games.js` requested `/assets/games/@r3ec1ae6daa2c13c805a58bd2!.json`, returning 404. The frontend alias builder replaced the `games.js` prefix inside `games.json`. This prevents catalog loading before any game relay connection; Wispurr health remained good.
 - Frontend alias replacement now requires the end of an asset path, preserving longer filenames/extensions while rewriting exact JavaScript URLs with query strings/fragments. Added regressions for JSON, source maps and longer names, plus a built-browser test that loads the actual bundled manifest/catalogs without mocking them. VPS-target build, deployment/branding checks, proxy/filename regressions and the built arcade test all passed. Corrective deployment/public verification pending below.
 

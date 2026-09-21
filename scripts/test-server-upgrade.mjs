@@ -49,7 +49,9 @@ try {
   clearTimeout(deadline);
   if (child.exitCode === null && child.signalCode === null) {
     const stopped = once(child, 'exit');
-    child.kill('SIGKILL');
+    const forced = setTimeout(() => child.kill('SIGKILL'), 5000);
+    child.disconnect();
     await stopped;
+    clearTimeout(forced);
   }
 }

@@ -33,7 +33,7 @@ import { join, dirname, resolve } from "node:path";
 import { createRequire } from "node:module";
 import { Readable } from "node:stream";
 import { spawn } from "node:child_process";
-import { server as wisp } from "@mercuryworkshop/wisp-js/server";
+import { startWispurr } from "./lib/wispurr-relay.mjs";
 import { Server as SocketIOServer } from "socket.io";
 import { linkGeneratorHourlyQuota } from "./lib/link-generator-quota.mjs";
 import { batchFiles, inspectBatchTree } from "./lib/link-generator-batch.mjs";
@@ -106,19 +106,6 @@ const embeddedWispAllowedOrigins = [...new Set([
   ...String(process.env.NYX_ALLOWED_ORIGINS || "").split(","),
   process.env.NYX_PUBLIC_ORIGIN
 ].map(value => String(value || "").trim().replace(/\/$/, "")).filter(Boolean))];
-if (!externalWispUrl) {
-  wisp.options.allow_private_ips = false;
-  wisp.options.allow_loopback_ips = false;
-  wisp.options.allow_direct_ip = true;
-  wisp.options.allow_udp_streams = false;
-  wisp.options.port_whitelist = [80, 443];
-  wisp.options.dns_method = "lookup";
-  wisp.options.dns_result_order = "ipv4first";
-  // wisp-js 0.4.1's per-host limiter cannot iterate its stream object safely.
-  wisp.options.stream_limit_per_host = -1;
-  wisp.options.stream_limit_total = 64;
-  wisp.options.wisp_motd = "Nyx embedded Wisp";
-}
 const presenceSessions = new Map();
 const presenceSessionFirstSeen = new Map();
 const presenceSessionDetails = new Map();
@@ -3434,6 +3421,7 @@ app.get("/healthz", (_req, res) => {
     ok: true,
     service: "nyx",
     wisp: externalWispUrl ? "external" : "embedded",
+    wispImplementation: externalWispUrl ? "external" : "wispurr",
     chatRealtime: nyxChatSocketServer ? "socket.io" : "polling"
   });
 });
@@ -14027,7 +14015,10 @@ app.use((_req, res) => {
 export { app, attachNyxChatSocketServer, externalWispUrl, normalizePublicWispUrl, nyxActiveGuestUsers, nyxActorCanReviewSearchHistory, nyxChatCanAccessChannel, nyxChatIsSchoolRestrictedChannel, nyxClientIp, nyxRolePresentation, nyxVisibleCustomRoles, nyxifyArtistMatches, nyxifyDurationMatches, nyxifyFullTrackCompare, nyxifyMultilingualTopMatch, nyxifyOfficialArtistScore, nyxifyTrackTitleMatches, recordLocalPresence };
 
 const isDirectRun = process.argv[1] && resolve(process.argv[1]) === join(__dirname, "server.js");
-if (isDirectRun) {
+async function startNyxServer() {
+  const wisp = externalWispUrl ? null : await startWispurr({
+    onFailure: () => { console.error("Nyx relay worker stopped."); shutdown("worker", 1); }
+  });
   const server = createServer((req, res) => app(req, res));
   const chatSocketServer = attachNyxChatSocketServer(server);
   const serverSockets = new Set();
@@ -14062,7 +14053,7 @@ if (isDirectRun) {
         console.error("Nyx Wisp IP ban check could not be completed:", error?.message || error);
       }
       if (socket.destroyed) return;
-      wisp.routeRequest(req, socket, head);
+      wisp.route(req, socket, head);
     } else {
       rejectWispUpgrade(socket, "404 Not Found");
     }
@@ -14079,19 +14070,23 @@ if (isDirectRun) {
   });
 
   let shuttingDown = false;
-  function shutdown(signal) {
+  function shutdown(signal, exitCode = 0) {
     closeHttpRelay();
     void nyxTubeBackend.close();
     void nyxTubeCatalog.close();
     if (shuttingDown) return;
     shuttingDown = true;
+    const workerStopped = wisp?.stop();
     chatSocketServer.disconnectSockets(true);
-    server.close(() => process.exit(0));
+    server.close(() => Promise.resolve(workerStopped).then(() => process.exit(exitCode)));
     setTimeout(() => {
       for (const socket of serverSockets) socket.destroy();
     }, 1_000).unref();
-    setTimeout(() => process.exit(0), 10_000).unref();
+    setTimeout(() => process.exit(exitCode), 10_000).unref();
   }
   process.once("SIGTERM", () => shutdown("SIGTERM"));
   process.once("SIGINT", () => shutdown("SIGINT"));
+  if (process.channel) process.once("disconnect", () => shutdown("disconnect"));
+  server.once("error", () => shutdown("listen", 1));
 }
+if (isDirectRun) void startNyxServer().catch(() => { console.error("Nyx relay could not start."); process.exit(1); });

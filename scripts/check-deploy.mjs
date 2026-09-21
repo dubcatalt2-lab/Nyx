@@ -2,6 +2,7 @@ import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
+  "lib/wispurr-relay.mjs",
   "js/ai-screen-chat.js",
   "apps/tutsi/app.webmanifest",
   "apps/tutsi/install.js",
@@ -213,7 +214,7 @@ if (missing.length) {
 }
 
 const packageJson = JSON.parse(await readFile("package.json", "utf8"));
-for (const dependency of ["express", "firebase-admin", "@mercuryworkshop/wisp-js", "mp4box", "hls.js"]) {
+for (const dependency of ["express", "firebase-admin", "wispurr", "mp4box", "hls.js"]) {
   if (!packageJson.dependencies?.[dependency]) {
     console.error(`Deployment dependency is missing: ${dependency}`);
     process.exit(1);

@@ -1,4 +1,14 @@
-## Wispurr replacement — release prepared (2026-09-20)
+## Shared arcade catalog URL repair (2026-09-21)
+
+- Reproduced the empty arcade on both public sites: built `games.js` requested `/assets/games/@r3ec1ae6daa2c13c805a58bd2!.json`, returning 404. The frontend alias builder replaced the `games.js` prefix inside `games.json`. This prevents catalog loading before any game relay connection; Wispurr health remained good.
+- Frontend alias replacement now requires the end of an asset path, preserving longer filenames/extensions while rewriting exact JavaScript URLs with query strings/fragments. Added regressions for JSON, source maps and longer names, plus a built-browser test that loads the actual bundled manifest/catalogs without mocking them. VPS-target build, deployment/branding checks, proxy/filename regressions and the built arcade test all passed. Corrective deployment/public verification pending below.
+
+## Wispurr replacement — deployed and verified (2026-09-20 Pacific / 2026-09-21 UTC)
+
+- Final runtime release `9aefde4646157c6b4eead43a416d89568bae350a` was pushed to `agent/pirate-cove` and deployed with `sudo bash deploy/update-ovh.sh`; updater completed successfully. Production checkout is clean at that exact commit. Nyx, Caddy, coturn, nyx-stratus and HAProxy are active; Nyx reports zero automatic restarts after deployment. Installed relay is `wispurr@4.2.0`. Loopback and all four authorized public health endpoints return healthy with `wispImplementation: wispurr`.
+- Live isolated Edge checks passed anonymous HTTPS browsing on Nyx with Ultraviolet/epoxy and Ultraviolet/libcurlRaw, and Tutsi with epoxy, libcurl and wisp over both explicit WebSocket and default HTTP bridge. The HTTP fixtures disable browser WebSocket; mutation APIs other than relay traffic are intercepted. Account member lookup returns 401 without authentication on Nyx and both Tutsi hosts. Deployment branding checks passed. Existing cloud-gaming maintenance and shared routing remain intact.
+- Live Nyx `/nyx` is not cross-origin isolated and selected the existing Ultraviolet fallback when Scramjet was requested; exact Scramjet selection was therefore not verified on that public route. All five Nyx engine/transport combinations and six Tutsi combinations passed against the isolated local production build after the port-selection fix. No unrelated frontend/header changes were made to expand this backend release.
+- Earlier failed attempts below are historical and superseded by this completed verification. This post-deployment verification entry is recorded locally after the runtime release; it is not part of the deployed hash.
 
 - Follow-up `af2ed8e` starts correctly on production: loopback health reports `wispImplementation: wispurr`. Its updater reached successful build/checks but stopped during `npm prune`, whose install scripts attempted an unused ONNX GPU download and timed out. Applied the existing `ONNXRUNTIME_NODE_INSTALL=skip` installation setting to pruning as well. This leaves CPU model preparation intact and avoids changing the production environment file. Final updater completion/public verification pending below.
 

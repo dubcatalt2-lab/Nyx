@@ -8,7 +8,10 @@ export function rewriteFrontendReferences(source,path,aliases) {
   source=rewriteStorageNames(source);
   const directory=posix.dirname(path);
   for(const [original,renamed] of Object.entries(aliases).sort((a,b)=>b[0].length-a[0].length)) {
-    source=source.split(original).join(renamed);
+    // Match a complete asset path, not the .js prefix of games.json (or
+    // .js.map, backup files and longer paths). Keep query/fragment URLs valid.
+    const escaped=original.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    source=source.replace(new RegExp(escaped+'(?![\\w./%+-])','g'),()=>renamed);
     const relative=posix.relative(directory,original),replacement=posix.relative(directory,renamed);
     for(const prefix of relative.startsWith('.')?['']:['','./']) {
       const from=prefix+relative,to=prefix+replacement;

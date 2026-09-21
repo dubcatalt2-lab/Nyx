@@ -1,7 +1,18 @@
 import assert from 'node:assert/strict';
 import {readFile,access} from 'node:fs/promises';
 import vm from 'node:vm';
+import {rewriteFrontendReferences} from './build-frontend-assets.mjs';
 import {proxyAssetNames as names,legacyProxyAssetNames,rewriteProxyReferences,scrambleProxyCode} from './build-proxy-assets.mjs';
+
+const gameAliases={'/assets/games/games.js':'/assets/games/@test!.js'};
+for(const suffix of ['on','.map','/extra','-backup','_backup','%20copy']) {
+  const url='/assets/games/games.js'+suffix;
+  assert.equal(rewriteFrontendReferences(JSON.stringify(url),'/assets/games/games.js',gameAliases),JSON.stringify(url));
+}
+for(const suffix of ['', '?v=1', '#entry']) {
+  assert.equal(rewriteFrontendReferences(JSON.stringify('/assets/games/games.js'+suffix),'/assets/games/index.html',gameAliases),JSON.stringify('/assets/games/@test!.js'+suffix));
+}
+assert.equal(rewriteFrontendReferences('fetch("games.json");import("./games.js?v=1")','/assets/games/index.html',gameAliases),'fetch("games.json");import("./@test!.js?v=1")');
 
 assert.equal(rewriteProxyReferences('importScripts("/uv/uv.sw.js","/uv.sw.js")','/uv.sw.js'),`importScripts("${names['/uv/uv.sw.js']}","${names['/uv.sw.js']}")`);
 assert.equal(rewriteProxyReferences('import x from "./header-utils.mjs"','/assets/transports/libcurl-baremux.mjs'),`import x from "./${names['/assets/transports/header-utils.mjs'].split('/').at(-1)}"`);

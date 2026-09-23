@@ -21,7 +21,7 @@ try {
   assert(data.models.some(m=>m.id==='openai/gpt-6-luna-pro'),role+query);
   assert.equal(data.models.some(m=>m.id==='anthropic/claude-opus-5.5'),['premium','owner'].includes(role),role+query);
   if(role==='premium')assert.equal(data.models.find(m=>m.id==='anthropic/claude-opus-5.5').poolTokenLimit,5000);
-  assert.equal(data.models.find(m=>m.id==='openai/gpt-6-luna').poolTokenLimit,role==='owner'?null:5000);
+  assert.equal(data.models.find(m=>m.id==='openai/gpt-6-luna').poolTokenLimit,['premium','owner'].includes(role)?null:5000);
   assert.equal(data.models.some(m=>m.id==='openai/gpt-6-sol'),role==='owner',role+query);
   assert.equal(data.models.some(m=>m.id==='openai/gpt-5.6-luna'),['premium','owner'].includes(role),role+query);
   assert(data.models.some(m=>m.id==='google/gemini-2.5-flash-lite'));

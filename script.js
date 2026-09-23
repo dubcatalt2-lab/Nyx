@@ -11183,6 +11183,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       installAltBridge();
       if(frame.dataset.nyxInputReady==='true') return;
       frame.dataset.nyxInputReady='true';
+      frame.addEventListener('nyx:app-dom-ready',()=>syncInternalThemeFrames());
       const focusFrame=()=>setTimeout(()=>{try{frame.focus({preventScroll:true})}catch{try{frame.focus()}catch{}}},0);
       frame.addEventListener('load',()=>{
         installAltBridge();

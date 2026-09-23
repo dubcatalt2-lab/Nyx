@@ -447,6 +447,7 @@ function appFrame(name) {
   }[name];
   frame.allow =
     "fullscreen; autoplay; encrypted-media; picture-in-picture; clipboard-write; microphone; display-capture";
+  frame.addEventListener("nyx:app-dom-ready", () => styleApp(frame));
   frame.src = appPaths[name];
   frame.addEventListener("load", () => {styleApp(frame);protectAppContents(frame);try{installShortcuts(frame.contentDocument,shortcutActions)}catch{}});
   frames.set(name, frame);

@@ -37,5 +37,8 @@ await request();assert(pool().start>oldStart);assert.equal(pool().used,50);asser
 await allowance.settle(late,null,true);assert.equal(pool().used,50);assert.equal(pool().luna6Tokens,50,'Late refund cannot alter the new window');
 seed(0,0);await request({...actor,requestedModel:'openai/gpt-6-luna-pro'});assert.equal(pool().luna6Tokens,50);
 seed(4900,4900);await assert.rejects(request({...actor,requestedModel:'openai/gpt-6-luna-pro'}),/GPT-6 Luna allowance/,'Pro shares the Luna cap');
-const premium={...actor,premium:true};seed(4900,4900);await assert.rejects(request(premium),/GPT-6 Luna allowance/);
+const premium={...actor,premium:true};seed(4900,4900);await request(premium);assert.equal(pool().luna6Tokens,4950);
+seed(8000,8000);await request({...premium,requestedModel:'openai/gpt-6-luna-pro'});assert.equal(pool().used,8050,'New Premium uses the existing larger shared pool without a Luna subcap');
+await assert.rejects(request(actor),/GPT-6 Luna allowance/,'Downgrade restores the public cap without resetting usage');
+seed(49900,0);await assert.rejects(request(premium),/shared 50,000-token pool/);
 console.log('PASS public Luna access; nested 5k/10k limits, other-model preservation, concurrent reservations, refunds and synchronized four-day reset.');

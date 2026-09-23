@@ -13,7 +13,7 @@ for(const invalid of [null,{},[{model:'evil',access:'allow',messages:2,periodDay
 const first=await a.begin(actor);await a.finish(first,true);time+=61000;
 const second=await a.begin(actor);await a.finish(second,true);time+=61000;
 await assert.rejects(a.begin(actor),/message limit/);
-await assert.rejects(a.begin({...actor,requestedModel:'google/gemini-2.5-flash-lite'}),/Premium/,'Grant is scoped to selected model');
+await assert.rejects(a.begin({...actor,requestedModel:'inception/mercury-2.5'}),/not enabled/,'Grant is scoped to selected model');
 const other=await a.begin({...actor,uid:'other-person'});await a.finish(other,true);
 time+=4*86400000;
 const after=await a.begin(actor);await a.finish(after,false);time+=61000;

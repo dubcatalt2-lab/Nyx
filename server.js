@@ -2689,13 +2689,13 @@ app.get('/api/nyx-ai/providers',(_req,res)=>{res.set('Cache-Control','private, n
 app.get('/api/nyx-ai/models',async(req,res)=>{
   res.set('Cache-Control','private, no-store');
   const entitlement=await nyxAiPremiumEntitlement(req);
-  if(req.query.custom==='1')return res.json({models:[{id:'openai/gpt-6-luna-pro',label:'GPT-6 Luna Pro',vision:true},{id:'anthropic/claude-opus-5.5',label:'Claude Opus 5.5',vision:true},{id:'openai/gpt-6-luna',label:'GPT-6 Luna',vision:true},{id:'openai/gpt-6-sol',label:'GPT-6 Sol',vision:true},{id:'google/gemini-2.5-flash-image',label:'Gemini 2.5 Flash Image',vision:true,imageGeneration:true},{id:'google/gemini-2.5-flash-lite',label:'Gemini 2.5 Flash Lite',vision:true},{id:'openai/gpt-5.6-luna',label:'GPT-5.6 Luna',vision:true},{id:'inception/mercury-2.5',label:'Mercury 2.5',vision:false},{id:'qwen/qwen3.7-flash',label:'Qwen3.7 Flash',vision:true},{id:'deepseek/deepseek-v4.1-flash',label:'DeepSeek V4.1 Flash',vision:true},{id:'openai/gpt-5.6-sol-pro',label:'GPT-5.6 Sol Pro',vision:true}].filter(model=>aiModelAllowed(model.id,entitlement)).map(model=>({...model,poolTokenLimit:!entitlement.owner&&(model.id==='anthropic/claude-opus-5.5'||(!entitlement.premium&&['openai/gpt-6-luna','openai/gpt-6-luna-pro'].includes(model.id)))?5000:null}))});
+  if(req.query.custom==='1')return res.json({models:[{id:'openai/gpt-6-luna-pro',label:'GPT-6 Luna Pro',vision:true},{id:'anthropic/claude-opus-5.5',label:'Claude Opus 5.5',vision:true},{id:'openai/gpt-6-luna',label:'GPT-6 Luna',vision:true},{id:'openai/gpt-6-sol',label:'GPT-6 Sol',vision:true},{id:'google/gemini-2.5-flash-image',label:'Gemini 2.5 Flash Image',vision:true,imageGeneration:true},{id:'google/gemini-2.5-flash-lite',label:'Gemini 2.5 Flash Lite',vision:true},{id:'openai/gpt-5.6-luna',label:'GPT-5.6 Luna',vision:true},{id:'inception/mercury-2.5',label:'Mercury 2.5',vision:false},{id:'qwen/qwen3.7-flash',label:'Qwen3.7 Flash',vision:true},{id:'deepseek/deepseek-v4.1-flash',label:'DeepSeek V4.1 Flash',vision:true},{id:'openai/gpt-5.6-sol-pro',label:'GPT-5.6 Sol Pro',vision:true}].filter(model=>aiModelAllowed(model.id,entitlement))});
   const credential=nyxAiRequestCredential(req);
   if(credential.invalid||credential.invalidProvider)return res.status(410).json({error:'This AI option has been removed. Use OpenRouter.'});
   if(!credential.key)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
   const models=await nyxAiAvailableModels(credential.key,false,credential.provider);
   if(!models.length)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
-  res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement)).map(model=>({...model,poolTokenLimit:!entitlement.owner&&(model.id==='anthropic/claude-opus-5.5'||(!entitlement.premium&&['openai/gpt-6-luna','openai/gpt-6-luna-pro'].includes(model.id)))?5000:null})),credential:'shared'});
+  res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement)),credential:'shared'});
 });
 
 app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {

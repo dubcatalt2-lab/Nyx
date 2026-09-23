@@ -15,7 +15,7 @@ for(const extra of [{},{premium:true},{coOwner:true},{trusted:true},{apiVerified
   finally {await allowance.finish(session,false);}
 }
 for(const [model,owner,rates] of [[luna,false,{prompt:0.1,completion:0.5}],[sol,true,{prompt:2,completion:10}],['openai/gpt-6-luna-pro',false,{prompt:0.1,completion:0.5}],['anthropic/claude-opus-5.5',false,{prompt:4,completion:20}]]) {
-  const actor={uid:model,createdAt:AI_JOIN_CUTOFF-1,owner,premium:model==='anthropic/claude-opus-5.5',requestedModel:model};
+  const actor={uid:model,createdAt:AI_JOIN_CUTOFF-1,owner,premium:['anthropic/claude-opus-5.5','openai/gpt-6-luna-pro'].includes(model),requestedModel:model};
   assert(aiModelAllowed(model,actor));
   assert(!aiModelAllowed(model,{...actor,modelRules:[{model,access:'deny'}]}));
   const session=await allowance.begin(actor);

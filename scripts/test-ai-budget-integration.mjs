@@ -20,7 +20,7 @@ const declaration=name=>{const node=ast.body.find(n=>n.type==='FunctionDeclarati
 const db=memoryFirestore(),app=express();app.use(express.json());
 const firebase={firestore:db,auth:{async getUser(uid){return {uid,email:'optional@example.com',emailVerified:uid==='late-api',disabled:uid==='disabled',metadata:{creationTime:uid.startsWith('late-')?'2026-08-25T07:00:00Z':'2026-01-01T00:00:00Z'}};}}};
 let calls=0,lastPayload,hold,balance=1;
-const environment={NYX_AI_CONCURRENT_GLOBAL:3,NYX_OPENROUTER_API_KEY:'fixture-inference',NYX_OPENROUTER_MANAGEMENT_KEY:'fixture-management',NYX_AI_DAILY_BUDGET_USD:'1',NYX_AI_MODEL_PRICES_JSON:JSON.stringify({'shared:test':{inputPerMillion:1,outputPerMillion:2},['shared:'+GEMINI]:{inputPerMillion:.1,outputPerMillion:.4},'groq:test':{inputPerMillion:1,outputPerMillion:2}})};
+const environment={NYX_AI_CONCURRENT_GLOBAL:3,NYX_OPENROUTER_API_KEY:'fixture-inference',NYX_OPENROUTER_MANAGEMENT_KEY:'fixture-management',NYX_AI_DAILY_BUDGET_USD:'1',NYX_AI_MODEL_PRICES_JSON:JSON.stringify({'shared:google/gemini-fixture':{inputPerMillion:1,outputPerMillion:2},['shared:'+GEMINI]:{inputPerMillion:.1,outputPerMillion:.4},'groq:test':{inputPerMillion:1,outputPerMillion:2}})};
 const context=vm.createContext({recordAiExchange,isFreeAiModel,app,AsyncLocalStorage,aiAllowanceConfig,createAiAllowance,premiumModelLimits,aiBudgetResponse,
   process:{env:environment},AbortController,AbortSignal,URL,Headers,setTimeout,clearTimeout,
   createOpenRouterBalanceGuard:options=>createOpenRouterBalanceGuard({...options,fetchImpl:async url=>new Response(JSON.stringify({data:url.endsWith('/credits')?{total_credits:balance,total_usage:0}:{limit_remaining:null}}))}),
@@ -43,7 +43,7 @@ for(const path of ['/api/nyx-ai'])app.post(path,async(req,res)=>{
     if(path==='/api/v1/ai')return res.status(410).json({error:'Retired'});
     const credential=context.nyxAiRequestCredential(req);
     if(credential.invalid||credential.invalidProvider)return res.status(410).json({error:'Removed'});
-    const options={method:'POST',headers:{authorization:'Bearer fixture-inference'},body:JSON.stringify({model:req.body.model||'test',max_tokens:1000,messages:[{role:'user',content:'Hi'}]})};
+    const options={method:'POST',headers:{authorization:'Bearer fixture-inference'},body:JSON.stringify({model:req.body.model||'google/gemini-fixture',max_tokens:1000,messages:[{role:'user',content:'Hi'}]})};
     let response=await context.nyxAiProviderFetch({id:'shared'},'https://openrouter.ai/api/v1/chat/completions',options);
     if(req.body.repair){await response.json();response=await context.nyxAiProviderFetch({id:'shared'},'https://openrouter.ai/api/v1/chat/completions',options);}
     res.type('json').send(await response.text());
@@ -56,7 +56,7 @@ try {
   assert.equal((await send(null)).status,401);assert.equal(calls,0);
   assert.equal((await send('member',{}, {'sec-fetch-site':'cross-site'})).status,403);assert.equal(calls,0);
   assert.equal((await send('disabled')).status,403);assert.equal(calls,0);
-  assert.equal((await send('unpriced',{model:'other'})).status,503);assert.equal(calls,0);
+  assert.equal((await send('unpriced',{model:'google/gemini-unpriced'})).status,503);assert.equal(calls,0);
   await new Promise(resolve=>setTimeout(resolve,30));
   const ok=await send('member');assert.equal(ok.status,200);assert.match(ok.headers.get('set-cookie'),/HttpOnly/);await ok.text();
   assert.equal(calls,1);assert.equal(lastPayload.max_tokens,700);
@@ -87,14 +87,14 @@ try {
   await new Promise(resolve=>setTimeout(resolve,30));
   const beforeEligibility=calls;
   db.records.set('nyxUserAdministration/late-approved',{aiAccess:'trusted',createdAt:'2020-01-01T00:00:00Z'});
-  assert.equal((await send('late-approved')).status,403,'Owner trust or a profile date cannot bypass actual Firebase creation time');
-  assert.equal((await send('late-member',{}, {'x-nyx-premium':'true'})).status,403,'Browser headers cannot grant Premium');
+  assert.equal((await send('late-approved',{model:'openai/gpt-5.6-luna'})).status,403,'Owner trust or a profile date cannot bypass actual Firebase creation time');
+  assert.equal((await send('late-member',{model:'openai/gpt-5.6-luna'}, {'x-nyx-premium':'true'})).status,403,'Browser headers cannot grant Premium');
   assert.equal(calls,beforeEligibility,'Ineligible requests must not contact inference');
   db.records.set('nyxUserAdministration/late-premium',{subscriptionStatus:'premium'});
   assert.equal((await send('late-premium')).status,200,'Server-authorized Premium qualifies after cutoff');
   db.records.set('nyxUserAdministration/late-coowner',{role:'co_owner'});
   assert.equal((await send('late-coowner')).status,200,'Server-verified co-owner has priority access');
-  assert.equal((await send('late-spoof',{}, {'x-nyx-role':'co_owner'})).status,403,'Browser headers cannot grant co-owner priority');
+  assert.equal((await send('late-spoof',{model:'openai/gpt-5.6-luna'}, {'x-nyx-role':'co_owner'})).status,403,'Browser headers cannot grant co-owner priority');
   const cloud=await context.authenticatedNyxCloudUser({get:()=> 'Bearer member'});assert.equal(cloud.token.uid,'member');assert.equal(cloud.account.emailVerified,false);
   await assert.rejects(context.authenticatedNyxCloudUser({get:()=> ''}),e=>e.status===401);
   Object.assign(context,{nyxRolePolicy:role=>({rank:{owner:100,admin:80,member:0}[role]}),nyxActorHasPermission:()=>true,nyxAssignableRolesForActor:()=>[]});

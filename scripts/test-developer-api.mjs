@@ -96,10 +96,10 @@ try {
   assert.equal((await request('/api/v1/ai',issued.key,prompt)).status,401);
 }finally{server.closeAllConnections();await new Promise(r=>server.close(r));}
 
-// API-only eligibility exception must never unlock normal chat for a new account.
+// Public Gemini is available to new chat accounts; API grants keep their own limits.
 const allowance=createAiAllowance({db:memoryFirestore(),config:aiAllowanceConfig({NYX_AI_DAILY_BUDGET_USD:'1',NYX_AI_MODEL_PRICES_JSON:JSON.stringify({['shared:'+GEMINI]:{inputPerMillion:.1,outputPerMillion:.4}})})});
 const actor={uid:'new',createdAt:Date.now(),device:'device',network:'school'};
-await assert.rejects(allowance.begin(actor),/before August/);
+await allowance.finish(await allowance.begin({...actor,requestedModel:GEMINI}));
 const session=await allowance.begin({...actor,apiVerified:true,apiDailyRequests:20});
 const reservation=await allowance.reserve(session,'shared',{model:GEMINI,messages:[{role:'user',content:'Hi'}],max_tokens:128});
 assert.ok(reservation.reserved>0);assert.equal(session.tier,'newcomer');

@@ -11,20 +11,20 @@ function fixture() {
   const actor={uid:'member',createdAt:AI_JOIN_CUTOFF-1,premium:false,device:'device',network:'school'};
   return {db,create,actor,advance:(n=61000)=>time+=n};
 }
-const payload=()=>({model:'test',messages:[{role:'user',content:'Hello'}],max_tokens:1000});
+const payload=()=>({model:'google/gemini-fixture',messages:[{role:'user',content:'Hello'}],max_tokens:1000});
 const denied=p=>assert.rejects(p,e=>e.code==='ai_allowance');
 {
   const f=fixture(),a=f.create();
   for(const createdAt of [AI_JOIN_CUTOFF,AI_JOIN_CUTOFF+1,NaN]) {
     for(const extras of [{},{trusted:true}]) {
-      await assert.rejects(a.begin({...f.actor,createdAt,...extras}),e=>e.status===403);
+      await a.finish(await a.begin({...f.actor,uid:'date-'+createdAt+'-'+Boolean(extras.trusted),createdAt,requestedModel:'google/gemini-2.5-flash-lite',...extras}));
     }
   }
-  assert.equal(f.db.records.size,0,'Ineligible accounts must not consume quota or acquire slots');
+  await assert.rejects(a.begin({...f.actor,requestedModel:'inception/mercury-2.5'}),e=>e.status===403);
   await a.finish(await a.begin(f.actor));
   const premium={...f.actor,uid:'premium',createdAt:AI_JOIN_CUTOFF+1,premium:true};
   await a.finish(await a.begin(premium));
-  await denied(a.begin({...premium,premium:false}));
+  await denied(a.begin({...premium,premium:false,requestedModel:'openai/gpt-5.6-luna'}));
   await denied(a.begin({...premium,blocked:true}));
 }
 {
@@ -67,7 +67,7 @@ const denied=p=>assert.rejects(p,e=>e.code==='ai_allowance');
   await a.settle(r,{input:9000,output:9000});assert.equal(f.db.records.get(key('member')).tokens,0,'Settlement remains idempotent');
   await a.finish(s);
 }
-console.log('PASS: exact Pacific signup cutoff, Premium eligibility, no role/trust bypass, 5 standard/10 maximum, bonus token reservations, unknown usage, refunds and rollover');
+console.log('PASS: public access independent of signup date, Premium eligibility, no role/trust bypass, 5 standard/10 maximum, bonus token reservations, unknown usage, refunds and rollover');
 
 {
   const db=memoryFirestore(),config=aiAllowanceConfig({});

@@ -1051,7 +1051,7 @@
   }
 
   function modelCapabilities(item){
-    return [item.text!==false?'Text':'',item.vision?'Vision':'',item.imageGeneration?'Image generation':'',item.reasoning?'Reasoning':'',item.poolTokenLimit?`${item.poolTokenLimit.toLocaleString('en-US')} shared-token cap`:''].filter(Boolean).join(' · ');
+    return [item.text!==false?'Text':'',item.vision?'Vision':'',item.imageGeneration?'Image generation':'',item.reasoning?'Reasoning':''].filter(Boolean).join(' · ');
   }
 
   function modelOptions(models){
@@ -1075,7 +1075,7 @@
     const selected=model.value||DEFAULT_MODEL;
     const label=modelLabel(selected);
     modelSelected.textContent=label;
-    modelTrigger.title=`Model: ${label}${(selected.endsWith(":free")||selected==="openrouter/free")?". No Nyx daily or token quota. OpenRouter rate limits apply.":""}`;
+    modelTrigger.title=`Model: ${label}${(selected.endsWith(":free")||selected==="openrouter/free")?". Uses your shared token pool. Provider rate limits also apply.":""}`;
     modelTrigger.setAttribute('aria-label',`AI model: ${label}`);
     sidebarModelName.textContent=label;
     modelOptionsHost.querySelectorAll('[data-model-id]').forEach(option=>{

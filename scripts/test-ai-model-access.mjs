@@ -18,17 +18,17 @@ try {
   assert.equal(response.status,200);assert.match(response.headers.get('cache-control'),/no-store/);
   const data=await response.json();
   assert(data.models.some(m=>m.id==='openai/gpt-6-luna'),role+query);
-  assert(data.models.some(m=>m.id==='openai/gpt-6-luna-pro'),role+query);
+  assert.equal(data.models.some(m=>m.id==='openai/gpt-6-luna-pro'),['premium','owner'].includes(role),role+query);
   assert.equal(data.models.some(m=>m.id==='anthropic/claude-opus-5.5'),['premium','owner'].includes(role),role+query);
-  if(role==='premium')assert.equal(data.models.find(m=>m.id==='anthropic/claude-opus-5.5').poolTokenLimit,5000);
-  assert.equal(data.models.find(m=>m.id==='openai/gpt-6-luna').poolTokenLimit,['premium','owner'].includes(role)?null:5000);
+  assert(data.models.every(m=>m.poolTokenLimit===undefined),'No quota labels in model catalog');
+
   assert.equal(data.models.some(m=>m.id==='openai/gpt-6-sol'),role==='owner',role+query);
   assert.equal(data.models.some(m=>m.id==='openai/gpt-5.6-luna'),['premium','owner'].includes(role),role+query);
   assert(data.models.some(m=>m.id==='google/gemini-2.5-flash-lite'));
   assert(data.models.some(m=>m.id==='deepseek/deepseek-v4.1-flash'));
-  assert(data.models.some(m=>m.id==='qwen/qwen3.7-flash'));
-  assert(data.models.some(m=>m.id==='inception/mercury-2.5'));
+  assert.equal(data.models.some(m=>m.id==='qwen/qwen3.7-flash'),['premium','owner'].includes(role));
+  assert.equal(data.models.some(m=>m.id==='inception/mercury-2.5'),['premium','owner'].includes(role));
   assert.equal(data.models.some(m=>m.id==='openai/gpt-5.6-sol-pro'),role==='owner',role+query);
  }
- console.log('PASS: model routes expose public Luna 6/Pro, restrict Opus 5.5 to Premium/owner and Sol 6 to owner, and preserve older model gates');
+ console.log('PASS: model routes expose public Luna 6/Gemini/DeepSeek, Premium other models, both owner-only Sol models and no quota labels');
 } finally {server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

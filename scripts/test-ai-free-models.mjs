@@ -10,7 +10,7 @@ const actor={uid:'free-user',createdAt:now,freeModel:freeAiModels[0]};
 const account='nyxAiAllowance/account-'+createHash('sha256').update(actor.uid).digest('hex');
 const models='nyxAiAllowance/models-'+createHash('sha256').update(actor.uid).digest('hex');
 db.records.set(account,{day:new Date(now).toISOString().slice(0,10),requests:9999,tokens:999999});
-db.records.set(models,{pool:{used:999999,start:now,resetAt:now+86400000}});
+db.records.set(models,{pool:{used:0,start:now,resetAt:now+86400000}});
 for(let i=0;i<12;i++){
  const session=await allowance.begin(actor);
  const payload={model:actor.freeModel,messages:[{role:'user',content:'Hello'}],max_tokens:200};
@@ -18,13 +18,13 @@ for(let i=0;i<12;i++){
  assert.deepEqual(receipt.price,{inputRate:0,outputRate:0,fixed:0});
  await allowance.settle(receipt,{input:100,output:100});await allowance.finish(session,true);now+=61000;
 }
-assert.equal(db.records.get(account).requests,9999);assert.equal(db.records.get(account).tokens,999999);assert.equal(db.records.get(models).pool.used,999999);
+assert.equal(db.records.get(account).requests,9999);assert.equal(db.records.get(account).tokens,1002399);assert.equal(db.records.get(models).pool.used,2400);
 const session=await allowance.begin(actor);
-await assert.rejects(allowance.reserve(session,'shared',{model:'inception/mercury-2.5',messages:[],max_tokens:10}),/selected free text model/);
+await assert.rejects(allowance.reserve(session,'shared',{model:'inception/mercury-2.5',messages:[],max_tokens:10}),/not enabled|selected free text model/);
 await allowance.finish(session);
 await assert.rejects(allowance.begin({...actor,blocked:true}),/restricted/);
-await assert.rejects(allowance.begin({...actor,uid:'new-paid',freeModel:null}),/Premium/);
-console.log('Free models: new-account access, no daily/token debit, zero prices, paid escape blocked, restrictions retained');
+await assert.rejects(allowance.begin({...actor,uid:'new-paid',freeModel:null,requestedModel:'inception/mercury-2.5'}),/not enabled/);
+console.log('Free models: new-account access, shared token debit, no daily message debit, zero prices, paid escape blocked, restrictions retained');
 
 assert.equal(new Set(freeAiModels).size,freeAiModels.length);
 assert.ok(freeAiModels.includes('openrouter/free'));

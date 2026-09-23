@@ -27,7 +27,7 @@ function fixture(env={NYX_AI_CONCURRENT_GLOBAL:3}) {
   return {db,config,allowance:create(),create,advance:n=>time+=n,
     actor:(uid,extra={})=>({uid,device:uid,network:'school',createdAt:Date.parse('2026-08-01T00:00:00Z'),...extra})};
 }
-const payload=()=>({model:'test',messages:[{role:'user',content:'Hello'}],max_tokens:1000});
+const payload=()=>({model:'google/gemini-fixture',messages:[{role:'user',content:'Hello'}],max_tokens:1000});
 const rejected=(p,pattern)=>assert.rejects(p,error=>error.code==='ai_allowance'&&pattern.test(error.message));
 
 async function run() {
@@ -84,7 +84,7 @@ async function run() {
     assert.notEqual(await a.device(req,res),id,'Forged cookies must not be trusted');
   }
   {
-    const env={NYX_AI_DAILY_BUDGET_USD:'1',NYX_AI_MONTHLY_BUDGET_USD:'1',NYX_AI_MODEL_PRICES_JSON:JSON.stringify({'shared:test':{inputPerMillion:1,outputPerMillion:2}})};
+    const env={NYX_AI_DAILY_BUDGET_USD:'1',NYX_AI_MONTHLY_BUDGET_USD:'1',NYX_AI_MODEL_PRICES_JSON:JSON.stringify({'shared:google/gemini-fixture':{inputPerMillion:1,outputPerMillion:2}})};
     const f=fixture(env),a=f.allowance,s=await a.begin(f.actor('money'));
     const body=payload(),r=await a.reserve(s,'shared',body);
     assert.equal(body.max_tokens,700);assert.equal(r.reserved,2493,'Byte estimate and output reservation must be finite');
@@ -94,7 +94,7 @@ async function run() {
     await a.settle(r,{input:0,output:0});assert.equal(f.db.records.get('nyxAiAllowance/global').monthMoney,50,'Settlement must be idempotent');
     const uncertain=await a.reserve(s,'shared',payload());await a.settle(uncertain,null);
     assert.equal(f.db.records.get('nyxAiAllowance/global').monthMoney,2543,'Unknown usage must retain its reservation');
-    await rejected(a.reserve(s,'shared',{...payload(),model:'unpriced'}),/model is not available/);
+    await rejected(a.reserve(s,'shared',{...payload(),model:'google/gemini-unpriced'}),/model is not available/);
     await a.finish(s);f.advance(DAY);
     const next=await a.begin(f.actor('new-day'));
     assert.equal(f.db.records.get('nyxAiAllowance/global').monthMoney,2543,'Daily reset must preserve monthly spend');
@@ -106,7 +106,7 @@ async function run() {
     assert.equal(f.db.records.get('nyxAiAllowance/global').monthMoney,2493);
   }
   {
-    const f=fixture({NYX_AI_DAILY_BUDGET_USD:'1',NYX_AI_MODEL_PRICES_JSON:JSON.stringify({'shared:test':{inputPerMillion:1,outputPerMillion:2}})}),a=f.allowance;
+    const f=fixture({NYX_AI_DAILY_BUDGET_USD:'1',NYX_AI_MODEL_PRICES_JSON:JSON.stringify({'shared:google/gemini-fixture':{inputPerMillion:1,outputPerMillion:2}})}),a=f.allowance;
     const x=await a.begin(f.actor('x',{trusted:true})),y=await a.begin(f.actor('y',{trusted:true}));
     f.db.records.get('nyxAiAllowance/global').establishedMoney=696000;
     const results=await Promise.allSettled([a.reserve(x,'shared',payload()),f.create().reserve(y,'shared',payload())]);

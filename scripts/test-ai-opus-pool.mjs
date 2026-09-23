@@ -39,5 +39,5 @@ const pending=await allowance.begin(actor),late=await allowance.reserve(pending,
 const oldStart=pool().start;time+=4*day+1;
 await request();assert(pool().start>oldStart);assert.equal(pool().used,50);assert.equal(pool().opus55Tokens,50);
 await allowance.settle(late,null,true);assert.equal(pool().used,50);assert.equal(pool().opus55Tokens,50,'Late refund cannot alter the new window');
-time+=61000;seed(0,0);await request({...actor,requestedModel:'openai/gpt-6-luna'});await request();assert.equal(pool().used,100);assert.equal(pool().luna6Tokens,50);assert.equal(pool().opus55Tokens,50,'Luna and Opus maintain independent subcaps within one pool');
+time+=61000;seed(0,0);await request({...actor,requestedModel:'openai/gpt-6-luna'});await request();assert.equal(pool().used,100);assert.equal(pool().luna6Tokens,50);assert.equal(pool().opus55Tokens,50,'Opus retains its subcap while Luna uses the same shared pool');
 console.log('PASS premium Opus: role gate, nested 5k/50k limits, concurrent reservations, refunds and four-day reset.');

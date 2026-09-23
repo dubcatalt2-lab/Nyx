@@ -56,8 +56,9 @@ try {
       assert.deepEqual(ids.slice(0,4),['openai/gpt-6-sol','openai/gpt-6-luna-pro','openai/gpt-6-luna','openai/gpt-5.6-luna']);
       assert(ids.slice(-2).every(id=>id.endsWith(':free')||id==='openrouter/free'));
       const option=id=>page.locator('#modelOptions [data-model-id="'+id+'"]');
-      assert.match(await option('openai/gpt-6-luna').innerText(),/Text.*Vision.*5,000 shared-token cap/);
+      assert.match(await option('openai/gpt-6-luna').innerText(),/Text.*Vision/);
       assert(await option('openai/gpt-6-luna').locator('.ai-model-option-label').evaluate(node=>getComputedStyle(node).whiteSpace!=='nowrap'&&node.scrollWidth<=node.clientWidth+1),'Capability and quota labels must remain readable on mobile');
+      assert(!/5,000|token cap|token limit/.test(await page.locator('#modelOptions').innerText()));
       assert(!/Image generation/.test(await option('openai/gpt-6-luna').innerText()));
       assert.match(await option('google/gemini-2.5-flash-image').innerText(),/Text.*Vision.*Image generation/);
       assert.match(await option('inception/mercury-2.5').innerText(),/Text/);
@@ -65,7 +66,7 @@ try {
       await option('openai/gpt-6-luna').click();assert.equal(await page.locator('#model').inputValue(),'openai/gpt-6-luna');
       reverse=true;await page.reload();await page.waitForFunction(()=>document.querySelector('#model')?.value==='openai/gpt-6-luna');
       assert.deepEqual(errors,[]);
-      console.log((tutsi?'Tutsi mobile':'Nyx desktop')+': paid/GPT ordering, free section, capability labels, cap label and saved selection passed');
+      console.log((tutsi?'Tutsi mobile':'Nyx desktop')+': paid/GPT ordering, free section, capability labels, no quota labels and saved selection passed');
     } finally {await context.close();}
   }
 

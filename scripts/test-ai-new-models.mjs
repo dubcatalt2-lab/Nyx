@@ -12,13 +12,13 @@ const seed=(actor,model,used)=>db.records.set(record(actor),{month:'2026-09',tok
 async function call(actor,model,usage={input:20,output:30},notSent=false){const session=await allowance.begin(actor);try{const r=await allowance.reserve(session,'shared',payload(model));await allowance.settle(r,usage,notSent);return r;}finally{await allowance.finish(session);time+=61000;}}
 for(const actor of [member,premium,{...member,trusted:true},{...member,apiVerified:true}]){
  assert.equal(aiModelAllowed(sol,actor),false);
- await assert.rejects(call(actor,sol),/owner only/);
+ await assert.rejects(call(actor,sol),e=>e.status===403);
 }
 assert.equal(aiModelAllowed(sol,owner),true);
 assert.equal(aiMonthlyModelCap(deepseek,member),10000);
 assert.equal(aiMonthlyModelCap(deepseek,premium),50000);
 assert.equal(aiMonthlyModelCap(deepseek,owner),null);
-for(const [actor,model,cap] of [[member,deepseek,10000],[premium,deepseek,50000],[owner,sol,100000]]){
+for(const [actor,model,cap] of [[member,deepseek,10000],[premium,deepseek,50000]]){
  seed(actor,model,cap);
  await assert.rejects(call(actor,model),/exceeds your/);
  seed(actor,model,0);await call(actor,model);
@@ -35,11 +35,11 @@ assert.equal(results.filter(r=>r.status==='fulfilled').length,1,'Shared user cou
 for(const result of results)if(result.status==='fulfilled'){await allowance.settle(result.value,null,true);await allowance.settle(result.value,null,true);}
 assert.equal(db.records.get(record(premium)).tokens[deepseek],48500,'Refund is idempotent');
 await allowance.finish(a);await allowance.finish(b);
-time=Date.parse('2026-09-30T23:58:00Z');seed(owner,sol,0);const late=await allowance.begin(owner),r=await allowance.reserve(late,'shared',payload(sol));await allowance.finish(late);
+time=Date.parse('2026-09-30T23:58:00Z');seed(owner,sol,100000);const late=await allowance.begin(owner),r=await allowance.reserve(late,'shared',payload(sol));await allowance.finish(late);
 time=Date.parse('2026-10-01T00:01:00Z');await call(owner,sol);await allowance.settle(r,null,true);
-assert.deepEqual(db.records.get(record(owner)),{month:'2026-10',tokens:{[sol]:50}},'Month resets; old refund cannot debit new month');
+assert.deepEqual(db.records.get(record(owner)),{month:'2026-09',tokens:{[sol]:100000}},'Owner Sol is unlimited and preserves historical counters');
 const paid=createAiAllowance({db:memoryFirestore(),config:aiAllowanceConfig({NYX_AI_DAILY_BUDGET_USD:'10'}),now:()=>time});
 const session=await paid.begin(owner),request=payload(sol),reservation=await paid.reserve(session,'shared',request);
 assert.deepEqual(request.provider.max_price,{prompt:4,completion:20});
 await paid.settle(reservation,null,true);await paid.finish(session);
-console.log('PASS: shared 10k/50k/owner exemption; owner-only Sol 100k; separate counters, concurrency, refunds, UTC rollover and routing price bounds');
+console.log('PASS: shared 10k/50k/owner exemption; owner-only Sol without a token cap; separate counters, concurrency, refunds, UTC rollover and routing price bounds');

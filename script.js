@@ -8366,8 +8366,19 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     };
     const check=()=>{
       if(!current()) return;
+      // A rendered SPA can temporarily clear its UI after consent or a route
+      // change. Only recover a document that has never rendered successfully.
+      let document=null;
+      try{document=t.frame.contentDocument}catch{}
+      if(document && t.scramjetHealthyDocument===document) return;
       const presentation=inspectFramePresentation(t);
       if(!presentation.reachable || presentation.hasErrorText) return;
+      if(document && presentation.readyState==='complete' && !presentation.blank && !presentation.unstyled){
+        t.scramjetHealthyDocument=document;
+        badKind='';
+        badChecks=0;
+        return;
+      }
       const kind=presentation.unstyled ? 'stylesheets did not load' : (presentation.blank && Date.now()-startedAt>3600 ? 'page stayed blank' : '');
       if(!kind){
         badKind='';

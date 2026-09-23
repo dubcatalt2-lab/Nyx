@@ -33,13 +33,19 @@ try{
   const sourceMode=process.argv.includes('--source');
   const shell=sourceMode?rewriteFrontendReferences(rewriteProxyReferences(await readFile('script.js','utf8'),'/script.js'),'/script.js',aliases):'';
   const app=`document.body.dataset.instance=String(Math.random());
+    document.getElementById('accept-cookies').addEventListener('click',event=>{
+      document.cookie='consent=yes; Path=/; SameSite=Lax';
+      localStorage.setItem('fixture-consent','yes');
+      history.replaceState({consent:true},'',location.pathname+'?consent=yes#ready');
+      event.currentTarget.textContent='Cookies accepted';
+    });
     document.getElementById('links').addEventListener('click',event=>{
       const link=event.target.closest('a');if(!link)return;event.preventDefault();
       history.pushState({key:link.id,state:{channel:link.id}},null,link.getAttribute('href'));
       document.getElementById('channel').textContent=link.textContent;
       document.getElementById('message').textContent='A chat message says something went wrong';
     });`;
-  const html='<!doctype html><html><head><title>Channel fixture</title><style>body{background:#202225;color:white;font:16px sans-serif}a{display:block;color:cyan;padding:12px}</style></head><body><h1 id="channel">A</h1><p id="message">Loaded channel list</p><nav id="links"><a id="channel-b" href="/channels/100/200">B</a><a id="channel-c" href="/channels/100/300">C</a></nav><script src="/fixture-app.js"></script></body></html>';
+  const html='<!doctype html><html><head><title>Channel fixture</title><style>body{background:#202225;color:white;font:16px sans-serif}a{display:block;color:cyan;padding:12px}</style></head><body><button id="accept-cookies" type="button">Accept cookies</button><h1 id="channel">A</h1><p id="message">Loaded channel list</p><nav id="links"><a id="channel-b" href="/channels/100/200">B</a><a id="channel-c" href="/channels/100/300">C</a></nav><script src="/fixture-app.js"></script></body></html>';
   const transport=`export default class {ready=false;async init(){this.ready=true}async request(remote){
     const script=String(remote).includes('fixture-app.js');
     return {status:200,statusText:'OK',headers:[['content-type',script?'text/javascript':'text/html']],
@@ -83,6 +89,7 @@ try{
     ['nyx','scramjet',0,'libcurlRaw'],['tutsi','scramjet',0,'libcurl'],
     ['nyx','scramjet-v1',0,'libcurlRaw'],['nyx','ultraviolet',0,'libcurlRaw']
   ]){
+    if(process.argv.includes('--presentation') && !(brand==='nyx'&&delay===3000))continue;
     if(process.argv.includes('--legacy') && !['scramjet-v1','ultraviolet'].includes(mode))continue;
     const context=await browser.newContext();
     await context.routeWebSocket('wss://fixture.test/wisp/',ws=>setTimeout(()=>ws.send(Buffer.from([3,0,0,0,0,255,255,0,0])),20));
@@ -122,7 +129,17 @@ try{
     if(brand==='nyx') assert.match(await page.locator('iframe.view.active').getAttribute('src'), /\/~\/sj\//, 'Every saved proxy engine must use Scramjet v2');
     const instance=await frame.locator('body').getAttribute('data-instance');
     assert(instance,'Fixture script must initialize');
+    await frame.locator('#accept-cookies').evaluate(button=>button.click());
+    assert.equal(await frame.locator('#accept-cookies').innerText(),'Cookies accepted');
+    assert.equal(await frame.locator('body').evaluate(()=>localStorage.getItem('fixture-consent')),'yes');
+    assert.match(await frame.locator('body').evaluate(()=>document.cookie),/consent=yes/);
+    assert.equal(await frame.locator('body').getAttribute('data-instance'),instance,'Accept cookies must preserve document');
     if(delay) await page.waitForTimeout(delay);
+    if(process.argv.includes('--presentation')){
+      await frame.locator('body').evaluate(body=>{const nodes=[...body.childNodes];body.replaceChildren();setTimeout(()=>body.append(...nodes),7000);});
+      await page.waitForTimeout(8000);
+      assert.equal(await frame.locator('body').getAttribute('data-instance'),instance,'A temporary blank app transition must not reload the frame');
+    }
     // Early route changes can happen while the host's loading animation still
     // covers the frame. Later changes exercise an actual pointer click.
     if(delay) await frame.locator('#channel-b').click();

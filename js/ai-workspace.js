@@ -1033,17 +1033,29 @@
   }
 
   function groupedModels(models){
+    const priority=['openai/gpt-6-sol','openai/gpt-5.6-sol-pro','openai/gpt-6-luna-pro','openai/gpt-6-luna','openai/gpt-5.6-luna'];
+    const companies={openai:'OpenAI',google:'Google',anthropic:'Anthropic',deepseek:'DeepSeek',qwen:'Qwen',inception:'Inception',nvidia:'NVIDIA',openrouter:'OpenRouter'};
+    const free=item=>item.free||item.id.endsWith(':free')||item.id==='openrouter/free';
+    const company=item=>companies[item.id.split('/')[0]]||item.company||item.id.split('/')[0]||'Other models';
+    const rank=item=>{const index=priority.indexOf(item.id);return index<0?priority.length:index;};
+    const ordered=[...models].sort((a,b)=>Number(free(a))-Number(free(b))
+      ||Number(company(b)==='OpenAI')-Number(company(a)==='OpenAI')
+      ||company(a).localeCompare(company(b))||rank(a)-rank(b)||a.label.localeCompare(b.label));
     const groups=new Map();
-    models.forEach(item=>{
-      const company=item.company||'Other models';
-      if(!groups.has(company)) groups.set(company,[]);
-      groups.get(company).push(item);
+    ordered.forEach(item=>{
+      const group=`${free(item)?'Free':'Paid'} · ${company(item)}`;
+      if(!groups.has(group)) groups.set(group,[]);
+      groups.get(group).push(item);
     });
     return [...groups];
   }
 
+  function modelCapabilities(item){
+    return [item.text!==false?'Text':'',item.vision?'Vision':'',item.imageGeneration?'Image generation':'',item.reasoning?'Reasoning':'',item.poolTokenLimit?`${item.poolTokenLimit.toLocaleString('en-US')} shared-token cap`:''].filter(Boolean).join(' · ');
+  }
+
   function modelOptions(models){
-    return groupedModels(models).map(([company,items])=>`<optgroup label="${escapeHtml(company)}">${items.map(item=>`<option value="${escapeHtml(item.id)}">${escapeHtml(item.label)}${item.vision?' · Vision':''}</option>`).join('')}</optgroup>`).join('');
+    return groupedModels(models).map(([company,items])=>`<optgroup label="${escapeHtml(company)}">${items.map(item=>`<option value="${escapeHtml(item.id)}">${escapeHtml(item.label)} · ${modelCapabilities(item)}</option>`).join('')}</optgroup>`).join('');
   }
 
   function modelMenuOptions(models,selected){
@@ -1052,7 +1064,7 @@
       return `<section class="ai-model-group" role="group" aria-labelledby="${groupId}">
         <p class="ai-model-group-label" id="${groupId}">${escapeHtml(company)}</p>
         ${items.map(item=>`<button class="ai-model-option" type="button" role="option" data-model-id="${escapeHtml(item.id)}" aria-selected="${item.id===selected?'true':'false'}">
-          <span class="ai-model-option-label">${escapeHtml(item.label)}${item.vision?' · Vision':''}</span>
+          <span class="ai-model-option-label">${escapeHtml(item.label)} · ${modelCapabilities(item)}</span>
           <span class="ai-model-option-check" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="m5 10 3 3 7-7"/></svg></span>
         </button>`).join('')}
       </section>`;
@@ -1127,7 +1139,7 @@
         const id=String(item?.id||'').trim();
         const label=String(item?.label||id).trim();
         const company=String(item?.company||'').trim();
-        return id&&label?[{id,label,company,imageGeneration:!(customKey&&customKind()==='nyx')&&Boolean(item?.imageGeneration),vision:customKey&&customKind()==='nyx'?false:Boolean(item?.vision)||KNOWN_VISION_MODELS.has(id),reasoning:Boolean(item?.reasoning)}]:[];
+        return id&&label?[{id,label,company,poolTokenLimit:Number.isSafeInteger(item?.poolTokenLimit)&&item.poolTokenLimit>0?item.poolTokenLimit:null,free:Boolean(item?.free),text:item?.text!==false,imageGeneration:!(customKey&&customKind()==='nyx')&&Boolean(item?.imageGeneration),vision:customKey&&customKind()==='nyx'?false:Boolean(item?.vision)||KNOWN_VISION_MODELS.has(id),reasoning:Boolean(item?.reasoning)}]:[];
       }):[];
       if(!next.length) throw new Error('No models are currently available.');
       const saved=activeThread()?.model||localStorage.getItem(MODEL_KEY)||DEFAULT_MODEL;

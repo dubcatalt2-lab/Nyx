@@ -2,6 +2,8 @@ import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
+  "assets/transports/libcurl-client.mjs",
+  "assets/transports/libcurl-response.mjs",
   "lib/wispurr-relay.mjs",
   "js/ai-screen-chat.js",
   "apps/tutsi/app.webmanifest",

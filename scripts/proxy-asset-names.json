@@ -46,5 +46,7 @@
   "/apps/tutsi/proxy.mjs": "/apps/tutsi/rd27c79b62a597029f65620d6.mjs",
   "/apps/tutsi/relay.mjs": "/apps/tutsi/r361db614e2e4a8c3d4534ef0.mjs",
   "/tutsi-runtime.sw.js": "/r0db2211bda86f75468bd0647.js",
-  "/apps/tutsi/shortcuts.mjs": "/apps/tutsi/rea5cc74330ca293000b5bb69.mjs"
+  "/apps/tutsi/shortcuts.mjs": "/apps/tutsi/rea5cc74330ca293000b5bb69.mjs",
+  "/assets/transports/libcurl-client.mjs": "/assets/transports/r4e12a6ccf4cab71bed4ba9a2.mjs",
+  "/assets/transports/libcurl-response.mjs": "/assets/transports/rb2b3030eeac80a1d4ae4b3fa.mjs"
 }

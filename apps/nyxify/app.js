@@ -75,7 +75,7 @@ const playlistAccentCache = new Map();
 
 let queue = [];
 let qindex = -1;
-let playbackmode = 'preview';
+let playbackmode = 'idle';
 let octaveplayer = null;
 let octaveplaying = false;
 let octaverequest = 0;
@@ -1766,10 +1766,6 @@ async function togglenowplayingfullscreen() {
   syncnowplayingfullscreen();
 }
 
-function previewsource() {
-  return curtrack?.catalog === 'deezer' ? `/api/nyxify/stream/${curtrack.id}` : '';
-}
-
 function setoctavevideo(candidate = null) {
   octavevideo = candidate && /^[A-Za-z0-9_-]{11}$/.test(String(candidate.videoId || '')) ? candidate : null;
   fullTrackVideo.disabled = !octavevideo;
@@ -1777,31 +1773,20 @@ function setoctavevideo(candidate = null) {
   setnowplayingvideomode(Boolean(octavevideo && prefernowplayingvideo));
 }
 
-function usepreview(autoplay = true, message = '') {
+function resetnativeaudio() {
   octaverequest += 1;
   destroyoctaveplayer();
   setoctavevideo();
-  playbackmode = 'preview';
+  playbackmode = 'idle';
   nativePending = false;
   document.getElementById('playBtn').classList.remove('is-loading');
-  const source = previewsource();
-  audio.pause();
-  if (source) {
-    if (!audio.getAttribute('src') || new URL(audio.getAttribute('src'), location.href).pathname !== source) audio.src = source;
-  } else {
-    audio.removeAttribute('src');
-    audio.load();
-  }
-  dlBtn.hidden = !source;
-  if (message) console.warn(message);
-  if (autoplay && source) audio.play().catch(() => {});
+  audio.pause(); audio.removeAttribute('src'); audio.load();
+  dlBtn.hidden = true;
+  playIcon.className = 'line-md--play-filled';
 }
 
 function octaveerror(message) {
-  const fallback = previewsource() ? `${message} Playing the preview instead.` : `${message} No preview is available for this catalog result.`;
-  if (fullTrackStatus) fullTrackStatus.textContent = fallback;
-  evictfulltrackmatch(curtrack);
-  usepreview(Boolean(previewsource()), fallback);
+  metingfallback(message);
 }
 
 let nativePending = false;
@@ -1816,6 +1801,24 @@ function musicstatus(message, loading = false) {
   fullTrackStatus.textContent = message;
   document.getElementById('playBtn').classList.toggle('is-loading', loading);
   requestAnimationFrame(updatebodypad);
+}
+function validatefullaudio(expected, current) {
+  return new Promise((resolve, reject) => {
+    const finish = error => { clearTimeout(timer); audio.removeEventListener('loadedmetadata', ready); audio.removeEventListener('error', failed); error ? reject(error) : resolve(); };
+    const ready = () => {
+      if (!current()) return finish(new DOMException('Superseded playback', 'AbortError'));
+      const duration = Number(audio.duration), required = Number(expected);
+      if (!Number.isFinite(duration) || !(duration > 0) || !(required > 0) || Math.abs(duration - required) > Math.max(4, required * .03)) {
+        return finish(new Error('The provider returned a different or incomplete recording.'));
+      }
+      finish();
+    };
+    const failed = () => finish(new Error('Full audio could not load.'));
+    const timer = setTimeout(() => finish(new Error('Full audio took too long to load.')), 20000);
+    audio.addEventListener('loadedmetadata', ready);
+    audio.addEventListener('error', failed);
+    audio.load();
+  });
 }
 async function startmetingtrack(track, request, resumeAt = 0) {
   nativePending = true;
@@ -1833,9 +1836,11 @@ async function startmetingtrack(track, request, resumeAt = 0) {
     const match = await getfulltrackmatch(track);
     if (request !== octaverequest || curtrack !== track) return;
     if (!validfulltrackmatch(match)) throw new Error('No matching full recording is available.');
-    nativePending = false;
-    audio.src = match.streamUrl;
     pendingseek = resumeAt > 0 ? resumeAt : null;
+    audio.src = match.streamUrl;
+    await validatefullaudio(match.durationSeconds, () => request === octaverequest && curtrack === track);
+    if (request !== octaverequest || curtrack !== track) return;
+    nativePending = false;
     nativeProgressAt = performance.now();
     musicstatus('Loading full song…', true);
     dlBtn.hidden = true;
@@ -1852,15 +1857,16 @@ async function startmetingtrack(track, request, resumeAt = 0) {
   } catch (error) {
     if (request !== octaverequest || curtrack !== track) return;
     if (!navigator.onLine) { nativePending = false; musicstatus('You’re offline. Playback will retry when connected.'); return; }
+    if (error.message === 'Full audio could not load.' && nativeRetries < 1) {
+      nativePending = false; recovernative(error.message); return;
+    }
     metingfallback(error.message);
   }
 }
 function metingfallback(reason) {
-  const preview = Boolean(previewsource());
-  const message = reason + (preview ? (nativeWantPlay ? ' Playing a short preview instead.' : ' A short preview is available — press play.') : ' No preview is available.');
   evictfulltrackmatch(curtrack);
-  usepreview(preview && nativeWantPlay);
-  musicstatus(message);
+  resetnativeaudio();
+  musicstatus(reason + ' Full-song playback is unavailable. Press play to retry.');
 }
 audio.addEventListener('playing', () => {
   if (playbackmode === 'meting') musicstatus('Playing full song');
@@ -1880,7 +1886,6 @@ function recovernative(reason) {
   } else metingfallback(reason);
 }
 audio.addEventListener('error', () => {
-  if (playbackmode === 'preview' && audio.error) { musicstatus('The preview is unavailable. Try another song.'); return; }
   if (playbackmode !== 'meting' || nativePending || !curtrack || !audio.error) return;
   if (!navigator.onLine) { musicstatus('You’re offline. Playback will retry when connected.'); return; }
   recovernative('Full audio is unavailable right now.');
@@ -1908,6 +1913,7 @@ function playbackplay() {
   nativeWantPlay = true;
   nativeProgressAt = performance.now();
   if (nativePending) { playIcon.className = 'material-symbols--pause-rounded'; return; }
+  if (playbackmode === 'idle' && curtrack) { nativeRetries = 0; void startmetingtrack(curtrack, octaverequest); return; }
   if (playbackmode === 'octave' || octavepending) octaveplayer?.playVideo?.();
   else audio.play().catch(() => musicstatus('Unable to play. Select the song again to retry.'));
 }
@@ -1959,7 +1965,7 @@ function playtrack(t, list, context = '') {
 
   pushhistory(t);
 
-  usepreview(false);
+  resetnativeaudio();
   const fullTrackRequest = octaverequest;
   nativeRetries = 0;
   nativeWantPlay = true;
@@ -1972,8 +1978,8 @@ function playtrack(t, list, context = '') {
   document.getElementById('pArtist').title = t.artist;
   document.getElementById('timeTotal').textContent = fmt(t.duration);
 
-  dlBtn.href = previewsource() || '#';
-  dlBtn.hidden = !previewsource();
+  dlBtn.removeAttribute('href');
+  dlBtn.hidden = true;
   dlBtn.setAttribute('download', `${(t.artist || 'unknown')} - ${(t.title || 'song')}.mp3`.replace(/["\\]/g, ''));
   dlBtn.setAttribute('aria-label', `download ${t.title}`);
   pPlaylist.disabled = false;
@@ -2177,7 +2183,7 @@ function updateseek(sec) {
 }
 
 audio.addEventListener('loadedmetadata', () => {
-  if (playbackmode === 'meting' && Number(curtrack?.duration) > 0 && Number.isFinite(audio.duration)
+  if (playbackmode === 'meting' && !nativePending && Number(curtrack?.duration) > 0 && Number.isFinite(audio.duration)
       && Math.abs(audio.duration - Number(curtrack.duration)) > Math.max(4, Number(curtrack.duration) * .03)) {
     metingfallback('The provider returned a different or incomplete recording.');
     return;

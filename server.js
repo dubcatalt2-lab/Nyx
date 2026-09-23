@@ -12341,45 +12341,9 @@ app.get("/api/nyxify/cover", async (req, res) => {
 });
 
 app.get("/api/nyxify/stream/:trackId", async (req, res) => {
-  res.set({ "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" });
+  res.set({ "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" });
   if (!sameOriginRequest(req)) return res.status(403).type("text/plain").send("Cross-origin requests are not allowed.");
-  const trackId = String(req.params.trackId || "").trim();
-  if (!nyxifyTrackIdPattern.test(trackId)) return res.status(400).type("text/plain").send("Invalid Nyxify track.");
-  const range = String(req.get("range") || "").trim();
-  if (range && !/^bytes=\d*-\d*$/i.test(range)) return res.status(416).type("text/plain").send("Invalid audio range.");
-  try {
-    const audioHeaders = {
-      Accept: "audio/mpeg,audio/mp4,audio/aac,audio/ogg,audio/webm,application/octet-stream",
-      ...(range ? { Range: range } : {}),
-      "User-Agent": "Nyxify/1.0"
-    };
-    const upstream = await nyxifyDeezerPreview(trackId, audioHeaders);
-    res.set("X-Nyxify-Playback", "deezer-preview");
-    if (![200, 206].includes(upstream.status)) {
-      upstream.body?.cancel().catch(() => {});
-      return res.status(upstream.status === 404 ? 404 : 502).type("text/plain").send("This track is not currently streamable.");
-    }
-    const contentType = String(upstream.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
-    if (!nyxifyAudioTypes.has(contentType) || !upstream.body) {
-      upstream.body?.cancel().catch(() => {});
-      return res.status(415).type("text/plain").send("The music provider returned unsupported audio.");
-    }
-    const headers = { "Content-Type": contentType, "Content-Disposition": "inline", "X-Content-Type-Options": "nosniff" };
-    for (const name of ["accept-ranges", "content-length", "content-range"]) {
-      const value = upstream.headers.get(name);
-      if (value) headers[name] = value;
-    }
-    res.status(upstream.status).set(headers);
-    const stream = Readable.fromWeb(upstream.body);
-    const close = () => stream.destroy();
-    res.once("close", close);
-    stream.once("error", () => { if (!res.writableEnded) res.destroy(); });
-    stream.once("end", () => res.off("close", close));
-    stream.pipe(res);
-  } catch (error) {
-    if (!res.headersSent) res.status(error?.name === "AbortError" ? 504 : 502).type("text/plain").send("Nyxify could not start this track.");
-    else res.destroy();
-  }
+  res.status(410).type("text/plain").send("Short previews have been removed. Reload Nyxify to use full-song playback.");
 });
 
 

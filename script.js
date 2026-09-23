@@ -2748,6 +2748,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   let bareMuxConnection = null;
   let scramjetTransport = null;
   let scramjetTransportKey = '';
+  let scramjetTransportPending = null;
   let browserTransportOverride = '';
   let scramjetInstallError = '';
   let nyxPresenceCount = null;
@@ -3928,7 +3929,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const uvPrefix=window.__uv$config?.prefix || '/service/';
       const uvStart=parsed.origin + uvPrefix;
       const scramjetStart=parsed.origin + '/scramjet/service/';
+      const scramjetV1Prefix='/~/sj-v1/';
       const scramjetV2Match=parsed.pathname.match(/^\/~\/sj\/[^/]+\/[^/]+\/([^?#]*)/);
+      if(parsed.origin===location.origin && parsed.pathname.startsWith(scramjetV1Prefix)){
+        const decoded=new URL(decodeUriPart(parsed.pathname.slice(scramjetV1Prefix.length)));
+        if(parsed.search) decoded.search=parsed.search;
+        if(parsed.hash) decoded.hash=parsed.hash;
+        return decoded.href;
+      }
       if(parsed.origin===location.origin && parsed.href.startsWith(uvStart)){
         let encoded=parsed.href.slice(uvStart.length);
         const privateSession=encoded.match(/^nyx_[a-z0-9_-]{12,80}\/(.+)$/i);
@@ -5182,7 +5190,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const effect=esc(store.text('nyx.visualEffect','none'));
     const effectSpeed=esc(store.text('nyx.visualEffectSpeed','1.1'));
     const effectAmount=esc(store.text('nyx.visualEffectAmount','16'));
-    return `<section class="settings-app settings-single-pane browser-only-settings"><main class="settings-main"><h1>Browser Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="nyx" type="button">Reset</button></div></section><section class="settings-block"><h2>Preset Cloak</h2><select class="settings-select" data-preset-select><option value="nyx" ${currentPreset==='nyx'?'selected':''}>ռʏӼ</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Cloaking</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original tab redirect URL"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Auto Cloak</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Redirect original after launch</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save Cloak Settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Panic Key</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>Search Engine</h2><select class="settings-select" data-browser-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>DuckDuckGo</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Proxy Engine</h2><select class="settings-select" data-browser-mode-select><option value="auto" ${browserMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${browserMode==='scramjet'?'selected':''}>Scrapmmy</option><option value="ultraviolet" ${browserMode==='ultraviolet'?'selected':''}>Violet</option><option value="iframe" ${browserMode==='iframe'?'selected':''}>Iframe</option></select></section><section class="settings-block"><h2>Transport</h2><select class="settings-select" data-browser-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Eppy over Relay</option><option value="wisp" ${transport==='wisp'?'selected':''}>Relay endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Libby over Relay</option></select><div class="settings-actions"><button class="settings-action" data-browser-settings-save type="button">Save Browser Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
+    return `<section class="settings-app settings-single-pane browser-only-settings"><main class="settings-main"><h1>Browser Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="nyx" type="button">Reset</button></div></section><section class="settings-block"><h2>Preset Cloak</h2><select class="settings-select" data-preset-select><option value="nyx" ${currentPreset==='nyx'?'selected':''}>ռʏӼ</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Cloaking</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original tab redirect URL"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Auto Cloak</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Redirect original after launch</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save Cloak Settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Panic Key</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>Search Engine</h2><select class="settings-select" data-browser-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>DuckDuckGo</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Proxy Engine</h2><select class="settings-select" data-browser-mode-select><option value="auto" ${browserMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${browserMode==='scramjet'?'selected':''}>Scrapmmy</option><option value="iframe" ${browserMode==='iframe'?'selected':''}>Iframe</option></select></section><section class="settings-block"><h2>Transport</h2><select class="settings-select" data-browser-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Eppy over Relay</option><option value="wisp" ${transport==='wisp'?'selected':''}>Relay endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Libby over Relay</option></select><div class="settings-actions"><button class="settings-action" data-browser-settings-save type="button">Save Browser Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
   }
   function browserShellPresetTiles(){
     return `<button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${nyxTabFavicon}"><span>ռʏӼ tab</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
@@ -5218,19 +5226,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     // The browser settings overlay is assembled separately from the setup
     // screen. Keep its proxy selector in sync with the supported engines.
     const browserModeSelect=source.querySelector('[data-browser-mode-select]');
-    if(browserModeSelect && !browserModeSelect.querySelector('option[value="scramjet-v1"]')){
-      const option=document.createElement('option');
-      option.value='scramjet-v1';
-      option.textContent='Scramjet v1';
-      const ultravioletOption=browserModeSelect.querySelector('option[value="ultraviolet"]');
-      browserModeSelect.insertBefore(option,ultravioletOption || null);
-    }
+
     if(browserModeSelect){
       const browserModeLabels={
         auto:'Auto',
         scramjet:'Scramjet v2',
-        'scramjet-v1':'Scramjet v1',
-        ultraviolet:'Ultraviolet',
         iframe:'Iframe'
       };
       [...browserModeSelect.options].forEach(option=>{
@@ -7341,8 +7341,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   window.nyxProxyGameUrl=async url=>{
     const target=proxyTargetUrl(url);
     if(!target) return '';
-    const ready=await installUltraviolet();
-    return ready ? (proxyModeUrl('ultraviolet',target) || target) : target;
+    const ready=await installScramjet();
+    if(!ready) throw new Error('Nyx game proxy is unavailable.');
+    return scramjetUrl(target);
   };
   const nyxManagedGameFrames=new WeakMap();
   const nyxAdProtectedGameFrames=new WeakSet();
@@ -7390,40 +7391,33 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return protect();
   }
   window.nyxInstallGameAdProtection=frame=>installGameFrameAdProtection(frame);
-  window.nyxLaunchGameFrame=async (frame,url)=>{
+  window.nyxLaunchGameFrame=async (frame,url,{forceProxy=false,signal}={})=>{
     const target=proxyTargetUrl(url);
     if(!target) return {managed:false,engine:'',url:''};
     installGameFrameAdProtection(frame);
-    const mode=selectedBrowserMode(target);
-    if((mode==='scramjet' || mode==='scramjet-v1') && String(frame?.tagName || '').toLowerCase()==='iframe'){
-      const useV1=mode==='scramjet-v1';
-      const ready=await (useV1 ? installScramjetV1() : installScramjet());
-      const controller=useV1 ? scramjetV1Controller : scramjetController;
+    const mode=forceProxy ? 'scramjet' : selectedBrowserMode(target);
+    if(mode==='scramjet' && String(frame?.tagName || '').toLowerCase()==='iframe'){
+      const ready=await installScramjet();
+      const controller=scramjetController;
       if(ready && controller){
         let managed=nyxManagedGameFrames.get(frame);
-        if(!managed || managed.__nyxScramjetVersion!==(useV1 ? 'v1' : 'v2')){
+        if(!managed || managed.__nyxScramjetVersion!=='v2'){
           frame.removeAttribute('src');
-          managed=useV1
-            ? controller.createFrame(frame)
-            : controller.createFrame(frame,{plugins:[
+          managed=controller.createFrame(frame,{plugins:[
                 createScramjetCompatibilityPlugin('','proxy-sri'),
                 createScramjetCompatibilityPlugin(browserAdBlockRuntimeSource,'ad-block'),
                 createScramjetCompatibilityPlugin(scramjetMinimalRuntimeGuardSource,'minimal-guard')
               ]});
-          managed.__nyxScramjetVersion=useV1 ? 'v1' : 'v2';
+          managed.__nyxScramjetVersion='v2';
           nyxManagedGameFrames.set(frame,managed);
         }
+        if(signal?.aborted || !frame.isConnected) return;
         managed.go(target);
-        return {managed:true,engine:useV1 ? 'scramjet-v1' : 'scramjet',url:target};
+        return {managed:true,engine:'scramjet',url:target};
       }
     }
     if(mode==='iframe') return {managed:false,engine:'iframe',url:target};
-    const ready=await installUltraviolet();
-    return {
-      managed:false,
-      engine:'ultraviolet',
-      url:ready ? (proxyModeUrl('ultraviolet',target) || target) : target
-    };
+    throw new Error('Nyx game proxy is unavailable.');
   };
   // Movies explicitly requests a proxy. Never fall back to a direct provider URL.
   window.nyxLaunchMovieFrame=async(frame,url,{signal,recover=false}={})=>{
@@ -7433,14 +7427,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const sandbox='allow-scripts allow-same-origin allow-forms allow-presentation';
     if(frame.getAttribute('sandbox')!==sandbox)throw new Error('Movie sandbox is required.');
     if(signal?.aborted||!frame.isConnected)return;
-    if(recover)uvInstallPromise=null;
-    const ready=await installUltraviolet();
-    if(signal?.aborted||!frame.isConnected)return;
-    if(!ready)throw new Error('Nyx movie proxy is unavailable.');
-    installGameFrameAdProtection(frame);
-    const target=nativeUvUrl(url);
-    if(!target?.startsWith('/service/'))throw new Error('Movie proxy URL is unavailable.');
-    frame.src=target;
+    if(recover) nyxManagedGameFrames.delete(frame);
+    await window.nyxLaunchGameFrame(frame,url,{forceProxy:true,signal});
   };
   function normalizeBrowserModeName(mode){
     let value=String(mode || 'auto').trim();
@@ -7448,9 +7436,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       try{value=JSON.parse(value)}catch{value=value.slice(1,-1)}
     }
     value=String(value || 'auto').trim().toLowerCase();
-    if(value==='uv' || value==='ultra' || value==='ultraviolet') return 'ultraviolet';
+    if(value==='uv' || value==='ultra' || value==='ultraviolet') return 'scramjet';
     if(value==='sj' || value==='scram' || value==='scramjet' || value==='scramjet-v2' || value==='sjv2') return 'scramjet';
-    if(value==='scramjet-v1' || value==='sjv1' || value==='scram-v1') return 'scramjet-v1';
+    if(value==='scramjet-v1' || value==='sjv1' || value==='scram-v1') return 'scramjet';
     if(value==='rh' || value==='rammerhead') return 'rammerhead';
     if(value==='direct' || value==='iframe') return 'iframe';
     return value || 'auto';
@@ -7519,14 +7507,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }catch{}
     const mode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
     if(isSpotifyFamilyUrl(url)) return 'scramjet';
-    if(hostMatches(browserHost(url),['tiktok.com'])) return 'ultraviolet';
+    if(hostMatches(browserHost(url),['tiktok.com'])) return 'scramjet';
     if(hostMatches(browserHost(url),['slither.io'])) return 'iframe';
     if(mode==='iframe' && hostMatches(browserHost(url),['cineby.at'])) return 'scramjet';
     if(mode!=='auto') return mode;
     return bestBrowserMode(url);
   }
   function appCompatibilityMode(url){
-    if(hostMatches(browserHost(url),['aether.cx','crazygames.com','tiktok.com'])) return 'ultraviolet';
+    if(hostMatches(browserHost(url),['aether.cx','crazygames.com','tiktok.com'])) return 'scramjet';
     return '';
   }
   function isYouTubeUrl(url){
@@ -7920,6 +7908,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const transport=normalizeBrowserTransportName(browserTransportOverride || store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT));
     const key=`${transport}:${wispUrl()}`;
     if(scramjetTransport && scramjetTransportKey===key) return scramjetTransport;
+    if(scramjetTransportPending?.key===key) return scramjetTransportPending.promise;
     const wisp=wispUrl();
     const buildTransport=async name=>{
       if(name==='libcurlRaw'){
@@ -7929,19 +7918,25 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const { default: EpoxyTransport } = await import('/assets/transports/epoxy-scramjet.mjs');
       return new EpoxyTransport({ wisp, wisp_v2: name!=='wisp' });
     };
-    scramjetTransport=await buildTransport(transport);
-    if(typeof scramjetTransport.init==='function' && !scramjetTransport.ready){
-      try{
+    // libcurl.js has a single onload callback. Concurrent cold initializations
+    // can overwrite it and strand the earlier caller until its timeout.
+    const pending={key,promise:null};
+    scramjetTransportPending=pending;
+    pending.promise=(async()=>{
+      const client=await buildTransport(transport);
+      if(typeof client.init==='function' && !client.ready){
         await Promise.race([
-          scramjetTransport.init(),
+          client.init(),
           new Promise((_,reject)=>setTimeout(()=>reject(new Error(`Scramjet ${transport} transport timed out while connecting to ${wisp}`)),4500))
         ]);
-      }catch(error){
-        throw error;
       }
-    }
-    scramjetTransportKey=`${transport}:${wisp}`;
-    return scramjetTransport;
+      if(scramjetTransportPending===pending){
+        scramjetTransport=client;
+        scramjetTransportKey=key;
+      }
+      return client;
+    })().finally(()=>{if(scramjetTransportPending===pending) scramjetTransportPending=null;});
+    return pending.promise;
   }
   function scramjetConfig(){
     return {
@@ -8745,32 +8740,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     store.setText('nyx.scramjetV1StateVersion',scramjetV1StateVersion);
   }
   function installUltraviolet(){
-    if(uvInstallPromise) return uvInstallPromise;
-    uvInstallPromise=(async()=>{
-      if(location.protocol==='file:' || !('serviceWorker' in navigator)) return false;
-      await ensureFreshProxyState();
-      if(!window.__uv$config){
-        await loadScript('/uv/uv.bundle.js');
-        await loadScript('/uv.config.js');
-      }
-      const config=window.__uv$config;
-      if(!config?.prefix || typeof config.encodeUrl!=='function') return false;
-      const existing=await navigator.serviceWorker.getRegistration(config.prefix).catch(()=>null);
-      if(existing?.active?.scriptURL && !existing.active.scriptURL.includes(config.sw || '/uv.sw.js')){
-        await existing.unregister().catch(()=>null);
-      }
-      const registration=await navigator.serviceWorker.register(config.sw || '/uv.sw.js',{scope:config.prefix,updateViaCache:'none'});
-      uvRegistration=registration;
-      await registration.update().catch(()=>null);
-      await waitForServiceWorkerActive(registration,config.prefix);
-      await installBareMuxTransport();
-      return true;
-    })().catch(err=>{
-      uvInstallPromise=null;
-      return false;
-    });
-    return uvInstallPromise;
-  }
+    // Retain old assets for already-open tabs, but never start this engine.
+    return Promise.resolve(false);
+}
   function scramjetV1Config(){
     return {
       prefix:'/~/sj-v1/',
@@ -8800,45 +8772,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     serviceworker.postMessage({scramjet$type:'loadConfig',config});
   }
   function installScramjetV1(){
-    if(scramjetV1InstallPromise) return scramjetV1InstallPromise;
-    let step='starting Scramjet v1';
-    scramjetV1InstallPromise=(async()=>{
-      if(location.protocol==='file:') throw new Error('Scramjet v1 needs Nyx to be opened from its website, not as a local file.');
-      if(!('serviceWorker' in navigator)) throw new Error('This browser does not support the Service Workers Scramjet v1 needs.');
-      step='resetting stale Scramjet v1 state';
-      await ensureFreshScramjetV1State();
-      step='loading Scramjet v1 assets';
-      if(!window.$scramjetLoadController) await loadScript(scramjetV1RuntimeUrl);
-      step='starting relay';
-      await installBareMuxTransport();
-      step='initializing controller storage';
-      try{
-        if(!scramjetV1Controller) scramjetV1Controller=await initializeScramjetV1Controller();
-      }catch(initError){
-        if(!isScramjetIdbShapeError(initError)) throw initError;
-        step='repairing incompatible Scramjet v1 storage';
-        await repairScramjetV1Storage();
-        scramjetV1Controller=null;
-        step='initializing controller storage after repair';
-        scramjetV1Controller=await initializeScramjetV1Controller();
-      }
-      step='registering service worker';
-      const registration=await navigator.serviceWorker.register(scramjetV1ServiceWorkerUrl,{scope:'/~/sj-v1/',updateViaCache:'none'});
-      await registration.update().catch(()=>null);
-      const serviceworker=await waitForServiceWorkerScript(registration,scramjetV1ServiceWorkerUrl,'/~/sj-v1/');
-      if(!serviceworker) throw new Error('Scramjet v1 service worker did not activate');
-      step='sending configuration to service worker';
-      await sendScramjetV1Config(scramjetV1Controller,serviceworker);
-      scramjetV1InstallError='';
-      return true;
-    })().catch(error=>{
-      scramjetV1Controller=null;
-      scramjetV1InstallPromise=null;
-      scramjetV1InstallError=`Failed while ${step}: ${error?.message || error}`;
-      return false;
-    });
-    return scramjetV1InstallPromise;
-  }
+    return Promise.resolve(false);
+}
   function installScramjet(){
     if(scramjetInstallPromise) return scramjetInstallPromise;
     let step='starting Scramjet';
@@ -10014,22 +9949,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   async function preflightEngineReady(target=''){
     if(location.protocol==='file:' || !('serviceWorker' in navigator)) return false;
-    const mode=preflightBrowserModeForTarget(target);
-    if(mode==='iframe') return true;
-    if(mode==='ultraviolet') return installUltraviolet();
-    if(mode==='scramjet-v1') return installScramjetV1();
-    if(mode==='scramjet') return installScramjet();
-    const results=await Promise.allSettled([installScramjet(),installUltraviolet()]);
-    return results.some(result=>result.status==='fulfilled' && result.value);
-  }
+    if(preflightBrowserModeForTarget(target)==='iframe') return true;
+    return installScramjet();
+}
   async function preflightTransportReady(target=''){
     if(location.protocol==='file:') return false;
-    const mode=preflightBrowserModeForTarget(target);
-    if(mode==='iframe') return true;
-    if(mode==='scramjet-v1') return !!(await installBareMuxTransport());
-    if(mode==='scramjet') return !!(await createScramjetTransport());
-    return !!(await installBareMuxTransport());
-  }
+    if(preflightBrowserModeForTarget(target)==='iframe') return true;
+    return !!(await createScramjetTransport());
+}
   async function preflightServiceWorkerReady(target=''){
     if(location.protocol==='file:' || !('serviceWorker' in navigator)) return false;
     await preflightEngineReady(target);
@@ -11343,7 +11270,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const raw=String(url || '');
       const frameSrc=String(t?.frame?.getAttribute?.('src') || '');
       if(t?.scramjetFrame || raw.startsWith('/~/sj/') || frameSrc.includes('/~/sj/')) return 'scramjet';
-      if(raw.startsWith('/service/') || frameSrc.startsWith('/service/')) return 'ultraviolet';
+      if(raw.startsWith('/service/') || frameSrc.startsWith('/service/')) return 'scramjet';
       if(raw.startsWith('/scramjet/service/') || frameSrc.startsWith('/scramjet/service/')) return 'scramjet-legacy';
       if(/^https?:/i.test(raw)) return 'direct';
       if(raw.startsWith('nyx://')) return 'nyx';
@@ -11473,60 +11400,18 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }
     function fallbackProxyEngine(t,sourceUrl,expectedEngine,reason=''){
       if(!t || !sourceUrl || !expectedEngine) return false;
-      const key=`${expectedEngine}:${sourceUrl}`;
-      const attempts=t.engineFallbackAttempts || (t.engineFallbackAttempts={});
-      attempts[key]=(attempts[key] || 0) + 1;
       const configuredMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
-      if(configuredMode!=='auto'){
-        if(configuredMode==='scramjet' && expectedEngine!=='scramjet'){
-          loadScramjetTab(t,sourceUrl,false);
-          return true;
-        }
-        if(configuredMode==='ultraviolet' && expectedEngine!=='ultraviolet'){
-          installUltraviolet().then(ok=>{
-            if(!state.tabs.includes(t)) return;
-            const proxied=ok ? proxyModeUrl('ultraviolet',sourceUrl,t.privacySessionId) : '';
-            if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',sourceUrl);
-            else loadSelectedSearchFallback(t,sourceUrl,'selected Ultraviolet engine unavailable');
-          });
-          return true;
-        }
-        if(configuredMode==='iframe'){
-          if(expectedEngine!=='iframe') loadTab(t,sourceUrl,false,'iframe',sourceUrl);
-          else loadSelectedSearchFallback(t,sourceUrl,reason || 'selected iframe mode failed');
-          return true;
-        }
+      if(configuredMode==='iframe'){
+        if(expectedEngine!=='iframe') loadTab(t,sourceUrl,false,'iframe',sourceUrl);
+        else return loadSelectedSearchFallback(t,sourceUrl,reason || 'selected iframe mode failed');
+        return true;
       }
-      if(isSpotifyFamilyUrl(sourceUrl) && expectedEngine==='scramjet'){
-        return false;
-      }
-      if(expectedEngine==='scramjet' && configuredMode==='auto'){
-        return loadSelectedSearchFallback(t,sourceUrl,reason || 'Scramjet relays exhausted');
-      }
-      if(expectedEngine==='scramjet' && configuredMode==='scramjet'){
-        if(attempts[key]>3) return loadSelectedSearchFallback(t,sourceUrl,reason || 'Scramjet retries exhausted');
+      if(expectedEngine!=='scramjet'){
         loadScramjetTab(t,sourceUrl,false);
         return true;
       }
-      if(expectedEngine==='ultraviolet' && configuredMode==='ultraviolet'){
-        return loadSelectedSearchFallback(t,sourceUrl,reason || 'Ultraviolet failed while selected');
-      }
-      if(attempts[key]>3) return loadSelectedSearchFallback(t,sourceUrl,reason || 'proxy fallback exhausted');
-      if(expectedEngine==='scramjet'){
-        installUltraviolet().then(ok=>{
-          if(!state.tabs.includes(t)) return;
-          const proxied=ok ? proxyModeUrl('ultraviolet',sourceUrl,t.privacySessionId) : '';
-          if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',sourceUrl);
-          else loadSelectedSearchFallback(t,sourceUrl,'Ultraviolet unavailable after Scramjet failure');
-        });
-        return true;
-      }
-      if(expectedEngine==='ultraviolet'){
-        loadScramjetTab(t,sourceUrl,false);
-        return true;
-      }
-      return loadSelectedSearchFallback(t,sourceUrl,reason || 'unknown proxy failure');
-    }
+      return loadSelectedSearchFallback(t,sourceUrl,reason || 'Scramjet retries exhausted');
+}
     function watchFrameTransportErrors(t,sourceUrl,expectedEngine){
       if(!t?.frame || !sourceUrl || !expectedEngine) return;
       const automaticMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE))==='auto';
@@ -11590,6 +11475,15 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       t.loadWatchToken=token;
       const watchStartedAt=Date.now();
       let loaded=false;
+      let settled=false;
+      // SPA history changes can precede the controller's URL notification.
+      // Never let an old startup timer replace the route now in the frame.
+      const current=()=>!settled && t.loadWatchToken===token && state.tabs.includes(t)
+        && browserFrameStillAtSource(t,sourceUrl);
+      const settle=()=>{
+        settled=true;
+        t.frame?.removeEventListener?.('load',markLoaded);
+      };
       const markLoaded=()=>{
         const frameSrc=String(t.frame?.getAttribute?.('src') || '');
         let frameHref='';
@@ -11630,7 +11524,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         let protectedChecks=0;
         const protectedTimer=setInterval(()=>{
           protectedChecks+=1;
-          if(t.loadWatchToken!==token || !state.tabs.includes(t) || protectedChecks>20){
+          if(!current() || protectedChecks>20){
             clearInterval(protectedTimer);
             return;
           }
@@ -11642,12 +11536,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       const attemptFallback=(force=false)=>{
         t.frame?.removeEventListener?.('load',markLoaded);
-        if((loaded && !force) || t.loadWatchToken!==token || !state.tabs.includes(t)) return;
+        if(!current() || (loaded && !force)) return;
         if(!force){
           const health=inspectFrameHealth(t);
           const healthyProgress=health.reachable && !health.hasErrorText && !health.blank;
           if(healthyProgress){
             loaded=true;
+            settle();
             return;
           }
           if(health.reachable && !health.hasErrorText && health.readyState==='loading' && Date.now()-watchStartedAt<10000) return;
@@ -11702,12 +11597,17 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         if(!handled) fallbackProxyEngine(t,sourceUrl,expectedEngine,'blank or timed-out proxy frame');
       };
       const checkBlankFallback=()=>{
-        if(t.loadWatchToken!==token || !state.tabs.includes(t)) return;
+        if(!current()) return;
         if(protectedSiteReturnedEmptyShell()){
           loadSelectedSearchFallback(t,sourceUrl,'the site returned a blocked empty shell');
           return;
         }
         if(proxyLooksBroken()) attemptFallback(true);
+        else{
+          const health=inspectFrameHealth(t);
+          if(health.reachable && !health.blank && !health.hasErrorText
+            && /^(?:interactive|complete)$/.test(health.readyState)) settle();
+        }
       };
       t.frame.addEventListener('load',()=>setTimeout(checkBlankFallback,1600),{once:true});
       setTimeout(checkBlankFallback,3200);
@@ -12145,7 +12045,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         const browserMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
         if(!forceMode || !browserTransportOverride) applyPreferredTransportForUrl(url,browserMode);
         updateBrowserShellLocation(url,t.id,true);
-        const mode=forceMode || selectedBrowserMode(url);
+        const mode=normalizeBrowserModeName(forceMode || selectedBrowserMode(url));
         if(browserMode==='auto' && mode==='iframe' && directOnly(url)){
           loadScramjetTab(t,url,true);
         }else if(mode==='rammerhead'){
@@ -12197,7 +12097,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           return;
         }
       }catch{}
-      const mode=forceMode || selectedBrowserMode(url);
+      const mode=normalizeBrowserModeName(forceMode || selectedBrowserMode(url));
       if(browserMode==='auto' && mode==='iframe' && directOnly(url)){
         loadScramjetTab(t,url,true);
         return;
@@ -14152,8 +14052,6 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
           <select id="settingBrowserMode">
             <option value="auto">Auto</option>
             <option value="scramjet">Use Scramjet v2</option>
-            <option value="scramjet-v1">Use Scramjet v1</option>
-            <option value="ultraviolet">Use Ultraviolet</option>
             <option value="iframe">Iframe</option>
           </select>
         </section>

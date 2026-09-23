@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { createRequire } from 'node:module';
 import { spawnSync, spawn } from 'node:child_process';
 import { chromium } from 'playwright';
@@ -12,12 +12,16 @@ const fixture = join(folder, 'audio.mp3');
 const made = spawnSync(require('@ffmpeg-installer/ffmpeg').path, ['-v', 'error', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=125', '-c:a', 'libmp3lame', '-b:a', '32k', fixture]);
 assert.equal(made.status, 0);
 const bytes = await readFile(fixture);
+const staticRoot = join(folder, 'site');
+await symlink(resolve(process.env.NYX_TEST_ASSET_ROOT || '.'), staticRoot, process.platform === 'win32' ? 'junction' : 'dir');
 const origin = process.env.NYX_TEST_BASE_URL || 'http://127.0.0.1:8198';
-const server = process.env.NYX_TEST_BASE_URL ? null : spawn(process.execPath, ['server.js'], { env: { ...process.env, PORT: '8198' }, stdio: 'ignore' });
+const server = process.env.NYX_TEST_BASE_URL ? null : spawn(process.execPath, ['server.js'], { env: { ...process.env, PORT: '8198', NYX_STATIC_ROOT: staticRoot }, stdio: 'ignore' });
 let browser;
 const tracks = [1, 2].map(id => ({ id: String(id), title: `Music fixture ${id}`, artist: 'Nyx test', duration: 125, catalog: 'deezer', cover: '', album: 'Test album' }));
 try {
   for (let i = 0; i < 100; i++) { try { if ((await fetch(origin + '/healthz')).ok) break; } catch {} await new Promise(r => setTimeout(r, 150)); }
+  const removedPreview = await fetch(origin + '/api/nyxify/stream/1', { headers: { Origin: origin } });
+  assert.equal(removedPreview.status, 410, 'Legacy clients must not receive preview clips');
   browser = await chromium.launch();
   for (const width of [1280, 390]) {
     const page = await browser.newPage({ viewport: { width, height: 850 } });
@@ -28,9 +32,11 @@ try {
       localStorage.setItem('nyx_nyxify_repeat', 'invalid');
     });
     const errors = [], audioRequests = [];
+    const previewRequests = [];
+    page.on('request', r => { if(r.url().includes('/api/nyxify/stream/')) previewRequests.push(r.url()); });
     let failLookup = false, delayLookup = false, busyLookup = 0, failAudio = 0;
     let lookups = 0, firstTrackLookups = 0;
-    page.on('pageerror', e => errors.push(e.message));
+    page.on('pageerror', e => { errors.push(e.message); if(process.env.NYX_TEST_DEBUG)console.log('PAGEERROR',e.message); });
     await page.route('**/api/**', async route => {
       const u = new URL(route.request().url()), path = u.pathname;
       if (path === '/api/nyxify/home') return route.fulfill({ json: { tracks, artists: [], albums: [] } });
@@ -129,6 +135,7 @@ try {
       await page.locator('#shuffleBtn').click();
       await page.locator('#repeatBtn').click();
     }
+    assert.deepEqual(previewRequests, [], 'Preview endpoints must never be requested');
     assert.deepEqual(errors, [], 'corrupt/full storage does not crash playback or controls');
     await page.close();
 
@@ -151,7 +158,7 @@ try {
     await hung.locator('.row', { hasText: tracks[0].title }).first().dblclick();
     await hung.clock.fastForward(26_000);
     await hung.waitForFunction(() => document.querySelector('#playerPlaybackStatus').textContent.includes('took too long'));
-    assert.match(await hung.locator('audio').getAttribute('src'), /\/stream\/1$/);
+    assert.equal(await hung.locator('audio').getAttribute('src'), null);
     await hung.close();
 
     const offline = await browser.newPage({ viewport: { width, height: 850 } });
@@ -185,10 +192,10 @@ try {
     });
     await offline.clock.fastForward(55_000);
     await offline.waitForFunction(() => document.querySelector('#playerPlaybackStatus').textContent.includes('stopped responding'));
-    assert.match(await offline.locator('audio').getAttribute('src'), /\/stream\/1$/);
+    assert.equal(await offline.locator('audio').getAttribute('src'), null);
     await offline.close();
 
-    // A fresh page rejects a missing match and labels the existing preview fallback.
+    // A fresh page rejects a missing match and stops without requesting preview audio.
     const failed = await browser.newPage({ viewport: { width, height: 850 } });
     const restrictedErrors = [];
     failed.on('pageerror', e => restrictedErrors.push(e.message));
@@ -205,21 +212,24 @@ try {
       if (path.includes('/stream/') || path.includes('/audio/')) return route.fulfill({ body: bytes, contentType: 'audio/mpeg' });
       return route.fulfill({ json: {} });
     });
+    failed.on('request', r => { if(r.url().includes('/api/nyxify/stream/')) previewRequests.push(r.url()); });
     await failed.goto(origin + '/apps/nyxify/');
     await failed.locator('.row', { hasText: tracks[0].title }).first().dblclick();
-    await failed.waitForFunction(() => document.querySelector('#musicPlaybackStatus').textContent.includes('short preview'));
+    await failed.waitForFunction(() => document.querySelector('#musicPlaybackStatus').textContent.includes('Full-song playback is unavailable'));
     const statusBounds = await failed.locator('#playerPlaybackStatus').boundingBox();
     const playerBounds = await failed.locator('.player-inner').boundingBox();
     assert.ok(statusBounds.width > playerBounds.width * .8, 'Playback status uses the player width');
-    assert.ok(statusBounds.y >= playerBounds.y && statusBounds.y + statusBounds.height <= playerBounds.y + playerBounds.height, 'Long preview message stays inside player');
-    assert.match(await failed.locator('audio').getAttribute('src'), /\/stream\/1$/);
+    assert.ok(statusBounds.y >= playerBounds.y && statusBounds.y + statusBounds.height <= playerBounds.y + playerBounds.height, 'Full-track failure message stays inside player');
+    assert.equal(await failed.locator('audio').getAttribute('src'), null);
     truncated = true;
     await failed.reload();
     await failed.locator('.row', { hasText: tracks[0].title }).first().dblclick();
     await failed.waitForFunction(() => document.querySelector('#musicPlaybackStatus').textContent.includes('incomplete recording'));
-    assert.match(await failed.locator('audio').getAttribute('src'), /\/stream\/1$/);
+    assert.equal(await failed.locator('audio').getAttribute('src'), null);
+    assert.deepEqual(previewRequests, [], 'Failed and shortened recordings must not request previews');
+    assert.equal(await failed.locator('audio').evaluate(a => a.paused), true);
     await failed.close();
     assert.deepEqual(restrictedErrors, [], 'blocked storage does not crash the app');
-    console.log(`PASS ${width}px: playback/seeking, busy retry, audio renewal, pending pause, autoplay denial, lookup timeout, rapid switching, layout and preview fallback.`);
+    console.log(`PASS ${width}px: playback/seeking, busy retry, audio renewal, pending pause, autoplay denial, lookup timeout, rapid switching, layout and no-preview failures.`);
   }
 } finally { await browser?.close(); server?.kill(); await rm(folder, { recursive: true, force: true }); }

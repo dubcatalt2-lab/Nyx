@@ -50,7 +50,7 @@ try {
         if (!result.managed) frame.src = result.url;
         return result;
       });
-      assert.equal(launch.engine, mode);
+      assert.equal(launch.engine, 'scramjet');
       await page.waitForFunction(() => document.querySelector('#relay-test')?.contentDocument?.body?.innerText?.includes('Example Domain'), {}, {timeout: 45000});
       assert.deepEqual(errors, []);
       console.log(`Nyx built: ${mode}/${transport} anonymous HTTPS passed`);

@@ -1,4 +1,4 @@
-﻿import LibcurlClient from '/libcurl/index.mjs';
+﻿import LibcurlClient from './libcurl-client.mjs';
 import { headerEntries, headerRecord } from './header-utils.mjs';
 
 export default class nyxLibcurlClient extends LibcurlClient {

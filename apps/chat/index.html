@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="/css/avatar-decorations.css?v=20260916-decor-hover-v3">
 <link rel="stylesheet" href="/css/profile-effects.css?v=20260916-effects-hover-v4">
 <link rel="stylesheet" href="./catppuccin.css?v=20260915-mocha-v1">
+<style>.voice-transport{display:grid;gap:6px;margin:8px 12px;color:inherit;font-size:12px}.voice-transport select{width:100%;min-width:0;border:1px solid #ffffff26;border-radius:10px;padding:8px;background:var(--panel,#24242c);color:inherit;font:inherit}.voice-transport small{font-size:11px;line-height:1.4;opacity:.75}</style>
 </head>
 <body>
   <svg class="chat-icon-sprite" aria-hidden="true">
@@ -66,6 +67,7 @@
           </div>
           <nav class="channel-list" data-channel-list aria-label="Chat channels"></nav>
           <div class="sidebar-heading voice-heading"><span>Voice Channels</span></div>
+          <label class="voice-transport">Voice connection<select data-voice-transport aria-label="Voice connection"><option value="auto">Automatic</option><option value="relay">Compatibility</option><option value="http">HTTP only</option></select><small>Compatibility helps when WebRTC is blocked. HTTP also works without WebSockets. Screen sharing requires WebRTC.</small></label>
           <nav class="voice-channel-list" data-voice-channel-list aria-label="Voice channels"></nav>
           <section class="voice-panel" data-voice-panel hidden>
             <div class="voice-panel-copy"><strong data-voice-status>Voice connected</strong><span data-voice-room></span></div>
@@ -219,6 +221,7 @@
     <div class="deleted-message-list" data-deleted-list></div><button class="btn-subtle" type="button" data-deleted-older hidden>Load older</button>
   </dialog>
   <script src="./emoji-catalog.js?v=20260915-full-reaction-catalog-v37"></script>
-  <script src="./app.js?v=20260919-member-search-v42"></script>
+  <script src="./voice-relay.js?v=20260923-voice-relay-v1"></script>
+  <script src="./app.js?v=20260923-voice-relay-v43"></script>
 </body>
 </html>

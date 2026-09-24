@@ -1,3 +1,4 @@
+import { exchangeVoiceAudio, createVoiceAudioAccess, cleanupVoiceAudio } from './lib/chat-voice-relay.mjs';
 import {recordAiExchange,readAiActivity} from './lib/ai-history.mjs';
 import {assignableAiModels,validateAiModelRules} from './lib/ai-model-policy.mjs';
 import {createFreeModelHealth} from './lib/ai-free-health.mjs';
@@ -5698,6 +5699,25 @@ function attachNyxChatSocketServer(server) {
         if (typeof acknowledge === "function") acknowledge({ ok: false, error: error.message || "The voice connection could not be relayed.", status: error.status || 503 });
       }
     });
+    socket.on("nyx:voice:audio", async (value, acknowledge) => {
+      if (typeof acknowledge !== "function") return;
+      if (socket.data.voiceAudioBusy) return acknowledge({ ok: false, status: 429, error: "Wait for the current voice exchange." });
+      socket.data.voiceAudioBusy = true;
+      try {
+        // Short authorization lease, including temporary bans. Do not query account storage per audio frame.
+        if (!socket.data.voiceAudioAuthorizedAt || Date.now() - socket.data.voiceAudioAuthorizedAt > 5000) {
+          const { firebase, token } = await authorizeNyxChatSocket(socket, socket.data.token);
+          if (await nyxChatActiveTemporaryBan(firebase, token.uid)) throw Object.assign(new Error("Voice access is unavailable."), { status: 403 });
+          socket.data.voiceAudioAuthorizedAt = Date.now();
+        }
+        if (!socket.connected) return;
+        const result = exchangeVoiceAudio(nyxChatVoiceSessions, uid, value, new Set(socket.data.visibleVoiceChannelIds || []));
+        if (result.changed) emitNyxChatVoiceRefresh();
+        acknowledge(result);
+      } catch (error) {
+        acknowledge({ ok: false, status: error.status || 401, error: error.message || "Voice access is unavailable." });
+      } finally { socket.data.voiceAudioBusy = false; }
+    });
     socket.on("disconnect", () => {
       if (!uid) return;
       queueMicrotask(() => {
@@ -5924,6 +5944,8 @@ function nyxChatVoiceParticipant(session, viewerUid = "") {
   return {
     uid,
     sessionId: String(session?.sessionId || ""),
+    audioTransport: session?.audioTransport === "relay" ? "relay" : "webrtc",
+    audioRelayVersion: session?.audioRelayVersion === 1 ? 1 : 0,
     channelId: nyxChatVoiceChannel(session?.channelId),
     displayName: founderProfileText(identity.displayName, "Nyx member", 48),
     handle: `@${nyxProfileUsername(identity.handle, "nyx-user")}`,
@@ -11223,7 +11245,9 @@ app.post("/api/chat/voice/join", async (req, res) => {
     }
     const now = Date.now();
     nyxChatVoiceSignals.delete(token.uid);
-    nyxChatVoiceSessions.set(token.uid, { uid: token.uid, sessionId, channelId, identity, joinedAtMs: now, lastSeenAtMs: now });
+    nyxChatVoiceSessions.set(token.uid, { uid: token.uid, sessionId, channelId, identity, joinedAtMs: now, lastSeenAtMs: now,
+      audioRelayVersion: req.body?.audioRelayVersion === 1 ? 1 : 0,
+      audioTransport: req.body?.audioRelayVersion === 1 && req.body?.audioTransport === "relay" ? "relay" : "webrtc" });
     emitNyxChatVoiceRefresh();
     res.status(201).json(nyxChatVoiceState(token.uid, sessionId, true, visibleVoiceChannels));
   } catch (error) {
@@ -11249,6 +11273,28 @@ app.post("/api/chat/voice/leave", async (req, res) => {
     res.json({ ok: true });
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "The voice channel could not be left." });
+  }
+});
+
+const authorizeNyxChatVoiceAudio = createVoiceAudioAccess(async req => {
+  const { firebase, token } = await authenticatedNyxChatUser(req);
+  const [configuration, identity] = await Promise.all([loadNyxChatConfiguration(firebase), nyxChatIdentity(firebase, token)]);
+  const channels = new Set(configuration.voiceChannels.filter(channel => nyxChatCanAccessChannel(identity.role, channel, nyxClientIp(req))).map(channel => channel.id));
+  return { uid: token.uid, channels };
+});
+setInterval(() => cleanupVoiceAudio(nyxChatVoiceSessions), 1000).unref();
+
+app.post("/api/chat/voice/audio", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
+  try {
+    const key = createHash("sha256").update(String(req.get("authorization") || "")).update("\n" + nyxClientIp(req)).digest("hex");
+    const { uid, channels } = await authorizeNyxChatVoiceAudio(key, req);
+    const result = exchangeVoiceAudio(nyxChatVoiceSessions, uid, req.body, channels);
+    if (result.changed) emitNyxChatVoiceRefresh();
+    res.json(result);
+  } catch (error) {
+    res.status(error.status || 503).json({ error: error.message || "Voice audio is unavailable." });
   }
 });
 

@@ -56,7 +56,7 @@ try {
     }};
   backend=createTubeBackend(options);
   const prepared=await backend.prepareSegments(id,720), token=prepared.url.split('/').at(-2);
-  assert.equal(prepared.kind,'hls');assert.equal((await backend.status()).cacheBytes,0);
+  assert.equal((await backend.status()).maxJobs,5,'Four segment workers plus one index job');assert.equal(prepared.kind,'hls');assert.equal((await backend.status()).cacheBytes,0);
   const master=await backend.playlist(token,'master.m3u8');assert.match(master,/AUDIO="audio"/);assert.ok(!master.includes('googlevideo'));
   assert.match(await backend.playlist(token,'video.m3u8'),/#EXT-X-ENDLIST/);
   rangeCalls=[];failNext=1;
@@ -80,18 +80,21 @@ try {
   b.abort();await second;hold=false;const reacquired=await backend.segment(token,'audio',1,new AbortController().signal);reacquired.release();assert.equal(cancelled,1);
   assert.ok(!(await readdir(join(root,'cache'))).some(n=>n.startsWith('work-')));
   hold=true;
-  const controllers=Array.from({length:12},()=>new AbortController());
+  const controllers=Array.from({length:16},()=>new AbortController());
   const queued=controllers.map((c,i)=>backend.segment(token,'audio',i,c.signal).catch(e=>e));
-  await new Promise(r=>setTimeout(r,60));assert.ok(maxActive<=2,'At most two segment downloads');
+  for(let attempt=0;attempt<100 && active<4;attempt++)await new Promise(r=>setTimeout(r,10));
+  assert.equal(active,4,'Four independent downloads run simultaneously');
+  assert.equal(maxActive,4,'Queued work cannot exceed four segment downloads');
+  assert.equal((await backend.status()).activeJobs,4,'Status reports running downloads');
   controllers.forEach(c=>c.abort());const results=await Promise.all(queued);assert.ok(results.some(e=>e.code==='busy'));
   await new Promise(r=>setTimeout(r,60));hold=false;
 
   let deny=false;
   const app=express();
   app.use(tubeStreamingRoutes({backend,sameOrigin:req=>req.headers.origin!=='https://evil.test',clientIp:()=> 'fixture',owner:async()=>{},publicVideo:async()=>{if(deny)throw Object.assign(new Error('Unavailable'),{status:404});}}));
-  app.get('/assets/vendor/hls.min.js',(_req,res)=>res.sendFile(require.resolve('hls.js/dist/hls.min.js')));
+  app.get('/assets/vendor/hls.min.js',(_req,res)=>res.sendFile(require.resolve('hls.js/dist/hls.min.js'),{dotfiles:'allow'}));
   app.get('/test',(_req,res)=>res.send('<div id="player" style="width:640px;height:360px"></div><script src="/assets/vendor/hls.min.js"></script><script src="/apps/nyxtube/native-player.js"></script>'));
-  app.use(express.static(resolve(process.env.NYX_TEST_STATIC_ROOT||'.')));
+  app.use(express.static(resolve(process.env.NYX_TEST_STATIC_ROOT||'.'),{dotfiles:'allow'}));
   server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base=`http://127.0.0.1:${server.address().port}`;
   assert.equal((await fetch(base+prepared.url,{headers:{Origin:'https://evil.test'}})).status,403);
   assert.equal((await fetch(base+prepared.url.replace('master.m3u8','video--1.m4s'))).status,404);
@@ -122,6 +125,11 @@ try {
   assert.deepEqual(errors,[]);
   console.log('PASS: range-only indexing (>3 GiB source), fragment decoding, shared downloads, arbitrary seek, cancellation, concurrency, route checks, browser HLS playback and controls.');
 
+  // Keep browser prefetch and warmed fragments out of the expiry fixture.
+  await page.goto('about:blank');
+  await backend.close();
+  options.env.NYX_YOUTUBE_CACHE_DIR=join(root,'expiry-cache');
+  backend=createTubeBackend(options);await backend.prepareSegments(id,720);
   const pinned=await backend.segment(token,'video',0,new AbortController().signal);
   clock+=121*60000;await backend.prepareSegments(id,720);
   const pressure=await backend.segment(token,'video',13,new AbortController().signal);pressure.release();
@@ -136,7 +144,7 @@ try {
   clock+=121*60000;
   await utimes(freshName,new Date(clock-119*60000),new Date(clock-119*60000));
   backend=createTubeBackend(options);await backend.status();
-  const diskFiles=(await readdir(join(root,'cache'))).filter(n=>n.endsWith('.m4s'));
+  const diskFiles=(await readdir(options.env.NYX_YOUTUBE_CACHE_DIR)).filter(n=>n.endsWith('.m4s'));
   assert.equal(diskFiles.length,1);assert.ok(freshName.endsWith(diskFiles[0]));
   const restarted=await backend.prepareSegments(id,720);assert.equal(restarted.url,prepared.url);
   rangeCalls=[];const reused=await backend.segment(token,'video',0,new AbortController().signal);reused.release();assert.equal(rangeCalls.length,0);
@@ -155,9 +163,9 @@ try {
   server.closeAllConnections();await new Promise(r=>server.close(r));
   const adaptive=express();
   adaptive.use(tubeStreamingRoutes({backend,sameOrigin:()=>true,clientIp:()=> 'adaptive',owner:async()=>{},publicVideo:async()=>{}}));
-  adaptive.get('/assets/vendor/hls.min.js',(_req,res)=>res.sendFile(require.resolve('hls.js/dist/hls.min.js')));
+  adaptive.get('/assets/vendor/hls.min.js',(_req,res)=>res.sendFile(require.resolve('hls.js/dist/hls.min.js'),{dotfiles:'allow'}));
   adaptive.get('/test',(_req,res)=>res.send('<div id="player" style="width:640px;height:360px"></div><script src="/assets/vendor/hls.min.js"></script><script src="/apps/nyxtube/native-player.js"></script>'));
-  adaptive.use(express.static(resolve(process.env.NYX_TEST_STATIC_ROOT||'.')));
+  adaptive.use(express.static(resolve(process.env.NYX_TEST_STATIC_ROOT||'.'),{dotfiles:'allow'}));
   server=adaptive.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
   await page.goto(`http://127.0.0.1:${server.address().port}/test`);rangeCalls=[];
   await page.evaluate(id=>{

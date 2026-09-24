@@ -2341,6 +2341,12 @@ function nyxAiErrorMessage(data, status, secret = "") {
   return secret ? message.split(secret).join("[redacted]") : message;
 }
 
+function nyxAiProviderError(model,data,status,key,personal=false) {
+  if(!personal){const error=freeModelHealth.failure(model,status,data);if(error)return error;}
+  const embedded=Number(data?.error?.code);
+  return Object.assign(new Error(nyxAiErrorMessage(data,status,key)),{status:Number.isInteger(embedded)&&embedded>=400&&embedded<=599?embedded:status>=400?status:502});
+}
+
 function nyxAiStreamText(data) {
   if (!data || typeof data !== "object") return "";
   if (data.type === "delta") return String(data.text || data.delta || "");
@@ -2897,8 +2903,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       },
       body: JSON.stringify(providerPayload)
     });
-    if(!upstream.ok&&!credential.personal)freeModelHealth.failure(model,upstream.status);
-    if (wantsStream && upstream.ok) {
+    if (wantsStream && upstream.ok && /text\/event-stream/i.test(upstream.headers.get("content-type") || "")) {
       res.status(200);
       res.setHeader("content-type", "text/event-stream; charset=utf-8");
       res.setHeader("cache-control", "no-cache, no-transform");
@@ -2921,7 +2926,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
           const raw = line.slice(5).trim();
           if (!raw || raw === "[DONE]") continue;
           const event = JSON.parse(raw);
-          if (event?.type === "error" || event?.error) throw new Error(nyxAiErrorMessage(event, upstream.status, key));
+          if (event?.type === "error" || event?.error) { await reader.cancel().catch(()=>{}); throw nyxAiProviderError(model,event,upstream.status,key,credential.personal); }
           const text = nyxAiStreamText(event);
           const metadata=aiResponseMetadata(event);
           if(text||metadata.summary)deadline.touch();
@@ -2936,7 +2941,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
         const raw = buffer.trim().slice(5).trim();
         if (raw && raw !== "[DONE]") {
           const event = JSON.parse(raw);
-          if (event?.type === "error" || event?.error) throw new Error(nyxAiErrorMessage(event, upstream.status, key));
+          if (event?.type === "error" || event?.error) { await reader.cancel().catch(()=>{}); throw nyxAiProviderError(model,event,upstream.status,key,credential.personal); }
           const text = nyxAiStreamText(event);
           const metadata=aiResponseMetadata(event);
           if(metadata.summary||metadata.sources.length)res.write(`data: ${JSON.stringify({nyx_metadata:metadata})}\n\n`);
@@ -2966,10 +2971,9 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       return;
     }
     let data = await upstream.json().catch(() => ({}));
-    if (!upstream.ok) {
-      res.status(upstream.status).json({
-        error: nyxAiErrorMessage(data, upstream.status, key)
-      });
+    if (!upstream.ok || data?.error || data?.type === 'error') {
+      const error=nyxAiProviderError(model,data,upstream.status,key,credential.personal);
+      res.status(error.status).json({error:error.message});
       return;
     }
     let text = nyxAiCompletionText(data);
@@ -2981,7 +2985,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
         const repairPayload={...providerPayload,messages:[...providerPayload.messages,{role:'user',content:'Your previous response was empty, truncated or not the required JSON object. Retry the original task as ONE tiny complete edit. Return summary and files as JSON only, under 400 tokens. Use a short exact search/replace, never reproduce an existing whole file.'}]};
         const repaired=await nyxAiProviderFetch(credential.provider,endpoint,{method:'POST',signal:controller.signal,headers:{'content-type':'application/json',authorization:`Bearer ${key}`},body:JSON.stringify(repairPayload)});
         const repairedData=await repaired.json().catch(()=>({}));
-        if(!repaired.ok){res.status(repaired.status).json({error:nyxAiErrorMessage(repairedData,repaired.status,key)});return;}
+        if(!repaired.ok||repairedData?.error||repairedData?.type==='error'){const error=nyxAiProviderError(model,repairedData,repaired.status,key,credential.personal);res.status(error.status).json({error:error.message});return;}
         data=repairedData;text=nyxAiCompletionText(data);
         if(data?.choices?.[0]?.finish_reason==='length'||!valid(text)){res.status(502).json({error:'The model could not produce a complete edit after one repair attempt. Your files are unchanged. Try a smaller change or another model.'});return;}
       }
@@ -3005,9 +3009,9 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     if (!res.headersSent) {
       const timedOut = error?.name === "AbortError";
       if(error?.retryAfter)res.setHeader('Retry-After',String(error.retryAfter));
-      res.status(error?.code==='ai_allowance'?error.status:timedOut ? 504 : 502).json({ error: error?.code==='ai_allowance'?error.message:timedOut ? "Nyx AI timed out. Please try again." : `Nyx AI request failed: ${error?.message || error}` });
+      res.status(['ai_allowance','free_ai_provider'].includes(error?.code)?error.status:timedOut ? 504 : 502).json({ error: ['ai_allowance','free_ai_provider'].includes(error?.code)?error.message:timedOut ? "Nyx AI timed out. Please try again." : `Nyx AI request failed: ${error?.message || error}` });
     } else if (!res.writableEnded) {
-      res.write(`data: ${JSON.stringify({error:{message:error?.code==='ai_allowance'?error.message:error?.name==='AbortError'?'Nyx AI timed out. Please try again.':'Nyx AI could not finish this reply. Please try again.'}})}\n\n`);
+      res.write(`data: ${JSON.stringify({error:{message:['ai_allowance','free_ai_provider'].includes(error?.code)?error.message:error?.name==='AbortError'?'Nyx AI timed out. Please try again.':'Nyx AI could not finish this reply. Please try again.'}})}\n\n`);
       res.end();
     }
   } finally {

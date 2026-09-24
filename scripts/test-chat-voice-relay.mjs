@@ -112,6 +112,12 @@ try{
         await page.route('**/'+file,r=>r.fulfill({contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body}));
       }
       if(scenario==='http')await page.route('**/socket.io/**',r=>r.abort());
+      if(scenario==='http'&&index===0)await page.route(url=>url.pathname==='/apps/chat/',async r=>{
+        const response=await r.fetch();const original=await response.text();
+        const body=original.replace(/<label class="voice-transport">[\s\S]*?<\/label>/,'').replace(/<script[^>]+src="[^\"]*voice-relay[^\"]*"[^>]*><\/script>/,'');
+        assert(!body.includes('data-voice-transport'));assert(!body.includes('<script src="./voice-relay'));
+        await r.fulfill({response,body});
+      });
       await page.route('**/api/**',r=>{
         const path=new URL(r.request().url()).pathname;
         if(path.startsWith('/api/chat/voice/'))return r.continue();

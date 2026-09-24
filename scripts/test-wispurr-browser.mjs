@@ -30,18 +30,19 @@ try {
   const health = await (await fetch(base + '/healthz')).json();
   assert.equal(health.wispImplementation, 'wispurr');
   browser = await chromium.launch({ channel: 'msedge', headless: true });
-  for (const [mode, transport] of [['scramjet','libcurlRaw'], ['scramjet','epoxy'], ['scramjet-v1','epoxy'], ['ultraviolet','epoxy'], ['ultraviolet','libcurlRaw']]) {
+  if(!process.argv.includes('--settings-only')) for (const [mode, transport, httpBridge] of [['scramjet','libcurlRaw',false], ['scramjet','epoxy',false], ['scramjet','libcurlRaw',true], ['scramjet','epoxy',true], ['scramjet-v1','epoxy',false], ['ultraviolet','epoxy',false], ['ultraviolet','libcurlRaw',false]]) {
     const context = await browser.newContext();
     try {
       const page = await context.newPage(); const errors = [];
       page.on('pageerror', error => errors.push(error.message));
-      await page.addInitScript(({mode, transport, base}) => {
+      await page.addInitScript(({mode, transport, base, httpBridge}) => {
         localStorage.setItem('nyx.setupComplete', 'true');
         localStorage.setItem('nyx.tosAcceptedVersion', '2026-07-30');
         localStorage.setItem('nyx.browserMode', mode);
         localStorage.setItem('nyx.transport', transport);
-        localStorage.setItem('nyx.wispUrl', base.replace(/^http/, 'ws') + '/resources/live/');
-      }, {mode, transport, base});
+        localStorage.setItem('nyx.httpBridge', JSON.stringify(httpBridge));
+        if (httpBridge) window.WebSocket = class { constructor() { throw new Error('Native WebSockets disabled by test'); } };
+      }, {mode, transport, base, httpBridge});
       await page.goto(base + '/nyx');
       await page.waitForFunction(() => typeof nyxLaunchGameFrame === 'function');
       const launch = await page.evaluate(async () => {
@@ -53,10 +54,10 @@ try {
       assert.equal(launch.engine, 'scramjet');
       await page.waitForFunction(() => document.querySelector('#relay-test')?.contentDocument?.body?.innerText?.includes('Example Domain'), {}, {timeout: 45000});
       assert.deepEqual(errors, []);
-      console.log(`Nyx built: ${mode}/${transport} anonymous HTTPS passed`);
+      console.log(`Nyx built: ${mode}/${transport}/${httpBridge ? "HTTP" : "WebSocket"} anonymous HTTPS passed`);
     } finally { await context.close(); }
   }
-  for (const httpOnly of [false, true]) {
+  if(!process.argv.includes('--settings-only')) for (const httpOnly of [false, true]) {
     for (const transport of ['epoxy', 'libcurl', 'wisp']) {
       const context = await browser.newContext();
       try {
@@ -65,7 +66,7 @@ try {
         page.on('request', req => { if (req.url().includes('/api/tutsi-relay/')) requests.push(req.method() + ' ' + new URL(req.url()).pathname); });
         await page.addInitScript(({transport, httpOnly, base}) => {
           localStorage.setItem('tutsi.customize.seen', '1');
-          localStorage.setItem('tutsi.settings.v1', JSON.stringify({transport, closePrevention: false, ...(httpOnly ? {} : {relay: base.replace(/^http/, 'ws') + '/resources/live/', autoRelay: false})}));
+          localStorage.setItem('tutsi.settings.v1', JSON.stringify({transport, closePrevention: false, httpBridge: httpOnly}));
           if (httpOnly) window.WebSocket = class { constructor() { throw new Error('WebSockets disabled by test'); } };
         }, {transport, httpOnly, base});
         await page.goto(base + '/tutsi');
@@ -80,6 +81,59 @@ try {
       } finally { await context.close(); }
     }
   }
+  // Exercise the visible Tutsi switch on an existing website tab, then reload
+  // with the new connection method. No production accounts or DNS are touched.
+  const context = await browser.newContext();
+  try {
+    await context.addInitScript(()=>{
+      localStorage.setItem('tutsi.customize.seen','1');
+      localStorage.setItem('tutsi.settings.v1',JSON.stringify({transport:'libcurl',closePrevention:false}));
+      localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.releaseNotes.2026-09-14-nyx-1.0.3.seen','2026-09-14-nyx-1.0.3');
+    });
+    const page=await context.newPage();let receives=0;
+    page.on('request',r=>{if(r.url().endsWith('/api/tutsi-relay/receive'))receives++;});
+    await page.goto(base+'/tutsi');
+    await page.locator('#studyready-startup').waitFor({state:'detached',timeout:15000});
+    await page.fill('#query','https://example.com/');await page.locator('#search button').click();
+    const heading=page.frameLocator('#browser-stage iframe:not([hidden])').getByRole('heading',{name:'Example Domain'});
+    await heading.waitFor({timeout:60000});assert(receives>0);
+    await page.evaluate(()=>location.hash='settings');
+    await page.locator('#http-bridge').uncheck();
+    assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('tutsi.settings.v1')).httpBridge),false);
+    await page.keyboard.press('Alt+1');
+    await page.locator('#reload').click();await heading.waitFor({timeout:60000});
+    await page.waitForTimeout(1500);const before=receives;await page.waitForTimeout(1500);assert.equal(receives,before,'Bridge polling stops after direct reload');
+    await page.evaluate(()=>location.hash='settings');await page.locator('#http-bridge').check();
+    await page.keyboard.press('Alt+1');await page.locator('#reload').click();
+    await page.waitForFunction(()=>document.querySelector('#browser-stage iframe:not([hidden])')?.contentDocument?.body?.innerText.includes('Example Domain'),{},{timeout:60000});
+    await page.waitForTimeout(1000);assert(receives>before,'Bridge resumes after enabled reload');
+    await page.goto(base+'/nyx');await page.waitForFunction(()=>typeof nyxLaunchGameFrame==='function');
+    await page.waitForFunction(()=>!document.querySelector('#nyxStudyHubStartup')&&!document.body.classList.contains('nyx-loading-active'));
+    await page.locator('[data-browser-shell-search]').evaluate(form=>{form.querySelector('[data-browser-shell-url]').value='https://example.com/';form.requestSubmit();});
+    await page.frameLocator('iframe.view.active').getByRole('heading',{name:'Example Domain'}).waitFor({timeout:60000});
+    await page.locator('[data-browser-shell-settings]').first().evaluate(el=>el.click());
+    await page.locator('[data-settings-category-button="proxy"]').click();
+    const toggle=page.locator('[data-switch="nyx.httpBridge"]');await toggle.click();
+    assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('nyx.httpBridge'))),true);
+    const nyxBefore=receives;
+    await page.locator('[data-browser-shell-tab]').filter({hasText:'example.com'}).first().evaluate(el=>el.click());
+    await page.locator('[data-browser-shell-reload]').evaluate(el=>el.click());
+    await page.frameLocator('iframe.view.active').getByRole('heading',{name:'Example Domain'}).waitFor({timeout:60000});
+    await page.waitForTimeout(1000);assert(receives>nyxBefore,'Nyx existing tab reload applies HTTP transport');
+    await page.locator('[data-browser-shell-settings]').first().evaluate(el=>el.click());
+    await page.locator('[data-settings-category-button="proxy"]').click();
+    await toggle.click();assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('nyx.httpBridge'))),false);
+    await page.locator('[data-browser-shell-tab]').filter({hasText:'example.com'}).first().evaluate(el=>el.click());
+    await page.locator('[data-browser-shell-reload]').evaluate(el=>el.click());
+    await page.frameLocator('iframe.view.active').getByRole('heading',{name:'Example Domain'}).waitFor({timeout:60000});
+    await page.waitForTimeout(1000);const stopped=receives;await page.waitForTimeout(1000);assert.equal(receives,stopped,'Nyx polling stops after direct reload');
+    await page.route('**/api/custom-hostnames/config',r=>r.fulfill({json:{enabled:true,targetIps:['15.204.93.166']}}));
+    let body;
+    await page.route('**/api/custom-hostnames',r=>{body=r.request().postDataJSON();return r.fulfill({json:{hostname:body.hostname,url:'https://'+body.hostname+'/',message:'Domain verified.'}});});
+    await page.goto(base+'/tutsi/connect-domain');await page.fill('#hostname','fixture.example.org');await page.locator('[data-submit]').click();
+    await page.locator('[data-status].success').waitFor();assert.equal(body.site,'tutsi');assert.match(await page.title(),/Tutsi/);
+    console.log('Built settings: both switches persist, Tutsi existing-tab transport changes, domain form branding and payload passed.');
+  } finally {await context.close();}
 } finally {
   await browser?.close();
   if (child.exitCode === null && child.signalCode === null) {

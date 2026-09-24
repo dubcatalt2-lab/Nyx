@@ -1,5 +1,35 @@
 ﻿// Only the reserved relay URL uses HTTP. All other WebSockets retain native behavior.
 export const httpRelayUrl = (page=location) => `${page.protocol === 'https:' ? 'wss:' : 'ws:'}//${page.host}/api/tutsi-relay/socket/`;
+// Decode complete Wisp frames as HTTP bytes arrive, rather than waiting for a
+// whole (up to 20 MiB) response. Keep partial headers/frames bounded and ordered.
+export async function readRelayFrames(body, emit, progress=()=>{}) {
+  const reader=body.getReader(),header=new Uint8Array(4);
+  let headerBytes=0,frame=null,frameBytes=0,total=0;
+  try {
+    for(;;){
+      const {done,value}=await reader.read();
+      if(done)break;
+      if(!value?.length)continue;
+      progress();total+=value.length;
+      if(total>20*1024*1024)throw new Error('Relay response is too large');
+      let offset=0;
+      while(offset<value.length){
+        if(!frame){
+          const count=Math.min(4-headerBytes,value.length-offset);
+          header.set(value.subarray(offset,offset+count),headerBytes);headerBytes+=count;offset+=count;
+          if(headerBytes<4)continue;
+          const length=new DataView(header.buffer).getUint32(0,true);
+          if(length>2*1024*1024)throw new Error('Relay frame is too large');
+          frame=new Uint8Array(length);frameBytes=0;headerBytes=0;
+        }
+        const count=Math.min(frame.length-frameBytes,value.length-offset);
+        frame.set(value.subarray(offset,offset+count),frameBytes);frameBytes+=count;offset+=count;
+        if(frameBytes===frame.length){emit(frame.buffer);frame=null;}
+      }
+    }
+    if(headerBytes||frame)throw new Error('Incomplete relay frame');
+  } finally {await reader.cancel().catch(()=>{});reader.releaseLock();}
+}
 export class HttpRelaySocket extends EventTarget {
   static CONNECTING=0; static OPEN=1; static CLOSING=2; static CLOSED=3;
   CONNECTING=0; OPEN=1; CLOSING=2; CLOSED=3;
@@ -9,8 +39,8 @@ export class HttpRelaySocket extends EventTarget {
     this.start();
   }
   emit(type, event = new Event(type)) { this.dispatchEvent(event); this['on'+type]?.call(this,event); }
-  async request(path, options={}) {
-    const response=await fetch('/api/tutsi-relay/'+path,{...options,cache:'no-store',credentials:'same-origin',signal:AbortSignal.any([this.abort.signal,AbortSignal.timeout(30000)]),
+  async request(path, options={}, signal=AbortSignal.timeout(30000)) {
+    const response=await fetch('/api/tutsi-relay/'+path,{...options,cache:'no-store',credentials:'same-origin',signal:AbortSignal.any([this.abort.signal,signal]),
       headers:{...options.headers,...(this.token?{Authorization:'Bearer '+this.token}:{})}});
     if (!response.ok) throw new Error('Connection unavailable');
     return response;
@@ -21,17 +51,18 @@ export class HttpRelaySocket extends EventTarget {
       if(this.readyState!==0)return this.cleanup();
       this.readyState=1; this.emit('open');
       while(this.readyState===1) {
-        const response=await this.request('receive');
-        if(response.status===204)continue;
-        const data=await response.arrayBuffer(); const view=new DataView(data);
-        for(let offset=0;offset<data.byteLength;) {
-          if(offset+4>data.byteLength)throw new Error('Invalid relay frame');
-          const length=view.getUint32(offset,true); offset+=4;
-          if(offset+length>data.byteLength)throw new Error('Invalid relay frame');
-          const frame=data.slice(offset,offset+length);offset+=length;
-          if(this.readyState!==1)break;
-          this.emit('message',new MessageEvent('message',{data:this.binaryType==='arraybuffer'?frame:new Blob([frame])}));
-        }
+        const idle=new AbortController();let timer;
+        const progress=()=>{clearTimeout(timer);timer=setTimeout(()=>idle.abort(),30000);};
+        progress();
+        try {
+          const response=await this.request('receive',{},AbortSignal.any([idle.signal,AbortSignal.timeout(120000)]));
+          if(response.status===204)continue;
+          progress();
+          await readRelayFrames(response.body,frame=>{
+            if(this.readyState!==1)return;
+            this.emit('message',new MessageEvent('message',{data:this.binaryType==='arraybuffer'?frame:new Blob([frame])}));
+          },progress);
+        } finally {clearTimeout(timer);}
       }
     } catch { if(this.readyState<2){this.emit('error');this.close(1006);} }
   }

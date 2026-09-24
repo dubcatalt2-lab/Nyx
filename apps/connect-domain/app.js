@@ -4,6 +4,8 @@
   const form = document.querySelector("[data-domain-form]");
   const submit = document.querySelector("[data-submit]");
   const status = document.querySelector("[data-status]");
+  const site = document.body.dataset.site === "tutsi" ? "tutsi" : "nyx";
+  const brand = site === "tutsi" ? "Tutsi" : "Nyx";
   let targetIp = "";
 
   function showStatus(message, type = "") {
@@ -17,7 +19,7 @@
     try {
       return text ? JSON.parse(text) : {};
     } catch {
-      throw new Error(`Nyx returned an unexpected ${response.status} response.`);
+      throw new Error(`${brand} returned an unexpected ${response.status} response.`);
     }
   }
 
@@ -29,12 +31,12 @@
       target.textContent = targetIp || "Not configured";
       copy.disabled = !targetIp;
       submit.disabled = !data.enabled;
-      if (!data.enabled) showStatus("Custom-domain connection is not enabled on this Nyx server yet.", "error");
+      if (!data.enabled) showStatus(`Custom-domain connection is not enabled on this ${brand} server yet.`, "error");
     } catch (error) {
       target.textContent = "Unavailable";
       copy.disabled = true;
       submit.disabled = true;
-      showStatus(error.message || "Nyx could not load the domain configuration.", "error");
+      showStatus(error.message || `${brand} could not load the domain configuration.`, "error");
     }
   }
 
@@ -60,7 +62,7 @@
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ hostname: form.elements.hostname.value })
+        body: JSON.stringify({ hostname: form.elements.hostname.value, site })
       });
       const data = await readJson(response);
       if (!response.ok) throw new Error(data.error || `Domain verification failed (${response.status}).`);
@@ -72,7 +74,7 @@
       link.textContent = `Open ${data.hostname}`;
       status.append(link);
     } catch (error) {
-      showStatus(error.message || "Nyx could not connect that domain.", "error");
+      showStatus(error.message || `${brand} could not connect that domain.`, "error");
     } finally {
       submit.disabled = false;
       submit.textContent = originalLabel;

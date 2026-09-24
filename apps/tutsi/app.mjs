@@ -5,7 +5,7 @@ import { scanFilters, filterSignatures, identifyFilterAddress } from "./filter-d
 import { decorateEmbedded } from "./embedded.mjs";
 import { startClock } from "./clock.mjs";
 import { icons as nyxIcons } from "./icons.mjs";
-import { browse, control, closeBrowser, testRelay, updateProtectionPolicy, currentWebsiteUrl } from "./proxy.mjs";
+import { browse, control, reloadBrowser, closeBrowser, testRelay, updateProtectionPolicy, currentWebsiteUrl } from "./proxy.mjs";
 const $ = (id) => document.getElementById(id),
   root = document.documentElement;
 const defaults = {
@@ -16,6 +16,7 @@ const defaults = {
   transport: "libcurl",
   relay: "",
   autoRelay: true,
+  httpBridge: true,
   adBlock: true, popupBlock: true, downloadBlock: true,
   blocker: "auto",
   tabPreset: "tutsi",
@@ -304,6 +305,7 @@ function applySettings() {
   $("transport").value = settings.transport;
   $("relay").value = settings.relay;
   $("auto-relay").checked = settings.autoRelay;
+  $("http-bridge").checked = settings.httpBridge !== false;
   for(const [id,key] of [['ad-block','adBlock'],['popup-block','popupBlock'],['download-block','downloadBlock']])$(id).checked=settings[key]!==false;
   updateProtectionPolicy(settings);
   $("blocker").value = settings.blocker;
@@ -328,6 +330,7 @@ function applySettings() {
 for (const [id, key] of Object.entries({
   "close-prevention": "closePrevention",
   "auto-relay": "autoRelay",
+  "http-bridge": "httpBridge",
   "ad-block": "adBlock", "popup-block": "popupBlock", "download-block": "downloadBlock",
   blocker: "blocker",
   wallpaper: "wallpaper",
@@ -341,6 +344,7 @@ for (const [id, key] of Object.entries({
   $(id).addEventListener("change", () => {
     settings[key] = $(id).type === "checkbox" ? $(id).checked : $(id).value;
     applySettings();
+    if(key==='httpBridge')toast('Connection setting saved. Reload website tabs to apply.');
     if(['adBlock','popupBlock','downloadBlock'].includes(key)){
       for(const [name,frame] of frames){if(['games','movies'].includes(name))frame.src=frame.src;else protectAppContents(frame);}
       for(const tab of browserTabs)if(tab.element){tab.element.setAttribute('sandbox',protectionSandbox(settings));control('reload',tab.element);}
@@ -657,7 +661,8 @@ function browserControl(action){
   if(document.body.dataset.view==="app-view"){
     if(action==="reload") frames.get(location.hash.slice(1))?.contentWindow.location.reload();
     else history[action]();
-  }else control(action,proxyElement);
+  }else if(action==='reload')void reloadBrowser(proxyElement,{...settings}).catch(error=>toast(error.message));
+  else control(action,proxyElement);
 }
 for (const action of ["back", "forward", "reload"]) $(action).onclick=()=>browserControl(action);
 $("close-browser").onclick = () => {

@@ -16,7 +16,7 @@ const fakeModule='data:text/javascript,'+encodeURIComponent(`export default clas
 create=create.replace("'/assets/transports/libcurl-scramjet.mjs'",JSON.stringify(fakeModule));
 const make=new Function('selectWispRelay','normalizeBrowserTransportName','store','wispUrl','setTimeout',`
   let browserTransportOverride='',scramjetTransport=null,scramjetTransportKey='',scramjetTransportPending=null;
-  const DEFAULT_BROWSER_TRANSPORT='libcurlRaw';${create};return createScramjetTransport;
+  const browserHttpRelayUrl=()=> 'wss://fixture.test/api/tutsi-relay/socket/'; const DEFAULT_BROWSER_TRANSPORT='libcurlRaw';${create};return createScramjetTransport;
 `);
 function state(){
   let entered,resolve,reject;

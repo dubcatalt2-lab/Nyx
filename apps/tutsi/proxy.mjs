@@ -84,7 +84,7 @@ async function transport(settings) {
   try{await connection.init();return protectTransport(connection,()=>protectionPolicy)}catch(error){connection.close();throw error}
 }
 async function engine(settings) {
-  const key = `${settings.transport}:${settings.blocker||""}:${JSON.stringify(relayCandidates(settings))}`;
+  const key = `${settings.transport}:${settings.blocker||""}:${JSON.stringify(transportCandidates(settings))}`;
   if (controller) {
     if (key !== transportKey) {
       const next=await transport(settings);
@@ -211,6 +211,20 @@ export function control(action, element) {
   const target=browserFrames.get(element);
   if(target&&typeof target[action]==='function')target[action]();
 }
+export function reloadBrowser(element, settings) {
+  if(!element)return Promise.resolve();
+  const request=++navigationId;
+  navigationRequests.set(element,request);
+  const reload=async()=>{
+    if(request!==navigationRequests.get(element)||!element.isConnected)return;
+    await engine(settings);
+    if(request!==navigationRequests.get(element)||!element.isConnected)return;
+    control('reload',element);
+  };
+  const result=navigationQueue.then(reload,reload);
+  navigationQueue=result.catch(()=>{});
+  return result;
+}
 export function closeBrowser(element) {
   if(!element)return;
   const target=browserFrames.get(element);
@@ -222,7 +236,7 @@ export function currentWebsiteUrl(element){
 }
 export async function testRelay(settings) {
   installHttpRelaySocket();
-  for(const url of [...relayCandidates(settings),httpRelayUrl()]) {
+  for(const url of transportCandidates(settings)) {
     relayStatus({state:'checking',url});
     if(await probeWisp(url)) {relayStatus({state:'available',url});return 'Connected.';}
   }

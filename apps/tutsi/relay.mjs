@@ -14,6 +14,11 @@ export function relayCandidates(settings, config = globalThis.__NYX_RUNTIME_CONF
 }
 export function transportCandidates(settings,config=globalThis.__NYX_RUNTIME_CONFIG__||{},page=location){
   const bridge=httpRelayUrl(page),relays=relayCandidates(settings,config,page);
+  if(settings.httpBridge===false){
+    const directSettings=settings.relay===bridge?{...settings,relay:''}:settings;
+    const directConfig=config.wispUrl===bridge?{...config,wispUrl:''}:config;
+    return relayCandidates(directSettings,directConfig,page).filter(url=>url!==bridge);
+  }
   if(!settings.relay||settings.relay===bridge)return [...new Set([bridge,...(settings.autoRelay===false?[]:relays)])];
   return [...new Set([...relays,...(settings.autoRelay===false?[]:[bridge])])];
 }

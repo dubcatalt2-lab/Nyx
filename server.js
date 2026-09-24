@@ -490,6 +490,23 @@ function normalizeNyxCustomHostname(value) {
   }
 }
 
+const customHostnameSites = new Map();
+async function customHostnameSite(hostname) {
+  const host = normalizeNyxCustomHostname(hostname);
+  if (isTutsiHostname(host)) return "tutsi";
+  if (!host || [...embeddedWispAllowedOrigins, process.env.NYX_PUBLIC_ORIGIN].some(value => normalizeNyxCustomHostname(value) === host)) return "nyx";
+  const cached = customHostnameSites.get(host);
+  if (cached && cached.expires > Date.now()) return cached.site;
+  if (!firebaseAdminModeConfigured()) return "nyx";
+  const firebase = await linkGeneratorFirebase();
+  const snapshot = await firebase.firestore.collection(nyxCustomHostnameCollectionName).doc(nyxCustomHostnameDocumentId(host)).get();
+  const data = snapshot.data();
+  const site = data?.hostname === host && data.status === "active" && data.site === "tutsi" ? "tutsi" : "nyx";
+  if (customHostnameSites.size >= 2000) customHostnameSites.delete(customHostnameSites.keys().next().value);
+  customHostnameSites.set(host, { site, expires: Date.now() + 60000 });
+  return site;
+}
+
 function nyxCustomHostnameDocumentId(hostname) {
   return createHash("sha256").update(`nyx-custom-hostname:${hostname}`).digest("hex");
 }
@@ -8287,6 +8304,11 @@ app.post("/api/custom-hostnames", async (req, res) => {
     res.status(400).json({ error: "Enter a valid hostname without a path, port, or wildcard." });
     return;
   }
+  const site = req.body?.site ?? "nyx";
+  if (!["nyx", "tutsi"].includes(site)) return res.status(400).json({ error: "Choose Nyx or Tutsi." });
+  const reserved = [...embeddedWispAllowedOrigins, process.env.NYX_PUBLIC_ORIGIN, ...tutsiHostnames]
+    .some(value => normalizeNyxCustomHostname(value) === requestedHostname);
+  if (reserved) return res.status(409).json({ error: "This is a built-in hostname and cannot be registered." });
   const rate = nyxCustomHostnameRateState(nyxClientIp(req) || "unknown");
   rate.attempts += 1;
   if (rate.attempts > nyxCustomHostnameRegistrationMaxAttempts) {
@@ -8309,29 +8331,37 @@ app.post("/api/custom-hostnames", async (req, res) => {
     const reference = firebase.firestore
       .collection(nyxCustomHostnameCollectionName)
       .doc(nyxCustomHostnameDocumentId(requestedHostname));
-    const existing = await reference.get();
-    const now = new Date().toISOString();
-    await reference.set({
-      hostname: requestedHostname,
-      status: "active",
-      verifiedIps: matchedIps,
-      verifiedAt: now,
-      createdAt: existing.data()?.createdAt || now
-    }, { merge: true });
+    const existed = await firebase.firestore.runTransaction(async transaction => {
+      const existing = await transaction.get(reference);
+      const data = existing.data() || {};
+      if (existing.exists && (data.status === "disabled" || (data.site || "nyx") !== site)) {
+        const error = new Error("This hostname is already registered to another site or has been disabled.");
+        error.status = 409;
+        throw error;
+      }
+      const now = new Date().toISOString();
+      transaction.set(reference, { hostname: requestedHostname, site, status: "active",
+        verifiedIps: matchedIps, verifiedAt: now, createdAt: data.createdAt || now }, { merge: true });
+      return existing.exists;
+    });
+    customHostnameSites.delete(requestedHostname);
     cacheNyxCustomHostnameDecision(requestedHostname, true);
-    res.status(existing.exists ? 200 : 201).json({
+    res.status(existed ? 200 : 201).json({
       ok: true,
       hostname: requestedHostname,
       url: `https://${requestedHostname}/`,
       message: "Domain verified. HTTPS will be prepared automatically on its first visit."
     });
   } catch (error) {
-    const status = /timed out/i.test(String(error?.message || "")) ? 504 : 502;
+    const status = error.status === 409 ? 409 : /timed out/i.test(String(error?.message || "")) ? 504 : 502;
     console.error("Nyx custom-hostname verification failed:", error?.message || error);
-    res.status(status).json({ error: status === 504 ? error.message : "Nyx could not verify that hostname right now." });
+    res.status(status).json({ error: status === 504 || status === 409 ? error.message : "Could not verify that hostname right now." });
   }
 });
 
+app.get("/tutsi/connect-domain", (_req, res) => {
+  res.sendFile(join(staticRoot, "apps", "tutsi", "connect-domain.html"));
+});
 app.get("/connect-domain", (_req, res) => {
   res.sendFile(join(staticRoot, "apps", "connect-domain", "index.html"));
 });
@@ -13912,8 +13942,10 @@ app.get(["/tutsi", "/tutsi/"], (_req, res) => {
   res.sendFile(join(staticRoot, "apps", "tutsi", "index.html"));
 });
 // The sibling site shares services, while keeping its own shell and origin storage.
-app.get("/", (req, res, next) => {
-  if (!isTutsiHostname(req.hostname)) return next();
+app.get("/", async (req, res, next) => {
+  try {
+    if (await customHostnameSite(req.hostname) !== "tutsi") return next();
+  } catch { return res.status(503).set("Retry-After", "30").send("Website temporarily unavailable. Please retry shortly."); }
   res.set("Cache-Control", "no-cache");
   res.sendFile(join(staticRoot, "apps", "tutsi", "index.html"));
 });

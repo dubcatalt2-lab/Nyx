@@ -22,7 +22,7 @@
     </style>
     <script defer src="/apps/tutsi/startup.js"></script>
     <script src="/runtime-config.js"></script>
-    <script type="module" src="/apps/tutsi/app.mjs?v=20260922-style-ready-v3"></script>
+    <script type="module" src="/apps/tutsi/app.mjs?v=20260923-bridge-domains-v4"></script>
   </head>
   <body>
     <iframe id="studyready-startup" title="StudyReady math lessons" src="/apps/tutsi/studyready/index.html" referrerpolicy="no-referrer"></iframe>
@@ -279,6 +279,8 @@
                   <option value="wisp">Wisp compatibility</option>
                 </select>
               </div>
+              <div class="setting-row"><div><label>Custom domains</label><p>Connect a FreeDNS hostname with automatic HTTPS.</p></div><a class="button" href="/tutsi/connect-domain" target="_blank" rel="noopener">Connect domain</a></div>
+              <div class="setting-row"><div><label for="http-bridge">HTTP bridge</label><p>Turn off to use a direct WebSocket connection. Reload website tabs to apply.</p></div><input id="http-bridge" class="switch" type="checkbox" /></div>
               <div class="setting-row"><div><label for="auto-relay">Auto-reconnect</label><p>Try another server when the connection fails.</p></div><input id="auto-relay" class="switch" type="checkbox" /></div>
               <div class="setting-row"><div><label for="blocker">Network filter (optional)</label><p>Optional. Select your filter or leave detection on.</p></div><select id="blocker"><option value="auto">Auto-detect</option><option value="">Choose your blocker</option><option value="lightspeed">Lightspeed</option><option value="goguardian">GoGuardian</option><option value="securly">Securly</option><option value="linewize">Linewize</option><option value="blocksi">Blocksi</option></select></div><div class="setting-row"><div><label for="detect-filter">Detect filter</label><p>Checks for visible filtering extensions. If nothing is found, use a block-page address below.</p></div><button id="detect-filter" type="button">Check again</button></div><p id="filter-detection-result" class="body-copy" role="status"></p><p id="blocker-result" class="body-copy" role="status"></p>
               <details class="filter-address-help"><summary>Detection details</summary><p>Checks public extension resources and resources already loaded in this page. A failed check does not mean the filter is absent.</p><ul id="filter-check-details"></ul></details>

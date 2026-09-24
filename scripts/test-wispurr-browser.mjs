@@ -30,7 +30,7 @@ try {
   const health = await (await fetch(base + '/healthz')).json();
   assert.equal(health.wispImplementation, 'wispurr');
   browser = await chromium.launch({ channel: 'msedge', headless: true });
-  if(!process.argv.includes('--settings-only')) for (const [mode, transport, httpBridge] of [['scramjet','libcurlRaw',false], ['scramjet','epoxy',false], ['scramjet','libcurlRaw',true], ['scramjet','epoxy',true], ['scramjet-v1','epoxy',false], ['ultraviolet','epoxy',false], ['ultraviolet','libcurlRaw',false]]) {
+  if(!process.argv.includes('--settings-only')) for (const [mode, transport, httpBridge] of [['scramjet','libcurlRaw',undefined], ['scramjet','epoxy',undefined], ['scramjet','libcurlRaw',false], ['scramjet','epoxy',false], ['scramjet','libcurlRaw',true], ['scramjet','epoxy',true], ['scramjet-v1','epoxy',false], ['ultraviolet','epoxy',false], ['ultraviolet','libcurlRaw',false]]) {
     const context = await browser.newContext();
     try {
       const page = await context.newPage(); const errors = [];
@@ -40,8 +40,8 @@ try {
         localStorage.setItem('nyx.tosAcceptedVersion', '2026-07-30');
         localStorage.setItem('nyx.browserMode', mode);
         localStorage.setItem('nyx.transport', transport);
-        localStorage.setItem('nyx.httpBridge', JSON.stringify(httpBridge));
-        if (httpBridge) window.WebSocket = class { constructor() { throw new Error('Native WebSockets disabled by test'); } };
+        if (httpBridge !== undefined) localStorage.setItem('nyx.httpBridge', JSON.stringify(httpBridge));
+        if (httpBridge !== false) window.WebSocket = class { constructor() { throw new Error('Native WebSockets disabled by test'); } };
       }, {mode, transport, base, httpBridge});
       await page.goto(base + '/nyx');
       await page.waitForFunction(() => typeof nyxLaunchGameFrame === 'function');
@@ -54,7 +54,7 @@ try {
       assert.equal(launch.engine, 'scramjet');
       await page.waitForFunction(() => document.querySelector('#relay-test')?.contentDocument?.body?.innerText?.includes('Example Domain'), {}, {timeout: 45000});
       assert.deepEqual(errors, []);
-      console.log(`Nyx built: ${mode}/${transport}/${httpBridge ? "HTTP" : "WebSocket"} anonymous HTTPS passed`);
+      console.log(`Nyx built: ${mode}/${transport}/${httpBridge === undefined ? "default HTTP" : httpBridge ? "HTTP" : "WebSocket"} anonymous HTTPS passed`);
     } finally { await context.close(); }
   }
   if(!process.argv.includes('--settings-only')) for (const httpOnly of [false, true]) {
@@ -113,20 +113,22 @@ try {
     await page.frameLocator('iframe.view.active').getByRole('heading',{name:'Example Domain'}).waitFor({timeout:60000});
     await page.locator('[data-browser-shell-settings]').first().evaluate(el=>el.click());
     await page.locator('[data-settings-category-button="proxy"]').click();
-    const toggle=page.locator('[data-switch="nyx.httpBridge"]');await toggle.click();
-    assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('nyx.httpBridge'))),true);
-    const nyxBefore=receives;
-    await page.locator('[data-browser-shell-tab]').filter({hasText:'example.com'}).first().evaluate(el=>el.click());
-    await page.locator('[data-browser-shell-reload]').evaluate(el=>el.click());
-    await page.frameLocator('iframe.view.active').getByRole('heading',{name:'Example Domain'}).waitFor({timeout:60000});
-    await page.waitForTimeout(1000);assert(receives>nyxBefore,'Nyx existing tab reload applies HTTP transport');
-    await page.locator('[data-browser-shell-settings]').first().evaluate(el=>el.click());
-    await page.locator('[data-settings-category-button="proxy"]').click();
-    await toggle.click();assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('nyx.httpBridge'))),false);
-    await page.locator('[data-browser-shell-tab]').filter({hasText:'example.com'}).first().evaluate(el=>el.click());
-    await page.locator('[data-browser-shell-reload]').evaluate(el=>el.click());
-    await page.frameLocator('iframe.view.active').getByRole('heading',{name:'Example Domain'}).waitFor({timeout:60000});
-    await page.waitForTimeout(1000);const stopped=receives;await page.waitForTimeout(1000);assert.equal(receives,stopped,'Nyx polling stops after direct reload');
+    const toggle=page.locator('[data-switch="nyx.httpBridge"]');
+    assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.httpBridge')),null);
+    assert.equal(await toggle.getAttribute('aria-checked'),'true');
+    assert.equal(await toggle.innerText(),'On');
+    for (const enabled of [false,true]) {
+      await toggle.click();assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('nyx.httpBridge'))),enabled);
+      const nyxBefore=receives;
+      await page.locator('[data-browser-shell-tab]').filter({hasText:'example.com'}).first().evaluate(el=>el.click());
+      await page.locator('[data-browser-shell-reload]').evaluate(el=>el.click());
+      await page.frameLocator('iframe.view.active').getByRole('heading',{name:'Example Domain'}).waitFor({timeout:60000});
+      await page.waitForTimeout(1500);const settled=receives;await page.waitForTimeout(1500);
+      if(enabled) assert(receives>nyxBefore,'Nyx existing tab reload applies HTTP transport');
+      else assert.equal(receives,settled,'Nyx polling stops after direct reload');
+      await page.locator('[data-browser-shell-settings]').first().evaluate(el=>el.click());
+      await page.locator('[data-settings-category-button="proxy"]').click();
+    }
     await page.route('**/api/custom-hostnames/config',r=>r.fulfill({json:{enabled:true,targetIps:['15.204.93.166']}}));
     let body;
     await page.route('**/api/custom-hostnames',r=>{body=r.request().postDataJSON();return r.fulfill({json:{hostname:body.hostname,url:'https://'+body.hostname+'/',message:'Domain verified.'}});});

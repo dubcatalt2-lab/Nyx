@@ -1,3 +1,9 @@
+## HTTP bridge default for both brands (2026-09-23)
+
+- Nyx now defaults unsaved HTTP bridge preferences to enabled, matching Tutsi. Both Nyx settings views and Tutsi Settings explain that it is recommended for devices or networks that block WebSockets, with direct-WebSocket opt-out and tab reload guidance. Explicit saved false values, custom relays and transport preferences remain respected; this does not guarantee access through every network filter.
+- Corrected Nyx switch initialization and first-click behavior for the enabled default. Entry asset versions updated. Regression coverage exercises unsaved Nyx defaults with native WebSockets disabled, saved direct connections and existing-tab transport switching on both brands.
+- VPS-target build, deploy/branding checks, relay/custom-choice/opt-out, transport initialization, incremental stream, syntax/diff and full built browser transport/settings tests passed. User authorized push and deployment; production verification follows the release.
+
 ## HTTP bridge controls and Tutsi custom domains - release preparation (2026-09-23)
 
 - Previous presentation fix c2b7f5ff92494415e2cee62a1faf06dcb22b2c85 was deployed cleanly with all five services active, loopback/public health checks passing, and live Nyx temporary-blank document retention plus both-brand proxy/account-gate checks passing.

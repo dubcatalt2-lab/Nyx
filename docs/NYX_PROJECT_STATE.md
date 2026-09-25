@@ -1,3 +1,18 @@
+## Tutsi corner placement release authorized (2026-09-24)
+
+- User authorized push/deployment. Rechecked local, fetched deployment branch and clean production at 332773b. The tested Tutsi Home Discord placement and style version are the only application changes; unrelated edits/exports remain excluded. Verification follows deployment.
+
+## Tutsi Discord corner placement (2026-09-24, local only)
+
+- Moved the existing Home Discord link to a fixed bottom-right position, retaining its theme, icon and invite. Mobile placement clears the bottom app dock; safe-area offsets, a 44-pixel minimum target and visible keyboard focus are included. It remains scoped to Home. Style cache version bumped.
+- VPS build and deployment/branding checks passed. Built-browser checks passed exact right/bottom positioning at 320, 390 and 1280 pixels, no horizontal overflow and the intercepted new-tab invite destination. Not pushed or deployed; production remains 332773b.
+
+## Search and community release deployed and verified (2026-09-24)
+
+- Pushed and deployed exact revision 332773ba4cc9c95a5f75efe65627f5becd1e7188 through deploy/update-ovh.sh. Production is clean on agent/pirate-cove; all five services are active. Loopback and all five public hostname health checks passed, with no recent Nyx error-priority journal entries. Production build, deployment/branding checks and Caddy validation passed.
+- BOTH live brands passed pending-address preservation, built-in-app-to-search transitions and result navigation within the same frame using deployed controllers with isolated upstream fixtures. Both also passed actual Example Domain navigation through default HTTP with native WebSockets disabled and explicit saved WebSocket transport, changed asset versions and anonymous account gates. Arbitrary upstream/device behavior remains unverified.
+- Both live Discord buttons passed exact invite URL, responsive visibility at 320/390/1280 pixels and new-tab navigation; invite requests were intercepted and no community was joined. Tutsi shortcut wrapping passed without horizontal overflow. FreeDNS branding/configuration passed without registering a hostname.
+- Unrelated image-search edits, standalone exports, artifacts and main-checkout work remain preserved. This post-deployment verification note is local; production and remote remain at 332773b. Earlier local-only entries below describe historical status superseded by this release.
 ## Search and community release authorized (2026-09-24)
 
 - User requested push and deployment. Local HEAD, fetched deployment branch and clean production were verified at 75b3ec2. This release includes the search transition/same-frame result fixes and Discord updates described below; source/built browser regressions, VPS-target build and deployment/branding checks passed. Unrelated image-search edits, standalone exports and diagnostic artifacts are excluded. Deployment verification follows separately.

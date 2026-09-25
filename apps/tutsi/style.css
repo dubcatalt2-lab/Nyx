@@ -329,6 +329,24 @@ svg {
   width: 17px;
   height: 17px;
 }
+.home-shortcuts .tutsi-discord-link {
+  position: fixed;
+  right: max(20px, env(safe-area-inset-right));
+  bottom: max(22px, env(safe-area-inset-bottom));
+  z-index: 5;
+  min-height: 44px;
+  background: var(--mantle);
+}
+.tutsi-discord-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+@media (max-width: 650px) {
+  .home-shortcuts .tutsi-discord-link {
+    right: max(18px, env(safe-area-inset-right));
+    bottom: calc(90px + env(safe-area-inset-bottom));
+  }
+}
 #app-dock {
   position: fixed;
   left: 26px;

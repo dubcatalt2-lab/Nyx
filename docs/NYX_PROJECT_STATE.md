@@ -1,3 +1,19 @@
+## Discord polish release authorized (2026-09-25)
+
+- User authorized push/deployment. Local, fetched deployment branch and clean production verified at 2b986c7. Releasing the tested Tutsi button styling and stylesheet version; unrelated edits/exports are excluded. Build, deployment/branding and responsive button checks already passed. Live verification follows.
+
+## Tutsi Discord button visual polish (2026-09-25, local only)
+
+- Fixed the Discord logo inheriting the generic fill:none icon rule. The logo now has a theme-aware fill, faint 0.6px non-scaling outline and 22px size. Refined button padding, rounded border, subtle gradient/inset highlight and hover contrast; existing Home-only bottom-right placement, mobile dock clearance, focus treatment and invite behavior remain. Style version bumped.
+- VPS-target build and deployment/branding checks passed. Built-browser checks passed 320/390/1280px position/overflow and intercepted invite navigation; visually reviewed the brown-background button and captured dark/brown previews. Not pushed/deployed; production remains 2b986c7. Unrelated edits/exports preserved.
+
+## Worker recovery release deployed and verified (2026-09-24)
+
+- Pushed and deployed exact revision 2b986c7777068e1ac1860c7c205bb0d03b6b215b through deploy/update-ovh.sh. Production is clean; all five services active, loopback and five public hostname health checks passed, and no recent Nyx error-priority journal entries. VPS build, deployment/branding and Caddy validation passed.
+- BOTH live brands passed actual service-worker replacement using query-versioned deployed worker URLs in isolated browser contexts, with mocked upstream/relay fixtures. Existing document state survived; delayed navigation recovered in 3.74 seconds for Nyx and 3.44 seconds for Tutsi including the deliberate three-second fixture response. Pending address, app-to-search transition and same-frame result checks passed. This did not change production worker files or real user accounts.
+- Both brands also passed real Example Domain navigation through default HTTP with native WebSockets disabled and explicit saved WebSocket transport, new asset versions and anonymous account gates. Tutsi FreeDNS branding/configuration passed without registering a domain. Existing tabs need a full page refresh to load the fix. DuckDuckGo challenges and the exact user-device latency remain separate/unverified constraints.
+- This post-deployment note is local; remote and production remain 2b986c7. Unrelated edits/exports remain preserved.
+
 ## Worker recovery release authorized (2026-09-24)
 
 - User authorized push/deployment of the tested shared controller recovery fix. Local HEAD, fetched deployment branch and clean production all verified at 21ef7fb. Source and built worker-replacement regressions passed on both brands, along with startup/relay regressions and VPS build/deployment/branding checks. Unrelated image-search edits and standalone exports are excluded. Live verification follows.

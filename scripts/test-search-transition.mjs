@@ -26,4 +26,3 @@ try{for(const brand of (process.env.NYX_TEST_BRANDS||'nyx,tutsi').split(',')){
  assert.equal(page.frames().length,frameCount);assert.equal(await page.locator(brand==='nyx'?'.browser-tabs .browser-tab':'#browser-tabs [role=tab]').count(),tabs);assert.equal(context.pages().length,1);
  console.log(brand+': pending address, app-to-search and same-frame result click passed');await context.close();
 }}finally{await browser.close();}
-

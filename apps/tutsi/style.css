@@ -332,31 +332,29 @@ svg {
 .home-shortcuts .tutsi-discord-link {
   position: fixed;
   right: max(20px, env(safe-area-inset-right));
-  bottom: max(22px, env(safe-area-inset-bottom));
+  bottom: calc(60px + env(safe-area-inset-bottom));
   z-index: 5;
   min-height: 44px;
   gap: 10px;
   padding: 11px 18px;
   border-radius: 16px;
-  border-color: color-mix(in srgb, var(--accent) 25%, var(--line));
-  background: linear-gradient(145deg, color-mix(in srgb, var(--accent) 9%, var(--mantle)), var(--mantle));
+  border-color: color-mix(in srgb, var(--line) 65%, transparent);
+  background: color-mix(in srgb, var(--mantle) 55%, transparent);
   color: var(--text);
-  box-shadow: 0 5px 18px #0002, inset 0 1px 0 color-mix(in srgb, var(--text) 7%, transparent);
 }
 .home-shortcuts .tutsi-discord-link:hover {
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
-  background: color-mix(in srgb, var(--accent) 14%, var(--mantle));
+  background: var(--surface);
 }
 .home-shortcuts .tutsi-discord-link svg {
   width: 22px;
   height: 22px;
   flex: none;
-  fill: color-mix(in srgb, var(--accent) 75%, var(--text));
-  stroke: color-mix(in srgb, var(--text) 45%, transparent);
+  fill: none;
+  stroke: currentColor;
 }
 .tutsi-discord-link path {
   vector-effect: non-scaling-stroke;
-  stroke-width: 0.6px;
+  stroke-width: 0.8px;
 }
 .tutsi-discord-link:focus-visible {
   outline: 2px solid var(--accent);

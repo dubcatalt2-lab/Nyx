@@ -91,6 +91,28 @@ export function pageProtection(policy, riskySource) {
   HTMLAnchorElement.prototype.click=function(){if(!denyLink(this))return Reflect.apply(click,this,arguments)};
   for(const type of ['click','auxclick'])document.addEventListener(type,event=>{
     const link=event.target?.closest?.('a[href],area[href]');
+    // Deliberate search results stay in this frame; unsolicited popups stay blocked.
+    if(link&&event.isTrusted&&type==='click'&&event.button===0&&!event.ctrlKey&&!event.metaKey&&!event.shiftKey&&!event.altKey&&!link.hasAttribute('download')&&!downloadRisk(link)){
+      let source=new URL(location.href);
+      const envelope=source.pathname.match(/^\/~\/tm\/[^/]+\/[^/]+\/(.+)$/);
+      try{if(envelope)source=new URL(decodeURIComponent(envelope[1]));}catch{}
+      const host=source.hostname.replace(/^www\./,'');
+      const result=host==='duckduckgo.com'?link.closest('article,.result,.results_links,[data-testid="result"]'):host==='google.com'?link.closest('#search,.MjjYud,.g'):host==='bing.com'?link.closest('.b_algo'):null;
+      if(result){
+        try{
+          let url=new URL(link.href,location.href),direct='';
+          if(url.hostname==='duckduckgo.com')direct=url.searchParams.get('uddg')||'';
+          if(/^(www\.)?google\.com$/.test(url.hostname)&&url.pathname==='/url')direct=url.searchParams.get('q')||url.searchParams.get('url')||'';
+          if(/^(www\.)?bing\.com$/.test(url.hostname)&&url.pathname.startsWith('/ck/a')){const encoded=url.searchParams.get('u')||'';if(encoded.startsWith('a1'))direct=atob(encoded.slice(2).replace(/-/g,'+').replace(/_/g,'/'));}
+          if(/^https?:\/\//i.test(direct))url=new URL(direct);
+          if(/^https?:$/.test(url.protocol)){
+            link.href=url.href;link.target='_self';
+            if(denyLink(link)){event.preventDefault();event.stopImmediatePropagation();}
+            return;
+          }
+        }catch{}
+      }
+    }
     if(link&&denyLink(link)){event.preventDefault();event.stopImmediatePropagation();}
   },true);
   document.addEventListener('submit',event=>{

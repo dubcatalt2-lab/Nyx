@@ -8752,7 +8752,6 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     scramjetController=null;
     scramjetTransport=null;
     scramjetTransportKey='';
-    scramjetInstallPromise=null;
     uvInstallPromise=null;
     store.setText('nyx.scramjetStateVersion',scramjetStateVersion);
     store.setText('nyx.proxyStateVersion',proxyStateVersion);
@@ -10608,6 +10607,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           const pendingFrameNavigation=t.frameHistoryPending || null;
           t.frameHistoryPending=null;
           try{
+            if(t.previousNavigationDocument && t.frame.contentDocument===t.previousNavigationDocument)return;
             const frameHref=String(t.frame?.contentWindow?.location?.href || '');
             const source=browserShellSourceUrl(frameHref);
             if(!/^https?:\/\//i.test(source) || source===location.href) return;
@@ -10617,6 +10617,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
               return;
             }
             t.scramjetRejectedLocationKey='';
+            t.previousNavigationDocument=null;
             const currentHistory=browserShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
             if(pendingFrameNavigation && pendingFrameNavigation.index===t.index){
               if(source!==currentHistory && t.index>=0) t.history[t.index]=source;
@@ -10632,8 +10633,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
             t.icon=iconForUrl(source);
             renderTabs();
             if(t.id===state.active){
-              win.querySelector('.urlbar').value=browserShellDisplayValue(source);
-              updateBrowserShellLocation(source,t.id,true);
+              const address=win.querySelector('.urlbar');
+              if(document.activeElement!==address)address.value=browserShellDisplayValue(source);
+              updateBrowserShellLocation(source,t.id);
             }
             syncLoadedTabIcon(t);
           }catch{}
@@ -10642,7 +10644,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       const bridgeUrl=t.sourceUrl || t.url || t.frame.getAttribute('src') || '';
       if(isSpotifyFamilyUrl(bridgeUrl) || isAuthSensitiveUrl(bridgeUrl)) return;
-      if(hostMatches(browserHost(browserShellSourceUrl(bridgeUrl) || bridgeUrl),['google.com','gstatic.com','youtube.com','youtu.be'])) return;
+      if(hostMatches(browserHost(browserShellSourceUrl(bridgeUrl) || bridgeUrl),['youtube.com','youtu.be'])) return;
       t.popupBridgeInstalled=true;
       const shouldTrapPopupTarget=target=>{
         const value=String(target || '').toLowerCase();
@@ -10717,7 +10719,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const followSearchResult=link=>{
         const destination=searchResultUrl(link);
         if(!destination) return false;
-        openBrowserShellAppTab(destination);
+        activate(t.id);
+        navigate(destination);
         return true;
       };
       const searchUrlForCurrentProvider=query=>{
@@ -10761,11 +10764,29 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         void nyxRequestBrowserDownload(href,String(filename || '').trim(),currentBridgeUrl());
         return true;
       };
+      const searchDocuments=new WeakSet();
+      const containSearchDocument=doc=>{
+        if(!doc?.documentElement||searchDocuments.has(doc)||!hostMatches(browserHost(currentBridgeUrl()),['duckduckgo.com','bing.com','google.com']))return;
+        searchDocuments.add(doc);
+          const containSearchResults=(root=doc)=>{
+            const links=[...(root.matches?.('a[target]')?[root]:[]),...(root.querySelectorAll?.('a[target]')||[])];
+            for(const link of links){
+              if(link.target==='_self' || link.hasAttribute('download'))continue;
+              const destination=searchResultUrl(link);
+              if(destination){link.href=destination;link.setAttribute('target','_self');}
+            }
+          };
+          containSearchResults();
+          if(hostMatches(browserHost(currentBridgeUrl()),['duckduckgo.com','bing.com','google.com'])){
+            new MutationObserver(records=>{for(const record of records){if(record.type==='attributes')containSearchResults(record.target);else for(const node of record.addedNodes)containSearchResults(node);}}).observe(doc.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['target']});
+          }
+      };
       const attachBridge=()=>{
         try{
           const liveHost=browserHost(currentBridgeUrl());
-          if(hostMatches(liveHost,['google.com','gstatic.com'])) return;
           const doc=t.frame.contentDocument;
+          containSearchDocument(doc);
+          if(hostMatches(liveHost,['google.com','gstatic.com'])) return;
           const frameWindow=t.frame.contentWindow;
           if(frameWindow && !frameWindow.__nyxOpenBridge){
             frameWindow.__nyxOpenBridge=true;
@@ -11144,7 +11165,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(frame.dataset.nyxInputReady==='true') return;
       frame.dataset.nyxInputReady='true';
       frame.addEventListener('nyx:app-dom-ready',()=>syncInternalThemeFrames());
-      const focusFrame=()=>setTimeout(()=>{try{frame.focus({preventScroll:true})}catch{try{frame.focus()}catch{}}},0);
+      const focusFrame=()=>setTimeout(()=>{
+        const focused=document.activeElement;
+        if(!frame.isConnected || !frame.classList.contains('active') || focused?.matches?.('input,textarea,select,[contenteditable="true"]'))return;
+        try{frame.focus({preventScroll:true})}catch{try{frame.focus()}catch{}}
+      },0);
       frame.addEventListener('load',()=>{
         installAltBridge();
         setTimeout(focusFrame,90);
@@ -12060,6 +12085,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const t=current(); if(!t)return;
       const navigationIntent='navigate-'+Date.now()+Math.random().toString(16).slice(2);
       t.navigationIntent=navigationIntent;
+      try{t.previousNavigationDocument=t.frame.contentDocument}catch{t.previousNavigationDocument=null;}
       t.scramjetStartupRetries=0;
       t.selectedSearchFallbackKey='';
       t.loadWatchToken='superseded-'+navigationIntent;
@@ -15324,7 +15350,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         e.stopPropagation();
         e.stopImmediatePropagation?.();
         const nativeOpen=window.__nyxNativeOpen || window.open?.bind(window);
-        nativeOpen?.(link.href || 'https://discord.gg/cAdjYAJs3u','_blank','noopener,noreferrer');
+        nativeOpen?.(link.href || 'https://discord.com/invite/cAdjYAJs3u','_blank','noopener,noreferrer');
         return;
       }
       const target=String(link.getAttribute('target') || '').toLowerCase();

@@ -621,6 +621,8 @@ async function navigate(value, {newTab=false, input=null} = {}) {
   if((!activeTab || (newTab && activeTab.url))&&!newBrowserTab())return;
   if(input)input.value="";
   const targetTab=activeTab;targetTab.url=url;renderBrowserTabs();
+  // The old document remains accessible until the next navigation commits.
+  try{targetTab.previousDocument=targetTab.element?.contentDocument}catch{targetTab.previousDocument=null;}
   const request = ++targetTab.navigation;
   location.hash = "browser";
   route();
@@ -639,7 +641,14 @@ async function navigate(value, {newTab=false, input=null} = {}) {
     proxyElement = document.createElement("iframe");
     proxyElement.title = "Website";
     targetTab.element=proxyElement;
-    proxyElement.addEventListener("load",()=>{try{installShortcuts(targetTab.element.contentDocument,shortcutActions)}catch{};const latest=currentWebsiteUrl(targetTab.element);if(latest && !targetTab.loading && browserTabs.includes(targetTab)){targetTab.url=latest;if(activeTab===targetTab && document.body.dataset.view==="browser" && document.activeElement!==$("address"))$("address").value=latest;renderBrowserTabs();}});
+    proxyElement.addEventListener("load",()=>{
+      if(!browserTabs.includes(targetTab))return;
+      try{if(targetTab.loading&&targetTab.element.contentDocument===targetTab.previousDocument)return;installShortcuts(targetTab.element.contentDocument,shortcutActions)}catch{}
+      // Ignore initial about:blank events while the engine is starting.
+      if(!targetTab.element.getAttribute('src')?.includes('/~/tm/'))return;
+      const latest=currentWebsiteUrl(targetTab.element);
+      if(latest){targetTab.loading=false;targetTab.previousDocument=null;syncBrowserTabView();targetTab.url=latest;if(activeTab===targetTab && document.body.dataset.view==="browser" && document.activeElement!==$("address"))$("address").value=latest;renderBrowserTabs();}
+    });
     proxyElement.setAttribute(
       "sandbox",
       protectionSandbox(settings),
@@ -653,7 +662,8 @@ async function navigate(value, {newTab=false, input=null} = {}) {
   try {
     await browse(url, { ...settings }, targetTab.element);
     if (request !== targetTab.navigation || !browserTabs.includes(targetTab)) return;
-    targetTab.loading=false;syncBrowserTabView();
+    // browse() assigns the frame URL; its load event confirms the new document.
+    syncBrowserTabView();
   } catch (e) {
     if (request === targetTab.navigation && browserTabs.includes(targetTab)) {
       status.replaceChildren(document.createTextNode(e.message));

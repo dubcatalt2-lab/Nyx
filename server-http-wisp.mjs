@@ -50,7 +50,7 @@ export function installHttpWisp(app, {upstream, allowed, clientIp, banned = asyn
       sessions.set(token, s);
       s.connectTimer = setTimeout(() => { dispose(s); if (!res.headersSent) res.sendStatus(504); }, 9000);
       res.on('close', () => { if (!res.writableEnded) dispose(s); });
-      ws.on('open', () => { clearTimeout(s.connectTimer); res.json({token}); });
+      ws.on('open', () => { clearTimeout(s.connectTimer); res.json({token, sendBatch: 1}); });
       ws.on('message', (data, binary) => {
         if (!binary || s.bytes + data.length + 4 > maxQueue) return dispose(s);
         const size = Buffer.alloc(4); size.writeUInt32LE(data.length);
@@ -84,6 +84,28 @@ export function installHttpWisp(app, {upstream, allowed, clientIp, banned = asyn
     if (s.ws.bufferedAmount + req.body.length > maxSendQueue) { dispose(s); return res.sendStatus(429); }
     s.sequence++;
     s.ws.send(req.body, {binary: true}, error => { if (error) { dispose(s); res.sendStatus(502); } else res.sendStatus(204); });
+  });
+  router.post('/send-batch', express.raw({type: 'application/octet-stream', limit: '1mb'}), (req, res) => {
+    const s=req.relaySession,body=req.body;
+    if(!Buffer.isBuffer(body)||Number(req.headers['x-tutsi-sequence'])!==s.sequence||s.ws.readyState!==WebSocket.OPEN)return res.sendStatus(409);
+    const frames=[];let offset=0,bytes=0;
+    // Validate the complete envelope before forwarding any frame or consuming sequence numbers.
+    while(offset<body.length){
+      if(body.length-offset<4||frames.length>=64)return res.sendStatus(400);
+      const length=body.readUInt32LE(offset);offset+=4;
+      if(length>262144)return res.sendStatus(413);
+      if(length>body.length-offset)return res.sendStatus(400);
+      frames.push(body.subarray(offset,offset+length));offset+=length;bytes+=length;
+    }
+    if(!frames.length)return res.sendStatus(400);
+    if(s.ws.bufferedAmount+bytes>maxSendQueue){dispose(s);return res.sendStatus(429);}
+    s.sequence+=frames.length;
+    let remaining=frames.length,failed=false;
+    for(const frame of frames)s.ws.send(frame,{binary:true},error=>{
+      if(failed)return;
+      if(error){failed=true;dispose(s);res.sendStatus(502);return;}
+      if(--remaining===0)res.sendStatus(204);
+    });
   });
   router.delete('/session', (req, res) => { dispose(req.relaySession); res.sendStatus(204); });
   app.use('/api/tutsi-relay', router);

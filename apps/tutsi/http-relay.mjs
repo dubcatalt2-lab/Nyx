@@ -35,7 +35,7 @@ export class HttpRelaySocket extends EventTarget {
   CONNECTING=0; OPEN=1; CLOSING=2; CLOSED=3;
   readyState=0; binaryType='blob'; bufferedAmount=0; protocol=''; extensions='';
   constructor(url) {
-    super(); this.url=String(url); this.abort=new AbortController(); this.sequence=0; this.tail=Promise.resolve();
+    super(); this.url=String(url); this.abort=new AbortController(); this.sequence=0; this.queue=[]; this.sending=false;
     this.start();
   }
   emit(type, event = new Event(type)) { this.dispatchEvent(event); this['on'+type]?.call(this,event); }
@@ -47,7 +47,8 @@ export class HttpRelaySocket extends EventTarget {
   }
   async start() {
     try {
-      this.token=(await (await this.request('sessions',{method:'POST'})).json()).token;
+      const session=await (await this.request('sessions',{method:'POST'})).json();
+      this.token=session.token; this.batchSend=session.sendBatch===1;
       if(this.readyState!==0)return this.cleanup();
       this.readyState=1; this.emit('open');
       while(this.readyState===1) {
@@ -69,20 +70,37 @@ export class HttpRelaySocket extends EventTarget {
   send(value) {
     if(this.readyState!==1)throw new DOMException('Socket is not open','InvalidStateError');
     const blob=new Blob([value]);
-    if(blob.size>262144||this.bufferedAmount+blob.size>2097152){this.emit('error');this.close(1006);return;}
+    if(blob.size>262144||this.bufferedAmount+blob.size>2097152||this.queue.length>=512){this.emit('error');this.close(1006);return;}
     this.bufferedAmount+=blob.size;
-    this.tail=this.tail.then(async()=>{
-      if(this.readyState!==1)return;
-      await this.request('send',{method:'POST',headers:{'Content-Type':'application/octet-stream','X-Tutsi-Sequence':String(this.sequence++)},body:blob});
-      this.bufferedAmount-=blob.size;
-    }).catch(()=>{if(this.readyState<2){this.emit('error');this.close(1006);}});
+    this.queue.push(blob);
+    this.flush();
+  }
+  flush() {
+    if(this.sending||this.readyState!==1||!this.queue.length)return;
+    this.sending=true;
+    // Coalesce already queued frames without a timer or an extra network delay.
+    void Promise.resolve().then(async()=>{
+      while(this.readyState===1&&this.queue.length){
+        const frames=[],parts=[];let bytes=0,wireBytes=0;
+        do{
+          const next=this.queue[0];
+          if(frames.length&&wireBytes+4+next.size>1048576)break;
+          this.queue.shift();frames.push(next);bytes+=next.size;wireBytes+=next.size+4;
+          if(this.batchSend){const header=new Uint8Array(4);new DataView(header.buffer).setUint32(0,next.size,true);parts.push(header,next);}
+        }while(this.batchSend&&this.queue.length&&frames.length<64);
+        const sequence=this.sequence;this.sequence+=frames.length;
+        await this.request(this.batchSend?'send-batch':'send',{method:'POST',headers:{'Content-Type':'application/octet-stream','X-Tutsi-Sequence':String(sequence)},body:this.batchSend?new Blob(parts):frames[0]});
+        if(this.readyState!==1)return;
+        this.bufferedAmount-=bytes;
+      }
+    }).catch(()=>{if(this.readyState<2){this.emit('error');this.close(1006);}}).finally(()=>{this.sending=false;this.flush();});
   }
   cleanup() {
     if(this.token)fetch('/api/tutsi-relay/session',{method:'DELETE',headers:{Authorization:'Bearer '+this.token},keepalive:true}).catch(()=>{});
   }
   close(code=1000,reason='') {
     if(this.readyState===3)return;
-    this.readyState=3; this.abort.abort();this.cleanup();this.bufferedAmount=0;
+    this.readyState=3; this.abort.abort();this.cleanup();this.bufferedAmount=0;this.queue.length=0;
     this.emit('close',new CloseEvent('close',{code,reason,wasClean:code===1000}));
   }
 }

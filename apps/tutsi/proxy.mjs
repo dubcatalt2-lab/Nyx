@@ -1,4 +1,4 @@
-import {loadProxyScript as script, waitForProxyController} from '/js/proxy-startup.mjs';
+import {loadProxyScript as script, waitForProxyController, trackProxyController} from '/js/proxy-startup.mjs';
 import {sourceWebsiteUrl} from "./navigation.mjs";
 import {protectTransport, policyFrom, installPageProtection} from "./protections.mjs";
 import {httpRelayUrl, installHttpRelaySocket, createHttpRelayEndpoint} from "./http-relay.mjs";
@@ -126,7 +126,9 @@ async function engine(settings) {
         maskedfiles: ["inject.js", "scramjet.wasm.js"],
       },
     });
-    await waitForProxyController(instance);
+    const stopTracking = trackProxyController(instance);
+    try { await waitForProxyController(instance); }
+    catch (error) { stopTracking(); client.close?.(); throw error; }
     activeTransport=client;
     controller = instance;
     transportKey = key;

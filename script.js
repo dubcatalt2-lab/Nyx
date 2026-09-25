@@ -8023,10 +8023,12 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const base=scramjetController;
     if(!base?.serviceWorkerController || !base?.transport) throw new Error('Scramjet private session is unavailable');
     const controller=createScramjetController(base.serviceWorkerController,base.transport);
-    await Promise.race([
+    const {trackProxyController}=await import('/js/proxy-startup.mjs');
+    controller.nyxStopWorkerTracking=trackProxyController(controller);
+    try{await Promise.race([
       controller.wait(),
       new Promise((_,reject)=>setTimeout(()=>reject(new Error('Scramjet private session timed out')),5000))
-    ]);
+    ]);}catch(error){controller.nyxStopWorkerTracking();throw error;}
     controller.loadSavedCookies=async()=>{};
     controller.persistCookies=async()=>{};
     controller.cookieSyncDirty=false;
@@ -8039,6 +8041,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(!tab) return;
     const controller=tab.privateScramjetController;
     if(controller){
+      controller.nyxStopWorkerTracking?.();
       try{controller.cookieJar?.clear?.()}catch{}
       try{controller.frames?.splice?.(0,controller.frames.length)}catch{}
       try{controller.cookieSyncChannel?.close?.()}catch{}
@@ -8824,7 +8827,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       await ensureFreshProxyState();
       await ensureFreshScramjetState();
       step='loading Scramjet assets';
-      const {loadProxyScript,waitForProxyController}=await import('/js/proxy-startup.mjs');
+      const {loadProxyScript,waitForProxyController,trackProxyController}=await import('/js/proxy-startup.mjs');
       await loadProxyScript('/scramjet/scramjet.js?v=20260905-optional-history-url-v1',()=>Boolean(window.$scramjet));
       await loadProxyScript('/controller/controller.api.js',()=>Boolean(window.$scramjetController));
       step='loading Scramjet runtime guard';
@@ -8843,6 +8846,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         else if(!await reconnectScramjetController(scramjetController,serviceworker,transport)){
           scramjetController=createScramjetController(serviceworker,transport);
         }
+        scramjetController.nyxStopWorkerTracking=trackProxyController(scramjetController);
         await waitForProxyController(scramjetController);
       }catch(initError){
         if(!isScramjetIdbShapeError(initError)) throw initError;
@@ -8852,13 +8856,16 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         const repairedServiceworker=await waitForServiceWorkerScript(repairedRegistration,scramjetServiceWorkerUrl);
         if(!repairedServiceworker) throw new Error('Scramjet service worker did not activate after storage repair');
         step='initializing Scramjet controller after storage repair';
+        scramjetController?.nyxStopWorkerTracking?.();
         scramjetController=createScramjetController(repairedServiceworker,transport);
+        scramjetController.nyxStopWorkerTracking=trackProxyController(scramjetController);
         await waitForProxyController(scramjetController);
       }
       scramjetInstallError='';
       return true;
     })().catch(err=>{
       scramjetInstallError=`Failed while ${step}: ${err?.message || err}`;
+      scramjetController?.nyxStopWorkerTracking?.();
       scramjetController=null;
       scramjetInstallPromise=null;
       return false;

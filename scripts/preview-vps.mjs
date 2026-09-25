@@ -13,7 +13,8 @@ const app=express();
 // Do not accept LAN traffic or other sites' requests to this localhost bridge.
 app.use((req,res,next)=>{
  if(!['localhost','127.0.0.1'].includes(req.hostname)) return res.sendStatus(403);
- if(req.headers.origin && ![`http://localhost:${port}`,`http://127.0.0.1:${port}`].includes(req.headers.origin)) return res.sendStatus(403);
+ const sandboxGameAsset=req.headers.origin==='null'&&['GET','HEAD','OPTIONS'].includes(req.method)&&/^\/(?:gn-math-(?:fetch|asset|proxy)|gms-games-(?:fetch|proxy)|assets\/games\/(?:game-health|game-ad-protection|game-runtime-compat)\.js)$/.test(req.path);
+ if(req.headers.origin && !sandboxGameAsset && ![`http://localhost:${port}`,`http://127.0.0.1:${port}`].includes(req.headers.origin)) return res.sendStatus(403);
  next();
 });
 const root=resolve(process.env.PREVIEW_STATIC_ROOT || 'dist');
@@ -23,7 +24,7 @@ function headers(req){
  const result={...req.headers,host:upstreamHost};
  // The tunnel terminates at the existing app, behind its normal public HTTPS host.
  result['x-forwarded-proto']='https';
- if(result.origin) result.origin=`https://${upstreamHost}`;
+ if(result.origin && result.origin!=='null') result.origin=`https://${upstreamHost}`;
  if(result.referer) result.referer=`https://${upstreamHost}/`;
  delete result['x-forwarded-for'];
  return result;

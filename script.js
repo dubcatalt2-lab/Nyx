@@ -2968,7 +2968,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(!window.PokiSDK){
         window.PokiSDK={
           init:()=>resolved(),initWithVideoHB:()=>resolved(),commercialBreak:()=>resolved(),rewardedBreak:()=>resolved(true),
-          displayAd:()=>{},gameplayStart:()=>{},gameplayStop:()=>{},gameLoadingStart:()=>{},gameLoadingFinished:()=>{},
+          displayAd:()=>{},gameplayStart:()=>{},gameplayStop:()=>{},gameLoadingStart:()=>{},gameLoadingFinished:()=>{},gameLoadingProgress:()=>{},
           happyTime:()=>{},setDebug:()=>{},getURLParam:()=>null,getLanguage:()=>navigator.language || "en"
         };
       }
@@ -8825,8 +8825,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       await ensureFreshProxyState();
       await ensureFreshScramjetState();
       step='loading Scramjet assets';
-      if(!window.$scramjet) await loadScript('/scramjet/scramjet.js?v=20260905-optional-history-url-v1');
-      if(!window.$scramjetController) await loadScript('/controller/controller.api.js');
+      const {loadProxyScript,waitForProxyController}=await import('/js/proxy-startup.mjs');
+      await loadProxyScript('/scramjet/scramjet.js?v=20260905-optional-history-url-v1',()=>Boolean(window.$scramjet));
+      await loadProxyScript('/controller/controller.api.js',()=>Boolean(window.$scramjetController));
       step='loading Scramjet runtime guard';
       await loadScramjetRuntimeGuardSource();
       step='starting Scramjet relay';
@@ -8843,10 +8844,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         else if(!await reconnectScramjetController(scramjetController,serviceworker,transport)){
           scramjetController=createScramjetController(serviceworker,transport);
         }
-        await Promise.race([
-          scramjetController.wait(),
-          new Promise((_,reject)=>setTimeout(()=>reject(new Error('Scramjet controller timed out')),5000))
-        ]);
+        await waitForProxyController(scramjetController);
       }catch(initError){
         if(!isScramjetIdbShapeError(initError)) throw initError;
         step='repairing Scramjet storage';
@@ -8856,10 +8854,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         if(!repairedServiceworker) throw new Error('Scramjet service worker did not activate after storage repair');
         step='initializing Scramjet controller after storage repair';
         scramjetController=createScramjetController(repairedServiceworker,transport);
-        await Promise.race([
-          scramjetController.wait(),
-          new Promise((_,reject)=>setTimeout(()=>reject(new Error('Scramjet controller timed out after storage repair')),5000))
-        ]);
+        await waitForProxyController(scramjetController);
       }
       scramjetInstallError='';
       return true;

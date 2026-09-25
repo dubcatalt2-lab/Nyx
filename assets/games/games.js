@@ -104,7 +104,7 @@ async function fetchCatalogJson(url, label, options = {}) {
     const timer = setTimeout(() => controller.abort(), timeout);
     try {
       const response = await fetch(url, {
-        cache: attempt === 0 ? 'no-store' : 'default',
+        cache: 'no-cache',
         signal: controller.signal
       });
       if (!response.ok) throw new Error(`${label} returned ${response.status}`);
@@ -745,7 +745,7 @@ function visibleGames() {
   const games = state.games.filter(game =>
     (state.activeLibrary === 'misc'
       ? !game.hasIcon
-      : game.hasIcon && (state.activeLibrary === 'all' || gameSources(game).some(source => source.source === state.activeLibrary)))
+      : (game.hasIcon || query) && (state.activeLibrary === 'all' || gameSources(game).some(source => source.source === state.activeLibrary)))
       && (!query || game.title.toLowerCase().includes(query))
   );
   return games.sort((a, b) => elements.sort.value === 'za'

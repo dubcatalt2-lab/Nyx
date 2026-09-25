@@ -13,7 +13,7 @@ const browser=await chromium.launch();
 try {
  const page=await browser.newPage();
  await page.route('**/fixture-ad/**',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><body><canvas id="game"></canvas></body>'}));
- await page.goto('http://localhost:9091/fixture-ad/host');
+ await page.goto((process.env.NYX_TEST_BASE_URL || 'http://localhost:9091')+'/fixture-ad/host');
  const result=await page.evaluate(async()=>{
    const {installGameProtectionHost}=await import('/apps/tutsi/protections.mjs');
    const policy={adBlock:true,popupBlock:true,downloadBlock:true};

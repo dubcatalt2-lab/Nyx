@@ -422,6 +422,22 @@ const appPaths = {
 };
 installShellPopupProtection(()=>settings,()=>document.body.dataset.view==='browser'||['#games','#movies'].includes(location.hash));
 const protectEmbeddedFrame=installGameProtectionHost(()=>settings,()=>[...frames.values()]);
+// Remote game runners and Movies use the same transport/settings as browser tabs.
+window.nyxLaunchGameFrame=async(frame,url,{signal}={})=>{
+  const target=new URL(url);
+  if(!['http:','https:'].includes(target.protocol)||target.username||target.password||!protectEmbeddedFrame(frame))throw Error('Invalid game frame.');
+  if(signal?.aborted||!frame.isConnected)return;
+  const cancel=()=>closeBrowser(frame);
+  signal?.addEventListener('abort',cancel,{once:true});
+  try { await browse(target.href,settings,frame); if(signal?.aborted){closeBrowser(frame);return;} return {managed:true,engine:'scramjet',url:target.href}; }
+  catch(error){signal?.removeEventListener('abort',cancel);cancel();throw error;}
+};
+window.nyxLaunchMovieFrame=async(frame,url,{signal,recover=false}={})=>{
+  const {movieSourceUrl}=await import('/apps/movies/providers.mjs');
+  if(!movieSourceUrl(url)||frame?.ownerDocument?.location?.pathname!=='/apps/movies/'||frame.getAttribute('sandbox')!=='allow-scripts allow-same-origin allow-forms allow-presentation')throw Error('Invalid movie proxy request.');
+  if(recover)closeBrowser(frame);
+  await window.nyxLaunchGameFrame(frame,url,{signal});
+};
 const protectedAppDocs=new WeakSet();
 function protectAppContents(frame){
   try{

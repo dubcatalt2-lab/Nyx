@@ -1,41 +1,13 @@
 import {movieSourceUrl} from './providers.mjs?v=20260915-aniembed-v1';
-let initialization;
-const load = src => new Promise((resolve, reject) => {
-  const script = document.createElement('script');
-  const timer=setTimeout(()=>{script.remove();reject(Error('Movie proxy load timed out.'));},12000);
-  script.src = src; script.onload = () => {clearTimeout(timer);resolve();}; script.onerror = () => {clearTimeout(timer);reject(Error('Movie proxy could not load.'));};
-  document.head.append(script);
-});
 const read = key => { try { return localStorage.getItem(key) || ''; } catch { return ''; } };
 const abort = signal => { if (signal?.aborted) throw signal.reason || new DOMException('Cancelled', 'AbortError'); };
-
-async function standaloneProxy() {
-  if (initialization) return initialization;
-  initialization = (async () => {
-    if (!navigator.serviceWorker) throw Error('This browser does not support the movie proxy.');
-    if (!globalThis.__NYX_RUNTIME_CONFIG__) await load('/runtime-config.js');
-    if (!globalThis.NyxRelaySelection) await load('/js/relay-selection.js');
-    if (!globalThis.__uv$config) { await load('/uv/uv.bundle.js'); await load('/uv.config.js'); }
-    const config = globalThis.__uv$config;
-    const registration = await navigator.serviceWorker.register(config.sw, {scope: config.prefix, updateViaCache: 'none'});
-    const until = Date.now() + 12000;
-    while (!registration.active && Date.now() < until) await new Promise(resolve => setTimeout(resolve, 100));
-    if (!registration.active) throw Error('Movie proxy did not start.');
-    const runtime = globalThis.__NYX_RUNTIME_CONFIG__ || {};
-    const own = `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/resources/live/`;
-    const endpoints = [...new Set([runtime.wispUrl || own, ...(runtime.wispUrls || [])])];
-    const custom = read('nyx.wispUrl');
-    const wisp = custom || await globalThis.NyxRelaySelection.choose(endpoints);
-    if (!wisp) throw Error('Nyx relay is unavailable.');
-    const parsed = new URL(wisp);
-    if (!['ws:', 'wss:'].includes(parsed.protocol) || parsed.username || parsed.password || parsed.hash || location.protocol === 'https:' && parsed.protocol !== 'wss:') throw Error('Invalid Nyx relay.');
-    const {BareMuxConnection} = await import('/baremux/index.mjs?v=nyx-baremux-worker-start-v2');
-    const connection = new BareMuxConnection('/baremux/worker.js');
-    const libcurl = read('nyx.transport') === 'libcurlRaw';
-    await connection.setTransport(libcurl ? '/assets/transports/libcurl-baremux.mjs' : '/epoxy/index.mjs', [{wisp, wisp_v2: read('nyx.transport') !== 'wisp'}]);
-    return config;
-  })().catch(error => { initialization = null; throw error; });
-  return initialization;
+function standaloneSettings() {
+  const tutsi = location.hostname.startsWith('tutsi.') || new URLSearchParams(location.search).get('tutsi') === '1' || document.documentElement.dataset.site === 'tutsi';
+  if (tutsi) { let saved; try { saved=JSON.parse(read('tutsi.settings.v1') || '{}'); } catch {} return {transport:'libcurl',httpBridge:true,autoRelay:true,...saved}; }
+  const transport=read('nyx.transport').replace(/^"|"$/g,'');
+  return {transport:!transport || /^libcurl/i.test(transport)?'libcurl':transport==='wisp'?'wisp':'epoxy',
+    httpBridge:read('nyx.httpBridge')!=='false',relay:read('nyx.wispUrl'),autoRelay:true,
+    adBlock:read('nyx.popupProtection')!=='false',popupBlock:true,downloadBlock:true};
 }
 
 export async function launchMovieProxy(frame, url, signal, {recover=false}={}) {
@@ -45,11 +17,16 @@ export async function launchMovieProxy(frame, url, signal, {recover=false}={}) {
     await parent.nyxLaunchMovieFrame(frame, url, {signal, recover});
     return;
   }
-  if(recover) initialization=null;
-  const config = await standaloneProxy();
+  const {loadProxyScript}=await import('/js/proxy-startup.mjs');
+  if(!globalThis.__NYX_RUNTIME_CONFIG__)await loadProxyScript('/runtime-config.js',()=>!!globalThis.__NYX_RUNTIME_CONFIG__);
+  const {browse,closeBrowser}=await import('/apps/tutsi/proxy.mjs');
   abort(signal);
   if (!frame.isConnected) return;
-  frame.src = config.prefix + config.encodeUrl(url);
+  if(recover)closeBrowser(frame);
+  const cancel=()=>closeBrowser(frame);
+  signal?.addEventListener('abort',cancel,{once:true});
+  try { await browse(url,standaloneSettings(),frame); abort(signal); }
+  catch(error){signal?.removeEventListener('abort',cancel);cancel();throw error;}
 }
 
 export function inspectMovieProxy(frame) {

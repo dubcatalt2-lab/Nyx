@@ -1,3 +1,4 @@
+import {loadProxyScript as script, waitForProxyController} from '/js/proxy-startup.mjs';
 import {sourceWebsiteUrl} from "./navigation.mjs";
 import {protectTransport, policyFrom, installPageProtection} from "./protections.mjs";
 import {httpRelayUrl, installHttpRelaySocket, createHttpRelayEndpoint} from "./http-relay.mjs";
@@ -21,23 +22,6 @@ let controller,
 let activeTransport;
 let protectionPolicy=policyFrom({});
 export function updateProtectionPolicy(settings){protectionPolicy=policyFrom(settings);}
-function script(src, ready) {
-  if (ready()) return Promise.resolve();
-  return bounded(
-    new Promise((resolve, reject) => {
-      const node = document.createElement("script");
-      node.src = src;
-      node.onload = resolve;
-      node.onerror = () => {
-        node.remove();
-        reject(new Error("The browser engine could not load. Please retry."));
-      };
-      document.head.append(node);
-    }),
-    20000,
-    "The browser engine took too long to load.",
-  );
-}
 async function activeWorker() {
   const registration = await navigator.serviceWorker.register(
     "/tutsi-runtime.sw.js",
@@ -142,11 +126,7 @@ async function engine(settings) {
         maskedfiles: ["inject.js", "scramjet.wasm.js"],
       },
     });
-    await bounded(
-      instance.wait(),
-      15000,
-      "Browser engine startup timed out. Please retry.",
-    );
+    await waitForProxyController(instance);
     activeTransport=client;
     controller = instance;
     transportKey = key;

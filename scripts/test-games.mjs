@@ -75,6 +75,10 @@ try {
   assert(isGray(neutralLibrary.background) && isGray(neutralLibrary.border), `Active library styling is theme-colored (${JSON.stringify(neutralLibrary)})`);
   assert(neutralLibrary.backdrop.includes('blur'), `Library picker is missing its neutral blur (${neutralLibrary.backdrop})`);
 
+  await page.locator('[data-library="all"]').click();
+  await page.locator('#gameSearch').fill('Nyx Only');
+  assert(await page.getByRole('button', {name:'Play Nyx Only',exact:true}).count() === 1, 'All-games search must find games without cover art');
+  await page.locator('#gameSearch').fill('');
   await page.locator('[data-library="misc"]').click();
   assert(await page.locator('.game-card').count() === 1, 'The miscellaneous library did not contain only the coverless games');
   await page.locator('[data-library="gn"]').click();

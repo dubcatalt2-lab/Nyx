@@ -25,6 +25,7 @@
     </div>
   </div>
   <iframe id="gameFrame" class="game-frame" title="GMS game" allow="fullscreen; gamepad; autoplay; keyboard-map; clipboard-read; clipboard-write; camera; microphone; display-capture; accelerometer; gyroscope; magnetometer; xr-spatial-tracking" allowfullscreen tabindex="0"></iframe>
+  <script src="/assets/games/game-health.js" data-provider="gms"></script>
   <script>
     const loading=document.querySelector('.loading');
     const status=document.getElementById('status');
@@ -103,7 +104,7 @@
       parent.postMessage({type:'nyx:game-launched'},'*');
       setTimeout(()=>loading.classList.add('hidden'),650);
     }
-    function fail(message){
+    function fail(message){window.nyxReportGameFailure?.(/blank|timed out/i.test(String(message))?'startup-timeout':'load-error');
       clearInterval(progressTimer);
       status.innerHTML='';
       status.append(document.createTextNode(String(message || 'This game failed to load.')));
@@ -144,7 +145,7 @@
     }
     function rewrite(html,path){
       const safeFetchGuard=`<script>(()=>{const nativeFetch=window.fetch?.bind(window);if(nativeFetch)window.fetch=(input,init)=>{const url=input instanceof Request?input.url:String(input||'');if(/^about:/i.test(url))return Promise.resolve(new Response(null,{status:204,statusText:'No Content'}));return nativeFetch(input,init)};try{const nativeOpen=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(method,url,...rest){if(/^about:/i.test(String(url||'')))url='data:,';return nativeOpen.call(this,method,url,...rest)}}catch{}})()<\/script>`;
-      const adProtection=`<script src="${location.origin}/assets/games/game-ad-protection.js?v=20260903-game-ads-v1"><\/script>`;
+      const adProtection=`<script src="${location.origin}/assets/games/game-health.js"><\/script><script src="${location.origin}/assets/games/game-ad-protection.js?v=20260903-game-ads-v1"><\/script>`;
       const base=`https://raw.githubusercontent.com/isaacduh123/reds-exploit-corner/main/${path.replace(/[^/]+$/,'')}`;
       const repoRoot='https://raw.githubusercontent.com/isaacduh123/reds-exploit-corner/main/';
       const proxyUrl=url=>`${location.origin}/gms-games-proxy?url=${encodeURIComponent(url)}`;

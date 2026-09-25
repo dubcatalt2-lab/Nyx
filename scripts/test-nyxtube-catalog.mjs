@@ -1,4 +1,9 @@
 import assert from 'node:assert/strict';
+import {extractionFailure} from '../lib/nyxtube-streaming.mjs';
+assert.match(extractionFailure('This video is age-restricted').message,/age verification/);
+assert.match(extractionFailure('This video is not available in your country').message,/region/);
+assert.match(extractionFailure('Private video').message,/account or membership/);
+assert.equal(extractionFailure('Sign in to confirm you are not a bot').code,'authentication');
 import { mkdtemp, writeFile, readFile, access, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -46,7 +51,8 @@ try {
   await catalog.info(id,{refresh:true});assert.equal(calls,before+1,'Expired stream refresh bypasses catalog metadata cache');
   const channel = await catalog.channel(channelId); assert.equal(channel.channel.title,'Creator'); assert.equal(channel.videos[0].id,id);
   const comments = await catalog.comments(id); assert.equal(comments.comments[0].text,'Hello');
-  for (const bad of [{ availability: 'unlisted' }, { age_limit: 18 }, { is_live: true }, { playable_in_embed: false }, { geo_countries: ['CA'] }]) assert.equal(catalogVideo({ ...info, ...bad },true),null);
+  for (const bad of [{ availability: 'unlisted' }, { age_limit: 18 }, { is_live: true }, { geo_countries: ['CA'] }]) assert.equal(catalogVideo({ ...info, ...bad },true),null);
+  assert.equal(catalogVideo({ ...info, playable_in_embed: false },true).id,id,'Public native playback does not require iframe embedding permission');
   assert.equal(catalogVideo({ ...info, availability: undefined },true),null);
   await assert.rejects(catalog.info('--exec=bad'),e=>e.status===400);
   assert.throws(()=>catalog.channel('https://localhost/'),e=>e.status===400);

@@ -79,6 +79,7 @@
     </div>
   </div>
   <iframe id="gameFrame" class="game-frame" title="GN Math game" sandbox="allow-scripts allow-forms allow-modals allow-downloads allow-pointer-lock allow-presentation" allow="fullscreen; gamepad; autoplay; keyboard-map; clipboard-read; clipboard-write; camera; microphone; display-capture; accelerometer; gyroscope; magnetometer; xr-spatial-tracking" allowfullscreen tabindex="0"></iframe>
+  <script src="/assets/games/game-health.js" data-provider="gn"></script>
   <script>
     const loading=document.querySelector('.loading');
     const status=document.getElementById('status');
@@ -162,7 +163,7 @@
       setTimeout(()=>loading.classList.add('hidden'),650);
     }
 
-    function fail(message){
+    function fail(message){window.nyxReportGameFailure?.(/blank|timed out/i.test(String(message))?'startup-timeout':'load-error');
       clearInterval(progressTimer);
       status.innerHTML='';
       status.append(document.createTextNode(String(message || 'This game failed to load.')));
@@ -204,7 +205,7 @@
       const baseUrl=rawBase.slice(0,rawBase.lastIndexOf('/') + 1);
       const repoRoot='https://raw.githubusercontent.com/freebuisness/html/main/';
       const proxyUrl=url=>`${location.origin}/gn-math-proxy?url=${encodeURIComponent(url)}`;
-      const adProtection=`<script src="${location.origin}/assets/games/game-ad-protection.js?v=20260903-game-ads-v1"><\/script>`;
+      const adProtection=`<script src="${location.origin}/assets/games/game-runtime-compat.js"><\/script><script src="${location.origin}/assets/games/game-health.js"><\/script><script src="${location.origin}/assets/games/game-ad-protection.js?v=20260903-game-ads-v1"><\/script>`;
       const sourceHtml=String(html || '').replace(
         /https?:\/\/cdn\.jsdelivr\.net\/gh\/genizy\/fnaf@[^/"'<>\s]+/gi,
         'https://cdn.jsdelivr.net/gh/bubblfan/fnaf@latest'
@@ -306,9 +307,16 @@
           const repoRoot='https://raw.githubusercontent.com/freebuisness/html/main/';
           const prox='${location.origin}/gn-math-proxy?url=';
           const proxHosts=['cdn.jsdelivr.net','raw.githubusercontent.com','rawcdn.githack.com','raw.githack.com'];
+          // Some older Unity loaders prepend their asset directory to blob URLs.
+          // Recover only URLs created in this document, never arbitrary blob text.
+          const objectUrls=new Set();
+          const createObjectURL=URL.createObjectURL.bind(URL),revokeObjectURL=URL.revokeObjectURL.bind(URL);
+          URL.createObjectURL=value=>{const url=createObjectURL(value);objectUrls.add(url);return url};
+          URL.revokeObjectURL=url=>{objectUrls.delete(String(url));return revokeObjectURL(url)};
           const own=url=>{
             try{
               const raw=String(url || '').trim();
+              for(const blob of objectUrls)if(raw.endsWith('/'+blob))return blob;
               if(!raw || raw.startsWith('#') || /^(?:javascript|data|blob|about):/i.test(raw)) return raw || 'about:blank';
               const parsed=new URL(raw.startsWith('/') ? raw.slice(1) : raw,raw.startsWith('/') ? repoRoot : (document.baseURI || repoRoot));
               if(ignorable.test(parsed.href)) return 'about:blank';
@@ -374,7 +382,7 @@
         .replace(/<script\b[^>]*googletagmanager[^>]*>[\s\S]*?<\/script>/gi,'')
         .replace(/<script\b[^>]*google-analytics[^>]*>[\s\S]*?<\/script>/gi,'')
         .replace(/<script\b[^>]*(?:adinplay|imasdk|pagead2|googlesyndication|doubleclick|connect\.facebook|cdn\.r9x\.in|(?:\/|["'])ads?\.js(?:[?"']|$)|jump[_-]gamemonetize|poki-(?:master-loader|sdk)|html5\.api\.gamedistribution\.com)[^>]*>[\s\S]*?<\/script>/gi,'')
-        .replace(/<script\b[^>]*>[\s\S]*?(?:gtag|dataLayer|adsbygoogle|googletag|fbq|facebook|doubleclick|r9x)[\s\S]*?<\/script>/gi,'');
+        .replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi,(tag,attrs,code)=>! /\bsrc\s*=/i.test(attrs) && /^\s*(?:window\.)?dataLayer\s*=/.test(code)?'':tag);
       if(!/<base\b/i.test(output)){
         output=/<head([^>]*)>/i.test(output)
           ? output.replace(/<head([^>]*)>/i,`<head$1><base href="${baseHref}">`)
@@ -403,18 +411,23 @@
     frame.addEventListener('load',()=>setTimeout(finishGameProgress,1800));
 
     const gamePath=safeGamePath(game);
-    if(!gamePath){
+    const archiveGame={'82-a.html':'C/clcookieclicker.html','177.html':'R/clrun3.html'}[gamePath];
+    if(archiveGame){
+      location.replace('/assets/ugs/play.html?game='+encodeURIComponent(archiveGame));
+    }else if(!gamePath){
       fail('Missing GN Math game path.');
     }else{
       startGameProgress();
       const rawUrl=`https://raw.githubusercontent.com/freebuisness/html/main/${encodeURIComponent(gamePath)}`;
       setGameProgress(22);
-      fetch(`/gn-math-fetch?path=${encodeURIComponent(gamePath)}`,{cache:'no-store'})
+      const localGame={'4-pf.html':'/assets/games/gladihoppers.html'}[gamePath];
+      fetch(localGame||`/gn-math-fetch?path=${encodeURIComponent(gamePath)}`,{cache:'no-store'})
         .then(response=>{
           if(response.ok){
             setGameProgress(48);
             return response;
           }
+          if(localGame)throw new Error(`HTTP ${response.status}`);
           setGameProgress(34);
           return fetch(rawUrl,{cache:'no-store'});
         })

@@ -239,6 +239,7 @@
       gameplayStop: () => {},
       gameLoadingStart: () => {},
       gameLoadingFinished: () => {},
+      gameLoadingProgress: () => {},
       happyTime: () => {},
       setDebug: () => {},
       getURLParam: () => null,

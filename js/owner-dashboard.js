@@ -266,6 +266,7 @@
           </div>
         </header>
         <section class="nyx-owner-tube-status" data-owner-ai-status hidden aria-live="polite"></section>
+        <section class="nyx-owner-tube-status" data-owner-game-reports hidden></section>
         <section class="nyx-owner-tube-status" data-owner-tube-status hidden aria-live="polite"></section>
         <section class="nyx-owner-metrics" data-owner-metrics aria-label="Account metrics"></section>
         <section class="nyx-owner-workspace">
@@ -376,6 +377,15 @@
     }
     const aiStatusTimer=setInterval(()=>{if(!document.hidden)void loadAiStatus();},60000);
 
+    async function loadGameReports(){
+      const host=overlay.querySelector('[data-owner-game-reports]');
+      if(!overlay.isConnected||!state.access?.founder)return;
+      host.hidden=false;
+      try{const data=await api('/api/owner-dashboard/game-reports');if(!overlay.isConnected)return;
+        host.innerHTML='<div><strong>Game loading reports</strong><p>Automatic signals from browsers; reports may include slow loads. Last seven days.</p>'+((data.reports||[]).slice(0,50).map(row=>`<p><strong>${esc(row.title)}</strong> &middot; ${esc(row.provider)} &middot; ${esc(row.brand)} &middot; ${esc(row.reason)} &middot; ${Number(row.count)||1} reports<br><small>${esc(dateLabel(row.lastSeen))}</small></p>`).join('')||'<p>No recent failures reported.</p>')+'</div>';
+      }catch{host.textContent='Game reports could not be loaded. Refresh to retry.';}
+      compactStatus(host,'game-reports','Game loading reports');
+    }
     let tubeBusy = false;
     let tubeLastStatus = null;
     const tubeHost = overlay.querySelector("[data-owner-tube-status]");
@@ -574,7 +584,7 @@
         tubeHost.hidden = !state.access?.founder;
         if (!tubeHost.hidden) void loadTubeStatus();
         aiStatusHost.hidden=!state.access?.founder;
-        if(!aiStatusHost.hidden)void loadAiStatus();
+        if(!aiStatusHost.hidden){void loadAiStatus();void loadGameReports();}
         state.customRoles = Array.isArray(data.customRoles) ? data.customRoles : state.customRoles;
         const ipBansButton = overlay.querySelector("[data-owner-ip-bans]");
         if (ipBansButton) ipBansButton.hidden = !state.access?.permissions?.includes("network:bans");

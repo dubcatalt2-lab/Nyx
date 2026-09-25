@@ -1,3 +1,4 @@
+import {createGameReports} from './lib/game-reports.mjs';
 import { exchangeVoiceAudio, createVoiceAudioAccess, cleanupVoiceAudio } from './lib/chat-voice-relay.mjs';
 import {recordAiExchange,readAiActivity} from './lib/ai-history.mjs';
 import {assignableAiModels,validateAiModelRules} from './lib/ai-model-policy.mjs';
@@ -139,6 +140,7 @@ const nyxifyProviderOrigin = "https://mizumath.com";
 const nyxifyChartOrigin = "https://api.deezer.com";
 const nyxifyArtworkFallbackOrigin = "https://e-cdns-images.dzcdn.net";
 const nyxifyTrackIdPattern = /^\d{1,20}$/;
+const nyxifyTrackKeyPattern = /^(?:netease:)?\d{1,20}$/;
 const nyxifyCoverPathPattern = /^\/img\/images\/(?:cover|artist)\/[a-f0-9]{32}\/[A-Za-z0-9._-]{1,128}$/i;
 const nyxifyCatalogCacheTtlMs = 90_000;
 const nyxifyHomeCacheTtlMs = 5 * 60_000;
@@ -6332,6 +6334,7 @@ function nyxifyTidalArtworkPath(value) {
 }
 
 function nyxifyCoverUrl(value) {
+  if (value === "/apps/nyxify/cover-placeholder.svg") return value;
   const path = nyxifyCoverPath(value);
   if (path) return `/api/nyxify/cover?path=${encodeURIComponent(path)}`;
   const tidalPath = nyxifyTidalArtworkPath(value);
@@ -6368,7 +6371,7 @@ function nyxifyTrackRecord(value, context = {}) {
   const source = value && typeof value === "object" ? value : {};
   const id = String(source.id || "").trim();
   const title = nyxifyCleanText(source.title);
-  if (!nyxifyTrackIdPattern.test(id) || !title) return null;
+  if (!nyxifyTrackKeyPattern.test(id) || !title) return null;
   const artistId = String(source.artistId || context.artistId || "").trim();
   const albumId = String(source.albumId || context.albumId || "").trim();
   return {
@@ -6379,7 +6382,7 @@ function nyxifyTrackRecord(value, context = {}) {
     album: nyxifyCleanText(source.album || context.album, "", 160),
     albumId: nyxifyTrackIdPattern.test(albumId) ? albumId : "",
     cover: nyxifyCoverUrl(source.cover || context.cover),
-    catalog: new Set(["deezer", "tidal"]).has(String(source.catalog || context.catalog || "").toLowerCase()) ? String(source.catalog || context.catalog).toLowerCase() : "",
+    catalog: new Set(["deezer", "tidal", "netease"]).has(String(source.catalog || context.catalog || "").toLowerCase()) ? String(source.catalog || context.catalog).toLowerCase() : "",
     duration: Math.max(0, Math.min(14_400, Math.round(Number(source.duration) || 0)))
   };
 }
@@ -6508,9 +6511,10 @@ async function nyxifySearch(query) {
   const key = `search:${cleanQuery.toLowerCase()}`;
   const cached = nyxifyCacheGet(nyxifyCatalogCache, key);
   if (cached) return structuredClone(cached);
-  const [tidalResult, deezerResult] = await Promise.allSettled([
+  const [tidalResult, deezerResult, nativeResult] = await Promise.allSettled([
     nyxifyProviderJson("/api/music/search", { q: cleanQuery }),
-    nyxifyDeezerJson("/search", { q: cleanQuery, limit: 50 })
+    nyxifyDeezerJson("/search", { q: cleanQuery, limit: 50 }),
+    nyxifyMeting.search(cleanQuery)
   ]);
   const tidalTracks = tidalResult.status === "fulfilled"
     ? (Array.isArray(tidalResult.value.data) ? tidalResult.value.data : []).slice(0, 50).map(value => nyxifyTrackRecord(value, { catalog: "tidal" })).filter(Boolean)
@@ -6518,13 +6522,15 @@ async function nyxifySearch(query) {
   const deezerTracks = deezerResult.status === "fulfilled"
     ? (Array.isArray(deezerResult.value.data) ? deezerResult.value.data : []).slice(0, 50).map(nyxifyDeezerTrackRecord).filter(Boolean)
     : [];
-  if (!tidalTracks.length && !deezerTracks.length) {
+  const nativeTracks = nativeResult.status === "fulfilled" ? nativeResult.value : [];
+  if (!tidalTracks.length && !deezerTracks.length && !nativeTracks.length) {
     throw new Error(tidalResult.reason?.message || deezerResult.reason?.message || "No music catalog is available right now.");
   }
   const identity = track => `${nyxifyMatchText(track.title)}|${nyxifyMatchText(track.artist)}`;
   const playableByIdentity = new Map(deezerTracks.map(track => [identity(track), track]));
   const seen = new Set();
-  const data = [...tidalTracks.map(track => playableByIdentity.get(identity(track)) || track), ...deezerTracks]
+  const nativeWithCovers = nativeTracks.map(track => {const metadata = playableByIdentity.get(identity(track));return {...track, cover: metadata?.cover || track.cover};});
+  const data = [...nativeWithCovers, ...tidalTracks.map(track => playableByIdentity.get(identity(track)) || track), ...deezerTracks]
     .filter(track => {
       const key = identity(track);
       if (!key || seen.has(key)) return false;
@@ -12354,9 +12360,12 @@ for (const detailType of ["artist", "album"]) {
 app.get("/api/nyxify/playback/:trackId", async (req, res) => {
   res.set("Cache-Control", "private, no-store");
   if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
-  if (!nyxifyTrackIdPattern.test(String(req.params.trackId))) return res.status(400).json({ error: "Invalid Nyxify track." });
+  if (!nyxifyTrackKeyPattern.test(String(req.params.trackId))) return res.status(400).json({ error: "Invalid Nyxify track." });
   try {
-    res.json(await nyxifyMeting.resolve({ title: req.query.title, artist: req.query.artist, duration: req.query.duration }, { prefetch: req.query.prefetch === '1' }));
+    const hints = { title: req.query.title, artist: req.query.artist, duration: req.query.duration };
+    res.json(String(req.params.trackId).startsWith('netease:')
+      ? await nyxifyMeting.resolveId(String(req.params.trackId).slice(8), hints, {prefetch:req.query.prefetch === '1'})
+      : await nyxifyMeting.resolve(hints, { prefetch: req.query.prefetch === '1' }));
   } catch (error) {
     if (error.status === 503) res.set("Retry-After", "5");
     res.status(error.status || 502).json({ error: error.status ? error.message : "Music lookup is temporarily unavailable." });
@@ -12750,6 +12759,28 @@ app.delete("/api/owner-dashboard/apps/:id", async (req, res) => {
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "The app could not be removed." });
   }
+});
+
+const gameReportCatalog=new Map();
+let gameReportCatalogReady=false;
+function loadGameReportCatalog(){
+  if(gameReportCatalogReady)return true;
+  try {for(const [provider,folder] of [['local','ugs'],['gn','gn-math'],['gms','gms-games']]){
+    const raw=JSON.parse(readFileSync(join(__dirname,'assets',folder,'games.json'),'utf8'));
+    for(const game of (Array.isArray(raw)?raw:raw.games||[]))if(game.path)gameReportCatalog.set(`${provider}:${game.path}`,String(game.title||game.name||game.path).slice(0,160));
+  }gameReportCatalogReady=true;return true;}catch{return false;}
+}
+const gameReports=createGameReports({catalog:gameReportCatalog,file:process.env.NYX_GAME_REPORT_FILE||(process.platform==='win32'?join(process.env.TEMP||'.','nyx-game-reports.json'):'/var/lib/nyx/game-reports.json')});
+app.post('/api/games/reports',async(req,res)=>{
+  res.set('Cache-Control','no-store');
+  if(!sameOriginRequest(req))return res.sendStatus(403);
+  try {if(!loadGameReportCatalog())return res.sendStatus(503);const status=await gameReports.report(req.body,req.ip,isTutsiHostname(req.hostname)?'tutsi':'nyx');res.sendStatus(status);}
+  catch {res.sendStatus(503);}
+});
+app.get('/api/owner-dashboard/game-reports',async(req,res)=>{
+  res.set('Cache-Control','no-store');
+  try {await ownerDashboardActor(req);if(!loadGameReportCatalog())return res.sendStatus(503);res.json({reports:await gameReports.list()});}
+  catch(error){res.status(error.status||503).json({error:'Game reports could not be loaded.'});}
 });
 
 const nyxOpenRouterOwnerStatus = createOpenRouterOwnerStatus({credentials:()=>({key:nyxAiKey(),managementKey:process.env.NYX_OPENROUTER_MANAGEMENT_KEY})});

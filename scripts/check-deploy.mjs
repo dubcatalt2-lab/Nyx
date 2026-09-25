@@ -2,6 +2,9 @@ import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
+  "assets/games/game-health.js",
+  "assets/games/game-runtime-compat.js",
+  "lib/game-reports.mjs",
   "assets/transports/libcurl-client.mjs",
   "assets/transports/libcurl-response.mjs",
   "lib/wispurr-relay.mjs",
@@ -118,6 +121,8 @@ const requiredFiles = [
   "apps/link-checker/app.js",
   "apps/chat/index.html",
   "apps/chat/styles.css",
+  "js/proxy-startup.mjs",
+  "apps/nyxify/cover-placeholder.svg",
   "apps/chat/app.js",
   "apps/chat/voice-relay.js",
   "apps/chat/voice-capture.js",
@@ -175,6 +180,7 @@ const requiredFiles = [
   "lib/nyxify-media-fetch.mjs",
   "assets/icons/shortcut-nyxify.svg",
   "assets/games/index.html",
+  "assets/games/gladihoppers.html",
   "assets/ugs/play.html",
   "deploy/nginx/nyx.conf.template",
   "deploy/caddy/nyx.Caddyfile.template",

@@ -120,12 +120,12 @@ export function installGameProtectionHost(getSettings, getAppFrames) {
       while (owner && !hosts.includes(owner) && owner !== window) owner = owner.parent;
       if (!hosts.includes(owner)) return false;
     } catch { return false; }
-    frame.setAttribute('sandbox',protectionSandbox(getSettings()));
+    frame.setAttribute('sandbox',frame.ownerDocument.location.pathname==='/apps/movies/'?'allow-scripts allow-same-origin allow-forms allow-presentation':protectionSandbox(getSettings()));
     const protect = () => {
       try {
         const doc = frame.contentDocument;
         if (!doc?.documentElement) return;
-        frame.setAttribute('sandbox',protectionSandbox(getSettings()));
+        frame.setAttribute('sandbox',frame.ownerDocument.location.pathname==='/apps/movies/'?'allow-scripts allow-same-origin allow-forms allow-presentation':protectionSandbox(getSettings()));
         installPageProtection(frame,getSettings());
         const scan = () => doc.querySelectorAll('iframe').forEach(install);
         scan();

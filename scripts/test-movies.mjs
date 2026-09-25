@@ -12,11 +12,13 @@ await assert.rejects(()=>createMovieCatalog({token:()=>''}).search('x'),e=>e.sta
 for(const status of [401,404,429,500])await assert.rejects(()=>createMovieCatalog({token:()=> 'secret',fetchImpl:async()=>new Response('secret',{status})}).search('x'),e=>!e.message.includes('secret')&&e.status===(status===404?404:status===429?429:503));
 let failures=0;const broken=createMovieCatalog({token:()=> 'x',fetchImpl:()=>{failures++;throw Error('secret');}});await assert.rejects(()=>broken.search('x'));await assert.rejects(()=>broken.search('x'));assert.equal(failures,2);
 const app=express();installMovieApi(app,{catalog});app.use(express.static(process.env.NYX_TEST_ASSET_ROOT||'.'));const server=app.listen(0);await new Promise(r=>server.once('listening',r));const origin='http://localhost:'+server.address().port;
+let proxyAsset='/apps/movies/proxy.mjs';
+try{proxyAsset=JSON.parse(readFileSync((process.env.NYX_TEST_ASSET_ROOT||'.')+'/frontend-assets.json','utf8')).aliases[proxyAsset]||proxyAsset;}catch{}
 const browser=await chromium.launch({channel:"msedge"});
 try{
  const page=await browser.newPage({viewport:{width:1280,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',r=>{if(new URL(r.request().url()).origin===origin)return r.continue();if(r.request().url().startsWith('https://vidsrcme.ru/embed/'))return r.fulfill({contentType:'text/html',body:'<button>Test player</button>'});return r.abort();});
- await page.route('**/apps/movies/proxy.mjs',r=>r.fulfill({contentType:'application/javascript',body:`export {inspectMovieProxy,styleMovieVideo,startMovieProxy,canStartMovieProxy} from './proxy-runtime.mjs';export async function launchMovieProxy(frame,url,signal,options={}){if(window.failAll){window.launchCount=(window.launchCount||0)+1;if(options.recover)window.recoverCount=(window.recoverCount||0)+1;throw Error('Fixture outage');}if(url.includes('vidfast.pro'))throw Error('Fixture proxy failure');if(!signal.aborted)frame.src='/service/test?target='+encodeURIComponent(url);}`}));
+ await page.route(url=>url.pathname===proxyAsset||url.pathname==='/apps/movies/proxy.mjs',r=>r.fulfill({contentType:'application/javascript',body:`export {inspectMovieProxy,styleMovieVideo,startMovieProxy,canStartMovieProxy} from './proxy-runtime.mjs';export async function launchMovieProxy(frame,url,signal,options={}){if(window.failAll){window.launchCount=(window.launchCount||0)+1;if(options.recover)window.recoverCount=(window.recoverCount||0)+1;throw Error('Fixture outage');}if(url.includes('vidfast.pro'))throw Error('Fixture proxy failure');if(!signal.aborted)frame.src='/service/test?target='+encodeURIComponent(url);}`}));
  await page.route('**/apps/movies/proxy-runtime.mjs',r=>r.fulfill({contentType:'application/javascript',body:readFileSync((process.env.NYX_TEST_ASSET_ROOT||'.')+'/apps/movies/proxy.mjs','utf8')}));
  await page.route('**/service/test?*',r=>r.fulfill({contentType:'text/html',body:r.request().url().includes('embed.su')?'<h1>Error processing your request</h1><textarea>Request failed with error code 35: SSL connect error</textarea>':'<button>Fixture player</button>'}));
  await page.goto(origin+'/apps/movies/');await page.locator('.movie-card').waitFor();assert.equal(await page.locator('.movie-card').count(),1);assert.equal(await page.locator('.movie-card strong').textContent(),item.title);
@@ -38,11 +40,11 @@ try{
  await providerFrame.locator('button').evaluate(button=>button.textContent='Play');
  await page.locator('#start-proxy').waitFor({state:'visible'});
  assert.equal(await page.locator('#proxy-loading').isVisible(),false);
- await page.locator('#choose-source').click();
+ await page.locator('#watch-area').hover({position:{x:10,y:10}});await page.locator('#choose-source').click();
  await providerFrame.evaluate(()=>{const v=document.createElement('video');for(const [key,value] of Object.entries({videoWidth:1280,videoHeight:720,readyState:4,paused:false,duration:120}))Object.defineProperty(v,key,{get:()=>value});Object.defineProperty(v,'currentTime',{get:()=>performance.now()/1000});document.body.append(v);});
  await page.waitForFunction(()=>document.querySelector('#source-list li[data-state=Playing]'));
  assert.equal(await page.locator('#sources-panel').isVisible(),false,'Loading list closes on measured playback');
- await page.locator('#choose-source').click();await page.waitForTimeout(1200);
+ await page.locator('#watch-area').hover({position:{x:10,y:10}});await page.locator('#choose-source').click();await page.waitForTimeout(1200);
  assert.equal(await page.locator('#sources-panel').isVisible(),true,'Manual source chooser stays open during playback');
  await page.locator('[data-provider=videasy]').click();
  await page.waitForFunction(()=>document.querySelector('#player iframe')?.getAttribute('src')?.includes('videasy'));

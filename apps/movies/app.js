@@ -1,5 +1,5 @@
 import {additionalSources, movieSourceUrl} from './providers.mjs?v=20260915-aniembed-v1';
-import {launchMovieProxy, inspectMovieProxy, styleMovieVideo, startMovieProxy, canStartMovieProxy} from './proxy.mjs?v=20260916-relay-v2';
+import {launchMovieProxy, inspectMovieProxy, styleMovieVideo, startMovieProxy, canStartMovieProxy} from './proxy.mjs?v=20260924-shared-proxy-v3';
 (()=>{'use strict';
 
 const $=id=>document.getElementById(id);

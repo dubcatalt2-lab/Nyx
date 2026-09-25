@@ -300,7 +300,7 @@ function playlisttrack(track) {
     album: String(track?.album || '').slice(0, 160),
     albumId: String(track?.albumId || ''),
     cover: String(track?.cover || '').slice(0, 500),
-    catalog: ['deezer', 'tidal'].includes(String(track?.catalog || '').toLowerCase()) ? String(track.catalog).toLowerCase() : '',
+    catalog: ['deezer', 'tidal', 'netease'].includes(String(track?.catalog || '').toLowerCase()) ? String(track.catalog).toLowerCase() : '',
     duration: Math.max(0, Math.min(14400, Math.round(Number(track?.duration) || 0)))
   };
 }
@@ -556,7 +556,7 @@ function buildrow(t, list, options = {}) {
     <div class="t-meta">
       <div class="t-top">
         <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
-        <span class="t-title">${esc(t.title)}</span>
+        <span class="t-title">${esc(t.title)}</span>${t.audioAvailable ? '<small class="audio-available">Audio found</small>' : ''}
       </div>
       <div class="t-sub">${sub}</div>
     </div>

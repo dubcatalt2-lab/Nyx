@@ -18,8 +18,9 @@ service cloud.firestore {
     // Nyx writes through authenticated server routes using Firebase Admin.
     // Client writes stay disabled so role, subscription, audit, and ban data
     // cannot be forged from a browser.
+    // Network details and audit records are available only through owner-checked server routes.
     match /nyxUserAdministration/{uid} {
-      allow read: if isOwner() || ownsDocument(uid);
+      allow read: if false;
       allow write: if false;
     }
 
@@ -34,8 +35,24 @@ service cloud.firestore {
     }
 
     match /nyxAuditLog/{eventId} {
-      allow read: if isOwner();
+      allow read: if false;
       allow write: if false;
+    }
+
+    match /nyxIpBans/{banId} {
+      allow read, write: if false;
+    }
+
+    match /nyxAccountNotices/{noticeId} {
+      allow read, write: if false;
+    }
+
+    match /nyxCustomRoles/{roleId} {
+      allow read, write: if false;
+    }
+
+    match /nyxCustomHostnames/{hostnameId} {
+      allow read, write: if false;
     }
 
     match /nyxUsernames/{username} {
@@ -44,6 +61,47 @@ service cloud.firestore {
     }
 
     match /nyxPresenceSessions/{sessionId} {
+      allow read, write: if false;
+    }
+
+    match /nyxChatChannels/{channelId} {
+      allow read, write: if false;
+      match /messages/{messageId} {
+        allow read, write: if false;
+      }
+    }
+
+    match /nyxChatConversations/{conversationId} {
+      allow read, write: if false;
+      match /messages/{messageId} {
+        allow read, write: if false;
+      }
+    }
+
+    match /nyxChatAttachments/{attachmentId} {
+      allow read, write: if false;
+      match /chunks/{chunkId} {
+        allow read, write: if false;
+      }
+    }
+
+    match /nyxCaffeineGifts/{giftId} {
+      allow read, write: if false;
+    }
+
+    match /nyxChatConfiguration/{documentId} {
+      allow read, write: if false;
+    }
+
+    match /nyxChatMutes/{uid} {
+      allow read, write: if false;
+    }
+
+    match /nyxFlaggedSearches/{searchId} {
+      allow read, write: if false;
+    }
+
+    match /nyxSearchHistory/{searchId} {
       allow read, write: if false;
     }
 

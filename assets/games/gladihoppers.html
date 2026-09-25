@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Gladihoppers</title>
+  <base href="https://cdn.jsdelivr.net/gh/Toaster68/gh@bd6bd0189e8f6579756fbc78ef89241c28e0101b/">
+  <style>html,body{margin:0;width:100%;height:100%;background:#05070d;color:white;font-family:system-ui}#unity-container{width:100%;height:100%}#progress{position:fixed;inset:auto 0 12px;text-align:center;pointer-events:none;z-index:2}</style>
+  <script src="https://cdn.jsdelivr.net/gh/Toaster68/gh@bd6bd0189e8f6579756fbc78ef89241c28e0101b/patch/js/UnityLoader.2019.2.js"></script>
+</head>
+<body>
+  <div id="unity-container"></div><div id="progress" role="status">Loading Gladihoppers…</div>
+  <script>
+    // Same Dreamon Studios build, started directly without the advertising loader.
+    const progress=document.getElementById('progress');
+    // The mirrored Unity build expects these compatibility values from its old loader.
+    document.xURL=document.URL;
+    window.config={cachedDecompressedFileSizes:{'Gladihoppers.data.unityweb':17409938,'Gladihoppers.wasm.code.unityweb':6410659,'Gladihoppers.wasm.framework.unityweb':91463}};
+    window.initPokiBridge=function(name){
+      const send=(method,value)=>window.unityGame.SendMessage(name,method,value);
+      window.commercialBreak=()=>Promise.resolve().then(()=>send('commercialBreakCompleted'));
+      window.rewardedBreak=()=>Promise.resolve().then(()=>send('rewardedBreakCompleted','false'));
+      queueMicrotask(()=>send('ready'));
+    };
+    const updateProgress=UnityLoader.Progress.update;
+    UnityLoader.Progress.update=function(instance,name,event){
+      if(event && !event.lengthComputable && event.target){
+        const requestUrl=new URL(event.target.responseURL,document.baseURI);
+        const sourceUrl=requestUrl.searchParams.get('url') || requestUrl.href;
+        if(sourceUrl.includes('/Build/'))event={type:event.type,lengthComputable:false,loaded:event.loaded,total:event.total,target:{responseURL:sourceUrl}};
+      }
+      return updateProgress.call(this,instance,name,event);
+    };
+    try {
+      window.unityGame=window.gameInstance=UnityLoader.instantiate('unity-container','https://cdn.jsdelivr.net/gh/Toaster68/gh@bd6bd0189e8f6579756fbc78ef89241c28e0101b/Build/Gladihoppers.json',{
+        onProgress(instance,value){progress.textContent=`Loading Gladihoppers… ${Math.round(value*100)}%`;if(value===1){progress.hidden=true;parent.postMessage({type:'gn-math:ready'},'*');}}
+      });
+    } catch(error) {
+      progress.textContent='Gladihoppers could not start. Reload to try again.';
+      parent.postMessage({type:'gn-math:error',message:progress.textContent},'*');
+    }
+  </script>
+</body>
+</html>

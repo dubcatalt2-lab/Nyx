@@ -1960,6 +1960,8 @@ body.browser-shell #desktop .desktop-app{
 .browser-tab.tab-closing{pointer-events:none;animation:none!important;display:none!important}
 @keyframes tabOut{to{opacity:0;transform:translateY(-8px) scale(.86);max-width:0;min-width:0;width:0;padding-left:0;padding-right:0;margin-left:-6px}}
 .browser-tab.active{background:rgba(255,255,255,.17)}
+.browser-tab.chat-unread{position:relative}
+.browser-tab.chat-unread::after{content:"";position:absolute;z-index:2;right:4px;top:3px;width:7px;height:7px;border-radius:50%;background:#f0445c;box-shadow:0 0 0 2px rgba(240,68,92,.18),0 0 8px rgba(240,68,92,.7);pointer-events:none}
 .browser-tab span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .browser-tab button,.new-tab{border:0;background:transparent;color:#cbd5e1}
 .browser-tab button{position:relative;color:transparent;font-size:0;transition:transform .58s cubic-bezier(.16,.86,.2,1),background .26s ease,color .26s ease}
@@ -2861,8 +2863,16 @@ body.theme-fresh .browser-search-suggestion{
 .minimized-item::first-letter{font-size:13px;font-weight:900}
 .minimized-item::after{content:attr(data-mini);font-size:13px;font-weight:900;color:white}
 .corner-gear{display:none}
-.toast{position:fixed;right:18px;bottom:66px;z-index:200;max-width:320px;padding:12px 14px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:var(--glass-panel);backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-saturate));box-shadow:0 14px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.12);opacity:0;transform:translateY(10px);transition:.2s}
-.toast.show{opacity:1;transform:translateY(0)}
+.toast{position:fixed;right:18px;bottom:66px;z-index:2147483647;display:flex;align-items:center;gap:9px;width:max-content;max-width:min(360px,calc(100vw - 32px));min-height:48px;box-sizing:border-box;padding:9px 14px;overflow:hidden;border:1px solid rgba(190,166,255,.1);border-radius:14px;background:#100c1d;color:#edf3f1;box-shadow:0 12px 36px #0005;opacity:0;visibility:hidden;pointer-events:none;transform:translateY(10px);transition:opacity .18s,transform .18s,visibility .18s;--toast-accent:#b99aff}
+.toast.show{opacity:1;visibility:visible;transform:translateY(0)}
+.toast::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:4px;border-radius:0 4px 4px 0;background:var(--toast-accent)}
+.toast-icon{display:grid;place-items:center;flex:0 0 30px;height:30px;border-radius:9px;color:var(--toast-accent);background:color-mix(in srgb,var(--toast-accent) 13%,transparent)}
+.toast-icon svg{width:18px;height:18px}
+.toast-message{min-width:0;overflow-wrap:anywhere;font-size:12px;font-weight:600;line-height:1.45}
+.toast-progress{position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--toast-accent);transform-origin:left;animation:nyx-toast-countdown 2s linear forwards}
+@keyframes nyx-toast-countdown{to{transform:scaleX(0)}}
+@media(prefers-reduced-motion:reduce){.toast{transition:opacity .1s;transform:none}.toast-progress{animation:none}}
+
 .setting-field select,.weather-options select{background:#0b1220;color:white;border-radius:14px}
 .setting-field select option,.weather-options option{background:#101827;color:white}
 .setting-field{display:grid;gap:7px;margin:12px 0}
@@ -2983,8 +2993,6 @@ body.theme-fresh .browser-search-suggestion{
 .setup-final-list{display:grid;gap:10px;align-content:center}
 .setup-final-row{display:flex;justify-content:space-between;gap:16px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(255,255,255,.06);padding:10px 12px;color:#e5e7eb}
 .setup-final-row strong{color:#f8fafc;font-weight:400}
-.chromeos-alt-dim{position:fixed;inset:0;z-index:99999;display:none;background:#000;opacity:0;pointer-events:auto;transition:opacity .18s ease}
-.chromeos-alt-dim.show{display:block;opacity:1}
 @media(max-width:680px){.setup-shortcut-grid{grid-template-columns:1fr;max-height:42vh}.setup-shortcut-card{align-items:flex-start;flex-direction:column}.setup-shortcut-card kbd{min-width:0}}
 .setup-panel .bg-choices{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px;max-height:min(330px,42vh);overflow:auto;padding:2px 4px 6px 2px}
 .bg-choices{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
@@ -3532,3 +3540,11 @@ body.lag-reducer .setup-launch-screen.show .nyx-loading-spinner{
 @media(prefers-reduced-motion:reduce){
   body.lag-reducer .setup-launch-screen.show .nyx-loading-spinner{animation:none!important}
 }
+
+/* Blur the wallpaper in the host document; child frames cannot sample it. */
+iframe[src*="/apps/code-studio/"] {
+  -webkit-backdrop-filter: blur(48px) saturate(.65);
+  backdrop-filter: blur(48px) saturate(.65);
+}
+
+@media(min-width:901px){body.browser-shell .toast{right:calc(var(--nyx-visual-dock-current-width,50px) + 18px);max-width:min(360px,calc(100vw - var(--nyx-visual-dock-current-width,50px) - 36px))}}

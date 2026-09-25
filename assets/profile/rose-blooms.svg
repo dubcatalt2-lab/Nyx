@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="650" viewBox="0 0 420 650" preserveAspectRatio="none">
+  <defs>
+    <radialGradient id="petal" cx="42%" cy="36%" r="70%">
+      <stop offset="0" stop-color="#f4b1c5"/>
+      <stop offset=".42" stop-color="#c85f82"/>
+      <stop offset="1" stop-color="#79314e"/>
+    </radialGradient>
+    <radialGradient id="petalSoft" cx="42%" cy="34%" r="72%">
+      <stop offset="0" stop-color="#f8c4d2"/>
+      <stop offset=".48" stop-color="#d77a98"/>
+      <stop offset="1" stop-color="#8f3b5a"/>
+    </radialGradient>
+    <g id="rose">
+      <ellipse rx="7" ry="10" cy="-7" fill="url(#petal)"/>
+      <ellipse rx="7" ry="10" cy="-7" fill="url(#petal)" transform="rotate(72)"/>
+      <ellipse rx="7" ry="10" cy="-7" fill="url(#petal)" transform="rotate(144)"/>
+      <ellipse rx="7" ry="10" cy="-7" fill="url(#petal)" transform="rotate(216)"/>
+      <ellipse rx="7" ry="10" cy="-7" fill="url(#petal)" transform="rotate(288)"/>
+      <circle r="5.2" fill="#9b3d60"/>
+      <path d="M-2.5 1C-1-2 2-2 3.2.2C1.6 3-1.2 3-2.5 1Z" fill="#efadc0" opacity=".8"/>
+    </g>
+    <g id="roseSoft">
+      <ellipse rx="6" ry="8.5" cy="-6" fill="url(#petalSoft)"/>
+      <ellipse rx="6" ry="8.5" cy="-6" fill="url(#petalSoft)" transform="rotate(72)"/>
+      <ellipse rx="6" ry="8.5" cy="-6" fill="url(#petalSoft)" transform="rotate(144)"/>
+      <ellipse rx="6" ry="8.5" cy="-6" fill="url(#petalSoft)" transform="rotate(216)"/>
+      <ellipse rx="6" ry="8.5" cy="-6" fill="url(#petalSoft)" transform="rotate(288)"/>
+      <circle r="4.4" fill="#a84967"/>
+    </g>
+  </defs>
+  <g stroke="#6d2945" stroke-width=".7">
+    <use href="#roseSoft" transform="translate(20 446) scale(.72)"/>
+    <use href="#roseSoft" transform="translate(13 526) scale(.82)"/>
+    <use href="#rose" transform="translate(17 631) scale(.9)"/>
+    <use href="#roseSoft" transform="translate(57 640) scale(.75)"/>
+    <use href="#rose" transform="translate(105 641)"/>
+    <use href="#roseSoft" transform="translate(171 641) scale(.7)"/>
+    <use href="#roseSoft" transform="translate(377 638) scale(.7)"/>
+    <use href="#rose" transform="translate(407 635) scale(.82)"/>
+  </g>
+</svg>

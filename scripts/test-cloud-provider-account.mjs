@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {loginProviderAccount} from '../services/stratus/provider-account.mjs';
+const account={email:'test@example.com',password:'fixture-private-password',sn:'fixture-device'};
+let calls=0;
+await assert.rejects(loginProviderAccount({},async()=>{calls++}),/configured provider account/);assert.equal(calls,0);
+const result=await loginProviderAccount(account,async(path,opts)=>{calls++;assert.equal(path,'/users/emailLogin');assert.equal(opts.body.get('email'),account.email);assert.equal(opts.body.get('password'),account.password);assert.equal(opts.body.get('sn'),account.sn);return new Response(JSON.stringify({status:200,data:{user_token:'fixture-token'}}));});
+assert.deepEqual(result,{sn:'fixture-device',token:'fixture-token'});assert.equal(calls,1);
+await assert.rejects(loginProviderAccount(account,async()=>new Response(JSON.stringify({status:400,msg:account.password}))),error=>/rejected account sign-in/.test(error.message)&&!error.message.includes(account.password));
+await assert.rejects(loginProviderAccount(account,async()=>new Response(JSON.stringify({status:200,data:{}}))),/without returning a session token/);
+const cookie=await loginProviderAccount(account,async()=>new Response(JSON.stringify({status:200,data:{}}),{headers:{'set-cookie':'as_user_token=cookie-token; Secure; HttpOnly'}}));assert.equal(cookie.token,'cookie-token');
+console.log('Existing provider account login, missing configuration, rejection redaction, token validation and cookie authentication passed.');

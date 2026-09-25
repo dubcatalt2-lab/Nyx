@@ -1,0 +1,305 @@
+html#tutsi-profile-root[data-tutsi-app="profiles"] {
+  color-scheme: dark;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"] body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--bg, #1e1e2e) !important;
+  color: var(--text, #cdd6f4) !important;
+}
+#profile-status {
+  padding: 24px;
+  text-align: center;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"]
+  body
+  .nyx-user-profile-overlay,
+html#tutsi-profile-root[data-tutsi-app="profiles"]
+  body
+  .nyx-profile-directory-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  padding: 20px !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"]
+  body
+  .nyx-user-profile-dialog,
+html#tutsi-profile-root[data-tutsi-app="profiles"] body .nyx-profile-directory {
+  width: min(1160px, 100%) !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  margin: auto !important;
+  border: 1px solid var(--border, #45475a) !important;
+  border-radius: 18px !important;
+  background: var(--surface, #181825) !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"]
+  body
+  .nyx-discord-profile-main {
+  width: 100% !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"]
+  body
+  .nyx-discord-profile-scroll {
+  height: 100% !important;
+  overflow: auto !important;
+  padding: 24px !important;
+  display: block !important;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"]
+  body
+  .nyx-discord-profile-header {
+  padding: 0 48px 22px 0 !important;
+  margin: 0 !important;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"]
+  body
+  .nyx-discord-profile-header
+  h2 {
+  font-size: 27px !important;
+  color: var(--text) !important;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"]
+  body
+  .nyx-discord-profile-layout {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 300px !important;
+  gap: 24px !important;
+  overflow: visible !important;
+  height: auto !important;
+  align-items: start !important;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"] body .nyx-user-profile-form {
+  padding: 0 !important;
+  height: auto !important;
+  overflow: visible !important;
+  background: transparent !important;
+  min-width: 0 !important;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"]
+  body
+  .nyx-profile-editor-section {
+  padding: 20px !important;
+  margin: 0 0 18px !important;
+  background: var(--bg) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 14px !important;
+  box-shadow: none !important;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"]
+  body
+  .nyx-profile-editor-section
+  h4 {
+  margin: 0 0 18px !important;
+  color: var(--text) !important;
+  font-size: 17px !important;
+  text-transform: none !important;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"]
+  body
+  .nyx-profile-field-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"]
+  body
+  .nyx-profile-field-wide {
+  grid-column: 1/-1 !important;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"]
+  body
+  :is(label, small, p, h3) {
+  color: var(--text) !important;
+  letter-spacing: normal !important;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"]
+  body
+  .nyx-user-profile-form
+  :is(input:not([type="color"]), textarea, select) {
+  width: 100% !important;
+  min-width: 0 !important;
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 9px !important;
+  box-shadow: none !important;
+  padding: 10px 12px !important;
+  font-size: 15px !important;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"] body button {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+  border-radius: 9px !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"] body button:hover {
+  background: var(--surface-hover) !important;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"] body :focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"]
+  body
+  .nyx-discord-preview-pane {
+  position: sticky !important;
+  top: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  height: auto !important;
+  padding: 0 !important;
+  gap: 14px !important;
+  overflow: visible !important;
+  background: none !important;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"]
+  body
+  .nyx-discord-preview-pane
+  .nyx-user-profile-card {
+  width: 100% !important;
+  max-width: 300px !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"]
+  body
+  .nyx-profile-rail-header {
+  position: static !important;
+  background: transparent !important;
+  padding: 0 0 16px !important;
+  margin: 0 !important;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"]
+  body
+  .nyx-user-profile-form
+  > footer {
+  position: sticky !important;
+  bottom: -24px !important;
+  background: var(--surface) !important;
+  border-top: 1px solid var(--border) !important;
+  margin: 0 !important;
+  padding: 14px !important;
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 10px !important;
+  z-index: 10;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"]
+  body
+  .nyx-user-profile-form
+  > footer
+  button[type="submit"] {
+  background: var(--accent) !important;
+  color: var(--bg) !important;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"]
+  body
+  .nyx-discord-settings-close {
+  position: absolute !important;
+  right: 26px !important;
+  top: 26px !important;
+  z-index: 20;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"]
+  body
+  .nyx-profile-directory
+  :is(
+    .nyx-profile-directory-sidebar,
+    .nyx-profile-directory-header,
+    .nyx-profile-directory-view
+  ) {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+}
+@media (max-width: 800px) {
+  html#tutsi-profile-root[data-tutsi-app="profiles"]
+    body
+    .nyx-user-profile-overlay,
+  html#tutsi-profile-root[data-tutsi-app="profiles"]
+    body
+    .nyx-profile-directory-overlay {
+    padding: 8px !important;
+  }
+  html#tutsi-profile-root[data-tutsi-app="profiles"]
+    body
+    .nyx-discord-profile-scroll {
+    padding: 16px !important;
+  }
+  html#tutsi-profile-root[data-tutsi-app="profiles"]
+    body
+    .nyx-discord-profile-layout {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  html#tutsi-profile-root[data-tutsi-app="profiles"]
+    body
+    .nyx-discord-preview-pane {
+    position: static !important;
+    order: 0 !important;
+    align-items: center !important;
+  }
+  html#tutsi-profile-root[data-tutsi-app="profiles"]
+    body
+    .nyx-user-profile-form {
+    order: 1 !important;
+    width: 100% !important;
+  }
+  html#tutsi-profile-root[data-tutsi-app="profiles"]
+    body
+    .nyx-profile-field-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  html#tutsi-profile-root[data-tutsi-app="profiles"]
+    body
+    .nyx-user-profile-form
+    > footer {
+    bottom: -16px !important;
+  }
+}
+
+html#tutsi-profile-root
+  body
+  :is(
+    input,
+    textarea,
+    select,
+    button,
+    h2,
+    h3,
+    h4,
+    label,
+    small,
+    p,
+    span,
+    strong
+  ):not(.nyx-styled-display-name):not(.nyx-styled-display-name *) {
+  font-family: "Indie Flower", cursive !important;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"]
+  body
+  .nyx-user-profile-dialog,
+html#tutsi-profile-root[data-tutsi-app="profiles"] body .nyx-profile-directory {
+  position: relative !important;
+  inset: auto !important;
+  transform: none !important;
+  opacity: 1 !important;
+  min-width: 0 !important;
+}
+html#tutsi-profile-root[data-tutsi-app="profiles"]
+  body
+  .nyx-user-profile-overlay {
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: center !important;
+  transform: none !important;
+}

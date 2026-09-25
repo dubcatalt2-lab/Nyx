@@ -40,6 +40,7 @@
     const detail=document.getElementById('detail');
     const retry=document.getElementById('retry');
     let launchTimer=0;
+    let launchAttempt=0;
 
     function validSource(value){
       try{
@@ -52,7 +53,7 @@
       let current=window;
       for(let depth=0;depth<4;depth++){
         try{
-          if(typeof current.nyxProxyGameUrl==='function') return current;
+          if(typeof current.nyxLaunchGameFrame==='function' || typeof current.nyxProxyGameUrl==='function') return current;
           if(current.parent===current) break;
           current=current.parent;
         }catch{break}
@@ -70,7 +71,23 @@
       parent.postMessage({type:'nyx:game-failed'},'*');
     }
 
+    function loadedErrorDocument(){
+      try{
+        const doc=frame.contentDocument;
+        if(!doc?.body) return '';
+        const text=String(doc.body.innerText || doc.body.textContent || '').replace(/\s+/g,' ').trim();
+        const title=String(doc.title || '').replace(/\s+/g,' ').trim();
+        const summary=`${title} ${text}`.trim();
+        if(summary.length>1200) return '';
+        if(/^(?:404|410)(?:\s+(?:error|status))?(?:\s*[-:])?\s*(?:page\s+)?not found\.?$/i.test(text)) return text;
+        if(/^(?:not found|page not found|site not found)\.?$/i.test(text)) return text;
+        if(/\b(?:404|410)\b[\s\S]{0,80}\b(?:page\s+)?not found\b/i.test(summary)) return summary;
+      }catch{}
+      return '';
+    }
+
     async function launch(){
+      const attempt=++launchAttempt;
       const target=validSource(source);
       if(!target){fail('The catalog supplied an invalid game address.');return}
       spinner.hidden=false;
@@ -81,7 +98,21 @@
       frame.removeAttribute('src');
       try{
         const owner=proxyOwner();
-        const destination=owner ? await owner.nyxProxyGameUrl(target) : target;
+        const launch=owner && typeof owner.nyxLaunchGameFrame==='function'
+          ? await owner.nyxLaunchGameFrame(frame,target)
+          : null;
+        if(attempt!==launchAttempt) return;
+        if(launch?.managed){
+          clearTimeout(launchTimer);
+          setTimeout(()=>{
+            if(attempt!==launchAttempt) return;
+            state.hidden=true;
+            parent.postMessage({type:'nyx:game-launched',engine:launch.engine},'*');
+          },650);
+          return;
+        }
+        const destination=launch?.url || (owner ? await owner.nyxProxyGameUrl(target) : target);
+        if(attempt!==launchAttempt) return;
         if(!destination){fail('Nyx could not prepare this game source.');return}
         launchTimer=setTimeout(()=>fail('The original game host did not respond.'),30000);
         frame.src=destination;
@@ -92,8 +123,17 @@
 
     frame.addEventListener('load',()=>{
       if(!frame.src) return;
+      const attempt=launchAttempt;
       clearTimeout(launchTimer);
-      setTimeout(()=>{state.hidden=true;parent.postMessage({type:'nyx:game-launched'},'*')},500);
+      setTimeout(()=>{
+        if(attempt!==launchAttempt) return;
+        if(loadedErrorDocument()){
+          fail('The original game link returned a not-found page. Trying another source if one is available.');
+          return;
+        }
+        state.hidden=true;
+        parent.postMessage({type:'nyx:game-launched'},'*');
+      },650);
     });
     frame.addEventListener('error',()=>fail('The original game host refused the connection.'));
     retry.addEventListener('click',launch);

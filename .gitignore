@@ -48,6 +48,7 @@ build/Release
 
 # Dependency directories
 node_modules/
+services/stratus/.runtime/
 
 # Optional npm cache directory
 .npm
@@ -75,6 +76,12 @@ node_modules/
 .dataconnect
 
 # Nyx local/generated files
+# Local agent instructions and work history are retained on disk, not published.
+/AGENTS.md
+/docs/NYX_PROJECT_STATE.md
+.codex-artifacts/
+playwright-report/
+test-results/
 .tmp-edge-proxy-matrix/
 nyx
 nyx-backupfolder.html/
@@ -88,6 +95,7 @@ assets/docs/
 assets/backgrounds/*
 !assets/backgrounds/nyx-blue-light-trails.jpg
 !assets/backgrounds/animated-blue-wave.html
+!assets/backgrounds/pirate-cove.gif
 *.mp4
 *.webm
 *.mov

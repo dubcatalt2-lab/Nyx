@@ -449,8 +449,8 @@ async function main() {
   await configureUv(wispUrl);
   await removeUnavailableUgsEntries();
   await minifyFirstPartyBrowserRuntimes();
-  await minifyFirstPartyMarkupAndStyles();
   await versionStylesheets();
+  await minifyFirstPartyMarkupAndStyles();
   await buildProxyAssets(output);
   await buildFrontendAssets(output,repositoryFiles().filter(isStaticSource),learningPage());
   await writeNetlifyFiles();

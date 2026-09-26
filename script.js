@@ -14277,7 +14277,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }
     },delay);
   }
-  const NYX_RELEASE_NOTES_VERSION='2026-09-14-nyx-1.0.3';
+  const NYX_RELEASE_NOTES_VERSION='2026-09-26-nyx-1.3.6.7';
   let nyxReleaseNotesTimer=0;
   function nyxReleaseNotesStorageKey(){
     return `nyx.releaseNotes.${NYX_RELEASE_NOTES_VERSION}.seen`;
@@ -14308,10 +14308,10 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     const overlay=document.createElement('div');
     overlay.className='nyx-release-notes-overlay';
     overlay.innerHTML=`<section class="nyx-release-notes" role="dialog" aria-modal="true" aria-labelledby="nyxReleaseNotesTitle" aria-describedby="nyxReleaseNotesIntro">
-      <header><div><span>What's new</span><h1 id="nyxReleaseNotesTitle" tabindex="-1">Nyx v1.0.3 is here!</h1></div><button type="button" data-nyx-release-notes-close aria-label="Close update log">&times;</button></header>
+      <header><div><span>What's new</span><h1 id="nyxReleaseNotesTitle" tabindex="-1">Nyx v1.3.6.7</h1></div><button type="button" data-nyx-release-notes-close aria-label="Close update log">&times;</button></header>
       <div class="nyx-release-message" id="nyxReleaseNotesIntro">
-        <p class="nyx-release-greeting"><strong><em>Hi guys new update!<br>Nyx v1.0.3</em></strong></p>
-        <p class="nyx-release-changes"><strong>What changed:</strong> Fixed movies<br>Fixed AI<br>Redesigned some stuff<br>Added message toasts!</p>
+        <p class="nyx-release-greeting"><strong>New UI is here!</strong></p>
+        <p class="nyx-release-changes">Everything is more clean<br>Fixed a lot of games<br>added Lightspeed Bypass<br>Fixed some settings</p>
       </div>
       <footer><button type="button" data-nyx-release-notes-close>Got it</button></footer>
     </section>`;

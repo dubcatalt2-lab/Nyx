@@ -1,26 +1,25 @@
-/* First-run setup follows the redesigned Nyx glass shell and previews the
-   selected theme against the shared Beams wallpaper. */
+/* A quiet setup surface; theme colors stay in the actual previews. */
 html body.setup-active{
-  --setup-canvas:rgba(2,5,10,.18);
-  --setup-surface:rgba(5,8,14,.48);
-  --setup-deep:rgba(3,6,11,.44);
-  --setup-control:rgba(9,13,20,.46);
+  --setup-canvas:#09090b;
+  --setup-surface:#111112;
+  --setup-deep:#0b0b0c;
+  --setup-control:#171719;
   --setup-control-hover:rgba(255,255,255,.075);
   --setup-selected:color-mix(in srgb,var(--setup-accent) 16%,rgba(10,14,22,.48));
-  --setup-accent:#a78bfa;
-  --setup-bright:#c4b5fd;
-  --setup-text:#f7f7fb;
-  --setup-muted:#9896a2;
-  --setup-line:color-mix(in srgb,var(--setup-accent) 46%,transparent);
+  --setup-accent:#d4d4d8;
+  --setup-bright:#ededf0;
+  --setup-text:#f0f0f2;
+  --setup-muted:#a1a1a8;
+  --setup-line:#3b3b40;
   --setup-line-soft:rgba(255,255,255,.1);
 }
 
 html body .setup-screen{
+  z-index:2147483501;
   padding:clamp(12px,2.4vw,28px);
   background-color:var(--setup-canvas);
   background-image:none;
-  backdrop-filter:blur(5px) saturate(1.03);
-  -webkit-backdrop-filter:blur(5px) saturate(1.03);
+  backdrop-filter:none;
   visibility:hidden;
   pointer-events:none;
 }
@@ -40,18 +39,17 @@ html body .setup-screen.show{
 
 html body .setup-panel{
   position:relative;
-  width:min(860px,calc(100vw - 28px));
-  min-height:min(590px,calc(100vh - 40px));
-  max-height:calc(100vh - 40px);
+  width:min(800px,calc(100vw - 28px));
+  min-height:min(590px,calc(100dvh - 40px));
+  max-height:calc(100dvh - 40px);
   padding:0;
   overflow:hidden;
   border:1px solid var(--setup-line);
-  border-radius:20px;
+  border-radius:16px;
   background:var(--setup-surface);
   color:var(--setup-text);
-  box-shadow:0 32px 90px rgba(0,0,0,.72),inset 0 1px 0 rgba(255,255,255,.04);
-  backdrop-filter:blur(14px) saturate(1.05);
-  -webkit-backdrop-filter:blur(14px) saturate(1.05);
+  box-shadow:0 24px 90px rgba(0,0,0,.3);
+  backdrop-filter:none;
 }
 
 html body .setup-header{
@@ -64,11 +62,10 @@ html body .setup-header{
     "subtitle progress";
   align-items:center;
   column-gap:28px;
-  padding:25px 28px 23px;
+  padding:24px 32px;
   border-bottom:1px solid var(--setup-line-soft);
-  background:rgba(5,8,14,.30);
-  backdrop-filter:blur(9px) saturate(1.04);
-  -webkit-backdrop-filter:blur(9px) saturate(1.04);
+  background:transparent;
+  backdrop-filter:none;
 }
 
 html body .setup-eyebrow{
@@ -77,7 +74,7 @@ html body .setup-eyebrow{
   color:var(--setup-bright);
   font-size:10px;
   font-weight:700;
-  letter-spacing:.18em;
+  letter-spacing:0;
   line-height:1;
 }
 
@@ -87,7 +84,7 @@ html body .setup-panel .setup-header h1{
   color:var(--setup-text)!important;
   -webkit-text-fill-color:var(--setup-text)!important;
   background:none!important;
-  font-size:clamp(27px,3.2vw,38px);
+  font-size:20px;
   font-weight:600;
   letter-spacing:-.035em;
   line-height:1.04;
@@ -108,14 +105,13 @@ html body .setup-panel .setup-header > p{
 html body .setup-progress{
   grid-area:progress;
   display:grid;
-  grid-template-columns:repeat(9,12px);
-  gap:7px;
+  grid-template-columns:repeat(10,12px);
+  gap:5px;
   align-self:center;
   margin:0;
-  padding:10px 12px;
-  border:1px solid var(--setup-line-soft);
-  border-radius:999px;
-  background:var(--setup-deep);
+  padding:0;
+  border:0;
+  background:none;
 }
 
 html body .setup-dot,
@@ -131,12 +127,12 @@ html body .setup-dot.active{
 
 html body .setup-dot.active{
   background:var(--setup-bright);
-  box-shadow:0 0 10px color-mix(in srgb,var(--setup-accent) 58%,transparent);
+  box-shadow:none;
 }
 
 html body .setup-grid{
   overflow:auto;
-  padding:27px 28px 22px;
+  padding:32px;
   scrollbar-width:thin;
   scrollbar-color:var(--setup-line) transparent;
 }
@@ -175,14 +171,14 @@ html body .setup-welcome-step{
 }
 
 html body .setup-welcome-logo{
-  width:84px;
-  height:84px;
-  margin-bottom:5px;
-  border:1px solid var(--setup-line);
-  border-radius:22px;
-  background:var(--setup-control);
-  color:var(--setup-bright);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 36px rgba(0,0,0,.35);
+  width:64px;
+  height:64px;
+  margin-bottom:10px;
+  border:0;
+  border-radius:0;
+  background:none;
+  color:var(--setup-text);
+  box-shadow:none;
 }
 
 html body .setup-welcome-logo :is(img,svg){
@@ -191,22 +187,21 @@ html body .setup-welcome-logo :is(img,svg){
 }
 
 html body .setup-welcome-step > h2{
-  font-size:clamp(32px,5vw,48px);
+  font-size:clamp(36px,5vw,52px);
   font-weight:500;
 }
 
 html body .setup-welcome-step > p{
-  max-width:510px;
+  max-width:350px;
   font-size:15px;
 }
 
 html body .setup-welcome-hint{
-  margin-top:5px;
-  border:1px solid var(--setup-line-soft);
-  border-radius:12px;
-  background:color-mix(in srgb,var(--setup-control) 72%,transparent);
+  margin-top:16px;
+  border:0;
+  background:none;
   color:var(--setup-muted);
-  padding:7px 11px;
+  padding:0;
   font-size:12px;
 }
 
@@ -231,8 +226,8 @@ html body .setup-field label{
   -webkit-text-fill-color:var(--setup-muted)!important;
   font-size:11px;
   font-weight:500;
-  letter-spacing:.08em;
-  text-transform:uppercase;
+  letter-spacing:0;
+  text-transform:none;
 }
 
 html body .setup-name input,
@@ -247,7 +242,7 @@ html body .setup-field select{
   color:var(--setup-text);
   -webkit-text-fill-color:var(--setup-text);
   padding:0 14px;
-  box-shadow:inset 0 1px 0 color-mix(in srgb,var(--setup-bright) 5%,transparent);
+  box-shadow:none;
 }
 
 html body .setup-field select option{
@@ -455,9 +450,8 @@ html body .setup-actions{
   margin:0;
   padding:17px 28px;
   border-top:1px solid var(--setup-line-soft);
-  background:rgba(5,8,14,.30);
-  backdrop-filter:blur(9px) saturate(1.04);
-  -webkit-backdrop-filter:blur(9px) saturate(1.04);
+  background:transparent;
+  backdrop-filter:none;
 }
 
 html body .setup-copyright{
@@ -498,9 +492,9 @@ html body .setup-actions button:active{
 html body #setupScreen .setup-actions button.primary,
 html body #setupScreen .setup-actions button.primary:hover{
   border-color:color-mix(in srgb,var(--setup-bright) 72%,transparent)!important;
-  background:color-mix(in srgb,var(--setup-accent) 28%,rgba(10,14,22,.58))!important;
-  color:var(--setup-text)!important;
-  -webkit-text-fill-color:var(--setup-text)!important;
+  background:#ededf0!important;
+  color:#151517!important;
+  -webkit-text-fill-color:#151517!important;
 }
 
 html body .setup-account-card{
@@ -594,7 +588,7 @@ html body #setupScreen .setup-actions button.primary:focus-visible{
   outline-offset:3px;
 }
 
-html body .setup-actions [data-skip-setup]{
+html body #setupScreen .setup-actions [data-skip-setup]{
   margin-right:auto;
   border-color:transparent;
   background:transparent;
@@ -602,15 +596,15 @@ html body .setup-actions [data-skip-setup]{
   -webkit-text-fill-color:var(--setup-muted);
 }
 
-html body .setup-actions [data-skip-setup]:hover{
+html body #setupScreen .setup-actions [data-skip-setup]:hover{
   border-color:var(--setup-line-soft);
   background:color-mix(in srgb,var(--setup-control) 55%,transparent);
 }
 
 @media(max-width:760px){
   html body .setup-panel{
-    min-height:calc(100vh - 24px);
-    max-height:calc(100vh - 24px);
+    min-height:calc(100dvh - 24px);
+    max-height:calc(100dvh - 24px);
     border-radius:18px;
   }
   html body .setup-header{
@@ -619,7 +613,7 @@ html body .setup-actions [data-skip-setup]:hover{
     padding:21px 20px 18px;
   }
   html body .setup-progress{
-    grid-template-columns:repeat(9,minmax(12px,1fr));
+    grid-template-columns:repeat(10,minmax(0,1fr));
     width:100%;
     margin-top:16px;
     padding:8px 10px;
@@ -650,10 +644,11 @@ html body .setup-actions [data-skip-setup]:hover{
 
 @media(max-width:480px){
   html body .setup-screen{padding:0}
-  html body .setup-panel{
+  html body #setupScreen .setup-panel{
     width:100vw;
-    min-height:100vh;
-    max-height:100vh;
+    zoom:1;
+    min-height:100dvh;
+    max-height:100dvh;
     border-width:0;
     border-radius:0;
   }

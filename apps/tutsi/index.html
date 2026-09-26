@@ -14,7 +14,7 @@
     <script defer src="/apps/tutsi/install.js?v=20260918"></script>
     <link rel="icon" href="/apps/tutsi/icon.png?v=2" type="image/png" />
     <link rel="stylesheet" href="/apps/tutsi/font.css?v=1" />
-    <link rel="stylesheet" href="/apps/tutsi/style.css?v=20260925-discord-outline-v6" />
+    <link rel="stylesheet" href="/apps/tutsi/style.css?v=20260926-flat-setup-v7" />
     <style>
       html.startup-covered{overflow:hidden;background:#f5f7fa}
       html.startup-covered body > :not(#studyready-startup):not(script){visibility:hidden!important}
@@ -22,7 +22,7 @@
     </style>
     <script defer src="/apps/tutsi/startup.js"></script>
     <script src="/runtime-config.js"></script>
-    <script type="module" src="/apps/tutsi/app.mjs?v=20260925-http-batch-v10"></script>
+    <script type="module" src="/apps/tutsi/app.mjs?v=20260926-study-runtime-v11"></script>
   </head>
   <body>
     <iframe id="studyready-startup" title="StudyReady math lessons" src="/apps/tutsi/studyready/index.html" referrerpolicy="no-referrer"></iframe>
@@ -504,13 +504,13 @@
       </button>
     </dialog>
     <dialog id="customize-dialog" aria-labelledby="customize-title">
-      <header class="customize-heading"><div><p class="eyebrow">Customize</p><h2 id="customize-title">Customize Tutsi</h2></div><button id="customize-dismiss" class="text-link" type="button" hidden>Cancel</button></header>
+      <header class="customize-heading"><div><p class="eyebrow">Tutsi / setup</p><h2 id="customize-title">A few things before you start.</h2></div><button id="customize-dismiss" class="text-link" type="button" hidden>Cancel</button></header>
       <div class="customize-layout">
         <aside id="customize-preview" aria-label="Appearance preview"><div class="customize-mini-tab"><span aria-hidden="true"></span><span id="customize-tab-label">Tutsi Math</span></div><div class="customize-mini-home"><img src="/apps/tutsi/icon.png?v=2" width="64" height="64" alt=""><strong>tutsi math.</strong><div class="customize-mini-search">Search the web <span aria-hidden="true">&#8594;</span></div><div class="customize-mini-links">AI &nbsp; Music &nbsp; YouTube</div></div><p>Preview</p></aside>
         <div class="customize-fields">
           <ol class="customize-steps" aria-label="Customization steps"><li data-step-marker aria-label="Theme">1</li><li data-step-marker aria-label="Color">2</li><li data-step-marker aria-label="Background">3</li><li data-step-marker aria-label="Your tab">4</li><li data-step-marker aria-label="Preferences">5</li><li data-step-marker aria-label="Your blocker">6</li></ol>
-          <section data-customize-step="0"><h3 tabindex="-1">Theme</h3><p>Pick a starting theme.</p><select id="customize-theme"><option value="mocha">Mocha</option><option value="macchiato">Macchiato</option><option value="frappe">Frappe</option><option value="latte">Latte</option></select></section>
-          <section data-customize-step="1" hidden><h3 tabindex="-1">Color</h3><p>Choose your color.</p><select id="customize-accent"></select></section>
+          <section data-customize-step="0"><h3 tabindex="-1">Theme</h3><p>Choose the one you like.</p><select id="customize-theme"><option value="mocha">Mocha</option><option value="macchiato">Macchiato</option><option value="frappe">Frappe</option><option value="latte">Latte</option></select></section>
+          <section data-customize-step="1" hidden><h3 tabindex="-1">Color</h3><p>An accent for buttons and highlights.</p><select id="customize-accent"></select></section>
           <section data-customize-step="2" hidden><h3 tabindex="-1">Background</h3><p>Keep it plain or add a background.</p><select id="customize-wallpaper"></select></section>
           <section data-customize-step="3" hidden><h3 tabindex="-1">Your tab</h3><p>Choose the title and icon shown by your browser.</p><label for="customize-tabPreset">Tab preset</label><select id="customize-tabPreset"></select><label for="customize-tabTitle">Custom title</label><input id="customize-tabTitle" maxlength="100" placeholder="Your tab title"></section>
           <section data-customize-step="4" hidden><h3 tabindex="-1">Preferences</h3><p>You can change these later in Settings.</p><select id="customize-engine"></select><label class="customize-check"><input id="customize-closePrevention" type="checkbox">Confirm before closing</label><label class="customize-check"><input id="customize-motion" type="checkbox">Reduce motion</label><p id="customize-summary"></p></section>

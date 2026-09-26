@@ -2748,7 +2748,7 @@
     },
     {
       "id": "253",
-      "path": "253-update.html",
+      "path": "253-update2.html",
       "title": "Chat Bot AI (A.I GPT)",
       "author": "gn-math",
       "authorLink": "https://gn-math.dev",
@@ -2756,7 +2756,7 @@
         "tools"
       ],
       "cover": "/gn-math-asset?repo=covers&path=253.png",
-      "rawUrl": "https://raw.githubusercontent.com/freebuisness/html/main/253-update.html",
+      "rawUrl": "https://raw.githubusercontent.com/freebuisness/html/main/253-update2.html",
       "coverFallback": "https://raw.githubusercontent.com/freebuisness/covers/main/253.png"
     },
     {
@@ -8936,7 +8936,7 @@
     },
     {
       "id": "785",
-      "path": "785-upd2.html",
+      "path": "785-upd3.html",
       "title": "Geometry Dash",
       "author": "RobTop Games",
       "authorLink": "https://geometrydash.com",
@@ -8944,7 +8944,7 @@
         "port"
       ],
       "cover": "/gn-math-asset?repo=covers&path=785.png",
-      "rawUrl": "https://raw.githubusercontent.com/freebuisness/html/main/785-upd2.html",
+      "rawUrl": "https://raw.githubusercontent.com/freebuisness/html/main/785-upd3.html",
       "coverFallback": "https://raw.githubusercontent.com/freebuisness/covers/main/785.png"
     },
     {

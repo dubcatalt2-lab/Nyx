@@ -12,7 +12,8 @@
   <div class="loading" id="loading"><div class="status" id="status"><span>Loading game…</span><div class="track"><div class="fill"></div></div></div></div>
   <iframe id="game" title="Game" allow="autoplay; fullscreen; gamepad; keyboard-map" allowfullscreen tabindex="0"></iframe>
   <script src="/assets/games/game-health.js" data-provider="local"></script>
-  <script>
+  <script type="module">
+    import {prepareGameDocument} from '/assets/games/game-document.js';
     const frame=document.getElementById('game');
     const loading=document.getElementById('loading');
     const status=document.getElementById('status');
@@ -64,7 +65,7 @@
     const path=safePath(rawPath);
     if(!path) fail('Invalid game path.');
     else if(externalGames[path]){launchStarted=true;frame.src=externalGames[path]}
-    else {const assetUrl=`/assets/ugs/${path}`;fetch(assetUrl,{cache:'no-store'}).then(response=>{if(!response.ok)throw new Error(`HTTP ${response.status}`);return response.text()}).then(source=>{launchStarted=true;const hasDeadCloak=/(?:\.\.\/)+storage\/js\/cloak(?:i)?\.js/i.test(source);if(isWrapped(source)||hasDeadCloak)frame.srcdoc=prepare(source,path);else frame.src=assetUrl}).catch(error=>fail(`Could not load game: ${error.message||error}`))}
+    else {const assetUrl=`/assets/ugs/${path}`;fetch(assetUrl,{cache:'no-store'}).then(response=>{if(!response.ok)throw new Error(`HTTP ${response.status}`);return response.text()}).then(source=>{launchStarted=true;const hasDeadCloak=/(?:\.\.\/)+storage\/js\/cloak(?:i)?\.js/i.test(source);if(/<base\b[^>]*href=["'][^"']*(?:youtube-playables|cdn\.jsdelivr\.net\/(?!gh\/|npm\/|combine\/)[\w.-]+\/[\w.-]+@)/i.test(source))frame.srcdoc=prepareGameDocument(unwrap(source),path,location.origin+assetUrl);else if(isWrapped(source)||hasDeadCloak)frame.srcdoc=prepare(source,path);else frame.src=assetUrl}).catch(error=>fail(`Could not load game: ${error.message||error}`))}
   </script>
 </body>
 </html>

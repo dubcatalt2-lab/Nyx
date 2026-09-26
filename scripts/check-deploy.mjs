@@ -4,6 +4,9 @@ import { spawnSync } from "node:child_process";
 const requiredFiles = [
   "assets/games/game-health.js",
   "assets/games/game-runtime-compat.js",
+  "assets/games/game-cdn.js",
+  "assets/games/game-document.js",
+  "lib/game-resource-repairs.mjs",
   "lib/game-reports.mjs",
   "assets/transports/libcurl-client.mjs",
   "assets/transports/libcurl-response.mjs",

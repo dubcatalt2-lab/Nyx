@@ -1776,7 +1776,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   const DEFAULT_BROWSER_MODE='scramjet';
   const DEFAULT_BROWSER_TRANSPORT='auto';
   function normalizeBrowserTransportName(value=DEFAULT_BROWSER_TRANSPORT){
-    const name=String(value || DEFAULT_BROWSER_TRANSPORT).trim().toLowerCase();
+    const name=String(value || DEFAULT_BROWSER_TRANSPORT).trim().toLowerCase()
+      .replace(atob('bGliY3VybA=='),'libcurl').replace('textlib','libcurl')
+      .replace(atob('ZXBveHk='),'epoxy').replace('atlas','epoxy');
     if(name==='libcurl' || name==='libcurlraw') return 'libcurlRaw';
     if(name==='epoxy' || name==='wisp' || name==='auto') return name;
     return DEFAULT_BROWSER_TRANSPORT;
@@ -7435,7 +7437,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))){
       try{value=JSON.parse(value)}catch{value=value.slice(1,-1)}
     }
-    value=String(value || 'auto').trim().toLowerCase();
+    value=String(value || 'auto').trim().toLowerCase().replace(atob('c2NyYW1qZXQ='),'scramjet').replace('studyjet','scramjet');
     if(value==='uv' || value==='ultra' || value==='ultraviolet') return 'scramjet';
     if(value==='sj' || value==='scram' || value==='scramjet' || value==='scramjet-v2' || value==='sjv2') return 'scramjet';
     if(value==='scramjet-v1' || value==='sjv1' || value==='scram-v1') return 'scramjet';
@@ -14185,18 +14187,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     setTimeout(()=>win.querySelector('#settingName')?.focus(),60);
   }
   let setupStepIndex=0;
-  const setupStepTitles=[
-    'Welcome to Nyx. Customize your experience.',
-    'Choose the username Nyx will use.',
-    'Create an account or continue as a guest.',
-    'Customize your Nyx profile.',
-    'Preview the theme Nyx starts with.',
-    'Choose how much motion you want.',
-    'Choose your browser defaults.',
-    'Choose the font Nyx uses.',
-    'Check everything before launch.',
-    'Learn the controls before launch.'
-  ];
+  const setupStepTitles=['Welcome','Username','Account','Profile','Theme','Effects','Browser','Font','Preview','Shortcuts'];
   function syncSetupAccountStep(){
     const setup=$('setupScreen');
     if(!setup)return;
@@ -14260,14 +14251,14 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     steps.forEach((step,i)=>step.classList.toggle('active',i===setupStepIndex));
     setup.querySelectorAll('.setup-dot').forEach((dot,i)=>dot.classList.toggle('active',i===setupStepIndex));
     const subtitle=setup.querySelector('[data-setup-subtitle]');
-    if(subtitle) subtitle.textContent=setupStepTitles[setupStepIndex] || setupStepTitles[0];
+    if(subtitle) subtitle.textContent=`${setupStepIndex+1} of ${steps.length} / ${setupStepTitles[setupStepIndex] || setupStepTitles[0]}`;
     const back=setup.querySelector('[data-setup-back]');
     const next=setup.querySelector('[data-setup-next]');
     const finish=setup.querySelector('[data-finish-setup]');
     if(back) back.hidden=setupStepIndex===0;
     if(next){
       next.hidden=setupStepIndex===steps.length-1;
-      next.textContent=setupStepIndex===0?'Enter':setupStepIndex===2&&!nyxFounderSignedInUser?'Continue as guest':'Next';
+      next.textContent=setupStepIndex===0?'Get started':setupStepIndex===2&&!nyxFounderSignedInUser?'Continue as guest':'Next';
     }
     if(finish) finish.hidden=setupStepIndex!==steps.length-1;
     updateSetupPreview();

@@ -1,26 +1,30 @@
+import {renameRuntimeText,rewriteRuntimeNames,renameRuntimeWasm} from './build-runtime-names.mjs';
+import {createHash} from 'node:crypto';
 import {rewriteStorageNames} from './build-storage.mjs';
-import {readFile, writeFile, readdir, rm} from 'node:fs/promises';
+import {readFile, writeFile, readdir, rm, mkdir} from 'node:fs/promises';
 import {join, posix} from 'node:path';
 import {randomBytes} from 'node:crypto';
 import {minify} from 'terser';
 
 // Generated once and committed: stable opaque URLs keep old tabs working.
 export const legacyProxyAssetNames=JSON.parse(await readFile(new URL('./proxy-asset-names.json',import.meta.url),'utf8'));
-export const proxyAssetNames=Object.fromEntries(Object.entries(legacyProxyAssetNames).map(([original,alias])=>[original,alias.replace(/r([0-9a-f]{24})(\.(?:js|mjs|wasm))$/, '@r$1!$2')]));
+const previousProxyAssetNames=Object.fromEntries(Object.entries(legacyProxyAssetNames).map(([original,alias])=>[original,alias.replace(/r([0-9a-f]{24})(\.(?:js|mjs|wasm))$/, '@r$1!$2')]));
+export const proxyAssetNames=Object.fromEntries(Object.entries(legacyProxyAssetNames).map(([original,alias])=>[original,posix.join(renameRuntimeText(posix.dirname(alias)), '@r'+createHash('sha256').update('education-v1:'+original).digest('hex').slice(0,24)+'!'+posix.extname(alias))]));
 const entries=Object.entries(proxyAssetNames);
 const destinations=new Set();
 for(const [original,alias] of entries){
-  if(!original.startsWith('/')||original.includes('..')||posix.dirname(original)!==posix.dirname(alias)||posix.extname(original)!==posix.extname(alias)||!/^@r[0-9a-f]{24}!\.(?:js|mjs|wasm)$/.test(posix.basename(alias))||destinations.has(alias))throw Error('Invalid proxy asset mapping');
+  if(!original.startsWith('/')||original.includes('..')||renameRuntimeText(posix.dirname(original))!==posix.dirname(alias)||posix.extname(original)!==posix.extname(alias)||!/^@r[0-9a-f]{24}!\.(?:js|mjs|wasm)$/.test(posix.basename(alias))||destinations.has(alias))throw Error('Invalid proxy asset mapping');
   destinations.add(alias);
 }
-export function rewriteProxyReferences(source,path){
+export function rewriteProxyReferences(source,path,mappings=entries){
   source=rewriteStorageNames(source);
-  for(const [original,alias] of [...entries].sort((a,b)=>b[0].length-a[0].length)) source=source.split(original).join(alias);
-  // Relative imports/default URLs stay in the same directory after renaming.
+  for(const [original,alias] of [...mappings].sort((a,b)=>b[0].length-a[0].length)) source=source.split(original).join(alias);
+  // Resolve relative imports from the renamed module directory.
   const directory=posix.dirname(path);
-  for(const [original,alias] of entries){
+  const destinationDirectory=posix.dirname(mappings.find(([original])=>original===path)?.[1] || path);
+  for(const [original,alias] of mappings){
     let relative=posix.relative(directory,posix.normalize(original));
-    const renamed=posix.relative(directory,alias);
+    const renamed=posix.relative(destinationDirectory,alias);
     for(const prefix of relative.startsWith('.')?['']:['','./']){
       for(const quote of ['"',"'",'`']) source=source.split(quote+prefix+relative+quote).join(quote+prefix+renamed+quote);
     }
@@ -56,8 +60,17 @@ export async function buildProxyAssets(output){
   let renamed=0;
   for(const [original,alias] of entries){
     const bytes=originals.get(original);
-    if(original.endsWith('.wasm')){await writeFile(join(output,alias.slice(1)),bytes);await writeFile(join(output,legacyProxyAssetNames[original].slice(1)),bytes);continue;}
-    const transformed=await scrambleProxyCode(rewriteProxyReferences(bytes.toString('utf8'),original),{module:original.endsWith('.mjs')});
+    await mkdir(join(output,posix.dirname(alias)),{recursive:true});
+    const previousAlias=previousProxyAssetNames[original];
+    if(original.endsWith('.wasm')){
+      await writeFile(join(output,alias.slice(1)),renameRuntimeWasm(bytes));
+      await writeFile(join(output,previousAlias.slice(1)),bytes);
+      await writeFile(join(output,legacyProxyAssetNames[original].slice(1)),bytes);
+      continue;
+    }
+    const previous=await scrambleProxyCode(rewriteProxyReferences(bytes.toString('utf8'),original,Object.entries(previousProxyAssetNames)),{module:original.endsWith('.mjs')});
+    await writeFile(join(output,previousAlias.slice(1)),previous.code);
+    const transformed=await scrambleProxyCode(rewriteRuntimeNames(rewriteProxyReferences(bytes.toString('utf8'),original)),{module:original.endsWith('.mjs')});
     renamed+=transformed.renamed;
     await writeFile(join(output,alias.slice(1)),transformed.code);
     // Compatibility filenames also receive mangled code, but keep their URLs.
@@ -70,13 +83,13 @@ export async function buildProxyAssets(output){
       if(path.endsWith('.map'))await rm(join(output,path));
       continue;
     }
-    if(Object.values(legacyProxyAssetNames).includes('/'+path)||proxyAssetNames['/'+path]||entries.some(([,alias])=>alias==='/'+path)||path.startsWith('assets/ugs/')||path.startsWith('assets/vendor/'))continue;
+    if(Object.values(previousProxyAssetNames).includes('/'+path)||Object.values(legacyProxyAssetNames).includes('/'+path)||proxyAssetNames['/'+path]||entries.some(([,alias])=>alias==='/'+path)||path.startsWith('assets/ugs/')||path.startsWith('assets/vendor/'))continue;
     if(!/\.(?:js|mjs|html)$/.test(path))continue;
     const source=await readFile(join(output,path),'utf8');
-    const rewritten=rewriteProxyReferences(source,'/'+path);
+    const rewritten=rewriteRuntimeNames(rewriteProxyReferences(source,'/'+path));
     if(source!==rewritten)await writeFile(join(output,path),rewritten);
   }
-  await writeFile(join(output,'proxy-assets.json'),JSON.stringify({version:2,aliases:proxyAssetNames}));
+  await writeFile(join(output,'proxy-assets.json'),JSON.stringify({version:3,aliases:proxyAssetNames}));
   await writeFile(join(output,'_headers'),entries.map(([,alias])=>`${alias}\n  Cache-Control: no-store, no-cache, must-revalidate\n`).join('\n'));
-  console.log(`Proxy build: ${entries.length} opaque asset URLs; ${renamed} randomized identifier slots; public interfaces preserved.`);
+  console.log(`Proxy build: ${entries.length} opaque asset URLs; ${renamed} randomized identifier slots; educational runtime names linked across JS and WASM.`);
 }

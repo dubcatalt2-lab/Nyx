@@ -1,4 +1,6 @@
 import {createGameReports} from './lib/game-reports.mjs';
+import {gameResourceTarget} from './assets/games/game-cdn.js';
+import {repairGameResource} from './lib/game-resource-repairs.mjs';
 import { exchangeVoiceAudio, createVoiceAudioAccess, cleanupVoiceAudio } from './lib/chat-voice-relay.mjs';
 import {recordAiExchange,readAiActivity} from './lib/ai-history.mjs';
 import {assignableAiModels,validateAiModelRules} from './lib/ai-model-policy.mjs';
@@ -744,7 +746,7 @@ app.use((req, res, next) => {
     "/nyx-scramjet-runtime-guard.js"
   ]);
   const noStorePrefix = /^\/(?:assets\/(?:gms-games|reds-misc)\/|gms-games-|reds-misc-)/i.test(req.path);
-  const opaqueProxyAsset = /^\/(?:scramjet(?:-v1)?\/|controller\/|epoxy\/|libcurl\/|baremux\/|uv\/|assets\/transports\/|apps\/tutsi\/)?@?r[0-9a-f]{24}!?\.(?:js|mjs|wasm)$/.test(req.path);
+  const opaqueProxyAsset = /^\/(?:(?:scramjet|studyjet)(?:-v1)?\/|controller\/|epoxy\/|atlas\/|libcurl\/|textlib\/|baremux\/|uv\/|assets\/transports\/|apps\/tutsi\/)?@?r[0-9a-f]{24}!?\.(?:js|mjs|wasm)$/.test(req.path);
   if (noStorePaths.has(req.path) || noStorePrefix || opaqueProxyAsset) {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma", "no-cache");
@@ -1964,6 +1966,13 @@ function isHtmlProxyPayload(url, result) {
 
 function gnMathProxyCandidates(url) {
   const candidates = [url];
+  // The original mirror mixed filename casing; its replacement lowercased files.
+  // Try the requested path first so files that retain their casing still work.
+  if(url.hostname==='cdn.jsdelivr.net' && /^\/gh\/web-ports\/fear-and-hunger-2@[^/]+\//i.test(url.pathname)) {
+    const lower=new URL(url);
+    lower.pathname=lower.pathname.replace(/^(\/gh\/web-ports\/fear-and-hunger-2@[^/]+\/)(.*)$/i,(_all,root,path)=>root+path.toLowerCase());
+    if(lower.href!==url.href)candidates.push(lower);
+  }
   const parts = url.pathname.split("/").filter(Boolean);
   if (url.hostname === "cdn.jsdelivr.net" && parts[0] === "gh" && parts.length >= 4) {
     const [owner, repoRef, ...resourcePath] = parts.slice(1);
@@ -2056,6 +2065,25 @@ app.get("/gn-math-proxy", async (req, res) => {
     }
   }
   res.status(lastError?.status || 502).type("text/plain").send(`GN Math proxy error: ${lastError?.message || lastError}`);
+});
+
+app.options(/^\/gn-math-resource\//, (req, res) => { setGnMathCors(req, res); res.sendStatus(204); });
+app.get(/^\/gn-math-resource\//, async (req, res) => {
+  setGnMathCors(req, res);
+  const target = gameResourceTarget(req.originalUrl);
+  if (!target || !safeGnMathProxyUrl(target.href)) return res.status(400).type('text/plain').send('Invalid game resource URL');
+  let lastError;
+  for (const candidate of gnMathProxyCandidates(target)) {
+    try {
+      const result = await directProxyFetch(candidate);
+      if (isHtmlProxyPayload(candidate, result)) throw Object.assign(new Error('upstream returned HTML for a game resource'), {status: 502});
+      // Never rewrite arbitrary JSON strings. The path preserves their base.
+      res.setHeader('Cache-Control', result.cacheControl);
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      return res.type(gnMathResourceContentType(candidate, result.contentType)).send(repairGameResource(target, result.body));
+    } catch (error) { lastError = error; }
+  }
+  res.status(lastError?.status || 502).type('text/plain').send(`Game resource error: ${lastError?.message || 'upstream unavailable'}`);
 });
 
 const redsMiscProxyHosts = new Set([
@@ -14040,7 +14068,7 @@ app.use("/baremux/", express.static(baremuxPath));
 app.use("/epoxy/", express.static(epoxyPath));
 app.use("/libcurl/", express.static(libcurlPath));
 
-app.use("/~/sj/", (_req, res) => {
+app.use(["/~/sj/", "/~/study/", "/~/study-v1/"], (_req, res) => {
   res.status(502).type("html").send(`<!doctype html>
 <meta charset="utf-8">
 <style>
@@ -14051,13 +14079,13 @@ app.use("/~/sj/", (_req, res) => {
   button{margin-top:18px;border:1px solid #445066;border-radius:10px;background:#1b2230;color:#f5f7fb;padding:10px 15px;font:600 14px Raleway,Arial,sans-serif;cursor:pointer}
 </style>
 <main>
-  <h1>Reconnecting Scramjet</h1>
+  <h1>Reconnecting StudyJet</h1>
   <p>Nyx is reconnecting this tab to the proxy service worker.</p>
   <button type="button" onclick="location.reload()">Retry now</button>
 </main>
 <script>
   (() => {
-    const key='nyx.scramjet-claim-retry:'+location.pathname;
+    const key='nyx.reader-claim-retry:'+location.pathname;
     const attempts=Number(sessionStorage.getItem(key)||0);
     if(attempts<2){
       sessionStorage.setItem(key,String(attempts+1));

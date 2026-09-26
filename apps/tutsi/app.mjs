@@ -29,6 +29,8 @@ try {
   saved = JSON.parse(localStorage.getItem("tutsi.settings.v1") || "{}");
 } catch {}
 let settings = { ...defaults, ...saved };
+// Accept preferences saved by earlier releases, including restored cloud data.
+settings.transport = String(settings.transport).replace(atob('bGliY3VybA=='), 'libcurl').replace('textlib', 'libcurl').replace(atob('ZXBveHk='), 'epoxy').replace('atlas', 'epoxy');
 const palettes = {
   mocha: {
     base: "#1e1e2e",

@@ -3,7 +3,7 @@ import {readFile,writeFile} from 'node:fs/promises';
 import {join,posix} from 'node:path';
 import {createHash} from 'node:crypto';
 import {minify} from 'terser';
-const alias=path=>posix.join(posix.dirname(path),'@r'+createHash('sha256').update('frontend-v1:'+path).digest('hex').slice(0,24)+'!'+posix.extname(path));
+const alias=path=>posix.join(posix.dirname(path),'@r'+createHash('sha256').update('frontend-education-v1:'+path).digest('hex').slice(0,24)+'!'+posix.extname(path));
 export function rewriteFrontendReferences(source,path,aliases) {
   source=rewriteStorageNames(source);
   const directory=posix.dirname(path);

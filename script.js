@@ -2310,6 +2310,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function currentNyxBeamWallpaper(){
     const presets=nyxBeamWallpaperPresets();
     let value=store.text('nyx.beamWallpaper','frost');
+    // Cloud preferences can restore the old theme default after local migration.
+    // Explicit wallpaper selections use custom-wallpaper and remain untouched.
+    if(['frost','arctic'].includes(value)
+      && store.text('nyx.beamTheme','')!=='custom-wallpaper'
+      && ['default','midnight'].includes(normalizeNyxTheme(store.text('nyx.theme','default')))){
+      value='obsidian';
+      store.setText('nyx.beamWallpaper',value);
+    }
     if(!store.text('nyx.beamTheme','')){
       const theme=normalizeNyxTheme(store.text('nyx.theme','default'));
       value=nyxThemeBeamWallpaper(theme);

@@ -1,6 +1,7 @@
 import {buildFrontendAssets} from './build-frontend-assets.mjs';
 import { spawn, spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
+import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { cp, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
@@ -407,6 +408,29 @@ async function writeNetlifyFiles() {
   await writeFile(join(output, "404.html"), "<!doctype html><meta charset=\"utf-8\"><title>Not found</title><p>Not found</p>\n");
 }
 
+async function versionStylesheets() {
+  const files = repositoryFiles().filter(isStaticSource).sort();
+  const hash = createHash("sha256");
+  for (const path of files.filter(path => path.endsWith(".css"))) {
+    hash.update(path).update(await readFile(join(root, path)));
+  }
+  const revision = hash.digest("hex").slice(0, 16);
+  for (const path of files.filter(path => /\.(?:html|css)$/.test(path))) {
+    const target = join(output, path);
+    if (!existsSync(target)) continue;
+    const source = await readFile(target, "utf8");
+    const updated = source.replace(/(["'])([^"'\s<>]+\.css(?:\?[^"'\s<>]*)?)\1/g, (match, quote, url) => {
+      if (/^(?:[a-z]+:|\/\/)/i.test(url)) return match;
+      const pathname = url.split("?")[0];
+      const local = resolve(url.startsWith("/") ? output : dirname(target), url.startsWith("/") ? "." + pathname : pathname);
+      if (!local.startsWith(output) || !existsSync(local)) return match;
+      return quote + pathname + "?rev=" + revision + quote;
+    });
+    if (updated !== source) await writeFile(target, updated);
+  }
+  console.log(`Stylesheet cache revision: ${revision}`);
+}
+
 async function main() {
   const wispUrl = normalizeWispUrl(process.env.WISP_URL);
   await rm(output, { recursive: true, force: true });
@@ -426,6 +450,7 @@ async function main() {
   await removeUnavailableUgsEntries();
   await minifyFirstPartyBrowserRuntimes();
   await minifyFirstPartyMarkupAndStyles();
+  await versionStylesheets();
   await buildProxyAssets(output);
   await buildFrontendAssets(output,repositoryFiles().filter(isStaticSource),learningPage());
   await writeNetlifyFiles();

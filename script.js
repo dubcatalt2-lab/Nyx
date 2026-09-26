@@ -5603,7 +5603,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       tab.icon=favicons.nyx;
     }
     renderBrowserShellTabs();
-    if(forceInput){
+    if(forceInput && tab.id===browserShellActiveTab){
       const input=document.querySelector('[data-browser-shell-url]');
       if(input){
         input.value=browserShellDisplayValue(nextUrl);
@@ -11352,7 +11352,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       t.icon=iconForUrl(key);
       t.frame.removeAttribute('src');
       t.frame.srcdoc=proxyFailureHtml(failureMessage,'Page',certificateFailure ? {heading:'Connection not private'} : {});
-      t.frame.classList.add('active');
+      t.frame.classList.toggle('active',isSelectedBrowserTab(t));
       renderTabs();
       updateBrowserShellLocation(key,t.id,true);
       setBrowserTabSecurityState(t,failedSecurityState);

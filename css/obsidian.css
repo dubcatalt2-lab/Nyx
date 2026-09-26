@@ -38,6 +38,8 @@ body.browser-shell.nyx-browser-chrome-visible {--nyx-chrome-height:86px}
 body.browser-shell::before {background:var(--obsidian-bg);filter:blur(38px);transform:scale(1.12);inset:0}
 html body.browser-shell.custom-bg-active .custom-bg-image {display:block!important;filter:blur(42px) brightness(.48) saturate(.65);transform:scale(1.12);z-index:1}
 body.browser-shell :is(#nyxBeamsBg,#nyxLineWavesBg,.nyx-wave-bg,#defaultVantaBg,#rubyVantaBg,#emeraldVantaBg,#sakuraVantaBg,#whiteVantaBg) {filter:blur(42px) brightness(.55) saturate(.65);transform:scale(1.12)}
+html[data-nyx-appearance="light"] body.browser-shell::before {opacity:.12}
+html[data-nyx-appearance="light"] body.browser-shell :is(#nyxBeamsBg,#nyxLineWavesBg,#customBgImage,#defaultVantaBg,#rubyVantaBg,#emeraldVantaBg,#sakuraVantaBg,#whiteVantaBg) {opacity:.14}
 html[data-nyx-beam-wallpaper="obsidian"] body:not(.custom-bg-active)::before {
   background:var(--obsidian-bg) url('../assets/backgrounds/obsidian-fabric.svg') bottom right/cover no-repeat;
 }

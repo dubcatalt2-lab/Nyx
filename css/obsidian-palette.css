@@ -1,0 +1,26 @@
+/* Shared quiet tints for the shell and embedded apps. */
+:root {--nyx-tint:#718478}
+html[data-nyx-theme="midnight"] {--nyx-tint:#8194b0}
+html[data-nyx-theme="ruby"] {--nyx-tint:#ad777b}
+html[data-nyx-theme="emerald"] {--nyx-tint:#579c85}
+html[data-nyx-theme="sakura"] {--nyx-tint:#b58b9f}
+html[data-nyx-theme="fresh"] {--nyx-tint:#9da77b}
+html[data-nyx-theme="custom"] {--nyx-tint:var(--nyx-custom-base,#6f9ee8)}
+:root {
+  --nyx-surface-bg:color-mix(in srgb,var(--nyx-tint) 10%,#050706);
+  --nyx-surface-panel:color-mix(in srgb,var(--nyx-tint) 13%,#0b0e0dee);
+  --nyx-surface-field:color-mix(in srgb,var(--nyx-tint) 18%,#0b0e0dc7);
+  --nyx-surface-raised:color-mix(in srgb,var(--nyx-tint) 23%,#101411);
+  --nyx-surface-text:color-mix(in srgb,var(--nyx-tint) 9%,#f1f3f1);
+  --nyx-surface-muted:color-mix(in srgb,var(--nyx-tint) 30%,#a1a6a2);
+  --nyx-surface-line:color-mix(in srgb,var(--nyx-tint) 22%,#ffffff10);
+}
+html[data-nyx-appearance="light"] {
+  --nyx-surface-bg:color-mix(in srgb,var(--nyx-tint) 12%,#f1f3f1);
+  --nyx-surface-panel:color-mix(in srgb,var(--nyx-tint) 6%,#ffffffee);
+  --nyx-surface-field:color-mix(in srgb,var(--nyx-tint) 5%,#ffffffdd);
+  --nyx-surface-raised:color-mix(in srgb,var(--nyx-tint) 20%,#edf1ee);
+  --nyx-surface-text:#202a24;
+  --nyx-surface-muted:color-mix(in srgb,var(--nyx-tint) 35%,#434d46);
+  --nyx-surface-line:color-mix(in srgb,var(--nyx-tint) 25%,#00000010);
+}

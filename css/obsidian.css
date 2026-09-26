@@ -1,24 +1,23 @@
 /* Nyx Obsidian. One desktop layout at every viewport size.
    Shell geometry lives here, not in JS or viewport-specific override sheets. */
+@import url('./obsidian-palette.css');
 :root {
   --nyx-sidebar-width:184px;
   --nyx-chrome-height:0px;
-  --obsidian-bg:#090d0c;
-  --obsidian-panel:rgba(13,18,16,.88);
-  --obsidian-field:rgba(21,27,24,.78);
+  --obsidian-bg:var(--nyx-surface-bg);
+  --obsidian-panel:var(--nyx-surface-panel);
+  --obsidian-field:var(--nyx-surface-field);
   --obsidian-hover:rgba(255,255,255,.055);
-  --obsidian-line:rgba(225,238,231,.10);
-  --obsidian-text:#e6ebe8;
-  --obsidian-muted:#929d97;
+  --obsidian-line:var(--nyx-surface-line);
+  --obsidian-text:var(--nyx-surface-text);
+  --obsidian-muted:var(--nyx-surface-muted);
   --obsidian-dot:#8da99b;
   --nyx-font:Inter,Arial,sans-serif;
   --nyx-rail-motion:240ms cubic-bezier(.22,.75,.24,1);
 }
 html[data-nyx-sidebar-width="collapsed"] {--nyx-sidebar-width:64px}
 html[data-nyx-appearance="light"] {
-  --obsidian-bg:#e4e9e5;--obsidian-panel:rgba(237,241,238,.93);
-  --obsidian-field:rgba(255,255,255,.7);--obsidian-hover:rgba(0,0,0,.055);
-  --obsidian-line:rgba(30,45,35,.16);--obsidian-text:#202a24;--obsidian-muted:#5b6860;
+  --obsidian-hover:rgba(0,0,0,.055);
   color-scheme:light;
 }
 html body.browser-shell {
@@ -35,13 +34,16 @@ html body.browser-shell {
   --theme-bg:none!important;
   background:var(--obsidian-bg)!important;color:var(--obsidian-text);
 }
-body.browser-shell.browser-content-active {--nyx-chrome-height:86px}
-body.browser-shell::before {background:var(--obsidian-bg);filter:none;transform:none;inset:0}
+body.browser-shell.nyx-browser-chrome-visible {--nyx-chrome-height:86px}
+body.browser-shell::before {background:var(--obsidian-bg);filter:blur(38px);transform:scale(1.12);inset:0}
+html body.browser-shell.custom-bg-active .custom-bg-image {display:block!important;filter:blur(42px) brightness(.48) saturate(.65);transform:scale(1.12);z-index:1}
+body.browser-shell :is(#nyxBeamsBg,#nyxLineWavesBg,.nyx-wave-bg,#defaultVantaBg,#rubyVantaBg,#emeraldVantaBg,#sakuraVantaBg,#whiteVantaBg) {filter:blur(42px) brightness(.55) saturate(.65);transform:scale(1.12)}
 html[data-nyx-beam-wallpaper="obsidian"] body:not(.custom-bg-active)::before {
   background:var(--obsidian-bg) url('../assets/backgrounds/obsidian-fabric.svg') bottom right/cover no-repeat;
 }
 html[data-nyx-beam-wallpaper="obsidian"] :is(#nyxBeamsBg,#nyxWaveBg,#nyxLineWavesBg,#defaultVantaBg){display:none!important}
-body.browser-shell :is(.dock,.weather-restore,#desktop>.desktop-shortcuts,.nyx-browser-tab-sidebar){display:none!important}
+html[data-nyx-beam-wallpaper] #nyxWaveBg {display:none!important}
+body.browser-shell :is(.dock,.weather-restore,#desktop>.desktop-shortcuts){display:none!important}
 body.browser-shell #desktop {position:fixed;inset:0;overflow:hidden;zoom:1!important;pointer-events:none}
 body.browser-shell #desktop>.window.maximized {
   position:fixed!important;top:var(--nyx-chrome-height)!important;left:var(--nyx-sidebar-width)!important;
@@ -107,7 +109,28 @@ body.browser-shell .top-os {
   width:auto;height:86px;display:none;padding:0;border:0;border-bottom:1px solid var(--obsidian-line);
   background:var(--obsidian-panel);backdrop-filter:blur(24px);box-shadow:none;zoom:1!important;
 }
-body.browser-shell.browser-content-active .top-os {display:grid;grid-template-rows:40px 46px}
+body.browser-shell.nyx-browser-chrome-visible .top-os {display:grid;grid-template-columns:minmax(0,1fr) 44px;grid-template-rows:40px 46px}
+.top-os>.browser-mode-address {grid-column:1/-1;grid-row:2}
+.nyx-tab-list-toggle {grid-column:2;grid-row:1;align-self:center;justify-self:center;width:30px;height:30px;display:grid;place-items:center;border:0;border-radius:6px;background:none;color:var(--obsidian-muted);padding:6px;transition:background-color 140ms,color 140ms}
+.nyx-tab-list-toggle svg {width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round}
+.nyx-tab-list-toggle:hover,.nyx-tab-list-toggle[aria-expanded="true"] {background:var(--obsidian-hover);color:var(--obsidian-text)}
+.nyx-browser-tab-sidebar {display:none;position:fixed;z-index:10000;top:90px;right:10px;width:300px;max-height:calc(100vh - 104px);overflow:auto;padding:8px;border:1px solid var(--obsidian-line);border-radius:10px;background:var(--obsidian-panel);backdrop-filter:blur(24px);box-shadow:0 15px 45px #0005;color:var(--obsidian-text)}
+.nyx-tab-sidebar-open .nyx-browser-tab-sidebar {display:block}
+.nyx-browser-tab-sidebar header {display:flex;align-items:center;justify-content:space-between;padding:5px 8px 10px;font-size:12px}
+.nyx-browser-tab-sidebar header>div {display:flex;gap:4px}
+.nyx-browser-tab-sidebar button {border:0;border-radius:5px;background:none;color:var(--obsidian-muted);width:28px;height:28px;padding:5px;box-shadow:none}
+.nyx-browser-tab-sidebar button:hover,.nyx-browser-tab-row:hover {background:var(--obsidian-hover);color:var(--obsidian-text)}
+.nyx-browser-tab-sidebar svg {width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5}
+.nyx-browser-tab-row {display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:7px;cursor:pointer;font-size:12px}
+.nyx-browser-tab-row.active {background:var(--obsidian-hover)}
+.nyx-browser-tab-row>span {display:grid;gap:4px;flex:1;min-width:0}
+.nyx-browser-tab-row strong,.nyx-browser-tab-row small {overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:400}
+.nyx-browser-tab-row small {color:var(--obsidian-muted);font-size:10px}
+.nyx-browser-tab-icon {width:18px;height:18px;object-fit:contain;border-radius:3px}
+.nyx-browser-tab-close {flex:none;font-size:20px;line-height:18px}
+.nyx-browser-tab-sidebar :focus-visible {outline:1px solid var(--obsidian-muted);outline-offset:-2px}
+.nyx-browser-tab-slot {display:flex;align-items:center}
+.nyx-browser-tab-slot>.nyx-browser-tab-row {flex:1;min-width:0}
 .top-os>:is(.brand-mini,.nyx-dashboard,.nyx-latency-bubble,.status-icons,.nyx-home-tabs-toggle,.nyx-minimal-top-actions){display:none!important}
 .nyx-tab-strip {display:flex;align-items:end;gap:4px;padding:5px 10px 0;overflow-x:auto;scrollbar-width:none;min-width:0}
 .nyx-visual-dock-tab {position:relative;display:flex;align-items:center;gap:9px;flex:0 1 212px;min-width:130px;height:35px;padding:0 9px 0 12px;border:1px solid transparent;border-bottom:0;border-radius:8px 8px 0 0;color:var(--obsidian-muted);font-size:12px;cursor:pointer}
@@ -135,8 +158,8 @@ body.browser-shell .top-os .browser-mode-address {position:relative;inset:auto;d
 .browser-home.nyx-minimal-home {position:absolute;inset:0;display:grid;place-items:center;background:transparent;color:var(--obsidian-text);overflow:hidden}
 .browser-home.nyx-minimal-home.hidden {display:none!important}
 .nyx-minimal-hero {position:absolute;top:43%;left:50%;transform:translate(-50%,-50%);display:grid;justify-items:center;gap:28px;width:min(530px,calc(100% - 64px));margin:0;padding:0}
-.nyx-minimal-brand {display:grid;justify-items:center;gap:9px;background:var(--obsidian-bg)}
-.nyx-home-logo {display:block;width:57px;height:57px;object-fit:contain;filter:grayscale(1) contrast(1.8);mix-blend-mode:screen}
+.nyx-minimal-brand {display:grid;justify-items:center;gap:9px;background:transparent}
+.nyx-home-logo {display:block;width:57px;height:57px;object-fit:contain;filter:url('../assets/icons/nyx-mark-filter.svg#mark')}
 .nyx-minimal-brand h1 {margin:0;color:var(--obsidian-text);font-size:13px;font-weight:400;line-height:1.3;letter-spacing:.38em;text-indent:.38em}
 .nyx-minimal-brand h1::before,.nyx-minimal-brand h1::after,.nyx-title-dot-canvas,.nyx-home-dot-field {display:none!important}
 .nyx-minimal-search {display:flex;align-items:center;gap:12px;width:100%;height:46px;padding:0 13px;border:1px solid var(--obsidian-line);border-radius:9px;background:var(--obsidian-field);backdrop-filter:blur(20px);box-shadow:0 8px 30px #0002}
@@ -148,6 +171,10 @@ body.browser-shell .top-os .browser-mode-address {position:relative;inset:auto;d
 .nyx-home-links {display:flex;align-items:center;justify-content:center;gap:18px;margin-top:-12px;font-size:10px;color:var(--obsidian-muted)}
 .nyx-home-links button {padding:4px 0;color:inherit;background:none;border:0!important;border-radius:0!important;font:inherit;box-shadow:none;transition:color 160ms,transform 160ms}
 .nyx-home-links button:hover {color:var(--obsidian-text);background:none!important;transform:translateY(-2px)}
+.nyx-home-links {max-width:100%;min-width:0}
+.nyx-home-links[hidden] {display:none}
+.nyx-home-links>span {flex:none}
+.nyx-home-links button {max-width:130px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;min-width:0}
 .nyx-minimal-utility-links {position:absolute;right:26px;bottom:22px;font-size:10px}
 .nyx-minimal-utility-links a {color:var(--obsidian-muted);text-decoration:none}
 .nyx-visual-customize,.nyx-appearance-toggle {position:absolute;right:25px;top:21px;display:flex;align-items:center;gap:9px;height:30px;padding:0 8px;background:none;border:0;box-shadow:none;color:var(--obsidian-muted);font:11px Inter,Arial,sans-serif;border-radius:6px}
@@ -194,7 +221,7 @@ html body.browser-shell .browser-mode-address>button:hover {background:var(--obs
 html body.browser-shell .browser-mode-address .browser-mode-url {color:var(--obsidian-text)!important;-webkit-text-fill-color:var(--obsidian-text)!important;border-color:var(--obsidian-line)!important;box-shadow:none!important}
 html body.browser-shell .browser-mode-address .browser-mode-url::selection {color:var(--obsidian-text);-webkit-text-fill-color:var(--obsidian-text);background:#46594e}
 html body.browser-shell :is(.browser-mode-address>button,.nyx-home-links button):focus-visible {outline:1px solid var(--obsidian-muted);outline-offset:2px}
-html[data-nyx-appearance="light"] .nyx-home-logo {filter:grayscale(1) contrast(1.8) invert(1);mix-blend-mode:multiply}
+html[data-nyx-appearance="light"] .nyx-home-logo {filter:url('../assets/icons/nyx-mark-filter.svg#mark') invert(1)}
 html body.browser-shell .nyx-settings-control input[type="range"] {accent-color:#9aac9f;cursor:pointer}
 html body.browser-shell .nyx-settings-control :is(button,input,select,textarea):focus-visible {outline:1px solid var(--obsidian-muted)!important;outline-offset:2px!important;border-radius:7px}
 html body.browser-shell .nyx-settings-control button {padding:8px 12px!important;transition:background-color 150ms,border-color 150ms!important}

@@ -108,7 +108,7 @@ html body.nyx-startup-reveal.browser-shell iframe.view.tab-opening{
   animation:none!important;
 }
 /* Every color theme shares Midnight's animated light trails. */
-html body:not(.three-d-backgrounds):not(.custom-bg-active):not(.browser-content-active) .nyx-wave-bg{
+html:not([data-nyx-beam-wallpaper]) body:not(.three-d-backgrounds):not(.custom-bg-active):not(.browser-content-active) .nyx-wave-bg{
   display:block!important;
   opacity:1!important;
   transition:filter .45s ease!important;

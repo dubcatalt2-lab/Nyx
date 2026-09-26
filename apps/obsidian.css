@@ -1,7 +1,8 @@
 /* Shared Obsidian surfaces for built-in apps. Layout remains owned by each app. */
+@import url('../css/obsidian-palette.css');
 :root,html body {
-  --app-bg:#0b100d;--app-panel:rgba(17,23,19,.92);--app-raised:#1b231e;
-  --app-field:#111813;--app-text:#e6ebe8;--app-muted:#94a097;--app-line:rgba(226,237,231,.11);
+  --app-bg:var(--nyx-surface-bg);--app-panel:var(--nyx-surface-panel);--app-raised:var(--nyx-surface-raised);
+  --app-field:var(--nyx-surface-field);--app-text:var(--nyx-surface-text);--app-muted:var(--nyx-surface-muted);--app-line:var(--nyx-surface-line);
   --accent:var(--app-text)!important;--accent-rgb:230,235,232!important;
   --accent-soft:rgba(226,237,231,.06)!important;--theme-accent:var(--app-text)!important;
   --theme-border:var(--app-line)!important;--theme-panel:var(--app-panel)!important;
@@ -30,8 +31,6 @@
   color-scheme:dark;
 }
 html[data-nyx-appearance="light"],html[data-nyx-appearance="light"] body {
-  --app-bg:#e8ede9;--app-panel:rgba(248,250,248,.94);--app-raised:#dbe3dd;
-  --app-field:#f8faf8;--app-text:#253028;--app-muted:#5b6a60;--app-line:rgba(30,50,38,.16);
   color-scheme:light;
 }
 html,html body {background:var(--app-bg)!important;color:var(--app-text);font-family:Inter,Arial,sans-serif}

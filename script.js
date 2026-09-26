@@ -2195,9 +2195,31 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function nyxSearchHistoryQuery(value){
     return String(value || '').normalize('NFKC').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,180);
   }
+  function nyxRecentSearches(){
+    const saved=store.get('nyx.recentSearches',[]);
+    return Array.isArray(saved) ? saved.filter(value=>typeof value==='string').map(nyxSearchHistoryQuery).filter(Boolean).slice(0,12) : [];
+  }
+  function syncNyxRecentSearches(){
+    const recent=nyxRecentSearches().slice(0,3);
+    document.querySelectorAll('[data-nyx-recent-searches]').forEach(row=>{
+      row.hidden=!recent.length;
+      const signature=JSON.stringify(recent);
+      if(row.dataset.recentSignature===signature) return;
+      row.dataset.recentSignature=signature;
+      row.innerHTML='<span>Jump back in</span>'+recent.map(query=>`<button type="button" data-nyx-recent-search="${esc(query)}" title="${esc(query)}">${esc(query)}</button>`).join('');
+    });
+  }
+  function rememberNyxRecentSearch(value){
+    const query=nyxSearchHistoryQuery(value);
+    if(!query) return;
+    const recent=nyxRecentSearches().filter(item=>item.toLowerCase()!==query.toLowerCase());
+    store.set('nyx.recentSearches',[query,...recent].slice(0,12));
+    syncNyxRecentSearches();
+  }
   async function nyxRecordSearchHistory(value){
     const query=nyxSearchHistoryQuery(value);
     if(!query) return false;
+    rememberNyxRecentSearch(query);
     try{
       await initializeFounderOwnerAccess();
       const user=nyxFounderSignedInUser || nyxFounderFirebaseAuth?.currentUser;
@@ -2407,6 +2429,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       store.setText('nyx.beamWallpaper',value);
       store.setText('nyx.beamTheme','custom-wallpaper');
+      store.setText('nyx.customBg','');
+      store.setText('nyx.customBgUrl','');
+      store.setText('nyx.customBgData','');
+      setCustomBackgroundLayer('');
       if(value==='lineWaves') store.setText('nyx.lineWaves.colorVariant',nyxThemeWavesColor());
       store.set('nyx.threeDBackgrounds',false);
       qsa('[data-switch="nyx.threeDBackgrounds"]').forEach(button=>{
@@ -4615,7 +4641,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return String(value || '').trim().toLowerCase()==='list' ? 'list' : 'bar';
   }
   function setBrowserTabSidebarOpen(open,{restoreFocus=false}={}){
-    const shouldOpen=Boolean(open) && normalizeBrowserTabDesign(store.text('nyx.tabDesign','bar'))==='bar';
+    const shouldOpen=Boolean(open);
     document.body.classList.toggle('nyx-tab-sidebar-open',shouldOpen);
     const toggles=[...document.querySelectorAll('[data-browser-shell-tabs-toggle]')];
     toggles.forEach(button=>button.setAttribute('aria-expanded',String(shouldOpen)));
@@ -4633,12 +4659,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     document.documentElement.dataset.nyxTabDesign=design;
     document.body.dataset.nyxTabDesign=design;
     document.body.classList.toggle('nyx-tab-design-list',design==='list');
-    if(design==='list') setBrowserTabSidebarOpen(false);
     qsa('[data-tab-design-value]').forEach(select=>{select.value=design});
     document.querySelectorAll('[data-browser-shell-tabs-toggle]').forEach(button=>{
-      button.setAttribute('aria-hidden',String(design==='list'));
-      button.tabIndex=design==='list' ? -1 : 0;
-      button.setAttribute('aria-expanded',String(design==='bar' && document.body.classList.contains('nyx-tab-sidebar-open')));
+      button.tabIndex=0;
+      button.setAttribute('aria-expanded',String(document.body.classList.contains('nyx-tab-sidebar-open')));
     });
     renderBrowserShellTabs();
   }
@@ -4660,6 +4684,17 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       strip.setAttribute('aria-label','Open tabs');
       top.prepend(strip);
       installBrowserShellTabReordering(strip);
+    }
+    if(!top.querySelector('[data-browser-shell-tabs-toggle]')){
+      const toggle=document.createElement('button');
+      toggle.type='button';
+      toggle.className='nyx-tab-list-toggle';
+      toggle.dataset.browserShellTabsToggle='';
+      toggle.setAttribute('aria-label','Open tabs');
+      toggle.setAttribute('aria-controls','nyxBrowserTabSidebar');
+      toggle.setAttribute('aria-expanded','false');
+      toggle.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M3 6h1M3 12h1M3 18h1"/></svg>';
+      top.appendChild(toggle);
     }
     const fragment=document.createDocumentFragment();
     browserShellTabs.forEach(tab=>{
@@ -4779,8 +4814,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       active=browserShellTabs[0];
       browserShellActiveTab=active.id;
     }
-    // Every blank tab uses the new-tab surface; tab controls now live in the
-    // persistent rail and no longer depend on content mode being active.
+    // Keep tabs reachable on blank pages, including a final remaining New Tab.
+    const chromeVisible=browserShellTabs.length>1 || Boolean(active?.url) || active?.title!=='Home';
+    document.body.classList.toggle('nyx-browser-chrome-visible',chromeVisible);
+    syncNyxRecentSearches();
     const activeShowsContent=Boolean(active?.url);
     const navigationKey=active.id+'|'+(active.url||'');
     if(nyxLastNavigation!==navigationKey){
@@ -5062,6 +5099,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   function setBrowserShellActive(id){
     if(!browserShellTabs.some(tab=>tab.id===id)) return;
+    hideBrowserSuggestions();
+    setBrowserTabSidebarOpen(false);
     closeWeatherForWindowOpen();
     browserShellActiveTab=id;
     const shellTab=browserShellTabs.find(tab=>tab.id===id);
@@ -5488,7 +5527,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const closingWasActive=browserShellActiveTab===id;
     const closing=browserShellTabs[index];
     try{
-      if(closing.url==='nyx://settings') closeBrowserShellSettings();
+      if(closingWasActive && closing.url==='nyx://settings') closeBrowserShellSettings();
       const nextIndex=browserShellTabs.findIndex(tab=>tab.id===id);
       if(nextIndex<0) return;
       const shellTab=browserShellTabs[nextIndex];
@@ -5514,6 +5553,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         hideBrowserSuggestions();
         const address=document.querySelector('[data-browser-shell-url]');
         if(address) address.value=browserShellDisplayValue(activeShell?.url || '');
+      }
+      if(!closingWasActive){
+        renderBrowserShellTabs();
+        return;
       }
       if(activeShell?.title==='Home' && !activeShell.url){
         if(activeBrowser?.win?.isConnected){
@@ -5604,6 +5647,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const proxyInternal=/^(?:\/service\/|\/~\/sj\/|\/scramjet\/service\/|nyx:\/\/)/i.test(raw);
     const looksLikeUrl=/^(?:[a-z][a-z0-9+.-]*:|[\w.-]+\.[a-z]{2,}(?:\/|$)|\/|\.\/|\.\.\/|assets\/)/i.test(raw);
     const isSearchQuery=raw && !looksLikeUrl && !proxyInternal;
+    if(isSearchQuery) rememberNyxRecentSearch(raw);
     const normalized=normalize(raw);
     const target=isSearchQuery ? selectedSearchUrl(raw) : (normalized || raw);
     let shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab) || browserShellTabs[0];
@@ -5718,7 +5762,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const popupScript='document.addEventListener("click",e=>{const popup=e.target.closest("[data-popup-protection]");if(!popup)return;e.preventDefault();const next=popup.dataset.enabled!=="true";popup.dataset.enabled=String(next);popup.classList.toggle("on",next);popup.textContent="Popup Protection "+(next?"On":"Off");parent.postMessage({type:"nyx:popup-protection",enabled:next},"*")});';
     const panicFrameScript='let NYX_PANIC_CAPTURE=false;function nyxPanicCombo(e){const key=String(e.key||"").trim();if(!key||["Control","Shift","Alt","Meta"].includes(key))return "";const parts=[];if(e.ctrlKey)parts.push("Ctrl");if(e.altKey)parts.push("Alt");if(e.shiftKey)parts.push("Shift");if(e.metaKey)parts.push("Meta");parts.push(key.length===1?key.toUpperCase():key.replace(/^Arrow/,""));return parts.join("+")}document.addEventListener("click",e=>{if(e.target.closest("[data-panic-capture]"))NYX_PANIC_CAPTURE=true;if(e.target.closest("[data-panic-clear]"))NYX_PANIC_CAPTURE=false},true);document.addEventListener("keydown",e=>{if(!NYX_PANIC_CAPTURE)return;const combo=nyxPanicCombo(e);if(!combo)return;e.preventDefault();e.stopPropagation();NYX_PANIC_CAPTURE=false;document.querySelectorAll("[data-panic-key-display]").forEach(el=>el.textContent=combo);parent.postMessage({type:"nyx:panic-key-set",combo},"*")},true);';
     const finalInternalPaintScript='document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=Number(NYX_EFFECT_SPEED).toFixed(1)+"x"});';
-    return '<!doctype html><html data-nyx-appearance="'+esc(store.text('nyx.appearance','dark'))+'"><head><meta charset="utf-8"><base target="_self"><link rel="stylesheet" href="/css/avatar-decorations.css"><link rel="stylesheet" href="/css/profile-effects.css"><style>'+(page.style||'')+'</style><link rel="stylesheet" href="/apps/obsidian.css?v=20260926-1"><link rel="stylesheet" href="/apps/internal-pages.css?v=20260926-1"></head><body>'+page.body+'<script>const NYX_EFFECT='+JSON.stringify(store.text('nyx.visualEffect','none'))+';const NYX_EFFECT_SPEED='+JSON.stringify(store.text('nyx.visualEffectSpeed','1.1'))+';const NYX_EFFECT_AMOUNT='+JSON.stringify(store.text('nyx.visualEffectAmount','16'))+';const NYX_THEME='+JSON.stringify(normalizeNyxTheme(store.text('nyx.theme','default')))+';'+finalInternalPaintScript+script+popupScript+panicFrameScript+(page.script||'')+'<\/script></body></html>';
+    return '<!doctype html><html data-nyx-theme="'+esc(normalizeNyxTheme(store.text('nyx.theme','default')))+'" style="--nyx-custom-base:'+esc(nyxCustomThemePalette().base)+'" data-nyx-appearance="'+esc(store.text('nyx.appearance','dark'))+'"><head><meta charset="utf-8"><base target="_self"><link rel="stylesheet" href="/css/avatar-decorations.css"><link rel="stylesheet" href="/css/profile-effects.css"><style>'+(page.style||'')+'</style><link rel="stylesheet" href="/apps/obsidian.css?v=20260926-2"><link rel="stylesheet" href="/apps/internal-pages.css?v=20260926-1"></head><body>'+page.body+'<script>const NYX_EFFECT='+JSON.stringify(store.text('nyx.visualEffect','none'))+';const NYX_EFFECT_SPEED='+JSON.stringify(store.text('nyx.visualEffectSpeed','1.1'))+';const NYX_EFFECT_AMOUNT='+JSON.stringify(store.text('nyx.visualEffectAmount','16'))+';const NYX_THEME='+JSON.stringify(normalizeNyxTheme(store.text('nyx.theme','default')))+';'+finalInternalPaintScript+script+popupScript+panicFrameScript+(page.script||'')+'<\/script></body></html>';
   }
   function showBrowserShellInternalPage(name){
     hideBrowserSuggestions();
@@ -5866,8 +5910,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const doc=frame.contentDocument;
       if(!doc?.head)return;
       doc.documentElement.dataset.nyxAppearance=store.text('nyx.appearance','dark');
+      doc.documentElement.dataset.nyxTheme=normalizeNyxTheme(store.text('nyx.theme','default'));
+      doc.documentElement.style.setProperty('--nyx-custom-base',nyxCustomThemePalette().base);
       if(!doc.querySelector('link[href*="/apps/obsidian.css"]')){
-        const link=doc.createElement('link');link.rel='stylesheet';link.href='/apps/obsidian.css?v=20260926-1';doc.head.appendChild(link);
+        const link=doc.createElement('link');link.rel='stylesheet';link.href='/apps/obsidian.css?v=20260926-2';doc.head.appendChild(link);
       }
     },{once:true});
   }
@@ -6406,7 +6452,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         const frameHref=String(frame.contentWindow?.location?.href || frame.getAttribute('src') || '');
         const source=browserShellSourceUrl(frameHref) || frameHref;
         const target=new URL(source,location.href);
-        if(target.origin!==location.origin) return;
+        if(target.origin!==location.origin && !(frame.hasAttribute('srcdoc') && frameHref==='about:srcdoc')) return;
         const doc=frame.contentDocument;
         if(!doc?.body) return;
         frame.classList.add('transparent-internal-page');
@@ -6418,6 +6464,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         doc.body.classList.add('theme-'+clean);
         doc.body.dataset.nyxTheme=clean;
         doc.documentElement.dataset.nyxTheme=clean;
+        if(clean==='custom') doc.documentElement.style.setProperty('--nyx-custom-base',nyxCustomThemePalette().base);
+        else doc.documentElement.style.removeProperty('--nyx-custom-base');
         doc.documentElement.dataset.nyxAppearance=store.text('nyx.appearance','dark');
         ensureFreshThemeOptions(doc);
         doc.querySelectorAll('[data-theme-value]').forEach(el=>{el.value=clean});
@@ -9019,7 +9067,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     {
       const searchEngine=selectedSearchEngineMeta();
       const searchLabel=`Search ${searchEngine.label} or type a URL`;
-      return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home nyx-minimal-home nyx-visual-home"><main class="browser-shell-start nyx-minimal-hero"><div class="nyx-minimal-brand"><img class="nyx-home-logo" data-nyx-logo src="/assets/icons/nyx-monogram.png" alt="Nyx"><h1>NYX</h1></div><form class="browser-blank-search nyx-minimal-search" data-browser-blank-search><svg class="nyx-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input data-browser-blank-input data-search-engine="${searchEngine.id}" aria-label="${searchLabel}" placeholder="${searchLabel}" autocomplete="off" spellcheck="false"><button class="nyx-home-search-submit" type="submit" aria-label="Search"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6"/></svg></button></form><nav class="nyx-home-links" aria-label="Quick links"><span>Jump back in</span><button type="button" data-app-url="https://wikipedia.org">Wikipedia</button><button type="button" data-app-url="https://youtube.com">YouTube</button></nav></main><nav class="nyx-minimal-utility-links" aria-label="Nyx tools and terms"><a data-open="terms" href="nyx://terms">Terms</a></nav><button class="nyx-appearance-toggle" data-nyx-appearance type="button" aria-label="Use light appearance" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button><button class="nyx-visual-customize" data-open="settings" type="button">${nyxDashboardIcon('settings')}<span>Customize</span></button><div class="nyx-home-presence${nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="button" tabindex="${nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${minimalPresenceText}</span></div></div></div>`;
+      return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home nyx-minimal-home nyx-visual-home"><main class="browser-shell-start nyx-minimal-hero"><div class="nyx-minimal-brand"><img class="nyx-home-logo" data-nyx-logo src="/assets/icons/nyx-monogram.png" alt="Nyx"><h1>NYX</h1></div><form class="browser-blank-search nyx-minimal-search" data-browser-blank-search><svg class="nyx-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input data-browser-blank-input data-search-engine="${searchEngine.id}" aria-label="${searchLabel}" placeholder="${searchLabel}" autocomplete="off" spellcheck="false"><button class="nyx-home-search-submit" type="submit" aria-label="Search"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6"/></svg></button></form><nav class="nyx-home-links" data-nyx-recent-searches aria-label="Recent searches" hidden></nav></main><nav class="nyx-minimal-utility-links" aria-label="Nyx tools and terms"><a data-open="terms" href="nyx://terms">Terms</a></nav><button class="nyx-appearance-toggle" data-nyx-appearance type="button" aria-label="Use light appearance" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button><button class="nyx-visual-customize" data-open="settings" type="button">${nyxDashboardIcon('settings')}<span>Customize</span></button><div class="nyx-home-presence${nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="button" tabindex="${nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${minimalPresenceText}</span></div></div></div>`;
     }
   }
   //apps-grid
@@ -11528,6 +11576,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       setTimeout(attemptFallback,5200);
       setTimeout(attemptFallback,11000);
     }
+    function isSelectedBrowserTab(t){
+      const linked=browserShellTabs.find(tab=>tab.browserTabId===t.id);
+      return state.active===t.id && (!document.body.classList.contains('browser-shell') || !linked || linked.id===browserShellActiveTab);
+    }
     function loadTab(t,url,addHistory=true,expectedEngine='',sourceUrl=''){
       const requestedSource=sourceUrl || (/^https?:/i.test(url) ? url : '');
       if(expectedEngine==='iframe' && hostMatches(browserHost(requestedSource),['cineby.at'])){
@@ -11541,7 +11593,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       setBrowserTabSecurityState(t,browserShellSecurityStateForUrl(securitySource));
       t.frame.classList.remove('transparent-internal-page');
       t.frame.style.backgroundColor='';
-      win.classList.remove('internal-clear');
+      if(isSelectedBrowserTab(t)) win.classList.remove('internal-clear');
       t.url=url;
       if(addHistory){
         t.history=t.history.slice(0,t.index+1);
@@ -11550,8 +11602,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       t.title=titleForUrl(sourceUrl || url);
       t.icon=iconForUrl(sourceUrl || url);
-      win.querySelector('.browser-home').classList.add('hidden');
-      t.frame.classList.add('active');
+      if(isSelectedBrowserTab(t)){
+        win.querySelector('.browser-home').classList.add('hidden');
+        t.frame.classList.add('active');
+      }
       installPopupBridge(t);
       const proxied=url.startsWith('/service/') || url.startsWith('/scramjet/service/') || url.startsWith('/~/sj/');
       if(!url.startsWith('/scramjet/service/') && !url.startsWith('/~/sj/')) t.scramjetFrame=null;
@@ -11579,7 +11633,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       t.frame.src=url;
       markBrowserEngine(t,expectedEngine,url,'iframe-src');
       renderTabs();
-      activate(t.id);
+      if(isSelectedBrowserTab(t)) activate(t.id);
       updateBrowserShellLocation(browserShellSourceUrl(t.sourceUrl || url) || t.sourceUrl || url,t.id);
     }
     function setTabMeta(t,url,addHistory=true){
@@ -11591,11 +11645,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       t.title=titleForUrl(url);
       t.icon=iconForUrl(url);
-      win.querySelector('.browser-home').classList.add('hidden');
-      t.frame.classList.add('active');
+      if(isSelectedBrowserTab(t)){
+        win.querySelector('.browser-home').classList.add('hidden');
+        t.frame.classList.add('active');
+      }
       installCrazyGamesOfflineRecovery(t,url);
       renderTabs();
-      activate(t.id);
+      if(isSelectedBrowserTab(t)) activate(t.id);
       updateBrowserShellLocation(url,t.id);
     }
     function retryScramjetTab(t,url){
@@ -12112,6 +12168,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         const nextIndex=state.tabs.findIndex(t=>t.id===tabId);
         if(nextIndex<0) return;
         const closingTab=state.tabs[nextIndex];
+        const wasActive=isSelectedBrowserTab(closingTab);
         if(closingTab.frame?.dataset?.nyxBrowserContained==='true') browserOverlayQuarantineUntil=Date.now()+30000;
         if(closingTab.id===state.active) setTabLoading(closingTab,false);
         destroyProxyPrivacySession(closingTab);
@@ -12121,9 +12178,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         if(!state.tabs.length){
           if(keepBlank) addTab();
           else renderTabs();
-        }else{
+        }else if(wasActive){
           activate(state.tabs[Math.max(0,nextIndex-1)].id);
-        }
+        }else renderTabs();
       return true;
     }
     state.addTab=addTab;
@@ -15372,6 +15429,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     document.addEventListener('keydown',e=>{
       if(e.key!=='Escape' || !document.body.classList.contains('nyx-tab-sidebar-open')) return;
       e.preventDefault();
+      e.stopImmediatePropagation();
       setBrowserTabSidebarOpen(false,{restoreFocus:true});
     });
     document.addEventListener('keydown',e=>{
@@ -15584,8 +15642,14 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       const shellTabsToggle=e.target.closest('[data-browser-shell-tabs-toggle]');
       if(shellTabsToggle){
         e.preventDefault();
-        if(normalizeBrowserTabDesign(store.text('nyx.tabDesign','bar'))==='list') return;
         setBrowserTabSidebarOpen(!document.body.classList.contains('nyx-tab-sidebar-open'));
+        return;
+      }
+      if(document.body.classList.contains('nyx-tab-sidebar-open') && !e.target.closest('#nyxBrowserTabSidebar')) setBrowserTabSidebarOpen(false);
+      const recentSearch=e.target.closest('[data-nyx-recent-search]');
+      if(recentSearch){
+        e.preventDefault();
+        navigateBrowserShell(recentSearch.dataset.nyxRecentSearch);
         return;
       }
       const shellNewAfter=e.target.closest('[data-browser-shell-new-tab-after]');

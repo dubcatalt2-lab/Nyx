@@ -14,7 +14,7 @@
   overflow:hidden;
   background:rgba(3,5,9,.72);
   color:var(--owner-text);
-  font-family:Inter,"Outfit","Segoe UI",sans-serif;
+  font-family:var(--nyx-font,Inter),Arial,sans-serif;
   opacity:0;
   transition:opacity .18s ease;
 }
@@ -440,39 +440,6 @@
 @keyframes nyx-owner-aurora{50%{background-position:100% 0}}
 @keyframes nyx-owner-lightning{0%,18%,20%,62%,64%,100%{opacity:.08}19%,63%{opacity:.9}}
 @keyframes nyx-owner-grid{to{background-position:0 52px,52px 0}}
-@media(max-width:1180px){
-  .nyx-owner-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .nyx-owner-workspace{grid-template-columns:minmax(0,1fr) 260px}
-  .nyx-owner-filters{grid-template-columns:minmax(200px,1fr) repeat(3,125px)}
-}
-@media(max-width:900px){
-  .nyx-owner-dashboard{margin:0;padding:16px;border:0;border-radius:0}
-  .nyx-owner-workspace{grid-template-columns:1fr}
-  .nyx-owner-activity-panel{display:none}
-  .nyx-owner-filters{grid-template-columns:1fr 1fr}
-  .nyx-owner-search{grid-column:1/-1}
-}
-@media(max-width:620px){
-  .nyx-owner-dashboard{gap:12px;padding:13px}
-  .nyx-owner-header h1{font-size:22px}
-  .nyx-owner-header p,.nyx-owner-header-actions button span,.nyx-owner-quick-actions{display:none}
-  .nyx-owner-metrics{grid-template-columns:1fr 1fr;gap:7px}
-  .nyx-owner-metric{min-height:62px;padding:9px}.nyx-owner-metric strong{font-size:17px}
-  .nyx-owner-panel-head{padding:12px}
-  .nyx-owner-filters{grid-template-columns:1fr;padding:9px}
-  .nyx-owner-search{grid-column:auto}
-  .nyx-owner-table{min-width:0}
-  .nyx-owner-table th:nth-child(n+2):not(:last-child),.nyx-owner-table td:nth-child(n+2):not(:last-child){display:none}
-  .nyx-owner-user-cell small{max-width:220px}
-  .nyx-owner-pagination{align-items:flex-start;gap:6px}.nyx-owner-pagination>div{flex-wrap:wrap;justify-content:flex-end}
-  .nyx-owner-detail-grid{grid-template-columns:1fr}
-  .nyx-owner-detail-value.uid{grid-column:auto}
-  .nyx-owner-detail-section>label{grid-template-columns:1fr}
-  .nyx-owner-role-options{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .nyx-owner-media-editors{grid-template-columns:1fr}
-  .nyx-owner-profile-fields{grid-template-columns:1fr}
-  .nyx-owner-profile-fields>label.wide{grid-column:auto}
-}
 @media(prefers-reduced-motion:reduce){
   .nyx-owner-dashboard-overlay,.nyx-owner-user-drawer,.nyx-owner-toast{transition:none}
   .nyx-owner-table-loading i,.nyx-owner-activity-loading i,.nyx-owner-drawer-loading i{animation:none}
@@ -488,13 +455,12 @@
 .nyx-owner-custom-role-swatch{position:absolute;inset:0 auto 0 0;width:4px;border-radius:13px 0 0 13px;background:var(--owner-custom-role)}
 .nyx-owner-custom-role-color-control{position:relative;display:grid;grid-template-columns:32px minmax(0,1fr);gap:7px;align-items:center}.nyx-owner-custom-role-color-control .nyx-owner-custom-role-swatch{position:static;width:30px;height:30px;border-radius:8px}.nyx-owner-custom-role-color-control input{min-width:0}.nyx-owner-custom-role-form label>small,.nyx-owner-custom-role-editor label>small{margin-top:3px;color:var(--owner-muted);font-size:8px}.nyx-owner-custom-role-permission-editor{grid-column:1/-1;border:1px solid var(--owner-line);border-radius:9px;background:var(--owner-panel-2)}.nyx-owner-custom-role-permission-editor>summary{padding:9px 11px;color:var(--owner-muted);font-size:9px;font-weight:750;cursor:pointer}.nyx-owner-custom-role-permissions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:0;padding:10px;border:0;border-top:1px solid var(--owner-line)}.nyx-owner-custom-role-permissions legend{display:none}.nyx-owner-custom-role-permissions label{display:grid!important;grid-template-columns:17px minmax(0,1fr)!important;gap:2px 7px!important;align-items:center;padding:7px;border:1px solid color-mix(in srgb,var(--owner-line) 80%,transparent);border-radius:7px;background:var(--owner-panel)}.nyx-owner-custom-role-permissions input{grid-row:1/3;width:14px!important;height:14px!important;min-height:0!important}.nyx-owner-custom-role-permissions span{color:var(--owner-text);font-size:9px;font-weight:750}.nyx-owner-custom-role-permissions small{overflow:hidden;color:var(--owner-muted);font:7px/1.2 "Cascadia Mono",Consolas,monospace;text-overflow:ellipsis}.nyx-owner-custom-role-editor-actions{display:flex;gap:8px;grid-column:1/-1}
 @container (max-width:520px){.nyx-owner-custom-role-row{grid-template-columns:12px minmax(0,1fr) max-content 34px}.nyx-owner-custom-role-placement,.nyx-owner-custom-role-permission-count{display:none}}
-@media (max-width:700px){.nyx-owner-custom-role-form,.nyx-owner-custom-role-editor{grid-template-columns:1fr}.nyx-owner-custom-role-form label:first-child{grid-column:auto}.nyx-owner-custom-role-permissions{grid-template-columns:1fr}.nyx-owner-custom-role-toolbar{align-items:flex-start}.nyx-owner-custom-role-row{grid-template-columns:12px minmax(0,1fr) max-content 34px}.nyx-owner-custom-role-placement,.nyx-owner-custom-role-permission-count{display:none}}
 
 .nyx-owner-tube-status{display:block;margin:0 0 10px;padding:10px 14px;border:1px solid rgba(255,255,255,.14);border-radius:16px;background:rgba(15,17,23,.7);color:#e8eaf2}
 .nyx-owner-tube-status[hidden]{display:none!important}
 .nyx-owner-tube-status>div{min-width:0}.nyx-owner-tube-status p{margin:8px 0;font-size:13px;line-height:1.5;overflow-wrap:anywhere}.nyx-owner-tube-status small{display:block;margin-top:5px;color:#aeb4c6;font-size:12px}
 .nyx-owner-tube-status strong span{margin-left:12px;color:#b5bacb}.nyx-owner-tube-status [data-owner-tube-state="working"]{color:#77d6a2}.nyx-owner-tube-status [data-owner-tube-state="login_required"],.nyx-owner-tube-status [data-owner-tube-state="trouble"]{color:#ffc78a}
-.nyx-owner-tube-status button{flex-shrink:0;padding:10px 16px;border:1px solid #454959;border-radius:10px;background:#20232e;color:#eef0ff;cursor:pointer}.nyx-owner-tube-status button:disabled{opacity:.6;cursor:default}@media(max-width:600px){.nyx-owner-tube-status{align-items:flex-start;flex-direction:column}.nyx-owner-tube-status strong span{display:block;margin:5px 0 0}}
+.nyx-owner-tube-status button{flex-shrink:0;padding:10px 16px;border:1px solid #454959;border-radius:10px;background:#20232e;color:#eef0ff;cursor:pointer}.nyx-owner-tube-status button:disabled{opacity:.6;cursor:default}
 
 .nyx-owner-tube-status details{width:100%;min-width:0}
 .nyx-owner-tube-status summary{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;list-style:none;font-size:14px;min-height:28px}
@@ -507,7 +473,6 @@
 .nyx-owner-tube-status .nyx-owner-status-body p{margin:5px 0;font-size:12px}
 .nyx-owner-tube-status .nyx-owner-status-body small{font-size:11px;margin-top:3px}
 .nyx-owner-tube-status .nyx-owner-status-body button{font-size:12px;padding:8px 12px}
-@media(max-width:600px){.nyx-owner-status-body{align-items:flex-start;flex-direction:column;gap:8px}.nyx-owner-tube-status summary strong span{display:inline;margin:0 0 0 8px}}
 
 .nyx-owner-ai-rules details{padding:12px 0;border-bottom:1px solid var(--border,#ffffff20)}
 .nyx-owner-ai-rules summary{cursor:pointer;overflow-wrap:anywhere}.nyx-owner-ai-rules summary small{opacity:.7}

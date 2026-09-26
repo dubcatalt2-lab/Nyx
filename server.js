@@ -3674,11 +3674,11 @@ app.get("/apps/chat/emoji-catalog.js", (_req, res) => {
 
 app.get("/assets/vendor/eruda.min.js", (_req, res) => {
   res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-  res.type("application/javascript").sendFile(erudaPath);
+  res.type("application/javascript").sendFile(erudaPath, { dotfiles: "allow" });
 });
 app.get("/assets/vendor/hls.min.js", (_req, res) => {
   res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-  res.type("application/javascript").sendFile(hlsPath);
+  res.type("application/javascript").sendFile(hlsPath, { dotfiles: "allow" });
 });
 
 function linkGeneratorConfig() {

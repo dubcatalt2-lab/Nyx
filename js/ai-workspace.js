@@ -829,21 +829,18 @@
     return `<svg aria-hidden="true" viewBox="0 0 24 24">${icons[kind]||icons.ideas}</svg>`;
   }
 
-  function starter(prompt,title,description,kind){
-    return `<button class="ai-starter" type="button" data-prompt="${escapeHtml(prompt)}"><span class="ai-starter-icon">${starterIcon(kind)}</span><span class="ai-starter-copy"><strong>${escapeHtml(title)}</strong><small>${escapeHtml(description)}</small></span><svg class="ai-starter-arrow" aria-hidden="true" viewBox="0 0 20 20"><path d="m7 4 6 6-6 6"/></svg></button>`;
+  function starter(prompt,title,kind){
+    return `<button class="ai-starter" type="button" data-prompt="${escapeHtml(prompt)}"><span class="ai-starter-icon">${starterIcon(kind)}</span><span class="ai-starter-copy"><strong>${escapeHtml(title)}</strong></span></button>`;
   }
 
   function welcome(){
     return `<section class="ai-welcome" data-ai-welcome>
-      <div class="ai-welcome-mark" data-nyx-logo aria-hidden="true"></div>
-      <p class="ai-welcome-kicker">NYX INTELLIGENCE</p>
-      <h2>What can I help you create?</h2>
-      <p class="ai-welcome-copy">Ask a question, explore an idea, or work through something complex. Choose a starting point or write your own prompt below.</p>
+      <h2>What's on your mind?</h2>
       <div class="ai-starters">
-        ${starter('Help me plan and build a new project from scratch','Help me build a project','Turn an idea into clear next steps','project')}
-        ${starter('Explain quantum computing in simple terms with a useful analogy','Explain a complex topic','Make difficult ideas easier to understand','explain')}
-        ${starter('Review this code for bugs, clarity, and performance improvements','Review my code','Find issues and suggest improvements','code')}
-        ${starter('Brainstorm ten original ideas for a creative side project','Brainstorm ideas','Generate thoughtful directions to explore','ideas')}
+        ${starter('Help me plan and build a new project from scratch','Plan a project','project')}
+        ${starter('Explain quantum computing in simple terms with a useful analogy','Explain something','explain')}
+        ${starter('Review this code for bugs, clarity, and performance improvements','Review my code','code')}
+        ${starter('Brainstorm ten original ideas for a creative side project','Brainstorm ideas','ideas')}
       </div>
     </section>`;
   }
@@ -868,7 +865,7 @@
     const visible=query?items.filter(thread=>`${thread.title}\n${thread.messages.map(item=>item.content).join('\n')}`.toLowerCase().includes(query)):items;
     threadCount.textContent=query?`${visible.length}/${items.length}`:String(items.length);
     historyEmpty.hidden=visible.length>0;
-    historyEmpty.textContent=items.length?(query?'No matching chats.':'Your conversations will appear here.'):'Your conversations will appear here.';
+    historyEmpty.textContent=items.length?(query?'No matching chats.':'No chats yet.'):'No chats yet.';
     threadList.innerHTML=visible.map(thread=>`<div role="listitem"><button class="ai-thread-button" type="button" data-thread-id="${escapeHtml(thread.id)}" aria-current="${!temporaryMode&&thread.id===activeThreadId?'true':'false'}"><span class="ai-thread-icon">${threadIcon()}</span><span class="ai-thread-copy"><strong>${escapeHtml(thread.title)}</strong><small>${escapeHtml(threadDate(thread.updatedAt))}</small></span></button></div>`).join('');
     temporaryChat.setAttribute('aria-pressed',String(temporaryMode));
   }
@@ -898,7 +895,7 @@
     render();
     input.value='';
     autoGrow();
-    setSidebarOpen(false);
+    // Conversation navigation keeps the desktop history panel open.
     input.focus();
   }
 
@@ -919,7 +916,7 @@
     }
     renderThreadList();
     render();
-    setSidebarOpen(false);
+    // Conversation navigation keeps the desktop history panel open.
     input.focus();
   }
 
@@ -1580,6 +1577,7 @@
   });
   addEventListener('pagehide',stopScreenSharing);
 
+  setSidebarOpen(true);
   initializeThreads();
   renderModelOptions(modelCatalog,model.value||DEFAULT_MODEL);
   renderThreadList();

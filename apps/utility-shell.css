@@ -130,19 +130,4 @@ body.utility-neutral input:focus,
 body.utility-neutral select:focus{background:#121212;box-shadow:0 0 0 3px rgba(255,255,255,.055)}
 body.utility-neutral .notice{border:1px solid var(--line);background:#0b0b0b}
 body.utility-neutral .notice.error{border-color:rgba(241,160,173,.2);background:rgba(105,31,47,.16)}
-
-@media(max-width:720px){
-  .utility-shell{width:min(100% - 20px,620px);padding-top:13px}
-  .utility-header{gap:7px;margin-bottom:42px}
-  .brand-copy span{display:none}
-  .utility-nav{gap:1px}
-  .utility-nav-item{padding:0 8px}
-  .utility-nav-item span{display:none}
-  .service-status,.api-status{margin-left:2px;padding:7px 9px}
-  .service-status span,.api-status span{display:none}
-  .utility-intro{margin-bottom:22px}
-  .utility-intro h1{font-size:29px}
-  .intro-mark{width:41px;height:41px;font-size:38px}
-  .surface{border-radius:16px}
-}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}

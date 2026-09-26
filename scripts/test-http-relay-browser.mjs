@@ -20,7 +20,7 @@ try{
   await context.addInitScript(({transport,nativeRelay})=>{localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.releaseNotes.2026-09-14-nyx-1.0.3.seen','2026-09-14-nyx-1.0.3');localStorage.setItem('nyx.httpBridge',String(!nativeRelay));localStorage.setItem('nyx.browserMode','scramjet');localStorage.setItem('nyx.transport',transport==='libcurl'?'libcurlRaw':transport);localStorage.setItem('tutsi.customize.seen','1');localStorage.setItem('tutsi.settings.v1',JSON.stringify({transport,httpBridge:!nativeRelay,closePrevention:false}));if(!nativeRelay)window.WebSocket=class{constructor(){throw new Error('Native WebSockets disabled for HTTP test');}};},{transport,nativeRelay});
   const page=await context.newPage();let batches=0,legacy=0;const runtimeUrls=[];page.on('request',r=>{if(r.url().startsWith(base))runtimeUrls.push(r.url());if(r.url().endsWith('/api/tutsi-relay/send-batch'))batches++;if(r.url().endsWith('/api/tutsi-relay/send'))legacy++;});
   await page.goto(base+(brand==='nyx'?'/nyx':'/tutsi'));await page.waitForTimeout(8500);
-  const input=page.locator(brand==='nyx'?'[data-browser-shell-url]:visible':'#query').first();
+  const input=page.locator(brand==='nyx'?'[data-browser-blank-input]:visible':'#query').first();
   await input.fill('https://example.com/');const start=Date.now();await input.press('Enter');
   await page.frameLocator(brand==='nyx'?'.browser-body iframe.view.active':'#browser-stage iframe:not([hidden])').getByRole('heading',{name:'Example Domain'}).waitFor({timeout:45000});
   if(!nativeRelay)assert(batches>0);else assert.equal(batches,0);assert.equal(legacy,0);

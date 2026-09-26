@@ -11,13 +11,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/vendor/katex/katex.min.css?v=20260814-ai-math-v1">
-  <link rel="stylesheet" href="/css/ai-workspace.css?v=20260923-public-pool-v9">
-<link rel="stylesheet" href="/apps/visual-redesign.css?v=20260914-ai-restored-v5">
-  <script src="/js/nyx-logo.js?v=20260906-small-monogram-v7" defer></script>
+  <link rel="stylesheet" href="/css/ai-workspace.css?v=20260926-slim-v1">
+<script src="/js/nyx-logo.js?v=20260906-small-monogram-v7" defer></script>
   <script src="/assets/vendor/katex/katex.min.js?v=20260814-ai-math-v1" defer></script>
   <script src="/js/ai-markdown.js?v=20260914-premium-luna-v2" defer></script>
 <script src="/js/ai-screen-chat.js?v=20260919-screen-chat-v1" defer></script>
-<script src="/js/ai-workspace.js?v=20260922-model-picker-v8" defer></script>
+<script src="/js/ai-workspace.js?v=20260926-slim-v1" defer></script>
+<link rel="stylesheet" href="/apps/obsidian.css?v=20260926-2">
 </head>
 <body>
   <main class="ai-app" data-ai-app>
@@ -25,7 +25,7 @@
       <header class="ai-sidebar-header">
         <div class="ai-sidebar-brand">
           <span class="ai-sidebar-brand-mark" data-nyx-logo aria-hidden="true"></span>
-          <span><strong>Nyx AI</strong><small>Workspace</small></span>
+          <span><strong>Nyx AI</strong></span>
         </div>
         <button class="ai-sidebar-close" id="sidebarClose" type="button" aria-label="Close conversation sidebar">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg>
@@ -37,9 +37,9 @@
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
           <span>New chat</span>
         </button>
-        <button class="ai-temporary-chat" id="temporaryChat" type="button" aria-pressed="false">
+        <button class="ai-temporary-chat" id="temporaryChat" title="Not saved to history" type="button" aria-pressed="false">
           <span class="ai-sidebar-action-icon"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9M12 7v5l3 2M17 3h4v4"/></svg></span>
-          <span><strong>Temporary chat</strong><small>Not saved to history</small></span>
+          <span><strong>Temporary chat</strong></span>
         </button>
       </nav>
 
@@ -54,6 +54,7 @@
       </section>
 
       <footer class="ai-sidebar-footer">
+        <details class="ai-chat-options"><summary>Chat options</summary><div class="ai-chat-options-body">
         <div class="ai-effort-control">
           <span class="ai-effort-label">Reasoning effort</span>
           <div class="ai-depth" role="group" aria-label="AI reasoning effort">
@@ -67,6 +68,7 @@
           <h2 id="aiUsageTitle">Your AI usage <small>estimated</small></h2>
           <div><span><strong id="usageWeek">0</strong><small>tokens · 7d</small></span><span><strong id="usageAll">0</strong><small>all-time</small></span><span><strong id="usageRequests">0</strong><small>responses</small></span></div>
         </section>
+        </div></details>
         <button class="ai-profile-button" id="aiProfile" type="button" aria-label="Open your Nyx profile">
           <span class="ai-profile-avatar"><img id="profileAvatar" alt="" hidden><span id="profileInitial">N</span></span>
           <span class="ai-profile-copy"><strong id="profileName">Profile</strong><small id="profileHandle">Open your Nyx profile</small></span>
@@ -83,13 +85,7 @@
           <button class="ai-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Open conversation sidebar" aria-controls="aiSidebar" aria-expanded="false">
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
           </button>
-          <div class="ai-brand-mark" data-nyx-logo aria-hidden="true"></div>
-          <div class="ai-brand-copy">
-            <span>NYX INTELLIGENCE</span>
-            <h1>Nyx AI</h1>
-          </div>
-          <span class="ai-header-divider" aria-hidden="true"></span>
-          <p class="ai-thread-title" id="threadTitle">New conversation</p>
+<p class="ai-thread-title" id="threadTitle">New conversation</p>
         </div>
 
         <div class="ai-header-actions">
@@ -150,7 +146,7 @@
             </button>
           </div>
           <label class="sr-only" for="input">Message Nyx AI</label>
-          <textarea id="input" rows="1" maxlength="4000" placeholder="Ask Nyx AI anything…" aria-label="Message Nyx AI"></textarea>
+          <textarea id="input" rows="1" maxlength="4000" placeholder="Message Nyx AI..." aria-label="Message Nyx AI"></textarea>
           <div class="ai-composer-footer">
             <button class="ai-attach" id="attachImage" type="button" title="Attach an image" aria-label="Attach an image" aria-controls="imageInput">
               <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M13 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-8"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 5-5 4 4 3-3 6 6M19 2v6M16 5h6"/></svg>
@@ -158,7 +154,7 @@
             <button class="ai-attach ai-screen-share" id="shareScreen" type="button" title="Share your screen" aria-label="Share your screen">
               <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
             </button>
-            <span class="ai-composer-hint"><kbd>Enter</kbd> to send · <kbd>Shift</kbd> + <kbd>Enter</kbd> for a new line</span>
+            <span class="ai-composer-hint"><kbd>Shift + Enter</kbd> for a new line</span>
             <span class="ai-character-count" id="characterCount" aria-live="off">0 / 4000</span>
             <button class="ai-send" id="send" type="submit" title="Send message" aria-label="Send message">
               <svg class="ai-send-arrow" aria-hidden="true" viewBox="0 0 24 24"><path d="m12 19V5m0 0-6 6m6-6 6 6"/></svg>

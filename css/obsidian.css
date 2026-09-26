@@ -1,0 +1,203 @@
+/* Nyx Obsidian. One desktop layout at every viewport size.
+   Shell geometry lives here, not in JS or viewport-specific override sheets. */
+:root {
+  --nyx-sidebar-width:184px;
+  --nyx-chrome-height:0px;
+  --obsidian-bg:#090d0c;
+  --obsidian-panel:rgba(13,18,16,.88);
+  --obsidian-field:rgba(21,27,24,.78);
+  --obsidian-hover:rgba(255,255,255,.055);
+  --obsidian-line:rgba(225,238,231,.10);
+  --obsidian-text:#e6ebe8;
+  --obsidian-muted:#929d97;
+  --obsidian-dot:#8da99b;
+  --nyx-font:Inter,Arial,sans-serif;
+  --nyx-rail-motion:240ms cubic-bezier(.22,.75,.24,1);
+}
+html[data-nyx-sidebar-width="collapsed"] {--nyx-sidebar-width:64px}
+html[data-nyx-appearance="light"] {
+  --obsidian-bg:#e4e9e5;--obsidian-panel:rgba(237,241,238,.93);
+  --obsidian-field:rgba(255,255,255,.7);--obsidian-hover:rgba(0,0,0,.055);
+  --obsidian-line:rgba(30,45,35,.16);--obsidian-text:#202a24;--obsidian-muted:#5b6860;
+  color-scheme:light;
+}
+html body.browser-shell {
+  --bar:var(--nyx-chrome-height)!important;
+  --nyx-interface-bar:var(--nyx-chrome-height)!important;
+  --nyx-visual-dock-current-width:var(--nyx-sidebar-width)!important;
+  --theme-panel:var(--obsidian-panel)!important;--theme-card:var(--obsidian-panel)!important;
+  --theme-text:var(--obsidian-text)!important;--text:var(--obsidian-text)!important;
+  --theme-muted:var(--obsidian-muted)!important;--muted:var(--obsidian-muted)!important;
+  --theme-border:var(--obsidian-line)!important;--line:var(--obsidian-line)!important;
+  --theme-accent:var(--obsidian-text)!important;--accent:var(--obsidian-text)!important;
+  --glass:var(--obsidian-panel)!important;--glass-panel:var(--obsidian-panel)!important;
+  --glass-control:var(--obsidian-field)!important;
+  --theme-bg:none!important;
+  background:var(--obsidian-bg)!important;color:var(--obsidian-text);
+}
+body.browser-shell.browser-content-active {--nyx-chrome-height:86px}
+body.browser-shell::before {background:var(--obsidian-bg);filter:none;transform:none;inset:0}
+html[data-nyx-beam-wallpaper="obsidian"] body:not(.custom-bg-active)::before {
+  background:var(--obsidian-bg) url('../assets/backgrounds/obsidian-fabric.svg') bottom right/cover no-repeat;
+}
+html[data-nyx-beam-wallpaper="obsidian"] :is(#nyxBeamsBg,#nyxWaveBg,#nyxLineWavesBg,#defaultVantaBg){display:none!important}
+body.browser-shell :is(.dock,.weather-restore,#desktop>.desktop-shortcuts,.nyx-browser-tab-sidebar){display:none!important}
+body.browser-shell #desktop {position:fixed;inset:0;overflow:hidden;zoom:1!important;pointer-events:none}
+body.browser-shell #desktop>.window.maximized {
+  position:fixed!important;top:var(--nyx-chrome-height)!important;left:var(--nyx-sidebar-width)!important;
+  right:0!important;bottom:0!important;width:calc(100% - var(--nyx-sidebar-width))!important;
+  height:calc(100% - var(--nyx-chrome-height))!important;max-height:none!important;max-width:none!important;
+  min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;
+  border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;
+  transform:none!important;zoom:1!important;backdrop-filter:none!important;pointer-events:auto;
+}
+body.browser-shell #desktop>.window.maximized::before,
+body.browser-shell #desktop>.window.maximized::after {display:none!important}
+body.browser-shell .browser-window.maximized>:is(.titlebar,.browser-tabs,.browser-tools){display:none!important}
+body.browser-shell .browser-window.maximized .browser-body {position:absolute;inset:0;height:100%;overflow:hidden;background:transparent}
+body.browser-shell .browser-window.maximized .view {inset:0;width:100%;height:100%;border:0}
+body.browser-shell .browser-window.maximized .view.active {display:block}
+
+/* Continuous navigation rail; labels are the only part removed on collapse. */
+.nyx-visual-dock {
+  position:fixed;z-index:2147482502;inset:0 auto 0 0;width:var(--nyx-sidebar-width);height:100%;
+  display:flex;flex-direction:column;padding:18px 12px 14px;gap:24px;
+  background:var(--obsidian-panel);backdrop-filter:blur(26px);border-right:1px solid var(--obsidian-line);
+  color:var(--obsidian-text);overflow:hidden;
+  transition:width var(--nyx-rail-motion);
+}
+.nyx-visual-dock-head {display:flex;align-items:center;justify-content:space-between;height:32px;flex:none}
+.nyx-rail-brand {display:flex;align-items:center;gap:9px;width:calc(100% - 30px);overflow:hidden;text-decoration:none;color:inherit;font-size:10px;letter-spacing:.24em;transition:width var(--nyx-rail-motion),opacity 160ms}
+.nyx-rail-brand img {width:25px;height:25px;object-fit:contain}
+.nyx-visual-dock button {font:inherit;border:0;background:transparent;color:inherit;box-shadow:none;cursor:pointer}
+.nyx-visual-dock svg {display:block;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.nyx-visual-dock-expand {display:grid;place-items:center;width:30px;height:30px;flex:none;padding:5px;border-radius:6px}
+.nyx-visual-dock-expand svg {width:20px;height:20px;color:var(--obsidian-text)}
+.nyx-visual-dock-expand [data-sidebar-arrow]{transform-origin:14px 12px;transition:transform var(--nyx-rail-motion)}
+.nyx-visual-dock-expand[aria-expanded="true"] [data-sidebar-arrow]{transform:rotate(180deg)}
+.nyx-visual-dock [data-nyx-dock-item]>span{opacity:1;transform:translateX(0);transition:opacity 160ms,transform var(--nyx-rail-motion)}
+.nyx-visual-dock nav {display:flex;flex-direction:column;gap:6px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;min-height:0}
+.nyx-visual-dock [data-nyx-dock-item] {position:relative;display:flex;align-items:center;gap:14px;flex:none;width:100%;height:40px;padding:0 11px;text-align:left;font-size:12px;border-radius:7px;white-space:nowrap;color:var(--obsidian-muted)}
+.nyx-visual-dock [data-nyx-dock-item="apps"] {margin-top:18px}
+.nyx-visual-dock [data-nyx-dock-item].active {color:var(--obsidian-text);background:var(--obsidian-hover)}
+.nyx-visual-dock [data-nyx-dock-item].active::before {content:"";position:absolute;left:1px;width:3px;height:3px;border-radius:50%;background:var(--obsidian-dot)}
+.nyx-visual-dock button:hover {background:var(--obsidian-hover);color:var(--obsidian-text)}
+.nyx-rail-footer {margin-top:auto;display:grid;gap:6px;flex:none}
+html body .nyx-visual-dock #nyxAccountButton {
+  position:relative;display:flex!important;align-items:center;justify-content:flex-start;gap:12px;
+  width:100%!important;min-width:0!important;height:40px!important;padding:0 9px!important;
+  border:0!important;border-radius:7px!important;background:transparent!important;box-shadow:none!important;
+  color:var(--obsidian-text)!important;text-align:left;overflow:hidden;
+}
+html body .nyx-visual-dock #nyxAccountButton::before {display:none!important}
+html body .nyx-visual-dock #nyxAccountButton::after {content:'Account';position:static!important;font:12px Inter,Arial,sans-serif;letter-spacing:0;background:none!important;transform:none!important;width:auto!important;height:auto!important}
+html body .nyx-visual-dock #nyxAccountButton>span {position:relative;display:grid;place-items:center;flex:0 0 24px;width:24px!important;height:24px!important;border-radius:50%;background:var(--obsidian-hover);color:inherit}
+html body .nyx-visual-dock #nyxAccountButton>.nyx-account-button-copy {display:none!important}
+.nyx-visual-dock #nyxAccountButton svg {width:17px;height:17px}
+html[data-nyx-sidebar-width="collapsed"] .nyx-rail-brand {width:0;opacity:0}
+html[data-nyx-sidebar-width="collapsed"] .nyx-visual-dock-head {justify-content:center}
+html[data-nyx-sidebar-width="collapsed"] .nyx-visual-dock [data-nyx-dock-item]>span{opacity:0;transform:translateX(-5px);pointer-events:none}
+html[data-nyx-sidebar-width="collapsed"] body .nyx-visual-dock #nyxAccountButton::after {opacity:0;pointer-events:none}
+.nyx-visual-dock #nyxAccountButton::after{transition:opacity 160ms}
+.nyx-visual-dock button:focus-visible {outline:1px solid var(--obsidian-text);outline-offset:-2px}
+
+/* Tabs and navigation are application chrome, without window controls. */
+body.browser-shell .top-os {
+  position:fixed;z-index:2147482501;top:0;left:var(--nyx-sidebar-width);right:0;
+  width:auto;height:86px;display:none;padding:0;border:0;border-bottom:1px solid var(--obsidian-line);
+  background:var(--obsidian-panel);backdrop-filter:blur(24px);box-shadow:none;zoom:1!important;
+}
+body.browser-shell.browser-content-active .top-os {display:grid;grid-template-rows:40px 46px}
+.top-os>:is(.brand-mini,.nyx-dashboard,.nyx-latency-bubble,.status-icons,.nyx-home-tabs-toggle,.nyx-minimal-top-actions){display:none!important}
+.nyx-tab-strip {display:flex;align-items:end;gap:4px;padding:5px 10px 0;overflow-x:auto;scrollbar-width:none;min-width:0}
+.nyx-visual-dock-tab {position:relative;display:flex;align-items:center;gap:9px;flex:0 1 212px;min-width:130px;height:35px;padding:0 9px 0 12px;border:1px solid transparent;border-bottom:0;border-radius:8px 8px 0 0;color:var(--obsidian-muted);font-size:12px;cursor:pointer}
+.nyx-visual-dock-tab.active {background:var(--obsidian-field);border-color:var(--obsidian-line);color:var(--obsidian-text)}
+.nyx-visual-dock-tab img {width:16px;height:16px;object-fit:contain;border-radius:3px}
+.nyx-visual-dock-tab strong {font-weight:400;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.nyx-visual-dock-tab-close,.nyx-visual-dock-tab-add {border:0;color:var(--obsidian-muted);background:none;border-radius:5px;padding:0;width:24px;height:24px;flex:none;font-size:19px;box-shadow:none}
+.nyx-visual-dock-tab-add {align-self:center;width:30px;height:30px}
+.nyx-visual-dock-tab-add strong {display:none}
+.nyx-tab-strip button:hover {background:var(--obsidian-hover);color:var(--obsidian-text)}
+.nyx-tab-strip button,.nyx-visual-dock [data-nyx-dock-item]{transition:background-color 140ms,color 140ms}
+.nyx-tab-strip [role="tab"]:focus-visible {outline:1px solid var(--obsidian-muted);outline-offset:-2px}
+.nyx-tab-strip .tab-drop-before {border-left-color:var(--obsidian-text)}
+.nyx-tab-strip .tab-drop-after {border-right-color:var(--obsidian-text)}
+body.browser-shell .top-os .browser-mode-address {position:relative;inset:auto;display:flex;align-items:center;gap:5px;width:100%;height:46px;padding:5px 10px;margin:0;border:0;background:var(--obsidian-field);box-shadow:none}
+.browser-mode-address>button {display:grid;place-items:center;flex:none;width:30px;height:30px;padding:6px;border:0;border-radius:6px;background:none;color:var(--obsidian-text);box-shadow:none;font-size:17px}
+.browser-mode-address>button:hover {background:var(--obsidian-hover)}
+.browser-mode-address svg {width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.browser-mode-address .browser-mode-secure-indicator {display:grid;place-items:center;width:28px;height:30px;margin-left:6px;color:var(--obsidian-muted)}
+.browser-mode-address .browser-mode-url {flex:1;min-width:0;height:32px;border:1px solid var(--obsidian-line);border-radius:7px;padding:0 12px;background:var(--obsidian-bg);color:var(--obsidian-text);-webkit-text-fill-color:var(--obsidian-text);font-size:12px;box-shadow:none;outline:none}
+.browser-mode-address .browser-mode-url:focus {border-color:var(--obsidian-muted)}
+.browser-mode-address :is(.browser-tabs-toggle,[data-browser-shell-home-nav],[data-browser-shell-settings],[data-page-fullscreen],.browser-mode-url-pointer-border){display:none!important}
+
+/* Home composition. No old title particles, shortcut bubbles or footer dock. */
+.browser-home.nyx-minimal-home {position:absolute;inset:0;display:grid;place-items:center;background:transparent;color:var(--obsidian-text);overflow:hidden}
+.browser-home.nyx-minimal-home.hidden {display:none!important}
+.nyx-minimal-hero {position:absolute;top:43%;left:50%;transform:translate(-50%,-50%);display:grid;justify-items:center;gap:28px;width:min(530px,calc(100% - 64px));margin:0;padding:0}
+.nyx-minimal-brand {display:grid;justify-items:center;gap:9px;background:var(--obsidian-bg)}
+.nyx-home-logo {display:block;width:57px;height:57px;object-fit:contain;filter:grayscale(1) contrast(1.8);mix-blend-mode:screen}
+.nyx-minimal-brand h1 {margin:0;color:var(--obsidian-text);font-size:13px;font-weight:400;line-height:1.3;letter-spacing:.38em;text-indent:.38em}
+.nyx-minimal-brand h1::before,.nyx-minimal-brand h1::after,.nyx-title-dot-canvas,.nyx-home-dot-field {display:none!important}
+.nyx-minimal-search {display:flex;align-items:center;gap:12px;width:100%;height:46px;padding:0 13px;border:1px solid var(--obsidian-line);border-radius:9px;background:var(--obsidian-field);backdrop-filter:blur(20px);box-shadow:0 8px 30px #0002}
+.nyx-minimal-search:focus-within {border-color:var(--obsidian-muted)}
+.nyx-minimal-search svg {width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.5;flex:none;color:var(--obsidian-muted)}
+.nyx-minimal-search input {flex:1;min-width:0;height:100%;border:0;outline:0;box-shadow:none;padding:0;background:none;color:var(--obsidian-text);font-size:12px}
+.nyx-minimal-search input::placeholder {color:var(--obsidian-muted)}
+.nyx-home-search-submit {display:grid;place-items:center;width:28px;height:30px;padding:4px;border:0;background:none;box-shadow:none}
+.nyx-home-links {display:flex;align-items:center;justify-content:center;gap:18px;margin-top:-12px;font-size:10px;color:var(--obsidian-muted)}
+.nyx-home-links button {padding:4px 0;color:inherit;background:none;border:0!important;border-radius:0!important;font:inherit;box-shadow:none;transition:color 160ms,transform 160ms}
+.nyx-home-links button:hover {color:var(--obsidian-text);background:none!important;transform:translateY(-2px)}
+.nyx-minimal-utility-links {position:absolute;right:26px;bottom:22px;font-size:10px}
+.nyx-minimal-utility-links a {color:var(--obsidian-muted);text-decoration:none}
+.nyx-visual-customize,.nyx-appearance-toggle {position:absolute;right:25px;top:21px;display:flex;align-items:center;gap:9px;height:30px;padding:0 8px;background:none;border:0;box-shadow:none;color:var(--obsidian-muted);font:11px Inter,Arial,sans-serif;border-radius:6px}
+.nyx-appearance-toggle {right:132px;width:30px;justify-content:center;padding:6px}
+.nyx-visual-customize svg,.nyx-appearance-toggle svg {width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.4}
+.nyx-visual-customize:hover,.nyx-appearance-toggle:hover {color:var(--obsidian-text);background:var(--obsidian-hover)}
+.nyx-home-presence {display:none}
+
+/* Existing menus/settings keep their behavior with the same quiet palette. */
+html body.browser-shell .browser-shell-settings-overlay {position:fixed!important;inset:86px 0 0 var(--nyx-sidebar-width)!important;width:auto!important;height:auto!important;padding:0!important;zoom:1!important;background:var(--obsidian-bg)!important}
+html body.browser-shell.browser-shell .browser-shell-settings-panel.browser-shell-settings-panel {width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;margin:0!important;border:0!important;border-radius:0!important;background:var(--obsidian-bg)!important}
+.nyx-color-theme-grid{display:grid;grid-template-columns:repeat(3,minmax(110px,1fr));gap:10px}
+.nyx-color-theme-card{position:relative;display:grid;gap:7px;text-align:left;padding:13px;border:1px solid var(--obsidian-line);border-radius:8px;background:var(--obsidian-field);color:var(--obsidian-text)}
+.nyx-color-theme-card small{color:var(--obsidian-muted);font-size:10px;line-height:1.5}
+.nyx-color-theme-swatches{display:flex;gap:4px;margin-bottom:4px}
+.nyx-color-theme-swatches i{width:16px;height:16px;border-radius:50%;background:var(--nyx-theme-swatch)}
+.nyx-color-theme-check{display:none;position:absolute;right:8px;top:8px}
+.nyx-color-theme-card.selected .nyx-color-theme-check{display:block}
+.nyx-wallpaper-grid{display:grid;grid-template-columns:repeat(3,minmax(100px,1fr));gap:10px}
+.nyx-wallpaper-card{position:relative;display:grid;gap:9px;padding:8px;text-align:left;border:1px solid var(--obsidian-line);border-radius:8px;background:var(--obsidian-field);color:var(--obsidian-text)}
+.nyx-wallpaper-card canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;border-radius:5px}
+.nyx-wallpaper-card span{display:grid;gap:4px;font-size:11px}
+.nyx-wallpaper-card small{font-size:10px;color:var(--obsidian-muted)}
+.nyx-wallpaper-check{display:none;position:absolute;right:9px;top:9px}
+.nyx-wallpaper-card.selected .nyx-wallpaper-check{display:block}
+html body :is(.settings-card,.settings-block,.apps-panel,.panel,.nyx-credits-card) {border-color:var(--obsidian-line)!important;background:var(--obsidian-panel)!important;box-shadow:none!important}
+html body :is(.settings-action,.settings-card button,.nyx-account-submit,.nyx-account-tab.active,.nyx-prompt button) {background:var(--obsidian-field)!important;background-image:none!important;color:var(--obsidian-text)!important;border:1px solid var(--obsidian-line)!important;border-radius:7px;box-shadow:none!important;text-shadow:none!important}
+html body :is(.browser-mode-menu,.browser-bookmark-panel,.nyx-account-menu) {background:var(--obsidian-panel)!important;border:1px solid var(--obsidian-line)!important;border-radius:10px!important;backdrop-filter:blur(24px);box-shadow:0 15px 45px #0005!important;color:var(--obsidian-text)!important}
+html body .browser-mode-menu {position:absolute;top:88px!important;right:12px!important;width:230px;padding:8px;display:none!important}
+html body.menu-open .browser-mode-menu {display:block!important;opacity:1;visibility:visible;pointer-events:auto}
+.browser-mode-menu button{display:block;width:100%;padding:10px 12px;text-align:left;background:none;border:0;color:var(--obsidian-text);font-size:12px}
+html body.browser-shell .browser-shell-settings-panel :is(.nyx-settings-side,.nyx-color-theme-card,.nyx-wallpaper-card){border-color:var(--obsidian-line)!important;background:var(--obsidian-panel)!important}
+html body.browser-shell .browser-shell-settings-panel .nyx-settings-nav button.active{background:var(--obsidian-hover)!important;color:var(--obsidian-text)!important}
+body.browser-shell #desktop>.window.maximized{transition:left var(--nyx-rail-motion),width var(--nyx-rail-motion)!important}
+body.browser-shell .top-os,html body.browser-shell .browser-shell-settings-overlay{transition:left var(--nyx-rail-motion)}
+@media(prefers-reduced-motion:reduce) {
+  :root{--nyx-rail-motion:0ms}
+  .nyx-visual-dock,.nyx-visual-dock *,.nyx-visual-dock *::after,.top-os,.nyx-minimal-hero{transition:none!important;animation:none!important}
+}
+
+/* The address field stays legible while selected and while a page is loading. */
+html body.browser-shell .browser-mode-address>button {color:var(--obsidian-text)!important;-webkit-text-fill-color:currentColor!important;background:transparent!important;border:0!important;border-radius:6px!important;box-shadow:none!important;transition:background-color 150ms,transform 150ms}
+html body.browser-shell .browser-mode-address>button:hover {background:var(--obsidian-hover)!important;transform:translateY(-1px)}
+html body.browser-shell .browser-mode-address .browser-mode-url {color:var(--obsidian-text)!important;-webkit-text-fill-color:var(--obsidian-text)!important;border-color:var(--obsidian-line)!important;box-shadow:none!important}
+html body.browser-shell .browser-mode-address .browser-mode-url::selection {color:var(--obsidian-text);-webkit-text-fill-color:var(--obsidian-text);background:#46594e}
+html body.browser-shell :is(.browser-mode-address>button,.nyx-home-links button):focus-visible {outline:1px solid var(--obsidian-muted);outline-offset:2px}
+html[data-nyx-appearance="light"] .nyx-home-logo {filter:grayscale(1) contrast(1.8) invert(1);mix-blend-mode:multiply}
+html body.browser-shell .nyx-settings-control input[type="range"] {accent-color:#9aac9f;cursor:pointer}
+html body.browser-shell .nyx-settings-control :is(button,input,select,textarea):focus-visible {outline:1px solid var(--obsidian-muted)!important;outline-offset:2px!important;border-radius:7px}
+html body.browser-shell .nyx-settings-control button {padding:8px 12px!important;transition:background-color 150ms,border-color 150ms!important}
+html body.browser-shell .nyx-settings-control :is(.nyx-wallpaper-card,.nyx-color-theme-card).selected {border-color:var(--obsidian-muted)!important}
+html body.browser-shell .nyx-settings-control :is(.nyx-wallpaper-card,.nyx-color-theme-card):hover {border-color:var(--obsidian-muted)!important;background:var(--obsidian-hover)!important}
+@media(prefers-reduced-motion:reduce){.nyx-home-links button,.browser-mode-address>button{transition:none!important;transform:none!important}}

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" fill="none">
+ <defs>
+  <linearGradient id="fold" x1="800" y1="480" x2="1050" y2="1100" gradientUnits="userSpaceOnUse"><stop stop-color="#151e18" stop-opacity="0"/><stop offset=".65" stop-color="#29382e" stop-opacity=".32"/><stop offset="1" stop-color="#020604" stop-opacity=".1"/></linearGradient>
+  <pattern id="weave" width="4" height="4" patternUnits="userSpaceOnUse"><path d="M0 1h4M1 0v4" stroke="#b3c1b6" stroke-opacity=".024" stroke-width=".5"/></pattern>
+  <mask id="fade"><rect width="1600" height="1000" fill="url(#fadeGradient)"/></mask>
+  <linearGradient id="fadeGradient" x1="600" y1="300" x2="1200" y2="1000" gradientUnits="userSpaceOnUse"><stop stop-color="black"/><stop offset="1" stop-color="white"/></linearGradient>
+ </defs>
+ <g mask="url(#fade)"><path d="M330 1100C590 950 806 627 1040 712s370 25 690-280v668Z" fill="url(#fold)"/><path d="M690 1100c170-300 400-493 614-297s324 140 440-40v337Z" fill="url(#fold)"/><path d="M230 1100C590 920 806 627 1040 712s370 25 690-280v668Z" fill="url(#weave)"/></g>
+</svg>

@@ -93,6 +93,7 @@ assets/ugs/*
 assets/music/
 assets/docs/
 assets/backgrounds/*
+!assets/backgrounds/obsidian-fabric.svg
 !assets/backgrounds/nyx-blue-light-trails.jpg
 !assets/backgrounds/animated-blue-wave.html
 !assets/backgrounds/pirate-cove.gif

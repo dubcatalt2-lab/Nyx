@@ -43,16 +43,6 @@ html[data-nyx-theme] body .nyx-profile-organized .nyx-user-profile-form>footer>.
 html[data-nyx-theme] body .nyx-profile-drawer.nyx-profile-organized .nyx-discord-preview-pane {height:100%!important;min-height:0!important;display:flex!important;flex-direction:column;justify-content:flex-start;gap:22px;padding:30px!important;background:radial-gradient(ellipse at top,color-mix(in srgb,var(--theme-accent,#8fb8ff) 12%,transparent),transparent 75%)!important}
 html[data-nyx-theme] body .nyx-profile-organized .nyx-discord-preview-pane>h3 {display:block!important;margin:0;color:#c2caee;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
 html[data-nyx-theme] body .nyx-profile-drawer.nyx-profile-organized .nyx-discord-preview-pane .nyx-user-profile-card {height:auto!important;min-height:0!important;max-height:none!important;width:min(360px,100%)!important}
-@media(max-width:760px){
- html[data-nyx-theme] body .nyx-profile-organized .nyx-discord-profile-layout {display:flex!important;flex-direction:column;overflow:visible!important;flex:none;min-height:0!important}
- html[data-nyx-theme] body .nyx-profile-organized .nyx-discord-profile-scroll {overflow-y:auto!important}
- html[data-nyx-theme] body .nyx-profile-drawer.nyx-profile-organized .nyx-user-profile-form {height:auto!important;overflow:visible!important;padding:0 16px!important;flex:none;width:100%!important}
- html[data-nyx-theme] body .nyx-profile-drawer.nyx-profile-organized .nyx-discord-preview-pane {order:0!important;height:auto!important;overflow:visible;padding:24px!important;position:relative!important;inset:auto!important;flex:none;width:100%!important}
- html[data-nyx-theme] body .nyx-profile-organized .nyx-profile-editor-section {padding:16px!important}
- html[data-nyx-theme] body .nyx-profile-organized .nyx-profile-field-grid {grid-template-columns:1fr!important}
- html[data-nyx-theme] body .nyx-profile-organized .nyx-user-profile-form>footer {margin-inline:-16px;padding-inline:16px!important}
- html[data-nyx-theme] body .nyx-profile-drawer.nyx-profile-organized .nyx-profile-rail-header {margin-inline:-16px!important;padding-inline:16px!important;position:relative}
-}
 
 /* Preserve contrast where blur is unavailable or disabled for performance. */
 @supports not (backdrop-filter:blur(1px)) { html[data-nyx-theme] body .nyx-profile-drawer.nyx-profile-organized .nyx-user-profile-dialog {background:rgba(13,18,28,.96)!important} }

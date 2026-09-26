@@ -15,7 +15,7 @@ send('http://evil.test');send('http://nyx.test',{});assert.equal(opened,0);
 send('http://nyx.test');assert.equal(opened,1);
 const browser=await chromium.launch({headless:true});
 try {
-  for(const width of [1280,390]) {
+  for(const width of [1280,1024]) {
     const page=await browser.newPage({viewport:{width,height:950},reducedMotion:'reduce'}),errors=[];
     page.on('pageerror',e=>errors.push(e.message));
     let owner=false,verified=false,unlocked=false,key=null,balance=1000,premium=false;
@@ -25,7 +25,7 @@ try {
       if(path==='/')return route.fulfill({contentType:'text/html',body:`<meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font-family:Outfit,Arial,sans-serif;background:#141414}iframe{border:0;width:100%;height:950px}</style><iframe src="/api"></iframe><script>window.signedIn=false;addEventListener('message',e=>{if(e.origin===location.origin&&e.data.type==='nyx:account-token-request')e.source.postMessage({type:'nyx:account-token-response',requestId:e.data.requestId,token:window.signedIn?'fixture':''},location.origin);if(e.origin===location.origin&&e.data.type==='nyx:account-open-signin'){window.signedIn=true;e.source.postMessage({type:'nyx:account-changed'},location.origin);}});</script>`});
       if(path.startsWith('/assets/vendor/katex/'))return route.fulfill({contentType:path.endsWith('.js')?'text/javascript':path.endsWith('.css')?'text/css':'font/woff2',body:await readFile(root==='.'?'node_modules/katex/dist/'+path.split('/katex/')[1]:root+path)});
       if(path==='/assets/icons/nyx-monogram.png')return route.fulfill({contentType:'image/png',body:await readFile(root+path)});
-      if(path==='/api'||path.startsWith('/apps/api-keys/')||['/js/ai-markdown.js','/apps/utility-shell.css','/apps/visual-redesign.css','/assets/vendor/three.r134.min.js','/js/beams-wallpaper.js','/js/line-waves-wallpaper.js'].includes(path))return route.fulfill({contentType:path.endsWith('.js')?'text/javascript':path.endsWith('.css')?'text/css':'text/html',body:await readFile(root+(path==='/api'?'/apps/api-keys/index.html':path),'utf8')});
+      if(path==='/api'||path.startsWith('/apps/api-keys/')||['/js/app-presentation.js','/js/ai-markdown.js','/apps/utility-shell.css','/apps/obsidian.css','/assets/vendor/three.r134.min.js','/js/beams-wallpaper.js','/js/line-waves-wallpaper.js'].includes(path))return route.fulfill({contentType:path.endsWith('.js')?'text/javascript':path.endsWith('.css')?'text/css':'text/html',body:await readFile(root+(path==='/api'?'/apps/api-keys/index.html':path),'utf8')});
       if(path==='/api/v1/ai'){balance-=12;return route.fulfill({json:{choices:[{message:{content:answer},finish_reason:'length'}],usage:{prompt_tokens:7,completion_tokens:5}}});}
       if(path==='/api/developer/owner/account/member/reveal-key')return route.fulfill({json:{key:'n_api_owner-reveal-fixture'}});
       if(path==='/api/developer/owner/accounts')return route.fulfill({json:{members:[{uid:'member',name:'Test Member',balance,usedTokens:12,key:{prefix:'n_api_fixture'}}],nextCursor:null}});
@@ -43,7 +43,7 @@ try {
     await frame.locator('#sign-in').click();
     await frame.locator('#account').filter({hasText:'1,000'}).waitFor();
     assert.equal(await frame.locator('#sign-in').isVisible(),false,'Signed-in users must not see a sign-in link');
-    assert.equal(await frame.locator('body').evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0)');
+    assert.equal(await frame.locator('body').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(11, 16, 13)');
     assert.equal(await frame.locator('body').evaluate(el=>getComputedStyle(el).backgroundImage),'none');
     assert.equal(await frame.locator('#nyxBeamsBg').count(),0,'Embedded page must not duplicate wallpaper rendering');
     assert.equal(await frame.locator('#create-button').isDisabled(),false,'Email verification is not required');
@@ -97,10 +97,10 @@ try {
     await page.addInitScript(()=>localStorage.setItem('nyx.beamWallpaper','rose'));
     await page.goto('http://nyx.test/api');await page.locator('#nyxBeamsBg[data-preset=rose]').waitFor();
     assert.equal(await page.locator('html').getAttribute('data-nyx-beam-wallpaper'),'rose');
-    assert.match(await page.locator('body').evaluate(el=>getComputedStyle(el).fontFamily),/Outfit/);
+    assert.match(await page.locator('body').evaluate(el=>getComputedStyle(el).fontFamily),/Inter/);
     assert.equal(await page.locator('body').evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
     await page.locator('.brand-logo').evaluate(el=>el.decode());assert.ok(await page.locator('.brand-logo').evaluate(el=>el.naturalWidth>0));
     await page.screenshot({path:`.codex-artifacts/developer-nyx-theme-${width}.png`});await page.close();
   }
-  console.log('PASS: API account-only access, one-time reveal, playground completion, usage metrics, owner unlock/limits/relock, desktop and mobile layout');
+  console.log('PASS: API account-only access, one-time reveal, playground completion, usage metrics, owner unlock/limits/relock, desktop layout');
 }finally{await browser.close();}

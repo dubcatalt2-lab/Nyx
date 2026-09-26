@@ -1,63 +1,8 @@
 /* //theme-border-only */
-body.theme-ruby,
-body.theme-emerald,
-body.theme-sakura{
-  background-size:cover!important;
-  background-position:center!important;
-  background-repeat:no-repeat!important;
-}
-body.theme-ruby{--theme-border:#fb7185!important;--theme-bg:linear-gradient(rgba(60,0,12,.10),rgba(60,0,12,.22)),url("../assets/backgrounds/nyx-blue-light-trails.jpg")!important}
-body.theme-emerald{--theme-border:#34d399!important;--theme-bg:linear-gradient(rgba(0,24,12,.08),rgba(0,24,12,.20)),url("../assets/backgrounds/nyx-blue-light-trails.jpg")!important}
-body.theme-sakura{--theme-border:#fbcfe8!important;--theme-bg:linear-gradient(rgba(40,0,28,.06),rgba(40,0,28,.18)),url("../assets/backgrounds/nyx-blue-light-trails.jpg")!important}
-body.theme-ruby::before,
-body.theme-emerald::before,
-body.theme-sakura::before{
-  background:linear-gradient(rgba(0,0,0,.18),rgba(0,0,0,.28)),var(--bg-enhanced-render)!important;
-}
 body:not(.browser-shell).custom-bg-active.theme-ruby .custom-bg-image,
 body:not(.browser-shell).custom-bg-active.theme-emerald .custom-bg-image,
 body:not(.browser-shell).custom-bg-active.theme-sakura .custom-bg-image{
   display:block!important;
-}
-body:not(.browser-shell)::after{
-  background:transparent!important;
-  -webkit-mask-image:none!important;
-  mask-image:none!important;
-  mix-blend-mode:normal!important;
-  opacity:0!important;
-  animation:none!important;
-}
-body.browser-shell.theme-ruby::before,
-body.browser-shell.theme-emerald::before,
-body.browser-shell.theme-sakura::before{
-  background:linear-gradient(rgba(0,0,0,.18),rgba(0,0,0,.28)),var(--bg-enhanced-render)!important;
-}
-body.browser-shell.theme-ruby::after,
-body.browser-shell.theme-emerald::after,
-body.browser-shell.theme-sakura::after{
-  background:linear-gradient(rgba(0,0,0,.06),rgba(0,0,0,.22))!important;
-}
-body.browser-shell.theme-ruby :is(h1,h2,h3,p,span,label,strong,.home-heading,.home-sub,.titlebar-title,.desktop-center-clock,.browser-shell-clock,.settings-main h1,.settings-block h2,.settings-block p,.settings-side button,.quick-tile span),
-body.browser-shell.theme-emerald :is(h1,h2,h3,p,span,label,strong,.home-heading,.home-sub,.titlebar-title,.desktop-center-clock,.browser-shell-clock,.settings-main h1,.settings-block h2,.settings-block p,.settings-side button,.quick-tile span),
-body.browser-shell.theme-sakura :is(h1,h2,h3,p,span,label,strong,.home-heading,.home-sub,.titlebar-title,.desktop-center-clock,.browser-shell-clock,.settings-main h1,.settings-block h2,.settings-block p,.settings-side button,.quick-tile span){
-  background:none!important;
-  color:inherit!important;
-  -webkit-text-fill-color:currentColor!important;
-}
-body.browser-shell.theme-ruby :is(.top-os,.window,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,button,input,select,textarea),
-body.browser-shell.theme-emerald :is(.top-os,.window,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,button,input,select,textarea),
-body.browser-shell.theme-sakura :is(.top-os,.window,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,button,input,select,textarea){
-  border-color:color-mix(in srgb,var(--theme-border) 68%,rgba(255,255,255,.2))!important;
-}
-body.browser-shell.theme-ruby :is(.shell-page,.browser-shell-page),
-body.browser-shell.theme-emerald :is(.shell-page,.browser-shell-page),
-body.browser-shell.theme-sakura :is(.shell-page,.browser-shell-page){
-  background:radial-gradient(circle at 18% 10%,rgba(255,255,255,.52),transparent 28%),linear-gradient(135deg,#d6dbe1 0%,#9199a4 48%,#46505c 100%)!important;
-}
-body.browser-shell.theme-ruby :is(.settings-app,.settings-main,.settings-side,.quick-tile,.weather-panel,.weather-restore,.apps-panel),
-body.browser-shell.theme-emerald :is(.settings-app,.settings-main,.settings-side,.quick-tile,.weather-panel,.weather-restore,.apps-panel),
-body.browser-shell.theme-sakura :is(.settings-app,.settings-main,.settings-side,.quick-tile,.weather-panel,.weather-restore,.apps-panel){
-  background:rgba(15,23,42,.36)!important;
 }
 body.theme-ruby input[type="file"].settings-input::file-selector-button,
 body.theme-ruby .file-input[data-tab-favicon-file]::file-selector-button,
@@ -70,117 +15,18 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
   -webkit-text-fill-color:#f8fafc!important;
 }
 /* //browser-mode-stabilizer */
-body.browser-shell .browser-window.maximized:has(.browser-home:not(.hidden)),
 body.browser-shell .browser-window.maximized.browser-blank{
   background:transparent!important;
   border-color:transparent!important;
   box-shadow:none!important;
   backdrop-filter:none!important;
 }
-body.browser-shell .browser-home{
-  background:transparent!important;
-  display:flex!important;
-  flex-direction:column!important;
-  align-items:center!important;
-  justify-content:center!important;
-  gap:14px!important;
-  min-height:100%!important;
-  overflow:hidden!important;
-  padding:22px 18px 32px!important;
-}
-body.browser-shell .browser-shell-start{
-  display:grid!important;
-  transform:none!important;
-  gap:6px!important;
-}
-body.browser-shell .browser-home-normal{
-  display:block!important;
-  width:min(760px,calc(100vw - 48px))!important;
-}
-body.browser-shell .browser-home-normal .home-heading,
-body.browser-shell .browser-home-normal .home-sub{
-  display:none!important;
-}
-body.browser-shell .browser-home-normal .quick-grid{
-  display:flex!important;
-  flex-wrap:wrap!important;
-  justify-content:center!important;
-  align-items:center!important;
-  gap:10px!important;
-  max-height:none!important;
-  overflow:visible!important;
-}
-body.browser-shell .browser-home-normal .quick-tile{
-  width:62px!important;
-  height:72px!important;
-  min-width:62px!important;
-  min-height:72px!important;
-  max-height:72px!important;
-  border-radius:12px!important;
-  padding:4px!important;
-  display:grid!important;
-  place-items:center!important;
-  gap:4px!important;
-  background:transparent!important;
-  border-color:transparent!important;
-}
-body.browser-shell .browser-home-normal .quick-icon{
-  width:32px!important;
-  height:32px!important;
-  padding:0!important;
-  border-radius:8px!important;
-}
-body.browser-shell .browser-home-normal .quick-tile b{
-  font-size:18px!important;
-}
-body.browser-shell .browser-home-normal .quick-tile span{
-  max-width:58px!important;
-  overflow:hidden!important;
-  text-overflow:ellipsis!important;
-  white-space:nowrap!important;
-  font-size:10px!important;
-  line-height:1.1!important;
-  text-align:center!important;
-}
-body.browser-shell .browser-home-normal .home-shortcut .home-shortcut-open{
-  width:100%!important;
-  height:100%!important;
-  min-height:0!important;
-  padding:4px!important;
-  gap:4px!important;
-}
-body.browser-shell .browser-home-normal .home-shortcut-menu-btn{
-  right:0!important;
-  top:0!important;
-  width:20px!important;
-  height:20px!important;
-  min-width:20px!important;
-  font-size:13px!important;
-}
-body.browser-shell .browser-home-normal .home-shortcut-menu{
-  right:-26px!important;
-  top:22px!important;
-  z-index:80!important;
-  width:94px!important;
-  min-width:94px!important;
-  padding:3px!important;
-}
-body.browser-shell .browser-home-normal .home-shortcut-menu button{
-  min-height:22px!important;
-  padding:0 6px!important;
-  font-size:10.5px!important;
-  line-height:1.05!important;
-}
-body.browser-shell .browser-home-normal .home-shortcut-add{
-  font-size:24px!important;
-}
 body.browser-shell .browser-shell-logo{
   width:clamp(104px,11vw,152px)!important;
   height:clamp(104px,11vw,152px)!important;
   filter:brightness(1.5) contrast(1.45) drop-shadow(0 0 2px rgba(255,255,255,.96)) drop-shadow(0 0 14px rgba(255,255,255,.66)) drop-shadow(0 22px 42px rgba(0,0,0,.54))!important;
 }
-.browser-tab-icon,
-.browser-mode-tab-icon{
+.browser-tab-icon{
   width:16px!important;
   height:16px!important;
   object-fit:contain!important;
@@ -206,11 +52,8 @@ img[src$="firefly-tab-logo-bold.png"]{
   border-radius:16px!important;
 }
 .browser-tab-icon[src$="firefly-tab-logo.png"],
-.browser-mode-tab-icon[src$="firefly-tab-logo.png"],
 .browser-tab-icon[src$="firefly-tab-logo-cropped.png"],
-.browser-mode-tab-icon[src$="firefly-tab-logo-cropped.png"],
-.browser-tab-icon[src$="firefly-tab-logo-bold.png"],
-.browser-mode-tab-icon[src$="firefly-tab-logo-bold.png"]{
+.browser-tab-icon[src$="firefly-tab-logo-bold.png"]{
   width:32px!important;
   height:32px!important;
   min-width:32px!important;
@@ -224,151 +67,33 @@ img[src$="firefly-tab-logo-bold.png"]{
 body:not(.browser-shell) .browser-tab-icon{
   display:none!important;
 }
-.browser-tab,
-.browser-mode-shell-tab{
+.browser-tab{
   display:inline-flex!important;
   align-items:center!important;
   gap:0!important;
 }
-.browser-tab span,
-.browser-mode-shell-tab span{
+.browser-tab span{
   min-width:0!important;
   overflow:hidden!important;
   text-overflow:ellipsis!important;
 }
 /* //flat-ui-final */
-body.browser-shell :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.browser-mode-menu,.browser-bookmark-panel,.weather-panel,.weather-restore,.apps-panel,.panel,.lion-ai-msg,.lion-ai-form,button,input,select,textarea,.urlbar,.browser-mode-url,.quick-tile,.quick-icon,.settings-action,.settings-preset,.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.tool-btn,.go-btn,.menu-btn){
-  background-image:none!important;
-  text-shadow:none!important;
-  box-shadow:none!important;
-}
-body.browser-shell :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.settings-panel,.settings-app,.settings-main,.settings-side,.glass-card,.browser-mode-menu,.browser-bookmark-panel,.weather-panel,.weather-restore,.apps-panel,.panel){
-  background-color:rgba(15,23,42,.76)!important;
-}
-body.browser-shell :is(button,input,select,textarea,.urlbar,.browser-mode-url,.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.tool-btn,.go-btn,.menu-btn,.settings-action,.settings-preset):not(.nyx-visual-dock-hide){
-  background-color:rgba(11,15,25,.86)!important;
-}
-body.browser-shell :is(.quick-tile,.quick-icon){
-  background-color:transparent!important;
-}
-body.browser-shell :is(button,.quick-tile,.quick-icon,.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-menu button,.settings-action,.settings-preset,.dock button,.tool-btn,.go-btn,.menu-btn):hover{
-  transform:scale(1.015)!important;
-  box-shadow:none!important;
-}
-body.browser-shell.theme-ruby :is(button,.quick-tile,.quick-icon,.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-menu button,.settings-action,.settings-preset,.dock button,.tool-btn,.go-btn,.menu-btn):hover,
-body.browser-shell.theme-emerald :is(button,.quick-tile,.quick-icon,.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-menu button,.settings-action,.settings-preset,.dock button,.tool-btn,.go-btn,.menu-btn):hover,
-body.browser-shell.theme-sakura :is(button,.quick-tile,.quick-icon,.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-menu button,.settings-action,.settings-preset,.dock button,.tool-btn,.go-btn,.menu-btn):hover{
-  border-color:var(--theme-border)!important;
-}
 /* //flat-theme-final */
 :root{--theme-border:rgba(226,232,240,.26)}
-body.theme-ruby{--theme-border:#fb7185!important}
-body.theme-emerald{--theme-border:#34d399!important}
-body.theme-sakura{--theme-border:#f9a8d4!important}
-body.browser-shell.theme-ruby :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,button,input,select,textarea),
-body.browser-shell.theme-emerald :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,button,input,select,textarea),
-body.browser-shell.theme-sakura :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.dock,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-menu,.browser-bookmark-panel,.browser-mode-tab,.browser-mode-app-button,.browser-mode-url,.urlbar,.settings-input,.settings-select,.shell-page,.browser-shell-page,button,input,select,textarea){
-  background-image:none!important;
-  border-color:color-mix(in srgb,var(--theme-border) 72%,rgba(255,255,255,.18))!important;
-  box-shadow:none!important;
-  text-shadow:none!important;
-}
-body.browser-shell.theme-ruby :is(button,.quick-tile,.quick-icon,.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-menu button,.settings-action,.settings-preset,.dock button,.tool-btn,.go-btn,.menu-btn),
-body.browser-shell.theme-emerald :is(button,.quick-tile,.quick-icon,.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-menu button,.settings-action,.settings-preset,.dock button,.tool-btn,.go-btn,.menu-btn),
-body.browser-shell.theme-sakura :is(button,.quick-tile,.quick-icon,.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-menu button,.settings-action,.settings-preset,.dock button,.tool-btn,.go-btn,.menu-btn){
-  transition:transform .14s ease,border-color .14s ease!important;
-}
-body.browser-shell.theme-ruby :is(button,.quick-tile,.quick-icon,.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-menu button,.settings-action,.settings-preset,.dock button,.tool-btn,.go-btn,.menu-btn):hover,
-body.browser-shell.theme-emerald :is(button,.quick-tile,.quick-icon,.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-menu button,.settings-action,.settings-preset,.dock button,.tool-btn,.go-btn,.menu-btn):hover,
-body.browser-shell.theme-sakura :is(button,.quick-tile,.quick-icon,.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-menu button,.settings-action,.settings-preset,.dock button,.tool-btn,.go-btn,.menu-btn):hover{
-  transform:scale(1.015)!important;
-  border-color:var(--theme-border)!important;
-  background-image:none!important;
-  box-shadow:none!important;
-}
-body.browser-shell.theme-ruby :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.browser-mode-menu,.browser-bookmark-panel,.settings-panel,.settings-app,.settings-main,.settings-side,.glass-card),
-body.browser-shell.theme-emerald :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.browser-mode-menu,.browser-bookmark-panel,.settings-panel,.settings-app,.settings-main,.settings-side,.glass-card),
-body.browser-shell.theme-sakura :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.browser-mode-menu,.browser-bookmark-panel,.settings-panel,.settings-app,.settings-main,.settings-side,.glass-card){
-  background:rgba(15,23,42,.76)!important;
-}
-body.browser-shell.theme-ruby::before{
-  background:linear-gradient(rgba(0,0,0,.10),rgba(0,0,0,.22)),url("../assets/backgrounds/nyx-blue-light-trails.jpg")!important;
-  background-size:cover!important;
-  background-position:center!important;
-}
-body.browser-shell.theme-emerald::before{
-  background:linear-gradient(rgba(0,0,0,.10),rgba(0,0,0,.22)),url("../assets/backgrounds/nyx-blue-light-trails.jpg")!important;
-  background-size:cover!important;
-  background-position:center!important;
-}
-body.browser-shell.theme-sakura::before{
-  background:linear-gradient(rgba(0,0,0,.10),rgba(0,0,0,.22)),url("../assets/backgrounds/nyx-blue-light-trails.jpg")!important;
-  background-size:cover!important;
-  background-position:center!important;
-}
-body.browser-shell.theme-ruby :is(.shell-page,.browser-shell-page),
-body.browser-shell.theme-emerald :is(.shell-page,.browser-shell-page),
-body.browser-shell.theme-sakura :is(.shell-page,.browser-shell-page){
-  background:rgba(15,23,42,.76)!important;
-  background-image:none!important;
-}
-body.browser-shell.theme-ruby :is(.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-url,.urlbar,.settings-input,.settings-select,input,select,textarea),
-body.browser-shell.theme-emerald :is(.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-url,.urlbar,.settings-input,.settings-select,input,select,textarea),
-body.browser-shell.theme-sakura :is(.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-url,.urlbar,.settings-input,.settings-select,input,select,textarea){
-  background:rgba(11,15,25,.86)!important;
-}
-body.browser-shell.theme-ruby :is(.quick-tile,.quick-icon),
-body.browser-shell.theme-emerald :is(.quick-tile,.quick-icon),
-body.browser-shell.theme-sakura :is(.quick-tile,.quick-icon){
-  background:transparent!important;
-}
-body.browser-shell.theme-ruby :is(.quick-tile,.quick-icon):hover,
-body.browser-shell.theme-emerald :is(.quick-tile,.quick-icon):hover,
-body.browser-shell.theme-sakura :is(.quick-tile,.quick-icon):hover{
-  background:rgba(15,23,42,.42)!important;
-}
-body.browser-shell.theme-ruby :is(h1,h2,h3,h4,p,span,label,strong,b,i,button,a):not(.nyx-styled-display-name):not(.nyx-user-profile-effect):not(.nyx-avatar-decoration),
-body.browser-shell.theme-emerald :is(h1,h2,h3,h4,p,span,label,strong,b,i,button,a):not(.nyx-styled-display-name):not(.nyx-user-profile-effect):not(.nyx-avatar-decoration),
-body.browser-shell.theme-sakura :is(h1,h2,h3,h4,p,span,label,strong,b,i,button,a):not(.nyx-styled-display-name):not(.nyx-user-profile-effect):not(.nyx-avatar-decoration){
-  background-image:none!important;
-  color:inherit!important;
-  -webkit-text-fill-color:currentColor!important;
-  text-shadow:none!important;
-}
 body.browser-shell,
 body.browser-shell button,
 body.browser-shell input,
 body.browser-shell select,
 body.browser-shell textarea{
-  font-family:Outfit,Arial,sans-serif!important;
+  font-family:var(--nyx-font,Inter),Arial,sans-serif!important;
   font-weight:400!important;
 }
 body.browser-shell *:not(.nyx-styled-display-name){
-  font-family:Outfit,Arial,sans-serif!important;
+  font-family:var(--nyx-font,Inter),Arial,sans-serif!important;
   font-weight:400!important;
   text-shadow:none!important;
-}
-body.browser-shell :is(button,input,select,textarea,.settings-app,.settings-app *,.apps-panel,.apps-panel *,.lion-ai,.lion-ai *,.panel,.panel *,.quick-tile,.quick-tile *,.browser-mode-menu,.browser-mode-menu *,.browser-mode-tab,.browser-mode-tab *,.browser-mode-app-button,.browser-mode-app-button *,.browser-mode-url,.urlbar,.browser-tab,.browser-tab *,.window,.window *):not(.nyx-styled-display-name){
-  font-family:Outfit,Arial,sans-serif!important;
-  font-weight:400!important;
-  text-shadow:none!important;
-  -webkit-text-stroke:0!important;
 }
 /* //browser-background-final */
-body.browser-shell::before{
-  inset:-1.5%!important;
-  background:var(--bg-render)!important;
-  background-size:cover!important;
-  background-position:left center!important;
-  background-repeat:no-repeat!important;
-  filter:none!important;
-}
-body.browser-shell::after{
-  background:transparent!important;
-  backdrop-filter:none!important;
-  -webkit-backdrop-filter:none!important;
-  pointer-events:none!important;
-}
 body.browser-shell .browser-window.internal-clear,
 body.browser-shell .browser-window.internal-clear .browser-body{
   background:transparent!important;
@@ -378,13 +103,6 @@ body.browser-shell .browser-window.internal-clear .browser-body{
 body.browser-shell .browser-window.internal-clear iframe.view.transparent-internal-page{
   background:transparent!important;
   background-color:transparent!important;
-}
-body.browser-shell :is(button,.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-menu button,.settings-action,.settings-preset,.quick-tile,.quick-icon,.dock button,.tool-btn,.go-btn,.menu-btn){
-  transition:transform .22s cubic-bezier(.2,.8,.2,1),border-color .22s ease,background-color .22s ease,color .22s ease,opacity .22s ease!important;
-  will-change:transform;
-}
-body.browser-shell :is(button,.browser-mode-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-menu button,.settings-action,.settings-preset,.quick-tile,.quick-icon,.dock button,.tool-btn,.go-btn,.menu-btn):hover{
-  transform:scale(1.02)!important;
 }
 /* //browser-shell-input-exceptions */
 body.browser-shell .lion-ai-form{
@@ -422,38 +140,6 @@ body.browser-shell .nyx-prompt-cancel{
   -webkit-text-fill-color:#000!important;
 }
 /* //transparent-apps-settings-final */
-body.browser-shell :is(.apps-panel,.apps-panel .quick-grid,.panel.apps-panel),
-body.browser-shell.theme-ruby :is(.apps-panel,.apps-panel .quick-grid,.panel.apps-panel),
-body.browser-shell.theme-emerald :is(.apps-panel,.apps-panel .quick-grid,.panel.apps-panel),
-body.browser-shell.theme-sakura :is(.apps-panel,.apps-panel .quick-grid,.panel.apps-panel){
-  background:transparent!important;
-  background-color:transparent!important;
-  background-image:none!important;
-  box-shadow:none!important;
-  backdrop-filter:none!important;
-}
-body.browser-shell :is(.apps-panel .quick-tile,.apps-panel .quick-icon),
-body.browser-shell.theme-ruby :is(.apps-panel .quick-tile,.apps-panel .quick-icon),
-body.browser-shell.theme-emerald :is(.apps-panel .quick-tile,.apps-panel .quick-icon),
-body.browser-shell.theme-sakura :is(.apps-panel .quick-tile,.apps-panel .quick-icon){
-  background:transparent!important;
-  background-color:transparent!important;
-  background-image:none!important;
-  border-color:transparent!important;
-  box-shadow:none!important;
-  backdrop-filter:none!important;
-}
-body.browser-shell :is(.apps-panel .quick-tile:hover,.apps-panel .quick-icon:hover),
-body.browser-shell.theme-ruby :is(.apps-panel .quick-tile:hover,.apps-panel .quick-icon:hover),
-body.browser-shell.theme-emerald :is(.apps-panel .quick-tile:hover,.apps-panel .quick-icon:hover),
-body.browser-shell.theme-sakura :is(.apps-panel .quick-tile:hover,.apps-panel .quick-icon:hover){
-  background:transparent!important;
-  background-color:transparent!important;
-  background-image:none!important;
-  border-color:var(--theme-border)!important;
-  box-shadow:none!important;
-  transform:scale(1.015)!important;
-}
 body.browser-shell .apps-panel .quick-tile span,
 body.browser-shell.theme-ruby .apps-panel .quick-tile span,
 body.browser-shell.theme-emerald .apps-panel .quick-tile span,
@@ -483,30 +169,7 @@ body.browser-shell.theme-sakura .panel.apps-panel{
   background-position:center!important;
   background-repeat:no-repeat!important;
 }
-body.browser-shell :is(.settings-app,.settings-main,.settings-side,.settings-block,.settings-card),
-body.browser-shell.theme-ruby :is(.settings-app,.settings-main,.settings-side,.settings-block,.settings-card),
-body.browser-shell.theme-emerald :is(.settings-app,.settings-main,.settings-side,.settings-block,.settings-card),
-body.browser-shell.theme-sakura :is(.settings-app,.settings-main,.settings-side,.settings-block,.settings-card){
-  background:transparent!important;
-  background-color:transparent!important;
-  background-image:none!important;
-  box-shadow:none!important;
-  backdrop-filter:none!important;
-}
-body.browser-shell :is(.settings-block,.settings-card),
-body.browser-shell.theme-ruby :is(.settings-block,.settings-card),
-body.browser-shell.theme-emerald :is(.settings-block,.settings-card),
-body.browser-shell.theme-sakura :is(.settings-block,.settings-card){
-  border-color:transparent!important;
-}
-body.browser-shell :is(.settings-side button,.settings-side button.active,.settings-action,.settings-preset,.settings-input,.settings-select),
-body.browser-shell.theme-ruby :is(.settings-side button,.settings-side button.active,.settings-action,.settings-preset,.settings-input,.settings-select),
-body.browser-shell.theme-emerald :is(.settings-side button,.settings-side button.active,.settings-action,.settings-preset,.settings-input,.settings-select),
-body.browser-shell.theme-sakura :is(.settings-side button,.settings-side button.active,.settings-action,.settings-preset,.settings-input,.settings-select),
-body.browser-shell input[type=file].settings-input::file-selector-button,
-body.browser-shell.theme-ruby input[type=file].settings-input::file-selector-button,
-body.browser-shell.theme-emerald input[type=file].settings-input::file-selector-button,
-body.browser-shell.theme-sakura input[type=file].settings-input::file-selector-button{
+body.browser-shell input[type=file].settings-input::file-selector-button,body.browser-shell.theme-ruby input[type=file].settings-input::file-selector-button,body.browser-shell.theme-emerald input[type=file].settings-input::file-selector-button,body.browser-shell.theme-sakura input[type=file].settings-input::file-selector-button{
   background:transparent!important;
   background-color:transparent!important;
   background-image:none!important;
@@ -514,14 +177,7 @@ body.browser-shell.theme-sakura input[type=file].settings-input::file-selector-b
   filter:none!important;
   text-shadow:none!important;
 }
-body.browser-shell :is(.settings-side button:hover,.settings-side button.active,.settings-action:hover,.settings-preset:hover,.settings-input:hover,.settings-select:hover),
-body.browser-shell.theme-ruby :is(.settings-side button:hover,.settings-side button.active,.settings-action:hover,.settings-preset:hover,.settings-input:hover,.settings-select:hover),
-body.browser-shell.theme-emerald :is(.settings-side button:hover,.settings-side button.active,.settings-action:hover,.settings-preset:hover,.settings-input:hover,.settings-select:hover),
-body.browser-shell.theme-sakura :is(.settings-side button:hover,.settings-side button.active,.settings-action:hover,.settings-preset:hover,.settings-input:hover,.settings-select:hover),
-body.browser-shell input[type=file].settings-input:hover::file-selector-button,
-body.browser-shell.theme-ruby input[type=file].settings-input:hover::file-selector-button,
-body.browser-shell.theme-emerald input[type=file].settings-input:hover::file-selector-button,
-body.browser-shell.theme-sakura input[type=file].settings-input:hover::file-selector-button{
+body.browser-shell input[type=file].settings-input:hover::file-selector-button,body.browser-shell.theme-ruby input[type=file].settings-input:hover::file-selector-button,body.browser-shell.theme-emerald input[type=file].settings-input:hover::file-selector-button,body.browser-shell.theme-sakura input[type=file].settings-input:hover::file-selector-button{
   background:transparent!important;
   background-color:transparent!important;
   background-image:none!important;
@@ -581,8 +237,7 @@ body.browser-shell .settings-card p{
   color:rgba(226,232,240,.72)!important;
   -webkit-text-fill-color:rgba(226,232,240,.72)!important;
 }
-body.browser-shell .settings-card :is(input:not([type="range"]),select,.settings-input,.settings-select),
-body.browser-shell .panic-key-display{
+body.browser-shell .settings-card :is(input:not([type="range"]),select,.settings-input,.settings-select),body.browser-shell .panic-key-display{
   min-height:38px!important;
   border:1px solid rgba(255,255,255,.12)!important;
   border-radius:10px!important;
@@ -600,8 +255,7 @@ body.browser-shell .panic-key-display{
   font-size:15px;
   justify-content:center;
 }
-body.browser-shell .settings-card :is(button,.settings-action),
-body.browser-shell .settings-card input[type=file]::file-selector-button{
+body.browser-shell .settings-card :is(button,.settings-action),body.browser-shell .settings-card input[type=file]::file-selector-button{
   min-height:34px!important;
   border:1px solid rgba(255,255,255,.14)!important;
   border-radius:999px!important;
@@ -611,8 +265,7 @@ body.browser-shell .settings-card input[type=file]::file-selector-button{
   -webkit-text-fill-color:#f8fafc!important;
   box-shadow:none!important;
 }
-body.browser-shell .settings-card :is(button,.settings-action):hover,
-body.browser-shell .settings-card input[type=file]::file-selector-button:hover{
+body.browser-shell .settings-card :is(button,.settings-action):hover,body.browser-shell .settings-card input[type=file]::file-selector-button:hover{
   background:rgba(255,255,255,.16)!important;
   border-color:var(--theme-border,#8b5cf6)!important;
   transform:scale(1.015)!important;
@@ -628,183 +281,10 @@ body.browser-shell .settings-card .switch{
 .welcome-title,
 .welcome-title *,
 #setupScreen h1{
-  font-family:Outfit,Arial,sans-serif!important;
+  font-family:var(--nyx-font,Inter),Arial,sans-serif!important;
   font-weight:400!important;
   letter-spacing:0!important;
   text-shadow:none!important;
-}
-/* //nyx-pearl-purple-final */
-:root{
-  --nyx-pearl:#08070d;
-  --nyx-pearl-2:#0d0b14;
-  --nyx-purple-edge:rgba(190,148,255,.38);
-  --nyx-purple-soft:rgba(126,87,194,.22);
-  --theme-border:rgba(190,148,255,.42);
-}
-body:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura)::before{
-  background:url("../assets/backgrounds/nyx-blue-light-trails.jpg")!important;
-  background-size:cover!important;
-  background-position:center!important;
-}
-body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura)::before{
-  background:
-    linear-gradient(rgba(8,7,13,.10),rgba(8,7,13,.18)),
-    var(--browser-bg-render)!important;
-  background-size:cover!important;
-  background-position:left center!important;
-  background-repeat:no-repeat!important;
-  filter:none!important;
-}
-body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura).custom-bg-active::before{
-  background:
-    linear-gradient(rgba(8,7,13,.10),rgba(8,7,13,.18)),
-    var(--browser-bg-render)!important;
-  background-size:cover!important;
-  background-position:left center!important;
-  background-repeat:no-repeat!important;
-  filter:none!important;
-}
-body:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura).custom-bg-active::before{
-  background:
-    radial-gradient(circle at 0 50%,rgba(139,92,246,.34),transparent 30%),
-    radial-gradient(circle at 100% 45%,rgba(168,85,247,.30),transparent 32%),
-    linear-gradient(rgba(8,7,13,.18),rgba(8,7,13,.24)),
-    var(--bg-enhanced-render)!important;
-}
-body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura)::before,
-body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura).custom-bg-active::before{
-  background:
-    linear-gradient(rgba(8,7,13,.10),rgba(8,7,13,.18)),
-    var(--browser-bg-render)!important;
-  background-size:cover!important;
-  background-position:left center!important;
-  background-repeat:no-repeat!important;
-  filter:none!important;
-}
-body.browser-shell.theme-ruby::before,
-body.browser-shell.theme-emerald::before,
-body.browser-shell.theme-sakura::before{
-  background:var(--theme-bg)!important;
-  background-size:cover!important;
-  background-position:center!important;
-  background-repeat:no-repeat!important;
-  filter:brightness(.98) contrast(1.02) saturate(1.06)!important;
-}
-.window,
-.glass-card,
-.panel,
-.settings-panel,
-.settings-card,
-.settings-main,
-.settings-side,
-.browser-mode-menu,
-.browser-bookmark-panel,
-.quick-tile,
-.quick-icon,
-button,
-input,
-select,
-textarea{
-  border-radius:10px!important;
-}
-.window,
-.glass-card,
-.settings-panel,
-.settings-card,
-.settings-main,
-.settings-side,
-.browser-mode-menu,
-.browser-bookmark-panel{
-  background:rgba(8,7,13,.82)!important;
-  background-image:none!important;
-  border-color:var(--nyx-purple-edge)!important;
-  box-shadow:0 0 0 1px rgba(190,148,255,.08),0 18px 54px rgba(0,0,0,.36)!important;
-}
-.panel,
-.apps-panel{
-  background:transparent!important;
-  background-color:transparent!important;
-  background-image:none!important;
-  box-shadow:none!important;
-  border-color:transparent!important;
-}
-.apps-panel .quick-grid,
-.shell-page .quick-grid{
-  gap:18px!important;
-}
-.apps-panel .quick-tile,
-.shell-page .quick-tile,
-.browser-home .quick-tile{
-  height:106px!important;
-  background:transparent!important;
-  background-image:none!important;
-  border:1px solid transparent!important;
-  box-shadow:none!important;
-  backdrop-filter:none!important;
-  border-radius:10px!important;
-}
-.apps-panel .quick-tile:hover,
-.shell-page .quick-tile:hover,
-.browser-home .quick-tile:hover{
-  background:rgba(8,7,13,.42)!important;
-  background-image:none!important;
-  border-color:var(--nyx-purple-edge)!important;
-  box-shadow:0 10px 28px rgba(0,0,0,.22)!important;
-  transform:scale(1.018)!important;
-}
-.apps-panel .quick-icon,
-.shell-page .quick-icon,
-.browser-home .quick-icon{
-  width:58px!important;
-  height:58px!important;
-  background:transparent!important;
-  background-image:none!important;
-  border-color:transparent!important;
-  box-shadow:none!important;
-  border-radius:9px!important;
-}
-.apps-panel .quick-tile span,
-.shell-page .quick-tile span,
-.browser-home .quick-tile span{
-  display:block!important;
-  opacity:1!important;
-  visibility:visible!important;
-  color:#f8f5ff!important;
-  -webkit-text-fill-color:#f8f5ff!important;
-  text-shadow:none!important;
-  font-size:13px!important;
-}
-.apps-panel .apps-launch-grid,
-.shell-page .apps-launch-grid,
-.browser-shell-page .apps-launch-grid{
-  grid-template-columns:repeat(auto-fill,minmax(178px,1fr))!important;
-  gap:24px!important;
-}
-.apps-panel .apps-launch-grid .quick-tile,
-.shell-page .apps-launch-grid .quick-tile,
-.browser-shell-page .apps-launch-grid .quick-tile{
-  min-height:178px!important;
-  height:178px!important;
-  border-radius:18px!important;
-  animation:appTileOpenRise .62s cubic-bezier(.18,.82,.2,1) both;
-  animation-delay:var(--tile-delay,0ms);
-}
-.apps-panel .apps-launch-grid .quick-icon,
-.shell-page .apps-launch-grid .quick-icon,
-.browser-shell-page .apps-launch-grid .quick-icon{
-  width:98px!important;
-  height:98px!important;
-  border-radius:18px!important;
-}
-.apps-panel .apps-launch-grid .quick-tile span,
-.shell-page .apps-launch-grid .quick-tile span,
-.browser-shell-page .apps-launch-grid .quick-tile span{
-  font-size:16px!important;
-}
-@keyframes appTileOpenRise{
-  0%{opacity:0;transform:translate(-34px,42px) scale(.78);filter:blur(8px)}
-  64%{opacity:1;transform:translate(4px,-5px) scale(1.025);filter:blur(0)}
-  100%{opacity:1;transform:translate(0,0) scale(1);filter:blur(0)}
 }
 .settings-window{
   max-width:min(780px,calc(100vw - 24px))!important;
@@ -847,9 +327,9 @@ textarea{
 .settings-action,
 .settings-preset,
 .settings-side button{
-  background:rgba(8,7,13,.56)!important;
+  background:var(--obsidian-field)!important;
   background-image:none!important;
-  border-color:rgba(190,148,255,.36)!important;
+  border-color:var(--obsidian-line)!important;
   box-shadow:none!important;
 }
 body,
@@ -862,63 +342,9 @@ textarea,
 .quick-tile,
 .settings-panel,
 .settings-card{
-  font-family:Outfit,Arial,sans-serif!important;
+  font-family:var(--nyx-font,Inter),Arial,sans-serif!important;
 }
 /* //browser-purple-edge-final */
-body.browser-shell .top-os{
-  background:
-    linear-gradient(90deg,
-      rgba(43,18,80,.92) 0%,
-      rgba(15,11,28,.94) 24%,
-      rgba(8,7,13,.96) 50%,
-      rgba(15,11,28,.94) 76%,
-      rgba(61,24,112,.92) 100%)!important;
-  border-color:var(--theme-border)!important;
-  border-bottom-color:var(--theme-border)!important;
-  box-shadow:
-    inset 0 0 0 1px color-mix(in srgb,var(--theme-border) 54%,transparent),
-    0 12px 28px rgba(0,0,0,.34)!important;
-}
-body.browser-shell :is(.browser-mode-app-button,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-address button,.browser-mode-url,.browser-mode-menu,.browser-bookmark-panel){
-  border-color:var(--theme-border)!important;
-}
-body.browser-shell :is(.browser-mode-app-button,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-address button,.browser-mode-url){
-  background:
-    linear-gradient(90deg,
-      color-mix(in srgb,var(--theme-border) 22%,#08070d) 0%,
-      rgba(8,7,13,.94) 48%,
-      color-mix(in srgb,var(--theme-border) 14%,#08070d) 100%)!important;
-  background-color:#08070d!important;
-  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--theme-border) 26%,transparent)!important;
-}
-body.browser-shell :is(.browser-mode-app-button,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-address button,.browser-mode-url):hover,
-body.browser-shell .browser-mode-url:focus{
-  border-color:color-mix(in srgb,var(--theme-border) 82%,#fff)!important;
-  box-shadow:
-    inset 0 0 0 1px color-mix(in srgb,var(--theme-border) 42%,transparent),
-    0 0 0 2px color-mix(in srgb,var(--theme-border) 18%,transparent)!important;
-}
-body.browser-shell .top-os{
-  background:
-    linear-gradient(90deg,
-      #261044 0%,
-      #110d20 23%,
-      #08070d 50%,
-      #110d20 77%,
-      #341663 100%)!important;
-  backdrop-filter:blur(18px) saturate(1.08)!important;
-  -webkit-backdrop-filter:blur(18px) saturate(1.08)!important;
-}
-body.browser-shell.theme-ruby .top-os,
-body.browser-shell.theme-emerald .top-os,
-body.browser-shell.theme-sakura .top-os{
-  background:
-    linear-gradient(90deg,
-      color-mix(in srgb,var(--theme-border) 34%,#08070d) 0%,
-      #08070d 34%,
-      #08070d 66%,
-      color-mix(in srgb,var(--theme-border) 30%,#08070d) 100%)!important;
-}
 body.browser-shell .browser-mode-weather,
 body.browser-shell #weatherRestore{
   font-size:0!important;
@@ -1051,25 +477,7 @@ body.browser-shell #weatherRestore > .weather-cloud-icon{
   content:none!important;
   display:none!important;
 }
-body.browser-shell .browser-window.maximized.browser-blank:not(:has(.browser-home:not(.hidden))),
-body.browser-shell .browser-window.maximized.browser-blank:not(:has(.browser-home:not(.hidden))) .browser-body{
-  background:transparent!important;
-  background-image:none!important;
-  border-color:transparent!important;
-  box-shadow:none!important;
-  backdrop-filter:none!important;
-  -webkit-backdrop-filter:none!important;
-}
 /* //galaxy-black-ui-final */
-body :is(.window,.panel,.settings-panel,.settings-card,.apps-panel,.lion-ai,.browser-mode-menu,.browser-bookmark-panel,.weather-panel){
-  background-color:rgba(5,6,12,.72);
-}
-body.browser-shell :is(.browser-tabs,.browser-tools,.browser-mode-tab,.tool-btn,.go-btn,.menu-btn,.urlbar,.browser-mode-url){
-  background-color:rgba(5,6,12,.78)!important;
-}
-body :is(input,select,textarea,.settings-input,.settings-select):hover{
-  transform:none!important;
-}
 /* //settings-overlay-final */
 body.browser-shell .window.settings-window{
   left:50%!important;
@@ -1190,39 +598,6 @@ body.browser-shell .settings-window :is(button,.settings-action):hover{
   border-color:var(--theme-border,#8b5cf6)!important;
 }
 /* //browser-mode-settings-panel */
-body.browser-shell .browser-shell-settings-overlay{
-  position:fixed;
-  inset:0;
-  z-index:120;
-  display:grid;
-  place-items:start center;
-  padding:82px 18px 28px;
-  background:transparent;
-  pointer-events:none;
-  --settings-panel-width:min(560px,calc(100vw - 36px));
-}
-body.browser-shell .browser-shell-settings-panel{
-  pointer-events:auto;
-  position:relative;
-  width:var(--settings-panel-width);
-  max-height:min(620px,calc(100vh - 112px));
-  overflow:auto;
-  scrollbar-width:none;
-  -ms-overflow-style:none;
-  border:1px solid color-mix(in srgb,var(--theme-border,#8b5cf6) 64%,rgba(255,255,255,.16));
-  border-radius:14px;
-  background:color-mix(in srgb,var(--theme-border,#8b5cf6) 18%,rgba(5,6,12,.68));
-  background-image:linear-gradient(90deg,rgba(126,87,194,.18),rgba(5,6,12,.16));
-  box-shadow:0 24px 72px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.10);
-  backdrop-filter:blur(12px) saturate(1.08);
-  -webkit-backdrop-filter:blur(12px) saturate(1.08);
-  animation:settingsDropIn .30s cubic-bezier(.18,.82,.22,1) both;
-}
-body.browser-shell .browser-shell-settings-panel::-webkit-scrollbar{
-  width:0;
-  height:0;
-  display:none;
-}
 body.browser-shell .browser-shell-settings-close{
   position:sticky;
   top:8px;
@@ -1266,138 +641,14 @@ body.browser-shell .browser-shell-settings-close:active{
   transform:scale(.94)!important;
   filter:brightness(.9);
 }
-body.browser-shell .browser-shell-settings-panel .settings-app{
-  width:100%!important;
-  min-height:0!important;
-  margin:0!important;
-  padding:16px!important;
-  border:0!important;
-  background:transparent!important;
-  background-image:none!important;
-  box-shadow:none!important;
-  backdrop-filter:none!important;
-  -webkit-backdrop-filter:none!important;
-}
-body.browser-shell .browser-shell-settings-panel .settings-main{
-  padding:0!important;
-  background:transparent!important;
-}
-body.browser-shell .browser-shell-settings-panel .settings-main>h1{
-  display:none!important;
-}
-body.browser-shell .browser-shell-settings-panel .settings-section{
-  display:grid!important;
-  grid-template-columns:1fr!important;
-  gap:10px!important;
-}
-body.browser-shell .browser-shell-settings-panel .settings-block{
-  margin:0!important;
-  padding:12px 14px!important;
-  border:1px solid color-mix(in srgb,var(--theme-border,#8b5cf6) 38%,rgba(255,255,255,.12))!important;
-  border-radius:10px!important;
-  background:color-mix(in srgb,var(--theme-border,#8b5cf6) 14%,rgba(5,6,12,.52))!important;
-  background-image:none!important;
-  box-shadow:none!important;
-  transition:transform .24s cubic-bezier(.18,.82,.22,1),border-color .24s ease,background .24s ease,box-shadow .24s ease;
-}
-body.browser-shell .browser-shell-settings-panel .settings-block:hover{
-  transform:translateY(-1px);
-  border-color:color-mix(in srgb,var(--theme-border,#8b5cf6) 58%,rgba(255,255,255,.18))!important;
-  background:color-mix(in srgb,var(--theme-border,#8b5cf6) 18%,rgba(5,6,12,.56))!important;
-}
-body.browser-shell .browser-shell-settings-panel :is(button,.settings-action,input,select,textarea,.settings-input,.settings-select,.panic-key-display){
-  min-height:32px!important;
-  border-radius:9px!important;
-  background:rgba(8,7,14,.48)!important;
-  background-image:none!important;
-  border:1px solid rgba(255,255,255,.14)!important;
-  box-shadow:none!important;
-  transition:transform .22s cubic-bezier(.18,.82,.22,1),background .22s ease,border-color .22s ease,box-shadow .22s ease,filter .22s ease,color .22s ease;
-}
-body.browser-shell .browser-shell-settings-panel :is(button,.settings-action):hover{
-  transform:translateY(-1px) scale(1.025)!important;
-  background:rgba(115,74,170,.22)!important;
-  border-color:var(--theme-border,#8b5cf6)!important;
-  box-shadow:0 10px 24px rgba(0,0,0,.20)!important;
-}
-body.browser-shell .browser-shell-settings-panel :is(button,.settings-action):active{
-  transform:translateY(0) scale(.975)!important;
-  filter:brightness(.92);
-}
-body.browser-shell .browser-shell-settings-panel :is(input,select,textarea,.settings-input,.settings-select):focus{
-  border-color:var(--theme-border,#8b5cf6)!important;
-  box-shadow:0 0 0 3px color-mix(in srgb,var(--theme-border,#8b5cf6) 20%,transparent)!important;
-}
-body.browser-shell .browser-shell-settings-panel .browser-shell-settings-close{
-  width:24px!important;
-  min-width:24px!important;
-  height:24px!important;
-  min-height:24px!important;
-  border-radius:7px!important;
-  padding:0!important;
-  background:rgba(8,7,14,.64)!important;
-  box-shadow:0 8px 20px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.1)!important;
-  transition:transform .58s cubic-bezier(.16,.86,.2,1),background .26s ease,border-color .26s ease,box-shadow .26s ease,filter .26s ease!important;
-}
-body.browser-shell .browser-shell-settings-panel .browser-shell-settings-close:hover{
-  transform:scale(1.06)!important;
-}
-body.browser-shell .browser-shell-settings-panel .browser-shell-settings-close:active{
-  transform:scale(.94)!important;
-}
-body.browser-shell .brand-mini [data-browser-shell-new-tab]::before,
 body.browser-shell .home-shortcut-add b{
   display:inline-grid;
   place-items:center;
   transform:rotate(0deg);
   transition:transform .58s cubic-bezier(.16,.86,.2,1);
 }
-body.browser-shell .brand-mini [data-browser-shell-new-tab]:hover::before,
 body.browser-shell .home-shortcut-add:hover b{
   transform:rotate(45deg);
-}
-body.browser-shell .browser-shell-settings-panel .settings-block:has([data-cloak-type]){
-  display:grid!important;
-  gap:10px!important;
-}
-body.browser-shell .browser-shell-settings-panel .settings-block:has([data-cloak-type]) .settings-form-row{
-  display:grid!important;
-  grid-template-columns:minmax(150px,.8fr) minmax(230px,1.2fr)!important;
-  gap:10px!important;
-  align-items:center!important;
-}
-body.browser-shell .browser-shell-settings-panel .settings-block:has([data-cloak-type]) .settings-row{
-  display:grid!important;
-  grid-template-columns:minmax(0,1fr) 74px!important;
-  gap:10px!important;
-  align-items:center!important;
-  margin:0!important;
-}
-body.browser-shell .browser-shell-settings-panel .settings-block:has([data-cloak-type]) .settings-row span{
-  min-width:0!important;
-  overflow:hidden!important;
-  text-overflow:ellipsis!important;
-  white-space:nowrap!important;
-}
-body.browser-shell .browser-shell-settings-panel .settings-block:has([data-cloak-type]) .settings-actions{
-  display:grid!important;
-  grid-template-columns:1fr 1fr!important;
-  gap:10px!important;
-  margin:0!important;
-}
-body.browser-shell .browser-shell-settings-panel .settings-block:has([data-cloak-type]) :is(.settings-action,button,input,select){
-  width:100%!important;
-  min-width:0!important;
-  height:36px!important;
-  padding:0 10px!important;
-  font-size:12px!important;
-  line-height:1!important;
-}
-@media(max-width:640px){
-  body.browser-shell .browser-shell-settings-panel .settings-block:has([data-cloak-type]) .settings-form-row,
-  body.browser-shell .browser-shell-settings-panel .settings-block:has([data-cloak-type]) .settings-actions{
-    grid-template-columns:1fr!important;
-  }
 }
 .cloak-launch-screen .cloak-input,
 body.browser-shell .cloak-launch-screen .cloak-input{
@@ -1433,34 +684,6 @@ body.browser-shell .cloak-launch-screen .cloak-submit-actions .primary{
   color:#000!important;
   -webkit-text-fill-color:#000!important;
   border-color:#d1d5db!important;
-}
-body.theme-ruby{--theme-border:#7f1d1d!important}
-body.theme-emerald{--theme-border:#064e3b!important}
-body.theme-sakura{--theme-border:#fbcfe8!important}
-body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):not(.theme-fresh):not(.theme-midnight){
-  --theme-border:#6d28d9!important;
-}
-body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):not(.theme-fresh):not(.theme-midnight) :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.browser-mode-menu,.browser-bookmark-panel,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-url,.urlbar,.settings-input,.settings-select,button,input,select,textarea):not(.nyx-visual-dock-hide){
-  border-color:color-mix(in srgb,var(--theme-border) 54%,rgba(255,255,255,.10) 46%)!important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.05),
-    0 0 0 1px rgba(0,0,0,.20)!important;
-}
-body.browser-shell.theme-ruby :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.browser-mode-menu,.browser-bookmark-panel,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-url,.urlbar,.settings-input,.settings-select,button,input,select,textarea),
-body.browser-shell.theme-emerald :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.browser-mode-menu,.browser-bookmark-panel,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-url,.urlbar,.settings-input,.settings-select,button,input,select,textarea),
-body.browser-shell.theme-sakura :is(.top-os,.window,.titlebar,.browser-tabs,.browser-tools,.browser-mode-menu,.browser-bookmark-panel,.settings-panel,.settings-card,.settings-app,.settings-main,.settings-side,.glass-card,.quick-tile,.quick-icon,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-app-button,.browser-mode-address button,.browser-mode-url,.urlbar,.settings-input,.settings-select,button,input,select,textarea){
-  border-color:var(--theme-border)!important;
-  box-shadow:
-    inset 0 0 0 1px color-mix(in srgb,var(--theme-border) 78%,#000 22%),
-    0 0 0 1px rgba(0,0,0,.36)!important;
-}
-body.browser-shell.theme-ruby :is(button,.quick-tile,.quick-icon,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-app-button,.browser-mode-address button,.settings-action,.settings-preset):hover,
-body.browser-shell.theme-emerald :is(button,.quick-tile,.quick-icon,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-app-button,.browser-mode-address button,.settings-action,.settings-preset):hover,
-body.browser-shell.theme-sakura :is(button,.quick-tile,.quick-icon,.browser-mode-tab,.browser-mode-shell-tab,.browser-mode-app-button,.browser-mode-address button,.settings-action,.settings-preset):hover{
-  border-color:color-mix(in srgb,var(--theme-border) 86%,#000 14%)!important;
-  box-shadow:
-    inset 0 0 0 1px color-mix(in srgb,var(--theme-border) 86%,#000 14%),
-    0 0 0 1px rgba(0,0,0,.48)!important;
 }
 select,
 .settings-select,
@@ -1516,16 +739,6 @@ select option:checked,
   font-family:Arial,Helvetica,sans-serif!important;
   transform:none!important;
 }
-body.browser-shell .browser-mode-shell-tab{
-  width:clamp(104px,10.5vw,142px)!important;
-  min-width:104px!important;
-  max-width:142px!important;
-  flex:0 0 clamp(104px,10.5vw,142px)!important;
-  justify-content:flex-start!important;
-}
-body.browser-shell .browser-mode-shell-tab span{
-  text-align:left!important;
-}
 html body .nyx-prompt-shade .nyx-prompt{
   background:#fff!important;
   background-color:#fff!important;
@@ -1553,79 +766,7 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
   border-color:#000!important;
   font-weight:800!important;
 }
-@media(max-width:760px){
-  body.browser-shell .browser-mode-shell-tab{
-    width:clamp(88px,29vw,118px)!important;
-    min-width:88px!important;
-    max-width:118px!important;
-    flex-basis:clamp(88px,29vw,118px)!important;
-  }
-}
 /* //browser-chrome-overlap-final */
-body.browser-shell{
-  --bar:72px!important;
-}
-body.browser-shell .top-os{
-  height:72px!important;
-  min-height:72px!important;
-  padding:5px 10px!important;
-  display:grid!important;
-  grid-template-columns:minmax(0,1fr)!important;
-  grid-template-rows:29px 31px!important;
-  align-items:start!important;
-  align-content:start!important;
-  gap:4px!important;
-  overflow:visible!important;
-}
-body.browser-shell .top-os > .status-icons,
-body.browser-shell .top-os > .brand-button,
-body.browser-shell .top-os > .user-chip,
-body.browser-shell .top-os > span:not(.weather-cloud-icon):not(.browser-top-clock){
-  display:none!important;
-  visibility:hidden!important;
-  width:0!important;
-  height:0!important;
-  pointer-events:none!important;
-}
-body.browser-shell .brand-mini{
-  grid-row:1!important;
-  align-self:start!important;
-  height:29px!important;
-  max-height:29px!important;
-  min-height:0!important;
-  gap:5px!important;
-}
-body.browser-shell .browser-mode-address{
-  grid-row:2!important;
-  align-self:start!important;
-  height:31px!important;
-  max-height:31px!important;
-  grid-template-columns:29px 29px 29px minmax(0,1fr) 29px 29px 33px!important;
-  gap:5px!important;
-}
-body.browser-shell .browser-mode-app-button,
-body.browser-shell .browser-mode-tab,
-body.browser-shell .browser-mode-shell-tab{
-  height:29px!important;
-  max-height:29px!important;
-  align-self:start!important;
-}
-body.browser-shell .browser-mode-app-button{
-  width:132px!important;
-  max-width:36vw!important;
-}
-body.browser-shell .browser-mode-address button{
-  width:29px!important;
-  height:29px!important;
-  max-width:29px!important;
-  max-height:29px!important;
-  align-self:start!important;
-}
-body.browser-shell .browser-mode-url{
-  height:29px!important;
-  max-height:29px!important;
-  align-self:start!important;
-}
 body.browser-shell .browser-window .titlebar,
 body.browser-shell .browser-window .browser-tabs,
 body.browser-shell .browser-window .browser-tools{
@@ -1653,66 +794,11 @@ body.browser-shell .weather-panel{
 body.browser-shell .weather-restore{
   top:78px!important;
 }
-body.browser-shell :is(
-  [data-browser-shell-bookmark],
-  .browser-mode-weather,
-  [data-browser-shell-menu]
-){
-  color:transparent!important;
-  -webkit-text-fill-color:transparent!important;
-  text-shadow:none!important;
-  font-size:0!important;
-  line-height:0!important;
-  text-indent:-9999px!important;
-  overflow:hidden!important;
-}
-body.browser-shell :is(
-  [data-browser-shell-bookmark],
-  .browser-mode-weather,
-  [data-browser-shell-menu]
-)::before,
-body.browser-shell :is(
-  [data-browser-shell-bookmark],
-  .browser-mode-weather,
-  [data-browser-shell-menu]
-)::after{
-  text-indent:0!important;
-  -webkit-text-fill-color:currentColor!important;
-}
-body.browser-shell [data-browser-shell-bookmark]::before,
-body.browser-shell [data-browser-shell-menu]::before{
-  z-index:3!important;
-}
 body.browser-shell .browser-mode-weather > .weather-cloud-icon{
   text-indent:0!important;
   color:#fff!important;
   -webkit-text-fill-color:#fff!important;
   z-index:3!important;
-}
-@media(max-width:760px){
-  body.browser-shell{
-    --bar:70px!important;
-  }
-  body.browser-shell .top-os{
-    height:70px!important;
-    min-height:70px!important;
-    grid-template-rows:28px 30px!important;
-    padding:5px 7px!important;
-  }
-  body.browser-shell .browser-mode-address{
-    height:30px!important;
-    max-height:30px!important;
-    grid-template-columns:28px 28px 28px minmax(0,1fr) 28px 28px 32px!important;
-    gap:4px!important;
-  }
-  body.browser-shell .browser-window,
-  body.browser-shell .window.maximized{
-    top:70px!important;
-    height:calc(100dvh - 70px)!important;
-  }
-  body.browser-shell .browser-mode-menu{
-    top:70px!important;
-  }
 }
 /* //center-icon-buttons-final */
 .home-shortcut-menu-btn{
@@ -1748,46 +834,6 @@ body.browser-shell .browser-mode-weather > .weather-cloud-icon{
   text-indent:0!important;
   -webkit-text-fill-color:#f8fafc!important;
 }
-body.browser-shell :is(
-  [data-browser-shell-back],
-  [data-browser-shell-forward],
-  [data-browser-shell-reload],
-  [data-browser-shell-bookmark],
-  .browser-mode-weather,
-  [data-browser-shell-menu],
-  .browser-mode-shell-tab-close,
-  .weather-icon-btn,
-  .browser-shell-settings-close,
-  .settings-close,
-  .new-tab,
-  .tool-btn,
-  .menu-btn
-){
-  display:grid!important;
-  place-items:center!important;
-  justify-content:center!important;
-  align-items:center!important;
-  padding:0!important;
-  line-height:0!important;
-  text-align:center!important;
-}
-body.browser-shell :is(
-  [data-browser-shell-reload],
-  [data-browser-shell-bookmark],
-  [data-browser-shell-menu],
-  .browser-mode-weather,
-  .tool-btn,
-  .menu-btn
-)::before,
-body.browser-shell :is(
-  [data-browser-shell-back],
-  [data-browser-shell-forward],
-  .tool-btn
-)::after{
-  left:50%!important;
-  top:50%!important;
-}
-body.browser-shell [data-browser-shell-menu]::before,
 .menu-btn::before{
   width:3.5px!important;
   height:3.5px!important;
@@ -1801,87 +847,21 @@ body.browser-shell .browser-mode-weather > .weather-cloud-icon{
   transform:translate(-50%,-50%)!important;
 }
 /* //browser-nav-icon-center-final */
-body.browser-shell :is(
-  [data-browser-shell-back],
-  [data-browser-shell-forward],
-  [data-browser-shell-reload],
-  .tool-btn[data-back],
-  .tool-btn[data-forward],
-  .tool-btn[data-reload]
-){
-  position:relative!important;
-  overflow:hidden!important;
-  color:transparent!important;
-  -webkit-text-fill-color:transparent!important;
-  font-size:0!important;
-  text-indent:-9999px!important;
-}
-body.browser-shell :is(
-  [data-browser-shell-back],
-  [data-browser-shell-forward],
-  [data-browser-shell-reload],
-  .tool-btn[data-back],
-  .tool-btn[data-forward],
-  .tool-btn[data-reload]
-)::before{
-  position:absolute!important;
-  left:50%!important;
-  top:50%!important;
-  width:auto!important;
-  height:auto!important;
-  display:block!important;
-  border:0!important;
-  border-radius:0!important;
-  background:transparent!important;
-  box-shadow:none!important;
-  color:#f8fafc!important;
-  -webkit-text-fill-color:#f8fafc!important;
-  font-family:Arial,Helvetica,sans-serif!important;
-  font-size:22px!important;
-  font-weight:700!important;
-  line-height:1!important;
-  text-indent:0!important;
-  transform:translate(-50%,-50%) rotate(0deg)!important;
-  transition:transform .42s cubic-bezier(.16,.86,.2,1),color .22s ease!important;
-}
-body.browser-shell :is(
-  [data-browser-shell-back],
-  [data-browser-shell-forward],
-  .tool-btn[data-back],
-  .tool-btn[data-forward]
-)::after{
-  content:none!important;
-  display:none!important;
-}
-body.browser-shell [data-browser-shell-back]::before,
 body.browser-shell .tool-btn[data-back]::before{
   content:"\2B05"!important;
   transform:translate(-50%,-50%)!important;
 }
-body.browser-shell [data-browser-shell-forward]::before,
 body.browser-shell .tool-btn[data-forward]::before{
   content:"\279C"!important;
 }
-body.browser-shell [data-browser-shell-reload]::before,
 body.browser-shell .tool-btn[data-reload]::before{
   content:"\1F5D8"!important;
   font-size:21px!important;
 }
-body.browser-shell :is([data-browser-shell-back],.tool-btn[data-back]):hover::before{
-  transform:translate(-54%,-50%)!important;
-}
-body.browser-shell :is([data-browser-shell-forward],.tool-btn[data-forward]):hover::before{
-  transform:translate(-46%,-50%)!important;
-}
-body.browser-shell :is([data-browser-shell-reload],.tool-btn[data-reload]):hover::before{
-  transform:translate(-50%,-50%) rotate(28deg)!important;
-}
 /* //shortcut-dropdown-layer-final */
-body.browser-shell .browser-home,
 body.browser-shell .browser-body,
 body.browser-shell .browser-window,
-body.browser-shell .home-shortcut-grid,
-body.browser-shell .browser-home-normal{
+body.browser-shell .home-shortcut-grid{
   overflow:visible!important;
 }
 body.browser-shell .home-shortcut-grid{
@@ -1911,10 +891,9 @@ body.browser-shell .home-shortcut-menu{
   width:112px!important;
   min-width:112px!important;
   overflow:visible!important;
-  box-shadow:0 18px 46px rgba(0,0,0,.48),0 0 0 1px rgba(190,148,255,.36)!important;
+  box-shadow:0 18px 46px rgba(0,0,0,.48),0 0 0 1px var(--obsidian-line)!important;
 }
 /* //single-close-icon-final */
-body.browser-shell .browser-mode-shell-tab-close,
 body.browser-shell .browser-shell-settings-close{
   position:absolute!important;
   display:grid!important;
@@ -1927,14 +906,6 @@ body.browser-shell .browser-shell-settings-close{
   line-height:0!important;
   text-indent:-9999px!important;
 }
-body.browser-shell .browser-mode-shell-tab-close{
-  right:5px!important;
-  top:50%!important;
-  width:18px!important;
-  height:18px!important;
-  transform:translateY(-50%)!important;
-}
-body.browser-shell .browser-mode-shell-tab-close::before,
 body.browser-shell .browser-shell-settings-close::before{
   position:absolute!important;
   left:50%!important;
@@ -1948,16 +919,6 @@ body.browser-shell .browser-shell-settings-close::before{
   line-height:1!important;
   text-indent:0!important;
   transform:translate(-50%,-50%) rotate(0deg)!important;
-}
-body.browser-shell .browser-mode-shell-tab-close::before{
-  content:"\00d7"!important;
-  font-size:16px!important;
-}
-body.browser-shell .browser-mode-shell-tab-close:hover{
-  transform:translateY(-50%) scale(1.06)!important;
-}
-body.browser-shell .browser-mode-shell-tab-close:hover::before{
-  transform:translate(-50%,-50%) rotate(45deg)!important;
 }
 body.browser-shell .browser-shell-settings-close{
   top:12px!important;
@@ -1981,25 +942,6 @@ body.browser-shell .browser-shell-settings-close:hover::before{
   transform:translate(-50%,-50%) rotate(45deg)!important;
 }
 /* //settings-close-sticky-final */
-body.browser-shell .browser-shell-settings-panel .browser-shell-settings-close{
-  position:sticky!important;
-  top:12px!important;
-  left:auto!important;
-  right:auto!important;
-  z-index:9000!important;
-  margin:0 0 8px auto!important;
-  width:28px!important;
-  height:28px!important;
-  min-width:28px!important;
-  min-height:28px!important;
-  transform:none!important;
-}
-body.browser-shell .browser-shell-settings-panel .browser-shell-settings-close:hover{
-  transform:none!important;
-}
-body.browser-shell .browser-shell-settings-panel .browser-shell-settings-close:hover::before{
-  transform:translate(-50%,-50%) rotate(45deg)!important;
-}
 /* //weather-icon-single-layer-final */
 body.browser-shell .browser-mode-weather,
 body.browser-shell #weatherRestore{

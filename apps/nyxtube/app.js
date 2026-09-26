@@ -37,8 +37,8 @@
   }
   const icon = id => `<svg aria-hidden="true"><use href="#${id}"></use></svg>`;
   function notice(message = "") { refs.notice.textContent = message; refs.notice.hidden = !message; }
-  async function json(url) {
-    const response = await fetch(url, { credentials: "same-origin", headers: { Accept: "application/json" } });
+  async function json(url, signal) {
+    const response = await fetch(url, { credentials: "same-origin", headers: { Accept: "application/json" }, signal });
     let payload = null;
     try { payload = await response.json(); } catch { /* reported below */ }
     if (!response.ok) throw new Error(payload?.error || `Request failed (${response.status})`);
@@ -126,15 +126,26 @@
       copy.append(title, meta); card.append(cover, copy); return card;
     }));
   }
+  let feedRequestId = 0;
+  let feedRequestController = null;
   async function loadFeed(query = "") {
+    const requestId = ++feedRequestId;
+    feedRequestController?.abort();
+    feedRequestController = new AbortController();
+    const { signal } = feedRequestController;
     notice(); skeletons(); refs.resultCount.textContent = "Loading...";
     refs.feedTitle.textContent = query ? `Results for “${query}”` : "Discover videos";
-    refs.searchForm.querySelector("button").disabled = true;
+    refs.videoGrid.setAttribute("aria-busy", "true");
     try {
       const endpoint = query ? `/api/nyxtube/search?q=${encodeURIComponent(query)}&limit=20` : "/api/nyxtube/feed?limit=20";
-      renderVideos((await json(endpoint))?.videos);
-    } catch (error) { renderVideos([]); notice(error.message || "Videos could not be loaded."); }
-    finally { refs.searchForm.querySelector("button").disabled = false; }
+      const payload = await json(endpoint, signal);
+      if (requestId === feedRequestId) renderVideos(payload?.videos);
+    } catch (error) {
+      if (signal.aborted || requestId !== feedRequestId) return;
+      renderVideos([]); notice(error.message || "Videos could not be loaded.");
+    } finally {
+      if (requestId === feedRequestId) refs.videoGrid.setAttribute("aria-busy", "false");
+    }
   }
 
   async function loadInitialView() {

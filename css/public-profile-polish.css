@@ -198,13 +198,6 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-preview-pane .nyx-use
   transform:translateY(-1px)!important;
 }
 
-@media(max-width:620px){
-  html body .nyx-founder-profile-standard{max-width:100%!important;border-radius:12px!important}
-  html body .nyx-founder-profile-standard .nyx-founder-banner{height:122px!important}
-  html body .nyx-founder-profile-standard .nyx-founder-image-wrap{width:74px!important;height:74px!important;margin-top:-38px!important}
-  html body .nyx-founder-profile-standard .nyx-founder-profile-content{padding:0 8px 8px!important}
-}
-
 @media(prefers-reduced-motion:reduce){
   html body .nyx-founder-role-chip,
   html body .nyx-founder-profile-standard .nyx-founder-badge,

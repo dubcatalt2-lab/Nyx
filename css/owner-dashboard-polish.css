@@ -204,24 +204,4 @@ body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-global-app-form .nyx-
 
 @container (max-width:520px){.nyx-owner-custom-role-form,.nyx-owner-custom-role-editor{grid-template-columns:minmax(0,1fr)!important;align-items:stretch!important}.nyx-owner-custom-role-form label:first-child,.nyx-owner-custom-role-editor>.nyx-owner-custom-role-field,.nyx-owner-custom-role-permission-editor,.nyx-owner-custom-role-editor-actions{grid-column:1!important}}
 @container (max-width:520px){.nyx-owner-global-app-form{grid-template-columns:minmax(0,1fr)}.nyx-owner-global-app-list article{grid-template-columns:30px minmax(0,1fr)}.nyx-owner-global-app-list button{grid-column:2;justify-self:start}}
-@media(max-width:1180px){.nyx-owner-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}.nyx-owner-workspace{grid-template-columns:minmax(0,1fr) 270px}}
-@media(max-width:900px){.nyx-owner-dashboard>header,.nyx-owner-dashboard>section{flex-shrink:0}.nyx-owner-dashboard{display:flex;overflow-y:auto;flex-direction:column;padding:16px}.nyx-owner-workspace{grid-template-columns:1fr;overflow:visible}.nyx-owner-users-panel{min-height:620px}.nyx-owner-activity-panel{display:grid;min-height:310px;max-height:520px}.nyx-owner-table-wrap{max-height:470px}}
-@media(max-width:620px){
-  .nyx-owner-dashboard{gap:11px;padding:0 10px 16px;background:#000}.nyx-owner-dashboard-overlay::before{opacity:.18;background-size:26px 26px}
-  .nyx-owner-header{position:sticky;z-index:3;top:0;margin:0 -10px;padding:11px 10px;border-bottom:1px solid var(--owner-line);background:rgba(0,0,0,.94);backdrop-filter:blur(12px)}
-  .nyx-owner-eyebrow{font-size:7px;letter-spacing:.12em}.nyx-owner-eyebrow svg{width:12px;height:12px}.nyx-owner-header h1{font-size:19px}.nyx-owner-header p{display:none}
-  .nyx-owner-header-actions button{width:34px;min-height:34px;padding:0}.nyx-owner-header-actions button span{display:none}.nyx-owner-header-actions [data-owner-refresh]{border-color:var(--owner-line);background:#08090d!important;color:#fff}
-  .nyx-owner-metrics{display:flex;gap:7px;margin:0 -10px;padding:1px 10px 7px;overflow-x:auto;scroll-snap-type:x proximity}
-  .nyx-owner-metric,.nyx-owner-metric:first-child,.nyx-owner-metric:nth-child(n+4){min-width:142px;min-height:62px;padding:8px;scroll-snap-align:start}
-  .nyx-owner-metric>svg,.nyx-owner-metric:first-child>svg,.nyx-owner-metric:nth-child(n+4)>svg{width:29px;height:29px;flex-basis:29px;padding:6px}.nyx-owner-metric strong,.nyx-owner-metric:first-child strong,.nyx-owner-metric:nth-child(n+4) strong{font-size:16px}
-  .nyx-owner-users-panel,.nyx-owner-activity-panel{border-radius:11px}.nyx-owner-users-panel{min-height:596px}.nyx-owner-panel-head{align-items:flex-start;flex-direction:column;padding:12px}
-  .nyx-owner-quick-actions{display:flex;width:100%;flex-wrap:wrap}.nyx-owner-quick-actions button{display:flex;flex:1 1 auto;min-height:33px}
-  .nyx-owner-filters{grid-template-columns:1fr;padding:9px}.nyx-owner-search{grid-column:auto}.nyx-owner-table{min-width:0}.nyx-owner-table th,.nyx-owner-table td{padding-left:10px;padding-right:10px}
-  .nyx-owner-table th:nth-child(n+2):not(:last-child),.nyx-owner-table td:nth-child(n+2):not(:last-child){display:none!important}.nyx-owner-table td{height:72px}.nyx-owner-user-cell small{max-width:min(220px,56vw)}
-  .nyx-owner-mobile-access{display:flex!important;align-items:center;gap:5px;margin-top:5px}.nyx-owner-mobile-access .nyx-owner-badge{min-height:19px;padding:2px 6px;font-size:7px}.nyx-owner-mobile-access .nyx-owner-role-icon{width:11px;height:11px}
-  .nyx-owner-pagination{align-items:flex-start;gap:6px}.nyx-owner-pagination>div{flex-wrap:wrap;justify-content:flex-end}.nyx-owner-activity-panel{display:grid;min-height:330px;max-height:none}.nyx-owner-activity-list{overflow:visible}
-  .nyx-owner-user-drawer{inset:0;width:100%;border:0;border-radius:0}.nyx-owner-user-drawer>header{padding:13px}.nyx-owner-drawer-scroll{padding:11px}
-  body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-header-actions [data-owner-refresh]{border-color:var(--owner-line)!important;background:#08090d!important;color:#fff!important}
-}
-@media(max-height:700px) and (min-width:901px){.nyx-owner-dashboard{gap:10px;padding:13px 18px}.nyx-owner-header{padding-bottom:9px}.nyx-owner-header h1{font-size:23px}.nyx-owner-metric,.nyx-owner-metric:first-child,.nyx-owner-metric:nth-child(n+4){min-height:62px;padding:8px}.nyx-owner-panel-head,.nyx-owner-activity-panel>header{min-height:52px;padding-top:9px;padding-bottom:9px}}
 @media(prefers-reduced-motion:reduce){.nyx-owner-dashboard-overlay *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}

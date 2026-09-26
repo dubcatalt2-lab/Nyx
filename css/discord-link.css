@@ -21,14 +21,6 @@
   transition: transform 150ms ease, border-color 150ms ease, background-color 150ms ease;
 }
 
-body.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .nyx-discord-link {
-  display: inline-flex;
-}
-
-html[data-nyx-sidebar-side="right"] body.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .nyx-discord-link {
-  right: calc(var(--nyx-visual-dock-current-width, 50px) + 14px);
-}
-
 .nyx-discord-link svg {
   width: 19px;
   height: 19px;
@@ -51,23 +43,6 @@ html[data-nyx-sidebar-side="right"] body.browser-shell:not(.browser-content-acti
 .nyx-discord-link:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--nyx-home-wordmark, #dedee8) 64%, transparent);
   outline-offset: 3px;
-}
-
-@media (max-width: 620px) {
-  .nyx-discord-link {
-    right: max(12px, env(safe-area-inset-right));
-    bottom: max(12px, env(safe-area-inset-bottom));
-    width: 40px;
-    padding: 0;
-    justify-content: center;
-    border-radius: 11px;
-  }
-
-  .nyx-discord-link span { display: none; }
-
-  html[data-nyx-sidebar-side="right"] body.browser-shell:not(.browser-content-active):not(.nyx-home-search-active) .nyx-discord-link {
-    right: calc(var(--nyx-visual-dock-current-width, 50px) + 10px);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

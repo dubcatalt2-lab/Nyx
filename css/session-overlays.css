@@ -1,0 +1,26 @@
+/* Startup/session UI is independent of the navigation layout and its wallpaper. */
+.nyx-frame-loader{position:absolute;z-index:8;left:50%;top:28px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;max-width:calc(100% - 40px);padding:12px 16px;border:1px solid var(--obsidian-line);border-radius:9px;background:var(--obsidian-panel);color:var(--obsidian-muted);font-size:12px;pointer-events:none}
+.nyx-frame-loader[aria-hidden="true"],.browser-home-page .nyx-frame-loader,.browser-blank .nyx-frame-loader{display:none!important}
+.nyx-page-spinner{width:14px;height:14px;flex:none;border:1.5px solid var(--obsidian-line);border-top-color:var(--obsidian-text);border-radius:50%;animation:nyx-page-spin .8s linear infinite}
+@keyframes nyx-page-spin{to{transform:rotate(360deg)}}
+.nyx-release-notes-overlay{position:fixed;z-index:2147483644;inset:0;display:grid;place-items:center;padding:24px;background:rgba(2,5,3,.78);backdrop-filter:blur(14px);opacity:0;transition:opacity .18s}
+.nyx-release-notes-overlay.show{opacity:1}
+.nyx-release-notes{width:min(580px,100%);max-height:calc(100dvh - 48px);overflow:auto;border:1px solid var(--obsidian-line);border-radius:14px;background:var(--obsidian-bg);color:var(--obsidian-text);box-shadow:0 24px 70px #0005}
+.nyx-release-notes header{display:flex;justify-content:space-between;align-items:start;gap:20px;padding:26px 26px 16px}
+.nyx-release-notes header span{font-size:10px;color:var(--obsidian-muted);letter-spacing:.1em;text-transform:uppercase}
+.nyx-release-notes h1{margin:7px 0 0;font-size:25px;font-weight:500;letter-spacing:-.035em}
+.nyx-release-notes header button{width:30px;height:30px;flex:none;font-size:23px;padding:0}
+.nyx-release-message{padding:0 26px;color:var(--obsidian-muted);font-size:13px;line-height:1.7}
+.nyx-release-message strong{font-weight:500;color:var(--obsidian-text)}
+.nyx-release-notes ul{display:grid;gap:10px;margin:20px 0;padding:0 26px;list-style:none}
+.nyx-release-notes li{display:grid;gap:5px;padding:13px;border:1px solid var(--obsidian-line);border-radius:8px;background:var(--obsidian-panel)}
+.nyx-release-notes li strong{font-size:13px;font-weight:500}
+.nyx-release-notes li span{font-size:12px;color:var(--obsidian-muted);line-height:1.6}
+.nyx-release-notes footer{display:flex;justify-content:flex-end;padding:16px 26px 24px}
+.nyx-release-notes button{border:1px solid var(--obsidian-line);border-radius:7px;background:var(--obsidian-field);color:var(--obsidian-text);box-shadow:none;padding:9px 17px;cursor:pointer}
+.nyx-release-notes button:focus-visible{outline:1px solid var(--obsidian-text);outline-offset:3px}
+html body .nyx-tos-gate{background:rgba(2,5,3,.8);backdrop-filter:blur(14px)}
+html body .nyx-tos-dialog{border:1px solid var(--obsidian-line);border-radius:14px;background:var(--obsidian-bg);color:var(--obsidian-text);box-shadow:0 24px 70px #0005}
+html body .nyx-tos-gate-header,html body .nyx-tos-actions{background:var(--obsidian-panel);border-color:var(--obsidian-line)}
+html body .nyx-tos-actions button{background:var(--obsidian-field);border:1px solid var(--obsidian-line);border-radius:7px;color:var(--obsidian-text);box-shadow:none}
+@media(prefers-reduced-motion:reduce){.nyx-page-spinner{animation:none}.nyx-release-notes-overlay{transition:none}}

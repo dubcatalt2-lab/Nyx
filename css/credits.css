@@ -1,17 +1,14 @@
 /* Shared by Credits, Settings and the desktop About window. */
-html body .nyx-credits-tab{box-sizing:border-box;width:100%;max-width:960px;min-height:65vh;margin:0 auto;padding:clamp(48px,9vh,96px) 24px 64px!important;text-align:center;color:#e0ddea}
-html body .nyx-credits-tab .nyx-credits-title{margin:0 0 48px!important;padding:0;border:0;color:#a8a1b8!important;font-size:28px!important;font-weight:400!important;letter-spacing:0!important;line-height:1.4;text-shadow:none!important}
+html body .nyx-credits-tab{box-sizing:border-box;width:100%;max-width:960px;min-height:65vh;margin:0 auto;padding:clamp(48px,9vh,96px) 24px 64px!important;text-align:center;color:var(--obsidian-text,var(--app-text))}
+html body .nyx-credits-tab .nyx-credits-title{margin:0 0 48px!important;padding:0;border:0;color:var(--obsidian-muted,var(--app-muted))!important;font-size:28px!important;font-weight:400!important;letter-spacing:0!important;line-height:1.4;text-shadow:none!important}
 html body .nyx-credits-tab .nyx-credits-thanks{display:grid;gap:40px;width:100%!important;max-width:none!important;margin:0!important;padding:0!important;list-style:none}
-html body .nyx-credits-thanks li{margin:0;padding:0;color:#e0ddea;font-size:clamp(18px,2.2vw,24px);line-height:1.7;overflow-wrap:anywhere}
+html body .nyx-credits-thanks li{margin:0;padding:0;color:var(--obsidian-text,var(--app-text));font-size:clamp(18px,2.2vw,24px);line-height:1.7;overflow-wrap:anywhere}
 html body .nyx-credits-thanks strong{font-weight:700}
-html body .nyx-credits-thanks a{color:#a69bff;text-decoration:none;text-underline-offset:5px}
+html body .nyx-credits-thanks a{color:var(--obsidian-text,var(--app-text));text-decoration:none;text-underline-offset:5px}
 html body .nyx-credits-thanks a:hover{text-decoration:underline}
-html body .nyx-credits-thanks a:focus-visible{outline:2px solid #b8afff;outline-offset:5px;border-radius:3px}
+html body .nyx-credits-thanks a:focus-visible{outline:2px solid var(--obsidian-text,var(--app-text));outline-offset:5px;border-radius:3px}
 html body .nyx-credits-thanks .nyx-credits-site{display:block;width:fit-content;margin:5px auto 0;font-size:16px}
-@media(max-width:480px){html body .nyx-credits-tab{padding:48px 20px!important}html body .nyx-credits-tab .nyx-credits-title{margin-bottom:36px!important}}
 
 html body .nyx-credits-thanks .nyx-credits-libraries{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 20px;width:100%;max-width:none!important;margin:12px auto 0!important;padding:0!important;list-style:none}
-html body .nyx-credits-thanks .nyx-credits-libraries li{font-size:15px;color:#b8b1c8;line-height:1.8}
+html body .nyx-credits-thanks .nyx-credits-libraries li{font-size:15px;color:var(--obsidian-muted,var(--app-muted));line-height:1.8}
 html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;height:60px;object-fit:contain;margin:0 auto 12px}
-
-html body .nyx-settings-group .nyx-credits-tab{grid-column:1 / -1;min-height:0}

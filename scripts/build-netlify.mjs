@@ -1,9 +1,10 @@
 import {buildFrontendAssets} from './build-frontend-assets.mjs';
 import { spawn, spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
+import { existsSync } from "node:fs";
 import { cp, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { parse } from "acorn";
 import CleanCSS from "clean-css";
 import { minify as minifyHtml } from "html-minifier-terser";
@@ -68,7 +69,9 @@ function repositoryFiles() {
     encoding: "buffer"
   });
   if (result.status !== 0) throw new Error(`Unable to list repository files: ${result.stderr?.toString() || "git failed"}`);
-  return result.stdout.toString("utf8").split("\0").filter(Boolean).map(path => path.replaceAll("\\", "/"));
+  return result.stdout.toString("utf8").split("\0").filter(Boolean)
+    .map(path => path.replaceAll("\\", "/"))
+    .filter(path => existsSync(join(root, path)));
 }
 
 function isStaticSource(path) {
@@ -147,7 +150,23 @@ async function waitForLocalServer(child) {
 }
 
 async function writePatchedRuntimes(wispUrl) {
-  const child = spawn(process.execPath, [join(root, "server.js")], {
+  // Runtime generation needs Express routes, not a second relay worker.
+  // Bind only to loopback and keep an existing development server running.
+  const runtimeServer = `
+    import { createServer } from "node:http";
+    import { app } from ${JSON.stringify(pathToFileURL(join(root, "server.js")).href)};
+    const server = createServer(app);
+    server.listen(0, "127.0.0.1", () => {
+      process.send({ type: "nyx:listening", port: server.address().port });
+    });
+    const stop = () => {
+      server.close(() => process.exit(0));
+      setTimeout(() => process.exit(0), 1000).unref();
+    };
+    process.once("disconnect", stop);
+    process.once("SIGTERM", stop);
+  `;
+  const child = spawn(process.execPath, ["--input-type=module", "--eval", runtimeServer], {
     cwd: root,
     env: { ...process.env, PORT: "0", WISP_URL: wispUrl },
     stdio: ["ignore", "pipe", "pipe", "ipc"]

@@ -1,10 +1,1 @@
-.nyx-minimal-shortcuts {
-  grid-template-columns: repeat(7, clamp(36px, 6.2vw, 64px)) !important;
-}
 
-@media (max-width: 650px) {
-  .nyx-minimal-shortcuts {
-    grid-template-columns: repeat(4, 50px) !important;
-    gap: 14px 11px !important;
-  }
-}

@@ -131,7 +131,6 @@ fieldset{min-width:0;margin:0;border:0}
 [data-bulk-job] button:focus-visible{outline:2px solid #d0d0d0;outline-offset:3px}
 [data-bulk-job] button:disabled{background:#161616;border-color:rgba(255,255,255,.06);color:#737373;cursor:not-allowed;opacity:1}
 [data-bulk-job] [data-job-clear]{background:transparent;color:#bcbcbc}
-@media(max-width:680px){[data-bulk-job] .bulk-variants-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}[data-bulk-job] button{min-width:0;min-height:44px;padding:9px 8px}}
 .bulk-variants-actions .primary-action{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 15px}
 .bulk-variants-actions .primary-action svg{width:16px;height:16px}
 .bulk-variants-progress{margin-top:12px;padding:13px 14px;border:1px solid var(--line);border-radius:14px;background:#080808}
@@ -148,26 +147,6 @@ fieldset{min-width:0;margin:0;border:0}
 .bulk-variants-note{margin:12px 2px 0;color:var(--muted-deep);font-size:9px;line-height:1.55}
 .bulk-variants-note strong{color:var(--muted)}
 .bulk-variants-note code{color:var(--muted);font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
-@media(max-width:680px){
-  .generator-card{padding:18px}
-  .section-bar{display:block}
-  .origin-badge{display:flex;max-width:100%;margin:14px 0 0}
-  .wizard-progress{margin-bottom:24px;padding:0}
-  .wizard-progress-line{right:26px;left:26px}
-  .wizard-progress li small{display:none}
-  .wizard-step{min-height:440px}
-  .form-panel{padding:14px}
-  .account-fields,.details-grid,.details-grid.premium,.review-list{grid-template-columns:1fr}
-  .bulk-link-box textarea{min-height:190px}
-  .bulk-variants-card{padding:18px}
-  .bulk-variants-heading{display:flex}
-  .bulk-variants-grid{grid-template-columns:1fr}
-  .bulk-alias-destination{align-items:flex-start;flex-direction:column}
-  .bulk-alias-destination code{width:100%}
-  .bulk-variants-summary{display:grid;gap:4px}
-  .bulk-variants-actions{align-items:stretch;flex-direction:column}
-  .bulk-variants-actions button{width:100%}
-}
 @media(prefers-reduced-motion:reduce){
   .generator-card.wizard-forward .wizard-step.active,.generator-card.wizard-back .wizard-step.active{animation:none}
   .wizard-progress-line span{transition:none}

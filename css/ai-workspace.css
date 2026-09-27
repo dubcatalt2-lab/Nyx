@@ -339,6 +339,8 @@ button:disabled{cursor:not-allowed}
 .ai-model-companies button:hover,.ai-model-companies button[aria-pressed="true"]{background:var(--ai-surface-hover);border-color:var(--ai-border-strong);color:var(--ai-text)}
 .ai-model-companies button:focus-visible,#modelMenuClose:focus-visible{outline:2px solid var(--ai-muted);outline-offset:2px}
 .ai-company-logo{display:block;width:22px;height:22px;flex-shrink:0;background:currentColor;mask:var(--company-logo) center/contain no-repeat;-webkit-mask:var(--company-logo) center/contain no-repeat}
+.ai-company-logo-color{object-fit:contain;background:none;mask:none;-webkit-mask:none;filter:none;opacity:1}
+.ai-company-logo[src$="/writer-author.png"]{background:#f4f4f4;border-radius:4px;padding:2px}
 .ai-company-initial{display:grid;place-items:center;width:22px;height:22px;font-size:9px;color:var(--ai-muted)}
 .ai-model-search{display:block;margin:0 16px 10px;flex-shrink:0}
 .ai-model-search input{box-sizing:border-box;width:100%;height:40px;padding:0 12px;border:1px solid var(--ai-border-strong);border-radius:8px;background:var(--ai-surface-hover);color:var(--ai-text);font:inherit;font-size:12px;outline:none}
@@ -583,12 +585,11 @@ button:disabled{cursor:not-allowed}
   font-weight:650;
 }
 .ai-message-assistant .ai-message-avatar{
-  background-color:var(--ai-surface-raised);
-  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-monogram.png"));
-  background-position:center;
-  background-repeat:no-repeat;
-  background-size:100%;
+  background:transparent;
+  border:0;
 }
+.ai-message-assistant .ai-message-avatar .ai-company-logo{width:26px;height:26px}
+.ai-message-assistant .ai-message-avatar img{border-radius:6px}
 .ai-message-user{grid-template-columns:minmax(0,1fr);justify-items:end}
 .ai-message-user .ai-message-avatar{display:none}
 .ai-message-body{min-width:0;width:min(100%,900px)}

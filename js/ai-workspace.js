@@ -305,6 +305,7 @@
           if(!content) return null;
           const message={role:item.role,content};
           if(item.role==='assistant'&&item.metadata)message.metadata=normalizeMetadata(item.metadata);
+          if(item.role==='assistant'&&typeof item.modelId==='string'){message.modelId=item.modelId.slice(0,200);message.modelName=String(item.modelName||'').slice(0,200);}
           if(item.role==='assistant'&&item.timing)message.timing=normalizeTiming(item.timing);
           if(item.role==='assistant'&&/^[a-f0-9-]{36}$/.test(item.imageId||''))message.imageId=item.imageId;
           const textAttachment=item.role==='user'?normalizedTextAttachment(item.textAttachment):null;
@@ -774,7 +775,7 @@
     stats.title='Measured on this device. Tokens per second averages the entire request, including waiting. Estimates use roughly four characters per token; reported usage may include reasoning tokens.';
   }
 
-  function addMessage(role,text,{error=false,thinking=false,attachment=null,imageId=null,metadata=null,timing=null}={}){
+  function addMessage(role,text,{error=false,thinking=false,attachment=null,imageId=null,metadata=null,timing=null,modelId='',modelName=''}={}){
     conversation.querySelector('[data-ai-welcome]')?.remove();
     conversation.classList.remove('is-empty');
     const assistant=role!=='user';
@@ -782,11 +783,12 @@
     message._nyxMetadata=normalizeMetadata(metadata);
     message.className=`ai-message ai-message-${assistant?'assistant':'user'}`;
     message.innerHTML=`
-      <div class="ai-message-avatar" ${assistant?'data-nyx-logo aria-hidden="true"':'aria-hidden="true"'}>${assistant?'':'You'}</div>
+      <div class="ai-message-avatar" aria-hidden="true">${assistant?'':'You'}</div>
       <div class="ai-message-body">
-        <div class="ai-message-meta"><strong>${assistant?aiBrand():'You'}</strong><div class="ai-message-actions">${messageCopyButton()}</div></div>
+        <div class="ai-message-meta"><strong>${assistant?'Assistant':'You'}</strong><div class="ai-message-actions">${messageCopyButton()}</div></div>
         <div class="ai-message-content"></div>
       </div>`;
+    if(assistant)setReplyModel(message,modelId,modelName);
     if(assistant&&timing)showTiming(message,timing);
     if(attachment?.dataUrl&&!assistant){
       const figure=document.createElement('figure');
@@ -1007,7 +1009,7 @@
     }else{
       conversation.classList.remove('is-empty');
       let start=Math.max(0,items.length-MESSAGE_PAGE_SIZE);
-      const append=item=>addMessage(item.role,item.content,{attachment:item.textAttachment||null,imageId:item.imageId,metadata:item.metadata,timing:item.timing});
+      const append=item=>addMessage(item.role,item.content,{attachment:item.textAttachment||null,imageId:item.imageId,metadata:item.metadata,timing:item.timing,modelId:item.modelId,modelName:item.modelName});
       items.slice(start).forEach(append);
       if(start){
         const earlier=document.createElement('button');earlier.type='button';earlier.className='ai-history-earlier';earlier.textContent='Load earlier messages';
@@ -1037,18 +1039,72 @@
     cohere:['Cohere','cohere'],minimax:['MiniMax','minimax'],openrouter:['OpenRouter','openrouter'],
     xiaomi:['Xiaomi','xiaomimimo'],amazon:['Amazon','aws'],microsoft:['Microsoft','microsoft'],
     perplexity:['Perplexity','perplexity'],stepfun:['StepFun','stepfun'],baidu:['Baidu','baidu'],
-    bytedance:['ByteDance','bytedance'],arcee:['Arcee','arcee'],ai21:['AI21','ai21']
+    bytedance:['ByteDance','bytedance'],arcee:['Arcee','arcee'],ai21:['AI21','ai21'],
+    "arcee-ai":["Arcee", "arcee"],
+    "bytedance-seed":["ByteDance", "bytedance"],
+    "meta":["Meta", "meta"],
+    "aion-labs":["Aion Labs", "aionlabs"],
+    "tencent":["Tencent", "tencent"],
+    "sakana":["Sakana AI", "sakana"],
+    "poolside":["Poolside", "poolside"],
+    "upstage":["Upstage", "upstage"],
+    "nousresearch":["Nous Research", "nousresearch"],
+    "perceptron":["Perceptron", "perceptron"],
+    "inference-net":["Inference.net", "inference"],
+    "ibm-granite":["IBM", "ibm"],
+    "rekaai":["Reka", "reka"],
+    "relace":["Relace", "relace"],
+    "morph":["Morph", "morph"],
+    "fireworks":["Fireworks", "fireworks"],
+    "dots-studio":["Dots", "dotsstudio"],
+    "liquid":["Liquid AI", "liquid"],
+    "kwaipilot":["Kwai", "kwaipilot"],
+    "meituan":["Meituan", "longcat"],
+    "thinkingmachines":["Thinking Machines", "thinkingmachines"],
+    "inclusionai":["InclusionAI", "inclusionai"],
+    "thedrummer":["TheDrummer", "thedrummer"],
+    "typesafe":["TypeSafe", "typesafe"],
+    "unbiased":["Unbiased", "unbiased"],
+    "writer":["Writer", "writer"],
+    "stealth":["Stealth", "stealth"],
+    "sao10k":["Sao10K", "sao10k"],
+    "anthracite-org":["Anthracite", "anthracite-org"],
+    "gryphe":["Gryphe", "gryphe"],
+    "undi95":["Undi95", "undi95"],
+    "cognitivecomputations":["Cognitive Computations", "cognitivecomputations"],
+    "prism-ml":["PrismML", "prism-ml"],
+    "mancer":["Mancer", "mancer"]
   };
   let modelCompanyFilter='';
   const modelSearch=document.getElementById('modelSearch');
   const modelCompaniesHost=document.getElementById('modelCompanies');
   function modelCompany(item){
-    const key=item.id.split('/')[0].toLowerCase();
+    const key=item.id.split('/')[0].toLowerCase().replace(/^~/,'');
     const known=modelCompanies[key];
     return {key:known?.[1]||key,label:known?.[0]||item.company||key||'Other',icon:known?.[1]||''};
   }
+  const colorCompanyIcons=new Set(["aionlabs", "arcee", "aws", "baidu", "bytedance", "claude", "cohere", "deepseek", "fireworks", "gemini", "gemma", "hunyuan", "kimi", "kwaipilot", "longcat", "meta", "microsoft", "minimax", "mistral", "morph", "nvidia", "openrouter", "perplexity", "poolside", "qwen", "sakana", "stepfun", "tencent", "upstage"]);
+  const authorIcons={"thinkingmachines": "thinkingmachines-author.png", "inclusionai": "inclusionai-author.png", "thedrummer": "thedrummer-author.png", "typesafe": "typesafe-author.png", "unbiased": "unbiased-author.png", "writer": "writer-author.png", "stealth": "stealth-author.svg", "sao10k": "sao10k-author.webp", "anthracite-org": "anthracite-org-author.webp", "gryphe": "gryphe-author.webp", "undi95": "undi95-author.webp", "cognitivecomputations": "cognitivecomputations-author.png", "prism-ml": "prism-ml-author.png", "mancer": "mancer-author.png"};
   function modelCompanyIcon(company){
+    if(authorIcons[company.icon])return `<img class="ai-company-logo ai-company-logo-color" src="/assets/icons/ai-companies/${authorIcons[company.icon]}" alt="" aria-hidden="true" width="22" height="22">`;
+    if(colorCompanyIcons.has(company.icon))return `<img class="ai-company-logo ai-company-logo-color" src="/assets/icons/ai-companies/${company.icon}-color.svg" alt="" aria-hidden="true" width="22" height="22">`;
     return company.icon ? `<span class="ai-company-logo" style="--company-logo:url('/assets/icons/ai-companies/${company.icon}.svg')" aria-hidden="true"></span>` : `<span class="ai-company-initial" aria-hidden="true">${escapeHtml(company.label.slice(0,2).toUpperCase())}</span>`;
+  }
+  function modelIcon(item){
+    const company=modelCompany(item);
+    const id=item.id.toLowerCase().replace(/^~/,'');
+    const family=id.startsWith('anthropic/claude')?'claude':id.startsWith('google/gemma')?'gemma':id.startsWith('moonshotai/kimi')?'kimi':id.startsWith('x-ai/grok')?'grok':id.startsWith('tencent/hunyuan')?'hunyuan':'';
+    return modelCompanyIcon(family?{...company,icon:family}:company);
+  }
+  function setReplyModel(message,id,name=''){
+    const clean=typeof id==='string'?id.trim().slice(0,200):'';
+    const exact=modelCatalog.find(item=>item.id===clean);
+    const matches=clean&&!clean.includes('/')?modelCatalog.filter(item=>item.id.split('/').slice(1).join('/')===clean):[];
+    const item=exact||(matches.length===1?matches[0]:null);
+    message._modelId=item?.id||clean;
+    message._modelName=item?.label||String(name||clean||'Assistant').slice(0,200);
+    message.querySelector('.ai-message-meta strong').textContent=message._modelName;
+    message.querySelector('.ai-message-avatar').innerHTML=message._modelId?modelIcon({id:message._modelId,company:'Assistant'}):'<span class="ai-company-initial" aria-hidden="true">AI</span>';
   }
   function renderModelCompanies(){
     const companies=[...new Map(modelCatalog.map(item=>{const company=modelCompany(item);return [company.key,company]})).values()].sort((a,b)=>a.label.localeCompare(b.label));
@@ -1094,7 +1150,7 @@
       return `<section class="ai-model-group" role="group" aria-labelledby="${groupId}">
         <p class="ai-model-group-label" id="${groupId}">${escapeHtml(company)}</p>
         <div class="ai-model-group-grid">${items.map(item=>`<button class="ai-model-option" type="button" role="option" data-model-id="${escapeHtml(item.id)}" aria-selected="${item.id===selected?'true':'false'}">
-          ${modelCompanyIcon(modelCompany(item))}<span class="ai-model-option-label"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(modelCompany(item).label)} &middot; ${modelCapabilities(item)}</small></span>
+          ${modelIcon(item)}<span class="ai-model-option-label"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(modelCompany(item).label)} &middot; ${modelCapabilities(item)}</small></span>
           <span class="ai-model-option-check" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="m5 10 3 3 7-7"/></svg></span>
         </button>`).join('')}</div>
       </section>`;
@@ -1298,7 +1354,7 @@
     addMessage('user',userText,{attachment:imageAttachment||textAttachment});
     input.value='';
     autoGrow();
-    const pending=addMessage('assistant','',{thinking:true});
+    const pending=addMessage('assistant','',{thinking:true,modelId:requestedModel,modelName:modelLabel(requestedModel)});
     activeController=new AbortController();
     setBusy(true);
     let answer='';
@@ -1328,7 +1384,7 @@
         const messages=history.slice(-MODEL_CONTEXT_MESSAGES).map(item=>({role:item.role,content:item.content+(item.textAttachment?'\n\n'+item.textAttachment.content:'')}));
         if(preparedImage)messages[messages.length-1].content=[{type:'text',text:messages[messages.length-1].content},{type:'image_url',image_url:{url:preparedImage.dataUrl}}];
         response=await fetch(kind==='nyx'?'/api/v1/ai':'https://openrouter.ai/api/v1/chat/completions',{method:'POST',signal:activeController.signal,headers:{'Content-Type':'application/json',Authorization:'Bearer '+customKey},body:JSON.stringify({model:requestedModel,messages,max_tokens:generateImage?2200:512,stream:!generateImage&&kind!=='nyx',...(generateImage?{modalities:['text','image']}:{})})});
-        if(kind==='nyx'&&response.ok){const result=await response.json();const content=result.choices?.[0]?.message?.content||'';response=new Response('data: '+JSON.stringify({choices:[{delta:{content}}]})+'\n\ndata: [DONE]\n\n',{headers:{'Content-Type':'text/event-stream'}});}
+        if(kind==='nyx'&&response.ok){const result=await response.json();const content=result.choices?.[0]?.message?.content||'';response=new Response('data: '+JSON.stringify({model:result.model,choices:[{delta:{content}}]})+'\n\ndata: [DONE]\n\n',{headers:{'Content-Type':'text/event-stream'}});}
       }else{
       response=await fetch('/api/nyx-ai',{
         method:'POST',
@@ -1346,6 +1402,7 @@
         for(;;){const part=await imageReader.read();if(part.done)break;imageBytes+=part.value.byteLength;if(imageBytes>8*1024*1024){await imageReader.cancel();throw new Error('The generated image response is too large.');}raw+=imageDecoder.decode(part.value,{stream:true});}
         raw+=imageDecoder.decode();
         const data=JSON.parse(raw);
+        if(typeof data.model==='string'&&data.model.trim())setReplyModel(pending,data.model);
         if(data.error)throw new Error(data.error.message||data.error);
         const reply=data.choices?.[0]?.message;
         answer=typeof data.text==='string'?data.text:typeof reply?.content==='string'?reply.content:'';
@@ -1368,6 +1425,7 @@
         if(!raw||raw==='[DONE]') return;
         try{
           const data=JSON.parse(raw);
+          if(typeof data.model==='string'&&data.model.trim())setReplyModel(pending,data.model);
           if(data.error){streamError=String(data.error.message||data.error);return;}
           const usageTokens=Number(data.nyx_usage?.completion_tokens??data.usage?.completion_tokens);
           if(Number.isFinite(usageTokens)&&usageTokens>0)reportedTokens=usageTokens;
@@ -1402,7 +1460,7 @@
       const finalAnswer=responseParts(clean).answer.trim();
       if(!finalAnswer) throw new Error('This model did not produce a final answer. Try again or choose another available model.');
       setMessageContent(pending,clean);
-      history.push({role:'assistant',content:finalAnswer,metadata:pending._nyxMetadata,timing:getTiming(),...(generatedImageId?{imageId:generatedImageId}:{})});
+      history.push({role:'assistant',content:finalAnswer,modelId:pending._modelId,modelName:pending._modelName,metadata:pending._nyxMetadata,timing:getTiming(),...(generatedImageId?{imageId:generatedImageId}:{})});
       saveMessages(history);
       recordUsage(userText,finalAnswer);
       requestSucceeded=true;

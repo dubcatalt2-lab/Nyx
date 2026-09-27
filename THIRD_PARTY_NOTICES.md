@@ -44,3 +44,7 @@ Locally hosted, resized JPEGs; UI names are Nyx labels. Licensed under https://u
 
 ## AI company icons
 SVG icons from Lobe Icons, https://github.com/lobehub/lobe-icons/tree/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-svg/icons. MIT license included in assets/icons/ai-companies/LICENSE. Company marks belong to their respective owners.
+
+## AI author marks
+
+Additional company and model-family SVGs use the same pinned Lobe Icons source and MIT license listed above. Original author avatars and site favicons in `assets/icons/ai-companies/*-author.*` are separate third-party brand marks, not covered by that MIT license. Their download sources and OpenRouter author references are recorded in `assets/icons/ai-companies/author-sources.json`. They are displayed only to identify their respective model authors; ownership remains with the respective owners.

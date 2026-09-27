@@ -1109,8 +1109,42 @@
   function renderModelCompanies(){
     const companies=[...new Map(modelCatalog.map(item=>{const company=modelCompany(item);return [company.key,company]})).values()].sort((a,b)=>a.label.localeCompare(b.label));
     if(!companies.some(company=>company.key===modelCompanyFilter))modelCompanyFilter='';
-    modelCompaniesHost.innerHTML=`<button type="button" data-model-company="" aria-pressed="${!modelCompanyFilter}">All</button>`+companies.map(company=>`<button type="button" data-model-company="${escapeHtml(company.key)}" title="${escapeHtml(company.label)}" aria-label="${escapeHtml(company.label)} models" aria-pressed="${modelCompanyFilter===company.key}">${modelCompanyIcon(company)}</button>`).join('');
+    const button=company=>`<button type="button" data-model-company="${escapeHtml(company.key)}" title="${escapeHtml(company.label)}" aria-label="${escapeHtml(company.label)} models" aria-pressed="${modelCompanyFilter===company.key}">${modelCompanyIcon(company)}</button>`;
+    modelCompaniesHost.innerHTML=[companies.filter((_,i)=>i%2===0),companies.filter((_,i)=>i%2===1)].map((items,i)=>`<div class="ai-company-rail" aria-label="${i?'Right':'Left'} company filters"><div class="ai-company-track">${items.map(button).join('')}</div></div>`).join('');
+    modelCompaniesHost.querySelectorAll('.ai-company-rail').forEach(rail=>{
+      const copy=rail.firstElementChild.cloneNode(true);
+      copy.setAttribute('aria-hidden','true');copy.dataset.loopCopy='';
+      copy.querySelectorAll('button').forEach(button=>button.tabIndex=-1);
+      rail.append(copy);
+      rail.addEventListener('pointerleave',()=>{rail._loopOffset=rail.scrollTop;});
+      rail.addEventListener('focusout',()=>{rail._loopOffset=rail.scrollTop;});
+    });
+    syncCompanyMotion();
   }
+  let companyFrame=0;
+  function syncCompanyMotion(){
+    cancelAnimationFrame(companyFrame);
+    const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const stopped=Boolean(modelCompanyFilter)||reduced;
+    modelMenu.querySelector('[data-model-company=""]').setAttribute('aria-pressed',String(!modelCompanyFilter));
+    modelCompaniesHost.querySelectorAll('[data-loop-copy]').forEach(copy=>copy.hidden=stopped);
+    if(modelMenu.hidden||stopped)return;
+    let previous=0;
+    const tick=time=>{
+      const delta=previous?Math.min(time-previous,50):0;previous=time;
+      modelCompaniesHost.querySelectorAll('.ai-company-rail').forEach(rail=>{
+        const track=rail.firstElementChild;
+        if(track.offsetHeight<=rail.clientHeight){rail.lastElementChild.hidden=true;return;}
+        if(rail.matches(':hover,:focus-within')||document.hidden)return;
+        rail._loopOffset=((rail._loopOffset??rail.scrollTop)+delta*.018)%track.offsetHeight;
+        rail.scrollTop=rail._loopOffset;
+      });
+      companyFrame=requestAnimationFrame(tick);
+    };
+    companyFrame=requestAnimationFrame(tick);
+  }
+  matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',syncCompanyMotion);
+
   function filterModelOptions(){
     const query=(modelSearch.value||'').trim().toLowerCase();
     const visible=modelCatalog.filter(item=>(!modelCompanyFilter||modelCompany(item).key===modelCompanyFilter)&&`${item.label} ${item.id} ${modelCompany(item).label}`.toLowerCase().includes(query));
@@ -1183,6 +1217,7 @@
 
   function closeModelMenu({restoreFocus=false}={}){
     if(modelMenu.hidden) return;
+    cancelAnimationFrame(companyFrame);
     modelMenu.close();
     modelMenu.hidden=true;
     modelPicker.classList.remove('is-open');
@@ -1194,6 +1229,7 @@
     if(modelTrigger.disabled) return;
     modelMenu.hidden=false;
     modelMenu.showModal();
+    syncCompanyMotion();
     modelPicker.classList.add('is-open');
     modelTrigger.setAttribute('aria-expanded','true');
     requestAnimationFrame(()=>{
@@ -1593,12 +1629,15 @@
   document.getElementById('modelMenuClose').addEventListener('click',()=>closeModelMenu({restoreFocus:true}));
   modelMenu.addEventListener('cancel',event=>{event.preventDefault();closeModelMenu({restoreFocus:true});});
   modelSearch.addEventListener('input',filterModelOptions);
-  modelCompaniesHost.addEventListener('click',event=>{
+  modelMenu.addEventListener('click',event=>{
     const button=event.target.closest('[data-model-company]');
     if(!button)return;
     modelCompanyFilter=button.dataset.modelCompany;
-    renderModelCompanies();filterModelOptions();
-    modelCompaniesHost.querySelectorAll('[data-model-company]').forEach(item=>{if(item.dataset.modelCompany===modelCompanyFilter)item.focus();});
+    modelMenu.querySelectorAll('[data-model-company]').forEach(item=>item.setAttribute('aria-pressed',String(item.dataset.modelCompany===modelCompanyFilter)));
+    syncCompanyMotion();filterModelOptions();
+    const selected=[...modelCompaniesHost.querySelectorAll('.ai-company-track:not([data-loop-copy]) button')].find(item=>item.dataset.modelCompany===modelCompanyFilter);
+    if(selected){selected.focus({preventScroll:true});selected.scrollIntoView({block:'nearest'});}
+
   });
   modelMenu.addEventListener('click',event=>{
     const option=event.target.closest('[data-model-id]');

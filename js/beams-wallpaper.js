@@ -336,7 +336,7 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
     return instance;
   }
   function syncVisibility(){
-    if(document.documentElement.dataset.nyxBeamWallpaper==='obsidian'){instance?.stop();if(canvas)canvas.hidden=true;return;}
+    if(document.documentElement.dataset.nyxBeamWallpaper==='obsidian' || document.documentElement.dataset.nyxBeamWallpaper?.startsWith('photo-')){instance?.stop();if(canvas)canvas.hidden=true;return;}
     if(!canvas) return;
     const body=document.body;
     const externalContent=body?.classList.contains('browser-content-active') && !body.classList.contains('nyx-built-in-content-active');

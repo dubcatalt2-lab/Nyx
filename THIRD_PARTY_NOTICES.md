@@ -35,3 +35,9 @@ MIT + Commons Clause License Condition v1.0
 Copyright (c) 2026 David Haz
 
 The Line Waves port is subject to the same permission, Commons Clause restriction, and no-warranty terms stated above.
+
+## Photo wallpapers (Unsplash)
+Locally hosted, resized JPEGs; UI names are Nyx labels. Licensed under https://unsplash.com/license.
+- Leaves: Sander Weeteling ? https://unsplash.com/photos/4LiyQSlYD-4
+- Moonlight: Jeff Nissen ? https://unsplash.com/photos/ZMiXh39Gps4
+- Rain: Christian Ladewig ? https://unsplash.com/photos/ckyhWjWa3kU

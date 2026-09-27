@@ -43,6 +43,17 @@ html[data-nyx-appearance="light"] body.browser-shell :is(#nyxBeamsBg,#nyxLineWav
 html[data-nyx-beam-wallpaper="obsidian"] body:not(.custom-bg-active)::before {
   background:var(--obsidian-bg) url('../assets/backgrounds/obsidian-fabric.svg') bottom right/cover no-repeat;
 }
+html[data-nyx-beam-wallpaper^="photo-leaves-"] { --nyx-photo-wallpaper:url("../assets/backgrounds/leaves.jpg") }
+html[data-nyx-beam-wallpaper^="photo-moonlight-"] { --nyx-photo-wallpaper:url("../assets/backgrounds/moonlight.jpg") }
+html[data-nyx-beam-wallpaper^="photo-rain-"] { --nyx-photo-wallpaper:url("../assets/backgrounds/rain.jpg") }
+html[data-nyx-beam-wallpaper^="photo-"] body:not(.custom-bg-active)::before {background:#000 var(--nyx-photo-wallpaper) center/cover no-repeat;filter:blur(32px) brightness(.55) saturate(.65)}
+html[data-nyx-beam-wallpaper$="-deep"] body:not(.custom-bg-active)::before {filter:blur(44px) brightness(.35) saturate(.5)}
+html[data-nyx-beam-wallpaper$="-mono"] body:not(.custom-bg-active)::before {filter:blur(32px) brightness(.5) grayscale(1)}
+/* Darker photos need slightly less blur to retain their silhouettes. */
+html:is([data-nyx-beam-wallpaper^="photo-leaves-"],[data-nyx-beam-wallpaper^="photo-moonlight-"]) body:not(.custom-bg-active)::before {filter:blur(28px) brightness(.55) saturate(.65)}
+html:is([data-nyx-beam-wallpaper^="photo-leaves-"],[data-nyx-beam-wallpaper^="photo-moonlight-"])[data-nyx-beam-wallpaper$="-deep"] body:not(.custom-bg-active)::before {filter:blur(39px) brightness(.35) saturate(.5)}
+html:is([data-nyx-beam-wallpaper^="photo-leaves-"],[data-nyx-beam-wallpaper^="photo-moonlight-"])[data-nyx-beam-wallpaper$="-mono"] body:not(.custom-bg-active)::before {filter:blur(28px) brightness(.5) grayscale(1)}
+html[data-nyx-appearance="light"][data-nyx-beam-wallpaper^="photo-"] body::before {opacity:.14}
 html[data-nyx-beam-wallpaper="obsidian"] :is(#nyxBeamsBg,#nyxWaveBg,#nyxLineWavesBg,#defaultVantaBg){display:none!important}
 html[data-nyx-beam-wallpaper] #nyxWaveBg {display:none!important}
 body.browser-shell :is(.dock,.weather-restore,#desktop>.desktop-shortcuts){display:none!important}
@@ -201,7 +212,7 @@ html body.browser-shell.browser-shell .browser-shell-settings-panel.browser-shel
 .nyx-color-theme-card.selected .nyx-color-theme-check{display:block}
 .nyx-wallpaper-grid{display:grid;grid-template-columns:repeat(3,minmax(100px,1fr));gap:10px}
 .nyx-wallpaper-card{position:relative;display:grid;gap:9px;padding:8px;text-align:left;border:1px solid var(--obsidian-line);border-radius:8px;background:var(--obsidian-field);color:var(--obsidian-text)}
-.nyx-wallpaper-card canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;border-radius:5px}
+.nyx-wallpaper-card :is(canvas,img){display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;border-radius:5px}
 .nyx-wallpaper-card span{display:grid;gap:4px;font-size:11px}
 .nyx-wallpaper-card small{font-size:10px;color:var(--obsidian-muted)}
 .nyx-wallpaper-check{display:none;position:absolute;right:9px;top:9px}
@@ -237,3 +248,8 @@ html body.browser-shell .nyx-settings-control :is(.nyx-wallpaper-card,.nyx-color
 
 @keyframes nyx-wordmark-arrive{from{opacity:0;transform:translateY(9px) scale(.94);filter:blur(4px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
 @media(prefers-reduced-motion:reduce){html body.browser-shell .nyx-minimal-brand h1{animation:none}}
+
+.nyx-wallpaper-card .nyx-photo-preview.soft{filter:blur(2px) brightness(.65)}
+.nyx-wallpaper-card .nyx-photo-preview.deep{filter:blur(3px) brightness(.4)}
+.nyx-wallpaper-card .nyx-photo-preview.mono{filter:blur(2px) grayscale(1) brightness(.6)}
+.nyx-wallpaper-back{margin-bottom:16px}

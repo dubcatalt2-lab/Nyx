@@ -2317,17 +2317,16 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     dark:'Black Gradient',
     violet:'Violet Glass'
   };
+  const nyxPhotoWallpapers={leaves:'Leaves',moonlight:'Moonlight',rain:'Rain'};
+  const nyxPhotoVariants={soft:'Soft',deep:'Deep',mono:'Mono'};
   function nyxBeamWallpaperPresets(){
-    return window.NyxBeamsWallpaper?.presets || {
-      frost:{label:'Frost',summary:'Soft white light'},
-      arctic:{label:'Arctic',summary:'Cool blue beams'},
-      violet:{label:'Violet',summary:'Muted violet light'},
-      mint:{label:'Mint',summary:'Quiet green light'},
-      obsidian:{label:'Obsidian',summary:'Quiet dark fabric'},
-      rose:{label:'Rose',summary:'Soft rose light'},
-      ember:{label:'Ember',summary:'Warm amber light'},
-      lineWaves:{label:'Waves',summary:'Flowing contour lines'}
-    };
+    const photos={};
+    for(const [family,label] of Object.entries(nyxPhotoWallpapers)){
+      for(const [variant,title] of Object.entries(nyxPhotoVariants)){
+        photos[`photo-${family}-${variant}`]={label:title,summary:label,family,variant};
+      }
+    }
+    return {...(window.NyxBeamsWallpaper?.presets || {}),...photos};
   }
   function currentNyxBeamWallpaper(){
     const presets=nyxBeamWallpaperPresets();
@@ -2383,7 +2382,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function applyNyxThemeBeamWallpaper(theme){
     const cleanTheme=normalizeNyxTheme(theme);
     const wavesActive=currentNyxBeamWallpaper()==='lineWaves';
-    const value=wavesActive ? 'lineWaves' : nyxThemeBeamWallpaper(cleanTheme);
+    const photoActive=currentNyxBeamWallpaper().startsWith('photo-');
+    const value=photoActive ? currentNyxBeamWallpaper() : wavesActive ? 'lineWaves' : nyxThemeBeamWallpaper(cleanTheme);
     store.setText('nyx.beamWallpaper',value);
     store.setText('nyx.beamTheme',cleanTheme);
     if(wavesActive) store.setText('nyx.lineWaves.colorVariant',nyxThemeWavesColor(cleanTheme));
@@ -2396,18 +2396,38 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       card.setAttribute('aria-pressed',String(selected));
     });
   }
-  function nyxBeamWallpaperCardsMarkup(){
-    const wavesActive=currentNyxBeamWallpaper()==='lineWaves';
+  function nyxBeamWallpaperCardsMarkup(family='beams'){
+    const wavesActive=family==='waves';
     const selected=wavesActive ? currentNyxLineWavesOptions().colorVariant : currentNyxBeamWallpaper();
-    return Object.entries(nyxBeamWallpaperPresets()).filter(([value])=>!wavesActive || value!=='lineWaves').map(([value,preset])=>`<button class="nyx-wallpaper-card${selected===value?' selected':''}" data-nyx-beam-wallpaper="${esc(value)}" type="button" aria-pressed="${selected===value}"><canvas width="240" height="135" data-nyx-beam-preview="${esc(value)}" aria-hidden="true"></canvas><span><strong>${esc(preset.label || value)}</strong><small>${esc(wavesActive ? `${preset.label || value} Waves` : (preset.summary || 'Animated beams'))}</small></span><i class="nyx-wallpaper-check" aria-hidden="true">✓</i></button>`).join('');
+    return Object.entries(nyxBeamWallpaperPresets()).filter(([value,preset])=>{
+      if(nyxPhotoWallpapers[family]) return preset.family===family;
+      if(preset.family || value==='lineWaves') return false;
+      return !wavesActive || Object.hasOwn(window.NyxLineWavesWallpaper?.palettes || {},value);
+    }).map(([value,preset])=>`<button class="nyx-wallpaper-card${selected===value?' selected':''}" data-nyx-beam-wallpaper="${esc(value)}" type="button" aria-pressed="${selected===value}">${preset.family ? `<img src="assets/backgrounds/${preset.family}.jpg" class="nyx-photo-preview ${preset.variant}" alt="" loading="lazy">` : `<canvas width="240" height="135" data-nyx-beam-preview="${esc(value)}" aria-hidden="true"></canvas>`}<span><strong>${esc(preset.label)}</strong></span><i class="nyx-wallpaper-check" aria-hidden="true">&#10003;</i></button>`).join('');
+  }
+  function nyxWallpaperFamiliesMarkup(){
+    const selected=currentNyxBeamWallpaper();
+    return `<div class="nyx-wallpaper-grid">${Object.entries({...nyxPhotoWallpapers,waves:'Waves',beams:'Beams'}).map(([family,label])=>{
+      const active=family==='waves' ? selected==='lineWaves' : family==='beams' ? !selected.startsWith('photo-') && selected!=='lineWaves' : selected.startsWith(`photo-${family}-`);
+      return `<button class="nyx-wallpaper-card${active?' selected':''}" data-nyx-wallpaper-family="${family}" type="button" aria-label="${label} styles">${nyxPhotoWallpapers[family] ? `<img src="assets/backgrounds/${family}.jpg" alt="" loading="lazy">` : `<canvas width="240" height="135" data-nyx-beam-preview="${family==='waves'?'lineWaves':'frost'}" aria-hidden="true"></canvas>`}<span><strong>${label}</strong></span><i class="nyx-wallpaper-check" aria-hidden="true">&#10003;</i></button>`;
+    }).join('')}</div>`;
+  }
+  function showNyxWallpaperFamily(root,family=''){
+    root.dataset.wallpaperFamily=family;
+    const back='<button class="settings-action nyx-wallpaper-back" data-nyx-wallpaper-back type="button">? All backgrounds</button>';
+    root.innerHTML=!family ? nyxWallpaperFamiliesMarkup() : back+(family==='waves' ? nyxLineWavesSettingsMarkup() : `<h2>${esc(nyxPhotoWallpapers[family] || 'Beams')}</h2><div class="nyx-wallpaper-grid">${nyxBeamWallpaperCardsMarkup(family)}</div>`);
+    wireNyxBeamWallpaperSettings(root);
   }
   function nyxLineWavesSettingsMarkup(){
     const options=currentNyxLineWavesOptions();
-    return `<h2>Wallpapers</h2><p>Waves is active. It follows your color theme; pick a color below to override it until you change themes again.</p><div class="settings-actions"><button class="settings-action" data-nyx-line-waves-use-beams type="button">Switch to Beams</button></div><div class="nyx-wallpaper-grid">${nyxBeamWallpaperCardsMarkup()}</div><label class="nyx-line-waves-control"><span>Motion speed <output data-nyx-line-waves-speed-output>${options.speed.toFixed(2)}</output></span><input type="range" min="0.04" max="0.55" step="0.01" value="${options.speed}" data-nyx-line-waves-speed aria-label="Waves motion speed"></label><label class="nyx-line-waves-control"><span>Line density <output data-nyx-line-waves-density-output>${options.innerLineCount}</output></span><input type="range" min="16" max="48" step="1" value="${options.innerLineCount}" data-nyx-line-waves-density aria-label="Waves line density"></label><div class="settings-row"><span>Cursor response</span><button class="settings-action ${options.enableMouseInteraction?'on':''}" data-nyx-line-waves-mouse type="button">${options.enableMouseInteraction?'On':'Off'}</button></div>`;
+    return `<h2>Waves</h2><div class="nyx-wallpaper-grid">${nyxBeamWallpaperCardsMarkup('waves')}</div><label class="nyx-line-waves-control"><span>Motion speed <output data-nyx-line-waves-speed-output>${options.speed.toFixed(2)}</output></span><input type="range" min="0.04" max="0.55" step="0.01" value="${options.speed}" data-nyx-line-waves-speed aria-label="Waves motion speed"></label><label class="nyx-line-waves-control"><span>Line density <output data-nyx-line-waves-density-output>${options.innerLineCount}</output></span><input type="range" min="16" max="48" step="1" value="${options.innerLineCount}" data-nyx-line-waves-density aria-label="Waves line density"></label><div class="settings-row"><span>Cursor response</span><button class="settings-action ${options.enableMouseInteraction?'on':''}" data-nyx-line-waves-mouse type="button">${options.enableMouseInteraction?'On':'Off'}</button></div>`;
   }
   function wireNyxBeamWallpaperSettings(root){
     if(!root) return;
-    const wavesActive=currentNyxBeamWallpaper()==='lineWaves';
+    const family=root.dataset.wallpaperFamily || '';
+    const wavesActive=family==='waves';
+    root.querySelectorAll('[data-nyx-wallpaper-family]').forEach(card=>card.addEventListener('click',()=>showNyxWallpaperFamily(root,card.dataset.nyxWallpaperFamily)));
+    root.querySelector('[data-nyx-wallpaper-back]')?.addEventListener('click',()=>showNyxWallpaperFamily(root));
     const syncCards=()=>{
       const current=wavesActive ? currentNyxLineWavesOptions().colorVariant : currentNyxBeamWallpaper();
       root.querySelectorAll('[data-nyx-beam-wallpaper]').forEach(card=>{
@@ -2419,15 +2439,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     root.querySelectorAll('[data-nyx-beam-wallpaper]').forEach(card=>card.addEventListener('click',()=>{
       const value=card.dataset.nyxBeamWallpaper || 'frost';
       if(!nyxBeamWallpaperPresets()[value]) return;
-      if(wavesActive){
-        store.setText('nyx.lineWaves.colorVariant',value);
-        applyNyxBeamWallpaper();
-        syncCards();
-        requestAnimationFrame(()=>root.querySelectorAll('[data-nyx-beam-preview]').forEach(canvas=>window.NyxLineWavesWallpaper?.renderPreview(canvas,canvas.dataset.nyxBeamPreview)));
-        toast(`${nyxBeamWallpaperPresets()[value].label || 'Wave'} Waves color applied`);
-        return;
-      }
-      store.setText('nyx.beamWallpaper',value);
+      if(wavesActive) store.setText('nyx.lineWaves.colorVariant',value);
+      store.setText('nyx.beamWallpaper',wavesActive ? 'lineWaves' : value);
       store.setText('nyx.beamTheme','custom-wallpaper');
       store.setText('nyx.customBg','');
       store.setText('nyx.customBgUrl','');
@@ -2441,9 +2454,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         if(button.classList.contains('settings-action')) button.textContent='Off';
       });
       applyUserSettings();
-      // Changing to or from Line Waves changes the available controls, so rebuild
-      // this settings pane immediately instead of leaving a stale picker on screen.
-      renderBrowserShellSettingsTab();
+      // Keep the open family visible while applying its selected style.
       syncCards();
       toast(`${nyxBeamWallpaperPresets()[value].label || 'Beam'} wallpaper applied`);
     }));
@@ -2468,12 +2479,6 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       event.currentTarget.classList.toggle('on',next);
       event.currentTarget.textContent=next?'On':'Off';
       applyNyxBeamWallpaper();
-    });
-    root.querySelector('[data-nyx-line-waves-use-beams]')?.addEventListener('click',()=>{
-      store.setText('nyx.beamWallpaper','frost');
-      store.setText('nyx.beamTheme','custom-wallpaper');
-      applyUserSettings();
-      renderBrowserShellSettingsTab();
     });
     requestAnimationFrame(()=>root.querySelectorAll('[data-nyx-beam-preview]').forEach(canvas=>{
       const value=canvas.dataset.nyxBeamPreview;
@@ -5273,7 +5278,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         const current=normalizeNyxTheme(select?.value || store.text('nyx.theme','default'));
         const customColor=nyxThemeHex(store.text('nyx.customThemeColor',nyxCustomThemeDefaults.base));
         const themes=[
-          ['default','Default','The original Nyx palette',['#bfffe9','#29413b','#191c20']],
+          ['default','Default','Pure black with neutral glass',['#000000','#151515','#333333']],
           ['midnight','Midnight','Deep blue, calm and focused',['#75b8ff','#243756','#121924']],
           ['ruby','Ruby','Deep reds with crisp highlights',['#fb7185','#5b2231','#201218']],
           ['emerald','Emerald','Rich green, balanced and clear',['#63e6a5','#1d4a36','#101b16']],
@@ -5466,12 +5471,15 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       liteBlock.innerHTML=`<h2>Lite Mode</h2><p>Lightens blur, shadows, and particles without fully disabling animations.</p><div class="settings-row"><span>Lite Mode</span><button class="settings-action ${liteOn?'on':''}" data-switch="nyx.performanceLite" data-performance-lite type="button">${liteOn?'On':'Off'}</button></div>`;
       const backgroundsBlock=document.createElement('section');
       backgroundsBlock.className='settings-block nyx-wallpaper-block';
+      backgroundsBlock.innerHTML='<h2>Wallpapers</h2><p>Choose a background, then explore its styles.</p>';
+      const wallpaperPicker=document.createElement('div');
+      showNyxWallpaperFamily(wallpaperPicker);
+      backgroundsBlock.append(wallpaperPicker);
+      const legacyScene=document.createElement('div');
+      legacyScene.className='settings-row nyx-wallpaper-legacy';
       const threeDOn=store.get('nyx.threeDBackgrounds',false);
-      const lineWavesActive=currentNyxBeamWallpaper()==='lineWaves';
-      backgroundsBlock.innerHTML=lineWavesActive
-        ? nyxLineWavesSettingsMarkup()
-        : `<h2>Wallpapers</h2><p>Choose the animated light behind Nyx. Each wallpaper keeps the interface readable through blurred glass.</p><div class="nyx-wallpaper-grid">${nyxBeamWallpaperCardsMarkup()}</div><div class="settings-row nyx-wallpaper-legacy"><span>Legacy 3D scene</span><button class="settings-action ${threeDOn?'on':''}" data-switch="nyx.threeDBackgrounds" type="button" aria-checked="${threeDOn}">${threeDOn?'On':'Off'}</button></div>`;
-      wireNyxBeamWallpaperSettings(backgroundsBlock);
+      legacyScene.innerHTML=`<span>Legacy 3D scene</span><button class="settings-action ${threeDOn?'on':''}" data-switch="nyx.threeDBackgrounds" type="button" aria-checked="${threeDOn}">${threeDOn?'On':'Off'}</button>`;
+      backgroundsBlock.append(legacyScene);
       const customThemeBlock=document.createElement('section');
       customThemeBlock.className='settings-block nyx-custom-theme-maker';
       const customColor=nyxThemeHex(store.text('nyx.customThemeColor',nyxCustomThemeDefaults.base));

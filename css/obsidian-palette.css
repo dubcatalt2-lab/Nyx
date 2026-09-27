@@ -1,6 +1,6 @@
 @font-face{font-family:NyxRounded;src:url("../assets/fonts/fredoka/Fredoka.ttf") format("truetype");font-weight:300 700;font-style:normal;font-display:swap}
 /* Shared quiet tints for the shell and embedded apps. */
-:root,[data-nyx-preview-theme] {--nyx-tint:#718478}
+:root,[data-nyx-preview-theme] {--nyx-tint:#000000}
 html[data-nyx-theme="midnight"],[data-nyx-preview-theme="midnight"] {--nyx-tint:#8194b0}
 html[data-nyx-theme="ruby"],[data-nyx-preview-theme="ruby"] {--nyx-tint:#ad777b}
 html[data-nyx-theme="emerald"],[data-nyx-preview-theme="emerald"] {--nyx-tint:#579c85}
@@ -15,6 +15,12 @@ html[data-nyx-theme="custom"],[data-nyx-preview-theme="custom"] {--nyx-tint:var(
   --nyx-surface-text:color-mix(in srgb,var(--nyx-tint) 9%,#f1f3f1);
   --nyx-surface-muted:color-mix(in srgb,var(--nyx-tint) 30%,#a1a6a2);
   --nyx-surface-line:color-mix(in srgb,var(--nyx-tint) 22%,#ffffff10);
+}
+html:not([data-nyx-theme]),html[data-nyx-theme="default"],[data-nyx-preview-theme="default"] {
+  --nyx-surface-bg:#000000;
+  --nyx-surface-panel:#0b0b0bee;
+  --nyx-surface-field:#101010c7;
+  --nyx-surface-raised:#191919;
 }
 html[data-nyx-appearance="light"],html[data-nyx-appearance="light"] [data-nyx-preview-theme] {
   --nyx-surface-bg:color-mix(in srgb,var(--nyx-tint) 12%,#f1f3f1);

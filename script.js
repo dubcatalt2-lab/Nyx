@@ -14139,7 +14139,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     const fontSelect=$('setupFont');
     const theme=themeSelect?.value || 'default';
     const stage=setup.querySelector('[data-setup-final-stage]');
-    if(stage) stage.dataset.theme=theme;
+    if(stage) stage.dataset.nyxPreviewTheme=normalizeNyxTheme(theme);
     const values=[
       ['[data-setup-preview-theme]',setupOptionText(themeSelect)],
       ['[data-setup-preview-effect]',setupOptionText(effectSelect)],

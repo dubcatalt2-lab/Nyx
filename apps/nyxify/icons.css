@@ -274,7 +274,6 @@
   mask-size: 100% 100%;
 }
 
-
 .material-symbols--settings-rounded {
   display: inline-block;
   width: 1em;
@@ -331,7 +330,6 @@
   mask-size: 100% 100%;
 }
 
-/* music player */
 .material-symbols--skip-next-rounded {
   display: inline-block;
   width: 1em;
@@ -472,7 +470,6 @@
   mask-size: 100% 100%;
 }
 
-
 .material-symbols--folder-rounded {
   display: inline-block;
   width: 1.1em;
@@ -528,9 +525,6 @@
   mask-size: 100% 100%;
 }
 
-
-/* apps */
-
 .mingcute--ai-fill {
   display: inline-block;
   width: 1em;
@@ -572,7 +566,6 @@
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
 }
-
 
 .line-md--arrow-left {
   display: inline-block;
@@ -769,7 +762,6 @@
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
 }
-
 
 .ic-heart {
   display: inline-block;

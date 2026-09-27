@@ -80,7 +80,7 @@ try {
   assert.equal((await request('/api/developer/owner/account/member','owner',{...settings,addTokens:-1},null,{cookie})).status,400);
   routeDb.records.set('nyxUserAdministration/member',{subscriptionStatus:'free',aiMonthlyTokenLimit:60000});
   const downgraded=await (await request('/api/developer/me','member')).json();assert.equal(downgraded.balance,0,"Downgrade does not refill migrated usage");assert.deepEqual(downgraded.monthlyModelLimits,{luna:0,gemini:0});
-  routeDb.records.set(usageId,{month:'2000-01',tokens:26000}); // Independent API billing tests after an expired usage period.
+  routeDb.records.set(usageId,{month:'2000-01',tokens:26000});
   const prompt={messages:[{role:'user',content:'Hi'}]};
   const ok=await request('/api/v1/ai',issued.key,prompt);assert.equal(ok.status,200);assert.equal(calls,1);
   assert.equal((await (await request('/api/developer/me','member')).json()).balance,1090);

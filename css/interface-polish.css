@@ -1,4 +1,3 @@
-/* //performance-lite-final */
 html body.performance-lite{
   --glass-blur:10px!important;
   --glass-saturate:1.08!important;
@@ -6,12 +5,12 @@ html body.performance-lite{
 html body.performance-lite #visualEffects i:nth-child(n+17){
   display:none!important;
 }
-/* //fresh-electric-aqua-border-final */
+
 html body.theme-fresh{
   --nyx-purple-edge:#00f5d4!important;
   --fresh-line:rgba(0,245,212,.68)!important;
 }
-/* //weather-compact-modern-final */
+
 html body.browser-shell #weatherRestore,
 html body.browser-shell #weatherRestore.show{
   display:none!important;
@@ -104,7 +103,7 @@ html body.browser-shell.theme-fresh .weather-forecast-row{
   border-color:rgba(0,245,212,.42)!important;
 }
 html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!important}
-/* //browser-chrome-slim-galaxy-final */
+
 body.browser-shell{
   --chrome-black:#04050a;
   --chrome-black-2:#070812;
@@ -140,13 +139,13 @@ body.browser-shell .browser-mode-menu button{
 body.browser-shell .browser-mode-menu hr{
   margin:2px 3px!important;
 }
-/* //browser-chrome-icon-fit-final */
+
 html body.browser-shell .browser-mode-weather > .weather-cloud-icon{
   width:14px!important;
   height:14px!important;
   margin:0!important;
 }
-/* //nyx-blank-page-final */
+
 body.browser-shell #centerClock{
   display:none!important;
 }
@@ -166,8 +165,7 @@ body.browser-shell .browser-blank-logo{
 body.browser-shell .browser-blank-center [data-home-shortcuts]{
   justify-content:center!important;
 }
-/* //home-shortcuts-row-repair */
-/* //blank-tab-open-animation */
+
 body.browser-shell .browser-window.browser-blank-page .browser-blank-logo{
   animation:blankLogoRise .72s cubic-bezier(.18,.82,.22,1) both!important;
 }
@@ -197,8 +195,7 @@ body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .qui
   68%{opacity:1;transform:translate(-3px,3px) scale(1.015);filter:blur(0)}
   100%{opacity:1;transform:translate(0,0) scale(1);filter:blur(0)}
 }
-/* //top-bar-no-blur-final */
-/* //outfit-font-everywhere-final */
+
 html,
 body,
 body ::placeholder,
@@ -206,9 +203,7 @@ body *::before,
 body *::after{
   font-family:var(--nyx-font,Inter),Arial,sans-serif!important;
 }
-/* //browser-top-clock-visible-final */
-/* //normal-text-and-darker-white-theme-final */
-/* //browser-top-bar-comfort-size-final */
+
 html body.browser-shell .fresh-real-icon{
   font-size:18px!important;
 }
@@ -231,7 +226,7 @@ body.theme-fresh{
   --fresh-blue:#176da8!important;
   --fresh-blue-deep:#11557f!important;
 }
-/* //final-bar-theme-and-loader-polish */
+
 .welcome-progress{display:none!important}
 .post-cover-loader{
   position:fixed;
@@ -329,7 +324,7 @@ html body.theme-fresh .post-cover-loader-track{
   box-shadow:0 0 0 1px rgba(84,235,217,.42),0 8px 22px rgba(11,114,128,.14)!important;
 }
 html body.theme-fresh .post-cover-loader-fill{background:#54ebd9!important}
-/* //small-bottom-shortcut-bar-final */
+
 html body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid,
 html body.browser-shell [data-home-shortcuts]{
   position:absolute!important;
@@ -415,7 +410,7 @@ html body.browser-shell [data-home-shortcuts] > .quick-tile.home-shortcut:hover,
 html body.browser-shell [data-home-shortcuts] > .quick-tile.home-shortcut-add:hover{
   transform:translateY(-3px) scale(1.06)!important;
 }
-/* //welcome-loader-and-shortcut-layer-fix */
+
 .welcome-card .welcome-progress{
   display:block!important;
   position:relative!important;
@@ -456,7 +451,7 @@ html body.browser-shell .home-shortcut-glyph{
 html body.browser-shell .home-shortcut-menu{
   z-index:80!important;
 }
-/* //top-menu-and-shortcut-visibility-final */
+
 html body.browser-shell.menu-open .browser-mode-menu,
 html body.browser-shell .browser-mode-menu{
   position:fixed!important;
@@ -466,7 +461,7 @@ html body.browser-shell .browser-mode-menu{
   overflow:visible!important;
   pointer-events:auto!important;
 }
-/* //browser-top-bar-comfort-size-true-final */
+
 html body.browser-shell .window.maximized{
   top:68px!important;
   height:calc(100dvh - 68px)!important;
@@ -493,7 +488,7 @@ html body.browser-shell .home-shortcut-glyph{
   max-height:27px!important;
   transform:none!important;
 }
-/* //theme-tint-original-shortcut-images */
+
 html body.browser-shell{
   --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(97%) sepia(5%) saturate(851%) hue-rotate(181deg) brightness(103%) contrast(98%);
 }
@@ -509,7 +504,7 @@ html body.browser-shell.theme-ruby{
 html body.browser-shell.theme-fresh{
   --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(78%) sepia(96%) saturate(1138%) hue-rotate(106deg) brightness(101%) contrast(101%);
 }
-/* //final-shortcut-theme-color-stability */
+
 html body.browser-shell{
   --nyx-final-shortcut-icon:#f8fafc;
 }
@@ -525,7 +520,7 @@ html body.browser-shell.theme-ruby{
 html body.browser-shell.theme-fresh{
   --nyx-final-shortcut-icon:#00f5d4;
 }
-/* //slow-hover-and-weather-final */
+
 html body.browser-shell .weather-panel{
   transform-origin:top right!important;
   transition:
@@ -567,12 +562,12 @@ html body.browser-shell .weather-restore.show{
   0%{opacity:0;transform:translateY(-10px) scale(.9)}
   100%{opacity:1;transform:translateY(0) scale(1)}
 }
-/* //shortcut-dots-and-new-tab-cleanup-final */
+
 html body.browser-shell .browser-mode-menu > [data-browser-shell-new-tab]{
   display:none!important;
   pointer-events:none!important;
 }
-/* //horizontal-dots-slower-hover-menu-border-final */
+
 html body.browser-shell .browser-mode-menu{
   border:1px solid var(--accent,#7c3aed)!important;
   box-shadow:0 16px 38px rgba(0,0,0,.38)!important;
@@ -590,7 +585,7 @@ html body.browser-shell .browser-mode-menu hr{
   height:1px!important;
   margin:0!important;
   border:0!important;
-  background:color-mix(in srgb,var(--accent,#7c3aed) 55%,transparent)!important;
+  background:var(--nyx-surface-line,rgba(255,255,255,.1))!important;
 }
 html body.browser-shell.menu-open .browser-mode-menu,
 html body.browser-shell .browser-mode-menu{
@@ -608,7 +603,7 @@ html body.browser-shell .browser-mode-menu > button:focus-visible{
   border-radius:0!important;
   background-clip:padding-box!important;
 }
-/* //post-cover-fullscreen-loader-final */
+
 body.post-cover-loading .post-cover-loader{
   left:0!important;
   top:0!important;
@@ -670,7 +665,7 @@ body.theme-fresh.post-cover-loading .post-cover-loader{
   color:#0b7280!important;
   -webkit-text-fill-color:#0b7280!important;
 }
-/* //panic-effects-dropdown-polish-final */
+
 html body.browser-shell .browser-mode-menu,
 html body.browser-shell .browser-mode-menu *,
 html body.browser-shell .browser-mode-menu > button{
@@ -687,13 +682,12 @@ html body.browser-shell.menu-open .browser-mode-menu > button{
   font-weight:400!important;
   font-style:normal!important;
 }
-/* //final-debug-polish */
+
 html body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):not(.theme-fresh):not(.theme-midnight){
   --theme-strong:#c7a7ff!important;
   --accent:#8b5cf6!important;
 }
-/* //blank-search-and-shortcut-hover-repair */
-/* //original-shortcut-recolor-final */
+
 html body.browser-shell{
   --nyx-final-shortcut-icon:#c7a7ff!important;
   --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(68%) sepia(57%) saturate(1206%) hue-rotate(218deg) brightness(101%) contrast(102%)!important;
@@ -714,8 +708,7 @@ html body.browser-shell.theme-fresh{
   --nyx-final-shortcut-icon:#0f8fa3!important;
   --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(47%) sepia(97%) saturate(974%) hue-rotate(146deg) brightness(91%) contrast(92%)!important;
 }
-/* //exact-original-shortcut-theme-recolor */
-/* //tab-and-blank-shortcut-animation-final */
+
 @keyframes nyxShellTabOpenSmooth{
   0%{opacity:0;max-width:0;min-width:0;width:0;padding-left:0;padding-right:0;margin-right:0;transform:translateX(-18px) translateY(4px) scale(.9);filter:blur(8px)}
   56%{opacity:1;max-width:160px;min-width:78px;transform:translateX(3px) translateY(-1px) scale(1.025);filter:blur(0)}
@@ -725,10 +718,7 @@ html body.browser-shell.theme-fresh{
   0%{opacity:1;max-width:160px;min-width:78px;transform:translateX(0) translateY(0) scale(1);filter:blur(0)}
   100%{opacity:0;max-width:0;min-width:0;width:0;padding-left:0;padding-right:0;margin-left:-6px;margin-right:0;transform:translateX(-18px) translateY(-5px) scale(.88);filter:blur(5px)}
 }
-/* //extra-slow-shortcut-icon-hover-final */
-/* //extra-slower-shortcut-arrow-final */
-/* //shortcut-dots-hover-stability-final */
-/* //hidden-dropdown-click-guard-final */
+
 html body.browser-shell .home-shortcut:not(.menu-open) .home-shortcut-menu,
 html body.browser-shell .browser-bookmark-panel[hidden],
 html body.browser-shell:not(.menu-open) .browser-mode-menu{
@@ -737,9 +727,6 @@ html body.browser-shell:not(.menu-open) .browser-mode-menu{
 /* Keep shortcut feedback quick. Blur/filter changes are intentionally not
    interpolated because they trigger an expensive repaint on every frame. */
 
-/* Final motion cap. Several legacy shortcut experiments used 2.35–6 second
-   hover transitions; keep their visual states but make their feedback direct. */
-/* //final-top-bar-menu-offset-debug-fix */
 html body.browser-shell #browserModeMenu,
 html body.browser-shell.menu-open #browserModeMenu{
   top:68px!important;
@@ -747,7 +734,7 @@ html body.browser-shell.menu-open #browserModeMenu{
   z-index:50000!important;
 }
 html body,html body *:not(.fresh-real-icon):not(.weather-cloud-icon){font-family:var(--nyx-font)!important}
-/* //browser-top-bar-size-and-color-unification-final */
+
 html body.browser-shell .window.maximized{
   top:84px!important;
   height:calc(100dvh - 84px)!important;

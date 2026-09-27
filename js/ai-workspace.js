@@ -895,7 +895,7 @@
     render();
     input.value='';
     autoGrow();
-    // Conversation navigation keeps the desktop history panel open.
+
     input.focus();
   }
 
@@ -916,7 +916,7 @@
     }
     renderThreadList();
     render();
-    // Conversation navigation keeps the desktop history panel open.
+
     input.focus();
   }
 
@@ -1029,11 +1029,44 @@
     return modelCatalog.find(item=>item.id===id)?.label||id;
   }
 
+  const modelCompanies={
+    openai:['OpenAI','openai'],anthropic:['Anthropic','anthropic'],google:['Google','gemini'],
+    deepseek:['DeepSeek','deepseek'],qwen:['Qwen','qwen'],'x-ai':['xAI','xai'],xai:['xAI','xai'],
+    mistralai:['Mistral','mistral'],moonshotai:['Moonshot','moonshot'],'z-ai':['Z.ai','zai'],
+    inception:['Inception','inception'],nvidia:['NVIDIA','nvidia'],'meta-llama':['Meta','meta'],
+    cohere:['Cohere','cohere'],minimax:['MiniMax','minimax'],openrouter:['OpenRouter','openrouter'],
+    xiaomi:['Xiaomi','xiaomimimo'],amazon:['Amazon','aws'],microsoft:['Microsoft','microsoft'],
+    perplexity:['Perplexity','perplexity'],stepfun:['StepFun','stepfun'],baidu:['Baidu','baidu'],
+    bytedance:['ByteDance','bytedance'],arcee:['Arcee','arcee'],ai21:['AI21','ai21']
+  };
+  let modelCompanyFilter='';
+  const modelSearch=document.getElementById('modelSearch');
+  const modelCompaniesHost=document.getElementById('modelCompanies');
+  function modelCompany(item){
+    const key=item.id.split('/')[0].toLowerCase();
+    const known=modelCompanies[key];
+    return {key:known?.[1]||key,label:known?.[0]||item.company||key||'Other',icon:known?.[1]||''};
+  }
+  function modelCompanyIcon(company){
+    return company.icon ? `<span class="ai-company-logo" style="--company-logo:url('/assets/icons/ai-companies/${company.icon}.svg')" aria-hidden="true"></span>` : `<span class="ai-company-initial" aria-hidden="true">${escapeHtml(company.label.slice(0,2).toUpperCase())}</span>`;
+  }
+  function renderModelCompanies(){
+    const companies=[...new Map(modelCatalog.map(item=>{const company=modelCompany(item);return [company.key,company]})).values()].sort((a,b)=>a.label.localeCompare(b.label));
+    if(!companies.some(company=>company.key===modelCompanyFilter))modelCompanyFilter='';
+    modelCompaniesHost.innerHTML=`<button type="button" data-model-company="" aria-pressed="${!modelCompanyFilter}">All</button>`+companies.map(company=>`<button type="button" data-model-company="${escapeHtml(company.key)}" title="${escapeHtml(company.label)}" aria-label="${escapeHtml(company.label)} models" aria-pressed="${modelCompanyFilter===company.key}">${modelCompanyIcon(company)}</button>`).join('');
+  }
+  function filterModelOptions(){
+    const query=(modelSearch.value||'').trim().toLowerCase();
+    const visible=modelCatalog.filter(item=>(!modelCompanyFilter||modelCompany(item).key===modelCompanyFilter)&&`${item.label} ${item.id} ${modelCompany(item).label}`.toLowerCase().includes(query));
+    modelOptionsHost.innerHTML=visible.length ? modelMenuOptions(visible,model.value) : '<p class="ai-model-empty" role="status">No matching models.</p>';
+    modelOptionsHost.scrollTop=0;
+    const count=modelMenu.querySelector('[data-model-count]');
+    if(count)count.textContent=query||modelCompanyFilter ? `${visible.length} of ${modelCatalog.length}` : `${modelCatalog.length} available`;
+  }
   function groupedModels(models){
     const priority=['openai/gpt-6-astra','anthropic/claude-fable-5.1','openai/gpt-6-sol','openai/gpt-5.6-sol-pro','openai/gpt-6-luna-pro','openai/gpt-6-luna','openai/gpt-5.6-luna'];
-    const companies={openai:'OpenAI',google:'Google',anthropic:'Anthropic',deepseek:'DeepSeek',qwen:'Qwen',inception:'Inception',nvidia:'NVIDIA',openrouter:'OpenRouter'};
     const free=item=>item.free||item.id.endsWith(':free')||item.id==='openrouter/free';
-    const company=item=>companies[item.id.split('/')[0]]||item.company||item.id.split('/')[0]||'Other models';
+    const company=item=>modelCompany(item).label;
     const rank=item=>{const index=priority.indexOf(item.id);return index<0?priority.length:index;};
     const ordered=[...models].sort((a,b)=>Number(free(a))-Number(free(b))
       ||Number(company(b)==='OpenAI')-Number(company(a)==='OpenAI')
@@ -1060,10 +1093,10 @@
       const groupId=`modelGroup${groupIndex}`;
       return `<section class="ai-model-group" role="group" aria-labelledby="${groupId}">
         <p class="ai-model-group-label" id="${groupId}">${escapeHtml(company)}</p>
-        ${items.map(item=>`<button class="ai-model-option" type="button" role="option" data-model-id="${escapeHtml(item.id)}" aria-selected="${item.id===selected?'true':'false'}">
-          <span class="ai-model-option-label">${escapeHtml(item.label)} · ${modelCapabilities(item)}</span>
+        <div class="ai-model-group-grid">${items.map(item=>`<button class="ai-model-option" type="button" role="option" data-model-id="${escapeHtml(item.id)}" aria-selected="${item.id===selected?'true':'false'}">
+          ${modelCompanyIcon(modelCompany(item))}<span class="ai-model-option-label"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(modelCompany(item).label)} &middot; ${modelCapabilities(item)}</small></span>
           <span class="ai-model-option-check" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="m5 10 3 3 7-7"/></svg></span>
-        </button>`).join('')}
+        </button>`).join('')}</div>
       </section>`;
     }).join('');
   }
@@ -1083,9 +1116,8 @@
   function renderModelOptions(models,selected){
     model.innerHTML=modelOptions(models);
     model.value=selected;
-    modelOptionsHost.innerHTML=modelMenuOptions(models,selected);
-    const count=modelMenu.querySelector('[data-model-count]');
-    if(count) count.textContent=`${models.length} available`;
+    renderModelCompanies();
+    filterModelOptions();
     syncModelControl();
   }
 
@@ -1095,6 +1127,7 @@
 
   function closeModelMenu({restoreFocus=false}={}){
     if(modelMenu.hidden) return;
+    modelMenu.close();
     modelMenu.hidden=true;
     modelPicker.classList.remove('is-open');
     modelTrigger.setAttribute('aria-expanded','false');
@@ -1104,14 +1137,15 @@
   function openModelMenu(direction=0){
     if(modelTrigger.disabled) return;
     modelMenu.hidden=false;
+    modelMenu.showModal();
     modelPicker.classList.add('is-open');
     modelTrigger.setAttribute('aria-expanded','true');
     requestAnimationFrame(()=>{
       const options=modelOptionElements();
       const selectedIndex=Math.max(0,options.findIndex(option=>option.getAttribute('aria-selected')==='true'));
       const index=direction<0?options.length-1:(direction>0?0:selectedIndex);
-      options[index]?.focus({preventScroll:true});
-      options[index]?.scrollIntoView({block:'nearest'});
+      if(direction){options[index]?.focus({preventScroll:true});options[index]?.scrollIntoView({block:'nearest'});}
+      else modelSearch.focus();
     });
   }
 
@@ -1498,16 +1532,27 @@
       closeModelMenu();
     }
   });
+  document.getElementById('modelMenuClose').addEventListener('click',()=>closeModelMenu({restoreFocus:true}));
+  modelMenu.addEventListener('cancel',event=>{event.preventDefault();closeModelMenu({restoreFocus:true});});
+  modelSearch.addEventListener('input',filterModelOptions);
+  modelCompaniesHost.addEventListener('click',event=>{
+    const button=event.target.closest('[data-model-company]');
+    if(!button)return;
+    modelCompanyFilter=button.dataset.modelCompany;
+    renderModelCompanies();filterModelOptions();
+    modelCompaniesHost.querySelectorAll('[data-model-company]').forEach(item=>{if(item.dataset.modelCompany===modelCompanyFilter)item.focus();});
+  });
   modelMenu.addEventListener('click',event=>{
     const option=event.target.closest('[data-model-id]');
     if(option) selectModel(option.dataset.modelId||'');
   });
   modelMenu.addEventListener('keydown',event=>{
     const option=event.target.closest('[data-model-id]');
+    if(!option&&event.key!=='ArrowDown'&&event.key!=='Escape')return;
     const options=modelOptionElements();
     const index=Math.max(0,options.indexOf(option));
     let target=-1;
-    if(event.key==='ArrowDown') target=Math.min(options.length-1,index+1);
+    if(event.key==='ArrowDown') target=option?Math.min(options.length-1,index+1):0;
     else if(event.key==='ArrowUp') target=Math.max(0,index-1);
     else if(event.key==='Home') target=0;
     else if(event.key==='End') target=options.length-1;
@@ -1517,10 +1562,8 @@
       return;
     }else if(event.key==='Escape'){
       event.preventDefault();
+      event.stopPropagation();
       closeModelMenu({restoreFocus:true});
-      return;
-    }else if(event.key==='Tab'){
-      closeModelMenu();
       return;
     }
     if(target>=0){
@@ -1530,7 +1573,7 @@
     }
   });
   document.addEventListener('pointerdown',event=>{
-    if(!modelMenu.hidden&&!modelPicker.contains(event.target)) closeModelMenu();
+    if(!modelMenu.hidden&&event.target===modelMenu){const rect=modelMenu.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)closeModelMenu({restoreFocus:true});}
   });
   model.addEventListener('change',()=>{
     localStorage.setItem(MODEL_KEY,model.value||DEFAULT_MODEL);

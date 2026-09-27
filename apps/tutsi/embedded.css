@@ -508,7 +508,6 @@ html[data-tutsi-app="chat"] .chat-app .message-text a {
   color: var(--accent) !important;
 }
 
-/* Shared Tutsi controls for the built-in tools; media/content canvases retain their own behavior. */
 html[data-tutsi-app] body {
   --nyx-app-canvas: var(--bg);
   --nyx-app-base: var(--bg);
@@ -612,7 +611,7 @@ html[data-tutsi-app="movies"] :is(.movie-header, .catalog-toolbar) {
 html[data-tutsi-app="movies"] .movie-brand {
   font-size: 24px;
 }
-/* Poster-only motion keeps the card and its title steady. */
+
 html[data-tutsi-app="movies"] .movie-card .poster img {
   transition: transform 360ms cubic-bezier(.22,.61,.36,1), filter 360ms ease;
 }
@@ -655,7 +654,7 @@ html[data-tutsi-app]
 }
 
 html[data-tutsi-app="movies"] .movie-header .home-link {width:auto!important;min-width:42px;padding-inline:12px;flex-shrink:0;}
-/* Keep playback numbers readable and aligned with the transport buttons. */
+
 html:root[data-tutsi-app="youtube"] body [data-watch-time],
 html:root[data-tutsi-app="youtube"] body .duration {
   font-family: Arial, Helvetica, sans-serif !important;
@@ -687,7 +686,6 @@ html:root[data-tutsi-app="youtube"] body .duration { font-size: 12px; }
 
 html[data-tutsi-app="games"] .performance-button {line-height:1.2;}
 
-/* Movies uses the same palette with a quieter header and one search field. */
 html[data-tutsi-app="movies"] body>main{max-width:1500px;padding:0 clamp(16px,3vw,40px) 32px;background:var(--bg)!important}
 html[data-tutsi-app="movies"] .movie-header{height:72px;background:transparent!important;padding:12px 0;border-bottom:1px solid var(--border)}
 html[data-tutsi-app="movies"] .movie-header .home-link{display:none!important}

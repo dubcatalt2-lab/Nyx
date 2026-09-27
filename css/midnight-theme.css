@@ -1,4 +1,3 @@
-/* Midnight borrows Shadow's focused browser-chrome language while remaining a Nyx theme. */
 html body.theme-midnight{
   --accent:#60a5fa!important;
   --theme-a:#3b82f6!important;
@@ -7,13 +6,12 @@ html body.theme-midnight{
   color:#e0f2fe!important;
 }
 html body.browser-shell.theme-midnight .browser-mode-menu button:hover{background:#10244e!important;color:#eff6ff!important}
-/* Shadow-inspired chrome: restrained idle surfaces with a clearly filled active tab. */
+
 html body.browser-shell.theme-midnight .window.maximized{top:94px!important;height:calc(100dvh - 94px)!important}
 html body.browser-shell.theme-midnight #browserModeMenu,
 html body.browser-shell.theme-midnight.menu-open #browserModeMenu,
 html body.browser-shell.theme-midnight .browser-mode-menu{top:94px!important}
-/* Final Shadow geometry: stable rounded rectangles, never circles or scaled crops. */
-/* Exact Shadow palette and vector controls. */
+
 html body.browser-shell.theme-midnight .window.maximized{top:96px!important;height:calc(100dvh - 96px)!important}
 html body.browser-shell.theme-midnight #browserModeMenu,
   html body.browser-shell.theme-midnight.menu-open #browserModeMenu,
@@ -33,7 +31,7 @@ html body.browser-shell.theme-midnight #browserModeMenu,
   62%{opacity:1;transform:translateY(-2px);scale:1.04}
   100%{opacity:1;transform:translateY(0);scale:1}
 }
-/* Shadow-matched Midnight sizing at the displayed 80% reference scale. */
+
 html body.browser-shell.theme-midnight .window.maximized{
     top:96px!important;
     height:calc(100dvh - 96px)!important;
@@ -47,7 +45,7 @@ html body.browser-shell.theme-midnight{
   --nyx-final-shortcut-icon:#60a5fa!important;
   --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(65%) sepia(60%) saturate(946%) hue-rotate(184deg) brightness(101%) contrast(96%)!important;
 }
-/* Shared Shadow-style chrome geometry with a distinct palette for every theme. */
+
 html body.browser-shell{
   --nyx-final-shortcut-icon:#a78bfa!important;
   --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(65%) sepia(45%) saturate(2185%) hue-rotate(218deg) brightness(102%) contrast(96%)!important;
@@ -67,13 +65,12 @@ html body.browser-shell.theme-sakura{
 html body.browser-shell.theme-fresh{
   --nyx-final-shortcut-icon:#0f8fa3!important;
 }
-/* Keep the final Midnight surfaces in one blue family. Earlier theme layers used
-   cyan for the page edge and purple for the home controls. */
+
 html body.browser-shell.theme-midnight .window.browser-window.maximized,
 html body.browser-shell.theme-midnight .browser-window.maximized.browser-blank{
   border-color:rgba(59,130,246,.46)!important;
 }
-/* Keep Shadow-matched chrome dimensions and motion consistent in every theme. */
+
 html body.browser-shell .window.maximized{
     top:96px!important;
     height:calc(100dvh - 96px)!important;
@@ -81,11 +78,7 @@ html body.browser-shell .window.maximized{
 html body.browser-shell #browserModeMenu,
   html body.browser-shell.menu-open #browserModeMenu,
   html body.browser-shell .browser-mode-menu{top:96px!important}
-/* Settings remain fully reachable while the scroll track stays visually hidden. */
-/* Give every top-level setting a clearly separate, theme-matched box. */
-/* Shadow-style address box: defined edge at rest, brighter edge on focus. */
 
-/* Compact, theme-independent settings motion and controls. */
 @keyframes nyxSettingsReveal{
   from{opacity:0;transform:translateY(12px) scale(.985)}
   to{opacity:1;transform:translateY(0) scale(1)}
@@ -96,7 +89,7 @@ html body.browser-shell #browserModeMenu,
 }
 @media(prefers-reduced-motion:reduce){
 }
-/* Only the home-shortcut hover response is slightly quicker. */
+
 /* One launch sequence for browser chrome and home shortcuts. Apps-page tiles keep
    their separate appTileOpenRise animation inside the Apps iframe. */
 @keyframes nyxStartupRise{
@@ -107,7 +100,7 @@ html body.browser-shell #browserModeMenu,
 html body.nyx-startup-reveal.browser-shell iframe.view.tab-opening{
   animation:none!important;
 }
-/* Every color theme shares Midnight's animated light trails. */
+
 html:not([data-nyx-beam-wallpaper]) body:not(.three-d-backgrounds):not(.custom-bg-active):not(.browser-content-active) .nyx-wave-bg{
   display:block!important;
   opacity:1!important;
@@ -115,7 +108,6 @@ html:not([data-nyx-beam-wallpaper]) body:not(.three-d-backgrounds):not(.custom-b
 }
 html body.theme-midnight .nyx-wave-bg{filter:none!important}
 
-/* Keep both browser navigation arrow sets synchronized with the active theme. */
 html body{--nyx-nav-arrow:#60a5fa;--nyx-nav-arrow-hover:#bfdbfe}
 html body.theme-midnight{--nyx-nav-arrow:#60a5fa;--nyx-nav-arrow-hover:#bfdbfe}
 html body.theme-ruby{--nyx-nav-arrow:#fb7185;--nyx-nav-arrow-hover:#fecdd3}
@@ -130,7 +122,6 @@ html body.three-d-backgrounds .nyx-wave-bg,
 html body.browser-content-active .nyx-wave-bg,
 html body.custom-bg-active .nyx-wave-bg{display:none!important}
 
-/* Settings cards keep their glass depth without moving or zooming on hover. */
 html body.browser-shell .settings-window .settings-card{
   min-height:0!important;
   padding:16px!important;
@@ -204,7 +195,6 @@ html body.browser-shell .settings-window .settings-card .settings-actions{
 
 /* Final navigation paint: these selectors intentionally outrank legacy icon rules. */
 
-/* Pointer-position reload rotation. */
 html body .browser-tools.browser-tools button.tool-btn[data-reload]::before{
   transform:rotate(var(--nyx-reload-turn,0deg)) scale(.96)!important;
   transform-origin:center!important;
@@ -214,5 +204,3 @@ html body .browser-tools.browser-tools button.tool-btn[data-reload]::before{
 html body .browser-tools.browser-tools button.tool-btn[data-reload]:hover::before{
   transform:rotate(var(--nyx-reload-turn,0deg)) scale(1.055)!important;
 }
-
-/* Draw the Add App plus from centered bars instead of a font baseline glyph. */

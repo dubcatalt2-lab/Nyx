@@ -159,7 +159,7 @@ try {
     const index=await localIndex(kind);assert.equal(index.fragmented,true);assert.ok(index.segments.length>=19);
   }
   backend=createTubeBackend(options);
-  // Recreate routes after restarting the backend with adaptive fixtures.
+
   server.closeAllConnections();await new Promise(r=>server.close(r));
   const adaptive=express();
   adaptive.use(tubeStreamingRoutes({backend,sameOrigin:()=>true,clientIp:()=> 'adaptive',owner:async()=>{},publicVideo:async()=>{}}));

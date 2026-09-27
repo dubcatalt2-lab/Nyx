@@ -1,11 +1,3 @@
-/*
- * Nyx Administration visual layer.
- *
- * The account data, permissions, and interactions live in owner-dashboard.css.
- * This file keeps that behavior intact while matching the quiet, jet-black Nyx
- * home screen: neutral hairlines, compact controls, white icons, and very
- * restrained lavender focus states.
- */
 .nyx-owner-dashboard-overlay{
   --owner-bg:#000;
   --owner-panel:#07080b;
@@ -53,7 +45,6 @@
   box-shadow:none;
 }
 
-/* Header */
 .nyx-owner-header{align-items:center;gap:18px;padding:0 0 13px;border-bottom:1px solid rgba(255,255,255,.085)}
 .nyx-owner-header>div:first-child{gap:4px}
 .nyx-owner-eyebrow{display:flex;align-items:center;gap:7px;color:#aaa2d3;font-size:8px;font-weight:750;letter-spacing:.16em}
@@ -72,7 +63,6 @@
 .nyx-owner-header-actions .nyx-owner-close:hover{border-color:rgba(255,125,145,.55);background-color:rgba(255,125,145,.08)!important;color:#ffb2bd}
 .nyx-owner-header-actions svg,.nyx-owner-quick-actions svg{stroke-width:1.8}
 
-/* Metrics */
 .nyx-owner-metrics{grid-template-columns:repeat(6,minmax(112px,1fr));gap:8px}
 .nyx-owner-metric,.nyx-owner-metric:first-child,.nyx-owner-metric:nth-child(n+4){min-height:72px;gap:10px;padding:11px;border:1px solid var(--owner-line);border-radius:11px;background:#07080b!important;box-shadow:none;animation:none}
 .nyx-owner-metric:hover{border-color:var(--owner-line-strong);background:#0c0d12!important;box-shadow:none}
@@ -82,7 +72,6 @@
 .nyx-owner-metric span{font-size:8px;font-weight:650;letter-spacing:.015em;text-transform:none}
 .nyx-owner-metric strong,.nyx-owner-metric:first-child strong,.nyx-owner-metric:nth-child(n+4) strong{font-family:var(--owner-display-font);font-size:19px;font-weight:600}
 
-/* Main workspace */
 .nyx-owner-workspace{grid-template-columns:minmax(0,1fr) 304px;gap:11px}
 .nyx-owner-users-panel,.nyx-owner-activity-panel{border:1px solid var(--owner-line);border-radius:13px;background:#07080b;box-shadow:none;animation:none}
 .nyx-owner-panel-head,.nyx-owner-activity-panel>header{min-height:60px;padding:12px 14px;border-bottom-color:var(--owner-line)}
@@ -116,7 +105,6 @@
 .nyx-owner-pagination{min-height:44px;padding:7px 12px;border-top-color:var(--owner-line);background:#050609}
 .nyx-owner-pagination select{border-color:var(--owner-line);background:#020203}
 
-/* Activity rail */
 .nyx-owner-activity-list{padding:10px;gap:8px}.nyx-owner-activity-group{display:grid;gap:6px}
 .nyx-owner-activity-group>header{display:flex;align-items:center;justify-content:space-between;padding:2px;color:var(--owner-muted)}
 .nyx-owner-activity-group>header strong{color:#a7a8b0;font-size:7px;font-weight:750;letter-spacing:.1em;text-transform:uppercase}.nyx-owner-activity-group>header span{font-size:7px}
@@ -126,7 +114,6 @@
 .nyx-owner-activity-dot svg{width:12px;height:12px;fill:none;stroke:#c9c6d8;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .nyx-owner-activity-item>div{gap:2px}.nyx-owner-activity-item strong{font-size:8px}.nyx-owner-activity-item p{font-size:8px}.nyx-owner-activity-item span{font-size:7px}
 
-/* Drawers and account details */
 .nyx-owner-user-drawer{border:1px solid var(--owner-line);border-radius:13px 0 0 13px;background:#050609;box-shadow:-22px 0 70px rgba(0,0,0,.72)}
 .nyx-owner-user-drawer.show{animation:none}.nyx-owner-user-drawer>header{border-bottom-color:var(--owner-line);background:#090a0e}
 .nyx-owner-user-drawer>header button{border-color:var(--owner-line);border-radius:50%;background:#050609;color:var(--owner-muted)}.nyx-owner-user-drawer>header button:hover{border-color:#4a4b55;color:#fff}
@@ -153,7 +140,6 @@
 .nyx-owner-ip-ban-form input{border-color:var(--owner-line);background:#030304;box-shadow:none}.nyx-owner-ip-ban-form input:focus{border-color:#8b839f;box-shadow:0 0 0 2px rgba(195,184,242,.09)}
 .nyx-owner-ip-ban-list button{display:flex;align-items:center;gap:6px}.nyx-owner-ip-ban-list button svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
-/* Confirmation dialogs and feedback */
 .nyx-owner-confirm{background:rgba(0,0,0,.82);backdrop-filter:blur(8px)}.nyx-owner-confirm form{border-color:var(--owner-line);border-radius:13px;background:#090a0e;box-shadow:0 24px 70px rgba(0,0,0,.7);animation:none}
 .nyx-owner-confirm :is(input,textarea){border-color:var(--owner-line);background:#030304;box-shadow:none}.nyx-owner-confirm :is(input,textarea):focus{border-color:#8b839f;box-shadow:0 0 0 2px rgba(195,184,242,.09)}
 .nyx-owner-confirm button{border-color:var(--owner-line);background:#0d0e13;color:var(--owner-text)}.nyx-owner-confirm button[type=submit]{border-color:#efeff1;background:#f3f3f5!important;color:#08080a;box-shadow:none}
@@ -193,7 +179,6 @@ body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-custom-role-editor-ac
 body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-custom-role-editor-actions>button>svg{display:block!important;flex:0 0 14px!important;width:14px!important;height:14px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.8!important;stroke-linecap:round;stroke-linejoin:round}
 body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-custom-role-row>button{font:750 9px/1 var(--owner-display-font)!important;-webkit-text-fill-color:currentColor!important}body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-custom-role-row>button[data-owner-custom-role-delete]>svg{display:block!important;width:13px!important;height:13px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.8!important}
 
-/* Founder-managed global app catalog. */
 .nyx-owner-global-app-header>div:first-child{display:flex;align-items:center;gap:12px}.nyx-owner-global-app-header>div:first-child>span{display:grid;width:38px;height:38px;place-items:center;border:1px solid var(--owner-line);border-radius:10px;background:#0d0e13}.nyx-owner-global-app-header>div:first-child>span svg{width:18px;height:18px;fill:none;stroke:#c9c6d8;stroke-width:1.8}
 .nyx-owner-global-app-drawer{display:grid;gap:12px}.nyx-owner-global-app-form{display:grid;grid-template-columns:minmax(120px,.55fr) minmax(190px,1fr);gap:10px;align-items:end}.nyx-owner-global-app-form label{display:grid;min-width:0;gap:5px;color:var(--owner-muted);font-size:9px;font-weight:700}.nyx-owner-global-app-form .nyx-owner-detail-actions{grid-column:1/-1;margin:0}.nyx-owner-global-app-heading{display:flex;align-items:start;justify-content:space-between;gap:12px}.nyx-owner-global-app-heading>span{display:grid;min-width:28px;height:24px;place-items:center;border:1px solid var(--owner-line);border-radius:999px;background:#050609;color:#d5d4dc;font-size:9px;font-weight:800}
 .nyx-owner-global-app-list{display:grid;gap:6px;margin-top:10px}.nyx-owner-global-app-list article{display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:center;gap:9px;padding:8px;border:1px solid var(--owner-line);border-radius:9px;background:#050609}.nyx-owner-global-app-icon{display:grid;width:30px;height:30px;place-items:center;border:1px solid #292a32;border-radius:8px;background:#0d0e13}.nyx-owner-global-app-icon svg{width:14px;height:14px;fill:none;stroke:#aaa5c0;stroke-width:1.8}.nyx-owner-global-app-list article>div{display:grid;min-width:0;gap:2px}.nyx-owner-global-app-list strong{color:var(--owner-text);font-size:10px}.nyx-owner-global-app-list small{overflow:hidden;color:var(--owner-muted);font-size:8px;text-overflow:ellipsis;white-space:nowrap}.nyx-owner-global-app-list button{display:flex;align-items:center;gap:5px;padding:6px 8px;border:1px solid rgba(255,125,145,.34);border-radius:7px;background:rgba(255,125,145,.07)!important;color:#ffabb8!important;font:750 8px/1 var(--owner-display-font)!important;-webkit-text-fill-color:#ffabb8!important}.nyx-owner-global-app-list button:hover{border-color:rgba(255,125,145,.6);background:rgba(255,125,145,.11)!important}.nyx-owner-global-app-list button svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.8}

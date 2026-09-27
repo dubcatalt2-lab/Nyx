@@ -1,4 +1,3 @@
-// Shared Nyx/Tutsi DuckDuckGo image-results viewport repair.
 globalThis.NyxDuckImageViewport = function(t, browserShellSourceUrl){
       if(!t?.frame) return;
       let doc;
@@ -211,7 +210,7 @@ globalThis.NyxDuckImageViewport = function(t, browserShellSourceUrl){
         warmQueued=true;
         requestAnimationFrame(()=>{warmQueued=false;warmVisibleImages()});
       };
-      // Image completion and viewport changes must work without continuous scroll.
+
       doc.addEventListener('load',queueWarm,true);
       doc.addEventListener('scroll',queueWarm,{capture:true,passive:true});
       doc.defaultView?.addEventListener('resize',queueWarm,{passive:true});

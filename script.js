@@ -1,4 +1,3 @@
-
 (function(){
   'use strict';
   const nyxEarlyConsoleEntries=[];
@@ -22,7 +21,7 @@
   addEventListener('unhandledrejection',event=>{
     bufferNyxConsoleEntry('error',['Unhandled promise rejection',event.reason]);
   });
-  //helpers
+
   const $ = id => document.getElementById(id);
   const qsa = (sel, root=document) => Array.from(root.querySelectorAll(sel));
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1814,7 +1813,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       select.value=key;
     });
   }
-  //popup-protection
+
   function popupProtectionEnabled(){
     return store.get('nyx.popupProtection',true);
   }
@@ -2046,7 +2045,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     setTimeout(()=>link.remove(),0);
     return true;
   }
-  //hieroglyph-text-effect
+
   const hieroglyphTextNodes = new WeakMap();
   const hieroglyphSkipSelector = 'script,style,noscript,textarea,input,select,option,iframe,canvas,svg,audio,video';
   const hieroglyphLetters = {
@@ -2054,7 +2053,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     n:'𓈖',o:'𓅱',p:'𓊪',q:'𓈎',r:'𓂋',s:'𓋴',t:'𓏏',u:'𓅱',v:'𓆑',w:'𓅱',x:'𓐍',y:'𓇌',z:'𓊃',
     '0':'𓏤','1':'𓏺','2':'𓏻','3':'𓏼','4':'𓏽','5':'𓏾','6':'𓏿','7':'𓐀','8':'𓐁','9':'𓐂'
   };
-  //browser-engine-state
+
   const hasHostedBackend = () => location.protocol === 'http:' || location.protocol === 'https:';
   const browserShellTabs = [];
   const browserShellOpeningTabs = new Set();
@@ -2454,7 +2453,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         if(button.classList.contains('settings-action')) button.textContent='Off';
       });
       applyUserSettings();
-      // Keep the open family visible while applying its selected style.
+
       syncCards();
       toast(`${nyxBeamWallpaperPresets()[value].label || 'Beam'} wallpaper applied`);
     }));
@@ -2486,7 +2485,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }));
     syncCards();
   }
-  //favicons
+
   const favicons = {
     nyx:'./assets/icons/nyx-monogram-small.png',
     studyhub:'./assets/icons/studyhub.svg?v=20260903-cap-v3',
@@ -2570,7 +2569,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     };
     return svgIcon(icons[slug] || `<svg ${common}><rect width="64" height="64" rx="14" fill="#0b0f17"/><circle cx="32" cy="32" r="18" fill="${c}"/></svg>`);
   }
-  //app-icons
+
   const appIcons = {
     'youtube.com':simpleIcon('youtube','ff0000'),
     'discord.com':localIcon('discord-embleme.png'),
@@ -2829,7 +2828,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const random=crypto.randomUUID?.() || `${Date.now()}_${Math.random().toString(36).slice(2)}_${Math.random().toString(36).slice(2)}`;
     return `nyx_${String(random).replace(/[^a-z0-9_-]/gi,'_').slice(0,72)}`;
   }
-  //scramjet-runtime-guard
+
   let scramjetRuntimeGuardSource = '';
   const scramjetNvidiaAuthGuardSource=`(() => {
     if (typeof window === "undefined" || window.__nyxNvidiaAuthCompatibility) return;
@@ -3402,7 +3401,6 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     });
     hieroglyphObserver.observe(document.body,{childList:true,subtree:true});
   }
-  //browser-mode-chrome
 
   function normalizeBrowserChromeButtons(root=document){
     const scope=root || document;
@@ -3845,7 +3843,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     document.documentElement.classList.remove('nyx-browser-shell-expected');
     tick();
   }
-  //browser-url-display
+
   function browserShellSourceUrl(url,decodeDepth=0){
     const initial=String(url || '').trim();
     const raw=/^apps\//i.test(initial) ? `/${initial}` : initial;
@@ -3999,7 +3997,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       return browserShellSourceUrl(url);
     }
   }
-  //browser-bookmarks
+
   function browserBookmarks(){
     try{
       const parsed=JSON.parse(store.text('nyx.browserBookmarks','[]'));
@@ -4508,7 +4506,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     saveBrowserBookmarks(bookmarks);
     renderBrowserBookmarks();
   }
-  //browser-home-and-tabs
+
   function isBrowserShellBlankUrl(url){
     const raw=String(url || '').trim().toLowerCase();
     return !raw;
@@ -5160,7 +5158,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const input=document.querySelector('[data-browser-shell-url]');
     if(input) input.value='';
   }
-  //browser-settings-page
+
   function browserShellSettingsMarkup(presetTiles){
     const savedTitle=esc(store.text('nyx.tabTitle',document.title || 'ռʏӼ'));
     const savedFavicon=esc(store.text('nyx.tabFavicon',nyxFaviconHref()));
@@ -5528,7 +5526,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     document.querySelector('.browser-shell-settings-overlay')?.remove();
     syncNyxVisualDockState();
   }
-  //browser-tab-actions
+
   function closeBrowserShellTab(id){
     const index=browserShellTabs.findIndex(tab=>tab.id===id);
     if(index<0) return;
@@ -5720,7 +5718,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     updateBrowserShellLocation('');
     document.querySelector('[data-browser-shell-url]')?.focus();
   }
-  //browser-internal-pages
+
   function legacyBrowserShellInternalPage(name){
     ensureBrowserShellHome();
     if(!activeBrowser?.win?.isConnected){
@@ -5764,7 +5762,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     updateBrowserShellLocation(tab.url);
     return true;
   }
-  //browser-srcdoc-pages
+
   function browserShellPageSrcdoc(page){
     const script='function nyxEffectPayload(){return{type:"nyx:effect-settings",effect:document.querySelector("[data-effect-value]")?.value||"none",speed:document.querySelector("[data-effect-speed]")?.value||"1.1",amount:document.querySelector("[data-effect-amount]")?.value||"16",theme:document.querySelector("[data-theme-value]")?.value||"default"}}function nyxBrowserPayload(){return{type:"nyx:browser-settings",engine:document.querySelector("[data-browser-engine]")?.value||"duckduckgo",browserMode:document.querySelector("[data-browser-mode-select]")?.value||"auto",transport:document.querySelector("[data-browser-transport]")?.value||"epoxy"}}document.addEventListener("click",e=>{const preset=e.target.closest("[data-preset]");if(preset){e.preventDefault();e.stopPropagation();parent.postMessage({type:"nyx:preset",preset:preset.dataset.preset},"*");return}const app=e.target.closest("[data-app-url]");if(app){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:app.dataset.appUrl},"*");return}const url=e.target.closest("[data-url]");if(url&&url.closest(".shell-page,.browser-shell-page")){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:url.dataset.url},"*");return}if(e.target.closest("[data-browser-settings-save]")){e.preventDefault();parent.postMessage(nyxBrowserPayload(),"*")}if(e.target.closest("[data-page-fullscreen]"))parent.postMessage({type:"nyx:fullscreen"},"*");if(e.target.closest("[data-shell-about]"))parent.postMessage({type:"nyx:about"},"*");if(e.target.closest("[data-shell-about-tab]"))parent.postMessage({type:"nyx:about-tab"},"*")});document.addEventListener("change",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){document.querySelectorAll("[data-tab-title]").forEach(el=>{el.value=presetSelect.options[presetSelect.selectedIndex]?.textContent||presetSelect.value||"nyx"});parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-value],[data-effect-speed],[data-effect-amount],[data-theme-value]"))parent.postMessage(nyxEffectPayload(),"*");if(e.target.closest("[data-browser-engine],[data-browser-mode-select],[data-browser-transport]"))parent.postMessage(nyxBrowserPayload(),"*")});document.addEventListener("input",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-speed],[data-effect-amount]")){document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=(Number(document.querySelector("[data-effect-speed]")?.value||1.1)).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=document.querySelector("[data-effect-amount]")?.value||"16"});parent.postMessage(nyxEffectPayload(),"*")}});';
     const popupScript='document.addEventListener("click",e=>{const popup=e.target.closest("[data-popup-protection]");if(!popup)return;e.preventDefault();const next=popup.dataset.enabled!=="true";popup.dataset.enabled=String(next);popup.classList.toggle("on",next);popup.textContent="Popup Protection "+(next?"On":"Off");parent.postMessage({type:"nyx:popup-protection",enabled:next},"*")});';
@@ -6076,7 +6074,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     while(layer.children.length>count) layer.lastElementChild?.remove();
     return Array.from(layer.children);
   }
-  //themes-and-visual-effects
+
   let nyxStartupOpened=false;
   let defaultVantaInstance=null;
   let rubyVantaInstance=null;
@@ -6556,7 +6554,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     qsa('[data-effect-speed-label]').forEach(el=>{el.textContent=speed.toFixed(1)+'x'});
     qsa('[data-effect-amount-label]').forEach(el=>{el.textContent=String(requestedAmount)});
   }
-  //user-settings-apply
+
   function applyUserSettings(){
     document.body.classList.toggle('three-d-backgrounds',store.get('nyx.threeDBackgrounds',false));
     applyNyxBeamWallpaper();
@@ -6645,7 +6643,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     qsa('[data-glass-value]').forEach(el=>{el.value=String(value)});
     qsa('[data-glass-output]').forEach(el=>{el.textContent=value+'%'});
   }
-  //background-rendering
+
   function normalizeBgValue(value){
     const raw=String(value||'').trim();
     if(raw.startsWith('url(') || raw.startsWith('linear-gradient')) return raw;
@@ -7211,7 +7209,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       scheduleNyxReleaseNotes(980);
     },0);
   }
-  //url-normalization
+
   function normalize(v){
     const input=String(v||'').trim(); if(!input)return '';
     const raw=/^apps\//i.test(input) ? `/${input}` : input;
@@ -8970,7 +8968,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     win.style.left=left+'px';
     win.style.top=top+'px';
   }
-  //window-system
+
   function makeWindow(opts){
     const win=document.createElement('section');
     win.className='window '+(opts.className||'');
@@ -9078,7 +9076,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="Search"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home nyx-minimal-home nyx-visual-home"><main class="browser-shell-start nyx-minimal-hero"><div class="nyx-minimal-brand"><img class="nyx-home-logo" data-nyx-logo src="/assets/icons/nyx-monogram.png" alt="Nyx"><h1>NYX</h1></div><form class="browser-blank-search nyx-minimal-search" data-browser-blank-search><svg class="nyx-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input data-browser-blank-input data-search-engine="${searchEngine.id}" aria-label="${searchLabel}" placeholder="${searchLabel}" autocomplete="off" spellcheck="false"><button class="nyx-home-search-submit" type="submit" aria-label="Search"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6"/></svg></button></form><nav class="nyx-home-links" data-nyx-recent-searches aria-label="Recent searches" hidden></nav></main><nav class="nyx-minimal-utility-links" aria-label="Nyx tools and terms"><a data-open="terms" href="nyx://terms">Terms</a></nav><button class="nyx-appearance-toggle" data-nyx-appearance type="button" aria-label="Use light appearance" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button><button class="nyx-visual-customize" data-open="settings" type="button">${nyxDashboardIcon('settings')}<span>Customize</span></button><div class="nyx-home-presence${nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="button" tabindex="${nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${minimalPresenceText}</span></div></div></div>`;
     }
   }
-  //apps-grid
+
   const nyxAiHomeShortcut={domain:'nyx-ai',title:'AI Tutor',url:'nyx://ai',favorite:false};
   const nyxAiHomeShortcutMigrationKey='nyx.homeShortcuts.aiShortcutV1';
   const nyxTubeHomeShortcut={domain:'youtube.com',title:'NyxTube',url:'/apps/nyxtube/',favorite:false};
@@ -9559,8 +9557,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const canvasPadding=90;
       const pointerRadius=55;
       const repelStrength=2.2;
-      // Keep the particle wordmark playful without making it trail the
-      // pointer. A firmer spring and lower inertia return dots promptly.
+
       const spring=.14;
       const friction=.7;
       const fadeDistance=42;
@@ -9625,8 +9622,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         let pixels;
         try{pixels=maskContext.getImageData(0,0,mask.width,mask.height).data;}catch{return}
         const spacing=Math.max(4,Math.round(font.size/11));
-        // Keep visible air between particles. Touching circles made the dot
-        // wordmark look like a second solid NYX label at normal zoom levels.
+
         dotRadius=Math.max(1.15,Math.min(2.1,spacing*.3));
         const nextDots=[];
         for(let y=0;y<textHeight;y+=spacing){
@@ -10139,7 +10135,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     })().finally(()=>{nyxPreflightPromise=null});
     return nyxPreflightPromise;
   }
-  //browser-window
+
   function openBrowser(url='https://duckduckgo.com/',options={}){
     const win=makeWindow({title:'New Tab',className:'browser-window',body:browserBody()});
 
@@ -12704,7 +12700,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if([0,1].includes(code)) return 'weather-sun';
     return 'weather-cloud';
   }
-  //weather
+
   function renderWeatherTime(timezone){
     const time=weatherPanel()?.querySelector('[data-weather-time]');
     if(!time) return;
@@ -13006,7 +13002,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }
     restoreWeatherPanel(next,trigger);
   }
-  //lion-ai-ui
+
   let nyxAiModels=[];
   function nyxAiSelectedModel(){
     const saved=store.text('nyx.aiModel','chatgpt-5.4-mini');
@@ -13385,7 +13381,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     ];
     return sentences.slice(0,count).map(s=>/[.!?]$/.test(s) ? s : s+'.').join(' ');
   }
-  //lion-ai-symbol-math
+
   function lionAiNormalizeEverydaySymbols(value){
     const sub={'₀':'0','₁':'1','₂':'2','₃':'3','₄':'4','₅':'5','₆':'6','₇':'7','₈':'8','₉':'9','₊':'+','₋':'-','₌':'=','₍':'(','₎':')'};
     return String(value || '')
@@ -13913,7 +13909,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   openApps = function(){
     makeWindow({title:'Apps',left:'8vw',top:'64px',width:'960px',height:'650px',body:`<div class="panel apps-panel"><h1>Apps</h1><div class="quick-grid apps-launch-grid" data-nyx-global-app-grid>${quickTiles()}</div></div>`});
   };
-  //settings-window
+
   function settingsBody(){
     return `<div class="settings-panel">
       <h1>Preferences</h1>
@@ -16217,7 +16213,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }
     },true);
   }
-  //clock
+
   function syncNyxDashboardClock(date=new Date()){
     const time=date.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
     const day=date.toLocaleDateString([],{weekday:'long',month:'long',day:'numeric'});
@@ -16367,7 +16363,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     syncNyxDashboardPerformance();
     requestAnimationFrame(sample);
   }
-  // Live round-trip latency to Nyx's same-origin health endpoint.
+
   let nyxLatencyMs=null;
   let nyxLatencyQuality='sampling';
   let nyxLatencySampledAt=0;

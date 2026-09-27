@@ -1,6 +1,3 @@
-/* Public-profile polish: preserves the existing banner/avatar/card structure
-   and profile variables while tightening its visual hierarchy. */
-
 html body .nyx-founder-profile-standard{
   max-width:480px!important;
   border-color:color-mix(in srgb,#555963 72%,var(--nyx-founder-accent-primary,var(--credits-accent,#8fb8ff)))!important;
@@ -131,7 +128,6 @@ html body .nyx-founder-profile-standard .nyx-founder-link:is(:hover,:focus-visib
   transform:translateX(2px)!important;
 }
 
-/* The same profile primitives appear in the existing public-card preview. */
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-preview-pane .nyx-user-profile-card{
   height:auto!important;
   min-height:0!important;

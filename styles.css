@@ -15,9 +15,6 @@
 @import url("./css/setup-wizard.css?v=20260927-previews-v3");
 @import url("./css/credits.css?v=20260927-previews-v3");
 
-/* Keep the close mark geometrically centered instead of relying on a font baseline. */
-
-/* Founder profile editor: public profile, owner-only publishing. */
 .nyx-founder-editor-overlay{position:fixed;z-index:2147483000;inset:0;display:grid;place-items:center;padding:22px;background:rgba(3,8,14,.68);backdrop-filter:blur(12px)}
 .nyx-founder-editor{width:min(760px,100%);max-height:min(880px,calc(100vh - 44px));overflow:auto;border:1px solid var(--theme-border,rgba(143,184,255,.38));border-radius:22px;background:var(--theme-panel,#111b2a);box-shadow:0 24px 80px rgba(0,0,0,.48);color:var(--theme-text,#edf4ff)}
 .nyx-founder-editor header{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;padding:28px 30px 20px;border-bottom:1px solid var(--theme-border,rgba(143,184,255,.22))}
@@ -39,21 +36,17 @@
 .nyx-user-profile-dialog{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,.82fr);gap:24px}.nyx-user-profile-card{overflow:hidden;border:1px solid color-mix(in srgb,var(--nyx-user-accent,#8fb8ff) 38%,transparent);border-radius:18px;background:linear-gradient(145deg,color-mix(in srgb,var(--nyx-user-accent,#8fb8ff) 14%,transparent),rgba(8,15,26,.76))}.nyx-user-profile-banner{height:108px;background:linear-gradient(135deg,color-mix(in srgb,var(--nyx-user-accent,#8fb8ff) 42%,#13223a),#09101b)}.nyx-user-profile-banner img{width:100%;height:100%;object-fit:cover}.nyx-user-profile-heading{display:flex;align-items:center;gap:13px;padding:0 18px;margin-top:-29px}.nyx-user-profile-avatar{position:relative;display:grid;place-items:center;overflow:visible;width:72px;height:72px;border:3px solid var(--nyx-user-accent,#8fb8ff);border-radius:18px;background:#172338;color:#fff;font-weight:700}.nyx-user-profile-avatar img{width:100%;height:100%;border-radius:15px;object-fit:cover}.nyx-user-status{position:absolute;right:-5px;bottom:-5px;width:17px;height:17px;border:3px solid #111b2a;border-radius:50%;background:#5bc68a}.nyx-user-status-idle{background:#e4b65a}.nyx-user-status-dnd{background:#df6875}.nyx-user-status-offline{background:#7d8999}.nyx-user-profile-heading h2{margin:32px 0 2px;font-size:21px}.nyx-user-profile-heading p{margin:0;color:var(--theme-muted,#b5c2d5);font-size:13px}.nyx-user-profile-bio{min-height:42px;margin:20px 18px;color:#c7d2e2;line-height:1.55}.nyx-user-profile-meta{display:flex;justify-content:space-between;gap:8px;padding:13px 18px;border-top:1px solid color-mix(in srgb,var(--nyx-user-accent,#8fb8ff) 24%,transparent);color:var(--theme-muted,#aebdd1);font-size:11px}.nyx-user-profile-form{display:grid;align-content:start;gap:14px}.nyx-user-profile-form h3{margin:0;font-size:20px}.nyx-user-profile-form footer{display:flex;justify-content:flex-end}.nyx-user-profile-form footer button{min-width:130px}
 .nyx-user-profile-form header{display:grid;gap:5px}.nyx-user-profile-form header .utility-kicker{margin:0;color:var(--theme-accent,#8fb8ff);font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase}.nyx-user-profile-form header>p:last-child{margin:0;color:var(--theme-muted,#aebdd1);font-size:12px;line-height:1.45}.nyx-profile-customizer-section{display:grid;gap:12px;padding:15px;border:1px solid color-mix(in srgb,var(--theme-border,rgba(143,184,255,.3)) 72%,transparent);border-radius:14px;background:color-mix(in srgb,var(--theme-panel,#111b2a) 48%,transparent)}.nyx-profile-customizer-section h4{margin:0;color:var(--theme-text,#edf4ff);font-size:12px;letter-spacing:.08em;text-transform:uppercase}.nyx-user-profile-form .nyx-founder-editor-grid{gap:12px}.nyx-user-profile-form label{min-width:0}.nyx-user-profile-form label small{color:var(--theme-muted,#aebdd1);font-weight:400;letter-spacing:0;text-transform:none}.nyx-user-profile-form textarea{resize:vertical}.nyx-user-profile-card{position:relative;isolation:isolate}.nyx-user-profile-card>*:not(.nyx-user-profile-effect){position:relative;z-index:1}.nyx-user-profile-banner{background:linear-gradient(135deg,var(--nyx-user-banner-primary,var(--nyx-user-accent,#8fb8ff)),var(--nyx-user-banner-secondary,#172a46))}.nyx-user-profile-banner-solid .nyx-user-profile-banner{background:var(--nyx-user-banner-primary,var(--nyx-user-accent,#8fb8ff))}.nyx-user-profile-banner img{display:block}.nyx-user-profile-pronouns{display:inline-flex;margin-left:7px;padding:2px 6px;border:1px solid color-mix(in srgb,var(--nyx-user-accent,#8fb8ff) 36%,transparent);border-radius:999px;color:var(--nyx-user-accent,#8fb8ff);font-size:10px;line-height:1.2;vertical-align:middle}.nyx-user-profile-theme-cloud{background:linear-gradient(145deg,color-mix(in srgb,var(--nyx-user-accent,#8fb8ff) 20%,#fff),#eaf1fa);color:#122039}.nyx-user-profile-theme-cloud .nyx-user-profile-heading p,.nyx-user-profile-theme-cloud .nyx-user-profile-meta{color:#4c607d}.nyx-user-profile-theme-cloud .nyx-user-profile-bio{color:#283b55}.nyx-user-profile-theme-cloud .nyx-user-status{border-color:#eaf1fa}.nyx-user-profile-theme-neon{background:linear-gradient(145deg,#0c1428,#140c29);border-color:color-mix(in srgb,var(--nyx-user-accent,#8fb8ff) 70%,#8d4dff);box-shadow:inset 0 0 22px color-mix(in srgb,var(--nyx-user-accent,#8fb8ff) 20%,transparent)}.nyx-user-profile-theme-neon .nyx-user-profile-avatar{box-shadow:0 0 18px color-mix(in srgb,var(--nyx-user-accent,#8fb8ff) 64%,transparent)}.nyx-user-profile-effect{display:none;position:absolute!important;z-index:2!important;inset:0;overflow:hidden;pointer-events:none}.nyx-user-profile-effect-glow{box-shadow:0 0 26px color-mix(in srgb,var(--nyx-user-accent,#8fb8ff) 62%,transparent),inset 0 0 20px color-mix(in srgb,var(--nyx-user-accent,#8fb8ff) 13%,transparent)}.nyx-user-profile-effect-aurora .nyx-user-profile-effect{display:block;background:linear-gradient(112deg,transparent 25%,color-mix(in srgb,var(--nyx-user-banner-primary,#8fb8ff) 48%,transparent),transparent 48%,color-mix(in srgb,var(--nyx-user-banner-secondary,#172a46) 48%,transparent),transparent 72%);background-size:220% 100%;mix-blend-mode:screen;animation:nyx-profile-aurora 7s ease-in-out infinite}.nyx-user-profile-effect-sparkle .nyx-user-profile-effect{display:block;background-image:radial-gradient(circle at 18% 28%,#fff 0 1px,transparent 2px),radial-gradient(circle at 75% 18%,#fff 0 1px,transparent 2px),radial-gradient(circle at 48% 69%,#fff 0 1.4px,transparent 2.4px),radial-gradient(circle at 87% 74%,#fff 0 1px,transparent 2px);background-size:130px 130px;opacity:.8;animation:nyx-profile-sparkle 3.5s linear infinite}@keyframes nyx-profile-aurora{50%{background-position:100% 0}}@keyframes nyx-profile-sparkle{to{background-position:130px -130px}}
 .nyx-user-profile-dialog{width:min(1080px,calc(100vw - 40px));grid-template-columns:minmax(320px,.8fr) minmax(0,1.2fr);align-items:start;scrollbar-width:none;-ms-overflow-style:none}.nyx-user-profile-dialog::-webkit-scrollbar{display:none}.nyx-user-profile-dialog>.nyx-founder-editor-close{position:absolute;top:18px;right:18px;z-index:4}.nyx-user-profile-view{position:sticky;top:0}.nyx-user-profile-form .nyx-founder-editor-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.nyx-user-profile-form input,.nyx-user-profile-form select,.nyx-user-profile-form textarea{min-width:0}.nyx-user-profile-form footer{padding-bottom:2px}
-/* Account and profile contrast stays readable even when a theme styles generic buttons or labels. */
+
 .nyx-account-dialog,.nyx-user-profile-dialog{color:#f8fbff!important}.nyx-account-dialog :is(h2,h3,p,label,button),.nyx-user-profile-dialog :is(h2,h3,h4,p,label,button){-webkit-text-fill-color:currentColor}.nyx-account-title,.nyx-account-dialog label,.nyx-user-profile-form header>p:last-child,.nyx-user-profile-form label small{color:#dbe7fa!important}.nyx-account-tab{color:#f8fbff!important}.nyx-account-tab.active,.nyx-account-submit{background:color-mix(in srgb,var(--theme-accent,#5865f2) 65%,#101827)!important;color:#fff!important;-webkit-text-fill-color:#fff!important}.nyx-account-footer{color:#dbe7fa!important;border-color:rgba(255,255,255,.18)!important}.nyx-user-profile-form :is(h3,h4,label){color:#f8fbff!important}.nyx-profile-customizer-section{border-color:rgba(255,255,255,.14)!important;background:rgba(7,15,30,.36)!important}
 .settings-action:is([data-open-nyx-account],[data-open-nyx-profile],[data-open-founder-profile-editor],[data-nyx-account-sign-out]),[data-open-nyx-account]:not(.settings-action),[data-open-nyx-profile]:not(.settings-action),[data-open-founder-profile-editor]:not(.settings-action),[data-nyx-account-sign-out]:not(.settings-action){background:color-mix(in srgb,var(--theme-accent,#5865f2) 65%,#101827)!important;color:#fff!important;border-color:transparent!important;-webkit-text-fill-color:#fff!important}
-/* Keep the browser menu flat and borderless in every theme. */
+
 html body.browser-shell .browser-mode-menu{border:0!important;border-radius:0!important;box-shadow:none!important}html body.browser-shell .browser-mode-menu>button{border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:var(--theme-text,#edf4ff)!important;-webkit-text-fill-color:currentColor!important}html body.browser-shell .browser-mode-menu>button:hover,html body.browser-shell .browser-mode-menu>button:focus-visible{background:color-mix(in srgb,var(--theme-accent,#8fb8ff) 20%,transparent)!important;transform:none!important}html body.browser-shell .browser-mode-menu>hr{border-color:color-mix(in srgb,var(--theme-border,#8fb8ff) 42%,transparent)!important}
-/* A profile is a solid, two-accent surface; the banner is intentionally solid too. */
+
 .nyx-user-profile-card{background:var(--nyx-user-accent-primary,#5865f2)!important;border:0!important;color:#fff!important;box-shadow:none!important}.nyx-user-profile-banner{background:var(--nyx-user-banner-color,var(--nyx-user-accent-secondary,#8ea1ff))!important}.nyx-user-profile-heading p,.nyx-user-profile-bio,.nyx-user-profile-meta{color:rgba(255,255,255,.88)!important}.nyx-user-profile-avatar{border-color:rgba(255,255,255,.92)!important;background:var(--nyx-user-accent-secondary,#8ea1ff)!important}.nyx-user-status{border-color:var(--nyx-user-accent-primary,#5865f2)!important}.nyx-user-profile-meta{border-color:rgba(255,255,255,.2)!important}.nyx-user-profile-effect-glow{box-shadow:0 0 24px color-mix(in srgb,var(--nyx-user-accent-secondary,#8ea1ff) 70%,transparent)!important}.nyx-user-profile-effect-aurora .nyx-user-profile-effect{display:none!important}
 
 /* This file loads after the imported theme sheets.  Keep the custom palette
    authoritative for the remaining shell controls those sheets define later. */
 
-/* Built-in themes share one neutral surface system. Their identity comes from
-   accent, icon, focus, and selected-state colors rather than tinted canvases. */
-
-/* Clean, Discord-inspired profile editor: wide fields, quiet dividers, and local image controls. */
 .nyx-user-profile-dialog{width:min(1160px,calc(100vw - 40px));grid-template-columns:minmax(330px,.82fr) minmax(0,1.18fr);gap:38px;padding:34px 36px;background:#111a2b!important}
 .nyx-user-profile-form{display:block;min-width:0}
 .nyx-user-profile-form header{display:grid;gap:6px;padding:8px 40px 22px 0;border-bottom:1px solid rgba(255,255,255,.12)}
@@ -103,7 +96,6 @@ html body.browser-shell .browser-mode-menu{border:0!important;border-radius:0!im
 .nyx-profile-direct-popover :is(select,textarea,input[type=color]):focus{border-color:var(--nyx-direct-secondary,#8ea1ff);box-shadow:0 0 0 2px color-mix(in srgb,var(--nyx-direct-secondary,#8ea1ff) 28%,transparent)}
 .nyx-profile-direct-popover>p{margin:0;color:#aeb2b9;font-size:11px;line-height:1.45}
 
-/* Persistent profile entry point: a signed-in avatar or a neutral default profile. */
 .status-icons .nyx-account-button{flex:0 0 auto}
 .nyx-account-button-default{position:relative;background:#172338!important;border-color:rgba(255,255,255,.3)!important}
 .nyx-account-button-default span{position:relative;width:21px;height:21px;border:2px solid #dbe7fa;border-radius:50%;box-sizing:border-box}
@@ -137,7 +129,7 @@ body.browser-shell .nyx-profile-slot .nyx-account-button:hover{border-color:var(
 }
 .nyx-account-menu::-webkit-scrollbar{display:none}
 .nyx-account-menu.show{opacity:1;transform:none}
-/* Compact navigation menu only; full profile/editor cards keep their layout. */
+
 html body .nyx-account-menu-compact .nyx-account-menu-banner{height:48px!important}
 html body .nyx-account-menu-compact .nyx-account-menu-profile{min-height:0!important;padding:29px 12px 10px!important}
 html body .nyx-account-menu-compact .nyx-account-menu-avatar{width:44px!important;height:44px!important;top:-22px!important;left:12px!important;border-width:3px!important}
@@ -327,7 +319,6 @@ html[data-nyx-theme] body .nyx-account-menu :is(h2,p,span):not(.nyx-styled-displ
   transform:none!important;
 }
 
-/* Richer Discord-style profile presentation and effects. */
 .nyx-user-profile-dialog{width:min(1180px,calc(100vw - 32px));grid-template-columns:minmax(360px,420px) minmax(0,1fr);gap:42px}
 .nyx-user-profile-view{position:sticky;top:0;display:grid;justify-items:center}
 .nyx-user-profile-card{display:block;width:100%;max-width:420px;min-height:650px;padding:14px;overflow:hidden;background:linear-gradient(180deg,color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 78%,#1e1f22) 0%,color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 62%,#1e1f22) 54%,color-mix(in srgb,var(--nyx-user-accent-secondary,#8ea1ff) 68%,#1e1f22) 100%)!important;border:1px solid color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 66%,#4e5058)!important;border-radius:18px!important;box-shadow:0 26px 70px rgba(0,0,0,.42),inset 0 3px 0 var(--nyx-user-accent-primary,#5865f2),inset 0 -3px 0 var(--nyx-user-accent-secondary,#8ea1ff)!important}
@@ -411,8 +402,6 @@ html[data-nyx-theme] body .nyx-account-menu :is(h2,p,span):not(.nyx-styled-displ
 @keyframes nyx-profile-ocean-caustics{0%,100%{background-position:0 0,0 0;transform:rotate(-2deg)}50%{background-position:35px 22px,100% 0;transform:rotate(2deg)}}
 @media(prefers-reduced-motion:reduce){.nyx-user-profile-effect,.nyx-user-profile-effect::before,.nyx-avatar-decoration,.nyx-avatar-decoration::after{animation:none!important}}
 
-/* Final theme contract. Every app surface consumes these semantic colors so
-   late component styles cannot expose a canvas, field, or border from another theme. */
 html[data-nyx-theme="default"],
 html[data-nyx-theme="midnight"],
 html[data-nyx-theme="ruby"],
@@ -435,8 +424,6 @@ html[data-nyx-theme] body.browser-shell{
   --nyx-panel-surface:color-mix(in srgb,var(--nyx-home-panel-soft) 88%,var(--nyx-unified-canvas));
   color:var(--nyx-home-text)!important;
 }
-
-/* Browser menus, bookmark panels, suggestions, and small utility surfaces. */
 
 /* The dashboard is imported before several navy-only polish files. This late
    layer keeps every settings surface and control on the active palette. */
@@ -468,7 +455,6 @@ html[data-nyx-theme] body.browser-shell .nyx-profile-direct-popover :is(button,s
   border-color:var(--nyx-chrome-bright)!important;
 }
 
-/* Weather and the persistent account entry use the same palette aliases. */
 html[data-nyx-theme] body.browser-shell{
   --weather-accent:var(--nyx-chrome-bright)!important;
   --weather-accent-soft:color-mix(in srgb,var(--nyx-chrome-accent) 15%,transparent)!important;
@@ -508,8 +494,6 @@ html[data-nyx-theme] body.browser-shell .nyx-home-copyright{
   opacity:1!important;
 }
 
-/* Discord desktop profile editor. This surface intentionally uses Discord's
-   neutral settings palette while the live card keeps the member's Nyx colors. */
 html[data-nyx-theme] body .nyx-user-profile-overlay{
   z-index:2147483640!important;
   inset:0!important;
@@ -937,8 +921,6 @@ html[data-nyx-theme] body.browser-shell .top-os.top-os #browserModeMenu.browser-
   transform:none!important;
 }
 
-/* Discord-style profile appearance editor: compact controls on the left and
-   a large, distraction-free live profile on the right. */
 html[data-nyx-theme] body .nyx-user-profile-overlay,
 html[data-nyx-theme] body .nyx-user-profile-dialog,
 html[data-nyx-theme] body .nyx-discord-profile-main{
@@ -1522,7 +1504,6 @@ html[data-nyx-theme] body .nyx-profile-custom-effect-controls small{
   font-size:9px!important;
 }
 
-/* Profile interaction polish: compact controls, uncropped media, and one edit affordance. */
 html[data-nyx-theme] body.browser-shell .nyx-home-presence .nyx-profile-slot{
   place-items:center start!important;
 }
@@ -1763,7 +1744,6 @@ html[data-nyx-theme] body .nyx-user-profile-form>footer>.settings-action{
   font-size:11px!important;
 }
 
-/* Denser, brighter meteor streaks with independent foreground comets. */
 .nyx-user-profile-effect-meteor-shower .nyx-user-profile-effect{
   display:block!important;
   opacity:.92!important;
@@ -1798,7 +1778,6 @@ html[data-nyx-theme] body .nyx-user-profile-form>footer>.settings-action{
   100%{translate:-560px 600px;opacity:0}
 }
 
-/* Discord-style display name customization. */
 .nyx-styled-display-name{display:inline-block!important;max-width:100%;color:var(--nyx-name-color-primary,#fff)!important;-webkit-text-fill-color:var(--nyx-name-color-primary,#fff)!important;line-height:1.14;text-overflow:ellipsis}
 html body .nyx-styled-display-name.nyx-name-font-gg-sans[class]{font-family:var(--nyx-font,Inter),Arial,sans-serif!important}
 html body .nyx-styled-display-name.nyx-name-font-headline[class]{font-family:"Arial Black","Franklin Gothic Heavy","Segoe UI",sans-serif!important;font-size:1.08em!important;font-weight:900!important;letter-spacing:-.035em}
@@ -1936,7 +1915,6 @@ html[data-nyx-theme] body .nyx-name-surprise-button:hover{background:#4752c4!imp
   .nyx-name-effect-gradient,.nyx-name-effect-neon,.nyx-name-effect-pop{animation:none!important}
 }
 
-/* Profile and Settings share one matched home control row. */
 html[data-nyx-theme][data-nyx-theme] body.browser-shell:is(body,#nyx-profile-settings-row):is(body,#nyx-profile-settings-controls)
   .browser-window.browser-home-page .nyx-home-actions{
   width:min(620px,100%)!important;
@@ -1952,7 +1930,6 @@ html[data-nyx-theme] body.browser-shell .nyx-home-action-profile{
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='8' r='4' fill='none' stroke='black' stroke-width='1.7'/%3E%3Cpath d='M4.5 21a7.5 7.5 0 0 1 15 0' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;
 }
 
-/* Edit Profile and Settings > Account open this same left-side drawer. */
 html[data-nyx-theme] body .nyx-user-profile-overlay.nyx-profile-drawer{
   display:flex!important;
   align-items:stretch!important;
@@ -2048,8 +2025,6 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-user-profile-avatar:hover>img
   filter:brightness(.72);
 }
 
-/* Final profile-surface pass: profile accents tint Discord-like gray surfaces
-   without becoming the page background or stacking bright nested outlines. */
 html[data-nyx-theme] body .nyx-account-menu{
   border:1px solid color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 28%,rgba(255,255,255,.1))!important;
   background:#111214!important;
@@ -2119,8 +2094,6 @@ html[data-nyx-theme] body .nyx-user-profile-body{
   )!important;
 }
 
-/* High-visibility profile palette: the selected primary and accent colors
-   tint the actual card surfaces, while the avatar ring remains neutral. */
 html[data-nyx-theme] body .nyx-account-menu{
   border-color:color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 58%,rgba(255,255,255,.18))!important;
   background:linear-gradient(
@@ -2441,7 +2414,6 @@ html[data-nyx-theme] body .nyx-profile-switch-confirm button:is(:hover,:focus-vi
   outline:none!important;
 }
 
-/* Nyx AI: focused two-pane workspace inspired by modern chat applications. */
 html body .lion-ai-panel{
   --ai-accent:var(--accent,#b889ff);
   --ai-line:color-mix(in srgb,var(--ai-accent) 21%,rgba(255,255,255,.09));
@@ -2890,7 +2862,6 @@ html body .lion-ai-image-status{
   font-size:10px!important;
 }
 
-/* Keep the AI workspace recognizably Nyx: themed dots, glass, and one focused canvas. */
 html body .lion-ai-panel{
   --ai-accent:var(--accent,#b889ff);
   --ai-line:var(--line,rgba(184,137,255,.25));
@@ -3010,8 +2981,7 @@ html body .lion-ai-clear{
   -webkit-text-fill-color:var(--ai-muted)!important;
 }
 html body .lion-ai-preview{border-color:var(--ai-line)!important;background:var(--glass,rgba(8,7,13,.82))!important}
-/* Custom themes own every Nyx chrome surface. External page content and
-   profile-specific accents intentionally remain untouched. */
+
 html[data-nyx-theme="custom"] body.browser-shell.theme-custom{
   --glass:var(--nyx-custom-canvas)!important;
   --glass-panel:var(--nyx-custom-panel)!important;
@@ -3028,8 +2998,6 @@ html[data-nyx-theme="custom"] body.browser-shell.theme-custom{
   .nyx-styled-display-name{animation:none!important}
 }
 
-/* Custom home colors: preserve the default homepage's exact layout, artwork,
-   opacity, shadows, and motion while replacing only its fixed navy palette. */
 html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default{
   --nyx-title-theme-color:var(--nyx-custom-bright)!important;
 }
@@ -3050,9 +3018,7 @@ html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default .bro
   color:var(--nyx-custom-text)!important;
   -webkit-text-fill-color:var(--nyx-custom-text)!important;
 }
-/* These three default-home details have their own direct color declarations. */
 
-/* Keep the two Nyx installation choices stacked in every settings layout. */
 .nyx-install-actions{
   display:grid!important;
   grid-template-columns:minmax(0,1fr)!important;
@@ -3063,7 +3029,6 @@ html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default .bro
   width:100%!important;
 }
 
-/* Signed-in public profile browser. */
 .nyx-profile-directory-overlay{
   position:fixed;
   z-index:2147483004;
@@ -3132,8 +3097,6 @@ html[data-nyx-theme] body .nyx-profile-directory-card-host .nyx-user-profile-abo
 @keyframes nyx-directory-loading{to{background-position:-200% 0}}
 @media(prefers-reduced-motion:reduce){.nyx-profile-directory-overlay,.nyx-profile-directory,.nyx-profile-directory-results>button{transition:none}.nyx-profile-directory-loading i{animation:none}}
 
-/* Signature profile cosmetics. These replace the older collection of generic
-   particles with a small, art-directed set that reuses each profile palette. */
 .nyx-user-profile-effect-chromatic-inferno .nyx-user-profile-effect,
 .nyx-user-profile-effect-ghostfire .nyx-user-profile-effect,
 .nyx-user-profile-effect-pirate-breach .nyx-user-profile-effect,
@@ -3183,8 +3146,6 @@ html[data-nyx-theme] body .nyx-profile-directory-card-host .nyx-user-profile-abo
 .nyx-user-profile-effect-stormforged .nyx-user-profile-effect::after,
 .nyx-founder-effect-stormforged .nyx-founder-profile-effect::after{content:"";position:absolute;inset:0;background-image:radial-gradient(ellipse at 15% 110%,transparent 0 16%,color-mix(in srgb,var(--nyx-user-accent-secondary,var(--nyx-founder-accent-secondary,#b7dcff)) 52%,transparent) 17% 18%,transparent 20%),radial-gradient(ellipse at 70% 114%,transparent 0 20%,color-mix(in srgb,var(--nyx-user-accent-primary,var(--nyx-founder-accent-primary,#697fff)) 44%,transparent) 21% 23%,transparent 25%);background-size:145% 85%;animation:nyx-signature-clouds 8s ease-in-out infinite alternate}
 
-/* Avatar objects share the same markup everywhere, so each design remains
-   crisp in the editor, account popover, public profile, and founder card. */
 .nyx-avatar-decoration-inferno-crown>.nyx-avatar-decoration,
 .nyx-avatar-decoration-corsair-crest>.nyx-avatar-decoration,
 .nyx-avatar-decoration-kraken-grasp>.nyx-avatar-decoration,
@@ -3235,7 +3196,6 @@ html[data-nyx-theme] body .nyx-profile-directory-card-host .nyx-user-profile-abo
 @keyframes nyx-avatar-prism-aegis{0%,100%{filter:hue-rotate(0deg) drop-shadow(0 0 5px var(--nyx-user-accent-secondary,var(--nyx-founder-accent-secondary,#8fe4ff)))}50%{filter:hue-rotate(34deg) drop-shadow(0 0 12px var(--nyx-user-accent-secondary,var(--nyx-founder-accent-secondary,#8fe4ff)));transform:scale(1.025)}}
 @media(prefers-reduced-motion:reduce){[class*="nyx-user-profile-effect-"] .nyx-user-profile-effect,[class*="nyx-user-profile-effect-"] .nyx-user-profile-effect::before,[class*="nyx-user-profile-effect-"] .nyx-user-profile-effect::after,[class*="nyx-founder-effect-"] .nyx-founder-profile-effect,[class*="nyx-founder-effect-"] .nyx-founder-profile-effect::before,[class*="nyx-founder-effect-"] .nyx-founder-profile-effect::after,[class*="nyx-avatar-decoration-"]>.nyx-avatar-decoration,[class*="nyx-avatar-decoration-"]>.nyx-avatar-decoration::before,[class*="nyx-avatar-decoration-"]>.nyx-avatar-decoration::after,[class*="nyx-avatar-decoration-"]>.nyx-avatar-decoration>span{animation:none!important}}
 
-/* Keep the cinematic layer around the identity instead of washing over it. */
 .nyx-user-profile-card:is(.nyx-user-profile-effect-chromatic-inferno,.nyx-user-profile-effect-ghostfire,.nyx-user-profile-effect-pirate-breach,.nyx-user-profile-effect-kraken-depths,.nyx-user-profile-effect-celestial-rift,.nyx-user-profile-effect-stormforged) .nyx-user-profile-chrome{z-index:4!important}
 .nyx-user-profile-card{box-sizing:border-box}
 .nyx-user-profile-card:is(.nyx-user-profile-effect-chromatic-inferno,.nyx-user-profile-effect-ghostfire,.nyx-user-profile-effect-pirate-breach,.nyx-user-profile-effect-kraken-depths,.nyx-user-profile-effect-celestial-rift,.nyx-user-profile-effect-stormforged) .nyx-user-profile-body{z-index:3!important;background:linear-gradient(180deg,color-mix(in srgb,#20222b 90%,transparent),color-mix(in srgb,#151820 86%,var(--nyx-user-accent-primary,#5865f2)))!important;box-shadow:0 16px 34px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.08)!important;backdrop-filter:blur(10px) saturate(.92)}
@@ -3245,8 +3205,6 @@ html[data-nyx-theme] body .nyx-profile-directory-card-host .nyx-user-profile-abo
 .nyx-user-profile-effect-kraken-depths .nyx-user-profile-effect::before,.nyx-founder-effect-kraken-depths .nyx-founder-profile-effect::before{left:-12%;bottom:-20%;width:43%;height:66%;border-width:12px;opacity:.62}
 .nyx-user-profile-effect-kraken-depths .nyx-user-profile-effect::after,.nyx-founder-effect-kraken-depths .nyx-founder-profile-effect::after{right:-12%;bottom:-18%;width:40%;height:62%;border-width:11px;opacity:.55}
 
-/* Simple profile cosmetics. Roses stay on the frame edge so they never cover
-   the avatar, identity, role chips, or profile copy. */
 .nyx-user-profile-effect-blooming-roses .nyx-user-profile-effect,
 .nyx-founder-effect-blooming-roses .nyx-founder-profile-effect{
   display:block!important;
@@ -3386,11 +3344,6 @@ html[data-nyx-theme] body .nyx-profile-directory-card-host .nyx-user-profile-abo
   }
 }
 
-/* Balanced theme accents. Theme colors identify interactive controls while
-   the canvas, panels, labels, and full-color brand marks stay neutral. The
-   high-specificity selectors intentionally replace older fixed lavender and
-   gray values in the redesigned browser chrome. */
-
 /* A few monochrome source assets are black with transparent backgrounds.
    Give only those marks an off-white plate so they remain legible without
    tinting the rest of the branded Apps grid. */
@@ -3420,7 +3373,6 @@ html[data-nyx-theme] body.browser-shell .apps-panel :is(p,small),html[data-nyx-t
   -webkit-text-fill-color:var(--nyx-home-muted)!important;
 }
 
-/* App tiles stay neutral until they are the active pointer/keyboard target. */
 html[data-nyx-theme] body.browser-shell .apps-launch-grid>.quick-tile{
   border-color:transparent!important;
   background-color:#000!important;
@@ -3467,8 +3419,6 @@ html[data-nyx-theme] body.browser-shell .apps-launch-grid>.quick-tile:is(:hover,
   background:color-mix(in srgb,var(--nyx-chrome-accent,#8fb8ff) 18%,#181a20);
 }
 
-/* Theme selection is accent-only. Structural surfaces stay on the shared
-   translucent glass contract while each theme supplies focus and accent. */
 html[data-nyx-theme] body.browser-shell:not(.three-d-backgrounds):not(.custom-bg-active){
   --nyx-final-shortcut-icon:#f1f3f7!important;
   --nyx-dot-color:#202633!important;
@@ -3484,6 +3434,5 @@ html[data-nyx-theme] body.browser-shell .lion-ai-form{
   backdrop-filter:blur(10px) saturate(1.06)!important;
 }
 
-/* Keep account actions readable above the saved profile artwork. */
 html[data-nyx-theme] body .nyx-account-menu>.nyx-account-menu-group{z-index:4}
 html[data-nyx-theme] body .nyx-account-menu>.nyx-account-menu-profile-effect{background-size:100% auto!important;background-position:center top!important}

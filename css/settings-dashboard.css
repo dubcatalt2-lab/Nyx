@@ -1,4 +1,3 @@
-/* Settings workspace with grouped controls and the shared theme palette. */
 html body.browser-shell .browser-shell-settings-panel [data-settings-category="browser"] .nyx-settings-group{display:grid!important;gap:16px!important;background:transparent!important;overflow:visible!important}
 html body.browser-shell .browser-shell-settings-panel .nyx-settings-group > .nyx-browser-settings-card{--nyx-settings-columns:minmax(0,1fr);min-width:0!important;grid-template-columns:var(--nyx-settings-columns)!important;align-items:start!important;gap:16px!important;padding:22px!important;border:1px solid var(--theme-border,rgba(255,255,255,.1))!important;border-radius:16px!important}
 html body.browser-shell .browser-shell-settings-panel .nyx-browser-settings-card .nyx-settings-control{display:grid!important;width:100%!important;min-width:0!important;gap:14px!important;justify-self:stretch!important}

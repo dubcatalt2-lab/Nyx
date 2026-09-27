@@ -1,5 +1,5 @@
 @font-face{font-family:NyxRounded;src:url("../assets/fonts/fredoka/Fredoka.ttf") format("truetype");font-weight:300 700;font-style:normal;font-display:swap}
-/* Shared quiet tints for the shell and embedded apps. */
+
 :root,[data-nyx-preview-theme] {--nyx-tint:#000000}
 html[data-nyx-theme="midnight"],[data-nyx-preview-theme="midnight"] {--nyx-tint:#8194b0}
 html[data-nyx-theme="ruby"],[data-nyx-preview-theme="ruby"] {--nyx-tint:#ad777b}

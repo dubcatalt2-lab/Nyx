@@ -1,4 +1,3 @@
-// Nyx line icons adapted for the Tutsi dock.
 export const icons = {
   cloud: '<path d="M7 19h11a4 4 0 0 0 .7-7.94A7 7 0 0 0 5.1 9.2 5 5 0 0 0 7 19Z"/>',
   checker: '<circle cx="10" cy="10" r="7"/><path d="m15 15 6 6M7 10l2 2 4-4"/>',

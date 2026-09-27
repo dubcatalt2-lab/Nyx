@@ -1,4 +1,3 @@
-/* Final weather report design. Keeps the existing Open-Meteo behavior and data hooks. */
 html body{
   --weather-accent:#7da8e8;
   --weather-accent-soft:rgba(125,168,232,.16);
@@ -390,7 +389,6 @@ html body:is(body,#nyx-weather-specificity) .weather-status{
 }
 html body:is(body,#nyx-weather-specificity) .weather-status:empty{display:none!important}
 
-/* Keep weather effects atmospheric rather than covering the report content. */
 html body:is(body,#nyx-weather-specificity) .weather-effects{z-index:0!important;opacity:.18!important;filter:saturate(.75)!important}
 html body:is(body,#nyx-weather-specificity) .weather-panel.weather-sun .fx-sun{right:-4px!important;top:54px!important;transform:scale(.72)!important}
 
@@ -398,7 +396,6 @@ html body:is(body,#nyx-weather-specificity) .weather-panel.weather-sun .fx-sun{r
   html body:is(body,#nyx-weather-specificity) .weather-effects{display:none!important}
 }
 
-/* Compact vertical report: familiar at a glance, but distinctly Nyx. */
 html body:is(body,#nyx-weather-specificity) .weather-panel{
   width:min(306px,calc(100vw - 32px))!important;
   max-height:min(560px,calc(100vh - 96px))!important;

@@ -1,6 +1,3 @@
-/* Profile customization editor: visual shell only. Existing form controls and
-   live-preview event wiring remain the source of truth. */
-
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-user-profile-dialog{
   width:min(1180px,calc(100vw - 32px))!important;
   height:min(860px,calc(100dvh - 32px))!important;
@@ -414,8 +411,6 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-preview-pane .nyx-edi
   transform:none!important;
 }
 
-/* Keep the editor preview narrow like the dropdown, but give it the taller
-   canvas needed to inspect banner, avatar, identity, and action spacing. */
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-banner{
   height:164px!important;
 }

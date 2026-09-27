@@ -1304,7 +1304,6 @@ $('use-address-filter').onclick=()=>{
   $('filter-address-result').textContent=`${label} saved. Used when the next browser connection starts.`;
 };
 
-
 // Keep player shortcuts working when focus remains in the enclosing Tutsi page.
 for(const type of ['keydown','keyup'])addEventListener(type,event=>{
   if(location.hash!=='#youtube'||event.target.closest?.('input,textarea,select,button,a,[contenteditable]'))return;
@@ -1328,7 +1327,6 @@ addEventListener('message',event=>{
   if(event.origin===location.origin&&proxyElement&&event.source===proxyElement.contentWindow&&event.data?.type==='tutsi:protection')protectionNotice(event.data.kind);
 });
 
-// Customization stays a draft until Save; no account or relay changes are made.
 const customize=$('customize-dialog');
 let customizeStep=0, customizeDraft, customizeTransition=0, customizeBusy=false;
 const customizeKeys={theme:'theme',accent:'accent',wallpaper:'wallpaper',tabPreset:'tab-preset',tabTitle:'tab-title',engine:'search-engine',motion:'motion',closePrevention:'close-prevention',blocker:'blocker'};

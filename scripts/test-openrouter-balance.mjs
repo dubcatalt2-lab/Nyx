@@ -17,7 +17,7 @@ balance=.11;await denied(claim(10000)); // Reserving ten thousand microdollars w
 const results=await Promise.allSettled([claim(6000),createOpenRouterBalanceGuard(options).reserve({key:'inference-fixture',amount:6000})]);
 assert.equal(results.filter(r=>r.status==='fulfilled').length,1,'Processes/models must share pending cost reservations');
 await denied(claim(6000));
-balance=.2;await claim(6000); // Refilled balance resumes without restarting.
+balance=.2;await claim(6000);
 keyLimit=.1;await denied(claim(1));keyLimit=null;
 broken=true;await denied(claim(1));broken=false;
 balance=.11;now+=300001;await claim(6000);

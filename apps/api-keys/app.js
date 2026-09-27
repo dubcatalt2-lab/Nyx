@@ -5,8 +5,7 @@ function clearOwnerKey(){clearTimeout(ownerKeyTimer);ownerKeyVersion++;if($('#ow
 let localAuth=null,loadedUid='',currentUid='',accountOwner=false,playController=null;
 function showTab(name){if(name!=='owner')clearOwnerKey();if(!['keys','usage','playground','owner'].includes(name))name='keys';if(name==='owner'&&!accountOwner)name='keys';document.querySelectorAll('[data-page]').forEach(el=>el.hidden=el.dataset.page!==name);document.querySelectorAll('[data-tab]').forEach(el=>{if(el.dataset.tab===name)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');});}
 document.querySelectorAll('[data-tab]').forEach(button=>button.onclick=()=>{location.hash=button.dataset.tab;showTab(button.dataset.tab);});addEventListener('hashchange',()=>showTab(location.hash.slice(1)));showTab(location.hash.slice(1));
-// Embedded apps inherit the existing Nyx wallpaper. Standalone /api reuses
-// the same wallpaper renderers and saved preferences, without changing them.
+
 const embedded=window.parent!==window;
 const setting=(key,fallback)=>{try{return localStorage.getItem(key)||fallback;}catch{return fallback;}};
 function syncAppearance(){

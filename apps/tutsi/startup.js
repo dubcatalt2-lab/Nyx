@@ -1,4 +1,3 @@
-// A startup cover only: routes, accounts and saved preferences stay intact.
 window.tutsiStartupReady = new Promise(resolve => {
   const frame = document.getElementById('studyready-startup');
   let timer, finished = false, staying = false;

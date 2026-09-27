@@ -1,4 +1,3 @@
-/* //fresh-theme-final */
 body.theme-fresh{
   --nyx-purple-edge:rgba(255,255,255,.84)!important;
   color:#0f8fa3;
@@ -13,7 +12,7 @@ body.theme-fresh select option{
 body.browser-shell.theme-fresh .weather-cloud-icon{
   filter:none!important;
 }
-/* //fresh-polish-final */
+
 body.theme-fresh{
   --fresh-ink:#0b7186;
   --fresh-blue:#2f80ed;
@@ -70,7 +69,7 @@ body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn{
   color:#1d64c8!important;
   -webkit-text-fill-color:#1d64c8!important;
 }
-/* //fresh-cleanup-final */
+
 body.browser-shell.theme-fresh .weather-cloud-icon,
 body.browser-shell.theme-fresh .browser-mode-weather > .weather-cloud-icon,
 body.browser-shell.theme-fresh #weatherRestore > .weather-cloud-icon{
@@ -170,7 +169,7 @@ body.browser-shell.theme-fresh #weatherRestore > .weather-cloud-icon{
   mask:url("../assets/icons/cloud-weather.png") center/contain no-repeat!important;
   filter:none!important;
 }
-/* //fresh-blur-menu-final */
+
 body.browser-shell.theme-fresh .browser-mode-menu{
   overflow:hidden!important;
   background:rgba(255,255,255,.56)!important;
@@ -210,7 +209,7 @@ body.browser-shell.theme-fresh .home-shortcut-menu button{
 body.browser-shell.theme-fresh .home-shortcut-menu button:hover{
   background:rgba(255,255,255,.46)!important;
 }
-/* //fresh-icon-toolbar-final */
+
 body.browser-shell.theme-fresh .browser-mode-weather{
   position:relative!important;
   display:grid!important;
@@ -277,7 +276,7 @@ body.browser-shell.theme-fresh .home-shortcut-menu button:hover{
   background:rgba(255,255,255,.44)!important;
   transform:translateX(2px)!important;
 }
-/* //fresh-shortcut-single-box-final */
+
 body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn{
   background:transparent!important;
   background-image:none!important;
@@ -309,7 +308,7 @@ body.browser-shell.theme-fresh .home-shortcut-add b{
   -webkit-text-fill-color:#0b7186!important;
   text-shadow:none!important;
 }
-/* //fresh-hover-smooth-final */
+
 body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn:hover{
   transform:scale(1.08)!important;
 }
@@ -317,8 +316,7 @@ body.browser-shell.theme-fresh .browser-mode-menu button:hover,
 body.browser-shell.theme-fresh .home-shortcut-menu button:hover{
   transform:translateX(1px)!important;
 }
-/* //fresh-shortcut-one-border-final */
-/* //fresh-logo-aqua-glow-final */
+
 body.browser-shell.theme-fresh .browser-shell-logo{
   filter:
     brightness(0) saturate(100%)
@@ -328,7 +326,7 @@ body.browser-shell.theme-fresh .browser-shell-logo{
     drop-shadow(0 0 32px rgba(11,113,134,.46))!important;
   opacity:.98!important;
 }
-/* //fresh-electric-aqua-final */
+
 body.theme-fresh{
   --fresh-electric:#00f5d4;
   --fresh-electric-deep:#00bfae;
@@ -361,7 +359,7 @@ body.browser-shell.theme-fresh .browser-shell-logo{
     drop-shadow(0 0 58px rgba(0,245,212,.48))!important;
   opacity:1!important;
 }
-/* //fresh-smooth-borderless-dots-final */
+
 body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn,
 body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn:hover,
 body.browser-shell.theme-fresh .home-shortcut.menu-open .home-shortcut-menu-btn{
@@ -381,7 +379,7 @@ body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn::before{
 body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn:hover::before{
   transform:translate(-50%,-50%) scale(1.08)!important;
 }
-/* //fresh-toolbar-icon-repair-final */
+
 body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn::before{
   content:""!important;
   position:absolute!important;
@@ -396,7 +394,7 @@ body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn::before{
   box-shadow:0 -6.5px 0 var(--fresh-electric),0 6.5px 0 var(--fresh-electric),0 0 10px rgba(0,245,212,.36)!important;
   transform:translate(-50%,-50%)!important;
 }
-/* //fresh-dot-border-erasure-final */
+
 body.browser-shell .browser-mode-weather,
 body.browser-shell #weatherRestore{
   position:relative!important;
@@ -448,9 +446,7 @@ body.browser-shell .weather-cloud-icon::after{
   content:none!important;
   display:none!important;
 }
-/* //fresh-shortcut-and-player-final */
-/* //fresh-final-button-repair */
-/* //fresh-card-settings-tone-final */
+
 body.browser-shell.theme-fresh .browser-mode-menu button,
 body.browser-shell.theme-fresh .home-shortcut-menu button{
   background:rgba(232,245,246,.54)!important;
@@ -467,7 +463,7 @@ body.browser-shell.theme-fresh .home-shortcut-menu button:hover{
   background-color:rgba(220,238,240,.68)!important;
   border-color:rgba(0,191,174,.50)!important;
 }
-/* //fresh-real-icons-no-borders-final */
+
 body.browser-shell.theme-fresh .fresh-real-icon{
   display:grid!important;
   place-items:center!important;
@@ -490,7 +486,7 @@ body.browser-shell.theme-fresh .fresh-real-back{
   mask:url("../assets/icons/fresh-left-arrow.png") center/contain no-repeat!important;
   filter:drop-shadow(0 0 8px rgba(0,245,212,.32))!important;
 }
-/* //fresh-final-render-fix */
+
 body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn::before,
 body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn::after{
   content:none!important;
@@ -542,7 +538,7 @@ html body.browser-shell.theme-fresh .shortcut-real-dots::before{
   font:900 24px/1 Arial,Helvetica,sans-serif!important;
   text-shadow:0 0 10px rgba(0,245,212,.45),0 0 22px rgba(0,245,212,.24)!important;
 }
-/* //all-theme-toolbar-shortcut-cloud-final */
+
 html body.browser-shell .browser-mode-weather,
 html body.browser-shell #weatherRestore{
   position:relative!important;
@@ -609,7 +605,7 @@ html body.browser-shell #weatherRestore > .weather-cloud-icon{
   background:var(--nyx-shell-icon)!important;
   background-color:var(--nyx-shell-icon)!important;
 }
-/* //final-theme-toolbar-polish */
+
 html body.browser-shell.theme-fresh{
   --nyx-shortcut-border:rgba(0,245,212,.74);
 }
@@ -618,7 +614,7 @@ html body.browser-shell.theme-fresh .browser-shell-settings-close::before{
   -webkit-text-fill-color:var(--fresh-electric,#00f5d4)!important;
   text-shadow:0 0 10px rgba(0,245,212,.5),0 0 22px rgba(0,245,212,.24)!important;
 }
-/* //compact-shortcut-dots-final */
+
 html body.browser-shell .apps-panel .quick-tile[data-domain="traxmojo.com"] .quick-icon{
   width:118px!important;
   height:118px!important;

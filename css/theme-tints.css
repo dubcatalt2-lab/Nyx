@@ -1,6 +1,3 @@
-/* Final theme model: one Default layout/background with restrained tint palettes. */
-
-/* Startup keeps the same dark Default surface; only its accent is tinted. */
 html body.theme-midnight{
   --nyx-load-bright:#f1f3f7;--nyx-load-mid:#9eb7d9;--nyx-load-accent:#9eb7d9;--nyx-load-deep:#607a9d;--nyx-load-muted:#929aaa;--nyx-load-surface:#0f131b;--nyx-load-bg:#080a0f;--nyx-load-deep-bg:#090b10;--nyx-load-glow:transparent;
 }
@@ -49,13 +46,6 @@ html body.browser-shell.theme-fresh{
 /* Preserve custom user backgrounds. All built-in themes otherwise share the
    exact Default canvas and dot pattern. */
 
-/* Default chrome geometry and surfaces, tinted only through variables above. */
-
-/* Every built-in theme uses the Default homepage spacing and shortcut geometry. */
-
-/* High-specificity normalization beats older per-theme layout rules. */
-
-/* Shared dark chrome and utility surfaces; palettes only tint borders/icons. */
 html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh){
   --weather-accent:var(--nyx-home-wordmark);
   --weather-accent-soft:color-mix(in srgb,var(--nyx-home-wordmark) 14%,transparent);
@@ -89,17 +79,12 @@ html[data-nyx-theme] body.browser-shell{
 /* One icon implementation for every palette. Older theme files used a mix of
    glyphs and masks, which made Default's arrows look like missing images. */
 
-/* Shortcut option dots use the same size and hover reveal in every theme. */
-
 /* Fern's legacy file has unusually specific control selectors. This final
    canonical state keeps it from changing the shared control geometry. */
 
 /* Canonical browser chrome. Theme files may supply colors, never geometry or
    motion, so switching a palette cannot resize tabs or toolbar controls. */
 
-/* The Add App tile shares the exact shortcut footprint and tint. */
-
-/* Settings inherits the active palette instead of the old purple fallback. */
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .browser-shell-settings-overlay.browser-shell-settings-overlay .browser-shell-settings-close{
   border-color:transparent!important;
   background:transparent!important;
@@ -124,15 +109,6 @@ html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-
   --line:var(--nyx-home-line)!important;
 }
 
-/* Single-source toolbar icons: no theme is allowed to rotate, offset, or draw
-   a second glyph on hover. */
-
-/* Theme-colored cloud drawn as a mask, replacing the purple bitmap layer. */
-
-/* Exactly one horizontal three-dot mark per shortcut. */
-
-/* Fern is a complete dark-green palette, including the settings surfaces
-   that historically inherited Fresh's old white/teal treatment. */
 html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"] body.browser-shell.theme-fresh.browser-shell{
   color:var(--nyx-home-text)!important;
   border-color:var(--nyx-home-line)!important;
@@ -142,8 +118,6 @@ html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"] bod
    Fresh's legacy teal text rules have higher specificity than their base
    utility styles, so this theme-scoped rule deliberately resolves that clash. */
 
-/* Fresh used to be the light aqua theme. Keep its green accent while sharing
-   the same neutral text and surface hierarchy as the other built-in themes. */
 html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
   body.theme-fresh:is(body,#nyx-fern-text-specificity){
   --nyx-fern-text:#f1f3f7;
@@ -201,8 +175,6 @@ html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
   -webkit-text-fill-color:var(--nyx-fern-muted)!important;
 }
 
-/* Final legacy containment prevents old aqua declarations from leaking while
-   leaving green for accent states rather than every piece of text and chrome. */
 html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
   body.theme-fresh:is(body,#nyx-fern-global-specificity){
   --nyx-fern-line:rgba(255,255,255,.085);
@@ -232,7 +204,6 @@ html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
 /* The unified canvas and its dot field are the 2D fallback.  They must not
    paint over an enabled Vanta scene, regardless of the active theme. */
 
-/* Wallpaper colors do not replace the Default interaction palette. */
 html[data-nyx-theme="custom"] body.theme-custom{
   --nyx-dot-color:var(--nyx-custom-dot)!important;
   --theme-a:var(--nyx-chrome-accent)!important;

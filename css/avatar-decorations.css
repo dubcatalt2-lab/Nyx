@@ -190,7 +190,6 @@ body.lag-reducer .nyx-avatar-decoration-prism-crown>.nyx-avatar-decoration,
 body.lag-reducer .nyx-avatar-decoration-ember-ring>.nyx-avatar-decoration,
 body.lag-reducer .nyx-avatar-decoration-vortex-crown>.nyx-avatar-decoration { background-image: var(--nyx-decoration-still) !important; }
 
-/* Decorations remain still unless their avatar is hovered. */
 .nyx-avatar-decoration,.nyx-avatar-decoration::before,.nyx-avatar-decoration::after,.nyx-avatar-decoration *{animation-play-state:paused!important}
 @media(hover:hover) and (prefers-reduced-motion:no-preference){
 [class*="nyx-avatar-decoration-"]:hover{--nyx-decoration-current:var(--nyx-decoration-image)}

@@ -1,13 +1,9 @@
-/* Final hover behavior: one quiet translucent blur across the Nyx interface. */
 html body{
   --nyx-hover-surface:color-mix(in srgb,var(--nyx-home-wordmark,var(--theme-strong,#a9bddf)) 11%,transparent);
   --nyx-hover-border:color-mix(in srgb,var(--nyx-home-wordmark,var(--theme-strong,#a9bddf)) 34%,transparent);
 }
 
 /* The ID option inside :is() intentionally wins over legacy theme !important rules. */
-
-/* The large chrome address field is intentionally static. It keeps a quiet
-   border for structure, but has no glow or pointer-hover response. */
 
 /* New tabs finish their entrance once without hover interrupting/restarting it. */
 
@@ -46,7 +42,6 @@ html body:is(body,#nyx-hover-specificity) .window-controls [data-close]:hover::a
 /* Settings navigation has a deliberate selected-row fill. The generic hover
    surface must not replace it or make an active row flash between two colors. */
 
-/* The compact chrome menu needs a visible, stationary row hover. */
 html body.browser-shell:is(body,#nyx-hover-specificity) .browser-mode-menu button:hover{
   transform:none!important;
   border-color:var(--nyx-hover-border)!important;

@@ -1,4 +1,3 @@
-/* Quiet Nyx home-screen visual system for Chat. Chat behavior stays in app.js. */
 :root{
   --chat-bg:#000;
   --chat-panel:#07080b;
@@ -30,7 +29,6 @@ html,body{background:#000}
   mask-image:radial-gradient(ellipse 70% 72% at 55% 48%,#000,transparent 100%);
 }
 
-/* Slim top bar, using the same neutral controls as the Nyx home screen. */
 .chat-topbar{height:54px;padding:0 12px 0 15px;border-bottom-color:var(--chat-line-soft);background:rgba(5,6,9,.97)}
 .chat-brand{gap:8px}
 .chat-brand-mark{width:30px;height:30px;border-color:#30313a;border-radius:50%;background:#090a0e;color:#ecebf2}
@@ -45,7 +43,6 @@ html,body{background:#000}
 .caffeine-button{min-height:32px;padding:0 10px;color:#d5c8bd;font-size:9px}.caffeine-button:hover,.caffeine-button.active{border-color:#67584c;background:#12100e;color:#fff}
 .caffeine-badge{border-color:#51463d;background:#14100d;color:#d6c3b4}
 
-/* Shell */
 .chat-layout{grid-template-columns:218px minmax(0,1fr) 230px;height:calc(100dvh - 54px)}
 .channel-sidebar,.member-sidebar{background:rgba(5,6,9,.96)}
 .channel-sidebar{border-right-color:var(--chat-line-soft)}.member-sidebar{border-left-color:var(--chat-line-soft)}
@@ -63,7 +60,6 @@ html,body{background:#000}
 .chat-guidelines{border-color:var(--chat-line-soft);border-radius:9px;background:#08090d}.chat-guidelines>svg{stroke:#b7b2ca}.chat-guidelines strong{color:#d8d8dd}
 .current-user{border-top-color:var(--chat-line-soft);background:#08090d}
 
-/* Conversation */
 .conversation{grid-template-rows:49px minmax(0,1fr) auto;background:rgba(0,0,0,.84)}
 .conversation-header{padding:0 15px;border-bottom-color:var(--chat-line-soft);background:rgba(5,6,9,.92)}
 .channel-symbol{color:#a0a1aa}.conversation-header h1{font:650 13px/1 Outfit,Inter,sans-serif}
@@ -88,7 +84,6 @@ html,body{background:#000}
 .message-context-action:hover,.message-context-action:focus-visible{background:#f1f1f3;color:#08080a}
 .chat-notice{border-color:rgba(255,125,145,.35);background:#291318}.chat-notice.success{border-color:rgba(98,220,168,.3);background:#0d2019}
 
-/* Member rail and profile */
 .member-group h2{color:#747680}.member-button.offline{opacity:.62}
 .avatar.online::after{border-color:#07080b;box-shadow:none}
 .member-dialog,.dm-dialog,.channel-manager-dialog,.caffeine-dialog,.caffeine-gift-dialog,.command-dialog,.flagged-search-dialog{

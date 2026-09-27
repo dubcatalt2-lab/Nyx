@@ -1,4 +1,3 @@
-/* The profile drawer owns its layout; other profile surfaces keep their styling. */
 html[data-nyx-theme] body .nyx-profile-drawer.nyx-profile-organized {
   --editor-surface: color-mix(in srgb, var(--theme-accent, #8fb8ff) 5%, rgba(17, 22, 32, .46));
   --editor-control: rgba(8, 12, 20, .48);

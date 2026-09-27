@@ -1,5 +1,3 @@
-// Public embed endpoints, using canonical TMDB coordinates. Names identify the
-// actual services; inclusion is not a claim of availability or ad-free playback.
 export const providerDefinitions = Object.freeze([
   ['vidy', 'Vidy', 'https://www.vidy.st', ''],
   ['videasy', 'Videasy', 'https://player.videasy.net', ''],

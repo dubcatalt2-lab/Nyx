@@ -102,7 +102,6 @@ button {
   color: inherit;
 }
 
-
 .ibtn,
 .like-btn {
   display: inline-grid;
@@ -152,7 +151,6 @@ button {
   display: block;
   line-height: 1;
 }
-
 
 .like-btn { color: rgba(var(--text-rgb), .38); }
 .like-btn.liked {
@@ -272,7 +270,6 @@ header {
 .searchbox:focus-within .search-kbd,
 .searchbox input:not(:placeholder-shown) ~ .search-kbd { display: none; }
 
-
 .shell {
   display: grid;
   grid-template-columns: 190px minmax(0, 1fr) 280px;
@@ -373,7 +370,6 @@ header {
 .sidebar-playlist strong { font-size: .75rem; }
 .sidebar-playlist small { color: var(--dim); font-size: .62rem; }
 .sidebar-playlist-empty { padding: 8px 11px; color: var(--dim); font-size: .7rem; }
-
 
 main { min-width: 0; }
 
@@ -759,7 +755,6 @@ main { min-width: 0; }
   line-height: 1;
   letter-spacing: .03em;
 }
-
 
 .rail {
   position: sticky;
@@ -1768,8 +1763,6 @@ input[type="range"]::-moz-range-thumb {
   }
   .eq i { animation: none; height: 60%; }
 }
-
-/* whoever did this css is so cool and talented, i love them so much. i want to be them when i grow up. (why did my vscode put that last part!?) */
 
 #musicPlaybackStatus { font-size: .82rem; color: var(--text-muted, #a4a4b8); margin: 8px 0; overflow-wrap: anywhere; }
 .play-btn.is-loading i { visibility: hidden; }

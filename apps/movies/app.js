@@ -31,8 +31,6 @@ if(!embedded){document.documentElement.classList.add('nyx-movies-standalone');fo
 
 syncAppearance();addEventListener('storage',syncAppearance);addEventListener('message',event=>{if(event.source===parent&&event.origin===location.origin&&event.data?.type==='nyx:theme-sync')syncAppearance();});
 
-
-
 let query='',page=1,totalPages=1,searchController,detailController,selected=null,playerTimer;
 
 async function api(path,signal,retries=0){
@@ -85,7 +83,7 @@ function showSlide(index,{recenter=true}={}){
  panels.forEach((panel,i)=>{const active=i===featuredIndex;panel.classList.toggle('ag-panel--active',active);panel.style.setProperty('--ag-grow',active?String((.6*(panels.length-1))/(1-.6)||1):'1');panel.style.setProperty('--ag-tilt',active?'0deg':i<featuredIndex?'5deg':'-5deg');panel.style.setProperty('--ag-shift',active?'0px':Math.max(-1.5,Math.min(1.5,featuredIndex-i))*10+'px');panel.querySelector('.ag-panel-trigger').setAttribute('aria-expanded',String(active));});
  if(panels[featuredIndex])panels[featuredIndex].append(document.querySelector('.featured-copy'));
  const half=Math.floor(panels.length/2);
- // Keep the expanded movie centered; advancing the index shifts titles right.
+
  for(let position=0;recenter&&position<panels.length;position++){
   const index=(featuredIndex+half-position+panels.length)%panels.length;
   const panel=panels[index];panel.style.setProperty('--ag-tilt',position<half?'5deg':position>half?'-5deg':'0deg');
@@ -96,7 +94,7 @@ function showSlide(index,{recenter=true}={}){
   for(const panel of panels){
    const before=oldRects.get(panel),after=panel.getBoundingClientRect();if(!before||!after.width||!after.height)continue;
    let dx=before.left-after.left,dy=before.top-after.top;
-   // The card wrapping around enters from the edge instead of crossing over its neighbors.
+
    if(!vertical&&Math.abs(dx)>galleryRect.width*.65)dx=-direction*(after.width+12);
    if(vertical&&Math.abs(dy)>galleryRect.height*.65)dy=-direction*(after.height+7);
    panel.animate([{transform:`translate(${dx}px,${dy}px) scale(${before.width/after.width},${before.height/after.height})`},{transform:'none'}],{duration:recenter?500:450,easing:'cubic-bezier(.22,1,.36,1)'});

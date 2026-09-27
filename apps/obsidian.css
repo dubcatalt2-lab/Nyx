@@ -1,4 +1,3 @@
-/* Shared Obsidian surfaces for built-in apps. Layout remains owned by each app. */
 @import url('../css/obsidian-palette.css');
 :root,html body {
   --app-bg:var(--nyx-surface-bg);--app-panel:var(--nyx-surface-panel);--app-raised:var(--nyx-surface-raised);
@@ -75,7 +74,6 @@ html body :is(.channel-sidebar,.member-sidebar,.conversation-header,.current-use
 html body :is(.primary-button,.send-button,.composer-send){background:var(--app-raised)!important;color:var(--app-text)!important;border-color:var(--app-line)!important;box-shadow:none!important}
 html body :is(.primary-button,.send-button,.composer-send):hover{background:var(--app-field)!important;filter:none}
 
-/* Composite search controls have one rounded surface and one focus ring. */
 html body :is(.search-field,.searchbox,.search-box,.ai-history-search){background:var(--app-field);border-color:var(--app-line);border-radius:10px;box-shadow:none;transition:background-color 160ms,border-color 160ms}
 html body :is(.search-field,.searchbox,.search-box,.ai-history-search):hover{background:var(--app-raised);border-color:var(--app-muted)}
 html body :is(.search-field,.searchbox,.search-box,.ai-history-search):focus-within{background:var(--app-field);border-color:var(--app-muted);box-shadow:0 0 0 2px color-mix(in srgb,var(--app-muted) 14%,transparent)}

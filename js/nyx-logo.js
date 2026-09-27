@@ -2,7 +2,7 @@
   'use strict';
   const source='/assets/icons/nyx-monogram.png';
   const smallSource='/assets/icons/nyx-monogram-small.png';
-  // Preserve the supplied artwork, without the legacy crescent crop or tint.
+
   async function themedUrl(){return source}
   async function croppedUrl(){return smallSource}
   async function apply(theme='default',root=document){

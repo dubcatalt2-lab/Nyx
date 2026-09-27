@@ -1,5 +1,3 @@
-/* Compact homepage utilities and their Nyx-native information windows. */
-
 html body.browser-shell .browser-window .browser-body > .nyx-eruda-host{
   position:absolute;
   inset:0;
@@ -215,7 +213,6 @@ html body .nyx-terminal-form input{
 html body .nyx-terminal-form input:focus{border-color:var(--accent,#8fb8ff)}
 html body .nyx-terminal-form button{height:36px;padding:0 15px;border-radius:9px}
 
-/* One-time versioned Terms acceptance gate. */
 html body.nyx-tos-active{overflow:hidden!important}
 html body .nyx-tos-gate{
   position:fixed;

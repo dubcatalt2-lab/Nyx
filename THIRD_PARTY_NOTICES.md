@@ -41,3 +41,6 @@ Locally hosted, resized JPEGs; UI names are Nyx labels. Licensed under https://u
 - Leaves: Sander Weeteling ? https://unsplash.com/photos/4LiyQSlYD-4
 - Moonlight: Jeff Nissen ? https://unsplash.com/photos/ZMiXh39Gps4
 - Rain: Christian Ladewig ? https://unsplash.com/photos/ckyhWjWa3kU
+
+## AI company icons
+SVG icons from Lobe Icons, https://github.com/lobehub/lobe-icons/tree/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-svg/icons. MIT license included in assets/icons/ai-companies/LICENSE. Company marks belong to their respective owners.

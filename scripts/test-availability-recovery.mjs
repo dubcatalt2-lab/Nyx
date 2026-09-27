@@ -15,12 +15,12 @@ try{
  const warning=page.locator('#nyxAvailabilityWarning');
  const advance=ms=>page.clock.runFor(ms);
  const hidden=async()=>assert(await warning.count()===0 || await warning.isHidden());
- await advance(7001);await hidden(); // A handshake over the old 5s timeout succeeds.
+ await advance(7001);await hidden();
  await page.evaluate(()=>window.mode='hang');
- await advance(30000+10000+5000+10000);await hidden(); // Two timeouts alone do not warn.
+ await advance(30000+10000+5000+10000);await hidden();
  await advance(5000+10000);assert.match(await warning.locator("span").innerText(),/Having trouble connecting to Wisp/);
  assert.doesNotMatch(await warning.locator("span").innerText(),/may be down|Report/);
- await page.evaluate(()=>window.mode='ok');await advance(5002);await hidden(); // No reload needed.
+ await page.evaluate(()=>window.mode='ok');await advance(5002);await hidden();
  await page.evaluate(()=>{window.mode='hang';window.hidden=true;document.dispatchEvent(new Event('visibilitychange'))});
  const count=await page.evaluate(()=>opened);await advance(120000);assert.equal(await page.evaluate(()=>opened),count);
  await page.evaluate(()=>{window.hidden=false;document.dispatchEvent(new Event('visibilitychange'))});await advance(1);

@@ -324,20 +324,29 @@ button:disabled{cursor:not-allowed}
 .ai-model-trigger>svg{width:16px;height:16px;fill:none;stroke:var(--ai-muted);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;transition:transform 160ms ease}
 .ai-model-picker.is-open .ai-model-trigger>svg{transform:rotate(180deg)}
 .ai-model-menu{
-  position:absolute;
-  z-index:50;
-  top:calc(100% + 9px);
-  right:0;
-  width:min(340px,calc(100vw - 24px));
-  max-height:min(430px,calc(100vh - var(--ai-header) - 28px));
-  overflow:hidden;
-  border:1px solid var(--ai-border-strong);
-  border-radius:15px;
-  background:color-mix(in srgb,var(--ai-surface-raised) 96%,var(--ai-bg-deep));
-  box-shadow:0 24px 60px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.035);
-  transform-origin:top right;
-  animation:ai-menu-in 150ms cubic-bezier(.2,.75,.25,1);
+  position:fixed;inset:0;margin:auto;padding:0;
+  width:min(760px,calc(100vw - 32px));max-width:none;
+  height:min(680px,calc(100dvh - 64px));max-height:none;
+  display:flex;flex-direction:column;overflow:hidden;
+  border:1px solid var(--ai-border-strong);border-radius:16px;
+  background:var(--ai-surface);color:var(--ai-text);
+  box-shadow:0 24px 80px #0008;
+  animation:ai-menu-in 150ms ease;
 }
+.ai-model-menu::backdrop{background:#0009;backdrop-filter:blur(8px)}
+.ai-model-companies{display:flex;flex-wrap:wrap;gap:5px;padding:12px 16px;max-height:110px;overflow:auto;flex-shrink:0}
+.ai-model-companies button{display:grid;place-items:center;min-width:36px;height:36px;padding:6px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ai-muted);font-size:11px;cursor:pointer}
+.ai-model-companies button:hover,.ai-model-companies button[aria-pressed="true"]{background:var(--ai-surface-hover);border-color:var(--ai-border-strong);color:var(--ai-text)}
+.ai-model-companies button:focus-visible,#modelMenuClose:focus-visible{outline:2px solid var(--ai-muted);outline-offset:2px}
+.ai-company-logo{display:block;width:22px;height:22px;flex-shrink:0;background:currentColor;mask:var(--company-logo) center/contain no-repeat;-webkit-mask:var(--company-logo) center/contain no-repeat}
+.ai-company-initial{display:grid;place-items:center;width:22px;height:22px;font-size:9px;color:var(--ai-muted)}
+.ai-model-search{display:block;margin:0 16px 10px;flex-shrink:0}
+.ai-model-search input{box-sizing:border-box;width:100%;height:40px;padding:0 12px;border:1px solid var(--ai-border-strong);border-radius:8px;background:var(--ai-surface-hover);color:var(--ai-text);font:inherit;font-size:12px;outline:none}
+.ai-model-search input:focus{border-color:var(--ai-muted)}
+.ai-model-search input::placeholder{color:var(--ai-muted)}
+#modelMenuClose{margin-left:auto;display:grid;place-items:center;width:30px;height:30px;border:1px solid var(--ai-border);border-radius:7px;background:transparent;color:var(--ai-muted);font-size:22px;cursor:pointer}
+.ai-model-empty{padding:30px 16px;text-align:center;color:var(--ai-muted);font-size:13px}
+.ai-model-group-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr));gap:3px 10px}
 .ai-model-menu[hidden]{display:none}
 .ai-model-menu-header{
   display:flex;
@@ -351,7 +360,7 @@ button:disabled{cursor:not-allowed}
 .ai-model-menu-header strong{color:var(--ai-text);font-size:12px;font-weight:600}
 .ai-model-menu-header span{color:var(--ai-muted);font-size:10px}
 .ai-model-options{
-  max-height:min(380px,calc(100vh - var(--ai-header) - 78px));
+  flex:1;min-height:0;max-height:none;
   padding:7px;
   overflow-x:hidden;
   overflow-y:auto;
@@ -378,7 +387,7 @@ button:disabled{cursor:not-allowed}
   width:100%;
   min-height:38px;
   display:grid;
-  grid-template-columns:minmax(0,1fr) 18px;
+  grid-template-columns:22px minmax(0,1fr) 18px;
   align-items:center;
   gap:10px;
   padding:8px 9px;
@@ -402,7 +411,9 @@ button:disabled{cursor:not-allowed}
   background:var(--ai-accent-soft);
   color:var(--ai-text);
 }
-.ai-model-option-label{min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.4}
+.ai-model-option-label{display:grid;gap:4px;min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.4}
+.ai-model-option-label strong{font-size:12px;font-weight:550}
+.ai-model-option-label small{color:var(--ai-muted);font-size:10px;font-weight:400}
 .ai-model-option-check{display:grid;width:18px;height:18px;place-items:center;color:var(--ai-accent-bright);opacity:0;transform:scale(.75);transition:opacity 140ms ease,transform 140ms ease}
 .ai-model-option[aria-selected="true"] .ai-model-option-check{opacity:1;transform:none}
 .ai-model-option-check svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}

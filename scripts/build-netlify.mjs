@@ -436,7 +436,7 @@ async function main() {
   await rm(output, { recursive: true, force: true });
   await mkdir(output, { recursive: true });
   await copyRepositoryStaticFiles();
-  // Reuse StudyReady's real lessons for the four-second startup cover.
+
   const studyDir=join(output,'apps/tutsi/studyready');
   await mkdir(studyDir,{recursive:true});
   await writeFile(join(studyDir,'index.html'),learningPage().replaceAll('/learning/','/apps/tutsi/studyready/'));

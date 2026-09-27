@@ -2181,17 +2181,9 @@ const freeModelHealth=createFreeModelHealth();
 const nyxAiCatalogCacheLimit = 50;
 function nyxAiKey() { return String(process.env.NYX_OPENROUTER_API_KEY || '').trim(); }
 
-
-
 function nyxAiSharedProvider() {
   return { id: "shared", label: "OpenRouter", key: nyxAiKey(), endpoint: nyxAiEndpoint(), catalogEndpoint: nyxAiCatalogEndpoint() };
 }
-
-
-
-
-
-
 
 async function nyxAiProviderFetch(provider,url,options={}) {
   if(new URL(url).origin!=='https://openrouter.ai')throw Object.assign(new Error('This AI provider has been removed.'),{status:410});
@@ -2199,17 +2191,6 @@ async function nyxAiProviderFetch(provider,url,options={}) {
     ? nyxBudgetedAiFetch('shared',url,options)
     : fetch(url,{...options,redirect:'error'});
 }
-
-
-
-
-
-
-
-
-
-
-
 
 function nyxAiGlobalProvider(value) { return ['shared','openrouter'].includes(String(value||'shared').toLowerCase()) ? nyxAiSharedProvider() : null; }
 
@@ -2310,12 +2291,6 @@ function nyxAiMergeCatalogs(...catalogs) {
   }
   return [...merged.values()];
 }
-
-
-
-
-
-
 
 function nyxAiBudgetCatalog(available, personal, provider, actor={}) {
   if(hasFullAiCatalog(actor)&&new URL(nyxAiEndpoint(provider)).hostname==='openrouter.ai')return available.filter(model=>(model.text||model.imageGeneration)&&aiCatalogPrice(model));
@@ -2782,7 +2757,6 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     return;
   }
 
-
   const requestedModel = String(req.body?.model || "");
 
   const key = credential.key;
@@ -3219,8 +3193,6 @@ function nyxGroqChatModelId(value) {
   return !/^(?:allam-2-7b|groq\/compound(?:-mini)?|(?:meta-llama\/)?llama-3\.3-70b-versatile)$/i.test(id);
 }
 
-
-
 async function nyxApiKeyOwnerEntitlement(firebase, uid) {
   if (!firebase || !uid) return { premium: false, owner: false };
   try {
@@ -3304,8 +3276,6 @@ async function nyxApiKeyConsume(firebase, key, config) {
   minuteTimes.push(Date.now());
   nyxApiKeyMinuteUsage.set(key.id, minuteTimes);
 }
-
-
 
 app.get("/api/nyx-api-keys/status", async (req, res) => {
   res.set("Cache-Control", "no-store");
@@ -3433,8 +3403,6 @@ installDeveloperApi(app, {
   page: (req,res) => res.sendFile(join(staticRoot,'apps/api-keys/index.html'))
 });
 
-
-
 // Shared Groq is selected only by a same-origin Nyx AI client. The browser
 // receives model IDs and responses, never the provider credential.
 async function nyxAiGroqWorkspaceMessages(req) {
@@ -3461,12 +3429,9 @@ async function nyxAiGroqWorkspaceMessages(req) {
   return sourceMessages;
 }
 
-
-
 // The Nyx AI workspace accepts a user's Nyx key in its existing personal-key
 // control. It reaches the same server-only Groq gateway as external clients;
 // the browser never receives the provider credential.
-
 
 app.use((req, res, next) => {
   const referer = String(req.get("referer") || "");
@@ -7260,7 +7225,6 @@ async function nyxifySendArtwork(res, artworkPath, tidalArtworkPath = "") {
   }).send(artwork.body);
 }
 
-
 function nyxCloudGamingBoundedInteger(value, fallback, minimum, maximum) {
   const parsed = Number.parseInt(String(value || ""), 10);
   return Number.isInteger(parsed) ? Math.min(maximum, Math.max(minimum, parsed)) : fallback;
@@ -7637,8 +7601,6 @@ function nyxTubePublicVideo(item) {
   };
 }
 
-// Retained only for Nyxify's existing official embed verification.
-// NyxTube catalog, community and playback validation do not use this API.
 async function nyxTubeApi(resource, parameters = {}) {
   const key = String(process.env.NYX_YOUTUBE_API_KEY || "").trim();
   if (!key) {
@@ -7660,7 +7622,6 @@ async function nyxTubeApi(resource, parameters = {}) {
   return payload;
 }
 
-// Keep the separate music matcher's existing official-catalog fallback unchanged.
 async function nyxifyYouTubeSearch(query, limit) {
   const cacheKey = `music-search:${query.toLowerCase()}:${limit}`;
   const cached = nyxTubeCached(cacheKey);
@@ -7686,7 +7647,7 @@ async function nyxTubeVideoDetails(ids) {
 }
 
 async function nyxTubeFeed(limit) {
-  // A shared discovery feed, not Google's ranked mostPopular chart.
+
   return nyxTubeCatalog.search('science music gaming', limit);
 }
 
@@ -10712,7 +10673,6 @@ app.post("/api/chat/moderation/warnings", async (req, res) => {
   }
 });
 
-// Search the indexed username field, independently of the bootstrap member cap.
 app.get("/api/chat/members", async (req, res) => {
   res.set("Cache-Control", "no-store");
   try {
@@ -12479,8 +12439,6 @@ app.get("/api/nyxify/stream/:trackId", async (req, res) => {
   res.status(410).type("text/plain").send("Short previews have been removed. Reload Nyxify to use full-song playback.");
 });
 
-
-
 app.get("/api/cloud-gaming/status", (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
@@ -14066,7 +14024,7 @@ app.get(["/tutsi", "/tutsi/"], (_req, res) => {
   res.set("Cache-Control", "no-cache");
   res.sendFile(join(staticRoot, "apps", "tutsi", "index.html"));
 });
-// The sibling site shares services, while keeping its own shell and origin storage.
+
 app.get("/", async (req, res, next) => {
   try {
     if (await customHostnameSite(req.hostname) !== "tutsi") return next();

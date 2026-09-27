@@ -1258,7 +1258,6 @@ body[data-view="app-view"] #app-host{height:auto;flex:1;min-height:0}
 .browser-bar{flex:none;align-items:center}
 @media(max-width:500px){.browser-bar{padding:6px;gap:2px}.browser-bar .icon-button{width:32px;height:34px;flex:none}#address-form{min-width:0}#address{padding:7px;font-size:14px}}
 
-/* Tutsi customization: a live postcard preview beside three short steps. */
 #open-customize{display:inline-flex;align-items:center;gap:10px;margin-top:16px}#open-customize svg{width:18px;height:18px}
 #customize-dialog{width:min(920px,calc(100vw - 28px));max-width:920px;max-height:calc(100dvh - 28px);padding:32px;border:1px solid var(--line);border-radius:14px;background:var(--mantle);color:var(--text);overflow:auto}
 #customize-dialog::backdrop{background:#09090bf5;backdrop-filter:none}
@@ -1286,7 +1285,6 @@ html[data-motion="reduce"] #customize-dialog *,html[data-motion="reduce"] .setti
 
 .tab-preset-feedback{display:flex;align-items:center;gap:12px;padding-top:12px;min-width:0}.tab-preset-feedback img{object-fit:contain;flex:none}.tab-preset-feedback span{flex:1;min-width:0;overflow-wrap:anywhere}.tab-preset-feedback button{flex:none}
 
-/* Signed-in account menu shares the profile editor and saved identity. */
 #account-button img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 #account-avatar{width:64px;height:64px;margin:0 auto 12px}#account-avatar img,#account-avatar svg{width:100%;height:100%;object-fit:cover;border-radius:50%}
 #account-dialog.account-dropdown{position:fixed;inset:76px 20px auto auto;margin:0;width:min(310px,calc(100vw - 40px));padding:24px;text-align:center}
@@ -1324,7 +1322,6 @@ html[data-motion="reduce"] #customize-dialog *,html[data-motion="reduce"] .setti
 #customize-skip-blocker{margin-top:20px}
 @media(max-width:650px){.customize-layout{grid-template-columns:1fr;gap:20px}#customize-preview{display:none}.customize-fields section{min-height:330px}.customize-choices button{padding:10px;min-height:56px}.customize-steps{justify-content:space-between}}
 
-/* Keep long website addresses legible. */
 #address{font-family:system-ui,sans-serif!important;font-size:13px;letter-spacing:normal;line-height:1.5;direction:ltr;text-overflow:ellipsis}
 #address:focus{text-overflow:clip}
 body[data-view="app-view"] #app-host{height:100dvh}

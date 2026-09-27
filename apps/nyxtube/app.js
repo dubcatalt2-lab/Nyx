@@ -40,7 +40,7 @@
   async function json(url, signal) {
     const response = await fetch(url, { credentials: "same-origin", headers: { Accept: "application/json" }, signal });
     let payload = null;
-    try { payload = await response.json(); } catch { /* reported below */ }
+    try { payload = await response.json(); } catch {                      }
     if (!response.ok) throw new Error(payload?.error || `Request failed (${response.status})`);
     return payload;
   }
@@ -563,7 +563,7 @@
     refs.watchSpeedIndicator.hidden = true;
     if (held) {
       if (state.watchSpaceRateChanged && ready(state.watchPlayer)) {
-        try { state.watchPlayer.setPlaybackRate?.(state.watchSpacePreviousRate); } catch { /* Player closed while Space was held. */ }
+        try { state.watchPlayer.setPlaybackRate?.(state.watchSpacePreviousRate); } catch {                                           }
       }
       if (!state.watchSpaceWasPlaying && ready(state.watchPlayer)) state.watchPlayer.pauseVideo();
     } else if (!cancel && state.view === "watch") toggleWatch();
@@ -672,7 +672,7 @@
     state.shortPlayer=entry.player;entry.node.style.visibility='visible';entry.node.style.pointerEvents='auto';entry.node.setAttribute('aria-hidden','false');
     state.shortMuted=true;refs.shortMute.innerHTML=icon('icon-muted');
     if(entry.ready){entry.player.mute();entry.player.playVideo();startShortTimer();}
-    // Warm only the next three. They remain muted and do not autoplay.
+
     for(let offset=1;offset<=Math.min(3,state.shorts.length-1);offset++)prepareShort(state.shorts[(state.shortIndex+offset)%state.shorts.length]);
   }
   function recoverShort(video) {
@@ -805,8 +805,8 @@
       if (opening) { refs.watchSettingsMenu.hidden = false; refs.watchSettings.setAttribute("aria-expanded", "true"); refs.watchSpeed.focus({ preventScroll: true }); }
     });
     refs.watchSettingsMenu.addEventListener("click", event => event.stopPropagation());
-    refs.watchSpeed.addEventListener("change", () => { try { state.watchPlayer?.setPlaybackRate?.(Number(refs.watchSpeed.value) || 1); } catch { /* YouTube rejected this rate. */ } });
-    refs.watchVolume.addEventListener("input", () => { try { state.watchPlayer?.setVolume?.(Number(refs.watchVolume.value) || 0); } catch { /* The player closed while the volume changed. */ } });
+    refs.watchSpeed.addEventListener("change", () => { try { state.watchPlayer?.setPlaybackRate?.(Number(refs.watchSpeed.value) || 1); } catch {                                   } });
+    refs.watchVolume.addEventListener("input", () => { try { state.watchPlayer?.setVolume?.(Number(refs.watchVolume.value) || 0); } catch {                                                   } });
     refs.watchSettingsCaptions.addEventListener("change", () => changeWatchCaptions(refs.watchSettingsCaptions.value === "on"));
     refs.watchRewind.addEventListener("click", () => seekWatchBy(-10)); refs.watchForward.addEventListener("click", () => seekWatchBy(10));
     $$('[data-watch-info-tab]').forEach(button => button.addEventListener("click", () => showWatchInfo(button.dataset.watchInfoTab)));

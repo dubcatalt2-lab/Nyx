@@ -4,6 +4,7 @@ import {repairGameResource} from './lib/game-resource-repairs.mjs';
 import { exchangeVoiceAudio, createVoiceAudioAccess, cleanupVoiceAudio } from './lib/chat-voice-relay.mjs';
 import {recordAiExchange,readAiActivity} from './lib/ai-history.mjs';
 import {assignableAiModels,validateAiModelRules} from './lib/ai-model-policy.mjs';
+import {hasFullAiCatalog,aiCatalogPrice} from './lib/ai-owner-catalog.mjs';
 import {createFreeModelHealth} from './lib/ai-free-health.mjs';
 import {isFreeAiModel,configureFreeAiReasoning} from './lib/ai-free-models.mjs';
 import {installStudyReady} from './services/domain-pages/integration.mjs';
@@ -2254,6 +2255,7 @@ function nyxAiNormalizeCatalog(models) {
       label: String(model?.label || model?.displayName || model?.display_name || model?.name || id).trim().slice(0, 100) || id,
       company: String(model?.company || model?.provider || model?.owned_by || "").trim().slice(0, 50),
       endpoint: String(model?.endpoint || "").trim().slice(0, 80),
+      pricing: model?.pricing && typeof model.pricing==='object' ? {prompt:model.pricing.prompt,completion:model.pricing.completion,request:model.pricing.request,image:model.pricing.image} : null,
       supportedParameters: Array.isArray(model?.supported_parameters) ? model.supported_parameters.filter(value=>typeof value==='string') : Array.isArray(model?.supportedParameters) ? model.supportedParameters : null,
       vision: model?.vision === true || model?.architecture?.input_modalities?.includes("image") === true,
       text: !Array.isArray(model?.architecture?.output_modalities) || model.architecture.output_modalities.includes("text"),
@@ -2315,7 +2317,8 @@ function nyxAiMergeCatalogs(...catalogs) {
 
 
 
-function nyxAiBudgetCatalog(available, personal, provider) {
+function nyxAiBudgetCatalog(available, personal, provider, actor={}) {
+  if(hasFullAiCatalog(actor)&&new URL(nyxAiEndpoint(provider)).hostname==='openrouter.ai')return available.filter(model=>(model.text||model.imageGeneration)&&aiCatalogPrice(model));
   if (!personal && new URL(nyxAiEndpoint(provider)).hostname === "openrouter.ai") {
     try {
       const config = aiAllowanceConfig(process.env);
@@ -2325,11 +2328,11 @@ function nyxAiBudgetCatalog(available, personal, provider) {
   return available;
 }
 
-async function nyxAiAvailableModels(key = nyxAiKey(), personal = false, provider = null) {
+async function nyxAiAvailableModels(key = nyxAiKey(), personal = false, provider = null, actor={}) {
   const now = Date.now();
   const cacheKey = nyxAiCredentialCacheKey(key, personal, provider?.id || "shared", provider?.baseUrl || "");
   const cached = nyxAiCatalogCache(cacheKey);
-  if (cached.expiresAt > now) return nyxAiBudgetCatalog(cached.models, personal, provider);
+  if (cached.expiresAt > now) return nyxAiBudgetCatalog(cached.models, personal, provider, actor);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 6000);
   try {
@@ -2352,12 +2355,12 @@ async function nyxAiAvailableModels(key = nyxAiKey(), personal = false, provider
   } finally {
     clearTimeout(timeout);
   }
-  return nyxAiBudgetCatalog(nyxAiCatalogCache(cacheKey).models, personal, provider);
+  return nyxAiBudgetCatalog(nyxAiCatalogCache(cacheKey).models, personal, provider, actor);
 }
 
-async function nyxAiResolveModel(requestedModel, key, personal = false, provider = null) {
+async function nyxAiResolveModel(requestedModel, key, personal = false, provider = null, actor={}) {
   const providerModel = nyxAiModels[requestedModel] || requestedModel;
-  const models = await nyxAiAvailableModels(key, personal, provider);
+  const models = await nyxAiAvailableModels(key, personal, provider, actor);
   const match = models.find(item => item.id === providerModel);
   return match ? { ...match, id: providerModel } : null;
 }
@@ -2636,7 +2639,15 @@ async function nyxBudgetedAiFetch(provider,url,options) {
   if(!scope)throw Object.assign(new Error('Shared AI requires an authenticated request.'),{status:401});
   const session=await nyxSharedAiSession(scope);
   let payload;try {payload=JSON.parse(options.body);}catch{throw Object.assign(new Error('Invalid AI request.'),{status:400});}
-  const reservation=await scope.allowance.reserve(session,provider,payload);
+  let catalogPrice=null;
+  if(hasFullAiCatalog(session.actor)&&new URL(url).hostname==='openrouter.ai'){
+    const key=String(new Headers(options.headers).get('authorization')||'').replace(/^Bearer\s+/i,'');
+    const catalog=await nyxAiAvailableModels(key,false,null,session.actor);
+    const selected=catalog.find(model=>model.id===payload.model);
+    catalogPrice=aiCatalogPrice(selected);
+    if(!catalogPrice)throw Object.assign(new Error('This model has no supported price in the current OpenRouter catalog. Choose another model.'),{status:503});
+  }
+  const reservation=await scope.allowance.reserve(session,provider,payload,catalogPrice);
   if(new URL(url).hostname==='openrouter.ai') {
     if(!reservation.price)throw Object.assign(new Error('The owner needs to configure the shared AI dollar budget and model prices.'),{status:503,code:'ai_allowance'});
     payload.provider={sort:reservation.free?'latency':'price',require_parameters:true,max_price:{prompt:reservation.price.inputRate,completion:reservation.price.outputRate,request:reservation.price.fixed}};
@@ -2743,11 +2754,15 @@ app.get('/api/nyx-ai/providers',(_req,res)=>{res.set('Cache-Control','private, n
 app.get('/api/nyx-ai/models',async(req,res)=>{
   res.set('Cache-Control','private, no-store');
   const entitlement=await nyxAiPremiumEntitlement(req);
+  if(req.query.custom==='1'&&hasFullAiCatalog(entitlement)){
+    const models=await nyxAiAvailableModels(nyxAiKey(),false,null,entitlement);
+    return res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement))});
+  }
   if(req.query.custom==='1')return res.json({models:[{id:'openai/gpt-6-luna-pro',label:'GPT-6 Luna Pro',vision:true},{id:'anthropic/claude-opus-5.5',label:'Claude Opus 5.5',vision:true},{id:'openai/gpt-6-luna',label:'GPT-6 Luna',vision:true},{id:'openai/gpt-6-sol',label:'GPT-6 Sol',vision:true},{id:'google/gemini-2.5-flash-image',label:'Gemini 2.5 Flash Image',vision:true,imageGeneration:true},{id:'google/gemini-2.5-flash-lite',label:'Gemini 2.5 Flash Lite',vision:true},{id:'openai/gpt-5.6-luna',label:'GPT-5.6 Luna',vision:true},{id:'inception/mercury-2.5',label:'Mercury 2.5',vision:false},{id:'qwen/qwen3.7-flash',label:'Qwen3.7 Flash',vision:true},{id:'deepseek/deepseek-v4.1-flash',label:'DeepSeek V4.1 Flash',vision:true},{id:'openai/gpt-5.6-sol-pro',label:'GPT-5.6 Sol Pro',vision:true}].filter(model=>aiModelAllowed(model.id,entitlement))});
   const credential=nyxAiRequestCredential(req);
   if(credential.invalid||credential.invalidProvider)return res.status(410).json({error:'This AI option has been removed. Use OpenRouter.'});
   if(!credential.key)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
-  const models=await nyxAiAvailableModels(credential.key,false,credential.provider);
+  const models=await nyxAiAvailableModels(credential.key,false,credential.provider,entitlement);
   if(!models.length)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
   res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement)),credential:'shared'});
 });
@@ -2777,13 +2792,14 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     });
     return;
   }
-  const modelInfo = await nyxAiResolveModel(requestedModel, key, credential.personal, credential.provider);
+  const modelEntitlement=await nyxAiPremiumEntitlement(req);
+  const modelInfo = await nyxAiResolveModel(requestedModel, key, credential.personal, credential.provider,modelEntitlement);
   if (!modelInfo) {
     res.status(400).json({ error: "Unknown Nyx AI model." });
     return;
   }
   const model = modelInfo.id;
-  if(!aiModelAllowed(model,await nyxAiPremiumEntitlement(req)))return res.status(403).json({error:'This AI model is not enabled for your account.'});
+  if(!aiModelAllowed(model,modelEntitlement))return res.status(403).json({error:'This AI model is not enabled for your account.'});
   const isPremiumOpus = false;
   const isSharedNavy = false;
   const premiumEntitlement = isPremiumOpus || isSharedNavy ? await nyxAiPremiumEntitlement(req) : null;

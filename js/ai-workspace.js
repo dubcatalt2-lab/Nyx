@@ -1030,7 +1030,7 @@
   }
 
   function groupedModels(models){
-    const priority=['openai/gpt-6-sol','openai/gpt-5.6-sol-pro','openai/gpt-6-luna-pro','openai/gpt-6-luna','openai/gpt-5.6-luna'];
+    const priority=['openai/gpt-6-astra','anthropic/claude-fable-5.1','openai/gpt-6-sol','openai/gpt-5.6-sol-pro','openai/gpt-6-luna-pro','openai/gpt-6-luna','openai/gpt-5.6-luna'];
     const companies={openai:'OpenAI',google:'Google',anthropic:'Anthropic',deepseek:'DeepSeek',qwen:'Qwen',inception:'Inception',nvidia:'NVIDIA',openrouter:'OpenRouter'};
     const free=item=>item.free||item.id.endsWith(':free')||item.id==='openrouter/free';
     const company=item=>companies[item.id.split('/')[0]]||item.company||item.id.split('/')[0]||'Other models';

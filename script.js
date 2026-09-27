@@ -5762,7 +5762,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const popupScript='document.addEventListener("click",e=>{const popup=e.target.closest("[data-popup-protection]");if(!popup)return;e.preventDefault();const next=popup.dataset.enabled!=="true";popup.dataset.enabled=String(next);popup.classList.toggle("on",next);popup.textContent="Popup Protection "+(next?"On":"Off");parent.postMessage({type:"nyx:popup-protection",enabled:next},"*")});';
     const panicFrameScript='let NYX_PANIC_CAPTURE=false;function nyxPanicCombo(e){const key=String(e.key||"").trim();if(!key||["Control","Shift","Alt","Meta"].includes(key))return "";const parts=[];if(e.ctrlKey)parts.push("Ctrl");if(e.altKey)parts.push("Alt");if(e.shiftKey)parts.push("Shift");if(e.metaKey)parts.push("Meta");parts.push(key.length===1?key.toUpperCase():key.replace(/^Arrow/,""));return parts.join("+")}document.addEventListener("click",e=>{if(e.target.closest("[data-panic-capture]"))NYX_PANIC_CAPTURE=true;if(e.target.closest("[data-panic-clear]"))NYX_PANIC_CAPTURE=false},true);document.addEventListener("keydown",e=>{if(!NYX_PANIC_CAPTURE)return;const combo=nyxPanicCombo(e);if(!combo)return;e.preventDefault();e.stopPropagation();NYX_PANIC_CAPTURE=false;document.querySelectorAll("[data-panic-key-display]").forEach(el=>el.textContent=combo);parent.postMessage({type:"nyx:panic-key-set",combo},"*")},true);';
     const finalInternalPaintScript='document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=Number(NYX_EFFECT_SPEED).toFixed(1)+"x"});';
-    return '<!doctype html><html data-nyx-theme="'+esc(normalizeNyxTheme(store.text('nyx.theme','default')))+'" style="--nyx-custom-base:'+esc(nyxCustomThemePalette().base)+'" data-nyx-appearance="'+esc(store.text('nyx.appearance','dark'))+'"><head><meta charset="utf-8"><base target="_self"><link rel="stylesheet" href="/css/avatar-decorations.css"><link rel="stylesheet" href="/css/profile-effects.css"><style>'+(page.style||'')+'</style><link rel="stylesheet" href="/apps/obsidian.css?v=20260926-2"><link rel="stylesheet" href="/apps/internal-pages.css?v=20260926-1"></head><body>'+page.body+'<script>const NYX_EFFECT='+JSON.stringify(store.text('nyx.visualEffect','none'))+';const NYX_EFFECT_SPEED='+JSON.stringify(store.text('nyx.visualEffectSpeed','1.1'))+';const NYX_EFFECT_AMOUNT='+JSON.stringify(store.text('nyx.visualEffectAmount','16'))+';const NYX_THEME='+JSON.stringify(normalizeNyxTheme(store.text('nyx.theme','default')))+';'+finalInternalPaintScript+script+popupScript+panicFrameScript+(page.script||'')+'<\/script></body></html>';
+    return '<!doctype html><html data-nyx-theme="'+esc(normalizeNyxTheme(store.text('nyx.theme','default')))+'" style="--nyx-custom-base:'+esc(nyxCustomThemePalette().base)+'" data-nyx-appearance="'+esc(store.text('nyx.appearance','dark'))+'"><head><meta charset="utf-8"><base target="_self"><link rel="stylesheet" href="/css/avatar-decorations.css"><link rel="stylesheet" href="/css/profile-effects.css"><style>'+(page.style||'')+'</style><link rel="stylesheet" href="/apps/obsidian.css?v=20260926-2"><link rel="stylesheet" href="/apps/internal-pages.css?v=20260926-icons-v2"></head><body>'+page.body+'<script>const NYX_EFFECT='+JSON.stringify(store.text('nyx.visualEffect','none'))+';const NYX_EFFECT_SPEED='+JSON.stringify(store.text('nyx.visualEffectSpeed','1.1'))+';const NYX_EFFECT_AMOUNT='+JSON.stringify(store.text('nyx.visualEffectAmount','16'))+';const NYX_THEME='+JSON.stringify(normalizeNyxTheme(store.text('nyx.theme','default')))+';'+finalInternalPaintScript+script+popupScript+panicFrameScript+(page.script||'')+'<\/script></body></html>';
   }
   function showBrowserShellInternalPage(name){
     hideBrowserSuggestions();
@@ -9819,8 +9819,19 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return {id,icon,name:name.slice(0,48),url:url.slice(0,2048)};
   }
   function globalAppIcon(app){return appIcons[app.icon] || iconForUrl(app.url) || appIcon('apps')}
+  function globalAppIconMarkup(app){
+    const symbols={'code-studio':'code','link-generator':'link','nyxify':'music','nyx-chat':'chat','nyx-movies':'movies','games':'games'};
+    const tools={
+      'link-checker':'<path d="M10 13a4 4 0 0 0 5.7 0l2.3-2.3A4 4 0 0 0 12.3 5L11 6.3M8 11l-2 2a4 4 0 0 0 3 7"/><path d="m14 19 2 2 5-5"/>',
+      'jsdelivr-publisher':'<path d="M12 16V3m-4 4 4-4 4 4M4 14v6h16v-6"/>',
+      'api-keys':'<circle cx="8" cy="8" r="5"/><path d="m12 12 9 9m-3-3 3-3m-6 0 3-3"/>'
+    };
+    const symbol=symbols[app.icon];
+    const icon=symbol?nyxDashboardIcon(symbol):tools[app.icon]?`<svg viewBox="0 0 24 24" aria-hidden="true">${tools[app.icon]}</svg>`:`<img alt="" draggable="false" referrerpolicy="no-referrer" src="${esc(globalAppIcon(app))}">`;
+    return `<span class="quick-icon" aria-hidden="true">${icon}</span>`;
+  }
   function quickTiles(){
-    return nyxGlobalApps.map((app,i)=>`<button class="quick-tile" draggable="true" style="--tile-delay:${Math.min(i,18)*34}ms" data-global-app-id="${esc(app.id)}" data-domain="${esc(app.icon)}" data-app-url="${esc(app.url)}"><img class="quick-icon" alt="" draggable="false" referrerpolicy="no-referrer" src="${esc(globalAppIcon(app))}"><span>${esc(app.name)}</span></button>`).join('');
+    return nyxGlobalApps.map((app,i)=>`<button class="quick-tile" draggable="true" style="--tile-delay:${Math.min(i,18)*34}ms" data-global-app-id="${esc(app.id)}" data-domain="${esc(app.icon)}" data-app-url="${esc(app.url)}">${globalAppIconMarkup(app)}<span>${esc(app.name)}</span></button>`).join('');
   }
   function renderNyxGlobalApps(){
     const documents=[document];

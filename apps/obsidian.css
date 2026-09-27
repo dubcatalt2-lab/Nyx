@@ -59,7 +59,6 @@ html body :is(.ai-app,.ai-workspace,.ai-composer,.ai-composer-shell) {background
 .ai-depth button.is-active {background:none;box-shadow:none;border-bottom-color:var(--app-text)}
 .ai-composer textarea {background:transparent!important}
 .ai-message {background:none!important}
-.ai-message-user .ai-message-body {border-radius:12px;background:var(--app-raised)}
 .utility-shell {max-width:1160px;padding-top:34px}
 .utility-header h1 {letter-spacing:-.035em;font-weight:500}
 .utility-card {border-radius:12px}

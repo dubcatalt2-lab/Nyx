@@ -66,7 +66,9 @@ body.browser-shell .browser-window.maximized .view.active {display:block}
 .nyx-visual-dock {
   position:fixed;z-index:2147482502;inset:0 auto 0 0;width:var(--nyx-sidebar-width);height:100%;
   display:flex;flex-direction:column;padding:18px 12px 14px;gap:24px;
-  background:var(--obsidian-panel);backdrop-filter:blur(26px);border-right:1px solid var(--obsidian-line);
+  background:color-mix(in srgb,var(--obsidian-bg) 48%,transparent);
+  -webkit-backdrop-filter:blur(48px) saturate(.65);backdrop-filter:blur(48px) saturate(.65);
+  border-right:1px solid color-mix(in srgb,var(--obsidian-text) 6%,transparent);
   color:var(--obsidian-text);overflow:hidden;
   transition:width var(--nyx-rail-motion);
 }
@@ -74,14 +76,14 @@ body.browser-shell .browser-window.maximized .view.active {display:block}
 .nyx-rail-brand {display:flex;align-items:center;gap:9px;width:calc(100% - 30px);overflow:hidden;text-decoration:none;color:inherit;font-size:10px;letter-spacing:.24em;transition:width var(--nyx-rail-motion),opacity 160ms}
 .nyx-rail-brand img {width:25px;height:25px;object-fit:contain}
 .nyx-visual-dock button {font:inherit;border:0;background:transparent;color:inherit;box-shadow:none;cursor:pointer}
-.nyx-visual-dock svg {display:block;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.nyx-visual-dock svg {display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .nyx-visual-dock-expand {display:grid;place-items:center;width:30px;height:30px;flex:none;padding:5px;border-radius:6px}
-.nyx-visual-dock-expand svg {width:20px;height:20px;color:var(--obsidian-text)}
+.nyx-visual-dock-expand svg {width:22px;height:22px;color:var(--obsidian-text)}
 .nyx-visual-dock-expand [data-sidebar-arrow]{transform-origin:14px 12px;transition:transform var(--nyx-rail-motion)}
 .nyx-visual-dock-expand[aria-expanded="true"] [data-sidebar-arrow]{transform:rotate(180deg)}
 .nyx-visual-dock [data-nyx-dock-item]>span{opacity:1;transform:translateX(0);transition:opacity 160ms,transform var(--nyx-rail-motion)}
 .nyx-visual-dock nav {display:flex;flex-direction:column;gap:6px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;min-height:0}
-.nyx-visual-dock [data-nyx-dock-item] {position:relative;display:flex;align-items:center;gap:14px;flex:none;width:100%;height:40px;padding:0 11px;text-align:left;font-size:12px;border-radius:7px;white-space:nowrap;color:var(--obsidian-muted)}
+.nyx-visual-dock [data-nyx-dock-item] {position:relative;display:flex;align-items:center;gap:14px;flex:none;width:100%;height:40px;padding:0 9px;text-align:left;font-size:12px;border-radius:7px;white-space:nowrap;color:var(--obsidian-muted)}
 .nyx-visual-dock [data-nyx-dock-item="apps"] {margin-top:18px}
 .nyx-visual-dock [data-nyx-dock-item].active {color:var(--obsidian-text);background:var(--obsidian-hover)}
 .nyx-visual-dock [data-nyx-dock-item].active::before {content:"";position:absolute;left:1px;width:3px;height:3px;border-radius:50%;background:var(--obsidian-dot)}
@@ -97,7 +99,7 @@ html body .nyx-visual-dock #nyxAccountButton::before {display:none!important}
 html body .nyx-visual-dock #nyxAccountButton::after {content:'Account';position:static!important;font:12px Inter,Arial,sans-serif;letter-spacing:0;background:none!important;transform:none!important;width:auto!important;height:auto!important}
 html body .nyx-visual-dock #nyxAccountButton>span {position:relative;display:grid;place-items:center;flex:0 0 24px;width:24px!important;height:24px!important;border-radius:50%;background:var(--obsidian-hover);color:inherit}
 html body .nyx-visual-dock #nyxAccountButton>.nyx-account-button-copy {display:none!important}
-.nyx-visual-dock #nyxAccountButton svg {width:17px;height:17px}
+.nyx-visual-dock #nyxAccountButton svg {width:19px;height:19px}
 html[data-nyx-sidebar-width="collapsed"] .nyx-rail-brand {width:0;opacity:0}
 html[data-nyx-sidebar-width="collapsed"] .nyx-visual-dock-head {justify-content:center}
 html[data-nyx-sidebar-width="collapsed"] .nyx-visual-dock [data-nyx-dock-item]>span{opacity:0;transform:translateX(-5px);pointer-events:none}

@@ -12,9 +12,11 @@ a{color:inherit}
 .quick-tile{display:flex;align-items:center;gap:15px;width:100%;min-width:0;min-height:86px;padding:20px;border:1px solid var(--app-line);border-radius:10px;background:var(--app-panel);color:var(--app-text);text-decoration:none;text-align:left;font-size:13px;transition:background .15s}
 .quick-tile:hover{background:var(--app-raised)}
 .quick-tile:focus-visible{outline:1px solid var(--app-text);outline-offset:2px}
-.quick-icon{display:grid;place-items:center;flex:none;width:34px;height:34px;background:transparent;border:0;border-radius:7px;overflow:hidden}
-.quick-icon img,.quick-icon svg{width:28px;height:28px;object-fit:contain}
+.quick-icon{display:grid;place-items:center;flex:none;width:48px;height:48px;padding:9px;background:color-mix(in srgb,var(--app-text) 4%,transparent);border:1px solid var(--app-line);border-radius:13px;overflow:hidden;transition:transform 160ms ease,background-color 160ms ease}
+.quick-icon img,.quick-icon svg{width:28px;height:28px;object-fit:contain;border-radius:5px}
 .quick-icon svg{fill:none;stroke:currentColor;stroke-width:1.5}
+.quick-tile:hover .quick-icon{transform:translateY(-2px);background:color-mix(in srgb,var(--app-text) 8%,transparent)}
+@media(prefers-reduced-motion:reduce){.quick-icon{transition:none}.quick-tile:hover .quick-icon{transform:none}}
 .quick-tile>span:last-child{overflow:hidden;text-overflow:ellipsis}
 .quick-combo{display:flex;gap:6px;align-items:center}
 .nyx-utility-tab section{margin:24px 0;padding:22px;border:1px solid var(--app-line);border-radius:12px;background:var(--app-panel);line-height:1.7}

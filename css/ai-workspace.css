@@ -503,7 +503,7 @@ button:disabled{cursor:not-allowed}
   display:flex;
   flex-direction:column;
   justify-content:flex-start;
-  gap:34px;
+  gap:24px;
 }
 .ai-conversation.is-empty{justify-content:center;padding-top:32px;padding-bottom:32px}
 
@@ -581,10 +581,11 @@ button:disabled{cursor:not-allowed}
 .ai-message-user{grid-template-columns:minmax(0,1fr);justify-items:end}
 .ai-message-user .ai-message-avatar{display:none}
 .ai-message-body{min-width:0;width:min(100%,900px)}
-.ai-message-user .ai-message-body{width:auto;max-width:70%}
+.ai-message-user .ai-message-body{display:flex;flex-direction:column;align-items:flex-end;width:fit-content;max-width:75%}
 .ai-message-meta{min-height:22px;margin-bottom:7px;display:flex;align-items:center;gap:9px;color:var(--ai-muted);font-size:10px}
 .ai-message-meta strong{color:var(--ai-text-soft);font-size:11px;font-weight:600}
-.ai-message-user .ai-message-meta{justify-content:flex-end}
+.ai-message-user .ai-message-meta{order:1;justify-content:flex-end;min-height:0;margin:3px 0 0}
+.ai-message-user .ai-message-meta strong{display:none}
 .ai-message-actions{margin-left:auto;display:flex;align-items:center;opacity:0;transform:translateY(2px);transition:opacity 150ms ease,transform 150ms ease}
 .ai-message-user .ai-message-actions{order:-1;margin:0 auto 0 0}
 .ai-message:is(:hover,:focus-within) .ai-message-actions{opacity:1;transform:none}
@@ -605,12 +606,13 @@ button:disabled{cursor:not-allowed}
 .ai-message-content{color:var(--ai-text-soft);font-size:15px;line-height:1.72;overflow-wrap:anywhere}
 .ai-message-assistant .ai-message-content{padding:2px 0}
 .ai-message-user .ai-message-content{
-  padding:12px 15px;
-  border:1px solid var(--ai-accent-border);
-  border-radius:16px 16px 5px 16px;
-  background:color-mix(in srgb,var(--ai-accent) 24%,var(--ai-surface-raised));
+  padding:10px 14px;
+  border:0;
+  border-radius:14px;
+  background:var(--ai-surface-raised);
   color:var(--ai-text);
-  box-shadow:0 10px 28px rgba(0,0,0,.14),inset 0 1px 0 rgba(255,255,255,.035);
+  box-shadow:none;
+  line-height:1.55;
   white-space:pre-wrap;
 }
 .ai-message-attachment{

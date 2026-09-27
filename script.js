@@ -3681,7 +3681,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         <button type="button" data-nyx-dock-item="chat" data-app-url="/apps/chat/" aria-label="Chat">${nyxDashboardIcon('chat')}<span>Chat</span></button>
         <button type="button" data-nyx-dock-item="apps" data-app-url="nyx://apps" aria-label="Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="7" height="7" rx="1"/><rect x="3" y="16" width="7" height="6" rx="1"/><rect x="12" y="14" width="7" height="8" rx="1"/><rect x="14" y="2" width="7" height="7" rx="1"/></svg><span>Apps</span></button>
       </nav>
-      <div class="nyx-rail-footer"><button type="button" data-nyx-dock-item="settings" data-open="settings" aria-label="Settings">${nyxDashboardIcon('settings')}<span>Settings</span></button><div class="nyx-visual-dock-profile" data-nyx-profile-slot></div></div>`;
+      <div class="nyx-rail-footer"><a class="nyx-rail-discord" data-nyx-trusted-external="discord" data-nyx-dock-item="discord" href="https://discord.com/invite/cAdjYAJs3u" target="_blank" rel="noopener noreferrer" aria-label="Join the Nyx Discord server (opens in a new tab)" title="Join our Discord"><i class="nyx-rail-discord-icon" aria-hidden="true"></i><span>Discord</span></a><button type="button" data-nyx-dock-item="settings" data-open="settings" aria-label="Settings">${nyxDashboardIcon('settings')}<span>Settings</span></button><div class="nyx-visual-dock-profile" data-nyx-profile-slot></div></div>`;
       document.body.appendChild(dock);
       watchNyxVisualDock();
       if(navigator.getBattery){

@@ -87,7 +87,9 @@ body.browser-shell .browser-window.maximized .view.active {display:block}
 .nyx-visual-dock [data-nyx-dock-item="apps"] {margin-top:18px}
 .nyx-visual-dock [data-nyx-dock-item].active {color:var(--obsidian-text);background:var(--obsidian-hover)}
 .nyx-visual-dock [data-nyx-dock-item].active::before {content:"";position:absolute;left:1px;width:3px;height:3px;border-radius:50%;background:var(--obsidian-dot)}
-.nyx-visual-dock button:hover {background:var(--obsidian-hover);color:var(--obsidian-text)}
+.nyx-visual-dock button:hover,.nyx-rail-discord:hover {background:var(--obsidian-hover);color:var(--obsidian-text)}
+.nyx-rail-discord{text-decoration:none}
+.nyx-rail-discord-icon{display:block;flex:none;width:22px;height:22px;background:currentColor;mask:url("../assets/icons/shortcut-discord.svg") center/contain no-repeat;-webkit-mask:url("../assets/icons/shortcut-discord.svg") center/contain no-repeat}
 .nyx-rail-footer {margin-top:auto;display:grid;gap:6px;flex:none}
 html body .nyx-visual-dock #nyxAccountButton {
   position:relative;display:flex!important;align-items:center;justify-content:flex-start;gap:12px;
@@ -105,7 +107,7 @@ html[data-nyx-sidebar-width="collapsed"] .nyx-visual-dock-head {justify-content:
 html[data-nyx-sidebar-width="collapsed"] .nyx-visual-dock [data-nyx-dock-item]>span{opacity:0;transform:translateX(-5px);pointer-events:none}
 html[data-nyx-sidebar-width="collapsed"] body .nyx-visual-dock #nyxAccountButton::after {opacity:0;pointer-events:none}
 .nyx-visual-dock #nyxAccountButton::after{transition:opacity 160ms}
-.nyx-visual-dock button:focus-visible {outline:1px solid var(--obsidian-text);outline-offset:-2px}
+.nyx-visual-dock button:focus-visible,.nyx-rail-discord:focus-visible {outline:1px solid var(--obsidian-text);outline-offset:-2px}
 
 /* Tabs and navigation are application chrome, without window controls. */
 body.browser-shell .top-os {

@@ -1,9 +1,35 @@
+import {parse} from 'acorn';
 import {rewriteStorageNames,storageNames,migrateStorage} from './build-storage.mjs';
 import {readFile,writeFile} from 'node:fs/promises';
 import {join,posix} from 'node:path';
 import {createHash} from 'node:crypto';
 import {minify} from 'terser';
 const alias=path=>posix.join(posix.dirname(path),'@r'+createHash('sha256').update('frontend-education-v1:'+path).digest('hex').slice(0,24)+'!'+posix.extname(path));
+function rewriteRelativeScriptUrls(source,path,aliases){
+  const edits=[];
+  const tree=parse(source,{ecmaVersion:'latest',sourceType:'module',allowReturnOutsideFunction:true});
+  const property=node=>node?.computed?node.property?.value:node?.property?.name;
+  const urlArgument=(parent,node)=>{
+    if(parent?.type==='ImportExpression')return parent.source===node;
+    if(['ImportDeclaration','ExportNamedDeclaration','ExportAllDeclaration'].includes(parent?.type))return parent.source===node;
+    if(parent?.type==='AssignmentExpression')return parent.right===node&&['src','href'].includes(property(parent.left));
+    if(!['CallExpression','NewExpression'].includes(parent?.type))return false;
+    const callee=parent.callee,name=callee?.type==='Identifier'?callee.name:property(callee);
+    if(name==='setAttribute')return parent.arguments[1]===node&&['src','href'].includes(parent.arguments[0]?.value);
+    return (name==='importScripts'||parent.arguments[0]===node)&&['fetch','importScripts','URL','Worker','SharedWorker','register'].includes(name);
+  };
+  function visit(node,parent){
+    if(!node||typeof node!=='object')return;
+    const value=node.type==='Literal'&&typeof node.value==='string'?node.value:node.type==='TemplateLiteral'&&!node.expressions.length?node.quasis[0].value.cooked:null;
+    if(value&&!value.startsWith('/')&&!/^[a-z]+:/i.test(value)&&urlArgument(parent,node)){
+      const [,pathname,suffix]=value.match(/^([^?#]*)(.*)$/);
+      const original=posix.resolve(posix.dirname(path),pathname),renamed=aliases[original];
+      if(renamed){let relative=posix.relative(posix.dirname(path),renamed);if(value.startsWith('./'))relative='./'+relative;edits.push({start:node.start,end:node.end,text:JSON.stringify(relative+suffix)});}
+    }
+    for(const [key,value] of Object.entries(node)){if(key==='parent')continue;if(Array.isArray(value))for(const child of value)visit(child,node);else if(value&&typeof value==='object')visit(value,node);}
+  }
+  visit(tree,null);for(const edit of edits.sort((a,b)=>b.start-a.start))source=source.slice(0,edit.start)+edit.text+source.slice(edit.end);return source;
+}
 export function rewriteFrontendReferences(source,path,aliases) {
   source=rewriteStorageNames(source);
   const directory=posix.dirname(path);
@@ -12,6 +38,7 @@ export function rewriteFrontendReferences(source,path,aliases) {
     // .js.map, backup files and longer paths). Keep query/fragment URLs valid.
     const escaped=original.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
     source=source.replace(new RegExp(escaped+'(?![\\w./%+-])','g'),()=>renamed);
+    if(/\.(?:js|mjs)$/.test(path))continue;
     const relative=posix.relative(directory,original),replacement=posix.relative(directory,renamed);
     for(const prefix of relative.startsWith('.')?['']:['','./']) {
       const from=prefix+relative,to=prefix+replacement;
@@ -21,7 +48,7 @@ export function rewriteFrontendReferences(source,path,aliases) {
       }
     }
   }
-  return source;
+  return /\.(?:js|mjs)$/.test(path)?rewriteRelativeScriptUrls(source,path,aliases):source;
 }
 export async function buildFrontendAssets(output,files,lessonHtml) {
   const existing=JSON.parse(await readFile(join(output,'proxy-assets.json'),'utf8')).aliases;

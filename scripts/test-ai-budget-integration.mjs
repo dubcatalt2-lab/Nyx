@@ -135,10 +135,11 @@ try {
   }
   context.founderProfileConfig=()=>({administratorUid:fullCatalogUid});
   context.nyxAiAvailableModels=async()=>[{id:'openai/gpt-6-astra',pricing:{prompt:'.00001',completion:'.00005'}},{id:'new-vendor/new-chat',pricing:{prompt:'.000002',completion:'.000003'}}];
+  balance=.01;
   for(const model of ['openai/gpt-6-astra','new-vendor/new-chat']){
     const reply=await send(fullCatalogUid,{model});assert.equal(reply.status,200,await reply.text());
     assert.equal(lastPayload.model,model);
-    assert.equal(lastPayload.provider.max_price.prompt,model==='openai/gpt-6-astra'?10:2);
+    assert.equal(lastPayload.provider.max_price,undefined,'Exact UID avoids Nyx provider-price caps');
     await new Promise(resolve=>setTimeout(resolve,30));
   }
   const beforeUnknown=calls;

@@ -26,39 +26,26 @@ assert.deepEqual(Array.from(context.nyxAiBudgetCatalog(catalog,false,null,{uid:f
 assert.deepEqual(Array.from(context.nyxAiBudgetCatalog(catalog,false,null,{uid:'other',owner:true}),x=>x.id),['openai/gpt-6-sol']);
 
 let time=Date.parse('2026-09-26T12:00:00Z');
-const db=memoryFirestore(),config=aiAllowanceConfig({NYX_AI_DAILY_BUDGET_USD:'100'});
+const db=memoryFirestore(),config=aiAllowanceConfig({NYX_AI_DAILY_BUDGET_USD:'0.001',NYX_AI_MONTHLY_BUDGET_USD:'0.001',NYX_AI_DAILY_REQUEST_BUDGET:'1'});
 const allowance=createAiAllowance({db,config,now:()=>time});
-const actor={uid:fullCatalogUid,owner:true,requestedModel:astra};
+const actor={uid:fullCatalogUid,owner:true,requestedModel:astra,modelRules:[{model:astra,access:'deny',messages:0,periodDays:4}]};
 const key='nyxAiAllowance/models-'+createHash('sha256').update(fullCatalogUid).digest('hex');
-const pool=()=>db.records.get(key)?.ownerDailyPool;
-const payload=model=>({model,messages:[{role:'user',content:'hello'}],max_tokens:20});
-const seed=used=>db.records.set(key,{...db.records.get(key),ownerDailyPool:{day:new Date(time).toISOString().slice(0,10),used}});
-async function request(model=astra,usage={input:100,output:50},notSent=false){
- const session=await allowance.begin({...actor,requestedModel:model});
- try{const r=await allowance.reserve(session,'shared',payload(model),price);await allowance.settle(r,usage,notSent);return r;}
- finally{await allowance.finish(session,!notSent);time+=61000;}
+db.records.set(key,{ownerDailyPool:{day:'2026-09-26',used:100000},ownerClaudePool:{start:time,used:100000}});
+const payload=model=>({model,messages:[{role:'user',content:'hello'}],max_tokens:8000});
+const sessions=[];
+for(const model of [astra,fable,'~openai/gpt-astra-latest','~anthropic/claude-fable-latest','anthropic/claude-opus-5.5','new-vendor/new-chat']){
+ const session=await allowance.begin({...actor,requestedModel:model});sessions.push(session);
+ const body=payload(model),reservation=await allowance.reserve(session,'shared',body,price);
+ assert.equal(body.max_tokens,8000,'Exact UID avoids shared output cap');
+ await allowance.settle(reservation,{input:10000,output:5000,cost:1});
 }
-await request();await request(fable);assert.equal(pool().used,300);
-await request('~openai/gpt-astra-latest');assert.equal(pool().used,450);
-await request('~anthropic/claude-fable-latest');assert.equal(pool().used,600);
-await request('new-vendor/new-chat');assert.equal(pool().used,600,'Other models do not consume Astra/Fable pool');
-await request(astra,null,true);assert.equal(pool().used,600,'Unsent call refunded');
-seed(9500);await assert.rejects(request(fable),/10,000-token daily allowance/);
-const denied=await allowance.begin({uid:'other-owner',owner:true,requestedModel:'openai/gpt-6-sol'});
-try{await assert.rejects(allowance.reserve(denied,'shared',payload(astra),price),e=>e.status===403);}
-finally{await allowance.finish(denied,false);}
-seed(8500);
-const sessions=[await allowance.begin(actor),await allowance.begin({...actor,apiVerified:true})];
-const results=await Promise.allSettled(sessions.map((s,i)=>allowance.reserve(s,'shared',payload(i?fable:astra),price)));
-assert.equal(results.filter(r=>r.status==='fulfilled').length,1,'Shared transactional cap across API/chat and both models');
-const reserved=results.find(r=>r.status==='fulfilled').value;
-await allowance.settle(reserved,null,true);await allowance.settle(reserved,null,true);assert.equal(pool().used,8500);
-for(const session of sessions)await allowance.finish(session,false);
-time+=61000;seed(0);
-const pending=await allowance.begin(actor),late=await allowance.reserve(pending,'shared',payload(astra),price);await allowance.finish(pending);
-time=Date.parse('2026-09-27T00:00:01Z');await request(fable);assert.equal(pool().used,150);
-await allowance.settle(late,null,true);assert.equal(pool().used,150,'Late refund cannot change next UTC day');
-const reopened=createAiAllowance({db,config,now:()=>time}),session=await reopened.begin(actor);
-const reservation=await reopened.reserve(session,'shared',payload(astra),price);await reopened.settle(reservation,{input:30,output:20});await reopened.finish(session,true);
-assert.equal(pool().used,200,'Usage survives server restart');
-console.log('PASS exact UID catalog/access, provider pricing, shared 10k daily pool, concurrency, refunds, midnight and restart persistence');
+for(const session of sessions)await allowance.finish(session,true);
+assert.equal(db.records.get(key).ownerDailyPool.used,100000,'Retired owner daily cap is no longer consumed');
+assert.equal(db.records.get(key).ownerClaudePool.used,100000,'Exact UID no longer consumes Claude quota');
+const other={uid:'other-owner',owner:true,requestedModel:'openai/gpt-6-sol'};
+await assert.rejects(allowance.begin(other),/shared AI allowance has been used/);
+assert(!aiModelAllowed(astra,other));
+const account=db.records.get('nyxAiAllowance/account-'+createHash('sha256').update(fullCatalogUid).digest('hex'));
+assert(account.money>0&&account.tokens>0,'Owner usage remains accounted for');
+assert.equal(account.slots.length,0);
+console.log('PASS exact-UID exemption for spending, daily tokens, model messages, burst/concurrent account quotas; other owners remain limited; usage accounting preserved');

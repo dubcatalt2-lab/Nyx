@@ -1,3 +1,6 @@
+import {configureModelVoice,collectModelVoice} from './lib/model-voice.mjs';
+import {agentInstruction,parseAgentReply} from './lib/agent-protocol.mjs';
+import {companionZip} from './lib/agent-download.mjs';
 import {installAiMedia} from './lib/ai-media.mjs';
 import {publishSurgeLink,validateSurgeToken} from './lib/surge-publisher.mjs';
 import {createGameReports} from './lib/game-reports.mjs';
@@ -85,6 +88,9 @@ let catClassGamesCache = { games: [], expires: 0, promise: null };
 let catClassCoverUrls = new Set();
 const nyxCustomRoleLabelLimit = 64;
 const app = express();
+app.get(['/agents','/agents/'],(_req,res)=>res.redirect(302,'/apps/agents/'));
+app.get('/',(req,res,next)=>req.hostname==='nook.nyxlearning.org'?res.set({'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}).sendFile(join(staticRoot,'apps','agents','index.html'),{dotfiles:'allow'}):next());
+app.get('/download/nyx-agents.zip',async(_req,res)=>{try{res.set({'Content-Type':'application/zip','Content-Disposition':'attachment; filename="Nyx-Agents.zip"','Cache-Control':'no-store'}).send(await companionZip(__dirname));}catch{res.status(503).send('The companion download is unavailable.');}});
 installTutsiCrawlerControls(app);
 app.get(["/proxy-assets.json", "/frontend-assets.json"], (_req,res)=>res.status(404).end());
 const nyxifyMeting = createMetingBackend();
@@ -572,6 +578,7 @@ function cacheNyxCustomHostnameDecision(hostname, allowed) {
 async function nyxCustomHostnameAllowed(hostname) {
   const normalized = normalizeNyxCustomHostname(hostname);
   if (!normalized) return false;
+  if(normalized==='nook.nyxlearning.org')return true;
   const configuredHostnames = [...embeddedWispAllowedOrigins, process.env.NYX_PUBLIC_ORIGIN, ...tutsiHostnames]
     .map(value => normalizeNyxCustomHostname(value))
     .filter(Boolean);
@@ -2239,6 +2246,7 @@ function nyxAiNormalizeCatalog(models) {
       company: String(model?.company || model?.provider || model?.owned_by || (String(model?.name||'').includes(':')?String(model.name).split(':')[0]:'')).trim().slice(0, 50),
       endpoint: String(model?.endpoint || "").trim().slice(0, 80),
       catalogRank,
+      created: Number.isFinite(Number(model?.created)) ? Number(model.created) : null,
       outputModalities: Array.isArray(model?.architecture?.output_modalities) ? model.architecture.output_modalities.filter(value=>typeof value==='string') : ['text'],
       inputModalities: Array.isArray(model?.architecture?.input_modalities) ? model.architecture.input_modalities.filter(value=>typeof value==='string') : ['text'],
       pricing: model?.pricing && typeof model.pricing==='object' ? {prompt:model.pricing.prompt,completion:model.pricing.completion,request:model.pricing.request,image:model.pricing.image} : null,
@@ -2635,10 +2643,10 @@ async function nyxBudgetedAiFetch(provider,url,options) {
   const reservation=await scope.allowance.reserve(session,provider,payload,catalogPrice);
   if(new URL(url).hostname==='openrouter.ai') {
     if(!reservation.price)throw Object.assign(new Error('The owner needs to configure the shared AI dollar budget and model prices.'),{status:503,code:'ai_allowance'});
-    payload.provider={sort:reservation.free?'latency':'price',require_parameters:true,max_price:{prompt:reservation.price.inputRate,completion:reservation.price.outputRate,request:reservation.price.fixed}};
+    payload.provider=hasFullAiCatalog(session.actor)?{sort:'latency',require_parameters:true}:{sort:reservation.free?'latency':'price',require_parameters:true,max_price:{prompt:reservation.price.inputRate,completion:reservation.price.outputRate,request:reservation.price.fixed}};
     try {
       const key=String(new Headers(options.headers).get('authorization')||'').replace(/^Bearer\s+/i,'');
-      if(!reservation.free)await scope.allowance.openRouterBalance.reserve({key,amount:reservation.reserved,signal:scope.controller.signal});
+      if(!reservation.free&&!hasFullAiCatalog(session.actor))await scope.allowance.openRouterBalance.reserve({key,amount:reservation.reserved,signal:scope.controller.signal});
     } catch(error) {await scope.allowance.settle(reservation,null,true).catch(()=>{});throw error;}
   }
   const signal=options.signal?AbortSignal.any([options.signal,scope.controller.signal]):scope.controller.signal;
@@ -2687,18 +2695,19 @@ async function nyxAiRateLimit(req, res, next) {
   // IP-scoped, but do not make a Premium member share a daily AI ceiling with
   // everybody else on a school or home connection.
   const entitlement = await nyxAiPremiumEntitlement(req);
-  const unlimitedDaily = Boolean(entitlement.premium || entitlement.owner || isFreeAiModel(req.body?.model));
+  const unlimited=hasFullAiCatalog(entitlement);
+  const unlimitedDaily = Boolean(unlimited || entitlement.premium || entitlement.owner || isFreeAiModel(req.body?.model));
   const usageId = entitlement.uid ? `account:${entitlement.uid}` : `ip:${clientId}`;
   const usage = nyxAiUsage.get(usageId) || { minute: [], day: [], active: 0, seen: now };
   usage.minute = usage.minute.filter(time => now - time < 60_000);
   usage.day = usage.day.filter(time => now - time < 86_400_000);
   usage.seen = now;
   nyxAiUsage.set(usageId, usage);
-  res.setHeader("x-ratelimit-limit-minute", nyxAiLimits.minute);
-  res.setHeader("x-ratelimit-remaining-minute", Math.max(0, nyxAiLimits.minute - usage.minute.length));
+  res.setHeader("x-ratelimit-limit-minute", unlimited?"unlimited":nyxAiLimits.minute);
+  res.setHeader("x-ratelimit-remaining-minute", unlimited?"unlimited":Math.max(0, nyxAiLimits.minute - usage.minute.length));
   res.setHeader("x-ratelimit-limit-day", unlimitedDaily ? "unlimited" : nyxAiLimits.daily);
   res.setHeader("x-ratelimit-remaining-day", unlimitedDaily ? "unlimited" : Math.max(0, nyxAiLimits.daily - usage.day.length));
-  if (usage.minute.length >= nyxAiLimits.minute || (!unlimitedDaily && usage.day.length >= nyxAiLimits.daily)) {
+  if ((!unlimited && usage.minute.length >= nyxAiLimits.minute) || (!unlimitedDaily && usage.day.length >= nyxAiLimits.daily)) {
     const retryAfter = usage.minute.length >= nyxAiLimits.minute
       ? Math.max(1, Math.ceil((60_000 - (now - usage.minute[0])) / 1000))
       : Math.max(1, Math.ceil((86_400_000 - (now - usage.day[0])) / 1000));
@@ -2706,7 +2715,7 @@ async function nyxAiRateLimit(req, res, next) {
     res.status(429).json({ error: "Nyx AI usage limit reached. Please try again later." });
     return;
   }
-  if (usage.active >= nyxAiLimits.perIpConcurrent || nyxAiActiveRequests >= nyxAiLimits.globalConcurrent) {
+  if ((!unlimited && usage.active >= nyxAiLimits.perIpConcurrent) || nyxAiActiveRequests >= nyxAiLimits.globalConcurrent) {
     res.setHeader("retry-after", "10");
     res.status(429).json({ error: "Nyx AI is busy. Please wait for another response to finish." });
     return;
@@ -2770,10 +2779,10 @@ installAiMedia(app,{
   reserve:async(req,estimate)=>{
     const scope=nyxAiBudgetContext.getStore(),session=await nyxSharedAiSession(scope);
     if(!hasFullAiCatalog(session.actor))throw Object.assign(new Error('Owner media access is required.'),{status:403});
-    if(!Number.isFinite(estimate)||estimate<0||estimate>100)throw Object.assign(new Error('The media price could not be verified.'),{status:503});
+    if(!Number.isFinite(estimate)||estimate<0)throw Object.assign(new Error('The media price could not be verified.'),{status:503});
     const payload={model:req.body.model,messages:[{role:'user',content:req.body.message}],max_tokens:1};
     const reservation=await scope.allowance.reserve(session,'shared',payload,{inputPerMillion:0,outputPerMillion:0,requestUsd:estimate},{media:true});
-    try{await scope.allowance.openRouterBalance.reserve({key:nyxAiKey(),amount:reservation.reserved,signal:scope.controller.signal,holdMs:1800000});}
+    try{if(!hasFullAiCatalog(session.actor))await scope.allowance.openRouterBalance.reserve({key:nyxAiKey(),amount:reservation.reserved,signal:scope.controller.signal,holdMs:1800000});}
     catch(error){await scope.allowance.settle(reservation,null,true);throw error;}
     const {session:unused,...cost}=reservation;
     const stored={...cost,session:{refs:Object.fromEntries(Object.entries(session.refs).map(([name,ref])=>[name,ref.path]))}};
@@ -2845,6 +2854,8 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     return;
   }
   const sourceHistory = Array.isArray(req.body?.messages) ? req.body.messages.slice(-20) : [];
+  const computerAgent=req.body?.task==='computer-agent';
+  if(computerAgent&&(!modelEntitlement.uid||req.body?.stream!==false||req.body?.generateImage))return res.status(400).json({error:'Sign in and use a text model for agent tasks.'});
   const codeEdit = req.body?.task === 'code-edit';
   if(codeEdit && (req.body?.stream !== false || sourceHistory.some(item=>typeof item?.content!=='string'||item.content.length>nyxAiLimits.contextChars))) {
     return res.status(413).json({error:'This workspace exceeds the AI context limit. Use a smaller workspace for this edit; your files are unchanged.'});
@@ -2883,9 +2894,11 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       return;
     }
   }
+  const generateAudio = req.body?.generateAudio === true;
   const generateImage = req.body?.generateImage === true;
+  if(generateAudio&&(computerAgent||codeEdit||generateImage||!modelInfo.outputModalities?.includes("audio")))return res.status(400).json({error:"Choose a native voice model in Chat mode."});
   if(generateImage && (!modelInfo.imageGeneration || codeEdit))return res.status(400).json({error:'Choose an image-generation model in AI chat to create an image.'});
-  const wantsStream = !generateImage && req.body?.stream !== false;
+  const wantsStream = !generateAudio && !generateImage && req.body?.stream !== false;
   const responseDepth = ["off", "normal", "extended"].includes(req.body?.responseDepth) ? req.body.responseDepth : "normal";
   const responseGuidance = responseDepth === "off"
     ? "Answer concisely and do not add optional detail unless it is required for accuracy."
@@ -2900,6 +2913,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       : configuredMaxTokens;
   if(generateImage)maxTokens=2200;
   if(codeEdit)maxTokens=2200; // Existing shared allowance still caps/reserves this output.
+  if(computerAgent)maxTokens=2200;
   let opusReservation = null;
   let opusReservationSettled = false;
   let navyReservation = null;
@@ -2951,7 +2965,11 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   }
   nyxAiApplySupportedParameters(providerPayload,modelInfo);
   configureFreeAiReasoning(providerPayload,modelInfo,responseDepth);
-  const webEnabled=!isFreeAiModel(model)&&aiConfigureChatWeb(providerPayload,modelInfo,message,{codeEdit,generateImage,responseDepth});
+  const webEnabled=!generateAudio&&!computerAgent&&!isFreeAiModel(model)&&aiConfigureChatWeb(providerPayload,modelInfo,message,{codeEdit,generateImage,responseDepth});
+  if(['low','medium','high'].includes(req.body?.reasoningEffort)){
+    if(modelInfo.supportedParameters?.includes('reasoning'))providerPayload.reasoning={effort:req.body.reasoningEffort,exclude:false};
+    else if(modelInfo.supportedParameters?.includes('reasoning_effort'))providerPayload.reasoning_effort=req.body.reasoningEffort;
+  }
   if(isFreeAiModel(model))providerPayload.messages[0].content+=' Live web retrieval is unavailable for this free model in this chat. Do not claim to have searched the web.';
   if(codeEdit){
     providerPayload.messages[0].content='You are the Nyx Code Sandbox editing assistant. Return ONLY {"summary":"short explanation","files":[{"language":"language id","edits":[{"search":"unique exact text","replace":"replacement"}]}]}. For a new file use code (complete contents) instead of edits. Make the requested change, not suggestions about changing it. Use compact patches for existing files. Complete the entire JSON within 600 output tokens, including escaped code. For a large request implement one small useful step and describe its scope. Never output partial files or placeholders. Only edit supplied files or create new files. For a question or an already satisfied request, return files: [] and explain why.';
@@ -2959,7 +2977,9 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     if(supported.includes('response_format'))providerPayload.response_format={type:'json_object'};
     if(supported.includes('reasoning'))providerPayload.reasoning={enabled:false};
   }
+  if(computerAgent){providerPayload.messages[0].content=agentInstruction;if(modelInfo.supportedParameters?.includes('response_format'))providerPayload.response_format={type:'json_object'};}
   try {
+    if(generateAudio)configureModelVoice(providerPayload,modelInfo,{voice:String(req.body.voice||"alloy"),computerAgent,codeEdit,generateImage});
     const upstream = await nyxAiProviderFetch(credential.provider, endpoint, {
       method: "POST",
       signal: controller.signal,
@@ -3045,13 +3065,14 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       res.end();
       return;
     }
-    let data = await upstream.json().catch(() => ({}));
+    let data = generateAudio&&upstream.ok&&/text\/event-stream/i.test(upstream.headers.get("content-type")||"") ? await collectModelVoice(upstream) : await upstream.json().catch(() => ({}));
     if (!upstream.ok || data?.error || data?.type === 'error') {
       const error=nyxAiProviderError(model,data,upstream.status,key,credential.personal);
       res.status(error.status).json({error:error.message});
       return;
     }
     let text = nyxAiCompletionText(data);
+    if(computerAgent){try{if(data?.choices?.[0]?.finish_reason==='length')throw new Error();parseAgentReply(text);}catch{return res.status(502).json({error:'The model returned an incomplete agent action. No action was executed. Try a smaller task or another model.'});}}
     if(codeEdit){
       const valid=value=>{try{const parsed=JSON.parse(value.slice(value.indexOf('{'),value.lastIndexOf('}')+1));return typeof parsed.summary==='string'&&Array.isArray(parsed.files)&&parsed.files.length<=8;}catch{return false;}};
       if(data?.choices?.[0]?.finish_reason==='length'||!valid(text)){
@@ -3065,7 +3086,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
         if(data?.choices?.[0]?.finish_reason==='length'||!valid(text)){res.status(502).json({error:'The model could not produce a complete edit after one repair attempt. Your files are unchanged. Try a smaller change or another model.'});return;}
       }
     }
-    if (!codeEdit && !generateImage && !webEnabled && nyxAiLooksCorrupted(text)) {
+    if (!generateAudio && !computerAgent && !codeEdit && !generateImage && !webEnabled && nyxAiLooksCorrupted(text)) {
       const retry = await nyxAiRetryCorruptedCompletion(endpoint, key, providerPayload, controller.signal, credential.provider).catch(error => { if(error?.code==='ai_allowance')throw error; return {text:'',tokens:0}; });
       text = retry.text || "That model returned a corrupted reply twice. Please try again or choose another model.";
     }
@@ -3077,9 +3098,10 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       await settleNyxAiNavyTokens(navyReservation, nyxAiCompletionTokens(data) || nyxAiEstimatedTokens(text));
       navyReservationSettled = true;
     }
+    if(generateAudio&&!data.voiceAudio)return res.status(502).json({error:"The voice model did not return audio. No browser voice was substituted."});
     const images=generateImage?aiOutputImages(data):[];
     if(generateImage&&!images.length&&!String(text||'').trim())return res.status(502).json({error:'The model returned no image or explanation. Please try another prompt.'});
-    res.json({ text: String(text || "").trim(), model:typeof data.model==='string'&&/^~?[a-z0-9][a-z0-9._:/-]{0,199}$/i.test(data.model)?data.model:model, ...(!codeEdit&&!generateImage?{metadata:aiResponseMetadata(data)}:{}), ...(generateImage?{images}:{}), finishReason:data?.choices?.[0]?.finish_reason||null });
+    res.json({ ...(generateAudio?{audio:data.voiceAudio}:{}), text: String(text || "").trim(), model:typeof data.model==='string'&&/^~?[a-z0-9][a-z0-9._:/-]{0,199}$/i.test(data.model)?data.model:model, ...(!codeEdit&&!generateImage?{metadata:aiResponseMetadata(data)}:{}), ...(generateImage?{images}:{}), finishReason:data?.choices?.[0]?.finish_reason||null });
   } catch (error) {
     if (!res.headersSent) {
       const timedOut = error?.name === "AbortError";

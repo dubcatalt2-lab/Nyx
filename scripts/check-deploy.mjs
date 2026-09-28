@@ -2,6 +2,22 @@ import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
+  "apps/agents/index.html",
+  "apps/agents/icons/nook.svg",
+  "apps/agents/fonts/Quicksand-Variable.ttf",
+  "apps/agents/app.js",
+  "apps/agents/style.css",
+  "apps/agents/media.js",
+  "apps/agents/screen.js",
+  "apps/agents/chats.js",
+  "apps/agents/models.js",
+  "apps/agents/models.css",
+  "companion/core.mjs",
+  "companion/start.mjs",
+  "companion/Start-Nyx-Agents.cmd",
+  "lib/agent-protocol.mjs",
+  "lib/model-voice.mjs",
+  "lib/agent-download.mjs",
   "assets/games/game-health.js",
   "assets/games/game-runtime-compat.js",
   "assets/games/game-cdn.js",

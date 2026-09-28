@@ -423,7 +423,7 @@ function normalizeNyxIp(value) {
   return isIP(ip) ? ip : "";
 }
 
-function embeddedWispOriginAllowed(origin, requestHost = "") {
+function nyxChatOriginAllowed(origin, requestHost = "") {
   if (!embeddedWispAllowedOrigins.length || embeddedWispAllowedOrigins.includes("*")) return true;
   const normalizedOrigin = String(origin || "").trim().replace(/\/$/, "");
   if (embeddedWispAllowedOrigins.includes(normalizedOrigin)) return true;
@@ -5720,7 +5720,7 @@ function attachNyxChatSocketServer(server) {
       skipMiddlewares: false
     },
     allowRequest(req, callback) {
-      if (!embeddedWispOriginAllowed(req.headers.origin, req.headers.host)) {
+      if (!nyxChatOriginAllowed(req.headers.origin, req.headers.host)) {
         callback("Origin is not allowed.", false);
         return;
       }
@@ -14183,10 +14183,6 @@ async function startNyxServer() {
       return;
     }
     if (!externalWispUrl && ["/resources/live/", "/resources/live", "/wisp/", "/wisp"].includes(upgradePath)) {
-      if (!embeddedWispOriginAllowed(req.headers.origin, req.headers.host)) {
-        rejectWispUpgrade(socket);
-        return;
-      }
       try {
         if (await nyxRequestIpIsBanned(req)) {
           rejectWispUpgrade(socket);

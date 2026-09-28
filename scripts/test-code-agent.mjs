@@ -13,7 +13,7 @@ try {
  async function ask(text){await prompt.fill(text);await send.click();await page.waitForFunction(()=>!document.querySelector('[data-ai-send]').disabled);}
  await ask('Create Python and edit JS');assert.equal(request.model,'mercury');
  assert.equal(await page.locator('[data-code-input]').inputValue(),'print("created")');
- await page.getByRole('combobox',{name:'Workspace files'}).selectOption('javascript');assert.equal(await page.locator('[data-code-input]').inputValue(),'console.log("edited")');
+ await page.getByRole('combobox',{name:'Workspace files'}).selectOption('app.js');assert.equal(await page.locator('[data-code-input]').inputValue(),'console.log("edited")');
  assert(await page.evaluate(()=>JSON.parse(localStorage.getItem('nyx.codeStudio.v1')).versions.some(v=>v.code==='console.log("original")')));
  await page.getByRole('button',{name:'Undo changes',exact:true}).click();assert.equal(await page.locator('[data-code-input]').inputValue(),'console.log("original")');
  assert.equal(await page.getByRole('combobox',{name:'Workspace files'}).locator('option').count(),1);
@@ -24,7 +24,7 @@ try {
  const versionsBefore=await page.evaluate(()=>JSON.parse(localStorage.getItem('nyx.codeStudio.v1')).versions.length);
  answer={summary:'Already done',files:[{language:'javascript',code:'console.log("original")'}]};await ask('No-op');assert.match(await page.locator('.ai-message.is-assistant').last().innerText(),/No files changed/);assert.equal(await prompt.inputValue(),'No-op');assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('nyx.codeStudio.v1')).versions.length),versionsBefore);
  answer={summary:'Please specify a change',files:[]};await ask('Empty files');assert.match(await page.locator('.ai-message.is-assistant').last().innerText(),/No files changed/);
- assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--studio-accent').trim()),'#cba6f7');
+ assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--studio-accent').trim()),await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--app-text').trim()));
  answer={summary:'Atomic failure',files:[{language:'python',code:'print(1)'},{language:'javascript',edits:[{search:'missing',replace:'bad'}]}]};await ask('Mismatch');assert.equal(await page.getByRole('combobox',{name:'Workspace files'}).locator('option').count(),1);assert.equal(await page.locator('[data-code-input]').inputValue(),'console.log("original")');
  answer={summary:'Truncated',files:[{language:'javascript',code:'bad'}]};finishReason='length';await ask('Truncated output');assert.equal(await page.locator('[data-code-input]').inputValue(),'console.log("original")');finishReason=null;
  answer='';await ask('Empty output');assert.equal(await page.locator('[data-code-input]').inputValue(),'console.log("original")');

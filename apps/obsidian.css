@@ -39,7 +39,9 @@ html body :is(.utility-card,.panel,.card:not(:has(img)),.ai-sidebar,.assistant-p
 html body :is(button,.button,.btn,.primary,.secondary,.utility-button,.settings-action):not(.swatch):not([data-color]) {background-image:none!important;text-shadow:none;box-shadow:none;}
 html body :is(.primary,.button-primary,.btn-primary,.button-run,.button-ai,.ai-new-chat,.ai-send,.utility-primary) {background:var(--app-raised)!important;color:var(--app-text)!important;border:1px solid var(--app-line)!important;border-radius:7px!important;box-shadow:none!important}
 html body :is(input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(.search-field input):not(.searchbox input):not(.search-box input):not(.ai-history-search input),textarea:not([data-code-input]),select) {background-color:var(--app-field);color:var(--app-text);border-color:var(--app-line);box-shadow:none}
-html body :is(button,a,input,textarea,select):not(.search-field input):not(.searchbox input):not(.search-box input):not(.ai-history-search input):focus-visible {outline:1px solid var(--app-muted);outline-offset:3px}
+html body :is(button,a,input,textarea,select):not(.search-field input):not(.searchbox input):not(.search-box input):not(.ai-history-search input):not(.message-composer textarea):not(.assistant-form textarea):focus-visible {outline:1px solid var(--app-muted);outline-offset:3px}
+html body :is(.message-composer,.assistant-form) textarea {border:0;border-radius:8px;outline:0;background:transparent;box-shadow:none}
+html body :is(.message-composer,.assistant-form):focus-within {border-color:var(--app-muted);box-shadow:0 0 0 2px color-mix(in srgb,var(--app-muted) 10%,transparent)}
 html body :is(.ai-app,.ai-workspace,.ai-composer,.ai-composer-shell) {background:transparent;box-shadow:none}
 .ai-sidebar {backdrop-filter:blur(22px);border-right:1px solid var(--app-line)}
 .ai-sidebar-close,.ai-sidebar-toggle {display:grid}

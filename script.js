@@ -8587,13 +8587,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       store.set('nyx.removedStartupPdfData',true);
     }catch{}
   }
+  async function unregisterProxyScope(scope){
+    const registration=await navigator.serviceWorker.getRegistration(scope).catch(()=>null);
+    if(registration?.scope===new URL(scope,location.href).href)await registration.unregister().catch(()=>null);
+  }
   async function repairScramjetStorage(){
     if(navigator.serviceWorker){
-      const registrations=await Promise.all([
-        navigator.serviceWorker.getRegistration('/~/sj/').catch(()=>null),
-        navigator.serviceWorker.getRegistration('/scramjet/service/').catch(()=>null)
-      ]);
-      await Promise.all(registrations.map(registration=>registration?.unregister?.().catch(()=>null)));
+      await Promise.all(['/~/sj/','/scramjet/service/'].map(unregisterProxyScope));
     }
     const names=['$scramjet','__scramjet_controller'];
     if(indexedDB.databases){
@@ -8606,8 +8606,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   async function repairScramjetV1Storage(){
     if(navigator.serviceWorker){
-      const registration=await navigator.serviceWorker.getRegistration('/~/sj-v1/').catch(()=>null);
-      await registration?.unregister?.().catch(()=>null);
+      await unregisterProxyScope('/~/sj-v1/');
     }
     // v1 has a private database, so its recovery must never remove v2's
     // "$scramjet" database.
@@ -8621,11 +8620,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   async function repairUvStorage(){
     if(navigator.serviceWorker){
-      const registrations=await Promise.all([
-        navigator.serviceWorker.getRegistration('/service/').catch(()=>null),
-        navigator.serviceWorker.getRegistration('/uv/').catch(()=>null)
-      ]);
-      await Promise.all(registrations.map(registration=>registration?.unregister?.().catch(()=>null)));
+      await Promise.all(['/service/','/uv/'].map(unregisterProxyScope));
     }
   }
   async function repairUvCaches(){

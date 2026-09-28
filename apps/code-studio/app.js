@@ -39,12 +39,20 @@
   let runSequence=0;
   let running=false;
 
+  function fileLanguage(name){return ({html:'html',htm:'html',css:'css',js:'javascript',mjs:'javascript',ts:'typescript',py:'python',java:'java',c:'c',cpp:'cpp',cs:'csharp',go:'go',rs:'rust',php:'php',rb:'ruby',sql:'sql',json:'json',md:'markdown'})[String(name).split('.').pop().toLowerCase()]||null;}
+  function validFile(name){return typeof name==='string'&&name.length<=120&&/^[a-zA-Z0-9_-][a-zA-Z0-9_./-]*$/.test(name)&&!name.split('/').some(part=>!part||part==='.'||part==='..')&&Boolean(fileLanguage(name));}
   function loadState(){
-    try{
-      const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');
-      const language=languages[saved.language]?saved.language:'html';
-      return {language,codes:saved.codes&&typeof saved.codes==='object'?saved.codes:{},versions:Array.isArray(saved.versions)?saved.versions.filter(v=>languages[v.language]&&typeof v.code==='string').slice(-20):[]};
-    }catch{return {language:'html',codes:{}}}
+    let saved={};try{saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')||{};}catch{}
+    const codes={};
+    for(const [key,value] of Object.entries(saved.codes||{})){
+      const name=saved.schema===2?key:languages[key]?.file;
+      if(validFile(name)&&typeof value==='string')codes[name]=value.slice(0,MAX_CODE_CHARS);
+    }
+    const file=saved.schema===2?saved.file:languages[saved.language]?.file;
+    const selected=validFile(file)?file:Object.keys(codes)[0]||'index.html';
+    if(!Object.hasOwn(codes,selected))codes[selected]=languages[fileLanguage(selected)].starter;
+    const versions=(Array.isArray(saved.versions)?saved.versions:[]).map(v=>({...v,file:v.file||languages[v.language]?.file})).filter(v=>validFile(v.file)&&typeof v.code==='string').slice(-20);
+    return {schema:2,file:selected,language:fileLanguage(selected),codes,versions};
   }
   function setSaveState(label,kind=''){
     refs.saveLabel.textContent=label;
@@ -55,8 +63,8 @@
     try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));setSaveState('Saved locally');return true}
     catch{setSaveState('Could not save','error');return false}
   }
-  function code(){return String(state.codes[state.language]??languages[state.language].starter).slice(0,MAX_CODE_CHARS)}
-  function setCode(value){state.codes[state.language]=String(value||'').slice(0,MAX_CODE_CHARS);refs.input.value=code();renderEditor();resetPreview();save()}
+  function code(){return String(state.codes[state.file]??languages[state.language].starter).slice(0,MAX_CODE_CHARS)}
+  function setCode(value){state.codes[state.file]=String(value||'').slice(0,MAX_CODE_CHARS);refs.input.value=code();renderEditor();resetPreview();save()}
   function escapeHtml(value){return String(value||'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]))}
   function matchingBracketIndexes(source,caret){
     const pairs={'(':')','[':']','{':'}'};
@@ -162,7 +170,7 @@
     const info=languages[state.language];
     refs.language.value=state.language;
     refs.help.textContent=info.help;
-    refs.files.forEach(file=>file.textContent=info.file);
+    refs.files.forEach(file=>file.textContent=state.file);
     refs.languageStatus.textContent=languageLabel();
     refs.languageBadge.textContent=languageLabel();
     refs.input.value=code();
@@ -172,7 +180,34 @@
     resetPreview();
     save();
   }
-  function previewDocument(source){if(state.language==='html')return source;if(state.language==='css')return `<!doctype html><style>${source}</style><article class="card"><h1>Styled card</h1><p>Your CSS is running in this safe preview.</p></article>`;return `<!doctype html><style>body{font-family:system-ui;padding:2rem;color:#172033}button{padding:.7rem 1rem;border:0;border-radius:.5rem;background:#4f6ee8;color:white}</style><h1>JavaScript preview</h1><p id="message">Press the button to test your code.</p><button>Try it</button><script>${source.replace(/<\/script/gi,'<\\/script')}<\/script>`}
+  function previewDocument(source){
+    let htmlFile=state.language==='html'?state.file:Object.hasOwn(state.codes,'index.html')?'index.html':Object.keys(state.codes).find(name=>fileLanguage(name)==='html');
+    if(htmlFile&&state.language!=='html'){
+      const linked=new DOMParser().parseFromString(state.codes[htmlFile],'text/html');
+      const base=new URL(htmlFile,'https://workspace.invalid/');
+      if(![...linked.querySelectorAll('link[href],script[src]')].some(node=>{try{return new URL(node.getAttribute('href')||node.getAttribute('src'),base).pathname.slice(1)===state.file;}catch{return false;}}))htmlFile=null;
+    }
+    if(htmlFile){
+      const doc=new DOMParser().parseFromString(htmlFile===state.file?source:state.codes[htmlFile],'text/html');
+      const base=new URL(htmlFile,'https://workspace.invalid/');
+      const resolve=reference=>{const url=new URL(reference,base);return url.origin===base.origin?decodeURIComponent(url.pathname.slice(1)):null;};
+      for(const link of doc.querySelectorAll('link[rel="stylesheet"][href]')){
+        const file=resolve(link.getAttribute('href'));if(!file)continue;
+        if(!Object.hasOwn(state.codes,file))throw Error('Missing workspace file: '+file);
+        const style=doc.createElement('style');style.textContent=state.codes[file];link.replaceWith(style);
+      }
+      for(const script of doc.querySelectorAll('script[src]')){
+        const file=resolve(script.getAttribute('src'));if(!file)continue;
+        if(!Object.hasOwn(state.codes,file))throw Error('Missing workspace file: '+file);
+        if(script.type==='module')throw Error('Use classic scripts for this preview. Module imports need a build server.');
+        if(script.hasAttribute('defer')){script.removeAttribute('defer');doc.body.append(script);}
+        script.removeAttribute('src');script.removeAttribute('integrity');script.textContent=state.codes[file].replace(/<\/script/gi,'<\\/script');
+      }
+      return '<!doctype html>'+doc.documentElement.outerHTML;
+    }
+    if(state.language==='css')return `<!doctype html><style>${source}</style><article class="card"><h1>Styled card</h1><p>Your CSS is running in this safe preview.</p></article>`;
+    return `<!doctype html><h1>JavaScript preview</h1><p id="message">Press the button to test your code.</p><button>Try it</button><script>${source.replace(/<\/script/gi,'<\\/script')}<\/script>`;
+  }
   function markdown(source){return escapeHtml(source).replace(/^### (.*)$/gm,'<h3>$1</h3>').replace(/^## (.*)$/gm,'<h2>$1</h2>').replace(/^# (.*)$/gm,'<h1>$1</h1>').replace(/^[-*] (.*)$/gm,'<li>$1</li>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\n{2,}/g,'</p><p>').replace(/\n/g,'<br>')}
   function setPreviewNote(label,kind){
     refs.previewStateLabel.textContent=label;
@@ -201,7 +236,7 @@
     const messages=problemMessages();
     const list=document.createElement('div');
     list.className='problem-list';
-    const entries=messages.length?messages:[{title:'No problems found',detail:`${languages[state.language].file} passed the available browser checks.`,clear:true}];
+    const entries=messages.length?messages:[{title:'No problems found',detail:`${state.file} passed the available browser checks.`,clear:true}];
     entries.forEach(message=>{
       const row=document.createElement('div');
       row.className=`problem-row${message.clear?' is-clear':''}`;
@@ -259,15 +294,16 @@
     const runId=++runSequence;
     hasRun=true;
     refs.refreshPreview.disabled=false;
-    lastTerminal=`Run ${languages[state.language].file}\nCompleted ${new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}`;
-    runLogLines=[{text:`Run ${languages[state.language].file}`,tone:'prompt'},{text:`Started ${new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}`,tone:'muted'}];
+    lastTerminal=`Run ${state.file}\nCompleted ${new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}`;
+    runLogLines=[{text:`Run ${state.file}`,tone:'prompt'},{text:`Started ${new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}`,tone:'muted'}];
     runtimeProblems=[];
     refs.problemCount.textContent='0';
     if(languages[state.language].run&&['html','css','javascript'].includes(state.language)){
       const csp='<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; script-src \'unsafe-inline\'; img-src data:">';
       previewRunId=`preview-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const bridge=`<script>(()=>{const runId=${JSON.stringify(previewRunId)};const send=(kind,args)=>parent.postMessage({type:'nyx-code-preview',runId,kind,text:args.map(value=>{try{return typeof value==='string'?value:JSON.stringify(value)}catch{return String(value)}}).join(' ')},'*');['log','info','warn','error'].forEach(kind=>{const original=console[kind]?.bind(console);console[kind]=(...args)=>{original?.(...args);send(kind,args)}});addEventListener('error',event=>send('error',[event.message||'Preview error']));addEventListener('unhandledrejection',event=>send('error',[event.reason?.message||event.reason||'Unhandled promise rejection']))})()<\/script>`;
-      refs.preview.srcdoc=`${csp}${bridge}${previewDocument(source)}`;
+      try{refs.preview.srcdoc=`${csp}${bridge}${previewDocument(source)}`;}
+      catch(error){lastOutput=error.message;runtimeProblems=[{title:'Preview needs a file',detail:error.message}];refs.preview.removeAttribute('srcdoc');setPreviewNote('Needs a fix','note');setResultMode('problems');return;}
       setPreviewNote('Live','live');
       setResultMode('output');
       return;
@@ -334,17 +370,20 @@
     clearCustomThemePalette();
     // This workspace has its own Catppuccin palette; never change the host theme.
   }
-  function keepVersion(language,value){
+  function keepVersion(file,value){
     state.versions=state.versions||[];
-    if(state.versions.at(-1)?.language===language&&state.versions.at(-1)?.code===value)return;
-    state.versions.push({language,code:value,at:Date.now()});state.versions=state.versions.slice(-20);
+    if(state.versions.at(-1)?.file===file&&state.versions.at(-1)?.code===value)return;
+    state.versions.push({file,language:fileLanguage(file),code:value,at:Date.now()});state.versions=state.versions.slice(-20);
+  }
+  function switchFile(file){
+    if(!Object.hasOwn(state.codes,file))return;
+    state.codes[state.file]=code();state.file=file;state.language=fileLanguage(file);syncLanguage();
   }
   function switchLanguage(target){
-    if(!languages[target]||target===state.language)return;
-    const previous=state.language;
-    state.codes[previous]=code();
-    if(!save()){refs.language.value=previous;return;}
-    state.language=target;syncLanguage();
+    if(!languages[target])return;
+    const file=Object.keys(state.codes).find(name=>fileLanguage(name)===target)||languages[target].file;
+    if(!Object.hasOwn(state.codes,file))state.codes[file]=languages[target].starter;
+    switchFile(file);
   }
   const versionsButton=document.createElement('button');versionsButton.type='button';versionsButton.className='tool-button';versionsButton.textContent='Versions';versionsButton.title='Restore a saved code version';
   document.querySelector('[data-download-code]').after(versionsButton);
@@ -354,8 +393,8 @@
   const restoreVersion=document.createElement('button');restoreVersion.textContent='Restore version';restoreVersion.className='tool-button';const closeVersions=document.createElement('button');closeVersions.textContent='Close';closeVersions.className='tool-button';
   versionsDialog.append(versionsHeading,versionsSelect,versionsPreview,restoreVersion,closeVersions);document.body.append(versionsDialog);
   versionsSelect.onchange=()=>{versionsPreview.value=state.versions?.[Number(versionsSelect.value)]?.code||'';};
-  versionsButton.onclick=()=>{versionsSelect.replaceChildren();(state.versions||[]).forEach((version,index)=>{const option=document.createElement('option');option.value=index;option.textContent=version.language+' - '+new Date(version.at).toLocaleString();versionsSelect.append(option);});restoreVersion.disabled=!state.versions?.length;versionsSelect.onchange();versionsDialog.showModal();};
-  closeVersions.onclick=()=>versionsDialog.close();restoreVersion.onclick=()=>{const version=state.versions?.[Number(versionsSelect.value)];if(!version)return;keepVersion(state.language,code());state.codes[version.language]=version.code;state.language=version.language;syncLanguage();versionsDialog.close();};
+  versionsButton.onclick=()=>{versionsSelect.replaceChildren();(state.versions||[]).forEach((version,index)=>{const option=document.createElement('option');option.value=index;option.textContent=version.file+' - '+new Date(version.at).toLocaleString();versionsSelect.append(option);});restoreVersion.disabled=!state.versions?.length;versionsSelect.onchange();versionsDialog.showModal();};
+  closeVersions.onclick=()=>versionsDialog.close();restoreVersion.onclick=()=>{const version=state.versions?.[Number(versionsSelect.value)];if(!version)return;keepVersion(state.file,code());state.codes[version.file]=version.code;state.file=version.file;state.language=fileLanguage(version.file);syncLanguage();versionsDialog.close();};
   const modelPicker=document.createElement('select');modelPicker.className='studio-model-picker';modelPicker.setAttribute('aria-label','AI model');modelPicker.disabled=true;
   document.querySelector('.assistant-brand').after(modelPicker);
   let selectedModel='';try{selectedModel=localStorage.getItem('nyx.codeStudio.model')||'';}catch{}
@@ -363,7 +402,7 @@
   function renderAiModels(){modelPicker.replaceChildren();for(const item of aiOptions){const option=document.createElement('option');option.value=item.model;option.textContent=item.label||item.model;modelPicker.append(option);}if(!aiOptions.some(item=>item.model===selectedModel))selectedModel=aiOptions[0]?.model||'';modelPicker.value=selectedModel;modelPicker.disabled=!aiOptions.length;if(!aiOptions.length){const option=document.createElement('option');option.textContent='Models unavailable';modelPicker.append(option);}}
   function selectedAiOptions(){return aiOptions.filter(option=>option.model===selectedModel).slice(0,1);}
   function focusLanguage(){refs.language.focus()}
-  function handleCommand(command){if(command==='reset'){delete state.codes[state.language];syncLanguage();return}if(command==='edit'){refs.input.focus();return}if(command==='select'){refs.input.focus();refs.input.select();return}if(command==='preview'){setResultMode('output');return}if(command==='language'){focusLanguage();return}if(command==='run'){run();return}if(command==='terminal'){setResultMode('terminal')}}
+  function handleCommand(command){if(command==='reset'){setCode(languages[state.language].starter);return}if(command==='edit'){refs.input.focus();return}if(command==='select'){refs.input.focus();refs.input.select();return}if(command==='preview'){setResultMode('output');return}if(command==='language'){focusLanguage();return}if(command==='run'){run();return}if(command==='terminal'){setResultMode('terminal')}}
   async function accountToken(){if(parent!==window){const requestId=`code-${Date.now()}-${Math.random().toString(36).slice(2)}`;const parentToken=await new Promise(resolve=>{let done=false;const finish=value=>{if(done)return;done=true;clearTimeout(timer);removeEventListener('message',receive);resolve(String(value||''))};const receive=event=>{if(event.source===parent&&event.origin===location.origin&&event.data?.type==='nyx:account-token-response'&&event.data.requestId===requestId)finish(event.data.token)};const timer=setTimeout(()=>finish(''),2200);addEventListener('message',receive);parent.postMessage({type:'nyx:account-token-request',requestId},location.origin)});if(parentToken)return parentToken}if(!authPromise)authPromise=(async()=>{try{const response=await fetch('/api/founder-profile/auth-config',{cache:'no-store'});const config=await response.json();if(!config?.enabled||!config?.apiKey||!config?.projectId)return null;const [{initializeApp,getApps},{getAuth,setPersistence,browserLocalPersistence}]=await Promise.all([import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')]);const app=getApps().find(item=>item.name==='nyx-code-studio')||initializeApp({apiKey:config.apiKey,authDomain:`${config.projectId}.firebaseapp.com`,projectId:config.projectId},'nyx-code-studio');const auth=getAuth(app);try{await setPersistence(auth,browserLocalPersistence)}catch{}if(typeof auth.authStateReady==='function')await auth.authStateReady();return auth}catch{return null}})();try{const auth=await authPromise;return auth?.currentUser?await auth.currentUser.getIdToken():''}catch{return ''}}
   async function aiHeaders(provider='shared',token=null){const account=token===null?await accountToken():token;return {'content-type':'application/json','x-nyx-ai-provider':provider,...(account?{Authorization:`Bearer ${account}`}:{})}}
   async function loadAiOptions(){
@@ -429,23 +468,38 @@
   agentMode.onchange=()=>{refs.prompt.placeholder=agentMode.value==='agent'?'Describe the change to make…':'Ask a question about your code…';document.querySelector('#assistant-title').textContent=agentMode.value==='agent'?'Code agent':'Ask Nyx';};
   const workspaceFiles=document.createElement('select');workspaceFiles.className='studio-model-picker';workspaceFiles.setAttribute('aria-label','Workspace files');
   const fileField=document.createElement('label');fileField.className='workspace-file-field';fileField.textContent='Open file';fileField.append(workspaceFiles);document.querySelector('.project-controls').prepend(fileField);
-  function renderWorkspaceFiles(){workspaceFiles.replaceChildren();for(const language of Object.keys(languages)){if(language!==state.language&&typeof state.codes[language]!=='string')continue;const option=document.createElement('option');option.value=language;option.textContent=languages[language].file;workspaceFiles.append(option);}workspaceFiles.value=state.language;}
-  workspaceFiles.onchange=()=>{state.language=workspaceFiles.value;syncLanguage();};
+  function renderWorkspaceFiles(){workspaceFiles.replaceChildren();for(const file of Object.keys(state.codes)){const option=document.createElement('option');option.value=file;option.textContent=file;workspaceFiles.append(option);}workspaceFiles.value=state.file;}
+  workspaceFiles.onchange=()=>switchFile(workspaceFiles.value);
+  const newFile=document.createElement('button');newFile.type='button';newFile.className='tool-button';newFile.textContent='+ New file';newFile.dataset.newFile='';fileField.after(newFile);
+  const fileDialog=document.createElement('dialog');fileDialog.className='studio-file-dialog';fileDialog.setAttribute('aria-label','Create file');
+  fileDialog.innerHTML='<form><h2>New file</h2><label>File name<input name="filename" placeholder="styles.css" maxlength="120" required autocomplete="off"></label><p role="alert"></p><div><button type="button" class="tool-button" data-cancel>Cancel</button><button class="tool-button" type="submit">Create file</button></div></form>';
+  document.body.append(fileDialog);newFile.onclick=()=>{fileDialog.querySelector('form').reset();fileDialog.querySelector('[role=alert]').textContent='';fileDialog.showModal();fileDialog.querySelector('input').focus();};
+  fileDialog.querySelector('[data-cancel]').onclick=()=>fileDialog.close();
+  fileDialog.querySelector('form').onsubmit=event=>{
+    event.preventDefault();const name=fileDialog.querySelector('input').value.trim();const error=fileDialog.querySelector('[role=alert]');
+    if(!validFile(name)){error.textContent='Use a file name such as index.html, styles.css or app.js.';return;}
+    if(Object.keys(state.codes).some(file=>file.toLowerCase()===name.toLowerCase())){error.textContent='A file with that name already exists.';return;}
+    if(Object.keys(state.codes).length>=32){error.textContent='This workspace can hold 32 files.';return;}
+    const before=JSON.parse(JSON.stringify(state));state.codes[name]='';state.file=name;state.language=fileLanguage(name);
+    if(!save()){state=before;error.textContent='Could not save the new file.';return;}
+    syncLanguage();fileDialog.close();refs.input.focus();
+  };
   function applyAgentReply(raw,snapshot,reply){
     let result;try{
       const start=raw.indexOf('{'),end=raw.lastIndexOf('}');
       result=JSON.parse(raw.slice(start,end+1));
     }catch{throw Error('The model did not return a complete edit. Your files are unchanged. Ask for one smaller change or choose another model.');}
     if(!result||typeof result.summary!=='string'||!Array.isArray(result.files)||result.files.length>8)throw Error('Invalid edit response. Your files are unchanged.');
-    const originalFiles={...JSON.parse(snapshot.codes),[snapshot.language]:snapshot.current};
+    const originalFiles={...JSON.parse(snapshot.codes),[snapshot.file]:snapshot.current};
     const seen=new Set();
     for(const file of result.files){
-      if(!file||!Object.hasOwn(languages,file.language)||seen.has(file.language))throw Error('Invalid edit response. Your files are unchanged.');
-      if(!snapshot.provided.includes(file.language)&&typeof originalFiles[file.language]==='string')throw Error('Select the other saved file before asking Nyx to edit it. Your files are unchanged.');
-      seen.add(file.language);
+      if(file&&!file.name&&Object.hasOwn(languages,file.language))file.name=languages[file.language].file;
+      if(!file||!validFile(file.name)||seen.has(file.name.toLowerCase())||Object.keys(originalFiles).some(name=>name!==file.name&&name.toLowerCase()===file.name.toLowerCase()))throw Error('Invalid edit response. Your files are unchanged.');
+      if(!snapshot.provided.includes(file.name)&&typeof originalFiles[file.name]==='string')throw Error('Select the other saved file before asking Nyx to edit it. Your files are unchanged.');
+      seen.add(file.name.toLowerCase());
       if(Array.isArray(file.edits)){
-        if(file.code!==undefined||!file.edits.length||file.edits.length>16||typeof originalFiles[file.language]!=='string')throw Error('Invalid edit response. Your files are unchanged.');
-        let edited=originalFiles[file.language];
+        if(file.code!==undefined||!file.edits.length||file.edits.length>16||typeof originalFiles[file.name]!=='string')throw Error('Invalid edit response. Your files are unchanged.');
+        let edited=originalFiles[file.name];
         for(const edit of file.edits){
           if(typeof edit?.search!=='string'||!edit.search||typeof edit.replace!=='string')throw Error('Invalid edit response. Your files are unchanged.');
           const offset=edited.indexOf(edit.search);
@@ -457,16 +511,17 @@
       }
       if(typeof file.code!=='string'||file.code.length>MAX_CODE_CHARS)throw Error('Invalid or oversized file. Your files are unchanged.');
     }
-    if(JSON.stringify(state.codes)!==snapshot.codes||state.language!==snapshot.language||code()!==snapshot.current)throw Error('Your code changed while Nyx was working. Keeping your edits; ask again to use the latest version.');
-    result.files=result.files.filter(file=>file.code!==originalFiles[file.language]);
+    if(JSON.stringify(state.codes)!==snapshot.codes||state.file!==snapshot.file||code()!==snapshot.current)throw Error('Your code changed while Nyx was working. Keeping your edits; ask again to use the latest version.');
+    result.files=result.files.filter(file=>file.code!==originalFiles[file.name]);
     if(!result.files.length){reply.querySelector('p').textContent='No files changed. '+result.summary;return false;}
+    if(new Set([...Object.keys(state.codes),...result.files.map(file=>file.name)]).size>32)throw Error('This workspace can hold 32 files.');
     const before=JSON.parse(JSON.stringify(state));
-    keepVersion(state.language,code());
-    for(const file of result.files){if(typeof state.codes[file.language]==='string')keepVersion(file.language,state.codes[file.language]);state.codes[file.language]=file.code;}
-    state.language=result.files[0].language;
+    keepVersion(state.file,code());
+    for(const file of result.files){if(typeof state.codes[file.name]==='string')keepVersion(file.name,state.codes[file.name]);state.codes[file.name]=file.code;}
+    state.file=result.files[0].name;state.language=fileLanguage(state.file);
     if(!save()){state=before;throw Error('Could not save the edited files. Your original code is unchanged.');}
     syncLanguage();const applied=JSON.stringify(state.codes);
-    reply.querySelector('p').textContent=result.summary+'\nUpdated: '+result.files.map(file=>languages[file.language].file).join(', ')+'. Review your files, then press Run code.';
+    reply.querySelector('p').textContent=result.summary+'\nUpdated: '+result.files.map(file=>file.name).join(', ')+'. Review your files, then press Run code.';
     const undo=document.createElement('button');undo.type='button';undo.className='tool-button';undo.textContent='Undo changes';
     undo.onclick=()=>{if(JSON.stringify(state.codes)!==applied){appendMessage('assistant','You have edited these files since this change. Use Versions to restore an earlier file without losing your work.',true);return;}const current=state;state=before;if(!save()){state=current;return;}syncLanguage();undo.disabled=true;undo.textContent='Changes undone';};
     reply.append(undo);
@@ -475,7 +530,7 @@
   async function ask(prompt){
     const question=String(prompt||'').trim();
     if(!question||agentBusy||refs.language.disabled)return;
-    agentBusy=true;const editing=agentMode.value==='agent';const snapshot={codes:JSON.stringify(state.codes),language:state.language,current:code()};
+    agentBusy=true;const editing=agentMode.value==='agent';const snapshot={codes:JSON.stringify(state.codes),language:state.language,file:state.file,current:code()};
     refs.send.disabled=true;
     document.querySelectorAll('[data-ai-prompt]').forEach(button=>{button.disabled=true});
     setAiStatus('Thinking',true);
@@ -486,18 +541,18 @@
       let options=await ensureAiOptions();
       if(!options.length)options=await ensureAiOptions(true);
       if(!options.length)throw new Error('Nyx AI is not available right now. Please try again in a moment.');
-      const file=languages[state.language].file;
+      const file=state.file;
       const currentCode=code();
       const codeLimit=18000;
       const visibleCode=currentCode.slice(0,codeLimit);
       let context=`You are helping in Nyx Code Studio. Give a practical, friendly answer for a ${file} file. Focus on the request, point out the most important issue first, and include a small corrected snippet only when it helps.\n\nUser request: ${question}\n\nCurrent code${currentCode.length>codeLimit?' (first 18,000 characters)':''}:\n\n${visibleCode}`;
       if(editing){
-        let files={...JSON.parse(snapshot.codes),[snapshot.language]:snapshot.current};
+        let files={...JSON.parse(snapshot.codes),[snapshot.file]:snapshot.current};
         // Keep small multi-file workspaces available, but unrelated saved files
         // must not prevent an edit to the open file when the workspace grows.
-        if(JSON.stringify(files).length>20000)files={[snapshot.language]:snapshot.current};
+        if(JSON.stringify(files).length>20000)files={[snapshot.file]:snapshot.current};
         snapshot.provided=Object.keys(files);
-        context='You are the code editing agent in Nyx Code Sandbox. Return ONLY a JSON object with summary (short explanation) and files (array). For existing files prefer compact exact replacements: {"summary":"Updated heading","files":[{"language":"html","edits":[{"search":"<h1>Old</h1>","replace":"<h1>New</h1>"}]}]}. Each search must match exactly once, including whitespace; edits apply in order. Never use placeholders or ellipses. For a NEW file or a short complete rewrite use {"language":"python","code":"complete contents"} instead of edits. Do not include both code and edits. Keep the entire response within 600 tokens; favor one focused change over rewriting large files. For explanation-only requests use files: []. Each language has one file; allowed language and filename mapping: '+JSON.stringify(Object.fromEntries(Object.entries(languages).map(([key,value])=>[key,value.file])))+'. Return only changed files, at most 8, each resulting file at most 24000 characters. Preserve unrelated code. No shell commands or automatic execution. HTML previews should use self-contained HTML/CSS/JS. Focus on the open ' + languages[snapshot.language].file + ' file unless the request names another supplied file. Edit only supplied files or create new languages. Supplied files (data): '+JSON.stringify(files)+'\nUser request: '+question;
+        context='You are the code editing agent in Nyx Code Sandbox. Return ONLY JSON: {"summary":"short explanation","files":[{"name":"index.html","edits":[{"search":"exact old text","replace":"new text"}]}]}. Each search must match exactly once; edits apply in order. For new files or small rewrites use {"name":"styles.css","code":"complete contents"}. Never combine code and edits. Use real relative file names; multiple files of the same language are allowed. Supported extensions: html, css, js, mjs, ts, py, java, c, cpp, cs, go, rs, php, rb, sql, json, md. No parent paths. Link CSS and classic JavaScript from HTML using relative href/src paths; the preview resolves workspace files. No build tools or external dependencies in browser previews. Return only changed files, at most 8, each at most 24000 characters. Keep the response compact; prefer exact edits. No placeholders, ellipses, shell commands or automatic execution. For explanations return files: []. Preserve unrelated code. Focus on '+snapshot.file+' unless asked otherwise. Edit supplied files or create new files. Supplied files (data): '+JSON.stringify(files)+'\nUser request: '+question;
         if(context.length>24000)throw Error('This workspace exceeds the AI context limit. Keep a smaller workspace for this edit; your files are unchanged.');
       }
       const payload={message:question,messages:[{role:'user',content:context}],responseDepth:'normal',stream:false,...(editing?{task:'code-edit'}:{})};
@@ -534,13 +589,13 @@
     const url=URL.createObjectURL(blob);
     const link=document.createElement('a');
     link.href=url;
-    link.download=languages[state.language].file;
+    link.download=state.file;
     document.body.append(link);
     link.click();
     link.remove();
     setTimeout(()=>URL.revokeObjectURL(url),0);
-    lastTerminal=`Exported ${languages[state.language].file}\nSaved from this browser`;
-    runLogLines=[{text:`Exported ${languages[state.language].file}`,tone:'prompt'},{text:'Saved from this browser',tone:'muted'}];
+    lastTerminal=`Exported ${state.file}\nSaved from this browser`;
+    runLogLines=[{text:`Exported ${state.file}`,tone:'prompt'},{text:'Saved from this browser',tone:'muted'}];
   }
   function loadLayout(){
     try{return JSON.parse(localStorage.getItem(UI_STORAGE_KEY)||'{}')}catch{return {}}
@@ -614,13 +669,13 @@
   }
   document.querySelector('[data-close-assistant]').addEventListener('click',()=>{if(matchMedia('(min-width: 941px)').matches)setPanelCollapsed('assistant',true);else setMobileView('editor');});
   refs.language.addEventListener('change',()=>switchLanguage(refs.language.value));
-  refs.input.addEventListener('input',()=>{state.codes[state.language]=refs.input.value.slice(0,MAX_CODE_CHARS);setSaveState('Saving…','saving');renderEditor();save()});
+  refs.input.addEventListener('input',()=>{state.codes[state.file]=refs.input.value.slice(0,MAX_CODE_CHARS);setSaveState('Saving…','saving');renderEditor();save()});
   refs.input.addEventListener('scroll',()=>{refs.highlight.parentElement.scrollTop=refs.input.scrollTop;refs.highlight.parentElement.scrollLeft=refs.input.scrollLeft;refs.lineNumbers.scrollTop=refs.input.scrollTop;refs.editorWrap.style.setProperty('--editor-scroll-top',`${refs.input.scrollTop}px`)});
   refs.input.addEventListener('keyup',updateCursor);
   refs.input.addEventListener('click',updateCursor);
   refs.input.addEventListener('keydown',event=>{if(event.key==='Tab'){event.preventDefault();const start=refs.input.selectionStart,end=refs.input.selectionEnd;refs.input.setRangeText('  ',start,end,'end');refs.input.dispatchEvent(new Event('input'))}else if((event.ctrlKey||event.metaKey)&&event.key==='Enter'){event.preventDefault();run();if(matchMedia('(max-width: 940px)').matches)setMobileView('preview')}});
   refs.runButtons.forEach(button=>button.addEventListener('click',()=>{run();if(matchMedia('(max-width: 940px)').matches)setMobileView('preview')}));
-  document.querySelectorAll('[data-reset]').forEach(button=>button.addEventListener('click',()=>{delete state.codes[state.language];syncLanguage()}));
+  document.querySelectorAll('[data-reset]').forEach(button=>button.addEventListener('click',()=>{setCode(languages[state.language].starter)}));
   document.querySelector('[data-load-starter]').addEventListener('click',()=>setCode(languages[state.language].starter));
   refs.clear.addEventListener('click',()=>setCode(''));
   refs.download.addEventListener('click',downloadCode);

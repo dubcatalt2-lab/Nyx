@@ -7,7 +7,7 @@
   <meta name="color-scheme" content="dark light">
   <title>Link Generator</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/icons/link-generator.svg">
-  <link rel="stylesheet" href="./styles.css?v=20260905-job-controls-v14">
+  <link rel="stylesheet" href="./styles.css?v=20260927-surge-tour-v15">
 <link rel="stylesheet" href="/apps/obsidian.css?v=20260926-2">
 </head>
 <body class="utility-neutral">
@@ -27,7 +27,7 @@
 
     <section class="utility-intro" aria-labelledby="page-title">
       <span class="intro-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9.5 14.5l-2 2a3.5 3.5 0 01-5-5l3-3a3.5 3.5 0 015 0M14.5 9.5l2-2a3.5 3.5 0 015 5l-3 3a3.5 3.5 0 01-5 0M8.5 15.5l7-7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
-      <div><h1 id="page-title">Link Generator</h1><p>Nyx utility</p></div>
+      <div><h1 id="page-title">Link Generator</h1><p>Create a link in four steps.</p><button type="button" class="secondary-action" data-tutorial-replay>Show me how</button></div>
     </section>
 
     <section class="generator-card surface" aria-labelledby="generator-title" data-wizard-card>
@@ -98,7 +98,7 @@
               <label class="generation-method-field">
                 <span>Link provider</span>
                 <select name="provider" data-provider>
-                  <option value="jsdelivr">jsDelivr files</option>
+                  <option value="surge" hidden disabled>Surge &middot; surge.sh</option><option value="jsdelivr" selected>jsDelivr files</option>
                   <option value="bunny" disabled>Bunny.net pull zones (checking setup…)</option>
                 </select>
                 <small data-provider-hint>Publish SVG files through GitHub and serve them on jsDelivr.</small>
@@ -106,7 +106,7 @@
               <label>
                 <span>Link label</span>
                 <input name="label" data-label-input maxlength="40" autocomplete="off" placeholder="Example: study-room">
-                <small>Up to 40 characters personalize your filenames or pull zone names.</small>
+                <small>Up to 40 characters personalize your filenames or hostnames.</small>
               </label>
               <label>
                 <span>Content filter report</span>
@@ -208,6 +208,7 @@
       <p class="bulk-variants-note">Up to 100,000 links per saved job. Sign in above first. Larger requests publish in small batches and wait through account cooldowns; keep this tab open to continue. Closing it saves progress for Resume on this device. Repository capacity may stop a job before its target; completed links stay downloadable. Large jobs do not run an automatic filter scan.</p>
     </section>
   </main>
-  <script src="./app.js?v=20260910-optional-verification-v11"></script>
+  <script src="./tutorial.js?v=20260927-v2"></script>
+  <script src="./app.js?v=20260927-surge-hidden-v13"></script>
 </body>
 </html>

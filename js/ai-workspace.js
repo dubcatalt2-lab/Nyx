@@ -74,6 +74,7 @@
   let activeController=null;
   let followStream=true;
   let modelCatalog=[];
+  let ownerMediaAccess=false;
   let threads=[];
   let activeThreadId='';
   let temporaryMode=false;
@@ -297,6 +298,50 @@
     scrollToBottom();
   }
 
+  const videoBlobs=new Map();
+  new MutationObserver(()=>{for(const [figure,url] of videoBlobs)if(!figure.isConnected){URL.revokeObjectURL(url);videoBlobs.delete(figure);}}).observe(document.body,{childList:true,subtree:true});
+  async function showMediaJob(message,id){
+    const figure=document.createElement('figure');figure.className='ai-message-attachment ai-generated-video';
+    const state=document.createElement('p'),check=document.createElement('button');check.type='button';check.textContent='Check progress';
+    figure.append(state,check);message.querySelector('.ai-message-content')?.after(figure);
+    let timer=null,busy=false,attempts=0;
+    const update=async()=>{
+      clearTimeout(timer);if(!figure.isConnected||busy)return;busy=true;check.disabled=true;
+      try{
+        const response=await fetch('/api/nyx-ai/media/'+id,{headers:await aiHeaders({accept:'application/json'})});
+        const data=await response.json();if(!response.ok)throw new Error(data.error||'Could not check this generation.');
+        const kind=data.kind==='image'?'image':'video';
+        if(data.status==='completed'){
+          state.textContent=kind==='image'?'Image ready':'Video ready';check.textContent=kind==='image'?'Load image':'Load video';
+          check.onclick=async()=>{
+            check.disabled=true;state.textContent='Loading '+kind+'...';
+            try{
+              const media=await fetch('/api/nyx-ai/media/'+id+'/content',{headers:await aiHeaders({})});
+              if(!media.ok)throw new Error('This '+kind+' is unavailable or has expired.');
+              if(kind==='image'){
+                const result=await media.json();
+                const imageId=await saveGeneratedImage(result.images?.[0]?.dataUrl);
+                if(!figure.isConnected)return;
+                await showGeneratedImage(message,imageId);figure.remove();
+                saveMessages(savedMessages().map(item=>item.mediaJobId===id?{...item,mediaJobId:undefined,imageId,content:'Generated image.'}:item));
+                setMessageContent(message,'Generated image.');
+                return;
+              }
+              const blob=await media.blob();if(blob.size>100*1024*1024)throw new Error('This video is too large.');
+              const url=URL.createObjectURL(blob);if(!figure.isConnected){URL.revokeObjectURL(url);return;}videoBlobs.set(figure,url);
+              const video=document.createElement('video');video.controls=true;video.playsInline=true;video.src=url;video.style.cssText='max-width:100%;max-height:480px;border-radius:12px';
+              const download=document.createElement('a');download.href=url;download.download='nyx-video.mp4';download.textContent='Download video';figure.replaceChildren(video,download);
+            }catch(error){state.textContent=error.message;check.disabled=false;}
+          };
+          if(kind==='image')await check.onclick();
+        }else if(['failed','cancelled','expired'].includes(data.status)){state.textContent='Generation '+data.status+'. Try a different prompt or model.';check.hidden=true;}
+        else{state.textContent='Rendering '+kind+'... You can keep chatting.';if(++attempts<60)timer=setTimeout(update,kind==='image'?5000:30000);else state.textContent='This is taking longer than usual. Check again when ready.';}
+      }catch(error){state.textContent=error.message;}
+      finally{busy=false;check.disabled=false;}
+    };
+    check.onclick=update;await update();
+  }
+
   function normalizedMessages(value){
     return Array.isArray(value)
       ? value.map(item=>{
@@ -308,6 +353,7 @@
           if(item.role==='assistant'&&typeof item.modelId==='string'){message.modelId=item.modelId.slice(0,200);message.modelName=String(item.modelName||'').slice(0,200);}
           if(item.role==='assistant'&&item.timing)message.timing=normalizeTiming(item.timing);
           if(item.role==='assistant'&&/^[a-f0-9-]{36}$/.test(item.imageId||''))message.imageId=item.imageId;
+          if(item.role==='assistant'&&/^[a-f0-9-]{36}$/.test(item.mediaJobId||''))message.mediaJobId=item.mediaJobId;
           const textAttachment=item.role==='user'?normalizedTextAttachment(item.textAttachment):null;
           if(textAttachment) message.textAttachment=textAttachment;
           return message;
@@ -775,7 +821,7 @@
     stats.title='Measured on this device. Tokens per second averages the entire request, including waiting. Estimates use roughly four characters per token; reported usage may include reasoning tokens.';
   }
 
-  function addMessage(role,text,{error=false,thinking=false,attachment=null,imageId=null,metadata=null,timing=null,modelId='',modelName=''}={}){
+  function addMessage(role,text,{error=false,thinking=false,attachment=null,imageId=null,mediaJobId=null,metadata=null,timing=null,modelId='',modelName=''}={}){
     conversation.querySelector('[data-ai-welcome]')?.remove();
     conversation.classList.remove('is-empty');
     const assistant=role!=='user';
@@ -816,6 +862,7 @@
     setMessageContent(message,text,{error,thinking});
     conversation.appendChild(message);
     if(imageId)void showGeneratedImage(message,imageId);
+    if(mediaJobId)void showMediaJob(message,mediaJobId);
     applyLogoTheme();
     scrollToBottom(true);
     return message;
@@ -1009,7 +1056,7 @@
     }else{
       conversation.classList.remove('is-empty');
       let start=Math.max(0,items.length-MESSAGE_PAGE_SIZE);
-      const append=item=>addMessage(item.role,item.content,{attachment:item.textAttachment||null,imageId:item.imageId,metadata:item.metadata,timing:item.timing,modelId:item.modelId,modelName:item.modelName});
+      const append=item=>addMessage(item.role,item.content,{attachment:item.textAttachment||null,imageId:item.imageId,mediaJobId:item.mediaJobId,metadata:item.metadata,timing:item.timing,modelId:item.modelId,modelName:item.modelName});
       items.slice(start).forEach(append);
       if(start){
         const earlier=document.createElement('button');earlier.type='button';earlier.className='ai-history-earlier';earlier.textContent='Load earlier messages';
@@ -1073,7 +1120,15 @@
     "undi95":["Undi95", "undi95"],
     "cognitivecomputations":["Cognitive Computations", "cognitivecomputations"],
     "prism-ml":["PrismML", "prism-ml"],
-    "mancer":["Mancer", "mancer"]
+    "mancer":["Mancer", "mancer"],
+    "black-forest-labs":["Black Forest Labs", "flux"],
+    "recraft":["Recraft", "recraft"],
+    "runway":["Runway", "runway"],
+    "kwaivgi":["Kling", "kling"],
+    "elevenlabs":["ElevenLabs", "elevenlabs"],
+    "assemblyai":["AssemblyAI", "assemblyai"],
+    "suno":["Suno", "suno"],
+    "alibaba":["Alibaba", "alibaba"]
   };
   let modelCompanyFilter='';
   const modelSearch=document.getElementById('modelSearch');
@@ -1083,7 +1138,7 @@
     const known=modelCompanies[key];
     return {key:known?.[1]||key,label:known?.[0]||item.company||key||'Other',icon:known?.[1]||''};
   }
-  const colorCompanyIcons=new Set(["aionlabs", "arcee", "aws", "baidu", "bytedance", "claude", "cohere", "deepseek", "fireworks", "gemini", "gemma", "hunyuan", "kimi", "kwaipilot", "longcat", "meta", "microsoft", "minimax", "mistral", "morph", "nvidia", "openrouter", "perplexity", "poolside", "qwen", "sakana", "stepfun", "tencent", "upstage"]);
+  const colorCompanyIcons=new Set(["kling","assemblyai","alibaba","aionlabs", "arcee", "aws", "baidu", "bytedance", "claude", "cohere", "deepseek", "fireworks", "gemini", "gemma", "hunyuan", "kimi", "kwaipilot", "longcat", "meta", "microsoft", "minimax", "mistral", "morph", "nvidia", "openrouter", "perplexity", "poolside", "qwen", "sakana", "stepfun", "tencent", "upstage"]);
   const authorIcons={"thinkingmachines": "thinkingmachines-author.png", "inclusionai": "inclusionai-author.png", "thedrummer": "thedrummer-author.png", "typesafe": "typesafe-author.png", "unbiased": "unbiased-author.png", "writer": "writer-author.png", "stealth": "stealth-author.svg", "sao10k": "sao10k-author.webp", "anthracite-org": "anthracite-org-author.webp", "gryphe": "gryphe-author.webp", "undi95": "undi95-author.webp", "cognitivecomputations": "cognitivecomputations-author.png", "prism-ml": "prism-ml-author.png", "mancer": "mancer-author.png"};
   function modelCompanyIcon(company){
     if(authorIcons[company.icon])return `<img class="ai-company-logo ai-company-logo-color" src="/assets/icons/ai-companies/${authorIcons[company.icon]}" alt="" aria-hidden="true" width="22" height="22">`;
@@ -1116,7 +1171,7 @@
       copy.setAttribute('aria-hidden','true');copy.dataset.loopCopy='';
       copy.querySelectorAll('button').forEach(button=>button.tabIndex=-1);
       rail.append(copy);
-      rail.addEventListener('pointerleave',()=>{rail._loopOffset=rail.scrollTop;});
+      rail.addEventListener('pointerleave',()=>{rail._loopOffset=rail.scrollTop;rail._continueOnHover=false;});
       rail.addEventListener('focusout',()=>{rail._loopOffset=rail.scrollTop;});
     });
     syncCompanyMotion();
@@ -1125,18 +1180,19 @@
   function syncCompanyMotion(){
     cancelAnimationFrame(companyFrame);
     const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const stopped=Boolean(modelCompanyFilter)||reduced;
+    const stopped=reduced;
     modelMenu.querySelector('[data-model-company=""]').setAttribute('aria-pressed',String(!modelCompanyFilter));
     modelCompaniesHost.querySelectorAll('[data-loop-copy]').forEach(copy=>copy.hidden=stopped);
     if(modelMenu.hidden||stopped)return;
     let previous=0;
     const tick=time=>{
       const delta=previous?Math.min(time-previous,50):0;previous=time;
-      modelCompaniesHost.querySelectorAll('.ai-company-rail').forEach(rail=>{
+      modelCompaniesHost.querySelectorAll('.ai-company-rail').forEach((rail,index)=>{
         const track=rail.firstElementChild;
         if(track.offsetHeight<=rail.clientHeight){rail.lastElementChild.hidden=true;return;}
-        if(rail.matches(':hover,:focus-within')||document.hidden)return;
-        rail._loopOffset=((rail._loopOffset??rail.scrollTop)+delta*.018)%track.offsetHeight;
+        if(rail.matches(':focus-within')||(rail.matches(':hover')&&!rail._continueOnHover)||document.hidden)return;
+        const offset=(rail._loopOffset??rail.scrollTop)+delta*.018*(index===0?1:-1);
+        rail._loopOffset=((offset%track.offsetHeight)+track.offsetHeight)%track.offsetHeight;
         rail.scrollTop=rail._loopOffset;
       });
       companyFrame=requestAnimationFrame(tick);
@@ -1145,11 +1201,26 @@
   }
   matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',syncCompanyMotion);
 
+  function revealModelCompany(key){
+    if(!key||modelMenu.hidden)return;
+    const button=[...modelCompaniesHost.querySelectorAll('.ai-company-track:not([data-loop-copy]) button')].find(item=>item.dataset.modelCompany===key);
+    const rail=button?.closest('.ai-company-rail');
+    if(!rail)return;
+    const track=rail.firstElementChild;
+    const target=button.getBoundingClientRect().top-rail.getBoundingClientRect().top+rail.scrollTop-(rail.clientHeight-button.offsetHeight)/2;
+    const looping=!rail.lastElementChild.hidden&&track.offsetHeight>rail.clientHeight;
+    rail._loopOffset=looping?((target%track.offsetHeight)+track.offsetHeight)%track.offsetHeight:Math.max(0,Math.min(target,rail.scrollHeight-rail.clientHeight));
+    rail.scrollTop=rail._loopOffset;
+  }
   function filterModelOptions(){
     const query=(modelSearch.value||'').trim().toLowerCase();
-    const visible=modelCatalog.filter(item=>(!modelCompanyFilter||modelCompany(item).key===modelCompanyFilter)&&`${item.label} ${item.id} ${modelCompany(item).label}`.toLowerCase().includes(query));
-    modelOptionsHost.innerHTML=visible.length ? modelMenuOptions(visible,model.value) : '<p class="ai-model-empty" role="status">No matching models.</p>';
+    const candidates=modelCatalog.filter(item=>!modelCompanyFilter||modelCompany(item).key===modelCompanyFilter);
+    const visible=NyxModelSearch.search(candidates,query,modelCompany);
+    modelOptionsHost.innerHTML=visible.length ? modelMenuOptions(visible,model.value,Boolean(query)) : '<p class="ai-model-empty" role="status">No matching models.</p>';
     modelOptionsHost.scrollTop=0;
+    const match=visible.find(item=>modelCompany(item).label.toLowerCase()===query)||visible[0];
+    if(query&&match)revealModelCompany(modelCompany(match).key);
+    else if(modelCompanyFilter)revealModelCompany(modelCompanyFilter);
     const count=modelMenu.querySelector('[data-model-count]');
     if(count)count.textContent=query||modelCompanyFilter ? `${visible.length} of ${modelCatalog.length}` : `${modelCatalog.length} available`;
   }
@@ -1171,20 +1242,24 @@
   }
 
   function modelCapabilities(item){
-    return [item.text!==false?'Text':'',item.vision?'Vision':'',item.imageGeneration?'Image generation':'',item.reasoning?'Reasoning':''].filter(Boolean).join(' · ');
+    const labels={text:'Text',image:'Image generation',video:'Video generation',audio:'Audio',speech:'Speech',transcription:'Transcription',embeddings:'Embeddings',rerank:'Rerank',decisions:'Decisions'};
+    const outputs=item.outputModalities||[...(item.text!==false?['text']:[]),...(item.imageGeneration?['image']:[])];
+    return [...new Set([...outputs.map(kind=>labels[kind]||kind),item.vision?'Vision':'',item.reasoning?'Reasoning':''])].filter(Boolean).join(' · ');
   }
+
+  function modelToolOnly(item){return item&&item.text===false&&!item.imageGeneration&&!item.outputModalities?.includes('video');}
 
   function modelOptions(models){
-    return groupedModels(models).map(([company,items])=>`<optgroup label="${escapeHtml(company)}">${items.map(item=>`<option value="${escapeHtml(item.id)}">${escapeHtml(item.label)} · ${modelCapabilities(item)}</option>`).join('')}</optgroup>`).join('');
+    return groupedModels(models).map(([company,items])=>`<optgroup label="${escapeHtml(company)}">${items.map(item=>`<option value="${escapeHtml(item.id)}"${modelToolOnly(item)?' disabled':''}>${escapeHtml(item.label)} · ${escapeHtml(modelCapabilities(item))}</option>`).join('')}</optgroup>`).join('');
   }
 
-  function modelMenuOptions(models,selected){
-    return groupedModels(models).map(([company,items],groupIndex)=>{
+  function modelMenuOptions(models,selected,ranked=false){
+    return (ranked?[['Best matches',models]]:groupedModels(models)).map(([company,items],groupIndex)=>{
       const groupId=`modelGroup${groupIndex}`;
       return `<section class="ai-model-group" role="group" aria-labelledby="${groupId}">
         <p class="ai-model-group-label" id="${groupId}">${escapeHtml(company)}</p>
         <div class="ai-model-group-grid">${items.map(item=>`<button class="ai-model-option" type="button" role="option" data-model-id="${escapeHtml(item.id)}" aria-selected="${item.id===selected?'true':'false'}">
-          ${modelIcon(item)}<span class="ai-model-option-label"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(modelCompany(item).label)} &middot; ${modelCapabilities(item)}</small></span>
+          ${modelIcon(item)}<span class="ai-model-option-label"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(modelCompany(item).label)} &middot; ${escapeHtml(modelCapabilities(item))}${modelToolOnly(item)?' · Open in OpenRouter ↗':''}</small></span>
           <span class="ai-model-option-check" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="m5 10 3 3 7-7"/></svg></span>
         </button>`).join('')}</div>
       </section>`;
@@ -1243,6 +1318,7 @@
 
   function selectModel(id){
     if(!modelCatalog.some(item=>item.id===id)) return;
+    if(modelToolOnly(modelCatalog.find(item=>item.id===id))){window.open('https://openrouter.ai/'+encodeURI(id),'_blank','noopener');return;}
     model.value=id;
     model.dispatchEvent(new Event('change',{bubbles:true}));
     closeModelMenu({restoreFocus:true});
@@ -1257,12 +1333,13 @@
       const response=await fetch('/api/nyx-ai/models'+(customKey?'?custom=1':''),{headers:await aiHeaders({accept:'application/json'})});
       const data=await response.json();
       if(!response.ok) throw new Error(data?.error||`Model catalog failed (${response.status})`);
+      ownerMediaAccess=data.ownerMediaAccess===true;
       const next=Array.isArray(data?.models)?data.models.flatMap(item=>{
         if(customKey&&customKind()==='nyx'&&item?.imageGeneration)return [];
         const id=String(item?.id||'').trim();
         const label=String(item?.label||id).trim();
         const company=String(item?.company||'').trim();
-        return id&&label?[{id,label,company,poolTokenLimit:Number.isSafeInteger(item?.poolTokenLimit)&&item.poolTokenLimit>0?item.poolTokenLimit:null,free:Boolean(item?.free),text:item?.text!==false,imageGeneration:!(customKey&&customKind()==='nyx')&&Boolean(item?.imageGeneration),vision:customKey&&customKind()==='nyx'?false:Boolean(item?.vision)||KNOWN_VISION_MODELS.has(id),reasoning:Boolean(item?.reasoning)}]:[];
+        return id&&label?[{id,label,company,catalogRank:Number.isFinite(item.catalogRank)?item.catalogRank:9999,codingRank:item.codingRank,outputModalities:item.outputModalities,inputModalities:item.inputModalities,poolTokenLimit:Number.isSafeInteger(item?.poolTokenLimit)&&item.poolTokenLimit>0?item.poolTokenLimit:null,free:Boolean(item?.free),text:item?.text!==false,imageGeneration:!(customKey&&customKind()==='nyx')&&Boolean(item?.imageGeneration),vision:customKey&&customKind()==='nyx'?false:Boolean(item?.vision)||KNOWN_VISION_MODELS.has(id),reasoning:Boolean(item?.reasoning)}]:[];
       }):[];
       if(!next.length) throw new Error('No models are currently available.');
       const saved=activeThread()?.model||localStorage.getItem(MODEL_KEY)||DEFAULT_MODEL;
@@ -1381,7 +1458,13 @@
     }
     const selectedModelId=model.value||DEFAULT_MODEL;
     const requestedModel=selectedModelId||DEFAULT_MODEL;
-    const generateImage=Boolean(modelCatalog.find(item=>item.id===requestedModel)?.imageGeneration);
+    const modelInfo=modelCatalog.find(item=>item.id===requestedModel);
+    if(modelToolOnly(modelInfo)){window.open('https://openrouter.ai/'+encodeURI(requestedModel),'_blank','noopener');return;}
+    const generateVideo=Boolean(modelInfo?.outputModalities?.includes('video'));
+    const nativeImage=(ownerMediaAccess||modelInfo?.text===false)&&modelInfo?.imageGeneration;
+    const dedicatedMedia=generateVideo||nativeImage;
+    if(dedicatedMedia&&customKey){addMessage('assistant','Use Nyx shared for dedicated image and video generation, or open the model on OpenRouter.',{error:true,modelId:requestedModel});return;}
+    const generateImage=Boolean(modelInfo?.imageGeneration)&&!generateVideo;
     const userText=prompt||(sharing?'Please analyze what is currently on my screen.':imageAttachment?'Please analyze this image.':'Please review the attached text file.');
     const history=savedMessages();
     if(!history.length) updateThreadTitle([{role:'user',content:userText}]);
@@ -1398,7 +1481,7 @@
     const getTiming=()=>({elapsedMs:performance.now()-timingStart,firstTextMs,tokens:reportedTokens||Math.ceil(answer.length/4),estimated:!reportedTokens});
     const timingTimer=setInterval(()=>showTiming(pending,getTiming(),true),500);
     showTiming(pending,getTiming(),true);
-    let generatedImageId=null;
+    let generatedImageId=null,mediaJobId=null;
     let requestSucceeded=false;
     let renderFrame=0;
     const renderAnswer=()=>{
@@ -1422,7 +1505,7 @@
         response=await fetch(kind==='nyx'?'/api/v1/ai':'https://openrouter.ai/api/v1/chat/completions',{method:'POST',signal:activeController.signal,headers:{'Content-Type':'application/json',Authorization:'Bearer '+customKey},body:JSON.stringify({model:requestedModel,messages,max_tokens:generateImage?2200:512,stream:!generateImage&&kind!=='nyx',...(generateImage?{modalities:['text','image']}:{})})});
         if(kind==='nyx'&&response.ok){const result=await response.json();const content=result.choices?.[0]?.message?.content||'';response=new Response('data: '+JSON.stringify({model:result.model,choices:[{delta:{content}}]})+'\n\ndata: [DONE]\n\n',{headers:{'Content-Type':'text/event-stream'}});}
       }else{
-      response=await fetch('/api/nyx-ai',{
+      response=await fetch(dedicatedMedia?'/api/nyx-ai/media':'/api/nyx-ai',{
         method:'POST',
         signal:activeController.signal,
         headers:await aiHeaders({'content-type':'application/json'}),
@@ -1431,9 +1514,15 @@
       }
       if(!response.ok){
         const data=await response.json().catch(()=>({}));
-        throw new Error(data?.error?.message||data?.error||`Nyx AI failed (${response.status})`);
+        throw new Error(data?.error?.message||data?.error||(generateImage&&[502,504].includes(response.status)?'The image provider failed or timed out before finishing. Try again or choose another image model.':`Nyx AI failed (${response.status})`));
       }
-      if(generateImage){
+      if(dedicatedMedia){
+        const data=await response.json();
+        if(!/^[a-f0-9-]{36}$/.test(data.jobId||''))throw new Error('The video request did not return a job.');
+        mediaJobId=data.jobId;
+        answer=data.kind==='image'?'Rendering your image. You can keep chatting while it finishes.':`Rendering a ${data.duration}-second video${data.resolution?' at '+data.resolution:''}. It may take a few minutes.`;
+        void showMediaJob(pending,mediaJobId);
+      }else if(generateImage){
         const imageReader=response.body.getReader(),imageDecoder=new TextDecoder();let raw='',imageBytes=0;
         for(;;){const part=await imageReader.read();if(part.done)break;imageBytes+=part.value.byteLength;if(imageBytes>8*1024*1024){await imageReader.cancel();throw new Error('The generated image response is too large.');}raw+=imageDecoder.decode(part.value,{stream:true});}
         raw+=imageDecoder.decode();
@@ -1496,7 +1585,7 @@
       const finalAnswer=responseParts(clean).answer.trim();
       if(!finalAnswer) throw new Error('This model did not produce a final answer. Try again or choose another available model.');
       setMessageContent(pending,clean);
-      history.push({role:'assistant',content:finalAnswer,modelId:pending._modelId,modelName:pending._modelName,metadata:pending._nyxMetadata,timing:getTiming(),...(generatedImageId?{imageId:generatedImageId}:{})});
+      history.push({role:'assistant',content:finalAnswer,modelId:pending._modelId,modelName:pending._modelName,metadata:pending._nyxMetadata,timing:getTiming(),...(generatedImageId?{imageId:generatedImageId}:{}),...(mediaJobId?{mediaJobId}:{})});
       saveMessages(history);
       recordUsage(userText,finalAnswer);
       requestSucceeded=true;
@@ -1628,15 +1717,21 @@
   });
   document.getElementById('modelMenuClose').addEventListener('click',()=>closeModelMenu({restoreFocus:true}));
   modelMenu.addEventListener('cancel',event=>{event.preventDefault();closeModelMenu({restoreFocus:true});});
-  modelSearch.addEventListener('input',filterModelOptions);
+  modelSearch.addEventListener('input',()=>{
+    modelCompanyFilter='';
+    modelMenu.querySelectorAll('[data-model-company]').forEach(item=>item.setAttribute('aria-pressed',String(item.dataset.modelCompany==='')));
+    filterModelOptions();
+  });
   modelMenu.addEventListener('click',event=>{
     const button=event.target.closest('[data-model-company]');
     if(!button)return;
     modelCompanyFilter=button.dataset.modelCompany;
+    modelSearch.value='';
     modelMenu.querySelectorAll('[data-model-company]').forEach(item=>item.setAttribute('aria-pressed',String(item.dataset.modelCompany===modelCompanyFilter)));
     syncCompanyMotion();filterModelOptions();
-    const selected=[...modelCompaniesHost.querySelectorAll('.ai-company-track:not([data-loop-copy]) button')].find(item=>item.dataset.modelCompany===modelCompanyFilter);
-    if(selected){selected.focus({preventScroll:true});selected.scrollIntoView({block:'nearest'});}
+    const rail=button.closest('.ai-company-rail');
+    if(rail)rail._continueOnHover=true;
+    modelSearch.focus({preventScroll:true});
 
   });
   modelMenu.addEventListener('click',event=>{

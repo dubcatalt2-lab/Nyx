@@ -8,7 +8,7 @@ import {hasFullAiCatalog,fullCatalogUid,dailyOwnerModels,aiCatalogPrice} from '.
 import {isFreeAiModel} from '../lib/ai-free-models.mjs';
 import {memoryFirestore} from './test-ai-allowance.mjs';
 const [astra,fable]=dailyOwnerModels;
-for(const model of dailyOwnerModels){
+for(const model of [...dailyOwnerModels,'~openai/gpt-astra-latest','~anthropic/claude-fable-latest']){
  for(const actor of [{},{uid:'other',owner:true},{uid:'other',premium:true},{uid:'other',modelRules:[{model,access:'allow'}]}])assert(!aiModelAllowed(model,actor));
  assert(aiModelAllowed(model,{uid:fullCatalogUid}));
 }
@@ -22,7 +22,7 @@ const declaration=name=>{const n=ast.body.find(n=>n.type==='FunctionDeclaration'
 const context=vm.createContext({hasFullAiCatalog,aiCatalogPrice,aiAllowanceConfig,isFreeAiModel,URL,process:{env:{NYX_AI_DAILY_BUDGET_USD:'100'}},nyxAiEndpoint:()=> 'https://openrouter.ai/api/v1/chat/completions',freeModelHealth:{available:()=>true}});
 vm.runInContext(declaration('nyxAiBudgetCatalog'),context);
 const catalog=[{id:astra,text:true,pricing:{prompt:'.00001',completion:'.00005'}},{id:fable,text:true,pricing:{prompt:'.00001',completion:'.00005'}},{id:'new-vendor/new-chat',text:true,pricing:{prompt:'.000001',completion:'.000002'}},{id:'audio-only',text:false,pricing:{prompt:'.000001',completion:'.000002'}},{id:'unpriced-router',text:true,pricing:{prompt:-1,completion:-1}},{id:'openai/gpt-6-sol',text:true,pricing:{prompt:'.000002',completion:'.00001'}}];
-assert.deepEqual(Array.from(context.nyxAiBudgetCatalog(catalog,false,null,{uid:fullCatalogUid}),x=>x.id),[astra,fable,'new-vendor/new-chat','openai/gpt-6-sol']);
+assert.deepEqual(Array.from(context.nyxAiBudgetCatalog(catalog,false,null,{uid:fullCatalogUid}),x=>x.id),catalog.map(x=>x.id));
 assert.deepEqual(Array.from(context.nyxAiBudgetCatalog(catalog,false,null,{uid:'other',owner:true}),x=>x.id),['openai/gpt-6-sol']);
 
 let time=Date.parse('2026-09-26T12:00:00Z');
@@ -39,8 +39,10 @@ async function request(model=astra,usage={input:100,output:50},notSent=false){
  finally{await allowance.finish(session,!notSent);time+=61000;}
 }
 await request();await request(fable);assert.equal(pool().used,300);
-await request('new-vendor/new-chat');assert.equal(pool().used,300,'Other models do not consume Astra/Fable pool');
-await request(astra,null,true);assert.equal(pool().used,300,'Unsent call refunded');
+await request('~openai/gpt-astra-latest');assert.equal(pool().used,450);
+await request('~anthropic/claude-fable-latest');assert.equal(pool().used,600);
+await request('new-vendor/new-chat');assert.equal(pool().used,600,'Other models do not consume Astra/Fable pool');
+await request(astra,null,true);assert.equal(pool().used,600,'Unsent call refunded');
 seed(9500);await assert.rejects(request(fable),/10,000-token daily allowance/);
 const denied=await allowance.begin({uid:'other-owner',owner:true,requestedModel:'openai/gpt-6-sol'});
 try{await assert.rejects(allowance.reserve(denied,'shared',payload(astra),price),e=>e.status===403);}

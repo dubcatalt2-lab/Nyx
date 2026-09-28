@@ -31,13 +31,13 @@
   const cdnSelect=$('[data-cdn-host]');
   const providerSelect=$('[data-provider]');
   let resultProvider='jsdelivr';
-  function selectedProvider(){return providerSelect.value==='bunny'?'bunny':'jsdelivr'}
+  function selectedProvider(){return ['bunny','surge'].includes(providerSelect.value)?providerSelect.value:'jsdelivr'}
   function updateProvider(){
-    const bunny=selectedProvider()==='bunny';
-    if(bunny)refs.generationMethod.value='managed';
-    refs.generationMethod.closest('label').hidden=bunny;
-    cdnSelect.closest('label').hidden=bunny;
-    $('[data-provider-hint]').textContent=bunny
+    const bunny=selectedProvider()==='bunny',surge=selectedProvider()==='surge';
+    if(bunny||surge)refs.generationMethod.value='managed';
+    refs.generationMethod.closest('label').hidden=bunny||surge;
+    cdnSelect.closest('label').hidden=bunny||surge;
+    $('[data-provider-hint]').textContent=surge ? 'Publish one new surge.sh site on the configured Surge account. The label gets a random suffix; existing sites are not replaced.' : bunny
       ? 'Create separate b-cdn.net hostnames pointing to Nyx. Bunny bandwidth charges and account limits apply; these still share the Nyx backend.'
       : 'Publish SVG files and choose a delivery hostname.';
     refs.confirm.checked=false;
@@ -147,6 +147,7 @@
   function accountHasPremium(){return Boolean(authSession?.premiumAccess || ['premium','trialing'].includes(String(authSession?.subscriptionStatus || '').toLowerCase()))}
   function premiumAccessActive(){return accessMode==='administrator' || (accessMode==='account' && accountHasPremium())}
   function amountLimit(){
+    if(selectedProvider()==='surge')return 1;
     if(refs.generationMethod.value==='p2p' && premiumAccessActive()) return p2pPremiumBatchLimit;
     return premiumAccessActive() ? premiumBatchLimit : regularHourlyLimit;
   }
@@ -186,7 +187,7 @@
     const premium=premiumAccessActive();
     const p2p=refs.generationMethod.value==='p2p';
     const limit=amountLimit();
-    refs.amountField.hidden=false;
+    refs.amountField.hidden=selectedProvider()==='surge';
     refs.detailsGrid.classList.add('premium');
     refs.amount.max=String(limit);
     if(Number.parseInt(refs.amount.value,10)>limit)refs.amount.value=String(limit);
@@ -218,7 +219,7 @@
     const p2p=refs.generationMethod.value==='p2p';
     refs.reviewAmountRow.hidden=false;
     refs.reviewAmount.textContent=`${amount} link${amount===1?'':'s'}`;
-    refs.confirmText.textContent=selectedProvider()==='bunny'
+    refs.confirmText.textContent=selectedProvider()==='surge' ? 'I understand this publishes a public Nyx wrapper on the configured Surge account. Surge account limits apply.' : selectedProvider()==='bunny'
       ? `I understand this creates ${amount} Bunny pull zone${amount===1?'':'s'} on the configured Bunny account, with its bandwidth charges and limits.`
       : p2p
       ? `I understand P2P bulk-publishes ${amount===1?'one Nyx SVG':`${amount} Nyx SVGs`} through Nyx's protected server publisher.`
@@ -250,15 +251,16 @@
       if(stepIndex===index) indicator.setAttribute('aria-current','step');
       else indicator.removeAttribute('aria-current');
     });
+    document.dispatchEvent(new CustomEvent('nyx-generator-step',{detail:index}));
     refs.wizardProgress.style.width=`${(index/(refs.wizardSteps.length-1))*100}%`;
   }
   function updateReview(){
-    $('[data-review-cdn]').textContent=selectedProvider()==='bunny'?'Bunny.net · b-cdn.net':selectedCdn();
+    $('[data-review-cdn]').textContent=selectedProvider()==='surge'?'Surge - new .surge.sh address':selectedProvider()==='bunny'?'Bunny.net · b-cdn.net':selectedCdn();
     refs.reviewAccess.textContent=accessMode==='account' ? (accountHasPremium() ? `${authSession?.email || 'Account'} · Premium` : (authSession?.email || 'Free account')) : 'Premium access code';
     refs.reviewLabel.textContent=refs.label.value.trim() || 'Automatic';
     refs.reviewFilter.textContent=refs.filter.options[refs.filter.selectedIndex]?.textContent || 'Not selected';
     refs.reviewOrigin.textContent=refs.origin.textContent || 'Official Nyx origin';
-    refs.reviewMethod.textContent=refs.generationMethod.value==='p2p' ? 'P2P' : 'Nyx managed';
+    refs.reviewMethod.textContent=selectedProvider()==='surge'?'Nyx Surge publisher':refs.generationMethod.value==='p2p' ? 'P2P' : 'Nyx managed';
     updateAmountCopy();
   }
   async function validateAccessStep(){
@@ -447,6 +449,9 @@
   async function loadStatus(){
     try{
       const status=await readJson(await fetch('/api/link-generator/status',{headers:{Accept:'application/json'},cache:'no-store'}));
+      const surgeOption=providerSelect.querySelector('[value="surge"]');
+      surgeOption.hidden=status.surgeAvailable!==true;surgeOption.disabled=status.surgeAvailable!==true;
+      if(selectedProvider()==='surge'&&!status.surgeAvailable){providerSelect.value='jsdelivr';updateProvider();}
       const bunnyOption=providerSelect.querySelector('[value="bunny"]');
       bunnyOption.disabled=!status.bunnyAvailable;
       bunnyOption.textContent=status.bunnyAvailable?'Bunny.net pull zones':'Bunny.net pull zones (server key not configured)';
@@ -537,7 +542,7 @@
       if(!links.length && result.url) links.push(withCdnHost(result.url,selectedCdn()));
       if(!links.length) throw new Error('The link provider did not return any generated links.');
       resultProvider=provider;
-      const isJsdelivr=provider==='jsdelivr';
+      const isJsdelivr=provider!=='bunny';
       refs.resultUrl.value=links.join('\n');refs.resultCount.textContent=`${links.length} link${links.length===1?'':'s'}`;refs.resultTitle.textContent=links.length===1?'Your Nyx link is ready':'Your Nyx links are ready';refs.resultSubtitle.textContent=result.partial?`${links.length} of ${result.requested} requested links were created.`:`${links.length===1?'The link was':'All links were'} created successfully.`;refs.open.href=links[0];setOpenReady(isJsdelivr);refs.resultCard.hidden=false;refs.accessCode.value='';setWizardStep(3);requestAnimationFrame(()=>refs.resultCard.scrollIntoView({behavior:'smooth',block:'nearest'}));
       const [,cdnReady]=await Promise.all([checkGeneratedLinks(links,selectedFilter,selectedFilterName),isJsdelivr?Promise.resolve(true):waitForCdnReadiness(links[0])]);
       const cooldown=result.premiumCooldown;
@@ -561,5 +566,5 @@
   });
   refs.copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(refs.resultUrl.value);refs.copy.textContent='Copied all';setTimeout(()=>{refs.copy.textContent='Copy all'},1400)}catch{refs.resultUrl.select();document.execCommand('copy')}});
 
-  applyTheme();renderAccount();updateGenerationMethod();setWizardStep(0);Promise.all([loadStatus(),loadAuthConfig(),loadFilters()]);
+  applyTheme();renderAccount();updateProvider();setWizardStep(0);Promise.all([loadStatus(),loadAuthConfig(),loadFilters()]);
 })();

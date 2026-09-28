@@ -1,3 +1,5 @@
+import {installAiMedia} from './lib/ai-media.mjs';
+import {publishSurgeLink,validateSurgeToken} from './lib/surge-publisher.mjs';
 import {createGameReports} from './lib/game-reports.mjs';
 import {gameResourceTarget} from './assets/games/game-cdn.js';
 import {repairGameResource} from './lib/game-resource-repairs.mjs';
@@ -2221,27 +2223,30 @@ function nyxAiSetCatalogCache(cacheKey, cache) {
 
 function nyxAiEndpoint() { return 'https://openrouter.ai/api/v1/chat/completions'; }
 
-function nyxAiCatalogEndpoint() { return 'https://openrouter.ai/api/v1/models'; }
+function nyxAiCatalogEndpoint() { return 'https://openrouter.ai/api/v1/models?output_modalities=all&sort=intelligence-high-to-low'; }
 
 function nyxAiNormalizeCatalog(models) {
   if (!Array.isArray(models)) return [];
   const seen = new Set();
-  return models.flatMap(item => {
+  return models.flatMap((item,catalogRank) => {
     const model = typeof item === "string" ? { id: item } : item;
     const id = String(model?.id || model?.model || model?.name || "").trim();
-    if (!/^[a-z0-9][a-z0-9._:/-]{0,127}$/i.test(id) || seen.has(id) || (model?.audience && model.audience !== "all")) return [];
+    if (!/^~?[a-z0-9][a-z0-9._:/-]{0,199}$/i.test(id) || seen.has(id) || (model?.audience && model.audience !== "all")) return [];
     seen.add(id);
     return [{
       id,
       label: String(model?.label || model?.displayName || model?.display_name || model?.name || id).trim().slice(0, 100) || id,
-      company: String(model?.company || model?.provider || model?.owned_by || "").trim().slice(0, 50),
+      company: String(model?.company || model?.provider || model?.owned_by || (String(model?.name||'').includes(':')?String(model.name).split(':')[0]:'')).trim().slice(0, 50),
       endpoint: String(model?.endpoint || "").trim().slice(0, 80),
+      catalogRank,
+      outputModalities: Array.isArray(model?.architecture?.output_modalities) ? model.architecture.output_modalities.filter(value=>typeof value==='string') : ['text'],
+      inputModalities: Array.isArray(model?.architecture?.input_modalities) ? model.architecture.input_modalities.filter(value=>typeof value==='string') : ['text'],
       pricing: model?.pricing && typeof model.pricing==='object' ? {prompt:model.pricing.prompt,completion:model.pricing.completion,request:model.pricing.request,image:model.pricing.image} : null,
       supportedParameters: Array.isArray(model?.supported_parameters) ? model.supported_parameters.filter(value=>typeof value==='string') : Array.isArray(model?.supportedParameters) ? model.supportedParameters : null,
       vision: model?.vision === true || model?.architecture?.input_modalities?.includes("image") === true,
       text: !Array.isArray(model?.architecture?.output_modalities) || model.architecture.output_modalities.includes("text"),
       imageGeneration: model?.imageGeneration === true || model?.architecture?.output_modalities?.includes("image") === true,
-      reasoning: Boolean(model?.reasoning),
+      reasoning: Boolean(model?.reasoning || model?.supported_parameters?.includes?.('reasoning') || model?.supported_parameters?.includes?.('include_reasoning')),
       premium: model?.premium === true || String(model?.premium || "").trim().toLowerCase() === "true"
     }];
   });
@@ -2293,11 +2298,11 @@ function nyxAiMergeCatalogs(...catalogs) {
 }
 
 function nyxAiBudgetCatalog(available, personal, provider, actor={}) {
-  if(hasFullAiCatalog(actor)&&new URL(nyxAiEndpoint(provider)).hostname==='openrouter.ai')return available.filter(model=>(model.text||model.imageGeneration)&&aiCatalogPrice(model));
+  if(hasFullAiCatalog(actor)&&new URL(nyxAiEndpoint(provider)).hostname==='openrouter.ai')return available;
   if (!personal && new URL(nyxAiEndpoint(provider)).hostname === "openrouter.ai") {
     try {
       const config = aiAllowanceConfig(process.env);
-      return available.filter(model => (isFreeAiModel(model.id)&&freeModelHealth.available(model.id))||(!isFreeAiModel(model.id)&&config.dailyUsd&&Object.hasOwn(config.prices, `${provider?.id || 'shared'}:${model.id}`)));
+      return available.filter(model => (model.text||model.imageGeneration) && ((isFreeAiModel(model.id)&&freeModelHealth.available(model.id))||(!isFreeAiModel(model.id)&&config.dailyUsd&&Object.hasOwn(config.prices, `${provider?.id || 'shared'}:${model.id}`))));
     } catch { return []; }
   }
   return available;
@@ -2319,7 +2324,12 @@ async function nyxAiAvailableModels(key = nyxAiKey(), personal = false, provider
     });
     const data = await response.json().catch(() => ({}));
     const providerModels = response.ok ? nyxAiCatalogModels(data) : [];
-    const models = personal ? providerModels : await freeModelHealth.filter(providerModels);
+    const models = providerModels;
+    if(!personal)await freeModelHealth.filter(providerModels);
+    try {
+      const codingResponse=await fetch('https://openrouter.ai/api/v1/models?output_modalities=text&sort=coding-high-to-low',{headers,signal:controller.signal,redirect:'error'});
+      if(codingResponse.ok){const coding=await codingResponse.json();const ranks=new Map((coding.data||[]).map((item,index)=>[item.id,index]));for(const model of models)if(ranks.has(model.id))model.codingRank=ranks.get(model.id);}
+    }catch{}
     if (!models.length) throw new Error("The AI model catalog was empty.");
     nyxAiSetCatalogCache(cacheKey, { expiresAt: now + 300_000, models });
   } catch {
@@ -2647,9 +2657,9 @@ async function nyxBudgetedAiFetch(provider,url,options) {
   } catch(error) {await scope.allowance.settle(reservation,null).catch(()=>{});throw error;}
 }
 app.use(async(req,res,next)=>{
-  if(req.method!=='POST'||!['/api/nyx-ai','/api/v1/ai'].includes(req.path))return next();
-  if(req.path==='/api/nyx-ai'&&!sameOriginRequest(req))return res.status(403).json({error:'Cross-origin AI requests are not allowed.'});
-  const scope={req,res,credential:req.path==='/api/nyx-ai'?nyxAiRequestCredential(req):null,controller:new AbortController(),success:false};
+  if(req.method!=='POST'||!['/api/nyx-ai','/api/nyx-ai/media','/api/v1/ai'].includes(req.path))return next();
+  if(req.path.startsWith('/api/nyx-ai')&&!sameOriginRequest(req))return res.status(403).json({error:'Cross-origin AI requests are not allowed.'});
+  const scope={req,res,credential:req.path.startsWith('/api/nyx-ai')?nyxAiRequestCredential(req):null,controller:new AbortController(),success:false};
   const deadline=setTimeout(()=>scope.controller.abort(),120000);
   deadline.unref();
   let finished=false;
@@ -2739,7 +2749,41 @@ app.get('/api/nyx-ai/models',async(req,res)=>{
   if(!credential.key)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
   const models=await nyxAiAvailableModels(credential.key,false,credential.provider,entitlement);
   if(!models.length)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
-  res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement)),credential:'shared'});
+  res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement)),credential:'shared',ownerMediaAccess:hasFullAiCatalog(entitlement)});
+});
+
+function nyxMediaUsage(usage) {
+  if(!usage||!Number.isFinite(usage.cost)||usage.cost<0)return null;
+  return {input:Number.isSafeInteger(usage.prompt_tokens)?usage.prompt_tokens:0,output:Number.isSafeInteger(usage.completion_tokens)?usage.completion_tokens:0,cost:usage.cost};
+}
+installAiMedia(app,{
+  key:nyxAiKey,
+  rateLimit:nyxAiRateLimit,
+  authorize:async req=>{
+    const actor=await nyxAiPremiumEntitlement(req);
+    if(!hasFullAiCatalog(actor))return null;
+    const admin=(await actor.firebase.firestore.collection('nyxUserAdministration').doc(actor.uid).get()).data()||{};
+    if(admin.disabled||admin.aiAccess==='restricted')return null;
+    return actor;
+  },
+  catalog:actor=>nyxAiAvailableModels(nyxAiKey(),false,null,actor).then(models=>models.filter(model=>aiModelAllowed(model.id,actor))),
+  reserve:async(req,estimate)=>{
+    const scope=nyxAiBudgetContext.getStore(),session=await nyxSharedAiSession(scope);
+    if(!hasFullAiCatalog(session.actor))throw Object.assign(new Error('Owner media access is required.'),{status:403});
+    if(!Number.isFinite(estimate)||estimate<0||estimate>100)throw Object.assign(new Error('The media price could not be verified.'),{status:503});
+    const payload={model:req.body.model,messages:[{role:'user',content:req.body.message}],max_tokens:1};
+    const reservation=await scope.allowance.reserve(session,'shared',payload,{inputPerMillion:0,outputPerMillion:0,requestUsd:estimate},{media:true});
+    try{await scope.allowance.openRouterBalance.reserve({key:nyxAiKey(),amount:reservation.reserved,signal:scope.controller.signal,holdMs:1800000});}
+    catch(error){await scope.allowance.settle(reservation,null,true);throw error;}
+    const {session:unused,...cost}=reservation;
+    const stored={...cost,session:{refs:Object.fromEntries(Object.entries(session.refs).map(([name,ref])=>[name,ref.path]))}};
+    return {stored,accepted:()=>{scope.success=true;},settle:(usage,notSent=false)=>scope.allowance.settle(reservation,nyxMediaUsage(usage),notSent)};
+  },
+  settleStored:async(actor,stored,usage)=>{
+    if(!stored)return;
+    const reservation={...stored,session:{refs:Object.fromEntries(Object.entries(stored.session.refs).map(([name,path])=>[name,actor.firebase.firestore.doc(path)]))}};
+    await nyxSharedAiAllowance(actor.firebase).settle(reservation,nyxMediaUsage(usage));
+  }
 });
 
 app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
@@ -2772,6 +2816,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     res.status(400).json({ error: "Unknown Nyx AI model." });
     return;
   }
+  if(modelInfo.text===false)return res.status(400).json({error:'This model uses a dedicated media or tools API. Choose it from the model picker to see its supported workflow.'});
   const model = modelInfo.id;
   if(!aiModelAllowed(model,modelEntitlement))return res.status(403).json({error:'This AI model is not enabled for your account.'});
   const isPremiumOpus = false;
@@ -2935,6 +2980,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       const decoder = new TextDecoder();
       let buffer = "";
       let generatedText = "";
+      let reportedModel = model;
       let reportedTokens = 0;
       for (;;) {
         const { done, value } = await reader.read();
@@ -2948,13 +2994,17 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
           if (!raw || raw === "[DONE]") continue;
           const event = JSON.parse(raw);
           if (event?.type === "error" || event?.error) { await reader.cancel().catch(()=>{}); throw nyxAiProviderError(model,event,upstream.status,key,credential.personal); }
+          if(typeof event.model==='string' && /^~?[a-z0-9][a-z0-9._:/-]{0,199}$/i.test(event.model)) {
+            reportedModel=event.model;
+            res.write(`data: ${JSON.stringify({model:reportedModel})}\n\n`);
+          }
           const text = nyxAiStreamText(event);
           const metadata=aiResponseMetadata(event);
           if(text||metadata.summary)deadline.touch();
           if(metadata.summary||metadata.sources.length)res.write(`data: ${JSON.stringify({nyx_metadata:metadata})}\n\n`);
           generatedText += text;
           reportedTokens = Math.max(reportedTokens, nyxAiCompletionTokens(event));
-          nyxAiWriteStreamChunk(res, text, model);
+          nyxAiWriteStreamChunk(res, text, reportedModel);
         }
       }
       buffer += decoder.decode();
@@ -2963,18 +3013,22 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
         if (raw && raw !== "[DONE]") {
           const event = JSON.parse(raw);
           if (event?.type === "error" || event?.error) { await reader.cancel().catch(()=>{}); throw nyxAiProviderError(model,event,upstream.status,key,credential.personal); }
+          if(typeof event.model==='string' && /^~?[a-z0-9][a-z0-9._:/-]{0,199}$/i.test(event.model)) {
+            reportedModel=event.model;
+            res.write(`data: ${JSON.stringify({model:reportedModel})}\n\n`);
+          }
           const text = nyxAiStreamText(event);
           const metadata=aiResponseMetadata(event);
           if(metadata.summary||metadata.sources.length)res.write(`data: ${JSON.stringify({nyx_metadata:metadata})}\n\n`);
           generatedText += text;
           reportedTokens = Math.max(reportedTokens, nyxAiCompletionTokens(event));
-          nyxAiWriteStreamChunk(res, text, model);
+          nyxAiWriteStreamChunk(res, text, reportedModel);
         }
       }
       if (!webEnabled && nyxAiLooksCorrupted(generatedText)) {
         const retry = await nyxAiRetryCorruptedCompletion(endpoint, key, providerPayload, controller.signal, credential.provider).catch(error => { if(error?.code==='ai_allowance')throw error; return {text:'',tokens:0}; });
         const replacement = retry.text || "That model returned a corrupted reply twice. Please try again or choose another model.";
-        nyxAiWriteStreamReplacement(res, replacement, model);
+        nyxAiWriteStreamReplacement(res, replacement, reportedModel);
         generatedText = replacement;
         reportedTokens += retry.tokens || nyxAiEstimatedTokens(replacement);
       }
@@ -3025,7 +3079,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     }
     const images=generateImage?aiOutputImages(data):[];
     if(generateImage&&!images.length&&!String(text||'').trim())return res.status(502).json({error:'The model returned no image or explanation. Please try another prompt.'});
-    res.json({ text: String(text || "").trim(), model, ...(!codeEdit&&!generateImage?{metadata:aiResponseMetadata(data)}:{}), ...(generateImage?{images}:{}), finishReason:data?.choices?.[0]?.finish_reason||null });
+    res.json({ text: String(text || "").trim(), model:typeof data.model==='string'&&/^~?[a-z0-9][a-z0-9._:/-]{0,199}$/i.test(data.model)?data.model:model, ...(!codeEdit&&!generateImage?{metadata:aiResponseMetadata(data)}:{}), ...(generateImage?{images}:{}), finishReason:data?.choices?.[0]?.finish_reason||null });
   } catch (error) {
     if (!res.headersSent) {
       const timedOut = error?.name === "AbortError";
@@ -13675,6 +13729,7 @@ app.get("/api/link-generator/status", (_req, res) => {
     provider: "jsdelivr",
     globalPublisherConfigured: globalNyxJsdelivrConfigured(config),
     bunnyAvailable: Boolean(config.apiKey),
+    surgeAvailable: Boolean(process.env.SURGE_TOKEN?.trim()),
     administratorAccess: Boolean(config.accessCode),
     accountAccess: firebaseAccountModeConfigured(),
     origin: config.origin,
@@ -13796,7 +13851,7 @@ app.post("/api/link-generator", async (req, res) => {
 
   const config = linkGeneratorConfig();
   const provider = String(req.body?.provider || "bunny").trim().toLowerCase();
-  if (!new Set(["bunny", "jsdelivr"]).has(provider)) {
+  if (!new Set(["bunny", "jsdelivr", "surge"]).has(provider)) {
     res.status(400).json({ error: "Choose a supported link provider." });
     return;
   }
@@ -13845,7 +13900,13 @@ app.post("/api/link-generator", async (req, res) => {
     return;
   }
 
-  if (provider === "jsdelivr") {
+  if (provider === "surge") {
+    if (amount !== 1 || method !== 'managed' || batchRequestId !== undefined) return res.status(400).json({error:'Surge publishes one link at a time.'});
+    if(!process.env.SURGE_TOKEN?.trim())return res.status(503).json({error:'Surge is not configured yet.'});
+    try { validateSurgeToken(process.env.SURGE_TOKEN.trim()); }
+    catch(error) { return res.status(400).json({error:error.message}); }
+  }
+  if (provider === "jsdelivr" || provider === "surge") {
     if (method === "p2p" && !globalNyxJsdelivrConfigured(config)) {
       res.status(503).json({ error: "P2P publishing is not configured on this Nyx server." });
       return;
@@ -13860,7 +13921,9 @@ app.post("/api/link-generator", async (req, res) => {
         const premiumIdentity = premiumAccount ? `account:${publicUser.uid}` : clientId;
         premiumReservation = await reservePremiumGeneration(premiumFirebase, premiumIdentity, amount, now);
       }
-      const links = globalNyxJsdelivrConfigured(config)
+      const links = provider === 'surge'
+        ? await publishSurgeLink({origin:config.origin,label:req.body?.label,token:process.env.SURGE_TOKEN.trim()})
+        : globalNyxJsdelivrConfigured(config)
         ? await queueNyxJsdelivrPublish(() => publishNyxJsdelivrLinks(config, amount, req.body?.label, batchRequestId ? { uid: publicUser.uid, requestId: batchRequestId } : null))
         : [];
       if (links.replayed) {
@@ -13869,7 +13932,7 @@ app.post("/api/link-generator", async (req, res) => {
       }
       res.status(links.length ? 201 : 200).json({
         authorized: true,
-        provider: "jsdelivr",
+        provider,
         method,
         published: links.length > 0,
         links,
@@ -13892,7 +13955,7 @@ app.post("/api/link-generator", async (req, res) => {
       if (publicUser && reservation) await releaseFreeLink(publicUser.firebase, reservation);
       if (premiumAccess && premiumReservation) await adjustPremiumGeneration(premiumFirebase, premiumReservation, 0);
       if (error.retryAfter) res.set("Retry-After", String(error.retryAfter));
-      res.status(error.status || 503).json({ error: error.message || "JSDelivr link access could not be prepared." });
+      res.status(error.status || 503).json({ error: error.message || "Link publication could not be completed." });
     }
     return;
   }

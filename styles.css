@@ -107,188 +107,36 @@ body.browser-shell .nyx-profile-slot .nyx-account-button:hover{border-color:var(
 
 /* The home avatar opens a compact, Discord-style account card. This menu
    deliberately owns its palette so every Nyx theme keeps the controls legible. */
-.nyx-account-menu{
-  position:fixed;
-  z-index:2147482999;
-  box-sizing:border-box;
-  max-height:calc(100dvh - 24px);
-  overflow-x:hidden;
-  overflow-y:auto;
-  padding:0 8px 8px;
-  border:1px solid rgba(255,255,255,.09);
-  border-radius:16px;
-  background:#111214;
-  color:#f2f3f5;
-  color-scheme:dark;
-  box-shadow:0 20px 60px rgba(0,0,0,.56),0 2px 8px rgba(0,0,0,.42);
-  opacity:0;
-  transform:translateY(-7px) scale(.985);
-  transform-origin:top left;
-  transition:opacity .14s ease,transform .14s ease;
-  scrollbar-width:none;
+html[data-nyx-theme] body .nyx-account-menu{
+ --profile-surface:color-mix(in srgb,var(--nyx-account-primary,#5865f2) 18%,#1b1c20);
+ position:fixed;z-index:2147482999;isolation:isolate;box-sizing:border-box;max-height:calc(100dvh - 24px);overflow-x:hidden;overflow-y:auto;padding:0 12px 12px;border:1px solid #ffffff24!important;border-radius:12px!important;background:linear-gradient(180deg,var(--profile-surface),color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 18%,#1b1c20))!important;color:#f2f3f5!important;color-scheme:dark;backdrop-filter:none!important;box-shadow:0 12px 32px #0007!important;scrollbar-width:thin;opacity:0;transform:translateY(4px);transition:opacity .14s ease,transform .14s ease;font-family:"gg sans","Segoe UI",sans-serif;text-shadow:none!important;
 }
-.nyx-account-menu::-webkit-scrollbar{display:none}
-.nyx-account-menu.show{opacity:1;transform:none}
+html[data-nyx-theme] body .nyx-account-menu.show{opacity:1;transform:none}
+html[data-nyx-theme] body .nyx-account-menu-banner{height:72px;margin:0 -12px;overflow:hidden;background:var(--nyx-account-banner,#5865f2)}
+html[data-nyx-theme] body .nyx-account-menu-banner img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
+html[data-nyx-theme] body .nyx-account-menu-profile{margin:0;padding:38px 2px 8px;min-height:0;background:transparent!important}
+html[data-nyx-theme] body .nyx-account-menu-avatar{position:absolute;z-index:2;top:-30px;left:0;display:grid;place-items:center;box-sizing:border-box;width:60px;height:60px;border:4px solid var(--profile-surface);border-radius:50%;background:var(--profile-surface);color:#fff;font-size:22px;overflow:visible;box-shadow:none}
+html[data-nyx-theme] body .nyx-account-menu-avatar>img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
+html[data-nyx-theme] body .nyx-account-menu-avatar>.nyx-user-status{position:absolute!important;right:-2px!important;bottom:0!important;width:12px!important;height:12px!important;box-sizing:content-box!important;border:3px solid var(--profile-surface)!important}
+html[data-nyx-theme] body .nyx-account-menu-status{position:absolute;z-index:2;top:-7px;left:68px;max-width:calc(100% - 72px);box-sizing:border-box;padding:7px 9px;border:1px solid #ffffff0c;border-radius:16px;background:color-mix(in srgb,var(--profile-surface) 90%,white);color:#dbdee1;font-size:12px;line-height:1.3;white-space:normal;overflow-wrap:anywhere;box-shadow:0 2px 5px #0002}
+html[data-nyx-theme] body .nyx-account-menu-status>span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+html[data-nyx-theme] body .nyx-account-menu-status::before,html[data-nyx-theme] body .nyx-account-menu-status::after{content:"";position:absolute;border-radius:50%;background:inherit;pointer-events:none}
+html[data-nyx-theme] body .nyx-account-menu-status::before{width:12px;height:12px;top:-7px;left:14px}
+html[data-nyx-theme] body .nyx-account-menu-status::after{width:6px;height:6px;top:-16px;left:6px}
+html[data-nyx-theme] body .nyx-account-menu-profile h2{margin:0;font-size:17px;line-height:1.25;font-weight:700;letter-spacing:0;color:#f2f3f5}
+html[data-nyx-theme] body .nyx-account-menu-handle{margin:3px 0 0;font-size:13px;line-height:1.4;color:#d5d7dc;overflow-wrap:anywhere}
+html[data-nyx-theme] body .nyx-account-menu-bio{margin:7px 0 0;font-size:13px;line-height:1.45;color:#dbdee1;white-space:pre-wrap;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+html[data-nyx-theme] body .nyx-account-menu-bio:empty{display:none}
+html[data-nyx-theme] body .nyx-account-menu-group{position:relative;z-index:4;margin:8px 0 0;padding:4px;border:1px solid #ffffff0c;border-radius:8px;background:color-mix(in srgb,var(--profile-surface) 50%,#191a1e)}
+html[data-nyx-theme] body .nyx-account-menu-group button{display:flex!important;align-items:center!important;gap:8px!important;box-sizing:border-box;width:100%!important;min-height:32px;margin:0!important;padding:6px 8px!important;border:0!important;border-radius:4px!important;background:transparent!important;color:#dbdee1!important;-webkit-text-fill-color:currentColor!important;box-shadow:none!important;font-family:inherit!important;font-size:12px!important;line-height:1.3!important;font-weight:500!important;text-align:left!important;cursor:pointer;transform:none!important;text-shadow:none!important}
+html[data-nyx-theme] body .nyx-account-menu-group button:is(:hover,:focus-visible){background:#ffffff12!important;color:#fff!important}
+html[data-nyx-theme] body .nyx-account-menu-group button:focus-visible{outline:2px solid #b5bac1;outline-offset:-2px}
+html[data-nyx-theme] body .nyx-account-menu-group button svg{flex:0 0 17px;width:17px;height:17px;color:#b5bac1}
+html[data-nyx-theme] body .nyx-account-menu-group button svg:last-child:not(:first-child){margin-left:auto;width:16px;height:16px;flex-basis:16px}
+html[data-nyx-theme] body .nyx-account-menu-group button>.nyx-user-status{position:static!important;flex:0 0 16px!important;width:16px!important;height:16px!important;margin:0 2px!important;border:0!important}
+html[data-nyx-theme] body .nyx-account-menu-group hr{height:1px;margin:4px 10px;border:0;background:#ffffff12}
+html[data-nyx-theme] body .nyx-account-menu :is(h2,p,span):not(.nyx-styled-display-name){-webkit-text-fill-color:currentColor!important;text-shadow:none!important}
 
-html body .nyx-account-menu-compact .nyx-account-menu-banner{height:48px!important}
-html body .nyx-account-menu-compact .nyx-account-menu-profile{min-height:0!important;padding:29px 12px 10px!important}
-html body .nyx-account-menu-compact .nyx-account-menu-avatar{width:44px!important;height:44px!important;top:-22px!important;left:12px!important;border-width:3px!important}
-html body .nyx-account-menu-compact .nyx-account-menu-avatar>.nyx-user-status{width:9px!important;height:9px!important;border-width:2px!important}
-html body .nyx-account-menu-compact .nyx-account-menu-status{left:65px!important;top:-17px!important;max-width:calc(100% - 77px)!important;padding:5px 7px!important;font-size:10px!important}
-html body .nyx-account-menu-compact .nyx-account-menu-profile h2{font-size:14px!important}
-html body .nyx-account-menu-compact .nyx-account-menu-handle{font-size:11px!important}
-html body .nyx-account-menu-compact .nyx-account-menu-bio{display:none!important}
-html body .nyx-account-menu-compact .nyx-account-menu-group{margin-top:4px!important;padding:2px!important}
-html body .nyx-account-menu-compact .nyx-account-menu-group button{min-height:29px!important;padding:3px 6px!important;font-size:11px!important}
-.nyx-account-menu-banner{
-  height:116px;
-  margin:0 -8px;
-  overflow:hidden;
-  background:var(--nyx-account-banner,#5865f2);
-}
-.nyx-account-menu-banner img{display:block;width:100%;height:100%;object-fit:cover}
-.nyx-account-menu-profile{
-  position:relative;
-  margin:0 -8px;
-  min-height:174px;
-  padding:51px 18px 16px;
-  background:
-    linear-gradient(160deg,color-mix(in srgb,var(--nyx-account-primary,#5865f2) 22%,#111214) 0%,color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 12%,#111214) 58%,#111214 100%);
-}
-.nyx-account-menu-avatar{
-  position:absolute;
-  top:-38px;
-  left:15px;
-  display:grid;
-  place-items:center;
-  width:72px;
-  height:72px;
-  box-sizing:border-box;
-  border:6px solid #111214;
-  border-radius:50%;
-  background:color-mix(in srgb,var(--nyx-account-primary,#5865f2) 28%,#202225);
-  color:#fff;
-  font-size:24px;
-  font-weight:700;
-  overflow:visible;
-}
-.nyx-account-menu-avatar>img{
-  display:block;
-  width:100%;
-  height:100%;
-  border-radius:50%;
-  object-fit:cover;
-}
-.nyx-account-menu-avatar>span{line-height:1}
-.nyx-account-menu-avatar>.nyx-user-status{
-  position:absolute!important;
-  right:-1px!important;
-  bottom:1px!important;
-  width:14px!important;
-  height:14px!important;
-  box-sizing:content-box!important;
-  border:4px solid #111214!important;
-}
-.nyx-account-menu-status{
-  position:absolute;
-  top:-29px;
-  left:97px;
-  max-width:calc(100% - 113px);
-  overflow:hidden;
-  padding:8px 11px;
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:18px;
-  background:#1e1f22;
-  color:#dbdee1;
-  font-size:12px;
-  line-height:1.1;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-  box-shadow:0 5px 16px rgba(0,0,0,.3);
-}
-.nyx-account-menu-profile h2{
-  margin:0;
-  color:#f2f3f5;
-  font:700 19px/1.2 inherit;
-  letter-spacing:0;
-}
-.nyx-account-menu-handle{
-  margin:4px 0 0;
-  color:#b5bac1;
-  font:500 15px/1.25 inherit;
-}
-.nyx-account-menu-bio{
-  margin:14px 0 0;
-  color:#dbdee1;
-  font:400 13px/1.4 inherit;
-  white-space:pre-wrap;
-  overflow-wrap:anywhere;
-}
-.nyx-account-menu-group{
-  margin-top:6px;
-  overflow:hidden;
-  padding:5px;
-  border-radius:12px;
-  background:#1e1f22;
-}
-.nyx-account-menu-group button{
-  display:flex!important;
-  align-items:center!important;
-  gap:13px!important;
-  width:100%!important;
-  min-height:40px!important;
-  box-sizing:border-box!important;
-  margin:0!important;
-  padding:7px 9px!important;
-  border:0!important;
-  border-radius:7px!important;
-  background:transparent!important;
-  color:#dbdee1!important;
-  -webkit-text-fill-color:#dbdee1!important;
-  box-shadow:none!important;
-  font:600 13px/1.2 inherit!important;
-  text-align:left!important;
-  cursor:pointer;
-  transform:none!important;
-}
-.nyx-account-menu-group button:hover,
-.nyx-account-menu-group button:focus-visible{
-  background:#35373c!important;
-  color:#fff!important;
-  -webkit-text-fill-color:#fff!important;
-  outline:none;
-}
-.nyx-account-menu-group button:focus-visible{box-shadow:inset 0 0 0 2px #5865f2!important}
-.nyx-account-menu-group button svg{
-  flex:0 0 18px;
-  width:18px;
-  height:18px;
-  color:#b5bac1;
-}
-.nyx-account-menu-group button svg:last-child:not(:first-child){margin-left:auto;width:16px;height:16px}
-.nyx-account-menu-group button:hover svg{color:#fff}
-.nyx-account-menu-group button>.nyx-user-status{
-  position:static!important;
-  flex:0 0 15px!important;
-  width:15px!important;
-  height:15px!important;
-  box-sizing:border-box!important;
-  margin:0 3px!important;
-  border:0!important;
-}
-.nyx-account-menu-group hr{
-  height:1px;
-  margin:3px 10px;
-  border:0;
-  background:#3f4147;
-}
-html[data-nyx-theme] body .nyx-account-menu,
-html[data-nyx-theme] body .nyx-account-menu :is(h2,p,span,button):not(.nyx-styled-display-name){
-  text-shadow:none!important;
-}
-html[data-nyx-theme] body .nyx-account-menu :is(h2,p,span):not(.nyx-styled-display-name){
-  -webkit-text-fill-color:currentColor!important;
-}
 .nyx-account-settings-link{
   display:inline!important;
   width:auto!important;
@@ -1326,62 +1174,9 @@ html[data-nyx-theme] body .nyx-discord-settings-close{
 
 /* Profile effects and accents are shared by the full card, compact account
    menu, Credits card, and the custom-effect editor. */
-html[data-nyx-theme] body .nyx-account-menu{
-  isolation:isolate;
-  border-color:color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 72%,rgba(255,255,255,.12))!important;
-  background:color-mix(in srgb,var(--nyx-account-primary,#5865f2) 24%,#111214)!important;
-  box-shadow:
-    inset 0 3px 0 var(--nyx-account-primary,#5865f2),
-    inset 0 -3px 0 var(--nyx-account-secondary,#8ea1ff),
-    0 20px 60px rgba(0,0,0,.56),
-    0 0 24px color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 18%,transparent)!important;
-}
 html[data-nyx-theme] body .nyx-account-menu>*:not(.nyx-account-menu-profile-effect){
   position:relative;
   z-index:1;
-}
-html[data-nyx-theme] body .nyx-account-menu-profile{
-  background:color-mix(in srgb,var(--nyx-account-primary,#5865f2) 46%,#1e1f22)!important;
-}
-html[data-nyx-theme] body .nyx-account-menu-profile::before{
-  position:absolute;
-  z-index:0;
-  top:39px;
-  right:10px;
-  bottom:8px;
-  left:10px;
-  border:1px solid color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 24%,rgba(255,255,255,.06));
-  border-radius:10px;
-  background:color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 14%,#1e1f22);
-  content:"";
-  pointer-events:none;
-}
-html[data-nyx-theme] body .nyx-account-menu-profile :is(h2,.nyx-account-menu-handle,.nyx-account-menu-bio){
-  position:relative;
-  z-index:1;
-}
-html[data-nyx-theme] body .nyx-account-menu-avatar{
-  z-index:2;
-  border-color:color-mix(in srgb,var(--nyx-account-primary,#5865f2) 42%,#111214)!important;
-  box-shadow:0 0 0 2px color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 74%,transparent),0 8px 22px rgba(0,0,0,.4);
-}
-html[data-nyx-theme] body .nyx-account-menu-status{
-  z-index:2;
-  border-color:color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 42%,transparent)!important;
-  background:color-mix(in srgb,var(--nyx-account-primary,#5865f2) 24%,#1e1f22)!important;
-}
-html[data-nyx-theme] body .nyx-account-menu-group{
-  border:1px solid color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 27%,rgba(255,255,255,.06));
-  background:color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 12%,#1e1f22)!important;
-}
-html[data-nyx-theme] body .nyx-account-menu-group button svg{
-  color:color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 68%,#fff)!important;
-}
-html[data-nyx-theme] body .nyx-account-menu-group button:is(:hover,:focus-visible){
-  background:color-mix(in srgb,var(--nyx-account-primary,#5865f2) 28%,#35373c)!important;
-}
-html[data-nyx-theme] body .nyx-account-menu-group hr{
-  background:color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 32%,#3f4147)!important;
 }
 html[data-nyx-theme] body .nyx-account-menu-profile-effect{
   position:absolute!important;
@@ -1573,14 +1368,6 @@ html[data-nyx-theme] body.browser-shell .nyx-account-button-rich .nyx-account-bu
   opacity:.72;
   font:500 9px/1.2 "Outfit","Segoe UI",sans-serif!important;
 }
-
-.nyx-account-menu{
-  border-radius:12px!important;
-}
-.nyx-account-menu-banner{
-  height:116px!important;
-}
-.nyx-account-menu-banner img,
 .nyx-user-profile-banner img,
 .nyx-founder-banner img{
   display:block!important;
@@ -1617,38 +1404,6 @@ html[data-nyx-theme] body.browser-shell .nyx-account-button-rich .nyx-account-bu
   font-size:10px!important;
   font-weight:500!important;
   text-transform:none!important;
-}
-.nyx-account-menu-profile{
-  min-height:154px!important;
-  padding-top:47px!important;
-  padding-bottom:13px!important;
-}
-.nyx-account-menu-profile h2{
-  font-size:17px!important;
-}
-.nyx-account-menu-bio{
-  margin-top:10px!important;
-  font-size:12px!important;
-}
-.nyx-account-menu-group{
-  margin-top:5px!important;
-  padding:4px!important;
-  border-radius:9px!important;
-}
-.nyx-account-menu-group button{
-  min-height:33px!important;
-  gap:9px!important;
-  padding:4px 7px!important;
-  border-radius:5px!important;
-  font-size:11.5px!important;
-}
-.nyx-account-menu-group button svg{
-  flex-basis:16px!important;
-  width:16px!important;
-  height:16px!important;
-}
-.nyx-account-menu-group hr{
-  margin:2px 8px!important;
 }
 html[data-nyx-theme] body .nyx-account-menu-profile h2.nyx-name-effect-gradient,
 html[data-nyx-theme] body .nyx-account-menu-profile h2.nyx-name-effect-neon,
@@ -2024,55 +1779,6 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-user-profile-banner:is(:hover
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-user-profile-avatar:hover>img{
   filter:brightness(.72);
 }
-
-html[data-nyx-theme] body .nyx-account-menu{
-  border:1px solid color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 28%,rgba(255,255,255,.1))!important;
-  background:#111214!important;
-  box-shadow:
-    0 20px 60px rgba(0,0,0,.56),
-    0 2px 8px rgba(0,0,0,.42),
-    0 0 0 1px color-mix(in srgb,var(--nyx-account-primary,#5865f2) 10%,transparent)!important;
-}
-html[data-nyx-theme] body .nyx-account-menu-profile{
-  background:linear-gradient(
-    180deg,
-    color-mix(in srgb,#1e1f22 84%,var(--nyx-account-primary,#5865f2)) 0%,
-    color-mix(in srgb,#1e1f22 90%,var(--nyx-account-secondary,#8ea1ff)) 100%
-  )!important;
-}
-html[data-nyx-theme] body .nyx-account-menu-profile::before{
-  display:none!important;
-}
-html[data-nyx-theme] body .nyx-account-menu-avatar{
-  border-color:#111214!important;
-  box-shadow:
-    0 0 0 2px color-mix(in srgb,var(--nyx-account-primary,#5865f2) 52%,transparent),
-    0 8px 22px rgba(0,0,0,.4)!important;
-}
-html[data-nyx-theme] body .nyx-account-menu-status{
-  border-color:rgba(255,255,255,.1)!important;
-  background:color-mix(in srgb,#1e1f22 88%,var(--nyx-account-secondary,#8ea1ff))!important;
-}
-html[data-nyx-theme] body .nyx-account-menu-group{
-  border:1px solid rgba(255,255,255,.065)!important;
-  background:color-mix(in srgb,#1e1f22 94%,var(--nyx-account-primary,#5865f2))!important;
-}
-html[data-nyx-theme] body .nyx-account-menu-group button{
-  border:0!important;
-  box-shadow:none!important;
-}
-html[data-nyx-theme] body .nyx-account-menu-group button svg{
-  color:color-mix(in srgb,#b5bac1 78%,var(--nyx-account-secondary,#8ea1ff))!important;
-}
-html[data-nyx-theme] body .nyx-account-menu-group button:is(:hover,:focus-visible){
-  background:color-mix(in srgb,#35373c 86%,var(--nyx-account-primary,#5865f2))!important;
-}
-html[data-nyx-theme] body .nyx-account-menu-group button:focus-visible{
-  box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--nyx-account-primary,#5865f2) 58%,#fff)!important;
-}
-html[data-nyx-theme] body .nyx-account-menu-group hr{
-  background:color-mix(in srgb,#3f4147 88%,var(--nyx-account-secondary,#8ea1ff))!important;
-}
 html[data-nyx-theme] body .nyx-user-profile-card{
   border:1px solid color-mix(in srgb,var(--nyx-user-accent-secondary,#8ea1ff) 32%,#4e5058)!important;
   background:linear-gradient(
@@ -2092,51 +1798,6 @@ html[data-nyx-theme] body .nyx-user-profile-body{
     color-mix(in srgb,#2b2d31 84%,var(--nyx-user-accent-primary,#5865f2)) 0%,
     color-mix(in srgb,#2b2d31 90%,var(--nyx-user-accent-secondary,#8ea1ff)) 100%
   )!important;
-}
-
-html[data-nyx-theme] body .nyx-account-menu{
-  border-color:color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 58%,rgba(255,255,255,.18))!important;
-  background:linear-gradient(
-    180deg,
-    color-mix(in srgb,var(--nyx-account-primary,#5865f2) 45%,#111214) 0%,
-    color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 36%,#111214) 100%
-  )!important;
-  backdrop-filter:none!important;
-  -webkit-backdrop-filter:none!important;
-}
-html[data-nyx-theme] body .nyx-account-menu-profile{
-  background:linear-gradient(
-    180deg,
-    color-mix(in srgb,var(--nyx-account-primary,#5865f2) 58%,#1e1f22) 0%,
-    color-mix(in srgb,var(--nyx-account-primary,#5865f2) 43%,#1e1f22) 58%,
-    color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 42%,#1e1f22) 100%
-  )!important;
-}
-html[data-nyx-theme] body .nyx-account-menu-avatar{
-  border-color:#202225!important;
-  box-shadow:0 0 0 2px rgba(255,255,255,.2),0 8px 22px rgba(0,0,0,.4)!important;
-}
-html[data-nyx-theme] body .nyx-account-menu-avatar>.nyx-user-status{
-  border-color:#202225!important;
-}
-html[data-nyx-theme] body .nyx-account-menu-status{
-  border-color:color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 52%,rgba(255,255,255,.18))!important;
-  background:color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 42%,#1e1f22)!important;
-  backdrop-filter:none!important;
-  -webkit-backdrop-filter:none!important;
-}
-html[data-nyx-theme] body .nyx-account-menu-group{
-  border-color:color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 42%,rgba(255,255,255,.12))!important;
-  background:linear-gradient(
-    135deg,
-    color-mix(in srgb,var(--nyx-account-primary,#5865f2) 31%,#1e1f22),
-    color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 34%,#1e1f22)
-  )!important;
-  backdrop-filter:none!important;
-  -webkit-backdrop-filter:none!important;
-}
-html[data-nyx-theme] body .nyx-account-menu-group button:is(:hover,:focus-visible){
-  background:color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 38%,#35373c)!important;
 }
 html[data-nyx-theme] body .nyx-user-profile-card{
   border-color:color-mix(in srgb,var(--nyx-user-accent-secondary,#8ea1ff) 70%,rgba(255,255,255,.18))!important;
@@ -3433,6 +3094,4 @@ html[data-nyx-theme] body.browser-shell .lion-ai-form{
   -webkit-backdrop-filter:blur(10px) saturate(1.06)!important;
   backdrop-filter:blur(10px) saturate(1.06)!important;
 }
-
-html[data-nyx-theme] body .nyx-account-menu>.nyx-account-menu-group{z-index:4}
 html[data-nyx-theme] body .nyx-account-menu>.nyx-account-menu-profile-effect{background-size:100% auto!important;background-position:center top!important}

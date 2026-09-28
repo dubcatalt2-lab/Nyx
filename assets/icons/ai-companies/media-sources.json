@@ -1,0 +1,42 @@
+{
+  "flux": {
+    "file": "flux.svg",
+    "color": false,
+    "source": "https://unpkg.com/@lobehub/icons-static-svg@1.95.1/icons/flux.svg"
+  },
+  "recraft": {
+    "file": "recraft.svg",
+    "color": false,
+    "source": "https://unpkg.com/@lobehub/icons-static-svg@1.95.1/icons/recraft.svg"
+  },
+  "runway": {
+    "file": "runway.svg",
+    "color": false,
+    "source": "https://unpkg.com/@lobehub/icons-static-svg@1.95.1/icons/runway.svg"
+  },
+  "kling": {
+    "file": "kling-color.svg",
+    "color": true,
+    "source": "https://unpkg.com/@lobehub/icons-static-svg@1.95.1/icons/kling-color.svg"
+  },
+  "elevenlabs": {
+    "file": "elevenlabs.svg",
+    "color": false,
+    "source": "https://unpkg.com/@lobehub/icons-static-svg@1.95.1/icons/elevenlabs.svg"
+  },
+  "assemblyai": {
+    "file": "assemblyai-color.svg",
+    "color": true,
+    "source": "https://unpkg.com/@lobehub/icons-static-svg@1.95.1/icons/assemblyai-color.svg"
+  },
+  "suno": {
+    "file": "suno.svg",
+    "color": false,
+    "source": "https://unpkg.com/@lobehub/icons-static-svg@1.95.1/icons/suno.svg"
+  },
+  "alibaba": {
+    "file": "alibaba-color.svg",
+    "color": true,
+    "source": "https://unpkg.com/@lobehub/icons-static-svg@1.95.1/icons/alibaba-color.svg"
+  }
+}

@@ -193,7 +193,11 @@ html body.browser-shell .nyx-minimal-brand h1 {margin:0;color:var(--obsidian-tex
 .nyx-appearance-toggle {right:132px;width:30px;justify-content:center;padding:6px}
 .nyx-visual-customize svg,.nyx-appearance-toggle svg {width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.4}
 .nyx-visual-customize:hover,.nyx-appearance-toggle:hover {color:var(--obsidian-text);background:var(--obsidian-hover)}
-.nyx-home-presence {display:none}
+.nyx-home-presence {position:absolute;top:62px;right:25px;display:flex;align-items:center;gap:7px;min-height:28px;padding:0 8px;border:0;border-radius:6px;background:transparent;color:var(--obsidian-muted);font:11px Inter,Arial,sans-serif;cursor:default}
+.nyx-home-presence-dot {width:6px;height:6px;border-radius:50%;background:#63c58d;flex:none}
+.nyx-home-presence.nyx-owner-presence-action {cursor:pointer}
+.nyx-home-presence.nyx-owner-presence-action:hover {background:var(--obsidian-hover);color:var(--obsidian-text)}
+.nyx-home-presence.nyx-owner-presence-action:focus-visible {outline:2px solid var(--obsidian-muted);outline-offset:2px}
 
 html body.browser-shell .browser-shell-settings-overlay {position:fixed!important;inset:86px 0 0 var(--nyx-sidebar-width)!important;width:auto!important;height:auto!important;padding:0!important;zoom:1!important;background:var(--obsidian-bg)!important}
 html body.browser-shell.browser-shell .browser-shell-settings-panel.browser-shell-settings-panel {width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;margin:0!important;border:0!important;border-radius:0!important;background:var(--obsidian-bg)!important}
@@ -213,7 +217,7 @@ html body.browser-shell.browser-shell .browser-shell-settings-panel.browser-shel
 .nyx-wallpaper-card.selected .nyx-wallpaper-check{display:block}
 html body :is(.settings-card,.settings-block,.apps-panel,.panel,.nyx-credits-card) {border-color:var(--obsidian-line)!important;background:var(--obsidian-panel)!important;box-shadow:none!important}
 html body :is(.settings-action,.settings-card button,.nyx-account-submit,.nyx-account-tab.active,.nyx-prompt button) {background:var(--obsidian-field)!important;background-image:none!important;color:var(--obsidian-text)!important;border:1px solid var(--obsidian-line)!important;border-radius:7px;box-shadow:none!important;text-shadow:none!important}
-html body :is(.browser-mode-menu,.browser-bookmark-panel,.nyx-account-menu) {background:var(--obsidian-panel)!important;border:1px solid var(--obsidian-line)!important;border-radius:10px!important;backdrop-filter:blur(24px);box-shadow:0 15px 45px #0005!important;color:var(--obsidian-text)!important}
+html body :is(.browser-mode-menu,.browser-bookmark-panel) {background:var(--obsidian-panel)!important;border:1px solid var(--obsidian-line)!important;border-radius:10px!important;backdrop-filter:blur(24px);box-shadow:0 15px 45px #0005!important;color:var(--obsidian-text)!important}
 html body .browser-mode-menu {position:absolute;top:88px!important;right:12px!important;width:230px;padding:8px;display:none!important}
 html body.menu-open .browser-mode-menu {display:block!important;opacity:1;visibility:visible;pointer-events:auto}
 .browser-mode-menu button{display:block;width:100%;padding:10px 12px;text-align:left;background:none;border:0;color:var(--obsidian-text);font-size:12px}

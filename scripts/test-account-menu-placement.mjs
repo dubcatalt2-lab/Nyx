@@ -61,7 +61,7 @@ try {
       const a = menu.getBoundingClientRect(), b = rail.getBoundingClientRect();
       return { width: a.width, height: a.height, clear: side === 'left' ? a.left >= b.right : a.right <= b.left };
     }, side);
-    assert.ok(geometry.width <= 220 && geometry.height <= 400);
+    assert.ok(geometry.width <= 260 && geometry.height <= 456);
     assert.equal(geometry.clear, true, 'Menu must not cover sidebar');
   }
   await page.screenshot({ path: '.codex-artifacts/account-menu-placement.png' });

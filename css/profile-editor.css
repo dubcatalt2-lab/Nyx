@@ -404,7 +404,7 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-preview-pane .nyx-edi
   position:relative!important;
   inset:auto!important;
   z-index:0!important;
-  width:min(360px,100%)!important;
+  width:min(320px,100%)!important;
   max-height:none!important;
   margin:0!important;
   opacity:1!important;
@@ -412,18 +412,18 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-preview-pane .nyx-edi
 }
 
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-banner{
-  height:164px!important;
+  height:106px!important;
 }
 
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-profile{
-  min-height:246px!important;
-  padding:72px 18px 26px!important;
+  min-height:0!important;
+  padding:56px 4px 14px!important;
 }
 
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-avatar{
-  top:-41px!important;
-  width:76px!important;
-  height:76px!important;
+  top:-40px!important;
+  width:80px!important;
+  height:80px!important;
 }
 
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-avatar>.nyx-avatar-decoration{
@@ -451,9 +451,9 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-acco
 }
 
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-status{
-  top:-31px!important;
-  left:102px!important;
-  max-width:calc(100% - 118px)!important;
+  top:-7px!important;
+  left:90px!important;
+  max-width:calc(100% - 94px)!important;
 }
 
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-group{
@@ -462,7 +462,7 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-acco
 }
 
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-group button{
-  min-height:58px!important;
+  min-height:40px!important;
 }
 
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-profile-media-edit-avatar{

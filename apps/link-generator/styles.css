@@ -151,3 +151,8 @@ fieldset{min-width:0;margin:0;border:0}
   .generator-card.wizard-forward .wizard-step.active,.generator-card.wizard-back .wizard-step.active{animation:none}
   .wizard-progress-line span{transition:none}
 }
+
+.generator-tour-ring{position:fixed;z-index:10000;pointer-events:none;border:2px solid #d1d8d4;border-radius:12px;box-shadow:0 0 0 9999px #0008;box-sizing:border-box}
+.generator-tour{position:fixed;z-index:10001;box-sizing:border-box;width:320px;max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow:auto;padding:18px;border:1px solid #ffffff24;border-radius:14px;background:#151817;color:#e5e9e7;box-shadow:0 12px 40px #0008}
+.generator-tour[hidden],.generator-tour-ring[hidden]{display:none}
+.generator-tour small{color:#959e98;font-size:11px}.generator-tour h3{margin:8px 0;font-size:17px}.generator-tour p{margin:0;font-size:13px;line-height:1.6;color:#b5bdb8}.generator-tour>div{display:flex;justify-content:space-between;gap:12px;margin-top:18px}.generator-tour button{padding:8px 12px;border:1px solid #ffffff20;border-radius:8px;background:#ffffff0c;color:inherit;cursor:pointer}.generator-tour button:hover{background:#ffffff18}.generator-tour button:focus-visible{outline:2px solid #d1d8d4;outline-offset:2px}

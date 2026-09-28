@@ -156,13 +156,13 @@ try {
   const shellPage = await shellContext.newPage();
   const shellErrors = [];
   shellPage.on('pageerror', error => shellErrors.push(error.message));
-  await shellPage.goto(`${origin}/`, { waitUntil: 'domcontentloaded' });
+  await shellPage.goto(`${origin}/nyx`, { waitUntil: 'domcontentloaded' });
   await shellPage.evaluate(() => {
-    document.body.classList.add('browser-content-active');
     document.querySelectorAll('#nyxStudyHubStartup,#setupLaunchScreen,#setupScreen,.nyx-tos-gate,.nyx-release-notes-overlay').forEach(element => { element.style.pointerEvents = 'none'; });
   });
   await shellPage.waitForFunction(() => !document.querySelector('#nyxStudyHubStartup') && !document.body.classList.contains('nyx-loading-active'), null, { timeout: 20_000 });
-  await shellPage.locator('.nyx-minimal-utility-links [data-app-url="/apps/link-generator/"]').click();
+  await shellPage.locator('[data-nyx-dock-item="apps"]').click();
+  await shellPage.frameLocator('iframe.view.active').locator('[data-app-url="/apps/link-generator/"]').click();
   const shellFrameElement = shellPage.locator('iframe.view.active');
   await shellFrameElement.waitFor({ state: 'attached' });
   await shellFrameElement.evaluate(frame => frame.closest('.browser-window')?.setAttribute('data-popup-test-host', 'true'));

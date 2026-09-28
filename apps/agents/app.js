@@ -1,11 +1,13 @@
-import {setupChats} from './chats.js?v=20260927-activity';
+import {setupChats} from './chats.js?v=20260928-projects-v1';
 import {setupScreen} from './screen.js?v=20260927-chat';
-import {setupPicker} from './models.js?v=20260927-media';
+import {setupPicker} from './models.js?v=20260928-projects-v1';
 import {setupMedia} from './media.js?v=20260927-media';
 const $=id=>document.getElementById(id);
-const iconPaths={folder:'M3 7V5h6l2 2h10v13H3z',file:'M6 3h8l4 4v14H6z M14 3v5h5',refresh:'M20 11a8 8 0 1 0-2.35 5.65 M20 4v7h-7',plus:'M12 5v14 M5 12h14',send:'m21 3-8.5 18-3.2-7.3L2 10.5 21 3z M9.3 13.7l4.2-4.2',stop:'M6 6h12v12H6z',close:'m6 6 12 12 M18 6 6 18',search:'M21 21l-5-5 M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',connect:'M8 3v5 M16 3v5 M5 8h14v3a7 7 0 0 1-14 0z M12 18v3',download:'m3 7 9-4 9 4v10l-9 4-9-4z M3 7l9 4 9-4 M12 11v10 M7 5l9 4',spark:'m12 3 2 6 6 3-6 2-2 6-2-6-6-2 6-3z'};
+const iconPaths={account:'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0 M4 21v-2a8 8 0 0 1 16 0v2',code:'m8 6-6 6 6 6M16 6l6 6-6 6M14 3l-4 18',chat:'M4 4h16v12H9l-5 4z',sun:'M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1 1M18 18l1 1M5 19l1-1M18 6l1-1 M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0',moon:'M20 15A8 8 0 0 1 9 4a8 8 0 1 0 11 11z',compose:'M9 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-5 M16 3a2 2 0 0 1 3 3l-9 9-4 1 1-4z',pin:'M8 3h8l-1 6 4 4v2H5v-2l4-4z M12 15v6',folder:'M3 7V5h6l2 2h10v13H3z',file:'M6 3h8l4 4v14H6z M14 3v5h5',refresh:'M20 11a8 8 0 1 0-2.35 5.65 M20 4v7h-7',plus:'M12 5v14 M5 12h14',send:'m21 3-8.5 18-3.2-7.3L2 10.5 21 3z M9.3 13.7l4.2-4.2',stop:'M6 6h12v12H6z',close:'m6 6 12 12 M18 6 6 18',search:'M21 21l-5-5 M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',connect:'M8 3v5 M16 3v5 M5 8h14v3a7 7 0 0 1-14 0z M12 18v3',download:'m3 7 9-4 9 4v10l-9 4-9-4z M3 7l9 4 9-4 M12 11v10 M7 5l9 4',spark:'m12 3 2 6 6 3-6 2-2 6-2-6-6-2 6-3z'};
 function icon(name){return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="'+iconPaths[name]+'"></path></svg>';}
-for(const [id,name,label] of [['refresh','refresh',''],['newTask','plus','New chat'],['send','send',''],['stop','stop','Stop'],['closeLogin','close',''],['connect','connect','Connect folder'],['activityTab','spark','Activity'],['fileTab','file','Preview']]){const button=$(id);button.innerHTML=icon(name);if(label)button.append(document.createTextNode(label));}
+for(const [id,name,label] of [['refresh','refresh',''],['newTask','compose','New chat'],['send','send',''],['stop','stop','Stop'],['closeLogin','close',''],['connect','connect','Connect folder'],['activityTab','spark','Activity'],['fileTab','file','Preview']]){const button=$(id);button.innerHTML=icon(name);if(label)button.append(document.createTextNode(label));}
+function updateTheme(){const light=document.documentElement.dataset.theme==='light';$('themeToggle').innerHTML=icon(light?'moon':'sun')+(light?'Dark mode':'Light mode');$('themeToggle').setAttribute('aria-label',light?'Use dark mode':'Use light mode');}
+$('themeToggle').onclick=()=>{const theme=document.documentElement.dataset.theme==='light'?'dark':'light';document.documentElement.dataset.theme=theme;try{localStorage.setItem('nook.theme',theme);}catch{}updateTheme();};updateTheme();
 const download=document.querySelector('.aside-bottom a');download.innerHTML=icon('download')+'Download companion';
 const welcomeTemplate=document.getElementById('welcome').cloneNode(true);
 const picker=setupPicker($('model'));
@@ -16,7 +18,7 @@ const chats=setupChats({notice,busy:()=>running,changed:renderRecentSuggestions,
  if(typeof item.computer==='boolean'&&chatMode===item.computer)changeMode(!item.computer,false);
  if(item.model&&[...$('model').options].some(option=>option.value===item.model)){$('model').value=item.model;$('model').dispatchEvent(new Event('change'));}
  $('effort').value=['low','medium','high'].includes(item.effort)?item.effort:'medium';$('effort').dispatchEvent(new Event('change'));
- $('feed').replaceChildren();if(!history.length)renderWelcome();for(const entry of history){let text=entry.content;if(!chatMode&&entry.role==='assistant')try{text=JSON.parse(text).message||text;}catch{}message(entry.role,text,entry.model,entry.metadata);}
+ $('feed').replaceChildren();if(!history.length)renderWelcome();for(const entry of history){let text=entry.content;if(!chatMode&&entry.role==='assistant')try{text=JSON.parse(text).message||text;}catch{}message(entry.role,text,entry.model,entry.metadata,entry);}
  $('taskTitle').textContent=item.temporary?'Temporary chat':item.title||'New chat';$('prompt').value='';sizePrompt();sync();
 }});
 let welcomeName='',greetingIndex=0;
@@ -28,13 +30,15 @@ if(/^[a-f0-9]{64}$/.test(pairing.get('companion')||'')&&pairing.get('port')==='6
 if(location.hash)window.history.replaceState(null,'',location.pathname+location.search);
 const pairingToken=()=>sessionStorage.getItem('nyx.agents.pair')||'';
 function notice(text){$('notice').textContent=text;$('notice').hidden=false;clearTimeout(notice.timer);notice.timer=setTimeout(()=>$('notice').hidden=true,7000);}
-function message(role,text,replyModel,metadata){
+function message(role,text,replyModel,metadata,entry){
  $('welcome')?.remove();if(role!=='user')$('feed').querySelector('.thinking-message')?.remove();
  const row=document.createElement('article');row.className='message '+role;
  const header=document.createElement('div');header.className='message-heading';
  const id=replyModel||$('model').value;
  if(role==='assistant'&&id){const logo=document.createElement('span');logo.className='reply-logo';logo.innerHTML=picker.icon(id);header.append(logo);}
  const name=document.createElement('strong');name.textContent=role==='user'?'You':role==='error'?'Stopped':(models.find(item=>item.id===id)?.label||id||'Assistant');header.append(name);row.append(header);
+ if(entry&&!chats.temporary()){entry.id||=crypto.randomUUID();row.dataset.messageId=entry.id;const pin=document.createElement('button');pin.type='button';pin.className='message-pin';pin.innerHTML=icon('pin');const update=()=>{pin.setAttribute('aria-pressed',String(!!entry.pinned));pin.setAttribute('aria-label',entry.pinned?'Unpin message':'Pin message');pin.title=entry.pinned?'Unpin message':'Pin message';};update();pin.onclick=()=>{if(running)return;if(!entry.pinned&&history.filter(m=>m.pinned).length>=20){notice('You can pin up to 20 messages per chat.');return;}entry.pinned=!entry.pinned;update();chats.save(history,$('model').value,!chatMode,$('effort').value);};header.append(pin);}
+
  if(typeof metadata?.summary==='string'&&metadata.summary.trim()){const details=document.createElement('details');details.className='reasoning-summary';const summary=document.createElement('summary');summary.textContent='Thinking summary';const content=document.createElement('div');content.textContent=metadata.summary.slice(0,2400);details.append(summary,content);row.append(details);}
  const content=document.createElement('div');content.className='message-content';content.textContent=text;row.append(content);$('feed').append(row);$('feed').scrollTop=$('feed').scrollHeight;return row;
 }
@@ -49,7 +53,7 @@ function selectPanel(file){$('preview').hidden=!file;$('activity').hidden=file;$
 $('activityTab').onclick=()=>selectPanel(false);$('fileTab').onclick=()=>selectPanel(true);
 $('refresh').onclick=()=>files(currentPath).catch(error=>notice(error.message));
 $('connect').onclick=async()=>{try{if(!auth?.currentUser){$('login').showModal();return;}notice('Confirm the connection in the Windows dialog.');const result=await local('/connect',{});connected=result.connected;if(!connected)throw Error('Connection declined.');const status=await local('/status');$('folder').textContent=status.workspace;await files();notice('Connected to '+status.workspace);}catch(error){connected=false;notice(error.message);}finally{sync();}};
-async function initialize(){try{const config=await(await fetch('/api/founder-profile/auth-config',{cache:'no-store'})).json();if(!config.enabled)throw Error('Account sign-in is unavailable on this server.');const [appModule,module]=await Promise.all([import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')]);authModule=module;const app=appModule.getApps().find(item=>item.name==='nyx-founder-owner')||appModule.initializeApp({apiKey:config.apiKey,authDomain:config.projectId+'.firebaseapp.com',projectId:config.projectId},'nyx-founder-owner');auth=module.getAuth(app);await module.setPersistence(auth,module.browserLocalPersistence);module.onAuthStateChanged(auth,user=>{welcomeName=cleanGreetingName(user?.displayName);greetingIndex=0;chats.bind(user?.uid);if(user)loadGreetingName(user);$('account').textContent=user?'Sign out':'Sign in';if(user)loadModels();else{$('model').replaceChildren(new Option('Sign in to load models',''));picker.set([]);media.reset();}sync();});}catch(error){notice(error.message);}}
+async function initialize(){try{const config=await(await fetch('/api/founder-profile/auth-config',{cache:'no-store'})).json();if(!config.enabled)throw Error('Account sign-in is unavailable on this server.');const [appModule,module]=await Promise.all([import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')]);authModule=module;const app=appModule.getApps().find(item=>item.name==='nyx-founder-owner')||appModule.initializeApp({apiKey:config.apiKey,authDomain:config.projectId+'.firebaseapp.com',projectId:config.projectId},'nyx-founder-owner');auth=module.getAuth(app);await module.setPersistence(auth,module.browserLocalPersistence);module.onAuthStateChanged(auth,user=>{welcomeName=cleanGreetingName(user?.displayName);greetingIndex=0;chats.bind(user?.uid);if(user)loadGreetingName(user);$('account').innerHTML=icon('account')+(user?'Sign out':'Sign in');$('account').title=user?'Sign out':'Sign in';$('account').setAttribute('aria-label',user?'Sign out':'Sign in');if(user)loadModels();else{$('model').replaceChildren(new Option('Sign in to load models',''));picker.set([]);media.reset();}sync();});}catch(error){notice(error.message);}}
 $('account').onclick=async()=>{if(auth?.currentUser){await stop();await authModule.signOut(auth);connected=false;history=[];$('feed').replaceChildren();sync();}else $('login').showModal();};
 let creatingAccount=false,authBusy=false;
 function setAuthMode(create){
@@ -120,24 +124,24 @@ $('newTask').onclick=()=>chats.fresh(false);
 function actionCard(action){selectPanel(false);$('activity').querySelector('.muted')?.remove();const row=document.createElement('article');row.className='action';const title=document.createElement('strong');title.textContent=action.tool+' · '+(action.args.path||action.args.cwd||'workspace');const detail=document.createElement('pre');detail.textContent=action.tool==='write'?action.args.content:JSON.stringify(action.args,null,2);const status=document.createElement('p');status.textContent=['write','delete','command'].includes(action.tool)?'Waiting for desktop approval…':'Reading workspace…';row.append(title,detail,status);$('activity').append(row);return {row,status};}
 async function stop(){media.stopVoice();controller?.abort();try{if(pairingToken())await local('/stop',{});}catch{} }
 $('stop').onclick=stop;
-$('composer').onsubmit=async event=>{event.preventDefault();if(running||(!chatMode&&!connected)||!auth?.currentUser)return;const voice=media.voiceActive();let image=media.image();if(capturing)return;if(!image){capturing=true;try{image=await screen.capture();}catch(error){notice(error.message);return;}finally{capturing=false;}}const prompt=$('prompt').value.trim()||(image?'Use this image as context for the task.':'');if(!prompt||media.preparing())return;media.pause();running=true;controller=new AbortController();sync();$('prompt').value='';sizePrompt();$('taskTitle').textContent=prompt;message('user',prompt);if(image){const preview=document.createElement('img');preview.src=image.dataUrl;preview.alt='Attached image';preview.className='message-image';$('feed').lastElementChild.append(preview);}media.clearImage();history.push({role:'user',content:prompt});const model=$('model').value;
+$('composer').onsubmit=async event=>{event.preventDefault();if(running||(!chatMode&&!connected)||!auth?.currentUser)return;const voice=media.voiceActive();let image=media.image();if(capturing)return;if(!image){capturing=true;try{image=await screen.capture();}catch(error){notice(error.message);return;}finally{capturing=false;}}const prompt=$('prompt').value.trim()||(image?'Use this image as context for the task.':'');if(!prompt||media.preparing())return;media.pause();running=true;controller=new AbortController();sync();$('prompt').value='';sizePrompt();$('taskTitle').textContent=prompt;history.push({role:'user',content:prompt,id:crypto.randomUUID()});message('user',prompt,null,null,history.at(-1));if(image){const preview=document.createElement('img');preview.src=image.dataUrl;preview.alt='Attached image';preview.className='message-image';$('feed').lastElementChild.append(preview);}media.clearImage();const model=$('model').value;
   try{
     if(chatMode){
-      if(history.reduce((total,item)=>total+item.content.length,0)>21000)throw Error('This conversation is full. Start a new chat to continue.');
+      if([...chats.context(),...history].reduce((total,item)=>total+item.content.length,0)>21000)throw Error('This conversation is full. Start a new chat to continue.');
       showThinking(model);
-      const data=await api('/api/nyx-ai',{model,message:prompt,messages:history.slice(-18),stream:false,temporaryChat:true,responseDepth:({low:'off',medium:'normal',high:'extended'})[$('effort').value],reasoningEffort:$('effort').value,...(voice?{generateAudio:true,voice:$('voiceName').value.trim()||'alloy'}:{}),...(image?{image}:{})},controller.signal);
+      const data=await api('/api/nyx-ai',{model,message:prompt,messages:[...chats.context(),...history.slice(-18)],stream:false,temporaryChat:true,responseDepth:({low:'off',medium:'normal',high:'extended'})[$('effort').value],reasoningEffort:$('effort').value,...(voice?{generateAudio:true,voice:$('voiceName').value.trim()||'alloy'}:{}),...(image?{image}:{})},controller.signal);
       if(typeof data.text!=='string'||!data.text.trim())throw Error('The model returned no text. Try again or select another model.');
-      history.push({role:'assistant',content:data.text,model:data.model||model,metadata:{summary:String(data.metadata?.summary||'').slice(0,2400)}});message('assistant',data.text,data.model||model,data.metadata);media.reply(data.text,data.audio);return;
+      history.push({role:'assistant',content:data.text,model:data.model||model,metadata:{summary:String(data.metadata?.summary||'').slice(0,2400)}});message('assistant',data.text,data.model||model,data.metadata,history.at(-1));media.reply(data.text,data.audio);return;
     }
     for(let step=0;step<12;step++){
     if(controller.signal.aborted)throw new DOMException('Stopped','AbortError');
-    if(history.reduce((total,item)=>total+item.content.length,0)>21000)throw Error('This task has filled its context. Start a new task; your file changes are saved.');
+    if([...chats.context(),...history].reduce((total,item)=>total+item.content.length,0)>21000)throw Error('This task has filled its context. Start a new task; your file changes are saved.');
     showThinking(model);
-    const data=await api('/api/nyx-ai',{task:'computer-agent',model,message:prompt,messages:history.slice(-20),stream:false,temporaryChat:true,responseDepth:({low:'off',medium:'normal',high:'extended'})[$('effort').value],reasoningEffort:$('effort').value,...(step===0&&image?{image}: {})},controller.signal);
+    const data=await api('/api/nyx-ai',{task:'computer-agent',model,message:prompt,messages:[...chats.context(),...history.slice(-19)],stream:false,temporaryChat:true,responseDepth:({low:'off',medium:'normal',high:'extended'})[$('effort').value],reasoningEffort:$('effort').value,...(step===0&&image?{image}: {})},controller.signal);
     if(data.finishReason==='length')throw Error('The model returned an incomplete action. No new action was executed.');
     let action;try{action=JSON.parse(data.text);}catch{throw Error('The model did not return a valid action. No new action was executed.');}
     if(!action||typeof action.message!=='string'||action.message.length>6000)throw Error('Invalid agent response.');
-    history.push({role:'assistant',content:data.text,model:data.model||model,metadata:{summary:String(data.metadata?.summary||'').slice(0,2400)}});message('assistant',action.message,data.model||model,data.metadata);
+    history.push({role:'assistant',content:data.text,model:data.model||model,metadata:{summary:String(data.metadata?.summary||'').slice(0,2400)}});message('assistant',action.message,data.model||model,data.metadata,history.at(-1));
     if(action.done===true&&!action.tool){media.reply(action.message);break;}
     if(!['list','read','search','write','delete','command'].includes(action.tool)||!action.args||typeof action.args!=='object')throw Error('The model requested an unsupported action.');
     const card=actionCard(action);let result;
@@ -165,18 +169,20 @@ function changeMode(value,reset=true){
  }
  $('chatMode').setAttribute('aria-pressed',String(value));$('computerMode').setAttribute('aria-pressed',String(!value));
  $('taskTitle').textContent=value?'New chat':'New task';
- $('newTask').innerHTML=icon('plus')+(value?'New chat':'New task');
+ $('newTask').innerHTML=icon('compose')+(value?'New chat':'New task');
  $('modeHint').textContent=value?'Chat with your selected model. Code mode is optional.':'Code mode: file edits and commands require desktop approval.';
  $('prompt').placeholder=value?'Message your model...':'Describe a task...';
  sync();$('prompt').focus();
 }
 $('chatMode').onclick=()=>{changeMode(true);chats.fresh(false);};$('computerMode').onclick=()=>{changeMode(false);chats.fresh(false);};
 const panelIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>';
-$('toggleChats').innerHTML=panelIcon;$('collapseChats').innerHTML=panelIcon;
-function toggleSidebar(){const collapsed=document.body.classList.toggle('sidebar-collapsed');$('toggleChats').setAttribute('aria-expanded',String(!collapsed));$('chatSidebar').inert=collapsed;try{localStorage.setItem('agents.sidebar.collapsed',String(collapsed));}catch{}}
-$('toggleChats').onclick=toggleSidebar;$('collapseChats').onclick=()=>{toggleSidebar();$('toggleChats').focus();};
+$('collapseChats').innerHTML=panelIcon;
+function toggleSidebar(){const collapsed=document.body.classList.toggle('sidebar-collapsed');$('collapseChats').setAttribute('aria-expanded',String(!collapsed));$('collapseChats').setAttribute('aria-label',collapsed?'Expand sidebar':'Collapse sidebar');$('collapseChats').title=collapsed?'Expand sidebar':'Collapse sidebar';try{localStorage.setItem('agents.sidebar.collapsed',String(collapsed));}catch{}}
+$('collapseChats').onclick=toggleSidebar;
 try{if(localStorage.getItem('agents.sidebar.collapsed')==='true')toggleSidebar();}catch{}
-$('sidebarNewChat').insertAdjacentHTML('afterbegin',icon('plus'));
+for(const [id,name,label] of [['chatMode','chat','Chat'],['computerMode','code','Code']]){$(id).insertAdjacentHTML('afterbegin',icon(name));$(id).title=label;$(id).setAttribute('aria-label',label);}
+for(const id of ['sidebarNewChat','tempChat','pinnedMessages']){$(id).title=$(id).textContent;$(id).setAttribute('aria-label',$(id).textContent);}
+$('sidebarNewChat').insertAdjacentHTML('afterbegin',icon('compose'));
 $('tempChat').insertAdjacentHTML('afterbegin','<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9M12 7v5l3 2M17 3h4v4"/></svg>');
 $('taskTitle').textContent='New chat';
 initialize();

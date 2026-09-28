@@ -21,7 +21,7 @@
 .ai-model-companies button{display:grid;place-items:center;min-width:36px;height:36px;padding:6px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ai-muted);font-size:11px;cursor:pointer}
 .ai-model-companies button:hover,.ai-model-companies button[aria-pressed="true"]{background:var(--ai-surface-hover);border-color:var(--ai-border-strong);color:var(--ai-text)}
 .ai-model-companies button:focus-visible,#modelMenuClose:focus-visible{outline:2px solid var(--ai-muted);outline-offset:2px}
-.ai-company-logo{display:block;width:22px;height:22px;flex-shrink:0;background:#fff;mask:var(--company-logo) center/contain no-repeat;-webkit-mask:var(--company-logo) center/contain no-repeat}
+.ai-company-logo{display:block;width:22px;height:22px;flex-shrink:0;background:var(--ai-text);mask:var(--company-logo) center/contain no-repeat;-webkit-mask:var(--company-logo) center/contain no-repeat}
 .ai-company-logo-color{object-fit:contain;background:none;mask:none;-webkit-mask:none;filter:none;opacity:1}
 .ai-company-logo[src$="/writer-author.png"]{background:#f4f4f4;border-radius:4px;padding:2px}
 .ai-company-initial{display:grid;place-items:center;width:22px;height:22px;font-size:9px;color:var(--ai-muted)}

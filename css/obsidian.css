@@ -193,7 +193,7 @@ html body.browser-shell .nyx-minimal-brand h1 {margin:0;color:var(--obsidian-tex
 .nyx-appearance-toggle {right:132px;width:30px;justify-content:center;padding:6px}
 .nyx-visual-customize svg,.nyx-appearance-toggle svg {width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.4}
 .nyx-visual-customize:hover,.nyx-appearance-toggle:hover {color:var(--obsidian-text);background:var(--obsidian-hover)}
-.nyx-home-presence {position:absolute;top:62px;right:25px;display:flex;align-items:center;gap:7px;min-height:28px;padding:0 8px;border:0;border-radius:6px;background:transparent;color:var(--obsidian-muted);font:11px Inter,Arial,sans-serif;cursor:default}
+.nyx-home-presence {position:absolute;top:22px;right:170px;white-space:nowrap;display:flex;align-items:center;gap:7px;min-height:28px;padding:0 8px;border:0;border-radius:6px;background:transparent;color:var(--obsidian-muted);font:11px Inter,Arial,sans-serif;cursor:default}
 .nyx-home-presence-dot {width:6px;height:6px;border-radius:50%;background:#63c58d;flex:none}
 .nyx-home-presence.nyx-owner-presence-action {cursor:pointer}
 .nyx-home-presence.nyx-owner-presence-action:hover {background:var(--obsidian-hover);color:var(--obsidian-text)}

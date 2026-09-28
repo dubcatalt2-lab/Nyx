@@ -13,3 +13,9 @@ await assert.rejects(()=>readResponse(new Response('data: {"choices":[{"delta":{
 await assert.rejects(()=>readResponse(new Response('data: {"error":{"message":"Provider unavailable"}}\n\n',{headers:{'content-type':'text/event-stream'}})),/Provider unavailable/);
 const replaced=await readResponse(new Response('data: {"choices":[{"delta":{"content":"bad"}}]}\n\ndata: {"nyx_replace":true,"choices":[{"delta":{"content":"fixed"}}]}\n\ndata: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}}));assert.equal(replaced.text,'fixed');
 console.log('PASS first words before completion, metadata, replacement, interrupted stream and gateway errors');
+
+const voiceStream=events=>new Response(events.map(e=>'data: '+JSON.stringify(e)+'\n\n').join('')+'data: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}});
+const voice=await readResponse(voiceStream([{choices:[{delta:{audio:{data:'AQIDBA==',transcript:'Hello.'}},finish_reason:'stop'}]}]),null,'pcm16');
+const wav=Buffer.from(voice.audio.data,'base64');assert.equal(wav.toString('ascii',0,4),'RIFF');assert.equal(wav.readUInt32LE(24),24000);assert.deepEqual([...wav.subarray(44)],[1,2,3,4]);assert.equal(voice.text,'Hello.');assert.equal(voice.finishReason,'stop');
+await assert.rejects(()=>readResponse(voiceStream([]),null,'pcm16'),/no audio/);
+console.log('PASS native voice PCM stream, WAV conversion and empty audio rejection');

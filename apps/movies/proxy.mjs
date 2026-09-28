@@ -37,6 +37,7 @@ export function inspectMovieProxy(frame) {
       const doc = current.frame.contentDocument;
       if (!doc) continue;
       for (const video of doc.querySelectorAll('video')) {
+        if(video.error){failure=true;continue;}
         if (video.videoWidth > 0 && video.readyState >= 1) {
           return {video, frames: current.frames, paused: video.paused, time: video.currentTime, width: video.videoWidth, height: video.videoHeight, failed: false};
         }

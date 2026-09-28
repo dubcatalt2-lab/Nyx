@@ -1,5 +1,5 @@
 import {additionalSources, movieSourceUrl} from './providers.mjs?v=20260915-aniembed-v1';
-import {launchMovieProxy, inspectMovieProxy, styleMovieVideo, startMovieProxy, canStartMovieProxy} from './proxy.mjs?v=20260924-shared-proxy-v3';
+import {launchMovieProxy, inspectMovieProxy, styleMovieVideo, startMovieProxy, canStartMovieProxy} from './proxy.mjs?v=20260928-playback-recovery-v4';
 (()=>{'use strict';
 
 const $=id=>document.getElementById(id);
@@ -259,13 +259,13 @@ async function watch(preferred){
   if(index>=order.length&&!recovered&&order.some(source=>source.proxy)){recovered=true;recoverNext=true;providerStates={};renderSources();sourcePanel(true);$('player-status').textContent='Reconnecting to Nyx?';return attempt(0);}
   if(index>=order.length){playbackVideo=null;currentProvider='';renderSources();sourcePanel(true);$('player-status').textContent='No source could start this movie. Try again shortly.';$('retry-player').hidden=false;return;}
   const source=order[index];currentProvider=source.id;providerStates[source.id]='Checking';renderSources();sourcePanel(true);
-  const controller=playbackRequest=new AbortController();let failed=false,started=false;
+  const controller=playbackRequest=new AbortController();let failed=false,started=false,startRequested=false;
   const active=()=>generation===watchGeneration&&playbackRequest===controller&&!controller.signal.aborted;
   if(source.url){
    const frame=document.createElement('iframe');frame.title=movie.title+' — '+source.name;frame.sandbox='allow-scripts allow-same-origin allow-forms allow-presentation';frame.allow='autoplay; fullscreen; picture-in-picture';frame.referrerPolicy='strict-origin-when-cross-origin';frame.allowFullscreen=true;
    if(source.proxy){
     $('watch-area').classList.add('proxy-playback');controlsReady(false);$('seek').disabled=true;$('seek').value=0;$('seek').style.setProperty('--played','0%');$('seek').style.setProperty('--buffered','0%');$('playback-time').textContent='0:00 / 0:00';icon($('toggle-play'),'play');$('toggle-play').setAttribute('aria-label','Play');$('picture-in-picture').hidden=true;$('start-proxy').hidden=true;$('proxy-loading').hidden=false;
-    proxyStarter=async()=>{if(!active())return;try{$('start-proxy').hidden=true;$('proxy-loading').hidden=false;sourcePanel(true);await startMovieProxy(frame);}catch{if(active())$('player-status').textContent='';}};
+    proxyStarter=async()=>{if(!active()||startRequested)return;startRequested=true;clearTimeout(playerTimer);playerTimer=setTimeout(unavailable,30000);try{$('start-proxy').hidden=true;$('proxy-loading').hidden=false;sourcePanel(true);$('player-status').textContent='Starting video...';await startMovieProxy(frame);}catch{if(active())unavailable();}};
    }else{$('watch-area').classList.add('external-playback');document.querySelector('.watch-header').insertBefore(document.querySelector('.playback-controls'),document.querySelector('.watch-brand'));}
    $('player').append(frame);$('player-status').textContent='Loading player…';$('retry-player').hidden=true;
    let lastTime=null;
@@ -287,13 +287,14 @@ async function watch(preferred){
    frame.addEventListener('load',()=>{if(!active()||started)return;providerStates[source.id]=source.proxy?'Loading video':'Player loaded';renderSources();$('player-status').textContent='';});
    frame.addEventListener('error',unavailable);
    if(source.proxy){
+    playerTimer=setTimeout(unavailable,30000);
     try{const recover=recoverNext;recoverNext=false;await launchMovieProxy(frame,source.url,controller.signal,{recover});if(!active()){frame.remove();return;}}
     catch{if(active())unavailable();return;}
     // Inspect only the active proxied frame. Loading is not playback evidence.
     const poll=setInterval(()=>{
      if(!active())return;
      const sample=inspectMovieProxy(frame);
-     if(!sample.video){const ready=canStartMovieProxy(frame),becameReady=ready&&$('start-proxy').hidden;$('start-proxy').hidden=!ready;$('proxy-loading').hidden=ready;if(becameReady)sourcePanel(false);}
+     if(!sample.video){const ready=!startRequested&&!sample.failed&&canStartMovieProxy(frame),becameReady=ready&&$('start-proxy').hidden;$('start-proxy').hidden=!ready;$('proxy-loading').hidden=ready;if(ready){clearTimeout(playerTimer);$('player-status').textContent='Press Play to start the movie.';}if(becameReady)sourcePanel(false);}
      if(sample.video&&sample.video!==playbackVideo){
       try{
        proxyCleanup?.();controlCleanup?.();proxyCleanup=styleMovieVideo(sample.video,sample.frames);playbackVideo=sample.video;controlCleanup=bindControls(playbackVideo);
@@ -306,7 +307,7 @@ async function watch(preferred){
     },1000);
     controller.signal.addEventListener('abort',()=>clearInterval(poll),{once:true});
    }else frame.src=source.url;
-   playerTimer=setTimeout(()=>{if(active()&&!started){if(source.id==='aniembed'||source.proxy&&!playbackVideo){unavailable();return;}$('player-status').textContent='Use the player’s Play button. If it cannot start, choose another source or reload.';$('retry-player').hidden=false;}},45000);
+   if(!source.proxy)playerTimer=setTimeout(()=>{if(active()&&!started){if(source.id==='aniembed'||source.proxy&&!playbackVideo){unavailable();return;}$('player-status').textContent='Use the player’s Play button. If it cannot start, choose another source or reload.';$('retry-player').hidden=false;}},45000);
    return;
   }
   const video=playbackVideo=document.createElement('video');video.controls=false;video.playsInline=true;video.preload='metadata';video.setAttribute('aria-label',movie.title+' video player');

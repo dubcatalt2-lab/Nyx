@@ -329,9 +329,9 @@ html[data-nyx-theme] body.browser-shell .nyx-account-button-default span::after{
 
 /* Native dropdown menus and form affordances are otherwise rendered with a
    browser-default navy/gray palette even when the surrounding control is themed. */
-html[data-nyx-theme] body.browser-shell ::selection{
-  background:var(--nyx-chrome-accent);
-  color:var(--theme-on-accent);
+html body.browser-shell ::selection{
+  background:#3390ff;
+  color:#fff;
 }
 
 /* High-specificity legacy hover rules used ID-weighted :is() selectors. Keep

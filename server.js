@@ -89,7 +89,7 @@ let catClassCoverUrls = new Set();
 const nyxCustomRoleLabelLimit = 64;
 const app = express();
 app.get(['/agents','/agents/'],(_req,res)=>res.redirect(302,'/apps/agents/'));
-app.get('/',(req,res,next)=>req.hostname==='nook.nyxlearning.org'?res.set({'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}).sendFile(join(staticRoot,'apps','agents','index.html'),{dotfiles:'allow'}):next());
+app.get('/',(req,res,next)=>['nook.nyxlearning.org','nook.donateyourboat.us'].includes(req.hostname)?res.set({'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}).sendFile(join(staticRoot,'apps','agents','index.html'),{dotfiles:'allow'}):next());
 app.get('/download/nyx-agents.zip',async(_req,res)=>{try{res.set({'Content-Type':'application/zip','Content-Disposition':'attachment; filename="Nyx-Agents.zip"','Cache-Control':'no-store'}).send(await companionZip(__dirname));}catch{res.status(503).send('The companion download is unavailable.');}});
 installTutsiCrawlerControls(app);
 app.get(["/proxy-assets.json", "/frontend-assets.json"], (_req,res)=>res.status(404).end());
@@ -578,7 +578,7 @@ function cacheNyxCustomHostnameDecision(hostname, allowed) {
 async function nyxCustomHostnameAllowed(hostname) {
   const normalized = normalizeNyxCustomHostname(hostname);
   if (!normalized) return false;
-  if(normalized==='nook.nyxlearning.org')return true;
+  if(['nook.nyxlearning.org','nook.donateyourboat.us'].includes(normalized))return true;
   const configuredHostnames = [...embeddedWispAllowedOrigins, process.env.NYX_PUBLIC_ORIGIN, ...tutsiHostnames]
     .map(value => normalizeNyxCustomHostname(value))
     .filter(Boolean);

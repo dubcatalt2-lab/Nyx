@@ -1162,7 +1162,9 @@
     message.querySelector('.ai-message-avatar').innerHTML=message._modelId?modelIcon({id:message._modelId,company:'Assistant'}):'<span class="ai-company-initial" aria-hidden="true">AI</span>';
   }
   function renderModelCompanies(){
-    const companies=[...new Map(modelCatalog.map(item=>{const company=modelCompany(item);return [company.key,company]})).values()].sort((a,b)=>a.label.localeCompare(b.label));
+    const leading=['openai','anthropic','gemini','deepseek','meta','qwen','xai','mistral'];
+    const rank=key=>leading.includes(key)?leading.indexOf(key):leading.length;
+    const companies=[...new Map(modelCatalog.map(item=>{const company=modelCompany(item);return [company.key,company]})).values()].sort((a,b)=>rank(a.key)-rank(b.key)||a.label.localeCompare(b.label));
     if(!companies.some(company=>company.key===modelCompanyFilter))modelCompanyFilter='';
     const button=company=>`<button type="button" data-model-company="${escapeHtml(company.key)}" title="${escapeHtml(company.label)}" aria-label="${escapeHtml(company.label)} models" aria-pressed="${modelCompanyFilter===company.key}">${modelCompanyIcon(company)}</button>`;
     modelCompaniesHost.innerHTML=[companies.filter((_,i)=>i%2===0),companies.filter((_,i)=>i%2===1)].map((items,i)=>`<div class="ai-company-rail" aria-label="${i?'Right':'Left'} company filters"><div class="ai-company-track">${items.map(button).join('')}</div></div>`).join('');
@@ -1305,6 +1307,10 @@
     modelMenu.hidden=false;
     modelMenu.showModal();
     syncCompanyMotion();
+    if(!modelCompanyFilter&&!modelSearch.value.trim()){
+      revealModelCompany('openai');
+      revealModelCompany('anthropic');
+    }
     modelPicker.classList.add('is-open');
     modelTrigger.setAttribute('aria-expanded','true');
     requestAnimationFrame(()=>{

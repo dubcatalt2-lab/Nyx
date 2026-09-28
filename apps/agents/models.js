@@ -1,3 +1,4 @@
+import {supportsConversationVoice} from './voice-capabilities.js';
 import '/js/ai-model-search.js';
 const escapeHtml=value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   const modelCompanies={
@@ -60,9 +61,10 @@ const escapeHtml=value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<'
   const colorCompanyIcons=new Set(["kling","assemblyai","alibaba","aionlabs", "arcee", "aws", "baidu", "bytedance", "claude", "cohere", "deepseek", "fireworks", "gemini", "gemma", "hunyuan", "kimi", "kwaipilot", "longcat", "meta", "microsoft", "minimax", "mistral", "morph", "nvidia", "openrouter", "perplexity", "poolside", "qwen", "sakana", "stepfun", "tencent", "upstage"]);
   const authorIcons={"thinkingmachines": "thinkingmachines-author.png", "inclusionai": "inclusionai-author.png", "thedrummer": "thedrummer-author.png", "typesafe": "typesafe-author.png", "unbiased": "unbiased-author.png", "writer": "writer-author.png", "stealth": "stealth-author.svg", "sao10k": "sao10k-author.webp", "anthracite-org": "anthracite-org-author.webp", "gryphe": "gryphe-author.webp", "undi95": "undi95-author.webp", "cognitivecomputations": "cognitivecomputations-author.png", "prism-ml": "prism-ml-author.png", "mancer": "mancer-author.png"};
   function modelCompanyIcon(company){
+    if(['aws','longcat'].includes(company.icon))return `<span class="ai-company-themed"><img class="ai-company-logo ai-company-logo-color ai-logo-dark" src="/apps/agents/icons/${company.icon}-dark.svg" alt="" aria-hidden="true"><img class="ai-company-logo ai-company-logo-color ai-logo-light" src="/assets/icons/ai-companies/${company.icon}-color.svg" alt="" aria-hidden="true"></span>`;
     if(authorIcons[company.icon])return `<img class="ai-company-logo ai-company-logo-color" src="/assets/icons/ai-companies/${authorIcons[company.icon]}" alt="" aria-hidden="true" width="22" height="22">`;
     if(colorCompanyIcons.has(company.icon))return `<img class="ai-company-logo ai-company-logo-color" src="/assets/icons/ai-companies/${company.icon}-color.svg" alt="" aria-hidden="true" width="22" height="22">`;
-    return company.icon ? `<span class="ai-company-logo" style="--company-logo:url('/assets/icons/ai-companies/${company.icon}.svg')" aria-hidden="true"></span>` : `<span class="ai-company-initial" aria-hidden="true">${escapeHtml(company.label.slice(0,2).toUpperCase())}</span>`;
+    return company.icon ? `<img class="ai-company-logo ai-company-logo-mono" src="/assets/icons/ai-companies/${company.icon}.svg" alt="" aria-hidden="true" width="22" height="22">` : `<span class="ai-company-initial" aria-hidden="true">${escapeHtml(company.label.slice(0,2).toUpperCase())}</span>`;
   }
   function modelIcon(item){
     const company=modelCompany(item);
@@ -130,11 +132,12 @@ export function setupPicker(select){
   }
 
  function render(){
- const visible=globalThis.NyxModelSearch.search(modelCatalog.filter(item=>!modelCompanyFilter||modelCompany(item).key===modelCompanyFilter),modelSearch.value.trim().toLowerCase(),modelCompany);
+ const voiceSearch=/^(voice|speech|speak|tts)$/i.test(modelSearch.value.trim());
+ const visible=globalThis.NyxModelSearch.search(modelCatalog.filter(item=>(!voiceSearch||supportsConversationVoice(item))&&(!modelCompanyFilter||modelCompany(item).key===modelCompanyFilter)),modelSearch.value.trim().toLowerCase(),modelCompany);
  document.querySelector('[data-model-count]').textContent=visible.length+' of '+modelCatalog.length;
  const groups=new Map();for(const item of visible){const company=modelCompany(item);if(!groups.has(company.key))groups.set(company.key,{company,items:[]});groups.get(company.key).items.push(item);}
  const date=item=>Number.isFinite(Number(item.created))?Number(item.created):0;
- const renderOption=(item,newest)=>'<button type="button" class="ai-model-option" role="option" aria-selected="'+(item.id===select.value)+'" data-id="'+escapeHtml(item.id)+'">'+modelIcon(item)+'<span class="ai-model-option-label"><strong>'+escapeHtml(item.label)+(newest?' <em>Newest</em>':'')+'</strong><small>'+escapeHtml(modelCompany(item).label)+(item.outputModalities?.includes('audio')?' &middot; Native voice':'')+(item.vision?' &middot; Vision':'')+(item.reasoning?' &middot; Reasoning':'')+(date(item)?' &middot; '+new Date(date(item)*1000).toLocaleDateString(undefined,{month:'short',year:'numeric'}):'')+'</small></span><span class="ai-model-option-check"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg></span></button>';
+ const renderOption=(item,newest)=>'<button type="button" class="ai-model-option" role="option" aria-selected="'+(item.id===select.value)+'" data-id="'+escapeHtml(item.id)+'">'+modelIcon(item)+'<span class="ai-model-option-label"><strong>'+escapeHtml(item.label)+(newest?' <em>Newest</em>':'')+'</strong><small>'+escapeHtml(modelCompany(item).label)+(supportsConversationVoice(item)?' &middot; Native voice':item.outputModalities?.includes('audio')?' &middot; Music / audio':'')+(item.vision?' &middot; Vision':'')+(item.reasoning?' &middot; Reasoning':'')+(date(item)?' &middot; '+new Date(date(item)*1000).toLocaleDateString(undefined,{month:'short',year:'numeric'}):'')+'</small></span><span class="ai-model-option-check"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg></span></button>';
  options.innerHTML=[...groups.values()].sort((a,b)=>compareCompanies(a.company,b.company)).map(group=>{group.items.sort((a,b)=>date(b)-date(a)||a.label.localeCompare(b.label,undefined,{numeric:true}));const newest=Math.max(0,...modelCatalog.filter(item=>modelCompany(item).key===group.company.key).map(date));return '<section class="ai-model-group" role="group" aria-label="'+escapeHtml(group.company.label)+'"><h3 class="ai-model-group-label">'+escapeHtml(group.company.label)+' <span>'+group.items.length+'</span></h3><div class="ai-model-group-grid">'+group.items.map(item=>renderOption(item,newest>0&&date(item)===newest)).join('')+'</div></section>';}).join('');
  if(!visible.length)options.textContent='No matching models.';
  options.scrollTop=0;
@@ -149,5 +152,7 @@ export function setupPicker(select){
  modelMenu.addEventListener('click',event=>{const company=event.target.closest('[data-model-company]');if(company){modelCompanyFilter=company.dataset.modelCompany;render();syncCompanyMotion();return;}const option=event.target.closest('[data-id]');if(option){select.value=option.dataset.id;select.dispatchEvent(new Event('change'));sync();modelMenu.close();}});
  select.addEventListener('change',sync);
  new MutationObserver(sync).observe(select,{attributes:true,childList:true});
- return {icon(id){return modelIcon(modelCatalog.find(item=>item.id===id)||{id,company:'Assistant'});},openVoice(){trigger.click();modelSearch.value='voice';render();},set(items){modelCatalog=items.map(item=>({...item,label:item.label||item.id}));renderModelCompanies();render();sync();}};
+ return {icon(id){return modelIcon(modelCatalog.find(item=>item.id===id)||{id,company:'Assistant'});},openVoice(){modelCompanyFilter='';trigger.click();modelSearch.value='voice';render();},set(items){modelCatalog=items.map(item=>({...item,label:item.label||item.id}));renderModelCompanies();render();sync();}};
 }
+
+document.addEventListener('error',event=>{const image=event.target;if(!(image instanceof HTMLImageElement)||!image.classList.contains('ai-company-logo'))return;const fallback=document.createElement('span');fallback.className='ai-company-initial';fallback.textContent=image.closest('[aria-label]')?.getAttribute('aria-label')?.slice(0,2).toUpperCase()||'AI';fallback.setAttribute('aria-hidden','true');image.replaceWith(fallback);},true);

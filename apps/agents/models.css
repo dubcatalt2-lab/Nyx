@@ -114,3 +114,11 @@
 
 #modelMenuClose{padding:0;line-height:1}
 .ai-model-group-label{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.03em;padding:13px 9px 9px;text-transform:none}.ai-model-group-label span{font-size:10px;color:var(--muted)}.ai-model-option-label em{display:inline-block;font-size:9px;font-style:normal;font-weight:400;border:1px solid #ffffff20;border-radius:4px;padding:1px 4px;margin-left:5px;color:#bac8bf}
+
+.ai-company-logo-mono{background:none;mask:none;-webkit-mask:none;object-fit:contain;filter:brightness(0) invert(1);opacity:1}
+:root[data-theme="light"] .ai-company-logo-mono{filter:brightness(0)}
+.ai-company-themed{display:block;width:22px;height:22px;flex-shrink:0}
+.ai-company-themed .ai-logo-light{display:none}
+:root[data-theme="light"] .ai-company-themed .ai-logo-dark{display:none}
+:root[data-theme="light"] .ai-company-themed .ai-logo-light{display:block}
+#modelTrigger .ai-company-themed{width:17px;height:17px}

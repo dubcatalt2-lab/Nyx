@@ -1,8 +1,11 @@
+import {readResponse} from './response.js';
+import {supportsConversationVoice} from './voice-capabilities.js';
 import {setupChats} from './chats.js?v=20260928-projects-v1';
 import {setupScreen} from './screen.js?v=20260927-chat';
-import {setupPicker} from './models.js?v=20260928-projects-v1';
-import {setupMedia} from './media.js?v=20260927-media';
+import {setupPicker} from './models.js?v=20260928-voice-v2';
+import {setupMedia} from './media.js?v=20260928-voice-v2';
 const $=id=>document.getElementById(id);
+$('model').addEventListener('change',()=>media.stopVoice());
 const iconPaths={account:'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0 M4 21v-2a8 8 0 0 1 16 0v2',code:'m8 6-6 6 6 6M16 6l6 6-6 6M14 3l-4 18',chat:'M4 4h16v12H9l-5 4z',sun:'M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1 1M18 18l1 1M5 19l1-1M18 6l1-1 M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0',moon:'M20 15A8 8 0 0 1 9 4a8 8 0 1 0 11 11z',compose:'M9 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-5 M16 3a2 2 0 0 1 3 3l-9 9-4 1 1-4z',pin:'M8 3h8l-1 6 4 4v2H5v-2l4-4z M12 15v6',folder:'M3 7V5h6l2 2h10v13H3z',file:'M6 3h8l4 4v14H6z M14 3v5h5',refresh:'M20 11a8 8 0 1 0-2.35 5.65 M20 4v7h-7',plus:'M12 5v14 M5 12h14',send:'m21 3-8.5 18-3.2-7.3L2 10.5 21 3z M9.3 13.7l4.2-4.2',stop:'M6 6h12v12H6z',close:'m6 6 12 12 M18 6 6 18',search:'M21 21l-5-5 M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',connect:'M8 3v5 M16 3v5 M5 8h14v3a7 7 0 0 1-14 0z M12 18v3',download:'m3 7 9-4 9 4v10l-9 4-9-4z M3 7l9 4 9-4 M12 11v10 M7 5l9 4',spark:'m12 3 2 6 6 3-6 2-2 6-2-6-6-2 6-3z'};
 function icon(name){return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="'+iconPaths[name]+'"></path></svg>';}
 for(const [id,name,label] of [['refresh','refresh',''],['newTask','compose','New chat'],['send','send',''],['stop','stop','Stop'],['closeLogin','close',''],['connect','connect','Connect folder'],['activityTab','spark','Activity'],['fileTab','file','Preview']]){const button=$(id);button.innerHTML=icon(name);if(label)button.append(document.createTextNode(label));}
@@ -11,7 +14,7 @@ $('themeToggle').onclick=()=>{const theme=document.documentElement.dataset.theme
 const download=document.querySelector('.aside-bottom a');download.innerHTML=icon('download')+'Download companion';
 const welcomeTemplate=document.getElementById('welcome').cloneNode(true);
 const picker=setupPicker($('model'));
-const media=setupMedia({notice,sizePrompt,canSend:()=>!running&&(chatMode||connected)&&!!auth?.currentUser&&!!$('model').value,voiceModel:()=>{if(!chatMode){notice('Switch to Chat for model voice conversations.');return false;}if(!models.find(item=>item.id===$('model').value)?.outputModalities?.includes('audio')){picker.openVoice();notice('Choose a model with native voice output.');return false;}return true;}});
+const media=setupMedia({notice,sizePrompt,canSend:()=>!running&&(chatMode||connected)&&!!auth?.currentUser&&!!$('model').value,voiceModel:()=>{if(!chatMode){notice('Switch to Chat for model voice conversations.');return false;}if(!supportsConversationVoice(models.find(item=>item.id===$('model').value))){picker.openVoice();notice('Choose a model with native voice output.');return false;}return true;}});
 const screen=setupScreen({notice});
 const chats=setupChats({notice,busy:()=>running,changed:renderRecentSuggestions,open:item=>{
  media.reset();screen.stop();history=item.messages||[];
@@ -46,7 +49,8 @@ function showThinking(model){$('feed').querySelector('.thinking-message')?.remov
 
 function sync(){ $('send').disabled=running||(!chatMode&&!connected)||!auth?.currentUser||!$('model').value;$('stop').hidden=!running;$('model').disabled=running;$('effortTrigger').disabled=running;$('newTask').disabled=running;$('chatMode').disabled=running;$('computerMode').disabled=running;$('connection').classList.toggle('online',connected);$('connection').innerHTML=connected?'<i></i> Companion connected':'<i></i> Companion offline';}
 async function local(route,body,signal){if(!pairingToken())throw Error('Open this page from Start-Nyx-Agents.cmd to pair your companion.');let response;try{response=await fetch('http://127.0.0.1:6768'+route,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+pairingToken(),...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),signal,targetAddressSpace:'loopback'});}catch(error){if(error.name==='AbortError')throw error;throw Error('Cannot reach the companion. Keep its window open and allow local-network access in your browser.');}const data=await response.json();if(!response.ok)throw Error(data.error||'Companion request failed.');return data;}
-async function api(route,body,signal){const token=await auth?.currentUser?.getIdToken();if(!token)throw Error('Sign in to your account first.');const response=await fetch(route,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token,'x-nyx-ai-provider':'shared',...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),signal});const data=await response.json();if(!response.ok)throw Error(data.error||'AI request failed.');return data;}
+async function api(route,body,signal,onProgress){const token=await auth?.currentUser?.getIdToken();if(!token)throw Error('Sign in to your account first.');const response=await fetch(route,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token,'x-nyx-ai-provider':'shared',...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),signal});return readResponse(response,onProgress);}
+
 async function loadModels(){try{const data=await api('/api/nyx-ai/models');models=(data.models||[]).filter(item=>(item.text!==false||item.outputModalities?.includes('audio'))&&!item.id.endsWith(':batch'));$('model').replaceChildren(...models.map(item=>new Option(item.label||item.id,item.id)));picker.set(models);sync();}catch(error){notice(error.message);}}
 async function files(path=''){const result=await local('/tool',{tool:'list',args:{path}});currentPath=path;$('files').replaceChildren();const add=(label,click,directory=false)=>{const button=document.createElement('button');button.className='file'+(directory?' directory':'');button.innerHTML=icon(directory?'folder':'file');button.append(document.createTextNode(label));button.onclick=()=>click().catch(error=>notice(error.message));$('files').append(button);};if(path)add('Parent folder',()=>files(path.split('/').slice(0,-1).join('/')),true);for(const entry of result.entries)add(entry.name,async()=>{if(entry.directory)return files(entry.path);const file=await local('/tool',{tool:'read',args:{path:entry.path}});$('previewPath').textContent=entry.path;$('previewContent').textContent=file.content;selectPanel(true);},entry.directory);}
 function selectPanel(file){$('preview').hidden=!file;$('activity').hidden=file;$('fileTab').classList.toggle('selected',file);$('activityTab').classList.toggle('selected',!file);}
@@ -129,8 +133,11 @@ $('composer').onsubmit=async event=>{event.preventDefault();if(running||(!chatMo
     if(chatMode){
       if([...chats.context(),...history].reduce((total,item)=>total+item.content.length,0)>21000)throw Error('This conversation is full. Start a new chat to continue.');
       showThinking(model);
-      const data=await api('/api/nyx-ai',{model,message:prompt,messages:[...chats.context(),...history.slice(-18)],stream:false,temporaryChat:true,responseDepth:({low:'off',medium:'normal',high:'extended'})[$('effort').value],reasoningEffort:$('effort').value,...(voice?{generateAudio:true,voice:$('voiceName').value.trim()||'alloy'}:{}),...(image?{image}:{})},controller.signal);
+      let partial;
+      const update=data=>{if(!data.text)return;partial||=message('assistant','',data.model||model);const follow=$('feed').scrollHeight-$('feed').scrollTop-$('feed').clientHeight<100;partial.querySelector('.message-content').textContent=data.text;if(follow)$('feed').scrollTop=$('feed').scrollHeight;};
+      const data=await api('/api/nyx-ai',{model,message:prompt,messages:[...chats.context(),...history.slice(-18)],stream:!voice,temporaryChat:true,responseDepth:({low:'off',medium:'normal',high:'extended'})[$('effort').value],reasoningEffort:$('effort').value,...(voice?{generateAudio:true,voice:$('voiceName').value.trim()||'alloy'}:{}),...(image?{image}:{})},controller.signal,update);
       if(typeof data.text!=='string'||!data.text.trim())throw Error('The model returned no text. Try again or select another model.');
+      partial?.remove();
       history.push({role:'assistant',content:data.text,model:data.model||model,metadata:{summary:String(data.metadata?.summary||'').slice(0,2400)}});message('assistant',data.text,data.model||model,data.metadata,history.at(-1));media.reply(data.text,data.audio);return;
     }
     for(let step=0;step<12;step++){
@@ -189,7 +196,7 @@ initialize();
 
 const voiceDialog=$('voiceDialog');
 function renderVoiceSettings(){
- const item=models.find(item=>item.id===$('model').value),native=chatMode&&item?.outputModalities?.includes('audio');
+ const item=models.find(item=>item.id===$('model').value),native=chatMode&&supportsConversationVoice(item);
  $('voiceModelLabel').textContent=item?.label||'No model selected';
  $('voicePresets').replaceChildren();
  if(native&&item.id.startsWith('openai/'))for(const name of ['alloy','echo','fable','onyx','nova','shimmer']){const button=document.createElement('button');button.type='button';button.textContent=name[0].toUpperCase()+name.slice(1);button.setAttribute('aria-pressed',String($('voiceName').value===name));button.onclick=()=>{$('voiceName').value=name;renderVoiceSettings();};$('voicePresets').append(button);}

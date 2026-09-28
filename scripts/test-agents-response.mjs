@@ -1,0 +1,15 @@
+﻿import assert from 'node:assert/strict';
+import {readResponse} from '../apps/agents/response.js';
+let controller,latest='',settled=false;
+const stream=new ReadableStream({start(c){controller=c;}});
+const pending=readResponse(new Response(stream,{headers:{'content-type':'text/event-stream'}}),data=>latest=data.text).then(data=>{settled=true;return data;});
+const send=data=>controller.enqueue(new TextEncoder().encode('data: '+(typeof data==='string'?data:JSON.stringify(data))+'\n\n'));
+send({model:'openai/test',choices:[{delta:{content:'First words'}}]});
+await new Promise(r=>setTimeout(r,10));assert.equal(latest,'First words');assert.equal(settled,false);
+send({choices:[{delta:{content:' arrive early'}}]});send({nyx_metadata:{summary:'A short summary'}});send('[DONE]');
+const result=await pending;assert.equal(result.text,'First words arrive early');assert.equal(result.metadata.summary,'A short summary');
+await assert.rejects(()=>readResponse(new Response('<!DOCTYPE html>',{status:502})),/temporarily unavailable/);
+await assert.rejects(()=>readResponse(new Response('data: {"choices":[{"delta":{"content":"partial"}}]}\n\n',{headers:{'content-type':'text/event-stream'}})),/before the reply finished/);
+await assert.rejects(()=>readResponse(new Response('data: {"error":{"message":"Provider unavailable"}}\n\n',{headers:{'content-type':'text/event-stream'}})),/Provider unavailable/);
+const replaced=await readResponse(new Response('data: {"choices":[{"delta":{"content":"bad"}}]}\n\ndata: {"nyx_replace":true,"choices":[{"delta":{"content":"fixed"}}]}\n\ndata: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}}));assert.equal(replaced.text,'fixed');
+console.log('PASS first words before completion, metadata, replacement, interrupted stream and gateway errors');

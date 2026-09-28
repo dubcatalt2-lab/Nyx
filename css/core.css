@@ -176,24 +176,24 @@ body.theme-ruby .custom-bg-image,
 body.theme-emerald .custom-bg-image,
 body.theme-sakura .custom-bg-image,
 body.theme-fresh .custom-bg-image{display:none!important}
-body.theme-ruby .glass-card,
-body.theme-ruby .quick-tile,
-body.theme-ruby .settings-card{background:linear-gradient(145deg,rgba(248,113,113,.28),rgba(127,29,29,.42))}
-body.theme-emerald .glass-card,
-body.theme-emerald .quick-tile,
-body.theme-emerald .settings-card{background:linear-gradient(145deg,rgba(52,211,153,.28),rgba(6,78,59,.42))}
-body.theme-sakura .glass-card,
-body.theme-sakura .quick-tile,
-body.theme-sakura .settings-card{background:linear-gradient(145deg,rgba(249,168,212,.3),rgba(190,24,93,.38))}
-body.theme-ruby .browser-mode-menu,
-body.theme-ruby .window,
-body.theme-ruby .settings-panel{background:linear-gradient(145deg,rgba(254,202,202,.38),rgba(239,68,68,.28),rgba(127,29,29,.42))!important}
-body.theme-emerald .browser-mode-menu,
-body.theme-emerald .window,
-body.theme-emerald .settings-panel{background:linear-gradient(145deg,rgba(187,247,208,.34),rgba(16,185,129,.28),rgba(6,95,70,.42))!important}
-body.theme-sakura .browser-mode-menu,
-body.theme-sakura .window,
-body.theme-sakura .settings-panel{background:linear-gradient(145deg,rgba(252,231,243,.36),rgba(244,114,182,.3),rgba(190,24,93,.4))!important}
+body:not(.browser-shell).theme-ruby .glass-card,
+body:not(.browser-shell).theme-ruby .quick-tile,
+body:not(.browser-shell).theme-ruby .settings-card{background:linear-gradient(145deg,rgba(248,113,113,.28),rgba(127,29,29,.42))}
+body:not(.browser-shell).theme-emerald .glass-card,
+body:not(.browser-shell).theme-emerald .quick-tile,
+body:not(.browser-shell).theme-emerald .settings-card{background:linear-gradient(145deg,rgba(52,211,153,.28),rgba(6,78,59,.42))}
+body:not(.browser-shell).theme-sakura .glass-card,
+body:not(.browser-shell).theme-sakura .quick-tile,
+body:not(.browser-shell).theme-sakura .settings-card{background:linear-gradient(145deg,rgba(249,168,212,.3),rgba(190,24,93,.38))}
+body:not(.browser-shell).theme-ruby .browser-mode-menu,
+body:not(.browser-shell).theme-ruby .window,
+body:not(.browser-shell).theme-ruby .settings-panel{background:linear-gradient(145deg,rgba(254,202,202,.38),rgba(239,68,68,.28),rgba(127,29,29,.42))!important}
+body:not(.browser-shell).theme-emerald .browser-mode-menu,
+body:not(.browser-shell).theme-emerald .window,
+body:not(.browser-shell).theme-emerald .settings-panel{background:linear-gradient(145deg,rgba(187,247,208,.34),rgba(16,185,129,.28),rgba(6,95,70,.42))!important}
+body:not(.browser-shell).theme-sakura .browser-mode-menu,
+body:not(.browser-shell).theme-sakura .window,
+body:not(.browser-shell).theme-sakura .settings-panel{background:linear-gradient(145deg,rgba(252,231,243,.36),rgba(244,114,182,.3),rgba(190,24,93,.4))!important}
 body.theme-ruby{
   --weather-text:#fff1f2;
   --weather-muted:#ffe4e6;
@@ -213,108 +213,108 @@ body.theme-sakura{
   --weather-control-border:rgba(249,168,212,.36);
 }
 
-body.theme-ruby button,
-body.theme-ruby select,
-body.theme-ruby input{border-color:rgba(248,113,113,.38)}
-body.theme-emerald button,
-body.theme-emerald select,
-body.theme-emerald input{border-color:rgba(52,211,153,.38)}
-body.theme-sakura button,
-body.theme-sakura select,
-body.theme-sakura input{border-color:rgba(249,168,212,.42)}
-body.theme-ruby .window button,
-body.theme-ruby .quick-tile,
-body.theme-ruby .settings-action{background:linear-gradient(145deg,rgba(248,113,113,.42),rgba(127,29,29,.76))!important}
-body.theme-emerald .window button,
-body.theme-emerald .quick-tile,
-body.theme-emerald .settings-action{background:linear-gradient(145deg,rgba(52,211,153,.42),rgba(6,78,59,.76))!important}
-body.theme-sakura .window button,
-body.theme-sakura .quick-tile,
-body.theme-sakura .settings-action{background:linear-gradient(145deg,rgba(249,168,212,.48),rgba(157,23,77,.68))!important}
-body.theme-ruby h1,
-body.theme-ruby h2,
-body.theme-ruby h3,
-body.theme-ruby .home-heading,
-body.theme-ruby .titlebar-title,
-body.theme-ruby .desktop-center-clock,
-body.theme-ruby .browser-shell-clock{background:linear-gradient(90deg,#fecaca,#fb7185,#991b1b);-webkit-background-clip:text;background-clip:text;color:transparent!important}
-body.theme-emerald h1,
-body.theme-emerald h2,
-body.theme-emerald h3,
-body.theme-emerald .home-heading,
-body.theme-emerald .titlebar-title,
-body.theme-emerald .desktop-center-clock,
-body.theme-emerald .browser-shell-clock{background:linear-gradient(90deg,#bbf7d0,#34d399,#065f46);-webkit-background-clip:text;background-clip:text;color:transparent!important}
-body.theme-sakura h1,
-body.theme-sakura h2,
-body.theme-sakura h3,
-body.theme-sakura .home-heading,
-body.theme-sakura .titlebar-title,
-body.theme-sakura .desktop-center-clock,
-body.theme-sakura .browser-shell-clock{background:linear-gradient(90deg,#fce7f3,#f9a8d4,#be185d);-webkit-background-clip:text;background-clip:text;color:transparent!important}
-body.theme-ruby .home-sub,
-body.theme-ruby .settings-main p,
-body.theme-ruby .settings-block label,
-body.theme-ruby .quick-tile span,
-body.theme-ruby .browser-mode-menu button{background:linear-gradient(90deg,#fee2e2,#fb7185);-webkit-background-clip:text;background-clip:text;color:transparent!important}
-body.theme-emerald .home-sub,
-body.theme-emerald .settings-main p,
-body.theme-emerald .settings-block label,
-body.theme-emerald .quick-tile span,
-body.theme-emerald .browser-mode-menu button{background:linear-gradient(90deg,#dcfce7,#34d399);-webkit-background-clip:text;background-clip:text;color:transparent!important}
-body.theme-sakura .home-sub,
-body.theme-sakura .settings-main p,
-body.theme-sakura .settings-block label,
-body.theme-sakura .quick-tile span,
-body.theme-sakura .browser-mode-menu button{background:linear-gradient(90deg,#fce7f3,#f9a8d4);-webkit-background-clip:text;background-clip:text;color:transparent!important}
-body.theme-ruby .urlbar,
-body.theme-ruby select,
-body.theme-ruby input{background:linear-gradient(145deg,rgba(127,29,29,.38),rgba(15,7,9,.74));color:#fee2e2}
-body.theme-emerald .urlbar,
-body.theme-emerald select,
-body.theme-emerald input{background:linear-gradient(145deg,rgba(6,78,59,.38),rgba(5,13,10,.74));color:#dcfce7}
-body.theme-sakura .urlbar,
-body.theme-sakura select,
-body.theme-sakura input{background:linear-gradient(145deg,rgba(157,23,77,.35),rgba(17,8,13,.74));color:#fce7f3}
-body.theme-ruby .browser-mode-menu button,
-body.theme-emerald .browser-mode-menu button,
-body.theme-sakura .browser-mode-menu button,
-body.theme-ruby .browser-bookmark-panel button,
-body.theme-emerald .browser-bookmark-panel button,
-body.theme-sakura .browser-bookmark-panel button{
+body:not(.browser-shell).theme-ruby button,
+body:not(.browser-shell).theme-ruby select,
+body:not(.browser-shell).theme-ruby input{border-color:rgba(248,113,113,.38)}
+body:not(.browser-shell).theme-emerald button,
+body:not(.browser-shell).theme-emerald select,
+body:not(.browser-shell).theme-emerald input{border-color:rgba(52,211,153,.38)}
+body:not(.browser-shell).theme-sakura button,
+body:not(.browser-shell).theme-sakura select,
+body:not(.browser-shell).theme-sakura input{border-color:rgba(249,168,212,.42)}
+body:not(.browser-shell).theme-ruby .window button,
+body:not(.browser-shell).theme-ruby .quick-tile,
+body:not(.browser-shell).theme-ruby .settings-action{background:linear-gradient(145deg,rgba(248,113,113,.42),rgba(127,29,29,.76))!important}
+body:not(.browser-shell).theme-emerald .window button,
+body:not(.browser-shell).theme-emerald .quick-tile,
+body:not(.browser-shell).theme-emerald .settings-action{background:linear-gradient(145deg,rgba(52,211,153,.42),rgba(6,78,59,.76))!important}
+body:not(.browser-shell).theme-sakura .window button,
+body:not(.browser-shell).theme-sakura .quick-tile,
+body:not(.browser-shell).theme-sakura .settings-action{background:linear-gradient(145deg,rgba(249,168,212,.48),rgba(157,23,77,.68))!important}
+body:not(.browser-shell).theme-ruby h1,
+body:not(.browser-shell).theme-ruby h2,
+body:not(.browser-shell).theme-ruby h3,
+body:not(.browser-shell).theme-ruby .home-heading,
+body:not(.browser-shell).theme-ruby .titlebar-title,
+body:not(.browser-shell).theme-ruby .desktop-center-clock,
+body:not(.browser-shell).theme-ruby .browser-shell-clock{background:linear-gradient(90deg,#fecaca,#fb7185,#991b1b);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+body:not(.browser-shell).theme-emerald h1,
+body:not(.browser-shell).theme-emerald h2,
+body:not(.browser-shell).theme-emerald h3,
+body:not(.browser-shell).theme-emerald .home-heading,
+body:not(.browser-shell).theme-emerald .titlebar-title,
+body:not(.browser-shell).theme-emerald .desktop-center-clock,
+body:not(.browser-shell).theme-emerald .browser-shell-clock{background:linear-gradient(90deg,#bbf7d0,#34d399,#065f46);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+body:not(.browser-shell).theme-sakura h1,
+body:not(.browser-shell).theme-sakura h2,
+body:not(.browser-shell).theme-sakura h3,
+body:not(.browser-shell).theme-sakura .home-heading,
+body:not(.browser-shell).theme-sakura .titlebar-title,
+body:not(.browser-shell).theme-sakura .desktop-center-clock,
+body:not(.browser-shell).theme-sakura .browser-shell-clock{background:linear-gradient(90deg,#fce7f3,#f9a8d4,#be185d);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+body:not(.browser-shell).theme-ruby .home-sub,
+body:not(.browser-shell).theme-ruby .settings-main p,
+body:not(.browser-shell).theme-ruby .settings-block label,
+body:not(.browser-shell).theme-ruby .quick-tile span,
+body:not(.browser-shell).theme-ruby .browser-mode-menu button{background:linear-gradient(90deg,#fee2e2,#fb7185);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+body:not(.browser-shell).theme-emerald .home-sub,
+body:not(.browser-shell).theme-emerald .settings-main p,
+body:not(.browser-shell).theme-emerald .settings-block label,
+body:not(.browser-shell).theme-emerald .quick-tile span,
+body:not(.browser-shell).theme-emerald .browser-mode-menu button{background:linear-gradient(90deg,#dcfce7,#34d399);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+body:not(.browser-shell).theme-sakura .home-sub,
+body:not(.browser-shell).theme-sakura .settings-main p,
+body:not(.browser-shell).theme-sakura .settings-block label,
+body:not(.browser-shell).theme-sakura .quick-tile span,
+body:not(.browser-shell).theme-sakura .browser-mode-menu button{background:linear-gradient(90deg,#fce7f3,#f9a8d4);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+body:not(.browser-shell).theme-ruby .urlbar,
+body:not(.browser-shell).theme-ruby select,
+body:not(.browser-shell).theme-ruby input{background:linear-gradient(145deg,rgba(127,29,29,.38),rgba(15,7,9,.74));color:#fee2e2}
+body:not(.browser-shell).theme-emerald .urlbar,
+body:not(.browser-shell).theme-emerald select,
+body:not(.browser-shell).theme-emerald input{background:linear-gradient(145deg,rgba(6,78,59,.38),rgba(5,13,10,.74));color:#dcfce7}
+body:not(.browser-shell).theme-sakura .urlbar,
+body:not(.browser-shell).theme-sakura select,
+body:not(.browser-shell).theme-sakura input{background:linear-gradient(145deg,rgba(157,23,77,.35),rgba(17,8,13,.74));color:#fce7f3}
+body:not(.browser-shell).theme-ruby .browser-mode-menu button,
+body:not(.browser-shell).theme-emerald .browser-mode-menu button,
+body:not(.browser-shell).theme-sakura .browser-mode-menu button,
+body:not(.browser-shell).theme-ruby .browser-bookmark-panel button,
+body:not(.browser-shell).theme-emerald .browser-bookmark-panel button,
+body:not(.browser-shell).theme-sakura .browser-bookmark-panel button{
   color:var(--theme-strong)!important;
   -webkit-text-fill-color:var(--theme-strong)!important;
   background-clip:border-box!important;
   -webkit-background-clip:border-box!important;
   text-shadow:0 1px 8px rgba(0,0,0,.48);
 }
-body.theme-ruby .browser-mode-menu,
-body.theme-emerald .browser-mode-menu,
-body.theme-sakura .browser-mode-menu,
-body.theme-ruby .browser-bookmark-panel,
-body.theme-emerald .browser-bookmark-panel,
-body.theme-sakura .browser-bookmark-panel{
+body:not(.browser-shell).theme-ruby .browser-mode-menu,
+body:not(.browser-shell).theme-emerald .browser-mode-menu,
+body:not(.browser-shell).theme-sakura .browser-mode-menu,
+body:not(.browser-shell).theme-ruby .browser-bookmark-panel,
+body:not(.browser-shell).theme-emerald .browser-bookmark-panel,
+body:not(.browser-shell).theme-sakura .browser-bookmark-panel{
   background:linear-gradient(145deg,color-mix(in srgb,var(--theme-b) 76%,#05070d),color-mix(in srgb,var(--theme-a) 32%,#05070d))!important;
   border-color:color-mix(in srgb,var(--theme-a) 52%,rgba(255,255,255,.22))!important;
 }
-body.theme-ruby .quick-tile:not(:hover),
-body.theme-emerald .quick-tile:not(:hover),
-body.theme-sakura .quick-tile:not(:hover){
+body:not(.browser-shell).theme-ruby .quick-tile:not(:hover),
+body:not(.browser-shell).theme-emerald .quick-tile:not(:hover),
+body:not(.browser-shell).theme-sakura .quick-tile:not(:hover){
   background:transparent!important;
   border-color:transparent!important;
   box-shadow:none!important;
   backdrop-filter:none!important;
 }
-body.theme-ruby .quick-tile:hover,
-body.theme-emerald .quick-tile:hover,
-body.theme-sakura .quick-tile:hover{
+body:not(.browser-shell).theme-ruby .quick-tile:hover,
+body:not(.browser-shell).theme-emerald .quick-tile:hover,
+body:not(.browser-shell).theme-sakura .quick-tile:hover{
   background:linear-gradient(145deg,color-mix(in srgb,var(--theme-a) 34%,rgba(255,255,255,.16)),color-mix(in srgb,var(--theme-b) 48%,rgba(7,10,16,.7)))!important;
   border-color:color-mix(in srgb,var(--theme-a) 45%,rgba(255,255,255,.22))!important;
 }
-body.theme-ruby select option,
-body.theme-emerald select option,
-body.theme-sakura select option,
-body.theme-fresh select option{
+body:not(.browser-shell).theme-ruby select option,
+body:not(.browser-shell).theme-emerald select option,
+body:not(.browser-shell).theme-sakura select option,
+body:not(.browser-shell).theme-fresh select option{
   color:#f8fafc!important;
   background:#111827!important;
 }

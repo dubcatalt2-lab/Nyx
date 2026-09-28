@@ -8,6 +8,8 @@ const requiredFiles = [
   "apps/agents/app.js",
   "apps/agents/style.css",
   "apps/agents/media.js",
+  "apps/agents/voice-capabilities.js",
+  "apps/agents/response.js",
   "apps/agents/screen.js",
   "apps/agents/chats.js",
   "apps/agents/models.js",

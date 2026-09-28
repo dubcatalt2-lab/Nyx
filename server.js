@@ -1,3 +1,4 @@
+import {supportsConversationVoice} from './apps/agents/voice-capabilities.js';
 import {configureModelVoice,collectModelVoice} from './lib/model-voice.mjs';
 import {agentInstruction,parseAgentReply} from './lib/agent-protocol.mjs';
 import {companionZip} from './lib/agent-download.mjs';
@@ -2896,7 +2897,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   }
   const generateAudio = req.body?.generateAudio === true;
   const generateImage = req.body?.generateImage === true;
-  if(generateAudio&&(computerAgent||codeEdit||generateImage||!modelInfo.outputModalities?.includes("audio")))return res.status(400).json({error:"Choose a native voice model in Chat mode."});
+  if(generateAudio&&(computerAgent||codeEdit||generateImage||!supportsConversationVoice({...modelInfo,id:model})))return res.status(400).json({error:"Choose a native voice model in Chat mode."});
   if(generateImage && (!modelInfo.imageGeneration || codeEdit))return res.status(400).json({error:'Choose an image-generation model in AI chat to create an image.'});
   const wantsStream = !generateAudio && !generateImage && req.body?.stream !== false;
   const responseDepth = ["off", "normal", "extended"].includes(req.body?.responseDepth) ? req.body.responseDepth : "normal";
@@ -3065,7 +3066,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       res.end();
       return;
     }
-    let data = generateAudio&&upstream.ok&&/text\/event-stream/i.test(upstream.headers.get("content-type")||"") ? await collectModelVoice(upstream) : await upstream.json().catch(() => ({}));
+    let data = generateAudio&&upstream.ok&&/text\/event-stream/i.test(upstream.headers.get("content-type")||"") ? await collectModelVoice(upstream,{format:providerPayload.audio.format}) : await upstream.json().catch(() => ({}));
     if (!upstream.ok || data?.error || data?.type === 'error') {
       const error=nyxAiProviderError(model,data,upstream.status,key,credential.personal);
       res.status(error.status).json({error:error.message});

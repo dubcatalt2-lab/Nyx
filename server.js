@@ -579,7 +579,7 @@ function cacheNyxCustomHostnameDecision(hostname, allowed) {
 async function nyxCustomHostnameAllowed(hostname) {
   const normalized = normalizeNyxCustomHostname(hostname);
   if (!normalized) return false;
-  if(['nook.nyxlearning.org','nook.donateyourboat.us'].includes(normalized))return true;
+  if(['nook.nyxlearning.org','nook.donateyourboat.us','robotics.ridgewoodstem.org'].includes(normalized))return true;
   const configuredHostnames = [...embeddedWispAllowedOrigins, process.env.NYX_PUBLIC_ORIGIN, ...tutsiHostnames]
     .map(value => normalizeNyxCustomHostname(value))
     .filter(Boolean);

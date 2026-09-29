@@ -1,3 +1,4 @@
+import {isDropAiActor,dropModelIsExpensive} from '../lib/ai-allowance.mjs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
@@ -19,7 +20,7 @@ assert.equal(aiCatalogPrice({pricing:{prompt:'oops',completion:0}}),null);
 
 const source=readFileSync('server.js','utf8'),ast=parse(source,{ecmaVersion:'latest',sourceType:'module'});
 const declaration=name=>{const n=ast.body.find(n=>n.type==='FunctionDeclaration'&&n.id.name===name);return source.slice(n.start,n.end)};
-const context=vm.createContext({hasFullAiCatalog,aiCatalogPrice,aiAllowanceConfig,isFreeAiModel,URL,process:{env:{NYX_AI_DAILY_BUDGET_USD:'100'}},nyxAiEndpoint:()=> 'https://openrouter.ai/api/v1/chat/completions',freeModelHealth:{available:()=>true}});
+const context=vm.createContext({isDropAiActor,dropModelIsExpensive,hasFullAiCatalog,aiCatalogPrice,aiAllowanceConfig,isFreeAiModel,URL,process:{env:{NYX_AI_DAILY_BUDGET_USD:'100'}},nyxAiEndpoint:()=> 'https://openrouter.ai/api/v1/chat/completions',freeModelHealth:{available:()=>true}});
 vm.runInContext(declaration('nyxAiBudgetCatalog'),context);
 const catalog=[{id:astra,text:true,pricing:{prompt:'.00001',completion:'.00005'}},{id:fable,text:true,pricing:{prompt:'.00001',completion:'.00005'}},{id:'new-vendor/new-chat',text:true,pricing:{prompt:'.000001',completion:'.000002'}},{id:'audio-only',text:false,pricing:{prompt:'.000001',completion:'.000002'}},{id:'unpriced-router',text:true,pricing:{prompt:-1,completion:-1}},{id:'openai/gpt-6-sol',text:true,pricing:{prompt:'.000002',completion:'.00001'}}];
 assert.deepEqual(Array.from(context.nyxAiBudgetCatalog(catalog,false,null,{uid:fullCatalogUid}),x=>x.id),catalog.map(x=>x.id));

@@ -67,4 +67,6 @@ body:not(.chat-mode) #composer{margin-bottom:0;flex-shrink:0}
 
 #apiKeys{justify-content:flex-start;background:transparent;border:0;padding:7px 6px;color:var(--muted)}#apiKeys[aria-pressed=true]{color:var(--text)}#keyDialog{width:min(440px,calc(100vw - 24px));max-height:85dvh;overflow:auto}#keyDialog .muted{font-size:11px;line-height:1.6;color:var(--muted)}#keyDialog hr{border:0;border-top:1px solid var(--line);margin:20px 0}#keyError{color:var(--error)}.sidebar-collapsed #apiKeys span{display:none}
 
+.continue-response{display:inline-flex;margin-top:14px;padding:7px 12px;border:1px solid #8885;border-radius:10px;background:transparent;color:inherit;font:inherit;font-size:12px;cursor:pointer}
+
 #discordCommunity{justify-content:flex-start;border:0;background:transparent;color:var(--muted);font-size:12px;padding:7px 6px;min-height:32px}#discordCommunity:hover{background:var(--wash-08);color:var(--text)}#discordCommunity svg{width:18px;height:18px;flex-shrink:0}.sidebar-collapsed #discordCommunity{width:38px;height:36px;justify-content:center;padding:8px;gap:0}.sidebar-collapsed #discordCommunity span{display:none}

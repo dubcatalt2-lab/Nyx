@@ -67,3 +67,5 @@ await request('What is on nyxlearning.org');
 assert.equal(payload.tools.length,2);
 
 assert.equal(aiWantsWeb('Please read nyxlearning.org.'),true);
+
+event.choices[0].finish_reason="length";stream=true;assert.match((await request("Write a long answer")).output,/"finish_reason":"length"/);console.log("PASS response-limit finish reason reaches streaming clients");

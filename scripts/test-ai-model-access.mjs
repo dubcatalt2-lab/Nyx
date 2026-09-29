@@ -1,3 +1,4 @@
+import {isDropAiActor,dropModelIsExpensive} from '../lib/ai-allowance.mjs';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
@@ -8,8 +9,8 @@ const app=express(),source=readFileSync('server.js','utf8');
 const models=[{id:'google/gemini-2.5-flash-lite'},{id:'openai/gpt-5.6-luna'},{id:'deepseek/deepseek-v4.1-flash'},{id:'qwen/qwen3.7-flash'},{id:'inception/mercury-2.5'},{id:'openai/gpt-5.6-sol-pro'}];
 models.push({id:'openai/gpt-6-luna-pro'},{id:'anthropic/claude-opus-5.5'},{id:'openai/gpt-6-luna'},{id:'openai/gpt-6-sol'},{id:'openai/gpt-6-astra'},{id:'anthropic/claude-fable-5.1'});
 const start=source.indexOf("app.get('/api/nyx-ai/models',");
-const end=source.indexOf('\napp.post("/api/nyx-ai"',start);
-vm.runInNewContext(source.slice(start,end),{app,aiModelAllowed,hasFullAiCatalog,nyxAiKey:()=> 'fixture',
+const end=source.indexOf('\ninstallAiMedia(',start);
+vm.runInNewContext(source.slice(start,end),{app,isDropAiActor,dropModelIsExpensive,aiModelAllowed,hasFullAiCatalog,nyxAiKey:()=> 'fixture',
  nyxAiPremiumEntitlement:async req=>({uid:req.get('authorization')==='Bearer specific'?fullCatalogUid:'other',premium:req.get('authorization')==='Bearer premium',owner:['Bearer owner','Bearer specific'].includes(req.get('authorization'))}),
  nyxAiRequestCredential:()=>({key:'fixture'}),nyxAiAvailableModels:async()=>models});
 const server=app.listen(0,'127.0.0.1');await new Promise(resolve=>server.once('listening',resolve));

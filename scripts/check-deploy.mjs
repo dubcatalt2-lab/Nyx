@@ -2,6 +2,19 @@ import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
+  "apps/drop/index.html",
+  "apps/drop/logo.svg",
+  "apps/drop/astra.png",
+  "apps/drop/presence.mjs",
+  "apps/drop/style.css",
+  "apps/drop/app.mjs",
+  "apps/drop/traffic.mjs",
+  "apps/drop/ai-embed.mjs",
+  "apps/drop/ai.css",
+  "apps/drop/games.html",
+  "apps/drop/games.css",
+  "apps/drop/tube.html",
+  "apps/drop/tube.css",
   "apps/agents/index.html",
   "apps/agents/icons/nook.svg",
   "apps/agents/fonts/Quicksand-Variable.ttf",

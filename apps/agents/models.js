@@ -76,13 +76,14 @@ const escapeHtml=value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<'
 const companyOrder=['openai','anthropic','xai','deepseek','gemini','meta','qwen','mistral','moonshot','zai','minimax'];
 const companyRank=key=>companyOrder.includes(key)?companyOrder.indexOf(key):companyOrder.length;
 const compareCompanies=(a,b)=>companyRank(a.key)-companyRank(b.key)||a.label.localeCompare(b.label);
-export function setupPicker(select){
+export function setupPicker(select,{compact=false}={}){
  const modelMenu=document.getElementById('modelMenu'),modelSearch=document.getElementById('modelSearch'),modelCompaniesHost=document.getElementById('modelCompanies'),options=document.getElementById('modelOptions'),trigger=document.getElementById('modelTrigger');
  let modelCatalog=[],modelCompanyFilter='';
   function renderModelCompanies(){
     const companies=[...new Map(modelCatalog.map(item=>{const company=modelCompany(item);return [company.key,company]})).values()].sort(compareCompanies);
     if(!companies.some(company=>company.key===modelCompanyFilter))modelCompanyFilter='';
     const button=company=>`<button type="button" data-model-company="${escapeHtml(company.key)}" title="${escapeHtml(company.label)}" aria-label="${escapeHtml(company.label)} models" aria-pressed="${modelCompanyFilter===company.key}">${modelCompanyIcon(company)}</button>`;
+    if(compact){modelCompaniesHost.innerHTML=companies.map(company=>button(company).replace('</button>','<span>'+escapeHtml(company.label)+'</span></button>')).join('');syncCompanyMotion();return;}
     modelCompaniesHost.innerHTML=[companies.filter((_,i)=>i%2===0),companies.filter((_,i)=>i%2===1)].map((items,i)=>`<div class="ai-company-rail" aria-label="${i?'Right':'Left'} company filters"><div class="ai-company-track">${items.map(button).join('')}</div></div>`).join('');
     modelCompaniesHost.querySelectorAll('.ai-company-rail').forEach(rail=>{
       const copy=rail.firstElementChild.cloneNode(true);
@@ -101,7 +102,7 @@ export function setupPicker(select){
     const stopped=reduced;
     modelMenu.querySelector('[data-model-company=""]').setAttribute('aria-pressed',String(!modelCompanyFilter));
     modelCompaniesHost.querySelectorAll('[data-loop-copy]').forEach(copy=>copy.hidden=stopped);
-    if(modelMenu.hidden||stopped)return;
+    if(modelMenu.hidden||stopped||compact)return;
     let previous=0;
     const tick=time=>{
       const delta=previous?Math.min(time-previous,50):0;previous=time;
@@ -121,6 +122,7 @@ export function setupPicker(select){
 
   function revealModelCompany(key){
     if(!key||modelMenu.hidden)return;
+    if(compact){[...modelCompaniesHost.querySelectorAll('button')].find(button=>button.dataset.modelCompany===key)?.scrollIntoView({block:'nearest',inline:'nearest'});return;}
     const button=[...modelCompaniesHost.querySelectorAll('.ai-company-track:not([data-loop-copy]) button')].find(item=>item.dataset.modelCompany===key);
     const rail=button?.closest('.ai-company-rail');
     if(!rail)return;
@@ -137,7 +139,7 @@ export function setupPicker(select){
  document.querySelector('[data-model-count]').textContent=visible.length+' of '+modelCatalog.length;
  const groups=new Map();for(const item of visible){const company=modelCompany(item);if(!groups.has(company.key))groups.set(company.key,{company,items:[]});groups.get(company.key).items.push(item);}
  const date=item=>Number.isFinite(Number(item.created))?Number(item.created):0;
- const renderOption=(item,newest)=>'<button type="button" class="ai-model-option" role="option" aria-selected="'+(item.id===select.value)+'" data-id="'+escapeHtml(item.id)+'">'+modelIcon(item)+'<span class="ai-model-option-label"><strong>'+escapeHtml(item.label)+(newest?' <em>Newest</em>':'')+'</strong><small>'+escapeHtml(modelCompany(item).label)+(supportsConversationVoice(item)?' &middot; Native voice':item.outputModalities?.includes('audio')?' &middot; Music / audio':'')+(item.vision?' &middot; Vision':'')+(item.reasoning?' &middot; Reasoning':'')+(date(item)?' &middot; '+new Date(date(item)*1000).toLocaleDateString(undefined,{month:'short',year:'numeric'}):'')+'</small></span><span class="ai-model-option-check"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg></span></button>';
+ const renderOption=(item,newest)=>'<button type="button" class="ai-model-option" role="option" aria-selected="'+(item.id===select.value)+'" data-id="'+escapeHtml(item.id)+'">'+modelIcon(item)+'<span class="ai-model-option-label"><strong>'+escapeHtml(item.label)+(newest?' <em>Newest</em>':'')+'</strong><small>'+escapeHtml(modelCompany(item).label)+(supportsConversationVoice(item)?' &middot; Native voice':item.outputModalities?.includes('audio')?' &middot; Music / audio':'')+(item.vision?' &middot; Vision':'')+(item.reasoning?' &middot; Reasoning':'')+(date(item)?' &middot; '+new Date(date(item)*1000).toLocaleDateString(undefined,{month:'short',year:'numeric'}):'')+(compact&&item.allowanceLabel?' &middot; '+escapeHtml(item.allowanceLabel):'')+'</small></span><span class="ai-model-option-check"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg></span></button>';
  options.innerHTML=[...groups.values()].sort((a,b)=>compareCompanies(a.company,b.company)).map(group=>{group.items.sort((a,b)=>date(b)-date(a)||a.label.localeCompare(b.label,undefined,{numeric:true}));const newest=Math.max(0,...modelCatalog.filter(item=>modelCompany(item).key===group.company.key).map(date));return '<section class="ai-model-group" role="group" aria-label="'+escapeHtml(group.company.label)+'"><h3 class="ai-model-group-label">'+escapeHtml(group.company.label)+' <span>'+group.items.length+'</span></h3><div class="ai-model-group-grid">'+group.items.map(item=>renderOption(item,newest>0&&date(item)===newest)).join('')+'</div></section>';}).join('');
  if(!visible.length)options.textContent='No matching models.';
  options.scrollTop=0;

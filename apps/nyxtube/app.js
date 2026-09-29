@@ -1,6 +1,9 @@
 (() => {
   "use strict";
 
+  const dropTube = document.body.classList.contains('drop-tube');
+  const allowedVideo = video => !dropTube || (!video?.isShort && !/\/shorts\//i.test(video?.sourceUrl || ''));
+  const filterVideos = videos => (Array.isArray(videos) ? videos : []).filter(allowedVideo);
   const $ = selector => document.querySelector(selector);
   const $$ = selector => [...document.querySelectorAll(selector)];
   const views = Object.fromEntries($$("[data-view]").map(view => [view.dataset.view, view]));
@@ -31,12 +34,13 @@
   ].map(name => [name.replace(/-([a-z])/g, (_match, letter) => letter.toUpperCase()), $(`[data-${name}]`)]));
 
   function applyTheme() {
+    if (dropTube) return;
     const raw = String(localStorage.getItem("theme") || localStorage.getItem("nyxTheme") || "").toLowerCase();
     const theme = ["ruby", "emerald", "sakura", "fresh"].find(name => raw.includes(name));
     if (theme) document.body.classList.add(`theme-${theme}`);
   }
   const icon = id => `<svg aria-hidden="true"><use href="#${id}"></use></svg>`;
-  function notice(message = "") { refs.notice.textContent = message; refs.notice.hidden = !message; }
+  function notice(message = "") { refs.notice.textContent = dropTube ? String(message).replace(/NyxTube/g, 'DropTube') : message; refs.notice.hidden = !message; }
   async function json(url, signal) {
     const response = await fetch(url, { credentials: "same-origin", headers: { Accept: "application/json" }, signal });
     let payload = null;
@@ -99,7 +103,7 @@
     }));
   }
   function renderVideos(videos) {
-    state.videos = Array.isArray(videos) ? videos : [];
+    state.videos = filterVideos(videos);
     const catalog = new Map(state.catalog.map(video => [video.id, video]));
     state.videos.forEach(video => { if (video?.id) catalog.set(video.id, video); });
     state.catalog = [...catalog.values()].slice(-60);
@@ -154,10 +158,12 @@
     const payload = await json(`/api/nyxtube/video?id=${encodeURIComponent(videoId)}`);
     const video = Array.isArray(payload?.videos) ? payload.videos[0] : null;
     if (!video?.id) throw new Error("That video could not be loaded in NyxTube.");
+    if (!allowedVideo(video)) { await loadFeed(); notice("This video is not available in DropTube."); return; }
     state.catalog = [video];
     openWatch(video);
   }
   function showView(name) {
+    if (dropTube && name === 'shorts') name = 'home';
     state.view = name;
     Object.entries(views).forEach(([key, view]) => { view.hidden = key !== name; });
     $$("[data-view-button]").forEach(button => button.classList.toggle("active", button.dataset.viewButton === (name === "watch" ? "home" : name)));
@@ -232,6 +238,7 @@
     return /^UC[A-Za-z0-9_-]{22}$/.test(channelId) ? `https://www.youtube.com/channel/${channelId}` : "";
   }
   function renderChannelVideoCards(videos) {
+    videos = filterVideos(videos);
     refs.channelVideos.replaceChildren(...videos.map(video => {
       const card = document.createElement("article"); card.className = "video-card";
       const cover = document.createElement("button"); cover.className = "video-cover"; cover.type = "button";
@@ -265,7 +272,7 @@
       refs.channelAvatar.replaceChildren();
       if (avatar) { const image = document.createElement("img"); image.alt = ""; image.src = avatar; image.referrerPolicy = "no-referrer"; image.addEventListener("error", () => { refs.channelAvatar.textContent = refs.channelTitle.textContent.slice(0, 1).toUpperCase(); }, { once: true }); refs.channelAvatar.append(image); }
       else refs.channelAvatar.textContent = refs.channelTitle.textContent.slice(0, 1).toUpperCase();
-      const videos = Array.isArray(payload?.videos) ? payload.videos : [];
+      const videos = filterVideos(payload?.videos);
       refs.channelStatus.textContent = videos.length ? `${videos.length} recent videos` : "No public videos available";
       renderChannelVideoCards(videos);
     } catch (error) {
@@ -299,6 +306,7 @@
   }
   async function openWatch(video, { recoveryMessage = "" } = {}) {
     if (!video?.id) return;
+    if (!allowedVideo(video)) { showView("home"); notice("This video is not available in DropTube."); return; }
     if(state.watchVideo && state.watchVideo.id!==video.id)state.watchTrail.push(state.watchVideo);
     if(state.watchTrail.length>50)state.watchTrail.shift();
     stopWatch();
@@ -316,6 +324,7 @@
         if (state.view !== "watch" || state.watchGeneration !== requestGeneration) return;
         const detail = payload?.videos?.[0];
         if (!detail || detail.id !== video.id) throw new Error("That video is unavailable or restricted.");
+        if (!allowedVideo(detail)) { showView("home"); notice("This video is not available in DropTube."); return; }
         video = detail;
         state.catalog = state.catalog.map(item => item.id === detail.id ? detail : item);
       } catch (error) {
@@ -347,7 +356,7 @@
   }
   function updatePlayerSwitch(native) {
     refs.watchEngine.value = native ? "native" : "youtube";
-    refs.watchEngine.textContent = native ? "Switch to embedded" : "Switch to NyxTube";
+    refs.watchEngine.textContent = native ? "Switch to embedded" : (dropTube ? "Switch to DropTube" : "Switch to NyxTube");
   }
   async function createWatch(video, forceDirect = false, fallback = false, restore = null) {
     finishWatchSpace({ cancel: true });
@@ -383,7 +392,7 @@
   function relatedVideos(selected, limit = 10) {
     const seen = new Set();
     return [...state.catalog, ...state.shorts]
-      .filter(video => video?.id && video.id !== selected.id && !state.failedVideoIds.has(video.id) && !seen.has(video.id) && seen.add(video.id))
+      .filter(video => allowedVideo(video) && video?.id && video.id !== selected.id && !state.failedVideoIds.has(video.id) && !seen.has(video.id) && seen.add(video.id))
       .sort((left, right) => relatedScore(right, selected) - relatedScore(left, selected))
       .slice(0, limit);
   }
@@ -588,6 +597,7 @@
   }
 
   async function loadShorts() {
+    if (dropTube) return;
     notice(); refs.shortLoading.hidden = false;
     try {
       if (!state.shorts.length) state.shorts = (await json("/api/nyxtube/shorts?limit=16"))?.videos || [];
@@ -697,6 +707,7 @@
     }, 250);
   }
   function stopShorts() {
+    if (dropTube) return;
     finishShortHold(true);
     shortGeneration++;clearShortLoadTimer();clearInterval(state.shortTimer);state.shortTimer=0;
     for(const entry of preparedShorts.values()){entry.removed=true;entry.player?.destroy?.();entry.node?.remove();}
@@ -757,7 +768,7 @@
 
   function bind() {
     addEventListener("message", event => {
-      if (event.origin !== location.origin || event.data?.type !== "nyx:nyxtube-profile" || event.data.requestId !== state.profileRequestId) return;
+      if (event.origin !== location.origin || event.source !== parent || event.data?.type !== "nyx:nyxtube-profile" || event.data.requestId !== state.profileRequestId) return;
       renderProfile(event.data.profile);
     });
     refs.profileButton.addEventListener("click", () => parent.postMessage({ type: "nyx:nyxtube-open-profile", uid: state.profile.uid }, location.origin));
@@ -820,6 +831,7 @@
       shortWheelAt=now;shortWheelTotal+=event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?innerHeight:1);
       if(Math.abs(shortWheelTotal)>=40){gestureShort(Math.sign(shortWheelTotal));shortWheelTotal=0;}
     },{passive:false});
+    if (!dropTube) {
     refs.shortStage.addEventListener('pointerdown',event=>{
       if(event.isPrimary&&event.button===0&&!event.target.closest('button,a,input')){beginShortHold('pointer');refs.shortStage.setPointerCapture(event.pointerId)}
       if(event.pointerType!=='touch'||event.target.closest('button,a,input'))return;
@@ -839,6 +851,7 @@
     refs.shortCaptions.addEventListener("click", () => { state.shortCaptions = !state.shortCaptions; if (!setCaptions(state.shortPlayer, state.shortCaptions, refs.shortCaptions)) state.shortCaptions = !state.shortCaptions; });
     refs.shortFullscreen.addEventListener("click", () => fullscreen(refs.shortStage));
     $("[data-short-previous]").addEventListener("click", () => changeShort(-1)); $("[data-short-next]").addEventListener("click", () => changeShort(1));
+    }
     $('[data-shortcut-help-close]').addEventListener('click',()=>{$('[data-shortcut-help]').close();refs.watchStage.focus()});
     $('[data-shortcut-help-open]').addEventListener('click',showShortcutHelp);
     refs.watchStage.addEventListener('dblclick',event=>{if(event.target.closest('[data-watch-gesture]')){finishWatchSpace({cancel:true});fullscreen(refs.watchStage)}});
@@ -895,6 +908,7 @@
     });
   }
 
+  if(dropTube)addEventListener('message',event=>{if(event.origin===location.origin&&event.source===parent&&event.data?.type==='drop:tube-pause')state.watchPlayer?.pauseVideo?.();});
   applyTheme(); bind(); skeletons(); requestProfile();
   json("/api/nyxtube/status").then(status => {
     if (!status?.configured) throw new Error("NyxTube is not configured yet.");

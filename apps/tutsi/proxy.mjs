@@ -63,6 +63,7 @@ async function transport(settings) {
     const client=new Client({wisp:url,websocket:url,wisp_v2:settings.transport!=='wisp'});
     if(endpoint){const close=client.close?.bind(client);client.close=()=>{endpoint.close();close?.();};}
     try{if(typeof client.init==='function'&&!client.ready)await bounded(client.init(),10000,'Relay initialization timed out.')}catch(error){client.close?.();throw error}
+    if(typeof settings.onTraffic==='function'){const {measureTransport}=await import('/apps/drop/traffic.mjs');measureTransport(client,settings.onTraffic);}
     return client;
   }});
   try{await connection.init();return protectTransport(connection,()=>protectionPolicy)}catch(error){connection.close();throw error}
@@ -160,6 +161,7 @@ let navigationId = 0;
 let navigationQueue = Promise.resolve();
 export function browse(url, settings, element) {
   updateProtectionPolicy(settings);
+  element.tutsiSourceUrl=url;
   const request = ++navigationId;
   navigationRequests.set(element,request);
   const navigate = async () => {
@@ -195,17 +197,10 @@ export function control(action, element) {
 }
 export function reloadBrowser(element, settings) {
   if(!element)return Promise.resolve();
-  const request=++navigationId;
-  navigationRequests.set(element,request);
-  const reload=async()=>{
-    if(request!==navigationRequests.get(element)||!element.isConnected)return;
-    await engine(settings);
-    if(request!==navigationRequests.get(element)||!element.isConnected)return;
-    control('reload',element);
-  };
-  const result=navigationQueue.then(reload,reload);
-  navigationQueue=result.catch(()=>{});
-  return result;
+  // Native reload cannot recover a frame that has not been created yet. Re-enter
+  // the navigation queue with the source URL so cold-start reloads remain valid.
+  const url=currentWebsiteUrl(element);
+  return url?browse(url,settings,element):Promise.resolve();
 }
 export function closeBrowser(element) {
   if(!element)return;

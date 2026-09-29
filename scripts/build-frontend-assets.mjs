@@ -61,7 +61,7 @@ export async function buildFrontendAssets(output,files,lessonHtml) {
     await writeFile(join(output,path),source);
     if(aliases['/'+path])await writeFile(join(output,aliases['/'+path].slice(1)),source);
   }
-  for(const path of ['index.html','apps/tutsi/index.html']) {
+  for(const path of ['index.html','apps/tutsi/index.html','apps/drop/index.html']) {
     const original=await readFile(join(output,path),'utf8');
     const loader=posix.join(posix.dirname('/'+path),'@r'+createHash('sha256').update('entry:'+path).digest('hex').slice(0,24)+'!.js');
     // Decode as UTF-8, preserve the original document URL, script order and handlers.
@@ -71,5 +71,5 @@ export async function buildFrontendAssets(output,files,lessonHtml) {
     await writeFile(join(output,path),shell);
   }
   await writeFile(join(output,'frontend-assets.json'),JSON.stringify({version:1,aliases}));
-  console.log(`Frontend build: ${candidates.length} stable script aliases; lesson entry documents for both sites.`);
+  console.log(`Frontend build: ${candidates.length} stable script aliases; lesson entry documents for Nyx, Tutsi and Drop.`);
 }

@@ -1,3 +1,4 @@
+const dropGames = document.body.classList.contains('drop-games');
 const elements = {
   grid: document.getElementById('gameGrid'),
   search: document.getElementById('gameSearch'),
@@ -62,7 +63,7 @@ const GAME_LIBRARIES = Object.freeze([
   { id: 'lumin', label: 'LuminSDK', shortLabel: 'Lumin', description: 'Games delivered through LuminSDK' },
   { id: 'gn', label: 'GN Math', shortLabel: 'GN', description: 'The GN Math collection' },
   { id: 'gms', label: 'GMS', shortLabel: 'GMS', description: 'The GMS collection' },
-  { id: 'local', label: 'Nyx Archive', shortLabel: 'Nyx', description: 'Games stored with Nyx' },
+  { id: 'local', label: dropGames ? 'Archive' : 'Nyx Archive', shortLabel: dropGames ? 'Archive' : 'Nyx', description: dropGames ? 'The Drop game archive' : 'Games stored with Nyx' },
   { id: 'catclass', label: 'CatClass', shortLabel: 'CatClass', description: 'Community game sources' },
   { id: 'duckmath', label: 'DuckMath', shortLabel: 'DuckMath', description: 'Extra fallback sources' },
   { id: 'misc', label: 'Miscellaneous', shortLabel: 'Misc', description: 'Games without cover art' }
@@ -204,7 +205,7 @@ function cloudStorageSnapshot() {
   try {
     for (let index = 0; index < localStorage.length && Object.keys(snapshot).length < 64; index += 1) {
       const key = localStorage.key(index);
-      if (!key || key.startsWith('nyx.') || key.startsWith('firebase:') || /[\u0000-\u001f]/.test(key)) continue;
+      if (!key || /^(?:nyx\.|drop\.|nook\.|tutsi\.|firebase:)/.test(key) || /[\u0000-\u001f]/.test(key)) continue;
       const value = localStorage.getItem(key);
       if (typeof value !== 'string' || new TextEncoder().encode(value).length > 24_000) continue;
       total += new TextEncoder().encode(key).length + new TextEncoder().encode(value).length;
@@ -234,7 +235,7 @@ async function restoreCloudGameStorage(game) {
     const result = await requestCloudGameSave('nyx:cloud-game-load', { gameKey: game.key });
     const storage = result?.storage && typeof result.storage === 'object' ? result.storage : {};
     Object.entries(storage).forEach(([key, value]) => {
-      if (typeof key === 'string' && typeof value === 'string' && !key.startsWith('nyx.') && !key.startsWith('firebase:')) localStorage.setItem(key, value);
+      if (typeof key === 'string' && typeof value === 'string' && !/^(?:nyx\.|drop\.|nook\.|tutsi\.|firebase:)/.test(key)) localStorage.setItem(key, value);
     });
   } catch {}
   return cloudStorageSnapshot();
@@ -745,7 +746,7 @@ function visibleGames() {
   const games = state.games.filter(game =>
     (state.activeLibrary === 'misc'
       ? !game.hasIcon
-      : (game.hasIcon || query) && (state.activeLibrary === 'all' || gameSources(game).some(source => source.source === state.activeLibrary)))
+      : (game.hasIcon || query || dropGames) && (state.activeLibrary === 'all' || gameSources(game).some(source => source.source === state.activeLibrary)))
       && (!query || game.title.toLowerCase().includes(query))
   );
   return games.sort((a, b) => elements.sort.value === 'za'
@@ -771,9 +772,9 @@ function render() {
 }
 
 function libraryGameCount(libraryId) {
-  if (libraryId === 'all') return state.games.filter(game => game.hasIcon).length;
+  if (libraryId === 'all') return state.games.filter(game => game.hasIcon || dropGames).length;
   if (libraryId === 'misc') return state.games.filter(game => !game.hasIcon).length;
-  return state.games.filter(game => game.hasIcon && gameSources(game).some(source => source.source === libraryId)).length;
+  return state.games.filter(game => (game.hasIcon || dropGames) && gameSources(game).some(source => source.source === libraryId)).length;
 }
 
 function renderLibraryTabs() {
@@ -961,7 +962,7 @@ function gameSources(game = state.activeGame) {
 
 function gameProviderLabel(source, index) {
   const labels = {
-    local: 'Nyx Archive',
+    local: dropGames ? 'Archive' : 'Nyx Archive',
     gn: 'GN Math',
     gms: 'GMS',
     lumin: 'LuminSDK',
@@ -1285,6 +1286,6 @@ loadLibrary().catch(error => {
   elements.progress.classList.add('done');
   elements.count.textContent = 'Could not load the game library';
   elements.empty.querySelector('h2').textContent = 'Library unavailable';
-  elements.empty.querySelector('p').textContent = 'Reload Nyx and try again.';
+  elements.empty.querySelector('p').textContent = dropGames ? 'Reload Drop and try again.' : 'Reload Nyx and try again.';
   elements.empty.hidden = false;
 });

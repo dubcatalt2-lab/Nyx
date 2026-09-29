@@ -9,7 +9,12 @@ export const policyFrom = settings => Object.fromEntries(Object.keys(protectionD
 export function isAdUrl(value) {
   try {const host=new URL(value).hostname.toLowerCase();return adHosts.some(domain=>host===domain||host.endsWith('.'+domain)) || /(?:^|\/)(?:ads?|ad[-_.]?(?:loader|manager|script)|jump[_-]gamemonetize|poki-(?:master-loader|sdk))\.(?:js|mjs)(?:$|\/)/i.test(new URL(value).pathname) || (host==='serve.app.playsaurus.com' && new URL(value).pathname.includes('/ad-campaigns/'));}catch{return false;}
 }
-export function riskyFile(value) {try{return riskyExtension.test(decodeURIComponent(String(value)))}catch{return riskyExtension.test(String(value))}}
+export function riskyFile(value) {
+  let path=String(value);
+  // Domain suffixes and search terms are not downloadable file extensions.
+  try{if(/^https?:\/\//i.test(path))path=new URL(path).pathname;}catch{}
+  try{return riskyExtension.test(decodeURIComponent(path))}catch{return riskyExtension.test(path)}
+}
 const notify=kind=>globalThis.dispatchEvent?.(new CustomEvent('tutsi:protection',{detail:{kind}}));
 export function protectTransport(transport,getPolicy,{checkDownload=async url=>{
   const response=await fetch('/api/download-safety/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url}),signal:AbortSignal.timeout(6000)});
@@ -49,7 +54,7 @@ export function pageProtection(policy, riskySource) {
   const risky=new RegExp(riskySource,'i');
   const tell=kind=>{try{parent.postMessage({type:'tutsi:protection',kind},'*')}catch{}};
   const downloadRisk=link=>{
-    return [link.getAttribute('download')||'',link.getAttribute('href')||''].some(value=>{try{value=decodeURIComponent(value)}catch{}return risky.test(value)});
+    return [link.getAttribute('download')||'',link.getAttribute('href')||''].some(value=>{try{if(/^https?:\/\//i.test(value))value=new URL(value).pathname;value=decodeURIComponent(value)}catch{}return risky.test(value)});
   };
   const popupTarget=target=>!!target&&!['_self','_parent','_top'].includes(target.toLowerCase());
   let guardedOpen;

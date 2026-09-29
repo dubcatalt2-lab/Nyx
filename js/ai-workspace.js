@@ -348,7 +348,7 @@
           if(!item||!['user','assistant'].includes(item.role)) return null;
           const content=item.role==='assistant'?responseParts(item.content).answer.trim():String(item.content||'').trim();
           if(!content) return null;
-          const message={role:item.role,content};
+          const message={role:item.role,content,...(item.finishReason==='length'?{finishReason:'length'}:{})};
           if(item.role==='assistant'&&item.metadata)message.metadata=normalizeMetadata(item.metadata);
           if(item.role==='assistant'&&typeof item.modelId==='string'){message.modelId=item.modelId.slice(0,200);message.modelName=String(item.modelName||'').slice(0,200);}
           if(item.role==='assistant'&&item.timing)message.timing=normalizeTiming(item.timing);
@@ -821,7 +821,14 @@
     stats.title='Measured on this device. Tokens per second averages the entire request, including waiting. Estimates use roughly four characters per token; reported usage may include reasoning tokens.';
   }
 
-  function addMessage(role,text,{error=false,thinking=false,attachment=null,imageId=null,mediaJobId=null,metadata=null,timing=null,modelId='',modelName=''}={}){
+  function showContinuation(message){
+    if(message.querySelector('.continue-response'))return;
+    const button=document.createElement('button');button.type='button';button.className='continue-response';button.textContent='Continue response';button.title='This reply reached its response limit. Continue using your remaining allowance.';
+    button.onclick=()=>{if(send.disabled)return;if(conversation.querySelector('.ai-message:last-child')!==message)return;if(input.value.trim()){input.focus();return;}input.value='Continue your previous response from where it stopped, without repeating it.';void submitPrompt();};
+    message.querySelector('.ai-message-body').append(button);
+  }
+
+  function addMessage(role,text,{error=false,thinking=false,attachment=null,imageId=null,mediaJobId=null,metadata=null,timing=null,modelId='',modelName='',finishReason=null}={}){
     conversation.querySelector('[data-ai-welcome]')?.remove();
     conversation.classList.remove('is-empty');
     const assistant=role!=='user';
@@ -860,6 +867,7 @@
       }
     }
     setMessageContent(message,text,{error,thinking});
+    if(finishReason==='length')showContinuation(message);
     conversation.appendChild(message);
     if(imageId)void showGeneratedImage(message,imageId);
     if(mediaJobId)void showMediaJob(message,mediaJobId);
@@ -1056,7 +1064,7 @@
     }else{
       conversation.classList.remove('is-empty');
       let start=Math.max(0,items.length-MESSAGE_PAGE_SIZE);
-      const append=item=>addMessage(item.role,item.content,{attachment:item.textAttachment||null,imageId:item.imageId,mediaJobId:item.mediaJobId,metadata:item.metadata,timing:item.timing,modelId:item.modelId,modelName:item.modelName});
+      const append=item=>addMessage(item.role,item.content,{attachment:item.textAttachment||null,imageId:item.imageId,mediaJobId:item.mediaJobId,metadata:item.metadata,timing:item.timing,modelId:item.modelId,modelName:item.modelName,finishReason:item.finishReason});
       items.slice(start).forEach(append);
       if(start){
         const earlier=document.createElement('button');earlier.type='button';earlier.className='ai-history-earlier';earlier.textContent='Load earlier messages';
@@ -1482,7 +1490,7 @@
     const pending=addMessage('assistant','',{thinking:true,modelId:requestedModel,modelName:modelLabel(requestedModel)});
     activeController=new AbortController();
     setBusy(true);
-    let answer='';
+    let answer='',finishReason=null;
     const timingStart=performance.now();let firstTextMs=null,reportedTokens=0;
     const getTiming=()=>({elapsedMs:performance.now()-timingStart,firstTextMs,tokens:reportedTokens||Math.ceil(answer.length/4),estimated:!reportedTokens});
     const timingTimer=setInterval(()=>showTiming(pending,getTiming(),true),500);
@@ -1509,7 +1517,7 @@
         const messages=history.slice(-MODEL_CONTEXT_MESSAGES).map(item=>({role:item.role,content:item.content+(item.textAttachment?'\n\n'+item.textAttachment.content:'')}));
         if(preparedImage)messages[messages.length-1].content=[{type:'text',text:messages[messages.length-1].content},{type:'image_url',image_url:{url:preparedImage.dataUrl}}];
         response=await fetch(kind==='nyx'?'/api/v1/ai':'https://openrouter.ai/api/v1/chat/completions',{method:'POST',signal:activeController.signal,headers:{'Content-Type':'application/json',Authorization:'Bearer '+customKey},body:JSON.stringify({model:requestedModel,messages,max_tokens:generateImage?2200:512,stream:!generateImage&&kind!=='nyx',...(generateImage?{modalities:['text','image']}:{})})});
-        if(kind==='nyx'&&response.ok){const result=await response.json();const content=result.choices?.[0]?.message?.content||'';response=new Response('data: '+JSON.stringify({model:result.model,choices:[{delta:{content}}]})+'\n\ndata: [DONE]\n\n',{headers:{'Content-Type':'text/event-stream'}});}
+        if(kind==='nyx'&&response.ok){const result=await response.json();const content=result.choices?.[0]?.message?.content||'';response=new Response('data: '+JSON.stringify({model:result.model,choices:[{delta:{content},finish_reason:result.choices?.[0]?.finish_reason}]})+'\n\ndata: [DONE]\n\n',{headers:{'Content-Type':'text/event-stream'}});}
       }else{
       response=await fetch(dedicatedMedia?'/api/nyx-ai/media':'/api/nyx-ai',{
         method:'POST',
@@ -1544,6 +1552,13 @@
           if(!answer.trim())answer='Generated image.';
           await showGeneratedImage(pending,generatedImageId);
         }
+      }else if(!response.headers.get('content-type')?.includes('text/event-stream')){
+        const data=await response.json();
+        if(data.error)throw new Error(data.error.message||data.error);
+        answer=data.text||data.choices?.[0]?.message?.content||'';
+        finishReason=data.finishReason||data.choices?.[0]?.finish_reason||null;
+        if(data.model)setReplyModel(pending,data.model);
+        if(data.metadata)pending._nyxMetadata=normalizeMetadata(data.metadata);
       }else{
       if(!response.body) throw new Error('The selected model did not return a stream.');
       const reader=response.body.getReader();
@@ -1558,6 +1573,7 @@
           const data=JSON.parse(raw);
           if(typeof data.model==='string'&&data.model.trim())setReplyModel(pending,data.model);
           if(data.error){streamError=String(data.error.message||data.error);return;}
+          finishReason=data.choices?.[0]?.finish_reason||finishReason;
           const usageTokens=Number(data.nyx_usage?.completion_tokens??data.usage?.completion_tokens);
           if(Number.isFinite(usageTokens)&&usageTokens>0)reportedTokens=usageTokens;
           if(data.nyx_metadata){
@@ -1591,7 +1607,8 @@
       const finalAnswer=responseParts(clean).answer.trim();
       if(!finalAnswer) throw new Error('This model did not produce a final answer. Try again or choose another available model.');
       setMessageContent(pending,clean);
-      history.push({role:'assistant',content:finalAnswer,modelId:pending._modelId,modelName:pending._modelName,metadata:pending._nyxMetadata,timing:getTiming(),...(generatedImageId?{imageId:generatedImageId}:{}),...(mediaJobId?{mediaJobId}:{})});
+      if(finishReason==='length')showContinuation(pending);
+      history.push({role:'assistant',content:finalAnswer,finishReason,modelId:pending._modelId,modelName:pending._modelName,metadata:pending._nyxMetadata,timing:getTiming(),...(generatedImageId?{imageId:generatedImageId}:{}),...(mediaJobId?{mediaJobId}:{})});
       saveMessages(history);
       recordUsage(userText,finalAnswer);
       requestSucceeded=true;

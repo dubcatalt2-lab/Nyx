@@ -25,7 +25,7 @@ const established={...actor,createdAt:AI_JOIN_CUTOFF-1,requestedModel:other};
 await request(established);assert.equal(pool().used,100);assert.equal(pool().opus55Tokens,50,'Other models preserve Luna usage');
 seed(4900,4900);await assert.rejects(request(),/Claude Opus 5.5 allowance/);
 await assert.rejects(request({...actor,modelRules:[{model,access:'allow'}]}),/Claude Opus 5.5 allowance/,'Allow cannot bypass subcap');
-seed(49900,0);await assert.rejects(request(),/shared 50,000-token pool/);
+seed(49900,0);await assert.rejects(request(),/account's 50,000-token allowance/);
 seed(3800,3800);
 const sessions=[await allowance.begin(actor),await allowance.begin({...actor,apiVerified:true})];
 const results=await Promise.allSettled(sessions.map(s=>allowance.reserve(s,'shared',payload(model))));

@@ -1272,7 +1272,7 @@
     const selected=model.value||DEFAULT_MODEL;
     const label=modelLabel(selected);
     modelSelected.textContent=label;
-    modelTrigger.title=`Model: ${label}${(selected.endsWith(":free")||selected==="openrouter/free")?". Uses your shared token pool. Provider rate limits also apply.":""}`;
+    modelTrigger.title=`Model: ${label}${(selected.endsWith(":free")||selected==="openrouter/free")?". Uses your account’s token allowance. Provider rate limits also apply.":""}`;
     modelTrigger.setAttribute('aria-label',`AI model: ${label}`);
     sidebarModelName.textContent=label;
     modelOptionsHost.querySelectorAll('[data-model-id]').forEach(option=>{

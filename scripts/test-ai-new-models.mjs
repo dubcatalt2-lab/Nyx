@@ -15,10 +15,10 @@ for(const actor of [member,premium,{...member,trusted:true},{...member,apiVerifi
  await assert.rejects(call(actor,sol),e=>e.status===403);
 }
 assert.equal(aiModelAllowed(sol,owner),true);
-assert.equal(aiMonthlyModelCap(deepseek,member),10000);
+assert.equal(aiMonthlyModelCap(deepseek,member),7000);
 assert.equal(aiMonthlyModelCap(deepseek,premium),50000);
 assert.equal(aiMonthlyModelCap(deepseek,owner),null);
-for(const [actor,model,cap] of [[member,deepseek,10000],[premium,deepseek,50000]]){
+for(const [actor,model,cap] of [[member,deepseek,7000],[premium,deepseek,50000]]){
  seed(actor,model,cap);
  await assert.rejects(call(actor,model),/exceeds your/);
  seed(actor,model,0);await call(actor,model);
@@ -42,4 +42,4 @@ const paid=createAiAllowance({db:memoryFirestore(),config:aiAllowanceConfig({NYX
 const session=await paid.begin(owner),request=payload(sol),reservation=await paid.reserve(session,'shared',request);
 assert.deepEqual(request.provider.max_price,{prompt:4,completion:20});
 await paid.settle(reservation,null,true);await paid.finish(session);
-console.log('PASS: shared 10k/50k/owner exemption; owner-only Sol without a token cap; separate counters, concurrency, refunds, UTC rollover and routing price bounds');
+console.log('PASS: per-account 7k/50k/owner exemption; owner-only Sol without a token cap; separate counters, concurrency, refunds, UTC rollover and routing price bounds');

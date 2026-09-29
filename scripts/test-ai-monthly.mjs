@@ -12,20 +12,20 @@ async function call(actor,model,usage={input:50,output:50}){const s=await a.begi
 for(const actor of [member,premium]){
  for(const model of [gemini,deepseek,...(actor.premium?[qwen,'inception/mercury-2.5',luna]:[])])await call(actor,model);
  const ledger=db.records.get(path(actor));assert.equal(ledger.pool.used,actor.premium?500:200,'Different models debit one pool');
- ledger.pool.used=actor.premium?50000:10000;
- for(const model of [gemini,deepseek,...(actor.premium?[qwen,'inception/mercury-2.5',luna]:[])])await assert.rejects(call(actor,model),/shared (10,000|50,000)-token pool/);
+ ledger.pool.used=actor.premium?50000:7000;
+ for(const model of [gemini,deepseek,...(actor.premium?[qwen,'inception/mercury-2.5',luna]:[])])await assert.rejects(call(actor,model),/account's (7,000|50,000)-token allowance/);
 }
 const firstReset=db.records.get(path(member)).pool.resetAt;
 assert.equal(firstReset,Date.parse('2026-10-03T12:00:00Z'),'Regular period is 4 days from first request');
 assert.equal(db.records.get(path(premium)).pool.resetAt-db.records.get(path(premium)).pool.start,4*86400000);
 time=Date.parse('2026-10-01T00:01:00Z');
-await assert.rejects(call(member,gemini),/shared (10,000|50,000)-token pool/);
-await assert.rejects(call(premium,luna),/shared 50,000-token pool/);
+await assert.rejects(call(member,gemini),/account's (7,000|50,000)-token allowance/);
+await assert.rejects(call(premium,luna),/account's 50,000-token allowance/);
 const premiumReset=db.records.get(path(premium)).pool.resetAt;
-await call({...member,premium:true},luna);assert.equal(db.records.get(path(member)).pool.used,10100,'Upgrade increases cap while preserving usage');
-await assert.rejects(call(member,gemini),/shared 10,000-token pool/);
+await call({...member,premium:true},luna);assert.equal(db.records.get(path(member)).pool.used,7100,'Upgrade increases cap while preserving usage');
+await assert.rejects(call(member,gemini),/account's 7,000-token allowance/);
 assert.equal(db.records.get(path(member)).pool.resetAt,firstReset,'Changing tier does not refill or move running pool');
-time=firstReset-1;const s=await a.begin(member);await assert.rejects(a.reserve(s,'shared',payload(gemini)),/shared (10,000|50,000)-token pool/);await a.finish(s);
+time=firstReset-1;const s=await a.begin(member);await assert.rejects(a.reserve(s,'shared',payload(gemini)),/account's (7,000|50,000)-token allowance/);await a.finish(s);
 time=firstReset;await call(member,gemini);assert.equal(db.records.get(path(member)).pool.used,100);assert.equal(db.records.get(path(member)).pool.resetAt,firstReset+4*86400000);
 time=premiumReset;await call(premium,luna);assert.equal(db.records.get(path(premium)).pool.used,100,'Premium resets after 4 days');
 // Reservations and settlement remain correct across calendar boundaries within a four-days.
@@ -51,3 +51,15 @@ assert.equal(migrated.resetAt,start+4*day);assert.equal(migrated.used,3000);asse
 assert.equal(aiTokenPoolUsage(oldPool,{},member,start+4*day).used,0);
 assert.equal(aiTokenPoolUsage(oldPool,{},member,start+4*day).images,0);
 console.log('PASS: existing 14-day windows shorten from original start, preserve usage, and reset after four days.');
+
+const independent={...member,uid:'independent',device:'same-browser',network:'same-school'};
+const exhausted={...member,uid:'exhausted',device:'same-browser',network:'same-school'};
+await call(exhausted,gemini);db.records.get(path(exhausted)).pool.used=7000;
+const resetBefore=db.records.get(path(exhausted)).pool.resetAt;
+await assert.rejects(call(exhausted,gemini),/account's 7,000-token allowance/);
+await call(independent,gemini);
+assert.equal(aiTokenPoolUsage(db.records.get(path(independent)),{},independent,time).remaining,6900);
+assert.equal(db.records.get(path(exhausted)).pool.used,7000);
+assert.equal(db.records.get(path(exhausted)).pool.resetAt,resetBefore);
+assert.equal(aiTokenPoolUsage({pool:{start:time,resetAt:time+86400000,used:8500}}, {},member,time).remaining,0);
+console.log('PASS independent 7,000-token account pools on a shared device/network, existing usage preserved');

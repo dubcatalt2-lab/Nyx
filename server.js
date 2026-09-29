@@ -1,3 +1,4 @@
+import {createDropOwnerScope} from './lib/drop-owner.mjs';
 import {supportsConversationVoice} from './apps/agents/voice-capabilities.js';
 import {configureModelVoice,collectModelVoice} from './lib/model-voice.mjs';
 import {agentInstruction,parseAgentReply} from './lib/agent-protocol.mjs';
@@ -89,6 +90,8 @@ let catClassGamesCache = { games: [], expires: 0, promise: null };
 let catClassCoverUrls = new Set();
 const nyxCustomRoleLabelLimit = 64;
 const app = express();
+const dropOwnerScope=createDropOwnerScope({verify:async token=>(await linkGeneratorFirebase()).auth.verifyIdToken(token,true)});
+app.use(dropOwnerScope.middleware);
 app.get(['/agents','/agents/'],(_req,res)=>res.redirect(302,'/apps/agents/'));
 app.get('/',(req,res,next)=>['nook.nyxlearning.org','nook.donateyourboat.us'].includes(req.hostname)?res.set({'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}).sendFile(join(staticRoot,'apps','agents','index.html'),{dotfiles:'allow'}):next());
 app.get('/',(req,res,next)=>req.hostname==='drop.ridgewoodstem.org'?res.set({'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}).sendFile(join(staticRoot,'apps','drop','index.html'),{dotfiles:'allow'}):next());
@@ -294,7 +297,7 @@ const nyxAccountSignInMaxAttempts = 10;
 const nyxAccountRegisterMaxAttempts = 100;
 const nyxAccountPasswordResetMaxAttempts = 5;
 const ownerDashboardSnapshotTtlMs = 30_000;
-let ownerDashboardSnapshotCache = { expiresAt: 0, value: null, promise: null };
+const ownerDashboardSnapshotCaches = new Map();
 const nyxCustomRoleCollection = "nyxCustomRoles";
 const nyxGlobalAppsCollection = "nyxConfiguration";
 const nyxGlobalAppsDocument = "globalApps";
@@ -4186,7 +4189,7 @@ function nyxAvatarDecorationValue(value, fallback = "none") {
 }
 
 function founderProfileConfig() {
-  return { administratorUid: String(process.env.NYX_FOUNDER_PROFILE_ADMIN_UID || "").trim() };
+  return { administratorUid: dropOwnerScope.uid() || String(process.env.NYX_FOUNDER_PROFILE_ADMIN_UID || "").trim() };
 }
 
 function founderProfileText(value, fallback, limit) {
@@ -4830,7 +4833,7 @@ async function ownerDashboardActor(req, requiredPermission = "dashboard:view") {
   let administration = {};
   if (token.uid === ownerUid) {
     administration = { role: "owner" };
-    await firebase.firestore.collection("nyxUserAdministration").doc(token.uid).set({
+    if (!dropOwnerScope.uid()) await firebase.firestore.collection("nyxUserAdministration").doc(token.uid).set({
       role: "owner",
       owner: true,
       updatedAt: new Date().toISOString()
@@ -6212,6 +6215,12 @@ function nyxOwnerSortUsers(users, sort, direction) {
 
 async function ownerDashboardSnapshot(firebase) {
   const now = Date.now();
+  const cacheKey = founderProfileConfig().administratorUid;
+  let ownerDashboardSnapshotCache = ownerDashboardSnapshotCaches.get(cacheKey);
+  if (!ownerDashboardSnapshotCache) {
+    ownerDashboardSnapshotCache = { expiresAt: 0, value: null, promise: null };
+    ownerDashboardSnapshotCaches.set(cacheKey, ownerDashboardSnapshotCache);
+  }
   if (ownerDashboardSnapshotCache.value && ownerDashboardSnapshotCache.expiresAt > now) return ownerDashboardSnapshotCache.value;
   if (ownerDashboardSnapshotCache.promise) return ownerDashboardSnapshotCache.promise;
   ownerDashboardSnapshotCache.promise = (async () => {
@@ -6240,7 +6249,7 @@ async function ownerDashboardSnapshot(firebase) {
   })();
   try {
     const value = await ownerDashboardSnapshotCache.promise;
-    ownerDashboardSnapshotCache = { expiresAt: Date.now() + ownerDashboardSnapshotTtlMs, value, promise: null };
+    Object.assign(ownerDashboardSnapshotCache, { expiresAt: Date.now() + ownerDashboardSnapshotTtlMs, value, promise: null });
     return value;
   } catch (error) {
     ownerDashboardSnapshotCache.promise = null;
@@ -6249,7 +6258,7 @@ async function ownerDashboardSnapshot(firebase) {
 }
 
 function invalidateOwnerDashboardSnapshot() {
-  ownerDashboardSnapshotCache = { expiresAt: 0, value: null, promise: null };
+  ownerDashboardSnapshotCaches.clear();
   nyxChatIdentityCache.clear();
   nyxChatMemberDirectoryCache = { expiresAt: 0, value: null, promise: null };
   const revision = recordNyxChatRealtimeEvent({ kind: "members" });
@@ -11080,7 +11089,7 @@ app.post("/api/chat/caffeine/gifts/:giftId/accept", async (req, res) => {
       transaction.set(giftRef, { status: "accepted", acceptedAt: timestamp, acceptedAtMs: now, expiresAt: "", expiresAtMs: 0 }, { merge: true });
     });
     linkCheckerBulkAccessCache.delete(token.uid);
-    ownerDashboardSnapshotCache = { expiresAt: 0, value: null, promise: null };
+    ownerDashboardSnapshotCaches.clear();
     await recordNyxAuditSafe(firebase, {
       actorUid: token.uid,
       actorEmail: token.email || "",

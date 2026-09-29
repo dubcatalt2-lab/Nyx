@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
   "apps/drop/index.html",
+  "apps/drop/startup.js",
   "apps/drop/logo.svg",
   "apps/drop/astra.png",
   "apps/drop/presence.mjs",

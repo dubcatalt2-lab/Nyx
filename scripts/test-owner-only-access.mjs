@@ -11,7 +11,7 @@ const snapshot={docs:[{id:'audit-event',data:()=>({details:{ip:'192.0.2.10'}})}]
 const collection={doc:()=>({set:async()=>{databaseCalls++;},get:async()=>{databaseCalls++;return {data:()=>({role:'owner'})};}}),orderBy:()=>collection,limit:()=>collection,get:async()=>{databaseCalls++;return snapshot;}};
 const firebase={firestore:{collection:()=>collection}};
 const app=express();
-const context=vm.createContext({app,founderProfileConfig:()=>({administratorUid:ownerUid}),
+const context=vm.createContext({app,dropOwnerScope:{uid:()=>''},founderProfileConfig:()=>({administratorUid:ownerUid}),
  authenticatedNyxUser:async req=>{const uid=req.get('x-fixture-uid');if(!uid)throw Object.assign(new Error('Sign in'),{status:401});return {firebase,token:{uid,role:req.get('x-fixture-role'),permissions:['dashboard:view','network:bans']}};},
  nyxRoleForUser:uid=>uid===ownerUid?'owner':'admin',nyxRolePolicy:()=>({rank:100,permissions:['dashboard:view','users:view','audit:view','network:bans']}),nyxRoleLabels:{owner:'Owner'},
  nyxAssignedCustomRole:()=>({permissions:['dashboard:view','network:bans'],rank:100}),nyxCustomRoles:async()=>new Map(),

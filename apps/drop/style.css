@@ -32,3 +32,5 @@
 .setting-help{margin:0 12px 10px;color:#aaa;font-size:11px;line-height:1.5;max-width:330px}
 
 .account-role{margin:0 12px 14px;color:#bbb;font-size:12px}.account-role[data-role=owner]{color:#f1f1f1}
+
+#setupWizard{width:min(380px,calc(100vw - 32px));padding:24px;border-radius:18px}#setupWizard form{margin:0}.setup-brand{display:flex;align-items:center;gap:12px;margin-bottom:24px}.setup-brand h2{font-size:20px;font-weight:500;margin:0}#setupWizard .setting{padding:12px 0;gap:16px}.setup-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:24px}.setup-actions button{padding:9px 20px;border-radius:10px}.setup-actions .setup-done{background:#e4e4e4;color:#222}.setup-actions .setup-done:hover{background:#fff}

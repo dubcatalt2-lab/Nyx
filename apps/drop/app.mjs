@@ -96,3 +96,20 @@ $('blankCloak').onclick=()=>{
   const frame=doc.createElement('iframe');frame.title='Drop';frame.src=location.href;frame.style.cssText='display:block;width:100%;height:100%;border:0';frame.allow='autoplay; fullscreen; gamepad; microphone; display-capture; clipboard-read; clipboard-write';frame.allowFullscreen=true;doc.body.replaceChildren(frame);popup.opener=null;popup.focus();$('settings').close();
  }catch{popup.close();notice('Could not open the about:blank window. Try again.');}
 };
+
+// First-visit setup follows the study screen and uses the regular settings.
+function finishSetup(apply){
+ if(apply){settings.engine=$('setupEngine').value;settings.closePrevention=$('setupClose').checked;$('engine').value=settings.engine;saveSettings();syncClosePrevention();}
+ try{localStorage.setItem('drop.setupComplete','1');}catch{}
+ $('setupWizard').close();
+}
+$('setupForm').onsubmit=event=>{event.preventDefault();finishSetup(true);};
+$('setupSkip').onclick=()=>finishSetup(false);
+$('setupWizard').addEventListener('cancel',event=>{event.preventDefault();finishSetup(false);});
+async function showFirstSetup(){
+ await (window.dropStartupReady||Promise.resolve());
+ try{if(localStorage.getItem('drop.setupComplete')==='1')return;}catch{}
+ $('setupEngine').value=settings.engine;$('setupClose').checked=settings.closePrevention;
+ $('setupWizard').showModal();
+}
+if(document.readyState==='complete')void showFirstSetup();else document.addEventListener('DOMContentLoaded',()=>void showFirstSetup(),{once:true});

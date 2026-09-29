@@ -5,7 +5,7 @@ import {chromium} from 'playwright';
 const browser=await chromium.launch({channel:'msedge',headless:true});
 try {
  const context=await browser.newContext();
- await context.route('http://drop.test/**',async r=>{
+ await context.route('http://localhost:9765/**',async r=>{
   const path=new URL(r.request().url()).pathname;
   if(path.startsWith('/api/'))return r.fulfill({json:{}});
   try {
@@ -14,12 +14,14 @@ try {
    await r.fulfill({body:await readFile(file),contentType:({'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.svg':'image/svg+xml'})[extname(file)]||'application/octet-stream'});
   }catch {await r.fulfill({status:404,body:''});}
  });
- const p=await context.newPage();
- await p.goto('http://drop.test/apps/drop/',{waitUntil:'domcontentloaded'});
+ const p=await context.newPage();p.on('pageerror',error=>console.error(error.message));
+ await p.goto('http://localhost:9765/apps/drop/',{waitUntil:'domcontentloaded'});
  const cover=p.locator('#studyready-startup');await cover.waitFor();
  await p.frameLocator('#studyready-startup').getByRole('heading',{name:'My courses',exact:true}).waitFor();
  const start=Date.now();await p.waitForTimeout(1000);assert(await cover.isVisible());
  await cover.waitFor({state:'detached'});assert(Date.now()-start>=1800);assert.equal(await p.title(),'Drop');assert(await p.locator('#query').isVisible());
+ await p.locator('#setupWizard').waitFor();await p.locator('#setupEngine').selectOption('google');await p.locator('#setupForm button[type=submit]').click();assert.equal(await p.locator('#engine').inputValue(),'google');
+ await p.reload({waitUntil:'domcontentloaded'});await cover.waitFor();await cover.waitFor({state:'detached'});assert(!await p.locator('#setupWizard').isVisible());assert.equal(await p.locator('#engine').inputValue(),'google');
  await p.reload({waitUntil:'domcontentloaded'});await cover.waitFor();
  await p.frameLocator('#studyready-startup').getByRole('heading',{name:'My courses',exact:true}).click();
  await p.waitForTimeout(3400);assert(await cover.isVisible());assert.equal(await cover.getAttribute('data-staying'),'true');

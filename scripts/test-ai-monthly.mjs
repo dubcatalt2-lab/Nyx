@@ -1,4 +1,4 @@
-﻿import assert from 'node:assert/strict';
+import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {createAiAllowance,aiAllowanceConfig,aiTokenPoolUsage} from '../lib/ai-allowance.mjs';
 import {memoryFirestore} from './test-ai-allowance.mjs';
@@ -37,11 +37,11 @@ time+=2000;await call(crossing,gemini);await a.settle(oldR,null,true);assert.equ
 const migration={...premium,uid:'migration'};db.records.set(path(migration,'premium'),{month:'2026-11',tokens:4000,legacyTokens:0,modelTokens:{luna:2000,gemini:2000}});db.records.set(path(migration),{month:'2026-11',tokens:{[deepseek]:1000}});
 await call(migration,qwen);assert.equal(db.records.get(path(migration)).pool.used,5100);await call(migration,gemini);assert.equal(db.records.get(path(migration)).pool.used,5200,'Legacy usage migrates once, without double counting');
 for(const model of [gemini,luna,deepseek,qwen])await call(owner,model,{input:10000,output:10000});assert.equal(db.records.has(path(owner)),false,'Owner exempt from pooled cap');
-const race={...premium,uid:'race'};await call(race,qwen);db.records.get(path(race)).pool.used=48500;
+const race={...premium,uid:'race'};await call(race,qwen);db.records.get(path(race)).pool.used=49700;
 const one=await a.begin(race),two=await a.begin({...race,apiVerified:true});
 const results=await Promise.allSettled([a.reserve(one,'shared',payload(gemini)),a.reserve(two,'shared',payload(gemini))]);assert.equal(results.filter(r=>r.status==='fulfilled').length,1,'Different models/API sessions cannot double-spend pool');
 for(const result of results)if(result.status==='fulfilled')await a.settle(result.value,null,true);await a.finish(one);await a.finish(two);
-assert.equal(aiTokenPoolUsage(db.records.get(path(race)),{},race,time).remaining,1500);
+assert.equal(aiTokenPoolUsage(db.records.get(path(race)),{},race,time).remaining,300);
 console.log('PASS: shared cross-model pools, 4-day regular reset, 4-day Premium reset, tier changes, cross-month settlement, refunds, legacy migration, owner exemption and concurrent API/chat reservations');
 
 const start=Date.parse('2026-09-01T00:00:00Z'),day=86400000;

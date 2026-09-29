@@ -45,11 +45,11 @@
     "@mercuryworkshop/scramjet": "2.0.67-alpha.2",
     "@mercuryworkshop/scramjet-controller": "0.0.14",
     "@mercuryworkshop/scramjet-v1": "npm:@mercuryworkshop/scramjet@1.1.0",
-    "wispurr": "4.2.0",
     "@titaniumnetwork-dev/ultraviolet": "^3.2.10",
     "eruda": "3.4.3",
     "express": "5.2.1",
     "firebase-admin": "13.10.0",
+    "gpt-tokenizer": "4.0.0",
     "hls.js": "1.7.2",
     "katex": "0.18.4",
     "mp4box": "2.4.1",
@@ -58,6 +58,7 @@
     "socket.io": "^4.8.3",
     "three": "^0.134.0",
     "vanta": "^0.5.24",
+    "wispurr": "4.2.0",
     "ws": "^8.21.0"
   },
   "devDependencies": {

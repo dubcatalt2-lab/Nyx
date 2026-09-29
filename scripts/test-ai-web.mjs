@@ -1,3 +1,5 @@
+import {createAiDeadline} from '../lib/ai-deadline.mjs';
+import {configureFreeAiReasoning,isFreeAiModel} from '../lib/ai-free-models.mjs';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
@@ -10,14 +12,14 @@ import {memoryFirestore} from './test-ai-allowance.mjs';
 const source=await readFile(new URL('../server.js',import.meta.url),'utf8');
 const ast=parse(source,{ecmaVersion:'latest',sourceType:'module'});
 const route=ast.body.find(n=>n.expression?.callee?.property?.name==='post'&&n.expression.arguments?.[0]?.value==='/api/nyx-ai').expression.arguments.at(-1);
-const modelInfo={id:'qwen/qwen3.7-flash',supportedParameters:['tools','reasoning','temperature']};
+const modelInfo={id:'deepseek/deepseek-v4.1-flash',supportedParameters:['tools','reasoning','temperature']};
 let payload,stream=true;
 const event={choices:[{delta:{content:'Try these cupcake recipes.',annotations:[{type:'url_citation',url_citation:{url:'https://recipes.example/cupcakes?a=1&b=2',title:'Cupcake recipes'}}],reasoning_details:[{type:'reasoning.summary',summary:'Compared recipe instructions and ingredient lists.'},{type:'reasoning.text',text:'RAW SECRET'},{type:'reasoning.encrypted',data:'ENCRYPTED'}]}}]};
-const context=vm.createContext({URL,AbortController,setTimeout,clearTimeout,TextDecoder,process:{env:{}},aiConfigureChatWeb,aiResponseMetadata,aiWantsWeb,
+const context=vm.createContext({createAiDeadline,configureFreeAiReasoning,isFreeAiModel,URL,AbortController,setTimeout,clearTimeout,TextDecoder,process:{env:{}},aiConfigureChatWeb,aiResponseMetadata,aiWantsWeb,
  nyxAiRequestCredential:()=>({key:'fixture',provider:{id:'shared'}}),nyxAiResolveModel:async()=>modelInfo,aiModelAllowed:()=>true,nyxAiPremiumEntitlement:async()=>({owner:true}),
  nyxAiLimits:{promptChars:10000,contextChars:24000,timeoutMs:45000},nyxAiTextAttachmentPrompt:v=>v,nyxAiEndpoint:()=> 'https://openrouter.ai/api/v1/chat/completions',
  nyxAiApplySupportedParameters:()=>{},nyxAiLooksCorrupted:()=>false,aiOutputImages:()=>[],
- nyxAiProviderFetch:async(_provider,_url,options)=>{payload=JSON.parse(options.body);return stream?new Response('data: '+JSON.stringify(event)+'\n\ndata: [DONE]\n\n'):Response.json({choices:[{message:event.choices[0].delta}]});}
+ nyxAiProviderFetch:async(_provider,_url,options)=>{payload=JSON.parse(options.body);return stream?new Response('data: '+JSON.stringify(event)+'\n\ndata: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}}):Response.json({choices:[{message:event.choices[0].delta}]});}
 });
 for(const name of ['nyxAiStreamText','nyxAiWriteStreamChunk','nyxAiCompletionTokens','nyxAiCompletionText']){
  const n=ast.body.find(n=>n.type==='FunctionDeclaration'&&n.id.name===name);vm.runInContext(source.slice(n.start,n.end),context);
@@ -41,7 +43,10 @@ assert.deepEqual(aiResponseMetadata({choices:[{message:{annotations:[{type:'url_
 const db=memoryFirestore(),allowance=createAiAllowance({db,config:aiAllowanceConfig({NYX_AI_DAILY_BUDGET_USD:'1'})});
 const session=await allowance.begin({uid:'web-member',device:'web-member',network:'fixture',createdAt:Date.parse('2026-01-01')});
 const reserved=await allowance.reserve(session,'shared',webPayload);
-assert.ok(reserved.tokens<=10000,'A short web request must fit the regular token pool');
+assert.ok(reserved.tokens<=7000,'A short DeepSeek web request must fit a fresh regular account');
+const oldByteReservation=(1024+webPayload.messages.reduce((n,m)=>n+64+Buffer.byteLength(m.content),0))*2+4096+1400;
+assert.ok(oldByteReservation>7000,'Reproduce the oversized byte-as-token reservation');
+console.log('DeepSeek web reservation:',reserved.tokens,'tokens; old byte estimate:',oldByteReservation);
 assert.ok(reserved.reserved>=1000,'Search cost reserved before provider call');
 let usage;
 await aiBudgetResponse(Response.json({usage:{prompt_tokens:2000,completion_tokens:300,cost:.0015,server_tool_use:{web_search_requests:1}}}),async u=>{usage=u;await allowance.settle(reserved,u);}).text();

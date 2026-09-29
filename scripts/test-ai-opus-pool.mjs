@@ -26,13 +26,13 @@ await request(established);assert.equal(pool().used,100);assert.equal(pool().opu
 seed(4900,4900);await assert.rejects(request(),/Claude Opus 5.5 allowance/);
 await assert.rejects(request({...actor,modelRules:[{model,access:'allow'}]}),/Claude Opus 5.5 allowance/,'Allow cannot bypass subcap');
 seed(49900,0);await assert.rejects(request(),/account's 50,000-token allowance/);
-seed(3800,3800);
+seed(4800,4800);
 const sessions=[await allowance.begin(actor),await allowance.begin({...actor,apiVerified:true})];
 const results=await Promise.allSettled(sessions.map(s=>allowance.reserve(s,'shared',payload(model))));
 assert.equal(results.filter(r=>r.status==='fulfilled').length,1,'Transactions serialize the shared Luna subcap');
 const reserved=results.find(r=>r.status==='fulfilled').value;
 await allowance.settle(reserved,null,true);await allowance.settle(reserved,null,true);
-assert.equal(pool().used,3800);assert.equal(pool().opus55Tokens,3800,'Refunds are idempotent');
+assert.equal(pool().used,4800);assert.equal(pool().opus55Tokens,4800,'Refunds are idempotent');
 for(const s of sessions)await allowance.finish(s,false);
 time+=61000;seed(0,0);
 const pending=await allowance.begin(actor),late=await allowance.reserve(pending,'shared',payload(model));await allowance.finish(pending);

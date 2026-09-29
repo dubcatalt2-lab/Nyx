@@ -1,4 +1,4 @@
-﻿import assert from 'node:assert/strict';
+import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {createAiAllowance,aiAllowanceConfig,AI_JOIN_CUTOFF} from '../lib/ai-allowance.mjs';
 import {memoryFirestore} from './test-ai-allowance.mjs';
@@ -22,13 +22,13 @@ await request(established);assert.equal(pool().used,100);assert.equal(pool().lun
 seed(4900,4900);await request();assert.equal(pool().used,4950,'Luna uses the full shared pool');
 seed(6900,0);await assert.rejects(request({...actor,modelRules:[{model,access:'allow'}]}),/account's 7,000-token allowance/,'Allow cannot bypass shared cap');
 seed(6900,0);await assert.rejects(request(),/account's 7,000-token allowance/);
-seed(5800,5800);
+seed(6800,6800);
 const sessions=[await allowance.begin(actor),await allowance.begin({...actor,apiVerified:true})];
 const results=await Promise.allSettled(sessions.map(s=>allowance.reserve(s,'shared',payload(model))));
 assert.equal(results.filter(r=>r.status==='fulfilled').length,1,'Transactions serialize the shared pool');
 const reserved=results.find(r=>r.status==='fulfilled').value;
 await allowance.settle(reserved,null,true);await allowance.settle(reserved,null,true);
-assert.equal(pool().used,5800);assert.equal(pool().luna6Tokens,5800,'Refunds are idempotent');
+assert.equal(pool().used,6800);assert.equal(pool().luna6Tokens,6800,'Refunds are idempotent');
 for(const s of sessions)await allowance.finish(s,false);
 time+=61000;seed(0,0);
 const pending=await allowance.begin(actor),late=await allowance.reserve(pending,'shared',payload(model));await allowance.finish(pending);
@@ -42,4 +42,3 @@ seed(8000,8000);await request({...premium,requestedModel:'openai/gpt-6-luna-pro'
 await assert.rejects(request(actor),/account's 7,000-token allowance/);assert.equal(pool().used,8050,'Downgrade preserves usage without refilling');
 seed(49900,0);await assert.rejects(request(premium),/account's 50,000-token allowance/);
 console.log('PASS public Luna access; full 7k account limit, other-model preservation, concurrent reservations, refunds and synchronized four-day reset.');
-

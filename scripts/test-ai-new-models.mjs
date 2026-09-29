@@ -1,4 +1,4 @@
-﻿import assert from 'node:assert/strict';
+import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {createAiAllowance,aiAllowanceConfig,aiModelAllowed,aiMonthlyModelCap} from '../lib/ai-allowance.mjs';
 import {memoryFirestore} from './test-ai-allowance.mjs';
@@ -28,12 +28,12 @@ for(const [actor,model,cap] of [[member,deepseek,7000],[premium,deepseek,50000]]
 }
 assert.equal(db.records.has('nyxAiAllowance/premium-'+createHash('sha256').update(premium.uid).digest('hex')),false,'DeepSeek does not alter Luna/Gemini or legacy counters');
 seed(owner,deepseek,999999);await call(owner,deepseek);assert.equal(db.records.get(record(owner)).tokens[deepseek],999999,'Owner DeepSeek exempt');
-seed(premium,deepseek,48500);
+seed(premium,deepseek,49700);
 const a=await allowance.begin(premium),b=await allowance.begin({...premium,apiVerified:true});
 const results=await Promise.allSettled([allowance.reserve(a,'shared',payload(deepseek)),allowance.reserve(b,'shared',payload(deepseek))]);
 assert.equal(results.filter(r=>r.status==='fulfilled').length,1,'Shared user counter serializes concurrent reservations');
 for(const result of results)if(result.status==='fulfilled'){await allowance.settle(result.value,null,true);await allowance.settle(result.value,null,true);}
-assert.equal(db.records.get(record(premium)).tokens[deepseek],48500,'Refund is idempotent');
+assert.equal(db.records.get(record(premium)).tokens[deepseek],49700,'Refund is idempotent');
 await allowance.finish(a);await allowance.finish(b);
 time=Date.parse('2026-09-30T23:58:00Z');seed(owner,sol,100000);const late=await allowance.begin(owner),r=await allowance.reserve(late,'shared',payload(sol));await allowance.finish(late);
 time=Date.parse('2026-10-01T00:01:00Z');await call(owner,sol);await allowance.settle(r,null,true);

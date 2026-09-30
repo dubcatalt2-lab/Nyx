@@ -1,3 +1,4 @@
+import {createRemoteDesktop} from './lib/remote-desktop.mjs';
 import {isNookRequest} from './lib/nook-policy.mjs';
 import {createDropOwnerScope} from './lib/drop-owner.mjs';
 import {startMemoryMonitor} from './lib/memory-monitor.mjs';
@@ -14101,6 +14102,8 @@ app.get("/download/nyx-singlefile.html", (_req, res) => {
   res.download(join(staticRoot, "nyx-singlefile.html"), "Nyx-Download.html");
 });
 
+const remoteDesktop=createRemoteDesktop({firebase:linkGeneratorFirebase,download:()=>companionZip(__dirname,{remote:true})});
+app.use('/api/private-remote',remoteDesktop.router);
 let httpRelayPort = 0;
 const closeHttpRelay = installHttpWisp(app, {
   upstream: () => httpRelayPort ? {url: externalWispUrl || `ws://127.0.0.1:${httpRelayPort}/resources/live/`, origin: `http://127.0.0.1:${httpRelayPort}`} : null,
@@ -14151,6 +14154,7 @@ app.get("/", async (req, res, next) => {
 });
 app.use(express.static(staticRoot));
 app.use("/assets/vendor/katex/", express.static(katexPath));
+app.use('/assets/vendor/novnc/',express.static(dirname(dirname(require.resolve('@novnc/novnc')))));
 app.use("/uv/", express.static(uvPath));
 app.use("/scramjet/", express.static(scramjetPath));
 app.use("/scramjet-v1/", express.static(scramjetV1Path));
@@ -14233,6 +14237,7 @@ async function startNyxServer() {
       rejectWispUpgrade(socket, "400 Bad Request");
       return;
     }
+    if (upgradePath === '/api/private-remote/socket') { remoteDesktop.upgrade(req,socket,head);return; }
     if (upgradePath === "/socket.io/" || upgradePath.startsWith("/socket.io/")) {
       return;
     }
@@ -14264,6 +14269,7 @@ async function startNyxServer() {
 
   let shuttingDown = false;
   function shutdown(signal, exitCode = 0) {
+    remoteDesktop.close();
     closeHttpRelay();
     void nyxTubeBackend.close();
     void nyxTubeCatalog.close();

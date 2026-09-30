@@ -2,6 +2,21 @@ import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
+  "apps/remote/index.html",
+  "apps/remote/app.js",
+  "apps/remote/style.css",
+  "lib/remote-desktop.mjs",
+  "remote-host/host.mjs",
+  "remote-host/desktop.ps1",
+  "remote-host/Start-Nyx-Remote.cmd",
+  "remote-host/Start-Background.ps1",
+  "remote-host/Install-Startup.ps1",
+  "remote-host/Remove-Startup.ps1",
+  "remote-host/README.txt",
+  "remote-host/service-bridge.mjs",
+  "remote-host/Install-Nyx-Service.cmd",
+  "remote-host/Install-Service.ps1",
+  "remote-host/Remove-Service.ps1",
   "apps/drop/index.html",
   "apps/drop/startup.js",
   "apps/drop/logo.svg",
@@ -263,7 +278,7 @@ if (missing.length) {
 }
 
 const packageJson = JSON.parse(await readFile("package.json", "utf8"));
-for (const dependency of ["express", "firebase-admin", "wispurr", "mp4box", "hls.js"]) {
+for (const dependency of ["express", "firebase-admin", "wispurr", "mp4box", "hls.js", "@novnc/novnc"]) {
   if (!packageJson.dependencies?.[dependency]) {
     console.error(`Deployment dependency is missing: ${dependency}`);
     process.exit(1);

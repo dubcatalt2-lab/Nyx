@@ -341,6 +341,14 @@
       return payload;
     }
 
+    // A role alone must never reveal remote desktop. The capability endpoint
+    // verifies the exact Firebase UID independently of dashboard permissions.
+    api('/api/private-remote/access').then(data=>{
+      if(!data.enabled||!overlay.isConnected)return;
+      const button=document.createElement('button');button.type='button';button.textContent='Remote desktop';
+      button.addEventListener('click',()=>window.open('/apps/remote/','_blank','noopener'));
+      overlay.querySelector('.nyx-owner-header-actions').prepend(button);
+    }).catch(()=>{});
     const aiStatusHost=overlay.querySelector('[data-owner-ai-status]');
     function compactStatus(host,key,label) {
       const details=document.createElement('details'),summary=document.createElement('summary'),body=document.createElement('div');

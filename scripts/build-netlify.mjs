@@ -243,6 +243,13 @@ async function copyKatex() {
   await cp(source, destination, { recursive: true, force: true });
 }
 
+async function copyRemoteViewer() {
+  const source=dirname(dirname(require.resolve('@novnc/novnc')));
+  const destination=join(output,'assets','vendor','novnc');
+  await mkdir(destination,{recursive:true});
+  for(const name of ['core','vendor','docs','AUTHORS'])await cp(join(source,name),join(destination,name),{recursive:true});
+}
+
 function runtimeMangleOptions(topLevel) {
   return {
     toplevel: topLevel,
@@ -444,6 +451,7 @@ async function main() {
     await cp(join(root,'services/domain-pages',name),join(studyDir,name));
   await copyEruda();
   await copyKatex();
+  await copyRemoteViewer();
   await copyProxyRuntimes();
   await writePatchedRuntimes(wispUrl);
   await configureUv(wispUrl);

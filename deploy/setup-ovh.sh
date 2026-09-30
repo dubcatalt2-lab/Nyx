@@ -114,6 +114,7 @@ else
   systemctl disable --now nyx-stratus >/dev/null 2>&1 || true
 fi
 systemctl restart nyx
+bash deploy/install-health-watchdog.sh
 systemctl reload caddy
 bash deploy/refresh-turn-router.sh
 

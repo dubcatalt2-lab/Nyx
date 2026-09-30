@@ -82,6 +82,7 @@ else
   systemctl disable --now nyx-stratus >/dev/null 2>&1 || true
 fi
 systemctl restart nyx
+bash deploy/install-health-watchdog.sh
 if [[ -x deploy/setup-turn.sh || -f deploy/setup-turn.sh ]]; then
   bash deploy/setup-turn.sh
 fi

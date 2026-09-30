@@ -2,6 +2,9 @@ import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
+  "apps/remote-entry/index.html",
+  "apps/remote-entry/entry.js",
+  "apps/remote-entry/entry.css",
   "apps/remote/index.html",
   "apps/remote/app.js",
   "apps/remote/desktop-controls.js",

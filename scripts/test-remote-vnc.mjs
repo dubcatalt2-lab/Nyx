@@ -1,3 +1,4 @@
+import {createRemoteEntry} from '../deploy/remote-entry.mjs';
 import assert from 'node:assert/strict';
 import express from 'express';
 import {createServer} from 'node:http';
@@ -11,7 +12,7 @@ const require=createRequire(import.meta.url),records=new Map();
 const collection={doc:id=>({get:async()=>({data:()=>records.get(id)}),set:async data=>records.set(id,data),delete:async()=>records.delete(id)}),where:()=>({get:async()=>({size:records.size,docs:[...records].map(([id,data])=>({id,data:()=>data}))})})};
 const remote=createRemoteDesktop({firebase:async()=>({auth:{verifyIdToken:async token=>({uid:token==='owner'?remoteOwnerUid:'denied'})},firestore:{collection:()=>collection}}),download:async()=>Buffer.from('zip')});
 const app=express();app.use('/api/private-remote',remote.router);app.get('/api/founder-profile/auth-config',(_req,res)=>res.json({enabled:true,apiKey:'fixture',projectId:'fixture'}));app.use('/assets/vendor/novnc',express.static(dirname(dirname(require.resolve('@novnc/novnc')))));app.use(express.static(resolve(process.env.REMOTE_TEST_DIST?'dist':'.')));
-const server=createServer(app);server.on('upgrade',remote.upgrade);await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin='http://127.0.0.1:'+server.address().port;
+const server=createServer(app);server.on('upgrade',remote.upgrade);await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const gateway=process.env.REMOTE_TEST_ENTRY?createRemoteEntry({upstreamPort:server.address().port}):null;if(gateway)await new Promise(r=>gateway.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+(gateway||server).address().port;
 const post=async(path,body)=>(await fetch(origin+'/api/private-remote'+path,{method:'POST',headers:{Authorization:'Bearer owner','Content-Type':'application/json'},body:JSON.stringify(body)})).json();
 const credential=randomBytes(32).toString('base64url'),pair=await post('/pair/start',{credential,name:'Windows service fixture',mode:'vnc'});await post('/pair/approve',{code:pair.code});const {deviceId:id}=await post('/pair/poll',{poll:pair.poll});
 const host=new WebSocket(origin.replace('http:','ws:')+'/api/private-remote/socket');await new Promise(resolve=>host.once('open',resolve));const ready=new Promise(resolve=>host.once('message',resolve));host.send(JSON.stringify({type:'host',id,credential}));await ready;
@@ -41,4 +42,4 @@ try{
 
 assert(frames>0);assert(await page.locator('#secureAttention').isVisible());const connectedCount=connections;host.send(JSON.stringify({type:'ended'}));await page.locator('#cancelReconnect').waitFor({state:'visible'});await page.locator('#cancelReconnect').click();await page.waitForTimeout(3500);assert.equal(connections,connectedCount,'Stop reconnecting must cancel the queued attempt');assert(await page.locator('#setup').isVisible());assert(stopped);assert.deepEqual(errors,[]);
  console.log('PASS: noVNC RFB handshake, framebuffer, mouse/keyboard over owner-authenticated binary relay; session teardown. Native Windows service installation still requires administrator approval.');
-}finally{await browser.close();host.close();remote.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+}finally{await browser.close();gateway?.closeAllConnections();gateway?.close();host.close();remote.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

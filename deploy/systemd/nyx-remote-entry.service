@@ -1,0 +1,23 @@
+[Unit]
+Description=Private remote desktop entry point
+After=network-online.target nyx.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+WorkingDirectory=/usr/local/lib/nyx-remote-entry
+Environment=PORT=8081
+Environment=NYX_REMOTE_ENTRY_ROOT=/usr/local/lib/nyx-remote-entry/site
+ExecStart=/usr/bin/node /usr/local/lib/nyx-remote-entry/remote-entry.mjs
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

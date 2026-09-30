@@ -1,3 +1,4 @@
+import {isNookRequest} from './lib/nook-policy.mjs';
 import {createDropOwnerScope} from './lib/drop-owner.mjs';
 import {startMemoryMonitor} from './lib/memory-monitor.mjs';
 import {supportsConversationVoice} from './apps/agents/voice-capabilities.js';
@@ -30,7 +31,7 @@ import { installDeveloperApi } from './lib/developer-api.mjs';
 import { aiImageContent } from './lib/ai-image.mjs';
 ﻿import express from "express";
 import { AsyncLocalStorage } from "node:async_hooks";
-import { createAiAllowance, aiAllowanceConfig, premiumModelLimits, aiModelAllowed, isDropAiActor, dropModelIsExpensive } from "./lib/ai-allowance.mjs";
+import { createAiAllowance, aiAllowanceConfig, premiumModelLimits, aiModelAllowed, hasAppAiAllowance, dropModelIsExpensive, nookModelIsExpensive } from "./lib/ai-allowance.mjs";
 import { createOpenRouterBalanceGuard, createOpenRouterOwnerStatus } from "./lib/openrouter-balance.mjs";
 import { aiOutputImages } from "./lib/ai-output-images.mjs";
 import { aiBudgetResponse } from "./lib/ai-budget-response.mjs";
@@ -2313,7 +2314,7 @@ function nyxAiMergeCatalogs(...catalogs) {
 }
 
 function nyxAiBudgetCatalog(available, personal, provider, actor={}) {
-  if(isDropAiActor(actor)&&new URL(nyxAiEndpoint(provider)).hostname==='openrouter.ai')return available.filter(model=>aiCatalogPrice(model)!==null);
+  if(hasAppAiAllowance(actor)&&new URL(nyxAiEndpoint(provider)).hostname==='openrouter.ai')return available.filter(model=>aiCatalogPrice(model)!==null);
   if(hasFullAiCatalog(actor)&&new URL(nyxAiEndpoint(provider)).hostname==='openrouter.ai')return available;
   if (!personal && new URL(nyxAiEndpoint(provider)).hostname === "openrouter.ai") {
     try {
@@ -2506,7 +2507,7 @@ async function nyxAiPremiumEntitlement(req) {
     const administration = await firebase.firestore.collection("nyxUserAdministration").doc(token.uid).get();
     const administrationData = administration.data() || {};
     const subscriptionStatus = normalizeSubscriptionStatus(administrationData.subscriptionStatus || administrationData.subscription?.status);
-    return { app:req.nyxAiApp==='drop'?'drop':null, modelRules:administrationData.aiModelRules||[], premium: hasPremiumSubscription(subscriptionStatus), owner: nyxRoleForUser(token.uid, administrationData) === "owner", firebase, uid: token.uid };
+    return { app:['drop','nook'].includes(req.nyxAiApp)?req.nyxAiApp:null, modelRules:administrationData.aiModelRules||[], premium: hasPremiumSubscription(subscriptionStatus), owner: nyxRoleForUser(token.uid, administrationData) === "owner", firebase, uid: token.uid };
   } catch {
     return { premium: false, owner: false, firebase: null, uid: "" };
   }
@@ -2622,12 +2623,12 @@ async function nyxSharedAiSession(scope) {
     if(account.disabled||admin.disabled)throw Object.assign(new Error('This account is disabled.'),{status:403});
     const allowance=nyxSharedAiAllowance(firebase);
     if(allowance.configurationError)throw Object.assign(new Error('Shared AI budget settings need to be checked by the owner.'),{status:503});
-    const actor={uid,app:req.nyxAiApp==='drop'?'drop':null,requestedModel:String(req.body?.model||(req.path==='/api/v1/ai'?'google/gemini-2.5-flash-lite':'')),modelRules:admin.aiModelRules||[],freeModel:isFreeAiModel(req.body?.model)?req.body.model:null,createdAt:Date.parse(account.metadata?.creationTime||''),
+    const actor={uid,app:['drop','nook'].includes(req.nyxAiApp)?req.nyxAiApp:null,requestedModel:String(req.body?.model||(req.path==='/api/v1/ai'?'google/gemini-2.5-flash-lite':'')),modelRules:admin.aiModelRules||[],freeModel:isFreeAiModel(req.body?.model)?req.body.model:null,createdAt:Date.parse(account.metadata?.creationTime||''),
       owner:uid===founderProfileConfig().administratorUid,premium:hasPremiumSubscription(normalizeSubscriptionStatus(admin.subscriptionStatus||admin.subscription?.status)),
       coOwner:nyxRoleForUser(uid,admin)==='co_owner',
       monthlyModelLimits:premiumModelLimits(admin.aiMonthlyModelLimits),trusted:admin.aiAccess==='trusted',blocked:admin.aiAccess==='restricted',
       apiVerified:Boolean(req.nyxAiBilling?.apiVerified),apiDailyRequests:req.nyxAiBilling?.dailyRequests,apiMinuteRequests:req.nyxAiBilling?.minuteRequests,apiMaxOutput:req.nyxAiBilling?.maxOutput,
-      device:req.path==='/api/v1/ai'?`key-owner:${uid}`:await allowance.device(req,res),network:nyxClientIp(req)};
+      device:req.path==='/api/v1/ai'?`key-owner:${uid}`:await allowance.device(req,res,req.nyxAiApp==='nook'?{cookieName:'nook_device',maxAge:31536000}:{}),network:nyxClientIp(req)};
     const session=await allowance.begin(actor);
     scope.allowance=allowance;scope.session=session;scope.firestore=firebase.firestore;
     if(scope.controller.signal.aborted){await allowance.finish(session);throw Object.assign(new Error('AI request cancelled.'),{status:499});}
@@ -2641,7 +2642,7 @@ async function nyxBudgetedAiFetch(provider,url,options) {
   const session=await nyxSharedAiSession(scope);
   let payload;try {payload=JSON.parse(options.body);}catch{throw Object.assign(new Error('Invalid AI request.'),{status:400});}
   let catalogPrice=null;
-  if((hasFullAiCatalog(session.actor)||isDropAiActor(session.actor))&&new URL(url).hostname==='openrouter.ai'){
+  if((hasFullAiCatalog(session.actor)||hasAppAiAllowance(session.actor))&&new URL(url).hostname==='openrouter.ai'){
     const key=String(new Headers(options.headers).get('authorization')||'').replace(/^Bearer\s+/i,'');
     const catalog=await nyxAiAvailableModels(key,false,null,session.actor);
     const selected=catalog.find(model=>model.id===payload.model);
@@ -2672,10 +2673,15 @@ async function nyxBudgetedAiFetch(provider,url,options) {
     },payload.modalities?.includes("image")?8*1024*1024:undefined);
   } catch(error) {await scope.allowance.settle(reservation,null).catch(()=>{});throw error;}
 }
-// A dedicated route selects Drop's server policy; request-body/header claims do not.
+// Dedicated routes select product policy; request body/header claims do not.
 app.use((req,res,next)=>{
-  if(/^\/api\/drop-ai(?:\/models)?$/.test(req.path)&&['GET','POST'].includes(req.method)){
-    req.nyxAiApp='drop';req.url=req.url.replace('/api/drop-ai','/api/nyx-ai');
+  const appRoute=/^\/api\/(drop|nook)-ai(?:\/models)?$/.exec(req.path);
+  if(appRoute&&['GET','POST'].includes(req.method)){
+    req.nyxAiApp=appRoute[1];req.url=req.url.replace('/api/'+appRoute[1]+'-ai','/api/nyx-ai');
+  }
+  if(isNookRequest(req)&&/^\/api\/nyx-ai(?:\/|$)/.test(req.path))req.nyxAiApp='nook';
+  if(req.path==='/api/nook-account/register'&&req.method==='POST'){
+    req.nookAccount=true;req.url=req.url.replace('/api/nook-account/register','/api/account/register');
   }
   next();
 });
@@ -2711,8 +2717,8 @@ async function nyxAiRateLimit(req, res, next) {
   // everybody else on a school or home connection.
   const entitlement = await nyxAiPremiumEntitlement(req);
   const unlimited=hasFullAiCatalog(entitlement);
-  const unlimitedDaily = Boolean(unlimited || isDropAiActor(entitlement) || entitlement.premium || entitlement.owner || isFreeAiModel(req.body?.model));
-  const usageId = entitlement.uid ? `account:${isDropAiActor(entitlement)?'drop:':''}${entitlement.uid}` : `ip:${clientId}`;
+  const unlimitedDaily = Boolean(unlimited || hasAppAiAllowance(entitlement) || entitlement.premium || entitlement.owner || isFreeAiModel(req.body?.model));
+  const usageId = entitlement.uid ? `account:${hasAppAiAllowance(entitlement)?entitlement.app+':':''}${entitlement.uid}` : `ip:${clientId}`;
   const usage = nyxAiUsage.get(usageId) || { minute: [], day: [], active: 0, seen: now };
   usage.minute = usage.minute.filter(time => now - time < 60_000);
   usage.day = usage.day.filter(time => now - time < 86_400_000);
@@ -2773,7 +2779,7 @@ app.get('/api/nyx-ai/models',async(req,res)=>{
   if(!credential.key)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
   const models=await nyxAiAvailableModels(credential.key,false,credential.provider,entitlement);
   if(!models.length)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
-  res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement)).map(model=>isDropAiActor(entitlement)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'No token quota':dropModelIsExpensive(aiCatalogPrice(model),model.id)?'500 shared / 4 days':'No token quota'}:model),credential:'shared',ownerMediaAccess:hasFullAiCatalog(entitlement)});
+  res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement)).map(model=>hasAppAiAllowance(entitlement)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'No token quota':entitlement.app==='nook'?(nookModelIsExpensive(aiCatalogPrice(model))?'1,000 expensive / browser / 4 days':'7,000 / browser / 4 days'):dropModelIsExpensive(aiCatalogPrice(model),model.id)?'500 shared / 4 days':'No token quota'}:model),credential:'shared',ownerMediaAccess:hasFullAiCatalog(entitlement)});
 });
 
 function nyxMediaUsage(usage) {
@@ -9318,7 +9324,7 @@ app.post("/api/account/register", async (req, res) => {
     res.status(503).json({ error: "Nyx accounts are not configured." });
     return;
   }
-  const rateState = nyxAccountRegisterRateState(linkGeneratorClientId(req));
+  const rateState = isNookRequest(req)?{attempts:0}:nyxAccountRegisterRateState(linkGeneratorClientId(req));
   if (rateState.attempts >= nyxAccountRegisterMaxAttempts) {
     res.status(429).json({ error: "Too many account creation attempts. Try again in a few minutes." });
     return;
@@ -9363,7 +9369,7 @@ app.post("/api/account/register", async (req, res) => {
       return;
     }
     const allowance = nyxSharedAiAllowance(firebase);
-    await allowance.register(await allowance.device(req,res),nyxClientIp(req));
+    if(!isNookRequest(req))await allowance.register(await allowance.device(req,res),nyxClientIp(req));
     const account = await firebase.auth.createUser({
       email,
       password,

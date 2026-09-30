@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Nyx</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; min-height: 100vh; display: grid; place-content: center;
+      background: #080b09; color: #e3e9e5; font: 15px system-ui; text-align: center; }
+    h1 { font-weight: 500; letter-spacing: 8px; }
+    p { max-width: 420px; padding: 0 24px; color: #a2aaa5; }
+  </style>
+</head>
+<body>
+  <h1>NYX</h1>
+  <p id="status" role="status">Opening your workspace...</p>
+  <section id="localHelp" hidden><p>Extract the complete mini ZIP, then run <code>Start-Nyx-Mini.cmd</code> inside its folder. Keep that window open.</p><a href="http://localhost:8765/" style="color:inherit">Open localhost</a><p>This launcher needs the package files beside it. Proxy browsing cannot start directly from a downloaded HTML or SVG file.</p></section>
+  <script>
+    (async () => {
+      if (!['http:', 'https:'].includes(location.protocol) || location.origin === 'null') {
+        document.getElementById('status').textContent = 'Start the local server to open Nyx Mini.';
+        document.getElementById('localHelp').hidden = false;
+        return;
+      }
+      if (!isSecureContext || !('serviceWorker' in navigator)) {
+        throw new Error('Host the complete package on HTTPS or localhost.');
+      }
+      const base = new URL('.', location.href);
+      await navigator.serviceWorker.register(new URL('library-worker.js', base), {
+        scope: base.pathname
+      });
+      await navigator.serviceWorker.ready;
+      if (!navigator.serviceWorker.controller) {
+        await new Promise((resolve, reject) => {
+          const timer = setTimeout(() => reject(new Error('Reload to retry starting Nyx.')), 15000);
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            clearTimeout(timer);
+            resolve();
+          }, { once: true });
+        });
+      }
+      location.replace(new URL('index.html', base));
+    })().catch(error => {
+      document.getElementById('status').textContent = error.message;
+    });
+  </script>
+</body>
+</html>

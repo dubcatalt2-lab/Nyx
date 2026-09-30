@@ -2,7 +2,7 @@ export async function readResponse(response,onProgress,audioFormat){
  if(!response.ok||!response.headers.get('content-type')?.includes('text/event-stream')){
   const raw=await response.text();let data;
   try{data=JSON.parse(raw);}catch{throw Error(response.status>=500?'The AI service is temporarily unavailable ('+response.status+'). Please retry in a moment.':'The AI service returned an unexpected response. Reload the page and try again.');}
-  if(!response.ok)throw Error(typeof data.error==='string'?data.error:data.error?.message||'AI request failed ('+response.status+').');
+  if(!response.ok)throw Object.assign(new Error(typeof data.error==='string'?data.error:data.error?.message||'AI request failed ('+response.status+').'),{status:response.status,code:data.code});
   return data;
  }
  const reader=response.body.getReader(),decoder=new TextDecoder(),result={text:'',model:'',metadata:{summary:''}};

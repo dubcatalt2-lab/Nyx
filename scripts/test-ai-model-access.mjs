@@ -1,4 +1,4 @@
-import {isDropAiActor,dropModelIsExpensive} from '../lib/ai-allowance.mjs';
+import {hasAppAiAllowance,dropModelIsExpensive,nookModelIsExpensive} from '../lib/ai-allowance.mjs';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
@@ -10,8 +10,9 @@ const models=[{id:'google/gemini-2.5-flash-lite'},{id:'openai/gpt-5.6-luna'},{id
 models.push({id:'openai/gpt-6-luna-pro'},{id:'anthropic/claude-opus-5.5'},{id:'openai/gpt-6-luna'},{id:'openai/gpt-6-sol'},{id:'openai/gpt-6-astra'},{id:'anthropic/claude-fable-5.1'});
 const start=source.indexOf("app.get('/api/nyx-ai/models',");
 const end=source.indexOf('\ninstallAiMedia(',start);
-vm.runInNewContext(source.slice(start,end),{app,isDropAiActor,dropModelIsExpensive,aiModelAllowed,hasFullAiCatalog,nyxAiKey:()=> 'fixture',
- nyxAiPremiumEntitlement:async req=>({uid:req.get('authorization')==='Bearer specific'?fullCatalogUid:'other',premium:req.get('authorization')==='Bearer premium',owner:['Bearer owner','Bearer specific'].includes(req.get('authorization'))}),
+vm.runInNewContext(source.slice(start,end),{app,hasAppAiAllowance,dropModelIsExpensive,nookModelIsExpensive,aiModelAllowed,hasFullAiCatalog,nyxAiKey:()=> 'fixture',
+ aiCatalogPrice:model=>({inputPerMillion:model.id.includes('claude')?6:1,outputPerMillion:1}),
+ nyxAiPremiumEntitlement:async req=>({app:req.get('authorization')==='Bearer nook'?'nook':null,uid:req.get('authorization')==='Bearer specific'?fullCatalogUid:'other',premium:req.get('authorization')==='Bearer premium',owner:['Bearer owner','Bearer specific'].includes(req.get('authorization'))}),
  nyxAiRequestCredential:()=>({key:'fixture'}),nyxAiAvailableModels:async()=>models});
 const server=app.listen(0,'127.0.0.1');await new Promise(resolve=>server.once('listening',resolve));
 try {
@@ -38,5 +39,7 @@ try {
   assert(data.models.some(m=>m.id==='openai/gpt-6-astra'));
   assert(data.models.some(m=>m.id==='anthropic/claude-fable-5.1'));
  }
+ const nook=await (await fetch(`http://127.0.0.1:${server.address().port}/api/nyx-ai/models`,{headers:{authorization:'Bearer nook'}})).json();
+ assert.equal(nook.models.length,models.length);assert(nook.models.find(m=>m.id==='anthropic/claude-opus-5.5').allowanceLabel.startsWith('1,000'));assert(nook.models.find(m=>m.id==='openai/gpt-6-astra').allowanceLabel.startsWith('7,000'));
  console.log('PASS: model routes expose public Luna 6/Gemini/DeepSeek, Premium other models, both owner-only Sol models and no quota labels');
 } finally {server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

@@ -46,3 +46,10 @@ remain local. One viewer at a time; reconnect after 30 minutes. Desktop data
 uses TLS through your Nyx server and is relayed in memory, never recorded.
 Only the exact configured Firebase owner UID can pair, view, or remove devices.
 Roles, co-owners, and the separate Drop owner do not grant access.
+
+Connection route
+Both Windows helpers default to the direct TLS desktop relay at
+fmsrobotics.robot-agachado.com. Pairing/account requests still use nyxlearning.org.
+The direct route uses the same exact-owner authorization and encrypted transport;
+it avoids the route that caused repeated disconnects during the owner preview.
+No router port forwarding or public Windows desktop listener is required.

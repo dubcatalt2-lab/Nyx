@@ -50,7 +50,7 @@ worker.stderr.on('data',()=>console.error('Desktop helper reported an error. Res
 worker.on('error',stop);worker.on('exit',()=>{stopping=true;clearTimeout(retry);socket?.close();process.exit(0);});
 function connect(){
  if(stopping||!workerReady)return;
- socket=new WebSocket(origin.replace(/^http/,'ws')+'/api/private-remote/socket');
+ socket=new WebSocket(origin==='https://nyxlearning.org'?'wss://fmsrobotics.robot-agachado.com/api/private-remote/socket':origin.replace(/^http/,'ws')+'/api/private-remote/socket');
  socket.addEventListener('open',()=>socket.send(JSON.stringify({type:'host',id:config.id,credential:config.credential})));
  socket.addEventListener('message',event=>{try{const data=JSON.parse(event.data);if(data.type!=='ready')command(data);}catch{socket.close();}});
  socket.addEventListener('error',()=>{});

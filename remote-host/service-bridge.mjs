@@ -14,7 +14,7 @@ let socket,desktop,stopped=false,timer;
 const status=message=>writeFile(join(directory,'status.txt'),new Date().toISOString()+' '+message).catch(()=>{});
 const closeDesktop=()=>{desktop?.destroy();desktop=null;};
 function connect(){
- if(stopped)return;socket=new WebSocket(config.origin.replace('https:','wss:')+'/api/private-remote/socket');socket.binaryType='arraybuffer';
+ if(stopped)return;socket=new WebSocket('wss://fmsrobotics.robot-agachado.com/api/private-remote/socket');socket.binaryType='arraybuffer';
  socket.onopen=()=>{socket.send(JSON.stringify({type:'host',id:config.id,credential:config.credential}));void status('Online; awaiting owner connection');};
  socket.onmessage=event=>{
   if(typeof event.data!=='string'){if(desktop&&!desktop.destroyed){if(desktop.writableLength>4*1024*1024){closeDesktop();socket.send(JSON.stringify({type:'ended'}));}else desktop.write(Buffer.from(event.data));}return;}

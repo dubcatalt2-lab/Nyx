@@ -19,13 +19,13 @@ export function enhanceDesktop(rfb, screen, releaseCapture) {
     else if(event.type==='mousedown'||event.type==='mouseup'){mask=(event.buttons&1)|((event.buttons&2)<<1)|((event.buttons&4)>>1);rfb._handleMouseButton(x,y,mask);}
     else if(event.type==='wheel'){const bit=event.deltaY<0?8:16;rfb._handleMouseButton(x,y,mask|bit);rfb._handleMouseButton(x,y,mask);}
   };
-  const endCapture=()=>queueMicrotask(releaseCapture);screen.addEventListener('mouseup',endCapture,true);document.addEventListener('fullscreenchange',releaseCapture);
+  const endCapture=()=>queueMicrotask(releaseCapture);screen.addEventListener('mouseup',endCapture,true);const fullscreenChanged=()=>{releaseCapture();if(!document.fullscreenElement&&locked())document.exitPointerLock();};document.addEventListener('fullscreenchange',fullscreenChanged);
   const events=['mousemove','mousedown','mouseup','click','contextmenu','wheel'];
   for(const name of events)screen.addEventListener(name,mouse,{capture:true,passive:false});
   document.addEventListener('pointerlockchange',changed);
   const blur=()=>{if(locked())document.exitPointerLock();};window.addEventListener('blur',blur);
   return {
     async lock(){if(!canvas.requestPointerLock)throw Error('Mouse lock is unavailable in this browser.');await canvas.requestPointerLock();},
-    destroy(){release();releaseCapture();screen.removeEventListener('mouseup',endCapture,true);document.removeEventListener('fullscreenchange',releaseCapture);if(locked())document.exitPointerLock();for(const name of events)screen.removeEventListener(name,mouse,true);document.removeEventListener('pointerlockchange',changed);window.removeEventListener('blur',blur);marker.remove();display.absX=originalX;display.absY=originalY;}
+    destroy(){release();releaseCapture();screen.removeEventListener('mouseup',endCapture,true);document.removeEventListener('fullscreenchange',fullscreenChanged);if(locked())document.exitPointerLock();for(const name of events)screen.removeEventListener(name,mouse,true);document.removeEventListener('pointerlockchange',changed);window.removeEventListener('blur',blur);marker.remove();display.absX=originalX;display.absY=originalY;}
   };
 }

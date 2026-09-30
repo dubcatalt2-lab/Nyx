@@ -198,6 +198,7 @@
   }
 
   function applyWorkspaceTheme(theme=localStorage.getItem('nyx.theme')||'default'){
+    if(document.documentElement.dataset.appShell==='tutsi')return;
     const clean=String(theme||'default').trim().toLowerCase()||'default';
     const root=document.documentElement;
     const values={
@@ -1631,7 +1632,7 @@
   applyWorkspaceTheme();
   addEventListener('message',event=>{
     if(event.origin!==location.origin) return;
-    if(event.data?.type==='nyx:theme-sync') applyWorkspaceTheme(event.data.theme);
+    if(event.source===parent&&event.data?.type==='nyx:theme-sync') applyWorkspaceTheme(event.data.theme);
     if(event.data?.type==='nyx:ai-profile') updateProfile(event.data.profile||{});
   });
   addEventListener('focus',requestProfile);

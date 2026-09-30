@@ -97,6 +97,7 @@
     try{return localStorage.getItem('nyx.theme') || 'default'}catch{return 'default'}
   }
   function applyTheme(){
+    if(document.documentElement.dataset.appShell==='tutsi')return;
     document.body.classList.remove(...THEME_CLASSES);
     const selected=settings.theme==='inherit' ? inheritedTheme() : settings.theme;
     if(selected && selected!=='default') document.body.classList.add(`theme-${selected}`);

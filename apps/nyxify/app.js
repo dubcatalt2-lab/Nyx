@@ -2391,6 +2391,7 @@ function hexrgb(value) {
 
 let nyxifyConstellationScene = null;
 function applynyxifytheme() {
+    if(document.documentElement.dataset.appShell==='tutsi')return;
   const theme = musicStorage.getItem('nyx.theme') || 'default';
   let accent = theme === 'custom' ? musicStorage.getItem('nyx.customThemeColor') : nyxifyThemeAccents[theme];
   if (!validhex(accent)) accent = nyxifyThemeAccents.default;

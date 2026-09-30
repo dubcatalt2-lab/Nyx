@@ -34,6 +34,7 @@
   ].map(name => [name.replace(/-([a-z])/g, (_match, letter) => letter.toUpperCase()), $(`[data-${name}]`)]));
 
   function applyTheme() {
+    if(document.documentElement.dataset.appShell==='tutsi')return;
     if (dropTube) return;
     const raw = String(localStorage.getItem("theme") || localStorage.getItem("nyxTheme") || "").toLowerCase();
     const theme = ["ruby", "emerald", "sakura", "fresh"].find(name => raw.includes(name));

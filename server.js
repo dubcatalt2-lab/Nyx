@@ -1,4 +1,5 @@
 import {createDropOwnerScope} from './lib/drop-owner.mjs';
+import {startMemoryMonitor} from './lib/memory-monitor.mjs';
 import {supportsConversationVoice} from './apps/agents/voice-capabilities.js';
 import {configureModelVoice,collectModelVoice} from './lib/model-voice.mjs';
 import {agentInstruction,parseAgentReply} from './lib/agent-protocol.mjs';
@@ -90,6 +91,7 @@ let catClassGamesCache = { games: [], expires: 0, promise: null };
 let catClassCoverUrls = new Set();
 const nyxCustomRoleLabelLimit = 64;
 const app = express();
+startMemoryMonitor();
 const dropOwnerScope=createDropOwnerScope({verify:async token=>(await linkGeneratorFirebase()).auth.verifyIdToken(token,true)});
 app.use(dropOwnerScope.middleware);
 app.get(['/agents','/agents/'],(_req,res)=>res.redirect(302,'/apps/agents/'));

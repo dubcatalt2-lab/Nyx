@@ -54,6 +54,7 @@ if [[ ! -f ${STRATUS_ENV_FILE} ]]; then
   echo "Created ${STRATUS_ENV_FILE}. Add a generated key there to enable self-hosted Cloud Gaming."
 fi
 bash "${SCRIPT_DIR}/install-ytdlp.sh"
+bash "${SCRIPT_DIR}/configure-memory.sh"
 # Nyx vision runs on the VPS CPU. Skip onnxruntime-node's optional CUDA payload;
 # extracting those unused GPU libraries can exhaust this host during a clean install.
 runuser -u "${APP_OWNER}" -- env ONNXRUNTIME_NODE_INSTALL=skip npm ci

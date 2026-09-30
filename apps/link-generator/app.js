@@ -61,6 +61,7 @@
   bulkJobs.catch(()=>{});
 
   function applyTheme(){
+    if(document.documentElement.dataset.appShell==='tutsi')return;
     let theme='default';
     try{theme=localStorage.getItem('nyx.theme') || 'default'}catch{}
     if(theme && theme!=='default') document.body.classList.add(`theme-${theme}`);

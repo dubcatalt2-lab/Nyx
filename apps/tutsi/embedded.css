@@ -402,12 +402,23 @@ html[data-tutsi-app="games"] .game-name {
   }
 }
 @media (max-width: 650px) {
+  html[data-tutsi-app] :is(.utility-header,.utility-nav) { flex-wrap: wrap; }
+
+  html[data-tutsi-app="checker"] .lc-app { flex-direction: column; }
+  html[data-tutsi-app="checker"] .lc-sidebar { position: static; width: 100%; height: auto; flex-basis: auto; }
+  html[data-tutsi-app="checker"] .lc-nav { flex-direction: row; flex-wrap: wrap; }
+  html[data-tutsi-app="checker"] .lc-nav button { width: auto; }
+  html[data-tutsi-app="checker"] .lc-content { padding: 16px; }
+  html[data-tutsi-app="checker"] :is(.page-heading,.heading-line) { flex-wrap: wrap; }
+  html[data-tutsi-app="checker"] .dashboard-top-grid { grid-template-columns: minmax(0,1fr); }
+  html[data-tutsi-app="checker"] .table-card { overflow: auto; }
+
   html[data-tutsi-app="youtube"] .tube-shell,
   html[data-tutsi-app="games"] .library {
     padding: 16px 16px 35px;
   }
   html[data-tutsi-app="youtube"] .catalog-head {
-    flex-direction: column;
+    grid-template-columns: minmax(0, 1fr);
     align-items: stretch;
     gap: 15px;
   }

@@ -20,6 +20,7 @@ const requiredFiles = [
   "apps/agents/icons/nook.svg",
   "apps/agents/fonts/Quicksand-Variable.ttf",
   "apps/agents/app.js",
+  "apps/agents/reply-content.js",
   "apps/agents/style.css",
   "apps/agents/media.js",
   "apps/agents/voice-capabilities.js",

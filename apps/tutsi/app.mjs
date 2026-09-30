@@ -248,7 +248,7 @@ function styleApp(frame, gamesFrame = null) {
     installShortcuts(doc,shortcutActions);
     frame.contentWindow.postMessage(
       {
-        type: "nyx:theme-sync",
+        type: "tutsi:theme-sync",
         theme: settings.theme === "latte" ? "light" : "dark",
       },
       location.origin,
@@ -470,6 +470,7 @@ function appFrame(name) {
   frame.allow =
     "fullscreen; autoplay; encrypted-media; picture-in-picture; clipboard-write; microphone; display-capture";
   frame.addEventListener("nyx:app-dom-ready", () => styleApp(frame));
+  frame.dataset.appShell = "tutsi";
   frame.src = appPaths[name];
   frame.addEventListener("load", () => {styleApp(frame);protectAppContents(frame);try{installShortcuts(frame.contentDocument,shortcutActions)}catch{}});
   frames.set(name, frame);

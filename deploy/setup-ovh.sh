@@ -59,6 +59,7 @@ install -d -m 0750 -o nyx -g nyx /var/lib/nyx/vision-models
 install -d -m 0700 -o nyx -g nyx /var/lib/nyx/youtube-cache
 install -d -m 0750 -o nyx -g nyx /var/lib/nyx-stratus
 bash "${SCRIPT_DIR}/install-ytdlp.sh"
+bash "${SCRIPT_DIR}/configure-memory.sh"
 
 cd "${APP_DIR}"
 runuser -u "${APP_OWNER}" -- npm ci

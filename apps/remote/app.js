@@ -1,6 +1,6 @@
 import {enhanceDesktop} from './desktop-controls.js';
 const $=id=>document.getElementById(id);
-let auth,socket,rfb,frameUrl,lastMove=0,generation=0,desktopControls;
+let auth,socket,rfb,frameUrl,lastMove=0,generation=0,desktopControls,reconnectTimer,reconnectAttempts=0;
 const notice=text=>{$('notice').textContent=text;};
 async function api(path,body,method){
  const token=await auth?.currentUser?.getIdToken();if(!token)throw Error('Sign in to Nyx with your owner account.');
@@ -9,19 +9,28 @@ async function api(path,body,method){
 }
 const run=fn=>async event=>{event?.preventDefault();try{await fn(event);}catch(error){notice(error.message);}};
 function send(value){if(socket?.readyState===1)socket.send(JSON.stringify(value));}
-function disconnect(){generation++;desktopControls?.destroy();desktopControls=null;rfb?.disconnect();rfb=null;send({type:'release'});socket?.close();socket=null;if(frameUrl)URL.revokeObjectURL(frameUrl);frameUrl=null;$('frame').removeAttribute('src');$('frame').hidden=false;$('screen').replaceChildren($('frame'));$('screen').classList.remove('vnc-screen');$('secureAttention').hidden=true;$('session').hidden=true;$('setup').hidden=false;}
+function disconnect(){clearTimeout(reconnectTimer);generation++;desktopControls?.destroy();desktopControls=null;rfb?.disconnect();rfb=null;send({type:'release'});socket?.close();socket=null;if(frameUrl)URL.revokeObjectURL(frameUrl);frameUrl=null;$('frame').removeAttribute('src');$('frame').hidden=false;$('screen').replaceChildren($('frame'));$('screen').classList.remove('vnc-screen');$('secureAttention').hidden=true;$('session').hidden=true;$('setup').hidden=false;}
 async function list(){
  const data=await(await api('/devices')).json();$('devices').replaceChildren();
  if(!data.devices.length){const text=document.createElement('p');text.textContent='No paired computers.';$('devices').append(text);}
  for(const device of data.devices){const row=document.createElement('div');row.className='device';const label=document.createElement('span');label.textContent=device.name;const state=document.createElement('small');state.textContent=device.connected?'In use':device.online?'Online':'Offline';label.append(state);const connect=document.createElement('button');connect.textContent='Connect';connect.disabled=!device.online||device.connected;connect.onclick=run(()=>start(device));const remove=document.createElement('button');remove.textContent='Remove';remove.onclick=run(async()=>{if(!confirm('Remove '+device.name+' and revoke its remote access?'))return;await api('/devices/'+device.id,null,'DELETE');await list();});const codeButton=document.createElement('button');codeButton.textContent='Generate new code';codeButton.onclick=run(async()=>{const result=await(await api('/devices/'+device.id+'/code',{})).json();notice('Code: '+result.code.match(/.{1,4}/g).join('-')+' ? valid for 5 minutes, for your owner account only.');});row.append(label,connect,codeButton,remove);$('devices').append(row);}
 }
-async function start(device){
+function reconnect(device,reason,allowed=true){
+ disconnect();list().catch(()=>{});
+ if(!allowed||reconnectAttempts>=5){notice(reason+' Select Connect to try again.');return;}
+ const attempt=++reconnectAttempts,version=generation;notice(reason+' Reconnecting ('+attempt+'/5)...');
+ reconnectTimer=setTimeout(()=>{if(generation!==version)return;start(device,true).catch(error=>{if(generation===version+2)reconnect(device,error.message);});},3000);
+}
+async function start(device,retry=false){
+ if(!retry)reconnectAttempts=0;
  disconnect();const version=++generation;const RFB=device.mode==='vnc'?(await import('/assets/vendor/novnc/core/rfb.js')).default:null;const releaseCapture=device.mode==='vnc'?(await import('/assets/vendor/novnc/core/util/events.js')).releaseCapture:null;const {ticket}=await(await api('/connect',{id:device.id})).json();if(version!==generation)return;
  $('session').hidden=false;$('setup').hidden=true;$('computerName').textContent=device.name;$('sessionState').textContent='Connecting…';notice('');
- socket=new WebSocket(location.origin.replace(/^http/,'ws')+'/api/private-remote/socket');socket.binaryType='blob';const current=socket;
+ socket=new WebSocket(location.origin.replace(/^http/,'ws')+'/api/private-remote/socket');socket.binaryType='blob';const current=socket;let closeCode=1006,failedSecurity=false;
+ current.addEventListener('close',event=>{closeCode=event.code;},{capture:true});
+ const ended=()=>{if(version!==generation)return;const reasons={4001:'Session authorization needs refreshing.',4003:'Remote access was refused.',4008:'Remote traffic limit reached.',4009:'Computer is already in use.',4010:'Connection could not keep up with the desktop stream.',4011:'The Windows desktop stream ended.',4012:'The Windows bridge disconnected.'};reconnect(device,failedSecurity?'Windows desktop authentication failed.':reasons[closeCode]||'Desktop connection interrupted (code '+closeCode+').',!failedSecurity&&![4003,4009].includes(closeCode));};
  socket.onopen=()=>current.send(JSON.stringify({type:'viewer',ticket}));
- socket.onmessage=event=>{if(version!==generation)return;if(event.data instanceof Blob){const next=URL.createObjectURL(event.data),old=frameUrl;frameUrl=next;$('frame').src=next;if(old)URL.revokeObjectURL(old);$('sessionState').textContent='Connected';}else{const data=JSON.parse(event.data);if(data.type==='status')$('sessionState').textContent=data.message;if(data.type==='vnc'&&RFB){$('frame').hidden=true;screen.classList.add('vnc-screen');rfb=new RFB(screen,current,{credentials:{password:data.password}});desktopControls=enhanceDesktop(rfb,screen,releaseCapture);rfb.scaleViewport=true;rfb.qualityLevel=6;rfb.compressionLevel=2;rfb.addEventListener('connect',()=>{$('sessionState').textContent='Connected · Windows service';$('secureAttention').hidden=false;});rfb.addEventListener('disconnect',()=>{if(version!==generation)return;disconnect();notice('Desktop disconnected. Refresh to reconnect.');list().catch(()=>{});});rfb.addEventListener('securityfailure',()=>notice('Windows desktop authentication failed.'));}}};
- socket.onclose=()=>{if(version!==generation)return;disconnect();notice('Disconnected. Refresh your computers to reconnect.');list().catch(()=>{});};
+ socket.onmessage=event=>{if(version!==generation)return;if(event.data instanceof Blob){const next=URL.createObjectURL(event.data),old=frameUrl;frameUrl=next;$('frame').src=next;if(old)URL.revokeObjectURL(old);$('sessionState').textContent='Connected';}else{const data=JSON.parse(event.data);if(data.type==='status')$('sessionState').textContent=data.message;if(data.type==='vnc'&&RFB){$('frame').hidden=true;screen.classList.add('vnc-screen');rfb=new RFB(screen,current,{credentials:{password:data.password}});desktopControls=enhanceDesktop(rfb,screen,releaseCapture);rfb.scaleViewport=true;rfb.qualityLevel=6;rfb.compressionLevel=2;rfb.addEventListener('connect',()=>{$('sessionState').textContent='Connected · Windows service';$('secureAttention').hidden=false;});rfb.addEventListener('disconnect',()=>setTimeout(ended,0));rfb.addEventListener('securityfailure',()=>{failedSecurity=true;notice('Windows desktop authentication failed.');});}}};
+ socket.onclose=ended;
  socket.onerror=()=>{if(version===generation)notice('Connection unavailable. Check that your PC is awake and the helper is running.');};
 }
 function point(event){const rect=$('frame').getBoundingClientRect();if(!rect.width||!$('frame').naturalWidth)return null;return {x:Math.max(0,Math.min(1,(event.clientX-rect.left)/rect.width)),y:Math.max(0,Math.min(1,(event.clientY-rect.top)/rect.height))};}

@@ -18,7 +18,7 @@ const host=new WebSocket(origin.replace('http:','ws:')+'/api/private-remote/sock
 let stage=0,pending=Buffer.alloc(0),frames=0,keys=0,pointers=0,stopped=false,lastPointer;
 function serverInit(){const name=Buffer.from('Service test'),init=Buffer.alloc(24+name.length);init.writeUInt16BE(320,0);init.writeUInt16BE(200,2);init[4]=32;init[5]=24;init[7]=1;init.writeUInt16BE(255,8);init.writeUInt16BE(255,10);init.writeUInt16BE(255,12);init[14]=16;init[15]=8;init.writeUInt32BE(name.length,20);name.copy(init,24);return init;}
 host.on('message',(data,binary)=>{
- if(!binary){const value=JSON.parse(data);if(value.type==='control'&&value.active){host.send(JSON.stringify({type:'vnc',password:'Abcdef23'}));host.send(Buffer.from('RFB 003.008\n'));}if(value.type==='control'&&!value.active)stopped=true;return;}
+ if(!binary){const value=JSON.parse(data);if(value.type==='control'&&value.active){stage=0;pending=Buffer.alloc(0);frames=0;host.send(JSON.stringify({type:'vnc',password:'Abcdef23'}));host.send(Buffer.from('RFB 003.008\n'));}if(value.type==='control'&&!value.active)stopped=true;return;}
  pending=Buffer.concat([pending,data]);
  if(stage===0&&pending.length>=12){assert.equal(pending.subarray(0,12).toString(),'RFB 003.008\n');pending=pending.subarray(12);host.send(Buffer.from([1,1]));stage++;}
  if(stage===1&&pending.length>=1){assert.equal(pending[0],1);pending=pending.subarray(1);host.send(Buffer.alloc(4));stage++;}
@@ -34,6 +34,8 @@ try{
  await page.locator('#lockMouse').click();await page.waitForFunction(()=>document.pointerLockElement?.tagName==='CANVAS');
  const before=pointers;await page.evaluate(()=>document.pointerLockElement.dispatchEvent(new MouseEvent('mousemove',{bubbles:true,movementX:30,movementY:20})));await page.waitForTimeout(150);assert(pointers>before);assert(await page.locator('.locked-pointer').isVisible());
  await page.evaluate(()=>document.exitPointerLock());await page.waitForFunction(()=>!document.pointerLockElement);assert(await page.locator('.locked-pointer').isHidden());
+ host.send(JSON.stringify({type:'ended'}));await page.getByText('The Windows desktop stream ended. Reconnecting (1/5)...',{exact:true}).waitFor();await page.locator('#secureAttention').waitFor({state:'visible'});
+
 assert(frames>0);assert(await page.locator('#secureAttention').isVisible());await page.locator('#disconnect').click();await page.waitForTimeout(100);assert(stopped);assert.deepEqual(errors,[]);
  console.log('PASS: noVNC RFB handshake, framebuffer, mouse/keyboard over owner-authenticated binary relay; session teardown. Native Windows service installation still requires administrator approval.');
 }finally{await browser.close();host.close();remote.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

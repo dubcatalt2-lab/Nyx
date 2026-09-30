@@ -27,7 +27,7 @@ export function setupDeveloper({account,user,nook,secret,refresh}){
   $('modelAccess').textContent=(next.models?.length||0)+' models · same access as your account';
   usage(next.usage);$('otherBrowserUsage').hidden=!next.currentBrowserUsage;if(next.currentBrowserUsage)usage(next.currentBrowserUsage,'current');
   const requests=next.usage?.requestsToday||0;$('usageRequests').textContent=requests.toLocaleString()+(requests===1?' request today':' requests today')+(next.usage?.pending?' · request in progress':'');
-  $('usageScope').textContent=next.keyUsesCurrentBrowser?'Chat and this key share this browser’s allowance.':'Your key uses the browser allowance it was first created with. This browser’s chat allowance is shown separately.';
+  $('usageScope').textContent=next.key&&next.key.app!=='nook'?'Your existing key uses the older API allowance. In Keys, choose “Use Nook models and allowance” to share the pool shown here.':next.keyUsesCurrentBrowser?'Chat and Nook keys share this browser’s allowance.':'Your key uses the browser allowance it was first created with. This browser’s chat allowance is shown separately.';
   example();
  }
  function example(){const model=$('playModel').value||'MODEL_ID';$('apiEndpoint').textContent=location.origin+'/api/v1/ai';$('apiExample').textContent=`curl "${location.origin}/api/v1/ai" \\\n  -H "Authorization: Bearer $NOOK_API_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d '${JSON.stringify({model,messages:[{role:'user',content:'Hello'}],max_tokens:512})}'`;}

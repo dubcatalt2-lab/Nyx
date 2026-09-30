@@ -51,5 +51,10 @@ Connection route
 Both Windows helpers default to the direct TLS desktop relay at
 fmsrobotics.robot-agachado.com. Pairing/account requests still use nyxlearning.org.
 The direct route uses the same exact-owner authorization and encrypted transport;
-it avoids the route that caused repeated disconnects during the owner preview.
+it avoids the previous route, which showed more frequent disconnects in testing.
 No router port forwarding or public Windows desktop listener is required.
+
+The Windows service retries interrupted connections and checks relay replies.
+A brief missed heartbeat does not end an otherwise active desktop stream.
+Protected ProgramData/NyxRemote/bridge-log.txt keeps the last 100 status entries
+(close codes and connection state only, no credentials or desktop content).

@@ -63,8 +63,7 @@ html[data-tutsi-app="ai"] .ai-sidebar-header {
 }
 html[data-tutsi-app="ai"] .ai-sidebar-brand-mark,
 html[data-tutsi-app="ai"] .ai-brand-mark,
-html[data-tutsi-app="ai"] .ai-welcome-mark,
-html[data-tutsi-app="ai"] .ai-message-assistant .ai-message-avatar {
+html[data-tutsi-app="ai"] .ai-welcome-mark {
   background: url("/apps/tutsi/icon.png?v=2") center/contain no-repeat !important;
   border: 0 !important;
   box-shadow: none !important;
@@ -140,6 +139,110 @@ html[data-tutsi-app="ai"] .ai-model-trigger {
 }
 html[data-tutsi-app="ai"] .ai-provider-select {
   font-size: 10px;
+}
+/* Reply avatars contain the actual model mark; app branding belongs to chrome. */
+html[data-tutsi-app="ai"] .ai-message-assistant .ai-message-avatar {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+html[data-tutsi-app="ai"] .ai-company-logo:not(.ai-company-logo-color) {
+  background-color: var(--ai-text);
+}
+/* Tutsi's model directory: named companies beside a readable single-column list. */
+html[data-tutsi-app="ai"] .ai-model-menu {
+  width: min(880px, calc(100vw - 32px));
+  height: min(720px, calc(100dvh - 48px));
+  grid-template-columns: 190px minmax(0, 1fr);
+  grid-template-rows: 68px 72px minmax(0, 1fr);
+  gap: 0;
+  border-color: var(--ai-border);
+  border-radius: 24px;
+  box-shadow: 0 28px 90px #0005;
+}
+html[data-tutsi-app="ai"] .ai-model-menu-header {
+  padding: 0 24px;
+  gap: 12px;
+}
+html[data-tutsi-app="ai"] .ai-model-menu-header strong {font-size: 21px;}
+html[data-tutsi-app="ai"] .ai-model-menu-header span {font-size: 13px;}
+html[data-tutsi-app="ai"] #modelMenuClose {width: 34px; height: 34px; border-radius: 11px;}
+html[data-tutsi-app="ai"] .ai-model-companies {
+  display: flex;
+  flex-direction: column;
+  grid-column: 1;
+  grid-row: 2 / -1;
+  gap: 5px;
+  min-height: 0;
+  padding: 17px 12px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border-right: 1px solid var(--ai-border);
+  background: var(--ai-bg);
+  scrollbar-width: thin;
+  scrollbar-color: var(--ai-border) transparent;
+}
+html[data-tutsi-app="ai"] .ai-model-companies::before {
+  content: "Companies";
+  color: var(--ai-muted);
+  font-size: 13px;
+  padding: 0 10px 10px;
+}
+html[data-tutsi-app="ai"] .ai-model-companies button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  height: auto;
+  min-height: 43px;
+  flex: 0 0 auto;
+  padding: 8px 10px;
+  border-radius: 12px;
+  font-size: 14px;
+  text-align: left;
+  color: var(--ai-text-soft);
+}
+html[data-tutsi-app="ai"] .ai-company-filter-label {min-width: 0; overflow-wrap: anywhere; line-height: 1.3;}
+html[data-tutsi-app="ai"] .ai-model-companies button[aria-pressed="true"] {border-color: var(--ai-accent); background: var(--ai-surface-raised);}
+html[data-tutsi-app="ai"] .ai-model-search {margin: 15px 20px; gap: 10px;}
+html[data-tutsi-app="ai"] .ai-model-search input {height: 42px; border-radius: 12px; font-size: 15px; background: var(--ai-bg);}
+html[data-tutsi-app="ai"] .ai-model-search button {height: 42px; border-radius: 12px; padding-inline: 15px; font-size: 14px;}
+html[data-tutsi-app="ai"] .ai-model-options {padding: 0 20px 20px;}
+html[data-tutsi-app="ai"] .ai-model-group {padding-bottom: 14px;}
+html[data-tutsi-app="ai"] .ai-model-group+.ai-model-group {border-top: 0; margin-top: 0;}
+html[data-tutsi-app="ai"] .ai-model-group-label {font-size: 13px; text-transform: none; letter-spacing: 0; padding: 12px 4px; color: var(--ai-muted); line-height: 1.4;}
+html[data-tutsi-app="ai"] .ai-model-group-grid {grid-template-columns: minmax(0, 1fr); gap: 8px;}
+html[data-tutsi-app="ai"] .ai-model-option {
+  grid-template-columns: 28px minmax(0, 1fr) 20px;
+  gap: 13px;
+  min-height: 76px;
+  padding: 13px 15px;
+  border: 1px solid var(--ai-border);
+  border-radius: 15px;
+  background: var(--ai-bg);
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
+html[data-tutsi-app="ai"] .ai-model-option:hover,
+html[data-tutsi-app="ai"] .ai-model-option:focus-visible {background: var(--ai-surface-raised); border-color: var(--ai-accent);}
+html[data-tutsi-app="ai"] .ai-model-option[aria-selected="true"] {background: var(--ai-surface-raised); border-color: var(--ai-accent);}
+html[data-tutsi-app="ai"] .ai-model-option-label {gap: 5px;}
+html[data-tutsi-app="ai"] .ai-model-option-label strong {font-size: 17px; line-height: 1.35;}
+html[data-tutsi-app="ai"] .ai-model-option-label small {font-size: 12px; line-height: 1.4;}
+html[data-tutsi-app="ai"] .ai-model-option>.ai-company-logo {width: 27px; height: 27px;}
+@media (max-width: 620px) {
+  html[data-tutsi-app="ai"] .ai-model-menu {width: calc(100vw - 16px); height: calc(100dvh - 24px); border-radius: 18px; grid-template-columns: minmax(0, 1fr); grid-template-rows: 64px 68px 58px minmax(0, 1fr);}
+  html[data-tutsi-app="ai"] .ai-model-menu-header {padding-inline: 16px; gap: 8px;}
+  html[data-tutsi-app="ai"] .ai-model-menu-header strong {font-size: 19px;}
+  html[data-tutsi-app="ai"] .ai-model-menu-header span {font-size: 11px;}
+  html[data-tutsi-app="ai"] .ai-model-search {grid-column: 1; grid-row: 2; margin: 12px;}
+  html[data-tutsi-app="ai"] .ai-model-companies {grid-column: 1; grid-row: 3; flex-direction: row; padding: 6px 12px 10px; border-right: 0; border-bottom: 1px solid var(--ai-border); background: transparent;}
+  html[data-tutsi-app="ai"] .ai-model-companies::before {display: none;}
+  html[data-tutsi-app="ai"] .ai-model-companies button {min-height: 36px; padding: 5px 10px; border-color: var(--ai-border); white-space: nowrap; font-size: 13px; gap: 7px;}
+  html[data-tutsi-app="ai"] .ai-company-filter-label {overflow-wrap: normal;}
+  html[data-tutsi-app="ai"] .ai-model-companies .ai-company-logo {width: 18px; height: 18px;}
+  html[data-tutsi-app="ai"] .ai-model-options {grid-column: 1; grid-row: 4; padding: 4px 12px 14px;}
+  html[data-tutsi-app="ai"] .ai-model-option {gap: 10px; padding: 12px;}
+  html[data-tutsi-app="ai"] .ai-model-option-label strong {font-size: 16px;}
 }
 html[data-tutsi-app="youtube"] .tube-shell {
   width: min(1400px, 100%);

@@ -42,7 +42,7 @@ export function decorateEmbedded(doc, app) {
     const link = doc.createElement("link");
     link.id = "tutsi-embedded-style";
     link.rel = "stylesheet";
-    link.href = "/apps/tutsi/embedded.css?v=20260919-movie-hover";
+    link.href = "/apps/tutsi/embedded.css?v=20260930-model-directory";
     doc.head.append(link);
   }
   doc.title =
@@ -113,6 +113,7 @@ export function decorateEmbedded(doc, app) {
   }
   if (labels[app]) doc.title = "Tutsi Math - " + labels[app];
   if (app === "ai") {
+    text(doc, ".ai-model-menu-header strong", "Choose a model");
     text(doc, ".ai-brand-copy > span", "Tutsi Math");
     text(doc, ".ai-brand-copy h1", "AI");
     text(doc, ".ai-sidebar-brand strong", "Tutsi AI");

@@ -41,17 +41,36 @@ try {
     {id:'openai/gpt-6-luna',label:'GPT-6 Luna',vision:true,poolTokenLimit:5000},
     {id:'openai/gpt-6-sol',label:'GPT-6 Sol',vision:true}
   ];
-  for(const tutsi of [false,true]) {
-    const context=await browser.newContext({viewport:{width:tutsi?390:1280,height:850}});
+  for(const variant of ['nyx','tutsi-desktop','tutsi-mobile']) {
+    const tutsi=variant.startsWith('tutsi');
+    const context=await browser.newContext({viewport:{width:variant.endsWith('mobile')?390:1280,height:850}});
     try {
       let reverse=false;
       await context.route('**/api/**',route=>route.fulfill({contentType:'application/json',body:'{}'}));
       await context.route('**/api/nyx-ai/providers',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({providers:[{id:'shared',label:'OpenRouter'}]})}));
       await context.route('**/api/nyx-ai/models',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({models:reverse?[...fixtures].reverse():fixtures})}));
+      await context.route('**/api/nyx-ai',route=>route.fulfill({contentType:'text/event-stream',body:'data: '+JSON.stringify({model:'anthropic/claude-opus-5.5',choices:[{delta:{content:'Reply icon regression fixture.'}}]})+'\n\ndata: [DONE]\n\n'}));
       const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
       await page.goto(base+'/ai.html');
-      if(tutsi)await page.evaluate(async()=>{const {decorateEmbedded}=await import('/apps/tutsi/embedded.mjs');decorateEmbedded(document,'ai');});
+      if(tutsi){
+        await page.evaluate(async()=>{const {decorateEmbedded}=await import('/apps/tutsi/embedded.mjs');decorateEmbedded(document,'ai');});
+        await page.waitForFunction(()=>[...document.styleSheets].some(sheet=>sheet.href?.includes('/apps/tutsi/embedded.css')));
+      }
       await page.locator('#modelTrigger').click();
+      if(tutsi){
+        assert.equal(await page.locator('#modelCompanies .ai-company-filter-label').count(),5);
+        assert.equal(await page.locator('#modelCompanies [data-loop-copy]').count(),0);
+        assert.equal(await page.locator('#modelCompanies').evaluate(el=>getComputedStyle(el).flexDirection),variant.endsWith('mobile')?'row':'column');
+        const bounds=await page.locator('#modelMenu').boundingBox();
+        assert(bounds.x>=0&&bounds.x+bounds.width<=page.viewportSize().width,'Picker must fit viewport');
+        await page.locator('#modelCompanies [data-model-company="anthropic"]').click();
+        assert.equal(await page.locator('#modelOptions [data-model-id]').count(),1);
+        await page.locator('#modelSearch').fill('Mercury');
+        assert.equal(await page.locator('#modelOptions [data-model-id]').count(),1);
+        assert.equal(await page.locator('#modelOptions [data-model-id]').getAttribute('data-model-id'),'inception/mercury-2.5');
+        await page.locator('.ai-model-search [data-model-company=""]').click();
+        await page.screenshot({path:join(tmpdir(),variant+'-model-picker.png')});
+      }else assert.equal(await page.locator('#modelCompanies .ai-company-rail').count(),2);
       const ids=await page.locator('#modelOptions [data-model-id]').evaluateAll(nodes=>nodes.map(n=>n.dataset.modelId));
       assert.deepEqual(ids.slice(0,4),['openai/gpt-6-sol','openai/gpt-6-luna-pro','openai/gpt-6-luna','openai/gpt-5.6-luna']);
       assert(ids.slice(-2).every(id=>id.endsWith(':free')||id==='openrouter/free'));
@@ -60,15 +79,50 @@ try {
       assert(await option('openai/gpt-6-luna').locator('.ai-model-option-label').evaluate(node=>getComputedStyle(node).whiteSpace!=='nowrap'&&node.scrollWidth<=node.clientWidth+1),'Capability and quota labels must remain readable on mobile');
       assert(!/5,000|token cap|token limit/.test(await page.locator('#modelOptions').innerText()));
       assert(!/Image generation/.test(await option('openai/gpt-6-luna').innerText()));
-      assert.match(await option('google/gemini-2.5-flash-image').innerText(),/Text.*Vision.*Image generation/);
+      const imageCapabilities=await option('google/gemini-2.5-flash-image').innerText();
+      for(const capability of ['Text','Vision','Image generation'])assert(imageCapabilities.includes(capability));
       assert.match(await option('inception/mercury-2.5').innerText(),/Text/);
       assert(!/Vision/.test(await option('inception/mercury-2.5').innerText()));
       await option('openai/gpt-6-luna').click();assert.equal(await page.locator('#model').inputValue(),'openai/gpt-6-luna');
+      if(tutsi){
+        await page.locator('#input').fill('Check the model avatar');
+        await page.locator('#send').click();
+        await page.waitForFunction(()=>document.querySelector('#conversation')?.textContent.includes('Reply icon regression fixture.'));
+        const avatar=page.locator('.ai-message-assistant .ai-message-avatar').last();
+        assert.equal(await avatar.evaluate(el=>getComputedStyle(el).backgroundImage),'none','Old Tutsi icon must not appear behind company logo');
+        assert.equal(await avatar.locator('.ai-company-logo').count(),1);
+        assert.match(await page.locator('.ai-message-assistant .ai-message-meta strong').last().innerText(),/Claude/);
+      }
       reverse=true;await page.reload();await page.waitForFunction(()=>document.querySelector('#model')?.value==='openai/gpt-6-luna');
       assert.deepEqual(errors,[]);
-      console.log((tutsi?'Tutsi mobile':'Nyx desktop')+': paid/GPT ordering, free section, capability labels, no quota labels and saved selection passed');
+      console.log(variant+': model ordering, capabilities, saved selection, layout, filters and reply icons passed');
     } finally {await context.close();}
   }
+
+  const embedded=await browser.newContext({viewport:{width:1280,height:850}});
+  try{
+    await embedded.route('**/api/**',route=>route.fulfill({contentType:'application/json',body:'{}'}));
+    await embedded.route('**/api/nyx-ai/providers',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({providers:[{id:'shared',label:'OpenRouter'}]})}));
+    await embedded.route('**/api/nyx-ai/models',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({models:fixtures})}));
+    await embedded.addInitScript(()=>localStorage.setItem('tutsi.customize.seen','1'));
+    const page=await embedded.newPage();
+    await page.goto(base+'/apps/tutsi/index.html#settings');
+    await page.selectOption('#accent','green');
+    await page.locator('#close-prevention').uncheck();
+    await page.goto(base+'/apps/tutsi/index.html#ai');
+    const frame=page.frameLocator('#app-host iframe:not([hidden])');
+    await frame.locator('html[data-tutsi-app="ai"]').waitFor();
+    await frame.locator('#modelTrigger').click();
+    assert.equal(await frame.locator('#modelCompanies').getAttribute('data-layout'),'tutsi');
+    assert.equal(await frame.locator('link[href*="obsidian.css"]').count(),0);
+    assert.equal(await frame.locator('#modelCompanies').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(30, 47, 29)');
+    const mark=frame.locator('#modelCompanies .ai-company-logo:not(.ai-company-logo-color)').first();
+    assert.equal(await mark.evaluate(el=>getComputedStyle(el).backgroundColor),await mark.evaluate(el=>getComputedStyle(el).color));
+    await page.screenshot({path:join(tmpdir(),'tutsi-embedded-model-picker.png')});
+    await frame.locator('#modelSearch').press('Escape');
+    assert.equal(await frame.locator('#modelMenu').evaluate(el=>el.open),false);
+    console.log('Tutsi actual shell: named filters, native palette, isolated stylesheet and Escape passed');
+  }finally{await embedded.close();}
 
 } finally {
   await browser?.close();

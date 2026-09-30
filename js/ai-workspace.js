@@ -1170,12 +1170,15 @@
     message.querySelector('.ai-message-meta strong').textContent=message._modelName;
     message.querySelector('.ai-message-avatar').innerHTML=message._modelId?modelIcon({id:message._modelId,company:'Assistant'}):'<span class="ai-company-initial" aria-hidden="true">AI</span>';
   }
+  const tutsiModelPicker=()=>document.documentElement.dataset.appShell==='tutsi'||document.documentElement.dataset.tutsiApp==='ai';
   function renderModelCompanies(){
     const leading=['openai','anthropic','gemini','deepseek','meta','qwen','xai','mistral'];
     const rank=key=>leading.includes(key)?leading.indexOf(key):leading.length;
     const companies=[...new Map(modelCatalog.map(item=>{const company=modelCompany(item);return [company.key,company]})).values()].sort((a,b)=>rank(a.key)-rank(b.key)||a.label.localeCompare(b.label));
     if(!companies.some(company=>company.key===modelCompanyFilter))modelCompanyFilter='';
-    const button=company=>`<button type="button" data-model-company="${escapeHtml(company.key)}" title="${escapeHtml(company.label)}" aria-label="${escapeHtml(company.label)} models" aria-pressed="${modelCompanyFilter===company.key}">${modelCompanyIcon(company)}</button>`;
+    const tutsi=tutsiModelPicker();modelCompaniesHost.dataset.layout=tutsi?'tutsi':'nyx';
+    const button=company=>`<button type="button" data-model-company="${escapeHtml(company.key)}" title="${escapeHtml(company.label)}" aria-label="${escapeHtml(company.label)} models" aria-pressed="${modelCompanyFilter===company.key}">${modelCompanyIcon(company)}${tutsi?`<span class="ai-company-filter-label">${escapeHtml(company.label)}</span>`:''}</button>`;
+    if(tutsi){modelCompaniesHost.innerHTML=companies.map(button).join('');syncCompanyMotion();return;}
     modelCompaniesHost.innerHTML=[companies.filter((_,i)=>i%2===0),companies.filter((_,i)=>i%2===1)].map((items,i)=>`<div class="ai-company-rail" aria-label="${i?'Right':'Left'} company filters"><div class="ai-company-track">${items.map(button).join('')}</div></div>`).join('');
     modelCompaniesHost.querySelectorAll('.ai-company-rail').forEach(rail=>{
       const copy=rail.firstElementChild.cloneNode(true);
@@ -1190,8 +1193,9 @@
   let companyFrame=0;
   function syncCompanyMotion(){
     cancelAnimationFrame(companyFrame);
+    if(modelCompaniesHost.dataset.layout!==(tutsiModelPicker()?'tutsi':'nyx')){renderModelCompanies();return;}
     const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const stopped=reduced;
+    const stopped=reduced||tutsiModelPicker();
     modelMenu.querySelector('[data-model-company=""]').setAttribute('aria-pressed',String(!modelCompanyFilter));
     modelCompaniesHost.querySelectorAll('[data-loop-copy]').forEach(copy=>copy.hidden=stopped);
     if(modelMenu.hidden||stopped)return;
@@ -1214,6 +1218,10 @@
 
   function revealModelCompany(key){
     if(!key||modelMenu.hidden)return;
+    if(tutsiModelPicker()){
+      const button=[...modelCompaniesHost.querySelectorAll('button')].find(item=>item.dataset.modelCompany===key);
+      button?.scrollIntoView({block:'nearest',inline:'nearest'});return;
+    }
     const button=[...modelCompaniesHost.querySelectorAll('.ai-company-track:not([data-loop-copy]) button')].find(item=>item.dataset.modelCompany===key);
     const rail=button?.closest('.ai-company-rail');
     if(!rail)return;

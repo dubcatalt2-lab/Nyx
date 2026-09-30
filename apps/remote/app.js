@@ -32,7 +32,7 @@ screen.addEventListener('pointercancel',()=>send({type:'release'}));screen.addEv
 screen.addEventListener('wheel',event=>{if(rfb)return;event.preventDefault();send({type:'wheel',delta:Math.sign(event.deltaY)});},{passive:false});
 for(const action of ['keydown','keyup'])screen.addEventListener(action,event=>{if(rfb)return;if(event.key==='Escape'){send({type:'release'});screen.blur();return;}event.preventDefault();send({type:'key',action:action==='keydown'?'down':'up',key:event.keyCode});});
 screen.addEventListener('blur',()=>send({type:'release'}));window.addEventListener('blur',()=>send({type:'release'}));window.addEventListener('pagehide',disconnect);
-$('refresh').onclick=run(list);$('disconnect').onclick=()=>{disconnect();list().catch(()=>{});};$('fullscreen').onclick=run(()=>document.fullscreenElement?document.exitFullscreen():$('session').requestFullscreen());
+$('refresh').onclick=run(list);$('disconnect').onclick=()=>{disconnect();list().catch(()=>{});};$('fullscreen').onclick=run(()=>document.fullscreenElement?document.exitFullscreen():$('screen').requestFullscreen());
 $('secureAttention').onclick=()=>rfb?.sendCtrlAltDel();
 $('pair').onsubmit=run(async()=>{await api('/pair/approve',{code:$('code').value});$('code').value='';notice('Computer paired. It should appear online shortly.');await list();});
 $('download').onclick=run(async()=>{const blob=await(await api('/host.zip')).blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Nyx-Remote.zip';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});

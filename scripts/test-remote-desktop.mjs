@@ -7,7 +7,7 @@ import {createRemoteDesktop,remoteOwnerUid,remoteInput} from '../lib/remote-desk
 const records=new Map();let clock=Date.now();
 const collection={doc:id=>({get:async()=>({data:()=>records.get(id)}),set:async data=>records.set(id,data),delete:async()=>records.delete(id)}),where:()=>({get:async()=>({size:records.size,docs:[...records].map(([id,data])=>({id,data:()=>data}))})})};
 const remote=createRemoteDesktop({now:()=>clock,firebase:async()=>({auth:{verifyIdToken:async(token,revoked)=>{assert.equal(revoked,true);if(token==='owner')return {uid:remoteOwnerUid};if(token==='invalid')throw Error();return {uid:token,role:'owner'};}},firestore:{collection:()=>collection}}),download:async()=>Buffer.from('fixture')});
-const app=express();app.use('/api/private-remote',remote.router);const server=createServer(app);server.on('upgrade',remote.upgrade);
+const app=express();app.use('/api/private-remote',remote.router);app.get('/private-page',remote.pageAccess,(_req,res)=>res.send('owner page'));const server=createServer(app);server.on('upgrade',remote.upgrade);
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base='http://127.0.0.1:'+server.address().port+'/api/private-remote';
 async function api(path,{token='owner',body,method}={}){return fetch(base+path,{method:method||(body?'POST':'GET'),headers:{...(token?{Authorization:'Bearer '+token}:{}),'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});}
 const message=socket=>new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Message timeout')),3000);socket.once('message',(data,binary)=>{clearTimeout(timer);resolve(binary?data:JSON.parse(data.toString()));});});
@@ -16,12 +16,32 @@ async function denied(first){const socket=new WebSocket(base.replace('http:','ws
 try{
  for(const token of ['', 'member','co-owner','another-owner','invalid'])for(const path of ['/access','/devices','/host.zip'])assert.equal((await api(path,{token})).status,404);
  assert.equal((await api('/access')).status,200);
+ const pageUrl=base.replace('/api/private-remote','/private-page');
+ assert.equal((await fetch(pageUrl)).status,404);
+ assert.equal((await api('/session',{token:'member',method:'POST'})).status,404);
+ const session=await api('/session',{method:'POST'});assert.equal(session.status,200);
+ const setCookie=session.headers.get('set-cookie');assert(setCookie.includes('HttpOnly; Secure; SameSite=Strict'));
+ const cookie=setCookie.split(';')[0];
+ assert.equal((await fetch(pageUrl,{headers:{Cookie:cookie}})).status,200);
+ assert.equal((await fetch(pageUrl,{headers:{Cookie:cookie+'invalid'}})).status,404);
+ clock+=600001;assert.equal((await fetch(pageUrl,{headers:{Cookie:cookie}})).status,404);
+
  const credential=randomBytes(32).toString('base64url');
  const pair=await(await api('/pair/start',{token:'',body:{credential,name:'Test PC'}})).json();
  assert.equal((await api('/pair/approve',{token:'member',body:{code:pair.code}})).status,404);
  assert.equal((await api('/pair/approve',{body:{code:pair.code}})).status,200);
  const {deviceId:id}=await(await api('/pair/poll',{token:'',body:{poll:pair.poll}})).json();assert(id);assert.equal((await api('/pair/poll',{token:'',body:{poll:pair.poll}})).status,404);
  assert(!JSON.stringify([...records.values()]).includes(credential));
+ assert.equal((await api('/devices/'+id+'/code',{token:'member',body:{}})).status,404);
+ const oldCode=await(await api('/devices/'+id+'/code',{body:{}})).json();
+ const freshCode=await(await api('/devices/'+id+'/code',{body:{}})).json();
+ assert.equal((await api('/pair/approve',{body:{code:oldCode.code}})).status,400);
+ assert.equal((await api('/pair/approve',{body:{code:freshCode.code}})).status,200);
+ assert.equal((await api('/pair/approve',{body:{code:freshCode.code}})).status,400);
+ assert.equal(records.size,1);
+ const expiredCode=await(await api('/devices/'+id+'/code',{body:{}})).json();clock+=300001;
+ assert.equal((await api('/pair/approve',{body:{code:expiredCode.code}})).status,400);
+
  await denied({type:'host',id,credential:randomBytes(32).toString('base64url')});
  const host=await ws({type:'host',id,credential});assert.equal((await host.reply).type,'ready');
  assert.equal((await(await api('/devices')).json()).devices[0].online,true);

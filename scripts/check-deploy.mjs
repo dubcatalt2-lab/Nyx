@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 const requiredFiles = [
   "apps/remote/index.html",
   "apps/remote/app.js",
+  "apps/remote/desktop-controls.js",
   "apps/remote/style.css",
   "lib/remote-desktop.mjs",
   "remote-host/host.mjs",

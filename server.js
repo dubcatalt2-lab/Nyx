@@ -44,7 +44,7 @@ import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypt
 import { lookup } from "node:dns/promises";
 import { createReadStream, readFileSync } from "node:fs";
 import { mkdir, open as openFile, stat, statfs, unlink } from "node:fs/promises";
-import { join, dirname, resolve } from "node:path";
+import { join, dirname, resolve, posix } from "node:path";
 import { createRequire } from "node:module";
 import { Readable } from "node:stream";
 import { spawn } from "node:child_process";
@@ -14104,6 +14104,7 @@ app.get("/download/nyx-singlefile.html", (_req, res) => {
 
 const remoteDesktop=createRemoteDesktop({firebase:linkGeneratorFirebase,download:()=>companionZip(__dirname,{remote:true})});
 app.use('/api/private-remote',remoteDesktop.router);
+app.use((req,res,next)=>{let path;try{path=posix.normalize(decodeURIComponent(req.path).replaceAll('\\','/')).toLowerCase();}catch{return res.status(400).end();}if(path==='/apps/remote'||path.startsWith('/apps/remote/'))return remoteDesktop.pageAccess(req,res,next);next();});
 let httpRelayPort = 0;
 const closeHttpRelay = installHttpWisp(app, {
   upstream: () => httpRelayPort ? {url: externalWispUrl || `ws://127.0.0.1:${httpRelayPort}/resources/live/`, origin: `http://127.0.0.1:${httpRelayPort}`} : null,

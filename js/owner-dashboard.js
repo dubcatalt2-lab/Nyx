@@ -346,7 +346,7 @@
     api('/api/private-remote/access').then(data=>{
       if(!data.enabled||!overlay.isConnected)return;
       const button=document.createElement('button');button.type='button';button.textContent='Remote desktop';
-      button.addEventListener('click',()=>window.open('/apps/remote/','_blank','noopener'));
+      button.addEventListener('click',async()=>{button.disabled=true;try{await api('/api/private-remote/session',{method:'POST'});window.location.assign('/apps/remote/');}catch{button.textContent='Remote access unavailable';}finally{button.disabled=false;}});
       overlay.querySelector('.nyx-owner-header-actions').prepend(button);
     }).catch(()=>{});
     const aiStatusHost=overlay.querySelector('[data-owner-ai-status]');

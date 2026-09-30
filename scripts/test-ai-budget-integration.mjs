@@ -1,3 +1,4 @@
+import {createNookDeveloper} from '../lib/nook-developer.mjs';
 import {isNookRequest} from '../lib/nook-policy.mjs';
 import {hasAppAiAllowance,dropModelIsExpensive} from '../lib/ai-allowance.mjs';
 import {recordAiExchange,readAiActivity} from '../lib/ai-history.mjs';
@@ -40,7 +41,7 @@ const context=vm.createContext({isNookRequest,hasAppAiAllowance,dropModelIsExpen
 vm.runInContext(source.slice(source.indexOf('const nyxAiBudgetContext ='),source.indexOf('async function nyxAiRateLimit')),context);
 vm.runInContext(['nyxAiKey','nyxAiEndpoint','nyxAiCatalogEndpoint','nyxAiSharedProvider','nyxAiGlobalProvider','nyxAiRequestCredential'].map(declaration).join('\n'),context);
 vm.runInContext(declaration('nyxAiProviderFetch')+'\n'+declaration('authenticatedNyxCloudUser'),context);
-installDeveloperApi(app,{firebase:async()=>firebase,authenticate:context.authenticatedNyxUser,ownerUid:()=> 'owner',passwordHash:()=>'',sameOrigin:()=>true,device:async()=> 'browser',configured:()=>true,page:(_req,res)=>res.send('API'),send:async(req,payload)=>context.nyxBudgetedAiFetch('shared','https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{authorization:'Bearer fixture-inference'},body:JSON.stringify(payload)})});
+installDeveloperApi(app,{nook:createNookDeveloper({allowance:context.nyxSharedAiAllowance,catalog:actor=>context.nyxAiAvailableModels('',false,null,actor),configured:()=>true,send:(req,payload)=>context.nyxBudgetedAiFetch('shared','https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{authorization:'Bearer fixture-inference'},body:JSON.stringify(payload)})}),firebase:async()=>firebase,authenticate:context.authenticatedNyxUser,ownerUid:()=> 'owner',passwordHash:()=>'',sameOrigin:()=>true,device:async()=> 'browser',configured:()=>true,page:(_req,res)=>res.send('API'),send:async(req,payload)=>context.nyxBudgetedAiFetch('shared','https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{authorization:'Bearer fixture-inference'},body:JSON.stringify(payload)})});
 for(const path of ['/api/nyx-ai'])app.post(path,async(req,res)=>{
   try {
     if(path==='/api/v1/ai')return res.status(410).json({error:'Retired'});
@@ -155,8 +156,33 @@ try {
   const beforeDropUnknown=calls;
   assert.equal((await send('drop-unpriced',{model:'unpriced/unknown'},{},'/api/drop-ai')).status,503);
   assert.equal(calls,beforeDropUnknown);
+  db.records.set('nyxUserAdministration/nook-route',{aiAccess:'trusted'});
   const nookReply=await send('nook-route',{model:'new-vendor/new-chat'},{},'/api/nook-ai');assert.equal(nookReply.status,200,await nookReply.text());assert.match(nookReply.headers.get('set-cookie'),/nook_device=/);
   assert([...db.records.keys()].some(k=>k.includes('nook-device-')));
   assert.equal((await send('spoof-nook',{model:'new-vendor/new-chat',app:'nook'},{'x-app':'nook'})).status,403);
+
+  const cookie=nookReply.headers.get('set-cookie').split(';')[0];
+  const keyResponse=await send('nook-route',{label:'Nook test'},{cookie},'/api/nook-developer/keys');
+  assert.equal(keyResponse.status,200,await keyResponse.clone().text());const {key:nookKey}=await keyResponse.json();
+  const nookStore=createKeyStore(db),keyRecord=await nookStore.authenticate(nookKey);
+  assert.equal(keyRecord.app,'nook');assert(keyRecord.device);
+  const info=await (await fetch(origin+'/api/nook-developer/me',{headers:{authorization:'Bearer nook-route',cookie}})).json();
+  assert.equal(info.key.app,'nook');assert(info.models.includes('new-vendor/new-chat'));assert(info.models.includes('openai/gpt-6-astra'));
+  assert.equal(info.usage.total.used,12);assert.equal(info.usage.expensive.used,0);
+  const keyReply=await send(nookKey,{model:'openai/gpt-6-astra',messages:[{role:'user',content:'Hi'}],max_tokens:400},{cookie:'nook_device=forged',device:'forged'},'/api/v1/ai');
+  assert.equal(keyReply.status,200,await keyReply.clone().text());await keyReply.text();
+  await new Promise(resolve=>setTimeout(resolve,30));
+  const after=await (await fetch(origin+'/api/nook-developer/me',{headers:{authorization:'Bearer nook-route',cookie}})).json();
+  assert.equal(after.usage.total.used,24,'Key and chat must share the original device counter despite forged cookies');assert.equal(after.usage.expensive.used,12);
+  assert.equal((await nookStore.details('nook-route')).balance,1000,'No second legacy balance is charged');
+  const earlierCalls=calls;const denied=await send(nookKey,{model:'invented/model',messages:[{role:'user',content:'Hi'}]}, {},'/api/v1/ai');assert.equal(denied.status,403);assert.equal(calls,earlierCalls);
+  const deviceDoc=[...db.records.keys()].find(k=>k.startsWith('nyxAiAllowance/nook-device-')&&db.records.get(k).pool?.used===24);assert(deviceDoc);
+  const savedPool=structuredClone(db.records.get(deviceDoc));db.records.get(deviceDoc).pool.used=7000;
+  assert.equal((await send(nookKey,{model:'new-vendor/new-chat',messages:[{role:'user',content:'Hi'}]}, {},'/api/v1/ai')).status,429);assert.equal(calls,earlierCalls);
+  db.records.set(deviceDoc,savedPool);db.records.get(deviceDoc).pool.expensiveUsed=1000;
+  await new Promise(resolve=>setTimeout(resolve,30));
+  assert.equal((await send(nookKey,{model:'openai/gpt-6-astra',messages:[{role:'user',content:'Hi'}]}, {},'/api/v1/ai')).status,429);assert.equal(calls,earlierCalls);
+  await nookStore.revoke('nook-route');assert.equal((await send(nookKey,{model:'new-vendor/new-chat',messages:[{role:'user',content:'Hi'}]}, {},'/api/v1/ai')).status,401);
+  console.log('PASS Nook key catalog, shared chat/device pools, expensive subset, forged-cookie isolation, depletion and revocation');
   console.log('PASS: real AI middleware auth/origin, OpenRouter routing, UID catalog pricing, parallel capacity, slot release and unverified cloud authentication');
 }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

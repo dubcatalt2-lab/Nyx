@@ -29,6 +29,7 @@ import { createMovieCatalog, installMovieApi } from './lib/movies.mjs';
 import { installMoviePlayback } from './lib/movie-playback.mjs';
 import { createApiKeyVault } from './lib/api-key-vault.mjs';
 import { installDeveloperApi } from './lib/developer-api.mjs';
+import { createNookDeveloper } from './lib/nook-developer.mjs';
 import { aiImageContent } from './lib/ai-image.mjs';
 ﻿import express from "express";
 import { AsyncLocalStorage } from "node:async_hooks";
@@ -2629,7 +2630,7 @@ async function nyxSharedAiSession(scope) {
       coOwner:nyxRoleForUser(uid,admin)==='co_owner',
       monthlyModelLimits:premiumModelLimits(admin.aiMonthlyModelLimits),trusted:admin.aiAccess==='trusted',blocked:admin.aiAccess==='restricted',
       apiVerified:Boolean(req.nyxAiBilling?.apiVerified),apiDailyRequests:req.nyxAiBilling?.dailyRequests,apiMinuteRequests:req.nyxAiBilling?.minuteRequests,apiMaxOutput:req.nyxAiBilling?.maxOutput,
-      device:req.path==='/api/v1/ai'?`key-owner:${uid}`:await allowance.device(req,res,req.nyxAiApp==='nook'?{cookieName:'nook_device',maxAge:31536000}:{}),network:nyxClientIp(req)};
+      device:req.nyxAiBilling?.device||(req.path==='/api/v1/ai'?`key-owner:${uid}`:await allowance.device(req,res,req.nyxAiApp==='nook'?{cookieName:'nook_device',maxAge:31536000}:{})),network:nyxClientIp(req)};
     const session=await allowance.begin(actor);
     scope.allowance=allowance;scope.session=session;scope.firestore=firebase.firestore;
     if(scope.controller.signal.aborted){await allowance.finish(session);throw Object.assign(new Error('AI request cancelled.'),{status:499});}
@@ -3492,6 +3493,7 @@ app.delete("/api/nyx-api-keys/:id", async (req, res) => {
 });
 
 installDeveloperApi(app, {
+  nook: createNookDeveloper({allowance:nyxSharedAiAllowance,catalog:actor=>nyxAiAvailableModels(nyxAiKey(),false,null,actor),configured:()=>Boolean(nyxAiKey()),send:(_req,payload)=>nyxBudgetedAiFetch('shared','https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{Authorization:`Bearer ${nyxAiKey()}`,'Content-Type':'application/json'},body:JSON.stringify(payload)})}),
   keyVault: createApiKeyVault(),
   firebase: linkGeneratorFirebase,
   authenticate: authenticatedNyxUser,

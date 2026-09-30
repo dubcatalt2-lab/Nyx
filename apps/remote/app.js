@@ -2,6 +2,9 @@ import {enhanceDesktop} from './desktop-controls.js';
 const $=id=>document.getElementById(id);
 let auth,socket,rfb,frameUrl,lastMove=0,generation=0,desktopControls,reconnectTimer,connectTimer,reconnectAttempts=0;
 const notice=text=>{$('notice').textContent=text;};
+const retryable=error=>![401,403,404].includes(error.status)&&!['auth/user-disabled','auth/user-token-expired','auth/invalid-user-token'].includes(error.code);
+const connectionError=error=>error instanceof TypeError||['TimeoutError','auth/network-request-failed'].includes(error.name)||error.code==='auth/network-request-failed'?'The connection request could not reach the server.':error.message;
+let accessTimer,accessVersion=0,initializeTimer;
 async function api(path,body,method){
  const token=await auth?.currentUser?.getIdToken();if(!token)throw Object.assign(Error('Sign in to Nyx with your owner account.'),{status:401});
  const response=await fetch('/api/private-remote'+path,{method:method||(body?'POST':'GET'),headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),cache:'no-store',signal:AbortSignal.timeout(15000)});
@@ -24,7 +27,9 @@ function reconnect(device,reason,allowed=true){
 }
 async function start(device,retry=false){
  if(!retry)reconnectAttempts=0;
- disconnect();const version=++generation;$('cancelReconnect').hidden=!retry;const RFB=device.mode==='vnc'?(await import('/assets/vendor/novnc/core/rfb.js')).default:null;const releaseCapture=device.mode==='vnc'?(await import('/assets/vendor/novnc/core/util/events.js')).releaseCapture:null;if(version!==generation)return;const {ticket}=await(await api('/connect',{id:device.id})).json();if(version!==generation)return;
+ disconnect();const version=++generation;$('cancelReconnect').hidden=false;
+ try{
+ const RFB=device.mode==='vnc'?(await import('/assets/vendor/novnc/core/rfb.js')).default:null;const releaseCapture=device.mode==='vnc'?(await import('/assets/vendor/novnc/core/util/events.js')).releaseCapture:null;if(version!==generation)return;const {ticket}=await(await api('/connect',{id:device.id})).json();if(version!==generation)return;
  $('session').hidden=false;$('setup').hidden=true;$('computerName').textContent=device.name;$('sessionState').textContent='Connecting…';notice('');
  socket=new WebSocket(location.origin.replace(/^http/,'ws')+'/api/private-remote/socket');socket.binaryType='blob';const current=socket;let closeCode=1006,failedSecurity=false;
  current.addEventListener('close',event=>{closeCode=event.code;},{capture:true});
@@ -35,6 +40,7 @@ async function start(device,retry=false){
  socket.onmessage=event=>{if(version!==generation)return;if(event.data instanceof Blob){connected();const next=URL.createObjectURL(event.data),old=frameUrl;frameUrl=next;$('frame').src=next;if(old)URL.revokeObjectURL(old);$('sessionState').textContent='Connected';}else{const data=JSON.parse(event.data);if(data.type==='status')$('sessionState').textContent=data.message;if(data.type==='vnc'&&RFB){$('frame').hidden=true;screen.classList.add('vnc-screen');rfb=new RFB(screen,current,{credentials:{password:data.password}});desktopControls=enhanceDesktop(rfb,screen,releaseCapture);rfb.scaleViewport=true;rfb.qualityLevel=6;rfb.compressionLevel=2;rfb.addEventListener('connect',()=>{if(version!==generation)return;connected();$('sessionState').textContent='Connected · Windows service';$('secureAttention').hidden=false;});rfb.addEventListener('disconnect',()=>setTimeout(ended,0));rfb.addEventListener('securityfailure',()=>{failedSecurity=true;notice('Windows desktop authentication failed.');});}}};
  socket.onclose=ended;
  socket.onerror=()=>{if(version===generation)notice('Connection unavailable. Check that your PC is awake and the helper is running.');};
+ }catch(error){if(version===generation)reconnect(device,connectionError(error),retryable(error));}
 }
 function point(event){const rect=$('frame').getBoundingClientRect();if(!rect.width||!$('frame').naturalWidth)return null;return {x:Math.max(0,Math.min(1,(event.clientX-rect.left)/rect.width)),y:Math.max(0,Math.min(1,(event.clientY-rect.top)/rect.height))};}
 const screen=$('screen');
@@ -51,10 +57,15 @@ $('secureAttention').onclick=()=>rfb?.sendCtrlAltDel();
 $('pair').onsubmit=run(async()=>{await api('/pair/approve',{code:$('code').value});$('code').value='';notice('Computer paired. It should appear online shortly.');await list();});
 $('download').onclick=run(async()=>{const blob=await(await api('/host.zip')).blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Nyx-Remote.zip';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 async function initialize(){try{
- const config=await(await fetch('/api/founder-profile/auth-config')).json();if(!config.enabled)throw Error('Account sign-in is unavailable.');
+ const response=await fetch('/api/founder-profile/auth-config',{cache:'no-store',signal:AbortSignal.timeout(15000)});if(!response.ok)throw Error('Account service is temporarily unavailable.');const config=await response.json();if(!config.enabled)throw Error('Account sign-in is unavailable.');
  const [appModule,module]=await Promise.all([import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')]);
  const app=appModule.getApps().find(item=>item.name==='nyx-founder-owner')||appModule.initializeApp({apiKey:config.apiKey,authDomain:config.projectId+'.firebaseapp.com',projectId:config.projectId},'nyx-founder-owner');
  auth=module.getAuth(app);await module.setPersistence(auth,module.browserLocalPersistence);
- module.onAuthStateChanged(auth,async user=>{disconnect();$('workspace').hidden=true;$('locked').hidden=false;if(!user){$('accessState').textContent='Sign in to Nyx, then return here.';return;}try{await api('/access');$('locked').hidden=true;$('workspace').hidden=false;await list();}catch{$('accessState').textContent='This workspace is not available to your account.';}});
-}catch(error){$('accessState').textContent=error.message;}}
+ module.onAuthStateChanged(auth,user=>{disconnect();clearTimeout(accessTimer);const version=++accessVersion;$('workspace').hidden=true;$('locked').hidden=false;if(!user){$('accessState').textContent='Sign in to Nyx, then return here.';return;}void openWorkspace(user,version);});
+}catch(error){$('accessState').textContent=connectionError(error)+' Retrying…';initializeTimer=setTimeout(initialize,5000);}}
+async function openWorkspace(user,version){
+ try{await api('/access');if(version!==accessVersion||auth.currentUser!==user)return;await list();if(version!==accessVersion||auth.currentUser!==user)return;$('locked').hidden=true;$('workspace').hidden=false;}
+ catch(error){if(version!==accessVersion||auth.currentUser!==user)return;const again=retryable(error);$('accessState').textContent=again?'Connection unavailable. Retrying…':'This workspace is not available to your account.';if(again)accessTimer=setTimeout(()=>openWorkspace(user,version),5000);}
+}
+window.addEventListener('pagehide',()=>{accessVersion++;clearTimeout(accessTimer);clearTimeout(initializeTimer);});
 void initialize();

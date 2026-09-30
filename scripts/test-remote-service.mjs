@@ -15,7 +15,7 @@ let first=sockets[0];first.readyState=1;first.onopen();await flush();
 assert(!writes.get('fixture/status.txt').includes('Online'),'Do not advertise online before authentication');
 first.onmessage({data:'{"type":"ready"}'});await flush();assert(writes.get('fixture/status.txt').includes('Online'));
 intervals[0]();assert.equal(first.sent.at(-1).type,'heartbeat');
-first.close(1006);await flush();assert.equal(scheduled[0].delay,1000);assert(writes.get('fixture/status.txt').includes('code 1006'));
+first.onerror({error:{message:'Network error',cause:{code:'ECONNRESET',message:'secret'}}});first.close(1006);await flush();assert.equal(scheduled[0].delay,1000);assert(writes.get('fixture/status.txt').includes('code 1006'));assert(writes.get('fixture/status.txt').includes('ECONNRESET'));assert(!writes.get('fixture/bridge-log.txt').includes('secret'));
 scheduled.shift().fn();let second=sockets[1];second.readyState=1;second.onopen();second.onmessage({data:'{"type":"ready"}'});
 // A stale close callback must not kill a replacement connection.
 first.onclose({code:1006});assert.equal(scheduled.length,0);

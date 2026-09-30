@@ -59,7 +59,16 @@ function connect(){
    tcp.on('error',()=>{void status('Local desktop stream error');});tcp.on('close',()=>{if(desktop===tcp){desktop=null;if(current===socket&&current.readyState===1)current.send(JSON.stringify({type:'ended'}));}});
   }catch{failure='invalid relay message';current.close();}
  };
- current.onerror=()=>{failure='WebSocket transport error';};current.onclose=event=>finish(event.code);
+ current.onerror=event=>{
+  const details=[];let error=event.error;
+  for(let depth=0;error&&depth<3;depth++,error=error.cause){
+   const text=[error.code,error.message].filter(value=>typeof value==='string').join(': ');
+   if(text)details.push(text);
+  }
+  let detail=details.join(' / ');
+  for(const value of [config.credential,config.vncPassword])if(value)detail=detail.replaceAll(value,'[redacted]');
+  failure='WebSocket transport error'+(detail?': '+detail.replace(/[\r\n\x00-\x1f]/g,' ').slice(0,240):'');
+ };current.onclose=event=>finish(event.code);
 }
 if(!config.id){
  // The elevated installer leaves a code for the owner. It contains no secrets.

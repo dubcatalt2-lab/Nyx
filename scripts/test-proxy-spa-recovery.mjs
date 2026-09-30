@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {parse} from 'acorn';
+import {rewriteRuntimeNames} from './build-runtime-names.mjs';
 
 // Exercise the real host watchdog with deterministic load/route timing.
 const source=readFileSync('script.js','utf8');
@@ -27,6 +28,10 @@ assert.equal(decode('https://nyx.test/~/sj-v1/'+encodeURIComponent(channel)),cha
 assert.equal(decode('https://nyx.test/~/sj-v1/'+encodeURIComponent(channel)+'#next%20message'),channel.replace('#message','#next%20message'));
 const other='https://other.test/~/sj-v1/'+encodeURIComponent(channel);
 assert.equal(decode(other),other,'Only decode local proxy paths');
+const productionDecode=vm.runInNewContext(rewriteRuntimeNames(sourceDecoder)+';browserShellSourceUrl;',{
+  URL,window:{},location:{origin:'https://nyx.test',href:'https://nyx.test/'}
+});
+assert.equal(productionDecode('https://nyx.test/~/study/session/frame/'+encodeURIComponent(channel)),channel,'Production paths must decode before navigation rejection checks');
 
 function fixture(){
   const url='https://discord.com/app', tasks=[], calls=[], listeners=new Map();
@@ -75,6 +80,14 @@ function fixture(){
   assert.deepEqual(f.calls,[],'A loaded app must leave the startup watchdog');
 }
 // Actual startup error documents must still enter the existing bounded recovery.
+{
+  const f=fixture();f.body.textContent='Accept cookies; internal service worker error; something went wrong';f.body.innerText='Accept cookies';f.load();f.advance(12000);
+  assert.deepEqual(f.calls,[],'Hidden template/script error strings must not reload consent screens');
+}
+{
+  const f=fixture();f.body.textContent=f.body.innerText='Accept cookies. If something went wrong, contact support.';f.load();f.advance(12000);
+  assert.deepEqual(f.calls,[],'Ordinary visible page text must not count as a proxy error');
+}
 {
   const f=fixture();f.body.textContent=f.body.innerText='Internal service worker error';f.load();f.advance(1700);
   assert.equal(f.calls[0],'reload');

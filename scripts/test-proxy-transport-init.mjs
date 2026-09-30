@@ -14,6 +14,8 @@ const fakeModule='data:text/javascript,'+encodeURIComponent(`export default clas
   async init(){const state=globalThis.__nyxTransportInitTest;state.entered();await state.gate;this.ready=true;}
 }`);
 create=create.replace("'/assets/transports/libcurl-scramjet.mjs'",JSON.stringify(fakeModule));
+const relayModule='data:text/javascript,'+encodeURIComponent("import {RelayTransport as Base} from "+JSON.stringify(new URL('../apps/tutsi/relay.mjs',import.meta.url).href)+";export class RelayTransport extends Base {constructor(options){super({...options,probe:async()=>true,online:()=>true});}}");
+create=create.replace("'/apps/tutsi/relay.mjs'",JSON.stringify(relayModule));
 const make=new Function('selectWispRelay','normalizeBrowserTransportName','store','wispUrl','setTimeout',`
   let browserTransportOverride='',scramjetTransport=null,scramjetTransportKey='',scramjetTransportPending=null;
   const browserHttpRelayUrl=()=> 'wss://fixture.test/api/tutsi-relay/socket/'; const DEFAULT_BROWSER_TRANSPORT='libcurlRaw';${create};return createScramjetTransport;
@@ -32,7 +34,7 @@ try{
 
   const retry=make(async()=>{},x=>x,{text:()=> 'libcurlRaw'},()=> 'wss://fixture.test/wisp/',()=>0);
   const failed=state(),attempt=retry();await failed.started;failed.reject(new Error('fixture init failed'));
-  await assert.rejects(attempt,/fixture init failed/);
+  await assert.rejects(attempt,/No configured Wisp relay/);
   const next=state(),recovered=retry();await next.started;next.resolve();assert.equal((await recovered).ready,true);
   assert.equal(next.created,1,'Failure must release the pending initializer for a later retry');
 

@@ -1,3 +1,5 @@
+import {warmBrowser} from '../tutsi/proxy.mjs';
+import {watchWebsiteFrame} from '../tutsi/frame-navigation.mjs';
 import {setupDropPresence} from './presence.mjs';
 import {browse,control,closeBrowser,currentWebsiteUrl,testRelay} from '../tutsi/proxy.mjs';
 import {websiteAddress} from '../tutsi/navigation.mjs';
@@ -24,9 +26,36 @@ function saveTabs(){try{if(settings.restore)localStorage.setItem('drop.tabs',JSO
 function setView(next){view=next;document.body.dataset.view=next;for(const name of ['home','browser','ai','games','tube','bookmarks'])$(name).hidden=name!==next;$('homeNav').toggleAttribute('aria-current',next==='home');$('homeNav').setAttribute('aria-current',next==='home'?'page':'false');$('aiNav').setAttribute('aria-current',next==='ai'?'page':'false');if(next==='home'){$('query').value='';$('query').focus();}if(next==='ai')ensureAi();if(next==='games'&&!$('gamesFrame').getAttribute('src')){$('gamesFrame').src='/apps/drop/games.html';ensureAi();}if(next==='tube'&&!$('tubeFrame').getAttribute('src')){$('tubeFrame').src='/apps/drop/tube.html';ensureAi();}if(next!=='tube'&&$('tubeFrame').contentWindow)$('tubeFrame').contentWindow.postMessage({type:'drop:tube-pause'},location.origin);if(next==='bookmarks')renderBookmarks();for(const name of ['games','tube','bookmarks'])$(name+'Nav').setAttribute('aria-current',next===name?'page':'false');renderTabs();}
 function renderTabs(){tabs.sort((a,b)=>Number(!!b.pinned)-Number(!!a.pinned));syncPageActions();$('tabCount').textContent=tabs.length;$('tabs').replaceChildren(...tabs.map(tab=>{const row=document.createElement('div');row.className='tab'+(tab.pinned?' pinned':'');row.setAttribute('role','tab');row.setAttribute('aria-selected',String(view==='browser'&&active===tab));const open=document.createElement('button');open.innerHTML=icon(tab.pinned?'pin':'file');const label=document.createElement('span');label.className='label';label.textContent=tab.title||new URL(tab.url).hostname;open.append(label);open.title=label.textContent;open.onclick=()=>activate(tab);const close=document.createElement('button');close.className='icon close-tab';close.innerHTML=icon('close');close.setAttribute('aria-label','Close '+label.textContent);close.onclick=()=>remove(tab);const pin=document.createElement('button');pin.className='icon pin-tab';pin.innerHTML=icon('pin');pin.setAttribute('aria-label',(tab.pinned?'Unpin ':'Pin ')+label.textContent);pin.setAttribute('aria-pressed',String(!!tab.pinned));pin.onclick=()=>togglePin(tab);row.append(open,pin,close);return row;}));}
 function activate(tab){active=tab;setView('browser');for(const item of tabs)if(item.frame)item.frame.hidden=item!==tab;$('address').value=tab.url;$('loading').textContent=tab.loading?'Loading...':'';showBrowseError(tab.error);if(!tab.frame)void navigate(tab,tab.url);}
-function remove(tab){clearTimeout(tab.loadTimer);const i=tabs.indexOf(tab);tabs=tabs.filter(t=>t!==tab);if(tab.frame){closeBrowser(tab.frame);tab.frame.remove();}if(active===tab){active=null;if(tabs.length)activate(tabs[Math.max(0,i-1)]);else setView('home');}renderTabs();saveTabs();}
+function remove(tab){tab.stopNavigationWatch?.();clearTimeout(tab.loadTimer);const i=tabs.indexOf(tab);tabs=tabs.filter(t=>t!==tab);if(tab.frame){closeBrowser(tab.frame);tab.frame.remove();}if(active===tab){active=null;if(tabs.length)activate(tabs[Math.max(0,i-1)]);else setView('home');}renderTabs();saveTabs();}
 function newTab(url){if(tabs.length>=20){notice('Close a tab before opening another.');return;}const tab={id:crypto.randomUUID(),url,title:new URL(url).hostname,version:0};tabs.push(tab);activate(tab);saveTabs();}
-async function navigate(tab,url){const version=++tab.version;tab.url=url;tab.title=new URL(url).hostname;tab.loading=true;tab.error='';clearTimeout(tab.loadTimer);if(active===tab)showBrowseError('');tab.loadTimer=setTimeout(()=>failNavigation(tab,version,'The page took too long to respond. Check your connection or try again.'),45000);if(!tab.frame){const frame=document.createElement('iframe');frame.title=tab.title;frame.setAttribute('sandbox',protectionSandbox(settings));frame.setAttribute('allow','fullscreen; autoplay; clipboard-write');frame.referrerPolicy='no-referrer';frame.hidden=active!==tab;tab.frame=frame;$('stage').append(frame);frame.addEventListener('load',()=>{if(!tabs.includes(tab))return;try{if(frame.contentWindow.location.href==='about:blank')return;}catch{}try{const doc=frame.contentDocument;if(doc?.body?.innerText.trim().startsWith('Internal Service Worker Error:')){failNavigation(tab,tab.version,'The browsing connection failed. Try again or check Connection in Settings.');return;}if(doc?.body&&!doc.body.textContent.trim()&&!doc.body.querySelector('*')){failNavigation(tab,tab.version,'The website returned an empty page. Try loading it again.');return;}}catch{}try{const current=currentWebsiteUrl(frame);if(current&&/^https?:/.test(current)){tab.url=current;tab.title=frame.contentDocument?.title||new URL(current).hostname;}}catch{}clearTimeout(tab.loadTimer);tab.loading=false;tab.error='';if(active===tab){showBrowseError('');$('address').value=tab.url;$('loading').textContent='';}renderTabs();saveTabs();});}if(active===tab){$('address').value=url;$('loading').textContent='Loading...';}renderTabs();try{await browse(url,settings,tab.frame);if(version!==tab.version||!tabs.includes(tab))return;saveTabs();}catch(error){if(version!==tab.version||!tabs.includes(tab))return;failNavigation(tab,version,error.message||'Could not open this page. Try again.');}}
+async function navigate(tab,url){
+ const version=++tab.version;tab.stopNavigationWatch?.();
+ let previousDocument;try{previousDocument=tab.frame?.contentDocument}catch{}
+ tab.url=url;tab.title=new URL(url).hostname;tab.loading=true;tab.error='';
+ if(active===tab)showBrowseError('');
+ if(!tab.frame){
+  const frame=document.createElement('iframe');frame.title=tab.title;
+  frame.setAttribute('sandbox',protectionSandbox(settings));frame.setAttribute('allow','fullscreen; autoplay; clipboard-write');
+  frame.referrerPolicy='no-referrer';frame.hidden=active!==tab;tab.frame=frame;$('stage').append(frame);
+  frame.addEventListener('load',()=>{if(!tabs.includes(tab)||tab.loading)return;const current=currentWebsiteUrl(frame);if(current){tab.url=current;saveTabs();}});
+ }
+ if(active===tab){$('address').value=url;$('loading').textContent='Loading...';}renderTabs();
+ tab.stopNavigationWatch=watchWebsiteFrame(tab.frame,{previousDocument,
+  onError:message=>failNavigation(tab,version,message),
+  reload:()=>browse(url,settings,tab.frame,{reconnect:true}),
+  onReady:()=>{
+   if(version!==tab.version||!tabs.includes(tab))return;
+   const current=currentWebsiteUrl(tab.frame);if(current)tab.url=current;
+   try{tab.title=tab.frame.contentDocument?.title||new URL(tab.url).hostname}catch{}
+   tab.loading=false;tab.error='';
+   if(active===tab){showBrowseError('');if(document.activeElement!==$('address'))$('address').value=tab.url;$('loading').textContent='';}
+   renderTabs();saveTabs();
+  }
+ });
+ try{await browse(url,settings,tab.frame);if(version===tab.version&&tabs.includes(tab))saveTabs();}
+ catch(error){if(version===tab.version)void tab.stopNavigationWatch.failed(error.message||'Could not open this page.');}
+}
+
 $('search').onsubmit=e=>{e.preventDefault();try{newTab(websiteAddress($('query').value,settings.engine));}catch(error){notice(error.message);}};
 $('addressForm').onsubmit=e=>{e.preventDefault();if(active)try{void navigate(active,websiteAddress($('address').value,settings.engine));}catch(error){notice(error.message);}};
 $('back').onclick=()=>control('back',active?.frame);$('forward').onclick=()=>control('forward',active?.frame);$('reload').onclick=$('retryPage').onclick=()=>{if(active)void navigate(active,currentWebsiteUrl(active.frame)||active.url);};
@@ -63,7 +92,7 @@ addEventListener('keydown',e=>{if(e.altKey&&e.key==='n'){e.preventDefault();setV
 if(settings.restore)try{const stored=JSON.parse(localStorage.getItem('drop.tabs')||'[]');if(Array.isArray(stored))tabs=stored.slice(0,20).filter(t=>typeof t.url==='string'&&/^https?:\/\//.test(t.url)).map(t=>({id:crypto.randomUUID(),url:new URL(t.url).href,title:String(t.title||new URL(t.url).hostname).slice(0,100),pinned:t.pinned===true,version:0}));}catch{}
 
 function showBrowseError(message){$('browseError').hidden=!message;$('browseErrorText').textContent=message||'';}
-function failNavigation(tab,version,message){if(!tabs.includes(tab)||tab.version!==version)return;clearTimeout(tab.loadTimer);tab.loading=false;tab.error=message;if(active===tab){$('loading').textContent='';showBrowseError(message);}}
+function failNavigation(tab,version,message){if(!tabs.includes(tab)||tab.version!==version)return;tab.stopNavigationWatch?.();clearTimeout(tab.loadTimer);tab.loading=false;tab.error='';if(active===tab){$('loading').textContent='';showBrowseError('');notice('This website is not responding. You can open another address.');}}
 function togglePin(tab){tab.pinned=!tab.pinned;renderTabs();saveTabs();}
 let bookmarks=[];try{const saved=JSON.parse(localStorage.getItem('drop.bookmarks')||'[]');if(Array.isArray(saved))bookmarks=saved.filter(b=>typeof b.url==='string'&&/^https?:\/\//.test(b.url)).map(b=>({url:new URL(b.url).href,title:String(b.title||b.url).slice(0,200)}));}catch{}
 function persistBookmarks(){try{localStorage.setItem('drop.bookmarks',JSON.stringify(bookmarks));}catch{notice('Bookmarks could not be saved. Browser storage may be full.');}syncPageActions();renderBookmarks();}
@@ -113,3 +142,9 @@ async function showFirstSetup(){
  $('setupWizard').showModal();
 }
 if(document.readyState==='complete')void showFirstSetup();else document.addEventListener('DOMContentLoaded',()=>void showFirstSetup(),{once:true});
+
+let warmingBrowser;
+const prepareBrowser=()=>{if(document.hidden||warmingBrowser)return;warmingBrowser=warmBrowser(settings).finally(()=>{warmingBrowser=null;});};
+$('query').addEventListener('focus',prepareBrowser);
+$('query').addEventListener('pointerdown',prepareBrowser,{passive:true});
+if(typeof requestIdleCallback==='function')requestIdleCallback(prepareBrowser,{timeout:1000});else setTimeout(prepareBrowser,700);

@@ -6,6 +6,10 @@ import {proxyAssetNames,rewriteProxyReferences} from './build-proxy-assets.mjs';
 for(const [before,after] of Object.entries(runtimeNames)) assert.equal(Buffer.byteLength(before),Buffer.byteLength(after));
 assert.equal(renameRuntimeText('ScramjetController ScramjetClient libcurlClient LibcurlTransport EpoxyClient EpoxyTransport Epoxy_wbg_fetch'),'StudyJetController StudyJetClient textlibClient TextlibTransport AtlasClient AtlasTransport Atlas_wbg_fetch');
 assert.equal(rewriteRuntimeNames('/scramjet/ /~sj/ /~/sj/ /~/sj-v1/'),'/studyjet/ /~study/ /~/study/ /~/study-v1/');
+for(const pattern of [String.raw`/^\/~\/sj\/[^/]+\/[^/]+\/([^?#]*)/`,String.raw`/^\/~\/(?:sj|tm)\/[^/]+\/[^/]+\/([^?#]*)/`]){
+ const regex=Function('return '+rewriteRuntimeNames(pattern))();
+ assert.equal(regex.exec('/~/study/session/frame/https%3A%2F%2Ffixture.test%2Fconsent')?.[1],'https%3A%2F%2Ffixture.test%2Fconsent');
+}
 assert.equal(rewriteRuntimeNames('/*! Scramjet license */ const ScramjetClient=1;'),'/*! Scramjet license */ const StudyJetClient=1;');
 assert.throws(()=>renameRuntimeWasm(Buffer.from('bad wasm')));
 const linked=rewriteProxyReferences('import "../epoxy/index.mjs";','/libcurl/index.mjs');

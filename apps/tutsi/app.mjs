@@ -1,3 +1,5 @@
+import {warmBrowser} from './proxy.mjs';
+import {watchWebsiteFrame} from './frame-navigation.mjs';
 import {websiteAddress} from "./navigation.mjs";
 import {installShortcuts} from "./shortcuts.mjs";
 import {protectionSandbox, installGameProtectionHost, installShellPopupProtection} from "./protections.mjs";
@@ -270,11 +272,11 @@ function decorateApp(doc) {
   if (arcade) arcade.textContent = "Tutsi arcade";
   for (const selector of [".ai-brand-copy h1", ".ai-sidebar-brand strong"]) {
     const name = doc.querySelector(selector);
-    if (name) name.textContent = "Tutsi AI";
+    if (name) name.textContent = "Tutsi A1";
   }
   const input = doc.querySelector("#input");
   if (input?.tagName === "TEXTAREA") {
-    input.placeholder = "Ask Tutsi AI anything...";
+    input.placeholder = "Ask Tutsi A1 anything...";
     input.setAttribute("aria-label", "Message Tutsi AI");
   }
   const home = doc.querySelector(".home-link");
@@ -453,7 +455,7 @@ function appFrame(name) {
   const frame = document.createElement("iframe");
   frame.hidden = true;
   frame.title = {
-    ai: "Tutsi AI",
+    ai: "Tutsi A1",
     movies: "Movies",
     music: "Music",
     games: "Games",
@@ -592,7 +594,7 @@ function removeWebsiteTab(tab){
   const index=browserTabs.indexOf(tab);if(index<0)return;
   const wasActive=tab===activeTab,url=currentWebsiteUrl(tab.element)||tab.url;
   if(/^https?:\/\//i.test(url)){closedWebsites.push(url);if(closedWebsites.length>10)closedWebsites.shift();}
-  tab.navigation++;tab.status?.remove();closeBrowser(tab.element);tab.element?.remove();browserTabs.splice(index,1);
+  tab.navigation++;tab.stopNavigationWatch?.();tab.status?.remove();closeBrowser(tab.element);tab.element?.remove();browserTabs.splice(index,1);
   if(!wasActive){renderBrowserTabs();syncBrowserTabView();return;}
   activeTab=null;proxyElement=null;
   if(browserTabs.length)selectBrowserTab(browserTabs[Math.max(0,index-1)]);else {location.hash='home';renderBrowserTabs();}
@@ -627,6 +629,7 @@ async function navigate(value, {newTab=false, input=null} = {}) {
   // The old document remains accessible until the next navigation commits.
   try{targetTab.previousDocument=targetTab.element?.contentDocument}catch{targetTab.previousDocument=null;}
   const request = ++targetTab.navigation;
+  targetTab.stopNavigationWatch?.();
   location.hash = "browser";
   route();
   $("address").value = url;
@@ -649,8 +652,8 @@ async function navigate(value, {newTab=false, input=null} = {}) {
       try{if(targetTab.loading&&targetTab.element.contentDocument===targetTab.previousDocument)return;installShortcuts(targetTab.element.contentDocument,shortcutActions)}catch{}
       // Ignore initial about:blank events while the engine is starting.
       if(!targetTab.element.getAttribute('src')?.includes('/~/tm/'))return;
-      const latest=currentWebsiteUrl(targetTab.element);
-      if(latest){targetTab.loading=false;targetTab.previousDocument=null;syncBrowserTabView();targetTab.url=latest;if(activeTab===targetTab && document.body.dataset.view==="browser" && document.activeElement!==$("address"))$("address").value=latest;renderBrowserTabs();}
+      if(!targetTab.loading){const latest=currentWebsiteUrl(targetTab.element);if(latest){targetTab.url=latest;renderBrowserTabs();}}
+
     });
     proxyElement.setAttribute(
       "sandbox",
@@ -662,20 +665,30 @@ async function navigate(value, {newTab=false, input=null} = {}) {
   }
   proxyElement=targetTab.element;
   syncBrowserTabView();
+  const fail=message=>{
+    if(request!==targetTab.navigation||!browserTabs.includes(targetTab))return;
+    targetTab.stopNavigationWatch?.();
+    targetTab.loading=false;syncBrowserTabView();
+    if(activeTab===targetTab)toast('This website is not responding. You can open another address.');
+  };
+  targetTab.stopNavigationWatch=watchWebsiteFrame(targetTab.element,{
+    previousDocument:targetTab.previousDocument,
+    onError:fail,
+    reload:()=>browse(url,{...settings},targetTab.element,{reconnect:true}),
+    onReady:()=>{
+      if(request!==targetTab.navigation||!browserTabs.includes(targetTab))return;
+      targetTab.loading=false;targetTab.previousDocument=null;
+      targetTab.url=currentWebsiteUrl(targetTab.element)||url;
+      if(activeTab===targetTab&&document.activeElement!==$('address'))$('address').value=targetTab.url;
+      syncBrowserTabView();renderBrowserTabs();
+    }
+  });
   try {
     await browse(url, { ...settings }, targetTab.element);
-    if (request !== targetTab.navigation || !browserTabs.includes(targetTab)) return;
-    // browse() assigns the frame URL; its load event confirms the new document.
+    if(request!==targetTab.navigation||!browserTabs.includes(targetTab))return;
     syncBrowserTabView();
-  } catch (e) {
-    if (request === targetTab.navigation && browserTabs.includes(targetTab)) {
-      status.replaceChildren(document.createTextNode(e.message));
-      const retry = document.createElement("button");
-      retry.textContent = "Try again";
-      retry.onclick = () => {selectBrowserTab(targetTab);void navigate(url);};
-      status.append(retry);
-    }
-  }
+  }catch(error){if(request===targetTab.navigation)void targetTab.stopNavigationWatch.failed(error.message||'Could not open this page.');}
+
 }
 $("search").onsubmit = (e) => {
   e.preventDefault();
@@ -690,7 +703,7 @@ function browserControl(action){
   if(document.body.dataset.view==="app-view"){
     if(action==="reload") frames.get(location.hash.slice(1))?.contentWindow.location.reload();
     else history[action]();
-  }else if(action==='reload')void reloadBrowser(proxyElement,{...settings}).catch(error=>toast(error.message));
+  }else if(action==='reload'&&activeTab)void navigate(currentWebsiteUrl(proxyElement)||activeTab.url);
   else control(action,proxyElement);
 }
 for (const action of ["back", "forward", "reload"]) $(action).onclick=()=>browserControl(action);
@@ -719,7 +732,7 @@ const defaultAccountIcon = $("account-button").innerHTML;
 function profilePayload() {
   return { ...accountProfile, uid: accountUser?.uid || "", signedIn: !!accountUser,
     displayName: accountProfile.displayName || accountUser?.displayName || "Guest",
-    handle: accountProfile.handle || (accountUser ? "Your profile" : "Sign in to use AI") };
+    handle: accountProfile.handle || (accountUser ? "Your profile" : "Sign in to use A1") };
 }
 function renderAccountProfile() {
   const profile = profilePayload();
@@ -1120,7 +1133,7 @@ const appIcons = {
   'cloud-gaming':'cloud'
 };
 const fallbackApps = [
-  ["nyx-ai", "nyx-ai", "AI", "nyx://ai"],
+  ["nyx-ai", "nyx-ai", "A1", "nyx://ai"],
   ["movies", "nyx-movies", "Movies", appPaths.movies],
   ["nyxify", "nyxify", "Music", appPaths.music],
   ["pirate-cove", "games", "Games", appPaths.games],
@@ -1137,7 +1150,7 @@ const fallbackApps = [
     appPaths.publisher,
   ],
   ["nyx-api-keys", "api-keys", "API Keys", appPaths.api],
-  ["duck-ai", "duck.ai", "Duck AI", "https://duck.ai/"],
+  ["duck-ai", "duck.ai", "Duck A1", "https://duck.ai/"],
   [
     "more-movie-sites",
     "fmhy.net",
@@ -1161,7 +1174,7 @@ function renderApps(apps) {
     if (!internal && !/^https?:\/\//i.test(app.url)) continue;
     const name =
       {
-        "nyx-ai": "AI",
+        "nyx-ai": "A1",
         nyxify: "Music",
         "nyx-chat": "Chat",
         "pirate-cove": "Games",
@@ -1192,7 +1205,7 @@ function renderApps(apps) {
 }
 function renderDock() {
   for (const [key, label, icon] of [
-    ["ai", "AI", "ai"],
+    ["ai", "A1", "ai"],
     ["music", "Music", "music"],
     ["settings", "Settings", "settings"],
     ["youtube", "YouTube", "youtube"],
@@ -1447,3 +1460,9 @@ $('clear-cache').onclick=async()=>{
  }catch{$('storage-status').textContent='Cache could not be cleared. Try your browser settings.';}
  finally{button.disabled=false;}
 };
+
+let warmingBrowser;
+const prepareBrowser=()=>{if(document.hidden||warmingBrowser)return;warmingBrowser=warmBrowser(settings).finally(()=>{warmingBrowser=null;});};
+$('query').addEventListener('focus',prepareBrowser);
+$('query').addEventListener('pointerdown',prepareBrowser,{passive:true});
+if(typeof requestIdleCallback==='function')requestIdleCallback(prepareBrowser,{timeout:1000});else setTimeout(prepareBrowser,700);

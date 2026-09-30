@@ -98,7 +98,7 @@ try{
     const path='/assets/transports/epoxy-scramjet.mjs';
     await context.route(url=>[path,proxyAssetNames[path]].includes(url.pathname),route=>route.fulfill({contentType:'text/javascript',body:transport}));
     await context.addInitScript(({mode,transportName})=>{
-      localStorage.setItem('nyx.releaseNotes.2026-09-14-nyx-1.0.3.seen','2026-09-14-nyx-1.0.3');
+      localStorage.setItem('nyx.releaseNotes.2026-09-26-nyx-1.3.6.7.seen','2026-09-26-nyx-1.3.6.7');
       localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');
       localStorage.setItem('nyx.browserShellMode','true');localStorage.setItem('nyx.browserMode',mode);
       localStorage.setItem('nyx.transport',transportName);localStorage.setItem('nyx.wispUrl','wss://fixture.test/wisp/');

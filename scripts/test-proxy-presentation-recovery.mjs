@@ -19,6 +19,15 @@ for(const changes of [{blank:true},{unstyled:true}]){
  assert.deepEqual(f.calls,[],'Rendered document must survive consent/UI transitions');
 }
 {
+ const f=fixture();f.change({unstyled:true,usableControls:true,readyState:'interactive'});f.watch();await f.advance(9000);
+ assert.deepEqual(f.calls,[],'A usable consent screen must not reload because optional styles are missing');
+}
+{
+ const f=fixture();f.watch();f.tab.scramjetPresentationRetries=2;
+ f.watch('https://fixture.test/consent');f.change({blank:true});await f.advance(9000);
+ assert.deepEqual(f.calls,[],'Redirects must not reset the recovery budget within a navigation');
+}
+{
  const f=fixture();f.watch();await f.advance(2500);f.watch('https://fixture.test/next');f.change({blank:true});await f.advance(12000);
  assert.deepEqual(f.calls,[],'A same-document route must not rearm presentation recovery');
 }

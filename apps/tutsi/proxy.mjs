@@ -159,7 +159,7 @@ const browserFrames=new WeakMap();
 const navigationRequests=new WeakMap();
 let navigationId = 0;
 let navigationQueue = Promise.resolve();
-export function browse(url, settings, element) {
+export function browse(url, settings, element, {reconnect=false} = {}) {
   updateProtectionPolicy(settings);
   element.tutsiSourceUrl=url;
   const request = ++navigationId;
@@ -167,6 +167,7 @@ export function browse(url, settings, element) {
   const navigate = async () => {
     if (request !== navigationRequests.get(element)) return;
     const instance = await engine(settings);
+    if(reconnect&&activeTransport?.client)await activeTransport.recover(activeTransport.client,true,true);
     if (request !== navigationRequests.get(element) || !element.isConnected) return;
     frame=browserFrames.get(element);
     if (!frame) {
@@ -219,3 +220,6 @@ export async function testRelay(settings) {
   }
   throw new Error('No configured relay responded from this device.');
 }
+
+// Compile the engine and establish its worker channel before the first submission.
+export function warmBrowser(settings){return engine(settings).then(()=>true).catch(()=>false);}

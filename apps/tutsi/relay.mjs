@@ -39,8 +39,8 @@ export function probeWisp(url, {timeout=7000, Socket=WebSocket}={}) {
   });
 }
 export class RelayTransport {
-  constructor({urls,createClient,probe=probeWisp,onStatus=()=>{},storage=globalThis.sessionStorage,monitorMs=30000,rank=async urls=>urls,online=()=>globalThis.navigator?.onLine!==false,visible=()=>!globalThis.document?.hidden}) {
-    Object.assign(this,{urls,createClient,probe,onStatus,storage,monitorMs,rank,online,visible});
+  constructor({urls,createClient,probe=probeWisp,onStatus=()=>{},storage=globalThis.sessionStorage,monitorMs=30000,requestTimeoutMs=20000,rank=async urls=>urls,online=()=>globalThis.navigator?.onLine!==false,visible=()=>!globalThis.document?.hidden}) {
+    Object.assign(this,{urls,createClient,probe,onStatus,storage,monitorMs,requestTimeoutMs,rank,online,visible});
     this.ready=false;this.closed=false;this.url='';this.client=null;this.switching=null;this.failures=0;this.retired=[];
   }
   async init(){await this.select();this.ready=true;this.schedule();}
@@ -76,27 +76,44 @@ export class RelayTransport {
     })();
     try{return await this.switching}finally{this.switching=null}
   }
-  async recover(failedClient,force=false) {
+  async recover(failedClient,force=false,reconnect=false) {
     if(this.closed||!this.online())return false;
     if(this.client!==failedClient)return true;
     if(this.switching){await this.switching;return this.client!==failedClient;}
     if(!force&&await this.probe(this.url))return false;
     if(this.client!==failedClient)return true;
-    await this.select(this.url);
+    // A fresh probe cannot establish that the existing multiplexed client works.
+    // Rebuild that client after a transport failure, even on a reachable relay.
+    await this.select(reconnect?'':this.url);
     return this.client!==failedClient;
   }
+  async attempt(client,args) {
+    const caller=args[4],abort=new AbortController();
+    if(caller?.aborted)throw caller.reason||new DOMException('Cancelled','AbortError');
+    let timer,expired=false,finished=false;
+    const signal=caller?AbortSignal.any([caller,abort.signal]):abort.signal;
+    const request=Promise.resolve().then(()=>client.request(...args.slice(0,4),signal));
+    // Some SDKs ignore AbortSignal. Discard late bodies and release the caller anyway.
+    request.then(response=>{if(finished&&signal.aborted)void response?.body?.cancel?.().catch(()=>{});},()=>{});
+    const cancelled=new Promise((_,reject)=>{
+      const onAbort=()=>reject(expired?Object.assign(new Error('Relay request timed out'),{name:'TimeoutError'}):signal.reason);
+      signal.addEventListener('abort',onAbort,{once:true});
+      timer=setTimeout(()=>{expired=true;abort.abort();},this.requestTimeoutMs);
+      request.finally(()=>signal.removeEventListener('abort',onAbort)).catch(()=>{});
+    });
+    try{return await Promise.race([request,cancelled]);}
+    finally{finished=true;clearTimeout(timer);}
+  }
   async request(...args) {
-    if(this.closed)throw new Error("Relay connection closed.");
+    if(this.closed)throw new Error('Relay connection closed.');
     if(!this.ready)await this.init();
     const client=this.client;
-    try{return await client.request(...args)}catch(error){
+    try{return await this.attempt(client,args)}catch(error){
       if(args[4]?.aborted||error?.name==='AbortError')throw error;
-      let changed=false;try{changed=await this.recover(client)}catch{}
-      // Never replay form submissions or other writes after an ambiguous failure.
-      // A cold connection may time out its first read despite a healthy handshake.
-      // Retry once, directly on the client, so repeated failures cannot loop.
-      const timedOut=error?.name==='TimeoutError'||/\b(?:timed?\s*out|timeout|ETIMEDOUT)\b/i.test(String(error?.message||''));
-      if((changed||timedOut)&&/^(GET|HEAD)$/i.test(String(args[1]||'GET'))&&!args[4]?.aborted&&!this.closed&&this.online())return this.client.request(...args);
+      const connectionFailed=error?.name==='TimeoutError'||/timed?\s*out|timeout|ETIMEDOUT|ECONNRESET|network|socket|wisp|hyper.*(?:error|client)|muxtaskended|connection.*(?:closed|reset|lost|failed)|unexpected.*(?:eof|cutoff)|transport.*(?:closed|failed)/i.test(String(error?.message||error||''));
+      let changed=false;try{changed=await this.recover(client,connectionFailed,connectionFailed)}catch{}
+      // Only idempotent reads may be replayed, once. Never replay a form submission.
+      if(changed&&/^(GET|HEAD)$/i.test(String(args[1]||'GET'))&&!args[4]?.aborted&&!this.closed&&this.online())return this.attempt(this.client,args);
       throw error;
     }
   }

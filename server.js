@@ -14109,7 +14109,8 @@ const remoteDesktop=createRemoteDesktop({firebase:linkGeneratorFirebase,download
 const nyxCloudDesktop=createNyxCloudDesktop({firebase:linkGeneratorFirebase});
 app.use('/api/nyxcloud',nyxCloudDesktop.router);
 app.use((req,res,next)=>{let path;try{path=posix.normalize(decodeURIComponent(req.path).replaceAll('\\','/')).toLowerCase();}catch{return res.status(400).end();}if(path==='/apps/nyxcloud'||path.startsWith('/apps/nyxcloud/'))return nyxCloudDesktop.pageAccess(req,res,next);next();});
-app.get('/apps/nyxcloud',(_req,res)=>res.redirect(302,'/apps/nyxcloud/'));
+// Express string routes match an optional trailing slash; redirect only the bare path.
+app.get(/^\/apps\/nyxcloud$/,(_req,res)=>res.redirect(302,'/apps/nyxcloud/'));
 app.use('/api/private-remote',remoteDesktop.router);
 app.use((req,res,next)=>{let path;try{path=posix.normalize(decodeURIComponent(req.path).replaceAll('\\','/')).toLowerCase();}catch{return res.status(400).end();}if(path==='/apps/remote'||path.startsWith('/apps/remote/'))return remoteDesktop.pageAccess(req,res,next);next();});
 let httpRelayPort = 0;

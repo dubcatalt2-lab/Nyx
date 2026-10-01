@@ -55,8 +55,22 @@ function connect(){
    void status('Owner connected');
    current.send(JSON.stringify({type:'vnc',password:config.vncPassword}));
    const tcp=createConnection({host:'127.0.0.1',port:5900});desktop=tcp;
-   tcp.on('data',chunk=>{if(current!==socket||current.readyState!==1||current.bufferedAmount>4*1024*1024){tcp.destroy();return;}current.send(chunk);});
-   tcp.on('error',()=>{void status('Local desktop stream error');});tcp.on('close',()=>{if(desktop===tcp){desktop=null;if(current===socket&&current.readyState===1)current.send(JSON.stringify({type:'ended'}));}});
+   let draining,pausedAt=0;
+   tcp.on('data',chunk=>{
+    if(current!==socket||current.readyState!==1){tcp.destroy();return;}
+    current.send(chunk);
+    // A detailed frame can exceed the uplink speed. Pause capture instead of
+    // discarding the RFB stream and disconnecting at the old 4 MB threshold.
+    if(current.bufferedAmount>=256*1024&&!draining){
+     tcp.pause();pausedAt=Date.now();
+     draining=setInterval(()=>{
+      if(current!==socket||current.readyState!==1){tcp.destroy();return;}
+      if(current.bufferedAmount<64*1024){clearInterval(draining);draining=null;tcp.resume();}
+      else if(Date.now()-pausedAt>45000){void status('Desktop upload stalled for 45s; reconnecting stream');tcp.destroy();}
+     },25);
+    }
+   });
+   tcp.on('error',()=>{void status('Local desktop stream error');});tcp.on('close',()=>{clearInterval(draining);if(desktop===tcp){desktop=null;if(current===socket&&current.readyState===1)current.send(JSON.stringify({type:'ended'}));}});
   }catch{failure='invalid relay message';current.close();}
  };
  current.onerror=event=>{

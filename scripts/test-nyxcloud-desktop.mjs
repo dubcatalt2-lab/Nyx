@@ -28,7 +28,7 @@ try{
   assert.equal((await fetch(origin+'/apps/nyxcloud/',{headers:{cookie},redirect:'manual'})).status,200);
   const slashless=await fetch(origin+'/apps/nyxcloud',{headers:{cookie},redirect:'manual'});assert.equal(slashless.status,302);assert.equal(slashless.headers.get('location'),'/apps/nyxcloud/');
   assert.equal((await(await request('/access')).json()).online,true);
-  const {ticket}=await(await request('/connect','POST')).json();
+  const {ticket}=await(await request('/connect','POST','valid-owner',cookie)).json();
   const bad=new WebSocket(origin.replace('http:','ws:')+'/api/nyxcloud/socket',{origin:'https://evil.test',headers:{cookie}});bad.on('error',()=>{});const [req,res]=await once(bad,'unexpected-response');assert.equal(res.statusCode,404);res.resume();bad.terminate();
   const ws=new WebSocket(origin.replace('http:','ws:')+'/api/nyxcloud/socket',{origin,headers:{cookie}});await once(ws,'open');const frames=[];ws.on('message',(data,binary)=>frames.push({data,binary}));ws.send(JSON.stringify({ticket}));
   await new Promise(resolve=>setTimeout(resolve,100));assert.equal(JSON.parse(frames[0].data).ready,true);assert(frames.some(f=>f.binary&&f.data.toString().startsWith('RFB ')));

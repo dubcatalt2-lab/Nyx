@@ -8,7 +8,7 @@ import {pathToFileURL} from 'node:url';
 // in the existing relay; no desktop credential or Firebase admin key lives here.
 export function createRemoteEntry({upstreamPort=8080,root=resolve('apps/remote-entry')}={}){
  const entry=new Map([['/',['index.html','text/html']],['/entry.js',['entry.js','text/javascript']],['/entry.css',['entry.css','text/css']]]);
- const allowed=path=>path==='/healthz'||path==='/api/founder-profile/auth-config'||/^\/api\/private-remote\/(?:access|session|devices|connect|host\.zip|pair\/(?:start|poll|approve)|devices\/[a-f0-9]{32}(?:\/code)?)$/.test(path)||/^\/apps\/remote\/(?:index\.html|app\.js|desktop-controls\.js|style\.css)?$/.test(path)||/^\/assets\/vendor\/novnc\/[a-zA-Z0-9_/-]+\.js$/.test(path)||path==='/apps/agents/fonts/Quicksand-Variable.ttf';
+ const allowed=path=>path==='/healthz'||path==='/api/founder-profile/auth-config'||/^\/api\/private-remote\/(?:access|session|renew|devices|connect|host\.zip|pair\/(?:start|poll|approve)|devices\/[a-f0-9]{32}(?:\/code)?)$/.test(path)||/^\/apps\/remote\/(?:index\.html|app\.js|desktop-controls\.js|style\.css)?$/.test(path)||/^\/assets\/vendor\/novnc\/[a-zA-Z0-9_/-]+\.js$/.test(path)||path==='/apps/agents/fonts/Quicksand-Variable.ttf';
  const server=createServer(async(req,res)=>{
   res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','no-referrer');
   const path=(req.url||'').split('?')[0];

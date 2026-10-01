@@ -25,6 +25,7 @@ const requiredFiles = [
   "remote-host/service-bridge.mjs",
   "remote-host/Install-Nyx-Service.cmd",
   "remote-host/Install-Service.ps1",
+  "remote-host/Update-Service.ps1",
   "remote-host/Remove-Service.ps1",
   "apps/drop/index.html",
   "apps/drop/startup.js",

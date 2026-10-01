@@ -42,7 +42,7 @@ This initial version streams the primary screen as JPEG at up to 4 fps and
 1600px wide, with mouse and keyboard control. It requires Windows to remain
 signed in, awake, and unlocked. It cannot unlock Windows, operate UAC/secure
 desktop prompts, transmit audio, or transfer files. Browser/OS shortcuts may
-remain local. One viewer at a time; reconnect after 30 minutes. Desktop data
+remain local. One viewer at a time; active sessions renew authorization automatically. Desktop data
 uses TLS through your Nyx server and is relayed in memory, never recorded.
 Only the exact configured Firebase owner UID can pair, view, or remove devices.
 Roles, co-owners, and the separate Drop owner do not grant access.
@@ -58,3 +58,9 @@ The Windows service retries interrupted connections and checks relay replies.
 A brief missed heartbeat does not end an otherwise active desktop stream.
 Protected ProgramData/NyxRemote/bridge-log.txt keeps the last 100 status entries
 (close codes and connection state only, no credentials or desktop content).
+
+Service updates
+Run Update-Service.ps1 from an administrator PowerShell after downloading the
+updated helper. It backs up the installed bridge and preserves its pairing and
+selected connection address. A slow uplink now pauses desktop reads instead of
+ending the stream when the outgoing buffer reaches 4 MB.

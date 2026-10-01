@@ -15,7 +15,7 @@ function fixture(){
   start:async()=>{starts++;vm.runInContext('disconnect();generation++;',context);if(context.pending)await new Promise((_,reject)=>pendingReject=reject);throw Object.assign(Error('Computer is offline.'),{status:context.status||409});}
  });
  function $(id){return element(id);}
- vm.runInContext('let reconnectTimer,connectTimer,generation=0,reconnectAttempts=0,desktopControls,rfb,socket,frameUrl;\n'+functions+';this.retry=reconnect;this.stop=disconnect;',context);
+ vm.runInContext('let reconnectTimer,connectTimer,renewTimer,generation=0,reconnectAttempts=0,desktopControls,rfb,socket,frameUrl;\n'+functions+';this.retry=reconnect;this.stop=disconnect;',context);
  return {context,delays,elements,tasks,get starts(){return starts},reject:()=>pendingReject?.(Error('offline')),async tick(){const [id,task]=[...tasks].sort((a,b)=>a[1].at-b[1].at)[0]||[];assert(task,'Expected another automatic retry');tasks.delete(id);now=task.at;task.fn();await new Promise(resolve=>setImmediate(resolve));}};
 }
 {

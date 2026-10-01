@@ -1,18 +1,24 @@
 import {enhanceDesktop} from './desktop-controls.js';
 const $=id=>document.getElementById(id);
-let auth,socket,rfb,frameUrl,lastMove=0,generation=0,desktopControls,reconnectTimer,connectTimer,reconnectAttempts=0;
+let auth,socket,rfb,frameUrl,lastMove=0,generation=0,desktopControls,reconnectTimer,connectTimer,renewTimer,reconnectAttempts=0;
 const notice=text=>{$('notice').textContent=text;};
 const retryable=error=>![401,403,404].includes(error.status)&&!['auth/user-disabled','auth/user-token-expired','auth/invalid-user-token'].includes(error.code);
 const connectionError=error=>error instanceof TypeError||['TimeoutError','auth/network-request-failed'].includes(error.name)||error.code==='auth/network-request-failed'?'The connection request could not reach the server.':error.message;
 let accessTimer,accessVersion=0,initializeTimer;
-async function api(path,body,method){
- const token=await auth?.currentUser?.getIdToken();if(!token)throw Object.assign(Error('Sign in to Nyx with your owner account.'),{status:401});
+async function api(path,body,method,refresh=false){
+ const token=await auth?.currentUser?.getIdToken(refresh);if(!token)throw Object.assign(Error('Sign in to Nyx with your owner account.'),{status:401});
  const response=await fetch('/api/private-remote'+path,{method:method||(body?'POST':'GET'),headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),cache:'no-store',signal:AbortSignal.timeout(15000)});
+ if(response.status===401&&!refresh)return api(path,body,method,true);
  if(!response.ok){const result=await response.json().catch(()=>({}));throw Object.assign(Error(result.error||'Not available.'),{status:response.status});}return response;
 }
+function renewSession(session,device,version,delay=60000){renewTimer=setTimeout(async()=>{
+ if(version!==generation)return;
+ try{await api('/renew',{session});}catch(error){if(version===generation){if(error.status===409||!retryable(error))reconnect(device,connectionError(error),retryable(error));else renewSession(session,device,version,5000);}return;}
+ if(version===generation)renewSession(session,device,version);
+},delay);}
 const run=fn=>async event=>{event?.preventDefault();try{await fn(event);}catch(error){notice(error.message);}};
 function send(value){if(socket?.readyState===1)socket.send(JSON.stringify(value));}
-function disconnect(){clearTimeout(reconnectTimer);clearTimeout(connectTimer);$('cancelReconnect').hidden=true;generation++;desktopControls?.destroy();desktopControls=null;rfb?.disconnect();rfb=null;send({type:'release'});socket?.close();socket=null;if(frameUrl)URL.revokeObjectURL(frameUrl);frameUrl=null;$('frame').removeAttribute('src');$('frame').hidden=false;$('screen').replaceChildren($('frame'));$('screen').classList.remove('vnc-screen');$('secureAttention').hidden=true;$('session').hidden=true;$('setup').hidden=false;}
+function disconnect(){clearTimeout(reconnectTimer);clearTimeout(connectTimer);clearTimeout(renewTimer);$('cancelReconnect').hidden=true;generation++;desktopControls?.destroy();desktopControls=null;rfb?.disconnect();rfb=null;send({type:'release'});socket?.close();socket=null;if(frameUrl)URL.revokeObjectURL(frameUrl);frameUrl=null;$('frame').removeAttribute('src');$('frame').hidden=false;$('screen').replaceChildren($('frame'));$('screen').classList.remove('vnc-screen');$('secureAttention').hidden=true;$('session').hidden=true;$('setup').hidden=false;}
 async function list(){
  const data=await(await api('/devices')).json();$('devices').replaceChildren();
  if(!data.devices.length){const text=document.createElement('p');text.textContent='No paired computers.';$('devices').append(text);}
@@ -37,7 +43,7 @@ async function start(device,retry=false){
  const connected=()=>{clearTimeout(connectTimer);reconnectAttempts=0;$('cancelReconnect').hidden=true;};
  connectTimer=setTimeout(()=>{if(version===generation)reconnect(device,'The desktop connection timed out.');},15000);
  socket.onopen=()=>current.send(JSON.stringify({type:'viewer',ticket}));
- socket.onmessage=event=>{if(version!==generation)return;if(event.data instanceof Blob){connected();const next=URL.createObjectURL(event.data),old=frameUrl;frameUrl=next;$('frame').src=next;if(old)URL.revokeObjectURL(old);$('sessionState').textContent='Connected';}else{const data=JSON.parse(event.data);if(data.type==='status')$('sessionState').textContent=data.message;if(data.type==='vnc'&&RFB){$('frame').hidden=true;screen.classList.add('vnc-screen');rfb=new RFB(screen,current,{credentials:{password:data.password}});desktopControls=enhanceDesktop(rfb,screen,releaseCapture);rfb.scaleViewport=true;rfb.qualityLevel=6;rfb.compressionLevel=2;rfb.addEventListener('connect',()=>{if(version!==generation)return;connected();$('sessionState').textContent='Connected · Windows service';$('secureAttention').hidden=false;});rfb.addEventListener('disconnect',()=>setTimeout(ended,0));rfb.addEventListener('securityfailure',()=>{failedSecurity=true;notice('Windows desktop authentication failed.');});}}};
+ socket.onmessage=event=>{if(version!==generation)return;if(event.data instanceof Blob){connected();const next=URL.createObjectURL(event.data),old=frameUrl;frameUrl=next;$('frame').src=next;if(old)URL.revokeObjectURL(old);$('sessionState').textContent='Connected';}else{const data=JSON.parse(event.data);if(data.type==='ready'&&data.session)renewSession(data.session,device,version);if(data.type==='status')$('sessionState').textContent=data.message;if(data.type==='vnc'&&RFB){$('frame').hidden=true;screen.classList.add('vnc-screen');rfb=new RFB(screen,current,{credentials:{password:data.password}});desktopControls=enhanceDesktop(rfb,screen,releaseCapture);rfb.scaleViewport=true;rfb.qualityLevel=6;rfb.compressionLevel=2;rfb.addEventListener('connect',()=>{if(version!==generation)return;connected();$('sessionState').textContent='Connected · Windows service';$('secureAttention').hidden=false;});rfb.addEventListener('disconnect',()=>setTimeout(ended,0));rfb.addEventListener('securityfailure',()=>{failedSecurity=true;notice('Windows desktop authentication failed.');});}}};
  socket.onclose=ended;
  socket.onerror=()=>{if(version===generation)notice('Connection unavailable. Check that your PC is awake and the helper is running.');};
  }catch(error){if(version===generation)reconnect(device,connectionError(error),retryable(error));}

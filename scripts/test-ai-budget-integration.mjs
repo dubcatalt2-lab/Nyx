@@ -33,6 +33,7 @@ const context=vm.createContext({isTutsiHostname:host=>host==='tutsi.test',isNook
 
   founderProfileConfig:()=>({administratorUid:'owner'}),nyxClientIp:()=> 'school-network',
   sameOriginRequest:req=>req.get('sec-fetch-site')!=='cross-site',
+  nyxAiAvailableModels:async()=>[{id:'google/gemini-fixture',pricing:{prompt:'.000001',completion:'.000002'}}],
   nyxRoleForUser:(uid,admin={})=>uid==='owner'?'owner':admin.role||'member',hasPremiumSubscription:value=>value==='premium',normalizeSubscriptionStatus:value=>value,
   fetch:async(_url,options)=>{calls++;lastPayload=JSON.parse(options.body);
     if(providerFailure)return Response.json({error:{message:'Fixture provider rejected request'}},{status:503});
@@ -139,7 +140,7 @@ try {
     await new Promise(resolve=>setTimeout(resolve,30));
   }
   context.founderProfileConfig=()=>({administratorUid:fullCatalogUid});
-  context.nyxAiAvailableModels=async()=>[{id:'openai/gpt-6-astra',pricing:{prompt:'.00001',completion:'.00005'}},{id:'new-vendor/new-chat',pricing:{prompt:'.000002',completion:'.000003'}}];
+  context.nyxAiAvailableModels=async()=>[{id:'google/gemini-fixture',pricing:{prompt:'.000001',completion:'.000002'}},{id:'openai/gpt-6-astra',pricing:{prompt:'.00001',completion:'.00005'}},{id:'new-vendor/new-chat',pricing:{prompt:'.000002',completion:'.000003'}}];
   balance=.01;
   for(const model of ['openai/gpt-6-astra','new-vendor/new-chat']){
     const reply=await send(fullCatalogUid,{model});assert.equal(reply.status,200,await reply.text());
@@ -158,7 +159,7 @@ try {
   const beforeDropUnknown=calls;
   assert.equal((await send('drop-unpriced',{model:'unpriced/unknown'},{},'/api/drop-ai')).status,503);
   assert.equal(calls,beforeDropUnknown);
-  db.records.set('nyxUserAdministration/nook-route',{aiAccess:'trusted'});
+  db.records.set('nyxUserAdministration/nook-route',{aiAccess:'trusted',subscriptionStatus:'premium'});
   const nookReply=await send('nook-route',{model:'new-vendor/new-chat'},{},'/api/nook-ai');assert.equal(nookReply.status,200,await nookReply.text());assert.match(nookReply.headers.get('set-cookie'),/nook_device=/);
   assert([...db.records.keys()].some(k=>k.includes('nook-device-')));
   assert.equal((await send('spoof-nook',{model:'new-vendor/new-chat',app:'nook'},{'x-app':'nook'})).status,403);
@@ -171,6 +172,13 @@ try {
   const info=await (await fetch(origin+'/api/nook-developer/me',{headers:{authorization:'Bearer nook-route',cookie}})).json();
   assert.equal(info.key.app,'nook');assert(info.models.includes('new-vendor/new-chat'));assert(info.models.includes('openai/gpt-6-astra'));
   assert.equal(info.usage.total.used,12);assert.equal(info.usage.expensive.used,0);
+  db.records.set('nyxUserAdministration/nook-route',{aiAccess:'trusted'});
+  const hidden=await(await fetch(origin+'/api/nook-developer/me',{headers:{authorization:'Bearer nook-route',cookie}})).json();
+  assert(!hidden.models.includes('openai/gpt-6-astra'),'Downgrade removes expensive models from existing key catalog');
+  const callsBeforeDenied=calls;
+  assert.equal((await send(nookKey,{model:'openai/gpt-6-astra',messages:[{role:'user',content:'Hi'}],premium:true},{'x-nyx-premium':'true'},'/api/v1/ai')).status,403);
+  assert.equal(calls,callsBeforeDenied,'Forged Premium and previously issued key must not reach inference');
+  db.records.set('nyxUserAdministration/nook-route',{aiAccess:'trusted',subscriptionStatus:'premium'});
   const keyReply=await send(nookKey,{model:'openai/gpt-6-astra',messages:[{role:'user',content:'Hi'}],max_tokens:400},{cookie:'nook_device=forged',device:'forged'},'/api/v1/ai');
   assert.equal(keyReply.status,200,await keyReply.clone().text());await keyReply.text();
   await new Promise(resolve=>setTimeout(resolve,30));

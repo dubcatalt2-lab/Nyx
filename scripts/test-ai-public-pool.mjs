@@ -4,12 +4,12 @@ import {memoryFirestore} from './test-ai-allowance.mjs';
 import {aiModelAllowed,createAiAllowance,aiAllowanceConfig,aiOwnerClaudeUsage} from '../lib/ai-allowance.mjs';
 import {freeAiModels} from '../lib/ai-free-models.mjs';
 const opus='anthropic/claude-opus-5.5',luna='openai/gpt-6-luna',gemini='google/gemini-2.5-flash-lite',free=freeAiModels[0];
-const publicModels=[luna,gemini,'google/gemini-2.5-flash-image','deepseek/deepseek-v4.1-flash',...freeAiModels];
-const premiumModels=['openai/gpt-6-luna-pro','openai/gpt-5.6-luna','inception/mercury-2.5','qwen/qwen3.7-flash',opus];
+const publicModels=[luna,gemini,'deepseek/deepseek-v4.1-flash',...freeAiModels];
+const premiumModels=['google/gemini-2.5-flash-image','openai/gpt-6-luna-pro','openai/gpt-5.6-luna','inception/mercury-2.5','qwen/qwen3.7-flash',opus];
 const sols=['openai/gpt-6-sol','openai/gpt-5.6-sol-pro'];
 for(const model of publicModels)assert(aiModelAllowed(model,{}),model);
 for(const model of premiumModels){assert(!aiModelAllowed(model,{}),model);assert(aiModelAllowed(model,{premium:true}),model);}
-for(const model of sols){assert(!aiModelAllowed(model,{premium:true,modelRules:[{model,access:'allow'}]}));assert(aiModelAllowed(model,{owner:true}));}
+for(const model of sols){assert(!aiModelAllowed(model,{modelRules:[{model,access:'allow'}]}));assert(aiModelAllowed(model,{premium:true}));assert(aiModelAllowed(model,{owner:true}));}
 let time=Date.parse('2026-09-23T12:00:00Z');const day=86400000,db=memoryFirestore();
 const allowance=createAiAllowance({db,config:aiAllowanceConfig({}),now:()=>time});
 const key=uid=>'nyxAiAllowance/models-'+createHash('sha256').update(uid).digest('hex');

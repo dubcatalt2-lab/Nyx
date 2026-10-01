@@ -6,7 +6,7 @@ const db=memoryFirestore();let now=Date.now();
 const allowance=()=>createAiAllowance({db,config:aiAllowanceConfig({NYX_AI_DAILY_BUDGET_USD:1000,NYX_AI_MONTHLY_BUDGET_USD:30000,NYX_AI_DAILY_REQUEST_BUDGET:100000}),now:()=>now});
 const cheap={inputPerMillion:5,outputPerMillion:5},expensive={inputPerMillion:5.01,outputPerMillion:1};
 assert(!nookModelIsExpensive(cheap));assert(nookModelIsExpensive(expensive));assert(nookModelIsExpensive({inputPerMillion:1,outputPerMillion:5.01}));assert.throws(()=>nookModelIsExpensive(null));
-const actor=(uid,device='browser')=>({uid,device,network:'same-school',app:'nook',trusted:true});
+const actor=(uid,device='browser')=>({uid,device,network:'same-school',app:'nook',premium:true,trusted:true});
 assert(aiModelAllowed('provider/any-model',actor('user')));
 const payload=(model='provider/cheap')=>({model,max_tokens:2200,messages:[{role:'user',content:'Hi'}]});
 async function use(uid,tokens,device='browser',price=cheap,model='provider/cheap'){
@@ -32,4 +32,4 @@ const racing=await Promise.allSettled([a.reserve(s1,'shared',payload('provider/p
 assert.equal(racing.filter(r=>r.status==='fulfilled').length,1);await a.finish(s1);await a.finish(s2);
 const owner=await a.begin(actor(fullCatalogUid,'browser'));const own=await a.reserve(owner,'shared',payload(),cheap);assert(own.tokens>1000);await a.finish(owner);
 assert(![...db.records.keys()].some(key=>key.includes('signup-')));
-console.log('PASS Nook 7k browser pool, 1k expensive pool, strict $5 threshold, all-model catalog, unlimited account count, same-IP independence, atomic reservations, refunds, four-day reset and owner exemption');
+console.log('PASS Nook 7k browser pool, 1k expensive pool, strict $5 threshold, Premium catalog, unlimited account count, same-IP independence, atomic reservations, refunds, four-day reset and owner exemption');

@@ -3,6 +3,10 @@ import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
   "lib/nyxcloud-access.mjs",
+  "lib/nyxcloud-desktop.mjs",
+  "apps/nyxcloud/index.html",
+  "apps/nyxcloud/app.js",
+  "apps/nyxcloud/style.css",
   "apps/remote-entry/index.html",
   "apps/remote-entry/entry.js",
   "apps/remote-entry/entry.css",

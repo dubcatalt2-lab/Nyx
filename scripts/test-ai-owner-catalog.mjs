@@ -10,8 +10,8 @@ import {isFreeAiModel} from '../lib/ai-free-models.mjs';
 import {memoryFirestore} from './test-ai-allowance.mjs';
 const [astra,fable]=dailyOwnerModels;
 for(const model of [...dailyOwnerModels,'~openai/gpt-astra-latest','~anthropic/claude-fable-latest']){
- for(const actor of [{},{uid:'other',owner:true},{uid:'other',premium:true},{uid:'other',modelRules:[{model,access:'allow'}]}])assert(!aiModelAllowed(model,actor));
- assert(aiModelAllowed(model,{uid:fullCatalogUid}));
+ for(const actor of [{},{uid:'other',modelRules:[{model,access:'allow'}]}])assert(!aiModelAllowed(model,actor));
+ assert(aiModelAllowed(model,{uid:fullCatalogUid}));assert(aiModelAllowed(model,{uid:'premium',premium:true}));assert(aiModelAllowed(model,{uid:'owner',owner:true}));
 }
 const price=aiCatalogPrice({pricing:{prompt:'0.00001',completion:'0.00005'}});
 assert.deepEqual(price,{inputPerMillion:10,outputPerMillion:50,requestUsd:0,imageTokens:8192});
@@ -24,7 +24,7 @@ const context=vm.createContext({hasAppAiAllowance,dropModelIsExpensive,hasFullAi
 vm.runInContext(declaration('nyxAiBudgetCatalog'),context);
 const catalog=[{id:astra,text:true,pricing:{prompt:'.00001',completion:'.00005'}},{id:fable,text:true,pricing:{prompt:'.00001',completion:'.00005'}},{id:'new-vendor/new-chat',text:true,pricing:{prompt:'.000001',completion:'.000002'}},{id:'audio-only',text:false,pricing:{prompt:'.000001',completion:'.000002'}},{id:'unpriced-router',text:true,pricing:{prompt:-1,completion:-1}},{id:'openai/gpt-6-sol',text:true,pricing:{prompt:'.000002',completion:'.00001'}}];
 assert.deepEqual(Array.from(context.nyxAiBudgetCatalog(catalog,false,null,{uid:fullCatalogUid}),x=>x.id),catalog.map(x=>x.id));
-assert.deepEqual(Array.from(context.nyxAiBudgetCatalog(catalog,false,null,{uid:'other',owner:true}),x=>x.id),['openai/gpt-6-sol']);
+assert.deepEqual(Array.from(context.nyxAiBudgetCatalog(catalog,false,null,{uid:'other',owner:true}),x=>x.id),[astra,fable,'new-vendor/new-chat','openai/gpt-6-sol']);
 
 let time=Date.parse('2026-09-26T12:00:00Z');
 const db=memoryFirestore(),config=aiAllowanceConfig({NYX_AI_DAILY_BUDGET_USD:'0.001',NYX_AI_MONTHLY_BUDGET_USD:'0.001',NYX_AI_DAILY_REQUEST_BUDGET:'1'});
@@ -45,7 +45,7 @@ assert.equal(db.records.get(key).ownerDailyPool.used,100000,'Retired owner daily
 assert.equal(db.records.get(key).ownerClaudePool.used,100000,'Exact UID no longer consumes Claude quota');
 const other={uid:'other-owner',owner:true,requestedModel:'openai/gpt-6-sol'};
 await assert.rejects(allowance.begin(other),/shared AI allowance has been used/);
-assert(!aiModelAllowed(astra,other));
+assert(aiModelAllowed(astra,other));
 const account=db.records.get('nyxAiAllowance/account-'+createHash('sha256').update(fullCatalogUid).digest('hex'));
 assert(account.money>0&&account.tokens>0,'Owner usage remains accounted for');
 assert.equal(account.slots.length,0);

@@ -14,7 +14,7 @@ const model=freeAiModels[0],health=createFreeModelHealth({now:()=>clock});
 const context=vm.createContext({app,process:{env:{}},URL,AbortController,setTimeout,clearTimeout,TextDecoder,
  freeModelHealth:health,isFreeAiModel,configureFreeAiReasoning,createAiDeadline,
  nyxAiRateLimit:(_req,_res,next)=>next(),nyxAiRequestCredential:()=>({key:'secret-fixture',personal,provider:{id:'shared'}}),
- nyxAiResolveModel:async()=>({id:model,supportedParameters:[]}),aiModelAllowed:()=>true,nyxAiPremiumEntitlement:async()=>({}),
+ nyxAiResolveModel:async()=>({id:model,supportedParameters:[]}),aiModelAllowed:()=>true,aiCatalogPrice:()=>null,nyxAiPremiumEntitlement:async()=>({}),
  nyxAiLimits:{promptChars:4000,contextChars:24000,timeoutMs:45000},nyxAiTextAttachment:()=>null,nyxAiTextAttachmentPrompt:value=>value,
  nyxAiEndpoint:()=> 'https://openrouter.ai/api/v1/chat/completions',aiWantsWeb:()=>false,
  aiResponseMetadata:()=>({sources:[]}),nyxAiCompletionTokens:()=>0,

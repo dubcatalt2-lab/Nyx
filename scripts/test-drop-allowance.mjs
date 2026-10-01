@@ -4,7 +4,7 @@ import {memoryFirestore} from './test-ai-allowance.mjs';
 import {fullCatalogUid} from '../lib/ai-owner-catalog.mjs';
 const db=memoryFirestore();let now=Date.parse('2026-09-28T00:00:00Z');const day=86400000;
 const allowance=createAiAllowance({db,config:aiAllowanceConfig({NYX_AI_DAILY_BUDGET_USD:1000,NYX_AI_DAILY_REQUEST_BUDGET:100000,NYX_AI_MONTHLY_BUDGET_USD:30000}),now:()=>now});
-const actor=(uid='member',extra={})=>({uid,app:'drop',trusted:true,...extra});
+const actor=(uid='member',extra={})=>({uid,app:'drop',premium:true,trusted:true,...extra});
 const cheap={inputPerMillion:9.99,outputPerMillion:9.99},price={inputPerMillion:1,outputPerMillion:10};
 assert.equal(dropModelIsExpensive(cheap),false);assert.equal(dropModelIsExpensive(price),true);assert.equal(dropModelIsExpensive({inputPerMillion:10,outputPerMillion:0}),true);assert.throws(()=>dropModelIsExpensive(null));assert.throws(()=>dropModelIsExpensive({inputPerMillion:NaN,outputPerMillion:0}));
 for(const model of ['anthropic/claude-fable-5','anthropic/claude-fable-5.1','anthropic/claude-opus-5.5','openai/gpt-6-astra','openai/gpt-6-astra-pro','~anthropic/claude-fable-latest','~openai/gpt-astra-latest'])assert(dropModelIsExpensive(cheap,model),model);
@@ -26,4 +26,4 @@ const namedNext=await begin('named','openai/gpt-6-astra');await assert.rejects(a
 const fakeOwner=await allowance.begin({...actor('not-the-owner',{owner:true}),requestedModel:'any/expensive'});const fakeReserve=await allowance.reserve(fakeOwner,'shared',payload('any/expensive'),price);assert.equal(fakeReserve.tokens,500,'A role label cannot grant the exact UID exemption');await allowance.settle(fakeReserve,{input:100,output:400});await allowance.finish(fakeOwner);now+=61000;const fakeAgain=await allowance.begin({...actor('not-the-owner',{owner:true}),requestedModel:'any/expensive'});await assert.rejects(allowance.reserve(fakeAgain,'shared',payload('any/expensive'),price),/500-token Drop allowance/);await allowance.finish(fakeAgain);
 const unknown=await begin('unknown');await assert.rejects(allowance.reserve(unknown,'shared',payload('any/expensive'),null),/verified token pricing/);await allowance.finish(unknown);
 assert([...db.records.keys()].some(key=>key.includes('drop-models-')));assert(![...db.records.keys()].some(key=>key.startsWith('nyxAiAllowance/models-')));
-console.log('PASS Drop prices, all-model access, unlimited cheap tokens/messages, shared expensive pool, output fitting, account isolation, refunds, reset, owner and unknown-price guard');
+console.log('PASS Drop prices, Premium model access, unlimited cheap tokens/messages, shared expensive pool, output fitting, account isolation, refunds, reset, owner and unknown-price guard');

@@ -1,5 +1,5 @@
 import {createRemoteDesktop} from './lib/remote-desktop.mjs';
-import {createNyxCloudAccess} from './lib/nyxcloud-access.mjs';
+import {createNyxCloudDesktop} from './lib/nyxcloud-desktop.mjs';
 import {isNookRequest} from './lib/nook-policy.mjs';
 import {createDropOwnerScope} from './lib/drop-owner.mjs';
 import {startMemoryMonitor} from './lib/memory-monitor.mjs';
@@ -2319,6 +2319,7 @@ function nyxAiMergeCatalogs(...catalogs) {
 function nyxAiBudgetCatalog(available, personal, provider, actor={}) {
   if(hasAppAiAllowance(actor)&&new URL(nyxAiEndpoint(provider)).hostname==='openrouter.ai')return available.filter(model=>aiCatalogPrice(model)!==null);
   if(hasFullAiCatalog(actor)&&new URL(nyxAiEndpoint(provider)).hostname==='openrouter.ai')return available;
+  if((actor.premium===true||actor.owner===true)&&new URL(nyxAiEndpoint(provider)).hostname==='openrouter.ai')return available.filter(model=>(model.text||model.imageGeneration)&&aiCatalogPrice(model)!==null);
   if (!personal && new URL(nyxAiEndpoint(provider)).hostname === "openrouter.ai") {
     try {
       const config = aiAllowanceConfig(process.env);
@@ -2645,7 +2646,7 @@ async function nyxBudgetedAiFetch(provider,url,options) {
   const session=await nyxSharedAiSession(scope);
   let payload;try {payload=JSON.parse(options.body);}catch{throw Object.assign(new Error('Invalid AI request.'),{status:400});}
   let catalogPrice=null;
-  if((hasFullAiCatalog(session.actor)||hasAppAiAllowance(session.actor))&&new URL(url).hostname==='openrouter.ai'){
+  if((hasFullAiCatalog(session.actor)||hasAppAiAllowance(session.actor)||session.actor.premium===true||session.actor.owner===true)&&new URL(url).hostname==='openrouter.ai'){
     const key=String(new Headers(options.headers).get('authorization')||'').replace(/^Bearer\s+/i,'');
     const catalog=await nyxAiAvailableModels(key,false,null,session.actor);
     const selected=catalog.find(model=>model.id===payload.model);
@@ -2773,17 +2774,17 @@ app.get('/api/nyx-ai/providers',(_req,res)=>{res.set('Cache-Control','private, n
 app.get('/api/nyx-ai/models',async(req,res)=>{
   res.set('Cache-Control','private, no-store');
   const entitlement=await nyxAiPremiumEntitlement(req);
-  if(req.query.custom==='1'&&hasFullAiCatalog(entitlement)){
+  if(req.query.custom==='1'&&(hasFullAiCatalog(entitlement)||entitlement.premium===true||entitlement.owner===true)){
     const models=await nyxAiAvailableModels(nyxAiKey(),false,null,entitlement);
-    return res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement))});
+    return res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement,aiCatalogPrice(model)))});
   }
-  if(req.query.custom==='1')return res.json({models:[{id:'openai/gpt-6-luna-pro',label:'GPT-6 Luna Pro',vision:true},{id:'anthropic/claude-opus-5.5',label:'Claude Opus 5.5',vision:true},{id:'openai/gpt-6-luna',label:'GPT-6 Luna',vision:true},{id:'openai/gpt-6-sol',label:'GPT-6 Sol',vision:true},{id:'google/gemini-2.5-flash-image',label:'Gemini 2.5 Flash Image',vision:true,imageGeneration:true},{id:'google/gemini-2.5-flash-lite',label:'Gemini 2.5 Flash Lite',vision:true},{id:'openai/gpt-5.6-luna',label:'GPT-5.6 Luna',vision:true},{id:'inception/mercury-2.5',label:'Mercury 2.5',vision:false},{id:'qwen/qwen3.7-flash',label:'Qwen3.7 Flash',vision:true},{id:'deepseek/deepseek-v4.1-flash',label:'DeepSeek V4.1 Flash',vision:true},{id:'openai/gpt-5.6-sol-pro',label:'GPT-5.6 Sol Pro',vision:true}].filter(model=>aiModelAllowed(model.id,entitlement))});
+  if(req.query.custom==='1')return res.json({models:[{id:'openai/gpt-6-luna-pro',label:'GPT-6 Luna Pro',vision:true},{id:'anthropic/claude-opus-5.5',label:'Claude Opus 5.5',vision:true},{id:'openai/gpt-6-luna',label:'GPT-6 Luna',vision:true},{id:'openai/gpt-6-sol',label:'GPT-6 Sol',vision:true},{id:'google/gemini-2.5-flash-image',label:'Gemini 2.5 Flash Image',vision:true,imageGeneration:true},{id:'google/gemini-2.5-flash-lite',label:'Gemini 2.5 Flash Lite',vision:true},{id:'openai/gpt-5.6-luna',label:'GPT-5.6 Luna',vision:true},{id:'inception/mercury-2.5',label:'Mercury 2.5',vision:false},{id:'qwen/qwen3.7-flash',label:'Qwen3.7 Flash',vision:true},{id:'deepseek/deepseek-v4.1-flash',label:'DeepSeek V4.1 Flash',vision:true},{id:'openai/gpt-5.6-sol-pro',label:'GPT-5.6 Sol Pro',vision:true}].filter(model=>aiModelAllowed(model.id,entitlement,aiCatalogPrice(model)))});
   const credential=nyxAiRequestCredential(req);
   if(credential.invalid||credential.invalidProvider)return res.status(410).json({error:'This AI option has been removed. Use OpenRouter.'});
   if(!credential.key)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
   const models=await nyxAiAvailableModels(credential.key,false,credential.provider,entitlement);
   if(!models.length)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
-  res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement)).map(model=>hasAppAiAllowance(entitlement)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'No token quota':entitlement.app==='nook'?(nookModelIsExpensive(aiCatalogPrice(model))?'1,000 expensive / browser / 4 days':'7,000 / browser / 4 days'):dropModelIsExpensive(aiCatalogPrice(model),model.id)?'500 shared / 4 days':'No token quota'}:model).map(model=>!hasFullAiCatalog(entitlement)&&expensiveClaudeModel(model.id,aiCatalogPrice(model))?{...model,allowanceLabel:[model.allowanceLabel,'$0.05 Claude / account / site / 4 days'].filter(Boolean).join(' · ')}:model),credential:'shared',ownerMediaAccess:hasFullAiCatalog(entitlement)});
+  res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement,aiCatalogPrice(model))).map(model=>hasAppAiAllowance(entitlement)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'No token quota':entitlement.app==='nook'?(nookModelIsExpensive(aiCatalogPrice(model))?'1,000 expensive / browser / 4 days':'7,000 / browser / 4 days'):dropModelIsExpensive(aiCatalogPrice(model),model.id)?'500 shared / 4 days':'No token quota'}:model).map(model=>!hasFullAiCatalog(entitlement)&&expensiveClaudeModel(model.id,aiCatalogPrice(model))?{...model,allowanceLabel:[model.allowanceLabel,'$0.05 Claude / account / site / 4 days'].filter(Boolean).join(' · ')}:model),credential:'shared',ownerMediaAccess:hasFullAiCatalog(entitlement)});
 });
 
 function nyxMediaUsage(usage) {
@@ -2800,7 +2801,7 @@ installAiMedia(app,{
     if(admin.disabled||admin.aiAccess==='restricted')return null;
     return actor;
   },
-  catalog:actor=>nyxAiAvailableModels(nyxAiKey(),false,null,actor).then(models=>models.filter(model=>aiModelAllowed(model.id,actor))),
+  catalog:actor=>nyxAiAvailableModels(nyxAiKey(),false,null,actor).then(models=>models.filter(model=>aiModelAllowed(model.id,actor,aiCatalogPrice(model)))),
   reserve:async(req,estimate)=>{
     const scope=nyxAiBudgetContext.getStore(),session=await nyxSharedAiSession(scope);
     if(!hasFullAiCatalog(session.actor))throw Object.assign(new Error('Owner media access is required.'),{status:403});
@@ -2852,7 +2853,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   }
   if(modelInfo.text===false)return res.status(400).json({error:'This model uses a dedicated media or tools API. Choose it from the model picker to see its supported workflow.'});
   const model = modelInfo.id;
-  if(!aiModelAllowed(model,modelEntitlement))return res.status(403).json({error:'This AI model is not enabled for your account.'});
+  if(!aiModelAllowed(model,modelEntitlement,aiCatalogPrice(modelInfo)))return res.status(403).json({error:'This AI model is not enabled for your account.'});
   const isPremiumOpus = false;
   const isSharedNavy = false;
   const premiumEntitlement = isPremiumOpus || isSharedNavy ? await nyxAiPremiumEntitlement(req) : null;
@@ -8025,9 +8026,7 @@ app.get("/api/nyxtube/community", async (req, res) => {
   res.json({ provider: "youtube", comments, transcript });
 });
 
-app.get(["/apps/nyxcloud", "/apps/nyxcloud/"], (_req, res) => {
-  res.redirect(302, "/");
-});
+
 
 app.get(["/apps/nyxtube", "/apps/nyxtube/"], (_req, res) => {
   res.sendFile(join(staticRoot, "apps", "nyxtube", "index.html"));
@@ -14107,7 +14106,10 @@ app.get("/download/nyx-singlefile.html", (_req, res) => {
 });
 
 const remoteDesktop=createRemoteDesktop({firebase:linkGeneratorFirebase,download:()=>companionZip(__dirname,{remote:true})});
-app.use('/api/nyxcloud',createNyxCloudAccess({firebase:linkGeneratorFirebase}));
+const nyxCloudDesktop=createNyxCloudDesktop({firebase:linkGeneratorFirebase});
+app.use('/api/nyxcloud',nyxCloudDesktop.router);
+app.use((req,res,next)=>{let path;try{path=posix.normalize(decodeURIComponent(req.path).replaceAll('\\','/')).toLowerCase();}catch{return res.status(400).end();}if(path==='/apps/nyxcloud'||path.startsWith('/apps/nyxcloud/'))return nyxCloudDesktop.pageAccess(req,res,next);next();});
+app.get('/apps/nyxcloud',(_req,res)=>res.redirect(302,'/apps/nyxcloud/'));
 app.use('/api/private-remote',remoteDesktop.router);
 app.use((req,res,next)=>{let path;try{path=posix.normalize(decodeURIComponent(req.path).replaceAll('\\','/')).toLowerCase();}catch{return res.status(400).end();}if(path==='/apps/remote'||path.startsWith('/apps/remote/'))return remoteDesktop.pageAccess(req,res,next);next();});
 let httpRelayPort = 0;
@@ -14243,6 +14245,7 @@ async function startNyxServer() {
       rejectWispUpgrade(socket, "400 Bad Request");
       return;
     }
+    if (upgradePath === '/api/nyxcloud/socket') { nyxCloudDesktop.upgrade(req,socket,head);return; }
     if (upgradePath === '/api/private-remote/socket') { remoteDesktop.upgrade(req,socket,head);return; }
     if (upgradePath === "/socket.io/" || upgradePath.startsWith("/socket.io/")) {
       return;

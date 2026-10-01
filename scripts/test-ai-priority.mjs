@@ -30,7 +30,7 @@ for (const privilege of [{ premium: true }, { owner: true }, { coOwner: true }])
     time += 30000;
     await allowance.finish(await allowance.begin(priority));
   }
-  assert.equal(aiModelAllowed('openai/gpt-5.6-sol-pro', priority), privilege.owner === true);
+  assert.equal(aiModelAllowed('openai/gpt-5.6-sol-pro', priority), privilege.owner === true || privilege.premium === true);
 }
 {
   const allowance = createAiAllowance({ db: memoryFirestore(), config: aiAllowanceConfig({}) });

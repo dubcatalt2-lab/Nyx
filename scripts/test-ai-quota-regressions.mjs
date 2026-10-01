@@ -8,7 +8,7 @@ import {memoryFirestore} from './test-ai-allowance.mjs';
 const source=readFileSync(new URL('../server.js',import.meta.url),'utf8');
 const system=source.split('  const system = `')[1].split('`;')[0].replace('${responseGuidance}','Give a balanced answer with enough explanation to be useful without unnecessary length.');
 const model='deepseek/deepseek-fixture';
-const price={inputPerMillion:3,outputPerMillion:15};
+const price={inputPerMillion:3,outputPerMillion:4};
 const payload=(message='Hello')=>({model,messages:[{role:'system',content:system},{role:'user',content:message}],max_tokens:1200});
 function setup(app){
  const db=memoryFirestore();let time=Date.parse('2026-09-30T12:00:00Z');

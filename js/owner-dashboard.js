@@ -351,11 +351,11 @@
     }).catch(()=>{});
     api('/api/nyxcloud/access').then(data=>{
       if(!data.allowed||!overlay.isConnected)return;
-      const status=document.createElement('span');
-      status.textContent='NyxCloud · access reserved';
-      status.title='Your VM access is reserved. The local VM is not connected to this website.';
-      status.dataset.nyxcloudAccess='reserved';
-      overlay.querySelector('.nyx-owner-header-actions').append(status);
+      const button=document.createElement('button');button.type='button';
+      button.textContent='NyxCloud';button.dataset.nyxcloudAccess='owner';
+      button.title=data.online?'Open your VM':'Open NyxCloud (VM currently offline)';
+      button.addEventListener('click',async()=>{button.disabled=true;try{await api('/api/nyxcloud/session',{method:'POST'});window.location.assign('/apps/nyxcloud/');}catch{button.textContent='NyxCloud unavailable';}finally{button.disabled=false;}});
+      overlay.querySelector('.nyx-owner-header-actions').append(button);
     }).catch(()=>{});
     const aiStatusHost=overlay.querySelector('[data-owner-ai-status]');
     function compactStatus(host,key,label) {

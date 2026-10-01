@@ -1,3 +1,9 @@
+## Current expensive-model access (2026-09-30)
+
+This supersedes older catalog access rules below. Across Nyx, Tutsi, Nook and Drop, all Anthropic Claude and OpenAI Astra models/aliases require a server-verified Premium subscription or owner access. Other models require Premium when verified catalog input or output pricing is at least $10 per million tokens; Nook retains its stricter greater-than-$5 threshold. Manual Allow rules, trusted/co-owner flags and client-supplied Premium flags do not bypass this gate. Model catalogs, chat requests, internal reservations and existing Nook developer keys use the current account policy. Premium/owner catalogs include supported, verified-price text/image models; the exact owner UID retains its full catalog and existing exemption.
+
+Existing token caps, four-day windows, separate $0.05 expensive-Claude pools per account/site, and global spending protections remain. Upgrading or downgrading does not reset counters. Tests include `test-ai-premium-models.mjs`, `test-ai-model-access.mjs`, `test-ai-budget-integration.mjs` and the allowance suite. No paid inference is used in those tests.
+
 ## Current corrections (2026-09-30)
 
 Regular Nyx/Tutsi accounts retain their 7,000-token four-day pool. Nook retains

@@ -1,4 +1,6 @@
 const dropGames = document.body.classList.contains('drop-games');
+const nyxArcade = !dropGames && document.documentElement.dataset.appShell !== 'tutsi'
+  && !document.documentElement.dataset.tutsiApp;
 const elements = {
   grid: document.getElementById('gameGrid'),
   search: document.getElementById('gameSearch'),
@@ -80,6 +82,93 @@ let luminReadyPromise = null;
 const CATALOG_FETCH_TIMEOUT = 8_000;
 const CATALOG_FETCH_ATTEMPTS = 2;
 const LUMIN_OPERATION_TIMEOUT = 9_000;
+
+// The shared catalog also powers Tutsi and Drop; only Nyx gets this presentation.
+let arcadeFeatured;
+let arcadeRandom;
+let arcadeFeaturedSignature = '';
+if (nyxArcade) {
+  document.body.classList.add('nyx-arcade');
+  const header = document.querySelector('.cove-header');
+  header.querySelector('.eyebrow').textContent = 'NYX';
+  header.querySelector('h1').textContent = 'ARCADE';
+  const masthead = document.createElement('div');
+  masthead.className = 'arcade-masthead';
+  header.before(masthead);
+  masthead.append(header, document.querySelector('.game-view-switch'));
+
+  arcadeFeatured = document.createElement('section');
+  arcadeFeatured.className = 'arcade-featured';
+  arcadeFeatured.setAttribute('aria-label', 'Featured games');
+  arcadeFeatured.hidden = true;
+  elements.localView.prepend(arcadeFeatured);
+
+  const collection = document.createElement('div');
+  collection.className = 'arcade-collection';
+  collection.innerHTML = '<h2>Game library<span class="arcade-heading-line" aria-hidden="true"></span></h2>';
+  const tools = document.querySelector('.catalog-tools');
+  tools.before(collection);
+  collection.append(tools);
+  arcadeRandom = document.createElement('button');
+  arcadeRandom.type = 'button';
+  arcadeRandom.className = 'arcade-random';
+  arcadeRandom.setAttribute('aria-label', 'Random game');
+  arcadeRandom.title = 'Random game';
+  arcadeRandom.disabled = true;
+  arcadeRandom.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h3c4 0 8 12 12 12h3m-4-4 4 4-4 4M3 18h3c1.7 0 3.4-2.2 5-5m2-3c1.7-2.5 3.3-4 5-4h3m-4-4 4 4-4 4"/></svg><span>Random game</span>';
+  tools.append(arcadeRandom);
+  arcadeRandom.addEventListener('click', () => {
+    const games = visibleGames();
+    if (games.length) openGame(games[Math.floor(Math.random() * games.length)], true,
+      ['all', 'misc'].includes(state.activeLibrary) ? '' : state.activeLibrary);
+  });
+  arcadeFeatured.addEventListener('click', event => {
+    const card = event.target.closest('[data-game-key]');
+    if (card) openGame(state.gamesByKey.get(card.dataset.gameKey));
+  });
+}
+
+function renderArcadeFeatures(games) {
+  if (!arcadeFeatured) return;
+  arcadeRandom.disabled = games.length === 0;
+  // Keep search and filtered collections focused on their results.
+  arcadeFeatured.hidden = Boolean(elements.search.value.trim()) || state.activeLibrary !== 'all' || state.page !== 1;
+  if (arcadeFeatured.hidden) return;
+  const picks = ['Slope', 'Retro Bowl', 'Geometry Dash'].map(title =>
+    state.games.find(game => game.hasIcon && game.title.toLowerCase() === title.toLowerCase())
+  ).filter(Boolean);
+  arcadeFeatured.hidden = !picks.length;
+  const signature = JSON.stringify(picks.map(game => [game.key, game.covers]));
+  if (signature === arcadeFeaturedSignature) return;
+  arcadeFeaturedSignature = signature;
+  const fragment = document.createDocumentFragment();
+  for (const [index, game] of picks.entries()) {
+    const card = document.createElement('button');
+    card.className = 'arcade-feature';
+    card.type = 'button';
+    card.dataset.gameKey = game.key;
+    card.setAttribute('aria-label', `Launch ${game.title}`);
+    const copy = document.createElement('span');
+    copy.className = 'arcade-feature-copy';
+    const label = document.createElement('span');
+    label.className = 'arcade-feature-label';
+    label.textContent = index === 0 ? 'In the spotlight' : 'Arcade pick';
+    const title = document.createElement('span');
+    title.className = 'arcade-feature-title';
+    title.textContent = game.title;
+    const play = document.createElement('span');
+    play.className = 'arcade-feature-play';
+    play.innerHTML = 'Play now <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>';
+    copy.append(label, title, play);
+    const number = document.createElement('span');
+    number.className = 'arcade-feature-number';
+    number.textContent = `0${index + 1}`;
+    number.setAttribute('aria-hidden', 'true');
+    card.append(makeCover(game), number, copy);
+    fragment.append(card);
+  }
+  arcadeFeatured.replaceChildren(fragment);
+}
 
 function wait(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds));
@@ -758,6 +847,7 @@ function render() {
   const games = visibleGames();
   const totalPages = Math.max(1, Math.ceil(games.length / state.pageSize));
   state.page = Math.min(Math.max(1, state.page), totalPages);
+  renderArcadeFeatures(games);
   const pageStart = (state.page - 1) * state.pageSize;
   const pageGames = games.slice(pageStart, pageStart + state.pageSize);
   const fragment = document.createDocumentFragment();
@@ -1141,7 +1231,9 @@ async function loadLibrary() {
     if (pending > 0) elements.count.textContent += ` · ${pending} ${pending === 1 ? 'library' : 'libraries'} loading`;
     if (completed === catalogs.length && failed.length) elements.count.textContent += ` · ${failed.length} unavailable`;
     elements.progress.classList.toggle('done', state.games.length > 0 || completed === catalogs.length);
-    elements.empty.hidden = state.games.length === 0 && completed < catalogs.length;
+    // render() owns the empty-results state. Only suppress it during the first
+    // catalog load; a successful publish must not reveal it beneath real games.
+    if (state.games.length === 0 && completed < catalogs.length) elements.empty.hidden = true;
 
     if (!requestedOpened && requested && state.gamesByKey.has(requested)) {
       requestedOpened = true;

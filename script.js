@@ -3470,7 +3470,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       code:'<path d="m9 7-5 5 5 5M15 7l5 5-5 5M14 4l-4 16"/>',
       settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
       chat:'<path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/><path d="M9 10v4M12 9v6M15 11v2"/>',
-      games:'<path d="M8 9h8a5 5 0 0 1 4.6 6.9l-.8 2a2 2 0 0 1-3.2.8L14.8 17H9.2l-1.8 1.7a2 2 0 0 1-3.2-.8l-.8-2A5 5 0 0 1 8 9z"/><path d="M8 12v4M6 14h4M16.5 13.2h.1M18.2 15h.1"/>',
+      games:'<rect x="2" y="6" width="20" height="13" rx="2.5"/><path d="M7.5 10v5M5 12.5h5"/><circle cx="15" cy="14" r=".9" fill="currentColor" stroke="none"/><circle cx="18" cy="11" r=".9" fill="currentColor" stroke="none"/>',
       music:'<path d="M9 18V6l9-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="15.5" cy="16" r="2.5"/>',
       sparkle:'<path d="M12 2c.7 5.3 2.7 7.3 8 8-5.3.7-7.3 2.7-8 8-.7-5.3-2.7-7.3-8-8 5.3-.7 7.3-2.7 8-8Z"/><path d="M19 16.5c.25 1.8.95 2.5 2.75 2.75C19.95 19.5 19.25 20.2 19 22c-.25-1.8-.95-2.5-2.75-2.75C18.05 19 18.75 18.3 19 16.5Z"/>',
       browse:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/>',
@@ -10542,7 +10542,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       installDuckDuckGoImageViewportFix(t);
       if(t.frame.dataset.nyxLocationSync!=='true'){
         t.frame.dataset.nyxLocationSync='true';
-        t.frame.addEventListener('load',()=>setTimeout(()=>{
+        const frame=t.frame;
+        const syncLocation=(sameDocument=false)=>{
+          if(t.frame!==frame || !state.tabs.includes(t)) return;
           const pendingFrameNavigation=t.frameHistoryPending || null;
           t.frameHistoryPending=null;
           try{
@@ -10552,9 +10554,12 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
             if(!/^https?:\/\//i.test(source) || source===location.href) return;
             const previousSource=browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
             if(browserShellRejectFrameLocation(source,previousSource)){
-              recoverRejectedScramjetLocation(t,source,previousSource);
+              if(!sameDocument) recoverRejectedScramjetLocation(t,source,previousSource);
               return;
             }
+            // History API/hash changes belong to the already running app.
+            // Update chrome only; never rearm startup recovery for its route.
+            if(sameDocument) t.scramjetHealthyDocument=frame.contentDocument;
             t.scramjetRejectedLocationKey='';
             t.previousNavigationDocument=null;
             const currentHistory=browserShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
@@ -10579,7 +10584,23 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
             syncLoadedTabIcon(t);
           }catch{}
           setTimeout(()=>syncLoadedTabIcon(t),260);
-        },40));
+        };
+        frame.addEventListener('load',()=>setTimeout(()=>syncLocation(),40));
+        // Controller 0.0.14 has no urlchange event. Native same-document
+        // navigation also emits no iframe load, so observe without wrapping
+        // the site's History methods or intercepting its channel links.
+        let observedDocument=null,observedHref='';
+        const locationTimer=setInterval(()=>{
+          if(t.frame!==frame || !frame.isConnected || !state.tabs.includes(t)){
+            clearInterval(locationTimer);return;
+          }
+          try{
+            const doc=frame.contentDocument,href=frame.contentWindow.location.href;
+            const changed=doc && doc===observedDocument && href!==observedHref;
+            observedDocument=doc;observedHref=href;
+            if(changed) syncLocation(true);
+          }catch{observedDocument=null;observedHref='';}
+        },250);
       }
       const bridgeUrl=t.sourceUrl || t.url || t.frame.getAttribute('src') || '';
       if(isSpotifyFamilyUrl(bridgeUrl) || isAuthSensitiveUrl(bridgeUrl)) return;

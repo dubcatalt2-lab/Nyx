@@ -44,21 +44,23 @@ const denied=p=>assert.rejects(p,e=>e.code==='ai_allowance');
   const f=fixture();
   for(let i=0;i<5;i++) {
     const a=f.create(),s=await a.begin(f.actor),r=await a.reserve(s,'shared',payload());
-    await a.settle(r,{input:1300,output:700});await a.finish(s);f.advance();
+    await a.settle(r,{input:600,output:400});await a.finish(s,true);f.advance();
   }
   assert.equal(f.db.records.get(key('member')).requests,5);
+  // Isolate the legacy daily-message guard from the newer four-day 7k pool.
+  f.db.records.get(key('member')).tokens=10000;
   await denied(f.create().begin(f.actor));
 }
 {
   const f=fixture(),a=f.create();
   for(let i=0;i<5;i++) {
     const s=await a.begin(f.actor),r=await a.reserve(s,'shared',payload());
-    await a.settle(r,null);await a.finish(s);f.advance();
+    await a.settle(r,null);await a.finish(s,true);f.advance();
   }
-  const tokens=f.db.records.get(key('member')).tokens;
+  f.db.records.get(key('member')).tokens=9500;
   const s=await a.begin(f.actor);
-  await assert.rejects(a.reserve(s,'shared',payload()),/exceeds your shared|extra message would exceed/);
-  assert.equal(f.db.records.get(key('member')).tokens,tokens,'Rejected bonus must not reserve more tokens');
+  await assert.rejects(a.reserve(s,'shared',payload()),/extra message would exceed/);
+  assert.equal(f.db.records.get(key('member')).tokens,9500,'Rejected bonus must not reserve more tokens');
   await a.finish(s);
 }
 {

@@ -1,4 +1,33 @@
-## Current policy (2026-09-11; deployed in 7f0ce4f)
+## Current corrections (2026-09-30)
+
+Regular Nyx/Tutsi accounts retain their 7,000-token four-day pool. Nook retains
+its browser pool of 7,000 tokens and 1,000-token expensive subset; Drop retains
+its 500-token expensive-model pool. Existing access rules and owner exemptions
+are preserved. These policies supersede conflicting historical notes below.
+
+Expensive Claude models additionally share $0.05 per account, per site, in a
+rolling four-day window. Nyx, Tutsi, Nook and Drop have distinct dollar ledgers.
+This covers Opus/Fable models and other Claude models priced at $10/million or
+more for input or output. Unknown Claude pricing fails closed. The exact full-
+catalog owner exemption and personal OpenRouter BYOK remain unchanged. Account
+API calls share the applicable site's money pool. A dedicated Tutsi AI route
+selects its site policy; arbitrary body/header app claims do not select a pool.
+
+Reservations fit output to remaining dollars and tokens before sending. Actual
+provider cost settles the Claude pool when available; token rates are the
+fallback. Unknown costs retain their reservation. Unsent calls refund it, and
+late settlement cannot alter a new four-day window. No historical usage reset
+or guessed refund was performed. Independent service funding, daily spending,
+request-rate and concurrency guards still apply.
+
+Completed provider rejections without generated output refund user token pools.
+Failed requests refund the personal daily message count. Short-term attempt
+guards remain: the regular default is four requests per minute. All four chat
+interfaces now show a short Retry-After countdown, block repeated submits during
+that wait and preserve the next draft. They never automatically repeat inference.
+Exhausted-token, oversized-input and spending-denial messages are distinguished.
+
+## Historical policy (2026-09-11; deployed in 7f0ce4f)
 
 Premium: 50,000 tokens/month across all models and chat/API calls, reset at the start of each UTC calendar month. Luna stops when the next conservative reservation cannot fit; Gemini remains subject to site money limits. Owner can set each user's ceiling in either owner dashboard. Changes preserve usage. Configured founder owner has no personal message/token quota; site spending, burst and concurrency guards still apply. Regular users retain the existing join-date and 5?10 message policy. AI/key allowances are per user, not IP/device; signup abuse checks remain. Only the configured owner can grant Premium/Caffeine and view service billing/cache notices.
 

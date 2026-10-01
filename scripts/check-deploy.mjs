@@ -2,6 +2,7 @@ import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
+  "lib/nyxcloud-access.mjs",
   "apps/remote-entry/index.html",
   "apps/remote-entry/entry.js",
   "apps/remote-entry/entry.css",

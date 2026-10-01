@@ -349,6 +349,14 @@
       button.addEventListener('click',async()=>{button.disabled=true;try{await api('/api/private-remote/session',{method:'POST'});window.location.assign('/apps/remote/');}catch{button.textContent='Remote access unavailable';}finally{button.disabled=false;}});
       overlay.querySelector('.nyx-owner-header-actions').prepend(button);
     }).catch(()=>{});
+    api('/api/nyxcloud/access').then(data=>{
+      if(!data.allowed||!overlay.isConnected)return;
+      const status=document.createElement('span');
+      status.textContent='NyxCloud · access reserved';
+      status.title='Your VM access is reserved. The local VM is not connected to this website.';
+      status.dataset.nyxcloudAccess='reserved';
+      overlay.querySelector('.nyx-owner-header-actions').append(status);
+    }).catch(()=>{});
     const aiStatusHost=overlay.querySelector('[data-owner-ai-status]');
     function compactStatus(host,key,label) {
       const details=document.createElement('details'),summary=document.createElement('summary'),body=document.createElement('div');

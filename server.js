@@ -1,4 +1,5 @@
 import {createRemoteDesktop} from './lib/remote-desktop.mjs';
+import {createNyxCloudAccess} from './lib/nyxcloud-access.mjs';
 import {isNookRequest} from './lib/nook-policy.mjs';
 import {createDropOwnerScope} from './lib/drop-owner.mjs';
 import {startMemoryMonitor} from './lib/memory-monitor.mjs';
@@ -33,7 +34,7 @@ import { createNookDeveloper } from './lib/nook-developer.mjs';
 import { aiImageContent } from './lib/ai-image.mjs';
 ﻿import express from "express";
 import { AsyncLocalStorage } from "node:async_hooks";
-import { createAiAllowance, aiAllowanceConfig, premiumModelLimits, aiModelAllowed, hasAppAiAllowance, dropModelIsExpensive, nookModelIsExpensive } from "./lib/ai-allowance.mjs";
+import { createAiAllowance, aiAllowanceConfig, premiumModelLimits, aiModelAllowed, hasAppAiAllowance, dropModelIsExpensive, nookModelIsExpensive, expensiveClaudeModel } from "./lib/ai-allowance.mjs";
 import { createOpenRouterBalanceGuard, createOpenRouterOwnerStatus } from "./lib/openrouter-balance.mjs";
 import { aiOutputImages } from "./lib/ai-output-images.mjs";
 import { aiBudgetResponse } from "./lib/ai-budget-response.mjs";
@@ -2509,7 +2510,7 @@ async function nyxAiPremiumEntitlement(req) {
     const administration = await firebase.firestore.collection("nyxUserAdministration").doc(token.uid).get();
     const administrationData = administration.data() || {};
     const subscriptionStatus = normalizeSubscriptionStatus(administrationData.subscriptionStatus || administrationData.subscription?.status);
-    return { app:['drop','nook'].includes(req.nyxAiApp)?req.nyxAiApp:null, modelRules:administrationData.aiModelRules||[], premium: hasPremiumSubscription(subscriptionStatus), owner: nyxRoleForUser(token.uid, administrationData) === "owner", firebase, uid: token.uid };
+    return { app:['drop','nook','tutsi'].includes(req.nyxAiApp)?req.nyxAiApp:null, modelRules:administrationData.aiModelRules||[], premium: hasPremiumSubscription(subscriptionStatus), owner: nyxRoleForUser(token.uid, administrationData) === "owner", firebase, uid: token.uid };
   } catch {
     return { premium: false, owner: false, firebase: null, uid: "" };
   }
@@ -2625,7 +2626,7 @@ async function nyxSharedAiSession(scope) {
     if(account.disabled||admin.disabled)throw Object.assign(new Error('This account is disabled.'),{status:403});
     const allowance=nyxSharedAiAllowance(firebase);
     if(allowance.configurationError)throw Object.assign(new Error('Shared AI budget settings need to be checked by the owner.'),{status:503});
-    const actor={uid,app:['drop','nook'].includes(req.nyxAiApp)?req.nyxAiApp:null,requestedModel:String(req.body?.model||(req.path==='/api/v1/ai'?'google/gemini-2.5-flash-lite':'')),modelRules:admin.aiModelRules||[],freeModel:isFreeAiModel(req.body?.model)?req.body.model:null,createdAt:Date.parse(account.metadata?.creationTime||''),
+    const actor={uid,app:['drop','nook','tutsi'].includes(req.nyxAiApp)?req.nyxAiApp:null,requestedModel:String(req.body?.model||(req.path==='/api/v1/ai'?'google/gemini-2.5-flash-lite':'')),modelRules:admin.aiModelRules||[],freeModel:isFreeAiModel(req.body?.model)?req.body.model:null,createdAt:Date.parse(account.metadata?.creationTime||''),
       owner:uid===founderProfileConfig().administratorUid,premium:hasPremiumSubscription(normalizeSubscriptionStatus(admin.subscriptionStatus||admin.subscription?.status)),
       coOwner:nyxRoleForUser(uid,admin)==='co_owner',
       monthlyModelLimits:premiumModelLimits(admin.aiMonthlyModelLimits),trusted:admin.aiAccess==='trusted',blocked:admin.aiAccess==='restricted',
@@ -2664,9 +2665,9 @@ async function nyxBudgetedAiFetch(provider,url,options) {
   try {
     scope.req.nyxApiSent=true;
     const response=await fetch(url,{...options,body:JSON.stringify(payload),signal});
-    return aiBudgetResponse(response,async(usage,success,imageCount,answer)=>{
+    return aiBudgetResponse(response,async(usage,success,imageCount,answer,details)=>{
       scope.success ||= success;
-      await scope.allowance.settle(reservation,usage,false,imageCount);
+      await scope.allowance.settle(reservation,usage,false,imageCount,{refundTokens:details?.refundTokens});
       if(success){
         const lastUser=Array.isArray(scope.req.body?.messages)?scope.req.body.messages.filter(m=>m?.role==='user').at(-1)?.content:'';
         const prompt=typeof scope.req.body?.message==='string'?scope.req.body.message:typeof lastUser==='string'?lastUser:'';
@@ -2677,11 +2678,12 @@ async function nyxBudgetedAiFetch(provider,url,options) {
 }
 // Dedicated routes select product policy; request body/header claims do not.
 app.use((req,res,next)=>{
-  const appRoute=/^\/api\/(drop|nook)-ai(?:\/models)?$/.exec(req.path);
+  const appRoute=/^\/api\/(drop|nook|tutsi)-ai(?:\/models)?$/.exec(req.path);
   if(appRoute&&['GET','POST'].includes(req.method)){
     req.nyxAiApp=appRoute[1];req.url=req.url.replace('/api/'+appRoute[1]+'-ai','/api/nyx-ai');
   }
   if(isNookRequest(req)&&/^\/api\/nyx-ai(?:\/|$)/.test(req.path))req.nyxAiApp='nook';
+  if(!req.nyxAiApp&&isTutsiHostname(req.hostname)&&/^\/api\/nyx-ai(?:\/|$)/.test(req.path))req.nyxAiApp='tutsi';
   if(req.path==='/api/nook-account/register'&&req.method==='POST'){
     req.nookAccount=true;req.url=req.url.replace('/api/nook-account/register','/api/account/register');
   }
@@ -2781,7 +2783,7 @@ app.get('/api/nyx-ai/models',async(req,res)=>{
   if(!credential.key)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
   const models=await nyxAiAvailableModels(credential.key,false,credential.provider,entitlement);
   if(!models.length)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
-  res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement)).map(model=>hasAppAiAllowance(entitlement)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'No token quota':entitlement.app==='nook'?(nookModelIsExpensive(aiCatalogPrice(model))?'1,000 expensive / browser / 4 days':'7,000 / browser / 4 days'):dropModelIsExpensive(aiCatalogPrice(model),model.id)?'500 shared / 4 days':'No token quota'}:model),credential:'shared',ownerMediaAccess:hasFullAiCatalog(entitlement)});
+  res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement)).map(model=>hasAppAiAllowance(entitlement)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'No token quota':entitlement.app==='nook'?(nookModelIsExpensive(aiCatalogPrice(model))?'1,000 expensive / browser / 4 days':'7,000 / browser / 4 days'):dropModelIsExpensive(aiCatalogPrice(model),model.id)?'500 shared / 4 days':'No token quota'}:model).map(model=>!hasFullAiCatalog(entitlement)&&expensiveClaudeModel(model.id,aiCatalogPrice(model))?{...model,allowanceLabel:[model.allowanceLabel,'$0.05 Claude / account / site / 4 days'].filter(Boolean).join(' · ')}:model),credential:'shared',ownerMediaAccess:hasFullAiCatalog(entitlement)});
 });
 
 function nyxMediaUsage(usage) {
@@ -14105,6 +14107,7 @@ app.get("/download/nyx-singlefile.html", (_req, res) => {
 });
 
 const remoteDesktop=createRemoteDesktop({firebase:linkGeneratorFirebase,download:()=>companionZip(__dirname,{remote:true})});
+app.use('/api/nyxcloud',createNyxCloudAccess({firebase:linkGeneratorFirebase}));
 app.use('/api/private-remote',remoteDesktop.router);
 app.use((req,res,next)=>{let path;try{path=posix.normalize(decodeURIComponent(req.path).replaceAll('\\','/')).toLowerCase();}catch{return res.status(400).end();}if(path==='/apps/remote'||path.startsWith('/apps/remote/'))return remoteDesktop.pageAccess(req,res,next);next();});
 let httpRelayPort = 0;

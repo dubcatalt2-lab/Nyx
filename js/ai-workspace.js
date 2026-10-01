@@ -72,6 +72,23 @@
   if(!app||!feed||!conversation||!form||!input||!send||!model||!providerSelect||!modelPicker||!modelTrigger||!modelSelected||!modelMenu||!modelOptionsHost||!clear||!threadTitle||!sidebar||!sidebarToggle||!sidebarClose||!sidebarScrim||!newChat||!temporaryChat||!threadList||!threadCount||!historyEmpty||!threadSearch||depthButtons.length!==3||!sidebarModelName||!usageWeek||!usageAll||!usageRequests||!profileButton||!profileAvatar||!profileInitial||!profileName||!profileHandle||!imageInput||!attachImage||!attachmentPreview||!attachmentThumbnail||!attachmentName||!attachmentStatus||!removeAttachment||!screenPreview||!screenVideo||!screenStatus||!shareScreen||!stopScreenShare) return;
 
   let activeController=null;
+  let sendCooldownUntil=0,sendCooldownTimer;
+  const cooldownLine=document.createElement('div');
+  cooldownLine.className='ai-send-cooldown';cooldownLine.hidden=true;
+  cooldownLine.setAttribute('role','status');cooldownLine.style.cssText='font-size:12px;text-align:center;padding:4px;';
+  form.before(cooldownLine);
+  function showSendCooldown(response){
+    const seconds=Number(response.headers.get('retry-after'));
+    if(response.status!==429||!Number.isFinite(seconds)||seconds<1||seconds>60)return;
+    sendCooldownUntil=Date.now()+seconds*1000;clearInterval(sendCooldownTimer);
+    const update=()=>{
+      const remaining=Math.max(0,Math.ceil((sendCooldownUntil-Date.now())/1000));
+      cooldownLine.hidden=!remaining;cooldownLine.textContent=remaining?`You can send another message in ${remaining}s.`:'';
+      send.disabled=!!remaining||form.classList.contains('is-busy');
+      if(!remaining)clearInterval(sendCooldownTimer);
+    };
+    update();sendCooldownTimer=setInterval(update,250);
+  }
   let followStream=true;
   let modelCatalog=[];
   let ownerMediaAccess=false;
@@ -1353,7 +1370,7 @@
     modelTrigger.disabled=true;
     modelTrigger.setAttribute('aria-busy','true');
     try{
-      const response=await fetch('/api/nyx-ai/models'+(customKey?'?custom=1':''),{headers:await aiHeaders({accept:'application/json'})});
+      const response=await fetch((tutsiModelPicker()?'/api/tutsi-ai/models':'/api/nyx-ai/models')+(customKey?'?custom=1':''),{headers:await aiHeaders({accept:'application/json'})});
       const data=await response.json();
       if(!response.ok) throw new Error(data?.error||`Model catalog failed (${response.status})`);
       ownerMediaAccess=data.ownerMediaAccess===true;
@@ -1408,7 +1425,7 @@
     feed.setAttribute('aria-busy',String(busy));
     form.classList.toggle('is-busy',busy);
     input.disabled=busy;
-    send.disabled=busy;
+    send.disabled=busy||Date.now()<sendCooldownUntil;
     imageInput.disabled=busy;
     attachImage.disabled=busy;
     shareScreen.disabled=busy;
@@ -1528,7 +1545,7 @@
         response=await fetch(kind==='nyx'?'/api/v1/ai':'https://openrouter.ai/api/v1/chat/completions',{method:'POST',signal:activeController.signal,headers:{'Content-Type':'application/json',Authorization:'Bearer '+customKey},body:JSON.stringify({model:requestedModel,messages,max_tokens:generateImage?2200:512,stream:!generateImage&&kind!=='nyx',...(generateImage?{modalities:['text','image']}:{})})});
         if(kind==='nyx'&&response.ok){const result=await response.json();const content=result.choices?.[0]?.message?.content||'';response=new Response('data: '+JSON.stringify({model:result.model,choices:[{delta:{content},finish_reason:result.choices?.[0]?.finish_reason}]})+'\n\ndata: [DONE]\n\n',{headers:{'Content-Type':'text/event-stream'}});}
       }else{
-      response=await fetch(dedicatedMedia?'/api/nyx-ai/media':'/api/nyx-ai',{
+      response=await fetch(dedicatedMedia?'/api/nyx-ai/media':tutsiModelPicker()?'/api/tutsi-ai':'/api/nyx-ai',{
         method:'POST',
         signal:activeController.signal,
         headers:await aiHeaders({'content-type':'application/json'}),
@@ -1536,6 +1553,7 @@
       });
       }
       if(!response.ok){
+        showSendCooldown(response);
         const data=await response.json().catch(()=>({}));
         throw new Error(data?.error?.message||data?.error||(generateImage&&[502,504].includes(response.status)?'The image provider failed or timed out before finishing. Try again or choose another image model.':`Nyx AI failed (${response.status})`));
       }

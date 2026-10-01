@@ -6,6 +6,7 @@ import {isFreeAiModel} from '../lib/ai-free-models.mjs';
 import {hasFullAiCatalog,aiCatalogPrice,fullCatalogUid} from '../lib/ai-owner-catalog.mjs';
 import {installDeveloperApi,createKeyStore,GEMINI} from '../lib/developer-api.mjs';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 import {AsyncLocalStorage} from 'node:async_hooks';
@@ -23,9 +24,9 @@ const ast=parse(source,{ecmaVersion:'latest',sourceType:'module'});
 const declaration=name=>{const node=ast.body.find(n=>n.type==='FunctionDeclaration'&&n.id.name===name);assert.ok(node,name);return source.slice(node.start,node.end);};
 const db=memoryFirestore(),app=express();app.use(express.json());
 const firebase={firestore:db,auth:{async getUser(uid){return {uid,email:'optional@example.com',emailVerified:uid==='late-api',disabled:uid==='disabled',metadata:{creationTime:uid.startsWith('late-')?'2026-08-25T07:00:00Z':'2026-01-01T00:00:00Z'}};}}};
-let calls=0,lastPayload,hold,balance=1;
+let calls=0,lastPayload,hold,balance=1,providerFailure=false;
 const environment={NYX_AI_CONCURRENT_GLOBAL:3,NYX_OPENROUTER_API_KEY:'fixture-inference',NYX_OPENROUTER_MANAGEMENT_KEY:'fixture-management',NYX_AI_DAILY_BUDGET_USD:'1',NYX_AI_MODEL_PRICES_JSON:JSON.stringify({'shared:google/gemini-fixture':{inputPerMillion:1,outputPerMillion:2},['shared:'+GEMINI]:{inputPerMillion:.1,outputPerMillion:.4},'groq:test':{inputPerMillion:1,outputPerMillion:2}})};
-const context=vm.createContext({isNookRequest,hasAppAiAllowance,dropModelIsExpensive,recordAiExchange,isFreeAiModel,hasFullAiCatalog,aiCatalogPrice,app,AsyncLocalStorage,aiAllowanceConfig,createAiAllowance,premiumModelLimits,aiBudgetResponse,
+const context=vm.createContext({isTutsiHostname:host=>host==='tutsi.test',isNookRequest,hasAppAiAllowance,dropModelIsExpensive,recordAiExchange,isFreeAiModel,hasFullAiCatalog,aiCatalogPrice,app,AsyncLocalStorage,aiAllowanceConfig,createAiAllowance,premiumModelLimits,aiBudgetResponse,
   process:{env:environment},AbortController,AbortSignal,URL,Headers,setTimeout,clearTimeout,
   createOpenRouterBalanceGuard:options=>createOpenRouterBalanceGuard({...options,fetchImpl:async url=>new Response(JSON.stringify({data:url.endsWith('/credits')?{total_credits:balance,total_usage:0}:{limit_remaining:null}}))}),
   authenticatedNyxUser:async req=>{const uid=req.get('authorization')?.replace('Bearer ','');if(!uid)throw Object.assign(new Error('Auth required'),{status:401});return {firebase,token:{uid,email_verified:false}};},
@@ -34,6 +35,7 @@ const context=vm.createContext({isNookRequest,hasAppAiAllowance,dropModelIsExpen
   sameOriginRequest:req=>req.get('sec-fetch-site')!=='cross-site',
   nyxRoleForUser:(uid,admin={})=>uid==='owner'?'owner':admin.role||'member',hasPremiumSubscription:value=>value==='premium',normalizeSubscriptionStatus:value=>value,
   fetch:async(_url,options)=>{calls++;lastPayload=JSON.parse(options.body);
+    if(providerFailure)return Response.json({error:{message:'Fixture provider rejected request'}},{status:503});
     if(hold)await Promise.race([hold,new Promise((_,reject)=>options.signal.addEventListener('abort',()=>reject(new Error('aborted')),{once:true}))]);
     return new Response(JSON.stringify({choices:[{message:{content:'hello'}}],usage:{prompt_tokens:10,completion_tokens:2,cost:0.000014}}),{headers:{'content-type':'application/json'}});
   }
@@ -184,5 +186,18 @@ try {
   assert.equal((await send(nookKey,{model:'openai/gpt-6-astra',messages:[{role:'user',content:'Hi'}]}, {},'/api/v1/ai')).status,429);assert.equal(calls,earlierCalls);
   await nookStore.revoke('nook-route');assert.equal((await send(nookKey,{model:'new-vendor/new-chat',messages:[{role:'user',content:'Hi'}]}, {},'/api/v1/ai')).status,401);
   console.log('PASS Nook key catalog, shared chat/device pools, expensive subset, forged-cookie isolation, depletion and revocation');
+  providerFailure=true;
+  for(const appName of ['nyx','drop','nook']){
+    const uid=`failure-${appName}`,prefix=appName==='nyx'?'':appName+'-';
+    db.records.set('nyxUserAdministration/'+uid,{aiAccess:'trusted'});
+    const rejected=await send(uid,{model:appName==='nyx'?'google/gemini-fixture':'new-vendor/new-chat'},{},`/api/${appName}-ai`);
+    assert.match(await rejected.text(),/Fixture provider rejected/);
+    await new Promise(resolve=>setTimeout(resolve,30));
+    const account=db.records.get('nyxAiAllowance/'+prefix+'account-'+createHash('sha256').update(uid).digest('hex'));
+    assert.equal(account.tokens,0,`${appName}: actual middleware must refund failed answer tokens`);
+    assert.equal(account.requests,0,`${appName}: actual middleware must refund failed message counts`);
+    assert(account.money>0,'Unknown provider spending remains reserved');
+  }
+  console.log('PASS real middleware provider-error refunds across Nyx/Tutsi, Drop and Nook');
   console.log('PASS: real AI middleware auth/origin, OpenRouter routing, UID catalog pricing, parallel capacity, slot release and unverified cloud authentication');
 }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

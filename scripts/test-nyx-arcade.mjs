@@ -23,6 +23,13 @@ try {
   assert.equal(await page.locator('h1').textContent(), 'ARCADE');
   assert.equal(await page.locator('.cove-mark, .subtitle').count(), 0);
   assert.equal(await page.locator('.arcade-feature').count(), 3);
+  // clean-css drops a font shorthand containing clamp(); guard the rendered
+  // production typography so the featured titles cannot fall back to body text.
+  const featuredType = await page.locator('.arcade-feature-title').nth(1).evaluate(element => {
+    const style = getComputedStyle(element);
+    return { size: parseFloat(style.fontSize), weight: Number(style.fontWeight), family: style.fontFamily };
+  });
+  assert(featuredType.size >= 25 && featuredType.weight >= 700 && featuredType.family.includes('ArcadeDisplay'), JSON.stringify(featuredType));
   assert.equal(await page.locator('#emptyState').isVisible(), false);
   assert.equal(await page.locator('#gamePagination').isVisible(), false);
 
